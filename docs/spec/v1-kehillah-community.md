@@ -52,7 +52,25 @@ distinct from court-intrigue-driven landless play:
 | **Prosper** | Work as a merchant/craftsman | **Stewardship** | Passive Gold income scaled by the leader's (and key family members') Stewardship, plus 1-2 community buildings (market/workshop) as multipliers. Not land taxation, not a full trade-route system. |
 | **Study** | Torah scholarship | **Learning** | Learning feeds Influence generation directly — scholars naturally accumulate the standing that also wins elections (§5). A signature "compose a commentary" decision can produce an artifact at high Learning. |
 | **Steward** | Manage internal affairs | **Stewardship / Influence**, explicitly *not* Intrigue | Decisions like mediating family disputes or funding charity succeed on competence/standing. This is the main visible break from Byzantine-office flavor — no scheme system. |
-| **Protect** | Shield the community from harm | Influence + Gold, reactive | Light, non-branching flavor events only (§3b) — the deep system is Phase 4. |
+| **Protect** | Shield the community from harm | **Diplomacy** (primary), Gold, Martial (minor) | Three resolution paths on a threat event: negotiate (Shtadlan/Diplomacy), pay it off (Gold), or push back (communal watch/Martial). Light, non-branching flavor only in v1 (§3b) — the deep system is Phase 4. |
+
+### Where each vanilla skill lives
+
+All five skills get a home in this mod; not all in v1 — sequencing them on
+purpose keeps the baseline from turning into "every skill does everything":
+
+- **Stewardship** — Prosper, Steward (v1).
+- **Learning** — Study (v1).
+- **Diplomacy** — Protect, via the Shtadlan office (v1, and the core skill
+  for Phase 4's host-charter negotiations later).
+- **Martial** — minor supporting role in Protect (communal watch softens
+  incidents) and a secondary role guarding trade caravans (Prosper).
+  Deliberately not a full pillar — diaspora communities historically
+  weren't military powers. Expands in Phase 4 once threats are real.
+- **Intrigue** — deliberately absent from the baseline (that's the whole
+  point of contrasting with Byzantine-office scheming). Its real home is
+  Phase 5's crypto-Jewish survival loop, where evading detection is
+  legitimately an Intrigue-driven mechanic.
 
 Core loop:
 
@@ -67,9 +85,11 @@ Core loop:
 3. **Generate Influence** via Learning and successful stewardship (Study +
    Steward) — the community's internal political capital.
 4. **Spend both** through decisions: fund a study house or communal
-   building (Gold), appoint internal roles like a chief rabbi or treasurer
-   (Influence), resolve internal disputes between notable families
-   (Influence), respond to protection-flavor events (Gold/Influence).
+   building (Gold), appoint internal officers (Influence) — a chief rabbi
+   (Learning), a treasurer (Stewardship), a **Shtadlan** (Diplomacy, the
+   community's advocate to outside authorities) — resolve internal disputes
+   between notable families (Influence), respond to protection-flavor
+   events (negotiate/pay/defend, per the Protect row above).
 5. **Manage notable families.** Multiple prominent families exist alongside
    the ruling one; keeping them content (or outmaneuvering them through
    competence, not schemes) feeds directly into who wins the next
@@ -86,8 +106,11 @@ Deliberately thin, and explicitly not the Phase 4 system:
 - Occasional flavor events — a shakedown by a local official, a rumor/
   accusation, petty theft/vandalism — with no branching storylines and no
   existential stakes (nobody gets expelled in v1).
-- Resolved by spending Gold (pay it off), Influence (community standing
-  smooths it over), or ignoring it for a minor, temporary modifier.
+- Three resolution paths, mirroring the Protect row in §3: **negotiate**
+  (Shtadlan's Diplomacy softens or dismisses it), **pay** (spend Gold to
+  make it go away), or **defend** (Martial reduces severity if ignored).
+  Whichever officer/skill you've invested in should visibly matter here,
+  even at this light scale.
 - No host-faith split, no counter tied to Christian/Islamic doctrine —
   that nuance is entirely Phase 4's job. v1's version is generic by design
   so it doesn't get half-built twice.
