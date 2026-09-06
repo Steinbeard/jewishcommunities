@@ -51,6 +51,42 @@ Playable bookmarks for Jewish-majority landed polities, using vanilla
 government/succession/title systems with Judaism/Israelite (or regional)
 culture and religion content. Picked up once Track A Phase 1 ships.
 
+## Candidate future loops (backlog, unscheduled)
+
+Ideas raised during design discussion, sorted by how cheaply they'd fit —
+not yet assigned to a phase. Pull one into a phase's scope explicitly
+before building it; nothing here is approved by default.
+
+**Cheap, reinforces an existing v1 pillar (candidates to pull into Phase 1):**
+- **Yeshiva pipeline (Study).** Actively choosing tutors/mentors for
+  promising children to raise their Learning — vanilla guardian/education
+  assignment, reflavored. Makes meritocratic succession something you
+  cultivate, not just a die roll at the death screen.
+- **Tzedakah / charity meter (Steward).** A recurring decision spending
+  Gold for Influence and family contentment. One decision, one modifier.
+
+**Needs more than one Kehillah on the map, or a regional anchor to travel
+to — natural Phase 2/3 content, not v1:**
+- **Inter-communal correspondence/responsa network.** Sister communities
+  in other cities exchange letters, aid, and rulings (historically this is
+  what the Cairo Geniza actually preserves). Arguably the truest expression
+  of "diaspora as differentiator," but only means something once multiple
+  Kehillot exist to talk to.
+- **Craft/guild specialization per family.** Different notable families
+  specialize (goldsmith, physician, textile trade) — variety pass on top
+  of the Prosper pillar's baseline economy.
+- **Pilgrimage**, reusing the vanilla Pilgrimage activity — travel to
+  Jerusalem or a great yeshiva for Learning/Influence/artifacts. Lands
+  better once Phase 2's academies exist as real destinations.
+
+**Bigger, and overlaps a system already scheduled later — don't build twice:**
+- **Legends system integration** (martyrs, great sages memorialized for
+  lasting bonuses) — pair with Phase 4/5, where persecution and memory are
+  the actual theme.
+- **Voluntary "found a sister community" expansion.** A lighter, non-crisis
+  version of Phase 4's Unlanded Migration Journey. Fold into Phase 4 rather
+  than building two migration systems.
+
 ## Explicitly not scheduled yet
 Anything not listed above (additional overlays beyond the three named,
 further survival-loop depth, multiplayer considerations, etc.) is out of

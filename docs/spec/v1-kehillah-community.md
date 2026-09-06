@@ -12,13 +12,19 @@ of [ROADMAP.md](../../ROADMAP.md), Track A.
 - Meritocratic elective succession.
 - A minimal internal decision set — enough to make the currencies matter
   and give the player things to do.
+- **Light, non-branching "protection" flavor** — occasional small threat
+  events (a shakedown, an accusation, petty theft) resolved by spending
+  Gold/Influence. No Christian/Islamic split, no existential stakes — see
+  §3b. This is deliberately thin; it exists so "protect the community" is a
+  felt verb in v1, not a placeholder stat.
 - One generic playable start scenario, used for internal testing/iteration.
 
 **Explicitly out of scope for v1** (see ROADMAP.md for when these land):
 - Any regional/temporal overlay (Babylonia, Ashkenaz, Sepharad) — no
   Exilarch, no Geonim faction, no Synodic council, no Negidim court loop.
-- Any host-realm mechanic — no usury, no charters, no Dhimma pact, no
-  expulsion or purge threat. The host liege exists as flavor/context only.
+- The **deep** host-realm mechanic — no usury, no charters, no Dhimma pact,
+  no branching Christian-vs-Islamic paths, no expulsion/purge threat. Only
+  the light generic flavor above exists pre-Phase-4.
 - The crypto-Jewish survival loop.
 - Landed Jewish realms (Track B).
 - A polished bookmark, full localization pass, or art — v1 is about proving
@@ -28,37 +34,63 @@ of [ROADMAP.md](../../ROADMAP.md), Track A.
 
 You lead a Jewish community embedded inside someone else's realm. You don't
 own the land under your feet — the host count or duke does — but you hold
-real, playable authority over your own people: who leads, who prospers, who
-studies, and how the community's two forms of capital (money and communal
-standing) get spent. The tension is internal, not (yet) with the host: can
-you keep prominent families satisfied, keep scholarship and piety funded,
-and pick worthy leadership, all with a resource base a landed ruler would
-consider tiny?
+real, playable authority over your own people. Crucially, this should not
+feel like a reskinned Byzantine landless office: Byzantine offices reward
+*currying favor and Intrigue-driven scheming* for a bureaucratic seat.
+Kehillah leadership instead rewards **competence and knowledge** —
+Stewardship and Learning, not Intrigue. Standing, succession, and respect
+come from running the community well and knowing the Torah well, not from
+plots.
 
-## 3. Core loop (proposed)
+## 3. Player pillars and the core loop
+
+Four verbs, each mapped to a skill/system so the loop stays mechanically
+distinct from court-intrigue-driven landless play:
+
+| Pillar | Player verb | Driven by | How |
+|---|---|---|---|
+| **Prosper** | Work as a merchant/craftsman | **Stewardship** | Passive Gold income scaled by the leader's (and key family members') Stewardship, plus 1-2 community buildings (market/workshop) as multipliers. Not land taxation, not a full trade-route system. |
+| **Study** | Torah scholarship | **Learning** | Learning feeds Influence generation directly — scholars naturally accumulate the standing that also wins elections (§5). A signature "compose a commentary" decision can produce an artifact at high Learning. |
+| **Steward** | Manage internal affairs | **Stewardship / Influence**, explicitly *not* Intrigue | Decisions like mediating family disputes or funding charity succeed on competence/standing. This is the main visible break from Byzantine-office flavor — no scheme system. |
+| **Protect** | Shield the community from harm | Influence + Gold, reactive | Light, non-branching flavor events only (§3b) — the deep system is Phase 4. |
+
+Core loop:
 
 1. **Hold a landless Kehillah title** (e.g. "Kehillah of Worms") layered
    over a county/duchy that belongs to a host realm — analogous to how
    Byzantine administrative offices are landless duchy-tier titles held
-   inside the empire (see §6).
-2. **Generate Gold** from a small set of community-owned sources (a
-   "Kehillah quarter" special building, artisan/trade activity, member
-   tithes) — enough to fund buildings and absorb minor misfortune events,
+   inside the empire (see §6). The structural plumbing is shared with that
+   vanilla system; the player-facing loop above is not.
+2. **Generate Gold** via Stewardship (Prosper) — small, steady, community-
+   scale income, enough to fund buildings and absorb flavor threat events,
    not to rival a landed ruler.
-3. **Generate Influence** from scholarship, piety, and successful
-   leadership — the community's internal political capital.
+3. **Generate Influence** via Learning and successful stewardship (Study +
+   Steward) — the community's internal political capital.
 4. **Spend both** through decisions: fund a study house or communal
    building (Gold), appoint internal roles like a chief rabbi or treasurer
    (Influence), resolve internal disputes between notable families
-   (Influence), respond to minor flavor misfortune events (Gold).
+   (Influence), respond to protection-flavor events (Gold/Influence).
 5. **Manage notable families.** Multiple prominent families exist alongside
-   the ruling one; keeping them content (or outmaneuvering them) feeds
-   directly into who wins the next succession.
+   the ruling one; keeping them content (or outmaneuvering them through
+   competence, not schemes) feeds directly into who wins the next
+   succession.
 6. **Succession is an event, not a formality.** When the leader dies, the
    Meritocratic Elective System picks a successor from eligible candidates
    weighted by Learning, Influence standing, and dynasty prestige — not
    strict primogeniture. Losing the election is a real outcome for
    non-favored heirs.
+
+## 3b. Protection (light, v1 scope)
+
+Deliberately thin, and explicitly not the Phase 4 system:
+- Occasional flavor events — a shakedown by a local official, a rumor/
+  accusation, petty theft/vandalism — with no branching storylines and no
+  existential stakes (nobody gets expelled in v1).
+- Resolved by spending Gold (pay it off), Influence (community standing
+  smooths it over), or ignoring it for a minor, temporary modifier.
+- No host-faith split, no counter tied to Christian/Islamic doctrine —
+  that nuance is entirely Phase 4's job. v1's version is generic by design
+  so it doesn't get half-built twice.
 
 ## 4. Currencies
 
