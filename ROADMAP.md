@@ -29,20 +29,25 @@ is fun and functional end-to-end before spending art/writing budget on
 regional variants.
 See [spec/v1-kehillah-community.md](spec/v1-kehillah-community.md). The
 concrete playable start is the Kehillah of Worms, 1066 — see
-[docs/scenarios/worms-1066.md](docs/scenarios/worms-1066.md). That scenario
-surfaced a real prerequisite not yet scoped: **a Judaism faith and a
-playable culture for this mod** (SoJ2's are reference-only, not reused
-directly) — needs its own short spec before Worms is implementable.
+[docs/scenarios/worms-1066.md](docs/scenarios/worms-1066.md), using
+vanilla's own `judaism_religion` (faith: `rabbinism`) and `heritage_israelite`
+culture family (culture: `ashkenazi`) — no custom faith/culture build-out
+needed, corrected from an earlier draft that assumed otherwise.
 
 ### Phase 2 — First Regional Overlay
 Reskin/extend the baseline with one historically-anchored variant. Babylonia
 (Exilarch/Geonim) is the leading candidate — most self-contained, clearest
-historical throughline — but not yet finalized.
+historical throughline — but not yet finalized. Vanilla already has a
+matching culture ready to use: `bavlim` (Babylonian Jews, part of the
+`heritage_israelite` family) — confirmed while researching the Worms
+scenario, see docs/scenarios/worms-1066.md §5.
 
 ### Phase 3 — Additional Regional Overlays
 Ashkenaz (Synodic Council — no central executive, players vote on regional
 decrees) and Sepharad/Islamicate (Negidim — influence via host-court
-placement) once Phase 2 validates the overlay pattern.
+placement) once Phase 2 validates the overlay pattern. Vanilla's `sephardi`
+culture is the matching ready-made asset for the latter (same source as
+the Phase 2 note above).
 
 ### Phase 4 — Host Dynamics
 The host-realm relationship layer: Christian-sphere loop (usury, charters,

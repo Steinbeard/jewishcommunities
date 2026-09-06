@@ -94,15 +94,44 @@ special risk particular to this mod.
   technical design (the title-holder is *also* historically "the rabbi" in
   the loose sense, even before the mechanical Chief Rabbi office exists).
 
-## 5. Open dependency, not yet scoped
+## 5. Faith and culture — correction to an earlier draft of this file
 
-This scenario needs a **Judaism faith and an appropriate playable
-culture** to exist in this mod before it's implementable — neither exists
-yet in this fresh project (SoJ2's `00_judaism.txt`/`00_israelite.txt` are
-reference-only per this project's earlier scope decision, not to be
-copied wholesale). This is a real prerequisite, not a detail to defer
-silently — it should get its own short spec before implementation work on
-Worms starts.
+An earlier draft flagged "no Judaism faith/culture exists yet in this
+project" as a blocking prerequisite. **That was wrong.** Checked directly
+against the installed 1.19 files: vanilla already ships a full
+`judaism_religion` (`common/religion/religions/00_judaism.txt`) with four
+faiths — **rabbinism**, karaism, haymanot, malabarism — and a
+`heritage_israelite` culture family (`common/culture/cultures/00_israelite.txt`)
+with five cultures — ashkenazi, sephardi, radhanite, kochinim, bavlim. This
+isn't a stub; it's detailed (holy sites, doctrines, name lists, traits,
+graphics assignments).
+
+**Isaac ben Eliezer ha-Levi's faith/culture, concretely:**
+- **Faith: `rabbinism`.** Notably decentralized by design —
+  `doctrine_no_head`, with the doctrine's own comment reading "Rabbinism
+  is highly decentralised, leaving all decisions down to the individual
+  Rabbis. A religious head is very antithetical to their doctrine." That's
+  a strong, native validation of Track A's whole premise: many independent
+  Kehillot, no single top-down authority to appoint or depose them —
+  matches real Rabbinic Judaism's actual structure, not just this mod's
+  convenience.
+- **Culture: `ashkenazi`.** `ethos = ethos_communal`,
+  `heritage = heritage_israelite`, and its traditions include
+  `tradition_diasporic` and `tradition_faith_bound` — again, real vanilla
+  content already pointed at exactly this mod's premise, not generic
+  filler.
+
+**What this doesn't change:** vanilla's religion/culture data is a
+population/flavor layer (used for character generation, minority
+populations in various counties) — it does not include a dedicated
+playable non-landed government for it. Phase 1's actual work (Kehillah
+government type, Synagogue-quarter buildings, meritocratic appointment
+succession) is fully necessary regardless; we just don't need to build
+the faith/culture layer underneath it, which is a meaningful scope cut.
+
+**Bonus find for later phases:** `bavlim` (Babylonian Jews) and `sephardi`
+map directly onto Phase 2 (Babylonia) and Phase 3 (Sepharad) — logged to
+ROADMAP.md.
 
 ## Backlog note
 

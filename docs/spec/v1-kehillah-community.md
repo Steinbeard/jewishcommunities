@@ -310,10 +310,9 @@ spec, so these aren't assumptions:
    item. Keep it to 1-2 generic buildings for v1?
 3. ~~What does the generic v1 playable start look like~~ — resolved: the
    Kehillah of Worms, 1066, with Isaac ben Eliezer ha-Levi as the starting
-   leader. See [scenarios/worms-1066.md](../scenarios/worms-1066.md). That
-   scenario surfaced a new prerequisite: this mod needs its own Judaism
-   faith and playable culture before Worms is implementable (SoJ2's are
-   reference-only) — not yet scoped, needs its own short spec.
+   leader, using vanilla's own Judaism faith (`rabbinism`) and culture
+   (`ashkenazi`) — no custom faith/culture build-out needed. See
+   [scenarios/worms-1066.md](../scenarios/worms-1066.md).
 4. Rough starting list of v1 decisions — I'd propose starting minimal
    (fund a Synagogue-quarter building, appoint each of the three officers,
    mediate a family dispute) and growing from there rather than designing
