@@ -27,7 +27,12 @@ named officer roles — Chief Rabbi, Treasurer, Shtadlan), a minimal internal
 decision set, one generic playable start. Goal: prove the government type
 is fun and functional end-to-end before spending art/writing budget on
 regional variants.
-See [spec/v1-kehillah-community.md](spec/v1-kehillah-community.md).
+See [spec/v1-kehillah-community.md](spec/v1-kehillah-community.md). The
+concrete playable start is the Kehillah of Worms, 1066 — see
+[docs/scenarios/worms-1066.md](docs/scenarios/worms-1066.md). That scenario
+surfaced a real prerequisite not yet scoped: **a Judaism faith and a
+playable culture for this mod** (SoJ2's are reference-only, not reused
+directly) — needs its own short spec before Worms is implementable.
 
 ### Phase 2 — First Regional Overlay
 Reskin/extend the baseline with one historically-anchored variant. Babylonia
@@ -79,6 +84,12 @@ to — natural Phase 2/3 content, not v1:**
 - **Craft/guild specialization per family.** Different notable families
   specialize (goldsmith, physician, textile trade) — variety pass on top
   of the Prosper pillar's baseline economy.
+- **A second starting scenario: Kehillah of Troyes, c. 1070+, led by
+  Rashi.** Checked and ruled out for the Worms 1066 scenario specifically
+  — he'd returned to Troyes by 1065 and hadn't founded his own yeshiva
+  yet (1067–1070) — but he's a strong real candidate for his own scenario
+  once this mod supports more than one starting Kehillah. See
+  docs/scenarios/worms-1066.md's backlog note for the sourcing.
 - **Pilgrimage**, reusing the vanilla Pilgrimage activity — travel to
   Jerusalem or a great yeshiva for Learning/Influence/artifacts. Lands
   better once Phase 2's academies exist as real destinations.
