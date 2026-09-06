@@ -190,42 +190,72 @@ government` specifically. The script-side evidence suggests it's generic
 (the effects don't reference government type themselves), but this should
 be a first, cheap prototype check before building on top of it.
 
-## 5. Succession: Meritocratic Elective System
+## 5. Succession: Meritocratic Appointment (revised — see history below)
 
-Disables strict hereditary succession, but **the candidate pool is
-restricted to the outgoing leader's own dynasty** — a son, nephew, cousin,
-etc. — not the whole community. Candidate weight is a function of:
-- **Learning** skill (scholarship)
-- **Influence** standing (the real vanilla Influence resource, per §4)
-- **Dynasty prestige**
+**Revision note:** an earlier draft of this section restricted the
+candidate pool to the outgoing leader's own dynasty, out of concern that
+an open pool could eject the player from play entirely with nothing else
+to fall back to. Further investigation found that concern doesn't apply to
+the mechanism CK3 actually uses for this exact situation — see below.
+Superseded, kept here for the reasoning trail rather than deleted.
 
-**Why dynasty-restricted, not open to any notable family:** an open
-election (any Powerful Family can win) is the more novel design, but it
-means the player can lose the Kehillah leadership entirely — and since the
-Kehillah title is the *only* title in v1 (nothing else to fall back to
-playing), that risks ending the player's game outright. Dynasty-restricted
-election is how vanilla's own Elective succession law already behaves
-outside the HRE (electors pick the most-deserving eligible family member,
-not literally anyone) — it keeps the meritocratic tension (your most
-scholarly son inheriting over your firstborn) without ever ejecting the
-player from the community they built. It also reuses the same
-succession-law weight/tooltip UI vanilla already ships — a config/weights
-problem, not a new-system problem.
+**The mechanism: `succession_appointment`, not `succession_election`.**
+CK3 already ships a mostly-unrelated precedent for "the institution's next
+leader is chosen from a broad pool, and the player simply continues
+playing as whoever it is": administrative-government governors and
+emperors (`common/succession_appointment/admin_governor.txt`,
+`admin_emperor.txt`). Their candidate pools explicitly include people
+**outside the outgoing holder's family** — `admin_governor`'s
+`invested_candidates` includes `unlanded_noble_house_head` and
+`landed_vassal`, i.e. heads of other households entirely, not just kin.
+This is shipped, playable, base-game content — a player-controlled
+governor already hands off to an unrelated appointee under this system,
+with no separate "keep playing as the loser" mode needed, because there
+*is* no loser to keep playing: appointment succession has exactly one
+outcome per vacancy, and the player becomes it.
 
-Open, community-wide election with a genuine "rival family head" playable
-mode (losing an election demotes you to scheming for the *next* one,
-rather than ending your game) is a legitimately good idea for later —
-logged to ROADMAP.md's backlog rather than dropped, since it needs its own
-gameplay layer for what a non-ruling family head actually does.
+This is a direct mechanical answer to your original question — **you can
+always play the community leader, regardless of who that is**, without
+inventing anything: define our own `kehillah_appointment_succession_law`
+(forked from vanilla's `appointment_succession_law`, but gated on a
+Kehillah-specific government flag instead of `government_allows =
+administrative`, so we don't inherit unrelated administrative-government
+behavior) and our own `kehillah_leadership` succession-appointment entry
+(forked from `admin_governor`'s structure) with:
+- **Candidate pool:** notable/Powerful Family heads within the community —
+  open, not restricted to the outgoing leader's family.
+- **Candidate score:** Learning, Influence standing, and dynasty prestige
+  (replacing vanilla's generic five-skill sum and admin-specific trait
+  modifiers) — i.e. exactly the original "Meritocratic Elective System"
+  from the design doc, just implemented as an appointment, not an election.
 
-**Estate continuity fix.** §3c's technical grounding found that vanilla
-estates are owned per-character, not per-title — a new office-holder
-normally gets a fresh, culture-seeded estate, not their predecessor's
-actual buildings. Restricting succession to one dynasty makes this cheap
-to fix properly: on succession, a small scripted effect copies the outgoing
+**What this changes about the political fantasy.** Because the player
+always becomes the appointed leader, political maneuvering stops being
+about keeping *your bloodline* in charge and becomes about keeping the
+office's *candidate pool and scoring inputs* strong — investing in Learning
+and Influence generally, cultivating capable people, growing the
+community's overall standing — since whoever inherits those investments is
+who you'll be playing next regardless of family. That's a meaningfully
+different feel from standard CK3 dynasty play, and it's a better match for
+communal/institutional continuity (Exilarchs, Geonim, chief rabbis, elected
+lay leadership) than the bloodline-über-alles default the engine assumes
+almost everywhere else.
+
+**Estate continuity fix, revised.** §3c's technical grounding found that
+vanilla estates are owned per-character, not per-title — a new
+office-holder normally gets a fresh, culture-seeded estate, not their
+predecessor's actual buildings. With an open candidate pool this fix
+matters *more*, not less (leadership can now pass to any family, not just
+within one bloodline): on succession, a scripted effect copies the outgoing
 leader's exact domicile building list onto the new leader's domicile,
-rather than relying on vanilla's auto-seed. This is what actually makes
-"the estate stays with the community" true, not just approximately true.
+regardless of whether they're related. This is what actually makes "the
+estate stays with the community" true.
+
+**Residual risk to validate early** (prototype-phase, not a reason to
+doubt the plan): confirm that player-camera continuation onto a
+non-blood-related appointed successor is actually smooth in practice for a
+custom government (the admin_governor precedent is strong structural
+evidence, but I haven't watched it happen in an actual playthrough).
 
 ## 6. Technical feasibility grounding
 
@@ -256,9 +286,17 @@ spec, so these aren't assumptions:
 - Estate domiciles are owned **per-character**, confirmed by reading
   `change_to_administrative_effect`/`set_up_domicile_estate_effect`: a new
   office-holder gets a fresh, culture-seeded estate, not their
-  predecessor's literal buildings. This is why §5 restricts succession to
-  one dynasty and adds an explicit building-copy effect rather than relying
-  on vanilla's default behavior.
+  predecessor's literal buildings. This is why §5 adds an explicit
+  building-copy effect on succession rather than relying on vanilla's
+  default behavior.
+- `common/succession_appointment/admin_governor.txt` and `admin_emperor.txt`
+  confirm appointment-based succession pools already extend beyond blood
+  family in shipped, playable content (`invested_candidates` includes
+  `unlanded_noble_house_head`, `landed_vassal`). The law that invokes this
+  (`appointment_succession_law` in `common/laws/00_succession_laws.txt`)
+  gates on `government_allows = administrative`, itself just a moddable
+  government_rule flag — so a Kehillah-specific fork of both the law and
+  the appointment-type entry is a config problem, not an engine hack.
 - None of this is a final decision — it's evidence the shape of the design
   doc's ask (non-landed, family-competition-driven, elective) has real
   vanilla scaffolding to build on, which is why v1 is scoped the way it is.

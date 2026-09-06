@@ -20,11 +20,13 @@ implemented yet — this is the plan, subject to revision after each phase.
 ### Phase 1 — Kehillah Community Baseline (current focus)
 The core non-landed government mechanic, with no historical/regional flavor
 yet: currencies (Gold, the real vanilla Influence resource), meritocratic
-elective succession, a Synagogue-quarter estate-building system (visible
-community growth, gates named officer roles — Chief Rabbi, Treasurer,
-Shtadlan), a minimal internal decision set, one generic playable start.
-Goal: prove the government type is fun and functional end-to-end before
-spending art/writing budget on regional variants.
+**appointment** succession (the player always continues playing as the
+community's leader, regardless of bloodline — see spec §5), a
+Synagogue-quarter estate-building system (visible community growth, gates
+named officer roles — Chief Rabbi, Treasurer, Shtadlan), a minimal internal
+decision set, one generic playable start. Goal: prove the government type
+is fun and functional end-to-end before spending art/writing budget on
+regional variants.
 See [spec/v1-kehillah-community.md](spec/v1-kehillah-community.md).
 
 ### Phase 2 — First Regional Overlay
@@ -81,15 +83,26 @@ to — natural Phase 2/3 content, not v1:**
   Jerusalem or a great yeshiva for Learning/Influence/artifacts. Lands
   better once Phase 2's academies exist as real destinations.
 
-**Needs its own gameplay layer to be worth building — real idea, not v1:**
-- **Open, community-wide leadership elections with a "rival family head"
-  playable mode.** v1 restricts elections to the outgoing leader's own
-  dynasty specifically so the player is never ejected from power (see
-  spec/v1-kehillah-community.md §5). A fully open election, where any
-  notable family can win and losing demotes you to scheming for the next
-  one rather than ending your game, is a genuinely richer design — but it
-  needs a whole answer to "what does a non-ruling family head actually do"
-  before it's buildable.
+**Resolved, no longer backlog:** open, community-wide leadership succession
+(any notable family can be appointed, not just the outgoing leader's own)
+turned out not to need a separate "rival family head" playable mode at all
+— see spec §5. Appointment-based succession (`succession_appointment`,
+the same framework vanilla uses for administrative governors) has no
+"losing candidate who keeps playing a demotion" case to design for: there's
+one outcome per vacancy, and the player becomes it. Folded into Phase 1
+directly instead of staying backlog.
+
+**Track to revisit once released, not buildable yet:** CK3's upcoming "By
+God Alone" expansion (dev diary, unreleased as of this writing) introduces
+Ecclesiastical Titles (`clerical_region_titles`), a Clerical Appointment
+score picking the next officeholder from a broad clergy pool, and a
+Cathedral Complex Domicile that persists and grows independent of any one
+office-holder — i.e. Paradox's own native version of almost exactly what
+Phase 1 approximates today with a forked succession_appointment entry plus
+a manual domicile-copy effect. The dev diary explicitly calls out
+`clerical_region_titles` as intended for mod reuse. Once this ships,
+revisit whether it offers a cleaner substrate than our custom Kehillah
+title/domicile plumbing — but nothing in Phase 1 should wait on it.
 
 **Bigger, and overlaps a system already scheduled later — don't build twice:**
 - **Legends system integration** (martyrs, great sages memorialized for
