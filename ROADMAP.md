@@ -81,6 +81,16 @@ to — natural Phase 2/3 content, not v1:**
   Jerusalem or a great yeshiva for Learning/Influence/artifacts. Lands
   better once Phase 2's academies exist as real destinations.
 
+**Needs its own gameplay layer to be worth building — real idea, not v1:**
+- **Open, community-wide leadership elections with a "rival family head"
+  playable mode.** v1 restricts elections to the outgoing leader's own
+  dynasty specifically so the player is never ejected from power (see
+  spec/v1-kehillah-community.md §5). A fully open election, where any
+  notable family can win and losing demotes you to scheming for the next
+  one rather than ending your game, is a genuinely richer design — but it
+  needs a whole answer to "what does a non-ruling family head actually do"
+  before it's buildable.
+
 **Bigger, and overlaps a system already scheduled later — don't build twice:**
 - **Legends system integration** (martyrs, great sages memorialized for
   lasting bonuses) — pair with Phase 4/5, where persecution and memory are

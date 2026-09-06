@@ -192,16 +192,40 @@ be a first, cheap prototype check before building on top of it.
 
 ## 5. Succession: Meritocratic Elective System
 
-Disables hereditary succession. Replaced with an elective law where
-candidate weight is a function of:
+Disables strict hereditary succession, but **the candidate pool is
+restricted to the outgoing leader's own dynasty** — a son, nephew, cousin,
+etc. — not the whole community. Candidate weight is a function of:
 - **Learning** skill (scholarship)
 - **Influence** standing (the real vanilla Influence resource, per §4)
 - **Dynasty prestige**
 
-This sits on top of CK3's existing elective-succession framework (the same
-system underlying the HRE/Imperial elections and appointed religious
-succession), which already supports weighted, script-defined elector pools
-— this is a config/weights problem, not a new-system problem.
+**Why dynasty-restricted, not open to any notable family:** an open
+election (any Powerful Family can win) is the more novel design, but it
+means the player can lose the Kehillah leadership entirely — and since the
+Kehillah title is the *only* title in v1 (nothing else to fall back to
+playing), that risks ending the player's game outright. Dynasty-restricted
+election is how vanilla's own Elective succession law already behaves
+outside the HRE (electors pick the most-deserving eligible family member,
+not literally anyone) — it keeps the meritocratic tension (your most
+scholarly son inheriting over your firstborn) without ever ejecting the
+player from the community they built. It also reuses the same
+succession-law weight/tooltip UI vanilla already ships — a config/weights
+problem, not a new-system problem.
+
+Open, community-wide election with a genuine "rival family head" playable
+mode (losing an election demotes you to scheming for the *next* one,
+rather than ending your game) is a legitimately good idea for later —
+logged to ROADMAP.md's backlog rather than dropped, since it needs its own
+gameplay layer for what a non-ruling family head actually does.
+
+**Estate continuity fix.** §3c's technical grounding found that vanilla
+estates are owned per-character, not per-title — a new office-holder
+normally gets a fresh, culture-seeded estate, not their predecessor's
+actual buildings. Restricting succession to one dynasty makes this cheap
+to fix properly: on succession, a small scripted effect copies the outgoing
+leader's exact domicile building list onto the new leader's domicile,
+rather than relying on vanilla's auto-seed. This is what actually makes
+"the estate stays with the community" true, not just approximately true.
 
 ## 6. Technical feasibility grounding
 
@@ -229,6 +253,12 @@ spec, so these aren't assumptions:
   office-holders — reusing them together, rather than piecemeal, is what
   makes "community growth" and "a real second currency" cheap at the same
   time instead of two separate problems.
+- Estate domiciles are owned **per-character**, confirmed by reading
+  `change_to_administrative_effect`/`set_up_domicile_estate_effect`: a new
+  office-holder gets a fresh, culture-seeded estate, not their
+  predecessor's literal buildings. This is why §5 restricts succession to
+  one dynasty and adds an explicit building-copy effect rather than relying
+  on vanilla's default behavior.
 - None of this is a final decision — it's evidence the shape of the design
   doc's ask (non-landed, family-competition-driven, elective) has real
   vanilla scaffolding to build on, which is why v1 is scoped the way it is.
