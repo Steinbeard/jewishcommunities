@@ -115,6 +115,43 @@ Deliberately thin, and explicitly not the Phase 4 system:
   that nuance is entirely Phase 4's job. v1's version is generic by design
   so it doesn't get half-built twice.
 
+## 3c. The Kehillah Quarter (community growth, made visible)
+
+Checked directly against the game's `estate` domicile system (the same
+domicile type Byzantine administrative office-holders use). It's a strong,
+concrete answer to "how does the community's growth show up mechanically":
+
+- The `estate` domicile has one **main building slot** with a tiered
+  progression (villa → manor → ... → palace in vanilla) plus several
+  **internal upgrade slots**, each already organized **one per skill** in
+  vanilla data: a Learning building (`library`), a Stewardship building
+  (`office`), a Diplomacy building (`living_quarters`), a Martial building
+  (`trophy_room`), an Intrigue building (`servants_quarters`), plus two
+  unskilled flavor slots (`bath`, `guest_room`).
+- Proposed Kehillah reskin, reusing the slot *structure* but writing our
+  own modifiers rather than copying vanilla's (several vanilla versions
+  grant Intrigue-scheme bonuses — an "Ingratiate Family" interaction,
+  scheme-duration/success modifiers — that we deliberately don't want):
+
+  | Slot (vanilla building family) | Kehillah building | Ties to |
+  |---|---|---|
+  | Main (`estate_main_0X`, tiered) | **Synagogue** — grows in tiers; this is the community's visible growth arc | all pillars |
+  | Internal, Learning (`library`) | **Beit Midrash** (study hall) | Study; gates the Chief Rabbi office |
+  | Internal, Stewardship (`office`) | **Countinghouse** | Prosper; gates the Treasurer office |
+  | Internal, Diplomacy (`living_quarters`) | **Shtadlan's Chambers** | Protect; gates the Shtadlan office |
+  | Internal, Martial (`trophy_room`) | **Communal Watch** (minor) | Protect (minor) — no dedicated office in v1 |
+  | Internal, unskilled (`bath`) | **Mikvah** — your suggestion; fits directly, vanilla's version already carries health/purity-flavored bonuses | flavor, light Influence/wellbeing |
+  | Internal, unskilled (`guest_room`) | **Communal Hall** — hosts guests/traveling scholars, boosts Influence | Study/Steward; seeds the Phase 2/3 correspondence-network backlog item |
+  | Internal, Intrigue (`servants_quarters`) | **Left unbuilt in v1.** Reserved for Phase 5's "Hidden Chamber" (a *Genizah* — literally a hidden storage room in real Jewish communal life — is an unusually good in-theme wrapper for a secret-practice mechanic) | intentionally deferred |
+  | External slots | Market / craft workshops — variety pass on Prosper | Prosper; overlaps the Phase 2+ guild-specialization backlog item, so keep v1's version minimal |
+
+- **Characters gate on buildings, not just currency.** You can't appoint a
+  Chief Rabbi without a Beit Midrash, no Treasurer without a Countinghouse,
+  no Shtadlan without the Chambers. This is what makes "growth" and
+  "personality" reinforce each other mechanically: building up the
+  Synagogue quarter is what creates the seats that named, competing family
+  heads (via Powerful Families, §6) actually vie for.
+
 ## 4. Currencies
 
 ### Gold
@@ -124,30 +161,41 @@ directionally: small, steady income from community-owned buildings/trade;
 spent on buildings and absorbing flavor misfortune events.
 
 ### Influence
-Represents internal prestige, scholarship, and communal consensus.
-**Recommendation:** implement as vanilla **Piety**, re-themed via
-localization, rather than inventing a new tracked resource from scratch.
-Rationale:
-- Piety already has full engine support: accumulation, decay, spend-effects,
-  trigger checks, and a UI display slot — no custom resource plumbing.
-- Thematically it isn't a stretch: a Kehillah leader's religious standing
-  and their communal political capital are plausibly the same thing.
-- Risk: if a later phase wants "religious piety" and "communal Influence"
-  to diverge (e.g. a secular Negid archetype in Phase 3), this choice would
-  need revisiting. Flagging now so it's a known tradeoff, not a surprise
-  later.
+**Correction to an earlier draft of this spec:** the previous version
+recommended reskinning Piety. That's wrong and now superseded — while
+digging into the estate building system (§3c) I found that vanilla already
+ships a **separate, real Influence resource**, distinct from Piety:
+- A `change_influence` script effect and an `influence` cost scope, used
+  throughout administrative-government content (interactions, decisions,
+  casus belli).
+- `domicile_monthly_influence_add` / `domicile_monthly_influence_mult`
+  character-modifier fields, used by both estate domicile buildings and
+  Byzantine administrative county buildings — i.e. Influence generation is
+  already wired into exactly the building system §3c proposes reusing.
+- `government_has_flag = government_has_influence`, the flag that surfaces
+  it in relevant UI/tooltips (currently only set on `administrative_
+  government`; a moddable flag we can also set on Kehillah's own
+  government type).
 
-Open question for you: are you comfortable with Influence = reskinned
-Piety for v1, or do you want a genuinely separate tracked resource even at
-the cost of more plumbing? (My recommendation is the reskin, specifically
-*because* v1 is about proving the loop cheaply.)
+This is a better fit than a Piety reskin on every count: it's purpose-built
+for exactly this ("communal political capital" for a landless office-style
+character), and it avoids entangling a Kehillah leader's real religious
+piety with their political standing.
+
+**Residual risk to validate early** (technical-design/prototype phase, not
+a reason to doubt the plan): confirm that `change_influence` and the
+`influence` cost scope work generically on any character/government, or
+whether some part of the mechanic is hardcoded to `administrative_
+government` specifically. The script-side evidence suggests it's generic
+(the effects don't reference government type themselves), but this should
+be a first, cheap prototype check before building on top of it.
 
 ## 5. Succession: Meritocratic Elective System
 
 Disables hereditary succession. Replaced with an elective law where
 candidate weight is a function of:
 - **Learning** skill (scholarship)
-- **Influence** standing (piety, per §4)
+- **Influence** standing (the real vanilla Influence resource, per §4)
 - **Dynasty prestige**
 
 This sits on top of CK3's existing elective-succession framework (the same
@@ -176,23 +224,35 @@ spec, so these aren't assumptions:
   `government_has_powerful_families`) is a strong existing candidate for
   the "multiple notable families, meritocratic competition" dynamic,
   rather than building faction logic from scratch.
+- The **estate domicile + Influence resource** (§3c, §4) are the same
+  underlying system, both built for administrative-government
+  office-holders — reusing them together, rather than piecemeal, is what
+  makes "community growth" and "a real second currency" cheap at the same
+  time instead of two separate problems.
 - None of this is a final decision — it's evidence the shape of the design
   doc's ask (non-landed, family-competition-driven, elective) has real
   vanilla scaffolding to build on, which is why v1 is scoped the way it is.
 
 ## 7. Open questions before implementation
 
-1. Influence-as-Piety (§4) — confirm or override.
-2. What does the generic v1 playable start actually look like — a single
+1. ~~Influence-as-Piety~~ — resolved: real vanilla Influence resource (§4).
+2. Confirm the Kehillah Quarter building list (§3c) — especially the
+   External-slot content (Market/workshops), which I left the least
+   specific since it overlaps the Phase 2+ guild-specialization backlog
+   item. Keep it to 1-2 generic buildings for v1?
+3. What does the generic v1 playable start actually look like — a single
    test bookmark placed where? (Doesn't need to be historical yet; just
    needs a host county to sit inside.)
-3. Rough starting list of v1 decisions — I'd propose starting minimal
-   (3-4 decisions: fund a communal building, appoint a chief rabbi,
-   mediate a family dispute, hold a study circle) and growing from there
-   rather than designing the full decision list up front. Agree?
-4. Do you want the notable-families/elective-weight formula worked out in
+4. Rough starting list of v1 decisions — I'd propose starting minimal
+   (fund a Synagogue-quarter building, appoint each of the three officers,
+   mediate a family dispute) and growing from there rather than designing
+   the full decision list up front. Agree?
+5. Do you want the notable-families/elective-weight formula worked out in
    full numeric detail now, or prototyped loosely first and tuned by
    playtest once it's in-game?
+6. Early technical spike recommended before deeper spec work: verify
+   `change_influence`/the `influence` cost scope actually function on a
+   non-`administrative_government` character (§4's residual risk).
 
 Once these are answered, the next step is a **technical design doc**
 (concrete government_type file, title setup, succession law weights,

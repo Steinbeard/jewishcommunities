@@ -19,10 +19,12 @@ implemented yet — this is the plan, subject to revision after each phase.
 
 ### Phase 1 — Kehillah Community Baseline (current focus)
 The core non-landed government mechanic, with no historical/regional flavor
-yet: currencies (Gold, Influence), meritocratic elective succession, a
-minimal internal decision set, one generic playable start. Goal: prove the
-government type is fun and functional end-to-end before spending art/writing
-budget on regional variants.
+yet: currencies (Gold, the real vanilla Influence resource), meritocratic
+elective succession, a Synagogue-quarter estate-building system (visible
+community growth, gates named officer roles — Chief Rabbi, Treasurer,
+Shtadlan), a minimal internal decision set, one generic playable start.
+Goal: prove the government type is fun and functional end-to-end before
+spending art/writing budget on regional variants.
 See [spec/v1-kehillah-community.md](spec/v1-kehillah-community.md).
 
 ### Phase 2 — First Regional Overlay
