@@ -1,4 +1,4 @@
-# =====================================================================
+﻿# =====================================================================
 # Kehillah economy tuning values.
 #
 # Spec section 7, question 5 asked whether to work the numbers out in
@@ -26,9 +26,19 @@ kehillah_synagogue_cost_3 = 400
 kehillah_synagogue_cost_4 = 700
 kehillah_synagogue_cost_5 = 1100
 
-# Internal buildings: Beit Midrash, Countinghouse, Shtadlan's Chambers,
-# Communal Watch, Mikvah, Communal Hall. Cheaper than Synagogue tiers --
-# these are the moment-to-moment growth choices.
+# The other six building families: Yeshiva (Beit Midrash), Countinghouse,
+# Mikvah, Hekdesh, Sofer's Workshop, Slaughterhouse. Cheaper than
+# Synagogue tiers -- these are the moment-to-moment growth choices.
+# (Shtadlan's Chambers and the Communal Watch were removed 2026-09-06;
+# see common/domiciles/buildings/kehillah_domicile_buildings.txt.)
+#
+# NAMING NOTE: "internal" here is a cost-tier label, not a slot-type
+# claim. As of the 2026-09-06 externalization pass, only the Mikvah and
+# Sofer's Workshop actually occupy internal slots; Yeshiva, Countinghouse,
+# Hekdesh and Slaughterhouse moved to external slots but kept using
+# these same cost values (unchanged numbers, no rebalance intended) --
+# renaming the script_value keys themselves would touch every reference
+# in kehillah_domicile_buildings.txt for no mechanical benefit.
 kehillah_internal_cost_1 = 100
 kehillah_internal_cost_2 = 220
 kehillah_internal_cost_3 = 400
@@ -43,8 +53,13 @@ kehillah_external_cost_3 = 320
 # Decision costs and rewards
 # ---------------------------------------------------------------------
 
-# Tzedakah (charity). A recurring Gold-for-Influence conversion, scaled
-# so it is a real choice against building instead.
+# Tzedakah (charity). A recurring Gold-for-Stability conversion, scaled
+# so it is a real choice against building instead. Renamed 2026-09-07
+# from kehillah_tzedakah_influence_gain when Influence was retired in
+# favor of the kehillah_var_stability/kehillah_var_greatness character
+# variables -- see kehillah_quarterly_pillars_effect in
+# common/scripted_effects/kehillah_scripted_effects.txt for the full
+# reasoning. Same numbers, new destination.
 kehillah_tzedakah_gold_cost = {
 	value = 40
 	# A larger community is expected to give more, and gets more
@@ -55,7 +70,7 @@ kehillah_tzedakah_gold_cost = {
 	}
 }
 
-kehillah_tzedakah_influence_gain = {
+kehillah_tzedakah_stability_gain = {
 	value = 60
 	if = {
 		limit = { domicile ?= { has_domicile_parameter = kehillah_prominent_quarter } }
@@ -63,12 +78,33 @@ kehillah_tzedakah_influence_gain = {
 	}
 }
 
-# Mediating a dispute between notable families. Costs Influence, and
-# succeeds on Stewardship -- explicitly not Intrigue (spec section 3).
-kehillah_mediation_influence_cost = 50
+# Mediating a dispute between notable families. Costs Stability (the
+# community's patience for you presiding over its quarrels -- see the
+# rename note above), and succeeds on Stewardship -- explicitly not
+# Intrigue (spec section 3).
+kehillah_mediation_standing_cost = 50
 
-# Composing a Torah commentary. The Study pillar's signature act.
+# Composing a Torah commentary. The Greatness pillar's signature act.
 kehillah_commentary_piety_cost = 100
+
+# ---------------------------------------------------------------------
+# Pillar standing (added 2026-09-07, replacing Influence)
+# ---------------------------------------------------------------------
+#
+# NOTE: there was briefly a kehillah_total_standing_value script value
+# here (Stability + Greatness, read by kehillah_leadership.txt's
+# succession scoring in place of the old influence_level buckets).
+# Removed in the same pass that added it, once review caught that it
+# does not work: kehillah_var_stability/kehillah_var_greatness live on
+# the TITLE now (correctly -- see kehillah_quarterly_pillars_effect's
+# "WHY THE TITLE, NOT THE CHARACTER" note), which means every candidate
+# in one succession event scores against the exact same scope:title and
+# gets an identical number back. A term that adds the same constant to
+# every candidate cannot change their relative order, so it was dead
+# weight in the score formula. Full account in
+# common/succession_appointment/kehillah_leadership.txt at the point it
+# was removed. Community standing is real and tracked; it just is not
+# a valid PERSONAL differentiator for who leads next.
 
 # ---------------------------------------------------------------------
 # Protection events (spec section 3b)

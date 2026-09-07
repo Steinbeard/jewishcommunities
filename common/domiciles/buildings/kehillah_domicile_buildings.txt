@@ -1,22 +1,68 @@
-# =====================================================================
+﻿# =====================================================================
 # Kehillah Quarter buildings.
 #
-# Source of truth: docs/spec/v1-kehillah-community.md section 3c, which
-# maps each vanilla estate slot family onto a Kehillah building. This
-# file implements that table.
+# Source of truth: docs/spec/v1-kehillah-community.md section 3c, three
+# pillars (Prosperity, Stability, Greatness).
 #
-# Two rules the spec insists on, both honoured here:
+# REWRITTEN 2026-09-06. The original version of this file mapped vanilla
+# estate slots one-per-skill onto Kehillah buildings (spec section 3c's
+# first table): a Learning slot became the Beit Midrash, a Diplomacy
+# slot became Shtadlan's Chambers, a Martial slot became the Communal
+# Watch. That was a good way to prove the domicile system could carry
+# this at all -- see docs/implementation/v1-kehillah-implementation.md
+# for the playtest that confirmed it does -- but it is a bad way to
+# decide what a Jewish community actually contains, because it starts
+# from CK3's five skills instead of from communal life. That criticism
+# is in docs/iteration/v1-iteration-notes.md section 1, written before
+# this rewrite.
 #
-#  1. We reuse the SLOT STRUCTURE, not vanilla's modifiers. Several
+# Two buildings did not survive the rewrite:
+#
+#   - Shtadlan's Chambers. A shtadlan was a person and a function, often
+#     an informal or occasional one. He did not generally have
+#     premises. The office is now ungated -- see
+#     common/court_positions/types/kehillah_officers.txt.
+#   - Communal Watch. The same criticism, less visibly: a reskinned
+#     vanilla Martial slot with a plausible-sounding label attached.
+#     Standing firm against a threat is now also ungated, for the same
+#     reason the Shtadlan is -- see
+#     events/kehillah_protection_events.txt.
+#
+# That frees exactly one internal building family (the cap is six, one
+# reserved for Phase 5's Genizah -- see the Synagogue block below), which
+# is what makes room for two new ones grounded in things every real
+# community of this size actually needed: a Sofer's Workshop (a scribe
+# is not optional -- Torah scrolls, mezuzot, tefillin, ketubot and gittin
+# all require one) and a Slaughterhouse (shechita is not optional
+# either). Communal Hall is renamed Hekdesh, a real institution -- poor
+# relief and hospice, not a reskinned guest room -- rather than replaced.
+#
+# UNVERIFIED, BY DESIGN. Per this project's established norm (see
+# docs/scenarios/worms-1066.md and the iteration notes), buildings below
+# are period-plausible for an 11th-century Ashkenazi community but not
+# individually source-checked against Worms specifically. The Mikvah in
+# particular: the surviving monumental Worms mikvah dates to the 1180s,
+# over a century after this scenario; a simpler one very likely existed
+# earlier, since a community cannot function without one, but that is an
+# inference, not a citation. Treat every building here as Isaac's traits
+# were treated (docs/implementation section on character sourcing): a
+# reasonable, undocumented choice, not a researched fact.
+#
+# Two rules carried over from the original version, both still honoured:
+#
+#  1. We reuse vanilla's SLOT STRUCTURE, not vanilla's modifiers. Several
 #     vanilla estate buildings grant Intrigue and scheme bonuses; the
 #     Kehillah design explicitly rejects scheming as a pillar (spec
 #     section 2). Every modifier below is written fresh.
 #
-#  2. Officers gate on BUILDINGS, not just currency. The Beit Midrash,
-#     Countinghouse and Shtadlan's Chambers each set a domicile
-#     parameter, and the matching court position checks for it in its
-#     valid_position block. See
-#     common/court_positions/types/kehillah_officers.txt.
+#  2. The two remaining major officers gate on BUILDINGS, not just
+#     currency: no Chief Rabbi without a Beit Midrash, no Treasurer
+#     without a Countinghouse. Minor communal roles (Sofer, Shochet,
+#     Gabbai Tzedakah, Mikvah attendant -- see
+#     common/court_positions/types/kehillah_minor_positions.txt) gate
+#     the same way on their own buildings. This is what makes growing
+#     the quarter and populating it with people reinforce each other
+#     instead of being two separate tracks.
 #
 # NOTE ON PARAMETERS: per common/domiciles/buildings/_domicile_buildings.info,
 # "Parameters are not inherited from previous_building and has to be
@@ -26,27 +72,70 @@
 # Art is vanilla base-game estate art referenced by path -- see the
 # header of common/domiciles/types/kehillah_domicile_types.txt for why.
 # The generic (non-Christian, non-Islamic) temple texture is used for
-# the Synagogue.
+# the Synagogue. Icons are the closest semantic match available in
+# vanilla's domicile_building icon set; several are shared across tiers
+# of the same building, matching how the original file already treated
+# the Mikvah and Countinghouse.
+#
+# SECOND REWRITE, same day: internal vs. external reassigned.
+#
+# Per _domicile_buildings.info, "internal" is not a synonym for "minor"
+# -- it specifically means "has no slot of its own; lives nested inside
+# a main or external building, with no separate model in the scene."
+# The first rewrite put six unrelated institutions there (Yeshiva,
+# Countinghouse, Mikvah, Hekdesh, Sofer's Workshop, Slaughterhouse),
+# which is mechanically fine but reads wrong: a Jewish quarter is not
+# one building with five invisible upgrades bolted on, and most of
+# these are not naturally part of a synagogue at all.
+#
+# Four families move to their own EXTERNAL slots, becoming genuinely
+# separate visible structures: Yeshiva, Countinghouse, Hekdesh,
+# Slaughterhouse. Two stay INTERNAL, because they plausibly are annexes
+# of a synagogue building rather than freestanding institutions: the
+# Mikvah (ritual baths were routinely built as part of or immediately
+# adjoining a synagogue complex) and the Sofer's Workshop (a scribe's
+# room off the study hall, not a separate trade premises the way a
+# slaughterhouse is).
+#
+# This needs more external slots than the quarter started with. See
+# common/domiciles/types/kehillah_domicile_types.txt and the Synagogue's
+# domicile_external_slots_capacity_add progression below: six external
+# families now exist (the four moved here plus Market Stalls and Craft
+# Workshops), so the Synagogue's tiers now unlock external capacity up
+# to 6, not the previous 4. Internal capacity drops to match: 2 families
+# need at most 2 slots at once, plus 1 held in reserve for Phase 5's
+# Genizah (still a real institution, still not reachable yet).
 # =====================================================================
 
 
 # =====================================================================
 # MAIN SLOT -- THE SYNAGOGUE
 #
-# The community's visible growth arc. Each tier unlocks internal slots,
-# so the Synagogue is what literally makes room for everything else.
+# The community's visible growth arc, and its Greatness pillar made
+# literal: a synagogue outsiders can find and name is what "other
+# communities' respect" looks like as a building rather than a stat.
+# Each tier unlocks internal slots (for the Mikvah and Sofer's Workshop)
+# and, from tier 2 on, external slot capacity (for everything else in
+# the quarter) -- so the Synagogue is what literally makes room for the
+# rest of the community to build.
 #
-# Slot budget: tiers 1-5 give 2/3/4/5/6 internal slots. Six is exactly
-# the number of v1 internal buildings, which means a fully grown
-# Synagogue can host all of them and no more. The seventh conceptual
-# slot -- the Genizah, spec section 3c's reserved Phase 5 hidden chamber
-# -- is deliberately NOT reachable in v1. Raise the tier-5 number to 7
-# when Phase 5 adds it.
+# Internal slot budget: tiers 1-5 give 1/2/2/2/3 internal slots. Two is
+# exactly the number of internal building families below (Mikvah,
+# Sofer's Workshop), which means both can exist from tier 2 onward. The
+# third slot at tier 5 is deliberately spare -- reserved for Phase 5's
+# Genizah, not reachable now.
+#
+# External slot budget: base 2 (kehillah_domicile_types.txt), plus +1 at
+# tiers 2/3/4/5 = 6 at full growth, matching the six external building
+# families that now exist (Yeshiva, Countinghouse, Hekdesh,
+# Slaughterhouse, Market Stalls, Craft Workshops). A small young
+# community cannot have all six institutions at once; a fully grown one
+# can.
 # =====================================================================
 
 kehillah_synagogue_01 = {
 	slot_type = main
-	internal_slots = 2
+	internal_slots = 1
 	construction_time = 730
 	allowed_domicile_types = { kehillah_quarter }
 
@@ -56,7 +145,6 @@ kehillah_synagogue_01 = {
 
 	character_modifier = {
 		domicile_monthly_gold_add = 0.2
-		domicile_monthly_influence_add = 0.5
 		domicile_monthly_piety_add = 0.25
 	}
 
@@ -74,7 +162,7 @@ kehillah_synagogue_01 = {
 
 kehillah_synagogue_02 = {
 	slot_type = main
-	internal_slots = 3
+	internal_slots = 2
 	construction_time = 730
 	allowed_domicile_types = { kehillah_quarter }
 	previous_building = kehillah_synagogue_01
@@ -85,7 +173,6 @@ kehillah_synagogue_02 = {
 
 	character_modifier = {
 		domicile_monthly_gold_add = 0.2
-		domicile_monthly_influence_add = 0.5
 		domicile_monthly_piety_add = 0.25
 		domicile_external_slots_capacity_add = 1
 	}
@@ -104,7 +191,7 @@ kehillah_synagogue_02 = {
 
 kehillah_synagogue_03 = {
 	slot_type = main
-	internal_slots = 4
+	internal_slots = 2
 	construction_time = 900
 	allowed_domicile_types = { kehillah_quarter }
 	previous_building = kehillah_synagogue_02
@@ -125,7 +212,6 @@ kehillah_synagogue_03 = {
 
 	character_modifier = {
 		domicile_monthly_gold_add = 0.25
-		domicile_monthly_influence_add = 0.75
 		domicile_monthly_piety_add = 0.25
 		domicile_external_slots_capacity_add = 1
 	}
@@ -136,7 +222,7 @@ kehillah_synagogue_03 = {
 
 	asset = {
 		icon = "gfx/interface/icons/domicile_building/domicile_building_monastery.dds"
-		texture = "gfx/interface/window_domiciles/estate_building_temple_generic_byzantine.dds"
+		texture = "gfx/interface/window_domiciles/estate_building_temple_generic_western.dds"
 		intersectionmask_texture = "gfx/interface/window_domiciles/estate_building_temple_generic_mask.png"
 		soundeffect = "event:/DLC/EP3/SFX/UI/domicile_buildings/ep3_ui_domicile_buildings_estate_main_building"
 	}
@@ -144,7 +230,7 @@ kehillah_synagogue_03 = {
 
 kehillah_synagogue_04 = {
 	slot_type = main
-	internal_slots = 5
+	internal_slots = 2
 	construction_time = 900
 	allowed_domicile_types = { kehillah_quarter }
 	previous_building = kehillah_synagogue_03
@@ -159,8 +245,8 @@ kehillah_synagogue_04 = {
 
 	character_modifier = {
 		domicile_monthly_gold_add = 0.25
-		domicile_monthly_influence_add = 0.75
 		domicile_monthly_piety_add = 0.5
+		domicile_external_slots_capacity_add = 1
 	}
 
 	ai_value = {
@@ -169,7 +255,7 @@ kehillah_synagogue_04 = {
 
 	asset = {
 		icon = "gfx/interface/icons/domicile_building/domicile_building_monastery.dds"
-		texture = "gfx/interface/window_domiciles/estate_building_temple_generic_byzantine.dds"
+		texture = "gfx/interface/window_domiciles/estate_building_temple_generic_western.dds"
 		intersectionmask_texture = "gfx/interface/window_domiciles/estate_building_temple_generic_mask.png"
 		soundeffect = "event:/DLC/EP3/SFX/UI/domicile_buildings/ep3_ui_domicile_buildings_estate_main_building"
 	}
@@ -177,7 +263,7 @@ kehillah_synagogue_04 = {
 
 kehillah_synagogue_05 = {
 	slot_type = main
-	internal_slots = 6
+	internal_slots = 3
 	construction_time = 1095
 	allowed_domicile_types = { kehillah_quarter }
 	previous_building = kehillah_synagogue_04
@@ -192,7 +278,6 @@ kehillah_synagogue_05 = {
 
 	character_modifier = {
 		domicile_monthly_gold_add = 0.3
-		domicile_monthly_influence_add = 1
 		domicile_monthly_piety_add = 0.5
 		domicile_external_slots_capacity_add = 1
 	}
@@ -203,7 +288,7 @@ kehillah_synagogue_05 = {
 
 	asset = {
 		icon = "gfx/interface/icons/domicile_building/domicile_building_monastery.dds"
-		texture = "gfx/interface/window_domiciles/estate_building_temple_generic_byzantine.dds"
+		texture = "gfx/interface/window_domiciles/estate_building_temple_generic_western.dds"
 		intersectionmask_texture = "gfx/interface/window_domiciles/estate_building_temple_generic_mask.png"
 		soundeffect = "event:/DLC/EP3/SFX/UI/domicile_buildings/ep3_ui_domicile_buildings_estate_main_building"
 	}
@@ -211,15 +296,25 @@ kehillah_synagogue_05 = {
 
 
 # =====================================================================
-# INTERNAL -- BEIT MIDRASH (study hall)
-# Spec slot: Learning. Pillar: Study. Gates the Chief Rabbi.
+# EXTERNAL -- BEIT MIDRASH, then YESHIVA
+# Pillar: Greatness. Gates the Chief Rabbi.
+#
+# A study hall is not an annex of the synagogue building -- it is its
+# own hall, often its own building entirely, and the single most
+# visible sign of a serious community after the synagogue itself. Moved
+# out of the internal slot system 2026-09-06 so it actually shows up in
+# the quarter as a building of its own.
+#
+# Tier 2's building key is unchanged (kehillah_beit_midrash_02) but its
+# content is new: the original tier 2 was "Scribes' Room", which has
+# moved to its own building family below (a sofer is a real, distinct
+# communal role, not a Beit Midrash upgrade). Tier 2 is now a larger
+# study hall, not yet the full academy tier 3 becomes.
 # =====================================================================
 
 kehillah_beit_midrash_01 = {
-	slot_type = internal
 	construction_time = 540
 	allowed_domicile_types = { kehillah_quarter }
-	previous_building = kehillah_synagogue_01
 
 	cost = {
 		gold = kehillah_internal_cost_1
@@ -231,7 +326,6 @@ kehillah_beit_midrash_01 = {
 
 	character_modifier = {
 		monthly_learning_lifestyle_xp_gain_mult = 0.1
-		domicile_monthly_influence_add = 0.25
 	}
 
 	ai_value = {
@@ -246,7 +340,6 @@ kehillah_beit_midrash_01 = {
 }
 
 kehillah_beit_midrash_02 = {
-	slot_type = internal
 	construction_time = 540
 	allowed_domicile_types = { kehillah_quarter }
 	previous_building = kehillah_beit_midrash_01
@@ -262,7 +355,6 @@ kehillah_beit_midrash_02 = {
 	character_modifier = {
 		learning = 1
 		monthly_learning_lifestyle_xp_gain_mult = 0.1
-		domicile_monthly_influence_add = 0.25
 	}
 
 	ai_value = {
@@ -270,14 +362,13 @@ kehillah_beit_midrash_02 = {
 	}
 
 	asset = {
-		icon = "gfx/interface/icons/domicile_building/domicile_building_scribes.dds"
+		icon = "gfx/interface/icons/domicile_building/domicile_building_nightly_debates.dds"
 		texture = "gfx/interface/window_domiciles/estate_building_villa_western.dds"
 		intersectionmask_texture = "gfx/interface/window_domiciles/estate_building_villa_western_mask.png"
 	}
 }
 
 kehillah_beit_midrash_03 = {
-	slot_type = internal
 	construction_time = 720
 	allowed_domicile_types = { kehillah_quarter }
 	previous_building = kehillah_beit_midrash_02
@@ -286,7 +377,7 @@ kehillah_beit_midrash_03 = {
 		gold = kehillah_internal_cost_3
 	}
 
-	# A full yeshiva. The commentary decision (spec section 3, Study)
+	# A full yeshiva. The commentary decision (spec section 3, Greatness)
 	# requires this tier for its strongest outcome.
 	parameters = {
 		kehillah_unlocks_chief_rabbi = yes
@@ -296,7 +387,6 @@ kehillah_beit_midrash_03 = {
 	character_modifier = {
 		learning = 2
 		monthly_learning_lifestyle_xp_gain_mult = 0.15
-		domicile_monthly_influence_add = 0.5
 	}
 
 	ai_value = {
@@ -312,15 +402,18 @@ kehillah_beit_midrash_03 = {
 
 
 # =====================================================================
-# INTERNAL -- COUNTINGHOUSE
-# Spec slot: Stewardship. Pillar: Prosper. Gates the Treasurer.
+# EXTERNAL -- COUNTINGHOUSE
+# Pillar: Prosperity. Gates the Treasurer.
+#
+# A community's accounts are not kept in a synagogue back room -- this
+# is its own building, and one of the most visible signs of communal
+# self-government to an outside observer. Moved out of the internal
+# slot system 2026-09-06.
 # =====================================================================
 
 kehillah_countinghouse_01 = {
-	slot_type = internal
 	construction_time = 540
 	allowed_domicile_types = { kehillah_quarter }
-	previous_building = kehillah_synagogue_01
 
 	cost = {
 		gold = kehillah_internal_cost_1
@@ -347,7 +440,6 @@ kehillah_countinghouse_01 = {
 }
 
 kehillah_countinghouse_02 = {
-	slot_type = internal
 	construction_time = 540
 	allowed_domicile_types = { kehillah_quarter }
 	previous_building = kehillah_countinghouse_01
@@ -378,7 +470,6 @@ kehillah_countinghouse_02 = {
 }
 
 kehillah_countinghouse_03 = {
-	slot_type = internal
 	construction_time = 720
 	allowed_domicile_types = { kehillah_quarter }
 	previous_building = kehillah_countinghouse_02
@@ -410,179 +501,13 @@ kehillah_countinghouse_03 = {
 
 
 # =====================================================================
-# INTERNAL -- SHTADLAN'S CHAMBERS
-# Spec slot: Diplomacy. Pillar: Protect. Gates the Shtadlan.
-#
-# The Shtadlan is the community's advocate to outside authority. In v1
-# these chambers are what make the "negotiate" path on protection events
-# available at all -- see events/kehillah_protection_events.txt.
-# =====================================================================
-
-kehillah_shtadlan_chambers_01 = {
-	slot_type = internal
-	construction_time = 540
-	allowed_domicile_types = { kehillah_quarter }
-	previous_building = kehillah_synagogue_01
-
-	cost = {
-		gold = kehillah_internal_cost_1
-	}
-
-	parameters = {
-		kehillah_unlocks_shtadlan = yes
-	}
-
-	character_modifier = {
-		monthly_diplomacy_lifestyle_xp_gain_mult = 0.1
-		domicile_monthly_influence_add = 0.25
-	}
-
-	ai_value = {
-		value = 10
-	}
-
-	asset = {
-		icon = "gfx/interface/icons/domicile_building/domicile_building_negotiators.dds"
-		texture = "gfx/interface/window_domiciles/estate_building_villa_western.dds"
-		intersectionmask_texture = "gfx/interface/window_domiciles/estate_building_villa_western_mask.png"
-	}
-}
-
-kehillah_shtadlan_chambers_02 = {
-	slot_type = internal
-	construction_time = 540
-	allowed_domicile_types = { kehillah_quarter }
-	previous_building = kehillah_shtadlan_chambers_01
-
-	cost = {
-		gold = kehillah_internal_cost_2
-	}
-
-	parameters = {
-		kehillah_unlocks_shtadlan = yes
-	}
-
-	character_modifier = {
-		diplomacy = 1
-		monthly_diplomacy_lifestyle_xp_gain_mult = 0.1
-		domicile_monthly_influence_add = 0.25
-	}
-
-	ai_value = {
-		value = 9
-	}
-
-	asset = {
-		icon = "gfx/interface/icons/domicile_building/domicile_building_negotiators.dds"
-		texture = "gfx/interface/window_domiciles/estate_building_villa_western.dds"
-		intersectionmask_texture = "gfx/interface/window_domiciles/estate_building_villa_western_mask.png"
-	}
-}
-
-kehillah_shtadlan_chambers_03 = {
-	slot_type = internal
-	construction_time = 720
-	allowed_domicile_types = { kehillah_quarter }
-	previous_building = kehillah_shtadlan_chambers_02
-
-	cost = {
-		gold = kehillah_internal_cost_3
-	}
-
-	parameters = {
-		kehillah_unlocks_shtadlan = yes
-		kehillah_practised_advocacy = yes
-	}
-
-	character_modifier = {
-		diplomacy = 2
-		monthly_diplomacy_lifestyle_xp_gain_mult = 0.15
-		domicile_monthly_influence_add = 0.5
-	}
-
-	ai_value = {
-		value = 8
-	}
-
-	asset = {
-		icon = "gfx/interface/icons/domicile_building/domicile_building_living_quarters.dds"
-		texture = "gfx/interface/window_domiciles/estate_building_villa_western.dds"
-		intersectionmask_texture = "gfx/interface/window_domiciles/estate_building_villa_western_mask.png"
-	}
-}
-
-
-# =====================================================================
-# INTERNAL -- COMMUNAL WATCH
-# Spec slot: Martial. Pillar: Protect (minor). No officer in v1, by
-# design -- spec section 3c is explicit that this slot gets no dedicated
-# office yet. It exists to soften protection incidents.
-# =====================================================================
-
-kehillah_communal_watch_01 = {
-	slot_type = internal
-	construction_time = 540
-	allowed_domicile_types = { kehillah_quarter }
-	previous_building = kehillah_synagogue_01
-
-	cost = {
-		gold = kehillah_internal_cost_1
-	}
-
-	parameters = {
-		kehillah_has_communal_watch = yes
-	}
-
-	character_modifier = {
-		martial = 1
-	}
-
-	ai_value = {
-		value = 6
-	}
-
-	asset = {
-		icon = "gfx/interface/icons/domicile_building/domicile_building_watchtower.dds"
-		texture = "gfx/interface/window_domiciles/estate_building_villa_western.dds"
-		intersectionmask_texture = "gfx/interface/window_domiciles/estate_building_villa_western_mask.png"
-	}
-}
-
-kehillah_communal_watch_02 = {
-	slot_type = internal
-	construction_time = 720
-	allowed_domicile_types = { kehillah_quarter }
-	previous_building = kehillah_communal_watch_01
-
-	cost = {
-		gold = kehillah_internal_cost_2
-	}
-
-	parameters = {
-		kehillah_has_communal_watch = yes
-		kehillah_watch_is_organised = yes
-	}
-
-	character_modifier = {
-		martial = 1
-		domicile_monthly_prestige_add = 0.25
-	}
-
-	ai_value = {
-		value = 5
-	}
-
-	asset = {
-		icon = "gfx/interface/icons/domicile_building/domicile_building_guardhouse.dds"
-		texture = "gfx/interface/window_domiciles/estate_building_villa_western.dds"
-		intersectionmask_texture = "gfx/interface/window_domiciles/estate_building_villa_western_mask.png"
-	}
-}
-
-
-# =====================================================================
 # INTERNAL -- MIKVAH
-# Spec slot: unskilled (vanilla's bath). Flavor, health and wellbeing.
+# Flavor and religious observance -- not cleanly one of the three
+# pillars, and left that way deliberately (see the header note on
+# forcing assignments). Gates the Mikvah attendant.
+#
+# DATING FLAG: see the file header. The tier-one Mikvah here is an
+# inference from "a functioning community needs one", not a citation.
 # =====================================================================
 
 kehillah_mikvah_01 = {
@@ -648,15 +573,97 @@ kehillah_mikvah_02 = {
 
 
 # =====================================================================
-# INTERNAL -- COMMUNAL HALL
-# Spec slot: unskilled (vanilla's guest room). Hosts travelling scholars
-# and visiting community members. Spec section 3c notes this seeds the
-# Phase 2/3 correspondence-network backlog item, so its Influence tilt
-# is deliberate -- it is the building that will later mean "we are
-# connected to other Kehillot".
+# EXTERNAL -- HEKDESH (poorhouse and hospice)
+# Pillar: Stability. Renamed and refocused from "Communal Hall", which
+# was the same reskinned-vanilla-slot problem as Shtadlan's Chambers
+# (spec section 3c mapped it from vanilla's guest-room slot). A hekdesh
+# -- poor relief, care for the sick, and lodging for travelers who have
+# nowhere else to stay -- is a real institution rather than a slot
+# filled by an art pass. It is also the natural building for the
+# communal-welfare rework docs/iteration/v1-iteration-notes.md section 2
+# already flagged as wanted; the Gabbai Tzedakah this building unlocks
+# is that rework's first mechanical foothold, not its finished form.
+#
+# Tier 2 keeps the original's "hosts travelling scholars" beat: a hekdesh
+# housing a passing scholar is exactly the kind of care it existed to
+# provide, not a separate guest-house function.
+#
+# Moved out of the internal slot system 2026-09-06: a hospice/poorhouse
+# is its own building in every real community that had one, never a
+# synagogue annex.
 # =====================================================================
 
-kehillah_communal_hall_01 = {
+kehillah_hekdesh_01 = {
+	construction_time = 540
+	allowed_domicile_types = { kehillah_quarter }
+
+	cost = {
+		gold = kehillah_internal_cost_1
+	}
+
+	parameters = {
+		kehillah_has_hekdesh = yes
+	}
+
+	character_modifier = {
+		courtier_and_guest_opinion = 5
+	}
+
+	ai_value = {
+		value = 8
+	}
+
+	asset = {
+		icon = "gfx/interface/icons/domicile_building/domicile_building_curers.dds"
+		texture = "gfx/interface/window_domiciles/estate_building_villa_western.dds"
+		intersectionmask_texture = "gfx/interface/window_domiciles/estate_building_villa_western_mask.png"
+	}
+}
+
+kehillah_hekdesh_02 = {
+	construction_time = 720
+	allowed_domicile_types = { kehillah_quarter }
+	previous_building = kehillah_hekdesh_01
+
+	cost = {
+		gold = kehillah_internal_cost_2
+	}
+
+	parameters = {
+		kehillah_has_hekdesh = yes
+		kehillah_hosts_travelling_scholars = yes
+	}
+
+	character_modifier = {
+		monthly_learning_lifestyle_xp_gain_mult = 0.05
+		courtier_and_guest_opinion = 5
+		stress_loss_mult = 0.05
+	}
+
+	ai_value = {
+		value = 7
+	}
+
+	asset = {
+		icon = "gfx/interface/icons/domicile_building/domicile_building_health.dds"
+		texture = "gfx/interface/window_domiciles/estate_building_villa_western.dds"
+		intersectionmask_texture = "gfx/interface/window_domiciles/estate_building_villa_western_mask.png"
+	}
+}
+
+
+# =====================================================================
+# INTERNAL -- SOFER'S WORKSHOP (scribe)
+# Pillar: Greatness. Gates the Sofer.
+#
+# New building family, made room for by removing Shtadlan's Chambers.
+# A sofer is not optional flavor: Torah scrolls, mezuzot, tefillin,
+# ketubot (marriage contracts) and gittin (divorce documents) all
+# require one, which makes this a more essential communal institution
+# than several buildings that survived the original pass.
+# =====================================================================
+
+kehillah_sofer_workshop_01 = {
 	slot_type = internal
 	construction_time = 540
 	allowed_domicile_types = { kehillah_quarter }
@@ -667,44 +674,12 @@ kehillah_communal_hall_01 = {
 	}
 
 	parameters = {
-		kehillah_has_communal_hall = yes
+		kehillah_unlocks_sofer = yes
 	}
 
 	character_modifier = {
-		domicile_monthly_influence_add = 0.5
-		courtier_and_guest_opinion = 5
-	}
-
-	ai_value = {
-		value = 8
-	}
-
-	asset = {
-		icon = "gfx/interface/icons/domicile_building/domicile_building_guest.dds"
-		texture = "gfx/interface/window_domiciles/estate_building_villa_western.dds"
-		intersectionmask_texture = "gfx/interface/window_domiciles/estate_building_villa_western_mask.png"
-	}
-}
-
-kehillah_communal_hall_02 = {
-	slot_type = internal
-	construction_time = 720
-	allowed_domicile_types = { kehillah_quarter }
-	previous_building = kehillah_communal_hall_01
-
-	cost = {
-		gold = kehillah_internal_cost_2
-	}
-
-	parameters = {
-		kehillah_has_communal_hall = yes
-		kehillah_hosts_travelling_scholars = yes
-	}
-
-	character_modifier = {
-		domicile_monthly_influence_add = 0.5
+		domicile_monthly_piety_add = 0.15
 		monthly_learning_lifestyle_xp_gain_mult = 0.05
-		courtier_and_guest_opinion = 5
 	}
 
 	ai_value = {
@@ -712,7 +687,116 @@ kehillah_communal_hall_02 = {
 	}
 
 	asset = {
-		icon = "gfx/interface/icons/domicile_building/domicile_building_guest.dds"
+		icon = "gfx/interface/icons/domicile_building/domicile_building_scribes.dds"
+		texture = "gfx/interface/window_domiciles/estate_building_villa_western.dds"
+		intersectionmask_texture = "gfx/interface/window_domiciles/estate_building_villa_western_mask.png"
+	}
+}
+
+kehillah_sofer_workshop_02 = {
+	slot_type = internal
+	construction_time = 720
+	allowed_domicile_types = { kehillah_quarter }
+	previous_building = kehillah_sofer_workshop_01
+
+	cost = {
+		gold = kehillah_internal_cost_2
+	}
+
+	# A scriptorium: more than one sofer at work, and texts copied here
+	# circulate to other communities. This is the same "greatness made
+	# legible to the outside world" idea the Synagogue's upper tiers
+	# carry, on a smaller scale.
+	parameters = {
+		kehillah_unlocks_sofer = yes
+		kehillah_has_scriptorium = yes
+	}
+
+	character_modifier = {
+		domicile_monthly_piety_add = 0.2
+		monthly_learning_lifestyle_xp_gain_mult = 0.05
+	}
+
+	ai_value = {
+		value = 6
+	}
+
+	asset = {
+		icon = "gfx/interface/icons/domicile_building/domicile_building_scribes.dds"
+		texture = "gfx/interface/window_domiciles/estate_building_villa_western.dds"
+		intersectionmask_texture = "gfx/interface/window_domiciles/estate_building_villa_western_mask.png"
+	}
+}
+
+
+# =====================================================================
+# EXTERNAL -- SLAUGHTERHOUSE (shechita)
+# Pillar: Prosperity, with a Stability undertone (a community that
+# cannot keep kosher cannot function as one). Gates the Shochet.
+#
+# New building family, made room for by removing the Communal Watch.
+# Shechita is a hard requirement for an observant community, which
+# makes this, like the Sofer's Workshop, a more load-bearing piece of
+# communal life than the building it replaces in the slot budget.
+#
+# Moved out of the internal slot system 2026-09-06: a slaughterhouse is
+# never part of a synagogue building under any circumstance.
+# =====================================================================
+
+kehillah_slaughterhouse_01 = {
+	construction_time = 480
+	allowed_domicile_types = { kehillah_quarter }
+
+	cost = {
+		gold = kehillah_internal_cost_1
+	}
+
+	parameters = {
+		kehillah_unlocks_shochet = yes
+	}
+
+	character_modifier = {
+		domicile_monthly_gold_add = 0.2
+		health = 0.05
+	}
+
+	ai_value = {
+		value = 7
+	}
+
+	asset = {
+		icon = "gfx/interface/icons/domicile_building/domicile_building_cooks.dds"
+		texture = "gfx/interface/window_domiciles/estate_building_villa_western.dds"
+		intersectionmask_texture = "gfx/interface/window_domiciles/estate_building_villa_western_mask.png"
+	}
+}
+
+kehillah_slaughterhouse_02 = {
+	construction_time = 600
+	allowed_domicile_types = { kehillah_quarter }
+	previous_building = kehillah_slaughterhouse_01
+
+	cost = {
+		gold = kehillah_internal_cost_2
+	}
+
+	# Trading kosher meat to travelers and neighbouring communities, not
+	# just supplying the Kehillah's own table.
+	parameters = {
+		kehillah_unlocks_shochet = yes
+	}
+
+	character_modifier = {
+		domicile_monthly_gold_add = 0.35
+		health = 0.1
+	}
+
+	ai_value = {
+		value = 6
+	}
+
+	asset = {
+		icon = "gfx/interface/icons/domicile_building/domicile_building_cooks.dds"
 		texture = "gfx/interface/window_domiciles/estate_building_villa_western.dds"
 		intersectionmask_texture = "gfx/interface/window_domiciles/estate_building_villa_western_mask.png"
 	}
@@ -721,7 +805,7 @@ kehillah_communal_hall_02 = {
 
 # =====================================================================
 # EXTERNAL -- MARKET STALLS
-# Pillar: Prosper. The community's bread and butter.
+# Pillar: Prosperity. The community's bread and butter.
 #
 # Deliberately kept to two external families (market, workshop) with no
 # specialization branches. Spec section 7 question 2 flagged the
@@ -804,9 +888,17 @@ kehillah_market_stalls_03 = {
 
 
 # =====================================================================
-# EXTERNAL -- CRAFT WORKSHOPS
-# Pillar: Prosper. Slightly less Gold than the market, but it also
+# EXTERNAL -- CRAFT WORKSHOPS (dyers and textile trade)
+# Pillar: Prosperity. Slightly less Gold than the market, but it also
 # carries Prestige -- craftsmanship is what the community is known for.
+#
+# Given a specific trade (dyeing and textiles) rather than left generic,
+# per the user's "industrial building" request. The wine trade was also
+# specifically significant in Worms (iteration notes section 1's
+# "candidate trades" list) and is a strong alternative if this should
+# be re-flavored later; dyeing was chosen because vanilla already
+# supplies a fitting tier-3 icon (domicile_building_textile.dds), used
+# below.
 # =====================================================================
 
 kehillah_workshops_01 = {

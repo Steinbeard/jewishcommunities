@@ -1,4 +1,4 @@
-# =====================================================================
+﻿# =====================================================================
 # Kehillah scripted triggers.
 # =====================================================================
 
@@ -51,59 +51,68 @@ kehillah_has_shtadlan_trigger = {
 
 
 # ---------------------------------------------------------------------
-# kehillah_has_watch_trigger
-# Scope: a character.
-#
-# The Communal Watch has no officer by design (spec section 3c), so
-# unlike the Shtadlan it is a pure building check.
-# ---------------------------------------------------------------------
-
-kehillah_has_watch_trigger = {
-	domicile ?= { has_domicile_parameter = kehillah_has_communal_watch }
-}
-
-
-# ---------------------------------------------------------------------
 # kehillah_shtadlan_prevails_trigger / kehillah_watch_prevails_trigger
 # Scope: a character. Parameter: THRESHOLD (the skill needed).
 #
 # Whether a protection incident is resolved WELL rather than merely
-# survived. Two ways to clear the bar: personal skill, or a fully built
-# institution that carries a less able leader.
+# survived.
 #
-# This is what stops the upper tiers of the Shtadlan's Chambers and the
-# Communal Watch from being pure stat padding. Spec section 3b asks that
-# "whichever officer/skill you've invested in should visibly matter" in
-# these events; a building that only nudged a modifier would not deliver
-# that, whereas one that changes which outcome you get does.
-#
-# The institutional route asks 4 points less than the personal one. A
+# REWRITTEN 2026-09-06, alongside the removal of Shtadlan's Chambers and
+# the Communal Watch as buildings (see
+# common/domiciles/buildings/kehillah_domicile_buildings.txt and
+# common/court_positions/types/kehillah_officers.txt for why). The
+# original version of each trigger offered a second, easier way to clear
+# the bar if the matching building's top tier existed
+# (kehillah_practised_advocacy, kehillah_watch_is_organised) -- "a
 # practised office genuinely helps, and does not entirely substitute for
-# knowing what you are doing.
+# knowing what you are doing." With no premises behind either role
+# anymore, that institutional shortcut has nothing left to hang off, so
+# both triggers are now a plain personal-skill check. This is the
+# correct simplification, not a loss: "person and function, not
+# premises" was the whole point of ungating these roles, and a building
+# quietly still discounting the skill check would have undercut that.
 # ---------------------------------------------------------------------
 
 kehillah_shtadlan_prevails_trigger = {
-	OR = {
-		diplomacy >= $THRESHOLD$
-		AND = {
-			domicile ?= { has_domicile_parameter = kehillah_practised_advocacy }
-			diplomacy >= {
-				value = $THRESHOLD$
-				subtract = 4
-			}
-		}
-	}
+	diplomacy >= $THRESHOLD$
 }
 
 kehillah_watch_prevails_trigger = {
+	martial >= $THRESHOLD$
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_leader_is_rabbinic_trigger
+# Scope: the Kehillah leader (character).
+#
+# Whether the community currently reads this leader as its rabbi rather
+# than a lay elder -- see common/flavorization/kehillah_title_holders.txt
+# for what this actually changes (the character's displayed rank: "Rav"
+# instead of "Parnas"). Historically both were real communal leadership
+# types -- see that file's header for the sourcing.
+#
+# ADDED 2026-09-07: kehillah_rabbi_trait (common/traits/
+# kehillah_traits.txt) is now the primary, unambiguous signal -- it
+# means exactly "this specific person holds recognized religious
+# authority", nothing weaker. The three checks that predate it stay as
+# a fallback, deliberately checked on the LEADER's own traits/skill
+# rather than on whether they hold the Chief Rabbi court position: the
+# ruler cannot hold their own community's court positions (those are
+# for courtiers), so a leader can plausibly read as a serious scholar
+# on personal reputation alone without ever having held that specific
+# office -- theologian and the top two Learning education tiers are
+# the same signals kehillah_officers.txt already uses to judge Chief
+# Rabbi aptitude; learning >= 12 is a fallback for a self-taught or
+# late-blooming scholar who never received a formal education trait.
+# ---------------------------------------------------------------------
+
+kehillah_leader_is_rabbinic_trigger = {
 	OR = {
-		martial >= $THRESHOLD$
-		AND = {
-			domicile ?= { has_domicile_parameter = kehillah_watch_is_organised }
-			martial >= {
-				value = $THRESHOLD$
-				subtract = 4
-			}
-		}
+		has_trait = kehillah_rabbi_trait
+		has_trait = theologian
+		has_trait = education_learning_4
+		has_trait = education_learning_5
+		learning >= 12
 	}
 }

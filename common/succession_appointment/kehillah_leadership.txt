@@ -1,4 +1,4 @@
-# =====================================================================
+﻿# =====================================================================
 # Kehillah leadership -- meritocratic appointment succession.
 #
 # Source of truth: docs/spec/v1-kehillah-community.md section 5.
@@ -10,39 +10,66 @@
 # section 2 is that Kehillah leadership rewards competence and Torah
 # knowledge, not court manoeuvring.
 #
-# WHY THE POOL LOOKS LIKE THIS. The spec wants an open pool -- notable
-# family heads, not just the outgoing leader's kin. Vanilla's open
-# categories for that (unlanded_noble_house_head, landed_vassal) are
-# administrative-government constructs and are empty for an independent
-# landless Kehillah, so they would silently contribute nobody. The
-# categories below are the ones that actually contain people in this
-# government:
+# =====================================================================
+# THE POOL IS FAMILY-ONLY, AND THAT IS NOT WHAT THE SPEC ASKED FOR.
+# READ THIS BEFORE TRYING TO WIDEN IT.
 #
-#   - holder_close_family:        the leader's own household.
-#   - holder_close_extended_family and holder_house_member: the wider
-#                                 family, i.e. one notable family.
-#   - holder_court_position:      THE IMPORTANT ONE. The Chief Rabbi,
-#                                 the Treasurer and the Shtadlan are
-#                                 court positions in this mod (see
-#                                 common/court_positions/types/
-#                                 kehillah_officers.txt), and they are
-#                                 routinely unrelated to the leader.
-#                                 This is what makes "the Shtadlan
-#                                 succeeds the old rabbi" a real
-#                                 outcome and delivers the open,
-#                                 beyond-the-bloodline pool the spec
-#                                 asks for.
+# Spec section 5 wants an open pool: notable family heads, not just the
+# outgoing leader's kin. This entry cannot currently deliver that, and
+# the reason is an engine limitation rather than a design choice.
 #
-# The consequence spec section 5 predicts holds: because the player
-# always continues as whoever is appointed, the strategic question stops
-# being "keep my bloodline in charge" and becomes "keep the pool and its
-# scoring inputs strong" -- appoint able officers, since those officers
-# are who you will be playing next.
+# The candidate categories documented in
+# common/succession_appointment/_succession_appointment.info are:
+#
+#   holder_close_family, holder_close_extended_family,
+#   holder_house_member, landed_vassal, landed_vassal_close_family,
+#   landed_vassal_close_extended_family, landed_vassal_house_member,
+#   unlanded_noble_house_head, unlanded_noble_close_family,
+#   unlanded_noble_close_extended_family, unlanded_noble_house_member,
+#   holder_councilor, holder_court_position, direct_subject
+#
+# For an independent, landless, council-less Kehillah they sort into
+# three groups:
+#
+#   1. Family categories. Work, but are all kin.
+#   2. Vassal and noble-house categories. Administrative-government
+#      constructs. They parse, but contribute nobody here.
+#   3. holder_councilor, holder_court_position, direct_subject. These
+#      are the three that WOULD have opened the pool to the community's
+#      officers. **They are documented but not implemented.** Grepping
+#      the 1.19 files shows no vanilla content using any of them, and
+#      the first playtest confirmed it the hard way: including
+#      holder_court_position made the parser reject the whole
+#      invested_candidates statement, which left this entry undefined,
+#      which left the succession law pointing at a missing appointment
+#      type, which crashed the game on load with
+#      "Failed build succession ... unhandled succession order [invalid]"
+#      (succession_order.cpp:704).
+#
+# So the officers cannot be candidates through this system. What
+# remains is family, which is an honest v1 state but is NOT the design.
+#
+# The route to the real thing is almost certainly to stop using
+# succession_appointment for this and script the handover instead: on
+# the leader's death, run an effect that scores every eligible member
+# of the community and grants the title to the winner. That is more
+# work, but it removes the category restriction entirely and it is the
+# same machinery a player-chosen successor and a retirement decision
+# would need anyway. Logged in docs/iteration/v1-iteration-notes.md.
+#
+# The candidate_score below is written as though the pool were already
+# open -- the office-holding bonus, the culture check and the
+# faith check all still make sense, and several will apply to family
+# members who hold offices. None of it needs rewriting when the pool
+# widens.
 # =====================================================================
 
 kehillah_leadership = {
 	default_candidates = { holder_close_family }
-	invested_candidates = { holder_close_extended_family holder_house_member holder_court_position }
+
+	# holder_court_position belongs here and cannot go here. See the
+	# header. Do not re-add it without testing that the game still
+	# loads.
 
 	# Communal leadership is not a child's office. A minor cannot lead a
 	# congregation, and unlike vanilla's admin_emperor there is no realm
@@ -53,7 +80,7 @@ kehillah_leadership = {
 	candidate_score = {
 		value = {
 			# -----------------------------------------------------
-			# THE MERIT CORE (spec section 5: Learning, Influence
+			# THE MERIT CORE (spec section 5: Learning, communal
 			# standing, dynasty prestige).
 			#
 			# Learning is weighted heaviest and Stewardship second.
@@ -81,28 +108,33 @@ kehillah_leadership = {
 			}
 
 			# -----------------------------------------------------
-			# STANDING IN THE COMMUNITY
+			# STANDING IN THE COMMUNITY -- REMOVED 2026-09-07, READ
+			# BEFORE RE-ADDING SOMETHING SIMILAR.
+			#
+			# This used to read influence_level, a per-CHARACTER
+			# bucketed tier off the vanilla Influence resource: each
+			# candidate could have their own personal standing, so the
+			# term genuinely differentiated candidates. When Influence
+			# was retired (common/governments/kehillah_government.txt)
+			# the review that caught the character-vs-title scoping bug
+			# also caught this: kehillah_var_stability/
+			# kehillah_var_greatness correctly moved onto the TITLE
+			# (see kehillah_quarterly_pillars_effect's "WHY THE TITLE,
+			# NOT THE CHARACTER" note) because they represent the
+			# community's standing, not any one person's. But
+			# candidate_score is evaluated once per candidate against
+			# the SAME title -- scope:title never changes between
+			# candidates in one succession event -- so a term reading
+			# scope:title.var:... adds the identical number to every
+			# candidate and changes nothing about their relative order.
+			# An earlier draft of this section left that term in with a
+			# 0.1 multiplier, which was dead code: consistent, harmless,
+			# and pure waste. Removed rather than kept "just in case".
+			# If a personal standing signal is wanted again, it needs a
+			# per-candidate source (a character-scoped variable, a
+			# trait, something scope:title.holder-independent) -- not
+			# a resurrection of this term.
 			# -----------------------------------------------------
-
-			# Influence: the community's own political capital.
-			if = {
-				limit = { influence_level >= 2 }
-				add = {
-					value = 8
-					multiply = {
-						value = influence_level
-						subtract = 1
-					}
-					desc = kehillah_score_influence_desc
-				}
-			}
-			if = {
-				limit = { influence_level = 0 }
-				subtract = {
-					value = 10
-					desc = kehillah_score_no_influence_desc
-				}
-			}
 
 			# Holding one of the community offices is the single
 			# strongest non-skill signal. You earned a seat; the

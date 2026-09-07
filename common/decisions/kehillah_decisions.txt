@@ -1,4 +1,4 @@
-# =====================================================================
+﻿# =====================================================================
 # Kehillah decisions -- the v1 minimal set.
 #
 # Source of truth: docs/spec/v1-kehillah-community.md section 3 and
@@ -19,34 +19,98 @@
 #     where the building gate is enforced (see
 #     common/court_positions/types/kehillah_officers.txt).
 #
-# That leaves the decisions that genuinely have no home elsewhere. One
-# per remaining pillar:
+# That leaves the decisions that genuinely have no home elsewhere:
 #
-#   Steward  -> Mediate a Dispute Between Families
-#   Prosper  -> Distribute Tzedakah
-#   Study    -> Compose a Commentary
+#   Mediate a Dispute Between Families -- Stability
+#   Distribute Tzedakah                -- Gold spent, Stability gained
+#   Compose a Commentary               -- Greatness
 #
-# Protect has no decision by design: it is reactive, and lives in
-# events/kehillah_protection_events.txt.
+# (Renamed 2026-09-07 from the original Steward/Prosper/Study labels
+# when the pillars themselves were renamed to Prosperity/Stability/
+# Greatness -- see docs/spec/v1-kehillah-community.md section 3.
+# Stability has no decision of its own reacting to threats; that side
+# is reactive and lives in events/kehillah_protection_events.txt.)
 #
 # Two of these three come straight from the spec. Distribute Tzedakah is
 # pulled up from ROADMAP.md's "cheap, reinforces an existing v1 pillar"
 # backlog list, which explicitly flags it as a Phase 1 candidate. That
 # is a scope addition, small and deliberate: without it the Gold-to-
-# Influence conversion the currency design depends on has no manual
+# standing conversion the currency design depends on has no manual
 # lever at all.
+#
+# COST/REWARD MECHANICS REWRITTEN 2026-09-07 when Influence was retired
+# in favor of the kehillah_var_stability / kehillah_var_greatness
+# variables tracked on primary_title, not the character (see docs/
+# implementation/v1-kehillah-implementation.md). A decision's `cost`
+# block only accepts vanilla's
+# fixed resource list (gold, piety, prestige, influence, ...) -- there
+# is no way to make it deduct a custom variable. Anywhere a decision
+# used to cost Influence, the check moved into is_valid (with a
+# custom_tooltip explaining the requirement) and the deduction into the
+# effect block's first line, unconditional; anywhere a decision used to
+# award Influence, that became a change_variable call on whichever
+# pillar the reward actually represents.
 # =====================================================================
 
 
 # =====================================================================
-# STEWARD -- MEDIATE A DISPUTE BETWEEN FAMILIES
+# TAKE STOCK OF THE COMMUNITY -- pure information, added 2026-09-07
+#
+# Answers "should I just use a debug view?" from playtest: no. Both
+# pillar variables live on primary_title (see kehillah_quarterly_
+# pillars_effect's "WHY THE TITLE, NOT THE CHARACTER" note) with no
+# top-bar display of their own (that needs real interface/GUI work --
+# see docs/implementation/v1-kehillah-implementation.md), so there was
+# no in-game way to see them at all short of the console. This decision
+# is the minimal fix: its own desc text, always visible on hover in the
+# decision list whether or not it is ever taken, reads the live values
+# straight off the title via dynamic localization
+# ([ROOT.GetPrimaryTitle.Var('...').GetValue|V0], the same pattern
+# vanilla uses for e.g. activity progress bars). Taking it does nothing
+# mechanical -- it exists to be looked at, not clicked.
+# =====================================================================
+
+kehillah_view_standing_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_realm.dds"
+	}
+
+	decision_group_type = kehillah
+	sort_order = 110
+	ai_check_interval = 9999
+
+	is_shown = {
+		government_has_flag = government_is_kehillah
+	}
+
+	is_valid = {
+		is_adult = yes
+	}
+
+	effect = {
+		custom_tooltip = kehillah_view_standing_taken_tt
+	}
+
+	ai_potential = {
+		government_has_flag = government_is_kehillah
+	}
+
+	ai_will_do = {
+		base = 0
+	}
+}
+
+
+# =====================================================================
+# MEDIATE A DISPUTE BETWEEN FAMILIES -- Stability
 #
 # Spec section 3: "Decisions like mediating family disputes or funding
 # charity succeed on competence/standing. This is the main visible break
 # from Byzantine-office flavor -- no scheme system."
 #
-# Accordingly this resolves on Stewardship and costs Influence. There is
-# no plot, no secrecy, no target to be caught by. You are the person the
+# Accordingly this resolves on Stewardship and costs standing (formerly
+# Influence, now Stability -- see the file header). There is no plot,
+# no secrecy, no target to be caught by. You are the person the
 # community trusts to settle things, and you either are good at it or
 # you are not.
 # =====================================================================
@@ -58,7 +122,7 @@ kehillah_mediate_dispute_decision = {
 
 	decision_group_type = kehillah
 	sort_order = 100
-	ai_check_frequency = 36
+	ai_check_interval = 36
 
 	is_shown = {
 		government_has_flag = government_is_kehillah
@@ -67,15 +131,23 @@ kehillah_mediate_dispute_decision = {
 	is_valid = {
 		is_adult = yes
 		is_imprisoned = no
-	}
-
-	cost = {
-		influence = kehillah_mediation_influence_cost
+		custom_tooltip = {
+			text = kehillah_requires_stability_cost_tt
+			primary_title.var:kehillah_var_stability >= kehillah_mediation_standing_cost
+		}
 	}
 
 	cooldown = { years = 3 }
 
 	effect = {
+		# Spent up front either way -- see the else branch below.
+		primary_title = {
+			change_variable = {
+				name = kehillah_var_stability
+				subtract = kehillah_mediation_standing_cost
+			}
+		}
+
 		# Outcome scales on Stewardship. The thresholds are wide on
 		# purpose: at low Stewardship this should feel like a gamble
 		# that mostly does not pay, and improving the skill should
@@ -83,7 +155,7 @@ kehillah_mediate_dispute_decision = {
 		if = {
 			limit = { stewardship >= 14 }
 			add_prestige = major_prestige_gain
-			change_influence = medium_influence_gain
+			primary_title = { change_variable = { name = kehillah_var_stability add = medium_influence_gain } }
 			add_character_modifier = {
 				modifier = kehillah_settled_dispute_modifier
 				years = 5
@@ -93,7 +165,7 @@ kehillah_mediate_dispute_decision = {
 		else_if = {
 			limit = { stewardship >= 8 }
 			add_prestige = medium_prestige_gain
-			change_influence = minor_influence_gain
+			primary_title = { change_variable = { name = kehillah_var_stability add = minor_influence_gain } }
 			add_character_modifier = {
 				modifier = kehillah_settled_dispute_modifier
 				years = 3
@@ -101,9 +173,9 @@ kehillah_mediate_dispute_decision = {
 			custom_tooltip = kehillah_mediate_dispute_good_tt
 		}
 		else = {
-			# The Influence is spent either way. Botching a mediation
-			# in front of the whole community is the actual risk, and
-			# it should sting.
+			# The standing spent above is not refunded. Botching a
+			# mediation in front of the whole community is the actual
+			# risk, and it should sting.
 			add_prestige = minor_prestige_loss
 			add_stress = medium_stress_gain
 			custom_tooltip = kehillah_mediate_dispute_poor_tt
@@ -115,26 +187,27 @@ kehillah_mediate_dispute_decision = {
 	}
 
 	ai_will_do = {
-		value = 60
-		if = {
-			limit = { stewardship < 8 }
-			multiply = 0.2
+		base = 60
+
+		modifier = {
+			factor = 0.2
+			stewardship < 8
 		}
 	}
 }
 
 
 # =====================================================================
-# PROSPER -- DISTRIBUTE TZEDAKAH
+# DISTRIBUTE TZEDAKAH -- Gold spent, Stability gained
 #
-# Gold into Influence, plus contentment. The community's obligation to
+# Gold into standing, plus contentment. The community's obligation to
 # its poor, which is also, straightforwardly, how a communal leader
 # builds standing.
 #
-# This is the manual counterpart to the passive Influence the quarter's
-# buildings generate: it lets a cash-rich, standing-poor leader convert,
-# which matters a great deal right after an appointment (a new leader
-# inherits the treasury but not their predecessor's reputation).
+# This is the manual counterpart to the passive Stability the quarter's
+# Hekdesh and Gabbai Tzedakah generate (kehillah_quarterly_pillars_effect):
+# it lets a cash-rich, standing-poor leader convert, which matters a
+# great deal right after an appointment.
 # =====================================================================
 
 kehillah_distribute_tzedakah_decision = {
@@ -144,7 +217,7 @@ kehillah_distribute_tzedakah_decision = {
 
 	decision_group_type = kehillah
 	sort_order = 90
-	ai_check_frequency = 24
+	ai_check_interval = 24
 
 	is_shown = {
 		government_has_flag = government_is_kehillah
@@ -162,7 +235,12 @@ kehillah_distribute_tzedakah_decision = {
 	cooldown = { years = 2 }
 
 	effect = {
-		change_influence = kehillah_tzedakah_influence_gain
+		primary_title = {
+			change_variable = {
+				name = kehillah_var_stability
+				add = kehillah_tzedakah_stability_gain
+			}
+		}
 		add_piety = medium_piety_gain
 
 		add_character_modifier = {
@@ -178,33 +256,34 @@ kehillah_distribute_tzedakah_decision = {
 	}
 
 	ai_will_do = {
-		value = 50
-		if = {
-			limit = { gold < 100 }
-			multiply = 0
+		base = 50
+
+		modifier = {
+			factor = 0
+			gold < 100
 		}
 	}
 }
 
 
 # =====================================================================
-# STUDY -- COMPOSE A COMMENTARY
+# COMPOSE A COMMENTARY -- Greatness
 #
 # Spec section 3: "A signature 'compose a commentary' decision can
 # produce an artifact at high Learning."
 #
-# Structure: always costs Piety and time, always yields Influence and
-# Learning experience. The artifact is the high end, and it requires
-# BOTH high Learning and a full yeshiva (Beit Midrash tier 3) -- a
-# lasting work of scholarship should require the institution as well as
-# the man, which is the whole thesis of the building system.
+# Structure: always costs Piety and time, always yields standing
+# (Greatness) and Learning experience. The artifact is the high end, and
+# it requires BOTH high Learning and a full yeshiva (Beit Midrash tier
+# 3) -- a lasting work of scholarship should require the institution as
+# well as the man, which is the whole thesis of the building system.
 #
 # The artifact branch is gated on the Royal Court DLC, because that is
 # what vanilla's create_artifact_book_effect belongs to. Without it the
 # decision still works and still rewards; you simply do not get a
-# physical book out of it. That degradation is deliberate -- the Study
-# pillar must not be dead content for players who own Roads to Power but
-# not Royal Court.
+# physical book out of it. That degradation is deliberate -- the
+# Greatness pillar must not be dead content for players who own Roads to
+# Power but not Royal Court.
 # =====================================================================
 
 kehillah_compose_commentary_decision = {
@@ -214,7 +293,7 @@ kehillah_compose_commentary_decision = {
 
 	decision_group_type = kehillah
 	sort_order = 95
-	ai_check_frequency = 60
+	ai_check_interval = 60
 
 	is_shown = {
 		government_has_flag = government_is_kehillah
@@ -237,7 +316,7 @@ kehillah_compose_commentary_decision = {
 
 	effect = {
 		add_learning_lifestyle_xp = major_lifestyle_xp
-		change_influence = major_influence_gain
+		primary_title = { change_variable = { name = kehillah_var_greatness add = major_influence_gain } }
 		add_prestige = medium_prestige_gain
 
 		# The lasting work. Learning AND the institution behind it.
@@ -279,6 +358,6 @@ kehillah_compose_commentary_decision = {
 	}
 
 	ai_will_do = {
-		value = 70
+		base = 70
 	}
 }

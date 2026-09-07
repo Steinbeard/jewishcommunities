@@ -1,0 +1,83 @@
+# =====================================================================
+# Kehillah domicile naming override.
+#
+# THE PROBLEM. Vanilla composes every domicile's default display name
+# from a single SHARED loc key, `domicile_name` (defined in vanilla's
+# own localization/english/dlc/ep3/ep3_laamps_l_english.yml):
+#
+#   domicile_name: "[CHARACTER.GetDynastyHouseNameNoTooltip] [DOMICILE_TYPE.GetNameNoTooltip]"
+#
+# -- used for every domicile type in the game, camps and yurts and
+# estates and ours alike. There is no per-type override key (confirmed:
+# no "estate_domicile_name", "camp_domicile_name" etc. exist anywhere in
+# vanilla) and no `name = ` field on the domicile_type definition itself
+# (see common/domiciles/types/_domicile_types.info). The shared key is
+# the only lever that exists, which is why overriding it naively would
+# rename every domicile in the game, not just ours.
+#
+# THE FIX. Vanilla itself solves "different text depending on a real
+# trigger check inside a loc string" with the customizable_localization
+# system -- see GetRealmOrDomicile in
+# common/customizable_localization/00_government_custom_loc.txt, the
+# direct model for the structure below. localization/english/
+# kehillah_domicile_name_l_english.yml redefines domicile_name to
+# delegate here via CHARACTER.Custom('KehillahDomicileName'); this
+# function is the only place that actually branches.
+#
+# The fallback branch reproduces vanilla's own template exactly, via
+# paths reachable from CHARACTER alone (CHARACTER.GetDomicile.GetType in
+# place of the separately-bound DOMICILE_TYPE vanilla's version uses --
+# confirmed as a valid chain by vanilla's own
+# CHARACTER.GetDomicile.GetType.GetTitleText(CHARACTER.Self) usage in
+# localization/*/messages_l_*.yml). So this is additive: every domicile
+# in the game that isn't a Kehillah looks exactly as it did before.
+# =====================================================================
+
+KehillahDomicileName = {
+	type = character
+
+	# The Kehillah of Worms, named for the town rather than for whichever
+	# family currently holds the title -- the institution outlives its
+	# leader (spec section 5), so the place name should too.
+	#
+	# When Phase 2/3 adds further Kehillot, give each its own text block
+	# here, gated by that specific title, mirroring the extension point
+	# already documented on is_kehillah_title_trigger in
+	# common/scripted_triggers/kehillah_scripted_triggers.txt.
+	text = {
+		trigger = {
+			any_held_title = {
+				this = title:d_kehillah_worms
+			}
+		}
+		localization_key = kehillah_worms_domicile_name
+	}
+
+	# Any OTHER Kehillah (none exist in v1, but Phase 2/3 will add some
+	# before anyone remembers to add a named branch above for it) --
+	# falls back to the generic type name rather than vanilla's
+	# dynasty-based default. A communal institution reading as somebody's
+	# family estate is the wrong default for every Kehillah, not only
+	# Worms specifically.
+	text = {
+		trigger = {
+			any_held_title = {
+				is_kehillah_title_trigger = yes
+			}
+		}
+		localization_key = kehillah_generic_domicile_name
+	}
+
+	# Not a Kehillah at all -- every other domicile in the game, players
+	# and AI alike. Reproduces vanilla's own domicile_name text exactly.
+	#
+	# trigger = { always = no } is copied deliberately from vanilla's own
+	# GetRealmOrDomicile fallback entry, not a mistake: fallback = yes is
+	# what tells the engine to use this text when nothing above matched,
+	# and the trigger itself is never meant to be reached on its own.
+	text = {
+		trigger = { always = no }
+		localization_key = kehillah_domicile_name_vanilla_fallback
+		fallback = yes
+	}
+}

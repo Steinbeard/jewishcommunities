@@ -1,4 +1,4 @@
-# =====================================================================
+﻿# =====================================================================
 # Kehillah scripted effects.
 #
 # Source of truth: docs/spec/v1-kehillah-community.md sections 3c and 5.
@@ -205,6 +205,13 @@ kehillah_record_quarter_effect = {
 		# title, this needs to become an explicit search.
 		primary_title = { save_scope_as = kq_title }
 
+		# NOTE: the Stability/Greatness pillar variables need no mirror
+		# here. They live on primary_title itself (see
+		# kehillah_quarterly_pillars_effect's "WHY THE TITLE, NOT THE
+		# CHARACTER" note), so they are already exactly where the next
+		# holder will find them -- unlike the buildings below, which
+		# live on the domicile and do need copying onto the title.
+
 		domicile = {
 			kehillah_record_track_5_effect = {
 				VAR = kq_synagogue
@@ -226,26 +233,25 @@ kehillah_record_quarter_effect = {
 				B2 = kehillah_countinghouse_02
 				B3 = kehillah_countinghouse_03
 			}
-			kehillah_record_track_3_effect = {
-				VAR = kq_shtadlan_chambers
-				B1 = kehillah_shtadlan_chambers_01
-				B2 = kehillah_shtadlan_chambers_02
-				B3 = kehillah_shtadlan_chambers_03
-			}
-			kehillah_record_track_2_effect = {
-				VAR = kq_communal_watch
-				B1 = kehillah_communal_watch_01
-				B2 = kehillah_communal_watch_02
-			}
 			kehillah_record_track_2_effect = {
 				VAR = kq_mikvah
 				B1 = kehillah_mikvah_01
 				B2 = kehillah_mikvah_02
 			}
 			kehillah_record_track_2_effect = {
-				VAR = kq_communal_hall
-				B1 = kehillah_communal_hall_01
-				B2 = kehillah_communal_hall_02
+				VAR = kq_hekdesh
+				B1 = kehillah_hekdesh_01
+				B2 = kehillah_hekdesh_02
+			}
+			kehillah_record_track_2_effect = {
+				VAR = kq_sofer_workshop
+				B1 = kehillah_sofer_workshop_01
+				B2 = kehillah_sofer_workshop_02
+			}
+			kehillah_record_track_2_effect = {
+				VAR = kq_slaughterhouse
+				B1 = kehillah_slaughterhouse_01
+				B2 = kehillah_slaughterhouse_02
 			}
 			kehillah_record_track_3_effect = {
 				VAR = kq_market_stalls
@@ -278,6 +284,12 @@ kehillah_restore_quarter_effect = {
 			government_has_flag = government_is_kehillah
 			exists = domicile
 		}
+
+		# NOTE: no restore step needed for Stability/Greatness -- see
+		# the matching note in kehillah_record_quarter_effect above.
+		# They live on primary_title/scope:kq_title itself, so the new
+		# holder already has them the instant they hold the title.
+
 		domicile = {
 			kehillah_restore_track_5_effect = {
 				VAR = kq_synagogue
@@ -299,26 +311,25 @@ kehillah_restore_quarter_effect = {
 				B2 = kehillah_countinghouse_02
 				B3 = kehillah_countinghouse_03
 			}
-			kehillah_restore_track_3_effect = {
-				VAR = kq_shtadlan_chambers
-				B1 = kehillah_shtadlan_chambers_01
-				B2 = kehillah_shtadlan_chambers_02
-				B3 = kehillah_shtadlan_chambers_03
-			}
-			kehillah_restore_track_2_effect = {
-				VAR = kq_communal_watch
-				B1 = kehillah_communal_watch_01
-				B2 = kehillah_communal_watch_02
-			}
 			kehillah_restore_track_2_effect = {
 				VAR = kq_mikvah
 				B1 = kehillah_mikvah_01
 				B2 = kehillah_mikvah_02
 			}
 			kehillah_restore_track_2_effect = {
-				VAR = kq_communal_hall
-				B1 = kehillah_communal_hall_01
-				B2 = kehillah_communal_hall_02
+				VAR = kq_hekdesh
+				B1 = kehillah_hekdesh_01
+				B2 = kehillah_hekdesh_02
+			}
+			kehillah_restore_track_2_effect = {
+				VAR = kq_sofer_workshop
+				B1 = kehillah_sofer_workshop_01
+				B2 = kehillah_sofer_workshop_02
+			}
+			kehillah_restore_track_2_effect = {
+				VAR = kq_slaughterhouse
+				B1 = kehillah_slaughterhouse_01
+				B2 = kehillah_slaughterhouse_02
 			}
 			kehillah_restore_track_3_effect = {
 				VAR = kq_market_stalls
@@ -363,6 +374,17 @@ kehillah_setup_worms_start_effect = {
 		}
 		add_character_flag = kehillah_start_configured
 
+		# Named explicitly rather than trusted to root: on_game_start_after_lobby
+		# is a global on_action with no bound character root, and this
+		# effect is reached through title:d_kehillah_worms ?= { holder ?= { ... } },
+		# which changes the acting scope but not root. root.faith/root.culture
+		# happened to still resolve for the first (heir) create_character
+		# call below, then failed with "Event target link 'root' returned
+		# an unset scope" on the second (notable families) call inside a
+		# while loop -- root's binding here is not reliable enough to use
+		# at all. scope:kehillah_leader is.
+		save_scope_as = kehillah_leader
+
 		domicile = {
 			if = {
 				limit = { NOT = { has_domicile_building_or_higher = kehillah_synagogue_01 } }
@@ -377,14 +399,20 @@ kehillah_setup_worms_start_effect = {
 
 		# Isaac has led the community since 1064 (see
 		# history/titles/kehillah_titles.txt), so he does not begin
-		# with nothing to his name.
-		change_influence = 150
+		# with nothing to his name. Greatness, not Stability -- his
+		# standing is scholarly (chief rabbi, yeshiva head, Rashi's own
+		# teacher), not administrative.
+		primary_title = { change_variable = { name = kehillah_var_greatness add = 150 } }
 
 		kehillah_seed_community_effect = yes
 
 		# Mirror the starting state onto the title immediately, so
 		# continuity works even if he dies before building anything.
 		kehillah_record_quarter_effect = yes
+
+		# Isaac reads as the community's rabbi, not a lay elder -- see
+		# common/flavorization/kehillah_title_holders.txt.
+		kehillah_update_leader_flavor_effect = yes
 	}
 }
 
@@ -438,42 +466,294 @@ kehillah_seed_community_effect = {
 			}
 		}
 		create_character = {
-			father = root
+			father = scope:kehillah_leader
 			dynasty = inherit
 			age = { 26 38 }
-			faith = root.faith
-			culture = root.culture
-			location = root.location
+			faith = scope:kehillah_leader.faith
+			culture = scope:kehillah_leader.culture
+			# scope:kehillah_leader.location is unreliable here: this
+			# effect runs the same tick as change_government creates the
+			# domicile, and a landless character's own .location does not
+			# always resolve by then (vanilla's own
+			# create_landless_adventurer_title_effect guards the identical
+			# case with exists = location). The domicile's own placement
+			# is set synchronously with its creation, so read the
+			# location from there instead.
+			location = scope:kehillah_leader.domicile.domicile_location
 			random_traits = yes
 			gender_female_chance = 0
 			save_scope_as = kehillah_seeded_heir
 		}
 		scope:kehillah_seeded_heir = {
-			set_employer = root
+			set_employer = scope:kehillah_leader
 		}
 	}
 
 	# The notable families. Given their own dynasties on purpose: these
 	# are other households of the community, not branches of the
-	# leader's. Skewed toward Learning and Stewardship so that when the
-	# offices do open, there are people actually worth appointing.
-	while = {
-		count = 3
-		create_character = {
-			dynasty = generate
-			age = { 28 50 }
-			faith = root.faith
-			culture = root.culture
-			location = root.location
-			random_traits = yes
-			gender_female_chance = 0
-			learning = { 6 14 }
-			stewardship = { 5 13 }
-			diplomacy = { 4 12 }
-			save_scope_as = kehillah_seeded_notable
-		}
-		scope:kehillah_seeded_notable = {
-			set_employer = root
-		}
+	# leader's. Three distinct people, not three rolls of the same
+	# template -- each skewed and (education-)traited toward a
+	# specific communal role, so the community reads as populated by
+	# particular people rather than a generic pool the moment the game
+	# starts, per the "tied to different communal roles that feel
+	# realistic" design goal.
+	#
+	# Only one can actually hold a position on day one: the Shtadlan,
+	# because it is the only office that isn't building-gated (see
+	# common/court_positions/types/kehillah_officers.txt). The other two
+	# are deliberately NOT appointed to anything yet -- Worms starts
+	# with only a Synagogue (kehillah_setup_worms_start_effect above),
+	# so neither the Beit Midrash nor the Countinghouse their skills
+	# point toward exists. This is the same "growth is the player's
+	# job" principle the floor-heir comment below already documents,
+	# not an oversight: build the Beit Midrash and the community's own
+	# future Chief Rabbi is already standing there waiting.
+
+	# The scholar. Reads as a plausible future Chief Rabbi or, later, a
+	# second learned hand for the Sofer's Workshop.
+	create_character = {
+		dynasty = generate
+		age = { 30 55 }
+		faith = scope:kehillah_leader.faith
+		culture = scope:kehillah_leader.culture
+		location = scope:kehillah_leader.domicile.domicile_location
+		random_traits = yes
+		gender_female_chance = 0
+		trait = education_learning_3
+		learning = { 8 15 }
+		stewardship = { 3 9 }
+		diplomacy = { 3 9 }
+		save_scope_as = kehillah_seeded_scholar
+	}
+	scope:kehillah_seeded_scholar = {
+		set_employer = scope:kehillah_leader
+	}
+
+	# The merchant. Reads as a plausible future Treasurer once the
+	# community has a Countinghouse to keep its books in.
+	create_character = {
+		dynasty = generate
+		age = { 30 55 }
+		faith = scope:kehillah_leader.faith
+		culture = scope:kehillah_leader.culture
+		location = scope:kehillah_leader.domicile.domicile_location
+		random_traits = yes
+		gender_female_chance = 0
+		trait = education_stewardship_3
+		stewardship = { 8 15 }
+		learning = { 3 9 }
+		diplomacy = { 3 9 }
+		save_scope_as = kehillah_seeded_merchant
+	}
+	scope:kehillah_seeded_merchant = {
+		set_employer = scope:kehillah_leader
+	}
+
+	# The advocate. Appointed Shtadlan immediately below -- the one
+	# office this community can fill from day one, being a person and
+	# a function rather than a building (spec section 3c).
+	create_character = {
+		dynasty = generate
+		age = { 30 55 }
+		faith = scope:kehillah_leader.faith
+		culture = scope:kehillah_leader.culture
+		location = scope:kehillah_leader.domicile.domicile_location
+		random_traits = yes
+		gender_female_chance = 0
+		trait = education_diplomacy_3
+		diplomacy = { 8 15 }
+		stewardship = { 3 9 }
+		learning = { 3 9 }
+		save_scope_as = kehillah_seeded_advocate
+	}
+	scope:kehillah_seeded_advocate = {
+		set_employer = scope:kehillah_leader
+		assign_court_position_type = shtadlan_kehillah_position
+	}
+}
+
+
+# =====================================================================
+# kehillah_quarterly_pillars_effect
+# Scope: the Kehillah leader (character), via quarterly_playable_pulse
+# (see common/on_action/kehillah_on_actions.txt). Every contribution is
+# credited to primary_title, not root -- see "WHY THE TITLE, NOT THE
+# CHARACTER" below.
+#
+# Accumulates the two tracked pillar scores -- Stability and Greatness
+# -- that replaced the vanilla Influence resource on 2026-09-07 (see
+# docs/implementation/v1-kehillah-implementation.md for the full
+# reasoning). Variables, not a vanilla resource: CK3 has no way to add
+# a resource with its own top-bar display without real interface/GUI
+# work, and none of the vanilla toggleable "extra resource" flags
+# (Merit, Treasury, Herd) fit two independent scores without dragging
+# in unrelated mechanics. This is the tracking half; there is no
+# display yet beyond what a future GUI pass adds.
+#
+# WHY THE TITLE, NOT THE CHARACTER. Caught in review before this ever
+# shipped: an earlier draft of this effect stored both variables on
+# root (the leader) and then had to bolt a manual mirror-on-death
+# system onto kehillah_record_quarter_effect / kehillah_restore_
+# quarter_effect to carry them across succession, duplicating logic
+# that already exists for buildings. That was solving a problem this
+# mod had already solved the right way once: d_kehillah_worms IS the
+# community (the same principle the buildings' record/restore system is
+# built on -- see that section's own header). Storing the variables on
+# primary_title instead means they are simply already there for
+# whoever holds the title next, with no copying step, no mirror
+# variables, and nothing that can desync between the two copies.
+#
+# PROSPERITY HAS NO VARIABLE. It does not need one: every
+# Prosperity-tagged building (Countinghouse, Market Stalls, Craft
+# Workshops, the Slaughterhouse) already generates real Gold directly,
+# which IS the Prosperity pillar's own resource, complete with its own
+# top-bar display -- more visible than a hidden variable would be.
+# Nothing about Prosperity ran through the old Influence pool either,
+# so this is a continuation of the actual prior behaviour, not a gap.
+#
+# WHY QUARTERLY, NOT MONTHLY. Vanilla resources like Gold/Piety/Prestige
+# accrue every month via an engine-internal tick that character_modifier
+# fields hook into directly (domicile_monthly_gold_add and its
+# siblings). There is no equivalent monthly on_action for playable
+# characters to hang a custom effect from -- the finest-grained one
+# that exists is quarterly_playable_pulse. Every rate below is the old
+# monthly Influence rate x3.
+#
+# WHY BUILDING/POSITION CONTRIBUTIONS ARE CHECKED HERE RATHER THAN
+# DECLARED ON THE BUILDING. A character_modifier field can only credit
+# a fixed vanilla resource (common/domiciles/buildings/_domicile_buildings.info:
+# "please use domicile_monthly_gold_add... same for _prestige / _piety
+# / _influence" -- note what is NOT on that list). A custom variable
+# has no such field, so the only way to accumulate one is to check "do
+# I have this building/position/timed modifier" here and add manually.
+# Every check below mirrors an amount that used to be a
+# domicile_monthly_influence_add line on that exact building tier,
+# position, or timed character_modifier -- removed from those files in
+# the same pass that added this effect. If a contribution needs
+# retuning later, this is now the only place it lives.
+#
+# POSITION CONTRIBUTIONS ARE FLATTENED, NOT APTITUDE-SCALED. The
+# original scaling_employer_modifiers gave terrible/poor/average/good/
+# excellent officeholders different Influence rates. Reproducing that
+# from script would mean re-deriving each position's own aptitude
+# script value here, duplicating logic that already exists once in
+# common/court_positions/types/kehillah_officers.txt and
+# kehillah_minor_positions.txt. Simplified instead to a single flat
+# rate -- the position's own "average" tier value -- awarded whenever
+# the position is filled at all. Aptitude still matters for everything
+# else the position grants (salary, stat bonuses, Piety/Gold in Chief
+# Rabbi's and Gabbai Tzedakah's cases); only the pillar-point rate lost
+# its fine-grained scaling. First-pass tuning throughout this effect;
+# revisit after a playtest, same as every number in
+# kehillah_script_values.txt.
+# =====================================================================
+
+kehillah_quarterly_pillars_effect = {
+	# ---------------------------------------------------------------
+	# GREATNESS -- the Synagogue, the Yeshiva, the Sofer's Workshop,
+	# the Chief Rabbi.
+	# ---------------------------------------------------------------
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_synagogue_01 }
+		primary_title = { change_variable = { name = kehillah_var_greatness add = 1.5 } }
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_synagogue_02 }
+		primary_title = { change_variable = { name = kehillah_var_greatness add = 1.5 } }
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_synagogue_03 }
+		primary_title = { change_variable = { name = kehillah_var_greatness add = 2.25 } }
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_synagogue_04 }
+		primary_title = { change_variable = { name = kehillah_var_greatness add = 2.25 } }
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_synagogue_05 }
+		primary_title = { change_variable = { name = kehillah_var_greatness add = 3 } }
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_beit_midrash_01 }
+		primary_title = { change_variable = { name = kehillah_var_greatness add = 0.75 } }
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_beit_midrash_02 }
+		primary_title = { change_variable = { name = kehillah_var_greatness add = 0.75 } }
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_beit_midrash_03 }
+		primary_title = { change_variable = { name = kehillah_var_greatness add = 1.5 } }
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_sofer_workshop_02 }
+		primary_title = { change_variable = { name = kehillah_var_greatness add = 0.75 } }
+	}
+	if = {
+		limit = { employs_court_position = chief_rabbi_kehillah_position }
+		primary_title = { change_variable = { name = kehillah_var_greatness add = 0.75 } }
+	}
+
+	# ---------------------------------------------------------------
+	# STABILITY -- the Hekdesh, the Shtadlan, the Gabbai Tzedakah, and
+	# the protection layer's and communal decisions' outcomes.
+	# ---------------------------------------------------------------
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_hekdesh_01 }
+		primary_title = { change_variable = { name = kehillah_var_stability add = 1.5 } }
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_hekdesh_02 }
+		primary_title = { change_variable = { name = kehillah_var_stability add = 1.5 } }
+	}
+	if = {
+		limit = { employs_court_position = shtadlan_kehillah_position }
+		primary_title = { change_variable = { name = kehillah_var_stability add = 0.75 } }
+	}
+	if = {
+		limit = { employs_court_position = gabbai_tzedakah_kehillah_position }
+		primary_title = { change_variable = { name = kehillah_var_stability add = 0.3 } }
+	}
+	if = {
+		limit = { has_character_modifier = kehillah_settled_dispute_modifier }
+		primary_title = { change_variable = { name = kehillah_var_stability add = 1.5 } }
+	}
+	if = {
+		limit = { has_character_modifier = kehillah_tzedakah_modifier }
+		primary_title = { change_variable = { name = kehillah_var_stability add = 0.75 } }
+	}
+	if = {
+		limit = { has_character_modifier = kehillah_shaken_community_modifier }
+		primary_title = { change_variable = { name = kehillah_var_stability subtract = 0.75 } }
+	}
+	if = {
+		limit = { has_character_modifier = kehillah_emboldened_community_modifier }
+		primary_title = { change_variable = { name = kehillah_var_stability add = 1.5 } }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_update_leader_flavor_effect
+# Scope: the Kehillah leader (character).
+#
+# Keeps the character flag that drives common/flavorization/
+# kehillah_title_holders.txt's "Rav" vs "Parnas" choice in sync.
+# Deliberately re-evaluated only at the moments a leader's public
+# identity is actually established -- game start and taking the title
+# -- rather than every quarter alongside the pillar tick. This mirrors
+# vanilla's own pattern for the same kind of one-time-but-revisitable
+# flag: landless adventurers choose their camp's flavor
+# (flavourise_camp_purpose_scholars and siblings) via a realm law,
+# reapplied at game start and on death, not continuously recomputed.
+# ---------------------------------------------------------------------
+
+kehillah_update_leader_flavor_effect = {
+	if = {
+		limit = { kehillah_leader_is_rabbinic_trigger = yes }
+		add_character_flag = kehillah_rabbinic_leader_flag
+	}
+	else = {
+		remove_character_flag = kehillah_rabbinic_leader_flag
 	}
 }

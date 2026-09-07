@@ -1,4 +1,4 @@
-# =====================================================================
+﻿# =====================================================================
 # Kehillah officers -- Chief Rabbi, Treasurer, Shtadlan.
 #
 # Source of truth: docs/spec/v1-kehillah-community.md sections 3 and 3c.
@@ -10,25 +10,52 @@
 # -- vanilla's camp officers are court positions on a landless
 # government, and this file follows that precedent closely.
 #
-# THE GATING RULE (spec section 3c): "Characters gate on buildings, not
-# just currency. You cannot appoint a Chief Rabbi without a Beit
-# Midrash, no Treasurer without a Countinghouse, no Shtadlan without the
-# Chambers." Each valid_position block below enforces exactly that by
-# checking the domicile parameter its building sets. This is what makes
-# growing the quarter and populating it with people reinforce each
-# other instead of being two separate tracks.
+# THE GATING RULE, AND THE ONE EXCEPTION. Two of these three still gate
+# on buildings: no Chief Rabbi without a Beit Midrash, no Treasurer
+# without a Countinghouse. Each valid_position block below enforces
+# that by checking the domicile parameter its building sets. This is
+# what makes growing the quarter and populating it with people reinforce
+# each other instead of being two separate tracks.
 #
-# These three are also the open half of the succession candidate pool --
-# see common/succession_appointment/kehillah_leadership.txt. Appointing
-# a capable Shtadlan is therefore not only a present-tense decision; it
-# is choosing who you may be playing as after the current leader dies.
+# The Shtadlan is deliberately NOT building-gated (see that office's own
+# header below for why) -- a rewrite from the original version of this
+# file, which gave him a "Shtadlan's Chambers" building purely because
+# spec section 3c's first draft mapped one Kehillah office onto each
+# vanilla estate skill slot, and Diplomacy needed a home. Minor communal
+# roles (Sofer, Shochet, Gabbai Tzedakah, Mikvah attendant) that DO gate
+# on buildings live in their own file,
+# common/court_positions/types/kehillah_minor_positions.txt, kept
+# separate because they are mechanically lighter and there will be more
+# of them than there are major officers.
+#
+# THESE OFFICES WERE MEANT TO BE THE SUCCESSION POOL, AND CURRENTLY ARE
+# NOT. The design was that appointing a capable Shtadlan also chose who
+# you might play next. That turned out to be unbuildable through
+# succession_appointment: its holder_court_position candidate category
+# is documented but not implemented, and including it crashed the game.
+# The full account is in the header of
+# common/succession_appointment/kehillah_leadership.txt.
+#
+# So for now these are ordinary offices with ordinary benefits, and
+# succession runs on family. An officer who happens to be kin still
+# gets the office-holding bonus in the candidate score. Reconnecting
+# the two properly needs a scripted handover instead of the engine's
+# appointment system.
 #
 # NOTE: officers get a real Gold salary. A community pays its rabbi and
 # its treasurer; that expense is a deliberate counterweight to the
 # Prosper pillar rather than a free bonus.
 # =====================================================================
 
-@kehillah_officer_will_do = 20
+# NOTE ON THE AI BASE SCORE BELOW (search: "value = 500").
+#
+# This was originally a file-local @define. On the first playtest the
+# define failed to resolve inside candidate_score, and the parser
+# rejected that whole statement in all three positions with
+# "Unexpected token: candidate_score". Vanilla declares its @defines on
+# the very first lines of the file, before any comment at all; this file
+# opens with a long header, so the value is simply inlined instead.
+# 500 is the same base vanilla uses for its camp officers.
 
 
 # =====================================================================
@@ -139,6 +166,13 @@ chief_rabbi_kehillah_position = {
 		}
 	}
 
+	# A filled Chief Rabbi position also adds a flat +0.75 Greatness per
+	# quarter, checked in kehillah_quarterly_pillars_effect (common/
+	# scripted_effects/kehillah_scripted_effects.txt) rather than here --
+	# a character_modifier field can't credit a custom variable, only a
+	# fixed vanilla resource, so the old domicile_monthly_influence_add
+	# aptitude-tier rows below were removed 2026-09-07 and replaced with
+	# that single flat rate. Aptitude still scales everything else here.
 	scaling_employer_modifiers = {
 		terrible = {
 			learning = 1
@@ -151,17 +185,14 @@ chief_rabbi_kehillah_position = {
 		average = {
 			learning = 2
 			monthly_piety = 0.25
-			domicile_monthly_influence_add = 0.25
 		}
 		good = {
 			learning = 3
 			monthly_piety = 0.35
-			domicile_monthly_influence_add = 0.5
 		}
 		excellent = {
 			learning = 4
 			monthly_piety = 0.5
-			domicile_monthly_influence_add = 0.75
 		}
 	}
 
@@ -169,8 +200,26 @@ chief_rabbi_kehillah_position = {
 		monthly_learning_lifestyle_xp_gain_mult = 0.1
 	}
 
-	candidate_score = {
-		value = @kehillah_officer_will_do
+	# Holding the office earns the trait, not the other way around --
+	# see common/traits/kehillah_traits.txt's header for the full
+	# reasoning. Covers every way the office can end: an explicit
+	# revocation, the office being invalidated (e.g. the Beit Midrash
+	# is lost), or simply vacated (left court, died).
+	on_court_position_received = {
+		scope:employee = { add_trait = kehillah_rabbi_trait }
+	}
+	on_court_position_revoked = {
+		scope:employee = { remove_trait = kehillah_rabbi_trait }
+	}
+	on_court_position_invalidated = {
+		scope:employee = { remove_trait = kehillah_rabbi_trait }
+	}
+	on_court_position_vacated = {
+		scope:employee = { remove_trait = kehillah_rabbi_trait }
+	}
+
+	ai_candidate_score = {
+		value = 500
 		add = court_position_candidate_score_base_value
 		add = court_position_candidate_aptitude_value
 	}
@@ -311,8 +360,8 @@ treasurer_kehillah_position = {
 		monthly_stewardship_lifestyle_xp_gain_mult = 0.1
 	}
 
-	candidate_score = {
-		value = @kehillah_officer_will_do
+	ai_candidate_score = {
+		value = 500
 		add = court_position_candidate_score_base_value
 		add = court_position_candidate_aptitude_value
 	}
@@ -320,13 +369,27 @@ treasurer_kehillah_position = {
 
 
 # =====================================================================
-# SHTADLAN -- Diplomacy. Gated on the Shtadlan's Chambers.
+# SHTADLAN -- Diplomacy. NOT gated on a building.
 #
-# The community's advocate to outside authority. In v1 this office is
-# what makes the "negotiate" resolution available on protection events
-# (see events/kehillah_protection_events.txt), which is the concrete
-# form of spec section 3b's promise that "whichever officer you have
-# invested in should visibly matter here".
+# The community's advocate to outside authority -- a person and a
+# function, often an informal or occasional one, and one who did not
+# generally have premises of his own. Every other officer in this file
+# has a building because the office is where the work visibly happens:
+# the rabbi teaches in the Beit Midrash, the treasurer keeps the books
+# in the Countinghouse. A shtadlan's work happens wherever the person he
+# is petitioning happens to be, which is exactly why an earlier version
+# of this file gave him a "Shtadlan's Chambers" anyway -- spec section
+# 3c's first draft mapped one office onto each vanilla estate skill
+# slot, and Diplomacy needed a slot to live in. That was the slot
+# driving the building, not the building answering to anything real.
+#
+# So: available from the moment the Kehillah exists, like vanilla's own
+# camp officers. In v1 this office is what makes the "negotiate"
+# resolution available on protection events (see
+# events/kehillah_protection_events.txt), which is the concrete form of
+# spec section 3b's promise that "whichever officer you have invested in
+# should visibly matter here" -- that promise only needed a person in
+# the role, never a room for him to sit in.
 #
 # This is also the office that grows most in Phase 4, when host-realm
 # charters become a real system rather than flavor.
@@ -400,10 +463,6 @@ shtadlan_kehillah_position = {
 			text = kehillah_government_tt
 			government_has_flag = government_is_kehillah
 		}
-		custom_tooltip = {
-			text = kehillah_requires_shtadlan_chambers_tt
-			domicile ?= { has_domicile_parameter = kehillah_unlocks_shtadlan }
-		}
 	}
 
 	is_shown_character = {
@@ -431,6 +490,9 @@ shtadlan_kehillah_position = {
 		}
 	}
 
+	# A filled Shtadlan position also adds a flat +0.75 Stability per
+	# quarter -- see the identical note on Chief Rabbi's
+	# scaling_employer_modifiers above.
 	scaling_employer_modifiers = {
 		terrible = {
 			diplomacy = 1
@@ -442,17 +504,14 @@ shtadlan_kehillah_position = {
 		average = {
 			diplomacy = 2
 			monthly_prestige = 0.2
-			domicile_monthly_influence_add = 0.25
 		}
 		good = {
 			diplomacy = 3
 			monthly_prestige = 0.3
-			domicile_monthly_influence_add = 0.4
 		}
 		excellent = {
 			diplomacy = 4
 			monthly_prestige = 0.4
-			domicile_monthly_influence_add = 0.6
 		}
 	}
 
@@ -460,8 +519,8 @@ shtadlan_kehillah_position = {
 		monthly_diplomacy_lifestyle_xp_gain_mult = 0.1
 	}
 
-	candidate_score = {
-		value = @kehillah_officer_will_do
+	ai_candidate_score = {
+		value = 500
 		add = court_position_candidate_score_base_value
 		add = court_position_candidate_aptitude_value
 	}

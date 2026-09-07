@@ -1,4 +1,4 @@
-# =====================================================================
+﻿# =====================================================================
 # Kehillah on_actions.
 #
 # Every vanilla on_action touched here is extended using the pattern
@@ -71,7 +71,7 @@ kehillah_on_title_gain = {
 		# with no government at all. If this line is missing and the
 		# engine does not propagate it on its own, the new leader holds
 		# the Kehillah title while being mechanically something else --
-		# no quarter, no Influence, no officers, and no way back.
+		# no quarter, no pillar standing, no officers, and no way back.
 		#
 		# Setting it here means the rule is simply: whoever holds this
 		# title leads a Kehillah. Which is what the title means.
@@ -88,11 +88,18 @@ kehillah_on_title_gain = {
 		# a domicile that does not exist yet would silently do nothing.
 		kehillah_restore_quarter_effect = yes
 
-		# A new leader takes office with the community's confidence but
-		# no personal stock of standing. Small, deliberate: the point of
-		# appointment succession is that you inherit the institution,
-		# not your predecessor's reputation.
-		change_influence = 50
+		# A new leader takes office with the community's confidence.
+		# Small and deliberate, and separate from the institution's own
+		# accumulated Stability/Greatness -- those live on the title
+		# itself (kehillah_quarterly_pillars_effect's "WHY THE TITLE,
+		# NOT THE CHARACTER" note) and so are already exactly as they
+		# were, needing no restoration; this is a personal vote of
+		# confidence added on top, not a duplicate of anything.
+		scope:title = { change_variable = { name = kehillah_var_stability add = 50 } }
+
+		# Re-evaluate Rav vs. Parnas for the incoming leader -- see
+		# common/flavorization/kehillah_title_holders.txt.
+		kehillah_update_leader_flavor_effect = yes
 	}
 }
 
@@ -148,6 +155,75 @@ kehillah_on_domicile_building_completed = {
 
 random_yearly_playable_pulse = {
 	on_actions = { kehillah_yearly_pulse }
+}
+
+
+# ---------------------------------------------------------------------
+# QUARTERLY PILLAR TICK -- Stability and Greatness accrual.
+#
+# root = the character
+#
+# quarterly_playable_pulse is the finest-grained on_action that exists
+# for playable characters -- there is no monthly equivalent to hook a
+# custom effect from, which is why this runs quarterly rather than
+# monthly. See kehillah_quarterly_pillars_effect in
+# common/scripted_effects/kehillah_scripted_effects.txt for the full
+# reasoning and every rate.
+# ---------------------------------------------------------------------
+
+quarterly_playable_pulse = {
+	on_actions = { kehillah_quarterly_pulse }
+}
+
+kehillah_quarterly_pulse = {
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+	effect = {
+		kehillah_quarterly_pillars_effect = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# COURT ARRIVALS -- keep the court from filling up with strangers.
+#
+# root = the character joining
+# scope:new_employer = who they are joining
+# scope:old_employer = their previous employer, if any (unset for a
+# character's first-ever employment)
+#
+# PARTIAL MITIGATION, NOT A FIX. Playtesting turned up a court full of
+# courtiers who have nothing to do with the community -- wrong faith,
+# wrong culture, apparently vanilla's generic "unemployed character
+# seeks a court" behaviour pulling from the surrounding (Christian,
+# German) population and the wider world regardless of what this
+# government actually is. The exact vanilla mechanism responsible
+# was not pinned down (see docs/implementation/v1-kehillah-implementation.md
+# for what was and wasn't chased down). This on_action only catches the
+# case it can catch safely and verifiably: a character who already has
+# an employer and is about to switch to this one is sent back where
+# they came from if they do not share the community's faith. It does
+# nothing for a character seeking their very first employment (no
+# old_employer to return them to) -- that case needs whatever the root
+# vanilla mechanism turns out to be, once found.
+# ---------------------------------------------------------------------
+
+on_join_court = {
+	on_actions = { kehillah_on_join_court }
+}
+
+kehillah_on_join_court = {
+	trigger = {
+		scope:new_employer = {
+			government_has_flag = government_is_kehillah
+		}
+		exists = scope:old_employer
+		NOT = { faith = scope:new_employer.faith }
+	}
+	effect = {
+		set_employer = scope:old_employer
+	}
 }
 
 kehillah_yearly_pulse = {

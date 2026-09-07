@@ -1,4 +1,4 @@
-# =====================================================================
+﻿# =====================================================================
 # Kehillah protection events -- the light v1 layer.
 #
 # Source of truth: docs/spec/v1-kehillah-community.md section 3b.
@@ -23,15 +23,31 @@
 #
 #   NEGOTIATE  -- needs a Shtadlan in post. Resolves on Diplomacy.
 #   PAY        -- needs Gold. Always available if you can afford it.
-#   STAND FIRM -- needs the Communal Watch. Resolves on Martial.
+#   STAND FIRM -- always available. Resolves on Martial.
 #
-# The negotiate and stand-firm options are hidden, not merely disabled,
-# when you lack the officer or the building. A community without an
-# advocate does not get to choose advocacy. That is the mechanic making
-# the argument the building system exists to make.
+# UPDATED 2026-09-06: STAND FIRM used to need the Communal Watch
+# building; that building is gone (see
+# common/domiciles/buildings/kehillah_domicile_buildings.txt for why --
+# it was a reskinned vanilla slot, not a real institution). Standing
+# firm physically doesn't require a dedicated institution the way
+# advocacy to outside authorities does, so it is now always offered,
+# the same way ENDURE always is -- the difference is that STAND FIRM
+# has a real Martial skill check behind it and a better ceiling.
+#
+# NEGOTIATE is the one door still hidden, not merely disabled, when you
+# lack the officer. A community without an advocate does not get to
+# choose advocacy. That is the mechanic making the argument the officer
+# system exists to make.
 #
 # There is always a fourth door -- endure it -- so the player is never
 # trapped with no legal option. It is always the worst outcome.
+#
+# UPDATED 2026-09-07: every outcome's change_influence call became a
+# change_variable call against kehillah_var_stability when Influence
+# was retired (see docs/implementation/v1-kehillah-implementation.md).
+# All four map to Stability, not Greatness or Prosperity -- these
+# outcomes are all, one way or another, about the community's cohesion
+# and safety, which is exactly what Stability means (spec section 3).
 #
 # TONE NOTE. These are written as ordinary municipal friction of the
 # kind any medieval urban community faced: a grasping official, a
@@ -86,7 +102,7 @@ kehillah.0001 = {
 		# check is still yours.
 		if = {
 			limit = { kehillah_shtadlan_prevails_trigger = { THRESHOLD = 12 } }
-			change_influence = medium_influence_gain
+			primary_title = { change_variable = { name = kehillah_var_stability add = medium_influence_gain } }
 			add_character_modifier = {
 				modifier = kehillah_emboldened_community_modifier
 				years = 3
@@ -125,13 +141,10 @@ kehillah.0001 = {
 		}
 	}
 
-	# STAND FIRM -- the watch makes the demand more trouble than it is
-	# worth.
+	# STAND FIRM -- always available; see the file header for why this
+	# no longer needs a building.
 	option = {
 		name = kehillah.0001.c
-		trigger = {
-			kehillah_has_watch_trigger = yes
-		}
 
 		if = {
 			limit = { kehillah_watch_prevails_trigger = { THRESHOLD = 10 } }
@@ -166,7 +179,7 @@ kehillah.0001 = {
 			modifier = kehillah_shaken_community_modifier
 			years = 3
 		}
-		change_influence = minor_influence_loss
+		primary_title = { change_variable = { name = kehillah_var_stability add = minor_influence_loss } }
 
 		custom_tooltip = kehillah.0001.d.tt
 
@@ -209,7 +222,7 @@ kehillah.0002 = {
 
 		if = {
 			limit = { kehillah_shtadlan_prevails_trigger = { THRESHOLD = 10 } }
-			change_influence = medium_influence_gain
+			primary_title = { change_variable = { name = kehillah_var_stability add = medium_influence_gain } }
 			add_prestige = minor_prestige_gain
 			custom_tooltip = kehillah.0002.a.success.tt
 		}
@@ -290,12 +303,10 @@ kehillah.0003 = {
 		is_imprisoned = no
 	}
 
-	# SET THE WATCH -- what the Communal Watch is for.
+	# SET THE WATCH -- always available; see the file header for why
+	# this no longer needs a building.
 	option = {
 		name = kehillah.0003.a
-		trigger = {
-			kehillah_has_watch_trigger = yes
-		}
 
 		if = {
 			limit = { kehillah_watch_prevails_trigger = { THRESHOLD = 8 } }
@@ -325,7 +336,7 @@ kehillah.0003 = {
 
 		if = {
 			limit = { kehillah_shtadlan_prevails_trigger = { THRESHOLD = 10 } }
-			change_influence = minor_influence_gain
+			primary_title = { change_variable = { name = kehillah_var_stability add = minor_influence_gain } }
 			custom_tooltip = kehillah.0003.b.success.tt
 		}
 		else = {

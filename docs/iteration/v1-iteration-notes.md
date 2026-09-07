@@ -6,6 +6,16 @@ Nothing here is a decision, and nothing here has been built. Each item
 records what you asked for, plus whatever is already known from the
 1.19 game files or from the existing implementation that would shape it.
 
+> **Updated after the first playtest, which crashed on load.** The crash
+> and its six causes are written up in section 6 of
+> [../implementation/v1-kehillah-implementation.md](../implementation/v1-kehillah-implementation.md).
+> One of them is not a bug but a design problem, and it lands directly
+> on item 4 below: **the succession candidate pool cannot reach outside
+> the leader's family.** Item 4 was a nice-to-have when you wrote it. It
+> is now the cheapest known route to the open, cross-family succession
+> the spec has wanted all along, which makes it the highest-value item
+> on this list rather than the smallest.
+
 Source: review of
 [../implementation/v1-kehillah-implementation.md](../implementation/v1-kehillah-implementation.md)
 after the first iteration was written.
@@ -22,6 +32,31 @@ dating problems already.
 ---
 
 ## 1. Building flavor is not right yet
+
+> **Addressed 2026-09-06.** Shtadlan's Chambers and the Communal Watch
+> are gone; the Shtadlan and standing firm against a threat are now
+> ungated instead, exactly per this section's own diagnosis ("a
+> shtadlan was a person and a function... he did not generally have
+> premises"). A Hekdesh (poorhouse/hospice) replaces Communal Hall, and
+> a Sofer's Workshop and Slaughterhouse are new — both drawn from this
+> section's own "candidate buildings" list below. Minor positions
+> (Sofer, Shochet, Gabbai Tzedakah, Mikvah attendant) now exist per this
+> section's "minor positions" note, each gated on its building. See
+> docs/spec/v1-kehillah-community.md section 3c for the rewritten
+> table, and common/domiciles/buildings/kehillah_domicile_buildings.txt
+> for the implementation. The Cemetery, Hekdesh's own further tiers,
+> the Talmud Torah, bakery, dance house and kahal house from the
+> candidate list below remain unbuilt — this pass took the buildings
+> the requested list named, not the full candidate set. The dating
+> caveats below (Mikvah, klopper) still apply exactly as written; this
+> pass did not resolve either, only carried the caveat forward into the
+> spec.
+>
+> The pillar framing referenced throughout this section (Prosper,
+> Study, Steward, Protect) is also superseded — see
+> docs/spec/v1-kehillah-community.md section 3's revision note. Read
+> "Prosper" below as Prosperity, "Study" as Greatness, and
+> "Steward"/"Protect" as the two halves of Stability.
 
 **What you said.** The domicile buildings do not feel right. The
 Shtadlan's Chambers in particular does not feel like a real thing. The
@@ -109,13 +144,20 @@ Candidate roles, again unverified: shammash (beadle or sexton), chazzan
 (teacher), mohel, dayan (judge on the communal court), members of the
 chevra kadisha (burial society), the klopper, the mikvah attendant.
 
-Note that the existing three officers are also the succession candidate
-pool, which is the mechanism that opens up appointment succession beyond
-the leader's family (implementation doc section 2c). **Adding many minor
-positions therefore widens the succession pool as a side effect.** That
-may be desirable, since it would make a developed community genuinely
-meritocratic. It may also dilute the pool with candidates nobody would
-seriously consider. Worth deciding on purpose rather than discovering.
+This paragraph originally warned that adding many minor offices would
+widen the succession candidate pool as a side effect, possibly diluting
+it. **The playtest inverted that concern.** Court positions turned out
+not to feed succession at all, because the `holder_court_position`
+candidate category is documented but not implemented (implementation doc
+section 2c). So minor offices are currently free of any succession
+consequence, and can be added purely on flavour and mechanical merit.
+
+The concern comes back the moment item 4 is built. If succession runs on
+a designated heir chosen from the whole community, or on a scored
+character pool, then everyone holding an office is implicitly a
+candidate, and a klopper standing for the rabbinate is exactly the kind
+of thing that needs a deliberate answer rather than an accident. Worth
+settling the scoring rules at the same time as the offices, not after.
 
 ### More economic options
 
@@ -226,12 +268,18 @@ scripted variable with its own presentation.
 happens to a Kehillah leader's Gold today, when the title passes by
 appointment to someone unrelated? Gold normally follows the heir of a
 character's titles, but this is an unusual case: landless, independent,
-appointment succession, possibly no blood relation. **This has not been
-verified, and it is not currently on the implementation doc's checklist.
-It should be, because the answer determines whether the community's
-money already vanishes on every succession.** Test it at the same time
-as checklist items 2 and 4, since all three are answered by killing the
-starting leader and watching what the successor inherits.
+appointment succession, possibly no blood relation. **Still unverified,
+but now added to the implementation doc's checklist, because the answer
+determines whether the community's money already evaporates every
+reign.** Test it at the same time as checklist items 2 and 4, since all
+three are answered by killing the starting leader and watching what the
+successor inherits.
+
+Note that the playtest narrowed this question rather than answering it.
+Succession is family-only for now, so "passes to someone unrelated" is
+not currently reachable in-game. The honest test today is the
+family case; the unrelated case only becomes testable once item 4 or one
+of its alternatives is built.
 
 **Wealth as a succession factor.** Easy once the split exists. The
 candidate score in
@@ -250,12 +298,44 @@ and not necessarily the right one.
 in. Perhaps a decision to appoint your successor, with recommendations
 based on top score. Perhaps the option to retire.
 
+**This item got much more important after the playtest.** You proposed
+it as flavour: a way to feel involved in who follows you. It turns out
+to be the cheapest way to get succession outside the family at all.
+
+The implementation assumed the three officers would be succession
+candidates, because `_succession_appointment.info` documents a
+`holder_court_position` category. That category is documented but not
+implemented, and using it crashed the game. Every other non-family
+category is an administrative construct that contributes nobody to a
+landless independent community. So succession currently runs on family,
+which is not the design.
+
+`set_designated_heir`, by contrast, is a plain effect with **no kinship
+restriction at all**, and vanilla's `designate_heir_interaction` places
+no family condition on the recipient either. So letting the leader name
+their successor is not merely a nicer interface over the existing pool.
+It is a way to bypass the pool's limits entirely and put an unrelated
+scholar in the chair.
+
+That reframes the work: item 4 is no longer polish on top of a working
+succession system, it is the succession system. Section 2c of the
+implementation doc lists two heavier alternatives (theocratic succession
+with a custom character pool, or going administrative so the notable
+families become real noble houses). Both are worth reading before
+committing to this one, but this is the cheap one and it also gives you
+the feature you actually asked for.
+
 **Designating a successor: there is a native mechanism, and it is
 half-usable.**
 
 - Succession laws carry a `can_designate_heirs` flag. Vanilla sets it on
   `acclamation_succession_law` and `landless_adventurer_succession_law`,
   among others. **The Kehillah law currently does not set it.**
+- The important precedent: `acclamation_succession_law` carries **both**
+  `appointment_type_succession` and `can_designate_heirs`. So appointment
+  succession combined with a designated heir is a combination vanilla
+  already ships and relies on, not something to discover. That removes
+  most of the risk from this route.
 - `designate_heir_interaction`, in
   `common/character_interactions/00_heir.txt`, is the interface, and for
   administrative characters it already **costs Influence**
@@ -359,19 +439,32 @@ probably want to be thought about together.
 
 | Item | Size | Notes |
 |---|---|---|
-| 4, designate successor | Small | Law flag plus a forked interaction. |
+| 4, designate successor | Small | Law flag plus a forked interaction. Now also the fix for family-only succession. |
 | 4, retirement | Medium | No vanilla precedent, built from scratch. |
 | 1, buildings and minor positions | Medium | Mostly content, but needs the research pass first. |
 | 2, communal welfare | Medium | Depends on item 3 being settled. |
 | 3, wealth split | Medium to large | Engine constraint, and needs a UI answer. |
 | 5, commentary activity | Large | Probably its own phase. |
 
+Cost and value have come apart since these notes were written. Item 4's
+first half is the smallest piece of work on the list and now carries the
+most weight, because it is what makes leadership cross-family. If
+anything here gets built next, it should be that.
+
 ## Next step regardless of which item is picked up
 
-The first iteration has still never been loaded by the game. The
-verification checklist in the implementation doc, particularly whether
-Influence functions at all on this government, is upstream of every item
-here. Item 3 in particular is unanswerable until it is known what
-currently happens to a leader's Gold on succession.
+The first iteration has now been loaded once. It crashed, the six causes
+are fixed, and **the fixes themselves have not been run.** So the
+verification checklist in the implementation doc is still almost
+entirely open, and it remains upstream of every item here. In
+particular, nobody has yet confirmed that Influence functions at all on
+this government, which several of these ideas quietly assume.
 
-Add that Gold question to the implementation doc's checklist.
+Run it again first. Then, on that run, answer the two questions that
+gate the rest of this list:
+
+1. Does Influence accrue and can it be spent?
+2. What happens to the leader's Gold when the title passes?
+
+Item 2 and item 3 are both stuck behind those answers. Item 4 is not,
+and could be built in parallel.

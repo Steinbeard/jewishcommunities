@@ -1,0 +1,58 @@
+﻿# =====================================================================
+# Overrides vanilla's is_playable_character
+# (common/scripted_triggers/00_available_for_events_triggers.txt).
+#
+# THE ACTUAL ROOT CAUSE OF THE BOOKMARK-GENERATION CRASH, FOUND AFTER AN
+# EXHAUSTIVE PROCESS OF ELIMINATION.
+#
+# is_playable_character is a closed, hardcoded list:
+#
+#   is_landed | is_landless_administrative | is_landless_adventurer |
+#   is_landless_nomad | is_landless_soryo | tgp_is_any_minister
+#
+# There is no generic branch for "any government with landless_playable
+# = yes in its government_rules". Setting that rule (which
+# kehillah_government does) is necessary to let the engine assign the
+# landless title, domicile and buildings at all -- and it does, as
+# verified in a live session -- but it is NOT sufficient to satisfy
+# THIS separate check, which gates whether a character may be handed to
+# (or remain) the player. kehillah_government's flag,
+# government_is_kehillah, matches none of the six hardcoded branches, so
+# a Kehillah leader always fails this trigger regardless of anything
+# else about the government, domicile, succession law, or candidate
+# pool -- which is exactly the pattern the elimination testing found:
+# every configuration using kehillah_government as the character's
+# INITIAL bookmark government failed identically, while every
+# configuration using an existing vanilla landless government (which
+# DOES match one of the six branches) succeeded.
+#
+# is_playable_character is also the fallback branch of vanilla's
+# is_character_allowed_to_be_player scripted rule
+# (common/scripted_rules/00_rules.txt), which is what produces the
+# "Game Over: became landless" screen once the mid-session
+# change_government workaround (see history/titles/kehillah_titles.txt
+# and common/on_action/kehillah_on_actions.txt) hands Isaac
+# kehillah_government.
+#
+# The fix is additive: copy vanilla's OR block verbatim and add one more
+# branch. This is deliberately narrower than the "All Governments
+# Playable" Workshop mod (id 3021516102), which neuters the entire
+# is_character_allowed_to_be_player rule via a permanently-false limit
+# wrapper -- that also removes vanilla's DLC-gating for
+# theocracy/republic/mercenary/holy_order governments, which this fork
+# does not touch.
+# =====================================================================
+
+is_playable_character = {
+	OR = {
+		is_landed = yes
+		is_landless_administrative = yes
+		is_landless_adventurer = yes
+		is_landless_nomad = yes
+		is_landless_soryo = yes
+		tgp_is_any_minister = yes
+
+		# --- added by the Jewish Communities mod ---
+		government_has_flag = government_is_kehillah
+	}
+}

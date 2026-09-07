@@ -15,25 +15,62 @@ Two playable tracks, per the project vision:
 Phases are sequential within a track unless noted. This is the plan,
 subject to revision after each phase.
 
-**Current state:** Phase 1 has a first implementation written to script
-but not yet run in the game — see
-[docs/implementation/v1-kehillah-implementation.md](docs/implementation/v1-kehillah-implementation.md),
-whose verification checklist is the immediate next piece of work.
-Everything from Phase 2 onward remains unimplemented.
+**Current state:** Phase 1 is verified working live, end to end, as of
+2026-09-06 — bookmark start, buildings, officers, and a full
+console-kill → appointment succession → continue-as-successor cycle all
+confirmed in a running game, government/courtiers/treasury intact across
+the handoff. The original crash was misdiagnosed the first time (section
+6 of the implementation doc); the actual cause — vanilla's
+`is_playable_character` trigger has no branch for a custom landless
+government — is recorded in section 8 there, with the fix in
+`common/scripted_triggers/kehillah_is_playable_character_override.txt`.
+The same session also carried out a building/officer/pillar content
+rework (implementation doc section 9): Shtadlan's Chambers and the
+Communal Watch are gone, the Shtadlan and standing firm are now
+ungated, Hekdesh/Sofer's Workshop/Slaughterhouse and four new minor
+positions are in, and the four community goals are now three pillars
+(Prosperity/Stability/Greatness, spec §3) — that content pass has not
+yet had its own live playtest (see the implementation doc's closing
+caveat in section 9). Everything from Phase 2 onward remains
+unimplemented.
+
+**Meritocratic succession is still family-only**, unchanged by the
+above. The plan had been for the three community officers to be
+succession candidates via the `holder_court_position` category, but
+that category is documented in the game files and not implemented.
+Every other non-family candidate category is an administrative-
+government construct that contributes nobody to a landless independent
+community. So the headline promise below — "the player always continues
+as the community's leader, regardless of bloodline" — is not yet true
+in the way it reads. Three routes to fix it are laid out in section 2c
+of the implementation doc; the cheapest is heir designation, which
+vanilla already combines with appointment succession on
+`acclamation_succession_law`.
+
+**Review notes on the first iteration**, covering communal welfare,
+personal versus communal wealth, player-directed succession and a
+commentary activity, are captured in
+[docs/iteration/v1-iteration-notes.md](docs/iteration/v1-iteration-notes.md)
+(building flavour, its first section, was addressed by the 2026-09-06
+rework above — see the note at the top of that section). Those are
+unscheduled and deliberately not folded into the phases below until
+they are chosen.
 
 ## Track A — Diaspora Communities
 
-### Phase 1 — Kehillah Community Baseline (current focus; first iteration written, untested)
+### Phase 1 — Kehillah Community Baseline (current focus; verified working live, content rework in progress)
 The core non-landed government mechanic, with no historical/regional flavor
 yet: currencies (Gold, the real vanilla Influence resource), meritocratic
 **appointment** succession (the player always continues playing as the
-community's leader, regardless of bloodline — see spec §5), a
+community's leader, regardless of bloodline — see spec §5; **note the
+current-state caveat above: this is family-only today**), a
 Synagogue-quarter estate-building system (visible community growth, gates
-named officer roles — Chief Rabbi, Treasurer, Shtadlan), a minimal internal
-decision set, one generic playable start. Goal: prove the government type
-is fun and functional end-to-end before spending art/writing budget on
-regional variants.
-See [spec/v1-kehillah-community.md](spec/v1-kehillah-community.md). The
+the Chief Rabbi and Treasurer officer roles and four minor communal
+positions; the Shtadlan is a person-driven role, not building-gated — see
+spec §3c), a minimal internal decision set, one generic playable start.
+Goal: prove the government type is fun and functional end-to-end before
+spending art/writing budget on regional variants.
+See [spec/v1-kehillah-community.md](docs/spec/v1-kehillah-community.md). The
 concrete playable start is the Kehillah of Worms, 1066 — see
 [docs/scenarios/worms-1066.md](docs/scenarios/worms-1066.md), using
 vanilla's own `judaism_religion` (faith: `rabbinism`) and `heritage_israelite`
@@ -105,14 +142,25 @@ to — natural Phase 2/3 content, not v1:**
   Jerusalem or a great yeshiva for Learning/Influence/artifacts. Lands
   better once Phase 2's academies exist as real destinations.
 
-**Resolved, no longer backlog:** open, community-wide leadership succession
-(any notable family can be appointed, not just the outgoing leader's own)
-turned out not to need a separate "rival family head" playable mode at all
-— see spec §5. Appointment-based succession (`succession_appointment`,
-the same framework vanilla uses for administrative governors) has no
-"losing candidate who keeps playing a demotion" case to design for: there's
-one outcome per vacancy, and the player becomes it. Folded into Phase 1
-directly instead of staying backlog.
+**Partly resolved, and reopened by the first playtest:** open,
+community-wide leadership succession (any notable family can be
+appointed, not just the outgoing leader's own).
+
+The part that *is* resolved is the one that worried us: it needs no
+separate "rival family head" playable mode. Appointment-based succession
+(`succession_appointment`, the same framework vanilla uses for
+administrative governors) has no "losing candidate who keeps playing a
+demotion" case to design for. There is one outcome per vacancy and the
+player becomes it. That still holds.
+
+**What is not resolved is getting the notable families into the
+candidate pool in the first place.** The Phase 1 implementation assumed
+the community's officers would qualify through the
+`holder_court_position` category; that category is documented but not
+implemented, and using it crashed the game. Succession is family-only
+today. This is back on the critical path for Phase 1 rather than being
+backlog — see the current-state note at the top of this file and section
+2c of the implementation doc for the three candidate fixes.
 
 **Track to revisit once released, not buildable yet:** CK3's upcoming "By
 God Alone" expansion (dev diary, unreleased as of this writing) introduces
@@ -125,6 +173,18 @@ a manual domicile-copy effect. The dev diary explicitly calls out
 `clerical_region_titles` as intended for mod reuse. Once this ships,
 revisit whether it offers a cleaner substrate than our custom Kehillah
 title/domicile plumbing — but nothing in Phase 1 should wait on it.
+
+That last point is worth restating now that the first playtest has
+found the family-only succession problem, because the temptation to wait
+is real. The Clerical Appointment score — picking an officeholder from a
+broad clergy pool, with no dynastic component — is Paradox solving
+exactly the problem Phase 1 just ran into, and it would likely solve it
+better than any of our three workarounds. It is also unreleased, with no
+date. **Build the workaround anyway.** Heir designation is small, it is
+independently worth having as a player-facing feature, and if By God
+Alone eventually makes it redundant, a small forked interaction is a
+cheap thing to have thrown away. The alternative is a mod whose central
+promise stays broken for an unbounded period.
 
 **Bigger, and overlaps a system already scheduled later — don't build twice:**
 - **Legends system integration** (martyrs, great sages memorialized for

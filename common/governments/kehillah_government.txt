@@ -1,4 +1,4 @@
-# =====================================================================
+﻿# =====================================================================
 # Kehillah government -- Phase 1, Track A.
 #
 # Source of truth: docs/spec/v1-kehillah-community.md (sections 2, 3, 6)
@@ -71,23 +71,36 @@ kehillah_government = {
 		# real outcome.
 		council = no
 
-		# No royal court: that is a landed, high-tier feature.
-		royal_court = no
-
 		# Not a dynastic government. This blocks Kehillah leaders from
 		# inheriting feudal or clan realms sideways, which would
 		# instantly break the premise.
 		inherit_from_dynastic_government = no
-		use_as_base_on_landed = no
-		use_as_base_on_rank_up = no
 
 		# No passive prestige from title tier -- a Kehillah is not a
 		# duchy in any meaningful sense, it only borrows the tier.
 		use_title_tier_modifiers = no
 
-		# Legitimacy is an administrative/feudal framing that does not
-		# fit communal appointment.
-		legitimacy = no
+		# RULES DELIBERATELY OMITTED RATHER THAN SET TO "no":
+		#   royal_court, use_as_base_on_landed, use_as_base_on_rank_up,
+		#   legitimacy
+		#
+		# The 1.19 parser rejects these with "Unexpected enum found"
+		# when written as "= no", and that rejection desynced the whole
+		# file on the first playtest, taking the character_modifier and
+		# flag blocks down with it. Vanilla never writes any of these
+		# four as "no" -- only ever "yes" -- which is the tell.
+		#
+		# Omitting them gives the behaviour we wanted anyway: all three
+		# of royal_court, use_as_base_on_landed and use_as_base_on_rank_up
+		# default to off. legitimacy defaults to ON, which we did not
+		# want, but it is inert here because legitimacy only applies
+		# when a legitimacy type is valid for the ruler and none is
+		# defined for this government.
+		#
+		# Rule of thumb for anything added here later: only write a rule
+		# as "no" if vanilla writes that same rule as "no" somewhere in
+		# 00_government_types.txt. Every "no" in this block passes that
+		# test. Otherwise omit it and rely on the default.
 
 		# The community has no standing army and pays no MaA upkeep.
 		use_maa_maintenance = no
@@ -95,6 +108,10 @@ kehillah_government = {
 		# Spouses still generate normally -- family life is a live part
 		# of the fantasy.
 		court_generate_spouses = yes
+
+		# Live 1.19 expresses this as a government rule, not as an
+		# active_accolades character modifier.
+		allow_accolades = no
 	}
 
 	domicile_type = kehillah_quarter
@@ -106,7 +123,7 @@ kehillah_government = {
 
 	can_get_government = {
 		any_held_title = {
-			tier = tier_duchy
+			title_tier = duchy
 			is_landless_type_title = yes
 		}
 	}
@@ -125,7 +142,6 @@ kehillah_government = {
 		men_at_arms_cap = -10
 		men_at_arms_limit = -10
 		knight_limit = -10
-		active_accolades = -100
 
 		# Competence and knowledge, not scheming (spec section 2).
 		# These two lines are the mechanical statement of the player
@@ -147,23 +163,31 @@ kehillah_government = {
 
 	# Use flags rather than has_government where possible, per vanilla's
 	# own guidance in 00_government_types.txt.
-	flag = government_is_kehillah
+	flags = {
+		government_is_kehillah
 
-	# Enables the real vanilla Influence resource in the UI. Confirmed
-	# in 00_government_types.txt: administrative_government sets exactly
-	# this flag, and its comment marks it as existing "for loc and
-	# in-game descriptions" -- a presentation flag, not an admin-only
-	# gate. Spec section 4's residual risk is whether change_influence
-	# and the influence cost scope actually FUNCTION off administrative
-	# government; that still needs a playtest.
-	flag = government_has_influence
+	# government_has_influence REMOVED 2026-09-07. It did what it was
+	# supposed to (confirmed live: it works fine off this government),
+	# but playtest feedback was that Influence reads to players as
+	# Byzantine/administrative political-scheme currency regardless of
+	# what this mod actually spends it on, because that is what the
+	# resource means everywhere else it appears. Replaced with two
+	# tracked variables on the title itself (not the character --
+	# d_kehillah_worms IS the community, same principle as the building-
+	# continuity system), kehillah_var_stability and
+	# kehillah_var_greatness -- see kehillah_quarterly_pillars_effect in
+	# common/scripted_effects/kehillah_scripted_effects.txt for the full
+	# reasoning and docs/implementation/v1-kehillah-implementation.md for
+	# the decision record. Prosperity needed no equivalent: it was
+	# always read off Gold, never off Influence.
 
 	# Keeps the community independent and un-vassalizable. This is the
 	# same code-referenced flag vanilla puts on
 	# landless_adventurer_government. Without it a host realm could
 	# absorb the Kehillah as a vassal, and the prototype would fall
 	# apart in exactly the ways Phase 4 is meant to handle on purpose.
-	flag = cannot_be_vassal_or_liege
+		cannot_be_vassal_or_liege
+	}
 
 	color = { 58 84 130 }
 }
