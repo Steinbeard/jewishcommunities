@@ -12,12 +12,18 @@ Two playable tracks, per the project vision:
   culture/religion/government systems, reflavored. Lower priority; picked up
   once Track A's baseline is proven.
 
-Phases are sequential within a track unless noted. Nothing below is
-implemented yet — this is the plan, subject to revision after each phase.
+Phases are sequential within a track unless noted. This is the plan,
+subject to revision after each phase.
+
+**Current state:** Phase 1 has a first implementation written to script
+but not yet run in the game — see
+[docs/implementation/v1-kehillah-implementation.md](docs/implementation/v1-kehillah-implementation.md),
+whose verification checklist is the immediate next piece of work.
+Everything from Phase 2 onward remains unimplemented.
 
 ## Track A — Diaspora Communities
 
-### Phase 1 — Kehillah Community Baseline (current focus)
+### Phase 1 — Kehillah Community Baseline (current focus; first iteration written, untested)
 The core non-landed government mechanic, with no historical/regional flavor
 yet: currencies (Gold, the real vanilla Influence resource), meritocratic
 **appointment** succession (the player always continues playing as the

@@ -1,0 +1,170 @@
+# =====================================================================
+# Kehillah on_actions.
+#
+# Every vanilla on_action touched here is extended using the pattern
+# Paradox documents in common/on_action/_on_actions.info:
+#
+#   "you cannot append an effect block directly to an on_action which
+#    already has an effect block, as this creates a conflict. If a
+#    modder wishes to append their own effects to an on_action without
+#    overriding a file, they may do it as follows:
+#      some_vanilla_on_action = { on_actions = { some_modded_on_action } }
+#      some_modded_on_action = { effect = { ... } }"
+#
+# All three vanilla on_actions below already carry effect blocks, so the
+# indirection is required, not stylistic. No vanilla file is overridden
+# and no vanilla effect is displaced.
+# =====================================================================
+
+
+# ---------------------------------------------------------------------
+# GAME START -- establish the Worms 1066 starting state.
+# ---------------------------------------------------------------------
+
+on_game_start_after_lobby = {
+	on_actions = { kehillah_on_game_start }
+}
+
+kehillah_on_game_start = {
+	effect = {
+		title:d_kehillah_worms ?= {
+			holder ?= {
+				kehillah_setup_worms_start_effect = yes
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# TITLE GAIN -- the estate continuity fix (spec section 5).
+#
+# root = the character who gained the title
+# scope:title = the title gained
+#
+# When a new leader is appointed, rebuild the community's quarter on
+# their domicile from the state mirrored on the title. Without this the
+# successor inherits an empty lot and the community's entire building
+# history is lost, because CK3 domiciles are owned per character rather
+# than per title.
+# ---------------------------------------------------------------------
+
+on_title_gain = {
+	on_actions = { kehillah_on_title_gain }
+}
+
+kehillah_on_title_gain = {
+	trigger = {
+		scope:title = {
+			is_kehillah_title_trigger = yes
+		}
+	}
+	effect = {
+		scope:title = { save_scope_as = kq_title }
+
+		# Make the government follow the office, explicitly.
+		#
+		# This is NOT redundant belt-and-braces. Government type in CK3
+		# is a property of the character, not of the title, and there is
+		# no government rule that reliably hands a custom government to
+		# an appointed successor who was previously an ordinary courtier
+		# with no government at all. If this line is missing and the
+		# engine does not propagate it on its own, the new leader holds
+		# the Kehillah title while being mechanically something else --
+		# no quarter, no Influence, no officers, and no way back.
+		#
+		# Setting it here means the rule is simply: whoever holds this
+		# title leads a Kehillah. Which is what the title means.
+		if = {
+			limit = {
+				NOT = { government_has_flag = government_is_kehillah }
+			}
+			change_government = kehillah_government
+		}
+
+		# Rebuild the community's quarter. Deliberately ordered AFTER
+		# change_government, because changing government is what creates
+		# the new leader's domicile in the first place -- restoring into
+		# a domicile that does not exist yet would silently do nothing.
+		kehillah_restore_quarter_effect = yes
+
+		# A new leader takes office with the community's confidence but
+		# no personal stock of standing. Small, deliberate: the point of
+		# appointment succession is that you inherit the institution,
+		# not your predecessor's reputation.
+		change_influence = 50
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# DOMICILE BUILDING COMPLETED -- keep the title's mirror current.
+#
+# root = the domicile
+# scope:owner = the domicile's owner
+#
+# This is the write half of the continuity system. Every time the
+# community finishes a building, the title records it, so the record
+# survives the leader's death.
+# ---------------------------------------------------------------------
+
+on_domicile_building_completed = {
+	on_actions = { kehillah_on_domicile_building_completed }
+}
+
+kehillah_on_domicile_building_completed = {
+	trigger = {
+		exists = scope:owner
+		scope:owner = {
+			government_has_flag = government_is_kehillah
+		}
+	}
+	effect = {
+		scope:owner = {
+			kehillah_record_quarter_effect = yes
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# YEARLY PULSE -- the light protection layer (spec section 3b).
+#
+# root = the character
+#
+# Hooked to random_yearly_playable_pulse rather than to on_yearly_events
+# for two reasons. It is the point where vanilla fans out to all its
+# themed yearly pools, so it is the natural place to add another one.
+# And unlike on_yearly_events it carries no random_events block of its
+# own that ours would sit alongside -- our events get their own roll
+# rather than competing for a slot in vanilla's pool, which matters
+# because a Kehillah leader is excluded from most vanilla yearly
+# content anyway and would otherwise have very quiet decades.
+#
+# chance_to_happen is deliberately modest. These are occasional
+# incidents. A community harassed every single year is a different,
+# much darker game than v1 is trying to be.
+# ---------------------------------------------------------------------
+
+random_yearly_playable_pulse = {
+	on_actions = { kehillah_yearly_pulse }
+}
+
+kehillah_yearly_pulse = {
+	trigger = {
+		government_has_flag = government_is_kehillah
+		is_adult = yes
+		is_imprisoned = no
+	}
+	random_events = {
+		chance_to_happen = 30
+
+		# A meaningful chance of a quiet year even when the roll
+		# happens. Most years, nothing happens to you.
+		100 = 0
+
+		40 = kehillah.0001	# The Bailiff's Demand
+		30 = kehillah.0002	# An Ugly Rumour
+		30 = kehillah.0003	# Stones in the Night
+	}
+}

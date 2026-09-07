@@ -1,0 +1,169 @@
+# =====================================================================
+# Kehillah government -- Phase 1, Track A.
+#
+# Source of truth: docs/spec/v1-kehillah-community.md (sections 2, 3, 6)
+# and docs/scenarios/worms-1066.md.
+#
+# ---------------------------------------------------------------------
+# DESIGN DEVIATION FROM SPEC SECTION 6 -- READ BEFORE CHANGING.
+#
+# The spec proposes modelling the Kehillah on the *administrative*
+# pattern: a landless title held as a VASSAL inside the host realm.
+# This implementation makes the Kehillah leader an INDEPENDENT landless
+# ruler instead. Reason, checked against the installed 1.19 files:
+#
+#   - common/governments/_governments.info documents the "administrative"
+#     government rule as the thing that lets a top liege "have landless
+#     vassal who are house heads of noble families". Landless vassalage
+#     is tied to the LIEGE having administrative government. In the
+#     Worms 1066 scenario the host is Bishop Siegfried, a theocratic
+#     vassal of the feudal HRE -- not an administrative realm. The
+#     vassal route would therefore require either converting the HRE to
+#     administrative government, or setting administrative = yes here,
+#     which needs the admin_gov DLC flag and drags in the whole
+#     Byzantine mechanic set the spec explicitly does not want.
+#
+#   - The independent route has direct vanilla precedent for the one
+#     thing the spec actually needs from it: acclamation_succession_law
+#     in common/laws/00_succession_laws.txt uses
+#     order_of_succession = appointment together with
+#     is_independent_ruler = yes. Appointment succession therefore
+#     demonstrably works WITHOUT a liege doing the appointing, which is
+#     what spec section 5 requires.
+#
+# Consequence: in v1 the host-realm relationship is flavor only (spec
+# section 3b's light protection events), which is exactly the scope the
+# spec assigns to v1 anyway -- the real host system is Phase 4. Revisit
+# when Phase 4 lands, or if the "By God Alone" ecclesiastical titles
+# noted in ROADMAP.md turn out to be a better substrate.
+# ---------------------------------------------------------------------
+#
+# NOT YET VERIFIED IN A RUNNING GAME. See
+# docs/implementation/v1-kehillah-implementation.md for everything that
+# still needs a playtest to confirm.
+# =====================================================================
+
+kehillah_government = {
+	government_rules = {
+		# Landless and playable -- the whole point. Requires the
+		# landless_playable DLC feature (Roads to Power), same as the
+		# adventurer and administrative governments.
+		landless_playable = yes
+
+		# The community leader is a real person with a lineage, and
+		# notable families matter (spec section 3, step 5).
+		rulers_should_have_dynasty = yes
+
+		# ...but the community is not a dynastic possession. Leadership
+		# passes by appointment on merit (spec section 5), so no cadet
+		# branches and no dynasty-named realms: the Kehillah of Worms
+		# is never "the HaLevi Realm".
+		create_cadet_branches = no
+		dynasty_named_realms = no
+
+		# No council. Landless rulers have no counties for councillor
+		# tasks to act on, and vanilla's own landless government
+		# (landless_adventurer) disables it for the same reason. The
+		# community's officers are court positions instead -- see
+		# common/court_positions/types/kehillah_officers.txt. Those
+		# officers also form part of the succession candidate pool,
+		# which is what makes "the Shtadlan succeeds the old rabbi" a
+		# real outcome.
+		council = no
+
+		# No royal court: that is a landed, high-tier feature.
+		royal_court = no
+
+		# Not a dynastic government. This blocks Kehillah leaders from
+		# inheriting feudal or clan realms sideways, which would
+		# instantly break the premise.
+		inherit_from_dynastic_government = no
+		use_as_base_on_landed = no
+		use_as_base_on_rank_up = no
+
+		# No passive prestige from title tier -- a Kehillah is not a
+		# duchy in any meaningful sense, it only borrows the tier.
+		use_title_tier_modifiers = no
+
+		# Legitimacy is an administrative/feudal framing that does not
+		# fit communal appointment.
+		legitimacy = no
+
+		# The community has no standing army and pays no MaA upkeep.
+		use_maa_maintenance = no
+
+		# Spouses still generate normally -- family life is a live part
+		# of the fantasy.
+		court_generate_spouses = yes
+	}
+
+	domicile_type = kehillah_quarter
+
+	# Deliberately NOT a fallback government. Nothing should land in
+	# this government type by accident; it is only ever assigned
+	# explicitly, via title history today and via a found-a-community
+	# decision in a later phase.
+
+	can_get_government = {
+		any_held_title = {
+			tier = tier_duchy
+			is_landless_type_title = yes
+		}
+	}
+
+	# Only relevant if a Kehillah ever ends up holding a holding, which
+	# v1 never does. Listed so the game has a sane answer rather than
+	# none.
+	valid_holdings = { city_holding }
+
+	court_generate_commanders = no
+
+	character_modifier = {
+		# A diaspora community is not a military power (spec section 3,
+		# the "Martial is deliberately not a full pillar" note).
+		levy_size = -1
+		men_at_arms_cap = -10
+		men_at_arms_limit = -10
+		knight_limit = -10
+		active_accolades = -100
+
+		# Competence and knowledge, not scheming (spec section 2).
+		# These two lines are the mechanical statement of the player
+		# fantasy.
+		monthly_learning_lifestyle_xp_gain_mult = 0.15
+		monthly_stewardship_lifestyle_xp_gain_mult = 0.15
+
+		# Leadership turns over by appointment and elder sages get
+		# appointed late in life, so reigns are often short. Soften the
+		# short-reign penalty rather than punishing normal play.
+		short_reign_duration_mult = -0.5
+	}
+
+	ai = {
+		use_goals = no
+		use_legends = no
+		perform_religious_reformation = no
+	}
+
+	# Use flags rather than has_government where possible, per vanilla's
+	# own guidance in 00_government_types.txt.
+	flag = government_is_kehillah
+
+	# Enables the real vanilla Influence resource in the UI. Confirmed
+	# in 00_government_types.txt: administrative_government sets exactly
+	# this flag, and its comment marks it as existing "for loc and
+	# in-game descriptions" -- a presentation flag, not an admin-only
+	# gate. Spec section 4's residual risk is whether change_influence
+	# and the influence cost scope actually FUNCTION off administrative
+	# government; that still needs a playtest.
+	flag = government_has_influence
+
+	# Keeps the community independent and un-vassalizable. This is the
+	# same code-referenced flag vanilla puts on
+	# landless_adventurer_government. Without it a host realm could
+	# absorb the Kehillah as a vassal, and the prototype would fall
+	# apart in exactly the ways Phase 4 is meant to handle on purpose.
+	flag = cannot_be_vassal_or_liege
+
+	color = { 58 84 130 }
+}

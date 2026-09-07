@@ -1,0 +1,284 @@
+# =====================================================================
+# Kehillah decisions -- the v1 minimal set.
+#
+# Source of truth: docs/spec/v1-kehillah-community.md section 3 and
+# section 7, question 4.
+#
+# The spec proposed "starting minimal (fund a Synagogue-quarter
+# building, appoint each of the three officers, mediate a family
+# dispute) and growing from there rather than designing the full
+# decision list up front". This file follows that, with one adjustment
+# worth stating plainly:
+#
+#   - "Fund a Synagogue-quarter building" is NOT a decision here. The
+#     domicile window already is that interface -- picking a building,
+#     paying for it and watching it go up. Wrapping the same action in
+#     a decision would be a second, worse door onto the same room.
+#   - "Appoint each of the three officers" is likewise not a decision.
+#     Court positions have their own vanilla appointment UI, and that is
+#     where the building gate is enforced (see
+#     common/court_positions/types/kehillah_officers.txt).
+#
+# That leaves the decisions that genuinely have no home elsewhere. One
+# per remaining pillar:
+#
+#   Steward  -> Mediate a Dispute Between Families
+#   Prosper  -> Distribute Tzedakah
+#   Study    -> Compose a Commentary
+#
+# Protect has no decision by design: it is reactive, and lives in
+# events/kehillah_protection_events.txt.
+#
+# Two of these three come straight from the spec. Distribute Tzedakah is
+# pulled up from ROADMAP.md's "cheap, reinforces an existing v1 pillar"
+# backlog list, which explicitly flags it as a Phase 1 candidate. That
+# is a scope addition, small and deliberate: without it the Gold-to-
+# Influence conversion the currency design depends on has no manual
+# lever at all.
+# =====================================================================
+
+
+# =====================================================================
+# STEWARD -- MEDIATE A DISPUTE BETWEEN FAMILIES
+#
+# Spec section 3: "Decisions like mediating family disputes or funding
+# charity succeed on competence/standing. This is the main visible break
+# from Byzantine-office flavor -- no scheme system."
+#
+# Accordingly this resolves on Stewardship and costs Influence. There is
+# no plot, no secrecy, no target to be caught by. You are the person the
+# community trusts to settle things, and you either are good at it or
+# you are not.
+# =====================================================================
+
+kehillah_mediate_dispute_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/fp2_decision_struggle_compromise.dds"
+	}
+
+	decision_group_type = kehillah
+	sort_order = 100
+	ai_check_frequency = 36
+
+	is_shown = {
+		government_has_flag = government_is_kehillah
+	}
+
+	is_valid = {
+		is_adult = yes
+		is_imprisoned = no
+	}
+
+	cost = {
+		influence = kehillah_mediation_influence_cost
+	}
+
+	cooldown = { years = 3 }
+
+	effect = {
+		# Outcome scales on Stewardship. The thresholds are wide on
+		# purpose: at low Stewardship this should feel like a gamble
+		# that mostly does not pay, and improving the skill should
+		# visibly fix that.
+		if = {
+			limit = { stewardship >= 14 }
+			add_prestige = major_prestige_gain
+			change_influence = medium_influence_gain
+			add_character_modifier = {
+				modifier = kehillah_settled_dispute_modifier
+				years = 5
+			}
+			custom_tooltip = kehillah_mediate_dispute_great_tt
+		}
+		else_if = {
+			limit = { stewardship >= 8 }
+			add_prestige = medium_prestige_gain
+			change_influence = minor_influence_gain
+			add_character_modifier = {
+				modifier = kehillah_settled_dispute_modifier
+				years = 3
+			}
+			custom_tooltip = kehillah_mediate_dispute_good_tt
+		}
+		else = {
+			# The Influence is spent either way. Botching a mediation
+			# in front of the whole community is the actual risk, and
+			# it should sting.
+			add_prestige = minor_prestige_loss
+			add_stress = medium_stress_gain
+			custom_tooltip = kehillah_mediate_dispute_poor_tt
+		}
+	}
+
+	ai_potential = {
+		government_has_flag = government_is_kehillah
+	}
+
+	ai_will_do = {
+		value = 60
+		if = {
+			limit = { stewardship < 8 }
+			multiply = 0.2
+		}
+	}
+}
+
+
+# =====================================================================
+# PROSPER -- DISTRIBUTE TZEDAKAH
+#
+# Gold into Influence, plus contentment. The community's obligation to
+# its poor, which is also, straightforwardly, how a communal leader
+# builds standing.
+#
+# This is the manual counterpart to the passive Influence the quarter's
+# buildings generate: it lets a cash-rich, standing-poor leader convert,
+# which matters a great deal right after an appointment (a new leader
+# inherits the treasury but not their predecessor's reputation).
+# =====================================================================
+
+kehillah_distribute_tzedakah_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_spend_money.dds"
+	}
+
+	decision_group_type = kehillah
+	sort_order = 90
+	ai_check_frequency = 24
+
+	is_shown = {
+		government_has_flag = government_is_kehillah
+	}
+
+	is_valid = {
+		is_adult = yes
+		is_imprisoned = no
+	}
+
+	cost = {
+		gold = kehillah_tzedakah_gold_cost
+	}
+
+	cooldown = { years = 2 }
+
+	effect = {
+		change_influence = kehillah_tzedakah_influence_gain
+		add_piety = medium_piety_gain
+
+		add_character_modifier = {
+			modifier = kehillah_tzedakah_modifier
+			years = 3
+		}
+
+		custom_tooltip = kehillah_distribute_tzedakah_tt
+	}
+
+	ai_potential = {
+		government_has_flag = government_is_kehillah
+	}
+
+	ai_will_do = {
+		value = 50
+		if = {
+			limit = { gold < 100 }
+			multiply = 0
+		}
+	}
+}
+
+
+# =====================================================================
+# STUDY -- COMPOSE A COMMENTARY
+#
+# Spec section 3: "A signature 'compose a commentary' decision can
+# produce an artifact at high Learning."
+#
+# Structure: always costs Piety and time, always yields Influence and
+# Learning experience. The artifact is the high end, and it requires
+# BOTH high Learning and a full yeshiva (Beit Midrash tier 3) -- a
+# lasting work of scholarship should require the institution as well as
+# the man, which is the whole thesis of the building system.
+#
+# The artifact branch is gated on the Royal Court DLC, because that is
+# what vanilla's create_artifact_book_effect belongs to. Without it the
+# decision still works and still rewards; you simply do not get a
+# physical book out of it. That degradation is deliberate -- the Study
+# pillar must not be dead content for players who own Roads to Power but
+# not Royal Court.
+# =====================================================================
+
+kehillah_compose_commentary_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_tale.dds"
+	}
+
+	decision_group_type = kehillah
+	sort_order = 95
+	ai_check_frequency = 60
+
+	is_shown = {
+		government_has_flag = government_is_kehillah
+	}
+
+	is_valid = {
+		is_adult = yes
+		is_imprisoned = no
+		custom_tooltip = {
+			text = kehillah_requires_learning_8_tt
+			learning >= 8
+		}
+	}
+
+	cost = {
+		piety = kehillah_commentary_piety_cost
+	}
+
+	cooldown = { years = 10 }
+
+	effect = {
+		add_learning_lifestyle_xp = major_lifestyle_xp
+		change_influence = major_influence_gain
+		add_prestige = medium_prestige_gain
+
+		# The lasting work. Learning AND the institution behind it.
+		if = {
+			limit = {
+				learning >= 16
+				domicile ?= { has_domicile_parameter = kehillah_has_yeshiva }
+			}
+			add_piety = major_piety_gain
+
+			if = {
+				limit = { has_ep1_dlc_trigger = yes }
+				create_artifact_book_effect = {
+					OWNER = root
+					CREATOR = root
+					SET_SUBJECT = flag:no
+					SET_TOPIC = flag:no
+				}
+				scope:newly_created_artifact ?= {
+					set_artifact_description = kehillah_commentary_artifact_desc
+					set_artifact_rarity = illustrious
+					set_owner = root
+				}
+				custom_tooltip = kehillah_compose_commentary_masterwork_tt
+			}
+			else = {
+				# No Royal Court: same standing, no object.
+				add_prestige = major_prestige_gain
+				custom_tooltip = kehillah_compose_commentary_masterwork_no_dlc_tt
+			}
+		}
+		else = {
+			custom_tooltip = kehillah_compose_commentary_ordinary_tt
+		}
+	}
+
+	ai_potential = {
+		government_has_flag = government_is_kehillah
+	}
+
+	ai_will_do = {
+		value = 70
+	}
+}

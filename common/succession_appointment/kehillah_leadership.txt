@@ -1,0 +1,303 @@
+# =====================================================================
+# Kehillah leadership -- meritocratic appointment succession.
+#
+# Source of truth: docs/spec/v1-kehillah-community.md section 5.
+#
+# Forked in STRUCTURE from vanilla's admin_governor, but the scoring is
+# written from scratch. Vanilla's governor score is a flat sum of all
+# five skills plus a long tail of administrative, claim, war and scheme
+# modifiers. None of that belongs here: the whole point of spec
+# section 2 is that Kehillah leadership rewards competence and Torah
+# knowledge, not court manoeuvring.
+#
+# WHY THE POOL LOOKS LIKE THIS. The spec wants an open pool -- notable
+# family heads, not just the outgoing leader's kin. Vanilla's open
+# categories for that (unlanded_noble_house_head, landed_vassal) are
+# administrative-government constructs and are empty for an independent
+# landless Kehillah, so they would silently contribute nobody. The
+# categories below are the ones that actually contain people in this
+# government:
+#
+#   - holder_close_family:        the leader's own household.
+#   - holder_close_extended_family and holder_house_member: the wider
+#                                 family, i.e. one notable family.
+#   - holder_court_position:      THE IMPORTANT ONE. The Chief Rabbi,
+#                                 the Treasurer and the Shtadlan are
+#                                 court positions in this mod (see
+#                                 common/court_positions/types/
+#                                 kehillah_officers.txt), and they are
+#                                 routinely unrelated to the leader.
+#                                 This is what makes "the Shtadlan
+#                                 succeeds the old rabbi" a real
+#                                 outcome and delivers the open,
+#                                 beyond-the-bloodline pool the spec
+#                                 asks for.
+#
+# The consequence spec section 5 predicts holds: because the player
+# always continues as whoever is appointed, the strategic question stops
+# being "keep my bloodline in charge" and becomes "keep the pool and its
+# scoring inputs strong" -- appoint able officers, since those officers
+# are who you will be playing next.
+# =====================================================================
+
+kehillah_leadership = {
+	default_candidates = { holder_close_family }
+	invested_candidates = { holder_close_extended_family holder_house_member holder_court_position }
+
+	# Communal leadership is not a child's office. A minor cannot lead a
+	# congregation, and unlike vanilla's admin_emperor there is no realm
+	# to hold together under a regency, so there is no reason to allow
+	# it.
+	allow_children = no
+
+	candidate_score = {
+		value = {
+			# -----------------------------------------------------
+			# THE MERIT CORE (spec section 5: Learning, Influence
+			# standing, dynasty prestige).
+			#
+			# Learning is weighted heaviest and Stewardship second.
+			# Diplomacy contributes at half rate for the Shtadlan
+			# path. Martial and Intrigue contribute NOTHING -- that
+			# absence is the design, not an oversight. A gifted
+			# schemer has no claim on this office.
+			# -----------------------------------------------------
+			add = {
+				value = learning
+				multiply = 3
+				desc = kehillah_score_learning_desc
+			}
+
+			add = {
+				value = stewardship
+				multiply = 2
+				desc = kehillah_score_stewardship_desc
+			}
+
+			add = {
+				value = diplomacy
+				multiply = 0.5
+				desc = kehillah_score_diplomacy_desc
+			}
+
+			# -----------------------------------------------------
+			# STANDING IN THE COMMUNITY
+			# -----------------------------------------------------
+
+			# Influence: the community's own political capital.
+			if = {
+				limit = { influence_level >= 2 }
+				add = {
+					value = 8
+					multiply = {
+						value = influence_level
+						subtract = 1
+					}
+					desc = kehillah_score_influence_desc
+				}
+			}
+			if = {
+				limit = { influence_level = 0 }
+				subtract = {
+					value = 10
+					desc = kehillah_score_no_influence_desc
+				}
+			}
+
+			# Holding one of the community offices is the single
+			# strongest non-skill signal. You earned a seat; the
+			# congregation has watched you work.
+			if = {
+				limit = {
+					scope:title.holder ?= {
+						any_court_position_holder ?= { this = root }
+					}
+				}
+				add = {
+					value = 25
+					desc = kehillah_score_officer_desc
+				}
+			}
+
+			# Piety, as visible religious standing. Modest weight:
+			# this is a learned office, not a saintly one.
+			if = {
+				limit = { piety_level >= 2 }
+				add = {
+					value = {
+						value = piety_level
+						multiply = 4
+					}
+					desc = kehillah_score_piety_desc
+				}
+			}
+
+			# Dynasty prestige, per spec section 5. Kept deliberately
+			# small next to Learning: lineage counts for something,
+			# but it must never outweigh scholarship, or the whole
+			# meritocratic premise collapses back into ordinary CK3
+			# dynasty play.
+			if = {
+				limit = { exists = dynasty }
+				add = {
+					value = dynasty.dynasty_prestige_level
+					multiply = 3
+					desc = kehillah_score_dynasty_prestige_desc
+				}
+			}
+
+			# -----------------------------------------------------
+			# AGE AND EXPERIENCE
+			#
+			# Real communal leadership skewed old, and the Worms
+			# scenario leans on that explicitly (scenario doc
+			# section 3 picks an older birth year so the documented
+			# ~1070 death reads as an elder's natural end). Reward
+			# maturity, then taper: the very old are revered but
+			# increasingly unable to serve.
+			# -----------------------------------------------------
+			if = {
+				limit = { age >= 35 }
+				add = {
+					value = 10
+					desc = kehillah_score_mature_desc
+				}
+			}
+			if = {
+				limit = { age >= 50 }
+				add = {
+					value = 10
+					desc = kehillah_score_elder_desc
+				}
+			}
+			if = {
+				limit = { age >= 70 }
+				subtract = {
+					value = 15
+					desc = kehillah_score_very_aged_desc
+				}
+			}
+
+			# -----------------------------------------------------
+			# TRAITS
+			# -----------------------------------------------------
+
+			# Scholarly and teacherly traits.
+			if = {
+				limit = { has_trait = theologian }
+				add = {
+					value = 15
+					desc = kehillah_score_theologian_desc
+				}
+			}
+			if = {
+				limit = { has_trait = scholar }
+				add = {
+					value = 10
+					desc = kehillah_score_scholar_desc
+				}
+			}
+
+			# Character traits the congregation weighs. These are
+			# drawn from Judaism's own listed virtue and sin traits
+			# in vanilla's common/religion/religions/00_judaism.txt,
+			# rather than a generic good-and-bad list, so the
+			# community judges by its own faith's standards.
+			if = {
+				limit = { has_trait = just }
+				add = {
+					value = 8
+					desc = kehillah_score_just_desc
+				}
+			}
+			if = {
+				limit = { has_trait = patient }
+				add = {
+					value = 6
+					desc = kehillah_score_patient_desc
+				}
+			}
+			if = {
+				limit = { has_trait = compassionate }
+				add = {
+					value = 6
+					desc = kehillah_score_compassionate_desc
+				}
+			}
+			if = {
+				limit = { has_trait = arbitrary }
+				subtract = {
+					value = 12
+					desc = kehillah_score_arbitrary_desc
+				}
+			}
+			if = {
+				limit = { has_trait = greedy }
+				subtract = {
+					value = 10
+					desc = kehillah_score_greedy_desc
+				}
+			}
+
+			# Cannot lead in practice.
+			if = {
+				limit = {
+					OR = {
+						has_trait = incapable
+						has_trait = infirm
+					}
+				}
+				subtract = {
+					value = 100
+					desc = kehillah_score_incapable_desc
+				}
+			}
+
+			# -----------------------------------------------------
+			# FAITH AND CULTURE
+			#
+			# A Kehillah leader must be of the community's faith.
+			# This is not snobbery about outsiders, it is what the
+			# office IS -- the person who rules on religious law for
+			# this congregation. A hard, very large penalty rather
+			# than an outright exclusion, so that if the pool somehow
+			# empties the game still has an answer instead of
+			# deadlocking.
+			# -----------------------------------------------------
+			if = {
+				limit = {
+					NOT = { faith = scope:title.holder.faith }
+				}
+				subtract = {
+					value = 500
+					desc = kehillah_score_wrong_faith_desc
+				}
+			}
+
+			if = {
+				limit = {
+					culture ?= scope:title.holder.culture
+				}
+				add = {
+					value = 10
+					desc = kehillah_score_same_culture_desc
+				}
+			}
+
+			# -----------------------------------------------------
+			# Personal ties to the outgoing leader. Small, and
+			# smaller than the officer bonus above, so favouritism
+			# never beats demonstrated competence.
+			# -----------------------------------------------------
+			if = {
+				limit = {
+					scope:title.holder ?= { has_relation_friend = root }
+				}
+				add = {
+					value = 5
+					desc = kehillah_score_friend_desc
+				}
+			}
+		}
+	}
+}

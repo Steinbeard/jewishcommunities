@@ -1,7 +1,19 @@
 # V1 Spec: The Kehillah Community Baseline
 
-Status: **draft — for review**. Nothing here is implemented. This is Phase 1
+Status: **spec agreed; a first implementation now exists.** This is Phase 1
 of [ROADMAP.md](../../ROADMAP.md), Track A.
+
+A first iteration of this spec has been written to script — see
+[../implementation/v1-kehillah-implementation.md](../implementation/v1-kehillah-implementation.md).
+It has **not yet been run in the game.** That doc records three places
+where the implementation departs from this spec (the Kehillah is
+independent rather than a vassal; a new domicile type rather than
+reusing `estate`; the open succession pool opens up as the quarter is
+built rather than being open from turn one), the answers it gives to §7's
+open questions, and the list of things only a playtest can settle. This
+spec has been left as written rather than retrofitted to match — where
+the two disagree, the implementation doc says so explicitly and gives
+its reasoning.
 
 ## 1. Scope
 

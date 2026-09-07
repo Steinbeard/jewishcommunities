@@ -1,0 +1,371 @@
+# =====================================================================
+# Kehillah protection events -- the light v1 layer.
+#
+# Source of truth: docs/spec/v1-kehillah-community.md section 3b.
+#
+# READ THIS BEFORE ADDING TO THIS FILE. The spec is unusually specific
+# about what these events must NOT be, and the constraints are the
+# design, not a placeholder:
+#
+#   - "no branching storylines and no existential stakes (nobody gets
+#     expelled in v1)". Every event here resolves in one step.
+#   - "No host-faith split, no counter tied to Christian/Islamic
+#     doctrine -- that nuance is entirely Phase 4's job. v1's version is
+#     generic by design so it doesn't get half-built twice." Nothing
+#     below inspects the host's religion. That restraint is the point:
+#     the moment these events start distinguishing a bishop from an
+#     emir, Phase 4 is being built badly and early.
+#   - "Whichever officer/skill you've invested in should visibly matter
+#     here, even at this light scale."
+#
+# That last line is what shapes the option structure. Every event offers
+# the same three doors from spec section 3:
+#
+#   NEGOTIATE  -- needs a Shtadlan in post. Resolves on Diplomacy.
+#   PAY        -- needs Gold. Always available if you can afford it.
+#   STAND FIRM -- needs the Communal Watch. Resolves on Martial.
+#
+# The negotiate and stand-firm options are hidden, not merely disabled,
+# when you lack the officer or the building. A community without an
+# advocate does not get to choose advocacy. That is the mechanic making
+# the argument the building system exists to make.
+#
+# There is always a fourth door -- endure it -- so the player is never
+# trapped with no legal option. It is always the worst outcome.
+#
+# TONE NOTE. These are written as ordinary municipal friction of the
+# kind any medieval urban community faced: a grasping official, a
+# rumour, drunk youths. They are deliberately NOT written as pogrom
+# foreshadowing. The Rhineland massacres of 1096 sit thirty years after
+# this scenario's start and are Phase 4/5 material, handled with the
+# weight they deserve, not gestured at in yearly flavor events.
+# =====================================================================
+
+namespace = kehillah
+
+
+# ---------------------------------------------------------------------
+# kehillah.0001 -- THE BAILIFF'S DEMAND
+# A shakedown by a local official. The classic case.
+# ---------------------------------------------------------------------
+
+kehillah.0001 = {
+	type = character_event
+	title = kehillah.0001.t
+	desc = kehillah.0001.desc
+	theme = realm
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+		is_adult = yes
+		is_imprisoned = no
+	}
+
+	immediate = {
+		save_scope_value_as = {
+			name = shakedown_cost
+			value = kehillah_shakedown_gold_cost
+		}
+	}
+
+	# NEGOTIATE -- the Shtadlan earns his salary.
+	option = {
+		name = kehillah.0001.a
+		trigger = {
+			kehillah_has_shtadlan_trigger = yes
+		}
+
+		# Resolves on the LEADER's Diplomacy rather than the Shtadlan's.
+		# You are the one who decides how far to let him go, and you
+		# wear the result. Holding the office is the gate; the skill
+		# check is still yours.
+		if = {
+			limit = { kehillah_shtadlan_prevails_trigger = { THRESHOLD = 12 } }
+			change_influence = medium_influence_gain
+			add_character_modifier = {
+				modifier = kehillah_emboldened_community_modifier
+				years = 3
+			}
+			custom_tooltip = kehillah.0001.a.success.tt
+		}
+		else = {
+			# Half measure: it costs something, but far less than
+			# paying the full demand.
+			remove_short_term_gold = {
+				value = scope:shakedown_cost
+				multiply = 0.4
+			}
+			custom_tooltip = kehillah.0001.a.partial.tt
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	# PAY -- the reliable, unglamorous answer.
+	option = {
+		name = kehillah.0001.b
+		trigger = {
+			gold >= scope:shakedown_cost
+		}
+
+		remove_short_term_gold = scope:shakedown_cost
+		add_prestige = minor_prestige_loss
+
+		custom_tooltip = kehillah.0001.b.tt
+
+		ai_chance = {
+			base = 60
+		}
+	}
+
+	# STAND FIRM -- the watch makes the demand more trouble than it is
+	# worth.
+	option = {
+		name = kehillah.0001.c
+		trigger = {
+			kehillah_has_watch_trigger = yes
+		}
+
+		if = {
+			limit = { kehillah_watch_prevails_trigger = { THRESHOLD = 10 } }
+			add_prestige = medium_prestige_gain
+			add_character_modifier = {
+				modifier = kehillah_emboldened_community_modifier
+				years = 2
+			}
+			custom_tooltip = kehillah.0001.c.success.tt
+		}
+		else = {
+			# Standing firm without the martial standing to back it is
+			# how a small problem becomes a larger one.
+			add_stress = minor_stress_gain
+			add_character_modifier = {
+				modifier = kehillah_shaken_community_modifier
+				years = 2
+			}
+			custom_tooltip = kehillah.0001.c.failure.tt
+		}
+
+		ai_chance = {
+			base = 40
+		}
+	}
+
+	# ENDURE -- always available, always worst.
+	option = {
+		name = kehillah.0001.d
+
+		add_character_modifier = {
+			modifier = kehillah_shaken_community_modifier
+			years = 3
+		}
+		change_influence = minor_influence_loss
+
+		custom_tooltip = kehillah.0001.d.tt
+
+		ai_chance = {
+			base = 10
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah.0002 -- AN UGLY RUMOUR
+# An accusation with nothing behind it. Answered with words or waited
+# out; there is nothing here to pay off or to fight.
+# ---------------------------------------------------------------------
+
+kehillah.0002 = {
+	type = character_event
+	title = kehillah.0002.t
+	desc = kehillah.0002.desc
+	theme = dread
+
+	left_portrait = {
+		character = root
+		animation = paranoia
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+		is_adult = yes
+		is_imprisoned = no
+	}
+
+	# SPEAK TO IT -- the Shtadlan goes and puts the case.
+	option = {
+		name = kehillah.0002.a
+		trigger = {
+			kehillah_has_shtadlan_trigger = yes
+		}
+
+		if = {
+			limit = { kehillah_shtadlan_prevails_trigger = { THRESHOLD = 10 } }
+			change_influence = medium_influence_gain
+			add_prestige = minor_prestige_gain
+			custom_tooltip = kehillah.0002.a.success.tt
+		}
+		else = {
+			custom_tooltip = kehillah.0002.a.partial.tt
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	# QUIET GENEROSITY -- spend to make the story uninteresting. Note
+	# this is a smaller sum than the bailiff's demand: you are buying
+	# goodwill, not paying a toll.
+	option = {
+		name = kehillah.0002.b
+		trigger = {
+			gold >= 30
+		}
+
+		remove_short_term_gold = 30
+		add_piety = minor_piety_gain
+
+		custom_tooltip = kehillah.0002.b.tt
+
+		ai_chance = {
+			base = 50
+		}
+	}
+
+	# SAY NOTHING. Rumours mostly do burn out, and answering one can
+	# feed it -- so this is the least bad of the free options, and
+	# unlike enduring the bailiff it is a defensible choice rather than
+	# simply a failure.
+	option = {
+		name = kehillah.0002.c
+
+		if = {
+			limit = { learning >= 12 }
+			# Judgement about when NOT to act is a form of competence.
+			custom_tooltip = kehillah.0002.c.wise.tt
+		}
+		else = {
+			add_character_modifier = {
+				modifier = kehillah_shaken_community_modifier
+				years = 2
+			}
+			custom_tooltip = kehillah.0002.c.tt
+		}
+
+		ai_chance = {
+			base = 40
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah.0003 -- STONES IN THE NIGHT
+# Vandalism. Property damage and rattled nerves, nothing worse.
+# ---------------------------------------------------------------------
+
+kehillah.0003 = {
+	type = character_event
+	title = kehillah.0003.t
+	desc = kehillah.0003.desc
+	theme = martial
+
+	left_portrait = {
+		character = root
+		animation = anger
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+		is_adult = yes
+		is_imprisoned = no
+	}
+
+	# SET THE WATCH -- what the Communal Watch is for.
+	option = {
+		name = kehillah.0003.a
+		trigger = {
+			kehillah_has_watch_trigger = yes
+		}
+
+		if = {
+			limit = { kehillah_watch_prevails_trigger = { THRESHOLD = 8 } }
+			add_prestige = medium_prestige_gain
+			add_character_modifier = {
+				modifier = kehillah_emboldened_community_modifier
+				years = 3
+			}
+			custom_tooltip = kehillah.0003.a.success.tt
+		}
+		else = {
+			add_prestige = minor_prestige_gain
+			custom_tooltip = kehillah.0003.a.partial.tt
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	# TAKE IT TO THE AUTHORITIES -- the Shtadlan's other job.
+	option = {
+		name = kehillah.0003.b
+		trigger = {
+			kehillah_has_shtadlan_trigger = yes
+		}
+
+		if = {
+			limit = { kehillah_shtadlan_prevails_trigger = { THRESHOLD = 10 } }
+			change_influence = minor_influence_gain
+			custom_tooltip = kehillah.0003.b.success.tt
+		}
+		else = {
+			custom_tooltip = kehillah.0003.b.partial.tt
+		}
+
+		ai_chance = {
+			base = 70
+		}
+	}
+
+	# REPAIR AND CARRY ON. Costs gold, restores nothing but the wall --
+	# and the community's sense that damage gets fixed.
+	option = {
+		name = kehillah.0003.c
+		trigger = {
+			gold >= 25
+		}
+
+		remove_short_term_gold = 25
+		custom_tooltip = kehillah.0003.c.tt
+
+		ai_chance = {
+			base = 50
+		}
+	}
+
+	# LEAVE IT.
+	option = {
+		name = kehillah.0003.d
+
+		add_character_modifier = {
+			modifier = kehillah_shaken_community_modifier
+			years = 2
+		}
+
+		custom_tooltip = kehillah.0003.d.tt
+
+		ai_chance = {
+			base = 10
+		}
+	}
+}

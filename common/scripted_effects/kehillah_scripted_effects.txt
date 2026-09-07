@@ -1,0 +1,479 @@
+# =====================================================================
+# Kehillah scripted effects.
+#
+# Source of truth: docs/spec/v1-kehillah-community.md sections 3c and 5.
+#
+# ---------------------------------------------------------------------
+# THE ESTATE CONTINUITY FIX (spec section 5, "Estate continuity fix")
+#
+# The problem, confirmed by reading vanilla's own
+# change_to_administrative_effect and set_up_domicile_estate_effect:
+# domiciles are owned PER CHARACTER, not per title. When a Kehillah
+# leader dies, the appointed successor would normally receive a fresh,
+# empty, culture-seeded quarter -- and three generations of Synagogue
+# construction would evaporate. That is obviously wrong: the synagogue
+# belongs to the congregation, not to whoever last held the keys.
+#
+# The spec calls for copying the outgoing leader's buildings onto the
+# incoming leader's domicile. This implementation does that indirectly,
+# via the TITLE, and the indirection is deliberate:
+#
+#   - on_title_gain does expose scope:previous_holder, but vanilla's own
+#     comment on it reads "Might be dead". A dead character is not a
+#     reliable place to read a live domicile from.
+#   - So instead the quarter's state is mirrored onto the Kehillah title
+#     every time a building completes. The title always knows what the
+#     community has built, independent of who is alive.
+#
+# The title is also the conceptually right home for this. The buildings
+# are the community's, and the title IS the community.
+#
+# Because spec section 5 opens the candidate pool beyond the outgoing
+# leader's family, this matters more than it would under bloodline
+# succession, not less -- leadership can now pass to someone with no
+# family connection to their predecessor at all.
+# ---------------------------------------------------------------------
+#
+# The per-track helpers below exist because CK3 offers no "iterate every
+# building in this domicile" list. Vanilla solves the same problem the
+# same way, by enumerating building families explicitly (see
+# destroy_random_estate_building_effect). Adding a new building family
+# means adding it here too -- there is no way around that, so it is
+# called out rather than hidden.
+# =====================================================================
+
+
+# ---------------------------------------------------------------------
+# Recording helpers. Scope: the domicile. Requires scope:kq_title.
+# Checks tiers high to low and stores the reached tier as a number.
+# ---------------------------------------------------------------------
+
+kehillah_record_track_2_effect = {
+	if = {
+		limit = { has_domicile_building = $B2$ }
+		scope:kq_title = { set_variable = { name = $VAR$ value = 2 } }
+	}
+	else_if = {
+		limit = { has_domicile_building = $B1$ }
+		scope:kq_title = { set_variable = { name = $VAR$ value = 1 } }
+	}
+}
+
+kehillah_record_track_3_effect = {
+	if = {
+		limit = { has_domicile_building = $B3$ }
+		scope:kq_title = { set_variable = { name = $VAR$ value = 3 } }
+	}
+	else_if = {
+		limit = { has_domicile_building = $B2$ }
+		scope:kq_title = { set_variable = { name = $VAR$ value = 2 } }
+	}
+	else_if = {
+		limit = { has_domicile_building = $B1$ }
+		scope:kq_title = { set_variable = { name = $VAR$ value = 1 } }
+	}
+}
+
+kehillah_record_track_5_effect = {
+	if = {
+		limit = { has_domicile_building = $B5$ }
+		scope:kq_title = { set_variable = { name = $VAR$ value = 5 } }
+	}
+	else_if = {
+		limit = { has_domicile_building = $B4$ }
+		scope:kq_title = { set_variable = { name = $VAR$ value = 4 } }
+	}
+	else_if = {
+		limit = { has_domicile_building = $B3$ }
+		scope:kq_title = { set_variable = { name = $VAR$ value = 3 } }
+	}
+	else_if = {
+		limit = { has_domicile_building = $B2$ }
+		scope:kq_title = { set_variable = { name = $VAR$ value = 2 } }
+	}
+	else_if = {
+		limit = { has_domicile_building = $B1$ }
+		scope:kq_title = { set_variable = { name = $VAR$ value = 1 } }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# Restoring helpers. Scope: the domicile. Requires scope:kq_title.
+# Buildings are added in ascending tier order so each upgrade has its
+# previous_building already in place.
+# ---------------------------------------------------------------------
+
+kehillah_restore_track_2_effect = {
+	if = {
+		limit = {
+			scope:kq_title = { exists = var:$VAR$ }
+			NOT = { has_domicile_building_or_higher = $B1$ }
+		}
+		add_domicile_building = $B1$
+	}
+	if = {
+		limit = {
+			scope:kq_title = { var:$VAR$ >= 2 }
+			NOT = { has_domicile_building_or_higher = $B2$ }
+		}
+		add_domicile_building = $B2$
+	}
+}
+
+kehillah_restore_track_3_effect = {
+	if = {
+		limit = {
+			scope:kq_title = { exists = var:$VAR$ }
+			NOT = { has_domicile_building_or_higher = $B1$ }
+		}
+		add_domicile_building = $B1$
+	}
+	if = {
+		limit = {
+			scope:kq_title = { var:$VAR$ >= 2 }
+			NOT = { has_domicile_building_or_higher = $B2$ }
+		}
+		add_domicile_building = $B2$
+	}
+	if = {
+		limit = {
+			scope:kq_title = { var:$VAR$ >= 3 }
+			NOT = { has_domicile_building_or_higher = $B3$ }
+		}
+		add_domicile_building = $B3$
+	}
+}
+
+kehillah_restore_track_5_effect = {
+	if = {
+		limit = {
+			scope:kq_title = { exists = var:$VAR$ }
+			NOT = { has_domicile_building_or_higher = $B1$ }
+		}
+		add_domicile_building = $B1$
+	}
+	if = {
+		limit = {
+			scope:kq_title = { var:$VAR$ >= 2 }
+			NOT = { has_domicile_building_or_higher = $B2$ }
+		}
+		add_domicile_building = $B2$
+	}
+	if = {
+		limit = {
+			scope:kq_title = { var:$VAR$ >= 3 }
+			NOT = { has_domicile_building_or_higher = $B3$ }
+		}
+		add_domicile_building = $B3$
+	}
+	if = {
+		limit = {
+			scope:kq_title = { var:$VAR$ >= 4 }
+			NOT = { has_domicile_building_or_higher = $B4$ }
+		}
+		add_domicile_building = $B4$
+	}
+	if = {
+		limit = {
+			scope:kq_title = { var:$VAR$ >= 5 }
+			NOT = { has_domicile_building_or_higher = $B5$ }
+		}
+		add_domicile_building = $B5$
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_record_quarter_effect
+# Scope: the Kehillah leader (character).
+#
+# Writes the current state of the quarter onto the Kehillah title. Safe
+# to call at any time; it only ever overwrites with the truth.
+# ---------------------------------------------------------------------
+
+kehillah_record_quarter_effect = {
+	if = {
+		limit = {
+			government_has_flag = government_is_kehillah
+			exists = domicile
+			exists = primary_title
+		}
+
+		# The Kehillah title is the leader's only title, so it is always
+		# their primary. If later phases give a leader more than one
+		# title, this needs to become an explicit search.
+		primary_title = { save_scope_as = kq_title }
+
+		domicile = {
+			kehillah_record_track_5_effect = {
+				VAR = kq_synagogue
+				B1 = kehillah_synagogue_01
+				B2 = kehillah_synagogue_02
+				B3 = kehillah_synagogue_03
+				B4 = kehillah_synagogue_04
+				B5 = kehillah_synagogue_05
+			}
+			kehillah_record_track_3_effect = {
+				VAR = kq_beit_midrash
+				B1 = kehillah_beit_midrash_01
+				B2 = kehillah_beit_midrash_02
+				B3 = kehillah_beit_midrash_03
+			}
+			kehillah_record_track_3_effect = {
+				VAR = kq_countinghouse
+				B1 = kehillah_countinghouse_01
+				B2 = kehillah_countinghouse_02
+				B3 = kehillah_countinghouse_03
+			}
+			kehillah_record_track_3_effect = {
+				VAR = kq_shtadlan_chambers
+				B1 = kehillah_shtadlan_chambers_01
+				B2 = kehillah_shtadlan_chambers_02
+				B3 = kehillah_shtadlan_chambers_03
+			}
+			kehillah_record_track_2_effect = {
+				VAR = kq_communal_watch
+				B1 = kehillah_communal_watch_01
+				B2 = kehillah_communal_watch_02
+			}
+			kehillah_record_track_2_effect = {
+				VAR = kq_mikvah
+				B1 = kehillah_mikvah_01
+				B2 = kehillah_mikvah_02
+			}
+			kehillah_record_track_2_effect = {
+				VAR = kq_communal_hall
+				B1 = kehillah_communal_hall_01
+				B2 = kehillah_communal_hall_02
+			}
+			kehillah_record_track_3_effect = {
+				VAR = kq_market_stalls
+				B1 = kehillah_market_stalls_01
+				B2 = kehillah_market_stalls_02
+				B3 = kehillah_market_stalls_03
+			}
+			kehillah_record_track_3_effect = {
+				VAR = kq_workshops
+				B1 = kehillah_workshops_01
+				B2 = kehillah_workshops_02
+				B3 = kehillah_workshops_03
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_restore_quarter_effect
+# Scope: the new Kehillah leader (character). Requires scope:kq_title.
+#
+# Rebuilds the community's quarter on the new leader's domicile. This is
+# what makes "the synagogue stays with the congregation" actually true.
+# ---------------------------------------------------------------------
+
+kehillah_restore_quarter_effect = {
+	if = {
+		limit = {
+			government_has_flag = government_is_kehillah
+			exists = domicile
+		}
+		domicile = {
+			kehillah_restore_track_5_effect = {
+				VAR = kq_synagogue
+				B1 = kehillah_synagogue_01
+				B2 = kehillah_synagogue_02
+				B3 = kehillah_synagogue_03
+				B4 = kehillah_synagogue_04
+				B5 = kehillah_synagogue_05
+			}
+			kehillah_restore_track_3_effect = {
+				VAR = kq_beit_midrash
+				B1 = kehillah_beit_midrash_01
+				B2 = kehillah_beit_midrash_02
+				B3 = kehillah_beit_midrash_03
+			}
+			kehillah_restore_track_3_effect = {
+				VAR = kq_countinghouse
+				B1 = kehillah_countinghouse_01
+				B2 = kehillah_countinghouse_02
+				B3 = kehillah_countinghouse_03
+			}
+			kehillah_restore_track_3_effect = {
+				VAR = kq_shtadlan_chambers
+				B1 = kehillah_shtadlan_chambers_01
+				B2 = kehillah_shtadlan_chambers_02
+				B3 = kehillah_shtadlan_chambers_03
+			}
+			kehillah_restore_track_2_effect = {
+				VAR = kq_communal_watch
+				B1 = kehillah_communal_watch_01
+				B2 = kehillah_communal_watch_02
+			}
+			kehillah_restore_track_2_effect = {
+				VAR = kq_mikvah
+				B1 = kehillah_mikvah_01
+				B2 = kehillah_mikvah_02
+			}
+			kehillah_restore_track_2_effect = {
+				VAR = kq_communal_hall
+				B1 = kehillah_communal_hall_01
+				B2 = kehillah_communal_hall_02
+			}
+			kehillah_restore_track_3_effect = {
+				VAR = kq_market_stalls
+				B1 = kehillah_market_stalls_01
+				B2 = kehillah_market_stalls_02
+				B3 = kehillah_market_stalls_03
+			}
+			kehillah_restore_track_3_effect = {
+				VAR = kq_workshops
+				B1 = kehillah_workshops_01
+				B2 = kehillah_workshops_02
+				B3 = kehillah_workshops_03
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_setup_worms_start_effect
+# Scope: the Kehillah leader (character).
+#
+# Establishes the 1066 starting state described in
+# docs/scenarios/worms-1066.md section 4:
+#
+#   - Synagogue at TIER 1, not empty. The real Worms Synagogue was built
+#     in 1034, thirty-two years before this start date, so the community
+#     is modestly established rather than founded from nothing.
+#   - NO internal buildings. A modest single-tier community. Growth is
+#     the player's job, not a pre-built showcase.
+#   - NO officers, which follows automatically: all three gate on
+#     internal buildings that do not exist yet.
+#
+# Run once, from the game-start on_action.
+# ---------------------------------------------------------------------
+
+kehillah_setup_worms_start_effect = {
+	if = {
+		limit = {
+			exists = domicile
+			NOT = { has_character_flag = kehillah_start_configured }
+		}
+		add_character_flag = kehillah_start_configured
+
+		domicile = {
+			if = {
+				limit = { NOT = { has_domicile_building_or_higher = kehillah_synagogue_01 } }
+				add_domicile_building = kehillah_synagogue_01
+			}
+		}
+
+		# A modest communal chest. Enough to start one internal
+		# building and absorb an early flavor incident, not enough to
+		# buy the whole quarter on day one.
+		add_gold = 120
+
+		# Isaac has led the community since 1064 (see
+		# history/titles/kehillah_titles.txt), so he does not begin
+		# with nothing to his name.
+		change_influence = 150
+
+		kehillah_seed_community_effect = yes
+
+		# Mirror the starting state onto the title immediately, so
+		# continuity works even if he dies before building anything.
+		kehillah_record_quarter_effect = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_seed_community_effect
+# Scope: the Kehillah leader (character).
+#
+# Populates the community with people. This exists to close a real gap
+# in how appointment succession interacts with this government, and the
+# reasoning matters more than the code:
+#
+# THE GAP. The candidate categories CK3 offers for appointment
+# succession are all structural -- close family, house members,
+# councillors, court position holders, vassals. There is deliberately no
+# "any courtier" category. A Kehillah leader has no vassals and no
+# council, and at game start holds no buildings, so no officers can be
+# appointed either. That leaves close family as the only populated
+# category. If the starting leader also had no living close family, the
+# candidate pool would be empty when he dies -- and an empty pool on the
+# player's own title is a game-over, in a mod whose entire premise is
+# that leadership survives the leader.
+#
+# THE FIX, AND WHY IT IS ALSO THE DESIGN. Two things are seeded:
+#
+#   1. An adult child, if the leader has none. This guarantees the pool
+#      is never empty. A floor, not a feature.
+#
+#   2. Three unrelated notable community members, each with their own
+#      family. These are spec section 3's "multiple prominent families
+#      exist alongside the ruling one". They are NOT eligible for
+#      succession on day one -- they become eligible only once you have
+#      built the Beit Midrash, Countinghouse or Chambers and appointed
+#      them to those offices.
+#
+# That produces a genuine progression rather than a workaround. Early
+# on, an undeveloped community really does pass leadership within the
+# family, because it has no institutions through which anyone else can
+# earn standing. Build the quarter, fill the offices, and the
+# succession opens up to the whole community. The open pool spec
+# section 5 asks for is something the player constructs, which is a
+# better answer than handing it to them at turn one.
+# ---------------------------------------------------------------------
+
+kehillah_seed_community_effect = {
+	# The floor: never let the pool be empty.
+	if = {
+		limit = {
+			NOT = {
+				any_child = { is_adult = yes }
+			}
+		}
+		create_character = {
+			father = root
+			dynasty = inherit
+			age = { 26 38 }
+			faith = root.faith
+			culture = root.culture
+			location = root.location
+			random_traits = yes
+			gender_female_chance = 0
+			save_scope_as = kehillah_seeded_heir
+		}
+		scope:kehillah_seeded_heir = {
+			set_employer = root
+		}
+	}
+
+	# The notable families. Given their own dynasties on purpose: these
+	# are other households of the community, not branches of the
+	# leader's. Skewed toward Learning and Stewardship so that when the
+	# offices do open, there are people actually worth appointing.
+	while = {
+		count = 3
+		create_character = {
+			dynasty = generate
+			age = { 28 50 }
+			faith = root.faith
+			culture = root.culture
+			location = root.location
+			random_traits = yes
+			gender_female_chance = 0
+			learning = { 6 14 }
+			stewardship = { 5 13 }
+			diplomacy = { 4 12 }
+			save_scope_as = kehillah_seeded_notable
+		}
+		scope:kehillah_seeded_notable = {
+			set_employer = root
+		}
+	}
+}
