@@ -39,13 +39,14 @@ other docs) currently take on faith.
    (single-entity tiered dashboard — matches an own-community dashboard) and `window_factions.gui`
    (cross-entity list — matches a map-wide community comparison) to come back with a concrete,
    evidence-based plan for opening a custom window bound to scripted data.
-6. **Write a spec for regional/unified leadership** (a beit din or synod spanning multiple
-   Kehillot — joint takkanot rulings, collective expulsion negotiation with a host realm) before
-   building any cross-community dashboard for it. The data model (which communities belong to
-   which grouping, what an aggregate score even means) doesn't exist yet; a dashboard can't show
-   groupings that aren't designed. Also flag early: CK3 script has no native sort primitive
-   (already hit once approximating "top-N" in Wave 2/3), which will bite a ranked community list
-   again, harder.
+6. **Regional/unified leadership** — done as a spec, in progress as content: see
+   [docs/spec/v4-regional-communities-and-batei-din.md](docs/spec/v4-regional-communities-and-batei-din.md)
+   for the design (a titular duchy-tier `d_kehillah_shum` grouping Worms/Speyer/Mainz by de jure
+   nesting, no new government/succession construct in v1) and its own §7 for implementation
+   order. This still doesn't resolve the "aggregate score for a dashboard" question — the spec
+   deliberately sidesteps it by applying takkanah effects symmetrically per-title rather than
+   defining a blended regional number — so the sort-primitive and aggregate-definition problems
+   flagged here originally are still open for whenever a real dashboard needs them.
 7. **Wave 4** (dissolution) and **Wave 5** (community lifecycle: creation/destruction/migration),
    per [docs/spec/v2-pillar-economy-and-lifecycle.md](docs/spec/v2-pillar-economy-and-lifecycle.md)
    §8's build order.

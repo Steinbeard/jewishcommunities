@@ -41,7 +41,8 @@ tells you whether what follows is shipped, proposed, or abandoned.
   (it is kept more current than README's feature list). Phases are sequential; don't build ahead
   of the current phase without a reason recorded in a doc.
 - **`docs/spec/v1-kehillah-community.md`, `v2-pillar-economy-and-lifecycle.md`,
-  `v3-meritocratic-succession.md`** — design specs, in version order. A later spec **supersedes
+  `v3-meritocratic-succession.md`, `v4-regional-communities-and-batei-din.md`** — design specs,
+  in version order. A later spec **supersedes
   a named section** of an earlier one in content, not in the repo — both stay, read the newest
   first and follow its cross-references backward only as needed. Check each one's Status line:
   some are "proposal, not implemented" — do not treat spec prose as a description of the current
