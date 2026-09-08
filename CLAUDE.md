@@ -94,6 +94,18 @@ it's the one deliberately kept current.
 See **[docs/testing/automation-shim-guide.md](docs/testing/automation-shim-guide.md)** for the
 full mechanics and philosophy; summary:
 
+- **Run `ck3-tiger` before anything else, on every session that touches script/loc/gui.** Installed
+  at `C:\Users\Daniel\Documents\ck3-tiger\ck3-tiger.exe`, version-matched to this mod's target CK3
+  (1.19.0). Invoke as:
+  `ck3-tiger.exe "C:\Users\Daniel\Documents\Paradox Interactive\Crusader Kings III\mod\jewishcommunities\descriptor.mod" --no-color`
+  (add `--json` for machine-readable output). It catches duplicate IDs, malformed script, dangling
+  references, and — critically — things that are silent in script but **crash the live game**
+  (e.g. a bookmark referencing a portrait that doesn't exist). This is seconds, not minutes; there
+  is no reason to hand-verify anything it already checks, and no reason to boot the live game to
+  find a bug this would have caught standing still. Treat any `fatal`/`error` it reports on files
+  you touched as blocking; `warning`/`tips` are judgment calls, same as a human linter. It doesn't
+  know this mod's own custom logic (pillar thresholds, band gates, etc.) — that's still
+  source-reading or a debug-event probe, below.
 - **Prefer reading source over live-testing when the question is about logic**, not rendering —
   e.g. "does this gate check the right pillar" is answered faster and more reliably by reading
   the trigger than by playing to that state. Live-test only what source-reading can't settle.
