@@ -78,11 +78,13 @@ kehillah_tzedakah_stability_gain = {
 	}
 }
 
-# Mediating a dispute between notable families. Costs Stability (the
-# community's patience for you presiding over its quarrels -- see the
-# rename note above), and succeeds on Stewardship -- explicitly not
-# Intrigue (spec section 3).
-kehillah_mediation_standing_cost = 50
+# kehillah_mediation_standing_cost lived here, an upfront Stability cost
+# for the retired kehillah_mediate_dispute_decision. Removed 2026-09-07
+# when that decision was replaced by the organic dispute-ruling event
+# (see the "Organic dispute-ruling event" section below) -- the new
+# version has no upfront cost, only outcomes, so the value had no
+# remaining reference. Full account in
+# common/decisions/kehillah_decisions.txt at the point of removal.
 
 # Composing a Torah commentary. The Greatness pillar's signature act.
 kehillah_commentary_piety_cost = 100
@@ -107,6 +109,368 @@ kehillah_commentary_piety_cost = 100
 # a valid PERSONAL differentiator for who leads next.
 
 # ---------------------------------------------------------------------
+# Bands (v2 spec section 1.1) -- Crisis / Strained / Healthy /
+# Flourishing / Legendary, shared by all three pillars on one 0-1000
+# scale. Used by kehillah_pillar_at_least_trigger (common/scripted_
+# triggers/kehillah_scripted_triggers.txt) and by the band-name
+# customizable_localization functions (common/customizable_localization/
+# kehillah_pillar_band_custom_loc.txt) that back kehillah_view_standing_
+# decision's tooltip. Crisis itself (0-149) has no threshold of its own
+# -- it is simply "below Strained".
+# ---------------------------------------------------------------------
+
+kehillah_band_strained_threshold = 150
+kehillah_band_healthy_threshold = 400
+kehillah_band_flourishing_threshold = 700
+kehillah_band_legendary_threshold = 950
+
+# ---------------------------------------------------------------------
+# Baseline convergence (v2 spec section 1.2, Wave 2 item 5).
+#
+# current = current + (baseline - current) * convergence_rate, applied
+# every quarterly tick (kehillah_quarterly_pillars_effect, common/
+# scripted_effects/kehillah_scripted_effects.txt) to all three pillars.
+# See that effect's own "BASELINE CONVERGENCE, 2026-09-07" header for
+# the full account of what this replaces and why. 0.05 is the v2 spec's
+# own illustrative first guess (~18%/year), not a derived constant --
+# tune after a playtest, same as everything else in this file.
+# ---------------------------------------------------------------------
+
+kehillah_convergence_rate_value = 0.05
+
+# The diminishing-returns weights shared by every baseline's "leader
+# plus officeholder" stat term below (v2 spec's top-N-aggregate
+# approximation -- see kehillah_prosperity_baseline_value's own header
+# for the full reasoning on why this is two terms, not a true top-N
+# sum). The leader's own stat counts in full; a relevant officeholder's
+# matching stat counts at roughly 60% weight, so a strong officer
+# meaningfully raises the baseline without simply doubling the leader's
+# own contribution.
+kehillah_baseline_leader_stat_weight = 4
+kehillah_baseline_officer_stat_weight = 2.4
+
+# The two pillars whose spec formula (section 1.2) explicitly names a
+# flat floor constant. Prosperity has no equivalent floor -- a community
+# with no Prosperity buildings and an unskilled leader plausibly has
+# nothing propping its economic baseline up at all, unlike Stability's
+# "ordinary communal life continues regardless" and Greatness's
+# "some minimal scholarly/religious presence always exists" framings.
+kehillah_stability_baseline_floor_value = 200
+kehillah_greatness_baseline_floor_value = 60
+
+# ---------------------------------------------------------------------
+# kehillah_prosperity_baseline_value
+# Scope: the Kehillah leader (character) -- evaluated from inside
+# kehillah_quarterly_pillars_effect, the same scope as every other
+# building/office check in that effect.
+#
+# v2 spec section 2's Prosperity inputs: Countinghouse/Market Stalls/
+# Craft Workshops tiers (all P1, i.e. already-shipped buildings), the
+# Slaughterhouse's "Prosperity undertone", and the top-N Stewardship
+# aggregate from v1 spec section 3.
+#
+# TOP-N AGGREGATE, APPROXIMATED. v1/v2 spec ask for "the sum of the top
+# ten Stewardship values among eligible community characters, with
+# diminishing returns". CK3 script values have no "sort a list and take
+# the top N" primitive -- confirmed absent from every script_value
+# pattern found in the live 1.19 files during this task's research (the
+# closest primitive, every_X + add, sums EVERY match unconditionally;
+# there is no equivalent that ranks and truncates). Faking a true sort
+# would mean hand-rolling a rank-comparison loop against every courtier,
+# which is exactly the "something fragile" the task instructions for
+# this pass explicitly say not to force. The honest approximation built
+# instead: the leader's own Stewardship (full weight) plus the Gabbai
+# (Treasurer)'s Stewardship if the office is filled (discounted weight)
+# -- NOT a population-wide sum over every courtier with that skill. This
+# is a deliberate simplification versus the spec's stated aspiration,
+# not a missing feature -- revisit if CK3 ever gains a real top-N
+# primitive, or if this is worth hand-rolling properly later.
+# ---------------------------------------------------------------------
+
+kehillah_prosperity_baseline_value = {
+	value = 0
+
+	# Countinghouse. Cumulative across tiers, same pattern as every
+	# other building check in kehillah_quarterly_pillars_effect: a
+	# fully-built Countinghouse satisfies all three has_domicile_
+	# building_or_higher checks below and adds all three contributions.
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_countinghouse_01 }
+		add = 80
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_countinghouse_02 }
+		add = 70
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_countinghouse_03 }
+		add = 90
+	}
+
+	# Market Stalls.
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_market_stalls_01 }
+		add = 50
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_market_stalls_02 }
+		add = 50
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_market_stalls_03 }
+		add = 70
+	}
+
+	# Craft Workshops.
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_workshops_01 }
+		add = 40
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_workshops_02 }
+		add = 40
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_workshops_03 }
+		add = 60
+	}
+
+	# Slaughterhouse -- v2 spec's "Prosperity undertone". Smaller than
+	# the three dedicated Prosperity buildings above; it exists mainly
+	# for Stability (a community that cannot keep kosher cannot function
+	# as one), not primarily as an economic engine.
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_slaughterhouse_01 }
+		add = 25
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_slaughterhouse_02 }
+		add = 35
+	}
+
+	# The Stewardship term -- see this script value's own header above
+	# for the top-N-aggregate approximation this implements.
+	add = {
+		value = stewardship
+		multiply = kehillah_baseline_leader_stat_weight
+	}
+	if = {
+		limit = { employs_court_position = treasurer_kehillah_position }
+		add = {
+			value = 0
+			court_position:treasurer_kehillah_position = {
+				add = {
+					value = stewardship
+					multiply = kehillah_baseline_officer_stat_weight
+				}
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_stability_baseline_value
+# Scope: the Kehillah leader (character), same as Prosperity's above.
+#
+# v2 spec section 1.2's Stability-baseline formula, verbatim: "Hekdesh
+# tier, whether the Shtadlan seat is filled, average notable-family
+# opinion of the leader, plus a flat 'ordinary communal life' floor."
+#
+# ALSO INCLUDES: whether the Gabbai Tzedakah seat is filled. Not in the
+# spec's own formula list above, but it WAS one of the flat per-quarter
+# contributions this whole mechanism replaces (the old +0.3/quarter for
+# a filled Gabbai Tzedakah position -- see kehillah_quarterly_pillars_
+# effect's "BASELINE CONVERGENCE, 2026-09-07" header). Folded in here
+# rather than silently dropped, for the same reason the Synagogue stays
+# in Greatness's baseline below despite that pillar's own formula list
+# also not naming it.
+#
+# NOT INCLUDED: average notable-family opinion of the leader, the
+# spec's fourth input -- and the one the spec itself flags as optional
+# ("if you can do this without excessive complexity"). DELIBERATE
+# SIMPLIFICATION, not an oversight: CK3 script values have no native
+# "average" operator. Building one honestly needs a sum AND a matching
+# denominator (a count of eligible courtiers) computed the same way, to
+# avoid dividing by zero in exactly the case this baseline most needs to
+# handle gracefully -- an early community with no notable-family
+# courtiers yet. That is two script values doing real work to stand in
+# for one already-optional spec bullet, so it is dropped here rather
+# than forced. Revisit if a clean vanilla "average X over a filtered
+# list" pattern turns up later.
+# ---------------------------------------------------------------------
+
+kehillah_stability_baseline_value = {
+	value = 0
+	add = kehillah_stability_baseline_floor_value
+
+	# Hekdesh.
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_hekdesh_01 }
+		add = 60
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_hekdesh_02 }
+		add = 60
+	}
+
+	# Whether the Shtadlan seat is filled -- reuses the existing
+	# kehillah_has_shtadlan_trigger (common/scripted_triggers/
+	# kehillah_scripted_triggers.txt) rather than re-deriving the same
+	# check a second way.
+	if = {
+		limit = { kehillah_has_shtadlan_trigger = yes }
+		add = 90
+	}
+
+	# Whether the Gabbai Tzedakah seat is filled -- see this script
+	# value's own header above for why this is here despite not being in
+	# the spec's own Stability-baseline formula list.
+	if = {
+		limit = { employs_court_position = gabbai_tzedakah_kehillah_position }
+		add = 40
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_greatness_baseline_value
+# Scope: the Kehillah leader (character), same as the two above.
+#
+# v2 spec section 1.2's Greatness-baseline formula, verbatim: "Yeshiva/
+# Sofer's Workshop tiers, the Chief Rabbi's Learning, plus the top-N
+# Learning aggregate."
+#
+# ALSO INCLUDES: the Synagogue's tiers. Not in the spec's own formula
+# list above, but the Synagogue IS Greatness's main-slot building (v1
+# spec section 3c's building table) and its per-tier contributions were
+# among the flat per-quarter adds this mechanism replaces (see
+# kehillah_quarterly_pillars_effect's "BASELINE CONVERGENCE, 2026-09-07"
+# header). Dropping it here would silently delete the Synagogue's
+# Greatness contribution rather than migrate it, which is exactly what
+# this whole task's verification pass was asked to catch, not create.
+#
+# TOP-N AGGREGATE, APPROXIMATED the same way as Prosperity's Stewardship
+# term above -- see that script value's header for the full reasoning.
+# Leader's own Learning (full weight) plus the Chief Rabbi's Learning if
+# the office is filled (discounted weight), not a population-wide sum.
+# ---------------------------------------------------------------------
+
+kehillah_greatness_baseline_value = {
+	value = 0
+	add = kehillah_greatness_baseline_floor_value
+
+	# Synagogue. Cumulative across tiers -- see this script value's own
+	# header above for why it is here.
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_synagogue_01 }
+		add = 40
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_synagogue_02 }
+		add = 30
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_synagogue_03 }
+		add = 40
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_synagogue_04 }
+		add = 40
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_synagogue_05 }
+		add = 50
+	}
+
+	# Beit Midrash / Yeshiva.
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_beit_midrash_01 }
+		add = 50
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_beit_midrash_02 }
+		add = 40
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_beit_midrash_03 }
+		add = 60
+	}
+
+	# Sofer's Workshop.
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_sofer_workshop_01 }
+		add = 20
+	}
+	if = {
+		limit = { has_domicile_building_or_higher = kehillah_sofer_workshop_02 }
+		add = 30
+	}
+
+	# The Learning term -- see this script value's own header above for
+	# the top-N-aggregate approximation this implements.
+	add = {
+		value = learning
+		multiply = kehillah_baseline_leader_stat_weight
+	}
+	if = {
+		limit = { employs_court_position = chief_rabbi_kehillah_position }
+		add = {
+			value = 0
+			court_position:chief_rabbi_kehillah_position = {
+				add = {
+					value = learning
+					multiply = kehillah_baseline_officer_stat_weight
+				}
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# Organic dispute-ruling event (v2 spec section 3, Wave 1) -- replaces
+# the retired kehillah_mediate_dispute_decision. See
+# events/kehillah_dispute_events.txt and kehillah_dispute_pulse in
+# common/on_action/kehillah_on_actions.txt.
+#
+# Magnitudes are pitched relative to the numbers the old decision used
+# (mediation cost 50, medium_influence_gain 60) rather than invented
+# fresh -- this is the same event in spirit, just triggered organically
+# and with a fourth, delegated-to-the-Chief-Rabbi option. First-pass
+# tuning, same as everything else in this file; revisit after a
+# playtest.
+# ---------------------------------------------------------------------
+
+# The leader's or Chief Rabbi's "great"/"good" ruling. Chief Rabbi
+# delegation only ever uses the "good" tier (see the event file's own
+# note on why it has one threshold, not two).
+kehillah_dispute_ruling_stability_gain_great = 70
+kehillah_dispute_ruling_stability_gain_good = 40
+
+# A botched ruling, by anyone -- leader or Chief Rabbi. The community's
+# patience for a poor judgement doesn't care who delivered it.
+kehillah_dispute_ruling_stability_loss_poor = 45
+
+# "Split the difference" -- always available, no skill check, no
+# opinion swings. Deliberately the smallest of the three positive
+# outcomes: it is the safe, mediocre choice.
+kehillah_dispute_split_stability_gain = 20
+
+# The Chief Rabbi route's extra: a ruling from religious authority also
+# nudges the community's Greatness, on top of the same Stability gain
+# the leader's own "good" tier would give. Small on purpose -- this is
+# a side effect of competent day-to-day governance, not a scholarly
+# achievement on the scale of Compose a Commentary.
+kehillah_dispute_rabbi_greatness_tick = 15
+
+# Opinion swings for the favored/disfavored disputant, applied via
+# reverse_add_opinion against common/opinion_modifiers/
+# kehillah_opinion_modifiers.txt's two modifiers, overridden per tier at
+# the call site (opinion = / years =, confirmed supported by vanilla's
+# own add_opinion/reverse_add_opinion usage -- see that file's header).
+kehillah_dispute_favor_opinion_great = 20
+kehillah_dispute_favor_opinion_good = 10
+kehillah_dispute_disfavor_opinion_poor = -20
+
+# ---------------------------------------------------------------------
 # Protection events (spec section 3b)
 # ---------------------------------------------------------------------
 
@@ -120,3 +484,337 @@ kehillah_shakedown_gold_cost = {
 		add = 25
 	}
 }
+
+# ---------------------------------------------------------------------
+# Epidemic/physician hooks (v2 spec section "epidemic pulse", Wave 1
+# item 2). See kehillah_epidemic_pulse in common/on_action/
+# kehillah_on_actions.txt and kehillah_var_prosperity's introduction
+# there and in kehillah_view_standing_decision.
+#
+# Base drain-per-tick amounts, before physician mitigation, keyed to
+# outbreak_intensity (minor/major/apocalyptic -- confirmed against
+# common/epidemics/00_epidemics.txt and common/script_values/
+# 06_ce1_epidemics_values.txt's own character_infection_chance_default_value,
+# which switches on the identical three values). Prosperity takes the
+# larger hit (v2 spec's Prosperity input table lists epidemics as a
+# direct negative input; Stability's is explicitly "secondary to the
+# Prosperity hit"), so the Stability figures are roughly a third of the
+# matching Prosperity ones. First-pass numbers, not derived from any
+# formula -- tune after a playtest, same as everything else here.
+# ---------------------------------------------------------------------
+
+kehillah_epidemic_prosperity_drain_minor = 3
+kehillah_epidemic_prosperity_drain_major = 8
+kehillah_epidemic_prosperity_drain_apocalyptic = 15
+
+kehillah_epidemic_stability_drain_minor = 1
+kehillah_epidemic_stability_drain_major = 3
+kehillah_epidemic_stability_drain_apocalyptic = 6
+
+# Composite drain values, evaluated in CHARACTER scope (root = the
+# affected Kehillah leader, per epidemic_ongoing_events) so that
+# scope:epidemic and employs_court_position both resolve correctly --
+# see kehillah_epidemic_pulse's own header for why these are saved via
+# save_scope_value_as BEFORE the effect switches into primary_title,
+# rather than referenced from inside that scope directly.
+#
+# Physician mitigation: halved with any physician in post at all,
+# reduced further at each higher lifestyle_physician trait_xp tier,
+# mirroring (not reusing -- the two use different resources) vanilla's
+# own aptitude scaling for court_physician_court_position
+# (common/court_positions/types/00_court_positions.txt: trait_xp >= 50
+# and >= 100 are the two tiers vanilla itself checks).
+kehillah_epidemic_prosperity_drain_value = {
+	value = 0
+	if = {
+		limit = { scope:epidemic ?= { outbreak_intensity = apocalyptic } }
+		add = kehillah_epidemic_prosperity_drain_apocalyptic
+	}
+	else_if = {
+		limit = { scope:epidemic ?= { outbreak_intensity = major } }
+		add = kehillah_epidemic_prosperity_drain_major
+	}
+	else = {
+		add = kehillah_epidemic_prosperity_drain_minor
+	}
+
+	if = {
+		limit = { employs_court_position = court_physician_court_position }
+		if = {
+			limit = {
+				root.court_position:court_physician_court_position ?= {
+					has_trait_xp = { trait = lifestyle_physician value >= 100 }
+				}
+			}
+			multiply = 0.25
+		}
+		else_if = {
+			limit = {
+				root.court_position:court_physician_court_position ?= {
+					has_trait_xp = { trait = lifestyle_physician value >= 50 }
+				}
+			}
+			multiply = 0.4
+		}
+		else = {
+			multiply = 0.6
+		}
+	}
+}
+
+kehillah_epidemic_stability_drain_value = {
+	value = 0
+	if = {
+		limit = { scope:epidemic ?= { outbreak_intensity = apocalyptic } }
+		add = kehillah_epidemic_stability_drain_apocalyptic
+	}
+	else_if = {
+		limit = { scope:epidemic ?= { outbreak_intensity = major } }
+		add = kehillah_epidemic_stability_drain_major
+	}
+	else = {
+		add = kehillah_epidemic_stability_drain_minor
+	}
+
+	if = {
+		limit = { employs_court_position = court_physician_court_position }
+		if = {
+			limit = {
+				root.court_position:court_physician_court_position ?= {
+					has_trait_xp = { trait = lifestyle_physician value >= 100 }
+				}
+			}
+			multiply = 0.25
+		}
+		else_if = {
+			limit = {
+				root.court_position:court_physician_court_position ?= {
+					has_trait_xp = { trait = lifestyle_physician value >= 50 }
+				}
+			}
+			multiply = 0.4
+		}
+		else = {
+			multiply = 0.6
+		}
+	}
+}
+
+# The recovery beat: a small reward if the epidemic clears from the
+# leader's location while a physician was in post for the whole time.
+# See kehillah_quarterly_pillars_effect for the detection logic
+# (there is no vanilla "epidemic just ended" hook to trigger off of
+# directly -- confirmed absent from common/on_action/ during this
+# task's research -- so this is checked at the existing quarterly tick
+# instead, which can lag the actual clearance by up to ~2 months; an
+# accepted tolerance, not a bug).
+kehillah_epidemic_recovery_stability_gain = 25
+
+
+# =====================================================================
+# WAVE 3 -- the unlock ladder (v2 spec section 8, item 6). Everything
+# below is new tuning for docs/spec/v2-pillar-economy-and-lifecycle.md
+# sections 2-4's output tables: sfarim tiers, band-gated building tiers,
+# courtier quality/cap/retention, and the light baron/count loan
+# contracts. See common/decisions/kehillah_decisions.txt,
+# common/domiciles/buildings/kehillah_domicile_buildings.txt,
+# common/on_action/kehillah_on_actions.txt and
+# common/scripted_effects/kehillah_scripted_effects.txt for where each
+# value below is actually read.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# Sfarim (book) tiers -- Compose a Commentary (Wave 3 item 1).
+#
+# The Healthy tier keeps its existing reward numbers verbatim
+# (major_piety_gain / major_prestige_gain, both vanilla-generic script
+# values already used before this task -- not redefined here). Flourishing
+# and Legendary reuse vanilla's own next rungs up the SAME generic ladder
+# (massive_/monumental_ piety and prestige gain, common/script_values/
+# 00_basic_values.txt) rather than inventing parallel Kehillah-specific
+# piety/prestige constants -- only the Greatness kicker below is genuinely
+# new, since "a Greatness reward on top of today's reward" (v2 spec
+# section 4's output table) has no vanilla equivalent to reuse.
+# ---------------------------------------------------------------------
+
+kehillah_commentary_flourishing_greatness_bonus = 40
+kehillah_commentary_legendary_greatness_bonus = 90
+
+
+# ---------------------------------------------------------------------
+# Courtier cap/quality/retention (Wave 3 item 3).
+#
+# CAPACITY, APPROXIMATED AS PRESSURE, NOT A HARD CAP. Confirmed against
+# common/defines/00_defines.txt during this task's research:
+# MAX_COURTIERS_AND_GUESTS_PER_TIER is a fixed ENGINE DEFINE array keyed
+# only by the ruler's title TIER ({0 0 6 8 12 20 36} for
+# none/barony/county/duchy/kingdom/empire/hegemony) -- not a
+# character_modifier field, not scriptable per-character or
+# per-government at all. There is no vanilla hook that lets a band-scaled
+# courtier CAP be enforced by script. This confirms v2 spec's own
+# "pressure rather than deletion above it" framing is not just a softer
+# design choice but the ONLY implementable version: what follows is a
+# script-computed soft capacity threshold that drives a discontent
+# modifier and a small direct Stability drain when exceeded, never an
+# actual hard limit on how many courtiers can be employed.
+#
+# Cumulative across bands, mirroring this file's own baseline-value
+# pattern (kehillah_prosperity_baseline_value etc.) rather than a
+# reassignment chain, for consistency and because it is the pattern
+# already proven safe in this exact file. Magnitudes are loosely
+# inspired by (not copied from) the vanilla per-tier array above, scaled
+# down for a landless community -- first-pass, tune after a playtest.
+# ---------------------------------------------------------------------
+
+kehillah_courtier_capacity_crisis_value = 4
+kehillah_courtier_capacity_strained_bonus = 4
+kehillah_courtier_capacity_healthy_bonus = 6
+kehillah_courtier_capacity_flourishing_bonus = 8
+kehillah_courtier_capacity_legendary_bonus = 10
+
+kehillah_courtier_capacity_value = {
+	value = kehillah_courtier_capacity_crisis_value
+	if = {
+		limit = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_strained_threshold } }
+		add = kehillah_courtier_capacity_strained_bonus
+	}
+	if = {
+		limit = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_healthy_threshold } }
+		add = kehillah_courtier_capacity_healthy_bonus
+	}
+	if = {
+		limit = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_flourishing_threshold } }
+		add = kehillah_courtier_capacity_flourishing_bonus
+	}
+	if = {
+		limit = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_legendary_threshold } }
+		add = kehillah_courtier_capacity_legendary_bonus
+	}
+}
+
+# Simple headcount. Scope: the Kehillah leader (character). There is no
+# vanilla "number of courtiers" primitive either (confirmed absent
+# alongside the capacity search above) -- every_courtier + add is the
+# same counting idiom vanilla itself uses for equivalent tallies
+# elsewhere (e.g. vassal/prisoner counts).
+kehillah_courtier_count_value = {
+	value = 0
+	every_courtier = {
+		add = 1
+	}
+}
+
+# The direct Stability cost of visible overcrowding, applied once per
+# quarter (not scaled by how far over capacity the community is -- a
+# flat nudge is the "prototype loosely" version of this).
+kehillah_overcrowding_stability_drain = 8
+
+# QUALITY. Applied to a courtier the moment they join a Kehillah court
+# (kehillah_on_join_court, common/on_action/kehillah_on_actions.txt),
+# not through common/scripted_character_templates/
+# kehillah_pool_repopulation_patch.txt -- see that on_action's own
+# updated header for why the world-pool template turned out to be the
+# wrong file (it generates characters for the ENTIRE world's Jewish
+# population, with no reliable scope link back to any one specific
+# Kehillah's title variables; on_join_court already hands this mod
+# scope:new_employer bound correctly, which the pool template does not).
+kehillah_courtier_quality_healthy_learning_bonus = 1
+kehillah_courtier_quality_flourishing_learning_bonus = 2
+kehillah_courtier_quality_legendary_learning_bonus = 3
+kehillah_courtier_quality_legendary_stewardship_bonus = 1
+
+# RETENTION. A first-pass approximation, per this task's own brief: no
+# clean vanilla "chance a courtier leaves" hook exists (confirmed absent
+# alongside set_up_loan_effect's neighbours during this task's research),
+# so this is a plain percentage roll at the quarterly tick rather than a
+# proper emigration system. 8% per quarter while Stability is in Crisis
+# is roughly "a bad year in four has someone leave", not a derived
+# figure.
+kehillah_courtier_defection_chance_value = 8
+
+
+# ---------------------------------------------------------------------
+# Light loan contracts, baron/count tier only (Wave 3 item 4).
+#
+# TARGETING, AND WHY IT IS NOT A PLAYER-DRIVEN PICK. v2 spec section 2
+# calls for "lend to baron/count" without specifying how a target is
+# chosen. CK3 decisions (unlike character_interactions) have no native
+# arbitrary-character target picker without a custom GUI widget -- this
+# mod has no existing character_interaction file and no precedent for
+# building one, which would have been a materially larger and less
+# certain undertaking than everything else in this wave. The target
+# used instead is fixed and always well-defined: the holder of the
+# COUNTY the Kehillah's own quarter physically sits in
+# (root.domicile.domicile_location.county.holder, the same scope chain
+# kehillah_setup_worms_start_effect already uses to place created
+# characters) -- the community's own local count, or whichever baron
+# happens to hold that county directly. This is a deliberate
+# simplification versus "targeting a baron/count-tier landed character"
+# read as player choice: the player cannot choose WHICH noble, only
+# whether to extend the loan at all. It is also, arguably, the more
+# historically apt version of the fantasy (a community's dealings were
+# overwhelmingly with its own immediate lord, not a stranger picked from
+# a world-spanning list) and it is what keeps this item inside the
+# "light" scope the task asks for.
+#
+# MECHANISM, CONFIRMED AGAINST LIVE VANILLA CONTENT, NOT INVENTED FROM
+# SCRATCH. v2 spec itself flags "I haven't confirmed CK3 has any native
+# mechanic for this" as an open question -- it does: Holy Orders lend
+# gold to characters today (common/decisions/00_holy_order_decisions.txt's
+# borrow_from_holy_order_decision, common/scripted_effects/
+# 00_scripted_effects.txt's set_up_loan_effect / clear_loanee_variables_
+# effect, common/decisions/80_major_decisions.txt's repay_loan_decision,
+# events/religion_events/holy_order_events.txt's holy_order.0200-0206).
+# That existing system is NOT reused directly here -- it is
+# character-variable-based (var:loan_amount_owed etc.) and its own
+# events layer on escalating consequences (demanding a castle, then a
+# child hostage) that have nothing to do with this mod and that this
+# mod must not risk triggering by touching shared variable names. Every
+# kehillah_loan_* variable/decision below is a parallel, self-contained
+# namespace with the SAME shape (principal owed, a lender reference, a
+# variable_list of debtors, a plain repayment decision) so this item
+# rests on confirmed-working vanilla mechanics without touching or
+# risking anything vanilla or another mod already depends on. The
+# variable_list mechanism itself (every_in_list / any_in_list with
+# "variable = <name>", add_to_variable_list, remove_list_variable) is
+# confirmed working syntax, read directly from holy_order.0206 and
+# repay_loan_decision.
+#
+# THE LENDER IS THE TITLE, NOT THE CHARACTER -- a deliberate improvement
+# on vanilla's own version, which has to special-case loan inheritance
+# when a Holy Order's leader changes (holy_order.0201). Storing
+# kehillah_loan_lender_title = scope:kq_title on the borrower means a
+# Kehillah succession happening mid-loan needs no equivalent handling at
+# all: whoever holds the title next is automatically who gets repaid,
+# the same "the title IS the community" principle this mod already
+# applies to buildings and pillars.
+#
+# NO COMPOUNDING INTEREST. The amount owed is fixed at origination
+# (principal x a flat multiplier), exactly mirroring vanilla's own Holy
+# Order loan (the amount borrowed and the amount owed are the same
+# number there -- confirmed by reading holy_order.0200's set_up_loan_
+# effect call, AMOUNT = holy_order_gold_value both times). A single lump
+# multiplier is the "light" version of interest the task asks for.
+# ---------------------------------------------------------------------
+
+kehillah_loan_principal_value = 150
+kehillah_loan_repayment_multiplier = 1.3
+kehillah_loan_term_years = 6
+
+# The amount actually owed, principal x the flat multiplier above,
+# computed as its own script value rather than via a "set then multiply"
+# two-step effect call -- CONFIRMED there is no multiply_variable effect
+# in vanilla (grepped for it directly against the installed 1.19 files
+# during this task's research and found nothing); change_variable only
+# supports add/subtract, not multiply, so the multiplication has to
+# happen here, in a script_value, where "multiply" is a valid operator
+# (the same operator this file's own kehillah_tzedakah_gold_cost already
+# uses).
+kehillah_loan_amount_owed_value = {
+	value = kehillah_loan_principal_value
+	multiply = kehillah_loan_repayment_multiplier
+}
+
+kehillah_loan_default_prosperity_loss = 60
+kehillah_loan_repayment_prosperity_reward = 50
+kehillah_loan_repayment_greatness_reward = 20

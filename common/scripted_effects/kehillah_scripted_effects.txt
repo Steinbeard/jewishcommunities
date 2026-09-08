@@ -376,7 +376,7 @@ kehillah_setup_worms_start_effect = {
 
 		# Named explicitly rather than trusted to root: on_game_start_after_lobby
 		# is a global on_action with no bound character root, and this
-		# effect is reached through title:d_kehillah_worms ?= { holder ?= { ... } },
+		# effect is reached through title:c_kehillah_worms ?= { holder ?= { ... } },
 		# which changes the acting scope but not root. root.faith/root.culture
 		# happened to still resolve for the first (heir) create_character
 		# call below, then failed with "Event target link 'root' returned
@@ -402,7 +402,13 @@ kehillah_setup_worms_start_effect = {
 		# with nothing to his name. Greatness, not Stability -- his
 		# standing is scholarly (chief rabbi, yeshiva head, Rashi's own
 		# teacher), not administrative.
-		primary_title = { change_variable = { name = kehillah_var_greatness add = 150 } }
+		# kehillah_init_pillars_effect first -- see that effect's header:
+		# change_variable silently no-ops on a variable that has never
+		# been set, which is exactly what made this +150 a no-op live.
+		primary_title = {
+			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_greatness add = 150 }
+		}
 
 		kehillah_seed_community_effect = yes
 
@@ -568,7 +574,25 @@ kehillah_seed_community_effect = {
 	}
 	scope:kehillah_seeded_advocate = {
 		set_employer = scope:kehillah_leader
-		assign_court_position_type = shtadlan_kehillah_position
+	}
+
+	# CORRECTED 2026-09-07. This was assign_court_position_type, which is
+	# not an effect the game has -- error.log carried "Unknown effect:
+	# assign_court_position_type" (pdx_persistent_reader.cpp:216) on every
+	# load, so the Shtadlan was never actually appointed and the community
+	# had no office holders at all. That was invisible until
+	# holder_court_position was added to kehillah_leadership's candidate
+	# pool, at which point it would have silently contributed nobody.
+	#
+	# The real effect is appoint_court_position, and it runs in the
+	# EMPLOYER's scope, not the appointee's -- see vanilla
+	# common/scripted_effects/00_court_position_effects.txt and
+	# common/character_interactions/00_vassal_interactions.txt:3929.
+	scope:kehillah_leader = {
+		appoint_court_position = {
+			recipient = scope:kehillah_seeded_advocate
+			court_position = shtadlan_kehillah_position
+		}
 	}
 }
 
@@ -596,7 +620,7 @@ kehillah_seed_community_effect = {
 # system onto kehillah_record_quarter_effect / kehillah_restore_
 # quarter_effect to carry them across succession, duplicating logic
 # that already exists for buildings. That was solving a problem this
-# mod had already solved the right way once: d_kehillah_worms IS the
+# mod had already solved the right way once: c_kehillah_worms IS the
 # community (the same principle the buildings' record/restore system is
 # built on -- see that section's own header). Storing the variables on
 # primary_title instead means they are simply already there for
@@ -646,74 +670,164 @@ kehillah_seed_community_effect = {
 # its fine-grained scaling. First-pass tuning throughout this effect;
 # revisit after a playtest, same as every number in
 # kehillah_script_values.txt.
+#
+# ---------------------------------------------------------------------
+# BASELINE CONVERGENCE, 2026-09-07 (v2 spec section 1.2, Wave 2 items
+# 3-5) -- REVISES THE PARAGRAPH ABOVE. READ BEFORE RE-ADDING A FLAT
+# PER-QUARTER STRUCTURAL BONUS TO THIS EFFECT.
+#
+# WHAT CHANGED. Every flat, unconditional per-quarter Stability/
+# Greatness addition described above and originally listed in this
+# effect's body -- the Synagogue's five tiers, the Beit Midrash's three,
+# the Sofer's Workshop, the Chief Rabbi being in post (Greatness); the
+# Hekdesh's two tiers, the Shtadlan and the Gabbai Tzedakah being in
+# post (Stability) -- has been REMOVED from the per-quarter accrual
+# below and REPLACED by the BASELINE CONVERGENCE block at the end of
+# this effect. Prosperity, which never had a flat accrual pass at all
+# (see that pillar's own comment below), gets its first one the same
+# way, built from scratch rather than migrated.
+#
+# WHY THIS IS A REPLACEMENT, NOT AN OVERSIGHT. v2 spec section 1.2:
+# each pillar now has a STRUCTURAL BASELINE computed from the same
+# durable assets (buildings, officers) every quarter, and the pillar's
+# CURRENT value drifts toward that baseline by a fraction of the gap
+# (kehillah_convergence_rate_value, common/script_values/
+# kehillah_script_values.txt). If the flat per-quarter adds above were
+# LEFT IN ALONGSIDE that new baseline, the exact same structural fact --
+# "the Hekdesh is built", "the Chief Rabbi is in post" -- would be
+# counted twice every quarter: once as a permanent stacking increment
+# that never stops, and again as an upward pull on the number the first
+# mechanism is also permanently inflating. v1 spec section 3's own
+# shared rules explicitly warn against exactly this ("avoid
+# double-counting... unless each layer has a deliberately small and
+# documented weight") -- there is no such deliberate split here, so the
+# correct fix is removal, not down-weighting one side.
+#
+# WHAT DID NOT CHANGE. Every INSTANTANEOUS, decision- or event-driven
+# change_variable call in this effect and elsewhere in this mod is
+# UNCHANGED and is NOT part of this replacement: the four has_character_
+# modifier checks still further down this effect (settled dispute,
+# tzedakah, shaken/emboldened community), the epidemic drain and
+# recovery beat below, and every change_variable call inside
+# events/kehillah_dispute_events.txt, events/kehillah_protection_
+# events.txt and common/decisions/kehillah_decisions.txt. Those
+# represent things that HAPPENED, not durable structural investment --
+# convergence smoothing their effect out over subsequent quarters is
+# v2 spec section 1.2's own stated intent ("cushions single bad
+# events"), not a bug to fix by also converting them to baseline terms.
+#
+# WHERE THE REPLACEMENT LIVES. kehillah_prosperity_baseline_value,
+# kehillah_stability_baseline_value and kehillah_greatness_baseline_
+# value (all common/script_values/kehillah_script_values.txt) now own
+# every structural building/office check this effect used to make
+# directly. This effect's job for those checks is done -- see the
+# BASELINE CONVERGENCE block at the end of this effect for the three
+# lines that actually apply them, and see each of those three script
+# values' own header comments for the exact simplifications made versus
+# v1/v2 spec's full aspiration (the top-N aggregate is approximated as
+# leader-plus-one-officeholder with diminishing weight, not a true
+# sorted top-N; Stability's average-notable-family-opinion input is
+# dropped entirely, both documented in place, not silently missing).
+# ---------------------------------------------------------------------
 # =====================================================================
 
+# ---------------------------------------------------------------------
+# kehillah_init_pillars_effect
+# Scope: a Kehillah title (e.g. scope:kq_title, primary_title). Idempotent
+# -- safe to call every tick, from every entry point.
+#
+# ROOT CAUSE FOUND 2026-09-07, via live-test + a dedicated diagnostic
+# pass: change_variable is a silent no-op on a variable that has never
+# been set. Vanilla NEVER calls change_variable on a pillar-shaped
+# variable without a set_variable = { ... value = 0 } immediately before
+# it the first time (confirmed against common/scripted_effects/
+# 00_laamp_effects.txt:1230, common/scripted_effects/
+# 04_dlc_ep2_tour_effects.txt's traveler_progress_point_gain_effect, and
+# two more independent DLC examples with the identical
+# if-not-exists-set-else-change shape). This mod never did that for
+# kehillah_var_prosperity/_stability/_greatness anywhere -- every one of
+# the ~33 writes across the whole mod was change_variable, so the three
+# pillar variables were NEVER ACTUALLY CREATED, and every write to them,
+# including Isaac's starting +150 Greatness and every quarterly
+# convergence tick, has been silently discarded since Wave 1/2 shipped.
+# Confirmed decisively live: a parallel set_variable-based flag on the
+# same title (kq_synagogue, kehillah_record_quarter_effect) read back
+# correctly while the pillars read 0 on the identical character in the
+# identical session.
+#
+# This was NOT a primary_title scope-resolution problem -- primary_title
+# as an effect-scope-opener is exactly how vanilla itself writes and
+# reads title variables (see e.g. common/decisions/dlc_decisions/
+# ep3_decisions.txt's founded_varangian_guard). Read that finding before
+# ever suspecting primary_title again for a similar symptom.
+# ---------------------------------------------------------------------
+
+kehillah_init_pillars_effect = {
+	if = {
+		limit = { NOT = { exists = var:kehillah_var_prosperity } }
+		set_variable = { name = kehillah_var_prosperity value = 0 }
+	}
+	if = {
+		limit = { NOT = { exists = var:kehillah_var_stability } }
+		set_variable = { name = kehillah_var_stability value = 0 }
+	}
+	if = {
+		limit = { NOT = { exists = var:kehillah_var_greatness } }
+		set_variable = { name = kehillah_var_greatness value = 0 }
+	}
+}
+
+
 kehillah_quarterly_pillars_effect = {
-	# ---------------------------------------------------------------
-	# GREATNESS -- the Synagogue, the Yeshiva, the Sofer's Workshop,
-	# the Chief Rabbi.
-	# ---------------------------------------------------------------
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_synagogue_01 }
-		primary_title = { change_variable = { name = kehillah_var_greatness add = 1.5 } }
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_synagogue_02 }
-		primary_title = { change_variable = { name = kehillah_var_greatness add = 1.5 } }
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_synagogue_03 }
-		primary_title = { change_variable = { name = kehillah_var_greatness add = 2.25 } }
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_synagogue_04 }
-		primary_title = { change_variable = { name = kehillah_var_greatness add = 2.25 } }
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_synagogue_05 }
-		primary_title = { change_variable = { name = kehillah_var_greatness add = 3 } }
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_beit_midrash_01 }
-		primary_title = { change_variable = { name = kehillah_var_greatness add = 0.75 } }
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_beit_midrash_02 }
-		primary_title = { change_variable = { name = kehillah_var_greatness add = 0.75 } }
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_beit_midrash_03 }
-		primary_title = { change_variable = { name = kehillah_var_greatness add = 1.5 } }
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_sofer_workshop_02 }
-		primary_title = { change_variable = { name = kehillah_var_greatness add = 0.75 } }
-	}
-	if = {
-		limit = { employs_court_position = chief_rabbi_kehillah_position }
-		primary_title = { change_variable = { name = kehillah_var_greatness add = 0.75 } }
-	}
+	# Belt-and-braces: guarantees the three variables exist before
+	# anything below tries to change_variable on them, and self-repairs
+	# any existing save/community that predates this fix.
+	primary_title = { kehillah_init_pillars_effect = yes }
 
 	# ---------------------------------------------------------------
-	# STABILITY -- the Hekdesh, the Shtadlan, the Gabbai Tzedakah, and
-	# the protection layer's and communal decisions' outcomes.
+	# PROSPERITY. kehillah_var_prosperity was introduced 2026-09-07
+	# (v2 spec section 1.1, Wave 1 item 2) by kehillah_epidemic_pulse
+	# (common/on_action/kehillah_on_actions.txt), which drains the
+	# variable when the community's location has an active epidemic.
+	#
+	# WAVE 2, 2026-09-07: Prosperity now also gets the full passive
+	# accrual v2 spec section 8 called for, via the BASELINE CONVERGENCE
+	# block at the end of this effect (see this effect's own header
+	# above for the full account). There is no separate flat-add
+	# if-block here the way Greatness and Stability had one to remove
+	# below -- Prosperity never had one (it read off Gold directly
+	# before kehillah_var_prosperity existed at all), so convergence is
+	# this pillar's ENTIRE passive-growth story, not a replacement for
+	# anything that used to be here.
 	# ---------------------------------------------------------------
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_hekdesh_01 }
-		primary_title = { change_variable = { name = kehillah_var_stability add = 1.5 } }
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_hekdesh_02 }
-		primary_title = { change_variable = { name = kehillah_var_stability add = 1.5 } }
-	}
-	if = {
-		limit = { employs_court_position = shtadlan_kehillah_position }
-		primary_title = { change_variable = { name = kehillah_var_stability add = 0.75 } }
-	}
-	if = {
-		limit = { employs_court_position = gabbai_tzedakah_kehillah_position }
-		primary_title = { change_variable = { name = kehillah_var_stability add = 0.3 } }
-	}
+
+	# ---------------------------------------------------------------
+	# GREATNESS -- structural (building/office) contributions REMOVED
+	# 2026-09-07 (Wave 2). See this effect's "BASELINE CONVERGENCE"
+	# header above for the full reasoning: the Synagogue, Beit Midrash/
+	# Yeshiva, Sofer's Workshop and Chief-Rabbi-in-post flat per-quarter
+	# adds that used to live here are now expressed through
+	# kehillah_greatness_baseline_value (common/script_values/
+	# kehillah_script_values.txt) instead, applied by the BASELINE
+	# CONVERGENCE block at the end of this effect. Nothing below this
+	# comment computes Greatness any more.
+	# ---------------------------------------------------------------
+
+	# ---------------------------------------------------------------
+	# STABILITY. Structural (building/office) contributions REMOVED
+	# 2026-09-07 (Wave 2) -- see "BASELINE CONVERGENCE" above. The
+	# Hekdesh, Shtadlan-in-post and Gabbai-Tzedakah-in-post flat
+	# per-quarter adds that used to live here are now expressed through
+	# kehillah_stability_baseline_value instead, applied by the BASELINE
+	# CONVERGENCE block at the end of this effect.
+	#
+	# The four blocks below are UNCHANGED and are NOT part of that
+	# replacement: they read instantaneous, decision/event-driven
+	# consequences (a dispute ruling, tzedakah, a botched or successful
+	# protection incident) off time-limited character modifiers, not
+	# durable structural investment. See "BASELINE CONVERGENCE" above for
+	# why these stay exactly as they are.
+	# ---------------------------------------------------------------
 	if = {
 		limit = { has_character_modifier = kehillah_settled_dispute_modifier }
 		primary_title = { change_variable = { name = kehillah_var_stability add = 1.5 } }
@@ -729,6 +843,226 @@ kehillah_quarterly_pillars_effect = {
 	if = {
 		limit = { has_character_modifier = kehillah_emboldened_community_modifier }
 		primary_title = { change_variable = { name = kehillah_var_stability add = 1.5 } }
+	}
+
+	# ---------------------------------------------------------------
+	# EPIDEMIC RECOVERY BEAT (v2 spec's "epidemic pulse", Wave 1 item 2).
+	#
+	# There is no vanilla "epidemic just ended at this location" hook to
+	# trigger off of directly -- confirmed absent from
+	# common/on_action/ during this task's research (only
+	# epidemic_endemic_capital_legitimacy_effect exists nearby, which is
+	# a different concept -- ongoing endemic disease, not an end event).
+	# So this is checked here, at the existing quarterly tick, instead:
+	# if kehillah_epidemic_active_flag is set (kehillah_epidemic_pulse
+	# sets it every time the epidemic pulse fires) but the location no
+	# longer has an active epidemic at all, the epidemic that flag
+	# tracked has cleared since the last check. This can lag the actual
+	# clearance by up to ~2 months (one quarterly tick), an accepted
+	# tolerance rather than a design goal -- the same kind of belt-and-
+	# suspenders timing gap v2 spec section 4.4 accepts for dissolution
+	# detection.
+	#
+	# kehillah_epidemic_no_physician_flag, once set by even one pulse
+	# during the epidemic, means "not throughout" -- reward only fires
+	# if that flag was never set.
+	# ---------------------------------------------------------------
+	if = {
+		limit = {
+			has_character_flag = kehillah_epidemic_active_flag
+			NOT = {
+				location = {
+					any_province_epidemic = { }
+				}
+			}
+		}
+		if = {
+			limit = {
+				NOT = { has_character_flag = kehillah_epidemic_no_physician_flag }
+			}
+			primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_epidemic_recovery_stability_gain } }
+			add_character_modifier = {
+				modifier = kehillah_epidemic_recovery_modifier
+				years = 3
+			}
+		}
+		remove_character_flag = kehillah_epidemic_active_flag
+		remove_character_flag = kehillah_epidemic_no_physician_flag
+	}
+
+	# ---------------------------------------------------------------
+	# BASELINE CONVERGENCE (v2 spec section 1.2, Wave 2 items 3-5). See
+	# this effect's top header for the full account of what this
+	# replaces and why. current = current + (baseline - current) *
+	# convergence_rate, computed here in CHARACTER scope (root = the
+	# Kehillah leader) via save_scope_value_as, then applied to the
+	# TITLE -- the same "compute in character scope, apply in title
+	# scope" split kehillah_epidemic_pulse already uses for its drain
+	# values (common/on_action/kehillah_on_actions.txt), and for the
+	# same reason: employs_court_position, has_domicile_building_or_
+	# higher and the leader's own skills all need to resolve against the
+	# CHARACTER, not the title, and a title-scoped block cannot read a
+	# character trigger directly.
+	#
+	# Each delta guards the "current" read with an exists check rather
+	# than assuming the variable is already there. kehillah_var_
+	# stability and kehillah_var_greatness are normally initialised
+	# elsewhere (on_title_gain's +50 Stability, Isaac's starting +150
+	# Greatness), but kehillah_var_prosperity has no equivalent
+	# unconditional initialisation anywhere -- it is created on demand
+	# by kehillah_epidemic_pulse's change_variable call, so a community
+	# that has never had an epidemic would otherwise have this effect
+	# try to read a variable that does not exist yet on its very first
+	# quarterly tick. Treating "does not exist" as "reads as 0" for the
+	# purpose of this subtraction is the semantically correct behaviour
+	# regardless of the reason it is missing, so the same guard is
+	# applied to all three pillars for consistency rather than only the
+	# one that strictly needs it.
+	# ---------------------------------------------------------------
+
+	save_scope_value_as = {
+		name = kehillah_prosperity_convergence_delta
+		value = {
+			value = kehillah_prosperity_baseline_value
+			if = {
+				limit = { primary_title = { exists = var:kehillah_var_prosperity } }
+				subtract = primary_title.var:kehillah_var_prosperity
+			}
+			multiply = kehillah_convergence_rate_value
+		}
+	}
+	save_scope_value_as = {
+		name = kehillah_stability_convergence_delta
+		value = {
+			value = kehillah_stability_baseline_value
+			if = {
+				limit = { primary_title = { exists = var:kehillah_var_stability } }
+				subtract = primary_title.var:kehillah_var_stability
+			}
+			multiply = kehillah_convergence_rate_value
+		}
+	}
+	save_scope_value_as = {
+		name = kehillah_greatness_convergence_delta
+		value = {
+			value = kehillah_greatness_baseline_value
+			if = {
+				limit = { primary_title = { exists = var:kehillah_var_greatness } }
+				subtract = primary_title.var:kehillah_var_greatness
+			}
+			multiply = kehillah_convergence_rate_value
+		}
+	}
+
+	primary_title = {
+		change_variable = {
+			name = kehillah_var_prosperity
+			add = scope:kehillah_prosperity_convergence_delta
+		}
+		change_variable = {
+			name = kehillah_var_stability
+			add = scope:kehillah_stability_convergence_delta
+		}
+		change_variable = {
+			name = kehillah_var_greatness
+			add = scope:kehillah_greatness_convergence_delta
+		}
+	}
+
+	# ---------------------------------------------------------------
+	# POPULATION PRESSURE (Wave 3 item 3, v2 spec section 2's "soft
+	# courtier/population cap"). See kehillah_courtier_capacity_value's
+	# own header (common/script_values/kehillah_script_values.txt) for
+	# why this is pressure rather than an enforced limit -- CK3 has no
+	# scriptable per-character courtier cap at all.
+	# ---------------------------------------------------------------
+	if = {
+		limit = { kehillah_courtier_count_value > kehillah_courtier_capacity_value }
+		add_character_modifier = {
+			modifier = kehillah_overcrowded_quarter_modifier
+		}
+		primary_title = {
+			change_variable = { name = kehillah_var_stability subtract = kehillah_overcrowding_stability_drain }
+		}
+	}
+	else = {
+		remove_character_modifier = kehillah_overcrowded_quarter_modifier
+	}
+
+	# ---------------------------------------------------------------
+	# RETENTION (Wave 3 item 3, v2 spec's "courtier retention/defection
+	# chance, inversely scaled to Stability band"). FIRST-PASS
+	# APPROXIMATION, per this task's own brief: no vanilla "chance a
+	# courtier leaves" hook exists, so this is a plain percentage roll,
+	# gated to only the WORST band (Crisis), that sends one random
+	# courtier of a DIFFERENT dynasty than the leader's own (the same
+	# "protect the succession floor" exclusion kehillah_has_dispute_
+	# candidates_trigger already uses) to take service with the
+	# community's own local count/baron instead -- the same
+	# domicile.domicile_location.county.holder target the loan feature
+	# below uses, which reads as "a discontented courtier leaves the
+	# community for the host's own court" rather than vanishing.
+	# ---------------------------------------------------------------
+	if = {
+		limit = {
+			NOT = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_stability THRESHOLD = kehillah_band_strained_threshold } }
+			exists = domicile.domicile_location.county.holder
+		}
+		random = {
+			chance = kehillah_courtier_defection_chance_value
+			random_courtier = {
+				limit = {
+					is_adult = yes
+					is_imprisoned = no
+					NOT = { dynasty = root.dynasty }
+				}
+				# Scope inside random_courtier's body is the picked
+				# courtier; root still refers to the leader, so this
+				# reaches the leader's own local county holder without
+				# any extra scope-saving.
+				set_employer = root.domicile.domicile_location.county.holder
+			}
+		}
+	}
+
+	# ---------------------------------------------------------------
+	# LOAN TICK (Wave 3 item 4). Full mechanism account:
+	# common/script_values/kehillah_script_values.txt's "Light loan
+	# contracts" header. Two passes over the SAME variable_list, both
+	# read-only with respect to the list itself (neither pass ever
+	# calls remove_list_variable while iterating it -- see that
+	# header's note on why removal is deliberately confined to
+	# kehillah_repay_loan_decision's own plain, non-iterating effect
+	# instead): first increment every active debtor's elapsed time,
+	# then default any debtor whose term has run out. A defaulted
+	# debtor's own loan variables are cleared (so this guard cannot
+	# re-fire on them next quarter) but they are left in the list --
+	# a harmless, permanently-inert entry, not a leak, since every
+	# check here and in kehillah_repay_loan_decision already requires
+	# exists = var:kehillah_loan_amount_owed before doing anything.
+	# ---------------------------------------------------------------
+	primary_title = {
+		save_scope_as = kehillah_loan_title
+	}
+	scope:kehillah_loan_title = {
+		every_in_list = {
+			variable = kehillah_loan_debtors
+			limit = { exists = var:kehillah_loan_amount_owed }
+			change_variable = { name = kehillah_loan_years_elapsed add = 0.25 }
+		}
+		every_in_list = {
+			variable = kehillah_loan_debtors
+			limit = {
+				exists = var:kehillah_loan_amount_owed
+				var:kehillah_loan_years_elapsed >= kehillah_loan_term_years
+			}
+			remove_variable = kehillah_loan_amount_owed
+			remove_variable = kehillah_loan_lender_title
+			remove_variable = kehillah_loan_years_elapsed
+			scope:kehillah_loan_title = {
+				change_variable = { name = kehillah_var_prosperity subtract = kehillah_loan_default_prosperity_loss }
+			}
+		}
 	}
 }
 
@@ -755,5 +1089,126 @@ kehillah_update_leader_flavor_effect = {
 	}
 	else = {
 		remove_character_flag = kehillah_rabbinic_leader_flag
+	}
+}
+
+
+# =====================================================================
+# kehillah_dispute_pick_parties_effect
+# Scope: the Kehillah leader (character).
+#
+# Picks the two disputants for events/kehillah_dispute_events.txt and
+# looks up the Chief Rabbi if the office is filled. Shared by both
+# dispute event variants so the selection logic lives in one place
+# rather than being copy-pasted per event.
+#
+# random_courtier + save_scope_as, with the second call excluding the
+# first pick via NOT = { this = scope:X }, mirrors vanilla's own
+# two-random-courtier pattern (common/scripted_effects/
+# 00_ep1_court_type_effects.txt's courtier_1/courtier_2 selection).
+# root.court_position:<key> as a direct link to a court position's
+# current holder is confirmed vanilla usage (e.g.
+# common/character_interactions/00_education_interactions.txt's
+# court_position:court_tutor_court_position, and
+# common/activities/activity_types/hunt.txt's
+# scope:host.court_position:master_of_hunt_court_position).
+#
+# kehillah_has_dispute_candidates_trigger (common/scripted_triggers/
+# kehillah_scripted_triggers.txt) guarantees a qualifying pair exists
+# before either event can fire, but scope:kehillah_party_b's read sites
+# in the event file still use the safe-scope style (?=) already used
+# throughout this mod, in case that guarantee ever proves wrong.
+# =====================================================================
+
+# =====================================================================
+# kehillah_apply_courtier_quality_effect
+# Scope: a character who has just joined a Kehillah court. Requires
+# scope:new_employer (handed to kehillah_on_join_court by vanilla's own
+# on_join_court on_action).
+#
+# Wave 3 item 3, v2 spec section 4's "courtier quality: better skill/
+# trait weights... at higher Greatness bands."
+#
+# WHY THIS HOOKS HERE RATHER THAN EDITING common/scripted_character_
+# templates/kehillah_pool_repopulation_patch.txt, AS THIS TASK'S OWN
+# BRIEF SUGGESTED. That file's random_traits_list/skill weighting runs
+# inside pool_repopulate_local_flavor, vanilla's WORLD-WIDE low-born
+# character-pool generator -- it fires for any Jewish-culture pool
+# character anywhere on the map, keyed off geography (root.capital_
+# province's geographical_region), with no reliable scope link back to
+# any ONE specific Kehillah's title variables. There is no "which
+# Kehillah is this character being generated near" question the
+# template can even ask. kehillah_on_join_court, by contrast, already
+# hands this mod scope:new_employer bound to the EXACT Kehillah a
+# character is joining, every single time -- the correct, already-
+# proven scope to read a Greatness band from. This is a deliberate
+# pivot from the suggested file, not a missed instruction: the
+# suggested file was read in full during this task before choosing an
+# alternative.
+#
+# WHY A ONE-TIME SKILL BUMP RATHER THAN A CONTINUOUS MODIFIER. A
+# character_modifier boosting a stat lives on the character it targets,
+# but this mod controls the LEADER, not each courtier -- there is no
+# clean "apply this to everyone in my court" character_modifier field.
+# A one-time add-on-arrival is what stays within reach of a plain
+# effect: a courtier who joins a Legendary-band community is simply a
+# somewhat more accomplished person than one joining a Crisis-band one,
+# permanently, not a temporary bonus that would need per-courtier
+# tracking to remove correctly if the band later falls.
+#
+# Cumulative across bands (Legendary gets Healthy's + Flourishing's +
+# its own), mirroring the baseline-value / courtier-capacity pattern
+# already used elsewhere in this mod for the same reason: consistency
+# and confirmed safety.
+# =====================================================================
+
+kehillah_apply_courtier_quality_effect = {
+	if = {
+		limit = {
+			scope:new_employer = {
+				kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_healthy_threshold }
+			}
+		}
+		add_learning_skill = kehillah_courtier_quality_healthy_learning_bonus
+	}
+	if = {
+		limit = {
+			scope:new_employer = {
+				kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_flourishing_threshold }
+			}
+		}
+		add_learning_skill = kehillah_courtier_quality_flourishing_learning_bonus
+	}
+	if = {
+		limit = {
+			scope:new_employer = {
+				kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_legendary_threshold }
+			}
+		}
+		add_learning_skill = kehillah_courtier_quality_legendary_learning_bonus
+		add_stewardship_skill = kehillah_courtier_quality_legendary_stewardship_bonus
+	}
+}
+
+
+kehillah_dispute_pick_parties_effect = {
+	random_courtier = {
+		limit = {
+			is_adult = yes
+			is_imprisoned = no
+		}
+		save_scope_as = kehillah_party_a
+	}
+	random_courtier = {
+		limit = {
+			is_adult = yes
+			is_imprisoned = no
+			NOT = { this = scope:kehillah_party_a }
+			NOT = { dynasty = scope:kehillah_party_a.dynasty }
+		}
+		save_scope_as = kehillah_party_b
+	}
+	root.court_position:chief_rabbi_kehillah_position ?= {
+		save_scope_as = kehillah_chief_rabbi
 	}
 }

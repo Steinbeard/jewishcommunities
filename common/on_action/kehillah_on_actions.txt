@@ -27,7 +27,7 @@ on_game_start_after_lobby = {
 
 kehillah_on_game_start = {
 	effect = {
-		title:d_kehillah_worms ?= {
+		title:c_kehillah_worms ?= {
 			holder ?= {
 				kehillah_setup_worms_start_effect = yes
 			}
@@ -95,7 +95,15 @@ kehillah_on_title_gain = {
 		# NOT THE CHARACTER" note) and so are already exactly as they
 		# were, needing no restoration; this is a personal vote of
 		# confidence added on top, not a duplicate of anything.
-		scope:title = { change_variable = { name = kehillah_var_stability add = 50 } }
+		# kehillah_init_pillars_effect first -- change_variable is a
+		# silent no-op on a variable that has never been set (see that
+		# effect's header in kehillah_scripted_effects.txt for the full
+		# live-test finding). Matters most here of anywhere: an appointed
+		# successor's quarter may not have had a quarterly tick yet.
+		scope:title = {
+			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_stability add = 50 }
+		}
 
 		# Re-evaluate Rav vs. Parnas for the incoming leader -- see
 		# common/flavorization/kehillah_title_holders.txt.
@@ -218,11 +226,25 @@ kehillah_on_join_court = {
 		scope:new_employer = {
 			government_has_flag = government_is_kehillah
 		}
-		exists = scope:old_employer
-		NOT = { faith = scope:new_employer.faith }
 	}
 	effect = {
-		set_employer = scope:old_employer
+		if = {
+			limit = {
+				exists = scope:old_employer
+				NOT = { faith = scope:new_employer.faith }
+			}
+			set_employer = scope:old_employer
+		}
+		else = {
+			# QUALITY (Wave 3 item 3, v2 spec's "courtier quality... skew
+			# toward better skills at higher Greatness bands"). See
+			# kehillah_apply_courtier_quality_effect's own header
+			# (common/scripted_effects/kehillah_scripted_effects.txt) for
+			# why this hooks HERE rather than editing
+			# common/scripted_character_templates/
+			# kehillah_pool_repopulation_patch.txt as originally suggested.
+			kehillah_apply_courtier_quality_effect = yes
+		}
 	}
 }
 
@@ -242,5 +264,173 @@ kehillah_yearly_pulse = {
 		40 = kehillah.0001	# The Bailiff's Demand
 		30 = kehillah.0002	# An Ugly Rumour
 		30 = kehillah.0003	# Stones in the Night
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# DISPUTE PULSE -- the organic dispute-ruling event (v2 spec section 3,
+# Wave 1), replacing the retired kehillah_mediate_dispute_decision (see
+# common/decisions/kehillah_decisions.txt's header for why).
+#
+# root = the character
+#
+# Deliberately a SEPARATE on_action block from kehillah_yearly_pulse
+# above, not a third entry added to that block's random_events, even
+# though both hang off the same vanilla anchor. This is mundane
+# internal governance, not the external-threat "protection" layer, and
+# giving it its own chance_to_happen means the two rates can be tuned
+# independently -- a community could plausibly face threats often and
+# disputes rarely, or the reverse, and folding both into one roll would
+# make that impossible to express. Two same-key
+# random_yearly_playable_pulse blocks in one file merge exactly the way
+# this file's own header describes for the three vanilla on_actions it
+# already extends (on_actions = { ... } lists concatenate by key,
+# regardless of which file or how many times the key appears).
+#
+# chance_to_happen is set looser than protection's 30: family disputes
+# are ordinary communal friction, not a threat from outside, so they
+# should come up somewhat more often. 65 is a first guess, per this
+# file's and kehillah_script_values.txt's own "prototype loosely, tune
+# by playtest" norm -- not a claim about the historically correct rate
+# of Jewish communal litigation.
+# ---------------------------------------------------------------------
+
+random_yearly_playable_pulse = {
+	on_actions = { kehillah_dispute_pulse }
+}
+
+kehillah_dispute_pulse = {
+	trigger = {
+		government_has_flag = government_is_kehillah
+		is_adult = yes
+		is_imprisoned = no
+		kehillah_has_dispute_candidates_trigger = yes
+	}
+	random_events = {
+		chance_to_happen = 65
+
+		# A meaningful chance nothing comes to you even when the roll
+		# happens, same reasoning as kehillah_yearly_pulse above.
+		100 = 0
+
+		50 = kehillah_dispute.0001	# A Broken Partnership
+		50 = kehillah_dispute.0002	# A Question of Dowry
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# EPIDEMIC PULSE -- hooks the existing vanilla epidemic/physician system
+# into Prosperity and Stability (v2 spec's "epidemic pulse" input on
+# both pillars; Wave 1 item 2).
+#
+# root = the character. epidemic_ongoing_events is a GLOBAL vanilla
+# on_action (common/on_action/ce1_on_actions.txt), confirmed root-bound
+# to the affected character (its own effect block reads
+# capital_province, a character-scope link, directly at the top level)
+# and confirmed to already fire for landless governments explicitly --
+# its own effect block special-cases
+# OR = { has_government = landless_adventurer_government
+#        is_landless_administrative = yes } for the Black Death
+# splash-screen check. It also hands the effect block scope:epidemic,
+# the specific epidemic instance driving this firing, already bound --
+# confirmed by that same vanilla effect block reading
+# capital_province ?= { any_province_epidemic = { this = scope:epidemic } ... }
+# with no save_scope_as of its own beforehand. No iteration or extra
+# scope-saving was needed to reach it, unlike the doc note that
+# prompted this task assumed might be necessary.
+#
+# Gated on has_ce1_dlc_trigger (common/scripted_triggers/
+# 00_has_dlc_scripted_triggers.txt) since epidemics are Legends of the
+# Dead content; without the DLC this on_action's own vanilla trigger
+# conditions mean it will not fire in the first place, but the explicit
+# gate here is kept for clarity and consistency with this file's own
+# style of never assuming a DLC silently.
+#
+# location = { any_province_epidemic = { this = scope:epidemic } }
+# confirms the SPECIFIC epidemic driving this pulse is actually present
+# at the character's own current location -- not merely somewhere in
+# the wider world -- mirroring the exact trigger shape used throughout
+# common/scripted_triggers/06_ce1_epidemic_triggers.txt and
+# common/epidemics/00_epidemics.txt.
+#
+# kehillah_var_prosperity is introduced HERE, as a title variable
+# (primary_title, not the character -- see kehillah_quarterly_pillars_
+# effect's "WHY THE TITLE, NOT THE CHARACTER" note for why every pillar
+# variable in this mod follows that pattern). It did not exist before
+# this task; v2 spec section 1.1 flags creating it as the one piece of
+# new plumbing this whole Prosperity/Stability/Greatness design
+# depends on, so it is added properly here rather than assumed.
+#
+# UPDATED 2026-09-07 (Wave 2): this drain is no longer the only writer.
+# kehillah_quarterly_pillars_effect (common/scripted_effects/
+# kehillah_scripted_effects.txt) now also applies baseline convergence
+# to this variable every quarter, per v2 spec section 8's Wave 2 item 3.
+# This on_action's drain is unchanged -- it remains the one
+# INSTANTANEOUS negative input on Prosperity (v2 spec section 2's
+# epidemic input row); convergence pulling the variable back toward its
+# structural baseline afterward is the intended interaction between the
+# two, not a conflict.
+#
+# Drain amounts and physician mitigation are computed as script values
+# in CHARACTER scope (kehillah_epidemic_prosperity_drain_value /
+# kehillah_epidemic_stability_drain_value, common/script_values/
+# kehillah_script_values.txt) and saved via save_scope_value_as BEFORE
+# switching into primary_title -- the same pattern
+# events/kehillah_protection_events.txt already uses for
+# kehillah_shakedown_gold_cost, and necessary here for the same reason:
+# employs_court_position and scope:epidemic need to resolve against the
+# character, not the title, and a title-scoped block cannot read a
+# character trigger directly.
+# ---------------------------------------------------------------------
+
+epidemic_ongoing_events = {
+	on_actions = { kehillah_epidemic_pulse }
+}
+
+kehillah_epidemic_pulse = {
+	trigger = {
+		government_has_flag = government_is_kehillah
+		has_ce1_dlc_trigger = yes
+		exists = scope:epidemic
+		location = {
+			any_province_epidemic = { this = scope:epidemic }
+		}
+	}
+	effect = {
+		save_scope_value_as = {
+			name = kehillah_epidemic_prosperity_drain
+			value = kehillah_epidemic_prosperity_drain_value
+		}
+		save_scope_value_as = {
+			name = kehillah_epidemic_stability_drain
+			value = kehillah_epidemic_stability_drain_value
+		}
+
+		primary_title = {
+			change_variable = {
+				name = kehillah_var_prosperity
+				subtract = scope:kehillah_epidemic_prosperity_drain
+			}
+			change_variable = {
+				name = kehillah_var_stability
+				subtract = scope:kehillah_epidemic_stability_drain
+			}
+		}
+
+		# Recovery-beat bookkeeping (see kehillah_quarterly_pillars_effect
+		# for the detection side). Flag stays set for the whole time the
+		# epidemic is active at this location; the "no physician" flag,
+		# once set, is never cleared mid-epidemic -- a physician who
+		# leaves partway through should not retroactively count as
+		# "throughout".
+		add_character_flag = kehillah_epidemic_active_flag
+		if = {
+			limit = {
+				NOT = { employs_court_position = court_physician_court_position }
+			}
+			add_character_flag = kehillah_epidemic_no_physician_flag
+		}
 	}
 }

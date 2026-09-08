@@ -18,7 +18,7 @@
 # ---------------------------------------------------------------------
 
 is_kehillah_title_trigger = {
-	this = title:d_kehillah_worms
+	this = title:c_kehillah_worms
 }
 
 
@@ -114,5 +114,129 @@ kehillah_leader_is_rabbinic_trigger = {
 		has_trait = education_learning_4
 		has_trait = education_learning_5
 		learning >= 12
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_pillar_at_least_trigger
+# Scope: a character holding the Kehillah title as primary_title.
+# Parameters: PILLAR (the bare pillar variable name, e.g.
+# kehillah_var_prosperity), THRESHOLD (a literal number or a script
+# value name, e.g. kehillah_band_healthy_threshold).
+#
+# v2 spec section 8, Wave 2 item 4: one shared band-check trigger for
+# all three pillars, so Wave 3's band-gated building tiers/decisions/
+# courtier quality read off a single mechanism rather than each
+# reinventing the comparison.
+#
+# DESIGN DECISION: PARAMETERIZED, NOT PER-BAND-PER-PILLAR. The
+# alternative the task considered was 15 explicit triggers (one per
+# band per pillar, e.g. kehillah_prosperity_is_healthy_trigger). Went
+# with the parameterized single trigger instead because the exact
+# mechanism it depends on -- a trigger parameter substituted directly
+# into a var: accessor -- is CONFIRMED, not guessed, against two live
+# 1.19 vanilla precedents:
+#
+#   common/scripted_triggers/tgp_imperial_examination_triggers.txt:
+#     has_perfect_score_trigger = {
+#         has_variable = $SCORE_VAR$
+#         var:$SCORE_VAR$ >= imperial_examination_perfect_score_value
+#     }
+#   -- called with has_perfect_score_trigger = { SCORE_VAR =
+#   first_place_entrant_score } (common/activities/activity_types/
+#   local_examination.txt and imperial_examination.txt), i.e. exactly
+#   this mod's PILLAR = kehillah_var_prosperity pattern: a bare variable
+#   NAME, no quotes, substituted textually into var:$X$ at parse time.
+#
+#   common/scripted_triggers/03_bp1_scripted_triggers.txt:
+#     house_relation_feud_flag_trigger = {
+#         exists = var:$VARIABLE$
+#         var:$VARIABLE$ = flag:$FLAG$
+#     }
+#   -- a second, independent vanilla file doing the identical thing.
+#
+# And the exact composition used here -- a var: accessor compared
+# against a NAMED SCRIPT VALUE, not a literal -- is ALSO directly
+# confirmed, not just separately plausible from two other patterns:
+#   common/character_interactions/00_diarch_interactions.txt:
+#     scope:actor.var:movement_power_individual >= decent_movement_power_value
+# i.e. precisely this trigger's own var:$PILLAR$ >= $THRESHOLD$ shape,
+# with $THRESHOLD$ substituting to a script value name (e.g.
+# kehillah_band_healthy_threshold) rather than a literal number. Every
+# individual piece of this trigger is therefore confirmed against live
+# 1.19 vanilla content; nothing about it is a guess.
+#
+# The 15-trigger fallback remains the documented Plan B if a live load
+# ever disagrees with this reading (e.g. some interaction between the
+# specific dotted chain primary_title.var:$PILLAR$ and parameter
+# substitution that these precedents don't individually cover) --
+# same band thresholds, same script values, just spelled out per pillar
+# per band instead of substituted.
+# ---------------------------------------------------------------------
+
+kehillah_pillar_at_least_trigger = {
+	primary_title = {
+		var:$PILLAR$ >= $THRESHOLD$
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_has_dispute_candidates_trigger
+# Scope: a character (the Kehillah leader).
+#
+# Guards the organic dispute-ruling event (events/kehillah_dispute_events.txt,
+# v2 spec section 3, replacing the retired Mediate a Dispute decision --
+# see common/decisions/kehillah_decisions.txt's header) so it cannot fire
+# in a thin, early community with nobody plausible to be quarrelling.
+# Requires at least two adult, unimprisoned courtiers, AND that at least
+# one pair of them actually belongs to different dynasties -- two
+# members of the leader's own household squabbling is a family matter,
+# not the "two notable families" dispute spec section 3 describes.
+#
+# SYNTAX CONFIRMED AGAINST LIVE FILES: "count" as a bare filter inside
+# an any_X block (common/scripted_triggers/06_ce1_epidemic_triggers.txt's
+# realm_has_any_epidemic, "any_sub_realm_county = { count >= $SIZE$ ... }")
+# and "prev" as a link back to the immediately enclosing scope
+# (common/scripted_triggers/00_activity_triggers.txt, used throughout).
+#
+# JUDGEMENT CALL, NOT CONFIRMED VERBATIM: this exact nested composition
+# -- iterate courtiers, then from EACH one check root's other courtiers
+# for a different dynasty via root.any_courtier + prev -- was not found
+# written this way in any single vanilla file. Each piece is confirmed;
+# the assembly is this mod's own and should be sanity-checked on a live
+# load (does the guard actually gate the event out of a one-family
+# community, and let it through once a second family exists).
+# ---------------------------------------------------------------------
+
+kehillah_has_dispute_candidates_trigger = {
+	any_courtier = {
+		count >= 2
+		is_adult = yes
+		is_imprisoned = no
+	}
+	any_courtier = {
+		is_adult = yes
+		is_imprisoned = no
+		# FIXED 2026-09-07 (live-test finding): the previous line here was
+		# "root.any_courtier = { ... }" -- chaining any_courtier as a
+		# dotted link off root, rather than opening it as its own block
+		# inside a root scope change. That failed live with "Failed to
+		# find a valid event target link 'any_courtier'" / "Unknown
+		# trigger: root.any_courtier". any_courtier is confirmed (grep
+		# against the installed 1.19 files, e.g. 00_diarch_interactions.txt)
+		# to be valid ONLY as its own "any_courtier = { ... }" block, never
+		# dot-chained onto another scope. root = { any_courtier = { ... } }
+		# opens root as a scope first, which is the correct form.
+		root = {
+			any_courtier = {
+				count >= 1
+				is_adult = yes
+				is_imprisoned = no
+				NOT = { this = prev }
+				NOT = { dynasty = prev.dynasty }
+			}
+		}
 	}
 }

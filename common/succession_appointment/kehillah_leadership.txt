@@ -11,12 +11,10 @@
 # knowledge, not court manoeuvring.
 #
 # =====================================================================
-# THE POOL IS FAMILY-ONLY, AND THAT IS NOT WHAT THE SPEC ASKED FOR.
-# READ THIS BEFORE TRYING TO WIDEN IT.
+# THE POOL. FAMILY PLUS THE COMMUNITY'S OFFICERS.
 #
 # Spec section 5 wants an open pool: notable family heads, not just the
-# outgoing leader's kin. This entry cannot currently deliver that, and
-# the reason is an engine limitation rather than a design choice.
+# outgoing leader's kin. This is how close the engine lets us get.
 #
 # The candidate categories documented in
 # common/succession_appointment/_succession_appointment.info are:
@@ -34,42 +32,55 @@
 #   1. Family categories. Work, but are all kin.
 #   2. Vassal and noble-house categories. Administrative-government
 #      constructs. They parse, but contribute nobody here.
-#   3. holder_councilor, holder_court_position, direct_subject. These
-#      are the three that WOULD have opened the pool to the community's
-#      officers. **They are documented but not implemented.** Grepping
-#      the 1.19 files shows no vanilla content using any of them, and
-#      the first playtest confirmed it the hard way: including
-#      holder_court_position made the parser reject the whole
-#      invested_candidates statement, which left this entry undefined,
-#      which left the succession law pointing at a missing appointment
-#      type, which crashed the game on load with
-#      "Failed build succession ... unhandled succession order [invalid]"
-#      (succession_order.cpp:704).
+#   3. holder_court_position, holder_councilor. These open the pool to
+#      the community's own officers, and they are the reason this is
+#      no longer a family-only office.
 #
-# So the officers cannot be candidates through this system. What
-# remains is family, which is an honest v1 state but is NOT the design.
+# CORRECTION, 2026-09-07. An earlier version of this header claimed
+# holder_court_position was "documented but not implemented" and that
+# including it made the parser reject the whole statement. That was
+# wrong, and it was the reason succession still handed the title to the
+# outgoing leader's eldest son in play: family were the only candidates,
+# so the meritocratic scoring below had nothing to choose between and
+# degenerated into ordinary inheritance.
 #
-# The route to the real thing is almost certainly to stop using
-# succession_appointment for this and script the handover instead: on
-# the leader's death, run an effect that scores every eligible member
-# of the community and grants the title to the winner. That is more
-# work, but it removes the category restriction entirely and it is the
-# same machinery a player-chosen successor and a retirement decision
-# would need anyway. Logged in docs/iteration/v1-iteration-notes.md.
+# holder_court_position and holder_councilor are both supported and both
+# shipped in vanilla 1.19 -- see common/succession_appointment/
+# japanese_admin_governor.txt, which lists
+#   default_candidates = { holder_close_family landed_vassal holder_councilor holder_court_position }
+# The earlier load failure was a different mistake (the statement was
+# spelled invested_candidates, which is not a key the parser knows);
+# the category was never the problem.
 #
-# The candidate_score below is written as though the pool were already
-# open -- the office-holding bonus, the culture check and the
-# faith check all still make sense, and several will apply to family
-# members who hold offices. None of it needs rewriting when the pool
-# widens.
+# direct_subject is deliberately still left out. It is listed in the
+# .info but no vanilla file uses it, so nothing proves it parses, and a
+# rejected default_candidates statement leaves this entry undefined,
+# which leaves the succession law pointing at a missing appointment type
+# and crashes on load ("Failed build succession ... unhandled succession
+# order [invalid]", succession_order.cpp:704). Not worth the risk for a
+# category that adds nobody the two above do not already cover.
+#
+# WHAT THIS MEANS IN PLAY. The Shtadlan is eligible from day one -- it
+# is the only office that is not building-gated. The Chief Rabbi and
+# the Treasurer become eligible once the player has built the Beit
+# Midrash and the Countinghouse and appointed someone to them. So an
+# undeveloped community really does pass leadership within the family,
+# because it has no institutions through which anyone else can earn
+# standing; build the quarter and the succession opens up. That
+# progression is the design (see kehillah_seed_community_effect in
+# common/scripted_effects/kehillah_scripted_effects.txt), not a
+# leftover limitation.
 # =====================================================================
 
 kehillah_leadership = {
-	default_candidates = { holder_close_family }
-
-	# holder_court_position belongs here and cannot go here. See the
-	# header. Do not re-add it without testing that the game still
-	# loads.
+	# Family, plus whoever holds one of the community's offices. See the
+	# header for why holder_court_position is safe here (vanilla ships it
+	# in japanese_admin_governor.txt) and why direct_subject is not.
+	default_candidates = {
+		holder_close_family
+		holder_court_position
+		holder_councilor
+	}
 
 	# Communal leadership is not a child's office. A minor cannot lead a
 	# congregation, and unlike vanilla's admin_emperor there is no realm
@@ -298,7 +309,11 @@ kehillah_leadership = {
 			# -----------------------------------------------------
 			if = {
 				limit = {
-					NOT = { faith = scope:title.holder.faith }
+					# Guarded with ?= like every other scope:title.holder read in
+					# this file: the outgoing holder can already be gone when
+					# candidates are scored, and an unset scope here would throw
+					# rather than simply skipping the penalty.
+					scope:title.holder ?= { NOT = { faith = root.faith } }
 				}
 				subtract = {
 					value = 500

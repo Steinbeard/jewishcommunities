@@ -21,17 +21,39 @@
 #
 # That leaves the decisions that genuinely have no home elsewhere:
 #
-#   Mediate a Dispute Between Families -- Stability
 #   Distribute Tzedakah                -- Gold spent, Stability gained
 #   Compose a Commentary               -- Greatness
 #
 # (Renamed 2026-09-07 from the original Steward/Prosper/Study labels
 # when the pillars themselves were renamed to Prosperity/Stability/
-# Greatness -- see docs/spec/v1-kehillah-community.md section 3.
-# Stability has no decision of its own reacting to threats; that side
-# is reactive and lives in events/kehillah_protection_events.txt.)
+# Greatness -- see docs/spec/v1-kehillah-community.md section 3.)
 #
-# Two of these three come straight from the spec. Distribute Tzedakah is
+# RETIRED 2026-09-07 (Wave 1 of docs/spec/v2-pillar-economy-and-lifecycle.md,
+# section 8): Mediate a Dispute Between Families used to live here,
+# resolving on the leader's Stewardship whenever the player chose to
+# take it. It has been replaced by an ORGANIC event pair --
+# events/kehillah_dispute_events.txt, on its own on_action
+# (kehillah_dispute_pulse, common/on_action/kehillah_on_actions.txt) --
+# rather than a decision the player summons at will. v2 spec section 3
+# names this explicitly as the "organic family-dispute ruling" that
+# supersedes the decision. The new version keeps the same Stewardship
+# check and threshold shape (see the event file's header) but adds two
+# things a decision structurally couldn't: it arrives on its own
+# schedule rather than on demand, and it offers a fourth option --
+# delegating the ruling to the Chief Rabbi, resolved on Learning instead
+# -- which needed real disputants (picked at event immediate) to mean
+# anything, not just an abstract "the community" the old decision spent
+# standing against. kehillah_mediation_standing_cost (common/
+# script_values/kehillah_script_values.txt) and
+# kehillah_requires_stability_cost_tt (localization) went with it --
+# the new event has no upfront cost, only outcomes -- and
+# kehillah_mediate_dispute_decision's own localization keys
+# (kehillah_mediate_dispute_decision / _desc / _tooltip / _confirm,
+# kehillah_mediate_dispute_great_tt / _good_tt / _poor_tt) were removed
+# from kehillah_l_english.yml in the same pass, replaced by the new
+# event's own kehillah_dispute.* keys.
+#
+# One of these two comes straight from the spec. Distribute Tzedakah is
 # pulled up from ROADMAP.md's "cheap, reinforces an existing v1 pillar"
 # backlog list, which explicitly flags it as a Phase 1 candidate. That
 # is a scope addition, small and deliberate: without it the Gold-to-
@@ -68,6 +90,28 @@
 # ([ROOT.GetPrimaryTitle.Var('...').GetValue|V0], the same pattern
 # vanilla uses for e.g. activity progress bars). Taking it does nothing
 # mechanical -- it exists to be looked at, not clicked.
+#
+# UPDATED 2026-09-07: now also reads kehillah_var_prosperity, added by
+# common/on_action/kehillah_on_actions.txt's kehillah_epidemic_pulse
+# (v2 spec's "epidemic pulse", Wave 1 item 2). Only the localization
+# text changed here.
+#
+# UPDATED AGAIN 2026-09-07 (Wave 2): kehillah_var_prosperity is no
+# longer fed only by the epidemic drain -- it now gets the same
+# baseline-convergence accrual as the other two pillars (see
+# kehillah_quarterly_pillars_effect's "BASELINE CONVERGENCE" header,
+# common/scripted_effects/kehillah_scripted_effects.txt). The
+# desc's localization text was updated again in the same pass to stop
+# describing Prosperity as reading "at or below zero" / moving "only...
+# when illness passes through the quarter", which was true under Wave 1
+# but is no longer an accurate description of the mechanic. The desc
+# also now shows each pillar's qualitative band (Crisis/Strained/
+# Healthy/Flourishing/Legendary, v2 spec section 1.1) next to its raw
+# number, via the new KehillahProsperityBandName/KehillahStabilityBand
+# Name/KehillahGreatnessBandName customizable_localization functions
+# (common/customizable_localization/kehillah_pillar_band_custom_loc.txt)
+# -- this decision's own script is unchanged; only its localization key
+# grew the band-name calls.
 # =====================================================================
 
 kehillah_view_standing_decision = {
@@ -97,102 +141,6 @@ kehillah_view_standing_decision = {
 
 	ai_will_do = {
 		base = 0
-	}
-}
-
-
-# =====================================================================
-# MEDIATE A DISPUTE BETWEEN FAMILIES -- Stability
-#
-# Spec section 3: "Decisions like mediating family disputes or funding
-# charity succeed on competence/standing. This is the main visible break
-# from Byzantine-office flavor -- no scheme system."
-#
-# Accordingly this resolves on Stewardship and costs standing (formerly
-# Influence, now Stability -- see the file header). There is no plot,
-# no secrecy, no target to be caught by. You are the person the
-# community trusts to settle things, and you either are good at it or
-# you are not.
-# =====================================================================
-
-kehillah_mediate_dispute_decision = {
-	picture = {
-		reference = "gfx/interface/illustrations/decisions/fp2_decision_struggle_compromise.dds"
-	}
-
-	decision_group_type = kehillah
-	sort_order = 100
-	ai_check_interval = 36
-
-	is_shown = {
-		government_has_flag = government_is_kehillah
-	}
-
-	is_valid = {
-		is_adult = yes
-		is_imprisoned = no
-		custom_tooltip = {
-			text = kehillah_requires_stability_cost_tt
-			primary_title.var:kehillah_var_stability >= kehillah_mediation_standing_cost
-		}
-	}
-
-	cooldown = { years = 3 }
-
-	effect = {
-		# Spent up front either way -- see the else branch below.
-		primary_title = {
-			change_variable = {
-				name = kehillah_var_stability
-				subtract = kehillah_mediation_standing_cost
-			}
-		}
-
-		# Outcome scales on Stewardship. The thresholds are wide on
-		# purpose: at low Stewardship this should feel like a gamble
-		# that mostly does not pay, and improving the skill should
-		# visibly fix that.
-		if = {
-			limit = { stewardship >= 14 }
-			add_prestige = major_prestige_gain
-			primary_title = { change_variable = { name = kehillah_var_stability add = medium_influence_gain } }
-			add_character_modifier = {
-				modifier = kehillah_settled_dispute_modifier
-				years = 5
-			}
-			custom_tooltip = kehillah_mediate_dispute_great_tt
-		}
-		else_if = {
-			limit = { stewardship >= 8 }
-			add_prestige = medium_prestige_gain
-			primary_title = { change_variable = { name = kehillah_var_stability add = minor_influence_gain } }
-			add_character_modifier = {
-				modifier = kehillah_settled_dispute_modifier
-				years = 3
-			}
-			custom_tooltip = kehillah_mediate_dispute_good_tt
-		}
-		else = {
-			# The standing spent above is not refunded. Botching a
-			# mediation in front of the whole community is the actual
-			# risk, and it should sting.
-			add_prestige = minor_prestige_loss
-			add_stress = medium_stress_gain
-			custom_tooltip = kehillah_mediate_dispute_poor_tt
-		}
-	}
-
-	ai_potential = {
-		government_has_flag = government_is_kehillah
-	}
-
-	ai_will_do = {
-		base = 60
-
-		modifier = {
-			factor = 0.2
-			stewardship < 8
-		}
 	}
 }
 
@@ -267,23 +215,79 @@ kehillah_distribute_tzedakah_decision = {
 
 
 # =====================================================================
-# COMPOSE A COMMENTARY -- Greatness
+# COMPOSE A COMMENTARY -- Greatness. Sfarim (book) tiers, Wave 3 item 1.
 #
 # Spec section 3: "A signature 'compose a commentary' decision can
-# produce an artifact at high Learning."
+# produce an artifact at high Learning." v2 spec section 4's output
+# table replaces the old binary (ordinary / masterwork-if-Learning-16-
+# and-Yeshiva) with four bands, keyed off the community's GREATNESS BAND
+# via the existing kehillah_pillar_at_least_trigger (common/
+# scripted_triggers/kehillah_scripted_triggers.txt) rather than a fresh
+# threshold check:
 #
-# Structure: always costs Piety and time, always yields standing
-# (Greatness) and Learning experience. The artifact is the high end, and
-# it requires BOTH high Learning and a full yeshiva (Beit Midrash tier
-# 3) -- a lasting work of scholarship should require the institution as
-# well as the man, which is the whole thesis of the building system.
+#   Crisis/Strained -- a private teaching note. No artifact, base reward
+#     only (exactly what the old "ordinary" else-branch gave).
+#   Healthy -- a real commentary. THIS TIER KEEPS THE OLD MASTERWORK
+#     BRANCH'S REWARD NUMBERS VERBATIM (major_piety_gain / no-DLC
+#     major_prestige_gain) -- see the rarity note below for the one
+#     thing that does change.
+#   Flourishing -- a widely-copied responsum: bigger piety/prestige
+#     (vanilla's own next rung up the same generic ladder,
+#     massive_piety_gain / massive_prestige_gain) plus a new Greatness
+#     kicker (kehillah_commentary_flourishing_greatness_bonus) and
+#     flavor text saying the work is cited by name elsewhere.
+#   Legendary -- a chronicle of the community itself: the biggest
+#     reward on this ladder (monumental_piety_gain /
+#     monumental_prestige_gain, kehillah_commentary_legendary_greatness_
+#     bonus) and flavor text making explicit that other communities now
+#     write about THIS one -- the payoff line v2 spec section 4 calls
+#     for.
 #
-# The artifact branch is gated on the Royal Court DLC, because that is
-# what vanilla's create_artifact_book_effect belongs to. Without it the
-# decision still works and still rewards; you simply do not get a
-# physical book out of it. That degradation is deliberate -- the
-# Greatness pillar must not be dead content for players who own Roads to
-# Power but not Royal Court.
+# THE PERSONAL LEARNING FLOOR IS UNCHANGED AND SEPARATE FROM THE BAND
+# GATE. is_valid's learning >= 8 check is a per-CHARACTER capability
+# requirement ("can this leader write anything at all"), not a
+# community-standing gate -- kept as-is rather than folded into the
+# band logic, because the two questions are genuinely different (a
+# newly appointed but personally brilliant leader of a Crisis-band
+# community can still compose a private note; a middling scholar leading
+# a Flourishing community still needs Learning 8 to attempt anything).
+# The old inner "learning >= 16 AND has_domicile_parameter =
+# kehillah_has_yeshiva" gate is DROPPED as a separate condition for the
+# Healthy tier specifically -- a deliberate simplification, not an
+# oversight: the Greatness band itself already substantially captures
+# "the institution and the man are both ready" (kehillah_greatness_
+# baseline_value already weighs the Yeshiva's own tiers and the leader's
+# Learning), so re-checking both conditions a second time inside the
+# Healthy branch would just be the same fact gated twice. If a future
+# playtest finds the Healthy tier triggers too easily on Learning-8
+# leaders with no real institution behind them, reintroducing an inner
+# check here is the fix.
+#
+# RARITY ENUM, CONFIRMED AGAINST LIVE VANILLA FILES, NOT ASSUMED --
+# READ BEFORE CHANGING. common/artifacts/blueprints/_blueprints.info and
+# 00_reforge.txt both enumerate rarity strictly as
+# common < masterwork < famed < illustrious. illustrious is therefore
+# the TOP of the scale, not a middle rung -- there is no rarity ABOVE
+# illustrious for a hypothetical Flourishing/Legendary tier to use, which
+# is exactly the possibility this task's own brief flagged as needing
+# confirmation ("better rarity if the artifact system supports a tier
+# above illustrious"). It does not. Given that, and given the old
+# Healthy-tier branch already used illustrious (the maximum), literally
+# "keeping Healthy's behavior as-is" would leave nothing above it for
+# Flourishing/Legendary to reach for. The chosen resolution: redistribute
+# the three non-common rarities across the three tiers that now produce
+# an artifact at all -- Healthy = masterwork, Flourishing = famed,
+# Legendary = illustrious -- so rarity actually climbs with the band, at
+# the cost of the Healthy tier's artifact being ONE STEP LESS RARE than
+# it used to be. This is the one place in this item where "keep this
+# tier's behavior as-is" (the task's own suggested default) was NOT
+# followed, and it is a deliberate, reasoned deviation, not an oversight
+# -- flagged here and in the final report.
+#
+# The DLC-degradation behavior (works without Royal Court, just no
+# physical artifact) is preserved at every tier, per this task's
+# explicit instruction -- see the has_ep1_dlc_trigger branch repeated
+# inside each of the three artifact-producing tiers below.
 # =====================================================================
 
 kehillah_compose_commentary_decision = {
@@ -319,12 +323,69 @@ kehillah_compose_commentary_decision = {
 		primary_title = { change_variable = { name = kehillah_var_greatness add = major_influence_gain } }
 		add_prestige = medium_prestige_gain
 
-		# The lasting work. Learning AND the institution behind it.
 		if = {
 			limit = {
-				learning >= 16
-				domicile ?= { has_domicile_parameter = kehillah_has_yeshiva }
+				kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_legendary_threshold }
 			}
+			# LEGENDARY -- a chronicle of the community itself.
+			primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_commentary_legendary_greatness_bonus } }
+			add_piety = monumental_piety_gain
+
+			if = {
+				limit = { has_ep1_dlc_trigger = yes }
+				create_artifact_book_effect = {
+					OWNER = root
+					CREATOR = root
+					SET_SUBJECT = flag:no
+					SET_TOPIC = flag:no
+				}
+				scope:newly_created_artifact ?= {
+					set_artifact_description = kehillah_commentary_artifact_desc_legendary
+					set_artifact_rarity = illustrious
+					set_owner = root
+				}
+				custom_tooltip = kehillah_compose_commentary_legendary_tt
+			}
+			else = {
+				add_prestige = monumental_prestige_gain
+				custom_tooltip = kehillah_compose_commentary_legendary_no_dlc_tt
+			}
+		}
+		else_if = {
+			limit = {
+				kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_flourishing_threshold }
+			}
+			# FLOURISHING -- a widely-copied responsum, cited by name.
+			primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_commentary_flourishing_greatness_bonus } }
+			add_piety = massive_piety_gain
+
+			if = {
+				limit = { has_ep1_dlc_trigger = yes }
+				create_artifact_book_effect = {
+					OWNER = root
+					CREATOR = root
+					SET_SUBJECT = flag:no
+					SET_TOPIC = flag:no
+				}
+				scope:newly_created_artifact ?= {
+					set_artifact_description = kehillah_commentary_artifact_desc_flourishing
+					set_artifact_rarity = famed
+					set_owner = root
+				}
+				custom_tooltip = kehillah_compose_commentary_flourishing_tt
+			}
+			else = {
+				add_prestige = massive_prestige_gain
+				custom_tooltip = kehillah_compose_commentary_flourishing_no_dlc_tt
+			}
+		}
+		else_if = {
+			limit = {
+				kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_healthy_threshold }
+			}
+			# HEALTHY -- a real commentary. Same reward numbers as the old
+			# masterwork branch; see this decision's header for the one
+			# thing that changed (rarity: illustrious -> masterwork).
 			add_piety = major_piety_gain
 
 			if = {
@@ -337,18 +398,21 @@ kehillah_compose_commentary_decision = {
 				}
 				scope:newly_created_artifact ?= {
 					set_artifact_description = kehillah_commentary_artifact_desc
-					set_artifact_rarity = illustrious
+					set_artifact_rarity = masterwork
 					set_owner = root
 				}
 				custom_tooltip = kehillah_compose_commentary_masterwork_tt
 			}
 			else = {
-				# No Royal Court: same standing, no object.
 				add_prestige = major_prestige_gain
 				custom_tooltip = kehillah_compose_commentary_masterwork_no_dlc_tt
 			}
 		}
 		else = {
+			# CRISIS/STRAINED -- a private teaching note. No artifact;
+			# the unconditional base reward above (Learning XP, a little
+			# Greatness, a little Prestige) is the whole reward, matching
+			# what the old "ordinary" branch gave.
 			custom_tooltip = kehillah_compose_commentary_ordinary_tt
 		}
 	}
@@ -359,5 +423,180 @@ kehillah_compose_commentary_decision = {
 
 	ai_will_do = {
 		base = 70
+	}
+}
+
+
+# =====================================================================
+# LIGHT LOAN CONTRACTS -- Prosperity. Wave 3 item 4.
+#
+# Full research account, targeting rationale, and why the lender is the
+# TITLE rather than the character: see kehillah_script_values.txt's
+# "Light loan contracts" header (common/script_values/
+# kehillah_script_values.txt). Short version: this reuses the SHAPE of
+# vanilla's own confirmed-working Holy Order loan mechanic (principal
+# owed, a lender reference, a variable_list of debtors, a plain
+# repayment decision) but under an entirely separate kehillah_loan_*
+# variable namespace, so nothing here can collide with or be disrupted
+# by vanilla's own loan content or another mod using the same vanilla
+# system.
+#
+# Two decisions, not one: EXTEND (on the Kehillah leader, gated on
+# Prosperity >= Healthy) and REPAY (on the borrower -- an ordinary
+# landed character, not a Kehillah government, so this is NOT in the
+# kehillah decision_group_type, exactly mirroring how vanilla's own
+# repay_loan_decision sits in decision_group_type = major rather than
+# anything Holy-Order-specific).
+# =====================================================================
+
+kehillah_extend_loan_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_spend_money.dds"
+	}
+
+	decision_group_type = kehillah
+	sort_order = 100
+	ai_check_interval = 24
+
+	is_shown = {
+		government_has_flag = government_is_kehillah
+		is_adult = yes
+		is_imprisoned = no
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = kehillah_requires_prosperity_healthy_tt
+			kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_healthy_threshold }
+		}
+		custom_tooltip = {
+			text = kehillah_loan_target_exists_tt
+			exists = domicile.domicile_location.county.holder
+		}
+		custom_tooltip = {
+			text = kehillah_loan_target_tier_tt
+			domicile.domicile_location.county.holder ?= {
+				highest_held_title_tier <= tier_county
+			}
+		}
+		custom_tooltip = {
+			text = kehillah_loan_target_not_indebted_tt
+			domicile.domicile_location.county.holder ?= {
+				NOT = { exists = var:kehillah_loan_amount_owed }
+				is_imprisoned = no
+				is_incapable = no
+			}
+		}
+	}
+
+	cost = {
+		gold = kehillah_loan_principal_value
+	}
+
+	cooldown = { years = 8 }
+
+	effect = {
+		primary_title = { save_scope_as = kq_title }
+		domicile.domicile_location.county.holder ?= {
+			save_scope_as = kehillah_loan_target
+		}
+
+		# Defense in depth: is_valid already confirmed the target exists,
+		# but this guard means a bypassed/forced execution (e.g. an AI
+		# path that skips is_valid) can never write loan variables onto
+		# an unset scope.
+		if = {
+			limit = { exists = scope:kehillah_loan_target }
+			scope:kehillah_loan_target = {
+				add_gold = kehillah_loan_principal_value
+				set_variable = {
+					name = kehillah_loan_amount_owed
+					value = kehillah_loan_amount_owed_value
+				}
+				set_variable = {
+					name = kehillah_loan_lender_title
+					value = scope:kq_title
+				}
+				set_variable = {
+					name = kehillah_loan_years_elapsed
+					value = 0
+				}
+			}
+
+			scope:kq_title = {
+				add_to_variable_list = {
+					name = kehillah_loan_debtors
+					target = scope:kehillah_loan_target
+				}
+			}
+		}
+
+		custom_tooltip = kehillah_extend_loan_tt
+	}
+
+	ai_potential = {
+		always = no
+	}
+
+	ai_will_do = {
+		base = 0
+	}
+}
+
+
+kehillah_repay_loan_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_spend_money.dds"
+	}
+
+	decision_group_type = major
+
+	is_shown = {
+		exists = var:kehillah_loan_amount_owed
+	}
+
+	is_valid_showing_failures_only = {
+		is_available = yes
+		gold >= var:kehillah_loan_amount_owed
+	}
+
+	effect = {
+		var:kehillah_loan_lender_title ?= { save_scope_as = kehillah_lender_title }
+
+		# Defense in depth, same reasoning as kehillah_extend_loan_
+		# decision's own guard: is_shown/is_valid already confirmed the
+		# loan variables exist, but this means a forced/AI execution
+		# path can never try to pay an unset lender scope.
+		if = {
+			limit = { exists = scope:kehillah_lender_title }
+			pay_short_term_gold = {
+				target = scope:kehillah_lender_title.holder
+				gold = var:kehillah_loan_amount_owed
+			}
+
+			scope:kehillah_lender_title = {
+				kehillah_init_pillars_effect = yes
+				change_variable = { name = kehillah_var_prosperity add = kehillah_loan_repayment_prosperity_reward }
+				change_variable = { name = kehillah_var_greatness add = kehillah_loan_repayment_greatness_reward }
+				remove_list_variable = {
+					name = kehillah_loan_debtors
+					target = root
+				}
+			}
+		}
+
+		remove_variable = kehillah_loan_amount_owed
+		remove_variable = kehillah_loan_lender_title
+		remove_variable = kehillah_loan_years_elapsed
+
+		custom_tooltip = kehillah_repay_loan_tt
+	}
+
+	ai_potential = {
+		always = no
+	}
+
+	ai_will_do = {
+		base = 0
 	}
 }

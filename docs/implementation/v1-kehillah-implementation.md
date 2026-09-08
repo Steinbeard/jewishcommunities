@@ -1,24 +1,30 @@
 # V1 Implementation: The Kehillah Community Baseline
 
-Status: **verified working live, end to end, 2026-09-06.** A full
-death → appointment succession → continue-as-successor cycle has been
-run and observed directly: government, domicile, buildings, Influence,
-Gold, and the treasury all survive succession correctly, exactly as
-sections 4 and 5 below claim. Section 8 records what it took to get
-there and should be read before touching the government, title history,
-or succession law again — the actual root cause of the original crash
-was not any of the six causes section 6 originally identified.
+Status: **core loop (government, succession, buildings, Gold/treasury)
+verified working live, end to end, as of 2026-09-06 — but sections 9
+through 11, covering everything built since, have NOT been live-tested
+against that verification.** Read section 12 before doing anything else;
+it is the actual current status and the required next step, not this
+paragraph. The 2026-09-06 test itself was real: a full death →
+appointment succession → continue-as-successor cycle was run and
+observed directly, and section 8 records what it took to get there —
+read it before touching the government, title history, or succession
+law again, since the actual root cause of the original crash was not
+any of the six causes section 6 originally identified.
 
 The single most important open item is still section 2c: the succession
 candidate pool cannot reach beyond the leader's family the way the
 design assumed. That is unrelated to the crash and remains true.
 
 Section 9 records a 2026-09-06 content pass that replaced two of the
-original buildings (Shtadlan's Chambers, Communal Watch) and reframed
-the four-pillar structure into three (Prosperity, Stability, Greatness).
-Sections 2-7 below describe the pre-rework state and are kept for the
-reasoning trail; where they conflict with section 9, section 9 is
-current.
+original buildings (Shtadlan's Chambers, Communal Watch), externalized
+four more into their own visible structures, and reframed the
+four-pillar structure into three (Prosperity, Stability, Greatness).
+Section 10 corrects a real bug in how section 9's pillar variables were
+scoped. Section 11 adds leader rank flavor (Rav/Parnas), a Rabbi trait,
+and a way to actually see the pillar numbers in-game. Sections 2-7 below
+describe the pre-rework state and are kept for the reasoning trail;
+where they conflict with sections 9-11, the later section is current.
 
 This is the "implementation" half of the spec → implementation pair that
 [../spec/v1-kehillah-community.md](../spec/v1-kehillah-community.md) §7
@@ -605,3 +611,225 @@ effects' record/restore tracks were updated for the new building set;
 no code or localization reference to a removed building survives) but
 not yet loaded in a running game. Run it before treating section 9 as
 confirmed the way section 8 is.
+
+
+## 10. Pillar variables moved to the title, 2026-09-07 (correcting section 9)
+
+Section 9's Influence-retirement work (kehillah_var_stability /
+kehillah_var_greatness replacing the vanilla Influence resource) shipped
+with a real design bug: both variables were stored on the LEADER
+CHARACTER, not the title. User feedback caught it directly: "these
+shouldn't be character variables, they should be tied to the title's
+scope." This section documents the fix and, more importantly, a second
+bug it exposed.
+
+**Why character-scoped was wrong.** This mod already has a working
+answer to "what persists across a Kehillah's succession": the title.
+`d_kehillah_worms` IS the community (see the buildings record/restore
+system's own header, common/scripted_effects/kehillah_scripted_effects.txt).
+Storing the pillar variables on the character instead meant reinventing
+that problem from scratch -- an earlier draft of
+`kehillah_quarterly_pillars_effect` had to bolt a manual mirror-on-death
+copy step onto `kehillah_record_quarter_effect`/`kehillah_restore_
+quarter_effect` (write the character's values onto the title at every
+building completion, read them back onto the new leader at succession)
+to fake persistence the title would have given for free.
+
+**The fix.** Both variables now live on `primary_title` (from
+character-scoped effects) or the already-bound `scope:title`/
+`scope:kq_title` (from on_title_gain, candidate_score). Every accrual in
+`kehillah_quarterly_pillars_effect` was rewritten from `change_variable =
+{...}` to `primary_title = { change_variable = {...} }` -- 18 call
+sites, done via a scoped sed pass, each still gated by a `limit` that
+checks the CHARACTER's own buildings/positions/modifiers (limit blocks
+don't change scope, so this is safe). Same treatment for both one-time
+lump sums (Isaac's starting +150 Greatness, the new-leader +50
+Stability), all three decisions' costs/rewards, and all four protection-
+event outcomes -- roughly 30 call sites total, all confirmed via a final
+grep sweep (`primary_title = { change_variable\|scope:title = {
+change_variable\|primary_title.var:\|scope:title.var:`). The manual
+mirror-on-death code in record/restore_quarter_effect was deleted
+outright -- no longer needed, since a title-scoped variable is already
+wherever the next holder needs it.
+
+**The second bug this caught.** `kehillah_leadership.txt`'s
+`candidate_score` had a "STANDING IN THE COMMUNITY" term reading a
+`kehillah_total_standing_value` script value (Stability + Greatness).
+Once those variables moved to the title, that term became mathematically
+inert: `candidate_score` runs once per candidate against the SAME
+`scope:title` in one succession event, so every candidate got the
+identical number added and nothing about their relative ranking changed.
+Removed the term entirely rather than leave dead code; removed the now-
+orphaned `kehillah_total_standing_value` script value and
+`kehillah_score_standing_desc` loc key with it. Full reasoning is at the
+point of removal in kehillah_leadership.txt -- read it before
+re-adding anything similar; a personal standing signal for succession
+scoring needs a per-candidate source, which a title-scoped variable
+structurally cannot be.
+
+**Not yet re-verified live.** This whole rearchitecture (and everything
+in section 11 below) postdates the last live test. See section 12.
+
+## 11. Rav/Parnas leader flavor, the Rabbi trait, and a standing-viewer decision, 2026-09-07
+
+Three more pieces of playtest feedback, handled together since they
+compound:
+
+**"Duke" is wrong.** A Kehillah leader showed the generic duchy-tier
+rank "Duke"/"Duchess" (vanilla's `duke`/`duke_female` flavorization
+entries, `common/flavorization/00_title_holders.txt`, priority 25).
+Fixed via a new file, `common/flavorization/kehillah_title_holders.txt`,
+modeled directly on vanilla's own `landless_adventurer_government` "camp
+purpose" flavors (`duke_landless_adventurer_camp_scholars` and
+siblings): four entries (`kehillah_rav_male/_female`,
+`kehillah_parnas_male/_female`) gated on `governments = {
+kehillah_government }` + `domicile_type = kehillah_quarter` (never on
+the specific title name, so a future second Kehillah title inherits the
+same flavor with no changes needed here), at priority 301/302 to beat
+vanilla's 25. The Rav variant additionally requires character flag
+`kehillah_rabbinic_leader_flag`, kept in sync by
+`kehillah_update_leader_flavor_effect` (new, in kehillah_scripted_effects.txt),
+called at game start and on every `on_title_gain`.
+
+Historical note the user asked for directly, recorded in that file's
+header: real Ashkenazi communal leadership wasn't one office -- the rav
+held religious authority, a separate lay figure (parnas, sometimes rosh
+ha-kahal) often held communal/administrative leadership, and the two
+sometimes overlapped (Isaac himself) and sometimes didn't. Rather than
+force every leader into one identity, the flavor follows whichever kind
+of standing THIS leader actually has.
+
+**The Rabbi trait.** User asked whether to add a dedicated trait or
+reskin an existing one (scholar was the specific suggestion) to show as
+"Rabbi" for Jewish characters. Recommended and built the dedicated
+trait: reskinning scholar would put "Rabbi" on any secular Jewish
+scholar too (scholar is earned by anyone via the Learning lifestyle
+tree, unrelated to religious authority), which is simply wrong, not
+just imprecise. New file `common/traits/kehillah_traits.txt`,
+`kehillah_rabbi_trait`: `category = fame` (a granted status, not a
+chosen lifestyle path -- same category choice as vanilla's
+`excommunicated`, and importantly sits outside the lifestyle-trait slot
+limit since it's granted by script, not earned through the normal
+lifestyle UI that limit rations), `icon = theologian.dds` (reuse, no new
+art). Granted/removed via the Chief Rabbi court position's
+`on_court_position_received/revoked/invalidated/vacated` hooks (added to
+`kehillah_officers.txt`) and directly to Isaac in his history file (he
+already is chief rabbi and yeshiva head per documented fact, so it's
+stated outright rather than inferred). Added as the primary signal in
+`kehillah_leader_is_rabbinic_trigger`, with the pre-existing theologian/
+education/learning-threshold checks kept as fallback for a leader who
+reads as a serious scholar without having held that specific court
+position (the ruler can't hold their own community's court positions).
+
+Note: while implementing this, discovered `common/traits/
+kehillah_traits.txt` had ALREADY grown two more entries (`kohen`,
+`levite`, both `category = fame` / `icon = theologian.dds`, lineage-
+inheritance traits with `inherit_chance = 100`) and localization for
+`trait_kehillah_rabbi_trait` had already appeared in
+`kehillah_l_english.yml` -- neither added by this session. See section
+12's note on the concurrent session. Confirmed no collision: the
+kohen/levite entries were additive to the same file, not edits to my
+entry, and the loc key format they used (`trait_<key>`, `trait_<key>_desc`)
+is what I matched for consistency rather than the bare `<key>:0` format
+flavorization entries use (different systems, different loc
+conventions -- do not conflate them if extending either later).
+
+**A way to actually see the numbers.** User asked for a basic UI for the
+pillar values and whether a debug view was the right call. Answer: no,
+not for actual play -- a debug/console view is fine for testing but
+isn't player-facing UX. Built the minimal real fix instead: a new
+decision, `kehillah_view_standing_decision` (top of
+`kehillah_decisions.txt`, sort_order 110 so it lists first), whose own
+`desc` text is always visible on hover in the decision list --whether
+or not it's ever taken -- and reads the live values straight off the
+title via dynamic localization: `[ROOT.GetPrimaryTitle.Var('kehillah_var_stability').GetValue|V0]`
+(confirmed against vanilla's own use of this exact pattern, e.g.
+`GetPlayer.MakeScope.Var('wager_value').GetValue|V0` in
+`ep3_custom_loc_l_english.yml`). Taking the decision does nothing
+mechanical (`ai_will_do = { base = 0 }`, effect is just a flavor
+custom_tooltip) -- it exists to be looked at, not clicked. This is
+explicitly NOT a top-bar meter; that still needs real interface/GUI
+work and remains unbuilt, exactly as flagged when the user chose the
+custom-variable architecture in section 10's predecessor discussion.
+
+## 12. Handoff, 2026-09-07 -- read this before doing anything else
+
+**Nothing in sections 9, 10, or 11 has been live-tested since this
+exact combination of changes landed.** The last confirmed-clean live
+load (section 8) predates all three sections. Before trusting any of
+this, run a fresh load exactly like section 8's: exit to desktop,
+relaunch `E:\...\Crusader Kings III\binaries\ck3.exe` (not D: -- see
+project memory `ck3-live-install-is-on-e-drive.md`), start "The
+Kehillah of Worms" bookmark (1066, playing Isaac ben Eliezer ha-Levi),
+and read `Documents/Paradox Interactive/Crusader Kings III/logs/debug.log`
+for anything beyond the two known-harmless "no portrait in database"
+bookmark-art errors. Specific things worth checking beyond "does it
+still load":
+  - Does Isaac show "Rav" instead of "Duke"? (confirms the
+    flavorization file parsed and the flag got set at game start)
+  - Does he have the Rabbi trait on his character sheet?
+  - Does "Take Stock of the Community" appear at the top of the
+    decisions list, and does its tooltip show two numbers rather than
+    an error or `[missing_key]`-style text?
+  - Console-kill Isaac (Slay Character debug interaction, same as
+    section 8's succession test) and confirm the new leader inherits
+    Stability/Greatness correctly and gets re-flavored appropriately
+    (Rav if they qualify, Parnas if not) -- this is the actual test of
+    whether the title-scoping fix in section 10 works end to end.
+  - Build a Yeshiva, Countinghouse, Hekdesh, or Slaughterhouse and
+    confirm each appears as its own separate structure in the quarter
+    view (section 9's externalization) rather than failing to place or
+    erroring.
+
+**A second live Claude Code session is concurrently working on this
+same mod repository.** Discovered by accident (a misplaced click
+exposed its VS Code window) partway through this session, not something
+either session coordinated on beforehand. Confirmed via git status:
+untracked files this session did not create --
+`common/modifiers/jewish_holiday_modifiers.txt`,
+`common/on_action/jewish_holiday_on_actions.txt`,
+`common/scripted_triggers/jewish_holiday_scripted_triggers.txt`,
+`events/jewish_holiday_events.txt`, a new `common/culture/`, `common/
+religion/` (culture/religion tuning), `common/defines/`, `gfx/`, and
+new dynasty-name localization files -- plus, mid-session, unrequested
+`kohen`/`levite` trait entries appended to a file this session created
+(`kehillah_traits.txt`) and localization for this session's own new
+trait appearing before this session wrote it. Its VS Code sidebar
+listed sibling session names: "CK3 Jewish name lists revamp", "Jewish
+communities mod roadmap", "Jewishcommunities holiday events" (the one
+that was active), "AGI-CK3 setup for jewishcommunities testing",
+"Jewishcommunities mod crash", "Jewish community CK3 mod", "Jewish
+communities mod for Crusader Kings III" -- so there may be more than
+one other session, past or present, not just the one caught active.
+
+**Implication for whoever picks this up next:** before editing any file,
+check whether it changed since last read (the harness surfaces this
+automatically as a system-reminder) -- it may be the other session's
+work, not stale state. Prefer `git status`/`git diff` over assumptions
+about what's "supposed" to be in a file. This session's own edits were
+all internally consistent (every touched file's braces balance, no
+orphaned references, no duplicate loc keys -- verified with a full sweep
+after every batch of changes throughout), but that consistency was
+never checked against a live game reload after the concurrent session
+was discovered, which is exactly what section 12's first item above
+asks for.
+
+**Files this session (2026-09-07 continuation) touched, for a quick
+diff review:** `common/domiciles/types/kehillah_domicile_types.txt`,
+`common/domiciles/buildings/kehillah_domicile_buildings.txt`,
+`common/governments/kehillah_government.txt`,
+`common/court_positions/types/kehillah_officers.txt`,
+`common/court_positions/types/kehillah_minor_positions.txt`,
+`common/modifiers/kehillah_modifiers.txt`,
+`common/decisions/kehillah_decisions.txt`,
+`common/scripted_effects/kehillah_scripted_effects.txt`,
+`common/scripted_triggers/kehillah_scripted_triggers.txt`,
+`common/script_values/kehillah_script_values.txt`,
+`common/succession_appointment/kehillah_leadership.txt`,
+`common/on_action/kehillah_on_actions.txt`,
+`events/kehillah_protection_events.txt`,
+`history/characters/worms_1066.txt`,
+`localization/english/kehillah_l_english.yml`, plus two new files,
+`common/flavorization/kehillah_title_holders.txt` and
+`common/traits/kehillah_traits.txt` (the latter now shared with the
+concurrent session's kohen/levite additions).

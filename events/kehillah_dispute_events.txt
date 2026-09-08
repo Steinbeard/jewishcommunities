@@ -1,0 +1,458 @@
+﻿# =====================================================================
+# Kehillah dispute events -- the organic yearly dispute-ruling event.
+#
+# Source of truth: docs/spec/v2-pillar-economy-and-lifecycle.md section 3
+# ("Organic family-dispute ruling"), section 8's Wave 1 item 1. Replaces
+# kehillah_mediate_dispute_decision, retired from
+# common/decisions/kehillah_decisions.txt -- see that file's header for
+# why a decision was the wrong shape for this (a leader shouldn't be
+# able to summon a dispute to order; it should arrive on its own, the
+# way a real communal leader's docket fills up without being asked).
+#
+# STRUCTURE, MODELLED ON events/kehillah_protection_events.txt:
+#   - Own namespace (kehillah_dispute), own on_action
+#     (kehillah_dispute_pulse, common/on_action/kehillah_on_actions.txt),
+#     separate from the protection layer's kehillah_yearly_pulse.
+#   - Guarded by kehillah_has_dispute_candidates_trigger (common/
+#     scripted_triggers/kehillah_scripted_triggers.txt) so this cannot
+#     fire before a second notable family plausibly exists to quarrel
+#     with the first.
+#   - Two flavor variants, numbered kehillah_dispute.0001/.0002 to match
+#     the protection events' own numbering convention.
+#
+# THE TENSION EACH VARIANT IS BUILT ON. Both are written as a genuine
+# conflict between the letter of an agreement/precedent and compassion
+# or need, not a whodunit -- there is no secret to uncover, only a
+# judgement to make, which is the same "competence and knowledge, not
+# plots" design principle spec section 2 states for the whole mod. The
+# dowry variant (kehillah_dispute.0002) draws on hachnasat kallah
+# (dowering poor brides) as a real historical communal obligation --
+# flagged, per this project's own established norm (see docs/iteration/
+# v1-iteration-notes.md section 2 and docs/scenarios/worms-1066.md), as
+# an accurate NAME for a real institution, not a claim that this
+# specific scenario is individually source-checked.
+#
+# THE FOUR OPTIONS, EVERY TIME:
+#   RULE FOR PARTY A / RULE FOR PARTY B -- always available. Resolves on
+#     the LEADER's Stewardship (great >=14, good >=8, else poor -- the
+#     same three-tier shape the retired decision used). A good or great
+#     ruling improves the FAVORED party's opinion of the leader and
+#     leaves the other party alone -- a competent verdict is accepted
+#     even by the side that didn't win. A poor ruling costs Stability
+#     and sours the DISFAVORED party's opinion of the leader specifically
+#     -- botching it in front of the community creates a grievance in
+#     the person who lost, not a vague general shame.
+#   SPLIT THE DIFFERENCE -- always available, no skill check, a small
+#     flat guaranteed Stability gain, no opinion swings either way. The
+#     safe, mediocre choice.
+#   LET THE CHIEF RABBI JUDGE IT -- shown only if chief_rabbi_kehillah_
+#     position is filled (common/court_positions/types/
+#     kehillah_officers.txt). Resolves on the CHIEF RABBI's Learning,
+#     not the leader's Stewardship, against a single threshold (learning
+#     >= 12, the same bar kehillah_leader_is_rabbinic_trigger's fallback
+#     already uses for "reads as a serious scholar") rather than three --
+#     delegation is one judgement, not a spectrum of how well the leader
+#     personally performed. A good outcome matches the leader's own
+#     "good" tier Stability gain, plus a small Greatness tick, since a
+#     religious ruling is also, quietly, an act of communal scholarship.
+#     A poor outcome costs the same as any other botched ruling. The
+#     leader gets no personal opinion swing either way here -- they
+#     delegated, so the community's reaction lands on the office, not on
+#     them.
+#
+# See common/scripted_effects/kehillah_scripted_effects.txt's
+# kehillah_dispute_pick_parties_effect for how the two disputants
+# (scope:kehillah_party_a / scope:kehillah_party_b) and, if filled, the
+# Chief Rabbi (scope:kehillah_chief_rabbi) are chosen -- shared by both
+# events below rather than duplicated.
+# =====================================================================
+
+namespace = kehillah_dispute
+
+
+# ---------------------------------------------------------------------
+# kehillah_dispute.0001 -- A BROKEN PARTNERSHIP
+# A joint venture or apprenticeship contract has fallen apart over who
+# owes what to whom. The letter of the agreement points one way; what
+# the losing side actually needs to get by may point the other.
+# ---------------------------------------------------------------------
+
+kehillah_dispute.0001 = {
+	type = character_event
+	title = kehillah_dispute.0001.t
+	desc = kehillah_dispute.0001.desc
+	theme = family
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_party_a
+		animation = disapproval
+	}
+	lower_right_portrait = {
+		character = scope:kehillah_party_b
+		animation = worry
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+		is_adult = yes
+		is_imprisoned = no
+		kehillah_has_dispute_candidates_trigger = yes
+	}
+
+	immediate = {
+		kehillah_dispute_pick_parties_effect = yes
+	}
+
+	# RULE FOR PARTY A.
+	option = {
+		name = kehillah_dispute.0001.a
+
+		if = {
+			limit = { stewardship >= 14 }
+			primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_dispute_ruling_stability_gain_great } }
+			if = {
+				limit = { exists = scope:kehillah_party_a }
+				reverse_add_opinion = {
+					target = scope:kehillah_party_a
+					modifier = kehillah_dispute_ruling_favor_opinion
+					opinion = kehillah_dispute_favor_opinion_great
+					years = 5
+				}
+			}
+			add_character_modifier = {
+				modifier = kehillah_settled_dispute_modifier
+				years = 5
+			}
+			custom_tooltip = kehillah_dispute.0001.a.great.tt
+		}
+		else_if = {
+			limit = { stewardship >= 8 }
+			primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_dispute_ruling_stability_gain_good } }
+			if = {
+				limit = { exists = scope:kehillah_party_a }
+				reverse_add_opinion = {
+					target = scope:kehillah_party_a
+					modifier = kehillah_dispute_ruling_favor_opinion
+					opinion = kehillah_dispute_favor_opinion_good
+					years = 3
+				}
+			}
+			add_character_modifier = {
+				modifier = kehillah_settled_dispute_modifier
+				years = 3
+			}
+			custom_tooltip = kehillah_dispute.0001.a.good.tt
+		}
+		else = {
+			primary_title = { change_variable = { name = kehillah_var_stability subtract = kehillah_dispute_ruling_stability_loss_poor } }
+			if = {
+				limit = { exists = scope:kehillah_party_b }
+				reverse_add_opinion = {
+					target = scope:kehillah_party_b
+					modifier = kehillah_dispute_ruling_disfavor_opinion
+					opinion = kehillah_dispute_disfavor_opinion_poor
+					years = 4
+				}
+			}
+			add_character_modifier = {
+				modifier = kehillah_shaken_community_modifier
+				years = 2
+			}
+			custom_tooltip = kehillah_dispute.0001.a.poor.tt
+		}
+
+		ai_chance = { base = 45 }
+	}
+
+	# RULE FOR PARTY B. Mirror of the option above.
+	option = {
+		name = kehillah_dispute.0001.b
+
+		if = {
+			limit = { stewardship >= 14 }
+			primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_dispute_ruling_stability_gain_great } }
+			if = {
+				limit = { exists = scope:kehillah_party_b }
+				reverse_add_opinion = {
+					target = scope:kehillah_party_b
+					modifier = kehillah_dispute_ruling_favor_opinion
+					opinion = kehillah_dispute_favor_opinion_great
+					years = 5
+				}
+			}
+			add_character_modifier = {
+				modifier = kehillah_settled_dispute_modifier
+				years = 5
+			}
+			custom_tooltip = kehillah_dispute.0001.b.great.tt
+		}
+		else_if = {
+			limit = { stewardship >= 8 }
+			primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_dispute_ruling_stability_gain_good } }
+			if = {
+				limit = { exists = scope:kehillah_party_b }
+				reverse_add_opinion = {
+					target = scope:kehillah_party_b
+					modifier = kehillah_dispute_ruling_favor_opinion
+					opinion = kehillah_dispute_favor_opinion_good
+					years = 3
+				}
+			}
+			add_character_modifier = {
+				modifier = kehillah_settled_dispute_modifier
+				years = 3
+			}
+			custom_tooltip = kehillah_dispute.0001.b.good.tt
+		}
+		else = {
+			primary_title = { change_variable = { name = kehillah_var_stability subtract = kehillah_dispute_ruling_stability_loss_poor } }
+			if = {
+				limit = { exists = scope:kehillah_party_a }
+				reverse_add_opinion = {
+					target = scope:kehillah_party_a
+					modifier = kehillah_dispute_ruling_disfavor_opinion
+					opinion = kehillah_dispute_disfavor_opinion_poor
+					years = 4
+				}
+			}
+			add_character_modifier = {
+				modifier = kehillah_shaken_community_modifier
+				years = 2
+			}
+			custom_tooltip = kehillah_dispute.0001.b.poor.tt
+		}
+
+		ai_chance = { base = 45 }
+	}
+
+	# SPLIT THE DIFFERENCE. Always available; no check, no swings.
+	option = {
+		name = kehillah_dispute.0001.c
+
+		primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_dispute_split_stability_gain } }
+		custom_tooltip = kehillah_dispute.0001.c.tt
+
+		ai_chance = { base = 30 }
+	}
+
+	# LET THE CHIEF RABBI JUDGE IT. Shown only if the office is filled.
+	option = {
+		name = kehillah_dispute.0001.d
+		trigger = {
+			employs_court_position = chief_rabbi_kehillah_position
+		}
+
+		if = {
+			limit = {
+				scope:kehillah_chief_rabbi ?= { learning >= 12 }
+			}
+			primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_dispute_ruling_stability_gain_good } }
+			primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_dispute_rabbi_greatness_tick } }
+			custom_tooltip = kehillah_dispute.0001.d.success.tt
+		}
+		else = {
+			primary_title = { change_variable = { name = kehillah_var_stability subtract = kehillah_dispute_ruling_stability_loss_poor } }
+			custom_tooltip = kehillah_dispute.0001.d.failure.tt
+		}
+
+		ai_chance = { base = 90 }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_dispute.0002 -- A QUESTION OF DOWRY
+# A promised dowry has fallen short of what was pledged, and a match
+# hangs on the answer. Holding a family to the letter of what it agreed
+# is defensible; so is recognising that it no longer has it to give.
+# ---------------------------------------------------------------------
+
+kehillah_dispute.0002 = {
+	type = character_event
+	title = kehillah_dispute.0002.t
+	desc = kehillah_dispute.0002.desc
+	theme = family
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_party_a
+		animation = disapproval
+	}
+	lower_right_portrait = {
+		character = scope:kehillah_party_b
+		animation = worry
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+		is_adult = yes
+		is_imprisoned = no
+		kehillah_has_dispute_candidates_trigger = yes
+	}
+
+	immediate = {
+		kehillah_dispute_pick_parties_effect = yes
+	}
+
+	# RULE FOR PARTY A.
+	option = {
+		name = kehillah_dispute.0002.a
+
+		if = {
+			limit = { stewardship >= 14 }
+			primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_dispute_ruling_stability_gain_great } }
+			if = {
+				limit = { exists = scope:kehillah_party_a }
+				reverse_add_opinion = {
+					target = scope:kehillah_party_a
+					modifier = kehillah_dispute_ruling_favor_opinion
+					opinion = kehillah_dispute_favor_opinion_great
+					years = 5
+				}
+			}
+			add_character_modifier = {
+				modifier = kehillah_settled_dispute_modifier
+				years = 5
+			}
+			custom_tooltip = kehillah_dispute.0002.a.great.tt
+		}
+		else_if = {
+			limit = { stewardship >= 8 }
+			primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_dispute_ruling_stability_gain_good } }
+			if = {
+				limit = { exists = scope:kehillah_party_a }
+				reverse_add_opinion = {
+					target = scope:kehillah_party_a
+					modifier = kehillah_dispute_ruling_favor_opinion
+					opinion = kehillah_dispute_favor_opinion_good
+					years = 3
+				}
+			}
+			add_character_modifier = {
+				modifier = kehillah_settled_dispute_modifier
+				years = 3
+			}
+			custom_tooltip = kehillah_dispute.0002.a.good.tt
+		}
+		else = {
+			primary_title = { change_variable = { name = kehillah_var_stability subtract = kehillah_dispute_ruling_stability_loss_poor } }
+			if = {
+				limit = { exists = scope:kehillah_party_b }
+				reverse_add_opinion = {
+					target = scope:kehillah_party_b
+					modifier = kehillah_dispute_ruling_disfavor_opinion
+					opinion = kehillah_dispute_disfavor_opinion_poor
+					years = 4
+				}
+			}
+			add_character_modifier = {
+				modifier = kehillah_shaken_community_modifier
+				years = 2
+			}
+			custom_tooltip = kehillah_dispute.0002.a.poor.tt
+		}
+
+		ai_chance = { base = 45 }
+	}
+
+	# RULE FOR PARTY B. Mirror of the option above.
+	option = {
+		name = kehillah_dispute.0002.b
+
+		if = {
+			limit = { stewardship >= 14 }
+			primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_dispute_ruling_stability_gain_great } }
+			if = {
+				limit = { exists = scope:kehillah_party_b }
+				reverse_add_opinion = {
+					target = scope:kehillah_party_b
+					modifier = kehillah_dispute_ruling_favor_opinion
+					opinion = kehillah_dispute_favor_opinion_great
+					years = 5
+				}
+			}
+			add_character_modifier = {
+				modifier = kehillah_settled_dispute_modifier
+				years = 5
+			}
+			custom_tooltip = kehillah_dispute.0002.b.great.tt
+		}
+		else_if = {
+			limit = { stewardship >= 8 }
+			primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_dispute_ruling_stability_gain_good } }
+			if = {
+				limit = { exists = scope:kehillah_party_b }
+				reverse_add_opinion = {
+					target = scope:kehillah_party_b
+					modifier = kehillah_dispute_ruling_favor_opinion
+					opinion = kehillah_dispute_favor_opinion_good
+					years = 3
+				}
+			}
+			add_character_modifier = {
+				modifier = kehillah_settled_dispute_modifier
+				years = 3
+			}
+			custom_tooltip = kehillah_dispute.0002.b.good.tt
+		}
+		else = {
+			primary_title = { change_variable = { name = kehillah_var_stability subtract = kehillah_dispute_ruling_stability_loss_poor } }
+			if = {
+				limit = { exists = scope:kehillah_party_a }
+				reverse_add_opinion = {
+					target = scope:kehillah_party_a
+					modifier = kehillah_dispute_ruling_disfavor_opinion
+					opinion = kehillah_dispute_disfavor_opinion_poor
+					years = 4
+				}
+			}
+			add_character_modifier = {
+				modifier = kehillah_shaken_community_modifier
+				years = 2
+			}
+			custom_tooltip = kehillah_dispute.0002.b.poor.tt
+		}
+
+		ai_chance = { base = 45 }
+	}
+
+	# SPLIT THE DIFFERENCE. Always available; no check, no swings.
+	option = {
+		name = kehillah_dispute.0002.c
+
+		primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_dispute_split_stability_gain } }
+		custom_tooltip = kehillah_dispute.0002.c.tt
+
+		ai_chance = { base = 30 }
+	}
+
+	# LET THE CHIEF RABBI JUDGE IT. Shown only if the office is filled.
+	option = {
+		name = kehillah_dispute.0002.d
+		trigger = {
+			employs_court_position = chief_rabbi_kehillah_position
+		}
+
+		if = {
+			limit = {
+				scope:kehillah_chief_rabbi ?= { learning >= 12 }
+			}
+			primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_dispute_ruling_stability_gain_good } }
+			primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_dispute_rabbi_greatness_tick } }
+			custom_tooltip = kehillah_dispute.0002.d.success.tt
+		}
+		else = {
+			primary_title = { change_variable = { name = kehillah_var_stability subtract = kehillah_dispute_ruling_stability_loss_poor } }
+			custom_tooltip = kehillah_dispute.0002.d.failure.tt
+		}
+
+		ai_chance = { base = 90 }
+	}
+}

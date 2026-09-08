@@ -1,0 +1,223 @@
+﻿# =====================================================================
+# Kehillah Wave 3 manual QA harness. NOT content -- a fixed set of
+# hidden, console-only events for driving pillar variables and
+# inspecting otherwise-invisible state during live testing.
+#
+# Written 2026-09-07 alongside docs/testing/wave3-testing-runbook.md --
+# read that file for the full test plan these events support.
+#
+# None of these are hooked to any on_action, pulse, or trigger, so they
+# never fire on their own -- the only way to reach one is the debug
+# console (requires -debug_mode), while playing the Kehillah leader:
+#
+#     event kehillah_debug.<number>
+#
+# All are `hidden = yes` (no popup, matches this mod's own
+# jewish_holiday_events.txt precedent for hidden setup events) and all
+# either write state via set_variable or report state via debug_log,
+# which lands in debug.log (not error.log) in the game's logs folder --
+# not to be confused with the debug.txt in vanilla's own
+# events/test_events/, an unrelated file.
+# =====================================================================
+
+namespace = kehillah_debug
+
+# ---------------------------------------------------------------------
+# Full-band jumps: sets all three pillars to the same representative
+# value, for testing the sfarim tiers and building gates without
+# playing to a band naturally. Values are comfortably inside each band
+# (see kehillah_band_*_threshold in kehillah_script_values.txt: Crisis
+# 0-149, Strained 150-399, Healthy 400-699, Flourishing 700-949,
+# Legendary 950+).
+# ---------------------------------------------------------------------
+
+kehillah_debug.1 = { # All pillars -> Crisis (50)
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title = {
+			set_variable = { name = kehillah_var_prosperity value = 50 }
+			set_variable = { name = kehillah_var_stability value = 50 }
+			set_variable = { name = kehillah_var_greatness value = 50 }
+		}
+		debug_log = "kehillah_debug.1: all pillars set to Crisis (50)"
+	}
+}
+
+kehillah_debug.2 = { # All pillars -> Strained (200)
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title = {
+			set_variable = { name = kehillah_var_prosperity value = 200 }
+			set_variable = { name = kehillah_var_stability value = 200 }
+			set_variable = { name = kehillah_var_greatness value = 200 }
+		}
+		debug_log = "kehillah_debug.2: all pillars set to Strained (200)"
+	}
+}
+
+kehillah_debug.3 = { # All pillars -> Healthy (500)
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title = {
+			set_variable = { name = kehillah_var_prosperity value = 500 }
+			set_variable = { name = kehillah_var_stability value = 500 }
+			set_variable = { name = kehillah_var_greatness value = 500 }
+		}
+		debug_log = "kehillah_debug.3: all pillars set to Healthy (500)"
+	}
+}
+
+kehillah_debug.4 = { # All pillars -> Flourishing (750)
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title = {
+			set_variable = { name = kehillah_var_prosperity value = 750 }
+			set_variable = { name = kehillah_var_stability value = 750 }
+			set_variable = { name = kehillah_var_greatness value = 750 }
+		}
+		debug_log = "kehillah_debug.4: all pillars set to Flourishing (750)"
+	}
+}
+
+kehillah_debug.5 = { # All pillars -> Legendary (975)
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title = {
+			set_variable = { name = kehillah_var_prosperity value = 975 }
+			set_variable = { name = kehillah_var_stability value = 975 }
+			set_variable = { name = kehillah_var_greatness value = 975 }
+		}
+		debug_log = "kehillah_debug.5: all pillars set to Legendary (975)"
+	}
+}
+
+# ---------------------------------------------------------------------
+# Isolation tests: exactly one pillar at Legendary, the other two held
+# at Crisis. Use these to confirm a gate really keys off the pillar its
+# tooltip claims -- the 12 band-gated building tiers were all built by
+# copying the same trigger block with a different PILLAR param, which
+# is exactly the kind of place a copy-paste mistake hides. If, say,
+# kehillah_debug.12 (Prosperity only) ever unlocks a Greatness-gated
+# tier, that tier's gate is checking the wrong variable.
+# ---------------------------------------------------------------------
+
+kehillah_debug.11 = { # Greatness Legendary only, others Crisis
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title = {
+			set_variable = { name = kehillah_var_greatness value = 975 }
+			set_variable = { name = kehillah_var_prosperity value = 50 }
+			set_variable = { name = kehillah_var_stability value = 50 }
+		}
+		debug_log = "kehillah_debug.11: Greatness=975 (Legendary) only"
+	}
+}
+
+kehillah_debug.12 = { # Prosperity Legendary only, others Crisis
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title = {
+			set_variable = { name = kehillah_var_prosperity value = 975 }
+			set_variable = { name = kehillah_var_greatness value = 50 }
+			set_variable = { name = kehillah_var_stability value = 50 }
+		}
+		debug_log = "kehillah_debug.12: Prosperity=975 (Legendary) only"
+	}
+}
+
+kehillah_debug.13 = { # Stability Legendary only, others Crisis
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title = {
+			set_variable = { name = kehillah_var_stability value = 975 }
+			set_variable = { name = kehillah_var_greatness value = 50 }
+			set_variable = { name = kehillah_var_prosperity value = 50 }
+		}
+		debug_log = "kehillah_debug.13: Stability=975 (Legendary) only"
+	}
+}
+
+# ---------------------------------------------------------------------
+# Inspection: reports current band membership, courtier capacity
+# pressure, and whether the local county holder has an outstanding
+# Kehillah loan -- none of which Take Stock shows directly. Check
+# debug.log after firing, not the screen (nothing pops up, by design).
+# ---------------------------------------------------------------------
+
+kehillah_debug.30 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title = {
+			if = { limit = { kehillah_var_prosperity >= kehillah_band_legendary_threshold } debug_log = "kehillah_debug.30: Prosperity band = Legendary" }
+			else_if = { limit = { kehillah_var_prosperity >= kehillah_band_flourishing_threshold } debug_log = "kehillah_debug.30: Prosperity band = Flourishing" }
+			else_if = { limit = { kehillah_var_prosperity >= kehillah_band_healthy_threshold } debug_log = "kehillah_debug.30: Prosperity band = Healthy" }
+			else_if = { limit = { kehillah_var_prosperity >= kehillah_band_strained_threshold } debug_log = "kehillah_debug.30: Prosperity band = Strained" }
+			else = { debug_log = "kehillah_debug.30: Prosperity band = Crisis" }
+
+			if = { limit = { kehillah_var_stability >= kehillah_band_legendary_threshold } debug_log = "kehillah_debug.30: Stability band = Legendary" }
+			else_if = { limit = { kehillah_var_stability >= kehillah_band_flourishing_threshold } debug_log = "kehillah_debug.30: Stability band = Flourishing" }
+			else_if = { limit = { kehillah_var_stability >= kehillah_band_healthy_threshold } debug_log = "kehillah_debug.30: Stability band = Healthy" }
+			else_if = { limit = { kehillah_var_stability >= kehillah_band_strained_threshold } debug_log = "kehillah_debug.30: Stability band = Strained" }
+			else = { debug_log = "kehillah_debug.30: Stability band = Crisis" }
+
+			if = { limit = { kehillah_var_greatness >= kehillah_band_legendary_threshold } debug_log = "kehillah_debug.30: Greatness band = Legendary" }
+			else_if = { limit = { kehillah_var_greatness >= kehillah_band_flourishing_threshold } debug_log = "kehillah_debug.30: Greatness band = Flourishing" }
+			else_if = { limit = { kehillah_var_greatness >= kehillah_band_healthy_threshold } debug_log = "kehillah_debug.30: Greatness band = Healthy" }
+			else_if = { limit = { kehillah_var_greatness >= kehillah_band_strained_threshold } debug_log = "kehillah_debug.30: Greatness band = Strained" }
+			else = { debug_log = "kehillah_debug.30: Greatness band = Crisis" }
+		}
+
+		if = {
+			limit = { kehillah_courtier_count_value > kehillah_courtier_capacity_value }
+			debug_log = "kehillah_debug.30: courtier count EXCEEDS capacity"
+		}
+		else = {
+			debug_log = "kehillah_debug.30: courtier count within capacity"
+		}
+
+		domicile.domicile_location.county.holder ?= {
+			if = {
+				limit = { exists = var:kehillah_loan_amount_owed }
+				debug_log = "kehillah_debug.30: local county holder HAS an outstanding Kehillah loan"
+			}
+			else = {
+				debug_log = "kehillah_debug.30: local county holder has NO outstanding Kehillah loan"
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# Fast-forward an already-outstanding loan to one quarterly tick before
+# its 6-year term (kehillah_loan_term_years), to reach the default path
+# (kehillah_loan_default_prosperity_loss, in
+# kehillah_scripted_effects.txt) without waiting 6 real years. Take the
+# Extend a Loan decision first -- this only has anything to fast-forward
+# if a loan already exists.
+# ---------------------------------------------------------------------
+
+kehillah_debug.40 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county.holder ?= {
+			if = {
+				limit = { exists = var:kehillah_loan_amount_owed }
+				set_variable = { name = kehillah_loan_years_elapsed value = 5.9 }
+				debug_log = "kehillah_debug.40: loan fast-forwarded to 5.9 years elapsed (term is 6, ticks by 0.25/quarter -- next tick should default)"
+			}
+			else = {
+				debug_log = "kehillah_debug.40: no outstanding loan to fast-forward"
+			}
+		}
+	}
+}
