@@ -39,14 +39,18 @@ other docs) currently take on faith.
    (single-entity tiered dashboard — matches an own-community dashboard) and `window_factions.gui`
    (cross-entity list — matches a map-wide community comparison) to come back with a concrete,
    evidence-based plan for opening a custom window bound to scripted data.
-6. **Regional/unified leadership** — done as a spec, in progress as content: see
+6. **DONE, 2026-09-08. Regional/unified leadership**: see
    [docs/spec/v4-regional-communities-and-batei-din.md](docs/spec/v4-regional-communities-and-batei-din.md)
    for the design (a titular duchy-tier `d_kehillah_shum` grouping Worms/Speyer/Mainz by de jure
-   nesting, no new government/succession construct in v1) and its own §7 for implementation
-   order. This still doesn't resolve the "aggregate score for a dashboard" question — the spec
-   deliberately sidesteps it by applying takkanah effects symmetrically per-title rather than
-   defining a blended regional number — so the sort-primitive and aggregate-definition problems
-   flagged here originally are still open for whenever a real dashboard needs them.
+   nesting, no new government/succession construct in v1) and
+   [docs/testing/2026-09-08-shum-live-test-log.md](docs/testing/2026-09-08-shum-live-test-log.md)
+   for the live-test pass that closed it out — Speyer and Mainz exist as AI-run peer communities,
+   the Greatness-gated "Convene the Bet Din of Sh'um" decision and its three-option takkanah event
+   are live and confirmed working end to end (UI, gate, and the symmetric per-title effect at the
+   raw-value level). This still doesn't resolve the "aggregate score for a dashboard" question —
+   the spec deliberately sidesteps it by applying takkanah effects symmetrically per-title rather
+   than defining a blended regional number — so the sort-primitive and aggregate-definition
+   problems flagged here originally are still open for whenever a real dashboard needs them.
 7. **Wave 4** (dissolution) and **Wave 5** (community lifecycle: creation/destruction/migration),
    per [docs/spec/v2-pillar-economy-and-lifecycle.md](docs/spec/v2-pillar-economy-and-lifecycle.md)
    §8's build order.
@@ -91,6 +95,18 @@ dissolution) and its §8 for the 5-wave build order. Status:
   [docs/testing/wave3-testing-runbook.md](docs/testing/wave3-testing-runbook.md)
   and `events/kehillah_debug_events.txt`.
 - **Waves 4-5** (dissolution, community lifecycle) — not started.
+
+**2026-09-08 update — regional/unified leadership shipped and live-tested**, outside the
+Prosperity/Stability/Greatness wave numbering above (it's a v4 spec item, not v2's). See
+[docs/spec/v4-regional-communities-and-batei-din.md](docs/spec/v4-regional-communities-and-batei-din.md)
+and [docs/testing/2026-09-08-shum-live-test-log.md](docs/testing/2026-09-08-shum-live-test-log.md).
+Speyer and Mainz now exist as AI-run Kehillot alongside Worms, all three nested under a titular
+`d_kehillah_shum` duchy (the first landless-county-inside-a-duchy structure this mod has built,
+confirmed clean live), and "Convene the Bet Din of Sh'um" is a real, working decision. This pass
+also found and fixed a real pre-existing-adjacent bug: `kehillah_pillar_at_least_trigger` could
+read a pillar variable before the same tick's `kehillah_init_pillars_effect` had set it (courtier
+seeding at game start raced the variable-set); it now guards with `has_variable` first, matching
+a vanilla precedent the trigger's own header already cited but hadn't fully copied.
 
 A separate, deliberately unimplemented design pass for succession —
 theocratic pool succession, an appoint-successor override, and a

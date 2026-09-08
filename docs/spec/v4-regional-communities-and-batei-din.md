@@ -1,11 +1,21 @@
 # V4 Spec: Regional Communities and the Bet Din of Sh'um
 
-Status: **proposal, with a first concrete instance (Sh'um) scoped for immediate implementation.**
-Unlike v3, this isn't research-first — the underlying titling architecture was already prepared
+Status: **implemented and live-tested, 2026-09-08.** Section 7's implementation order was carried
+out in full the same day this spec was written — see
+[docs/testing/2026-09-08-shum-live-test-log.md](../testing/2026-09-08-shum-live-test-log.md) for
+the live-test pass, including the one genuinely unverified structural step (§2's landless-county-
+inside-a-duchy nesting), which passed clean. Two real bugs were found and fixed during that pass
+(a pillar-variable race in `kehillah_pillar_at_least_trigger`, and a self-inflicted loc-key
+regression) — both documented in the test log, neither specific to this feature's design. Sections
+1-6 below are unchanged from the original proposal and remain the design record; treat past-tense
+"is recommended"/"this spec adopts" phrasing throughout as describing what was actually built,
+now confirmed live.
+
+Unlike v3, this wasn't research-first — the underlying titling architecture was already prepared
 for exactly this in [common/landed_titles/kehillah_landed_titles.txt](../../common/landed_titles/kehillah_landed_titles.txt)'s
-2026-09-07 header (see §2 below), so this doc mostly formalizes and completes a decision already
-half-made, plus flags what's genuinely still open. Written 2026-09-08 from the design conversation
-about regional/unified leadership referenced in `ROADMAP.md`'s near-term TODO item 6.
+2026-09-07 header (see §2 below), so this doc mostly formalized and completed a decision already
+half-made. Written 2026-09-08 from the design conversation about regional/unified leadership
+referenced in `ROADMAP.md`'s near-term TODO item 6.
 
 ## 1. Why Sh'um, specifically
 

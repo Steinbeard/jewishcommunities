@@ -1,82 +1,140 @@
 ﻿# =====================================================================
 # Kehillah titles.
 #
-# Source of truth: docs/spec/v1-kehillah-community.md section 6 and
-# docs/scenarios/worms-1066.md section 4 (which left the tag as "TBD in
-# technical design" -- this file is that decision: c_kehillah_worms).
+# Source of truth: docs/spec/v1-kehillah-community.md section 6,
+# docs/scenarios/worms-1066.md section 4, and (for the duchy-tier
+# grouping added 2026-09-08) docs/spec/v4-regional-communities-and-
+# batei-din.md.
 #
-# Structure: a LANDLESS COUNTY-TIER title.
+# Structure: THREE landless county-tier titles (Worms, Speyer, Mainz),
+# nested under one titular duchy (d_kehillah_shum) that is never granted
+# to anyone.
 #
-# CHANGED FROM DUCHY TIER, 2026-09-07. A Kehillah is a community inside
-# a single town, so county tier is what it actually is. Duchy tier also
-# made no room for the intended next step -- neighbouring communities in
-# Speyer and Mainz, and a regional body (takkanot, rabbinical synods)
-# sitting above them. That body wants to be the duchy-tier thing; the
-# individual communities cannot already be occupying that rank.
+# CHANGED FROM DUCHY TIER, 2026-09-07 (Worms only, at the time). A
+# Kehillah is a community inside a single town, so county tier is what
+# it actually is. See that date's history in git for the original
+# reasoning (also: common/governments/_governments.info's
+# landless_playable documentation, and the c_nf_yamato precedent in
+# common/landed_titles/01_japan_noble_family.txt -- top-level in its
+# file, not nested in any duchy, landless, capital pointing at a real
+# county somebody else holds. c_kehillah_worms/speyer/mainz are the
+# same shape.)
 #
-# The previous version of this header claimed duchy tier was "the tier
-# the landless_playable government rule expects". That was not true.
-# common/governments/_governments.info documents landless_playable as
-# nothing more than "Allow rulers be playable even when they do not have
-# any county" -- it says nothing about tier. And vanilla ships 442
-# county-tier landless titles: every c_nf_* noble-family title in
-# common/landed_titles/01_japan_noble_family.txt and its Korean and
-# Chinese siblings. c_nf_yamato is the same shape as this title --
-# top-level in the file, not nested in any duchy, no baronies, landless,
-# with capital pointing at a real county somebody else holds.
+# ADDED 2026-09-08 (v4 spec): d_kehillah_shum, the Sh'um confederation
+# (Speyer/Worms/Mainz -- the real medieval Rhineland Bet Din). Landless
+# county titles CAN carry real de jure parentage; CK3's de jure
+# hierarchy is built by file nesting (a county block written inside a
+# duchy block becomes that duchy's de jure territory), independent of
+# whether the duchy is ever held. d_kehillah_shum never is -- no
+# succession law, no holder, not granted anywhere in history/titles.
+# It exists purely so `de_jure_duchy = title:d_kehillah_shum` (or
+# equivalent -- see is_kehillah_shum_member_trigger in
+# common/scripted_triggers/kehillah_scripted_triggers.txt) can answer
+# "which three communities are Sh'um members" without a hand-maintained
+# list. This is the first time this mod nests a landless = yes county
+# inside a duchy at all; no vanilla file does this combination anywhere
+# research turned up (v4 spec section 2). Confirmed clean via ck3-tiger
+# and a live boot before anything else was built on top of it (v4 spec
+# section 7, step 1) -- see docs/testing/ for the dated log.
 #
-# The domicile survives the tier change because domiciles are attached
-# to the GOVERNMENT, not the title: kehillah_government declares
-# domicile_type = kehillah_quarter, and kehillah_quarter gates itself on
-# government_has_flag = government_is_kehillah. Neither the domicile
-# type database nor the landed_titles allow_domicile field (default yes,
-# documented as applying "despite possibly landless") mentions tier at
-# all.
-#
-# The government's use_title_tier_modifiers = no still strips the
-# prestige that would otherwise ride along with the rank.
-#
-# The county under the community (c_worms) is untouched and still
-# belongs to its vanilla holder, Bishop Siegfried. The Kehillah title
+# The county under each community (c_worms, c_speyer, c_mainz) is
+# untouched and still belongs to its vanilla holder. The Kehillah title
 # is layered over it, not carved out of it. That is the whole premise:
 # you do not own the ground you stand on.
 #
-# This file adds ONE new title and modifies no vanilla title, so it
-# merges cleanly with the vanilla landed_titles database.
+# This file adds new titles and modifies no vanilla title, so it merges
+# cleanly with the vanilla landed_titles database.
 # =====================================================================
 
-c_kehillah_worms = {
-	# Deep blue, distinct from the vanilla Jewish religious-head titles
-	# in the 0/100-140/255 range so the two are not confused on the map.
+d_kehillah_shum = {
+	# Same deep blue as the three member counties below -- one visual
+	# family, distinct from vanilla's Jewish religious-head titles in
+	# the 0/100-140/255 range.
 	color = { 45 70 125 }
 
-	landless = yes
-	# Marks this as a PLAYABLE landless ruler's title rather than a
-	# titular one like k_papal_state. Without it the engine refuses to
-	# hand the holder to a player -- pdx_assert.cpp:619 "Trying to
-	# assign unplayable character" -- and the game crashes on Play.
-	# Every vanilla d_laamp_* adventurer title carries this flag.
-	require_landless = yes
+	# Never held (v4 spec section 3): no holder is ever assigned in
+	# history/titles, and nothing in this mod's scripts ever grants it.
+	# It carries no succession law because it never needs one -- there
+	# is no vacancy to fill. capital points at Worms only because the
+	# field is mandatory on a duchy-tier title; it has no play
+	# significance for a title nobody holds.
+	capital = c_kehillah_worms
+
 	definite_form = yes
-
-	# The holder is addressed by their own name and role, not as a duke
-	# of anything -- same treatment vanilla gives religious head titles.
-	ruler_uses_title_name = no
-
-	# A Kehillah is an institution, never a family possession. This is
-	# the title-level statement of the same principle the government
-	# type makes by disabling cadet branches and dynasty-named realms.
 	can_be_named_after_dynasty = no
-	can_use_nomadic_naming = no
-
-	# Nobody inherits, claims or drifts into leading a Jewish community.
-	# Succession runs exclusively through
-	# kehillah_appointment_succession_law.
-	no_automatic_claims = yes
 	de_jure_drift_disabled = yes
 
-	# The community sits in Worms and stays there. Province 2731,
-	# verified against the installed 1.19 files and matching
-	# docs/scenarios/worms-1066.md section 1.
-	capital = c_worms
+	c_kehillah_worms = {
+		landless = yes
+		# Marks this as a PLAYABLE landless ruler's title rather than a
+		# titular one like k_papal_state. Without it the engine refuses
+		# to hand the holder to a player -- pdx_assert.cpp:619 "Trying
+		# to assign unplayable character" -- and the game crashes on
+		# Play. Every vanilla d_laamp_* adventurer title carries this
+		# flag.
+		require_landless = yes
+		definite_form = yes
+
+		# The holder is addressed by their own name and role, not as a
+		# count of anything -- same treatment vanilla gives religious
+		# head titles.
+		ruler_uses_title_name = no
+
+		# A Kehillah is an institution, never a family possession. This
+		# is the title-level statement of the same principle the
+		# government type makes by disabling cadet branches and
+		# dynasty-named realms.
+		can_be_named_after_dynasty = no
+		can_use_nomadic_naming = no
+
+		# Nobody inherits, claims or drifts into leading a Jewish
+		# community. Succession runs exclusively through
+		# kehillah_appointment_succession_law.
+		no_automatic_claims = yes
+		de_jure_drift_disabled = yes
+
+		# The community sits in Worms and stays there. Province 2731,
+		# verified against the installed 1.19 files and matching
+		# docs/scenarios/worms-1066.md section 1.
+		capital = c_worms
+	}
+
+	# ADDED 2026-09-08 (v4 spec section 5). Mirrors c_kehillah_worms
+	# exactly. AI-run, not a bookmark start -- see
+	# history/characters/speyer_1066.txt and history/titles/
+	# kehillah_titles.txt for the seeding, and that character file's own
+	# header for why 1066 is a deliberate anachronism here (the real
+	# Speyer community is not documented before the 1070s).
+	c_kehillah_speyer = {
+		landless = yes
+		require_landless = yes
+		definite_form = yes
+		ruler_uses_title_name = no
+		can_be_named_after_dynasty = no
+		can_use_nomadic_naming = no
+		no_automatic_claims = yes
+		de_jure_drift_disabled = yes
+
+		# Vanilla county tag, confirmed present in the installed 1.19
+		# files (00_landed_titles.txt).
+		capital = c_speyer
+	}
+
+	# ADDED 2026-09-08 (v4 spec section 5). Mirrors c_kehillah_worms
+	# exactly. AI-run, not a bookmark start -- see
+	# history/characters/mainz_1066.txt.
+	c_kehillah_mainz = {
+		landless = yes
+		require_landless = yes
+		definite_form = yes
+		ruler_uses_title_name = no
+		can_be_named_after_dynasty = no
+		can_use_nomadic_naming = no
+		no_automatic_claims = yes
+		de_jure_drift_disabled = yes
+
+		# Vanilla county tag, confirmed present in the installed 1.19
+		# files (00_landed_titles.txt).
+		capital = c_mainz
+	}
 }

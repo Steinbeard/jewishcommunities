@@ -8,9 +8,9 @@
 # Scope: a landed title.
 #
 # The single place that answers "is this title a Jewish community?".
-# v1 has exactly one, the Kehillah of Worms. Every later Kehillah --
-# Troyes, the Phase 2 Babylonian overlay, the Phase 3 Sephardi one --
-# gets added here and nowhere else.
+# UPDATED 2026-09-08 (v4 spec): Speyer and Mainz added alongside Worms.
+# Every later Kehillah -- Troyes, the Phase 2 Babylonian overlay, the
+# Phase 3 Sephardi one -- gets added here and nowhere else.
 #
 # This is checked by name rather than by a title flag because it has to
 # be answerable during history execution and at game start, before any
@@ -18,7 +18,68 @@
 # ---------------------------------------------------------------------
 
 is_kehillah_title_trigger = {
-	this = title:c_kehillah_worms
+	OR = {
+		this = title:c_kehillah_worms
+		this = title:c_kehillah_speyer
+		this = title:c_kehillah_mainz
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# is_kehillah_shum_member_trigger
+# Scope: a character (the Kehillah leader). Wraps primary_title
+# internally, same pattern as kehillah_pillar_at_least_trigger below --
+# every caller so far (the takkanah decision, the Sh'um event) needs
+# this on a character, not a title, so that is the scope this trigger
+# takes directly rather than making every caller open primary_title
+# itself.
+#
+# ADDED 2026-09-08 (v4 spec sections 3-4). Answers "does this leader's
+# community belong to the Sh'um confederation" via real de jure
+# parentage rather than a hand-maintained list -- the answer IS
+# is_kehillah_title_trigger today (every Kehillah title happens to be a
+# Sh'um member in v1), but the two triggers are kept separate on
+# purpose: a future non-Sh'um Kehillah (Troyes, Babylonia) must not
+# accidentally count as a Sh'um member just because it is a Kehillah,
+# and this is the one place that distinction gets made.
+# ---------------------------------------------------------------------
+
+is_kehillah_shum_member_trigger = {
+	primary_title = {
+		# de_jure_liege, on a county-tier title, resolves directly to its
+		# de jure duchy -- confirmed against vanilla's own usage (e.g.
+		# common/scripted_triggers/00_illustration_triggers.txt's
+		# primary_title.de_jure_liege = title:h_china), not invented
+		# syntax.
+		de_jure_liege = title:d_kehillah_shum
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_is_shum_greatness_leader_trigger
+# Scope: a Kehillah leader (character), a Sh'um member.
+#
+# ADDED 2026-09-08 (v4 spec section 4). "Whichever Sh'um member's leader
+# currently has the highest Greatness" -- checked by comparing
+# primary_title's own Greatness directly against all three fixed member
+# titles' Greatness (including itself; a >= comparison against your own
+# value is trivially true, so no explicit self-exclusion is needed).
+# Ties resolve in favor of whoever asks -- "cheapest to write correctly"
+# per the spec, not worth a tie-breaking flag for a v1 feature.
+#
+# var:X >= scope.var:Y is valid vanilla syntax, confirmed against e.g.
+# common/laws/02_admininistrative_laws.txt:1560's
+# var:movement_power >= root.diarch.var:movement_power.
+# ---------------------------------------------------------------------
+
+kehillah_is_shum_greatness_leader_trigger = {
+	primary_title = {
+		var:kehillah_var_greatness >= title:c_kehillah_worms.var:kehillah_var_greatness
+		var:kehillah_var_greatness >= title:c_kehillah_speyer.var:kehillah_var_greatness
+		var:kehillah_var_greatness >= title:c_kehillah_mainz.var:kehillah_var_greatness
+	}
 }
 
 
@@ -173,10 +234,33 @@ kehillah_leader_is_rabbinic_trigger = {
 # substitution that these precedents don't individually cover) --
 # same band thresholds, same script values, just spelled out per pillar
 # per band instead of substituted.
+#
+# GUARD ADDED 2026-09-08, found live during the v4 spec Speyer/Mainz
+# boot test: game start seeds three communities' notable-family
+# courtiers via kehillah_seed_community_effect, each set_employer call
+# firing on_join_court -> kehillah_apply_courtier_quality_effect ->
+# this trigger SYNCHRONOUSLY, in the same effect execution as the
+# set_variable call that creates kehillah_var_greatness moments
+# earlier in kehillah_init_pillars_effect -- error.log showed "Failed
+# to fetch variable... due to not being set" (and once, "Invalid left
+# side during comparison 'var'") dozens of times at the exact game-start
+# tick, non-fatal but real: the variable-just-set write and this read
+# are not always visible to each other within the same tick. This
+# mod's OWN established idiom already exists for exactly this (every
+# set_variable in kehillah_init_pillars_effect is itself guarded with
+# NOT = { exists = var:... }) and the vanilla precedent cited above --
+# tgp_imperial_examination_triggers.txt's has_perfect_score_trigger --
+# already guards with has_variable = $SCORE_VAR$ before its own
+# var:$SCORE_VAR$ comparison; this trigger simply hadn't copied that
+# half of the precedent yet. Single Kehillah (Worms-only) sessions
+# likely hit the same race before this fix; it went unnoticed because
+# nobody had checked error.log this closely against a fresh game start
+# until this session's live test.
 # ---------------------------------------------------------------------
 
 kehillah_pillar_at_least_trigger = {
 	primary_title = {
+		has_variable = $PILLAR$
 		var:$PILLAR$ >= $THRESHOLD$
 	}
 }
