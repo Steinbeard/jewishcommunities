@@ -105,7 +105,11 @@ full mechanics and philosophy; summary:
   find a bug this would have caught standing still. Treat any `fatal`/`error` it reports on files
   you touched as blocking; `warning`/`tips` are judgment calls, same as a human linter. It doesn't
   know this mod's own custom logic (pillar thresholds, band gates, etc.) — that's still
-  source-reading or a debug-event probe, below.
+  source-reading or a debug-event probe, below. **Its results can include false positives** — it's
+  a generic linter, not one written for this mod's own scripted triggers/effects/values, so a
+  flagged line is a strong lead to go verify against the actual vanilla/mod definition, not an
+  automatic truth to patch around. Confirm what it's actually complaining about before changing
+  anything on its say-so alone.
 - **Prefer reading source over live-testing when the question is about logic**, not rendering —
   e.g. "does this gate check the right pillar" is answered faster and more reliably by reading
   the trigger than by playing to that state. Live-test only what source-reading can't settle.
@@ -127,6 +131,17 @@ full mechanics and philosophy; summary:
   known pre-existing ones.
 
 ## Working autonomously
+
+**If the task is open-ended** — "continue working on the mod", "what's next", or no specific task
+given at all — go to **ROADMAP.md's "Near-term TODO" section** and work it top-down. It's kept in
+priority order for exactly this situation. Before starting the top item, sanity-check it's still
+accurate (the list is a snapshot from whenever it was last updated — it may already be done, or a
+dependency it names may have landed since); if it's stale, correct the list as part of the work,
+the same dated-correction-note way this repo handles every other stale claim, don't just silently
+skip it. Only move to the next item if the current one is genuinely blocked on something outside
+your control (most commonly: needs the user to live-test something first, or needs a judgment call
+this doc's own "Working autonomously" guidance below doesn't resolve). Don't invent unlisted work
+while an actionable, unblocked TODO item is still open.
 
 **Don't stop mid-session to ask questions.** Infer the answer from ROADMAP.md, the specs, and the
 implementation doc; if a genuine judgment call remains, make the more conservative or more

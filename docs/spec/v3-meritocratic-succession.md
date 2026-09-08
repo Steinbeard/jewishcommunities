@@ -14,13 +14,36 @@ doc's optimism.
 
 ## 1. The problem this replaces
 
-Current succession (v1 spec §5, implementation doc §2c) is family-only. This is a known,
+**CORRECTED 2026-09-07 — this section's original premise is wrong; kept below for the record,
+not as a live claim.** `holder_court_position` and `holder_councilor` are real, shipped, working
+candidate categories (vanilla's `common/succession_appointment/japanese_admin_governor.txt` uses
+both). The crash that produced the belief they didn't work came from a spelling mistake
+(`invested_candidates` instead of `default_candidates`), not from the category itself. See
+[[holder-court-position-is-implemented]] and `kehillah_leadership.txt`'s own 2026-09-07 header
+note for the full account. `kehillah_leadership.txt` has already been fixed to include both
+categories, with a real score bonus for holding a community office — so the community's officers
+are, as of that fix, genuinely eligible successors, not just family. **This has not yet been
+independently re-verified live** (see `ROADMAP.md`'s current-state note and the near-term TODO) —
+the one succession this session watched live is ambiguous evidence, since family remained
+eligible under the fix too and could simply have won on merit.
+
+What this means for the rest of this document: **§2a (theocratic pool succession) may no longer
+be necessary** — if the appointment-succession pool already does real, dynasty-blind, scored
+selection among family and officers alike, the case for switching succession order types at all
+is weaker than when this was written, and may not be worth the succession-law risk this doc's own
+intro warns about. **§2b (appoint-successor override) and §2c (resignation with a choice of
+camera) are unaffected by this correction** and still describe real gaps worth having regardless
+of which succession order underlies them. Before picking this back up: re-verify the
+holder_court_position fix live first, then re-decide whether §2a is still wanted at all, rather
+than assuming this document's original sequencing still holds.
+
+~~Current succession (v1 spec §5, implementation doc §2c) is family-only. This is a known,
 already-documented gap, not new: the original plan assumed the three officers (Shtadlan, Chief
 Rabbi, Gabbai) would qualify as succession candidates via CK3's `holder_court_position`
 candidate category. That category is documented in the game's files but not implemented by the
 engine — using it crashed the game during the original Phase 1 build. Every other non-family
 candidate category (`holder_councilor`, `direct_subject`) is equally unimplemented. What
-remains usable for an independent, landless, council-less government is family only.
+remains usable for an independent, landless, council-less government is family only.~~
 
 This is a narrow, specific gap, not a statement that meritocratic non-family succession is
 impossible in CK3 — vanilla's own Byzantine administrative governors already do real

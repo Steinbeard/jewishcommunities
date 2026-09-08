@@ -15,6 +15,43 @@ Two playable tracks, per the project vision:
 Phases are sequential within a track unless noted. This is the plan,
 subject to revision after each phase.
 
+## Near-term TODO
+
+Written 2026-09-07. Roughly priority order, but the first two are correctness/verification work
+that should happen before anything else here, since they check claims the rest of this list (and
+other docs) currently take on faith.
+
+1. **Live-test Wave 3** (sfarim tiers, band-gated buildings, courtier quality/cap/retention, loan
+   contracts) using [docs/testing/wave3-testing-runbook.md](docs/testing/wave3-testing-runbook.md)
+   and its `events/kehillah_debug_events.txt` console harness. Not yet run.
+2. **Re-verify the `holder_court_position` succession fix live**, with a test built to actually
+   distinguish merit from coincidence: engineer a Shtadlan whose score clearly beats the likely
+   heir (age/Learning/traits), trigger succession, confirm the Shtadlan wins. Then update
+   `ROADMAP.md`'s current-state note and `v3-meritocratic-succession.md`'s §1 correction from
+   "not yet independently re-verified" to a real result either way.
+3. **Decide whether `v3-meritocratic-succession.md`'s §2a (theocratic pool succession) is still
+   wanted**, now that appointment succession may already do real merit-based selection — do this
+   only after item 2 has a result. §2b (appoint override) and §2c (resignation) stand regardless.
+4. **Quick-win UI**: expand the Take Stock decision into a real breakdown — per-pillar
+   contributors, current rate of change, and a tier-effects reference — using nested
+   `custom_tooltip` blocks and the dynamic-loc pattern already proven. No GUI risk, ships fast.
+5. **GUI feasibility research pass** (no implementation): read vanilla's `window_dynasty_legacy.gui`
+   (single-entity tiered dashboard — matches an own-community dashboard) and `window_factions.gui`
+   (cross-entity list — matches a map-wide community comparison) to come back with a concrete,
+   evidence-based plan for opening a custom window bound to scripted data.
+6. **Write a spec for regional/unified leadership** (a beit din or synod spanning multiple
+   Kehillot — joint takkanot rulings, collective expulsion negotiation with a host realm) before
+   building any cross-community dashboard for it. The data model (which communities belong to
+   which grouping, what an aggregate score even means) doesn't exist yet; a dashboard can't show
+   groupings that aren't designed. Also flag early: CK3 script has no native sort primitive
+   (already hit once approximating "top-N" in Wave 2/3), which will bite a ranked community list
+   again, harder.
+7. **Wave 4** (dissolution) and **Wave 5** (community lifecycle: creation/destruction/migration),
+   per [docs/spec/v2-pillar-economy-and-lifecycle.md](docs/spec/v2-pillar-economy-and-lifecycle.md)
+   §8's build order.
+8. **Own-community GUI dashboard**, once item 5's research lands.
+9. **Map-wide/regional GUI dashboard**, once items 5 and 6 both land.
+
 **Current state:** Phase 1 is verified working live, end to end, as of
 2026-09-06 — bookmark start, buildings, officers, and a full
 console-kill → appointment succession → continue-as-successor cycle all
@@ -29,12 +66,64 @@ rework (implementation doc section 9): Shtadlan's Chambers and the
 Communal Watch are gone, the Shtadlan and standing firm are now
 ungated, Hekdesh/Sofer's Workshop/Slaughterhouse and four new minor
 positions are in, and the four community goals are now three pillars
-(Prosperity/Stability/Greatness, spec §3) — that content pass has not
-yet had its own live playtest (see the implementation doc's closing
-caveat in section 9). Everything from Phase 2 onward remains
-unimplemented.
+(Prosperity/Stability/Greatness, spec §3).
 
-**Meritocratic succession is still family-only**, unchanged by the
+**2026-09-07 update — the three pillars now have a full economy, not
+just a display.** See
+[docs/spec/v2-pillar-economy-and-lifecycle.md](docs/spec/v2-pillar-economy-and-lifecycle.md)
+for the full input/output design (band scale, baseline convergence,
+dissolution) and its §8 for the 5-wave build order. Status:
+- **Wave 1** (organic dispute event, epidemic/physician hooks) —
+  implemented, live-tested for the epidemic hooks' non-interference;
+  the dispute event itself is probabilistic and hasn't fired in a test
+  window yet.
+- **Wave 2** (Prosperity variable, band triggers, baseline convergence)
+  — implemented and live-tested; see
+  [docs/testing/2026-09-07-live-playtest-log.md](docs/testing/2026-09-07-live-playtest-log.md).
+  This pass also found and fixed the session's one major bug (pillar
+  variables were never `set_variable`-initialized, so `change_variable`
+  silently no-op'd on all of them) and a benign-but-unresolved "illegal
+  government" error firing on every succession.
+- **Wave 3** (sfarim tiers, band-gated building tiers, courtier
+  quality/cap/retention, light loan contracts) — implemented, not yet
+  live-tested. Runbook and console test harness ready:
+  [docs/testing/wave3-testing-runbook.md](docs/testing/wave3-testing-runbook.md)
+  and `events/kehillah_debug_events.txt`.
+- **Waves 4-5** (dissolution, community lifecycle) — not started.
+
+A separate, deliberately unimplemented design pass for succession —
+theocratic pool succession, an appoint-successor override, and a
+resignation decision — is written up in
+[docs/spec/v3-meritocratic-succession.md](docs/spec/v3-meritocratic-succession.md).
+Its problem statement needs a correction pass (see the succession note
+below) before anyone picks it back up: the holder_court_position fix
+may have already closed some of the gap it was designed to solve.
+
+Everything from Phase 2 onward remains unimplemented.
+
+**CORRECTED 2026-09-07 — the paragraph below is wrong and kept only so
+the correction is legible.** `holder_court_position` and
+`holder_councilor` are real, shipped, working candidate categories —
+vanilla's `common/succession_appointment/japanese_admin_governor.txt`
+uses both. The original crash that produced the belief below came from
+a typo (`invested_candidates` instead of `default_candidates`), not
+from the category. `kehillah_leadership.txt` now includes both
+categories for real, plus a `+25` score bonus for holding a community
+office — see that file's own 2026-09-07 header note for the full
+account. **This is not yet independently re-verified live**: the one
+succession this session's live-testing actually watched (Isaac →
+Mordechai, his son) is ambiguous evidence either way — Mordechai could
+have won on family alone under the old broken pool, or won on genuine
+merit under the fixed one, since family candidates are still eligible
+and were never excluded, just no longer the *only* eligible ones. A
+dedicated re-test (built a Shtadlan with a stronger score than the
+likely heir, then trigger succession, confirm the Shtadlan wins) is on
+the near-term TODO below before this gets marked resolved.
+[docs/spec/v3-meritocratic-succession.md](docs/spec/v3-meritocratic-succession.md)'s
+own §1 problem statement repeats the now-disproven claim and needs the
+same correction.
+
+~~**Meritocratic succession is still family-only**, unchanged by the
 above. The plan had been for the three community officers to be
 succession candidates via the `holder_court_position` category, but
 that category is documented in the game files and not implemented.
@@ -45,7 +134,7 @@ as the community's leader, regardless of bloodline" — is not yet true
 in the way it reads. Three routes to fix it are laid out in section 2c
 of the implementation doc; the cheapest is heir designation, which
 vanilla already combines with appointment succession on
-`acclamation_succession_law`.
+`acclamation_succession_law`.~~
 
 **Review notes on the first iteration**, covering communal welfare,
 personal versus communal wealth, player-directed succession and a
@@ -153,14 +242,25 @@ administrative governors) has no "losing candidate who keeps playing a
 demotion" case to design for. There is one outcome per vacancy and the
 player becomes it. That still holds.
 
-**What is not resolved is getting the notable families into the
+**UPDATED 2026-09-07 — the premise below turned out to be wrong; see the
+current-state note at the top of this file for the full correction.**
+`holder_court_position` does work, and `kehillah_leadership.txt` now
+uses it — the community's officers are genuinely in the candidate pool,
+not just family. What's actually still open is verifying this live with
+a test built to distinguish "the Shtadlan won because merit really
+outscored inheritance" from "family happened to outscore the Shtadlan
+this one time too" — see the near-term TODO. Section 2c of the
+implementation doc still documents the (now moot) three-routes analysis
+for historical reference, not as a live task list.
+
+~~**What is not resolved is getting the notable families into the
 candidate pool in the first place.** The Phase 1 implementation assumed
 the community's officers would qualify through the
 `holder_court_position` category; that category is documented but not
 implemented, and using it crashed the game. Succession is family-only
 today. This is back on the critical path for Phase 1 rather than being
 backlog — see the current-state note at the top of this file and section
-2c of the implementation doc for the three candidate fixes.
+2c of the implementation doc for the three candidate fixes.~~
 
 **Track to revisit once released, not buildable yet:** CK3's upcoming "By
 God Alone" expansion (dev diary, unreleased as of this writing) introduces
