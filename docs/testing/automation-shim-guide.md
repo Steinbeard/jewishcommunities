@@ -86,6 +86,32 @@ Screenshots (any PowerShell one-liner using `System.Windows.Forms.Screen` +
 actually happened. This works fine in this environment; an earlier assumption that visual/UI
 checks were out of reach for an automated session was wrong and got corrected mid-session.
 
+**Downscale before reading the PNG back — capture at native resolution, save a resized copy.**
+Claude's vision cost scales with pixel count (roughly `width×height/750` tokens), so a raw
+2560×1440 capture costs ~5,000 tokens *every time it's read*, and once it's in context that's
+every subsequent turn until the session ends, not a one-time cost. The 2026-09-08 overnight run
+took 26 full-resolution screenshots and burned its entire 5-hour session budget in 50 minutes —
+see the "Overnight automation" section of `CLAUDE.md` for the numbers. Resize to roughly a
+1024px-longest-side copy before handing it to the model; this doesn't touch click accuracy at all
+since `mouse_click` always uses actual-screen-pixel coordinates computed from the *capture*
+resolution (see the coordinate-scaling note above) — only the copy you read back gets smaller.
+
+```powershell
+Add-Type -AssemblyName System.Drawing
+$bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
+# ... CopyFromScreen into $bmp as usual, then before saving for read-back:
+$maxSide = 1024
+$scale = [Math]::Min(1.0, $maxSide / [Math]::Max($bmp.Width, $bmp.Height))
+$small = New-Object System.Drawing.Bitmap ([int]($bmp.Width * $scale)), ([int]($bmp.Height * $scale))
+$g = [System.Drawing.Graphics]::FromImage($small)
+$g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+$g.DrawImage($bmp, 0, 0, $small.Width, $small.Height)
+$small.Save("screenshot_small.png", [System.Drawing.Imaging.ImageFormat]::Png)
+```
+
+Only skip the downscale when the check itself needs fine detail a 1024px copy would blur (reading
+small loc text, checking an icon's exact pixels) — most boot/panel/"did it crash" checks don't.
+
 ---
 
 ## Navigation map (this mod's HUD, `-debug_mode`)
@@ -193,6 +219,36 @@ thing when they look" — decision option text, tooltip rendering, a modifier's 
 artifact's displayed rarity. That last category can't shrink below one live look per distinct UI
 surface, but it's a small fraction of the runbook once the first two categories are handled
 separately.
+
+---
+
+## Delegate self-contained live-game checks to a subagent
+
+Even a well-targeted screenshot check has a cost the philosophy above doesn't cover: everything a
+session does — every screenshot, every `keystroke_kick`, every relaunch — stays in that session's
+context for the rest of its life, resent in full on every subsequent turn. A single "relaunch,
+boot to bookmark, confirm no crash" cycle is a couple dozen tool calls and a screenshot or two;
+this repo's live-testing routinely needs several such cycles in one sitting (the 2026-09-08
+Sh'um pass relaunched CK3 17 times). Done inline, that's not 17× one cycle's cost, it's closer to
+17× the *average* context size across the whole session, because cycle #17 is still dragging
+cycles #1-16 along with it. That session took 1,223 API turns and peaked at ~454,000 tokens of
+context per turn — and burned its full 5-hour session budget in 50 minutes.
+
+**If a check has a clear, bounded pass/fail and doesn't need the running conversation's context to
+judge** — "boot CK3, confirm it reaches the bookmark without crashing," "click through decision X
+and confirm the tooltip text isn't blank," "run probe.txt and report what `debug.log` says" — hand
+it to a subagent (Claude Code's `Task` tool) instead of doing it inline. The subagent gets its own
+isolated context: its screenshots, clicks, and back-and-forth never enter the parent session's
+transcript, only its final report does (a few sentences: pass/fail plus whatever's relevant). This
+is a much bigger lever than downscaling alone — downscaling cuts each screenshot's resend cost,
+delegating removes the whole cycle's resend cost.
+
+Give the subagent a tight brief, not open-ended access to the task: what to boot/click, exactly
+what counts as pass vs. fail, and what to report back (e.g. "relaunch CK3, boot to the Worms 1066
+bookmark, confirm `ck3.exe` is still alive and responding after 30s and `error.log` has no new
+`kehillah`-tagged lines since <baseline>; report PASS/FAIL and paste any new error lines"). Keep
+judgment calls — does this bug matter, what to try next — in the parent session; hand off only the
+mechanical verification loop itself.
 
 ---
 

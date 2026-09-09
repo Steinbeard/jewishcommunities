@@ -1,0 +1,896 @@
+﻿# =====================================================================
+# Kehillah Bet Din Conference -- the docket.
+#
+# Source of truth: docs/spec/v5-bet-din-conference.md. Fired from
+# common/activities/activity_types/kehillah_bet_din_conference.txt's
+# on_phase_active. PART 1 (TEST BUILD), 2026-09-08 -- three hardcoded
+# cases proving the mechanic, not the dozens/hundreds-case pool v5 Part
+# 2 wants (blocked on a case-idea draft, per that spec's section 5).
+# NOT YET LIVE-TESTED -- see the activity file's own header for the
+# same caution.
+#
+# THE SHAPE OF A CASE, EVERY TIME (three events):
+#   HOST event   (.0001/.0011/.0021) -- root = the convening leader.
+#     Presents the case (real courtiers, for the cases that use them --
+#     see below) and two options representing a genuine legal/moral
+#     fork, not a pass/fail prompt. Whichever option is picked, the
+#     HOST's own stat is checked against a threshold (two tiers, pass/
+#     fail -- see kehillah_bet_din_judge_pass_tally/fail_tally in
+#     common/script_values/kehillah_script_values.txt for why two, not
+#     the three kehillah_dispute_events.txt uses) and the result is
+#     added to global_var:kehillah_bet_din_tally. Chains to the co-
+#     judge event.
+#   CO-JUDGE event (.0002/.0012/.0022) -- root = judge2 (global_var:
+#     kehillah_bet_din_judge2), fired via trigger_event the same way
+#     the activity's on_phase_active fires .0001. Presents the SAME
+#     case, judge2 picks via ai_chance (this mod has no live 2-player
+#     scenario yet, so this event only ever resolves through AI choice
+#     in practice, but is written as a real event, not a disguised
+#     effect block, so a future multiplayer Sh'um session sees a real
+#     prompt). judge2's tier check adds to the tally the same way the
+#     host's did. THE THIRD JUDGE, judge3, is folded into this SAME
+#     event's effect as a direct stat check rather than getting its own
+#     fourth event -- a deliberate Part 1 scope cut (see this file's
+#     footer note) to keep the chain at 3 events per case instead of 4;
+#     revisit if Part 2's larger case volume can afford the extra hop.
+#     Chains to the resolution event.
+#   RESOLUTION event (.0003/.0013/.0023) -- root = the convening leader
+#     again (global_var:kehillah_bet_din_convening_title.holder).
+#     Reads the final tally, applies Prosperity/Stability/Greatness to
+#     the CONVENING community only (see the script-values file's own
+#     note on why not all three symmetrically, unlike the retired
+#     takkanot), then chains to the next case's host event -- or, after
+#     case 3, to the closing event .0099.
+#
+# REAL CHARACTERS. Cases 1-2 pick two real courtiers from the convening
+# leader's own court via kehillah_bet_din_pick_litigants_effect (common/
+# scripted_effects/kehillah_bet_din_scripted_effects.txt), mirroring
+# kehillah_dispute_pick_parties_effect exactly. Case 3 deliberately has
+# none -- it is a communal policy question (does the community forbid
+# the practice at all), not one household's dispute, the same shape the
+# retired takkanot always had. This mirrors the historical Takkanot
+# Shu"m themselves: communal ordinances, not individual verdicts.
+#
+# THE TENET-ADDING CASE. Case 3, "The Second Wife," is built on
+# Rabbeinu Gershom's real historical herem against polygamy. Checked
+# against the installed vanilla files (common/religion/religion_types/
+# 00_judaism.txt): rabbinism, the faith this mod's Kehillot actually
+# use, ships with doctrine = doctrine_polygamy as its starting marriage
+# doctrine (that file's own header comment: "Polygamy was legal until
+# around 1000 AD"). A great ruling that also chooses to forbid the
+# practice removes doctrine_polygamy and adds doctrine_monogamy on the
+# ruling character's faith -- both confirmed vanilla doctrine keys in
+# the same marriage doctrine group (common/religion/doctrine_group_
+# types', doctrine_marriage_type), not invented ones, via add_doctrine/
+# remove_doctrine (confirmed vanilla effect precedent: common/scripted_
+# effects/00_game_rule_effects.txt's game_rule_full_gender_equality_
+# effect uses the identical remove-then-add shape on a religion's
+# doctrine group).
+#
+# PART 1 SCOPE CUTS, FOR THE RECORD (v5 spec section 6 material):
+#   - judge3 never gets its own event (see the co-judge event note
+#     above). This is the one place this test build does NOT give
+#     every judge a real choice-driven moment -- it gets a stat check
+#     instead. Worth revisiting once Part 2's case count makes the
+#     cost of a 4th event per case worth weighing for real.
+#   - The docket is a fixed sequence, not a random draw. Part 2's whole
+#     point is replacing this with a real pool; this build does not
+#     attempt draw-without-repeat logic at all.
+#   - Effects land on the convening community only, not all three
+#     symmetrically. Flagged as a default, not a resolved design call,
+#     in the script-values file.
+# =====================================================================
+
+namespace = kehillah_bet_din
+
+
+# =======================================================================
+# CASE 1 -- A DOWRY BEYOND READH
+# (kept as "BEYOND REACH" in loc; comment typo doesn't affect loading)
+# =======================================================================
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din.0001 -- CASE 1, HOST RULING
+# ---------------------------------------------------------------------
+
+kehillah_bet_din.0001 = {
+	type = character_event
+	title = kehillah_bet_din.0001.t
+	desc = kehillah_bet_din.0001.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = global_var:kehillah_bet_din_litigant_a
+		animation = disapproval
+	}
+	lower_right_portrait = {
+		character = global_var:kehillah_bet_din_litigant_b
+		animation = worry
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		set_global_variable = { name = kehillah_bet_din_tally value = 0 }
+		kehillah_bet_din_pick_litigants_effect = yes
+		# Re-saved as plain scope names so loc can reference them the same
+		# way kehillah_dispute_events.txt's [kehillah_party_a.GetFirstName]
+		# does -- loc text uses a save_scope_as name directly, not a
+		# global_var: prefix (no vanilla loc precedent was found for
+		# referencing global_var: from inside a .yml string, so this mod
+		# doesn't invent one).
+		# Guarded -- litigant picking has a known small-court failure mode
+		# (see kehillah_bet_din_pick_litigants_effect's header); an unset
+		# read here would hit the same tooltip-rebuild error-storm risk as
+		# the "after" blocks above.
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_litigant_a }
+			global_var:kehillah_bet_din_litigant_a = { save_scope_as = kbd_litigant_a }
+		}
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_litigant_b }
+			global_var:kehillah_bet_din_litigant_b = { save_scope_as = kbd_litigant_b }
+		}
+	}
+
+	# HOLD TO THE LETTER OF THE PROMISE.
+	option = {
+		name = kehillah_bet_din.0001.a
+
+		if = {
+			limit = { stewardship >= 10 }
+			change_global_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally }
+			custom_tooltip = kehillah_bet_din.0001.a.pass.tt
+		}
+		else = {
+			change_global_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally }
+			custom_tooltip = kehillah_bet_din.0001.a.fail.tt
+		}
+
+		ai_chance = { base = 50 }
+	}
+
+	# EXCUSE THE SHORTFALL.
+	option = {
+		name = kehillah_bet_din.0001.b
+
+		if = {
+			limit = { stewardship >= 10 }
+			change_global_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally }
+			custom_tooltip = kehillah_bet_din.0001.b.pass.tt
+		}
+		else = {
+			change_global_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally }
+			custom_tooltip = kehillah_bet_din.0001.b.fail.tt
+		}
+
+		ai_chance = { base = 50 }
+	}
+
+	# Guarded with exists = -- BUG FOUND LIVE, 2026-09-08: an unguarded
+	# global_var read here, when the var is unset, doesn't just log once.
+	# CK3 re-evaluates an option's effect (this "after" block included) on
+	# EVERY hover-tooltip rebuild while the player's mouse rests on that
+	# option, so an unset global_var here produced a live error-log storm
+	# (~20MB in well under a minute in the session that found this) rather
+	# than a single clean failure. Real effect execution (actually picking
+	# the option) only errors once and moves on -- it was the SPECULATIVE
+	# tooltip-preview evaluation that made this dangerous. Every "after"
+	# block in this file got the same guard once this was found; see this
+	# comment's twin on the first one where it's explained, not repeated.
+	after = {
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_judge2 }
+			global_var:kehillah_bet_din_judge2 = {
+				trigger_event = kehillah_bet_din.0002
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din.0002 -- CASE 1, CO-JUDGES RULE
+# ---------------------------------------------------------------------
+
+kehillah_bet_din.0002 = {
+	type = character_event
+	title = kehillah_bet_din.0002.t
+	desc = kehillah_bet_din.0002.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = global_var:kehillah_bet_din_litigant_a
+		animation = disapproval
+	}
+	lower_right_portrait = {
+		character = global_var:kehillah_bet_din_litigant_b
+		animation = worry
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		# Guarded -- litigant picking has a known small-court failure mode
+		# (see kehillah_bet_din_pick_litigants_effect's header); an unset
+		# read here would hit the same tooltip-rebuild error-storm risk as
+		# the "after" blocks above.
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_litigant_a }
+			global_var:kehillah_bet_din_litigant_a = { save_scope_as = kbd_litigant_a }
+		}
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_litigant_b }
+			global_var:kehillah_bet_din_litigant_b = { save_scope_as = kbd_litigant_b }
+		}
+		# The third judge is folded in here as a direct check -- see this
+		# file's header for why. Guarded with an outer exists check -- same
+		# unset-global_var risk as the "after" blocks (see kehillah_bet_din.
+		# 0001's "after" comment); a bare judge3.learning read would error
+		# on every tooltip rebuild if judge3 somehow never got set.
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_judge3 }
+			if = {
+				limit = { global_var:kehillah_bet_din_judge3.learning >= 10 }
+				change_global_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally }
+			}
+			else = {
+				change_global_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally }
+			}
+		}
+		else = {
+			change_global_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally }
+		}
+	}
+
+	option = {
+		name = kehillah_bet_din.0002.a
+
+		if = {
+			limit = { stewardship >= 10 }
+			change_global_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally }
+		}
+		else = {
+			change_global_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally }
+		}
+
+		ai_chance = {
+			base = 10
+			modifier = { add = 10 stewardship >= 10 }
+		}
+	}
+
+	option = {
+		name = kehillah_bet_din.0002.b
+
+		if = {
+			limit = { stewardship >= 10 }
+			change_global_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally }
+		}
+		else = {
+			change_global_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally }
+		}
+
+		ai_chance = {
+			base = 10
+			modifier = { add = 10 stewardship >= 10 }
+		}
+	}
+
+	# Guarded -- see kehillah_bet_din.0001's "after" for why.
+	after = {
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_convening_title }
+			global_var:kehillah_bet_din_convening_title.holder = {
+				trigger_event = kehillah_bet_din.0003
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din.0003 -- CASE 1, RESOLUTION
+# ---------------------------------------------------------------------
+
+kehillah_bet_din.0003 = {
+	type = character_event
+	title = kehillah_bet_din.0003.t
+	desc = kehillah_bet_din.0003.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		if = {
+			limit = { global_var:kehillah_bet_din_tally >= kehillah_bet_din_tally_threshold_great }
+			global_var:kehillah_bet_din_convening_title = {
+				change_variable = { name = kehillah_var_stability add = kehillah_bet_din_case1_stability_gain_great }
+				change_variable = { name = kehillah_var_prosperity add = kehillah_bet_din_case1_prosperity_gain_great }
+			}
+			custom_tooltip = kehillah_bet_din.0003.great.tt
+		}
+		else_if = {
+			limit = { global_var:kehillah_bet_din_tally >= kehillah_bet_din_tally_threshold_good }
+			global_var:kehillah_bet_din_convening_title = {
+				change_variable = { name = kehillah_var_stability add = kehillah_bet_din_case1_stability_gain_good }
+				change_variable = { name = kehillah_var_prosperity add = kehillah_bet_din_case1_prosperity_gain_good }
+			}
+			custom_tooltip = kehillah_bet_din.0003.good.tt
+		}
+		else = {
+			global_var:kehillah_bet_din_convening_title = {
+				change_variable = { name = kehillah_var_stability subtract = kehillah_bet_din_case1_stability_loss_poor }
+			}
+			custom_tooltip = kehillah_bet_din.0003.poor.tt
+		}
+	}
+
+	option = {
+		name = kehillah_bet_din.0003.a
+	}
+
+	# Guarded -- see kehillah_bet_din.0001's "after" for why.
+	after = {
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_convening_title }
+			global_var:kehillah_bet_din_convening_title.holder = {
+				trigger_event = kehillah_bet_din.0011
+			}
+		}
+	}
+}
+
+
+# =======================================================================
+# CASE 2 -- THE AGUNAH'S PLEA
+# =======================================================================
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din.0011 -- CASE 2, HOST RULING
+# ---------------------------------------------------------------------
+
+kehillah_bet_din.0011 = {
+	type = character_event
+	title = kehillah_bet_din.0011.t
+	desc = kehillah_bet_din.0011.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = global_var:kehillah_bet_din_litigant_a
+		animation = worry
+	}
+	lower_right_portrait = {
+		character = global_var:kehillah_bet_din_litigant_b
+		animation = disapproval
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		set_global_variable = { name = kehillah_bet_din_tally value = 0 }
+		# NOT kehillah_bet_din_pick_litigants_effect -- this case's text
+		# assumes litigant_a is a woman ("she is an agunah"). Bug found
+		# live, 2026-09-08: see the agunah-specific picker's own header in
+		# common/scripted_effects/kehillah_bet_din_scripted_effects.txt.
+		kehillah_bet_din_pick_agunah_litigants_effect = yes
+		# Guarded -- litigant picking has a known small-court failure mode
+		# (see kehillah_bet_din_pick_litigants_effect's header); an unset
+		# read here would hit the same tooltip-rebuild error-storm risk as
+		# the "after" blocks above.
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_litigant_a }
+			global_var:kehillah_bet_din_litigant_a = { save_scope_as = kbd_litigant_a }
+		}
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_litigant_b }
+			global_var:kehillah_bet_din_litigant_b = { save_scope_as = kbd_litigant_b }
+		}
+	}
+
+	# GRANT HER LEAVE TO REMARRY.
+	option = {
+		name = kehillah_bet_din.0011.a
+
+		if = {
+			limit = { learning >= 10 }
+			change_global_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally }
+			custom_tooltip = kehillah_bet_din.0011.a.pass.tt
+		}
+		else = {
+			change_global_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally }
+			custom_tooltip = kehillah_bet_din.0011.a.fail.tt
+		}
+
+		ai_chance = { base = 50 }
+	}
+
+	# HOLD TO THE STRICTER READING.
+	option = {
+		name = kehillah_bet_din.0011.b
+
+		if = {
+			limit = { learning >= 10 }
+			change_global_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally }
+			custom_tooltip = kehillah_bet_din.0011.b.pass.tt
+		}
+		else = {
+			change_global_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally }
+			custom_tooltip = kehillah_bet_din.0011.b.fail.tt
+		}
+
+		ai_chance = { base = 50 }
+	}
+
+	# Guarded -- see kehillah_bet_din.0001's "after" for why.
+	after = {
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_judge2 }
+			global_var:kehillah_bet_din_judge2 = {
+				trigger_event = kehillah_bet_din.0012
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din.0012 -- CASE 2, CO-JUDGES RULE
+# ---------------------------------------------------------------------
+
+kehillah_bet_din.0012 = {
+	type = character_event
+	title = kehillah_bet_din.0012.t
+	desc = kehillah_bet_din.0012.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = global_var:kehillah_bet_din_litigant_a
+		animation = worry
+	}
+	lower_right_portrait = {
+		character = global_var:kehillah_bet_din_litigant_b
+		animation = disapproval
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		# Guarded -- litigant picking has a known small-court failure mode
+		# (see kehillah_bet_din_pick_litigants_effect's header); an unset
+		# read here would hit the same tooltip-rebuild error-storm risk as
+		# the "after" blocks above.
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_litigant_a }
+			global_var:kehillah_bet_din_litigant_a = { save_scope_as = kbd_litigant_a }
+		}
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_litigant_b }
+			global_var:kehillah_bet_din_litigant_b = { save_scope_as = kbd_litigant_b }
+		}
+		# Guarded -- see kehillah_bet_din.0002's judge3 check for why.
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_judge3 }
+			if = {
+				limit = { global_var:kehillah_bet_din_judge3.learning >= 10 }
+				change_global_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally }
+			}
+			else = {
+				change_global_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally }
+			}
+		}
+		else = {
+			change_global_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally }
+		}
+	}
+
+	option = {
+		name = kehillah_bet_din.0012.a
+
+		if = {
+			limit = { learning >= 10 }
+			change_global_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally }
+		}
+		else = {
+			change_global_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally }
+		}
+
+		ai_chance = {
+			base = 10
+			modifier = { add = 10 learning >= 10 }
+		}
+	}
+
+	option = {
+		name = kehillah_bet_din.0012.b
+
+		if = {
+			limit = { learning >= 10 }
+			change_global_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally }
+		}
+		else = {
+			change_global_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally }
+		}
+
+		ai_chance = {
+			base = 10
+			modifier = { add = 10 learning >= 10 }
+		}
+	}
+
+	# Guarded -- see kehillah_bet_din.0001's "after" for why.
+	after = {
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_convening_title }
+			global_var:kehillah_bet_din_convening_title.holder = {
+				trigger_event = kehillah_bet_din.0013
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din.0013 -- CASE 2, RESOLUTION
+# ---------------------------------------------------------------------
+
+kehillah_bet_din.0013 = {
+	type = character_event
+	title = kehillah_bet_din.0013.t
+	desc = kehillah_bet_din.0013.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		if = {
+			limit = { global_var:kehillah_bet_din_tally >= kehillah_bet_din_tally_threshold_great }
+			global_var:kehillah_bet_din_convening_title = {
+				change_variable = { name = kehillah_var_stability add = kehillah_bet_din_case2_stability_gain_great }
+				change_variable = { name = kehillah_var_greatness add = kehillah_bet_din_case2_greatness_gain_great }
+			}
+			custom_tooltip = kehillah_bet_din.0013.great.tt
+		}
+		else_if = {
+			limit = { global_var:kehillah_bet_din_tally >= kehillah_bet_din_tally_threshold_good }
+			global_var:kehillah_bet_din_convening_title = {
+				change_variable = { name = kehillah_var_stability add = kehillah_bet_din_case2_stability_gain_good }
+				change_variable = { name = kehillah_var_greatness add = kehillah_bet_din_case2_greatness_gain_good }
+			}
+			custom_tooltip = kehillah_bet_din.0013.good.tt
+		}
+		else = {
+			global_var:kehillah_bet_din_convening_title = {
+				change_variable = { name = kehillah_var_stability subtract = kehillah_bet_din_case2_stability_loss_poor }
+			}
+			custom_tooltip = kehillah_bet_din.0013.poor.tt
+		}
+	}
+
+	option = {
+		name = kehillah_bet_din.0013.a
+	}
+
+	# Guarded -- see kehillah_bet_din.0001's "after" for why.
+	after = {
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_convening_title }
+			global_var:kehillah_bet_din_convening_title.holder = {
+				trigger_event = kehillah_bet_din.0021
+			}
+		}
+	}
+}
+
+
+# =======================================================================
+# CASE 3 -- THE SECOND WIFE (tenet-adding)
+# =======================================================================
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din.0021 -- CASE 3, HOST RULING
+# No litigant portraits -- this is a communal policy question, not one
+# household's dispute. See this file's header.
+# ---------------------------------------------------------------------
+
+kehillah_bet_din.0021 = {
+	type = character_event
+	title = kehillah_bet_din.0021.t
+	desc = kehillah_bet_din.0021.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		set_global_variable = { name = kehillah_bet_din_tally value = 0 }
+	}
+
+	# FORBID IT -- no man of the community may take a second wife.
+	option = {
+		name = kehillah_bet_din.0021.a
+
+		set_global_variable = { name = kehillah_bet_din_case3_direction value = 1 }
+
+		if = {
+			limit = {
+				OR = {
+					learning >= 12
+					AND = {
+						learning >= 8
+						has_trait = theologian
+					}
+				}
+			}
+			change_global_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally }
+			custom_tooltip = kehillah_bet_din.0021.a.pass.tt
+		}
+		else = {
+			change_global_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally }
+			custom_tooltip = kehillah_bet_din.0021.a.fail.tt
+		}
+
+		ai_chance = { base = 50 }
+	}
+
+	# LEAVE THE OLD CUSTOM BE.
+	option = {
+		name = kehillah_bet_din.0021.b
+
+		set_global_variable = { name = kehillah_bet_din_case3_direction value = 0 }
+
+		if = {
+			limit = {
+				OR = {
+					learning >= 12
+					AND = {
+						learning >= 8
+						has_trait = theologian
+					}
+				}
+			}
+			change_global_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally }
+			custom_tooltip = kehillah_bet_din.0021.b.pass.tt
+		}
+		else = {
+			change_global_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally }
+			custom_tooltip = kehillah_bet_din.0021.b.fail.tt
+		}
+
+		ai_chance = { base = 50 }
+	}
+
+	# Guarded -- see kehillah_bet_din.0001's "after" for why.
+	after = {
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_judge2 }
+			global_var:kehillah_bet_din_judge2 = {
+				trigger_event = kehillah_bet_din.0022
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din.0022 -- CASE 3, CO-JUDGES RULE
+# ---------------------------------------------------------------------
+
+kehillah_bet_din.0022 = {
+	type = character_event
+	title = kehillah_bet_din.0022.t
+	desc = kehillah_bet_din.0022.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		# Guarded -- see kehillah_bet_din.0002's judge3 check for why.
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_judge3 }
+			if = {
+				limit = {
+					OR = {
+						global_var:kehillah_bet_din_judge3.learning >= 12
+						AND = {
+							global_var:kehillah_bet_din_judge3.learning >= 8
+							global_var:kehillah_bet_din_judge3 = { has_trait = theologian }
+						}
+					}
+				}
+				change_global_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally }
+			}
+			else = {
+				change_global_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally }
+			}
+		}
+		else = {
+			change_global_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally }
+		}
+	}
+
+	option = {
+		name = kehillah_bet_din.0022.a
+
+		if = {
+			limit = {
+				OR = {
+					learning >= 12
+					AND = {
+						learning >= 8
+						has_trait = theologian
+					}
+				}
+			}
+			change_global_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally }
+		}
+		else = {
+			change_global_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally }
+		}
+
+		ai_chance = {
+			base = 10
+			modifier = { add = 10 learning >= 12 }
+		}
+	}
+
+	# Guarded -- see kehillah_bet_din.0001's "after" for why.
+	after = {
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_convening_title }
+			global_var:kehillah_bet_din_convening_title.holder = {
+				trigger_event = kehillah_bet_din.0023
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din.0023 -- CASE 3, RESOLUTION
+# The only branch with a doctrine change: a great ruling that ALSO
+# chose to forbid the practice (case3_direction = 1). A great ruling
+# that chose to leave custom be, or any ruling that wasn't great,
+# changes no doctrine -- an attempted herem that the panel couldn't
+# actually carry reads as a real failure, not a smaller version of
+# success.
+# ---------------------------------------------------------------------
+
+kehillah_bet_din.0023 = {
+	type = character_event
+	title = kehillah_bet_din.0023.t
+	desc = kehillah_bet_din.0023.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				global_var:kehillah_bet_din_tally >= kehillah_bet_din_tally_threshold_great
+				global_var:kehillah_bet_din_case3_direction = 1
+			}
+			global_var:kehillah_bet_din_convening_title = {
+				change_variable = { name = kehillah_var_greatness add = kehillah_bet_din_case3_greatness_gain_great }
+				change_variable = { name = kehillah_var_stability add = kehillah_bet_din_case3_stability_gain_great }
+			}
+			if = {
+				limit = { faith = { has_doctrine = doctrine_polygamy } }
+				faith = { remove_doctrine = doctrine_polygamy }
+			}
+			faith = { add_doctrine = doctrine_monogamy }
+			custom_tooltip = kehillah_bet_din.0023.herem.tt
+		}
+		else_if = {
+			limit = { global_var:kehillah_bet_din_tally >= kehillah_bet_din_tally_threshold_good }
+			global_var:kehillah_bet_din_convening_title = {
+				change_variable = { name = kehillah_var_greatness add = kehillah_bet_din_case3_greatness_gain_good }
+				change_variable = { name = kehillah_var_stability add = kehillah_bet_din_case3_stability_gain_good }
+			}
+			custom_tooltip = kehillah_bet_din.0023.good.tt
+		}
+		else = {
+			global_var:kehillah_bet_din_convening_title = {
+				change_variable = { name = kehillah_var_stability subtract = kehillah_bet_din_case3_stability_loss_poor }
+			}
+			custom_tooltip = kehillah_bet_din.0023.poor.tt
+		}
+	}
+
+	option = {
+		name = kehillah_bet_din.0023.a
+	}
+
+	# Guarded -- see kehillah_bet_din.0001's "after" for why.
+	after = {
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_convening_title }
+			global_var:kehillah_bet_din_convening_title.holder = {
+				trigger_event = kehillah_bet_din.0099
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din.0099 -- THE DOCKET CONCLUDES
+# ---------------------------------------------------------------------
+
+kehillah_bet_din.0099 = {
+	type = character_event
+	title = kehillah_bet_din.0099.t
+	desc = kehillah_bet_din.0099.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	option = {
+		name = kehillah_bet_din.0099.a
+	}
+}

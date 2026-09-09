@@ -74,7 +74,10 @@ it's the one deliberately kept current.
   spec to match a new decision — add a new doc or a dated addendum and say explicitly what it
   supersedes, the way `v2` and `v3` do to `v1`.
 - Single branch (`master`), direct commits — this repo has no feature-branch workflow today.
-  Don't introduce one unless asked.
+  Don't introduce one unless asked. **The one standing exception is the scheduled overnight
+  runs** (see "Overnight automation" below), which branch and push a PR-link instead of
+  committing to `master` directly — that's deliberate, not a mistake to "fix" back to direct
+  commits.
 
 ## Implementation approach
 
@@ -114,6 +117,30 @@ full mechanics and philosophy; summary:
 - **Prefer reading source over live-testing when the question is about logic**, not rendering —
   e.g. "does this gate check the right pillar" is answered faster and more reliably by reading
   the trigger than by playing to that state. Live-test only what source-reading can't settle.
+- **When you do need the live game, script it before you screenshot it.** Source-reading first, a
+  `debug_log`/`run <file>.txt` probe second (see below), and mouse+screenshot only for questions
+  that are genuinely about *rendering* — does a tooltip show real text, does an option's wording
+  match, does something a script already confirms exists actually show up where the player would
+  see it. That includes confirming a boot didn't crash: check the process is still alive and
+  `error.log` stayed clean, don't spend a screenshot on it — a screenshot is for "does this look
+  right," not "did this happen." See the shim guide's "Testing philosophy" section for the full
+  version of this split; it's worth reading in full before a live-test session, not just this
+  summary.
+- **When you do take a screenshot, downscale it before reading it back** (roughly a
+  1024px-longest-side copy) — a raw native-resolution capture costs several thousand vision tokens
+  *every time it's read*, and once it's in context that's every subsequent turn, not a one-time
+  cost. See the
+  shim guide's screenshot section for the exact snippet. Skip the downscale only when the check
+  needs fine detail a smaller copy would blur.
+- **Delegate a self-contained live-game check to a subagent (the `Task` tool) instead of doing it
+  inline**, whenever the check has a clear pass/fail and doesn't need the running session's
+  context to judge — "boot CK3, confirm it reaches the bookmark without crashing" is the canonical
+  example. A subagent's tool calls and screenshots stay in its own isolated context; only its
+  final report re-enters yours. This matters most for anything that relaunches the game, since a
+  relaunch-and-verify cycle run inline drags every earlier cycle's context along with it — see the
+  shim guide's "Delegate self-contained live-game checks to a subagent" section, written after the
+  2026-09-08 overnight run burned a full 5-hour session budget in 50 minutes largely from 17
+  in-line relaunch cycles.
 - **Ship a hidden, console-only debug-events file per non-trivial feature** (the existing pattern:
   `events/kehillah_debug_events.txt`) — `event <mod_namespace>.<n>` entries that set state directly
   and/or report it via the `debug_log` effect into `debug.log`. This is the cheap, repeatable way
@@ -159,3 +186,55 @@ those, same as normal. Everything else: decide, document, proceed.
 descriptive commits over one large one; this is how the existing history in this repo reads
 (`git log --oneline`), match that granularity. Don't leave a working tree with a passing,
 complete piece of work sitting uncommitted at the end of a session.
+
+**If you skip an item in the Near-term TODO order, say so explicitly** — a line in the commit
+message or a ROADMAP note ("skipping 1-2, they need a live playtest session rather than an
+unattended pass; did 6 instead"). Working top-down doesn't mean rigidly refusing to skip a
+genuinely-blocked item, it means never skipping *silently*.
+
+## Overnight automation
+
+A Windows Scheduled Task (`JewishCommunities-OvernightDev`, on Daniel's machine) runs an
+unattended instance of this same "Working autonomously" workflow at **2:00 AM America/New_York,
+once a night**. (Was twice nightly at 1AM/5AM; cut to a single run 2026-09-08 to bound token
+spend per night while token-efficiency work — screenshot downscaling, subagent delegation, see
+Testing above — is still being iterated on. Fine to go back to multiple runs a night once that
+lands.) Script: `C:\Users\Daniel\Documents\claude-automation\jewishcommunities-overnight.ps1`
+(logs alongside it in `logs\`). It launches `claude -p ... --dangerously-skip-permissions` — no
+one is present to approve tool calls, so these runs lean entirely on this doc's judgment rules.
+If you're an interactive session picking up work after an overnight run, or you *are* one of
+these scheduled runs, know the following:
+
+- **These runs branch, they don't commit to master.** The wrapper script itself checks out (or
+  creates) `overnight/<YYYY-MM-DD>` *before* Claude starts — this isn't a judgment call the
+  session makes, the branch is just already checked out when the session begins. Everything
+  scheduled runs commit goes there, never to `master` directly, and the branch gets pushed at the
+  end of the run. This is the one deliberate exception to this repo's normal single-branch/
+  direct-commit convention (see Repository conventions above).
+- **No `gh` CLI / API token is configured on this machine**, so a scheduled run can't open the PR
+  itself. Instead it writes a one-click GitHub compare link
+  (`https://github.com/Steinbeard/jewishcommunities/compare/master...overnight/<date>?expand=1`)
+  into `BLOCKERS.md`. **Check `BLOCKERS.md` and `git branch -a` for an open `overnight/*` branch
+  before starting new work** — there may be a night's work sitting there un-merged and unseen.
+- **`BLOCKERS.md`** (repo root, created on first use) is a running, dated log — newest entries on
+  top — of anything a session (scheduled or not) would normally have paused to ask about but
+  couldn't, or anything it's genuinely unsure is safe to do unattended. Format per entry:
+  date/time, what was being worked on, what's blocking or uncertain, what's needed from Daniel.
+  Mark an old entry `RESOLVED` with a one-line note once a later session addresses it — don't
+  delete it.
+- **Live-testing is best-effort on these runs.** If CK3 isn't reachable (not running, screen
+  locked, etc.), a scheduled run doesn't block on it — it notes in `BLOCKERS.md` that the change
+  is source-verified and `ck3-tiger`-clean but not live-tested, same as the Testing section's
+  normal "prefer reading source" guidance, just with a lower bar for when live-testing gets
+  deferred instead of attempted.
+- **A run hitting its usage limit mid-task doesn't lose the record.** The full session transcript
+  is always safe regardless — Claude Code logs every session incrementally to
+  `~/.claude/projects/...`, not just at the end, so a hard cutoff never loses the conversation.
+  What used to depend on the agent's own cooperation was the *human-readable* account: if a run got
+  cut off before it reached its own end-of-session `BLOCKERS.md` write, nothing explained what it
+  was mid-way through. The wrapper script now writes a mechanical "Automated run status" note to
+  `BLOCKERS.md` itself after every run (branch, whether a usage/session-limit cutoff was detected
+  in the log, any uncommitted files left in the tree, commits not yet pushed) and commits+pushes
+  just that note — this doesn't depend on the agent ever getting there. Treat a run whose note says
+  "cut off: true" with no matching explanation from the agent nearby as unresolved, and check
+  `git status`/`git diff` on that branch before trusting it's in a clean state.

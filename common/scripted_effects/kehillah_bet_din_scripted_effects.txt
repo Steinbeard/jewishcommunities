@@ -1,0 +1,124 @@
+﻿# =====================================================================
+# Kehillah Bet Din Conference -- shared scripted effects.
+#
+# Source of truth: docs/spec/v5-bet-din-conference.md. Supports events/
+# kehillah_bet_din_events.txt and common/activities/activity_types/
+# kehillah_bet_din_conference.txt. PART 1 (TEST BUILD), 2026-09-08.
+#
+# WHY GLOBAL VARIABLES, NOT SAVED SCOPES, CARRY STATE ACROSS THE CHAIN.
+# A docket case is a chain of separate character_events fired on THREE
+# DIFFERENT characters in turn (the convening host, then a co-judge,
+# then back to the host for the resolution). A scope saved with
+# save_scope_as does not survive a trigger_event hop onto a different
+# character's own event context the way a stored variable does.
+# global_var: is the same mechanism vanilla itself reaches for to carry
+# state across an event chain when the acting character changes
+# (set_global_variable usage throughout common/scripted_effects/00_
+# achievement_effects.txt and others is the confirmed precedent).
+# Storing a character/title REFERENCE as a variable's value, not just a
+# number, is also confirmed vanilla usage -- common/scripted_effects/
+# 00_accolades_scripted_effects.txt stores accolade objects exactly
+# this way (set_variable = { name = ... value = scope:accolade }).
+#
+# Only one Bet Din Conference can plausibly be in session at a time in
+# v1 (hosting is still gated on being the Sh'um Greatness leader, the
+# same exclusivity the retired takkanah decision had), so a single flat
+# global_var namespace for the active docket's scratch state is safe.
+# This is NOT a general "many activities running at once" pattern and
+# should not be copied for a feature without the same exclusivity
+# guarantee.
+#
+# THE FULL global_var:kehillah_bet_din_* NAMESPACE, FOR REFERENCE:
+#   convening_title  -- the title (e.g. title:c_kehillah_worms) whose
+#                        holder convened this session. Set once, in the
+#                        activity's on_phase_active.
+#   judge2 / judge3  -- the two co-judges (characters), set once from
+#                        the special_guest scopes, same place.
+#   tally            -- running sum of all three judges' per-case skill
+#                        checks. Reset to 0 at session start and again
+#                        at the start of EACH case's host event -- see
+#                        that event's own immediate block, not here.
+#   litigant_a/b     -- the current case's real courtiers, set by this
+#                        file's kehillah_bet_din_pick_litigants_effect.
+#                        Cases that don't need named litigants (case 3)
+#                        never set these; don't read them unguarded.
+#   case3_direction  -- 1 if the panel is ruling to forbid the practice
+#                        in case 3, 0 if not. Set in that case's host
+#                        event only.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_pick_litigants_effect
+# Scope: the convening leader (character), at the start of a case that
+# needs real courtiers (cases 1-2; case 3 deliberately has none -- see
+# that event's own comment for why). Mirrors kehillah_dispute_pick_
+# parties_effect's random_courtier + exclude-the-first-pick shape
+# exactly (common/scripted_effects/kehillah_scripted_effects.txt),
+# storing the pair as global_var instead of a transient saved scope for
+# the reason in this file's header.
+# ---------------------------------------------------------------------
+
+kehillah_bet_din_pick_litigants_effect = {
+	random_courtier = {
+		limit = {
+			is_adult = yes
+			is_imprisoned = no
+		}
+		save_scope_as = kbd_tmp_litigant_a
+	}
+	random_courtier = {
+		limit = {
+			is_adult = yes
+			is_imprisoned = no
+			NOT = { this = scope:kbd_tmp_litigant_a }
+			NOT = { dynasty = scope:kbd_tmp_litigant_a.dynasty }
+		}
+		save_scope_as = kbd_tmp_litigant_b
+	}
+	set_global_variable = { name = kehillah_bet_din_litigant_a value = scope:kbd_tmp_litigant_a }
+	set_global_variable = { name = kehillah_bet_din_litigant_b value = scope:kbd_tmp_litigant_b }
+}
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_pick_agunah_litigants_effect
+# Scope: the convening leader (character). Case 2 ("The Agunah's Plea")
+# ONLY -- litigant_a is the petitioner herself and the loc text (kehillah_
+# bet_din.0011.desc, "she is an agunah") assumes she is a woman, unlike
+# kehillah_bet_din_pick_litigants_effect above (used by case 1, which is
+# gender-neutral). BUG FOUND live, 2026-09-08: the shared picker has no
+# gender filter, so case 2 could (and did, in the live-test run that
+# caught this) assign a male courtier to litigant_a while the text still
+# read "she". Fixed by giving case 2 its own picker instead of adding an
+# unused parameter to the shared one for a single caller.
+#
+# KNOWN GAP, not fixed here: a very small/early court may have no adult
+# female courtier at all, in which case this silently picks nobody and
+# the event's [kbd_litigant_a...] loc references render broken. The
+# same risk exists for kehillah_dispute_events.txt's two-different-
+# dynasties requirement, which this mod gates behind kehillah_has_
+# dispute_candidates_trigger before the event can even fire -- this
+# event has no equivalent gate yet. Worth adding one before Part 2, not
+# attempted in this test build.
+# ---------------------------------------------------------------------
+
+kehillah_bet_din_pick_agunah_litigants_effect = {
+	random_courtier = {
+		limit = {
+			is_adult = yes
+			is_imprisoned = no
+			is_female = yes
+		}
+		save_scope_as = kbd_tmp_litigant_a
+	}
+	random_courtier = {
+		limit = {
+			is_adult = yes
+			is_imprisoned = no
+			NOT = { this = scope:kbd_tmp_litigant_a }
+			NOT = { dynasty = scope:kbd_tmp_litigant_a.dynasty }
+		}
+		save_scope_as = kbd_tmp_litigant_b
+	}
+	set_global_variable = { name = kehillah_bet_din_litigant_a value = scope:kbd_tmp_litigant_a }
+	set_global_variable = { name = kehillah_bet_din_litigant_b value = scope:kbd_tmp_litigant_b }
+}

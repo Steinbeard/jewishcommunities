@@ -1,0 +1,224 @@
+﻿# =====================================================================
+# Kehillah Bet Din Conference -- travelled-to gathering activity.
+#
+# Source of truth: docs/spec/v5-bet-din-conference.md. Supersedes
+# kehillah_shum_takkanah_decision (retired from common/decisions/
+# kehillah_decisions.txt -- see that file's header) and its event
+# kehillah_shum.0001 (events/kehillah_shum_events.txt, now unused --
+# see that file's own retirement note).
+#
+# PART 1 STATUS (test build, 2026-09-08): the first custom
+# activity_type this mod has built. Deliberately minimal next to
+# vanilla's own activity_types (Hunt is 5,843 lines, Grand Wedding is
+# 4,097) -- no pickable phases or options, no biome-conditional
+# backgrounds, no pulse_actions catalog, no window_characters. v5 spec
+# section 3 flags a custom activity_type as this feature's first-of-
+# its-kind structural risk; the goal here is proving the activity
+# fires, hosts, and resolves a docket correctly, not matching vanilla's
+# production polish. NOT YET LIVE-TESTED as of this writing -- treat
+# this file as unverified against a real boot until a dated log exists
+# under docs/testing/, the same caution v4 spec section 2 applied to
+# the Sh'um duchy nesting before it was confirmed live.
+#
+# WHO CAN CONVENE. Unchanged from the retired decision: only a Sh'um
+# member's leader (is_kehillah_shum_member_trigger), and only the one
+# currently holding Greatness leadership among the three
+# (kehillah_is_shum_greatness_leader_trigger) -- both triggers defined
+# in common/scripted_triggers/kehillah_scripted_triggers.txt, reused
+# verbatim rather than redefined. This also means, unlike a scripted
+# decision, no separate "start" decision is needed -- the vanilla
+# activity-hosting UI reads is_shown/can_start_showing_failures_only
+# directly, the same way it does for Hunt or a Grand Wedding.
+#
+# THE PANEL. The host plus special_guests kehillah_bet_din_co_judge_1/2
+# -- always the other two Sh'um leaders, picked directly via
+# select_character rather than a generic invite (v5 spec section 4:
+# "the three community leaders," no new Dayan office). Each slot's
+# select_character is a 2-branch if/else, not 3: given v1 has exactly
+# three fixed titles, checking "am I the host's own title" against ONE
+# of the other two per slot is enough to always land on the two the
+# host does NOT hold. Truth table for reference: host=worms ->
+# {speyer, mainz}; host=speyer -> {worms, mainz}; host=mainz ->
+# {worms, speyer}.
+#
+# THE DOCKET. A fixed, hardcoded 3-case sequence for this test build,
+# NOT the large random-draw-without-repeat pool v5 Part 2 wants --
+# building that pool is explicitly out of scope until docs/spec/
+# v5-bet-din-conference.md section 5's case-idea draft exists. See
+# events/kehillah_bet_din_events.txt for the three cases and the full
+# per-judge skill-check design -- that is where the actual engineering
+# risk this activity type exists to prove out lives, not in this file.
+# =====================================================================
+
+activity_kehillah_bet_din_conference = {
+	is_shown = {
+		government_has_flag = government_is_kehillah
+		is_kehillah_shum_member_trigger = yes
+		is_adult = yes
+	}
+
+	can_start_showing_failures_only = {
+		NOT = { is_activity_type_on_cooldown = activity_kehillah_bet_din_conference }
+		is_imprisoned = no
+		custom_tooltip = {
+			text = kehillah_requires_shum_greatness_leader_tt
+			kehillah_is_shum_greatness_leader_trigger = yes
+		}
+	}
+
+	is_valid = {
+		scope:host = {
+			is_alive = yes
+			is_imprisoned = no
+			government_has_flag = government_is_kehillah
+		}
+	}
+
+	province_filter = capital
+	ai_province_filter = capital
+	is_single_location = yes
+	max_province_icons = 1
+
+	cooldown = { years = kehillah_bet_din_conference_cooldown_years }
+
+	allow_zero_guest_invites = yes
+	open_invite = no
+
+	# Nobody attends except the two co-judges below, picked directly via
+	# select_character rather than any generic invite pool.
+	#
+	# LIVE-TEST FIX, 2026-09-08: `always = no` here silently made the
+	# activity unstartable -- the "Start" button in the planning UI did
+	# nothing at all (no dialog, no logged error; can_start_showing_
+	# failures_only had already passed to even reach this screen). Root
+	# cause, found by checking every vanilla activity_type that also
+	# defines special_guests (coronation, feast, wedding, tournament,
+	# camp_party, chariot_race, debate, hike): every single one gives
+	# can_be_activity_guest a real, permissive trigger -- NONE use
+	# `always = no`. hike.txt's own can_be_activity_guest is literally
+	# named `roaming_activity_special_guest_trigger`, i.e. the SAME gate
+	# its special guest uses. This confirms can_be_activity_guest is
+	# checked for special-guest candidates too, not only the open invite
+	# pool -- `always = no` made our own required co-judges permanently
+	# invalid, so a required guest slot could never be satisfied and the
+	# activity could never start. Fixed to allow exactly "a Sh'um leader
+	# who isn't the host" -- the same two characters select_character
+	# already targets -- which keeps the "no generic invite pool" intent
+	# (open_invite = no, max_guests = 2, each special guest's own
+	# can_pick still pins down exactly who fills which slot).
+	can_be_activity_guest = {
+		is_kehillah_shum_member_trigger = yes
+		NOT = { this = scope:host }
+	}
+
+	max_guests = 2
+
+	special_guests = {
+		kehillah_bet_din_co_judge_1 = {
+			is_required = yes
+			is_shown = { always = yes }
+
+			# NOTE, from ck3-tiger: select_character's own scope is root =
+			# host directly (confirmed against the strict-scopes error this
+			# produced when first written as scope:host.primary_title --
+			# "scope:host might not be available here"), unlike
+			# on_phase_active elsewhere in this file where scope:host IS a
+			# separate named scope. The activity_type.info doc says as much
+			# ("root = host") but it's easy to misread given how much of
+			# the rest of this schema DOES use scope:host explicitly.
+			select_character = {
+				if = {
+					limit = { primary_title = title:c_kehillah_worms }
+					title:c_kehillah_speyer.holder = { save_scope_as = character }
+				}
+				else = {
+					title:c_kehillah_worms.holder = { save_scope_as = character }
+				}
+			}
+
+			can_pick = {
+				this != scope:host
+			}
+
+			ai_will_do = {
+				value = 10
+			}
+		}
+
+		kehillah_bet_din_co_judge_2 = {
+			is_required = yes
+			is_shown = { always = yes }
+
+			select_character = {
+				if = {
+					limit = { primary_title = title:c_kehillah_mainz }
+					title:c_kehillah_speyer.holder = { save_scope_as = character }
+				}
+				else = {
+					title:c_kehillah_mainz.holder = { save_scope_as = character }
+				}
+			}
+
+			can_pick = {
+				this != scope:host
+			}
+
+			ai_will_do = {
+				value = 10
+			}
+		}
+	}
+
+	phases = {
+		phase_bet_din_session = {
+			is_predefined = yes
+			order = 1
+			location_source = pickable
+
+			# Session setup: stash the convening title and both co-judges
+			# as global_var (see common/scripted_effects/kehillah_bet_din_
+			# scripted_effects.txt's header for why), then open the docket
+			# with case 1's host event. on_phase_active runs once per
+			# attending character; guarded to scope:host so this fires
+			# exactly once, matching camp_party.txt's own precedent for
+			# this guard.
+			on_phase_active = {
+				if = {
+					limit = { this = scope:host }
+					set_global_variable = { name = kehillah_bet_din_convening_title value = scope:host.primary_title }
+					set_global_variable = { name = kehillah_bet_din_judge2 value = scope:activity.special_guest:kehillah_bet_din_co_judge_1 }
+					set_global_variable = { name = kehillah_bet_din_judge3 value = scope:activity.special_guest:kehillah_bet_din_co_judge_2 }
+					set_global_variable = { name = kehillah_bet_din_tally value = 0 }
+					scope:host = {
+						trigger_event = kehillah_bet_din.0001
+					}
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		value = 40
+	}
+
+	ai_check_interval = 24
+
+	# LIVE-TEST FIX, 2026-09-08: activity_type.cpp requires a host/guest
+	# default intent even when an activity has no window_characters/pulse
+	# interactivity of its own (error.log: "has no default host intent" /
+	# "has no default guest intent" -- not caught by ck3-tiger, only
+	# surfaced on a live boot). No case-specific intent content exists
+	# for this activity, so this reuses the shared, content-free
+	# reduce_stress_intent (common/activities/intents/shared_intents.txt)
+	# exactly the way camp_party.txt does for the same "nothing bespoke
+	# to offer" situation -- not an invented intent.
+	host_intents = {
+		default = reduce_stress_intent
+		intents = { reduce_stress_intent }
+	}
+
+	guest_intents = {
+		default = reduce_stress_intent
+		intents = { reduce_stress_intent }
+	}
+}

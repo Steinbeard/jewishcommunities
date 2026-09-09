@@ -51,11 +51,43 @@ other docs) currently take on faith.
    the spec deliberately sidesteps it by applying takkanah effects symmetrically per-title rather
    than defining a blended regional number — so the sort-primitive and aggregate-definition
    problems flagged here originally are still open for whenever a real dashboard needs them.
-7. **Wave 4** (dissolution) and **Wave 5** (community lifecycle: creation/destruction/migration),
+   **SUPERSEDED, 2026-09-08 — see item 7 below.** The 15-year single-ruling decision this item
+   shipped is being replaced, not kept alongside its replacement.
+7. **Bet Din Conference, Part 1 — BUILT, ck3-tiger-clean, LIVE-TESTED: PASS (2026-09-08).**
+   Redesigns item 6's takkanah decision into a travelled-to gathering activity (Hunt/Grand Wedding-
+   scale, not a lighter travel-event chain), convened every 3 years instead of every 15, drawing 3
+   hardcoded test cases from what will eventually be a large pool. Each case is ruled on by the
+   three community leaders (player and AI) via a stat-tiered skill check, affecting Prosperity/
+   Stability/Greatness; one test case can add a permanent tenet to the faith (Rabbeinu Gershom's
+   herem against polygamy) — **confirmed live**: a `doctrine_polygamy` → `doctrine_monogamy` change
+   on rabbinism's faith actually fires in a running game, not just on paper. The live-test pass
+   itself found a real bug `ck3-tiger` structurally cannot catch — an unguarded `global_var` read in
+   a chained `after` block, re-evaluated every tooltip-rebuild frame while hovering an option, that
+   turned one clean failure into a ~28MB/minute error-log storm — fixed with `exists =` guards at 16
+   sites. Full build record, the live-test account, and what's still open going into a fuller pass:
+   [docs/spec/v5-bet-din-conference.md](docs/spec/v5-bet-din-conference.md) sections 8-9 and
+   [docs/testing/2026-09-08-bet-din-conference-live-test-log.md](docs/testing/2026-09-08-bet-din-conference-live-test-log.md).
+   **Travel confirmed too, same day, in a follow-up pass**: the real activity-hosting UI is F9 in
+   the right-edge HUD strip (found by reading `gui/hud.gui` after direct exploration missed it — a
+   nearby cup/goblet icon had been mistaken for it). F9 lists "The Bet Din Conference" alongside
+   Hunt/Pilgrimage/University Visit; hosting it opens a real map planner (Worms selectable, Brussels
+   correctly rejected as "not your Realm Capital") with two real "Co-Judge" portraits. Starting it
+   and unpausing showed the phase go `Waiting` → `Engaged` after ~12 in-game days of real travel,
+   with the docket opening on its own via the real `on_phase_active` — confirming the one thing v5
+   §3 chose a full custom activity_type *for* genuinely works. One cosmetic bug found: the host
+   dialog's title renders as a raw loc key, unfixed. No art assets exist yet either (4 missing-icon
+   warnings, cosmetic only). The hundreds-of-cases content pass is Part 2, and
+   doesn't start until a case-idea draft exists (see the backlog entry below).
+   **Design-only addendum, 2026-09-08**: [v5 spec section 10](docs/spec/v5-bet-din-conference.md)
+   proposes widening the panel with up to 2 additional non-leader Jewish scholars, found via a
+   `guest_invite_rules` search and scored on proximity/Learning/Piety/traits, each getting a real
+   event (not folded into the tally) — raising a case's event count from 3 to up to 5. Not built;
+   worth weighing before Part 2's case format locks in, since it changes per-case authoring cost.
+8. **Wave 4** (dissolution) and **Wave 5** (community lifecycle: creation/destruction/migration),
    per [docs/spec/v2-pillar-economy-and-lifecycle.md](docs/spec/v2-pillar-economy-and-lifecycle.md)
    §8's build order.
-8. **Own-community GUI dashboard**, once item 5's research lands.
-9. **Map-wide/regional GUI dashboard**, once items 5 and 6 both land.
+9. **Own-community GUI dashboard**, once item 5's research lands.
+10. **Map-wide/regional GUI dashboard**, once items 5 and 6 both land.
 
 **Current state:** Phase 1 is verified working live, end to end, as of
 2026-09-06 — bookmark start, buildings, officers, and a full
@@ -107,6 +139,23 @@ also found and fixed a real pre-existing-adjacent bug: `kehillah_pillar_at_least
 read a pillar variable before the same tick's `kehillah_init_pillars_effect` had set it (courtier
 seeding at game start raced the variable-set); it now guards with `has_variable` first, matching
 a vanilla precedent the trigger's own header already cited but hadn't fully copied.
+
+**2026-09-08 update — the Bet Din takkanah mechanic has been redesigned, built, and live-tested,
+superseding item 6 above.** Scoping conversation produced
+[docs/spec/v5-bet-din-conference.md](docs/spec/v5-bet-din-conference.md); the same session built
+and live-tested it: the 15-year single-ruling decision is now a travelled-to Conference activity
+(this mod's first custom `activity_type`) convened every 3 years, drawing 3 hardcoded real-character
+test cases, ruled on by the three community leaders via stat-tiered skill checks, with one test case
+able to add a permanent tenet to the faith — **confirmed live**, a real `doctrine_polygamy` →
+`doctrine_monogamy` change on rabbinism's faith. The live-test pass found and fixed a real bug
+`ck3-tiger` cannot catch (an unguarded `global_var` read in a chained event block, spammed on every
+tooltip-rebuild frame into a ~28MB/minute error-log storm), on top of two `ck3-tiger`-caught bugs
+fixed pre-test. See spec sections 8-9 and
+[docs/testing/2026-09-08-bet-din-conference-live-test-log.md](docs/testing/2026-09-08-bet-din-conference-live-test-log.md)
+for the full record. **A same-day follow-up pass closed the one real gap that record initially
+flagged**: the activity-hosting UI (F9, alongside Hunt/Pilgrimage/University Visit) was found, and
+starting a real session confirmed the co-judges actually travel to Worms (~12 in-game days) before
+the docket opens on its own — the full mechanic, not a console stand-in. See near-term TODO item 7.
 
 A separate, deliberately unimplemented design pass for succession —
 theocratic pool succession, an appoint-successor override, and a
@@ -227,6 +276,15 @@ before building it; nothing here is approved by default.
   cultivate, not just a die roll at the death screen.
 - **Tzedakah / charity meter (Steward).** A recurring decision spending
   Gold for Influence and family contentment. One decision, one modifier.
+
+**Blocked on a content draft, not engineering — pull in once the draft exists:**
+- **Bet Din Conference, Part 2 (the case pool).** Once Part 1 (near-term TODO item 7,
+  [v5-bet-din-conference.md](docs/spec/v5-bet-din-conference.md)) has a working activity and a
+  handful of test cases proving the loop feels right, this expands the halachic-case pool to
+  dozens/hundreds so a playthrough doesn't see repeats. Needs the user to draft case ideas first —
+  scenario, which real characters/roles it involves, what a good vs. bad ruling looks like, and
+  which cases are tenet-adding milestones (Rabbeinu Gershom's herem against polygamy is the model
+  for that last category) — before any of this content gets written.
 
 **Needs more than one Kehillah on the map, or a regional anchor to travel
 to — natural Phase 2/3 content, not v1:**
