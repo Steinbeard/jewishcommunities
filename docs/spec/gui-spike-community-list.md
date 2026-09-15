@@ -342,6 +342,25 @@ real build commits to it as the entry point. If that spike fails or the mechanis
 support what's needed, the fallback is §2's Military-pane-swap approach — confirmed structurally
 sound, at the explicitly-flagged cost of forking and indefinitely maintaining `window_military.gui`.
 
+> **CLOSED 2026-09-14 — `gui/scripted_widgets/` WORKS, confirmed in a running game.** The open
+> item above is resolved, and resolved the optimistic way. The v12 build
+> ([v12-community-map-view.md](v12-community-map-view.md)) registered a mod-owned `.gui` file
+> through this folder and the widget **renders live**, in the position and at the size it was
+> authored at, forking no vanilla file. The Military-pane fallback is therefore *not* needed for
+> an entry point, and any future UI work in this repo should reach for `gui/scripted_widgets/`
+> first rather than assuming a fork.
+>
+> **Two corrections to §4's description**, both found while actually using it:
+> 1. **The registration file is a `.txt`, not a `.info`.** §4 (and the recommendation above) say
+>    `gui/scripted_widgets/kehillah_scripted_widgets.info`; vanilla's `_scripted_widgets.info` is
+>    documentation *about* the folder, and the shipped, working registration is
+>    `gui/scripted_widgets/kehillah_scripted_widgets.txt`.
+> 2. **`alwaystransparent = yes` propagates to the whole subtree**, so the natural way to write a
+>    floating widget — a full-screen transparent root with interactive children — produces a
+>    widget that renders and cannot be clicked. That cost the v12 build a live pass. See
+>    [v12 §6a](v12-community-map-view.md) for the vanilla citation that settles the semantics
+>    (`gui/hud.gui:2793` overriding `gui/shared/mapmodes.gui:88-90`) and for the structural fix.
+
 Not investigated in this pass and worth flagging rather than silently assuming: whether an activity
 whose only purpose is "exist so its guest list can be rendered" (no hosting, no phases, no travel)
 is itself viable as an `activity_type`, or whether the engine expects real hosting/completion

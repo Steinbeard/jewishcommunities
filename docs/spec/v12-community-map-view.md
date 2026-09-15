@@ -1,10 +1,12 @@
 # v12 — Jewish Communities Map View
 
 **Status:** BUILT 2026-09-14, `ck3-tiger`-clean (0 fatal, 0 error; no warning on any file this
-pass touched). **NOT LIVE-TESTED.** Nothing in this document has been seen in a running game —
-and unlike most script work in this repo, the highest-risk part of it (`gui/scripted_widgets/`)
-is a mechanism *no file in this repo has used before*, so "tiger is clean" is a weaker signal
-here than usual. See §6 for exactly what a live pass has to check and what the fallbacks are.
+pass touched). **PARTIALLY LIVE-TESTED.** One user-run pass on 2026-09-14 confirmed the widget
+**renders**, in the right place — so `gui/scripted_widgets/` genuinely works, which the earlier
+spike could only call "real but unproven". That pass also found the button would not click; the
+cause and the structural fix are recorded in **§6a**. **Everything past the button is still
+unverified** — the roster contents, the locate button, and the tooltips have not been seen. See
+§6 for what remains and §6a for what has been closed.
 
 Supersedes nothing. Extends ROADMAP item 10 ("Map-wide/regional GUI dashboard"), whose first
 draft was v9's `kehillah_view_communities_interaction`. Depends on the negative findings in
@@ -222,15 +224,16 @@ visibility on the mirrored count instead, so a game with no communities shows no
 
 ## 6. What a live pass must check, in priority order
 
-1. **Does the widget appear at all?** `gui/scripted_widgets/` is unused anywhere in this repo and
-   was flagged "real but unproven" by the earlier spike. If nothing renders, that mechanism is
-   the first suspect, ahead of anything in the widget's own contents. Check `error.log` for
-   complaints naming `kehillah_community_map_view`.
-2. **Position.** A scripted widget is free-floating — there is no parent pane to anchor inside,
-   so the toggle's `position = { -22 -150 }` and the panel's `{ -22 -196 }` are hand-placed to sit
-   above vanilla's bottom-right map-mode bar and are the single most likely thing to need a nudge,
-   especially at a resolution other than the test machine's. They are gathered at the top of each
-   block for that reason.
+1. ~~**Does the widget appear at all?**~~ **RESOLVED 2026-09-14, user-run: YES.** The toggle
+   button renders, in the intended bottom-right spot above vanilla's map-mode bar, at the intended
+   size, with the intended icon. **`gui/scripted_widgets/` works** — that promotes the earlier
+   spike's "real but unproven" to confirmed, and it is the single most reusable finding in this
+   build: *this repo now has an additive way to put UI on screen without forking a vanilla `.gui`
+   file.* Anything that previously assumed a fork was the only option should be re-examined against
+   this.
+2. ~~**Position.**~~ **RESOLVED 2026-09-14: correct as authored**, at the test machine's
+   resolution. Still the first thing to suspect at a different resolution. The offset now lives
+   once on the root container rather than separately on two children (see §6a).
 3. **Does the roster populate?** An empty panel with a visible button means the mirror
    (`kehillah_map_view_list`) is not reaching the GUI — check it exists at all with a
    `debug_log` probe on the player before blaming the datamodel syntax.
@@ -250,6 +253,32 @@ visibility on the mirrored count instead, so a game with no communities shows no
    (PDX gui `And()` is a function call, not a short-circuiting operator, so the guard has to wrap
    the read, not merely precede it). Confirm `error.log` is clean at the main menu, before loading
    anything.
+
+## 6a. Live pass 1 — 2026-09-14: rendered, but the button would not click
+
+**Symptom:** the toggle button drew correctly in the right place and did nothing on click.
+
+**Cause, confirmed against vanilla rather than guessed: `alwaystransparent = yes` propagates to a
+widget's entire subtree.** The first build put it on a full-screen root so the widget would not
+swallow clicks meant for the map, expecting the two children to opt back in with `filter_mouse`.
+A child cannot re-enable what an ancestor turned off.
+
+The citation worth keeping, because it settles the semantics outright: vanilla's own `map_modes`
+type sets `alwaystransparent = yes` (`gui/shared/mapmodes.gui:88-90`), and the one place it is
+instantiated **overrides it back to `alwaystransparent = no`** (`gui/hud.gui:2793`). Vanilla's own
+map-mode buttons would be unclickable otherwise — the override exists for exactly this reason.
+
+**Fix — structural, not a flag.** There is no full-screen surface any more. The root is now a
+content-sized `flowcontainer` pinned bottom-right holding the panel above the toggle, so it only
+ever covers the pixels it actually draws and therefore never needs mouse transparency at all;
+`ignoreinvisible = yes` collapses it to just the button when the panel is closed. The panel
+changed from a `window` to a `vbox` to lay out inside that container (losing `movable`, which
+nothing needed), and the two hand-placed offsets collapsed into one on the root.
+`alwaystransparent` survives only on the two decorative icons *inside* buttons — a leaf letting
+the click fall through to the button beneath it, which is its correct vanilla use.
+
+`ck3-tiger` clean after the fix. **Checklist items 3-6 below remain unverified** — the first pass
+never got past the button.
 
 **If (1) fails**, the feature is not salvageable as-is and the fallback is the one the spikes
 already named: v9's `kehillah_view_communities_interaction` stays the map-wide list, and a real
