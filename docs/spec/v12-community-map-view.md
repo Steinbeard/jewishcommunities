@@ -463,24 +463,26 @@ kehillah_breakdown_values.txt`, `common/customizable_localization/kehillah_break
 other. Drift is `(baseline − current) × kehillah_convergence_rate_value`, the exact expression the
 quarterly effect applies.
 
-**A recorded duplication, with a follow-up.** Every contributor value copies its number from the
-corresponding term in `kehillah_*_baseline_value` (`kehillah_script_values.txt:274-520`) rather
-than the baselines summing the contributor values, because that file had a parallel session's
-uncommitted edits the day this was written. **Follow-up:** refactor the three baselines to
-`add = kehillah_bd_<x>_value` and delete the literal terms. Until then a baseline term changed in
-one place and not the other makes the tooltip lie.
+**One source of truth (refactored the same day, once the parallel session finished).** The three
+baselines `kehillah_*_baseline_value` are now plain sums of the `kehillah_bd_*_value` contributor
+values — a building's or office's contribution is defined exactly once, in
+`kehillah_breakdown_values.txt`, and the baseline and the tooltip that explains it cannot disagree.
+(For a few hours the contributor values were a *copy* of the baseline terms, because
+`kehillah_script_values.txt` had another session's uncommitted edits; that duplication is gone.)
+Stability's two flat office terms gained `_in_post` twins for the sum, since the tooltip shows the
+flat amount but the baseline must add zero for an empty seat.
 
-**The bug this surfaced — needs a live check, and is not in this feature's files.** The three
-baselines call `has_domicile_building_or_higher` *bare, from character scope*. That trigger is
-domicile-scoped: every vanilla use wraps it as `domicile ?= { has_domicile_building_or_higher = … }`
-(`common/achievements/ep3_achievements.txt:210-220`; zero bare uses anywhere), `ck3-tiger` has been
-warning about it (`kehillah_prosperity_baseline_value expects scope to be domicile`), and the
-breakdown values use the wrapped form. If the bare call silently fails on a character, **no
-building has ever contributed to any baseline** — only floors, skills and offices — which would be
-a significant, silent gameplay bug. The tooltip is itself the test: if a community's contributor
-lines sum to more than its "Baseline: N" figure, the baseline is dropping the buildings. Fix if so:
-wrap each call in `domicile ?= { … }` in `kehillah_script_values.txt`, or better, do the follow-up
-above, which replaces those terms with the already-wrapped contributor values.
+**The bug this surfaced — fixed by the refactor.** The old literal baseline terms called
+`has_domicile_building_or_higher` *bare, from character scope*. That trigger is domicile-scoped:
+every vanilla use wraps it as `domicile ?= { has_domicile_building_or_higher = … }`
+(`common/achievements/ep3_achievements.txt:210-220`; zero bare uses anywhere), and `ck3-tiger` had
+warned about it on every run since Wave 2. If the bare call silently failed on a character, **no
+building had ever contributed to any baseline** — only floors, skills and offices. The contributor
+values use the wrapped form, so routing the baselines through them fixes it; the refactor took
+`ck3-tiger` from 91 warnings to 68, the thirteen pre-existing baseline scope warnings among them.
+Whether it *was* silently failing live is still worth one look: with the fix in, a community with
+a built Countinghouse should show its Prosperity baseline jump on the next quarterly tick compared
+to a save from before.
 
 ## 7. The region hierarchy (user decision, 2026-09-14)
 
