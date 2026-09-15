@@ -1,0 +1,156 @@
+﻿# =====================================================================
+# Kehillah map-view effects.
+#
+# Feeds the "Jewish Communities" map view (gui/kehillah_community_map_
+# view.gui). Design doc: docs/spec/v12-community-map-view.md.
+#
+# WHY THIS EXISTS AT ALL -- the one non-obvious constraint.
+# A .gui widget cannot read a GLOBAL variable list. Every variable-list
+# datamodel in the installed 1.19 files goes through a scope:
+# "[<Scope>.MakeScope.GetList( 'name' )]" -- e.g. gui/activity_window_
+# widgets/artifact_rewards.gui:9, .../trait_rewards.gui:10, .../funeral_
+# deceased_selection_widget.gui:62, gui/window_situation_list.gui:1052.
+# There is no GetGlobalVariable / global-list equivalent anywhere in the
+# installation (grepped for "GlobalVar" across gui/: zero hits). The
+# registry this feature wants to show -- global_variable_list
+# kehillah_registered_communities (common/on_action/kehillah_on_actions.
+# txt) -- is therefore invisible to the GUI as it stands.
+#
+# So the roster is MIRRORED onto the viewing player's own character as a
+# character-scope variable list, which the GUI can read via
+# GetPlayer.MakeScope.GetList. The mirror is rebuilt from scratch on
+# every refresh rather than incrementally maintained, so it cannot drift
+# out of sync with the registry the way an add/remove-as-you-go copy
+# would; at sixteen communities the cost of a full rebuild is not worth
+# optimising away, and Wave 5's community lifecycle (founding/destroying
+# communities at runtime, ROADMAP item 8) would break an incremental
+# mirror the day it lands.
+#
+# The mirror is a DISPLAY CACHE. Nothing gameplay-facing may read
+# kehillah_map_view_list or kehillah_ui_* -- those are for the widget.
+# The registry stays the source of truth.
+# =====================================================================
+
+
+# ---------------------------------------------------------------------
+# kehillah_cache_map_view_facts_effect
+#
+# Scope: a c_kehillah_* community title.
+#
+# Caches onto the title the two facts the roster needs that the GUI
+# cannot compute for itself:
+#
+#   kehillah_ui_host_county -- the county the community currently sits
+#     in. This is what the roster's "go to" button selects, and it is
+#     what makes the feature a MAP view rather than just a list: the GUI
+#     has Title.SelectTitle (confirmed in vanilla at gui/map_icon_layer.
+#     gui:751, "[HolySite.GetBarony.SelectTitle]"), which moves the
+#     camera to a title and selects it -- but it has no way to walk
+#     holder -> domicile -> location -> county itself.
+#
+#     Read off the LIVE domicile location first, not the title's static
+#     capital = field, because a community's quarter can be moved
+#     (set_capital_county / a moved domicile -- see kehillah_landed_
+#     titles.txt's own v7 header on founding "anywhere"). title_capital_
+#     county is the fallback for a title whose holder has no domicile
+#     yet, which is the real state during game-start seeding.
+#
+# It also refreshes the community's STANDING (kehillah_var_standing),
+# which the roster orders on and shows as its own column. That figure is
+# NOT a display invention -- as of 2026-09-14 it is this mod's canonical
+# "how is this community doing, in one number", defined by
+# kehillah_standing_value and maintained by kehillah_update_standing_
+# effect (both alongside the pillars themselves, not here). It is
+# refreshed at this point only so that a roster is never built on a
+# figure up to a quarter stale; the definition lives with the pillars,
+# where anything else that wants it can reach it.
+# ---------------------------------------------------------------------
+kehillah_cache_map_view_facts_effect = {
+	if = {
+		limit = { exists = holder.domicile.domicile_location.county }
+		set_variable = {
+			name = kehillah_ui_host_county
+			value = holder.domicile.domicile_location.county
+		}
+	}
+	else_if = {
+		limit = { exists = title_capital_county }
+		set_variable = {
+			name = kehillah_ui_host_county
+			value = title_capital_county
+		}
+	}
+	else = {
+		remove_variable = kehillah_ui_host_county
+	}
+
+	kehillah_update_standing_effect = yes
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_refresh_map_view_effect
+#
+# Scope: the character whose UI is being fed -- in practice always a
+# player, since the widget reads GetPlayer. Safe to call on anyone; it
+# only writes display variables.
+#
+# Rebuilds that character's kehillah_map_view_list from the registry,
+# strongest standing first, skipping held-by-nobody titles (a community
+# between leaders has no portrait, no domicile and no live location, so
+# a row for it would be three empty columns).
+#
+# max = 64 is an explicit bound, not a guess at the real count: sixteen
+# communities exist today (common/on_action/kehillah_on_actions.txt) and
+# Wave 5 can add more, but an ordered_ iterator wants a stated ceiling
+# and a runaway list would be a UI problem long before it was a
+# correctness one. Raise it if founding ever outgrows it.
+# ---------------------------------------------------------------------
+kehillah_refresh_map_view_effect = {
+	save_scope_as = kehillah_map_view_owner
+
+	clear_variable_list = kehillah_map_view_list
+	set_variable = {
+		name = kehillah_map_view_count
+		value = 0
+	}
+
+	ordered_in_global_list = {
+		variable = kehillah_registered_communities
+		order_by = { value = kehillah_standing_value }
+		limit = { exists = holder }
+		max = 64
+
+		kehillah_cache_map_view_facts_effect = yes
+		save_scope_as = kehillah_map_view_entry
+
+		scope:kehillah_map_view_owner = {
+			add_to_variable_list = {
+				name = kehillah_map_view_list
+				target = scope:kehillah_map_view_entry
+			}
+			change_variable = {
+				name = kehillah_map_view_count
+				add = 1
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_refresh_map_view_for_players_effect
+#
+# Scope: anything (it iterates from global scope).
+#
+# The hook-side wrapper. every_player rather than every_ruler: this is
+# purely a UI cache, an AI ruler has no UI to feed, and mirroring the
+# roster onto hundreds of AI characters would be sixteen list writes
+# each for nothing. Multiplayer is covered -- every_player is every
+# human, not just the host.
+# ---------------------------------------------------------------------
+kehillah_refresh_map_view_for_players_effect = {
+	every_player = {
+		kehillah_refresh_map_view_effect = yes
+	}
+}

@@ -57,6 +57,14 @@ other docs) currently take on faith.
    the spec deliberately sidesteps it by applying takkanah effects symmetrically per-title rather
    than defining a blended regional number — so the sort-primitive and aggregate-definition
    problems flagged here originally are still open for whenever a real dashboard needs them.
+   **PER-COMMUNITY AGGREGATE NOW DEFINED, 2026-09-14** (user decision, mid-build on item 10):
+   `kehillah_var_standing`, the arithmetic mean of the three pillars, maintained as a real title
+   variable — see [docs/spec/v12-community-map-view.md](docs/spec/v12-community-map-view.md) §2.3
+   for the definition, why it is the mean and not the sum (it shares the pillars' scale, so their
+   band thresholds and `kehillah_pillar_at_least_trigger` apply to it unchanged), and where it is
+   maintained. v4's own symmetric-per-title takkanah mechanism is unaffected and unchanged. The
+   *regional* roll-up — several communities into one figure — is still genuinely open and needs its
+   own spec; do not improvise one.
    **SUPERSEDED, 2026-09-08 — see item 7 below.** The 15-year single-ruling decision this item
    shipped is being replaced, not kept alongside its replacement.
 7. **Bet Din Conference, Part 1 — BUILT, ck3-tiger-clean; live-tested PASS 2026-09-08, then
@@ -120,6 +128,19 @@ other docs) currently take on faith.
     `gui/scripted_widgets/` to be live-test-verified first (the spike flagged it as real but unproven,
     zero vanilla usages found) or a Military-pane fork (the spike's confirmed-but-costly fallback);
     and the list itself is not sortable/filterable the way a true dashboard would be.
+    **SECOND DRAFT BUILT 2026-09-14 — `ck3-tiger`-clean, NOT LIVE-TESTED:**
+    [docs/spec/v12-community-map-view.md](docs/spec/v12-community-map-view.md). This takes the
+    `gui/scripted_widgets/` route the paragraph above names as unproven, and is this repo's first
+    use of it — a dedicated toggle button and a roster panel of every community in the world, each
+    row showing standing plus the three pillars and carrying a locate button that moves the camera
+    to the community's live host county (`Title.SelectTitle`). No vanilla file is forked. The spec's
+    §1 records why a literal CK3 map mode is not available to a mod at all (colouring is engine-side
+    with no script-drivable `color_mode`; a Kehillah owns no county to colour; the map-mode bar is a
+    hand-written button list, not a datamodel) — read that before anyone re-scopes "add a map mode"
+    as though it were a data change. **The whole thing is unverified**, and if the scripted-widget
+    mechanism turns out not to work, the v9 interaction remains the map-wide list; see the spec's §6
+    for the ordered live-test checklist and the fallback. Sorting is now done script-side (standing,
+    descending); filtering is still absent and still deliberate.
 
 **Current state:** Phase 1 is verified working live, end to end, as of
 2026-09-06 — bookmark start, buildings, officers, and a full

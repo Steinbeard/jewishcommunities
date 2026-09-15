@@ -1167,3 +1167,76 @@ kehillah_bet_din_session_stability_loss_failed = 25
 # =====================================================================
 
 kehillah_translation_greatness_reward = 20
+
+
+# =====================================================================
+# STANDING -- the community's single overall figure.
+#
+# ADDED 2026-09-14 (v12), at the user's explicit decision. This SETTLES a
+# question two earlier passes deliberately left open, and the change is
+# recorded here rather than made silently because of that history:
+# docs/spec/v4-regional-communities-and-batei-din.md sidestepped defining
+# a blended score (applying takkanah effects symmetrically per-title
+# instead), and ROADMAP item 6 still lists "the aggregate-definition
+# problem" as open. It is no longer open. Anything that wants "how is
+# this community doing, in one number" now reads kehillah_var_standing
+# and must not invent a second aggregate alongside it.
+#
+# THE MEAN, NOT THE SUM. Standing is the arithmetic mean of the three
+# pillars, which is the whole reason it is useful as a backend value
+# rather than just a display total:
+#
+#   - It lands on the SAME 0-1000-ish scale each pillar already lives
+#     on, so kehillah_band_strained/healthy/flourishing/legendary_
+#     threshold apply to it UNCHANGED. No second threshold set to keep
+#     in sync, and no risk of the two drifting apart.
+#   - It therefore also works with the existing comparison machinery
+#     with no new trigger at all:
+#       kehillah_pillar_at_least_trigger = {
+#           PILLAR = kehillah_var_standing
+#           THRESHOLD = kehillah_band_flourishing_threshold
+#       }
+#     -- that trigger substitutes a bare variable name into var:$PILLAR$
+#     (see its own header for the vanilla precedents), and standing is a
+#     plain title variable like any pillar, so it just works.
+#   - A sum would have been three times the scale of its own parts, which
+#     would have meant either a fourth set of thresholds or a permanently
+#     confusing number next to the three it is made of.
+#
+# EQUAL WEIGHTS, deliberately. Prosperity, Stability and Greatness are
+# peers in this mod's design -- the three pillars are presented as
+# co-equal everywhere from v1 spec section 3 to the Take Stock decision
+# -- so weighting one above the others here would quietly assert a
+# ranking the design has never made. If a weighting is ever wanted, it
+# is a design decision for a spec, not a tweak to this value.
+#
+# ABSENT PILLARS read as 0 rather than shrinking the divisor: the three
+# are created together by kehillah_init_pillars_effect, so the only time
+# one is missing is before a community is initialised at all, where a
+# standing of 0 is the correct answer, not an average over fewer terms.
+# The has_variable guards are still required -- see
+# kehillah_pillar_at_least_trigger's "GUARD ADDED 2026-09-08" note for
+# the live error-log evidence that a pillar read can genuinely land on a
+# not-yet-set variable at the game-start tick.
+#
+# Scope: a Kehillah title.
+# =====================================================================
+
+kehillah_standing_value = {
+	value = 0
+
+	if = {
+		limit = { has_variable = kehillah_var_prosperity }
+		add = var:kehillah_var_prosperity
+	}
+	if = {
+		limit = { has_variable = kehillah_var_stability }
+		add = var:kehillah_var_stability
+	}
+	if = {
+		limit = { has_variable = kehillah_var_greatness }
+		add = var:kehillah_var_greatness
+	}
+
+	divide = 3
+}
