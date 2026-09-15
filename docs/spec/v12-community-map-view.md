@@ -505,6 +505,30 @@ sub-region titles), or a "regions" toggle in the panel header that runs a second
 paint without pass 2. Not built speculatively — the tints are the smaller change and may be
 enough, given the hover names the region.
 
+## 6g. Live pass 7 — 2026-09-15: access violation on the region-tinted map
+
+`crashes/ck3_20260915_091129`: `EXCEPTION_ACCESS_VIOLATION`, preceded in `error.log` by
+**17,640 × 3** script errors from `KehillahCountyRegionName` — "Failed to fetch variable
+'kehillah_minhag' due to not being set". The map mode's hover description is re-evaluated every
+frame for the county under the mouse; the custom loc compared `de_jure_liege.var:kehillah_minhag`
+with only an `exists` guard on the duchy, not a `has_variable` guard on the variable, and most
+duchies carry no `kehillah_minhag`. This is exactly the error-storm class the v5 spec recorded
+(an unguarded `var:` read in a hovered option, 28 MB/min), and the crash followed within seconds.
+The paint effect was guarded correctly; only the hover was not.
+
+**Fix:** `has_variable` inside the duchy scope before every `var:` read, the shape
+`kehillah_pillar_at_least_trigger` uses. The same guard was added to the `Kehillah<Pillar>Score`
+and `…BandName` comparisons, which are also evaluated per row per frame and would storm the same
+way on a save from before `kehillah_var_standing` existed. `ck3-tiger` 68 → 65.
+
+Also in that log, non-fatal and **not this feature's**: `reverse_add_opinion [Modifier
+'flattered_opinion' with monthly_change cannot have a specified duration]` from
+`kehillah_task_contracts.txt:299/321/342` — the parallel session's translation contract.
+
+**Known harmless log line:** "Widget cannot have a position in a layout" for the four score
+cells (`text_label_center` inside the row hbox). The cells render correctly; the cause isn't in
+the type chain and couldn't be resolved from files. Left as is.
+
 ## 7. The region hierarchy (user decision, 2026-09-14)
 
 The roster groups communities into three super-regions with sub-regions, hidden when empty:
