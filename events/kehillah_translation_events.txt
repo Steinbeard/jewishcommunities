@@ -1,0 +1,370 @@
+﻿# =====================================================================
+# Commission a Translation -- the challenge chain. v11 overhaul, at the
+# user's explicit request: "make the translation actually a challenge,
+# like adventurer contracts... a series of challenges that determine
+# success or failure... a final decision to steal the book vs complete
+# the contract." Fired from kehillah_translation_contract's own
+# on_accepted (common/task_contracts/kehillah_task_contracts.txt), which
+# now only sets a starting tally and hands off here instead of resolving
+# in place -- see that type's own header for the full account.
+#
+# STRUCTURE, mirroring events/kehillah_book_events.txt's own tally chain
+# shape (same idiom, new stakes -- see common/scripted_effects/kehillah_
+# translation_effects.txt's own header for the full precedent chase on
+# why root and the two saved scopes stay valid throughout):
+#   .0001 SECURING THE TEXT -- getting hold of a working copy at all.
+#   .0002 THE DIFFICULT PASSAGES -- the chain's main difficulty roll.
+#   .0003 A SECOND OPINION -- reuses kehillah_book.0003's exact shape
+#         (random_courtier weighted by learning, one genuine random
+#         roll for a lucky bonus) under its own constants.
+#   .0004 REVISE OR RUSH -- a Stress-for-quality tradeoff.
+#   .0005 THE FINISHED COPY -- resolves the final tier, then THE
+#         decision: deliver honestly, or keep the true copy and hand
+#         over a lesser one. Either way ends by calling complete_task_
+#         contract on the saved scope:task_contract.
+#
+# EVERY EVENT GUARDS is_alive/is_imprisoned/government_has_flag/exists
+# scope:task_contract in its own trigger -- if the leader dies, is
+# imprisoned, or the community itself dissolves mid-chain, the chain
+# just silently stops firing rather than erroring; kehillah_translation_
+# contract's own valid_to_continue (is_alive + is_imprisoned) handles
+# invalidating the underlying contract independently, the same way
+# every other pulse-fired chain in this mod already guards entry.
+# =====================================================================
+
+namespace = kehillah_translation
+
+
+# ---------------------------------------------------------------------
+# kehillah_translation.0001 -- SECURING THE TEXT
+# ---------------------------------------------------------------------
+
+kehillah_translation.0001 = {
+	type = character_event
+	title = kehillah_translation.0001.t
+	desc = kehillah_translation.0001.desc
+	theme = diplomacy
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		is_alive = yes
+		is_imprisoned = no
+		government_has_flag = government_is_kehillah
+		exists = scope:task_contract
+	}
+
+	option = {
+		name = kehillah_translation.0001.a
+		if = {
+			limit = { learning >= 12 }
+			change_variable = { name = kehillah_translation_tally add = kehillah_translation_access_gain }
+			custom_tooltip = kehillah_translation.0001.a.pass.tt
+		}
+		else = {
+			change_variable = { name = kehillah_translation_tally subtract = kehillah_translation_access_loss }
+			custom_tooltip = kehillah_translation.0001.a.fail.tt
+		}
+	}
+
+	option = {
+		name = kehillah_translation.0001.b
+		add_gold = medium_gold_value
+		change_variable = { name = kehillah_translation_tally add = kehillah_translation_access_broker_gain }
+		custom_tooltip = kehillah_translation.0001.b.tt
+	}
+
+	option = {
+		name = kehillah_translation.0001.c
+		change_variable = { name = kehillah_translation_tally subtract = kehillah_translation_access_reckless_loss }
+		custom_tooltip = kehillah_translation.0001.c.tt
+	}
+
+	after = {
+		trigger_event = { id = kehillah_translation.0002 days = 7 }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_translation.0002 -- THE DIFFICULT PASSAGES
+# ---------------------------------------------------------------------
+
+kehillah_translation.0002 = {
+	type = character_event
+	title = kehillah_translation.0002.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work_lang = flag:greek }
+				desc = kehillah_translation.0002.desc.greek
+			}
+			desc = kehillah_translation.0002.desc.arabic
+		}
+	}
+	theme = diplomacy
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		is_alive = yes
+		is_imprisoned = no
+		government_has_flag = government_is_kehillah
+		exists = scope:task_contract
+	}
+
+	option = {
+		name = kehillah_translation.0002.a
+		if = {
+			limit = { learning >= 16 }
+			change_variable = { name = kehillah_translation_tally add = kehillah_translation_passage_gain }
+			custom_tooltip = kehillah_translation.0002.a.pass.tt
+		}
+		else = {
+			change_variable = { name = kehillah_translation_tally subtract = kehillah_translation_passage_loss }
+			custom_tooltip = kehillah_translation.0002.a.fail.tt
+		}
+	}
+
+	option = {
+		name = kehillah_translation.0002.b
+		trigger = {
+			has_trait = kehillah_rabbi_trait
+			has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 }
+		}
+		change_variable = { name = kehillah_translation_tally add = kehillah_translation_passage_gain }
+		custom_tooltip = kehillah_translation.0002.b.tt
+	}
+
+	option = {
+		name = kehillah_translation.0002.c
+		change_variable = { name = kehillah_translation_tally add = kehillah_translation_passage_loss }
+		custom_tooltip = kehillah_translation.0002.c.tt
+	}
+
+	after = {
+		trigger_event = { id = kehillah_translation.0003 days = 7 }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_translation.0003 -- A SECOND OPINION
+# Reuses kehillah_book.0003's exact shape (common/scripted_effects/
+# kehillah_book_events -- see events/kehillah_book_events.txt), own
+# constants. See that event's own header for why the empty-eligible-
+# courtier case is handled with guards rather than required up front.
+# ---------------------------------------------------------------------
+
+kehillah_translation.0003 = {
+	type = character_event
+	title = kehillah_translation.0003.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:kehillah_translation_courtier }
+				desc = kehillah_translation.0003.desc.courtier
+			}
+			desc = kehillah_translation.0003.desc.alone
+		}
+	}
+	theme = diplomacy
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_translation_courtier
+		animation = thinking
+		trigger = { exists = scope:kehillah_translation_courtier }
+	}
+
+	trigger = {
+		is_alive = yes
+		is_imprisoned = no
+		government_has_flag = government_is_kehillah
+		exists = scope:task_contract
+	}
+
+	immediate = {
+		random_courtier = {
+			limit = {
+				is_adult = yes
+				is_imprisoned = no
+			}
+			weight = {
+				base = 1
+				modifier = { add = 3 learning >= 10 }
+			}
+			save_scope_as = kehillah_translation_courtier
+		}
+	}
+
+	option = {
+		name = kehillah_translation.0003.a
+		trigger = { exists = scope:kehillah_translation_courtier }
+		if = {
+			limit = { learning >= 10 }
+			change_variable = { name = kehillah_translation_tally add = kehillah_translation_courtier_gain }
+			custom_tooltip = kehillah_translation.0003.a.pass.tt
+		}
+		else = {
+			change_variable = { name = kehillah_translation_tally subtract = kehillah_translation_courtier_loss }
+			custom_tooltip = kehillah_translation.0003.a.fail.tt
+		}
+		random_list = {
+			50 = {
+				custom_tooltip = kehillah_translation.0003.a.unlucky_tt
+			}
+			50 = {
+				change_variable = { name = kehillah_translation_tally add = kehillah_translation_courtier_lucky_bonus }
+				custom_tooltip = kehillah_translation.0003.a.lucky_tt
+			}
+		}
+	}
+
+	option = {
+		name = kehillah_translation.0003.b
+		trigger = { exists = scope:kehillah_translation_courtier }
+		change_variable = { name = kehillah_translation_tally add = kehillah_translation_courtier_loss }
+		custom_tooltip = kehillah_translation.0003.b.tt
+	}
+
+	option = {
+		name = kehillah_translation.0003.c
+		custom_tooltip = kehillah_translation.0003.c.tt
+	}
+
+	after = {
+		trigger_event = { id = kehillah_translation.0004 days = 7 }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_translation.0004 -- REVISE OR RUSH
+# ---------------------------------------------------------------------
+
+kehillah_translation.0004 = {
+	type = character_event
+	title = kehillah_translation.0004.t
+	desc = kehillah_translation.0004.desc
+	theme = diplomacy
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		is_alive = yes
+		is_imprisoned = no
+		government_has_flag = government_is_kehillah
+		exists = scope:task_contract
+	}
+
+	option = {
+		name = kehillah_translation.0004.a
+		change_variable = { name = kehillah_translation_tally add = kehillah_translation_revision_gain }
+		add_stress = kehillah_translation_revision_stress
+		custom_tooltip = kehillah_translation.0004.a.tt
+	}
+
+	option = {
+		name = kehillah_translation.0004.b
+		custom_tooltip = kehillah_translation.0004.b.tt
+	}
+
+	after = {
+		trigger_event = { id = kehillah_translation.0005 days = 10 }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_translation.0005 -- THE FINISHED COPY
+# Resolves the final tier, then THE decision: deliver honestly (kehillah_
+# translation_deliver_effect) or keep the true copy for the Kehillah
+# (kehillah_translation_steal_effect) -- both common/scripted_effects/
+# kehillah_translation_effects.txt, both closers of the whole chain.
+# ---------------------------------------------------------------------
+
+kehillah_translation.0005 = {
+	type = character_event
+	title = kehillah_translation.0005.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_euclid }
+				desc = kehillah_translation.0005.desc.euclid
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_ptolemy }
+				desc = kehillah_translation.0005.desc.ptolemy
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_galen }
+				desc = kehillah_translation.0005.desc.galen
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_hippocrates }
+				desc = kehillah_translation.0005.desc.hippocrates
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_dioscorides }
+				desc = kehillah_translation.0005.desc.dioscorides
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_khwarizmi_algebra }
+				desc = kehillah_translation.0005.desc.khwarizmi_algebra
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_khwarizmi_zij }
+				desc = kehillah_translation.0005.desc.khwarizmi_zij
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_kindi }
+				desc = kehillah_translation.0005.desc.kindi
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_jabir }
+				desc = kehillah_translation.0005.desc.jabir
+			}
+			desc = kehillah_translation.0005.desc.mashallah
+		}
+	}
+	theme = diplomacy
+
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+
+	trigger = {
+		is_alive = yes
+		is_imprisoned = no
+		government_has_flag = government_is_kehillah
+		exists = scope:task_contract
+	}
+
+	immediate = {
+		kehillah_translation_resolve_tier_effect = yes
+	}
+
+	option = {
+		name = kehillah_translation.0005.a
+		kehillah_translation_deliver_effect = yes
+	}
+
+	option = {
+		name = kehillah_translation.0005.b
+		kehillah_translation_steal_effect = yes
+	}
+}

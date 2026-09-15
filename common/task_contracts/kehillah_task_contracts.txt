@@ -109,30 +109,90 @@
 
 
 # ---------------------------------------------------------------------
-# TRANSLATION -- commission a translation of Arabic/Hebrew scholarship
-# into Latin. v8 spec section 4a.
+# TRANSLATION -- commission a translation of a real Greek or Arabic work
+# into Latin. v8 spec section 4a; overhauled top-to-bottom in v11, at
+# the user's own explicit request, into a genuine multi-stage challenge.
+# See events/kehillah_translation_events.txt (the challenge chain itself)
+# and common/scripted_effects/kehillah_translation_effects.txt (the
+# effects it calls) for the full mechanical account; this header covers
+# what changed here, in the contract TYPE definition, and why.
 #
-# JUDGEMENT CALL (spec 4a): valid_to_create is gated on learning >= 8 OR
-# already holding kehillah_rabbi_trait (common/traits/kehillah_traits.txt)
-# -- "some baseline learning skill... or the kehillah_rabbi_trait", the
-# spec's own suggested either/or, taken literally. 8 matches the existing
-# precedent for "can attempt serious scholarship" already used by
-# kehillah_compose_commentary_decision's own is_valid gate (common/
-# decisions/kehillah_decisions.txt), reused here rather than inventing a
-# different bar for what is, in-fiction, the same kind of work.
+# CREATION-SIDE GATE UNCHANGED (spec 4a, v8): valid_to_create is still
+# learning >= 8 OR kehillah_rabbi_trait -- "some baseline learning
+# skill... or the kehillah_rabbi_trait," the spec's own suggested
+# either/or, matching kehillah_compose_commentary_decision's own bar for
+# "can attempt serious scholarship" (common/decisions/kehillah_
+# decisions.txt).
 #
-# TWO OUTCOME TIERS, not four like Compose a Commentary -- this is a
-# one-off commissioned job for an outsider, not the community's own
-# flagship scholarly-output decision, so a lighter two-band shape
-# (learning >= 14 = exceptional work, else = solid, competent work) is
-# proportionate. The Greatness reward is the SAME amount at both tiers
-# (kehillah_translation_greatness_reward = 20, matching the spec's own
-# explicit reference point, "kehillah_loan_repayment_greatness_reward =
-# 20 is the existing reference point for 'a solid one-off Greatness
-# gain'") -- the work becoming known abroad is a binary fact of a
-# completed commission, not something that scales with how elegantly it
-# was done; only the direct gold fee and the employer's personal opinion
-# gain scale with quality.
+# THE EMPLOYER GATE IS NEW (v11, "this contract should only be offered
+# by non-Muslim non-Greek rulers"): moved onto scope:employer INSIDE
+# valid_to_create rather than only valid_to_accept, specifically so it
+# also gates the ROUTER's own can_create_task_contract check (events/
+# kehillah_task_contract_events.txt's kehillah_task_contract.0001 passes
+# employer = scope:employer into that check, per this file's own top
+# header -- so valid_to_create, not just valid_to_accept, is what
+# actually controls whether this type is even offered to a given
+# candidate). In-fiction: a Muslim ruler's own clerks already read
+# Arabic, and a Greek/Byzantine-heritage ruler's own clerks already read
+# Greek, so neither would need the Kehillah to render one INTO Latin.
+# Checked against real, confirmed trigger keys, not guessed -- faith.
+# religion = religion:islam_religion is this mod's own already-
+# established idiom (common/scripted_triggers/jewish_holiday_scripted_
+# triggers.txt's identical faith.religion = religion:judaism_religion),
+# and culture = { has_cultural_pillar = heritage_byzantine } is the
+# real, extensively precedented vanilla trigger for "this culture reads
+# Greek" (grepped: heritage = heritage_byzantine as a direct comparison
+# appears NOWHERE in the installed game; has_cultural_pillar is what
+# every one of hundreds of real call sites actually uses, culture-only
+# and heritage-based rather than religion-based on purpose, since a
+# Greek Muslim or Greek Jewish character would still read Greek).
+#
+# THE OFFER NOW NAMES A SPECIFIC WORK (v11, "should name specific books
+# from a list of Greek and Arabic real medieval works that are pre-876,
+# or books... owned by Arab or Byzantine rulers"): picked by kehillah_
+# translation_pick_work_effect (common/scripted_effects/kehillah_
+# translation_effects.txt) in the ROUTER, before the flavored offer
+# event fires, so the offer itself (kehillah_task_contract.0002) can
+# name it. See that effect's own header for the ten real works chosen
+# and their dating.
+#
+# "MORE LEARNED RULERS REQUEST IT" (v11) is implemented in the ROUTER's
+# own random_list weighting (events/kehillah_task_contract_events.txt),
+# not here -- this type has only ever offered ONE candidate employer per
+# pulse (the community's own local county holder, kehillah_has_task_
+# contract_employer_candidate_trigger), so "more learned rulers request
+# it" cannot mean widening a candidate POOL; it means that SAME
+# candidate is more likely to be the one THIS contract type gets rolled
+# for, the one lever the existing one-candidate architecture actually
+# has. See that file's own updated header.
+#
+# NO LONGER RESOLVED IMMEDIATELY (v11, "make the translation actually a
+# challenge... a series of challenges that determine success or
+# failure"). on_accepted now only sets a starting tally (from the SAME
+# learning/rabbi-trait either/or valid_to_create already gates on, three
+# baseline bands instead of a flat start) and a hand-off to events/
+# kehillah_translation_events.txt's own four-stage chain, instead of
+# branching straight to complete_task_contract. This makes translation
+# the SECOND task_contract_type in this file not resolved inside its own
+# on_accepted, after kehillah_loan_contract -- unlike the loan, though,
+# nothing here is reusing an untouched pre-existing system, so there was
+# no equivalent constraint to honor; the chain is new, purpose-built.
+#
+# THREE REWARD TIERS, NOT TWO, PLUS A SEPARATE STOLEN PAIR (v11). TRIUMPH
+# and SUCCESS both still pay the flat kehillah_translation_greatness_
+# reward (kehillah_script_values.txt's own updated note on that value
+# explains why); FAILURE -- new, the actual "or failure" half of the
+# request -- pays a token fee and a mild opinion hit instead of a gain.
+# translation_stolen_caught/_undetected are the two endings of "a final
+# decision to steal the book vs complete the contract" (kehillah_
+# translation.0005's own "Keep the true copy" option, kehillah_
+# translation_steal_effect) -- an artifact IS created for that ending
+# (create_artifact_book_effect, called from the EVENT option itself,
+# BEFORE complete_task_contract fires), which does not violate this
+# file's own earlier "no create_artifact precedent inside a task_
+# contract_reward block" finding (still true, still honored: the
+# artifact is created in the calling EVENT, not inside the reward
+# block's own effect body below).
 # ---------------------------------------------------------------------
 
 kehillah_translation_contract = {
@@ -154,6 +214,10 @@ kehillah_translation_contract = {
 			learning >= 8
 			has_trait = kehillah_rabbi_trait
 		}
+		scope:employer = {
+			NOT = { faith.religion = religion:islam_religion }
+			NOT = { culture = { has_cultural_pillar = heritage_byzantine } }
+		}
 	}
 
 	valid_to_accept = {
@@ -161,11 +225,13 @@ kehillah_translation_contract = {
 			is_alive = yes
 			NOT = { government_has_flag = government_is_kehillah }
 			NOT = { faith = root.faith }
+			NOT = { faith.religion = religion:islam_religion }
+			NOT = { culture = { has_cultural_pillar = heritage_byzantine } }
 		}
 	}
 
 	valid_to_continue = {
-		task_contract_taker = { is_alive = yes }
+		task_contract_taker = { is_alive = yes is_imprisoned = no }
 	}
 
 	valid_to_keep = {
@@ -174,20 +240,39 @@ kehillah_translation_contract = {
 
 	on_create = {}
 
-	# Resolved immediately -- see events/kehillah_task_contract_events.txt's
-	# header for why (none of these four need travel, so the contract's
-	# own duration bookkeeping has nothing to wait on).
+	# Hands off to events/kehillah_translation_events.txt's own four-
+	# stage challenge chain instead of resolving in place -- see this
+	# type's own header above for the full account of why. save_scope_as
+	# = task_contract, then grabbing task_contract_employer BEFORE
+	# switching into task_contract_taker, mirrors admin_contracts.txt's
+	# own confirmed pattern (this file's top header, point 2) exactly;
+	# both saved scopes are proven to survive the whole cross-event,
+	# multi-week chain by the identical precedent kehillah_book_send_
+	# copies_effect already established for scope:kehillah_book_author
+	# (common/scripted_effects/kehillah_translation_effects.txt's own
+	# header spells this out in full).
 	on_accepted = {
 		save_scope_as = task_contract
-		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
-		if = {
-			limit = {
-				task_contract_taker = { learning >= 14 }
+		task_contract_employer = { save_scope_as = kehillah_translation_employer }
+		task_contract_taker = {
+			play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract"
+			if = {
+				limit = { learning >= 18 }
+				set_variable = { name = kehillah_translation_tally value = kehillah_translation_baseline_high }
 			}
-			complete_task_contract = translation_exceptional
-		}
-		else = {
-			complete_task_contract = translation_solid
+			else_if = {
+				limit = {
+					OR = {
+						learning >= 12
+						has_trait = kehillah_rabbi_trait
+					}
+				}
+				set_variable = { name = kehillah_translation_tally value = kehillah_translation_baseline_mid }
+			}
+			else = {
+				set_variable = { name = kehillah_translation_tally value = kehillah_translation_baseline_low }
+			}
+			trigger_event = { id = kehillah_translation.0001 days = 5 }
 		}
 	}
 
@@ -202,7 +287,7 @@ kehillah_translation_contract = {
 	should_show_toast_on_complete = yes
 
 	task_contract_reward = {
-		translation_exceptional = {
+		translation_triumph = {
 			should_print_on_complete = yes
 			visible = yes
 			positive = yes
@@ -221,10 +306,10 @@ kehillah_translation_contract = {
 						change_variable = { name = kehillah_var_greatness add = kehillah_translation_greatness_reward }
 					}
 				}
-				custom_tooltip = kehillah_translation_exceptional_tt
+				custom_tooltip = kehillah_translation_triumph_tt
 			}
 		}
-		translation_solid = {
+		translation_success = {
 			should_print_on_complete = yes
 			visible = yes
 			positive = yes
@@ -243,7 +328,68 @@ kehillah_translation_contract = {
 						change_variable = { name = kehillah_var_greatness add = kehillah_translation_greatness_reward }
 					}
 				}
-				custom_tooltip = kehillah_translation_solid_tt
+				custom_tooltip = kehillah_translation_success_tt
+			}
+		}
+		translation_failure = {
+			should_print_on_complete = yes
+			visible = yes
+			positive = no
+			effect = {
+				save_scope_as = task_contract
+				task_contract_taker = {
+					add_gold = minor_gold_value
+					reverse_add_opinion = {
+						target = scope:task_contract.task_contract_employer
+						modifier = disappointed_opinion
+						opinion = -15
+						years = 3
+					}
+				}
+				custom_tooltip = kehillah_translation_failure_tt
+			}
+		}
+		translation_stolen_undetected = {
+			should_print_on_complete = yes
+			visible = yes
+			positive = yes
+			effect = {
+				save_scope_as = task_contract
+				# Re-saved here, fresh, rather than trusted to still carry
+				# over from on_accepted's own much-earlier save -- ck3-tiger
+				# flagged [kehillah_translation_employer...] in this reward's
+				# own custom_tooltip as an unrecognized datafunction when it
+				# only relied on the distant on_accepted save, even though
+				# the script side itself checked out with zero errors. A
+				# local save, right here in the same effect body the
+				# tooltip fires from, is the same idiom this whole reward
+				# block already uses for scope:task_contract itself.
+				task_contract_employer = { save_scope_as = kehillah_translation_employer }
+				task_contract_taker = {
+					add_gold = minor_gold_value
+					primary_title = {
+						change_variable = { name = kehillah_var_greatness add = kehillah_translation_steal_greatness_reward }
+					}
+				}
+				custom_tooltip = kehillah_translation_stolen_undetected_tt
+			}
+		}
+		translation_stolen_caught = {
+			should_print_on_complete = yes
+			visible = yes
+			positive = no
+			effect = {
+				save_scope_as = task_contract
+				task_contract_employer = { save_scope_as = kehillah_translation_employer }
+				task_contract_taker = {
+					reverse_add_opinion = {
+						target = scope:task_contract.task_contract_employer
+						modifier = angry_opinion
+						opinion = -40
+						years = 8
+					}
+				}
+				custom_tooltip = kehillah_translation_stolen_caught_tt
 			}
 		}
 	}

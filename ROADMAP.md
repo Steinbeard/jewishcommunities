@@ -231,6 +231,44 @@ opinion only, per the spec's own named fallback, rather than forcing an artifact
 
 ck3-tiger clean (0 errors, 0 warnings on every file touched or created). Not yet live-tested.
 
+**2026-09-14 update — Commission a Translation overhauled into a real challenge chain, at the
+user's own explicit request, ck3-tiger-clean, not yet live-tested.** `kehillah_translation_contract`
+(common/task_contracts/kehillah_task_contracts.txt) no longer resolves inside its own `on_accepted`
+off a single learning-check; it now hands off to a five-event challenge chain
+(events/kehillah_translation_events.txt, namespace `kehillah_translation`, effects in
+common/scripted_effects/kehillah_translation_effects.txt) mirroring "Write a Book"'s own tally/
+threshold shape: Securing the Text → The Difficult Passages → A Second Opinion (reuses
+`kehillah_book.0003`'s exact random-courtier/lucky-roll shape under its own constants) → Revise or
+Rush → The Finished Copy, which resolves a genuine TRIUMPH/SUCCESS/FAILURE tier (a real failure
+floor, not just a quality band) and then poses the user's own requested final choice: deliver
+honestly, or keep the true copy for the Kehillah's own library and hand over a lesser one, with a
+real, Intrigue-modified risk of being caught. `create_artifact_book_effect` (EP1-gated, same macro
+"Write a Book" already uses) fires for the stolen copy specifically — named after whichever of ten
+real, dated pre-876 Greek/Arabic works was requested — which does not violate this file's own
+earlier "no create_artifact precedent inside a task_contract_reward block" finding, since the
+artifact is created in the calling EVENT, before `complete_task_contract` ever fires.
+
+**The offer now names a specific, real work**, picked by `kehillah_translation_pick_work_effect` in
+the router before the flavored offer event fires: five works transmitted from Greek (Euclid,
+Ptolemy, Galen, Hippocrates, Dioscorides) and five original Arabic works (al-Khwarizmi's algebra and
+astronomical tables, al-Kindi, Jabir ibn Hayyan, and Masha'allah ibn Athari — a Jewish-born
+astronomer who helped cast Baghdad's own foundation horoscope, kept in the pool deliberately for
+that resonance), all pre-876 or, for the Greek set, squarely Byzantine-court-held regardless of
+exact Arabic-recension dating. **The employer gate is new**: `kehillah_translation_contract` is now
+only offered to non-Muslim, non-Greek/Byzantine-heritage rulers (`faith.religion = religion:
+islam_religion` and `culture = { has_cultural_pillar = heritage_byzantine }`, both real, precedented
+vanilla triggers, checked rather than guessed — `heritage = heritage_byzantine` as a direct
+comparison appears nowhere in the installed game; `has_cultural_pillar` is the real idiom), on the
+in-fiction logic that a ruler who already reads Arabic or Greek has no need of a Latin translation.
+**And "more learned rulers request it"** is a weighted-`random_list` change in the ROUTER event
+(events/kehillah_task_contract_events.txt) — this contract type has only ever had one candidate
+employer per pulse, so the lever available was making THAT candidate more likely to roll this
+contract type specifically, not widening a pool.
+
+ck3-tiger clean (0 fatal, 0 errors; one new warning, `strict-scopes: expects scope:story to be set`
+on the new `create_artifact_book_effect` call, mirroring the identical pre-existing, already-accepted
+warning on "Write a Book"'s own call to the same macro). Not yet live-tested.
+
 **2026-09-08 update — the Bet Din takkanah mechanic has been redesigned, built, and live-tested,
 superseding item 6 above.** Scoping conversation produced
 [docs/spec/v5-bet-din-conference.md](docs/spec/v5-bet-din-conference.md); the same session built

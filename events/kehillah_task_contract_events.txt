@@ -24,6 +24,20 @@
 #     created contract, not tracked with a separate flag, and routes to
 #     exactly one of the four flavor events below.
 #
+#     v11 ADDITION: the translation branch's own weight is no longer a
+#     flat 25 -- it now climbs with scope:employer's Learning (and again
+#     for a Learning education trait), per the user's explicit "more
+#     learned rulers request it." Real vanilla weighted-random_list idiom
+#     (modifier = { add = X <trigger> } as a sibling inside a random_list
+#     entry, confirmed via common/scripted_effects/00_commander_effects.
+#     txt and 00_accolades_scripted_effects.txt before writing this --
+#     the other three branches are untouched, still flat 25). The
+#     translation branch also now calls kehillah_translation_pick_work_
+#     effect (common/scripted_effects/kehillah_translation_effects.txt)
+#     right after create_task_contract succeeds, so the specific work
+#     is already chosen by the time kehillah_task_contract.0002 fires and
+#     can name it.
+#
 #   kehillah_task_contract.0002/0003/0004/0005 -- one flavored offer per
 #     contract type (translation / loan / exotic goods / hebrew tutor),
 #     each a real two-portrait event with an Accept/Decline choice.
@@ -114,6 +128,19 @@ kehillah_task_contract.0001 = {
 						employer = scope:employer
 					}
 				}
+				# "More learned rulers request it" -- weight climbs with
+				# scope:employer's own Learning, on top of the flat base
+				# every branch here starts from. Two steps, not one, so a
+				# truly renowned scholar-ruler (education_learning_3+)
+				# stands out further than merely "decently learned."
+				modifier = {
+					add = 20
+					scope:employer = { learning >= 12 }
+				}
+				modifier = {
+					add = 15
+					scope:employer = { has_trait = education_learning_3 }
+				}
 				create_task_contract = {
 					task_contract_type = kehillah_translation_contract
 					task_contract_tier = root.task_contract_tier_value
@@ -121,6 +148,7 @@ kehillah_task_contract.0001 = {
 					task_contract_employer = scope:employer
 					save_scope_as = new_contract
 				}
+				kehillah_translation_pick_work_effect = yes
 			}
 			25 = {
 				trigger = {
@@ -225,12 +253,65 @@ kehillah_task_contract.0001 = {
 
 # ---------------------------------------------------------------------
 # kehillah_task_contract.0002 -- COMMISSION A TRANSLATION
+#
+# v11: desc now names the SPECIFIC work kehillah_translation_pick_work_
+# effect already chose in the router (a first_valid/triggered_desc list
+# keyed on var:kehillah_translation_work, the same idiom kehillah_book.
+# 0007's own genre-desc list already established), instead of a single
+# generic paragraph. Decline now also clears the two picked-work
+# variables -- they were set in the router BEFORE this offer, so a
+# declined offer must not leave them stale on root for whatever contract
+# gets offered next.
 # ---------------------------------------------------------------------
 
 kehillah_task_contract.0002 = {
 	type = character_event
 	title = kehillah_task_contract.0002.t
-	desc = kehillah_task_contract.0002.desc
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_euclid }
+				desc = kehillah_task_contract.0002.desc.euclid
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_ptolemy }
+				desc = kehillah_task_contract.0002.desc.ptolemy
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_galen }
+				desc = kehillah_task_contract.0002.desc.galen
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_hippocrates }
+				desc = kehillah_task_contract.0002.desc.hippocrates
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_dioscorides }
+				desc = kehillah_task_contract.0002.desc.dioscorides
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_khwarizmi_algebra }
+				desc = kehillah_task_contract.0002.desc.khwarizmi_algebra
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_khwarizmi_zij }
+				desc = kehillah_task_contract.0002.desc.khwarizmi_zij
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_kindi }
+				desc = kehillah_task_contract.0002.desc.kindi
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_jabir }
+				desc = kehillah_task_contract.0002.desc.jabir
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_translation_work = flag:work_mashallah }
+				desc = kehillah_task_contract.0002.desc.mashallah
+			}
+			desc = kehillah_task_contract.0002.desc.generic
+		}
+	}
 	theme = diplomacy
 
 	left_portrait = {
@@ -255,6 +336,8 @@ kehillah_task_contract.0002 = {
 		name = kehillah_task_contract.0002.b
 		flavor = kehillah_task_contract.0002.b.flavor
 		scope:new_contract = { invalidate_contract = yes }
+		remove_variable = kehillah_translation_work
+		remove_variable = kehillah_translation_work_lang
 	}
 }
 

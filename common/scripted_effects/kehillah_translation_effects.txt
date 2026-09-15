@@ -1,0 +1,269 @@
+﻿# =====================================================================
+# Commission a Translation -- the challenge chain's own effects. v11
+# overhaul, at the user's explicit request: more learned rulers should
+# request this contract, it should name a real pre-876 (or Byzantine/
+# Arab-court-held) Greek or Arabic work, and completing it should be a
+# genuine multi-step challenge ending in a real choice -- deliver
+# honestly, or keep the true copy for the Kehillah and hand over a
+# lesser one. Fired from events/kehillah_translation_events.txt, itself
+# fired from kehillah_translation_contract's own on_accepted (common/
+# task_contracts/kehillah_task_contracts.txt) -- see that type's own
+# header for the full account of why resolution is no longer immediate.
+#
+# ROOT THROUGHOUT THIS WHOLE FILE is the Kehillah leader (task_contract_
+# taker), the SAME character across the entire chain -- no cross-
+# character retargeting needed, exactly like "Write a Book" (common/
+# scripted_effects/kehillah_book_effects.txt's own header makes the
+# identical point about that chain). var:kehillah_translation_work /
+# _work_lang / _tally / _tier all live on that one root as CHARACTER
+# variables, not global_var, for the same reason kehillah_book_genre/
+# _tally do -- multiple Kehillah leaders could plausibly be mid-
+# commission simultaneously.
+#
+# scope:task_contract and scope:kehillah_translation_employer are NOT
+# variables -- they are scopes saved with save_scope_as inside
+# kehillah_translation_contract's own on_accepted, BEFORE switching into
+# task_contract_taker, and read back here exactly the way kehillah_book_
+# send_copies_effect's own scope:kehillah_book_author already proves
+# works across a multi-day, cross-event trigger_event chain in this
+# exact mod (save_scope_as one level up, then trigger_event from a
+# nested scope, and the outer save is still reachable in the newly
+# fired event) -- the identical idiom this whole file's header block in
+# kehillah_task_contracts.txt already confirms against admin_
+# contracts.txt for task_contract scopes specifically ("save_scope_as =
+# task_contract before reading task_contract_taker / scope:task_
+# contract.task_contract_employer"). No new persistence mechanism was
+# invented; both known-good precedents were simply combined.
+# =====================================================================
+
+
+# ---------------------------------------------------------------------
+# kehillah_translation_pick_work_effect
+# Scope: root, the Kehillah leader, called from the router event
+# (kehillah_task_contract.0001) immediately after create_task_contract
+# succeeds for kehillah_translation_contract -- BEFORE the flavored
+# offer event (kehillah_task_contract.0002) fires, so the offer can
+# name the specific work being requested.
+#
+# TEN REAL, MEDIEVAL WORKS, not an invented pool -- five transmitted
+# from Greek (studied in Arabic translation across Baghdad, Córdoba and
+# Constantinople alike, so squarely "owned by Arab or Byzantine rulers"
+# regardless of exactly when a given Arabic recension was made) and
+# five originally written in Arabic, pre-876 in every case (the latest,
+# al-Kindi's own corpus, closes with his death c.873). See this effect's
+# own work-by-work comments below for the specific dating each rests
+# on.
+#
+# WEIGHTED TOWARD ARABIC, NOT FLAT -- a Latin ruler hearing rumor of
+# Jewish scholars' reading is, in-fiction, more likely to have heard it
+# through the Mediterranean trade and diplomatic contacts that actually
+# ran through Al-Andalus and Ifriqiya than through Constantinople
+# specifically; 14 per Arabic work vs 10 per Greek-transmitted one
+# (58/42 split) reflects that without making Greek commissions rare.
+# ---------------------------------------------------------------------
+
+kehillah_translation_pick_work_effect = {
+	random_list = {
+		# GREEK, TRANSMITTED -- weight 10 each.
+		10 = { # Euclid's Elements (Kitab al-Usul), tr. under al-Ma'mun
+			set_variable = { name = kehillah_translation_work value = flag:work_euclid }
+			set_variable = { name = kehillah_translation_work_lang value = flag:greek }
+		}
+		10 = { # Ptolemy's Almagest (Al-Majisti)
+			set_variable = { name = kehillah_translation_work value = flag:work_ptolemy }
+			set_variable = { name = kehillah_translation_work_lang value = flag:greek }
+		}
+		10 = { # Galen's therapeutic method, tr. Hunayn ibn Ishaq (d.873)
+			set_variable = { name = kehillah_translation_work value = flag:work_galen }
+			set_variable = { name = kehillah_translation_work_lang value = flag:greek }
+		}
+		10 = { # Hippocrates' Aphorisms (Kitab al-Fusul), tr. Hunayn ibn Ishaq
+			set_variable = { name = kehillah_translation_work value = flag:work_hippocrates }
+			set_variable = { name = kehillah_translation_work_lang value = flag:greek }
+		}
+		10 = { # Dioscorides' De Materia Medica -- Byzantine-held Greek copies
+			set_variable = { name = kehillah_translation_work value = flag:work_dioscorides }
+			set_variable = { name = kehillah_translation_work_lang value = flag:greek }
+		}
+		# ARABIC, ORIGINAL -- weight 14 each, all pre-876.
+		14 = { # al-Khwarizmi's Al-Jabr wa'l-Muqabala (d. c.850)
+			set_variable = { name = kehillah_translation_work value = flag:work_khwarizmi_algebra }
+			set_variable = { name = kehillah_translation_work_lang value = flag:arabic }
+		}
+		14 = { # al-Khwarizmi's Zij al-Sindhind astronomical tables
+			set_variable = { name = kehillah_translation_work value = flag:work_khwarizmi_zij }
+			set_variable = { name = kehillah_translation_work_lang value = flag:arabic }
+		}
+		14 = { # al-Kindi's Rasa'il, the "Philosopher of the Arabs" (d. c.873)
+			set_variable = { name = kehillah_translation_work value = flag:work_kindi }
+			set_variable = { name = kehillah_translation_work_lang value = flag:arabic }
+		}
+		14 = { # Jabir ibn Hayyan's alchemical corpus, Kutub al-Mawazin
+			set_variable = { name = kehillah_translation_work value = flag:work_jabir }
+			set_variable = { name = kehillah_translation_work_lang value = flag:arabic }
+		}
+		14 = { # Masha'allah ibn Athari (d. c.815) -- Jewish-born astronomer
+			# who helped cast Baghdad's own foundation horoscope in 762; kept
+			# deliberately in the pool for that resonance, not despite it.
+			set_variable = { name = kehillah_translation_work value = flag:work_mashallah }
+			set_variable = { name = kehillah_translation_work_lang value = flag:arabic }
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_translation_resolve_tier_effect
+# Scope: root, the Kehillah leader, from kehillah_translation.0005's
+# immediate. Reads var:kehillah_translation_tally against the two
+# thresholds (kehillah_script_values.txt) and sets var:kehillah_
+# translation_tier accordingly -- TRIUMPH / SUCCESS / FAILURE, the same
+# high-to-low if/else_if shape kehillah_book_complete_effect's own tier
+# calc already uses, with a genuine failure floor added (v11, per
+# explicit request: "determine success or failure," not just quality).
+# ---------------------------------------------------------------------
+
+kehillah_translation_resolve_tier_effect = {
+	if = {
+		limit = { var:kehillah_translation_tally >= kehillah_translation_threshold_triumph }
+		set_variable = { name = kehillah_translation_tier value = flag:triumph }
+	}
+	else_if = {
+		limit = { var:kehillah_translation_tally >= kehillah_translation_threshold_success }
+		set_variable = { name = kehillah_translation_tier value = flag:success }
+	}
+	else = {
+		set_variable = { name = kehillah_translation_tier value = flag:failure }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_translation_cleanup_effect
+# Scope: root, the Kehillah leader. Shared tail for both endings below
+# -- clears every character variable this whole chain used, so a LATER
+# translation commission on the same leader starts clean rather than
+# inheriting a stale tally/tier/work from this one.
+# ---------------------------------------------------------------------
+
+kehillah_translation_cleanup_effect = {
+	remove_variable = kehillah_translation_tally
+	remove_variable = kehillah_translation_tier
+	remove_variable = kehillah_translation_work
+	remove_variable = kehillah_translation_work_lang
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_translation_deliver_effect
+# Scope: root, the Kehillah leader, from kehillah_translation.0005's
+# "Deliver it faithfully" option. Branches on the tier already resolved
+# by kehillah_translation_resolve_tier_effect and calls complete_task_
+# contract on the SAVED contract scope (scope:task_contract -- see this
+# file's own header for why that scope is trustworthy this deep into
+# the chain) with the matching reward key (common/task_contracts/
+# kehillah_task_contracts.txt).
+# ---------------------------------------------------------------------
+
+kehillah_translation_deliver_effect = {
+	if = {
+		limit = { var:kehillah_translation_tier = flag:triumph }
+		scope:task_contract = { complete_task_contract = translation_triumph }
+	}
+	else_if = {
+		limit = { var:kehillah_translation_tier = flag:success }
+		scope:task_contract = { complete_task_contract = translation_success }
+	}
+	else = {
+		scope:task_contract = { complete_task_contract = translation_failure }
+	}
+	kehillah_translation_cleanup_effect = yes
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_translation_steal_effect
+# Scope: root, the Kehillah leader, from kehillah_translation.0005's
+# "Keep the true copy for the Kehillah" option -- THE final decision the
+# user explicitly asked for. Creates a real artifact for root (EP1-
+# gated, create_artifact_book_effect, the same macro and OWNER=CREATOR=
+# root/SET_SUBJECT=SET_TOPIC=flag:no shape kehillah_book_complete_effect
+# already uses), named after the SPECIFIC work (var:kehillah_
+# translation_work, ten-way branch) with rarity/description set by the
+# SAME tier the honest path reads (three-way branch, reusing the
+# illustrious/famed/masterwork rarity ladder "Write a Book" already
+# established for this mod's own artifacts).
+#
+# THEN THE RISK: an if/else-wrapped random_list roll for whether the
+# substitution is noticed, modified by root's own Intrigue -- 35/65 base
+# (caught/undetected), shifting to 20/80 at Intrigue 14+. Caught pays no
+# gold and a real opinion hit; undetected pays a token sum. See this
+# effect's own header file-comment and kehillah_script_values.txt's
+# "THE FINAL DECISION" note for the full reasoning on both numbers and
+# on why they are literal here rather than aliased script values.
+# ---------------------------------------------------------------------
+
+kehillah_translation_steal_effect = {
+	if = {
+		limit = { has_ep1_dlc_trigger = yes }
+		create_artifact_book_effect = {
+			OWNER = root
+			CREATOR = root
+			SET_SUBJECT = flag:no
+			SET_TOPIC = flag:no
+		}
+		scope:newly_created_artifact ?= {
+			set_owner = root
+
+			if = { limit = { root = { var:kehillah_translation_work = flag:work_euclid } } set_artifact_name = kehillah_translation_work_euclid_artifact_name }
+			else_if = { limit = { root = { var:kehillah_translation_work = flag:work_ptolemy } } set_artifact_name = kehillah_translation_work_ptolemy_artifact_name }
+			else_if = { limit = { root = { var:kehillah_translation_work = flag:work_galen } } set_artifact_name = kehillah_translation_work_galen_artifact_name }
+			else_if = { limit = { root = { var:kehillah_translation_work = flag:work_hippocrates } } set_artifact_name = kehillah_translation_work_hippocrates_artifact_name }
+			else_if = { limit = { root = { var:kehillah_translation_work = flag:work_dioscorides } } set_artifact_name = kehillah_translation_work_dioscorides_artifact_name }
+			else_if = { limit = { root = { var:kehillah_translation_work = flag:work_khwarizmi_algebra } } set_artifact_name = kehillah_translation_work_khwarizmi_algebra_artifact_name }
+			else_if = { limit = { root = { var:kehillah_translation_work = flag:work_khwarizmi_zij } } set_artifact_name = kehillah_translation_work_khwarizmi_zij_artifact_name }
+			else_if = { limit = { root = { var:kehillah_translation_work = flag:work_kindi } } set_artifact_name = kehillah_translation_work_kindi_artifact_name }
+			else_if = { limit = { root = { var:kehillah_translation_work = flag:work_jabir } } set_artifact_name = kehillah_translation_work_jabir_artifact_name }
+			else = { set_artifact_name = kehillah_translation_work_mashallah_artifact_name }
+
+			if = {
+				limit = { root = { var:kehillah_translation_tier = flag:triumph } }
+				set_artifact_description = kehillah_translation_stolen_desc_illustrious
+				set_artifact_rarity = illustrious
+			}
+			else_if = {
+				limit = { root = { var:kehillah_translation_tier = flag:success } }
+				set_artifact_description = kehillah_translation_stolen_desc_famed
+				set_artifact_rarity = famed
+			}
+			else = {
+				set_artifact_description = kehillah_translation_stolen_desc_masterwork
+				set_artifact_rarity = masterwork
+			}
+		}
+	}
+
+	if = {
+		limit = { intrigue >= 14 }
+		random_list = {
+			20 = {
+				scope:task_contract = { complete_task_contract = translation_stolen_caught }
+			}
+			80 = {
+				scope:task_contract = { complete_task_contract = translation_stolen_undetected }
+			}
+		}
+	}
+	else = {
+		random_list = {
+			35 = {
+				scope:task_contract = { complete_task_contract = translation_stolen_caught }
+			}
+			65 = {
+				scope:task_contract = { complete_task_contract = translation_stolen_undetected }
+			}
+		}
+	}
+
+	kehillah_translation_cleanup_effect = yes
+}
