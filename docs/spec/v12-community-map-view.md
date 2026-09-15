@@ -442,6 +442,46 @@ asked for and built, not yet re-tested:
    (`imprison_decline_summary_*`) and a tag opened by one substitution and closed by a literal is
    not. Thresholds stay script-side; the GUI never sees a number.
 
+## 8. Score breakdown tooltips (user request, 2026-09-15) — and a bug they surfaced
+
+**What:** hovering any of the four score cells shows what is building that number. Per pillar:
+the value and band; whether it is *rising by* / *falling by* / *holding* this season, with the
+amount; the **baseline** it is converging toward and every contributor to it (each building
+family with its tier, the floor, leader skill, officer skill, offices in post); and for Stability
+the active temporary influences (settled dispute, tzedakah, shaken, emboldened, overcrowding).
+Standing's tooltip shows the three pillars it averages. This is ROADMAP item 4's "per-pillar
+contributors and current rate of change", delivered on the roster rather than the Take Stock
+decision — every line is a character-scope customizable-loc function, so the decision can reuse
+them verbatim later (`[ROOT.Char.Custom('KehillahBd…')]`).
+
+**How:** the loc system has no conditionals, so "show this line only if" is one customizable-loc
+function per line, returning the line (with its own leading `\n`) or the empty string
+`kehillah_bd_none`. The tooltip is just the lines concatenated. Generated from one table
+(contributor → building keys → tier values) into three files — `common/script_values/
+kehillah_breakdown_values.txt`, `common/customizable_localization/kehillah_breakdown_custom_loc.txt`,
+`localization/english/kehillah_breakdown_l_english.yml` — so the three cannot disagree with each
+other. Drift is `(baseline − current) × kehillah_convergence_rate_value`, the exact expression the
+quarterly effect applies.
+
+**A recorded duplication, with a follow-up.** Every contributor value copies its number from the
+corresponding term in `kehillah_*_baseline_value` (`kehillah_script_values.txt:274-520`) rather
+than the baselines summing the contributor values, because that file had a parallel session's
+uncommitted edits the day this was written. **Follow-up:** refactor the three baselines to
+`add = kehillah_bd_<x>_value` and delete the literal terms. Until then a baseline term changed in
+one place and not the other makes the tooltip lie.
+
+**The bug this surfaced — needs a live check, and is not in this feature's files.** The three
+baselines call `has_domicile_building_or_higher` *bare, from character scope*. That trigger is
+domicile-scoped: every vanilla use wraps it as `domicile ?= { has_domicile_building_or_higher = … }`
+(`common/achievements/ep3_achievements.txt:210-220`; zero bare uses anywhere), `ck3-tiger` has been
+warning about it (`kehillah_prosperity_baseline_value expects scope to be domicile`), and the
+breakdown values use the wrapped form. If the bare call silently fails on a character, **no
+building has ever contributed to any baseline** — only floors, skills and offices — which would be
+a significant, silent gameplay bug. The tooltip is itself the test: if a community's contributor
+lines sum to more than its "Baseline: N" figure, the baseline is dropping the buildings. Fix if so:
+wrap each call in `domicile ?= { … }` in `kehillah_script_values.txt`, or better, do the follow-up
+above, which replaces those terms with the already-wrapped contributor values.
+
 ## 7. The region hierarchy (user decision, 2026-09-14)
 
 The roster groups communities into three super-regions with sub-regions, hidden when empty:
