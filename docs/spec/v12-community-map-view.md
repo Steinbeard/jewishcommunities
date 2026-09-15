@@ -280,6 +280,54 @@ the click fall through to the button beneath it, which is its correct vanilla us
 `ck3-tiger` clean after the fix. **Checklist items 3-6 below remain unverified** — the first pass
 never got past the button.
 
+## 6b. Live pass 2 — still not clickable: no layer
+
+The §6a fix was necessary but not sufficient. The root declared no `layer`; every top-level HUD
+widget in vanilla does. The HUD's own full-screen roots (`hud.gui` `meta_info` and `bottom_bar`,
+both `size = { 100% 100% }`, both `layer = bottom`) don't block the *map* — the map is not a GUI
+widget and takes whatever the GUI doesn't consume — but a layerless widget most plausibly sits
+beneath them, and they sit between the mouse and anything under them. The closest vanilla analog
+to this widget (persistent, right-anchored, content-sized, interactive) is the outliner,
+`gui/hud_outliner.gui:1-7`, whose root is exactly `alwaystransparent = no` / `filter_mouse = all`
+/ `layer = windows_layer`. The root now matches it property for property. **Confirmed live: the
+button became clickable.** The toggle tile also lights while the roster is open, driven by the same
+VariableSystem flag as the panel, so "click registered, panel failed" is now visibly distinct from
+"click never arrived".
+
+## 6c. Live pass 3 — the click crashed the game (stack overflow)
+
+`crashes/ck3_20260914_223419/exception.txt`: `EXCEPTION_STACK_OVERFLOW` on opening the panel —
+infinite recursion, which in a `.gui` file means a layout cycle. `error.log` from the same crash
+named both structural faults outright, at load time, before the click:
+
+1. `kehillah_community_map_view.gui:68 — A (flow)container can't have an hbox/vbox as a direct
+   child.` The panel was a `vbox` placed straight into the root `flowcontainer`. That is the
+   illegal nesting, and the layout it produced is what recursed when the panel became visible.
+   **Fix:** the panel is now a plain `widget` (legal in a flowcontainer) with the layout `vbox`
+   one level down inside it — the shape `window_situation_list.gui:29-40` uses.
+2. `:149 — Widget cannot have a position in a layout.` A bare `button_close` inside the header
+   hbox. Its own type chain (`button_icon` → `button` → `game_button`) carries no `position`, so
+   the exact origin stayed unexplained, but vanilla never uses it that way: it goes through
+   `header_pattern`, a plain widget that positions the close button absolutely inside itself.
+   **Fix:** the header is now `header_pattern` with the two blockoverrides, exactly as
+   `window_situation_list.gui:40-52`.
+
+Also changed, because it was the other candidate for the recursion: the roster's `scrollarea` had
+`layoutpolicy_vertical = growing` inside a vbox with no fixed height to grow into — a size
+dependency with no fixed point. It now uses the outliner's self-sizing shape
+(`autoresizescrollarea = yes` / `size = { 400 0 }` / `maximumsize`, `hud_outliner.gui:80-97`),
+which needs nothing from its parent's height.
+
+**A script error from the same log, non-fatal but logged every refresh:** `ordered_in_global_list
+[Given max value was bigger than the list, capping at list size]` — `max = 64` against sixteen
+entries. Now the registry is counted first (same `exists = holder` filter as the ordered pass, so
+the two agree while a community is between leaders) and the count *is* the ceiling; zero is
+guarded. Tracks Wave 5's founding automatically instead of needing a number raised by hand.
+
+`ck3-tiger` clean. **Not yet re-tested** — this is the pass that finally builds the rows, so items
+3-5 (does the roster populate, does locate move the camera, do the tooltips render) are what the
+next attempt actually exercises for the first time.
+
 **If (1) fails**, the feature is not salvageable as-is and the fallback is the one the spikes
 already named: v9's `kehillah_view_communities_interaction` stays the map-wide list, and a real
 window needs a `.gui` fork. Do not fork `gui/shared/mapmodes.gui` or `gui/map_icon_layer.gui` to

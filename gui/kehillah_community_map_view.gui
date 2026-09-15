@@ -98,9 +98,17 @@ flowcontainer = {
 	### The roster panel. Sits directly above the toggle and shares its
 	### right edge, because both are laid out by the same container
 	### rather than being positioned independently.
-	vbox = {
+	#
+	# A plain widget, NOT a vbox -- live pass 3 (2026-09-14) crashed the
+	# game with a stack overflow the moment this became visible, and
+	# error.log named the cause outright:
+	#   "A (flow)container can't have an hbox/vbox as a direct child."
+	# The layout vbox now lives one level down, inside this widget, which
+	# the engine does allow. Every layout below follows a vanilla shape
+	# that is known to resolve; see the notes at each one.
+	widget = {
 		name = "kehillah_map_view_panel"
-		size = { 430 560 }
+		size = { 430 600 }
 
 		# The IsInGame/GetPlayer.IsValid half is not belt-and-braces: a
 		# scripted widget is created at STARTUP, which includes contexts
@@ -129,33 +137,34 @@ flowcontainer = {
 		}
 
 		vbox = {
-			layoutpolicy_horizontal = expanding
-			layoutpolicy_vertical = expanding
 			margin = { 14 12 }
 			spacing = 6
+			min_width = 400
 
-			### Header
-			hbox = {
+			### Header. Vanilla's own window header, used the way
+			### gui/window_situation_list.gui:40-52 uses it -- it carries
+			### the close button internally, positioned absolutely inside
+			### a plain widget. That matters: pass 3's error.log also
+			### reported "Widget cannot have a position in a layout" for
+			### a bare button_close placed straight into an hbox, because
+			### its base button type carries a position of its own.
+			header_pattern = {
 				layoutpolicy_horizontal = expanding
 
-				text_single = {
+				blockoverride "header_text"
+				{
 					text = "KEHILLAH_MAP_VIEW_HEADER"
-					default_format = "#high;bold"
-					parentanchor = vcenter
 				}
 
-				expand = {}
-
-				button_close = {
-					parentanchor = vcenter
+				blockoverride "button_close"
+				{
 					onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_open' )]"
 				}
 			}
 
 			text_multi = {
-				layoutpolicy_horizontal = expanding
 				autoresize = yes
-				max_width = 390
+				max_width = 400
 				text = "KEHILLAH_MAP_VIEW_SUBHEADER"
 				default_format = "#weak;italic"
 			}
@@ -200,11 +209,19 @@ flowcontainer = {
 				widget = { size = { 34 1 } }
 			}
 
-			### The roster itself.
+			### The roster itself. This is the outliner's own scrollarea
+			### shape, property for property (gui/hud_outliner.gui:80-97):
+			### it sizes itself to its content up to a ceiling, and needs
+			### nothing from its parent's height. The first build used
+			### layoutpolicy_vertical = growing here instead, inside a
+			### vbox that had no fixed height to grow into -- a size
+			### dependency with no fixed point, and the most likely seat
+			### of pass 3's stack overflow after the illegal nesting.
 			scrollarea = {
-				layoutpolicy_horizontal = expanding
-				layoutpolicy_vertical = growing
+				autoresizescrollarea = yes
 				scrollbarpolicy_horizontal = always_off
+				size = { 400 0 }
+				maximumsize = { -1 420 }
 
 				scrollbar_vertical = {
 					using = Scrollbar_Vertical
@@ -212,8 +229,8 @@ flowcontainer = {
 
 				scrollwidget = {
 					vbox = {
-						layoutpolicy_horizontal = expanding
 						set_parent_size_to_minimum = yes
+						min_width = 400
 						margin_right = 12
 						spacing = 3
 

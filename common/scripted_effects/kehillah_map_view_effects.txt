@@ -100,11 +100,19 @@ kehillah_cache_map_view_facts_effect = {
 # between leaders has no portrait, no domicile and no live location, so
 # a row for it would be three empty columns).
 #
-# max = 64 is an explicit bound, not a guess at the real count: sixteen
-# communities exist today (common/on_action/kehillah_on_actions.txt) and
-# Wave 5 can add more, but an ordered_ iterator wants a stated ceiling
-# and a runaway list would be a UI problem long before it was a
-# correctness one. Raise it if founding ever outgrows it.
+# THE max BOUND. An ordered_ iterator without max or position visits
+# ONE entry (vanilla's own no-max uses are all "pick the best one", e.g.
+# 00_laamp_effects.txt:1702), so an explicit ceiling is required to
+# iterate the whole roster. The first build hardcoded max = 64 and the
+# engine logged, on every single refresh:
+#   "ordered_in_global_list effect [ Given max value was bigger than the
+#    list, capping at list size ]"
+# -- non-fatal, but an error-log line per player per quarter, forever.
+# So the registry is counted first and the count IS the ceiling: exact
+# by construction, and it tracks Wave 5's founding automatically instead
+# of needing a number raised by hand. Vanilla passes a variable as max
+# the same way (max = global_var:creatable_mongol_successor_states_number,
+# common/scripted_effects/).
 # ---------------------------------------------------------------------
 kehillah_refresh_map_view_effect = {
 	save_scope_as = kehillah_map_view_owner
@@ -115,23 +123,49 @@ kehillah_refresh_map_view_effect = {
 		value = 0
 	}
 
-	ordered_in_global_list = {
+	# Count the registry so the ordered pass below has an exact ceiling.
+	# Same limit as that pass, so the two agree even while a community
+	# is between leaders -- a ceiling above the FILTERED count would
+	# trip the very "max bigger than the list" error this exists to
+	# avoid.
+	set_variable = {
+		name = kehillah_map_view_registry_size
+		value = 0
+	}
+	every_in_global_list = {
 		variable = kehillah_registered_communities
-		order_by = { value = kehillah_standing_value }
 		limit = { exists = holder }
-		max = 64
-
-		kehillah_cache_map_view_facts_effect = yes
-		save_scope_as = kehillah_map_view_entry
-
 		scope:kehillah_map_view_owner = {
-			add_to_variable_list = {
-				name = kehillah_map_view_list
-				target = scope:kehillah_map_view_entry
-			}
 			change_variable = {
-				name = kehillah_map_view_count
+				name = kehillah_map_view_registry_size
 				add = 1
+			}
+		}
+	}
+
+	# Guarded: a game with no led communities at all would hand the
+	# iterator max = 0, and there is nothing to order anyway.
+	if = {
+		limit = { var:kehillah_map_view_registry_size > 0 }
+
+		ordered_in_global_list = {
+			variable = kehillah_registered_communities
+			order_by = { value = kehillah_standing_value }
+			limit = { exists = holder }
+			max = scope:kehillah_map_view_owner.var:kehillah_map_view_registry_size
+
+			kehillah_cache_map_view_facts_effect = yes
+			save_scope_as = kehillah_map_view_entry
+
+			scope:kehillah_map_view_owner = {
+				add_to_variable_list = {
+					name = kehillah_map_view_list
+					target = scope:kehillah_map_view_entry
+				}
+				change_variable = {
+					name = kehillah_map_view_count
+					add = 1
+				}
 			}
 		}
 	}
