@@ -419,6 +419,29 @@ showed Stability 0 while Prosperity and Greatness were seeded (Mainz 650 / 0 / 1
 maths confirms the 0 is real data). The game-start seeding effects may set two pillars and not the
 third.
 
+## 6f. Live pass 6 — 2026-09-15: the map mode works; three refinements
+
+**Confirmed live by the user: the coloured map mode renders** ("You did it!") — so
+`gfx/map/map_modes/` does merge a second file, `set_color_from_title` does take on baronies, and
+the scripted_gui bridge fires from a scripted widget. Items 7-8 of §6 are closed. Three things
+asked for and built, not yet re-tested:
+
+1. **Locate went to the county holder.** `Title.SelectTitle` *selects* the county, and selecting a
+   county opens its holder. Replaced with `…Title.GetProvince.ZoomCameraTo` — camera only, the call
+   vanilla's own "go to" buttons use (`gui/hud.gui:2489` and five more on characters,
+   `gui/window_epidemics.gui:436` on a province).
+2. **A "visit the quarter" button** per row: `ToggleGameViewData( 'domicile',
+   Title.GetHolder.GetDomicile )`, enabled on `Title.HasDomicile`. This is the generic,
+   not-owner-locked domicile window `spike-domicile-map-visibility.md` §3 found and the user
+   confirmed live on 2026-09-10 by the three-click title-view route — now one click.
+3. **Scores coloured by band.** Four customizable-loc functions, `Kehillah<Pillar>Score`, return
+   the value already wrapped in vanilla's court-aptitude colour ramp (`aptitude_terrible` = red …
+   `aptitude_excellent` = green, `gui/preload/textformatting.gui:526-543`), one step per band.
+   Twenty small self-contained loc keys rather than five concatenated tag fragments, because a
+   complete `#X … #!` span inside a custom-loc key is vanilla's proven shape
+   (`imprison_decline_summary_*`) and a tag opened by one substitution and closed by a literal is
+   not. Thresholds stay script-side; the GUI never sees a number.
+
 ## 7. The region hierarchy (user decision, 2026-09-14)
 
 The roster groups communities into three super-regions with sub-regions, hidden when empty:
