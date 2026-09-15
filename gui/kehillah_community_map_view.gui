@@ -31,39 +31,37 @@
 # exists. That file's header has the full account.
 #
 # ---------------------------------------------------------------------
-# SHAPE OF THIS WIDGET, AND THE BUG THAT DICTATED IT (2026-09-14, found
-# in the first live pass: the button rendered but would not click).
+# TWO TOP-LEVEL WIDGETS, both registered in gui/scripted_widgets/
+# kehillah_scripted_widgets.txt:
 #
-# The first build made the root a full-screen widget with
-# "alwaystransparent = yes" so it would not swallow clicks meant for the
-# map, and relied on the two children opting back in with filter_mouse.
-# That does not work: **alwaystransparent propagates to the whole
-# subtree**, so nothing inside it can ever be hit-tested.
+#   kehillah_community_map_view        -- the toggle button
+#   kehillah_community_map_view_panel  -- the roster window
 #
-# Vanilla says so itself, and this is the citation to keep: the
-# map_modes TYPE sets "alwaystransparent = yes"
-# (gui/shared/mapmodes.gui:88-90), and the ONE place it is instantiated
-# overrides it back to "alwaystransparent = no" (gui/hud.gui:2793) --
-# vanilla's own map-mode buttons would be unclickable otherwise. A child
-# cannot re-enable what an ancestor turned off.
+# They were one widget until live pass 4 (2026-09-14) asked for the
+# panel to be draggable. A draggable panel is a "window" with
+# "movable = yes" (vanilla: gui/window_message_settings.gui:755-762),
+# and a movable window cannot sit inside the flowcontainer that lays
+# out the toggle -- dragging would fight the layout every frame. So the
+# panel is its own free-floating window and the toggle keeps the
+# content-sized container. The two are linked only by the VariableSystem
+# flag "kehillah_map_view_open", which the toggle flips and the panel
+# reads.
 #
-# THE FIX IS STRUCTURAL, not a flag: there is no full-screen surface any
-# more. The root is a content-sized flowcontainer pinned to the
-# bottom-right, so it only ever covers the pixels it actually draws and
-# therefore never needs to be transparent to the mouse in the first
-# place. ignoreinvisible collapses it to just the toggle button when the
-# panel is closed.
-#
-# alwaystransparent survives ONLY on the decorative icons inside the two
-# buttons, which is the correct vanilla use of it: a leaf that must let
-# the click fall through to the button beneath it.
-#
-# POSITIONING. A scripted widget is free-floating -- there is no parent
-# pane to anchor inside, so the offset below is hand-placed to sit above
-# vanilla's map-mode bar. It is the one number most likely to need a
-# nudge at a different resolution, which is why it now lives on the root
-# rather than being repeated on two independently placed children.
+# EVERYTHING BELOW IS THE RESIDUE OF FOUR LIVE PASSES, each of which
+# found one thing that a clean read of the vanilla files had not.
+# The spec's sections 6a-6d record them in order; the short list:
+#   - alwaystransparent propagates to the whole subtree (6a)
+#   - a top-level widget needs a layer or it sits under the HUD (6b)
+#   - a (flow)container cannot have an hbox/vbox as a direct child, and
+#     a bare button_close cannot sit in an hbox -- both crash on open (6c)
+#   - text_single autoresizes to its text unless max_width caps it (6d)
+# Each is cited at the line it governs. Do not "tidy" them away.
 ##########################################################################
+
+
+### =====================================================================
+### THE TOGGLE
+### =====================================================================
 
 flowcontainer = {
 	name = "kehillah_community_map_view"
@@ -71,191 +69,25 @@ flowcontainer = {
 	widgetanchor = bottom|right
 	position = { -22 -150 }
 
-	# LAYER (live pass 2, 2026-09-14). The alwaystransparent fix from
-	# pass 1 was necessary but not sufficient: the button still rendered
-	# and still would not click. Every top-level HUD widget in vanilla
-	# declares a layer, and this one declared none. The HUD's own
-	# full-screen roots (hud.gui "meta_info" and "bottom_bar", both
-	# size 100%/100%, both layer = bottom) do not block the MAP -- the
-	# map is not a gui widget and takes whatever the gui does not
-	# consume -- but a layerless widget most plausibly sits beneath
-	# them, and they sit between the mouse and anything under them.
-	# The nearest vanilla analog to this widget -- persistent,
+	# LAYER (live pass 2). Every top-level HUD widget in vanilla declares
+	# one; without it this sat beneath the HUD's full-screen bottom-layer
+	# roots (hud.gui "meta_info"/"bottom_bar") and rendered without ever
+	# receiving a click. The nearest vanilla analog -- persistent,
 	# right-anchored, content-sized, interactive -- is the outliner
-	# (gui/hud_outliner.gui:1-7), whose root is exactly
-	# "alwaystransparent = no / filter_mouse = all /
-	# layer = windows_layer". This matches it property for property.
+	# (gui/hud_outliner.gui:1-7), whose root is exactly these three
+	# lines. alwaystransparent stays explicitly "no" (live pass 1): it
+	# propagates to the whole subtree, which is why vanilla's map_modes
+	# instantiation overrides its own type's "yes" (gui/hud.gui:2793).
 	layer = windows_layer
 	alwaystransparent = no
 	filter_mouse = all
 
 	direction = vertical
-	spacing = 6
 	ignoreinvisible = yes
 	allow_outside = yes
 
-
-	### The roster panel. Sits directly above the toggle and shares its
-	### right edge, because both are laid out by the same container
-	### rather than being positioned independently.
-	#
-	# A plain widget, NOT a vbox -- live pass 3 (2026-09-14) crashed the
-	# game with a stack overflow the moment this became visible, and
-	# error.log named the cause outright:
-	#   "A (flow)container can't have an hbox/vbox as a direct child."
-	# The layout vbox now lives one level down, inside this widget, which
-	# the engine does allow. Every layout below follows a vanilla shape
-	# that is known to resolve; see the notes at each one.
-	widget = {
-		name = "kehillah_map_view_panel"
-		size = { 430 600 }
-
-		# The IsInGame/GetPlayer.IsValid half is not belt-and-braces: a
-		# scripted widget is created at STARTUP, which includes contexts
-		# with no player (the frontend, the loading screen). Reading
-		# GetPlayer.MakeScope there would log an error every frame. PDX
-		# gui And() is a function call, not a short-circuiting operator,
-		# so the guard has to wrap the read rather than merely precede
-		# it -- vanilla guards its own always-created debug widgets the
-		# same way (gui/debug/debug_menus.gui:784).
-		visible = "[And( And( IsInGame, GetPlayer.IsValid ), GetVariableSystem.Exists( 'kehillah_map_view_open' ) )]"
-		visible_at_creation = no
-
-		state = {
-			name = _show
-			using = Animation_FadeIn_Quick
-		}
-		state = {
-			name = _hide
-			using = Animation_FadeOut_Standard
-		}
-
-		background = {
-			using = Background_Area_Dark
-			color = { 0.11 0.10 0.09 0.94 }
-			margin = { 6 6 }
-		}
-
-		vbox = {
-			margin = { 14 12 }
-			spacing = 6
-			min_width = 400
-
-			### Header. Vanilla's own window header, used the way
-			### gui/window_situation_list.gui:40-52 uses it -- it carries
-			### the close button internally, positioned absolutely inside
-			### a plain widget. That matters: pass 3's error.log also
-			### reported "Widget cannot have a position in a layout" for
-			### a bare button_close placed straight into an hbox, because
-			### its base button type carries a position of its own.
-			header_pattern = {
-				layoutpolicy_horizontal = expanding
-
-				blockoverride "header_text"
-				{
-					text = "KEHILLAH_MAP_VIEW_HEADER"
-				}
-
-				blockoverride "button_close"
-				{
-					onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_open' )]"
-				}
-			}
-
-			text_multi = {
-				autoresize = yes
-				max_width = 400
-				text = "KEHILLAH_MAP_VIEW_SUBHEADER"
-				default_format = "#weak;italic"
-			}
-
-			### Column labels, so the four bare numbers on each row are
-			### readable without hovering every one of them.
-			hbox = {
-				layoutpolicy_horizontal = expanding
-				margin_right = 18
-				margin_top = 4
-
-				text_single = {
-					text = "KEHILLAH_MAP_VIEW_COL_COMMUNITY"
-					default_format = "#weak"
-					margin_left = 70
-				}
-
-				expand = {}
-
-				text_label_center = {
-					text = "KEHILLAH_MAP_VIEW_COL_STANDING"
-					default_format = "#weak"
-					min_width = 48
-				}
-				text_label_center = {
-					text = "KEHILLAH_MAP_VIEW_COL_P"
-					default_format = "#weak"
-					min_width = 42
-				}
-				text_label_center = {
-					text = "KEHILLAH_MAP_VIEW_COL_S"
-					default_format = "#weak"
-					min_width = 42
-				}
-				text_label_center = {
-					text = "KEHILLAH_MAP_VIEW_COL_G"
-					default_format = "#weak"
-					min_width = 42
-				}
-
-				# Spacer matching the locate button's column width.
-				widget = { size = { 34 1 } }
-			}
-
-			### The roster itself. This is the outliner's own scrollarea
-			### shape, property for property (gui/hud_outliner.gui:80-97):
-			### it sizes itself to its content up to a ceiling, and needs
-			### nothing from its parent's height. The first build used
-			### layoutpolicy_vertical = growing here instead, inside a
-			### vbox that had no fixed height to grow into -- a size
-			### dependency with no fixed point, and the most likely seat
-			### of pass 3's stack overflow after the illegal nesting.
-			scrollarea = {
-				autoresizescrollarea = yes
-				scrollbarpolicy_horizontal = always_off
-				size = { 400 0 }
-				maximumsize = { -1 420 }
-
-				scrollbar_vertical = {
-					using = Scrollbar_Vertical
-				}
-
-				scrollwidget = {
-					vbox = {
-						set_parent_size_to_minimum = yes
-						min_width = 400
-						margin_right = 12
-						spacing = 3
-
-						# The mirrored roster, already ordered
-						# strongest-standing-first by
-						# kehillah_refresh_map_view_effect -- a .gui
-						# datamodel cannot sort, so the ordering is done
-						# script-side with ordered_in_global_list.
-						datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list' )]"
-
-						item = {
-							kehillah_map_view_row = {}
-						}
-					}
-				}
-			}
-		}
-	}
-
-
-	### The toggle -- a map-mode-style round button, parked above
-	### vanilla's own map-mode bar in the bottom-right corner.
 	flowcontainer = {
 		name = "kehillah_map_view_toggle"
-		parentanchor = right
 		direction = vertical
 		ignoreinvisible = yes
 
@@ -265,6 +97,15 @@ flowcontainer = {
 		# possibly-absent variable is vanilla's own idiom for exactly
 		# this -- gui/shared/mapmodes.gui:105 reads hide_ui_map_zoom the
 		# same way, and a variable that does not exist reads as 0.
+		#
+		# The IsInGame/GetPlayer.IsValid half is not belt-and-braces: a
+		# scripted widget is created at STARTUP, which includes contexts
+		# with no player (the frontend, the loading screen). Reading
+		# GetPlayer.MakeScope there would log an error every frame. PDX
+		# gui And() is a function call, not a short-circuiting operator,
+		# so the guard has to wrap the read rather than merely precede
+		# it -- vanilla guards its own always-created debug widgets the
+		# same way (gui/debug/debug_menus.gui:784).
 		visible = "[And( And( IsInGame, GetPlayer.IsValid ), And( IsDefaultGUIMode, GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_map_view_count' ).GetValue, '(CFixedPoint)0' ) ) )]"
 
 		background = {
@@ -273,11 +114,8 @@ flowcontainer = {
 			margin = { 8 6 }
 		}
 
-		# Lit while the roster is open. Doubles as a diagnostic: it is
-		# driven by the same VariableSystem flag the panel is, and lives
-		# on the button's own tile, so a click that registers but fails
-		# to show the panel is visibly different from a click that never
-		# arrived at all -- the two look identical otherwise.
+		# Lit while the roster is open -- driven by the same flag the
+		# panel reads, so the two can never disagree.
 		background = {
 			visible = "[GetVariableSystem.Exists( 'kehillah_map_view_open' )]"
 			using = Background_Area_Dark
@@ -293,11 +131,178 @@ flowcontainer = {
 			tooltip = "KEHILLAH_MAP_VIEW_BUTTON_TOOLTIP"
 			using = tooltip_ws
 
+			# alwaystransparent on a LEAF is its correct use: let the
+			# click fall through to the button beneath.
 			icon = {
 				parentanchor = center
 				size = { 22 22 }
 				texture = "gfx/interface/icons/faith/judaism.dds"
 				alwaystransparent = yes
+			}
+		}
+	}
+}
+
+
+### =====================================================================
+### THE ROSTER WINDOW
+### =====================================================================
+
+# Column widths, shared by the header row and every roster row so they
+# line up. Rows are: portrait | name block | standing | P | S | G |
+# locate. The name block takes whatever is left.
+@col_portrait = 64
+@col_standing = 48
+@col_pillar = 42
+@col_locate = 30
+
+window = {
+	name = "kehillah_community_map_view_panel"
+	parentanchor = bottom|right
+	widgetanchor = bottom|right
+
+	# Default resting place: bottom-right, clear of both the toggle (which
+	# sits at -150 and is 46 tall) and vanilla's zoom-level caption
+	# ("Paper Map / Selecting: Realms"), which live pass 4 showed bleeding
+	# through the panel's bottom edge at -196. Draggable from here.
+	position = { -22 -240 }
+	size = { 520 640 }
+
+	movable = yes
+	resizable = no
+	layer = windows_layer
+	alwaystransparent = no
+	filter_mouse = all
+	allow_outside = yes
+
+	visible = "[And( And( IsInGame, GetPlayer.IsValid ), GetVariableSystem.Exists( 'kehillah_map_view_open' ) )]"
+	visible_at_creation = no
+
+	state = {
+		name = _show
+		using = Animation_FadeIn_Quick
+	}
+	state = {
+		name = _hide
+		using = Animation_FadeOut_Standard
+	}
+
+	background = {
+		using = Background_Area_Dark
+		color = { 0.11 0.10 0.09 0.94 }
+		margin = { 6 6 }
+	}
+
+	# The layout vbox lives INSIDE the window, never directly in a
+	# (flow)container -- live pass 3 crashed the game with a stack
+	# overflow on exactly that, and error.log said so in as many words
+	# ("A (flow)container can't have an hbox/vbox as a direct child").
+	vbox = {
+		margin = { 14 12 }
+		spacing = 6
+		min_width = 490
+
+		### Header. Vanilla's own window header, used the way
+		### gui/window_situation_list.gui:40-52 uses it -- it carries
+		### the close button internally, positioned absolutely inside a
+		### plain widget. A bare button_close dropped into an hbox is
+		### rejected ("Widget cannot have a position in a layout", live
+		### pass 3).
+		header_pattern = {
+			layoutpolicy_horizontal = expanding
+
+			blockoverride "header_text"
+			{
+				text = "KEHILLAH_MAP_VIEW_HEADER"
+			}
+
+			blockoverride "button_close"
+			{
+				onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_open' )]"
+			}
+		}
+
+		text_multi = {
+			autoresize = yes
+			max_width = 480
+			text = "KEHILLAH_MAP_VIEW_SUBHEADER"
+			default_format = "#weak;italic"
+		}
+
+		### Column labels, so the four bare numbers on each row are
+		### readable without hovering every one of them. Same widths as
+		### the rows, from the constants above.
+		hbox = {
+			layoutpolicy_horizontal = expanding
+			margin_right = 18
+			margin_top = 4
+
+			text_single = {
+				text = "KEHILLAH_MAP_VIEW_COL_COMMUNITY"
+				default_format = "#weak"
+				margin_left = @col_portrait
+			}
+
+			expand = {}
+
+			text_label_center = {
+				text = "KEHILLAH_MAP_VIEW_COL_STANDING"
+				default_format = "#weak"
+				min_width = @col_standing
+			}
+			text_label_center = {
+				text = "KEHILLAH_MAP_VIEW_COL_P"
+				default_format = "#weak"
+				min_width = @col_pillar
+			}
+			text_label_center = {
+				text = "KEHILLAH_MAP_VIEW_COL_S"
+				default_format = "#weak"
+				min_width = @col_pillar
+			}
+			text_label_center = {
+				text = "KEHILLAH_MAP_VIEW_COL_G"
+				default_format = "#weak"
+				min_width = @col_pillar
+			}
+
+			# Spacer matching the locate button's column.
+			widget = { size = { @col_locate 1 } }
+		}
+
+		### The roster. The outliner's own scrollarea shape, property for
+		### property (gui/hud_outliner.gui:80-97): sizes itself to its
+		### content up to a ceiling and needs nothing from its parent's
+		### height. A "growing" layoutpolicy here, inside a vbox with no
+		### fixed height, was the other layout cycle live pass 3 removed.
+		scrollarea = {
+			autoresizescrollarea = yes
+			scrollbarpolicy_horizontal = always_off
+			size = { 490 0 }
+			maximumsize = { -1 480 }
+
+			scrollbar_vertical = {
+				using = Scrollbar_Vertical
+			}
+
+			scrollwidget = {
+				vbox = {
+					set_parent_size_to_minimum = yes
+					min_width = 490
+					margin_right = 12
+					spacing = 3
+
+					# The mirrored roster, already ordered
+					# strongest-standing-first by
+					# kehillah_refresh_map_view_effect -- a .gui datamodel
+					# cannot sort, so the ordering is done script-side
+					# with ordered_in_global_list.
+					datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list' )]"
+
+					item = {
+						kehillah_map_view_row = {}
+					}
+				}
 			}
 		}
 	}
@@ -344,7 +349,7 @@ types KehillahMapView
 		### docs/spec/spike-domicile-map-visibility.md section 3
 		### confirmed live on 2026-09-10).
 		widget = {
-			size = { 64 56 }
+			size = { @col_portrait 56 }
 			parentanchor = vcenter
 			visible = "[Title.HasHolder]"
 			datacontext = "[Title.GetHolder]"
@@ -355,6 +360,14 @@ types KehillahMapView
 		}
 
 		### Name, and where in the world it is.
+		#
+		# max_width on both lines is load-bearing (live pass 4): the
+		# text_single template is autoresize = yes / elide = right
+		# (gui/preload/labels.gui:6-15), so without a cap each line sizes
+		# to its own text, the longest county name in the roster sets the
+		# row width, and the whole panel ran off the right edge of the
+		# screen. With the cap the line elides instead; the full text is
+		# in the row tooltip anyway.
 		vbox = {
 			layoutpolicy_horizontal = expanding
 			parentanchor = vcenter
@@ -363,6 +376,7 @@ types KehillahMapView
 			text_single = {
 				layoutpolicy_horizontal = expanding
 				align = left
+				max_width = 200
 				text = "[Title.GetNameNoTooltip]"
 				default_format = "#high"
 			}
@@ -370,6 +384,7 @@ types KehillahMapView
 			text_single = {
 				layoutpolicy_horizontal = expanding
 				align = left
+				max_width = 200
 				text = "KEHILLAH_MAP_VIEW_ROW_LOCATION"
 				default_format = "#weak"
 			}
@@ -384,7 +399,7 @@ types KehillahMapView
 		### kehillah_standing_value.
 		text_label_center = {
 			parentanchor = vcenter
-			min_width = 48
+			min_width = @col_standing
 			text = "[Title.MakeScope.Var( 'kehillah_var_standing' ).GetValue|V0]"
 			default_format = "#high;bold"
 		}
@@ -393,17 +408,17 @@ types KehillahMapView
 		### Greatness order this mod uses everywhere else.
 		text_label_center = {
 			parentanchor = vcenter
-			min_width = 42
+			min_width = @col_pillar
 			text = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue|V0]"
 		}
 		text_label_center = {
 			parentanchor = vcenter
-			min_width = 42
+			min_width = @col_pillar
 			text = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue|V0]"
 		}
 		text_label_center = {
 			parentanchor = vcenter
-			min_width = 42
+			min_width = @col_pillar
 			text = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue|V0]"
 		}
 
@@ -417,7 +432,7 @@ types KehillahMapView
 		# county for itself.
 		button_round = {
 			parentanchor = vcenter
-			size = { 30 30 }
+			size = { @col_locate @col_locate }
 			margin_right = 4
 
 			enabled = "[Title.MakeScope.Var( 'kehillah_ui_host_county' ).Title.IsValid]"
