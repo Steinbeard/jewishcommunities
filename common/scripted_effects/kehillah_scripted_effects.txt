@@ -352,8 +352,18 @@ kehillah_restore_quarter_effect = {
 # kehillah_setup_worms_start_effect
 # Scope: the Kehillah leader (character).
 #
-# Establishes the 1066 starting state described in
-# docs/scenarios/worms-1066.md section 4:
+# CHANGED 2026-09-08 -- Worms now starts as a FULLY BUILT community, on
+# the user's explicit request ("give it all the buildings for now and a
+# fully maxed out synagogue"). This deliberately overrides the modest
+# starting state docs/scenarios/worms-1066.md section 4 specified, and
+# that section has been updated to say so rather than left to contradict
+# the code. The buildings themselves live in
+# kehillah_worms_developed_start_effect below; read its header before
+# changing any of this, and see it for the one line to comment out to get
+# the original modest start back.
+#
+# What section 4 originally specified, for the record, since it is still
+# the design's own preferred shape and this is explicitly a "for now":
 #
 #   - Synagogue at TIER 1, not empty. The real Worms Synagogue was built
 #     in 1034, thirty-two years before this start date, so the community
@@ -362,6 +372,11 @@ kehillah_restore_quarter_effect = {
 #     the player's job, not a pre-built showcase.
 #   - NO officers, which follows automatically: all three gate on
 #     internal buildings that do not exist yet.
+#
+# Speyer and Mainz are deliberately NOT changed -- they still start at
+# Synagogue tier 1. Worms is the playable start, so it is the one that
+# needs a developed state to exercise content against; leaving the other
+# two modest also keeps the contrast visible in the Sh'um comparison.
 #
 # Run once, from the game-start on_action.
 # ---------------------------------------------------------------------
@@ -385,16 +400,15 @@ kehillah_setup_worms_start_effect = {
 		# at all. scope:kehillah_leader is.
 		save_scope_as = kehillah_leader
 
-		domicile = {
-			if = {
-				limit = { NOT = { has_domicile_building_or_higher = kehillah_synagogue_01 } }
-				add_domicile_building = kehillah_synagogue_01
-			}
-		}
+		# THE ONE LINE TO COMMENT OUT to restore the modest tier-1 start
+		# this effect's header describes. Nothing else here depends on it.
+		kehillah_worms_developed_start_effect = yes
 
 		# A modest communal chest. Enough to start one internal
 		# building and absorb an early flavor incident, not enough to
-		# buy the whole quarter on day one.
+		# buy the whole quarter on day one. Left unchanged by the
+		# developed-start change above: the quarter being already built
+		# is the point, not the community being rich.
 		add_gold = 120
 
 		# Isaac has led the community since 1064 (see
@@ -424,6 +438,149 @@ kehillah_setup_worms_start_effect = {
 
 
 # ---------------------------------------------------------------------
+# kehillah_worms_developed_start_effect
+# Scope: the Kehillah of Worms's leader (character). Called only from
+# kehillah_setup_worms_start_effect, once, at game start.
+#
+# ADDED 2026-09-08 on request: Worms starts with EVERY building family
+# present and the Synagogue at its maximum tier, instead of the single
+# tier-1 Synagogue the scenario doc originally specified. Explicitly a
+# "for now" state -- a developed community to exercise building-gated
+# content (the officer appointments, the pillar bands, the Bet Din) with
+# without playing thirty years up to it first.
+#
+# WHY THE SYNAGOGUE GOES FIRST, AND IN TIER ORDER. Two hard constraints,
+# both structural:
+#
+#  1. Every tier is an UPGRADE of the one below (previous_building), so
+#     tiers must be added in ascending order. add_domicile_building on
+#     tier 5 with no tier 4 present has nothing to upgrade.
+#  2. The Synagogue is what MAKES ROOM for everything else. External slot
+#     capacity is base 2 (base_external_slots in common/domiciles/types/
+#     kehillah_domicile_types.txt) plus +1 from each Synagogue tier 2-5,
+#     for 6 at maximum -- exactly the six external families below. And
+#     internal slots come from the current main building's own
+#     internal_slots field, which is 3 at tier 5 (two families below, one
+#     spare, per the buildings file's own budget). So the full quarter
+#     only fits at all once the Synagogue is maxed. Add an outbuilding
+#     before the upgrades and it has nowhere to go.
+#
+# SLOT-CAPACITY MODIFIERS ARE CUMULATIVE ACROSS AN UPGRADE CHAIN -- the
+# assumption the arithmetic above rests on, checked against vanilla
+# rather than assumed. common/domiciles/buildings/00_estate_buildings.txt
+# gives estate_main_01 domicile_external_slots_capacity_add = 2 and each
+# of tiers 02-05 another 1, and drops domicile_monthly_influence_add from
+# 1 at tier 1 to 0.5 at every tier after. Under replace semantics
+# upgrading the villa would REDUCE both its slot capacity and its
+# influence, which is plainly not what vanilla means; under cumulative
+# semantics both progress sensibly (influence 1 -> 1.5 -> 2 -> 2.5 -> 3)
+# and the estate reaches exactly the 6 external slots its own type
+# defines. The _domicile_buildings.info note that "parameters are not
+# inherited from previous_building" is about `parameters` specifically,
+# which is why it is called out as the exception -- character_modifier is
+# not mentioned. Still worth confirming live: if it turns out these do
+# NOT accumulate, the last three outbuildings below will silently find no
+# free slot, and the mod's own slot budget (documented in the buildings
+# file header, written before this effect existed) is wrong too.
+#
+# SAME-TICK PRECEDENT, also from vanilla: common/on_action/game_start.txt
+# seeds nomad yurts with exactly this shape -- inside one
+# `domicile ?= { ... }` block it adds yurt_main_02, _03 and _04 in
+# ascending order and then three external buildings immediately after,
+# relying on the capacity the upgrades just granted being available in
+# the same effect. So neither the tier ordering nor "upgrade the main
+# building and then fill the new slots in one tick" is an invention here.
+#
+# Every add is guarded with has_domicile_building_or_higher, matching the
+# guard style the callers already use, so this is safe to re-run and
+# cannot double-add or downgrade anything a save already has.
+#
+# NOT DONE HERE, deliberately:
+#   - Non-Synagogue families are added at TIER 1 only. "All the buildings
+#     and a maxed synagogue" is what was asked for, and the reading that
+#     singles out the Synagogue as the maxed one. To max a family, add
+#     its tier-2/3 lines in the same shape as the Synagogue's.
+#   - No pillar values are inflated to match. The band gates on tier 2+
+#     of every family (can_construct, see the buildings file) are checks
+#     on the PLAYER's own construction, and add_domicile_building does
+#     not consult them -- so a maxed Synagogue here does not imply the
+#     Legendary Greatness band its tier 5 would normally demand. The
+#     pillars will climb on their own, because the pillar baselines in
+#     common/script_values/kehillah_script_values.txt are computed FROM
+#     the buildings; they just start low.
+#   - Gold is untouched (see the caller).
+# ---------------------------------------------------------------------
+
+kehillah_worms_developed_start_effect = {
+	domicile = {
+		# --- MAIN SLOT: the Synagogue, tier 1 through 5 in order. ---
+		if = {
+			limit = { NOT = { has_domicile_building_or_higher = kehillah_synagogue_01 } }
+			add_domicile_building = kehillah_synagogue_01
+		}
+		if = {
+			limit = { NOT = { has_domicile_building_or_higher = kehillah_synagogue_02 } }
+			add_domicile_building = kehillah_synagogue_02
+		}
+		if = {
+			limit = { NOT = { has_domicile_building_or_higher = kehillah_synagogue_03 } }
+			add_domicile_building = kehillah_synagogue_03
+		}
+		if = {
+			limit = { NOT = { has_domicile_building_or_higher = kehillah_synagogue_04 } }
+			add_domicile_building = kehillah_synagogue_04
+		}
+		if = {
+			limit = { NOT = { has_domicile_building_or_higher = kehillah_synagogue_05 } }
+			add_domicile_building = kehillah_synagogue_05
+		}
+
+		# --- INTERNAL SLOTS: the two annexes of the synagogue complex.
+		# Both take kehillah_synagogue_01 as their previous_building, so
+		# they can only be added after the main slot exists at all.
+		if = {
+			limit = { NOT = { has_domicile_building_or_higher = kehillah_mikvah_01 } }
+			add_domicile_building = kehillah_mikvah_01
+		}
+		if = {
+			limit = { NOT = { has_domicile_building_or_higher = kehillah_sofer_workshop_01 } }
+			add_domicile_building = kehillah_sofer_workshop_01
+		}
+
+		# --- EXTERNAL SLOTS: all six freestanding families, one each.
+		# Six families, six slots at Synagogue tier 5 -- no room to
+		# spare, which is why nothing here is guarded on a free slot: a
+		# missing slot would mean the capacity arithmetic above is wrong,
+		# and that should be visible rather than quietly absorbed.
+		if = {
+			limit = { NOT = { has_domicile_building_or_higher = kehillah_beit_midrash_01 } }
+			add_domicile_building = kehillah_beit_midrash_01
+		}
+		if = {
+			limit = { NOT = { has_domicile_building_or_higher = kehillah_countinghouse_01 } }
+			add_domicile_building = kehillah_countinghouse_01
+		}
+		if = {
+			limit = { NOT = { has_domicile_building_or_higher = kehillah_hekdesh_01 } }
+			add_domicile_building = kehillah_hekdesh_01
+		}
+		if = {
+			limit = { NOT = { has_domicile_building_or_higher = kehillah_slaughterhouse_01 } }
+			add_domicile_building = kehillah_slaughterhouse_01
+		}
+		if = {
+			limit = { NOT = { has_domicile_building_or_higher = kehillah_market_stalls_01 } }
+			add_domicile_building = kehillah_market_stalls_01
+		}
+		if = {
+			limit = { NOT = { has_domicile_building_or_higher = kehillah_workshops_01 } }
+			add_domicile_building = kehillah_workshops_01
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
 # kehillah_setup_mainz_start_effect
 # Scope: the Kehillah of Mainz's leader (character).
 #
@@ -435,6 +592,19 @@ kehillah_setup_worms_start_effect = {
 # before this scenario -- hence a larger starting Greatness bonus than
 # Worms's, not parity. See history/characters/mainz_1066.txt for the
 # leader himself.
+#
+# PROSPERITY ADDED 2026-09-10 (v6 spec section 3a). The user's own v6
+# rating for Mainz (Development 4) is higher RELATIVE TO WORMS than this
+# effect used to reflect -- before this change Mainz got only a Synagogue
+# tier and the 180 Greatness bonus below, no material Prosperity head
+# start at all, unlike Worms's fully-built quarter. 650 is the Dev-4
+# starting Prosperity number from v6 spec section 3's own table (a direct
+# change_variable, not a domicile-building-list the way Worms's own start
+# works -- see that section's explicit note that the simpler mechanism is
+# the correct one for every community past Worms, not a lesser version of
+# it). The 180 Greatness bonus is UNCHANGED -- already correctly
+# calibrated to Gershom's stature; this adds the missing Prosperity floor
+# on top of it, not instead of it.
 # ---------------------------------------------------------------------
 
 kehillah_setup_mainz_start_effect = {
@@ -458,6 +628,7 @@ kehillah_setup_mainz_start_effect = {
 		primary_title = {
 			kehillah_init_pillars_effect = yes
 			change_variable = { name = kehillah_var_greatness add = 180 }
+			change_variable = { name = kehillah_var_prosperity add = 650 }
 		}
 
 		kehillah_seed_community_effect = yes
@@ -480,6 +651,66 @@ kehillah_setup_mainz_start_effect = {
 # standing to start from, unlike Worms and Mainz), and a smaller purse
 # (a handful of recent arrivals, not a communal chest built up over
 # generations).
+#
+# PROSPERITY ADDED 2026-09-10 (v6 spec section 3a) -- SUPERSEDES THE
+# "no Greatness head start" PARAGRAPH ABOVE WHERE IT TALKS ABOUT
+# PROSPERITY SPECIFICALLY (the Greatness half of that paragraph was still
+# true and unchanged at the time; Speyer got none). The deliberate zero-
+# Prosperity start described above was the correct call under v4/v5, and
+# the historical grounding above is still true and still worth keeping on
+# record -- but the user's own v6 rating for Speyer (Development 3) is an
+# explicit, later instruction that supersedes the STARTING NUMBER itself,
+# so a future reader is not left confused by the two dates disagreeing.
+# 420 is the Dev-3 starting Prosperity number from v6 spec section 3's
+# own table, added directly via change_variable (Speyer already starts
+# with zero built and nothing breaks, per that section's own note).
+#
+# LIVE-TEST FIX, 2026-09-11: v10 spec section 2 flagged the zero starting
+# Greatness as "a real, separate gap, not by design" -- verified against
+# this file's OWN header above and history/characters/speyer_1066.txt,
+# and that framing needs correcting for the record: zero Greatness here
+# was NOT an oversight. It was deliberate, and documented twice (the
+# ADDED 2026-09-08 paragraph above, and speyer_1066.txt's "GAMEPLAY
+# CONSEQUENCE OF THE ANACHRONISM" section) -- Speyer's Jewish community
+# is not historically documented until the 1070s and not chartered until
+# 1084, both after this scenario's 1066 start, so its seeded figure
+# (Kalonymus, a Parnas/lay leader, deliberately NOT given kehillah_rabbi_
+# trait -- see that history file) was written with no established
+# scholarly standing to start from, unlike Worms's Isaac or Mainz's
+# Gershom.
+#
+# What WAS a genuine oversight: nobody, at the time, connected "starts at
+# literally 0" to Bet Din co-judge selection (kehillah_bet_din_conference.
+# txt's special_guests, added 2026-09-08 same day, ranks candidates by
+# raw kehillah_var_greatness with no floor). Worse, kehillah_tag_minhag_
+# regions_effect (added 2026-09-10, common/scripted_effects/kehillah_
+# minhag_geography_effects.txt) put Speyer's own minhag region
+# (western_ashkenaz) in a large pool that also includes Mainz (180) and
+# Troyes/"Rashi" (140, d_champagne is in the same region) -- see that
+# effect's WESTERN ASHKENAZ block. The combination makes Speyer not just
+# "usually outranked" but MATHEMATICALLY UNABLE to ever win a co-judge
+# seat at game start, and slow enough to claw back via play (Greatness
+# climbs off the pillar baselines, common/script_values/kehillah_script_
+# values.txt, which are themselves driven by domicile buildings the AI
+# builds slowly) that the very first live playtest already caught it.
+# That structural floor-of-zero problem is real regardless of whether the
+# original "no head start" call was deliberate -- so it gets fixed here.
+#
+# THE NUMBER. Not parity with Mainz's 180: Gershom's documented rabbinic
+# stature (Meor HaGolah) is a real premium this file already treats as
+# the ceiling (see the ADDED 2026-09-08 paragraph on kehillah_setup_
+# mainz_start_effect above), and Kalonymus explicitly carries no such
+# standing. Matching Worms's 150 instead: Speyer is historically
+# anachronistic for 1066 (see above), but it IS, same as Worms, one of
+# the three actual Sh'um member communities the Bet Din mechanic exists
+# to represent -- the anachronism is already priced into its smaller
+# purse (40 gold vs. Worms's 120) and its Prosperity (420 vs. Worms's
+# implicit head start from a fully-built quarter); Greatness alone does
+# not need to also carry that penalty all the way to zero once zero has
+# a hard mechanical consequence downstream. 150 clears both Mainz's non-
+# host-region competitors and Troyes's 140 often enough to be a real
+# candidate without silently erasing the Kalonymus-vs-Gershom distinction
+# from Greatness entirely.
 # ---------------------------------------------------------------------
 
 kehillah_setup_speyer_start_effect = {
@@ -495,6 +726,480 @@ kehillah_setup_speyer_start_effect = {
 
 		primary_title = {
 			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_prosperity add = 420 }
+			change_variable = { name = kehillah_var_greatness add = 150 }
+		}
+
+		kehillah_seed_community_effect = yes
+		kehillah_record_quarter_effect = yes
+		kehillah_update_leader_flavor_effect = yes
+	}
+}
+
+
+# =====================================================================
+# THE THIRTEEN NEW COMMUNITIES (v6 spec sections 3, 6). Every one below
+# shares Mainz/Speyer's shape, not Worms's domicile-heavy one -- v6 spec
+# section 3's own note: the domicile-building-list approach does not
+# scale to fifteen-plus new starts, and a direct change_variable onto
+# kehillah_var_prosperity is equally valid (Speyer already proved this,
+# starting with zero built and nothing breaking). None of these thirteen
+# get a pre-built Synagogue the way Mainz does -- Mainz's tier-1 Synagogue
+# reflects Mainz's own specific, older-than-Worms documented community;
+# nothing in v6 spec's own tables claims the same for any of these
+# thirteen, so none is given one it was not asked for.
+#
+# Starting Prosperity for every community below comes straight from v6
+# spec section 3's own Dev-to-Prosperity table (1->80, 2->220, 3->420,
+# 4->650), applied via change_variable exactly the way Speyer's own
+# rebalance above now works. Starting Greatness is this task's own
+# editorial judgment from each community's historical notes, per v6 spec
+# section 3's explicit instruction to prioritise getting the RELATIVE
+# ordering right over any exact magnitude -- see each community's own
+# history/characters/*_1066.txt for the full per-figure reasoning; only
+# the resulting numbers are repeated here. Gold is a modest, roughly
+# Development-scaled communal chest, the same spirit as Worms/Mainz/
+# Speyer's own purses, not itself specified by the spec.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# kehillah_setup_troyes_start_effect
+# Scope: the Kehillah of Troyes's leader (character).
+#
+# Dev 3 -> 420 starting Prosperity. Greatness 140 -- the flagship
+# Development-vs-Greatness case the spec names by name (Rashi); see
+# history/characters/troyes_1066.txt for the full reasoning behind the
+# exact figure (pitched below Worms's 150/Mainz's 180 -- he is 26 at this
+# scenario's start, genuinely early in his own career -- but well above
+# what Dev 3 alone would suggest, and clearly above Paris's own 20,
+# satisfying the spec's explicit "should out-rank Paris" instruction).
+# ---------------------------------------------------------------------
+
+kehillah_setup_troyes_start_effect = {
+	if = {
+		limit = {
+			exists = domicile
+			NOT = { has_character_flag = kehillah_start_configured }
+		}
+		add_character_flag = kehillah_start_configured
+		save_scope_as = kehillah_leader
+
+		add_gold = 90
+
+		primary_title = {
+			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_prosperity add = 420 }
+			change_variable = { name = kehillah_var_greatness add = 140 }
+		}
+
+		kehillah_seed_community_effect = yes
+		kehillah_record_quarter_effect = yes
+		kehillah_update_leader_flavor_effect = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_setup_paris_start_effect
+# Scope: the Kehillah of Paris's leader (character).
+#
+# Dev 2 -> 220 starting Prosperity. Greatness 20, low and deliberate --
+# "emerging community, not yet the center it becomes later" (v6 spec
+# section 3a). See history/characters/paris_1066.txt.
+# ---------------------------------------------------------------------
+
+kehillah_setup_paris_start_effect = {
+	if = {
+		limit = {
+			exists = domicile
+			NOT = { has_character_flag = kehillah_start_configured }
+		}
+		add_character_flag = kehillah_start_configured
+		save_scope_as = kehillah_leader
+
+		add_gold = 60
+
+		primary_title = {
+			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_prosperity add = 220 }
+			change_variable = { name = kehillah_var_greatness add = 20 }
+		}
+
+		kehillah_seed_community_effect = yes
+		kehillah_record_quarter_effect = yes
+		kehillah_update_leader_flavor_effect = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_setup_cologne_start_effect
+# Scope: the Kehillah of Cologne's leader (character).
+#
+# Dev 2 -> 220 starting Prosperity. Greatness 40, a little above Paris's
+# despite the identical Development -- Cologne's own real, documented
+# antiquity (a Roman-era imperial edict already regulates Jewish
+# municipal participation there, 321 CE) earns it a modest edge even with
+# no specific named 11th-century leader to point to. See history/
+# characters/cologne_1066.txt.
+# ---------------------------------------------------------------------
+
+kehillah_setup_cologne_start_effect = {
+	if = {
+		limit = {
+			exists = domicile
+			NOT = { has_character_flag = kehillah_start_configured }
+		}
+		add_character_flag = kehillah_start_configured
+		save_scope_as = kehillah_leader
+
+		add_gold = 60
+
+		primary_title = {
+			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_prosperity add = 220 }
+			change_variable = { name = kehillah_var_greatness add = 40 }
+		}
+
+		kehillah_seed_community_effect = yes
+		kehillah_record_quarter_effect = yes
+		kehillah_update_leader_flavor_effect = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_setup_prague_start_effect
+# Scope: the Kehillah of Prague's leader (character).
+#
+# Dev 1 -> 80 starting Prosperity, per Eastern Ashkenaz's own
+# deliberately thin design (v6 spec section 3b). Greatness 30 -- a modest
+# edge over Vienna's own 10, reflecting Prague's real documented earlier
+# antiquity (Ibrahim ibn Yaqub's c. 965 account) without overstating a
+# Development-1 start. See history/characters/prague_1066.txt.
+# ---------------------------------------------------------------------
+
+kehillah_setup_prague_start_effect = {
+	if = {
+		limit = {
+			exists = domicile
+			NOT = { has_character_flag = kehillah_start_configured }
+		}
+		add_character_flag = kehillah_start_configured
+		save_scope_as = kehillah_leader
+
+		add_gold = 30
+
+		primary_title = {
+			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_prosperity add = 80 }
+			change_variable = { name = kehillah_var_greatness add = 30 }
+		}
+
+		kehillah_seed_community_effect = yes
+		kehillah_record_quarter_effect = yes
+		kehillah_update_leader_flavor_effect = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_setup_vienna_start_effect
+# Scope: the Kehillah of Vienna's leader (character).
+#
+# Dev 1 -> 80 starting Prosperity. Greatness 10, the thinnest of the
+# region's own two communities -- Eastern Ashkenaz is deliberately thin
+# by design, and Vienna is deliberately the thinner of its two members
+# (v6 spec section 3b). See history/characters/vienna_1066.txt.
+# ---------------------------------------------------------------------
+
+kehillah_setup_vienna_start_effect = {
+	if = {
+		limit = {
+			exists = domicile
+			NOT = { has_character_flag = kehillah_start_configured }
+		}
+		add_character_flag = kehillah_start_configured
+		save_scope_as = kehillah_leader
+
+		add_gold = 30
+
+		primary_title = {
+			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_prosperity add = 80 }
+			change_variable = { name = kehillah_var_greatness add = 10 }
+		}
+
+		kehillah_seed_community_effect = yes
+		kehillah_record_quarter_effect = yes
+		kehillah_update_leader_flavor_effect = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_setup_london_start_effect
+# Scope: the Kehillah of London's leader (character).
+#
+# Dev 2 -> 220 starting Prosperity, the highest Development in Anglia.
+# Greatness 15 -- see history/characters/london_1066.txt for the region-
+# wide anachronism note this and the other three Anglia communities
+# share (real English Jewish settlement is documented only from the
+# years just after 1066).
+# ---------------------------------------------------------------------
+
+kehillah_setup_london_start_effect = {
+	if = {
+		limit = {
+			exists = domicile
+			NOT = { has_character_flag = kehillah_start_configured }
+		}
+		add_character_flag = kehillah_start_configured
+		save_scope_as = kehillah_leader
+
+		add_gold = 60
+
+		primary_title = {
+			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_prosperity add = 220 }
+			change_variable = { name = kehillah_var_greatness add = 15 }
+		}
+
+		kehillah_seed_community_effect = yes
+		kehillah_record_quarter_effect = yes
+		kehillah_update_leader_flavor_effect = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_setup_york_start_effect
+# Scope: the Kehillah of York's leader (character).
+#
+# Dev 1 -> 80 starting Prosperity. Greatness 5, deliberately minimal --
+# per the user's own explicit design note, York's later prominence
+# (culminating in the 1190 massacre) should read as a later development,
+# not something this 1066 start already implies. See history/characters/
+# york_1066.txt.
+# ---------------------------------------------------------------------
+
+kehillah_setup_york_start_effect = {
+	if = {
+		limit = {
+			exists = domicile
+			NOT = { has_character_flag = kehillah_start_configured }
+		}
+		add_character_flag = kehillah_start_configured
+		save_scope_as = kehillah_leader
+
+		add_gold = 30
+
+		primary_title = {
+			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_prosperity add = 80 }
+			change_variable = { name = kehillah_var_greatness add = 5 }
+		}
+
+		kehillah_seed_community_effect = yes
+		kehillah_record_quarter_effect = yes
+		kehillah_update_leader_flavor_effect = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_setup_lincoln_start_effect
+# Scope: the Kehillah of Lincoln's leader (character).
+#
+# Dev 1 -> 80 starting Prosperity. Greatness 5 -- per the user's own note,
+# no early blood-libel flavor (the real 1255 accusation is well outside
+# this scenario). See history/characters/lincoln_1066.txt.
+# ---------------------------------------------------------------------
+
+kehillah_setup_lincoln_start_effect = {
+	if = {
+		limit = {
+			exists = domicile
+			NOT = { has_character_flag = kehillah_start_configured }
+		}
+		add_character_flag = kehillah_start_configured
+		save_scope_as = kehillah_leader
+
+		add_gold = 30
+
+		primary_title = {
+			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_prosperity add = 80 }
+			change_variable = { name = kehillah_var_greatness add = 5 }
+		}
+
+		kehillah_seed_community_effect = yes
+		kehillah_record_quarter_effect = yes
+		kehillah_update_leader_flavor_effect = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_setup_norwich_start_effect
+# Scope: the Kehillah of Norwich's leader (character).
+#
+# Dev 1 -> 80 starting Prosperity. Greatness 10, a shade above York/
+# Lincoln's own 5 but still deliberately modest -- the real 1144 Norwich
+# accusation is a candidate for future dated flavor content on this
+# title, not foreshadowed by an inflated starting rating here. See
+# history/characters/norwich_1066.txt.
+# ---------------------------------------------------------------------
+
+kehillah_setup_norwich_start_effect = {
+	if = {
+		limit = {
+			exists = domicile
+			NOT = { has_character_flag = kehillah_start_configured }
+		}
+		add_character_flag = kehillah_start_configured
+		save_scope_as = kehillah_leader
+
+		add_gold = 30
+
+		primary_title = {
+			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_prosperity add = 80 }
+			change_variable = { name = kehillah_var_greatness add = 10 }
+		}
+
+		kehillah_seed_community_effect = yes
+		kehillah_record_quarter_effect = yes
+		kehillah_update_leader_flavor_effect = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_setup_narbonne_start_effect
+# Scope: the Kehillah of Narbonne's leader (character).
+#
+# Dev 3 -> 420 starting Prosperity, the highest Development in Provence
+# (and this region's own duchy capital). Greatness 90 -- Narbonne's real,
+# documented prominence as a center of Talmudic learning into the 11th
+# century, well short of Lunel's own 110 (see that community's own
+# header for why: Lunel's number pulls forward a LATER renown per the
+# user's explicit instruction, where Narbonne's reflects standing it
+# genuinely already held by 1066). See history/characters/
+# narbonne_1066.txt.
+# ---------------------------------------------------------------------
+
+kehillah_setup_narbonne_start_effect = {
+	if = {
+		limit = {
+			exists = domicile
+			NOT = { has_character_flag = kehillah_start_configured }
+		}
+		add_character_flag = kehillah_start_configured
+		save_scope_as = kehillah_leader
+
+		add_gold = 90
+
+		primary_title = {
+			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_prosperity add = 420 }
+			change_variable = { name = kehillah_var_greatness add = 90 }
+		}
+
+		kehillah_seed_community_effect = yes
+		kehillah_record_quarter_effect = yes
+		kehillah_update_leader_flavor_effect = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_setup_beziers_start_effect
+# Scope: the Kehillah of Béziers's leader (character).
+#
+# Dev 2 -> 220 starting Prosperity. Greatness 20, modest -- a real but
+# smaller medieval community alongside Narbonne's much more prominent
+# one, no specific named 1066 figure documented. See history/characters/
+# beziers_1066.txt.
+# ---------------------------------------------------------------------
+
+kehillah_setup_beziers_start_effect = {
+	if = {
+		limit = {
+			exists = domicile
+			NOT = { has_character_flag = kehillah_start_configured }
+		}
+		add_character_flag = kehillah_start_configured
+		save_scope_as = kehillah_leader
+
+		add_gold = 60
+
+		primary_title = {
+			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_prosperity add = 220 }
+			change_variable = { name = kehillah_var_greatness add = 20 }
+		}
+
+		kehillah_seed_community_effect = yes
+		kehillah_record_quarter_effect = yes
+		kehillah_update_leader_flavor_effect = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_setup_montpellier_start_effect -- REMOVED 2026-09-11, user
+# request. c_kehillah_montpellier and c_kehillah_lunel shared the exact
+# same host county (c_montpellier -- Lunel is not on the CK3 map at any
+# tier, see c_kehillah_lunel's own landed_titles header, which already
+# flagged this placement as "a real, deliberate compromise" before the
+# duplication itself was judged one Kehillah too many for one county).
+# Cut Montpellier, kept Lunel (the stronger historical figure of the
+# two here -- a real medieval Talmudic academy town, per that same
+# header). Removed from: common/landed_titles/kehillah_landed_titles.txt,
+# history/titles/kehillah_titles.txt, history/characters/
+# montpellier_1066.txt (deleted), common/on_action/kehillah_on_actions.txt
+# (setup-effect call + registry entry), common/scripted_triggers/
+# kehillah_scripted_triggers.txt (is_kehillah_title_trigger), and this
+# file's own setup effect (deleted, was here).
+# ---------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------
+# kehillah_setup_lunel_start_effect
+# Scope: the Kehillah of Lunel's leader (character).
+#
+# Dev 2 -> 220 starting Prosperity, the same material start as Béziers/
+# Montpellier despite sharing Montpellier's own host county (common/
+# landed_titles/kehillah_landed_titles.txt's own comment on the
+# placement compromise). Greatness 110 -- deliberately the SECOND-HIGHEST
+# in this whole pass's roster, after only Troyes's 140, and clearly above
+# Narbonne's own 90 despite Narbonne's higher Development and duchy-
+# capital status. This is the user's own explicit instruction (v6 spec
+# section 3d): Lunel's real historical weight -- an academy that drew
+# students from abroad -- must show up as genuinely strong Greatness,
+# not be quietly diminished by the shared-county compromise. See history/
+# characters/lunel_1066.txt for the honest anachronism note (the
+# academy's actual fame is a 12th-century flowering, pulled forward here
+# on explicit instruction, unlike York/Norwich's own later notability,
+# which is deliberately NOT pulled forward).
+# ---------------------------------------------------------------------
+
+kehillah_setup_lunel_start_effect = {
+	if = {
+		limit = {
+			exists = domicile
+			NOT = { has_character_flag = kehillah_start_configured }
+		}
+		add_character_flag = kehillah_start_configured
+		save_scope_as = kehillah_leader
+
+		add_gold = 70
+
+		primary_title = {
+			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_prosperity add = 220 }
+			change_variable = { name = kehillah_var_greatness add = 110 }
 		}
 
 		kehillah_seed_community_effect = yes
@@ -1174,6 +1879,96 @@ kehillah_update_leader_flavor_effect = {
 }
 
 
+# ---------------------------------------------------------------------
+# kehillah_refresh_shum_bond_effect
+# Scope: the Kehillah leader (character) of Worms, Speyer or Mainz
+# specifically. Called from common/on_action/kehillah_on_actions.txt's
+# kehillah_on_game_start (the three starting leaders) and kehillah_on_
+# title_gain (a new leader taking office in any of the three, guarded
+# there to only those three titles -- see that on_action's own comment).
+#
+# ADDED 2026-09-10 (v6 spec section 1). d_kehillah_shum, the titular
+# duchy that used to group these three communities, is gone -- see
+# common/landed_titles/kehillah_landed_titles.txt's header. This effect
+# is the "concrete flavor way" the spec asks for in its place: a small,
+# permanent, non-decaying reverse_add_opinion bond (kehillah_shum_bond_
+# opinion, common/opinion_modifiers/kehillah_opinion_modifiers.txt)
+# between whoever currently leads the three, refreshed every time one of
+# them changes hands so the bond survives leadership turnover rather
+# than quietly lapsing on the first succession.
+#
+# BOTH add_opinion AND reverse_add_opinion, same call, same target,
+# same modifier -- add_opinion changes the OTHER leader's opinion of the
+# original caller (the scope this whole block is nested inside is the
+# other leader's own), reverse_add_opinion changes the original caller's
+# own opinion of the other leader (this file's own kehillah_opinion_
+# modifiers.txt header already documents reverse_add_opinion's "target's
+# opinion of the acting scope changes" semantics) -- so a single nested
+# block makes the bond fully mutual in one pass, rather than needing to
+# separately open the caller's own scope afterward.
+#
+# save_scope_as = kehillah_shum_bond_self, NOT root, to refer back to the
+# original caller from inside the nested title:X.holder blocks below.
+# root would normally do this (it is meant to stay fixed to the
+# effect's own original scope regardless of nesting), but one real call
+# site -- kehillah_on_game_start (common/on_action/kehillah_on_actions.
+# txt), where this effect is called from inside
+# title:c_kehillah_worms ?= { holder ?= { ... } } -- has an outer root
+# that is NOT reliably bound to any specific character at all, per this
+# file's own already-documented finding on kehillah_setup_worms_start_
+# effect's header ("on_game_start_after_lobby is a global on_action with
+# no bound character root... root's binding here is not reliable enough
+# to use at all"). That effect solved the identical problem with
+# save_scope_as = kehillah_leader instead of root; this effect follows
+# the same precedent rather than re-introducing the bug in a new place.
+# "this", unlike root, DOES correctly track the current scope through
+# every holder ?= / title: X open, so save_scope_as = kehillah_shum_
+# bond_self at the top of this effect captures the right character in
+# every calling context, on_game_start included.
+#
+# Called once per starting/succeeding leader (up to three times per
+# actual turnover event across this mod's three call sites), which
+# means every PAIR among the three gets covered even though any single
+# call only touches "me and the other two" -- redundant re-application
+# on an already-current pair is harmless: the modifier is not stacking
+# and carries no years/decay to reset, so applying it twice is exactly
+# as good as applying it once.
+#
+# NOT = { this = title:c_kehillah_X.holder } guards against bonding a
+# leader to themselves -- relevant the moment a single person somehow
+# ends up holding more than one of the three (not expected under normal
+# appointment succession, but cheap to guard against regardless). The
+# holder ?= safe-scope-open handles the title being briefly unheld
+# during succession processing.
+# ---------------------------------------------------------------------
+
+kehillah_refresh_shum_bond_effect = {
+	save_scope_as = kehillah_shum_bond_self
+
+	if = {
+		limit = { NOT = { this = title:c_kehillah_worms.holder } }
+		title:c_kehillah_worms.holder ?= {
+			add_opinion = { modifier = kehillah_shum_bond_opinion target = scope:kehillah_shum_bond_self }
+			reverse_add_opinion = { modifier = kehillah_shum_bond_opinion target = scope:kehillah_shum_bond_self }
+		}
+	}
+	if = {
+		limit = { NOT = { this = title:c_kehillah_speyer.holder } }
+		title:c_kehillah_speyer.holder ?= {
+			add_opinion = { modifier = kehillah_shum_bond_opinion target = scope:kehillah_shum_bond_self }
+			reverse_add_opinion = { modifier = kehillah_shum_bond_opinion target = scope:kehillah_shum_bond_self }
+		}
+	}
+	if = {
+		limit = { NOT = { this = title:c_kehillah_mainz.holder } }
+		title:c_kehillah_mainz.holder ?= {
+			add_opinion = { modifier = kehillah_shum_bond_opinion target = scope:kehillah_shum_bond_self }
+			reverse_add_opinion = { modifier = kehillah_shum_bond_opinion target = scope:kehillah_shum_bond_self }
+		}
+	}
+}
+
+
 # =====================================================================
 # kehillah_dispute_pick_parties_effect
 # Scope: the Kehillah leader (character).
@@ -1291,5 +2086,23 @@ kehillah_dispute_pick_parties_effect = {
 	}
 	root.court_position:chief_rabbi_kehillah_position ?= {
 		save_scope_as = kehillah_chief_rabbi
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_task_contract_pick_employer_effect
+# Scope: a character (the Kehillah leader). v8 spec section 2 point 1.
+#
+# Saves scope:employer for events/kehillah_task_contract_events.txt's
+# router event. Kept in exact lockstep with kehillah_has_task_contract_
+# employer_candidate_trigger (common/scripted_triggers/kehillah_
+# scripted_triggers.txt) -- same selection, same filters -- so the two
+# can never disagree about who counts as a candidate.
+# ---------------------------------------------------------------------
+
+kehillah_task_contract_pick_employer_effect = {
+	domicile.domicile_location.county.holder = {
+		save_scope_as = employer
 	}
 }

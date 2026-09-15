@@ -183,6 +183,12 @@ icon, activity header icon, activity header background, phase icon) -- a real, a
 
 ## 9. Live-test pass, 2026-09-08 -- PASS, with a real bug found and fixed live
 
+> **Partly superseded by §11.** This pass called the docket done, and two structural bugs -- the
+> whole docket firing at once, and the activity never ending -- survived it, because it never
+> followed a real hosted session past case 1. Everything it confirmed about hosting, travel,
+> co-judge selection, the per-case skill checks and the doctrine change still stands; its account of
+> how the docket *sequences and closes* describes the pre-fix build, not the current one.
+
 Full account: [docs/testing/2026-09-08-bet-din-conference-live-test-log.md](../testing/2026-09-08-bet-din-conference-live-test-log.md).
 Summary, since this is the section anyone deciding "is this actually done" should read first:
 
@@ -321,3 +327,120 @@ to the old 3-event shape.
 Retrofitting this into the shipped Part 1 build. This is additive design for whenever Part 2 (or an
 intermediate "Part 1.5") picks it up -- Part 1's three-judge, three-hardcoded-case build stands as
 tested in section 9 and is unchanged by anything in this section.
+
+## 11. Docket loop fix, 2026-09-08 -- the docket is now phase-driven and scored
+
+**Reported symptom (user, after playing the Part 1 build):** every event of the docket fired at
+once, and then the activity never ended -- it "gets caught in a loop."
+
+Both halves were real, and both were structural rather than a bad value somewhere. Section 9's live
+test did not catch either one: its console-driven half fired the case events directly, which
+exercises the chain but never the activity's own phase lifecycle, and its follow-up pass through the
+real hosting UI clicked through case 1 only and stopped there. So the two things that were broken
+are exactly the two things that pass never reached the end of. Worth recording as a testing lesson,
+not just a code fix: *"case 1 fired correctly from a real `on_phase_active`"* is not evidence that a
+multi-case docket sequences or terminates.
+
+### Cause 1 -- one phase, one unbroken chain
+
+Every event fired the next immediately (`after` -> `trigger_event`, no delay), and each case's
+resolution fired the **next case's** host event. One `on_phase_active` therefore produced all ten
+events of the docket inside a single day.
+
+### Cause 2 -- nothing ever ended the phase
+
+`common/activities/activity_types/kehillah_bet_din_conference.txt` never called
+`progress_activity_phase_after`. That call is what ends a phase in CK3; every vanilla
+`activity_type` makes it, from `on_phase_active` or `on_enter_phase` (`feast.txt`, `wedding.txt`,
+`coronation.txt`, `tournament.txt`, `local_examination.txt` were all checked -- no exceptions).
+Without it the activity's single phase never finished, so the activity never completed, so the host
+stayed in a conference that had already said everything it had to say. This is a first-of-its-kind
+gap of exactly the sort §3 warned a custom `activity_type` would carry.
+
+### The shape now
+
+- **Three predefined phases, one case each** (`phase_bet_din_case_1/2/3`). The phase count *is* the
+  "docket of three" rule -- `kehillah_bet_din_docket_case_count` in the script-values file documents
+  the number, but the phases enforce it. Vanilla precedent for several predefined, same-location,
+  sequential phases: `local_examination.txt`.
+- **Each phase draws its case at random from those not yet heard this session**
+  (`kehillah_bet_din_draw_case_effect`), with the heard set kept as a `global_var` list of flags.
+  This is the draw-without-repeat machinery §5's Part 2 asked for, delivered early because the fix
+  needed a per-phase case source anyway. **Part 2's case *content* is still not started** and still
+  gated on the user's case-idea draft (§5, §7) -- with only the three Part 1 cases in the pool, a
+  session hears all three in a random order. Adding a fourth case is now one `random_list` entry
+  plus its three events, and nothing else.
+- **The draw also gates on whether a case can be staged at all**: cases 1-2 require the same
+  two-different-dynasties court `kehillah_has_dispute_candidates_trigger` already defines (case 2
+  additionally requires an adult woman, matching its own picker and its "she is an agunah" text),
+  and case 3 only comes up while the faith still has `doctrine_polygamy`. This closes, for the draw,
+  the small-court gap section 9 left open: a thin court can no longer draw a case whose text names
+  courtiers who do not exist.
+- **Within a case the three events are `kehillah_bet_din_case_step_days` (3) apart**, so a case reads
+  as a session being worked through rather than three popups in one click.
+- **A case's resolution ends its phase** (`kehillah_bet_din_advance_docket_effect`, via
+  `involved_activity`) instead of summoning the next case. A per-phase ceiling of
+  `kehillah_bet_din_case_phase_days` (30) exists purely as a hang guard, not as the normal pace.
+- **The activity's own `on_complete` fires the closing event**, so the docket closes even if a case
+  was skipped or a chain never finished.
+
+### The session score (new -- answers "rewards based on the degree of success")
+
+Two scores now exist and they are deliberately different things:
+
+| | scope | reset | read by |
+|---|---|---|---|
+| `kehillah_bet_din_tally` | one case | start of each case | that case's resolution, for a great/good/poor verdict tier |
+| `kehillah_bet_din_session_score` | whole docket | when the docket opens | `kehillah_bet_din.0099`, once, at the close |
+
+Each case's resolution adds its verdict tier to the session score (great +2, good +1, poor -1), so
+a three-case docket scores +6 down to -3. The closing event reads it and pays out on the convening
+community: **landmark** (>= 5), **strong** (>= 3), **adequate** (>= 1), or **failed** (below that,
+and a real loss -- Greatness and Stability down, prestige lost, the same stance
+`kehillah_bet_din.0023` already takes toward a herem the panel couldn't carry). Greatness-led,
+because a well-ruled docket is what other communities hear about. A session that closed without a
+single verdict (thin court, or every popup ignored) gets no effects either way -- that is a docket
+that never happened, not a failure to punish.
+
+The reward is applied from the closing event's **option**, not its `immediate` block, and the tier
+is additionally stated in prose by a triggered `desc`. Reason: effects in an `immediate` block are
+applied but never shown, which means **every `custom_tooltip` in the per-case resolution events is
+currently invisible to the player**. That is a real, separate cosmetic gap, left alone here rather
+than fixed blind, because moving it would mean re-testing all three cases' verdict paths in a pass
+that can actually boot the game.
+
+### Files changed
+
+- `common/activities/activity_types/kehillah_bet_din_conference.txt` -- three phases, phase
+  progression, `on_complete`.
+- `common/scripted_effects/kehillah_bet_din_scripted_effects.txt` -- new "docket state machine"
+  section: `open_docket`, `draw_case`, `record_case_result`, `advance_docket`, `close_docket`.
+- `common/scripted_triggers/kehillah_scripted_triggers.txt` -- `kehillah_bet_din_session_score_at_
+  least_trigger`, `kehillah_bet_din_session_heard_any_case_trigger` (both pair their `exists =`
+  check with their comparison on purpose -- see their headers).
+- `common/script_values/kehillah_script_values.txt` -- pacing values, per-case score values, session
+  thresholds and session rewards.
+- `events/kehillah_bet_din_events.txt` -- step delays within each case; resolutions record their
+  tier and end their phase instead of chaining; `kehillah_bet_din.0099` rewritten as the scoring
+  event.
+- `localization/english/kehillah_l_english.yml` -- three phase names replace the single
+  `phase_bet_din_session`; four tier descs and four tier tooltips for the closing event.
+
+### Status and what is not done
+
+`ck3-tiger` is clean (**0 fatal, 0 error**); the only new warnings are three missing phase icon
+`.dds` files, the same known art gap the rest of this activity already has.
+
+**NOT LIVE-TESTED.** Nothing in this section has been confirmed against a real boot -- the fix was
+written from the game's own files and vanilla precedent, and it changes the activity's phase
+lifecycle, which is precisely the part section 9's pass never exercised to the end. It needs a pass
+that hosts the conference for real and follows it through all three cases to the closing event, per
+this project's standing rule for structural changes. Specifically unverified: that three sequential
+predefined phases advance the way `local_examination.txt` implies, that `on_complete` fires the
+closing event once, and that the random draw actually varies the case order across sessions.
+
+One edge case is accepted deliberately rather than solved: if a player leaves a case's popup
+unanswered past the 30-day phase ceiling, two cases can overlap and share the single-`global_var`
+per-case tally, so one verdict tier can be computed from the other case's checks. The docket still
+ends, nothing loops, and every drawn case is still heard and scored. The reasoning for preferring
+that over silently skipping cases is recorded in `kehillah_bet_din_advance_docket_effect`'s header.

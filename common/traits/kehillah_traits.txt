@@ -12,8 +12,8 @@
 # person holds religious authority", not "this person is smart and
 # happens to be Jewish".
 #
-# ACQUISITION: not a lifestyle-tree trait, so no perk track. Granted
-# directly by two things instead --
+# ACQUISITION -- REVISED 2026-09-09, at user request, from the original
+# two-source design to three:
 #   1. Holding the Chief Rabbi court position (see
 #      common/court_positions/types/kehillah_officers.txt's
 #      on_court_position_received/revoked/invalidated/vacated hooks).
@@ -21,6 +21,17 @@
 #      (history/characters/worms_1066.txt) -- he is already documented
 #      as chief rabbi and yeshiva head, so he starts with it rather
 #      than waiting to be inferred from other traits.
+#   3. NEW: sitting on a Bet Din Conference panel at all, as host or
+#      co-judge -- kehillah_bet_din_grant_rabbi_trait_effect (common/
+#      scripted_effects/kehillah_bet_din_scripted_effects.txt), called
+#      from kehillah_bet_din_open_docket_effect on all three judges once
+#      the panel is set. "You become a rabbi when you go to a bet din as
+#      a judge" was the literal request -- judging is now, on its own,
+#      sufficient, not just office-holding or starting history. NOT
+#      silent, per a same-day follow-up request: this is an offer, not
+#      a grant -- kehillah_bet_din_semicha.0001 (events/kehillah_bet_
+#      din_semicha_events.txt) lets the judge accept semicha or decline
+#      it (offered again next time they judge, not permanently refused).
 # This also makes it the clean, direct signal for
 # kehillah_leader_is_rabbinic_trigger (common/scripted_triggers/
 # kehillah_scripted_triggers.txt), which previously had to infer
@@ -31,13 +42,20 @@
 # Chief Rabbi office specifically (the ruler cannot hold their own
 # community's court positions; only a courtier can).
 #
-# category = fame, not lifestyle: this is a recognized status the
-# community accords someone, not a personally chosen life path, and
-# fame-category traits (see vanilla's excommunicated for the same
-# category choice) sit outside the lifestyle-trait slot limit, which
-# matters because this trait is granted by script rather than earned
-# through the normal lifestyle-progression UI that limit is meant to
-# ration.
+# category = lifestyle, CHANGED 2026-09-09 at user request (was fame).
+# The original reasoning for fame -- staying outside the lifestyle-trait
+# slot limit, since this was granted by script rather than earned --
+# assumed that slot limit is enforced BY the category field itself.
+# Checked against vanilla before making this change: theologian and
+# scholar (common/traits/00_traits.txt) are BOTH category = lifestyle
+# and routinely coexist on the same character (an education trait plus
+# an adult lifestyle-commitment trait) -- so category alone does not
+# force single-slot exclusivity; whatever DOES enforce "only one adult
+# lifestyle commitment" lives in the commitment interactions themselves,
+# which this trait was never part of anyway. So there was no real
+# tradeoff being protected, and category = lifestyle now correctly
+# reads this trait as what it has become: a path with real track
+# progression, not a static badge.
 #
 # icon reuses theologian.dds rather than new art, per this mod's
 # established art policy (see common/domiciles/types/
@@ -45,6 +63,26 @@
 # closest existing semantic match, and Isaac himself already carries
 # the theologian trait, so the visual continuity is a feature, not a
 # shortcut.
+#
+# TRACKS, ADDED 2026-09-09: three real, XP-driven tracks -- parshanut
+# (biblical exegesis), talmudics (Talmudic argumentation), halakha
+# (legal ruling). BASE bonus (learning/piety, present regardless of any
+# track progress) sits on the trait directly, below; each track then
+# layers THREE reward thresholds on top (30/65/100, engine-capped at 100), the third added
+# in this same pass specifically to give "each tier a different quality
+# of book" (below) three real quality levels to land on, not two.
+#
+# WHO GAINS XP AND WHEN: events/kehillah_bet_din_events.txt's docket.
+# Every case resolution that reaches a verdict is fundamentally a
+# Talmud/Halakha exercise, so kehillah_bet_din_record_case_result_effect
+# (common/scripted_effects/kehillah_bet_din_scripted_effects.txt) grants
+# talmudics + halakha XP to the host and both co-judges, whichever of
+# them hold this trait, on every tier. Parshanut is the "more rarely
+# Tanakh" case specifically -- kehillah_bet_din_grant_parshanut_xp_
+# effect only fires from a case's GREAT-tier branch, reusing the
+# existing tier check rather than adding a second random roll: a
+# ruling has to actually be excellent before it reads as reaching for
+# Tanakh-level authority, not just competent Talmudic reasoning.
 # =====================================================================
 
 # Reader variables for `compatibility` blocks below. CK3's `@variable`
@@ -59,10 +97,17 @@
 @neg_compat_low = -5
 
 kehillah_rabbi_trait = {
-	category = fame
+	category = lifestyle
 	icon = theologian.dds
 
+	# BASE bonus -- present from the moment this trait is held, before
+	# any track XP at all. "A little extra piety and learning," per user
+	# request: learning was already +2 from the original design; added a
+	# small flat monthly_piety alongside the existing gain-MULTIPLIER so
+	# there is a real, literal "gains a little extra piety" line too, not
+	# only "gains piety faster."
 	learning = 2
+	monthly_piety = 0.1
 	monthly_piety_gain_mult = 0.15
 	same_faith_opinion = 5
 
@@ -75,6 +120,74 @@ kehillah_rabbi_trait = {
 		compassionate = @pos_compat_low
 		arbitrary = @neg_compat_low
 		cynical = @neg_compat_low
+	}
+
+	# Three thresholds per track (30/65/100 -- see the UPDATED note just below) -- vanilla's own lifestyle_
+	# hunter tracks (common/traits/00_traits.txt) only use two, but this
+	# needed a third specifically so the book-writing decisions below
+	# (common/decisions/kehillah_rabbi_book_decisions.txt) have three
+	# real quality tiers to land on, the top one reading as "legendary"
+	# and not just "the better of two options." See this file's header
+	# for who actually grants this XP and when.
+	# UPDATED 2026-09-09: thresholds are 30/65/100, not 50/100/150 --
+	# ck3-tiger caught this immediately ("trait xp only goes up to 100")
+	# before it ever reached a live game: trait XP is hard-capped at 100
+	# by the engine, so 150 was never reachable. This turns out to read
+	# BETTER than the original plan, not worse -- 100 = fully maxing the
+	# track is a more literal match for "COMPLETING one of the tracks"
+	# ungating the legendary book than an arbitrary 150 ever was.
+	tracks = {
+		parshanut = {
+			30 = {
+				learning = 1
+				monthly_piety = 0.2
+			}
+			65 = {
+				learning = 1
+				monthly_piety = 0.3
+				same_faith_opinion = 5
+			}
+			100 = {
+				learning = 1
+				monthly_piety = 0.4
+				same_faith_opinion = 5
+				monthly_prestige = 0.3
+			}
+		}
+		talmudics = {
+			30 = {
+				learning = 1
+				diplomacy = 1
+			}
+			65 = {
+				learning = 1
+				diplomacy = 1
+				same_faith_opinion = 5
+			}
+			100 = {
+				learning = 1
+				diplomacy = 1
+				same_faith_opinion = 5
+				monthly_prestige = 0.3
+			}
+		}
+		halakha = {
+			30 = {
+				learning = 1
+				stewardship = 1
+			}
+			65 = {
+				learning = 1
+				stewardship = 1
+				monthly_prestige = 0.3
+			}
+			100 = {
+				learning = 1
+				stewardship = 1
+				monthly_prestige = 0.5
+				same_faith_opinion = 5
+			}
+		}
 	}
 }
 

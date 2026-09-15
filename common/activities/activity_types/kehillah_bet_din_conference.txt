@@ -1,11 +1,17 @@
 ﻿# =====================================================================
 # Kehillah Bet Din Conference -- travelled-to gathering activity.
 #
-# Source of truth: docs/spec/v5-bet-din-conference.md. Supersedes
-# kehillah_shum_takkanah_decision (retired from common/decisions/
-# kehillah_decisions.txt -- see that file's header) and its event
-# kehillah_shum.0001 (events/kehillah_shum_events.txt, now unused --
-# see that file's own retirement note).
+# Source of truth: docs/spec/v5-bet-din-conference.md, generalized to all
+# four minhag regions by docs/spec/v6-minhag-regions.md section 4.
+# Supersedes kehillah_shum_takkanah_decision (retired from common/
+# decisions/kehillah_decisions.txt -- see that file's header) and its
+# event kehillah_shum.0001 (events/kehillah_shum_events.txt -- deleted
+# outright 2026-09-10, having been dead code, kept only for historical
+# reference, since 2026-09-08; see common/scripted_triggers/kehillah_
+# scripted_triggers.txt's retirement note on is_kehillah_shum_member_
+# trigger for why keeping it around any longer was no longer possible
+# once that trigger -- which its own trigger block still referenced --
+# was itself retired).
 #
 # PART 1 STATUS (test build, 2026-09-08): the first custom
 # activity_type this mod has built. Deliberately minimal next to
@@ -20,40 +26,96 @@
 # under docs/testing/, the same caution v4 spec section 2 applied to
 # the Sh'um duchy nesting before it was confirmed live.
 #
-# WHO CAN CONVENE. Unchanged from the retired decision: only a Sh'um
-# member's leader (is_kehillah_shum_member_trigger), and only the one
-# currently holding Greatness leadership among the three
-# (kehillah_is_shum_greatness_leader_trigger) -- both triggers defined
-# in common/scripted_triggers/kehillah_scripted_triggers.txt, reused
-# verbatim rather than redefined. This also means, unlike a scripted
-# decision, no separate "start" decision is needed -- the vanilla
-# activity-hosting UI reads is_shown/can_start_showing_failures_only
-# directly, the same way it does for Hunt or a Grand Wedding.
+# GENERALIZED TO ALL FOUR MINHAG REGIONS, 2026-09-10 (v6 spec section 4),
+# THEN REWORKED THE SAME DAY (v7 spec, docs/spec/v7-minhag-geographic-
+# tagging.md) to read a different underlying data source. v5/Part-1's
+# hardcoded Sh'um trio was first generalized to real de jure parentage
+# (primary_title.de_jure_liege, the four d_kehillah_<region> duchies v6
+# built) -- that worked, but those four duchies are GONE as of the same
+# day's v7 pass (common/landed_titles/kehillah_landed_titles.txt's own
+# header has the full account: de jure nesting cannot support founding a
+# Kehillah anywhere, only at pre-authored locations). Every check and
+# selection below now reads the geographic-tagging mechanism instead
+# (kehillah_minhag variable, tagged onto real vanilla duchies by
+# kehillah_tag_minhag_regions_effect, common/scripted_effects/kehillah_
+# minhag_geography_effects.txt) via kehillah_has_known_minhag_region_
+# trigger / kehillah_shares_minhag_region_trigger / kehillah_is_regional_
+# greatness_leader_trigger / kehillah_region_can_field_bet_din_panel_
+# trigger (common/scripted_triggers/kehillah_scripted_triggers.txt). The
+# BEHAVIOR this activity provides is unchanged from the v6 generalization
+# -- it still works identically for Western Ashkenaz's six members,
+# Anglia's four, or Provence's four, and still correctly refuses to offer
+# convening at all for Eastern Ashkenaz's two -- only what each trigger
+# reads underneath changed, not what it answers.
+#
+# WHO CAN CONVENE. Only a community whose real host geography resolves to
+# a minhag region this mod tags at all (kehillah_has_known_minhag_region_
+# trigger), and only the one currently holding Greatness leadership
+# within its OWN region (kehillah_is_regional_greatness_leader_trigger,
+# generalizing kehillah_is_shum_greatness_leader_trigger from a hardcoded
+# trio to "however many communities are in my own region") -- preserving
+# "the system of the greatest community being the one that gets to host
+# the bet din" exactly, only widening its scope. Both triggers defined in
+# common/scripted_triggers/kehillah_scripted_triggers.txt. This also
+# means, unlike a scripted decision, no separate "start" decision is
+# needed -- the vanilla activity-hosting UI reads is_shown/can_start_
+# showing_failures_only directly, the same way it does for Hunt or a
+# Grand Wedding.
 #
 # THE PANEL. The host plus special_guests kehillah_bet_din_co_judge_1/2
-# -- always the other two Sh'um leaders, picked directly via
-# select_character rather than a generic invite (v5 spec section 4:
-# "the three community leaders," no new Dayan office). Each slot's
-# select_character is a 2-branch if/else, not 3: given v1 has exactly
-# three fixed titles, checking "am I the host's own title" against ONE
-# of the other two per slot is enough to always land on the two the
-# host does NOT hold. Truth table for reference: host=worms ->
-# {speyer, mainz}; host=speyer -> {worms, mainz}; host=mainz ->
-# {worms, speyer}.
+# -- the two NEXT-highest-Greatness OTHER communities sharing the host's
+# own minhag region, picked via ordered_in_global_list over the
+# kehillah_registered_communities registry (v6 spec section 4 item 2's
+# own suggested default: "by Greatness... is a reasonable default"), not
+# a generic invite (v5 spec section 4: "the three community leaders," no
+# new Dayan office -- still true, just "three" is now "the host plus
+# two", not fixed to Sh'um specifically). Each slot's select_character
+# ranks every OTHER community sharing the host's own minhag region by
+# Greatness and picks the Nth-ranked one (position = 0 for judge_1,
+# position = 1 for judge_2) -- guaranteed to find a real candidate for
+# BOTH slots precisely because is_shown/can_start_showing_failures_only
+# already refuse to offer convening at all in a region with fewer than 3
+# members (kehillah_region_can_field_bet_din_panel_trigger above), so
+# is_required stays yes unconditionally rather than becoming conditional
+# per region size -- the spec's own explicitly offered alternative
+# resolution, chosen because it is simpler and pushes the gating into one
+# well-documented place instead of two.
 #
-# THE DOCKET. A fixed, hardcoded 3-case sequence for this test build,
-# NOT the large random-draw-without-repeat pool v5 Part 2 wants --
-# building that pool is explicitly out of scope until docs/spec/
-# v5-bet-din-conference.md section 5's case-idea draft exists. See
-# events/kehillah_bet_din_events.txt for the three cases and the full
-# per-judge skill-check design -- that is where the actual engineering
-# risk this activity type exists to prove out lives, not in this file.
+# THE DOCKET. Three cases per session, each one its own activity phase,
+# each DRAWN AT RANDOM from the cases this session has not heard yet --
+# see the phases block below and kehillah_bet_din_draw_case_effect
+# (common/scripted_effects/kehillah_bet_din_scripted_effects.txt). The
+# draw-without-repeat machinery v5 Part 2 wants therefore exists now;
+# what is still missing is Part 2's actual CASE CONTENT, which remains
+# explicitly out of scope until docs/spec/v5-bet-din-conference.md
+# section 5's case-idea draft exists. With only the three Part 1 cases
+# in the pool, a session hears all three in a random order; adding a
+# fourth is one more random_list entry and its events, nothing else.
+# See events/kehillah_bet_din_events.txt for the cases themselves and
+# the full per-judge skill-check design -- that is where the actual
+# engineering risk this activity type exists to prove out lives, not in
+# this file.
+#
+# UPDATED 2026-09-08 (docket loop fix): this file originally ran the
+# docket as one phase and one unbroken event chain, which fired every
+# event at once and left the activity unable to end. The phases block
+# below carries the full account.
 # =====================================================================
 
 activity_kehillah_bet_din_conference = {
 	is_shown = {
 		government_has_flag = government_is_kehillah
-		is_kehillah_shum_member_trigger = yes
+		# REWRITTEN 2026-09-10 (v7 spec, supersedes v6's de jure check).
+		# Every Kehillah county title is FLAT as of this pass (common/
+		# landed_titles/kehillah_landed_titles.txt's own header) -- there
+		# is no more d_kehillah_<region> duchy for primary_title.de_jure_
+		# liege to resolve to, so that check is now unconditionally false
+		# for all sixteen existing communities. kehillah_has_known_minhag_
+		# region_trigger (common/scripted_triggers/kehillah_scripted_
+		# triggers.txt) reads the SAME "does this community's real host
+		# geography fall inside a minhag region this mod tags" question
+		# off the new geographic-tagging mechanism instead.
+		kehillah_has_known_minhag_region_trigger = yes
 		is_adult = yes
 	}
 
@@ -61,8 +123,12 @@ activity_kehillah_bet_din_conference = {
 		NOT = { is_activity_type_on_cooldown = activity_kehillah_bet_din_conference }
 		is_imprisoned = no
 		custom_tooltip = {
-			text = kehillah_requires_shum_greatness_leader_tt
-			kehillah_is_shum_greatness_leader_trigger = yes
+			text = kehillah_requires_regional_panel_tt
+			kehillah_region_can_field_bet_din_panel_trigger = yes
+		}
+		custom_tooltip = {
+			text = kehillah_requires_regional_greatness_leader_tt
+			kehillah_is_regional_greatness_leader_trigger = yes
 		}
 	}
 
@@ -82,11 +148,47 @@ activity_kehillah_bet_din_conference = {
 	cooldown = { years = kehillah_bet_din_conference_cooldown_years }
 
 	allow_zero_guest_invites = yes
-	open_invite = no
 
-	# Nobody attends except the two co-judges below, picked directly via
-	# select_character rather than any generic invite pool.
+	# UPDATED 2026-09-09 at user request: the docket panel (the three
+	# Sh'um leaders, via special_guests below) is unchanged, but the
+	# conference now ALSO takes open invites, so it reads as a real
+	# gathering rather than three people alone in a room. open_invite
+	# used to be no with a can_be_activity_guest gated to exactly the
+	# two other Sh'um leaders (see the LIVE-TEST FIX note this comment
+	# replaces, kept below); that gate now OR's in a second population --
+	# Jewish landless adventurers and particularly high-learning Jewish
+	# rulers, via kehillah_bet_din_invite_rule_jewish_adventurers/
+	# _scholars (common/activities/guest_invite_rules/kehillah_bet_din_
+	# invite_rules.txt) -- while leaving the special-guest gate exactly
+	# as strict as it was.
 	#
+	# BOUNDED ON PURPOSE: both new rules iterate every_independent_ruler,
+	# not every character in the world -- the "high learning individual"
+	# a genuinely landless, courtless scholar somewhere in someone else's
+	# court is real and not reachable this way, but iterating every
+	# court everywhere is exactly the performance hazard vanilla's own
+	# activity_type.info warns about under max_guests ("too many people
+	# travelling to activities"). Revisit with vanilla's own range-
+	# restricted adventurer pattern (activity_invite_rule_landless_
+	# adventurers_restricted_range) if this population needs widening.
+	#
+	# THEY DON'T NEED TO ACCEPT: that is what open_invite + guest_invite_
+	# rules IS, as opposed to a special_guest -- an invited character's
+	# own guest_join_chance/AI decides whether they actually come. Only
+	# the two required co-judges are compelled to attend.
+	open_invite = yes
+
+	guest_invite_rules = {
+		rules = {
+			1 = kehillah_bet_din_invite_rule_jewish_scholars
+			2 = kehillah_bet_din_invite_rule_jewish_adventurers
+		}
+		defaults = {
+			1 = kehillah_bet_din_invite_rule_jewish_scholars
+			2 = kehillah_bet_din_invite_rule_jewish_adventurers
+		}
+	}
+
 	# LIVE-TEST FIX, 2026-09-08: `always = no` here silently made the
 	# activity unstartable -- the "Start" button in the planning UI did
 	# nothing at all (no dialog, no logged error; can_start_showing_
@@ -101,17 +203,68 @@ activity_kehillah_bet_din_conference = {
 	# checked for special-guest candidates too, not only the open invite
 	# pool -- `always = no` made our own required co-judges permanently
 	# invalid, so a required guest slot could never be satisfied and the
-	# activity could never start. Fixed to allow exactly "a Sh'um leader
-	# who isn't the host" -- the same two characters select_character
-	# already targets -- which keeps the "no generic invite pool" intent
-	# (open_invite = no, max_guests = 2, each special guest's own
-	# can_pick still pins down exactly who fills which slot).
+	# activity could never start. The Sh'um-leader branch below is that
+	# fix, unchanged; the second branch is the 2026-09-09 open-invite
+	# population described above.
+	#
+	# LIVE-TEST FIX, 2026-09-11: live test showed a Catholic Franconian
+	# duke ("Konrad of Luxembourg") arriving as an "Arrived" guest,
+	# alongside ordinary non-scholar courtiers. Root cause: the first OR
+	# branch, kehillah_shares_minhag_region_trigger, is PURELY geographic
+	# (common/scripted_triggers/kehillah_scripted_triggers.txt) -- it only
+	# reads capital_county.de_jure_liege.var:kehillah_minhag / the
+	# e_britannia special case, with no religion/Kehillah-ness requirement
+	# at all. It was written for -- and is still used correctly
+	# elsewhere in this file for -- checking a registered community's
+	# HOLDER, always reached after already filtering to
+	# kehillah_registered_communities (see the co-judge select_character
+	# blocks below, which apply it to `holder` after limiting to the
+	# registry). Used directly against `this` here (any activity-guest
+	# candidate in the world, not pre-filtered to the registry), it let
+	# ANY ruler whose capital merely sits inside a minhag-tagged de jure
+	# region satisfy it alone -- Judaism not required. Separately, the
+	# second OR branch's AND only required is_jewish_character_trigger
+	# plus (adventurer-government OR high learning) -- fine on its own,
+	# but the outer OR meant ordinary Jewish courtiers could ALSO slip in
+	# via the first (unguarded) branch if their capital happened to sit
+	# in a minhag region, which is how non-scholar courtiers appeared too.
+	#
+	# Fix: is_jewish_character_trigger is now a top-level AND, required
+	# for every candidate regardless of branch, and the region-sharing
+	# branch is restricted to is_ruler = yes (confirmed real vanilla
+	# trigger -- widely used, e.g. game/common/activities/guest_invite_
+	# rules/activity_invite_rules.txt's activity_invite_rule_knights,
+	# and game/common/activities/activity_types/imperial_examination.txt)
+	# so region-sharing alone is never sufficient; it now only ever
+	# admits a Jewish ruler of a same-region community, matching the
+	# "ruler of a registered community / scholar / adventurer" subclasses
+	# branch two already used, not bare courtier status. The two
+	# required co-judges are unaffected: they're selected below via
+	# ordered_in_global_list over kehillah_registered_communities'
+	# `holder`, who is a landed ruler (is_ruler = yes) of a community
+	# assumed Jewish by the mod's own registration invariant, and who
+	# already satisfies kehillah_shares_minhag_region_trigger by
+	# construction -- can_be_activity_guest re-checking that combination
+	# for them is a no-op, not a new exclusion.
 	can_be_activity_guest = {
-		is_kehillah_shum_member_trigger = yes
 		NOT = { this = scope:host }
+		is_jewish_character_trigger = yes
+		OR = {
+			AND = {
+				is_ruler = yes
+				kehillah_shares_minhag_region_trigger = { OTHER = scope:host }
+			}
+			has_government = landless_adventurer_government
+			learning >= kehillah_bet_din_scholar_guest_learning_threshold
+		}
 	}
 
-	max_guests = 2
+	# 2 required co-judges + up to 3 open-invite guests. reserved_guest_
+	# slots keeps those 2 special-guest seats free of the open-invite
+	# pool the way vanilla's own doc for that field describes ("so the
+	# guest list will not be completely filled up when we add them").
+	max_guests = 5
+	reserved_guest_slots = 2
 
 	special_guests = {
 		kehillah_bet_din_co_judge_1 = {
@@ -126,13 +279,48 @@ activity_kehillah_bet_din_conference = {
 			# separate named scope. The activity_type.info doc says as much
 			# ("root = host") but it's easy to misread given how much of
 			# the rest of this schema DOES use scope:host explicitly.
+			#
+			# REWRITTEN 2026-09-10 (v7 spec, supersedes v6 section 4 item
+			# 2's de jure version). root.primary_title.de_jure_liege no
+			# longer resolves to anything -- every Kehillah county title is
+			# FLAT as of this pass (common/landed_titles/kehillah_landed_
+			# titles.txt's own header) -- so ordered_de_jure_county has
+			# nothing left to open. Picks the highest-Greatness OTHER
+			# community sharing the host's own minhag region (position = 0
+			# after excluding the host itself) via ordered_in_global_list
+			# over kehillah_registered_communities instead -- confirmed
+			# vanilla iterator for a global_variable_list, with a real
+			# order_by/position precedent for exactly this "rank and take
+			# the Nth" shape (game/common/scripted_effects/03_dlc_fp2_
+			# scripted_effects.txt's ordered_in_global_list = { variable =
+			# fp2_struggle_ending_culture_list order_by = ... }, and
+			# position specifically confirmed generic across CK3's ordered_
+			# iterators by game/common/activities/activity_types/
+			# imperial_examination.txt's ordered_guest_subset = { order_by
+			# = ... position = 0/1/2 ... }, the same "rank then take a
+			# fixed slot" shape used here). "this" inside the block is each
+			# TITLE in the registry directly, so var:kehillah_var_greatness
+			# reads off it with no .holder.primary_title indirection.
+			# Guaranteed to find a real candidate: is_shown/can_start_
+			# showing_failures_only already refuse to offer convening at
+			# all in a region with fewer than 3 members (kehillah_region_
+			# can_field_bet_din_panel_trigger, common/scripted_triggers/
+			# kehillah_scripted_triggers.txt), so both judge slots always
+			# have at least 2 other candidates to rank.
 			select_character = {
-				if = {
-					limit = { primary_title = title:c_kehillah_worms }
-					title:c_kehillah_speyer.holder = { save_scope_as = character }
-				}
-				else = {
-					title:c_kehillah_worms.holder = { save_scope_as = character }
+				ordered_in_global_list = {
+					variable = kehillah_registered_communities
+					order_by = { value = var:kehillah_var_greatness }
+					limit = {
+						NOT = { this = root.primary_title }
+						has_variable = kehillah_var_greatness
+						exists = holder
+						holder = {
+							kehillah_shares_minhag_region_trigger = { OTHER = root }
+						}
+					}
+					position = 0
+					holder = { save_scope_as = character }
 				}
 			}
 
@@ -149,13 +337,24 @@ activity_kehillah_bet_din_conference = {
 			is_required = yes
 			is_shown = { always = yes }
 
+			# Same shape as kehillah_bet_din_co_judge_1 above, position = 1
+			# instead of 0 -- the SECOND-highest-Greatness other member of
+			# the host's own region, not a second independent search that
+			# could collide with judge_1's own pick.
 			select_character = {
-				if = {
-					limit = { primary_title = title:c_kehillah_mainz }
-					title:c_kehillah_speyer.holder = { save_scope_as = character }
-				}
-				else = {
-					title:c_kehillah_mainz.holder = { save_scope_as = character }
+				ordered_in_global_list = {
+					variable = kehillah_registered_communities
+					order_by = { value = var:kehillah_var_greatness }
+					limit = {
+						NOT = { this = root.primary_title }
+						has_variable = kehillah_var_greatness
+						exists = holder
+						holder = {
+							kehillah_shares_minhag_region_trigger = { OTHER = root }
+						}
+					}
+					position = 1
+					holder = { save_scope_as = character }
 				}
 			}
 
@@ -169,36 +368,209 @@ activity_kehillah_bet_din_conference = {
 		}
 	}
 
+	# =================================================================
+	# THE DOCKET -- ONE CASE PER PHASE.
+	#
+	# LOOP-BUG FIX, 2026-09-08. This block previously held a SINGLE
+	# phase whose on_phase_active fired case 1's host event, and every
+	# event from there chained straight into the next one -- so all ten
+	# events of the whole docket resolved inside one day. Worse, nothing
+	# in this file ever called progress_activity_phase_after, which is
+	# the one thing that ends a phase: every vanilla activity_type calls
+	# it from on_phase_active or on_enter_phase (feast.txt, wedding.txt,
+	# coronation.txt, tournament.txt, local_examination.txt -- checked,
+	# no exceptions). Without it the single phase never ended, the
+	# activity never reached completion, and the host was stuck in a
+	# conference that had already said everything it had to say.
+	#
+	# Now: kehillah_bet_din_docket_case_count (3) predefined phases, one
+	# case each, and the case is DRAWN AT RANDOM from those the session
+	# has not heard yet (kehillah_bet_din_draw_case_effect, common/
+	# scripted_effects/kehillah_bet_din_scripted_effects.txt -- see its
+	# own header for the draw and the "not yet chosen" bookkeeping). The
+	# phase count is what makes the docket end after three, and the
+	# activity's completion is what pays out the session score.
+	#
+	# WHY THREE LITERAL PHASES rather than one phase that loops three
+	# times: a phase is CK3's own unit of "part of an activity that
+	# starts, runs a while, and finishes", and it is the only thing the
+	# engine will advance and eventually complete on its own. Three
+	# phases also make the docket legible in the Activities window
+	# (F9 shows "Current Phase: The First Case"), which one repeating
+	# phase would not. Vanilla precedent for several predefined,
+	# same-location, purely sequential phases: local_examination.txt
+	# (assembly / preparation / examination, is_single_location = yes).
+	#
+	# Each phase is identical apart from its order and, for the first,
+	# the one-time session setup. on_phase_active runs once per
+	# attending character, so everything here is guarded to scope:host
+	# (camp_party.txt's precedent) -- both so the draw happens once and
+	# so the two co-judges cannot each reset the phase timer after the
+	# host's draw has already shortened it.
+	# =================================================================
 	phases = {
-		phase_bet_din_session = {
+		phase_bet_din_case_1 = {
 			is_predefined = yes
 			order = 1
 			location_source = pickable
 
-			# Session setup: stash the convening title and both co-judges
-			# as global_var (see common/scripted_effects/kehillah_bet_din_
-			# scripted_effects.txt's header for why), then open the docket
-			# with case 1's host event. on_phase_active runs once per
-			# attending character; guarded to scope:host so this fires
-			# exactly once, matching camp_party.txt's own precedent for
-			# this guard.
 			on_phase_active = {
 				if = {
 					limit = { this = scope:host }
-					set_global_variable = { name = kehillah_bet_din_convening_title value = scope:host.primary_title }
-					set_global_variable = { name = kehillah_bet_din_judge2 value = scope:activity.special_guest:kehillah_bet_din_co_judge_1 }
-					set_global_variable = { name = kehillah_bet_din_judge3 value = scope:activity.special_guest:kehillah_bet_din_co_judge_2 }
-					set_global_variable = { name = kehillah_bet_din_tally value = 0 }
-					scope:host = {
-						trigger_event = kehillah_bet_din.0001
+
+					# Ceiling first, draw second: the draw may shorten this
+					# phase (if no case was eligible) and must not be
+					# overwritten by the ceiling afterwards.
+					scope:activity = {
+						progress_activity_phase_after = { days = kehillah_bet_din_case_phase_days }
 					}
+
+					kehillah_bet_din_open_docket_effect = yes
+					kehillah_bet_din_draw_case_effect = yes
+				}
+			}
+		}
+
+		phase_bet_din_case_2 = {
+			is_predefined = yes
+			order = 2
+			location_source = pickable
+
+			# Same "let the phase become active promptly" hop
+			# local_examination.txt uses on every phase after its first --
+			# there is no travel between phases here (is_single_location =
+			# yes), so nothing else would move the docket off the passive
+			# state between cases.
+			on_enter_phase = {
+				if = {
+					limit = { this = scope:host }
+					scope:activity = {
+						progress_activity_phase_after = { days = 1 }
+					}
+				}
+			}
+
+			on_phase_active = {
+				if = {
+					limit = { this = scope:host }
+					scope:activity = {
+						progress_activity_phase_after = { days = kehillah_bet_din_case_phase_days }
+					}
+					kehillah_bet_din_draw_case_effect = yes
+				}
+			}
+		}
+
+		phase_bet_din_case_3 = {
+			is_predefined = yes
+			order = 3
+			location_source = pickable
+
+			on_enter_phase = {
+				if = {
+					limit = { this = scope:host }
+					scope:activity = {
+						progress_activity_phase_after = { days = 1 }
+					}
+				}
+			}
+
+			on_phase_active = {
+				if = {
+					limit = { this = scope:host }
+					scope:activity = {
+						progress_activity_phase_after = { days = kehillah_bet_din_case_phase_days }
+					}
+					kehillah_bet_din_draw_case_effect = yes
 				}
 			}
 		}
 	}
 
+	# The docket closes here, not in an event chain. kehillah_bet_din.
+	# 0099 reads global_var:kehillah_bet_din_session_score -- the sum of
+	# the three cases' verdict tiers -- and applies the session's own
+	# reward on top of the per-case effects, then clears the session
+	# scratch state. Guarded to the host: on_complete, like
+	# on_phase_active, runs once per attending character, and the closing
+	# event belongs to the convening leader alone (the co-judges' own
+	# leave-taking is that event's text, not a second copy of it).
+	on_complete = {
+		if = {
+			limit = { this = scope:host }
+			trigger_event = kehillah_bet_din.0099
+		}
+	}
+
+	# TRAVEL PULSE, ADDED 2026-09-09 at user request ("travel ticks").
+	# root here is whichever character is currently travelling TO this
+	# conference (activity_type.info: "root = character in this phase"),
+	# so this fires for a travelling co-judge or an accepted open-invite
+	# guest alike -- the host does not travel (the conference is hosted
+	# at the host's own capital; see this file's province_filter above),
+	# so scope:host never sees this fire on themselves.
+	#
+	# Nothing fired here before this: this file's own header calls out
+	# "no pulse_actions catalog" as a deliberate Part 1 scope cut, and
+	# on_travel_state_pulse specifically was never defined at all, so a
+	# co-judge's real, live-tested ~12-day journey to Worms (docs/
+	# testing/2026-09-08-bet-din-conference-live-test-log.md) passed in
+	# total silence. kehillah_bet_din_travel_pulse_effect (common/
+	# scripted_effects/kehillah_bet_din_scripted_effects.txt) gates its
+	# own chance internally (not every pulse tick should produce a
+	# popup) and picks one of a small set of flavor vignettes
+	# (events/kehillah_bet_din_travel_events.txt) -- Part 1 minimal, the
+	# same spirit as the rest of this activity. The "no pulse_actions
+	# catalog" cut itself is superseded immediately below, 2026-09-09.
+	on_travel_state_pulse = {
+		kehillah_bet_din_travel_pulse_effect = yes
+	}
+
+	# GUEST PULSE ACTIONS, ADDED 2026-09-09 at user request ("make it
+	# interesting to be a guest at a bet din activity"). Before this, an
+	# attending guest had nothing to do during an active case phase --
+	# the docket's own three events per case are all gated to root = the
+	# convening leader or judge2/judge3 specifically, never a plain
+	# attendee, so a co-judge or (per the same conversation's earlier
+	# widening) an accepted scholar/adventurer guest just sat through the
+	# phase. See common/activities/pulse_actions/kehillah_bet_din_pulse_
+	# actions.txt for the three entries and their own header for the
+	# full account -- one Prestige/opinion reward weighted toward
+	# Learning, one two-character opinion swing for texture (not every
+	# pulse should be a reward), one Prestige reward specifically for
+	# attending Jewish adventurers.
+	pulse_actions = {
+		entries = {
+			kehillah_bet_din_pulse_citation
+			kehillah_bet_din_pulse_disagreement
+			kehillah_bet_din_pulse_renown
+		}
+	}
+
+	# UPDATED 2026-09-09 at user request ("AI who have the option to host
+	# a bet din should do it"). This field is NOT an arbitrary weight --
+	# activity_type.info's own doc is explicit: "This value will then be
+	# used as a percent chance to be hosted, such that 0 will never be
+	# hosted and 100 will always be hosted," AFTER this activity has
+	# already been chosen as the highest-scoring one available that
+	# check. 40 meant that even when the Bet Din was the AI's best
+	# available option, it still had better than even odds of just not
+	# happening. 100 is the strongest lever this field gives -- given
+	# selected, it now always follows through.
+	#
+	# What 100 does NOT do: guarantee this activity gets selected over
+	# competing ones (Hunt, Feast, etc.) in the first place -- that is a
+	# separate, relative comparison of every eligible activity_type's own
+	# score this file cannot unilaterally win. In practice this matters
+	# less here than it would for a routine activity: is_shown/can_start_
+	# showing_failures_only already restrict this to the current
+	# Greatness leader among the three Sh'um communities specifically
+	# (kehillah_is_shum_greatness_leader_trigger), off cooldown -- a
+	# narrow, infrequent eligibility window in which this is likely to be
+	# one of few "special" activities on offer at all, not one competing
+	# against a full routine slate every check.
 	ai_will_do = {
-		value = 40
+		value = 100
 	}
 
 	ai_check_interval = 24

@@ -1,0 +1,263 @@
+﻿# =====================================================================
+# Kehillah character interactions -- v9 spec (docs/spec/
+# v9-community-list-ui.md), "Community List UI" first draft.
+#
+# MECHANISM VERIFICATION, done this pass by reading real installed 1.19
+# vanilla files (E:/.../Crusader Kings III/game), not assumed -- see
+# docs/spec/gui-spike-community-list.md for the earlier research this
+# builds on, and the actual verification trail below for what this pass
+# added on top of it.
+#
+# THE ASK: a clickable list of every registered Kehillah community's
+# leader, showing each community's three pillar scores with a
+# per-candidate breakdown tooltip. v9 spec section 3 offered two
+# options and asked this pass to time-box a decision between them.
+#
+# OPTION A CHOSEN (character-interaction target-search list, reusing
+# vanilla's vbox_character_list/portrait_base target picker). Real
+# evidence, not the spec's own guesses:
+#
+#   1. POPULATION. v9/the spike both worried an arbitrary script-driven
+#      character list has no binding into vanilla's target-search
+#      screen. That's true for scripted_lists/scripted_guis (the spike
+#      already ruled those out) but NOT true of interactions
+#      specifically: populate_recipient_list is a real effect hook
+#      (common/character_interactions/_character_interactions.info,
+#      confirmed against two live vanilla interactions --
+#      00_tributary_interactions.txt:3033's populate_actor_list and
+#      00_diarch_interactions.txt:847's populate_recipient_list, both
+#      building the "characters" list via ordinary add_to_list, not a
+#      fixed engine method). every_in_global_list (the effect-side
+#      counterpart of this mod's own any_in_global_list/
+#      ordered_in_global_list usage in kehillah_scripted_triggers.txt
+#      and kehillah_bet_din_conference.txt) is confirmed real vanilla
+#      syntax too (common/on_action/game_start.txt:4698 and others), so
+#      iterating kehillah_registered_communities straight into the
+#      candidate pool is real, not invented.
+#   2. CLICKABLE. portrait_base's DefaultOnCharacterClick is free, as
+#      the spike already found -- unchanged by this pass.
+#   3. TOOLTIP DEPTH -- the actual thing this pass was told to verify.
+#      The spec's own guess (a custom_tooltip inside a "potential_target"
+#      key) does not exist -- there is no potential_target key anywhere
+#      in _character_interactions.info's real, full structure listing,
+#      confirmed by reading it in full. What DOES exist and IS rendered
+#      per-candidate, live, while just browsing the list (not after
+#      selecting) is gui/interaction_templates.gui:3082-3107's
+#      Acceptance row: an icon + tooltip bound to
+#      CharacterInteractionConfirmationWindow.GetAcceptanceBreakdown(
+#      CharacterListItem.Self ), which is exactly this interaction's own
+#      script-defined ai_accept mtth, broken down modifier by modifier
+#      (real usage confirmed: common/character_interactions/
+#      00_gift.txt:440-465's ai_accept, each modifier carrying a desc
+#      loc key). The OTHER real per-candidate tooltip slot in this same
+#      shared template -- the candidate_score/governor_efficiency/
+#      obedience/merit breakdown widget, gui/interaction_templates.gui:
+#      2939-2985 -- was checked and ruled out: candidate_score
+#      "requires a target title" (_character_interactions.info's own
+#      FAQ, custom_character_sort entry) and this interaction has none.
+#      GetUnselectableReason (gui/shared/lists.gui:150), the only other
+#      candidate tooltip in the shared widget_character_list_item
+#      template, follows CK3's "_showing_failures_only" convention --
+#      it renders ONLY when a candidate fails validity, i.e. exactly
+#      when the row is NOT selectable, the opposite of what a
+#      browse-everyone, always-sendable interaction needs.
+#      So: the mechanism used below is the acceptance-breakdown row,
+#      repurposed honestly (this interaction's "acceptance" IS framed
+#      as "would this leader welcome the gesture right now", which the
+#      three pillars genuinely inform) rather than any bespoke tooltip
+#      machinery -- and it means ZERO vanilla .gui file is touched.
+#      Confirmed real, not a guess: Option A holds up. Option B (the
+#      Military-pane fork) was NOT built.
+#
+# ENTRY POINT -- a real correction to v9 section 3.1's own plan. v9
+# assumed a decision's effect could "open a character interaction".
+# Checked directly and found false: there is no scripted effect for
+# opening an interaction (grepped common/decisions, common/
+# scripted_effects, and every *.info under common/ for "interaction" --
+# nothing). The only real mechanism found anywhere in the game files is
+# Character.OpenPlayerInteraction('key'), a .gui bracket-script data
+# function (gui/hud.gui:1972, gui/window_my_realm.gui:1147 and others)
+# -- GUI-only, not scriptable from a decision's effect. Wiring a button
+# to it would mean either forking a vanilla .gui file (the exact cost
+# Option A was chosen to avoid) or betting on gui/scripted_widgets/,
+# which the spike already flagged as UNVERIFIED (zero real vanilla
+# usage) and said should get its own live-test spike before being
+# trusted -- not available in this environment. So no decision and no
+# new .gui file exist for this feature. The interaction is reached the
+# ordinary vanilla way instead: common_interaction = yes plus
+# interaction_category_diplomacy puts it in any character's right-click
+# interaction menu once is_shown passes for the player -- exactly how
+# 00_tributary_interactions.txt's offer_courtier_interaction (right-
+# click ANY courtier, but its own populate_actor_list still builds the
+# real candidate list from scratch) already works in vanilla. is_shown
+# below deliberately does not constrain scope:recipient at all, so it
+# is available from ANY right-click, not just a specific target -- the
+# real content comes entirely from populate_recipient_list, same as
+# offer_courtier. This is a real, working, zero-fork entry point; it is
+# not as convenient as a dedicated button, and that tradeoff is the
+# honest cost of staying zero-fork for a first draft.
+#
+# NOT LIVE-TESTED. Like everything else built this session, none of
+# this has been run in a live game. The script/localization content
+# below is ck3-tiger-clean (see the verification pass this file's
+# companion changes went through), but ck3-tiger does not simulate the
+# actual UI -- whether the acceptance-breakdown tooltip renders the way
+# this header describes, and whether the interaction is easy enough to
+# find via right-click in practice, are both unverified until someone
+# opens a running game.
+# =====================================================================
+
+kehillah_view_communities_interaction = {
+	icon = icon_culture
+	category = interaction_category_diplomacy
+	common_interaction = yes
+
+	# Community leaders can be anywhere in the world -- this list is not
+	# a "nearby" feature, so diplomatic range must not filter it.
+	use_diplomatic_range = no
+
+	desc = kehillah_view_communities_interaction_desc
+	prompt = kehillah_view_communities_interaction_prompt
+	notification_text = kehillah_view_communities_interaction_notification
+
+	# Available from ANY right-click -- see the file header's ENTRY
+	# POINT note. Only the actor's own government matters; the initial
+	# scope:recipient (whoever was right-clicked) is irrelevant because
+	# populate_recipient_list below throws the candidate pool away and
+	# rebuilds it from kehillah_registered_communities regardless.
+	is_shown = {
+		scope:actor = {
+			government_has_flag = government_is_kehillah
+		}
+	}
+
+	is_valid = {
+		scope:actor = {
+			is_adult = yes
+		}
+	}
+
+	# Rebuilds the ENTIRE candidate pool from the community registry --
+	# see the file header's POPULATION note for the real vanilla
+	# precedent this follows (00_diarch_interactions.txt:847,
+	# 00_tributary_interactions.txt:3033). The registry itself is
+	# populated once at game start (common/on_action/
+	# kehillah_on_actions.txt's kehillah_on_game_start) and is a list of
+	# TITLES, not characters -- "this" below is each community's title,
+	# matching this mod's own established any_in_global_list/
+	# ordered_in_global_list usage (common/scripted_triggers/
+	# kehillah_scripted_triggers.txt, common/activities/activity_types/
+	# kehillah_bet_din_conference.txt).
+	#
+	# The actor's own community is excluded -- kehillah_view_standing_
+	# decision (common/decisions/kehillah_decisions.txt) already covers
+	# "my own community" in full detail, and self-targeting a character
+	# interaction is an edge case this first draft has no reason to
+	# take on.
+	populate_recipient_list = {
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = {
+					NOT = { this = scope:actor }
+				}
+			}
+			holder = {
+				add_to_list = characters
+			}
+		}
+	}
+
+	can_be_picked = {
+		is_alive = yes
+	}
+
+	has_valid_target = {
+		scope:recipient = {
+			exists = primary_title
+			primary_title = {
+				has_variable = kehillah_var_stability
+			}
+		}
+	}
+
+	can_send = {
+		always = yes
+	}
+
+	# Flavor only, deliberately. The point of this interaction is
+	# browsing the populated list and its per-candidate tooltip, not
+	# its payload -- v9 spec section 3.4 explicitly allows (and prefers,
+	# absent a confirmed cancel-without-sending path to check against)
+	# making the send a total no-op rather than forcing a mechanical
+	# effect on either side.
+	on_send = {
+		custom_tooltip = kehillah_view_communities_send_tt
+	}
+	on_accept = {
+		custom_tooltip = kehillah_view_communities_accept_tt
+	}
+	on_decline = {
+		custom_tooltip = kehillah_view_communities_decline_tt
+	}
+
+	# THE TOOLTIP MECHANISM -- see the file header's TOOLTIP DEPTH note
+	# for why this is the acceptance-breakdown row and not a bespoke
+	# custom_tooltip. Each modifier is unconditional (always applies) so
+	# all three always render in the breakdown regardless of band --
+	# there is no gameplay reason to hide a low score, only to show it
+	# honestly. The 0.05 scaling keeps the 0-950+ raw pillar range (see
+	# common/script_values/kehillah_script_values.txt's kehillah_band_*_
+	# threshold) inside a sane-looking acceptance-percentage contribution
+	# rather than reusing the raw score as a percentage outright.
+	# has_variable guards match this mod's own defensive-read discipline
+	# (e.g. kehillah_scripted_triggers.txt's "exists = holder guards
+	# before dereferencing it" note) even though a registered community
+	# should always have these set by kehillah_init_pillars_effect.
+	ai_accept = {
+		base = 20
+
+		modifier = {
+			trigger = {
+				scope:recipient.primary_title = { has_variable = kehillah_var_stability }
+			}
+			add = {
+				value = scope:recipient.primary_title.var:kehillah_var_stability
+				multiply = 0.05
+			}
+			desc = kehillah_view_communities_stability_tt
+		}
+		modifier = {
+			trigger = {
+				scope:recipient.primary_title = { has_variable = kehillah_var_prosperity }
+			}
+			add = {
+				value = scope:recipient.primary_title.var:kehillah_var_prosperity
+				multiply = 0.05
+			}
+			desc = kehillah_view_communities_prosperity_tt
+		}
+		modifier = {
+			trigger = {
+				scope:recipient.primary_title = { has_variable = kehillah_var_greatness }
+			}
+			add = {
+				value = scope:recipient.primary_title.var:kehillah_var_greatness
+				multiply = 0.05
+			}
+			desc = kehillah_view_communities_greatness_tt
+		}
+	}
+
+	# A pure browsing tool should never get sent by the AI on its own.
+	# ai_will_do = 0 alone is sufficient and is the only lever used here
+	# -- is_available would also gate the PLAYER (.info: "Available for
+	# the actor, both AI and player"), which is not wanted, and
+	# ai_potential is both deprecated and a no-op at this interaction's
+	# default ai_frequency of 0 (ck3-tiger flagged both), so neither is
+	# set at all.
+	ai_will_do = {
+		base = 0
+	}
+}

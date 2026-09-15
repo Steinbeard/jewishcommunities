@@ -345,6 +345,47 @@ kehillah_leadership = {
 					desc = kehillah_score_friend_desc
 				}
 			}
+
+			# -----------------------------------------------------
+			# GENDER -- LIVE-TEST FIX, 2026-09-11 (v10 spec section
+			# 3). Live test found the player's own firstborn daughter
+			# showing as primary heir: nothing here gated candidates
+			# by gender at all, only ranked them. Per explicit user
+			# instruction, Kehillah succession is locked to male
+			# candidates by default, behind the single deferred-
+			# reform hook documented on kehillah_leadership_gender_
+			# eligible_trigger (common/scripted_triggers/kehillah_
+			# scripted_triggers.txt) -- read that trigger's own
+			# header before touching this block, it explains why a
+			# large subtract is the strongest real exclusion this
+			# schema actually supports (checked against _succession_
+			# appointment.info: there is no candidate_trigger/
+			# is_valid_candidate key to disqualify a candidate
+			# outright, only candidate_score to rank one -- the v10
+			# spec's own hope that such a field existed does not hold
+			# up against the real schema).
+			#
+			# 100000 dwarfs the realistic maximum of every term above
+			# combined (roughly 60 Learning + 40 Stewardship + 10
+			# Diplomacy + 25 officer + 12 piety + ~9 dynasty prestige
+			# + 20 age + 15 theologian + 10 scholar + 20 virtue traits
+			# + 5 friend, on the order of 200-250), so any eligible
+			# male candidate -- even a mediocre one -- outranks every
+			# female candidate whenever at least one male exists in
+			# the pool. Same wrong-faith-style tradeoff as the -500
+			# penalty above if the entire eligible pool is female:
+			# the game still returns an answer instead of deadlocking
+			# succession outright.
+			# -----------------------------------------------------
+			if = {
+				limit = {
+					NOT = { kehillah_leadership_gender_eligible_trigger = yes }
+				}
+				subtract = {
+					value = 100000
+					desc = kehillah_score_male_only_desc
+				}
+			}
 		}
 	}
 }

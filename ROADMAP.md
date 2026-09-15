@@ -21,24 +21,30 @@ Written 2026-09-07. Roughly priority order, but the first two are correctness/ve
 that should happen before anything else here, since they check claims the rest of this list (and
 other docs) currently take on faith.
 
-1. **Live-test Wave 3** (sfarim tiers, band-gated buildings, courtier quality/cap/retention, loan
-   contracts) using [docs/testing/wave3-testing-runbook.md](docs/testing/wave3-testing-runbook.md)
-   and its `events/kehillah_debug_events.txt` console harness. Not yet run.
-2. **Re-verify the `holder_court_position` succession fix live**, with a test built to actually
-   distinguish merit from coincidence: engineer a Shtadlan whose score clearly beats the likely
-   heir (age/Learning/traits), trigger succession, confirm the Shtadlan wins. Then update
-   `ROADMAP.md`'s current-state note and `v3-meritocratic-succession.md`'s §1 correction from
-   "not yet independently re-verified" to a real result either way.
-3. **Decide whether `v3-meritocratic-succession.md`'s §2a (theocratic pool succession) is still
-   wanted**, now that appointment succession may already do real merit-based selection — do this
-   only after item 2 has a result. §2b (appoint override) and §2c (resignation) stand regardless.
 4. **Quick-win UI**: expand the Take Stock decision into a real breakdown — per-pillar
    contributors, current rate of change, and a tier-effects reference — using nested
-   `custom_tooltip` blocks and the dynamic-loc pattern already proven. No GUI risk, ships fast.
-5. **GUI feasibility research pass** (no implementation): read vanilla's `window_dynasty_legacy.gui`
-   (single-entity tiered dashboard — matches an own-community dashboard) and `window_factions.gui`
-   (cross-entity list — matches a map-wide community comparison) to come back with a concrete,
-   evidence-based plan for opening a custom window bound to scripted data.
+   `custom_tooltip` blocks and the dynamic-loc pattern already proven. No GUI risk, ships fast. This is super useful so that we can actually view what's effecting score growth and change.
+5. **DONE, 2026-09-10 (research), then 2026-09-10 (v9 build on top of it).** GUI feasibility research
+   pass: [docs/spec/gui-spike-community-list.md](docs/spec/gui-spike-community-list.md) — ended up
+   reading different files than this item originally named (the user's own Military-pane idea
+   narrowed the actual question, see the spike's §2), but answered the same "concrete, evidence-based
+   plan for opening a window bound to scripted data" ask: no cross-file additive `.gui` mechanism
+   exists (5,166 `blockoverride` uses surveyed, all same-instantiation fill-ins), so any new window
+   means either reusing a screen already driven by script (an activity's guest list; a character
+   interaction's target-search list) or a permanent fork of a vanilla `.gui` file. Built on top of
+   that, [docs/spec/v9-community-list-ui.md](docs/spec/v9-community-list-ui.md) shipped a real
+   map-wide community list: `kehillah_view_communities_interaction` (common/character_interactions/
+   kehillah_character_interactions.txt) reuses vanilla's own character-interaction target-search
+   screen (`vbox_character_list`/`portrait_base`), populated from `kehillah_registered_communities`
+   via `populate_recipient_list`, with a per-candidate Stability/Prosperity/Greatness breakdown
+   tooltip via the interaction's own `ai_accept` acceptance-breakdown row — zero vanilla `.gui` file
+   touched. See that file's own header comment for the full mechanism verification (a real correction
+   to v9's own assumed design: decisions cannot open interactions by script; there is no dedicated
+   button, the interaction is reached via the ordinary right-click interaction menu, same as vanilla's
+   own `offer_courtier_interaction`). **Not live-tested** — see that same header. This item's own
+   original "own-community" and "map-wide" dashboard split (items 9/10 below) is effectively answered
+   for the map-wide half by this build; a richer own-community dashboard (more than
+   `kehillah_view_standing_decision` already shows) is still open.
 6. **DONE, 2026-09-08. Regional/unified leadership**: see
    [docs/spec/v4-regional-communities-and-batei-din.md](docs/spec/v4-regional-communities-and-batei-din.md)
    for the design (a titular duchy-tier `d_kehillah_shum` grouping Worms/Speyer/Mainz by de jure
@@ -53,7 +59,9 @@ other docs) currently take on faith.
    problems flagged here originally are still open for whenever a real dashboard needs them.
    **SUPERSEDED, 2026-09-08 — see item 7 below.** The 15-year single-ruling decision this item
    shipped is being replaced, not kept alongside its replacement.
-7. **Bet Din Conference, Part 1 — BUILT, ck3-tiger-clean, LIVE-TESTED: PASS (2026-09-08).**
+7. **Bet Din Conference, Part 1 — BUILT, ck3-tiger-clean; live-tested PASS 2026-09-08, then
+   REOPENED the same day by two structural bugs that pass missed (docket fired all at once, activity
+   never ended). Fixed, NOT YET RE-TESTED LIVE — see the "DOCKET LOOP FIX" paragraph below.**
    Redesigns item 6's takkanah decision into a travelled-to gathering activity (Hunt/Grand Wedding-
    scale, not a lighter travel-event chain), convened every 3 years instead of every 15, drawing 3
    hardcoded test cases from what will eventually be a large pool. Each case is ruled on by the
@@ -78,6 +86,23 @@ other docs) currently take on faith.
    dialog's title renders as a raw loc key, unfixed. No art assets exist yet either (4 missing-icon
    warnings, cosmetic only). The hundreds-of-cases content pass is Part 2, and
    doesn't start until a case-idea draft exists (see the backlog entry below).
+   **DOCKET LOOP FIX, 2026-09-08 — NOT YET LIVE-TESTED, and it downgrades the "LIVE-TESTED: PASS"
+   above.** Playing the build described above showed two structural bugs the live-test pass missed:
+   the whole docket (all ten events) fired inside a single day, and the activity never ended,
+   because nothing in the activity type ever called `progress_activity_phase_after` — the one thing
+   that ends a phase in CK3. The pass missed both because it never followed a real hosted session
+   past case 1; its console-driven half exercised the event chain but never the phase lifecycle.
+   **Fixed**: the docket is now three predefined phases, one case each, each case **drawn at random
+   from those the session has not heard yet** (so the draw-without-repeat machinery Part 2 wanted
+   exists now — only its case *content* is still gated on the case-idea draft); events within a case
+   are 3 days apart; a case's resolution ends its phase instead of summoning the next case; and the
+   activity's own `on_complete` fires a rewritten closing event that reads a new **session score**
+   (each case's verdict tier summed: great +2 / good +1 / poor −1) and pays out on a landmark /
+   strong / adequate / failed tier. `ck3-tiger` clean (0 fatal, 0 error). Full account, including
+   why the earlier pass missed this and what specifically still needs a live pass:
+   [v5 spec section 11](docs/spec/v5-bet-din-conference.md). **Next step for this item is a live
+   pass that hosts the conference and follows it through all three cases to the close** — until
+   then, treat the activity's phase sequencing and completion as unverified.
    **Design-only addendum, 2026-09-08**: [v5 spec section 10](docs/spec/v5-bet-din-conference.md)
    proposes widening the panel with up to 2 additional non-leader Jewish scholars, found via a
    `guest_invite_rules` search and scored on proximity/Learning/Piety/traits, each getting a real
@@ -86,8 +111,15 @@ other docs) currently take on faith.
 8. **Wave 4** (dissolution) and **Wave 5** (community lifecycle: creation/destruction/migration),
    per [docs/spec/v2-pillar-economy-and-lifecycle.md](docs/spec/v2-pillar-economy-and-lifecycle.md)
    §8's build order.
-9. **Own-community GUI dashboard**, once item 5's research lands.
-10. **Map-wide/regional GUI dashboard**, once items 5 and 6 both land.
+9. **Own-community GUI dashboard** — richer than `kehillah_view_standing_decision`'s current single
+   desc block. Item 5's research has landed; this is now unblocked, just not built.
+10. **Map-wide/regional GUI dashboard** — **first draft shipped as part of item 5** (`kehillah_view_
+    communities_interaction`, a clickable per-community list with pillar tooltips, reached via the
+    right-click interaction menu rather than a dedicated window). What's still open past that first
+    draft: a dedicated entry point (a real button, not "right-click anyone") needs either
+    `gui/scripted_widgets/` to be live-test-verified first (the spike flagged it as real but unproven,
+    zero vanilla usages found) or a Military-pane fork (the spike's confirmed-but-costly fallback);
+    and the list itself is not sortable/filterable the way a true dashboard would be.
 
 **Current state:** Phase 1 is verified working live, end to end, as of
 2026-09-06 — bookmark start, buildings, officers, and a full
@@ -140,6 +172,44 @@ read a pillar variable before the same tick's `kehillah_init_pillars_effect` had
 seeding at game start raced the variable-set); it now guards with `has_variable` first, matching
 a vanilla precedent the trigger's own header already cited but hadn't fully copied.
 
+**2026-09-10 update — v8 Task Contracts shipped, ck3-tiger-clean, not yet live-tested.** See
+[docs/spec/v8-task-contracts.md](docs/spec/v8-task-contracts.md). Four `task_contract_type` entries
+(`kehillah_translation_contract`, `kehillah_loan_contract`, `kehillah_exotic_goods_contract`,
+`kehillah_hebrew_tutor_contract`, common/task_contracts/kehillah_task_contracts.txt) let a nearby
+non-Kehillah, non-coreligionist county holder occasionally offer the community leader work through
+CK3's real EP3 Task Contracts system, fired by a new `kehillah_task_contract_pulse` on_action
+(chance_to_happen 40, common/on_action/kehillah_on_actions.txt) and a five-event offer chain
+(events/kehillah_task_contract_events.txt, namespace `kehillah_task_contract`: a hidden router plus
+one flavored Accept/Decline event per type). Translation, exotic goods, and hebrew tutoring all
+resolve immediately, inside the contract type's own `on_accepted`, via a skill-tiered `complete_task_
+contract` call — verified against a real non-travel vanilla contract (`admin_contracts.txt`'s
+`overdue_taxes`) before choosing that shape over an engine-timed completion.
+
+**The loan contract replaces `kehillah_extend_loan_decision`**, per explicit user request ("I think I
+prefer the contract mechanic for loans over a decision! Feels more compelling and character driven").
+Direction is inverted from the other three types — the employer IS the lender, the Kehillah ruler is
+the borrower — and the contract's `on_accepted` writes the SAME three ledger variables
+(`kehillah_loan_amount_owed`/`kehillah_loan_lender_title`/`kehillah_loan_years_elapsed`) the old
+decision used to write, at the same values, via the same script values. `kehillah_repay_loan_decision`
+and the quarterly accrual/default block (`common/scripted_effects/kehillah_scripted_effects.txt`) are
+both completely untouched, per the task's own explicit constraint — which is also why the contract's
+own closure (`on_invalidated`, once `var:kehillah_loan_amount_owed` clears either way) is deliberately
+NEUTRAL rather than claiming success or failure: distinguishing repayment from default after the fact
+would require touching one of those two untouched files, or building a fully parallel tracking system
+duplicating a signal the player already sees directly. Documented as a real, deliberate scope cut, not
+an oversight — see that contract type's own header comment for the full account. The retired decision
+is preserved in git history with a documented pointer comment in its place (common/decisions/
+kehillah_decisions.txt).
+
+Also verified and corrected one thing the spec's own draft had gotten wrong: the real effect for a
+player declining an offered contract is `invalidate_contract = yes`, called ON the contract scope —
+not `invalidate_task_contract = <scope>`, which does not exist anywhere as a callable effect in the
+installed game files. And confirmed `create_artifact`-family effects have no real precedent inside a
+`task_contract_reward` block anywhere in vanilla, so the exotic goods contract's reward is gold +
+opinion only, per the spec's own named fallback, rather than forcing an artifact in.
+
+ck3-tiger clean (0 errors, 0 warnings on every file touched or created). Not yet live-tested.
+
 **2026-09-08 update — the Bet Din takkanah mechanic has been redesigned, built, and live-tested,
 superseding item 6 above.** Scoping conversation produced
 [docs/spec/v5-bet-din-conference.md](docs/spec/v5-bet-din-conference.md); the same session built
@@ -156,6 +226,77 @@ for the full record. **A same-day follow-up pass closed the one real gap that re
 flagged**: the activity-hosting UI (F9, alongside Hunt/Pilgrimage/University Visit) was found, and
 starting a real session confirmed the co-judges actually travel to Worms (~12 in-game days) before
 the docket opens on its own — the full mechanic, not a console stand-in. See near-term TODO item 7.
+
+**2026-09-11 update — v10 live-test fixes, the first REAL live-test session against the built mod
+(everything above was console-driven verification or shorter test passes).** Seven issues, all
+`ck3-tiger`-clean. See [docs/spec/v10-live-test-fixes.md](docs/spec/v10-live-test-fixes.md) for the
+full spec, most of it already root-caused at triage time.
+1. **Bet Din invited a Christian duke and unrelated courtiers.** `can_be_activity_guest`
+   (common/activities/activity_types/kehillah_bet_din_conference.txt) had a purely-geographic OR
+   branch (`kehillah_shares_minhag_region_trigger`, written for -- and only previously used on --
+   a REGISTERED COMMUNITY's holder, not an arbitrary world character) with no religion/rulership
+   check of its own. Fixed: `is_jewish_character_trigger` is now a top-level AND for every
+   candidate, and the region-sharing branch additionally requires `is_ruler = yes` (confirmed real
+   vanilla trigger). Confirmed the exact live symptom's mechanism too: `d_luxembourg` is tagged
+   `western_ashkenaz` by `kehillah_tag_minhag_regions_effect`, so any Catholic Duke of Luxembourg
+   passed the old check on geography alone.
+2. **Speyer starts with zero Greatness.** Verified this was NOT an oversight as first triaged --
+   history/characters/speyer_1066.txt and the effect's own header both deliberately chose zero,
+   reflecting that Speyer's real Jewish community isn't documented until the 1070s/chartered 1084,
+   after this scenario's 1066 start. The genuine gap was different: nobody connected "starts at
+   literal 0" to Bet Din co-judge ranking (pure Greatness sort) once v7's minhag regions put Speyer
+   in the same large western_ashkenaz pool as Mainz (180) and Troyes (140) -- making Speyer
+   mathematically unable to ever win a co-judge seat at game start. Fixed with a starting Greatness
+   of 150 (matching Worms, below Mainz's rabbinic-stature premium), not a full oversight-style
+   backfill -- see `kehillah_setup_speyer_start_effect`'s own header for the corrected account.
+   **A running save's already-set Speyer Greatness is NOT retroactively fixed by this** -- only new
+   games get the new starting figure; a specific existing save would need its own one-time
+   correction effect if wanted, not built here.
+3. **Kehillah succession had no gender restriction at all**, only ranking. Verified the succession_
+   appointment schema itself first (`_succession_appointment.info`): there is no candidate-
+   disqualifying field, only `candidate_score` (ranks), `default_candidates` (categories),
+   `allow_children`/`allow_same_tier_candidates` -- confirmed even vanilla's OWN strictest
+   `male_only_law` (common/succession_appointment/admin_governor.txt) is a score-zeroing multiply,
+   not a true pool exclusion, so the spec's hoped-for hard-exclusion field does not exist to find.
+   Added the strongest real exclusion the schema supports -- a -100000 subtract, dwarfing every
+   other term combined -- gated behind a new global variable, `kehillah_egalitarian_succession`
+   (common/scripted_triggers/kehillah_scripted_triggers.txt's `kehillah_leadership_gender_eligible_
+   trigger`), unset by default (male-only default), with nothing in this pass ever setting it --
+   a documented hook for a future law/reform/decision, per explicit instruction not to build that
+   unlock now.
+4. **Rabbi trait/semicha had no gender gate either.** Found and gated all three real grant sites
+   with the same flag: the Chief Rabbi court position's `valid_character` (common/court_positions/
+   types/kehillah_officers.txt -- a REAL hard gate, unlike succession's score-only schema),
+   `kehillah_bet_din_grant_rabbi_trait_effect`, and `kehillah_bet_din_semicha.0001`'s own trigger
+   (events/kehillah_bet_din_semicha_events.txt) -- the semicha event no longer offers the choice to
+   a female character under the default flag state, not just a silent no-op.
+5. **Agunah's "missing" husband sat visibly in the player's own court.** The alive-branch (50%) of
+   `kehillah_bet_din_pick_agunah_litigants_effect` (common/scripted_effects/kehillah_bet_din_
+   scripted_effects.txt) really did nothing beyond `employer = root` at creation, exactly as its own
+   old comment admitted. Fixed with a real relocation: `set_employer` (confirmed real, already used
+   elsewhere in this mod) to a `random_independent_ruler` filtered on `NOT = { in_diplomatic_range =
+   root }`, both confirmed real vanilla (game/common/scripted_effects/10_dlc_tgp_scripted_effects.txt's
+   own homeless-families fallback-liege picker uses the identical any_/random_ + in_diplomatic_range
+   shape), falling back to any other independent ruler if the game world is too small/early for a
+   genuinely out-of-range one to exist. 50/50 dead/alive split unchanged.
+6. **`scope:kbd_book_courtier` reportedly "can't resolve."** The SCRIPT side checked out completely
+   correct: re-grepped every reference (all in events/kehillah_book_events.txt, nowhere else) and
+   every one is already correctly guarded, and the two live theories about it (an optionally-set
+   scope feeding a trigger-gated `right_portrait`, or the same feeding a trigger-gated option's own
+   `name` text) both checked out safe against real, shipped vanilla code doing the identical thing
+   (game/events/birth_events.txt's `scope:second_adult`, game/events/harm_events.txt's `scope:
+   medic`). The REAL bug was in localization, and `ck3-tiger`'s own mandatory verification run
+   caught it directly: `kehillah_l_english.yml` wrote `[scope:kbd_book_courtier.GetFirstName]` --
+   invalid CK3 loc syntax (`scope:` is a script-side prefix; loc bracket links use the bare scope
+   name, confirmed both against vanilla and against this mod's own correct usage everywhere else,
+   e.g. `[kbd_litigant_a.GetFirstName]`). Fixed all 8 affected lines (4 on kehillah_book.0003, 4 more
+   on kehillah_book.0007 with the identical mistake on `kehillah_book_author`) by removing the
+   `scope:` prefix. A strong, mechanically-confirmed match for "can't resolve," though not live-
+   verified against the original report -- still worth the user's own re-check, but now with an
+   actual confirmed defect fixed rather than only a theory ruled out.
+7. **Not a bug, just explained**: "why Rashi/Mainz, not Speyer" for co-judge slots was pure
+   Greatness ranking meeting Speyer's structural zero (§2's root cause) -- no separate code change,
+   §2's fix is the same fix.
 
 A separate, deliberately unimplemented design pass for succession —
 theocratic pool succession, an appoint-successor override, and a
@@ -276,15 +417,111 @@ before building it; nothing here is approved by default.
   cultivate, not just a die roll at the death screen.
 - **Tzedakah / charity meter (Steward).** A recurring decision spending
   Gold for Influence and family contentment. One decision, one modifier.
+- **DONE, 2026-09-09 — Turn the Rabbi trait into a lifestyle trait.** Completed in two passes.
+  **Pass 1** added three real, XP-driven tracks to `kehillah_rabbi_trait` — Parshanut (biblical
+  exegesis), Talmudics (Talmudic argumentation), Halakha (legal ruling) — fed by Bet Din Conference
+  case resolutions: Talmudics + Halakha on every case (any tier) a trait-holding judge sits on,
+  Parshanut ("more rarely Tanakh") only on a GREAT-tier verdict specifically, reusing the existing
+  tier check as the rarity gate rather than a second random roll. **Pass 2, same day, at further
+  user request**, went further than pass 1's own text had assumed necessary:
+  - **`category` changed from `fame` to `lifestyle`** after all — pass 1 kept it `fame` reasoning
+    that changing it would cost the trait its exemption from the lifestyle-trait slot limit. Checked
+    against vanilla before reversing that: `theologian` and `scholar` are both `category = lifestyle`
+    and routinely coexist on the same character, so the category field alone does not enforce
+    single-slot exclusivity — there was no real tradeoff being protected, so this is now a real
+    lifestyle-category trait as originally asked.
+  - **A third acquisition route**: sitting on a Bet Din Conference panel at all — host or either
+    co-judge — now OFFERS the trait if not already held (`kehillah_bet_din_grant_rabbi_trait_effect`,
+    called from `kehillah_bet_din_open_docket_effect`), on top of the original two (Chief Rabbi
+    office, Isaac's history entry). "You become a rabbi when you go to a bet din as a judge," per
+    the user's own framing — **not silently, per a same-day follow-up request**: it fires a real
+    event, `kehillah_bet_din_semicha.0001` (events/kehillah_bet_din_semicha_events.txt), not an
+    unprompted `add_trait`. One event, not two — its desc distinguishes the host's own version
+    ("no one more senior in the room to grant it," self-recognition by the panel) from a
+    co-judge's ("granted by the convening Av Beit Din," i.e. the host, by name) via a
+    `triggered_desc` on whether root is the host. Accept becomes a rabbi; decline is not a dead
+    end — the same NOT-already-holding-the-trait guard means it is offered again next session, not
+    permanently refused.
+  - **Each track extended from two thresholds to three (30/65/100 — 100 is the engine's own hard
+    cap on trait XP, caught by ck3-tiger before this reached a live game)**, so the tally-based
+    "Write a Book" chain below has masterwork/famed/illustrious to land on.
+  Not done, and still a real gap from the original "perk-by-perk path" phrasing: no actual
+  lifestyle-tree/perk-point *acquisition* path exists — a character still cannot spend lifestyle
+  points to become a rabbi the way one commits to Diplomat or Scholar; the three routes above are
+  still all script/event-granted, not a perk tree with an XP curve and lifestyle-selection UI.
+
+- **DONE (fleshed out), 2026-09-09 — Write a Book.** The three flat, single-effect book decisions
+  above were rebuilt, same day, into one real event chain at user request: `kehillah_write_book_
+  decision` (common/decisions/kehillah_rabbi_book_decisions.txt) now just opens `kehillah_book.0001`
+  (events/kehillah_book_events.txt), a 7-event chain —
+  1. **choose a genre**: Halakha/responsa, Torah commentary (Parshanut), Talmud commentary
+     (Talmudics) — each gated on the matching `kehillah_rabbi_trait` track at 30+, setting the
+     tally's baseline from whichever threshold (30/65/100) is actually met — or **Hebrew poetry**,
+     a fourth genre gated on vanilla's own `lifestyle_poet` trait instead, not tied to the rabbi
+     trait at all;
+  2. **choose an inspiration** (study alone / seek a colleague / draw on real experience) — two
+     stat-gated, one flat/safe;
+  3. **discuss it with a courtier** (`random_courtier`, weighted toward Learning) — a stat-gated
+     debate option that also carries the chain's one genuine `random_list` roll (a real *chance*
+     for a better tier, not just a deterministic stat check, per the user's own phrasing), a safer
+     "just listen," or working alone;
+  4. **revise or publish** — a Stress-for-quality tradeoff;
+  5. **completion** (`kehillah_book_complete_effect`, common/scripted_effects/kehillah_book_
+     effects.txt) — reads the final tally against two thresholds for the tier, then creates the
+     artifact genre-specifically: two name variants per genre (random-picked; one built from
+     `[owner.GetTitledFirstNamePossessiveNoTooltip]`, vanilla's own confirmed artifact-name
+     scope-link syntax, one a real historical-style title — Novellae for Talmudics, Diwan for
+     poetry, etc.) and two possible ownership modifiers per genre (common/modifiers/kehillah_book_
+     modifiers.txt, random-picked, independent of tier — "an interesting range of possible
+     boosts"), plus a flat-and-tier-scaling Greatness/Piety/Prestige reward bigger than any single
+     Bet Din case's own — "a big contribution," per request;
+  6. **sending copies**, which reads a NEW `kehillah_registered_communities` global_variable_list
+     (populated at game start in common/on_action/kehillah_on_actions.txt with Worms/Speyer/Mainz)
+     instead of naming the three communities directly — "register communities as a scope," per the
+     user's own suggestion, deliberately built as general-purpose infrastructure, not a one-off for
+     this feature;
+  7. **arrival**, fired on every other registered community's own leader, naming the author by
+     scope (saved before the scope switch into each recipient) and giving that leader a small
+     Piety/Learning payoff for the gift.
+
+  **Two honest, stated scope cuts, not silent ones**: (a) "nearest" communities are not actually
+  distance-ranked — every other registered community gets notified, which is indistinguishable from
+  "the nearest ones" while the registry only holds three communities, but will need real
+  `ordered_in_global_list` distance-ranking once it grows past a handful; (b) the registry itself
+  only ever gets populated at game start — nothing yet calls `add_to_global_variable_list` when a
+  new Kehillah is founded, because nothing in this mod can found one yet (Wave 5, unbuilt). Whoever
+  builds Wave 5 must remember to register there too. ck3-tiger-clean (one new, already-familiar
+  false-positive `strict-scopes` warning on `create_artifact_book_effect` through an extra
+  wrapper-effect layer, same class already accepted for `kehillah_compose_commentary_decision`);
+  not live-tested.
 
 **Blocked on a content draft, not engineering — pull in once the draft exists:**
-- **Bet Din Conference, Part 2 (the case pool).** Once Part 1 (near-term TODO item 7,
-  [v5-bet-din-conference.md](docs/spec/v5-bet-din-conference.md)) has a working activity and a
-  handful of test cases proving the loop feels right, this expands the halachic-case pool to
-  dozens/hundreds so a playthrough doesn't see repeats. Needs the user to draft case ideas first —
-  scenario, which real characters/roles it involves, what a good vs. bad ruling looks like, and
-  which cases are tenet-adding milestones (Rabbeinu Gershom's herem against polygamy is the model
-  for that last category) — before any of this content gets written.
+- **Bet Din Conference, Part 2 (the case pool) — IN PROGRESS, 2026-09-09: case 4 of an eventual
+  dozens/hundreds shipped.** This expands the halachic-case pool so a playthrough doesn't see
+  repeats. **Case 4, "The Recalcitrant Husband,"** is built and ck3-tiger-clean (not yet
+  live-tested): a wife petitions for a get, her husband (created with `callous`/`arbitrary`
+  traits) refuses outright, and the panel picks one of three real institutional responses —
+  cherem (the `excommunicated` trait, no forced divorce), coercion (`maimed` plus a forced
+  `divorce` plus a huge `reverse_add_opinion` from him toward all three judges), or upholding his
+  refusal (a Piety cost, still scored on the normal great/good/poor tally like every other case).
+  Independent of case 2 ("The Agunah's Plea") — no shared state, can be drawn in the same session
+  or neither. See kehillah_bet_din_recalcitrant_husband_resolution_effect (common/scripted_effects/
+  kehillah_bet_din_scripted_effects.txt) for the full account.
+
+  **Drafted, not built: "The Returning Husband."** Raised by the user in the same conversation as
+  case 4 — a genuine follow-on to case 2 this time, not independent: a husband case 2's DEAD
+  branch declared gone returns after his widow has already remarried on the Bet Din's own
+  approval. The user's own assessment stands: "that's a really hard one" — it needs case 2's
+  outcome (which litigant, which branch, who she remarried) to persist across sessions, which
+  nothing in the docket does yet (case 2's own scratch global_vars are cleared at session close).
+  Whoever picks this up next needs a real design pass on what persists and for how long before
+  writing events, not just a fourth case slot.
+
+  Case 1-3 (dowry, agunah, second wife) were the Part 1 proof-of-concept; case 4 is the first case
+  built without a "prove the mechanic" mandate attached, so it's also the first real test of
+  whether the case-authoring pattern (litigant creation/picking effect + host/co-judge/resolution
+  events + tally-tier Stability/Greatness + docket_draw_effect entry + activity-log loc) scales
+  cleanly to new content. It did, on this one data point.
 
 **Needs more than one Kehillah on the map, or a regional anchor to travel
 to — natural Phase 2/3 content, not v1:**

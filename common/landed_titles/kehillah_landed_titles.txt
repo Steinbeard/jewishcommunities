@@ -2,139 +2,424 @@
 # Kehillah titles.
 #
 # Source of truth: docs/spec/v1-kehillah-community.md section 6,
-# docs/scenarios/worms-1066.md section 4, and (for the duchy-tier
-# grouping added 2026-09-08) docs/spec/v4-regional-communities-and-
-# batei-din.md.
+# docs/scenarios/worms-1066.md section 4, docs/spec/v4-regional-
+# communities-and-batei-din.md (the original Sh'um duchy), docs/spec/
+# v6-minhag-regions.md sections 1-3 (the four-duchy rewrite), and (for
+# THIS rewrite) docs/spec/v7-minhag-geographic-tagging.md section 1,
+# which supersedes v6 sections 1-2 entirely.
 #
-# Structure: THREE landless county-tier titles (Worms, Speyer, Mainz),
-# nested under one titular duchy (d_kehillah_shum) that is never granted
-# to anyone.
+# REWRITTEN 2026-09-10 (v7 spec, same day as v6, following a design
+# conversation that changed the load-bearing mechanism). The FOUR titular
+# duchies v6 built four hours earlier in this same pass --
+# d_kehillah_western_ashkenaz, d_kehillah_eastern_ashkenaz,
+# d_kehillah_anglia, d_kehillah_provence -- are REMOVED. Every one of the
+# sixteen c_kehillah_<name> county titles below is now FLAT: a top-level
+# landless title with no duchy parent at all, exactly the shape
+# c_kehillah_worms had before v4/v6 ever added a duchy tier, and the same
+# shape vanilla's own c_nf_yamato landless-adventurer title already uses
+# (game/common/landed_titles/01_japan_noble_family.txt: c_nf_yamato sits
+# bare at file top level, no enclosing d_/k_/e_ title, confirmed directly
+# in the installed files before this rewrite).
 #
-# CHANGED FROM DUCHY TIER, 2026-09-07 (Worms only, at the time). A
-# Kehillah is a community inside a single town, so county tier is what
-# it actually is. See that date's history in git for the original
-# reasoning (also: common/governments/_governments.info's
-# landless_playable documentation, and the c_nf_yamato precedent in
-# common/landed_titles/01_japan_noble_family.txt -- top-level in its
-# file, not nested in any duchy, landless, capital pointing at a real
-# county somebody else holds. c_kehillah_worms/speyer/mainz are the
-# same shape.)
+# WHY, SO SOON AFTER V6 BUILT THE DUCHY TIER CLEANLY: v6's own duchy
+# structure works for the sixteen communities that exist today, authored
+# once, correctly, in this file. It does not support the user's actual
+# goal, surfaced in the SAME day's follow-up conversation: founding a new
+# Kehillah literally anywhere, not just at one of a pre-authored set of
+# locations. De jure parentage is fixed at file-load time -- no effect
+# can dynamically reassign an existing title's de jure liege into a
+# duchy computed at runtime, though a founded title's own CAPITAL can be
+# moved freely (set_capital_county, confirmed vanilla, works on titular
+# titles). A de-jure-nested minhag structure can therefore only ever
+# correctly describe communities placed in this file in advance -- so
+# widening it further (as v6 did, from one duchy to four) still could
+# never reach "anywhere," no matter how many regions it eventually held.
+# Full account: docs/spec/v7-minhag-geographic-tagging.md's own "Why this
+# supersedes v6 section 1-2".
 #
-# ADDED 2026-09-08 (v4 spec): d_kehillah_shum, the Sh'um confederation
-# (Speyer/Worms/Mainz -- the real medieval Rhineland Bet Din). Landless
-# county titles CAN carry real de jure parentage; CK3's de jure
-# hierarchy is built by file nesting (a county block written inside a
-# duchy block becomes that duchy's de jure territory), independent of
-# whether the duchy is ever held. d_kehillah_shum never is -- no
-# succession law, no holder, not granted anywhere in history/titles.
-# It exists purely so `de_jure_duchy = title:d_kehillah_shum` (or
-# equivalent -- see is_kehillah_shum_member_trigger in
-# common/scripted_triggers/kehillah_scripted_triggers.txt) can answer
-# "which three communities are Sh'um members" without a hand-maintained
-# list. This is the first time this mod nests a landless = yes county
-# inside a duchy at all; no vanilla file does this combination anywhere
-# research turned up (v4 spec section 2). Confirmed clean via ck3-tiger
-# and a live boot before anything else was built on top of it (v4 spec
-# section 7, step 1) -- see docs/testing/ for the dated log.
+# THE REPLACEMENT MECHANISM: minhag membership is no longer a title-tree
+# fact at all. It is now a computed fact about REAL, ALWAYS-PRESENT
+# vanilla geography -- which real de jure duchy (or, for Anglia, kingdom/
+# empire) a Kehillah's host county sits in, looked up against a
+# mod-defined table, tagged onto the real vanilla duchy titles themselves
+# via a one-time effect at game start (kehillah_tag_minhag_regions_effect,
+# common/scripted_effects/kehillah_minhag_geography_effects.txt) rather
+# than via title nesting. See that effect's own header for the full
+# twelve-region table. common/scripted_triggers/kehillah_scripted_
+# triggers.txt's kehillah_shares_minhag_region_trigger and the two
+# triggers built on top of it read that tagging, not de jure parentage,
+# for exactly this reason.
 #
-# The county under each community (c_worms, c_speyer, c_mainz) is
+# Sh'um itself is UNCHANGED by this rewrite -- it was already preserved
+# as FLAVOR, not structure, by the v6 pass (a permanent opinion bond
+# between whoever currently leads Worms/Speyer/Mainz,
+# kehillah_shum_bond_opinion, common/opinion_modifiers/kehillah_opinion_
+# modifiers.txt), and nothing about removing the wider regional duchy
+# tier changes that.
+#
+# EVERY COUNTY TAG BELOW is exactly as v6 verified it against the
+# installed CK3 1.19 files (grep common/landed_titles/00_landed_titles.txt)
+# -- this rewrite only removes the four enclosing d_kehillah_<region>
+# blocks and un-indents their contents by one tab; not one county tag,
+# capital line, or per-title field changed. Several of the user's raw
+# place-names in the original roster turned out not to be county-tier
+# titles at all -- major cities are frequently baronies inside a
+# differently-named county -- and are still called out at each capital
+# line below so nobody re-derives them incorrectly from the city name
+# alone.
+#
+# The county under each community (c_worms, c_troyes, c_praha, ...) is
 # untouched and still belongs to its vanilla holder. The Kehillah title
-# is layered over it, not carved out of it. That is the whole premise:
-# you do not own the ground you stand on.
-#
-# This file adds new titles and modifies no vanilla title, so it merges
-# cleanly with the vanilla landed_titles database.
+# is layered over it, not carved out of it -- you do not own the ground
+# you stand on. This file adds new titles and modifies no vanilla title,
+# so it merges cleanly with the vanilla landed_titles database.
 # =====================================================================
 
-d_kehillah_shum = {
-	# Same deep blue as the three member counties below -- one visual
-	# family, distinct from vanilla's Jewish religious-head titles in
-	# the 0/100-140/255 range.
-	color = { 45 70 125 }
 
-	# Never held (v4 spec section 3): no holder is ever assigned in
-	# history/titles, and nothing in this mod's scripts ever grants it.
-	# It carries no succession law because it never needs one -- there
-	# is no vacancy to fill. capital points at Worms only because the
-	# field is mandatory on a duchy-tier title; it has no play
-	# significance for a title nobody holds.
-	capital = c_kehillah_worms
+# =====================================================================
+# WESTERN ASHKENAZ -- Worms, Speyer, Mainz (the flattened Sh'um trio,
+# fields completely unchanged since v4), plus Troyes (Rashi), Paris and
+# Cologne, added by v6. All six were nested inside d_kehillah_western_
+# ashkenaz as of v6; that duchy is gone as of this v7 rewrite (see this
+# file's own header above) and every field below each c_kehillah_* title
+# is otherwise untouched. Region membership for these six is now read
+# off real geography (all six sit inside one of the Western Ashkenaz
+# duchy tags -- common/scripted_effects/kehillah_minhag_geography_
+# effects.txt), not off this file's own structure.
+# =====================================================================
 
+c_kehillah_worms = {
+	landless = yes
+	# Marks this as a PLAYABLE landless ruler's title rather than a
+	# titular one like k_papal_state. Without it the engine refuses
+	# to hand the holder to a player -- pdx_assert.cpp:619 "Trying
+	# to assign unplayable character" -- and the game crashes on
+	# Play. Every vanilla d_laamp_* adventurer title carries this
+	# flag.
+	require_landless = yes
 	definite_form = yes
+
+	# The holder is addressed by their own name and role, not as a
+	# count of anything -- same treatment vanilla gives religious
+	# head titles.
+	ruler_uses_title_name = no
+
+	# A Kehillah is an institution, never a family possession.
 	can_be_named_after_dynasty = no
+	can_use_nomadic_naming = no
+
+	# Nobody inherits, claims or drifts into leading a Jewish
+	# community. Succession runs exclusively through
+	# kehillah_appointment_succession_law.
+	no_automatic_claims = yes
 	de_jure_drift_disabled = yes
 
-	c_kehillah_worms = {
-		landless = yes
-		# Marks this as a PLAYABLE landless ruler's title rather than a
-		# titular one like k_papal_state. Without it the engine refuses
-		# to hand the holder to a player -- pdx_assert.cpp:619 "Trying
-		# to assign unplayable character" -- and the game crashes on
-		# Play. Every vanilla d_laamp_* adventurer title carries this
-		# flag.
-		require_landless = yes
-		definite_form = yes
+	# The community sits in Worms and stays there. Province 2731,
+	# verified against the installed 1.19 files and matching
+	# docs/scenarios/worms-1066.md section 1.
+	capital = c_worms
 
-		# The holder is addressed by their own name and role, not as a
-		# count of anything -- same treatment vanilla gives religious
-		# head titles.
-		ruler_uses_title_name = no
+	color = { 45 70 125 }
+}
 
-		# A Kehillah is an institution, never a family possession. This
-		# is the title-level statement of the same principle the
-		# government type makes by disabling cadet branches and
-		# dynasty-named realms.
-		can_be_named_after_dynasty = no
-		can_use_nomadic_naming = no
+c_kehillah_speyer = {
+	landless = yes
+	require_landless = yes
+	definite_form = yes
+	ruler_uses_title_name = no
+	can_be_named_after_dynasty = no
+	can_use_nomadic_naming = no
+	no_automatic_claims = yes
+	de_jure_drift_disabled = yes
 
-		# Nobody inherits, claims or drifts into leading a Jewish
-		# community. Succession runs exclusively through
-		# kehillah_appointment_succession_law.
-		no_automatic_claims = yes
-		de_jure_drift_disabled = yes
+	# Vanilla county tag, confirmed present in the installed 1.19
+	# files (00_landed_titles.txt).
+	capital = c_speyer
 
-		# The community sits in Worms and stays there. Province 2731,
-		# verified against the installed 1.19 files and matching
-		# docs/scenarios/worms-1066.md section 1.
-		capital = c_worms
-	}
+	color = { 45 70 125 }
+}
 
-	# ADDED 2026-09-08 (v4 spec section 5). Mirrors c_kehillah_worms
-	# exactly. AI-run, not a bookmark start -- see
-	# history/characters/speyer_1066.txt and history/titles/
-	# kehillah_titles.txt for the seeding, and that character file's own
-	# header for why 1066 is a deliberate anachronism here (the real
-	# Speyer community is not documented before the 1070s).
-	c_kehillah_speyer = {
-		landless = yes
-		require_landless = yes
-		definite_form = yes
-		ruler_uses_title_name = no
-		can_be_named_after_dynasty = no
-		can_use_nomadic_naming = no
-		no_automatic_claims = yes
-		de_jure_drift_disabled = yes
+c_kehillah_mainz = {
+	landless = yes
+	require_landless = yes
+	definite_form = yes
+	ruler_uses_title_name = no
+	can_be_named_after_dynasty = no
+	can_use_nomadic_naming = no
+	no_automatic_claims = yes
+	de_jure_drift_disabled = yes
 
-		# Vanilla county tag, confirmed present in the installed 1.19
-		# files (00_landed_titles.txt).
-		capital = c_speyer
-	}
+	# Vanilla county tag, confirmed present in the installed 1.19
+	# files (00_landed_titles.txt).
+	capital = c_mainz
 
-	# ADDED 2026-09-08 (v4 spec section 5). Mirrors c_kehillah_worms
-	# exactly. AI-run, not a bookmark start -- see
-	# history/characters/mainz_1066.txt.
-	c_kehillah_mainz = {
-		landless = yes
-		require_landless = yes
-		definite_form = yes
-		ruler_uses_title_name = no
-		can_be_named_after_dynasty = no
-		can_use_nomadic_naming = no
-		no_automatic_claims = yes
-		de_jure_drift_disabled = yes
+	color = { 45 70 125 }
+}
 
-		# Vanilla county tag, confirmed present in the installed 1.19
-		# files (00_landed_titles.txt).
-		capital = c_mainz
-	}
+# Rashi's community -- the flagship Development-versus-Greatness example
+# v6 spec section 3a calls for by name (see kehillah_setup_troyes_start_
+# effect, common/scripted_effects/kehillah_scripted_effects.txt, for the
+# Greatness reasoning). c_troyes confirmed a real county tag in the
+# installed 1.19 files.
+c_kehillah_troyes = {
+	landless = yes
+	require_landless = yes
+	definite_form = yes
+	ruler_uses_title_name = no
+	can_be_named_after_dynasty = no
+	can_use_nomadic_naming = no
+	no_automatic_claims = yes
+	de_jure_drift_disabled = yes
+
+	capital = c_troyes
+
+	color = { 45 70 125 }
+}
+
+# NOT c_paris -- Paris itself is a BARONY (b_paris) inside the county
+# c_ile_de_france; there is no distinct c_paris title in the installed
+# files. Confirmed directly (00_landed_titles.txt: c_ile_de_france
+# containing b_paris) rather than assumed from the city name.
+c_kehillah_paris = {
+	landless = yes
+	require_landless = yes
+	definite_form = yes
+	ruler_uses_title_name = no
+	can_be_named_after_dynasty = no
+	can_use_nomadic_naming = no
+	no_automatic_claims = yes
+	de_jure_drift_disabled = yes
+
+	capital = c_ile_de_france
+
+	color = { 45 70 125 }
+}
+
+# Unlike Paris, Cologne's own name IS the county tag -- confirmed
+# directly (00_landed_titles.txt: c_cologne), no barony indirection
+# needed.
+c_kehillah_cologne = {
+	landless = yes
+	require_landless = yes
+	definite_form = yes
+	ruler_uses_title_name = no
+	can_be_named_after_dynasty = no
+	can_use_nomadic_naming = no
+	no_automatic_claims = yes
+	de_jure_drift_disabled = yes
+
+	capital = c_cologne
+
+	color = { 45 70 125 }
+}
+
+
+# =====================================================================
+# EASTERN ASHKENAZ -- Prague and Vienna, deliberately thin per the
+# user's own explicit instruction not to pre-populate the later
+# Polish-Lithuanian world (v6 spec section 3b). This is also why this
+# pair alone cannot field a full three-judge Bet Din panel
+# (kehillah_region_can_field_bet_din_panel_trigger, common/scripted_
+# triggers/kehillah_scripted_triggers.txt).
+# =====================================================================
+
+# c_praha, not "c_prague" -- spelled the Czech way in the installed
+# vanilla files, confirmed directly.
+c_kehillah_praha = {
+	landless = yes
+	require_landless = yes
+	definite_form = yes
+	ruler_uses_title_name = no
+	can_be_named_after_dynasty = no
+	can_use_nomadic_naming = no
+	no_automatic_claims = yes
+	de_jure_drift_disabled = yes
+
+	capital = c_praha
+
+	color = { 45 70 125 }
+}
+
+# c_vienna confirmed a real county tag directly.
+c_kehillah_vienna = {
+	landless = yes
+	require_landless = yes
+	definite_form = yes
+	ruler_uses_title_name = no
+	can_be_named_after_dynasty = no
+	can_use_nomadic_naming = no
+	no_automatic_claims = yes
+	de_jure_drift_disabled = yes
+
+	capital = c_vienna
+
+	color = { 45 70 125 }
+}
+
+
+# =====================================================================
+# ANGLIA -- London, York, Lincoln, Norwich (v6 spec section 3c). Every
+# capital below is a county whose own name differs from the city everyone
+# actually means, confirmed directly rather than assumed:
+#   - London itself is the barony b_london, inside c_middlesex.
+#   - York itself is the barony b_york, inside c_north_riding.
+#   - Lincoln maps directly to c_lincolnshire.
+#   - Norwich maps directly to c_norfolk -- vanilla's own title file
+#     literally annotates "capital = c_norfolk # Norwich" on b_norwich.
+#
+# Anglia is the one region this pass's geographic tagging does NOT tag
+# duchy-by-duchy -- it is checked directly against empire = e_britannia
+# instead (common/scripted_effects/kehillah_minhag_geography_effects.txt's
+# own header explains why: Anglia does not overlap any other region's
+# territory, so the coarse kingdom/empire tier is sufficient and simpler
+# than tagging nine separate English duchies).
+# =====================================================================
+
+c_kehillah_london = {
+	landless = yes
+	require_landless = yes
+	definite_form = yes
+	ruler_uses_title_name = no
+	can_be_named_after_dynasty = no
+	can_use_nomadic_naming = no
+	no_automatic_claims = yes
+	de_jure_drift_disabled = yes
+
+	capital = c_middlesex
+
+	color = { 45 70 125 }
+}
+
+# Deliberately NOT given a high start (Development 1) -- per the
+# user's own explicit design note, York's later prominence
+# (culminating in the 1190 massacre) should read as a later
+# development, not something the 1066 start already implies. See
+# kehillah_setup_york_start_effect's own header.
+c_kehillah_york = {
+	landless = yes
+	require_landless = yes
+	definite_form = yes
+	ruler_uses_title_name = no
+	can_be_named_after_dynasty = no
+	can_use_nomadic_naming = no
+	no_automatic_claims = yes
+	de_jure_drift_disabled = yes
+
+	capital = c_north_riding
+
+	color = { 45 70 125 }
+}
+
+# Deliberately no early blood-libel flavor -- the real Lincoln
+# accusation (1255) is well outside this mod's 1066 start and should
+# not be foreshadowed by an inflated starting rating. See kehillah_
+# setup_lincoln_start_effect's own header.
+c_kehillah_lincoln = {
+	landless = yes
+	require_landless = yes
+	definite_form = yes
+	ruler_uses_title_name = no
+	can_be_named_after_dynasty = no
+	can_use_nomadic_naming = no
+	no_automatic_claims = yes
+	de_jure_drift_disabled = yes
+
+	capital = c_lincolnshire
+
+	color = { 45 70 125 }
+}
+
+# The 1144 Norwich accusation -- the actually-relevant early English
+# blood libel per the user's own note -- is a real candidate for
+# future flavor content on this specific title, not built here. See
+# kehillah_setup_norwich_start_effect's own header.
+c_kehillah_norwich = {
+	landless = yes
+	require_landless = yes
+	definite_form = yes
+	ruler_uses_title_name = no
+	can_be_named_after_dynasty = no
+	can_use_nomadic_naming = no
+	no_automatic_claims = yes
+	de_jure_drift_disabled = yes
+
+	capital = c_norfolk
+
+	color = { 45 70 125 }
+}
+
+
+# =====================================================================
+# PROVENCE -- Narbonne, Béziers, Montpellier, Lunel (v6 spec section 3d).
+# Internal id kehillah_provence throughout, matching the user's own
+# original roster and the standard historical term (v6 spec section 3d's
+# own discretion call, unchanged by this rewrite).
+# =====================================================================
+
+# Narbonne itself is the barony b_narbonne, inside c_carcassonne -- no
+# distinct Narbonne county exists in the base game. Confirmed directly.
+c_kehillah_narbonne = {
+	landless = yes
+	require_landless = yes
+	definite_form = yes
+	ruler_uses_title_name = no
+	can_be_named_after_dynasty = no
+	can_use_nomadic_naming = no
+	no_automatic_claims = yes
+	de_jure_drift_disabled = yes
+
+	capital = c_carcassonne
+
+	color = { 45 70 125 }
+}
+
+# c_beziers confirmed a real county tag directly.
+c_kehillah_beziers = {
+	landless = yes
+	require_landless = yes
+	definite_form = yes
+	ruler_uses_title_name = no
+	can_be_named_after_dynasty = no
+	can_use_nomadic_naming = no
+	no_automatic_claims = yes
+	de_jure_drift_disabled = yes
+
+	capital = c_beziers
+
+	color = { 45 70 125 }
+}
+
+# c_kehillah_montpellier REMOVED 2026-09-11 (user request): it shared
+# c_montpellier as a host county with c_kehillah_lunel below -- one
+# Kehillah too many for one real-world location. Cut Montpellier, kept
+# Lunel (see immediately below). Removed everywhere: history/titles/
+# kehillah_titles.txt, history/characters/montpellier_1066.txt (deleted),
+# common/on_action/kehillah_on_actions.txt, common/scripted_effects/
+# kehillah_scripted_effects.txt, common/scripted_triggers/
+# kehillah_scripted_triggers.txt, and this file's loc.
+
+# LUNEL IS NOT ON THE CK3 MAP AT ANY TIER -- checked directly, no
+# barony or county match under this name anywhere in the installed
+# files. Lunel sits ~15km from Montpellier historically, so this
+# hosts Lunel's Kehillah at c_montpellier -- now the SOLE Kehillah at
+# that county, after the removal noted immediately above. Lunel's real
+# historical weight (an academy that drew students from abroad) shows
+# up instead as a genuinely strong starting Greatness -- see
+# kehillah_setup_lunel_start_effect's own header for the full account,
+# including the one honest wrinkle (the academy's actual fame is a
+# 12th-century
+# development, later than this mod's 1066 start).
+c_kehillah_lunel = {
+	landless = yes
+	require_landless = yes
+	definite_form = yes
+	ruler_uses_title_name = no
+	can_be_named_after_dynasty = no
+	can_use_nomadic_naming = no
+	no_automatic_claims = yes
+	de_jure_drift_disabled = yes
+
+	capital = c_montpellier
+
+	color = { 45 70 125 }
 }

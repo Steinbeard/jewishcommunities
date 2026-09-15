@@ -9,8 +9,11 @@
 #
 # The single place that answers "is this title a Jewish community?".
 # UPDATED 2026-09-08 (v4 spec): Speyer and Mainz added alongside Worms.
-# Every later Kehillah -- Troyes, the Phase 2 Babylonian overlay, the
-# Phase 3 Sephardi one -- gets added here and nowhere else.
+# UPDATED 2026-09-10 (v6 spec sections 3, 6): the thirteen new
+# communities added across Western Ashkenaz, Eastern Ashkenaz, Anglia and
+# Provence. Every later Kehillah -- the other ~9 regions v6 spec section
+# 3 explicitly defers, the Phase 2 Babylonian overlay, the Phase 3
+# Sephardi one -- gets added here and nowhere else.
 #
 # This is checked by name rather than by a title flag because it has to
 # be answerable during history execution and at game start, before any
@@ -22,65 +25,277 @@ is_kehillah_title_trigger = {
 		this = title:c_kehillah_worms
 		this = title:c_kehillah_speyer
 		this = title:c_kehillah_mainz
+		this = title:c_kehillah_troyes
+		this = title:c_kehillah_paris
+		this = title:c_kehillah_cologne
+		this = title:c_kehillah_praha
+		this = title:c_kehillah_vienna
+		this = title:c_kehillah_london
+		this = title:c_kehillah_york
+		this = title:c_kehillah_lincoln
+		this = title:c_kehillah_norwich
+		this = title:c_kehillah_narbonne
+		this = title:c_kehillah_beziers
+		this = title:c_kehillah_lunel
 	}
 }
 
 
 # ---------------------------------------------------------------------
-# is_kehillah_shum_member_trigger
-# Scope: a character (the Kehillah leader). Wraps primary_title
-# internally, same pattern as kehillah_pillar_at_least_trigger below --
-# every caller so far (the takkanah decision, the Sh'um event) needs
-# this on a character, not a title, so that is the scope this trigger
-# takes directly rather than making every caller open primary_title
-# itself.
+# is_kehillah_shum_member_trigger / kehillah_is_shum_greatness_leader_
+# trigger -- RETIRED 2026-09-10 (v6 spec section 1).
 #
-# ADDED 2026-09-08 (v4 spec sections 3-4). Answers "does this leader's
-# community belong to the Sh'um confederation" via real de jure
-# parentage rather than a hand-maintained list -- the answer IS
-# is_kehillah_title_trigger today (every Kehillah title happens to be a
-# Sh'um member in v1), but the two triggers are kept separate on
-# purpose: a future non-Sh'um Kehillah (Troyes, Babylonia) must not
-# accidentally count as a Sh'um member just because it is a Kehillah,
-# and this is the one place that distinction gets made.
+# d_kehillah_shum, the titular duchy these two triggers existed to test,
+# no longer exists -- Worms/Speyer/Mainz now sit inside the wider
+# d_kehillah_western_ashkenaz alongside Troyes/Paris/Cologne (common/
+# landed_titles/kehillah_landed_titles.txt). Every community now answers
+# "which region am I in, and am I its Greatness leader" through the
+# GENERAL mechanism below (kehillah_is_regional_greatness_leader_trigger)
+# instead of a hand-rolled three-title check -- v6 spec section 1's own
+# words: "nothing needs to ask 'is this specifically a Sh'um member' once
+# region membership is the general mechanic." The historic bond between
+# Worms/Speyer/Mainz specifically is preserved as FLAVOR, not structure
+# -- see kehillah_shum_bond_opinion (common/opinion_modifiers/kehillah_
+# opinion_modifiers.txt) and common/on_action/kehillah_on_actions.txt's
+# on_title_gain handling.
+#
+# Every caller of both retired triggers was updated in the same pass:
+# common/activities/activity_types/kehillah_bet_din_conference.txt (is_
+# shown, can_start_showing_failures_only, can_be_activity_guest), events/
+# kehillah_debug_events.txt (.53's three report branches), and events/
+# kehillah_shum_events.txt (the retired Sh'um takkanah event itself,
+# already dead code per its own header before this pass -- deleted
+# outright rather than updated to keep referencing a trigger that no
+# longer exists; see common/decisions/kehillah_decisions.txt's header for
+# why that decision was removed first, in the v5 pass).
 # ---------------------------------------------------------------------
 
-is_kehillah_shum_member_trigger = {
+
+# ---------------------------------------------------------------------
+# kehillah_has_known_minhag_region_trigger
+# Scope: a character.
+#
+# ADDED 2026-09-10 (v7 spec, supersedes v6 section 4's de-jure-based
+# generalization). True if this character's REAL host geography
+# (capital_county -- the vanilla county their primary_title's own
+# capital field points at, confirmed as a working character-scope link
+# for a landless Kehillah leader by this mod's own pre-existing usage,
+# common/scripted_character_templates/kehillah_pool_repopulation_patch.txt's
+# root.capital_county.faith / root.capital_county calls) resolves to a
+# minhag region this mod actually tags: either Anglia, checked directly
+# against the kingdom/empire tier rather than a tagged variable (see
+# kehillah_tag_minhag_regions_effect's own header, common/scripted_
+# effects/kehillah_minhag_geography_effects.txt, for why Anglia alone is
+# not duchy-tagged), or one of the other eleven regions, tagged onto the
+# real de jure duchy by that same one-time effect.
+#
+# THE SINGLE PLACE THIS TWO-BRANCH CHECK IS WRITTEN. Every other trigger
+# below that needs to know "does this character's Kehillah have a known
+# region at all" calls this one rather than repeating the OR -- exactly
+# the single-source-of-truth discipline v7 spec's own header insists on
+# ("every consumer... reads the SAME single variable off the SAME real
+# duchy").
+# ---------------------------------------------------------------------
+
+kehillah_has_known_minhag_region_trigger = {
+	exists = capital_county
+	OR = {
+		capital_county = { empire = title:e_britannia }
+		capital_county.de_jure_liege = {
+			has_variable = kehillah_minhag
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_shares_minhag_region_trigger = { OTHER = <character scope> }
+# Scope: a character. Parameter: OTHER, another character.
+#
+# REWRITTEN 2026-09-10 (v7 spec, supersedes v6 section 4 item 3's de
+# jure version). de_jure_liege comparison no longer works for this: as
+# of this pass every Kehillah county title is FLAT (common/landed_titles/
+# kehillah_landed_titles.txt's own header), so primary_title.de_jure_liege
+# is simply unset for all sixteen of them -- there is no longer a
+# d_kehillah_<region> duchy for two sibling communities to share.
+# "Shares a minhag region" is now read off REAL geography instead:
+# either both communities' host counties sit under the empire e_britannia
+# (Anglia), or both their host counties' real de jure duchies carry the
+# SAME kehillah_minhag flag value, set once at game start by kehillah_
+# tag_minhag_regions_effect. Used by activity_kehillah_bet_din_
+# conference's can_be_activity_guest (common/activities/activity_types/
+# kehillah_bet_din_conference.txt), called with OTHER = scope:host, and
+# by the two triggers below that build on it.
+#
+# kehillah_has_known_minhag_region_trigger called on both sides first, as
+# an early, self-documenting guard; the two AND branches below repeat the
+# has_variable/empire checks anyway (has_variable guards on both operands
+# before ever comparing var:kehillah_minhag = OTHER's var:kehillah_minhag,
+# matching kehillah_pillar_at_least_trigger's own guard-before-compare
+# discipline elsewhere in this file) so a character with no known region
+# on either side reads as "does not share" rather than erroring.
+#
+# var:kehillah_minhag = $OTHER$...var:kehillah_minhag -- comparing two
+# variables holding flag-typed values for equality, confirmed valid CK3
+# syntax (common/on_action/war_on_actions.txt's var:coronation_event_1005_
+# target = root.var:coronation_event_1005_target is the general var-to-
+# var-across-a-scope-chain shape; common/scripted_triggers/20_health_
+# triggers.txt's scope:disease_type_for_trigger = flag:lovers_pox is the
+# flag-value-comparison half), not a guess.
+# ---------------------------------------------------------------------
+
+kehillah_shares_minhag_region_trigger = {
+	kehillah_has_known_minhag_region_trigger = yes
+	$OTHER$ = { kehillah_has_known_minhag_region_trigger = yes }
+	OR = {
+		AND = {
+			capital_county = { empire = title:e_britannia }
+			$OTHER$.capital_county = { empire = title:e_britannia }
+		}
+		AND = {
+			capital_county.de_jure_liege = { has_variable = kehillah_minhag }
+			$OTHER$.capital_county.de_jure_liege = { has_variable = kehillah_minhag }
+			capital_county.de_jure_liege.var:kehillah_minhag = $OTHER$.capital_county.de_jure_liege.var:kehillah_minhag
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_is_regional_greatness_leader_trigger
+# Scope: a Kehillah leader (character).
+#
+# REWRITTEN 2026-09-10 (v7 spec, supersedes v6 section 4 item 1's de
+# jure version, for the same reason kehillah_shares_minhag_region_trigger
+# above was rewritten -- there is no more d_kehillah_<region> duchy for
+# any_de_jure_county to iterate). Still true under exactly the same
+# condition as before: this character's community has the highest
+# Greatness among every OTHER community sharing its own minhag region --
+# "the greatest community gets to host the Bet Din," unchanged, only the
+# membership test underneath it changed.
+#
+# any_in_global_list, not any_de_jure_county -- iterates global_variable_
+# list kehillah_registered_communities (populated at game start, common/
+# on_action/kehillah_on_actions.txt; already read the same way by
+# kehillah_book_send_copies_effect, common/scripted_effects/kehillah_
+# book_effects.txt), confirmed vanilla iterator for a global_variable_
+# list (e.g. common/casus_belli_types/00_conquest.txt's any_in_global_
+# list = { variable = fp2_struggle_ending_culture_list ... }). "this"
+# inside the block is each TITLE in the list directly -- every entry is
+# one of this mod's own landless Kehillah titles, so has_variable/var:
+# reads apply to "this" with no .holder.primary_title indirection needed,
+# and holder switches to that title's own leader when the region check
+# needs a character scope.
+#
+# root stays fixed to the calling character throughout every nested
+# scope switch below (holder = { ... }, $OTHER$ = root inside the shared
+# trigger) -- the same property this mod's own header comments have
+# established and relied on repeatedly elsewhere (kehillah_refresh_shum_
+# bond_effect's own header, common/scripted_effects/kehillah_scripted_
+# effects.txt, has the fullest account).
+#
+# exists = holder guards before dereferencing it, matching this file's
+# own has_variable-before-compare discipline -- a Kehillah title should
+# always have a holder (require_landless + appointment succession), but
+# an unguarded holder read on the one title that momentarily does not is
+# exactly the kind of error worth not risking for free.
+#
+# TIES RESOLVE IN FAVOR OF WHOEVER ASKS, unchanged from the v6 version:
+# the comparison is a strict > in the OTHER direction (does any sibling
+# exceed me), so a tie with another sibling still lets both ask.
+# ---------------------------------------------------------------------
+
+kehillah_is_regional_greatness_leader_trigger = {
 	primary_title = {
-		# de_jure_liege, on a county-tier title, resolves directly to its
-		# de jure duchy -- confirmed against vanilla's own usage (e.g.
-		# common/scripted_triggers/00_illustration_triggers.txt's
-		# primary_title.de_jure_liege = title:h_china), not invented
-		# syntax.
-		de_jure_liege = title:d_kehillah_shum
+		has_variable = kehillah_var_greatness
+	}
+	NOT = {
+		any_in_global_list = {
+			variable = kehillah_registered_communities
+			NOT = { this = root.primary_title }
+			has_variable = kehillah_var_greatness
+			var:kehillah_var_greatness > root.primary_title.var:kehillah_var_greatness
+			exists = holder
+			holder = {
+				kehillah_shares_minhag_region_trigger = { OTHER = root }
+			}
+		}
 	}
 }
 
 
 # ---------------------------------------------------------------------
-# kehillah_is_shum_greatness_leader_trigger
-# Scope: a Kehillah leader (character), a Sh'um member.
+# kehillah_region_can_field_bet_din_panel_trigger
+# Scope: a Kehillah leader (character).
 #
-# ADDED 2026-09-08 (v4 spec section 4). "Whichever Sh'um member's leader
-# currently has the highest Greatness" -- checked by comparing
-# primary_title's own Greatness directly against all three fixed member
-# titles' Greatness (including itself; a >= comparison against your own
-# value is trivially true, so no explicit self-exclusion is needed).
-# Ties resolve in favor of whoever asks -- "cheapest to write correctly"
-# per the spec, not worth a tie-breaking flag for a v1 feature.
+# REWRITTEN 2026-09-10 (v7 spec, supersedes v6 section 4 item 2's de
+# jure version, same underlying reason as the two triggers above). Same
+# condition as before -- a host plus two co-judges needs THREE total
+# member communities in the region at minimum, so Eastern Ashkenaz's two
+# (Prague, Vienna) still correctly fail this and get gated out of
+# convening entirely by the activity's own is_shown/can_start_showing_
+# failures_only (common/activities/activity_types/kehillah_bet_din_
+# conference.txt) -- only the counting mechanism changed, from any_de_
+# jure_county to any_in_global_list over the same registry kehillah_is_
+# regional_greatness_leader_trigger above now uses.
 #
-# var:X >= scope.var:Y is valid vanilla syntax, confirmed against e.g.
-# common/laws/02_admininistrative_laws.txt:1560's
-# var:movement_power >= root.diarch.var:movement_power.
+# No has_variable = kehillah_var_greatness filter here, unlike the
+# trigger above -- the OLD any_de_jure_county version counted every de
+# jure county in the region's duchy with no Greatness-variable filter
+# either (every one of those counties WAS a Kehillah title by
+# construction, so the count was already exactly "how many communities
+# are in this region"), and this version preserves that same unfiltered
+# headcount rather than silently narrowing it.
+#
+# count >= 3 as a bare filter inside any_in_global_list mirrors the
+# confirmed "count" precedent kehillah_has_dispute_candidates_trigger
+# below already cites (common/scripted_triggers/06_ce1_epidemic_
+# triggers.txt's any_sub_realm_county = { count >= $SIZE$ ... }), and the
+# coronation.txt precedent cited above for any_in_global_list's sibling
+# any_in_list (game/common/activities/activity_types/coronation.txt:
+# any_in_list = { list = supporter count >= 3 }).
 # ---------------------------------------------------------------------
 
-kehillah_is_shum_greatness_leader_trigger = {
-	primary_title = {
-		var:kehillah_var_greatness >= title:c_kehillah_worms.var:kehillah_var_greatness
-		var:kehillah_var_greatness >= title:c_kehillah_speyer.var:kehillah_var_greatness
-		var:kehillah_var_greatness >= title:c_kehillah_mainz.var:kehillah_var_greatness
+kehillah_region_can_field_bet_din_panel_trigger = {
+	exists = primary_title
+	any_in_global_list = {
+		variable = kehillah_registered_communities
+		count >= 3
+		exists = holder
+		holder = {
+			kehillah_shares_minhag_region_trigger = { OTHER = root }
+		}
 	}
 }
+
+
+# ---------------------------------------------------------------------
+# kehillah_geographic_is_western_ashkenaz_trigger /
+# kehillah_geographic_is_eastern_ashkenaz_trigger /
+# kehillah_geographic_is_anglia_trigger /
+# kehillah_geographic_is_provence_trigger -- REMOVED 2026-09-10 (v7
+# spec, "The four geographic triggers built in the v6 pass... become
+# redundant with the tagging approach and should be removed -- keeping
+# both a boolean-trigger-per-region AND a variable-tagging system is
+# exactly the two-sources-of-truth problem this whole redesign exists to
+# avoid").
+#
+# These four existed as forward-looking infrastructure for Wave 5
+# (community founding, still unbuilt) -- "given a raw geographic
+# location, which minhag region would a NEW Kehillah founded there
+# default into". kehillah_tag_minhag_regions_effect (common/scripted_
+# effects/kehillah_minhag_geography_effects.txt) now answers exactly
+# that question, for all twelve regions rather than four, by tagging the
+# real duchies directly -- a future Wave 5 founding event reads
+# scope:new_county.de_jure_liege.var:kehillah_minhag (or checks empire =
+# title:e_britannia for Anglia) off the SAME table this file's own
+# kehillah_has_known_minhag_region_trigger and kehillah_shares_minhag_
+# region_trigger above already read, rather than a parallel OR-of-de-
+# jure-tags system that would need to be kept in sync with the tagging
+# table by hand. No replacement trigger is added here -- Wave 5 itself
+# remains out of scope for this pass (v7 spec's own closing section), so
+# there is no real caller yet to build one against.
+# ---------------------------------------------------------------------
 
 
 # ---------------------------------------------------------------------
@@ -322,5 +537,198 @@ kehillah_has_dispute_candidates_trigger = {
 				NOT = { dynasty = prev.dynasty }
 			}
 		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_session_score_at_least_trigger = { THRESHOLD = <sv> }
+# Scope: anything (it only reads a global_var). ADDED 2026-09-08 with
+# the Bet Din docket loop fix.
+#
+# "Did this Bet Din session's docket score at least THRESHOLD?" --
+# global_var:kehillah_bet_din_session_score against the
+# kehillah_bet_din_session_threshold_* values (common/script_values/
+# kehillah_script_values.txt). Used by kehillah_bet_din.0099, the
+# closing event, for both its triggered desc and its reward branches.
+#
+# THE exists = IS THE WHOLE POINT of it being a scripted trigger rather
+# than an inline comparison. This is read from an OPTION effect's limit,
+# and an unguarded global_var read there does not fail once -- CK3
+# re-evaluates an option's effect on every tooltip-rebuild frame while
+# the cursor rests on it, which is how a single unset variable produced
+# a ~28MB error.log in under a minute during the 2026-09-08 live test
+# (docs/testing/2026-09-08-bet-din-conference-live-test-log.md). Pairing
+# the exists check with the comparison in one trigger makes it
+# impossible to write the dangerous half without the safe half.
+# ---------------------------------------------------------------------
+
+kehillah_bet_din_session_score_at_least_trigger = {
+	exists = global_var:kehillah_bet_din_session_score
+	global_var:kehillah_bet_din_session_score >= $THRESHOLD$
+}
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_session_heard_any_case_trigger
+# Scope: anything. ADDED 2026-09-08 with the Bet Din docket loop fix.
+#
+# "Did this Bet Din session actually get a verdict out of at least one
+# case?" Separates the two ways a docket can end with nothing to its
+# name: a session that ruled badly (a real failure, which is penalised)
+# from one that never resolved a case at all -- no eligible case in a
+# very thin court, or a player who left every case's popup unanswered
+# until the activity ran out of phases. The second is not the panel's
+# fault and kehillah_bet_din.0099 must not charge them for it.
+#
+# Same exists-plus-comparison pairing, for the same tooltip-rebuild
+# reason, as kehillah_bet_din_session_score_at_least_trigger above.
+# ---------------------------------------------------------------------
+
+kehillah_bet_din_session_heard_any_case_trigger = {
+	exists = global_var:kehillah_bet_din_cases_heard_count
+	global_var:kehillah_bet_din_cases_heard_count >= 1
+}
+
+# ---------------------------------------------------------------------
+# kehillah_has_eligible_book_genre_trigger
+# Scope: a character. ADDED 2026-09-09, kehillah_write_book_decision's
+# is_shown (common/decisions/kehillah_rabbi_book_decisions.txt) -- true
+# if this character can write AT LEAST ONE of the four genres offered
+# in kehillah_book.0001 (events/kehillah_book_events.txt): a rabbi with
+# any track at 30+ (Halakha/Parshanut/Talmudics), or a Jewish poet
+# (Hebrew Poetry -- lifestyle_poet is vanilla's own trait, common/
+# traits/00_traits.txt, not something this mod defines).
+# ---------------------------------------------------------------------
+
+kehillah_has_eligible_book_genre_trigger = {
+	OR = {
+		AND = {
+			has_trait = kehillah_rabbi_trait
+			OR = {
+				has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 30 }
+				has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 }
+				has_trait_xp = { trait = kehillah_rabbi_trait track = halakha value >= 30 }
+			}
+		}
+		AND = {
+			has_trait = lifestyle_poet
+			is_jewish_character_trigger = yes
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_has_task_contract_employer_candidate_trigger
+# Scope: a character (the Kehillah leader). v8 spec (docs/spec/
+# v8-task-contracts.md) section 2 point 1.
+#
+# Guards kehillah_task_contract_pulse (common/on_action/kehillah_on_
+# actions.txt) the same way kehillah_has_dispute_candidates_trigger
+# guards the dispute pulse -- so the yearly roll never happens at all
+# when there is nobody plausible to offer a contract. REUSES the exact
+# candidate-selection shape kehillah_extend_loan_decision already used
+# (common/decisions/kehillah_decisions.txt, pre-retirement): the
+# community's own local county holder, filtered to highest_held_title_
+# tier <= tier_county (a count-tier figure, not a foreign king) -- plus
+# the two checks that decision never needed, since every candidate it
+# ever considered was implicitly cross-community by construction, but a
+# task contract employer must be checked explicitly: NOT a fellow
+# Kehillah government, and NOT the same faith as root (the whole point
+# of this feature is cross-community work).
+#
+# kehillah_task_contract_pick_employer_effect (common/scripted_effects/
+# kehillah_scripted_effects.txt) performs the identical selection to
+# actually save scope:employer -- kept in exact lockstep with this
+# trigger deliberately, so "can we offer a contract this year" and "who
+# would we offer it to" can never disagree.
+# ---------------------------------------------------------------------
+
+kehillah_has_task_contract_employer_candidate_trigger = {
+	exists = domicile.domicile_location.county.holder
+	domicile.domicile_location.county.holder = {
+		is_alive = yes
+		highest_held_title_tier <= tier_county
+		NOT = { government_has_flag = government_is_kehillah }
+		NOT = { faith = root.faith }
+	}
+}
+
+
+# =====================================================================
+# kehillah_leadership_gender_eligible_trigger
+# Scope: a character.
+#
+# ADDED 2026-09-11 (v10 spec sections 3-4, live-test fix). Live test
+# showed the player's own firstborn daughter as the primary Kehillah
+# succession heir, and separately that nothing gates who can become
+# kehillah_rabbi_trait's holder either. Per explicit user instruction --
+# "It should be locked to males at game start, barring some change to
+# laws and maybe religion" -- true if THIS character is eligible for
+# Kehillah's core leadership roles (succession candidacy, the Chief
+# Rabbi office, semicha/kehillah_rabbi_trait) under the CURRENT default:
+# male, OR the single deferred-reform hook below has been set.
+#
+# global_var:kehillah_egalitarian_succession IS THE HOOK, NOT A FEATURE.
+# Checked with exists = global_var:..., the same real idiom this file's
+# own kehillah_bet_din_session_score_at_least_trigger already uses for a
+# global variable that may not be set (below) -- CK3 has no separate
+# "global flag" effect (checked: no set_global_flag/has_global_flag
+# anywhere in the installed vanilla files), so a global_variable used
+# purely for its existence, never read for a value, IS the real vanilla
+# idiom for a global boolean toggle. It starts, and stays, unset for the
+# entire length of this pass: v10 spec section 3.2 is explicit that
+# unlocking gendered succession is future work (a law, reform, or
+# decision) that this pass must NOT build -- this trigger is the one
+# named place a later pass hangs that unlock off, by adding exactly one
+# set_global_variable call somewhere. Until then every consumer below
+# reads male-only from the same single source, so a future flip needs no
+# second trigger rewrite:
+#   - common/succession_appointment/kehillah_leadership.txt's
+#     candidate_score (inverted: penalises NOT this trigger)
+#   - common/court_positions/types/kehillah_officers.txt's Chief Rabbi
+#     valid_character
+#   - common/scripted_effects/kehillah_bet_din_scripted_effects.txt's
+#     kehillah_bet_din_grant_rabbi_trait_effect
+#   - events/kehillah_bet_din_semicha_events.txt's kehillah_bet_din_
+#     semicha.0001 trigger
+#
+# WHY is_female = no, NOT is_male = yes. Both exist in vanilla (see
+# common/succession_appointment/admin_governor.txt's own gender-law
+# scoring block, "ADJUST BASED ON GENDER LAW"), functionally identical
+# for any character with a defined sex -- is_female is what that same
+# vanilla precedent uses, so this matches it rather than inventing a
+# second equally-valid phrasing.
+#
+# NOT A TRUE HARD EXCLUSION EVERYWHERE IT IS USED, AND THAT IS A REAL,
+# CHECKED ENGINE LIMIT, NOT AN OVERSIGHT. Checked directly against
+# common/succession_appointment/_succession_appointment.info: the
+# succession_appointment schema exposes exactly four keys --
+# candidate_score, default_candidates, allow_children,
+# allow_same_tier_candidates -- and NONE of them can disqualify a
+# candidate outright; candidate_score only ranks (confirmed further by
+# vanilla's own strictest precedent, admin_governor.txt's male_only_law
+# branch, which does not remove female candidates either -- it multiplies
+# their score by (1 - appointment_opposite_gender_penalty_value), i.e.
+# 1 - 1 = 0, common/script_values/07_ep3_values.txt). So even vanilla's
+# own "male only" appointment law is a score floor, not a pool filter --
+# the engine simply does not expose one for this succession type. This
+# trigger's succession consumer therefore applies a subtract far larger
+# than any realistic positive score (see that file's own comment) rather
+# than a multiply-to-zero, which is a harder lock than vanilla's own
+# precedent but still cannot reach zero probability if literally every
+# eligible candidate is female -- same accepted tradeoff this file's
+# candidate_score already makes for wrong-faith candidates, documented
+# there. The court-position and event consumers, by contrast, use
+# valid_character/trigger fields that ARE real hard gates (a court
+# position's valid_character can flatly bar a candidate, and an event's
+# trigger can flatly refuse to fire) -- those three are genuine
+# exclusions, not score adjustments.
+# =====================================================================
+
+kehillah_leadership_gender_eligible_trigger = {
+	OR = {
+		exists = global_var:kehillah_egalitarian_succession
+		is_female = no
 	}
 }

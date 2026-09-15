@@ -1,5 +1,22 @@
 # Live test log — 2026-09-08: the Bet Din Conference (Part 1)
 
+> **PARTLY SUPERSEDED, same day.** Playing the build this log passed turned up two structural bugs
+> it missed: the whole docket fired inside a single day, and the activity never ended (no
+> `progress_activity_phase_after` anywhere in the activity type). See
+> [docs/spec/v5-bet-din-conference.md](../spec/v5-bet-din-conference.md) §11 for the fix — the docket
+> is now one case per activity phase, drawn at random from the cases not yet heard, with a session
+> score at the close.
+>
+> **Why this pass missed them, worth keeping:** its console-driven half fired the case events
+> directly, which exercises the event chain but never the activity's own phase lifecycle; and its
+> real-hosting half clicked through case 1 and stopped. Neither half ever reached the end of a
+> docket, which is exactly where both bugs lived. "Case 1 fired correctly from a real
+> `on_phase_active`" is not evidence that a multi-case activity sequences or terminates.
+>
+> Everything below about hosting, travel, co-judge selection, litigant picking, the per-judge skill
+> checks and the doctrine change still stands. The Step D/E account of how cases follow one another
+> and how the docket closes describes the pre-fix build.
+
 Status: **PASS, fully confirmed including the real hosting/travel flow, with two real bugs found and
 fixed during the pass** (one severe -- see below -- and one cosmetic loc bug, unfixed). A first pass
 verified the docket/tally/doctrine mechanics via console with manually-seeded state and could not

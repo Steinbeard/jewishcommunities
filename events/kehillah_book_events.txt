@@ -1,0 +1,504 @@
+﻿# =====================================================================
+# Write a Book -- the event chain.
+#
+# ADDED 2026-09-09, fired from kehillah_write_book_decision (common/
+# decisions/kehillah_rabbi_book_decisions.txt). Seven events:
+#   .0001 CHOOSE A GENRE -- Halakha/Torah commentary/Talmud commentary
+#          (gated on kehillah_rabbi_trait + that track at 30+) or Hebrew
+#          Poetry (gated on lifestyle_poet). Sets the tally's baseline.
+#   .0002 CHOOSE AN INSPIRATION -- three options, one safe/flat, two
+#          stat-gated, all adjusting the tally.
+#   .0003 DISCUSS WITH A COURTIER -- a random courtier if one exists;
+#          includes the one genuinely random roll in the whole chain
+#          (kehillah_book_courtier_lucky_bonus), not just stat gates.
+#   .0004 REVISE OR PUBLISH -- a Stress-for-quality tradeoff.
+#   .0005 THE BOOK IS FINISHED -- kehillah_book_complete_effect (common/
+#          scripted_effects/kehillah_book_effects.txt) reads the final
+#          tally, creates the artifact, pays out Greatness/Piety/
+#          Prestige.
+#   .0006 SENDING COPIES -- kehillah_book_send_copies_effect, read
+#          against global_variable_list kehillah_registered_communities
+#          (common/on_action/kehillah_on_actions.txt).
+#   .0007 A NEW BOOK ARRIVES -- fired on every OTHER registered
+#          community's leader, naming the author via scope:kehillah_
+#          book_author (saved before the scope switch into each
+#          recipient).
+#
+# root is the SAME writing character throughout .0001-.0006 (no
+# cross-character retargeting needed, unlike the Bet Din docket, which
+# hops between three different judges by construction) -- var:kehillah_
+# book_genre/_tally/_tier are character variables on that one root, not
+# global_var, for exactly that reason (see kehillah_book_effects.txt's
+# own header). Only .0007 changes root, to each recipient leader.
+# =====================================================================
+
+namespace = kehillah_book
+
+# ---------------------------------------------------------------------
+# kehillah_book.0001 -- CHOOSE A GENRE
+# ---------------------------------------------------------------------
+
+kehillah_book.0001 = {
+	type = character_event
+	title = kehillah_book.0001.t
+	desc = kehillah_book.0001.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	option = {
+		name = kehillah_book.0001.a
+		trigger = {
+			has_trait = kehillah_rabbi_trait
+			has_trait_xp = { trait = kehillah_rabbi_trait track = halakha value >= 30 }
+		}
+		set_variable = { name = kehillah_book_genre value = flag:halakha }
+		if = {
+			limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = halakha value >= 100 } }
+			set_variable = { name = kehillah_book_tally value = kehillah_book_baseline_track_100 }
+		}
+		else_if = {
+			limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = halakha value >= 65 } }
+			set_variable = { name = kehillah_book_tally value = kehillah_book_baseline_track_65 }
+		}
+		else = {
+			set_variable = { name = kehillah_book_tally value = kehillah_book_baseline_track_30 }
+		}
+	}
+
+	option = {
+		name = kehillah_book.0001.b
+		trigger = {
+			has_trait = kehillah_rabbi_trait
+			has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 30 }
+		}
+		set_variable = { name = kehillah_book_genre value = flag:parshanut }
+		if = {
+			limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 100 } }
+			set_variable = { name = kehillah_book_tally value = kehillah_book_baseline_track_100 }
+		}
+		else_if = {
+			limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 65 } }
+			set_variable = { name = kehillah_book_tally value = kehillah_book_baseline_track_65 }
+		}
+		else = {
+			set_variable = { name = kehillah_book_tally value = kehillah_book_baseline_track_30 }
+		}
+	}
+
+	option = {
+		name = kehillah_book.0001.c
+		trigger = {
+			has_trait = kehillah_rabbi_trait
+			has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 }
+		}
+		set_variable = { name = kehillah_book_genre value = flag:talmudics }
+		if = {
+			limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 100 } }
+			set_variable = { name = kehillah_book_tally value = kehillah_book_baseline_track_100 }
+		}
+		else_if = {
+			limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 65 } }
+			set_variable = { name = kehillah_book_tally value = kehillah_book_baseline_track_65 }
+		}
+		else = {
+			set_variable = { name = kehillah_book_tally value = kehillah_book_baseline_track_30 }
+		}
+	}
+
+	option = {
+		name = kehillah_book.0001.d
+		trigger = {
+			has_trait = lifestyle_poet
+			is_jewish_character_trigger = yes
+		}
+		set_variable = { name = kehillah_book_genre value = flag:poetry }
+		set_variable = { name = kehillah_book_tally value = kehillah_book_baseline_poet }
+	}
+
+	after = {
+		trigger_event = { id = kehillah_book.0002 days = 5 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_book.0002 -- CHOOSE AN INSPIRATION
+# ---------------------------------------------------------------------
+
+kehillah_book.0002 = {
+	type = character_event
+	title = kehillah_book.0002.t
+	desc = kehillah_book.0002.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	option = {
+		name = kehillah_book.0002.a
+		if = {
+			limit = { learning >= 12 }
+			change_variable = { name = kehillah_book_tally add = kehillah_book_inspiration_gain }
+			custom_tooltip = kehillah_book.0002.a.pass.tt
+		}
+		else = {
+			change_variable = { name = kehillah_book_tally subtract = kehillah_book_inspiration_loss }
+			custom_tooltip = kehillah_book.0002.a.fail.tt
+		}
+	}
+
+	option = {
+		name = kehillah_book.0002.b
+		if = {
+			limit = { diplomacy >= 12 }
+			change_variable = { name = kehillah_book_tally add = kehillah_book_inspiration_gain }
+			custom_tooltip = kehillah_book.0002.b.pass.tt
+		}
+		else = {
+			change_variable = { name = kehillah_book_tally subtract = kehillah_book_inspiration_loss }
+			custom_tooltip = kehillah_book.0002.b.fail.tt
+		}
+	}
+
+	option = {
+		name = kehillah_book.0002.c
+		change_variable = { name = kehillah_book_tally add = kehillah_book_inspiration_loss }
+		custom_tooltip = kehillah_book.0002.c.tt
+	}
+
+	after = {
+		trigger_event = { id = kehillah_book.0003 days = 7 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_book.0003 -- DISCUSS WITH A COURTIER
+# ---------------------------------------------------------------------
+
+# LIVE-TEST FIX, 2026-09-11 (v10 spec section 6): reported live as
+# "scope:kbd_book_courtier can't resolve in one of the book events."
+#
+# THE SCRIPT SIDE IS CORRECT -- checked thoroughly before looking
+# elsewhere. Re-grepped every use of scope:kbd_book_courtier across the
+# whole mod (events/kehillah_book_events.txt only -- confirmed no other
+# file references it) and checked each one individually: desc's own
+# triggered_desc (trigger = exists), right_portrait's character field
+# (paired with its own trigger = exists), and both stat-gated options'
+# triggers all correctly guard on exists = scope:kbd_book_courtier. Two
+# theories about the SCRIPT side were checked against real vanilla code
+# and disproven -- "right_portrait's character field evaluated eagerly
+# despite its own false trigger" (game/events/birth_events.txt's
+# birth.1001, right_portrait = { character = scope:second_adult trigger
+# = { exists = scope:second_adult } }, scope:second_adult only
+# conditionally set in that same event's own immediate -- shipped,
+# routine) and "an option's own name text referencing the scope is
+# evaluated even when its trigger hides it" (game/events/harm_events.txt's
+# harm.0011.b, name references [medic.GetFirstNameNoTooltip] behind
+# trigger = { exists = scope:medic } -- also shipped, also routine).
+# Neither is a real engine gotcha; this event's own script-side guards
+# already match verified vanilla idiom exactly.
+#
+# THE ACTUAL BUG WAS IN LOCALIZATION, FOUND BY ck3-tiger, NOT BY READING
+# THE FILE. `[scope:kbd_book_courtier.GetFirstName]` -- with the
+# `scope:` prefix -- is not valid CK3 LOCALIZATION bracket-command
+# syntax (ck3-tiger: "Unexpected character `:`, expected `]`" on every
+# one of these lines). `scope:` is a SCRIPT-side prefix (triggers/
+# effects); inside a loc [...] link chain, a saved scope is referenced
+# by its BARE name instead -- confirmed both against real vanilla
+# (game/events/harm_events.txt's own [medic.GetFirstNameNoTooltip], no
+# scope: prefix) and against every OTHER scope reference already
+# correct elsewhere in THIS mod's own localization/english/kehillah_l_
+# english.yml (e.g. [kbd_litigant_a.GetFirstName] throughout the Bet
+# Din case loc, [kbd_av_beit_din.GetFirstName] in the semicha event's
+# own loc) -- kehillah_book.0003's four lines (desc.courtier, .a,
+# .a.lucky_tt, .b) and kehillah_book.0007's four genre-desc lines
+# (which make the identical mistake with [scope:kehillah_book_author...])
+# were the ONLY eight lines in the entire mod using the invalid form.
+# This is almost certainly the real root cause of the live-test report:
+# the game's loc engine failing to parse an unrecognized `scope:` link
+# segment reads exactly like "can't resolve." FIXED: `scope:` prefix
+# removed from all eight lines (localization/english/kehillah_l_
+# english.yml) -- the only change this fix needed.
+#
+# NOT CHANGED, DELIBERATELY: this event's own trigger/save_scope_as
+# structure (the empty-eligible-courtier case is real, anticipated by
+# this event's own original header -- "a random courtier if one exists"
+# -- and already handled correctly by the desc/right_portrait/option
+# guards above). In particular, NOT switched to the "guarantee existence
+# up front" idiom game/events/elder_events.txt's elder_events.1000 uses
+# (requiring an eligible courtier in the top-level trigger): that idiom
+# is right for a fully-optional standalone event but wrong here -- it
+# would make book-writing itself silently dead-end forever for any
+# character with too small a court, a strictly worse bug than the loc
+# typo this section actually fixes.
+#
+# CONFIDENCE NOTE: the loc syntax bug is a mechanically confirmed,
+# ck3-tiger-caught defect and a very strong match for the reported
+# symptom, but it was not live-verified against the exact original
+# complaint (no live playtest was run for this pass). If "can't
+# resolve" still reproduces on the next live test after this fix,
+# capture the EXACT text/location of the message (error.log line,
+# on-screen text, or tooltip) -- that would mean a second, still-
+# unfound cause, not a failure of this one.
+kehillah_book.0003 = {
+	type = character_event
+	title = kehillah_book.0003.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:kbd_book_courtier }
+				desc = kehillah_book.0003.desc.courtier
+			}
+			desc = kehillah_book.0003.desc.alone
+		}
+	}
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kbd_book_courtier
+		animation = thinking
+		trigger = { exists = scope:kbd_book_courtier }
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		random_courtier = {
+			limit = {
+				is_adult = yes
+				is_imprisoned = no
+			}
+			weight = {
+				base = 1
+				modifier = { add = 3 learning >= 10 }
+			}
+			save_scope_as = kbd_book_courtier
+		}
+	}
+
+	option = {
+		name = kehillah_book.0003.a
+		trigger = { exists = scope:kbd_book_courtier }
+		if = {
+			limit = { learning >= 10 }
+			change_variable = { name = kehillah_book_tally add = kehillah_book_courtier_gain }
+			custom_tooltip = kehillah_book.0003.a.pass.tt
+		}
+		else = {
+			change_variable = { name = kehillah_book_tally subtract = kehillah_book_courtier_loss }
+			custom_tooltip = kehillah_book.0003.a.fail.tt
+		}
+		# The chain's one genuine random roll, not just a stat gate --
+		# "each tier... gives a CHANCE for a better tier," per user
+		# request. custom_tooltip, not desc: a random_list branch inside
+		# an option's effect body is a plain effect block, not a place
+		# the event schema reads a desc field from.
+		random_list = {
+			50 = {
+				custom_tooltip = kehillah_book.0003.a.unlucky_tt
+			}
+			50 = {
+				change_variable = { name = kehillah_book_tally add = kehillah_book_courtier_lucky_bonus }
+				custom_tooltip = kehillah_book.0003.a.lucky_tt
+			}
+		}
+	}
+
+	option = {
+		name = kehillah_book.0003.b
+		trigger = { exists = scope:kbd_book_courtier }
+		change_variable = { name = kehillah_book_tally add = kehillah_book_courtier_loss }
+		custom_tooltip = kehillah_book.0003.b.tt
+	}
+
+	option = {
+		name = kehillah_book.0003.c
+		custom_tooltip = kehillah_book.0003.c.tt
+	}
+
+	after = {
+		trigger_event = { id = kehillah_book.0004 days = 7 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_book.0004 -- REVISE OR PUBLISH
+# ---------------------------------------------------------------------
+
+kehillah_book.0004 = {
+	type = character_event
+	title = kehillah_book.0004.t
+	desc = kehillah_book.0004.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	option = {
+		name = kehillah_book.0004.a
+		change_variable = { name = kehillah_book_tally add = kehillah_book_revision_gain }
+		add_stress = kehillah_book_revision_stress
+		custom_tooltip = kehillah_book.0004.a.tt
+	}
+
+	option = {
+		name = kehillah_book.0004.b
+		custom_tooltip = kehillah_book.0004.b.tt
+	}
+
+	after = {
+		trigger_event = { id = kehillah_book.0005 days = 10 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_book.0005 -- THE BOOK IS FINISHED
+# ---------------------------------------------------------------------
+
+kehillah_book.0005 = {
+	type = character_event
+	title = kehillah_book.0005.t
+	desc = kehillah_book.0005.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		kehillah_book_complete_effect = yes
+	}
+
+	option = {
+		name = kehillah_book.0005.a
+	}
+
+	after = {
+		trigger_event = { id = kehillah_book.0006 days = 10 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_book.0006 -- SENDING COPIES
+# ---------------------------------------------------------------------
+
+kehillah_book.0006 = {
+	type = character_event
+	title = kehillah_book.0006.t
+	desc = kehillah_book.0006.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		kehillah_book_send_copies_effect = yes
+	}
+
+	option = {
+		name = kehillah_book.0006.a
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_book.0007 -- A NEW BOOK ARRIVES
+# Root: the RECIPIENT leader (an OTHER registered community's current
+# holder). scope:kehillah_book_author is the writer, saved before the
+# scope switch in kehillah_book_send_copies_effect.
+# ---------------------------------------------------------------------
+
+kehillah_book.0007 = {
+	type = character_event
+	title = kehillah_book.0007.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = scope:kehillah_book_author
+					scope:kehillah_book_author = { var:kehillah_book_genre = flag:halakha }
+				}
+				desc = kehillah_book.0007.desc.halakha
+			}
+			triggered_desc = {
+				trigger = {
+					exists = scope:kehillah_book_author
+					scope:kehillah_book_author = { var:kehillah_book_genre = flag:parshanut }
+				}
+				desc = kehillah_book.0007.desc.parshanut
+			}
+			triggered_desc = {
+				trigger = {
+					exists = scope:kehillah_book_author
+					scope:kehillah_book_author = { var:kehillah_book_genre = flag:talmudics }
+				}
+				desc = kehillah_book.0007.desc.talmudics
+			}
+			triggered_desc = {
+				trigger = { exists = scope:kehillah_book_author }
+				desc = kehillah_book.0007.desc.poetry
+			}
+			desc = kehillah_book.0007.desc.generic
+		}
+	}
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_book_author
+		animation = happiness
+		trigger = { exists = scope:kehillah_book_author }
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		add_piety = kehillah_book_recipient_piety_gain
+		add_learning_lifestyle_xp = kehillah_book_recipient_learning_xp
+	}
+
+	option = {
+		name = kehillah_book.0007.a
+		custom_tooltip = kehillah_book.0007.a.tt
+	}
+}
