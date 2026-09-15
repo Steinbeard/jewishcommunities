@@ -632,6 +632,30 @@ before building it; nothing here is approved by default.
     established. Full account: `kehillah_bet_din_silversmiths_resolution_effect` (common/
     scripted_effects/kehillah_bet_din_scripted_effects.txt).
 
+  **2026-09-15 follow-up — memories for cases 1-4/6, and a real Bet-Din-to-book payoff,
+  ck3-tiger-clean (warning count actually DROPPED, 79 → 65, since the same pass retired
+  `kehillah_compose_commentary_decision` below and took its own false-positive `strict-scopes`
+  warning with it), not yet live-tested.** Five more memory types (`common/character_memory_types/
+  kehillah_memory_types.txt`: `kehillah_bet_din_case1/2/3/4/6_memory` — case 3 declares no
+  participants, having none) join case 5's existing guilty/innocent pair, all seven now gated the
+  same way: created ONLY on a great- or good-tier verdict, never poor (retrofitted onto case 5's own
+  resolution effect too), specifically so "holds one of these memories" reliably means "ruled well."
+  That fact is what `kehillah_has_good_bet_din_memory_trigger` (common/scripted_triggers/
+  kehillah_scripted_triggers.txt) reads, gating a genuinely new fourth option in `kehillah_book.0002`
+  ("Write a Book"'s own inspiration step) — per explicit user request, "draw on a bet din memory of a
+  good ruling to improve the quality of your book, particularly for Talmudics and Halakha works."
+  Visible only for those two genres, no stat gate and cannot fail (unlike the two existing stat-gated
+  options), and pays more than either's own pass value (`kehillah_book_bet_din_memory_gain = 16` vs.
+  `kehillah_book_inspiration_gain = 12`) — recalling something that actually happened outranks a
+  favorable roll on generic inspiration.
+
+  **`kehillah_compose_commentary_decision` is RETIRED**, same pass, same explicit request ("remove
+  the compose commentary skeleton decision while we're at it") — the older, flatter one-click
+  "compose a scholarly work" mechanic, superseded now that "Write a Book" is the fully fleshed-out
+  version of the same idea (see that decision's own retirement note, `common/decisions/
+  kehillah_decisions.txt`, for the full account and the loc/script-value cleanup that came with it).
+  `kehillah_write_book_decision` is now this mod's only such decision.
+
 **Needs more than one Kehillah on the map, or a regional anchor to travel
 to — natural Phase 2/3 content, not v1:**
 - **Inter-communal correspondence/responsa network.** Sister communities

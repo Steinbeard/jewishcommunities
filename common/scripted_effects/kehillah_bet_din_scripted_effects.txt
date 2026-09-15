@@ -618,25 +618,34 @@ kehillah_bet_din_amulet_resolution_effect = {
 			}
 			custom_tooltip = kehillah_bet_din.0043.guilty.tt
 
-			create_character_memory = {
-				type = kehillah_bet_din_amulet_case_memory_guilty
-				participants = { accuser = scope:kbd_amulet_accuser scribe = scope:kbd_amulet_scribe }
-			}
+			# GOOD RULINGS ONLY -- see common/character_memory_types/
+			# kehillah_memory_types.txt's own header, added 2026-09-15, for
+			# why: a memory is created only when this case's own tally
+			# cleared the GOOD threshold, never on a poor ruling, so that
+			# "holds a Bet Din memory" reliably means "ruled well" for
+			# kehillah_has_good_bet_din_memory_trigger to read later.
 			if = {
-				limit = { exists = scope:kbd_amulet_judge2 }
-				scope:kbd_amulet_judge2 = {
-					create_character_memory = {
-						type = kehillah_bet_din_amulet_case_memory_guilty
-						participants = { accuser = scope:kbd_amulet_accuser scribe = scope:kbd_amulet_scribe }
+				limit = { involved_activity.var:kehillah_bet_din_tally >= kehillah_bet_din_tally_threshold_good }
+				create_character_memory = {
+					type = kehillah_bet_din_amulet_case_memory_guilty
+					participants = { accuser = scope:kbd_amulet_accuser scribe = scope:kbd_amulet_scribe }
+				}
+				if = {
+					limit = { exists = scope:kbd_amulet_judge2 }
+					scope:kbd_amulet_judge2 = {
+						create_character_memory = {
+							type = kehillah_bet_din_amulet_case_memory_guilty
+							participants = { accuser = scope:kbd_amulet_accuser scribe = scope:kbd_amulet_scribe }
+						}
 					}
 				}
-			}
-			if = {
-				limit = { exists = scope:kbd_amulet_judge3 }
-				scope:kbd_amulet_judge3 = {
-					create_character_memory = {
-						type = kehillah_bet_din_amulet_case_memory_guilty
-						participants = { accuser = scope:kbd_amulet_accuser scribe = scope:kbd_amulet_scribe }
+				if = {
+					limit = { exists = scope:kbd_amulet_judge3 }
+					scope:kbd_amulet_judge3 = {
+						create_character_memory = {
+							type = kehillah_bet_din_amulet_case_memory_guilty
+							participants = { accuser = scope:kbd_amulet_accuser scribe = scope:kbd_amulet_scribe }
+						}
 					}
 				}
 			}
@@ -647,25 +656,29 @@ kehillah_bet_din_amulet_resolution_effect = {
 			}
 			custom_tooltip = kehillah_bet_din.0043.innocent.tt
 
-			create_character_memory = {
-				type = kehillah_bet_din_amulet_case_memory_innocent
-				participants = { accuser = scope:kbd_amulet_accuser scribe = scope:kbd_amulet_scribe }
-			}
+			# GOOD RULINGS ONLY -- see the comment on the guilty branch above.
 			if = {
-				limit = { exists = scope:kbd_amulet_judge2 }
-				scope:kbd_amulet_judge2 = {
-					create_character_memory = {
-						type = kehillah_bet_din_amulet_case_memory_innocent
-						participants = { accuser = scope:kbd_amulet_accuser scribe = scope:kbd_amulet_scribe }
+				limit = { involved_activity.var:kehillah_bet_din_tally >= kehillah_bet_din_tally_threshold_good }
+				create_character_memory = {
+					type = kehillah_bet_din_amulet_case_memory_innocent
+					participants = { accuser = scope:kbd_amulet_accuser scribe = scope:kbd_amulet_scribe }
+				}
+				if = {
+					limit = { exists = scope:kbd_amulet_judge2 }
+					scope:kbd_amulet_judge2 = {
+						create_character_memory = {
+							type = kehillah_bet_din_amulet_case_memory_innocent
+							participants = { accuser = scope:kbd_amulet_accuser scribe = scope:kbd_amulet_scribe }
+						}
 					}
 				}
-			}
-			if = {
-				limit = { exists = scope:kbd_amulet_judge3 }
-				scope:kbd_amulet_judge3 = {
-					create_character_memory = {
-						type = kehillah_bet_din_amulet_case_memory_innocent
-						participants = { accuser = scope:kbd_amulet_accuser scribe = scope:kbd_amulet_scribe }
+				if = {
+					limit = { exists = scope:kbd_amulet_judge3 }
+					scope:kbd_amulet_judge3 = {
+						create_character_memory = {
+							type = kehillah_bet_din_amulet_case_memory_innocent
+							participants = { accuser = scope:kbd_amulet_accuser scribe = scope:kbd_amulet_scribe }
+						}
 					}
 				}
 			}
@@ -771,6 +784,202 @@ kehillah_bet_din_silversmiths_resolution_effect = {
 			}
 		}
 		custom_tooltip = kehillah_bet_din.0053.dismissed.tt
+	}
+}
+
+
+# =====================================================================
+# BET DIN CASE MEMORIES, cases 1-4 and 6. ADDED 2026-09-15 at user
+# request ("add memories for the other bet din cases"). Same shape as
+# kehillah_bet_din_amulet_resolution_effect's own memory-creation halves
+# above -- see common/character_memory_types/kehillah_memory_types.txt's
+# header for the full account of why GOOD RULINGS ONLY (tally >=
+# kehillah_bet_din_tally_threshold_good) and why participants are
+# declared but not load-bearing.
+#
+# EACH EFFECT BELOW IS SCOPE: the convening leader (character), called
+# UNCONDITIONALLY from its own case's resolution event's immediate,
+# alongside (not instead of) that case's existing tier-reward and
+# direction-effect calls -- see events/kehillah_bet_din_events.txt's own
+# .0003/.0013/.0023/.0033/.0053 for the call sites. None of these five
+# cases had a "resolved to plain scopes" pattern already in place for
+# their OWN resolution event the way the amulet/recalcitrant-husband/
+# silversmiths direction-effects did, so each one re-derives its own
+# scopes from involved_activity.var: directly, guarded the same exists =
+# way as everywhere else in this file.
+#
+# CASE 3 HAS NO PARTICIPANTS, deliberately -- no litigants exist for a
+# communal policy question (see that case's own header in events/
+# kehillah_bet_din_events.txt), and kehillah_bet_din_case3_memory's own
+# type definition declares none either.
+# =====================================================================
+
+kehillah_bet_din_case1_memory_effect = {
+	if = {
+		limit = { involved_activity.var:kehillah_bet_din_tally >= kehillah_bet_din_tally_threshold_good }
+		if = {
+			limit = {
+				exists = involved_activity.var:kehillah_bet_din_litigant_a
+				exists = involved_activity.var:kehillah_bet_din_litigant_b
+			}
+			involved_activity.var:kehillah_bet_din_litigant_a = { save_scope_as = kbd_case1_party_a }
+			involved_activity.var:kehillah_bet_din_litigant_b = { save_scope_as = kbd_case1_party_b }
+			create_character_memory = {
+				type = kehillah_bet_din_case1_memory
+				participants = { party_a = scope:kbd_case1_party_a party_b = scope:kbd_case1_party_b }
+			}
+			if = {
+				limit = { exists = involved_activity.var:kehillah_bet_din_judge2 }
+				involved_activity.var:kehillah_bet_din_judge2 = {
+					create_character_memory = {
+						type = kehillah_bet_din_case1_memory
+						participants = { party_a = scope:kbd_case1_party_a party_b = scope:kbd_case1_party_b }
+					}
+				}
+			}
+			if = {
+				limit = { exists = involved_activity.var:kehillah_bet_din_judge3 }
+				involved_activity.var:kehillah_bet_din_judge3 = {
+					create_character_memory = {
+						type = kehillah_bet_din_case1_memory
+						participants = { party_a = scope:kbd_case1_party_a party_b = scope:kbd_case1_party_b }
+					}
+				}
+			}
+		}
+	}
+}
+
+kehillah_bet_din_case2_memory_effect = {
+	if = {
+		limit = { involved_activity.var:kehillah_bet_din_tally >= kehillah_bet_din_tally_threshold_good }
+		if = {
+			limit = {
+				exists = involved_activity.var:kehillah_bet_din_litigant_a
+				exists = involved_activity.var:kehillah_bet_din_litigant_b
+			}
+			involved_activity.var:kehillah_bet_din_litigant_a = { save_scope_as = kbd_case2_petitioner }
+			involved_activity.var:kehillah_bet_din_litigant_b = { save_scope_as = kbd_case2_kinsman }
+			create_character_memory = {
+				type = kehillah_bet_din_case2_memory
+				participants = { petitioner = scope:kbd_case2_petitioner kinsman = scope:kbd_case2_kinsman }
+			}
+			if = {
+				limit = { exists = involved_activity.var:kehillah_bet_din_judge2 }
+				involved_activity.var:kehillah_bet_din_judge2 = {
+					create_character_memory = {
+						type = kehillah_bet_din_case2_memory
+						participants = { petitioner = scope:kbd_case2_petitioner kinsman = scope:kbd_case2_kinsman }
+					}
+				}
+			}
+			if = {
+				limit = { exists = involved_activity.var:kehillah_bet_din_judge3 }
+				involved_activity.var:kehillah_bet_din_judge3 = {
+					create_character_memory = {
+						type = kehillah_bet_din_case2_memory
+						participants = { petitioner = scope:kbd_case2_petitioner kinsman = scope:kbd_case2_kinsman }
+					}
+				}
+			}
+		}
+	}
+}
+
+kehillah_bet_din_case3_memory_effect = {
+	if = {
+		limit = { involved_activity.var:kehillah_bet_din_tally >= kehillah_bet_din_tally_threshold_good }
+		create_character_memory = {
+			type = kehillah_bet_din_case3_memory
+		}
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_judge2 }
+			involved_activity.var:kehillah_bet_din_judge2 = {
+				create_character_memory = {
+					type = kehillah_bet_din_case3_memory
+				}
+			}
+		}
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_judge3 }
+			involved_activity.var:kehillah_bet_din_judge3 = {
+				create_character_memory = {
+					type = kehillah_bet_din_case3_memory
+				}
+			}
+		}
+	}
+}
+
+kehillah_bet_din_case4_memory_effect = {
+	if = {
+		limit = { involved_activity.var:kehillah_bet_din_tally >= kehillah_bet_din_tally_threshold_good }
+		if = {
+			limit = {
+				exists = involved_activity.var:kehillah_bet_din_litigant_a
+				exists = involved_activity.var:kehillah_bet_din_litigant_b
+			}
+			involved_activity.var:kehillah_bet_din_litigant_a = { save_scope_as = kbd_case4_wife }
+			involved_activity.var:kehillah_bet_din_litigant_b = { save_scope_as = kbd_case4_husband }
+			create_character_memory = {
+				type = kehillah_bet_din_case4_memory
+				participants = { wife = scope:kbd_case4_wife husband = scope:kbd_case4_husband }
+			}
+			if = {
+				limit = { exists = involved_activity.var:kehillah_bet_din_judge2 }
+				involved_activity.var:kehillah_bet_din_judge2 = {
+					create_character_memory = {
+						type = kehillah_bet_din_case4_memory
+						participants = { wife = scope:kbd_case4_wife husband = scope:kbd_case4_husband }
+					}
+				}
+			}
+			if = {
+				limit = { exists = involved_activity.var:kehillah_bet_din_judge3 }
+				involved_activity.var:kehillah_bet_din_judge3 = {
+					create_character_memory = {
+						type = kehillah_bet_din_case4_memory
+						participants = { wife = scope:kbd_case4_wife husband = scope:kbd_case4_husband }
+					}
+				}
+			}
+		}
+	}
+}
+
+kehillah_bet_din_case6_memory_effect = {
+	if = {
+		limit = { involved_activity.var:kehillah_bet_din_tally >= kehillah_bet_din_tally_threshold_good }
+		if = {
+			limit = {
+				exists = involved_activity.var:kehillah_bet_din_litigant_a
+				exists = involved_activity.var:kehillah_bet_din_litigant_b
+			}
+			involved_activity.var:kehillah_bet_din_litigant_a = { save_scope_as = kbd_case6_accuser }
+			involved_activity.var:kehillah_bet_din_litigant_b = { save_scope_as = kbd_case6_accused }
+			create_character_memory = {
+				type = kehillah_bet_din_case6_memory
+				participants = { accuser = scope:kbd_case6_accuser accused = scope:kbd_case6_accused }
+			}
+			if = {
+				limit = { exists = involved_activity.var:kehillah_bet_din_judge2 }
+				involved_activity.var:kehillah_bet_din_judge2 = {
+					create_character_memory = {
+						type = kehillah_bet_din_case6_memory
+						participants = { accuser = scope:kbd_case6_accuser accused = scope:kbd_case6_accused }
+					}
+				}
+			}
+			if = {
+				limit = { exists = involved_activity.var:kehillah_bet_din_judge3 }
+				involved_activity.var:kehillah_bet_din_judge3 = {
+					create_character_memory = {
+						type = kehillah_bet_din_case6_memory
+						participants = { accuser = scope:kbd_case6_accuser accused = scope:kbd_case6_accused }
+					}
+				}
+			}
+		}
 	}
 }
 
