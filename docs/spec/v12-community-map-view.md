@@ -484,6 +484,27 @@ Whether it *was* silently failing live is still worth one look: with the fix in,
 a built Countinghouse should show its Prosperity baseline jump on the next quarterly tick compared
 to a save from before.
 
+## 9. Regions on the map (user request, 2026-09-15)
+
+The map mode now tints every county in a minhag region with that sub-region's colour, *under* the
+community band colours. Same paint, one more decision per county: pass 1 asks
+`kehillah_pick_region_tint_effect` (a county-title effect) which colour title to use — Anglia by
+`empire = title:e_britannia`, every other region by the `kehillah_minhag` flag on the county's de
+jure duchy, the neutral base outside all of them — so the map, the roster and the Bet Din
+triggers draw the same borders from the same two reads. Fifteen new colour titles
+(`d_kehillah_mapcolor_region_<key>`), muted and dark in one hue family per super-region (Ashkenaz
+slate blue/violet, Sepharad ochre/brown, Mizrach olive/teal) so the bright band colours still pop
+and the three super-regions read at a glance even where six close shades of one family don't.
+The hover description names the exact region on any county (`KehillahCountyRegionName`, a
+county-title custom loc reusing the roster's own `KEHILLAH_REGION_*` keys, so the map and roster
+can't spell a region two ways), with or without a community there.
+
+**Legibility is the thing to judge live.** If six shades of slate don't separate Rhineland from
+Provence, the cheap alternatives are: tint by super-region only (three colours, drop the
+sub-region titles), or a "regions" toggle in the panel header that runs a second scripted_gui
+paint without pass 2. Not built speculatively — the tints are the smaller change and may be
+enough, given the hover names the region.
+
 ## 7. The region hierarchy (user decision, 2026-09-14)
 
 The roster groups communities into three super-regions with sub-regions, hidden when empty:
