@@ -1,12 +1,12 @@
 # v12 — Jewish Communities Map View
 
-**Status:** BUILT 2026-09-14, `ck3-tiger`-clean (0 fatal, 0 error; no warning on any file this
-pass touched). **PARTIALLY LIVE-TESTED.** One user-run pass on 2026-09-14 confirmed the widget
-**renders**, in the right place — so `gui/scripted_widgets/` genuinely works, which the earlier
-spike could only call "real but unproven". That pass also found the button would not click; the
-cause and the structural fix are recorded in **§6a**. **Everything past the button is still
-unverified** — the roster contents, the locate button, and the tooltips have not been seen. See
-§6 for what remains and §6a for what has been closed.
+**Status:** BUILT 2026-09-14 across five user-run live passes the same day, `ck3-tiger`-clean.
+**The roster is CONFIRMED LIVE** — button, draggable window, real rows with portraits, leaders,
+host counties, standing and pillars, sorted, own row highlighted (§6a–6e record each pass and what
+it found; `gui/scripted_widgets/` genuinely works). **Built on top and NOT YET LIVE-TESTED:** the
+real coloured map mode (§2.5 — possible after all, see the correction at §1) and the region
+hierarchy (§7). Still unverified from earlier: the locate button and the tooltips. §6 has the
+ordered checklist.
 
 Supersedes nothing. Extends ROADMAP item 10 ("Map-wide/regional GUI dashboard"), whose first
 draft was v9's `kehillah_view_communities_interaction`. Depends on the negative findings in
@@ -16,7 +16,17 @@ before arguing with §1 below, it reached the same conclusion independently.
 
 ---
 
-## 1. Why this is not a real map mode
+## 1. Why this is not a real map mode — CORRECTED, see §2.5
+
+> **Correction, 2026-09-14 (same day, later):** point 1 below is wrong as stated. There *is* a
+> script-drivable colouring: the `baronies` colour mode paints each barony in its own title's
+> colour, and `set_color_from_title` rewrites that colour at runtime. The CK3 wiki's "Creating
+> Custom Map Modes" page (brought in by the user) uses exactly this, and every primitive checks out
+> against the installed 1.19 files. Point 2 is also moot under that technique — the community
+> doesn't need to *own* the county to have its baronies painted. Point 3 stands, but no longer
+> matters, because this mod's own scripted-widget button can call `SetMapMode` — no
+> `mapmodes.gui` fork needed. **The map mode is built; §2.5 has it.** The text below is kept
+> unedited as the record of what was checked before the wiki technique was known.
 
 The ask was "a map mode to view Jewish communities in the world." A literal CK3 map mode was
 investigated first and is **not available to a mod**. Three independent walls, each confirmed
@@ -172,6 +182,46 @@ their realm flag → Title View → Domicile button → **the other community's 
 chain that pass verified live on 2026-09-10 and which previously had no discoverable entry point
 ("you had to already know who to look for"). The roster is now that entry point.
 
+### 2.5 The map mode itself — `kehillah_communities_map`
+
+**Technique** (CK3 wiki, "Creating Custom Map Modes"; every primitive re-verified against 1.19
+before use): `color_mode = baronies` paints each barony in its own title's colour;
+`set_color_from_title` (vanilla effect — `common/casus_belli_types/07_ep3_wars.txt:6188`,
+`common/scripted_effects/00_administrative_effects.txt:545`) rewrites a title's colour at runtime.
+So: paint every barony a neutral base, paint each community's host county in its Standing-band
+colour, switch to the mode.
+
+**Pieces:**
+- `gfx/map/map_modes/kehillah_map_modes.txt` — the mode. A *second* file in that folder, on the
+  wiki's word that it loads additively (vanilla ships one file; no DLC adds another — this is the
+  first place in the repo that depends on the folder merging, and the first suspect if
+  `SetMapMode('kehillah_communities_map')` does nothing live). Flat "data map" look, one zoom
+  step, like `county_development`. Its `barony_description` is evaluated in *province* scope, as
+  vanilla's are, and reads a county-title variable the paint sets to name the community on hover.
+- `common/landed_titles/kehillah_map_color_titles.txt` — six titular, uncreatable colour-carrier
+  titles: a base plus one per band, cold-to-warm (red / orange / blue / green / gold).
+- `kehillah_paint_communities_map_effect` + `kehillah_pick_map_color_effect`
+  (`kehillah_map_view_effects.txt`) — the paint. Walks `every_county → every_county_province →
+  barony` (all confirmed vanilla links; `every_barony`, which the wiki uses, has zero vanilla uses
+  and was avoided). Band chosen by direct comparison on the title, **not** via
+  `kehillah_pillar_at_least_trigger` — that trigger is character-scoped (it opens `primary_title`
+  itself), which `ck3-tiger` caught.
+- `common/scripted_guis/kehillah_map_view_gui.txt` — the bridge a `.gui` button needs to run
+  script: `[GetScriptedGui('kehillah_communities_map_paint').Execute( GuiScope.SetRoot(
+  GetPlayer.MakeScope ).End )]`, vanilla's own form.
+- The toggle button became two overlaid buttons, vanilla's pause/play pattern: **open** = paint →
+  `SetMapMode('kehillah_communities_map')` → set flag; **close** (and the window's X) = clear flag
+  → `SetMapMode('realms')`. Ordered so the mode is never shown stale.
+
+**Costs, stated plainly:** one `set_color_from_title` per barony in the world (a few thousand) per
+open — never on a pulse. And **barony colours are persistent save state**: after a paint they
+stay repainted until the next paint, with no "restore" possible because nothing records the
+originals. Nothing in normal play shows a barony's own colour except the `baronies` debug mode
+and a hypothetical independent baron's realm colour, so the residue is invisible in practice; the
+wiki accepts the same trade.
+
+**Not live-tested at all yet** — see §6 items 7-9.
+
 ---
 
 ## 3. Files
@@ -187,6 +237,10 @@ chain that pass verified live on 2026-09-10 and which previously had no discover
 | `common/scripted_effects/kehillah_scripted_effects.txt` | changed | `kehillah_update_standing_effect`, plus its two call sites in `kehillah_init_pillars_effect` and the end of `kehillah_quarterly_pillars_effect`. |
 | `common/customizable_localization/kehillah_pillar_band_custom_loc.txt` | changed | `KehillahStandingBandName`, reusing the pillars' own thresholds. |
 | `localization/english/kehillah_l_english.yml` | changed | Standing now leads `kehillah_view_standing_decision_desc`. |
+| `gfx/map/map_modes/kehillah_map_modes.txt` | new | The map mode (§2.5). Second file in the folder; relies on it merging. |
+| `common/landed_titles/kehillah_map_color_titles.txt` | new | Six colour-carrier titles (§2.5). |
+| `common/scripted_guis/kehillah_map_view_gui.txt` | new | Button-to-script bridge for the paint (§2.5). |
+| `common/scripted_effects/kehillah_minhag_geography_effects.txt` | changed | `greater_bavel` split into `bavel` / `paras` / `radhanite` / `caucasus` (§7). |
 
 ## 4. Refresh cadence
 
@@ -211,9 +265,9 @@ visibility on the mirrored count instead, so a game with no communities shows no
 
 - **No sort/filter controls.** One ordering (standing, descending) computed script-side. Filters
   would need per-viewer UI state a `.gui` cannot cheaply keep, and sixteen rows do not need them.
-- **No minhag grouping**, though `kehillah_minhag` tagging exists (v7). It would need either
-  sixteen conditional section headers or a second mirrored list per region; worth adding only if
-  the roster outgrows one screen.
+- ~~No minhag grouping.~~ **Built the same day** at the user's request — see §7. It cost exactly
+  what this line predicted (sixteen conditional sections and a mirrored list per region), and the
+  roster did outgrow one screen the moment the sixteen Western European communities showed up.
 - **No coat of arms per row.** This mod defines no `common/coat_of_arms` entries for
   `c_kehillah_*` titles, so a CoA column would render engine-generated arms that mean nothing.
 - **No *regional* aggregate row.** Per-community standing is now defined (§2.3), but rolling
@@ -253,6 +307,20 @@ visibility on the mirrored count instead, so a game with no communities shows no
    (PDX gui `And()` is a function call, not a short-circuiting operator, so the guard has to wrap
    the read, not merely precede it). Confirm `error.log` is clean at the main menu, before loading
    anything.
+7. **Does the map mode exist?** Open the view; the map should switch. If it stays on realms,
+   `gfx/map/map_modes/` is not merging the second file (§2.5) — check `error.log` for an unknown
+   map mode key. That would mean moving the block into a full copy of vanilla's `map_modes.txt`,
+   a whole-file override; do not do that without recording it.
+8. **Does the paint land?** Host counties should show band colours against a grey base. If the
+   whole map is one colour, the paint ran but `set_color_from_title` did not take on baronies;
+   if nothing changed at all, the scripted_gui did not execute — check `error.log` for
+   `kehillah_communities_map_paint`.
+9. **Does the hover description read?** `KEHILLAH_MAP_MODE_TOOLTIP_COMMUNITY` walks
+   `ROOT.Province.GetCounty.GetTitle.MakeScope.Var(...)` — `GetTitle` on a county is confirmed
+   vanilla (`COURT_LANGUAGES_MAP_MODE_TOOLTIP_COUNTY_HOLDER`), the `.Var` hop from there is not.
+10. **Do the region sections show?** Every community today should land under Ashkenaz (Rhineland,
+    Eastern Ashkenaz, Anglia, Provence) — if any sits under "Elsewhere", its capital county's de
+    jure duchy is missing from the v7 table, which is a table gap, not a widget bug.
 
 ## 6a. Live pass 1 — 2026-09-14: rendered, but the button would not click
 
@@ -327,6 +395,75 @@ guarded. Tracks Wave 5's founding automatically instead of needing a number rais
 `ck3-tiger` clean. **Not yet re-tested** — this is the pass that finally builds the rows, so items
 3-5 (does the roster populate, does locate move the camera, do the tooltips render) are what the
 next attempt actually exercises for the first time.
+
+## 6d. Live pass 4 — the roster rendered, and ran off the screen
+
+First pass to build rows: real portraits, names, leaders, host counties, standing, sorted, the
+player's own row highlighted — and the whole panel extended past the right edge of the screen.
+`text_single` is `autoresize = yes` / `elide = right` by default (`gui/preload/labels.gui:6-15`),
+so the leader/county line sized to its longest text and set the row width. Both lines now carry
+`max_width` and elide; the full text is in the row tooltip. The user also asked for the panel to be
+draggable: it is now its own top-level `window` with `movable = yes`
+(`window_message_settings.gui:755-762`), registered as a second scripted widget — a movable window
+cannot sit inside the flowcontainer that lays out the toggle, or dragging fights the layout.
+**Confirmed live:** draggable, aligned, elided, header and close button correct.
+
+## 6e. Live pass 5 — column labels squished; regions and map mode built on top
+
+The numbers fit 48/42-pixel columns; the words "Standing / Pros. / Stab. / Great." did not. Widths
+are now shared constants (`@col_*`), widened to 74/58, and the panel to 600 wide. Built in the same
+pass, not yet tested: the region hierarchy (§7) and the real map mode (§2.5).
+
+Also seen in that pass and worth someone's attention, **not a map-view bug**: every community
+showed Stability 0 while Prosperity and Greatness were seeded (Mainz 650 / 0 / 180; the standing
+maths confirms the 0 is real data). The game-start seeding effects may set two pillars and not the
+third.
+
+## 7. The region hierarchy (user decision, 2026-09-14)
+
+The roster groups communities into three super-regions with sub-regions, hidden when empty:
+
+| Super-region | Sub-regions (key = the `kehillah_minhag` flag) |
+|---|---|
+| **Ashkenaz** | Anglia (`anglia`, implicit via `e_britannia`), Rhineland (`western_ashkenaz`), Eastern Ashkenaz, Provence, Italkia (`italki`), Romaniote |
+| **Sepharad** | Northern Sepharad, Southern Sepharad, Maghreb |
+| **Mizrach** | Eretz Yisrael, Misrayim (`misraim`), Bavel, Paras, Radhanite, Caucasus |
+| *Elsewhere* | `unplaced` — a community whose capital county sits in no tagged duchy |
+
+The sub-region keys **are** the v7 minhag flags, deliberately: the table lives in one place
+(`kehillah_minhag_geography_effects.txt`) and the roster classifies with the same reads the Bet
+Din triggers use (`kehillah_classify_map_view_region_effect` is
+`kehillah_has_known_minhag_region_trigger` as a classification), so "who is in my region" on the
+roster can never disagree with who counts as a regional peer in play.
+
+**What changed in the v7 table, superseding its "Greater Bavel" region** (which bundled Iraq,
+Persia and Transoxiana on the earlier note that Babylonian scholarly reach was wide): it is now
+four regions. Nothing outside that file ever read `flag:greater_bavel` (grepped), and no community
+exists in any of the four, so no gameplay trigger changes meaning.
+- **Bavel** — the original Mesopotamia group, plus `d_khuzestan` (Ahvaz/Shushtar sit with Basra in
+  the Talmudic geography).
+- **Paras** — the original Persia and `k_daylam` groups, minus Khuzestan and Azerbaijan, **plus
+  Khorasan** (`k_khorasan`: Nishapur, Merv, Herat, Balkh, Ghur, Nasa, Kohestan — real communities,
+  previously in no region).
+- **Radhanite** — *stated assumption, easy to change*: the Radhanites were a trade network, not a
+  place, so the region is taken as the network's eastern leg, Transoxiana and Khorezm (Bukhara,
+  Samarkand, Urgench) — exactly the original `k_transoxiana` group.
+- **Caucasus** — new: `k_georgia` (Georgia, Abkhazia), `k_armenia` (Greater Armenia, Vaspurakan;
+  its `d_mesopotamia` is Upper Mesopotamia and is left out), Azerbaijan (moved) and Shirvan, and
+  `k_caucasus` (Khazaria, Alania, Ciscaucasia, Azov). All tags confirmed against
+  `00_landed_titles.txt`.
+
+Two naming notes for the user, not changed without a say-so: the key `western_ashkenaz` is
+labelled **"Rhineland"** as asked, but its territory also spans Tzarfat (Champagne, Paris,
+Normandy) — Troyes and Paris will sit under "Rhineland". And **Syria** (Aleppo, Damascus — major
+communities) is still in no region at all; it was not in v7's table either.
+
+**Mechanism:** one mirrored list per sub-region on the player (`kehillah_map_view_list_<key>`) plus
+a count per super-region, filled by a parameterised `kehillah_map_view_file_entry_effect` from the
+already-standing-ordered outer pass, so each region list is standing-ordered for free. In the
+`.gui`, a `kehillah_map_view_superregion` type takes its sub-regions through a `blockoverride`,
+and each `kehillah_map_view_region` takes its list name and label the same way — static, since
+the table is static.
 
 **If (1) fails**, the feature is not salvageable as-is and the fallback is the one the spikes
 already named: v9's `kehillah_view_communities_interaction` stays the map-wide list, and a real

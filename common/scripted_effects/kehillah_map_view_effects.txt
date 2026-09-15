@@ -2,9 +2,10 @@
 # Kehillah map-view effects.
 #
 # Feeds the "Jewish Communities" map view (gui/kehillah_community_map_
-# view.gui). Design doc: docs/spec/v12-community-map-view.md.
+# view.gui) and paints its map mode (gfx/map/map_modes/kehillah_map_
+# modes.txt). Design doc: docs/spec/v12-community-map-view.md.
 #
-# WHY THIS EXISTS AT ALL -- the one non-obvious constraint.
+# WHY THE ROSTER IS MIRRORED -- the one non-obvious constraint.
 # A .gui widget cannot read a GLOBAL variable list. Every variable-list
 # datamodel in the installed 1.19 files goes through a scope:
 # "[<Scope>.MakeScope.GetList( 'name' )]" -- e.g. gui/activity_window_
@@ -12,22 +13,24 @@
 # deceased_selection_widget.gui:62, gui/window_situation_list.gui:1052.
 # There is no GetGlobalVariable / global-list equivalent anywhere in the
 # installation (grepped for "GlobalVar" across gui/: zero hits). The
-# registry this feature wants to show -- global_variable_list
-# kehillah_registered_communities (common/on_action/kehillah_on_actions.
-# txt) -- is therefore invisible to the GUI as it stands.
+# registry this feature shows -- global_variable_list kehillah_
+# registered_communities (common/on_action/kehillah_on_actions.txt) --
+# is therefore invisible to the GUI as it stands.
 #
-# So the roster is MIRRORED onto the viewing player's own character as a
-# character-scope variable list, which the GUI can read via
-# GetPlayer.MakeScope.GetList. The mirror is rebuilt from scratch on
-# every refresh rather than incrementally maintained, so it cannot drift
-# out of sync with the registry the way an add/remove-as-you-go copy
-# would; at sixteen communities the cost of a full rebuild is not worth
-# optimising away, and Wave 5's community lifecycle (founding/destroying
-# communities at runtime, ROADMAP item 8) would break an incremental
-# mirror the day it lands.
+# So the roster is MIRRORED onto the viewing player's own character as
+# character-scope variable lists, which the GUI reads via
+# GetPlayer.MakeScope.GetList: one list per minhag sub-region (the
+# roster is grouped by region, and a .gui datamodel cannot group any
+# more than it can sort), plus a flat list of everything. The mirror is
+# rebuilt from scratch on every refresh rather than incrementally
+# maintained, so it cannot drift out of sync with the registry; at
+# sixteen communities a full rebuild costs nothing worth optimising, and
+# Wave 5's community lifecycle (founding/destroying communities at
+# runtime, ROADMAP item 8) would break an incremental mirror the day it
+# landed.
 #
-# The mirror is a DISPLAY CACHE. Nothing gameplay-facing may read
-# kehillah_map_view_list or kehillah_ui_* -- those are for the widget.
+# The mirror is a DISPLAY CACHE. Nothing gameplay-facing may read the
+# kehillah_map_view_* variables or lists -- those are for the widget.
 # The registry stays the source of truth.
 # =====================================================================
 
@@ -37,8 +40,8 @@
 #
 # Scope: a c_kehillah_* community title.
 #
-# Caches onto the title the two facts the roster needs that the GUI
-# cannot compute for itself:
+# Caches onto the title the facts the roster needs that the GUI cannot
+# compute for itself:
 #
 #   kehillah_ui_host_county -- the county the community currently sits
 #     in. This is what the roster's "go to" button selects, and it is
@@ -55,15 +58,17 @@
 #     county is the fallback for a title whose holder has no domicile
 #     yet, which is the real state during game-start seeding.
 #
+#   kehillah_ui_region -- which minhag sub-region the community belongs
+#     to, as a flag, via kehillah_classify_map_view_region_effect below.
+#
 # It also refreshes the community's STANDING (kehillah_var_standing),
-# which the roster orders on and shows as its own column. That figure is
-# NOT a display invention -- as of 2026-09-14 it is this mod's canonical
-# "how is this community doing, in one number", defined by
-# kehillah_standing_value and maintained by kehillah_update_standing_
-# effect (both alongside the pillars themselves, not here). It is
-# refreshed at this point only so that a roster is never built on a
-# figure up to a quarter stale; the definition lives with the pillars,
-# where anything else that wants it can reach it.
+# which the roster orders on and shows as its own column, and which the
+# map mode colours by. That figure is NOT a display invention -- as of
+# 2026-09-14 it is this mod's canonical "how is this community doing, in
+# one number", defined by kehillah_standing_value and maintained by
+# kehillah_update_standing_effect (both alongside the pillars themselves,
+# not here). It is refreshed at this point only so that a roster is
+# never built on a figure up to a quarter stale.
 # ---------------------------------------------------------------------
 kehillah_cache_map_view_facts_effect = {
 	if = {
@@ -84,7 +89,86 @@ kehillah_cache_map_view_facts_effect = {
 		remove_variable = kehillah_ui_host_county
 	}
 
+	kehillah_classify_map_view_region_effect = yes
 	kehillah_update_standing_effect = yes
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_classify_map_view_region_effect
+#
+# Scope: a c_kehillah_* community title. Sets kehillah_ui_region.
+#
+# Reads the SAME geography the gameplay triggers read, the same way, so
+# the roster's grouping can never disagree with who counts as a
+# regional peer for a Bet Din: Anglia is "capital county sits in
+# e_britannia" (the deliberate untagged exception recorded in
+# kehillah_minhag_geography_effects.txt's own header), and every other
+# region is the kehillah_minhag flag on the capital county's de jure
+# duchy, tagged once at game start by kehillah_tag_minhag_regions_
+# effect. Compare kehillah_has_known_minhag_region_trigger and
+# kehillah_shares_minhag_region_trigger (common/scripted_triggers/
+# kehillah_scripted_triggers.txt) -- this is those two, as a
+# classification instead of a comparison.
+#
+# title_capital_county (the TITLE-scope link; the triggers use the
+# character-scope capital_county, which is the same county) rather than
+# the live domicile county, again to match the triggers exactly; the two only differ for a moved domicile whose
+# capital has not followed it, which nothing in this mod does today.
+#
+# A community outside every region gets flag:unplaced and its own
+# "Elsewhere" section in the roster rather than vanishing from it --
+# Wave 5's founding-anywhere makes that a real case, not a bug state.
+# ---------------------------------------------------------------------
+kehillah_classify_map_view_region_effect = {
+	if = {
+		limit = {
+			exists = title_capital_county
+			title_capital_county = { empire = title:e_britannia }
+		}
+		set_variable = { name = kehillah_ui_region value = flag:anglia }
+	}
+	else_if = {
+		limit = {
+			exists = title_capital_county.de_jure_liege
+			title_capital_county.de_jure_liege = { has_variable = kehillah_minhag }
+		}
+		set_variable = {
+			name = kehillah_ui_region
+			value = title_capital_county.de_jure_liege.var:kehillah_minhag
+		}
+	}
+	else = {
+		set_variable = { name = kehillah_ui_region value = flag:unplaced }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_map_view_file_entry_effect = { REGION = <flag> SUPER = <name> }
+#
+# Scope: the character whose roster is being built. scope:kehillah_map_
+# view_entry = the community title to file.
+#
+# One branch of the region switch in kehillah_refresh_map_view_effect,
+# parameterised so the sixteen branches are one line each. Files the
+# community into its sub-region list and bumps its super-region count
+# (which the roster's super-region headers show/hide on -- a .gui Or()
+# takes two arguments, and six-deep nesting to ask "is any of these
+# lists non-empty" is worse than one integer).
+# ---------------------------------------------------------------------
+kehillah_map_view_file_entry_effect = {
+	if = {
+		limit = { scope:kehillah_map_view_entry.var:kehillah_ui_region = flag:$REGION$ }
+		add_to_variable_list = {
+			name = kehillah_map_view_list_$REGION$
+			target = scope:kehillah_map_view_entry
+		}
+		change_variable = {
+			name = kehillah_map_view_count_$SUPER$
+			add = 1
+		}
+	}
 }
 
 
@@ -95,10 +179,21 @@ kehillah_cache_map_view_facts_effect = {
 # player, since the widget reads GetPlayer. Safe to call on anyone; it
 # only writes display variables.
 #
-# Rebuilds that character's kehillah_map_view_list from the registry,
-# strongest standing first, skipping held-by-nobody titles (a community
-# between leaders has no portrait, no domicile and no live location, so
-# a row for it would be three empty columns).
+# Rebuilds that character's roster lists from the registry, strongest
+# standing first, skipping held-by-nobody titles (a community between
+# leaders has no portrait, no domicile and no live location, so a row
+# for it would be three empty columns).
+#
+# THE REGION HIERARCHY (v12 section 7, user decision 2026-09-14). Three
+# super-regions, each with sub-regions; the sub-region keys are the
+# kehillah_minhag flags, so the table lives in one place
+# (kehillah_minhag_geography_effects.txt) and this only groups them:
+#
+#   ashkenaz: anglia, western_ashkenaz, eastern_ashkenaz, provence,
+#             italki, romaniote
+#   sepharad: northern_sepharad, southern_sepharad, maghreb
+#   mizrach:  eretz_yisrael, misraim, bavel, paras, radhanite, caucasus
+#   (elsewhere: unplaced)
 #
 # THE max BOUND. An ordered_ iterator without max or position visits
 # ONE entry (vanilla's own no-max uses are all "pick the best one", e.g.
@@ -118,28 +213,40 @@ kehillah_refresh_map_view_effect = {
 	save_scope_as = kehillah_map_view_owner
 
 	clear_variable_list = kehillah_map_view_list
-	set_variable = {
-		name = kehillah_map_view_count
-		value = 0
-	}
+	clear_variable_list = kehillah_map_view_list_anglia
+	clear_variable_list = kehillah_map_view_list_western_ashkenaz
+	clear_variable_list = kehillah_map_view_list_eastern_ashkenaz
+	clear_variable_list = kehillah_map_view_list_provence
+	clear_variable_list = kehillah_map_view_list_italki
+	clear_variable_list = kehillah_map_view_list_romaniote
+	clear_variable_list = kehillah_map_view_list_northern_sepharad
+	clear_variable_list = kehillah_map_view_list_southern_sepharad
+	clear_variable_list = kehillah_map_view_list_maghreb
+	clear_variable_list = kehillah_map_view_list_eretz_yisrael
+	clear_variable_list = kehillah_map_view_list_misraim
+	clear_variable_list = kehillah_map_view_list_bavel
+	clear_variable_list = kehillah_map_view_list_paras
+	clear_variable_list = kehillah_map_view_list_radhanite
+	clear_variable_list = kehillah_map_view_list_caucasus
+	clear_variable_list = kehillah_map_view_list_unplaced
+
+	set_variable = { name = kehillah_map_view_count value = 0 }
+	set_variable = { name = kehillah_map_view_count_ashkenaz value = 0 }
+	set_variable = { name = kehillah_map_view_count_sepharad value = 0 }
+	set_variable = { name = kehillah_map_view_count_mizrach value = 0 }
+	set_variable = { name = kehillah_map_view_count_elsewhere value = 0 }
 
 	# Count the registry so the ordered pass below has an exact ceiling.
 	# Same limit as that pass, so the two agree even while a community
 	# is between leaders -- a ceiling above the FILTERED count would
 	# trip the very "max bigger than the list" error this exists to
 	# avoid.
-	set_variable = {
-		name = kehillah_map_view_registry_size
-		value = 0
-	}
+	set_variable = { name = kehillah_map_view_registry_size value = 0 }
 	every_in_global_list = {
 		variable = kehillah_registered_communities
 		limit = { exists = holder }
 		scope:kehillah_map_view_owner = {
-			change_variable = {
-				name = kehillah_map_view_registry_size
-				add = 1
-			}
+			change_variable = { name = kehillah_map_view_registry_size add = 1 }
 		}
 	}
 
@@ -162,10 +269,26 @@ kehillah_refresh_map_view_effect = {
 					name = kehillah_map_view_list
 					target = scope:kehillah_map_view_entry
 				}
-				change_variable = {
-					name = kehillah_map_view_count
-					add = 1
-				}
+				change_variable = { name = kehillah_map_view_count add = 1 }
+
+				# Because the outer pass is already standing-ordered,
+				# each region list comes out standing-ordered too.
+				kehillah_map_view_file_entry_effect = { REGION = anglia SUPER = ashkenaz }
+				kehillah_map_view_file_entry_effect = { REGION = western_ashkenaz SUPER = ashkenaz }
+				kehillah_map_view_file_entry_effect = { REGION = eastern_ashkenaz SUPER = ashkenaz }
+				kehillah_map_view_file_entry_effect = { REGION = provence SUPER = ashkenaz }
+				kehillah_map_view_file_entry_effect = { REGION = italki SUPER = ashkenaz }
+				kehillah_map_view_file_entry_effect = { REGION = romaniote SUPER = ashkenaz }
+				kehillah_map_view_file_entry_effect = { REGION = northern_sepharad SUPER = sepharad }
+				kehillah_map_view_file_entry_effect = { REGION = southern_sepharad SUPER = sepharad }
+				kehillah_map_view_file_entry_effect = { REGION = maghreb SUPER = sepharad }
+				kehillah_map_view_file_entry_effect = { REGION = eretz_yisrael SUPER = mizrach }
+				kehillah_map_view_file_entry_effect = { REGION = misraim SUPER = mizrach }
+				kehillah_map_view_file_entry_effect = { REGION = bavel SUPER = mizrach }
+				kehillah_map_view_file_entry_effect = { REGION = paras SUPER = mizrach }
+				kehillah_map_view_file_entry_effect = { REGION = radhanite SUPER = mizrach }
+				kehillah_map_view_file_entry_effect = { REGION = caucasus SUPER = mizrach }
+				kehillah_map_view_file_entry_effect = { REGION = unplaced SUPER = elsewhere }
 			}
 		}
 	}
@@ -186,5 +309,147 @@ kehillah_refresh_map_view_effect = {
 kehillah_refresh_map_view_for_players_effect = {
 	every_player = {
 		kehillah_refresh_map_view_effect = yes
+	}
+}
+
+
+# =====================================================================
+# THE MAP MODE -- painting.
+#
+# THE TECHNIQUE (CK3 wiki, "Creating Custom Map Modes", brought in by the
+# user 2026-09-14; every primitive re-verified against the installed
+# 1.19 files before use). CK3 has no script-drivable county colouring --
+# but it has one script-drivable BARONY colouring: the "baronies"
+# color_mode paints each barony in its own title's colour, and
+# set_color_from_title (vanilla effect: common/casus_belli_types/
+# 07_ep3_wars.txt:6188, common/scripted_effects/00_administrative_
+# effects.txt:545) rewrites a title's colour at runtime. Paint every
+# barony neutral, then paint each community's host county by Standing
+# band, switch to that mode, and the map shows the communities. This is
+# what docs/spec/v12-community-map-view.md section 1 originally said
+# could not be done; its section 2.5 records the correction.
+#
+# WHAT IT COSTS. every_county x every_county_province x one set_color
+# call -- roughly one per barony in the world, a few thousand -- per
+# paint. The wiki does the same. It runs only when the map view is
+# opened, never on a pulse.
+#
+# WHAT IT LEAVES BEHIND. Barony colours are persistent state: after a
+# paint they stay repainted, in the save, until the next paint. Nothing
+# in normal play shows a barony's own colour except the "baronies" map
+# mode itself (a debug mode) and a hypothetical independent baron's
+# realm colour, so the residue is invisible in practice -- but it IS
+# there, and no "restore original colours" exists because nothing
+# records them. The wiki accepts the same trade. If it ever matters, the
+# base colour below is the one to make look like vanilla's.
+#
+# NOT every_barony. The wiki uses it; vanilla never does (grepped: zero
+# uses, though random_barony has five), so this walks every_county ->
+# every_county_province -> barony instead, all three of which are
+# confirmed vanilla links.
+# =====================================================================
+
+
+# ---------------------------------------------------------------------
+# kehillah_pick_map_color_effect
+#
+# Scope: a c_kehillah_* community title. Saves scope:kehillah_map_color
+# = the colour title for this community's Standing band.
+#
+# Same thresholds, same top-down order as every other band read in this
+# mod. NOT via kehillah_pillar_at_least_trigger: that trigger is
+# CHARACTER-scoped (it opens primary_title itself), and this runs on the
+# title. The comparison is written out directly, guarded the same way
+# the trigger guards its own. Colour titles: common/landed_titles/
+# kehillah_map_color_titles.txt.
+# ---------------------------------------------------------------------
+kehillah_pick_map_color_effect = {
+	if = {
+		limit = {
+			has_variable = kehillah_var_standing
+			var:kehillah_var_standing >= kehillah_band_legendary_threshold
+		}
+		title:d_kehillah_mapcolor_legendary = { save_scope_as = kehillah_map_color }
+	}
+	else_if = {
+		limit = {
+			has_variable = kehillah_var_standing
+			var:kehillah_var_standing >= kehillah_band_flourishing_threshold
+		}
+		title:d_kehillah_mapcolor_flourishing = { save_scope_as = kehillah_map_color }
+	}
+	else_if = {
+		limit = {
+			has_variable = kehillah_var_standing
+			var:kehillah_var_standing >= kehillah_band_healthy_threshold
+		}
+		title:d_kehillah_mapcolor_healthy = { save_scope_as = kehillah_map_color }
+	}
+	else_if = {
+		limit = {
+			has_variable = kehillah_var_standing
+			var:kehillah_var_standing >= kehillah_band_strained_threshold
+		}
+		title:d_kehillah_mapcolor_strained = { save_scope_as = kehillah_map_color }
+	}
+	else = {
+		title:d_kehillah_mapcolor_crisis = { save_scope_as = kehillah_map_color }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_paint_communities_map_effect
+#
+# Scope: any (the scripted_gui runs it with the player as root; nothing
+# here reads root).
+#
+# Pass 1 -- every county: clear the hover-tooltip tag and paint every
+# barony the neutral base. Pass 2 -- every led community: refresh its
+# cached facts (so a moved quarter paints in the right place and a
+# stale Standing does not pick the wrong band), tag its host county for
+# the map mode's hover description, and paint that county's baronies
+# in its band colour.
+#
+# The tag, kehillah_map_community, is a county-title variable pointing
+# at the community title. The map mode's barony_description reads it
+# (gfx/map/map_modes/kehillah_map_modes.txt) to say WHICH community is
+# painted there and how it stands. Cleared and re-set every paint, so a
+# community that moves or dissolves leaves no orphan tooltip.
+# ---------------------------------------------------------------------
+kehillah_paint_communities_map_effect = {
+	every_county = {
+		remove_variable = kehillah_map_community
+		every_county_province = {
+			barony ?= {
+				set_color_from_title = title:d_kehillah_mapcolor_base
+			}
+		}
+	}
+
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = { exists = holder }
+
+		kehillah_cache_map_view_facts_effect = yes
+
+		if = {
+			limit = { exists = var:kehillah_ui_host_county }
+
+			kehillah_pick_map_color_effect = yes
+			save_scope_as = kehillah_paint_community
+
+			var:kehillah_ui_host_county = {
+				set_variable = {
+					name = kehillah_map_community
+					value = scope:kehillah_paint_community
+				}
+				every_county_province = {
+					barony ?= {
+						set_color_from_title = scope:kehillah_map_color
+					}
+				}
+			}
+		}
 	}
 }
