@@ -71,11 +71,28 @@ flowcontainer = {
 	widgetanchor = bottom|right
 	position = { -22 -150 }
 
+	# LAYER (live pass 2, 2026-09-14). The alwaystransparent fix from
+	# pass 1 was necessary but not sufficient: the button still rendered
+	# and still would not click. Every top-level HUD widget in vanilla
+	# declares a layer, and this one declared none. The HUD's own
+	# full-screen roots (hud.gui "meta_info" and "bottom_bar", both
+	# size 100%/100%, both layer = bottom) do not block the MAP -- the
+	# map is not a gui widget and takes whatever the gui does not
+	# consume -- but a layerless widget most plausibly sits beneath
+	# them, and they sit between the mouse and anything under them.
+	# The nearest vanilla analog to this widget -- persistent,
+	# right-anchored, content-sized, interactive -- is the outliner
+	# (gui/hud_outliner.gui:1-7), whose root is exactly
+	# "alwaystransparent = no / filter_mouse = all /
+	# layer = windows_layer". This matches it property for property.
+	layer = windows_layer
+	alwaystransparent = no
+	filter_mouse = all
+
 	direction = vertical
 	spacing = 6
 	ignoreinvisible = yes
 	allow_outside = yes
-	filter_mouse = all
 
 
 	### The roster panel. Sits directly above the toggle and shares its
@@ -236,6 +253,18 @@ flowcontainer = {
 		background = {
 			using = Background_Area_Dark
 			color = { 0.15 0.15 0.15 0.75 }
+			margin = { 8 6 }
+		}
+
+		# Lit while the roster is open. Doubles as a diagnostic: it is
+		# driven by the same VariableSystem flag the panel is, and lives
+		# on the button's own tile, so a click that registers but fails
+		# to show the panel is visibly different from a click that never
+		# arrived at all -- the two look identical otherwise.
+		background = {
+			visible = "[GetVariableSystem.Exists( 'kehillah_map_view_open' )]"
+			using = Background_Area_Dark
+			color = { 0.55 0.45 0.18 0.85 }
 			margin = { 8 6 }
 		}
 
