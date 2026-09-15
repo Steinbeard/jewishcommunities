@@ -1561,6 +1561,56 @@ kehillah_init_pillars_effect = {
 		limit = { NOT = { exists = var:kehillah_var_greatness } }
 		set_variable = { name = kehillah_var_greatness value = 0 }
 	}
+
+	# STANDING, ADDED 2026-09-14 (v12). Created here with the three it is
+	# derived from, for the same reason they are created rather than
+	# change_variable'd into existence: see this effect's own ROOT CAUSE
+	# header. Seeded from the live figure rather than 0, so a community
+	# initialised mid-game reads correctly immediately instead of showing
+	# a false Crisis until the next quarterly tick.
+	if = {
+		limit = { NOT = { exists = var:kehillah_var_standing } }
+		set_variable = { name = kehillah_var_standing value = kehillah_standing_value }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_update_standing_effect
+# Scope: a Kehillah title. Idempotent.
+#
+# Recomputes kehillah_var_standing from the three pillars. See
+# kehillah_standing_value (common/script_values/kehillah_script_values.txt)
+# for what the number is, why it is their mean rather than their sum, and
+# why it therefore needs no thresholds or comparison trigger of its own.
+#
+# WHY A STORED VARIABLE AND NOT JUST THE SCRIPT VALUE. The script value
+# is the definition and is always correct; this variable is what makes it
+# usable everywhere the definition cannot reach. A .gui widget can read a
+# title variable (Title.MakeScope.Var) but cannot evaluate a script
+# value; ordered_in_global_list can order by either, but customizable
+# localization band functions can only test var: accessors; and
+# kehillah_pillar_at_least_trigger substitutes a variable NAME, not a
+# value. Storing it buys all four at the cost of a recompute.
+#
+# CADENCE, and the staleness it accepts. Called from
+# kehillah_init_pillars_effect (so it exists), from the end of
+# kehillah_quarterly_pillars_effect (the tick on which the pillars
+# themselves visibly move), and from kehillah_refresh_map_view_effect
+# (so a roster is never built on a stale figure). It is NOT called from
+# the ~33 individual event/decision writes that nudge a single pillar --
+# those would each need it, and standing would still only be as fresh as
+# whoever remembered. Accepting up to one quarter of lag, on a number
+# whose inputs are themselves quarterly, is the deliberate trade. If
+# something ever needs standing exact at an arbitrary tick, call this
+# first rather than reading the variable and hoping.
+# ---------------------------------------------------------------------
+
+kehillah_update_standing_effect = {
+	set_variable = {
+		name = kehillah_var_standing
+		value = kehillah_standing_value
+	}
 }
 
 
@@ -1849,6 +1899,18 @@ kehillah_quarterly_pillars_effect = {
 				change_variable = { name = kehillah_var_prosperity subtract = kehillah_loan_default_prosperity_loss }
 			}
 		}
+	}
+
+	# ---------------------------------------------------------------
+	# STANDING (v12, 2026-09-14). LAST, deliberately: every block above
+	# this one can still move a pillar -- convergence, overcrowding,
+	# retention, a loan default -- so recomputing anywhere earlier would
+	# store a figure that is already wrong by the end of the same tick.
+	# Keep this at the bottom of this effect if anything is ever appended
+	# after it.
+	# ---------------------------------------------------------------
+	primary_title = {
+		kehillah_update_standing_effect = yes
 	}
 }
 

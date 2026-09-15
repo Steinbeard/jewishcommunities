@@ -1,0 +1,640 @@
+﻿##########################################################################
+# Jewish Communities -- map view.
+#
+# Design doc: docs/spec/v12-community-map-view.md. Read that before
+# changing anything here.
+#
+# WHAT THIS IS. Two top-level widgets, both registered in gui/scripted_
+# widgets/kehillah_scripted_widgets.txt -- CK3's one additive GUI hook,
+# confirmed working live 2026-09-14 (this repo's first use of it):
+#
+#   kehillah_community_map_view        -- the toggle button
+#   kehillah_community_map_view_panel  -- the roster window
+#
+# The toggle does three things in one click: paints the map (a
+# scripted_gui, common/scripted_guis/kehillah_map_view_gui.txt),
+# switches to the kehillah_communities_map map mode (gfx/map/map_modes/
+# kehillah_map_modes.txt), and opens the roster. Closing the roster
+# switches back to realms. The two widgets are linked only by the
+# VariableSystem flag "kehillah_map_view_open".
+#
+# The roster is grouped by minhag region -- three super-regions, each
+# with sub-regions, plus an "elsewhere" bucket -- and the map mode
+# colours each community's host county by Standing band. Data comes
+# from character-scope variable lists mirrored onto the player by
+# common/scripted_effects/kehillah_map_view_effects.txt (one list per
+# sub-region; a .gui datamodel can neither sort nor group, so both are
+# done script-side), because .gui cannot read a global variable list.
+#
+# EVERYTHING BELOW IS THE RESIDUE OF FIVE LIVE PASSES, each of which
+# found one thing a clean read of the vanilla files had not. The spec's
+# sections 6a-6e record them in order; the short list:
+#   - alwaystransparent propagates to the whole subtree (6a)
+#   - a top-level widget needs a layer or it sits under the HUD (6b)
+#   - a (flow)container cannot have an hbox/vbox as a direct child, and
+#     a bare button_close cannot sit in an hbox -- both crash on open (6c)
+#   - text_single autoresizes to its text unless max_width caps it (6d)
+#   - a movable window cannot live inside a layout container (6d)
+# Each is cited at the line it governs. Do not "tidy" them away.
+##########################################################################
+
+
+### =====================================================================
+### THE TOGGLE
+### =====================================================================
+
+flowcontainer = {
+	name = "kehillah_community_map_view"
+	parentanchor = bottom|right
+	widgetanchor = bottom|right
+	position = { -22 -150 }
+
+	# LAYER (live pass 2). Every top-level HUD widget in vanilla declares
+	# one; without it this sat beneath the HUD's full-screen bottom-layer
+	# roots (hud.gui "meta_info"/"bottom_bar") and rendered without ever
+	# receiving a click. The nearest vanilla analog -- persistent,
+	# right-anchored, content-sized, interactive -- is the outliner
+	# (gui/hud_outliner.gui:1-7), whose root is exactly these three
+	# lines. alwaystransparent stays explicitly "no" (live pass 1): it
+	# propagates to the whole subtree, which is why vanilla's map_modes
+	# instantiation overrides its own type's "yes" (gui/hud.gui:2793).
+	layer = windows_layer
+	alwaystransparent = no
+	filter_mouse = all
+
+	direction = vertical
+	ignoreinvisible = yes
+	allow_outside = yes
+
+	flowcontainer = {
+		name = "kehillah_map_view_toggle"
+		direction = vertical
+		ignoreinvisible = yes
+
+		# Hidden entirely when there is nothing to show: no communities
+		# mirrored (a non-Kehillah game, or before the game-start refresh
+		# has run) means no button. The CFixedPoint comparison against a
+		# possibly-absent variable is vanilla's own idiom for exactly
+		# this -- gui/shared/mapmodes.gui:105 reads hide_ui_map_zoom the
+		# same way, and a variable that does not exist reads as 0.
+		#
+		# The IsInGame/GetPlayer.IsValid half is not belt-and-braces: a
+		# scripted widget is created at STARTUP, which includes contexts
+		# with no player (the frontend, the loading screen). Reading
+		# GetPlayer.MakeScope there would log an error every frame. PDX
+		# gui And() is a function call, not a short-circuiting operator,
+		# so the guard has to wrap the read rather than merely precede
+		# it -- vanilla guards its own always-created debug widgets the
+		# same way (gui/debug/debug_menus.gui:784).
+		visible = "[And( And( IsInGame, GetPlayer.IsValid ), And( IsDefaultGUIMode, GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_map_view_count' ).GetValue, '(CFixedPoint)0' ) ) )]"
+
+		background = {
+			using = Background_Area_Dark
+			color = { 0.15 0.15 0.15 0.75 }
+			margin = { 8 6 }
+		}
+
+		# Lit while the view is open -- driven by the same flag the
+		# panel reads, so the two can never disagree.
+		background = {
+			visible = "[GetVariableSystem.Exists( 'kehillah_map_view_open' )]"
+			using = Background_Area_Dark
+			color = { 0.55 0.45 0.18 0.85 }
+			margin = { 8 6 }
+		}
+
+		# Two buttons in the same spot, one visible at a time -- the
+		# vanilla pause/play pattern (gui/hud.gui, button_pause_hud).
+		# Cleaner than one button with a conditional, because the open
+		# and close actions are genuinely different lists of calls, and
+		# PDX gui onclick has no if.
+		widget = {
+			size = { 34 34 }
+			parentanchor = hcenter
+
+			### OPEN: paint the map, switch to the community map mode,
+			### show the roster. Order matters -- paint first, so the
+			### mode is never shown stale. Multiple onclick lines run in
+			### sequence (vanilla: gui/hud.gui find_title_shortcut).
+			button_round = {
+				name = "kehillah_map_view_open_button"
+				size = { 34 34 }
+				visible = "[Not( GetVariableSystem.Exists( 'kehillah_map_view_open' ) )]"
+				enabled = "[CanChangeMapMode]"
+				onclick = "[GetScriptedGui( 'kehillah_communities_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+				onclick = "[SetMapMode( 'kehillah_communities_map' )]"
+				onclick = "[GetVariableSystem.Set( 'kehillah_map_view_open', 'yes' )]"
+				tooltip = "KEHILLAH_MAP_VIEW_BUTTON_TOOLTIP"
+				using = tooltip_ws
+
+				# alwaystransparent on a LEAF is its correct use: let the
+				# click fall through to the button beneath.
+				icon = {
+					parentanchor = center
+					size = { 22 22 }
+					texture = "gfx/interface/icons/faith/judaism.dds"
+					alwaystransparent = yes
+				}
+			}
+
+			### CLOSE: hide the roster, back to the realms map.
+			button_round = {
+				name = "kehillah_map_view_close_button"
+				size = { 34 34 }
+				visible = "[GetVariableSystem.Exists( 'kehillah_map_view_open' )]"
+				onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_open' )]"
+				onclick = "[SetMapMode( 'realms' )]"
+				tooltip = "KEHILLAH_MAP_VIEW_BUTTON_CLOSE_TOOLTIP"
+				using = tooltip_ws
+
+				icon = {
+					parentanchor = center
+					size = { 22 22 }
+					texture = "gfx/interface/icons/faith/judaism.dds"
+					alwaystransparent = yes
+				}
+			}
+		}
+	}
+}
+
+
+### =====================================================================
+### THE ROSTER WINDOW
+### =====================================================================
+
+# Column widths, shared by the header row and every roster row so they
+# line up. Rows are: portrait | name block | standing | P | S | G |
+# locate. The name block takes whatever is left. Widened in live pass 5
+# -- the numbers fit 48/42 but the column labels did not.
+@col_portrait = 64
+@col_name = 190
+@col_standing = 74
+@col_pillar = 58
+@col_locate = 30
+@roster_width = 560
+
+window = {
+	name = "kehillah_community_map_view_panel"
+	parentanchor = bottom|right
+	widgetanchor = bottom|right
+
+	# Default resting place: bottom-right, clear of both the toggle (which
+	# sits at -150 and is 46 tall) and vanilla's zoom-level caption
+	# ("Paper Map / Selecting: Realms"), which live pass 4 showed bleeding
+	# through the panel's bottom edge at -196. Draggable from here.
+	position = { -22 -240 }
+	size = { 600 720 }
+
+	# A movable window cannot live inside the flowcontainer that lays out
+	# the toggle -- dragging would fight the layout -- which is why the
+	# panel is its own top-level widget (window_message_settings.gui:
+	# 755-762 is the vanilla shape).
+	movable = yes
+	resizable = no
+	layer = windows_layer
+	alwaystransparent = no
+	filter_mouse = all
+	allow_outside = yes
+
+	visible = "[And( And( IsInGame, GetPlayer.IsValid ), GetVariableSystem.Exists( 'kehillah_map_view_open' ) )]"
+	visible_at_creation = no
+
+	state = {
+		name = _show
+		using = Animation_FadeIn_Quick
+	}
+	state = {
+		name = _hide
+		using = Animation_FadeOut_Standard
+	}
+
+	background = {
+		using = Background_Area_Dark
+		color = { 0.11 0.10 0.09 0.94 }
+		margin = { 6 6 }
+	}
+
+	# The layout vbox lives INSIDE the window, never directly in a
+	# (flow)container -- live pass 3 crashed the game with a stack
+	# overflow on exactly that, and error.log said so in as many words
+	# ("A (flow)container can't have an hbox/vbox as a direct child").
+	vbox = {
+		margin = { 14 12 }
+		spacing = 6
+		min_width = @roster_width
+
+		### Header. Vanilla's own window header, used the way
+		### gui/window_situation_list.gui:40-52 uses it -- it carries
+		### the close button internally, positioned absolutely inside a
+		### plain widget. A bare button_close dropped into an hbox is
+		### rejected ("Widget cannot have a position in a layout", live
+		### pass 3). Closing here also leaves the map mode, same as the
+		### toggle's close half.
+		header_pattern = {
+			layoutpolicy_horizontal = expanding
+
+			blockoverride "header_text"
+			{
+				text = "KEHILLAH_MAP_VIEW_HEADER"
+			}
+
+			blockoverride "button_close"
+			{
+				onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_open' )]"
+				onclick = "[SetMapMode( 'realms' )]"
+			}
+		}
+
+		text_multi = {
+			autoresize = yes
+			max_width = @roster_width
+			text = "KEHILLAH_MAP_VIEW_SUBHEADER"
+			default_format = "#weak;italic"
+		}
+
+		### Column labels, so the four bare numbers on each row are
+		### readable without hovering every one of them. Same widths as
+		### the rows, from the constants above.
+		hbox = {
+			layoutpolicy_horizontal = expanding
+			margin_right = 18
+			margin_top = 4
+
+			text_single = {
+				text = "KEHILLAH_MAP_VIEW_COL_COMMUNITY"
+				default_format = "#weak"
+				margin_left = @col_portrait
+			}
+
+			expand = {}
+
+			text_label_center = {
+				text = "KEHILLAH_MAP_VIEW_COL_STANDING"
+				default_format = "#weak"
+				min_width = @col_standing
+			}
+			text_label_center = {
+				text = "KEHILLAH_MAP_VIEW_COL_P"
+				default_format = "#weak"
+				min_width = @col_pillar
+			}
+			text_label_center = {
+				text = "KEHILLAH_MAP_VIEW_COL_S"
+				default_format = "#weak"
+				min_width = @col_pillar
+			}
+			text_label_center = {
+				text = "KEHILLAH_MAP_VIEW_COL_G"
+				default_format = "#weak"
+				min_width = @col_pillar
+			}
+
+			# Spacer matching the locate button's column.
+			widget = { size = { @col_locate 1 } }
+		}
+
+		### The roster. The outliner's own scrollarea shape, property for
+		### property (gui/hud_outliner.gui:80-97): sizes itself to its
+		### content up to a ceiling and needs nothing from its parent's
+		### height. A "growing" layoutpolicy here, inside a vbox with no
+		### fixed height, was the other layout cycle live pass 3 removed.
+		scrollarea = {
+			autoresizescrollarea = yes
+			scrollbarpolicy_horizontal = always_off
+			size = { @roster_width 0 }
+			maximumsize = { -1 560 }
+
+			scrollbar_vertical = {
+				using = Scrollbar_Vertical
+			}
+
+			scrollwidget = {
+				vbox = {
+					set_parent_size_to_minimum = yes
+					min_width = @roster_width
+					margin_right = 12
+					spacing = 2
+
+					### The region hierarchy (v12 section 7). Static, since
+					### the region table is static: three super-regions,
+					### each holding its sub-regions, plus "elsewhere" for
+					### a community outside every region. Every level
+					### hides itself when empty. Each sub-region's rows come
+					### from its own mirrored list, already standing-
+					### ordered by kehillah_refresh_map_view_effect.
+					kehillah_map_view_superregion = {
+						blockoverride "super_visible" { visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_map_view_count_ashkenaz' ).GetValue, '(CFixedPoint)0' )]" }
+						blockoverride "super_name" { text = "KEHILLAH_SUPERREGION_ASHKENAZ" }
+						blockoverride "super_regions" {
+							kehillah_map_view_region = {
+								blockoverride "region_visible" { visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_anglia' ) )]" }
+								blockoverride "region_name" { text = "KEHILLAH_REGION_ANGLIA" }
+								blockoverride "region_list" { datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_anglia' )]" }
+							}
+							kehillah_map_view_region = {
+								blockoverride "region_visible" { visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_western_ashkenaz' ) )]" }
+								blockoverride "region_name" { text = "KEHILLAH_REGION_WESTERN_ASHKENAZ" }
+								blockoverride "region_list" { datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_western_ashkenaz' )]" }
+							}
+							kehillah_map_view_region = {
+								blockoverride "region_visible" { visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_eastern_ashkenaz' ) )]" }
+								blockoverride "region_name" { text = "KEHILLAH_REGION_EASTERN_ASHKENAZ" }
+								blockoverride "region_list" { datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_eastern_ashkenaz' )]" }
+							}
+							kehillah_map_view_region = {
+								blockoverride "region_visible" { visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_provence' ) )]" }
+								blockoverride "region_name" { text = "KEHILLAH_REGION_PROVENCE" }
+								blockoverride "region_list" { datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_provence' )]" }
+							}
+							kehillah_map_view_region = {
+								blockoverride "region_visible" { visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_italki' ) )]" }
+								blockoverride "region_name" { text = "KEHILLAH_REGION_ITALKI" }
+								blockoverride "region_list" { datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_italki' )]" }
+							}
+							kehillah_map_view_region = {
+								blockoverride "region_visible" { visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_romaniote' ) )]" }
+								blockoverride "region_name" { text = "KEHILLAH_REGION_ROMANIOTE" }
+								blockoverride "region_list" { datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_romaniote' )]" }
+							}
+						}
+					}
+
+					kehillah_map_view_superregion = {
+						blockoverride "super_visible" { visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_map_view_count_sepharad' ).GetValue, '(CFixedPoint)0' )]" }
+						blockoverride "super_name" { text = "KEHILLAH_SUPERREGION_SEPHARAD" }
+						blockoverride "super_regions" {
+							kehillah_map_view_region = {
+								blockoverride "region_visible" { visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_northern_sepharad' ) )]" }
+								blockoverride "region_name" { text = "KEHILLAH_REGION_NORTHERN_SEPHARAD" }
+								blockoverride "region_list" { datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_northern_sepharad' )]" }
+							}
+							kehillah_map_view_region = {
+								blockoverride "region_visible" { visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_southern_sepharad' ) )]" }
+								blockoverride "region_name" { text = "KEHILLAH_REGION_SOUTHERN_SEPHARAD" }
+								blockoverride "region_list" { datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_southern_sepharad' )]" }
+							}
+							kehillah_map_view_region = {
+								blockoverride "region_visible" { visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_maghreb' ) )]" }
+								blockoverride "region_name" { text = "KEHILLAH_REGION_MAGHREB" }
+								blockoverride "region_list" { datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_maghreb' )]" }
+							}
+						}
+					}
+
+					kehillah_map_view_superregion = {
+						blockoverride "super_visible" { visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_map_view_count_mizrach' ).GetValue, '(CFixedPoint)0' )]" }
+						blockoverride "super_name" { text = "KEHILLAH_SUPERREGION_MIZRACH" }
+						blockoverride "super_regions" {
+							kehillah_map_view_region = {
+								blockoverride "region_visible" { visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_eretz_yisrael' ) )]" }
+								blockoverride "region_name" { text = "KEHILLAH_REGION_ERETZ_YISRAEL" }
+								blockoverride "region_list" { datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_eretz_yisrael' )]" }
+							}
+							kehillah_map_view_region = {
+								blockoverride "region_visible" { visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_misraim' ) )]" }
+								blockoverride "region_name" { text = "KEHILLAH_REGION_MISRAIM" }
+								blockoverride "region_list" { datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_misraim' )]" }
+							}
+							kehillah_map_view_region = {
+								blockoverride "region_visible" { visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_bavel' ) )]" }
+								blockoverride "region_name" { text = "KEHILLAH_REGION_BAVEL" }
+								blockoverride "region_list" { datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_bavel' )]" }
+							}
+							kehillah_map_view_region = {
+								blockoverride "region_visible" { visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_paras' ) )]" }
+								blockoverride "region_name" { text = "KEHILLAH_REGION_PARAS" }
+								blockoverride "region_list" { datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_paras' )]" }
+							}
+							kehillah_map_view_region = {
+								blockoverride "region_visible" { visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_radhanite' ) )]" }
+								blockoverride "region_name" { text = "KEHILLAH_REGION_RADHANITE" }
+								blockoverride "region_list" { datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_radhanite' )]" }
+							}
+							kehillah_map_view_region = {
+								blockoverride "region_visible" { visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_caucasus' ) )]" }
+								blockoverride "region_name" { text = "KEHILLAH_REGION_CAUCASUS" }
+								blockoverride "region_list" { datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_caucasus' )]" }
+							}
+						}
+					}
+
+					kehillah_map_view_superregion = {
+						blockoverride "super_visible" { visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_map_view_count_elsewhere' ).GetValue, '(CFixedPoint)0' )]" }
+						blockoverride "super_name" { text = "KEHILLAH_SUPERREGION_ELSEWHERE" }
+						blockoverride "super_regions" {
+							kehillah_map_view_region = {
+								blockoverride "region_visible" { visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_unplaced' ) )]" }
+								blockoverride "region_name" { text = "KEHILLAH_REGION_UNPLACED" }
+								blockoverride "region_list" { datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_unplaced' )]" }
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+
+types KehillahMapView
+{
+	### A super-region: a bold header and, inserted by blockoverride, its
+	### sub-region blocks. Hidden when its mirrored count is 0.
+	type kehillah_map_view_superregion = vbox {
+		layoutpolicy_horizontal = expanding
+		spacing = 2
+
+		block "super_visible" {
+			visible = no
+		}
+
+		text_single = {
+			layoutpolicy_horizontal = expanding
+			align = left
+			margin_top = 8
+			margin_left = 4
+			default_format = "#high;bold"
+
+			block "super_name" {
+				text = "KEHILLAH_SUPERREGION_ELSEWHERE"
+			}
+		}
+
+		block "super_regions" {}
+	}
+
+	### A sub-region: an italic label and its rows. Hidden when its list
+	### is empty, so an unpopulated region costs no space.
+	type kehillah_map_view_region = vbox {
+		layoutpolicy_horizontal = expanding
+		spacing = 3
+
+		block "region_visible" {
+			visible = no
+		}
+
+		text_single = {
+			layoutpolicy_horizontal = expanding
+			align = left
+			margin_top = 4
+			margin_left = 10
+			default_format = "#weak;italic"
+
+			block "region_name" {
+				text = "KEHILLAH_REGION_UNPLACED"
+			}
+		}
+
+		vbox = {
+			layoutpolicy_horizontal = expanding
+			spacing = 3
+
+			block "region_list" {
+				datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_map_view_list_unplaced' )]"
+			}
+
+			item = {
+				kehillah_map_view_row = {}
+			}
+		}
+	}
+
+	### One community.
+	#
+	# datacontext comes from the region's datamodel: Scope.Title is the
+	# c_kehillah_* community title. Every number on the row is read off
+	# that title's own variables, which is where this mod keeps pillar
+	# state (see kehillah_quarterly_pillars_effect's "WHY THE TITLE, NOT
+	# THE CHARACTER" note).
+	type kehillah_map_view_row = hbox {
+		datacontext = "[Scope.Title]"
+		layoutpolicy_horizontal = expanding
+		min_height = 56
+		spacing = 6
+
+		tooltip = "KEHILLAH_MAP_VIEW_ROW_TOOLTIP"
+		using = tooltip_ws
+
+		background = {
+			using = Background_Area_Dark
+			color = { 0.18 0.17 0.15 0.55 }
+			margin = { 4 2 }
+		}
+
+		# The player's own community, marked so the roster reads as
+		# "where do I stand" and not just "who exists".
+		background = {
+			visible = "[Title.GetHolder.IsLocalPlayer]"
+			using = Background_Area_Dark
+			color = { 0.45 0.38 0.15 0.35 }
+			margin = { 4 2 }
+		}
+
+		### The leader. portrait_head_tiny's own portrait_button carries
+		### vanilla's character-click behaviour, so this doubles as the
+		### route to their character panel -- and from there, via their
+		### realm flag, to their actual domicile window (the chain
+		### docs/spec/spike-domicile-map-visibility.md section 3
+		### confirmed live on 2026-09-10).
+		widget = {
+			size = { @col_portrait 56 }
+			parentanchor = vcenter
+			visible = "[Title.HasHolder]"
+			datacontext = "[Title.GetHolder]"
+
+			portrait_head_tiny = {
+				parentanchor = center
+			}
+		}
+
+		### Name, and where in the world it is.
+		#
+		# max_width on both lines is load-bearing (live pass 4): the
+		# text_single template is autoresize = yes / elide = right
+		# (gui/preload/labels.gui:6-15), so without a cap each line sizes
+		# to its own text, the longest county name in the roster sets the
+		# row width, and the whole panel ran off the right edge of the
+		# screen. With the cap the line elides instead; the full text is
+		# in the row tooltip anyway.
+		vbox = {
+			layoutpolicy_horizontal = expanding
+			parentanchor = vcenter
+			spacing = 1
+
+			text_single = {
+				layoutpolicy_horizontal = expanding
+				align = left
+				max_width = @col_name
+				text = "[Title.GetNameNoTooltip]"
+				default_format = "#high"
+			}
+
+			text_single = {
+				layoutpolicy_horizontal = expanding
+				align = left
+				max_width = @col_name
+				text = "KEHILLAH_MAP_VIEW_ROW_LOCATION"
+				default_format = "#weak"
+			}
+		}
+
+		### Standing -- the community's overall figure, and what the
+		### roster is ordered on within each region. Emphasised over the
+		### three it is made of: this is the column you scan, they are
+		### the breakdown. It is the MEAN of the three, not their sum,
+		### which is why it sits on the same scale as its neighbours and
+		### why the band name in the row tooltip can reuse the pillars'
+		### own thresholds -- see kehillah_standing_value.
+		text_label_center = {
+			parentanchor = vcenter
+			min_width = @col_standing
+			text = "[Title.MakeScope.Var( 'kehillah_var_standing' ).GetValue|V0]"
+			default_format = "#high;bold"
+		}
+
+		### The three pillars, in the fixed Prosperity / Stability /
+		### Greatness order this mod uses everywhere else.
+		text_label_center = {
+			parentanchor = vcenter
+			min_width = @col_pillar
+			text = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue|V0]"
+		}
+		text_label_center = {
+			parentanchor = vcenter
+			min_width = @col_pillar
+			text = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue|V0]"
+		}
+		text_label_center = {
+			parentanchor = vcenter
+			min_width = @col_pillar
+			text = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue|V0]"
+		}
+
+		### The map half of the map view: put this community on screen.
+		#
+		# SelectTitle is the engine's own "move the camera to this title
+		# and select it" call -- vanilla uses it identically for holy
+		# sites at gui/map_icon_layer.gui:751. The county it targets is
+		# cached onto the title by kehillah_cache_map_view_facts_effect,
+		# because .gui cannot walk holder -> domicile -> location ->
+		# county for itself.
+		button_round = {
+			parentanchor = vcenter
+			size = { @col_locate @col_locate }
+			margin_right = 4
+
+			enabled = "[Title.MakeScope.Var( 'kehillah_ui_host_county' ).Title.IsValid]"
+			onclick = "[Title.MakeScope.Var( 'kehillah_ui_host_county' ).Title.SelectTitle]"
+			tooltip = "KEHILLAH_MAP_VIEW_LOCATE_TOOLTIP"
+			using = tooltip_ws
+
+			icon = {
+				parentanchor = center
+				size = { 18 18 }
+				texture = "gfx/interface/icons/flat_icons/go_to_my_location.dds"
+				alwaystransparent = yes
+			}
+		}
+	}
+}

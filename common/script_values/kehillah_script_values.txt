@@ -1163,7 +1163,191 @@ kehillah_bet_din_session_stability_loss_failed = 25
 # abroad). Set to the spec's own explicitly named reference point --
 # "kehillah_loan_repayment_greatness_reward = 20 is the existing
 # reference point for 'a solid one-off Greatness gain'" -- rather than a
-# new, undiscussed figure.
+# new, undiscussed figure. STILL the honest-completion reward after the
+# v11 overhaul below -- "the work becoming known abroad is a binary fact
+# of a completed commission" is exactly as true for a TRIUMPH as for a
+# bare SUCCESS, so both tiers keep paying this same flat amount; only
+# FAILURE (new in v11) pays none.
 # =====================================================================
 
 kehillah_translation_greatness_reward = 20
+
+
+# =====================================================================
+# TRANSLATION CONTRACT CHALLENGE -- v11 overhaul, at the user's explicit
+# request ("make the translation actually a challenge, like adventurer
+# contracts... a series of challenges that determine success or
+# failure... a final decision to steal the book vs complete the
+# contract"). Replaces the single learning>=14 pass/fail gate in
+# kehillah_translation_contract's own on_accepted with a four-stage
+# tally chain (events/kehillah_translation_events.txt, namespace
+# kehillah_translation) resolved into one of three tiers, mirroring the
+# tally/threshold SHAPE "Write a Book" already uses (this file's own
+# "WRITE A BOOK" section above) -- same idiom, new numbers, because this
+# is a one-off commissioned job with its own stakes, not a re-skin.
+#
+# THREE TIERS, NOT TWO -- the real change v11 makes to the OLD two-tier
+# shape (exceptional/solid) is a genuine FAILURE floor, per explicit
+# request ("determine success or failure," not just quality). TRIUMPH
+# and SUCCESS both still pay the full kehillah_translation_greatness_
+# reward above (see that value's own updated note); FAILURE pays none.
+#
+# BASELINE set in on_accepted from root's learning/kehillah_rabbi_trait,
+# same either/or gate valid_to_create already uses (learning >= 8 OR the
+# trait) -- three baseline bands off of that same stat, not a new gate.
+# Numbers chosen so the LOW baseline plus an average run (roughly half
+# the stage gains, one lucky roll skipped) lands close to the SUCCESS
+# floor, and the HIGH baseline plus a strong run clears TRIUMPH
+# comfortably -- exact tuning is, as with every other tally system in
+# this mod, the agent's call for a first pass, to be adjusted by
+# playtest rather than guessed at with false precision.
+# =====================================================================
+
+kehillah_translation_baseline_low = 10
+kehillah_translation_baseline_mid = 20
+kehillah_translation_baseline_high = 32
+
+# Stage 1 (kehillah_translation.0001, "Securing the Text") -- three
+# options mirroring kehillah_book.0002's own shape (a stat-gated pass/
+# fail, a paid-for certainty, and a free reckless fallback), retitled
+# for "getting hold of a copy" rather than "finding inspiration."
+kehillah_translation_access_gain = 12
+kehillah_translation_access_loss = 5
+kehillah_translation_access_broker_gain = 8
+kehillah_translation_access_reckless_loss = 3
+
+# Stage 2 (kehillah_translation.0002, "The Difficult Passages") -- the
+# chain's main difficulty roll: learning OR the Rabbi's own talmudics
+# track (Talmudic argument being, in-fiction, the same close-reading
+# muscle a knotty technical passage needs), plus a "set it aside" safe
+# fallback reusing the "loss" figure as a small guaranteed gain, the
+# same reused-constant idiom kehillah_book.0002.c already established.
+kehillah_translation_passage_gain = 16
+kehillah_translation_passage_loss = 6
+
+# Stage 3 (kehillah_translation.0003, "A Second Opinion") -- reuses
+# kehillah_book.0003's exact shape (random_courtier weighted by
+# learning, a pass/fail gate, ONE genuine random roll for a lucky
+# bonus, a flat "go it alone" option, and a "don't bother" no-op) under
+# its own constants rather than sharing kehillah_book_courtier_* --
+# translation and book-writing are different characters' different
+# projects and could run concurrently, so their tallies must never be
+# able to bleed into each other through a shared script value.
+kehillah_translation_courtier_gain = 10
+kehillah_translation_courtier_loss = 3
+kehillah_translation_courtier_lucky_bonus = 8
+
+# Stage 4 (kehillah_translation.0004, "Revise or Rush") -- reuses
+# kehillah_book.0004's Stress-for-quality tradeoff shape verbatim, own
+# constant, own stress value reused from vanilla's own ladder exactly
+# as kehillah_book_revision_stress already does.
+kehillah_translation_revision_gain = 15
+kehillah_translation_revision_stress = minor_stress_gain
+
+# Resolution (kehillah_translation.0005, "The Finished Copy") -- the
+# two thresholds the final tally is checked against, high to low,
+# genre-independent (there is only one "genre" here). Below SUCCESS is
+# the new FAILURE floor.
+kehillah_translation_threshold_triumph = 62
+kehillah_translation_threshold_success = 30
+
+# THE FINAL DECISION -- "steal the book vs complete the contract," per
+# explicit request. Deliver honestly pays the SAME gold/opinion ladder
+# the pre-v11 design already used (major/medium_gold_value +
+# flattered/pleased_opinion, left inline in the task_contract_reward
+# block rather than aliased here, exactly as this section's own header
+# above already explains for the rest of this feature) -- only FAILURE
+# is new, and reuses minor_gold_value + disappointed_opinion, both
+# already-confirmed vanilla keys this same header names.
+#
+# STEALING keeps the genuine article for the Kehillah's own library --
+# a real create_artifact_book_effect call, EP1-gated exactly like "Write
+# a Book" already is -- instead of handing it over, and hands the
+# employer a knowingly lesser transcription. It pays less (or nothing)
+# than honest delivery would, and risks discovery: an if/else-wrapped
+# random_list roll (35/65 base, shifting to 20/80 at Intrigue 14+),
+# LITERAL weights, kept directly in kehillah_translation.0005 rather
+# than aliased here -- random_list entry weights take a plain number
+# everywhere this is done in the installed game (grepped for a
+# script-value-as-weight counter-example before assuming otherwise;
+# found none), so a script value here would just be indirection with
+# no real precedent behind it. Caught pays no gold at all and a real,
+# lasting opinion hit (angry_opinion, the vanilla key -- not a bespoke
+# kehillah_ one, since this is a one-off betrayal with no ongoing
+# ledger the way the Bet Din's own disfavor/favor opinions track a
+# repeatable ruling); undetected pays a token sum, "so as not to look
+# as though nothing at all was delivered."
+kehillah_translation_steal_greatness_reward = 15
+
+
+# =====================================================================
+# STANDING -- the community's single overall figure.
+#
+# ADDED 2026-09-14 (v12), at the user's explicit decision. This SETTLES a
+# question two earlier passes deliberately left open, and the change is
+# recorded here rather than made silently because of that history:
+# docs/spec/v4-regional-communities-and-batei-din.md sidestepped defining
+# a blended score (applying takkanah effects symmetrically per-title
+# instead), and ROADMAP item 6 still lists "the aggregate-definition
+# problem" as open. It is no longer open. Anything that wants "how is
+# this community doing, in one number" now reads kehillah_var_standing
+# and must not invent a second aggregate alongside it.
+#
+# THE MEAN, NOT THE SUM. Standing is the arithmetic mean of the three
+# pillars, which is the whole reason it is useful as a backend value
+# rather than just a display total:
+#
+#   - It lands on the SAME 0-1000-ish scale each pillar already lives
+#     on, so kehillah_band_strained/healthy/flourishing/legendary_
+#     threshold apply to it UNCHANGED. No second threshold set to keep
+#     in sync, and no risk of the two drifting apart.
+#   - It therefore also works with the existing comparison machinery
+#     with no new trigger at all:
+#       kehillah_pillar_at_least_trigger = {
+#           PILLAR = kehillah_var_standing
+#           THRESHOLD = kehillah_band_flourishing_threshold
+#       }
+#     -- that trigger substitutes a bare variable name into var:$PILLAR$
+#     (see its own header for the vanilla precedents), and standing is a
+#     plain title variable like any pillar, so it just works.
+#   - A sum would have been three times the scale of its own parts, which
+#     would have meant either a fourth set of thresholds or a permanently
+#     confusing number next to the three it is made of.
+#
+# EQUAL WEIGHTS, deliberately. Prosperity, Stability and Greatness are
+# peers in this mod's design -- the three pillars are presented as
+# co-equal everywhere from v1 spec section 3 to the Take Stock decision
+# -- so weighting one above the others here would quietly assert a
+# ranking the design has never made. If a weighting is ever wanted, it
+# is a design decision for a spec, not a tweak to this value.
+#
+# ABSENT PILLARS read as 0 rather than shrinking the divisor: the three
+# are created together by kehillah_init_pillars_effect, so the only time
+# one is missing is before a community is initialised at all, where a
+# standing of 0 is the correct answer, not an average over fewer terms.
+# The has_variable guards are still required -- see
+# kehillah_pillar_at_least_trigger's "GUARD ADDED 2026-09-08" note for
+# the live error-log evidence that a pillar read can genuinely land on a
+# not-yet-set variable at the game-start tick.
+#
+# Scope: a Kehillah title.
+# =====================================================================
+
+kehillah_standing_value = {
+	value = 0
+
+	if = {
+		limit = { has_variable = kehillah_var_prosperity }
+		add = var:kehillah_var_prosperity
+	}
+	if = {
+		limit = { has_variable = kehillah_var_stability }
+		add = var:kehillah_var_stability
+	}
+	if = {
+		limit = { has_variable = kehillah_var_greatness }
+		add = var:kehillah_var_greatness
+	}
+
+	divide = 3
+}

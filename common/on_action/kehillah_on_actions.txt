@@ -191,6 +191,16 @@ kehillah_on_game_start = {
 		# c_kehillah_montpellier's registry entry REMOVED 2026-09-11 alongside
 		# the title itself -- see this file's own removed-effect comment above.
 		add_to_global_variable_list = { name = kehillah_registered_communities target = title:c_kehillah_lunel }
+
+		# MAP VIEW, ADDED 2026-09-14 (v12). Must come AFTER every
+		# add_to_global_variable_list above -- it mirrors that registry
+		# onto each player for the "Jewish Communities" widget to read
+		# (common/scripted_effects/kehillah_map_view_effects.txt explains
+		# why the GUI cannot read the global list directly). Registering
+		# a community without refreshing afterwards leaves it out of the
+		# roster until the next quarterly pulse, so if Wave 5 adds
+		# founding, its founding effect must call the refresh too.
+		kehillah_refresh_map_view_for_players_effect = yes
 	}
 }
 
@@ -209,7 +219,7 @@ kehillah_on_game_start = {
 # ---------------------------------------------------------------------
 
 on_title_gain = {
-	on_actions = { kehillah_on_title_gain }
+	on_actions = { kehillah_on_title_gain kehillah_map_view_on_title_gain }
 }
 
 kehillah_on_title_gain = {
@@ -664,5 +674,64 @@ kehillah_task_contract_pulse = {
 		100 = 0
 
 		100 = kehillah_task_contract.0001	# Router: pick employer + contract type
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# MAP VIEW REFRESH (v12, 2026-09-14).
+#
+# Keeps each player's mirrored community roster (see common/
+# scripted_effects/kehillah_map_view_effects.txt) in step with the
+# registry and with the live pillar numbers. Two hooks, deliberately
+# separate from the pillar-economy pulse above rather than bolted onto
+# it -- this file's own established convention (see the "Deliberately a
+# SEPARATE on_action block" note on kehillah_dispute_pulse) -- because
+# the refresh is a UI cache with no gameplay effect and must not become
+# entangled with the tuning of anything that does.
+#
+# CADENCE. Quarterly, matching kehillah_quarterly_pulse, because that is
+# exactly when pillar values change (kehillah_quarterly_pillars_effect);
+# refreshing more often would only re-copy identical numbers, and less
+# often would show a roster stale by up to a year. Note the trigger does
+# NOT require the player to lead a Kehillah: the roster is a view of the
+# world, useful to any player in a game where these communities exist,
+# and the widget gates its own visibility on the mirrored count instead.
+# ---------------------------------------------------------------------
+
+quarterly_playable_pulse = {
+	on_actions = { kehillah_map_view_quarterly_pulse }
+}
+
+kehillah_map_view_quarterly_pulse = {
+	trigger = {
+		is_ai = no
+	}
+	effect = {
+		kehillah_refresh_map_view_effect = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# Leadership changing hands is the one event that can make the roster
+# wrong IMMEDIATELY rather than gradually: the mirror skips titles with
+# no holder, and a row's portrait, location and standing all come from
+# the holder. Refreshing every player here means a succession shows up
+# in the roster the moment it resolves instead of up to three months
+# later.
+#
+# root = the character who gained the title
+# scope:title = the title gained
+# ---------------------------------------------------------------------
+
+kehillah_map_view_on_title_gain = {
+	trigger = {
+		scope:title = {
+			is_kehillah_title_trigger = yes
+		}
+	}
+	effect = {
+		kehillah_refresh_map_view_for_players_effect = yes
 	}
 }
