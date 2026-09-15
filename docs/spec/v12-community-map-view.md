@@ -529,6 +529,24 @@ Also in that log, non-fatal and **not this feature's**: `reverse_add_opinion [Mo
 cells (`text_label_center` inside the row hbox). The cells render correctly; the cause isn't in
 the type chain and couldn't be resolved from files. Left as is.
 
+## 10. Your own community on the HUD (user request, 2026-09-15)
+
+A third scripted widget, `kehillah_own_community_strip`: the player's Standing and three pillars,
+coloured by band, always on screen, parked directly under vanilla's resource bar in the top-left
+and styled like its tiles. Hover any figure for the same breakdown tooltip the roster shows; the
+menorah at its left opens and closes the map view (same open/close pair as the bottom-right
+toggle), so the strip is also the feature's entry point at the top of the screen. Shown only when
+`GetPlayer.GetGovernment.IsType('kehillah_government')`, and it hides with vanilla's
+`hide_ui_top_bar` exactly as the resource bar does.
+
+*Inside* the resource bar would mean forking `hud.gui` — the bar is a hand-written hbox
+(`resources_top_right_bar`, `hud.gui:911`) — so this is the additive equivalent. Zero new data:
+datacontext is `GetPlayer.GetPrimaryTitle`, and everything on it is the roster's own custom loc
+reused verbatim. `position = { 100 76 }` is hand-placed from the bar's geometry (80px suggestions
+placer + 15px spacer, 70px tiles) and is the one number likely to need a nudge. This closes the
+"richer own-community dashboard" half of ROADMAP item 9 as far as at-a-glance goes; a full pane
+with history would be a separate build.
+
 ## 7. The region hierarchy (user decision, 2026-09-14)
 
 The roster groups communities into three super-regions with sub-regions, hidden when empty:

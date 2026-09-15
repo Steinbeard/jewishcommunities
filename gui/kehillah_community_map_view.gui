@@ -10,6 +10,7 @@
 #
 #   kehillah_community_map_view        -- the toggle button
 #   kehillah_community_map_view_panel  -- the roster window
+#   kehillah_own_community_strip       -- your own scores, under the top bar
 #
 # The toggle does three things in one click: paints the map (a
 # scripted_gui, common/scripted_guis/kehillah_map_view_gui.txt),
@@ -436,6 +437,178 @@ window = {
 			}
 		}
 	}
+}
+
+
+### =====================================================================
+### YOUR OWN COMMUNITY -- the top-bar strip (v12 section 10, 2026-09-15)
+### =====================================================================
+#
+# A third top-level scripted widget: the player's own Standing and three
+# pillars, always on screen, parked directly under vanilla's resource
+# bar (gold / prestige / piety) in the top-left. Vanilla's bar is a
+# hand-written hbox inside hud.gui's "ingame_topbar" window (hud.gui:911,
+# resources_top_right_bar), so a widget cannot be added INSIDE it
+# without forking hud.gui; sitting just below it, styled like its tiles
+# (Font_Size_Medium values, small icon, dark tile background), is the
+# additive equivalent.
+#
+# Nothing here is new data: the datacontext is the player's primary
+# title, so the coloured scores (Kehillah<Pillar>Score) and the per-score
+# breakdown tooltips (KEHILLAH_BD_*_TOOLTIP) are the roster's own, reused
+# verbatim. The menorah is a button: it opens and closes the map view,
+# so the strip is also the map view's entry point at the top of the
+# screen -- the bottom-right toggle stays for symmetry with the map-mode
+# bar.
+#
+# Shown only for a player who leads a Kehillah
+# (GetPlayer.GetGovernment.IsType -- vanilla's own idiom for
+# government-gated HUD elements, e.g. IsType('nomad_government')), and
+# it respects vanilla's hide_ui_top_bar variable the same way the
+# resource bar itself does (hud.gui:913).
+#
+# POSITIONING: hand-placed; the one number likely to need a nudge. The
+# resource bar's tiles are 70 tall and it starts after an 80px
+# suggestions placer plus a 15px spacer (hud.gui:899-910).
+
+flowcontainer = {
+	name = "kehillah_own_community_strip"
+	parentanchor = top|left
+	position = { 100 76 }
+
+	layer = windows_layer
+	alwaystransparent = no
+	filter_mouse = all
+	direction = horizontal
+	spacing = 10
+	ignoreinvisible = yes
+	allow_outside = yes
+
+	datacontext = "[GetPlayer.GetPrimaryTitle]"
+
+	visible = "[And( And( IsInGame, GetPlayer.IsValid ), And( And( IsDefaultGUIMode, GetPlayer.GetGovernment.IsType( 'kehillah_government' ) ), Not( GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'hide_ui_top_bar' ).GetValue, '(CFixedPoint)0' ) ) ) )]"
+
+	background = {
+		using = Background_Area_Dark
+		color = { 0.12 0.11 0.10 0.85 }
+		margin = { 10 4 }
+	}
+
+	### The menorah: your community's name on hover, the map view on
+	### click. Same open/close pair as the bottom-right toggle.
+	widget = {
+		size = { 34 34 }
+		parentanchor = vcenter
+
+		button_round = {
+			size = { 34 34 }
+			visible = "[Not( GetVariableSystem.Exists( 'kehillah_map_view_open' ) )]"
+			enabled = "[CanChangeMapMode]"
+			onclick = "[GetScriptedGui( 'kehillah_communities_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+			onclick = "[SetMapMode( 'kehillah_communities_map' )]"
+			onclick = "[GetVariableSystem.Set( 'kehillah_map_view_open', 'yes' )]"
+			tooltip = "KEHILLAH_STRIP_TOOLTIP"
+			using = tooltip_se
+
+			icon = {
+				parentanchor = center
+				size = { 22 22 }
+				texture = "gfx/interface/icons/faith/judaism.dds"
+				alwaystransparent = yes
+			}
+		}
+		button_round = {
+			size = { 34 34 }
+			visible = "[GetVariableSystem.Exists( 'kehillah_map_view_open' )]"
+			onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_open' )]"
+			onclick = "[SetMapMode( 'realms' )]"
+			tooltip = "KEHILLAH_MAP_VIEW_BUTTON_CLOSE_TOOLTIP"
+			using = tooltip_se
+
+			icon = {
+				parentanchor = center
+				size = { 22 22 }
+				texture = "gfx/interface/icons/faith/judaism.dds"
+				alwaystransparent = yes
+			}
+		}
+	}
+
+		### Standing
+		vbox = {
+			spacing = -2
+			tooltip = "KEHILLAH_BD_STANDING_TOOLTIP"
+			using = tooltip_se
+
+			text_single = {
+				parentanchor = hcenter
+				text = "[Title.Custom( 'KehillahStandingScore' )]"
+				using = Font_Size_Medium default_format = "#high;bold"
+			}
+			text_single = {
+				parentanchor = hcenter
+				text = "KEHILLAH_MAP_VIEW_COL_STANDING"
+				default_format = "#weak"
+				using = Font_Size_Small
+			}
+		}
+
+		### Prosperity
+		vbox = {
+			spacing = -2
+			tooltip = "KEHILLAH_BD_PROSPERITY_TOOLTIP"
+			using = tooltip_se
+
+			text_single = {
+				parentanchor = hcenter
+				text = "[Title.Custom( 'KehillahProsperityScore' )]"
+				using = Font_Size_Medium
+			}
+			text_single = {
+				parentanchor = hcenter
+				text = "KEHILLAH_MAP_VIEW_COL_P"
+				default_format = "#weak"
+				using = Font_Size_Small
+			}
+		}
+
+		### Stability
+		vbox = {
+			spacing = -2
+			tooltip = "KEHILLAH_BD_STABILITY_TOOLTIP"
+			using = tooltip_se
+
+			text_single = {
+				parentanchor = hcenter
+				text = "[Title.Custom( 'KehillahStabilityScore' )]"
+				using = Font_Size_Medium
+			}
+			text_single = {
+				parentanchor = hcenter
+				text = "KEHILLAH_MAP_VIEW_COL_S"
+				default_format = "#weak"
+				using = Font_Size_Small
+			}
+		}
+
+		### Greatness
+		vbox = {
+			spacing = -2
+			tooltip = "KEHILLAH_BD_GREATNESS_TOOLTIP"
+			using = tooltip_se
+
+			text_single = {
+				parentanchor = hcenter
+				text = "[Title.Custom( 'KehillahGreatnessScore' )]"
+				using = Font_Size_Medium
+			}
+			text_single = {
+				parentanchor = hcenter
+				text = "KEHILLAH_MAP_VIEW_COL_G"
+				default_format = "#weak"
+				using = Font_Size_Small
+			}
+		}
 }
 
 
