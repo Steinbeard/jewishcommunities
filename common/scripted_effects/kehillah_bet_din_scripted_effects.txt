@@ -551,6 +551,230 @@ kehillah_bet_din_recalcitrant_husband_resolution_effect = {
 }
 
 
+# ---------------------------------------------------------------------
+# kehillah_bet_din_amulet_resolution_effect
+# Scope: the convening leader (character), called from kehillah_bet_din.
+# 0043's immediate, unconditionally -- same "direction is a separate
+# axis from the tally tier, branch internally" shape as kehillah_bet_
+# din_recalcitrant_husband_resolution_effect above, just two branches
+# instead of three (involved_activity.var:kehillah_bet_din_case5_
+# direction: 1 = ruled the scribe guilty, 0/unset = vindicated him, set
+# by kehillah_bet_din.0041's three options -- see that event's own
+# header for how each of the three reaches its verdict differently).
+#
+# DIRECTION 1, GUILTY: add_trait = excommunicated on the scribe -- the
+# same real Cherem mechanic kehillah_bet_din_recalcitrant_husband_
+# resolution_effect's own direction 1 already established (add_trait =
+# excommunicated, confirmed vanilla trait, not invented). The amulet
+# itself is NOT a spawned artifact that then gets destroy_artifact'd --
+# a deliberate scope cut, the same one this mod's own translation-
+# contract header already made for a comparable case ("no create_
+# artifact precedent inside a task_contract_reward block... gold +
+# opinion is a perfectly fine scope cut" -- common/task_contracts/
+# kehillah_task_contracts.txt): spawning a real artifact purely to
+# immediately destroy_artifact it one line later adds a whole extra
+# mechanical surface for a beat the custom_tooltip already tells fully.
+#
+# DIRECTION 0, INNOCENT: litigant_a (the accuser) gets add_stress =
+# minor_stress_gain, full stop -- "just reprimanded" per the user's own
+# framing, deliberately much lighter than the guilty branch's Cherem
+# rather than a smaller version of the same kind of punishment.
+#
+# THE MEMORY, BOTH BRANCHES: "this event should create a memory for the
+# judges," per explicit user request -- root plus judge2/judge3 (guarded
+# per the file's own established exists = pattern) each get their own
+# copy via kehillah_bet_din_amulet_case_memory_guilty/_innocent (common/
+# character_memory_types/kehillah_memory_types.txt -- see that file's
+# own header for why this is two fixed-text types picked here rather
+# than one type with a triggered description read later).
+# ---------------------------------------------------------------------
+kehillah_bet_din_amulet_resolution_effect = {
+	if = {
+		limit = {
+			exists = involved_activity.var:kehillah_bet_din_litigant_a
+			exists = involved_activity.var:kehillah_bet_din_litigant_b
+		}
+		# Resolved to plain saved scopes BEFORE opening litigant_b's own
+		# scope below -- same involved_activity re-hop hazard, same fix, as
+		# kehillah_bet_din_recalcitrant_husband_resolution_effect above.
+		involved_activity.var:kehillah_bet_din_litigant_a = { save_scope_as = kbd_amulet_accuser }
+		involved_activity.var:kehillah_bet_din_litigant_b = { save_scope_as = kbd_amulet_scribe }
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_judge2 }
+			involved_activity.var:kehillah_bet_din_judge2 = { save_scope_as = kbd_amulet_judge2 }
+		}
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_judge3 }
+			involved_activity.var:kehillah_bet_din_judge3 = { save_scope_as = kbd_amulet_judge3 }
+		}
+
+		if = {
+			limit = {
+				exists = involved_activity.var:kehillah_bet_din_case5_direction
+				involved_activity.var:kehillah_bet_din_case5_direction = 1
+			}
+			scope:kbd_amulet_scribe = {
+				add_trait = excommunicated
+			}
+			custom_tooltip = kehillah_bet_din.0043.guilty.tt
+
+			create_character_memory = {
+				type = kehillah_bet_din_amulet_case_memory_guilty
+				participants = { accuser = scope:kbd_amulet_accuser scribe = scope:kbd_amulet_scribe }
+			}
+			if = {
+				limit = { exists = scope:kbd_amulet_judge2 }
+				scope:kbd_amulet_judge2 = {
+					create_character_memory = {
+						type = kehillah_bet_din_amulet_case_memory_guilty
+						participants = { accuser = scope:kbd_amulet_accuser scribe = scope:kbd_amulet_scribe }
+					}
+				}
+			}
+			if = {
+				limit = { exists = scope:kbd_amulet_judge3 }
+				scope:kbd_amulet_judge3 = {
+					create_character_memory = {
+						type = kehillah_bet_din_amulet_case_memory_guilty
+						participants = { accuser = scope:kbd_amulet_accuser scribe = scope:kbd_amulet_scribe }
+					}
+				}
+			}
+		}
+		else = {
+			scope:kbd_amulet_accuser = {
+				add_stress = minor_stress_gain
+			}
+			custom_tooltip = kehillah_bet_din.0043.innocent.tt
+
+			create_character_memory = {
+				type = kehillah_bet_din_amulet_case_memory_innocent
+				participants = { accuser = scope:kbd_amulet_accuser scribe = scope:kbd_amulet_scribe }
+			}
+			if = {
+				limit = { exists = scope:kbd_amulet_judge2 }
+				scope:kbd_amulet_judge2 = {
+					create_character_memory = {
+						type = kehillah_bet_din_amulet_case_memory_innocent
+						participants = { accuser = scope:kbd_amulet_accuser scribe = scope:kbd_amulet_scribe }
+					}
+				}
+			}
+			if = {
+				limit = { exists = scope:kbd_amulet_judge3 }
+				scope:kbd_amulet_judge3 = {
+					create_character_memory = {
+						type = kehillah_bet_din_amulet_case_memory_innocent
+						participants = { accuser = scope:kbd_amulet_accuser scribe = scope:kbd_amulet_scribe }
+					}
+				}
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_silversmiths_resolution_effect
+# Scope: the convening leader (character), called from kehillah_bet_din.
+# 0053's immediate, unconditionally. involved_activity.var:kehillah_bet_
+# din_case6_direction: 1 = ruled it Mesirah (informing/inciting gentiles
+# against a fellow Jew -- the community's gravest betrayal, historically
+# among the few offenses grave enough to justify the community acting
+# against the informer directly), 2 = ruled it Gerama (indirect
+# liability for damage caused through an intermediate agent -- real
+# Talmudic tort law, Bava Kamma's own treatment of causing damage via a
+# third party rather than by one's own direct act), 3 = dismissed for
+# want of proof (kin'at sofrim -- ordinary trade rivalry is not itself
+# evidence of incitement). Set by kehillah_bet_din.0051's three options;
+# see that event's own header for why each draws on a different stat.
+#
+# DIRECTIONS 1 AND 2 BOTH ORDER RESTITUTION -- medium_gold_value moves
+# from the accused to the accuser either way, a straight character-to-
+# character transfer (add_gold negated on one side, plain add_gold on
+# the other -- no dedicated "transfer_gold" effect exists in the
+# installed game; two add_gold calls is the real, confirmed shape).
+# Direction 1 ALSO adds Cherem (add_trait = excommunicated, same real
+# mechanic as kehillah_bet_din_amulet_resolution_effect and kehillah_
+# bet_din_recalcitrant_husband_resolution_effect's own direction 1
+# above) on top of the restitution -- the betrayal is punished as
+# betrayal, not merely as an expensive tort.
+#
+# DIRECTION 3 leaves the accused entirely untouched -- the charge was
+# dismissed -- but is not free: the accuser (left uncompensated for a
+# real, acknowledged loss) loses opinion of root specifically, reusing
+# kehillah_dispute_ruling_disfavor_opinion (common/opinion_modifiers/
+# kehillah_opinion_modifiers.txt) rather than inventing a new modifier
+# for exactly the case that modifier's own header already describes,
+# and root pays medium_piety_loss -- the same "ruling away from the
+# injured party costs the panel's own standing" shape kehillah_bet_din_
+# recalcitrant_husband_resolution_effect's direction 3 already uses.
+# ---------------------------------------------------------------------
+kehillah_bet_din_silversmiths_resolution_effect = {
+	if = {
+		limit = {
+			exists = involved_activity.var:kehillah_bet_din_case6_direction
+			involved_activity.var:kehillah_bet_din_case6_direction = 1
+		}
+		if = {
+			limit = {
+				exists = involved_activity.var:kehillah_bet_din_litigant_a
+				exists = involved_activity.var:kehillah_bet_din_litigant_b
+			}
+			involved_activity.var:kehillah_bet_din_litigant_a = { save_scope_as = kbd_silver_accuser }
+			involved_activity.var:kehillah_bet_din_litigant_b = {
+				save_scope_as = kbd_silver_accused
+				add_trait = excommunicated
+				add_gold = {
+					value = medium_gold_value
+					multiply = -1
+				}
+			}
+			scope:kbd_silver_accuser = { add_gold = medium_gold_value }
+			custom_tooltip = kehillah_bet_din.0053.mesirah.tt
+		}
+	}
+	if = {
+		limit = {
+			exists = involved_activity.var:kehillah_bet_din_case6_direction
+			involved_activity.var:kehillah_bet_din_case6_direction = 2
+		}
+		if = {
+			limit = {
+				exists = involved_activity.var:kehillah_bet_din_litigant_a
+				exists = involved_activity.var:kehillah_bet_din_litigant_b
+			}
+			involved_activity.var:kehillah_bet_din_litigant_a = { save_scope_as = kbd_silver_accuser }
+			involved_activity.var:kehillah_bet_din_litigant_b = {
+				add_gold = {
+					value = medium_gold_value
+					multiply = -1
+				}
+			}
+			scope:kbd_silver_accuser = { add_gold = medium_gold_value }
+			custom_tooltip = kehillah_bet_din.0053.gerama.tt
+		}
+	}
+	if = {
+		limit = {
+			exists = involved_activity.var:kehillah_bet_din_case6_direction
+			involved_activity.var:kehillah_bet_din_case6_direction = 3
+		}
+		add_piety = medium_piety_loss
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_litigant_a }
+			involved_activity.var:kehillah_bet_din_litigant_a = {
+				reverse_add_opinion = {
+					target = root
+					modifier = kehillah_dispute_ruling_disfavor_opinion
+				}
+			}
+		}
+		custom_tooltip = kehillah_bet_din.0053.dismissed.tt
+	}
+}
+
+
 # =====================================================================
 # THE DOCKET STATE MACHINE (added 2026-09-08 with the loop fix).
 #
@@ -694,6 +918,23 @@ kehillah_bet_din_open_docket_effect = {
 	if = {
 		limit = { exists = scope:activity.var:kehillah_bet_din_case4_direction }
 		scope:activity = { remove_variable = kehillah_bet_din_case4_direction }
+	}
+	# Case 5 and case 6 (ADDED 2026-09-15) get the same belt-and-braces
+	# treatment as cases 3/4's own direction scratch above -- case5_truth
+	# additionally, since it is set once per case (kehillah_bet_din.0041's
+	# immediate) and must not leak into a later session that draws case 5
+	# again.
+	if = {
+		limit = { exists = scope:activity.var:kehillah_bet_din_case5_direction }
+		scope:activity = { remove_variable = kehillah_bet_din_case5_direction }
+	}
+	if = {
+		limit = { exists = scope:activity.var:kehillah_bet_din_case5_truth }
+		scope:activity = { remove_variable = kehillah_bet_din_case5_truth }
+	}
+	if = {
+		limit = { exists = scope:activity.var:kehillah_bet_din_case6_direction }
+		scope:activity = { remove_variable = kehillah_bet_din_case6_direction }
 	}
 	if = {
 		limit = { exists = scope:activity.var:kehillah_bet_din_agunah_husband }
@@ -847,6 +1088,51 @@ kehillah_bet_din_draw_case_effect = {
 			} }
 			scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 1 } }
 			trigger_event = kehillah_bet_din.0031
+		}
+
+		# CASE 5 -- A Cursed Amulet. ADDED 2026-09-15 at user request. Two
+		# generic courtiers (accuser, scribe), same two-different-dynasties
+		# requirement as case 1 -- reusing kehillah_has_dispute_candidates_
+		# trigger verbatim, same as that case's own entry does.
+		10 = {
+			trigger = {
+				NOT = {
+					scope:activity = { is_target_in_variable_list = {
+						name = kehillah_bet_din_cases_heard
+						target = flag:kehillah_bet_din_case_amulet
+					} }
+				}
+				kehillah_has_dispute_candidates_trigger = yes
+			}
+
+			scope:activity = { add_to_variable_list = {
+				name = kehillah_bet_din_cases_heard
+				target = flag:kehillah_bet_din_case_amulet
+			} }
+			scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 1 } }
+			trigger_event = kehillah_bet_din.0041
+		}
+
+		# CASE 6 -- The Silversmiths' Quarrel. ADDED 2026-09-15 at user
+		# request. Same litigant requirement as case 5 above (two generic
+		# courtiers of different dynasties).
+		10 = {
+			trigger = {
+				NOT = {
+					scope:activity = { is_target_in_variable_list = {
+						name = kehillah_bet_din_cases_heard
+						target = flag:kehillah_bet_din_case_silversmiths
+					} }
+				}
+				kehillah_has_dispute_candidates_trigger = yes
+			}
+
+			scope:activity = { add_to_variable_list = {
+				name = kehillah_bet_din_cases_heard
+				target = flag:kehillah_bet_din_case_silversmiths
+			} }
+			scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 1 } }
+			trigger_event = kehillah_bet_din.0051
 		}
 	}
 

@@ -582,6 +582,56 @@ before building it; nothing here is approved by default.
   events + tally-tier Stability/Greatness + docket_draw_effect entry + activity-log loc) scales
   cleanly to new content. It did, on this one data point.
 
+  **2026-09-15 update — cases 5 and 6 added, ck3-tiger-clean, not yet live-tested**, at explicit
+  user request (case prompts supplied verbatim, not drafted here). Pool is now six cases; a session
+  still hears three of them (`kehillah_bet_din_docket_case_count` is unchanged, per its own
+  "documentation value, not a mechanical one" header).
+  - **Case 5, "A Cursed Amulet."** A customer accuses a scribe (sofer) of selling him a curse
+    disguised as a blessing — nonsense-Hebrew letters in a rhythmic repeating pattern the scribe
+    himself can't fully explain, insisting only that he was "channeling the divine names." Three
+    genuinely different methods, not three facings of one ruling: studying the text directly
+    (Learning 16, the hard route), dismissing amulets' power outright (no check at all, an
+    ALWAYS-fail tally penalty for sidestepping the actual question, plus `minor_stress_gain` for a
+    ruling judge who personally holds `zealous`/`paranoid` and a real opinion hit — new modifier
+    `kehillah_bet_din_dismissed_mysticism_opinion` — from every courtier holding either trait), or
+    judging the scribe's own character (Learning 8, a much lower bar, verdict driven entirely by
+    `num_sinful_traits`/`num_virtuous_traits`, real vanilla triggers checked against the character's
+    own faith). THE KEY MECHANIC: a hidden ground truth is rolled once, at case start, and never
+    shown to the player in any tooltip — "the true meaning can be either way" made literal. Only
+    the text-study option ever reads it (success reveals it correctly; failure is a fresh, honest
+    50/50 guess, not a disguised free answer). Guilty: Cherem (`add_trait = excommunicated`, same
+    real mechanic case 4's own cherem branch uses) plus the amulet destroyed (flavor-only, a
+    deliberate scope cut mirroring this mod's own established "no create_artifact precedent inside
+    a task_contract_reward block" finding — see common/task_contracts/kehillah_task_contracts.txt).
+    Innocent: the accuser is reprimanded (`minor_stress_gain`, deliberately much lighter than
+    Cherem). Either way, every sitting judge gets a real memory of the case (this mod's first use
+    of `create_character_memory` and its first entry in `common/character_memory_types/` —
+    `kehillah_bet_din_amulet_case_memory_guilty`/`_innocent`, two fixed-text types picked at
+    creation time rather than one type with a triggered description, since a memory's own
+    description can be re-read by the UI long after `involved_activity` stops resolving to
+    anything). Full account: `kehillah_bet_din_amulet_resolution_effect` (common/scripted_effects/
+    kehillah_bet_din_scripted_effects.txt).
+  - **Case 6, "The Silversmiths' Quarrel."** One Jewish silversmith's shop is smashed by a gentile
+    mob; a rival silversmith is accused of putting them up to it. Three real, distinct Talmudic
+    frameworks, not three emotional stances on one question: **Mesirah** (informing on/inciting
+    gentiles against a fellow Jew — historically the community's gravest betrayal; Intrigue 14,
+    proving actual intent is the hard part), **Gerama** (Bava Kamma's own direct-vs-indirect
+    damage distinction — liable for damage caused through an intermediate agent, a real but lesser
+    liability than direct damage; Learning 12), or **dismissal** (kin'at sofrim — ordinary trade
+    rivalry alone isn't proof of incitement; Diplomacy 10, the skill here is holding the community
+    together around an unresolved grievance). UNLIKE every case before it, the tally check's stat
+    is NOT uniform across the three options — a deliberate departure from case 4's own uniform-
+    Diplomacy precedent, documented as such in the event file's own header, because these three
+    really do call on three different kinds of legal reasoning. Mesirah and Gerama both order
+    restitution (a real character-to-character `add_gold` transfer, `medium_gold_value`, no
+    dedicated "transfer gold" effect exists in the installed game so this is two calls, not one);
+    Mesirah additionally adds Cherem on top. Dismissal leaves the accused untouched but costs the
+    panel: the uncompensated accuser's opinion of the host (`kehillah_dispute_ruling_disfavor_
+    opinion`, reused rather than a new modifier) plus `medium_piety_loss`, the same "ruling away
+    from the injured party costs the panel's own standing" shape case 4's own direction 3 already
+    established. Full account: `kehillah_bet_din_silversmiths_resolution_effect` (common/
+    scripted_effects/kehillah_bet_din_scripted_effects.txt).
+
 **Needs more than one Kehillah on the map, or a regional anchor to travel
 to — natural Phase 2/3 content, not v1:**
 - **Inter-communal correspondence/responsa network.** Sister communities
