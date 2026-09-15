@@ -1,0 +1,333 @@
+﻿# =====================================================================
+# Write a Book -- the event chain's own effects.
+#
+# ADDED 2026-09-09. Fired from events/kehillah_book_events.txt. See
+# common/script_values/kehillah_script_values.txt's "WRITE A BOOK"
+# section for the full tally/threshold/reward design this reads, and
+# common/decisions/kehillah_rabbi_book_decisions.txt's header for how
+# this replaced three flat, single-effect decisions.
+#
+# CHARACTER VARIABLES, not global_var: kehillah_book_genre (a flag) and
+# kehillah_book_tally (a number) live on the WRITING CHARACTER, unlike
+# the Bet Din's docket state (global_var, because the Bet Din has
+# exactly one docket running at a time by construction -- three judges,
+# one activity). Multiple characters could plausibly be mid-book
+# simultaneously, so this needed to be per-character from the start.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# kehillah_book_complete_effect
+# Scope: root, the writing character, from kehillah_book.0005's
+# immediate. Reads var:kehillah_book_tally against the two thresholds
+# (kehillah_script_values.txt) to pick masterwork/famed/illustrious --
+# genre-independent, the same three tiers every genre resolves through
+# -- then branches on var:kehillah_book_genre for the genre-SPECIFIC
+# artifact (name/description/modifier) and, at the end, the same tiered
+# Greatness/Piety/Prestige reward regardless of which genre it was.
+#
+# NAME, per genre: two variants (kehillah_book_<genre>_name_1/_2),
+# picked 50/50 by random_list -- one built around the author's own name
+# (set_artifact_name's loc uses the "owner" link, confirmed vanilla
+# syntax: artifacts_l_english.yml's artifact_kris_name is literally
+# "[owner.GetTitledFirstNamePossessiveNoTooltip] Kris"), one a fixed
+# thematic title in the style of a real historical work's short name.
+# Not a large generated pool -- real variety across two axes (tier x
+# genre x name-variant) without an oversized loc surface.
+#
+# MODIFIER, per genre: two variants (common/modifiers/kehillah_book_
+# modifiers.txt), also picked 50/50 -- independent of the name roll and
+# independent of tier, so which of a genre's two "flavors" a given book
+# leans toward is its own axis of variety, not tied to how good it is.
+# ---------------------------------------------------------------------
+
+kehillah_book_complete_effect = {
+	if = {
+		limit = { var:kehillah_book_tally >= kehillah_book_threshold_illustrious }
+		set_variable = { name = kehillah_book_tier value = flag:illustrious }
+	}
+	else_if = {
+		limit = { var:kehillah_book_tally >= kehillah_book_threshold_famed }
+		set_variable = { name = kehillah_book_tier value = flag:famed }
+	}
+	else = {
+		set_variable = { name = kehillah_book_tier value = flag:masterwork }
+	}
+
+	if = {
+		limit = { var:kehillah_book_genre = flag:halakha }
+		if = {
+			limit = { has_ep1_dlc_trigger = yes }
+			create_artifact_book_effect = {
+				OWNER = root
+				CREATOR = root
+				SET_SUBJECT = flag:no
+				SET_TOPIC = flag:no
+			}
+			scope:newly_created_artifact ?= {
+				random_list = {
+					50 = { set_artifact_name = kehillah_book_halakha_name_1 }
+					50 = { set_artifact_name = kehillah_book_halakha_name_2 }
+				}
+				random_list = {
+					50 = { add_artifact_modifier = kehillah_book_halakha_modifier_1 }
+					50 = { add_artifact_modifier = kehillah_book_halakha_modifier_2 }
+				}
+				set_owner = root
+				if = {
+					limit = { var:kehillah_book_tier = flag:illustrious }
+					set_artifact_description = kehillah_rabbi_halakha_book_desc_illustrious
+					set_artifact_rarity = illustrious
+				}
+				else_if = {
+					limit = { var:kehillah_book_tier = flag:famed }
+					set_artifact_description = kehillah_rabbi_halakha_book_desc_famed
+					set_artifact_rarity = famed
+				}
+				else = {
+					set_artifact_description = kehillah_rabbi_halakha_book_desc_masterwork
+					set_artifact_rarity = masterwork
+				}
+			}
+		}
+		if = {
+			limit = { var:kehillah_book_tier = flag:illustrious }
+			custom_tooltip = kehillah_rabbi_halakha_book_illustrious_tt
+		}
+		else_if = {
+			limit = { var:kehillah_book_tier = flag:famed }
+			custom_tooltip = kehillah_rabbi_halakha_book_famed_tt
+		}
+		else = {
+			custom_tooltip = kehillah_rabbi_halakha_book_masterwork_tt
+		}
+	}
+	else_if = {
+		limit = { var:kehillah_book_genre = flag:parshanut }
+		if = {
+			limit = { has_ep1_dlc_trigger = yes }
+			create_artifact_book_effect = {
+				OWNER = root
+				CREATOR = root
+				SET_SUBJECT = flag:no
+				SET_TOPIC = flag:no
+			}
+			scope:newly_created_artifact ?= {
+				random_list = {
+					50 = { set_artifact_name = kehillah_book_parshanut_name_1 }
+					50 = { set_artifact_name = kehillah_book_parshanut_name_2 }
+				}
+				random_list = {
+					50 = { add_artifact_modifier = kehillah_book_parshanut_modifier_1 }
+					50 = { add_artifact_modifier = kehillah_book_parshanut_modifier_2 }
+				}
+				set_owner = root
+				if = {
+					limit = { var:kehillah_book_tier = flag:illustrious }
+					set_artifact_description = kehillah_rabbi_parshanut_book_desc_illustrious
+					set_artifact_rarity = illustrious
+				}
+				else_if = {
+					limit = { var:kehillah_book_tier = flag:famed }
+					set_artifact_description = kehillah_rabbi_parshanut_book_desc_famed
+					set_artifact_rarity = famed
+				}
+				else = {
+					set_artifact_description = kehillah_rabbi_parshanut_book_desc_masterwork
+					set_artifact_rarity = masterwork
+				}
+			}
+		}
+		if = {
+			limit = { var:kehillah_book_tier = flag:illustrious }
+			custom_tooltip = kehillah_rabbi_parshanut_book_illustrious_tt
+		}
+		else_if = {
+			limit = { var:kehillah_book_tier = flag:famed }
+			custom_tooltip = kehillah_rabbi_parshanut_book_famed_tt
+		}
+		else = {
+			custom_tooltip = kehillah_rabbi_parshanut_book_masterwork_tt
+		}
+	}
+	else_if = {
+		limit = { var:kehillah_book_genre = flag:talmudics }
+		if = {
+			limit = { has_ep1_dlc_trigger = yes }
+			create_artifact_book_effect = {
+				OWNER = root
+				CREATOR = root
+				SET_SUBJECT = flag:no
+				SET_TOPIC = flag:no
+			}
+			scope:newly_created_artifact ?= {
+				random_list = {
+					50 = { set_artifact_name = kehillah_book_talmudics_name_1 }
+					50 = { set_artifact_name = kehillah_book_talmudics_name_2 }
+				}
+				random_list = {
+					50 = { add_artifact_modifier = kehillah_book_talmudics_modifier_1 }
+					50 = { add_artifact_modifier = kehillah_book_talmudics_modifier_2 }
+				}
+				set_owner = root
+				if = {
+					limit = { var:kehillah_book_tier = flag:illustrious }
+					set_artifact_description = kehillah_rabbi_talmudics_book_desc_illustrious
+					set_artifact_rarity = illustrious
+				}
+				else_if = {
+					limit = { var:kehillah_book_tier = flag:famed }
+					set_artifact_description = kehillah_rabbi_talmudics_book_desc_famed
+					set_artifact_rarity = famed
+				}
+				else = {
+					set_artifact_description = kehillah_rabbi_talmudics_book_desc_masterwork
+					set_artifact_rarity = masterwork
+				}
+			}
+		}
+		if = {
+			limit = { var:kehillah_book_tier = flag:illustrious }
+			custom_tooltip = kehillah_rabbi_talmudics_book_illustrious_tt
+		}
+		else_if = {
+			limit = { var:kehillah_book_tier = flag:famed }
+			custom_tooltip = kehillah_rabbi_talmudics_book_famed_tt
+		}
+		else = {
+			custom_tooltip = kehillah_rabbi_talmudics_book_masterwork_tt
+		}
+	}
+	else = {
+		# flag:poetry, the only remaining possibility.
+		if = {
+			limit = { has_ep1_dlc_trigger = yes }
+			create_artifact_book_effect = {
+				OWNER = root
+				CREATOR = root
+				SET_SUBJECT = flag:no
+				SET_TOPIC = flag:no
+			}
+			scope:newly_created_artifact ?= {
+				random_list = {
+					50 = { set_artifact_name = kehillah_book_poetry_name_1 }
+					50 = { set_artifact_name = kehillah_book_poetry_name_2 }
+				}
+				random_list = {
+					50 = { add_artifact_modifier = kehillah_book_poetry_modifier_1 }
+					50 = { add_artifact_modifier = kehillah_book_poetry_modifier_2 }
+				}
+				set_owner = root
+				if = {
+					limit = { var:kehillah_book_tier = flag:illustrious }
+					set_artifact_description = kehillah_book_poetry_desc_illustrious
+					set_artifact_rarity = illustrious
+				}
+				else_if = {
+					limit = { var:kehillah_book_tier = flag:famed }
+					set_artifact_description = kehillah_book_poetry_desc_famed
+					set_artifact_rarity = famed
+				}
+				else = {
+					set_artifact_description = kehillah_book_poetry_desc_masterwork
+					set_artifact_rarity = masterwork
+				}
+			}
+		}
+		if = {
+			limit = { var:kehillah_book_tier = flag:illustrious }
+			custom_tooltip = kehillah_book_poetry_illustrious_tt
+		}
+		else_if = {
+			limit = { var:kehillah_book_tier = flag:famed }
+			custom_tooltip = kehillah_book_poetry_famed_tt
+		}
+		else = {
+			custom_tooltip = kehillah_book_poetry_masterwork_tt
+		}
+	}
+
+	# THE SHARED REWARD -- same three tiers, genre-independent. "A big
+	# contribution to the greatness of the community you live in," per
+	# user request: bigger than any single Bet Din case's own Stability
+	# swing (kehillah_bet_din_case1_stability_gain_great = 40 is that
+	# family's largest number), and scales with tier on top of the flat
+	# base, so tier matters for the community's own standing too, not
+	# only for the artifact.
+	if = {
+		limit = { var:kehillah_book_tier = flag:illustrious }
+		primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_book_greatness_gain } }
+		primary_title = { change_variable = { name = kehillah_var_greatness add = 40 } }
+		add_piety = massive_piety_gain
+		add_prestige = massive_prestige_gain
+	}
+	else_if = {
+		limit = { var:kehillah_book_tier = flag:famed }
+		primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_book_greatness_gain } }
+		primary_title = { change_variable = { name = kehillah_var_greatness add = 20 } }
+		add_piety = major_piety_gain
+		add_prestige = major_prestige_gain
+	}
+	else = {
+		primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_book_greatness_gain } }
+		add_piety = medium_piety_gain
+		add_prestige = medium_prestige_gain
+	}
+
+	# var:kehillah_book_tally and _tier are done being read -- the tier
+	# is now fixed on the artifact and the reward is already applied.
+	# var:kehillah_book_genre is NOT cleared here: kehillah_book.0006 (the
+	# "send copies" step, fired next) still wants it for its own desc,
+	# and only clears it once that step is actually done reading it. See
+	# kehillah_book_send_copies_effect below.
+	remove_variable = kehillah_book_tally
+	remove_variable = kehillah_book_tier
+}
+
+# ---------------------------------------------------------------------
+# kehillah_book_send_copies_effect
+# Scope: root, the writing character, from kehillah_book.0006's
+# immediate. "Maybe we should register communities as a scope so the
+# event can look for the nearest eligible communities" -- per user
+# request, this reads global_variable_list kehillah_registered_
+# communities (populated at game start, common/on_action/kehillah_on_
+# actions.txt) instead of naming Worms/Speyer/Mainz directly, which
+# several older places in this mod still do.
+#
+# HONEST SCOPE CUT: "nearest" is not actually distance-ranked here --
+# every OTHER registered community gets notified, not just the closest
+# one(s). With exactly three communities in the registry today, "every
+# other one" and "the nearest one(s)" are close to the same thing in
+# practice; real distance-ranking (ordered_in_global_list with a
+# squared_distance order_by) is worth adding once the registry is
+# larger than a handful of communities and "every other one" stops
+# being a reasonable stand-in for "nearby."
+#
+# save_scope_as = kehillah_book_author BEFORE switching into each
+# recipient's own scope below: scope: references persist across a plain
+# "= {" scope change the way root/this do not, so kehillah_book.0007
+# (root = the RECIPIENT leader, not the author) can still reach
+# scope:kehillah_book_author to name who wrote the book and read their
+# var:kehillah_book_genre -- a character variable that lives on the
+# author, not the recipient, and is only cleared here, once every
+# recipient event has had the chance to read it.
+# ---------------------------------------------------------------------
+
+kehillah_book_send_copies_effect = {
+	save_scope_as = kehillah_book_author
+
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			NOT = { this = root.primary_title }
+			exists = holder
+		}
+		holder = {
+			trigger_event = {
+				id = kehillah_book.0007
+				days = 30
+			}
+		}
+	}
+
+	remove_variable = kehillah_book_genre
+}

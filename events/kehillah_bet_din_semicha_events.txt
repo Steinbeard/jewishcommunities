@@ -1,0 +1,99 @@
+﻿# =====================================================================
+# Semicha -- becoming a rabbi by sitting on a Bet Din panel.
+#
+# ADDED 2026-09-09 at user request, same-day follow-up to "you become a
+# rabbi when you go to a bet din as a judge": that was originally built
+# as a silent add_trait (kehillah_bet_din_grant_rabbi_trait_effect,
+# common/scripted_effects/kehillah_bet_din_scripted_effects.txt). This
+# replaces the silent grant with a real event and a real choice --
+# "the Av Beit Din grants you semicha, and you can accept or choose not
+# to be a rabbi."
+#
+# Fired from kehillah_bet_din_grant_rabbi_trait_effect, called on root
+# (the host) and separately on judge2/judge3 from kehillah_bet_din_
+# open_docket_effect, the moment a session's panel is set -- guarded
+# there to only fire for whichever of the three do not already hold
+# kehillah_rabbi_trait, so this is offered at most once per character
+# per session, and not at all to someone who already accepted (or
+# otherwise acquired the trait) previously. Declining is not a dead
+# end: the same guard means it is offered again next time that
+# character judges, not permanently refused.
+#
+# ONE EVENT, NOT TWO: root can be the host or either co-judge, and the
+# desc distinguishes them -- global_var:kehillah_bet_din_convening_
+# title.holder (the same reach-the-host idiom this whole file already
+# uses) lets a triggered_desc tell "root IS the host" (self-recognition
+# by the assembled panel -- there is no more senior judge present to
+# grant it TO them) from "root is a co-judge" (literally granted by the
+# convening Av Beit Din). The right_portrait mirrors this: shown only
+# when root is not the host, so the host's own version of this event
+# never shows their own portrait twice.
+# =====================================================================
+
+namespace = kehillah_bet_din_semicha
+
+kehillah_bet_din_semicha.0001 = {
+	type = character_event
+	title = kehillah_bet_din_semicha.0001.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { this = global_var:kehillah_bet_din_convening_title.holder }
+				desc = kehillah_bet_din_semicha.0001.desc.host
+			}
+			desc = kehillah_bet_din_semicha.0001.desc.judge
+		}
+	}
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+	right_portrait = {
+		character = global_var:kehillah_bet_din_convening_title.holder
+		animation = prayer
+		trigger = {
+			NOT = { this = global_var:kehillah_bet_din_convening_title.holder }
+		}
+	}
+
+	# LIVE-TEST FIX, 2026-09-11 (v10 spec section 4). No gender check
+	# existed here at all -- "should not even offer the choice to a
+	# female character under the default flag state" (spec's own
+	# wording). kehillah_leadership_gender_eligible_trigger is the same
+	# flag section 3's succession fix reads (common/scripted_triggers/
+	# kehillah_scripted_triggers.txt); this is the second, independent
+	# gate on top of the calling effect's own check (kehillah_bet_din_
+	# grant_rabbi_trait_effect, common/scripted_effects/kehillah_bet_din_
+	# scripted_effects.txt) -- if anything else ever calls trigger_event
+	# on this directly, it still refuses to fire rather than silently
+	# offering semicha regardless.
+	trigger = {
+		government_has_flag = government_is_kehillah
+		NOT = { has_trait = kehillah_rabbi_trait }
+		kehillah_leadership_gender_eligible_trigger = yes
+	}
+
+	immediate = {
+		# Named scope for the desc.judge variant's [kbd_av_beit_din...]
+		# reference -- matches this mod's own established convention
+		# (kbd_litigant_a/b throughout events/kehillah_bet_din_events.txt)
+		# of a saved bare-name scope in loc, rather than a raw global_var
+		# chain inside [...]. Harmless when root IS the host (the
+		# desc.host variant never references this scope), so no trigger
+		# guard is needed around the save itself.
+		global_var:kehillah_bet_din_convening_title.holder = { save_scope_as = kbd_av_beit_din }
+	}
+
+	option = {
+		name = kehillah_bet_din_semicha.0001.a
+		add_trait = kehillah_rabbi_trait
+		custom_tooltip = kehillah_bet_din_semicha.0001.a.tt
+	}
+
+	option = {
+		name = kehillah_bet_din_semicha.0001.b
+		custom_tooltip = kehillah_bet_din_semicha.0001.b.tt
+	}
+}

@@ -1,0 +1,778 @@
+﻿# =====================================================================
+# Kehillah task contracts -- v8 spec (docs/spec/v8-task-contracts.md).
+#
+# Four contract types letting a non-Kehillah (in practice: non-Jewish)
+# ruler offer work to a Kehillah community leader through CK3's real EP3
+# Task Contracts system, rather than a bespoke decision-based mechanic --
+# the user's own explicit preference for the loan case ("I think I
+# prefer the contract mechanic for loans over a decision! Feels more
+# compelling and character driven"), extended to the other three for
+# consistency.
+#
+# MECHANICS CONFIRMED AGAINST THE INSTALLED GAME FILES BEFORE WRITING
+# ANY OF THIS, NOT ASSUMED:
+#   - _task_contracts.info (this same folder) is the field template.
+#   - create_task_contract / accept_task_contract / complete_task_contract
+#     are plain effects usable from any decision/event/on_action effect
+#     block -- confirmed via common/character_interactions/
+#     06_ep3_laamp_interactions.txt's contact-list "request a contract"
+#     flow (random_list of contract types gated by can_create_task_contract,
+#     each branch calling create_task_contract = { task_contract_type
+#     task_contract_tier location task_contract_employer save_scope_as }),
+#     common/character_interactions/00_debug_interactions.txt, and
+#     common/council_tasks/00_spymaster_tasks.txt (task_contract_tier and
+#     location confirmed REQUIRED fields on create_task_contract, not
+#     optional, even for a travel = no contract -- every real call site
+#     checked sets both).
+#   - task_contract_taker / task_contract_employer / task_contract_target
+#     are built-in links readable off a TASK_CONTRACT scope (root, inside
+#     on_create/on_accepted/on_completed/on_invalidated/task_contract_reward
+#     effect blocks -- confirmed via admin_contracts.txt's own on_accepted/
+#     task_contract_reward bodies, which universally open with
+#     save_scope_as = task_contract before reading task_contract_taker /
+#     scope:task_contract.task_contract_employer). Once you switch INTO
+#     task_contract_taker (a character scope), the contract's other links
+#     are no longer directly reachable -- admin_contracts.txt always reads
+#     them back off the saved scope:task_contract, not by re-chaining off
+#     the character. Followed identically below.
+#   - "target" IS a real, distinct create_task_contract parameter from
+#     "employer" -- confirmed via common/council_tasks/00_marshal_tasks.txt
+#     and common/factions/10_tgp_factions.txt (target = scope:councillor_
+#     liege / scope:faction.faction_target) and read back as the built-in
+#     task_contract_target link (common/character_interactions/
+#     06_ep3_laamp_interactions.txt's complete_task_contract_interaction:
+#     "task_contract_target ?= scope:recipient"). This answers v8 spec
+#     section 4d's open question: yes, kehillah_hebrew_tutor_contract can
+#     name a specific pupil distinct from the employer who commissioned
+#     the tutoring.
+#   - invalidate_contract = yes (NOT "invalidate_task_contract = <scope>",
+#     the name the spec's own draft guessed) is the real effect, called ON
+#     a task_contract scope -- confirmed via common/scripted_effects/
+#     09_mpo_settlement_issue_effects.txt ("scope:contract = {
+#     invalidate_contract = yes }" in the AI-decline branch of
+#     settlement_issue_on_create_effect) and common/casus_belli_types/
+#     07_ep3_wars.txt. "invalidate_task_contract" does not exist anywhere
+#     as a callable effect in the installed files -- only inside this
+#     very _task_contracts.info comment block and one unrelated
+#     effect_localization entry that documents invalidate_contract's own
+#     display text. The spec explicitly flagged this name as unverified
+#     ("whichever the agent finds cleaner ... verify before choosing, do
+#     not guess") -- verified, and corrected here.
+#   - NO clean vanilla precedent exists for create_artifact-family effects
+#     INSIDE a task_contract_reward block. The one create_artifact call in
+#     the entire common/task_contracts/ folder (laamp_extra_contracts.txt's
+#     treasure-map contract) runs in on_accepted, not in a reward. Per the
+#     spec's own instruction ("if none exists cleanly, gold + opinion is a
+#     perfectly fine scope cut, document it as such rather than forcing an
+#     artifact in"), kehillah_exotic_goods_contract below is gold + opinion
+#     only -- see that type's own header for the full note.
+#   - This whole system is EP3 (Legacy of Persia) content at the engine
+#     level, not just UI-gated vanilla content that happens to live under
+#     common/task_contracts/ -- has_ep3_dlc_trigger (common/
+#     scripted_triggers/00_has_dlc_scripted_triggers.txt) gates every
+#     valid_to_create below and the pulse's own on_action trigger
+#     (common/on_action/kehillah_on_actions.txt), mirroring this mod's own
+#     established has_ce1_dlc_trigger pattern on kehillah_epidemic_pulse
+#     rather than assuming EP3 the way nothing else in this mod does.
+#
+# GROUP: all four share one new group (kehillah_contract_group) rather
+# than each getting its own -- no common/task_contract_groups-style
+# registry file exists in the installed game (grepped for one and found
+# none; "group" on admin_governance_group, laamp_contracts_*, etc. is
+# used across dozens of vanilla contract types with no defining file
+# anywhere), so it is a free-form UI-grouping label, not a validated
+# reference. "So they render together" (spec section 4's own phrasing)
+# means one shared group, not four separate ones.
+#
+# WEIGHT = 0 ON ALL FOUR, DELIBERATELY. weight only matters to vanilla's
+# own populate_task_contracts_for_area auto-population algorithm (see
+# common/scripted_effects/07_dlc_ep3_scripted_effects.txt), which this
+# mod never calls -- every Kehillah contract is created explicitly, by
+# name, from events/kehillah_task_contract_events.txt. Leaving weight at
+# the template's own default (0) means these types can never accidentally
+# get swept into vanilla's regional auto-population if that system ever
+# runs near a Kehillah quarter, without needing a fragile negative trigger
+# to keep them out.
+#
+# OFFER FLOW, DECLINE HANDLING, AND SKILL-TIER RESOLUTION are all
+# implemented in events/kehillah_task_contract_events.txt -- see that
+# file's own header for the full account of how a contract is offered,
+# accepted or declined, and (for the three non-loan types) resolved
+# immediately in the same accept step via on_accepted itself calling
+# complete_task_contract directly, once verified against admin_contracts.
+# txt's own confirmed on_accepted/on_completed split for a non-travel
+# contract (on_accepted does the work, on_completed is empty, the reward
+# is applied by complete_task_contract naming a task_contract_reward key
+# -- see overdue_taxes in the installed admin_contracts.txt for the
+# precedent this mirrors).
+# =====================================================================
+
+
+# ---------------------------------------------------------------------
+# TRANSLATION -- commission a translation of Arabic/Hebrew scholarship
+# into Latin. v8 spec section 4a.
+#
+# JUDGEMENT CALL (spec 4a): valid_to_create is gated on learning >= 8 OR
+# already holding kehillah_rabbi_trait (common/traits/kehillah_traits.txt)
+# -- "some baseline learning skill... or the kehillah_rabbi_trait", the
+# spec's own suggested either/or, taken literally. 8 matches the existing
+# precedent for "can attempt serious scholarship" already used by
+# kehillah_compose_commentary_decision's own is_valid gate (common/
+# decisions/kehillah_decisions.txt), reused here rather than inventing a
+# different bar for what is, in-fiction, the same kind of work.
+#
+# TWO OUTCOME TIERS, not four like Compose a Commentary -- this is a
+# one-off commissioned job for an outsider, not the community's own
+# flagship scholarly-output decision, so a lighter two-band shape
+# (learning >= 14 = exceptional work, else = solid, competent work) is
+# proportionate. The Greatness reward is the SAME amount at both tiers
+# (kehillah_translation_greatness_reward = 20, matching the spec's own
+# explicit reference point, "kehillah_loan_repayment_greatness_reward =
+# 20 is the existing reference point for 'a solid one-off Greatness
+# gain'") -- the work becoming known abroad is a binary fact of a
+# completed commission, not something that scales with how elegantly it
+# was done; only the direct gold fee and the employer's personal opinion
+# gain scale with quality.
+# ---------------------------------------------------------------------
+
+kehillah_translation_contract = {
+	group = kehillah_contract_group
+	icon = "gfx/interface/icons/artifact/artifact_book.dds"
+	desc = kehillah_translation_contract_desc
+	task_contract_request = kehillah_translation_contract_request
+
+	travel = no
+	is_criminal = no
+	use_diplomatic_range = no
+
+	valid_to_create = {
+		has_ep3_dlc_trigger = yes
+		government_has_flag = government_is_kehillah
+		is_adult = yes
+		is_imprisoned = no
+		OR = {
+			learning >= 8
+			has_trait = kehillah_rabbi_trait
+		}
+	}
+
+	valid_to_accept = {
+		scope:employer = {
+			is_alive = yes
+			NOT = { government_has_flag = government_is_kehillah }
+			NOT = { faith = root.faith }
+		}
+	}
+
+	valid_to_continue = {
+		task_contract_taker = { is_alive = yes }
+	}
+
+	valid_to_keep = {
+		task_contract_taker = { is_alive = yes }
+	}
+
+	on_create = {}
+
+	# Resolved immediately -- see events/kehillah_task_contract_events.txt's
+	# header for why (none of these four need travel, so the contract's
+	# own duration bookkeeping has nothing to wait on).
+	on_accepted = {
+		save_scope_as = task_contract
+		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
+		if = {
+			limit = {
+				task_contract_taker = { learning >= 14 }
+			}
+			complete_task_contract = translation_exceptional
+		}
+		else = {
+			complete_task_contract = translation_solid
+		}
+	}
+
+	on_completed = {}
+
+	on_invalidated = {
+		task_contract_taker ?= {
+			custom_tooltip = kehillah_task_contract_fell_through_tt
+		}
+	}
+
+	should_show_toast_on_complete = yes
+
+	task_contract_reward = {
+		translation_exceptional = {
+			should_print_on_complete = yes
+			visible = yes
+			positive = yes
+			effect = {
+				save_scope_as = task_contract
+				task_contract_taker = {
+					play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract"
+					add_gold = major_gold_value
+					reverse_add_opinion = {
+						target = scope:task_contract.task_contract_employer
+						modifier = flattered_opinion
+						opinion = 40
+						years = 5
+					}
+					primary_title = {
+						change_variable = { name = kehillah_var_greatness add = kehillah_translation_greatness_reward }
+					}
+				}
+				custom_tooltip = kehillah_translation_exceptional_tt
+			}
+		}
+		translation_solid = {
+			should_print_on_complete = yes
+			visible = yes
+			positive = yes
+			effect = {
+				save_scope_as = task_contract
+				task_contract_taker = {
+					play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract"
+					add_gold = medium_gold_value
+					reverse_add_opinion = {
+						target = scope:task_contract.task_contract_employer
+						modifier = pleased_opinion
+						opinion = 20
+						years = 5
+					}
+					primary_title = {
+						change_variable = { name = kehillah_var_greatness add = kehillah_translation_greatness_reward }
+					}
+				}
+				custom_tooltip = kehillah_translation_solid_tt
+			}
+		}
+	}
+
+	weight = {
+		value = 0
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# LOAN -- see this file's tail-end note by kehillah_loan_contract for the
+# full ledger-integration account (v8 spec section 5). Placed here in
+# creation order (translation, loan, exotic goods, hebrew tutor) to match
+# the spec's own section 4 ordering; the design note is long enough that
+# it is kept as its own block immediately above the type rather than
+# repeated at the top of the file.
+# ---------------------------------------------------------------------
+
+# =====================================================================
+# LOAN CONTRACT -- ledger integration. v8 spec section 5 in full; this is
+# the part of the whole feature that most needed verification before
+# writing, and the header explains every choice made.
+#
+# DIRECTION IS INVERTED FROM THE OTHER THREE TYPES. Everywhere else,
+# scope:employer commissions work FROM the Kehillah ruler. Here,
+# scope:employer IS THE LENDER -- a non-Kehillah neighbor with money to
+# lend -- and the Kehillah ruler (root/task_contract_taker, still the
+# contract owner, since a task_contract's owner is whoever must fulfil
+# it) is the BORROWER. "Fulfilling" this contract means repaying the
+# loan, not delivering a commissioned good or service.
+#
+# THE EXISTING LEDGER IS REUSED VERBATIM, NOT DUPLICATED. kehillah_loan_
+# amount_owed / kehillah_loan_lender_title / kehillah_loan_years_elapsed
+# (on the borrower), kehillah_loan_debtors (a variable_list on the
+# lender's title), the quarterly accrual/default block in
+# kehillah_quarterly_pillars_effect (common/scripted_effects/
+# kehillah_scripted_effects.txt, ~line 1796), and kehillah_repay_loan_
+# decision (common/decisions/kehillah_decisions.txt) are ALL untouched by
+# this file. on_accepted below writes the exact same three variables,
+# with the exact same values, that kehillah_extend_loan_decision's own
+# effect block used to write -- see that decision's retirement comment
+# (common/decisions/kehillah_decisions.txt) for the full before/after.
+#
+# THE PROSPERITY GATE IS KEPT, REINTERPRETED. The old decision gated
+# EXTENDING a loan on the LENDER's (then: root, the Kehillah ruler)
+# Prosperity being Healthy+ -- "is this community stable enough to be
+# lending money out." Now the Kehillah ruler is the BORROWER, so the same
+# literal gate reads differently: "is this community's standing healthy
+# enough for an outside lender to see it as credit-worthy." Both readings
+# point at the same underlying economic idea (only a reasonably prosperous
+# community engages with this mechanic at all) so the gate is kept as-is,
+# just re-grounded -- not dropped, and not replaced with something that
+# would need a brand new threshold value.
+#
+# SPEC SECTION 5 POINT 2 -- THE REPAYMENT-TRACKING DESIGN, THE JUDGEMENT
+# CALL THAT MATTERS MOST HERE. The spec explicitly left open whether the
+# contract itself should be what complete_task_contracts on repayment, or
+# whether kehillah_repay_loan_decision should stay the sole repayment
+# trigger with the contract closed separately for bookkeeping, and asked
+# whether the contract scope needs to be persisted in a variable to be
+# found again later. Resolved as follows, in order:
+#
+#   1. kehillah_repay_loan_decision IS NOT TOUCHED, AT ALL -- zero edits,
+#      per this task's own explicit instruction that it "stays exactly as
+#      it is." That is a hard constraint on everything below.
+#   2. RE-FINDING THE CONTRACT DOES NOT NEED A PERSISTED SCOPE VARIABLE.
+#      Vanilla's own answer to "find my character's active contract of a
+#      given type again, later" is confirmed directly from common/
+#      character_interactions/06_ep3_laamp_interactions.txt's
+#      complete_task_contract_interaction: it re-locates the contract via
+#      random_character_active_contract / any_character_active_contract
+#      filtered on has_task_contract_type (plus a matching employer/
+#      target check), not by having stashed the scope in a variable
+#      somewhere. valid_to_create's own "no second loan while one is
+#      outstanding" guard (point 3 below) already guarantees at most one
+#      active kehillah_loan_contract per borrower, so this query is
+#      always unambiguous when it matters. No new persisted-scope
+#      plumbing was built, because vanilla's own equivalent case doesn't
+#      use one either.
+#   3. THE HARD PART: because point 1 forbids touching kehillah_repay_
+#      loan_decision, NOTHING calls complete_task_contract on this
+#      contract type, ever -- repayment and default both clear the exact
+#      same three borrower-side variables (confirmed by reading both
+#      code paths: kehillah_repay_loan_decision's remove_variable trio,
+#      and the quarterly default block's identical remove_variable trio),
+#      so there is no surviving signal on the borrower, after the fact,
+#      that would let an untouched-file-respecting design tell repayment
+#      and default apart. Two rejected alternatives, for the record:
+#      (a) add a marker variable inside the quarterly default block
+#      before it clears the ledger -- rejected, that file was also named
+#      as untouched; (b) build a fully independent, parallel quarterly
+#      tick on the CONTRACT scope to track elapsed time itself -- would
+#      have worked, but is real new infrastructure duplicating a signal
+#      that already exists, in full, in the parts of the mod already
+#      shown to the player (the direct gold/Prosperity/Greatness change
+#      the instant repayment or default actually happens, via the
+#      untouched, already-working code paths), purely to make ONE extra
+#      cosmetic toast able to say "success" instead of "concluded."
+#      CHOSEN: valid_to_continue simply tracks whether the loan is still
+#      open (exists = var:kehillah_loan_amount_owed on the borrower).
+#      When it goes false -- for EITHER reason -- on_invalidated fires a
+#      single, deliberately NEUTRAL closing note (kehillah_loan_contract_
+#      concluded_tt) that does not claim success or failure, because the
+#      contract genuinely cannot tell which one happened without touching
+#      a file this task was told not to touch. This IS a real, documented
+#      scope cut, not an oversight: the authoritative record of what
+#      happened (the gold changing hands, the Prosperity/Greatness swing)
+#      is already fully visible to the player through the existing,
+#      unmodified UI at the moment it actually occurs.
+#   4. valid_to_create/valid_to_accept reuse the existing "already
+#      indebted" guard VERBATIM (NOT = { exists = var:kehillah_loan_
+#      amount_owed }), re-homed from kehillah_extend_loan_decision's own
+#      is_valid (common/decisions/kehillah_decisions.txt, pre-retirement)
+#      per spec section 5 point 3.
+#
+# task_contract_reward IS STILL DEFINED, for completeness and defense in
+# depth (the same "defense in depth" idiom this mod's own decisions
+# already use -- see kehillah_extend_loan_decision's and kehillah_repay_
+# loan_decision's own effect blocks), in case anything ever does call
+# complete_task_contract on this type in the future. Its effect is
+# DELIBERATELY EMPTY of any prosperity/greatness/gold change -- those
+# numbers are already, and must remain, applied exactly once by the
+# untouched kehillah_repay_loan_decision and quarterly-default code
+# paths. Duplicating them here would double-book the ledger, which is
+# exactly the failure mode spec section 5 point 4 warns retiring the old
+# decision is meant to prevent. The key exists so the type is well-formed
+# and self-documenting, not because it is expected to fire.
+# =====================================================================
+
+kehillah_loan_contract = {
+	group = kehillah_contract_group
+	icon = "gfx/interface/icons/message_feed/money.dds"
+	desc = kehillah_loan_contract_desc
+	task_contract_request = kehillah_loan_contract_request
+
+	travel = no
+	is_criminal = no
+	use_diplomatic_range = no
+
+	valid_to_create = {
+		has_ep3_dlc_trigger = yes
+		government_has_flag = government_is_kehillah
+		is_adult = yes
+		is_imprisoned = no
+		NOT = { exists = var:kehillah_loan_amount_owed }
+		kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_healthy_threshold }
+	}
+
+	valid_to_accept = {
+		NOT = { exists = var:kehillah_loan_amount_owed }
+		scope:employer = {
+			is_alive = yes
+			NOT = { government_has_flag = government_is_kehillah }
+			NOT = { faith = root.faith }
+		}
+	}
+
+	# Stays open exactly as long as the loan is outstanding -- see this
+	# type's header, point 3, for why the contract cannot distinguish
+	# repayment from default at this point and deliberately does not try.
+	valid_to_continue = {
+		task_contract_taker = {
+			exists = var:kehillah_loan_amount_owed
+		}
+	}
+
+	valid_to_keep = {
+		task_contract_taker = {
+			NOT = { exists = var:kehillah_loan_amount_owed }
+		}
+	}
+
+	on_create = {}
+
+	# Origination. Mirrors kehillah_extend_loan_decision's old effect
+	# block exactly (common/decisions/kehillah_decisions.txt's retirement
+	# comment has the full before/after) -- the borrower is root/
+	# task_contract_taker, the lender is scope:employer, both already
+	# resolved by the time this fires.
+	on_accepted = {
+		save_scope_as = task_contract
+		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
+
+		scope:task_contract.task_contract_employer ?= {
+			primary_title = { save_scope_as = kehillah_loan_lender_title_scope }
+		}
+
+		# Defense in depth, matching kehillah_extend_loan_decision's own
+		# guard: only write the ledger if the lender's title actually
+		# resolved.
+		if = {
+			limit = { exists = scope:kehillah_loan_lender_title_scope }
+			task_contract_taker = {
+				add_gold = kehillah_loan_principal_value
+				set_variable = {
+					name = kehillah_loan_amount_owed
+					value = kehillah_loan_amount_owed_value
+				}
+				set_variable = {
+					name = kehillah_loan_lender_title
+					value = scope:kehillah_loan_lender_title_scope
+				}
+				set_variable = {
+					name = kehillah_loan_years_elapsed
+					value = 0
+				}
+			}
+			scope:kehillah_loan_lender_title_scope = {
+				add_to_variable_list = {
+					name = kehillah_loan_debtors
+					target = scope:task_contract.task_contract_taker
+				}
+			}
+			task_contract_taker = {
+				custom_tooltip = kehillah_loan_contract_originated_tt
+			}
+		}
+	}
+
+	on_completed = {}
+
+	on_invalidated = {
+		task_contract_taker ?= {
+			custom_tooltip = kehillah_loan_contract_concluded_tt
+		}
+	}
+
+	should_show_toast_on_complete = no
+
+	task_contract_reward = {
+		# Defense in depth only -- see this type's header, the final
+		# paragraph, for why this is deliberately inert.
+		repayment_bookkeeping = {
+			should_print_on_complete = no
+			visible = no
+			positive = yes
+			effect = {}
+		}
+	}
+
+	weight = {
+		value = 0
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# EXOTIC GOODS -- source something rare the community's trade contacts
+# can plausibly reach. v8 spec section 4c.
+#
+# SCOPE CUT, DOCUMENTED (spec 4c): no artifact reward. Verified (this
+# file's own top header) that no real vanilla task_contract_reward block
+# anywhere in the installed game applies a create_artifact-family effect
+# -- the one precedent found (laamp_extra_contracts.txt's treasure map)
+# runs in on_accepted, a structurally different place with different
+# scope guarantees. Rather than force an artifact into a spot nothing
+# vanilla actually does that, this is gold + opinion, exactly as the
+# spec names as the acceptable fallback.
+#
+# STEWARDSHIP, NOT LEARNING, gates the outcome tier -- sourcing goods
+# through trade contacts is a Stewardship skill in CK3's own vocabulary
+# (see e.g. bandit_payment/harvest_sell_excess in the installed
+# admin_contracts.txt pairing stewardship-flavored contract outcomes with
+# gold). Three tiers, not two, because this is the one type with a real
+# FAILURE state the spec explicitly asks for (positive = no, "no gold,
+# smaller opinion penalty") -- and with no learning-style floor gating
+# valid_to_create (spec doesn't ask for one here), the bottom tier is
+# genuinely reachable, unlike the loan contract's dead reward key above.
+# ---------------------------------------------------------------------
+
+kehillah_exotic_goods_contract = {
+	group = kehillah_contract_group
+	icon = "gfx/interface/icons/domicile_building/domicile_trade_yurt.dds"
+	desc = kehillah_exotic_goods_contract_desc
+	task_contract_request = kehillah_exotic_goods_contract_request
+
+	travel = no
+	is_criminal = no
+	use_diplomatic_range = no
+
+	valid_to_create = {
+		has_ep3_dlc_trigger = yes
+		government_has_flag = government_is_kehillah
+		is_adult = yes
+		is_imprisoned = no
+	}
+
+	valid_to_accept = {
+		scope:employer = {
+			is_alive = yes
+			NOT = { government_has_flag = government_is_kehillah }
+			NOT = { faith = root.faith }
+		}
+	}
+
+	valid_to_continue = {
+		task_contract_taker = { is_alive = yes }
+	}
+
+	valid_to_keep = {
+		task_contract_taker = { is_alive = yes }
+	}
+
+	on_create = {}
+
+	on_accepted = {
+		save_scope_as = task_contract
+		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
+		if = {
+			limit = {
+				task_contract_taker = { stewardship >= 14 }
+			}
+			complete_task_contract = exotic_goods_great
+		}
+		else_if = {
+			limit = {
+				task_contract_taker = { stewardship >= 8 }
+			}
+			complete_task_contract = exotic_goods_good
+		}
+		else = {
+			complete_task_contract = exotic_goods_poor
+		}
+	}
+
+	on_completed = {}
+
+	on_invalidated = {
+		task_contract_taker ?= {
+			custom_tooltip = kehillah_task_contract_fell_through_tt
+		}
+	}
+
+	should_show_toast_on_complete = yes
+
+	task_contract_reward = {
+		exotic_goods_great = {
+			should_print_on_complete = yes
+			visible = yes
+			positive = yes
+			effect = {
+				save_scope_as = task_contract
+				task_contract_taker = {
+					play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract"
+					add_gold = major_gold_value
+					reverse_add_opinion = {
+						target = scope:task_contract.task_contract_employer
+						modifier = flattered_opinion
+						opinion = 35
+						years = 5
+					}
+				}
+				custom_tooltip = kehillah_exotic_goods_great_tt
+			}
+		}
+		exotic_goods_good = {
+			should_print_on_complete = yes
+			visible = yes
+			positive = yes
+			effect = {
+				save_scope_as = task_contract
+				task_contract_taker = {
+					play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract"
+					add_gold = medium_gold_value
+					reverse_add_opinion = {
+						target = scope:task_contract.task_contract_employer
+						modifier = pleased_opinion
+						opinion = 20
+						years = 5
+					}
+				}
+				custom_tooltip = kehillah_exotic_goods_good_tt
+			}
+		}
+		exotic_goods_poor = {
+			should_print_on_complete = yes
+			visible = yes
+			positive = no
+			effect = {
+				save_scope_as = task_contract
+				task_contract_taker = {
+					play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_failure_on_contract"
+					reverse_add_opinion = {
+						target = scope:task_contract.task_contract_employer
+						modifier = disappointed_opinion
+						opinion = -20
+						years = 3
+					}
+				}
+				custom_tooltip = kehillah_exotic_goods_poor_tt
+			}
+		}
+	}
+
+	weight = {
+		value = 0
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# HEBREW TUTOR -- the employer (or their child) wants Hebrew language/
+# scriptural instruction. v8 spec section 4d.
+#
+# TARGET, CONFIRMED SUPPORTED (this file's own top header): create_task_
+# contract's target parameter names a specific pupil distinct from the
+# employer who commissioned the work -- events/kehillah_task_contract_
+# events.txt picks the employer's own child if one exists, falling back
+# to the employer themselves otherwise, and passes it through as target.
+#
+# SCOPE CUT, DOCUMENTED (spec 4d): no trait/XP/language-tradition tie-in
+# is granted to the pupil. Checked common/culture/ (only cultures/ and
+# name_lists/ exist in this mod -- no custom cultural_tradition content
+# at all) and the existing Kehillah scripted effects for any "Hebrew
+# learning" mechanism that could apply to an outside, non-Jewish target
+# character; none exists. Per the spec's own fallback, this stays gold +
+# opinion, plus a personal Learning XP tick for the ROOT (the Kehillah
+# ruler doing the actual teaching, or supervising it) using vanilla's own
+# generic add_learning_lifestyle_xp -- already the exact idiom this mod's
+# own kehillah_compose_commentary_decision uses. The pupil is still named
+# via task_contract_target for flavor (who is being tutored), just with
+# no mechanical effect applied to them.
+# ---------------------------------------------------------------------
+
+kehillah_hebrew_tutor_contract = {
+	group = kehillah_contract_group
+	icon = "gfx/interface/icons/court_position_task_types/court_tutor_teach_kids.dds"
+	desc = kehillah_hebrew_tutor_contract_desc
+	task_contract_request = kehillah_hebrew_tutor_contract_request
+
+	travel = no
+	is_criminal = no
+	use_diplomatic_range = no
+
+	valid_to_create = {
+		has_ep3_dlc_trigger = yes
+		government_has_flag = government_is_kehillah
+		is_adult = yes
+		is_imprisoned = no
+		learning >= 6
+	}
+
+	valid_to_accept = {
+		scope:employer = {
+			is_alive = yes
+			NOT = { government_has_flag = government_is_kehillah }
+			NOT = { faith = root.faith }
+		}
+	}
+
+	valid_to_continue = {
+		task_contract_taker = { is_alive = yes }
+	}
+
+	valid_to_keep = {
+		task_contract_taker = { is_alive = yes }
+	}
+
+	on_create = {}
+
+	on_accepted = {
+		save_scope_as = task_contract
+		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
+		if = {
+			limit = {
+				task_contract_taker = { learning >= 14 }
+			}
+			complete_task_contract = tutor_great
+		}
+		else = {
+			complete_task_contract = tutor_good
+		}
+	}
+
+	on_completed = {}
+
+	on_invalidated = {
+		task_contract_taker ?= {
+			custom_tooltip = kehillah_task_contract_fell_through_tt
+		}
+	}
+
+	should_show_toast_on_complete = yes
+
+	task_contract_reward = {
+		tutor_great = {
+			should_print_on_complete = yes
+			visible = yes
+			positive = yes
+			effect = {
+				save_scope_as = task_contract
+				task_contract_taker = {
+					play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract"
+					add_gold = medium_gold_value
+					add_learning_lifestyle_xp = medium_lifestyle_xp
+					reverse_add_opinion = {
+						target = scope:task_contract.task_contract_employer
+						modifier = flattered_opinion
+						opinion = 30
+						years = 5
+					}
+				}
+				custom_tooltip = kehillah_hebrew_tutor_great_tt
+			}
+		}
+		tutor_good = {
+			should_print_on_complete = yes
+			visible = yes
+			positive = yes
+			effect = {
+				save_scope_as = task_contract
+				task_contract_taker = {
+					play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract"
+					add_gold = minor_gold_value
+					add_learning_lifestyle_xp = minor_lifestyle_xp
+					reverse_add_opinion = {
+						target = scope:task_contract.task_contract_employer
+						modifier = pleased_opinion
+						opinion = 15
+						years = 5
+					}
+				}
+				custom_tooltip = kehillah_hebrew_tutor_good_tt
+			}
+		}
+	}
+
+	weight = {
+		value = 0
+	}
+}

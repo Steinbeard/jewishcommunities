@@ -441,107 +441,70 @@ kehillah_compose_commentary_decision = {
 # by vanilla's own loan content or another mod using the same vanilla
 # system.
 #
-# Two decisions, not one: EXTEND (on the Kehillah leader, gated on
-# Prosperity >= Healthy) and REPAY (on the borrower -- an ordinary
-# landed character, not a Kehillah government, so this is NOT in the
-# kehillah decision_group_type, exactly mirroring how vanilla's own
-# repay_loan_decision sits in decision_group_type = major rather than
-# anything Holy-Order-specific).
+# Originally two decisions (EXTEND on the Kehillah leader, REPAY on the
+# borrower). RETIRED 2026-09-10, EXTEND half only (v8 spec, docs/spec/
+# v8-task-contracts.md section 5) -- see the retirement note immediately
+# below for the full account. REPAY remains exactly as described here:
+# on the borrower -- an ordinary landed character, not a Kehillah
+# government, so it is NOT in the kehillah decision_group_type, exactly
+# mirroring how vanilla's own repay_loan_decision sits in decision_
+# group_type = major rather than anything Holy-Order-specific.
 # =====================================================================
 
-kehillah_extend_loan_decision = {
-	picture = {
-		reference = "gfx/interface/illustrations/decisions/decision_spend_money.dds"
-	}
-
-	decision_group_type = kehillah
-	sort_order = 100
-	ai_check_interval = 24
-
-	is_shown = {
-		government_has_flag = government_is_kehillah
-		is_adult = yes
-		is_imprisoned = no
-	}
-
-	is_valid = {
-		custom_tooltip = {
-			text = kehillah_requires_prosperity_healthy_tt
-			kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_healthy_threshold }
-		}
-		custom_tooltip = {
-			text = kehillah_loan_target_exists_tt
-			exists = domicile.domicile_location.county.holder
-		}
-		custom_tooltip = {
-			text = kehillah_loan_target_tier_tt
-			domicile.domicile_location.county.holder ?= {
-				highest_held_title_tier <= tier_county
-			}
-		}
-		custom_tooltip = {
-			text = kehillah_loan_target_not_indebted_tt
-			domicile.domicile_location.county.holder ?= {
-				NOT = { exists = var:kehillah_loan_amount_owed }
-				is_imprisoned = no
-				is_incapable = no
-			}
-		}
-	}
-
-	cost = {
-		gold = kehillah_loan_principal_value
-	}
-
-	cooldown = { years = 8 }
-
-	effect = {
-		primary_title = { save_scope_as = kq_title }
-		domicile.domicile_location.county.holder ?= {
-			save_scope_as = kehillah_loan_target
-		}
-
-		# Defense in depth: is_valid already confirmed the target exists,
-		# but this guard means a bypassed/forced execution (e.g. an AI
-		# path that skips is_valid) can never write loan variables onto
-		# an unset scope.
-		if = {
-			limit = { exists = scope:kehillah_loan_target }
-			scope:kehillah_loan_target = {
-				add_gold = kehillah_loan_principal_value
-				set_variable = {
-					name = kehillah_loan_amount_owed
-					value = kehillah_loan_amount_owed_value
-				}
-				set_variable = {
-					name = kehillah_loan_lender_title
-					value = scope:kq_title
-				}
-				set_variable = {
-					name = kehillah_loan_years_elapsed
-					value = 0
-				}
-			}
-
-			scope:kq_title = {
-				add_to_variable_list = {
-					name = kehillah_loan_debtors
-					target = scope:kehillah_loan_target
-				}
-			}
-		}
-
-		custom_tooltip = kehillah_extend_loan_tt
-	}
-
-	ai_potential = {
-		always = no
-	}
-
-	ai_will_do = {
-		base = 0
-	}
-}
+# =====================================================================
+# kehillah_extend_loan_decision -- RETIRED 2026-09-10 (v8 spec, docs/
+# spec/v8-task-contracts.md section 5 point 4).
+#
+# Superseded by kehillah_loan_contract (common/task_contracts/kehillah_
+# task_contracts.txt), a genuine task_contract rather than a decision --
+# the user's own explicit preference: "I think I prefer the contract
+# mechanic for loans over a decision! Feels more compelling and
+# character driven." Follows this mod's own established pattern for
+# documenting a retirement in place rather than silently deleting it
+# (see kehillah_mediate_dispute_decision's retirement note at the top of
+# this file, referenced by kehillah_dispute_pulse's own header).
+#
+# ONLY ORIGINATION MOVED. This decision used to do two things in one
+# atomic click: pick the borrower (the community's own local county
+# holder, domicile.domicile_location.county.holder, filtered to
+# highest_held_title_tier <= tier_county) and write the three ledger
+# variables (kehillah_loan_amount_owed / kehillah_loan_lender_title /
+# kehillah_loan_years_elapsed) onto them. kehillah_loan_contract's own
+# on_accepted writes the exact same three variables with the exact same
+# values -- the only real change is that the counterpart is now
+# selected by events/kehillah_task_contract_events.txt's shared
+# employer-selection logic (the same domicile.domicile_location.county.
+# holder shape, reused rather than reinvented) and offered through an
+# event with a real accept/decline choice, instead of being picked
+# silently the instant the player clicks a decision.
+#
+# DIRECTION IS INVERTED. This decision had root = the Kehillah ruler as
+# LENDER and the county holder as borrower. kehillah_loan_contract has
+# root = the Kehillah ruler as BORROWER and scope:employer (the same
+# kind of county-holder counterpart) as LENDER -- see that type's own
+# header in kehillah_task_contracts.txt for the full reasoning, including
+# why the Prosperity >= Healthy gate is kept despite the inversion.
+#
+# UNTOUCHED BY THIS RETIREMENT: kehillah_repay_loan_decision immediately
+# below. It is the correct, unrelated repayment half of this mechanism
+# and was not superseded by anything -- v8 spec section 5 point 2 is
+# explicit that it "stays exactly as it is." kehillah_quarterly_pulse's
+# own accrual/default block (common/scripted_effects/kehillah_scripted_
+# effects.txt, the loan tick inside kehillah_quarterly_pillars_effect) is
+# equally untouched.
+#
+# The loc keys this decision alone owned (kehillah_extend_loan_decision /
+# _desc / _tooltip / _confirm, kehillah_extend_loan_tt, kehillah_loan_
+# target_exists_tt, kehillah_loan_target_tier_tt, kehillah_loan_target_
+# not_indebted_tt) were removed from kehillah_l_english.yml in the same
+# pass. kehillah_requires_prosperity_healthy_tt was NOT removed -- it is
+# shared with common/domiciles/buildings/kehillah_domicile_buildings.txt
+# and is also reused, unchanged, by kehillah_loan_contract's own
+# valid_to_create. The full original block (cost = { gold = kehillah_
+# loan_principal_value }, an 8-year cooldown, the same target-selection
+# is_valid checks) is preserved in git history, not kept commented out
+# here, if it is ever needed for reference.
+# =====================================================================
 
 
 kehillah_repay_loan_decision = {

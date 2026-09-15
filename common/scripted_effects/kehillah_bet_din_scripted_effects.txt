@@ -1,34 +1,71 @@
 ﻿# =====================================================================
 # Kehillah Bet Din Conference -- shared scripted effects.
 #
-# Source of truth: docs/spec/v5-bet-din-conference.md. Supports events/
-# kehillah_bet_din_events.txt and common/activities/activity_types/
-# kehillah_bet_din_conference.txt. PART 1 (TEST BUILD), 2026-09-08.
+# Source of truth: docs/spec/v5-bet-din-conference.md, generalized to all
+# four minhag regions by docs/spec/v6-minhag-regions.md section 4. PART 1
+# (TEST BUILD), 2026-09-08; docket state moved off global_var and onto
+# the ACTIVITY itself, 2026-09-10 (v6 spec section 4's own explicit
+# instruction -- see "WHY scope:activity/involved_activity, NOT
+# global_var, NOW" below for the full account of why that changed).
 #
-# WHY GLOBAL VARIABLES, NOT SAVED SCOPES, CARRY STATE ACROSS THE CHAIN.
-# A docket case is a chain of separate character_events fired on THREE
-# DIFFERENT characters in turn (the convening host, then a co-judge,
-# then back to the host for the resolution). A scope saved with
-# save_scope_as does not survive a trigger_event hop onto a different
-# character's own event context the way a stored variable does.
-# global_var: is the same mechanism vanilla itself reaches for to carry
-# state across an event chain when the acting character changes
-# (set_global_variable usage throughout common/scripted_effects/00_
-# achievement_effects.txt and others is the confirmed precedent).
-# Storing a character/title REFERENCE as a variable's value, not just a
-# number, is also confirmed vanilla usage -- common/scripted_effects/
-# 00_accolades_scripted_effects.txt stores accolade objects exactly
-# this way (set_variable = { name = ... value = scope:accolade }).
+# WHY A STORED VARIABLE, NOT A SAVED SCOPE, CARRIES STATE ACROSS THE
+# CHAIN. A docket case is a chain of separate character_events fired on
+# THREE DIFFERENT characters in turn (the convening host, then a
+# co-judge, then back to the host for the resolution). A scope saved
+# with save_scope_as does not survive a trigger_event hop onto a
+# different character's own event context the way a stored variable
+# does. Storing a character/title REFERENCE as a variable's value, not
+# just a number, is confirmed vanilla usage -- common/scripted_effects/
+# 00_accolades_scripted_effects.txt stores accolade objects exactly this
+# way (set_variable = { name = ... value = scope:accolade }), and hunt.txt
+# does the identical thing for hunt_trophy_artifact on scope:activity
+# specifically (see the next section).
 #
-# Only one Bet Din Conference can plausibly be in session at a time in
-# v1 (hosting is still gated on being the Sh'um Greatness leader, the
-# same exclusivity the retired takkanah decision had), so a single flat
-# global_var namespace for the active docket's scratch state is safe.
-# This is NOT a general "many activities running at once" pattern and
-# should not be copied for a feature without the same exclusivity
-# guarantee.
+# WHY scope:activity/involved_activity, NOT global_var, NOW. Through v5
+# and the first draft of v6, this file used global_var:kehillah_bet_din_*
+# for every piece of docket state, on the stated assumption that only one
+# Bet Din Conference could ever be in session at a time (hosting gated to
+# the single Sh'um Greatness leader). v6 flattens Sh'um into one region
+# among four (Western Ashkenaz, Eastern Ashkenaz, Anglia, Provence), each
+# with its OWN Greatness leader able to convene independently -- so two
+# conferences (say Western Ashkenaz and Anglia) can now genuinely be in
+# session in the same game-year, and a single flat global_var namespace
+# would let the second convener's docket silently overwrite the first
+# one's tally, litigants, and convening title mid-session. v6 spec
+# section 4 flags this exact scenario and requires it be fixed as part of
+# generalizing the Bet Din, not deferred.
 #
-# THE FULL global_var:kehillah_bet_din_* NAMESPACE, FOR REFERENCE:
+# THE FIX: every name in the old global_var:kehillah_bet_din_* namespace
+# now lives as a plain variable ON THE ACTIVITY ITSELF instead -- each
+# concurrently-running conference is its own activity instance with its
+# own separate variable storage, so two dockets simply cannot collide any
+# more, by construction, independent of how many regions can convene at
+# once. Two access paths reach the same storage:
+#   - scope:activity, inside common/activities/activity_types/kehillah_
+#     bet_din_conference.txt's own on_phase_active/on_enter_phase (and
+#     effects called directly from there, e.g. kehillah_bet_din_open_
+#     docket_effect and kehillah_bet_din_draw_case_effect below) --
+#     confirmed vanilla precedent: common/activities/activity_types/
+#     hunt.txt's `scope:activity = { set_variable = { name = nerge_began
+#     value = 1 } } }` and `scope:activity = { has_variable = nerge_began }`.
+#   - involved_activity, everywhere else (every case/resolution/closing
+#     event in events/kehillah_bet_din_events.txt, and every scripted
+#     effect those events call) -- the reliable link from an ATTENDING
+#     CHARACTER back to the activity they are currently part of, already
+#     used by kehillah_bet_din_advance_docket_effect and kehillah_bet_din_
+#     record_case_result_effect below before this pass, and confirmed
+#     vanilla precedent beyond this mod's own prior usage: events/
+#     activities/hunt_activity/hunt_events.txt reads
+#     `involved_activity.var:hunt_success_chance` from exactly this kind
+#     of downstream character-scoped event.
+# scope:activity and involved_activity resolve to the SAME activity
+# object for every character actually attending it, so a value written
+# via one path reads back correctly via the other -- there is only ever
+# one underlying variable store per session, same as global_var used to
+# be, just now scoped to the activity instance instead of the whole game.
+#
+# THE FULL NAMESPACE, FOR REFERENCE (all now activity variables, read as
+# scope:activity.var:X or involved_activity.var:X, not global_var:X):
 #   convening_title  -- the title (e.g. title:c_kehillah_worms) whose
 #                        holder convened this session. Set once, in the
 #                        activity's on_phase_active.
@@ -45,6 +82,14 @@
 #   case3_direction  -- 1 if the panel is ruling to forbid the practice
 #                        in case 3, 0 if not. Set in that case's host
 #                        event only.
+# Four more names -- cases_heard, case_drawn, session_score and
+# cases_heard_count -- were added by the 2026-09-08 docket loop fix and
+# are documented with the machinery that uses them, in the "THE DOCKET
+# STATE MACHINE" section further down this file. The "set once, in the
+# activity's on_phase_active" note above still holds for
+# convening_title/judge2/judge3, but the setting is now done by
+# kehillah_bet_din_open_docket_effect rather than written inline in the
+# activity file.
 # =====================================================================
 
 # ---------------------------------------------------------------------
@@ -75,8 +120,8 @@ kehillah_bet_din_pick_litigants_effect = {
 		}
 		save_scope_as = kbd_tmp_litigant_b
 	}
-	set_global_variable = { name = kehillah_bet_din_litigant_a value = scope:kbd_tmp_litigant_a }
-	set_global_variable = { name = kehillah_bet_din_litigant_b value = scope:kbd_tmp_litigant_b }
+	involved_activity = { set_variable = { name = kehillah_bet_din_litigant_a value = scope:kbd_tmp_litigant_a } }
+	involved_activity = { set_variable = { name = kehillah_bet_din_litigant_b value = scope:kbd_tmp_litigant_b } }
 }
 
 # ---------------------------------------------------------------------
@@ -91,25 +136,148 @@ kehillah_bet_din_pick_litigants_effect = {
 # read "she". Fixed by giving case 2 its own picker instead of adding an
 # unused parameter to the shared one for a single caller.
 #
-# KNOWN GAP, not fixed here: a very small/early court may have no adult
-# female courtier at all, in which case this silently picks nobody and
-# the event's [kbd_litigant_a...] loc references render broken. The
-# same risk exists for kehillah_dispute_events.txt's two-different-
-# dynasties requirement, which this mod gates behind kehillah_has_
-# dispute_candidates_trigger before the event can even fire -- this
-# event has no equivalent gate yet. Worth adding one before Part 2, not
-# attempted in this test build.
+# UPDATED 2026-09-09 at user request: litigant_a is now ALWAYS a freshly
+# created character rather than an existing courtier, and comes with a
+# real missing husband (also created), so kehillah_bet_din_agunah_
+# remarriage_effect below has an actual marriage to dissolve if the
+# panel grants her leave. Reusing an existing courtier here would risk
+# colliding with whatever marriage (or lack of one) she already had --
+# a fresh character sidesteps that instead of guarding around it. This
+# also quietly closes the KNOWN GAP the old version of this note used to
+# flag ("a very small/early court may have no adult female courtier at
+# all") -- creation cannot fail the way random_courtier could.
+#
+# THE MISSING HUSBAND, involved_activity.var:kehillah_bet_din_agunah_husband: 50/50
+# already dead (death_vanished -- CK3's own "gone without a trace"
+# death reason, confirmed vanilla precedent: common/casus_belli_types/
+# 00_civil_war.txt) or simply gone, still alive, somewhere in the world.
+# Married to litigant_a immediately after both are created, so there is
+# a real bond in either branch -- the DEAD branch ends it the honest way
+# (his death), the FAR AWAY branch leaves it standing on purpose: she is
+# still validly married to a living man, which is the entire bind an
+# agunah is in, and is exactly what kehillah_bet_din_agunah_remarriage_
+# effect's own is_married guard exists to handle correctly either way.
+#
+# litigant_b (the kinsman who argues against her) is UNCHANGED below --
+# still an existing courtier, not a created relative of the husband.
+# Left alone as out of scope for this pass; a real kinsman of the
+# missing man would be a nicer touch but was not asked for here.
+#
+# LIVE-TEST FIX, 2026-09-11 (v10 spec section 5): "the agunah event
+# takes a woman who has a husband who's my courtier!" The FAR AWAY
+# (alive) branch below used to do nothing beyond the create_character
+# call's own employer = root -- its own comment admitted it ("he stays
+# a living employee of root, just narratively absent"), so he sat
+# visibly in the player's own court the whole time, breaking the case's
+# entire premise. Fixed by actually relocating him with set_employer
+# (confirmed real, already used elsewhere in this mod -- e.g.
+# common/on_action/kehillah_on_actions.txt's `set_employer = scope:
+# old_employer`) to a genuinely distant independent ruler, found via
+# random_independent_ruler filtered on NOT in_diplomatic_range = root --
+# both confirmed real vanilla, not assumed: game/common/scripted_
+# effects/10_dlc_tgp_scripted_effects.txt's own homeless-families
+# fallback-liege picker uses exactly this shape (any_independent_ruler
+# to guard an empty pool, then random_independent_ruler with the SAME
+# limit, filtered by in_diplomatic_range) for the identical "find some
+# far-off ruler" problem. in_diplomatic_range is diplomatic range, not a
+# literal straight-line distance, but it is the real, checked vanilla
+# tool for "closer to home" vs. "out there somewhere" -- exactly the
+# "as far away as the map allows" flavor asked for, without literally
+# targeting a specific real-world place vanilla CK3's own map does not
+# reach (the user's own "e.g. in China" was explicitly shorthand, not a
+# literal instruction -- see this section's own spec). Two-tier fallback,
+# matching this mod's established "never leave the game without an
+# answer" discipline (see e.g. kehillah_leadership.txt's wrong-faith
+# penalty comment): if nobody is genuinely out of diplomatic range (a
+# very early/small game world), fall back to any OTHER independent ruler
+# at all -- still not root's own court, which is the actual bug, even if
+# "far away" degrades to merely "not here" in that edge case. The DEAD
+# branch (50%) is unchanged.
 # ---------------------------------------------------------------------
-
 kehillah_bet_din_pick_agunah_litigants_effect = {
-	random_courtier = {
-		limit = {
-			is_adult = yes
-			is_imprisoned = no
-			is_female = yes
-		}
+	create_character = {
+		dynasty = generate
+		age = { 18 34 }
+		gender_female_chance = 100
+		faith = root.faith
+		culture = root.culture
+		random_traits = yes
+		# employer, not location: ck3-tiger (correctly) rejects
+		# create_character with neither -- "expected exactly 1 of
+		# location, employer" -- so this also does what a separate
+		# set_employer call after creation would, in one step.
+		employer = root
 		save_scope_as = kbd_tmp_litigant_a
 	}
+
+	create_character = {
+		dynasty = generate
+		age = { 20 40 }
+		gender_female_chance = 0
+		faith = root.faith
+		culture = root.culture
+		random_traits = yes
+		employer = root
+		save_scope_as = kbd_tmp_agunah_husband
+	}
+	scope:kbd_tmp_litigant_a = {
+		marry = scope:kbd_tmp_agunah_husband
+	}
+
+	random_list = {
+		50 = {
+			# DEAD -- but the community cannot prove it, which is the
+			# entire point of an agunah. The game state is more certain
+			# than anyone in-fiction is allowed to be.
+			scope:kbd_tmp_agunah_husband = {
+				death = { death_reason = death_vanished }
+			}
+		}
+		50 = {
+			# FAR AWAY, alive, unreachable -- LIVE-TEST FIX, 2026-09-11,
+			# see this effect's own header for the full account. Actually
+			# relocates him instead of leaving him sitting in root's own
+			# court: prefer a random independent ruler genuinely outside
+			# root's diplomatic range, falling back to any other
+			# independent ruler at all if the game world is too small/
+			# early for one to exist. kehillah_bet_din.0011.desc still
+			# reads correctly for either branch ("may already be a
+			# widowhood") without change.
+			if = {
+				limit = {
+					any_independent_ruler = {
+						NOT = { this = root }
+						NOT = { in_diplomatic_range = root }
+					}
+				}
+				random_independent_ruler = {
+					limit = {
+						NOT = { this = root }
+						NOT = { in_diplomatic_range = root }
+					}
+					save_scope_as = kbd_tmp_agunah_distant_employer
+				}
+			}
+			else_if = {
+				limit = {
+					any_independent_ruler = { NOT = { this = root } }
+				}
+				random_independent_ruler = {
+					limit = { NOT = { this = root } }
+					save_scope_as = kbd_tmp_agunah_distant_employer
+				}
+			}
+			if = {
+				limit = { exists = scope:kbd_tmp_agunah_distant_employer }
+				scope:kbd_tmp_agunah_husband = {
+					set_employer = scope:kbd_tmp_agunah_distant_employer
+				}
+			}
+		}
+	}
+
+	involved_activity = { set_variable = { name = kehillah_bet_din_agunah_husband value = scope:kbd_tmp_agunah_husband } }
+
 	random_courtier = {
 		limit = {
 			is_adult = yes
@@ -119,6 +287,996 @@ kehillah_bet_din_pick_agunah_litigants_effect = {
 		}
 		save_scope_as = kbd_tmp_litigant_b
 	}
-	set_global_variable = { name = kehillah_bet_din_litigant_a value = scope:kbd_tmp_litigant_a }
-	set_global_variable = { name = kehillah_bet_din_litigant_b value = scope:kbd_tmp_litigant_b }
+	involved_activity = { set_variable = { name = kehillah_bet_din_litigant_a value = scope:kbd_tmp_litigant_a } }
+	involved_activity = { set_variable = { name = kehillah_bet_din_litigant_b value = scope:kbd_tmp_litigant_b } }
+}
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_agunah_remarriage_effect
+# Scope: the convening leader (character), called from kehillah_bet_din.
+# 0013's immediate, guarded there on
+# involved_activity.var:kehillah_bet_din_case2_direction = 1 -- the panel
+# actually granted her leave to remarry
+# (kehillah_bet_din.0011's two options, set the same way kehillah_bet_
+# din_case3_direction already is for case 3). Runs regardless of verdict
+# TIER: the tier drives Stability/Greatness the same as every other
+# case, but the grant itself is the panel's actual decree, not something
+# earned only by arguing it well.
+#
+# is_married guard: kehillah_bet_din_pick_agunah_litigants_effect's DEAD
+# branch already ended the old marriage via death, so litigant_a may
+# already be a widow by the time this runs -- divorcing a marriage that
+# no longer exists would be a no-op at best, so this checks first rather
+# than assuming the FAR AWAY branch's still-living husband.
+#
+# create_character called at root (the convening leader), then married
+# in from there, not nested inside litigant_a's own scope -- mirrors
+# vanilla's own create-then-marry shape (common/scripted_effects/
+# 00_mongol_invasion_effects.txt's Temujin/Borte vignette: create_
+# character at the calling scope, save_scope_as, THEN a separate
+# `scope:X = { marry = scope:Y }`), not a stylistic choice invented here.
+# ---------------------------------------------------------------------
+kehillah_bet_din_agunah_remarriage_effect = {
+	if = {
+		limit = {
+			exists = involved_activity.var:kehillah_bet_din_litigant_a
+			involved_activity.var:kehillah_bet_din_litigant_a = { is_alive = yes }
+		}
+		create_character = {
+			dynasty = generate
+			age = { 20 45 }
+			gender_female_chance = 0
+			faith = root.faith
+			culture = root.culture
+			random_traits = yes
+			employer = root
+			save_scope_as = kbd_agunah_new_husband
+		}
+		# Resolved to a plain saved scope BEFORE opening litigant_a's own
+		# scope below, not read as involved_activity.var:kehillah_bet_din_
+		# agunah_husband from INSIDE it. involved_activity is a link
+		# relative to "this", the way primary_title or employer are, unlike
+		# the global_var: prefix it replaced (v6 concurrency fix, this
+		# file's own header) -- once "this" becomes litigant_a rather than
+		# root, a second involved_activity hop would ask litigant_a for
+		# HER OWN attended activity, which is unset (she is a courtier, not
+		# a guest of this conference), not re-resolve the same conference
+		# root is attending. Same hazard, same fix, as kehillah_bet_din_
+		# recalcitrant_husband_resolution_effect below and kehillah_bet_
+		# din_record_case_result_effect and kehillah_bet_din_log_session_
+		# participants_effect further down this file.
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_agunah_husband }
+			involved_activity.var:kehillah_bet_din_agunah_husband = { save_scope_as = kbd_res_agunah_husband }
+		}
+		involved_activity.var:kehillah_bet_din_litigant_a = {
+			if = {
+				limit = {
+					is_married = yes
+					exists = scope:kbd_res_agunah_husband
+				}
+				divorce = scope:kbd_res_agunah_husband
+			}
+			marry = scope:kbd_agunah_new_husband
+		}
+		custom_tooltip = kehillah_bet_din.0013.remarried.tt
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_pick_recalcitrant_husband_litigants_effect
+# Scope: the convening leader (character). Case 4 ("The Recalcitrant
+# Husband") ONLY -- ADDED 2026-09-09 at user request. Unlike case 1 and
+# case 2's litigant_b, BOTH litigants here are created rather than
+# drawn, and litigant_b is the husband himself, not a kinsman arguing
+# a side. gender_female_chance is set explicitly on both rather than
+# left to random_traits, the same way kehillah_bet_din_pick_agunah_
+# litigants_effect above pins litigant_a's -- this case's text depends
+# on knowing which one is which just as surely as the agunah case's
+# does.
+#
+# trait = callous / trait = arbitrary, forced rather than left to
+# random_traits alone: the case exists to present a husband the player
+# can believe is refusing out of real spite, not a coin-flip personality
+# -- same reasoning kehillah_scripted_effects.txt's notable-family
+# creation already uses for its own forced traits (trait = education_
+# learning_3 alongside random_traits = yes). ck3-tiger caught a real
+# mistake here first: CK3 has no trait literally named "cruel" -- the
+# closer vanilla fit for "doesn't care that this is ruining her life"
+# is callous (compassionate's opposite), not sadistic ("enjoys it").
+# arbitrary is confirmed vanilla too, just's opposite in the diplomacy
+# lane. Neither is an invented name.
+#
+# Married immediately, same as the agunah case, so kehillah_bet_din_
+# recalcitrant_husband_resolution_effect below has a real bond to force
+# a divorce out of on the "beat him up" direction.
+# ---------------------------------------------------------------------
+kehillah_bet_din_pick_recalcitrant_husband_litigants_effect = {
+	create_character = {
+		dynasty = generate
+		age = { 18 34 }
+		gender_female_chance = 100
+		faith = root.faith
+		culture = root.culture
+		random_traits = yes
+		employer = root
+		save_scope_as = kbd_tmp_litigant_a
+	}
+
+	create_character = {
+		dynasty = generate
+		age = { 20 40 }
+		gender_female_chance = 0
+		faith = root.faith
+		culture = root.culture
+		random_traits = yes
+		# callous, not cruel -- ck3-tiger caught this: CK3 has no trait
+		# literally named "cruel" (common/traits/00_traits.txt has
+		# callous, compassionate's opposite, and separately sadistic;
+		# callous is the closer fit for "doesn't care that this is
+		# ruining her life", not sadistic's "enjoys it").
+		trait = callous
+		trait = arbitrary
+		employer = root
+		save_scope_as = kbd_tmp_litigant_b
+	}
+	scope:kbd_tmp_litigant_a = {
+		marry = scope:kbd_tmp_litigant_b
+	}
+
+	involved_activity = { set_variable = { name = kehillah_bet_din_litigant_a value = scope:kbd_tmp_litigant_a } }
+	involved_activity = { set_variable = { name = kehillah_bet_din_litigant_b value = scope:kbd_tmp_litigant_b } }
+}
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_recalcitrant_husband_resolution_effect
+# Scope: the convening leader (character), called from kehillah_bet_din.
+# 0033's immediate, unconditionally -- unlike case 2/3's direction
+# effects, this one is not itself wrapped in an outer direction check at
+# the call site, because it has THREE branches to cover, not one; the
+# branching is internal instead, on
+# involved_activity.var:kehillah_bet_din_case4_direction (1 = cherem, 2 =
+# coerced divorce, 3 = sided with the
+# husband, set by kehillah_bet_din.0031's three options). Runs
+# regardless of verdict TIER, same reasoning as the other two cases'
+# direction effects: the tier (read separately, in the event file) is
+# how well the panel handled it, the direction is which way they went.
+#
+# DIRECTION 1, CHEREM: add_trait = excommunicated on the husband, full
+# stop. Deliberately does NOT also force the divorce -- cherem is
+# social/religious pressure, not compulsion, and leaving her still
+# bound is the honest cost of the gentler option (she may yet be freed
+# if the pressure works, off-page; this case does not resolve that
+# either way).
+#
+# DIRECTION 2, COERCED DIVORCE: add_trait = maimed (he is genuinely
+# hurt, not just threatened) + divorce (his consent is no longer asked
+# for) + a huge, fixed reverse_add_opinion from him toward EACH of the
+# three judges (root plus judge2/judge3, guarded the same exists =
+# pattern the rest of this file uses for global_var reads) -- kehillah_
+# bet_din_beaten_husband_opinion (common/opinion_modifiers/kehillah_
+# opinion_modifiers.txt), not the small-scale dispute-ruling modifiers
+# above, which exist to be tier-overridden on a +-20 scale this is
+# nowhere near.
+#
+# DIRECTION 3, SIDED WITH THE HUSBAND: add_piety = medium_piety_loss on
+# root, full stop -- no change to the marriage. The Stability
+# contribution this direction still gets is NOT bespoke: it comes from
+# the same great/good/poor tally-tier change_variable calls every
+# direction gets in kehillah_bet_din.0033's immediate, same as cases
+# 1-3's own per-case Stability. This branch's only bespoke cost is
+# the Piety.
+# ---------------------------------------------------------------------
+kehillah_bet_din_recalcitrant_husband_resolution_effect = {
+	if = {
+		limit = {
+			exists = involved_activity.var:kehillah_bet_din_case4_direction
+			involved_activity.var:kehillah_bet_din_case4_direction = 1
+		}
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_litigant_b }
+			involved_activity.var:kehillah_bet_din_litigant_b = {
+				add_trait = excommunicated
+			}
+			custom_tooltip = kehillah_bet_din.0033.cherem.tt
+		}
+	}
+	if = {
+		limit = {
+			exists = involved_activity.var:kehillah_bet_din_case4_direction
+			involved_activity.var:kehillah_bet_din_case4_direction = 2
+		}
+		if = {
+			limit = {
+				exists = involved_activity.var:kehillah_bet_din_litigant_a
+				exists = involved_activity.var:kehillah_bet_din_litigant_b
+			}
+			# Every character this branch needs is resolved to a plain
+			# saved scope BEFORE opening litigant_b's own scope below, not
+			# read via a second involved_activity hop from INSIDE it.
+			# involved_activity is a link relative to "this" (like
+			# primary_title or employer), unlike the global_var: prefix it
+			# replaced (v6 concurrency fix, this file's own header) -- once
+			# "this" becomes litigant_b rather than root, a second
+			# involved_activity hop would ask litigant_b for HER OWN
+			# attended activity (unset -- he is a courtier, not a guest of
+			# this conference), not re-resolve the conference root is
+			# attending. Same hazard, same fix, as kehillah_bet_din_agunah_
+			# remarriage_effect above.
+			involved_activity.var:kehillah_bet_din_litigant_a = { save_scope_as = kbd_res_litigant_a }
+			if = {
+				limit = { exists = involved_activity.var:kehillah_bet_din_judge2 }
+				involved_activity.var:kehillah_bet_din_judge2 = { save_scope_as = kbd_res_judge2 }
+			}
+			if = {
+				limit = { exists = involved_activity.var:kehillah_bet_din_judge3 }
+				involved_activity.var:kehillah_bet_din_judge3 = { save_scope_as = kbd_res_judge3 }
+			}
+			involved_activity.var:kehillah_bet_din_litigant_b = {
+				add_trait = maimed
+				if = {
+					limit = { is_married = yes }
+					divorce = scope:kbd_res_litigant_a
+				}
+				reverse_add_opinion = {
+					target = root
+					modifier = kehillah_bet_din_beaten_husband_opinion
+				}
+				if = {
+					limit = { exists = scope:kbd_res_judge2 }
+					reverse_add_opinion = {
+						target = scope:kbd_res_judge2
+						modifier = kehillah_bet_din_beaten_husband_opinion
+					}
+				}
+				if = {
+					limit = { exists = scope:kbd_res_judge3 }
+					reverse_add_opinion = {
+						target = scope:kbd_res_judge3
+						modifier = kehillah_bet_din_beaten_husband_opinion
+					}
+				}
+			}
+			custom_tooltip = kehillah_bet_din.0033.beaten.tt
+		}
+	}
+	if = {
+		limit = {
+			exists = involved_activity.var:kehillah_bet_din_case4_direction
+			involved_activity.var:kehillah_bet_din_case4_direction = 3
+		}
+		add_piety = medium_piety_loss
+		custom_tooltip = kehillah_bet_din.0033.sided.tt
+	}
+}
+
+
+# =====================================================================
+# THE DOCKET STATE MACHINE (added 2026-09-08 with the loop fix).
+#
+# WHAT WENT WRONG BEFORE. The Part 1 build ran the whole docket as one
+# unbroken event chain out of a single activity phase: on_phase_active
+# fired case 1's host event, whose "after" fired the co-judge event,
+# whose "after" fired the resolution, whose "after" fired case 2's host
+# event, and so on to a closing event -- ten events, no delays, all
+# inside one day. And nothing ever ended the phase: no
+# progress_activity_phase_after call existed anywhere in the activity
+# type, which is the ONE thing every vanilla activity_type does to make
+# a phase finish (feast.txt, coronation.txt, local_examination.txt,
+# tournament.txt -- all of them call it from on_phase_active or
+# on_enter_phase). With no phase progression the activity had no way to
+# reach its last phase, so it never completed and the host stayed stuck
+# in it.
+#
+# THE SHAPE NOW. One case per activity phase, three phases:
+#   phase active -> kehillah_bet_din_draw_case_effect picks a case at
+#   random from the ones this session has not heard yet, records it as
+#   heard, and fires its host event -> the case's three events step
+#   through a few days apart -> the resolution event records its tier in
+#   the session score and calls kehillah_bet_din_advance_docket_effect,
+#   which ends the phase -> next phase draws the next case -> after the
+#   third, the activity completes and on_complete fires the closing
+#   event, which reads the session score and pays out.
+# No event chains into another CASE any more; the activity's phase list
+# is what sequences the docket, which is also what makes it end.
+#
+# ADDITIONS TO THE involved_activity.var:kehillah_bet_din_* NAMESPACE documented in
+# this file's header:
+#   cases_heard       -- variable LIST of flags, one per case already
+#                        heard this session. The "not yet chosen" half
+#                        of the random draw. Cleared when the docket
+#                        opens, NOT when it closes (a session that ends
+#                        abnormally would otherwise leave the next one
+#                        unable to draw anything).
+#   case_drawn        -- 0/1, whether this phase's draw actually landed
+#                        on a case. Needed because random_list cannot
+#                        report "no entry was eligible" any other way.
+#   session_score     -- running total across the whole docket; see the
+#                        script-values file for how it differs from the
+#                        per-case tally.
+#   cases_heard_count -- how many cases actually got a verdict this
+#                        session. Normally 3; fewer if a case had to be
+#                        skipped for want of eligible litigants.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_grant_rabbi_trait_effect
+# Scope: any character. Called on root (the host), and separately on
+# judge2/judge3, from kehillah_bet_din_open_docket_effect below. A
+# no-op if the character already holds kehillah_rabbi_trait.
+#
+# UPDATED 2026-09-09 at user request: this used to add the trait
+# directly and silently. It now fires kehillah_bet_din_semicha.0001
+# instead -- "the Av Beit Din grants you semicha, and you can accept or
+# choose not to be a rabbi" -- so becoming a rabbi by judging is a real
+# choice with its own event, not an unprompted side effect of attending.
+# See events/kehillah_bet_din_semicha_events.txt for the event itself
+# (one event, not two -- its own desc distinguishes "granted by the
+# convening Av Beit Din" from "the assembled panel recognizes your own
+# standing" depending on whether root is the host).
+#
+# LIVE-TEST FIX, 2026-09-11 (v10 spec section 4). Neither this effect
+# nor the semicha event it fires checked gender at all. Gated here with
+# kehillah_leadership_gender_eligible_trigger (common/scripted_triggers/
+# kehillah_scripted_triggers.txt -- same flag as succession, section 3)
+# so a female host/co-judge simply never receives the trigger_event
+# call under the default flag state; the event's OWN trigger (below,
+# events/kehillah_bet_din_semicha_events.txt) repeats the same check as
+# a second real gate rather than trusting this call site alone -- this
+# file's own established double-guard style (see e.g. the exists =
+# guards on variable removal elsewhere in this file).
+# ---------------------------------------------------------------------
+kehillah_bet_din_grant_rabbi_trait_effect = {
+	if = {
+		limit = {
+			NOT = { has_trait = kehillah_rabbi_trait }
+			kehillah_leadership_gender_eligible_trigger = yes
+		}
+		trigger_event = kehillah_bet_din_semicha.0001
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_open_docket_effect
+# Scope: the convening leader (character). Called ONCE, from the first
+# phase's on_phase_active, where scope:activity is in context (that is a
+# real dependency of this effect -- it reads the special-guest slots off
+# the activity -- so it cannot be called from an event).
+#
+# Everything a session needs to start clean is reset here rather than
+# trusted to be absent: a previous conference on this SAME activity slot
+# (or a console-driven test) can leave any of them set, even though each
+# activity instance now has its own separate variable storage (see this
+# file's header). remove_variable calls are guarded with exists = for
+# the same reason the event file guards its reads -- an unguarded remove
+# of something absent is a logged error nobody needs.
+# ---------------------------------------------------------------------
+kehillah_bet_din_open_docket_effect = {
+	scope:activity = { set_variable = { name = kehillah_bet_din_convening_title value = scope:host.primary_title } }
+	scope:activity = { set_variable = { name = kehillah_bet_din_judge2 value = scope:activity.special_guest:kehillah_bet_din_co_judge_1 } }
+	scope:activity = { set_variable = { name = kehillah_bet_din_judge3 value = scope:activity.special_guest:kehillah_bet_din_co_judge_2 } }
+	scope:activity = { set_variable = { name = kehillah_bet_din_tally value = 0 } }
+	scope:activity = { set_variable = { name = kehillah_bet_din_session_score value = 0 } }
+	scope:activity = { set_variable = { name = kehillah_bet_din_cases_heard_count value = 0 } }
+	scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 0 } }
+	scope:activity = { clear_variable_list = kehillah_bet_din_cases_heard }
+
+	# BECOME A RABBI BY JUDGING, ADDED 2026-09-09 at user request ("you
+	# become a rabbi when you go to a bet din as a judge"). All three
+	# panel seats -- host and both co-judges -- are OFFERED kehillah_
+	# rabbi_trait if not already held (kehillah_bet_din_semicha.0001,
+	# accept-or-decline, per a same-day follow-up request -- this is not
+	# an unprompted grant any more). No exists = guard needed on judge2/
+	# judge3 here specifically (unlike reads of these same activity
+	# variables elsewhere in this file): they were just set,
+	# unconditionally, two lines above, in this same effect. See
+	# kehillah_rabbi_trait's own header (common/traits/kehillah_traits.
+	# txt) for the full three-route acquisition account this is now part
+	# of.
+	kehillah_bet_din_grant_rabbi_trait_effect = yes
+	scope:activity.var:kehillah_bet_din_judge2 = { kehillah_bet_din_grant_rabbi_trait_effect = yes }
+	scope:activity.var:kehillah_bet_din_judge3 = { kehillah_bet_din_grant_rabbi_trait_effect = yes }
+
+	# Stale per-case scratch from any earlier session. Case 3's own host
+	# event always sets case3_direction before its resolution reads it, so
+	# this is belt-and-braces, not load-bearing. case2_direction and
+	# agunah_husband (2026-09-09, case 2's remarriage mechanic) get the
+	# same treatment for the same reason, as does case4_direction
+	# (2026-09-09, case 4's three-way ruling).
+	if = {
+		limit = { exists = scope:activity.var:kehillah_bet_din_case3_direction }
+		scope:activity = { remove_variable = kehillah_bet_din_case3_direction }
+	}
+	if = {
+		limit = { exists = scope:activity.var:kehillah_bet_din_case2_direction }
+		scope:activity = { remove_variable = kehillah_bet_din_case2_direction }
+	}
+	if = {
+		limit = { exists = scope:activity.var:kehillah_bet_din_case4_direction }
+		scope:activity = { remove_variable = kehillah_bet_din_case4_direction }
+	}
+	if = {
+		limit = { exists = scope:activity.var:kehillah_bet_din_agunah_husband }
+		scope:activity = { remove_variable = kehillah_bet_din_agunah_husband }
+	}
+	if = {
+		limit = { exists = scope:activity.var:kehillah_bet_din_litigant_a }
+		scope:activity = { remove_variable = kehillah_bet_din_litigant_a }
+	}
+	if = {
+		limit = { exists = scope:activity.var:kehillah_bet_din_litigant_b }
+		scope:activity = { remove_variable = kehillah_bet_din_litigant_b }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_draw_case_effect
+# Scope: the convening leader (character), from a phase's
+# on_phase_active (scope:activity must be in context -- see the no-case
+# branch at the bottom, which shortens the phase).
+#
+# THE DRAW. One random_list entry per case in the pool. Each entry's
+# trigger does two jobs:
+#   1. "not yet chosen in that bet din" -- the case's own flag must not
+#      already be in global_var list kehillah_bet_din_cases_heard.
+#      random_list skips entries whose trigger fails, so a heard case
+#      simply stops being a candidate; there is no re-roll loop.
+#   2. Can this case actually be staged at all -- cases that need real
+#      litigants check for them BEFORE being drawn. This closes (for the
+#      draw, at least) the small-court gap flagged in kehillah_bet_din_
+#      pick_litigants_effect's header: a thin court can no longer draw a
+#      case whose text names courtiers that do not exist.
+# Equal weights: no case is rarer than another yet. When Part 2 brings
+# the landmark/tenet-adding cases in numbers, weighting them down here
+# (rather than gating them behind a trigger) is the intended lever.
+#
+# ADDING A CASE IN PART 2 is meant to be exactly this: one more entry
+# here, with a fresh flag name, plus its three events. Nothing else in
+# the docket machinery needs to know how many cases exist -- the session
+# still hears kehillah_bet_din_docket_case_count of them because that is
+# how many phases the activity has.
+# ---------------------------------------------------------------------
+kehillah_bet_din_draw_case_effect = {
+	scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 0 } }
+
+	random_list = {
+		# CASE 1 -- A Dowry Beyond Reach. Two feuding families, so it
+		# needs the same two-different-dynasties court that the organic
+		# dispute event needs; reusing that trigger verbatim rather than
+		# restating its nested courtier logic here.
+		10 = {
+			trigger = {
+				NOT = {
+					scope:activity = { is_target_in_variable_list = {
+						name = kehillah_bet_din_cases_heard
+						target = flag:kehillah_bet_din_case_dowry
+					} }
+				}
+				kehillah_has_dispute_candidates_trigger = yes
+			}
+
+			scope:activity = { add_to_variable_list = {
+				name = kehillah_bet_din_cases_heard
+				target = flag:kehillah_bet_din_case_dowry
+			} }
+			scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 1 } }
+			trigger_event = kehillah_bet_din.0001
+		}
+
+		# CASE 2 -- The Agunah's Plea. UPDATED 2026-09-09: litigant_a (the
+		# agunah) and her missing husband are both CREATED now, not drawn
+		# from the court (kehillah_bet_din_pick_agunah_litigants_effect's
+		# own header has the full account) -- the only existing-courtier
+		# requirement left is litigant_b, the kinsman who argues against
+		# her, which needs just one adult, unimprisoned courtier (of any
+		# gender, any dynasty -- litigant_a's dynasty is freshly generated,
+		# so "different dynasty" is trivially true against it). This was
+		# still gating on kehillah_has_dispute_candidates_trigger (TWO
+		# existing courtiers of different dynasties) and an existing adult
+		# woman until this pass -- both stricter than what the case
+		# actually needs post-creation, which could wrongly skip this case
+		# in courts that would in fact work fine.
+		10 = {
+			trigger = {
+				NOT = {
+					scope:activity = { is_target_in_variable_list = {
+						name = kehillah_bet_din_cases_heard
+						target = flag:kehillah_bet_din_case_agunah
+					} }
+				}
+				any_courtier = {
+					count >= 1
+					is_adult = yes
+					is_imprisoned = no
+				}
+			}
+
+			scope:activity = { add_to_variable_list = {
+				name = kehillah_bet_din_cases_heard
+				target = flag:kehillah_bet_din_case_agunah
+			} }
+			scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 1 } }
+			trigger_event = kehillah_bet_din.0011
+		}
+
+		# CASE 3 -- The Second Wife. A communal policy question with no
+		# litigants at all, so no court-size requirement -- but it is
+		# pointless to argue a herem against a practice the faith does not
+		# permit in the first place, so it only comes up while the faith
+		# still has doctrine_polygamy. (Rabbinism ships with it; a
+		# playthrough that has already passed this herem, here or
+		# elsewhere, should not be offered it twice.)
+		10 = {
+			trigger = {
+				NOT = {
+					scope:activity = { is_target_in_variable_list = {
+						name = kehillah_bet_din_cases_heard
+						target = flag:kehillah_bet_din_case_second_wife
+					} }
+				}
+				faith = { has_doctrine = doctrine_polygamy }
+			}
+
+			scope:activity = { add_to_variable_list = {
+				name = kehillah_bet_din_cases_heard
+				target = flag:kehillah_bet_din_case_second_wife
+			} }
+			scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 1 } }
+			trigger_event = kehillah_bet_din.0021
+		}
+
+		# CASE 4 -- The Recalcitrant Husband. ADDED 2026-09-09, this
+		# mod's first Part 2 case (see ROADMAP.md's "Blocked on a content
+		# draft" backlog item -- the draft finally exists). No court-size
+		# requirement, same reasoning as case 3: both litigants are
+		# CREATED (kehillah_bet_din_pick_recalcitrant_husband_litigants_
+		# effect), not drawn from the existing court.
+		10 = {
+			trigger = {
+				NOT = {
+					scope:activity = { is_target_in_variable_list = {
+						name = kehillah_bet_din_cases_heard
+						target = flag:kehillah_bet_din_case_recalcitrant
+					} }
+				}
+			}
+
+			scope:activity = { add_to_variable_list = {
+				name = kehillah_bet_din_cases_heard
+				target = flag:kehillah_bet_din_case_recalcitrant
+			} }
+			scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 1 } }
+			trigger_event = kehillah_bet_din.0031
+		}
+	}
+
+	# NO CASE WAS ELIGIBLE. Possible in a thin court, or in a session
+	# whose pool has been exhausted (with only the three cases above, it
+	# takes a court that cannot stage cases 1-2 and a faith that already
+	# forbids polygamy). Nothing is fired; the phase is cut short instead
+	# of idling for kehillah_bet_din_case_phase_days with nothing in it,
+	# and the closing event scores however many cases were actually heard.
+	if = {
+		limit = { scope:activity.var:kehillah_bet_din_case_drawn = 0 }
+		scope:activity = {
+			progress_activity_phase_after = { days = 1 }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_record_case_result_effect = { SCORE = <script value> }
+# Scope: the convening leader (character), from a case's resolution
+# event, inside whichever verdict-tier branch was taken. SCORE is that
+# tier's contribution (kehillah_bet_din_case_score_great/good/poor).
+#
+# Both variables are set to 0 by kehillah_bet_din_open_docket_effect, so
+# in normal play change_variable always has something to change. They
+# are set here too if absent, because a resolution event fired straight
+# from the console -- which is how this whole feature gets tested, per
+# docs/testing/2026-09-08-bet-din-conference-live-test-log.md -- can skip
+# the activity's own open_docket step entirely, and change_variable on a
+# variable that does not exist is an error.
+# ---------------------------------------------------------------------
+kehillah_bet_din_record_case_result_effect = {
+	if = {
+		limit = { NOT = { exists = involved_activity.var:kehillah_bet_din_session_score } }
+		involved_activity = { set_variable = { name = kehillah_bet_din_session_score value = 0 } }
+	}
+	if = {
+		limit = { NOT = { exists = involved_activity.var:kehillah_bet_din_cases_heard_count } }
+		involved_activity = { set_variable = { name = kehillah_bet_din_cases_heard_count value = 0 } }
+	}
+
+	involved_activity = { change_variable = { name = kehillah_bet_din_session_score add = $SCORE$ } }
+	involved_activity = { change_variable = { name = kehillah_bet_din_cases_heard_count add = 1 } }
+
+	# ACTIVITY LOG ENTRY, 2026-09-09. add_activity_log_entry was never
+	# called anywhere in this activity before this -- the Activity Log
+	# panel on the conference window (next to Guest List) was permanently
+	# "No log entries" regardless of how the docket actually went.
+	#
+	# $CASE$/$TIER$ build the loc key by literal token substitution --
+	# vanilla precedent: 00_hunt_effects.txt's hunt_$STORY$_method_
+	# selected_log, 04_dlc_ep2_tournament_effects.txt's tournament_
+	# $CONTEST$_winner_log. localization/english/kehillah_l_english.yml
+	# defines the nine kehillah_bet_din_case{1,2,3}_{great,good,poor}_log
+	# (_title) pairs this expands to.
+	#
+	# character = root: every caller of this effect is one of the three
+	# resolution events (.0003/.0013/.0023), whose root IS the convening
+	# leader (this file's header). $TARGET$ is the second portrait --
+	# LIVE-TEST-shaped FIX, 2026-09-09: originally an `if =` wrapped
+	# around a bare `target =` field, conditional on the litigant existing
+	# (cases 1-2 have one, case 3's communal question does not). ck3-tiger
+	# rejected that as "unknown token `target`" -- add_activity_log_entry's
+	# own fields (key/tags/score/character/target/show_in_conclusion) are
+	# not a general effect block and cannot be wrapped in control
+	# structures the way the nested tooltip-effect content further inside
+	# it can be (see vanilla's 04_dlc_ep2_tournament_effects.txt, where
+	# `scope:contest_winner ?= { ... }` sits AFTER these fields, not
+	# instead of one of them). $TARGET$ is passed a literal value at every
+	# call site instead: the litigant for cases 1-2, the first co-judge
+	# for case 3, so every case always gets a real second portrait rather
+	# than needing the field itself to be conditional.
+	#
+	# involved_activity, not scope:activity -- same reasoning as
+	# kehillah_bet_din_advance_docket_effect below: several trigger_event
+	# hops downstream of on_phase_active, so the character->activity link
+	# is the reliable one, guarded the same way for the same reason.
+	#
+	# $TARGET$ RESOLVED TO A PLAIN SAVED SCOPE FIRST, not used directly as
+	# `target = $TARGET$` inside the involved_activity = { ... } block
+	# below. $TARGET$ substitutes to e.g. involved_activity.var:kehillah_
+	# bet_din_litigant_a (v6 concurrency fix, this file's own header) --
+	# involved_activity is a link relative to "this", so evaluating it a
+	# SECOND time from inside a block already opened by involved_activity
+	# = { ... } would ask the ACTIVITY OBJECT ITSELF for its own
+	# involved_activity, which does not exist, instead of re-resolving the
+	# same activity root is attending. Same hazard, same fix, as
+	# kehillah_bet_din_agunah_remarriage_effect and kehillah_bet_din_
+	# recalcitrant_husband_resolution_effect above, and kehillah_bet_din_
+	# log_session_participants_effect below. Falls back to root itself if
+	# $TARGET$ somehow does not resolve, rather than leaving add_activity_
+	# log_entry's mandatory target field without a value at all.
+	if = {
+		limit = { exists = $TARGET$ }
+		$TARGET$ = { save_scope_as = kbd_log_target }
+	}
+	else = {
+		save_scope_as = kbd_log_target
+	}
+	if = {
+		limit = { exists = involved_activity }
+		involved_activity = {
+			add_activity_log_entry = {
+				key = kehillah_bet_din_case$CASE$_$TIER$_log
+				tags = { completed }
+				show_in_conclusion = yes
+				character = root
+				target = scope:kbd_log_target
+			}
+		}
+	}
+
+	# RABBI TRAIT TRACK XP, ADDED 2026-09-09 -- see kehillah_rabbi_trait's
+	# own header (common/traits/kehillah_traits.txt) for the full design.
+	# Every tier grants talmudics + halakha (this is what adjudicating a
+	# case AT ALL is); parshanut is separate and rarer -- see kehillah_
+	# bet_din_grant_parshanut_xp_effect below, called only from the
+	# great-tier branch at each of the four cases' own resolution events,
+	# not from here.
+	kehillah_rabbi_grant_case_xp_effect = yes
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_judge2 }
+		involved_activity.var:kehillah_bet_din_judge2 = { kehillah_rabbi_grant_case_xp_effect = yes }
+	}
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_judge3 }
+		involved_activity.var:kehillah_bet_din_judge3 = { kehillah_rabbi_grant_case_xp_effect = yes }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_rabbi_grant_case_xp_effect
+# Scope: any character -- called on root, and separately on judge2/
+# judge3, from kehillah_bet_din_record_case_result_effect above. Only
+# does anything if this character already holds kehillah_rabbi_trait; a
+# lay Greatness leader presiding without the trait gains nothing here,
+# which is correct -- the tracks measure a rabbi's own growing halakhic
+# authority, not generic participation.
+# ---------------------------------------------------------------------
+kehillah_rabbi_grant_case_xp_effect = {
+	if = {
+		limit = { has_trait = kehillah_rabbi_trait }
+		add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = kehillah_rabbi_talmudics_xp_per_case }
+		add_trait_xp = { trait = kehillah_rabbi_trait track = halakha value = kehillah_rabbi_halakha_xp_per_case }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_grant_parshanut_xp_effect
+# Scope: the convening leader (character) -- called explicitly from the
+# GREAT-tier branch of each case's resolution event (kehillah_bet_din.
+# 0003/0013/0023/0033), not from kehillah_rabbi_grant_case_xp_effect or
+# record_case_result_effect above. This is deliberate: reusing the
+# existing tier check as the "more rarely" gate for Tanakh/parshanut
+# means no second random roll is needed, and it only rewards a ruling
+# that was actually excellent, not merely heard.
+# ---------------------------------------------------------------------
+kehillah_bet_din_grant_parshanut_xp_effect = {
+	if = {
+		limit = { has_trait = kehillah_rabbi_trait }
+		add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_rabbi_parshanut_xp_per_great_case }
+	}
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_judge2 }
+		involved_activity.var:kehillah_bet_din_judge2 = {
+			if = {
+				limit = { has_trait = kehillah_rabbi_trait }
+				add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_rabbi_parshanut_xp_per_great_case }
+			}
+		}
+	}
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_judge3 }
+		involved_activity.var:kehillah_bet_din_judge3 = {
+			if = {
+				limit = { has_trait = kehillah_rabbi_trait }
+				add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_rabbi_parshanut_xp_per_great_case }
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_advance_docket_effect
+# Scope: the convening leader (character), from a case's resolution
+# event. Ends the current activity phase, which moves the docket to the
+# next case -- or, after the last phase, completes the activity and runs
+# its on_complete (the closing event). This is the piece whose absence
+# was the "activity never ends" half of the loop bug.
+#
+# involved_activity, not scope:activity: this runs from an event several
+# trigger_event hops downstream of on_phase_active, and the convening
+# leader is by definition attending their own conference, so the link
+# off the character is the reliable way back to the activity. Guarded
+# with exists = because the event can, in principle, land after the
+# activity is already gone (host died, activity invalidated) -- see the
+# event file's header on why an unguarded read here is genuinely
+# dangerous and not just untidy.
+#
+# days = 1 rather than 0: progress_activity_phase_after takes a
+# duration, and vanilla's own "end this phase now that the event chain
+# is done" calls use exactly this (events/activities/feast_activity/
+# murder_feast_events.txt, events/activities/coronation_activity/
+# coronation_events.txt).
+#
+# KNOWN EDGE, ACCEPTED DELIBERATELY. Two cases can overlap if a player
+# leaves a case's popup unanswered for longer than kehillah_bet_din_case_
+# phase_days (30): the phase's own ceiling fires, the next phase draws a
+# second case, and because the per-case tally is a single activity
+# variable (kehillah_bet_din_tally, moved off global_var per this file's
+# header -- that move fixes CROSS-ACTIVITY collision between two
+# different regions' concurrent conferences, but does nothing for two
+# cases overlapping WITHIN the same session's own docket, which is what
+# this edge is about), the still-pending case and the new one share it --
+# so one of the two can get a verdict tier computed from the other's
+# skill checks. What does NOT happen is the thing this fix is about: the
+# docket still ends after its three phases, no event loops, nothing
+# spams the error log, and every drawn case is still heard and still
+# scored.
+#
+# The alternative was to refuse to draw while a case is in flight, which
+# trades a wrong tier for a silently skipped case -- and, if a chain is
+# broken for a real reason (judge2 died before their event fired), for a
+# whole docket of skipped cases. Losing content silently is worse than
+# an occasionally miscomputed tier in a situation the player created by
+# ignoring the game for a month. Revisit if Part 2 ever gives each CASE
+# its own tally variable (e.g. keyed by phase) instead of one shared
+# per-session tally, which would make the overlap harmless rather than
+# merely survivable.
+# ---------------------------------------------------------------------
+kehillah_bet_din_advance_docket_effect = {
+	if = {
+		limit = { exists = involved_activity }
+		involved_activity = {
+			progress_activity_phase_after = { days = 1 }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_apply_session_stability_to_panel_effect
+# Scope: the convening leader (character), called from kehillah_bet_din.
+# 0099's four tier branches (landmark/strong/adequate/failed). ADDED
+# 2026-09-09 at user request: the session-close reward's Stability
+# change previously landed on the CONVENING community only -- documented
+# in common/script_values/kehillah_script_values.txt's "BET DIN
+# CONFERENCE" header as a default, not a resolved decision ("v5 spec
+# section 6 flags this as an open question"). This resolves it for
+# Stability specifically: the same per-tier change now also lands on the
+# other two Sh'um communities' own primary titles. Greatness and
+# Prosperity are UNCHANGED, still convening-only -- only Stability was
+# asked for.
+#
+# Per-CASE (kehillah_bet_din.0003/0013/0023) effects are deliberately
+# left convening-only, not extended by this: those disputes are drawn
+# from the convening leader's OWN court (kehillah_bet_din_pick_litigants_
+# effect), so they read as that community's own affair. The session
+# reward is different in kind -- kehillah_bet_din.0099's own header calls
+# it "the standing the panel earned by ruling a whole docket well", and
+# its landmark tooltip already says the wider Bet Din of Sh'um "is
+# spoken of with real authority now" -- so extending exactly this one
+# reward to the whole panel, and no further, matches what the text
+# already claimed before any of the co-judges' communities actually
+# gained anything from it.
+#
+# $OP$/$VALUE$ build the change_variable call by literal token
+# substitution, the same technique as $CASE$/$TIER$ above: $OP$ is
+# `add` for a gain tier, `subtract` for the failed tier, so one effect
+# covers both directions without inventing a signed-value convention
+# this codebase does not otherwise use.
+# ---------------------------------------------------------------------
+kehillah_bet_din_apply_session_stability_to_panel_effect = {
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_judge2 }
+		involved_activity.var:kehillah_bet_din_judge2.primary_title = {
+			change_variable = { name = kehillah_var_stability $OP$ = $VALUE$ }
+		}
+	}
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_judge3 }
+		involved_activity.var:kehillah_bet_din_judge3.primary_title = {
+			change_variable = { name = kehillah_var_stability $OP$ = $VALUE$ }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_log_session_participants_effect
+# Scope: the convening leader (character), called from kehillah_bet_din.
+# 0099's option, once per completed session regardless of tier. Two of
+# the panel's three faces (the co-judges) never showed up anywhere in
+# this activity's own UI before this -- Guest List only ever gave their
+# names, and the Activity Log was entirely empty (see kehillah_bet_din_
+# record_case_result_effect's own note). One entry per co-judge, both
+# reusing the same loc pair -- character/target differ per call, the
+# text does not need to.
+#
+# Guarded per-var, same reasoning as kehillah_bet_din_close_docket_
+# effect below: kehillah_bet_din.0099 can be reached after a session
+# that never properly opened a docket, and an unguarded variable read
+# here is the tooltip-rebuild error storm this file's other comments
+# describe, not a single clean error.
+#
+# judge2/judge3 RESOLVED TO A PLAIN SAVED SCOPE FIRST, not read as
+# `character = involved_activity.var:kehillah_bet_din_judgeN` from
+# INSIDE the involved_activity = { ... } block below. Same hazard as
+# kehillah_bet_din_record_case_result_effect's $TARGET$ handling above
+# (this file's header has the full account): involved_activity is a
+# link relative to "this", so a second hop from inside a block already
+# opened by involved_activity = { ... } would ask the ACTIVITY OBJECT
+# for its own involved_activity, which does not exist. `target = root`
+# needs no such fix -- root is stable regardless of nesting depth.
+# ---------------------------------------------------------------------
+kehillah_bet_din_log_session_participants_effect = {
+	if = {
+		limit = {
+			exists = involved_activity
+			exists = involved_activity.var:kehillah_bet_din_judge2
+		}
+		involved_activity.var:kehillah_bet_din_judge2 = { save_scope_as = kbd_log_judge2 }
+		involved_activity = {
+			add_activity_log_entry = {
+				key = kehillah_bet_din_session_co_judge_log
+				tags = { completed }
+				show_in_conclusion = yes
+				character = scope:kbd_log_judge2
+				target = root
+			}
+		}
+	}
+	if = {
+		limit = {
+			exists = involved_activity
+			exists = involved_activity.var:kehillah_bet_din_judge3
+		}
+		involved_activity.var:kehillah_bet_din_judge3 = { save_scope_as = kbd_log_judge3 }
+		involved_activity = {
+			add_activity_log_entry = {
+				key = kehillah_bet_din_session_co_judge_log
+				tags = { completed }
+				show_in_conclusion = yes
+				character = scope:kbd_log_judge3
+				target = root
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_close_docket_effect
+# Scope: the convening leader (character), from the closing event's
+# "after" block -- i.e. after the closing event has finished reading the
+# session score, not before.
+#
+# Clears the session's scratch state. The cases_heard LIST is
+# deliberately NOT cleared here: kehillah_bet_din_open_docket_effect
+# clears it at the start of the next session, which is the version that
+# also survives a session ending abnormally (host death, invalidation)
+# without leaving the next docket unable to draw anything.
+# ---------------------------------------------------------------------
+kehillah_bet_din_close_docket_effect = {
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_tally }
+		involved_activity = { set_variable = { name = kehillah_bet_din_tally value = 0 } }
+	}
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_session_score }
+		involved_activity = { set_variable = { name = kehillah_bet_din_session_score value = 0 } }
+	}
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_cases_heard_count }
+		involved_activity = { set_variable = { name = kehillah_bet_din_cases_heard_count value = 0 } }
+	}
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_case3_direction }
+		involved_activity = { remove_variable = kehillah_bet_din_case3_direction }
+	}
+	# ADDED 2026-09-09 alongside case 2's new remarriage mechanic --
+	# case2_direction is kehillah_bet_din_case3_direction's own pattern,
+	# so it gets the same cleanup. agunah_husband is scratch state the
+	# same way litigant_a/b are below: the character itself is real and
+	# persists in the world, only the activity variable pointer to it is
+	# session-scratch. case4_direction (2026-09-09, case 4) gets the
+	# same treatment as case2/case3_direction.
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_case2_direction }
+		involved_activity = { remove_variable = kehillah_bet_din_case2_direction }
+	}
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_case4_direction }
+		involved_activity = { remove_variable = kehillah_bet_din_case4_direction }
+	}
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_agunah_husband }
+		involved_activity = { remove_variable = kehillah_bet_din_agunah_husband }
+	}
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_litigant_a }
+		involved_activity = { remove_variable = kehillah_bet_din_litigant_a }
+	}
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_litigant_b }
+		involved_activity = { remove_variable = kehillah_bet_din_litigant_b }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_travel_pulse_effect
+# Scope: whichever character is currently traveling to the conference
+# (activity_kehillah_bet_din_conference's on_travel_state_pulse, common/
+# activities/activity_types/kehillah_bet_din_conference.txt -- see that
+# field's own header for the "travel ticks" request this answers).
+#
+# chance = 20 lives HERE, not left to the engine's own pulse cadence,
+# because on_travel_state_pulse fires on every activity pulse tick for
+# every traveling character -- without a gate this would be a popup
+# spam machine over a ~12-day journey (the live-tested real travel time,
+# docs/testing/2026-09-08-bet-din-conference-live-test-log.md), not
+# occasional flavor.
+#
+# Two vignettes, equal weight -- see events/kehillah_bet_din_travel_
+# events.txt for why there are only two and why neither has a
+# mechanical effect.
+# ---------------------------------------------------------------------
+kehillah_bet_din_travel_pulse_effect = {
+	random = {
+		chance = 20
+		random_list = {
+			50 = { trigger_event = kehillah_bet_din_travel.0001 }
+			50 = { trigger_event = kehillah_bet_din_travel.0002 }
+		}
+	}
 }

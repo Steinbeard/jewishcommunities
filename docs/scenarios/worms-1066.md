@@ -77,6 +77,27 @@ special risk particular to this mod.
 
 ## 4. Starting Kehillah state
 
+> **SUPERSEDED IN THE BUILD, 2026-09-08 — Worms now starts fully built.**
+> On request ("give it all the buildings for now and a fully maxed out
+> synagogue"), `kehillah_worms_developed_start_effect`
+> (`common/scripted_effects/kehillah_scripted_effects.txt`) now gives Worms the
+> **Synagogue at tier 5** plus **tier 1 of every other building family** — Mikvah and
+> Sofer's Workshop internally, and Beit Midrash, Countinghouse, Hekdesh,
+> Slaughterhouse, Market Stalls and Craft Workshops externally. The maxed Synagogue is
+> load-bearing, not decoration: external slot capacity is base 2 plus one per Synagogue
+> tier above the first, so the full set of six outbuildings only fits at tier 5.
+>
+> Consequences worth knowing: **all the officer appointments are open from turn one**
+> (they gate on buildings, not on time), and the pillar baselines — which are computed
+> *from* the buildings — will climb quickly, so the community will pass its band
+> thresholds far sooner than a tier-1 start would.
+>
+> This is explicitly a **"for now"** state, not a design reversal. The bullets below
+> remain the design's own preferred starting shape, and the code says so in the same
+> words. Reverting is one commented-out line in `kehillah_setup_worms_start_effect`.
+> **Speyer and Mainz are unchanged** — both still start at Synagogue tier 1, which also
+> keeps the contrast visible when comparing the three Sh'um communities.
+
 - **Title:** a new landless title, "Kehillah of Worms" (tag TBD in
   technical design), following the v1 baseline's structural pattern (§6 of
   the v1 spec).

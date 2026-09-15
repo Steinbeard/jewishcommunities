@@ -1,0 +1,151 @@
+﻿# =====================================================================
+# Guest pulse actions for activity_kehillah_bet_din_conference (common/
+# activities/activity_types/kehillah_bet_din_conference.txt's
+# pulse_actions = { entries = { ... } }).
+#
+# ADDED 2026-09-09 at user request ("make it interesting to be a guest
+# at a bet din activity"). Before this, an attending guest -- co-judge
+# or, since the same conversation's earlier pass, an accepted Jewish
+# scholar/adventurer -- had nothing to actually do during the ~7-9 days
+# an active case phase runs; only the docket's own three named events
+# (host/co-judge/resolution) ever fired, and those are gated to root =
+# the convening leader and judge2/judge3 specifically, never a plain
+# attending guest. root here = the activity (confirmed against vanilla's
+# own pulse_actions schema, common/activities/pulse_actions/
+# _pulse_actions.info), matching Hunt's own hunt_pulse_actions.txt for
+# shape: is_valid/weight/effect, random_attending_character to pick who
+# it happens to, add_activity_log_entry so it shows up in the panel the
+# 2026-09-09 activity-log pass populated for the first time.
+#
+# is_current_phase_active = yes on all three: these should only fire
+# while a case is actually being heard, not during the docket's brief
+# passive gaps between phases or before the first case has drawn.
+# =====================================================================
+
+# A scholarly citation offered during the docket. Weighted toward
+# higher-Learning attendees but not restricted to the invited-guest
+# threshold (kehillah_bet_din_scholar_guest_learning_threshold = 16,
+# common/script_values/kehillah_script_values.txt) -- any attending
+# character with a respectable Learning can contribute here, including
+# the co-judges themselves, not just the specially-invited scholars.
+kehillah_bet_din_pulse_citation = {
+	icon = public
+
+	is_valid = {
+		is_current_phase_active = yes
+		any_attending_character = {
+			learning >= 8
+		}
+	}
+
+	weight = {
+		value = 1
+		every_attending_character = {
+			limit = { learning >= 8 }
+			add = 0.5
+		}
+	}
+
+	effect = {
+		random_attending_character = {
+			limit = { learning >= 8 }
+			weight = {
+				base = 1
+				modifier = { add = 1 learning >= 12 }
+				modifier = { add = 1 learning >= 16 }
+			}
+			save_scope_as = kbd_pulse_scholar
+		}
+		scope:kbd_pulse_scholar = {
+			add_prestige = minor_prestige_gain
+			reverse_add_opinion = {
+				target = scope:activity.activity_host
+				modifier = kehillah_bet_din_pulse_favor_opinion
+			}
+		}
+		add_activity_log_entry = {
+			key = kehillah_bet_din_pulse_citation_log
+			tags = { pulse_action }
+			character = scope:kbd_pulse_scholar
+		}
+	}
+}
+
+# A disagreement between two attendees over a point of law -- the
+# gathering's one source of texture that ISN'T a straightforward
+# reward, matching vanilla pulse catalogs' own mix of good and bad
+# outcomes (Hunt's own pulse actions include injuries and failures
+# alongside successes, not only upside).
+kehillah_bet_din_pulse_disagreement = {
+	icon = public
+
+	is_valid = {
+		is_current_phase_active = yes
+		any_attending_character = {
+			count >= 2
+		}
+	}
+
+	weight = {
+		value = 1
+	}
+
+	effect = {
+		random_attending_character = {
+			save_scope_as = kbd_pulse_disputant_a
+		}
+		random_attending_character = {
+			limit = { this != scope:kbd_pulse_disputant_a }
+			save_scope_as = kbd_pulse_disputant_b
+		}
+		scope:kbd_pulse_disputant_a = {
+			reverse_add_opinion = {
+				target = scope:kbd_pulse_disputant_b
+				modifier = kehillah_bet_din_pulse_disfavor_opinion
+			}
+		}
+		add_activity_log_entry = {
+			key = kehillah_bet_din_pulse_disagreement_log
+			tags = { pulse_action }
+			character = scope:kbd_pulse_disputant_a
+			target = scope:kbd_pulse_disputant_b
+		}
+	}
+}
+
+# Word travels of who was seen at a gathering this prestigious --
+# Jewish landless adventurers specifically (kehillah_bet_din_invite_
+# rule_jewish_adventurers, common/activities/guest_invite_rules/
+# kehillah_bet_din_invite_rules.txt), since renown is exactly what an
+# adventurer's own career runs on. miniscule, not minor: this can recur
+# across a docket's several phases, unlike the citation above which is
+# already weighted down to the rarer high-Learning attendees.
+kehillah_bet_din_pulse_renown = {
+	icon = public
+
+	is_valid = {
+		is_current_phase_active = yes
+		any_attending_character = {
+			has_government = landless_adventurer_government
+		}
+	}
+
+	weight = {
+		value = 1
+	}
+
+	effect = {
+		random_attending_character = {
+			limit = { has_government = landless_adventurer_government }
+			save_scope_as = kbd_pulse_adventurer
+		}
+		scope:kbd_pulse_adventurer = {
+			add_prestige = miniscule_prestige_gain
+		}
+		add_activity_log_entry = {
+			key = kehillah_bet_din_pulse_renown_log
+			tags = { pulse_action }
+			character = scope:kbd_pulse_adventurer
+		}
+	}
+}

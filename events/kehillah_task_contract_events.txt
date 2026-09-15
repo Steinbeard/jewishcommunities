@@ -1,0 +1,375 @@
+﻿# =====================================================================
+# Kehillah task contract events -- v8 spec (docs/spec/
+# v8-task-contracts.md). Offer flow for CK3's real EP3 Task Contracts
+# system, replacing a bespoke decision-based mechanic (and, for the loan
+# case, the retired kehillah_extend_loan_decision -- see common/
+# decisions/kehillah_decisions.txt's retirement note).
+#
+# STRUCTURE. Fired from kehillah_task_contract_pulse (common/on_action/
+# kehillah_on_actions.txt), the same random_yearly_playable_pulse shape
+# every other Kehillah pulse in this mod already uses.
+#
+#   kehillah_task_contract.0001 -- the ROUTER. hidden = yes, no portraits
+#     or player-facing text at all (confirmed valid vanilla shape: see
+#     the installed events/dlc/ep3/ep3_contract_events.txt's own hidden
+#     bookkeeping events, e.g. ep3_contract_event.0002). Picks the
+#     employer (kehillah_task_contract_pick_employer_effect, common/
+#     scripted_effects/kehillah_scripted_effects.txt) and, via a
+#     can_create_task_contract-gated random_list, exactly one of the
+#     four contract types -- mirroring common/character_interactions/
+#     06_ep3_laamp_interactions.txt:3561+'s own random_list-of-contract-
+#     types pattern (trigger + create_task_contract per branch), the
+#     precedent this whole feature was built to imitate. Which type won
+#     is read back afterward via has_task_contract_type on the newly
+#     created contract, not tracked with a separate flag, and routes to
+#     exactly one of the four flavor events below.
+#
+#   kehillah_task_contract.0002/0003/0004/0005 -- one flavored offer per
+#     contract type (translation / loan / exotic goods / hebrew tutor),
+#     each a real two-portrait event with an Accept/Decline choice.
+#
+# ACCEPT/DECLINE MECHANICS, VERIFIED, NOT GUESSED (v8 spec section 2
+# point 3 explicitly asked for this to be checked rather than assumed).
+# Accept calls accept_task_contract = scope:new_contract (confirmed
+# plain effect, root = contract owner, common/character_interactions/
+# 06_ep3_laamp_interactions.txt:6860 and common/scripted_effects/
+# 07_dlc_ep3_scripted_effects.txt:3633). Decline calls invalidate_
+# contract = yes ON the contract scope -- NOT "invalidate_task_contract
+# = <scope>", the name the spec's own draft guessed and flagged as
+# unverified. Grepping the entire installed game found invalidate_
+# task_contract used NOWHERE as a callable effect (only inside _task_
+# contracts.info's own comment and one unrelated effect_localization
+# entry describing invalidate_contract's display text); invalidate_
+# contract = yes, called on the contract scope, is what common/scripted_
+# effects/09_mpo_settlement_issue_effects.txt's own AI-decline branch
+# actually uses, and what dozens of sites across events/dlc/ep3/
+# ep3_contract_events.txt use for exactly this "the offer lapses" case.
+# Explicit invalidation (not just leaving valid_to_keep to expire it
+# naturally over an unpredictable span) keeps a declined offer from
+# lingering as a ghost entry, matching that same confirmed AI-decline
+# precedent.
+#
+# IMMEDIATE RESOLUTION, VERIFIED AGAINST A REAL NON-TRAVEL VANILLA
+# CONTRACT (v8 spec section 2 point 4 explicitly asked for this
+# verification too, citing admin_contracts.txt's overdue_taxes as the
+# example to check). Confirmed shape: on_accepted does the real work,
+# on_completed is empty, and the reward is applied by complete_task_
+# contract naming a task_contract_reward key -- there is no engine-timed
+# "wait, then complete" step for a travel = no contract; a normal option
+# selected right after accepting (or, here, the type's own on_accepted)
+# is exactly how vanilla resolves these. For the three types where the
+# Kehillah leader's own household does the work without leaving
+# (translation, exotic goods, hebrew tutor), that means resolution
+# happens INSIDE the contract type's own on_accepted (common/task_
+# contracts/kehillah_task_contracts.txt), which is why these four
+# events' own Accept options do nothing but call accept_task_contract --
+# on_accepted takes it from there, all the way through complete_task_
+# contract, in the same effect chain, no further event needed.
+# kehillah_loan_contract is the one exception: its on_accepted pays out
+# the principal and writes the ledger but deliberately does NOT call
+# complete_task_contract -- see that type's own header in kehillah_task_
+# contracts.txt for the full account of why (the loan stays open until
+# repaid or defaulted, tracked by the existing, untouched loan ledger).
+#
+# NO SEPARATE OUTCOME EVENT. The skill-tier check (which task_contract_
+# reward key fires) lives inside on_accepted's own if/else, and its
+# result is narrated via that reward key's own custom_tooltip -- the
+# player sees the outcome as part of the SAME accept action's tooltip,
+# not a second event. Kept this way deliberately to hold the event
+# count for a whole new four-type feature to five, matching this mod's
+# existing "two events per scenario" scale (kehillah_dispute_events.txt,
+# kehillah_protection layer) rather than doubling it.
+# =====================================================================
+
+namespace = kehillah_task_contract
+
+
+# ---------------------------------------------------------------------
+# kehillah_task_contract.0001 -- ROUTER (hidden).
+# ---------------------------------------------------------------------
+
+kehillah_task_contract.0001 = {
+	hidden = yes
+
+	trigger = {
+		has_ep3_dlc_trigger = yes
+		government_has_flag = government_is_kehillah
+		is_adult = yes
+		is_imprisoned = no
+		kehillah_has_task_contract_employer_candidate_trigger = yes
+	}
+
+	immediate = {
+		kehillah_task_contract_pick_employer_effect = yes
+
+		random_list = {
+			# Flat, equal weighting across all four types for this first
+			# pass -- "agent's call," per the mod's own prototype-first
+			# norm; tune by playtest later rather than guessing plausible
+			# weights now.
+			25 = {
+				trigger = {
+					can_create_task_contract = {
+						type_name = kehillah_translation_contract
+						employer = scope:employer
+					}
+				}
+				create_task_contract = {
+					task_contract_type = kehillah_translation_contract
+					task_contract_tier = root.task_contract_tier_value
+					location = root.domicile.domicile_location
+					task_contract_employer = scope:employer
+					save_scope_as = new_contract
+				}
+			}
+			25 = {
+				trigger = {
+					can_create_task_contract = {
+						type_name = kehillah_loan_contract
+						employer = scope:employer
+					}
+				}
+				create_task_contract = {
+					task_contract_type = kehillah_loan_contract
+					task_contract_tier = root.task_contract_tier_value
+					location = root.domicile.domicile_location
+					task_contract_employer = scope:employer
+					save_scope_as = new_contract
+				}
+			}
+			25 = {
+				trigger = {
+					can_create_task_contract = {
+						type_name = kehillah_exotic_goods_contract
+						employer = scope:employer
+					}
+				}
+				create_task_contract = {
+					task_contract_type = kehillah_exotic_goods_contract
+					task_contract_tier = root.task_contract_tier_value
+					location = root.domicile.domicile_location
+					task_contract_employer = scope:employer
+					save_scope_as = new_contract
+				}
+			}
+			25 = {
+				trigger = {
+					can_create_task_contract = {
+						type_name = kehillah_hebrew_tutor_contract
+						employer = scope:employer
+					}
+				}
+				# Pupil: the employer's own child if one exists, else the
+				# employer themselves -- see kehillah_hebrew_tutor_contract's
+				# own header (common/task_contracts/kehillah_task_
+				# contracts.txt) for why no mechanical effect is applied to
+				# them either way (flavor use of task_contract_target only).
+				hidden_effect = {
+					if = {
+						limit = {
+							scope:employer = { any_child = { count >= 1 } }
+						}
+						scope:employer = {
+							random_child = {
+								save_scope_as = kehillah_tutor_target
+							}
+						}
+					}
+					else = {
+						scope:employer = {
+							save_scope_as = kehillah_tutor_target
+						}
+					}
+				}
+				create_task_contract = {
+					task_contract_type = kehillah_hebrew_tutor_contract
+					task_contract_tier = root.task_contract_tier_value
+					location = root.domicile.domicile_location
+					task_contract_employer = scope:employer
+					target = scope:kehillah_tutor_target
+					save_scope_as = new_contract
+				}
+			}
+		}
+
+		if = {
+			limit = { exists = scope:new_contract }
+			if = {
+				limit = {
+					scope:new_contract = { has_task_contract_type = kehillah_translation_contract }
+				}
+				trigger_event = kehillah_task_contract.0002
+			}
+			else_if = {
+				limit = {
+					scope:new_contract = { has_task_contract_type = kehillah_loan_contract }
+				}
+				trigger_event = kehillah_task_contract.0003
+			}
+			else_if = {
+				limit = {
+					scope:new_contract = { has_task_contract_type = kehillah_exotic_goods_contract }
+				}
+				trigger_event = kehillah_task_contract.0004
+			}
+			else_if = {
+				limit = {
+					scope:new_contract = { has_task_contract_type = kehillah_hebrew_tutor_contract }
+				}
+				trigger_event = kehillah_task_contract.0005
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_task_contract.0002 -- COMMISSION A TRANSLATION
+# ---------------------------------------------------------------------
+
+kehillah_task_contract.0002 = {
+	type = character_event
+	title = kehillah_task_contract.0002.t
+	desc = kehillah_task_contract.0002.desc
+	theme = diplomacy
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:employer
+		animation = interested
+	}
+
+	trigger = {
+		exists = scope:new_contract
+		exists = scope:employer
+	}
+
+	option = {
+		name = kehillah_task_contract.0002.a
+		accept_task_contract = scope:new_contract
+	}
+	option = {
+		name = kehillah_task_contract.0002.b
+		flavor = kehillah_task_contract.0002.b.flavor
+		scope:new_contract = { invalidate_contract = yes }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_task_contract.0003 -- A LOAN OFFERED
+# ---------------------------------------------------------------------
+
+kehillah_task_contract.0003 = {
+	type = character_event
+	title = kehillah_task_contract.0003.t
+	desc = kehillah_task_contract.0003.desc
+	theme = diplomacy
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:employer
+		animation = steward
+	}
+
+	trigger = {
+		exists = scope:new_contract
+		exists = scope:employer
+	}
+
+	option = {
+		name = kehillah_task_contract.0003.a
+		accept_task_contract = scope:new_contract
+	}
+	option = {
+		name = kehillah_task_contract.0003.b
+		flavor = kehillah_task_contract.0003.b.flavor
+		scope:new_contract = { invalidate_contract = yes }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_task_contract.0004 -- SOURCE EXOTIC GOODS
+# ---------------------------------------------------------------------
+
+kehillah_task_contract.0004 = {
+	type = character_event
+	title = kehillah_task_contract.0004.t
+	desc = kehillah_task_contract.0004.desc
+	theme = diplomacy
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:employer
+		animation = interested
+	}
+
+	trigger = {
+		exists = scope:new_contract
+		exists = scope:employer
+	}
+
+	option = {
+		name = kehillah_task_contract.0004.a
+		accept_task_contract = scope:new_contract
+	}
+	option = {
+		name = kehillah_task_contract.0004.b
+		flavor = kehillah_task_contract.0004.b.flavor
+		scope:new_contract = { invalidate_contract = yes }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_task_contract.0005 -- TUTOR HEBREW
+# ---------------------------------------------------------------------
+
+kehillah_task_contract.0005 = {
+	type = character_event
+	title = kehillah_task_contract.0005.t
+	desc = kehillah_task_contract.0005.desc
+	theme = diplomacy
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:employer
+		animation = interested
+	}
+	# Only shown when the pupil is a distinct character from the employer
+	# (an employer's child, not the employer themself) -- see the router
+	# event's own comment above for the fallback.
+	lower_right_portrait = {
+		trigger = { NOT = { scope:kehillah_tutor_target = scope:employer } }
+		character = scope:kehillah_tutor_target
+		animation = happy_teacher
+	}
+
+	trigger = {
+		exists = scope:new_contract
+		exists = scope:employer
+	}
+
+	option = {
+		name = kehillah_task_contract.0005.a
+		accept_task_contract = scope:new_contract
+	}
+	option = {
+		name = kehillah_task_contract.0005.b
+		flavor = kehillah_task_contract.0005.b.flavor
+		scope:new_contract = { invalidate_contract = yes }
+	}
+}
