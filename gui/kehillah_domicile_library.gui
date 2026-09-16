@@ -1,42 +1,61 @@
 ﻿# =====================================================================
 # THE COMMUNITY LIBRARY PANEL -- what books a Kehillah's Beit Midrash
 # holds, shown alongside the vanilla domicile window. ADDED 2026-09-15
-# at user request ("add a way to view the books a community has in its
-# domicile view"). Design and live-pass record: docs/spec/v13-domicile-
-# library-panel.md. Registered in gui/scripted_widgets/kehillah_
-# scripted_widgets.txt, the same additive hook as the map view.
+# at user request; REBUILT the same day as a DYNAMIC list ("I want
+# dozens of books to be possible... additive instead of showing missing
+# books too... subject in-line... a description for each book on
+# hover"). Design and live-pass record: docs/spec/v13-domicile-library-
+# panel.md. Registered in gui/scripted_widgets/kehillah_scripted_
+# widgets.txt, the same additive hook as the map view.
 #
 # WHY A COMPANION PANEL AND NOT A TAB: the domicile window is vanilla's
 # gui/window_domicile.gui, and this mod does not fork vanilla .gui files
 # (docs/spec/gui-spike-community-list.md). So this is a fourth top-level
-# scripted widget that simply appears whenever the domicile view is open
-# on a Kehillah's quarter, parked directly under the domicile window
-# (which is 1390 x 694, centred -- window_domicile.gui:9-10), and goes
-# away with it. Same layer as that window ("middle", gui/shared/
-# windows.gui) so the two draw together, above the HUD.
+# scripted widget that appears whenever the domicile view is open,
+# parked directly under the domicile window (1390 x 694, centred --
+# window_domicile.gui:9-10), and goes away with it.
 #
-# WHICH DOMICILE: DomicileWindow.GetDomicile -- the window's own global
-# accessor, the same one window_domicile.gui itself reads, and usable
-# from any file (window_artifact_reforge.gui reads CharacterWindow.
-# GetCharacter the same way). So this follows whatever quarter is being
-# looked at: your own, or another community's opened from the roster's
-# quarter button -- which is the point: "does the community I would
-# travel to hold the work I lack" is answerable before setting out.
+# WHICH DOMICILE: DomicileWindow.GetDomicile -- the accessor window_
+# domicile.gui:2 itself reads. Whether it resolves from OUTSIDE that
+# file is the one thing live pass 1 (2026-09-15, panel never appeared,
+# no load error) could not settle, so this build is deliberately
+# bisectable: the WINDOW shows on IsGameViewOpen alone, and what it
+# shows inside tells you which link failed --
+#   * nothing at all         -> IsGameViewOpen / layer / position;
+#   * the "no library" line
+#     with an EMPTY name     -> DomicileWindow.GetDomicile is null here;
+#   * the "no library" line
+#     with a name, on a
+#     Kehillah quarter       -> the government IsType check;
+#   * the list               -> everything works.
 #
-# WHAT IT READS: kehillah_lib_<work>_value on the community's title
-# (held or not) and kehillah_read_<work>_value on the PLAYER (studied
-# or not) -- common/script_values/kehillah_library_values.txt. Twelve
-# fixed rows, not a datamodel: the corpus is a fixed list of twelve
-# real works (kehillah_scripted_triggers.txt's header), and a
-# variable_list of flags has no GUI-side item type worth iterating.
+# THE LIST IS DYNAMIC. datamodel = the title's kehillah_library_works
+# variable_list (Title.MakeScope.GetList -- the same call the map view
+# uses for its roster mirror); each item is a Scope holding a flag, and
+# Scope.GetFlagName gives the flag's name as a string (vanilla: chariot_
+# race_widget_types.gui:105, Var('wager_team').GetFlagName). Every text
+# and tooltip on the row is then Localize( Concatenate( 'prefix_',
+# Scope.GetFlagName ) ) (vanilla: Localize( Concatenate(
+# 'COA_DESIGNER_CATEGORY_', CString.GetString ) )). So ADDING A BOOK IS
+# ZERO GUI WORK: one flag in script plus three loc lines --
+#   kehillah_lib_name_<flag>, kehillah_lib_subject_<flag>,
+#   kehillah_lib_tt_<flag>
+# -- see localization/english/kehillah_library_panel_l_english.yml.
+# Only what is HELD is listed (additive); nothing is said about works
+# the community lacks.
 #
-# STRUCTURE: a vbox inside a window, hboxes and vboxes nested freely --
-# never a vbox/hbox as a direct child of a (flow)container (live passes
-# 3 and 8 both crashed on exactly that).
+# STUDIED BY YOU: a second, smaller dynamic list of the PLAYER's own
+# kehillah_studied_works, as a line under the roster. GUI has no
+# "is this item in that other list" call, so the two lists sit side by
+# side rather than one being marked against the other.
+#
+# STRUCTURE: vbox inside window, hboxes and vboxes nested freely, text
+# items inside the one flowcontainer -- never a vbox/hbox as a direct
+# child of a (flow)container (live passes 3 and 8 both crashed on it).
 # =====================================================================
 
-@lib_col_width = 280
-@lib_name_width = 230
+@lib_width = 720
+@lib_name_width = 330
 
 window = {
 	name = "kehillah_domicile_library"
@@ -46,11 +65,11 @@ window = {
 	# Just under the domicile window's bottom edge (694 / 2 = 347).
 	# Draggable from here.
 	position = { 0 354 }
-	size = { 900 220 }
+	size = { 760 200 }
 
 	movable = yes
 	resizable = no
-	layer = middle
+	layer = windows_layer
 	alwaystransparent = no
 	filter_mouse = all
 	allow_outside = yes
@@ -58,7 +77,7 @@ window = {
 	datacontext = "[DomicileWindow.GetDomicile.GetOwner]"
 	datacontext = "[DomicileWindow.GetDomicile.GetOwner.GetPrimaryTitle]"
 
-	visible = "[And( And( IsInGame, IsGameViewOpen( 'domicile' ) ), Character.GetGovernment.IsType( 'kehillah_government' ) )]"
+	visible = "[And( IsInGame, IsGameViewOpen( 'domicile' ) )]"
 	visible_at_creation = no
 
 	state = {
@@ -79,6 +98,7 @@ window = {
 	vbox = {
 		margin = { 14 10 }
 		spacing = 4
+		min_width = @lib_width
 
 		### Header -- the community's name. The window-control close
 		### button is hidden: this panel lives and dies with the domicile
@@ -96,474 +116,93 @@ window = {
 			}
 		}
 
+		### Not a Kehillah's quarter (or the bisect case above).
 		text_single = {
-			parentanchor = hcenter
-			text = "KEHILLAH_LIB_SUBHEADER"
+			visible = "[Not( Character.GetGovernment.IsType( 'kehillah_government' ) )]"
+			text = "KEHILLAH_LIB_NOT_KEHILLAH"
 			default_format = "#weak;italic"
+			max_width = @lib_width
 		}
 
-		### Three tracks, side by side.
-		hbox = {
+		### A Kehillah's quarter: the library.
+		vbox = {
+			visible = "[Character.GetGovernment.IsType( 'kehillah_government' )]"
 			layoutpolicy_horizontal = expanding
-			margin_top = 4
+			spacing = 4
 
-			### PARSHANUT
+			text_single = {
+				visible = "[DataModelHasItems( Title.MakeScope.GetList( 'kehillah_library_works' ) )]"
+				text = "KEHILLAH_LIB_SUBHEADER"
+				default_format = "#weak;italic"
+				max_width = @lib_width
+			}
+			text_single = {
+				visible = "[Not( DataModelHasItems( Title.MakeScope.GetList( 'kehillah_library_works' ) ) )]"
+				text = "KEHILLAH_LIB_EMPTY"
+				default_format = "#weak;italic"
+				max_width = @lib_width
+			}
+
+			### The works held. One row per flag in the title's list.
 			vbox = {
-				spacing = 3
-				min_width = @lib_col_width
-				margin = { 6 0 }
+				layoutpolicy_horizontal = expanding
+				spacing = 2
+				margin_top = 4
+				datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
 
-				text_single = {
-					parentanchor = hcenter
-					text = "KEHILLAH_LIB_TRACK_PARSHANUT"
-					default_format = "#high;bold"
-					using = Font_Size_Medium
-				}
-				text_single = {
-					parentanchor = hcenter
-					text = "KEHILLAH_LIB_TRACK_PARSHANUT_SUB"
-					default_format = "#weak;italic"
-					using = Font_Size_Small
-				}
-				widget = { size = { 1 4 } }
-
-				### targum_onkelos
-				hbox = {
-					layoutpolicy_horizontal = expanding
-					ignoreinvisible = yes
-					spacing = 4
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_targum_onkelos_value' ), '(CFixedPoint)0' )]"
-						text = "kehillah_lib_name_targum_onkelos"
-						default_format = "#high"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_targum_onkelos_held"
+				item = {
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						spacing = 8
+						tooltip = "[Localize( Concatenate( 'kehillah_lib_tt_', Scope.GetFlagName ) )]"
 						using = tooltip_se
-					}
-					text_single = {
-						visible = "[Not( GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_targum_onkelos_value' ), '(CFixedPoint)0' ) )]"
-						text = "kehillah_lib_name_targum_onkelos"
-						default_format = "#weak;italic"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_targum_onkelos_missing"
-						using = tooltip_se
-					}
 
-					expand = {}
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.ScriptValue( 'kehillah_read_targum_onkelos_value' ), '(CFixedPoint)0' )]"
-						text = "KEHILLAH_LIB_READ_MARK"
-						tooltip = "KEHILLAH_LIB_READ_TT"
-						using = tooltip_se
-					}
-				}
-
-				### mekhilta
-				hbox = {
-					layoutpolicy_horizontal = expanding
-					ignoreinvisible = yes
-					spacing = 4
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_mekhilta_value' ), '(CFixedPoint)0' )]"
-						text = "kehillah_lib_name_mekhilta"
-						default_format = "#high"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_mekhilta_held"
-						using = tooltip_se
-					}
-					text_single = {
-						visible = "[Not( GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_mekhilta_value' ), '(CFixedPoint)0' ) )]"
-						text = "kehillah_lib_name_mekhilta"
-						default_format = "#weak;italic"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_mekhilta_missing"
-						using = tooltip_se
-					}
-
-					expand = {}
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.ScriptValue( 'kehillah_read_mekhilta_value' ), '(CFixedPoint)0' )]"
-						text = "KEHILLAH_LIB_READ_MARK"
-						tooltip = "KEHILLAH_LIB_READ_TT"
-						using = tooltip_se
-					}
-				}
-
-				### genesis_rabbah
-				hbox = {
-					layoutpolicy_horizontal = expanding
-					ignoreinvisible = yes
-					spacing = 4
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_genesis_rabbah_value' ), '(CFixedPoint)0' )]"
-						text = "kehillah_lib_name_genesis_rabbah"
-						default_format = "#high"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_genesis_rabbah_held"
-						using = tooltip_se
-					}
-					text_single = {
-						visible = "[Not( GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_genesis_rabbah_value' ), '(CFixedPoint)0' ) )]"
-						text = "kehillah_lib_name_genesis_rabbah"
-						default_format = "#weak;italic"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_genesis_rabbah_missing"
-						using = tooltip_se
-					}
-
-					expand = {}
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.ScriptValue( 'kehillah_read_genesis_rabbah_value' ), '(CFixedPoint)0' )]"
-						text = "KEHILLAH_LIB_READ_MARK"
-						tooltip = "KEHILLAH_LIB_READ_TT"
-						using = tooltip_se
-					}
-				}
-
-				### pirkei_derabbi_eliezer
-				hbox = {
-					layoutpolicy_horizontal = expanding
-					ignoreinvisible = yes
-					spacing = 4
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_pirkei_derabbi_eliezer_value' ), '(CFixedPoint)0' )]"
-						text = "kehillah_lib_name_pirkei_derabbi_eliezer"
-						default_format = "#high"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_pirkei_derabbi_eliezer_held"
-						using = tooltip_se
-					}
-					text_single = {
-						visible = "[Not( GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_pirkei_derabbi_eliezer_value' ), '(CFixedPoint)0' ) )]"
-						text = "kehillah_lib_name_pirkei_derabbi_eliezer"
-						default_format = "#weak;italic"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_pirkei_derabbi_eliezer_missing"
-						using = tooltip_se
-					}
-
-					expand = {}
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.ScriptValue( 'kehillah_read_pirkei_derabbi_eliezer_value' ), '(CFixedPoint)0' )]"
-						text = "KEHILLAH_LIB_READ_MARK"
-						tooltip = "KEHILLAH_LIB_READ_TT"
-						using = tooltip_se
+						icon = {
+							size = { 20 20 }
+							texture = "gfx/interface/icons/domicile_building/domicile_building_library.dds"
+							alwaystransparent = yes
+						}
+						text_single = {
+							text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
+							default_format = "#high"
+							max_width = @lib_name_width
+						}
+						text_single = {
+							text = "[Localize( Concatenate( 'kehillah_lib_subject_', Scope.GetFlagName ) )]"
+							default_format = "#weak"
+						}
+						expand = {}
 					}
 				}
 			}
 
-			### TALMUDICS
-			vbox = {
-				spacing = 3
-				min_width = @lib_col_width
-				margin = { 6 0 }
+			### What YOU have studied, wherever you studied it.
+			hbox = {
+				visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_studied_works' ) )]"
+				layoutpolicy_horizontal = expanding
+				margin_top = 8
+				spacing = 6
 
 				text_single = {
-					parentanchor = hcenter
-					text = "KEHILLAH_LIB_TRACK_TALMUDICS"
-					default_format = "#high;bold"
-					using = Font_Size_Medium
+					text = "KEHILLAH_LIB_STUDIED_LABEL"
+					default_format = "#weak"
+					tooltip = "KEHILLAH_LIB_STUDIED_TT"
+					using = tooltip_se
 				}
-				text_single = {
-					parentanchor = hcenter
-					text = "KEHILLAH_LIB_TRACK_TALMUDICS_SUB"
-					default_format = "#weak;italic"
-					using = Font_Size_Small
-				}
-				widget = { size = { 1 4 } }
+				flowcontainer = {
+					spacing = 10
+					datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_studied_works' )]"
 
-				### mishnah
-				hbox = {
-					layoutpolicy_horizontal = expanding
-					ignoreinvisible = yes
-					spacing = 4
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_mishnah_value' ), '(CFixedPoint)0' )]"
-						text = "kehillah_lib_name_mishnah"
-						default_format = "#high"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_mishnah_held"
-						using = tooltip_se
-					}
-					text_single = {
-						visible = "[Not( GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_mishnah_value' ), '(CFixedPoint)0' ) )]"
-						text = "kehillah_lib_name_mishnah"
-						default_format = "#weak;italic"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_mishnah_missing"
-						using = tooltip_se
-					}
-
-					expand = {}
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.ScriptValue( 'kehillah_read_mishnah_value' ), '(CFixedPoint)0' )]"
-						text = "KEHILLAH_LIB_READ_MARK"
-						tooltip = "KEHILLAH_LIB_READ_TT"
-						using = tooltip_se
+					item = {
+						text_single = {
+							text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
+							default_format = "#high"
+							tooltip = "[Localize( Concatenate( 'kehillah_lib_tt_', Scope.GetFlagName ) )]"
+							using = tooltip_se
+						}
 					}
 				}
-
-				### yerushalmi
-				hbox = {
-					layoutpolicy_horizontal = expanding
-					ignoreinvisible = yes
-					spacing = 4
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_yerushalmi_value' ), '(CFixedPoint)0' )]"
-						text = "kehillah_lib_name_yerushalmi"
-						default_format = "#high"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_yerushalmi_held"
-						using = tooltip_se
-					}
-					text_single = {
-						visible = "[Not( GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_yerushalmi_value' ), '(CFixedPoint)0' ) )]"
-						text = "kehillah_lib_name_yerushalmi"
-						default_format = "#weak;italic"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_yerushalmi_missing"
-						using = tooltip_se
-					}
-
-					expand = {}
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.ScriptValue( 'kehillah_read_yerushalmi_value' ), '(CFixedPoint)0' )]"
-						text = "KEHILLAH_LIB_READ_MARK"
-						tooltip = "KEHILLAH_LIB_READ_TT"
-						using = tooltip_se
-					}
-				}
-
-				### bavli
-				hbox = {
-					layoutpolicy_horizontal = expanding
-					ignoreinvisible = yes
-					spacing = 4
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_bavli_value' ), '(CFixedPoint)0' )]"
-						text = "kehillah_lib_name_bavli"
-						default_format = "#high"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_bavli_held"
-						using = tooltip_se
-					}
-					text_single = {
-						visible = "[Not( GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_bavli_value' ), '(CFixedPoint)0' ) )]"
-						text = "kehillah_lib_name_bavli"
-						default_format = "#weak;italic"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_bavli_missing"
-						using = tooltip_se
-					}
-
-					expand = {}
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.ScriptValue( 'kehillah_read_bavli_value' ), '(CFixedPoint)0' )]"
-						text = "KEHILLAH_LIB_READ_MARK"
-						tooltip = "KEHILLAH_LIB_READ_TT"
-						using = tooltip_se
-					}
-				}
-
-				### halakhot_gedolot
-				hbox = {
-					layoutpolicy_horizontal = expanding
-					ignoreinvisible = yes
-					spacing = 4
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_halakhot_gedolot_value' ), '(CFixedPoint)0' )]"
-						text = "kehillah_lib_name_halakhot_gedolot"
-						default_format = "#high"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_halakhot_gedolot_held"
-						using = tooltip_se
-					}
-					text_single = {
-						visible = "[Not( GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_halakhot_gedolot_value' ), '(CFixedPoint)0' ) )]"
-						text = "kehillah_lib_name_halakhot_gedolot"
-						default_format = "#weak;italic"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_halakhot_gedolot_missing"
-						using = tooltip_se
-					}
-
-					expand = {}
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.ScriptValue( 'kehillah_read_halakhot_gedolot_value' ), '(CFixedPoint)0' )]"
-						text = "KEHILLAH_LIB_READ_MARK"
-						tooltip = "KEHILLAH_LIB_READ_TT"
-						using = tooltip_se
-					}
-				}
-			}
-
-			### HASHKAFA
-			vbox = {
-				spacing = 3
-				min_width = @lib_col_width
-				margin = { 6 0 }
-
-				text_single = {
-					parentanchor = hcenter
-					text = "KEHILLAH_LIB_TRACK_HASHKAFA"
-					default_format = "#high;bold"
-					using = Font_Size_Medium
-				}
-				text_single = {
-					parentanchor = hcenter
-					text = "KEHILLAH_LIB_TRACK_HASHKAFA_SUB"
-					default_format = "#weak;italic"
-					using = Font_Size_Small
-				}
-				widget = { size = { 1 4 } }
-
-				### sefer_yetzirah
-				hbox = {
-					layoutpolicy_horizontal = expanding
-					ignoreinvisible = yes
-					spacing = 4
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_sefer_yetzirah_value' ), '(CFixedPoint)0' )]"
-						text = "kehillah_lib_name_sefer_yetzirah"
-						default_format = "#high"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_sefer_yetzirah_held"
-						using = tooltip_se
-					}
-					text_single = {
-						visible = "[Not( GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_sefer_yetzirah_value' ), '(CFixedPoint)0' ) )]"
-						text = "kehillah_lib_name_sefer_yetzirah"
-						default_format = "#weak;italic"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_sefer_yetzirah_missing"
-						using = tooltip_se
-					}
-
-					expand = {}
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.ScriptValue( 'kehillah_read_sefer_yetzirah_value' ), '(CFixedPoint)0' )]"
-						text = "KEHILLAH_LIB_READ_MARK"
-						tooltip = "KEHILLAH_LIB_READ_TT"
-						using = tooltip_se
-					}
-				}
-
-				### emunot_vedeot
-				hbox = {
-					layoutpolicy_horizontal = expanding
-					ignoreinvisible = yes
-					spacing = 4
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_emunot_vedeot_value' ), '(CFixedPoint)0' )]"
-						text = "kehillah_lib_name_emunot_vedeot"
-						default_format = "#high"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_emunot_vedeot_held"
-						using = tooltip_se
-					}
-					text_single = {
-						visible = "[Not( GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_emunot_vedeot_value' ), '(CFixedPoint)0' ) )]"
-						text = "kehillah_lib_name_emunot_vedeot"
-						default_format = "#weak;italic"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_emunot_vedeot_missing"
-						using = tooltip_se
-					}
-
-					expand = {}
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.ScriptValue( 'kehillah_read_emunot_vedeot_value' ), '(CFixedPoint)0' )]"
-						text = "KEHILLAH_LIB_READ_MARK"
-						tooltip = "KEHILLAH_LIB_READ_TT"
-						using = tooltip_se
-					}
-				}
-
-				### chovot_halevavot
-				hbox = {
-					layoutpolicy_horizontal = expanding
-					ignoreinvisible = yes
-					spacing = 4
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_chovot_halevavot_value' ), '(CFixedPoint)0' )]"
-						text = "kehillah_lib_name_chovot_halevavot"
-						default_format = "#high"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_chovot_halevavot_held"
-						using = tooltip_se
-					}
-					text_single = {
-						visible = "[Not( GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_chovot_halevavot_value' ), '(CFixedPoint)0' ) )]"
-						text = "kehillah_lib_name_chovot_halevavot"
-						default_format = "#weak;italic"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_chovot_halevavot_missing"
-						using = tooltip_se
-					}
-
-					expand = {}
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.ScriptValue( 'kehillah_read_chovot_halevavot_value' ), '(CFixedPoint)0' )]"
-						text = "KEHILLAH_LIB_READ_MARK"
-						tooltip = "KEHILLAH_LIB_READ_TT"
-						using = tooltip_se
-					}
-				}
-
-				### kuzari
-				hbox = {
-					layoutpolicy_horizontal = expanding
-					ignoreinvisible = yes
-					spacing = 4
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_kuzari_value' ), '(CFixedPoint)0' )]"
-						text = "kehillah_lib_name_kuzari"
-						default_format = "#high"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_kuzari_held"
-						using = tooltip_se
-					}
-					text_single = {
-						visible = "[Not( GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_kuzari_value' ), '(CFixedPoint)0' ) )]"
-						text = "kehillah_lib_name_kuzari"
-						default_format = "#weak;italic"
-						max_width = @lib_name_width
-						tooltip = "kehillah_lib_tt_kuzari_missing"
-						using = tooltip_se
-					}
-
-					expand = {}
-
-					text_single = {
-						visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.ScriptValue( 'kehillah_read_kuzari_value' ), '(CFixedPoint)0' )]"
-						text = "KEHILLAH_LIB_READ_MARK"
-						tooltip = "KEHILLAH_LIB_READ_TT"
-						using = tooltip_se
-					}
-				}
+				expand = {}
 			}
 		}
 	}
