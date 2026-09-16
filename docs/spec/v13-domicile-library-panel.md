@@ -1,6 +1,6 @@
 ﻿# v13 — The Community Library Panel
 
-**Status:** IMPLEMENTED 2026-09-15; rebuilt as a dynamic list the same day; live pass 1 failed to show (§5), pass 2 pending. Answers the user's request "add a way to view
+**Status:** IMPLEMENTED 2026-09-15; rebuilt as a dynamic list, then tied to the Beit Midrash building, the same day. Live passes 1-2 in §5; pass 3 pending. Answers the user's request "add a way to view
 the books a community has in its domicile view."
 
 **Read first:** `docs/spec/spike-book-inventory.md` (why the library is a `variable_list` of flags on
@@ -12,20 +12,22 @@ and §6c/§6h for the one GUI crash class this panel was built to avoid), and th
 
 ## 1. What it is
 
-Whenever the vanilla domicile window is open, a companion panel appears directly beneath it. On a
-Kehillah's quarter it reads **"The Library of [community]"** and lists every work the community's
-Beit Midrash holds — one row per work, its subject (Parshanut / Talmudics / Hashkafa) in-line, and a
-hover giving the work's description. **Only what is held is listed** (additive); nothing is said about
-works the community lacks. Beneath the roster a smaller line lists what *the player* has personally
-studied, wherever they studied it. On a non-Kehillah domicile it shows one line: "[name] keeps no
-library here."
+**The Beit Midrash holds the library.** In the domicile view, selecting the Beit Midrash slot (any
+tier) opens a companion panel beneath the window: **"The Library of [community]"**, one row per work
+the community holds, its subject (Parshanut / Talmudics / Hashkafa) in-line, and a hover giving the
+work's description. **Only what is held is listed** (additive); nothing is said about works the
+community lacks. Beneath the roster a smaller line lists what *the player* has personally studied,
+wherever they studied it. Select any other slot, or none, and the panel is gone. A community with no
+Beit Midrash has no library view — by design: the building *is* the library. The building's own
+tooltip carries a parameter line saying so.
 
 It follows whatever quarter is being viewed — your own, or another community's opened from the map
 roster's quarter button — so "does the community I would travel to hold the work I lack" is
 answerable before setting out, which is the whole reason the Learn Torah journey exists.
 
 **The list is dynamic — dozens of works cost nothing in the GUI.** Rebuilt 2026-09-15 from a first
-draft of twelve fixed rows after the user asked for exactly that.
+draft of twelve fixed rows after the user asked for exactly that; tied to the building the same day
+("could we have a beit midrash building that contains the books?").
 
 ## 2. Why a companion panel, not a tab in the domicile window
 
@@ -39,10 +41,16 @@ it. Accepted trade-off; a real tab would need the fork.
 ## 3. How the GUI knows which domicile and what it holds
 
 - **Which domicile:** `DomicileWindow.GetDomicile` — the accessor `window_domicile.gui:2` itself
-  reads. Whether it resolves from *outside* that file is the one thing live pass 1 could not settle
-  (see §5). Visibility of the window is `IsGameViewOpen('domicile')` (vanilla: `hud_outliner.gui:1124`,
-  `window_title.gui:1371`); the *contents* are gated on the owner's government
-  `IsType('kehillah_government')`.
+  reads; live pass 2 confirmed it resolves from outside that file.
+- **Which building is selected:** vanilla's slot click does two things (`window_domicile.gui:1882-1887`):
+  `GetVariableSystem.Set('show_building_panel', 'true')` and
+  `DomicileWindow.SelectBuildingSlot(...)`. Both are readable from any file, so the panel is visible
+  on `IsGameViewOpen('domicile')` AND `GetVariableSystem.Exists('show_building_panel')` AND
+  `DomicileWindow.GetSelectedBuildingSlot.GetBuilding.HasParameter('kehillah_holds_library')`.
+  `HasParameter` is the call vanilla makes for `can_receive_artifacts` (`00_estate_buildings.txt`),
+  reading a building's `parameters = { }` block; all three Beit Midrash tiers now declare
+  `kehillah_holds_library = yes`. An empty or under-construction slot has no building → null → false,
+  silently. The tooltip parameter line is `domicile_building_parameter_kehillah_holds_library`.
 - **What it holds:** `datamodel = Title.MakeScope.GetList('kehillah_library_works')` — the same call
   the map view uses for its roster mirror. Each item is a `Scope` holding a flag;
   `Scope.GetFlagName` yields the flag's name as a string (vanilla:
@@ -64,8 +72,9 @@ it. Accepted trade-off; a real tab would need the fork.
 
 | File | Role |
 |---|---|
-| `gui/kehillah_domicile_library.gui` | The panel (window, movable, `layer = windows_layer`). |
+| `gui/kehillah_domicile_library.gui` | The panel (window, movable, `layer = windows_layer`, under the domicile window's bottom-left corner). |
 | `gui/scripted_widgets/kehillah_scripted_widgets.txt` | One registration line. |
+| `common/domiciles/buildings/kehillah_domicile_buildings.txt` | `kehillah_holds_library = yes` on the three Beit Midrash tiers. |
 | `localization/english/kehillah_library_panel_l_english.yml` | Header/empty/not-a-Kehillah lines, three subject names, and per-work name / subject / description / tooltip keyed by flag. |
 
 (The first draft's `common/script_values/kehillah_library_values.txt` — twelve fixed 0/1 values — is
@@ -91,18 +100,25 @@ in `shared/cooltip.gui`) are all from files that could plausibly inherit that co
 on suspicion: `layer = middle` → `windows_layer` (the layer every working scripted widget in this
 repo uses).
 
-**Pass 2 is built to bisect in one restart.** The window shows on `IsGameViewOpen` alone; what it
-shows inside says which link failed:
+**Pass 2 (2026-09-15, dynamic list, bisect build):** the panel appeared on Mainz's quarter opened
+from the roster, and showed the Kehillah-gated branch's *empty* line ("The Beit Midrash holds no works
+yet"). So `IsGameViewOpen`, `DomicileWindow.GetDomicile` from outside its file, and the government
+check all work — **pass 1's no-show was `layer = middle`**; a scripted widget needs `windows_layer`.
+Two things wrong: (a) it was centred and half-hidden behind the roster window (now anchored under the
+domicile window's bottom-left corner, `position = { -695 354 }`); (b) the list was empty although the
+seed gives every registered community Targum Onkelos and the Mishnah at game start. Not yet
+separated: seed never ran on that title vs. `Title.MakeScope.GetList` not reading it (vanilla only
+calls `GetList` on Character, Activity and Story scopes). `run/probe_library.txt` logs both the
+player's primary title's list and `c_kehillah_mainz`'s, plus what the Mainz holder's primary title
+actually is — the panel reads `GetOwner.GetPrimaryTitle`, the seed writes to the registry title; if
+those differ, that is the bug. Also seen in that session's `error.log`, for the other session: the
+Worms developed-start effect fails at `kehillah_synagogue_02` ("Domicile owner failed to meet
+triggered requirements"), cascading so that Worms starts with Synagogue I + Mikvah only — no Sofer's
+Workshop, no Beit Midrash — which with this pass's design means no library view until one is built.
 
-| You see | Meaning |
-|---|---|
-| nothing at all | `IsGameViewOpen` / layer / position — fallback: drive visibility from our own variable, set by the roster's quarter button and the strip |
-| "keeps no library here" with an **empty** name | `DomicileWindow.GetDomicile` is null outside its file — same fallback, plus `GetPlayer.GetDomicile` for your own quarter |
-| "keeps no library here" **with** a name, on a Kehillah quarter | the government `IsType` check — swap for a domicile-type check |
-| the list | everything works; only `position = { 0 354 }` may want a nudge |
-
-Then: open another community's quarter from the roster (contents switch); study a work (it appears
-in "You have studied"); open a non-Kehillah domicile (the one-line notice); close the view (gone).
+**Pass 3 checklist:** build (or console-add) a Beit Midrash; select its slot — the panel appears
+under the window's left half, subheader naming the building; select the Synagogue — gone; close the
+view — gone. Then the list contents per the probe. Then another community's quarter from the roster.
 
 ## 6. Open ideas (not built)
 

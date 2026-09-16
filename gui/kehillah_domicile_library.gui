@@ -15,19 +15,25 @@
 # parked directly under the domicile window (1390 x 694, centred --
 # window_domicile.gui:9-10), and goes away with it.
 #
+# LIVES IN THE BEIT MIDRASH (live pass 3, 2026-09-15, at user request:
+# "could we have a beit midrash building that contains the books?").
+# The panel opens when the Beit Midrash SLOT is selected in the domicile
+# view -- vanilla sets the GUI variable show_building_panel and
+# DomicileWindow.SelectBuildingSlot on any slot click (window_domicile.
+# gui:1882-1887), both readable from here; the selected slot's building
+# is then asked DomicileBuilding.HasParameter( 'kehillah_holds_library' )
+# (the call vanilla makes for can_receive_artifacts, 00_estate_
+# buildings.gui), a parameter all three Beit Midrash tiers now declare
+# (common/domiciles/buildings/kehillah_domicile_buildings.txt). Any
+# other slot, or no slot: no panel. So a community without a Beit
+# Midrash has no library view -- by design, the building IS the library.
+#
 # WHICH DOMICILE: DomicileWindow.GetDomicile -- the accessor window_
-# domicile.gui:2 itself reads. Whether it resolves from OUTSIDE that
-# file is the one thing live pass 1 (2026-09-15, panel never appeared,
-# no load error) could not settle, so this build is deliberately
-# bisectable: the WINDOW shows on IsGameViewOpen alone, and what it
-# shows inside tells you which link failed --
-#   * nothing at all         -> IsGameViewOpen / layer / position;
-#   * the "no library" line
-#     with an EMPTY name     -> DomicileWindow.GetDomicile is null here;
-#   * the "no library" line
-#     with a name, on a
-#     Kehillah quarter       -> the government IsType check;
-#   * the list               -> everything works.
+# domicile.gui:2 itself reads. Live pass 2 confirmed it resolves from
+# outside that file (the panel reached the Kehillah-gated branch on
+# Mainz's quarter opened from the roster). Pass 1's no-show was the
+# layer: "middle" (the domicile window's own) does not work for a
+# scripted widget; windows_layer does.
 #
 # THE LIST IS DYNAMIC. datamodel = the title's kehillah_library_works
 # variable_list (Title.MakeScope.GetList -- the same call the map view
@@ -60,11 +66,12 @@
 window = {
 	name = "kehillah_domicile_library"
 	parentanchor = center
-	widgetanchor = top|hcenter
+	widgetanchor = top|left
 
-	# Just under the domicile window's bottom edge (694 / 2 = 347).
-	# Draggable from here.
-	position = { 0 354 }
+	# Under the domicile window's bottom-left corner (1390 x 694, centred:
+	# -695, +347), so it stays clear of the roster window bottom-right --
+	# live pass 2 had it centred, half-hidden behind the roster. Draggable.
+	position = { -695 354 }
 	size = { 760 200 }
 
 	movable = yes
@@ -76,8 +83,9 @@ window = {
 
 	datacontext = "[DomicileWindow.GetDomicile.GetOwner]"
 	datacontext = "[DomicileWindow.GetDomicile.GetOwner.GetPrimaryTitle]"
+	datacontext = "[DomicileWindow.GetSelectedBuildingSlot]"
 
-	visible = "[And( IsInGame, IsGameViewOpen( 'domicile' ) )]"
+	visible = "[And( And( IsInGame, IsGameViewOpen( 'domicile' ) ), And( GetVariableSystem.Exists( 'show_building_panel' ), DomicileWindow.GetSelectedBuildingSlot.GetBuilding.HasParameter( 'kehillah_holds_library' ) ) )]"
 	visible_at_creation = no
 
 	state = {
@@ -100,9 +108,9 @@ window = {
 		spacing = 4
 		min_width = @lib_width
 
-		### Header -- the community's name. The window-control close
-		### button is hidden: this panel lives and dies with the domicile
-		### view, it has no life of its own to close.
+		### Header -- the building and the community. The window-control
+		### close button is hidden: this panel lives and dies with the
+		### slot selection, it has no life of its own to close.
 		header_pattern = {
 			layoutpolicy_horizontal = expanding
 
@@ -116,17 +124,8 @@ window = {
 			}
 		}
 
-		### Not a Kehillah's quarter (or the bisect case above).
-		text_single = {
-			visible = "[Not( Character.GetGovernment.IsType( 'kehillah_government' ) )]"
-			text = "KEHILLAH_LIB_NOT_KEHILLAH"
-			default_format = "#weak;italic"
-			max_width = @lib_width
-		}
-
-		### A Kehillah's quarter: the library.
+		### The library.
 		vbox = {
-			visible = "[Character.GetGovernment.IsType( 'kehillah_government' )]"
 			layoutpolicy_horizontal = expanding
 			spacing = 4
 
