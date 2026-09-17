@@ -15,18 +15,26 @@
 # parked directly under the domicile window (1390 x 694, centred --
 # window_domicile.gui:9-10), and goes away with it.
 #
-# LIVES IN THE BEIT MIDRASH (live pass 3, 2026-09-15, at user request:
-# "could we have a beit midrash building that contains the books?").
-# The panel opens when the Beit Midrash SLOT is selected in the domicile
-# view -- vanilla sets the GUI variable show_building_panel and
-# DomicileWindow.SelectBuildingSlot on any slot click (window_domicile.
-# gui:1882-1887), both readable from here; the selected slot's building
-# is then asked DomicileBuilding.HasParameter( 'kehillah_holds_library' )
-# (the call vanilla makes for can_receive_artifacts, 00_estate_
-# buildings.gui), a parameter all three Beit Midrash tiers now declare
-# (common/domiciles/buildings/kehillah_domicile_buildings.txt). Any
-# other slot, or no slot: no panel. So a community without a Beit
-# Midrash has no library view -- by design, the building IS the library.
+# LIVES IN THE BEIT MIDRASH (live passes 3-4, 2026-09-15, at user
+# request: "could we have a beit midrash building that contains the
+# books?"). The panel is visible whenever the domicile view is open on
+# a quarter that HAS a Beit Midrash, any tier (kehillah_has_beit_
+# midrash_value, common/script_values/kehillah_library_values.txt), and
+# not otherwise -- the building is the library; no building, no library
+# view. The building's own tooltip says so (the kehillah_holds_library
+# parameter on all three tiers, localised as domicile_building_
+# parameter_kehillah_holds_library).
+#
+# NOT tied to selecting the building's slot, though pass 3 tried that
+# (show_building_panel + DomicileWindow.GetSelectedBuildingSlot.
+# GetBuilding.HasParameter, all of which do work): vanilla makes a
+# LOCKED slot click-through (window_domicile.gui:1892 alwaystransparent,
+# :2118 enabled = IsUnlocked), and the Worms start effect places
+# buildings into slots that base_external_slots = 2 has not unlocked
+# yet, so the Beit Midrash could not be selected at all in the test
+# game -- and even when it can, "find the right banner on the picture"
+# is a poor way to reach a list. Presence of the building is the
+# honest condition.
 #
 # WHICH DOMICILE: DomicileWindow.GetDomicile -- the accessor window_
 # domicile.gui:2 itself reads. Live pass 2 confirmed it resolves from
@@ -83,9 +91,8 @@ window = {
 
 	datacontext = "[DomicileWindow.GetDomicile.GetOwner]"
 	datacontext = "[DomicileWindow.GetDomicile.GetOwner.GetPrimaryTitle]"
-	datacontext = "[DomicileWindow.GetSelectedBuildingSlot]"
 
-	visible = "[And( And( IsInGame, IsGameViewOpen( 'domicile' ) ), And( GetVariableSystem.Exists( 'show_building_panel' ), DomicileWindow.GetSelectedBuildingSlot.GetBuilding.HasParameter( 'kehillah_holds_library' ) ) )]"
+	visible = "[And( And( IsInGame, IsGameViewOpen( 'domicile' ) ), GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_has_beit_midrash_value' ), '(CFixedPoint)0' ) )]"
 	visible_at_creation = no
 
 	state = {
@@ -108,9 +115,9 @@ window = {
 		spacing = 4
 		min_width = @lib_width
 
-		### Header -- the building and the community. The window-control
-		### close button is hidden: this panel lives and dies with the
-		### slot selection, it has no life of its own to close.
+		### Header -- the community. The window-control close button is
+		### hidden: this panel lives and dies with the domicile view, it
+		### has no life of its own to close.
 		header_pattern = {
 			layoutpolicy_horizontal = expanding
 

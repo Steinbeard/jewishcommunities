@@ -1,6 +1,6 @@
 ﻿# v13 — The Community Library Panel
 
-**Status:** IMPLEMENTED 2026-09-15; rebuilt as a dynamic list, then tied to the Beit Midrash building, the same day. Live passes 1-2 in §5; pass 3 pending. Answers the user's request "add a way to view
+**Status:** IMPLEMENTED 2026-09-15; rebuilt as a dynamic list, then tied to the Beit Midrash building, the same day. Live passes 1-3 in §5; pass 4 pending. Answers the user's request "add a way to view
 the books a community has in its domicile view."
 
 **Read first:** `docs/spec/spike-book-inventory.md` (why the library is a `variable_list` of flags on
@@ -12,14 +12,13 @@ and §6c/§6h for the one GUI crash class this panel was built to avoid), and th
 
 ## 1. What it is
 
-**The Beit Midrash holds the library.** In the domicile view, selecting the Beit Midrash slot (any
-tier) opens a companion panel beneath the window: **"The Library of [community]"**, one row per work
-the community holds, its subject (Parshanut / Talmudics / Hashkafa) in-line, and a hover giving the
-work's description. **Only what is held is listed** (additive); nothing is said about works the
-community lacks. Beneath the roster a smaller line lists what *the player* has personally studied,
-wherever they studied it. Select any other slot, or none, and the panel is gone. A community with no
-Beit Midrash has no library view — by design: the building *is* the library. The building's own
-tooltip carries a parameter line saying so.
+**The Beit Midrash holds the library.** Whenever the domicile view is open on a quarter that has a
+Beit Midrash (any tier), a companion panel sits beneath the window: **"The Library of [community]"**,
+one row per work the community holds, its subject (Parshanut / Talmudics / Hashkafa) in-line, and a
+hover giving the work's description. **Only what is held is listed** (additive); nothing is said about
+works the community lacks. Beneath the roster a smaller line lists what *the player* has personally
+studied, wherever they studied it. A community with no Beit Midrash has no library view — by design:
+the building *is* the library. The building's own tooltip carries a parameter line saying so.
 
 It follows whatever quarter is being viewed — your own, or another community's opened from the map
 roster's quarter button — so "does the community I would travel to hold the work I lack" is
@@ -42,15 +41,11 @@ it. Accepted trade-off; a real tab would need the fork.
 
 - **Which domicile:** `DomicileWindow.GetDomicile` — the accessor `window_domicile.gui:2` itself
   reads; live pass 2 confirmed it resolves from outside that file.
-- **Which building is selected:** vanilla's slot click does two things (`window_domicile.gui:1882-1887`):
-  `GetVariableSystem.Set('show_building_panel', 'true')` and
-  `DomicileWindow.SelectBuildingSlot(...)`. Both are readable from any file, so the panel is visible
-  on `IsGameViewOpen('domicile')` AND `GetVariableSystem.Exists('show_building_panel')` AND
-  `DomicileWindow.GetSelectedBuildingSlot.GetBuilding.HasParameter('kehillah_holds_library')`.
-  `HasParameter` is the call vanilla makes for `can_receive_artifacts` (`00_estate_buildings.txt`),
-  reading a building's `parameters = { }` block; all three Beit Midrash tiers now declare
-  `kehillah_holds_library = yes`. An empty or under-construction slot has no building → null → false,
-  silently. The tooltip parameter line is `domicile_building_parameter_kehillah_holds_library`.
+- **Has a Beit Midrash:** `Character.MakeScope.ScriptValue('kehillah_has_beit_midrash_value')` on
+  the domicile's owner — 1 if `domicile ?= { has_domicile_building_or_higher = kehillah_beit_midrash_01 }`
+  (`common/script_values/kehillah_library_values.txt`). The window is visible on
+  `IsGameViewOpen('domicile')` AND that value > 0. The `kehillah_holds_library` parameter on the three
+  tiers now only feeds the building tooltip line (`domicile_building_parameter_kehillah_holds_library`).
 - **What it holds:** `datamodel = Title.MakeScope.GetList('kehillah_library_works')` — the same call
   the map view uses for its roster mirror. Each item is a `Scope` holding a flag;
   `Scope.GetFlagName` yields the flag's name as a string (vanilla:
@@ -74,11 +69,12 @@ it. Accepted trade-off; a real tab would need the fork.
 |---|---|
 | `gui/kehillah_domicile_library.gui` | The panel (window, movable, `layer = windows_layer`, under the domicile window's bottom-left corner). |
 | `gui/scripted_widgets/kehillah_scripted_widgets.txt` | One registration line. |
-| `common/domiciles/buildings/kehillah_domicile_buildings.txt` | `kehillah_holds_library = yes` on the three Beit Midrash tiers. |
+| `common/domiciles/buildings/kehillah_domicile_buildings.txt` | `kehillah_holds_library = yes` on the three Beit Midrash tiers (tooltip line only). |
+| `common/script_values/kehillah_library_values.txt` | `kehillah_has_beit_midrash_value`. |
 | `localization/english/kehillah_library_panel_l_english.yml` | Header/empty/not-a-Kehillah lines, three subject names, and per-work name / subject / description / tooltip keyed by flag. |
 
-(The first draft's `common/script_values/kehillah_library_values.txt` — twelve fixed 0/1 values — is
-gone; the dynamic list needs none of it.)
+(The first draft's twelve fixed 0/1 values in that script-values file are gone; the dynamic list
+needs none of them. The file now holds the single presence value.)
 
 Structural rule carried over from v12: `vbox` inside `window`, hboxes and vboxes nested freely, text
 items inside the one flowcontainer, and no `vbox`/`hbox` as a direct child of any `(flow)container` —
@@ -116,9 +112,22 @@ Worms developed-start effect fails at `kehillah_synagogue_02` ("Domicile owner f
 triggered requirements"), cascading so that Worms starts with Synagogue I + Mikvah only — no Sofer's
 Workshop, no Beit Midrash — which with this pass's design means no library view until one is built.
 
-**Pass 3 checklist:** build (or console-add) a Beit Midrash; select its slot — the panel appears
-under the window's left half, subheader naming the building; select the Synagogue — gone; close the
-view — gone. Then the list contents per the probe. Then another community's quarter from the roster.
+**Pass 3 (2026-09-15, slot-selection build):** did not work, and could not have in that game. The
+build keyed on selecting the Beit Midrash's slot banner (`show_building_panel` +
+`DomicileWindow.GetSelectedBuildingSlot.GetBuilding.HasParameter('kehillah_holds_library')` — the
+parameter line *did* appear in the building tooltip, so `HasParameter` and the parameter are fine).
+But the user's Worms had seven buildings while its slot banners read "Locked Slot": the quarter has
+`base_external_slots = 2` and the start effect (or the console) had placed the Beit Midrash in a slot
+not yet unlocked, and vanilla makes a locked slot click-through (`window_domicile.gui:1892`
+`alwaystransparent = Not(IsUnlocked)`, `:2118 enabled = IsUnlocked`). The overview list on the left is
+fold-outs and tooltips only — not selectable. Beyond the test artefact, "find the right banner on
+the picture" is a poor way to reach a list, so the condition became the building's *presence*
+instead (§3). The start effect placing buildings into locked slots is the other session's to look
+at (`kehillah_worms_developed_start_effect`).
+
+**Pass 4 checklist:** open Worms's quarter (it has a Beit Midrash) — the panel appears under the
+window's left half; open Mainz's from the roster (Synagogue only) — no panel; then the list contents
+per the probe (`run/probe_library.txt`).
 
 ## 6. Open ideas (not built)
 
