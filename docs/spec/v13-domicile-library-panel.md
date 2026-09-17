@@ -129,7 +129,28 @@ at (`kehillah_worms_developed_start_effect`).
 window's left half; open Mainz's from the roster (Synagogue only) — no panel; then the list contents
 per the probe (`run/probe_library.txt`).
 
-## 6. Open ideas (not built)
+## 6. Every Kehillah starts with a Beit Midrash (2026-09-17)
+
+User request after pass 3: "give all Kehillahs a level 1 bet midrash and don't lock it behind
+synagogue level." Since the building *is* the library, a community without one has no library at all,
+and the Learn Torah loop presumes every community can keep a book. Three changes:
+
+- `common/scripted_effects/kehillah_domicile_seed_effects.txt` — `kehillah_seed_beit_midrash_effect`:
+  every living Kehillah leader with a domicile lacking a Beit Midrash gets `kehillah_beit_midrash_01`.
+  Walks characters, not the registry, so it does not depend on on_action order between files.
+- `common/on_action/kehillah_library_on_actions.txt` — hooks it to `on_game_start_after_lobby` from
+  its own file (on_actions of the same name merge across files). New games only.
+- The slot economy: `base_external_slots` 2 → 3 in `kehillah_domicile_types.txt`, and Synagogue V no
+  longer adds external capacity (base 3 + tiers 2/3/4 already reach the six defined slots). So the
+  seeded Beit Midrash sits in a slot unlocked at Synagogue I and the young community keeps its two
+  free slots. The developed-Worms start already guards its own Beit Midrash add with
+  `NOT has_domicile_building_or_higher`, so the two never collide.
+
+What "locked" actually was, for the record: the Beit Midrash building has no synagogue-tier trigger
+of its own; the lock was purely that a building placed by effect into external slot 3+ sits in a slot
+Synagogue I has not unlocked, and vanilla renders such a slot as "Locked Slot" and click-through.
+
+## 7. Open ideas (not built)
 
 - A "commission this work" button on missing rows, calling the acquire decision's option directly.
 - A "travel here to study" button on other communities' held rows.
