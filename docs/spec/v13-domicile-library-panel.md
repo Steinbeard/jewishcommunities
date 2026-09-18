@@ -1,6 +1,6 @@
 ﻿# v13 — The Community Library Panel
 
-**Status:** IMPLEMENTED 2026-09-15; rebuilt as a dynamic list, then tied to the Beit Midrash building, the same day. Live passes 1-3 in §5; pass 4 pending. Answers the user's request "add a way to view
+**Status:** IMPLEMENTED 2026-09-15; rebuilt as a dynamic list, then tied to the Beit Midrash building, the same day; **fixed and live-verified 2026-09-18** (§9 — the panel had never actually worked: its `DomicileWindow` datacontext is unreachable from a scripted widget). Live passes 1-5 in §5. Answers the user's request "add a way to view
 the books a community has in its domicile view."
 
 **Read first:** `docs/spec/spike-book-inventory.md` (why the library is a `variable_list` of flags on
@@ -39,12 +39,16 @@ it. Accepted trade-off; a real tab would need the fork.
 
 ## 3. How the GUI knows which domicile and what it holds
 
-- **Which domicile:** `DomicileWindow.GetDomicile` — the accessor `window_domicile.gui:2` itself
-  reads; live pass 2 confirmed it resolves from outside that file.
+- **Which domicile:** ~~`DomicileWindow.GetDomicile` — the accessor `window_domicile.gui:2` itself
+  reads; live pass 2 confirmed it resolves from outside that file.~~ **Wrong — corrected 2026-09-18,
+  see §9.** It resolves to nothing outside that window; the panel now shows the player's own
+  community by default and the community the map roster's quarter button recorded otherwise.
 - **Has a Beit Midrash:** `Character.MakeScope.ScriptValue('kehillah_has_beit_midrash_value')` on
   the domicile's owner — 1 if `domicile ?= { has_domicile_building_or_higher = kehillah_beit_midrash_01 }`
-  (`common/script_values/kehillah_library_values.txt`). The window is visible on
-  `IsGameViewOpen('domicile')` AND that value > 0. The `kehillah_holds_library` parameter on the three
+  (`common/script_values/kehillah_library_values.txt`). ~~The window is visible on
+  `IsGameViewOpen('domicile')` AND that value > 0.~~ (Since 2026-09-18 the window shows for any
+  Kehillah quarter and the value only switches the body between the roster and a "no Beit
+  Midrash" line — §9.) The `kehillah_holds_library` parameter on the three
   tiers now only feeds the building tooltip line (`domicile_building_parameter_kehillah_holds_library`).
 - **What it holds:** `datamodel = Title.MakeScope.GetList('kehillah_library_works')` — the same call
   the map view uses for its roster mirror. Each item is a `Scope` holding a flag;
@@ -67,8 +71,10 @@ it. Accepted trade-off; a real tab would need the fork.
 
 | File | Role |
 |---|---|
-| `gui/kehillah_domicile_library.gui` | The panel (window, movable, `layer = windows_layer`, under the domicile window's bottom-left corner). |
-| `gui/scripted_widgets/kehillah_scripted_widgets.txt` | One registration line. |
+| `gui/kehillah_domicile_library.gui` | The panel: one body type, two windows (own / roster-chosen community), movable, `layer = windows_layer`, in the column left of the domicile window (§9). |
+| `gui/scripted_widgets/kehillah_scripted_widgets.txt` | Two registration lines (one per window). |
+| `common/scripted_guis/kehillah_map_view_gui.txt` | `kehillah_lib_view_community` — the roster button records the chosen community on the player (§9). |
+| `gui/kehillah_community_map_view.gui` | The roster's quarter button's two extra `onclick`s (§9). |
 | `common/domiciles/buildings/kehillah_domicile_buildings.txt` | `kehillah_holds_library = yes` on the three Beit Midrash tiers (tooltip line only). |
 | `common/script_values/kehillah_library_values.txt` | `kehillah_has_beit_midrash_value`. |
 | `localization/english/kehillah_library_panel_l_english.yml` | Header/empty/not-a-Kehillah lines, three subject names, and per-work name / subject / description / tooltip keyed by flag. |
@@ -98,8 +104,11 @@ repo uses).
 
 **Pass 2 (2026-09-15, dynamic list, bisect build):** the panel appeared on Mainz's quarter opened
 from the roster, and showed the Kehillah-gated branch's *empty* line ("The Beit Midrash holds no works
-yet"). So `IsGameViewOpen`, `DomicileWindow.GetDomicile` from outside its file, and the government
-check all work — **pass 1's no-show was `layer = middle`**; a scripted widget needs `windows_layer`.
+yet"). So `IsGameViewOpen`, ~~`DomicileWindow.GetDomicile` from outside its file, and the government
+check all work~~ — **pass 1's no-show was `layer = middle`**; a scripted widget needs `windows_layer`.
+*(Corrected 2026-09-18: `DomicileWindow.GetDomicile` did NOT work — both datacontexts were null, which
+is exactly why the list read empty. The branch seen was the one whose condition happened to be true
+on a null Character. See §9.)*
 Two things wrong: (a) it was centred and half-hidden behind the roster window (now anchored under the
 domicile window's bottom-left corner, `position = { -695 354 }`); (b) the list was empty although the
 seed gives every registered community Targum Onkelos and the Mishnah at game start. Not yet
@@ -125,9 +134,16 @@ the picture" is a poor way to reach a list, so the condition became the building
 instead (§3). The start effect placing buildings into locked slots is the other session's to look
 at (`kehillah_worms_developed_start_effect`).
 
-**Pass 4 checklist:** open Worms's quarter (it has a Beit Midrash) — the panel appears under the
+**Pass 4 checklist:** ~~open Worms's quarter (it has a Beit Midrash) — the panel appears under the
 window's left half; open Mainz's from the roster (Synagogue only) — no panel; then the list contents
-per the probe (`run/probe_library.txt`).
+per the probe (`run/probe_library.txt`).~~ Superseded by pass 5 (§9): the presence-gated build never
+showed at all.
+
+**Pass 5 (2026-09-18, the fix, §9): PASS.** Worms's quarter from the realm panel: "Library of
+Kehillah of Worms — The Beit Midrash holds 2 works", rows Targum Onkelos / Parshanut and The Mishnah /
+Talmudics, content top-anchored, panel gone when the view closes. Mainz's quarter from the roster:
+header re-targets to "Library of Kehillah of Mainz" with its own (identical, seeded) two works.
+`error.log` clean of panel lines apart from the pre-existing roster "position in a layout" warnings.
 
 ## 6. Every Kehillah starts with a Beit Midrash (2026-09-17)
 
@@ -185,3 +201,56 @@ longer a second, redundant gate layered on top of those thresholds.
   (three lists maintained alongside `kehillah_library_works`) would give three columns for free.
 - Showing *which* nearby communities hold a work you lack — needs a cached per-work list on the
   player, same shape as the map view's roster mirror.
+
+## 9. Why the panel never showed, and the fix (2026-09-18)
+
+**The bug.** Every build from pass 1 on set the panel's datacontexts from `DomicileWindow.GetDomicile`.
+From a scripted widget that resolves to *nothing*: `DomicileWindow` is a datacontext **type** the
+engine injects into `window_domicile.gui`'s own tree (like `CharacterWindow`), not a global. The
+`DumpDataTypes` console dump lists it as `Definition type: Type`; the only window globals are
+`AccessCouncilWindow`, `AccessCourtWindow`, `AccessMyRealmWindow`. Confirmed live with debug text
+lines in the panel: `GetPlayer.GetNameNoTooltip` rendered, `DomicileWindow.GetDomicile.GetName` and
+`Character.GetNameNoTooltip` rendered blank. So the presence-gated build's
+`Character.MakeScope.ScriptValue(...)` test was always false and the window never appeared; the
+pass-2 build appeared only because its window condition did not touch `Character`, and its list was
+empty because `Title` was null too (the probe showed the title *did* have the list). The idioms
+themselves are fine — `GetPlayer.MakeScope.ScriptValue('kehillah_has_beit_midrash_value')` and
+`GetPlayer.GetPrimaryTitle.MakeScope.GetList('kehillah_library_works')` both evaluated correctly in
+the same debug pass.
+
+**The fix — the panel picks the community itself.**
+- Default: the **player's own** community (`GetPlayer`, `GetPlayer.GetPrimaryTitle`). Every vanilla
+  route into the domicile view (realm panel card, title window card, HUD) opens the player's quarter.
+- The one place this mod opens **another** community's quarter is the map roster's quarter button.
+  It now fires three `onclick`s in order (vanilla precedent for multiple: `frontend_bookmarks.gui:239`):
+  `GetScriptedGui('kehillah_lib_view_community').Execute(...)` with `scope:community` = the leader,
+  which sets `var:kehillah_lib_viewed_community` on the player; `GetVariableSystem.Set(
+  'kehillah_lib_viewing_other', 'yes')`; then the original `ToggleGameViewData`.
+- Two top-level windows in the same file, `kehillah_domicile_library` (own; visible when the flag is
+  *not* set) and `kehillah_domicile_library_other` (visible when it is; datacontexts
+  `GetPlayer.MakeScope.Var('kehillah_lib_viewed_community').Char` and its primary title — vanilla
+  precedent for `Var(...).Char`: the funeral widgets' `Var('body_to_bury').Char`). Both instantiate
+  one `kehillah_library_body` type. **Not** two instances in one window: a hidden vbox instance kept
+  its full height in the parent vbox despite `ignoreinvisible = yes`, pushing the visible one ~200 px
+  down (seen live; removing the twin fixed it).
+- The *other* window's `_hide` state clears the flag (`on_start = "[GetVariableSystem.Clear(...)]"`,
+  precedent `anonymous_letter_event.gui:17`), so closing a roster-opened quarter returns the panel to
+  the player's own. Only that window clears it: the own window hides the instant the roster sets
+  the flag, and a clear there would undo the click. The flag is GUI-side, so a reload starts clean.
+- Because the clear rides on the other window *showing*, the window now shows for every Kehillah
+  quarter; a community without a Beit Midrash gets a one-line `KEHILLAH_LIB_NO_BEIT_MIDRASH` instead
+  of the roster (§1's "no building, no library view" is relaxed to "no building, no list"). With §6
+  seeding a Beit Midrash everywhere, only pre-seed saves ever see the line.
+- **Placement moved** to the column left of the domicile window, below its bookmark tab strip
+  (`parentanchor = left|vcenter`, `position = { 6 -176 }`, 300 x 440): below the window there are
+  ~155 UI px before the bottom HUD — room for one row. The works and the "studied by you" rows share a
+  vanilla-idiom `scrollbox` (`blockoverride "scrollbox_content"`, `window_domicile.gui:1170`) so a
+  long library scrolls. Header shortened to "Library of [community]" with `max_width` on the header
+  text so it fits the column.
+- `kehillah_lib_view_community`'s effect also does an `exists = var:...` read first: the engine's
+  startup lint logs "variable set but never used" for a variable only the GUI reads.
+
+**Known limit.** Opening another community's quarter through a *vanilla* route (its title window's
+domicile card) sets no flag, so the panel shows the player's own library under that quarter. The
+header always names whose library it is, so this reads as "your library" rather than as wrong data.
+Fixing it would need the vanilla window forked, which this mod does not do.

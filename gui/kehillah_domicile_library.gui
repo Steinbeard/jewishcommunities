@@ -37,11 +37,20 @@
 #     records the community on the player (var:kehillah_lib_viewed_
 #     community, via scripted_gui kehillah_lib_view_community) and sets
 #     the GUI-side flag kehillah_lib_viewing_other, and the panel reads
-#     the recorded community instead. The flag is cleared by this
-#     window's own _hide state -- i.e. whenever the domicile view
-#     closes -- so it can never go stale across views.
-# The two cases are the same body type instantiated twice with
-# different datacontexts (types block below). Known limit: opening
+#     the recorded community instead. The flag is cleared by the
+#     OTHER window's _hide state -- i.e. when the domicile view closes
+#     on a roster-chosen quarter -- so it does not go stale across
+#     views. Only that window clears it: the own-quarter window also
+#     hides the instant the roster sets the flag, and a clear there
+#     would undo the click.
+# The two cases are the same body type (types block below) hosted by
+# TWO top-level windows, kehillah_domicile_library (own) and
+# kehillah_domicile_library_other (roster-chosen), only ever one of
+# them visible. Not two instances in one window: a hidden vbox
+# instance kept its full height in the parent vbox despite
+# ignoreinvisible = yes (live, 2026-09-17 -- the visible body sat 200
+# px down, under an invisible twin), and a separate window is the
+# robust way to give each body its own datacontexts. Known limit: opening
 # another community's quarter through a VANILLA route (its title
 # window's domicile card) leaves the flag unset, so the panel shows
 # the player's own library -- the header always names whose library it
@@ -53,9 +62,9 @@
 # roster; a community without one shows a single line saying so
 # (kehillah_has_beit_midrash_value, common/script_values/kehillah_
 # library_values.txt). The line rather than hiding the whole panel is
-# deliberate: the panel's _hide state is what clears the viewing-other
-# flag, so the panel must show for every Kehillah quarter or the flag
-# could stick. Since 2026-09-17 every Kehillah starts with a Beit
+# deliberate: the other window's _hide state is what clears the
+# viewing-other flag, so it must show for every Kehillah quarter the
+# roster can open or the flag could stick. Since 2026-09-17 every Kehillah starts with a Beit
 # Midrash anyway, so the line is only ever seen on pre-seed saves.
 #
 # WHERE: the column LEFT of the domicile window, below its bookmark
@@ -253,6 +262,7 @@ types KehillahLibrary
 	}
 }
 
+### Your own community.
 window = {
 	name = "kehillah_domicile_library"
 	parentanchor = left|vcenter
@@ -262,7 +272,7 @@ window = {
 	# strip bottom = window top + 165 = centre - 182). Height keeps the
 	# panel clear of the bottom-left character portrait. Draggable.
 	position = { 6 -176 }
-	size = { 300 100 }
+	size = { 300 440 }
 
 	movable = yes
 	resizable = no
@@ -271,9 +281,9 @@ window = {
 	filter_mouse = all
 	allow_outside = yes
 
-	# Open with the domicile view, for any Kehillah quarter: the
-	# player's own, or the community the roster button recorded.
-	visible = "[And( And( IsInGame, IsGameViewOpen( 'domicile' ) ), Or( And( Not( GetVariableSystem.Exists( 'kehillah_lib_viewing_other' ) ), GetPlayer.GetGovernment.IsType( 'kehillah_government' ) ), And( GetVariableSystem.Exists( 'kehillah_lib_viewing_other' ), GetPlayer.MakeScope.Var( 'kehillah_lib_viewed_community' ).Char.GetGovernment.IsType( 'kehillah_government' ) ) ) )]"
+	# Your own community -- every vanilla route into the domicile view
+	# opens your own quarter -- unless the roster chose another.
+	visible = "[And( And( IsInGame, IsGameViewOpen( 'domicile' ) ), And( Not( GetVariableSystem.Exists( 'kehillah_lib_viewing_other' ) ), GetPlayer.GetGovernment.IsType( 'kehillah_government' ) ) )]"
 	visible_at_creation = no
 
 	state = {
@@ -283,7 +293,58 @@ window = {
 	state = {
 		name = _hide
 		using = Animation_FadeOut_Standard
-		# The domicile view closed: whatever the roster chose is over.
+	}
+
+	background = {
+		using = Background_Area_Dark
+		color = { 0.11 0.10 0.09 0.94 }
+		margin = { 6 6 }
+	}
+
+	vbox = {
+		parentanchor = top|left
+		margin = { 14 10 }
+		spacing = 4
+		min_width = @lib_width
+
+		kehillah_library_body = {
+			datacontext = "[GetPlayer]"
+			datacontext = "[GetPlayer.GetPrimaryTitle]"
+		}
+	}
+}
+
+### The community the map roster's quarter button opened.
+window = {
+	name = "kehillah_domicile_library_other"
+	parentanchor = left|vcenter
+	widgetanchor = top|left
+
+	# Left of the domicile window, under its bookmark tab strip (tab
+	# strip bottom = window top + 165 = centre - 182). Height keeps the
+	# panel clear of the bottom-left character portrait. Draggable.
+	position = { 6 -176 }
+	size = { 300 440 }
+
+	movable = yes
+	resizable = no
+	layer = windows_layer
+	alwaystransparent = no
+	filter_mouse = all
+	allow_outside = yes
+
+	# The community the map roster's quarter button opened.
+	visible = "[And( And( IsInGame, IsGameViewOpen( 'domicile' ) ), And( GetVariableSystem.Exists( 'kehillah_lib_viewing_other' ), GetPlayer.MakeScope.Var( 'kehillah_lib_viewed_community' ).Char.GetGovernment.IsType( 'kehillah_government' ) ) )]"
+	visible_at_creation = no
+
+	state = {
+		name = _show
+		using = Animation_FadeIn_Quick
+	}
+	state = {
+		name = _hide
+		using = Animation_FadeOut_Standard
+		# The domicile view closed on a roster-chosen quarter: over.
 		on_start = "[GetVariableSystem.Clear( 'kehillah_lib_viewing_other' )]"
 	}
 
@@ -298,24 +359,10 @@ window = {
 		margin = { 14 10 }
 		spacing = 4
 		min_width = @lib_width
-		ignoreinvisible = yes
 
-		text_single = { raw_text = "TOP-MARKER" }
-
-		### The community the map roster's quarter button opened.
 		kehillah_library_body = {
-			visible = "[GetVariableSystem.Exists( 'kehillah_lib_viewing_other' )]"
 			datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_lib_viewed_community' ).Char]"
 			datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_lib_viewed_community' ).Char.GetPrimaryTitle]"
 		}
-
-		### Your own community -- every vanilla route into the domicile
-		### view opens your own quarter.
-		kehillah_library_body = {
-			visible = "[Not( GetVariableSystem.Exists( 'kehillah_lib_viewing_other' ) )]"
-			datacontext = "[GetPlayer]"
-			datacontext = "[GetPlayer.GetPrimaryTitle]"
-		}
-
 	}
 }
