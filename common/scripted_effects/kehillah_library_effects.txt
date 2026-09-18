@@ -29,13 +29,25 @@ kehillah_seed_starting_library_effect = {
 
 
 # =====================================================================
-# STUDYING A TRACK -- shared by kehillah_learn_torah.0001 (study locally,
-# events/kehillah_learn_torah_events.txt) and kehillah_learn_torah_
-# journey.0001 (study at a community you have travelled to, events/
-# kehillah_learn_torah_journey_events.txt). ADDED 2026-09-15 at user
-# request ("implement the travel to study a book... keep track of which
-# books you've already studied... studying the same book a second time
-# should give a much smaller boost").
+# STUDYING A TRACK -- ADDED 2026-09-15 at user request ("implement the
+# travel to study a book... keep track of which books you've already
+# studied... studying the same book a second time should give a much
+# smaller boost").
+#
+# NO LONGER SHARED WITH THE JOURNEY, AS OF 2026-09-17. Originally used by
+# BOTH kehillah_learn_torah.0001 (study locally, events/kehillah_learn_
+# torah_events.txt) and kehillah_learn_torah_journey.0001 (study having
+# travelled, events/kehillah_learn_torah_journey_events.txt) -- the three
+# effects below are now local-study-only. The journey's own arrival flow
+# was reworked, at user request, from "pick a track, then randomly find
+# out which of its four works you got" into "pick a track, then pick the
+# specific work" -- see kehillah_study_specific_work_effect below (this
+# file) and kehillah_learn_torah_journey.0002/0003/0004 (events/kehillah_
+# learn_torah_journey_events.txt) for the replacement. Local study is
+# UNCHANGED and still uses the three track effects below exactly as
+# before -- this split was a deliberate scope boundary (only "Yeshiva
+# Visit" was asked about), not an oversight forgetting to update the
+# local path too.
 #
 # ONE EFFECT PER TRACK, NOT ONE GENERIC ONE -- each track's four works
 # are a different set of literal flags, and CK3 parameter substitution
@@ -306,6 +318,73 @@ kehillah_study_hashkafa_effect = {
 		}
 		else = {
 			add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = kehillah_learn_torah_xp_fail }
+			custom_tooltip = kehillah_study_torah.fail.tt
+		}
+	}
+	add_piety = minor_piety_gain
+	remove_variable = kehillah_learn_torah_repeat
+}
+
+# =====================================================================
+# kehillah_study_specific_work_effect -- ADDED 2026-09-17 at user request
+# (Yeshiva Visit's own picker: "when you get there it gives you a
+# sampling of books to choose from?"). Scope: root = the studying
+# character (unchanged from the three track effects above). Journey-only
+# -- called from kehillah_learn_torah_journey.0002/0003/0004 (events/
+# kehillah_learn_torah_journey_events.txt), one per track, each offering
+# the specific works that track's random_list branch used to pick among
+# blind. Local study (kehillah_learn_torah.0001) is untouched and still
+# calls the three track effects above.
+#
+# $WORK$/$TRACK$, THE SAME PARAMETERIZED-SCRIPTED-EFFECT IDIOM $LIBRARY$
+# already established (kehillah_scripted_triggers.txt's own header) --
+# $WORK$ substitutes the literal flag (e.g. flag:work_targum_onkelos) and
+# $TRACK$ the literal trait track (parshanut/talmudics/hashkafa), so one
+# effect definition serves all twelve works, called once per work from
+# each follow-up event's own per-work option rather than twelve near-
+# duplicate effect bodies.
+#
+# NO $LIBRARY$ HERE, UNLIKE THE THREE TRACK EFFECTS ABOVE: "does the
+# destination library own this work" is now checked by the CALLING
+# option's own trigger (kehillah_learn_torah_journey.0002 etc.), because
+# that is also what decides whether the option is even shown -- this
+# effect only needs to touch the STUDYING character's own kehillah_
+# studied_works, never the library. random_list and its custom_tooltip-
+# per-branch reveal are also gone: the player already knows which work
+# they picked (it was the option they clicked), so there is nothing left
+# to reveal after the fact the way the blind track-random pick needed to.
+# =====================================================================
+
+kehillah_study_specific_work_effect = {
+	if = {
+		limit = { is_target_in_variable_list = { name = kehillah_studied_works target = $WORK$ } }
+		set_variable = { name = kehillah_learn_torah_repeat value = 1 }
+	}
+	else = {
+		set_variable = { name = kehillah_learn_torah_repeat value = 0 }
+		add_to_variable_list = { name = kehillah_studied_works target = $WORK$ }
+	}
+
+	if = {
+		limit = { var:kehillah_learn_torah_repeat = 1 }
+		if = {
+			limit = { learning >= 10 }
+			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_repeat_pass }
+			custom_tooltip = kehillah_study_torah.repeat_pass.tt
+		}
+		else = {
+			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_repeat_fail }
+			custom_tooltip = kehillah_study_torah.repeat_fail.tt
+		}
+	}
+	else = {
+		if = {
+			limit = { learning >= 10 }
+			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_pass }
+			custom_tooltip = kehillah_study_torah.pass.tt
+		}
+		else = {
+			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_fail }
 			custom_tooltip = kehillah_study_torah.fail.tt
 		}
 	}

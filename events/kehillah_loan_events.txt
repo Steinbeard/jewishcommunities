@@ -1,0 +1,262 @@
+﻿# =====================================================================
+# Loan Contract -- the challenge chain. Added 2026-09-17, at the user's
+# explicit request ("an event chain with challenges to succeed"), in the
+# same pass that reversed kehillah_loan_contract's direction back to its
+# original shape (the Kehillah lends, the neighboring ruler borrows) --
+# see that type's own header (common/task_contracts/
+# kehillah_task_contracts.txt) for the full account of both changes.
+# Fired from kehillah_loan_contract's own on_accepted, which now only
+# sets a Stewardship-banded starting tally and hands off here instead of
+# originating the loan in place.
+#
+# STRUCTURE, mirroring events/kehillah_translation_events.txt's own tally
+# chain shape (same idiom, new stakes -- see this mod's established
+# precedent for why root and scope:task_contract stay valid throughout
+# a multi-day, cross-event trigger_event chain):
+#   .0001 ASSESSING THE BORROWER -- due diligence before committing gold.
+#   .0002 NEGOTIATING TERMS -- a real tradeoff, firm vs. generous.
+#   .0003 SEALING THE LOAN -- resolves SUCCESS or FAILURE (two tiers,
+#         not three -- see kehillah_loan_contract's own header for why a
+#         financial negotiation's one meaningful stake is binary). On
+#         SUCCESS, runs the exact origination effect that used to live
+#         directly in on_accepted (same values, same shape, taker/
+#         employer swapped). On FAILURE, the deal falls through --
+#         invalidate_contract = yes, nothing paid, nothing written.
+#
+# root THROUGHOUT THIS WHOLE FILE is the Kehillah leader (task_contract_
+# taker), same character across the entire chain, exactly like the
+# translation chain. scope:task_contract is NOT a variable -- it is the
+# scope saved with save_scope_as inside kehillah_loan_contract's own
+# on_accepted, BEFORE switching into task_contract_taker, and read back
+# here the same proven way the translation chain already does.
+#
+# EVERY EVENT GUARDS is_alive/is_imprisoned/government_has_flag/exists
+# scope:task_contract in its own trigger -- if the leader dies, is
+# imprisoned, or the community dissolves mid-chain, the chain just
+# silently stops firing rather than erroring; kehillah_loan_contract's
+# own valid_to_continue (now keyed off task_contract_employer, the
+# borrower) handles the underlying contract independently.
+# =====================================================================
+
+namespace = kehillah_loan_challenge
+
+
+# ---------------------------------------------------------------------
+# kehillah_loan_challenge.0001 -- ASSESSING THE BORROWER
+# ---------------------------------------------------------------------
+
+kehillah_loan_challenge.0001 = {
+	type = character_event
+	title = kehillah_loan_challenge.0001.t
+	desc = kehillah_loan_challenge.0001.desc
+	theme = diplomacy
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:task_contract.task_contract_employer
+		animation = worry
+	}
+
+	trigger = {
+		is_alive = yes
+		is_imprisoned = no
+		government_has_flag = government_is_kehillah
+		exists = scope:task_contract
+	}
+
+	# Fresh, local re-save of the employer scope for loc's own use (e.g.
+	# [kehillah_loan_challenge_employer.GetFirstName]) -- matches the
+	# precedent kehillah_translation_effects.txt's own header established
+	# (a distant on_accepted-era save can go stale for loc/ck3-tiger's
+	# purposes; a save right here, in the firing event, does not).
+	immediate = {
+		scope:task_contract.task_contract_employer = { save_scope_as = kehillah_loan_challenge_employer }
+	}
+
+	option = {
+		name = kehillah_loan_challenge.0001.a
+		if = {
+			limit = { stewardship >= 14 }
+			change_variable = { name = kehillah_loan_challenge_tally add = kehillah_loan_challenge_assess_gain }
+			custom_tooltip = kehillah_loan_challenge.0001.a.pass.tt
+		}
+		else = {
+			change_variable = { name = kehillah_loan_challenge_tally subtract = kehillah_loan_challenge_assess_loss }
+			custom_tooltip = kehillah_loan_challenge.0001.a.fail.tt
+		}
+	}
+
+	option = {
+		name = kehillah_loan_challenge.0001.b
+		change_variable = { name = kehillah_loan_challenge_tally add = kehillah_loan_challenge_assess_agent_gain }
+		custom_tooltip = kehillah_loan_challenge.0001.b.tt
+	}
+
+	option = {
+		name = kehillah_loan_challenge.0001.c
+		change_variable = { name = kehillah_loan_challenge_tally subtract = kehillah_loan_challenge_assess_reckless_loss }
+		custom_tooltip = kehillah_loan_challenge.0001.c.tt
+	}
+
+	after = {
+		trigger_event = { id = kehillah_loan_challenge.0002 days = 5 }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_loan_challenge.0002 -- NEGOTIATING TERMS
+# ---------------------------------------------------------------------
+
+kehillah_loan_challenge.0002 = {
+	type = character_event
+	title = kehillah_loan_challenge.0002.t
+	desc = kehillah_loan_challenge.0002.desc
+	theme = diplomacy
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:task_contract.task_contract_employer
+		animation = personality_rational
+	}
+
+	trigger = {
+		is_alive = yes
+		is_imprisoned = no
+		government_has_flag = government_is_kehillah
+		exists = scope:task_contract
+	}
+
+	immediate = {
+		scope:task_contract.task_contract_employer = { save_scope_as = kehillah_loan_challenge_employer }
+	}
+
+	option = {
+		name = kehillah_loan_challenge.0002.a
+		change_variable = { name = kehillah_loan_challenge_tally add = kehillah_loan_challenge_firm_gain }
+		custom_tooltip = kehillah_loan_challenge.0002.a.tt
+	}
+
+	option = {
+		name = kehillah_loan_challenge.0002.b
+		random_list = {
+			60 = {
+				change_variable = { name = kehillah_loan_challenge_tally add = kehillah_loan_challenge_generous_gain }
+				custom_tooltip = kehillah_loan_challenge.0002.b.pays_off.tt
+			}
+			40 = {
+				change_variable = { name = kehillah_loan_challenge_tally subtract = kehillah_loan_challenge_generous_loss }
+				custom_tooltip = kehillah_loan_challenge.0002.b.exploited.tt
+			}
+		}
+	}
+
+	after = {
+		trigger_event = { id = kehillah_loan_challenge.0003 days = 7 }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_loan_challenge.0003 -- SEALING THE LOAN
+# Resolves the tally, then either originates the loan for real (SUCCESS
+# -- the same ledger-writing shape kehillah_loan_contract's on_accepted
+# used to run directly, relocated here) or lets the deal fall through
+# (FAILURE -- invalidate_contract = yes, the same effect a declined
+# offer already uses).
+# ---------------------------------------------------------------------
+
+kehillah_loan_challenge.0003 = {
+	type = character_event
+	title = kehillah_loan_challenge.0003.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:kehillah_loan_challenge_tally >= kehillah_loan_challenge_threshold_success }
+				desc = kehillah_loan_challenge.0003.desc.success
+			}
+			desc = kehillah_loan_challenge.0003.desc.failure
+		}
+	}
+	theme = diplomacy
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:task_contract.task_contract_employer
+		animation = personality_rational
+	}
+
+	trigger = {
+		is_alive = yes
+		is_imprisoned = no
+		government_has_flag = government_is_kehillah
+		exists = scope:task_contract
+	}
+
+	immediate = {
+		scope:task_contract.task_contract_employer = { save_scope_as = kehillah_loan_challenge_employer }
+		if = {
+			limit = { var:kehillah_loan_challenge_tally >= kehillah_loan_challenge_threshold_success }
+			set_variable = { name = kehillah_loan_challenge_tier value = flag:success }
+		}
+		else = {
+			set_variable = { name = kehillah_loan_challenge_tier value = flag:failure }
+		}
+	}
+
+	option = {
+		name = kehillah_loan_challenge.0003.a
+		if = {
+			limit = { var:kehillah_loan_challenge_tier = flag:success }
+			primary_title = { save_scope_as = kehillah_loan_lender_title_scope }
+			if = {
+				limit = { exists = scope:kehillah_loan_lender_title_scope }
+				play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract"
+				pay_short_term_gold = {
+					target = scope:task_contract.task_contract_employer
+					gold = kehillah_loan_principal_value
+				}
+				scope:task_contract.task_contract_employer = {
+					set_variable = {
+						name = kehillah_loan_amount_owed
+						value = kehillah_loan_amount_owed_value
+					}
+					set_variable = {
+						name = kehillah_loan_lender_title
+						value = scope:kehillah_loan_lender_title_scope
+					}
+					set_variable = {
+						name = kehillah_loan_years_elapsed
+						value = 0
+					}
+				}
+				scope:kehillah_loan_lender_title_scope = {
+					add_to_variable_list = {
+						name = kehillah_loan_debtors
+						target = scope:task_contract.task_contract_employer
+					}
+				}
+				primary_title = {
+					change_variable = { name = kehillah_var_greatness add = kehillah_loan_challenge_negotiation_greatness_bonus }
+				}
+				custom_tooltip = kehillah_loan_challenge_success_tt
+			}
+		}
+		else = {
+			play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_failure_on_contract"
+			scope:task_contract = { invalidate_contract = yes }
+			custom_tooltip = kehillah_loan_challenge_failure_tt
+		}
+		remove_variable = kehillah_loan_challenge_tally
+		remove_variable = kehillah_loan_challenge_tier
+	}
+}

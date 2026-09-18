@@ -1,4 +1,4 @@
-﻿# =====================================================================
+# =====================================================================
 # THE COMMUNITY LIBRARY PANEL -- what books a Kehillah's Beit Midrash
 # holds, shown alongside the vanilla domicile window. ADDED 2026-09-15
 # at user request; REBUILT the same day as a DYNAMIC list ("I want
@@ -11,41 +11,69 @@
 # WHY A COMPANION PANEL AND NOT A TAB: the domicile window is vanilla's
 # gui/window_domicile.gui, and this mod does not fork vanilla .gui files
 # (docs/spec/gui-spike-community-list.md). So this is a fourth top-level
-# scripted widget that appears whenever the domicile view is open,
-# parked directly under the domicile window (1390 x 694, centred --
-# window_domicile.gui:9-10), and goes away with it.
+# scripted widget that appears whenever the domicile view is open, and
+# goes away with it.
+#
+# WHICH DOMICILE -- THE BUG THAT HID THE PANEL FOR TWO DAYS (fixed
+# 2026-09-17, v13 spec section 9). The first three builds read
+# DomicileWindow.GetDomicile for their datacontext, on the strength of
+# window_domicile.gui:2 reading the same thing. It resolves to NOTHING
+# from here: DomicileWindow is a datacontext TYPE the engine injects
+# into the vanilla window's own widget tree (the DumpDataTypes console
+# dump lists it as "Type", not "Global promote" -- the only window
+# globals are AccessCouncilWindow / AccessCourtWindow /
+# AccessMyRealmWindow). With both datacontexts null, every visibility
+# test that looked at Character failed and the panel never appeared;
+# where it did appear (live pass 2) the list read empty for the same
+# reason. Confirmed live with debug text lines: GetPlayer resolved,
+# DomicileWindow.GetDomicile.GetName rendered blank.
+#
+# So the panel decides the community for ITSELF:
+#   - by default, the PLAYER's own community (GetPlayer) -- every
+#     vanilla route into the domicile view (realm panel card, title
+#     window card, HUD) opens the player's own quarter;
+#   - when the map roster's quarter button opened ANOTHER community's
+#     quarter (gui/kehillah_community_map_view.gui), that button first
+#     records the community on the player (var:kehillah_lib_viewed_
+#     community, via scripted_gui kehillah_lib_view_community) and sets
+#     the GUI-side flag kehillah_lib_viewing_other, and the panel reads
+#     the recorded community instead. The flag is cleared by this
+#     window's own _hide state -- i.e. whenever the domicile view
+#     closes -- so it can never go stale across views.
+# The two cases are the same body type instantiated twice with
+# different datacontexts (types block below). Known limit: opening
+# another community's quarter through a VANILLA route (its title
+# window's domicile card) leaves the flag unset, so the panel shows
+# the player's own library -- the header always names whose library it
+# is, so this is visible rather than silently wrong.
 #
 # LIVES IN THE BEIT MIDRASH (live passes 3-4, 2026-09-15, at user
 # request: "could we have a beit midrash building that contains the
-# books?"). The panel is visible whenever the domicile view is open on
-# a quarter that HAS a Beit Midrash, any tier (kehillah_has_beit_
-# midrash_value, common/script_values/kehillah_library_values.txt), and
-# not otherwise -- the building is the library; no building, no library
-# view. The building's own tooltip says so (the kehillah_holds_library
-# parameter on all three tiers, localised as domicile_building_
-# parameter_kehillah_holds_library).
+# books?"). The building IS the library: a community with one shows its
+# roster; a community without one shows a single line saying so
+# (kehillah_has_beit_midrash_value, common/script_values/kehillah_
+# library_values.txt). The line rather than hiding the whole panel is
+# deliberate: the panel's _hide state is what clears the viewing-other
+# flag, so the panel must show for every Kehillah quarter or the flag
+# could stick. Since 2026-09-17 every Kehillah starts with a Beit
+# Midrash anyway, so the line is only ever seen on pre-seed saves.
 #
-# NOT tied to selecting the building's slot, though pass 3 tried that
-# (show_building_panel + DomicileWindow.GetSelectedBuildingSlot.
-# GetBuilding.HasParameter, all of which do work): vanilla makes a
-# LOCKED slot click-through (window_domicile.gui:1892 alwaystransparent,
-# :2118 enabled = IsUnlocked), and the Worms start effect places
-# buildings into slots that base_external_slots = 2 has not unlocked
-# yet, so the Beit Midrash could not be selected at all in the test
-# game -- and even when it can, "find the right banner on the picture"
-# is a poor way to reach a list. Presence of the building is the
-# honest condition.
-#
-# WHICH DOMICILE: DomicileWindow.GetDomicile -- the accessor window_
-# domicile.gui:2 itself reads. Live pass 2 confirmed it resolves from
-# outside that file (the panel reached the Kehillah-gated branch on
-# Mainz's quarter opened from the roster). Pass 1's no-show was the
-# layer: "middle" (the domicile window's own) does not work for a
-# scripted widget; windows_layer does.
+# WHERE: the column LEFT of the domicile window, below its bookmark
+# tab strip. Below the window there are ~155 UI px before the bottom
+# HUD -- not enough for a list (the first builds sat there and could
+# never have shown more than a row). The window is 1390 x 694 centred
+# (window_domicile.gui:9-10); its tab strip hangs at { -49 25 } size
+# { 60 140 }, so the free column runs from the screen's left edge to
+# the window's left edge, from 165 px below the window's top down to
+# the bottom-left character portrait. Anchored to the screen's left so
+# a narrower UI puts the panel partly under the window rather than off
+# the screen. The domicile window draws above this panel (it is on
+# layer middle; a scripted widget needs windows_layer), so any overlap
+# hides the panel's right edge, never the window.
 #
 # THE LIST IS DYNAMIC. datamodel = the title's kehillah_library_works
-# variable_list (Title.MakeScope.GetList -- the same call the map view
-# uses for its roster mirror); each item is a Scope holding a flag, and
+# variable_list (Title.MakeScope.GetList -- confirmed live 2026-09-17
+# with the player's title); each item is a Scope holding a flag, and
 # Scope.GetFlagName gives the flag's name as a string (vanilla: chariot_
 # race_widget_types.gui:105, Var('wager_team').GetFlagName). Every text
 # and tooltip on the row is then Localize( Concatenate( 'prefix_',
@@ -56,31 +84,185 @@
 #   kehillah_lib_tt_<flag>
 # -- see localization/english/kehillah_library_panel_l_english.yml.
 # Only what is HELD is listed (additive); nothing is said about works
-# the community lacks.
+# the community lacks. The rows sit in a scrollbox (vanilla's own
+# blockoverride "scrollbox_content" idiom, window_domicile.gui:1170) so
+# a long library scrolls instead of running under the HUD.
 #
-# STUDIED BY YOU: a second, smaller dynamic list of the PLAYER's own
-# kehillah_studied_works, as a line under the roster. GUI has no
-# "is this item in that other list" call, so the two lists sit side by
-# side rather than one being marked against the other.
+# STUDIED BY YOU: a second dynamic list of the PLAYER's own
+# kehillah_studied_works, as rows under the roster in the same
+# scrollbox. GUI has no "is this item in that other list" call, so the
+# two lists sit one under the other rather than one being marked
+# against the other.
 #
-# STRUCTURE: vbox inside window, hboxes and vboxes nested freely, text
-# items inside the one flowcontainer -- never a vbox/hbox as a direct
-# child of a (flow)container (live passes 3 and 8 both crashed on it).
+# STRUCTURE: vbox inside window, hboxes and vboxes nested freely, and
+# no vbox/hbox as a direct child of a (flow)container (live passes 3
+# and 8 both crashed on it). The scrollbox's content vbox is the one
+# vanilla itself puts there.
 # =====================================================================
 
-@lib_width = 720
-@lib_name_width = 330
+@lib_width = 272
+@lib_name_width = 170
+@lib_list_height = 290
+
+types KehillahLibrary
+{
+	# One community's library. Datacontexts are set by the instance:
+	# Character = the community's leader, Title = their primary title.
+	type kehillah_library_body = vbox {
+		layoutpolicy_horizontal = expanding
+		spacing = 4
+		ignoreinvisible = yes
+
+		### Header -- whose library this is. The window-control close
+		### button is hidden: this panel lives and dies with the domicile
+		### view, it has no life of its own to close.
+		header_pattern = {
+			layoutpolicy_horizontal = expanding
+
+			blockoverride "header_text"
+			{
+				text = "KEHILLAH_LIB_HEADER"
+				max_width = 250
+			}
+			blockoverride "button_close"
+			{
+				visible = no
+			}
+		}
+
+		### No Beit Midrash: nowhere to keep a book.
+		text_multi = {
+			visible = "[Not( GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_has_beit_midrash_value' ), '(CFixedPoint)0' ) )]"
+			layoutpolicy_horizontal = expanding
+			autoresize = yes
+			text = "KEHILLAH_LIB_NO_BEIT_MIDRASH"
+			default_format = "#weak;italic"
+			max_width = @lib_width
+		}
+
+		### The library.
+		vbox = {
+			visible = "[GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_has_beit_midrash_value' ), '(CFixedPoint)0' )]"
+			layoutpolicy_horizontal = expanding
+			spacing = 4
+			ignoreinvisible = yes
+
+			text_single = {
+				visible = "[DataModelHasItems( Title.MakeScope.GetList( 'kehillah_library_works' ) )]"
+				text = "KEHILLAH_LIB_SUBHEADER"
+				default_format = "#weak;italic"
+				max_width = @lib_width
+			}
+			text_multi = {
+				visible = "[Not( DataModelHasItems( Title.MakeScope.GetList( 'kehillah_library_works' ) ) )]"
+				layoutpolicy_horizontal = expanding
+				autoresize = yes
+				text = "KEHILLAH_LIB_EMPTY"
+				default_format = "#weak;italic"
+				max_width = @lib_width
+			}
+
+			scrollbox = {
+				layoutpolicy_horizontal = expanding
+				size = { @lib_width @lib_list_height }
+
+				blockoverride "scrollbox_margins"
+				{
+					margin = { 0 4 }
+					margin_right = 12
+				}
+
+				blockoverride "scrollbox_content"
+				{
+					vbox = {
+						layoutpolicy_horizontal = expanding
+						spacing = 2
+						ignoreinvisible = yes
+
+						### The works held. One row per flag in the title's list.
+						vbox = {
+							layoutpolicy_horizontal = expanding
+							spacing = 2
+							datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
+
+							item = {
+								hbox = {
+									layoutpolicy_horizontal = expanding
+									spacing = 6
+									tooltip = "[Localize( Concatenate( 'kehillah_lib_tt_', Scope.GetFlagName ) )]"
+									using = tooltip_se
+
+									icon = {
+										size = { 20 20 }
+										texture = "gfx/interface/icons/domicile_building/domicile_building_library.dds"
+										alwaystransparent = yes
+									}
+									text_single = {
+										text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
+										default_format = "#high"
+										max_width = @lib_name_width
+									}
+									expand = {}
+									text_single = {
+										text = "[Localize( Concatenate( 'kehillah_lib_subject_', Scope.GetFlagName ) )]"
+										default_format = "#weak"
+									}
+								}
+							}
+						}
+
+						### What YOU have studied, wherever you studied it.
+						text_single = {
+							visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_studied_works' ) )]"
+							margin_top = 8
+							text = "KEHILLAH_LIB_STUDIED_LABEL"
+							default_format = "#weak"
+							tooltip = "KEHILLAH_LIB_STUDIED_TT"
+							using = tooltip_se
+						}
+						vbox = {
+							layoutpolicy_horizontal = expanding
+							spacing = 2
+							datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_studied_works' )]"
+
+							item = {
+								hbox = {
+									layoutpolicy_horizontal = expanding
+									spacing = 6
+									tooltip = "[Localize( Concatenate( 'kehillah_lib_tt_', Scope.GetFlagName ) )]"
+									using = tooltip_se
+
+									icon = {
+										size = { 20 20 }
+										texture = "gfx/interface/icons/symbols/icon_check.dds"
+										alwaystransparent = yes
+									}
+									text_single = {
+										text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
+										default_format = "#weak"
+										max_width = @lib_name_width
+									}
+									expand = {}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
 
 window = {
 	name = "kehillah_domicile_library"
-	parentanchor = center
+	parentanchor = left|vcenter
 	widgetanchor = top|left
 
-	# Under the domicile window's bottom-left corner (1390 x 694, centred:
-	# -695, +347), so it stays clear of the roster window bottom-right --
-	# live pass 2 had it centred, half-hidden behind the roster. Draggable.
-	position = { -695 354 }
-	size = { 760 200 }
+	# Left of the domicile window, under its bookmark tab strip (tab
+	# strip bottom = window top + 165 = centre - 182). Height keeps the
+	# panel clear of the bottom-left character portrait. Draggable.
+	position = { 6 -176 }
+	size = { 300 100 }
 
 	movable = yes
 	resizable = no
@@ -89,10 +271,9 @@ window = {
 	filter_mouse = all
 	allow_outside = yes
 
-	datacontext = "[DomicileWindow.GetDomicile.GetOwner]"
-	datacontext = "[DomicileWindow.GetDomicile.GetOwner.GetPrimaryTitle]"
-
-	visible = "[And( And( IsInGame, IsGameViewOpen( 'domicile' ) ), GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_has_beit_midrash_value' ), '(CFixedPoint)0' ) )]"
+	# Open with the domicile view, for any Kehillah quarter: the
+	# player's own, or the community the roster button recorded.
+	visible = "[And( And( IsInGame, IsGameViewOpen( 'domicile' ) ), Or( And( Not( GetVariableSystem.Exists( 'kehillah_lib_viewing_other' ) ), GetPlayer.GetGovernment.IsType( 'kehillah_government' ) ), And( GetVariableSystem.Exists( 'kehillah_lib_viewing_other' ), GetPlayer.MakeScope.Var( 'kehillah_lib_viewed_community' ).Char.GetGovernment.IsType( 'kehillah_government' ) ) ) )]"
 	visible_at_creation = no
 
 	state = {
@@ -102,6 +283,8 @@ window = {
 	state = {
 		name = _hide
 		using = Animation_FadeOut_Standard
+		# The domicile view closed: whatever the roster chose is over.
+		on_start = "[GetVariableSystem.Clear( 'kehillah_lib_viewing_other' )]"
 	}
 
 	background = {
@@ -111,105 +294,28 @@ window = {
 	}
 
 	vbox = {
+		parentanchor = top|left
 		margin = { 14 10 }
 		spacing = 4
 		min_width = @lib_width
+		ignoreinvisible = yes
 
-		### Header -- the community. The window-control close button is
-		### hidden: this panel lives and dies with the domicile view, it
-		### has no life of its own to close.
-		header_pattern = {
-			layoutpolicy_horizontal = expanding
+		text_single = { raw_text = "TOP-MARKER" }
 
-			blockoverride "header_text"
-			{
-				text = "KEHILLAH_LIB_HEADER"
-			}
-			blockoverride "button_close"
-			{
-				visible = no
-			}
+		### The community the map roster's quarter button opened.
+		kehillah_library_body = {
+			visible = "[GetVariableSystem.Exists( 'kehillah_lib_viewing_other' )]"
+			datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_lib_viewed_community' ).Char]"
+			datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_lib_viewed_community' ).Char.GetPrimaryTitle]"
 		}
 
-		### The library.
-		vbox = {
-			layoutpolicy_horizontal = expanding
-			spacing = 4
-
-			text_single = {
-				visible = "[DataModelHasItems( Title.MakeScope.GetList( 'kehillah_library_works' ) )]"
-				text = "KEHILLAH_LIB_SUBHEADER"
-				default_format = "#weak;italic"
-				max_width = @lib_width
-			}
-			text_single = {
-				visible = "[Not( DataModelHasItems( Title.MakeScope.GetList( 'kehillah_library_works' ) ) )]"
-				text = "KEHILLAH_LIB_EMPTY"
-				default_format = "#weak;italic"
-				max_width = @lib_width
-			}
-
-			### The works held. One row per flag in the title's list.
-			vbox = {
-				layoutpolicy_horizontal = expanding
-				spacing = 2
-				margin_top = 4
-				datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
-
-				item = {
-					hbox = {
-						layoutpolicy_horizontal = expanding
-						spacing = 8
-						tooltip = "[Localize( Concatenate( 'kehillah_lib_tt_', Scope.GetFlagName ) )]"
-						using = tooltip_se
-
-						icon = {
-							size = { 20 20 }
-							texture = "gfx/interface/icons/domicile_building/domicile_building_library.dds"
-							alwaystransparent = yes
-						}
-						text_single = {
-							text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
-							default_format = "#high"
-							max_width = @lib_name_width
-						}
-						text_single = {
-							text = "[Localize( Concatenate( 'kehillah_lib_subject_', Scope.GetFlagName ) )]"
-							default_format = "#weak"
-						}
-						expand = {}
-					}
-				}
-			}
-
-			### What YOU have studied, wherever you studied it.
-			hbox = {
-				visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_studied_works' ) )]"
-				layoutpolicy_horizontal = expanding
-				margin_top = 8
-				spacing = 6
-
-				text_single = {
-					text = "KEHILLAH_LIB_STUDIED_LABEL"
-					default_format = "#weak"
-					tooltip = "KEHILLAH_LIB_STUDIED_TT"
-					using = tooltip_se
-				}
-				flowcontainer = {
-					spacing = 10
-					datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_studied_works' )]"
-
-					item = {
-						text_single = {
-							text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
-							default_format = "#high"
-							tooltip = "[Localize( Concatenate( 'kehillah_lib_tt_', Scope.GetFlagName ) )]"
-							using = tooltip_se
-						}
-					}
-				}
-				expand = {}
-			}
+		### Your own community -- every vanilla route into the domicile
+		### view opens your own quarter.
+		kehillah_library_body = {
+			visible = "[Not( GetVariableSystem.Exists( 'kehillah_lib_viewing_other' ) )]"
+			datacontext = "[GetPlayer]"
+			datacontext = "[GetPlayer.GetPrimaryTitle]"
 		}
+
 	}
 }

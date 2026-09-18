@@ -269,6 +269,59 @@ ck3-tiger clean (0 fatal, 0 errors; one new warning, `strict-scopes: expects sco
 on the new `create_artifact_book_effect` call, mirroring the identical pre-existing, already-accepted
 warning on "Write a Book"'s own call to the same macro). Not yet live-tested.
 
+**2026-09-17 update — the loan contract's direction was reversed back to the Kehillah as LENDER,
+and both the loan and Hebrew tutor contracts got real challenge chains**, at the user's explicit
+request ("Wait it should be that you loan money to them! Can we also set it up in a way that we
+have an event chain with challenges to succeed? Same for the tutor in Hebrew even..."). See
+`kehillah_loan_contract`'s own header (`common/task_contracts/kehillah_task_contracts.txt`) for the
+full account.
+
+**The reversal was not just a preference — it fixed a real, live bug.** The v8 build (2026-09-10,
+above) had inverted the loan's direction so root/`task_contract_taker` (the Kehillah) was the
+borrower and `scope:employer` was the lender. Tracing it end to end while making this change:
+`kehillah_loan_debtors` (a `variable_list`) is only ever walked by the accrual/default block inside
+`kehillah_quarterly_pillars_effect` (`common/scripted_effects/kehillah_scripted_effects.txt`,
+~line 1867), which runs on `primary_title` and only ever fires via `kehillah_quarterly_pulse`
+(`common/on_action/kehillah_on_actions.txt`), itself gated `government_has_flag =
+government_is_kehillah`. Under the inverted design, `on_accepted` added the Kehillah to the
+**employer's** (a non-Kehillah foreign ruler's) `kehillah_loan_debtors` list — since that character
+never gets `kehillah_quarterly_pulse`, the list was never walked: `years_elapsed` never
+incremented, loans never came due, and the quarterly default codepath was dead for every loan
+originated through the contract since 2026-09-10. Restoring the original direction (the Kehillah
+is the lender, `kehillah_loan_debtors` lives on the Kehillah's own title again) fixes this for
+free — it is also what `kehillah_script_values.txt`'s own "THE LENDER IS THE TITLE" header note
+(the succession-safety argument for storing the lender as a title, not a character) was written
+for in the first place.
+
+**The ledger itself is unchanged** — `kehillah_loan_amount_owed`/`kehillah_loan_lender_title`/
+`kehillah_loan_years_elapsed` are still written with the exact same values, just onto the borrower
+(now correctly `scope:employer`) instead of root. `kehillah_repay_loan_decision` and the quarterly
+accrual/default block remain completely untouched, exactly as the original v8 constraint required
+— both already operate on "whichever character holds the debt variable," so the reversal needed
+zero edits to either.
+
+**Both contracts now hand off to a real three-event challenge chain** instead of resolving inside
+their own `on_accepted`, mirroring the translation contract's own v11 overhaul:
+- `kehillah_loan_contract` → `events/kehillah_loan_events.txt`, namespace `kehillah_loan_challenge`
+  (Assessing the Borrower → Negotiating Terms → Sealing the Loan). Resolves to SUCCESS or FAILURE
+  only (two tiers, not three — a financial negotiation's one real stake is "does the loan happen at
+  all"). On SUCCESS, the chain's final event runs the exact origination effect that used to live in
+  `on_accepted`, relocated verbatim. On FAILURE, the deal falls through via `invalidate_contract =
+  yes` (the same effect a declined offer already uses) — no gold changes hands, nothing is written
+  to the ledger.
+- `kehillah_hebrew_tutor_contract` → `events/kehillah_hebrew_tutor_events.txt`, namespace
+  `kehillah_hebrew_tutor` (The First Lesson → Patient or Rigorous → The Pupil's Progress), the v11
+  spec's own section 5 shape, written at the time but never built. `tutor_great`/`tutor_good`
+  (`common/task_contracts/kehillah_task_contracts.txt`) keep their existing values verbatim — only
+  a new `tutor_poor` failure tier was added (this contract previously had no failure state at all),
+  mirroring `exotic_goods_poor`'s shape.
+
+ck3-tiger clean (0 fatal, 0 errors) on every file touched or created. **Not yet live-tested** — a
+future live-test session should confirm: the loan actually disburses to the employer on a SUCCESS
+resolution, the Kehillah's own quarterly tick now correctly accrues and eventually
+repays/defaults that loan (the bug this pass fixed), and the tutor chain's new `tutor_poor` tier
+actually fires on a low tally.
+
 **2026-09-08 update — the Bet Din takkanah mechanic has been redesigned, built, and live-tested,
 superseding item 6 above.** Scoping conversation produced
 [docs/spec/v5-bet-din-conference.md](docs/spec/v5-bet-din-conference.md); the same session built
@@ -916,6 +969,8 @@ to — natural Phase 2/3 content, not v1:**
   character variables read by both `ai_accept`'s modifiers and their own `.MakeScope.Var(...)` display
   text. The interaction this scoring lived on no longer exists; see follow-up #3 for what replaced
   both the interaction and this scoring mechanism together.
+
+  **2026-09-17 library book levels** what if we gave books in Kehillah libraries levels. Before studying a level 3 book of parshanut, you need to study a level 2 book of parshanut, and so on. This would represent complexity of a text. We should also have inventory management. I think the level of your bet midrash should affect how many books you can have. And how many books you have, modified by their level, affects your greatness and the attractiveness of your kehillah to other scholars who want to study in a yeshiva to level up their rabbinics skills. Studying higher level books should give more xp, and maybe once you max out a track it gives you another benefit--like a temporary skill boost.
 
   **2026-09-15 follow-up #3 — the journey rebuilt as a real activity_type, ck3-tiger-clean, not yet
   live-tested**, at explicit user request: "the interaction is awkward. Maybe we should make it

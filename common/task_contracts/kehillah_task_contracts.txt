@@ -402,7 +402,8 @@ kehillah_translation_contract = {
 
 # ---------------------------------------------------------------------
 # LOAN -- see this file's tail-end note by kehillah_loan_contract for the
-# full ledger-integration account (v8 spec section 5). Placed here in
+# full ledger-integration account (v8 spec section 5, DIRECTION REVERSED
+# 2026-09-17 -- see that note's own opening paragraphs). Placed here in
 # creation order (translation, loan, exotic goods, hebrew tutor) to match
 # the spec's own section 4 ordering; the design note is long enough that
 # it is kept as its own block immediately above the type rather than
@@ -410,114 +411,119 @@ kehillah_translation_contract = {
 # ---------------------------------------------------------------------
 
 # =====================================================================
-# LOAN CONTRACT -- ledger integration. v8 spec section 5 in full; this is
-# the part of the whole feature that most needed verification before
-# writing, and the header explains every choice made.
+# LOAN CONTRACT -- ledger integration, AND a real challenge chain. v8
+# spec section 5 originally defined the ledger integration; DIRECTION
+# REVERSED 2026-09-17 at the user's own explicit request ("Wait it
+# should be that you loan money to them!"), and a challenge chain added
+# in the same pass ("an event chain with challenges to succeed").
 #
-# DIRECTION IS INVERTED FROM THE OTHER THREE TYPES. Everywhere else,
-# scope:employer commissions work FROM the Kehillah ruler. Here,
-# scope:employer IS THE LENDER -- a non-Kehillah neighbor with money to
-# lend -- and the Kehillah ruler (root/task_contract_taker, still the
-# contract owner, since a task_contract's owner is whoever must fulfil
-# it) is the BORROWER. "Fulfilling" this contract means repaying the
-# loan, not delivering a commissioned good or service.
+# THE KEHILLAH IS THE LENDER, NOT THE BORROWER. root/task_contract_taker
+# (the Kehillah ruler, still the contract owner) lends gold to
+# scope:employer (a non-Kehillah, non-coreligionist neighbor), who
+# becomes the BORROWER. This restores kehillah_extend_loan_decision's
+# ORIGINAL direction (root = lender, target = borrower) -- the v8 build
+# had inverted it (root = borrower, employer = lender) when first
+# converting the decision into a task contract; see this file's own git
+# history for that earlier version's (now superseded) reasoning.
 #
-# THE EXISTING LEDGER IS REUSED VERBATIM, NOT DUPLICATED. kehillah_loan_
-# amount_owed / kehillah_loan_lender_title / kehillah_loan_years_elapsed
-# (on the borrower), kehillah_loan_debtors (a variable_list on the
-# lender's title), the quarterly accrual/default block in
-# kehillah_quarterly_pillars_effect (common/scripted_effects/
-# kehillah_scripted_effects.txt, ~line 1796), and kehillah_repay_loan_
-# decision (common/decisions/kehillah_decisions.txt) are ALL untouched by
-# this file. on_accepted below writes the exact same three variables,
-# with the exact same values, that kehillah_extend_loan_decision's own
-# effect block used to write -- see that decision's retirement comment
-# (common/decisions/kehillah_decisions.txt) for the full before/after.
+# THE INVERSION WAS A REAL, LIVE BUG, NOT JUST A DIRECTION PREFERENCE --
+# traced end to end while making this change. kehillah_loan_debtors (a
+# variable_list) is walked every quarter by the accrual/default block
+# inside kehillah_quarterly_pillars_effect (common/scripted_effects/
+# kehillah_scripted_effects.txt, ~line 1867), which processes
+# primary_title's OWN debtors list. That block only ever runs via
+# kehillah_quarterly_pulse (common/on_action/kehillah_on_actions.txt),
+# gated government_has_flag = government_is_kehillah -- it never fires
+# for a non-Kehillah character. Under the inverted design, on_accepted
+# added the Kehillah (the borrower, under that design) to the EMPLOYER's
+# own kehillah_loan_debtors list -- since the foreign employer never
+# gets kehillah_quarterly_pulse, that list was never walked: years_
+# elapsed never incremented, loans never came due, and the default
+# codepath was dead for every loan originated through the contract. This
+# confirms kehillah_script_values.txt's own stated intent ("THE LENDER
+# IS THE TITLE" note, ~line 793) that the LENDER's title is meant to
+# hold the debtors list -- true only, and only ever working correctly,
+# with the Kehillah as lender.
 #
-# THE PROSPERITY GATE IS KEPT, REINTERPRETED. The old decision gated
-# EXTENDING a loan on the LENDER's (then: root, the Kehillah ruler)
-# Prosperity being Healthy+ -- "is this community stable enough to be
-# lending money out." Now the Kehillah ruler is the BORROWER, so the same
-# literal gate reads differently: "is this community's standing healthy
-# enough for an outside lender to see it as credit-worthy." Both readings
-# point at the same underlying economic idea (only a reasonably prosperous
-# community engages with this mechanic at all) so the gate is kept as-is,
-# just re-grounded -- not dropped, and not replaced with something that
-# would need a brand new threshold value.
+# THE EXISTING LEDGER IS STILL REUSED VERBATIM, NOT DUPLICATED --
+# unchanged by the reversal. kehillah_loan_amount_owed / kehillah_loan_
+# lender_title / kehillah_loan_years_elapsed are still written with the
+# exact same values as before; only WHICH character they land on has
+# changed (scope:employer, the borrower, instead of root). kehillah_
+# loan_debtors still lives on the lender's title (now correctly the
+# Kehillah's own, restoring the successor-safety property kehillah_
+# script_values.txt's own header describes). kehillah_repay_loan_
+# decision (common/decisions/kehillah_decisions.txt) and the quarterly
+# accrual/default block are STILL completely untouched -- both already
+# operate on "whichever character holds var:kehillah_loan_amount_owed,"
+# with no assumption baked in about who that is, so restoring the
+# original direction needed zero edits to either; they simply start
+# working as originally intended.
 #
-# SPEC SECTION 5 POINT 2 -- THE REPAYMENT-TRACKING DESIGN, THE JUDGEMENT
-# CALL THAT MATTERS MOST HERE. The spec explicitly left open whether the
-# contract itself should be what complete_task_contracts on repayment, or
-# whether kehillah_repay_loan_decision should stay the sole repayment
-# trigger with the contract closed separately for bookkeeping, and asked
-# whether the contract scope needs to be persisted in a variable to be
-# found again later. Resolved as follows, in order:
+# THE PROSPERITY GATE KEEPS ITS ORIGINAL, SIMPLER MEANING. Now that root
+# is the lender again, kehillah_pillar_at_least_trigger's Healthy+
+# Prosperity check on valid_to_create reads exactly as it did before the
+# v8 inversion: is this community prosperous enough to have money to
+# lend out at all. Same threshold, no new value.
 #
-#   1. kehillah_repay_loan_decision IS NOT TOUCHED, AT ALL -- zero edits,
-#      per this task's own explicit instruction that it "stays exactly as
-#      it is." That is a hard constraint on everything below.
-#   2. RE-FINDING THE CONTRACT DOES NOT NEED A PERSISTED SCOPE VARIABLE.
-#      Vanilla's own answer to "find my character's active contract of a
-#      given type again, later" is confirmed directly from common/
-#      character_interactions/06_ep3_laamp_interactions.txt's
-#      complete_task_contract_interaction: it re-locates the contract via
-#      random_character_active_contract / any_character_active_contract
-#      filtered on has_task_contract_type (plus a matching employer/
-#      target check), not by having stashed the scope in a variable
-#      somewhere. valid_to_create's own "no second loan while one is
-#      outstanding" guard (point 3 below) already guarantees at most one
-#      active kehillah_loan_contract per borrower, so this query is
-#      always unambiguous when it matters. No new persisted-scope
-#      plumbing was built, because vanilla's own equivalent case doesn't
-#      use one either.
-#   3. THE HARD PART: because point 1 forbids touching kehillah_repay_
-#      loan_decision, NOTHING calls complete_task_contract on this
-#      contract type, ever -- repayment and default both clear the exact
-#      same three borrower-side variables (confirmed by reading both
-#      code paths: kehillah_repay_loan_decision's remove_variable trio,
-#      and the quarterly default block's identical remove_variable trio),
-#      so there is no surviving signal on the borrower, after the fact,
-#      that would let an untouched-file-respecting design tell repayment
-#      and default apart. Two rejected alternatives, for the record:
-#      (a) add a marker variable inside the quarterly default block
-#      before it clears the ledger -- rejected, that file was also named
-#      as untouched; (b) build a fully independent, parallel quarterly
-#      tick on the CONTRACT scope to track elapsed time itself -- would
-#      have worked, but is real new infrastructure duplicating a signal
-#      that already exists, in full, in the parts of the mod already
-#      shown to the player (the direct gold/Prosperity/Greatness change
-#      the instant repayment or default actually happens, via the
-#      untouched, already-working code paths), purely to make ONE extra
-#      cosmetic toast able to say "success" instead of "concluded."
-#      CHOSEN: valid_to_continue simply tracks whether the loan is still
-#      open (exists = var:kehillah_loan_amount_owed on the borrower).
-#      When it goes false -- for EITHER reason -- on_invalidated fires a
-#      single, deliberately NEUTRAL closing note (kehillah_loan_contract_
-#      concluded_tt) that does not claim success or failure, because the
-#      contract genuinely cannot tell which one happened without touching
-#      a file this task was told not to touch. This IS a real, documented
-#      scope cut, not an oversight: the authoritative record of what
-#      happened (the gold changing hands, the Prosperity/Greatness swing)
-#      is already fully visible to the player through the existing,
-#      unmodified UI at the moment it actually occurs.
-#   4. valid_to_create/valid_to_accept reuse the existing "already
-#      indebted" guard VERBATIM (NOT = { exists = var:kehillah_loan_
-#      amount_owed }), re-homed from kehillah_extend_loan_decision's own
-#      is_valid (common/decisions/kehillah_decisions.txt, pre-retirement)
-#      per spec section 5 point 3.
+# THE "NO SECOND LOAN" GUARD MOVES TO THE BORROWER. Previously NOT =
+# { exists = var:kehillah_loan_amount_owed } sat on root (then the
+# borrower); it now sits on scope:employer inside valid_to_accept (the
+# borrower again, just relocated). Root's own valid_to_create no longer
+# carries this guard at all -- the Kehillah can lend to several
+# different borrowers at once (that is what kehillah_loan_debtors being
+# a variable_list, plural, was always for); only lending TWICE TO THE
+# SAME BORROWER is disallowed. A gold >= kehillah_loan_principal_value
+# affordability check is added to both valid_to_create and valid_to_
+# accept (root side) instead, since the Kehillah is now the one paying
+# out, not receiving.
 #
-# task_contract_reward IS STILL DEFINED, for completeness and defense in
-# depth (the same "defense in depth" idiom this mod's own decisions
-# already use -- see kehillah_extend_loan_decision's and kehillah_repay_
-# loan_decision's own effect blocks), in case anything ever does call
-# complete_task_contract on this type in the future. Its effect is
-# DELIBERATELY EMPTY of any prosperity/greatness/gold change -- those
-# numbers are already, and must remain, applied exactly once by the
-# untouched kehillah_repay_loan_decision and quarterly-default code
-# paths. Duplicating them here would double-book the ledger, which is
-# exactly the failure mode spec section 5 point 4 warns retiring the old
-# decision is meant to prevent. The key exists so the type is well-formed
-# and self-documenting, not because it is expected to fire.
+# NEW, 2026-09-17: A REAL CHALLENGE CHAIN, at the user's explicit
+# request, mirroring kehillah_translation_contract's own v11 overhaul
+# (events/kehillah_translation_events.txt) but lighter -- three events,
+# own namespace kehillah_loan_challenge (events/kehillah_loan_events.txt),
+# kept visually distinct from the many existing kehillah_loan_* ledger
+# names. on_accepted no longer originates the loan immediately; it sets
+# a Stewardship-banded starting tally (same three-band shape kehillah_
+# translation_contract's own on_accepted already uses for Learning) and
+# hands off to the chain. The chain's final event resolves the tally
+# into SUCCESS or FAILURE -- two tiers, not three; "does the loan happen
+# at all" is the one meaningful stake for a financial negotiation,
+# unlike a scholarly triumph/success/failure spread -- and, ONLY on
+# SUCCESS, runs the exact origination effect that used to live directly
+# in on_accepted (same values, same shape, just relocated with taker/
+# employer swapped). FAILURE pays out nothing and writes nothing to the
+# ledger; the deal simply falls through, via the same invalidate_
+# contract = yes effect already confirmed for a declined offer.
+#
+# SPEC SECTION 5 POINT 2 -- THE REPAYMENT-TRACKING DESIGN -- STILL
+# HOLDS, UNCHANGED BY THE REVERSAL. Nothing calls complete_task_contract
+# on this type, ever, for the same reason as before: kehillah_repay_
+# loan_decision (untouched, per this task's own explicit constraint) and
+# the quarterly default block are the only two things that ever clear
+# the ledger variables, and neither leaves a surviving signal that would
+# let this contract tell repayment and default apart after the fact.
+# valid_to_continue/valid_to_keep track whether the loan is still open by
+# checking task_contract_employer (the borrower) for exists/NOT exists
+# var:kehillah_loan_amount_owed -- the same shape as before, just reading
+# the correct character now. on_invalidated still fires a single NEUTRAL
+# closing note once the debt clears either way, for the same reason as
+# before: this contract genuinely cannot tell success from default
+# without touching one of the two untouched files. This IS a real,
+# documented scope cut, not an oversight: the authoritative record of
+# what happened (the gold changing hands, the Prosperity/Greatness swing)
+# is already fully visible to the player through the existing, unmodified
+# UI at the moment it actually occurs.
+#
+# task_contract_reward IS STILL DEFINED, for the same "defense in depth"
+# reason as before (in case anything ever does call complete_task_
+# contract on this type in the future), and is still DELIBERATELY EMPTY
+# of any prosperity/greatness/gold change -- those numbers are already,
+# and must remain, applied exactly once by the untouched kehillah_repay_
+# loan_decision and quarterly-default code paths, plus now the chain's
+# own SUCCESS-only origination effect. Duplicating any of them here would
+# double-book the ledger. The key exists so the type is well-formed and
+# self-documenting, not because it is expected to fire.
 # =====================================================================
 
 kehillah_loan_contract = {
@@ -535,78 +541,59 @@ kehillah_loan_contract = {
 		government_has_flag = government_is_kehillah
 		is_adult = yes
 		is_imprisoned = no
-		NOT = { exists = var:kehillah_loan_amount_owed }
+		gold >= kehillah_loan_principal_value
 		kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_healthy_threshold }
 	}
 
 	valid_to_accept = {
-		NOT = { exists = var:kehillah_loan_amount_owed }
+		gold >= kehillah_loan_principal_value
 		scope:employer = {
 			is_alive = yes
 			NOT = { government_has_flag = government_is_kehillah }
 			NOT = { faith = root.faith }
+			NOT = { exists = var:kehillah_loan_amount_owed }
 		}
 	}
 
 	# Stays open exactly as long as the loan is outstanding -- see this
-	# type's header, point 3, for why the contract cannot distinguish
-	# repayment from default at this point and deliberately does not try.
+	# type's header for why the contract cannot distinguish repayment
+	# from default at this point and deliberately does not try. The debt
+	# now lives on task_contract_employer (the borrower), not the taker.
 	valid_to_continue = {
-		task_contract_taker = {
+		task_contract_employer = {
 			exists = var:kehillah_loan_amount_owed
 		}
 	}
 
 	valid_to_keep = {
-		task_contract_taker = {
+		task_contract_employer = {
 			NOT = { exists = var:kehillah_loan_amount_owed }
 		}
 	}
 
 	on_create = {}
 
-	# Origination. Mirrors kehillah_extend_loan_decision's old effect
-	# block exactly (common/decisions/kehillah_decisions.txt's retirement
-	# comment has the full before/after) -- the borrower is root/
-	# task_contract_taker, the lender is scope:employer, both already
-	# resolved by the time this fires.
+	# No longer originates the loan immediately -- sets a Stewardship-
+	# banded starting tally (same three-band shape kehillah_translation_
+	# contract's own on_accepted uses for Learning) and hands off to
+	# events/kehillah_loan_events.txt's own three-stage challenge chain.
+	# See this type's own header for the full account of why.
 	on_accepted = {
 		save_scope_as = task_contract
-		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
-
-		scope:task_contract.task_contract_employer ?= {
-			primary_title = { save_scope_as = kehillah_loan_lender_title_scope }
-		}
-
-		# Defense in depth, matching kehillah_extend_loan_decision's own
-		# guard: only write the ledger if the lender's title actually
-		# resolved.
-		if = {
-			limit = { exists = scope:kehillah_loan_lender_title_scope }
-			task_contract_taker = {
-				add_gold = kehillah_loan_principal_value
-				set_variable = {
-					name = kehillah_loan_amount_owed
-					value = kehillah_loan_amount_owed_value
-				}
-				set_variable = {
-					name = kehillah_loan_lender_title
-					value = scope:kehillah_loan_lender_title_scope
-				}
-				set_variable = {
-					name = kehillah_loan_years_elapsed
-					value = 0
-				}
+		task_contract_taker = {
+			play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract"
+			if = {
+				limit = { stewardship >= 16 }
+				set_variable = { name = kehillah_loan_challenge_tally value = kehillah_loan_challenge_baseline_high }
 			}
-			scope:kehillah_loan_lender_title_scope = {
-				add_to_variable_list = {
-					name = kehillah_loan_debtors
-					target = scope:task_contract.task_contract_taker
-				}
+			else_if = {
+				limit = { stewardship >= 10 }
+				set_variable = { name = kehillah_loan_challenge_tally value = kehillah_loan_challenge_baseline_mid }
 			}
-			task_contract_taker = {
-				custom_tooltip = kehillah_loan_contract_originated_tt
+			else = {
+				set_variable = { name = kehillah_loan_challenge_tally value = kehillah_loan_challenge_baseline_low }
 			}
+			trigger_event = { id = kehillah_loan_challenge.0001 days = 5 }
 		}
 	}
 
@@ -813,6 +800,23 @@ kehillah_exotic_goods_contract = {
 # own kehillah_compose_commentary_decision uses. The pupil is still named
 # via task_contract_target for flavor (who is being tutored), just with
 # no mechanical effect applied to them.
+#
+# CHALLENGE CHAIN ADDED, 2026-09-17, at the user's explicit request ("an
+# event chain with challenges... same for the tutor in Hebrew"), per the
+# same v11-style overhaul kehillah_translation_contract already got --
+# see events/kehillah_hebrew_tutor_events.txt's own header (namespace
+# kehillah_hebrew_tutor, three events, centered on task_contract_target,
+# the pupil, exactly the shape v11 section 5 suggested but never built).
+# on_accepted no longer resolves in place off a single learning >= 14
+# check; it sets a Learning-banded starting tally (same three-band shape
+# kehillah_translation_contract's own on_accepted uses) and hands off.
+# tutor_great/tutor_good below are UNCHANGED, same values, reused
+# verbatim by the chain's own resolution event -- only HOW a tier gets
+# picked changed, matching v11's own "this pass changes how a tier gets
+# chosen, not what each tier gives" rule. tutor_poor is NEW: this
+# contract previously had no failure state at all; it now does, mirroring
+# kehillah_exotic_goods_contract's own exotic_goods_poor shape exactly
+# (positive = no, a mild opinion penalty, no gold/XP).
 # ---------------------------------------------------------------------
 
 kehillah_hebrew_tutor_contract = {
@@ -853,15 +857,20 @@ kehillah_hebrew_tutor_contract = {
 
 	on_accepted = {
 		save_scope_as = task_contract
-		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
-		if = {
-			limit = {
-				task_contract_taker = { learning >= 14 }
+		task_contract_taker = {
+			play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract"
+			if = {
+				limit = { learning >= 18 }
+				set_variable = { name = kehillah_hebrew_tutor_tally value = kehillah_hebrew_tutor_baseline_high }
 			}
-			complete_task_contract = tutor_great
-		}
-		else = {
-			complete_task_contract = tutor_good
+			else_if = {
+				limit = { learning >= 12 }
+				set_variable = { name = kehillah_hebrew_tutor_tally value = kehillah_hebrew_tutor_baseline_mid }
+			}
+			else = {
+				set_variable = { name = kehillah_hebrew_tutor_tally value = kehillah_hebrew_tutor_baseline_low }
+			}
+			trigger_event = { id = kehillah_hebrew_tutor.0001 days = 5 }
 		}
 	}
 
@@ -914,6 +923,24 @@ kehillah_hebrew_tutor_contract = {
 					}
 				}
 				custom_tooltip = kehillah_hebrew_tutor_good_tt
+			}
+		}
+		tutor_poor = {
+			should_print_on_complete = yes
+			visible = yes
+			positive = no
+			effect = {
+				save_scope_as = task_contract
+				task_contract_taker = {
+					play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_failure_on_contract"
+					reverse_add_opinion = {
+						target = scope:task_contract.task_contract_employer
+						modifier = disappointed_opinion
+						opinion = -20
+						years = 3
+					}
+				}
+				custom_tooltip = kehillah_hebrew_tutor_poor_tt
 			}
 		}
 	}

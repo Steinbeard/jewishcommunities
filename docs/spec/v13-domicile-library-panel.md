@@ -150,7 +150,29 @@ What "locked" actually was, for the record: the Beit Midrash building has no syn
 of its own; the lock was purely that a building placed by effect into external slot 3+ sits in a slot
 Synagogue I has not unlocked, and vanilla renders such a slot as "Locked Slot" and click-through.
 
-## 7. Open ideas (not built)
+## 7. External slot capacity fully unlocked from the start (2026-09-17)
+
+User request, later the same day as §6: external building slots should not be gated by Synagogue
+level at all, not just the Beit Midrash's slot. §6 had only raised `base_external_slots` from 2 to
+3 (enough to seat the Beit Midrash unlocked); slots 4-6 still needed Synagogue tiers 2/3/4
+(`domicile_external_slots_capacity_add = 1` on each). Changed:
+
+- `common/domiciles/types/kehillah_domicile_types.txt` — `base_external_slots` 3 → 6, flat.
+- `common/domiciles/buildings/kehillah_domicile_buildings.txt` — removed
+  `domicile_external_slots_capacity_add = 1` from Synagogue tiers 2, 3 and 4 (tier 5 already had
+  none, per §6). Synagogue tier no longer affects external slot count at all; it still gates the
+  two internal slots (Mikvah, Sofer's Workshop) via `internal_slots`, and each external *building*
+  keeps its own independent pillar-band `can_construct` requirement (a slot being unlocked has
+  never implied a player can afford or qualify for what goes in it).
+- `common/scripted_effects/kehillah_scripted_effects.txt` — updated `kehillah_worms_developed_start_
+  effect`'s header comments (they explained the now-removed slot-capacity-vs-Synagogue-tier
+  arithmetic); the effect's actual building adds were already order-safe and needed no change.
+
+Net effect: a brand-new community can build any/all of the six external families immediately,
+subject only to gold and each building's own Greatness/other pillar threshold — slot count is no
+longer a second, redundant gate layered on top of those thresholds.
+
+## 8. Open ideas (not built)
 
 - A "commission this work" button on missing rows, calling the acquire decision's option directly.
 - A "travel here to study" button on other communities' held rows.

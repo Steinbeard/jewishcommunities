@@ -188,6 +188,27 @@ activity_kehillah_bet_din_conference = {
 
 	allow_zero_guest_invites = yes
 
+	# LIVE-TEST FIX, 2026-09-17: this field was never set, which
+	# activity_type.info's own doc says defaults to 0 days -- with
+	# province_filter = capital (host is already home, no travel of their
+	# own), phase_bet_din_case_1's on_phase_active therefore fired, and
+	# kehillah_bet_din_open_docket_effect locked in attendance, essentially
+	# the instant the activity started, before any invited guest who
+	# actually had to travel could arrive. Only an already-present courtier
+	# could ever be "there" in time, which is exactly the live-tested bug
+	# reported (one courtier attending, everyone else missing). Every
+	# vanilla activity_type with real open-invite travel guests sets this
+	# explicitly (feast.txt/coronation.txt: 5 months, wedding.txt: 8
+	# months, tournament.txt/local_examination.txt: 1 month, camp_party.
+	# txt: 1 week) -- this file set none of them. 2 months split the
+	# difference: kehillah_bet_din_invite_rule_jewish_regional_leaders is
+	# distance-bounded (same minhag region), but _scholars/_adventurers
+	# (kehillah_bet_din_invite_rules.txt) draw from every_independent_ruler
+	# worldwide by Learning/government alone, no distance bound, so guests
+	# can be arriving from much farther than camp_party's 1-week case
+	# assumes.
+	max_guest_arrival_delay_time = { months = 3 }
+
 	# REWRITTEN 2026-09-17 (THE PANEL, this file's own header, has the
 	# full account): open_invite already covered scholars/adventurers
 	# since 2026-09-09; now it ALSO covers same-region community leaders
@@ -511,18 +532,30 @@ activity_kehillah_bet_din_conference = {
 	# default intent even when an activity has no window_characters/pulse
 	# interactivity of its own (error.log: "has no default host intent" /
 	# "has no default guest intent" -- not caught by ck3-tiger, only
-	# surfaced on a live boot). No case-specific intent content exists
-	# for this activity, so this reuses the shared, content-free
-	# reduce_stress_intent (common/activities/intents/shared_intents.txt)
-	# exactly the way camp_party.txt does for the same "nothing bespoke
-	# to offer" situation -- not an invented intent.
+	# surfaced on a live boot). Originally filled with the shared,
+	# content-free reduce_stress_intent (common/activities/intents/
+	# shared_intents.txt), the same way camp_party.txt does for the same
+	# "nothing bespoke to offer" situation.
+	#
+	# UPDATED 2026-09-17 at user request ("Recreation doesn't really make
+	# sense" -- reduce_stress_intent displays as "Recreation", dlc/ep2/
+	# dlc_ep2_intents_l_english.yml): a Beit Din session is people
+	# convening specifically to render judgment on the docket's cases, so
+	# justice_intent (common/activities/intents/tour_intents.txt) fits
+	# both host and attendee directly, needs no redefinition (another
+	# existing, unconditional vanilla intent, no is_shown/DLC gate, same
+	# as journey_knowledge_hoarding_intent below in kehillah_learn_torah_
+	# journey.txt), and its own ai_will_do already rewards has_trait =
+	# just/arbitrary and penalizes compassionate/shy/callous -- exactly
+	# the personality split you'd expect between who wants to sit in
+	# judgment and who does not.
 	host_intents = {
-		default = reduce_stress_intent
-		intents = { reduce_stress_intent }
+		default = justice_intent
+		intents = { justice_intent }
 	}
 
 	guest_intents = {
-		default = reduce_stress_intent
-		intents = { reduce_stress_intent }
+		default = justice_intent
+		intents = { justice_intent }
 	}
 }
