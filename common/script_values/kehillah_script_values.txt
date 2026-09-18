@@ -155,7 +155,10 @@ kehillah_book_revision_stress = minor_stress_gain
 # A FOURTH INSPIRATION OPTION, ADDED 2026-09-15 at user request: "draw
 # on a bet din memory of a good ruling to improve the quality of your
 # book, particularly for Talmudics and Halakha works." Visible in
-# kehillah_book.0002 only when the genre is talmudics or halakha AND
+# kehillah_book.0002 only when the genre is talmudics (Halakha merged
+# into Talmudics later the same day -- kehillah_rabbi_trait's own
+# header, common/traits/kehillah_traits.txt -- so this is the same set
+# of books the option was always meant to cover, not a narrowing) AND
 # the writer holds at least one of the seven "good ruling" Bet Din
 # memory types (kehillah_has_good_bet_din_memory_trigger, common/
 # scripted_triggers/kehillah_scripted_triggers.txt). Unlike the other
@@ -878,21 +881,124 @@ kehillah_bet_din_conference_cooldown_years = 3
 # scholar rather than merely a capable one.
 kehillah_bet_din_scholar_guest_learning_threshold = 16
 
+# ADDED 2026-09-15, REWRITTEN 2026-09-17 (see kehillah_bet_din_judge_
+# score_value below and kehillah_bet_din_eligible_judge_trigger, common/
+# scripted_triggers/kehillah_scripted_triggers.txt, for the full account
+# of why the co-judge seats moved from two compelled special_guests to an
+# open-invite-and-rank-the-top-2-by-attendance design). Originally three
+# separate hand-written pools; now a plain headcount of everyone
+# kehillah_bet_din_eligible_judge_trigger accepts, iterated across the
+# same three POPULATIONS as before (other same-region community leaders,
+# the host's own high-Learning courtiers, qualifying independent Jewish
+# rulers) -- what changed is not WHO counts, only that the eligibility
+# test itself now lives in one shared trigger instead of being re-derived
+# by hand in three places (this value, the old select_character pools,
+# and can_be_activity_guest) that could quietly drift out of sync with
+# each other. This is still only a PLANNING-TIME estimate of how many
+# people COULD show up, same as before -- actual turnout is what
+# kehillah_bet_din_open_docket_effect (common/scripted_effects/kehillah_
+# bet_din_scripted_effects.txt) checks for real, once the docket opens.
+#
+# HOST = root throughout, not scope:host: kehillah_bet_din_eligible_
+# judge_trigger takes $HOST$ as a real parameter (this mod's established
+# $PARAM$-substitution pattern, not a script value -- see the trigger's
+# own header for why), and root here is safe to pass directly even inside
+# the nested `holder = { ... }` block below -- root is the ORIGINAL scope
+# a trigger/effect/value was invoked on and does NOT change when a nested
+# block like `holder = {...}` shifts what "this" refers to; only `this`
+# moves. This value's own root is the leader/host character throughout
+# (its own "Scope: a Kehillah leader" header), so `HOST = root` correctly
+# means the host at every nesting depth below, with no scope-saving
+# needed at all (confirmed real precedent already in this file's own
+# git history: kehillah_region_can_field_bet_din_panel_trigger's own OLD
+# body did `holder = { kehillah_shares_minhag_region_trigger = { OTHER =
+# root } }`, the identical pattern).
+kehillah_bet_din_available_co_judges_value = {
+	value = 0
+
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = { exists = holder }
+		holder = {
+			if = {
+				limit = { kehillah_bet_din_eligible_judge_trigger = { HOST = root } }
+				add = 1
+			}
+		}
+	}
+
+	every_courtier = {
+		limit = { kehillah_bet_din_eligible_judge_trigger = { HOST = root } }
+		add = 1
+	}
+
+	every_independent_ruler = {
+		limit = { kehillah_bet_din_eligible_judge_trigger = { HOST = root } }
+		add = 1
+	}
+}
+
+# ADDED 2026-09-17, alongside the rewrite above -- ranks a candidate for
+# the two co-judge seats once the docket actually opens (kehillah_bet_
+# din_open_docket_effect, common/scripted_effects/kehillah_bet_din_
+# scripted_effects.txt: `ordered_attending_character = { order_by =
+# { value = kehillah_bet_din_judge_score_value } ... }`). Scope: a
+# candidate character (an activity attendee); requires scope:host, the
+# same requirement kehillah_bet_din_eligible_judge_trigger has and for
+# the same reason -- on_phase_active provides scope:host natively
+# (activity_type.info's own doc), so the docket-open call site needs no
+# extra save_scope_as of its own, unlike kehillah_bet_din_available_co_
+# judges_value above.
+#
+# FAVORED, NOT REQUIRED: a region-sharing community leader gets a flat
+# 1,000,000 floor plus their own community's Greatness -- enough to
+# always outrank a courtier or independent scholar/adventurer (whose own
+# score is bare Learning, comfortably under three digits) when a leader
+# actually attends, without making one mandatory when none does. This is
+# the same "favored" property THE PANEL (kehillah_bet_din_conference.txt's
+# own header) describes -- previously enforced by scoring a pre-built
+# candidate POOL before anyone was picked; now scoring who actually
+# SHOWED UP, which is what let the co-judge seats become real declinable
+# invites in the first place (a picked-in-advance special_guest cannot
+# gracefully be "whoever attends," only "this one person, yes or no").
+# The has_variable guard on Greatness matches kehillah_standing_value
+# above's own reasoning: a not-yet-initialized community should not error
+# out, just miss its own bonus and fall back to the flat 1,000,000 floor.
+kehillah_bet_din_judge_score_value = {
+	value = 0
+	if = {
+		limit = {
+			is_ruler = yes
+			kehillah_shares_minhag_region_trigger = { OTHER = scope:host }
+		}
+		add = 1000000
+		if = {
+			limit = { primary_title = { has_variable = kehillah_var_greatness } }
+			add = { value = primary_title.var:kehillah_var_greatness }
+		}
+	}
+	else = {
+		add = learning
+	}
+}
+
 # ADDED 2026-09-09, kehillah_rabbi_trait's tracks (common/traits/
-# kehillah_traits.txt) -- how much talmudics/halakha/parshanut trait_xp
-# a judge who already holds the trait gains from a case resolution.
-# Every case grants talmudics + halakha (any tier -- see kehillah_bet_
-# din_record_case_result_effect's own header for why); parshanut only
-# on a GREAT tier (kehillah_bet_din_grant_parshanut_xp_effect), so its
-# per-grant value is somewhat higher to still add up to something over
-# a career despite firing far less often. At 15/case, reaching this
-# trait's own 100-XP track threshold takes roughly 7 cases (2-3
-# Conference sessions, since a session hears 3 of the case pool per the
-# docket) for a judge who consistently sits on the panel -- close to a
-# decade at the Conference's own 3-year cooldown, which reads right for
-# "mastery," not something earned in one sitting.
-kehillah_rabbi_talmudics_xp_per_case = 15
-kehillah_rabbi_halakha_xp_per_case = 15
+# kehillah_traits.txt) -- how much talmudics/parshanut trait_xp a judge
+# who already holds the trait gains from a case resolution. Every case
+# grants talmudics (any tier -- see kehillah_bet_din_record_case_result_
+# effect's own header for why); parshanut only on a GREAT tier (kehillah_
+# bet_din_grant_parshanut_xp_effect), so its per-grant value is somewhat
+# higher to still add up to something over a career despite firing far
+# less often.
+#
+# UPDATED 2026-09-15: kehillah_rabbi_talmudics_xp_per_case is now 30, not
+# 15 -- the OLD 15/case shape granted talmudics AND a separate halakha
+# track, both at 15, every case; halakha is now merged into talmudics
+# (kehillah_rabbi_trait's own header has the full account), so this is
+# the SUM of the two old per-case grants, not a buff. The "roughly 7
+# cases (2-3 Conference sessions) to max a track" pacing this value was
+# originally tuned for is therefore unchanged in practice.
+kehillah_rabbi_talmudics_xp_per_case = 30
 kehillah_rabbi_parshanut_xp_per_great_case = 20
 
 # Per-judge tally contributions -- see events/kehillah_bet_din_events.txt
@@ -1311,3 +1417,68 @@ kehillah_standing_value = {
 
 	divide = 3
 }
+
+
+# =====================================================================
+# LEARN TORAH -- kehillah_learn_torah_decision and kehillah_acquire_
+# torah_work_decision (common/decisions/kehillah_learn_torah_decisions.
+# txt), their events (events/kehillah_learn_torah_events.txt), and the
+# community library triggers/effects those decisions read (common/
+# scripted_triggers/kehillah_scripted_triggers.txt, common/scripted_
+# effects/kehillah_library_effects.txt). ADDED 2026-09-15, the "first
+# version" of docs/spec/spike-book-inventory.md's own lighter path,
+# built as ONE decision opening ONE event with three track options --
+# deliberately flat, not a multi-step chain, the same shape "Write a
+# Book" itself started as (three flat decisions, per that file's own
+# header, common/decisions/kehillah_rabbi_book_decisions.txt) before it
+# grew into a real chain. Room to grow the same way later; not built
+# that way now.
+# =====================================================================
+
+# Piety cost, lower than kehillah_rabbi_book_piety_cost (75) -- Learn
+# Torah is meant to be a repeatable, lighter study session, not "Write a
+# Book"'s own rarer, bigger undertaking. Cooldown (3 years, on the
+# decision itself, common/decisions/kehillah_learn_torah_decisions.txt)
+# matches the Bet Din Conference's own cadence for the same "how often
+# should a real institutional activity plausibly recur" reasoning.
+kehillah_learn_torah_piety_cost = 30
+
+# Cooldown for activity_kehillah_learn_torah_journey (common/activities/
+# activity_types/kehillah_learn_torah_journey.txt), ADDED 2026-09-15 --
+# the travel-to-study half, rebuilt as a real activity the same day at
+# user request ("make it another activity like bet din"). Same 3-year
+# figure as kehillah_learn_torah_piety_cost's own cooldown note just
+# above and kehillah_bet_din_conference_cooldown_years (this file,
+# "BET DIN CONFERENCE" section) -- travel itself already paces this out
+# further in practice, the same way it does for the Bet Din.
+kehillah_learn_torah_journey_cooldown_years = 3
+
+# THE STUDY CHECK. One flat Learning-gated pass/fail per track option,
+# not a multi-stage tally -- studying a specific already-owned work is a
+# smaller, more frequent act than composing an original book, so it gets
+# a smaller, single-roll payout. Consolation XP on a fail (not zero):
+# time spent at the Beit Midrash is never wholly wasted, just less
+# productive.
+kehillah_learn_torah_xp_pass = 15
+kehillah_learn_torah_xp_fail = 5
+
+# REPEAT STUDY, ADDED 2026-09-15 at user request ("keep track of which
+# books you've already studied. Studying the same book a second time
+# should give a much smaller boost than studying a new book"). Tracked
+# per CHARACTER, not per community (kehillah_studied_works, a character
+# variable_list -- see kehillah_study_parshanut/talmudics/hashkafa_
+# effect's own header, common/scripted_effects/kehillah_library_
+# effects.txt, for the full account of how a repeat is detected). Real
+# pass/fail tiers still exist on a repeat, just roughly a third of the
+# fresh values -- "a much smaller boost," not zero; rereading a work
+# already studied still teaches something, just far less than a first
+# read of it does.
+kehillah_learn_torah_xp_repeat_pass = 5
+kehillah_learn_torah_xp_repeat_fail = 2
+
+# ACQUIRING A WORK NOT YET IN THE COMMUNITY'S LIBRARY -- reuses vanilla's
+# own generic gold ladder directly (medium_gold_value, common/script_
+# values/00_basic_values.txt) at the call site rather than a bespoke
+# alias, matching this file's own "genuinely new numbers only" rule
+# already established for Task Contracts and reaffirmed for Bet Din
+# case 6's restitution. No script value needed here for that reason.

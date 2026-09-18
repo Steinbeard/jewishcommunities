@@ -228,43 +228,106 @@ kehillah_is_regional_greatness_leader_trigger = {
 # kehillah_region_can_field_bet_din_panel_trigger
 # Scope: a Kehillah leader (character).
 #
-# REWRITTEN 2026-09-10 (v7 spec, supersedes v6 section 4 item 2's de
-# jure version, same underlying reason as the two triggers above). Same
-# condition as before -- a host plus two co-judges needs THREE total
-# member communities in the region at minimum, so Eastern Ashkenaz's two
-# (Prague, Vienna) still correctly fail this and get gated out of
-# convening entirely by the activity's own is_shown/can_start_showing_
-# failures_only (common/activities/activity_types/kehillah_bet_din_
-# conference.txt) -- only the counting mechanism changed, from any_de_
-# jure_county to any_in_global_list over the same registry kehillah_is_
-# regional_greatness_leader_trigger above now uses.
+# REWRITTEN 2026-09-15 at user request ("the two co-judges don't need to
+# be other community leaders -- they could also be courtiers or
+# adventurers, but nearby community leaders are favored. This way
+# frontier communities can still call batei din"). Supersedes the
+# 2026-09-10 version below, kept for record: that version required THREE
+# total member communities sharing the host's minhag region (a host plus
+# two co-judges, co-judges drawn only from other communities), which is
+# exactly what made a frontier community -- a lone or paired outpost with
+# no two neighbors of its own minhag -- permanently unable to convene at
+# all, no matter how learned its own court was. Now delegates to
+# kehillah_bet_din_available_co_judges_value (common/script_values/
+# kehillah_script_values.txt, "BET DIN CONFERENCE" section), which sums
+# the SAME three pools the co-judge select_character blocks (common/
+# activities/activity_types/kehillah_bet_din_conference.txt) actually
+# draw from -- other same-region community leaders, the host's own
+# high-Learning Jewish courtiers, and independent Jewish rulers who are
+# landless adventurers or comparably learned -- so this trigger can never
+# promise a panel the select_character blocks then fail to fill.
 #
-# No has_variable = kehillah_var_greatness filter here, unlike the
-# trigger above -- the OLD any_de_jure_county version counted every de
-# jure county in the region's duchy with no Greatness-variable filter
-# either (every one of those counties WAS a Kehillah title by
-# construction, so the count was already exactly "how many communities
-# are in this region"), and this version preserves that same unfiltered
-# headcount rather than silently narrowing it.
+# OLD VERSION (2026-09-10, v7 spec, supersedes v6 section 4 item 2's de
+# jure version): any_in_global_list = { variable =
+# kehillah_registered_communities count >= 3 exists = holder holder =
+# { kehillah_shares_minhag_region_trigger = { OTHER = root } } } -- a
+# bare regional headcount, unable to see courtiers or adventurers at all.
 #
-# count >= 3 as a bare filter inside any_in_global_list mirrors the
-# confirmed "count" precedent kehillah_has_dispute_candidates_trigger
-# below already cites (common/scripted_triggers/06_ce1_epidemic_
-# triggers.txt's any_sub_realm_county = { count >= $SIZE$ ... }), and the
-# coronation.txt precedent cited above for any_in_global_list's sibling
-# any_in_list (game/common/activities/activity_types/coronation.txt:
-# any_in_list = { list = supporter count >= 3 }).
+# UPDATED 2026-09-17: "the co-judge select_character blocks" above no
+# longer refers to anything real -- co-judges are no longer picked in
+# advance at all (THE PANEL, kehillah_bet_din_
+# conference.txt's own header, has the full account of why two separate
+# live tests broke that design). kehillah_bet_din_available_co_judges_
+# value now counts kehillah_bet_din_eligible_judge_trigger matches
+# directly, the same test can_be_activity_guest gates actual attendance
+# with and kehillah_bet_din_judge_score_value ranks attendees by once the
+# docket opens -- one shared definition of "who could be a co-judge"
+# instead of three that had to be kept in sync by hand.
 # ---------------------------------------------------------------------
 
 kehillah_region_can_field_bet_din_panel_trigger = {
 	exists = primary_title
-	any_in_global_list = {
-		variable = kehillah_registered_communities
-		count >= 3
-		exists = holder
-		holder = {
-			kehillah_shares_minhag_region_trigger = { OTHER = root }
+	kehillah_bet_din_available_co_judges_value >= 2
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_eligible_judge_trigger
+# Scope: a candidate character. $HOST$ = the character being evaluated
+# against, substituted by literal text replacement (this mod's own
+# established, confirmed-safe pattern for a trigger needing a caller-
+# supplied scope -- kehillah_pillar_at_least_trigger's $PILLAR$/
+# $THRESHOLD$ is the precedent). NOT a script value: script values do not
+# support save_scope_as (confirmed the hard way -- ck3-tiger's own
+# "unknown token `save_scope_as`" against an earlier draft of kehillah_
+# bet_din_available_co_judges_value that tried it), so kehillah_bet_din_
+# judge_score_value (common/script_values/kehillah_script_values.txt)
+# reads scope:host directly rather than taking a $HOST$ of its own -- it
+# is only ever called from kehillah_bet_din_open_docket_effect (common/
+# scripted_effects/kehillah_bet_din_scripted_effects.txt), where scope:
+# host is already provided natively by on_phase_active.
+#
+# ADDED 2026-09-17. Previously three separate hand-written OR branches --
+# this exact same test -- existed independently in can_be_activity_guest,
+# the old co-judge select_character pools (both common/activities/
+# activity_types/kehillah_bet_din_conference.txt), and kehillah_bet_din_
+# available_co_judges_value, all needing to agree on "who could plausibly
+# be a co-judge" without any single source of truth enforcing that they
+# actually did. Pulled into one trigger now that the co-judge seats no
+# longer need their OWN, fourth copy of this same logic (THE PANEL,
+# kehillah_bet_din_conference.txt's own header) -- an open invite just
+# needs "is this candidate eligible at all," the same question can_be_
+# activity_guest already answered, so co-judge eligibility and general
+# guest eligibility are now the SAME question asked once, not two
+# questions that happened to be worded identically in two places.
+#
+# THREE POPULATIONS, matching kehillah_bet_din_invite_rule_jewish_
+# regional_leaders/_courtiers/_scholars/_adventurers (common/activities/
+# guest_invite_rules/kehillah_bet_din_invite_rules.txt), which invite
+# exactly this population and no more:
+#   1. A same-region community leader (is_ruler + kehillah_shares_minhag_
+#      region_trigger) -- the FAVORED population, per kehillah_bet_din_
+#      judge_score_value's own scoring.
+#   2. Anyone (courtier or otherwise) at or above kehillah_bet_din_
+#      scholar_guest_learning_threshold Learning -- bare `learning >=`
+#      here, deliberately without an is_ruler/is_courtier qualifier,
+#      because that is genuinely how can_be_activity_guest already
+#      allowed a learned COURTIER in (LIVE-TEST FIX, 2026-09-11, this
+#      file's git history) -- narrowing it now would be a real behavior
+#      change smuggled into what is otherwise a pure refactor.
+#   3. A landless Jewish adventurer, learned or not.
+# ---------------------------------------------------------------------
+
+kehillah_bet_din_eligible_judge_trigger = {
+	NOT = { this = $HOST$ }
+	is_jewish_character_trigger = yes
+	OR = {
+		AND = {
+			is_ruler = yes
+			kehillah_shares_minhag_region_trigger = { OTHER = $HOST$ }
 		}
+		has_government = landless_adventurer_government
+		learning >= kehillah_bet_din_scholar_guest_learning_threshold
 	}
 }
 
@@ -595,9 +658,11 @@ kehillah_bet_din_session_heard_any_case_trigger = {
 # is_shown (common/decisions/kehillah_rabbi_book_decisions.txt) -- true
 # if this character can write AT LEAST ONE of the four genres offered
 # in kehillah_book.0001 (events/kehillah_book_events.txt): a rabbi with
-# any track at 30+ (Halakha/Parshanut/Talmudics), or a Jewish poet
-# (Hebrew Poetry -- lifestyle_poet is vanilla's own trait, common/
-# traits/00_traits.txt, not something this mod defines).
+# any track at 30+ (Parshanut/Talmudics/Hashkafa -- UPDATED 2026-09-15,
+# Halakha merged into Talmudics and replaced by Hashkafa, see kehillah_
+# rabbi_trait's own header, common/traits/kehillah_traits.txt), or a
+# Jewish poet (Hebrew Poetry -- lifestyle_poet is vanilla's own trait,
+# common/traits/00_traits.txt, not something this mod defines).
 # ---------------------------------------------------------------------
 
 kehillah_has_eligible_book_genre_trigger = {
@@ -607,7 +672,7 @@ kehillah_has_eligible_book_genre_trigger = {
 			OR = {
 				has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 30 }
 				has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 }
-				has_trait_xp = { trait = kehillah_rabbi_trait track = halakha value >= 30 }
+				has_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value >= 30 }
 			}
 		}
 		AND = {
@@ -765,5 +830,129 @@ kehillah_leadership_gender_eligible_trigger = {
 	OR = {
 		exists = global_var:kehillah_egalitarian_succession
 		is_female = no
+	}
+}
+
+
+# =====================================================================
+# THE COMMUNITY LIBRARY -- Learn Torah. ADDED 2026-09-15, at user
+# request ("implement the first version of" docs/spec/spike-book-
+# inventory.md). Builds the spike's own recommended "lighter" path: a
+# `variable_list`, `kehillah_library_works`, living directly on each
+# community's PRIMARY TITLE (not a character, and not a real spawned
+# artifact) -- the exact shape `kehillah_loan_debtors` already proves
+# works in this mod (a variable_list on a title, common/scripted_
+# effects/kehillah_scripted_effects.txt's quarterly accrual block), and
+# needs NO succession-handling code of its own the way a character-owned
+# artifact would: a title's own variable storage simply persists across
+# whoever currently holds it, by construction.
+#
+# TWELVE REAL WORKS, four per track, the same "curated real corpus"
+# idiom the Translation Contract already established (ten real pre-876
+# Greek/Arabic works, common/scripted_effects/kehillah_translation_
+# effects.txt) -- not invented titles:
+#   PARSHANUT: Targum Onkelos, Mekhilta de-Rabbi Yishmael, Genesis
+#     Rabbah, Pirkei De-Rabbi Eliezer.
+#   TALMUDICS: the Mishnah, the Jerusalem Talmud, the Babylonian Talmud,
+#     Halakhot Gedolot (the early Geonic code attributed to Simeon
+#     Kayyara).
+#   HASHKAFA: Sefer Yetzirah, Saadia Gaon's Emunot ve-Deot, Bahya ibn
+#     Paquda's Chovot HaLevavot, Yehuda Halevi's Kuzari.
+#
+# EVERY COMMUNITY STARTS OWNING TWO OF THE TWELVE -- Targum Onkelos and
+# the Mishnah, the two most foundational, universally-available texts
+# (kehillah_seed_starting_library_effect, common/scripted_effects/
+# kehillah_library_effects.txt) -- so Parshanut and Talmudics both have
+# a real foothold from game start, while Hashkafa starts with NOTHING
+# and every other work across all three tracks must be acquired
+# (kehillah_acquire_torah_work_decision, common/decisions/kehillah_
+# learn_torah_decisions.txt) -- deliberate scarcity, matching the user's
+# own framing of hashkafa as rarer/more esoteric, and the actual reason
+# "spend your money on books" has real stakes rather than being a
+# formality.
+#
+# SIX TRIGGERS BELOW, NOT THREE -- "owns at least one work in this
+# track" and "is missing at least one work in this track" are NOT each
+# other's negation (a community owning 2 of 4 satisfies both at once),
+# so each needs its own real check, not a bare NOT of the other. The
+# "owns" triggers gate kehillah_learn_torah_decision's own three study
+# options; the "missing" triggers gate kehillah_acquire_torah_work_
+# decision's own three acquisition options.
+#
+# $LIBRARY$, ADDED 2026-09-15 (travel to study elsewhere): every trigger
+# below takes the TITLE to check as a parameter rather than hardcoding
+# primary_title, the same parameterized-scripted-trigger idiom this
+# file's own kehillah_pillar_at_least_trigger already established
+# (PILLAR/THRESHOLD). Local callers pass `LIBRARY = primary_title`
+# (own community); kehillah_learn_torah_journey.0001 (events/kehillah_
+# learn_torah_journey_events.txt) passes `LIBRARY = var:kehillah_
+# journey_destination_title` instead -- the ONLY thing that changes to
+# make "does the community I am visiting own a work in this track"
+# checkable with the exact same trigger, not a parallel copy of it.
+# =====================================================================
+
+kehillah_owns_parshanut_work_trigger = {
+	$LIBRARY$ = {
+		OR = {
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mekhilta }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_genesis_rabbah }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_pirkei_derabbi_eliezer }
+		}
+	}
+}
+
+kehillah_missing_parshanut_work_trigger = {
+	$LIBRARY$ = {
+		OR = {
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mekhilta } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_genesis_rabbah } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_pirkei_derabbi_eliezer } }
+		}
+	}
+}
+
+kehillah_owns_talmudics_work_trigger = {
+	$LIBRARY$ = {
+		OR = {
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mishnah }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot }
+		}
+	}
+}
+
+kehillah_missing_talmudics_work_trigger = {
+	$LIBRARY$ = {
+		OR = {
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mishnah } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot } }
+		}
+	}
+}
+
+kehillah_owns_hashkafa_work_trigger = {
+	$LIBRARY$ = {
+		OR = {
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_yetzirah }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_emunot_vedeot }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_chovot_halevavot }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_kuzari }
+		}
+	}
+}
+
+kehillah_missing_hashkafa_work_trigger = {
+	$LIBRARY$ = {
+		OR = {
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_yetzirah } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_emunot_vedeot } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_chovot_halevavot } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_kuzari } }
+		}
 	}
 }

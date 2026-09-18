@@ -1072,90 +1072,148 @@ kehillah_bet_din_grant_rabbi_trait_effect = {
 # ---------------------------------------------------------------------
 # kehillah_bet_din_open_docket_effect
 # Scope: the convening leader (character). Called ONCE, from the first
-# phase's on_phase_active, where scope:activity is in context (that is a
-# real dependency of this effect -- it reads the special-guest slots off
-# the activity -- so it cannot be called from an event).
+# phase's on_phase_active, where scope:activity AND scope:host are both
+# in context (activity_type.info's own doc for on_phase_active -- that
+# is a real dependency of this effect, so it cannot be called from an
+# event).
 #
-# Everything a session needs to start clean is reset here rather than
-# trusted to be absent: a previous conference on this SAME activity slot
-# (or a console-driven test) can leave any of them set, even though each
-# activity instance now has its own separate variable storage (see this
-# file's header). remove_variable calls are guarded with exists = for
-# the same reason the event file guards its reads -- an unguarded remove
-# of something absent is a logged error nobody needs.
+# REWRITTEN 2026-09-17 (THE PANEL, kehillah_bet_din_conference.txt's own
+# header, has the full account): judge2/judge3 no longer come from two
+# compelled special_guests -- that slot no longer exists at all -- but
+# from ranking whoever actually attended. ordered_attending_character is
+# confirmed real vanilla precedent for ranking an activity's own real
+# attendees (game/common/activities/activity_types/coronation.txt uses it
+# the same way, scoring guests by title tier/domain/realm size to find an
+# "important character"). kehillah_bet_din_judge_score_value (common/
+# script_values/kehillah_script_values.txt) is the SAME score kehillah_
+# bet_din_eligible_judge_trigger's own header describes: a region-sharing
+# community leader scores far above a courtier or adventurer, so a leader
+# who attends always outranks one who didn't need to be there at all --
+# FAVORED, same as the retired select_character design, just computed
+# from settled attendance instead of a pre-committed pick.
+#
+# QUORUM. If fewer than two eligible attendees showed up, judge3 below
+# never gets set -- and the whole session is invalidated rather than run
+# short-handed. See this file's own ~80 direct judge2/judge3 references
+# across the case-resolution content: every one of them assumes a full
+# panel, and keeping that guarantee here, in one place, is the trade this
+# mod made instead of auditing all ~80 to degrade gracefully. Halachically
+# apt besides -- a court that cannot muster a quorum of three (host plus
+# two) is not a valid Beit Din to begin with.
+#
+# Everything else a session needs to start clean is reset here rather
+# than trusted to be absent: a previous conference on this SAME activity
+# slot (or a console-driven test) can leave any of them set, even though
+# each activity instance now has its own separate variable storage (see
+# this file's header). remove_variable calls are guarded with exists =
+# for the same reason the event file guards its reads -- an unguarded
+# remove of something absent is a logged error nobody needs.
 # ---------------------------------------------------------------------
 kehillah_bet_din_open_docket_effect = {
 	scope:activity = { set_variable = { name = kehillah_bet_din_convening_title value = scope:host.primary_title } }
-	scope:activity = { set_variable = { name = kehillah_bet_din_judge2 value = scope:activity.special_guest:kehillah_bet_din_co_judge_1 } }
-	scope:activity = { set_variable = { name = kehillah_bet_din_judge3 value = scope:activity.special_guest:kehillah_bet_din_co_judge_2 } }
-	scope:activity = { set_variable = { name = kehillah_bet_din_tally value = 0 } }
-	scope:activity = { set_variable = { name = kehillah_bet_din_session_score value = 0 } }
-	scope:activity = { set_variable = { name = kehillah_bet_din_cases_heard_count value = 0 } }
-	scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 0 } }
-	scope:activity = { clear_variable_list = kehillah_bet_din_cases_heard }
 
-	# BECOME A RABBI BY JUDGING, ADDED 2026-09-09 at user request ("you
-	# become a rabbi when you go to a bet din as a judge"). All three
-	# panel seats -- host and both co-judges -- are OFFERED kehillah_
-	# rabbi_trait if not already held (kehillah_bet_din_semicha.0001,
-	# accept-or-decline, per a same-day follow-up request -- this is not
-	# an unprompted grant any more). No exists = guard needed on judge2/
-	# judge3 here specifically (unlike reads of these same activity
-	# variables elsewhere in this file): they were just set,
-	# unconditionally, two lines above, in this same effect. See
-	# kehillah_rabbi_trait's own header (common/traits/kehillah_traits.
-	# txt) for the full three-route acquisition account this is now part
-	# of.
-	kehillah_bet_din_grant_rabbi_trait_effect = yes
-	scope:activity.var:kehillah_bet_din_judge2 = { kehillah_bet_din_grant_rabbi_trait_effect = yes }
-	scope:activity.var:kehillah_bet_din_judge3 = { kehillah_bet_din_grant_rabbi_trait_effect = yes }
+	scope:activity = {
+		ordered_attending_character = {
+			order_by = { value = kehillah_bet_din_judge_score_value }
+			limit = { kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host } }
+			position = 0
+			save_temporary_scope_as = kehillah_bet_din_judge2_candidate
+		}
+		ordered_attending_character = {
+			order_by = { value = kehillah_bet_din_judge_score_value }
+			limit = { kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host } }
+			position = 1
+			save_temporary_scope_as = kehillah_bet_din_judge3_candidate
+		}
+	}
+	if = {
+		limit = { exists = scope:kehillah_bet_din_judge2_candidate }
+		scope:activity = { set_variable = { name = kehillah_bet_din_judge2 value = scope:kehillah_bet_din_judge2_candidate } }
+	}
+	if = {
+		limit = { exists = scope:kehillah_bet_din_judge3_candidate }
+		scope:activity = { set_variable = { name = kehillah_bet_din_judge3 value = scope:kehillah_bet_din_judge3_candidate } }
+	}
 
-	# Stale per-case scratch from any earlier session. Case 3's own host
-	# event always sets case3_direction before its resolution reads it, so
-	# this is belt-and-braces, not load-bearing. case2_direction and
-	# agunah_husband (2026-09-09, case 2's remarriage mechanic) get the
-	# same treatment for the same reason, as does case4_direction
-	# (2026-09-09, case 4's three-way ruling).
 	if = {
-		limit = { exists = scope:activity.var:kehillah_bet_din_case3_direction }
-		scope:activity = { remove_variable = kehillah_bet_din_case3_direction }
+		limit = { NOT = { exists = scope:activity.var:kehillah_bet_din_judge3 } }
+		invalidate_activity = scope:activity
 	}
+
+	# Everything below only matters if the session actually has its full
+	# panel -- see QUORUM above.
 	if = {
-		limit = { exists = scope:activity.var:kehillah_bet_din_case2_direction }
-		scope:activity = { remove_variable = kehillah_bet_din_case2_direction }
-	}
-	if = {
-		limit = { exists = scope:activity.var:kehillah_bet_din_case4_direction }
-		scope:activity = { remove_variable = kehillah_bet_din_case4_direction }
-	}
-	# Case 5 and case 6 (ADDED 2026-09-15) get the same belt-and-braces
-	# treatment as cases 3/4's own direction scratch above -- case5_truth
-	# additionally, since it is set once per case (kehillah_bet_din.0041's
-	# immediate) and must not leak into a later session that draws case 5
-	# again.
-	if = {
-		limit = { exists = scope:activity.var:kehillah_bet_din_case5_direction }
-		scope:activity = { remove_variable = kehillah_bet_din_case5_direction }
-	}
-	if = {
-		limit = { exists = scope:activity.var:kehillah_bet_din_case5_truth }
-		scope:activity = { remove_variable = kehillah_bet_din_case5_truth }
-	}
-	if = {
-		limit = { exists = scope:activity.var:kehillah_bet_din_case6_direction }
-		scope:activity = { remove_variable = kehillah_bet_din_case6_direction }
-	}
-	if = {
-		limit = { exists = scope:activity.var:kehillah_bet_din_agunah_husband }
-		scope:activity = { remove_variable = kehillah_bet_din_agunah_husband }
-	}
-	if = {
-		limit = { exists = scope:activity.var:kehillah_bet_din_litigant_a }
-		scope:activity = { remove_variable = kehillah_bet_din_litigant_a }
-	}
-	if = {
-		limit = { exists = scope:activity.var:kehillah_bet_din_litigant_b }
-		scope:activity = { remove_variable = kehillah_bet_din_litigant_b }
+		limit = { exists = scope:activity.var:kehillah_bet_din_judge3 }
+		scope:activity = { set_variable = { name = kehillah_bet_din_tally value = 0 } }
+		scope:activity = { set_variable = { name = kehillah_bet_din_session_score value = 0 } }
+		scope:activity = { set_variable = { name = kehillah_bet_din_cases_heard_count value = 0 } }
+		scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 0 } }
+		scope:activity = { clear_variable_list = kehillah_bet_din_cases_heard }
+
+		# BECOME A RABBI BY JUDGING, ADDED 2026-09-09 at user request ("you
+		# become a rabbi when you go to a bet din as a judge"). All three
+		# panel seats -- host and both co-judges -- are OFFERED kehillah_
+		# rabbi_trait if not already held (kehillah_bet_din_semicha.0001,
+		# accept-or-decline, per a same-day follow-up request -- this is
+		# not an unprompted grant any more). No exists = guard needed on
+		# judge2/judge3 here specifically (unlike reads of these same
+		# activity variables elsewhere in this file): this whole block is
+		# already guarded on judge3 existing, and judge2 is guaranteed to
+		# exist whenever judge3 does (position = 0 always resolves before
+		# position = 1 can). See kehillah_rabbi_trait's own header (common/
+		# traits/kehillah_traits.txt) for the full three-route acquisition
+		# account this is now part of.
+		kehillah_bet_din_grant_rabbi_trait_effect = yes
+		scope:activity.var:kehillah_bet_din_judge2 = { kehillah_bet_din_grant_rabbi_trait_effect = yes }
+		scope:activity.var:kehillah_bet_din_judge3 = { kehillah_bet_din_grant_rabbi_trait_effect = yes }
+
+		# Stale per-case scratch from any earlier session. Case 3's own
+		# host event always sets case3_direction before its resolution
+		# reads it, so this is belt-and-braces, not load-bearing.
+		# case2_direction and agunah_husband (2026-09-09, case 2's
+		# remarriage mechanic) get the same treatment for the same reason,
+		# as does case4_direction (2026-09-09, case 4's three-way ruling).
+		if = {
+			limit = { exists = scope:activity.var:kehillah_bet_din_case3_direction }
+			scope:activity = { remove_variable = kehillah_bet_din_case3_direction }
+		}
+		if = {
+			limit = { exists = scope:activity.var:kehillah_bet_din_case2_direction }
+			scope:activity = { remove_variable = kehillah_bet_din_case2_direction }
+		}
+		if = {
+			limit = { exists = scope:activity.var:kehillah_bet_din_case4_direction }
+			scope:activity = { remove_variable = kehillah_bet_din_case4_direction }
+		}
+		# Case 5 and case 6 (ADDED 2026-09-15) get the same belt-and-braces
+		# treatment as cases 3/4's own direction scratch above --
+		# case5_truth additionally, since it is set once per case
+		# (kehillah_bet_din.0041's immediate) and must not leak into a
+		# later session that draws case 5 again.
+		if = {
+			limit = { exists = scope:activity.var:kehillah_bet_din_case5_direction }
+			scope:activity = { remove_variable = kehillah_bet_din_case5_direction }
+		}
+		if = {
+			limit = { exists = scope:activity.var:kehillah_bet_din_case5_truth }
+			scope:activity = { remove_variable = kehillah_bet_din_case5_truth }
+		}
+		if = {
+			limit = { exists = scope:activity.var:kehillah_bet_din_case6_direction }
+			scope:activity = { remove_variable = kehillah_bet_din_case6_direction }
+		}
+		if = {
+			limit = { exists = scope:activity.var:kehillah_bet_din_agunah_husband }
+			scope:activity = { remove_variable = kehillah_bet_din_agunah_husband }
+		}
+		if = {
+			limit = { exists = scope:activity.var:kehillah_bet_din_litigant_a }
+			scope:activity = { remove_variable = kehillah_bet_din_litigant_a }
+		}
+		if = {
+			limit = { exists = scope:activity.var:kehillah_bet_din_litigant_b }
+			scope:activity = { remove_variable = kehillah_bet_din_litigant_b }
+		}
 	}
 }
 
@@ -1456,8 +1514,9 @@ kehillah_bet_din_record_case_result_effect = {
 
 	# RABBI TRAIT TRACK XP, ADDED 2026-09-09 -- see kehillah_rabbi_trait's
 	# own header (common/traits/kehillah_traits.txt) for the full design.
-	# Every tier grants talmudics + halakha (this is what adjudicating a
-	# case AT ALL is); parshanut is separate and rarer -- see kehillah_
+	# Every tier grants talmudics (UPDATED 2026-09-15: used to also grant
+	# a separate halakha track, now merged into talmudics -- same total
+	# XP, one track); parshanut is separate and rarer -- see kehillah_
 	# bet_din_grant_parshanut_xp_effect below, called only from the
 	# great-tier branch at each of the four cases' own resolution events,
 	# not from here.
@@ -1480,12 +1539,18 @@ kehillah_bet_din_record_case_result_effect = {
 # lay Greatness leader presiding without the trait gains nothing here,
 # which is correct -- the tracks measure a rabbi's own growing halakhic
 # authority, not generic participation.
+#
+# UPDATED 2026-09-15: used to grant talmudics AND halakha, both at 15,
+# on every case -- now grants talmudics alone, at 30 (kehillah_rabbi_
+# talmudics_xp_per_case, common/script_values/kehillah_script_values.txt,
+# raised to the sum of the two old values), since halakha merged into
+# talmudics (see kehillah_rabbi_trait's own header, common/traits/
+# kehillah_traits.txt). Total trait-XP payout per case is unchanged.
 # ---------------------------------------------------------------------
 kehillah_rabbi_grant_case_xp_effect = {
 	if = {
 		limit = { has_trait = kehillah_rabbi_trait }
 		add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = kehillah_rabbi_talmudics_xp_per_case }
-		add_trait_xp = { trait = kehillah_rabbi_trait track = halakha value = kehillah_rabbi_halakha_xp_per_case }
 	}
 }
 

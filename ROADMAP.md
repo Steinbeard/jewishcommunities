@@ -656,6 +656,151 @@ before building it; nothing here is approved by default.
   kehillah_decisions.txt`, for the full account and the loc/script-value cleanup that came with it).
   `kehillah_write_book_decision` is now this mod's only such decision.
 
+  **2026-09-15, open panel — WHO CAN CONVENE and THE PANEL both loosened,
+  ck3-tiger-clean (0 fatal, 0 error), not yet live-tested.** Two separate
+  passes, same day, same underlying goal ("frontier communities can still
+  call batei din"):
+  - **WHO CAN CONVENE**: the Greatness-leadership gate (only the region's
+    currently-greatest community could host) is REMOVED — any member of a
+    known minhag region may now convene (`activity_kehillah_bet_din_
+    conference`'s own `is_shown`, common/activities/activity_types/
+    kehillah_bet_din_conference.txt).
+  - **THE PANEL**, at explicit user request ("the two co-judges don't need
+    to be other community leaders -- they could also be courtiers or
+    adventurers, but nearby community leaders are favored"): the co-judge
+    `select_character` blocks now rank a merged pool of THREE candidate
+    sources — other same-region community leaders (favored, scored
+    1,000,000 + Greatness so they always win when available), the host's
+    own high-Learning Jewish courtiers, and qualifying independent Jewish
+    rulers (landless adventurers or high Learning, the same population
+    `kehillah_bet_din_invite_rule_jewish_scholars/_adventurers` already
+    draws the open-invite pool from) — instead of requiring three total
+    region member communities. `kehillah_region_can_field_bet_din_panel_
+    trigger` (common/scripted_triggers/kehillah_scripted_triggers.txt) was
+    rewritten to sum these same three pools via a new script value,
+    `kehillah_bet_din_available_co_judges_value` (common/script_values/
+    kehillah_script_values.txt), so a lone or paired frontier outpost with
+    a learned court can now field a panel that a bare regional headcount
+    used to refuse outright. Also fixed in the same pass: two broken
+    `[GetPlayer.GetPrimaryTitle.GetDeJureLiege...]` loc chains (`activity_
+    kehillah_bet_din_conference_host_desc`/`_guest_help_text`) left over
+    from the v6-era de jure duchy design and resolving to a blank/"None"
+    name ever since the v7 pass flattened every Kehillah county title —
+    reported live by the user ("resolving to 'Bet Din of None of'").
+
+  **2026-09-15, both co-judge slots resolving to the same character —
+  THREE attempts, first two both disproven live, before landing on the
+  actual fix.** First reported playing Prague (Eastern Ashkenaz, exactly
+  two member communities — the frontier case THE PANEL above exists for).
+  1. First fix attempt: judge_2's own pool build excluded judge_1's pick
+     via `scope:kehillah_bet_din_co_judge_1`, which the vanilla schema doc
+     claims should be visible across special_guests slots. **Reported
+     STILL broken on a second playtest, as Worms** (Western Ashkenaz, SIX
+     member communities — ruling out "pool too small" as the cause).
+  2. Second fix attempt: replaced the scope reference with a self-
+     expiring character variable (`kehillah_bet_din_co_judge_reserved`)
+     judge_1 set on its own pick, checked via `has_variable` instead.
+     **Also reported broken**, same Worms retest.
+  3. **Actual fix**: both exclusion mechanisms most likely failed for the
+     same underlying reason — `select_character`'s own effects are almost
+     certainly run by the activity-planning UI as repeated live preview
+     computation, not committed once, so nothing written by judge_1's own
+     evaluation (a scope OR a variable) can be trusted to still be there
+     when judge_2's separate evaluation runs. Removed exclusion logic
+     entirely: both slots now build the identical three-pool list with NO
+     side effects and no cross-slot reads, differing only in `position = 0`
+     vs `position = 1` of that same deterministic ranking — the exact
+     mechanism this file's original 2026-09-08 single-pool build already
+     proved live ("position = 0 for judge_1, position = 1 for judge_2...
+     not a second independent search that could collide with judge_1's
+     own pick"), now just ranking a 3-pool merge instead of 1 pool.
+     ck3-tiger-clean (0 fatal, 0 error), not yet re-tested live -- if this
+     one is ALSO wrong, the deterministic-tie-order assumption the
+     original build rested on is the next thing to question, not a fourth
+     exclusion mechanism.
+
+  **2026-09-15, AI hosting frequency raised, at user request ("increase
+  the likelihood of AI deciding to host a Bet Din").** `ai_will_do` was
+  already at its ceiling (100, "given selected, always follows through"),
+  so the only remaining script-side lever was `ai_check_interval` -- how
+  often an eligible character even re-evaluates hosting at all -- lowered
+  24 -> 6 months, matching Coronation's own vanilla value (game/common/
+  activities/activity_types/coronation.txt) for a comparably significant,
+  occasional-not-routine activity. Also removed a stale comment claiming
+  eligibility was still "the current Greatness leader among the three
+  Sh'um communities... a narrow, infrequent window" -- long superseded by
+  both the v6/v7 generalization to all regions and the same day's own
+  Greatness-leadership-gate removal above, so real competing-activity
+  pressure is now higher than that comment assumed, not lower.
+  Separately: confirmed against the installed game (grepped common/ and
+  events/ for start_activity/create_activity and any activity-cooldown
+  effect, found neither) that CK3 has NO scripted way to force-start an
+  activity for a character at all -- hosting can only come from the
+  player's own planner UI or the AI's autonomous decision loop, so there
+  is no debug event this mod could add to literally force an AI to host
+  one. To inspect the co-judge/guest experience directly, host as the
+  player (now broadly eligible after THE PANEL above) and use the
+  console's `play <id>` to switch into a picked guest once the activity
+  starts, rather than waiting on or forcing AI. ck3-tiger-clean.
+
+  **2026-09-17, co-judges are now real declinable invites, not a
+  compelled pick -- THE PANEL rebuilt a fourth time, replacing
+  special_guests outright.** Follow-up to the two live-tested duplicate-
+  pick failures above: asked "is there a way to not force the co-judges
+  to come? Should it be an invite? Would that require a total
+  restructure?" -- answered with an audit (~84 direct `judge2`/`judge3`
+  references across the case-resolution content, many gating which
+  narrative branch is even available, not just decoration) showing a
+  declinable *special_guest* would need auditing most of that by hand.
+  Then asked "how about the two people who accept with the highest score
+  become the co-judges? ... cap the number of people who can accept" --
+  which sidesteps that audit entirely, and is what got built:
+  - **special_guests kehillah_bet_din_co_judge_1/2 removed outright.**
+    Every population that used to feed their select_character pools (same-
+    region community leaders, the host's own high-Learning courtiers,
+    qualifying independent Jewish rulers/adventurers) is now open-invite
+    instead, via two NEW guest_invite_rules (`kehillah_bet_din_invite_
+    rule_jewish_regional_leaders`/`_courtiers`, common/activities/
+    guest_invite_rules/kehillah_bet_din_invite_rules.txt) alongside the
+    existing `_scholars`/`_adventurers`. `can_be_activity_guest` and the
+    old select_character pools' hand-duplicated eligibility logic are
+    both replaced by one shared trigger, `kehillah_bet_din_eligible_
+    judge_trigger` (common/scripted_triggers/kehillah_scripted_
+    triggers.txt) -- three formerly-independent copies of "who could be a
+    co-judge" collapsed into one.
+  - **`kehillah_bet_din_open_docket_effect`** (common/scripted_effects/
+    kehillah_bet_din_scripted_effects.txt) now decides judge2/judge3 by
+    ranking real `ordered_attending_character` (confirmed real vanilla
+    iterator, coronation.txt's own precedent) via `kehillah_bet_din_
+    judge_score_value` (common/script_values/kehillah_script_values.txt)
+    -- region-sharing leaders scored far above courtiers/adventurers, so
+    the FAVORED property survives, computed from settled attendance
+    instead of a pre-committed pick. This is also what makes it immune to
+    the class of bug that broke special_guests twice: nothing here reads
+    another slot's still-pending decision.
+  - **QUORUM**: if fewer than two eligible people actually show up,
+    `invalidate_activity` cancels the whole session rather than let the
+    docket run short-handed -- the one guard that lets the ~84 case-
+    content references stay completely untouched, keeping the promise
+    "the docket only ever runs with a full panel" true by construction
+    instead of by audit. Halachically apt besides: a court that can't
+    muster three is not a valid Beit Din.
+  - **`max_guests` 5 -> 6**, `reserved_guest_slots` removed (nothing left
+    to reserve room for) -- the literal answer to "cap the number of
+    people who can accept."
+  - Discovered along the way: script VALUES do not support
+    `save_scope_as` (ck3-tiger: "unknown token") -- unlike TRIGGERS,
+    which do support $PARAM$ substitution (this mod's own established,
+    confirmed-safe pattern) and do NOT need scope-saving at all when the
+    parameter is just `root`, since root is fixed to a script's original
+    invocation scope and is unaffected by nested scope-shift blocks.
+    kehillah_bet_din_eligible_judge_trigger takes a real
+    $HOST$ parameter for this reason; kehillah_bet_din_judge_score_value
+    (a value, not a trigger) reads scope:host directly instead, since its
+    one real caller already provides it natively.
+  ck3-tiger-clean (0 fatal, 0 error, same 63-warning baseline), not yet
+  live-tested.
+
 **Needs more than one Kehillah on the map, or a regional anchor to travel
 to — natural Phase 2/3 content, not v1:**
 - **Inter-communal correspondence/responsa network.** Sister communities
@@ -675,6 +820,151 @@ to — natural Phase 2/3 content, not v1:**
 - **Pilgrimage**, reusing the vanilla Pilgrimage activity — travel to
   Jerusalem or a great yeshiva for Learning/Influence/artifacts. Lands
   better once Phase 2's academies exist as real destinations.
+
+  **2026-09-15 — "Learn Torah" v1 SHIPPED, ck3-tiger-clean, not yet live-tested.** Raised as a
+  design sketch, spiked ([docs/spec/spike-book-inventory.md](docs/spec/spike-book-inventory.md)),
+  confirmed by the user as the general umbrella all three rabbi tracks study through, then built
+  the same day — the "first version" of the spike's own recommended lighter path, per explicit
+  user request.
+
+  **The track split this depends on shipped in the same pass**: `kehillah_rabbi_trait` (common/
+  traits/kehillah_traits.txt) is now parshanut/talmudics/hashkafa, not parshanut/talmudics/halakha
+  — Halakha is RETIRED as a separate track and merged into Talmudics (every place that granted both
+  at once, chiefly the Bet Din docket's own per-case XP grant, now grants talmudics alone, at the
+  SUM of the two old amounts, so total payout is unchanged), and Hashkafa takes its vacated slot,
+  with its own distinct track bonus (`opinion_of_different_faith`, a real vanilla field, not
+  invented) reflecting worldview broadened by engaging outside wisdom rather than more of either
+  surviving track's own flavor. "Write a Book" (`events/kehillah_book_events.txt`) follows the same
+  rename — its old Halakha genre is now Hashkafa, re-flavored (philosophy/mysticism artifact
+  descriptions and modifiers, not legal-authority ones) rather than just relabeled. Also deleted in
+  this pass: `common/scripted_effects/kehillah_rabbi_book_effects.txt`, found to be dead code from
+  before "Write a Book" was unified into one chain — defined, never called anywhere.
+
+  **The community library is real, per the spike's own recommended shape**: a `variable_list`,
+  `kehillah_library_works`, on each community's primary title (not a character, not a real
+  artifact) — six new triggers (`kehillah_owns_/missing_<track>_work_trigger`, common/scripted_
+  triggers/kehillah_scripted_triggers.txt) read it. Twelve real works, four per track (Targum
+  Onkelos/Mekhilta/Genesis Rabbah/Pirkei De-Rabbi Eliezer for Parshanut; the Mishnah/Jerusalem
+  Talmud/Babylonian Talmud/Halakhot Gedolot for Talmudics; Sefer Yetzirah/Saadia Gaon's Emunot
+  ve-Deot/Bahya ibn Paquda's Chovot HaLevavot/Yehuda Halevi's Kuzari for Hashkafa) — the same
+  curated-real-corpus idiom the Translation Contract already established. Every community starts
+  owning exactly two (Targum Onkelos, the Mishnah — `kehillah_seed_starting_library_effect`, common/
+  scripted_effects/kehillah_library_effects.txt, called once per registered community from
+  `kehillah_on_game_start`); Hashkafa starts with nothing at all, and everything else across all
+  three tracks must be studied for or acquired, per the user's own "gated on actually having books"
+  request.
+
+  **Two flat decisions** (`common/decisions/kehillah_learn_torah_decisions.txt`, events in
+  `events/kehillah_learn_torah_events.txt`) — deliberately ONE decision opening ONE event each,
+  not a multi-step chain, the same shape "Write a Book" itself started as before it grew into one:
+  - `kehillah_learn_torah_decision` — study a track the community's library already owns a work
+    for (gated on `has_trait = kehillah_rabbi_trait`, matching "Write a Book"'s own gate exactly,
+    not a looser learning-only alternative); a Learning check picks pass/fail XP into that track,
+    naming which of the track's owned works was actually studied.
+  - `kehillah_acquire_torah_work_decision` — commission a copy of a work not yet owned, for gold,
+    gated on the Sofer's Workshop's own `kehillah_has_scriptorium` parameter (tier 2) — exactly the
+    building the spike found already carrying the right pre-existing flavor comment ("texts copied
+    here circulate to other communities") for this, unused until now.
+
+  **Deliberately NOT in v1, per the spike's own tiering and explicit scope discipline**: no
+  per-work choice in the Acquire decision (it picks a random missing work within whichever track you
+  choose, not the exact title); no Sefer Torah requirement (a separate, easy, low-risk piece the
+  spike explicitly scoped itself away from); no real spawned book artifacts (the spike's own
+  "cheaper than expected" full-artifact path, `artifact_succession_title`, remains a real upgrade
+  option, not built here). Destination-travel (below) and already-studied tracking (below) were
+  both v1 gaps too, and both shipped the same day at user follow-up request.
+
+  **2026-09-15 follow-up — travel to study elsewhere, and already-studied tracking, both SHIPPED,
+  ck3-tiger-clean, not yet live-tested.**
+  - **`kehillah_visit_library_interaction`** (common/character_interactions/kehillah_character_
+    interactions.txt) is the destination-travel half the spike flagged as separately provable —
+    proved the SAME way, but lighter than expected: not the Bet Din Conference's own full
+    activity_type machinery (host, guest list, phases), but `start_travel_plan` directly, the real
+    vanilla effect `common/scripted_effects/00_task_contract_scripted_effects.txt`'s own
+    `governor_contract_travel_or_progress_effect` already demonstrates ("if not already there,
+    travel with `on_arrival_event`; else fire it directly"), reused verbatim. Reuses `kehillah_view_
+    communities_interaction`'s own already-verified target-search mechanism (same file) to pick a
+    destination community, filtered to ones whose library actually holds something. Which community
+    is stored as a character variable holding a TITLE, not a saved scope — travel can take real
+    in-game time, well past this mod's own proven same-session scope-persistence guarantees — and
+    the CURRENT holder is read at arrival, so a succession at the destination mid-journey doesn't
+    break anything. The return trip is a second, explicit `start_travel_plan` issued once study
+    resolves (`events/kehillah_learn_torah_journey_events.txt`), not a `return_trip` field — that
+    field's real semantics could not be confirmed from any installed file (every citation found only
+    ever used `return_trip = no`), so this mod does not lean on an unconfirmed default.
+  - **The three `kehillah_study_<track>_effect` (common/scripted_effects/kehillah_library_
+    effects.txt) are now SHARED** between local study (`kehillah_learn_torah.0001`) and travelled
+    study (`kehillah_learn_torah_journey.0001`), parameterized on `$LIBRARY$` (which title's
+    collection to read from) — the same parameterized-scripted-effect/trigger idiom this mod's own
+    `kehillah_pillar_at_least_trigger` already established, now also applied to the six `kehillah_
+    owns_/missing_<track>_work_trigger` entries so both contexts share one trigger family too.
+  - **Already-studied tracking**, per explicit user request ("keep track of which books you've
+    already studied... a much smaller boost"): `kehillah_studied_works`, a character (not
+    community) `variable_list` — what a scholar has personally read doesn't reset when they travel
+    or when their own community's shelves change. A repeat pays `kehillah_learn_torah_xp_repeat_
+    pass/_fail` (5/2) instead of `kehillah_learn_torah_xp_pass/_fail` (15/5) — roughly a third,
+    "a much smaller boost," never zero. Detected per-work inside each track effect's own random_list
+    (a literal `is_target_in_variable_list` check per entry, not `target = var:X` with a variable —
+    that specific form was checked against the installed game and not found anywhere, so it was not
+    risked), signalled to the shared pass/fail block via a plain number variable, not a second flag
+    comparison.
+
+  **2026-09-15 follow-up #2 — candidate scoring by unstudied books, SHIPPED that day, then SUPERSEDED
+  the SAME day by follow-up #3 below** when the interaction it scored was itself retired. Kept here,
+  struck through in spirit rather than deleted, for the record: it scored `kehillah_visit_library_
+  interaction`'s own target-search list on unstudied-work counts per track via three transient
+  character variables read by both `ai_accept`'s modifiers and their own `.MakeScope.Var(...)` display
+  text. The interaction this scoring lived on no longer exists; see follow-up #3 for what replaced
+  both the interaction and this scoring mechanism together.
+
+  **2026-09-15 follow-up #3 — the journey rebuilt as a real activity_type, ck3-tiger-clean, not yet
+  live-tested**, at explicit user request: "the interaction is awkward. Maybe we should make it
+  another activity like bet din? But with more targets than just your home community" — and
+  separately, "studying should happen when you reach the target court, not when you return home"
+  (which, per `kehillah_visit_library_interaction`'s own retirement note, was already true of the
+  interaction's own `on_arrival_event` — not a bug this rebuild fixed so much as a property the
+  activity delivers more directly, `on_phase_active` only ever firing once the host has arrived).
+  - **`activity_kehillah_learn_torah_journey`** (common/activities/activity_types/kehillah_learn_
+    torah_journey.txt) replaces the interaction outright — retired the same pattern this mod already
+    uses for a retired decision (full account in the interaction's own retirement note, common/
+    character_interactions/kehillah_character_interactions.txt). HOST = the traveller, solo
+    (`open_invite = no`), unlike Bet Din Conference where the host stays home and guests travel to
+    them — the one structural way this activity could not reuse Bet Din's own shape, and the reason
+    HOST travel specifically (not just guest travel) needs to work, this build's one real, explicitly
+    flagged unverified assumption (this mod's own confirmed-live travel evidence to date is for
+    guests travelling to a host, not a host travelling to a self-picked destination — the general
+    mechanism is standard CK3 activity behavior, not invented for this file, but not independently
+    live-tested here for this specific direction).
+  - **`province_filter = all`**, deliberately, despite the schema's own warning against it — none of
+    `_activity_type.info`'s other named filters (capital/domain/realm/holy_sites*/domicile*/
+    landed_title/geographical_region) can express "wherever any of sixteen scattered, independently-
+    ruled communities happens to be," which is this mod's own actual map shape now that the old
+    `d_kehillah_<region>` duchies are gone. `is_location_valid` narrows the real candidate set back
+    to the registry immediately, bounding the practical cost the same way `kehillah_bet_din_invite_
+    rule_jewish_scholars/_adventurers` already accepted for iterating `every_independent_ruler`. The
+    AI never pays this cost at all: `ai_province_filter = capital` plus `ai_will_do = 0`, two
+    independent reasons the AI can never host this, not one.
+  - **`province_score`** now does what the retired interaction's own `ai_accept` modifiers used to —
+    ranks candidates by unstudied-work count — but CANNOT reproduce their literal per-track
+    breakdown tooltip: confirmed, from a real shipped vanilla example (`hunt.txt`'s own
+    `province_score`), to be a plain script value with no `modifier`/`desc` fields anywhere in that
+    system, unlike `ai_accept`. A second candidate route (stacking informational `custom_tooltip`
+    lines onto `is_location_valid`) was considered and deliberately not taken either — confirmed
+    real usage of that pattern is specifically for explaining validity FAILURES
+    (`can_start_showing_failures_only`'s own naming), not a general always-on breakdown surface, and
+    this file does not guess that it also does the latter. Real, flagged gap, not solved on a guess:
+    the exact per-track count now only shows once you have already arrived (each of kehillah_learn_
+    torah_journey.0001's own three options still names the specific work found there).
+  - **`kehillah_learn_torah_journey.0001`** (events/kehillah_learn_torah_journey_events.txt) no
+    longer needs ANY persisted destination variable — the interaction's old `kehillah_journey_
+    destination_title` character variable existed only because travel could cross this mod's own
+    proven same-session scope-persistence window; firing from `on_phase_active` instead means root
+    is already physically at the destination (`root.location`) by the time this event's own
+    `immediate` runs, so the destination is looked up fresh, in the same effect chain, every time —
+    which registered community's own domicile occupies `root.location`, right now. The "after" block
+    is now just `progress_activity_phase_after` (matching `kehillah_bet_din_advance_docket_effect`'s
+    own precedent) — the engine's own activity-completion machinery is trusted for the actual trip
+    home, not a second hand-built `start_travel_plan` the way the retired interaction needed.
 
 **Partly resolved, and reopened by the first playtest:** open,
 community-wide leadership succession (any notable family can be
