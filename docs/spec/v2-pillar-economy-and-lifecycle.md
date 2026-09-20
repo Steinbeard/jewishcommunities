@@ -321,8 +321,11 @@ dissolution chain specifically (nothing about the effect itself cares
 which route calls it). The voluntary "Found a Sister Community" route
 below and §4.4's dissolution rebound can both call the same effect once
 built — see ROADMAP.md's 2026-09-19 entry for the full account,
-including what this pass deliberately left out (AI eligibility). The
-runtime title now uses the founder's captured founding county in its
+including what this pass deliberately left out (AI eligibility). **Updated
+2026-09-20:** its adventurer route now also requires ten Jewish camp
+followers and an unoccupied camp location -- a registered Kehillah whose
+domicile is already at that location blocks a second one. The runtime title
+now uses the founder's captured founding county in its
 name, following vanilla's `new_landless_adventurer_location` pattern
 (scope `kehillah_founding_county`); the founding path itself is still
 awaiting a clean live run, see ROADMAP 2026-09-20.

@@ -1211,7 +1211,9 @@ gate**: `is_rabbinic_authority_jewish_trigger` (rabbinism/kabarism/merkabah spec
 half of "rabbinic") AND `kehillah_leader_is_rabbinic_trigger` (this mod's existing personal bar for
 "reads as a rabbi": the trait, `theologian`, top-two Learning education, or `learning >= 12` as
 fallback — reused rather than re-invented, so a founder and a credible Chief Rabbi candidate are held
-to literally the same definition) AND `has_government = landless_adventurer_government`. The founding
+to literally the same definition) AND `has_government = landless_adventurer_government` AND ten Jewish
+camp followers. It also requires the camp's current location not already to host a registered
+Kehillah, preventing duplicate communities in one place. The founding
 effect mirrors `kehillah_on_title_gain`'s own body (`common/on_action/kehillah_on_actions.txt`) almost
 exactly — `change_government`, `kehillah_restore_quarter_effect` (a safe no-op with no prior building
 record), `kehillah_init_pillars_effect`, leader-flavor — plus the three follow-up calls that on_action's
@@ -1250,15 +1252,20 @@ the wrong title and both titles ended up with invalid succession. `kehillah_foun
 now mirrors vanilla's own adventurer-becomes-landed teardown: create → `set_primary_title_to` →
 destroy the old adventurer title → `change_government` → `add_realm_law`, with `debug_log`
 breadcrumbs. (3) The title name is now `Kehillah of [kehillah_founding_county.GetNameNoTooltip]`
-(county, captured before creation, vanilla's `adventurer_name_010` mechanism) — never yet seen live.
-A dedicated test start `bm_1066_kehillah_founder_test` (rabbinic adventurer "Yitzhak", fixture title
-`d_kehillah_founder_test`, placeholder portrait) exists for exactly this check; whether it should ship
-to players or be console-only is an open call (BLOCKERS.md). ck3-tiger 0/0.
+(county, captured before creation, vanilla's `adventurer_name_010` mechanism) — a fresh later re-test
+confirmed it renders as intended. The same re-test confirmed the old title is destroyed, the founder
+does not Game Over, and the standard Kehillah decisions appear; the Worms bookmark also remained stable
+past 1066-10-01. A dedicated test start `bm_1066_kehillah_founder_test` (rabbinic adventurer
+"Yitzhak", fixture title `d_kehillah_founder_test`, placeholder portrait) exists for exactly this
+check; whether it should ship to players or be console-only is an open call (BLOCKERS.md). ck3-tiger
+0/0.
 
-**NEXT STEP is still the live pass:** founder-test bookmark → take the decision → no Game Over,
-title reads "Kehillah of <county>", old title gone, Kehillah decisions appear, four
-`kehillah_found_community_effect:` lines in `debug.log`. Plus one Worms-bookmark run past 1066-10-01
-to confirm the revert (low risk — it is the exact state three earlier playtests covered).
+**Remaining founder-path work:** its successful live resolution still logs two new Kehillah errors
+while initializing pillars and the starting library. See the 12:49 EDT entry in
+`docs/testing/2026-09-20-found-community-live-test-log.md`; repair those errors, then repeat the
+founder test. **Updated 2026-09-20:** the decision now also requires ten Jewish camp followers and a
+camp location without an existing registered Kehillah, so its test setup must satisfy both gates before
+exercising the resolution path.
 
 **Partly resolved, and reopened by the first playtest:** open,
 community-wide leadership succession (any notable family can be
