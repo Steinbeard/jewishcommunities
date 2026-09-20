@@ -46,7 +46,10 @@
 # The two cases are the same body type (types block below) hosted by
 # TWO top-level windows, kehillah_domicile_library (own) and
 # kehillah_domicile_library_other (roster-chosen), only ever one of
-# them visible. Not two instances in one window: a hidden vbox
+# them visible -- plus a THIRD, kehillah_domicile_library_standalone
+# (2026-09-19), which the roster's per-row library button opens beside
+# the roster with no domicile view at all, so any community's library
+# is one click away from the map; it has its own close button. Not two instances in one window: a hidden vbox
 # instance kept its full height in the parent vbox despite
 # ignoreinvisible = yes (live, 2026-09-17 -- the visible body sat 200
 # px down, under an invisible twin), and a separate window is the
@@ -122,22 +125,8 @@ types KehillahLibrary
 		spacing = 4
 		ignoreinvisible = yes
 
-		### Header -- whose library this is. The window-control close
-		### button is hidden: this panel lives and dies with the domicile
-		### view, it has no life of its own to close.
-		header_pattern = {
-			layoutpolicy_horizontal = expanding
-
-			blockoverride "header_text"
-			{
-				text = "KEHILLAH_LIB_HEADER"
-				max_width = 250
-			}
-			blockoverride "button_close"
-			{
-				visible = no
-			}
-		}
+		### (The header lives in each window, not here: only the
+		### standalone window has a close button that does anything.)
 
 		### No Beit Midrash: nowhere to keep a book.
 		text_multi = {
@@ -329,9 +318,35 @@ window = {
 		spacing = 4
 		min_width = @lib_width
 
-		kehillah_library_body = {
+		vbox = {
+			layoutpolicy_horizontal = expanding
+			spacing = 4
 			datacontext = "[GetPlayer]"
 			datacontext = "[GetPlayer.GetPrimaryTitle]"
+
+		### Header -- whose library this is.
+		header_pattern = {
+			layoutpolicy_horizontal = expanding
+
+			blockoverride "header_text"
+			{
+				text = "KEHILLAH_LIB_HEADER"
+				max_width = 220
+			}
+			# Left-aligned, not centred: keeps a long community name clear
+			# of the close button on the standalone window.
+			blockoverride "header_text_placement"
+			{
+				parentanchor = top|left
+				position = { 12 8 }
+			}
+			blockoverride "button_close"
+			{
+				visible = no
+			}
+		}
+
+			kehillah_library_body = {}
 		}
 	}
 }
@@ -382,9 +397,113 @@ window = {
 		spacing = 4
 		min_width = @lib_width
 
-		kehillah_library_body = {
+		vbox = {
+			layoutpolicy_horizontal = expanding
+			spacing = 4
 			datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_lib_viewed_community' ).Char]"
 			datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_lib_viewed_community' ).Char.GetPrimaryTitle]"
+
+		### Header -- whose library this is.
+		header_pattern = {
+			layoutpolicy_horizontal = expanding
+
+			blockoverride "header_text"
+			{
+				text = "KEHILLAH_LIB_HEADER"
+				max_width = 220
+			}
+			# Left-aligned, not centred: keeps a long community name clear
+			# of the close button on the standalone window.
+			blockoverride "header_text_placement"
+			{
+				parentanchor = top|left
+				position = { 12 8 }
+			}
+			blockoverride "button_close"
+			{
+				visible = no
+			}
+		}
+
+			kehillah_library_body = {}
+		}
+	}
+}
+
+### Any community's library, opened from the map roster's library button
+### -- no domicile view involved. Sits just left of the roster window
+### (bottom|right, 670 wide at { -22 -240 }) and closes from its own
+### header button, which clears the flag. ADDED 2026-09-19 (v13 spec
+### section 11): the user asked to see other communities' libraries
+### without having to reach them through the domicile window at all.
+window = {
+	name = "kehillah_domicile_library_standalone"
+	parentanchor = bottom|right
+	widgetanchor = bottom|right
+
+	position = { -702 -240 }
+	size = { 300 440 }
+
+	movable = yes
+	resizable = no
+	layer = windows_layer
+	alwaystransparent = no
+	filter_mouse = all
+	allow_outside = yes
+
+	visible = "[And( And( IsInGame, GetVariableSystem.Exists( 'kehillah_lib_standalone' ) ), GetPlayer.MakeScope.Var( 'kehillah_lib_viewed_community' ).Char.GetGovernment.IsType( 'kehillah_government' ) )]"
+	visible_at_creation = no
+
+	state = {
+		name = _show
+		using = Animation_FadeIn_Quick
+	}
+	state = {
+		name = _hide
+		using = Animation_FadeOut_Standard
+	}
+
+	background = {
+		using = Background_Area_Dark
+		color = { 0.11 0.10 0.09 0.94 }
+		margin = { 6 6 }
+	}
+
+	vbox = {
+		parentanchor = top|left
+		margin = { 14 10 }
+		spacing = 4
+		min_width = @lib_width
+
+		vbox = {
+			layoutpolicy_horizontal = expanding
+			spacing = 4
+			datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_lib_viewed_community' ).Char]"
+			datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_lib_viewed_community' ).Char.GetPrimaryTitle]"
+
+		### Header -- whose library this is.
+		header_pattern = {
+			layoutpolicy_horizontal = expanding
+
+			blockoverride "header_text"
+			{
+				text = "KEHILLAH_LIB_HEADER"
+				max_width = 220
+			}
+			# Left-aligned, not centred: keeps a long community name clear
+			# of the close button on the standalone window.
+			blockoverride "header_text_placement"
+			{
+				parentanchor = top|left
+				position = { 12 8 }
+			}
+			blockoverride "button_close"
+			{
+				onclick = "[GetVariableSystem.Clear( 'kehillah_lib_standalone' )]"
+			}
+		}
+
+			kehillah_library_body = {}
 		}
 	}
 }

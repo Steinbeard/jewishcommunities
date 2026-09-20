@@ -1,6 +1,6 @@
 ﻿# v13 — The Community Library Panel
 
-**Status:** IMPLEMENTED 2026-09-15; rebuilt as a dynamic list, then tied to the Beit Midrash building, the same day; **fixed and live-verified 2026-09-18** (§9 — the panel had never actually worked: its `DomicileWindow` datacontext is unreachable from a scripted widget); **first inventory action (donate a work) added and live-verified the same day** (§10). Live passes 1-6 in §5. Answers the user's request "add a way to view
+**Status:** IMPLEMENTED 2026-09-15; rebuilt as a dynamic list, then tied to the Beit Midrash building, the same day; **fixed and live-verified 2026-09-18** (§9 — the panel had never actually worked: its `DomicileWindow` datacontext is unreachable from a scripted widget); **first inventory action (donate a work) added and live-verified the same day** (§10); **any community's library one click from the map roster, live-verified 2026-09-19** (§11). Live passes 1-7 in §5. Answers the user's request "add a way to view
 the books a community has in its domicile view."
 
 **Read first:** `docs/spec/spike-book-inventory.md` (why the library is a `variable_list` of flags on
@@ -154,6 +154,14 @@ options "Send it to a yeshiva far away" / "Keep it"; "Keep it" closes it with th
 directly by probe, "Send" removed the row, the subheader went to 1 work, HUD piety +50 (the abroad
 value). `error.log` clean of panel/event lines on a fresh boot.
 
+**Pass 7 (2026-09-19, roster library button, §11): PASS.** Every roster row ends in a third button
+(book icon, tooltip "Library"); clicking Mainz's raised a panel left of the roster reading "Library of
+Kehillah of Mainz — The Beit Midrash holds 2 works", the two seeded rows, no donate buttons; Speyer's
+and Troyes's buttons re-targeted the header; the header X closed it and a later click reopened it. The
+own-quarter path (F2 → card) still showed the left-column panel with donate buttons. Cosmetics fixed
+in the same pass: header text left-aligned so the X clears the name, subheader shortened so it no
+longer elides at the column width. `error.log`: only the pre-existing roster layout warnings.
+
 ## 6. Every Kehillah starts with a Beit Midrash (2026-09-17)
 
 User request after pass 3: "give all Kehillahs a level 1 bet midrash and don't lock it behind
@@ -262,7 +270,9 @@ the same debug pass.
 **Known limit.** Opening another community's quarter through a *vanilla* route (its title window's
 domicile card) sets no flag, so the panel shows the player's own library under that quarter. The
 header always names whose library it is, so this reads as "your library" rather than as wrong data.
-Fixing it would need the vanilla window forked, which this mod does not do.
+Fixing it would need the vanilla window forked, which this mod does not do. *(2026-09-19: §11 makes
+this moot in practice — any community's library is now reachable from the roster without the domicile
+view at all.)*
 
 ## 10. Inventory actions — donating a work (2026-09-18)
 
@@ -312,3 +322,33 @@ kehillah_library_values.txt` (the two piety values), `localization/english/kehil
 **Not built (next actions for the same slot):** lend a work to a named community for a term; sell a copy
 for gold (would need the Sofer's Workshop to have made one); "commission this work" on a missing row is
 still §8's first idea.
+
+## 11. Any community's library from the map roster (2026-09-19)
+
+User request: "fix it to show other communities' libraries." §9's design could only re-target the
+panel through the roster's *quarter* button, and every other way of reaching another community's
+quarter showed the player's own library. Rather than chase the vanilla window, the library now has a
+door of its own.
+
+- **A third button on every roster row** (`gui/kehillah_community_map_view.gui`, after go-to and
+  quarter; the roster grew 30 px to fit it). It records the community on the player exactly as the
+  quarter button does (`kehillah_lib_view_community` → `var:kehillah_lib_viewed_community`), then sets
+  a *separate* GUI flag, `kehillah_lib_standalone`.
+- **A third window**, `kehillah_domicile_library_standalone`, in `gui/kehillah_domicile_library.gui`
+  and registered in `kehillah_scripted_widgets.txt`: visible on that flag alone (no
+  `IsGameViewOpen('domicile')`), parked just left of the roster (`bottom|right`, `{ -702 -240 }`,
+  300 x 440, bottom-aligned with it), with a working header close button that clears the flag. It
+  hosts the same `kehillah_library_body` as the other two, with the recorded community's datacontexts.
+- **Why a separate flag and window, not the "other" one:** `kehillah_lib_viewing_other` is tied to the
+  domicile view and cleared when that view closes; a standalone panel must not be, and must not hide
+  the own-quarter window when the player opens their own quarter while it is up. Three windows, one
+  body, each with one clear lifetime: own ↔ domicile view; other ↔ domicile view opened from the
+  roster; standalone ↔ its own close button.
+- **The header moved out of the shared body** into each window, because only the standalone one
+  wants a live close button (the two domicile-bound windows hide theirs — they close with the view).
+  The header text is left-aligned (vanilla's `header_text_placement` block) with `max_width` so a long
+  community name never runs under the X.
+- Donate buttons stay on the player's own library only (`Character.IsLocalPlayer`), so another
+  community's panel is read-only, as it should be.
+
+Loc: `KEHILLAH_MAP_VIEW_LIBRARY_TOOLTIP`. Live pass 7 in §5.
