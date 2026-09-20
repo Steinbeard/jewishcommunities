@@ -17,7 +17,10 @@
 # activity_type this mod has built. Deliberately minimal next to
 # vanilla's own activity_types (Hunt is 5,843 lines, Grand Wedding is
 # 4,097) -- no pickable phases or options, no biome-conditional
-# backgrounds, no pulse_actions catalog, no window_characters. v5 spec
+# backgrounds, and no custom pulse_actions catalog. The activity window
+# now has a council-chamber background and renders the host plus attending
+# guests; these were the only production-polish pieces missing from the
+# otherwise working activity UI. v5 spec
 # section 3 flags a custom activity_type as this feature's first-of-
 # its-kind structural risk; the goal here is proving the activity
 # fires, hosts, and resolves a docket correctly, not matching vanilla's
@@ -285,6 +288,76 @@ activity_kehillah_bet_din_conference = {
 	# every_independent_ruler/every_courtier rather than every character
 	# in the world.
 	max_guests = 6
+
+	###################
+	# GRAPHICS
+	###################
+	# The activity window reads this directly for its full-screen idle
+	# illustration. Reuse the installed council-chamber scene: it fits a
+	# rabbinical court better than a feast/travel scene and keeps the mod
+	# independent of a new art asset.
+	background = {
+		texture = "gfx/interface/illustrations/event_scenes/councilchamber.dds"
+		environment = "environment_council"
+		ambience = "event:/SFX/Events/Backgrounds/meetingchamber_western"
+	}
+
+	# ActivityWindow.GetCharacters is populated by these effects. The host
+	# is kept in a dedicated slot so the panel always has its convening
+	# judge; the two guest slots read the actual co-judges selected when the
+	# docket opens. Additional invited scholars/courtiers remain in the
+	# guest list, but the activity window stays at the three-person court
+	# panel instead of overflowing with every attendee.
+	window_characters = {
+		host = {
+			camera = camera_body
+
+			effect = {
+				if = {
+					limit = { scope:host.location = scope:activity.activity_location }
+					scope:host = { add_to_list = characters }
+				}
+			}
+
+			scripted_animation = {
+				animation = pondering
+			}
+		}
+
+		guest = {
+			camera = camera_body_right
+
+			effect = {
+				if = {
+					limit = { scope:host.location = scope:activity.activity_location }
+					scope:activity.var:kehillah_bet_din_judge2 ?= {
+						add_to_list = characters
+					}
+				}
+			}
+
+			scripted_animation = {
+				animation = pondering
+			}
+		}
+
+		guest = {
+			camera = camera_body_left
+
+			effect = {
+				if = {
+					limit = { scope:host.location = scope:activity.activity_location }
+					scope:activity.var:kehillah_bet_din_judge3 ?= {
+						add_to_list = characters
+					}
+				}
+			}
+
+			scripted_animation = {
+				animation = pondering
+			}
+		}
+	}
 
 	# =================================================================
 	# THE DOCKET -- ONE CASE PER PHASE.
