@@ -1,0 +1,141 @@
+﻿# =====================================================================
+# Found a Jewish Community. ADDED 2026-09-19.
+#
+# This is the "open technical question" v2 spec section 5.1 flagged and
+# deliberately left unsolved ("what actually places a new landless title
+# at a chosen location... needs checking against whatever vanilla
+# decision/effect creates a landless title today"). Checked directly
+# against the installed 1.19 files before building anything here, the
+# same way this project always checks a primitive before relying on it:
+#
+#   common/scripted_effects/07_dlc_ep3_scripted_effects.txt's own
+#   create_landless_adventurer_title_effect (the effect behind vanilla's
+#   "Abandon Realm to Become an Adventurer" decision and every other
+#   laamp-creation path) calls a genuinely hardcoded engine effect,
+#   create_adventurer_title = { name = <loc key> holder = <character>
+#   article = ... save_scope_as = ... }, with NO landed_titles entry
+#   anywhere backing the title it produces (grepped every adventurer_
+#   name_* loc key used as a `name` value above -- none of them are
+#   title IDs, they are plain title-name loc keys; the title itself is
+#   minted by the engine at runtime). This is real, general-purpose
+#   dynamic landless-title creation, not a pool of sixteen pre-authored
+#   slots the way this mod's own sixteen c_kehillah_* titles are (see
+#   common/landed_titles/kehillah_landed_titles.txt) -- a Kehillah can
+#   now be founded literally anywhere a landless adventurer is standing,
+#   which the pre-authored titles structurally cannot do (v7 spec's own
+#   header explains why de-jure-nested or flat pre-authored titles can
+#   only ever cover a fixed roster, never "anywhere").
+#
+# SCOPE CUT, DELIBERATE: the new title's own display name is a static
+# loc key (kehillah_found_community_decision_title_name, "The Kehillah"),
+# not dynamically built from the founder's current county. Vanilla's own
+# laamp title names (adventurer_name_001 etc.) reference a scope saved
+# via save_scope_as at the top of the SAME effect that calls
+# create_adventurer_title, which strongly suggests dynamic substitution
+# is possible here too -- but nothing in the installed files confirms
+# the exact scope-resolution rule for a landless title's OWN name loc
+# (evaluated wherever the title is displayed, not only inside this
+# effect), and a wrong accessor chain here is a silent cosmetic bug, not
+# a caught one. Left static and safe rather than guessed; a location-
+# flavored name is a good follow-up once this primitive is confirmed
+# live. This mirrors the existing sixteen titles' own
+# ruler_uses_title_name = no design anyway -- the leader's own name and
+# role (Rav/Parnas, kehillah_update_leader_flavor_effect) is what the
+# player actually reads, not the institution's own title string.
+#
+# WHY THIS EFFECT DUPLICATES kehillah_on_title_gain'S BODY INSTEAD OF
+# RELYING ON on_title_gain TO FIRE IT. It might: create_adventurer_title
+# is a real title grant and vanilla's own on_title_gain on_action may
+# well fire for it automatically. But even if it does, it fires
+# SYNCHRONOUSLY inside the create_adventurer_title call, before this
+# effect's own later lines run -- in particular, before the
+# add_to_global_variable_list call below ever adds the new title to
+# kehillah_registered_communities, which is what the extended
+# is_kehillah_title_trigger (common/scripted_triggers/kehillah_scripted_
+# triggers.txt) now needs to recognize it. kehillah_on_title_gain would
+# therefore see a title on_title_gain does not yet recognize as a
+# Kehillah at all, and do nothing. So the explicit calls below are load-
+# bearing, not optional belt-and-braces, regardless of whether on_title_
+# gain also fires -- and every one of them is idempotent (see each
+# call's own header) if it turns out on_title_gain fires too.
+#
+# Scope: the founding character (a landless adventurer). Called only from
+# kehillah_found_community_decision (common/decisions/kehillah_found_
+# community_decisions.txt), which is itself the only gate on who may call
+# this -- this effect trusts its caller and re-checks nothing.
+# =====================================================================
+
+kehillah_found_community_effect = {
+	save_scope_as = kehillah_founder
+
+	create_adventurer_title = {
+		name = kehillah_found_community_decision_title_name
+		holder = scope:kehillah_founder
+		article = DEFAULT_TITLE_NAME_ARTICLE
+		save_scope_as = kehillah_new_community_title
+	}
+
+	# kehillah_restore_quarter_effect (below) reads scope:kq_title, the
+	# exact scope name kehillah_on_title_gain saves its own scope:title
+	# under before calling it (common/on_action/kehillah_on_actions.txt).
+	# ck3-tiger caught this as a strict-scopes warning on the first pass
+	# here -- the effect works on ANY title, scope:kq_title is just the
+	# name every caller is expected to save it under first, and this one
+	# didn't yet.
+	scope:kehillah_new_community_title = { save_scope_as = kq_title }
+
+	# Government follows the office -- the exact rule and exact guard
+	# kehillah_on_title_gain already applies at every succession (common/
+	# on_action/kehillah_on_actions.txt); kehillah_government.txt's own
+	# can_get_government header names "a found-a-community decision in a
+	# later phase" as the second of the two explicit ways a character is
+	# meant to ever land in this government. This is that phase.
+	if = {
+		limit = {
+			NOT = { government_has_flag = government_is_kehillah }
+		}
+		change_government = kehillah_government
+	}
+
+	# No prior quarter to restore -- there is no history here at all, so
+	# this genuinely differs from every succession kehillah_on_title_gain
+	# handles. Called anyway rather than special-cased out: kehillah_
+	# restore_quarter_effect safely no-ops with no var:kq_* set on the
+	# title yet (every kehillah_restore_track_N_effect call guards on
+	# scope:kq_title = { exists = var:$VAR$ } first, common/scripted_
+	# effects/kehillah_scripted_effects.txt), and calling it keeps this
+	# effect's shape identical to kehillah_on_title_gain's rather than
+	# inventing a second, subtly different "first ever founding" path.
+	kehillah_restore_quarter_effect = yes
+
+	scope:kehillah_new_community_title = {
+		kehillah_init_pillars_effect = yes
+		change_variable = { name = kehillah_var_stability add = 50 }
+	}
+
+	# Re-evaluate Rav vs. Parnas for the founder, same as any new leader
+	# (common/flavorization/kehillah_title_holders.txt).
+	kehillah_update_leader_flavor_effect = yes
+
+	# REGISTRY, LIBRARY, MAP VIEW -- the three follow-up calls this mod's
+	# own comments already flagged as required here, written down before
+	# this feature existed to build against:
+	#   - kehillah_on_actions.txt's kehillah_on_game_start: "Whoever
+	#     builds that must remember to register here too, or the
+	#     registry silently goes stale the day it stops being true."
+	#   - kehillah_library_effects.txt's kehillah_seed_starting_library_
+	#     effect: "If Wave 5 ever adds founding a new Kehillah, that
+	#     founding effect needs to call kehillah_seed_starting_library_
+	#     effect too."
+	#   - kehillah_on_actions.txt again, the map view refresh: "if Wave 5
+	#     adds founding, its founding effect must call the refresh too."
+	# This is that day, for all three.
+	add_to_global_variable_list = {
+		name = kehillah_registered_communities
+		target = scope:kehillah_new_community_title
+	}
+	scope:kehillah_new_community_title = {
+		kehillah_seed_starting_library_effect = yes
+	}
+	kehillah_refresh_map_view_for_players_effect = yes
+}

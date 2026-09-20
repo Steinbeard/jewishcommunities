@@ -1147,6 +1147,106 @@ too. Corpus itself is unchanged (still the same 12 real works); "expand the init
 growing the pool a community's start can draw from (2 fixed → 8 eligible), not adding new works to
 the corpus, which nothing in the request actually asked for.
 
+**2026-09-19, SAME-DAY FOLLOW-UP — the Talmud corpus split into Sedarim, and three anachronistic
+Hashkafa works date-gated, ck3-tiger-clean, not yet live-tested.** Two user requests handled together
+since they both touch the same 12-work corpus the entry above just finished tuning: "can we split up
+the Talmuds into different Seders or Mashectot?" and, separately, "exclude the Kuzari and anything
+else written after 867 from the initial pool... have a creatable pool of books that can become
+available later... replace them in the initial pool though." Corpus grew from 12 real works to 23 —
+every file that enumerated the twelve by literal flag (the owns/missing triggers, the acquire event,
+the travel journey's tooltip/is_location_valid/province_score, the study scheme's numeric-ID bridge,
+the unstudied-count script values, the map-view GUI's per-work donate/studied functions, the donate
+confirmation event, and all their localization) needed the same mechanical expansion — done with a
+small Python script (not by hand) specifically to keep 11 near-duplicate blocks consistent instead of
+risking a typo'd flag name in one of them; ck3-tiger came back clean on the result.
+
+**The split itself, per the user's own choice ("keep Mishnah together, split Bavli and Yerushalmi")**:
+the Mishnah stays one work; the Babylonian Talmud splits into all six of its real Sedarim (Zeraim,
+Moed, Nashim, Nezikin, Kodashim, Tahorot — the same six volumes a real Vilna Shas edition prints, even
+though its own Gemara only substantially covers four of them, Zeraim/Tahorot being mostly Mishnah-only
+outside Berakhot/Niddah respectively); the Jerusalem Talmud splits into only the four Sedarim it
+actually has real Gemara for (Zeraim, Moed, Nashim, Nezikin — Kodashim/Tahorot were not invented for
+it, since it has none). This is a documented assumption about seder-level granularity and which
+Sedarim to include for Bavli, not independently confirmed with the user beyond the two questions
+actually asked (Seder- vs. Masechet-level granularity, and which texts to split) — flagging it here in
+case Masechet-level (individual tractate) granularity turns out to be wanted later, which would be
+another full pass of the same shape, not a small follow-up.
+
+**The date-gating, per the user's own choice of mechanism ("direct current_date gate")**: Emunot
+ve-Deot (933), Chovot HaLevavot (~1080) and Kuzari (~1140) are genuinely anachronistic before their
+own real composition year, not just before 867 — Chovot HaLevavot and Kuzari are even later than the
+flagship Worms 1066 start, so this was a real latent anachronism the acquire decision could already
+trigger, not only a hypothetical concern for an earlier bookmark. `kehillah_missing_hashkafa_work_
+trigger` (common/scripted_triggers/kehillah_scripted_triggers.txt) and the acquire event's own Hashkafa
+option (`kehillah_acquire_torah_work.0001.c`, events/kehillah_learn_torah_events.txt) both gate each of
+the three behind `current_date >= <year>.1.1` directly, ANDed with the existing not-owned check — no
+new state, unlike the alternative (a global unlock list plus an announcement toast) the user was also
+offered and did not choose. **Replacements, to keep Hashkafa's own immediately-available roster at
+four works instead of dropping to one**: Hekhalot Rabbati, Shi'ur Qomah (Merkabah/Hekhalot mysticism,
+Talmudic-Geonic era) and Sefer HaRazim (an ancient Jewish magical-cosmological text, ~3rd-4th century)
+— all three real, documented, pre-867 texts, proposed by the assistant and confirmed by the user before
+writing any content. Hashkafa is still excluded from the community-seed random pool entirely (the
+entry above), so this backfill matters for the acquire decision and the travel journey, not the
+starting-library roll.
+
+**2026-09-19 — "Found a Jewish Community" shipped for rabbinic landless adventurers, ck3-tiger-clean,
+NOT YET LIVE-TESTED**, at user request ("create a 'found a jewish community' decision for Rabbinic
+adventurers"). This resolves v2 spec section 5.1's own "open technical question, not solved here" —
+what actually places a new landless title at a chosen location — which had sat unanswered since that
+spec was written, flagged as "residual risk, not a blocker." Checked directly against the installed
+1.19 files before building anything: vanilla's own `create_adventurer_title` (the engine effect behind
+"Abandon Realm to Become an Adventurer" and every other laamp-creation path, `common/scripted_effects/
+07_dlc_ep3_scripted_effects.txt`) is genuine, general-purpose runtime title creation — no landed_titles
+entry backs the title it produces, unlike this mod's own sixteen pre-authored `c_kehillah_*` titles
+(`common/landed_titles/kehillah_landed_titles.txt`), so a Kehillah can now be founded literally
+anywhere a landless adventurer is standing, not just at one of the sixteen.
+
+**Scope shipped**: `kehillah_found_community_decision` (`common/decisions/kehillah_found_community_
+decisions.txt`) and `kehillah_found_community_effect` (`common/scripted_effects/kehillah_found_
+community_effects.txt`) — this is specifically v2 spec section 5.1's "landless character founds a
+title" primitive in its simplest form (founding from nothing), NOT the "Found a Sister Community"
+variant still listed below in the backlog (an existing Legendary-Prosperity/Greatness Kehillah sending
+a courtier elsewhere) — that variant is unbuilt and can reuse the same effect once it exists. **The
+gate**: `is_rabbinic_authority_jewish_trigger` (rabbinism/kabarism/merkabah specifically — the faith
+half of "rabbinic") AND `kehillah_leader_is_rabbinic_trigger` (this mod's existing personal bar for
+"reads as a rabbi": the trait, `theologian`, top-two Learning education, or `learning >= 12` as
+fallback — reused rather than re-invented, so a founder and a credible Chief Rabbi candidate are held
+to literally the same definition) AND `has_government = landless_adventurer_government`. The founding
+effect mirrors `kehillah_on_title_gain`'s own body (`common/on_action/kehillah_on_actions.txt`) almost
+exactly — `change_government`, `kehillah_restore_quarter_effect` (a safe no-op with no prior building
+record), `kehillah_init_pillars_effect`, leader-flavor — plus the three follow-up calls that on_action's
+own comments already flagged as required "if Wave 5 ever adds founding" (registering into
+`kehillah_registered_communities`, seeding the starting library, refreshing the map-view mirror). Also
+extended `is_kehillah_title_trigger` (`common/scripted_triggers/kehillah_scripted_triggers.txt`) with an
+additive `is_target_in_variable_list` branch alongside its sixteen hardcoded names, so a founded
+community is recognized everywhere that trigger is checked (domicile naming, the two on_title_gain
+hooks) exactly as the original sixteen are — the original name-based check's own documented reason
+(answerable during history execution, before the registry exists) is untouched for those sixteen.
+
+**A real bug caught before it ever reached a running game**: the first pass called
+`kehillah_restore_quarter_effect` without first setting `scope:kq_title`, the scope name that effect's
+own restore-track calls read — `ck3-tiger` flagged it immediately as a `strict-scopes` warning (0
+fatal/0 error throughout, but this one warning was real, not a false positive per this repo's own
+"verify before patching" norm). Fixed by saving the newly created title as `scope:kq_title` before the
+restore call, matching exactly what `kehillah_on_title_gain` already does. Exactly the kind of mistake
+CLAUDE.md's testing section exists to catch standing still, without ever booting the game.
+
+**Deliberately NOT built**: AI eligibility (`ai_potential = { always = no }`) — this is a genuinely new,
+unverified primitive (`create_adventurer_title` has never been called from this mod before), and
+CLAUDE.md's own guidance treats succession/government-law code as this codebase's highest-risk area,
+needing a live playtest before it's trusted at all, let alone handed to every AI-played rabbinic
+landless adventurer on the map at once. Also not built: a dynamic, location-based title name (the
+founded title's display name is the static "The Kehillah" rather than "Kehillah of \<county\>" — see
+the effect file's own header for why the accessor chain for a landless title's own dynamic name
+loc could not be confirmed against the installed files with the same confidence as everything else
+here, and a wrong one is a silent cosmetic bug, not a caught one).
+
+**NEXT STEP is a live pass** that takes a landless rabbinic-faith, high-Learning adventurer character,
+confirms the decision shows and is takeable, and confirms the resulting title/government/quarter/
+pillars/registry/library/map-view state is all correct in a running game — per CLAUDE.md, title
+creation and government assignment are this codebase's highest-crash-history area and this has not
+yet had that pass.
+
 **Partly resolved, and reopened by the first playtest:** open,
 community-wide leadership succession (any notable family can be
 appointed, not just the outgoing leader's own).
@@ -1208,7 +1308,12 @@ promise stays broken for an unbounded period.
   the actual theme.
 - **Voluntary "found a sister community" expansion.** A lighter, non-crisis
   version of Phase 4's Unlanded Migration Journey. Fold into Phase 4 rather
-  than building two migration systems.
+  than building two migration systems. **The underlying "place a new Kehillah
+  title" primitive this depends on now exists** — see the 2026-09-19 "Found a
+  Jewish Community" entry above (`kehillah_found_community_effect`, common/
+  scripted_effects/kehillah_found_community_effects.txt) — so this item is now
+  "send a courtier + endowment, gated on Legendary Prosperity/Greatness, then
+  call the existing effect," not "solve title placement from scratch."
 
 ## Explicitly not scheduled yet
 Anything not listed above (additional overlays beyond the three named,

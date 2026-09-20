@@ -306,6 +306,24 @@ obvious place to look), the same way this project checked
 `succession_appointment` and the estate/Influence systems before
 building on them. Flag as residual risk, not a blocker.
 
+**RESOLVED, 2026-09-19.** Vanilla's `create_adventurer_title` (the
+engine effect behind "Abandon Realm to Become an Adventurer" and every
+other laamp-creation path, `common/scripted_effects/07_dlc_ep3_
+scripted_effects.txt`) is genuine, general-purpose runtime landless-
+title creation — confirmed no `landed_titles` entry backs the title it
+produces, unlike this mod's own sixteen pre-authored `c_kehillah_*`
+titles. Built as `kehillah_found_community_effect` (`common/
+scripted_effects/kehillah_found_community_effects.txt`), consumed by
+`kehillah_found_community_decision` — the involuntary/founding-from-
+nothing half of this section's "core primitive," gated on a landless,
+rabbinic-faith, personally-learned adventurer rather than on the
+dissolution chain specifically (nothing about the effect itself cares
+which route calls it). The voluntary "Found a Sister Community" route
+below and §4.4's dissolution rebound can both call the same effect once
+built — see ROADMAP.md's 2026-09-19 entry for the full account,
+including what this pass deliberately left out (AI eligibility, a
+dynamic location-based title name) and why.
+
 ### 5.2 Destruction
 
 Two distinct causes, deliberately not merged:
