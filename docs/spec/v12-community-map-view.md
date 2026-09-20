@@ -4,9 +4,9 @@
 **The roster is CONFIRMED LIVE** — button, draggable window, real rows with portraits, leaders,
 host counties, standing and pillars, sorted, own row highlighted (§6a–6e record each pass and what
 it found; `gui/scripted_widgets/` genuinely works). **Built on top and NOT YET LIVE-TESTED:** the
-real coloured map mode (§2.5 — possible after all, see the correction at §1) and the region
-hierarchy (§7). Still unverified from earlier: the locate button and the tooltips. §6 has the
-ordered checklist.
+map mode's community colour was reworked 2026-09-20 to paint only a community's own barony instead
+of its whole host county (§11) and has not been re-tested since; the region hierarchy (§7). Still
+unverified from earlier: the locate button and the tooltips. §6 has the ordered checklist.
 
 Supersedes nothing. Extends ROADMAP item 10 ("Map-wide/regional GUI dashboard"), whose first
 draft was v9's `kehillah_view_communities_interaction`. Depends on the negative findings in
@@ -598,3 +598,50 @@ already named: v9's `kehillah_view_communities_interaction` stays the map-wide l
 window needs a `.gui` fork. Do not fork `gui/shared/mapmodes.gui` or `gui/map_icon_layer.gui` to
 rescue this without that tradeoff being chosen deliberately — `spike-domicile-map-visibility.md`'s
 own recommendation still stands.
+
+## 11. Barony-level community colour (user request, 2026-09-20) — not yet live-tested
+
+**What changed and why.** Before this, pass 2 of `kehillah_paint_communities_map_effect` painted
+every barony in a community's *whole host county* by its Standing band — the county was the
+smallest unit the map mode touched for a community. That leaves no room to show anything else about
+the rest of that county. The user asked for the community to colour only the one barony it actually
+sits in, freeing the rest of the county for a second per-county layer underneath — antisemitism was
+the example given, not yet designed or built, but this is the change that makes room for it: today
+the region tint (v12 section 9) already occupies that space, so a barony-level community colour is
+what lets the two coexist without one erasing the other in its own county.
+
+**Mechanism.** `kehillah_cache_map_view_facts_effect` (`common/scripted_effects/kehillah_map_view_
+effects.txt`) now caches a second location fact alongside the existing county one:
+`kehillah_ui_host_barony`, the live domicile's own province (`holder.domicile.domicile_location`
+directly, one link short of where the county version stops), falling back to `title_capital_
+county.title_province` — a vanilla link, confirmed at `travel_start_events.txt:2439`, that gives a
+county-tier title's own capital barony rather than the whole county. `kehillah_paint_communities_
+map_effect`'s pass 2 now sets colour and the hover tag on `var:kehillah_ui_host_barony` alone
+(`barony ?= { set_color_from_title = ... }`, no `every_county_province` loop), so a community's
+county keeps pass 1's region tint everywhere except that one barony.
+
+**The hover tag moved with it.** `kehillah_map_community` used to be a county-title variable; a
+county-scoped tag would have made every barony in the county show the community's tooltip even
+though only one barony was actually painted, which would read as a bug (hovering an uncoloured
+barony claiming a community lives there). It is now a **province** variable, cleared and set
+per-barony in both passes. Storing a variable directly on a province, and reading it back with
+`.MakeScope.Var`, is vanilla precedent already used elsewhere in the installed 1.19 files
+(`gruesome_festival.txt`'s `activity_location.faith`, `pilgrimage.txt`'s `pilgrimage_destination`,
+ce1's legendary-figure buildings), not a new mechanism invented for this.
+`gfx/map/map_modes/kehillah_map_modes.txt`'s `barony_description` trigger and
+`KEHILLAH_MAP_MODE_TOOLTIP_COMMUNITY` (`localization/english/kehillah_map_view_l_english.yml`) both
+updated to read the province directly (`ROOT.Province.MakeScope.Var(...)`) instead of walking
+through the county title.
+
+**Unaffected, deliberately.** The roster's own location line, locate button, and camera zoom
+(`gui/kehillah_community_map_view.gui`) still key off `kehillah_ui_host_county` and still zoom to
+the county's representative province via `Title.GetProvince` — that is a separate, already-live-
+tested feature (v12 sections 2.4 and 6f) and this change did not touch it. The region tint (section
+9) is also unaffected: it was always painted per-barony in pass 1 already, only the community
+overlay in pass 2 changed.
+
+**Not yet live-tested.** Source-verified and internally consistent (the tooltip trigger, the tag's
+scope, and both the paint and clear now agree on province-level), but this needs a live pass:
+confirm only one barony per community goes to its Standing-band colour with the rest of the county
+showing the region tint underneath, and confirm the hover tooltip still reads correctly on both the
+painted barony and its neighbours.

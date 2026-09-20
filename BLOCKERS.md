@@ -124,3 +124,58 @@ run regardless of whether the session reached its own end-of-run BLOCKERS.md wri
 is true above and there's no matching entry from the agent itself nearby explaining what it was
 mid-way through, treat this run as unresolved until a human or a later run reviews what state
 things were left in.
+
+## Automated run status -- 2026-09-20_020003 (overnight/2026-09-20)
+- Cut off by a usage/session limit (detected in this run's log): False
+- Uncommitted changes in the working tree at run end: YES --
+```
+ M ROADMAP.md  M common/bookmark_portraits/kehillah_bookmark_portraits.txt  M common/bookmarks/bookmarks/kehillah_bookmarks.txt  M common/decisions/kehillah_learn_torah_decisions.txt  M common/governments/kehillah_government.txt  M common/landed_titles/kehillah_landed_titles.txt  M common/schemes/scheme_types/kehillah_study_torah_scheme.txt  M common/scripted_effects/kehillah_found_community_effects.txt  M common/scripted_effects/kehillah_library_effects.txt  M common/scripted_triggers/kehillah_scripted_triggers.txt  M docs/spec/v2-pillar-economy-and-lifecycle.md  M events/kehillah_debug_events.txt  M events/kehillah_study_torah_events.txt  M history/characters/worms_1066.txt  M localization/english/kehillah_l_english.yml ?? AGENTS.md ?? docs/testing/2026-09-20-found-community-live-test-log.md ?? history/titles/kehillah_founder_test_titles.txt
+```
+- Commits on this branch not yet on origin at this point: 31
+- Last few commits on this branch:
+```
+4b7d3b9 Learn Torah as a scheme, randomized library seeding
+f2e2ef4 Learn Torah: open the scheme up beyond Kehillah leaders
+86eee48 Randomize the starting library seed instead of the same fixed two books
+6f75584 Fix stale comment reference after retiring the per-track study effects
+a887b7a Learn Torah: rebuild as a continuous scheme, kehillah_study_torah
+```
+
+Written mechanically by the scheduled script itself (not the agent) as a fallback -- present every
+run regardless of whether the session reached its own end-of-run BLOCKERS.md write. If "cut off"
+is true above and there's no matching entry from the agent itself nearby explaining what it was
+mid-way through, treat this run as unresolved until a human or a later run reviews what state
+things were left in.
+
+## Ready for review -- overnight/2026-09-20
+- https://github.com/Steinbeard/jewishcommunities/compare/master...=1
+
+## 2026-09-20 (interactive rescue session, overnight/2026-09-20) -- Codex regression reverted; founding path re-fixed, needs live test
+- **What was being worked on:** Daniel reported a Codex session had (a) left the Found a Jewish Community
+  decision game-over-ing, (b) broken the Worms start (Game Over on 1066-09-30, then bookmark not loading)
+  while "fixing" it, and (c) claimed county-tier landless titles are invalid. (c) is false and (b) was
+  self-inflicted (`title_tier = duchy` re-added to `kehillah_government.can_get_government`, then a
+  `c_`->`d_kehillah_worms` rename). Both reverted to the HEAD/09-07 shape. (a) had a real, different
+  cause -- the old `d_laamp_*` title was never destroyed / the new title never made primary -- fixed in
+  `kehillah_found_community_effect` following vanilla's own teardown order. Details: ROADMAP 2026-09-20
+  entry and the Correction section of `docs/testing/2026-09-20-found-community-live-test-log.md`.
+- **RESOLVED 2026-09-20 evening (mostly):** both live checks done via subagent, Daniel having asked for
+  the live drive. Worms revert: PASS (ran to Jun 1067). Founding: FAILED again on first try (Game Over
+  1066-10-10) -- second real bug, no domicile created; fixed with `create_adventurer_title = {
+  government = kehillah_government }` and re-verified PASS (ran to Oct 1067). Full account in
+  `docs/testing/2026-09-20-found-community-live-test-log.md` ("Root cause and fix"). STILL OPEN from
+  the same pass: the follow-up cleanup (restore-quarter call removed, tooltip internals hidden) and the
+  concurrently-committed decision gates (7616f87) have not had their live re-check -- CK3 was being
+  played by hand on the machine when it was due. ~6 minutes on a free machine; the subagent brief is in
+  the session transcript and the probe files are in `<CK3 user dir>\run\`.
+- **Needs a call from Daniel:** (1) `bm_1066_kehillah_founder_test` / character 9000003 / title
+  `d_kehillah_founder_test` / placeholder portrait entry are a Codex-added, player-visible test fixture --
+  keep as a shipped start, or cut to console-only (`kehillah_debug.60` already covers the same setup
+  without a bookmark)? Kept as-is for now since it is the fastest way to run the live check. (2) `AGENTS.md`
+  (untracked, Codex's copy of CLAUDE.md) -- left untracked, not committed; delete or keep? (3) Codex's other
+  uncommitted work (Learn Torah scheme/event changes, same-track reference trigger, library effect edits)
+  is committed separately and labelled as unreviewed so it can be dropped as one unit if unwanted.
+- **Also seen, not fixed:** `error.log` has ~990 errors per load from
+  `kehillah_study_torah_has_accessible_library_trigger` (`kehillah_scripted_triggers.txt:1247`,
+  `capital_province` unset scope) via `kehillah_study_torah:valid`. That is committed Learn-Torah work
+  (4b7d3b9 or earlier), not part of this rescue. Worth a fix -- it is noisy enough to hide real errors.

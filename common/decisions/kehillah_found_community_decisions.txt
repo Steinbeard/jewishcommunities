@@ -1,0 +1,132 @@
+﻿# =====================================================================
+# Found a Jewish Community. ADDED 2026-09-19, at user request ("create a
+# 'found a jewish community' decision for Rabbinic adventurers").
+#
+# This is v2 spec section 5.1's "core primitive" (docs/spec/v2-pillar-
+# economy-and-lifecycle.md) -- "a landless character founds a new
+# Kehillah title at their current location" -- specifically its simplest
+# entry point: a Jewish, rabbinically-learned landless adventurer settles
+# down and founds a community from nothing, rather than an existing
+# Legendary-Prosperity/Greatness Kehillah sending out a courtier (that
+# variant, "Found a Sister Community", is still unbuilt and is a
+# different decision with a different gate -- see that spec section's own
+# two-routes framing. Left for later; nothing here forecloses it, since
+# both routes are meant to share kehillah_found_community_effect).
+#
+# THE GATE. "Rabbinic adventurers" maps onto two already-established,
+# separately-meaningful mod triggers rather than one invented for this:
+#   - is_rabbinic_authority_jewish_trigger (common/scripted_triggers/
+#     jewish_holiday_scripted_triggers.txt) -- the FAITH half of
+#     "Rabbinic": rabbinism, kabarism or merkabah specifically, the three
+#     faiths that recognise rabbinic/Talmudic legal authority at all (as
+#     opposed to Karaite or Samaritan Judaism, which do not, and could
+#     not plausibly found a Kehillah in this mod's own sense of the
+#     word).
+#   - kehillah_leader_is_rabbinic_trigger (common/scripted_triggers/
+#     kehillah_scripted_triggers.txt) -- the PERSONAL half: the exact bar
+#     this mod already uses to decide whether an existing Kehillah's
+#     leader reads as its rabbi (kehillah_rabbi_trait, theologian, the
+#     top two Learning education tiers, or learning >= 12 as a fallback
+#     for a self-taught scholar). Nothing about that trigger depends on
+#     already holding a Kehillah title -- it only reads the character's
+#     own traits/skill -- so it is exactly as meaningful checked on a
+#     landless wanderer as on a sitting leader, and reusing it means a
+#     character who could found a community and one who would make a
+#     credible Chief Rabbi candidate are governed by literally the same
+#     definition, not two that could quietly drift apart.
+# "Adventurer" is has_government = landless_adventurer_government --
+# vanilla's own landless-adventurer government specifically, not merely
+# is_landless_adventurer (which also covers a couple of narrower related
+# governments this mod has no reason to include or exclude on purpose).
+#
+# A new community must have a real local congregation behind it: at least
+# ten Jewish camp followers, counted as Jewish courtiers. The founding rabbi
+# is deliberately not part of that count -- this is a minyan-sized body of
+# people who will remain once the camp becomes a fixed community, not merely
+# one learned traveller and a title. The decision also refuses to create a
+# second community at the same camp location. The registry is authoritative
+# for runtime-founded communities as well as the pre-authored roster; compare
+# each registered holder's domicile location to the adventurer's `location`,
+# the same location anchor used by the accessible-library trigger.
+#
+# AI: DELIBERATELY EXCLUDED FOR NOW (ai_will_do base 0, ai_potential
+# always = no). This is a genuinely new, unverified primitive --
+# create_adventurer_title has never been called from this mod before,
+# kehillah_found_community_effect has never run in a live game, and
+# CLAUDE.md's own testing guidance treats succession/government-law
+# code as this codebase's highest-risk area, needing a live playtest
+# before it's trusted, let alone trusted enough to hand to every AI-
+# played rabbinic landless adventurer on the map simultaneously. Once a
+# live pass confirms the effect chain behaves (title created, government
+# set, quarter/pillars/registry/library/map-view all correct), enabling
+# AI use is a small, separate follow-up, not a reason to hold up the
+# player-facing decision now.
+#
+# NOT YET LIVE-TESTED. Source-checked and ck3-tiger-clean only -- see
+# this repo's Testing section (CLAUDE.md) for why that's a real bar but
+# not the same bar as confirming a title-creation/government-change path
+# in a running game.
+# =====================================================================
+
+kehillah_found_community_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_tale.dds"
+	}
+
+	decision_group_type = kehillah
+	sort_order = 95
+	ai_check_interval = 0
+
+	is_shown = {
+		has_dlc_feature = roads_to_power
+		has_government = landless_adventurer_government
+		is_rabbinic_authority_jewish_trigger = yes
+	}
+
+	is_valid = {
+		is_adult = yes
+		is_imprisoned = no
+		exists = location.county
+		kehillah_leader_is_rabbinic_trigger = yes
+		custom_tooltip = {
+			text = kehillah_found_community_requires_ten_jewish_followers_tt
+			any_courtier = {
+				count >= 10
+				is_jewish_character_trigger = yes
+			}
+		}
+		custom_tooltip = {
+			text = kehillah_found_community_requires_empty_location_tt
+			NOT = {
+				any_in_global_list = {
+					variable = kehillah_registered_communities
+					exists = holder
+					holder = { domicile.domicile_location = root.location }
+				}
+			}
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		is_alive = yes
+		is_available_adult = yes
+		is_at_war = no
+		has_contagious_deadly_disease_trigger = no
+	}
+
+	cost = {
+		gold = massive_gold_value
+	}
+
+	effect = {
+		kehillah_found_community_effect = yes
+	}
+
+	ai_potential = {
+		always = no
+	}
+
+	ai_will_do = {
+		base = 0
+	}
+}

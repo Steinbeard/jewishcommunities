@@ -162,16 +162,43 @@
 # third slot at tier 5 is deliberately spare -- reserved for Phase 5's
 # Genizah, not reachable now.
 #
-# External slot budget: flat 6 from the start (base_external_slots in
-# kehillah_domicile_types.txt), matching the six external building
-# families that exist (Yeshiva, Countinghouse, Hekdesh, Slaughterhouse,
-# Market Stalls, Craft Workshops). Until 2026-09-17 this was gated behind
-# Synagogue tiers (base 3, +1 at tiers 2/3/4) so a young community could
-# only fill some slots at once; removed because slot count was a second,
-# redundant gate on top of each building's own pillar threshold, not a
-# meaningful choice of its own. The individual buildings still have their
-# own Greatness/etc. requirements -- only the slot capacity itself is now
-# unconditional.
+# External slot budget: flat 6 from the start, matching the six external
+# building families that exist (Yeshiva, Countinghouse, Hekdesh,
+# Slaughterhouse, Market Stalls, Craft Workshops). Until 2026-09-17 this
+# was gated behind Synagogue tiers (base 3, +1 at tiers 2/3/4) so a young
+# community could only fill some slots at once; removed because slot
+# count was a second, redundant gate on top of each building's own
+# pillar threshold, not a meaningful choice of its own. The individual
+# buildings still have their own Greatness/etc. requirements -- only the
+# slot capacity itself is meant to be unconditional.
+#
+# LIVE-CONFIRMED BROKEN, THEN FIXED, 2026-09-20: the 2026-09-17 version
+# tried to deliver "flat 6 from the start" purely via base_external_slots
+# = 6 in kehillah_domicile_types.txt, on the assumption that field alone
+# sets the domicile's starting unlocked-slot count. Live testing (both a
+# freshly founded community and a brand-new Worms 1066 bookmark start)
+# showed EVERY external slot -- all six, including the very first --
+# stuck on vanilla's generic "Locked Slot" state (tooltip: "New Slots can
+# be unlocked by upgrading the central Domicile Building"), with nothing
+# constructible past the auto-built Synagogue. Every vanilla domicile
+# type checked (estate, east-asian estate, yurt -- game/common/domiciles/
+# types/00_domicile_types.txt) pairs a small base_external_slots (2) with
+# a character_modifier, domicile_external_slots_capacity_add, on its own
+# tier-1 main building; base_external_slots alone, with no such modifier
+# anywhere in this mod's buildings, evidently was not enough to unlock
+# anything. Fixed by putting domicile_external_slots_capacity_add = 6
+# directly on kehillah_synagogue_01 below -- one flat grant, not spread
+# across tiers the way the pre-2026-09-17 version was, since that would
+# reintroduce the exact per-tier gating this design deliberately removed.
+# Per common/domiciles/buildings/_domicile_buildings.info ("All buildings
+# automatically inherit the character modifiers of its previous buildings
+# of the same track"), character_modifier -- unlike parameters -- carries
+# forward automatically to tiers 2-5 without being repeated, so this one
+# line at tier 1 covers the Synagogue's whole chain. base_external_slots
+# stays at 6 in the domicile type as a harmless upper bound (there are
+# only six external_slot_N positions defined to fill regardless of how
+# much capacity is granted), not because it is known to contribute
+# anything on its own.
 # =====================================================================
 
 kehillah_synagogue_01 = {
@@ -187,6 +214,10 @@ kehillah_synagogue_01 = {
 	character_modifier = {
 		domicile_monthly_gold_add = 0.2
 		domicile_monthly_piety_add = 0.25
+		# See this file's Synagogue header for why this is here and not
+		# spread across tiers: it is the actual mechanism behind "flat 6
+		# external slots from the start," confirmed live 2026-09-20.
+		domicile_external_slots_capacity_add = 6
 	}
 
 	ai_value = {

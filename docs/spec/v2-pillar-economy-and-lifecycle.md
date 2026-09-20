@@ -306,6 +306,34 @@ obvious place to look), the same way this project checked
 `succession_appointment` and the estate/Influence systems before
 building on them. Flag as residual risk, not a blocker.
 
+**RESOLVED, 2026-09-19; location naming and the founding path itself live-verified 2026-09-20.** Vanilla's `create_adventurer_title` (the
+engine effect behind "Abandon Realm to Become an Adventurer" and every
+other laamp-creation path, `common/scripted_effects/07_dlc_ep3_
+scripted_effects.txt`) is genuine, general-purpose runtime landless-
+title creation — confirmed no `landed_titles` entry backs the title it
+produces, unlike this mod's own sixteen pre-authored `c_kehillah_*`
+titles. Built as `kehillah_found_community_effect` (`common/
+scripted_effects/kehillah_found_community_effects.txt`), consumed by
+`kehillah_found_community_decision` — the involuntary/founding-from-
+nothing half of this section's "core primitive," gated on a landless,
+rabbinic-faith, personally-learned adventurer rather than on the
+dissolution chain specifically (nothing about the effect itself cares
+which route calls it). The voluntary "Found a Sister Community" route
+below and §4.4's dissolution rebound can both call the same effect once
+built — see ROADMAP.md's 2026-09-19 entry for the full account,
+including what this pass deliberately left out (AI eligibility). **Updated
+2026-09-20:** its adventurer route now also requires ten Jewish camp
+followers and an unoccupied camp location -- a registered Kehillah whose
+domicile is already at that location blocks a second one. The runtime title
+now uses the founder's captured founding county in its
+name, following vanilla's `new_landless_adventurer_location` pattern
+(scope `kehillah_founding_county`, rendered with `GetNameNoTierNoTooltip`).
+The load-bearing detail of the whole primitive, found live on 2026-09-20:
+`create_adventurer_title` must be passed `government = kehillah_government`,
+or the founder gets a camp instead of a Jewish Quarter and the engine
+resets the government to feudal within a month -- see ROADMAP 2026-09-20
+and the test log for the full account.
+
 ### 5.2 Destruction
 
 Two distinct causes, deliberately not merged:

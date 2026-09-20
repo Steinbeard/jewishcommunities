@@ -38,7 +38,7 @@
 # ---------------------------------------------------------------------
 # kehillah_cache_map_view_facts_effect
 #
-# Scope: a c_kehillah_* community title.
+# Scope: a d_kehillah_* community title.
 #
 # Caches onto the title the facts the roster needs that the GUI cannot
 # compute for itself:
@@ -57,6 +57,26 @@
 #     titles.txt's own v7 header on founding "anywhere"). title_capital_
 #     county is the fallback for a title whose holder has no domicile
 #     yet, which is the real state during game-start seeding.
+#
+#   kehillah_ui_host_barony -- the SPECIFIC province the community
+#     actually sits in, not just its county. This is what the map mode
+#     paints (kehillah_paint_communities_map_effect below) so that only
+#     the one barony the community occupies is coloured by its Standing
+#     band, leaving the rest of the host county free for a different
+#     per-county layer underneath (region tint today; the natural home
+#     for a future antisemitism-by-county value). Same live-location-
+#     first, capital-second precedence as kehillah_ui_host_county, but
+#     resolved one link further: the live domicile location IS a
+#     province already, and title_capital_county.title_province (vanilla
+#     link, confirmed at events/travel_events/travel_start_events.txt:
+#     2439, "title_capital_county.title_province = { save_scope_as ... }"
+#     on a plain county-tier title) is the capital-county fallback's own
+#     capital barony, not the whole county. Storing a raw province as a
+#     variable's value is itself vanilla precedent, not a guess: common/
+#     activities/activity_types/pilgrimage.txt:2433 does exactly this
+#     for pilgrimage_destination ("value = scope:activity.
+#     activity_location", read back elsewhere as "var:pilgrimage_
+#     destination.barony").
 #
 #   kehillah_ui_region -- which minhag sub-region the community belongs
 #     to, as a flag, via kehillah_classify_map_view_region_effect below.
@@ -89,6 +109,24 @@ kehillah_cache_map_view_facts_effect = {
 		remove_variable = kehillah_ui_host_county
 	}
 
+	if = {
+		limit = { exists = holder.domicile.domicile_location }
+		set_variable = {
+			name = kehillah_ui_host_barony
+			value = holder.domicile.domicile_location
+		}
+	}
+	else_if = {
+		limit = { exists = title_capital_county.title_province }
+		set_variable = {
+			name = kehillah_ui_host_barony
+			value = title_capital_county.title_province
+		}
+	}
+	else = {
+		remove_variable = kehillah_ui_host_barony
+	}
+
 	kehillah_classify_map_view_region_effect = yes
 	kehillah_update_standing_effect = yes
 }
@@ -97,7 +135,7 @@ kehillah_cache_map_view_facts_effect = {
 # ---------------------------------------------------------------------
 # kehillah_classify_map_view_region_effect
 #
-# Scope: a c_kehillah_* community title. Sets kehillah_ui_region.
+# Scope: a d_kehillah_* community title. Sets kehillah_ui_region.
 #
 # Reads the SAME geography the gameplay triggers read, the same way, so
 # the roster's grouping can never disagree with who counts as a
@@ -324,10 +362,13 @@ kehillah_refresh_map_view_for_players_effect = {
 # set_color_from_title (vanilla effect: common/casus_belli_types/
 # 07_ep3_wars.txt:6188, common/scripted_effects/00_administrative_
 # effects.txt:545) rewrites a title's colour at runtime. Paint every
-# barony neutral, then paint each community's host county by Standing
-# band, switch to that mode, and the map shows the communities. This is
-# what docs/spec/v12-community-map-view.md section 1 originally said
-# could not be done; its section 2.5 records the correction.
+# barony its county's region tint, then paint each community's OWN host
+# barony (not its whole county -- see kehillah_paint_communities_map_
+# effect's header) by Standing band, switch to that mode, and the map
+# shows the communities against the region tint everywhere else in their
+# county. This is what docs/spec/v12-community-map-view.md section 1
+# originally said could not be done; its section 2.5 records the
+# correction, and its "county vs. barony" scope changed 2026-09-20.
 #
 # WHAT IT COSTS. every_county x every_county_province x one set_color
 # call -- roughly one per barony in the world, a few thousand -- per
@@ -353,7 +394,7 @@ kehillah_refresh_map_view_for_players_effect = {
 # ---------------------------------------------------------------------
 # kehillah_pick_map_color_effect
 #
-# Scope: a c_kehillah_* community title. Saves scope:kehillah_map_color
+# Scope: a d_kehillah_* community title. Saves scope:kehillah_map_color
 # = the colour title for this community's Standing band.
 #
 # Same thresholds, same top-down order as every other band read in this
@@ -486,27 +527,45 @@ kehillah_pick_region_tint_effect = {
 # Scope: any (the scripted_gui runs it with the player as root; nothing
 # here reads root).
 #
-# Pass 1 -- every county: clear the hover-tooltip tag and paint every
-# barony its minhag REGION tint (kehillah_pick_region_tint_effect; the
-# neutral base outside every region). Pass 2 -- every led community: refresh its
-# cached facts (so a moved quarter paints in the right place and a
-# stale Standing does not pick the wrong band), tag its host county for
-# the map mode's hover description, and paint that county's baronies
-# in its band colour.
+# Pass 1 -- every county: clear the hover-tooltip tag on every one of its
+# baronies and paint every barony its minhag REGION tint (kehillah_pick_
+# region_tint_effect; the neutral base outside every region). Pass 2 --
+# every led community: refresh its cached facts (so a moved quarter
+# paints in the right place and a stale Standing does not pick the wrong
+# band), tag its host BARONY for the map mode's hover description, and
+# paint only that one barony in its band colour.
 #
-# The tag, kehillah_map_community, is a county-title variable pointing
-# at the community title. The map mode's barony_description reads it
-# (gfx/map/map_modes/kehillah_map_modes.txt) to say WHICH community is
-# painted there and how it stands. Cleared and re-set every paint, so a
-# community that moves or dissolves leaves no orphan tooltip.
+# BARONY, NOT COUNTY (changed 2026-09-20, user request). The whole host
+# county used to be painted one colour, which left no room to show
+# anything else about the rest of the county. Now only kehillah_ui_host_
+# barony -- the one province the community actually occupies -- gets the
+# Standing-band colour; every other barony in that county keeps pass 1's
+# region tint, which is exactly the free layer a future per-county value
+# (antisemitism, say) would paint into instead.
+#
+# The tag, kehillah_map_community, is now a PROVINCE variable (moved off
+# the county for the same reason -- a county-scoped tag would make every
+# barony in the county show the community's tooltip, not just the one
+# actually painted). Storing it on a province is vanilla precedent, not
+# a guess: common/activities/activity_types/gruesome_festival.txt uses
+# activity_location.faith the same way, and dlc/ce1's legendary-figure
+# buildings read a variable straight off a province with "ROOT.Province.
+# MakeScope.Var('legendary_figure')" -- the exact accessor shape this
+# feature's own tooltip now uses (gfx/map/map_modes/kehillah_map_modes.
+# txt's barony_description trigger and localization/english/kehillah_
+# map_view_l_english.yml's KEHILLAH_MAP_MODE_TOOLTIP_COMMUNITY both
+# updated to match). Cleared and re-set every paint, so a community that
+# moves or dissolves leaves no orphan tooltip.
 # ---------------------------------------------------------------------
 kehillah_paint_communities_map_effect = {
 	# Pass 1: every county to its REGION tint (or the neutral base outside
-	# every region -- v12 section 9), and clear the hover tag.
+	# every region -- v12 section 9), and clear the hover tag on every
+	# barony (province-scoped now, so it has to be cleared per-province,
+	# not once per county).
 	every_county = {
-		remove_variable = kehillah_map_community
 		kehillah_pick_region_tint_effect = yes
 		every_county_province = {
+			remove_variable = kehillah_map_community
 			barony ?= {
 				set_color_from_title = scope:kehillah_region_tint
 			}
@@ -520,20 +579,18 @@ kehillah_paint_communities_map_effect = {
 		kehillah_cache_map_view_facts_effect = yes
 
 		if = {
-			limit = { exists = var:kehillah_ui_host_county }
+			limit = { exists = var:kehillah_ui_host_barony }
 
 			kehillah_pick_map_color_effect = yes
 			save_scope_as = kehillah_paint_community
 
-			var:kehillah_ui_host_county = {
+			var:kehillah_ui_host_barony = {
 				set_variable = {
 					name = kehillah_map_community
 					value = scope:kehillah_paint_community
 				}
-				every_county_province = {
-					barony ?= {
-						set_color_from_title = scope:kehillah_map_color
-					}
+				barony ?= {
+					set_color_from_title = scope:kehillah_map_color
 				}
 			}
 		}

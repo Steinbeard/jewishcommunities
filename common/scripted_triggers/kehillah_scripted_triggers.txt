@@ -18,25 +18,61 @@
 # This is checked by name rather than by a title flag because it has to
 # be answerable during history execution and at game start, before any
 # script has had a chance to set flags on titles.
+#
+# ADDED 2026-09-19 (Found a Jewish Community, common/decisions/kehillah_
+# found_community_decisions.txt): a trailing is_target_in_global_variable_
+# list branch, alongside the fifteen hardcoded names above rather than
+# replacing them. The reasoning above for why the pre-authored sixteen
+# are checked by name (answerable during history execution, before
+# kehillah_registered_communities exists) is untouched and still true for
+# THEM -- but a community founded mid-game by that decision has no title
+# history entry to be checked during at all, and by the time any player
+# could reach a decision, the registry global_variable_list already
+# exists (built at on_game_start_after_lobby, common/on_action/
+# kehillah_on_actions.txt) and the founding effect adds the new title to
+# it in the same breath it calls change_government. Every consumer of
+# this trigger -- kehillah_on_title_gain, kehillah_map_view_on_title_
+# gain, the domicile naming customizable_localization -- needs to
+# recognize a founded community exactly as it recognizes the original
+# sixteen, so this is additive coverage, not a replacement.
+#
+# FIXED 2026-09-20 (live diagnosis of "founded community's buildings all
+# read as locked and error.log fills with kehillah_domicile_name_vanilla_
+# fallback spam"): this branch was written as is_target_in_variable_list,
+# the CHARACTER/REGULAR-scope checker, but kehillah_registered_communities
+# is populated with add_to_global_variable_list (kehillah_found_community_
+# effects.txt, kehillah_on_actions.txt). CK3 has three separate, non-
+# interchangeable variable-list namespaces -- plain, local, and global --
+# each with its own matching checker (confirmed directly against the
+# installed 1.19 files' own generated docs, logs/triggers.log:
+# "is_target_in_global_variable_list", "is_target_in_local_variable_list"
+# and "is_target_in_variable_list" are three distinct entries). Checking
+# the wrong namespace doesn't error, it just always returns false -- so
+# every founded community silently failed this trigger's trailing branch,
+# which is why kehillah_debug.61 reported "primary title is NOT
+# registered" live for a freshly founded Frankfurt community even though
+# add_to_global_variable_list had definitely run. Now
+# is_target_in_global_variable_list, matching the add_ call it reads back.
 # ---------------------------------------------------------------------
 
 is_kehillah_title_trigger = {
 	OR = {
-		this = title:c_kehillah_worms
-		this = title:c_kehillah_speyer
-		this = title:c_kehillah_mainz
-		this = title:c_kehillah_troyes
-		this = title:c_kehillah_paris
-		this = title:c_kehillah_cologne
-		this = title:c_kehillah_praha
-		this = title:c_kehillah_vienna
-		this = title:c_kehillah_london
-		this = title:c_kehillah_york
-		this = title:c_kehillah_lincoln
-		this = title:c_kehillah_norwich
-		this = title:c_kehillah_narbonne
-		this = title:c_kehillah_beziers
-		this = title:c_kehillah_lunel
+		this = title:d_kehillah_worms
+		this = title:d_kehillah_speyer
+		this = title:d_kehillah_mainz
+		this = title:d_kehillah_troyes
+		this = title:d_kehillah_paris
+		this = title:d_kehillah_cologne
+		this = title:d_kehillah_praha
+		this = title:d_kehillah_vienna
+		this = title:d_kehillah_london
+		this = title:d_kehillah_york
+		this = title:d_kehillah_lincoln
+		this = title:d_kehillah_norwich
+		this = title:d_kehillah_narbonne
+		this = title:d_kehillah_beziers
+		this = title:d_kehillah_lunel
+		is_target_in_global_variable_list = { name = kehillah_registered_communities target = this }
 	}
 }
 
@@ -114,7 +150,7 @@ kehillah_has_known_minhag_region_trigger = {
 #
 # REWRITTEN 2026-09-10 (v7 spec, supersedes v6 section 4 item 3's de
 # jure version). de_jure_liege comparison no longer works for this: as
-# of this pass every Kehillah county title is FLAT (common/landed_titles/
+# of this pass every Kehillah community title is FLAT (common/landed_titles/
 # kehillah_landed_titles.txt's own header), so primary_title.de_jure_liege
 # is simply unset for all sixteen of them -- there is no longer a
 # d_kehillah_<region> duchy for two sibling communities to share.
@@ -847,29 +883,60 @@ kehillah_leadership_gender_eligible_trigger = {
 # artifact would: a title's own variable storage simply persists across
 # whoever currently holds it, by construction.
 #
-# TWELVE REAL WORKS, four per track, the same "curated real corpus"
-# idiom the Translation Contract already established (ten real pre-876
-# Greek/Arabic works, common/scripted_effects/kehillah_translation_
-# effects.txt) -- not invented titles:
-#   PARSHANUT: Targum Onkelos, Mekhilta de-Rabbi Yishmael, Genesis
-#     Rabbah, Pirkei De-Rabbi Eliezer.
-#   TALMUDICS: the Mishnah, the Jerusalem Talmud, the Babylonian Talmud,
-#     Halakhot Gedolot (the early Geonic code attributed to Simeon
-#     Kayyara).
-#   HASHKAFA: Sefer Yetzirah, Saadia Gaon's Emunot ve-Deot, Bahya ibn
-#     Paquda's Chovot HaLevavot, Yehuda Halevi's Kuzari.
+# TWENTY-THREE REAL WORKS, the same "curated real corpus" idiom the
+# Translation Contract already established (ten real pre-876 Greek/
+# Arabic works, common/scripted_effects/kehillah_translation_effects.txt)
+# -- not invented titles. GREW FROM TWELVE, SAME-DAY FOLLOW-UP, 2026-09-19
+# ("can we split up the Talmuds into different Seders or Mashectot?" and
+# "exclude the Kuzari and anything else written after 867... replace them
+# in the initial pool"):
+#   PARSHANUT (4, unchanged): Targum Onkelos, Mekhilta de-Rabbi Yishmael,
+#     Genesis Rabbah, Pirkei De-Rabbi Eliezer.
+#   TALMUDICS (12): the Mishnah (kept whole, at the user's own choice --
+#     "keep Mishnah together, split Bavli and Yerushalmi"); the Babylonian
+#     Talmud split into its six real Sedarim (Zeraim, Moed, Nashim,
+#     Nezikin, Kodashim, Tahorot -- the same six volumes a real Vilna Shas
+#     edition prints, even though its own Gemara only substantially covers
+#     four of them, Zeraim/Tahorot being mostly Mishnah-only outside
+#     Berakhot/Niddah respectively -- a documented assumption, not
+#     independently confirmed with the user); the Jerusalem Talmud split
+#     into the four Sedarim it actually has Gemara for (Zeraim, Moed,
+#     Nashim, Nezikin -- Kodashim/Tahorot have no real Yerushalmi Gemara
+#     to represent, so they are not invented here); Halakhot Gedolot
+#     (unchanged).
+#   HASHKAFA (7): Sefer Yetzirah (unchanged, ancient); three real pre-867
+#     replacements added the same pass -- Hekhalot Rabbati and Shi'ur
+#     Qomah (Merkabah/Hekhalot mysticism, Talmudic-Geonic era) and Sefer
+#     HaRazim (an ancient Jewish magical-cosmological text, ~3rd-4th c.);
+#     and the original three, now DATE-GATED rather than removed --
+#     Saadia Gaon's Emunot ve-Deot (written 933), Bahya ibn Paquda's
+#     Chovot HaLevavot (~1080), and Yehuda Halevi's Kuzari (~1140) are all
+#     genuinely anachronistic before their own real composition year, not
+#     just before 867 -- Chovot HaLevavot and Kuzari are even later than
+#     the flagship Worms 1066 start. See kehillah_missing_hashkafa_work_
+#     trigger below for the current_date >= <year>.1.1 gate this added
+#     directly onto each of the three (the "direct gate" option, chosen
+#     over a global unlock-list-plus-toast mechanism, since the acquire
+#     decision's own missing-work check already needed no new state to
+#     express "not owned AND already written").
 #
-# EVERY COMMUNITY STARTS OWNING TWO OF THE TWELVE -- Targum Onkelos and
-# the Mishnah, the two most foundational, universally-available texts
-# (kehillah_seed_starting_library_effect, common/scripted_effects/
-# kehillah_library_effects.txt) -- so Parshanut and Talmudics both have
-# a real foothold from game start, while Hashkafa starts with NOTHING
-# and every other work across all three tracks must be acquired
-# (kehillah_acquire_torah_work_decision, common/decisions/kehillah_
-# learn_torah_decisions.txt) -- deliberate scarcity, matching the user's
-# own framing of hashkafa as rarer/more esoteric, and the actual reason
-# "spend your money on books" has real stakes rather than being a
-# formality.
+# EVERY COMMUNITY STARTS OWNING 1-3 OF THE TWELVE PARSHANUT+TALMUDICS
+# WORKS, RANDOMIZED -- ADDED 2026-09-19 at user request ("mix it up",
+# every community used to get the literal same two). kehillah_seed_
+# starting_library_effect (common/scripted_effects/kehillah_library_
+# effects.txt) rolls a count of 1-3 and draws that many distinct works
+# from the Parshanut+Talmudics pool (16 works as of the Talmud split
+# above, up from 8), so which tracks get a starting foothold (and how
+# much of one) varies by community, while Hashkafa still starts with
+# NOTHING -- kept OUT of the random pool on purpose, at the user's
+# explicit choice when this was changed, preserving the original
+# deliberate scarcity below -- and every other work across all three
+# tracks must still be acquired (kehillah_acquire_torah_work_decision,
+# common/decisions/kehillah_learn_torah_decisions.txt) or, for the three
+# date-gated Hashkafa works, must also wait for its own real year to
+# arrive first. This matches the user's own framing of hashkafa as
+# rarer/more esoteric, and the actual reason "spend your money on books"
+# has real stakes rather than being a formality.
 #
 # SIX TRIGGERS BELOW, NOT THREE -- "owns at least one work in this
 # track" and "is missing at least one work in this track" are NOT each
@@ -917,8 +984,16 @@ kehillah_owns_talmudics_work_trigger = {
 	$LIBRARY$ = {
 		OR = {
 			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mishnah }
-			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi }
-			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_zeraim }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nashim }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nezikin }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_kodashim }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_tahorot }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_zeraim }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_moed }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_nashim }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_nezikin }
 			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot }
 		}
 	}
@@ -928,8 +1003,16 @@ kehillah_missing_talmudics_work_trigger = {
 	$LIBRARY$ = {
 		OR = {
 			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mishnah } }
-			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi } }
-			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_zeraim } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nashim } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nezikin } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_kodashim } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_tahorot } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_zeraim } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_moed } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_nashim } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_nezikin } }
 			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot } }
 		}
 	}
@@ -939,6 +1022,9 @@ kehillah_owns_hashkafa_work_trigger = {
 	$LIBRARY$ = {
 		OR = {
 			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_yetzirah }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_hekhalot_rabbati }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_shiur_qomah }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_harazim }
 			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_emunot_vedeot }
 			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_chovot_halevavot }
 			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_kuzari }
@@ -950,9 +1036,315 @@ kehillah_missing_hashkafa_work_trigger = {
 	$LIBRARY$ = {
 		OR = {
 			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_yetzirah } }
-			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_emunot_vedeot } }
-			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_chovot_halevavot } }
-			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_kuzari } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_hekhalot_rabbati } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_shiur_qomah } }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_harazim } }
+			AND = {
+				current_date >= 933.1.1
+				NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_emunot_vedeot } }
+			}
+			AND = {
+				current_date >= 1080.1.1
+				NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_chovot_halevavot } }
+			}
+			AND = {
+				current_date >= 1140.1.1
+				NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_kuzari } }
+			}
+		}
+	}
+}
+
+# =====================================================================
+# STUDY TORAH AS A SCHEME -- ADDED 2026-09-19 at user request ("implement
+# Learn Torah as a continuous scheme"). See common/schemes/scheme_types/
+# kehillah_study_torah_scheme.txt for the scheme type itself and common/
+# scripted_effects/kehillah_library_effects.txt's own "STUDY TORAH AS A
+# SCHEME" header for the numeric-ID bridge these two triggers exist to
+# support. $LIBRARY$ here is the SAME parameterized-scope idiom the three
+# owns_<track>_work_trigger entries above already use -- not reused
+# because none of those three fit: this needs "owns ANY work, in any
+# track" (kehillah_owns_any_torah_work_trigger) and "owns the ONE
+# specific work a given numeric ID names" (kehillah_study_torah_current_
+# work_still_owned_trigger), neither of which any existing trigger checks.
+#
+# kehillah_study_torah_current_work_still_owned_trigger TOOK a $LIBRARY$
+# PARAM AS OF 2026-09-19's SAME-DAY FOLLOW-UP (below), not just primary_
+# title -- see kehillah_study_torah_has_accessible_library_trigger's own
+# header for why the scheme is no longer Kehillah-leader-only.
+# =====================================================================
+
+# Gates whether the scheme can start or keep running at all. Deliberately
+# just an OR of the three existing owns_<track>_work_trigger entries, not
+# a new twelve-work check of its own -- "owns at least one work, in any
+# track" is already exactly what those three ORed together mean.
+kehillah_owns_any_torah_work_trigger = {
+	OR = {
+		kehillah_owns_parshanut_work_trigger = { LIBRARY = $LIBRARY$ }
+		kehillah_owns_talmudics_work_trigger = { LIBRARY = $LIBRARY$ }
+		kehillah_owns_hashkafa_work_trigger = { LIBRARY = $LIBRARY$ }
+	}
+}
+
+# Scope: the studying character (kehillah_study_current_work_id lives on
+# them, set by kehillah_study_torah_pick_next_work_effect). Checks whether
+# $LIBRARY$ (whichever community's library kehillah_study_torah_resolve_
+# library_effect most recently resolved for this character -- common/
+# scripted_effects/kehillah_library_effects.txt) still holds the one
+# specific work that numeric ID names. An OR-of-AND over all twelve IDs,
+# the identical shape activity_kehillah_learn_torah_journey's own
+# is_location_valid/province_score already use for their own twelve-work
+# checks (common/activities/activity_types/kehillah_learn_torah_journey.
+# txt) -- not a new idiom. Used by kehillah_study_torah_monthly_effect to
+# detect a book donated (or otherwise lost) out from under a scheme
+# mid-read, per explicit user request ("refresh periodically to detect...
+# if you don't own a book anymore").
+kehillah_study_torah_current_work_still_owned_trigger = {
+	OR = {
+		AND = {
+			var:kehillah_study_current_work_id = 1
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 2
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mekhilta } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 3
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_genesis_rabbah } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 4
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_pirkei_derabbi_eliezer } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 5
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mishnah } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 6
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_zeraim } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 7
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 8
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nashim } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 9
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nezikin } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 10
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_kodashim } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 11
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_tahorot } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 12
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_zeraim } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 13
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_moed } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 14
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_nashim } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 15
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_nezikin } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 16
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 17
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_yetzirah } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 18
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_hekhalot_rabbati } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 19
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_shiur_qomah } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 20
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_harazim } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 21
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_emunot_vedeot } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 22
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_chovot_halevavot } }
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 23
+			$LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_kuzari } }
+		}
+	}
+}
+
+# =====================================================================
+# LEARN TORAH BEYOND KEHILLAH LEADERS -- ADDED 2026-09-19, same-day
+# follow-up, at user request ("make this available to non-Kehilla ruler
+# Jews too... Jewish unlanded adventurers can use the books of the
+# kehilla where their domicile is based... Jewish rulers can use the
+# library of the kehilla in their capital"). Three populations, checked
+# by kehillah_study_torah_resolve_library_effect (common/scripted_
+# effects/kehillah_library_effects.txt) and mirrored here as a pure
+# existence check (no scope to save, since this fires from is_valid/
+# is_shown/the scheme's own periodic valid re-check, not an effect
+# chain):
+#   1. A Kehillah leader -- UNCHANGED, their own primary_title.
+#   2. A landed Jewish ruler who is NOT a Kehillah -- the registered
+#      community whose domicile sits in the ruler's own capital county.
+#      Landless adventurers were investigated as needing this same
+#      "domicile" anchor and found NOT to have one at all in vanilla --
+#      domiciles (common/domiciles/types/estate, this mod's own kehillah
+#      type) are gated on holding a noble-family/landed title, never on
+#      landless_adventurer_government -- so capital_province is the
+#      correct anchor for is_ruler = yes specifically, not a workaround.
+#   3. A landless Jewish adventurer -- the registered community whose
+#      domicile sits at the adventurer's own CURRENT location instead
+#      (.location, the same anchor kehillah_learn_torah_journey.0001
+#      already uses for an arriving traveller, common/activities/
+#      activity_types/kehillah_learn_torah_journey.txt) -- confirmed, per
+#      the point above, to need a different anchor than a domicile since
+#      adventurers never have one.
+#
+# any_in_global_list, not every_/ordered_ -- a pure existence check is all
+# a TRIGGER needs (the matching EFFECT below is what actually saves the
+# match); kehillah_owns_any_torah_work_trigger = { LIBRARY = this } inside
+# each search confirms the matched community's OWN library still holds
+# something, not merely that a community's domicile occupies the right
+# location -- an empty library at the right location should not count as
+# "accessible" any more than no community there at all.
+#
+# $CHARACTER$, NOT BARE root -- root is UNSAFE here, confirmed by ck3-tiger
+# catching the identical mistake in kehillah_study_torah_resolve_library_
+# effect's own first draft (common/scripted_effects/kehillah_library_
+# effects.txt, its header has the full account): this trigger is called
+# from the scheme's own `valid` block, where root is the SCHEME, not the
+# owner (root does not change through a nested scope-opening block, per
+# kehillah_bet_din_available_co_judges_value's own confirmed-safe root
+# usage just above in this same file -- but that safety only holds when
+# root already equals the right character at the point of a call, and here
+# it sometimes does not). $CHARACTER$ substitutes literal caller-supplied
+# text (root from a decision/event's own top level; scope:owner from the
+# scheme's own valid block, which vanilla's own scheme files always use in
+# preference to root for exactly this reason) into every reference below,
+# including the ones nested inside holder = { ... }, sidestepping the
+# ambiguity entirely rather than guessing which one is safe at any given
+# call site.
+# =====================================================================
+
+kehillah_study_torah_has_accessible_library_trigger = {
+	OR = {
+		AND = {
+			$CHARACTER$ = { government_has_flag = government_is_kehillah }
+			kehillah_owns_any_torah_work_trigger = { LIBRARY = $CHARACTER$.primary_title }
+		}
+		AND = {
+			NOT = { $CHARACTER$ = { government_has_flag = government_is_kehillah } }
+			$CHARACTER$ = { is_ruler = yes }
+			any_in_global_list = {
+				variable = kehillah_registered_communities
+				exists = holder
+				holder = { domicile.domicile_location = $CHARACTER$.capital_province }
+				kehillah_owns_any_torah_work_trigger = { LIBRARY = this }
+			}
+		}
+		AND = {
+			$CHARACTER$ = { has_government = landless_adventurer_government }
+			any_in_global_list = {
+				variable = kehillah_registered_communities
+				exists = holder
+				holder = { domicile.domicile_location = $CHARACTER$.location }
+				kehillah_owns_any_torah_work_trigger = { LIBRARY = this }
+			}
+		}
+	}
+}
+
+# True when the current work has at least one OTHER previously studied work
+# in the same track. Used by the rare scheme intervention that lets a rabbi
+# recall a related passage and turn it into a breakthrough.
+kehillah_study_torah_has_same_track_reference_trigger = {
+	OR = {
+		AND = {
+			var:kehillah_study_current_work_id = 1
+			OR = {
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_mekhilta }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_genesis_rabbah }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_pirkei_derabbi_eliezer }
+			}
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 2
+			OR = {
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_targum_onkelos }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_genesis_rabbah }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_pirkei_derabbi_eliezer }
+			}
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 3
+			OR = {
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_targum_onkelos }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_mekhilta }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_pirkei_derabbi_eliezer }
+			}
+		}
+		AND = {
+			var:kehillah_study_current_work_id = 4
+			OR = {
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_targum_onkelos }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_mekhilta }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_genesis_rabbah }
+			}
+		}
+		AND = {
+			var:kehillah_study_current_work_id >= 5
+			var:kehillah_study_current_work_id <= 16
+			OR = {
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_mishnah }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_bavli_zeraim }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_bavli_moed }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_bavli_nashim }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_bavli_nezikin }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_bavli_kodashim }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_bavli_tahorot }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_yerushalmi_zeraim }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_yerushalmi_moed }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_yerushalmi_nashim }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_yerushalmi_nezikin }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_halakhot_gedolot }
+			}
+		}
+		AND = {
+			var:kehillah_study_current_work_id >= 17
+			var:kehillah_study_current_work_id <= 23
+			OR = {
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_sefer_yetzirah }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_hekhalot_rabbati }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_shiur_qomah }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_sefer_harazim }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_emunot_vedeot }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_chovot_halevavot }
+				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_kuzari }
+			}
 		}
 	}
 }

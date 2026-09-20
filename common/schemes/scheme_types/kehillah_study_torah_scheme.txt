@@ -1,0 +1,154 @@
+﻿# =====================================================================
+# kehillah_study_torah -- ADDED 2026-09-19 at user request ("implement
+# Learn Torah as a continuous scheme... it seems like that's the parallel
+# to the base game designs"). Replaces kehillah_learn_torah_decision's
+# old one-shot flat resolution (common/decisions/kehillah_learn_torah_
+# decisions.txt has the full retirement account); kehillah_acquire_torah_
+# work_decision and the whole travel-journey activity are UNCHANGED.
+#
+# SELF-TARGETED, NOT ADVERSARIAL -- CONFIRMED REAL VANILLA PRECEDENT, not
+# invented. target_type = character is normally a scheme AGAINST someone
+# (learn_language_scheme.txt's own scope:target is a different person);
+# this instead copies study_confucian_classics (common/schemes/
+# scheme_types/tgp_study_scheme.txt, Tours & Tournaments), whose own
+# `valid = { scope:target = scope:owner ... }` is the one confirmed
+# vanilla example of a scheme a character runs on themselves. Most of
+# this file's own shape (skill/speed/uses_resistance fields, the on_
+# monthly/on_phase_completed/on_invalidated hook set) is copied from that
+# same file rather than reinvented, for the same reason this mod already
+# prefers extending an existing pattern over inventing a new one.
+#
+# ICON/ILLUSTRATION deliberately reuse learn_language_scheme.txt's own
+# (icon_scheme_learn_language, gfx/interface/illustrations/event_scenes/
+# corridor.dds) rather than study_confucian_classics's own DLC-specific
+# art (icon_study, .../tgp_study_asia.dds) -- learn_language is base-game,
+# confirmed always loaded regardless of which DLC a given install owns;
+# reusing TGP-specific assets would risk a missing texture on an install
+# without that DLC, for zero benefit (a generic study/corridor image
+# reads fine here; this mod does not need its own bespoke art for this).
+#
+# The ordinary mastery gate remains in the shared work effect, so the
+# travel journey keeps its established behavior. Scheme-only study
+# interventions can grant a one-course mastery bonus, which that shared
+# effect consumes and removes when this scheme resolves its current book.
+# =====================================================================
+
+kehillah_study_torah = {
+	# Basic Setup
+	skill = learning
+	desc = kehillah_study_torah_scheme_desc_general
+	success_desc = "KEHILLAH_STUDY_TORAH_SCHEME_SUCCESS_DESC"
+	icon = icon_scheme_learn_language
+	illustration = "gfx/interface/illustrations/event_scenes/corridor.dds"
+	category = personal
+	target_type = character
+	is_secret = no
+	is_basic = yes
+	hide_target_name = yes
+
+	# A rabbi travelling for kehillah_learn_torah_journey is already
+	# covered by that separate activity/event chain -- freezing this
+	# scheme while travelling avoids double-dipping the same character's
+	# study time across both mechanisms at once, mirroring study_confucian_
+	# classics's own identical choice.
+	freeze_scheme_when_traveling = yes
+
+	# Parameters -- copied verbatim from study_confucian_classics (see
+	# this file's own header for why): a generic, non-adversarial personal
+	# pursuit, the closest confirmed vanilla shape to what this needs.
+	# Learning is the rabbi's study speed: each point removes 2.5 days
+	# from the effective progress time, so stronger scholars finish sooner.
+	speed_per_skill_point = -2.5
+	spymaster_speed_per_skill_point = 0
+	uses_resistance = no
+
+	# 730 days (2 years) for an otherwise average scholar. Learning further
+	# reduces the effective duration through speed_per_skill_point above.
+	base_progress_goal = 730
+	base_maximum_success = 95
+	minimum_success = 5
+
+	# Core Triggers -- BROADENED 2026-09-19, same-day follow-up ("make this
+	# available to non-Kehilla ruler Jews too... Jewish unlanded
+	# adventurers... Jewish rulers can use the library of the kehilla in
+	# their capital"). Was government_has_flag = government_is_kehillah +
+	# kehillah_owns_any_torah_work_trigger = { LIBRARY = primary_title };
+	# kehillah_study_torah_has_accessible_library_trigger (common/scripted_
+	# triggers/kehillah_scripted_triggers.txt) replaces both at once with
+	# the three-population check its own header describes -- a Kehillah
+	# leader's own primary_title is still exactly one of those three
+	# branches, so this is a strict widening, not a behavior change for
+	# the population this scheme already served.
+	allow = {
+		age >= 16
+		is_imprisoned = no
+		has_trait = kehillah_rabbi_trait
+		NOT = { has_trait = incapable }
+		is_jewish_character_trigger = yes
+	}
+
+	valid = {
+		scope:target = scope:owner
+		is_imprisoned = no
+		has_trait = kehillah_rabbi_trait
+		NOT = { has_trait = incapable }
+		is_jewish_character_trigger = yes
+		# CHARACTER = scope:owner, NOT root -- root here is the SCHEME
+		# itself (confirmed by ck3-tiger against the matching effect,
+		# kehillah_study_torah_resolve_library_effect's own header, common/
+		# scripted_effects/kehillah_library_effects.txt, has the full
+		# account), not the character every other unqualified check in this
+		# block correctly runs against.
+		kehillah_study_torah_has_accessible_library_trigger = { CHARACTER = scope:owner }
+	}
+
+	# Prediction only -- see this file's own header on why nothing actually
+	# branches on the roll this feeds. base_odds_prediction_target_is_char_
+	# value is the same vanilla value learn_language_scheme.txt itself uses
+	# for its own (also target_type = character) odds_prediction.
+	odds_prediction = {
+		add = base_odds_prediction_target_is_char_value
+		min = 0
+	}
+
+	base_success_chance = {
+		base = 10
+		modifier = {
+			add = scope:owner.learning
+			desc = kehillah_study_torah_scheme_learning_modifier
+		}
+		modifier = {
+			add = 20
+			desc = kehillah_study_torah_scheme_rabbi_modifier
+			scope:owner = { has_trait = kehillah_rabbi_trait }
+		}
+	}
+
+	# On Actions
+	on_phase_completed = {
+		save_scope_as = scheme
+		scheme_owner = { save_scope_as = owner }
+		scope:owner = {
+			# Resolve before opening the completion event so its description can
+			# say whether the text was mastered or needs another reading.
+			if = {
+				limit = { has_variable = kehillah_study_current_work_id }
+				kehillah_study_torah_resolve_current_work_effect = yes
+			}
+			remove_variable = kehillah_study_torah_pulse_seen
+			trigger_event = kehillah_study_torah.0001
+		}
+		reset_scheme_progress = yes
+	}
+
+	on_monthly = {
+		save_scope_as = scheme
+		scheme_owner = {
+			save_scope_as = owner
+			kehillah_study_torah_monthly_effect = yes
+		}
+	}
+
+	on_invalidated = {
+	}
+}

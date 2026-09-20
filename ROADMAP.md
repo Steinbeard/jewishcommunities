@@ -1021,6 +1021,326 @@ to — natural Phase 2/3 content, not v1:**
     own precedent) — the engine's own activity-completion machinery is trusted for the actual trip
     home, not a second hand-built `start_travel_plan` the way the retired interaction needed.
 
+**2026-09-19 — Learn Torah rebuilt as a continuous scheme, `kehillah_study_torah`, ck3-tiger-clean,
+not yet live-tested.** At user request, following a discussion of whether Learn Torah (until now a
+flat, one-shot decision) should instead work the way base-game "continuous background activity"
+mechanics do — the user specifically flagged vanilla's own `learn_language` scheme, and the "By God
+Alone" expansion's forthcoming (announced, not yet released) Study Scripture scheme for ecclesiastic
+Christian characters, as the closest parallels.
+
+**Self-targeted schemes are real, confirmed vanilla precedent, not a guess** — `study_confucian_
+classics` (`common/schemes/scheme_types/tgp_study_scheme.txt`, Tours & Tournaments) is a
+`target_type = character` scheme whose own `valid = { scope:target = scope:owner }` makes it a
+character's scheme against themselves, and its `on_phase_completed`/`on_monthly`/`on_invalidated`
+hook set (progress loops via `reset_scheme_progress = yes` rather than ending) is what `kehillah_
+study_torah` (`common/schemes/scheme_types/kehillah_study_torah_scheme.txt`) copies. `kehillah_
+learn_torah_decision` now only starts it (`start_scheme` + picking the first work), instead of
+resolving a study session itself; `kehillah_acquire_torah_work_decision` and the whole travel-journey
+activity (`kehillah_learn_torah_journey`) are UNCHANGED — commissioning a copy has no "continuous"
+framing to convert to, and the journey was explicitly out of scope.
+
+**The actual pass/fail and reward logic was deliberately NOT rebuilt** — `kehillah_study_specific_
+work_effect` (common/scripted_effects/kehillah_library_effects.txt, unchanged since 2026-09-17 and
+still shared with the travel journey) still owns it (a plain `learning >= 10` gate, repeat-vs-first
+tiering via `kehillah_studied_works`). Routing the scheme's own probabilistic `scheme_success_chance`
+into that gate instead was considered and rejected specifically because the effect is SHARED with
+the untouched journey — changing it would have silently changed journey behavior too, not just the
+scheme's. `base_success_chance` exists on the scheme purely because every scheme type requires one
+(it feeds the UI's own odds display); nothing branches on it.
+
+**Continuing indefinitely once out of unstudied books, with a clearly smaller reward** — explicit user
+request ("you should be able to continue the scheme even when out of books, but it should be very
+clear that the rewards are now much less"). Needed no new mechanism at all: the pick-next-work step
+now draws from every work the library owns, not just unstudied ones, and `kehillah_study_specific_
+work_effect`'s own repeat-vs-first tiering (built 2026-09-15, "a much smaller boost, not zero") was
+already exactly this. The only real change is surfacing it clearly — the same `kehillah_study_torah.
+<track>.<work>_tt` "You take up X" line used since 2026-09-15 now fires at PICK time (naming what's
+about to be reread), where before it only fired as an after-the-fact reveal.
+
+**The numeric-ID bridge, and why it's twelve if/elif branches, not a generic lookup** — a scheme
+phase and its own `on_phase_completed` are two different script moments, months apart, with no
+"phase started" hook to pair with it, so "which work is currently being read" has to be decided once
+(at pick time) and read back later (at resolve time). Storing an arbitrary flag reference in a
+variable and comparing against it later was already investigated and explicitly rejected once
+before, in `kehillah_study_specific_work_effect`'s own 2026-09-17 header ("checked against the
+installed game and NOT found anywhere as real precedent"). Rather than re-risking that, `kehillah_
+study_current_work_id` is a plain NUMBER (1-12, one literal work per number by fixed convention),
+read back via if/elif-per-literal (an effect: `kehillah_study_torah_resolve_current_work_effect`) or
+OR-of-AND-per-literal (a trigger: `kehillah_study_torah_current_work_still_owned_trigger`) — more
+lines than a generic lookup, but the confirmed-safe shape already used everywhere else in this file
+family, not an invented one.
+
+**No cached list, by design — the library query is live, at every pick.** `kehillah_study_torah_
+pick_next_work_effect` queries the community's CURRENT `kehillah_library_works` every time it runs
+(scheme start, every phase completion, and whenever `on_monthly` detects the current book is gone) —
+never a snapshot taken once and reused. This means "detect new books" needs no extra code at all
+(the very next pick already sees them); "detect a book donated away mid-read" (relevant now that the
+library panel's own donate-for-piety action exists) is the one case that genuinely needed an active
+check, so `kehillah_study_torah_monthly_effect` runs `kehillah_study_torah_current_work_still_owned_
+trigger` every month and, on a miss, toasts the player and re-picks immediately — `scheme_progress`
+itself is left untouched, since it represents time spent at the Beit Midrash, not attachment to one
+specific volume.
+
+**Flavor events, not mechanical ones, for the "insight mid-study" ask.** `kehillah_study_torah.0002`
+(events/kehillah_study_torah_events.txt) fires from `on_monthly` at a flat 12%/month chance while the
+current work is still owned, with a twelve-way `triggered_desc` naming which work the insight is
+about — pure flavor, no reward, specifically so it never double-pays what `kehillah_study_torah.0001`
+(the real phase-completion resolve+pick event) already pays.
+
+**2026-09-19, same-day follow-up — Learn Torah opened up beyond Kehillah leaders, ck3-tiger-clean,
+not yet live-tested.** At user request: "make this available to non-Kehilla ruler Jews too... Jewish
+unlanded adventurers can use the books of the kehilla where their domicile is based... Jewish rulers
+can use the library of the kehilla in their capital." Three populations now covered, via a new
+`kehillah_study_torah_has_accessible_library_trigger` (common/scripted_triggers/kehillah_scripted_
+triggers.txt) and matching `kehillah_study_torah_resolve_library_effect` (common/scripted_effects/
+kehillah_library_effects.txt): a Kehillah leader's own community (unchanged); a landed Jewish ruler
+who is not a Kehillah, via the registered community whose domicile sits in their own capital county;
+a landless Jewish adventurer, via the registered community whose domicile sits at their own CURRENT
+location instead of a domicile.
+
+**Landless adventurers do not have a domicile at all in vanilla** — checked directly against the
+installed game before building on the premise: `estate`/`yurt` (common/domiciles/types/00_domicile_
+types.txt) and this mod's own Kehillah domicile type are all gated on holding a noble-family or
+landed title, never on `landless_adventurer_government`. Using their current location instead
+(the same anchor `kehillah_learn_torah_journey.0001` already uses for an arriving traveller) reads
+better anyway for a wandering adventurer, at the cost of the library re-resolving if they wander away
+mid-scheme rather than staying fixed for the whole run — which, per the point below, it already does
+for everyone, not just adventurers.
+
+**A real scope bug, caught by ck3-tiger, not by inspection.** The first draft of both new
+triggers/effects used bare `root` for "the studying character" inside `holder = { domicile.
+domicile_location = root.capital_province }`-style checks. That is exactly the confirmed-safe idiom
+`kehillah_bet_din_available_co_judges_value` already established elsewhere in this file — EXCEPT that
+idiom is only safe when root, at the point of the call, already equals the right character, and here
+it sometimes did not: `kehillah_study_torah_monthly_effect` runs inside the scheme's own `on_monthly`
+hook, where root is the SCHEME itself, not the owner. Fixed by giving both a `$CHARACTER$` parameter
+(this mod's own established $PARAM$-substitution idiom) instead of guessing root vs. `this` per call
+site — every caller now passes whichever reference is actually stable there: `root` from the
+decision's own effect or the phase-completion event's option (both genuinely stable), `scope:owner`
+from the scheme's own `valid` block and from `kehillah_study_torah_monthly_effect` (both natively
+provided/already saved, and — unlike root or `this` — correct no matter how deeply the parameter is
+later referenced inside the callee).
+
+**No persisted "which library" variable, deliberately.** `kehillah_study_torah_resolve_library_effect`
+is re-run fresh every time a library is needed (the decision's own effect, every phase completion,
+every monthly tick) rather than resolved once and remembered — the same "live query, not snapshot"
+choice `kehillah_study_torah_pick_next_work_effect` already made for "which work," now extended to
+"which library" too. This is what lets a moved capital or a relocated adventurer be handled by simply
+re-running the same search next time, with no separate move-detection code of its own; a title-valued
+character variable (the retired `kehillah_visit_library_interaction`'s own approach) was considered
+and rejected specifically because that mod's own reason for persisting one — surviving a real-time gap
+between two different effect chains — does not apply here.
+
+**2026-09-19 — Starting library seed randomized, ck3-tiger-clean, not yet live-tested.** At user
+request ("mix it up... each community gets random books from the initial list... expand the initial
+list") — every community used to get the literal same two works (Targum Onkelos + the Mishnah,
+2026-09-15's own seed). `kehillah_seed_starting_library_effect` (common/scripted_effects/kehillah_
+library_effects.txt) now rolls a count of 1-3 (equal odds) and draws that many DISTINCT works from
+the 8-work Parshanut+Talmudics pool via a new `kehillah_seed_one_random_torah_work_effect` (called
+1-3 times per community), using the same trigger-filtered `random_list` idiom `kehillah_study_torah_
+pick_next_work_effect` already established, so a work already drawn can never be drawn again in the
+same seed. Asked the user explicitly rather than deciding silently: **Hashkafa stays OUT of the
+random pool**, preserving 2026-09-15's own deliberate "Hashkafa starts at zero" scarcity design
+(kehillah_scripted_triggers.txt's own header, just above the six `kehillah_owns_/missing_<track>_
+work_trigger` entries) — the user chose to keep it rather than open Hashkafa to the starting draw
+too. Corpus itself is unchanged (still the same 12 real works); "expand the initial list" meant
+growing the pool a community's start can draw from (2 fixed → 8 eligible), not adding new works to
+the corpus, which nothing in the request actually asked for.
+
+**2026-09-19, SAME-DAY FOLLOW-UP — the Talmud corpus split into Sedarim, and three anachronistic
+Hashkafa works date-gated, ck3-tiger-clean, not yet live-tested.** Two user requests handled together
+since they both touch the same 12-work corpus the entry above just finished tuning: "can we split up
+the Talmuds into different Seders or Mashectot?" and, separately, "exclude the Kuzari and anything
+else written after 867 from the initial pool... have a creatable pool of books that can become
+available later... replace them in the initial pool though." Corpus grew from 12 real works to 23 —
+every file that enumerated the twelve by literal flag (the owns/missing triggers, the acquire event,
+the travel journey's tooltip/is_location_valid/province_score, the study scheme's numeric-ID bridge,
+the unstudied-count script values, the map-view GUI's per-work donate/studied functions, the donate
+confirmation event, and all their localization) needed the same mechanical expansion — done with a
+small Python script (not by hand) specifically to keep 11 near-duplicate blocks consistent instead of
+risking a typo'd flag name in one of them; ck3-tiger came back clean on the result.
+
+**The split itself, per the user's own choice ("keep Mishnah together, split Bavli and Yerushalmi")**:
+the Mishnah stays one work; the Babylonian Talmud splits into all six of its real Sedarim (Zeraim,
+Moed, Nashim, Nezikin, Kodashim, Tahorot — the same six volumes a real Vilna Shas edition prints, even
+though its own Gemara only substantially covers four of them, Zeraim/Tahorot being mostly Mishnah-only
+outside Berakhot/Niddah respectively); the Jerusalem Talmud splits into only the four Sedarim it
+actually has real Gemara for (Zeraim, Moed, Nashim, Nezikin — Kodashim/Tahorot were not invented for
+it, since it has none). This is a documented assumption about seder-level granularity and which
+Sedarim to include for Bavli, not independently confirmed with the user beyond the two questions
+actually asked (Seder- vs. Masechet-level granularity, and which texts to split) — flagging it here in
+case Masechet-level (individual tractate) granularity turns out to be wanted later, which would be
+another full pass of the same shape, not a small follow-up.
+
+**The date-gating, per the user's own choice of mechanism ("direct current_date gate")**: Emunot
+ve-Deot (933), Chovot HaLevavot (~1080) and Kuzari (~1140) are genuinely anachronistic before their
+own real composition year, not just before 867 — Chovot HaLevavot and Kuzari are even later than the
+flagship Worms 1066 start, so this was a real latent anachronism the acquire decision could already
+trigger, not only a hypothetical concern for an earlier bookmark. `kehillah_missing_hashkafa_work_
+trigger` (common/scripted_triggers/kehillah_scripted_triggers.txt) and the acquire event's own Hashkafa
+option (`kehillah_acquire_torah_work.0001.c`, events/kehillah_learn_torah_events.txt) both gate each of
+the three behind `current_date >= <year>.1.1` directly, ANDed with the existing not-owned check — no
+new state, unlike the alternative (a global unlock list plus an announcement toast) the user was also
+offered and did not choose. **Replacements, to keep Hashkafa's own immediately-available roster at
+four works instead of dropping to one**: Hekhalot Rabbati, Shi'ur Qomah (Merkabah/Hekhalot mysticism,
+Talmudic-Geonic era) and Sefer HaRazim (an ancient Jewish magical-cosmological text, ~3rd-4th century)
+— all three real, documented, pre-867 texts, proposed by the assistant and confirmed by the user before
+writing any content. Hashkafa is still excluded from the community-seed random pool entirely (the
+entry above), so this backfill matters for the acquire decision and the travel journey, not the
+starting-library roll.
+
+**2026-09-19 — "Found a Jewish Community" shipped for rabbinic landless adventurers, ck3-tiger-clean,
+NOT YET LIVE-TESTED** (still true as of 2026-09-20 evening — see the correction below), at user request ("create a 'found a jewish community' decision for Rabbinic
+adventurers"). This resolves v2 spec section 5.1's own "open technical question, not solved here" —
+what actually places a new landless title at a chosen location — which had sat unanswered since that
+spec was written, flagged as "residual risk, not a blocker." Checked directly against the installed
+1.19 files before building anything: vanilla's own `create_adventurer_title` (the engine effect behind
+"Abandon Realm to Become an Adventurer" and every other laamp-creation path, `common/scripted_effects/
+07_dlc_ep3_scripted_effects.txt`) is genuine, general-purpose runtime title creation — no landed_titles
+entry backs the title it produces, unlike this mod's own sixteen pre-authored `c_kehillah_*` titles
+(`common/landed_titles/kehillah_landed_titles.txt`), so a Kehillah can now be founded literally
+anywhere a landless adventurer is standing, not just at one of the sixteen.
+
+**Scope shipped**: `kehillah_found_community_decision` (`common/decisions/kehillah_found_community_
+decisions.txt`) and `kehillah_found_community_effect` (`common/scripted_effects/kehillah_found_
+community_effects.txt`) — this is specifically v2 spec section 5.1's "landless character founds a
+title" primitive in its simplest form (founding from nothing), NOT the "Found a Sister Community"
+variant still listed below in the backlog (an existing Legendary-Prosperity/Greatness Kehillah sending
+a courtier elsewhere) — that variant is unbuilt and can reuse the same effect once it exists. **The
+gate**: `is_rabbinic_authority_jewish_trigger` (rabbinism/kabarism/merkabah specifically — the faith
+half of "rabbinic") AND `kehillah_leader_is_rabbinic_trigger` (this mod's existing personal bar for
+"reads as a rabbi": the trait, `theologian`, top-two Learning education, or `learning >= 12` as
+fallback — reused rather than re-invented, so a founder and a credible Chief Rabbi candidate are held
+to literally the same definition) AND `has_government = landless_adventurer_government` AND ten Jewish
+camp followers. It also requires the camp's current location not already to host a registered
+Kehillah, preventing duplicate communities in one place. The founding
+effect mirrors `kehillah_on_title_gain`'s own body (`common/on_action/kehillah_on_actions.txt`) almost
+exactly — `change_government`, `kehillah_restore_quarter_effect` (a safe no-op with no prior building
+record), `kehillah_init_pillars_effect`, leader-flavor — plus the three follow-up calls that on_action's
+own comments already flagged as required "if Wave 5 ever adds founding" (registering into
+`kehillah_registered_communities`, seeding the starting library, refreshing the map-view mirror). Also
+extended `is_kehillah_title_trigger` (`common/scripted_triggers/kehillah_scripted_triggers.txt`) with an
+additive `is_target_in_variable_list` branch alongside its sixteen hardcoded names, so a founded
+community is recognized everywhere that trigger is checked (domicile naming, the two on_title_gain
+hooks) exactly as the original sixteen are — the original name-based check's own documented reason
+(answerable during history execution, before the registry exists) is untouched for those sixteen.
+
+**A real bug caught before it ever reached a running game**: the first pass called
+`kehillah_restore_quarter_effect` without first setting `scope:kq_title`, the scope name that effect's
+own restore-track calls read — `ck3-tiger` flagged it immediately as a `strict-scopes` warning (0
+fatal/0 error throughout, but this one warning was real, not a false positive per this repo's own
+"verify before patching" norm). Fixed by saving the newly created title as `scope:kq_title` before the
+restore call, matching exactly what `kehillah_on_title_gain` already does. Exactly the kind of mistake
+CLAUDE.md's testing section exists to catch standing still, without ever booting the game.
+
+**Deliberately NOT built**: AI eligibility (`ai_potential = { always = no }`) — this is a genuinely new,
+unverified primitive (`create_adventurer_title` has never been called from this mod before), and
+CLAUDE.md's own guidance treats succession/government-law code as this codebase's highest-risk area,
+needing a live playtest before it's trusted at all, let alone handed to every AI-played rabbinic
+landless adventurer on the map at once. Also not built as of 09-19: a dynamic, location-based title name.
+
+**2026-09-20 — a Codex session claimed a live PASS on this path, renamed `c_kehillah_worms` to a duchy-tier
+`d_kehillah_worms`, and both claims were wrong; reverted and re-fixed the same day.** Daniel re-ran the
+decision himself: still Game Over, and no county-based name. Full account in
+`docs/testing/2026-09-20-found-community-live-test-log.md` ("Correction"). Short version: (1) county-tier
+landless titles are fine — Worms has been one since 09-07 through three live playtests, vanilla's
+`c_nf_yamato` is one — and the Isaac Game Over was caused by that session re-adding `title_tier = duchy`
+to `kehillah_government.can_get_government`; everything Worms-related is back to the 09-07 shape.
+(2) The real founding bug was title ordering: the founder already holds a `d_laamp_*` title, the new
+community title was never made primary and the old one was never destroyed, so `add_realm_law` hit
+the wrong title and both titles ended up with invalid succession. `kehillah_found_community_effect`
+now mirrors vanilla's own adventurer-becomes-landed teardown: create → `set_primary_title_to` →
+destroy the old adventurer title → `change_government` → `add_realm_law`, with `debug_log`
+breadcrumbs. (3) The title name is now `Kehillah of [kehillah_founding_county.GetNameNoTierNoTooltip]`
+(county, captured before creation, vanilla's `adventurer_name_010` mechanism) — a fresh later re-test
+confirmed it renders as intended. The same re-test confirmed the old title is destroyed, the founder
+does not Game Over, and the standard Kehillah decisions appear; the Worms bookmark also remained stable
+past 1066-10-01. A dedicated test start `bm_1066_kehillah_founder_test` (rabbinic adventurer
+"Yitzhak", fixture title `d_kehillah_founder_test`, placeholder portrait) exists for exactly this
+check; whether it should ship to players or be console-only is an open call (BLOCKERS.md). ck3-tiger
+0/0.
+
+**2026-09-20 evening — ROOT CAUSE of the founding Game Over, and the fix.** The 12:49 re-test above
+was already running on the fixed build; here is why it passed. The ordering fix was necessary but not
+sufficient: the real decision still Game-Overed 15-25 days later. Eleven scripted live probes
+(subagent-driven, `run <file>.txt` + `debug_log`; full sequence in the test log's "Root cause and
+fix") found the second bug: the founder ended up in `kehillah_government` with **no domicile** —
+`change_government` never creates one, it only destroys the adventurer's camp — and the engine
+silently resets a domicile-government with no domicile to feudal, which for a landless title is the
+"lost all titles" Game Over. Nothing in script can create a domicile after the fact (no such effect
+exists; confirmed against the engine's own `script_docs` output). The fix is a parameter no vanilla
+script uses: `create_adventurer_title = { government = kehillah_government }` creates title +
+government + Jewish Quarter in one engine operation. Verified on a fresh launch via the real UI
+decision: "Rav Yitzhak of the Kehillah of Worms", Communal Realm, Jewish Quarter Level 1, Kehillah
+decisions live, ran to Oct 1067 with no Game Over; Worms control unaffected. Same commit:
+flavorization no longer tier-gated (runtime titles are duchy-tier, so the founder read as "Duke"),
+title name via `GetNameNoTierNoTooltip` ("Kehillah of Worms", not "Kehillah of County of Worms").
+
+**2026-09-20 later — title tier unified at duchy, per Daniel's decision.** All fifteen
+pre-authored communities now use `d_kehillah_*` IDs, matching the runtime duchy created by
+`create_adventurer_title` in Found a Jewish Community. The earlier county-tier Worms
+regression above was caused by a government eligibility gate, not by duchy rank; that gate
+remains tier-agnostic. The flat, landless title layout and each real host county's ownership
+are unchanged. CK3's alternate `create_dynamic_title` rejected `tier = county` in both
+ck3-tiger and a live console probe; the briefly prototyped finite county-slot approach was
+discarded after Daniel chose duchy parity. See
+[docs/spec/v14-kehillah-title-tier.md](docs/spec/v14-kehillah-title-tier.md).
+  **Source-verified and ck3-tiger-clean (0 fatal/0 error); Daniel will run the
+  fresh live regression manually.** Kehillah leaders now receive plain
+  commoner portrait clothing instead of ducal attire, and Isaac's bookmark
+  placeholder no longer wears royal clothing. The portrait appearance also
+  awaits Daniel's visual check.
+The title-ID change requires a new campaign rather than an old `c_kehillah_*` save.
+
+**2026-09-20, that live regression — two real bugs found and fixed, unrelated to duchy
+tier.** Daniel reported every Jewish Quarter building reading as locked despite a Level 1
+Synagogue. Subagent-driven live diagnosis (both a freshly founded Frankfurt community and a
+brand-new Worms 1066 start) found:
+1. **The external-slot lock is real and was present on Worms too, not just founded
+   communities** — so this was never a duchy-tier regression at all. `base_external_slots = 6`
+   (`common/domiciles/types/kehillah_domicile_types.txt`), added 2026-09-17 on the assumption it
+   alone sets a domicile's starting unlocked-slot count, left every external slot — all six,
+   including the first — stuck on vanilla's generic "Locked Slot" state; hovering showed the
+   engine's own "New Slots can be unlocked by upgrading the central Domicile Building" tooltip.
+   Every vanilla domicile type actually pairs a small `base_external_slots` (2) with a
+   `domicile_external_slots_capacity_add` character modifier on its tier-1 main building — this
+   mod had removed that modifier on 2026-09-17 and never replaced it. Fixed by adding
+   `domicile_external_slots_capacity_add = 6` to `kehillah_synagogue_01`
+   (`common/domiciles/buildings/kehillah_domicile_buildings.txt`), which inherits automatically
+   to every later Synagogue tier per `_domicile_buildings.info`'s own inheritance rule for
+   `character_modifier`. Not yet re-verified live.
+2. **Founded communities were never actually recognized as Kehillah titles.** The 2026-09-19
+   addition to `is_kehillah_title_trigger` (`common/scripted_triggers/kehillah_scripted_
+   triggers.txt`) checked `is_target_in_variable_list`, the plain/character-scope checker, against
+   `kehillah_registered_communities` — a list populated with `add_to_global_variable_list`. CK3
+   has three separate, non-interchangeable variable-list namespaces (confirmed against the
+   installed 1.19 files' own generated `logs/triggers.log`: `is_target_in_variable_list`,
+   `is_target_in_local_variable_list`, `is_target_in_global_variable_list` are three distinct
+   entries), and checking the wrong one doesn't error, it just always returns false. Live:
+   `kehillah_debug.61` reported "primary title is NOT registered" for a freshly founded
+   community, and `error.log` filled with 22,000+ lines of `kehillah_domicile_name_vanilla_
+   fallback` loc errors from `KehillahDomicileName` falling through every single frame the
+   domicile panel was open. Fixed by changing the check to
+   `is_target_in_global_variable_list`, matching the `add_to_global_variable_list` call it reads
+   back. This bug is independent of bug 1 (Worms hit bug 1 without ever touching this code path)
+   and was masking bug 1's own symptom on the founded-community repro case with a second, louder
+   one. Not yet re-verified live.
+
+**Remaining founder-path work:** the two error-log items the 12:49 re-test flagged are addressed at
+source but NOT yet re-checked live (the machine was in use when the re-check was due): the
+`kehillah_restore_quarter_effect` call is removed from the founding effect (it does not no-op on a
+fresh title — ~38 unset-`var:kq_*` errors — and there is nothing to restore on a new community), and
+`set_primary_title_to` plus the post-setup internals are `hidden_effect` so the confirmation tooltip
+neither renders "None of becomes your Primary Title" nor evaluates pillar/library setup against a
+title that does not exist yet (the ~2,500 tooltip-time `landed_title is not valid` lines). ck3-tiger
+0/0. Next live check: hover the decision (tooltip error count should be ~0), take it (no
+`kehillah_restore` errors, six breadcrumbs), run a month. **The new gates** (ten Jewish camp
+followers, no registered Kehillah already at the location) landed after the last live run — whether
+the founder-test fixture still satisfies them is unverified; if the decision shows disabled on the
+fixture, the fixture needs seeded Jewish followers, not the gate loosened. Also still open: AI
+eligibility is `ai_potential = { always = no }` (unchanged since 09-19), the fixture bookmark is
+player-visible (BLOCKERS.md), and no founded-community *succession* has been live-tested yet.
+
 **Partly resolved, and reopened by the first playtest:** open,
 community-wide leadership succession (any notable family can be
 appointed, not just the outgoing leader's own).
@@ -1082,7 +1402,12 @@ promise stays broken for an unbounded period.
   the actual theme.
 - **Voluntary "found a sister community" expansion.** A lighter, non-crisis
   version of Phase 4's Unlanded Migration Journey. Fold into Phase 4 rather
-  than building two migration systems.
+  than building two migration systems. **The underlying "place a new Kehillah
+  title" primitive this depends on now exists** — see the 2026-09-19 "Found a
+  Jewish Community" entry above (`kehillah_found_community_effect`, common/
+  scripted_effects/kehillah_found_community_effects.txt) — so this item is now
+  "send a courtier + endowment, gated on Legendary Prosperity/Greatness, then
+  call the existing effect," not "solve title placement from scratch."
 
 ## Explicitly not scheduled yet
 Anything not listed above (additional overlays beyond the three named,

@@ -16,343 +16,168 @@
 # for the same reason: this needs the full registry already built to
 # iterate over it.
 #
-# TWO WORKS, THE SAME TWO FOR EVERY COMMUNITY: Targum Onkelos
-# (Parshanut) and the Mishnah (Talmudics) -- see the scripted-triggers
-# file's own header for why these two specifically, and why Hashkafa
-# starts empty on purpose.
+# RANDOMIZED, 1-3 WORKS, UPDATED 2026-09-19 at user request ("mix it up,
+# random books from the initial list, expand the initial list") --
+# previously every community got the literal same two (Targum Onkelos +
+# the Mishnah). Now each community rolls a count of 1-3 (equal odds) and
+# draws that many DISTINCT works from the 8-work Parshanut+Talmudics pool
+# via kehillah_seed_one_random_torah_work_effect below, called once per
+# roll. HASHKAFA IS DELIBERATELY STILL EXCLUDED from this pool -- kept at
+# user's explicit choice, preserving the scripted-triggers file's own
+# "Hashkafa starts empty on purpose" design (its header, just above the
+# six kehillah_owns_/missing_<track>_work_trigger entries) rather than
+# silently overriding it.
 # ---------------------------------------------------------------------
 
 kehillah_seed_starting_library_effect = {
-	add_to_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos }
-	add_to_variable_list = { name = kehillah_library_works target = flag:work_mishnah }
-}
-
-
-# =====================================================================
-# STUDYING A TRACK -- ADDED 2026-09-15 at user request ("implement the
-# travel to study a book... keep track of which books you've already
-# studied... studying the same book a second time should give a much
-# smaller boost").
-#
-# NO LONGER SHARED WITH THE JOURNEY, AS OF 2026-09-17. Originally used by
-# BOTH kehillah_learn_torah.0001 (study locally, events/kehillah_learn_
-# torah_events.txt) and kehillah_learn_torah_journey.0001 (study having
-# travelled, events/kehillah_learn_torah_journey_events.txt) -- the three
-# effects below are now local-study-only. The journey's own arrival flow
-# was reworked, at user request, from "pick a track, then randomly find
-# out which of its four works you got" into "pick a track, then pick the
-# specific work" -- see kehillah_study_specific_work_effect below (this
-# file) and kehillah_learn_torah_journey.0002/0003/0004 (events/kehillah_
-# learn_torah_journey_events.txt) for the replacement. Local study is
-# UNCHANGED and still uses the three track effects below exactly as
-# before -- this split was a deliberate scope boundary (only "Yeshiva
-# Visit" was asked about), not an oversight forgetting to update the
-# local path too.
-#
-# ONE EFFECT PER TRACK, NOT ONE GENERIC ONE -- each track's four works
-# are a different set of literal flags, and CK3 parameter substitution
-# cannot iterate a list, so three near-identical effects is the actual
-# shape this takes, the same reason "Write a Book" and the Translation
-# Contract both have one branch per genre/work rather than a single
-# generic one. $LIBRARY$ is the one thing that DOES get parameterized
-# (which title's kehillah_library_works to read from) -- see common/
-# scripted_triggers/kehillah_scripted_triggers.txt's own header for why,
-# and for the matching kehillah_owns_<track>_work_trigger these three
-# effects assume has already gated their own caller (none of the three
-# guards against being called with nothing owned; that is deliberately
-# the CALLER's job, exactly like kehillah_translation_pick_work_effect
-# assumes a valid pool upstream).
-#
-# ALREADY STUDIED TRACKING, scope: root (the studying character, NOT the
-# library). kehillah_studied_works is a character variable_list -- unlike
-# kehillah_library_works, this belongs to the PERSON, not the community,
-# because what a scholar has personally read does not reset when they
-# travel or when their own community's collection changes. A work
-# already in this list on a repeat study pays kehillah_learn_torah_xp_
-# repeat_pass/_fail instead of kehillah_learn_torah_xp_pass/_fail (common/
-# script_values/kehillah_script_values.txt) -- both real pass/fail tiers
-# still exist on a repeat, just much smaller, per explicit request
-# ("a much smaller boost", not zero -- rereading a book still teaches
-# something, just far less than a first read).
-#
-# THE "IS THIS A REPEAT" SIGNAL is a plain NUMBER variable (kehillah_
-# learn_torah_repeat, 0 or 1), set inside whichever random_list entry
-# actually fires, and read immediately after -- NOT is_target_in_
-# variable_list called with a variable as its own target. That specific
-# form (`target = var:X` where X holds a flag) was checked against the
-# installed game and NOT found anywhere as real precedent, so it is not
-# risked here; every is_target_in_variable_list call below takes a
-# literal flag:X, the confirmed-safe form used everywhere else in this
-# mod, and the cross-block signal is an ordinary number comparison
-# instead (var:kehillah_learn_torah_repeat = 1), which has extensive
-# precedent (e.g. every kehillah_bet_din_case*_direction check).
-# =====================================================================
-
-kehillah_study_parshanut_effect = {
 	random_list = {
-		25 = {
-			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos } } }
-			if = {
-				limit = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_targum_onkelos } }
-				set_variable = { name = kehillah_learn_torah_repeat value = 1 }
-			}
-			else = {
-				set_variable = { name = kehillah_learn_torah_repeat value = 0 }
-				add_to_variable_list = { name = kehillah_studied_works target = flag:work_targum_onkelos }
-			}
-			custom_tooltip = kehillah_study_torah.parshanut.targum_onkelos_tt
-		}
-		25 = {
-			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mekhilta } } }
-			if = {
-				limit = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_mekhilta } }
-				set_variable = { name = kehillah_learn_torah_repeat value = 1 }
-			}
-			else = {
-				set_variable = { name = kehillah_learn_torah_repeat value = 0 }
-				add_to_variable_list = { name = kehillah_studied_works target = flag:work_mekhilta }
-			}
-			custom_tooltip = kehillah_study_torah.parshanut.mekhilta_tt
-		}
-		25 = {
-			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_genesis_rabbah } } }
-			if = {
-				limit = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_genesis_rabbah } }
-				set_variable = { name = kehillah_learn_torah_repeat value = 1 }
-			}
-			else = {
-				set_variable = { name = kehillah_learn_torah_repeat value = 0 }
-				add_to_variable_list = { name = kehillah_studied_works target = flag:work_genesis_rabbah }
-			}
-			custom_tooltip = kehillah_study_torah.parshanut.genesis_rabbah_tt
-		}
-		25 = {
-			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_pirkei_derabbi_eliezer } } }
-			if = {
-				limit = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_pirkei_derabbi_eliezer } }
-				set_variable = { name = kehillah_learn_torah_repeat value = 1 }
-			}
-			else = {
-				set_variable = { name = kehillah_learn_torah_repeat value = 0 }
-				add_to_variable_list = { name = kehillah_studied_works target = flag:work_pirkei_derabbi_eliezer }
-			}
-			custom_tooltip = kehillah_study_torah.parshanut.pirkei_derabbi_eliezer_tt
-		}
+		1 = { set_variable = { name = kehillah_starting_book_count value = 1 } }
+		1 = { set_variable = { name = kehillah_starting_book_count value = 2 } }
+		1 = { set_variable = { name = kehillah_starting_book_count value = 3 } }
 	}
-
+	kehillah_seed_one_random_torah_work_effect = yes
 	if = {
-		limit = { var:kehillah_learn_torah_repeat = 1 }
-		if = {
-			limit = { learning >= 10 }
-			add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_learn_torah_xp_repeat_pass }
-			custom_tooltip = kehillah_study_torah.repeat_pass.tt
-		}
-		else = {
-			add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_learn_torah_xp_repeat_fail }
-			custom_tooltip = kehillah_study_torah.repeat_fail.tt
-		}
+		limit = { var:kehillah_starting_book_count >= 2 }
+		kehillah_seed_one_random_torah_work_effect = yes
 	}
-	else = {
-		if = {
-			limit = { learning >= 10 }
-			add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_learn_torah_xp_pass }
-			custom_tooltip = kehillah_study_torah.pass.tt
-		}
-		else = {
-			add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_learn_torah_xp_fail }
-			custom_tooltip = kehillah_study_torah.fail.tt
-		}
+	if = {
+		limit = { var:kehillah_starting_book_count >= 3 }
+		kehillah_seed_one_random_torah_work_effect = yes
 	}
-	add_piety = minor_piety_gain
-	remove_variable = kehillah_learn_torah_repeat
+	remove_variable = kehillah_starting_book_count
 }
 
-kehillah_study_talmudics_effect = {
+# kehillah_seed_one_random_torah_work_effect -- ADDED 2026-09-19, called
+# only from kehillah_seed_starting_library_effect above (1-3 times per
+# community). Scope: same title. Draws one work NOT already owned from
+# the 8-work Parshanut+Talmudics pool via a trigger-filtered random_list
+# (the same "trigger per branch" idiom kehillah_study_torah_pick_next_
+# work_effect below already uses for the same reason: entries whose
+# trigger fails drop out of the draw entirely rather than being weighted
+# down, so calling this 2-3 times in a row can never pick the same work
+# twice). Hashkafa's seven works are intentionally absent from this list --
+# see the caller's own header above for why.
+kehillah_seed_one_random_torah_work_effect = {
 	random_list = {
-		25 = {
-			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mishnah } } }
-			if = {
-				limit = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_mishnah } }
-				set_variable = { name = kehillah_learn_torah_repeat value = 1 }
-			}
-			else = {
-				set_variable = { name = kehillah_learn_torah_repeat value = 0 }
-				add_to_variable_list = { name = kehillah_studied_works target = flag:work_mishnah }
-			}
-			custom_tooltip = kehillah_study_torah.talmudics.mishnah_tt
+		1 = {
+			trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos }
 		}
-		25 = {
-			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi } } }
-			if = {
-				limit = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_yerushalmi } }
-				set_variable = { name = kehillah_learn_torah_repeat value = 1 }
-			}
-			else = {
-				set_variable = { name = kehillah_learn_torah_repeat value = 0 }
-				add_to_variable_list = { name = kehillah_studied_works target = flag:work_yerushalmi }
-			}
-			custom_tooltip = kehillah_study_torah.talmudics.yerushalmi_tt
+		1 = {
+			trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mekhilta } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_mekhilta }
 		}
-		25 = {
-			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli } } }
-			if = {
-				limit = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_bavli } }
-				set_variable = { name = kehillah_learn_torah_repeat value = 1 }
-			}
-			else = {
-				set_variable = { name = kehillah_learn_torah_repeat value = 0 }
-				add_to_variable_list = { name = kehillah_studied_works target = flag:work_bavli }
-			}
-			custom_tooltip = kehillah_study_torah.talmudics.bavli_tt
+		1 = {
+			trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_genesis_rabbah } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_genesis_rabbah }
 		}
-		25 = {
-			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot } } }
-			if = {
-				limit = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_halakhot_gedolot } }
-				set_variable = { name = kehillah_learn_torah_repeat value = 1 }
-			}
-			else = {
-				set_variable = { name = kehillah_learn_torah_repeat value = 0 }
-				add_to_variable_list = { name = kehillah_studied_works target = flag:work_halakhot_gedolot }
-			}
-			custom_tooltip = kehillah_study_torah.talmudics.halakhot_gedolot_tt
+		1 = {
+			trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_pirkei_derabbi_eliezer } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_pirkei_derabbi_eliezer }
 		}
-	}
-
-	if = {
-		limit = { var:kehillah_learn_torah_repeat = 1 }
-		if = {
-			limit = { learning >= 10 }
-			add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = kehillah_learn_torah_xp_repeat_pass }
-			custom_tooltip = kehillah_study_torah.repeat_pass.tt
+		1 = {
+			trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mishnah } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_mishnah }
 		}
-		else = {
-			add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = kehillah_learn_torah_xp_repeat_fail }
-			custom_tooltip = kehillah_study_torah.repeat_fail.tt
+		1 = {
+			trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_zeraim } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_bavli_zeraim }
 		}
-	}
-	else = {
-		if = {
-			limit = { learning >= 10 }
-			add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = kehillah_learn_torah_xp_pass }
-			custom_tooltip = kehillah_study_torah.pass.tt
+		1 = {
+			trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed }
 		}
-		else = {
-			add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = kehillah_learn_torah_xp_fail }
-			custom_tooltip = kehillah_study_torah.fail.tt
+		1 = {
+			trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nashim } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_bavli_nashim }
+		}
+		1 = {
+			trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nezikin } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_bavli_nezikin }
+		}
+		1 = {
+			trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_kodashim } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_bavli_kodashim }
+		}
+		1 = {
+			trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_tahorot } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_bavli_tahorot }
+		}
+		1 = {
+			trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_zeraim } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_zeraim }
+		}
+		1 = {
+			trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_moed } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_moed }
+		}
+		1 = {
+			trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_nashim } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_nashim }
+		}
+		1 = {
+			trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_nezikin } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_nezikin }
+		}
+		1 = {
+			trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot }
 		}
 	}
-	add_piety = minor_piety_gain
-	remove_variable = kehillah_learn_torah_repeat
 }
 
-kehillah_study_hashkafa_effect = {
-	random_list = {
-		25 = {
-			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_yetzirah } } }
-			if = {
-				limit = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_sefer_yetzirah } }
-				set_variable = { name = kehillah_learn_torah_repeat value = 1 }
-			}
-			else = {
-				set_variable = { name = kehillah_learn_torah_repeat value = 0 }
-				add_to_variable_list = { name = kehillah_studied_works target = flag:work_sefer_yetzirah }
-			}
-			custom_tooltip = kehillah_study_torah.hashkafa.sefer_yetzirah_tt
-		}
-		25 = {
-			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_emunot_vedeot } } }
-			if = {
-				limit = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_emunot_vedeot } }
-				set_variable = { name = kehillah_learn_torah_repeat value = 1 }
-			}
-			else = {
-				set_variable = { name = kehillah_learn_torah_repeat value = 0 }
-				add_to_variable_list = { name = kehillah_studied_works target = flag:work_emunot_vedeot }
-			}
-			custom_tooltip = kehillah_study_torah.hashkafa.emunot_vedeot_tt
-		}
-		25 = {
-			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_chovot_halevavot } } }
-			if = {
-				limit = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_chovot_halevavot } }
-				set_variable = { name = kehillah_learn_torah_repeat value = 1 }
-			}
-			else = {
-				set_variable = { name = kehillah_learn_torah_repeat value = 0 }
-				add_to_variable_list = { name = kehillah_studied_works target = flag:work_chovot_halevavot }
-			}
-			custom_tooltip = kehillah_study_torah.hashkafa.chovot_halevavot_tt
-		}
-		25 = {
-			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_kuzari } } }
-			if = {
-				limit = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_kuzari } }
-				set_variable = { name = kehillah_learn_torah_repeat value = 1 }
-			}
-			else = {
-				set_variable = { name = kehillah_learn_torah_repeat value = 0 }
-				add_to_variable_list = { name = kehillah_studied_works target = flag:work_kuzari }
-			}
-			custom_tooltip = kehillah_study_torah.hashkafa.kuzari_tt
-		}
-	}
 
-	if = {
-		limit = { var:kehillah_learn_torah_repeat = 1 }
-		if = {
-			limit = { learning >= 10 }
-			add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = kehillah_learn_torah_xp_repeat_pass }
-			custom_tooltip = kehillah_study_torah.repeat_pass.tt
-		}
-		else = {
-			add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = kehillah_learn_torah_xp_repeat_fail }
-			custom_tooltip = kehillah_study_torah.repeat_fail.tt
-		}
-	}
-	else = {
-		if = {
-			limit = { learning >= 10 }
-			add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = kehillah_learn_torah_xp_pass }
-			custom_tooltip = kehillah_study_torah.pass.tt
-		}
-		else = {
-			add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = kehillah_learn_torah_xp_fail }
-			custom_tooltip = kehillah_study_torah.fail.tt
-		}
-	}
-	add_piety = minor_piety_gain
-	remove_variable = kehillah_learn_torah_repeat
-}
+# kehillah_study_parshanut_effect / _talmudics_effect / _hashkafa_effect
+# (the old "pick a track, then randomly reveal which of its four owned
+# works you got" local-study effects, ADDED 2026-09-15) are RETIRED as of
+# 2026-09-19 -- kehillah_learn_torah_decision no longer calls them (see
+# its own header, common/decisions/kehillah_learn_torah_decisions.txt);
+# confirmed by repo-wide grep at retirement time that nothing else ever
+# did either. kehillah_study_specific_work_effect below is their
+# replacement's own foundation (already shared with the travel journey
+# since 2026-09-17) -- the "ALREADY STUDIED TRACKING" and "IS THIS A
+# REPEAT" design notes that used to live on the retired trio's own header
+# apply equally to it and are not repeated a second time; see its header
+# below for the real mechanism, unchanged.
+
 
 # =====================================================================
 # kehillah_study_specific_work_effect -- ADDED 2026-09-17 at user request
 # (Yeshiva Visit's own picker: "when you get there it gives you a
 # sampling of books to choose from?"). Scope: root = the studying
-# character (unchanged from the three track effects above). Journey-only
-# -- called from kehillah_learn_torah_journey.0002/0003/0004 (events/
-# kehillah_learn_torah_journey_events.txt), one per track, each offering
-# the specific works that track's random_list branch used to pick among
-# blind. Local study (kehillah_learn_torah.0001) is untouched and still
-# calls the three track effects above.
+# character. Originally journey-only (called from kehillah_learn_torah_
+# journey.0002/0003/0004, events/kehillah_learn_torah_journey_events.txt,
+# one per track, each offering the specific works that track's random_
+# list branch used to pick among blind) while local study went through
+# its own three now-retired per-track effects instead (this file's own
+# retirement note just above).
+#
+# AS OF 2026-09-19, ALSO LOCAL STUDY'S OWN RESOLUTION -- kehillah_study_
+# torah_resolve_current_work_effect (below) dispatches to this same
+# effect, by literal WORK/TRACK, for whichever work the kehillah_study_
+# torah scheme's own numeric-ID bridge says is currently being read. No
+# changes were needed to this effect itself to support that: it was
+# already exactly "resolve one named work for one named character",
+# which is exactly what both callers need.
 #
 # $WORK$/$TRACK$, THE SAME PARAMETERIZED-SCRIPTED-EFFECT IDIOM $LIBRARY$
 # already established (kehillah_scripted_triggers.txt's own header) --
 # $WORK$ substitutes the literal flag (e.g. flag:work_targum_onkelos) and
 # $TRACK$ the literal trait track (parshanut/talmudics/hashkafa), so one
 # effect definition serves all twelve works, called once per work from
-# each follow-up event's own per-work option rather than twelve near-
-# duplicate effect bodies.
+# each caller's own per-work branch rather than twelve near-duplicate
+# effect bodies.
 #
-# NO $LIBRARY$ HERE, UNLIKE THE THREE TRACK EFFECTS ABOVE: "does the
-# destination library own this work" is now checked by the CALLING
-# option's own trigger (kehillah_learn_torah_journey.0002 etc.), because
-# that is also what decides whether the option is even shown -- this
-# effect only needs to touch the STUDYING character's own kehillah_
-# studied_works, never the library. random_list and its custom_tooltip-
-# per-branch reveal are also gone: the player already knows which work
-# they picked (it was the option they clicked), so there is nothing left
-# to reveal after the fact the way the blind track-random pick needed to.
+# NO $LIBRARY$ HERE: "does the relevant library own this work" is checked
+# by the CALLER (the journey's own per-option trigger; the scheme's own
+# pick-next-work effect, which is what decides which work becomes
+# "current" in the first place) -- this effect only ever touches the
+# STUDYING character's own kehillah_studied_works, never a library.
+# random_list and a custom_tooltip-per-branch reveal are also absent here
+# for the same reason: whichever caller already knows the specific work
+# (the journey's own clicked option; the scheme's own numeric-ID
+# dispatch) has already revealed it, via the same kehillah_study_torah.
+# <track>.<work>_tt lines, before this effect ever runs.
 # =====================================================================
 
 kehillah_study_specific_work_effect = {
@@ -368,26 +193,497 @@ kehillah_study_specific_work_effect = {
 	if = {
 		limit = { var:kehillah_learn_torah_repeat = 1 }
 		if = {
-			limit = { learning >= 10 }
+			limit = {
+				OR = {
+					learning >= 10
+					has_variable = kehillah_study_torah_mastery_bonus
+				}
+			}
+			set_variable = { name = kehillah_study_torah_last_result value = 2 }
 			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_repeat_pass }
 			custom_tooltip = kehillah_study_torah.repeat_pass.tt
 		}
 		else = {
+			set_variable = { name = kehillah_study_torah_last_result value = 3 }
 			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_repeat_fail }
 			custom_tooltip = kehillah_study_torah.repeat_fail.tt
 		}
 	}
 	else = {
 		if = {
-			limit = { learning >= 10 }
+			limit = {
+				OR = {
+					learning >= 10
+					has_variable = kehillah_study_torah_mastery_bonus
+				}
+			}
+			set_variable = { name = kehillah_study_torah_last_result value = 1 }
 			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_pass }
 			custom_tooltip = kehillah_study_torah.pass.tt
 		}
 		else = {
+			set_variable = { name = kehillah_study_torah_last_result value = 0 }
 			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_fail }
 			custom_tooltip = kehillah_study_torah.fail.tt
 		}
 	}
 	add_piety = minor_piety_gain
+	remove_variable = kehillah_study_torah_mastery_bonus
 	remove_variable = kehillah_learn_torah_repeat
+}
+
+# =====================================================================
+# STUDY TORAH AS A SCHEME -- ADDED 2026-09-19 at user request ("implement
+# Learn Torah as a continuous scheme... events during the scheme fire to
+# tell you which text you're starting... refresh periodically to detect
+# if there are new books or if you don't own a book anymore"). See
+# common/schemes/scheme_types/kehillah_study_torah_scheme.txt for the
+# scheme type these three effects serve, and events/kehillah_study_
+# torah_events.txt for where they are actually called from.
+#
+# kehillah_learn_torah_decision now just starts this scheme (its own
+# header, common/decisions/kehillah_learn_torah_decisions.txt, has the
+# full retirement account of the old flat kehillah_learn_torah.0001 event
+# this replaces). kehillah_study_specific_work_effect above is UNCHANGED
+# and STILL SHARED with the travel journey (kehillah_learn_torah_journey.
+# 0002/0003/0004) -- everything below is new plumbing that calls it, not
+# a replacement for it, so the journey path is untouched by this pass.
+#
+# THE NUMERIC-ID BRIDGE, AND WHY IT EXISTS AT ALL. A scheme phase and its
+# own on_phase_completed hook are two different script moments, months
+# apart (base_progress_goal), with nothing but the scheme's own state to
+# carry information between them -- there is no "phase started" hook to
+# pair with on_phase_completed, so "which work am I currently reading"
+# has to be decided once (at pick time) and read back later (at resolve
+# time). The obvious way to do that -- store the specific work as some
+# kind of flag reference and compare against it later -- was already
+# investigated and explicitly rejected once in kehillah_study_specific_
+# work_effect's own header above ("target = var:X where X holds a flag...
+# was checked against the installed game and NOT found anywhere as real
+# precedent, so it is not risked here"). This reuses that same finding
+# rather than re-risking it: kehillah_study_current_work_id is a plain
+# NUMBER variable (1-23, one literal work per number, mapping fixed by
+# convention below and never computed), read back via the same OR-of-AND/
+# if-elif-per-literal shape this file and kehillah_scripted_triggers.txt
+# already use everywhere a "pick one of twenty-three real things" problem
+# shows up (kehillah_study_torah_current_work_still_owned_trigger, common/
+# scripted_triggers/kehillah_scripted_triggers.txt, is the trigger-side
+# twin of the same bridge). Twenty-three if/elif branches is more lines
+# than a generic lookup would be, but it is the confirmed-safe shape, not
+# an invented one.
+#
+# THE MAPPING (fixed, referenced by every branch below and by the
+# matching trigger). UPDATED 2026-09-19, SAME-DAY FOLLOW-UP: grew from
+# twelve to twenty-three when the Bavli and Yerushalmi were each split
+# into their own Sedarim (real print-volume divisions, not invented --
+# see kehillah_scripted_triggers.txt's own updated header), and Hashkafa
+# grew from four works to seven when Emunot ve-Deot/Chovot HaLevavot/
+# Kuzari were date-gated behind their real historical composition years
+# and backfilled with three pre-867 replacements (same header):
+#   1  = work_targum_onkelos          (parshanut)
+#   2  = work_mekhilta                (parshanut)
+#   3  = work_genesis_rabbah          (parshanut)
+#   4  = work_pirkei_derabbi_eliezer  (parshanut)
+#   5  = work_mishnah                 (talmudics)
+#   6  = work_bavli_zeraim            (talmudics)
+#   7  = work_bavli_moed              (talmudics)
+#   8  = work_bavli_nashim            (talmudics)
+#   9  = work_bavli_nezikin           (talmudics)
+#   10 = work_bavli_kodashim          (talmudics)
+#   11 = work_bavli_tahorot           (talmudics)
+#   12 = work_yerushalmi_zeraim       (talmudics)
+#   13 = work_yerushalmi_moed         (talmudics)
+#   14 = work_yerushalmi_nashim       (talmudics)
+#   15 = work_yerushalmi_nezikin      (talmudics)
+#   16 = work_halakhot_gedolot        (talmudics)
+#   17 = work_sefer_yetzirah          (hashkafa)
+#   18 = work_hekhalot_rabbati        (hashkafa)
+#   19 = work_shiur_qomah             (hashkafa)
+#   20 = work_sefer_harazim           (hashkafa)
+#   21 = work_emunot_vedeot           (hashkafa)
+#   22 = work_chovot_halevavot        (hashkafa)
+#   23 = work_kuzari                  (hashkafa)
+#
+# CONTINUING WHEN OUT OF UNSTUDIED BOOKS, PER EXPLICIT USER REQUEST ("you
+# should be able to continue the scheme even when out of books, but it
+# should be very clear that the rewards are now much less"). The pick
+# below draws from EVERY work the library owns, not just unstudied ones --
+# no separate "out of books" gate is needed because kehillah_study_
+# specific_work_effect already pays the smaller kehillah_learn_torah_xp_
+# repeat_pass/_fail tiers (not zero) the moment a work is already in
+# kehillah_studied_works, exactly the "much smaller boost, not zero"
+# tiering that effect was built with on 2026-09-15. Nothing new to build
+# for the reward side; the only real requirement is surfacing that
+# downgrade clearly, which the reused per-work custom_tooltip below does
+# by naming the specific work being reopened, same as a first read.
+# =====================================================================
+
+# Scope: the studying character (the scheme owner). Requires $LIBRARY$
+# (their own primary_title, from every call site below -- this scheme is
+# local-study-only) to own at least one work; callers must gate on
+# kehillah_owns_any_torah_work_trigger first, the same "caller's job"
+# contract kehillah_study_specific_work_effect's own header below already
+# establishes for a valid pool upstream -- an empty random_list here
+# (nothing owned at all) simply picks nothing and leaves kehillah_study_
+# current_work_id unset, which is exactly why every call site is gated.
+kehillah_study_torah_pick_next_work_effect = {
+	random_list = {
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos } } }
+			set_variable = { name = kehillah_study_current_work_id value = 1 }
+			custom_tooltip = kehillah_study_torah.parshanut.targum_onkelos_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mekhilta } } }
+			set_variable = { name = kehillah_study_current_work_id value = 2 }
+			custom_tooltip = kehillah_study_torah.parshanut.mekhilta_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_genesis_rabbah } } }
+			set_variable = { name = kehillah_study_current_work_id value = 3 }
+			custom_tooltip = kehillah_study_torah.parshanut.genesis_rabbah_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_pirkei_derabbi_eliezer } } }
+			set_variable = { name = kehillah_study_current_work_id value = 4 }
+			custom_tooltip = kehillah_study_torah.parshanut.pirkei_derabbi_eliezer_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mishnah } } }
+			set_variable = { name = kehillah_study_current_work_id value = 5 }
+			custom_tooltip = kehillah_study_torah.talmudics.mishnah_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_zeraim } } }
+			set_variable = { name = kehillah_study_current_work_id value = 6 }
+			custom_tooltip = kehillah_study_torah.talmudics.bavli_zeraim_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed } } }
+			set_variable = { name = kehillah_study_current_work_id value = 7 }
+			custom_tooltip = kehillah_study_torah.talmudics.bavli_moed_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nashim } } }
+			set_variable = { name = kehillah_study_current_work_id value = 8 }
+			custom_tooltip = kehillah_study_torah.talmudics.bavli_nashim_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nezikin } } }
+			set_variable = { name = kehillah_study_current_work_id value = 9 }
+			custom_tooltip = kehillah_study_torah.talmudics.bavli_nezikin_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_kodashim } } }
+			set_variable = { name = kehillah_study_current_work_id value = 10 }
+			custom_tooltip = kehillah_study_torah.talmudics.bavli_kodashim_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_tahorot } } }
+			set_variable = { name = kehillah_study_current_work_id value = 11 }
+			custom_tooltip = kehillah_study_torah.talmudics.bavli_tahorot_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_zeraim } } }
+			set_variable = { name = kehillah_study_current_work_id value = 12 }
+			custom_tooltip = kehillah_study_torah.talmudics.yerushalmi_zeraim_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_moed } } }
+			set_variable = { name = kehillah_study_current_work_id value = 13 }
+			custom_tooltip = kehillah_study_torah.talmudics.yerushalmi_moed_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_nashim } } }
+			set_variable = { name = kehillah_study_current_work_id value = 14 }
+			custom_tooltip = kehillah_study_torah.talmudics.yerushalmi_nashim_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_nezikin } } }
+			set_variable = { name = kehillah_study_current_work_id value = 15 }
+			custom_tooltip = kehillah_study_torah.talmudics.yerushalmi_nezikin_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot } } }
+			set_variable = { name = kehillah_study_current_work_id value = 16 }
+			custom_tooltip = kehillah_study_torah.talmudics.halakhot_gedolot_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_yetzirah } } }
+			set_variable = { name = kehillah_study_current_work_id value = 17 }
+			custom_tooltip = kehillah_study_torah.hashkafa.sefer_yetzirah_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_hekhalot_rabbati } } }
+			set_variable = { name = kehillah_study_current_work_id value = 18 }
+			custom_tooltip = kehillah_study_torah.hashkafa.hekhalot_rabbati_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_shiur_qomah } } }
+			set_variable = { name = kehillah_study_current_work_id value = 19 }
+			custom_tooltip = kehillah_study_torah.hashkafa.shiur_qomah_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_harazim } } }
+			set_variable = { name = kehillah_study_current_work_id value = 20 }
+			custom_tooltip = kehillah_study_torah.hashkafa.sefer_harazim_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_emunot_vedeot } } }
+			set_variable = { name = kehillah_study_current_work_id value = 21 }
+			custom_tooltip = kehillah_study_torah.hashkafa.emunot_vedeot_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_chovot_halevavot } } }
+			set_variable = { name = kehillah_study_current_work_id value = 22 }
+			custom_tooltip = kehillah_study_torah.hashkafa.chovot_halevavot_tt
+		}
+		1 = {
+			trigger = { $LIBRARY$ = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_kuzari } } }
+			set_variable = { name = kehillah_study_current_work_id value = 23 }
+			custom_tooltip = kehillah_study_torah.hashkafa.kuzari_tt
+		}
+	}
+}
+
+# Scope: the studying character. Assumes kehillah_study_current_work_id
+# is already set (every call site checks has_variable first) -- resolves
+# the work that ID names via kehillah_study_specific_work_effect, UNCHANGED
+# and shared with the journey, exactly as its own header above describes.
+kehillah_study_torah_resolve_current_work_effect = {
+	if = {
+		limit = { var:kehillah_study_current_work_id = 1 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_targum_onkelos TRACK = parshanut }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 2 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_mekhilta TRACK = parshanut }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 3 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_genesis_rabbah TRACK = parshanut }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 4 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_pirkei_derabbi_eliezer TRACK = parshanut }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 5 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_mishnah TRACK = talmudics }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 6 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_bavli_zeraim TRACK = talmudics }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 7 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_bavli_moed TRACK = talmudics }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 8 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_bavli_nashim TRACK = talmudics }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 9 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_bavli_nezikin TRACK = talmudics }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 10 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_bavli_kodashim TRACK = talmudics }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 11 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_bavli_tahorot TRACK = talmudics }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 12 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_yerushalmi_zeraim TRACK = talmudics }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 13 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_yerushalmi_moed TRACK = talmudics }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 14 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_yerushalmi_nashim TRACK = talmudics }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 15 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_yerushalmi_nezikin TRACK = talmudics }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 16 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_halakhot_gedolot TRACK = talmudics }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 17 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_sefer_yetzirah TRACK = hashkafa }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 18 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_hekhalot_rabbati TRACK = hashkafa }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 19 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_shiur_qomah TRACK = hashkafa }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 20 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_sefer_harazim TRACK = hashkafa }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 21 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_emunot_vedeot TRACK = hashkafa }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 22 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_chovot_halevavot TRACK = hashkafa }
+	}
+	else_if = {
+		limit = { var:kehillah_study_current_work_id = 23 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_kuzari TRACK = hashkafa }
+	}
+}
+
+# =====================================================================
+# BEYOND KEHILLAH LEADERS -- ADDED 2026-09-19, same-day follow-up, at user
+# request. See kehillah_study_torah_has_accessible_library_trigger's own
+# header (common/scripted_triggers/kehillah_scripted_triggers.txt) for the
+# three populations and why a landless adventurer's anchor is their own
+# CURRENT LOCATION, not a domicile (confirmed absent from vanilla for that
+# government type).
+#
+# kehillah_study_torah_resolve_library_effect is the one place that
+# actually decides WHICH community's library applies, and it is called
+# FRESH every single time a library is needed (the decision's own effect,
+# every phase completion, every monthly tick below) rather than once and
+# remembered -- the same "live query, not snapshot" choice kehillah_
+# study_torah_pick_next_work_effect's own header already made, now
+# extended to "which library" as well as "which work". This is not just
+# consistency for its own sake: it is what lets a landed ruler's capital
+# moving, or an adventurer wandering off, be handled by simply re-running
+# the same search next time, rather than needing separate move-detection
+# code of its own. A character variable holding the resolved title (the
+# retired kehillah_visit_library_interaction's own approach, see events/
+# kehillah_learn_torah_journey_events.txt's header for that precedent) was
+# considered and rejected here specifically because that mod's own reason
+# for persisting one -- surviving a gap between two DIFFERENT effect
+# chains separated by real time -- does not apply: every caller below
+# already needs a fresh answer at the moment it asks, not a memory of an
+# old one.
+#
+# scope:kehillah_study_torah_library is left UNSET if nothing matches
+# (no Kehillah, no ruler capital with a nearby community, no adventurer
+# location with one) -- every caller checks `exists =` before using it;
+# see kehillah_study_torah_monthly_effect below for what happens when it
+# comes up empty (nothing, this tick -- the scheme's own `valid` trigger,
+# common/schemes/scheme_types/kehillah_study_torah_scheme.txt, is what
+# actually ends the scheme if this is not transient).
+#
+# $CHARACTER$, NOT BARE root -- ck3-tiger caught this: root is UNSAFE when
+# this effect is called from kehillah_study_torah_monthly_effect below,
+# which itself runs inside the scheme's own on_monthly hook where root is
+# the SCHEME, not the owner (root does not change through a nested scope-
+# opening block, so it stays the scheme even several layers of scheme_
+# owner = { ... } deep). $CHARACTER$ substitutes literal caller-supplied
+# text into every reference below, including the ones nested inside
+# holder = { ... } -- root from the decision's own effect or the phase-
+# completion event's option (both stable there, character_event/decision
+# effect root never shifts); scope:owner from kehillah_study_torah_
+# monthly_effect (already saved one level up by the scheme's own on_
+# monthly, and -- unlike root or this -- a saved scope stays correct no
+# matter how deep it is later referenced).
+# =====================================================================
+
+kehillah_study_torah_resolve_library_effect = {
+	if = {
+		limit = { $CHARACTER$ = { government_has_flag = government_is_kehillah } }
+		$CHARACTER$.primary_title = { save_scope_as = kehillah_study_torah_library }
+	}
+	else_if = {
+		limit = { $CHARACTER$ = { is_ruler = yes } }
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = { domicile.domicile_location = $CHARACTER$.capital_province }
+			}
+			save_scope_as = kehillah_study_torah_library
+		}
+	}
+	else_if = {
+		limit = { $CHARACTER$ = { has_government = landless_adventurer_government } }
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = { domicile.domicile_location = $CHARACTER$.location }
+			}
+			save_scope_as = kehillah_study_torah_library
+		}
+	}
+}
+
+# Scope: the studying character. Called from the scheme's own on_monthly
+# (common/schemes/scheme_types/kehillah_study_torah_scheme.txt) -- the
+# "refresh periodically... if you don't own a book anymore" half of the
+# user's request; the "detect if there are new books" half needs no extra
+# code at all, since kehillah_study_torah_pick_next_work_effect above
+# already queries the library's CURRENT contents live, every single time
+# it runs (at scheme start and at every phase completion) rather than
+# working from any kind of snapshot -- see that effect's own header.
+#
+# If the specific work currently being read is no longer owned (donated
+# away mid-read, per the library panel's own new donate-for-piety action
+# -- OR simply because a moved capital/wandered-off adventurer now resolves
+# a DIFFERENT community's library entirely), toast the player and re-pick
+# immediately rather than let scheme_progress keep building toward a book
+# that no longer exists to reward. Progress itself is left untouched -- it
+# represents time spent at the Beit Midrash, not attachment to one
+# specific volume, so switching what is being read does not reset or
+# penalize it.
+#
+# If the current work is still owned, this is instead where the rare
+# intervention events (kehillah_study_torah.0003/.0004) may fire. The
+# old 12%/month flavor pulse was removed: at most one intervention can
+# occur per course, and it can grant progress or a one-course mastery
+# bonus.
+kehillah_study_torah_monthly_effect = {
+	if = {
+		limit = { has_variable = kehillah_study_current_work_id }
+		# CHARACTER = scope:owner, NOT root or this -- see kehillah_study_
+		# torah_resolve_library_effect's own header just above for why:
+		# root here is the SCHEME (this effect runs inside the scheme's own
+		# on_monthly), and scope:owner is already saved one level up by
+		# that same on_monthly, before this effect was ever called.
+		kehillah_study_torah_resolve_library_effect = { CHARACTER = scope:owner }
+		if = {
+			limit = { exists = scope:kehillah_study_torah_library }
+			if = {
+				limit = { NOT = { kehillah_study_torah_current_work_still_owned_trigger = { LIBRARY = scope:kehillah_study_torah_library } } }
+				send_interface_toast = {
+					title = kehillah_study_torah_book_lost_title
+					custom_tooltip = kehillah_study_torah_book_lost_tt
+					left_icon = this
+				}
+				kehillah_study_torah_pick_next_work_effect = { LIBRARY = scope:kehillah_study_torah_library }
+			}
+			else = {
+				# At most one interaction pulse per course, and only a small
+				# chance each month. This replaces the old 12% monthly flavor
+				# event, which made the same book-specific pulse appear too often.
+				if = {
+					limit = { NOT = { has_variable = kehillah_study_torah_pulse_seen } }
+					random = {
+						chance = 3
+						set_variable = { name = kehillah_study_torah_pulse_seen value = 1 }
+						random_list = {
+							1 = { trigger_event = kehillah_study_torah.0003 }
+							1 = { trigger_event = kehillah_study_torah.0004 }
+						}
+					}
+				}
+			}
+		}
+	}
 }

@@ -1,0 +1,246 @@
+﻿# =====================================================================
+# Found a Jewish Community. ADDED 2026-09-19.
+#
+# This is the "open technical question" v2 spec section 5.1 flagged and
+# deliberately left unsolved ("what actually places a new landless title
+# at a chosen location... needs checking against whatever vanilla
+# decision/effect creates a landless title today"). Checked directly
+# against the installed 1.19 files before building anything here, the
+# same way this project always checks a primitive before relying on it:
+#
+#   common/scripted_effects/07_dlc_ep3_scripted_effects.txt's own
+#   create_landless_adventurer_title_effect (the effect behind vanilla's
+#   "Abandon Realm to Become an Adventurer" decision and every other
+#   laamp-creation path) calls a genuinely hardcoded engine effect,
+#   create_adventurer_title = { name = <loc key> holder = <character>
+#   article = ... save_scope_as = ... }, with NO landed_titles entry
+#   anywhere backing the title it produces (grepped every adventurer_
+#   name_* loc key used as a `name` value above -- none of them are
+#   title IDs, they are plain title-name loc keys; the title itself is
+#   minted by the engine at runtime). This is real, general-purpose
+#   dynamic landless-title creation, not a pool of sixteen pre-authored
+#   slots the way this mod's fifteen pre-authored d_kehillah_* titles are (see
+#   common/landed_titles/kehillah_landed_titles.txt) -- a Kehillah can
+#   now be founded literally anywhere a landless adventurer is standing,
+#   which the pre-authored titles structurally cannot do (v7 spec's own
+#   header explains why de-jure-nested or flat pre-authored titles can
+#   only ever cover a fixed roster, never "anywhere").
+#
+# The title is named for the COUNTY the founder is standing in ("Kehillah
+# of Worms"), without a definite article. This follows vanilla's own
+# adventurer_name_010/011 pattern:
+# save the location before create_adventurer_title, then let the title-
+# name loc key resolve [kehillah_founding_county.GetNameNoTooltip]. The
+# name is baked at founding, so the community keeps its founding place
+# even though the leader's camp/title machinery changes afterward.
+# NOT YET SEEN LIVE as of 2026-09-20: the one live run that claimed to
+# check this was actually reading the OLD adventurer title's name (see
+# the ordering comment inside the effect body). A blank or wrong name
+# here is cosmetic, not a crash -- if it renders wrong, the fallback is a
+# static key, as the 2026-09-19 version shipped.
+#
+# WHY THIS EFFECT DUPLICATES kehillah_on_title_gain'S BODY INSTEAD OF
+# RELYING ON on_title_gain TO FIRE IT. It might: create_adventurer_title
+# is a real title grant and vanilla's own on_title_gain on_action may
+# well fire for it automatically. But even if it does, it fires
+# SYNCHRONOUSLY inside the create_adventurer_title call, before this
+# effect's own later lines run -- in particular, before the
+# add_to_global_variable_list call below ever adds the new title to
+# kehillah_registered_communities, which is what the extended
+# is_kehillah_title_trigger (common/scripted_triggers/kehillah_scripted_
+# triggers.txt) now needs to recognize it. kehillah_on_title_gain would
+# therefore see a title on_title_gain does not yet recognize as a
+# Kehillah at all, and do nothing. So the explicit calls below are load-
+# bearing, not optional belt-and-braces, regardless of whether on_title_
+# gain also fires -- and every one of them is idempotent (see each
+# call's own header) if it turns out on_title_gain fires too.
+#
+# Scope: the founding character (a landless adventurer). Called only from
+# kehillah_found_community_decision (common/decisions/kehillah_found_
+# community_decisions.txt), which is itself the only gate on who may call
+# this -- this effect trusts its caller and re-checks nothing.
+# =====================================================================
+
+kehillah_found_community_effect = {
+	save_scope_as = kehillah_founder
+	debug_log = "kehillah_found_community_effect: begin"
+	debug_log_scopes = yes
+
+	# The founding county, captured BEFORE create_adventurer_title so the
+	# title-name loc key (kehillah_found_community_title_name, "Kehillah of
+	# [kehillah_founding_county.GetNameNoTooltip]") can read it -- the same
+	# mechanism vanilla's own adventurer_name_010/011 use with
+	# new_landless_adventurer_location (07_dlc_ep3_scripted_effects.txt,
+	# create_landless_adventurer_title_effect). The COUNTY, not the raw
+	# province: a province's own name is its barony's, and "Kehillah of
+	# Worms" is the county name the player recognises. The decision's
+	# is_valid already requires exists = location.county. Mod-prefixed
+	# scope name on purpose so this never collides with vanilla's own
+	# new_landless_adventurer_* scopes if both wrappers are ever live in
+	# the same effect chain.
+	location.county = { save_scope_as = kehillah_founding_county }
+
+	# government = kehillah_government IS THE LOAD-BEARING LINE. Found on
+	# 2026-09-20 after ten live experiments (docs/testing/2026-09-20-found-
+	# community-live-test-log.md, "Correction" and "Root cause"): this
+	# optional parameter exists only in the engine's own effect docs
+	# (console `script_docs` -> logs/effects.log: "government = ... #
+	# optional government, default is adventurer"); no vanilla script uses
+	# it, so no grep of the game files can find it. With it, the engine
+	# creates the title, puts the holder in kehillah_government AND creates
+	# the government's domicile (the Jewish Quarter) in one operation --
+	# exactly as the default creates a camp for an adventurer. Without it,
+	# the founder gets a second CAMP, and the later change_government call
+	# destroys that camp without creating a quarter: a landless ruler in a
+	# domicile government with NO domicile. The engine tolerates that for
+	# 15-25 days, then silently resets the government to feudal, and
+	# feudal + only-a-landless-title = "has lost all of his titles" Game
+	# Over. NOTHING in script can create a domicile after the fact: no
+	# create_domicile effect exists (effects.log), change_government never
+	# creates one (and is refused as "illegal government" from a no-
+	# domicile state), title grants hand the recipient feudal, and
+	# give_noble_family_title refuses independent characters. Do not
+	# remove this parameter, and do not reorder a change_government call
+	# ahead of this create.
+	create_adventurer_title = {
+		name = kehillah_found_community_title_name
+		holder = scope:kehillah_founder
+		government = kehillah_government
+		# A named community reads as "Kehillah of Worms," not "The Kehillah
+		# of Worms." The article is a localization key, deliberately empty
+		# for this runtime title (defined in kehillah_l_english.yml).
+		article = kehillah_found_community_title_article
+		save_scope_as = kehillah_new_community_title
+	}
+	debug_log = "kehillah_found_community_effect: created title"
+	debug_log_scopes = yes
+
+	# ORDER MATTERS FROM HERE. A landless adventurer taking this decision
+	# ALREADY holds a landless duchy-tier title (their d_laamp_* / camp
+	# title). Vanilla's own creation wrapper never has to think about
+	# that: by the time it runs, the character has just lost their land,
+	# so the new title is their ONLY title and therefore automatically
+	# primary. Here the old adventurer title must go, the same way vanilla
+	# disposes of it in the reverse direction when an adventurer becomes
+	# landed (07_dlc_ep3_scripted_effects.txt, the every_held_title = {
+	# limit = { has_variable = adventurer_creation_reason } ... destroy_
+	# title } block): destroyed, not kept alongside. Keeping it was the
+	# FIRST cause of the pre-2026-09-20 Game Over (add_realm_law -- a
+	# primary-title effect -- landed on the old title, the new one had no
+	# succession law, the old one's adventurer law failed can_keep); the
+	# missing domicile (see the create above) was the second, and fixing
+	# only the first still Game-Overed 15-25 days later.
+
+	# Sanity breadcrumbs: with government = kehillah_government above, the
+	# founder should already be in the government and already have a
+	# domicile here. If either line ever logs the negative, the engine
+	# behaviour this effect depends on has changed.
+	if = { limit = { has_government = kehillah_government } debug_log = "kehillah_found_community_effect: government is kehillah after create" }
+	else = { debug_log = "kehillah_found_community_effect: WARNING government is NOT kehillah after create" }
+	if = { limit = { exists = domicile } debug_log = "kehillah_found_community_effect: domicile exists after create" }
+	else = { debug_log = "kehillah_found_community_effect: WARNING no domicile after create" }
+
+	# 1. Make the community the primary title while the old one still
+	#    exists, so nothing below ever sees a moment with no primary.
+	#    hidden_effect: at confirmation-tooltip time the title does not
+	#    exist yet, so the visible line rendered as "None of becomes your
+	#    Primary Title". The destroy line just below stays visible on
+	#    purpose -- the player should see their camp title going.
+	hidden_effect = {
+		set_primary_title_to = scope:kehillah_new_community_title
+	}
+
+	# 2. Destroy every OTHER landless title the founder holds -- in practice
+	#    the single d_laamp_* / test-fixture adventurer title. Same
+	#    iterate-and-destroy shape vanilla uses; not gated on
+	#    adventurer_creation_reason because history-authored adventurer
+	#    titles (and this mod's own test fixture) never carry that variable.
+	every_held_title = {
+		limit = {
+			NOT = { this = scope:kehillah_new_community_title }
+			is_landless_type_title = yes
+		}
+		save_scope_as = kehillah_old_adventurer_title
+		scope:kehillah_founder = {
+			debug_log = "kehillah_found_community_effect: destroying old adventurer title"
+			destroy_title = scope:kehillah_old_adventurer_title
+		}
+	}
+
+	# 3. Government follows the office. Normally already true here (the
+	#    create above sets it); this guarded call is the same rule and
+	#    guard kehillah_on_title_gain applies at every succession (common/
+	#    on_action/kehillah_on_actions.txt), kept as a belt-and-braces no-op.
+	#    The guard matters: change_government to the government you are
+	#    already in is refused with "Trying to set illegal government".
+	if = {
+		limit = {
+			NOT = { government_has_flag = government_is_kehillah }
+		}
+		change_government = kehillah_government
+	}
+
+	# 4. Succession law, AFTER the government change so the law's own
+	#    can_have (government_is_kehillah) holds, and after step 1 so
+	#    add_realm_law (primary title) lands on the community title.
+	#    Vanilla's wrapper does change_government then add_realm_law in
+	#    this same order.
+	if = {
+		limit = {
+			NOT = { has_realm_law = kehillah_appointment_succession_law }
+		}
+		add_realm_law = kehillah_appointment_succession_law
+	}
+	debug_log = "kehillah_found_community_effect: government + law set"
+	debug_log_scopes = yes
+
+	# NO kehillah_restore_quarter_effect call here (REMOVED 2026-09-20). An
+	# earlier version called it "to keep this effect's shape identical to
+	# kehillah_on_title_gain's", on the belief that it safely no-ops when no
+	# var:kq_* is set. Live: it does not -- the kehillah_restore_track_N_
+	# effect helpers read var:kq_synagogue / var:kq_workshops etc. before
+	# any guard and logged ~38 script errors per founding. There is nothing
+	# to restore on a brand-new community: the quarter the create above made
+	# already has its Level 1 Synagogue in the main slot (main-slot buildings
+	# auto-construct, per _domicile_types.info), which is exactly the
+	# undeveloped starting state every non-Worms community begins in.
+
+	# hidden_effect: none of the setup below produces a line the player
+	# needs on the confirmation tooltip, and evaluating it there (against a
+	# title that does not exist yet) logged ~2,500 tooltip-time "landed_title
+	# is not valid" errors per hover (live, 2026-09-20). Government + law +
+	# destroyed title above stay visible; that is the whole visible contract.
+	hidden_effect = {
+		scope:kehillah_new_community_title = {
+			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_stability add = 50 }
+		}
+
+		# Re-evaluate Rav vs. Parnas for the founder, same as any new leader
+		# (common/flavorization/kehillah_title_holders.txt).
+		kehillah_update_leader_flavor_effect = yes
+
+		# REGISTRY, LIBRARY, MAP VIEW -- the three follow-up calls this mod's
+		# own comments already flagged as required here, written down before
+		# this feature existed to build against:
+		#   - kehillah_on_actions.txt's kehillah_on_game_start: "Whoever
+		#     builds that must remember to register here too, or the
+		#     registry silently goes stale the day it stops being true."
+		#   - kehillah_library_effects.txt's kehillah_seed_starting_library_
+		#     effect: "If Wave 5 ever adds founding a new Kehillah, that
+		#     founding effect needs to call kehillah_seed_starting_library_
+		#     effect too."
+		#   - kehillah_on_actions.txt again, the map view refresh: "if Wave 5
+		#     adds founding, its founding effect must call the refresh too."
+		# This is that day, for all three.
+		add_to_global_variable_list = {
+			name = kehillah_registered_communities
+			target = scope:kehillah_new_community_title
+		}
+		scope:kehillah_new_community_title = {
+			kehillah_seed_starting_library_effect = yes
+		}
+		kehillah_refresh_map_view_for_players_effect = yes
+
+	}
+}
