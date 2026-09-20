@@ -146,3 +146,7 @@ run regardless of whether the session reached its own end-of-run BLOCKERS.md wri
 is true above and there's no matching entry from the agent itself nearby explaining what it was
 mid-way through, treat this run as unresolved until a human or a later run reviews what state
 things were left in.
+
+## Ready for review -- overnight/2026-09-20
+- https://github.com/Steinbeard/jewishcommunities/compare/master...=1
+
