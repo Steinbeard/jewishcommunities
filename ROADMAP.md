@@ -1276,6 +1276,22 @@ decisions live, ran to Oct 1067 with no Game Over; Worms control unaffected. Sam
 flavorization no longer tier-gated (runtime titles are duchy-tier, so the founder read as "Duke"),
 title name via `GetNameNoTierNoTooltip` ("Kehillah of Worms", not "Kehillah of County of Worms").
 
+**2026-09-20 later — title tier unified at duchy, per Daniel's decision.** All fifteen
+pre-authored communities now use `d_kehillah_*` IDs, matching the runtime duchy created by
+`create_adventurer_title` in Found a Jewish Community. The earlier county-tier Worms
+regression above was caused by a government eligibility gate, not by duchy rank; that gate
+remains tier-agnostic. The flat, landless title layout and each real host county's ownership
+are unchanged. CK3's alternate `create_dynamic_title` rejected `tier = county` in both
+ck3-tiger and a live console probe; the briefly prototyped finite county-slot approach was
+discarded after Daniel chose duchy parity. See
+[docs/spec/v14-kehillah-title-tier.md](docs/spec/v14-kehillah-title-tier.md).
+  **Source-verified and ck3-tiger-clean (0 fatal/0 error); Daniel will run the
+  fresh live regression manually.** Kehillah leaders now receive plain
+  commoner portrait clothing instead of ducal attire, and Isaac's bookmark
+  placeholder no longer wears royal clothing. The portrait appearance also
+  awaits Daniel's visual check.
+The title-ID change requires a new campaign rather than an old `c_kehillah_*` save.
+
 **Remaining founder-path work:** the two error-log items the 12:49 re-test flagged are addressed at
 source but NOT yet re-checked live (the machine was in use when the re-check was due): the
 `kehillah_restore_quarter_effect` call is removed from the founding effect (it does not no-op on a
