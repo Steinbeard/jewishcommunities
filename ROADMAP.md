@@ -1087,6 +1087,50 @@ current work is still owned, with a twelve-way `triggered_desc` naming which wor
 about — pure flavor, no reward, specifically so it never double-pays what `kehillah_study_torah.0001`
 (the real phase-completion resolve+pick event) already pays.
 
+**2026-09-19, same-day follow-up — Learn Torah opened up beyond Kehillah leaders, ck3-tiger-clean,
+not yet live-tested.** At user request: "make this available to non-Kehilla ruler Jews too... Jewish
+unlanded adventurers can use the books of the kehilla where their domicile is based... Jewish rulers
+can use the library of the kehilla in their capital." Three populations now covered, via a new
+`kehillah_study_torah_has_accessible_library_trigger` (common/scripted_triggers/kehillah_scripted_
+triggers.txt) and matching `kehillah_study_torah_resolve_library_effect` (common/scripted_effects/
+kehillah_library_effects.txt): a Kehillah leader's own community (unchanged); a landed Jewish ruler
+who is not a Kehillah, via the registered community whose domicile sits in their own capital county;
+a landless Jewish adventurer, via the registered community whose domicile sits at their own CURRENT
+location instead of a domicile.
+
+**Landless adventurers do not have a domicile at all in vanilla** — checked directly against the
+installed game before building on the premise: `estate`/`yurt` (common/domiciles/types/00_domicile_
+types.txt) and this mod's own Kehillah domicile type are all gated on holding a noble-family or
+landed title, never on `landless_adventurer_government`. Using their current location instead
+(the same anchor `kehillah_learn_torah_journey.0001` already uses for an arriving traveller) reads
+better anyway for a wandering adventurer, at the cost of the library re-resolving if they wander away
+mid-scheme rather than staying fixed for the whole run — which, per the point below, it already does
+for everyone, not just adventurers.
+
+**A real scope bug, caught by ck3-tiger, not by inspection.** The first draft of both new
+triggers/effects used bare `root` for "the studying character" inside `holder = { domicile.
+domicile_location = root.capital_province }`-style checks. That is exactly the confirmed-safe idiom
+`kehillah_bet_din_available_co_judges_value` already established elsewhere in this file — EXCEPT that
+idiom is only safe when root, at the point of the call, already equals the right character, and here
+it sometimes did not: `kehillah_study_torah_monthly_effect` runs inside the scheme's own `on_monthly`
+hook, where root is the SCHEME itself, not the owner. Fixed by giving both a `$CHARACTER$` parameter
+(this mod's own established $PARAM$-substitution idiom) instead of guessing root vs. `this` per call
+site — every caller now passes whichever reference is actually stable there: `root` from the
+decision's own effect or the phase-completion event's option (both genuinely stable), `scope:owner`
+from the scheme's own `valid` block and from `kehillah_study_torah_monthly_effect` (both natively
+provided/already saved, and — unlike root or `this` — correct no matter how deeply the parameter is
+later referenced inside the callee).
+
+**No persisted "which library" variable, deliberately.** `kehillah_study_torah_resolve_library_effect`
+is re-run fresh every time a library is needed (the decision's own effect, every phase completion,
+every monthly tick) rather than resolved once and remembered — the same "live query, not snapshot"
+choice `kehillah_study_torah_pick_next_work_effect` already made for "which work," now extended to
+"which library" too. This is what lets a moved capital or a relocated adventurer be handled by simply
+re-running the same search next time, with no separate move-detection code of its own; a title-valued
+character variable (the retired `kehillah_visit_library_interaction`'s own approach) was considered
+and rejected specifically because that mod's own reason for persisting one — surviving a real-time gap
+between two different effect chains — does not apply here.
+
 **2026-09-19 — Starting library seed randomized, ck3-tiger-clean, not yet live-tested.** At user
 request ("mix it up... each community gets random books from the initial list... expand the initial
 list") — every community used to get the literal same two works (Targum Onkelos + the Mishnah,

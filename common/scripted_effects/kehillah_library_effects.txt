@@ -376,6 +376,85 @@ kehillah_study_torah_resolve_current_work_effect = {
 	}
 }
 
+# =====================================================================
+# BEYOND KEHILLAH LEADERS -- ADDED 2026-09-19, same-day follow-up, at user
+# request. See kehillah_study_torah_has_accessible_library_trigger's own
+# header (common/scripted_triggers/kehillah_scripted_triggers.txt) for the
+# three populations and why a landless adventurer's anchor is their own
+# CURRENT LOCATION, not a domicile (confirmed absent from vanilla for that
+# government type).
+#
+# kehillah_study_torah_resolve_library_effect is the one place that
+# actually decides WHICH community's library applies, and it is called
+# FRESH every single time a library is needed (the decision's own effect,
+# every phase completion, every monthly tick below) rather than once and
+# remembered -- the same "live query, not snapshot" choice kehillah_
+# study_torah_pick_next_work_effect's own header already made, now
+# extended to "which library" as well as "which work". This is not just
+# consistency for its own sake: it is what lets a landed ruler's capital
+# moving, or an adventurer wandering off, be handled by simply re-running
+# the same search next time, rather than needing separate move-detection
+# code of its own. A character variable holding the resolved title (the
+# retired kehillah_visit_library_interaction's own approach, see events/
+# kehillah_learn_torah_journey_events.txt's header for that precedent) was
+# considered and rejected here specifically because that mod's own reason
+# for persisting one -- surviving a gap between two DIFFERENT effect
+# chains separated by real time -- does not apply: every caller below
+# already needs a fresh answer at the moment it asks, not a memory of an
+# old one.
+#
+# scope:kehillah_study_torah_library is left UNSET if nothing matches
+# (no Kehillah, no ruler capital with a nearby community, no adventurer
+# location with one) -- every caller checks `exists =` before using it;
+# see kehillah_study_torah_monthly_effect below for what happens when it
+# comes up empty (nothing, this tick -- the scheme's own `valid` trigger,
+# common/schemes/scheme_types/kehillah_study_torah_scheme.txt, is what
+# actually ends the scheme if this is not transient).
+#
+# $CHARACTER$, NOT BARE root -- ck3-tiger caught this: root is UNSAFE when
+# this effect is called from kehillah_study_torah_monthly_effect below,
+# which itself runs inside the scheme's own on_monthly hook where root is
+# the SCHEME, not the owner (root does not change through a nested scope-
+# opening block, so it stays the scheme even several layers of scheme_
+# owner = { ... } deep). $CHARACTER$ substitutes literal caller-supplied
+# text into every reference below, including the ones nested inside
+# holder = { ... } -- root from the decision's own effect or the phase-
+# completion event's option (both stable there, character_event/decision
+# effect root never shifts); scope:owner from kehillah_study_torah_
+# monthly_effect (already saved one level up by the scheme's own on_
+# monthly, and -- unlike root or this -- a saved scope stays correct no
+# matter how deep it is later referenced).
+# =====================================================================
+
+kehillah_study_torah_resolve_library_effect = {
+	if = {
+		limit = { $CHARACTER$ = { government_has_flag = government_is_kehillah } }
+		$CHARACTER$.primary_title = { save_scope_as = kehillah_study_torah_library }
+	}
+	else_if = {
+		limit = { $CHARACTER$ = { is_ruler = yes } }
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = { domicile.domicile_location = $CHARACTER$.capital_province }
+			}
+			save_scope_as = kehillah_study_torah_library
+		}
+	}
+	else_if = {
+		limit = { $CHARACTER$ = { has_government = landless_adventurer_government } }
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = { domicile.domicile_location = $CHARACTER$.location }
+			}
+			save_scope_as = kehillah_study_torah_library
+		}
+	}
+}
+
 # Scope: the studying character. Called from the scheme's own on_monthly
 # (common/schemes/scheme_types/kehillah_study_torah_scheme.txt) -- the
 # "refresh periodically... if you don't own a book anymore" half of the
@@ -386,12 +465,14 @@ kehillah_study_torah_resolve_current_work_effect = {
 # working from any kind of snapshot -- see that effect's own header.
 #
 # If the specific work currently being read is no longer owned (donated
-# away mid-read, per the library panel's own new donate-for-piety action),
-# toast the player and re-pick immediately rather than let scheme_progress
-# keep building toward a book that no longer exists to reward. Progress
-# itself is left untouched -- it represents time spent at the Beit
-# Midrash, not attachment to one specific volume, so switching what is
-# being read does not reset or penalize it.
+# away mid-read, per the library panel's own new donate-for-piety action
+# -- OR simply because a moved capital/wandered-off adventurer now resolves
+# a DIFFERENT community's library entirely), toast the player and re-pick
+# immediately rather than let scheme_progress keep building toward a book
+# that no longer exists to reward. Progress itself is left untouched -- it
+# represents time spent at the Beit Midrash, not attachment to one
+# specific volume, so switching what is being read does not reset or
+# penalize it.
 #
 # If the current work is still owned, this is instead where the
 # occasional flavor-only "insight" event (kehillah_study_torah.0002,
@@ -401,19 +482,28 @@ kehillah_study_torah_resolve_current_work_effect = {
 kehillah_study_torah_monthly_effect = {
 	if = {
 		limit = { has_variable = kehillah_study_current_work_id }
+		# CHARACTER = scope:owner, NOT root or this -- see kehillah_study_
+		# torah_resolve_library_effect's own header just above for why:
+		# root here is the SCHEME (this effect runs inside the scheme's own
+		# on_monthly), and scope:owner is already saved one level up by
+		# that same on_monthly, before this effect was ever called.
+		kehillah_study_torah_resolve_library_effect = { CHARACTER = scope:owner }
 		if = {
-			limit = { NOT = { kehillah_study_torah_current_work_still_owned_trigger = yes } }
-			send_interface_toast = {
-				title = kehillah_study_torah_book_lost_title
-				custom_tooltip = kehillah_study_torah_book_lost_tt
-				left_icon = root
+			limit = { exists = scope:kehillah_study_torah_library }
+			if = {
+				limit = { NOT = { kehillah_study_torah_current_work_still_owned_trigger = { LIBRARY = scope:kehillah_study_torah_library } } }
+				send_interface_toast = {
+					title = kehillah_study_torah_book_lost_title
+					custom_tooltip = kehillah_study_torah_book_lost_tt
+					left_icon = this
+				}
+				kehillah_study_torah_pick_next_work_effect = { LIBRARY = scope:kehillah_study_torah_library }
 			}
-			kehillah_study_torah_pick_next_work_effect = { LIBRARY = primary_title }
-		}
-		else = {
-			random = {
-				chance = 12
-				trigger_event = kehillah_study_torah.0002
+			else = {
+				random = {
+					chance = 12
+					trigger_event = kehillah_study_torah.0002
+				}
 			}
 		}
 	}

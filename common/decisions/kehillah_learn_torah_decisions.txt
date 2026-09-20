@@ -43,8 +43,25 @@ kehillah_learn_torah_decision = {
 	sort_order = 94
 	ai_check_interval = 60
 
+	# BROADENED 2026-09-19, same-day follow-up ("make this available to
+	# non-Kehilla ruler Jews too... Jewish unlanded adventurers... Jewish
+	# rulers can use the library of the kehilla in their capital"). Was
+	# government_has_flag = government_is_kehillah alone; kehillah_study_
+	# torah_has_accessible_library_trigger's own header (common/scripted_
+	# triggers/kehillah_scripted_triggers.txt) has the three populations
+	# now covered and why a landless adventurer's own CURRENT LOCATION,
+	# not a domicile, is the right anchor for them specifically (domiciles
+	# are confirmed absent from vanilla for that government type).
+	# is_ruler = yes here is intentionally not narrowed to independent
+	# rulers -- matches kehillah_bet_din_eligible_judge_trigger's own bare
+	# is_ruler = yes precedent for "a Jewish ruler" generally.
 	is_shown = {
-		government_has_flag = government_is_kehillah
+		is_jewish_character_trigger = yes
+		OR = {
+			government_has_flag = government_is_kehillah
+			is_ruler = yes
+			has_government = landless_adventurer_government
+		}
 	}
 
 	# has_trait = kehillah_rabbi_trait, NOT "OR learning >= 8" -- matches
@@ -52,29 +69,33 @@ kehillah_learn_torah_decision = {
 	# three rabbi-genre options requires the trait outright, events/
 	# kehillah_book_events.txt's kehillah_book.0001.a/b/c). Deliberate,
 	# not an oversight: add_trait_xp only ever gets called on a track this
-	# character already holds the trait for, both here and everywhere
-	# else in this mod (kehillah_rabbi_grant_case_xp_effect's own guard,
-	# common/scripted_effects/kehillah_bet_din_scripted_effects.txt) --
-	# there is no established precedent anywhere in this codebase for
-	# accruing trait_xp on a trait not yet held, so this doesn't invent
-	# one.
-	# The OR-of-owns clause is unchanged from before this decision started
-	# a scheme -- still "does the community's own library hold anything at
-	# all to begin reading." The custom_tooltip clause is new: reusing the
-	# real vanilla can_start_scheme guard pattern (confirmed against
-	# tgp_china_study_confucian_classics_decision, dlc_decisions/tgp/
-	# tgp_china_decisions.txt) so a rabbi already mid-scheme sees an
-	# explanatory line here rather than the decision just silently greying
-	# out with no visible reason.
+	# character already holds the trait for -- there is no established
+	# precedent anywhere in this codebase for accruing trait_xp on a trait
+	# not yet held, so this doesn't invent one. (Bet Din judging used to be
+	# the other add_trait_xp caller enforcing this same rule; REMOVED
+	# 2026-09-19 -- see kehillah_rabbi_trait's own header, common/traits/
+	# kehillah_traits.txt.)
+	#
+	# The OR-of-owns clause is REPLACED, same 2026-09-19 follow-up, by
+	# kehillah_study_torah_has_accessible_library_trigger -- "does the
+	# community's own library hold anything at all to begin reading" is
+	# now "does WHICHEVER community's library applies to this specific
+	# character hold anything," the same three-population check the
+	# scheme's own valid trigger uses. The custom_tooltip clause is
+	# unchanged: reusing the real vanilla can_start_scheme guard pattern
+	# (confirmed against tgp_china_study_confucian_classics_decision,
+	# dlc_decisions/tgp/tgp_china_decisions.txt) so a rabbi already
+	# mid-scheme sees an explanatory line here rather than the decision
+	# just silently greying out with no visible reason.
 	is_valid = {
 		is_adult = yes
 		is_imprisoned = no
 		has_trait = kehillah_rabbi_trait
-		OR = {
-			kehillah_owns_parshanut_work_trigger = { LIBRARY = primary_title }
-			kehillah_owns_talmudics_work_trigger = { LIBRARY = primary_title }
-			kehillah_owns_hashkafa_work_trigger = { LIBRARY = primary_title }
-		}
+		is_jewish_character_trigger = yes
+		# CHARACTER = root is safe here (unlike inside the scheme's own
+		# valid block) -- a decision's own is_valid root never shifts, it
+		# already is the character throughout.
+		kehillah_study_torah_has_accessible_library_trigger = { CHARACTER = root }
 		custom_tooltip = {
 			text = kehillah_learn_torah_decision_already_studying_tt
 			NOT = { any_scheme = { type = kehillah_study_torah } }
@@ -106,13 +127,29 @@ kehillah_learn_torah_decision = {
 			target_character = root
 		}
 
-		# Reveals which work the scheme begins on, via custom_tooltip, the
-		# same "You take up X" lines used since 2026-09-15 -- see this
-		# effect's own header (common/scripted_effects/kehillah_library_
-		# effects.txt) for why the pick is a live query, not a snapshot.
-		kehillah_study_torah_pick_next_work_effect = { LIBRARY = primary_title }
+		# Resolves WHICH library applies to THIS character (kehillah_
+		# study_torah_resolve_library_effect's own header, common/
+		# scripted_effects/kehillah_library_effects.txt, has the three
+		# populations), then reveals which work the scheme begins on via
+		# custom_tooltip, the same "You take up X" lines used since
+		# 2026-09-15 -- see that effect's own header for why the pick is a
+		# live query, not a snapshot. is_valid above already guarantees a
+		# match exists by the time this runs. CHARACTER = root, same
+		# reasoning as is_valid above -- a decision's own effect root
+		# never shifts either.
+		kehillah_study_torah_resolve_library_effect = { CHARACTER = root }
+		kehillah_study_torah_pick_next_work_effect = { LIBRARY = scope:kehillah_study_torah_library }
 	}
 
+	# UNCHANGED, DELIBERATELY: ai_potential still reads government_has_flag
+	# = government_is_kehillah alone, narrower than is_shown/is_valid above.
+	# The AI-eligible population for THIS decision stays exactly what it
+	# was -- see kehillah_learn_torah_journey.txt's own "AI NEVER HOSTS
+	# THIS, ON PURPOSE" header for the identical reasoning already
+	# established in this mod: a personal study action is not something
+	# this mod wants an AI evaluation loop running for every landed Jewish
+	# ruler and landless adventurer on the map, only for AI-played Kehillah
+	# leaders, the bounded population this was already tuned for.
 	ai_potential = {
 		government_has_flag = government_is_kehillah
 	}

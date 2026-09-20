@@ -43,8 +43,14 @@ kehillah_study_torah.0001 = {
 		animation = thinking
 	}
 
+	# BROADENED 2026-09-19, same-day follow-up: was government_has_flag =
+	# government_is_kehillah -- the scheme itself is no longer Kehillah-
+	# leader-only (kehillah_study_torah_has_accessible_library_trigger's
+	# own header, common/scripted_triggers/kehillah_scripted_triggers.txt,
+	# has the three populations), so this event's own trigger cannot stay
+	# narrower than the scheme that fires it.
 	trigger = {
-		government_has_flag = government_is_kehillah
+		is_jewish_character_trigger = yes
 	}
 
 	option = {
@@ -61,15 +67,27 @@ kehillah_study_torah.0001 = {
 			kehillah_study_torah_resolve_current_work_effect = yes
 		}
 
+		# Re-resolve which library applies NOW, not whichever one applied
+		# when this course of study last picked a work -- a moved capital
+		# or a relocated adventurer may mean a different community's shelves
+		# entirely (kehillah_study_torah_resolve_library_effect's own
+		# header, common/scripted_effects/kehillah_library_effects.txt).
 		# Then pick what comes next -- reveals itself via custom_tooltip,
-		# same "You take up X" lines used since 2026-09-15. Guarded on
-		# still owning at least one work at all: a library that has been
-		# donated down to nothing between phases has nothing left to
-		# reveal, and the scheme's own on_invalidated will end it the
-		# next time its own valid trigger is checked.
+		# same "You take up X" lines used since 2026-09-15. Guarded on a
+		# library actually existing AND still owning at least one work: no
+		# community reachable at all, or one reachable but donated down to
+		# nothing, both mean nothing left to reveal here -- the scheme's
+		# own on_invalidated will end it the next time its own valid
+		# trigger is checked, if this is not transient. CHARACTER = root
+		# is safe here -- a character_event's own root never shifts, it
+		# already is the character throughout.
+		kehillah_study_torah_resolve_library_effect = { CHARACTER = root }
 		if = {
-			limit = { kehillah_owns_any_torah_work_trigger = { LIBRARY = primary_title } }
-			kehillah_study_torah_pick_next_work_effect = { LIBRARY = primary_title }
+			limit = {
+				exists = scope:kehillah_study_torah_library
+				kehillah_owns_any_torah_work_trigger = { LIBRARY = scope:kehillah_study_torah_library }
+			}
+			kehillah_study_torah_pick_next_work_effect = { LIBRARY = scope:kehillah_study_torah_library }
 		}
 	}
 }
@@ -138,8 +156,10 @@ kehillah_study_torah.0002 = {
 		}
 	}
 
+	# BROADENED 2026-09-19, same-day follow-up -- see kehillah_study_torah.
+	# 0001's own identical note just above.
 	trigger = {
-		government_has_flag = government_is_kehillah
+		is_jewish_character_trigger = yes
 	}
 
 	option = {
