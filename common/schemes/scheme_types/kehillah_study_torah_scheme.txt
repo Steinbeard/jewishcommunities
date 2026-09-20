@@ -27,20 +27,10 @@
 # without that DLC, for zero benefit (a generic study/corridor image
 # reads fine here; this mod does not need its own bespoke art for this).
 #
-# THE ACTUAL PASS/FAIL AND REWARD LOGIC IS DELIBERATELY NOT HERE. Unlike
-# study_confucian_classics, this scheme's own on_phase_completed does not
-# roll scope:scheme.scheme_success_chance to decide anything -- that
-# would be a SECOND parallel success system sitting on top of the one
-# kehillah_study_specific_work_effect (common/scripted_effects/kehillah_
-# library_effects.txt) already owns (a plain `learning >= 10` gate,
-# unchanged since 2026-09-15 and still shared with the travel journey).
-# Changing that shared effect's own gate to read the scheme's roll instead
-# was considered and rejected specifically because it is SHARED with
-# kehillah_learn_torah_journey.0002/0003/0004, which this pass does not
-# touch -- doing so would silently change the journey's own behavior too.
-# base_success_chance below therefore exists only because every scheme
-# type requires one (it drives the UI's own odds_prediction display), not
-# because anything branches on it.
+# The ordinary mastery gate remains in the shared work effect, so the
+# travel journey keeps its established behavior. Scheme-only study
+# interventions can grant a one-course mastery bonus, which that shared
+# effect consumes and removes when this scheme resolves its current book.
 # =====================================================================
 
 kehillah_study_torah = {
@@ -66,18 +56,15 @@ kehillah_study_torah = {
 	# Parameters -- copied verbatim from study_confucian_classics (see
 	# this file's own header for why): a generic, non-adversarial personal
 	# pursuit, the closest confirmed vanilla shape to what this needs.
-	speed_per_skill_point = -2
+	# Learning is the rabbi's study speed: each point removes 2.5 days
+	# from the effective progress time, so stronger scholars finish sooner.
+	speed_per_skill_point = -2.5
 	spymaster_speed_per_skill_point = 0
 	uses_resistance = no
 
-	# 1095 days (3 years) -- matches kehillah_learn_torah_piety_cost's own
-	# cooldown note (common/script_values/kehillah_script_values.txt) on
-	# "how often should a real institutional activity plausibly recur",
-	# now read as "how long one course of reading plausibly takes" instead
-	# of "how long before you may ask again" -- the same real-world pacing
-	# assumption, just carried by a different field now that this is a
-	# continuous scheme rather than a decision on a cooldown.
-	base_progress_goal = 1095
+	# 730 days (2 years) for an otherwise average scholar. Learning further
+	# reduces the effective duration through speed_per_skill_point above.
+	base_progress_goal = 730
 	base_maximum_success = 95
 	minimum_success = 5
 
@@ -125,13 +112,13 @@ kehillah_study_torah = {
 	}
 
 	base_success_chance = {
-		base = 0
+		base = 10
 		modifier = {
 			add = scope:owner.learning
 			desc = kehillah_study_torah_scheme_learning_modifier
 		}
 		modifier = {
-			add = 15
+			add = 20
 			desc = kehillah_study_torah_scheme_rabbi_modifier
 			scope:owner = { has_trait = kehillah_rabbi_trait }
 		}
@@ -142,6 +129,13 @@ kehillah_study_torah = {
 		save_scope_as = scheme
 		scheme_owner = { save_scope_as = owner }
 		scope:owner = {
+			# Resolve before opening the completion event so its description can
+			# say whether the text was mastered or needs another reading.
+			if = {
+				limit = { has_variable = kehillah_study_current_work_id }
+				kehillah_study_torah_resolve_current_work_effect = yes
+			}
+			remove_variable = kehillah_study_torah_pulse_seen
 			trigger_event = kehillah_study_torah.0001
 		}
 		reset_scheme_progress = yes

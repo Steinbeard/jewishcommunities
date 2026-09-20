@@ -193,27 +193,42 @@ kehillah_study_specific_work_effect = {
 	if = {
 		limit = { var:kehillah_learn_torah_repeat = 1 }
 		if = {
-			limit = { learning >= 10 }
+			limit = {
+				OR = {
+					learning >= 10
+					has_variable = kehillah_study_torah_mastery_bonus
+				}
+			}
+			set_variable = { name = kehillah_study_torah_last_result value = 2 }
 			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_repeat_pass }
 			custom_tooltip = kehillah_study_torah.repeat_pass.tt
 		}
 		else = {
+			set_variable = { name = kehillah_study_torah_last_result value = 3 }
 			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_repeat_fail }
 			custom_tooltip = kehillah_study_torah.repeat_fail.tt
 		}
 	}
 	else = {
 		if = {
-			limit = { learning >= 10 }
+			limit = {
+				OR = {
+					learning >= 10
+					has_variable = kehillah_study_torah_mastery_bonus
+				}
+			}
+			set_variable = { name = kehillah_study_torah_last_result value = 1 }
 			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_pass }
 			custom_tooltip = kehillah_study_torah.pass.tt
 		}
 		else = {
+			set_variable = { name = kehillah_study_torah_last_result value = 0 }
 			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_fail }
 			custom_tooltip = kehillah_study_torah.fail.tt
 		}
 	}
 	add_piety = minor_piety_gain
+	remove_variable = kehillah_study_torah_mastery_bonus
 	remove_variable = kehillah_learn_torah_repeat
 }
 
@@ -628,11 +643,11 @@ kehillah_study_torah_resolve_library_effect = {
 # specific volume, so switching what is being read does not reset or
 # penalize it.
 #
-# If the current work is still owned, this is instead where the
-# occasional flavor-only "insight" event (kehillah_study_torah.0002,
-# events/kehillah_study_torah_events.txt) fires -- a flat 12%/month
-# chance, pure flavor, no mechanical reward (the real reward is still
-# only ever paid at phase completion) so as not to double up with it.
+# If the current work is still owned, this is instead where the rare
+# intervention events (kehillah_study_torah.0003/.0004) may fire. The
+# old 12%/month flavor pulse was removed: at most one intervention can
+# occur per course, and it can grant progress or a one-course mastery
+# bonus.
 kehillah_study_torah_monthly_effect = {
 	if = {
 		limit = { has_variable = kehillah_study_current_work_id }
@@ -654,9 +669,19 @@ kehillah_study_torah_monthly_effect = {
 				kehillah_study_torah_pick_next_work_effect = { LIBRARY = scope:kehillah_study_torah_library }
 			}
 			else = {
-				random = {
-					chance = 12
-					trigger_event = kehillah_study_torah.0002
+				# At most one interaction pulse per course, and only a small
+				# chance each month. This replaces the old 12% monthly flavor
+				# event, which made the same book-specific pulse appear too often.
+				if = {
+					limit = { NOT = { has_variable = kehillah_study_torah_pulse_seen } }
+					random = {
+						chance = 3
+						set_variable = { name = kehillah_study_torah_pulse_seen value = 1 }
+						random_list = {
+							1 = { trigger_event = kehillah_study_torah.0003 }
+							1 = { trigger_event = kehillah_study_torah.0004 }
+						}
+					}
 				}
 			}
 		}

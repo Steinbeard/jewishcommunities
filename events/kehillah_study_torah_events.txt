@@ -5,25 +5,15 @@
 # "STUDY TORAH AS A SCHEME" header for the numeric-ID bridge
 # (kehillah_study_current_work_id) both events below read from.
 #
-# TWO EVENTS, TWO DIFFERENT JOBS. kehillah_study_torah.0001 fires from
-# on_phase_completed (every base_progress_goal, ~3 years) and is where the
-# actual mechanical resolve-then-pick-next happens; kehillah_study_torah.
-# 0002 fires from on_monthly (a flat 12% chance per month the current work
-# is still being read) and is PURE FLAVOR, no mechanical effect at all --
-# see kehillah_study_torah_monthly_effect's own header for why the two
-# never double-pay the same reward.
+# The scheme starts with 0002, which describes the newly opened work.
+# 0001 fires at phase completion after the scheme has already resolved the
+# current work, so its description can distinguish mastery from a return
+# visit. Rare mid-course interactions are 0003 (a related text) and 0004
+# (help from a learned friend or courtier).
 #
-# WHY 0001's OWN desc IS GENERIC, NOT PER-WORK. The obvious first instinct
-# is a twelve-way triggered_desc keyed on the work that just finished,
-# matching kehillah_study_torah.0002 below -- but kehillah_study_specific_
-# work_effect (called from this event's own option) already reveals the
-# pass/fail/repeat_pass/repeat_fail tier via its own custom_tooltip, and
-# kehillah_study_torah_pick_next_work_effect already reveals which work
-# comes NEXT via the exact same kehillah_study_torah.<track>.<work>_tt
-# lines used since 2026-09-15 ("You take up Targum Onkelos..."). Both
-# reveals already name a specific work; a third, desc-level naming of the
-# work that just finished would be repeating information the tooltips
-# below the option already give, not adding any.
+# The completion event deliberately does not present the next work as a
+# choice: the picker has already selected it from the library, and the
+# single continuation option simply accepts that automatic choice.
 # =====================================================================
 
 namespace = kehillah_study_torah
@@ -35,7 +25,27 @@ namespace = kehillah_study_torah
 kehillah_study_torah.0001 = {
 	type = character_event
 	title = kehillah_study_torah.0001.t
-	desc = kehillah_study_torah.0001.desc
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:kehillah_study_torah_last_result = 1 }
+				desc = kehillah_study_torah.0001.mastered_desc
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_study_torah_last_result = 0 }
+				desc = kehillah_study_torah.0001.unmastered_desc
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_study_torah_last_result = 2 }
+				desc = kehillah_study_torah.0001.repeat_mastered_desc
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_study_torah_last_result = 3 }
+				desc = kehillah_study_torah.0001.repeat_unmastered_desc
+			}
+			desc = kehillah_study_torah.0001.desc
+		}
+	}
 	theme = faith
 
 	left_portrait = {
@@ -56,24 +66,14 @@ kehillah_study_torah.0001 = {
 	option = {
 		name = kehillah_study_torah.0001.a
 
-		# Resolve whatever was actually being read (nothing to resolve on
-		# the scheme's very first-ever phase completion if, somehow, no
-		# pick has ever landed -- has_variable guards that rather than
-		# assuming it, though kehillah_learn_torah_decision's own effect
-		# always picks a first work before start_scheme, so this should
-		# not normally be reached empty).
-		if = {
-			limit = { has_variable = kehillah_study_current_work_id }
-			kehillah_study_torah_resolve_current_work_effect = yes
-		}
-
 		# Re-resolve which library applies NOW, not whichever one applied
 		# when this course of study last picked a work -- a moved capital
 		# or a relocated adventurer may mean a different community's shelves
 		# entirely (kehillah_study_torah_resolve_library_effect's own
 		# header, common/scripted_effects/kehillah_library_effects.txt).
-		# Then pick what comes next -- reveals itself via custom_tooltip,
-		# same "You take up X" lines used since 2026-09-15. Guarded on a
+		# Then pick what comes next -- this is automatic, not a second set
+		# of player choices. The selected work is revealed by the same
+		# "You take up X" tooltip lines used since 2026-09-15. Guarded on a
 		# library actually existing AND still owning at least one work: no
 		# community reachable at all, or one reachable but donated down to
 		# nothing, both mean nothing left to reveal here -- the scheme's
@@ -93,7 +93,7 @@ kehillah_study_torah.0001 = {
 }
 
 # ---------------------------------------------------------------------
-# kehillah_study_torah.0002 -- AN INSIGHT MID-STUDY (flavor only)
+# kehillah_study_torah.0002 -- THE TEXT BEFORE YOU (scheme start)
 # ---------------------------------------------------------------------
 
 kehillah_study_torah.0002 = {
@@ -208,5 +208,121 @@ kehillah_study_torah.0002 = {
 
 	option = {
 		name = kehillah_study_torah.0002.a
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_study_torah.0003 -- A RELATED PASSAGE RETURNS
+# ---------------------------------------------------------------------
+
+kehillah_study_torah.0003 = {
+	type = character_event
+	title = kehillah_study_torah.0003.t
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					OR = {
+						var:kehillah_study_current_work_id <= 4
+						AND = { var:kehillah_study_current_work_id >= 5 var:kehillah_study_current_work_id <= 16 }
+					}
+				}
+				desc = kehillah_study_torah.0003.parshanut_or_talmudics_desc
+			}
+			desc = kehillah_study_torah.0003.hashkafa_desc
+		}
+	}
+
+	trigger = {
+		is_jewish_character_trigger = yes
+		has_variable = kehillah_study_current_work_id
+		kehillah_study_torah_has_same_track_reference_trigger = yes
+	}
+
+	option = {
+		name = kehillah_study_torah.0003.a
+		scope:scheme = { add_scheme_progress = 90 }
+		set_variable = { name = kehillah_study_torah_mastery_bonus value = 1 }
+	}
+
+	option = {
+		name = kehillah_study_torah.0003.b
+		trigger = {
+			any_courtier = { learning >= 12 }
+		}
+		random_courtier = {
+			limit = { learning >= 12 }
+			save_scope_as = kehillah_study_torah_mentor
+		}
+		scope:scheme = { add_scheme_progress = 45 }
+		set_variable = { name = kehillah_study_torah_mastery_bonus value = 1 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_study_torah.0004 -- A LEARNED COMPANION
+# ---------------------------------------------------------------------
+
+kehillah_study_torah.0004 = {
+	type = character_event
+	title = kehillah_study_torah.0004.t
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	desc = kehillah_study_torah.0004.desc
+
+	trigger = {
+		is_jewish_character_trigger = yes
+		OR = {
+			any_courtier = {
+				has_relation_friend = root
+				learning >= 12
+			}
+			any_courtier = { learning >= 16 }
+		}
+	}
+
+	option = {
+		name = kehillah_study_torah.0004.a
+		trigger = {
+			any_courtier = {
+				has_relation_friend = root
+				learning >= 12
+			}
+		}
+		random_courtier = {
+			limit = {
+				has_relation_friend = root
+				learning >= 12
+			}
+			save_scope_as = kehillah_study_torah_mentor
+		}
+		scope:scheme = { add_scheme_progress = 120 }
+		set_variable = { name = kehillah_study_torah_mastery_bonus value = 1 }
+	}
+
+	option = {
+		name = kehillah_study_torah.0004.b
+		trigger = { any_courtier = { learning >= 16 } }
+		random_courtier = {
+			limit = { learning >= 16 }
+			save_scope_as = kehillah_study_torah_mentor
+		}
+		scope:scheme = { add_scheme_progress = 75 }
+	}
+
+	option = {
+		name = kehillah_study_torah.0004.c
 	}
 }
