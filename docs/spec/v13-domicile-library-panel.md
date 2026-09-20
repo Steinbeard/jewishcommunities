@@ -164,8 +164,8 @@ longer elides at the column width. `error.log`: only the pre-existing roster lay
 
 **Pass 8 (2026-09-19, studied marks, §12): PASS.** With the Mishnah added to the player's
 `kehillah_studied_works` by console probe, Mainz's library showed "The Mishnah" in green with a check
-and Targum Onkelos plain; the Mishnah's tooltip ended "You have studied this work." and Targum's "You
-have not studied this work." ck3-tiger clean.
+and Targum Onkelos plain; the Mishnah's tooltip ended "You have mastered this work." (wording changed from "studied" the same day) and Targum's "You
+have not mastered this work." ck3-tiger clean.
 
 ## 6. Every Kehillah starts with a Beit Midrash (2026-09-17)
 
@@ -373,5 +373,5 @@ already maintain is the whole truth, so it is right on existing saves too.
   (vanilla precedent for `Select_CString`: `frontend_main.gui`'s tutorial toggle).
 - **Always about the player**, on any community's library — which is the point: another community's
   panel now shows at a glance what it holds that you have not yet read.
-- The "You have studied:" list under the roster stays, for works studied elsewhere that this library
+- The "You have mastered:" list under the roster stays, for works studied elsewhere that this library
   does not hold.
