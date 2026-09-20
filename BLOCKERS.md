@@ -124,3 +124,25 @@ run regardless of whether the session reached its own end-of-run BLOCKERS.md wri
 is true above and there's no matching entry from the agent itself nearby explaining what it was
 mid-way through, treat this run as unresolved until a human or a later run reviews what state
 things were left in.
+
+## Automated run status -- 2026-09-20_020003 (overnight/2026-09-20)
+- Cut off by a usage/session limit (detected in this run's log): False
+- Uncommitted changes in the working tree at run end: YES --
+```
+ M ROADMAP.md  M common/bookmark_portraits/kehillah_bookmark_portraits.txt  M common/bookmarks/bookmarks/kehillah_bookmarks.txt  M common/decisions/kehillah_learn_torah_decisions.txt  M common/governments/kehillah_government.txt  M common/landed_titles/kehillah_landed_titles.txt  M common/schemes/scheme_types/kehillah_study_torah_scheme.txt  M common/scripted_effects/kehillah_found_community_effects.txt  M common/scripted_effects/kehillah_library_effects.txt  M common/scripted_triggers/kehillah_scripted_triggers.txt  M docs/spec/v2-pillar-economy-and-lifecycle.md  M events/kehillah_debug_events.txt  M events/kehillah_study_torah_events.txt  M history/characters/worms_1066.txt  M localization/english/kehillah_l_english.yml ?? AGENTS.md ?? docs/testing/2026-09-20-found-community-live-test-log.md ?? history/titles/kehillah_founder_test_titles.txt
+```
+- Commits on this branch not yet on origin at this point: 31
+- Last few commits on this branch:
+```
+4b7d3b9 Learn Torah as a scheme, randomized library seeding
+f2e2ef4 Learn Torah: open the scheme up beyond Kehillah leaders
+86eee48 Randomize the starting library seed instead of the same fixed two books
+6f75584 Fix stale comment reference after retiring the per-track study effects
+a887b7a Learn Torah: rebuild as a continuous scheme, kehillah_study_torah
+```
+
+Written mechanically by the scheduled script itself (not the agent) as a fallback -- present every
+run regardless of whether the session reached its own end-of-run BLOCKERS.md write. If "cut off"
+is true above and there's no matching entry from the agent itself nearby explaining what it was
+mid-way through, treat this run as unresolved until a human or a later run reviews what state
+things were left in.
