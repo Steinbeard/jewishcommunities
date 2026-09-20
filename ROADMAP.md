@@ -1190,7 +1190,7 @@ entry above), so this backfill matters for the acquire decision and the travel j
 starting-library roll.
 
 **2026-09-19 — "Found a Jewish Community" shipped for rabbinic landless adventurers, ck3-tiger-clean,
-NOT YET LIVE-TESTED**, at user request ("create a 'found a jewish community' decision for Rabbinic
+NOT YET LIVE-TESTED** (still true as of 2026-09-20 evening — see the correction below), at user request ("create a 'found a jewish community' decision for Rabbinic
 adventurers"). This resolves v2 spec section 5.1's own "open technical question, not solved here" —
 what actually places a new landless title at a chosen location — which had sat unanswered since that
 spec was written, flagged as "residual risk, not a blocker." Checked directly against the installed
@@ -1235,17 +1235,30 @@ CLAUDE.md's testing section exists to catch standing still, without ever booting
 unverified primitive (`create_adventurer_title` has never been called from this mod before), and
 CLAUDE.md's own guidance treats succession/government-law code as this codebase's highest-risk area,
 needing a live playtest before it's trusted at all, let alone handed to every AI-played rabbinic
-landless adventurer on the map at once. Also not built: a dynamic, location-based title name (the
-founded title's display name is the static "The Kehillah" rather than "Kehillah of \<county\>" — see
-the effect file's own header for why the accessor chain for a landless title's own dynamic name
-loc could not be confirmed against the installed files with the same confidence as everything else
-here, and a wrong one is a silent cosmetic bug, not a caught one).
+landless adventurer on the map at once. Also not built as of 09-19: a dynamic, location-based title name.
 
-**NEXT STEP is a live pass** that takes a landless rabbinic-faith, high-Learning adventurer character,
-confirms the decision shows and is takeable, and confirms the resulting title/government/quarter/
-pillars/registry/library/map-view state is all correct in a running game — per CLAUDE.md, title
-creation and government assignment are this codebase's highest-crash-history area and this has not
-yet had that pass.
+**2026-09-20 — a Codex session claimed a live PASS on this path, renamed `c_kehillah_worms` to a duchy-tier
+`d_kehillah_worms`, and both claims were wrong; reverted and re-fixed the same day.** Daniel re-ran the
+decision himself: still Game Over, and no county-based name. Full account in
+`docs/testing/2026-09-20-found-community-live-test-log.md` ("Correction"). Short version: (1) county-tier
+landless titles are fine — Worms has been one since 09-07 through three live playtests, vanilla's
+`c_nf_yamato` is one — and the Isaac Game Over was caused by that session re-adding `title_tier = duchy`
+to `kehillah_government.can_get_government`; everything Worms-related is back to the 09-07 shape.
+(2) The real founding bug was title ordering: the founder already holds a `d_laamp_*` title, the new
+community title was never made primary and the old one was never destroyed, so `add_realm_law` hit
+the wrong title and both titles ended up with invalid succession. `kehillah_found_community_effect`
+now mirrors vanilla's own adventurer-becomes-landed teardown: create → `set_primary_title_to` →
+destroy the old adventurer title → `change_government` → `add_realm_law`, with `debug_log`
+breadcrumbs. (3) The title name is now `Kehillah of [kehillah_founding_county.GetNameNoTooltip]`
+(county, captured before creation, vanilla's `adventurer_name_010` mechanism) — never yet seen live.
+A dedicated test start `bm_1066_kehillah_founder_test` (rabbinic adventurer "Yitzhak", fixture title
+`d_kehillah_founder_test`, placeholder portrait) exists for exactly this check; whether it should ship
+to players or be console-only is an open call (BLOCKERS.md). ck3-tiger 0/0.
+
+**NEXT STEP is still the live pass:** founder-test bookmark → take the decision → no Game Over,
+title reads "Kehillah of <county>", old title gone, Kehillah decisions appear, four
+`kehillah_found_community_effect:` lines in `debug.log`. Plus one Worms-bookmark run past 1066-10-01
+to confirm the revert (low risk — it is the exact state three earlier playtests covered).
 
 **Partly resolved, and reopened by the first playtest:** open,
 community-wide leadership succession (any notable family can be

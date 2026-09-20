@@ -150,3 +150,28 @@ things were left in.
 ## Ready for review -- overnight/2026-09-20
 - https://github.com/Steinbeard/jewishcommunities/compare/master...=1
 
+## 2026-09-20 (interactive rescue session, overnight/2026-09-20) -- Codex regression reverted; founding path re-fixed, needs live test
+- **What was being worked on:** Daniel reported a Codex session had (a) left the Found a Jewish Community
+  decision game-over-ing, (b) broken the Worms start (Game Over on 1066-09-30, then bookmark not loading)
+  while "fixing" it, and (c) claimed county-tier landless titles are invalid. (c) is false and (b) was
+  self-inflicted (`title_tier = duchy` re-added to `kehillah_government.can_get_government`, then a
+  `c_`->`d_kehillah_worms` rename). Both reverted to the HEAD/09-07 shape. (a) had a real, different
+  cause -- the old `d_laamp_*` title was never destroyed / the new title never made primary -- fixed in
+  `kehillah_found_community_effect` following vanilla's own teardown order. Details: ROADMAP 2026-09-20
+  entry and the Correction section of `docs/testing/2026-09-20-found-community-live-test-log.md`.
+- **Blocking / uncertain:** source-verified and ck3-tiger 0/0, **not live-tested** -- Daniel was actively
+  using the machine, so no unattended SendInput run. Two live checks needed: Worms bookmark past
+  1066-10-01 (revert confirmation, low risk); founder-test bookmark -> decision -> no Game Over, title
+  "Kehillah of <county>", old fixture title gone, four `kehillah_found_community_effect:` breadcrumbs in
+  `debug.log`.
+- **Needs a call from Daniel:** (1) `bm_1066_kehillah_founder_test` / character 9000003 / title
+  `d_kehillah_founder_test` / placeholder portrait entry are a Codex-added, player-visible test fixture --
+  keep as a shipped start, or cut to console-only (`kehillah_debug.60` already covers the same setup
+  without a bookmark)? Kept as-is for now since it is the fastest way to run the live check. (2) `AGENTS.md`
+  (untracked, Codex's copy of CLAUDE.md) -- left untracked, not committed; delete or keep? (3) Codex's other
+  uncommitted work (Learn Torah scheme/event changes, same-track reference trigger, library effect edits)
+  is committed separately and labelled as unreviewed so it can be dropped as one unit if unwanted.
+- **Also seen, not fixed:** `error.log` has ~990 errors per load from
+  `kehillah_study_torah_has_accessible_library_trigger` (`kehillah_scripted_triggers.txt:1247`,
+  `capital_province` unset scope) via `kehillah_study_torah:valid`. That is committed Learn-Torah work
+  (4b7d3b9 or earlier), not part of this rescue. Worth a fix -- it is noisy enough to hide real errors.

@@ -306,7 +306,7 @@ obvious place to look), the same way this project checked
 `succession_appointment` and the estate/Influence systems before
 building on them. Flag as residual risk, not a blocker.
 
-**RESOLVED, 2026-09-19.** Vanilla's `create_adventurer_title` (the
+**RESOLVED, 2026-09-19; location naming implemented 2026-09-20 (not yet seen live).** Vanilla's `create_adventurer_title` (the
 engine effect behind "Abandon Realm to Become an Adventurer" and every
 other laamp-creation path, `common/scripted_effects/07_dlc_ep3_
 scripted_effects.txt`) is genuine, general-purpose runtime landless-
@@ -321,8 +321,11 @@ dissolution chain specifically (nothing about the effect itself cares
 which route calls it). The voluntary "Found a Sister Community" route
 below and §4.4's dissolution rebound can both call the same effect once
 built — see ROADMAP.md's 2026-09-19 entry for the full account,
-including what this pass deliberately left out (AI eligibility, a
-dynamic location-based title name) and why.
+including what this pass deliberately left out (AI eligibility). The
+runtime title now uses the founder's captured founding county in its
+name, following vanilla's `new_landless_adventurer_location` pattern
+(scope `kehillah_founding_county`); the founding path itself is still
+awaiting a clean live run, see ROADMAP 2026-09-20.
 
 ### 5.2 Destruction
 

@@ -26,22 +26,17 @@
 #   header explains why de-jure-nested or flat pre-authored titles can
 #   only ever cover a fixed roster, never "anywhere").
 #
-# SCOPE CUT, DELIBERATE: the new title's own display name is a static
-# loc key (kehillah_found_community_decision_title_name, "The Kehillah"),
-# not dynamically built from the founder's current county. Vanilla's own
-# laamp title names (adventurer_name_001 etc.) reference a scope saved
-# via save_scope_as at the top of the SAME effect that calls
-# create_adventurer_title, which strongly suggests dynamic substitution
-# is possible here too -- but nothing in the installed files confirms
-# the exact scope-resolution rule for a landless title's OWN name loc
-# (evaluated wherever the title is displayed, not only inside this
-# effect), and a wrong accessor chain here is a silent cosmetic bug, not
-# a caught one. Left static and safe rather than guessed; a location-
-# flavored name is a good follow-up once this primitive is confirmed
-# live. This mirrors the existing sixteen titles' own
-# ruler_uses_title_name = no design anyway -- the leader's own name and
-# role (Rav/Parnas, kehillah_update_leader_flavor_effect) is what the
-# player actually reads, not the institution's own title string.
+# The title is named for the COUNTY the founder is standing in ("Kehillah
+# of Worms"). This follows vanilla's own adventurer_name_010/011 pattern:
+# save the location before create_adventurer_title, then let the title-
+# name loc key resolve [kehillah_founding_county.GetNameNoTooltip]. The
+# name is baked at founding, so the community keeps its founding place
+# even though the leader's camp/title machinery changes afterward.
+# NOT YET SEEN LIVE as of 2026-09-20: the one live run that claimed to
+# check this was actually reading the OLD adventurer title's name (see
+# the ordering comment inside the effect body). A blank or wrong name
+# here is cosmetic, not a crash -- if it renders wrong, the fallback is a
+# static key, as the 2026-09-19 version shipped.
 #
 # WHY THIS EFFECT DUPLICATES kehillah_on_title_gain'S BODY INSTEAD OF
 # RELYING ON on_title_gain TO FIRE IT. It might: create_adventurer_title
@@ -67,13 +62,109 @@
 
 kehillah_found_community_effect = {
 	save_scope_as = kehillah_founder
+	debug_log = "kehillah_found_community_effect: begin"
+	debug_log_scopes = yes
+
+	# The founding county, captured BEFORE create_adventurer_title so the
+	# title-name loc key (kehillah_found_community_title_name, "Kehillah of
+	# [kehillah_founding_county.GetNameNoTooltip]") can read it -- the same
+	# mechanism vanilla's own adventurer_name_010/011 use with
+	# new_landless_adventurer_location (07_dlc_ep3_scripted_effects.txt,
+	# create_landless_adventurer_title_effect). The COUNTY, not the raw
+	# province: a province's own name is its barony's, and "Kehillah of
+	# Worms" is the county name the player recognises. The decision's
+	# is_valid already requires exists = location.county. Mod-prefixed
+	# scope name on purpose so this never collides with vanilla's own
+	# new_landless_adventurer_* scopes if both wrappers are ever live in
+	# the same effect chain.
+	location.county = { save_scope_as = kehillah_founding_county }
 
 	create_adventurer_title = {
-		name = kehillah_found_community_decision_title_name
+		name = kehillah_found_community_title_name
 		holder = scope:kehillah_founder
 		article = DEFAULT_TITLE_NAME_ARTICLE
 		save_scope_as = kehillah_new_community_title
 	}
+	debug_log = "kehillah_found_community_effect: created title"
+	debug_log_scopes = yes
+
+	# ORDER MATTERS FROM HERE -- this is the part that produced Game Over
+	# on every live attempt before 2026-09-20 (see docs/testing/2026-09-20-
+	# found-community-live-test-log.md, "Correction"). A landless
+	# adventurer taking this decision ALREADY holds a landless duchy-tier
+	# title (their d_laamp_* / camp title). Vanilla's own creation wrapper
+	# never has to think about that: by the time it runs, the character
+	# has just lost their land, so the new title is their ONLY title and
+	# therefore automatically primary, and change_government followed by
+	# add_realm_law (a PRIMARY-TITLE effect) lands on it. Here, without
+	# the three steps below, the new community title was never primary:
+	# add_realm_law put the Kehillah succession law on the OLD adventurer
+	# title, the new title was left with no succession law at all
+	# (succession_order.cpp "unhandled succession order [invalid]" -- the
+	# same failure mode as the 2026-09-06 crash, docs/implementation/
+	# v1-kehillah-implementation.md section 6), and the old title's own
+	# landless_adventurer_succession_law failed its can_keep the moment the
+	# government changed. Both titles invalid -> "lost all titles" -> Game
+	# Over. The UI meanwhile kept showing the OLD title's name as the
+	# character's title, which is why the dynamic name looked broken too.
+	#
+	# The fix is exactly what vanilla does in the reverse direction when
+	# an adventurer becomes landed (07_dlc_ep3_scripted_effects.txt, the
+	# every_held_title = { limit = { has_variable =
+	# adventurer_creation_reason } ... destroy_title } block): the old
+	# adventurer title is DESTROYED, not kept alongside. Community first,
+	# then the camp is gone, then government, then law -- the new title is
+	# primary at every step that cares.
+
+	# 1. Make the community the primary title while the old one still
+	#    exists, so nothing below ever sees a moment with no primary.
+	set_primary_title_to = scope:kehillah_new_community_title
+
+	# 2. Destroy every OTHER landless title the founder holds -- in practice
+	#    the single d_laamp_* / test-fixture adventurer title. Same
+	#    iterate-and-destroy shape vanilla uses; not gated on
+	#    adventurer_creation_reason because history-authored adventurer
+	#    titles (and this mod's own test fixture) never carry that variable.
+	every_held_title = {
+		limit = {
+			NOT = { this = scope:kehillah_new_community_title }
+			is_landless_type_title = yes
+		}
+		save_scope_as = kehillah_old_adventurer_title
+		scope:kehillah_founder = {
+			debug_log = "kehillah_found_community_effect: destroying old adventurer title"
+			destroy_title = scope:kehillah_old_adventurer_title
+		}
+	}
+
+	# 3. Government follows the office -- the exact rule and exact guard
+	#    kehillah_on_title_gain already applies at every succession
+	#    (common/on_action/kehillah_on_actions.txt); kehillah_government.
+	#    txt's own can_get_government header names "a found-a-community
+	#    decision in a later phase" as the second of the two explicit ways
+	#    a character is meant to ever land in this government. This is
+	#    that phase. can_get_government only asks for any held landless-
+	#    type title, which the new community title satisfies.
+	if = {
+		limit = {
+			NOT = { government_has_flag = government_is_kehillah }
+		}
+		change_government = kehillah_government
+	}
+
+	# 4. Succession law, AFTER the government change so the law's own
+	#    can_have (government_is_kehillah) holds, and after step 1 so
+	#    add_realm_law (primary title) lands on the community title.
+	#    Vanilla's wrapper does change_government then add_realm_law in
+	#    this same order.
+	if = {
+		limit = {
+			NOT = { has_realm_law = kehillah_appointment_succession_law }
+		}
+		add_realm_law = kehillah_appointment_succession_law
+	}
+	debug_log = "kehillah_found_community_effect: government + law set"
+	debug_log_scopes = yes
 
 	# kehillah_restore_quarter_effect (below) reads scope:kq_title, the
 	# exact scope name kehillah_on_title_gain saves its own scope:title
@@ -83,19 +174,6 @@ kehillah_found_community_effect = {
 	# name every caller is expected to save it under first, and this one
 	# didn't yet.
 	scope:kehillah_new_community_title = { save_scope_as = kq_title }
-
-	# Government follows the office -- the exact rule and exact guard
-	# kehillah_on_title_gain already applies at every succession (common/
-	# on_action/kehillah_on_actions.txt); kehillah_government.txt's own
-	# can_get_government header names "a found-a-community decision in a
-	# later phase" as the second of the two explicit ways a character is
-	# meant to ever land in this government. This is that phase.
-	if = {
-		limit = {
-			NOT = { government_has_flag = government_is_kehillah }
-		}
-		change_government = kehillah_government
-	}
 
 	# No prior quarter to restore -- there is no history here at all, so
 	# this genuinely differs from every succession kehillah_on_title_gain
