@@ -215,216 +215,40 @@ kehillah_distribute_tzedakah_decision = {
 
 
 # =====================================================================
-# COMPOSE A COMMENTARY -- Greatness. Sfarim (book) tiers, Wave 3 item 1.
+# kehillah_compose_commentary_decision -- RETIRED 2026-09-15, at explicit
+# user request ("remove the compose commentary skeleton decision").
 #
-# Spec section 3: "A signature 'compose a commentary' decision can
-# produce an artifact at high Learning." v2 spec section 4's output
-# table replaces the old binary (ordinary / masterwork-if-Learning-16-
-# and-Yeshiva) with four bands, keyed off the community's GREATNESS BAND
-# via the existing kehillah_pillar_at_least_trigger (common/
-# scripted_triggers/kehillah_scripted_triggers.txt) rather than a fresh
-# threshold check:
+# Superseded by kehillah_write_book_decision (common/decisions/kehillah_
+# rabbi_book_decisions.txt) and its event chain (events/kehillah_book_
+# events.txt) -- the two were built to coexist (see that file's own
+# header, "nothing here removes or replaces the existing decision"), but
+# with Write a Book now fleshed out into a real multi-step chain with its
+# own genre/tier/artifact system, this decision's one-click, four-band
+# flat resolution reads as the thinner, superseded version of the same
+# idea, not a genuinely different one -- the same shape of call this
+# mod already made once before for kehillah_extend_loan_decision (see
+# that decision's own retirement note below, in the LIGHT LOAN CONTRACTS
+# section, for the precedent this follows).
 #
-#   Crisis/Strained -- a private teaching note. No artifact, base reward
-#     only (exactly what the old "ordinary" else-branch gave).
-#   Healthy -- a real commentary. THIS TIER KEEPS THE OLD MASTERWORK
-#     BRANCH'S REWARD NUMBERS VERBATIM (major_piety_gain / no-DLC
-#     major_prestige_gain) -- see the rarity note below for the one
-#     thing that does change.
-#   Flourishing -- a widely-copied responsum: bigger piety/prestige
-#     (vanilla's own next rung up the same generic ladder,
-#     massive_piety_gain / massive_prestige_gain) plus a new Greatness
-#     kicker (kehillah_commentary_flourishing_greatness_bonus) and
-#     flavor text saying the work is cited by name elsewhere.
-#   Legendary -- a chronicle of the community itself: the biggest
-#     reward on this ladder (monumental_piety_gain /
-#     monumental_prestige_gain, kehillah_commentary_legendary_greatness_
-#     bonus) and flavor text making explicit that other communities now
-#     write about THIS one -- the payoff line v2 spec section 4 calls
-#     for.
+# WHAT IT DID, for reference (full text preserved in git history, not
+# kept commented out here): four bands keyed off the community's
+# Greatness pillar (kehillah_pillar_at_least_trigger) -- Crisis/Strained
+# a private teaching note (no artifact), Healthy a real commentary
+# (masterwork rarity), Flourishing a widely-copied responsum (famed) with
+# a Greatness kicker, Legendary a chronicle of the community itself
+# (illustrious) with a bigger kicker -- gated on a flat learning >= 8
+# floor, EP1-degrading gracefully to prestige-only when no Royal Court.
 #
-# THE PERSONAL LEARNING FLOOR IS UNCHANGED AND SEPARATE FROM THE BAND
-# GATE. is_valid's learning >= 8 check is a per-CHARACTER capability
-# requirement ("can this leader write anything at all"), not a
-# community-standing gate -- kept as-is rather than folded into the
-# band logic, because the two questions are genuinely different (a
-# newly appointed but personally brilliant leader of a Crisis-band
-# community can still compose a private note; a middling scholar leading
-# a Flourishing community still needs Learning 8 to attempt anything).
-# The old inner "learning >= 16 AND has_domicile_parameter =
-# kehillah_has_yeshiva" gate is DROPPED as a separate condition for the
-# Healthy tier specifically -- a deliberate simplification, not an
-# oversight: the Greatness band itself already substantially captures
-# "the institution and the man are both ready" (kehillah_greatness_
-# baseline_value already weighs the Yeshiva's own tiers and the leader's
-# Learning), so re-checking both conditions a second time inside the
-# Healthy branch would just be the same fact gated twice. If a future
-# playtest finds the Healthy tier triggers too easily on Learning-8
-# leaders with no real institution behind them, reintroducing an inner
-# check here is the fix.
-#
-# RARITY ENUM, CONFIRMED AGAINST LIVE VANILLA FILES, NOT ASSUMED --
-# READ BEFORE CHANGING. common/artifacts/blueprints/_blueprints.info and
-# 00_reforge.txt both enumerate rarity strictly as
-# common < masterwork < famed < illustrious. illustrious is therefore
-# the TOP of the scale, not a middle rung -- there is no rarity ABOVE
-# illustrious for a hypothetical Flourishing/Legendary tier to use, which
-# is exactly the possibility this task's own brief flagged as needing
-# confirmation ("better rarity if the artifact system supports a tier
-# above illustrious"). It does not. Given that, and given the old
-# Healthy-tier branch already used illustrious (the maximum), literally
-# "keeping Healthy's behavior as-is" would leave nothing above it for
-# Flourishing/Legendary to reach for. The chosen resolution: redistribute
-# the three non-common rarities across the three tiers that now produce
-# an artifact at all -- Healthy = masterwork, Flourishing = famed,
-# Legendary = illustrious -- so rarity actually climbs with the band, at
-# the cost of the Healthy tier's artifact being ONE STEP LESS RARE than
-# it used to be. This is the one place in this item where "keep this
-# tier's behavior as-is" (the task's own suggested default) was NOT
-# followed, and it is a deliberate, reasoned deviation, not an oversight
-# -- flagged here and in the final report.
-#
-# The DLC-degradation behavior (works without Royal Court, just no
-# physical artifact) is preserved at every tier, per this task's
-# explicit instruction -- see the has_ep1_dlc_trigger branch repeated
-# inside each of the three artifact-producing tiers below.
+# The loc keys this decision alone owned (kehillah_compose_commentary_
+# decision/_desc/_tooltip/_confirm, kehillah_requires_learning_8_tt, the
+# five kehillah_compose_commentary_*_tt / *_no_dlc_tt tier tooltips, and
+# the three kehillah_commentary_artifact_desc* artifact descriptions)
+# were removed from kehillah_l_english.yml in the same pass. The three
+# script values it alone used (kehillah_commentary_piety_cost, kehillah_
+# commentary_flourishing_greatness_bonus, kehillah_commentary_legendary_
+# greatness_bonus) were removed from kehillah_script_values.txt likewise
+# -- see that file's own pointer notes at the points of removal.
 # =====================================================================
-
-kehillah_compose_commentary_decision = {
-	picture = {
-		reference = "gfx/interface/illustrations/decisions/decision_tale.dds"
-	}
-
-	decision_group_type = kehillah
-	sort_order = 95
-	ai_check_interval = 60
-
-	is_shown = {
-		government_has_flag = government_is_kehillah
-	}
-
-	is_valid = {
-		is_adult = yes
-		is_imprisoned = no
-		custom_tooltip = {
-			text = kehillah_requires_learning_8_tt
-			learning >= 8
-		}
-	}
-
-	cost = {
-		piety = kehillah_commentary_piety_cost
-	}
-
-	cooldown = { years = 10 }
-
-	effect = {
-		add_learning_lifestyle_xp = major_lifestyle_xp
-		primary_title = { change_variable = { name = kehillah_var_greatness add = major_influence_gain } }
-		add_prestige = medium_prestige_gain
-
-		if = {
-			limit = {
-				kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_legendary_threshold }
-			}
-			# LEGENDARY -- a chronicle of the community itself.
-			primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_commentary_legendary_greatness_bonus } }
-			add_piety = monumental_piety_gain
-
-			if = {
-				limit = { has_ep1_dlc_trigger = yes }
-				create_artifact_book_effect = {
-					OWNER = root
-					CREATOR = root
-					SET_SUBJECT = flag:no
-					SET_TOPIC = flag:no
-				}
-				scope:newly_created_artifact ?= {
-					set_artifact_description = kehillah_commentary_artifact_desc_legendary
-					set_artifact_rarity = illustrious
-					set_owner = root
-				}
-				custom_tooltip = kehillah_compose_commentary_legendary_tt
-			}
-			else = {
-				add_prestige = monumental_prestige_gain
-				custom_tooltip = kehillah_compose_commentary_legendary_no_dlc_tt
-			}
-		}
-		else_if = {
-			limit = {
-				kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_flourishing_threshold }
-			}
-			# FLOURISHING -- a widely-copied responsum, cited by name.
-			primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_commentary_flourishing_greatness_bonus } }
-			add_piety = massive_piety_gain
-
-			if = {
-				limit = { has_ep1_dlc_trigger = yes }
-				create_artifact_book_effect = {
-					OWNER = root
-					CREATOR = root
-					SET_SUBJECT = flag:no
-					SET_TOPIC = flag:no
-				}
-				scope:newly_created_artifact ?= {
-					set_artifact_description = kehillah_commentary_artifact_desc_flourishing
-					set_artifact_rarity = famed
-					set_owner = root
-				}
-				custom_tooltip = kehillah_compose_commentary_flourishing_tt
-			}
-			else = {
-				add_prestige = massive_prestige_gain
-				custom_tooltip = kehillah_compose_commentary_flourishing_no_dlc_tt
-			}
-		}
-		else_if = {
-			limit = {
-				kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_healthy_threshold }
-			}
-			# HEALTHY -- a real commentary. Same reward numbers as the old
-			# masterwork branch; see this decision's header for the one
-			# thing that changed (rarity: illustrious -> masterwork).
-			add_piety = major_piety_gain
-
-			if = {
-				limit = { has_ep1_dlc_trigger = yes }
-				create_artifact_book_effect = {
-					OWNER = root
-					CREATOR = root
-					SET_SUBJECT = flag:no
-					SET_TOPIC = flag:no
-				}
-				scope:newly_created_artifact ?= {
-					set_artifact_description = kehillah_commentary_artifact_desc
-					set_artifact_rarity = masterwork
-					set_owner = root
-				}
-				custom_tooltip = kehillah_compose_commentary_masterwork_tt
-			}
-			else = {
-				add_prestige = major_prestige_gain
-				custom_tooltip = kehillah_compose_commentary_masterwork_no_dlc_tt
-			}
-		}
-		else = {
-			# CRISIS/STRAINED -- a private teaching note. No artifact;
-			# the unconditional base reward above (Learning XP, a little
-			# Greatness, a little Prestige) is the whole reward, matching
-			# what the old "ordinary" branch gave.
-			custom_tooltip = kehillah_compose_commentary_ordinary_tt
-		}
-	}
-
-	ai_potential = {
-		government_has_flag = government_is_kehillah
-	}
-
-	ai_will_do = {
-		base = 70
-	}
-}
 
 
 # =====================================================================

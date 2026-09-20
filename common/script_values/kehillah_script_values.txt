@@ -86,8 +86,11 @@ kehillah_tzedakah_stability_gain = {
 # remaining reference. Full account in
 # common/decisions/kehillah_decisions.txt at the point of removal.
 
-# Composing a Torah commentary. The Greatness pillar's signature act.
-kehillah_commentary_piety_cost = 100
+# kehillah_commentary_piety_cost (Composing a Torah commentary) lived
+# here. Removed 2026-09-15 when kehillah_compose_commentary_decision was
+# retired in favor of kehillah_write_book_decision -- see that decision's
+# own retirement note, common/decisions/kehillah_decisions.txt, for the
+# full account.
 
 # =====================================================================
 # WRITE A BOOK -- kehillah_write_book_decision (common/decisions/
@@ -98,10 +101,13 @@ kehillah_commentary_piety_cost = 100
 # was met) into one decision that opens a real chain: pick a genre,
 # pick an inspiration, discuss the work with a courtier, decide how
 # hard to revise, then the book is finished and copies go out to nearby
-# communities. A personal-mastery counterpart to kehillah_compose_
-# commentary_decision above: cheaper (this is one person's own
-# scholarship, not an act that draws on the whole community's
-# standing), but reaches a real event chain that decision never did.
+# communities. Originally a personal-mastery counterpart to kehillah_
+# compose_commentary_decision (cheaper, one person's own scholarship
+# rather than an act drawing on the whole community's standing, but
+# reaching a real event chain that decision never did) -- that decision
+# is RETIRED as of 2026-09-15 (see its own retirement note, common/
+# decisions/kehillah_decisions.txt), so this is now this mod's only
+# "compose a scholarly work" mechanic, full stop.
 kehillah_rabbi_book_piety_cost = 75
 
 # THE TALLY. Same shape as the Bet Din docket's own tally (common/
@@ -146,11 +152,27 @@ kehillah_book_courtier_lucky_bonus = 8
 kehillah_book_revision_gain = 15
 kehillah_book_revision_stress = minor_stress_gain
 
+# A FOURTH INSPIRATION OPTION, ADDED 2026-09-15 at user request: "draw
+# on a bet din memory of a good ruling to improve the quality of your
+# book, particularly for Talmudics and Halakha works." Visible in
+# kehillah_book.0002 only when the genre is talmudics (Halakha merged
+# into Talmudics later the same day -- kehillah_rabbi_trait's own
+# header, common/traits/kehillah_traits.txt -- so this is the same set
+# of books the option was always meant to cover, not a narrowing) AND
+# the writer holds at least one of the seven "good ruling" Bet Din
+# memory types (kehillah_has_good_bet_din_memory_trigger, common/
+# scripted_triggers/kehillah_scripted_triggers.txt). Unlike the other
+# two inspiration options, this one has NO stat gate and cannot fail --
+# it is recalling something that genuinely happened, not gambling on
+# one -- and pays MORE than kehillah_book_inspiration_gain's own pass
+# value for exactly that reason: a real, earned memory of ruling well
+# is worth more than a favorable roll on generic inspiration.
+kehillah_book_bet_din_memory_gain = 16
+
 # FINAL THRESHOLDS. No failure floor: the worst possible outcome is
-# still a masterwork-tier book, never nothing, matching kehillah_
-# compose_commentary_decision's own bottom tier (a private note, not
-# an abject failure) rather than wasting the Piety already spent to
-# start the chain.
+# still a masterwork-tier book, never nothing -- a private note, not an
+# abject failure, rather than wasting the Piety already spent to start
+# the chain.
 kehillah_book_threshold_illustrious = 55
 kehillah_book_threshold_famed = 30
 
@@ -272,84 +294,38 @@ kehillah_greatness_baseline_floor_value = 60
 # ---------------------------------------------------------------------
 
 kehillah_prosperity_baseline_value = {
+	# REFACTORED 2026-09-15 (v12 spec section 8): every term below is now
+	# the matching kehillah_bd_<x>_value from common/script_values/
+	# kehillah_breakdown_values.txt, so this baseline and the per-score
+	# breakdown tooltip that explains it are ONE set of numbers -- a
+	# building's contribution is defined exactly once. Change a term
+	# there, and both move together.
+	#
+	# This also fixed a real bug that had been here since Wave 2: the
+	# literal terms called has_domicile_building_or_higher BARE, from
+	# character scope. It is a DOMICILE-scope trigger -- every vanilla use
+	# wraps it as domicile ?= { ... } (common/achievements/
+	# ep3_achievements.txt:210-220; zero bare uses anywhere) and ck3-tiger
+	# had warned about it on every run. The breakdown values wrap it
+	# correctly, so routing through them fixes the baselines too.
+
 	value = 0
 
-	# Countinghouse. Cumulative across tiers, same pattern as every
-	# other building check in kehillah_quarterly_pillars_effect: a
-	# fully-built Countinghouse satisfies all three has_domicile_
-	# building_or_higher checks below and adds all three contributions.
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_countinghouse_01 }
-		add = 80
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_countinghouse_02 }
-		add = 70
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_countinghouse_03 }
-		add = 90
-	}
+	# Countinghouse, Market Stalls, Craft Workshops: cumulative across
+	# tiers. Slaughterhouse: v2 spec's "Prosperity undertone" -- smaller,
+	# it exists mainly for Stability (a community that cannot keep kosher
+	# cannot function as one), not primarily as an economic engine.
+	add = kehillah_bd_countinghouse_value
+	add = kehillah_bd_market_stalls_value
+	add = kehillah_bd_workshops_value
+	add = kehillah_bd_slaughterhouse_value
 
-	# Market Stalls.
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_market_stalls_01 }
-		add = 50
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_market_stalls_02 }
-		add = 50
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_market_stalls_03 }
-		add = 70
-	}
-
-	# Craft Workshops.
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_workshops_01 }
-		add = 40
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_workshops_02 }
-		add = 40
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_workshops_03 }
-		add = 60
-	}
-
-	# Slaughterhouse -- v2 spec's "Prosperity undertone". Smaller than
-	# the three dedicated Prosperity buildings above; it exists mainly
-	# for Stability (a community that cannot keep kosher cannot function
-	# as one), not primarily as an economic engine.
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_slaughterhouse_01 }
-		add = 25
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_slaughterhouse_02 }
-		add = 35
-	}
-
-	# The Stewardship term -- see this script value's own header above
-	# for the top-N-aggregate approximation this implements.
-	add = {
-		value = stewardship
-		multiply = kehillah_baseline_leader_stat_weight
-	}
-	if = {
-		limit = { employs_court_position = treasurer_kehillah_position }
-		add = {
-			value = 0
-			court_position:treasurer_kehillah_position = {
-				add = {
-					value = stewardship
-					multiply = kehillah_baseline_officer_stat_weight
-				}
-			}
-		}
-	}
+	# The Stewardship terms -- see this script value's own header above
+	# for the top-N-aggregate approximation these implement: the leader
+	# at full weight, the Gabbai (Treasurer) at discounted weight if the
+	# office is filled.
+	add = kehillah_bd_leader_stewardship_value
+	add = kehillah_bd_treasurer_value
 }
 
 # ---------------------------------------------------------------------
@@ -384,35 +360,33 @@ kehillah_prosperity_baseline_value = {
 # ---------------------------------------------------------------------
 
 kehillah_stability_baseline_value = {
+	# REFACTORED 2026-09-15 (v12 spec section 8): every term below is now
+	# the matching kehillah_bd_<x>_value from common/script_values/
+	# kehillah_breakdown_values.txt, so this baseline and the per-score
+	# breakdown tooltip that explains it are ONE set of numbers -- a
+	# building's contribution is defined exactly once. Change a term
+	# there, and both move together.
+	#
+	# This also fixed a real bug that had been here since Wave 2: the
+	# literal terms called has_domicile_building_or_higher BARE, from
+	# character scope. It is a DOMICILE-scope trigger -- every vanilla use
+	# wraps it as domicile ?= { ... } (common/achievements/
+	# ep3_achievements.txt:210-220; zero bare uses anywhere) and ck3-tiger
+	# had warned about it on every run. The breakdown values wrap it
+	# correctly, so routing through them fixes the baselines too.
+
 	value = 0
 	add = kehillah_stability_baseline_floor_value
 
-	# Hekdesh.
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_hekdesh_01 }
-		add = 60
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_hekdesh_02 }
-		add = 60
-	}
+	# Hekdesh, cumulative across tiers.
+	add = kehillah_bd_hekdesh_value
 
-	# Whether the Shtadlan seat is filled -- reuses the existing
-	# kehillah_has_shtadlan_trigger (common/scripted_triggers/
-	# kehillah_scripted_triggers.txt) rather than re-deriving the same
-	# check a second way.
-	if = {
-		limit = { kehillah_has_shtadlan_trigger = yes }
-		add = 90
-	}
-
-	# Whether the Gabbai Tzedakah seat is filled -- see this script
-	# value's own header above for why this is here despite not being in
-	# the spec's own Stability-baseline formula list.
-	if = {
-		limit = { employs_court_position = gabbai_tzedakah_kehillah_position }
-		add = 40
-	}
+	# Whether the Shtadlan seat is filled (kehillah_has_shtadlan_trigger,
+	# inside the bd value) and whether the Gabbai Tzedakah seat is -- see
+	# this script value's own header above for why the latter is here
+	# despite not being in the spec's own Stability-baseline formula list.
+	add = kehillah_bd_shtadlan_in_post_value
+	add = kehillah_bd_gabbai_tzedakah_in_post_value
 }
 
 # ---------------------------------------------------------------------
@@ -439,74 +413,36 @@ kehillah_stability_baseline_value = {
 # ---------------------------------------------------------------------
 
 kehillah_greatness_baseline_value = {
+	# REFACTORED 2026-09-15 (v12 spec section 8): every term below is now
+	# the matching kehillah_bd_<x>_value from common/script_values/
+	# kehillah_breakdown_values.txt, so this baseline and the per-score
+	# breakdown tooltip that explains it are ONE set of numbers -- a
+	# building's contribution is defined exactly once. Change a term
+	# there, and both move together.
+	#
+	# This also fixed a real bug that had been here since Wave 2: the
+	# literal terms called has_domicile_building_or_higher BARE, from
+	# character scope. It is a DOMICILE-scope trigger -- every vanilla use
+	# wraps it as domicile ?= { ... } (common/achievements/
+	# ep3_achievements.txt:210-220; zero bare uses anywhere) and ck3-tiger
+	# had warned about it on every run. The breakdown values wrap it
+	# correctly, so routing through them fixes the baselines too.
+
 	value = 0
 	add = kehillah_greatness_baseline_floor_value
 
-	# Synagogue. Cumulative across tiers -- see this script value's own
-	# header above for why it is here.
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_synagogue_01 }
-		add = 40
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_synagogue_02 }
-		add = 30
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_synagogue_03 }
-		add = 40
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_synagogue_04 }
-		add = 40
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_synagogue_05 }
-		add = 50
-	}
+	# Synagogue (see this script value's own header above for why it is
+	# here), Beit Midrash / Yeshiva, Sofer's Workshop: cumulative across
+	# tiers.
+	add = kehillah_bd_synagogue_value
+	add = kehillah_bd_beit_midrash_value
+	add = kehillah_bd_sofer_workshop_value
 
-	# Beit Midrash / Yeshiva.
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_beit_midrash_01 }
-		add = 50
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_beit_midrash_02 }
-		add = 40
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_beit_midrash_03 }
-		add = 60
-	}
-
-	# Sofer's Workshop.
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_sofer_workshop_01 }
-		add = 20
-	}
-	if = {
-		limit = { has_domicile_building_or_higher = kehillah_sofer_workshop_02 }
-		add = 30
-	}
-
-	# The Learning term -- see this script value's own header above for
-	# the top-N-aggregate approximation this implements.
-	add = {
-		value = learning
-		multiply = kehillah_baseline_leader_stat_weight
-	}
-	if = {
-		limit = { employs_court_position = chief_rabbi_kehillah_position }
-		add = {
-			value = 0
-			court_position:chief_rabbi_kehillah_position = {
-				add = {
-					value = learning
-					multiply = kehillah_baseline_officer_stat_weight
-				}
-			}
-		}
-	}
+	# The Learning terms -- see this script value's own header above for
+	# the top-N-aggregate approximation these implement: the leader at
+	# full weight, the Chief Rabbi at discounted weight if in post.
+	add = kehillah_bd_leader_learning_value
+	add = kehillah_bd_chief_rabbi_value
 }
 
 # ---------------------------------------------------------------------
@@ -707,22 +643,12 @@ kehillah_epidemic_recovery_stability_gain = 25
 # value below is actually read.
 # =====================================================================
 
-# ---------------------------------------------------------------------
-# Sfarim (book) tiers -- Compose a Commentary (Wave 3 item 1).
-#
-# The Healthy tier keeps its existing reward numbers verbatim
-# (major_piety_gain / major_prestige_gain, both vanilla-generic script
-# values already used before this task -- not redefined here). Flourishing
-# and Legendary reuse vanilla's own next rungs up the SAME generic ladder
-# (massive_/monumental_ piety and prestige gain, common/script_values/
-# 00_basic_values.txt) rather than inventing parallel Kehillah-specific
-# piety/prestige constants -- only the Greatness kicker below is genuinely
-# new, since "a Greatness reward on top of today's reward" (v2 spec
-# section 4's output table) has no vanilla equivalent to reuse.
-# ---------------------------------------------------------------------
-
-kehillah_commentary_flourishing_greatness_bonus = 40
-kehillah_commentary_legendary_greatness_bonus = 90
+# kehillah_commentary_flourishing_greatness_bonus / kehillah_commentary_
+# legendary_greatness_bonus (Sfarim tiers, Compose a Commentary) lived
+# here. Removed 2026-09-15 along with kehillah_commentary_piety_cost
+# above when kehillah_compose_commentary_decision was retired in favor
+# of kehillah_write_book_decision -- see that decision's own retirement
+# note, common/decisions/kehillah_decisions.txt, for the full account.
 
 
 # ---------------------------------------------------------------------
@@ -955,21 +881,124 @@ kehillah_bet_din_conference_cooldown_years = 3
 # scholar rather than merely a capable one.
 kehillah_bet_din_scholar_guest_learning_threshold = 16
 
+# ADDED 2026-09-15, REWRITTEN 2026-09-17 (see kehillah_bet_din_judge_
+# score_value below and kehillah_bet_din_eligible_judge_trigger, common/
+# scripted_triggers/kehillah_scripted_triggers.txt, for the full account
+# of why the co-judge seats moved from two compelled special_guests to an
+# open-invite-and-rank-the-top-2-by-attendance design). Originally three
+# separate hand-written pools; now a plain headcount of everyone
+# kehillah_bet_din_eligible_judge_trigger accepts, iterated across the
+# same three POPULATIONS as before (other same-region community leaders,
+# the host's own high-Learning courtiers, qualifying independent Jewish
+# rulers) -- what changed is not WHO counts, only that the eligibility
+# test itself now lives in one shared trigger instead of being re-derived
+# by hand in three places (this value, the old select_character pools,
+# and can_be_activity_guest) that could quietly drift out of sync with
+# each other. This is still only a PLANNING-TIME estimate of how many
+# people COULD show up, same as before -- actual turnout is what
+# kehillah_bet_din_open_docket_effect (common/scripted_effects/kehillah_
+# bet_din_scripted_effects.txt) checks for real, once the docket opens.
+#
+# HOST = root throughout, not scope:host: kehillah_bet_din_eligible_
+# judge_trigger takes $HOST$ as a real parameter (this mod's established
+# $PARAM$-substitution pattern, not a script value -- see the trigger's
+# own header for why), and root here is safe to pass directly even inside
+# the nested `holder = { ... }` block below -- root is the ORIGINAL scope
+# a trigger/effect/value was invoked on and does NOT change when a nested
+# block like `holder = {...}` shifts what "this" refers to; only `this`
+# moves. This value's own root is the leader/host character throughout
+# (its own "Scope: a Kehillah leader" header), so `HOST = root` correctly
+# means the host at every nesting depth below, with no scope-saving
+# needed at all (confirmed real precedent already in this file's own
+# git history: kehillah_region_can_field_bet_din_panel_trigger's own OLD
+# body did `holder = { kehillah_shares_minhag_region_trigger = { OTHER =
+# root } }`, the identical pattern).
+kehillah_bet_din_available_co_judges_value = {
+	value = 0
+
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = { exists = holder }
+		holder = {
+			if = {
+				limit = { kehillah_bet_din_eligible_judge_trigger = { HOST = root } }
+				add = 1
+			}
+		}
+	}
+
+	every_courtier = {
+		limit = { kehillah_bet_din_eligible_judge_trigger = { HOST = root } }
+		add = 1
+	}
+
+	every_independent_ruler = {
+		limit = { kehillah_bet_din_eligible_judge_trigger = { HOST = root } }
+		add = 1
+	}
+}
+
+# ADDED 2026-09-17, alongside the rewrite above -- ranks a candidate for
+# the two co-judge seats once the docket actually opens (kehillah_bet_
+# din_open_docket_effect, common/scripted_effects/kehillah_bet_din_
+# scripted_effects.txt: `ordered_attending_character = { order_by =
+# { value = kehillah_bet_din_judge_score_value } ... }`). Scope: a
+# candidate character (an activity attendee); requires scope:host, the
+# same requirement kehillah_bet_din_eligible_judge_trigger has and for
+# the same reason -- on_phase_active provides scope:host natively
+# (activity_type.info's own doc), so the docket-open call site needs no
+# extra save_scope_as of its own, unlike kehillah_bet_din_available_co_
+# judges_value above.
+#
+# FAVORED, NOT REQUIRED: a region-sharing community leader gets a flat
+# 1,000,000 floor plus their own community's Greatness -- enough to
+# always outrank a courtier or independent scholar/adventurer (whose own
+# score is bare Learning, comfortably under three digits) when a leader
+# actually attends, without making one mandatory when none does. This is
+# the same "favored" property THE PANEL (kehillah_bet_din_conference.txt's
+# own header) describes -- previously enforced by scoring a pre-built
+# candidate POOL before anyone was picked; now scoring who actually
+# SHOWED UP, which is what let the co-judge seats become real declinable
+# invites in the first place (a picked-in-advance special_guest cannot
+# gracefully be "whoever attends," only "this one person, yes or no").
+# The has_variable guard on Greatness matches kehillah_standing_value
+# above's own reasoning: a not-yet-initialized community should not error
+# out, just miss its own bonus and fall back to the flat 1,000,000 floor.
+kehillah_bet_din_judge_score_value = {
+	value = 0
+	if = {
+		limit = {
+			is_ruler = yes
+			kehillah_shares_minhag_region_trigger = { OTHER = scope:host }
+		}
+		add = 1000000
+		if = {
+			limit = { primary_title = { has_variable = kehillah_var_greatness } }
+			add = { value = primary_title.var:kehillah_var_greatness }
+		}
+	}
+	else = {
+		add = learning
+	}
+}
+
 # ADDED 2026-09-09, kehillah_rabbi_trait's tracks (common/traits/
-# kehillah_traits.txt) -- how much talmudics/halakha/parshanut trait_xp
-# a judge who already holds the trait gains from a case resolution.
-# Every case grants talmudics + halakha (any tier -- see kehillah_bet_
-# din_record_case_result_effect's own header for why); parshanut only
-# on a GREAT tier (kehillah_bet_din_grant_parshanut_xp_effect), so its
-# per-grant value is somewhat higher to still add up to something over
-# a career despite firing far less often. At 15/case, reaching this
-# trait's own 100-XP track threshold takes roughly 7 cases (2-3
-# Conference sessions, since a session hears 3 of the case pool per the
-# docket) for a judge who consistently sits on the panel -- close to a
-# decade at the Conference's own 3-year cooldown, which reads right for
-# "mastery," not something earned in one sitting.
-kehillah_rabbi_talmudics_xp_per_case = 15
-kehillah_rabbi_halakha_xp_per_case = 15
+# kehillah_traits.txt) -- how much talmudics/parshanut trait_xp a judge
+# who already holds the trait gains from a case resolution. Every case
+# grants talmudics (any tier -- see kehillah_bet_din_record_case_result_
+# effect's own header for why); parshanut only on a GREAT tier (kehillah_
+# bet_din_grant_parshanut_xp_effect), so its per-grant value is somewhat
+# higher to still add up to something over a career despite firing far
+# less often.
+#
+# UPDATED 2026-09-15: kehillah_rabbi_talmudics_xp_per_case is now 30, not
+# 15 -- the OLD 15/case shape granted talmudics AND a separate halakha
+# track, both at 15, every case; halakha is now merged into talmudics
+# (kehillah_rabbi_trait's own header has the full account), so this is
+# the SUM of the two old per-case grants, not a buff. The "roughly 7
+# cases (2-3 Conference sessions) to max a track" pacing this value was
+# originally tuned for is therefore unchanged in practice.
+kehillah_rabbi_talmudics_xp_per_case = 30
 kehillah_rabbi_parshanut_xp_per_great_case = 20
 
 # Per-judge tally contributions -- see events/kehillah_bet_din_events.txt
@@ -1031,6 +1060,43 @@ kehillah_bet_din_case3_stability_loss_poor = 15
 kehillah_bet_din_case4_stability_gain_great = 30
 kehillah_bet_din_case4_stability_gain_good = 12
 kehillah_bet_din_case4_stability_loss_poor = 20
+
+# Case 5 -- A Cursed Amulet (Learning-led; Stability/Greatness). ADDED
+# 2026-09-15 at user request. Magnitude matches case 2's family (also a
+# single-household scandal read by the whole community, also Learning-
+# led), not case 1's dowry-dispute or case 4's Diplomacy-led scale.
+# kehillah_bet_din_case5_direction (1 = ruled the scribe guilty, 0 =
+# vindicated him) is, as with cases 2-4, a SEPARATE axis from this tally
+# -- see kehillah_bet_din_amulet_resolution_effect's own header (common/
+# scripted_effects/kehillah_bet_din_scripted_effects.txt) for the
+# direction-specific consequences (cherem plus the amulet destroyed, or
+# a lesser reprimand) these tier values sit alongside, not instead of.
+kehillah_bet_din_case5_stability_gain_great = 35
+kehillah_bet_din_case5_greatness_gain_great = 20
+kehillah_bet_din_case5_stability_gain_good = 15
+kehillah_bet_din_case5_greatness_gain_good = 8
+kehillah_bet_din_case5_stability_loss_poor = 20
+
+# Case 6 -- The Silversmiths' Quarrel (Stability/Prosperity -- a craft
+# dispute, matching case 1's own Prosperity-bearing shape). ADDED
+# 2026-09-15 at user request. UNLIKE every case before it, the tally
+# check's stat is NOT uniform across the host's three options -- see
+# events/kehillah_bet_din_events.txt's own header on kehillah_bet_din.
+# 0051 for why that deviation from cases 1-4's own precedent is
+# deliberate here (three genuinely different kinds of legal reasoning,
+# not three facings of one argument). kehillah_bet_din_case6_direction
+# (1 = mesirah/cherem, 2 = gerama/liable, 3 = dismissed) again sits
+# alongside this tally, not instead of it -- see kehillah_bet_din_
+# silversmiths_resolution_effect's own header for the restitution/
+# cherem/Piety consequences each direction carries. Restitution itself
+# reuses vanilla's own medium_gold_value directly at the call site
+# rather than a bespoke alias, matching this file's own "genuinely new
+# numbers only" convention already established for Task Contracts.
+kehillah_bet_din_case6_stability_gain_great = 35
+kehillah_bet_din_case6_prosperity_gain_great = 25
+kehillah_bet_din_case6_stability_gain_good = 15
+kehillah_bet_din_case6_prosperity_gain_good = 10
+kehillah_bet_din_case6_stability_loss_poor = 20
 
 # The "beat him up" direction's opinion collapse lives as a literal -70
 # directly in common/opinion_modifiers/kehillah_opinion_modifiers.txt's
@@ -1281,6 +1347,93 @@ kehillah_translation_steal_greatness_reward = 15
 
 
 # =====================================================================
+# LOAN CHALLENGE CHAIN -- events/kehillah_loan_events.txt, namespace
+# kehillah_loan_challenge. ADDED 2026-09-17, alongside the direction
+# reversal (see kehillah_loan_contract's own header, common/task_
+# contracts/kehillah_task_contracts.txt) -- at the user's explicit
+# request for "an event chain with challenges to succeed." Same tally
+# shape as kehillah_translation_*, own namespace throughout so the two
+# chains' tallies (a character could conceivably be mid-loan-negotiation
+# and mid-translation at once) can never collide.
+#
+# BASELINE set in on_accepted from root's Stewardship (the Kehillah
+# lender's own financial acumen) -- three bands, same shape as kehillah_
+# translation_baseline_*. Two-tier resolution only (SUCCESS/FAILURE, no
+# TRIUMPH) -- see kehillah_loan_contract's own header for why a binary
+# "does the loan happen" stake fits a financial negotiation better than
+# a three-way quality spread.
+kehillah_loan_challenge_baseline_low = 8
+kehillah_loan_challenge_baseline_mid = 16
+kehillah_loan_challenge_baseline_high = 26
+
+# Stage 1 (kehillah_loan_challenge.0001, "Assessing the Borrower") --
+# investigate personally (Stewardship-gated pass/fail), send a trusted
+# agent first (a small, guaranteed gain, at a gold cost), or lend on
+# reputation alone (skip the check, the reckless option's smaller loss).
+kehillah_loan_challenge_assess_gain = 12
+kehillah_loan_challenge_assess_loss = 5
+kehillah_loan_challenge_assess_agent_gain = 8
+kehillah_loan_challenge_assess_reckless_loss = 3
+
+# Stage 2 (kehillah_loan_challenge.0002, "Negotiating Terms") -- a real
+# tradeoff, not a flat gate: firm terms (small guaranteed gain, no
+# downside) vs. generous terms (bigger potential gain, but a bigger loss
+# if the deal falls through anyway -- generosity that doesn't pay off
+# reads as having been taken advantage of).
+kehillah_loan_challenge_firm_gain = 10
+kehillah_loan_challenge_generous_gain = 18
+kehillah_loan_challenge_generous_loss = 10
+
+# Resolution (kehillah_loan_challenge.0003, "Sealing the Loan") -- the
+# one threshold the final tally is checked against.
+kehillah_loan_challenge_threshold_success = 24
+
+# A modest, one-time bonus for a strongly-negotiated loan, paid at
+# origination (SUCCESS only) -- deliberately smaller than and separate
+# from kehillah_loan_repayment_greatness_reward (20, paid later on actual
+# repayment), so this cannot be mistaken for double-booking the existing
+# reward.
+kehillah_loan_challenge_negotiation_greatness_bonus = 10
+
+
+# =====================================================================
+# HEBREW TUTOR CHALLENGE CHAIN -- events/kehillah_hebrew_tutor_events.txt,
+# namespace kehillah_hebrew_tutor. ADDED 2026-09-17, per the user's
+# explicit request ("same for the tutor in Hebrew... an event chain"),
+# the v11 spec's own section 5 shape (written but never built) finally
+# implemented. Same tally shape as kehillah_translation_*, own namespace.
+#
+# BASELINE set in on_accepted from root's Learning -- three bands, same
+# shape as kehillah_translation_baseline_*. tutor_great/tutor_good
+# (common/task_contracts/kehillah_task_contracts.txt) keep their existing
+# values verbatim; only tutor_poor below is new.
+kehillah_hebrew_tutor_baseline_low = 8
+kehillah_hebrew_tutor_baseline_mid = 16
+kehillah_hebrew_tutor_baseline_high = 26
+
+# Stage 1 (kehillah_hebrew_tutor.0001, "The First Lesson") -- teach
+# personally (Learning-gated pass/fail), bring in a learned courtier to
+# help (a small, guaranteed gain), or rush through it (a guaranteed
+# small loss).
+kehillah_hebrew_tutor_lesson_gain = 12
+kehillah_hebrew_tutor_lesson_loss = 5
+kehillah_hebrew_tutor_lesson_courtier_gain = 8
+kehillah_hebrew_tutor_lesson_rush_loss = 3
+
+# Stage 2 (kehillah_hebrew_tutor.0002, "Patient or Rigorous") -- patient
+# (small guaranteed gain, no risk) vs. rigorous (bigger potential gain,
+# but a real chance of a setback with the pupil).
+kehillah_hebrew_tutor_patient_gain = 10
+kehillah_hebrew_tutor_rigorous_gain = 18
+kehillah_hebrew_tutor_rigorous_loss = 8
+
+# Resolution (kehillah_hebrew_tutor.0003, "The Pupil's Progress") -- two
+# thresholds, high to low; below GOOD is the new tutor_poor floor.
+kehillah_hebrew_tutor_threshold_great = 34
+kehillah_hebrew_tutor_threshold_good = 14
+
+
+# =====================================================================
 # STANDING -- the community's single overall figure.
 #
 # ADDED 2026-09-14 (v12), at the user's explicit decision. This SETTLES a
@@ -1351,3 +1504,236 @@ kehillah_standing_value = {
 
 	divide = 3
 }
+
+
+# =====================================================================
+# LEARN TORAH -- kehillah_learn_torah_decision and kehillah_acquire_
+# torah_work_decision (common/decisions/kehillah_learn_torah_decisions.
+# txt), their events (events/kehillah_learn_torah_events.txt), and the
+# community library triggers/effects those decisions read (common/
+# scripted_triggers/kehillah_scripted_triggers.txt, common/scripted_
+# effects/kehillah_library_effects.txt). ADDED 2026-09-15, the "first
+# version" of docs/spec/spike-book-inventory.md's own lighter path,
+# built as ONE decision opening ONE event with three track options --
+# deliberately flat, not a multi-step chain, the same shape "Write a
+# Book" itself started as (three flat decisions, per that file's own
+# header, common/decisions/kehillah_rabbi_book_decisions.txt) before it
+# grew into a real chain. Room to grow the same way later; not built
+# that way now.
+# =====================================================================
+
+# Piety cost, lower than kehillah_rabbi_book_piety_cost (75) -- Learn
+# Torah is meant to be a repeatable, lighter study session, not "Write a
+# Book"'s own rarer, bigger undertaking. Cooldown (3 years, on the
+# decision itself, common/decisions/kehillah_learn_torah_decisions.txt)
+# matches the Bet Din Conference's own cadence for the same "how often
+# should a real institutional activity plausibly recur" reasoning.
+kehillah_learn_torah_piety_cost = 30
+
+# Cooldown for activity_kehillah_learn_torah_journey (common/activities/
+# activity_types/kehillah_learn_torah_journey.txt), ADDED 2026-09-15 --
+# the travel-to-study half, rebuilt as a real activity the same day at
+# user request ("make it another activity like bet din"). Same 3-year
+# figure as kehillah_learn_torah_piety_cost's own cooldown note just
+# above and kehillah_bet_din_conference_cooldown_years (this file,
+# "BET DIN CONFERENCE" section) -- travel itself already paces this out
+# further in practice, the same way it does for the Bet Din.
+kehillah_learn_torah_journey_cooldown_years = 3
+
+# =====================================================================
+# PICKER BREAKDOWN, ADDED 2026-09-17 at user request ("show a list of N
+# books of Talmudics you haven't studied, N books of Parshanut, N books
+# of Hashkafa"). Scope: a PROVINCE, matching activity_kehillah_learn_
+# torah_journey's own province_score (common/activities/activity_types/
+# kehillah_learn_torah_journey.txt) exactly -- same root (the province
+# being scored), same scope:host (the travelling character), same
+# every_in_global_list-over-kehillah_registered_communities shape, same
+# reason it is three near-identical values rather than one generic value
+# (that file's own province_score comment: CK3 parameter substitution
+# cannot iterate a list of literal work flags). These three are simply
+# province_score's own twelve-work sum SPLIT by track instead of pooled,
+# so the map picker's tooltip can show a per-track count instead of one
+# combined number.
+#
+# WIRED VIA province_description's desc + loc's own ROOT.ScriptValue(...)
+# (activity_kehillah_learn_torah_journey_province_desc, localization/
+# english/kehillah_l_english.yml). FIRST ATTEMPT AT THIS, SAME DAY, USED
+# ROOT.GetValue(...) INSTEAD AND WAS WRONG -- caught by cross-checking a
+# ck3-tiger warning ("GetValue takes 0 arguments") against real vanilla
+# precedent (game/common/scripted_effects/10_ach_effects.txt's own
+# coronation_herd_value): GetValue only reads a value some earlier EFFECT
+# in the SAME chain already wrote into the scope stack via save_scope_
+# value_as (every vanilla GetValue-with-an-argument use found is preceded
+# by exactly that, moments before, in the same effect body) -- and
+# province_description's desc has no effect chain of its own to run one.
+# ScriptValue('name') is the actually-correct, DIFFERENT datafunction:
+# it evaluates a named common/script_values/*.txt object fresh, against
+# whatever scope is currently bound, no prior save needed -- confirmed by
+# real precedent inside PASSIVELY-rendered UI text with no preceding
+# effect chain of its own, the same situation province_description is in
+# (accolade descriptions, decision trigger tooltips, and -- closest of
+# all -- game/localization/english/activities/pilgrimage_activity_l_
+# english.yml's own EmptyScope.ScriptValue(...) calls, live inside an
+# ACTIVITY's own loc file). No precalculation needed as a result: the
+# count is evaluated live on hover, same as province_score itself already
+# is for ranking the map pins. Still genuinely new ground for a
+# province_description specifically (every confirmed precedent found
+# uses a character/EmptyScope root, not a province one) -- live-test the
+# actual pin hover before fully trusting it over ck3-tiger alone.
+# =====================================================================
+
+kehillah_learn_torah_journey_unstudied_parshanut_count_value = {
+	value = 0
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			exists = holder
+			holder = { domicile.domicile_location = root }
+		}
+		add = {
+			value = 0
+			if = {
+				limit = {
+					holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos } } }
+					NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_targum_onkelos } } }
+				}
+				add = 1
+			}
+			if = {
+				limit = {
+					holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mekhilta } } }
+					NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_mekhilta } } }
+				}
+				add = 1
+			}
+			if = {
+				limit = {
+					holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_genesis_rabbah } } }
+					NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_genesis_rabbah } } }
+				}
+				add = 1
+			}
+			if = {
+				limit = {
+					holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_pirkei_derabbi_eliezer } } }
+					NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_pirkei_derabbi_eliezer } } }
+				}
+				add = 1
+			}
+		}
+	}
+}
+
+kehillah_learn_torah_journey_unstudied_talmudics_count_value = {
+	value = 0
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			exists = holder
+			holder = { domicile.domicile_location = root }
+		}
+		add = {
+			value = 0
+			if = {
+				limit = {
+					holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mishnah } } }
+					NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_mishnah } } }
+				}
+				add = 1
+			}
+			if = {
+				limit = {
+					holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi } } }
+					NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_yerushalmi } } }
+				}
+				add = 1
+			}
+			if = {
+				limit = {
+					holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli } } }
+					NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_bavli } } }
+				}
+				add = 1
+			}
+			if = {
+				limit = {
+					holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot } } }
+					NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_halakhot_gedolot } } }
+				}
+				add = 1
+			}
+		}
+	}
+}
+
+kehillah_learn_torah_journey_unstudied_hashkafa_count_value = {
+	value = 0
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			exists = holder
+			holder = { domicile.domicile_location = root }
+		}
+		add = {
+			value = 0
+			if = {
+				limit = {
+					holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_yetzirah } } }
+					NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_sefer_yetzirah } } }
+				}
+				add = 1
+			}
+			if = {
+				limit = {
+					holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_emunot_vedeot } } }
+					NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_emunot_vedeot } } }
+				}
+				add = 1
+			}
+			if = {
+				limit = {
+					holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_chovot_halevavot } } }
+					NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_chovot_halevavot } } }
+				}
+				add = 1
+			}
+			if = {
+				limit = {
+					holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_kuzari } } }
+					NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_kuzari } } }
+				}
+				add = 1
+			}
+		}
+	}
+}
+
+# THE STUDY CHECK. One flat Learning-gated pass/fail per track option,
+# not a multi-stage tally -- studying a specific already-owned work is a
+# smaller, more frequent act than composing an original book, so it gets
+# a smaller, single-roll payout. Consolation XP on a fail (not zero):
+# time spent at the Beit Midrash is never wholly wasted, just less
+# productive.
+kehillah_learn_torah_xp_pass = 15
+kehillah_learn_torah_xp_fail = 5
+
+# REPEAT STUDY, ADDED 2026-09-15 at user request ("keep track of which
+# books you've already studied. Studying the same book a second time
+# should give a much smaller boost than studying a new book"). Tracked
+# per CHARACTER, not per community (kehillah_studied_works, a character
+# variable_list -- see kehillah_study_parshanut/talmudics/hashkafa_
+# effect's own header, common/scripted_effects/kehillah_library_
+# effects.txt, for the full account of how a repeat is detected). Real
+# pass/fail tiers still exist on a repeat, just roughly a third of the
+# fresh values -- "a much smaller boost," not zero; rereading a work
+# already studied still teaches something, just far less than a first
+# read of it does.
+kehillah_learn_torah_xp_repeat_pass = 5
+kehillah_learn_torah_xp_repeat_fail = 2
+
+# ACQUIRING A WORK NOT YET IN THE COMMUNITY'S LIBRARY -- reuses vanilla's
+# own generic gold ladder directly (medium_gold_value, common/script_
+# values/00_basic_values.txt) at the call site rather than a bespoke
+# alias, matching this file's own "genuinely new numbers only" rule
+# already established for Task Contracts and reaffirmed for Bet Din
+# case 6's restitution. No script value needed here for that reason.

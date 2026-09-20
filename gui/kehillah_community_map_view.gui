@@ -10,6 +10,7 @@
 #
 #   kehillah_community_map_view        -- the toggle button
 #   kehillah_community_map_view_panel  -- the roster window
+#   kehillah_own_community_strip       -- your own scores, under the top bar
 #
 # The toggle does three things in one click: paints the map (a
 # scripted_gui, common/scripted_guis/kehillah_map_view_gui.txt),
@@ -172,7 +173,8 @@ flowcontainer = {
 @col_standing = 74
 @col_pillar = 58
 @col_locate = 30
-@roster_width = 560
+@col_quarter = 30
+@roster_width = 600
 
 window = {
 	name = "kehillah_community_map_view_panel"
@@ -184,7 +186,7 @@ window = {
 	# ("Paper Map / Selecting: Realms"), which live pass 4 showed bleeding
 	# through the panel's bottom edge at -196. Draggable from here.
 	position = { -22 -240 }
-	size = { 600 720 }
+	size = { 640 720 }
 
 	# A movable window cannot live inside the flowcontainer that lays out
 	# the toggle -- dragging would fight the layout -- which is why the
@@ -290,8 +292,9 @@ window = {
 				min_width = @col_pillar
 			}
 
-			# Spacer matching the locate button's column.
+			# Spacer matching the two action buttons' columns.
 			widget = { size = { @col_locate 1 } }
+			widget = { size = { @col_quarter 1 } }
 		}
 
 		### The roster. The outliner's own scrollarea shape, property for
@@ -434,6 +437,209 @@ window = {
 			}
 		}
 	}
+}
+
+
+### =====================================================================
+### YOUR OWN COMMUNITY -- the top-bar strip (v12 section 10, 2026-09-15)
+### =====================================================================
+#
+# A third top-level scripted widget: the player's own Standing and three
+# pillars, always on screen, parked directly under vanilla's resource
+# bar (gold / prestige / piety) in the top-left. Vanilla's bar is a
+# hand-written hbox inside hud.gui's "ingame_topbar" window (hud.gui:911,
+# resources_top_right_bar), so a widget cannot be added INSIDE it
+# without forking hud.gui; sitting just below it, styled like its tiles
+# (Font_Size_Medium values, small icon, dark tile background), is the
+# additive equivalent.
+#
+# Nothing here is new data: the datacontext is the player's primary
+# title, so the coloured scores (Kehillah<Pillar>Score) and the per-score
+# breakdown tooltips (KEHILLAH_BD_*_TOOLTIP) are the roster's own, reused
+# verbatim. The menorah is a button: it opens and closes the map view,
+# so the strip is also the map view's entry point at the top of the
+# screen -- the bottom-right toggle stays for symmetry with the map-mode
+# bar.
+#
+# Shown only for a player who leads a Kehillah
+# (GetPlayer.GetGovernment.IsType -- vanilla's own idiom for
+# government-gated HUD elements, e.g. IsType('nomad_government')), and
+# it respects vanilla's hide_ui_top_bar variable the same way the
+# resource bar itself does (hud.gui:913).
+#
+# STRUCTURE (live pass 8, 2026-09-15 -- stack overflow on load, second
+# time this repo has hit it): a (flow)container cannot have an hbox/vbox
+# as a direct child (error.log says so verbatim, pass 3 found it first,
+# spec section 6c). The four score tiles are vboxes, so each sits inside
+# a plain fixed-size widget, which a flowcontainer does accept.
+#
+# POSITIONING: hand-placed; the one number likely to need a nudge. The
+# resource bar's tiles are 70 tall and it starts after an 80px
+# suggestions placer plus a 15px spacer (hud.gui:899-910).
+
+flowcontainer = {
+	name = "kehillah_own_community_strip"
+	parentanchor = top|left
+	position = { 100 76 }
+
+	layer = windows_layer
+	alwaystransparent = no
+	filter_mouse = all
+	direction = horizontal
+	spacing = 10
+	ignoreinvisible = yes
+	allow_outside = yes
+
+	datacontext = "[GetPlayer.GetPrimaryTitle]"
+
+	visible = "[And( And( IsInGame, GetPlayer.IsValid ), And( And( IsDefaultGUIMode, GetPlayer.GetGovernment.IsType( 'kehillah_government' ) ), Not( GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'hide_ui_top_bar' ).GetValue, '(CFixedPoint)0' ) ) ) )]"
+
+	background = {
+		using = Background_Area_Dark
+		color = { 0.12 0.11 0.10 0.85 }
+		margin = { 10 4 }
+	}
+
+	### The menorah: your community's name on hover, the map view on
+	### click. Same open/close pair as the bottom-right toggle.
+	widget = {
+		size = { 34 34 }
+		parentanchor = vcenter
+
+		button_round = {
+			size = { 34 34 }
+			visible = "[Not( GetVariableSystem.Exists( 'kehillah_map_view_open' ) )]"
+			enabled = "[CanChangeMapMode]"
+			onclick = "[GetScriptedGui( 'kehillah_communities_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+			onclick = "[SetMapMode( 'kehillah_communities_map' )]"
+			onclick = "[GetVariableSystem.Set( 'kehillah_map_view_open', 'yes' )]"
+			tooltip = "KEHILLAH_STRIP_TOOLTIP"
+			using = tooltip_se
+
+			icon = {
+				parentanchor = center
+				size = { 22 22 }
+				texture = "gfx/interface/icons/faith/judaism.dds"
+				alwaystransparent = yes
+			}
+		}
+		button_round = {
+			size = { 34 34 }
+			visible = "[GetVariableSystem.Exists( 'kehillah_map_view_open' )]"
+			onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_open' )]"
+			onclick = "[SetMapMode( 'realms' )]"
+			tooltip = "KEHILLAH_MAP_VIEW_BUTTON_CLOSE_TOOLTIP"
+			using = tooltip_se
+
+			icon = {
+				parentanchor = center
+				size = { 22 22 }
+				texture = "gfx/interface/icons/faith/judaism.dds"
+				alwaystransparent = yes
+			}
+		}
+	}
+
+		### Standing
+		widget = {
+			size = { 66 44 }
+			parentanchor = vcenter
+
+			vbox = {
+				parentanchor = center
+				spacing = -2
+				tooltip = "KEHILLAH_BD_STANDING_TOOLTIP"
+				using = tooltip_se
+
+				text_single = {
+					parentanchor = hcenter
+					text = "[Title.Custom( 'KehillahStandingScore' )]"
+					using = Font_Size_Medium
+					default_format = "#high;bold"
+				}
+				text_single = {
+					parentanchor = hcenter
+					text = "KEHILLAH_MAP_VIEW_COL_STANDING"
+					default_format = "#weak"
+					using = Font_Size_Small
+				}
+			}
+		}
+
+		### Prosperity
+		widget = {
+			size = { 66 44 }
+			parentanchor = vcenter
+
+			vbox = {
+				parentanchor = center
+				spacing = -2
+				tooltip = "KEHILLAH_BD_PROSPERITY_TOOLTIP"
+				using = tooltip_se
+
+				text_single = {
+					parentanchor = hcenter
+					text = "[Title.Custom( 'KehillahProsperityScore' )]"
+					using = Font_Size_Medium
+				}
+				text_single = {
+					parentanchor = hcenter
+					text = "KEHILLAH_MAP_VIEW_COL_P"
+					default_format = "#weak"
+					using = Font_Size_Small
+				}
+			}
+		}
+
+		### Stability
+		widget = {
+			size = { 66 44 }
+			parentanchor = vcenter
+
+			vbox = {
+				parentanchor = center
+				spacing = -2
+				tooltip = "KEHILLAH_BD_STABILITY_TOOLTIP"
+				using = tooltip_se
+
+				text_single = {
+					parentanchor = hcenter
+					text = "[Title.Custom( 'KehillahStabilityScore' )]"
+					using = Font_Size_Medium
+				}
+				text_single = {
+					parentanchor = hcenter
+					text = "KEHILLAH_MAP_VIEW_COL_S"
+					default_format = "#weak"
+					using = Font_Size_Small
+				}
+			}
+		}
+
+		### Greatness
+		widget = {
+			size = { 66 44 }
+			parentanchor = vcenter
+
+			vbox = {
+				parentanchor = center
+				spacing = -2
+				tooltip = "KEHILLAH_BD_GREATNESS_TOOLTIP"
+				using = tooltip_se
+
+				text_single = {
+					parentanchor = hcenter
+					text = "[Title.Custom( 'KehillahGreatnessScore' )]"
+					using = Font_Size_Medium
+				}
+				text_single = {
+					parentanchor = hcenter
+					text = "KEHILLAH_MAP_VIEW_COL_G"
+					default_format = "#weak"
+					using = Font_Size_Small
+				}
+			}
+		}
 }
 
 
@@ -586,11 +792,19 @@ types KehillahMapView
 		### which is why it sits on the same scale as its neighbours and
 		### why the band name in the row tooltip can reuse the pillars'
 		### own thresholds -- see kehillah_standing_value.
+		#
+		# COLOURED BY BAND (live pass 6, user request). The text is a
+		# customizable-loc call, Kehillah<Pillar>Score (common/
+		# customizable_localization/kehillah_pillar_band_custom_loc.txt),
+		# which returns the value already wrapped in vanilla's aptitude
+		# colour ramp -- red for Crisis through green for Legendary. The
+		# thresholds stay script-side; the GUI never sees a number.
 		text_label_center = {
 			parentanchor = vcenter
 			min_width = @col_standing
-			text = "[Title.MakeScope.Var( 'kehillah_var_standing' ).GetValue|V0]"
-			default_format = "#high;bold"
+			text = "[Title.Custom( 'KehillahStandingScore' )]"
+			tooltip = "KEHILLAH_BD_STANDING_TOOLTIP"
+			using = tooltip_ws
 		}
 
 		### The three pillars, in the fixed Prosperity / Stability /
@@ -598,34 +812,42 @@ types KehillahMapView
 		text_label_center = {
 			parentanchor = vcenter
 			min_width = @col_pillar
-			text = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue|V0]"
+			text = "[Title.Custom( 'KehillahProsperityScore' )]"
+			tooltip = "KEHILLAH_BD_PROSPERITY_TOOLTIP"
+			using = tooltip_ws
 		}
 		text_label_center = {
 			parentanchor = vcenter
 			min_width = @col_pillar
-			text = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue|V0]"
+			text = "[Title.Custom( 'KehillahStabilityScore' )]"
+			tooltip = "KEHILLAH_BD_STABILITY_TOOLTIP"
+			using = tooltip_ws
 		}
 		text_label_center = {
 			parentanchor = vcenter
 			min_width = @col_pillar
-			text = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue|V0]"
+			text = "[Title.Custom( 'KehillahGreatnessScore' )]"
+			tooltip = "KEHILLAH_BD_GREATNESS_TOOLTIP"
+			using = tooltip_ws
 		}
 
 		### The map half of the map view: put this community on screen.
 		#
-		# SelectTitle is the engine's own "move the camera to this title
-		# and select it" call -- vanilla uses it identically for holy
-		# sites at gui/map_icon_layer.gui:751. The county it targets is
-		# cached onto the title by kehillah_cache_map_view_facts_effect,
-		# because .gui cannot walk holder -> domicile -> location ->
-		# county for itself.
+		# ZoomCameraTo, not SelectTitle (live pass 6). SelectTitle on the
+		# host county SELECTS it, and selecting a county opens its
+		# holder -- the user landed on the local count instead of the
+		# community. ZoomCameraTo is camera-only: vanilla's own "go to"
+		# buttons use it (gui/hud.gui:2489 and five more, on characters;
+		# gui/window_epidemics.gui:436 on a province). Title.GetProvince
+		# is the county's capital province. The county itself is cached
+		# onto the title by kehillah_cache_map_view_facts_effect, because
+		# .gui cannot walk holder -> domicile -> location -> county.
 		button_round = {
 			parentanchor = vcenter
 			size = { @col_locate @col_locate }
-			margin_right = 4
 
 			enabled = "[Title.MakeScope.Var( 'kehillah_ui_host_county' ).Title.IsValid]"
-			onclick = "[Title.MakeScope.Var( 'kehillah_ui_host_county' ).Title.SelectTitle]"
+			onclick = "[Title.MakeScope.Var( 'kehillah_ui_host_county' ).Title.GetProvince.ZoomCameraTo]"
 			tooltip = "KEHILLAH_MAP_VIEW_LOCATE_TOOLTIP"
 			using = tooltip_ws
 
@@ -633,6 +855,39 @@ types KehillahMapView
 				parentanchor = center
 				size = { 18 18 }
 				texture = "gfx/interface/icons/flat_icons/go_to_my_location.dds"
+				alwaystransparent = yes
+			}
+		}
+
+		### The community's own quarter (live pass 6, user request).
+		#
+		# ToggleGameViewData( 'domicile', <Domicile> ) opens the full
+		# domicile window for ANY domicile, not just the player's --
+		# docs/spec/spike-domicile-map-visibility.md section 3 found the
+		# generic form (Domicile.Self, four vanilla call sites) and the
+		# user confirmed it live on 2026-09-10 via the title-view route.
+		# This is that same window, one click instead of three.
+		button_round = {
+			parentanchor = vcenter
+			size = { @col_quarter @col_quarter }
+			margin_right = 4
+
+			enabled = "[Title.HasDomicile]"
+			# Tell the library panel whose quarter this is BEFORE opening
+			# it -- the panel cannot read that from the vanilla window
+			# (gui/kehillah_domicile_library.gui header; scripted_gui in
+			# common/scripted_guis/kehillah_map_view_gui.txt). ADDED
+			# 2026-09-17.
+			onclick = "[GetScriptedGui( 'kehillah_lib_view_community' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'community', Title.GetHolder.MakeScope ).End )]"
+			onclick = "[GetVariableSystem.Set( 'kehillah_lib_viewing_other', 'yes' )]"
+			onclick = "[ToggleGameViewData( 'domicile', Title.GetHolder.GetDomicile )]"
+			tooltip = "KEHILLAH_MAP_VIEW_QUARTER_TOOLTIP"
+			using = tooltip_ws
+
+			icon = {
+				parentanchor = center
+				size = { 18 18 }
+				texture = "gfx/interface/icons/flat_icons/estate.dds"
 				alwaystransparent = yes
 			}
 		}

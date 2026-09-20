@@ -1,0 +1,457 @@
+﻿# =====================================================================
+# Learn Torah -- the journey, as a real activity_type. ADDED 2026-09-15
+# at user request, REPLACING kehillah_visit_library_interaction (common/
+# character_interactions/kehillah_character_interactions.txt, RETIRED --
+# see that file's own retirement note) the same day: "the interaction is
+# awkward. Maybe we should make it another activity like bet din? But
+# with more targets than just your home community" -- and separately,
+# "studying should happen when you reach the target court, not when you
+# return home."
+#
+# WHY THIS FIXES BOTH COMPLAINTS AT ONCE, NOT JUST THE SECOND ONE. The
+# interaction's own hand-rolled start_travel_plan (its on_accept, now
+# gone) already fired kehillah_learn_torah_journey.0001 on arrival, not
+# on return -- mechanically it was never wrong on THAT specific point.
+# But a real activity_type fixes the actual complaint underneath both:
+# travel becomes visible and native (the Activities window, a real
+# travel plan the player can see progressing, arrival/passive/active
+# states) instead of a silent effect tucked inside accepting an
+# interaction, AND the destination is no longer a single interaction
+# target picked once -- it is a real, scored, re-rankable field of
+# candidates every time the activity is planned, which is what "more
+# targets than just your home community" asks for structurally, not
+# just larger.
+#
+# HOST = THE TRAVELLER, SOLO, UNLIKE kehillah_bet_din_conference. Bet
+# Din's host stays home (province_filter = capital) and guests travel TO
+# them; this activity inverts that -- the host is the one travelling,
+# to a location that is NEVER their own capital (is_location_valid
+# below explicitly excludes it), and there are no guests at all
+# (open_invite = no). This is the one structural way this activity
+# genuinely cannot reuse Bet Din's own shape wholesale, and the reason
+# host travel (not just guest travel) needs to actually work here --
+# see the ONE REAL UNVERIFIED ASSUMPTION note below.
+#
+# WHY province_filter = all, DESPITE THE SCHEMA'S OWN WARNING ("almost
+# certainly do not need to use it"). Every other named filter (capital/
+# domain/realm/top_realm/holy_sites*/domicile*/top_liege_border_*/
+# landed_title/geographical_region, common/activities/activity_types/
+# _activity_type.info) resolves relative to the HOST's own realm or
+# faith -- none of them can express "wherever any of sixteen scattered,
+# independently-ruled Kehillah communities happens to be," which is
+# exactly this mod's own map shape (registered communities have no
+# shared de jure parent -- see common/landed_titles/kehillah_landed_
+# titles.txt's own header on why the old d_kehillah_<region> duchies
+# were removed). is_location_valid narrows the real candidate set back
+# down to the ~16 communities in kehillah_registered_communities
+# immediately, so the practical cost is bounded even though the nominal
+# filter is not -- the same "bounded, not free" tradeoff this mod's own
+# kehillah_bet_din_invite_rule_jewish_scholars/_adventurers already
+# accepted for iterating every_independent_ruler (that file's own
+# header note). ai_province_filter is deliberately NOT also `all` --
+# see AI below.
+#
+# AI NEVER HOSTS THIS, ON PURPOSE. ai_will_do = 0 belt-and-braces with
+# ai_province_filter = capital (cheap, and never actually valid per
+# is_location_valid's own "not the host's own community" exclusion, so
+# the AI's own province-scoring pass has nothing to do even if it runs
+# at all) -- two independent reasons the AI can never actually host this,
+# not just one, specifically because `all` is a real, acknowledged
+# performance risk this mod does not want an AI evaluation loop anywhere
+# near, on top of the same "a personal browsing/study action, not
+# something the game's economy should depend on" reasoning kehillah_
+# view_communities_interaction's own header already used for an
+# identical ai_will_do = 0 call.
+#
+# THE ONE REAL UNVERIFIED ASSUMPTION, flagged rather than hidden: this
+# whole design assumes the activity system automatically travels a HOST
+# to a self-picked, non-capital, real location, and automatically
+# returns them home once the activity completes, the same way vanilla's
+# own Pilgrimage/Hunt/Tour activities are known to work for THEIR hosts.
+# This mod's own confirmed-live travel evidence to date
+# (docs/testing/2026-09-08-bet-din-conference-live-test-log.md) is for
+# GUESTS travelling to a host's capital, not for a HOST travelling to a
+# picked destination -- the general mechanism is standard, well-
+# established CK3 activity behavior, not a guess invented for this file,
+# but it has not been independently live-tested BY THIS MOD for the
+# host-travels case specifically. Flagged here exactly the way this
+# mod's own gui/scripted_widgets/ uncertainty was flagged before its own
+# live-test closed it (docs/spec/gui-spike-community-list.md §4).
+# =====================================================================
+
+activity_kehillah_learn_torah_journey = {
+	is_shown = {
+		government_has_flag = government_is_kehillah
+		has_trait = kehillah_rabbi_trait
+		is_adult = yes
+	}
+
+	can_start_showing_failures_only = {
+		NOT = { is_activity_type_on_cooldown = activity_kehillah_learn_torah_journey }
+		is_imprisoned = no
+		custom_tooltip = {
+			text = kehillah_requires_unstudied_library_elsewhere_tt
+			any_in_global_list = {
+				variable = kehillah_registered_communities
+				NOT = { this = root.primary_title }
+				exists = holder
+				holder = {
+					OR = {
+						AND = {
+							primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos } }
+							NOT = { root = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_targum_onkelos } } }
+						}
+						AND = {
+							primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mekhilta } }
+							NOT = { root = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_mekhilta } } }
+						}
+						AND = {
+							primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_genesis_rabbah } }
+							NOT = { root = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_genesis_rabbah } } }
+						}
+						AND = {
+							primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_pirkei_derabbi_eliezer } }
+							NOT = { root = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_pirkei_derabbi_eliezer } } }
+						}
+						AND = {
+							primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mishnah } }
+							NOT = { root = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_mishnah } } }
+						}
+						AND = {
+							primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi } }
+							NOT = { root = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_yerushalmi } } }
+						}
+						AND = {
+							primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli } }
+							NOT = { root = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_bavli } } }
+						}
+						AND = {
+							primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot } }
+							NOT = { root = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_halakhot_gedolot } } }
+						}
+						AND = {
+							primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_yetzirah } }
+							NOT = { root = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_sefer_yetzirah } } }
+						}
+						AND = {
+							primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_emunot_vedeot } }
+							NOT = { root = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_emunot_vedeot } } }
+						}
+						AND = {
+							primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_chovot_halevavot } }
+							NOT = { root = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_chovot_halevavot } } }
+						}
+						AND = {
+							primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_kuzari } }
+							NOT = { root = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_kuzari } } }
+						}
+					}
+				}
+			}
+		}
+	}
+
+	is_valid = {
+		scope:host = {
+			is_alive = yes
+			is_imprisoned = no
+			government_has_flag = government_is_kehillah
+		}
+	}
+
+	# See this file's own header for why `all` here, `capital` for the AI.
+	province_filter = all
+	ai_province_filter = capital
+
+	# root = the province being scored/validated (activity_type.info).
+	# Real membership check: does some OTHER registered community's own
+	# domicile sit exactly here, and does that community's library hold
+	# at least one work scope:host has not personally studied (kehillah_
+	# studied_works) -- the identical twelve-work check can_start_
+	# showing_failures_only's own custom_tooltip above already uses,
+	# repeated here per-province rather than shared via a parameterized
+	# trigger (this mod's own established $LIBRARY$/$VIEWER$ scripted-
+	# trigger idiom substitutes a SCOPE-OPENING token, not "which
+	# variable name to compare against a different implicit root", so it
+	# does not fit this specific reuse cleanly -- kept literal instead of
+	# forcing a parameterization that does not actually save anything
+	# here).
+	is_location_valid = {
+		any_in_global_list = {
+			variable = kehillah_registered_communities
+			NOT = { this = scope:host.primary_title }
+			exists = holder
+			holder = {
+				domicile.domicile_location = root
+				OR = {
+					AND = {
+						primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_targum_onkelos } } }
+					}
+					AND = {
+						primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mekhilta } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_mekhilta } } }
+					}
+					AND = {
+						primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_genesis_rabbah } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_genesis_rabbah } } }
+					}
+					AND = {
+						primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_pirkei_derabbi_eliezer } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_pirkei_derabbi_eliezer } } }
+					}
+					AND = {
+						primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mishnah } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_mishnah } } }
+					}
+					AND = {
+						primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_yerushalmi } } }
+					}
+					AND = {
+						primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_bavli } } }
+					}
+					AND = {
+						primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_halakhot_gedolot } } }
+					}
+					AND = {
+						primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_yetzirah } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_sefer_yetzirah } } }
+					}
+					AND = {
+						primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_emunot_vedeot } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_emunot_vedeot } } }
+					}
+					AND = {
+						primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_chovot_halevavot } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_chovot_halevavot } } }
+					}
+					AND = {
+						primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_kuzari } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_kuzari } } }
+					}
+				}
+			}
+		}
+	}
+
+	# HOW CANDIDATES ARE SCORED/RANKED -- per user request ("scores based
+	# on the books there that you haven't studied yet"). Counts the SAME
+	# twelve works, this time as a running total rather than a boolean --
+	# more unstudied works at a destination scores it higher, so richer
+	# libraries surface first / get the more prominent map icons (subject
+	# to max_province_icons below).
+	#
+	# NOT A PER-TRACK BREAKDOWN, AND THIS IS A REAL, FLAGGED GAP, not an
+	# oversight: unlike kehillah_visit_library_interaction's own retired
+	# ai_accept modifiers (which could each carry their own `desc` for a
+	# real rendered breakdown row), province_score is confirmed, from a
+	# real shipped example (game/common/activities/activity_types/
+	# hunt.txt's own province_score), to be a PLAIN script value with no
+	# modifier/desc breakdown fields anywhere in it -- there is no
+	# confirmed mechanism for a per-track "3 Parshanut, 1 Talmudics, 0
+	# Hashkafa" tooltip on a location pin, and none was invented on a
+	# guess. A second candidate route (unconditional custom_tooltip lines
+	# inside is_location_valid, the same idiom can_start_showing_
+	# failures_only above already uses for its own informational text)
+	# was considered and deliberately NOT taken either: that field's own
+	# real, confirmed rendering behavior is specifically "explain why a
+	# candidate FAILED validity" (the "_showing_failures_only" convention
+	# this file's own can_start_showing_failures_only is named for), not
+	# a general-purpose always-shown breakdown surface -- stacking three
+	# more never-failing custom_tooltip lines onto a VALID candidate's
+	# own is_location_valid would be relying on that same mechanism
+	# working somewhere its own naming does not actually promise it
+	# does, which is a real guess this file is not making. The literal
+	# per-track count therefore surfaces only once you have already
+	# picked a destination and arrived -- kehillah_learn_torah_journey.
+	# 0001's own three track options (events/kehillah_learn_torah_
+	# journey_events.txt) each still name the specific work found there
+	# -- not on the picker itself. A live-tested fix for the picker,
+	# if this gap matters enough once seen in a real game, is a real
+	# follow-up, not solved here on a guess.
+	# CONFIRMED SHAPE: every_in_list/every_in_global_list accumulating
+	# into a script value's own running total via a plain `add` per
+	# matching entry is real, shipped vanilla syntax -- game/common/
+	# script_values/00_activity_values.txt's own petition_liege_county_
+	# control_count_value ("value = 0  every_in_list = { list = X
+	# add = 1 }") is the confirmed precedent; this is the identical shape
+	# with `add` as a full inline value expression (itself a confirmed
+	# generic capability of `add`) instead of a flat 1, and over
+	# every_in_global_list instead of every_in_list, matching this mod's
+	# own already-established every_in_global_list usage elsewhere. Since
+	# at most one registered community's domicile can occupy any single
+	# province, the limit below matches at most one entry in practice --
+	# this is a sum over "zero or one" matches, not a real multi-entry
+	# aggregation, written as a sum anyway because that is what the
+	# confirmed vanilla idiom actually is.
+	province_score = {
+		value = 0
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = { domicile.domicile_location = root }
+			}
+			add = {
+				value = 0
+				if = {
+					limit = {
+						holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos } } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_targum_onkelos } } }
+					}
+					add = 1
+				}
+				if = {
+					limit = {
+						holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mekhilta } } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_mekhilta } } }
+					}
+					add = 1
+				}
+				if = {
+					limit = {
+						holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_genesis_rabbah } } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_genesis_rabbah } } }
+					}
+					add = 1
+				}
+				if = {
+					limit = {
+						holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_pirkei_derabbi_eliezer } } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_pirkei_derabbi_eliezer } } }
+					}
+					add = 1
+				}
+				if = {
+					limit = {
+						holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mishnah } } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_mishnah } } }
+					}
+					add = 1
+				}
+				if = {
+					limit = {
+						holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi } } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_yerushalmi } } }
+					}
+					add = 1
+				}
+				if = {
+					limit = {
+						holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli } } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_bavli } } }
+					}
+					add = 1
+				}
+				if = {
+					limit = {
+						holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot } } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_halakhot_gedolot } } }
+					}
+					add = 1
+				}
+				if = {
+					limit = {
+						holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_yetzirah } } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_sefer_yetzirah } } }
+					}
+					add = 1
+				}
+				if = {
+					limit = {
+						holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_emunot_vedeot } } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_emunot_vedeot } } }
+					}
+					add = 1
+				}
+				if = {
+					limit = {
+						holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_chovot_halevavot } } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_chovot_halevavot } } }
+					}
+					add = 1
+				}
+				if = {
+					limit = {
+						holder = { primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_kuzari } } }
+						NOT = { scope:host = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_kuzari } } }
+					}
+					add = 1
+				}
+			}
+		}
+	}
+
+	max_province_icons = 8
+
+	is_single_location = yes
+
+	cooldown = { years = kehillah_learn_torah_journey_cooldown_years }
+
+	open_invite = no
+
+	# Solo activity, no guests by design (see header) -- without this the
+	# game defaults to requiring at least one guest invite before the
+	# activity can start, same as vanilla's own solo activities (hunt.txt,
+	# pilgrimage.txt) and this mod's own kehillah_bet_din_conference.txt
+	# both explicitly set.
+	allow_zero_guest_invites = yes
+
+	# =================================================================
+	# ONE PHASE: ARRIVE, STUDY, DONE. See events/kehillah_learn_torah_
+	# journey_events.txt's own header for the full account of what
+	# kehillah_learn_torah_journey.0001 does now that it fires from
+	# on_phase_active (root = scope:host, physically at the destination
+	# already -- "studying happens when you reach the target court", not
+	# on any later return leg) rather than from a hand-rolled travel
+	# plan's own on_arrival_event. Ceiling set first, event fired second
+	# -- same "ceiling first, draw/event second" order kehillah_bet_din_
+	# conference.txt's own phases already establish, so a resolved
+	# choice can shorten the phase without a later ceiling write
+	# clobbering it.
+	# =================================================================
+	phases = {
+		phase_learn_torah_journey = {
+			is_predefined = yes
+			order = 1
+			location_source = pickable
+
+			on_phase_active = {
+				scope:activity = {
+					progress_activity_phase_after = { days = 30 }
+				}
+				trigger_event = kehillah_learn_torah_journey.0001
+			}
+		}
+	}
+
+	ai_will_do = {
+		value = 0
+	}
+
+	ai_check_interval = 24
+
+	# UPDATED 2026-09-17 at user request ("Recreation doesn't really make
+	# sense" -- the activity_type.cpp default-intent requirement this file
+	# and kehillah_bet_din_conference.txt both cite in their own LIVE-TEST
+	# FIX notes used to be filled with the shared, content-free
+	# reduce_stress_intent, which displays as "Recreation" (dlc/ep2/
+	# dlc_ep2_intents_l_english.yml) -- accurate for a hunt or a feast, not
+	# for a solo study trip. journey_knowledge_hoarding_intent (common/
+	# activities/intents/journey_intents.txt) is an existing, unconditional
+	# vanilla intent -- no is_shown/DLC gate of its own, so referencing it
+	# needs no redefinition here, the same way reduce_stress_intent itself
+	# never needed one -- and its own ai_will_do already rewards has_trait
+	# = scholar/theologian and introverted/level-headed personalities,
+	# which is exactly the profile of a rabbi travelling to study a
+	# foreign Beit Midrash's library. No guest_intents block exists here
+	# because this activity has no guests (open_invite = no, this file's
+	# own header).
+	host_intents = {
+		default = journey_knowledge_hoarding_intent
+		intents = { journey_knowledge_hoarding_intent }
+	}
+}

@@ -1,0 +1,235 @@
+﻿# =====================================================================
+# Hebrew Tutor Contract -- the challenge chain. Added 2026-09-17, at the
+# user's explicit request ("same for the tutor in Hebrew even, we should
+# have an event chain"), finally building the shape v11 spec section 5
+# (docs/spec/v11-task-contract-event-chains.md) already sketched but
+# never implemented, mirroring kehillah_translation_contract's own v11
+# overhaul. Fired from kehillah_hebrew_tutor_contract's own on_accepted
+# (common/task_contracts/kehillah_task_contracts.txt), which now only
+# sets a Learning-banded starting tally and hands off here instead of
+# resolving in a single if/else check.
+#
+# STRUCTURE:
+#   .0001 THE FIRST LESSON -- rapport-building, the chain's main
+#         Learning-gated roll.
+#   .0002 PATIENT OR RIGOROUS -- a real tradeoff, not a flat gate.
+#   .0003 THE PUPIL'S PROGRESS -- resolves GREAT/GOOD/POOR (three tiers
+#         -- tutor_great/tutor_good keep their existing values verbatim,
+#         common/task_contracts/kehillah_task_contracts.txt; tutor_poor
+#         is new, this contract previously had no failure state at all)
+#         and calls complete_task_contract with the matching key.
+#
+# root THROUGHOUT THIS WHOLE FILE is the Kehillah leader (task_contract_
+# taker), same character across the entire chain. scope:task_contract is
+# the scope saved with save_scope_as inside kehillah_hebrew_tutor_
+# contract's own on_accepted, before switching into task_contract_taker,
+# read back here the same proven way the translation chain already
+# does. The pupil (task_contract_target -- the employer's own child if
+# one exists, else the employer themselves, already resolved by the
+# router, events/kehillah_task_contract_events.txt) is shown throughout
+# via scope:task_contract.task_contract_target for flavor continuity.
+#
+# EVERY EVENT GUARDS is_alive/is_imprisoned/government_has_flag/exists
+# scope:task_contract in its own trigger -- same convention as every
+# other chain in this mod; the leader dying, being imprisoned, or the
+# community dissolving mid-chain just silently stops the chain rather
+# than erroring.
+# =====================================================================
+
+namespace = kehillah_hebrew_tutor
+
+
+# ---------------------------------------------------------------------
+# kehillah_hebrew_tutor.0001 -- THE FIRST LESSON
+# ---------------------------------------------------------------------
+
+kehillah_hebrew_tutor.0001 = {
+	type = character_event
+	title = kehillah_hebrew_tutor.0001.t
+	desc = kehillah_hebrew_tutor.0001.desc
+	theme = education
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:task_contract.task_contract_target
+		animation = happy_teacher
+	}
+
+	trigger = {
+		is_alive = yes
+		is_imprisoned = no
+		government_has_flag = government_is_kehillah
+		exists = scope:task_contract
+	}
+
+	# Fresh, local re-save of the pupil scope for loc's own use -- same
+	# precedent kehillah_translation_effects.txt's own header established
+	# for why a distant on_accepted-era save should not be trusted this
+	# deep into a chain for loc/ck3-tiger's purposes.
+	immediate = {
+		scope:task_contract.task_contract_target = { save_scope_as = kehillah_hebrew_tutor_target }
+	}
+
+	option = {
+		name = kehillah_hebrew_tutor.0001.a
+		if = {
+			limit = { learning >= 14 }
+			change_variable = { name = kehillah_hebrew_tutor_tally add = kehillah_hebrew_tutor_lesson_gain }
+			custom_tooltip = kehillah_hebrew_tutor.0001.a.pass.tt
+		}
+		else = {
+			change_variable = { name = kehillah_hebrew_tutor_tally subtract = kehillah_hebrew_tutor_lesson_loss }
+			custom_tooltip = kehillah_hebrew_tutor.0001.a.fail.tt
+		}
+	}
+
+	option = {
+		name = kehillah_hebrew_tutor.0001.b
+		change_variable = { name = kehillah_hebrew_tutor_tally add = kehillah_hebrew_tutor_lesson_courtier_gain }
+		custom_tooltip = kehillah_hebrew_tutor.0001.b.tt
+	}
+
+	option = {
+		name = kehillah_hebrew_tutor.0001.c
+		change_variable = { name = kehillah_hebrew_tutor_tally subtract = kehillah_hebrew_tutor_lesson_rush_loss }
+		custom_tooltip = kehillah_hebrew_tutor.0001.c.tt
+	}
+
+	after = {
+		trigger_event = { id = kehillah_hebrew_tutor.0002 days = 5 }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_hebrew_tutor.0002 -- PATIENT OR RIGOROUS
+# ---------------------------------------------------------------------
+
+kehillah_hebrew_tutor.0002 = {
+	type = character_event
+	title = kehillah_hebrew_tutor.0002.t
+	desc = kehillah_hebrew_tutor.0002.desc
+	theme = education
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:task_contract.task_contract_target
+		animation = happy_teacher
+	}
+
+	trigger = {
+		is_alive = yes
+		is_imprisoned = no
+		government_has_flag = government_is_kehillah
+		exists = scope:task_contract
+	}
+
+	immediate = {
+		scope:task_contract.task_contract_target = { save_scope_as = kehillah_hebrew_tutor_target }
+	}
+
+	option = {
+		name = kehillah_hebrew_tutor.0002.a
+		change_variable = { name = kehillah_hebrew_tutor_tally add = kehillah_hebrew_tutor_patient_gain }
+		custom_tooltip = kehillah_hebrew_tutor.0002.a.tt
+	}
+
+	option = {
+		name = kehillah_hebrew_tutor.0002.b
+		random_list = {
+			65 = {
+				change_variable = { name = kehillah_hebrew_tutor_tally add = kehillah_hebrew_tutor_rigorous_gain }
+				custom_tooltip = kehillah_hebrew_tutor.0002.b.pass.tt
+			}
+			35 = {
+				change_variable = { name = kehillah_hebrew_tutor_tally subtract = kehillah_hebrew_tutor_rigorous_loss }
+				custom_tooltip = kehillah_hebrew_tutor.0002.b.fail.tt
+			}
+		}
+	}
+
+	after = {
+		trigger_event = { id = kehillah_hebrew_tutor.0003 days = 7 }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_hebrew_tutor.0003 -- THE PUPIL'S PROGRESS
+# Resolves the final tier and calls complete_task_contract with the
+# matching key -- tutor_great/tutor_good/tutor_poor, common/task_
+# contracts/kehillah_task_contracts.txt.
+# ---------------------------------------------------------------------
+
+kehillah_hebrew_tutor.0003 = {
+	type = character_event
+	title = kehillah_hebrew_tutor.0003.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:kehillah_hebrew_tutor_tally >= kehillah_hebrew_tutor_threshold_great }
+				desc = kehillah_hebrew_tutor.0003.desc.great
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_hebrew_tutor_tally >= kehillah_hebrew_tutor_threshold_good }
+				desc = kehillah_hebrew_tutor.0003.desc.good
+			}
+			desc = kehillah_hebrew_tutor.0003.desc.poor
+		}
+	}
+	theme = education
+
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+	right_portrait = {
+		character = scope:task_contract.task_contract_target
+		animation = happy_teacher
+	}
+
+	trigger = {
+		is_alive = yes
+		is_imprisoned = no
+		government_has_flag = government_is_kehillah
+		exists = scope:task_contract
+	}
+
+	immediate = {
+		scope:task_contract.task_contract_target = { save_scope_as = kehillah_hebrew_tutor_target }
+		if = {
+			limit = { var:kehillah_hebrew_tutor_tally >= kehillah_hebrew_tutor_threshold_great }
+			set_variable = { name = kehillah_hebrew_tutor_tier value = flag:great }
+		}
+		else_if = {
+			limit = { var:kehillah_hebrew_tutor_tally >= kehillah_hebrew_tutor_threshold_good }
+			set_variable = { name = kehillah_hebrew_tutor_tier value = flag:good }
+		}
+		else = {
+			set_variable = { name = kehillah_hebrew_tutor_tier value = flag:poor }
+		}
+	}
+
+	option = {
+		name = kehillah_hebrew_tutor.0003.a
+		if = {
+			limit = { var:kehillah_hebrew_tutor_tier = flag:great }
+			scope:task_contract = { complete_task_contract = tutor_great }
+		}
+		else_if = {
+			limit = { var:kehillah_hebrew_tutor_tier = flag:good }
+			scope:task_contract = { complete_task_contract = tutor_good }
+		}
+		else = {
+			scope:task_contract = { complete_task_contract = tutor_poor }
+		}
+		remove_variable = kehillah_hebrew_tutor_tally
+		remove_variable = kehillah_hebrew_tutor_tier
+	}
+}

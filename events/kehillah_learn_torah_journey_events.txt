@@ -1,0 +1,391 @@
+﻿# =====================================================================
+# Learn Torah -- the travel journey. ADDED 2026-09-15 at user request
+# ("implement the travel to study a book"). REWRITTEN the same day, at
+# further user request ("studying should happen when you reach the
+# target court, not when you return home... make it another activity
+# like bet din"): now fired from activity_kehillah_learn_torah_journey's
+# own on_phase_active (common/activities/activity_types/kehillah_
+# learn_torah_journey.txt) instead of a hand-rolled start_travel_plan's
+# on_arrival_event, which kehillah_visit_library_interaction (common/
+# character_interactions/kehillah_character_interactions.txt) used to
+# own before being retired the same pass.
+#
+# WHY THIS VERSION NEEDS NO PERSISTED DESTINATION VARIABLE AT ALL, unlike
+# the retired interaction's own kehillah_journey_destination_title
+# character variable. That variable existed specifically because travel
+# started in one effect chain (the interaction's on_accept) and arrival
+# fired a SEPARATE one, potentially weeks later, past this mod's own
+# proven same-session scope-persistence guarantees. With a real
+# activity, on_phase_active fires ONLY once the host has actually
+# arrived and the phase has gone active -- root is already physically AT
+# the destination (root.location) by the time this event's own immediate
+# runs, so the destination can simply be looked up fresh, in this same
+# effect chain, every time: which registered community's own domicile
+# sits at root's current location. No variable needs to survive a
+# journey any more because nothing needs to be written before the
+# journey starts at all.
+# =====================================================================
+
+namespace = kehillah_learn_torah_journey
+
+# ---------------------------------------------------------------------
+# kehillah_learn_torah_journey.0001 -- ARRIVAL: STUDY AT THEIR BEIT
+# MIDRASH
+# root: the traveller (activity_type.info: on_phase_active's own "root =
+# character in this phase", carried into this event by the plain
+# trigger_event call that fires it), now physically at the community
+# whose domicile occupies root.location. A fourth option lets the
+# traveller leave without studying, for player agency.
+#
+# REWORKED 2026-09-17 at user request ("when you get there it gives you
+# a sampling of books to choose from?"): options a/b/c used to call
+# kehillah_study_<track>_effect directly, the same track-random_list
+# effect kehillah_learn_torah.0001 (local study) still uses -- picking a
+# track blind-picked one of its four works FOR you, only revealing which
+# one after the fact via that effect's own custom_tooltip. Now each
+# track option instead chains into kehillah_learn_torah_journey.0002/
+# 0003/0004 below, which lists that track's owned works as real,
+# individually named options -- the choice moves from "which track" +
+# random to "which track" + "which specific work in it". Local study is
+# UNCHANGED (kehillah_library_effects.txt's own updated header has the
+# full scope-boundary note); only the journey's arrival flow gained a
+# second step.
+#
+# WHY THE PHASE-END MOVE NEEDS A GUARD VARIABLE: `after` fires
+# unconditionally regardless of which option was picked (activity_type.
+# info's own doc), and this is the one place in this event that used to
+# end the activity's own phase (progress_activity_phase_after) no matter
+# which option fired. Options a/b/c no longer conclude studying
+# themselves -- they hand off to a follow-up event that should end the
+# phase once IT resolves, not now -- while option d (leave) still
+# concludes immediately, same as before. kehillah_learn_torah_journey_
+# chaining is a plain number character variable, set only by a/b/c and
+# checked (then always removed) in `after` below, the identical set-then-
+# remove idiom kehillah_study_<track>_effect already established for its
+# own kehillah_learn_torah_repeat signal (kehillah_library_effects.txt).
+# ---------------------------------------------------------------------
+
+kehillah_learn_torah_journey.0001 = {
+	type = character_event
+	title = kehillah_learn_torah_journey.0001.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:kehillah_journey_host }
+				desc = kehillah_learn_torah_journey.0001.desc
+			}
+			desc = kehillah_learn_torah_journey.0001.desc.fallback
+		}
+	}
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_journey_host
+		animation = interested
+		trigger = { exists = scope:kehillah_journey_host }
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	# Finds which registered community's own domicile sits exactly at
+	# root's current physical location, and saves both the TITLE (what
+	# the $LIBRARY$-parameterized study effects and triggers need) and
+	# its current holder (for the portrait and loc text -- read fresh,
+	# not the character who happened to hold it when any earlier step
+	# ran, so a succession at the destination is handled the same
+	# correctly-by-construction way this mod's retired interaction
+	# already established for this same feature). every_in_global_list,
+	# not any_/ordered_, because the match itself (not a boolean or a
+	# ranked pick) is what is needed here -- in practice at most one
+	# entry ever matches, since two communities cannot share a domicile
+	# location.
+	immediate = {
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = { domicile.domicile_location = root.location }
+			}
+			save_scope_as = kehillah_journey_destination_title
+		}
+		if = {
+			limit = { exists = scope:kehillah_journey_destination_title.holder }
+			scope:kehillah_journey_destination_title.holder = { save_scope_as = kehillah_journey_host }
+		}
+	}
+
+	# PARSHANUT.
+	option = {
+		name = kehillah_learn_torah_journey.0001.a
+		trigger = { kehillah_owns_parshanut_work_trigger = { LIBRARY = scope:kehillah_journey_destination_title } }
+		set_variable = { name = kehillah_learn_torah_journey_chaining value = 1 }
+		trigger_event = kehillah_learn_torah_journey.0002
+		ai_chance = { base = 30 }
+	}
+
+	# TALMUDICS.
+	option = {
+		name = kehillah_learn_torah_journey.0001.b
+		trigger = { kehillah_owns_talmudics_work_trigger = { LIBRARY = scope:kehillah_journey_destination_title } }
+		set_variable = { name = kehillah_learn_torah_journey_chaining value = 1 }
+		trigger_event = kehillah_learn_torah_journey.0003
+		ai_chance = { base = 30 }
+	}
+
+	# HASHKAFA.
+	option = {
+		name = kehillah_learn_torah_journey.0001.c
+		trigger = { kehillah_owns_hashkafa_work_trigger = { LIBRARY = scope:kehillah_journey_destination_title } }
+		set_variable = { name = kehillah_learn_torah_journey_chaining value = 1 }
+		trigger_event = kehillah_learn_torah_journey.0004
+		ai_chance = { base = 30 }
+	}
+
+	# LEAVE WITHOUT STUDYING.
+	option = {
+		name = kehillah_learn_torah_journey.0001.d
+		custom_tooltip = kehillah_learn_torah_journey.0001.d.tt
+		ai_chance = { base = 10 }
+	}
+
+	# ENDS THE ACTIVITY'S OWN (SOLE) PHASE -- but ONLY when nothing was
+	# chained onward (option d, or a track option whose own chained event
+	# somehow never fired): a/b/c now hand off to kehillah_learn_torah_
+	# journey.0002/0003/0004, and THEY end the phase once the player has
+	# actually picked a specific work, not this event. See this file's
+	# own header (REWORKED 2026-09-17) for the full account of why this
+	# guard exists. Where the phase-end itself DOES fire here (d, or as a
+	# safety net), the engine's own activity-completion machinery returns
+	# the host home from here, the same standard behavior any travelled
+	# vanilla activity already relies on for its own host (Pilgrimage,
+	# Hunt, Tour) -- see kehillah_learn_torah_journey.txt's own header for
+	# why that specific claim, for a HOST rather than a guest, is this
+	# build's one real unverified assumption. involved_activity, not
+	# scope:activity -- this runs from inside a fired EVENT, not from the
+	# activity_type's own native effect blocks, the identical reasoning
+	# kehillah_bet_din_advance_docket_effect (common/scripted_effects/
+	# kehillah_bet_din_scripted_effects.txt) already documents for the
+	# same distinction.
+	after = {
+		if = {
+			limit = { NOT = { has_variable = kehillah_learn_torah_journey_chaining } }
+			if = {
+				limit = { exists = involved_activity }
+				involved_activity = {
+					progress_activity_phase_after = { days = 1 }
+				}
+			}
+		}
+		remove_variable = kehillah_learn_torah_journey_chaining
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_learn_torah_journey.0002/0003/0004 -- WHICH SPECIFIC WORK.
+# ADDED 2026-09-17 (this file's own REWORKED note on .0001 above has the
+# full account). One event per track (Parshanut/Talmudics/Hashkafa),
+# reached only by chaining from .0001's matching track option --
+# scope:kehillah_journey_destination_title and scope:kehillah_journey_
+# host both carry forward from .0001 unchanged (same character, same
+# scope stack, no FROM/save needed to cross the trigger_event call, the
+# same same-chain scope persistence this mod's own docket-chain code
+# already relies on elsewhere). Each track offers up to four options, one
+# per work, gated on the SAME per-work "does the destination library own
+# this" check kehillah_owns_<track>_work_trigger already ORs together --
+# spelled out per-work here because each option needs its own individual
+# gate, not a combined one. kehillah_study_specific_work_effect (common/
+# scripted_effects/kehillah_library_effects.txt) is the shared per-work
+# payoff -- see its own header for why it takes $WORK$/$TRACK$ instead of
+# $LIBRARY$ (the library check already happened in this option's own
+# trigger). custom_tooltip on each option reuses the exact kehillah_
+# study_torah.<track>.<work>_tt flavor line the old random_list branch
+# used to reveal only AFTER the pick -- same text, now shown as a hover
+# preview BEFORE the pick, which is a strictly better use of it, not new
+# prose. All three works undefined trait's own "pass/fail" grading text
+# comes back through kehillah_study_specific_work_effect itself exactly
+# as before, so no changes needed to kehillah_study_torah.pass/fail/
+# repeat_pass/repeat_fail.tt.
+# ---------------------------------------------------------------------
+
+kehillah_learn_torah_journey.0002 = {
+	type = character_event
+	title = kehillah_learn_torah_journey.0002.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:kehillah_journey_host }
+				desc = kehillah_learn_torah_journey.0002.desc
+			}
+			desc = kehillah_learn_torah_journey.0002.desc.fallback
+		}
+	}
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_journey_host
+		animation = interested
+		trigger = { exists = scope:kehillah_journey_host }
+	}
+
+	option = {
+		name = kehillah_learn_torah_journey.0002.a
+		trigger = { scope:kehillah_journey_destination_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos } } }
+		custom_tooltip = kehillah_study_torah.parshanut.targum_onkelos_tt
+		kehillah_study_specific_work_effect = { WORK = flag:work_targum_onkelos TRACK = parshanut }
+	}
+	option = {
+		name = kehillah_learn_torah_journey.0002.b
+		trigger = { scope:kehillah_journey_destination_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mekhilta } } }
+		custom_tooltip = kehillah_study_torah.parshanut.mekhilta_tt
+		kehillah_study_specific_work_effect = { WORK = flag:work_mekhilta TRACK = parshanut }
+	}
+	option = {
+		name = kehillah_learn_torah_journey.0002.c
+		trigger = { scope:kehillah_journey_destination_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_genesis_rabbah } } }
+		custom_tooltip = kehillah_study_torah.parshanut.genesis_rabbah_tt
+		kehillah_study_specific_work_effect = { WORK = flag:work_genesis_rabbah TRACK = parshanut }
+	}
+	option = {
+		name = kehillah_learn_torah_journey.0002.d
+		trigger = { scope:kehillah_journey_destination_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_pirkei_derabbi_eliezer } } }
+		custom_tooltip = kehillah_study_torah.parshanut.pirkei_derabbi_eliezer_tt
+		kehillah_study_specific_work_effect = { WORK = flag:work_pirkei_derabbi_eliezer TRACK = parshanut }
+	}
+
+	after = {
+		if = {
+			limit = { exists = involved_activity }
+			involved_activity = {
+				progress_activity_phase_after = { days = 1 }
+			}
+		}
+	}
+}
+
+kehillah_learn_torah_journey.0003 = {
+	type = character_event
+	title = kehillah_learn_torah_journey.0003.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:kehillah_journey_host }
+				desc = kehillah_learn_torah_journey.0003.desc
+			}
+			desc = kehillah_learn_torah_journey.0003.desc.fallback
+		}
+	}
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_journey_host
+		animation = interested
+		trigger = { exists = scope:kehillah_journey_host }
+	}
+
+	option = {
+		name = kehillah_learn_torah_journey.0003.a
+		trigger = { scope:kehillah_journey_destination_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mishnah } } }
+		custom_tooltip = kehillah_study_torah.talmudics.mishnah_tt
+		kehillah_study_specific_work_effect = { WORK = flag:work_mishnah TRACK = talmudics }
+	}
+	option = {
+		name = kehillah_learn_torah_journey.0003.b
+		trigger = { scope:kehillah_journey_destination_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi } } }
+		custom_tooltip = kehillah_study_torah.talmudics.yerushalmi_tt
+		kehillah_study_specific_work_effect = { WORK = flag:work_yerushalmi TRACK = talmudics }
+	}
+	option = {
+		name = kehillah_learn_torah_journey.0003.c
+		trigger = { scope:kehillah_journey_destination_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli } } }
+		custom_tooltip = kehillah_study_torah.talmudics.bavli_tt
+		kehillah_study_specific_work_effect = { WORK = flag:work_bavli TRACK = talmudics }
+	}
+	option = {
+		name = kehillah_learn_torah_journey.0003.d
+		trigger = { scope:kehillah_journey_destination_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot } } }
+		custom_tooltip = kehillah_study_torah.talmudics.halakhot_gedolot_tt
+		kehillah_study_specific_work_effect = { WORK = flag:work_halakhot_gedolot TRACK = talmudics }
+	}
+
+	after = {
+		if = {
+			limit = { exists = involved_activity }
+			involved_activity = {
+				progress_activity_phase_after = { days = 1 }
+			}
+		}
+	}
+}
+
+kehillah_learn_torah_journey.0004 = {
+	type = character_event
+	title = kehillah_learn_torah_journey.0004.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:kehillah_journey_host }
+				desc = kehillah_learn_torah_journey.0004.desc
+			}
+			desc = kehillah_learn_torah_journey.0004.desc.fallback
+		}
+	}
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_journey_host
+		animation = interested
+		trigger = { exists = scope:kehillah_journey_host }
+	}
+
+	option = {
+		name = kehillah_learn_torah_journey.0004.a
+		trigger = { scope:kehillah_journey_destination_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_yetzirah } } }
+		custom_tooltip = kehillah_study_torah.hashkafa.sefer_yetzirah_tt
+		kehillah_study_specific_work_effect = { WORK = flag:work_sefer_yetzirah TRACK = hashkafa }
+	}
+	option = {
+		name = kehillah_learn_torah_journey.0004.b
+		trigger = { scope:kehillah_journey_destination_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_emunot_vedeot } } }
+		custom_tooltip = kehillah_study_torah.hashkafa.emunot_vedeot_tt
+		kehillah_study_specific_work_effect = { WORK = flag:work_emunot_vedeot TRACK = hashkafa }
+	}
+	option = {
+		name = kehillah_learn_torah_journey.0004.c
+		trigger = { scope:kehillah_journey_destination_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_chovot_halevavot } } }
+		custom_tooltip = kehillah_study_torah.hashkafa.chovot_halevavot_tt
+		kehillah_study_specific_work_effect = { WORK = flag:work_chovot_halevavot TRACK = hashkafa }
+	}
+	option = {
+		name = kehillah_learn_torah_journey.0004.d
+		trigger = { scope:kehillah_journey_destination_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_kuzari } } }
+		custom_tooltip = kehillah_study_torah.hashkafa.kuzari_tt
+		kehillah_study_specific_work_effect = { WORK = flag:work_kuzari TRACK = hashkafa }
+	}
+
+	after = {
+		if = {
+			limit = { exists = involved_activity }
+			involved_activity = {
+				progress_activity_phase_after = { days = 1 }
+			}
+		}
+	}
+}
