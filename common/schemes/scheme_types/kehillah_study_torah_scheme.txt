@@ -1,0 +1,143 @@
+﻿# =====================================================================
+# kehillah_study_torah -- ADDED 2026-09-19 at user request ("implement
+# Learn Torah as a continuous scheme... it seems like that's the parallel
+# to the base game designs"). Replaces kehillah_learn_torah_decision's
+# old one-shot flat resolution (common/decisions/kehillah_learn_torah_
+# decisions.txt has the full retirement account); kehillah_acquire_torah_
+# work_decision and the whole travel-journey activity are UNCHANGED.
+#
+# SELF-TARGETED, NOT ADVERSARIAL -- CONFIRMED REAL VANILLA PRECEDENT, not
+# invented. target_type = character is normally a scheme AGAINST someone
+# (learn_language_scheme.txt's own scope:target is a different person);
+# this instead copies study_confucian_classics (common/schemes/
+# scheme_types/tgp_study_scheme.txt, Tours & Tournaments), whose own
+# `valid = { scope:target = scope:owner ... }` is the one confirmed
+# vanilla example of a scheme a character runs on themselves. Most of
+# this file's own shape (skill/speed/uses_resistance fields, the on_
+# monthly/on_phase_completed/on_invalidated hook set) is copied from that
+# same file rather than reinvented, for the same reason this mod already
+# prefers extending an existing pattern over inventing a new one.
+#
+# ICON/ILLUSTRATION deliberately reuse learn_language_scheme.txt's own
+# (icon_scheme_learn_language, gfx/interface/illustrations/event_scenes/
+# corridor.dds) rather than study_confucian_classics's own DLC-specific
+# art (icon_study, .../tgp_study_asia.dds) -- learn_language is base-game,
+# confirmed always loaded regardless of which DLC a given install owns;
+# reusing TGP-specific assets would risk a missing texture on an install
+# without that DLC, for zero benefit (a generic study/corridor image
+# reads fine here; this mod does not need its own bespoke art for this).
+#
+# THE ACTUAL PASS/FAIL AND REWARD LOGIC IS DELIBERATELY NOT HERE. Unlike
+# study_confucian_classics, this scheme's own on_phase_completed does not
+# roll scope:scheme.scheme_success_chance to decide anything -- that
+# would be a SECOND parallel success system sitting on top of the one
+# kehillah_study_specific_work_effect (common/scripted_effects/kehillah_
+# library_effects.txt) already owns (a plain `learning >= 10` gate,
+# unchanged since 2026-09-15 and still shared with the travel journey).
+# Changing that shared effect's own gate to read the scheme's roll instead
+# was considered and rejected specifically because it is SHARED with
+# kehillah_learn_torah_journey.0002/0003/0004, which this pass does not
+# touch -- doing so would silently change the journey's own behavior too.
+# base_success_chance below therefore exists only because every scheme
+# type requires one (it drives the UI's own odds_prediction display), not
+# because anything branches on it.
+# =====================================================================
+
+kehillah_study_torah = {
+	# Basic Setup
+	skill = learning
+	desc = kehillah_study_torah_scheme_desc_general
+	success_desc = "KEHILLAH_STUDY_TORAH_SCHEME_SUCCESS_DESC"
+	icon = icon_scheme_learn_language
+	illustration = "gfx/interface/illustrations/event_scenes/corridor.dds"
+	category = personal
+	target_type = character
+	is_secret = no
+	is_basic = yes
+	hide_target_name = yes
+
+	# A rabbi travelling for kehillah_learn_torah_journey is already
+	# covered by that separate activity/event chain -- freezing this
+	# scheme while travelling avoids double-dipping the same character's
+	# study time across both mechanisms at once, mirroring study_confucian_
+	# classics's own identical choice.
+	freeze_scheme_when_traveling = yes
+
+	# Parameters -- copied verbatim from study_confucian_classics (see
+	# this file's own header for why): a generic, non-adversarial personal
+	# pursuit, the closest confirmed vanilla shape to what this needs.
+	speed_per_skill_point = -2
+	spymaster_speed_per_skill_point = 0
+	uses_resistance = no
+
+	# 1095 days (3 years) -- matches kehillah_learn_torah_piety_cost's own
+	# cooldown note (common/script_values/kehillah_script_values.txt) on
+	# "how often should a real institutional activity plausibly recur",
+	# now read as "how long one course of reading plausibly takes" instead
+	# of "how long before you may ask again" -- the same real-world pacing
+	# assumption, just carried by a different field now that this is a
+	# continuous scheme rather than a decision on a cooldown.
+	base_progress_goal = 1095
+	base_maximum_success = 95
+	minimum_success = 5
+
+	# Core Triggers
+	allow = {
+		age >= 16
+		is_imprisoned = no
+		has_trait = kehillah_rabbi_trait
+		NOT = { has_trait = incapable }
+	}
+
+	valid = {
+		scope:target = scope:owner
+		is_imprisoned = no
+		has_trait = kehillah_rabbi_trait
+		NOT = { has_trait = incapable }
+		government_has_flag = government_is_kehillah
+		kehillah_owns_any_torah_work_trigger = { LIBRARY = primary_title }
+	}
+
+	# Prediction only -- see this file's own header on why nothing actually
+	# branches on the roll this feeds. base_odds_prediction_target_is_char_
+	# value is the same vanilla value learn_language_scheme.txt itself uses
+	# for its own (also target_type = character) odds_prediction.
+	odds_prediction = {
+		add = base_odds_prediction_target_is_char_value
+		min = 0
+	}
+
+	base_success_chance = {
+		base = 0
+		modifier = {
+			add = scope:owner.learning
+			desc = kehillah_study_torah_scheme_learning_modifier
+		}
+		modifier = {
+			add = 15
+			desc = kehillah_study_torah_scheme_rabbi_modifier
+			scope:owner = { has_trait = kehillah_rabbi_trait }
+		}
+	}
+
+	# On Actions
+	on_phase_completed = {
+		save_scope_as = scheme
+		scheme_owner = { save_scope_as = owner }
+		scope:owner = {
+			trigger_event = kehillah_study_torah.0001
+		}
+		reset_scheme_progress = yes
+	}
+
+	on_monthly = {
+		save_scope_as = scheme
+		scheme_owner = {
+			save_scope_as = owner
+			kehillah_study_torah_monthly_effect = yes
+		}
+	}
+
+	on_invalidated = {
+	}
+}

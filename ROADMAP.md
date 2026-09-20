@@ -1021,6 +1021,72 @@ to — natural Phase 2/3 content, not v1:**
     own precedent) — the engine's own activity-completion machinery is trusted for the actual trip
     home, not a second hand-built `start_travel_plan` the way the retired interaction needed.
 
+**2026-09-19 — Learn Torah rebuilt as a continuous scheme, `kehillah_study_torah`, ck3-tiger-clean,
+not yet live-tested.** At user request, following a discussion of whether Learn Torah (until now a
+flat, one-shot decision) should instead work the way base-game "continuous background activity"
+mechanics do — the user specifically flagged vanilla's own `learn_language` scheme, and the "By God
+Alone" expansion's forthcoming (announced, not yet released) Study Scripture scheme for ecclesiastic
+Christian characters, as the closest parallels.
+
+**Self-targeted schemes are real, confirmed vanilla precedent, not a guess** — `study_confucian_
+classics` (`common/schemes/scheme_types/tgp_study_scheme.txt`, Tours & Tournaments) is a
+`target_type = character` scheme whose own `valid = { scope:target = scope:owner }` makes it a
+character's scheme against themselves, and its `on_phase_completed`/`on_monthly`/`on_invalidated`
+hook set (progress loops via `reset_scheme_progress = yes` rather than ending) is what `kehillah_
+study_torah` (`common/schemes/scheme_types/kehillah_study_torah_scheme.txt`) copies. `kehillah_
+learn_torah_decision` now only starts it (`start_scheme` + picking the first work), instead of
+resolving a study session itself; `kehillah_acquire_torah_work_decision` and the whole travel-journey
+activity (`kehillah_learn_torah_journey`) are UNCHANGED — commissioning a copy has no "continuous"
+framing to convert to, and the journey was explicitly out of scope.
+
+**The actual pass/fail and reward logic was deliberately NOT rebuilt** — `kehillah_study_specific_
+work_effect` (common/scripted_effects/kehillah_library_effects.txt, unchanged since 2026-09-17 and
+still shared with the travel journey) still owns it (a plain `learning >= 10` gate, repeat-vs-first
+tiering via `kehillah_studied_works`). Routing the scheme's own probabilistic `scheme_success_chance`
+into that gate instead was considered and rejected specifically because the effect is SHARED with
+the untouched journey — changing it would have silently changed journey behavior too, not just the
+scheme's. `base_success_chance` exists on the scheme purely because every scheme type requires one
+(it feeds the UI's own odds display); nothing branches on it.
+
+**Continuing indefinitely once out of unstudied books, with a clearly smaller reward** — explicit user
+request ("you should be able to continue the scheme even when out of books, but it should be very
+clear that the rewards are now much less"). Needed no new mechanism at all: the pick-next-work step
+now draws from every work the library owns, not just unstudied ones, and `kehillah_study_specific_
+work_effect`'s own repeat-vs-first tiering (built 2026-09-15, "a much smaller boost, not zero") was
+already exactly this. The only real change is surfacing it clearly — the same `kehillah_study_torah.
+<track>.<work>_tt` "You take up X" line used since 2026-09-15 now fires at PICK time (naming what's
+about to be reread), where before it only fired as an after-the-fact reveal.
+
+**The numeric-ID bridge, and why it's twelve if/elif branches, not a generic lookup** — a scheme
+phase and its own `on_phase_completed` are two different script moments, months apart, with no
+"phase started" hook to pair with it, so "which work is currently being read" has to be decided once
+(at pick time) and read back later (at resolve time). Storing an arbitrary flag reference in a
+variable and comparing against it later was already investigated and explicitly rejected once
+before, in `kehillah_study_specific_work_effect`'s own 2026-09-17 header ("checked against the
+installed game and NOT found anywhere as real precedent"). Rather than re-risking that, `kehillah_
+study_current_work_id` is a plain NUMBER (1-12, one literal work per number by fixed convention),
+read back via if/elif-per-literal (an effect: `kehillah_study_torah_resolve_current_work_effect`) or
+OR-of-AND-per-literal (a trigger: `kehillah_study_torah_current_work_still_owned_trigger`) — more
+lines than a generic lookup, but the confirmed-safe shape already used everywhere else in this file
+family, not an invented one.
+
+**No cached list, by design — the library query is live, at every pick.** `kehillah_study_torah_
+pick_next_work_effect` queries the community's CURRENT `kehillah_library_works` every time it runs
+(scheme start, every phase completion, and whenever `on_monthly` detects the current book is gone) —
+never a snapshot taken once and reused. This means "detect new books" needs no extra code at all
+(the very next pick already sees them); "detect a book donated away mid-read" (relevant now that the
+library panel's own donate-for-piety action exists) is the one case that genuinely needed an active
+check, so `kehillah_study_torah_monthly_effect` runs `kehillah_study_torah_current_work_still_owned_
+trigger` every month and, on a miss, toasts the player and re-picks immediately — `scheme_progress`
+itself is left untouched, since it represents time spent at the Beit Midrash, not attachment to one
+specific volume.
+
+**Flavor events, not mechanical ones, for the "insight mid-study" ask.** `kehillah_study_torah.0002`
+(events/kehillah_study_torah_events.txt) fires from `on_monthly` at a flat 12%/month chance while the
+current work is still owned, with a twelve-way `triggered_desc` naming which work the insight is
+about — pure flavor, no reward, specifically so it never double-pays what `kehillah_study_torah.0001`
+(the real phase-completion resolve+pick event) already pays.
+
 **Partly resolved, and reopened by the first playtest:** open,
 community-wide leadership succession (any notable family can be
 appointed, not just the outgoing leader's own).

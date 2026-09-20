@@ -6,25 +6,25 @@
 # decisions, and not a standalone competitor to the earlier "Study a
 # Work of Hashkafa" idea, which this supersedes before it was ever built.
 #
-# TWO DECISIONS, ONE SYSTEM:
-#   kehillah_learn_torah_decision -- study a track your OWN community's
-#     library already owns a work for. Opens kehillah_learn_torah.0001
-#     (events/kehillah_learn_torah_events.txt), one option per track,
-#     each visible only if the community owns >= 1 work in it.
-#   kehillah_acquire_torah_work_decision -- commission a copy of a work
-#     the community does NOT yet own, gated on the Sofer's Workshop's
-#     own scriptorium tier (kehillah_has_scriptorium) -- the spike's own
-#     finding that this building's tier 2 already reads, in its own
-#     pre-existing comment, as "texts copied here circulate to other
-#     communities." Opens kehillah_acquire_torah_work.0001, one option
-#     per track, each visible only if the community is missing >= 1.
+# kehillah_learn_torah_decision REBUILT 2026-09-19 AS A SCHEME-STARTER,
+# at user request: "implement Learn Torah as a continuous scheme... it
+# seems like that's the parallel to the base game designs." It no longer
+# resolves anything itself -- it starts kehillah_study_torah (common/
+# schemes/scheme_types/kehillah_study_torah_scheme.txt), a long-running
+# personal scheme that keeps reading through the community's own library
+# indefinitely (one work every base_progress_goal, currently 3 years)
+# rather than a single one-shot Learning check. kehillah_learn_torah.0001
+# (events/kehillah_learn_torah_events.txt), the old flat resolution event,
+# is RETIRED -- see that file's own retirement note for the full account,
+# and events/kehillah_study_torah_events.txt for its replacement.
 #
-# BOTH ARE FLAT: one decision, one event, options resolved in a single
-# step -- deliberately NOT a multi-event chain, the same "ship the flat
-# version first" shape "Write a Book" itself started as (three flat
-# decisions, per that file's own header, common/decisions/kehillah_
-# rabbi_book_decisions.txt) before it grew into a real chain. Room to
-# grow the same way later; not built that way now.
+# kehillah_acquire_torah_work_decision is UNCHANGED by this pass -- still
+# a flat, one-shot decision, commissioning a copy of a work the community
+# does NOT yet own, gated on the Sofer's Workshop's own scriptorium tier
+# (kehillah_has_scriptorium). "Commission a copy" is a single transaction
+# with a clear beginning and end; there is no equivalent "continuous"
+# framing for it the way there is for reading, so it had no reason to
+# follow Learn Torah into scheme form.
 #
 # THE LIBRARY ITSELF is a `variable_list` on each community's title
 # (kehillah_library_works), not a real artifact -- see common/scripted_
@@ -58,6 +58,14 @@ kehillah_learn_torah_decision = {
 	# there is no established precedent anywhere in this codebase for
 	# accruing trait_xp on a trait not yet held, so this doesn't invent
 	# one.
+	# The OR-of-owns clause is unchanged from before this decision started
+	# a scheme -- still "does the community's own library hold anything at
+	# all to begin reading." The custom_tooltip clause is new: reusing the
+	# real vanilla can_start_scheme guard pattern (confirmed against
+	# tgp_china_study_confucian_classics_decision, dlc_decisions/tgp/
+	# tgp_china_decisions.txt) so a rabbi already mid-scheme sees an
+	# explanatory line here rather than the decision just silently greying
+	# out with no visible reason.
 	is_valid = {
 		is_adult = yes
 		is_imprisoned = no
@@ -67,16 +75,42 @@ kehillah_learn_torah_decision = {
 			kehillah_owns_talmudics_work_trigger = { LIBRARY = primary_title }
 			kehillah_owns_hashkafa_work_trigger = { LIBRARY = primary_title }
 		}
+		custom_tooltip = {
+			text = kehillah_learn_torah_decision_already_studying_tt
+			NOT = { any_scheme = { type = kehillah_study_torah } }
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		can_start_scheme = {
+			type = kehillah_study_torah
+			target_character = root
+		}
 	}
 
 	cost = {
 		piety = kehillah_learn_torah_piety_cost
 	}
 
-	cooldown = { years = 3 }
-
+	# NO cooldown, DELIBERATELY, unlike before this became a scheme-
+	# starter: the old flat decision recurred every 3 years because it WAS
+	# the recurring action; now the SCHEME recurs (one work every
+	# base_progress_goal, common/schemes/scheme_types/kehillah_study_
+	# torah_scheme.txt), and this decision only ever fires once per course
+	# of study, to start it. can_start_scheme above already prevents a
+	# second one stacking on top of a running scheme, which is the only
+	# thing a cooldown here would otherwise have been guarding against.
 	effect = {
-		trigger_event = kehillah_learn_torah.0001
+		start_scheme = {
+			type = kehillah_study_torah
+			target_character = root
+		}
+
+		# Reveals which work the scheme begins on, via custom_tooltip, the
+		# same "You take up X" lines used since 2026-09-15 -- see this
+		# effect's own header (common/scripted_effects/kehillah_library_
+		# effects.txt) for why the pick is a live query, not a snapshot.
+		kehillah_study_torah_pick_next_work_effect = { LIBRARY = primary_title }
 	}
 
 	ai_potential = {

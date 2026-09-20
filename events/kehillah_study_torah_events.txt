@@ -1,0 +1,148 @@
+﻿# =====================================================================
+# Learn Torah, the scheme -- the events. ADDED 2026-09-19. See common/
+# schemes/scheme_types/kehillah_study_torah_scheme.txt for the scheme
+# itself and common/scripted_effects/kehillah_library_effects.txt's own
+# "STUDY TORAH AS A SCHEME" header for the numeric-ID bridge
+# (kehillah_study_current_work_id) both events below read from.
+#
+# TWO EVENTS, TWO DIFFERENT JOBS. kehillah_study_torah.0001 fires from
+# on_phase_completed (every base_progress_goal, ~3 years) and is where the
+# actual mechanical resolve-then-pick-next happens; kehillah_study_torah.
+# 0002 fires from on_monthly (a flat 12% chance per month the current work
+# is still being read) and is PURE FLAVOR, no mechanical effect at all --
+# see kehillah_study_torah_monthly_effect's own header for why the two
+# never double-pay the same reward.
+#
+# WHY 0001's OWN desc IS GENERIC, NOT PER-WORK. The obvious first instinct
+# is a twelve-way triggered_desc keyed on the work that just finished,
+# matching kehillah_study_torah.0002 below -- but kehillah_study_specific_
+# work_effect (called from this event's own option) already reveals the
+# pass/fail/repeat_pass/repeat_fail tier via its own custom_tooltip, and
+# kehillah_study_torah_pick_next_work_effect already reveals which work
+# comes NEXT via the exact same kehillah_study_torah.<track>.<work>_tt
+# lines used since 2026-09-15 ("You take up Targum Onkelos..."). Both
+# reveals already name a specific work; a third, desc-level naming of the
+# work that just finished would be repeating information the tooltips
+# below the option already give, not adding any.
+# =====================================================================
+
+namespace = kehillah_study_torah
+
+# ---------------------------------------------------------------------
+# kehillah_study_torah.0001 -- A COURSE OF STUDY CONCLUDES
+# ---------------------------------------------------------------------
+
+kehillah_study_torah.0001 = {
+	type = character_event
+	title = kehillah_study_torah.0001.t
+	desc = kehillah_study_torah.0001.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	option = {
+		name = kehillah_study_torah.0001.a
+
+		# Resolve whatever was actually being read (nothing to resolve on
+		# the scheme's very first-ever phase completion if, somehow, no
+		# pick has ever landed -- has_variable guards that rather than
+		# assuming it, though kehillah_learn_torah_decision's own effect
+		# always picks a first work before start_scheme, so this should
+		# not normally be reached empty).
+		if = {
+			limit = { has_variable = kehillah_study_current_work_id }
+			kehillah_study_torah_resolve_current_work_effect = yes
+		}
+
+		# Then pick what comes next -- reveals itself via custom_tooltip,
+		# same "You take up X" lines used since 2026-09-15. Guarded on
+		# still owning at least one work at all: a library that has been
+		# donated down to nothing between phases has nothing left to
+		# reveal, and the scheme's own on_invalidated will end it the
+		# next time its own valid trigger is checked.
+		if = {
+			limit = { kehillah_owns_any_torah_work_trigger = { LIBRARY = primary_title } }
+			kehillah_study_torah_pick_next_work_effect = { LIBRARY = primary_title }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_study_torah.0002 -- AN INSIGHT MID-STUDY (flavor only)
+# ---------------------------------------------------------------------
+
+kehillah_study_torah.0002 = {
+	type = character_event
+	title = kehillah_study_torah.0002.t
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:kehillah_study_current_work_id = 1 }
+				desc = kehillah_study_torah.0002.targum_onkelos_desc
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_study_current_work_id = 2 }
+				desc = kehillah_study_torah.0002.mekhilta_desc
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_study_current_work_id = 3 }
+				desc = kehillah_study_torah.0002.genesis_rabbah_desc
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_study_current_work_id = 4 }
+				desc = kehillah_study_torah.0002.pirkei_derabbi_eliezer_desc
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_study_current_work_id = 5 }
+				desc = kehillah_study_torah.0002.mishnah_desc
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_study_current_work_id = 6 }
+				desc = kehillah_study_torah.0002.yerushalmi_desc
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_study_current_work_id = 7 }
+				desc = kehillah_study_torah.0002.bavli_desc
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_study_current_work_id = 8 }
+				desc = kehillah_study_torah.0002.halakhot_gedolot_desc
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_study_current_work_id = 9 }
+				desc = kehillah_study_torah.0002.sefer_yetzirah_desc
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_study_current_work_id = 10 }
+				desc = kehillah_study_torah.0002.emunot_vedeot_desc
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_study_current_work_id = 11 }
+				desc = kehillah_study_torah.0002.chovot_halevavot_desc
+			}
+			desc = kehillah_study_torah.0002.kuzari_desc
+		}
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	option = {
+		name = kehillah_study_torah.0002.a
+	}
+}
