@@ -20,8 +20,8 @@
 # script has had a chance to set flags on titles.
 #
 # ADDED 2026-09-19 (Found a Jewish Community, common/decisions/kehillah_
-# found_community_decisions.txt): a trailing is_target_in_variable_list
-# branch, alongside the fifteen hardcoded names above rather than
+# found_community_decisions.txt): a trailing is_target_in_global_variable_
+# list branch, alongside the fifteen hardcoded names above rather than
 # replacing them. The reasoning above for why the pre-authored sixteen
 # are checked by name (answerable during history execution, before
 # kehillah_registered_communities exists) is untouched and still true for
@@ -35,6 +35,24 @@
 # gain, the domicile naming customizable_localization -- needs to
 # recognize a founded community exactly as it recognizes the original
 # sixteen, so this is additive coverage, not a replacement.
+#
+# FIXED 2026-09-20 (live diagnosis of "founded community's buildings all
+# read as locked and error.log fills with kehillah_domicile_name_vanilla_
+# fallback spam"): this branch was written as is_target_in_variable_list,
+# the CHARACTER/REGULAR-scope checker, but kehillah_registered_communities
+# is populated with add_to_global_variable_list (kehillah_found_community_
+# effects.txt, kehillah_on_actions.txt). CK3 has three separate, non-
+# interchangeable variable-list namespaces -- plain, local, and global --
+# each with its own matching checker (confirmed directly against the
+# installed 1.19 files' own generated docs, logs/triggers.log:
+# "is_target_in_global_variable_list", "is_target_in_local_variable_list"
+# and "is_target_in_variable_list" are three distinct entries). Checking
+# the wrong namespace doesn't error, it just always returns false -- so
+# every founded community silently failed this trigger's trailing branch,
+# which is why kehillah_debug.61 reported "primary title is NOT
+# registered" live for a freshly founded Frankfurt community even though
+# add_to_global_variable_list had definitely run. Now
+# is_target_in_global_variable_list, matching the add_ call it reads back.
 # ---------------------------------------------------------------------
 
 is_kehillah_title_trigger = {
@@ -54,7 +72,7 @@ is_kehillah_title_trigger = {
 		this = title:d_kehillah_narbonne
 		this = title:d_kehillah_beziers
 		this = title:d_kehillah_lunel
-		is_target_in_variable_list = { name = kehillah_registered_communities target = this }
+		is_target_in_global_variable_list = { name = kehillah_registered_communities target = this }
 	}
 }
 

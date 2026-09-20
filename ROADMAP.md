@@ -1292,6 +1292,40 @@ discarded after Daniel chose duchy parity. See
   awaits Daniel's visual check.
 The title-ID change requires a new campaign rather than an old `c_kehillah_*` save.
 
+**2026-09-20, that live regression — two real bugs found and fixed, unrelated to duchy
+tier.** Daniel reported every Jewish Quarter building reading as locked despite a Level 1
+Synagogue. Subagent-driven live diagnosis (both a freshly founded Frankfurt community and a
+brand-new Worms 1066 start) found:
+1. **The external-slot lock is real and was present on Worms too, not just founded
+   communities** — so this was never a duchy-tier regression at all. `base_external_slots = 6`
+   (`common/domiciles/types/kehillah_domicile_types.txt`), added 2026-09-17 on the assumption it
+   alone sets a domicile's starting unlocked-slot count, left every external slot — all six,
+   including the first — stuck on vanilla's generic "Locked Slot" state; hovering showed the
+   engine's own "New Slots can be unlocked by upgrading the central Domicile Building" tooltip.
+   Every vanilla domicile type actually pairs a small `base_external_slots` (2) with a
+   `domicile_external_slots_capacity_add` character modifier on its tier-1 main building — this
+   mod had removed that modifier on 2026-09-17 and never replaced it. Fixed by adding
+   `domicile_external_slots_capacity_add = 6` to `kehillah_synagogue_01`
+   (`common/domiciles/buildings/kehillah_domicile_buildings.txt`), which inherits automatically
+   to every later Synagogue tier per `_domicile_buildings.info`'s own inheritance rule for
+   `character_modifier`. Not yet re-verified live.
+2. **Founded communities were never actually recognized as Kehillah titles.** The 2026-09-19
+   addition to `is_kehillah_title_trigger` (`common/scripted_triggers/kehillah_scripted_
+   triggers.txt`) checked `is_target_in_variable_list`, the plain/character-scope checker, against
+   `kehillah_registered_communities` — a list populated with `add_to_global_variable_list`. CK3
+   has three separate, non-interchangeable variable-list namespaces (confirmed against the
+   installed 1.19 files' own generated `logs/triggers.log`: `is_target_in_variable_list`,
+   `is_target_in_local_variable_list`, `is_target_in_global_variable_list` are three distinct
+   entries), and checking the wrong one doesn't error, it just always returns false. Live:
+   `kehillah_debug.61` reported "primary title is NOT registered" for a freshly founded
+   community, and `error.log` filled with 22,000+ lines of `kehillah_domicile_name_vanilla_
+   fallback` loc errors from `KehillahDomicileName` falling through every single frame the
+   domicile panel was open. Fixed by changing the check to
+   `is_target_in_global_variable_list`, matching the `add_to_global_variable_list` call it reads
+   back. This bug is independent of bug 1 (Worms hit bug 1 without ever touching this code path)
+   and was masking bug 1's own symptom on the founded-community repro case with a second, louder
+   one. Not yet re-verified live.
+
 **Remaining founder-path work:** the two error-log items the 12:49 re-test flagged are addressed at
 source but NOT yet re-checked live (the machine was in use when the re-check was due): the
 `kehillah_restore_quarter_effect` call is removed from the founding effect (it does not no-op on a
