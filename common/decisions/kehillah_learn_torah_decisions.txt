@@ -1,0 +1,141 @@
+﻿# =====================================================================
+# Learn Torah. ADDED 2026-09-15 at user request ("implement the first
+# version of" docs/spec/spike-book-inventory.md), and confirmed by the
+# user as the general umbrella all three kehillah_rabbi_trait tracks
+# (parshanut/talmudics/hashkafa) study through -- not three separate
+# decisions, and not a standalone competitor to the earlier "Study a
+# Work of Hashkafa" idea, which this supersedes before it was ever built.
+#
+# TWO DECISIONS, ONE SYSTEM:
+#   kehillah_learn_torah_decision -- study a track your OWN community's
+#     library already owns a work for. Opens kehillah_learn_torah.0001
+#     (events/kehillah_learn_torah_events.txt), one option per track,
+#     each visible only if the community owns >= 1 work in it.
+#   kehillah_acquire_torah_work_decision -- commission a copy of a work
+#     the community does NOT yet own, gated on the Sofer's Workshop's
+#     own scriptorium tier (kehillah_has_scriptorium) -- the spike's own
+#     finding that this building's tier 2 already reads, in its own
+#     pre-existing comment, as "texts copied here circulate to other
+#     communities." Opens kehillah_acquire_torah_work.0001, one option
+#     per track, each visible only if the community is missing >= 1.
+#
+# BOTH ARE FLAT: one decision, one event, options resolved in a single
+# step -- deliberately NOT a multi-event chain, the same "ship the flat
+# version first" shape "Write a Book" itself started as (three flat
+# decisions, per that file's own header, common/decisions/kehillah_
+# rabbi_book_decisions.txt) before it grew into a real chain. Room to
+# grow the same way later; not built that way now.
+#
+# THE LIBRARY ITSELF is a `variable_list` on each community's title
+# (kehillah_library_works), not a real artifact -- see common/scripted_
+# triggers/kehillah_scripted_triggers.txt's own header (the six
+# kehillah_owns_/missing_<track>_work_trigger entries both decisions
+# below read) for the full account, including the twelve real works and
+# why every community starts owning exactly two of them.
+# =====================================================================
+
+kehillah_learn_torah_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_tale.dds"
+	}
+
+	decision_group_type = kehillah
+	sort_order = 94
+	ai_check_interval = 60
+
+	is_shown = {
+		government_has_flag = government_is_kehillah
+	}
+
+	# has_trait = kehillah_rabbi_trait, NOT "OR learning >= 8" -- matches
+	# kehillah_write_book_decision's own gate exactly (every one of its
+	# three rabbi-genre options requires the trait outright, events/
+	# kehillah_book_events.txt's kehillah_book.0001.a/b/c). Deliberate,
+	# not an oversight: add_trait_xp only ever gets called on a track this
+	# character already holds the trait for, both here and everywhere
+	# else in this mod (kehillah_rabbi_grant_case_xp_effect's own guard,
+	# common/scripted_effects/kehillah_bet_din_scripted_effects.txt) --
+	# there is no established precedent anywhere in this codebase for
+	# accruing trait_xp on a trait not yet held, so this doesn't invent
+	# one.
+	is_valid = {
+		is_adult = yes
+		is_imprisoned = no
+		has_trait = kehillah_rabbi_trait
+		OR = {
+			kehillah_owns_parshanut_work_trigger = { LIBRARY = primary_title }
+			kehillah_owns_talmudics_work_trigger = { LIBRARY = primary_title }
+			kehillah_owns_hashkafa_work_trigger = { LIBRARY = primary_title }
+		}
+	}
+
+	cost = {
+		piety = kehillah_learn_torah_piety_cost
+	}
+
+	cooldown = { years = 3 }
+
+	effect = {
+		trigger_event = kehillah_learn_torah.0001
+	}
+
+	ai_potential = {
+		government_has_flag = government_is_kehillah
+	}
+
+	ai_will_do = {
+		base = 50
+	}
+}
+
+kehillah_acquire_torah_work_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_spend_money.dds"
+	}
+
+	decision_group_type = kehillah
+	sort_order = 93
+	ai_check_interval = 60
+
+	# Gated on the Sofer's Workshop's own scriptorium tier -- see this
+	# file's own header for why this specific building/tier, not a new
+	# one invented for the purpose.
+	is_shown = {
+		government_has_flag = government_is_kehillah
+		domicile ?= { has_domicile_parameter = kehillah_has_scriptorium }
+	}
+
+	is_valid = {
+		is_adult = yes
+		is_imprisoned = no
+		OR = {
+			kehillah_missing_parshanut_work_trigger = { LIBRARY = primary_title }
+			kehillah_missing_talmudics_work_trigger = { LIBRARY = primary_title }
+			kehillah_missing_hashkafa_work_trigger = { LIBRARY = primary_title }
+		}
+	}
+
+	cost = {
+		gold = medium_gold_value
+	}
+
+	cooldown = { years = 2 }
+
+	effect = {
+		trigger_event = kehillah_acquire_torah_work.0001
+	}
+
+	ai_potential = {
+		government_has_flag = government_is_kehillah
+		domicile ?= { has_domicile_parameter = kehillah_has_scriptorium }
+	}
+
+	ai_will_do = {
+		base = 40
+
+		modifier = {
+			factor = 0
+			gold < 100
+		}
+	}
+}

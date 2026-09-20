@@ -31,3 +31,509 @@ kehillah_communities_map_paint = {
 		kehillah_paint_communities_map_effect = yes
 	}
 }
+
+# =====================================================================
+# THE LIBRARY PANEL'S "WHICH COMMUNITY" BRIDGE. ADDED 2026-09-17 (v13
+# spec section 9). A standalone scripted widget cannot read which
+# domicile the vanilla domicile window is showing (DomicileWindow is a
+# type injected into that window's own tree, not a global -- see the
+# header of gui/kehillah_domicile_library.gui). So the one place this
+# mod itself opens ANOTHER community's quarter -- the map roster's
+# quarter button -- records that community on the player first, and
+# the panel reads it back as GetPlayer.MakeScope.Var(
+# 'kehillah_lib_viewed_community' ).Char. The button also sets the
+# GUI-side flag kehillah_lib_viewing_other, which is what actually
+# switches the panel to this variable; the panel clears that flag when
+# the domicile view closes, so the variable only ever matters while a
+# roster-opened quarter is on screen.
+#
+# root = the player; scope:community = the community's leader.
+# =====================================================================
+
+kehillah_lib_view_community = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		exists = scope:community
+	}
+
+	effect = {
+		# The exists check is a real read of the variable in script: the
+		# engine's startup lint logs "set but never used" for a variable
+		# only the GUI reads (live, 2026-09-18), and this keeps error.log
+		# clean without changing what happens.
+		if = {
+			limit = { exists = var:kehillah_lib_viewed_community }
+			remove_variable = kehillah_lib_viewed_community
+		}
+		set_variable = {
+			name = kehillah_lib_viewed_community
+			value = scope:community
+		}
+	}
+}
+
+# =====================================================================
+# DONATE A WORK FROM THE LIBRARY PANEL. ADDED 2026-09-18 (v13 spec
+# section 10). One scripted_gui PER WORK, kehillah_lib_donate_<flag>:
+# the panel's per-row button picks its name from the row's own flag --
+#   GetScriptedGui( Concatenate( 'kehillah_lib_donate_', Scope.GetFlagName ) )
+# -- the same Concatenate-by-flag-name trick every text on the row
+# already uses for its loc keys. Tried first and REJECTED live
+# (2026-09-18): one generic scripted_gui taking the row item through
+# AddScope( 'work', Scope.Self ) / Scope.AccessSelf -- IsValid was
+# false and Execute a no-op both ways; a GetList item does not arrive
+# in script as scope:work. So the work is a literal here instead,
+# saved with save_scope_value_as for the event to read. Twelve small
+# blocks, generated from one template; a thirteenth work is one more.
+#
+# Each one: the button is only shown on the player's OWN library
+# window, and is_valid re-checks ownership in script so a stale click
+# can never give away a work twice. All the effect does is open the
+# confirmation event -- donating is irreversible (the work leaves the
+# library; getting one back is the acquire decision's random draw), so
+# it goes through an event with a "Keep it" option, never the click.
+#
+# root = the player.
+# =====================================================================
+
+kehillah_lib_donate_work_targum_onkelos = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		government_has_flag = government_is_kehillah
+		primary_title = {
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos }
+		}
+	}
+
+	effect = {
+		save_scope_value_as = { name = kehillah_donate_work value = flag:work_targum_onkelos }
+		trigger_event = kehillah_library.0001
+	}
+}
+
+kehillah_lib_donate_work_mekhilta = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		government_has_flag = government_is_kehillah
+		primary_title = {
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mekhilta }
+		}
+	}
+
+	effect = {
+		save_scope_value_as = { name = kehillah_donate_work value = flag:work_mekhilta }
+		trigger_event = kehillah_library.0001
+	}
+}
+
+kehillah_lib_donate_work_genesis_rabbah = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		government_has_flag = government_is_kehillah
+		primary_title = {
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_genesis_rabbah }
+		}
+	}
+
+	effect = {
+		save_scope_value_as = { name = kehillah_donate_work value = flag:work_genesis_rabbah }
+		trigger_event = kehillah_library.0001
+	}
+}
+
+kehillah_lib_donate_work_pirkei_derabbi_eliezer = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		government_has_flag = government_is_kehillah
+		primary_title = {
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_pirkei_derabbi_eliezer }
+		}
+	}
+
+	effect = {
+		save_scope_value_as = { name = kehillah_donate_work value = flag:work_pirkei_derabbi_eliezer }
+		trigger_event = kehillah_library.0001
+	}
+}
+
+kehillah_lib_donate_work_mishnah = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		government_has_flag = government_is_kehillah
+		primary_title = {
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mishnah }
+		}
+	}
+
+	effect = {
+		save_scope_value_as = { name = kehillah_donate_work value = flag:work_mishnah }
+		trigger_event = kehillah_library.0001
+	}
+}
+
+kehillah_lib_donate_work_yerushalmi = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		government_has_flag = government_is_kehillah
+		primary_title = {
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi }
+		}
+	}
+
+	effect = {
+		save_scope_value_as = { name = kehillah_donate_work value = flag:work_yerushalmi }
+		trigger_event = kehillah_library.0001
+	}
+}
+
+kehillah_lib_donate_work_bavli = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		government_has_flag = government_is_kehillah
+		primary_title = {
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli }
+		}
+	}
+
+	effect = {
+		save_scope_value_as = { name = kehillah_donate_work value = flag:work_bavli }
+		trigger_event = kehillah_library.0001
+	}
+}
+
+kehillah_lib_donate_work_halakhot_gedolot = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		government_has_flag = government_is_kehillah
+		primary_title = {
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot }
+		}
+	}
+
+	effect = {
+		save_scope_value_as = { name = kehillah_donate_work value = flag:work_halakhot_gedolot }
+		trigger_event = kehillah_library.0001
+	}
+}
+
+kehillah_lib_donate_work_sefer_yetzirah = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		government_has_flag = government_is_kehillah
+		primary_title = {
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_yetzirah }
+		}
+	}
+
+	effect = {
+		save_scope_value_as = { name = kehillah_donate_work value = flag:work_sefer_yetzirah }
+		trigger_event = kehillah_library.0001
+	}
+}
+
+kehillah_lib_donate_work_emunot_vedeot = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		government_has_flag = government_is_kehillah
+		primary_title = {
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_emunot_vedeot }
+		}
+	}
+
+	effect = {
+		save_scope_value_as = { name = kehillah_donate_work value = flag:work_emunot_vedeot }
+		trigger_event = kehillah_library.0001
+	}
+}
+
+kehillah_lib_donate_work_chovot_halevavot = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		government_has_flag = government_is_kehillah
+		primary_title = {
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_chovot_halevavot }
+		}
+	}
+
+	effect = {
+		save_scope_value_as = { name = kehillah_donate_work value = flag:work_chovot_halevavot }
+		trigger_event = kehillah_library.0001
+	}
+}
+
+kehillah_lib_donate_work_kuzari = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		government_has_flag = government_is_kehillah
+		primary_title = {
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_kuzari }
+		}
+	}
+
+	effect = {
+		save_scope_value_as = { name = kehillah_donate_work value = flag:work_kuzari }
+		trigger_event = kehillah_library.0001
+	}
+}
+
+# =====================================================================
+# HAS THE PLAYER STUDIED THIS WORK? ADDED 2026-09-19 at user request
+# ("tell you whether you've mastered each book... in the tooltip and by
+# coloring it or with a checkmark"). One per work, kehillah_lib_
+# studied_work_<flag>, read from the library panel's rows as
+#   GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( ... )
+# -- the same by-flag-name selection the donate buttons use, and the
+# same reason: the GUI has no "is this item in that other list" call
+# (v13 spec section 3), but a scripted_gui's is_valid can ask script
+# directly. Reads the PLAYER's own kehillah_studied_works, whichever
+# community's library is on screen -- the mark is always about you.
+# No effect: these are questions, never actions. No new state either:
+# the studied list the study effects already keep is the whole truth.
+#
+# root = the player.
+# =====================================================================
+
+kehillah_lib_studied_work_targum_onkelos = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_targum_onkelos }
+	}
+
+	effect = {
+	}
+}
+
+kehillah_lib_studied_work_mekhilta = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_mekhilta }
+	}
+
+	effect = {
+	}
+}
+
+kehillah_lib_studied_work_genesis_rabbah = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_genesis_rabbah }
+	}
+
+	effect = {
+	}
+}
+
+kehillah_lib_studied_work_pirkei_derabbi_eliezer = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_pirkei_derabbi_eliezer }
+	}
+
+	effect = {
+	}
+}
+
+kehillah_lib_studied_work_mishnah = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_mishnah }
+	}
+
+	effect = {
+	}
+}
+
+kehillah_lib_studied_work_yerushalmi = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_yerushalmi }
+	}
+
+	effect = {
+	}
+}
+
+kehillah_lib_studied_work_bavli = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_bavli }
+	}
+
+	effect = {
+	}
+}
+
+kehillah_lib_studied_work_halakhot_gedolot = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_halakhot_gedolot }
+	}
+
+	effect = {
+	}
+}
+
+kehillah_lib_studied_work_sefer_yetzirah = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_sefer_yetzirah }
+	}
+
+	effect = {
+	}
+}
+
+kehillah_lib_studied_work_emunot_vedeot = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_emunot_vedeot }
+	}
+
+	effect = {
+	}
+}
+
+kehillah_lib_studied_work_chovot_halevavot = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_chovot_halevavot }
+	}
+
+	effect = {
+	}
+}
+
+kehillah_lib_studied_work_kuzari = {
+	scope = character
+
+	is_shown = {
+		always = yes
+	}
+
+	is_valid = {
+		is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_kuzari }
+	}
+
+	effect = {
+	}
+}

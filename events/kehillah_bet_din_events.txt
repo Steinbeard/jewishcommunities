@@ -400,6 +400,8 @@ kehillah_bet_din.0003 = {
 			kehillah_bet_din_record_case_result_effect = { SCORE = kehillah_bet_din_case_score_poor CASE = 1 TIER = poor TARGET = involved_activity.var:kehillah_bet_din_litigant_a }
 			custom_tooltip = kehillah_bet_din.0003.poor.tt
 		}
+
+		kehillah_bet_din_case1_memory_effect = yes
 	}
 
 	option = {
@@ -693,6 +695,8 @@ kehillah_bet_din.0013 = {
 			}
 			kehillah_bet_din_agunah_remarriage_effect = yes
 		}
+
+		kehillah_bet_din_case2_memory_effect = yes
 	}
 
 	option = {
@@ -950,6 +954,8 @@ kehillah_bet_din.0023 = {
 			kehillah_bet_din_record_case_result_effect = { SCORE = kehillah_bet_din_case_score_poor CASE = 3 TIER = poor TARGET = involved_activity.var:kehillah_bet_din_judge2 }
 			custom_tooltip = kehillah_bet_din.0023.poor.tt
 		}
+
+		kehillah_bet_din_case3_memory_effect = yes
 	}
 
 	option = {
@@ -1303,10 +1309,781 @@ kehillah_bet_din.0033 = {
 		}
 
 		kehillah_bet_din_recalcitrant_husband_resolution_effect = yes
+		kehillah_bet_din_case4_memory_effect = yes
 	}
 
 	option = {
 		name = kehillah_bet_din.0033.a
+	}
+
+	after = {
+		kehillah_bet_din_advance_docket_effect = yes
+	}
+}
+
+
+# =======================================================================
+# CASE 5 -- A CURSED AMULET
+# ADDED 2026-09-15 at user request. Two real courtiers (kehillah_bet_
+# din_pick_litigants_effect, reused verbatim from case 1 -- no gender or
+# creation requirement either litigant needs, unlike case 2's agunah or
+# case 4's recalcitrant husband), litigant_a the accuser, litigant_b the
+# scribe (sofer) he accuses.
+#
+# THE HIDDEN TRUTH. kehillah_bet_din.0041's own immediate rolls
+# involved_activity.var:kehillah_bet_din_case5_truth, 50/50, ONCE, and it
+# is NEVER shown to the player in any tooltip, by design -- "the true
+# meaning can be either way," per the user's own framing of the reading
+# challenge. Whether the amulet's rhythmic, repeating nonsense-Hebrew
+# was genuinely a corrupted curse or an authentic (if garbled) attempt at
+# channeling the divine names, and the accuser's run of bad luck simple
+# coincidence, is a fact of the game state the judges are never allowed
+# to simply look up -- they have to actually rule on it, same as a real
+# court would. Only option .a (studying the text) ever reads it at all.
+#
+# THREE OPTIONS, THREE DIFFERENT METHODS, not three facings of one
+# argument -- matching case 4's three-genuinely-different-institutional-
+# responses shape, not cases 1-3's two-sides-same-question one:
+#   a) STUDY THE TEXT (Learning-led, threshold 16 -- deliberately higher
+#      than this case's own co-judge/reputation checks below, since this
+#      is the hard scholarly route). PASS: direction is set to the
+#      HIDDEN TRUTH -- a successful reading genuinely reveals what the
+#      letters mean. FAIL: direction is a fresh 50/50 roll, independent
+#      of the hidden truth -- "the true meaning can be either way" made
+#      literal: even a judge who tries in good faith and fails is
+#      genuinely guessing, not silently told the right answer through
+#      the back door of a bad tally check.
+#   b) DISMISS AMULETS ENTIRELY. Always rules the scribe innocent (if
+#      the object has no power, there is nothing to have cursed him
+#      with) WITHOUT any Learning check -- and always takes the FAIL
+#      tally penalty regardless of stats, because it never actually
+#      engages the question the community brought to court. Per explicit
+#      user request ("should have negatives as well as side-stepping the
+#      issue"): a judge who personally holds zealous or paranoid (the
+#      two real vanilla personality traits closest to "believes in the
+#      mystical/occult" either this mod's own trait roster or the
+#      installed game's has -- neither has anything literally named
+#      "superstitious") takes minor_stress_gain for the hypocrisy or
+#      anxiety of ruling against what they themselves believe, and every
+#      courtier holding either trait loses opinion of root
+#      (kehillah_bet_din_dismissed_mysticism_opinion, common/opinion_
+#      modifiers/kehillah_opinion_modifiers.txt).
+#   c) JUDGE THE MAN, NOT THE LETTERS -- a real halakhic principle
+#      (chazakah, ruling from an established, known character rather
+#      than from thin direct evidence), and a much lower Learning bar
+#      (8, not 16 -- reading a man's reputation correctly takes ordinary
+#      judgment, not great scholarship) for its own tally check. Direction
+#      is fully deterministic from litigant_b's OWN traits, not a random
+#      roll or the hidden truth at all: num_sinful_traits >= 1 (checked
+#      against Judaism's own doctrine-defined virtue/sin list -- real,
+#      confirmed vanilla triggers, common/scripted_triggers/00_ai_value_
+#      triggers.txt and 00_major_decision_triggers.txt) rules him guilty
+#      outright; failing that, num_virtuous_traits >= 1 rules him
+#      innocent; a man with neither gets the benefit of the doubt.
+#
+# THE VERDICT'S OWN CONSEQUENCES (Cherem plus the amulet destroyed, or a
+# lighter reprimand, plus a memory for every judge either way) are in
+# kehillah_bet_din_amulet_resolution_effect (common/scripted_effects/
+# kehillah_bet_din_scripted_effects.txt), called unconditionally from
+# kehillah_bet_din.0043 -- see that effect's own header for the full
+# account, including why the amulet itself is flavor-only rather than a
+# spawned-then-destroyed artifact.
+# =======================================================================
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din.0041 -- CASE 5, HOST RULING
+# ---------------------------------------------------------------------
+
+kehillah_bet_din.0041 = {
+	type = character_event
+	title = kehillah_bet_din.0041.t
+	desc = kehillah_bet_din.0041.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = involved_activity.var:kehillah_bet_din_litigant_a
+		animation = disapproval
+	}
+	lower_right_portrait = {
+		character = involved_activity.var:kehillah_bet_din_litigant_b
+		animation = worry
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		involved_activity = { set_variable = { name = kehillah_bet_din_tally value = 0 } }
+		kehillah_bet_din_pick_litigants_effect = yes
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_litigant_a }
+			involved_activity.var:kehillah_bet_din_litigant_a = { save_scope_as = kbd_litigant_a }
+		}
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_litigant_b }
+			involved_activity.var:kehillah_bet_din_litigant_b = { save_scope_as = kbd_litigant_b }
+		}
+		# THE HIDDEN TRUTH -- rolled once, never shown to the player. See
+		# this case's own header for the full account.
+		random_list = {
+			50 = {
+				involved_activity = { set_variable = { name = kehillah_bet_din_case5_truth value = 1 } }
+			}
+			50 = {
+				involved_activity = { set_variable = { name = kehillah_bet_din_case5_truth value = 0 } }
+			}
+		}
+	}
+
+	# STUDY THE TEXT YOURSELF.
+	option = {
+		name = kehillah_bet_din.0041.a
+
+		if = {
+			limit = { learning >= 16 }
+			involved_activity = {
+				change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally }
+				set_variable = { name = kehillah_bet_din_case5_direction value = var:kehillah_bet_din_case5_truth }
+			}
+			custom_tooltip = kehillah_bet_din.0041.a.pass.tt
+		}
+		else = {
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } }
+			random_list = {
+				50 = {
+					involved_activity = { set_variable = { name = kehillah_bet_din_case5_direction value = 1 } }
+				}
+				50 = {
+					involved_activity = { set_variable = { name = kehillah_bet_din_case5_direction value = 0 } }
+				}
+			}
+			custom_tooltip = kehillah_bet_din.0041.a.fail.tt
+		}
+
+		ai_chance = { base = 40 }
+	}
+
+	# AMULETS HAVE NO POWER TO CURSE ANYONE.
+	option = {
+		name = kehillah_bet_din.0041.b
+
+		involved_activity = {
+			set_variable = { name = kehillah_bet_din_case5_direction value = 0 }
+			change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally }
+		}
+		if = {
+			limit = {
+				OR = {
+					has_trait = zealous
+					has_trait = paranoid
+				}
+			}
+			add_stress = minor_stress_gain
+		}
+		every_courtier = {
+			limit = {
+				OR = {
+					has_trait = zealous
+					has_trait = paranoid
+				}
+			}
+			reverse_add_opinion = {
+				target = root
+				modifier = kehillah_bet_din_dismissed_mysticism_opinion
+			}
+		}
+		custom_tooltip = kehillah_bet_din.0041.b.tt
+
+		ai_chance = { base = 20 }
+	}
+
+	# JUDGE THE MAN, NOT THE LETTERS.
+	option = {
+		name = kehillah_bet_din.0041.c
+
+		if = {
+			limit = { learning >= 8 }
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } }
+			custom_tooltip = kehillah_bet_din.0041.c.pass.tt
+		}
+		else = {
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } }
+			custom_tooltip = kehillah_bet_din.0041.c.fail.tt
+		}
+
+		if = {
+			limit = {
+				exists = involved_activity.var:kehillah_bet_din_litigant_b
+				involved_activity.var:kehillah_bet_din_litigant_b = { num_sinful_traits >= 1 }
+			}
+			involved_activity = { set_variable = { name = kehillah_bet_din_case5_direction value = 1 } }
+		}
+		else_if = {
+			limit = {
+				exists = involved_activity.var:kehillah_bet_din_litigant_b
+				involved_activity.var:kehillah_bet_din_litigant_b = { num_virtuous_traits >= 1 }
+			}
+			involved_activity = { set_variable = { name = kehillah_bet_din_case5_direction value = 0 } }
+		}
+		else = {
+			involved_activity = { set_variable = { name = kehillah_bet_din_case5_direction value = 0 } }
+		}
+
+		ai_chance = { base = 40 }
+	}
+
+	# Guarded -- see kehillah_bet_din.0001's "after" for why.
+	after = {
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_judge2 }
+			involved_activity.var:kehillah_bet_din_judge2 = {
+				trigger_event = {
+					id = kehillah_bet_din.0042
+					days = kehillah_bet_din_case_step_days
+				}
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din.0042 -- CASE 5, CO-JUDGES RULE
+# Two generic "concur" options, both Learning-gated at 10 -- the co-
+# judges are weighing in on the merits, not independently re-picking
+# among the host's three methods (which method was used, and therefore
+# case5_direction, is already fixed by kehillah_bet_din.0041's own
+# choice). Mirrors case 1/2's own two-option co-judge shape rather than
+# case 4's three-option one, for that reason.
+# ---------------------------------------------------------------------
+
+kehillah_bet_din.0042 = {
+	type = character_event
+	title = kehillah_bet_din.0042.t
+	desc = kehillah_bet_din.0042.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = involved_activity.var:kehillah_bet_din_litigant_a
+		animation = disapproval
+	}
+	lower_right_portrait = {
+		character = involved_activity.var:kehillah_bet_din_litigant_b
+		animation = worry
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_litigant_a }
+			involved_activity.var:kehillah_bet_din_litigant_a = { save_scope_as = kbd_litigant_a }
+		}
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_litigant_b }
+			involved_activity.var:kehillah_bet_din_litigant_b = { save_scope_as = kbd_litigant_b }
+		}
+		# Guarded -- see kehillah_bet_din.0002's judge3 check for why.
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_judge3 }
+			if = {
+				limit = { involved_activity.var:kehillah_bet_din_judge3.learning >= 10 }
+				involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } }
+			}
+			else = {
+				involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } }
+			}
+		}
+		else = {
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } }
+		}
+	}
+
+	option = {
+		name = kehillah_bet_din.0042.a
+
+		if = {
+			limit = { learning >= 10 }
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } }
+		}
+		else = {
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } }
+		}
+
+		ai_chance = {
+			base = 10
+			modifier = { add = 10 learning >= 10 }
+		}
+	}
+
+	option = {
+		name = kehillah_bet_din.0042.b
+
+		if = {
+			limit = { learning >= 10 }
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } }
+		}
+		else = {
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } }
+		}
+
+		ai_chance = {
+			base = 10
+			modifier = { add = 10 learning >= 10 }
+		}
+	}
+
+	# Guarded -- see kehillah_bet_din.0001's "after" for why.
+	after = {
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_convening_title }
+			involved_activity.var:kehillah_bet_din_convening_title.holder = {
+				trigger_event = {
+					id = kehillah_bet_din.0043
+					days = kehillah_bet_din_case_step_days
+				}
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din.0043 -- CASE 5, RESOLUTION
+# ---------------------------------------------------------------------
+
+kehillah_bet_din.0043 = {
+	type = character_event
+	title = kehillah_bet_din.0043.t
+	desc = kehillah_bet_din.0043.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		if = {
+			limit = { involved_activity.var:kehillah_bet_din_tally >= kehillah_bet_din_tally_threshold_great }
+			involved_activity.var:kehillah_bet_din_convening_title = {
+				change_variable = { name = kehillah_var_stability add = kehillah_bet_din_case5_stability_gain_great }
+				change_variable = { name = kehillah_var_greatness add = kehillah_bet_din_case5_greatness_gain_great }
+			}
+			kehillah_bet_din_record_case_result_effect = { SCORE = kehillah_bet_din_case_score_great CASE = 5 TIER = great TARGET = involved_activity.var:kehillah_bet_din_litigant_b }
+			kehillah_bet_din_grant_parshanut_xp_effect = yes
+			custom_tooltip = kehillah_bet_din.0043.great.tt
+		}
+		else_if = {
+			limit = { involved_activity.var:kehillah_bet_din_tally >= kehillah_bet_din_tally_threshold_good }
+			involved_activity.var:kehillah_bet_din_convening_title = {
+				change_variable = { name = kehillah_var_stability add = kehillah_bet_din_case5_stability_gain_good }
+				change_variable = { name = kehillah_var_greatness add = kehillah_bet_din_case5_greatness_gain_good }
+			}
+			kehillah_bet_din_record_case_result_effect = { SCORE = kehillah_bet_din_case_score_good CASE = 5 TIER = good TARGET = involved_activity.var:kehillah_bet_din_litigant_b }
+			custom_tooltip = kehillah_bet_din.0043.good.tt
+		}
+		else = {
+			involved_activity.var:kehillah_bet_din_convening_title = {
+				change_variable = { name = kehillah_var_stability subtract = kehillah_bet_din_case5_stability_loss_poor }
+			}
+			kehillah_bet_din_record_case_result_effect = { SCORE = kehillah_bet_din_case_score_poor CASE = 5 TIER = poor TARGET = involved_activity.var:kehillah_bet_din_litigant_b }
+			custom_tooltip = kehillah_bet_din.0043.poor.tt
+		}
+
+		kehillah_bet_din_amulet_resolution_effect = yes
+	}
+
+	option = {
+		name = kehillah_bet_din.0043.a
+	}
+
+	after = {
+		kehillah_bet_din_advance_docket_effect = yes
+	}
+}
+
+
+# =======================================================================
+# CASE 6 -- THE SILVERSMITHS' QUARREL
+# ADDED 2026-09-15 at user request. Two real courtiers (kehillah_bet_
+# din_pick_litigants_effect, reused verbatim, same as case 5 above):
+# litigant_a the accuser (his shop was smashed), litigant_b the rival
+# silversmith he says put the mob up to it.
+#
+# THE FACTS ARE NOT IN DOUBT HERE, UNLIKE CASE 5 -- the shop really was
+# smashed by a gentile mob; there is no hidden truth roll. What is in
+# genuine dispute is which of three real, distinct halakhic FRAMEWORKS
+# actually applies, and the three options below draw on three different
+# real Talmudic principles rather than three facings of one question:
+#   a) MESIRAH -- treating this as informing on / inciting gentiles
+#      against a fellow Jew, historically the community's gravest
+#      betrayal (grave enough that a moser could, in real halakhic
+#      history, be resisted by the community directly). Intrigue-led
+#      (14): proving actual INTENT to incite, not mere coincidence of
+#      timing, is the hard part.
+#   b) GERAMA -- Bava Kamma's own distinction between direct damage
+#      (the mob's own, adam hamazik) and damage caused only INDIRECTLY,
+#      through an intermediate agent one set in motion. A real,
+#      substantial halakhic liability, just a lesser and more ordinary
+#      one than mesirah. Learning-led (12): correctly applying the
+#      direct/indirect distinction is a scholarly question.
+#   c) DISMISS FOR WANT OF PROOF -- kin'at sofrim tarbeh chochma
+#      ("the envy of scholars/craftsmen increases wisdom"): fierce
+#      trade rivalry between two silversmiths is not, on its own,
+#      evidence that one incited a mob. Diplomacy-led (10): the skill
+#      here is holding the community together around an unresolved
+#      grievance, not scholarship or investigation.
+#
+# UNLIKE EVERY CASE BEFORE THIS ONE, the tally stat is NOT uniform
+# across the three options (contrast case 4, where cherem/coerce/side-
+# with-husband all check the same Diplomacy) -- a deliberate choice, not
+# an oversight: these three really are three different kinds of legal
+# reasoning, not three emotional stances on one ruling, so letting each
+# option test the stat its OWN reasoning actually depends on reads truer
+# than forcing all three through one shared gate would. kehillah_bet_
+# din.0052 (co-judges) and the judge3 fold-in both carry the same
+# direction-matched stat forward, for the same reason.
+#
+# THE VERDICT'S OWN CONSEQUENCES (restitution, and Cherem for direction
+# 1 specifically) are in kehillah_bet_din_silversmiths_resolution_effect
+# (common/scripted_effects/kehillah_bet_din_scripted_effects.txt) --
+# see that effect's own header for the full account.
+# =======================================================================
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din.0051 -- CASE 6, HOST RULES
+# ---------------------------------------------------------------------
+
+kehillah_bet_din.0051 = {
+	type = character_event
+	title = kehillah_bet_din.0051.t
+	desc = kehillah_bet_din.0051.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = involved_activity.var:kehillah_bet_din_litigant_a
+		animation = disapproval
+	}
+	lower_right_portrait = {
+		character = involved_activity.var:kehillah_bet_din_litigant_b
+		animation = disapproval
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		involved_activity = { set_variable = { name = kehillah_bet_din_tally value = 0 } }
+		kehillah_bet_din_pick_litigants_effect = yes
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_litigant_a }
+			involved_activity.var:kehillah_bet_din_litigant_a = { save_scope_as = kbd_litigant_a }
+		}
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_litigant_b }
+			involved_activity.var:kehillah_bet_din_litigant_b = { save_scope_as = kbd_litigant_b }
+		}
+	}
+
+	# MESIRAH -- he betrayed a fellow Jew to a gentile mob.
+	option = {
+		name = kehillah_bet_din.0051.a
+
+		involved_activity = { set_variable = { name = kehillah_bet_din_case6_direction value = 1 } }
+
+		if = {
+			limit = { intrigue >= 14 }
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } }
+			custom_tooltip = kehillah_bet_din.0051.a.pass.tt
+		}
+		else = {
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } }
+			custom_tooltip = kehillah_bet_din.0051.a.fail.tt
+		}
+
+		ai_chance = { base = 30 }
+	}
+
+	# GERAMA -- liable for damage caused through an intermediate agent.
+	option = {
+		name = kehillah_bet_din.0051.b
+
+		involved_activity = { set_variable = { name = kehillah_bet_din_case6_direction value = 2 } }
+
+		if = {
+			limit = { learning >= 12 }
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } }
+			custom_tooltip = kehillah_bet_din.0051.b.pass.tt
+		}
+		else = {
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } }
+			custom_tooltip = kehillah_bet_din.0051.b.fail.tt
+		}
+
+		ai_chance = { base = 40 }
+	}
+
+	# DISMISS -- rivalry alone is not proof of incitement.
+	option = {
+		name = kehillah_bet_din.0051.c
+
+		involved_activity = { set_variable = { name = kehillah_bet_din_case6_direction value = 3 } }
+
+		if = {
+			limit = { diplomacy >= 10 }
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } }
+			custom_tooltip = kehillah_bet_din.0051.c.pass.tt
+		}
+		else = {
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } }
+			custom_tooltip = kehillah_bet_din.0051.c.fail.tt
+		}
+
+		ai_chance = { base = 30 }
+	}
+
+	# Guarded -- see kehillah_bet_din.0001's "after" for why.
+	after = {
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_judge2 }
+			involved_activity.var:kehillah_bet_din_judge2 = {
+				trigger_event = {
+					id = kehillah_bet_din.0052
+					days = kehillah_bet_din_case_step_days
+				}
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din.0052 -- CASE 6, CO-JUDGES RULE
+# Three "concur" options, one per direction, EACH gated on that
+# direction's own stat rather than one shared stat -- see this case's
+# own header for why. Direction itself is already fixed by kehillah_
+# bet_din.0051; these options do not set it again, same as case 4's own
+# co-judge event.
+# ---------------------------------------------------------------------
+
+kehillah_bet_din.0052 = {
+	type = character_event
+	title = kehillah_bet_din.0052.t
+	desc = kehillah_bet_din.0052.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = involved_activity.var:kehillah_bet_din_litigant_a
+		animation = disapproval
+	}
+	lower_right_portrait = {
+		character = involved_activity.var:kehillah_bet_din_litigant_b
+		animation = disapproval
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_litigant_a }
+			involved_activity.var:kehillah_bet_din_litigant_a = { save_scope_as = kbd_litigant_a }
+		}
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_litigant_b }
+			involved_activity.var:kehillah_bet_din_litigant_b = { save_scope_as = kbd_litigant_b }
+		}
+		# judge3, folded in here as everywhere else -- but gated on
+		# WHICHEVER stat matches the direction the host already chose,
+		# per this case's own header, rather than one shared stat.
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_judge3 }
+			if = {
+				limit = {
+					exists = involved_activity.var:kehillah_bet_din_case6_direction
+					involved_activity.var:kehillah_bet_din_case6_direction = 1
+				}
+				if = {
+					limit = { involved_activity.var:kehillah_bet_din_judge3.intrigue >= 14 }
+					involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } }
+				}
+				else = {
+					involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } }
+				}
+			}
+			else_if = {
+				limit = {
+					exists = involved_activity.var:kehillah_bet_din_case6_direction
+					involved_activity.var:kehillah_bet_din_case6_direction = 2
+				}
+				if = {
+					limit = { involved_activity.var:kehillah_bet_din_judge3.learning >= 12 }
+					involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } }
+				}
+				else = {
+					involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } }
+				}
+			}
+			else = {
+				if = {
+					limit = { involved_activity.var:kehillah_bet_din_judge3.diplomacy >= 10 }
+					involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } }
+				}
+				else = {
+					involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } }
+				}
+			}
+		}
+		else = {
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } }
+		}
+	}
+
+	option = {
+		name = kehillah_bet_din.0052.a
+
+		if = {
+			limit = { intrigue >= 14 }
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } }
+		}
+		else = {
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } }
+		}
+
+		ai_chance = {
+			base = 10
+			modifier = { add = 10 intrigue >= 14 }
+		}
+	}
+
+	option = {
+		name = kehillah_bet_din.0052.b
+
+		if = {
+			limit = { learning >= 12 }
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } }
+		}
+		else = {
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } }
+		}
+
+		ai_chance = {
+			base = 10
+			modifier = { add = 10 learning >= 12 }
+		}
+	}
+
+	option = {
+		name = kehillah_bet_din.0052.c
+
+		if = {
+			limit = { diplomacy >= 10 }
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } }
+		}
+		else = {
+			involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } }
+		}
+
+		ai_chance = {
+			base = 10
+			modifier = { add = 10 diplomacy >= 10 }
+		}
+	}
+
+	# Guarded -- see kehillah_bet_din.0001's "after" for why.
+	after = {
+		if = {
+			limit = { exists = involved_activity.var:kehillah_bet_din_convening_title }
+			involved_activity.var:kehillah_bet_din_convening_title.holder = {
+				trigger_event = {
+					id = kehillah_bet_din.0053
+					days = kehillah_bet_din_case_step_days
+				}
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din.0053 -- CASE 6, RESOLUTION
+# ---------------------------------------------------------------------
+
+kehillah_bet_din.0053 = {
+	type = character_event
+	title = kehillah_bet_din.0053.t
+	desc = kehillah_bet_din.0053.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		if = {
+			limit = { involved_activity.var:kehillah_bet_din_tally >= kehillah_bet_din_tally_threshold_great }
+			involved_activity.var:kehillah_bet_din_convening_title = {
+				change_variable = { name = kehillah_var_stability add = kehillah_bet_din_case6_stability_gain_great }
+				change_variable = { name = kehillah_var_prosperity add = kehillah_bet_din_case6_prosperity_gain_great }
+			}
+			kehillah_bet_din_record_case_result_effect = { SCORE = kehillah_bet_din_case_score_great CASE = 6 TIER = great TARGET = involved_activity.var:kehillah_bet_din_litigant_a }
+			kehillah_bet_din_grant_parshanut_xp_effect = yes
+			custom_tooltip = kehillah_bet_din.0053.great.tt
+		}
+		else_if = {
+			limit = { involved_activity.var:kehillah_bet_din_tally >= kehillah_bet_din_tally_threshold_good }
+			involved_activity.var:kehillah_bet_din_convening_title = {
+				change_variable = { name = kehillah_var_stability add = kehillah_bet_din_case6_stability_gain_good }
+				change_variable = { name = kehillah_var_prosperity add = kehillah_bet_din_case6_prosperity_gain_good }
+			}
+			kehillah_bet_din_record_case_result_effect = { SCORE = kehillah_bet_din_case_score_good CASE = 6 TIER = good TARGET = involved_activity.var:kehillah_bet_din_litigant_a }
+			custom_tooltip = kehillah_bet_din.0053.good.tt
+		}
+		else = {
+			involved_activity.var:kehillah_bet_din_convening_title = {
+				change_variable = { name = kehillah_var_stability subtract = kehillah_bet_din_case6_stability_loss_poor }
+			}
+			kehillah_bet_din_record_case_result_effect = { SCORE = kehillah_bet_din_case_score_poor CASE = 6 TIER = poor TARGET = involved_activity.var:kehillah_bet_din_litigant_a }
+			custom_tooltip = kehillah_bet_din.0053.poor.tt
+		}
+
+		kehillah_bet_din_silversmiths_resolution_effect = yes
+		kehillah_bet_din_case6_memory_effect = yes
+	}
+
+	option = {
+		name = kehillah_bet_din.0053.a
 	}
 
 	after = {

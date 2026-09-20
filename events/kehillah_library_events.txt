@@ -1,0 +1,177 @@
+﻿# =====================================================================
+# Community library events -- inventory actions on a held work. ADDED
+# 2026-09-18 at user request ("an inventory management system... click
+# a donate book option for some piety"). v13 spec section 10.
+#
+# ONE EVENT SO FAR: kehillah_library.0001, the donate confirmation,
+# reached only from the library panel's per-row button (gui/kehillah_
+# domicile_library.gui -> scripted_gui kehillah_lib_donate_work, common/
+# scripted_guis/kehillah_map_view_gui.txt). It is a confirmation on
+# purpose: donating is irreversible, the work leaves the community's
+# library for good, and the only way back is the acquire decision's
+# random draw two years later.
+#
+# WHICH WORK: scope:kehillah_donate_work, the flag scope the button
+# passed through. Localisation cannot look a key up by flag name, so
+# the description is a first_valid over the twelve works, each reusing
+# the panel's own kehillah_lib_tt_<flag> line (title, subject,
+# description) -- the same twelve-way shape the acquire event uses for
+# the same reason. Adding a thirteenth work means one more triggered_
+# desc here, next to its loc lines.
+#
+# WHERE IT GOES: a random registered community that LACKS the work
+# (scope:kehillah_donate_recipient, chosen in immediate) -- the copy
+# stays in the world, in a library the player can later travel to, and
+# that community's leader is grateful. If every community already holds
+# it, the fallback option sends it abroad for less piety
+# (kehillah_donate_work_abroad_piety, common/script_values/kehillah_
+# library_values.txt) -- the mitzvah is real either way, but keeping a
+# reachable copy in play is worth more.
+# =====================================================================
+
+namespace = kehillah_library
+
+# ---------------------------------------------------------------------
+# kehillah_library.0001 -- DONATE A WORK?
+# ---------------------------------------------------------------------
+
+kehillah_library.0001 = {
+	type = character_event
+	title = kehillah_library.0001.t
+	desc = {
+		desc = kehillah_library.0001.desc_intro
+		first_valid = {
+		triggered_desc = {
+			trigger = { scope:kehillah_donate_work = flag:work_targum_onkelos }
+			desc = kehillah_lib_tt_work_targum_onkelos
+		}
+		triggered_desc = {
+			trigger = { scope:kehillah_donate_work = flag:work_mekhilta }
+			desc = kehillah_lib_tt_work_mekhilta
+		}
+		triggered_desc = {
+			trigger = { scope:kehillah_donate_work = flag:work_genesis_rabbah }
+			desc = kehillah_lib_tt_work_genesis_rabbah
+		}
+		triggered_desc = {
+			trigger = { scope:kehillah_donate_work = flag:work_pirkei_derabbi_eliezer }
+			desc = kehillah_lib_tt_work_pirkei_derabbi_eliezer
+		}
+		triggered_desc = {
+			trigger = { scope:kehillah_donate_work = flag:work_mishnah }
+			desc = kehillah_lib_tt_work_mishnah
+		}
+		triggered_desc = {
+			trigger = { scope:kehillah_donate_work = flag:work_yerushalmi }
+			desc = kehillah_lib_tt_work_yerushalmi
+		}
+		triggered_desc = {
+			trigger = { scope:kehillah_donate_work = flag:work_bavli }
+			desc = kehillah_lib_tt_work_bavli
+		}
+		triggered_desc = {
+			trigger = { scope:kehillah_donate_work = flag:work_halakhot_gedolot }
+			desc = kehillah_lib_tt_work_halakhot_gedolot
+		}
+		triggered_desc = {
+			trigger = { scope:kehillah_donate_work = flag:work_sefer_yetzirah }
+			desc = kehillah_lib_tt_work_sefer_yetzirah
+		}
+		triggered_desc = {
+			trigger = { scope:kehillah_donate_work = flag:work_emunot_vedeot }
+			desc = kehillah_lib_tt_work_emunot_vedeot
+		}
+		triggered_desc = {
+			trigger = { scope:kehillah_donate_work = flag:work_chovot_halevavot }
+			desc = kehillah_lib_tt_work_chovot_halevavot
+		}
+		triggered_desc = {
+			trigger = { scope:kehillah_donate_work = flag:work_kuzari }
+			desc = kehillah_lib_tt_work_kuzari
+		}
+		}
+		triggered_desc = {
+			trigger = { exists = scope:kehillah_donate_recipient }
+			desc = kehillah_library.0001.desc_recipient
+		}
+		triggered_desc = {
+			trigger = { NOT = { exists = scope:kehillah_donate_recipient } }
+			desc = kehillah_library.0001.desc_no_recipient
+		}
+	}
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = personality_zealous
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+		exists = scope:kehillah_donate_work
+		primary_title = {
+			is_target_in_variable_list = { name = kehillah_library_works target = scope:kehillah_donate_work }
+		}
+	}
+
+	immediate = {
+		# A community that lacks the work, if any -- not our own.
+		random_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				NOT = { this = root.primary_title }
+				exists = holder
+				NOT = { is_target_in_variable_list = { name = kehillah_library_works target = scope:kehillah_donate_work } }
+			}
+			save_scope_as = kehillah_donate_recipient
+		}
+	}
+
+	# Give it to a community that lacks it.
+	option = {
+		name = kehillah_library.0001.a
+		trigger = { exists = scope:kehillah_donate_recipient }
+
+		custom_tooltip = {
+			text = kehillah_library.0001.a.tt
+			primary_title = {
+				remove_list_variable = { name = kehillah_library_works target = scope:kehillah_donate_work }
+			}
+			scope:kehillah_donate_recipient = {
+				add_to_variable_list = { name = kehillah_library_works target = scope:kehillah_donate_work }
+			}
+		}
+		add_piety = kehillah_donate_work_piety
+		scope:kehillah_donate_recipient.holder = {
+			add_opinion = {
+				target = root
+				modifier = grateful_opinion
+				opinion = 15
+			}
+		}
+
+		ai_chance = { base = 0 }
+	}
+
+	# Every community already holds it: send it abroad.
+	option = {
+		name = kehillah_library.0001.b
+		trigger = { NOT = { exists = scope:kehillah_donate_recipient } }
+
+		custom_tooltip = {
+			text = kehillah_library.0001.b.tt
+			primary_title = {
+				remove_list_variable = { name = kehillah_library_works target = scope:kehillah_donate_work }
+			}
+		}
+		add_piety = kehillah_donate_work_abroad_piety
+
+		ai_chance = { base = 0 }
+	}
+
+	# Keep it.
+	option = {
+		name = kehillah_library.0001.c
+		ai_chance = { base = 100 }
+	}
+}

@@ -419,6 +419,134 @@ showed Stability 0 while Prosperity and Greatness were seeded (Mainz 650 / 0 / 1
 maths confirms the 0 is real data). The game-start seeding effects may set two pillars and not the
 third.
 
+## 6f. Live pass 6 — 2026-09-15: the map mode works; three refinements
+
+**Confirmed live by the user: the coloured map mode renders** ("You did it!") — so
+`gfx/map/map_modes/` does merge a second file, `set_color_from_title` does take on baronies, and
+the scripted_gui bridge fires from a scripted widget. Items 7-8 of §6 are closed. Three things
+asked for and built, not yet re-tested:
+
+1. **Locate went to the county holder.** `Title.SelectTitle` *selects* the county, and selecting a
+   county opens its holder. Replaced with `…Title.GetProvince.ZoomCameraTo` — camera only, the call
+   vanilla's own "go to" buttons use (`gui/hud.gui:2489` and five more on characters,
+   `gui/window_epidemics.gui:436` on a province).
+2. **A "visit the quarter" button** per row: `ToggleGameViewData( 'domicile',
+   Title.GetHolder.GetDomicile )`, enabled on `Title.HasDomicile`. This is the generic,
+   not-owner-locked domicile window `spike-domicile-map-visibility.md` §3 found and the user
+   confirmed live on 2026-09-10 by the three-click title-view route — now one click.
+3. **Scores coloured by band.** Four customizable-loc functions, `Kehillah<Pillar>Score`, return
+   the value already wrapped in vanilla's court-aptitude colour ramp (`aptitude_terrible` = red …
+   `aptitude_excellent` = green, `gui/preload/textformatting.gui:526-543`), one step per band.
+   Twenty small self-contained loc keys rather than five concatenated tag fragments, because a
+   complete `#X … #!` span inside a custom-loc key is vanilla's proven shape
+   (`imprison_decline_summary_*`) and a tag opened by one substitution and closed by a literal is
+   not. Thresholds stay script-side; the GUI never sees a number.
+
+## 8. Score breakdown tooltips (user request, 2026-09-15) — and a bug they surfaced
+
+**What:** hovering any of the four score cells shows what is building that number. Per pillar:
+the value and band; whether it is *rising by* / *falling by* / *holding* this season, with the
+amount; the **baseline** it is converging toward and every contributor to it (each building
+family with its tier, the floor, leader skill, officer skill, offices in post); and for Stability
+the active temporary influences (settled dispute, tzedakah, shaken, emboldened, overcrowding).
+Standing's tooltip shows the three pillars it averages. This is ROADMAP item 4's "per-pillar
+contributors and current rate of change", delivered on the roster rather than the Take Stock
+decision — every line is a character-scope customizable-loc function, so the decision can reuse
+them verbatim later (`[ROOT.Char.Custom('KehillahBd…')]`).
+
+**How:** the loc system has no conditionals, so "show this line only if" is one customizable-loc
+function per line, returning the line (with its own leading `\n`) or the empty string
+`kehillah_bd_none`. The tooltip is just the lines concatenated. Generated from one table
+(contributor → building keys → tier values) into three files — `common/script_values/
+kehillah_breakdown_values.txt`, `common/customizable_localization/kehillah_breakdown_custom_loc.txt`,
+`localization/english/kehillah_breakdown_l_english.yml` — so the three cannot disagree with each
+other. Drift is `(baseline − current) × kehillah_convergence_rate_value`, the exact expression the
+quarterly effect applies.
+
+**One source of truth (refactored the same day, once the parallel session finished).** The three
+baselines `kehillah_*_baseline_value` are now plain sums of the `kehillah_bd_*_value` contributor
+values — a building's or office's contribution is defined exactly once, in
+`kehillah_breakdown_values.txt`, and the baseline and the tooltip that explains it cannot disagree.
+(For a few hours the contributor values were a *copy* of the baseline terms, because
+`kehillah_script_values.txt` had another session's uncommitted edits; that duplication is gone.)
+Stability's two flat office terms gained `_in_post` twins for the sum, since the tooltip shows the
+flat amount but the baseline must add zero for an empty seat.
+
+**The bug this surfaced — fixed by the refactor.** The old literal baseline terms called
+`has_domicile_building_or_higher` *bare, from character scope*. That trigger is domicile-scoped:
+every vanilla use wraps it as `domicile ?= { has_domicile_building_or_higher = … }`
+(`common/achievements/ep3_achievements.txt:210-220`; zero bare uses anywhere), and `ck3-tiger` had
+warned about it on every run since Wave 2. If the bare call silently failed on a character, **no
+building had ever contributed to any baseline** — only floors, skills and offices. The contributor
+values use the wrapped form, so routing the baselines through them fixes it; the refactor took
+`ck3-tiger` from 91 warnings to 68, the thirteen pre-existing baseline scope warnings among them.
+Whether it *was* silently failing live is still worth one look: with the fix in, a community with
+a built Countinghouse should show its Prosperity baseline jump on the next quarterly tick compared
+to a save from before.
+
+## 9. Regions on the map (user request, 2026-09-15)
+
+The map mode now tints every county in a minhag region with that sub-region's colour, *under* the
+community band colours. Same paint, one more decision per county: pass 1 asks
+`kehillah_pick_region_tint_effect` (a county-title effect) which colour title to use — Anglia by
+`empire = title:e_britannia`, every other region by the `kehillah_minhag` flag on the county's de
+jure duchy, the neutral base outside all of them — so the map, the roster and the Bet Din
+triggers draw the same borders from the same two reads. Fifteen new colour titles
+(`d_kehillah_mapcolor_region_<key>`), muted and dark in one hue family per super-region (Ashkenaz
+slate blue/violet, Sepharad ochre/brown, Mizrach olive/teal) so the bright band colours still pop
+and the three super-regions read at a glance even where six close shades of one family don't.
+The hover description names the exact region on any county (`KehillahCountyRegionName`, a
+county-title custom loc reusing the roster's own `KEHILLAH_REGION_*` keys, so the map and roster
+can't spell a region two ways), with or without a community there.
+
+**Legibility is the thing to judge live.** If six shades of slate don't separate Rhineland from
+Provence, the cheap alternatives are: tint by super-region only (three colours, drop the
+sub-region titles), or a "regions" toggle in the panel header that runs a second scripted_gui
+paint without pass 2. Not built speculatively — the tints are the smaller change and may be
+enough, given the hover names the region.
+
+## 6g. Live pass 7 — 2026-09-15: access violation on the region-tinted map
+
+`crashes/ck3_20260915_091129`: `EXCEPTION_ACCESS_VIOLATION`, preceded in `error.log` by
+**17,640 × 3** script errors from `KehillahCountyRegionName` — "Failed to fetch variable
+'kehillah_minhag' due to not being set". The map mode's hover description is re-evaluated every
+frame for the county under the mouse; the custom loc compared `de_jure_liege.var:kehillah_minhag`
+with only an `exists` guard on the duchy, not a `has_variable` guard on the variable, and most
+duchies carry no `kehillah_minhag`. This is exactly the error-storm class the v5 spec recorded
+(an unguarded `var:` read in a hovered option, 28 MB/min), and the crash followed within seconds.
+The paint effect was guarded correctly; only the hover was not.
+
+**Fix:** `has_variable` inside the duchy scope before every `var:` read, the shape
+`kehillah_pillar_at_least_trigger` uses. The same guard was added to the `Kehillah<Pillar>Score`
+and `…BandName` comparisons, which are also evaluated per row per frame and would storm the same
+way on a save from before `kehillah_var_standing` existed. `ck3-tiger` 68 → 65.
+
+Also in that log, non-fatal and **not this feature's**: `reverse_add_opinion [Modifier
+'flattered_opinion' with monthly_change cannot have a specified duration]` from
+`kehillah_task_contracts.txt:299/321/342` — the parallel session's translation contract.
+
+**Known harmless log line:** "Widget cannot have a position in a layout" for the four score
+cells (`text_label_center` inside the row hbox). The cells render correctly; the cause isn't in
+the type chain and couldn't be resolved from files. Left as is.
+
+## 10. Your own community on the HUD (user request, 2026-09-15)
+
+A third scripted widget, `kehillah_own_community_strip`: the player's Standing and three pillars,
+coloured by band, always on screen, parked directly under vanilla's resource bar in the top-left
+and styled like its tiles. Hover any figure for the same breakdown tooltip the roster shows; the
+menorah at its left opens and closes the map view (same open/close pair as the bottom-right
+toggle), so the strip is also the feature's entry point at the top of the screen. Shown only when
+`GetPlayer.GetGovernment.IsType('kehillah_government')`, and it hides with vanilla's
+`hide_ui_top_bar` exactly as the resource bar does.
+
+*Inside* the resource bar would mean forking `hud.gui` — the bar is a hand-written hbox
+(`resources_top_right_bar`, `hud.gui:911`) — so this is the additive equivalent. Zero new data:
+datacontext is `GetPlayer.GetPrimaryTitle`, and everything on it is the roster's own custom loc
+reused verbatim. `position = { 100 76 }` is hand-placed from the bar's geometry (80px suggestions
+placer + 15px spacer, 70px tiles) and is the one number likely to need a nudge. This closes the
+"richer own-community dashboard" half of ROADMAP item 9 as far as at-a-glance goes; a full pane
+with history would be a separate build.
+
 ## 7. The region hierarchy (user decision, 2026-09-14)
 
 The roster groups communities into three super-regions with sub-regions, hidden when empty:

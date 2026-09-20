@@ -1,0 +1,209 @@
+﻿# =====================================================================
+# Learn Torah -- the events. ADDED 2026-09-15. See common/decisions/
+# kehillah_learn_torah_decisions.txt's own header for the full design
+# account (both decisions, the flat-not-chained shape, the community
+# library this reads). See events/kehillah_learn_torah_journey_events.
+# txt for the travel-to-study-elsewhere counterpart to kehillah_learn_
+# torah.0001 below, ADDED the same day.
+#
+# TWO NAMESPACES IN ONE FILE, deliberately -- kehillah_learn_torah and
+# kehillah_acquire_torah_work are two different decisions' own event IDs,
+# not two steps of one chain, so they get two separate `namespace =`
+# declarations rather than sharing one the way this mod's other multi-
+# event files (one decision, several chained events) do.
+#
+# THE RANDOM_LIST "WHICH WORK" PATTERN, both events: each track's four
+# works appear as flat, equal-weight random_list entries, each entry's
+# OWN trigger checking whether the relevant library owns (or, for
+# Acquire, does NOT own) that specific work -- an entry whose trigger
+# fails is simply skipped, the identical idiom kehillah_bet_din_draw_
+# case_effect already uses to pick among not-yet-heard cases (common/
+# scripted_effects/kehillah_bet_din_scripted_effects.txt) and kehillah_
+# translation_pick_work_effect already uses for the Translation
+# Contract's own ten-work pool. Each option's own OUTER trigger (the
+# kehillah_owns_/missing_<track>_work_trigger checks, common/scripted_
+# triggers/kehillah_scripted_triggers.txt) already guarantees at least
+# one entry is eligible before the option is ever shown, so there is no
+# empty-random_list case to guard here the way the Bet Din's own draw
+# does (that one can legitimately draw nothing in a session; this
+# cannot, by construction of its own gating).
+#
+# kehillah_learn_torah.0001's THREE OPTIONS ARE NOW THIN, ADDED
+# 2026-09-15 -- each just gates on ownership and calls the matching
+# kehillah_study_<track>_effect (common/scripted_effects/kehillah_
+# library_effects.txt) with LIBRARY = primary_title. That effect owns
+# the random_list/pass-fail/already-studied logic now, shared verbatim
+# with kehillah_learn_torah_journey.0001's own three options (LIBRARY =
+# var:kehillah_journey_destination_title instead) -- see that shared
+# effect's own header for the full "why one effect, not two copies"
+# account, including the already-studied tracking this pass added.
+# =====================================================================
+
+namespace = kehillah_learn_torah
+
+# ---------------------------------------------------------------------
+# kehillah_learn_torah.0001 -- STUDY AT THE BEIT MIDRASH
+# ---------------------------------------------------------------------
+
+kehillah_learn_torah.0001 = {
+	type = character_event
+	title = kehillah_learn_torah.0001.t
+	desc = kehillah_learn_torah.0001.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	# PARSHANUT.
+	option = {
+		name = kehillah_learn_torah.0001.a
+		trigger = { kehillah_owns_parshanut_work_trigger = { LIBRARY = primary_title } }
+		kehillah_study_parshanut_effect = { LIBRARY = primary_title }
+		ai_chance = { base = 34 }
+	}
+
+	# TALMUDICS.
+	option = {
+		name = kehillah_learn_torah.0001.b
+		trigger = { kehillah_owns_talmudics_work_trigger = { LIBRARY = primary_title } }
+		kehillah_study_talmudics_effect = { LIBRARY = primary_title }
+		ai_chance = { base = 33 }
+	}
+
+	# HASHKAFA.
+	option = {
+		name = kehillah_learn_torah.0001.c
+		trigger = { kehillah_owns_hashkafa_work_trigger = { LIBRARY = primary_title } }
+		kehillah_study_hashkafa_effect = { LIBRARY = primary_title }
+		ai_chance = { base = 33 }
+	}
+}
+
+
+namespace = kehillah_acquire_torah_work
+
+# ---------------------------------------------------------------------
+# kehillah_acquire_torah_work.0001 -- COMMISSION A COPY
+# Each option picks, at random, one work the community's library does
+# NOT yet hold in that track, and adds it -- see this file's own header
+# for the shared random_list idiom. Unlike kehillah_learn_torah.0001,
+# this one is NOT shared with the travel journey -- acquiring is always
+# local (you cannot commission a copy at a scriptorium you have not
+# built), so its own mutate-the-library logic stays inline here rather
+# than moving to a $LIBRARY$-parameterized shared effect.
+# ---------------------------------------------------------------------
+
+kehillah_acquire_torah_work.0001 = {
+	type = character_event
+	title = kehillah_acquire_torah_work.0001.t
+	desc = kehillah_acquire_torah_work.0001.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	# PARSHANUT.
+	option = {
+		name = kehillah_acquire_torah_work.0001.a
+		trigger = { kehillah_missing_parshanut_work_trigger = { LIBRARY = primary_title } }
+
+		random_list = {
+			25 = {
+				trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos } } } }
+				primary_title = { add_to_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos } }
+				custom_tooltip = kehillah_acquire_torah_work.0001.a.targum_onkelos_tt
+			}
+			25 = {
+				trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mekhilta } } } }
+				primary_title = { add_to_variable_list = { name = kehillah_library_works target = flag:work_mekhilta } }
+				custom_tooltip = kehillah_acquire_torah_work.0001.a.mekhilta_tt
+			}
+			25 = {
+				trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_genesis_rabbah } } } }
+				primary_title = { add_to_variable_list = { name = kehillah_library_works target = flag:work_genesis_rabbah } }
+				custom_tooltip = kehillah_acquire_torah_work.0001.a.genesis_rabbah_tt
+			}
+			25 = {
+				trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_pirkei_derabbi_eliezer } } } }
+				primary_title = { add_to_variable_list = { name = kehillah_library_works target = flag:work_pirkei_derabbi_eliezer } }
+				custom_tooltip = kehillah_acquire_torah_work.0001.a.pirkei_derabbi_eliezer_tt
+			}
+		}
+
+		ai_chance = { base = 34 }
+	}
+
+	# TALMUDICS.
+	option = {
+		name = kehillah_acquire_torah_work.0001.b
+		trigger = { kehillah_missing_talmudics_work_trigger = { LIBRARY = primary_title } }
+
+		random_list = {
+			25 = {
+				trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mishnah } } } }
+				primary_title = { add_to_variable_list = { name = kehillah_library_works target = flag:work_mishnah } }
+				custom_tooltip = kehillah_acquire_torah_work.0001.b.mishnah_tt
+			}
+			25 = {
+				trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi } } } }
+				primary_title = { add_to_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi } }
+				custom_tooltip = kehillah_acquire_torah_work.0001.b.yerushalmi_tt
+			}
+			25 = {
+				trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli } } } }
+				primary_title = { add_to_variable_list = { name = kehillah_library_works target = flag:work_bavli } }
+				custom_tooltip = kehillah_acquire_torah_work.0001.b.bavli_tt
+			}
+			25 = {
+				trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot } } } }
+				primary_title = { add_to_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot } }
+				custom_tooltip = kehillah_acquire_torah_work.0001.b.halakhot_gedolot_tt
+			}
+		}
+
+		ai_chance = { base = 33 }
+	}
+
+	# HASHKAFA.
+	option = {
+		name = kehillah_acquire_torah_work.0001.c
+		trigger = { kehillah_missing_hashkafa_work_trigger = { LIBRARY = primary_title } }
+
+		random_list = {
+			25 = {
+				trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_yetzirah } } } }
+				primary_title = { add_to_variable_list = { name = kehillah_library_works target = flag:work_sefer_yetzirah } }
+				custom_tooltip = kehillah_acquire_torah_work.0001.c.sefer_yetzirah_tt
+			}
+			25 = {
+				trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_emunot_vedeot } } } }
+				primary_title = { add_to_variable_list = { name = kehillah_library_works target = flag:work_emunot_vedeot } }
+				custom_tooltip = kehillah_acquire_torah_work.0001.c.emunot_vedeot_tt
+			}
+			25 = {
+				trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_chovot_halevavot } } } }
+				primary_title = { add_to_variable_list = { name = kehillah_library_works target = flag:work_chovot_halevavot } }
+				custom_tooltip = kehillah_acquire_torah_work.0001.c.chovot_halevavot_tt
+			}
+			25 = {
+				trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_kuzari } } } }
+				primary_title = { add_to_variable_list = { name = kehillah_library_works target = flag:work_kuzari } }
+				custom_tooltip = kehillah_acquire_torah_work.0001.c.kuzari_tt
+			}
+		}
+
+		ai_chance = { base = 33 }
+	}
+}

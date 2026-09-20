@@ -398,6 +398,88 @@ kehillah_pick_map_color_effect = {
 }
 
 
+
+# ---------------------------------------------------------------------
+# kehillah_pick_region_tint_effect
+#
+# Scope: a COUNTY title. Saves scope:kehillah_region_tint = the colour
+# title for the minhag sub-region this county sits in, or the neutral
+# base if it sits in none. ADDED 2026-09-15 (v12 section 9).
+#
+# Same two reads the roster classifier and the Bet Din triggers use
+# (kehillah_classify_map_view_region_effect, kehillah_has_known_minhag_
+# region_trigger): Anglia is "sits in e_britannia", everything else is
+# the kehillah_minhag flag on the county's de jure duchy. So the map,
+# the roster and the gameplay triggers all draw the same borders.
+# ---------------------------------------------------------------------
+kehillah_pick_region_tint_effect = {
+	title:d_kehillah_mapcolor_base = { save_scope_as = kehillah_region_tint }
+
+	if = {
+		limit = { empire = title:e_britannia }
+		title:d_kehillah_mapcolor_region_anglia = { save_scope_as = kehillah_region_tint }
+	}
+	else_if = {
+		limit = { exists = de_jure_liege  de_jure_liege = { has_variable = kehillah_minhag } }
+		if = {
+			limit = { de_jure_liege.var:kehillah_minhag = flag:western_ashkenaz }
+			title:d_kehillah_mapcolor_region_western_ashkenaz = { save_scope_as = kehillah_region_tint }
+		}
+		else_if = {
+			limit = { de_jure_liege.var:kehillah_minhag = flag:eastern_ashkenaz }
+			title:d_kehillah_mapcolor_region_eastern_ashkenaz = { save_scope_as = kehillah_region_tint }
+		}
+		else_if = {
+			limit = { de_jure_liege.var:kehillah_minhag = flag:provence }
+			title:d_kehillah_mapcolor_region_provence = { save_scope_as = kehillah_region_tint }
+		}
+		else_if = {
+			limit = { de_jure_liege.var:kehillah_minhag = flag:italki }
+			title:d_kehillah_mapcolor_region_italki = { save_scope_as = kehillah_region_tint }
+		}
+		else_if = {
+			limit = { de_jure_liege.var:kehillah_minhag = flag:romaniote }
+			title:d_kehillah_mapcolor_region_romaniote = { save_scope_as = kehillah_region_tint }
+		}
+		else_if = {
+			limit = { de_jure_liege.var:kehillah_minhag = flag:northern_sepharad }
+			title:d_kehillah_mapcolor_region_northern_sepharad = { save_scope_as = kehillah_region_tint }
+		}
+		else_if = {
+			limit = { de_jure_liege.var:kehillah_minhag = flag:southern_sepharad }
+			title:d_kehillah_mapcolor_region_southern_sepharad = { save_scope_as = kehillah_region_tint }
+		}
+		else_if = {
+			limit = { de_jure_liege.var:kehillah_minhag = flag:maghreb }
+			title:d_kehillah_mapcolor_region_maghreb = { save_scope_as = kehillah_region_tint }
+		}
+		else_if = {
+			limit = { de_jure_liege.var:kehillah_minhag = flag:eretz_yisrael }
+			title:d_kehillah_mapcolor_region_eretz_yisrael = { save_scope_as = kehillah_region_tint }
+		}
+		else_if = {
+			limit = { de_jure_liege.var:kehillah_minhag = flag:misraim }
+			title:d_kehillah_mapcolor_region_misraim = { save_scope_as = kehillah_region_tint }
+		}
+		else_if = {
+			limit = { de_jure_liege.var:kehillah_minhag = flag:bavel }
+			title:d_kehillah_mapcolor_region_bavel = { save_scope_as = kehillah_region_tint }
+		}
+		else_if = {
+			limit = { de_jure_liege.var:kehillah_minhag = flag:paras }
+			title:d_kehillah_mapcolor_region_paras = { save_scope_as = kehillah_region_tint }
+		}
+		else_if = {
+			limit = { de_jure_liege.var:kehillah_minhag = flag:radhanite }
+			title:d_kehillah_mapcolor_region_radhanite = { save_scope_as = kehillah_region_tint }
+		}
+		else_if = {
+			limit = { de_jure_liege.var:kehillah_minhag = flag:caucasus }
+			title:d_kehillah_mapcolor_region_caucasus = { save_scope_as = kehillah_region_tint }
+		}
+	}
+}
+
 # ---------------------------------------------------------------------
 # kehillah_paint_communities_map_effect
 #
@@ -405,7 +487,8 @@ kehillah_pick_map_color_effect = {
 # here reads root).
 #
 # Pass 1 -- every county: clear the hover-tooltip tag and paint every
-# barony the neutral base. Pass 2 -- every led community: refresh its
+# barony its minhag REGION tint (kehillah_pick_region_tint_effect; the
+# neutral base outside every region). Pass 2 -- every led community: refresh its
 # cached facts (so a moved quarter paints in the right place and a
 # stale Standing does not pick the wrong band), tag its host county for
 # the map mode's hover description, and paint that county's baronies
@@ -418,11 +501,14 @@ kehillah_pick_map_color_effect = {
 # community that moves or dissolves leaves no orphan tooltip.
 # ---------------------------------------------------------------------
 kehillah_paint_communities_map_effect = {
+	# Pass 1: every county to its REGION tint (or the neutral base outside
+	# every region -- v12 section 9), and clear the hover tag.
 	every_county = {
 		remove_variable = kehillah_map_community
+		kehillah_pick_region_tint_effect = yes
 		every_county_province = {
 			barony ?= {
-				set_color_from_title = title:d_kehillah_mapcolor_base
+				set_color_from_title = scope:kehillah_region_tint
 			}
 		}
 	}
