@@ -306,7 +306,7 @@ obvious place to look), the same way this project checked
 `succession_appointment` and the estate/Influence systems before
 building on them. Flag as residual risk, not a blocker.
 
-**RESOLVED, 2026-09-19; location naming implemented 2026-09-20 (not yet seen live).** Vanilla's `create_adventurer_title` (the
+**RESOLVED, 2026-09-19; location naming and the founding path itself live-verified 2026-09-20.** Vanilla's `create_adventurer_title` (the
 engine effect behind "Abandon Realm to Become an Adventurer" and every
 other laamp-creation path, `common/scripted_effects/07_dlc_ep3_
 scripted_effects.txt`) is genuine, general-purpose runtime landless-
@@ -327,8 +327,12 @@ followers and an unoccupied camp location -- a registered Kehillah whose
 domicile is already at that location blocks a second one. The runtime title
 now uses the founder's captured founding county in its
 name, following vanilla's `new_landless_adventurer_location` pattern
-(scope `kehillah_founding_county`); the founding path itself is still
-awaiting a clean live run, see ROADMAP 2026-09-20.
+(scope `kehillah_founding_county`, rendered with `GetNameNoTierNoTooltip`).
+The load-bearing detail of the whole primitive, found live on 2026-09-20:
+`create_adventurer_title` must be passed `government = kehillah_government`,
+or the founder gets a camp instead of a Jewish Quarter and the engine
+resets the government to feudal within a month -- see ROADMAP 2026-09-20
+and the test log for the full account.
 
 ### 5.2 Destruction
 

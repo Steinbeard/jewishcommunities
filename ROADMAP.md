@@ -1251,7 +1251,7 @@ community title was never made primary and the old one was never destroyed, so `
 the wrong title and both titles ended up with invalid succession. `kehillah_found_community_effect`
 now mirrors vanilla's own adventurer-becomes-landed teardown: create → `set_primary_title_to` →
 destroy the old adventurer title → `change_government` → `add_realm_law`, with `debug_log`
-breadcrumbs. (3) The title name is now `Kehillah of [kehillah_founding_county.GetNameNoTooltip]`
+breadcrumbs. (3) The title name is now `Kehillah of [kehillah_founding_county.GetNameNoTierNoTooltip]`
 (county, captured before creation, vanilla's `adventurer_name_010` mechanism) — a fresh later re-test
 confirmed it renders as intended. The same re-test confirmed the old title is destroyed, the founder
 does not Game Over, and the standard Kehillah decisions appear; the Worms bookmark also remained stable
@@ -1260,12 +1260,36 @@ past 1066-10-01. A dedicated test start `bm_1066_kehillah_founder_test` (rabbini
 check; whether it should ship to players or be console-only is an open call (BLOCKERS.md). ck3-tiger
 0/0.
 
-**Remaining founder-path work:** its successful live resolution still logs two new Kehillah errors
-while initializing pillars and the starting library. See the 12:49 EDT entry in
-`docs/testing/2026-09-20-found-community-live-test-log.md`; repair those errors, then repeat the
-founder test. **Updated 2026-09-20:** the decision now also requires ten Jewish camp followers and a
-camp location without an existing registered Kehillah, so its test setup must satisfy both gates before
-exercising the resolution path.
+**2026-09-20 evening — ROOT CAUSE of the founding Game Over, and the fix.** The 12:49 re-test above
+was already running on the fixed build; here is why it passed. The ordering fix was necessary but not
+sufficient: the real decision still Game-Overed 15-25 days later. Eleven scripted live probes
+(subagent-driven, `run <file>.txt` + `debug_log`; full sequence in the test log's "Root cause and
+fix") found the second bug: the founder ended up in `kehillah_government` with **no domicile** —
+`change_government` never creates one, it only destroys the adventurer's camp — and the engine
+silently resets a domicile-government with no domicile to feudal, which for a landless title is the
+"lost all titles" Game Over. Nothing in script can create a domicile after the fact (no such effect
+exists; confirmed against the engine's own `script_docs` output). The fix is a parameter no vanilla
+script uses: `create_adventurer_title = { government = kehillah_government }` creates title +
+government + Jewish Quarter in one engine operation. Verified on a fresh launch via the real UI
+decision: "Rav Yitzhak of the Kehillah of Worms", Communal Realm, Jewish Quarter Level 1, Kehillah
+decisions live, ran to Oct 1067 with no Game Over; Worms control unaffected. Same commit:
+flavorization no longer tier-gated (runtime titles are duchy-tier, so the founder read as "Duke"),
+title name via `GetNameNoTierNoTooltip` ("Kehillah of Worms", not "Kehillah of County of Worms").
+
+**Remaining founder-path work:** the two error-log items the 12:49 re-test flagged are addressed at
+source but NOT yet re-checked live (the machine was in use when the re-check was due): the
+`kehillah_restore_quarter_effect` call is removed from the founding effect (it does not no-op on a
+fresh title — ~38 unset-`var:kq_*` errors — and there is nothing to restore on a new community), and
+`set_primary_title_to` plus the post-setup internals are `hidden_effect` so the confirmation tooltip
+neither renders "None of becomes your Primary Title" nor evaluates pillar/library setup against a
+title that does not exist yet (the ~2,500 tooltip-time `landed_title is not valid` lines). ck3-tiger
+0/0. Next live check: hover the decision (tooltip error count should be ~0), take it (no
+`kehillah_restore` errors, six breadcrumbs), run a month. **The new gates** (ten Jewish camp
+followers, no registered Kehillah already at the location) landed after the last live run — whether
+the founder-test fixture still satisfies them is unverified; if the decision shows disabled on the
+fixture, the fixture needs seeded Jewish followers, not the gate loosened. Also still open: AI
+eligibility is `ai_potential = { always = no }` (unchanged since 09-19), the fixture bookmark is
+player-visible (BLOCKERS.md), and no founded-community *succession* has been live-tested yet.
 
 **Partly resolved, and reopened by the first playtest:** open,
 community-wide leadership succession (any notable family can be

@@ -159,11 +159,15 @@ things were left in.
   cause -- the old `d_laamp_*` title was never destroyed / the new title never made primary -- fixed in
   `kehillah_found_community_effect` following vanilla's own teardown order. Details: ROADMAP 2026-09-20
   entry and the Correction section of `docs/testing/2026-09-20-found-community-live-test-log.md`.
-- **Blocking / uncertain:** source-verified and ck3-tiger 0/0, **not live-tested** -- Daniel was actively
-  using the machine, so no unattended SendInput run. Two live checks needed: Worms bookmark past
-  1066-10-01 (revert confirmation, low risk); founder-test bookmark -> decision -> no Game Over, title
-  "Kehillah of <county>", old fixture title gone, four `kehillah_found_community_effect:` breadcrumbs in
-  `debug.log`.
+- **RESOLVED 2026-09-20 evening (mostly):** both live checks done via subagent, Daniel having asked for
+  the live drive. Worms revert: PASS (ran to Jun 1067). Founding: FAILED again on first try (Game Over
+  1066-10-10) -- second real bug, no domicile created; fixed with `create_adventurer_title = {
+  government = kehillah_government }` and re-verified PASS (ran to Oct 1067). Full account in
+  `docs/testing/2026-09-20-found-community-live-test-log.md` ("Root cause and fix"). STILL OPEN from
+  the same pass: the follow-up cleanup (restore-quarter call removed, tooltip internals hidden) and the
+  concurrently-committed decision gates (7616f87) have not had their live re-check -- CK3 was being
+  played by hand on the machine when it was due. ~6 minutes on a free machine; the subagent brief is in
+  the session transcript and the probe files are in `<CK3 user dir>\run\`.
 - **Needs a call from Daniel:** (1) `bm_1066_kehillah_founder_test` / character 9000003 / title
   `d_kehillah_founder_test` / placeholder portrait entry are a Codex-added, player-visible test fixture --
   keep as a shipped start, or cut to console-only (`kehillah_debug.60` already covers the same setup

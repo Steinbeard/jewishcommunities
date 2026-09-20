@@ -1,6 +1,6 @@
 # Found a Jewish Community — 2026-09-20 test log
 
-Status: **SUPERSEDED by the 2026-09-20 correction at the bottom of this file. The "LIVE-TESTED PASS" below was wrong -- the founding path still produced Game Over on the user's own run the same day, and the "duchy-tier required" claim was wrong and has been reverted. Founding path: re-fixed at source, ck3-tiger-clean, NOT yet live-verified.**
+Status: **LIVE-TESTED PASS as of 2026-09-20 evening (see "Root cause and fix" at the bottom). The Codex "LIVE-TESTED PASS" section directly below was wrong and its "duchy-tier required" claim was reverted; read it as history only.**
 
 ## Change under test
 
@@ -141,7 +141,7 @@ still not seen live.
 **ck3-tiger after all of the above: 0 fatal, 0 error** (57 warnings, 17 tips,
 all pre-existing).
 
-**Still needed (live, not source-answerable):** (a) Worms bookmark loads and
+**Still needed (live, not source-answerable) -- BOTH DONE LATER THE SAME DAY, see below:** (a) Worms bookmark loads and
 runs past 1066-10-01 with no Game Over -- this is a straight revert to a state
 three earlier playtests covered, so low risk; (b) `bm_1066_kehillah_founder_
 test` -> Found a Jewish Community -> no Game Over, character's title reads
@@ -154,3 +154,117 @@ Also noticed, not fixed here: `error.log` shows ~990 errors per load from
 triggers.txt:1247`, `capital_province` returning an unset scope) via
 `kehillah_study_torah:valid`. Committed Learn-Torah work, not part of this
 rescue; logged in BLOCKERS.md.
+
+## Fresh live re-test — 2026-09-20 12:49 EDT
+
+**Founder path: functional PASS; error-log-cleanliness: FAIL.** A fresh
+`bm_1066_kehillah_founder_test` run selected the real **Found a Jewish
+Community** decision and its confirmation button (not a console effect).
+After resolution, CK3 remained responsive with no Game Over. The character
+window read **Rav Yitzhak of the Kehillah of Worms**, the primary title card
+read **The Kehillah of Worms**, and the notification feed recorded **Son is
+Losing The Wandering Kehillah**. The Community Decisions group contained
+**Take Stock of the Community**, **Learn Torah**, and **Distribute Tzedakah**;
+the founding decision was gone. This proves the fixture's founding county is
+Worms and that the old `d_kehillah_founder_test` camp title was destroyed.
+
+`debug.log` at `12:49:08` recorded all effect breadcrumbs: `begin`, `created
+title`, `government is kehillah after create`, `domicile exists after create`,
+`destroying old adventurer title`, and `government + law set`. Neither
+`WARNING` breadcrumb appeared, so the created Jewish Quarter/domicile exists.
+
+The same real decision generated new `error.log` entries at `12:49:08`, all
+reported as occurring while CK3 builds a tooltip/description: repeated
+`Scoped object of type 'landed_title' is not valid (null)` through
+`kehillah_init_pillars_effect` at founding-effect line 211 and
+`kehillah_seed_starting_library_effect` at line 237. The action did not crash
+the game, but these are new Kehillah-tagged errors and must be fixed before
+calling the full path log-clean. The current global-start runs also repeat the
+already-known Worms developed-start building errors and map-view GUI layout
+warnings; they were present before the founder action.
+
+**Worms regression: PASS.** A separate fresh **The Kehillah of Worms** 1066
+bookmark run loaded Isaac successfully and stayed alive/responding through
+1066-10-10 (past the requested 1066-10-01 checkpoint), with no Game Over.
+No new title-validity/government error appeared after startup; its log output
+was limited to the known developed-start building, Troyes employer, and
+map-view GUI warnings noted above.
+
+## Root cause and fix -- 2026-09-20 evening (Claude Code session, subagent-driven live runs)
+
+The ordering fix in the Correction above was necessary but not sufficient: with it,
+the real decision still ended in the same Game Over, just later (Yitzhak on
+1066-10-10, and Isaac put through the same path via `kehillah_debug.60` on
+1066-09-30). Eleven scripted live experiments (all `run <file>.txt` probes with
+`debug_log`, driven by a subagent per CLAUDE.md; probe files left in
+`<CK3 user dir>\run\` -- `kprobe.txt` is the reusable one) established the
+following, in order:
+
+1. **Not the heir.** `player_heir` and the title's `current_heir` existed at every
+   probe point for both characters.
+2. **The founder had no domicile from the instant the decision ran**, and the
+   engine silently reset `kehillah_government` to `feudal_government` 15-25 days
+   later; feudal + only a landless title is the "has lost all of his titles"
+   Game Over (reproduced instantly by `change_government = feudal_government`).
+   The Worms start always has a `kehillah_quarter`; that is the whole difference.
+3. **Nothing in script creates a domicile after the fact.** Tested and failed:
+   `change_government` from every reachable state (it only ever destroys a
+   mismatched domicile, never creates one, and is refused with "Trying to set
+   illegal government" from a no-domicile state); relaxing the quarter's
+   `allowed_for_character`; `travel = yes` / `move_with_realm_capital = yes` on
+   the quarter; `set_capital_county` (the runtime title already had `c_worms`);
+   `change_title_holder` to a temp and back (recipient gets feudal);
+   `give_noble_family_title` (refuses an independent character). The engine's
+   own effect list (console `script_docs` -> `logs/effects.log`) confirms there
+   is no `create_domicile`-type effect at all.
+4. **The fix is a parameter nothing in vanilla uses.** `effects.log` documents
+   `create_adventurer_title` as taking `government = <type> # optional government,
+   default is adventurer`. With `government = kehillah_government`, the ONE
+   engine operation creates the title, puts the holder in the government AND
+   creates the government's domicile -- the same path that gives adventurers
+   their camp. No grep of the game files could have found this; only the engine
+   docs list it.
+
+**Fix as shipped** (`kehillah_found_community_effect`): `create_adventurer_title`
+now passes `government = kehillah_government`; the ordering from the Correction
+above stays (primary -> destroy old adventurer title -> guarded
+`change_government` (now a no-op) -> guarded `add_realm_law`); two sanity
+`debug_log` lines report government/domicile right after the create; the
+`kehillah_restore_quarter_effect` call was removed (its "safely no-ops" claim was
+false -- ~38 unset-`var:kq_*` errors per founding, and there is nothing to
+restore on a new community); `set_primary_title_to` and the post-setup
+internals are `hidden_effect` (they rendered "None of becomes your Primary
+Title" and ~2,500 tooltip-time null-title errors per hover). Two cosmetic
+follow-ons in the same commit: `common/flavorization/kehillah_title_holders.txt`
+dropped its `tier = county` lines (runtime titles are duchy-tier, so the founder
+read as "Duke"; `tier` is optional in that file type), and the title-name loc
+uses `GetNameNoTierNoTooltip` ("Kehillah of Worms", not "Kehillah of County of
+Worms").
+
+**Final verification, fresh launch on the on-disk build (the `government =`
+parameter, flavorization and loc changes; NOT the restore-call removal or the
+`hidden_effect` wrapping, which were made afterwards, are ck3-tiger-clean, and
+still await their own ~6-minute re-check -- the machine was in manual use when
+it was due), real decision via the UI:** F1 "Rav Yitzhak of the Kehillah of Worms, 41", title card "The Kehillah of
+Worms -- Communal Realm", Realm -> Domain shows "Jewish Quarter (Level 1) Worms",
+all six `kehillah_found_community_effect:` breadcrumbs (`begin`, `created title`,
+`government is kehillah after create`, `domicile exists after create`,
+`destroying old adventurer title`, `government + law set`), Community Decisions
+= Take Stock / Learn Torah / Distribute Tzedakah, **ran to 16 Oct 1067 with no
+Game Over**. Control on the same launch: Worms start "Rav Isaac, 66", quarter
+present, ran to 26 Aug 1067, no Game Over. ck3-tiger 0 fatal / 0 error.
+
+**Still cosmetic, not fixed:** the founded quarter's own display name is blank
+in `debug_log_scopes` (the Domain card shows "Jewish Quarter (Level 1) Worms"
+regardless) -- `KehillahDomicileName` gates on the community registry, and the
+name is probably resolved once at creation, before the effect registers the
+title; two vanilla notifications fire at founding ("Son is Losing The Wandering
+Kehillah", "Your Wanderers Law is no longer valid"); the founder's coat of arms
+is blank. None affect play.
+
+**Method note for future sessions:** the whole diagnosis ran as
+`run <file>.txt` probes + `debug_log` through one long-lived subagent (eleven
+relaunch/reload cycles, ~350k subagent tokens, none of it in the main context).
+The `script_docs` console command is the thing to reach for FIRST when a
+vanilla primitive seems to lack a capability -- it would have cut this from
+eleven experiments to one.
