@@ -64,3 +64,22 @@ run regardless of whether the session reached its own end-of-run BLOCKERS.md wri
 is true above and there's no matching entry from the agent itself nearby explaining what it was
 mid-way through, treat this run as unresolved until a human or a later run reviews what state
 things were left in.
+
+## Automated run status -- 2026-09-19_204240 (overnight/2026-09-19)
+- Cut off by a usage/session limit (detected in this run's log): False
+- Uncommitted changes in the working tree at run end: none
+- Commits on this branch not yet on origin at this point: 0
+- Last few commits on this branch:
+```
+c216d03 Merge pull request #2 from Steinbeard/overnight/2026-09-11
+04bbf44 Improved commision book contract; community map view
+cf92223 Real coloured map mode, region-grouped roster, wider columns
+1bead4e Map view: cap row text widths, make the roster a draggable window
+f80a52d Fix map-view crash on open: illegal vbox-in-flowcontainer nesting
+```
+
+Written mechanically by the scheduled script itself (not the agent) as a fallback -- present every
+run regardless of whether the session reached its own end-of-run BLOCKERS.md write. If "cut off"
+is true above and there's no matching entry from the agent itself nearby explaining what it was
+mid-way through, treat this run as unresolved until a human or a later run reviews what state
+things were left in.
