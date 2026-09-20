@@ -100,11 +100,13 @@
 # blockoverride "scrollbox_content" idiom, window_domicile.gui:1170) so
 # a long library scrolls instead of running under the HUD.
 #
-# STUDIED BY YOU: a second dynamic list of the PLAYER's own
-# kehillah_studied_works, as rows under the roster in the same
-# scrollbox. GUI has no "is this item in that other list" call, so the
-# two lists sit one under the other rather than one being marked
-# against the other.
+# STUDIED BY YOU: each held row is marked (green name, check, and a
+# status line in its tooltip) when the PLAYER has studied that work --
+# asked of script per row through the per-work kehillah_lib_studied_
+# work_<flag> scripted_guis' IsValid (2026-09-19; GUI has no "is this
+# item in that other list" call of its own). A second dynamic list of
+# the player's kehillah_studied_works still follows under the roster,
+# for works studied elsewhere that this library does not hold.
 #
 # STRUCTURE: vbox inside window, hboxes and vboxes nested freely, and
 # no vbox/hbox as a direct child of a (flow)container (live passes 3
@@ -113,7 +115,7 @@
 # =====================================================================
 
 @lib_width = 272
-@lib_name_width = 150
+@lib_name_width = 132
 @lib_list_height = 290
 
 types KehillahLibrary
@@ -187,7 +189,11 @@ types KehillahLibrary
 								hbox = {
 									layoutpolicy_horizontal = expanding
 									spacing = 6
-									tooltip = "[Localize( Concatenate( 'kehillah_lib_tt_', Scope.GetFlagName ) )]"
+									ignoreinvisible = yes
+									### The work's own line, then whether YOU have studied
+									### it -- Select_CString picks the status line (vanilla:
+									### frontend_main.gui's Select_CString on IsTutorialEnabled).
+									tooltip = "[Concatenate( Localize( Concatenate( 'kehillah_lib_tt_', Scope.GetFlagName ) ), Select_CString( GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_LIB_TT_STUDIED' ), Localize( 'KEHILLAH_LIB_TT_UNSTUDIED' ) ) )]"
 									using = tooltip_se
 
 									icon = {
@@ -195,7 +201,23 @@ types KehillahLibrary
 										texture = "gfx/interface/icons/domicile_building/domicile_building_library.dds"
 										alwaystransparent = yes
 									}
+									### STUDIED BY YOU (2026-09-19): green name and a check;
+									### otherwise the plain name. Always about the player,
+									### whichever community's library this is.
 									text_single = {
+										visible = "[GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+										text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
+										default_format = "#P"
+										max_width = @lib_name_width
+									}
+									icon = {
+										visible = "[GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+										size = { 16 16 }
+										texture = "gfx/interface/icons/symbols/icon_check.dds"
+										alwaystransparent = yes
+									}
+									text_single = {
+										visible = "[Not( GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) )]"
 										text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
 										default_format = "#high"
 										max_width = @lib_name_width

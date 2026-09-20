@@ -1,6 +1,6 @@
 ﻿# v13 — The Community Library Panel
 
-**Status:** IMPLEMENTED 2026-09-15; rebuilt as a dynamic list, then tied to the Beit Midrash building, the same day; **fixed and live-verified 2026-09-18** (§9 — the panel had never actually worked: its `DomicileWindow` datacontext is unreachable from a scripted widget); **first inventory action (donate a work) added and live-verified the same day** (§10); **any community's library one click from the map roster, live-verified 2026-09-19** (§11). Live passes 1-7 in §5. Answers the user's request "add a way to view
+**Status:** IMPLEMENTED 2026-09-15; rebuilt as a dynamic list, then tied to the Beit Midrash building, the same day; **fixed and live-verified 2026-09-18** (§9 — the panel had never actually worked: its `DomicileWindow` datacontext is unreachable from a scripted widget); **first inventory action (donate a work) added and live-verified the same day** (§10); **any community's library one click from the map roster, live-verified 2026-09-19** (§11); **rows marked with whether you have studied the work, same day** (§12). Live passes 1-8 in §5. Answers the user's request "add a way to view
 the books a community has in its domicile view."
 
 **Read first:** `docs/spec/spike-book-inventory.md` (why the library is a `variable_list` of flags on
@@ -162,6 +162,11 @@ own-quarter path (F2 → card) still showed the left-column panel with donate bu
 in the same pass: header text left-aligned so the X clears the name, subheader shortened so it no
 longer elides at the column width. `error.log`: only the pre-existing roster layout warnings.
 
+**Pass 8 (2026-09-19, studied marks, §12): PASS.** With the Mishnah added to the player's
+`kehillah_studied_works` by console probe, Mainz's library showed "The Mishnah" in green with a check
+and Targum Onkelos plain; the Mishnah's tooltip ended "You have studied this work." and Targum's "You
+have not studied this work." ck3-tiger clean.
+
 ## 6. Every Kehillah starts with a Beit Midrash (2026-09-17)
 
 User request after pass 3: "give all Kehillahs a level 1 bet midrash and don't lock it behind
@@ -209,11 +214,8 @@ longer a second, redundant gate layered on top of those thresholds.
 
 - A "commission this work" button on missing rows, calling the acquire decision's option directly.
 - A "travel here to study" button on other communities' held rows.
-- Marking held rows the player has studied: needs script to expose membership per work (e.g. the
-  study effects also setting a per-work character variable the row can read by name via
-  `GetPlayer.MakeScope.Var( Concatenate( 'kehillah_read_', Scope.GetFlagName ) )`), or a confirmed
-  data-function form of `IsTargetInVariableList`. Touches the other session's study effects — not
-  done unilaterally.
+- ~~Marking held rows the player has studied~~ — done 2026-09-19 (§12), by a third route: per-work
+  scripted GUIs whose `is_valid` asks script directly.
 - Grouping rows by subject — the list is in acquisition order; a per-subject list on the title
   (three lists maintained alongside `kehillah_library_works`) would give three columns for free.
 - Showing *which* nearby communities hold a work you lack — needs a cached per-work list on the
@@ -352,3 +354,24 @@ door of its own.
   community's panel is read-only, as it should be.
 
 Loc: `KEHILLAH_MAP_VIEW_LIBRARY_TOOLTIP`. Live pass 7 in §5.
+
+## 12. Rows say whether *you* have studied the work (2026-09-19)
+
+User request: "tell you whether you've mastered each book or not... in the tooltip and by coloring it
+or with a checkmark... specific to your own character." §3 recorded that the GUI has no "is this item
+in that other list" call; the answer is the donate button's trick turned into a question. Twelve
+effect-less scripted GUIs, `kehillah_lib_studied_work_<flag>`, each with `is_valid = {
+is_target_in_variable_list = { name = kehillah_studied_works target = flag:<work> } }` on the player;
+every held row asks `GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) )
+.IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )`. No new state: the list the study effects
+already maintain is the whole truth, so it is right on existing saves too.
+
+- **Row:** studied → the name in `#P` green plus a check icon after it; otherwise the plain `#high`
+  name. Two `text_single`s with opposite `visible` in an `ignoreinvisible` hbox.
+- **Tooltip:** the work's `kehillah_lib_tt_<flag>` line, then a status line chosen with
+  `Select_CString( <studied>, Localize('KEHILLAH_LIB_TT_STUDIED'), Localize('KEHILLAH_LIB_TT_UNSTUDIED') )`
+  (vanilla precedent for `Select_CString`: `frontend_main.gui`'s tutorial toggle).
+- **Always about the player**, on any community's library — which is the point: another community's
+  panel now shows at a glance what it holds that you have not yet read.
+- The "You have studied:" list under the roster stays, for works studied elsewhere that this library
+  does not hold.
