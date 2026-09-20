@@ -1087,6 +1087,22 @@ current work is still owned, with a twelve-way `triggered_desc` naming which wor
 about — pure flavor, no reward, specifically so it never double-pays what `kehillah_study_torah.0001`
 (the real phase-completion resolve+pick event) already pays.
 
+**2026-09-19 — Starting library seed randomized, ck3-tiger-clean, not yet live-tested.** At user
+request ("mix it up... each community gets random books from the initial list... expand the initial
+list") — every community used to get the literal same two works (Targum Onkelos + the Mishnah,
+2026-09-15's own seed). `kehillah_seed_starting_library_effect` (common/scripted_effects/kehillah_
+library_effects.txt) now rolls a count of 1-3 (equal odds) and draws that many DISTINCT works from
+the 8-work Parshanut+Talmudics pool via a new `kehillah_seed_one_random_torah_work_effect` (called
+1-3 times per community), using the same trigger-filtered `random_list` idiom `kehillah_study_torah_
+pick_next_work_effect` already established, so a work already drawn can never be drawn again in the
+same seed. Asked the user explicitly rather than deciding silently: **Hashkafa stays OUT of the
+random pool**, preserving 2026-09-15's own deliberate "Hashkafa starts at zero" scarcity design
+(kehillah_scripted_triggers.txt's own header, just above the six `kehillah_owns_/missing_<track>_
+work_trigger` entries) — the user chose to keep it rather than open Hashkafa to the starting draw
+too. Corpus itself is unchanged (still the same 12 real works); "expand the initial list" meant
+growing the pool a community's start can draw from (2 fixed → 8 eligible), not adding new works to
+the corpus, which nothing in the request actually asked for.
+
 **Partly resolved, and reopened by the first playtest:** open,
 community-wide leadership succession (any notable family can be
 appointed, not just the outgoing leader's own).
