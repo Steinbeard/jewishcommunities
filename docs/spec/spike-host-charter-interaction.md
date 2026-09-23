@@ -537,22 +537,22 @@ Ordered by how much a wrong answer would hurt.
    8). `tributary_heir_succession` defaults to yes (§5.4), but no pass here tested a Kehillah
    succession while a charter was live. **Do not ship a charter without a live succession test**,
    regardless of how clean the script reads.
-8. **New, from the second pass (§8.2/§10.3): does `common/character_interactions/` honor
-   key-level redefinition the way `common/scripted_triggers/` does?** Still open. The probe's
-   `zzz_khost_probe_override.txt` redefined `release_tributary_interaction` with a Kehillah
-   exclusion, but the live pass never played the host side, so "release wasn't shown to us" is not
-   evidence the override won — vanilla's own generic `is_shown` (AI only releases *unruly* subjects)
-   would produce the identical result whether or not the override took effect. **Raised in
-   confidence by an adjacent negative finding**: this same pass found that duplicate *loc* keys did
-   **not** reliably resolve to the mod's version (§10.3's signature-line finding) — the
-   scripted-triggers precedent may not generalize as safely as §8.2 assumed. Needs its own live test,
-   played from the host's side, before a design relies on redefining a vanilla
-   `character_interaction`.
-9. **New, from the second pass (§10.3): why did the signature-line loc override not take?** Is it a
-   `SelectLocalization`-indirection quirk specific to those two keys, or does loc-key override
-   resolution genuinely differ from the script-database override order this repo has relied on
-   elsewhere? One isolated probe (a single overridden key with no `SelectLocalization` layer) would
-   settle it and matters beyond this spike.
+8. ~~**Does `common/character_interactions/` honor key-level redefinition the way
+   `common/scripted_triggers/` does?**~~ **RESOLVED, YES — see §13, live 2026-09-23.** A
+   redefinition of `release_tributary_interaction` with a deliberately unconditional `is_shown =
+   { always = yes }` was confirmed to win over vanilla's own definition, checked unambiguously via
+   script (no need to play the host side after all — see §13's test design).
+9. ~~**Why did the signature-line loc override not take — `SelectLocalization`-indirection quirk, or
+   general?**~~ **RESOLVED, GENERAL — see §13, live 2026-09-23.** A second, plain loc key with no
+   `SelectLocalization` wrapper (`interaction_category_vassal_suzerain`) was overridden and also did
+   **not** win on live render. Loc-key duplicate overrides do not reliably resolve to the mod's
+   version in this game version, independent of `SelectLocalization` — this generalizes beyond the
+   original two keys and is a real divergence from the `scripted_triggers` last-loaded-wins
+   precedent this repo otherwise relies on. Treat as a standing caution for this whole repo, not just
+   this spike: **do not assume a duplicate loc key resolves to the mod's file.** Where a mod needs a
+   guaranteed string change, prefer overriding the underlying data/trigger the loc reads from
+   (as `CharacterInteractionCategoryVassal`'s own `customizable_localization` branches already do
+   for which *key* gets picked) over relying on a same-key loc override to win.
 
 ---
 ---
@@ -1262,11 +1262,135 @@ ships, not a workaround.** What changed from §7 is not the recommendation but i
 profile: three "still unverified" items became confirmed passes (mod-defined groups render, the
 right-click menu renders, My Realm's suzerain card renders), and two new, narrower unverified items
 took their place (`character_interactions` key-override, loc-override-order) alongside one new
-concrete build constraint (no same-tick `start_tributary` + obligation-level write). None of the
-three are reasons to abandon the route; all three are reasons to spend one more short live pass on
-exactly those questions before Host Dynamics' first real implementation, rather than discovering
-them mid-build.
+concrete build constraint (no same-tick `start_tributary` + obligation-level write). **Both of those
+two were resolved the same day — see §13** — one confirmed working (the interaction override), one
+confirmed as a real, general limitation to design around (the loc override). Neither changes this
+section's verdict; the loc finding changes *how* a Host Charter should get its custom flavor text
+(via data/trigger branches, not a same-key loc override) rather than *whether* it can.
 
 **Fallback, unchanged**: §6 — bespoke variables, a v9-style interaction, a v12/v13-style scripted
 widget. Still strictly more authoring work, still zero inherited behaviour or risk, still entirely
 inside patterns this repo has already shipped and debugged.
+
+---
+
+## 13. Third pass, 2026-09-23 — closing the two items §12 left open
+
+Same day, same bookmark (`bm_1066_kehillah_worms`), same live-probe discipline. Two throwaway probe
+files made this possible, both deleted before commit per the established convention, contents
+reproduced inline below:
+
+- `common/character_interactions/zzz_khost_probe2_override.txt` — redefined vanilla
+  `release_tributary_interaction` with `is_shown = { always = yes }`. Deliberately not a real
+  design: the first pass's attempt to test this (§8.2, §10.2's item J) used a Kehillah-only exclusion
+  and got an ambiguous result, because vanilla's own original `is_shown` *also* reads false in an
+  AI-host/obedient-tributary scenario for an unrelated reason (its own "AI only releases unruly
+  subjects" clause) — so a narrower override would have read identically whether or not it won.
+  Making the override's `is_shown` unconditionally `always = yes` instead produces an unambiguous
+  script-checkable signal with no need to actually play the host character.
+- `localization/english/zzz_khost_probe2_l_english.yml` — overrode
+  `interaction_category_vassal_suzerain` (`localization/english/gui/characterinteractionwindow_l_english.yml:23`,
+  a plain string, "Suzerain", no `SelectLocalization` wrapper) to `"KHOSTPROBE2 Suzerain"` — the
+  exact string that titles the "Suzerain" category header in the interaction menu, already confirmed
+  live in §10.3.
+
+### 13.1 Item 8 — does `common/character_interactions/` honor key-level redefinition?
+
+Run live via `run/khost3_probe.txt`, `bm_1066_kehillah_worms`, 18:52:15. Verbatim `debug.log`:
+
+```
+KHOST3 ==== begin ====
+KHOST3 gov KEHILLAH
+KHOST3 already_tributary NO
+KHOST3 host resolved
+KHOST3 start_tributary SUCCEEDED
+KHOST3 OVERRIDE-TEST release_tributary SHOWN yes -- character_interactions KEY-OVERRIDE WON
+KHOST3 ==== end ====
+```
+
+**Yes, unambiguously.** `is_character_interaction_shown` for `release_tributary_interaction`, checked
+from the host's own scope against the tributary Kehillah, read **true** — the only way that happens
+is the mod's `always = yes` override winning, since vanilla's own original condition reads false in
+this exact scenario (confirmed by the first pass's §10.2 item J reading "no" under the unmodified
+group). **`common/character_interactions/` honors key-level redefinition the same way
+`common/scripted_triggers/` already does in this mod** (§8.2's precedent). Visually confirmed too:
+right-clicking the host in the same session (§13.2) showed "Release Tributary" listed in the menu,
+which is only possible if the override's `is_shown` is actually governing.
+
+**This retires the caveat §12 attached to Q1's release-suppression answer.** A future
+`release_tributary_interaction` redefinition carrying a real Kehillah-exclusion line (as
+§8.2/§10.1's original probe file modeled, not the `always = yes` test stand-in used here) can be
+relied on to actually take effect.
+
+### 13.2 Item 9 — is the loc-override failure specific to `SelectLocalization`, or general?
+
+While still tributary from §13.1, right-clicked the host (Kaiser Heinrich IV, resolved the same way
+as every prior pass). The interaction menu opened showing `Request Contract Change`, `Cease Paying
+Tribute`, and — confirming §13.1 visually — `Release Tributary`, all grouped under a category
+header.
+
+**The header read plain "Suzerain" — not "KHOSTPROBE2 Suzerain."** Confirmed against a
+full-resolution crop, not just the downscaled read-back copy, so this isn't a legibility artifact.
+
+**The override did not win, for a plain string key with zero `SelectLocalization` indirection.**
+This rules out §10.3's tentative "maybe it's the `SelectLocalization` wrapper" hypothesis for the
+original two signature-line keys — the failure is not specific to that indirection. **Duplicate loc
+keys do not reliably resolve to the mod's version in this game version, full stop, independent of
+how the key is consumed.** This is now confirmed on two independent keys, from two different
+localization files, in two different sessions.
+
+**This is a standing finding for the whole repo, not just this spike.** Every place elsewhere in
+this codebase that has assumed last-loaded-wins for a *duplicate key* — as opposed to defining a
+*new* key and pointing existing script/GUI at it — should be treated as unverified for loc, even
+where the equivalent assumption is proven for `common/scripted_triggers/`. The safe pattern going
+forward, already modeled by vanilla's own `CharacterInteractionCategoryVassal`
+(`common/customizable_localization/00_character_interaction_categories.txt`): branch which
+**loc key** gets used via script/trigger logic in a `customizable_localization` or similar
+indirection, rather than redefining an existing key and hoping it wins.
+
+### 13.3 Cleanup and error.log
+
+```
+KHOST3CLEAN begin
+KHOST3CLEAN still tributary (unpause a few seconds and re-run)
+KHOST3CLEAN gov still KEHILLAH
+KHOST3CLEAN independent YES
+KHOST3CLEAN end
+```
+— expected, matching the established tick-deferral behavior (§3, §10.2). After ~8s unpaused
+real time and re-pausing:
+
+```
+KHOST3CLEAN begin
+KHOST3CLEAN is_tributary NO -- clean
+KHOST3CLEAN gov still KEHILLAH
+KHOST3CLEAN independent YES
+KHOST3CLEAN end
+```
+
+**Confirmed clean final state.** `error.log` grew by 67 lines across the session; all reviewed and
+accounted for: the expected UTF-8-BOM notices on the two new probe files, an expected idempotent
+`end_tributary ... is not a tributary` from the second cleanup call (the first call's deferred
+`end_tributary` had already committed during the unpaused interval), repeats of this mod's known
+pre-existing baseline noise, and a batch of entirely unrelated vanilla/DLC errors from unrelated
+characters that accumulated during the several months of unpaused game time the cleanup step used —
+none reference `khost_probe`, `subject_contract`, or the Kehillah. **No sign the `always = yes`
+override caused the interaction to fire unprompted, spam, or misbehave** — it appeared only in the
+one deliberate menu check, as an ordinary listed (never auto-triggered) option, and was never
+clicked.
+
+### 13.4 What this changes going forward
+
+Both of §12's residual open items are closed, and neither reopens the core recommendation:
+
+- **The Q1 exit-suppression design (§8, §12) is now fully load-bearing**, including the host-side
+  half: a real `release_tributary_interaction` redefinition with a Kehillah-only exclusion (not the
+  `always = yes` test stand-in) can be built with confidence.
+- **Any custom flavor text this mod wants on vanilla-owned surfaces — the contract-paper signature
+  lines, or anywhere else "Tributary"/"Suzerain" language leaks (§10.4's audit table) — must not be
+  authored as a same-key loc override.** It needs either a new key that this mod's own GUI or effects
+  read directly (fully in this mod's control, e.g. anything the mod's own scripted widgets or
+  interactions display), or a `customizable_localization`-style redirection at the point vanilla
+  picks *which* key to use, matching the pattern vanilla's own interaction-category system already
+  uses. This is now a documented constraint for Host Dynamics' eventual implementation, not a loose
+  end.
