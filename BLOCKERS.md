@@ -196,3 +196,25 @@ things were left in.
   `kehillah_study_torah_has_accessible_library_trigger` (`kehillah_scripted_triggers.txt:1247`,
   `capital_province` unset scope) via `kehillah_study_torah:valid`. That is committed Learn-Torah work
   (4b7d3b9 or earlier), not part of this rescue. Worth a fix -- it is noisy enough to hide real errors.
+
+## Automated run status -- 2026-09-23_173801 (overnight/2026-09-23)
+- Cut off by a usage/session limit (detected in this run's log): False
+- Uncommitted changes in the working tree at run end: YES --
+```
+ M docs/spec/spike-host-charter-interaction.md ?? common/character_interactions/zzz_khost_probe_override.txt ?? common/subject_contracts/ ?? localization/english/zzz_khost_probe_l_english.yml
+```
+- Commits on this branch not yet on origin at this point: 0
+- Last few commits on this branch:
+```
+78f328c Spike: Host Charter interaction/UI feasibility for Phase 4
+caa3fcf Log Takkanot/Synod-as-Bet-Din idea to backlog, deferred pending By God Alone
+fc5946e Enable AI eligibility for Found a Jewish Community
+d79e8b8 Founder-path cleanup: live-test PASS, two real bugs found and fixed
+0ee3e11 Mark overnight/2026-09-20 merge and its open decisions resolved in BLOCKERS.md
+```
+
+Written mechanically by the scheduled script itself (not the agent) as a fallback -- present every
+run regardless of whether the session reached its own end-of-run BLOCKERS.md write. If "cut off"
+is true above and there's no matching entry from the agent itself nearby explaining what it was
+mid-way through, treat this run as unresolved until a human or a later run reviews what state
+things were left in.
