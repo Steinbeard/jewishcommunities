@@ -543,16 +543,19 @@ Ordered by how much a wrong answer would hurt.
    { always = yes }` was confirmed to win over vanilla's own definition, checked unambiguously via
    script (no need to play the host side after all — see §13's test design).
 9. ~~**Why did the signature-line loc override not take — `SelectLocalization`-indirection quirk, or
-   general?**~~ **RESOLVED, GENERAL — see §13, live 2026-09-23.** A second, plain loc key with no
-   `SelectLocalization` wrapper (`interaction_category_vassal_suzerain`) was overridden and also did
-   **not** win on live render. Loc-key duplicate overrides do not reliably resolve to the mod's
-   version in this game version, independent of `SelectLocalization` — this generalizes beyond the
-   original two keys and is a real divergence from the `scripted_triggers` last-loaded-wins
-   precedent this repo otherwise relies on. Treat as a standing caution for this whole repo, not just
-   this spike: **do not assume a duplicate loc key resolves to the mod's file.** Where a mod needs a
-   guaranteed string change, prefer overriding the underlying data/trigger the loc reads from
-   (as `CharacterInteractionCategoryVassal`'s own `customizable_localization` branches already do
-   for which *key* gets picked) over relying on a same-key loc override to win.
+   general?**~~ **RESOLVED, `SelectLocalization`-SPECIFIC — see §14, live 2026-09-23 (corrects an
+   intermediate, wrong conclusion reached earlier the same day — see §14's opening note).** Plain
+   duplicate loc keys **do** override reliably, confirmed on three independent keys across two
+   separate fresh-boot sessions. The `CONTRACT_LIEGE_SIGNATURE_SUZERAIN_TYPE` /
+   `CONTRACT_VASSAL_SIGNATURE_TRIBUTARY_TYPE` pair specifically, and reproducibly, does not — tested
+   a second time under the exact same rigor that made the plain keys succeed, in the same boot, as a
+   same-session positive control. **The failure is real but narrow: it is these two
+   `SelectLocalization`-consumed keys (or this specific GUI-reading path), not duplicate loc override
+   in general.** For that one surface, and anything else read the same way, the mod should override
+   the underlying data/trigger the loc reads from rather than the loc key itself — exactly the
+   `customizable_localization` pattern `CharacterInteractionCategoryVassal` already uses, which this
+   pass also confirms is unaffected (its own key-level override worked fine). Everywhere else — plain
+   keys, concept links, category headers — a same-key loc override can be relied on.
 
 ---
 ---
@@ -1010,13 +1013,13 @@ The full audit:
 |---|---|---|---|
 | Negotiation window title | `CONTRACT_NAME`, `my_realm_window_l_english.yml:218` | `<group name> Contract` | **Already custom** — reads the mod's own group loc |
 | Obligation names / tooltips / descs | contract + level loc keys | mod's own | **Already custom** |
-| Contract-paper signature lines | `CONTRACT_LIEGE_SIGNATURE` / `_VASSAL_SIGNATURE` → `SelectLocalization(SubjectContract.IsTributary, …)` → `CONTRACT_LIEGE_SIGNATURE_SUZERAIN_TYPE` = **"Suzerain"**, `CONTRACT_VASSAL_SIGNATURE_TRIBUTARY_TYPE` = **"Tributary"** (`government_l_english.yml:278-283`) | "The Tributary, *Name* of House *X*" | **Live-tested and it did not take (§10.3).** A mod override of both keys was recognized as a duplicate key at load but vanilla's string still rendered on the signature lines. Not confirmed whether this is a `SelectLocalization`-indirection quirk or a general loc-override-order gap — needs its own isolated probe before relying on it anywhere |
+| Contract-paper signature lines | `CONTRACT_LIEGE_SIGNATURE` / `_VASSAL_SIGNATURE` → `SelectLocalization(SubjectContract.IsTributary, …)` → `CONTRACT_LIEGE_SIGNATURE_SUZERAIN_TYPE` = **"Suzerain"**, `CONTRACT_VASSAL_SIGNATURE_TRIBUTARY_TYPE` = **"Tributary"** (`government_l_english.yml:278-283`) | "The Tributary, *Name* of House *X*" | **Live-tested twice, confirmed a real, `SelectLocalization`-specific failure (§10.3, §14.2) — not fixable by loc override.** Ruled out: BOM, stale process, general loc-override brokenness (three other plain keys won live in the same boot as the second failed retest, §14.2). Needs the data/trigger-branch fallback (see the Subject Standing row below for the pattern), or acceptance of vanilla wording here specifically |
 | Right-click menu entry | `subject_modify_tributary_contract_interaction` (`mpo_interactions_l_english.yml:106`) | **"Request Contract Change"** | **No tributary language at all already.** Its `_desc` (`:108`) does contain `[tributary_contract\|E]` — one loc override |
-| "This is the current …" footer | `SUBJECT_CONTRACT_OBLIGATION_NO_EFFECT` → `SelectLocalization(IsTributary, tributary_contract, vassal_contract)` (`my_realm_window_l_english.yml:211`) | "Tributary Contract" | Concept loc override, global |
-| Realm tooltip on the map / CoA | `COA_REALM_SUZERAIN_INFO` (`gui/common_l_english.yml:86-88`): `@tributary_settled![tributary\|E]` + `[suzerain\|E]: <name>` | "Tributary / Suzerain: Heinrich" | Loc override, global; the `@tributary_settled!` sprite is fixed |
-| Character window relation label | `gui/window_character.gui:691`, `[suzerain\|E]` concept | "Suzerain" | `game_concept_suzerain: "Suzerain"` (`dlc/mpo/dlc_mpo_game_concepts_l_english.yml:88`) — loc override, global |
+| "This is the current …" footer | `SUBJECT_CONTRACT_OBLIGATION_NO_EFFECT` → `SelectLocalization(IsTributary, tributary_contract, vassal_contract)` (`my_realm_window_l_english.yml:211`) | "Tributary Contract" | **Same `SelectLocalization(IsTributary, …)` shape as the signature-line row above, which is now confirmed to resist loc override — treat this as likely resistant too until independently tested, not as a plain override candidate** |
+| Realm tooltip on the map / CoA | `COA_REALM_SUZERAIN_INFO` (`gui/common_l_english.yml:86-88`): `@tributary_settled![tributary\|E]` + `[suzerain\|E]: <name>` | "Tributary / Suzerain: Heinrich" | Not `SelectLocalization`-wrapped — plain concept links, the pattern now confirmed to override cleanly (§14.2). Loc override, global; the `@tributary_settled!` sprite is fixed regardless |
+| Character window relation label | `gui/window_character.gui:691`, `[suzerain\|E]` concept | "Suzerain" | **Confirmed live, works (§14.2).** `game_concept_suzerain: "Suzerain"` (`dlc/mpo/dlc_mpo_game_concepts_l_english.yml:88`) — a plain-key loc override, global |
 | **Tributary icon on the character window and on map coat-of-arms** | `window_character.gui:698-715` and `map_icon_layer.gui:2455`, `:2549`, `:2622` — **`texture = "gfx/interface/icons/tributary_settled_map_icon.dds"`**, selected only by `IsNomad`/`IsHerder`, never by group | a chain-link tributary badge | **This is the one genuinely hardcoded, non-group-aware asset found.** Not loc. A mod can only replace the `.dds` by path (changing it for every settled tributary in the game) or fork the two `.gui` files |
-| Message filter | `message_filter_tributary` (`message_filters_l_english.yml:408`) reuses `CONTRACT_VASSAL_SIGNATURE_TRIBUTARY_TYPE` | "Tributary" | Falls out of the signature override above |
+| Message filter | `message_filter_tributary` (`message_filters_l_english.yml:408`) reuses `CONTRACT_VASSAL_SIGNATURE_TRIBUTARY_TYPE` | "Tributary" | Inherits the signature-line row's confirmed failure — same key, same fallback needed |
 | Subject Standing label | `MY_REALM_WINDOW_SUBJECT_STANDING` → `Custom('SubjectStanding')`, a **customizable_localization with triggers** (`common/customizable_localization/10_tgp_custom_loc.txt:13-32`) | "Imperial Grace" for celestial, generic otherwise | **Best case of all** — a mod redefining `SubjectStanding` can add a Kehillah `text = { trigger = … }` branch and keep vanilla's celestial branches intact. Per-government, no collateral |
 | Map lines / suzerain realm name / realm colour | per-group, all optional (`_subject_contract_groups.info:36-49`) | — | **Already silent** if the group omits them (first spike §5.2) |
 
@@ -1263,10 +1266,13 @@ profile: three "still unverified" items became confirmed passes (mod-defined gro
 right-click menu renders, My Realm's suzerain card renders), and two new, narrower unverified items
 took their place (`character_interactions` key-override, loc-override-order) alongside one new
 concrete build constraint (no same-tick `start_tributary` + obligation-level write). **Both of those
-two were resolved the same day — see §13** — one confirmed working (the interaction override), one
-confirmed as a real, general limitation to design around (the loc override). Neither changes this
-section's verdict; the loc finding changes *how* a Host Charter should get its custom flavor text
-(via data/trigger branches, not a same-key loc override) rather than *whether* it can.
+two were resolved the same day — see §13 and §14** — the interaction override is confirmed working,
+and the loc-override question took two more passes to pin down correctly (an intermediate
+over-broad "loc override just doesn't work" conclusion in §13 turned out to be two self-inflicted
+test bugs, corrected in §14): **duplicate loc-key override works fine in general, and the only real
+exception found is the pair of `SelectLocalization`-consumed signature-line keys specifically.**
+Neither changes this section's verdict; the loc finding narrows *which* strings need the
+data/trigger-branch fallback rather than casting doubt on custom flavor text everywhere.
 
 **Fallback, unchanged**: §6 — bespoke variables, a v9-style interaction, a v12/v13-style scripted
 widget. Still strictly more authoring work, still zero inherited behaviour or risk, still entirely
@@ -1332,21 +1338,29 @@ header.
 **The header read plain "Suzerain" — not "KHOSTPROBE2 Suzerain."** Confirmed against a
 full-resolution crop, not just the downscaled read-back copy, so this isn't a legibility artifact.
 
-**The override did not win, for a plain string key with zero `SelectLocalization` indirection.**
-This rules out §10.3's tentative "maybe it's the `SelectLocalization` wrapper" hypothesis for the
-original two signature-line keys — the failure is not specific to that indirection. **Duplicate loc
-keys do not reliably resolve to the mod's version in this game version, full stop, independent of
-how the key is consumed.** This is now confirmed on two independent keys, from two different
-localization files, in two different sessions.
+**The override did not win, for a plain string key with zero `SelectLocalization` indirection.** At
+the time, this read as ruling out §10.3's "maybe it's the `SelectLocalization` wrapper" hypothesis and
+pointing to a general loc-override failure.
 
-**This is a standing finding for the whole repo, not just this spike.** Every place elsewhere in
+> **CORRECTED IN §14, SAME DAY — do not rely on the conclusion originally drawn here.** This test had
+> an unexamined confound: the probe's own loc file (`zzz_khost_probe2_l_english.yml`) was written
+> without the UTF-8 BOM every other loc file in this mod and vanilla carries, and CK3 was still the
+> same long-running process left over from §13.1's test rather than a fresh boot — meaning the file
+> may never have been reloaded at all. §14 reruns this with both fixed and reaches the opposite
+> conclusion for plain keys, then separately re-tests the *original* signature-line keys under the
+> same rigor and finds their failure **does** reproduce. Read §14 in full before drawing any
+> conclusion from this section — the "standing finding for the whole repo" paragraph below is
+> superseded by §14's narrower, corrected version.
+
+~~**This is a standing finding for the whole repo, not just this spike.** Every place elsewhere in
 this codebase that has assumed last-loaded-wins for a *duplicate key* — as opposed to defining a
 *new* key and pointing existing script/GUI at it — should be treated as unverified for loc, even
 where the equivalent assumption is proven for `common/scripted_triggers/`. The safe pattern going
 forward, already modeled by vanilla's own `CharacterInteractionCategoryVassal`
 (`common/customizable_localization/00_character_interaction_categories.txt`): branch which
 **loc key** gets used via script/trigger logic in a `customizable_localization` or similar
-indirection, rather than redefining an existing key and hoping it wins.
+indirection, rather than redefining an existing key and hoping it wins.~~ *(Superseded by §14 — the
+finding survives only for `SelectLocalization`-consumed keys, not loc override in general.)*
 
 ### 13.3 Cleanup and error.log
 
@@ -1386,11 +1400,136 @@ Both of §12's residual open items are closed, and neither reopens the core reco
 - **The Q1 exit-suppression design (§8, §12) is now fully load-bearing**, including the host-side
   half: a real `release_tributary_interaction` redefinition with a Kehillah-only exclusion (not the
   `always = yes` test stand-in) can be built with confidence.
-- **Any custom flavor text this mod wants on vanilla-owned surfaces — the contract-paper signature
-  lines, or anywhere else "Tributary"/"Suzerain" language leaks (§10.4's audit table) — must not be
-  authored as a same-key loc override.** It needs either a new key that this mod's own GUI or effects
-  read directly (fully in this mod's control, e.g. anything the mod's own scripted widgets or
-  interactions display), or a `customizable_localization`-style redirection at the point vanilla
-  picks *which* key to use, matching the pattern vanilla's own interaction-category system already
-  uses. This is now a documented constraint for Host Dynamics' eventual implementation, not a loose
-  end.
+- **Custom flavor text on vanilla-owned surfaces (§10.4's audit table) — see §14 for the corrected,
+  narrower version of this bullet.** The blanket "must not be authored as a same-key loc override"
+  claim originally written here does not survive §14's follow-up passes; only the contract-paper
+  signature lines specifically need the data/trigger-branch fallback.
+
+---
+
+## 14. Fourth pass, 2026-09-23 — the loc-override question, corrected twice in one day
+
+**Read this section, not §13.2's original conclusion, for the real answer.** §13.2 concluded loc
+override "does not reliably resolve to the mod's version... full stop, independent of how the key is
+consumed." That conclusion was wrong, for a boring, identifiable reason, and this section corrects
+it with two further live passes — the first overturns §13.2 outright, the second re-narrows the
+correction to exactly where a real effect actually lives.
+
+### 14.1 Retest 1 — plain keys, done properly this time: the override DOES win
+
+§13.2's test had two live, unexamined bugs, found by inspection before spending another live cycle:
+its probe loc file (`zzz_khost_probe2_l_english.yml`) was written **without the UTF-8 BOM** every
+other loc file in this mod and in vanilla carries (`xxd` on a known-good shipped file, e.g.
+`kehillah_l_english.yml`, confirms `EF BB BF` at byte 0 — the probe file had none), and its live
+session **reused an already-running CK3 process** left over from §13.1's pass rather than a fresh
+boot after the new file existed on disk — meaning the file may never have been reloaded into the
+running game's database at all.
+
+A new probe file, `localization/english/zzz_khost_probe3_l_english.yml`, fixed both: a verified
+correct BOM (checked with `xxd` before the live pass started), and a genuinely fresh process —
+existing `ck3.exe` killed and confirmed absent via `tasklist` before relaunching. It overrode two
+plain keys with no `SelectLocalization` wrapper: `interaction_category_vassal_suzerain` (the
+"Suzerain" interaction-menu category header) and `game_concept_suzerain` (the underlying "Suzerain"
+concept string, used in the character window's relationship line and the My Realm suzerain row).
+
+Live at `bm_1066_kehillah_worms`, after `start_tributary` (vanilla `tributary_settled` group, no
+custom group needed for this question):
+
+| Render location | Result |
+|---|---|
+| Interaction-menu category header | **"KHOSTPROBE3 Suzerain"** — override won |
+| Character-window relationship line | **"Your KHOSTPROBE3 SuzerainConcept • Rapacious Atheist"** — override won |
+| My Realm (F2) suzerain row | **"KHOSTPROBE3 SuzerainConcept : Kaiser Heinrich IV"** — override won |
+
+All three render locations showed the mod's override, not vanilla's string. `error.log` logged the
+two expected "Duplicate localization key" notices (informational — the engine noting two
+definitions exist, not a failure) and **no BOM warning on the `.yml` file**, confirming the fix. No
+crash, no misbehavior. Cleanup (`end_tributary`) reproduced the same tick-deferral behavior already
+documented in §3/§10.2 — nothing new there.
+
+**Verdict at this point: §13.2 was wrong.** Duplicate loc-key override works, given a correct BOM
+and a genuinely fresh boot — exactly as expected from how common this technique is in CK3 modding
+generally. This is where the intermediate, overturned conclusion (visible in the "Still unverified"
+item 9 entry and §13.2/§13.4 above, both marked corrected) came from — the mistake was purely
+this session's own test hygiene, not an engine limitation.
+
+### 14.2 Retest 2 — the original signature-line keys, re-tested under the exact same rigor: they still lose
+
+That result raised one more real question: §13.1's original test (the `CONTRACT_LIEGE_SIGNATURE_SUZERAIN_TYPE`
+/ `CONTRACT_VASSAL_SIGNATURE_TRIBUTARY_TYPE` pair) *believed* it already had a correct BOM and a
+fresh boot — but that belief was never independently re-verified with the same rigor 14.1 just
+proved matters. Cheaper to redo it properly than trust an unconfirmed memory.
+
+A third probe file, `localization/english/zzz_khost_probe4_l_english.yml`, re-declared the exact same
+two keys §13.1 tested (`CONTRACT_LIEGE_SIGNATURE_SUZERAIN_TYPE` → "KHOSTPROBE4 Host",
+`CONTRACT_VASSAL_SIGNATURE_TRIBUTARY_TYPE` → "KHOSTPROBE4 Community"), BOM verified via `xxd` before
+the pass. The live session again killed and confirmed-absent the prior `ck3.exe` process before a
+genuinely fresh relaunch (hitting and solving an unrelated DRM/Steam-handshake boot stall along the
+way — worth folding into the shim guide separately, not a finding about this mod).
+
+Same setup: `bm_1066_kehillah_worms`, `start_tributary` toward the host, then the actual tributary
+contract-negotiation window opened (via My Realm → the suzerain link → right-click → "Request
+Contract Change"), scrolled to the wax-seal signature lines at the bottom of the parchment.
+
+**Exact text read from a native-resolution crop:**
+- "The Suzerain, Kaiser Heinrich of House Salian"
+- "The Tributary, Rav Isaac of House HaLevi"
+
+**Plain vanilla wording — not "KHOSTPROBE4 Host" / "KHOSTPROBE4 Community."** The override did not
+win, despite confirmed-correct BOM and confirmed-fresh boot. **And in the same session, as a direct
+positive control, three other overrides won cleanly**: the My Realm suzerain row's text
+(`game_concept_suzerain`, still `zzz_khost_probe3`'s override, present in the same load), that same
+row's tooltip, and the interaction menu's category header — all rendering the `KHOSTPROBE3` strings
+correctly, in the identical boot where the `KHOSTPROBE4` signature-line strings failed to render.
+**Same mod, same load, same session: three keys won, two lost.** This rules out boot freshness and
+BOM correctness as the explanation for the signature-line failure — both were controlled for and
+both were fine for the keys that worked.
+
+`error.log` showed the two expected duplicate-key notices for the `KHOSTPROBE4` keys, no BOM
+warning, and no crash. Cleanup confirmed clean (`is_tributary` NO, government KEHILLAH, independent
+YES), reproducing the by-now-routine tick-deferral behavior.
+
+### 14.3 What actually explains the difference, and the corrected verdict
+
+The one structural difference between the keys that won and the keys that lost is exactly what §13.2
+first floated and then wrongly ruled out: `CONTRACT_LIEGE_SIGNATURE_SUZERAIN_TYPE` and
+`CONTRACT_VASSAL_SIGNATURE_TRIBUTARY_TYPE` are read through
+`SelectLocalization(SubjectContract.IsTributary, …)` (§10.4), where every winning key
+(`interaction_category_vassal_suzerain`, `game_concept_suzerain`, and — unrelated to this spike but
+worth noting — the `CharacterInteractionCategoryVassal` `customizable_localization` block itself,
+whose own key-branch worked fine in every pass) is a direct key reference or a script/trigger-driven
+key *selection*, not a `SelectLocalization`-wrapped runtime pick baked against a live game object.
+**The most likely mechanism, not independently isolated further**: `SelectLocalization` may resolve
+and cache its chosen loc string once, at the point the `SubjectContract` object underlying the
+signature line is first created or first rendered, rather than doing a fresh key lookup on every
+render — which would make it insensitive to a loc file added or changed after that point in a way a
+plain key reference is not. This is a plausible explanation, not a confirmed one; it was not tested
+further (e.g. by creating the tributary contract *before* the probe loc file was even present, to see
+if that changes the result) because the practical answer for this design doesn't depend on knowing
+the exact mechanism.
+
+**Corrected, final verdict on the loc-override question**:
+
+1. **Duplicate loc-key override works in general**, reliably, given a correct UTF-8 BOM and a
+   genuinely fresh game boot — confirmed on three independent keys across two separate sessions, with
+   in-session positive controls in the final pass.
+2. **One real, narrow, reproducible exception exists**: the tributary contract's `SelectLocalization`-driven
+   signature-line keys (and, by the same shape, likely `SUBJECT_CONTRACT_OBLIGATION_NO_EFFECT` per
+   §10.4's updated table, though that one specifically was not independently tested) do not honor a
+   same-key loc override, confirmed twice, including as a same-session negative case against
+   passing positive controls.
+3. **This does not block the Host Charter design.** Every leftover piece of vanilla tributary
+   language identified in §10.4 that a Host Charter actually needs to change — the negotiation window
+   title (already the mod's own group name, no override needed), the interaction menu name and
+   category, the character-window/My-Realm "Suzerain" text, the map/CoA tooltip — is a plain key and
+   now confirmed overridable. Only the wax-seal signature lines (and, conservatively, the "current
+   contract" footer) are stuck with vanilla wording unless the mod redefines the underlying
+   `SelectLocalization`-consuming GUI text key itself (a global override, same cost class as
+   `CONTRACT_LIEGE_SIGNATURE`/`CONTRACT_VASSAL_SIGNATURE` in `common_l_english.yml`/`government_l_english.yml`
+   directly, rather than the `_TYPE` sub-keys this pass targeted — untested, a cheap follow-up if the
+   signature lines end up mattering enough to chase further) or simply accepts vanilla's "Suzerain" /
+   "Tributary" wording on that one decorative surface and reskins everything else.
+
+All three probe files from this section (`zzz_khost_probe3_l_english.yml`,
+`zzz_khost_probe4_l_english.yml`) are deleted before commit, per this doc's established convention;
+their contents are reproduced inline above where they matter.
