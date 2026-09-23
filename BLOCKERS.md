@@ -149,6 +149,11 @@ things were left in.
 
 ## Ready for review -- overnight/2026-09-20
 - https://github.com/Steinbeard/jewishcommunities/compare/master...=1
+- **RESOLVED 2026-09-23:** merged via PR #4 (`Merge pull request #4 from Steinbeard/overnight/2026-09-20`,
+  now `master`@ae67b7e). All of overnight/2026-09-15, -17, -19, -20 (a linear chain, -20 being the
+  superset) is in master. `ck3-tiger` clean (fatal 0, error 0) immediately before the merge. All 7
+  `overnight/*` branches (09-09 through 09-20), now fully redundant, deleted both locally and on origin
+  in the same session.
 
 ## 2026-09-20 (interactive rescue session, overnight/2026-09-20) -- Codex regression reverted; founding path re-fixed, needs live test
 - **What was being worked on:** Daniel reported a Codex session had (a) left the Found a Jewish Community
@@ -175,6 +180,13 @@ things were left in.
   (untracked, Codex's copy of CLAUDE.md) -- left untracked, not committed; delete or keep? (3) Codex's other
   uncommitted work (Learn Torah scheme/event changes, same-track reference trigger, library effect edits)
   is committed separately and labelled as unreviewed so it can be dropped as one unit if unwanted.
+  **RESOLVED 2026-09-23:** Daniel decided all three -- (1) keep the founder-test bookmark shipped, (2)
+  keep `AGENTS.md`, (3) merge the unreviewed Codex commit in as-is (it's load-bearing for the founding-path
+  fix built on top of it). No code changes needed; all three were already in the merged tree as-is.
+- **STILL OPEN (not addressed by the 2026-09-23 merge session):** the follow-up cleanup (restore-quarter
+  call removed, tooltip internals hidden) and the concurrently-committed decision gates (7616f87) still
+  have not had their live re-check mentioned in the "RESOLVED 2026-09-20 evening" note above -- that
+  requires the live game, not just a merge/ck3-tiger pass.
 - **Also seen, not fixed:** `error.log` has ~990 errors per load from
   `kehillah_study_torah_has_accessible_library_trigger` (`kehillah_scripted_triggers.txt:1247`,
   `capital_province` unset scope) via `kehillah_study_torah:valid`. That is committed Learn-Torah work
