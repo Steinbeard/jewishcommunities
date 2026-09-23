@@ -1238,6 +1238,13 @@ unverified primitive (`create_adventurer_title` has never been called from this 
 CLAUDE.md's own guidance treats succession/government-law code as this codebase's highest-risk area,
 needing a live playtest before it's trusted at all, let alone handed to every AI-played rabbinic
 landless adventurer on the map at once. Also not built as of 09-19: a dynamic, location-based title name.
+**AI ENABLED 2026-09-23**, per Daniel's decision, once the 09-23 live-test pass met this
+paragraph's own stated bar. `ai_potential` mirrors `is_shown`'s core eligibility (adventurer
+government + rabbinic leader); `is_valid`'s gates (ten Jewish followers, no existing community at
+the location) apply to the AI exactly as to the player. `ck3-tiger` 0 fatal/0 error. Not yet
+live-verified for AI use specifically (single-run player verification only) — Daniel's own call
+was to ship it and watch `error.log` for anything a many-AI-characters-at-once scenario surfaces,
+rather than gate on another live pass first.
 
 **2026-09-20 — a Codex session claimed a live PASS on this path, renamed `c_kehillah_worms` to a duchy-tier
 `d_kehillah_worms`, and both claims were wrong; reverted and re-fixed the same day.** Daniel re-ran the
@@ -1351,10 +1358,11 @@ firing.
    established idiom for a possibly-not-yet-existing scope. `ck3-tiger` 0 fatal/0 error
    throughout (56 warnings post-fix, down from 57).
 
-**Still genuinely open, unaffected by this pass:** AI eligibility for founding is still
-`ai_potential = { always = no }`, and no founded-community *succession* has ever been
-live-tested (this pass ran past the founding, not past a leadership handoff). The fixture
-bookmark remains player-visible (Daniel's call, 2026-09-23 — see BLOCKERS.md).
+**Still genuinely open, unaffected by this pass:** no founded-community *succession* has ever
+been live-tested (this pass ran past the founding, not past a leadership handoff). The fixture
+bookmark remains player-visible (Daniel's call, 2026-09-23 — see BLOCKERS.md). AI eligibility,
+open as of this pass, was enabled separately the same day — see the "AI ENABLED 2026-09-23" note
+earlier in this section.
 
 **Partly resolved, and reopened by the first playtest:** open,
 community-wide leadership succession (any notable family can be
