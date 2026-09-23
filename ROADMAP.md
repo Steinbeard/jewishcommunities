@@ -1420,6 +1420,21 @@ cheap thing to have thrown away. The alternative is a mod whose central
 promise stays broken for an unbounded period.
 
 **Bigger, and overlaps a system already scheduled later — don't build twice:**
+- **Takkanot/Synod as a Bet Din Conference activity variant, 2026-09-23 (Daniel's idea) —
+  DEFERRED pending the "By God Alone" DLC (expected ~1 week out as of this writing).** Instead of
+  a separate regional-council mechanic, a special Bet Din activity type callable by the
+  highest-Standing community leader in a region, producing binding takkanot the same way the
+  existing Sh'um Bet Din does (v4 spec) but without needing a pre-authored `d_kehillah_shum`-style
+  duchy grouping. Open question, and the reason to wait: what defines "a region" for who can call
+  it and who it binds — Ashkenaz-wide is one option, but Daniel's own instinct is this might map
+  more naturally onto a **rite** once one exists (Ashkenazi rite, Sephardi rite, Bavli rite,
+  possibly player-formable), which is a cleaner, more mechanically real scoping unit than a
+  hardcoded region list. If the DLC restructures faiths/tenets/rites as expected, this could
+  resolve for free; building region-scoping logic now risks throwing it away regardless. Unlike
+  the Clerical Appointment/`clerical_region_titles` precedent elsewhere in this file (where
+  "build the workaround anyway" was the right call because the mod's central promise was broken
+  without it), nothing here is currently broken by waiting — Sh'um's existing per-title symmetric
+  takkanot mechanism still works fine in the meantime.
 - **Legends system integration** (martyrs, great sages memorialized for
   lasting bonuses) — pair with Phase 4/5, where persecution and memory are
   the actual theme.
