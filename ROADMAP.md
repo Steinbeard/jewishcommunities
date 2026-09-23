@@ -1326,20 +1326,35 @@ brand-new Worms 1066 start) found:
    and was masking bug 1's own symptom on the founded-community repro case with a second, louder
    one. Not yet re-verified live.
 
-**Remaining founder-path work:** the two error-log items the 12:49 re-test flagged are addressed at
-source but NOT yet re-checked live (the machine was in use when the re-check was due): the
-`kehillah_restore_quarter_effect` call is removed from the founding effect (it does not no-op on a
-fresh title — ~38 unset-`var:kq_*` errors — and there is nothing to restore on a new community), and
-`set_primary_title_to` plus the post-setup internals are `hidden_effect` so the confirmation tooltip
-neither renders "None of becomes your Primary Title" nor evaluates pillar/library setup against a
-title that does not exist yet (the ~2,500 tooltip-time `landed_title is not valid` lines). ck3-tiger
-0/0. Next live check: hover the decision (tooltip error count should be ~0), take it (no
-`kehillah_restore` errors, six breadcrumbs), run a month. **The new gates** (ten Jewish camp
-followers, no registered Kehillah already at the location) landed after the last live run — whether
-the founder-test fixture still satisfies them is unverified; if the decision shows disabled on the
-fixture, the fixture needs seeded Jewish followers, not the gate loosened. Also still open: AI
-eligibility is `ai_potential = { always = no }` (unchanged since 09-19), the fixture bookmark is
-player-visible (BLOCKERS.md), and no founded-community *succession* has been live-tested yet.
+**Remaining founder-path work: LIVE-TESTED PASS, 2026-09-23** — all six items below are now
+confirmed, via a subagent-driven pass on `bm_1066_kehillah_founder_test`. Full account:
+[docs/testing/2026-09-23-founder-path-cleanup-live-test-log.md](docs/testing/2026-09-23-founder-path-cleanup-live-test-log.md).
+The `kehillah_restore_quarter_effect` removal and the tooltip-hover fix both held up as designed
+(0/0 error growth on hover, 0 restore errors and all six breadcrumbs on taking the decision). The
+new gates (ten Jewish camp followers, no registered Kehillah already at the location) gate
+correctly in both directions. The two 2026-09-20-later fixes ("Ungating domicile buildings":
+external-slot unlock, community-registration namespace) both hold live too. A month-plus run (15
+Sep 1066 → 7 Oct 1067) produced no Game Over, with normal downstream community flavor events
+firing.
+
+**Two real bugs found and fixed in the course of this pass, both re-verified live:**
+1. `d_kehillah_founder_test`'s `capital` was `c_worms` — the founder always spawned standing on
+   top of Isaac's already-registered Kehillah of Worms, so the new empty-location gate
+   permanently (and correctly) refused him. Fixed: `capital = c_frankfurt`
+   (`common/landed_titles/kehillah_landed_titles.txt`).
+2. The 2026-09-20 tooltip fix was incomplete: `hidden_effect` alone suppresses only the block's
+   own tooltip *summary line*, not per-frame evaluation of everything nested inside it — opening
+   the decision's confirmation dialog (distinct from hovering the list row, which is all the
+   09-20 pass checked) produced 127k+ new `error.log` lines from one ~10-second view, worse than
+   the original bug. Fixed by gating the whole block on `exists = scope:kehillah_new_community_
+   title` (`common/scripted_effects/kehillah_found_community_effects.txt`), this mod's own
+   established idiom for a possibly-not-yet-existing scope. `ck3-tiger` 0 fatal/0 error
+   throughout (56 warnings post-fix, down from 57).
+
+**Still genuinely open, unaffected by this pass:** AI eligibility for founding is still
+`ai_potential = { always = no }`, and no founded-community *succession* has ever been
+live-tested (this pass ran past the founding, not past a leadership handoff). The fixture
+bookmark remains player-visible (Daniel's call, 2026-09-23 — see BLOCKERS.md).
 
 **Partly resolved, and reopened by the first playtest:** open,
 community-wide leadership succession (any notable family can be

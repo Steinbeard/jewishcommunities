@@ -183,10 +183,15 @@ things were left in.
   **RESOLVED 2026-09-23:** Daniel decided all three -- (1) keep the founder-test bookmark shipped, (2)
   keep `AGENTS.md`, (3) merge the unreviewed Codex commit in as-is (it's load-bearing for the founding-path
   fix built on top of it). No code changes needed; all three were already in the merged tree as-is.
-- **STILL OPEN (not addressed by the 2026-09-23 merge session):** the follow-up cleanup (restore-quarter
-  call removed, tooltip internals hidden) and the concurrently-committed decision gates (7616f87) still
-  have not had their live re-check mentioned in the "RESOLVED 2026-09-20 evening" note above -- that
-  requires the live game, not just a merge/ck3-tiger pass.
+- **RESOLVED 2026-09-23 (live-test session, two chained subagents):** the follow-up cleanup and the
+  decision gates (7616f87) got their live re-check. All 6 items PASS. Two real bugs found in the
+  process and fixed: the founder-test fixture's `capital` collided with the already-registered Worms
+  community (fixed: `c_frankfurt`), and the 2026-09-20 tooltip fix was incomplete -- `hidden_effect`
+  alone didn't stop per-frame re-evaluation of the confirmation dialog, which was logging 127k+ lines
+  per view until gated on `exists = scope:kehillah_new_community_title`. Full account:
+  `docs/testing/2026-09-23-founder-path-cleanup-live-test-log.md`. `ck3-tiger` 0/0 throughout. Still
+  genuinely open: AI eligibility for founding (`always = no`), and founded-community succession has
+  never been live-tested.
 - **Also seen, not fixed:** `error.log` has ~990 errors per load from
   `kehillah_study_torah_has_accessible_library_trigger` (`kehillah_scripted_triggers.txt:1247`,
   `capital_province` unset scope) via `kehillah_study_torah:valid`. That is committed Learn-Torah work

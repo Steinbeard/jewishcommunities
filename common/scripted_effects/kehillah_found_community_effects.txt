@@ -210,37 +210,74 @@ kehillah_found_community_effect = {
 	# title that does not exist yet) logged ~2,500 tooltip-time "landed_title
 	# is not valid" errors per hover (live, 2026-09-20). Government + law +
 	# destroyed title above stay visible; that is the whole visible contract.
-	hidden_effect = {
-		scope:kehillah_new_community_title = {
-			kehillah_init_pillars_effect = yes
-			change_variable = { name = kehillah_var_stability add = 50 }
-		}
+	#
+	# THE OUTER if = { limit = { exists = scope:kehillah_new_community_title } ... }
+	# WAS ADDED 2026-09-23, hidden_effect ALONE WAS NOT ENOUGH. Live-verified:
+	# hidden_effect suppresses this block's own summary LINE in the tooltip,
+	# but the confirmation-window preview (opened by clicking the decision,
+	# not just hovering it in the list -- a distinct UI step from the 2026-
+	# 09-20 hover check) still walks and evaluates every nested effect/
+	# trigger inside it to build that preview, against scope:kehillah_new_
+	# community_title, which during a dry-run preview was never actually
+	# created. That produced the exact same "Scoped object of type landed_
+	# title is not valid" cascade as the pre-hidden_effect bug, except far
+	# larger (127k+ error.log lines / 139k+ debug.log lines for one ~10s
+	# preview, because the confirmation window re-evaluates every render
+	# frame it stays open, not once) -- kehillah_seed_starting_library_
+	# effect's own random-work-selection triggers (kehillah_library_
+	# effects.txt) walk a whole catalog, multiplying the per-frame cost.
+	# The fix follows this mod's own established idiom for a scope that may
+	# not exist yet (e.g. kehillah_bet_din_scripted_effects.txt's repeated
+	# if = { limit = { exists = scope:kbd_res_judge2 } ... }): gate entry
+	# into the block on the scope actually existing. During a real decision
+	# execution scope:kehillah_new_community_title was save_scope_as'd right
+	# after create_adventurer_title above, so exists is true and this runs
+	# exactly as before; during a dry-run preview the scope was never
+	# created, exists is false, and the tooltip builder skips the whole
+	# branch without descending into it -- no more cascade. The else
+	# debug_log is this file's own established breadcrumb-warning pattern
+	# (see the "government is kehillah after create" / "domicile exists
+	# after create" checks above): if it ever fires during a REAL execution
+	# (check debug.log breadcrumbs, not tooltip-time error.log noise), the
+	# engine assumption this guard depends on has changed and pillars/
+	# registry/library/map-view were silently skipped for a real founding.
+	if = {
+		limit = { exists = scope:kehillah_new_community_title }
+		hidden_effect = {
+			scope:kehillah_new_community_title = {
+				kehillah_init_pillars_effect = yes
+				change_variable = { name = kehillah_var_stability add = 50 }
+			}
 
-		# Re-evaluate Rav vs. Parnas for the founder, same as any new leader
-		# (common/flavorization/kehillah_title_holders.txt).
-		kehillah_update_leader_flavor_effect = yes
+			# Re-evaluate Rav vs. Parnas for the founder, same as any new leader
+			# (common/flavorization/kehillah_title_holders.txt).
+			kehillah_update_leader_flavor_effect = yes
 
-		# REGISTRY, LIBRARY, MAP VIEW -- the three follow-up calls this mod's
-		# own comments already flagged as required here, written down before
-		# this feature existed to build against:
-		#   - kehillah_on_actions.txt's kehillah_on_game_start: "Whoever
-		#     builds that must remember to register here too, or the
-		#     registry silently goes stale the day it stops being true."
-		#   - kehillah_library_effects.txt's kehillah_seed_starting_library_
-		#     effect: "If Wave 5 ever adds founding a new Kehillah, that
-		#     founding effect needs to call kehillah_seed_starting_library_
-		#     effect too."
-		#   - kehillah_on_actions.txt again, the map view refresh: "if Wave 5
-		#     adds founding, its founding effect must call the refresh too."
-		# This is that day, for all three.
-		add_to_global_variable_list = {
-			name = kehillah_registered_communities
-			target = scope:kehillah_new_community_title
-		}
-		scope:kehillah_new_community_title = {
-			kehillah_seed_starting_library_effect = yes
-		}
-		kehillah_refresh_map_view_for_players_effect = yes
+			# REGISTRY, LIBRARY, MAP VIEW -- the three follow-up calls this mod's
+			# own comments already flagged as required here, written down before
+			# this feature existed to build against:
+			#   - kehillah_on_actions.txt's kehillah_on_game_start: "Whoever
+			#     builds that must remember to register here too, or the
+			#     registry silently goes stale the day it stops being true."
+			#   - kehillah_library_effects.txt's kehillah_seed_starting_library_
+			#     effect: "If Wave 5 ever adds founding a new Kehillah, that
+			#     founding effect needs to call kehillah_seed_starting_library_
+			#     effect too."
+			#   - kehillah_on_actions.txt again, the map view refresh: "if Wave 5
+			#     adds founding, its founding effect must call the refresh too."
+			# This is that day, for all three.
+			add_to_global_variable_list = {
+				name = kehillah_registered_communities
+				target = scope:kehillah_new_community_title
+			}
+			scope:kehillah_new_community_title = {
+				kehillah_seed_starting_library_effect = yes
+			}
+			kehillah_refresh_map_view_for_players_effect = yes
 
+		}
+	}
+	else = {
+		debug_log = "kehillah_found_community_effect: WARNING scope:kehillah_new_community_title does not exist at post-setup -- pillars/registry/library/map-view were skipped"
 	}
 }
