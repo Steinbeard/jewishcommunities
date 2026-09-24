@@ -1,0 +1,52 @@
+﻿# =====================================================================
+# Jewish Settlement Policy (V16, first infrastructure slice).
+#
+# Scope of the four policy-band triggers: the HOST REALM'S PRIMARY
+# TITLE. Policy is stored as an optional numeric title variable, not on
+# each community or on the host character, so it is shared by every
+# Kehillah beneath that realm and survives ordinary character succession.
+#
+# Values: 0 = Banned, 1 = Discouraged, 2 = Allowed, 3 = Encouraged.
+# Absence deliberately means Allowed. This gives every realm a policy
+# without mass-initialising title variables at game start; a later
+# policy-change event only needs to store exceptional rungs.
+#
+# No charter currently calls these triggers. V16's next live spike must
+# prove scope:liege.primary_title works inside a tributary obligation's
+# is_valid/default logic before this resolver is allowed to govern a
+# live contract row. The debug events 72-75 exist solely to make that
+# probe repeatable. See docs/spec/v16-jewish-settlement-policy-and-
+# charters.md §§3 and 8.
+# =====================================================================
+
+kehillah_jewish_settlement_policy_encouraged_trigger = {
+	has_variable = kehillah_jewish_settlement_policy
+	var:kehillah_jewish_settlement_policy >= 3
+}
+
+kehillah_jewish_settlement_policy_allowed_trigger = {
+	OR = {
+		NOT = { has_variable = kehillah_jewish_settlement_policy }
+		var:kehillah_jewish_settlement_policy >= 2
+	}
+}
+
+kehillah_jewish_settlement_policy_discouraged_trigger = {
+	has_variable = kehillah_jewish_settlement_policy
+	var:kehillah_jewish_settlement_policy = 1
+}
+
+kehillah_jewish_settlement_policy_banned_trigger = {
+	has_variable = kehillah_jewish_settlement_policy
+	var:kehillah_jewish_settlement_policy <= 0
+}
+
+# Scope: a community leader. This is the eligibility primitive eventual
+# founding/migration routes will use: resolve the same top-liege host as
+# V15's Charter, then ask whether that host realm allows settlement.
+kehillah_host_policy_allows_jewish_settlement_trigger = {
+	exists = domicile.domicile_location.county.holder.top_liege.primary_title
+	domicile.domicile_location.county.holder.top_liege.primary_title = {
+		kehillah_jewish_settlement_policy_allowed_trigger = yes
+	}
+}

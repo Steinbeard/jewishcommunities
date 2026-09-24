@@ -555,6 +555,17 @@ fixed, see `BLOCKERS.md` and the implementation doc's 2026-09-23 addition. Still
 tested: a newly founded community actually getting a charter, and the host-changes-by-conquest
 backstop path specifically.
 
+**2026-09-23 — Jewish Settlement Policy and Charter redesign started, at explicit request.**
+[V16](docs/spec/v16-jewish-settlement-policy-and-charters.md) defines a realm-wide, default-Allowed
+Jewish Settlement Policy (Encouraged / Allowed / Discouraged / Banned) as the entitlement envelope
+for a local Host Charter, rather than a duplicate pillar modifier. Actual charter terms, not the
+policy forecast, will feed ongoing pillar baselines; the same right values will be used for a
+pre-foundation Settlement Outlook. V15's moneylending/walled-quarter terms are legacy first drafts,
+pending a live contract-default/save-migration spike before replacement with Residence and
+Protection, Economic Privileges, and Communal Jurisdiction. Policy deterioration, warning,
+expulsion, migration, regional charter packages, and a destination-picker are intentionally not
+being silently built by this first slice; V16 §8 lists the required live tests first.
+
 ### Phase 5 — Crypto-Jewish Survival Loop
 The secret-practice/detection/forced-conversion system for communities that
 lose the Phase 4 expulsion/purge struggle. Depends on Phase 4 existing.
