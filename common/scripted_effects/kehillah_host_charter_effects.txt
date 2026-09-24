@@ -1,0 +1,63 @@
+﻿# =====================================================================
+# Host Charter maintenance. See docs/spec/v15-host-charter.md.
+#
+# kehillah_maintain_host_charter_effect is the single entry point for
+# establishing and keeping a Kehillah's charter with its host current.
+# Called from four places (common/on_action/kehillah_on_actions.txt's
+# kehillah_on_game_start, kehillah_on_title_gain and
+# kehillah_quarterly_pulse; common/scripted_effects/
+# kehillah_found_community_effects.txt's kehillah_found_community_effect)
+# so it must be idempotent and safe to call on a Kehillah that already
+# has a correct, current charter -- which is the common case, not the
+# exception, since it runs every quarter for every Kehillah in the game.
+#
+# TICK-DEFERRAL CONSTRAINT, load-bearing, do not "simplify" this into an
+# end_tributary immediately followed by start_tributary in the same
+# block. Both docs/spec/spike-host-charter-interaction.md section 3
+# (end_tributary) and section 10.2 (tributary_contract_set_obligation_
+# level) found, live, that a subject-contract write does not commit
+# within the effect block that issues it -- it needs at least one further
+# tick. The host-mismatch branch below therefore only ever calls
+# end_tributary and stops; the NEXT scheduled call to this effect (at
+# most one quarter later, via kehillah_quarterly_pulse, which exists
+# specifically as the backstop for a host changing hands by conquest --
+# spike section 5 point 5) sees is_tributary = no and starts the new
+# charter fresh. This trades a possible one-quarter lag after a host
+# changes for never risking the same-tick failure mode the spike found.
+# =====================================================================
+
+kehillah_maintain_host_charter_effect = {
+	if = {
+		limit = { NOT = { kehillah_host_charter_host_available_trigger = yes } }
+		debug_log = "kehillah_maintain_host_charter_effect: no host resolvable yet, skipping"
+	}
+	else = {
+		domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_host }
+
+		if = {
+			limit = {
+				is_tributary = yes
+				has_subject_contract_group = kehillah_host_charter
+				suzerain = scope:kehillah_host
+			}
+			# Already correct -- the common case on every quarterly pulse
+			# and every ordinary succession. Nothing to do.
+		}
+		else_if = {
+			limit = { is_tributary = yes }
+			# Wrong host (the county changed hands) or, defensively, some
+			# other contract group entirely. End now; see the tick-
+			# deferral note above for why this does not also start_tributary
+			# in the same block.
+			debug_log = "kehillah_maintain_host_charter_effect: host mismatch, ending stale charter"
+			end_tributary = yes
+		}
+		else = {
+			start_tributary = {
+				contract_group = kehillah_host_charter
+				suzerain = scope:kehillah_host
+			}
+			debug_log = "kehillah_maintain_host_charter_effect: charter established"
+		}
+	}
+}

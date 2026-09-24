@@ -196,3 +196,70 @@ things were left in.
   `kehillah_study_torah_has_accessible_library_trigger` (`kehillah_scripted_triggers.txt:1247`,
   `capital_province` unset scope) via `kehillah_study_torah:valid`. That is committed Learn-Torah work
   (4b7d3b9 or earlier), not part of this rescue. Worth a fix -- it is noisy enough to hide real errors.
+
+## Automated run status -- 2026-09-23_173801 (overnight/2026-09-23)
+- Cut off by a usage/session limit (detected in this run's log): False
+- Uncommitted changes in the working tree at run end: YES --
+```
+ M docs/spec/spike-host-charter-interaction.md ?? common/character_interactions/zzz_khost_probe_override.txt ?? common/subject_contracts/ ?? localization/english/zzz_khost_probe_l_english.yml
+```
+- Commits on this branch not yet on origin at this point: 0
+- Last few commits on this branch:
+```
+78f328c Spike: Host Charter interaction/UI feasibility for Phase 4
+caa3fcf Log Takkanot/Synod-as-Bet-Din idea to backlog, deferred pending By God Alone
+fc5946e Enable AI eligibility for Found a Jewish Community
+d79e8b8 Founder-path cleanup: live-test PASS, two real bugs found and fixed
+0ee3e11 Mark overnight/2026-09-20 merge and its open decisions resolved in BLOCKERS.md
+```
+
+Written mechanically by the scheduled script itself (not the agent) as a fallback -- present every
+run regardless of whether the session reached its own end-of-run BLOCKERS.md write. If "cut off"
+is true above and there's no matching entry from the agent itself nearby explaining what it was
+mid-way through, treat this run as unresolved until a human or a later run reviews what state
+things were left in.
+
+## Ready for review -- overnight/2026-09-23
+- https://github.com/Steinbeard/jewishcommunities/compare/master...=1
+
+## 2026-09-23 (interactive session, continued) -- Host Charter (v15) implemented and live-tested
+- Phase 4's Host Charter mechanism (docs/spec/v15-host-charter.md) built directly on the four-pass
+  spike above, at Daniel's explicit "implement now" request -- jumps the normal Phase 1-4 ordering on
+  purpose, recorded in ROADMAP.md's Phase 4 entry. Two live-test passes (via subagent): the first
+  found one real bug (a `this = root` comparison inside `kehillah_host_charter_host_available_trigger`
+  broke under `kehillah_on_game_start`'s `every_in_global_list { holder = {...} }` wrapper, since
+  `root` isn't reliably bound there -- 30 harmless-but-noisy error.log lines per game start, self-liege
+  guard silently inert at that one call site only); fixed (`this = PREV` instead) and a second pass
+  confirmed the fix closes it with no regression. Everything else -- automatic establishment with zero
+  console setup, correct UI render (window title, both charter terms, no tax row), exit-suppression
+  visibly enforced in the live menu, stability over 3.5 in-game months, idempotency -- passed clean on
+  the first pass and was not re-tested on the second (out of scope for a one-line regression check).
+- **Also seen, not fixed, unrelated:** during the second live pass, `error.log` showed a `set_employer`
+  duplicate-court warning inside `kehillah_seed_community_effect`/`kehillah_setup_troyes_start_effect`
+  (called from `kehillah_on_game_start`). Pre-existing, unrelated to Host Charter, not touched this
+  session -- flagged here so it isn't lost, same as the `kehillah_study_torah` noise noted above.
+
+## 2026-09-23 (interactive session, continued) -- Host Charter succession live-tested; a known bug resurfaced
+- Daniel asked directly whether the charter survives the host's death or the community leader's.
+  Subagent live-test, two separate fresh boots, console-kill of each character in turn: **both
+  directions carry the charter correctly.** Community-leader death: vanilla's own
+  `tributary_heir_succession = yes` carried it, the mod's own `on_title_gain` safety net correctly
+  no-op'd (domicile not yet rebuilt at that exact tick). Host/suzerain death: vanilla's
+  `suzerain_heir_succession = yes` re-pointed `suzerain` to the new Emperor with **zero lag**,
+  confirmed at the raw engine level before any mod code ran -- the mod's quarterly-pulse backstop is
+  not load-bearing for a clean heir succession, only for the separately-flagged "county changes hands
+  by conquest" case. No crash, no Game Over, either test. Full account added to
+  `docs/spec/v15-host-charter.md` section 5.
+- **Real bug resurfaced, not fixed, pre-existing (not caused by Host Charter):** the community-leader
+  test reproduced `change_government effect [ Trying to set illegal government ]` at
+  `kehillah_on_actions.txt:281` (`kehillah_on_title_gain`), on the appointment succession. This is the
+  *same* error first found and "fixed" 2026-09-06
+  (`docs/implementation/v1-kehillah-implementation.md`), except the field that 2026-09-06 fix targeted
+  (`can_get_government`'s tier check) was rewritten entirely 2026-09-20 for an unrelated reason, and
+  nobody re-verified this error against the new code until today -- it's still there, under a new
+  predicate. Confirmed harmless in outcome (government ends up correct moments later), but this is the
+  third time this exact error has surfaced across two different root-cause guesses. See the
+  implementation doc's dated addition for the full history. **Needs a dedicated live-debugging pass**
+  before a fourth fix attempt -- flagged rather than guessed at again in this session, since it wasn't
+  what was being tested and the track record of blind fixes here is poor.
+

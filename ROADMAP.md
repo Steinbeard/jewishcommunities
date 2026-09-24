@@ -507,6 +507,28 @@ threat). Deliberately deferred past the baseline — it's the largest,
 riskiest system in the original design doc and depends on the community
 mechanic already working.
 
+**Started 2026-09-23, out of phase order, by explicit request.** A four-pass research spike
+([docs/spec/spike-host-charter-interaction.md](docs/spec/spike-host-charter-interaction.md)) de-risked
+the Host Charter piece specifically — reusing CK3's own tributary subject-contract system and its
+engine-owned negotiation window rather than building a bespoke UI — and it was then implemented the
+same day ([docs/spec/v15-host-charter.md](docs/spec/v15-host-charter.md)): every Kehillah now has a
+real, permanent (by design — see that doc §1) contract relationship with its host, with two charter
+terms (moneylending rights, walled-quarter rights). **This is the charter mechanism only.** The
+expulsion threat, the Islamic-sphere loop (trade posts/Dhimma pact/purge threat), and any resistance
+mechanic are all still entirely unbuilt and unscoped — v15's §4 lists exactly what was deliberately
+left out and why. **Live-tested, two passes, same day** (v15 §5): automatic establishment, correct
+UI render, exit-suppression, stability, and idempotency all confirmed; one real bug found (a `root`
+scope mistake under `kehillah_on_game_start`'s iteration wrapper) and fixed, fix itself confirmed.
+**Succession now live-tested too, both directions (v15 §5)**: the community leader's own death
+(charter carried by vanilla's `tributary_heir_succession`) and the host's own death (charter
+re-pointed with zero lag by vanilla's `suzerain_heir_succession`, confirmed at the raw engine level
+before any mod code ran) both pass clean. One separate, pre-existing, non-fatal bug resurfaced during
+that test (`change_government` "illegal government" on appointment succession, third time this exact
+error has appeared across two different unverified diagnoses) — not caused by Host Charter, not
+fixed, see `BLOCKERS.md` and the implementation doc's 2026-09-23 addition. Still not independently
+tested: a newly founded community actually getting a charter, and the host-changes-by-conquest
+backstop path specifically.
+
 ### Phase 5 — Crypto-Jewish Survival Loop
 The secret-practice/detection/forced-conversion system for communities that
 lose the Phase 4 expulsion/purge struggle. Depends on Phase 4 existing.
