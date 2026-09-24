@@ -1,7 +1,7 @@
 # 2026-09-24 — V16 settlement-policy and fresh-charter wiring
 
-**Status: PARTIAL LIVE PASS; POLICY-DERIVED FRESH-CHARTER DEFAULTS BLOCKED BY
-AN ENGINE-SCOPE LIMIT.** This log covers the
+**Status: PARTIAL LIVE PASS; FRESH-CHARTER WRITING CONFIRMED, BUT THE
+CHARACTER-TO-PILLAR READER REMAINS BLOCKED.** This log covers the
 first live wiring pass described by
 [V16](../spec/v16-jewish-settlement-policy-and-charters.md). It supplements,
 rather than replaces, the isolated earlier prototype test.
@@ -117,3 +117,31 @@ the `kehillah` lines in `logs/error.log` so a new error is distinguishable.
 - Does `enable_character_maa` plus the temporary cap offset produce the
   intended one regiment, and what happens to it on right revocation or a real
   adventurer transition?
+
+## Deferred-writer result and reader spike (2026-09-24)
+
+- The post-creation writer is now the supported fresh-charter path. Its
+  `tributary_contract_set_obligation_level` parameters must use the row's
+  **numeric index**, not an obligation ID. The tree ordering is deliberately
+  asymmetric for some rows (for example, Christian Free to Build is index 0,
+  while Forbidden is index 2), so each policy now writes the explicit correct
+  index for its named term.
+- On a fresh, exclusive `bm_1066_kehillah_worms` run, the game reached the
+  paused map. After `tick_day`, all fourteen startup writers logged their
+  deferred completion. Console probes using CK3's universal
+  `subject_contract_has_flag` trigger confirmed Worms' implicit **Allowed**
+  charter has **Free to Build**, **Royal Appeal**, and **Unrestricted Study**.
+  No new `scope:liege` / failed-primary-title contract error appeared.
+- This is a live pass for concrete contract creation, not yet for gameplay
+  consequences. The existing pillar, construction, ledger, and debug readers
+  use `vassal_contract_has_flag`; it does not see flags belonging to a
+  tributary charter. A direct `subject_contract_has_flag` probe sees them, but
+  replacing every reader with that trigger caused a fresh CK3 load to remain
+  unresponsive on "Initializing Game" before the first day. The experiment was
+  reverted to preserve a bootable branch.
+- Next implementation spike: have the deferred writer copy the four resolved
+  contract states into an explicit per-community cache after the charter is
+  registered. Pillars/UI/founding permissions can safely read that cache during
+  bootstrap; a later, deliberately scheduled reconciliation path must keep it
+  aligned with voluntary charter edits. Do not claim charter-to-pillar effects
+  or UI contract rows as live-verified until that path is implemented.
