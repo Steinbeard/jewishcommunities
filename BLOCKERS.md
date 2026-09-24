@@ -263,3 +263,22 @@ things were left in.
   before a fourth fix attempt -- flagged rather than guessed at again in this session, since it wasn't
   what was being tested and the track record of blind fixes here is poor.
 
+
+## Automated run status -- 2026-09-24_020003 (overnight/2026-09-24)
+- Cut off by a usage/session limit (detected in this run's log): False
+- Uncommitted changes in the working tree at run end: none
+- Commits on this branch not yet on origin at this point: 0
+- Last few commits on this branch:
+```
+e54be37 Merge pull request #5 from Steinbeard/overnight/2026-09-23
+8de0c28 Live-test Host Charter succession: both directions carry correctly
+0eed658 Implement the Host Charter mechanism (Phase 4, v15), live-tested
+7ce2a71 Host Charter spike: correct an over-broad loc-override finding, twice, same day
+0c7d16c Host Charter spike, third pass: close out the character_interaction/loc-override questions
+```
+
+Written mechanically by the scheduled script itself (not the agent) as a fallback -- present every
+run regardless of whether the session reached its own end-of-run BLOCKERS.md write. If "cut off"
+is true above and there's no matching entry from the agent itself nearby explaining what it was
+mid-way through, treat this run as unresolved until a human or a later run reviews what state
+things were left in.
