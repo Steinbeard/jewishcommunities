@@ -461,3 +461,18 @@ unanswered past the 30-day phase ceiling, two cases can overlap and share the si
 per-case tally, so one verdict tier can be computed from the other case's checks. The docket still
 ends, nothing loops, and every drawn case is still heard and scored. The reasoning for preferring
 that over silently skipping cases is recorded in `kehillah_bet_din_advance_docket_effect`'s header.
+
+**A third bug, found and fixed 2026-09-24 from Daniel's own play, not either automated live-test
+pass**: every case's own **resolution** event (`kehillah_bet_din.0003`/`0013`/`0033`/`0043`/`0053`)
+was missing the `right_portrait`/`lower_right_portrait` blocks its own case's host-ruling and
+co-judge events show — the litigants appeared during the ruling stages, then silently vanished from
+the portrait row for the verdict itself, even though the litigant `global_var`s are still very much
+in scope there (used the same moment by `kehillah_bet_din_record_case_result_effect`'s `TARGET =`).
+Fixed by adding the same portrait blocks, reusing each case's own established animations from its
+`X1` event, to all five affected resolution events. `0021`/`0022`/`0023` (the one case type with no
+litigants at all, by design) were correctly left untouched — confirmed by checking that they never
+had litigant portraits at any of their three stages either. `ck3-tiger` clean (0 fatal, 0 error).
+**Not yet re-confirmed live** — the fix reuses portrait syntax already proven working in the sibling
+events of the same cases (live-tested repeatedly, including in this same session's docket-loop pass
+above), but nobody has looked at the actual resolution popup since the fix landed. Worth one quick
+screenshot check next time a Bet Din docket is played, not a full re-test.
