@@ -143,6 +143,11 @@ The UI must identify whether a number is *projected* or *actual*. It must
 never display an Encouraged policy as though it were a right a community
 already holds.
 
+**Implemented in the first slice:** the existing ledger row tooltip now shows
+the cached host-realm name and policy badge. It is intentionally read-only and
+states the forecast/actual distinction in-place; a visual badge column and
+actual-charter/exemption summary wait on the contract-envelope spike.
+
 ## 7. Policy deterioration and warning
 
 `Banned` is a state of political danger, not a destruction effect. A later
