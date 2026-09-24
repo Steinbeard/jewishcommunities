@@ -37,7 +37,15 @@ kehillah_maintain_host_charter_effect = {
 		if = {
 			limit = {
 				is_tributary = yes
-				has_subject_contract_group = kehillah_host_charter
+				# A current host may legitimately use the legacy V15 group or
+				# either V16 regional fresh-charter group. Treat all three as
+				# stable: otherwise the quarterly maintenance pass would end a
+				# perfectly valid regional charter every time it ran.
+				OR = {
+					has_subject_contract_group = kehillah_host_charter
+					has_subject_contract_group = kehillah_christian_host_charter_prototype
+					has_subject_contract_group = kehillah_muslim_host_charter_prototype
+				}
 				suzerain = scope:kehillah_host
 			}
 			# Already correct -- the common case on every quarterly pulse
@@ -53,11 +61,51 @@ kehillah_maintain_host_charter_effect = {
 			end_tributary = yes
 		}
 		else = {
-			start_tributary = {
-				contract_group = kehillah_host_charter
-				suzerain = scope:kehillah_host
-			}
-			debug_log = "kehillah_maintain_host_charter_effect: charter established"
+			kehillah_start_fresh_host_charter_effect = yes
 		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# Scope: a Kehillah leader, with scope:kehillah_host saved by the
+# maintenance effect above. This is called only when no existing
+# tributary contract exists. It is therefore the one safe location for
+# regional selection and policy-derived defaults: it does not touch a
+# saved contract, and every additional community resolves the SAME
+# primary-title policy from its own host at this moment of creation.
+#
+# Do not fold this back into the existing-charter branch. A community
+# moving across realms follows the documented end -> later start path;
+# on that later start it rightly receives the new host's fresh offer.
+# ---------------------------------------------------------------------
+kehillah_start_fresh_host_charter_effect = {
+	if = {
+		limit = {
+			scope:kehillah_host = { religion = religion:christianity_religion }
+		}
+		start_tributary = {
+			contract_group = kehillah_christian_host_charter_prototype
+			suzerain = scope:kehillah_host
+		}
+		debug_log = "kehillah_start_fresh_host_charter_effect: Christian policy charter established"
+	}
+	else_if = {
+		limit = {
+			scope:kehillah_host = { religion = religion:islam_religion }
+		}
+		start_tributary = {
+			contract_group = kehillah_muslim_host_charter_prototype
+			suzerain = scope:kehillah_host
+		}
+		debug_log = "kehillah_start_fresh_host_charter_effect: Muslim policy charter established"
+	}
+	else = {
+		# Universal policy still gates founding in every realm. Only the
+		# regional contract vocabulary awaits further historical work.
+		start_tributary = {
+			contract_group = kehillah_host_charter
+			suzerain = scope:kehillah_host
+		}
+		debug_log = "kehillah_start_fresh_host_charter_effect: legacy fallback charter established"
 	}
 }

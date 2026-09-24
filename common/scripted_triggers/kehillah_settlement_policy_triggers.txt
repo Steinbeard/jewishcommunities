@@ -11,12 +11,10 @@
 # without mass-initialising title variables at game start; a later
 # policy-change event only needs to store exceptional rungs.
 #
-# No charter currently calls these triggers. V16's next live spike must
-# prove scope:liege.primary_title works inside a tributary obligation's
-# is_valid/default logic before this resolver is allowed to govern a
-# live contract row. The debug events 72-75 exist solely to make that
-# probe repeatable. See docs/spec/v16-jewish-settlement-policy-and-
-# charters.md §§3 and 8.
+# Fresh Christian/Muslim charters now call these in obligation-level
+# is_valid/default logic. Existing charters are never rewritten. The
+# debug events 72-75 remain the repeatable way to inspect policy bands.
+# See docs/spec/v16-jewish-settlement-policy-and-charters.md §§3 and 8.
 # =====================================================================
 
 kehillah_jewish_settlement_policy_encouraged_trigger = {
@@ -48,5 +46,78 @@ kehillah_host_policy_allows_jewish_settlement_trigger = {
 	exists = domicile.domicile_location.county.holder.top_liege.primary_title
 	domicile.domicile_location.county.holder.top_liege.primary_title = {
 		kehillah_jewish_settlement_policy_allowed_trigger = yes
+	}
+}
+
+# Scope: a rabbinic adventurer before founding. It intentionally mirrors
+# the community-leader resolver above but starts at the camp's current
+# location, because the title and domicile do not exist yet.
+kehillah_found_location_policy_allows_jewish_settlement_trigger = {
+	exists = location.county.holder.top_liege.primary_title
+	location.county.holder.top_liege.primary_title = {
+		kehillah_jewish_settlement_policy_allowed_trigger = yes
+	}
+}
+
+# Scope: an established community leader. This is an informational
+# grandfathering check, not an enforcement trigger: a policy change does
+# not revoke an existing charter. It tells the ledger and any future
+# policy-change event that the host's new public stance is now narrower
+# than one or more rights actually held by this community, so a charter
+# review/renegotiation is politically live.
+kehillah_current_charter_exceeds_host_policy_trigger = {
+	OR = {
+		# Construction: free needs Allowed; permission needs more than Banned.
+		AND = {
+			OR = {
+				vassal_contract_has_flag = kehillah_christian_building_free
+				vassal_contract_has_flag = kehillah_muslim_building_free
+			}
+			domicile.domicile_location.county.holder.top_liege.primary_title = {
+				NOT = { kehillah_jewish_settlement_policy_allowed_trigger = yes }
+			}
+		}
+		AND = {
+			OR = {
+				vassal_contract_has_flag = kehillah_christian_building_permission
+				vassal_contract_has_flag = kehillah_muslim_building_authorized
+			}
+			domicile.domicile_location.county.holder.top_liege.primary_title = {
+				kehillah_jewish_settlement_policy_banned_trigger = yes
+			}
+		}
+		# An armed communal watch and high communal autonomy need Encouraged.
+		AND = {
+			OR = {
+				vassal_contract_has_flag = kehillah_christian_security_licensed_watch
+				vassal_contract_has_flag = kehillah_christian_security_recognized_watch
+				vassal_contract_has_flag = kehillah_muslim_security_licensed_watch
+				vassal_contract_has_flag = kehillah_muslim_security_host_protection
+				vassal_contract_has_flag = kehillah_christian_jurisdiction_bet_din_discipline
+				vassal_contract_has_flag = kehillah_muslim_jurisdiction_bet_din_discipline
+				vassal_contract_has_flag = kehillah_muslim_market_chartered
+			}
+			domicile.domicile_location.county.holder.top_liege.primary_title = {
+				NOT = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+			}
+		}
+		# Ordinary intermediary rights need at least Allowed.
+		AND = {
+			OR = {
+				vassal_contract_has_flag = kehillah_christian_jurisdiction_royal_appeal
+				vassal_contract_has_flag = kehillah_muslim_jurisdiction_communal_arbitration
+				vassal_contract_has_flag = kehillah_christian_texts_unrestricted
+				vassal_contract_has_flag = kehillah_muslim_market_regional
+			}
+			domicile.domicile_location.county.holder.top_liege.primary_title = {
+				NOT = { kehillah_jewish_settlement_policy_allowed_trigger = yes }
+			}
+		}
+		AND = {
+			vassal_contract_has_flag = kehillah_christian_texts_licensed
+			domicile.domicile_location.county.holder.top_liege.primary_title = {
+				kehillah_jewish_settlement_policy_banned_trigger = yes
+			}
+		}
 	}
 }

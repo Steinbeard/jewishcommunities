@@ -1,7 +1,8 @@
 # V16 Spec: Jewish Settlement Policy, Host Charters, and Settlement Conditions
 
-**Status: IN PROGRESS — design approved in principle and the implementation/research
-slice began 2026-09-23.** This document supersedes the *v1 charter-term model*
+**Status: IN PROGRESS — the policy-to-fresh-charter and actual-charter-to-pillar
+implementation slice is source-validated as of 2026-09-24; its first live
+contract/default test is still required.** This document supersedes the *v1 charter-term model*
 in [v15-host-charter.md](v15-host-charter.md) §2 only. V15's use of a real
 tributary subject contract, host-resolution mechanism, inheritance behaviour,
 and no-unilateral-exit rule all remain the foundation. It also adds the
@@ -77,10 +78,11 @@ top-level title at game start and makes the feature compatible with newly
 created realms. A later policy-change system stores only deviations from
 Allowed on the host's realm title.
 
-**First implementation boundary.** V16 first adds the resolver and uses it for
-forecasts/contract validity. It does not yet choose policy changes for AI
-rulers. That requires a separate, transparent political-event design; it must
-not be smuggled in as a quarterly random modifier.
+**First implementation boundary.** V16 now uses the resolver for foundation
+validity, fresh-charter default selection, and contract validity. It does not
+yet choose policy changes for AI rulers. That requires a separate, transparent
+political-event design; it must not be smuggled in as a quarterly random
+modifier.
 
 ## 4. Charter dimensions
 
@@ -100,8 +102,9 @@ Christian package should instead have these dimensions:
 The walled-quarter concept becomes an optional building/permission consequence
 of a strong protection right rather than a universal legal dimension.
 
-**Regional row prototypes, 2026-09-24.** Two unattached, loadable contract
-groups now prototype this divergence without touching the shipped V15 group:
+**Regional fresh-charter packages, 2026-09-24.** Two loadable contract groups
+now express this divergence. They are selected only when a *new* Christian or
+Muslim host charter is made; an existing V15 charter remains untouched:
 
 - **Christian:** Quarter Construction, Community Security, Jurisdiction over
   Jewish Subjects, and Talmudic Study. The last is a three-rung censorship
@@ -128,13 +131,32 @@ so the prototype offsets that only while the armed-watch right is active. A
 fresh-game test must verify both recruitment and persistence across a real
 Kehillah-to-adventurer transition before this becomes shipped gameplay.
 
-These prototypes are **not live gameplay** yet: policy-envelope,
-default-selection, and saved-charter migration tests still gate the switch from
-V15. Their purpose is to make the actual negotiation rows reviewable and
-live-testable before that irreversible step. The console-only V16 harness
-(`kehillah_debug.76` then, after a tick, `.77` for a Christian host or `.78`
-for a Muslim host) is the safe way to attach one in a fresh debug save; `.79`
-then `.80`, again with a tick between them, restores the V15 charter.
+The packages are live for fresh Christian/Muslim charters, but their initial
+default selection and contract-window presentation remain a live-test gate.
+V15 remains the fallback for every other host tradition and for all existing
+V15 save contracts. The console-only V16 harness (`kehillah_debug.76` then,
+after a tick, `.77` for a Christian host or `.78` for a Muslim host) remains
+useful for an isolated fresh-save probe; `.79` then `.80`, again with a tick
+between them, restores the V15 charter.
+
+### 4.1 Policy envelope and ordinary defaults
+
+`defaults_to_highest_valid_level = yes` makes the most generous permitted
+rung the ordinary offer. Lower valid rungs deliberately remain legal, so a
+specific liege or vassal can negotiate a less generous local charter without
+changing the realm's shared policy. The policy must never silently rewrite an
+already accepted charter.
+
+| Policy | Christian ordinary offer | Muslim ordinary offer |
+|---|---|---|
+| Encouraged | Free construction; Recognized Watch; Bet Din; Unrestricted Study | Free construction; Host Protection; Bet Din; Chartered Trade |
+| Allowed | Free construction; No Communal Watch; Royal Appeal; Unrestricted Study | Free construction; Unarmed Community; Communal Arbitration; Regional Trade |
+| Discouraged | Permission Required; No Watch; Local Court; Licensed Study | Authorisation Required; Unarmed Community; Host Court; Local Market |
+| Banned | New construction forbidden; no watch; local/host court; Talmud proscribed | New construction forbidden; unarmed; host court; local market |
+
+The Banned row is an envelope edge case for an already-existing or debug
+charter, rather than a way to create a new community: the founding decision is
+disabled under Banned.
 
 V16 does **not** remove the two V15 terms until the live-save/contract-default
 spike in §8 passes. Removing a contract entry from an active contract group
@@ -149,8 +171,8 @@ rung. Component ownership is:
 
 | Component | Forecast source | After founding | Pillars |
 |---|---|---|---|
-| Legal security | Policy's projected residence right | Actual residence/protection right | Stability |
-| Economic access | Policy's projected economic right | Actual economic right | Prosperity |
+| Legal security | Policy's projected security right | Actual security right | Stability |
+| Economic access | Policy's projected construction/market right | Actual construction/market right | Prosperity |
 | Jurisdiction | Policy's projected jurisdiction | Actual jurisdiction right | Stability, Greatness |
 | Urban opportunity | County development/capacity | Same county condition | Prosperity, modest Stability |
 | Diaspora network | Nearby reachable Kehillot | Same live network | Stability, Greatness |
@@ -159,6 +181,28 @@ The forecast is a report, not a fourth score. Its top-line rating is the
 weighted summary of these components. For ongoing communities, contributors
 are capped so charter/location conditions matter greatly to a young Kehillah
 but cannot outweigh buildings, officers, events, or player choice.
+
+**Implemented accounting.** The pillar baseline reads only the flags on the
+actual fresh charter: construction and Muslim market access contribute to
+Prosperity; security, jurisdiction, and network contribute to Stability; and
+jurisdiction and Christian text freedom contribute to Greatness. Policy itself
+adds no pillar value. The intentionally visible first-pass values are:
+
+| Actual term | Pillar contribution |
+|---|---|
+| Free construction / permission / forbidden | +15 / +5 / -10 Prosperity |
+| Recognized or host protection / licensed watch | +25 / +10 Stability |
+| Bet Din / intermediary jurisdiction | +22 Stability +20 Greatness / +12 or +10 Stability +4 Greatness |
+| Unrestricted / licensed / proscribed study | +25 / +5 / -30 Greatness |
+| Chartered / regional / local market access | +40 / +20 / +5 Prosperity |
+
+The network cache is recomputed when the initial registry is built and when a
+community is founded, never in the quarterly pillar pulse. It counts other
+registered communities within vanilla's `squared_distance_medium` band:
+zero is -5 Stability, one or two is +15, three or four is +7, and five or more
+is 0. This is deliberately a Goldilocks mutual-aid result, not a linear
+"more neighbours is always better" bonus. The distance scale and performance
+with a large registry remain live-test questions.
 
 ## 6. Player information architecture
 
@@ -180,9 +224,11 @@ never display an Encouraged policy as though it were a right a community
 already holds.
 
 **Implemented in the first slice:** the existing ledger row tooltip now shows
-the cached host-realm name and policy badge. It is intentionally read-only and
-states the forecast/actual distinction in-place; a visual badge column and
-actual-charter/exemption summary wait on the contract-envelope spike.
+the cached host-realm name, policy badge, and a dynamic charter-status line.
+It reports when a grandfathered charter contains rights that exceed a newly
+restrictive policy, without revoking those rights. The pillar tooltip names
+each actual charter and network contribution. A visual badge column and an
+actual-charter/exemption summary wait on a dedicated contract-UI pass.
 
 ## 7. Policy deterioration and warning
 
@@ -222,10 +268,12 @@ entry in `docs/testing/` before it becomes load-bearing.
    deferred contract write to settle, then verify exactly one matching named
    contributor changes in the bespoke pillar tooltip and the quarterly
    baseline. The policy forecast must not add a second copy.
-6. **Development and distance primitives.** Confirm the script scope/value for
-   county development and select a bounded, performant network-distance
-   primitive. Do not put an all-world nearest-community scan in the quarterly
-   baseline until its cost is measured with many communities.
+6. **Development and distance primitives.** County development is available
+   at the founder's current `location.county.development_level`, and is now a
+   modest AI founding weight. Confirm the band implied by
+   `squared_distance_medium` and measure the one-shot registry scan with many
+   communities. Do not put an all-world nearest-community scan in the
+   quarterly baseline.
 7. **Warning visibility.** Before any AI policy-change event ships, live-test
    that a proposed policy and countdown are visible in the pillar/ledger UI to
    every affected player community.
@@ -239,15 +287,15 @@ entry in `docs/testing/` before it becomes load-bearing.
 
 ## 9. First build slice and non-goals
 
-The first build slice is deliberately small:
+The first build slice is deliberately bounded:
 
 1. policy resolver with implicit Allowed;
-2. actual-charter contributor infrastructure in the existing pillar
-   breakdowns;
+2. policy-selected fresh Christian/Muslim charter groups and actual-charter
+   contributor infrastructure in the existing pillar breakdowns;
 3. debug-only policy setters/reporting for repeatable contract probes;
-4. spikes 1–4 above;
-5. then, only after the evidence, replace V15's legacy terms with the
-   three-dimension Christian package and wire the policy envelope.
+4. cached Goldilocks network conditions and the first foundation weight;
+5. live spikes 1–4 and 8 above before any V15 migration or player-facing MaA
+   promise.
 
 This slice does not implement policy-changing AI, bans, expulsions, migration,
 the final founding picker, Indian-specific terms, or an unbounded geographic

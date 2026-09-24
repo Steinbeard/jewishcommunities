@@ -1,0 +1,53 @@
+﻿# =====================================================================
+# V16 Settlement Conditions: nearby-community Goldilocks cache.
+#
+# Scope: a community title in kehillah_registered_communities. This
+# deliberately runs only when the registry changes (game start or a new
+# foundation), never on the quarterly pillar pulse. Communities do not
+# move in the currently shipped lifecycle, so recomputing every quarter
+# would pay a global scan for unchanged geography. Migration must call
+# kehillah_refresh_all_settlement_networks_effect when it is built.
+#
+# The cache counts OTHER communities within squared_distance_medium
+# (250 map pixels; roughly one Ireland top-to-bottom, vanilla's own
+# documented scale). One or two neighbours is the strongest mutual-aid
+# band; a dense local cluster gives a smaller benefit; isolation carries
+# a small Stability cost. The count lives on the community title, never
+# the host realm, because it is a local settlement condition.
+# =====================================================================
+
+kehillah_refresh_settlement_network_effect = {
+	set_variable = { name = kehillah_nearby_community_count value = 0 }
+	save_scope_as = kehillah_network_subject
+
+	if = {
+		limit = { exists = holder.domicile.domicile_location }
+		holder.domicile.domicile_location = { save_scope_as = kehillah_network_location }
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				NOT = { this = scope:kehillah_network_subject }
+				exists = holder.domicile.domicile_location
+				holder.domicile.domicile_location = {
+					squared_distance = {
+						target = scope:kehillah_network_location
+						value <= squared_distance_medium
+					}
+				}
+			}
+			scope:kehillah_network_subject = {
+				change_variable = { name = kehillah_nearby_community_count add = 1 }
+			}
+		}
+	}
+}
+
+# Scope: any effect context. Recompute the cache for the complete
+# registry after it has gained a new community (or been freshly built at
+# game start), so existing neighbours gain their mutual-aid benefit too.
+kehillah_refresh_all_settlement_networks_effect = {
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		kehillah_refresh_settlement_network_effect = yes
+	}
+}
