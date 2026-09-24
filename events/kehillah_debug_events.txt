@@ -405,8 +405,10 @@ kehillah_debug.70 = {
 
 		if = { limit = { is_tributary = yes } debug_log = "kehillah_debug.70: is_tributary YES" }
 		else = { debug_log = "kehillah_debug.70: is_tributary NO" }
-		if = { limit = { has_subject_contract_group = kehillah_host_charter } debug_log = "kehillah_debug.70: contract group is kehillah_host_charter" }
-		else = { debug_log = "kehillah_debug.70: contract group is NOT kehillah_host_charter" }
+		if = { limit = { has_subject_contract_group = kehillah_host_charter } debug_log = "kehillah_debug.70: contract group is legacy kehillah_host_charter" }
+		else_if = { limit = { has_subject_contract_group = kehillah_christian_host_charter_prototype } debug_log = "kehillah_debug.70: contract group is Christian Host Charter" }
+		else_if = { limit = { has_subject_contract_group = kehillah_muslim_host_charter_prototype } debug_log = "kehillah_debug.70: contract group is Muslim Host Charter" }
+		else = { debug_log = "kehillah_debug.70: contract group is not a recognized Kehillah charter" }
 		if = { limit = { is_independent_ruler = yes } debug_log = "kehillah_debug.70: is_independent_ruler YES" }
 		else = { debug_log = "kehillah_debug.70: is_independent_ruler NO" }
 		if = {
@@ -493,5 +495,50 @@ kehillah_debug.75 = {
 			set_variable = { name = kehillah_jewish_settlement_policy value = 0 }
 		}
 		debug_log = "kehillah_debug.75: host realm policy set to Banned"
+	}
+}
+
+# V16 fresh-charter and settlement-conditions report. This is deliberately
+# a branch report rather than a literal variable dump: it tests the same
+# trigger paths that the pillar tooltip and ledger use, and makes a
+# clean/debug.log assertion possible without opening a UI panel.
+kehillah_debug.81 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_refresh_all_settlement_networks_effect = yes
+		debug_log = "kehillah_debug.81: refreshed nearby-community cache"
+
+		if = { limit = { has_subject_contract_group = kehillah_christian_host_charter_prototype } debug_log = "kehillah_debug.81: active group Christian Host Charter" }
+		else_if = { limit = { has_subject_contract_group = kehillah_muslim_host_charter_prototype } debug_log = "kehillah_debug.81: active group Muslim Host Charter" }
+		else_if = { limit = { has_subject_contract_group = kehillah_host_charter } debug_log = "kehillah_debug.81: active group legacy Host Charter" }
+		else = { debug_log = "kehillah_debug.81: no recognized Host Charter active" }
+
+		if = { limit = { domicile.domicile_location.county.holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } } debug_log = "kehillah_debug.81: host policy Encouraged" }
+		else_if = { limit = { domicile.domicile_location.county.holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } } debug_log = "kehillah_debug.81: host policy Discouraged" }
+		else_if = { limit = { domicile.domicile_location.county.holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } } debug_log = "kehillah_debug.81: host policy Banned" }
+		else = { debug_log = "kehillah_debug.81: host policy Allowed" }
+
+		if = { limit = { vassal_contract_has_flag = kehillah_christian_building_free } debug_log = "kehillah_debug.81: Christian construction = Free" }
+		else_if = { limit = { vassal_contract_has_flag = kehillah_christian_building_permission } debug_log = "kehillah_debug.81: Christian construction = Permission" }
+		else_if = { limit = { vassal_contract_has_flag = kehillah_christian_building_forbidden } debug_log = "kehillah_debug.81: Christian construction = Forbidden" }
+		if = { limit = { vassal_contract_has_flag = kehillah_christian_security_recognized_watch } debug_log = "kehillah_debug.81: Christian security = Recognized Watch" }
+		else_if = { limit = { vassal_contract_has_flag = kehillah_christian_security_licensed_watch } debug_log = "kehillah_debug.81: Christian security = Licensed Watch" }
+		else_if = { limit = { has_subject_contract_group = kehillah_christian_host_charter_prototype } debug_log = "kehillah_debug.81: Christian security = No Watch" }
+		if = { limit = { vassal_contract_has_flag = kehillah_christian_jurisdiction_bet_din_discipline } debug_log = "kehillah_debug.81: Christian jurisdiction = Bet Din" }
+		else_if = { limit = { vassal_contract_has_flag = kehillah_christian_jurisdiction_royal_appeal } debug_log = "kehillah_debug.81: Christian jurisdiction = Royal Appeal" }
+		else_if = { limit = { has_subject_contract_group = kehillah_christian_host_charter_prototype } debug_log = "kehillah_debug.81: Christian jurisdiction = Local Court" }
+		if = { limit = { vassal_contract_has_flag = kehillah_christian_texts_unrestricted } debug_log = "kehillah_debug.81: Christian study = Unrestricted" }
+		else_if = { limit = { vassal_contract_has_flag = kehillah_christian_texts_licensed } debug_log = "kehillah_debug.81: Christian study = Licensed" }
+		else_if = { limit = { has_subject_contract_group = kehillah_christian_host_charter_prototype } debug_log = "kehillah_debug.81: Christian study = Proscribed" }
+
+		if = { limit = { primary_title = { var:kehillah_nearby_community_count >= 5 } } debug_log = "kehillah_debug.81: network band Dense (5+)" }
+		else_if = { limit = { primary_title = { var:kehillah_nearby_community_count >= 3 } } debug_log = "kehillah_debug.81: network band Crowded (3-4)" }
+		else_if = { limit = { primary_title = { var:kehillah_nearby_community_count >= 1 } } debug_log = "kehillah_debug.81: network band Goldilocks (1-2)" }
+		else = { debug_log = "kehillah_debug.81: network band Isolated (0)" }
+		if = { limit = { domicile.domicile_location.county = { development_level >= 25 } } debug_log = "kehillah_debug.81: local development Major City (25+)" }
+		else_if = { limit = { domicile.domicile_location.county = { development_level >= 15 } } debug_log = "kehillah_debug.81: local development Established Town (15+)" }
+		else_if = { limit = { domicile.domicile_location.county = { development_level >= 5 } } debug_log = "kehillah_debug.81: local development Market Settlement (5+)" }
+		else = { debug_log = "kehillah_debug.81: local development Sparse Settlement (<5)" }
 	}
 }

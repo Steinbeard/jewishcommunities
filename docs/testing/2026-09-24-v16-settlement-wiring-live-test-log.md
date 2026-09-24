@@ -54,6 +54,8 @@ the `kehillah` lines in `logs/error.log` so a new error is distinguishable.
    Host Charter** and default to **Free to Build**, **No Communal Watch**,
    **Royal Appeal**, and **Unrestricted Study**. The contract window must stay
    usable and the game must remain running.
+   `event kehillah_debug.81` should independently log the active charter,
+   policy band, four Christian rights, network band, and development band.
 2. Allow a pillar refresh. The own-community breakdown should show separate
    actual-charter lines: construction under Prosperity; jurisdiction and
    settlement network under Stability; jurisdiction and text study under
