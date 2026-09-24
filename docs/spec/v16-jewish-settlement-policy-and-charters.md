@@ -141,11 +141,15 @@ between them, restores the V15 charter.
 
 ### 4.1 Policy envelope and ordinary defaults
 
-`defaults_to_highest_valid_level = yes` makes the most generous permitted
-rung the ordinary offer. Lower valid rungs deliberately remain legal, so a
-specific liege or vassal can negotiate a less generous local charter without
-changing the realm's shared policy. The policy must never silently rewrite an
-already accepted charter.
+`defaults_to_highest_valid_level = yes` is intended to make the most generous
+permitted rung the ordinary offer. CK3 requires the `default = yes` fallback
+itself to be unconditional, so every row uses its lowest rung for that parser
+requirement and relies on the highest-valid selector for a fresh charter. The
+selector's live `start_tributary` behavior is still explicitly a spike, not an
+assumption. Lower valid rungs deliberately remain legal, so a specific liege
+or vassal can negotiate a less generous local charter without changing the
+realm's shared policy. The policy must never silently rewrite an already
+accepted charter.
 
 | Policy | Christian ordinary offer | Muslim ordinary offer |
 |---|---|---|

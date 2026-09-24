@@ -1,6 +1,7 @@
 # 2026-09-24 — V16 settlement-policy and fresh-charter wiring
 
-**Status: SOURCE VALIDATED; LIVE CONTRACT TEST PENDING.** This log covers the
+**Status: SOURCE VALIDATED; FIRST LIVE LOAD FOUND THREE PARSER ERRORS, FIXED
+PENDING A FULL RELAUNCH.** This log covers the
 first live wiring pass described by
 [V16](../spec/v16-jewish-settlement-policy-and-charters.md). It supplements,
 rather than replaces, the isolated earlier prototype test.
@@ -19,6 +20,29 @@ rather than replaces, the isolated earlier prototype test.
 - A bounded `squared_distance_medium` scan writes each community's nearby-peer
   count at registry creation and foundation time. The quarterly pulse only
   consumes its cached value.
+
+## First live-load correction (2026-09-24)
+
+The first fresh load was stopped before UI inspection by three V16 errors.
+They are useful engine findings, not evidence that the feature worked:
+
+1. CK3 rejects an obligation level that has both `default = yes` and
+   `is_valid`. The conditional construction/study defaults are now replaced
+   with an unconditional lowest-rung fallback; the row's
+   `defaults_to_highest_valid_level = yes` is still the hypothesis being
+   tested for the ordinary offer.
+2. Two newly introduced character-scoped scripted-trigger calls were not
+   resolved when invoked from the decision/custom-localization parser paths.
+   The founding and ledger uses now spell out their scope transition and reuse
+   only the pre-existing, title-scoped policy-band triggers.
+3. The running CK3 instance reported the new settlement-condition file as
+   lacking a UTF-8 BOM despite the repository file having one. A full process
+   relaunch is required to distinguish a stale loaded copy from an encoding
+   problem. The committed file begins `EF BB BF` and `ck3-tiger` remains clean.
+
+The test process was left running and no user save was modified. Do not count
+this as a UI pass; rerun the probe below only after CK3 has read the corrected
+files from a full launch.
 
 ## Required live probe
 
