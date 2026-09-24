@@ -1,12 +1,13 @@
 # V5 Spec: The Bet Din Conference
 
 Status: **Part 1 built, ck3-tiger-clean, and live-tested — PASS, fully confirmed including the real
-hosting/travel flow**, 2026-09-08. Written from a roadmap-cleanup conversation; the decisions in
-sections 1-5 were made there. Section 8 records the actual Part 1 build (two bugs `ck3-tiger` caught
-pre-live-test) and section 9 records the live-test pass: a first sub-pass found and fixed a third,
-more serious bug live (see below) but could not locate the real activity-hosting UI; a same-day
-follow-up sub-pass found it and confirmed the entire mechanic end to end, including the co-judges
-genuinely travelling to Worms. Full account:
+hosting/travel flow**, 2026-09-08, **and the docket-loop fix (section 11) separately live-tested —
+PASS — 2026-09-24 (see section 11's own status paragraph).** Written from a roadmap-cleanup
+conversation; the decisions in sections 1-5 were made there. Section 8 records the actual Part 1
+build (two bugs `ck3-tiger` caught pre-live-test) and section 9 records the live-test pass: a first
+sub-pass found and fixed a third, more serious bug live (see below) but could not locate the real
+activity-hosting UI; a same-day follow-up sub-pass found it and confirmed the entire mechanic end to
+end, including the co-judges genuinely travelling to Worms. Full account:
 [docs/testing/2026-09-08-bet-din-conference-live-test-log.md](../testing/2026-09-08-bet-din-conference-live-test-log.md).
 
 ## 1. What this replaces
@@ -431,13 +432,29 @@ that can actually boot the game.
 `ck3-tiger` is clean (**0 fatal, 0 error**); the only new warnings are three missing phase icon
 `.dds` files, the same known art gap the rest of this activity already has.
 
-**NOT LIVE-TESTED.** Nothing in this section has been confirmed against a real boot -- the fix was
-written from the game's own files and vanilla precedent, and it changes the activity's phase
-lifecycle, which is precisely the part section 9's pass never exercised to the end. It needs a pass
-that hosts the conference for real and follows it through all three cases to the closing event, per
-this project's standing rule for structural changes. Specifically unverified: that three sequential
-predefined phases advance the way `local_examination.txt` implies, that `on_complete` fires the
-closing event once, and that the random draw actually varies the case order across sessions.
+**LIVE-TESTED, 2026-09-24 — PASS.** Hosted for real from Worms (F9 -> host -> Start), unpaused, and
+followed through to the close. All three specifically-flagged unverified points confirmed:
+- **No single-day mass-fire.** Activity started 1 Aug 1071 ("Waiting"); the first case opened on its
+  own after real travel (5 Nov 1071); the three cases together spanned 5 Nov -> 28 Nov 1071 --
+  correctly paced by `kehillah_bet_din_case_step_days`, not one day.
+- **Three phases, one case each, correctly sequenced.** The Activities panel showed the phase name
+  advancing case to case as designed.
+- **The random draw varies.** This session's docket order was "The Agunah's Plea" -> "A Cursed
+  Amulet" -> "The Silversmiths' Quarrel" -- not the fixed pre-fix order, and two of those three cases
+  aren't mentioned anywhere in this doc's sections 8-11, meaning Part 2's case pool has grown since
+  this doc was last updated without the doc being told. Worth a follow-up pass reconciling the
+  doc against the actual case list in `events/kehillah_bet_din_events.txt`.
+- **The closing event fires exactly once and the activity actually ends.** After case 3, "The
+  Docket Is Closed" fired once, correctly named both real co-judges, the normal activity conclusion
+  screen appeared, and afterward the Activities panel confirmed no ongoing activity and the decision
+  on cooldown -- no loop, no second close.
+
+**Two new, real, single-fire bugs found during this pass, unrelated to the docket-loop fix itself
+(both logged in `BLOCKERS.md`, not fixed here):** a missing `exists =` guard on
+`global_var:kehillah_bet_din_convening_title` in `events/kehillah_bet_din_semicha_events.txt`, and
+an unguarded `add_gold` with a negative value in `kehillah_bet_din_silversmiths_resolution_effect`
+(`common/scripted_effects/kehillah_bet_din_scripted_effects.txt`) when the target can't afford the
+deduction. Neither crashed, looped, or recurred.
 
 One edge case is accepted deliberately rather than solved: if a player leaves a case's popup
 unanswered past the 30-day phase ceiling, two cases can overlap and share the single-`global_var`

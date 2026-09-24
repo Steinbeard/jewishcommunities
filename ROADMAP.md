@@ -78,7 +78,8 @@ than renumbered, since later items and other docs cross-reference these numbers 
    shipped is being replaced, not kept alongside its replacement.
 7. **Bet Din Conference, Part 1 — BUILT, ck3-tiger-clean; live-tested PASS 2026-09-08, then
    REOPENED the same day by two structural bugs that pass missed (docket fired all at once, activity
-   never ended). Fixed, NOT YET RE-TESTED LIVE — see the "DOCKET LOOP FIX" paragraph below.**
+   never ended). Fixed, and the fix itself LIVE-TESTED — PASS — 2026-09-24, see the "DOCKET LOOP
+   FIX" paragraph below.**
    Redesigns item 6's takkanah decision into a travelled-to gathering activity (Hunt/Grand Wedding-
    scale, not a lighter travel-event chain), convened every 3 years instead of every 15, drawing 3
    hardcoded test cases from what will eventually be a large pool. Each case is ruled on by the
@@ -117,9 +118,14 @@ than renumbered, since later items and other docs cross-reference these numbers 
    (each case's verdict tier summed: great +2 / good +1 / poor −1) and pays out on a landmark /
    strong / adequate / failed tier. `ck3-tiger` clean (0 fatal, 0 error). Full account, including
    why the earlier pass missed this and what specifically still needs a live pass:
-   [v5 spec section 11](docs/spec/v5-bet-din-conference.md). **Next step for this item is a live
-   pass that hosts the conference and follows it through all three cases to the close** — until
-   then, treat the activity's phase sequencing and completion as unverified.
+   [v5 spec section 11](docs/spec/v5-bet-din-conference.md).
+   **LIVE-TESTED, 2026-09-24 — PASS.** Hosted for real, followed through all three cases to the
+   close: correctly paced (not one-day mass-fire), phases advance one case at a time, random draw
+   varies (and turned up two cases not documented in this doc — Part 2's pool has grown since this
+   was last updated), and the docket closes exactly once with the activity actually ending. Full
+   account in v5 §11's own status paragraph. **Two new, unrelated, single-fire bugs found in the
+   process, not fixed**: a missing `exists =` guard in `kehillah_bet_din_semicha_events.txt`, and an
+   unguarded negative `add_gold` in the Silversmiths' Quarrel case resolution — see `BLOCKERS.md`.
    **Design-only addendum, 2026-09-08**: [v5 spec section 10](docs/spec/v5-bet-din-conference.md)
    proposes widening the panel with up to 2 additional non-leader Jewish scholars, found via a
    `guest_invite_rules` search and scored on proximity/Learning/Piety/traits, each getting a real

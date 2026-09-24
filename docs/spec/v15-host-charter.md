@@ -1,7 +1,7 @@
 # v15 — The Host Charter
 
-**Status:** IMPLEMENTED and LIVE-TESTED 2026-09-23 (three passes — see §5), including succession in
-both directions. First slice of
+**Status:** IMPLEMENTED and LIVE-TESTED 2026-09-23 through 2026-09-24 (four passes — see §5),
+including succession in both directions and a freshly founded community. First slice of
 **Phase 4 — Host Dynamics**
 ([ROADMAP.md](../../ROADMAP.md)). This is the mechanism itself — a real, negotiable relationship
 between a Kehillah and its host — built directly on the route
@@ -195,7 +195,18 @@ root-cause diagnoses, neither ever re-verified live; see
 and `BLOCKERS.md` for the full account. Not fixed here — flagged for a dedicated pass rather than a
 fourth blind guess.
 
-**Still not independently tested**: a new community founded via `kehillah_found_community_effect`
-actually getting a charter (the code path is identical to the tested game-start path, but not
-independently run), and the "county changes hands by conquest" backstop case specifically (only the
-clean-heir-succession case was tested above).
+**Live pass 4 (via subagent), 2026-09-24 — a freshly founded community gets a charter too.**
+Returned to the main menu (no process relaunch) and started a new game on
+`bm_1066_kehillah_founder_test` (Yitzhak, "A Rabbi on the Road") rather than reusing Isaac's
+save — deliberately avoiding `kehillah_debug.60` on an existing Kehillah leader, since
+`kehillah_found_community_effect`'s own title-cleanup step would very likely have destroyed
+whichever pre-authored community that leader already held. Seeded courtiers via the repo's own
+`run/seedfollowers.txt`, took "Found a Jewish Community" for real, and confirmed a clean founding
+(all expected `debug_log` breadcrumbs, no `kq_*` errors). `kehillah_debug.70` on the new leader
+(now ruling the newly-created Kehillah of Frankfurt) reported `is_tributary YES`, correct contract
+group, `is_independent_ruler YES`, suzerain resolved to the same Heinrich Salian of `e_hre` the
+pre-authored communities resolve to. **First independent confirmation that the founding code path
+(not just game-start seeding) establishes a charter automatically, exactly as designed.**
+
+**Still not independently tested**: the "county changes hands by conquest" backstop case
+specifically (only the clean-heir-succession case has been tested, in §5 above).
