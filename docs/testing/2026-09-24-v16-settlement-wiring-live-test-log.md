@@ -57,7 +57,8 @@ the `kehillah` lines in `logs/error.log` so a new error is distinguishable.
 2. Allow a pillar refresh. The own-community breakdown should show separate
    actual-charter lines: construction under Prosperity; jurisdiction and
    settlement network under Stability; jurisdiction and text study under
-   Greatness. It must not show a second direct policy bonus.
+   Greatness. It should also name the local development band under both
+   Prosperity and Stability. It must not show a second direct policy bonus.
 3. With `event kehillah_debug.72`, set the host policy to Encouraged. End the
    current contract with `.76`, wait one tick, then attach the Christian group
    with `.77`, wait one tick. Verify the four highest defaults (Free,

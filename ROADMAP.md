@@ -567,8 +567,9 @@ Jewish Settlement Policy (Encouraged / Allowed / Discouraged / Banned) as the en
 for a local Host Charter, rather than a duplicate pillar modifier. The first implementation slice
 is now source-validated: new Christian/Muslim charters select distinct regional row groups; each
 policy bounds and supplies their ordinary default offer; founding is disabled under Banned; and
-only the *actual* charter flags feed the pillar breakdown. The first bounded Goldilocks-network
-cache also runs only at initial registry/foundation time, not on the quarterly pulse. Existing V15
+only the *actual* charter flags feed the pillar breakdown. County development now contributes a
+small, visible local-opportunity band to Prosperity and Stability, while the first bounded
+Goldilocks-network cache runs only at initial registry/foundation time, not on the quarterly pulse. Existing V15
 moneylending/walled-quarter contracts are deliberately retained; other host traditions use that
 legacy group until research supplies their own rows. A policy becoming more restrictive never
 silently revokes an existing charter — the map-ledger tooltip instead marks grandfathered rights

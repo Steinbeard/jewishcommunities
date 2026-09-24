@@ -199,6 +199,7 @@ adds no pillar value. The intentionally visible first-pass values are:
 | Bet Din / intermediary jurisdiction | +22 Stability +20 Greatness / +12 or +10 Stability +4 Greatness |
 | Unrestricted / licensed / proscribed study | +25 / +5 / -30 Greatness |
 | Chartered / regional / local market access | +40 / +20 / +5 Prosperity |
+| County development 25+ / 15+ / 5+ / below 5 | +15/+6, +8/+3, +5/0, -5/-3 Prosperity/Stability |
 
 The network cache is recomputed when the initial registry is built and when a
 community is founded, never in the quarterly pillar pulse. It counts other
