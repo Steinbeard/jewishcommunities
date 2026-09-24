@@ -240,6 +240,14 @@ is 0. This is deliberately a Goldilocks mutual-aid result, not a linear
 "more neighbours is always better" bonus. The distance scale and performance
 with a large registry remain live-test questions.
 
+The founding AI uses the identical Goldilocks bands in its monthly decision
+evaluation: it adds +15 for one or two nearby communities, +7 for three or
+four, and 0 for none or five-plus. It does this with three bounded
+`any_in_global_list` threshold scans at the candidate's current location;
+unlike a persistent character cache, that remains correct when an adventurer
+moves before founding. Its performance with a late-game registry is a required
+measurement, not an assumed free operation.
+
 ## 6. Player information architecture
 
 Do not expand `Take Stock`; it is a fallback/debug decision. The bespoke UI

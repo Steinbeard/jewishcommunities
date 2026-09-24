@@ -79,7 +79,9 @@ the `kehillah` lines in `logs/error.log` so a new error is distinguishable.
    grandfathered and need review; the underlying contract must remain intact.
 6. Record the nearby count for Worms and a deliberately isolated community.
    Verify the expected network bands (0=-5, 1–2=+15, 3–4=+7, 5+=0) and note
-   whether the visual labels communicate the count clearly.
+   whether the visual labels communicate the count clearly. With an eligible
+   adventurer at each candidate, verify the monthly AI weight uses the same
+   +15/+7/0 proximity bands and does not create log noise or a visible pause.
 
 ## Open questions after this run
 
