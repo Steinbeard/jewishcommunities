@@ -1,7 +1,7 @@
 # 2026-09-24 — V16 settlement-policy and fresh-charter wiring
 
-**Status: SOURCE VALIDATED; FIRST LIVE LOAD FOUND THREE PARSER ERRORS, FIXED
-PENDING A FULL RELAUNCH.** This log covers the
+**Status: PARTIAL LIVE PASS; POLICY-DERIVED FRESH-CHARTER DEFAULTS BLOCKED BY
+AN ENGINE-SCOPE LIMIT.** This log covers the
 first live wiring pass described by
 [V16](../spec/v16-jewish-settlement-policy-and-charters.md). It supplements,
 rather than replaces, the isolated earlier prototype test.
@@ -43,6 +43,30 @@ They are useful engine findings, not evidence that the feature worked:
 The test process was left running and no user save was modified. Do not count
 this as a UI pass; rerun the probe below only after CK3 has read the corrected
 files from a full launch.
+
+## Relaunch results and startup regression (2026-09-24)
+
+- The corrected files load with no new V16 parser error. `ck3-tiger` remains
+  **0 fatal, 0 error, 57 warnings, 0 untidy, 17 tips**.
+- The initial direct global-list refresh in `on_game_start` stalled CK3 during
+  "Initializing Game" (unresponsive window with sustained multi-core CPU).
+  It is fixed and live-verified: the bootstrap now schedules a day-one hidden
+  event, while a newly founded community still refreshes immediately. A fresh
+  Worms launch reaches the paused map normally.
+- `event kehillah_debug.81` on that map confirmed that Worms has the Christian
+  fresh-charter group under the implicit **Allowed** policy, and that the
+  nearby-community and local-development cache probes execute.
+- The same event exposed a blocking contract-default failure: every
+  `is_valid` reference to `scope:liege.primary_title` reports a failed context
+  switch while `start_tributary` constructs the contract. CK3 consequently
+  chooses the unconditional fallback levels (No Watch, Local Court, Proscribed
+  study; the construction line has no matching flag). This is not an acceptable
+  policy default and must not be presented as working.
+- A nested `scope:liege = { primary_title = { ... } }` spike did not produce a
+  usable fresh game startup and was reverted. The supported next design is a
+  deferred, post-creation effect using `tributary_contract_set_obligation_level`
+  to write the policy's four concrete levels after the new contract commits.
+  The existing V15 testing already establishes that this requires a later tick.
 
 ## Required live probe
 
