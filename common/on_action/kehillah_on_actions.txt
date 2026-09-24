@@ -205,6 +205,23 @@ kehillah_on_game_start = {
 			kehillah_seed_starting_library_effect = yes
 		}
 
+		# HOST CHARTER, ADDED 2026-09-23 (Phase 4, v15). Must come AFTER
+		# every add_to_global_variable_list above for the same reason as
+		# the library seeding immediately above -- it runs per already-
+		# registered community, on the community's own HOLDER (root here
+		# is the game-start effect's own caller, not any one Kehillah's
+		# ruler). If Wave 5 ever adds founding a new Kehillah outside
+		# kehillah_found_community_effect, that founding effect needs this
+		# same call too -- see kehillah_maintain_host_charter_effect's own
+		# header (common/scripted_effects/kehillah_host_charter_effects.txt)
+		# for why it is safe and cheap to call unconditionally, every time.
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			holder = {
+				kehillah_maintain_host_charter_effect = yes
+			}
+		}
+
 		# MAP VIEW, ADDED 2026-09-14 (v12). Must come AFTER every
 		# add_to_global_variable_list above -- it mirrors that registry
 		# onto each player for the "Jewish Communities" widget to read
@@ -269,6 +286,18 @@ kehillah_on_title_gain = {
 		# the new leader's domicile in the first place -- restoring into
 		# a domicile that does not exist yet would silently do nothing.
 		kehillah_restore_quarter_effect = yes
+
+		# HOST CHARTER, ADDED 2026-09-23 (Phase 4, v15). Deliberately
+		# ordered AFTER kehillah_restore_quarter_effect, same reason as
+		# that effect's own ordering note above -- the host-resolution
+		# trigger reads through domicile.domicile_location, which does not
+		# exist until the domicile does. tributary_heir_succession = yes
+		# (kehillah_host_charter_groups.txt) already carries an existing
+		# charter across this succession on its own; this call is the
+		# safety net for the appointed-successor case where no charter
+		# existed yet (kehillah_maintain_host_charter_effect no-ops
+		# instantly if one already does).
+		kehillah_maintain_host_charter_effect = yes
 
 		# A new leader takes office with the community's confidence.
 		# Small and deliberate, and separate from the institution's own
@@ -390,6 +419,17 @@ kehillah_quarterly_pulse = {
 	}
 	effect = {
 		kehillah_quarterly_pillars_effect = yes
+
+		# HOST CHARTER, ADDED 2026-09-23 (Phase 4, v15). This is the
+		# backstop for a host changing hands by conquest (spike section 5
+		# point 5, docs/spec/spike-host-charter-interaction.md) -- on_title_
+		# gain and the founding effect both establish a charter, but
+		# neither fires when the COUNTY the community sits in changes
+		# holder. This quarterly re-check is what actually re-points it,
+		# at most one quarter late; see kehillah_maintain_host_charter_
+		# effect's own header for why that lag is a deliberate trade
+		# against the tick-deferral constraint, not an oversight.
+		kehillah_maintain_host_charter_effect = yes
 	}
 }
 

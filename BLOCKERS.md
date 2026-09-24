@@ -222,3 +222,20 @@ things were left in.
 ## Ready for review -- overnight/2026-09-23
 - https://github.com/Steinbeard/jewishcommunities/compare/master...=1
 
+## 2026-09-23 (interactive session, continued) -- Host Charter (v15) implemented and live-tested
+- Phase 4's Host Charter mechanism (docs/spec/v15-host-charter.md) built directly on the four-pass
+  spike above, at Daniel's explicit "implement now" request -- jumps the normal Phase 1-4 ordering on
+  purpose, recorded in ROADMAP.md's Phase 4 entry. Two live-test passes (via subagent): the first
+  found one real bug (a `this = root` comparison inside `kehillah_host_charter_host_available_trigger`
+  broke under `kehillah_on_game_start`'s `every_in_global_list { holder = {...} }` wrapper, since
+  `root` isn't reliably bound there -- 30 harmless-but-noisy error.log lines per game start, self-liege
+  guard silently inert at that one call site only); fixed (`this = PREV` instead) and a second pass
+  confirmed the fix closes it with no regression. Everything else -- automatic establishment with zero
+  console setup, correct UI render (window title, both charter terms, no tax row), exit-suppression
+  visibly enforced in the live menu, stability over 3.5 in-game months, idempotency -- passed clean on
+  the first pass and was not re-tested on the second (out of scope for a one-line regression check).
+- **Also seen, not fixed, unrelated:** during the second live pass, `error.log` showed a `set_employer`
+  duplicate-court warning inside `kehillah_seed_community_effect`/`kehillah_setup_troyes_start_effect`
+  (called from `kehillah_on_game_start`). Pre-existing, unrelated to Host Charter, not touched this
+  session -- flagged here so it isn't lost, same as the `kehillah_study_torah` noise noted above.
+

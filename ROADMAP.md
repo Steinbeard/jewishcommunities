@@ -507,6 +507,22 @@ threat). Deliberately deferred past the baseline — it's the largest,
 riskiest system in the original design doc and depends on the community
 mechanic already working.
 
+**Started 2026-09-23, out of phase order, by explicit request.** A four-pass research spike
+([docs/spec/spike-host-charter-interaction.md](docs/spec/spike-host-charter-interaction.md)) de-risked
+the Host Charter piece specifically — reusing CK3's own tributary subject-contract system and its
+engine-owned negotiation window rather than building a bespoke UI — and it was then implemented the
+same day ([docs/spec/v15-host-charter.md](docs/spec/v15-host-charter.md)): every Kehillah now has a
+real, permanent (by design — see that doc §1) contract relationship with its host, with two charter
+terms (moneylending rights, walled-quarter rights). **This is the charter mechanism only.** The
+expulsion threat, the Islamic-sphere loop (trade posts/Dhimma pact/purge threat), and any resistance
+mechanic are all still entirely unbuilt and unscoped — v15's §4 lists exactly what was deliberately
+left out and why. **Live-tested, two passes, same day** (v15 §5): automatic establishment, correct
+UI render, exit-suppression, stability, and idempotency all confirmed; one real bug found (a `root`
+scope mistake under `kehillah_on_game_start`'s iteration wrapper) and fixed, fix itself confirmed.
+**Still not live-tested: a succession while a charter is active**, and a newly founded community
+actually getting one — both real, not yet exercised. Given this repo's own succession/government-law
+risk history, don't treat this as fully proven until a succession test is run.
+
 ### Phase 5 — Crypto-Jewish Survival Loop
 The secret-practice/detection/forced-conversion system for communities that
 lose the Phase 4 expulsion/purge struggle. Depends on Phase 4 existing.

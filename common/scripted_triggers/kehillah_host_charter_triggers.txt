@@ -1,0 +1,41 @@
+﻿# =====================================================================
+# Host Charter triggers. See docs/spec/v15-host-charter.md and
+# docs/spec/spike-host-charter-interaction.md (sections 2, 3, 5) for why
+# the host is domicile.domicile_location.county.holder.top_liege rather
+# than any kind of liege the Kehillah itself might have (it has none --
+# see docs/implementation/v1-kehillah-implementation.md).
+#
+# Scope: a Kehillah's ruler (root).
+# =====================================================================
+
+# Whether a host can currently be resolved for this Kehillah at all. A
+# single `exists` on the full chain is safe -- CK3 resolves each link in
+# turn and reports false the moment one is unset, the same idiom this
+# mod already relies on at kehillah_has_task_contract_employer_candidate_
+# trigger (common/scripted_triggers/kehillah_scripted_triggers.txt).
+# The self-check guards the one case spike section 3's control test
+# found: `top_liege`/`suzerain` self-resolve for a character with no
+# real liege, which would otherwise read as "the community is its own
+# host."
+#
+# `this = PREV`, NOT `this = root`. FOUND LIVE 2026-09-23: `root` is not
+# reliably bound here -- kehillah_on_game_start's every_in_global_list =
+# { holder = { kehillah_maintain_host_charter_effect = yes } } wrapper
+# (common/on_action/kehillah_on_actions.txt) rebinds `this` per iteration
+# but `root` stays whatever on_game_start_after_lobby's own on_action
+# scope was (no character), so `this = root` errored ("Event target link
+# 'root' returned an unset scope") once per pre-authored community, every
+# game start, and CK3's error-recovery silently evaluated the broken
+# comparison as false -- meaning NOT(false) = true, so the self-liege
+# guard was inert (always passed) specifically via that call site, not
+# via kehillah_on_title_gain/kehillah_quarterly_pulse/kehillah_found_
+# community_effect, none of which wrap the call in a scope-rebinding
+# block. `PREV` is the scope this whole chained link was entered from --
+# fixed by construction, unlike `root`, which depends on how deep in
+# on_action/effect nesting the caller happens to be.
+kehillah_host_charter_host_available_trigger = {
+	exists = domicile.domicile_location.county.holder.top_liege
+	NOT = {
+		domicile.domicile_location.county.holder.top_liege = { this = PREV }
+	}
+}
