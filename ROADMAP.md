@@ -519,9 +519,15 @@ mechanic are all still entirely unbuilt and unscoped — v15's §4 lists exactly
 left out and why. **Live-tested, two passes, same day** (v15 §5): automatic establishment, correct
 UI render, exit-suppression, stability, and idempotency all confirmed; one real bug found (a `root`
 scope mistake under `kehillah_on_game_start`'s iteration wrapper) and fixed, fix itself confirmed.
-**Still not live-tested: a succession while a charter is active**, and a newly founded community
-actually getting one — both real, not yet exercised. Given this repo's own succession/government-law
-risk history, don't treat this as fully proven until a succession test is run.
+**Succession now live-tested too, both directions (v15 §5)**: the community leader's own death
+(charter carried by vanilla's `tributary_heir_succession`) and the host's own death (charter
+re-pointed with zero lag by vanilla's `suzerain_heir_succession`, confirmed at the raw engine level
+before any mod code ran) both pass clean. One separate, pre-existing, non-fatal bug resurfaced during
+that test (`change_government` "illegal government" on appointment succession, third time this exact
+error has appeared across two different unverified diagnoses) — not caused by Host Charter, not
+fixed, see `BLOCKERS.md` and the implementation doc's 2026-09-23 addition. Still not independently
+tested: a newly founded community actually getting a charter, and the host-changes-by-conquest
+backstop path specifically.
 
 ### Phase 5 — Crypto-Jewish Survival Loop
 The secret-practice/detection/forced-conversion system for communities that

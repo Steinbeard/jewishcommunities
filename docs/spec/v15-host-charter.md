@@ -1,6 +1,7 @@
 # v15 — The Host Charter
 
-**Status:** IMPLEMENTED and LIVE-TESTED 2026-09-23 (two passes — see §5). First slice of
+**Status:** IMPLEMENTED and LIVE-TESTED 2026-09-23 (three passes — see §5), including succession in
+both directions. First slice of
 **Phase 4 — Host Dynamics**
 ([ROADMAP.md](../../ROADMAP.md)). This is the mechanism itself — a real, negotiable relationship
 between a Kehillah and its host — built directly on the route
@@ -162,9 +163,39 @@ A console-only probe, `kehillah_debug.70` (`events/kehillah_debug_events.txt`), 
 fastest way to confirm the mechanism from the console without waiting on a real succession or
 quarterly tick.
 
-**Not yet tested**: a live succession while a charter is active (relying on `tributary_heir_succession
-= yes` plus `kehillah_on_title_gain`'s safety-net call, neither independently exercised live), and a
-new community founded via `kehillah_found_community_effect` actually getting a charter (the code path
-is identical to the tested game-start path, but not independently run). Per
-[CLAUDE.md](../../CLAUDE.md)'s own highest-risk-area warning, a live succession test matters more than
-most — do not treat this as fully proven until one is run.
+**Live pass 3 (via subagent) — succession, both directions, at Daniel's direct request.** Two
+separate fresh boots, `bm_1066_kehillah_worms`, console-killing each character in turn:
+
+- **Community leader's own death**: killed Isaac; the appointment succession law handed the title to
+  Parnas Batsheva (his daughter, via `kehillah_appointment_succession_law`). `kehillah_debug.70` on
+  the new leader confirmed the charter fully intact — same group, same suzerain. The mod's own
+  `on_title_gain` safety-net call logged `no host resolvable yet, skipping` (domicile not yet rebuilt
+  at that exact tick, exactly as documented above) — meaning **vanilla's own
+  `tributary_heir_succession = yes` did the actual work here**, not the mod's backstop, which
+  correctly declined to act on nothing.
+- **Host/suzerain's own death**: killed Heinrich Salian (`e_hre`); a new Emperor (Kuno Salian) took
+  the throne via ordinary vanilla succession. **Critically, this was checked at the raw engine level
+  first** — a throwaway probe read `is_tributary`/`suzerain` directly, deliberately *without* calling
+  `kehillah_maintain_host_charter_effect` — and found `suzerain` had already been re-pointed to the
+  new Emperor, correctly, with **zero lag**, before any mod code ran at all. `kehillah_debug.70`
+  fired afterward reported an identical, unchanged state, confirming the mod's own backstop is not
+  load-bearing for this specific case (a clean heir succession within the same realm) — it remains
+  the correct mechanism for the separately-documented "county changes hands by conquest" case, which
+  is not the same scenario and wasn't retested here.
+
+No crash, no Game Over, in either test.
+
+**A separate, real, pre-existing bug resurfaced during the community-leader test, unrelated to Host
+Charter**: `change_government effect [ Trying to set illegal government ]` at
+`kehillah_on_actions.txt:281` (`kehillah_on_title_gain`), on the appointment succession. Confirmed
+harmless in outcome (government reads correct moments later) but real and reproducible — this is the
+*third* time this exact error has surfaced across the project's history under two different
+root-cause diagnoses, neither ever re-verified live; see
+[the implementation doc](../implementation/v1-kehillah-implementation.md)'s dated 2026-09-23 addition
+and `BLOCKERS.md` for the full account. Not fixed here — flagged for a dedicated pass rather than a
+fourth blind guess.
+
+**Still not independently tested**: a new community founded via `kehillah_found_community_effect`
+actually getting a charter (the code path is identical to the tested game-start path, but not
+independently run), and the "county changes hands by conquest" backstop case specifically (only the
+clean-heir-succession case was tested above).

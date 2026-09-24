@@ -474,6 +474,26 @@ failing at the time. Root cause and fix are the second bullet under
 this section up, not during the original testing, and not yet
 re-verified live.
 
+**STILL BROKEN as of 2026-09-23 -- this is the third time this exact error has surfaced, and the
+2026-09-06 "fix" below is no longer even the current code.** A Host Charter succession live-test
+(console-kill Isaac, appointed successor Parnas Batsheva) reproduced the identical
+`change_government effect [ Trying to set illegal government ]` at `kehillah_on_actions.txt:281`
+(`kehillah_on_title_gain`), on every appointment succession. Confirmed harmless in outcome again --
+a follow-up probe confirmed `government_has_flag = government_is_kehillah` reads true moments later,
+and everything downstream (Host Charter, pillars, quarter) worked correctly regardless. But the
+2026-09-06 diagnosis below (`tier = tier_duchy` vs `title_tier = duchy`) cannot be the current cause:
+`can_get_government` in `kehillah_government.txt` no longer uses either field at all -- it was
+rewritten 2026-09-20 to `any_held_title = { is_landless_type_title = yes }` specifically to fix an
+unrelated bug (a tier gate invalidating the county-tier Worms start), and nobody re-checked whether
+that rewrite also fixed *this* error or just inherited it under a new predicate. Likely candidate,
+not verified: an on_title_gain-timing issue where `any_held_title` (or `change_government` itself)
+doesn't yet see the just-gained title as fully committed at the exact point `on_title_gain` fires,
+rather than anything wrong with the predicate's logic once the title genuinely is held. **Do not
+attempt a fourth blind fix without live-testing it** -- this exact bug has now been "fixed" twice
+without ever being confirmed clean afterward, which is how it survived two rewrites of the very field
+each fix targeted. Worth a dedicated, isolated console-kill-succession pass whose only job is
+watching `error.log` at the moment of appointment, before touching anything else.
+
 This is narrower than the "All Governments Playable" Workshop mod
 (id 3021516102), which was investigated as a possible fix and rejected:
 it neuters the entire is_character_allowed_to_be_player rule via a

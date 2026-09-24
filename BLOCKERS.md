@@ -239,3 +239,27 @@ things were left in.
   (called from `kehillah_on_game_start`). Pre-existing, unrelated to Host Charter, not touched this
   session -- flagged here so it isn't lost, same as the `kehillah_study_torah` noise noted above.
 
+## 2026-09-23 (interactive session, continued) -- Host Charter succession live-tested; a known bug resurfaced
+- Daniel asked directly whether the charter survives the host's death or the community leader's.
+  Subagent live-test, two separate fresh boots, console-kill of each character in turn: **both
+  directions carry the charter correctly.** Community-leader death: vanilla's own
+  `tributary_heir_succession = yes` carried it, the mod's own `on_title_gain` safety net correctly
+  no-op'd (domicile not yet rebuilt at that exact tick). Host/suzerain death: vanilla's
+  `suzerain_heir_succession = yes` re-pointed `suzerain` to the new Emperor with **zero lag**,
+  confirmed at the raw engine level before any mod code ran -- the mod's quarterly-pulse backstop is
+  not load-bearing for a clean heir succession, only for the separately-flagged "county changes hands
+  by conquest" case. No crash, no Game Over, either test. Full account added to
+  `docs/spec/v15-host-charter.md` section 5.
+- **Real bug resurfaced, not fixed, pre-existing (not caused by Host Charter):** the community-leader
+  test reproduced `change_government effect [ Trying to set illegal government ]` at
+  `kehillah_on_actions.txt:281` (`kehillah_on_title_gain`), on the appointment succession. This is the
+  *same* error first found and "fixed" 2026-09-06
+  (`docs/implementation/v1-kehillah-implementation.md`), except the field that 2026-09-06 fix targeted
+  (`can_get_government`'s tier check) was rewritten entirely 2026-09-20 for an unrelated reason, and
+  nobody re-verified this error against the new code until today -- it's still there, under a new
+  predicate. Confirmed harmless in outcome (government ends up correct moments later), but this is the
+  third time this exact error has surfaced across two different root-cause guesses. See the
+  implementation doc's dated addition for the full history. **Needs a dedicated live-debugging pass**
+  before a fourth fix attempt -- flagged rather than guessed at again in this session, since it wasn't
+  what was being tested and the track record of blind fixes here is poor.
+
