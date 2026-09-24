@@ -573,7 +573,10 @@ Goldilocks-network cache runs only at initial registry/foundation time, not on t
 moneylending/walled-quarter contracts are deliberately retained; other host traditions use that
 legacy group until research supplies their own rows. A policy becoming more restrictive never
 silently revokes an existing charter — the map-ledger tooltip instead marks grandfathered rights
-for review. The live default-selection/contract-window spike, save/reload, distance calibration,
+for review. Construction is now mechanically bound to the actual construction term: free terms
+permit new Quarter institutions, permission terms require a paid five-year Host Construction
+Permission, and forbidden terms block new institutions while leaving recognized upgrades alone.
+The live default-selection/contract-window spike, construction-gate UI, save/reload, distance calibration,
 and armed-watch MaA tests remain open and are recorded in V16 §8 and
 `docs/testing/2026-09-24-v16-settlement-wiring-live-test-log.md`. Policy-change AI, warning
 events, expulsion, migration, Indian-specific terms, and a destination-picker are intentionally

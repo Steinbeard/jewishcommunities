@@ -162,6 +162,18 @@ The Banned row is an envelope edge case for an already-existing or debug
 charter, rather than a way to create a new community: the founding decision is
 disabled under Banned.
 
+**Construction is now an operative right, not a score label.** The first tier
+of every *new* Quarter institution checks the actual construction term.
+`Free to Build` needs nothing further; `Permission/Authorisation Required`
+needs the five-year **Host Construction Permission** granted by the leader's
+`Secure Construction Permission` decision; and `New Construction Forbidden`
+blocks a new institution. The permit costs a tunable, modest amount of gold
+for petitioners/gifts/fees, rather than pretending every host response is
+automatic goodwill. Existing institutions may be upgraded: V16 treats that
+as maintaining or expanding a recognized institution, not founding another
+one. A future host-court petition event may replace the interim automatic
+grant without changing this charter/building interface.
+
 V16 does **not** remove the two V15 terms until the live-save/contract-default
 spike in §8 passes. Removing a contract entry from an active contract group
 without proving how CK3 handles saved obligations is unnecessarily risky.

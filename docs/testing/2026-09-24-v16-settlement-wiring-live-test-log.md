@@ -70,6 +70,10 @@ the `kehillah` lines in `logs/error.log` so a new error is distinguishable.
    Permission, No Watch, Local Court, Licensed Study. Under Banned (`.75`),
    the founding decision must be disabled with its Jewish Settlement Policy
    tooltip. Restore Allowed with `.73`.
+   Under a Permission/Authorisation charter, try a first-tier Quarter
+   institution before and after `Secure Construction Permission`: it should
+   be blocked, then allowed for five years. Under Forbidden it must remain
+   blocked; upgrading an already-present institution should remain legal.
 5. Change an existing high charter to Discouraged or Banned **without ending
    it**. The ledger's charter-status line should report that its rights are
    grandfathered and need review; the underlying contract must remain intact.
