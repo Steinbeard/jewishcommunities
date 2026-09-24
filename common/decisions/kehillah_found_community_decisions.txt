@@ -73,7 +73,10 @@ kehillah_found_community_decision = {
 
 	decision_group_type = kehillah
 	sort_order = 95
-	ai_check_interval = 0
+	# Goldilocks proximity below scans the small, registered-community
+	# list. A monthly AI check keeps that deliberate destination signal
+	# bounded instead of doing it every AI evaluation tick.
+	ai_check_interval = 24
 
 	is_shown = {
 		has_dlc_feature = roads_to_power
@@ -86,6 +89,16 @@ kehillah_found_community_decision = {
 		is_imprisoned = no
 		exists = location.county
 		kehillah_leader_is_rabbinic_trigger = yes
+		custom_tooltip = {
+			text = kehillah_found_community_host_policy_allows_tt
+			# Inline the two scope steps rather than hiding the location
+			# transition behind a character-scoped helper. CK3's decision
+			# parser validates the scope here, while the shared title-policy
+			# trigger still owns the actual band definition.
+			location.county.holder.top_liege.primary_title = {
+				kehillah_jewish_settlement_policy_allowed_trigger = yes
+			}
+		}
 		custom_tooltip = {
 			text = kehillah_found_community_requires_ten_jewish_followers_tt
 			any_courtier = {
@@ -127,5 +140,72 @@ kehillah_found_community_decision = {
 
 	ai_will_do = {
 		base = 5
+		# A realm policy is the strongest frontier signal. Development is
+		# a second, local opportunity signal. The three bounded registry
+		# scans below intentionally reproduce the same Goldilocks bands the
+		# founded community receives in its Stability baseline: 1-2 peers is
+		# best; 3-4 is still useful; 5+ loses the bonus. This runs monthly,
+		# never in the quarterly pillar pulse.
+		modifier = {
+			add = 25
+			location.county.holder.top_liege.primary_title = {
+				kehillah_jewish_settlement_policy_encouraged_trigger = yes
+			}
+		}
+		modifier = {
+			add = -12
+			location.county.holder.top_liege.primary_title = {
+				kehillah_jewish_settlement_policy_discouraged_trigger = yes
+			}
+		}
+		modifier = {
+			add = {
+				value = location.county.development_level
+				divide = 4
+				max = 15
+			}
+		}
+		modifier = {
+			add = 20
+			any_in_global_list = {
+				variable = kehillah_registered_communities
+				count >= 1
+				exists = holder.domicile.domicile_location
+				holder.domicile.domicile_location = {
+					squared_distance = {
+						target = root.location
+						value <= squared_distance_medium
+					}
+				}
+			}
+		}
+		modifier = {
+			add = -8
+			any_in_global_list = {
+				variable = kehillah_registered_communities
+				count >= 3
+				exists = holder.domicile.domicile_location
+				holder.domicile.domicile_location = {
+					squared_distance = {
+						target = root.location
+						value <= squared_distance_medium
+					}
+				}
+			}
+		}
+		modifier = {
+			add = -7
+			any_in_global_list = {
+				variable = kehillah_registered_communities
+				count >= 5
+				exists = holder.domicile.domicile_location
+				holder.domicile.domicile_location = {
+					squared_distance = {
+						target = root.location
+						value <= squared_distance_medium
+					}
+				}
+			}
+		}
 	}
 }

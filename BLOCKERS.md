@@ -263,7 +263,6 @@ things were left in.
   before a fourth fix attempt -- flagged rather than guessed at again in this session, since it wasn't
   what was being tested and the track record of blind fixes here is poor.
 
-
 ## Automated run status -- 2026-09-24_020003 (overnight/2026-09-24)
 - Cut off by a usage/session limit (detected in this run's log): False
 - Uncommitted changes in the working tree at run end: none
@@ -285,4 +284,30 @@ things were left in.
 
 ## Ready for review -- overnight/2026-09-24
 - https://github.com/Steinbeard/jewishcommunities/compare/master...=1
+
+## 2026-09-24 -- Bet Din docket-loop fix live-tested PASS; two new unrelated bugs found, not fixed
+- The docket-loop fix (v5 spec section 11) that had never been live-tested since 2026-09-08 was
+  finally exercised end to end: hosted for real, all three cases correctly paced (not the original
+  one-day mass-fire bug), phases advanced one case at a time, random draw varied, and the docket
+  closed exactly once with the activity actually ending. Full account in
+  `docs/spec/v5-bet-din-conference.md` section 11 and `ROADMAP.md` item 7. Bonus finding: the case
+  pool has grown since this doc was last updated (two cases fired that section 8-11 don't mention) --
+  worth a follow-up doc pass, not a bug.
+- **Two new, real, single-fire bugs found in the process, not fixed (not what was being tested):**
+  - `events/kehillah_bet_din_semicha_events.txt:86` (`kehillah_bet_din_semicha.0001:immediate`) reads
+    `global_var:kehillah_bet_din_convening_title` without an `exists =` guard first -- fired once
+    ("Failed to fetch variable... due to not being set" / "Event target link 'global_var' returned an
+    unset scope"), around the first case's resolution. Same missing-guard class this project has
+    fixed repeatedly elsewhere (v5 section 9's own 16-site fix for the exact same idiom).
+  - `common/scripted_effects/kehillah_bet_din_scripted_effects.txt:741`
+    (`kehillah_bet_din_silversmiths_resolution_effect`, called from
+    `events/kehillah_bet_din_events.txt:2071`) calls `add_gold` with a negative value on a character
+    who doesn't have enough gold to cover it -- fired once on the Silversmiths' Quarrel case
+    resolution ("Trying to add add_gold with negative value to..."). Needs either a `min` clamp or a
+    can-afford check before the deduction.
+  - Both are non-crashing, did not recur or loop, and were left unfixed per the testing session's own
+    scope (it was checking the docket-loop fix, not authoring new fixes).
+- Also confirmed the same session, at Daniel's request: a freshly founded community (via "Found a
+   Jewish Community," not just game-start seeding) gets a Host Charter automatically too -- see
+   `docs/spec/v15-host-charter.md` section 5's live pass 4. No issues found there.
 

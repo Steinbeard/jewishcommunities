@@ -17,13 +17,22 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
-Written 2026-09-07. Roughly priority order, but the first two are correctness/verification work
-that should happen before anything else here, since they check claims the rest of this list (and
-other docs) currently take on faith.
+Written 2026-09-07. Roughly priority order. Items 1-3 (the original correctness/verification work
+this note referred to) are long since resolved and removed; numbering otherwise kept stable rather
+than renumbered, since later items and other docs cross-reference these numbers by hand (e.g.
+`kehillah_breakdown_custom_loc.txt`'s own header cites "ROADMAP item 4").
 
-4. **Quick-win UI**: expand the Take Stock decision into a real breakdown — per-pillar
-   contributors, current rate of change, and a tier-effects reference — using nested
-   `custom_tooltip` blocks and the dynamic-loc pattern already proven. No GUI risk, ships fast. This is super useful so that we can actually view what's effecting score growth and change.
+4. ~~**Quick-win UI**: expand the Take Stock decision into a real breakdown...~~ **CLOSED, 2026-09-23,
+   per user decision — no longer needed.** `kehillah_view_standing_decision` itself was never built
+   out (still a one-line `custom_tooltip` stub, confirmed by reading it) — but the actual need this
+   item was chasing (see what's growing/shrinking a pillar and why) is now served by the map view's
+   per-pillar contributor breakdown (v12/v13, `kehillah_breakdown_custom_loc.txt` +
+   `kehillah_breakdown_l_english.yml`, live-verified) and the community-list interaction's own
+   Stability/Prosperity/Greatness tooltips (v9). A dedicated Take Stock rewrite would be duplicating
+   visibility that already exists elsewhere, not adding new visibility. If a future session still
+   wants a decision-based breakdown specifically (rather than the map view), the
+   `KehillahBd*`-prefixed customizable-loc lines already do the per-line work and can be reused
+   directly — nothing here needs to be re-derived, just wired to a different call site.
 5. **DONE, 2026-09-10 (research), then 2026-09-10 (v9 build on top of it).** GUI feasibility research
    pass: [docs/spec/gui-spike-community-list.md](docs/spec/gui-spike-community-list.md) — ended up
    reading different files than this item originally named (the user's own Military-pane idea
@@ -69,7 +78,8 @@ other docs) currently take on faith.
    shipped is being replaced, not kept alongside its replacement.
 7. **Bet Din Conference, Part 1 — BUILT, ck3-tiger-clean; live-tested PASS 2026-09-08, then
    REOPENED the same day by two structural bugs that pass missed (docket fired all at once, activity
-   never ended). Fixed, NOT YET RE-TESTED LIVE — see the "DOCKET LOOP FIX" paragraph below.**
+   never ended). Fixed, and the fix itself LIVE-TESTED — PASS — 2026-09-24, see the "DOCKET LOOP
+   FIX" paragraph below.**
    Redesigns item 6's takkanah decision into a travelled-to gathering activity (Hunt/Grand Wedding-
    scale, not a lighter travel-event chain), convened every 3 years instead of every 15, drawing 3
    hardcoded test cases from what will eventually be a large pool. Each case is ruled on by the
@@ -108,9 +118,14 @@ other docs) currently take on faith.
    (each case's verdict tier summed: great +2 / good +1 / poor −1) and pays out on a landmark /
    strong / adequate / failed tier. `ck3-tiger` clean (0 fatal, 0 error). Full account, including
    why the earlier pass missed this and what specifically still needs a live pass:
-   [v5 spec section 11](docs/spec/v5-bet-din-conference.md). **Next step for this item is a live
-   pass that hosts the conference and follows it through all three cases to the close** — until
-   then, treat the activity's phase sequencing and completion as unverified.
+   [v5 spec section 11](docs/spec/v5-bet-din-conference.md).
+   **LIVE-TESTED, 2026-09-24 — PASS.** Hosted for real, followed through all three cases to the
+   close: correctly paced (not one-day mass-fire), phases advance one case at a time, random draw
+   varies (and turned up two cases not documented in this doc — Part 2's pool has grown since this
+   was last updated), and the docket closes exactly once with the activity actually ending. Full
+   account in v5 §11's own status paragraph. **Two new, unrelated, single-fire bugs found in the
+   process, not fixed**: a missing `exists =` guard in `kehillah_bet_din_semicha_events.txt`, and an
+   unguarded negative `add_gold` in the Silversmiths' Quarrel case resolution — see `BLOCKERS.md`.
    **Design-only addendum, 2026-09-08**: [v5 spec section 10](docs/spec/v5-bet-din-conference.md)
    proposes widening the panel with up to 2 additional non-leader Jewish scholars, found via a
    `guest_invite_rules` search and scored on proximity/Learning/Piety/traits, each getting a real
@@ -118,9 +133,22 @@ other docs) currently take on faith.
    worth weighing before Part 2's case format locks in, since it changes per-case authoring cost.
 8. **Wave 4** (dissolution) and **Wave 5** (community lifecycle: creation/destruction/migration),
    per [docs/spec/v2-pillar-economy-and-lifecycle.md](docs/spec/v2-pillar-economy-and-lifecycle.md)
-   §8's build order.
+   §8's build order. **Creation half of Wave 5 is now built and live-tested** (2026-09-19 onward):
+   "Found a Jewish Community" (`kehillah_found_community_effect`,
+   `common/scripted_effects/kehillah_found_community_effects.txt`) places a new landless title
+   anywhere a landless adventurer stands, with AI eligibility enabled — see
+   `docs/testing/2026-09-23-founder-path-cleanup-live-test-log.md` for the live-test PASS and the two
+   real bugs it found and fixed. **Destruction and migration (dissolution, the actual rest of Wave 4
+   and Wave 5) are still entirely unbuilt** — do not read the founding work above as having closed
+   this item, only its creation half.
 9. **Own-community GUI dashboard** — richer than `kehillah_view_standing_decision`'s current single
    desc block. Item 5's research has landed; this is now unblocked, just not built.
+   **Worth a second look now that item 4 is closed (2026-09-23) for the same underlying reason**:
+   the map view (v12/v13) already shows your own community's row (highlighted) alongside everyone
+   else's, with the same pillar/breakdown data this item wants. Not closed here unilaterally, since
+   this item is specifically about a dedicated *own-community* view rather than "your row in the
+   general list" — but if that distinction doesn't matter in practice, this may be another
+   already-satisfied item, not a real gap.
 10. **Map-wide/regional GUI dashboard** — **first draft shipped as part of item 5** (`kehillah_view_
     communities_interaction`, a clickable per-community list with pillar tooltips, reached via the
     right-click interaction menu rather than a dedicated window). What's still open past that first
@@ -128,7 +156,7 @@ other docs) currently take on faith.
     `gui/scripted_widgets/` to be live-test-verified first (the spike flagged it as real but unproven,
     zero vanilla usages found) or a Military-pane fork (the spike's confirmed-but-costly fallback);
     and the list itself is not sortable/filterable the way a true dashboard would be.
-    **SECOND DRAFT BUILT 2026-09-14 — `ck3-tiger`-clean, NOT LIVE-TESTED:**
+    **SECOND DRAFT BUILT 2026-09-14, CORE ROSTER CONFIRMED LIVE THE SAME DAY:**
     [docs/spec/v12-community-map-view.md](docs/spec/v12-community-map-view.md). This takes the
     `gui/scripted_widgets/` route the paragraph above names as unproven, and is this repo's first
     use of it — a dedicated toggle button and a roster panel of every community in the world, each
@@ -137,10 +165,14 @@ other docs) currently take on faith.
     §1 records why a literal CK3 map mode is not available to a mod at all (colouring is engine-side
     with no script-drivable `color_mode`; a Kehillah owns no county to colour; the map-mode bar is a
     hand-written button list, not a datamodel) — read that before anyone re-scopes "add a map mode"
-    as though it were a data change. **The whole thing is unverified**, and if the scripted-widget
-    mechanism turns out not to work, the v9 interaction remains the map-wide list; see the spec's §6
-    for the ordered live-test checklist and the fallback. Sorting is now done script-side (standing,
-    descending); filtering is still absent and still deliberate.
+    as though it were a data change. **Per v12's own status line (checked 2026-09-23, do not rely on
+    this summary staying current — read that line directly): the roster itself is confirmed live**
+    (button, draggable window, real rows with portraits/leaders/host counties/standing/pillars,
+    sorted, own row highlighted) across five live passes the same day it was built.
+    **Still unverified**: the 2026-09-20 rework of the map-mode recolor (painting only a community's
+    own barony instead of its whole host county) hasn't been re-tested since; the region hierarchy
+    (§7); the locate button and tooltips specifically. Sorting is script-side (standing, descending);
+    filtering is still absent and still deliberate.
 
 **Current state:** Phase 1 is verified working live, end to end, as of
 2026-09-06 — bookmark start, buildings, officers, and a full
@@ -528,6 +560,27 @@ error has appeared across two different unverified diagnoses) — not caused by 
 fixed, see `BLOCKERS.md` and the implementation doc's 2026-09-23 addition. Still not independently
 tested: a newly founded community actually getting a charter, and the host-changes-by-conquest
 backstop path specifically.
+
+**2026-09-23/24 — Jewish Settlement Policy and Charter redesign underway, at explicit request.**
+[V16](docs/spec/v16-jewish-settlement-policy-and-charters.md) defines a realm-wide, default-Allowed
+Jewish Settlement Policy (Encouraged / Allowed / Discouraged / Banned) as the entitlement envelope
+for a local Host Charter, rather than a duplicate pillar modifier. The first implementation slice
+is now source-validated: new Christian/Muslim charters select distinct regional row groups; each
+policy bounds and supplies their ordinary default offer; founding is disabled under Banned; and
+only the *actual* charter flags feed the pillar breakdown. County development now contributes a
+small, visible local-opportunity band to Prosperity and Stability, while the first bounded
+Goldilocks-network cache runs only at initial registry/foundation time, not on the quarterly pulse. Existing V15
+moneylending/walled-quarter contracts are deliberately retained; other host traditions use that
+legacy group until research supplies their own rows. A policy becoming more restrictive never
+silently revokes an existing charter — the map-ledger tooltip instead marks grandfathered rights
+for review. Construction is now mechanically bound to the actual construction term: free terms
+permit new Quarter institutions, permission terms require a paid five-year Host Construction
+Permission, and forbidden terms block new institutions while leaving recognized upgrades alone.
+The live default-selection/contract-window spike, construction-gate UI, save/reload, distance calibration,
+and armed-watch MaA tests remain open and are recorded in V16 §8 and
+`docs/testing/2026-09-24-v16-settlement-wiring-live-test-log.md`. Policy-change AI, warning
+events, expulsion, migration, Indian-specific terms, and a destination-picker are intentionally
+not being silently built by this slice.
 
 ### Phase 5 — Crypto-Jewish Survival Loop
 The secret-practice/detection/forced-conversion system for communities that
