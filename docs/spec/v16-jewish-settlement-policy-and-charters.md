@@ -100,6 +100,42 @@ Christian package should instead have these dimensions:
 The walled-quarter concept becomes an optional building/permission consequence
 of a strong protection right rather than a universal legal dimension.
 
+**Regional row prototypes, 2026-09-24.** Two unattached, loadable contract
+groups now prototype this divergence without touching the shipped V15 group:
+
+- **Christian:** Quarter Construction, Community Security, Jurisdiction over
+  Jewish Subjects, and Talmudic Study. The last is a three-rung censorship
+  regime (Unrestricted -> Licensed -> Talmud Proscribed), not a UI list of
+  works. A future book-burning chain can record a small, inspectable list of
+  proscribed library works underneath that regime, but such a list must never
+  be represented as a contract row per book.
+- **Muslim:** Quarter Construction, Community Security, Jurisdiction over
+  Jewish Subjects, and Market Access. This intentionally does not declare a
+  generic "Dhimma" row or assert a single Islamic legal experience; its
+  regional language and consequences need historical research before shipping.
+
+"Community Security" is deliberately narrower than a universal right to bear
+arms. Its rungs model whether a community can maintain a licensed watch or
+whether the host pledges protection. Similarly, Bet Din Discipline means civil
+discipline and communal penalties, not autonomous criminal jurisdiction.
+
+The armed-watch rung is also the natural gate for a very small **communal
+retinue**: exactly one character-owned men-at-arms regiment, rather than levies
+or a realm army. This makes the legal right matter in play and gives a leader
+who later becomes an adventurer a credible force to take with them. It remains
+a spike, however: the present Kehillah government deliberately suppresses MaA,
+so the prototype offsets that only while the armed-watch right is active. A
+fresh-game test must verify both recruitment and persistence across a real
+Kehillah-to-adventurer transition before this becomes shipped gameplay.
+
+These prototypes are **not live gameplay** yet: policy-envelope,
+default-selection, and saved-charter migration tests still gate the switch from
+V15. Their purpose is to make the actual negotiation rows reviewable and
+live-testable before that irreversible step. The console-only V16 harness
+(`kehillah_debug.76` then, after a tick, `.77` for a Christian host or `.78`
+for a Muslim host) is the safe way to attach one in a fresh debug save; `.79`
+then `.80`, again with a tick between them, restores the V15 charter.
+
 V16 does **not** remove the two V15 terms until the live-save/contract-default
 spike in §8 passes. Removing a contract entry from an active contract group
 without proving how CK3 handles saved obligations is unnecessarily risky.
@@ -193,6 +229,13 @@ entry in `docs/testing/` before it becomes load-bearing.
 7. **Warning visibility.** Before any AI policy-change event ships, live-test
    that a proposed policy and countdown are visible in the pillar/ledger UI to
    every affected player community.
+8. **Armed-watch retinue.** On each regional prototype, select the armed-watch
+   rung and verify it exposes exactly one character MaA slot (not title MaA or
+   levies). Recruit a regiment, revoke the right to learn CK3's disposition
+   rule, then repeat through a real Kehillah-to-adventurer transition and
+   confirm the regiment and its upkeep behavior. Do not promise retention in
+   the player-facing text until this is observed. Use the debug harness noted
+   in §4 on a fresh save and restore V15 immediately afterward.
 
 ## 9. First build slice and non-goals
 
