@@ -174,6 +174,25 @@ as maintaining or expanding a recognized institution, not founding another
 one. A future host-court petition event may replace the interim automatic
 grant without changing this charter/building interface.
 
+### 4.2 Row-to-gameplay wiring ledger
+
+The contract window is not the effect; every row needs a concrete, separately
+inspectable consequence. This is the implementation ledger as of 2026-09-24:
+
+| Row | Direct gameplay consequence | Pillar consequence | Verification state |
+|---|---|---|---|
+| Construction | New Quarter institutions are free, permit-gated, or blocked; upgrades remain legal | Prosperity | Source validated; domicile UI/permission expiry pending |
+| Christian security | Recognized Watch enables one character MaA regiment; lower rungs do not | Stability | Source validated; MaA/revocation/adventurer transition pending |
+| Muslim security | Licensed Watch enables one character MaA regiment; Host Protection does not | Stability | Source validated; MaA/revocation pending |
+| Jurisdiction | No one-click legal authority is invented; the term currently changes the baseline and will be the gate/weight for Bet Din and host-court event outcomes | Stability, Greatness | Pillar source validated; case-event design pending |
+| Talmudic Study | The term already changes the scholarly baseline. Its first direct restriction must be a genre/work-level library and book-writing gate, not a blanket ban on every Jewish book | Greatness | Deliberately deferred pending the proscribed-work data model |
+| Market Access | The term changes the community's economic baseline; future trade/task-contract offers can use it as their availability/quality gate | Prosperity | Pillar source validated; offer integration pending |
+
+This distinction is important: a right with only a pillar effect is still
+gameplay, but it is not the finished implementation of that legal institution.
+The ledger prevents a numerical contributor from being accidentally presented
+as the end of the design.
+
 V16 does **not** remove the two V15 terms until the live-save/contract-default
 spike in §8 passes. Removing a contract entry from an active contract group
 without proving how CK3 handles saved obligations is unnecessarily risky.
