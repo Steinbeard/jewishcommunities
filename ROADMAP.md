@@ -718,12 +718,12 @@ before building it; nothing here is approved by default.
   **PLANNED, 2026-09-25 — Rabbi ordination path.**
   [V21](docs/spec/v21-rabbi-ordination-paths.md) resolves the design question before code: a
   rabbinic-authority Jewish candidate studies through the existing Learn Torah scheme, records two
-  distinct fields of study, then explicitly seeks semicha at a Beit Midrash. Learning 8 is the
-  entry floor; Piety supports ceremony rather than becoming an opaque hard gate. It preserves
-  history, Chief Rabbi appointment, and Bet Din recognition as institutional routes, reuses the
-  current gender-law hook, and explicitly defers broad AI evaluation until a live spike. **No V21
-  code is built yet.**
-
+  distinct fields of study, then explicitly seeks semicha at a Beit Midrash. A four-year
+  rabbinic-guardian apprenticeship can satisfy that curriculum at adulthood unless Learning is very
+  low or the mentor-pupil relationship seriously fails. Learning 8 is the entry floor; Piety
+  supports ceremony rather than becoming an opaque hard gate. It preserves history, Chief Rabbi
+  appointment, and Bet Din recognition as institutional routes, reuses the current gender-law hook,
+  and explicitly defers broad AI evaluation until a live spike. **No V21 code is built yet.**
 
 - **DONE (fleshed out), 2026-09-09 — Write a Book.** The three flat, single-effect book decisions
   above were rebuilt, same day, into one real event chain at user request: `kehillah_write_book_

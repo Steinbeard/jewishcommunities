@@ -47,9 +47,9 @@ V21 reuses that gate rather than creating an incompatible fourth gender rule.
 The player-facing decision is necessarily available only while playing a
 character who can take decisions. Courtiers should not receive map-wide
 individual decision spam. They remain valid candidates for the same path via
-Chief Rabbi appointment, Bet Din invitation, and the future Yeshiva
-mentor/education pipeline; that pipeline must call the same candidate and
-study-progress effects rather than grant the trait through a separate rule.
+Chief Rabbi appointment, Bet Din invitation, and the rabbinic-apprenticeship
+path below. The latter uses the same readiness state and semicha event rather
+than granting the trait through a separate, child-only rule.
 
 ## 3. The study-and-ordination loop
 
@@ -98,7 +98,48 @@ relevant. The threshold belongs in a script value/trigger, not embedded in an
 event, so live results can tune it to three works later without changing the
 model.
 
-### 3.3 Seek Semicha
+### 3.3 Rabbinic apprenticeship
+
+Education is a second way to satisfy the study curriculum. A Jewish student
+who spends a substantial part of their education under a rabbi should be able
+to emerge as one, rather than being forced to repeat their childhood study as
+an adult scheme.
+
+The guardian must hold `kehillah_rabbi_trait`, be rabbinic-authority Jewish,
+and be an eligible religious leader under the current gender-law hook. The
+pupil must share that rabbinic-authority tradition. An education observation
+effect records a **rabbinic apprenticeship** only after four accumulated years
+with that qualifying guardian; replacing a guardian near adulthood cannot
+manufacture an ordination. The record is intentionally a curriculum
+equivalent—not two fake named books—so it satisfies the two-field requirement
+for Seek Semicha without corrupting the library's work history.
+
+At adulthood, a student with Learning **8 or higher**, completed
+apprenticeship, and access to an eligible Beit Midrash receives a *Semicha of
+a Student* event. Accepting the mentor's endorsement grants the Rabbi trait;
+declining preserves the apprenticeship record for a later Seek Semicha. If
+there is no accessible Beit Midrash at that moment, the record is also
+preserved rather than losing a childhood's work to a location change.
+
+The shortcut is intentionally withheld only for a genuine failure of study or
+relationship:
+
+- Learning below 6 is too low for a completed rabbinic curriculum. Learning
+  6–7 gives a visible foundation credit worth one study field, but requires
+  the ordinary adult Learn Torah route until Learning reaches 8 and supplies
+  one separate field of adult study.
+- A mentor with an opinion of the pupil at or below -50 does not endorse them.
+  `cynical` or `arbitrary` alone is not a veto—both are already only modest
+  negative compatibility signals on the Rabbi trait—but the combination of
+  both is a **deep incompatibility** and also withholds endorsement.
+
+Neither outcome is a permanent bar. The student keeps their education/foundation
+record and can repair their Learning, find another teacher, or complete the
+ordinary study route. Piety is not a substitute for learning here either; it
+can colour the endorsement but must not turn a devout unlearned child into a
+rabbi.
+
+### 3.4 Seek Semicha
 
 Once ready, an eligible character sees **Seek Semicha**. It is a capstone
 decision/event, not an annual random notification. It requires the candidate
@@ -108,9 +149,11 @@ enough to read; a functioning study hall is the minimum institution that can
 recognise an ordination. Tier 3 Yeshiva improves flavour and the ceremony's
 prestige/Greatness outcome, but is not required for the basic trait.
 
-The normal outcome is reliable: meeting the published study, Learning, faith,
-and institution requirements grants `kehillah_rabbi_trait`. There must be no
-permanent random rejection after a player has made the investment. Learning
+The normal outcome is reliable: meeting either published curriculum (two
+distinct study fields, a completed rabbinic apprenticeship, or an education
+foundation plus one distinct adult field), Learning, faith, and institution
+requirements grants `kehillah_rabbi_trait`. There must be no permanent random
+rejection after a player has made the investment. Learning
 should affect study speed and the scholarly quality of the ceremony; Piety may
 affect flavour, a modest Piety cost/reward, and how warmly peers receive the
 candidate. Neither should create a second opaque hard gate. A defer option may
@@ -157,9 +200,12 @@ The UI needs only three additions to familiar places:
   fields/works, e.g. `Ordination study: 1 of 2 fields`.
 - Its unavailable tooltip states the precise missing condition: rabbinic
   authority, Learning 8, an accessible work, or a usable study hall.
+- A qualifying pupil's education tooltip names the rabbi mentor and shows
+  apprenticeship years; their coming-of-age event explains whether Learning
+  or a serious mentor-pupil clash withheld endorsement.
 - Seek Semicha states the two completed fields and its institution. The event
-  names the community/teacher where scope permits; it never pretends that a
-  distant library is the character's own court.
+  names the community/teacher or saved mentor where scope permits; it never
+  pretends that a distant library is the character's own court.
 
 No pillar receives a direct ad-hoc ordination bonus. The economic incentive is
 structural: a Beit Midrash makes study and ordination possible, a Rabbi can
@@ -178,11 +224,12 @@ instead of hiding a one-time reward in an unrelated score.
    XP and new apprentice-work recording.
 3. Add the readiness trigger, a Beit-Midrash-aware institution resolver, the
    Seek Semicha decision/event, and localisation/debug output.
-4. Reconcile Chief Rabbi and Bet Din grants with the shared faith gate without
+4. Add the guarded education-observation effect, the apprenticeship/foundation
+   records, and the coming-of-age endorsement event. It must count accumulated
+   qualified years rather than only the guardian present on the final day.
+5. Reconcile Chief Rabbi and Bet Din grants with the shared faith gate without
    removing historical trait holders. Preserve the Bet Din event's
    `exists = global_var:kehillah_bet_din_convening_title` safeguard.
-5. Integrate the later mentor/education pipeline by recording the same work
-   progress, rather than by inventing a child-only trait grant.
 
 ## 7. Required spikes and live playtests
 
@@ -198,6 +245,11 @@ instead of hiding a one-time reward in an unrelated score.
 - **Timing and repetition:** complete two different fields, re-read one, and
   verify only the two distinct fields count; defer semicha and confirm the
   record survives save/load, travel, and a new scheme.
+- **Education:** change guardians at several ages, including immediately
+  before adulthood; verify only four accumulated years under a qualified Rabbi
+  count. Test Learning 5, 6–7, and 8; a -50 mentor opinion; each of cynical
+  and arbitrary alone; and the pair together. Confirm every non-endorsement
+  preserves a viable adult path.
 - **Institutional regression:** confirm Chief Rabbi appointment, a Bet Din
   co-judge, and a historical Rabbi still behave correctly; specifically check
   the deferred Semicha guard does not reintroduce the 2026-09-24 stale-global
