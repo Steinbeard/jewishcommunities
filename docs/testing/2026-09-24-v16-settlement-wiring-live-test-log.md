@@ -250,3 +250,42 @@ verify `.0006`/`.0007` appear exactly once with unchanged terms; then transfer
 a host county by conquest and wait through the deferred end-and-start path.
 Check `error.log` after each and confirm that the qualitative posture text is
 never blank and never changes a contract by itself.
+
+## Fresh V20 bootstrap and charter-notice regression (2026-09-25)
+
+**Status: FOUND AND SOURCE-FIXED A HOST-NOTICE SCOPE BUG; POST-FIX LIVE
+RECHECK BLOCKED BY CK3 INITIALIZATION HANG.**
+
+- `ck3-tiger` before the live run reported the established baseline: **0
+  fatal, 0 error, 57 warnings, 0 untidy, 17 tips**.
+- A clean Worms 1066 start reached the paused map. Advancing three days
+  produced the expected startup sequence in `debug.log`: `.0001` refreshed
+  the nearby-community cache, `.0002` applied the deferred regional policy
+  writes, `.0003` refreshed committed charter caches, and V20's `.0008`
+  reported **"initialized historical pillars from committed baselines."**
+  This is a live execution pass for V20's deferred snapshot scheduling, but
+  not yet a ledger-value or first-quarter-pulse pass.
+- After those ticks, `kehillah_debug.81` reported the expected Worms
+  Christian/Allowed state from the cache: **Free** construction, **No Watch**,
+  **Royal Appeal**, and **Unrestricted** study. The game remained responsive.
+- The new cache-backed community notice did reach the player (the sealed-
+  charter event was visibly queued), but the same run logged an error for
+  every host digest: `scope:liege` was unset for a tributary contract.
+  Consequently `.0005` was scheduled with no character root and emitted
+  `expected scope character, got none`; the grouped ruler notice cannot be
+  considered live-working.
+- Cause: `kehillah_queue_charter_notification_effect` assumed a normal
+  `scope:liege` event target. Tributary charters do not provide that target.
+  The effect now resolves the host through
+  `domicile.domicile_location.county.holder.top_liege`, the already-proven
+  settlement-policy host path. This supplies a real host-character scope for
+  the debounce counter and delayed `.0005` event.
+- The focused source fix is `ck3-tiger`-clean at the same baseline. A full
+  launcher and direct-executable restart were both attempted for the required
+  live retest. Each remained on CK3's **Initializing Game** screen and later
+  stopped responding before the main menu, with the log stopping during
+  vanilla GUI loading (`gui/tools/dropdown.gui`). This was not a charter
+  parser/error-log failure, but it prevents claiming the fix as live-verified.
+  Re-run a fresh Worms start after CK3 can again reach its main menu; advance
+  three days and confirm exactly one host digest per ruler, no `.0005`
+  scope errors, and the existing community notice.
