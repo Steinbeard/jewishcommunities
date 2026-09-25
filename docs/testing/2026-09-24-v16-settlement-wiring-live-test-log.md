@@ -145,3 +145,42 @@ the `kehillah` lines in `logs/error.log` so a new error is distinguishable.
   bootstrap; a later, deliberately scheduled reconciliation path must keep it
   aligned with voluntary charter edits. Do not claim charter-to-pillar effects
   or UI contract rows as live-verified until that path is implemented.
+
+## Deferred charter-state cache implementation (2026-09-24)
+
+**Status: SOURCE-VALIDATED; LIVE CACHE READ/RECONCILIATION TEST STILL
+REQUIRED.** The reader spike above is replaced by a deliberately narrow cache
+layer. `kehillah_refresh_charter_state_cache_effect` is now the sole ordinary
+script reader of `subject_contract_has_flag`. It runs only in character effect
+contexts, never in a pillar script value, building trigger, custom localization
+renderer, or game-start registry loop.
+
+- A fresh Christian or Muslim contract is still written by `.0002` one day
+  after `start_tributary`. `.0003` is scheduled **one further day later** and
+  reads the now-committed flags into numeric variables on the community title:
+  construction, security, jurisdiction, text study, and market access. The
+  writer is therefore never asked to read its own uncommitted obligation write.
+- The normal `kehillah_quarterly_pulse` refreshes the same cache **before**
+  `kehillah_quarterly_pillars_effect` converges that quarter's scores. This is
+  the conservative reconciliation cadence for voluntary charter edits: source
+  inspection found no generic vanilla subject-contract-changed on_action.
+  Accordingly a negotiated edit can leave the ledger, construction gate, and
+  pillar baseline stale for at most one quarterly pulse; it cannot invoke a
+  live contract trigger from a UI frame or initialization path.
+- The refresh first clears all V16 cache variables. A Christian package writes
+  construction/security/jurisdiction/text, while a Muslim package writes
+  construction/security/jurisdiction/market. A switch back to V15 or a future
+  regional fallback therefore cannot inherit stale V16 rights. V15's own
+  moneylending/walled-quarter readers remain unmodified.
+- V16 pillar values, the construction-permission decision and building gate,
+  breakdown custom localization, policy-alignment ledger line, and debug
+  `.81` now consume cache helper triggers. Before a regional cache exists,
+  V16 contributes no pillar term and its new-construction gate fails closed;
+  legacy/no-regional charters retain their previous permissive building path.
+
+Required next live probe: start fresh Worms, advance two days, run
+`event kehillah_debug.81`, and confirm the `.0003` breadcrumb followed by the
+Allowed cache values (Free / No Watch / Royal Appeal / Unrestricted). Then
+change a regional contract, wait through the next quarterly pulse, and confirm
+the debug report, construction gate, ledger wording, and pillar contributor
+all update together without initialization stalls or new `error.log` entries.
