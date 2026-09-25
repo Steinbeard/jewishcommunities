@@ -253,8 +253,7 @@ never blank and never changes a contract by itself.
 
 ## Fresh V20 bootstrap and charter-notice regression (2026-09-25)
 
-**Status: FOUND AND SOURCE-FIXED A HOST-NOTICE SCOPE BUG; POST-FIX LIVE
-RECHECK BLOCKED BY CK3 INITIALIZATION HANG.**
+**Status: HOST-NOTICE SCOPE BUG FOUND, FIXED, AND LIVE-VERIFIED.**
 
 - `ck3-tiger` before the live run reported the established baseline: **0
   fatal, 0 error, 57 warnings, 0 untidy, 17 tips**.
@@ -280,12 +279,19 @@ RECHECK BLOCKED BY CK3 INITIALIZATION HANG.**
   `domicile.domicile_location.county.holder.top_liege`, the already-proven
   settlement-policy host path. This supplies a real host-character scope for
   the debounce counter and delayed `.0005` event.
-- The focused source fix is `ck3-tiger`-clean at the same baseline. A full
-  launcher and direct-executable restart were both attempted for the required
-  live retest. Each remained on CK3's **Initializing Game** screen and later
-  stopped responding before the main menu, with the log stopping during
-  vanilla GUI loading (`gui/tools/dropdown.gui`). This was not a charter
-  parser/error-log failure, but it prevents claiming the fix as live-verified.
-  Re-run a fresh Worms start after CK3 can again reach its main menu; advance
-  three days and confirm exactly one host digest per ruler, no `.0005`
-  scope errors, and the existing community notice.
+- A direct-executable restart initially appeared stuck on **Initializing
+  Game**, but CK3 remained responsive and eventually reached the modded main
+  menu; the pause was a long engine world/database load, not a crash. A fresh
+  Worms start then reached the paused map. Letting the clock run through 18
+  September fired the deferred initialization. `debug.log` again recorded
+  `.0003` cache commits and `.0008` historical-pillar initialization, while
+  `error.log` contained **no** new `scope:liege`, `expected scope character`,
+  `wrong scope`, or `settlement_conditions` error.
+- The community-facing **A Charter Is Sealed** event rendered correctly for
+  Worms: it named the host realm and showed **Free to Build**, **No Communal
+  Watch**, **Royal Appeal**, and **Unrestricted Study**. This is a live pass
+  for the fixed community-notice route and proves that the delayed notification
+  path no longer loses its character scope. The grouped host digest remains
+  a separately open UI test because Worms's host is AI-controlled in this
+  start; it needs a host-player or real succession/conquest setup to inspect
+  its visible recipient and one-per-host debounce.
