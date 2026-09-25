@@ -1,6 +1,7 @@
 # V19 Spec: Historical Starting-Pillar Balance
 
-**Status: BUILT, source-validated; awaiting the scheduled live regression.**
+**Status: SUPERSEDED before live test by
+[`v20-starting-pillars-equal-baseline.md`](v20-starting-pillars-equal-baseline.md).**
 **Date: 2026-09-25.** This is a narrow calibration addendum to
 [`v2-pillar-economy-and-lifecycle.md`](v2-pillar-economy-and-lifecycle.md): it
 supersedes only that spec's implicit blank-slate treatment of communities
@@ -64,8 +65,6 @@ Source-modelled opening target, before the first quarterly convergence:
   reserve; confirm this explicitly so the historical-start loop has not
   leaked into dynamic founding.
 
-The scheduled live regression should load the 1066 bookmark, wait for the
-day-one cache and first quarterly pulse, inspect the community ledger for the
-fifteen historical rows, and compare a dynamically founded community when
-reachable. Record actual values and any adjustment to the three reserves in a
-dated test log before calling this calibration live-verified.
+This approach was replaced before its scheduled live test: fixed reserves
+still left starting values unrelated to their dynamic baselines. V20 instead
+sets the historical starting state directly from those baselines.
