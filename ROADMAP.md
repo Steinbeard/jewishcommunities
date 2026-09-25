@@ -124,8 +124,11 @@ than renumbered, since later items and other docs cross-reference these numbers 
    varies (and turned up two cases not documented in this doc — Part 2's pool has grown since this
    was last updated), and the docket closes exactly once with the activity actually ending. Full
    account in v5 §11's own status paragraph. **Two new, unrelated, single-fire bugs found in the
-   process, not fixed**: a missing `exists =` guard in `kehillah_bet_din_semicha_events.txt`, and an
-   unguarded negative `add_gold` in the Silversmiths' Quarrel case resolution — see `BLOCKERS.md`.
+   process**: a missing `exists =` guard in `kehillah_bet_din_semicha_events.txt`, and an unguarded
+   negative `add_gold` in the Silversmiths' Quarrel case resolution. **Source-fixed 2026-09-25,
+   awaiting live regression:** the Semicha event now refuses a stale host-dependent offer, and
+   restitution is capped at the accused's actual gold while preserving a matched transfer to the
+   accuser. See `BLOCKERS.md`.
    **Design-only addendum, 2026-09-08**: [v5 spec section 10](docs/spec/v5-bet-din-conference.md)
    proposes widening the panel with up to 2 additional non-leader Jewish scholars, found via a
    `guest_invite_rules` search and scored on proximity/Learning/Piety/traits, each getting a real

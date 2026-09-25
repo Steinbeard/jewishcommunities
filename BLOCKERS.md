@@ -311,3 +311,14 @@ things were left in.
    Jewish Community," not just game-start seeding) gets a Host Charter automatically too -- see
    `docs/spec/v15-host-charter.md` section 5's live pass 4. No issues found there.
 
+## 2026-09-25 — Bet Din single-fire errors source-fixed; live regression pending
+- **RESOLVED IN SOURCE, NOT YET LIVE-RETESTED:** `kehillah_bet_din_semicha.0001` now requires
+  `global_var:kehillah_bet_din_convening_title` before opening its host-dependent event, preventing
+  the deferred stale offer from dereferencing an unset global scope.
+- **RESOLVED IN SOURCE, NOT YET LIVE-RETESTED:** the Silversmiths' Quarrel now computes restitution
+  as `min(max(accused_gold, 0), medium_gold_value)` and uses that exact value for both the deduction
+  and accuser credit. This prevents an unaffordable negative `add_gold` while keeping the transfer
+  zero-sum.
+- `ck3-tiger`: 0 fatal, 0 error. The next real Bet Din docket should specifically exercise a
+  low-gold accused and a delayed Semicha offer before these are called live-verified.
+

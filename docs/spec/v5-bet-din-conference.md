@@ -449,12 +449,14 @@ followed through to the close. All three specifically-flagged unverified points 
   screen appeared, and afterward the Activities panel confirmed no ongoing activity and the decision
   on cooldown -- no loop, no second close.
 
-**Two new, real, single-fire bugs found during this pass, unrelated to the docket-loop fix itself
-(both logged in `BLOCKERS.md`, not fixed here):** a missing `exists =` guard on
-`global_var:kehillah_bet_din_convening_title` in `events/kehillah_bet_din_semicha_events.txt`, and
-an unguarded `add_gold` with a negative value in `kehillah_bet_din_silversmiths_resolution_effect`
-(`common/scripted_effects/kehillah_bet_din_scripted_effects.txt`) when the target can't afford the
-deduction. Neither crashed, looped, or recurred.
+**Two new, real, single-fire bugs found during this pass, unrelated to the docket-loop fix itself:**
+a missing `exists =` guard on `global_var:kehillah_bet_din_convening_title` in
+`events/kehillah_bet_din_semicha_events.txt`, and an unguarded `add_gold` with a negative value in
+`kehillah_bet_din_silversmiths_resolution_effect` (`common/scripted_effects/kehillah_bet_din_
+scripted_effects.txt`) when the target could not afford the deduction. **Source-fixed 2026-09-25,
+awaiting live regression:** the stale Semicha offer now does not open without its convening-title
+scope, and restitution is capped at the accused's actual gold with the exact same capped amount
+credited to the accuser. Neither original issue crashed, looped, or recurred.
 
 One edge case is accepted deliberately rather than solved: if a player leaves a case's popup
 unanswered past the 30-day phase ceiling, two cases can overlap and share the single-`global_var`
