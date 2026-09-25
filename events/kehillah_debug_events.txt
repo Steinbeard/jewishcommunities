@@ -856,7 +856,18 @@ kehillah_debug.95 = {
 			limit = { NOT = { has_trait = kehillah_rabbi_trait } }
 			debug_log = "kehillah_debug.95: precondition OK does not already hold kehillah_rabbi_trait"
 		}
-		else = { debug_log = "kehillah_debug.95: precondition FAILS already a rabbi -- test will be vacuous, run as a non-rabbi" }
+		else = {
+			# SELF-HEALING, ADDED 2026-09-25 after the first live run came
+			# back VACUOUS on exactly this branch: the Worms 1066 leader
+			# (Isaac ben Eliezer ha-Levi) starts the game already holding
+			# kehillah_rabbi_trait, so the positive control could never
+			# fire and the guard was never actually proven non-blocking.
+			# Strip the trait so the control means something. Accepting the
+			# event's own first option re-grants it, so the usual path
+			# leaves the character exactly as it found them.
+			remove_trait = kehillah_rabbi_trait
+			debug_log = "kehillah_debug.95: root was already a rabbi -- trait removed so the positive control is not vacuous. Accept the event's first option to restore it."
+		}
 		if = {
 			limit = { kehillah_leadership_gender_eligible_trigger = yes }
 			debug_log = "kehillah_debug.95: precondition OK gender-eligible under current flag state"
@@ -1172,5 +1183,132 @@ kehillah_debug.102 = {
 		if = { limit = { has_character_modifier = kehillah_band_greatness_legendary_modifier } debug_log = "kehillah_debug.102: wearing Greatness LEGENDARY modifier" }
 
 		debug_log = "kehillah_debug.102: pillar band report -- END"
+	}
+}
+
+# =====================================================================
+# .103 -- ISOLATING THE add_gold CLAMP FAILURE (added 2026-09-25, after
+# the first Sukkot live run).
+#
+# WHAT .97 ACTUALLY FOUND, live: with the accused holding 3 gold, the
+# clamp computed restitution = 3.00 exactly (logged, and the accuser was
+# credited exactly 3), and yet `add_gold = { value = <that scope value>
+# multiply = -1 }` STILL threw "Trying to add add_gold with negative
+# value", and the accused did not end at 0. So the deduction was refused
+# even though, by every number the probe could read, it was affordable.
+#
+# That is not what the 2026-09-25 source fix assumed. It means the
+# engine's affordability check for a negative add_gold is NOT simply
+# |value| <= gold, and the same shape is what currently ships inside
+# kehillah_bet_din_silversmiths_resolution_effect -- so the "resolved in
+# source" claim in BLOCKERS.md is in doubt, not confirmed.
+#
+# DO NOT GUESS A FIX FROM HERE. This event measures instead:
+#   A. what gold a freshly created character actually has at each step
+#      (probe characters may simply not behave like the real litigants
+#      the shipped effect operates on -- that alone would explain
+#      everything and would mean the shipped fix is fine)
+#   B. whether the SNAPSHOT shape (save_scope_value_as, then deduct that
+#      value) fails where the SELF-REFERENTIAL shape (deduct `gold`
+#      computed at deduction time) succeeds
+#
+# If B is the difference, the self-referential shape is the fix and it
+# is provably always affordable. If A shows the probe characters are the
+# anomaly, the shipped effect needs re-testing on real litigants in a
+# real docket instead, and .97/.103 should be retired as misleading.
+# =====================================================================
+kehillah_debug.103 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.103: add_gold clamp isolation -- START"
+
+		# --- A. What does a freshly created character actually hold? ---
+		create_character = {
+			culture = root.culture
+			faith = root.faith
+			age = 40
+			gender_female_chance = 0
+			location = root.location
+			save_scope_as = kehillah_debug_snap_target
+		}
+		scope:kehillah_debug_snap_target = {
+			save_scope_value_as = { name = kehillah_debug_gold_at_creation value = gold }
+		}
+		debug_log = "kehillah_debug.103: A1 gold at creation (see kehillah_debug_gold_at_creation below)"
+		debug_log_scopes = yes
+
+		scope:kehillah_debug_snap_target = {
+			add_gold = { value = gold multiply = -1 }
+			save_scope_value_as = { name = kehillah_debug_gold_after_zeroing value = gold }
+		}
+		debug_log = "kehillah_debug.103: A2 gold after zeroing -- should be 0.00; anything else is the anomaly"
+		debug_log_scopes = yes
+
+		scope:kehillah_debug_snap_target = {
+			add_gold = 3
+			save_scope_value_as = { name = kehillah_debug_gold_after_grant value = gold }
+		}
+		debug_log = "kehillah_debug.103: A3 gold after adding 3 -- should be 3.00"
+		debug_log_scopes = yes
+
+		# --- B1. The SNAPSHOT shape, i.e. exactly what ships today. ---
+		scope:kehillah_debug_snap_target = {
+			save_scope_value_as = {
+				name = kehillah_debug_snap_restitution
+				value = { value = gold min = 0 max = medium_gold_value }
+			}
+			add_gold = { value = scope:kehillah_debug_snap_restitution multiply = -1 }
+			save_scope_value_as = { name = kehillah_debug_gold_after_snapshot_deduct value = gold }
+		}
+		debug_log = "kehillah_debug.103: B1 SNAPSHOT shape attempted -- if gold_after_snapshot_deduct is still 3.00, the deduction was refused"
+		debug_log_scopes = yes
+		scope:kehillah_debug_snap_target = {
+			if = {
+				limit = { gold < 1 }
+				debug_log = "kehillah_debug.103: B1 PASS snapshot deduction went through"
+			}
+			else = {
+				debug_log = "kehillah_debug.103: B1 FAIL snapshot deduction was refused -- reproduces the shipped bug"
+			}
+		}
+
+		# --- B2. The SELF-REFERENTIAL shape, on a second fresh character. ---
+		# `gold` is evaluated by the engine at deduction time against the
+		# very character being deducted from, so this cannot ask for more
+		# than exists, whatever the affordability check is really doing.
+		create_character = {
+			culture = root.culture
+			faith = root.faith
+			age = 40
+			gender_female_chance = 0
+			location = root.location
+			save_scope_as = kehillah_debug_selfref_target
+		}
+		scope:kehillah_debug_selfref_target = {
+			add_gold = { value = gold multiply = -1 }
+			add_gold = 3
+			# Bank what we are about to take, so a caller could still pay it
+			# to the other party -- the transfer has to stay zero-sum.
+			save_scope_value_as = {
+				name = kehillah_debug_selfref_restitution
+				value = { value = gold min = 0 max = medium_gold_value }
+			}
+			add_gold = { value = gold multiply = -1 }
+			save_scope_value_as = { name = kehillah_debug_gold_after_selfref_deduct value = gold }
+		}
+		debug_log = "kehillah_debug.103: B2 SELF-REFERENTIAL shape attempted"
+		debug_log_scopes = yes
+		scope:kehillah_debug_selfref_target = {
+			if = {
+				limit = { gold < 1 }
+				debug_log = "kehillah_debug.103: B2 PASS self-referential deduction went through -- this is the candidate fix"
+			}
+			else = {
+				debug_log = "kehillah_debug.103: B2 FAIL self-referential deduction was ALSO refused -- the problem is not the snapshot"
+			}
+		}
+
+		debug_log = "kehillah_debug.103: add_gold clamp isolation -- END"
 	}
 }
