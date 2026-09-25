@@ -582,6 +582,15 @@ and armed-watch MaA tests remain open and are recorded in V16 §8 and
 events, expulsion, migration, Indian-specific terms, and a destination-picker are intentionally
 not being silently built by this slice.
 
+**2026-09-25 — policy-change AI is now specified, not built.**
+[V17](docs/spec/v17-settlement-politics-and-charter-revision.md) records the
+decision that host politics must be event-led, visible, one-rung-at-a-time,
+and followed by a separately negotiated charter response. Faith is legal
+context, personality a bounded modifier, and economic/local conditions named
+pressures; none is a universal hidden hostility score. Its first work is a
+pulse/AI-initiation spike, not a silent AI policy writer. Banned remains
+warning-only until migration and crisis counterplay exist.
+
 ### Phase 5 — Crypto-Jewish Survival Loop
 The secret-practice/detection/forced-conversion system for communities that
 lose the Phase 4 expulsion/purge struggle. Depends on Phase 4 existing.
