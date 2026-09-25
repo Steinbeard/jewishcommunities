@@ -1,7 +1,7 @@
 # 2026-09-24 — V16 settlement-policy and fresh-charter wiring
 
-**Status: PARTIAL LIVE PASS; FRESH-CHARTER WRITING CONFIRMED, BUT THE
-CHARACTER-TO-PILLAR READER REMAINS BLOCKED.** This log covers the
+**Status: PARTIAL LIVE PASS; FRESH-CHARTER WRITING AND DEFERRED CACHE
+INITIALIZATION CONFIRMED, BUT UI/PILLAR CONSEQUENCES REMAIN UNVERIFIED.** This log covers the
 first live wiring pass described by
 [V16](../spec/v16-jewish-settlement-policy-and-charters.md). It supplements,
 rather than replaces, the isolated earlier prototype test.
@@ -198,3 +198,20 @@ all update together without initialization stalls or new `error.log` entries.
   reconciliation, UI rendering, or pillar effects. Re-run the stated probe
   with a functioning console/clock input before upgrading this section's
   source-validated cache status.
+
+## Cache initialization live pass (2026-09-24)
+
+- After the player advanced the fresh Worms run by two days, `debug.log`
+  recorded the expected sequence: startup network cache (`.0001`), fourteen
+  deferred fresh-charter policy writes (`.0002`), then fourteen committed
+  regional-charter cache refreshes (`.0003`). This establishes that every
+  pre-authored community reaches the deferred read safely, not merely Worms.
+- The same log contains no new `settlement_conditions`, `charter_cache`,
+  `scope:liege`, or `primary_title` errors. Together with the two successful
+  fresh launches above, this is a live pass for the cache's initialization
+  lifecycle and its avoidance of the former game-start hang.
+- `kehillah_debug.81` was not run in this pass, so the individual Allowed
+  values (Free / No Watch / Royal Appeal / Unrestricted) are still inferred
+  from the already-live writer test, rather than independently observed
+  through the cache. Quarterly reconciliation after a voluntary contract edit,
+  construction gating, pillar contribution, and ledger UI remain open.
