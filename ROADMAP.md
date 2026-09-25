@@ -83,17 +83,33 @@ short research bullets for when Daniel is back.
   eligible courtier (one at a time, adds a fixed score in `kehillah_leadership.txt`, shown in the
   succession candidate tooltip). **Done when**: (a) is fixed or its cause documented with
   evidence; (b), (c), (d) each observed in a live console-kill succession.
-- **S4. BUILD — Scholars on the move: hiring a Chief Rabbi from elsewhere.** Build exactly:
-  (1) a character interaction "Invite to Serve as Chief Rabbi", usable by a Kehillah leader on a
-  Jewish, rabbi-eligible (existing gender/rabbi gates) character at another community's court or a
-  landless scholar; gold cost scaled by the target's Learning; `ai_accept` weighs the two
-  communities' Greatness, the offer, and the target's opinion/current post, with a readable
-  breakdown. On accept: move to the inviter's court and appoint as Chief Rabbi. (2) A yearly AI
-  pulse: an AI community with an empty Chief Rabbi seat tries the same interaction on the best
-  reachable candidate. (3) Two flavour events: "your student has been called to X" (your trained
-  courtier leaves; small Greatness gain for you) and "a scholar asks to join us" (arrival at a
-  high-Greatness community). **Done when**, live: the player hires a rabbi from another community
-  end to end, and an AI community fills an empty seat via the debug-triggered pulse.
+- **S4. BUILD — Chief Rabbi: search like "Find a Physician", or serve yourself.** (Daniel,
+  2026-09-25.) Build exactly:
+  (1) **"Seek a Chief Rabbi" decision, modelled on vanilla's physician recruitment** (the
+  `hire_physician_decision` item in `game/common/decisions/90_minor_decisions.txt`, which opens
+  event `health.3001` offering candidates at skill tiers and gold costs, with a cooldown flag —
+  copy that shape). Shown when the Chief Rabbi seat is empty and the Beit Midrash unlock exists.
+  The event offers ~3 candidates: where possible, **real existing rabbis** (Jewish, rabbi-eligible
+  under the existing gender/rabbi gates, not a community leader, preferring other communities'
+  courts and landless scholars; Learning-ranked, cost scaled by Learning and by the gap between
+  their community's Greatness and yours), padded with generated candidates at low/mid/high tiers
+  if too few real ones exist. On choosing: move to your court and appoint to
+  `chief_rabbi_kehillah_position`. AI communities with an empty seat use the same decision
+  (`ai_chance`).
+  (2) **The leader as their own Chief Rabbi.** A ruler can't hold a court position in their own
+  court, so model it as an explicit toggle decision, "Serve as the Community's Rabbi": available
+  when the leader has the rabbi trait and Learning ≥ a script_value threshold (~14), and no rabbi
+  is appointed. While active (character flag), every consumer of the Chief Rabbi seat — the pillar
+  contribution in `kehillah_breakdown_values.txt`/`kehillah_scripted_effects.txt` and the dispute
+  events in `kehillah_dispute_events.txt` — reads "the appointed Chief Rabbi, or the leader if
+  serving". Do this through ONE new scripted trigger/value pair used at every site, not per-site
+  special cases. Small drawback, so it's a choice (e.g. a stress or influence-gain cost for doing
+  two jobs); appointing a rabbi ends the toggle.
+  (3) One flavour event, "your student has been called to X": a rabbi you trained is recruited by
+  another community's search; small Greatness gain for you.
+  **Done when**, live: the player recruits a real rabbi from another community through the search
+  event; a rabbi-trait leader with high Learning serves as their own Chief Rabbi and the breakdown
+  tooltip shows the contribution; an AI community fills an empty seat.
 - **S5. BUILD — Responsa.** Build exactly: an on_action pulse (roughly one question every 1-2
   years for a leader or Chief Rabbi with Learning ≥ ~12) firing an event where a named leader of
   another real community sends a question (start with 6 question texts, halakhic/communal flavour,
