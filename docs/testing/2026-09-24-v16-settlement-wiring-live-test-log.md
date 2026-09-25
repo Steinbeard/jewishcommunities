@@ -322,3 +322,20 @@ never blank and never changes a contract by itself.
   direct probe established that the existing V20 sampler and the ordinary
   quarterly baseline evaluator agree. No V20 gameplay source change was
   required; the final working tree has only this documentation update.
+
+## Muslim charter cache and notice regression (2026-09-25)
+
+**Status: LIVE PASS.**
+
+- In the same debug session, switching to Granada's historical Kehillah
+  leader (live character ID `33325`) and running `kehillah_debug.81` reported
+  the **Muslim Host Charter** with an Allowed host policy, **Free** construction,
+  **Unarmed** security, **Communal Arbitration**, a Goldilocks nearby-community
+  network, and an Established Town. This independently exercises the Muslim
+  cache reader and the non-Christian location/network branches.
+- `kehillah_debug.82`, followed by one day, rendered **A Charter Is Sealed**
+  for Granada. Its visible terms matched the cache report: Free to Build,
+  Unarmed Community, Recognised Communal Arbitration, and Regional Trade
+  Access. No new `scope:liege`, `expected character`, or settlement-notice
+  error appeared. The only contemporaneous wrong-scope log line belonged to
+  vanilla/DLC `tgp_tribute_mission_scripted_effects.txt`, not Kehillah.
