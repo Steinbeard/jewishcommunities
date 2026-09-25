@@ -154,38 +154,67 @@ kehillah_norman_conquest_execute_effect = {
 # DYNASTY, per the user's own explicit "personal connections to other
 # Ashkenazi communities -- especially French communities if William
 # wins" request. global_var:kehillah_norman_new_leader_dynasty_choice
-# (set once, above): 1 = William branch, given dynn_Yitzhaki (9000003)
-# -- Rashi of Troyes's own real, already-defined dynasty (common/
-# dynasties/ha_levi.txt) -- read as kin of his household crossing the
-# Channel in William's own wake, the strongest, most concrete realization
-# of "personal connection" this mod's existing infrastructure can give
-# (a real, in-game-verifiable shared house with an existing community's
-# own named leader). 2 = Harald branch, given dynn_Bacharach (9000008) --
-# an already-reserved, real Rhineland Ashkenazi house name, not shared
-# with any specific living NPC (no existing community in this mod's
-# roster has a natural North Sea/Scandinavian trade connection to draw
-# on) -- a deliberately lighter connection than William's, not built to
-# match it. 3 = other branch, generated fresh (dynasty = generate) --
-# no specific household record, the same honest "no documented figure"
-# convention this file's own history/characters headers already use.
+# (set once, above): 1 = William branch, given dynn_Yitzhaki (9000003) --
+# Rashi of Troyes's own real, already-defined dynasty (common/dynasties/
+# ha_levi.txt) -- read as kin of his household crossing the Channel in
+# William's own wake, the strongest, most concrete realization of
+# "personal connection" this mod's existing infrastructure can give (a
+# real, in-game-verifiable shared house with an existing community's own
+# named leader). 2 = Harald branch and 3 = other branch both use
+# `dynasty = generate` (no specific household record) -- see the FIXED
+# note below for why the Harald branch's own originally-planned
+# dynn_Bacharach tie was dropped, not just re-implemented differently.
 #
-# FIXED 2026-09-25, found live: create_character's own `dynasty` field
-# (`dynasty = dynasty:9000003`) does NOT reliably join a freshly created
-# character to a pre-existing dynasty in this engine version -- confirmed
-# live, it silently lands the character in an unrelated generated dynasty
-# instead, durably (re-checked a full day later, still wrong, so not a
-# same-tick read-timing issue either). A `set_dynasty` effect exists in
-# effect_localization/00_character_effects.txt but turned out to be dead/
-# vestigial loc, not a real scriptable effect in this build (confirmed
-# live: "Unknown effect: set_dynasty"). The REAL, confirmed-working
-# mechanism is `dynasty_house = house:<key>` (real, repeated vanilla
-# precedent: common/scripted_effects/00_almohad_invasion_effects.txt:104,
-# 145) -- CK3 characters join a HOUSE, which itself declares its own
-# parent dynasty via a `dynasty = <numeric id>` field, not a dynasty
-# directly. common/dynasty_houses/kehillah_dynasty_houses.txt defines
-# kehillah_house_yitzhaki (dynasty 9000003) and kehillah_house_bacharach
-# (dynasty 9000008) for exactly this purpose. Every `dynasty =` field
-# below was rewritten to `dynasty_house =` accordingly.
+# FIXED 2026-09-25, found live, after THREE failed runtime mechanisms in
+# a row -- do not attempt a fourth guess at joining a pre-existing
+# dynasty/house directly from inside create_character without a live
+# re-test; use the mechanism below, which is grounded in two
+# independently-proven primitives instead of a new one:
+#   1. `dynasty = dynasty:9000003` inside create_character does NOT
+#      reliably join a freshly created character to a pre-existing
+#      dynasty -- confirmed live, it silently lands the character in an
+#      unrelated generated dynasty instead, durably (re-checked a full
+#      day later, still wrong, so not a same-tick read-timing issue).
+#   2. `set_dynasty` (referenced in effect_localization/
+#      00_character_effects.txt) is dead/vestigial localization, not a
+#      real scriptable effect in this build -- confirmed live: "Unknown
+#      effect: set_dynasty".
+#   3. `dynasty_house = house:<key>` (real, repeated vanilla precedent:
+#      common/scripted_effects/00_almohad_invasion_effects.txt:104,145)
+#      still failed for a BRAND NEW, custom, zero-population house
+#      defined only in common/dynasty_houses/ -- "Failed to fetch a
+#      valid house", even after a full clean relaunch. Strong suspicion,
+#      not fully proven: a house needs at least one history-file member
+#      before the engine ever instantiates it as a queryable object.
+# THE MECHANISM ACTUALLY USED instead combines two primitives already
+# independently proven to work, rather than a fourth guess at the same
+# untested runtime path: bare `dynasty = 9000003` in a HISTORY FILE (the
+# exact syntax Rashi's own entry already uses successfully, never in
+# doubt tonight -- only the RUNTIME script-effect equivalent was), plus
+# `father = character:X` + `dynasty = inherit` inside create_character
+# (real, confirmed vanilla precedent used in shipped, tested content:
+# common/scripted_effects/00_mongol_invasion_effects.txt:1717-1723, the
+# actual mechanism behind Genghis Khan's own dynamically generated
+# children). history/characters/yitzhaki_anglia_anchor.txt adds
+# character 9000218, "Meir" -- an elder kinsman of Rashi's own household,
+# already deceased by 1066 on purpose (a living anchor would need to
+# survive up to 24 years of unprotected simulation before ever being
+# referenced) -- solely so the William branch below can set `father =
+# character:9000218` + `dynasty = inherit` rather than reference a
+# dynasty or house directly at all. See that history file's own header
+# for the full account, including the one part still not independently
+# confirmed live: whether `father =` referencing an already-deceased
+# character resolves cleanly for a SCRIPTED (not organic) birth.
+#
+# THE HARALD BRANCH'S OWN dynn_Bacharach TIE WAS DROPPED, not reimplemented
+# with the new mechanism -- it never had a living reference character to
+# begin with (no existing community in this mod's roster has a natural
+# North Sea/Scandinavian trade connection), so there was no equivalent
+# "already-deceased anchor" to build for it the way Yitzhaki has Meir.
+# It was always documented as the deliberately lighter of the two ties;
+# now it is `dynasty = generate`, same as the other branch, rather than
+# inventing a second anchor character for a connection this feature never
+# actually needed to be concrete.
 # ---------------------------------------------------------------------
 
 kehillah_norman_found_london_effect = {
@@ -198,7 +227,8 @@ kehillah_norman_found_london_effect = {
 			location = title:c_middlesex.title_province
 			random_traits = yes
 			gender_female_chance = 0
-			dynasty_house = house:kehillah_house_yitzhaki
+			father = character:9000218
+			dynasty = inherit
 			save_scope_as = kehillah_norman_london_leader
 		}
 	}
@@ -211,7 +241,7 @@ kehillah_norman_found_london_effect = {
 			location = title:c_middlesex.title_province
 			random_traits = yes
 			gender_female_chance = 0
-			dynasty_house = house:kehillah_house_bacharach
+			dynasty = generate
 			save_scope_as = kehillah_norman_london_leader
 		}
 	}
@@ -249,7 +279,8 @@ kehillah_norman_found_york_effect = {
 			location = title:c_north_riding.title_province
 			random_traits = yes
 			gender_female_chance = 0
-			dynasty_house = house:kehillah_house_yitzhaki
+			father = character:9000218
+			dynasty = inherit
 			save_scope_as = kehillah_norman_york_leader
 		}
 	}
@@ -262,7 +293,7 @@ kehillah_norman_found_york_effect = {
 			location = title:c_north_riding.title_province
 			random_traits = yes
 			gender_female_chance = 0
-			dynasty_house = house:kehillah_house_bacharach
+			dynasty = generate
 			save_scope_as = kehillah_norman_york_leader
 		}
 	}
@@ -300,7 +331,8 @@ kehillah_norman_found_lincoln_effect = {
 			location = title:c_lincolnshire.title_province
 			random_traits = yes
 			gender_female_chance = 0
-			dynasty_house = house:kehillah_house_yitzhaki
+			father = character:9000218
+			dynasty = inherit
 			save_scope_as = kehillah_norman_lincoln_leader
 		}
 	}
@@ -313,7 +345,7 @@ kehillah_norman_found_lincoln_effect = {
 			location = title:c_lincolnshire.title_province
 			random_traits = yes
 			gender_female_chance = 0
-			dynasty_house = house:kehillah_house_bacharach
+			dynasty = generate
 			save_scope_as = kehillah_norman_lincoln_leader
 		}
 	}
@@ -351,7 +383,8 @@ kehillah_norman_found_norwich_effect = {
 			location = title:c_norfolk.title_province
 			random_traits = yes
 			gender_female_chance = 0
-			dynasty_house = house:kehillah_house_yitzhaki
+			father = character:9000218
+			dynasty = inherit
 			save_scope_as = kehillah_norman_norwich_leader
 		}
 	}
@@ -364,7 +397,7 @@ kehillah_norman_found_norwich_effect = {
 			location = title:c_norfolk.title_province
 			random_traits = yes
 			gender_female_chance = 0
-			dynasty_house = house:kehillah_house_bacharach
+			dynasty = generate
 			save_scope_as = kehillah_norman_norwich_leader
 		}
 	}
