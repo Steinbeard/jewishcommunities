@@ -1,0 +1,179 @@
+﻿# =====================================================================
+# PILLAR BANDS: make being in a band actually do something, and say so.
+#
+# ROADMAP item S2, parts 1 and 2. The state this replaces, read from the
+# code on 2026-09-25: bands gated building tiers, courtier quality, one
+# Crisis random event and the map-view colour -- but simply BEING in a
+# band had no ongoing effect and crossing a boundary produced no notice.
+# The three headline numbers moved and nothing visibly followed.
+#
+# ONE PARAMETERISED EFFECT, CALLED THREE TIMES. $PILLAR$ is the title
+# variable (kehillah_var_prosperity etc.) and $SHORT$ is the bare pillar
+# name used to build modifier and loc keys by literal token
+# substitution -- the same idiom kehillah_pillar_at_least_trigger already
+# uses for $PILLAR$ (common/scripted_triggers/kehillah_scripted_
+# triggers.txt) and that kehillah_bet_din_scripted_effects.txt uses to
+# build loc keys from $CASE$/$TIER$. Writing it once is what keeps the
+# three pillars from quietly drifting apart, which is the exact failure
+# kehillah_debug.11-.13 exist to catch.
+#
+# BAND INDICES: 0 Crisis, 1 Strained, 2 Healthy, 3 Flourishing,
+# 4 Legendary. Stored as a plain integer on the TITLE
+# (kehillah_band_prev_$SHORT$) rather than re-derived, because the whole
+# point is to detect a CHANGE, which needs last quarter's answer. On the
+# title and not the leader for the same reason the pillars themselves
+# are (kehillah_quarterly_pillars_effect's "WHY THE TITLE, NOT THE
+# CHARACTER"): a succession must not read as every band changing at once.
+#
+# HEALTHY (2) HAS NO MODIFIER, on purpose -- see the S2 block in
+# common/modifiers/kehillah_modifiers.txt. The notice still fires when
+# a pillar moves into or out of Healthy; it just says the modifier was
+# lost rather than naming a new one.
+#
+# FIRST TICK IS SILENT. If no previous band is recorded, this seeds it
+# and applies the right modifier WITHOUT sending a message -- otherwise
+# every community in the world would announce three band "changes" on
+# the first quarterly pulse of a new game, which is noise, not news.
+# =====================================================================
+
+kehillah_update_pillar_band_effect = {
+	if = {
+		limit = {
+			exists = primary_title
+			primary_title = { has_variable = $PILLAR$ }
+		}
+		# 1. What band is this pillar in right now? Highest first, so the
+		#    first match wins -- same top-down ordering the band-name
+		#    customizable_localization uses (common/customizable_
+		#    localization/kehillah_pillar_band_custom_loc.txt).
+		primary_title = {
+			if = {
+				limit = { var:$PILLAR$ >= kehillah_band_legendary_threshold }
+				set_variable = { name = kehillah_band_now_$SHORT$ value = 4 }
+			}
+			else_if = {
+				limit = { var:$PILLAR$ >= kehillah_band_flourishing_threshold }
+				set_variable = { name = kehillah_band_now_$SHORT$ value = 3 }
+			}
+			else_if = {
+				limit = { var:$PILLAR$ >= kehillah_band_healthy_threshold }
+				set_variable = { name = kehillah_band_now_$SHORT$ value = 2 }
+			}
+			else_if = {
+				limit = { var:$PILLAR$ >= kehillah_band_strained_threshold }
+				set_variable = { name = kehillah_band_now_$SHORT$ value = 1 }
+			}
+			else = {
+				set_variable = { name = kehillah_band_now_$SHORT$ value = 0 }
+			}
+		}
+
+		# 2. Seed-and-be-quiet on the very first tick for this community.
+		if = {
+			limit = { primary_title = { NOT = { has_variable = kehillah_band_prev_$SHORT$ } } }
+			kehillah_apply_pillar_band_modifier_effect = { SHORT = $SHORT$ }
+			primary_title = {
+				set_variable = {
+					name = kehillah_band_prev_$SHORT$
+					value = var:kehillah_band_now_$SHORT$
+				}
+			}
+			debug_log = "kehillah_update_pillar_band_effect: seeded a band for a community that had none recorded"
+		}
+		# 3. A real change: swap the modifier, then say what happened.
+		else_if = {
+			limit = {
+				NOT = {
+					primary_title.var:kehillah_band_now_$SHORT$ = primary_title.var:kehillah_band_prev_$SHORT$
+				}
+			}
+			kehillah_apply_pillar_band_modifier_effect = { SHORT = $SHORT$ }
+
+			# Direction decides only which message TYPE is used, i.e. the
+			# colour; the text is the same either way and is written to
+			# read correctly in both directions.
+			if = {
+				limit = {
+					primary_title.var:kehillah_band_now_$SHORT$ > primary_title.var:kehillah_band_prev_$SHORT$
+				}
+				send_interface_message = {
+					type = msg_kehillah_band_improved
+					title = kehillah_band_change_$SHORT$_title
+					desc = kehillah_band_change_$SHORT$_desc
+					left_icon = root
+				}
+			}
+			else = {
+				send_interface_message = {
+					type = msg_kehillah_band_worsened
+					title = kehillah_band_change_$SHORT$_title
+					desc = kehillah_band_change_$SHORT$_desc
+					left_icon = root
+				}
+			}
+
+			primary_title = {
+				set_variable = {
+					name = kehillah_band_prev_$SHORT$
+					value = var:kehillah_band_now_$SHORT$
+				}
+			}
+			debug_log = "kehillah_update_pillar_band_effect: band changed, modifier swapped and the player notified"
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# Put the leader in exactly the one modifier their current band calls
+# for, and in none of the others.
+#
+# CLEAR ALL FOUR, THEN ADD ONE. Cheaper to reason about than tracking
+# which one was applied last, and it self-repairs a character who
+# somehow holds two (a save from before this feature, a succession that
+# carried a modifier across, a debug event). Each removal is guarded by
+# has_character_modifier: an unguarded remove_character_modifier for a
+# modifier that is not present is tolerated, but this repo has been
+# bitten repeatedly by unguarded reads producing error-log noise
+# (v5 section 9's 16-site exists= fix), and a quarterly effect running
+# for every community in the world is the wrong place to be relaxed
+# about per-tick log spam.
+#
+# Healthy (2) deliberately falls through every branch and ends with no
+# modifier at all.
+# ---------------------------------------------------------------------
+kehillah_apply_pillar_band_modifier_effect = {
+	if = { limit = { has_character_modifier = kehillah_band_$SHORT$_crisis_modifier } remove_character_modifier = kehillah_band_$SHORT$_crisis_modifier }
+	if = { limit = { has_character_modifier = kehillah_band_$SHORT$_strained_modifier } remove_character_modifier = kehillah_band_$SHORT$_strained_modifier }
+	if = { limit = { has_character_modifier = kehillah_band_$SHORT$_flourishing_modifier } remove_character_modifier = kehillah_band_$SHORT$_flourishing_modifier }
+	if = { limit = { has_character_modifier = kehillah_band_$SHORT$_legendary_modifier } remove_character_modifier = kehillah_band_$SHORT$_legendary_modifier }
+
+	if = {
+		limit = { primary_title.var:kehillah_band_now_$SHORT$ = 0 }
+		add_character_modifier = kehillah_band_$SHORT$_crisis_modifier
+	}
+	else_if = {
+		limit = { primary_title.var:kehillah_band_now_$SHORT$ = 1 }
+		add_character_modifier = kehillah_band_$SHORT$_strained_modifier
+	}
+	else_if = {
+		limit = { primary_title.var:kehillah_band_now_$SHORT$ = 3 }
+		add_character_modifier = kehillah_band_$SHORT$_flourishing_modifier
+	}
+	else_if = {
+		limit = { primary_title.var:kehillah_band_now_$SHORT$ = 4 }
+		add_character_modifier = kehillah_band_$SHORT$_legendary_modifier
+	}
+}
+
+# ---------------------------------------------------------------------
+# The one call site. Runs all three pillars from the quarterly pulse.
+#
+# Ordered in the quarterly pulse AFTER kehillah_quarterly_pillars_effect
+# for the same reason kehillah_dissolution_watch_effect is: it must read
+# the Stability/Prosperity/Greatness this quarter actually produced.
+# ---------------------------------------------------------------------
+kehillah_update_all_pillar_bands_effect = {
+	kehillah_update_pillar_band_effect = { PILLAR = kehillah_var_prosperity SHORT = prosperity }
+	kehillah_update_pillar_band_effect = { PILLAR = kehillah_var_stability SHORT = stability }
+	kehillah_update_pillar_band_effect = { PILLAR = kehillah_var_greatness SHORT = greatness }
+}
