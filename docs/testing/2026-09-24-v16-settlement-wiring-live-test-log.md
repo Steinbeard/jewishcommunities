@@ -215,3 +215,135 @@ all update together without initialization stalls or new `error.log` entries.
   from the already-live writer test, rather than independently observed
   through the cache. Quarterly reconciliation after a voluntary contract edit,
   construction gating, pillar contribution, and ledger UI remain open.
+
+## Charter notices and ruler transition reports (2026-09-24)
+
+**Status: SOURCE-VALIDATED; LIVE EVENT-RENDER/TIMING TEST REQUIRED.**
+
+- `ck3-tiger` 1.19.0 completed after the notice implementation with **0 fatal,
+  0 error, 57 warnings, 0 untidy, 17 tips** — the established baseline. The
+  initial custom-localization file was converted to UTF-8 with BOM and the
+  only new portrait animation warning was removed before recording this pass.
+- Fresh-charter notices are scheduled only by `.0003`, after its committed
+  contract read has written the safe title cache. The community event reads
+  only that cache; the host digest is debounced with a one-day temporary flag
+  and counter, so simultaneous historical-start charters make one event per
+  host rather than one per community.
+- Inherited regional charters are found from `on_title_gain` by scanning the
+  bounded registered-community title list. CK3's
+  `tributary_heir_succession` remains responsible for preservation; the new
+  effect only counts reports and schedules one host event plus one affected
+  community event. A permanent successor flag prevents a multi-title
+  inheritance from repeating the grouped host report.
+- A host mismatch still uses the proven end-now/start-next-quarter lifecycle.
+  The new community-title marker survives this gap and selects the explicit
+  “new ruler” wording only after the replacement charter has committed.
+- `kehillah_debug.82` is the cache-only fresh-notice probe. Run it after `.0003`
+  (or a quarterly cache refresh), advance one day, and confirm the community
+  notice plus exactly one host digest. It intentionally cannot emulate an
+  inheritance or conquest: those require a real title succession / county
+  holder change to test the engine's treaty transfer and deferred timing.
+
+Still required live: render the Christian and Muslim community notices; view
+the grouped ruler digest as a host player; kill/succeed one host ruler and
+verify `.0006`/`.0007` appear exactly once with unchanged terms; then transfer
+a host county by conquest and wait through the deferred end-and-start path.
+Check `error.log` after each and confirm that the qualitative posture text is
+never blank and never changes a contract by itself.
+
+## Fresh V20 bootstrap and charter-notice regression (2026-09-25)
+
+**Status: HOST-NOTICE SCOPE BUG FOUND, FIXED, AND LIVE-VERIFIED.**
+
+- `ck3-tiger` before the live run reported the established baseline: **0
+  fatal, 0 error, 57 warnings, 0 untidy, 17 tips**.
+- A clean Worms 1066 start reached the paused map. Advancing three days
+  produced the expected startup sequence in `debug.log`: `.0001` refreshed
+  the nearby-community cache, `.0002` applied the deferred regional policy
+  writes, `.0003` refreshed committed charter caches, and V20's `.0008`
+  reported **"initialized historical pillars from committed baselines."**
+  This is a live execution pass for V20's deferred snapshot scheduling, but
+  not yet a ledger-value or first-quarter-pulse pass.
+- After those ticks, `kehillah_debug.81` reported the expected Worms
+  Christian/Allowed state from the cache: **Free** construction, **No Watch**,
+  **Royal Appeal**, and **Unrestricted** study. The game remained responsive.
+- The new cache-backed community notice did reach the player (the sealed-
+  charter event was visibly queued), but the same run logged an error for
+  every host digest: `scope:liege` was unset for a tributary contract.
+  Consequently `.0005` was scheduled with no character root and emitted
+  `expected scope character, got none`; the grouped ruler notice cannot be
+  considered live-working.
+- Cause: `kehillah_queue_charter_notification_effect` assumed a normal
+  `scope:liege` event target. Tributary charters do not provide that target.
+  The effect now resolves the host through
+  `domicile.domicile_location.county.holder.top_liege`, the already-proven
+  settlement-policy host path. This supplies a real host-character scope for
+  the debounce counter and delayed `.0005` event.
+- A direct-executable restart initially appeared stuck on **Initializing
+  Game**, but CK3 remained responsive and eventually reached the modded main
+  menu; the pause was a long engine world/database load, not a crash. A fresh
+  Worms start then reached the paused map. Letting the clock run through 18
+  September fired the deferred initialization. `debug.log` again recorded
+  `.0003` cache commits and `.0008` historical-pillar initialization, while
+  `error.log` contained **no** new `scope:liege`, `expected scope character`,
+  `wrong scope`, or `settlement_conditions` error.
+- The community-facing **A Charter Is Sealed** event rendered correctly for
+  Worms: it named the host realm and showed **Free to Build**, **No Communal
+  Watch**, **Royal Appeal**, and **Unrestricted Study**. This is a live pass
+  for the fixed community-notice route and proves that the delayed notification
+  path no longer loses its character scope. The grouped host digest remains
+  a separately open UI test because Worms's host is AI-controlled in this
+  start; it needs a host-player or real succession/conquest setup to inspect
+  its visible recipient and one-per-host debounce.
+
+## V20 starting-pillars quarterly regression (2026-09-25)
+
+**Status: LIVE PASS.**
+
+- A debug-enabled fresh Worms run advanced with `tick_day` through the V20
+  day-three handoff. The HUD showed a non-zero, internally consistent opening
+  row (Standing was the mean of the three pillars), `.0008` logged its
+  historical-baseline initialization, and the charter report confirmed the
+  committed Christian/Allowed terms: Free construction, no watch, Royal
+  Appeal, and unrestricted study.
+- Advancing to 1 January revealed an eight-point Stability change. This was
+  initially treated as a possible snapshot/convergence mismatch and traced
+  rather than waived: a direct character-scoped console probe evaluated the
+  live Stability baseline as **369**, the same value set on day three. Running
+  `kehillah_quarterly_pillars_effect` against that exact state produced the
+  same eight-point change.
+- Source inspection identifies the change as the normal population-pressure
+  path: Worms is over its courtier capacity, so the quarterly effect applies
+  `kehillah_overcrowding_stability_drain = 8` after baseline convergence. It
+  is an intentional, documented live condition rather than an artificial
+  pull toward a different baseline. Prosperity and Greatness remained at
+  their sampled baselines in this probe.
+- The attempted alternate title/holder scope route was discarded after the
+  direct probe established that the existing V20 sampler and the ordinary
+  quarterly baseline evaluator agree. No V20 gameplay source change was
+  required; the final working tree has only this documentation update.
+
+## Muslim charter cache and notice regression (2026-09-25)
+
+**Status: LIVE PASS.**
+
+- In the same debug session, switching to Granada's historical Kehillah
+  leader (live character ID `33325`) and running `kehillah_debug.81` reported
+  the **Muslim Host Charter** with an Allowed host policy, **Free** construction,
+  **Unarmed** security, **Communal Arbitration**, a Goldilocks nearby-community
+  network, and an Established Town. This independently exercises the Muslim
+  cache reader and the non-Christian location/network branches.
+- `kehillah_debug.82`, followed by one day, rendered **A Charter Is Sealed**
+  for Granada. Its visible terms matched the cache report: Free to Build,
+  Unarmed Community, Recognised Communal Arbitration, and Regional Trade
+  Access. No new `scope:liege`, `expected character`, or settlement-notice
+  error appeared. The only contemporaneous wrong-scope log line belonged to
+  vanilla/DLC `tgp_tribute_mission_scripted_effects.txt`, not Kehillah.
+- A follow-up attempt to inspect the grouped host digest by switching to
+  Granada's historical host used `play 45016`. CK3's `play` command resolves
+  a **runtime** character ID, not the history-file ID; it selected an
+  unrelated unplayable character and ended this throwaway debug session.
+  This neither exercises nor invalidates the digest. The outstanding visible
+  host-recipient check needs a host selected through the game interface, or a
+  small dedicated debug harness that resolves the live host chain before
+  changing the player.

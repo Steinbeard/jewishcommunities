@@ -111,26 +111,11 @@ kehillah_on_game_start = {
 				kehillah_setup_vienna_start_effect = yes
 			}
 		}
-		title:d_kehillah_london ?= {
-			holder ?= {
-				kehillah_setup_london_start_effect = yes
-			}
-		}
-		title:d_kehillah_york ?= {
-			holder ?= {
-				kehillah_setup_york_start_effect = yes
-			}
-		}
-		title:d_kehillah_lincoln ?= {
-			holder ?= {
-				kehillah_setup_lincoln_start_effect = yes
-			}
-		}
-		title:d_kehillah_norwich ?= {
-			holder ?= {
-				kehillah_setup_norwich_start_effect = yes
-			}
-		}
+		# London/York/Lincoln/Norwich REMOVED 2026-09-25 (v18 spec) -- see
+		# kehillah_landed_titles.txt's own removal note. They no longer
+		# exist at game start; kehillah_norman_conquest_effects.txt founds
+		# them dynamically once the Norman Conquest resolves in a running
+		# game, via the same on_title_gain hook wired further down this file.
 		title:d_kehillah_narbonne ?= {
 			holder ?= {
 				kehillah_setup_narbonne_start_effect = yes
@@ -149,6 +134,30 @@ kehillah_on_game_start = {
 		title:d_kehillah_lunel ?= {
 			holder ?= {
 				kehillah_setup_lunel_start_effect = yes
+			}
+		}
+
+		# ADDED 2026-09-25 (v18 spec): Southern Sepharad (Toledo, Córdoba,
+		# Granada) and Bavel (Baghdad) -- see common/scripted_effects/
+		# kehillah_scripted_effects.txt for each start effect.
+		title:d_kehillah_toledo ?= {
+			holder ?= {
+				kehillah_setup_toledo_start_effect = yes
+			}
+		}
+		title:d_kehillah_cordoba ?= {
+			holder ?= {
+				kehillah_setup_cordoba_start_effect = yes
+			}
+		}
+		title:d_kehillah_granada ?= {
+			holder ?= {
+				kehillah_setup_granada_start_effect = yes
+			}
+		}
+		title:d_kehillah_baghdad ?= {
+			holder ?= {
+				kehillah_setup_baghdad_start_effect = yes
 			}
 		}
 
@@ -182,15 +191,22 @@ kehillah_on_game_start = {
 		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_cologne }
 		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_praha }
 		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_vienna }
-		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_london }
-		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_york }
-		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_lincoln }
-		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_norwich }
+		# London/York/Lincoln/Norwich's registry entries REMOVED 2026-09-25
+		# (v18 spec) alongside the titles themselves -- kehillah_norman_
+		# conquest_effects.txt registers each once it founds it, the same
+		# way kehillah_found_community_effect already does for any other
+		# dynamically-founded community.
 		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_narbonne }
 		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_beziers }
 		# d_kehillah_montpellier's registry entry REMOVED 2026-09-11 alongside
 		# the title itself -- see this file's own removed-effect comment above.
 		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_lunel }
+
+		# ADDED 2026-09-25 (v18 spec): Southern Sepharad and Bavel.
+		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_toledo }
+		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_cordoba }
+		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_granada }
+		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_baghdad }
 
 		# V16 settlement-network cache. This comes only AFTER the full
 		# registry is complete, so every starting community sees all of its
@@ -201,6 +217,12 @@ kehillah_on_game_start = {
 		title:d_kehillah_worms ?= {
 			holder ?= {
 				trigger_event = { id = kehillah_settlement_conditions.0001 days = 1 }
+				# Day three is intentional: .0001 has written the nearby-
+				# community cache, while every fresh regional charter has gone
+				# through .0002's deferred obligation write and .0003's cache
+				# hand-off. The snapshot must see those real inputs rather than
+				# a bootstrap-time approximation.
+				trigger_event = { id = kehillah_settlement_conditions.0008 days = 3 }
 			}
 		}
 
@@ -261,7 +283,7 @@ kehillah_on_game_start = {
 # ---------------------------------------------------------------------
 
 on_title_gain = {
-	on_actions = { kehillah_on_title_gain kehillah_map_view_on_title_gain }
+	on_actions = { kehillah_on_title_gain kehillah_host_charter_steward_on_title_gain kehillah_map_view_on_title_gain kehillah_norman_conquest_check_on_title_gain }
 }
 
 kehillah_on_title_gain = {
@@ -349,6 +371,74 @@ kehillah_on_title_gain = {
 				}
 			}
 			kehillah_refresh_shum_bond_effect = yes
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# HOST-CHARTER STEWARDSHIP -- a host ruler, rather than a community
+# leader, has succeeded to one or more existing tributary agreements.
+#
+# CK3's tributary_heir_succession carries the agreement itself. There is
+# no contract rewrite here: scan the deliberately small registered-title
+# list only to tell the successor and each affected player-community what
+# survived. The permanent ruler flag debounces inheritance of a bundle of
+# titles on the same date and intentionally does not suppress the separate
+# fresh-charter report used after conquest.
+#
+# root = a character who just gained any title. The scan becomes nonzero
+# only if that character is already the suzerain of a V16 regional charter;
+# it is therefore inert for ordinary title gains and for the pre-charter
+# part of game startup.
+# ---------------------------------------------------------------------
+
+kehillah_host_charter_steward_on_title_gain = {
+	trigger = {
+		NOT = { has_character_flag = kehillah_charter_steward_introduced }
+		# Do not mistake an established host gaining a minor extra title for
+		# a change of charter steward. Vanilla scope comparison syntax is
+		# used here (see game/common/scripted_effects/00_major_decisions_
+		# scripted_effects.txt): only the incoming ruler's current primary
+		# title can introduce this one-time succession report.
+		scope:title = { this = root.primary_title }
+	}
+
+	effect = {
+		set_variable = { name = kehillah_charter_steward_community_count value = 0 }
+		save_scope_as = kehillah_new_charter_steward
+
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = {
+					is_tributary = yes
+					suzerain = scope:kehillah_new_charter_steward
+					OR = {
+						has_subject_contract_group = kehillah_christian_host_charter_prototype
+						has_subject_contract_group = kehillah_muslim_host_charter_prototype
+					}
+				}
+			}
+			scope:kehillah_new_charter_steward = {
+				change_variable = { name = kehillah_charter_steward_community_count add = 1 }
+			}
+			# A player leading one of these communities needs the same
+			# continuity report as the successor. AI leaders immediately
+			# acknowledge the event, so this is not an AI-event flood.
+			holder = {
+				trigger_event = { id = kehillah_settlement_conditions.0007 days = 1 }
+			}
+		}
+
+		if = {
+			limit = { var:kehillah_charter_steward_community_count >= 1 }
+			add_character_flag = kehillah_charter_steward_introduced
+			trigger_event = { id = kehillah_settlement_conditions.0006 days = 1 }
+		}
+		else = {
+			remove_variable = kehillah_charter_steward_community_count
 		}
 	}
 }
@@ -803,5 +893,31 @@ kehillah_map_view_on_title_gain = {
 	}
 	effect = {
 		kehillah_refresh_map_view_for_players_effect = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# NORMAN CONQUEST DETECTION (v18 spec, 2026-09-25).
+#
+# root = the character who gained the title
+# scope:title = the title gained
+#
+# Real body (branch evaluation, weighted chance, founding the four Anglia
+# Kehillot) lives in common/scripted_effects/kehillah_norman_conquest_
+# effects.txt's own kehillah_norman_conquest_evaluate_effect and its
+# neighbours -- see that file's header for the full account of why this
+# needs its own on_title_gain hook (vanilla has no Norman-Conquest-
+# specific mechanic to hang off) and how the three outcomes are weighted.
+# ---------------------------------------------------------------------
+
+kehillah_norman_conquest_check_on_title_gain = {
+	trigger = {
+		scope:title = title:k_england
+		NOT = { has_global_variable = kehillah_norman_conquest_resolved }
+		current_date <= 1090.1.1
+	}
+	effect = {
+		kehillah_norman_conquest_evaluate_effect = yes
 	}
 }

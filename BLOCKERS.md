@@ -311,3 +311,106 @@ things were left in.
    Jewish Community," not just game-start seeding) gets a Host Charter automatically too -- see
    `docs/spec/v15-host-charter.md` section 5's live pass 4. No issues found there.
 
+## 2026-09-25 — Bet Din single-fire errors source-fixed; live regression pending
+- **RESOLVED IN SOURCE, NOT YET LIVE-RETESTED:** `kehillah_bet_din_semicha.0001` now requires
+  `global_var:kehillah_bet_din_convening_title` before opening its host-dependent event, preventing
+  the deferred stale offer from dereferencing an unset global scope.
+- **RESOLVED IN SOURCE, NOT YET LIVE-RETESTED:** the Silversmiths' Quarrel now computes restitution
+  as `min(max(accused_gold, 0), medium_gold_value)` and uses that exact value for both the deduction
+  and accuser credit. This prevents an unaffordable negative `add_gold` while keeping the transfer
+  zero-sum.
+- `ck3-tiger`: 0 fatal, 0 error. The next real Bet Din docket should specifically exercise a
+  low-gold accused and a delayed Semicha offer before these are called live-verified.
+
+## 2026-09-25 (overnight, interactive session) — V18 Norman Conquest live-test blocked, not failed
+- **Not a code problem.** Every attempt to live-test V18 (docs/spec/v18-norman-conquest-and-new-
+  communities.md — the Norman Conquest founding event and the four new Sepharad/Bavel communities)
+  tonight was disrupted by machine/session conditions unrelated to the mod's own correctness:
+  a stale pre-commit `ck3.exe` process, a genuine multi-minute engine hang during a period of heavy
+  concurrent load (this machine was running at least three simultaneous Claude Code sessions,
+  including the scheduled overnight automation firing at 2:00:01 AM), and finally a direct
+  cross-session collision (below). **No valid pass/fail data exists yet for any of: the four new
+  communities loading cleanly at game start, the `kehillah_debug.90-93` founding chain, or the
+  `kehillah_norman_conquest.0001` announcement event's rendered text.** This is a clean slate for
+  whoever runs this test next, not a regression to chase.
+- **One real bug found and fixed along the way, confirmed in place:** the new debug harness itself
+  (`kehillah_debug.90`/`.91`/`.92`, `events/kehillah_debug_events.txt`) had `create_character` blocks
+  missing gender data, throwing "Must specify gender data" at script-load time. Fixed with
+  `gender_female_chance = 0`, matching the production founding effect's own convention (commit
+  `fd51b97`). `ck3-tiger` clean throughout.
+- **Structural finding, worth fixing before more concurrent live-testing on this machine:**
+  `C:\Users\Daniel\Documents\AGI-CK3\src\ck3env\winkeys.py`'s `ck3_pid()` finds "the" `ck3.exe`
+  process by name alone, with no concept of which session launched it. With multiple concurrent
+  Claude Code sessions active on one machine and only one `ck3.exe` ever alive at a time, any
+  session's `keystroke_kick`/`mouse_click` calls land on whatever process currently exists,
+  regardless of who started it. **Concrete evidence, tonight:** a fresh `ck3.exe` (PID 4232) was
+  launched at 02:11:25 AM to wait for its main menu; ~2 real hours later (confirmed via `date`, not
+  a log artifact) it was found deep into an active Worms 1066 game with a console history nobody in
+  that session had typed (`event kehillah_debug.81` → three `tick_day`s → `event kehillah_debug.81`
+  again) and a live "A Charter Is Sealed" popup for Worms' own Host Charter — an exact match for a
+  concurrent session's own V16 charter-regression probe, not anything from the V18 task. Confirmed
+  via cross-session messages that this was `jewishcommunities-8e`'s own Host Charter work landing on
+  the same process, not a fabrication or misread. **Needed before this happens again:** some session-
+  ownership convention for driving CK3 (a lock file, a PID recorded per session, or simply
+  serializing live-CK3 access across concurrent sessions on this machine) — not designed or built
+  this session, flagged here for whoever picks it up.
+- **What's needed from Daniel:** nothing urgent — the mod itself is believed sound (ck3-tiger clean,
+  and the disruptions were all external to the code under test). Whenever there's a quiet window with
+  no other session driving CK3, re-run the V18 test plan from a fresh boot: the four new communities,
+  then `kehillah_debug.90` → `.93`, then wait ~2-3 in-game days for the announcement event. Worth
+  deciding, at some point, whether the session-ownership gap above needs a real fix before further
+  unattended/concurrent overnight testing is trusted.
+
+## 2026-09-25 (later same night) — V18 re-tested for real: mostly PASS, one real bug chased through three wrong fixes
+- **Once the machine quieted down, a real test pass finally happened, using the actual existing live
+  game rather than a fresh boot.** Confirmed, live, no ambiguity:
+  - The four new communities (Toledo, Córdoba, Granada, Baghdad) all exist correctly at game start:
+    right government, holder, registration. No related `error.log` lines.
+  - **The real production path works end to end.** Rather than only exercising the console debug
+    harness, this pass forced an ACTUAL `title:k_england` transfer to William via `change_title_holder`
+    + `resolve_title_and_vassal_change` (the genuine vanilla conquest primitive) and confirmed the real
+    `on_title_gain` wrapper fires naturally: correct William-branch classification, all four Anglia
+    Kehillot founded, Host Charters established, Jewish Settlement Policy set. This is the strongest
+    possible evidence the whole mechanism (not just its debug shortcut) is sound.
+  - A more "mechanically accurate" test (a real `claim_cb` war via `start_war`/`end_war = attacker`,
+    using William's own genuine 1066 pressed claim) was attempted at the user's own request but is
+    **blocked by vanilla itself, not a mod bug**: `claim_cb`'s own `on_victory` expects `scope:claimant`,
+    populated only by the normal interactive war-declaration flow — a bare console shortcut throws real
+    vanilla errors (`claimant was null`, `Failed context switch`) inside vanilla's own `00_claim.txt`.
+    Not fixable from this mod's side; the `change_title_holder` route above is the practical substitute.
+- **One real, genuinely tricky bug found: the "personal connections" dynasty tie did not work.** The
+  user's own explicit ask ("personal connections to other Ashkenazi communities — especially French
+  communities if William wins") was implemented as `dynasty = dynasty:9000003` inside `create_character`
+  — confirmed LIVE to silently fail: the new leaders landed in an unrelated auto-generated dynasty
+  instead, durably (re-checked a full day later — not a same-tick timing artifact). Took three real
+  attempts to fix, each live-tested and each a genuine dead end before the last:
+  1. `dynasty = dynasty:X` (the original implementation) — confirmed broken as above.
+  2. `set_dynasty` (an effect referenced in `effect_localization/00_character_effects.txt`) — confirmed
+     to be dead/vestigial localization, not a real scriptable effect in this build ("Unknown effect:
+     set_dynasty", both candidate field shapes tried).
+  3. `dynasty_house = house:<new custom house>` (real, repeated vanilla precedent for THIS field) —
+     confirmed broken specifically for a brand-new, zero-population custom house: "Failed to fetch a
+     valid house", even after a full clean relaunch. Likely cause (not fully proven): house/dynasty
+     runtime objects may only instantiate from history-file characters at boot, not from a bare
+     `common/dynasty_houses/` static define alone.
+  4. **Shipped, NOT yet live-verified**: a new history-file character (id 9000218, "Meir," an elder
+     Yitzhaki kinsman already deceased by 1066) plus `father = character:9000218` + `dynasty = inherit`
+     inside `create_character` — this combines two primitives already independently proven to work
+     (bare `dynasty = 9000003` in a history file, exactly like Rashi's own entry; and `father =`/
+     `dynasty = inherit`, real confirmed vanilla precedent from the Mongol invasion's own dynamic
+     child-generation code) rather than a fourth guess at the same untested runtime path. The Harald
+     branch's own parallel dynasty tie (`dynn_Bacharach`) was dropped rather than rebuilt the same way
+     — it never had a living reference character to anchor from, and was always documented as the
+     lighter of the two connections.
+  - **What's needed from Daniel:** one more relaunch-and-verify pass, whenever convenient: confirm
+    `character:9000218` exists and reads as `dynasty:9000003`, reset
+    `global_var:kehillah_norman_conquest_resolved` via a `run` script, redo the William
+    `change_title_holder` transfer, and check whether the four newly-founded leaders finally read as
+    `dynn_Yitzhaki`. If this ALSO fails, stop and report rather than trying a fifth guess — the
+    Genghis Khan precedent is about as strong as vanilla evidence gets, so a failure here would be
+    genuinely surprising and worth a fresh look rather than another quick patch.
+  - Everything is committed (`overnight/2026-09-24`, ending at `feb1157`). Nothing here risks lost
+    work; the feature is fully usable today even if this one detail is still unresolved — worst case,
+    new leaders read as an unrelated generated family instead of Rashi's own, with no other effect on
+    gameplay.
+

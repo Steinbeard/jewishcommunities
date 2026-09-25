@@ -56,7 +56,14 @@ kehillah_maintain_host_charter_effect = {
 			# Wrong host (the county changed hands) or, defensively, some
 			# other contract group entirely. End now; see the tick-
 			# deferral note above for why this does not also start_tributary
-			# in the same block.
+			# in the same block. Remember the transition on the community
+			# title: after the later fresh contract has committed, its report
+			# can correctly say that a new liege has replaced the old charter
+			# instead of presenting it as an ordinary first settlement.
+			# .0004 clears this marker on acknowledgement.
+			primary_title = {
+				set_variable = { name = kehillah_charter_suzerain_changed value = 1 }
+			}
 			debug_log = "kehillah_maintain_host_charter_effect: host mismatch, ending stale charter"
 			end_tributary = yes
 		}
@@ -307,6 +314,33 @@ kehillah_refresh_charter_state_cache_effect = {
 		}
 		else = {
 			primary_title = { set_variable = { name = kehillah_charter_cache_market_access value = 0 } }
+		}
+	}
+}
+
+# Queues player-facing notification only after .0003 has copied the
+# committed contract into the safe title cache. Every community leader gets
+# its own notice (only a player-controlled leader will see it), while a host
+# ruler gets one delayed digest for every charter that resolved on that day.
+# The temporary character flag is a debounce: it is cleared, along with the
+# count, by the ruler event's sole acknowledgement option.
+kehillah_queue_charter_notification_effect = {
+	trigger_event = { id = kehillah_settlement_conditions.0004 days = 1 }
+
+	# Tributary charters do not populate the ordinary scope:liege event
+	# target. Resolve the actual host from the community's physical county,
+	# exactly as the settlement-policy resolver does. Besides being correct
+	# for independent county holders, this gives the digest a real character
+	# scope when the deferred .0003 event runs.
+	domicile.domicile_location.county.holder.top_liege = {
+		if = {
+			limit = { has_character_flag = kehillah_charter_notice_pending }
+			change_variable = { name = kehillah_charter_notice_count add = 1 }
+		}
+		else = {
+			set_variable = { name = kehillah_charter_notice_count value = 1 }
+			add_character_flag = kehillah_charter_notice_pending
+			trigger_event = { id = kehillah_settlement_conditions.0005 days = 1 }
 		}
 	}
 }

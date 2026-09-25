@@ -124,8 +124,11 @@ than renumbered, since later items and other docs cross-reference these numbers 
    varies (and turned up two cases not documented in this doc — Part 2's pool has grown since this
    was last updated), and the docket closes exactly once with the activity actually ending. Full
    account in v5 §11's own status paragraph. **Two new, unrelated, single-fire bugs found in the
-   process, not fixed**: a missing `exists =` guard in `kehillah_bet_din_semicha_events.txt`, and an
-   unguarded negative `add_gold` in the Silversmiths' Quarrel case resolution — see `BLOCKERS.md`.
+   process**: a missing `exists =` guard in `kehillah_bet_din_semicha_events.txt`, and an unguarded
+   negative `add_gold` in the Silversmiths' Quarrel case resolution. **Source-fixed 2026-09-25,
+   awaiting live regression:** the Semicha event now refuses a stale host-dependent offer, and
+   restitution is capped at the accused's actual gold while preserving a matched transfer to the
+   accuser. See `BLOCKERS.md`.
    **Design-only addendum, 2026-09-08**: [v5 spec section 10](docs/spec/v5-bet-din-conference.md)
    proposes widening the panel with up to 2 additional non-leader Jewish scholars, found via a
    `guest_invite_rules` search and scored on proximity/Learning/Piety/traits, each getting a real
@@ -582,6 +585,71 @@ and armed-watch MaA tests remain open and are recorded in V16 §8 and
 events, expulsion, migration, Indian-specific terms, and a destination-picker are intentionally
 not being silently built by this slice.
 
+**2026-09-25 — policy-change AI is now specified, not built.**
+[V17](docs/spec/v17-settlement-politics-and-charter-revision.md) records the
+decision that host politics must be event-led, visible, one-rung-at-a-time,
+and followed by a separately negotiated charter response. Faith is legal
+context, personality a bounded modifier, and economic/local conditions named
+pressures; none is a universal hidden hostility score. Its first work is a
+pulse/AI-initiation spike, not a silent AI policy writer. Banned remains
+warning-only until migration and crisis counterplay exist.
+
+**2026-09-25 — Norman Conquest founding event, and four new Sepharad/Bavel
+communities, built same session, by direct request.**
+[V18](docs/spec/v18-norman-conquest-and-new-communities.md). Two pieces:
+
+1. **Retcon + event chain.** London/York/Lincoln/Norwich no longer exist as
+   pre-authored 1066 game-start communities (removed from landed_titles,
+   history/titles, history/characters, and their old start-effects/registry
+   calls) — a deliberate, user-confirmed departure from four communities'
+   worth of prior (v6/v7) design, chosen when asked directly how to resolve
+   the conflict between "these four already exist at game start" and the
+   user's new ask to have a Norman Conquest event found them. They are now
+   founded dynamically, mid-game, once a running playthrough's own Norman
+   Conquest actually resolves (`on_title_gain` on `title:k_england`, since
+   vanilla has no scripted mechanic for this at all — checked directly).
+   Three weighted branches (William 80%, Harald Hardrada 45%, anyone else
+   30% chance to fire at all), each founding all four communities via the
+   same `create_adventurer_title` mechanism Wave 5's own founding decision
+   uses, and setting the host realm's V16 Jewish Settlement Policy to
+   Encouraged before the fresh Host Charter is created. New leaders share a
+   dynasty with an existing community's own named leader when William wins
+   (Rashi of Troyes's own `dynn_Yitzhaki`) — the user's own explicit
+   "personal connections... especially French communities if William wins"
+   ask, realized as a real, in-game-verifiable shared house rather than only
+   a flavor sentence.
+2. **Four new baseline communities**, same authoring pattern as the
+   existing fifteen, not a new government/overlay mechanic: Toledo,
+   Córdoba, Granada (Southern Sepharad — already-tagged minhag region, no
+   new geography work needed) and Baghdad (Bavel). Granada's leader is
+   named directly: Joseph ibn Naghrilla, a real, extraordinarily
+   well-documented vizier of the Taifa of Granada at this exact bookmark
+   date — with the real December 1066 Granada massacre that killed him
+   flagged honestly as unbuilt future content (see V18 §2 and the backlog
+   entry below), the same restraint this mod already applies to York's
+   1190 and Lincoln's 1255. A new dynasty, `dynn_Naghrilla`, was added for
+   him (common/dynasties/ha_levi.txt).
+
+ck3-tiger clean (0 fatal, 0 error) on every file touched or created.
+**Not yet live-tested** — a future live-test session should confirm: the
+founding chain actually fires and produces real playable/AI-run communities
+at the correct English counties; the settlement-policy-then-charter
+ordering actually yields an Encouraged-tier charter, not a default one; and
+the new leaders' shared dynasty actually renders as kinship in a real game.
+See V18 §3 for the full test list.
+
+**2026-09-25 — historical starting pillars now equal their dynamic
+baselines; awaiting live regression.** [V20](docs/spec/v20-starting-pillars-equal-baseline.md)
+supersedes V19's fixed-reserve pass before it was live-tested. All fifteen
+pre-authored 1066 communities are initialized, once, from the exact same
+building/office/leader/urban/network/actual-charter values their quarterly
+convergence uses. The snapshot waits until day three because V16's network
+and deferred charter caches are not truthful earlier. The old direct
+Prosperity/Greatness grants are removed; starting balance now has one source
+of truth, so live feedback can tune contributors instead of arbitrary opening
+bonuses. New founders remain a separate difficulty model and do not receive
+this historical snapshot.
+
 ### Phase 5 — Crypto-Jewish Survival Loop
 The secret-practice/detection/forced-conversion system for communities that
 lose the Phase 4 expulsion/purge struggle. Depends on Phase 4 existing.
@@ -598,6 +666,16 @@ not yet assigned to a phase. Pull one into a phase's scope explicitly
 before building it; nothing here is approved by default.
 
 **Cheap, reinforces an existing v1 pillar (candidates to pull into Phase 1):**
+- **The Granada massacre, December 1066.** Flagged 2026-09-25 (V18 spec) when
+  Granada was added as a new community with Joseph ibn Naghrilla, the real
+  historical vizier assassinated in the real massacre that followed barely
+  three and a half months after this scenario's own 1066.9.15 start —
+  an unusually strong, dated fit for a crisis chain, given how tightly it
+  lines up with this mod's own bookmark date, the same way York's 1190 and
+  Lincoln's 1255 are flagged without being built. Needs its own design pass
+  on stakes, tone, and player agency (does the player-led case play
+  differently from an AI-led one? what survives?) before anyone starts
+  writing events — not a slot to fill in by default.
 - **Yeshiva pipeline (Study).** Actively choosing tutors/mentors for
   promising children to raise their Learning — vanilla guardian/education
   assignment, reflavored. Makes meritocratic succession something you
@@ -636,6 +714,16 @@ before building it; nothing here is approved by default.
   lifestyle-tree/perk-point *acquisition* path exists — a character still cannot spend lifestyle
   points to become a rabbi the way one commits to Diplomat or Scholar; the three routes above are
   still all script/event-granted, not a perk tree with an XP curve and lifestyle-selection UI.
+
+  **PLANNED, 2026-09-25 — Rabbi ordination path.**
+  [V21](docs/spec/v21-rabbi-ordination-paths.md) resolves the design question before code: a
+  rabbinic-authority Jewish candidate studies through the existing Learn Torah scheme, records two
+  distinct fields of study, then explicitly seeks semicha at a Beit Midrash. A four-year
+  rabbinic-guardian apprenticeship can satisfy that curriculum at adulthood unless Learning is very
+  low or the mentor-pupil relationship seriously fails. Learning 8 is the entry floor; Piety
+  supports ceremony rather than becoming an opaque hard gate. It preserves history, Chief Rabbi
+  appointment, and Bet Din recognition as institutional routes, reuses the current gender-law hook,
+  and explicitly defers broad AI evaluation until a live spike. **No V21 code is built yet.**
 
 - **DONE (fleshed out), 2026-09-09 — Write a Book.** The three flat, single-effect book decisions
   above were rebuilt, same day, into one real event chain at user request: `kehillah_write_book_

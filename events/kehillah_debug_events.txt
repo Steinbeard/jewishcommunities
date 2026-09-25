@@ -560,3 +560,185 @@ kehillah_debug.81 = {
 		else = { debug_log = "kehillah_debug.81: local development Sparse Settlement (<5)" }
 	}
 }
+
+# V16 charter-notice probe. Run after .0003 or a quarterly cache refresh;
+# it exercises the same post-commit, cache-only notification path used by a
+# fresh foundation without touching a live subject-contract flag in UI scope.
+kehillah_debug.82 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { kehillah_has_cached_regional_charter_state_trigger = yes }
+			kehillah_queue_charter_notification_effect = yes
+			debug_log = "kehillah_debug.82: queued cache-backed charter notices"
+		}
+		else = {
+			debug_log = "kehillah_debug.82: no cached regional charter; notice not queued"
+		}
+	}
+}
+
+# =====================================================================
+# V18 Norman Conquest harness. ADDED 2026-09-25, for live-testing docs/
+# spec/v18-norman-conquest-and-new-communities.md -- the real trigger
+# (a change of English royal house) is a genuinely emergent, hard-to-
+# force-honestly fact about a live game's own war/succession outcomes,
+# so these three events call kehillah_norman_conquest_evaluate_effect
+# (common/scripted_effects/kehillah_norman_conquest_effects.txt)
+# DIRECTLY, on a fresh throwaway character created with the right
+# dynasty/culture for each branch, rather than on the real title:
+# k_england holder. This exercises the entire downstream mechanism
+# (branch classification, weighted fire/decline roll, all four
+# founding effects, pillar init, registry, network cache, library
+# seed, map view, Jewish Settlement Policy, Host Charter, and the
+# announcement event) end to end. It does NOT exercise the on_title_
+# gain WRAPPER itself (common/on_action/kehillah_on_actions.txt's
+# kehillah_norman_conquest_check_on_title_gain) -- that trigger is
+# simple enough (three conditions, already ck3-tiger-validated) to
+# read rather than force live, and this mod's own on_title_gain hook
+# already fires correctly for every Kehillah succession elsewhere in
+# this file's own precedent. The one thing genuinely NOT covered by
+# either: a REAL cross-dynasty transfer of title:k_england during live
+# play. See the runbook note at the end of this block for how to at
+# least partially exercise the wrapper's own "still House Godwinson,
+# don't consume the flag" guard without needing a full simulated
+# Conquest.
+#
+# NO DUPLICATE-LOCATION GUARD, ON PURPOSE. Unlike the player-facing
+# Found a Jewish Community decision (kehillah_found_community_
+# requires_empty_location_tt), calling one of these twice in the same
+# session founds a SECOND set of four Anglia communities at the same
+# four counties -- the real production path only ever fires once per
+# game (gated by global_var kehillah_norman_conquest_resolved), and
+# this harness deliberately bypasses that gate for repeatability.
+# Don't run more than one of .90/.91/.92 in the same test session
+# without expecting duplicate titles.
+# =====================================================================
+
+# Force the WILLIAM branch (dynasty:752, 80% chance to fire).
+kehillah_debug.90 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		create_character = {
+			dynasty_house = house:house_evreux
+			culture = root.culture
+			faith = root.faith
+			age = { 30 45 }
+			gender_female_chance = 0
+			location = root.location
+			save_scope_as = kehillah_debug_norman_test_character
+		}
+		scope:kehillah_debug_norman_test_character = {
+			kehillah_norman_conquest_evaluate_effect = yes
+		}
+		debug_log = "kehillah_debug.90: fired Norman Conquest evaluate_effect, William branch (dynasty:752)"
+	}
+}
+
+# Force the HARALD HARDRADA branch via culture:norwegian specifically
+# (the OR's SECOND clause) -- switched 2026-09-25 from an attempted
+# dynasty:499 test character after the whole dynasty-assignment mechanism
+# was reworked (see kehillah_norman_conquest_effects.txt's own "FIXED
+# 2026-09-25" header): a brand new, zero-population custom house (which a
+# fresh dynasty:499 test character would have needed) hit the exact same
+# "Failed to fetch a valid house" bug the production William-branch fix
+# was built around. culture:norwegian sidesteps needing any dynasty/house
+# reference at all and is equally sufficient evidence the OR's own shape
+# works -- the dynasty:499 clause is covered by source-reading (a plain
+# two-clause OR, ck3-tiger validated) rather than a second live test.
+kehillah_debug.91 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		create_character = {
+			dynasty = generate
+			culture = culture:norwegian
+			faith = root.faith
+			age = { 30 45 }
+			gender_female_chance = 0
+			location = root.location
+			save_scope_as = kehillah_debug_norman_test_character
+		}
+		scope:kehillah_debug_norman_test_character = {
+			kehillah_norman_conquest_evaluate_effect = yes
+		}
+		debug_log = "kehillah_debug.91: fired Norman Conquest evaluate_effect, Harald branch (dynasty:499)"
+	}
+}
+
+# Force the OTHER branch (neither William's nor Harald's dynasty/culture).
+kehillah_debug.92 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		create_character = {
+			dynasty = generate
+			culture = root.culture
+			faith = root.faith
+			age = { 30 45 }
+			gender_female_chance = 0
+			location = root.location
+			save_scope_as = kehillah_debug_norman_test_character
+		}
+		scope:kehillah_debug_norman_test_character = {
+			kehillah_norman_conquest_evaluate_effect = yes
+		}
+		debug_log = "kehillah_debug.92: fired Norman Conquest evaluate_effect, other branch (generated dynasty)"
+	}
+}
+
+# Reports every Norman-founded Anglia community currently registered,
+# and each one's cached charter/policy state -- the fast way to confirm
+# a .90/.91/.92 call actually finished cleanly, without hunting for four
+# separate titles by hand in the UI. Uses var:kehillah_norman_founded (a
+# persistent title variable set by kehillah_norman_conquest_finish_
+# founding_effect), NOT a saved effect scope -- a scope like
+# scope:kehillah_norman_london_title does not survive past the effect
+# call that created it, so re-deriving it in a SEPARATE event (this one)
+# would always read as unset; this was caught and fixed before ever
+# reaching a live game.
+kehillah_debug.93 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.93: Anglia founding report"
+		set_variable = { name = kehillah_debug_norman_found_count value = 0 }
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = { has_variable = kehillah_norman_founded }
+			root = {
+				change_variable = { name = kehillah_debug_norman_found_count add = 1 }
+			}
+			debug_log = "kehillah_debug.93: found a Norman-founded Anglia title"
+			debug_log_scopes = yes
+			if = {
+				limit = { has_variable = kehillah_charter_cache_construction }
+				debug_log = "kehillah_debug.93: this title has a committed regional charter cache"
+			}
+			else = {
+				debug_log = "kehillah_debug.93: WARNING this title has NO committed charter cache yet (may just need another day to settle)"
+			}
+			holder = {
+				if = { limit = { is_tributary = yes } debug_log = "kehillah_debug.93: its leader is a tributary (Host Charter established)" }
+				else = { debug_log = "kehillah_debug.93: WARNING its leader is NOT a tributary" }
+				if = {
+					limit = { exists = domicile.domicile_location.county.holder.top_liege.primary_title }
+					domicile.domicile_location.county.holder.top_liege.primary_title = {
+						if = { limit = { has_variable = kehillah_jewish_settlement_policy } debug_log = "kehillah_debug.93: its host realm has a Jewish Settlement Policy variable set" }
+						else = { debug_log = "kehillah_debug.93: WARNING its host realm has NO Jewish Settlement Policy variable" }
+					}
+				}
+			}
+		}
+		if = {
+			limit = { var:kehillah_debug_norman_found_count = 0 }
+			debug_log = "kehillah_debug.93: WARNING zero Norman-founded titles registered -- run .90/.91/.92 first"
+		}
+		else = {
+			debug_log = "kehillah_debug.93: total Norman-founded titles found"
+			debug_log_scopes = yes
+		}
+	}
+}

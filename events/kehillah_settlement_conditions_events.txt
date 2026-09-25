@@ -58,7 +58,166 @@ kehillah_settlement_conditions.0003 = {
 				}
 			}
 			kehillah_refresh_charter_state_cache_effect = yes
+			kehillah_queue_charter_notification_effect = yes
 			debug_log = "kehillah_settlement_conditions.0003: refreshed committed regional-charter cache"
 		}
+	}
+}
+
+# V20 historical-start snapshot. It is deliberately separate from .0001:
+# the nearby-community cache is valid by day one, but fresh regional charter
+# obligations are only committed and cached by day two. Taking the snapshot
+# on day three lets the opening pillars equal the complete, player-visible
+# baseline (buildings, officers, skills, urban opportunity, network, and
+# actual charter terms) rather than an ad hoc historical offset.
+kehillah_settlement_conditions.0008 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			kehillah_initialize_historical_pillars_from_baseline_effect = yes
+		}
+		kehillah_refresh_map_view_for_players_effect = yes
+		debug_log = "kehillah_settlement_conditions.0008: initialized historical pillars from committed baselines"
+	}
+}
+
+# Delivered only after .0003 has observed the committed contract. This is a
+# report, not a negotiation: the concrete Host Charter is now the source of
+# the community's pillar terms, while the host policy remains its shared
+# frontier stance.
+kehillah_settlement_conditions.0004 = {
+	type = character_event
+	title = kehillah_settlement_conditions.0004.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					primary_title = { has_variable = kehillah_charter_suzerain_changed }
+					kehillah_cached_christian_charter_trigger = yes
+				}
+				desc = kehillah_settlement_conditions.0004.suzerain_changed.christian.desc
+			}
+			triggered_desc = {
+				trigger = {
+					primary_title = { has_variable = kehillah_charter_suzerain_changed }
+					kehillah_cached_muslim_charter_trigger = yes
+				}
+				desc = kehillah_settlement_conditions.0004.suzerain_changed.muslim.desc
+			}
+			triggered_desc = {
+				trigger = { kehillah_cached_christian_charter_trigger = yes }
+				desc = kehillah_settlement_conditions.0004.christian.desc
+			}
+			triggered_desc = {
+				trigger = { kehillah_cached_muslim_charter_trigger = yes }
+				desc = kehillah_settlement_conditions.0004.muslim.desc
+			}
+		}
+	}
+	theme = realm
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	option = {
+		name = kehillah_settlement_conditions.0004.a
+		primary_title = { remove_variable = kehillah_charter_suzerain_changed }
+		ai_chance = { base = 100 }
+	}
+}
+
+# A ruler receives this once per host per resolution day, regardless of how
+# many communities resolved their fresh contracts. The counter is deliberately
+# retained until acknowledgement so it is safe for same-day events to coalesce.
+kehillah_settlement_conditions.0005 = {
+	type = character_event
+	title = kehillah_settlement_conditions.0005.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:kehillah_charter_notice_count = 1 }
+				desc = kehillah_settlement_conditions.0005.single.desc
+			}
+			desc = kehillah_settlement_conditions.0005.multiple.desc
+		}
+	}
+	theme = realm
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	option = {
+		name = kehillah_settlement_conditions.0005.a
+		remove_character_flag = kehillah_charter_notice_pending
+		remove_variable = kehillah_charter_notice_count
+		ai_chance = { base = 100 }
+	}
+}
+
+# A new host ruler inherited an already-live regional charter. The treaty
+# itself remains intact through tributary_heir_succession; this report makes
+# that continuity visible without pretending that inheritance renegotiated
+# it. It is fired by kehillah_host_charter_steward_on_title_gain.
+kehillah_settlement_conditions.0006 = {
+	type = character_event
+	title = kehillah_settlement_conditions.0006.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:kehillah_charter_steward_community_count = 1 }
+				desc = kehillah_settlement_conditions.0006.single.desc
+			}
+			desc = kehillah_settlement_conditions.0006.multiple.desc
+		}
+	}
+	theme = realm
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	option = {
+		name = kehillah_settlement_conditions.0006.a
+		remove_variable = kehillah_charter_steward_community_count
+		ai_chance = { base = 100 }
+	}
+}
+
+# Community-side counterpart to .0006. The outgoing agreement's actual
+# cached terms are restated, along with a deliberately non-mechanical first
+# reading of the successor's personal posture toward Jewish subjects.
+kehillah_settlement_conditions.0007 = {
+	type = character_event
+	title = kehillah_settlement_conditions.0007.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { kehillah_cached_christian_charter_trigger = yes }
+				desc = kehillah_settlement_conditions.0007.christian.desc
+			}
+			triggered_desc = {
+				trigger = { kehillah_cached_muslim_charter_trigger = yes }
+				desc = kehillah_settlement_conditions.0007.muslim.desc
+			}
+		}
+	}
+	theme = realm
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+
+	option = {
+		name = kehillah_settlement_conditions.0007.a
+		ai_chance = { base = 100 }
 	}
 }

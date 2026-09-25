@@ -1,0 +1,554 @@
+﻿# =====================================================================
+# The Norman Conquest and the founding of Anglia's Kehillot.
+#
+# ADDED 2026-09-25 (v18 spec, docs/spec/v18-norman-conquest-and-new-
+# communities.md), by direct request. This is the retcon's other half:
+# London, York, Lincoln and Norwich no longer exist as pre-authored
+# titles from 1066 game start (see kehillah_landed_titles.txt and
+# history/titles/kehillah_titles.txt's own removal notes) -- they are
+# founded HERE, dynamically, once a running game's own Norman Conquest
+# actually resolves, using the exact same create_adventurer_title
+# mechanism kehillah_found_community_effect (common/scripted_effects/
+# kehillah_found_community_effects.txt) already uses for player-driven
+# Wave-5 founding, including that effect's own hard-won lessons (the
+# "government = kehillah_government" inline parameter is load-bearing;
+# see that file's own header for the ten-live-experiment account this
+# reuses rather than re-derives).
+#
+# WHY THIS NEEDS ITS OWN DETECTION, NOT A SCRIPTED DATE. Checked directly
+# against the installed 1.19 files before writing anything here (same
+# norm as everywhere else in this mod): vanilla CK3 has NO scripted
+# mechanic tied to the 1066 Norman Conquest at all -- no on_action,
+# decision, or flag fires when title:k_england changes hands. William's
+# real 1066.10.14 title-history entry (game/history/titles/k_england.txt)
+# is background/display data only; it does not execute as a live,
+# guaranteed event during play (this mod is not the first to note CK3's
+# title history beyond the bookmark date does not enforce itself -- it
+# is why "what if Harold actually won" is a normal, real outcome in this
+# engine, not a myth). So whether William, Harald Hardrada, Harold's own
+# line, or someone else entirely ends up holding England is a genuine,
+# emergent fact about a specific playthrough, detected here via
+# on_title_gain rather than assumed from history.
+#
+# DETECTION SHAPE. kehillah_norman_conquest_check_on_title_gain (wired
+# into vanilla's on_title_gain in common/on_action/kehillah_on_actions.txt,
+# the same concatenated on_actions = { ... } list kehillah_on_title_gain
+# and the others already share) fires on ANY title:k_england transfer.
+# It deliberately does NOT consume the "resolved" flag while the title
+# stays inside House Godwinson (dynasty:756, Harold's own real 1066
+# dynasty, confirmed game/history/characters/anglo_saxon.txt) -- an
+# ordinary father-to-son inheritance within that house is not a Norman
+# Conquest and must not close the door on a LATER, real change of house.
+# The first transfer that actually leaves that dynasty is treated as the
+# Conquest resolving, whenever in a given playthrough that turns out to
+# be -- bounded to 24 years past this scenario's own 1066.9.15 start
+# (current_date <= 1090.1.1) so an unrelated later shuffle of the English
+# crown, decades on, is not mistaken for this specific moment. A
+# generous but real bound, a first guess per this mod's own "prototype
+# loosely, tune by playtest" norm, not a historically derived figure.
+#
+# THREE OUTCOMES, WEIGHTED CHANCES TO FIRE AT ALL -- the user's own
+# framing ("high chance... but not 100%--more likely if it's William, a
+# little less likely if the other two win") is about whether the whole
+# invitation happens, not about which claimant wins the war itself (this
+# mod does not and cannot rig who wins that; it only reacts once someone
+# has). Real 1066-bookmark character/dynasty ids, confirmed directly
+# against game/history/characters/*.txt and game/history/titles/*.txt:
+#   - WILLIAM (dynasty:752, Normandy) -- 80% chance to fire.
+#   - HARALD HARDRADA (dynasty:499, Norway, OR culture:norwegian for a
+#     descendant) -- 45% chance. Honestly noted: vanilla schedules
+#     Hardrada's own death for 1066.9.25 (game/history/titles/
+#     k_norway.txt) regardless of what happens at a live Hastings/
+#     Stamford Bridge, so this branch is a real but historically uphill
+#     outcome under ordinary play, not a coin flip against William.
+#   - OTHER (anyone else -- a different Godwinson-line ruler overthrown
+#     by an unrelated dynasty, or any other emergent result) -- 30%.
+# All three, when they fire, do exactly the same thing: found all four
+# communities and set the host realm's Jewish Settlement Policy to
+# Encouraged. The branch only changes the new leaders' own family
+# connections (see kehillah_norman_found_*_effect below) and the
+# announcement event's flavor text.
+# =====================================================================
+
+# NOTE: the on_action WRAPPER (trigger/effect block keyed to vanilla's
+# on_title_gain) lives in common/on_action/kehillah_on_actions.txt, not
+# here -- CK3 only scans common/on_action/ files for on_action bodies;
+# defining one here would silently never fire. That wrapper's trigger is
+# scope:title = title:k_england / NOT has_global_variable
+# kehillah_norman_conquest_resolved / current_date <= 1090.1.1, and its
+# effect is a single call to kehillah_norman_conquest_evaluate_effect
+# below -- see that file for the real hookup.
+
+# Scope: the character who just gained title:k_england (root, per vanilla
+# on_title_gain's own documented scopes).
+kehillah_norman_conquest_evaluate_effect = {
+	if = {
+		limit = { dynasty = dynasty:756 }
+		debug_log = "kehillah_norman_conquest_evaluate_effect: still House Godwinson, awaiting a real change of house"
+	}
+	else = {
+		set_global_variable = { name = kehillah_norman_conquest_resolved value = yes }
+
+		if = {
+			limit = { dynasty = dynasty:752 }
+			debug_log = "kehillah_norman_conquest_evaluate_effect: William branch"
+			set_global_variable = { name = kehillah_norman_new_leader_dynasty_choice value = 1 }
+			random_list = {
+				80 = { kehillah_norman_conquest_execute_effect = yes }
+				20 = { debug_log = "kehillah_norman_conquest_evaluate_effect: declined, William branch" }
+			}
+		}
+		else_if = {
+			limit = {
+				OR = {
+					dynasty = dynasty:499
+					culture = culture:norwegian
+				}
+			}
+			debug_log = "kehillah_norman_conquest_evaluate_effect: Harald Hardrada branch"
+			set_global_variable = { name = kehillah_norman_new_leader_dynasty_choice value = 2 }
+			random_list = {
+				45 = { kehillah_norman_conquest_execute_effect = yes }
+				55 = { debug_log = "kehillah_norman_conquest_evaluate_effect: declined, Harald branch" }
+			}
+		}
+		else = {
+			debug_log = "kehillah_norman_conquest_evaluate_effect: other branch"
+			set_global_variable = { name = kehillah_norman_new_leader_dynasty_choice value = 3 }
+			random_list = {
+				30 = { kehillah_norman_conquest_execute_effect = yes }
+				70 = { debug_log = "kehillah_norman_conquest_evaluate_effect: declined, other branch" }
+			}
+		}
+	}
+}
+
+# Scope: the new holder of title:k_england (unchanged from the effect
+# above -- random_list does not switch scope).
+kehillah_norman_conquest_execute_effect = {
+	debug_log = "kehillah_norman_conquest_execute_effect: founding Anglia's four Kehillot"
+
+	kehillah_norman_found_london_effect = yes
+	kehillah_norman_found_york_effect = yes
+	kehillah_norman_found_lincoln_effect = yes
+	kehillah_norman_found_norwich_effect = yes
+
+	trigger_event = { id = kehillah_norman_conquest.0001 days = 2 }
+}
+
+# ---------------------------------------------------------------------
+# The four founding effects. Each mirrors kehillah_found_community_
+# effect's own post-creation checklist (pillars, registry, network
+# cache, library seed, map view, host charter) exactly, since a
+# dynamically-created Kehillah needs precisely the same bookkeeping
+# regardless of how it came to exist. None needs that effect's own
+# "destroy the old adventurer title" step -- these are BRAND NEW
+# characters with no prior title to dispose of.
+#
+# Numbers (gold/Prosperity/Greatness) are carried over verbatim from the
+# old, now-removed kehillah_setup_london/york/lincoln/norwich_start_
+# effect (common/scripted_effects/kehillah_scripted_effects.txt's own
+# removal note) -- this retcon changes WHEN these communities start
+# existing, not their relative standing once they do.
+#
+# DYNASTY, per the user's own explicit "personal connections to other
+# Ashkenazi communities -- especially French communities if William
+# wins" request. global_var:kehillah_norman_new_leader_dynasty_choice
+# (set once, above): 1 = William branch, given dynn_Yitzhaki (9000003) --
+# Rashi of Troyes's own real, already-defined dynasty (common/dynasties/
+# ha_levi.txt) -- read as kin of his household crossing the Channel in
+# William's own wake, the strongest, most concrete realization of
+# "personal connection" this mod's existing infrastructure can give (a
+# real, in-game-verifiable shared house with an existing community's own
+# named leader). 2 = Harald branch and 3 = other branch both use
+# `dynasty = generate` (no specific household record) -- see the FIXED
+# note below for why the Harald branch's own originally-planned
+# dynn_Bacharach tie was dropped, not just re-implemented differently.
+#
+# FIXED 2026-09-25, found live, after THREE failed runtime mechanisms in
+# a row -- do not attempt a fourth guess at joining a pre-existing
+# dynasty/house directly from inside create_character without a live
+# re-test; use the mechanism below, which is grounded in two
+# independently-proven primitives instead of a new one:
+#   1. `dynasty = dynasty:9000003` inside create_character does NOT
+#      reliably join a freshly created character to a pre-existing
+#      dynasty -- confirmed live, it silently lands the character in an
+#      unrelated generated dynasty instead, durably (re-checked a full
+#      day later, still wrong, so not a same-tick read-timing issue).
+#   2. `set_dynasty` (referenced in effect_localization/
+#      00_character_effects.txt) is dead/vestigial localization, not a
+#      real scriptable effect in this build -- confirmed live: "Unknown
+#      effect: set_dynasty".
+#   3. `dynasty_house = house:<key>` (real, repeated vanilla precedent:
+#      common/scripted_effects/00_almohad_invasion_effects.txt:104,145)
+#      still failed for a BRAND NEW, custom, zero-population house
+#      defined only in common/dynasty_houses/ -- "Failed to fetch a
+#      valid house", even after a full clean relaunch. Strong suspicion,
+#      not fully proven: a house needs at least one history-file member
+#      before the engine ever instantiates it as a queryable object.
+# THE MECHANISM ACTUALLY USED instead combines two primitives already
+# independently proven to work, rather than a fourth guess at the same
+# untested runtime path: bare `dynasty = 9000003` in a HISTORY FILE (the
+# exact syntax Rashi's own entry already uses successfully, never in
+# doubt tonight -- only the RUNTIME script-effect equivalent was), plus
+# `father = character:X` + `dynasty = inherit` inside create_character
+# (real, confirmed vanilla precedent used in shipped, tested content:
+# common/scripted_effects/00_mongol_invasion_effects.txt:1717-1723, the
+# actual mechanism behind Genghis Khan's own dynamically generated
+# children). history/characters/yitzhaki_anglia_anchor.txt adds
+# character 9000218, "Meir" -- an elder kinsman of Rashi's own household,
+# already deceased by 1066 on purpose (a living anchor would need to
+# survive up to 24 years of unprotected simulation before ever being
+# referenced) -- solely so the William branch below can set `father =
+# character:9000218` + `dynasty = inherit` rather than reference a
+# dynasty or house directly at all. See that history file's own header
+# for the full account, including the one part still not independently
+# confirmed live: whether `father =` referencing an already-deceased
+# character resolves cleanly for a SCRIPTED (not organic) birth.
+#
+# THE HARALD BRANCH'S OWN dynn_Bacharach TIE WAS DROPPED, not reimplemented
+# with the new mechanism -- it never had a living reference character to
+# begin with (no existing community in this mod's roster has a natural
+# North Sea/Scandinavian trade connection), so there was no equivalent
+# "already-deceased anchor" to build for it the way Yitzhaki has Meir.
+# It was always documented as the deliberately lighter of the two ties;
+# now it is `dynasty = generate`, same as the other branch, rather than
+# inventing a second anchor character for a connection this feature never
+# actually needed to be concrete.
+# ---------------------------------------------------------------------
+
+kehillah_norman_found_london_effect = {
+	if = {
+		limit = { global_var:kehillah_norman_new_leader_dynasty_choice = 1 }
+		create_character = {
+			faith = faith:rabbinism
+			culture = culture:ashkenazi
+			age = { 25 45 }
+			location = title:c_middlesex.title_province
+			random_traits = yes
+			gender_female_chance = 0
+			father = character:9000218
+			dynasty = inherit
+			save_scope_as = kehillah_norman_london_leader
+		}
+	}
+	else_if = {
+		limit = { global_var:kehillah_norman_new_leader_dynasty_choice = 2 }
+		create_character = {
+			faith = faith:rabbinism
+			culture = culture:ashkenazi
+			age = { 25 45 }
+			location = title:c_middlesex.title_province
+			random_traits = yes
+			gender_female_chance = 0
+			dynasty = generate
+			save_scope_as = kehillah_norman_london_leader
+		}
+	}
+	else = {
+		create_character = {
+			faith = faith:rabbinism
+			culture = culture:ashkenazi
+			age = { 25 45 }
+			location = title:c_middlesex.title_province
+			random_traits = yes
+			gender_female_chance = 0
+			dynasty = generate
+			save_scope_as = kehillah_norman_london_leader
+		}
+	}
+	scope:kehillah_norman_london_leader = {
+		create_adventurer_title = {
+			name = kehillah_norman_london_title_name
+			holder = scope:kehillah_norman_london_leader
+			government = kehillah_government
+			article = kehillah_found_community_title_article
+			save_scope_as = kehillah_norman_london_title
+		}
+		kehillah_norman_conquest_finish_founding_effect = yes
+	}
+}
+
+kehillah_norman_found_york_effect = {
+	if = {
+		limit = { global_var:kehillah_norman_new_leader_dynasty_choice = 1 }
+		create_character = {
+			faith = faith:rabbinism
+			culture = culture:ashkenazi
+			age = { 25 45 }
+			location = title:c_north_riding.title_province
+			random_traits = yes
+			gender_female_chance = 0
+			father = character:9000218
+			dynasty = inherit
+			save_scope_as = kehillah_norman_york_leader
+		}
+	}
+	else_if = {
+		limit = { global_var:kehillah_norman_new_leader_dynasty_choice = 2 }
+		create_character = {
+			faith = faith:rabbinism
+			culture = culture:ashkenazi
+			age = { 25 45 }
+			location = title:c_north_riding.title_province
+			random_traits = yes
+			gender_female_chance = 0
+			dynasty = generate
+			save_scope_as = kehillah_norman_york_leader
+		}
+	}
+	else = {
+		create_character = {
+			faith = faith:rabbinism
+			culture = culture:ashkenazi
+			age = { 25 45 }
+			location = title:c_north_riding.title_province
+			random_traits = yes
+			gender_female_chance = 0
+			dynasty = generate
+			save_scope_as = kehillah_norman_york_leader
+		}
+	}
+	scope:kehillah_norman_york_leader = {
+		create_adventurer_title = {
+			name = kehillah_norman_york_title_name
+			holder = scope:kehillah_norman_york_leader
+			government = kehillah_government
+			article = kehillah_found_community_title_article
+			save_scope_as = kehillah_norman_york_title
+		}
+		kehillah_norman_conquest_finish_founding_effect = yes
+	}
+}
+
+kehillah_norman_found_lincoln_effect = {
+	if = {
+		limit = { global_var:kehillah_norman_new_leader_dynasty_choice = 1 }
+		create_character = {
+			faith = faith:rabbinism
+			culture = culture:ashkenazi
+			age = { 25 45 }
+			location = title:c_lincolnshire.title_province
+			random_traits = yes
+			gender_female_chance = 0
+			father = character:9000218
+			dynasty = inherit
+			save_scope_as = kehillah_norman_lincoln_leader
+		}
+	}
+	else_if = {
+		limit = { global_var:kehillah_norman_new_leader_dynasty_choice = 2 }
+		create_character = {
+			faith = faith:rabbinism
+			culture = culture:ashkenazi
+			age = { 25 45 }
+			location = title:c_lincolnshire.title_province
+			random_traits = yes
+			gender_female_chance = 0
+			dynasty = generate
+			save_scope_as = kehillah_norman_lincoln_leader
+		}
+	}
+	else = {
+		create_character = {
+			faith = faith:rabbinism
+			culture = culture:ashkenazi
+			age = { 25 45 }
+			location = title:c_lincolnshire.title_province
+			random_traits = yes
+			gender_female_chance = 0
+			dynasty = generate
+			save_scope_as = kehillah_norman_lincoln_leader
+		}
+	}
+	scope:kehillah_norman_lincoln_leader = {
+		create_adventurer_title = {
+			name = kehillah_norman_lincoln_title_name
+			holder = scope:kehillah_norman_lincoln_leader
+			government = kehillah_government
+			article = kehillah_found_community_title_article
+			save_scope_as = kehillah_norman_lincoln_title
+		}
+		kehillah_norman_conquest_finish_founding_effect = yes
+	}
+}
+
+kehillah_norman_found_norwich_effect = {
+	if = {
+		limit = { global_var:kehillah_norman_new_leader_dynasty_choice = 1 }
+		create_character = {
+			faith = faith:rabbinism
+			culture = culture:ashkenazi
+			age = { 25 45 }
+			location = title:c_norfolk.title_province
+			random_traits = yes
+			gender_female_chance = 0
+			father = character:9000218
+			dynasty = inherit
+			save_scope_as = kehillah_norman_norwich_leader
+		}
+	}
+	else_if = {
+		limit = { global_var:kehillah_norman_new_leader_dynasty_choice = 2 }
+		create_character = {
+			faith = faith:rabbinism
+			culture = culture:ashkenazi
+			age = { 25 45 }
+			location = title:c_norfolk.title_province
+			random_traits = yes
+			gender_female_chance = 0
+			dynasty = generate
+			save_scope_as = kehillah_norman_norwich_leader
+		}
+	}
+	else = {
+		create_character = {
+			faith = faith:rabbinism
+			culture = culture:ashkenazi
+			age = { 25 45 }
+			location = title:c_norfolk.title_province
+			random_traits = yes
+			gender_female_chance = 0
+			dynasty = generate
+			save_scope_as = kehillah_norman_norwich_leader
+		}
+	}
+	scope:kehillah_norman_norwich_leader = {
+		create_adventurer_title = {
+			name = kehillah_norman_norwich_title_name
+			holder = scope:kehillah_norman_norwich_leader
+			government = kehillah_government
+			article = kehillah_found_community_title_article
+			save_scope_as = kehillah_norman_norwich_title
+		}
+		kehillah_norman_conquest_finish_founding_effect = yes
+	}
+}
+
+# ---------------------------------------------------------------------
+# Shared finishing effect. Scope: the newly created leader, immediately
+# after create_adventurer_title -- the exact same scope shape kehillah_
+# found_community_effect uses for its own equivalent block, so this
+# reuses the identical exists-guard idiom for the identical reason (a
+# decision confirmation-tooltip preview walks this effect against a title
+# that does not exist yet during a dry run; there is no decision here,
+# but create_character/create_adventurer_title inside a trigger_event's
+# own immediate block CAN still be tooltip-previewed by a hovering
+# player if this is ever surfaced through UI later, so the guard is kept
+# as a defensive match to established practice, not dead code).
+#
+# primary_title is already set correctly by government = kehillah_
+# government on create_adventurer_title above (this is the character's
+# only title), so unlike kehillah_found_community_effect there is no
+# earlier adventurer title to make way for and no set_primary_title_to
+# call is needed here.
+#
+# Prosperity/Greatness/gold values are branch-INDEPENDENT (same four
+# numbers regardless of which claimant won) and per-CITY, read off
+# root's own held title name via a direct city check -- simpler than
+# passing the number set as a parameter, and every one of these calls
+# fires from a scope where root is unambiguous (the newly created
+# leader, holding exactly one title).
+# ---------------------------------------------------------------------
+kehillah_norman_conquest_finish_founding_effect = {
+	if = {
+		limit = { exists = primary_title }
+		hidden_effect = {
+			if = {
+				limit = {
+					exists = scope:kehillah_norman_london_title
+					primary_title = scope:kehillah_norman_london_title
+				}
+				add_gold = 60
+				primary_title = {
+					kehillah_init_pillars_effect = yes
+					change_variable = { name = kehillah_var_prosperity add = 220 }
+					change_variable = { name = kehillah_var_greatness add = 15 }
+				}
+			}
+			else_if = {
+				limit = {
+					exists = scope:kehillah_norman_york_title
+					primary_title = scope:kehillah_norman_york_title
+				}
+				add_gold = 30
+				primary_title = {
+					kehillah_init_pillars_effect = yes
+					change_variable = { name = kehillah_var_prosperity add = 80 }
+					change_variable = { name = kehillah_var_greatness add = 5 }
+				}
+			}
+			else_if = {
+				limit = {
+					exists = scope:kehillah_norman_lincoln_title
+					primary_title = scope:kehillah_norman_lincoln_title
+				}
+				add_gold = 30
+				primary_title = {
+					kehillah_init_pillars_effect = yes
+					change_variable = { name = kehillah_var_prosperity add = 80 }
+					change_variable = { name = kehillah_var_greatness add = 5 }
+				}
+			}
+			else_if = {
+				limit = {
+					exists = scope:kehillah_norman_norwich_title
+					primary_title = scope:kehillah_norman_norwich_title
+				}
+				add_gold = 30
+				primary_title = {
+					kehillah_init_pillars_effect = yes
+					change_variable = { name = kehillah_var_prosperity add = 80 }
+					change_variable = { name = kehillah_var_greatness add = 10 }
+				}
+			}
+
+			kehillah_update_leader_flavor_effect = yes
+
+			# Persistent marker, ADDED 2026-09-25 alongside the debug harness
+			# (events/kehillah_debug_events.txt's kehillah_debug.93) -- a
+			# saved effect scope (scope:kehillah_norman_london_title etc.)
+			# does not survive past the effect call that created it, so
+			# anything that needs to find these four titles again later
+			# (a debug probe, or future flavor content) needs a real,
+			# persistent way to recognize "this was founded by the Norman
+			# Conquest event" that isn't just re-deriving it from the
+			# title's own display name.
+			primary_title = {
+				set_variable = { name = kehillah_norman_founded value = yes }
+			}
+
+			add_to_global_variable_list = {
+				name = kehillah_registered_communities
+				target = primary_title
+			}
+			kehillah_refresh_all_settlement_networks_effect = yes
+			primary_title = {
+				kehillah_seed_starting_library_effect = yes
+			}
+			kehillah_refresh_map_view_for_players_effect = yes
+
+			# JEWISH SETTLEMENT POLICY, ADDED 2026-09-25 -- the user's own
+			# "offering favorable host charters" ask. Set on the actual
+			# resolved top_liege's primary title (V16's own resolver,
+			# common/scripted_triggers/kehillah_settlement_policy_
+			# triggers.txt), not hardcoded to title:k_england by name --
+			# the new leader's real top liege may hold a different primary
+			# title (an empire tier, if one forms), and V16's resolver
+			# always reads whatever IS primary, not k_england specifically.
+			# Set BEFORE the charter call below so defaults_to_highest_
+			# valid_level actually sees Encouraged at contract-creation time.
+			if = {
+				limit = { exists = domicile.domicile_location.county.holder.top_liege.primary_title }
+				domicile.domicile_location.county.holder.top_liege.primary_title = {
+					set_variable = { name = kehillah_jewish_settlement_policy value = 3 }
+				}
+			}
+
+			kehillah_maintain_host_charter_effect = yes
+		}
+	}
+	else = {
+		debug_log = "kehillah_norman_conquest_finish_founding_effect: WARNING no primary_title after create_adventurer_title -- founding failed"
+	}
+}
