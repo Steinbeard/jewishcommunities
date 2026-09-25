@@ -215,3 +215,38 @@ all update together without initialization stalls or new `error.log` entries.
   from the already-live writer test, rather than independently observed
   through the cache. Quarterly reconciliation after a voluntary contract edit,
   construction gating, pillar contribution, and ledger UI remain open.
+
+## Charter notices and ruler transition reports (2026-09-24)
+
+**Status: SOURCE-VALIDATED; LIVE EVENT-RENDER/TIMING TEST REQUIRED.**
+
+- `ck3-tiger` 1.19.0 completed after the notice implementation with **0 fatal,
+  0 error, 57 warnings, 0 untidy, 17 tips** — the established baseline. The
+  initial custom-localization file was converted to UTF-8 with BOM and the
+  only new portrait animation warning was removed before recording this pass.
+- Fresh-charter notices are scheduled only by `.0003`, after its committed
+  contract read has written the safe title cache. The community event reads
+  only that cache; the host digest is debounced with a one-day temporary flag
+  and counter, so simultaneous historical-start charters make one event per
+  host rather than one per community.
+- Inherited regional charters are found from `on_title_gain` by scanning the
+  bounded registered-community title list. CK3's
+  `tributary_heir_succession` remains responsible for preservation; the new
+  effect only counts reports and schedules one host event plus one affected
+  community event. A permanent successor flag prevents a multi-title
+  inheritance from repeating the grouped host report.
+- A host mismatch still uses the proven end-now/start-next-quarter lifecycle.
+  The new community-title marker survives this gap and selects the explicit
+  “new ruler” wording only after the replacement charter has committed.
+- `kehillah_debug.82` is the cache-only fresh-notice probe. Run it after `.0003`
+  (or a quarterly cache refresh), advance one day, and confirm the community
+  notice plus exactly one host digest. It intentionally cannot emulate an
+  inheritance or conquest: those require a real title succession / county
+  holder change to test the engine's treaty transfer and deferred timing.
+
+Still required live: render the Christian and Muslim community notices; view
+the grouped ruler digest as a host player; kill/succeed one host ruler and
+verify `.0006`/`.0007` appear exactly once with unchanged terms; then transfer
+a host county by conquest and wait through the deferred end-and-start path.
+Check `error.log` after each and confirm that the qualitative posture text is
+never blank and never changes a contract by itself.

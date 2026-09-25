@@ -274,6 +274,39 @@ restrictive policy, without revoking those rights. The pillar tooltip names
 each actual charter and network contribution. A visual badge column and an
 actual-charter/exemption summary wait on a dedicated contract-UI pass.
 
+### 6.1 Charter notices and provisional personal posture (2026-09-24)
+
+The post-commit cache hand-off is also the only safe point to report a new
+regional charter. Each community leader receives a focused event listing the
+four **actual cached terms** that now feed its pillars. A host ruler receives
+one delayed digest per resolution day, rather than one event for every
+community. Consequently, the historical-start charter batch is a single ruler
+event for each host while a player leading one Kehillah sees only that
+community's detail.
+
+There are deliberately two changes-of-ruler paths:
+
+1. **Inheritance:** `tributary_heir_succession` preserves the existing
+   agreement. On title gain, the new suzerain is detected against the
+   registered-community list; the successor receives one grouped stewardship
+   report and each affected community receives its own continuity report with
+   its still-current terms.
+2. **Conquest / host change:** the existing V15 deferred maintenance path ends
+   the stale agreement and creates the new one only on a later tick. A marker
+   survives that gap, so the eventual post-commit community report explicitly
+   says that a new ruler replaced the former charter; the new host receives the
+   normal grouped charter digest. No same-tick end-and-start write is added.
+
+Both community-facing change reports display a first-pass **personal posture
+toward Jewish subjects**. This is explicitly a UI-only, qualitative signal:
+Jewish coreligion, fervent confessionalism, wariness, compassion/justice, or
+unclear. It is not an anti-/philosemitism score, has no effect on policy,
+charter fairness, pillars, AI behaviour, expulsion, or migration, and must
+remain that way until a separate model specifies evidence, countervailing
+institutions, pacing, player recourse, and live tests. The display order makes
+religious identity outrank personality, so a Jewish zealot cannot be labelled
+as distrustful of Jewish subjects.
+
 ## 7. Policy deterioration and warning
 
 `Banned` is a state of political danger, not a destruction effect. A later
@@ -328,6 +361,15 @@ entry in `docs/testing/` before it becomes load-bearing.
    confirm the regiment and its upkeep behavior. Do not promise retention in
    the player-facing text until this is observed. Use the debug harness noted
    in §4 on a fresh save and restore V15 immediately afterward.
+9. **Charter notice timing and grouping.** On a fresh Christian and Muslim
+   start, confirm that the community report appears only after the committed
+   cache contains the four actual terms, while each host receives one digest
+   for the whole same-day batch. Then test one host inheritance and one county
+   conquest: inheritance must retain the old terms and notify both sides once;
+   conquest must use the deferred end-then-start path and label the later
+   report as a new-ruler charter. Verify that all personal-posture labels are
+   presented as non-mechanical text and survive a missing/ambiguous trait
+   combination without blank localisation.
 
 ## 9. First build slice and non-goals
 

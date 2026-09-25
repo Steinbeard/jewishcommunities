@@ -261,7 +261,7 @@ kehillah_on_game_start = {
 # ---------------------------------------------------------------------
 
 on_title_gain = {
-	on_actions = { kehillah_on_title_gain kehillah_map_view_on_title_gain }
+	on_actions = { kehillah_on_title_gain kehillah_host_charter_steward_on_title_gain kehillah_map_view_on_title_gain }
 }
 
 kehillah_on_title_gain = {
@@ -349,6 +349,74 @@ kehillah_on_title_gain = {
 				}
 			}
 			kehillah_refresh_shum_bond_effect = yes
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# HOST-CHARTER STEWARDSHIP -- a host ruler, rather than a community
+# leader, has succeeded to one or more existing tributary agreements.
+#
+# CK3's tributary_heir_succession carries the agreement itself. There is
+# no contract rewrite here: scan the deliberately small registered-title
+# list only to tell the successor and each affected player-community what
+# survived. The permanent ruler flag debounces inheritance of a bundle of
+# titles on the same date and intentionally does not suppress the separate
+# fresh-charter report used after conquest.
+#
+# root = a character who just gained any title. The scan becomes nonzero
+# only if that character is already the suzerain of a V16 regional charter;
+# it is therefore inert for ordinary title gains and for the pre-charter
+# part of game startup.
+# ---------------------------------------------------------------------
+
+kehillah_host_charter_steward_on_title_gain = {
+	trigger = {
+		NOT = { has_character_flag = kehillah_charter_steward_introduced }
+		# Do not mistake an established host gaining a minor extra title for
+		# a change of charter steward. Vanilla scope comparison syntax is
+		# used here (see game/common/scripted_effects/00_major_decisions_
+		# scripted_effects.txt): only the incoming ruler's current primary
+		# title can introduce this one-time succession report.
+		scope:title = { this = root.primary_title }
+	}
+
+	effect = {
+		set_variable = { name = kehillah_charter_steward_community_count value = 0 }
+		save_scope_as = kehillah_new_charter_steward
+
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = {
+					is_tributary = yes
+					suzerain = scope:kehillah_new_charter_steward
+					OR = {
+						has_subject_contract_group = kehillah_christian_host_charter_prototype
+						has_subject_contract_group = kehillah_muslim_host_charter_prototype
+					}
+				}
+			}
+			scope:kehillah_new_charter_steward = {
+				change_variable = { name = kehillah_charter_steward_community_count add = 1 }
+			}
+			# A player leading one of these communities needs the same
+			# continuity report as the successor. AI leaders immediately
+			# acknowledge the event, so this is not an AI-event flood.
+			holder = {
+				trigger_event = { id = kehillah_settlement_conditions.0007 days = 1 }
+			}
+		}
+
+		if = {
+			limit = { var:kehillah_charter_steward_community_count >= 1 }
+			add_character_flag = kehillah_charter_steward_introduced
+			trigger_event = { id = kehillah_settlement_conditions.0006 days = 1 }
+		}
+		else = {
+			remove_variable = kehillah_charter_steward_community_count
 		}
 	}
 }
