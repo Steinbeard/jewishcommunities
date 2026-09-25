@@ -194,6 +194,22 @@ genuinely-blocked item, it means never skipping *silently*.
 
 ## Overnight automation
 
+**2026-09-25 correction — the nightly wrapper never actually ran an agent from 2026-09-09 through
+2026-09-25.** Its launch line piped to `Tee-Object -Encoding utf8`; Windows PowerShell 5.1's
+`Tee-Object` has no `-Encoding` parameter, so the pipeline failed to bind and the agent (Claude,
+later Codex) never started. Each "overnight" branch got only the wrapper's mechanical status note;
+all real work on those branches came from interactive sessions. Fixed in the script (now
+`Out-File`). The wrapper also switched to Codex (reading `AGENTS.md`) around 2026-09-20.
+
+**Sukkot 2026 heartbeat (2026-09-25 18:00 → 2026-09-28 morning):** a separate task,
+`JewishCommunities-SukkotHeartbeat`, runs
+`C:\Users\Daniel\Documents\claude-automation\jewishcommunities-heartbeat.ps1` every 5 hours. All
+its runs share ONE branch, `autonomous/sukkot-2026` (not per-date), take a lock so they never
+overlap, and work the "v0.1 milestone — Sukkot autonomous queue" in ROADMAP.md. The nightly
+`JewishCommunities-OvernightDev` task is **disabled** for this window so it can't switch branches
+under a running heartbeat; re-enable it after (`schtasks /Change /TN JewishCommunities-OvernightDev
+/ENABLE`). The rest of this section describes the nightly task.
+
 A Windows Scheduled Task (`JewishCommunities-OvernightDev`, on Daniel's machine) runs an
 unattended instance of this same "Working autonomously" workflow at **2:00 AM America/New_York,
 once a night**. (Was twice nightly at 1AM/5AM; cut to a single run 2026-09-08 to bound token
