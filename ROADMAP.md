@@ -48,42 +48,97 @@ short research bullets for when Daniel is back.
   Greatness. Voluntary departure hands the community to an AI successor; dissolution ends the
   title. Mirror the founding path's verified teardown order in reverse. High crash-risk area: read
   the implementation doc §6/§8 and the founding-path notes first. Add a warning event one band
-  above the floor so collapse is never a surprise.
-- **S2. BUILD — Pillar transparency and impact.** Read what each pillar band actually does today
-  (code, not docs) and fix gaps: every band change notifies the player, every band has a concrete
-  visible effect, tooltips say what the next band up/down would change. Verify in-game it reads
-  clearly.
+  above the floor so collapse is never a surprise. **Done when**, live: (1) the player steps down,
+  plays on as an adventurer, and the community continues under an AI leader; (2) Stability forced
+  to 0 via debug event shows the warning, then collapse, and the player plays on as an adventurer;
+  (3) that adventurer can re-found a community; error.log clean of new errors throughout.
+- **S2. BUILD — Pillar transparency and impact.** State as of 2026-09-25 (read from code): bands
+  only gate building tiers (Greatness, one Prosperity tier), courtier quality (Greatness), one
+  Crisis-Stability random event, and map-view colour. There is no band-change notice, no ongoing
+  effect from simply *being* in a band, and no "what the next band gives" text. Build exactly:
+  1. **Per-band leader modifiers, 3 pillars × 5 bands**, applied/replaced on the quarterly tick
+     (remove the old band's modifier when the band changes; Healthy = small or none). Starting
+     proposal, verify every modifier key exists in vanilla 1.19 before using it: Prosperity →
+     `monthly_income_mult` (about −20% / −10% / 0 / +10% / +20%); Stability → influence gain and
+     stress gain (Crisis hurts, Flourishing helps); Greatness → `monthly_prestige_gain_mult` plus a
+     Learning bonus at Flourishing/Legendary. Numbers in script_values so they're tunable.
+  2. **Band-change notice.** Store each pillar's previous band on the title; when it changes on the
+     tick, send the player a `send_interface_message` saying the pillar, old → new band, and what
+     modifier or unlock was gained or lost. No notice if the band didn't change.
+  3. **Next-band text.** In the existing pillar tooltip/breakdown (map view row and community-list
+     tooltip), add one line per pillar: current band, points to the next band up, and what that
+     band adds.
+  4. **Debug harness:** a debug event that sets a chosen pillar to each band in turn, so every
+     modifier and notice can be triggered on demand.
+  **Done when**, live: for each pillar, pushing it up one band and down one band shows the notice,
+  swaps the modifier on the leader's character sheet, and the tooltip names the next band —
+  downscaled screenshots in the test log. ck3-tiger clean. No change to how pillars are
+  *calculated* in this item; that's S10's job if the soak test finds problems.
 - **S3. BUILD — Succession hardening.** (a) Root-cause the recurring non-fatal `change_government`
   "illegal government" error on appointment succession (implementation doc, 2026-09-23 addition).
   (b) Live-verify that an officer with a better score beats a family heir (the long-open
   holder_court_position re-test, see "CORRECTED 2026-09-07" below). (c) Succession of a *founded*
   community (never tested). (d) Give the player a real role in choosing a successor — smallest
-  workable version of V3 / iteration notes §4 (e.g. endorse a preferred candidate for a score
-  bonus).
-- **S4. BUILD — Scholars on the move: hiring a Chief Rabbi from elsewhere.** Communities can recruit
-  a learned rabbi from another community (or a wandering scholar) as Chief Rabbi, and scholars
-  migrate between communities over time, AI included. Builds on the Chief Rabbi court position,
-  Greatness, and the regional network. Scholar-playstyle payoff: your students get hired away and
-  spread your name.
-- **S5. BUILD — Responsa.** Questions arrive from other communities (and from within) for a learned
-  leader/Chief Rabbi to answer; skill-tiered answers affect Greatness, the asking community, and
-  relations; notable answers accumulate as a visible legacy (a count, or collected into a book via
-  the existing book system). Recurring and lightweight.
-- **S6. BUILD — Community goals / ambitions.** Give 50 years a shape: the community picks a goal
-  (build the yeshiva, secure a better charter, reach a Greatness band, found a daughter community,
-  weather a crisis) with visible progress and a reward/legacy on completion; AI communities pick
-  goals too. Start with 3-5 goals.
+  workable version of V3 / iteration notes §4: an interaction "Endorse as Successor" on one
+  eligible courtier (one at a time, adds a fixed score in `kehillah_leadership.txt`, shown in the
+  succession candidate tooltip). **Done when**: (a) is fixed or its cause documented with
+  evidence; (b), (c), (d) each observed in a live console-kill succession.
+- **S4. BUILD — Scholars on the move: hiring a Chief Rabbi from elsewhere.** Build exactly:
+  (1) a character interaction "Invite to Serve as Chief Rabbi", usable by a Kehillah leader on a
+  Jewish, rabbi-eligible (existing gender/rabbi gates) character at another community's court or a
+  landless scholar; gold cost scaled by the target's Learning; `ai_accept` weighs the two
+  communities' Greatness, the offer, and the target's opinion/current post, with a readable
+  breakdown. On accept: move to the inviter's court and appoint as Chief Rabbi. (2) A yearly AI
+  pulse: an AI community with an empty Chief Rabbi seat tries the same interaction on the best
+  reachable candidate. (3) Two flavour events: "your student has been called to X" (your trained
+  courtier leaves; small Greatness gain for you) and "a scholar asks to join us" (arrival at a
+  high-Greatness community). **Done when**, live: the player hires a rabbi from another community
+  end to end, and an AI community fills an empty seat via the debug-triggered pulse.
+- **S5. BUILD — Responsa.** Build exactly: an on_action pulse (roughly one question every 1-2
+  years for a leader or Chief Rabbi with Learning ≥ ~12) firing an event where a named leader of
+  another real community sends a question (start with 6 question texts, halakhic/communal flavour,
+  no invented historical attributions). Three options (lenient / stringent / send to a greater
+  authority), each a Learning-tiered check affecting Greatness, opinion with the asker, and a
+  small effect on the asking community's Stability. A title counter `kehillah_responsa_count`,
+  shown in the standing/map-view tooltip; at 10 answered, a decision to compile them into a book
+  via the existing book system. **Done when**, live: the debug-fired event resolves all three
+  options, the counter increments and displays, and the compile decision appears at the
+  threshold.
+- **S6. BUILD — Community goals.** Build exactly: a decision "Set the Community's Goal" (one active
+  goal at a time, 10-year deadline, stored as title variables) offering 4 goals checked on the
+  quarterly tick: **Build the Yeshiva** (the building exists at tier N), **A Name Among the
+  Communities** (Greatness reaches Flourishing), **Secure Our Rights** (the charter's security or
+  construction term improves), **A Daughter Community** (a new community is founded by one of
+  your courtiers or dynasty — if that turns out hard to detect, swap in "Prosperity reaches
+  Flourishing" and note it). Completion: a notice, a pillar reward, and a permanent title modifier
+  or counter as legacy; missing the deadline: a small Stability loss. Active goal + progress shown
+  in the standing tooltip. AI communities pick a goal at random, weighted by their weakest pillar.
+  **Done when**, live: one goal is set, completed via debug state, the reward and legacy appear,
+  and a failed deadline applies its penalty.
 - **S7. BUILD — Bookmark with the three prototype characters.** A 1066 bookmark featuring the
   Scholar (Rashi of Troyes), the Shtadlan (a Sh'um or Cologne leader), and the Financier (a landless
   Jewish adventurer near Rouen, created for this). ck3-tiger checks bookmark portraits — a missing
   one crashes the game. Must boot and be selectable live.
 - **S8. BUILD — The Financier path.** The S7 adventurer can take up the post-Conquest invitation and
-  found an English community themselves (V18 currently founds them only as AI), plus a first
-  royal-finance loop (loans to the crown / administrative service).
-- **S9. BUILD — Expulsion and host-ruler agency.** Banned policy → visible warning → expulsion event
-  with counterplay → S1's departure path. Decisions for a non-Jewish ruler to move the settlement
-  policy one rung, invite Jews, and expel, each with clear costs and benefits. Keep AI use of these
-  conservative (V17: policy AI must be visible and event-led).
+  found an English community themselves (V18 currently founds them only as AI): after the Conquest
+  resolves, the player adventurer gets an invitation event (accept → travel/found in London via the
+  existing founding effect with an Encouraged-tier charter; decline → AI founding as now). Then one
+  royal-finance loop: reuse the existing loan contract with the King of England as a repeat
+  borrower (larger sums, royal favour as opinion + charter security) — no new finance system.
+  **Done when**, live: the invitation appears for a player adventurer, accepting founds the
+  community with the right charter, and a royal loan originates, accrues and repays.
+- **S9a. BUILD — Host-ruler settlement-policy decisions (non-Jewish player).** Two decisions, "Raise"
+  and "Lower Jewish Settlement Policy" (one rung each, 5-year cooldown), writing the existing V16
+  title variable. Raising: costs piety/clergy opinion, grants a notice to Jewish communities in the
+  realm. Lowering: small piety gain, lost income expectation spelled out in the tooltip. **No AI use
+  yet** (V17 wants event-led AI; that's with Daniel). **Done when**, live: a non-Jewish player moves
+  the policy both ways and the Kehillah sees the notice and the changed charter outlook.
+- **S9b. BUILD — Expulsion.** Lowering to Banned starts a warning event for every community in the
+  realm, then after ~1-2 years an expulsion event with counterplay options (petition/bribe the
+  ruler via the Shtadlan → chance to restore Discouraged; leave in good order → S1's departure
+  path with followers and treasury share; stay illegally → Stability drain, later forced exit).
+  Depends on S1. **Done when**, live: both the reprieve and the departure outcome have been played
+  through with no errors in error.log.
 - **S10. BUILD/TEST — 50-year soak test.** Debug event + observe run logging every community's
   pillars yearly at speed 5; run it (the PC is free), record drift / dead loops / runaway numbers,
   fix the worst findings.
