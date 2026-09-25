@@ -405,13 +405,158 @@ kehillah_debug.70 = {
 
 		if = { limit = { is_tributary = yes } debug_log = "kehillah_debug.70: is_tributary YES" }
 		else = { debug_log = "kehillah_debug.70: is_tributary NO" }
-		if = { limit = { has_subject_contract_group = kehillah_host_charter } debug_log = "kehillah_debug.70: contract group is kehillah_host_charter" }
-		else = { debug_log = "kehillah_debug.70: contract group is NOT kehillah_host_charter" }
+		if = { limit = { has_subject_contract_group = kehillah_host_charter } debug_log = "kehillah_debug.70: contract group is legacy kehillah_host_charter" }
+		else_if = { limit = { has_subject_contract_group = kehillah_christian_host_charter_prototype } debug_log = "kehillah_debug.70: contract group is Christian Host Charter" }
+		else_if = { limit = { has_subject_contract_group = kehillah_muslim_host_charter_prototype } debug_log = "kehillah_debug.70: contract group is Muslim Host Charter" }
+		else = { debug_log = "kehillah_debug.70: contract group is not a recognized Kehillah charter" }
 		if = { limit = { is_independent_ruler = yes } debug_log = "kehillah_debug.70: is_independent_ruler YES" }
 		else = { debug_log = "kehillah_debug.70: is_independent_ruler NO" }
 		if = {
 			limit = { exists = suzerain }
 			suzerain = { debug_log_scopes = yes }
 		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# V16 Host Charter -> pillar-baseline probe. This must be fired only
+# AFTER a normal host charter already exists; a newly start_tributary'd
+# contract is not registered for tributary_contract_set_obligation_level
+# until a later tick (v15's confirmed deferral constraint). Fire .71,
+# unpause briefly, then inspect the bespoke pillar tooltips and/or fire
+# the existing quarterly debug probe. See v16 §8 test 5.
+# ---------------------------------------------------------------------
+kehillah_debug.71 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = {
+				is_tributary = yes
+				has_subject_contract_group = kehillah_host_charter
+			}
+			tributary_contract_set_obligation_level = {
+				type = kehillah_charter_moneylending_rights
+				level = kehillah_moneylending_full
+			}
+			tributary_contract_set_obligation_level = {
+				type = kehillah_charter_quarter_rights
+				level = kehillah_quarter_walled
+			}
+			debug_log = "kehillah_debug.71: requested full lending + walled-quarter rights; verify after a later tick"
+		}
+		else = {
+			debug_log = "kehillah_debug.71: no live kehillah_host_charter; nothing changed"
+		}
+	}
+}
+
+# V16 realm-policy probe setters. Scope is a Kehillah leader; all four
+# resolve the host exactly as the live Charter does, then write the host
+# realm primary title. The unset state is intentionally "Allowed".
+kehillah_debug.72 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege.primary_title = {
+			set_variable = { name = kehillah_jewish_settlement_policy value = 3 }
+		}
+		debug_log = "kehillah_debug.72: host realm policy set to Encouraged"
+	}
+}
+
+kehillah_debug.73 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege.primary_title = {
+			remove_variable = kehillah_jewish_settlement_policy
+		}
+		debug_log = "kehillah_debug.73: host realm policy reset to implicit Allowed"
+	}
+}
+
+kehillah_debug.74 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege.primary_title = {
+			set_variable = { name = kehillah_jewish_settlement_policy value = 1 }
+		}
+		debug_log = "kehillah_debug.74: host realm policy set to Discouraged"
+	}
+}
+
+kehillah_debug.75 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege.primary_title = {
+			set_variable = { name = kehillah_jewish_settlement_policy value = 0 }
+		}
+		debug_log = "kehillah_debug.75: host realm policy set to Banned"
+	}
+}
+
+# V16 fresh-charter and settlement-conditions report. This is deliberately
+# a branch report rather than a literal variable dump: it tests the same
+# trigger paths that the pillar tooltip and ledger use, and makes a
+# clean/debug.log assertion possible without opening a UI panel.
+kehillah_debug.81 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_refresh_all_settlement_networks_effect = yes
+		debug_log = "kehillah_debug.81: refreshed nearby-community cache"
+
+		if = { limit = { has_subject_contract_group = kehillah_christian_host_charter_prototype } debug_log = "kehillah_debug.81: active group Christian Host Charter" }
+		else_if = { limit = { has_subject_contract_group = kehillah_muslim_host_charter_prototype } debug_log = "kehillah_debug.81: active group Muslim Host Charter" }
+		else_if = { limit = { has_subject_contract_group = kehillah_host_charter } debug_log = "kehillah_debug.81: active group legacy Host Charter" }
+		else = { debug_log = "kehillah_debug.81: no recognized Host Charter active" }
+
+		if = { limit = { domicile.domicile_location.county.holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } } debug_log = "kehillah_debug.81: host policy Encouraged" }
+		else_if = { limit = { domicile.domicile_location.county.holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } } debug_log = "kehillah_debug.81: host policy Discouraged" }
+		else_if = { limit = { domicile.domicile_location.county.holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } } debug_log = "kehillah_debug.81: host policy Banned" }
+		else = { debug_log = "kehillah_debug.81: host policy Allowed" }
+
+		# These report the deferred title cache, not live tributary flags.
+		# .0003 writes it after a fresh charter commits; the quarterly pulse
+		# reconciles voluntary edits thereafter.
+		if = { limit = { kehillah_cached_charter_construction_free_trigger = yes } debug_log = "kehillah_debug.81: regional construction = Free" }
+		else_if = { limit = { kehillah_cached_charter_construction_permission_trigger = yes } debug_log = "kehillah_debug.81: regional construction = Permission" }
+		else_if = { limit = { kehillah_cached_charter_construction_forbidden_trigger = yes } debug_log = "kehillah_debug.81: regional construction = Forbidden" }
+		if = { limit = { kehillah_cached_charter_security_strong_trigger = yes } debug_log = "kehillah_debug.81: regional security = Strong protection" }
+		else_if = { limit = { kehillah_cached_charter_security_watch_trigger = yes } debug_log = "kehillah_debug.81: regional security = Licensed Watch" }
+		else_if = { limit = { has_subject_contract_group = kehillah_christian_host_charter_prototype } debug_log = "kehillah_debug.81: Christian security = No Watch" }
+		else_if = { limit = { has_subject_contract_group = kehillah_muslim_host_charter_prototype } debug_log = "kehillah_debug.81: Muslim security = Unarmed" }
+		if = { limit = { kehillah_cached_charter_jurisdiction_bet_din_trigger = yes } debug_log = "kehillah_debug.81: regional jurisdiction = Bet Din" }
+		else_if = {
+			limit = {
+				kehillah_cached_christian_charter_trigger = yes
+				kehillah_cached_charter_jurisdiction_royal_appeal_trigger = yes
+			}
+			debug_log = "kehillah_debug.81: Christian jurisdiction = Royal Appeal"
+		}
+		else_if = {
+			limit = {
+				kehillah_cached_muslim_charter_trigger = yes
+				kehillah_cached_charter_jurisdiction_communal_arbitration_trigger = yes
+			}
+			debug_log = "kehillah_debug.81: Muslim jurisdiction = Communal Arbitration"
+		}
+		else_if = { limit = { has_subject_contract_group = kehillah_christian_host_charter_prototype } debug_log = "kehillah_debug.81: Christian jurisdiction = Local Court" }
+		else_if = { limit = { has_subject_contract_group = kehillah_muslim_host_charter_prototype } debug_log = "kehillah_debug.81: Muslim jurisdiction = Host Court" }
+		if = { limit = { kehillah_cached_charter_text_unrestricted_trigger = yes } debug_log = "kehillah_debug.81: Christian study = Unrestricted" }
+		else_if = { limit = { kehillah_cached_charter_text_licensed_trigger = yes } debug_log = "kehillah_debug.81: Christian study = Licensed" }
+		else_if = { limit = { has_subject_contract_group = kehillah_christian_host_charter_prototype } debug_log = "kehillah_debug.81: Christian study = Proscribed" }
+
+		if = { limit = { primary_title = { var:kehillah_nearby_community_count >= 5 } } debug_log = "kehillah_debug.81: network band Dense (5+)" }
+		else_if = { limit = { primary_title = { var:kehillah_nearby_community_count >= 3 } } debug_log = "kehillah_debug.81: network band Crowded (3-4)" }
+		else_if = { limit = { primary_title = { var:kehillah_nearby_community_count >= 1 } } debug_log = "kehillah_debug.81: network band Goldilocks (1-2)" }
+		else = { debug_log = "kehillah_debug.81: network band Isolated (0)" }
+		if = { limit = { domicile.domicile_location.county = { development_level >= 25 } } debug_log = "kehillah_debug.81: local development Major City (25+)" }
+		else_if = { limit = { domicile.domicile_location.county = { development_level >= 15 } } debug_log = "kehillah_debug.81: local development Established Town (15+)" }
+		else_if = { limit = { domicile.domicile_location.county = { development_level >= 5 } } debug_log = "kehillah_debug.81: local development Market Settlement (5+)" }
+		else = { debug_log = "kehillah_debug.81: local development Sparse Settlement (<5)" }
 	}
 }

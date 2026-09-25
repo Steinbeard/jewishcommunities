@@ -1,0 +1,120 @@
+﻿# =====================================================================
+# V16 regional Host Charter prototype harness. Console-only and never
+# called by content: use only in a fresh debug save, while playing the
+# Kehillah leader. The legacy charter has a known deferred end/start
+# commit, so every swap is intentionally two console calls with an
+# unpaused tick between them.
+#
+# event kehillah_debug.76  end any current charter
+# event kehillah_debug.77  after a tick: Christian prototype (Christian host)
+# event kehillah_debug.78  after a tick: Muslim prototype (Muslim host)
+# event kehillah_debug.79  end prototype
+# event kehillah_debug.80  after a tick: restore V15 legacy charter
+# =====================================================================
+
+namespace = kehillah_debug
+
+kehillah_debug.76 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { is_tributary = yes }
+			end_tributary = yes
+			debug_log = "kehillah_debug.76: requested current charter end; unpause before .77/.78"
+		}
+		else = {
+			debug_log = "kehillah_debug.76: no charter existed; prototype can be started"
+		}
+	}
+}
+
+kehillah_debug.77 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = {
+				NOT = { is_tributary = yes }
+				exists = domicile.domicile_location.county.holder.top_liege
+				domicile.domicile_location.county.holder.top_liege = {
+					religion = religion:christianity_religion
+				}
+			}
+			domicile.domicile_location.county.holder.top_liege = {
+				save_scope_as = kehillah_prototype_host
+			}
+			start_tributary = {
+				contract_group = kehillah_christian_host_charter_prototype
+				suzerain = scope:kehillah_prototype_host
+			}
+			debug_log = "kehillah_debug.77: Christian prototype requested; unpause before inspecting its contract"
+		}
+		else = {
+			debug_log = "kehillah_debug.77: requires no current charter and a Christian host"
+		}
+	}
+}
+
+kehillah_debug.78 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = {
+				NOT = { is_tributary = yes }
+				exists = domicile.domicile_location.county.holder.top_liege
+				domicile.domicile_location.county.holder.top_liege = {
+					religion = religion:islam_religion
+				}
+			}
+			domicile.domicile_location.county.holder.top_liege = {
+				save_scope_as = kehillah_prototype_host
+			}
+			start_tributary = {
+				contract_group = kehillah_muslim_host_charter_prototype
+				suzerain = scope:kehillah_prototype_host
+			}
+			debug_log = "kehillah_debug.78: Muslim prototype requested; unpause before inspecting its contract"
+		}
+		else = {
+			debug_log = "kehillah_debug.78: requires no current charter and a Muslim host"
+		}
+	}
+}
+
+kehillah_debug.79 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = {
+				is_tributary = yes
+				OR = {
+					has_subject_contract_group = kehillah_christian_host_charter_prototype
+					has_subject_contract_group = kehillah_muslim_host_charter_prototype
+				}
+			}
+			end_tributary = yes
+			debug_log = "kehillah_debug.79: requested prototype end; unpause before .80"
+		}
+		else = {
+			debug_log = "kehillah_debug.79: no regional prototype was active"
+		}
+	}
+}
+
+kehillah_debug.80 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { NOT = { is_tributary = yes } }
+			kehillah_maintain_host_charter_effect = yes
+			debug_log = "kehillah_debug.80: requested V15 legacy charter restore; unpause before inspecting"
+		}
+		else = {
+			debug_log = "kehillah_debug.80: a charter is still active; wait another tick before restoring"
+		}
+	}
+}

@@ -1,0 +1,64 @@
+﻿namespace = kehillah_settlement_conditions
+
+# V16 startup cache hand-off. Running the global registry scan from the
+# on_game_start bootstrap can stall CK3 while title and domicile scopes are
+# still being constructed. The Worms leader is a stable 1066 event target;
+# one in-game day later all registered communities are complete and the
+# cache can be written safely. Later foundations refresh immediately from
+# their own effect, when the registry is already live.
+kehillah_settlement_conditions.0001 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		kehillah_refresh_all_settlement_networks_effect = yes
+		debug_log = "kehillah_settlement_conditions.0001: refreshed startup nearby-community cache"
+	}
+}
+
+# Fired by the fresh Christian/Muslim charter path one day after creation.
+kehillah_settlement_conditions.0002 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = {
+				is_tributary = yes
+				OR = {
+					has_subject_contract_group = kehillah_christian_host_charter_prototype
+					has_subject_contract_group = kehillah_muslim_host_charter_prototype
+				}
+			}
+			kehillah_apply_fresh_charter_policy_effect = yes
+			# The obligation write commits after this event. Read the live
+			# tributary flags only on the next day, never during bootstrap or
+			# the writer itself.
+			trigger_event = { id = kehillah_settlement_conditions.0003 days = 1 }
+			debug_log = "kehillah_settlement_conditions.0002: applied deferred fresh-charter policy"
+		}
+	}
+}
+
+# V16 cache hand-off. This executes one day after .0002's concrete
+# obligation writes, when the tributary contract has committed. Its effect
+# is intentionally the sole live subject-contract reader; every gameplay
+# and UI consumer reads the title cache it writes. Quarterly reconciliation
+# handles later voluntary contract edits (no generic CK3 on_action exists
+# for subject-contract changes).
+kehillah_settlement_conditions.0003 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = {
+				is_tributary = yes
+				OR = {
+					has_subject_contract_group = kehillah_christian_host_charter_prototype
+					has_subject_contract_group = kehillah_muslim_host_charter_prototype
+				}
+			}
+			kehillah_refresh_charter_state_cache_effect = yes
+			debug_log = "kehillah_settlement_conditions.0003: refreshed committed regional-charter cache"
+		}
+	}
+}
