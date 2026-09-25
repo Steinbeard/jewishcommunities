@@ -635,6 +635,18 @@ ordering actually yields an Encouraged-tier charter, not a default one; and
 the new leaders' shared dynasty actually renders as kinship in a real game.
 See V18 §3 for the full test list.
 
+**2026-09-25 — historical starting-pillar calibration built; awaiting live
+regression.** [V19](docs/spec/v19-starting-pillar-balance.md) adds a one-time,
+idempotent Prosperity/Stability/Greatness reserve only to the fifteen
+communities that already exist at the 1066 bookmark. This corrects the
+blank-slate opening state without reducing bands, changing recurring
+convergence, or making newly founded communities less precarious. The
+source-modelled opening target is a varied field of mostly Strained
+communities, with the strongest historical centres Healthy rather than every
+community reading Crisis. The scheduled live suite must inspect the ledger
+after the day-one cache and first quarterly pulse, then tune the three named
+reserve values if that target is missed.
+
 ### Phase 5 — Crypto-Jewish Survival Loop
 The secret-practice/detection/forced-conversion system for communities that
 lose the Phase 4 expulsion/purge struggle. Depends on Phase 4 existing.
