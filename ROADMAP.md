@@ -27,50 +27,72 @@ than renumbered, since later items and other docs cross-reference these numbers 
 Daniel's v0.1 direction is in [docs/spec/v22-v0.1-milestone.md](docs/spec/v22-v0.1-milestone.md):
 a fun, legible 50-year Ashkenaz 1066 loop, Jewish gameplay first. The Sukkot heartbeat runs
 (2026-09-25 to 2026-09-28, branch `autonomous/sukkot-2026`, see CLAUDE.md "Overnight automation")
-work this list top-down before the older numbered items. Markings: **BUILD** = implement and test;
-**SPEC** = write a proposal doc only; **DANIEL-DESIGN** = do not build, research/options memo at most.
+work this list top-down before the older numbered items.
 
+**Daniel's instruction for this window (2026-09-25): iterate and LIVE-TEST, don't write detailed
+specs he can't review.** The heartbeat has the PC to itself — it may launch, drive, and close CK3
+freely. A BUILD item is done only once it has actually been played or probed live. When a build
+needs a design choice, make the smallest reasonable one, write it down in a few lines (commit
+message or a short dated note in the relevant existing doc), and keep building — no new multi-page
+spec docs. Markings: **BUILD** = implement + live-test; **DANIEL-REVIEW** = do not build; at most
+short research bullets for when Daniel is back.
+
+- **S0. BUILD/TEST — Clear the pending live regressions in one batched session.** Bet Din semicha
+  guard + restitution cap (item 7), V18 Norman Conquest founding (dynasty tie), V20 starting
+  pillars, V16 §8 open tests. Turns "source-fixed" into "verified". One pass, record results, move
+  on — don't let it eat the window.
 - **S1. BUILD — Leave the Kehillah (ruler → landless adventurer), and Stability dissolution
   (V2 §4.4, Wave 4), sharing ONE teardown effect.** A voluntary decision ("Step Down and Take to
   the Road" or similar) and the Stability-floor collapse both call the same effect: narrate,
-  `change_government` to `landless_adventurer_government`, end the Kehillah title (successor-less
-  community: decide and document whether the title is destroyed or passed to an AI successor —
-  the voluntary case should probably hand the community to an AI successor rather than destroy
-  it, while dissolution destroys it), followers travel on, legacy fragment of Greatness. Mirror
-  the founding path's verified teardown order in reverse. High crash-risk area: read the
-  implementation doc §6/§8 and the founding-path notes first; live test required before DONE.
-  Add a warning event one band above the floor so collapse is never a surprise.
-- **S2. BUILD — Pillar transparency and impact audit.** For each pillar and band, list what it
-  actually does today (read the code, don't trust docs) and fix gaps: every band change should
-  notify the player, every band should have a concrete visible effect, and tooltips should say
-  what the next band up/down would change. Output a short table in a new doc plus the fixes.
-- **S3. SPEC — Friendliness toward Jews (V17 companion).** Multi-dimensional, readable attitude
-  (economic / personal / religious / political, per V22 §4) for rulers and church figures that
-  V17 policy AI, expulsion, and the crusade chain all consume. Include how the player sees the
-  breakdown. Then a read-only first slice (script values + breakdown tooltip, no behaviour) MAY be
-  built if the spec is settled enough; mark it clearly.
-- **S4. SPEC — Crusades chain (V22 §2 playstyle 2, §5 anchors).** Dynamic hook on the real
-  crusade call/armies (research which vanilla on_actions/GHW hooks exist in 1.19 first), local
-  protector choices keyed to S3, bribes/refuge/dispersal/flight, forced conversion and reversion
-  (tied to the Emperor/overlord's disposition), aftermath: kinot, memorial, reconstruction,
-  Hasidei Ashkenaz as a late legacy. Proposal only; slice plan included.
-- **S5. BUILD — Expulsion (V17 Slice D) using S1's teardown.** Banned policy → visible warning →
-  expulsion event with counterplay (bribe/appeal/shtadlan, relocation) → migration into S1's
-  departure path, with destination hints from Encouraged realms. Also V17 Slices A/B if needed as
-  scaffolding.
-- **S6. BUILD — Host-ruler agency for non-Jewish players.** Decisions for a non-Jewish ruler to move
-  Jewish Settlement Policy one rung at a time, invite Jews (seed/encourage a founding), and expel;
-  each with clear costs/benefits (income, loans, piety/clergy opinion, development). Coordinate with
-  V17 so AI and player use the same levers.
-- **S7. BUILD — The Financier path (V22 §2 playstyle 3).** A Jewish landless adventurer can take up
-  the post-Conquest invitation and found the English community themselves (V18 currently founds
-  them only as AI); plus a first royal-finance loop (loans to the crown, administrative service).
-- **S8. BUILD — 50-year soak-test harness (V22 §6.1).** Debug event + observe run logging every
-  community's pillars yearly; run it if CK3 is reachable, record findings.
-- **S9. DANIEL-DESIGN — Host charter polish; community watch → landed military force (vassal or
-  independent).** Options memo only.
-- Opportunistic, any time CK3 is already up for another test: the pending live regressions named
-  in item 7 (Bet Din semicha guard / restitution cap), V18, V20 below.
+  `change_government` to `landless_adventurer_government`, followers travel on, legacy fragment of
+  Greatness. Voluntary departure hands the community to an AI successor; dissolution ends the
+  title. Mirror the founding path's verified teardown order in reverse. High crash-risk area: read
+  the implementation doc §6/§8 and the founding-path notes first. Add a warning event one band
+  above the floor so collapse is never a surprise.
+- **S2. BUILD — Pillar transparency and impact.** Read what each pillar band actually does today
+  (code, not docs) and fix gaps: every band change notifies the player, every band has a concrete
+  visible effect, tooltips say what the next band up/down would change. Verify in-game it reads
+  clearly.
+- **S3. BUILD — Succession hardening.** (a) Root-cause the recurring non-fatal `change_government`
+  "illegal government" error on appointment succession (implementation doc, 2026-09-23 addition).
+  (b) Live-verify that an officer with a better score beats a family heir (the long-open
+  holder_court_position re-test, see "CORRECTED 2026-09-07" below). (c) Succession of a *founded*
+  community (never tested). (d) Give the player a real role in choosing a successor — smallest
+  workable version of V3 / iteration notes §4 (e.g. endorse a preferred candidate for a score
+  bonus).
+- **S4. BUILD — Scholars on the move: hiring a Chief Rabbi from elsewhere.** Communities can recruit
+  a learned rabbi from another community (or a wandering scholar) as Chief Rabbi, and scholars
+  migrate between communities over time, AI included. Builds on the Chief Rabbi court position,
+  Greatness, and the regional network. Scholar-playstyle payoff: your students get hired away and
+  spread your name.
+- **S5. BUILD — Responsa.** Questions arrive from other communities (and from within) for a learned
+  leader/Chief Rabbi to answer; skill-tiered answers affect Greatness, the asking community, and
+  relations; notable answers accumulate as a visible legacy (a count, or collected into a book via
+  the existing book system). Recurring and lightweight.
+- **S6. BUILD — Community goals / ambitions.** Give 50 years a shape: the community picks a goal
+  (build the yeshiva, secure a better charter, reach a Greatness band, found a daughter community,
+  weather a crisis) with visible progress and a reward/legacy on completion; AI communities pick
+  goals too. Start with 3-5 goals.
+- **S7. BUILD — Bookmark with the three prototype characters.** A 1066 bookmark featuring the
+  Scholar (Rashi of Troyes), the Shtadlan (a Sh'um or Cologne leader), and the Financier (a landless
+  Jewish adventurer near Rouen, created for this). ck3-tiger checks bookmark portraits — a missing
+  one crashes the game. Must boot and be selectable live.
+- **S8. BUILD — The Financier path.** The S7 adventurer can take up the post-Conquest invitation and
+  found an English community themselves (V18 currently founds them only as AI), plus a first
+  royal-finance loop (loans to the crown / administrative service).
+- **S9. BUILD — Expulsion and host-ruler agency.** Banned policy → visible warning → expulsion event
+  with counterplay → S1's departure path. Decisions for a non-Jewish ruler to move the settlement
+  policy one rung, invite Jews, and expel, each with clear costs and benefits. Keep AI use of these
+  conservative (V17: policy AI must be visible and event-led).
+- **S10. BUILD/TEST — 50-year soak test.** Debug event + observe run logging every community's
+  pillars yearly at speed 5; run it (the PC is free), record drift / dead loops / runaway numbers,
+  fix the worst findings.
+- **S11. DANIEL-REVIEW — Friendliness toward Jews and the Crusades chain.** Top priorities for v0.1
+  but design-heavy; to be designed with Daniel after Sukkot. Runs may only add short research
+  bullets to V22 §5 (e.g. which vanilla 1.19 on_actions/GHW hooks exist for a crusade call and army
+  movement). No spec docs, no builds.
+- **S12. DANIEL-REVIEW — Host charter polish; community watch → landed military force (vassal or
+  independent).** Short research bullets at most.
 
 4. ~~**Quick-win UI**: expand the Take Stock decision into a real breakdown...~~ **CLOSED, 2026-09-23,
    per user decision — no longer needed.** `kehillah_view_standing_decision` itself was never built
