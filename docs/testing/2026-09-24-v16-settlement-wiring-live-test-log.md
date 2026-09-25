@@ -339,3 +339,11 @@ never blank and never changes a contract by itself.
   Access. No new `scope:liege`, `expected character`, or settlement-notice
   error appeared. The only contemporaneous wrong-scope log line belonged to
   vanilla/DLC `tgp_tribute_mission_scripted_effects.txt`, not Kehillah.
+- A follow-up attempt to inspect the grouped host digest by switching to
+  Granada's historical host used `play 45016`. CK3's `play` command resolves
+  a **runtime** character ID, not the history-file ID; it selected an
+  unrelated unplayable character and ended this throwaway debug session.
+  This neither exercises nor invalidates the digest. The outstanding visible
+  host-recipient check needs a host selected through the game interface, or a
+  small dedicated debug harness that resolves the live host chain before
+  changing the player.
