@@ -322,3 +322,42 @@ things were left in.
 - `ck3-tiger`: 0 fatal, 0 error. The next real Bet Din docket should specifically exercise a
   low-gold accused and a delayed Semicha offer before these are called live-verified.
 
+## 2026-09-25 (overnight, interactive session) — V18 Norman Conquest live-test blocked, not failed
+- **Not a code problem.** Every attempt to live-test V18 (docs/spec/v18-norman-conquest-and-new-
+  communities.md — the Norman Conquest founding event and the four new Sepharad/Bavel communities)
+  tonight was disrupted by machine/session conditions unrelated to the mod's own correctness:
+  a stale pre-commit `ck3.exe` process, a genuine multi-minute engine hang during a period of heavy
+  concurrent load (this machine was running at least three simultaneous Claude Code sessions,
+  including the scheduled overnight automation firing at 2:00:01 AM), and finally a direct
+  cross-session collision (below). **No valid pass/fail data exists yet for any of: the four new
+  communities loading cleanly at game start, the `kehillah_debug.90-93` founding chain, or the
+  `kehillah_norman_conquest.0001` announcement event's rendered text.** This is a clean slate for
+  whoever runs this test next, not a regression to chase.
+- **One real bug found and fixed along the way, confirmed in place:** the new debug harness itself
+  (`kehillah_debug.90`/`.91`/`.92`, `events/kehillah_debug_events.txt`) had `create_character` blocks
+  missing gender data, throwing "Must specify gender data" at script-load time. Fixed with
+  `gender_female_chance = 0`, matching the production founding effect's own convention (commit
+  `fd51b97`). `ck3-tiger` clean throughout.
+- **Structural finding, worth fixing before more concurrent live-testing on this machine:**
+  `C:\Users\Daniel\Documents\AGI-CK3\src\ck3env\winkeys.py`'s `ck3_pid()` finds "the" `ck3.exe`
+  process by name alone, with no concept of which session launched it. With multiple concurrent
+  Claude Code sessions active on one machine and only one `ck3.exe` ever alive at a time, any
+  session's `keystroke_kick`/`mouse_click` calls land on whatever process currently exists,
+  regardless of who started it. **Concrete evidence, tonight:** a fresh `ck3.exe` (PID 4232) was
+  launched at 02:11:25 AM to wait for its main menu; ~2 real hours later (confirmed via `date`, not
+  a log artifact) it was found deep into an active Worms 1066 game with a console history nobody in
+  that session had typed (`event kehillah_debug.81` → three `tick_day`s → `event kehillah_debug.81`
+  again) and a live "A Charter Is Sealed" popup for Worms' own Host Charter — an exact match for a
+  concurrent session's own V16 charter-regression probe, not anything from the V18 task. Confirmed
+  via cross-session messages that this was `jewishcommunities-8e`'s own Host Charter work landing on
+  the same process, not a fabrication or misread. **Needed before this happens again:** some session-
+  ownership convention for driving CK3 (a lock file, a PID recorded per session, or simply
+  serializing live-CK3 access across concurrent sessions on this machine) — not designed or built
+  this session, flagged here for whoever picks it up.
+- **What's needed from Daniel:** nothing urgent — the mod itself is believed sound (ck3-tiger clean,
+  and the disruptions were all external to the code under test). Whenever there's a quiet window with
+  no other session driving CK3, re-run the V18 test plan from a fresh boot: the four new communities,
+  then `kehillah_debug.90` → `.93`, then wait ~2-3 in-game days for the announcement event. Worth
+  deciding, at some point, whether the session-ownership gap above needs a real fix before further
+  unattended/concurrent overnight testing is trusted.
+
