@@ -1,0 +1,63 @@
+﻿# =====================================================================
+# Houses backing the Norman Conquest founding effect's dynasty ties.
+#
+# ADDED 2026-09-25, fixing a real bug found live: `create_character`'s own
+# `dynasty` field (`dynasty = dynasty:9000003` etc.) does NOT reliably join
+# a newly created character to a pre-existing dynasty in this engine
+# version -- confirmed live, the assignment silently lands the character in
+# an unrelated generated dynasty instead, durably (not a same-tick read
+# issue -- re-checked a full day later, still wrong). `set_dynasty` (an
+# effect referenced only in effect_localization/00_character_effects.txt)
+# turned out to be a dead/vestigial localization entry, not a real
+# scriptable effect in this installed 1.19 build -- confirmed live,
+# "Unknown effect: set_dynasty".
+#
+# THE REAL MECHANISM, confirmed against real, repeated vanilla usage
+# (common/scripted_effects/00_almohad_invasion_effects.txt:104,145 and
+# 00_historical_characters_scripted_effects.txt:15, all genuine
+# create_character calls, not history-file data): `dynasty_house =
+# house:<key>` is a real, working create_character field -- but it takes a
+# HOUSE, not a dynasty directly. CK3's own data model attaches a character
+# to a house, which in turn declares its own parent dynasty via a `dynasty
+# = <numeric id>` field (confirmed format: common/dynasty_houses/
+# 00_dynasty_houses.txt:235-243, house_tumert and house_almohad both
+# pointing at the same parent dynasty 101875). A dynasty defined only in
+# common/dynasties/ (like this mod's own ha_levi.txt) has no usable house
+# of its own for this purpose without one being defined explicitly here --
+# reusing each dynasty's own already-existing name loc key, since a
+# single-house dynasty conventionally displays identically either way.
+#
+# Only the two dynasties the Norman Conquest founding effect actually
+# references are defined here (Yitzhaki for the William branch, Bacharach
+# for the Harald branch) -- not a house for every dynasty in ha_levi.txt,
+# since nothing else in this mod currently needs one. Add more here if a
+# future feature needs to create_character directly into another of this
+# mod's reserved dynasties.
+# =====================================================================
+
+kehillah_house_yitzhaki = {
+	name = dynn_Yitzhaki
+	dynasty = 9000003
+}
+
+kehillah_house_bacharach = {
+	name = dynn_Bacharach
+	dynasty = 9000008
+}
+
+# Debug-harness-only. Harald Hardrada's own real dynasty (499, game/history/
+# characters/norwegian.txt:160) has no clean pre-existing house of its own
+# to reference the way Normandy's dynasty 752 does (house_evreux, William's
+# own real house, game/history/characters/norman.txt:63) -- his own history
+# entry sets `dynasty = 499` as bare data-file assignment, which does not
+# need or define an explicit house. This one exists ONLY so kehillah_
+# debug.91 (events/kehillah_debug_events.txt) can force a real dynasty:499
+# test character the same way kehillah_debug.90 now uses house:house_evreux
+# for dynasty:752 -- nothing in production code (kehillah_norman_conquest_
+# effects.txt) references this, since the real production path always
+# reads dynasty off an EXISTING character (the real title:k_england holder)
+# rather than creating a new one that needs to join dynasty 499.
+kehillah_debug_house_norway_test = {
+	name = dynn_Yngling
+	dynasty = 499
+}
