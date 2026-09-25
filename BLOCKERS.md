@@ -414,3 +414,20 @@ things were left in.
     new leaders read as an unrelated generated family instead of Rashi's own, with no other effect on
     gameplay.
 
+
+## Heartbeat run status -- 2026-09-25_180001 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: YES --
+```
+?? docs/testing/2026-09-25-s0-regression-live-test-log.md
+```
+- Last few commits:
+```
+b81d9e0 S2 part 3 (next-band tooltip line) + probe fixes from the first live run
+39783ea S2: per-band leader modifiers and band-change notices
+bb442af S1: leave the Kehillah, and the Stability floor, sharing one teardown
+e755acc S0: add four narrow live-regression probes to the debug harness
+e00d164 S4: Rashi starts the game as Troyes's own Chief Rabbi
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-25_180001.log
