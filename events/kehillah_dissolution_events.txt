@@ -1,0 +1,106 @@
+﻿# =====================================================================
+# The Stability floor: warning, then collapse.
+#
+# ROADMAP item S1 / v2 spec section 4.4 (Wave 4). Both events are fired
+# by kehillah_dissolution_watch_effect (common/scripted_effects/
+# kehillah_departure_effects.txt) from the quarterly pulse; read that
+# effect's header for the three-state logic and why collapse takes a
+# full year below the floor rather than firing on one bad quarter.
+#
+# WHY BOTH FIRE FOR AI COMMUNITIES TOO. An AI-run community in terminal
+# decline should end the same way a player's does, or the world quietly
+# accumulates zombie communities that can never die -- and the registry,
+# the map view and the Bet Din panel would all keep listing them. Both
+# events therefore have no is_ai gate; the AI simply auto-resolves the
+# single option, which runs exactly the same effect the player's choice
+# would. The only difference is that nobody reads the text.
+#
+# TONE. This is a community dying, not a defeat screen. The wording is
+# deliberately quiet and concrete -- people leaving, a building standing
+# empty -- rather than dramatic. Compare the founding decision's own
+# register in localization/english/kehillah_l_english.yml.
+# =====================================================================
+
+namespace = kehillah_dissolution
+
+# ---------------------------------------------------------------------
+# THE WARNING. One band above the floor (Crisis), or the first quarter
+# at the floor itself. Cooldown-gated by kehillah_dissolution_try_warn_
+# effect, so this is at most a once-every-few-years message, not a
+# quarterly nag.
+#
+# NO OPTIONS THAT DO ANYTHING. This is deliberately a notice, not a
+# rescue mini-game: every lever for raising Stability already exists
+# elsewhere in the mod (officers, buildings, dispute rulings, the
+# charter). Adding a "fix it" button here would make those redundant and
+# would be a new system, which S1 does not ask for.
+# ---------------------------------------------------------------------
+kehillah_dissolution.0001 = {
+	type = character_event
+	title = kehillah_dissolution.0001.t
+	desc = kehillah_dissolution.0001.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	option = {
+		name = kehillah_dissolution.0001.a
+	}
+}
+
+# ---------------------------------------------------------------------
+# THE COLLAPSE. Fires after kehillah_dissolution_quarters_required
+# consecutive quarters below the floor.
+#
+# The single option calls kehillah_dissolve_community_effect, which is
+# the shared teardown -- the community title is destroyed and its former
+# leader continues as a landless adventurer, carrying away a legacy
+# fragment of the community's Greatness. See that effect and the file
+# header above it for the ordering constraints; this event contributes
+# no mechanism of its own beyond narrating the moment.
+#
+# THE TRIGGER RE-CHECKS THE FLOOR. The watch effect fires this with
+# days = 1, so a full day passes between the decision to fire and the
+# event resolving. A community that was rescued in that window -- an
+# event, a building completing, a charter improving -- should not
+# dissolve anyway. Re-checking here is cheap and fails safe.
+# ---------------------------------------------------------------------
+kehillah_dissolution.0002 = {
+	type = character_event
+	title = kehillah_dissolution.0002.t
+	desc = kehillah_dissolution.0002.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = grief
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+		exists = primary_title
+		primary_title = { is_kehillah_title_trigger = yes }
+		NOT = {
+			kehillah_pillar_at_least_trigger = {
+				PILLAR = kehillah_var_stability
+				THRESHOLD = kehillah_dissolution_floor_threshold
+			}
+		}
+	}
+
+	immediate = {
+		debug_log = "kehillah_dissolution.0002: collapse event opened -- the floor still held after the one-day delay"
+	}
+
+	option = {
+		name = kehillah_dissolution.0002.a
+		kehillah_dissolve_community_effect = yes
+	}
+}

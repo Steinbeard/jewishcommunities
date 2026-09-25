@@ -1,0 +1,68 @@
+﻿# =====================================================================
+# Step Down and Take to the Road -- the voluntary half of S1.
+#
+# The exact inverse of kehillah_found_community_decision: that decision
+# turns a landless adventurer into a community leader, this one turns a
+# community leader back into a landless adventurer. Together they are
+# V22 section 3's feature 1 ("a player can enter *or* leave the Kehillah
+# government type"), and they deliberately share the same vocabulary --
+# same decision group, same shape of gate, mirror-image wording.
+#
+# All the mechanism lives in kehillah_step_down_effect (common/
+# scripted_effects/kehillah_departure_effects.txt); read that file's
+# header for the ordering constraints and why the successor is the
+# engine's own appointment heir rather than a second scoring pass.
+#
+# NO AI USE, ON PURPOSE (for now). kehillah_found_community_decision's
+# own header records the standard this repo set for enabling AI on a new
+# primitive: it stayed AI-disabled until the whole chain had been
+# confirmed in a live run, and was only switched on afterwards. This
+# decision is brand new and unproven, and its failure mode is worse than
+# founding's -- an AI abandoning a community wrongly would quietly
+# change the world state of a game in progress. Same bar applies: leave
+# ai_potential off until a live pass confirms the chain, then revisit.
+# There is also a genuine design question underneath it (when SHOULD an
+# AI leader walk away?) that nothing in the docs settles yet.
+# =====================================================================
+
+kehillah_step_down_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/tgp_retire.dds"
+	}
+
+	decision_group_type = kehillah
+	sort_order = 10
+
+	is_shown = {
+		has_dlc_feature = roads_to_power
+		government_has_flag = government_is_kehillah
+	}
+
+	is_valid = {
+		is_adult = yes
+		is_imprisoned = no
+		is_landless_adventurer = no
+		# THE LOAD-BEARING GATE. Stepping down with nobody to step down TO
+		# would destroy the community through the wrong door. This is the
+		# same check kehillah_step_down_effect's own guard makes; having it
+		# here too is what turns a silent refusal into a readable one.
+		custom_tooltip = {
+			text = kehillah_step_down_requires_successor_tt
+			exists = primary_title.current_heir
+		}
+	}
+
+	effect = {
+		kehillah_step_down_effect = yes
+	}
+
+	# See the header: unproven primitive, and the wrong AI call here is
+	# destructive to a live world rather than merely suboptimal.
+	ai_potential = {
+		always = no
+	}
+
+	ai_will_do = {
+		base = 0
+	}
+}

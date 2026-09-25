@@ -997,3 +997,116 @@ kehillah_debug.97 = {
 		debug_log = "kehillah_debug.97: restitution clamp probe -- END"
 	}
 }
+
+# =====================================================================
+# S1 DEPARTURE / DISSOLUTION HARNESS (added 2026-09-25, Sukkot heartbeat 1).
+#
+# .98   drop Stability below the dissolution floor and clear the warning
+#       cooldown, so the next watch tick starts the countdown
+# .99   fast-forward a full year at the floor (four watch ticks) so the
+#       collapse event fires now instead of after four real quarters
+# .100  post-departure invariant report -- run after stepping down OR
+#       after a collapse, to confirm the character landed in a valid
+#       landless-adventurer state rather than the no-domicile state that
+#       is a 15-25 day fuse to Game Over
+#
+# Typical sequences:
+#   VOLUNTARY: take the "Step Down and Take to the Road" decision, then
+#              run .100.
+#   COLLAPSE:  .98, then .99, resolve the collapse event, then .100.
+# =====================================================================
+
+# Stability -> 10, which is below kehillah_dissolution_floor_threshold
+# (25) but not negative, so the countdown starts on the next watch tick.
+# Also clears the warning cooldown flag so the warning event can fire
+# again immediately in a session that has already seen it.
+kehillah_debug.98 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title = {
+			set_variable = { name = kehillah_var_stability value = 10 }
+			set_variable = { name = kehillah_var_dissolution_quarters value = 0 }
+		}
+		remove_character_flag = kehillah_dissolution_warned_flag
+		debug_log = "kehillah_debug.98: Stability forced to 10 (below the floor), countdown reset, warning cooldown cleared"
+	}
+}
+
+# Four watch ticks = kehillah_dissolution_quarters_required = one full
+# year below the floor. The fourth should fire kehillah_dissolution.0002
+# on a one-day delay. Run .98 first.
+#
+# The watch effect is called directly rather than waiting for four real
+# quarterly_playable_pulse ticks; it reads and writes only the title
+# counter and the leader's warning flag, so calling it four times in
+# succession is exactly equivalent to four quarters at the floor.
+kehillah_debug.99 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.99: fast-forwarding four quarters at the Stability floor"
+		kehillah_dissolution_watch_effect = yes
+		kehillah_dissolution_watch_effect = yes
+		kehillah_dissolution_watch_effect = yes
+		kehillah_dissolution_watch_effect = yes
+		debug_log = "kehillah_debug.99: four watch ticks done -- EXPECT the collapse event within a day"
+	}
+}
+
+# Post-departure invariants. The domicile check is the important one:
+# kehillah_found_community_effect's header records that a landless ruler
+# in a domicile government with NO domicile is tolerated for 15-25 days
+# and then Game-Overs, so "no domicile" here is a real failure even
+# though nothing visible has gone wrong yet.
+kehillah_debug.100 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.100: post-departure invariant report -- START"
+		if = {
+			limit = { has_government = landless_adventurer_government }
+			debug_log = "kehillah_debug.100: PASS government is landless_adventurer_government"
+		}
+		else = {
+			debug_log = "kehillah_debug.100: FAIL government is NOT landless_adventurer_government"
+			debug_log_scopes = yes
+		}
+		if = {
+			limit = { exists = domicile }
+			debug_log = "kehillah_debug.100: PASS a domicile exists (expected: a camp)"
+		}
+		else = {
+			debug_log = "kehillah_debug.100: FAIL no domicile -- this is the 15-25 day Game Over fuse"
+		}
+		if = {
+			limit = { exists = primary_title }
+			debug_log = "kehillah_debug.100: PASS holds a primary title"
+			if = {
+				limit = { primary_title = { is_kehillah_title_trigger = yes } }
+				debug_log = "kehillah_debug.100: FAIL primary title is STILL a Kehillah title -- the teardown did not complete"
+			}
+			else = {
+				debug_log = "kehillah_debug.100: PASS primary title is no longer a Kehillah title"
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.100: FAIL holds no primary title at all -- Game Over is imminent"
+		}
+		if = {
+			limit = { has_realm_law = landless_adventurer_succession_law }
+			debug_log = "kehillah_debug.100: PASS landless_adventurer_succession_law is active"
+		}
+		else = {
+			debug_log = "kehillah_debug.100: FAIL landless_adventurer_succession_law is missing"
+		}
+		if = {
+			limit = { has_variable = kehillah_departure_greatness_banked }
+			debug_log = "kehillah_debug.100: WARNING the banked-Greatness scratch variable was not cleaned up"
+		}
+		else = {
+			debug_log = "kehillah_debug.100: PASS the banked-Greatness scratch variable was cleaned up"
+		}
+		debug_log = "kehillah_debug.100: post-departure invariant report -- END"
+	}
+}

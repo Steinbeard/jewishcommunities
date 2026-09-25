@@ -1,0 +1,423 @@
+﻿# =====================================================================
+# LEAVING THE KEHILLAH -- one teardown, two causes.
+#
+# ROADMAP "v0.1 milestone -- Sukkot autonomous queue", item S1, which is
+# itself Daniel's v0.1 feature 1 (docs/spec/v22-v0.1-milestone.md section
+# 3: "Kehillah rulers can become adventurers, so a player can enter *or*
+# leave the Kehillah government type") plus the Stability half of v2
+# section 4.4 / Wave 4 (dissolution).
+#
+# Two causes, one mechanism, exactly as V22 section 4 asks:
+#   - VOLUNTARY: kehillah_step_down_effect. The leader walks away; the
+#     community continues under the engine's own appointment heir.
+#   - COLLAPSE: kehillah_dissolve_community_effect. Stability hit the
+#     floor; the community ends and its former leader takes to the road.
+# S9b (expulsion) is meant to become a third caller of the same pair.
+# Nothing here is expulsion-specific, on purpose.
+#
+# =====================================================================
+# WHY TWO SHARED EFFECTS (prepare/finish) AND NOT ONE PARAMETERISED ONE
+#
+# S1's wording asks for "ONE teardown effect". The teardown LOGIC is
+# shared and written once; what differs between the two causes is a
+# single step in the MIDDLE (hand the title on vs. end it), not the
+# teardown around it. Branching inside one effect would need a
+# `limit = { always = $DISSOLVE$ }`-style parameter branch, and a grep of
+# the installed game found NO vanilla precedent for that idiom (this
+# mod's own parameter use, e.g. kehillah_bet_din_scripted_effects.txt, is
+# value and loc-key substitution only). This file is in the single
+# highest-crash-risk area of this codebase (docs/implementation/
+# v1-kehillah-implementation.md sections 6 and 8: government, titles and
+# succession have crashed the game to desktop before), so it is not the
+# place to debut an unproven control-flow idiom. Two plain effects called
+# in sequence, with one caller-specific line between them, duplicate
+# nothing and use only primitives this repo has already run live.
+#
+# =====================================================================
+# ORDER: DISPOSE OF THE KEHILLAH TITLE FIRST, CREATE THE CAMP SECOND.
+#
+# This is deliberately NOT a literal mirror of kehillah_found_community_
+# effect's order (create new title -> destroy old), and the reason is a
+# real asymmetry, not an oversight:
+#
+#   - In FOUNDING, the old title is a camp nobody else needs, and the
+#     new title must exist first because it is the one carrying the
+#     domicile. Destroying the camp first would briefly leave the
+#     founder with nothing at all AND no domicile.
+#   - In DEPARTURE, the old title is the Kehillah, and it must SURVIVE
+#     with its Jewish Quarter under a new holder. A character cannot
+#     usefully hold a quarter and a camp at once: kehillah_found_
+#     community_effect's own header records, from ten live experiments,
+#     that change_government destroys the current domicile without
+#     creating a replacement, and that NOTHING in script can create a
+#     domicile after the fact. Creating the camp while the leader still
+#     held the Kehillah would risk exactly the state that header calls
+#     a 15-25 day fuse to "has lost all of his titles" Game Over: a
+#     domicile government with no domicile.
+#
+# Disposing first avoids the two-domicile state entirely. Handing the
+# title to a LIVING successor is the same operation ordinary succession
+# already performs every time a leader dies -- verified repeatedly in
+# this repo (implementation doc section 8's console-kill -> appointment
+# succession -> continue-as-successor cycles) -- so the quarter travels
+# with the title by the already-proven path, and the camp is created
+# afterwards for a character who by then owns no domicile to conflict
+# with.
+#
+# The window in which the departing character holds no title at all is
+# one effect block, i.e. the same tick. The landless Game Over check is
+# periodic (the 15-25 day fuse above), not instantaneous, so it cannot
+# fire inside the gap. EVERY STEP IS INSTRUMENTED with debug_log
+# breadcrumbs anyway -- if a live run ever Game-Overs or loses a
+# domicile here, debug.log will say which invariant broke rather than
+# leaving the next session to re-derive it from scratch.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# STEP 1 OF THE SHARED TEARDOWN. Called on the departing leader BEFORE
+# the caller disposes of the Kehillah title. Captures everything that
+# will be unreadable once the title is gone.
+#
+# Greatness is read HERE, not in finish: after a dissolution the title
+# is destroyed and its variables go with it. The "legacy fragment of
+# Greatness" S1 asks for has to be banked before the teardown, not after.
+# ---------------------------------------------------------------------
+kehillah_departure_prepare_effect = {
+	save_scope_as = kehillah_departure_leader
+	debug_log = "kehillah_departure_prepare_effect: begin"
+	debug_log_scopes = yes
+
+	if = { limit = { exists = domicile } debug_log = "kehillah_departure_prepare_effect: leader has a domicile at start (expected: the Jewish Quarter)" }
+	else = { debug_log = "kehillah_departure_prepare_effect: WARNING leader has NO domicile at start" }
+
+	# Bank the community's Greatness before the title can go away. Stored
+	# on the CHARACTER, since the character is the thing that survives
+	# both causes. Zero is a valid reading (a community that achieved
+	# nothing leaves no legacy) -- the else branch is for "no title to
+	# read at all", which would mean the caller called out of order.
+	if = {
+		limit = {
+			exists = primary_title
+			primary_title = { is_kehillah_title_trigger = yes }
+		}
+		primary_title = { save_scope_as = kehillah_departure_title }
+		if = {
+			limit = { scope:kehillah_departure_title = { has_variable = kehillah_var_greatness } }
+			set_variable = {
+				name = kehillah_departure_greatness_banked
+				value = scope:kehillah_departure_title.var:kehillah_var_greatness
+			}
+			debug_log = "kehillah_departure_prepare_effect: banked the community's Greatness for the legacy award"
+		}
+		else = {
+			set_variable = { name = kehillah_departure_greatness_banked value = 0 }
+			debug_log = "kehillah_departure_prepare_effect: community had no Greatness variable; legacy banked as 0"
+		}
+	}
+	else = {
+		set_variable = { name = kehillah_departure_greatness_banked value = 0 }
+		debug_log = "kehillah_departure_prepare_effect: WARNING primary title is not a Kehillah title -- called out of order?"
+	}
+
+	# End the host charter relationship. A wanderer is nobody's tributary.
+	# Only meaningful for the departing character; in the voluntary case
+	# the successor re-establishes their own charter through the ordinary
+	# kehillah_maintain_host_charter_effect path on the next tick.
+	if = {
+		limit = { is_tributary = yes }
+		end_tributary = yes
+		debug_log = "kehillah_departure_prepare_effect: ended the departing leader's tributary/host-charter relationship"
+	}
+
+	debug_log = "kehillah_departure_prepare_effect: end"
+}
+
+# ---------------------------------------------------------------------
+# STEP 2 OF THE SHARED TEARDOWN. Called on the departing leader AFTER
+# the caller has disposed of the Kehillah title. By now the character
+# should hold no title and no domicile.
+#
+# create_adventurer_title's `government` parameter is the same
+# load-bearing, docs-only parameter kehillah_found_community_effect
+# depends on (see that file's header: it exists in the engine's own
+# logs/effects.log, no vanilla script uses it, and it is what makes the
+# engine create the government's domicile in the same operation). Here
+# it is used in the opposite direction -- landless_adventurer_government,
+# so the engine makes a CAMP -- which is precisely the shape
+# kehillah_debug.60 has been using as a live test fixture since
+# 2026-09-19.
+# ---------------------------------------------------------------------
+kehillah_departure_finish_effect = {
+	debug_log = "kehillah_departure_finish_effect: begin"
+
+	if = { limit = { exists = domicile } debug_log = "kehillah_departure_finish_effect: WARNING leader still has a domicile before the camp is created" }
+	else = { debug_log = "kehillah_departure_finish_effect: leader has no domicile before the camp is created (expected)" }
+
+	create_adventurer_title = {
+		name = kehillah_departure_title_name
+		holder = scope:kehillah_departure_leader
+		government = landless_adventurer_government
+		article = kehillah_departure_title_article
+		save_scope_as = kehillah_departure_camp_title
+	}
+	debug_log = "kehillah_departure_finish_effect: created the wayfarer title"
+
+	hidden_effect = {
+		set_primary_title_to = scope:kehillah_departure_camp_title
+	}
+
+	if = { limit = { exists = domicile } debug_log = "kehillah_departure_finish_effect: domicile exists after create (expected: a camp)" }
+	else = { debug_log = "kehillah_departure_finish_effect: WARNING no domicile after create -- this is the 15-25 day Game Over fuse, investigate" }
+
+	# Guarded exactly the way kehillah_found_community_effect guards its
+	# own mirror-image call: change_government to the government you are
+	# already in is refused with "Trying to set illegal government". The
+	# create above should already have done this; this is belt and braces.
+	if = {
+		limit = { NOT = { has_government = landless_adventurer_government } }
+		change_government = landless_adventurer_government
+		debug_log = "kehillah_departure_finish_effect: change_government fallback fired (the create did not set it)"
+	}
+	if = { limit = { has_government = landless_adventurer_government } debug_log = "kehillah_departure_finish_effect: government is landless_adventurer" }
+	else = { debug_log = "kehillah_departure_finish_effect: WARNING government is NOT landless_adventurer" }
+
+	# Law after government, same order vanilla's own wrapper uses and the
+	# same order kehillah_found_community_effect uses in reverse.
+	if = {
+		limit = { NOT = { has_realm_law = landless_adventurer_succession_law } }
+		add_realm_law = landless_adventurer_succession_law
+	}
+
+	# THE LEGACY FRAGMENT OF GREATNESS (S1). What the leader carries away
+	# is reputation, not the institution: prestige scaled from the
+	# community's Greatness at the moment of departure. Kept as a plain
+	# prestige award rather than a new modifier -- the smallest thing that
+	# makes the years count for something, and it needs no new art, loc
+	# key or modifier definition. Tunable in one place.
+	if = {
+		limit = { has_variable = kehillah_departure_greatness_banked }
+		add_prestige = kehillah_departure_legacy_prestige_value
+		remove_variable = kehillah_departure_greatness_banked
+		debug_log = "kehillah_departure_finish_effect: paid the legacy prestige award"
+	}
+
+	debug_log = "kehillah_departure_finish_effect: end"
+}
+
+# ---------------------------------------------------------------------
+# VOLUNTARY DEPARTURE. The community continues.
+#
+# THE SUCCESSOR IS THE ENGINE'S OWN, not a second opinion. `current_heir`
+# on a landed_title ("Get current heir to scoped title", logs/
+# event_targets.log) resolves through whatever succession the title
+# actually runs -- here kehillah_appointment_succession_law and the
+# kehillah_leadership candidate pool and scoring. Reading it means
+# stepping down hands the title to exactly the character an ordinary
+# death would have handed it to, with ZERO duplication of the merit
+# scoring in common/succession_appointment/kehillah_leadership.txt. That
+# file's own header warns at length about two definitions that "could
+# quietly drift apart"; this avoids creating a second one.
+#
+# government_base = the departing leader, so a successor who was unlanded
+# (an officer, the usual meritocratic case) inherits kehillah_government
+# rather than defaulting to something else -- see change_title_holder's
+# own parameter docs in logs/effects.log. The call is made while the
+# departing leader is still the holder, so this reads correctly.
+#
+# NO SUCCESSOR, NO DEPARTURE. If the pool is empty there is nobody to
+# leave the community to, and walking away would destroy it by accident
+# through the wrong door. The decision's own is_valid refuses in that
+# case; this guard is the second line, and it fails CLOSED (nothing
+# happens) rather than silently dissolving.
+# ---------------------------------------------------------------------
+kehillah_step_down_effect = {
+	debug_log = "kehillah_step_down_effect: begin"
+
+	if = {
+		limit = {
+			exists = primary_title
+			primary_title = { is_kehillah_title_trigger = yes }
+			exists = primary_title.current_heir
+		}
+		primary_title.current_heir = { save_scope_as = kehillah_departure_successor }
+
+		kehillah_departure_prepare_effect = yes
+
+		create_title_and_vassal_change = {
+			type = granted
+			save_scope_as = kehillah_departure_change
+			add_claim_on_loss = no
+		}
+		scope:kehillah_departure_title = {
+			change_title_holder = {
+				holder = scope:kehillah_departure_successor
+				change = scope:kehillah_departure_change
+				government_base = scope:kehillah_departure_leader
+			}
+		}
+		resolve_title_and_vassal_change = scope:kehillah_departure_change
+		debug_log = "kehillah_step_down_effect: handed the community to its appointment heir"
+
+		kehillah_departure_finish_effect = yes
+
+		# The community itself is unchanged and stays registered, so no
+		# registry removal here -- only the map view needs to know the
+		# leader changed.
+		kehillah_refresh_map_view_for_players_effect = yes
+	}
+	else = {
+		debug_log = "kehillah_step_down_effect: REFUSED no eligible successor (or not a Kehillah leader) -- nothing was changed"
+	}
+
+	debug_log = "kehillah_step_down_effect: end"
+}
+
+# ---------------------------------------------------------------------
+# DISSOLUTION. The community ends.
+#
+# Unregistering BEFORE destroy_title is deliberate: every consumer of
+# kehillah_registered_communities re-derives `holder` from the title, and
+# a destroyed title left in the global list is exactly the stale-registry
+# failure kehillah_on_actions.txt's own game-start comment warns about
+# ("the registry silently goes stale the day it stops being true").
+#
+# kehillah_refresh_all_settlement_networks_effect mirrors the founding
+# path: a community disappearing changes its surviving neighbours'
+# bounded network cache just as much as one appearing does.
+# ---------------------------------------------------------------------
+kehillah_dissolve_community_effect = {
+	debug_log = "kehillah_dissolve_community_effect: begin"
+
+	if = {
+		limit = {
+			exists = primary_title
+			primary_title = { is_kehillah_title_trigger = yes }
+		}
+		kehillah_departure_prepare_effect = yes
+
+		remove_list_global_variable = {
+			name = kehillah_registered_communities
+			target = scope:kehillah_departure_title
+		}
+		debug_log = "kehillah_dissolve_community_effect: unregistered the community"
+
+		destroy_title = scope:kehillah_departure_title
+		debug_log = "kehillah_dissolve_community_effect: destroyed the community title"
+
+		kehillah_departure_finish_effect = yes
+
+		kehillah_refresh_all_settlement_networks_effect = yes
+		kehillah_refresh_map_view_for_players_effect = yes
+	}
+	else = {
+		debug_log = "kehillah_dissolve_community_effect: REFUSED not a Kehillah leader -- nothing was changed"
+	}
+
+	debug_log = "kehillah_dissolve_community_effect: end"
+}
+
+# =====================================================================
+# THE STABILITY FLOOR -- the collapse half of S1 / v2 section 4.4.
+#
+# Called once per quarter from kehillah_quarterly_pulse (common/
+# on_action/kehillah_on_actions.txt), AFTER kehillah_quarterly_pillars_
+# effect, so it always reads this quarter's Stability rather than last
+# quarter's. Root is the community's leader; the counter lives on the
+# TITLE, for the same reason the pillars themselves do (see
+# kehillah_quarterly_pillars_effect's "WHY THE TITLE, NOT THE CHARACTER"
+# note) -- it describes the community's condition, not any one leader's,
+# and must survive a succession mid-collapse.
+#
+# THREE STATES, AND WHY COLLAPSE IS NOT INSTANT:
+#   - Above the floor, inside Crisis: a WARNING, at most once every
+#     kehillah_dissolution_warning_cooldown_years. This is S1's "warning
+#     event one band above the floor so collapse is never a surprise".
+#   - Below the floor: a quarterly counter ticks up. Nothing else.
+#   - Below the floor for kehillah_dissolution_quarters_required
+#     consecutive quarters (a full year): the community dissolves.
+# Any quarter spent back above the floor resets the counter to zero. A
+# community can therefore always be pulled back, and the player gets a
+# full year of visible countdown -- dissolution is a consequence, not a
+# dice roll.
+# =====================================================================
+kehillah_dissolution_watch_effect = {
+	if = {
+		limit = {
+			exists = primary_title
+			primary_title = { is_kehillah_title_trigger = yes }
+			primary_title = { has_variable = kehillah_var_stability }
+		}
+		if = {
+			# BELOW THE FLOOR. Count the quarter, then check the year.
+			limit = {
+				NOT = {
+					kehillah_pillar_at_least_trigger = {
+						PILLAR = kehillah_var_stability
+						THRESHOLD = kehillah_dissolution_floor_threshold
+					}
+				}
+			}
+			primary_title = {
+				if = {
+					limit = { NOT = { has_variable = kehillah_var_dissolution_quarters } }
+					set_variable = { name = kehillah_var_dissolution_quarters value = 0 }
+				}
+				change_variable = { name = kehillah_var_dissolution_quarters add = 1 }
+			}
+			if = {
+				limit = {
+					primary_title.var:kehillah_var_dissolution_quarters >= kehillah_dissolution_quarters_required
+				}
+				debug_log = "kehillah_dissolution_watch_effect: floor held for a full year -- firing the collapse event"
+				trigger_event = { id = kehillah_dissolution.0002 days = 1 }
+			}
+			else = {
+				debug_log = "kehillah_dissolution_watch_effect: below the Stability floor, countdown advanced"
+				# The floor itself is also a warning state, and a community
+				# can fall into it from above without ever pausing in Crisis
+				# for a whole quarter. Reuse the same warning event rather
+				# than letting the first the player hears of it be collapse.
+				kehillah_dissolution_try_warn_effect = yes
+			}
+		}
+		else = {
+			# ABOVE THE FLOOR. Clear any countdown in progress...
+			if = {
+				limit = {
+					primary_title = { has_variable = kehillah_var_dissolution_quarters }
+					primary_title.var:kehillah_var_dissolution_quarters > 0
+				}
+				primary_title = { set_variable = { name = kehillah_var_dissolution_quarters value = 0 } }
+				debug_log = "kehillah_dissolution_watch_effect: back above the floor, collapse countdown reset"
+			}
+			# ...and warn while still inside Crisis, the band above the floor.
+			if = {
+				limit = {
+					NOT = {
+						kehillah_pillar_at_least_trigger = {
+							PILLAR = kehillah_var_stability
+							THRESHOLD = kehillah_band_strained_threshold
+						}
+					}
+				}
+				kehillah_dissolution_try_warn_effect = yes
+			}
+		}
+	}
+}
+
+# Cooldown wrapper for the warning, so a community sitting in Crisis for
+# a decade is told once every few years rather than every quarter. The
+# flag lives on the leader, not the title: a NEW leader inheriting a
+# community already in Crisis should hear it for themselves.
+kehillah_dissolution_try_warn_effect = {
+	if = {
+		limit = { NOT = { has_character_flag = kehillah_dissolution_warned_flag } }
+		add_character_flag = {
+			flag = kehillah_dissolution_warned_flag
+			years = kehillah_dissolution_warning_cooldown_years
+		}
+		debug_log = "kehillah_dissolution_watch_effect: firing the Stability warning event"
+		trigger_event = { id = kehillah_dissolution.0001 days = 1 }
+	}
+}
