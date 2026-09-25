@@ -184,3 +184,17 @@ Allowed cache values (Free / No Watch / Royal Appeal / Unrestricted). Then
 change a regional contract, wait through the next quarterly pulse, and confirm
 the debug report, construction gate, ledger wording, and pillar contributor
 all update together without initialization stalls or new `error.log` entries.
+
+## Cache boot recheck (2026-09-24)
+
+- A second fresh `bm_1066_kehillah_worms` launch, made after the cache commit,
+  again reached the paused world map. This is a live regression pass for the
+  narrow claim that the deferred character-scoped cache reader does **not**
+  recreate the earlier game-start initialization stall.
+- The desktop automation session could navigate the bookmark and make normal
+  mouse selections, but CK3 did not accept its simulated console or pause
+  keyboard input. It therefore could not advance the two required days or run
+  `.81`; no claim is made here for `.0003`, the cache values, quarterly
+  reconciliation, UI rendering, or pillar effects. Re-run the stated probe
+  with a functioning console/clock input before upgrading this section's
+  source-validated cache status.
