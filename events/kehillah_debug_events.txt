@@ -742,3 +742,258 @@ kehillah_debug.93 = {
 		}
 	}
 }
+
+# =====================================================================
+# S0 REGRESSION PROBES (added 2026-09-25, Sukkot heartbeat 1).
+#
+# These exist to turn three "source-fixed, awaiting live regression"
+# items into verified-or-not with ONE boot instead of a full hosted Bet
+# Din docket plus a simulated Norman Conquest. Each is a narrow probe of
+# the exact primitive that was broken, not a replay of the whole feature
+# -- see docs/testing/ for the run that uses them.
+#
+# .94  V18 dynasty tie report (BLOCKERS 2026-09-24, attempt 4)
+# .95  Semicha guard, POSITIVE control -- must fire
+# .96  Semicha guard, NEGATIVE test -- must NOT fire; also cleans up .95
+# .97  Silversmiths restitution clamp against a low-gold accused
+#
+# RUN ORDER MATTERS for .95/.96: .95 sets the global convening title,
+# .96 clears it again. Running .96 alone is still a valid negative test
+# provided no Bet Din is actually convening.
+# =====================================================================
+
+# V18 dynasty tie (BLOCKERS 2026-09-24): does attempt 4 -- a deceased
+# history-file anchor (character:9000218 "Meir", dynasty 9000003) plus
+# `father = character:9000218` + `dynasty = inherit` inside
+# create_character -- actually put the four Norman-founded Anglia
+# leaders in Rashi's own dynn_Yitzhaki dynasty, where three previous
+# mechanisms each silently failed?
+#
+# Two separate things are checked, because they fail differently:
+#   1. the ANCHOR itself loaded and reads as dynasty:9000003 (if this
+#      fails, the history file is wrong and nothing downstream can work)
+#   2. each founded leader INHERITED it (the actual open question)
+# Run AFTER .90 (or .91/.92) has founded the communities, then .93 for
+# the rest of the founding report.
+kehillah_debug.94 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.94: V18 dynasty tie report -- START"
+		if = {
+			limit = { exists = character:9000218 }
+			debug_log = "kehillah_debug.94: anchor character:9000218 EXISTS"
+			character:9000218 = {
+				if = {
+					limit = { dynasty = dynasty:9000003 }
+					debug_log = "kehillah_debug.94: PASS anchor 9000218 reads as dynasty:9000003 (dynn_Yitzhaki)"
+				}
+				else = {
+					debug_log = "kehillah_debug.94: FAIL anchor 9000218 exists but is NOT dynasty:9000003 -- history file did not take"
+				}
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.94: FAIL anchor character:9000218 does NOT exist -- history/characters/yitzhaki_anglia_anchor.txt did not load"
+		}
+		set_variable = { name = kehillah_debug_dyn_total value = 0 }
+		set_variable = { name = kehillah_debug_dyn_tied value = 0 }
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = { has_variable = kehillah_norman_founded }
+			root = { change_variable = { name = kehillah_debug_dyn_total add = 1 } }
+			holder = {
+				if = {
+					limit = { dynasty = dynasty:9000003 }
+					root = { change_variable = { name = kehillah_debug_dyn_tied add = 1 } }
+					debug_log = "kehillah_debug.94: PASS a Norman-founded leader reads as dynasty:9000003 (dynn_Yitzhaki)"
+				}
+				else = {
+					debug_log = "kehillah_debug.94: FAIL a Norman-founded leader is NOT dynasty:9000003 -- dynasty tie still broken for this one"
+					debug_log_scopes = yes
+				}
+			}
+		}
+		if = {
+			limit = { var:kehillah_debug_dyn_total = 0 }
+			debug_log = "kehillah_debug.94: INCONCLUSIVE zero Norman-founded titles registered -- run .90 first, then re-run .94"
+		}
+		else_if = {
+			limit = { var:kehillah_debug_dyn_tied = var:kehillah_debug_dyn_total }
+			debug_log = "kehillah_debug.94: OVERALL PASS every Norman-founded leader is in dynn_Yitzhaki"
+		}
+		else = {
+			debug_log = "kehillah_debug.94: OVERALL FAIL at least one Norman-founded leader is outside dynn_Yitzhaki"
+		}
+		debug_log = "kehillah_debug.94: V18 dynasty tie report -- END"
+	}
+}
+
+# Semicha guard, POSITIVE control. The 2026-09-25 fix added
+# `exists = global_var:kehillah_bet_din_convening_title` to
+# kehillah_bet_din_semicha.0001's trigger. A guard that blocks
+# everything would "pass" the negative test below while silently killing
+# the feature, so prove the event still fires when the global IS set.
+#
+# Uses trigger_event, NOT the console `event` command, deliberately --
+# console `event` bypasses an event's own trigger block, which is
+# precisely what is under test here.
+#
+# Logs each of the other trigger conditions separately so a non-fire can
+# be attributed to the right cause rather than blamed on the new guard.
+# EXPECT: the semicha event window opens, and no unset-scope error.
+kehillah_debug.95 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.95: semicha guard POSITIVE control -- START"
+		if = {
+			limit = { government_has_flag = government_is_kehillah }
+			debug_log = "kehillah_debug.95: precondition OK government_is_kehillah"
+		}
+		else = { debug_log = "kehillah_debug.95: precondition FAILS not a Kehillah government -- test will be vacuous, run as a community leader" }
+		if = {
+			limit = { NOT = { has_trait = kehillah_rabbi_trait } }
+			debug_log = "kehillah_debug.95: precondition OK does not already hold kehillah_rabbi_trait"
+		}
+		else = { debug_log = "kehillah_debug.95: precondition FAILS already a rabbi -- test will be vacuous, run as a non-rabbi" }
+		if = {
+			limit = { kehillah_leadership_gender_eligible_trigger = yes }
+			debug_log = "kehillah_debug.95: precondition OK gender-eligible under current flag state"
+		}
+		else = { debug_log = "kehillah_debug.95: precondition FAILS gender-ineligible -- test will be vacuous" }
+		if = {
+			limit = { exists = primary_title }
+			set_global_variable = { name = kehillah_bet_din_convening_title value = root.primary_title }
+			debug_log = "kehillah_debug.95: set global_var:kehillah_bet_din_convening_title to root's primary title"
+			trigger_event = kehillah_bet_din_semicha.0001
+			debug_log = "kehillah_debug.95: called trigger_event -- EXPECT the semicha window to open. Run .96 afterwards to clear the global."
+		}
+		else = {
+			debug_log = "kehillah_debug.95: INCONCLUSIVE root has no primary_title to use as a stand-in convening title"
+		}
+		debug_log = "kehillah_debug.95: semicha guard POSITIVE control -- END"
+	}
+}
+
+# Semicha guard, NEGATIVE test (the actual regression) AND cleanup for
+# .95. Clears the convening-title global, then calls trigger_event on
+# kehillah_bet_din_semicha.0001 -- reproducing the 2026-09-24 live bug,
+# where a deferred offer was evaluated after the activity had already
+# cleared its scratch global, and the event's immediate block
+# dereferenced an unset scope ("Event target link 'global_var' returned
+# an unset scope").
+#
+# EXPECT: no window opens, and error.log gains NO new unset-variable /
+# unset-scope line. A window opening here, or a fresh error, is a FAIL.
+kehillah_debug.96 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.96: semicha guard NEGATIVE test -- START"
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_convening_title }
+			remove_global_variable = kehillah_bet_din_convening_title
+			debug_log = "kehillah_debug.96: cleared global_var:kehillah_bet_din_convening_title"
+		}
+		else = {
+			debug_log = "kehillah_debug.96: global_var:kehillah_bet_din_convening_title was already unset"
+		}
+		trigger_event = kehillah_bet_din_semicha.0001
+		debug_log = "kehillah_debug.96: called trigger_event with the global UNSET -- EXPECT no window and no new error.log line"
+		debug_log = "kehillah_debug.96: semicha guard NEGATIVE test -- END"
+	}
+}
+
+# Silversmiths Quarrel restitution clamp (BLOCKERS 2026-09-25). The bug
+# was an unaffordable negative add_gold on an accused with less gold than
+# medium_gold_value. The fix computes the transfer as
+# min(max(gold,0), medium_gold_value) via save_scope_value_as and uses
+# that one value for both the deduction and the accuser's credit.
+#
+# This probe reproduces the FIXED ARITHMETIC AND THE add_gold CALLS on a
+# deliberately poor accused. It does NOT re-run
+# kehillah_bet_din_silversmiths_resolution_effect itself: that effect
+# reads involved_activity variables and is only reachable inside a real
+# hosted docket. What was broken was the clamp and the add_gold pair, and
+# that is exactly what is exercised here -- the activity-variable
+# plumbing around it was never implicated and is unchanged.
+#
+# EXPECT: accused ends at 0 gold, accuser is credited exactly 3, and
+# error.log gains NO "Trying to add add_gold with negative value" line.
+kehillah_debug.97 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.97: restitution clamp probe -- START"
+		create_character = {
+			culture = root.culture
+			faith = root.faith
+			age = 40
+			gender_female_chance = 0
+			location = root.location
+			save_scope_as = kehillah_debug_probe_accuser
+		}
+		create_character = {
+			culture = root.culture
+			faith = root.faith
+			age = 40
+			gender_female_chance = 0
+			location = root.location
+			save_scope_as = kehillah_debug_probe_accused
+		}
+		# Normalise both purses to a known state. add_gold with a negative
+		# value exactly equal to the character own gold is always
+		# affordable, so this cannot itself trip the bug under test.
+		scope:kehillah_debug_probe_accuser = { add_gold = { value = gold multiply = -1 } }
+		scope:kehillah_debug_probe_accused = {
+			add_gold = { value = gold multiply = -1 }
+			add_gold = 3
+		}
+		# The exact shape shipped in kehillah_bet_din_silversmiths_resolution_effect.
+		scope:kehillah_debug_probe_accused = {
+			save_scope_value_as = {
+				name = kehillah_debug_probe_restitution
+				value = {
+					value = gold
+					min = 0
+					max = medium_gold_value
+				}
+			}
+			add_gold = {
+				value = scope:kehillah_debug_probe_restitution
+				multiply = -1
+			}
+		}
+		scope:kehillah_debug_probe_accuser = { add_gold = scope:kehillah_debug_probe_restitution }
+		if = {
+			limit = { scope:kehillah_debug_probe_restitution = 3 }
+			debug_log = "kehillah_debug.97: PASS restitution clamped to the accused actual 3 gold, not medium_gold_value"
+		}
+		else = {
+			debug_log = "kehillah_debug.97: FAIL restitution is not the accused 3 gold -- clamp did not bind"
+			debug_log_scopes = yes
+		}
+		scope:kehillah_debug_probe_accused = {
+			if = {
+				limit = { gold = 0 }
+				debug_log = "kehillah_debug.97: PASS accused ends at exactly 0 gold"
+			}
+			else = {
+				debug_log = "kehillah_debug.97: FAIL accused did not end at 0 gold"
+				debug_log_scopes = yes
+			}
+		}
+		scope:kehillah_debug_probe_accuser = {
+			if = {
+				limit = { gold = 3 }
+				debug_log = "kehillah_debug.97: PASS accuser credited exactly 3 -- transfer is zero-sum"
+			}
+			else = {
+				debug_log = "kehillah_debug.97: FAIL accuser was not credited 3 -- transfer is not zero-sum"
+				debug_log_scopes = yes
+			}
+		}
+		debug_log = "kehillah_debug.97: restitution clamp probe -- END"
+	}
+}
