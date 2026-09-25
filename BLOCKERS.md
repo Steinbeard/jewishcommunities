@@ -361,3 +361,56 @@ things were left in.
   deciding, at some point, whether the session-ownership gap above needs a real fix before further
   unattended/concurrent overnight testing is trusted.
 
+## 2026-09-25 (later same night) — V18 re-tested for real: mostly PASS, one real bug chased through three wrong fixes
+- **Once the machine quieted down, a real test pass finally happened, using the actual existing live
+  game rather than a fresh boot.** Confirmed, live, no ambiguity:
+  - The four new communities (Toledo, Córdoba, Granada, Baghdad) all exist correctly at game start:
+    right government, holder, registration. No related `error.log` lines.
+  - **The real production path works end to end.** Rather than only exercising the console debug
+    harness, this pass forced an ACTUAL `title:k_england` transfer to William via `change_title_holder`
+    + `resolve_title_and_vassal_change` (the genuine vanilla conquest primitive) and confirmed the real
+    `on_title_gain` wrapper fires naturally: correct William-branch classification, all four Anglia
+    Kehillot founded, Host Charters established, Jewish Settlement Policy set. This is the strongest
+    possible evidence the whole mechanism (not just its debug shortcut) is sound.
+  - A more "mechanically accurate" test (a real `claim_cb` war via `start_war`/`end_war = attacker`,
+    using William's own genuine 1066 pressed claim) was attempted at the user's own request but is
+    **blocked by vanilla itself, not a mod bug**: `claim_cb`'s own `on_victory` expects `scope:claimant`,
+    populated only by the normal interactive war-declaration flow — a bare console shortcut throws real
+    vanilla errors (`claimant was null`, `Failed context switch`) inside vanilla's own `00_claim.txt`.
+    Not fixable from this mod's side; the `change_title_holder` route above is the practical substitute.
+- **One real, genuinely tricky bug found: the "personal connections" dynasty tie did not work.** The
+  user's own explicit ask ("personal connections to other Ashkenazi communities — especially French
+  communities if William wins") was implemented as `dynasty = dynasty:9000003` inside `create_character`
+  — confirmed LIVE to silently fail: the new leaders landed in an unrelated auto-generated dynasty
+  instead, durably (re-checked a full day later — not a same-tick timing artifact). Took three real
+  attempts to fix, each live-tested and each a genuine dead end before the last:
+  1. `dynasty = dynasty:X` (the original implementation) — confirmed broken as above.
+  2. `set_dynasty` (an effect referenced in `effect_localization/00_character_effects.txt`) — confirmed
+     to be dead/vestigial localization, not a real scriptable effect in this build ("Unknown effect:
+     set_dynasty", both candidate field shapes tried).
+  3. `dynasty_house = house:<new custom house>` (real, repeated vanilla precedent for THIS field) —
+     confirmed broken specifically for a brand-new, zero-population custom house: "Failed to fetch a
+     valid house", even after a full clean relaunch. Likely cause (not fully proven): house/dynasty
+     runtime objects may only instantiate from history-file characters at boot, not from a bare
+     `common/dynasty_houses/` static define alone.
+  4. **Shipped, NOT yet live-verified**: a new history-file character (id 9000218, "Meir," an elder
+     Yitzhaki kinsman already deceased by 1066) plus `father = character:9000218` + `dynasty = inherit`
+     inside `create_character` — this combines two primitives already independently proven to work
+     (bare `dynasty = 9000003` in a history file, exactly like Rashi's own entry; and `father =`/
+     `dynasty = inherit`, real confirmed vanilla precedent from the Mongol invasion's own dynamic
+     child-generation code) rather than a fourth guess at the same untested runtime path. The Harald
+     branch's own parallel dynasty tie (`dynn_Bacharach`) was dropped rather than rebuilt the same way
+     — it never had a living reference character to anchor from, and was always documented as the
+     lighter of the two connections.
+  - **What's needed from Daniel:** one more relaunch-and-verify pass, whenever convenient: confirm
+    `character:9000218` exists and reads as `dynasty:9000003`, reset
+    `global_var:kehillah_norman_conquest_resolved` via a `run` script, redo the William
+    `change_title_holder` transfer, and check whether the four newly-founded leaders finally read as
+    `dynn_Yitzhaki`. If this ALSO fails, stop and report rather than trying a fifth guess — the
+    Genghis Khan precedent is about as strong as vanilla evidence gets, so a failure here would be
+    genuinely surprising and worth a fresh look rather than another quick patch.
+  - Everything is committed (`overnight/2026-09-24`, ending at `feb1157`). Nothing here risks lost
+    work; the feature is fully usable today even if this one detail is still unresolved — worst case,
+    new leaders read as an unrelated generated family instead of Rashi's own, with no other effect on
+    gameplay.
+
