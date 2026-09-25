@@ -1,6 +1,6 @@
 # V20 Spec: Start Historical Communities at Their Dynamic Baselines
 
-**Status: BUILT, source-validated; awaiting live regression.**
+**Status: BUILT and live-verified.**
 **Date: 2026-09-25.** Supersedes V19 in full and supersedes the old literal
 Prosperity/Greatness grants in the individual 1066 community setup effects.
 It does not change the pillar bands, the quarterly convergence rate, or the

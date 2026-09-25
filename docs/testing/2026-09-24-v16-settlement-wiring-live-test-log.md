@@ -295,3 +295,30 @@ never blank and never changes a contract by itself.
   a separately open UI test because Worms's host is AI-controlled in this
   start; it needs a host-player or real succession/conquest setup to inspect
   its visible recipient and one-per-host debounce.
+
+## V20 starting-pillars quarterly regression (2026-09-25)
+
+**Status: LIVE PASS.**
+
+- A debug-enabled fresh Worms run advanced with `tick_day` through the V20
+  day-three handoff. The HUD showed a non-zero, internally consistent opening
+  row (Standing was the mean of the three pillars), `.0008` logged its
+  historical-baseline initialization, and the charter report confirmed the
+  committed Christian/Allowed terms: Free construction, no watch, Royal
+  Appeal, and unrestricted study.
+- Advancing to 1 January revealed an eight-point Stability change. This was
+  initially treated as a possible snapshot/convergence mismatch and traced
+  rather than waived: a direct character-scoped console probe evaluated the
+  live Stability baseline as **369**, the same value set on day three. Running
+  `kehillah_quarterly_pillars_effect` against that exact state produced the
+  same eight-point change.
+- Source inspection identifies the change as the normal population-pressure
+  path: Worms is over its courtier capacity, so the quarterly effect applies
+  `kehillah_overcrowding_stability_drain = 8` after baseline convergence. It
+  is an intentional, documented live condition rather than an artificial
+  pull toward a different baseline. Prosperity and Greatness remained at
+  their sampled baselines in this probe.
+- The attempted alternate title/holder scope route was discarded after the
+  direct probe established that the existing V20 sampler and the ordinary
+  quarterly baseline evaluator agree. No V20 gameplay source change was
+  required; the final working tree has only this documentation update.
