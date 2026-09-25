@@ -104,12 +104,17 @@ short research bullets for when Daniel is back.
   events in `kehillah_dispute_events.txt` — reads "the appointed Chief Rabbi, or the leader if
   serving". Do this through ONE new scripted trigger/value pair used at every site, not per-site
   special cases. Small drawback, so it's a choice (e.g. a stress or influence-gain cost for doing
-  two jobs); appointing a rabbi ends the toggle.
+  two jobs); appointing a rabbi ends the toggle. **Rashi starts the game serving as Troyes's own
+  Chief Rabbi** (Daniel, 2026-09-25): `kehillah_setup_troyes_start_effect` turns the toggle on for
+  him, and Troyes starts with no separately appointed rabbi. Check his actual in-game Learning and
+  set the threshold so he qualifies; if the drawback makes his start feel punishing, soften it for
+  him or overall and note it. He is also the Scholar in S7's bookmark, so this is his opening state
+  there too.
   (3) One flavour event, "your student has been called to X": a rabbi you trained is recruited by
   another community's search; small Greatness gain for you.
   **Done when**, live: the player recruits a real rabbi from another community through the search
-  event; a rabbi-trait leader with high Learning serves as their own Chief Rabbi and the breakdown
-  tooltip shows the contribution; an AI community fills an empty seat.
+  event; Rashi begins a new 1066 game as Troyes's own Chief Rabbi and the breakdown tooltip shows
+  his contribution; an AI community fills an empty seat.
 - **S5. BUILD — Responsa.** Build exactly: an on_action pulse (roughly one question every 1-2
   years for a leader or Chief Rabbi with Learning ≥ ~12) firing an event where a named leader of
   another real community sends a question (start with 6 question texts, halakhic/communal flavour,
