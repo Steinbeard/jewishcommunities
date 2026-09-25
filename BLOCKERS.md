@@ -311,3 +311,22 @@ things were left in.
    Jewish Community," not just game-start seeding) gets a Host Charter automatically too -- see
    `docs/spec/v15-host-charter.md` section 5's live pass 4. No issues found there.
 
+
+## Automated run status -- 2026-09-25_020003 (overnight/2026-09-25)
+- Cut off by a usage/session limit (detected in this run's log): False
+- Uncommitted changes in the working tree at run end: none
+- Commits on this branch not yet on origin at this point: 0
+- Last few commits on this branch:
+```
+20ac9a8 Merge pull request #7 from Steinbeard/overnight/2026-09-24
+22fd90b Record live charter cache initialization pass
+4e1f80a Record charter cache boot recheck
+9804f44 Cache deferred regional charter state
+1001354 Fix and live-verify fresh charter policy rungs
+```
+
+Written mechanically by the scheduled script itself (not the agent) as a fallback -- present every
+run regardless of whether the session reached its own end-of-run BLOCKERS.md write. If "cut off"
+is true above and there's no matching entry from the agent itself nearby explaining what it was
+mid-way through, treat this run as unresolved until a human or a later run reviews what state
+things were left in.
