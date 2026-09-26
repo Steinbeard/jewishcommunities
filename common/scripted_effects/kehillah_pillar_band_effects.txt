@@ -173,7 +173,30 @@ kehillah_apply_pillar_band_modifier_effect = {
 # the Stability/Prosperity/Greatness this quarter actually produced.
 # ---------------------------------------------------------------------
 kehillah_update_all_pillar_bands_effect = {
-	kehillah_update_pillar_band_effect = { PILLAR = kehillah_var_prosperity SHORT = prosperity }
-	kehillah_update_pillar_band_effect = { PILLAR = kehillah_var_stability SHORT = stability }
-	kehillah_update_pillar_band_effect = { PILLAR = kehillah_var_greatness SHORT = greatness }
+	# DON'T BAND A COMMUNITY WHOSE PILLARS HAVEN'T BEEN WRITTEN YET.
+	# ADDED 2026-09-26 (heartbeat 5) after a live find, logged in
+	# docs/testing/2026-09-26-heartbeat5-live-test-log.md.
+	#
+	# The historical starts hold all three pillars at 0 from game start
+	# (1066.9.15) until day three, and the first quarterly_playable_pulse
+	# lands on 1066.9.16. Measured live: all three bands were seeding as
+	# CRISIS off those zeroes, which applied the Crisis modifiers (-20%
+	# income, -20% prestige, stress) to the leader of a community actually
+	# sitting at Strained/Strained/Healthy -- and because the seed branch
+	# also records kehillah_band_prev_*, the following quarter then saw a
+	# "real change" and sent the player three band-change notices that
+	# described nothing but this bug.
+	#
+	# Skipping here is strictly better than seeding wrongly: an unbanded
+	# community wears no band modifier at all, which is the same state
+	# Healthy already ships, and the seed happens correctly on the first
+	# pulse after the pillars are real. kehillah_initialize_historical_
+	# pillars_from_baseline_effect also calls this directly now, so the
+	# bands are right from day three rather than up to a quarter late.
+	if = {
+		limit = { kehillah_pillars_are_live_trigger = yes }
+		kehillah_update_pillar_band_effect = { PILLAR = kehillah_var_prosperity SHORT = prosperity }
+		kehillah_update_pillar_band_effect = { PILLAR = kehillah_var_stability SHORT = stability }
+		kehillah_update_pillar_band_effect = { PILLAR = kehillah_var_greatness SHORT = greatness }
+	}
 }

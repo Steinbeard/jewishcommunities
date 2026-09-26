@@ -92,18 +92,8 @@ It does, however, have two consequences worth recording:
    FALLBACK branch — which is the exact branch that produced the original
    wrong text. Passing there proves the least. The tester was redirected
    mid-run to advance past day three and re-measure. See §2.
-2. **A hypothesis this run can settle for free** (not yet confirmed, do
-   not act on it until it is): `kehillah_quarterly_pulse` ends with
-   `kehillah_dissolution_watch_effect`, which treats Stability below 25
-   as the dissolution floor. For the first three days Stability *is* 0.
-   If vanilla's `quarterly_playable_pulse` can fire on game day 1 or 2,
-   a brand-new game would start its dissolution countdown at 1 and burn
-   the one-per-five-years warning on a spurious "The Community Frays" —
-   meaning a genuine early crisis would then go unwarned. Whether the
-   pulse can land that early is unknown and is exactly the kind of thing
-   this repo has been burned guessing at. The day-advance in §2 produces
-   the evidence: if the watch ran in days 1–5 it will have left
-   `kehillah_dissolution_watch_effect` breadcrumbs in `debug.log`.
+2. **A real bug, now CONFIRMED live — see §1a below.** It was raised here
+   as a hypothesis and the day-advance settled it within the minute.
 
 ---
 

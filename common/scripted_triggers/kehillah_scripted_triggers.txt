@@ -1485,3 +1485,74 @@ kehillah_rabbi_search_candidate_trigger = {
 
 	NOT = { this = scope:kehillah_rabbi_seeker }
 }
+
+
+# ---------------------------------------------------------------------
+# kehillah_pillars_are_live_trigger
+# Scope: a character (the Kehillah leader), matching
+# kehillah_pillar_at_least_trigger above.
+#
+# ADDED 2026-09-26 (heartbeat 5) after a live find. "Have this
+# community's opening pillars actually been written yet?"
+#
+# WHY THIS EXISTS. The historical communities are seeded at
+# on_game_start_after_lobby with all three pillars at 0, and their REAL
+# opening values are set three days later by
+# kehillah_settlement_conditions.0008 -> kehillah_initialize_historical_
+# pillars_from_baseline_effect. That three-day delay is deliberate and
+# load-bearing (see kehillah_on_actions.txt:218-225: the snapshot must
+# see .0001's nearby-community cache and .0002/.0003's committed charter
+# terms rather than a bootstrap-time approximation).
+#
+# But CK3's 1066 start is 1066.9.15 and the first
+# quarterly_playable_pulse lands on 1066.9.16 -- TWO DAYS BEFORE the
+# snapshot. Measured live, not inferred: debug.log for a fresh Worms
+# start shows the pulse's band seeding and
+# kehillah_dissolution_watch_effect running at 1066.9.16 against
+# Prosperity/Stability/Greatness all exactly 0.00, then the initialization
+# logging at 1066.9.18. Consequences, all confirmed in that same log:
+#   - all three bands seeded as CRISIS, applying the Crisis modifiers
+#     (-20% income, -20% prestige, stress) to a leader whose community is
+#     really Strained/Strained/Healthy;
+#   - the dissolution countdown advanced to 1;
+#   - "The Community Frays" fired on day one of a new game, and with it
+#     the five-year kehillah_dissolution_warned_flag cooldown -- so a
+#     GENUINE early crisis would then go unwarned, defeating S1's own
+#     promise that "collapse is never a surprise".
+#
+# WHY NOT FIX IT BY INITIALIZING EARLIER. Because the codebase already
+# decided against that, explicitly, and the reason still holds:
+# kehillah_worms_developed_start_effect's header says restoring Greatness
+# to 0 rather than to a real baseline is deliberate, since "computing it
+# here would duplicate V20's job three days early and give two places an
+# opinion about the same number." Day three stays the single authority;
+# the CONSUMERS learn not to read a number that has not been written yet.
+#
+# WHY "AT LEAST ONE PILLAR ABOVE ZERO" AND NOT THE EXISTING MARKER.
+# kehillah_start_pillars_initialized_from_baseline looks like the natural
+# predicate, but it is set ONLY on the historical-start path. Founded
+# communities never set it (kehillah_found_community_effect gives them
+# kehillah_init_pillars_effect plus Stability +50, deliberately above the
+# dissolution floor), so guarding on that marker would disable the watch
+# for every founded community permanently -- and for every community in
+# an existing save, which has no marker either. "Some pillar is non-zero"
+# is true for all three of those populations and false only for the
+# uninitialised state this guards.
+#
+# The one false negative -- a live community at exactly 0.00 on all three
+# pillars -- is harmless: that is total collapse, and dissolution already
+# requires four consecutive quarters below the floor, so it costs one
+# quarter of delay in noticing, not a missed collapse.
+# ---------------------------------------------------------------------
+kehillah_pillars_are_live_trigger = {
+	primary_title = {
+		has_variable = kehillah_var_prosperity
+		has_variable = kehillah_var_stability
+		has_variable = kehillah_var_greatness
+		OR = {
+			var:kehillah_var_prosperity > 0
+			var:kehillah_var_stability > 0
+			var:kehillah_var_greatness > 0
+		}
+	}
+}
