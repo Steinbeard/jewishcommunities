@@ -46,19 +46,64 @@ ck3-tiger: 0 fatal, 0 error, warnings unchanged at 59.
 
 ---
 
-## 1. Worms developed start — all five synagogue tiers?
+## 1. Worms developed start — **VERIFIED PASS, all five synagogue tiers**
 
-**IN FLIGHT.**
+What was confirmed: commit `4267d36`, which lifted the Greatness gate for
+the duration of `kehillah_worms_developed_start_effect`'s grant. Before
+it, `add_domicile_building` was silently refusing synagogue tiers 2–5 (it
+*does* consult `can_construct`, and those tiers gate on a Greatness value
+computed from the buildings themselves — circular, not merely misordered).
 
-What is being confirmed: commit `4267d36`, which lifted the Greatness
-gate for the duration of `kehillah_worms_developed_start_effect`'s grant.
-Before it, `add_domicile_building` was silently refusing synagogue tiers
-2–5 (it *does* consult `can_construct`, and those tiers gate on a
-Greatness value computed from the buildings themselves — circular, not
-merely misordered).
+`kehillah_debug.111`, run on the Kehillah of Worms at game start
+(`d_kehillah_worms`, holder Isaac HaLevi), reported:
 
-PASS = `.111` reports `SYNAGOGUE 5` and all eight other buildings
-`PRESENT`, with zero `add_domicile_building` lines in `error.log`.
+```
+SYNAGOGUE 5 -- the developed start full main slot (this is the PASS state for commit 4267d36)
+mikvah PRESENT          sofer workshop PRESENT   beit midrash PRESENT
+countinghouse PRESENT   hekdesh PRESENT          slaughterhouse PRESENT
+market stalls PRESENT   workshops PRESENT
+```
+
+All nine buildings the developed start is supposed to grant, and **zero
+`add_domicile_building` lines in `error.log`** — against the pre-fix
+symptom of four of them at `on_game_start_after_lobby`. The orchestrator
+read these lines straight out of `debug.log`.
+
+Note on why the error count alone was not accepted as the pass: zero
+`add_domicile_building` errors is *also* what a boot into some other
+community would show, so the positive `SYNAGOGUE 5` reading is what
+actually closes this. This is the same false-pass shape that has bitten
+this repo repeatedly.
+
+### Found in passing: the opening pillars are 0 until day three
+
+`.111` reported all three pillars at exactly `0.00`, each with a
+next-band gap of `150.00`, i.e. all three in Crisis. This is **expected
+and not a bug**: `kehillah_worms_developed_start_effect` deliberately
+restores Greatness to 0 after using an inflated value to get past the
+synagogue gates, and the real opening values are set on **day three** by
+`kehillah_settlement_conditions.0008`
+(`kehillah_on_actions.txt:225`, `trigger_event = { ... days = 3 }`).
+
+It does, however, have two consequences worth recording:
+
+1. **It made check B a weak test as originally briefed.** At 0 every
+   pillar is in Crisis, so the tooltip renders its `always = yes`
+   FALLBACK branch — which is the exact branch that produced the original
+   wrong text. Passing there proves the least. The tester was redirected
+   mid-run to advance past day three and re-measure. See §2.
+2. **A hypothesis this run can settle for free** (not yet confirmed, do
+   not act on it until it is): `kehillah_quarterly_pulse` ends with
+   `kehillah_dissolution_watch_effect`, which treats Stability below 25
+   as the dissolution floor. For the first three days Stability *is* 0.
+   If vanilla's `quarterly_playable_pulse` can fire on game day 1 or 2,
+   a brand-new game would start its dissolution countdown at 1 and burn
+   the one-per-five-years warning on a spurious "The Community Frays" —
+   meaning a genuine early crisis would then go unwarned. Whether the
+   pulse can land that early is unknown and is exactly the kind of thing
+   this repo has been burned guessing at. The day-advance in §2 produces
+   the evidence: if the watch ran in days 1–5 it will have left
+   `kehillah_dissolution_watch_effect` breadcrumbs in `debug.log`.
 
 ---
 
