@@ -1685,3 +1685,112 @@ kehillah_debug.110 = {
 		debug_log = "kehillah_debug.110: S4 Chief Rabbi setup and report -- END"
 	}
 }
+
+
+# =====================================================================
+# .111 -- THE WORMS DEVELOPED START AND THE NEXT-BAND TOOLTIP, MEASURED
+# (added 2026-09-26, heartbeat 5).
+#
+# Two outstanding checks, one probe, because both are answered by the
+# same read of the player's own community and neither needs the UI:
+#
+#   1. The Worms developed start was a NO-OP above synagogue tier 1
+#      until commit 4267d36 (add_domicile_building does consult
+#      can_construct, and tiers 2-5 gate on Greatness, which is computed
+#      FROM the buildings). This lists every building that start is
+#      supposed to grant, so "did the fix take" is a log line rather
+#      than a hunt through the Jewish Quarter panel.
+#
+#   2. S2 part 3's next-band tooltip line rendered the WRONG band name
+#      and threw ~2,000 error lines a second (BLOCKERS 2026-09-26). It
+#      was fixed by moving the custom loc and script values to title
+#      scope. This computes, IN TITLE SCOPE exactly as the tooltip now
+#      does, each pillar's value, the band the tooltip should name, and
+#      the gap it should print -- so a hover can be checked against a
+#      number instead of against a tester's expectation.
+#
+# READ-ONLY. Every line here is a read or a scope save; nothing is
+# granted, set or cleared. Safe to run at any time, as often as wanted.
+# =====================================================================
+
+kehillah_debug.111 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.111: Worms start buildings + next-band expectations -- START"
+
+		# --- 1. The building set the developed start grants. ---
+		domicile ?= {
+			if = { limit = { has_domicile_building_or_higher = kehillah_synagogue_05 } debug_log = "kehillah_debug.111: SYNAGOGUE 5 -- the developed start full main slot (this is the PASS state for commit 4267d36)" }
+			else_if = { limit = { has_domicile_building_or_higher = kehillah_synagogue_04 } debug_log = "kehillah_debug.111: SYNAGOGUE 4 -- short of the 5 the developed start grants" }
+			else_if = { limit = { has_domicile_building_or_higher = kehillah_synagogue_03 } debug_log = "kehillah_debug.111: SYNAGOGUE 3 -- short of the 5 the developed start grants" }
+			else_if = { limit = { has_domicile_building_or_higher = kehillah_synagogue_02 } debug_log = "kehillah_debug.111: SYNAGOGUE 2 -- short of the 5 the developed start grants" }
+			else_if = { limit = { has_domicile_building_or_higher = kehillah_synagogue_01 } debug_log = "kehillah_debug.111: SYNAGOGUE 1 ONLY -- this is the PRE-FIX symptom, tiers 2-5 were refused" }
+			else = { debug_log = "kehillah_debug.111: NO SYNAGOGUE AT ALL -- not a developed start; check the community" }
+
+			if = { limit = { has_domicile_building_or_higher = kehillah_mikvah_01 } debug_log = "kehillah_debug.111: mikvah PRESENT" }
+			else = { debug_log = "kehillah_debug.111: mikvah MISSING" }
+			if = { limit = { has_domicile_building_or_higher = kehillah_sofer_workshop_01 } debug_log = "kehillah_debug.111: sofer workshop PRESENT" }
+			else = { debug_log = "kehillah_debug.111: sofer workshop MISSING" }
+			if = { limit = { has_domicile_building_or_higher = kehillah_beit_midrash_01 } debug_log = "kehillah_debug.111: beit midrash PRESENT" }
+			else = { debug_log = "kehillah_debug.111: beit midrash MISSING" }
+			if = { limit = { has_domicile_building_or_higher = kehillah_countinghouse_01 } debug_log = "kehillah_debug.111: countinghouse PRESENT" }
+			else = { debug_log = "kehillah_debug.111: countinghouse MISSING" }
+			if = { limit = { has_domicile_building_or_higher = kehillah_hekdesh_01 } debug_log = "kehillah_debug.111: hekdesh PRESENT" }
+			else = { debug_log = "kehillah_debug.111: hekdesh MISSING" }
+			if = { limit = { has_domicile_building_or_higher = kehillah_slaughterhouse_01 } debug_log = "kehillah_debug.111: slaughterhouse PRESENT" }
+			else = { debug_log = "kehillah_debug.111: slaughterhouse MISSING" }
+			if = { limit = { has_domicile_building_or_higher = kehillah_market_stalls_01 } debug_log = "kehillah_debug.111: market stalls PRESENT" }
+			else = { debug_log = "kehillah_debug.111: market stalls MISSING" }
+			if = { limit = { has_domicile_building_or_higher = kehillah_workshops_01 } debug_log = "kehillah_debug.111: workshops PRESENT" }
+			else = { debug_log = "kehillah_debug.111: workshops MISSING" }
+		}
+
+		# --- 2. What the next-band tooltip line must say, per pillar. ---
+		# Title scope, direct variable reads, the same thresholds the
+		# custom loc branches on -- so these ARE the tooltip's own
+		# numbers, not an independent reimplementation that could drift.
+		primary_title ?= {
+			if = {
+				limit = { has_variable = kehillah_var_prosperity }
+				save_scope_value_as = { name = kehillah_debug_prosperity value = var:kehillah_var_prosperity }
+				save_scope_value_as = { name = kehillah_debug_prosperity_gap value = kehillah_next_band_gap_prosperity_value }
+				if = { limit = { var:kehillah_var_prosperity >= kehillah_band_legendary_threshold } debug_log = "kehillah_debug.111: PROSPERITY is Legendary -- tooltip must say Legendary is the highest band, with NO number" }
+				else_if = { limit = { var:kehillah_var_prosperity >= kehillah_band_flourishing_threshold } debug_log = "kehillah_debug.111: PROSPERITY is Flourishing -- tooltip must name LEGENDARY as the next band" }
+				else_if = { limit = { var:kehillah_var_prosperity >= kehillah_band_healthy_threshold } debug_log = "kehillah_debug.111: PROSPERITY is Healthy -- tooltip must name FLOURISHING as the next band" }
+				else_if = { limit = { var:kehillah_var_prosperity >= kehillah_band_strained_threshold } debug_log = "kehillah_debug.111: PROSPERITY is Strained -- tooltip must name HEALTHY as the next band" }
+				else = { debug_log = "kehillah_debug.111: PROSPERITY is Crisis -- tooltip must name STRAINED as the next band" }
+			}
+			else = { debug_log = "kehillah_debug.111: PROSPERITY variable NOT SET -- every guarded tooltip branch will fall through; investigate before judging the text" }
+
+			if = {
+				limit = { has_variable = kehillah_var_stability }
+				save_scope_value_as = { name = kehillah_debug_stability value = var:kehillah_var_stability }
+				save_scope_value_as = { name = kehillah_debug_stability_gap value = kehillah_next_band_gap_stability_value }
+				if = { limit = { var:kehillah_var_stability >= kehillah_band_legendary_threshold } debug_log = "kehillah_debug.111: STABILITY is Legendary -- tooltip must say Legendary is the highest band, with NO number" }
+				else_if = { limit = { var:kehillah_var_stability >= kehillah_band_flourishing_threshold } debug_log = "kehillah_debug.111: STABILITY is Flourishing -- tooltip must name LEGENDARY as the next band" }
+				else_if = { limit = { var:kehillah_var_stability >= kehillah_band_healthy_threshold } debug_log = "kehillah_debug.111: STABILITY is Healthy -- tooltip must name FLOURISHING as the next band" }
+				else_if = { limit = { var:kehillah_var_stability >= kehillah_band_strained_threshold } debug_log = "kehillah_debug.111: STABILITY is Strained -- tooltip must name HEALTHY as the next band" }
+				else = { debug_log = "kehillah_debug.111: STABILITY is Crisis -- tooltip must name STRAINED as the next band" }
+			}
+			else = { debug_log = "kehillah_debug.111: STABILITY variable NOT SET -- every guarded tooltip branch will fall through; investigate before judging the text" }
+
+			if = {
+				limit = { has_variable = kehillah_var_greatness }
+				save_scope_value_as = { name = kehillah_debug_greatness value = var:kehillah_var_greatness }
+				save_scope_value_as = { name = kehillah_debug_greatness_gap value = kehillah_next_band_gap_greatness_value }
+				if = { limit = { var:kehillah_var_greatness >= kehillah_band_legendary_threshold } debug_log = "kehillah_debug.111: GREATNESS is Legendary -- tooltip must say Legendary is the highest band, with NO number" }
+				else_if = { limit = { var:kehillah_var_greatness >= kehillah_band_flourishing_threshold } debug_log = "kehillah_debug.111: GREATNESS is Flourishing -- tooltip must name LEGENDARY as the next band" }
+				else_if = { limit = { var:kehillah_var_greatness >= kehillah_band_healthy_threshold } debug_log = "kehillah_debug.111: GREATNESS is Healthy -- tooltip must name FLOURISHING as the next band" }
+				else_if = { limit = { var:kehillah_var_greatness >= kehillah_band_strained_threshold } debug_log = "kehillah_debug.111: GREATNESS is Strained -- tooltip must name HEALTHY as the next band" }
+				else = { debug_log = "kehillah_debug.111: GREATNESS is Crisis -- tooltip must name STRAINED as the next band" }
+			}
+			else = { debug_log = "kehillah_debug.111: GREATNESS variable NOT SET -- every guarded tooltip branch will fall through; investigate before judging the text" }
+
+			# The three values and the three gaps the tooltip must print.
+			debug_log_scopes = yes
+		}
+
+		debug_log = "kehillah_debug.111: Worms start buildings + next-band expectations -- END"
+	}
+}
