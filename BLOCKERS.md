@@ -739,3 +739,17 @@ fc2678b Record two verified passes and one new bug; S2 is complete
 9236d57 Don't judge or band a community whose pillars aren't written yet
 ```
 Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-26_140002.log
+
+## Heartbeat run status -- 2026-09-26_190002 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+914f5b1 ROADMAP: correct S4's stale "~14" Learning threshold to the built 12
+807732f kehillah_debug.115: read Rashi's Chief Rabbi state without playing as him
+58a08e7 kehillah_debug.114: check V20's actual promise, not a plausible number
+df66353 Heartbeat 7 test log skeleton, written before the results
+1883ca5 S3(a): gate the inline change_government on the domicile, not the title
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-26_190002.log
