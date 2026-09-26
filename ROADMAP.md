@@ -41,6 +41,24 @@ short research bullets for when Daniel is back.
   guard + restitution cap (item 7), V18 Norman Conquest founding (dynasty tie), V20 starting
   pillars, V16 §8 open tests. Turns "source-fixed" into "verified". One pass, record results, move
   on — don't let it eat the window.
+  **PARTIAL, 2026-09-26.** Two runs, logged in
+  [docs/testing/2026-09-25-s0-regression-live-test-log.md](docs/testing/2026-09-25-s0-regression-live-test-log.md)
+  and [docs/testing/2026-09-26-s0-s2-live-test-log.md](docs/testing/2026-09-26-s0-s2-live-test-log.md).
+  - **V18 Norman Conquest founding + dynasty tie: VERIFIED PASS** (2026-09-25). Closes the item
+    BLOCKERS.md left open after three failed mechanisms.
+  - **Bet Din semicha guard: VERIFIED PASS** (2026-09-26), with a genuinely non-vacuous positive
+    control this time.
+  - **Bet Din restitution clamp: STILL OPEN, but now MEASURED rather than guessed at.** The
+    2026-09-25 source fix does not work, and `kehillah_debug.103` ruled out *both* standing
+    explanations: the probe characters hold gold normally, and the self-referential shape fails
+    identically to the snapshot shape. The engine refuses a negative `add_gold` that lands a
+    character on exactly 0.00. Next step is one more measurement (deduct strictly less than the
+    balance), then most likely a rewrite of
+    `kehillah_bet_din_silversmiths_resolution_effect` onto a real transfer primitive
+    (`pay_treasury_or_gold`) rather than a hand-rolled `add_gold` pair. **Do not patch it blind** —
+    this bug has already survived one confident fix.
+  - **V20 starting pillars and the V16 §8 open tests: NOT YET COVERED.** Neither run reached
+    them. Still open for a later heartbeat.
 - **S1. BUILD — Leave the Kehillah (ruler → landless adventurer), and Stability dissolution
   (V2 §4.4, Wave 4), sharing ONE teardown effect.** A voluntary decision ("Step Down and Take to
   the Road" or similar) and the Stability-floor collapse both call the same effect: narrate,
@@ -74,6 +92,17 @@ short research bullets for when Daniel is back.
   swaps the modifier on the leader's character sheet, and the tooltip names the next band —
   downscaled screenshots in the test log. ck3-tiger clean. No change to how pillars are
   *calculated* in this item; that's S10's job if the soak test finds problems.
+  **PARTIAL — parts 1, 2 and 4 VERIFIED LIVE 2026-09-26**
+  ([log](docs/testing/2026-09-26-s0-s2-live-test-log.md) §3): pushing all three pillars up a band
+  and then down a band produced the notice both ways (a real "The Community's Prosperity Has
+  Shifted" banner), and `kehillah_debug.102` confirms exactly one band modifier per pillar
+  afterwards with no stale leftovers from the previous band. **Part 3 (next-band text) is built and
+  wired but NOT yet confirmed rendering** — it lives in `KehillahBdNextBand{Prosperity,Stability,
+  Greatness}`, called from `KEHILLAH_BD_*_TOOLTIP` (`localization/english/
+  kehillah_breakdown_l_english.yml:95-97`), which `gui/kehillah_community_map_view.gui:578,817`
+  uses for the map-view widget's pillar rows. A 2026-09-26 tester reported it as dead code after
+  hovering the *community-list interaction's* tooltip instead — the wrong surface, corrected in
+  that log's §4. Needs one hover of the map-view widget to close out.
 - **S3. BUILD — Succession hardening.** (a) Root-cause the recurring non-fatal `change_government`
   "illegal government" error on appointment succession (implementation doc, 2026-09-23 addition).
   (b) Live-verify that an officer with a better score beats a family heir (the long-open
@@ -83,6 +112,18 @@ short research bullets for when Daniel is back.
   eligible courtier (one at a time, adds a fixed score in `kehillah_leadership.txt`, shown in the
   succession candidate tooltip). **Done when**: (a) is fixed or its cause documented with
   evidence; (b), (c), (d) each observed in a live console-kill succession.
+  **BUILT 2026-09-26, live test in flight.** (a) is deliberately *instrumented* rather than
+  blind-fixed for the third time: `kehillah_trace_title_gain_effect`
+  (`common/scripted_effects/kehillah_succession_effects.txt`, armed by `kehillah_debug.104`) logs
+  whether the just-gained title is yet visible to `any_held_title` at the instant `on_title_gain`
+  fires — which is `can_get_government`'s entire predicate — and
+  `kehillah_on_title_gain` now guards the inline `change_government` with that same predicate,
+  deferring to `kehillah_succession.0010` a day later when it would fail. That event logs its own
+  verdict, so one live succession settles the cause and validates or refutes the guard at once.
+  (d) is built: `kehillah_endorse_successor_interaction` writes
+  `kehillah_var_endorsed_successor` on the community title and
+  `kehillah_leadership.txt` adds `kehillah_endorsement_score_value` (30) to that one candidate.
+  (b) and (c) still need the live observation.
 - **S4. BUILD — Chief Rabbi: search like "Find a Physician", or serve yourself.** (Daniel,
   2026-09-25.) Build exactly:
   (1) **"Seek a Chief Rabbi" decision, modelled on vanilla's physician recruitment** (the
@@ -115,6 +156,22 @@ short research bullets for when Daniel is back.
   **Done when**, live: the player recruits a real rabbi from another community through the search
   event; Rashi begins a new 1066 game as Troyes's own Chief Rabbi and the breakdown tooltip shows
   his contribution; an AI community fills an empty seat.
+  **PARTS (1) AND (2) BUILT 2026-09-26, NOT YET LIVE-TESTED. Part (3) not built.**
+  - (2) is built through one shared trio, as this item demands:
+    `kehillah_has_acting_chief_rabbi_trigger`, `kehillah_acting_chief_rabbi_learning_value` and
+    `kehillah_save_acting_chief_rabbi_effect`. All four previous call sites were rewired (the
+    pillar value, the breakdown custom-loc row, the dispute-scope effect, both dispute events'
+    Chief-Rabbi option gates). Toggle: `kehillah_serve_as_rabbi_decision`, drawback is stress
+    (Influence is retired from this government, so an influence cost would cost nothing).
+    Rashi now has an explicit `learning = 12` in `history/characters/troyes_1066.txt` so his
+    documented starting state is deterministic rather than a stat roll.
+  - (1) is built as `kehillah_seek_chief_rabbi_decision` →
+    `events/kehillah_rabbi_search_events.txt`, on vanilla's physician-recruitment shape, with the
+    candidate pool walked out of `kehillah_registered_communities` (real rabbis in real courts)
+    and generated candidates only as a thin-pool fallback. Gated on the Beit Midrash, because
+    that is what gates the court position itself.
+  - Live-testing (1) needs a community that has actually built the Beit Midrash — a debug probe
+    to reach that state is the missing piece for the next heartbeat.
 - **S5. BUILD — Responsa.** Build exactly: an on_action pulse (roughly one question every 1-2
   years for a leader or Chief Rabbi with Learning ≥ ~12) firing an event where a named leader of
   another real community sends a question (start with 6 question texts, halakhic/communal flavour,
