@@ -216,7 +216,9 @@ short research bullets for when Daniel is back.
   (`ai_chance`).
   (2) **The leader as their own Chief Rabbi.** A ruler can't hold a court position in their own
   court, so model it as an explicit toggle decision, "Serve as the Community's Rabbi": available
-  when the leader has the rabbi trait and Learning ≥ a script_value threshold (~14), and no rabbi
+  when the leader has the rabbi trait and Learning ≥ a script_value threshold (~14 — **corrected
+  2026-09-26: the build chose 12**, `kehillah_serve_as_rabbi_learning_threshold`, and Rashi's
+  history was pinned to `learning = 12` to clear it exactly; read 12, not 14), and no rabbi
   is appointed. While active (character flag), every consumer of the Chief Rabbi seat — the pillar
   contribution in `kehillah_breakdown_values.txt`/`kehillah_scripted_effects.txt` and the dispute
   events in `kehillah_dispute_events.txt` — reads "the appointed Chief Rabbi, or the leader if
