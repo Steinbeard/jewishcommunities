@@ -2015,3 +2015,84 @@ kehillah_debug.114 = {
 		debug_log = "kehillah_debug.114: V20 opening-pillars-equal-baseline check -- END"
 	}
 }
+
+# ---------------------------------------------------------------------
+# kehillah_debug.115 -- READ-ONLY Chief Rabbi state for ANY character.
+#
+# Added 2026-09-26 (heartbeat 7). kehillah_debug.110 reports the same
+# ground but also GRANTS a Beit Midrash and clears a cooldown, so it can
+# only be pointed at the character under test. This one changes nothing,
+# which means it can be fired at another community's leader from the
+# console: `event kehillah_debug.115 9000201` reports Rashi's own state
+# at Troyes without a second boot or a character switch. That is S4(2)'s
+# "Rashi begins a new 1066 game as Troyes's own Chief Rabbi" answered
+# from inside an ordinary Worms game.
+#
+# The load-bearing line is the CONTRADICTION check at the end: all four
+# consumer sites now read kehillah_has_acting_chief_rabbi_trigger, so
+# that trigger disagreeing with the seat and the toggle would break every
+# one of them at once.
+# ---------------------------------------------------------------------
+kehillah_debug.115 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.115: Chief Rabbi state (read-only) -- START"
+
+		save_scope_value_as = { name = kehillah_debug_115_learning value = learning }
+		save_scope_value_as = { name = kehillah_debug_115_threshold value = kehillah_serve_as_rabbi_learning_threshold }
+		save_scope_value_as = { name = kehillah_debug_115_acting_learning value = kehillah_acting_chief_rabbi_learning_value }
+
+		if = {
+			limit = { government_has_flag = government_is_kehillah }
+			debug_log = "kehillah_debug.115: this character IS a Kehillah leader"
+		}
+		else = {
+			debug_log = "kehillah_debug.115: this character is NOT a Kehillah leader -- the rest is reported anyway, but read it with that in mind"
+		}
+
+		if = { limit = { has_trait = kehillah_rabbi_trait } debug_log = "kehillah_debug.115: HAS the rabbi trait" }
+		else = { debug_log = "kehillah_debug.115: does NOT have the rabbi trait" }
+
+		if = {
+			limit = { kehillah_can_serve_as_own_rabbi_trigger = yes }
+			debug_log = "kehillah_debug.115: COULD serve as own rabbi (trait, gender gate and Learning threshold all satisfied)"
+		}
+		else = {
+			debug_log = "kehillah_debug.115: could NOT serve as own rabbi -- compare the learning and threshold figures in the scope dump"
+		}
+
+		if = { limit = { has_character_flag = kehillah_serving_as_own_rabbi } debug_log = "kehillah_debug.115: TOGGLE ON serving as the community's own rabbi" }
+		else = { debug_log = "kehillah_debug.115: TOGGLE OFF not serving as own rabbi" }
+
+		if = { limit = { employs_court_position = chief_rabbi_kehillah_position } debug_log = "kehillah_debug.115: SEAT FILLED an appointed chief rabbi is employed" }
+		else = { debug_log = "kehillah_debug.115: SEAT EMPTY no appointed chief rabbi" }
+
+		if = { limit = { kehillah_has_acting_chief_rabbi_trigger = yes } debug_log = "kehillah_debug.115: ACTING RABBI YES the shared trigger reports an acting chief rabbi" }
+		else = { debug_log = "kehillah_debug.115: ACTING RABBI NO the shared trigger reports none" }
+
+		# The contradiction check. If this fires, all four consumer sites
+		# are wrong together and nothing downstream of them can be trusted.
+		if = {
+			limit = {
+				kehillah_has_acting_chief_rabbi_trigger = yes
+				NOT = { employs_court_position = chief_rabbi_kehillah_position }
+				NOT = { has_character_flag = kehillah_serving_as_own_rabbi }
+			}
+			debug_log = "kehillah_debug.115: CONTRADICTION the shared trigger says yes while both the seat and the toggle say no -- report this, it breaks all four consumer sites at once"
+		}
+		if = {
+			limit = {
+				NOT = { kehillah_has_acting_chief_rabbi_trigger = yes }
+				OR = {
+					employs_court_position = chief_rabbi_kehillah_position
+					has_character_flag = kehillah_serving_as_own_rabbi
+				}
+			}
+			debug_log = "kehillah_debug.115: CONTRADICTION the shared trigger says no while the seat or the toggle says yes -- report this, it breaks all four consumer sites at once"
+		}
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.115: Chief Rabbi state (read-only) -- END"
+	}
+}
