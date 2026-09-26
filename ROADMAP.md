@@ -166,7 +166,10 @@ short research bullets for when Daniel is back.
 - **S11. DANIEL-REVIEW — Friendliness toward Jews and the Crusades chain.** Top priorities for v0.1
   but design-heavy; to be designed with Daniel after Sukkot. Runs may only add short research
   bullets to V22 §5 (e.g. which vanilla 1.19 on_actions/GHW hooks exist for a crusade call and army
-  movement). No spec docs, no builds.
+  movement). No spec docs, no builds. **Research bullets DONE, 2026-09-25 (heartbeat 2)** --
+  V22 §5's new "Vanilla 1.19 hooks available for the Crusade chain" block: no
+  "crusade declared" on_action exists, but `on_army_enter_province` does and vanilla's own
+  `great_holy_war.0060` already uses it to spot a crusading host arriving. Nothing built.
 - **S12. DANIEL-REVIEW — Host charter polish; community watch → landed military force (vassal or
   independent).** Short research bullets at most.
 
