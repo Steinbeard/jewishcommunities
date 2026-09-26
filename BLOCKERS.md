@@ -462,3 +462,126 @@ f0bffb1 Record the 2026-09-26 S0/S2 live run, and correct one tester error
 bb657d5 Heartbeat run-status note (2026-09-25_230002)
 ```
 Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-26_040002.log
+
+## Sukkot heartbeat 2026-09-26 morning -- the `add_gold` saga is over; S2(3) and the Worms start both had real bugs hiding behind "passing" checks
+
+**What this run did.** Worked the Sukkot queue top-down. Closed S0's last open
+item (live-verified), built S4's last unbuilt part, and fixed three real bugs
+found by the live passes -- two of which were sitting underneath checks that
+looked like they were passing. Full account:
+`docs/testing/2026-09-26-s0-restitution-and-s2-tooltip-log.md`.
+
+**Verified live (not just source-fixed):**
+
+- **S0's Bet Din restitution bug is CLOSED.** Root cause: `add_gold` is
+  additive only and cannot go negative by any shape -- rejected at script-load
+  validation for a literal, at runtime for a computed one. The engine documents
+  this itself in its own generated `logs/effects.log`, which also names the
+  right primitive: `pay_short_term_gold = { target = X gold = Y }`, "the scope
+  character pays gold to the target character". Vanilla uses `add_gold = -`
+  **zero** times; this mod already used the correct primitives in six other
+  places and this one effect was the lone hand-rolled exception. Both
+  restitution branches are now one `pay_short_term_gold`. `kehillah_debug.108`
+  returns CLAMP/DEBIT/CREDIT all PASS against the low-gold accused that
+  originally broke it.
+  - *How it was caught:* the previous heartbeat's own `.108` probe used literal
+    negative `add_gold` calls and was rejected at script load before it ever
+    ran -- logging the answer instead of taking the measurement it was written
+    for. That version is preserved in commit `fe8ba31`.
+  - *Still worth doing once:* a genuine Silversmiths' Quarrel on a real Bet Din
+    docket. The probe exercises the primitive under the real clamp, not
+    `kehillah_bet_din.0051`'s option-to-direction wiring.
+- **The previous run's suspected reload artifacts were artifacts.** All five
+  names (`kehillah_endorse_successor_interaction`, the three rabbi-office
+  names, `kehillah_serve_as_rabbi_learning_threshold`) are 0-hit on a fresh
+  boot. Dev-mode hot-reload does not re-read localization or instantiate new
+  database objects.
+
+**Built this run, source-verified and ck3-tiger clean, NOT yet live-tested:**
+
+- **S4(3)**, the last unbuilt part of S4: a rabbi you raised being called away
+  to another community. Fires only when the hire actually takes someone out of
+  another Kehillah's court. The losing community *gains* Greatness (6, against
+  10 for hiring) -- a community whose scholars are wanted elsewhere has the
+  reputation Greatness measures, and the loss is already priced in since the
+  empty seat stops contributing that tick. The two figures differ on purpose so
+  two AI communities can't pump each other by passing one rabbi back and forth.
+- **`kehillah_debug.110`**, the probe S4's live test was said to be blocked on.
+  It also revealed the stated blocker was wrong about Worms: **Worms already
+  has a Beit Midrash at game start**, so S4(1) was testable all along.
+
+**Three real bugs found and fixed, none of which was what was being tested:**
+
+1. **S2 part 3's tooltip rendered, and rendered WRONG.** The narrow check
+   ("does the line appear") passed -- so the earlier "dead code" verdict is now
+   doubly refuted -- but it showed "0 more to Strained" on a community not in
+   Crisis, *and* spammed `error.log` at ~2,000 lines/second while hovered:
+   288 lines to 378,909 across three hovers, ~2.2GB to ~5.1GB of process
+   memory. One cause: the code was written for character scope and hopped back
+   to the title via `primary_title = { var:... }`, but the pillar variables live
+   on the title. Where the hop missed, the guarded custom-loc branches fell
+   through to their `always = yes` fallback (the Strained line) while the
+   *unguarded* script value threw every frame and clamped to 0. Fixed by
+   matching the sibling that always worked in this same widget
+   (`[Title.Custom('KehillahProsperityScore')]`): `type = landed_title`, direct
+   reads, `has_variable` everywhere, all 15 call sites moved off
+   `Title.GetHolder.*`.
+2. **Ten `reverse_add_opinion` errors in `kehillah_task_contracts.txt`**, all
+   `Modifier 'X' with monthly_change cannot have a specified duration`. The
+   four modifiers involved are declared `monthly_change = 0.1, decaying = yes`
+   and the engine refuses a caller-imposed duration; the `years = N` was
+   redundant as well as invalid. Vanilla: 88 uses of `pleased_opinion`, none
+   with `years`. All ten removed.
+3. **The Worms developed start has been a no-op above synagogue tier 1**, and
+   nobody noticed. `add_domicile_building` **does** consult `can_construct`,
+   contrary to what that effect's own header asserted -- so tier 2 failed its
+   Greatness gate and tiers 3-5 cascaded off the missing tier 2. This is
+   circular, not merely misordered: tiers 2-5 need Greatness at 150/400/700/950,
+   and Greatness is computed *from* the buildings. Fixed by lifting Greatness to
+   the Legendary threshold for the duration of the grant and restoring it
+   immediately; day three's V20 snapshot then computes the real opening figure
+   from the complete building set -- which is the quieter half of this bug, since
+   V20's "opening pillars equal the full baseline" promise was being kept
+   against a baseline missing four synagogue tiers.
+
+**Two things worth more than the items they came from, for future sessions:**
+
+- **`ck3-tiger` was clean on every real bug found today.** It does not flag
+  `add_gold = -5` (only the live game's load validation does), and it does not
+  check scope correctness across the `.gui` -> `.yml` -> `custom_loc` ->
+  `script_value` chain. Tiger rules out a class of error; it does not certify a
+  feature. Three sessions of this saga treated clean tiger output as evidence.
+- **A check can pass and still be hiding the real bug.** Two of the three bugs
+  above were found *by* checks that returned PASS on their own stated criteria.
+  Worth briefing testers to report what they saw around the check, not only the
+  verdict -- the error-storm finding came from a tester volunteering a line
+  count nobody asked for.
+
+**What the next heartbeat should pick up, in order:**
+
+1. **Re-hover the three pillar tooltips** (map-view widget, not the
+   community-list interaction) to close out S2(3): confirm the band named is
+   genuinely the one above the current band, and that `error.log` stays quiet.
+2. **Re-boot and confirm the Worms start now gets all five synagogue tiers** --
+   grep `error.log` for `add_domicile_building` (expect 0) and check the
+   Jewish Quarter shows Synagogue level 5.
+3. **S1 has never been live-tested at all** and is the highest unverified item
+   in the queue. Harness ready: `.98` -> `.99` -> resolve the collapse event ->
+   `.100`. A live pass was in flight when this entry was written; if it reported,
+   the result is in the testing log, and if not, S1 is still untested.
+4. **S4(1)/(2)/(3) have never been live-tested.** `.110` shows the state is
+   reachable at Worms today, so this is now unblocked.
+5. **S3 (b) and (c)** still need a console-kill succession observation.
+6. **V20 starting pillars and the V16 section 8 open tests** remain the last
+   uncovered parts of S0.
+
+**Nothing needs Daniel's decision from this run.** Every choice made was the
+small, reversible one, and each is argued in the file it touches. The one
+judgement worth flagging for review rather than action: the Worms start fix
+temporarily writes an inflated Greatness during `on_game_start_after_lobby` and
+restores it in the same effect. It is invisible to any other code (the community
+is not even registered yet) and day three overwrites it regardless, but it is a
+deliberate lie told briefly to the engine to get past a circular gate, and if
+you would rather the synagogue tiers' `can_construct` gates were themselves
+relaxed for the historical start, say so and it can be rewritten that way
+instead.
