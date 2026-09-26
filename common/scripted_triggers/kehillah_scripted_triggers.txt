@@ -1361,3 +1361,71 @@ kehillah_study_torah_has_same_track_reference_trigger = {
 		}
 	}
 }
+
+
+# =====================================================================
+# THE ACTING CHIEF RABBI -- ROADMAP item S4(2), added 2026-09-26
+# (Sukkot heartbeat 3).
+#
+# THE PROBLEM. A ruler cannot hold a court position in their own court,
+# so a Kehillah leader who IS a rabbi -- which the Worms, Mainz and
+# Troyes starting leaders all are, kehillah_rabbi_trait and all -- could
+# not serve as their own community's Chief Rabbi. The seat sat empty and
+# the community lost the Chief Rabbi's whole contribution, which reads
+# as a bug rather than a choice: Rashi of Troyes leading a community
+# with "no rabbi" is absurd on its face.
+#
+# THE SHAPE. An explicit opt-in toggle (kehillah_serve_as_rabbi_decision,
+# common/decisions/kehillah_rabbi_office_decisions.txt) sets a character
+# flag on the leader. Every consumer of the Chief Rabbi seat then asks
+# "who is ACTING as Chief Rabbi" rather than "who holds the position".
+#
+# ROADMAP S4(2) requires this to go through ONE shared
+# trigger/value/effect trio used at every call site, not per-site special
+# cases, precisely so the next consumer added cannot forget the
+# serving-leader case. The trio is:
+#
+#   kehillah_has_acting_chief_rabbi_trigger  -- is the seat filled at all
+#   kehillah_acting_chief_rabbi_learning_value  -- the pillar contribution
+#       (common/script_values/kehillah_script_values.txt)
+#   kehillah_save_acting_chief_rabbi_effect  -- bind scope:kehillah_chief_rabbi
+#       (common/scripted_effects/kehillah_scripted_effects.txt)
+#
+# THE APPOINTED RABBI ALWAYS WINS. Where both could apply, every member
+# of the trio prefers the court-position holder, so there is no window in
+# which a community counts two rabbis -- not even between the moment a
+# rabbi is appointed and the quarterly tick that clears the now-redundant
+# toggle (kehillah_clear_redundant_rabbi_toggle_effect).
+# =====================================================================
+
+# Scope: a character. True if THIS character is a Kehillah leader
+# currently serving as their own community's Chief Rabbi.
+kehillah_serving_as_own_rabbi_trigger = {
+	has_character_flag = kehillah_serving_as_own_rabbi
+
+	# Defensive, and the reason the appointed rabbi always wins: if a
+	# real rabbi has been appointed, the leader is no longer acting in
+	# the role even if the flag has not been cleaned up yet.
+	NOT = { employs_court_position = chief_rabbi_kehillah_position }
+}
+
+# Scope: the Kehillah leader. True if the community has a Chief Rabbi at
+# all, by either route. Replaces bare `employs_court_position =
+# chief_rabbi_kehillah_position` checks at every consumer site.
+kehillah_has_acting_chief_rabbi_trigger = {
+	OR = {
+		employs_court_position = chief_rabbi_kehillah_position
+		kehillah_serving_as_own_rabbi_trigger = yes
+	}
+}
+
+# Scope: the Kehillah leader. Can this leader take up the office
+# themselves? Recognized rabbinic standing plus real learning -- the
+# same gender hook every other Kehillah leadership role uses, so a
+# single future reform unlocks all of them together rather than this one
+# needing its own.
+kehillah_can_serve_as_own_rabbi_trigger = {
+	has_trait = kehillah_rabbi_trait
+	kehillah_leadership_gender_eligible_trigger = yes
+	learning >= kehillah_serve_as_rabbi_learning_threshold
+}

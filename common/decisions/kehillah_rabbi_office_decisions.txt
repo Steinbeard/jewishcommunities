@@ -1,0 +1,126 @@
+﻿# =====================================================================
+# THE RABBI'S OFFICE -- ROADMAP item S4(2), added 2026-09-26 (Sukkot
+# heartbeat 3).
+#
+# "Serve as the Community's Rabbi", and standing down from it.
+#
+# WHY A DECISION AND NOT A COURT POSITION. A ruler cannot hold a court
+# position in their own court -- that is an engine rule, not something
+# this mod can gate around. So a Kehillah leader who is himself a rabbi
+# (Worms's Isaac, Mainz's Isaac ben Judah, Troyes's Rashi -- all three
+# ship with kehillah_rabbi_trait) could not fill his own community's
+# Chief Rabbi seat, and the community lost that whole contribution. A
+# leader like Rashi presiding over a community recorded as having "no
+# rabbi" reads as a bug, not a design.
+#
+# The seat itself is untouched. What changes is that every consumer of it
+# now asks who is ACTING in the role -- see
+# kehillah_has_acting_chief_rabbi_trigger's header (common/
+# scripted_triggers/kehillah_scripted_triggers.txt) for the shared
+# trigger/value/effect trio this is built on and why it is deliberately
+# one place rather than a special case per site.
+#
+# APPOINTING A RABBI ENDS IT. Immediately in effect (the trigger itself
+# checks the seat), and cosmetically on the next quarterly pulse, which
+# is what clears the flag and stops charging the leader for two jobs --
+# see kehillah_clear_redundant_rabbi_toggle_effect for why a pulse and
+# not an on_action.
+# =====================================================================
+
+kehillah_serve_as_rabbi_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_personal_religious.dds"
+	}
+
+	decision_group_type = kehillah
+	sort_order = 85
+	ai_check_interval = 36
+
+	# Shown to any Kehillah leader with rabbinic standing, so the option
+	# is discoverable and its requirements readable, rather than hidden
+	# until it happens to be takeable.
+	is_shown = {
+		government_has_flag = government_is_kehillah
+		has_trait = kehillah_rabbi_trait
+		NOT = { has_character_flag = kehillah_serving_as_own_rabbi }
+	}
+
+	is_valid = {
+		is_adult = yes
+		is_imprisoned = no
+
+		# Someone already holds the seat. Two rabbis is not a thing.
+		custom_description = {
+			text = kehillah_serve_as_rabbi_seat_empty_tt
+			NOT = { employs_court_position = chief_rabbi_kehillah_position }
+		}
+
+		# Recognized standing plus real learning. See
+		# kehillah_serve_as_rabbi_learning_threshold's own comment
+		# (common/script_values/kehillah_script_values.txt) for why 12.
+		custom_description = {
+			text = kehillah_serve_as_rabbi_learned_enough_tt
+			kehillah_can_serve_as_own_rabbi_trigger = yes
+		}
+	}
+
+	effect = {
+		add_character_flag = kehillah_serving_as_own_rabbi
+
+		# No duration: the arrangement lasts until the leader stands
+		# down, a rabbi is appointed, or the leader dies -- all three of
+		# which remove it explicitly (kehillah_end_serving_as_own_rabbi_
+		# effect; a character modifier dies with its character).
+		add_character_modifier = kehillah_serving_as_own_rabbi_modifier
+
+		add_piety = medium_piety_gain
+
+		custom_tooltip = kehillah_serve_as_rabbi_tt
+	}
+
+	# AI communities take it up readily -- an AI leader who qualifies has
+	# no reason to leave the seat empty, and this is the cheapest route to
+	# the AI parity V22 section 6.6 asks for. The frequency is low because
+	# the state it produces is permanent.
+	ai_potential = {
+		government_has_flag = government_is_kehillah
+		has_trait = kehillah_rabbi_trait
+	}
+
+	ai_will_do = {
+		base = 100
+	}
+}
+
+
+kehillah_stand_down_as_rabbi_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_personal_religious.dds"
+	}
+
+	decision_group_type = kehillah
+	sort_order = 84
+	ai_check_interval = 120
+
+	is_shown = {
+		government_has_flag = government_is_kehillah
+		has_character_flag = kehillah_serving_as_own_rabbi
+	}
+
+	is_valid = {
+		is_adult = yes
+	}
+
+	effect = {
+		kehillah_end_serving_as_own_rabbi_effect = yes
+		custom_tooltip = kehillah_stand_down_as_rabbi_tt
+	}
+
+	# The AI never gives the office up on its own -- there is nothing to
+	# gain by it, and the one situation that genuinely should end the
+	# arrangement (a real rabbi being appointed) is handled by
+	# kehillah_clear_redundant_rabbi_toggle_effect instead.
+	ai_potential = {
+		always = no
+	}
+}

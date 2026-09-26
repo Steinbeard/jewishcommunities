@@ -779,6 +779,27 @@ kehillah_setup_troyes_start_effect = {
 		kehillah_seed_community_effect = yes
 		kehillah_record_quarter_effect = yes
 		kehillah_update_leader_flavor_effect = yes
+
+		# RASHI BEGINS AS TROYES'S OWN CHIEF RABBI (Daniel, 2026-09-25;
+		# ROADMAP S4(2), built 2026-09-26). He holds kehillah_rabbi_trait
+		# and, from history/characters/troyes_1066.txt, an explicit
+		# learning = 12 set for exactly this purpose -- so he clears
+		# kehillah_serve_as_rabbi_learning_threshold deterministically
+		# rather than by a lucky roll.
+		#
+		# Set through the trigger rather than assumed: if a future edit
+		# lowers his Learning or drops the trait, Troyes starts with an
+		# empty seat and the "Seek a Chief Rabbi" path instead, which is a
+		# sane outcome. Silently flagging him regardless would produce a
+		# leader "serving" in an office he no longer qualifies for.
+		if = {
+			limit = {
+				kehillah_can_serve_as_own_rabbi_trigger = yes
+				NOT = { employs_court_position = chief_rabbi_kehillah_position }
+			}
+			add_character_flag = kehillah_serving_as_own_rabbi
+			add_character_modifier = kehillah_serving_as_own_rabbi_modifier
+		}
 	}
 }
 
@@ -2185,8 +2206,103 @@ kehillah_dispute_pick_parties_effect = {
 		}
 		save_scope_as = kehillah_party_b
 	}
-	root.court_position:chief_rabbi_kehillah_position ?= {
+	# S4(2), 2026-09-26: goes through the shared resolver so a leader
+	# serving as their own community's rabbi is bound here too. See
+	# kehillah_has_acting_chief_rabbi_trigger's header (common/
+	# scripted_triggers/kehillah_scripted_triggers.txt).
+	kehillah_save_acting_chief_rabbi_effect = yes
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_save_acting_chief_rabbi_effect
+# Scope: the Kehillah leader.
+#
+# ROADMAP S4(2), added 2026-09-26. Binds scope:kehillah_chief_rabbi to
+# whoever is ACTUALLY acting as the community's Chief Rabbi -- the
+# appointed court-position holder, or the leader themselves if they have
+# taken up the office (kehillah_serve_as_rabbi_decision).
+#
+# The appointed rabbi always wins where both could apply, matching
+# kehillah_acting_chief_rabbi_learning_value and
+# kehillah_serving_as_own_rabbi_trigger. Every consumer that needs the
+# rabbi as a SCOPE calls this; every consumer that only needs "is the
+# seat filled" calls kehillah_has_acting_chief_rabbi_trigger. Between
+# them there is no site left that reads the court position directly, which
+# is the point -- see that trigger's header.
+#
+# Leaves the scope UNSET when there is no rabbi at all, which is why
+# every reader guards with ?=.
+# ---------------------------------------------------------------------
+
+kehillah_save_acting_chief_rabbi_effect = {
+	if = {
+		limit = { employs_court_position = chief_rabbi_kehillah_position }
+		court_position:chief_rabbi_kehillah_position = {
+			save_scope_as = kehillah_chief_rabbi
+		}
+	}
+	else_if = {
+		limit = { kehillah_serving_as_own_rabbi_trigger = yes }
 		save_scope_as = kehillah_chief_rabbi
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_clear_redundant_rabbi_toggle_effect
+# Scope: the Kehillah leader. Called from the quarterly pulse.
+#
+# ROADMAP S4(2), added 2026-09-26. "Appointing a rabbi ends the toggle."
+#
+# WHY THE QUARTERLY PULSE AND NOT AN on_action. There is no "a court
+# position was filled" on_action in 1.19 -- checked: common/on_action/
+# court_position_on_action.txt contains only scripted per-position task
+# effects (caravan_master_prepare_travels_on_action and friends), no
+# appointment hook, and nothing anywhere else in common/on_action/
+# references court positions being granted. So this is swept up on the
+# pulse instead.
+#
+# The lag is cosmetic ONLY, by construction: kehillah_serving_as_own_
+# rabbi_trigger itself returns false the instant a real rabbi is
+# appointed, so the leader stops acting in the role immediately and
+# nothing is ever double-counted. What this effect cleans up is the stale
+# flag and, more importantly, the two-jobs modifier the leader should no
+# longer be paying for.
+# ---------------------------------------------------------------------
+
+kehillah_clear_redundant_rabbi_toggle_effect = {
+	if = {
+		limit = {
+			has_character_flag = kehillah_serving_as_own_rabbi
+			employs_court_position = chief_rabbi_kehillah_position
+		}
+		kehillah_end_serving_as_own_rabbi_effect = yes
+
+		send_interface_message = {
+			type = msg_kehillah_endorsement
+			title = kehillah_rabbi_office_handed_over_msg_title
+			desc = kehillah_rabbi_office_handed_over_msg_desc
+			left_icon = root
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_end_serving_as_own_rabbi_effect
+# Scope: the Kehillah leader. ROADMAP S4(2), added 2026-09-26.
+#
+# The single teardown for the toggle, so the decision that stands down,
+# the quarterly cleanup, and anything added later cannot disagree about
+# what "no longer serving" involves.
+# ---------------------------------------------------------------------
+
+kehillah_end_serving_as_own_rabbi_effect = {
+	remove_character_flag = kehillah_serving_as_own_rabbi
+	if = {
+		limit = { has_character_modifier = kehillah_serving_as_own_rabbi_modifier }
+		remove_character_modifier = kehillah_serving_as_own_rabbi_modifier
 	}
 }
 
