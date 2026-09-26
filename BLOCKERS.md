@@ -585,3 +585,17 @@ deliberate lie told briefly to the engine to get past a circular gate, and if
 you would rather the synagogue tiers' `can_construct` gates were themselves
 relaxed for the historical start, say so and it can be rewritten that way
 instead.
+
+## Heartbeat run status -- 2026-09-26_090002 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+e79f80f Log the 17 GUI-layout warning sites precisely, without fixing them
+067cfc9 Shim guide: what ck3-tiger misses, and two tester-briefing lessons
+d0b1af9 ROADMAP: correct S0 stale claim that V16 section 8 is a mop-up
+d945d6a Record that the unguarded-pillar-read audit came back clean
+5b39181 ROADMAP: warn that the V20 starting-pillars check must follow the Worms-start fix
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-26_090002.log
