@@ -2441,6 +2441,23 @@ kehillah_generate_rabbi_candidate_effect = {
 # ---------------------------------------------------------------------
 
 kehillah_install_chief_rabbi_effect = {
+	# S4(3), added 2026-09-26. Note WHERE they are coming from BEFORE
+	# add_courtier moves them, because afterwards the old liege link is
+	# gone and there is no way back to it. Only a rabbi leaving another
+	# KEHILLAH matters here: poaching from a bishop's court or taking on
+	# a landless scholar costs no other community anything, and should
+	# not fire a "we have lost our teacher" event at somebody.
+	$RABBI$ = {
+		if = {
+			limit = {
+				exists = liege
+				NOT = { liege = root }
+				liege = { government_has_flag = government_is_kehillah }
+			}
+			liege = { save_scope_as = kehillah_rabbi_former_liege }
+		}
+	}
+
 	$RABBI$ = {
 		if = {
 			limit = { NOT = { liege ?= root } }
@@ -2472,6 +2489,29 @@ kehillah_install_chief_rabbi_effect = {
 		change_variable = {
 			name = kehillah_var_greatness
 			add = kehillah_rabbi_hired_greatness_gain
+		}
+	}
+
+	# S4(3): "your student has been called to X". The community that
+	# RAISED this rabbi hears about it, and gains Greatness for it --
+	# S4(3)'s own framing, and the right one: a community whose scholars
+	# are wanted elsewhere is a community with a reputation, even though
+	# it has just lost a person. The loss is real and already priced in
+	# (the seat is empty now, so the per-quarter contribution through
+	# kehillah_acting_chief_rabbi_learning_value stops); this is the
+	# other half of the ledger, not a free gift.
+	#
+	# Fired to the FORMER liege, so root of .0002 is the community that
+	# lost the rabbi, not the one that hired them.
+	if = {
+		limit = { exists = scope:kehillah_rabbi_former_liege }
+		$RABBI$ = { save_scope_as = kehillah_rabbi_departed }
+		save_scope_as = kehillah_rabbi_new_patron
+		scope:kehillah_rabbi_former_liege = {
+			trigger_event = {
+				id = kehillah_rabbi_search.0002
+				days = { 3 10 }
+			}
 		}
 	}
 }
