@@ -291,8 +291,31 @@ values and needed nothing added.
   seeding) — pre-existing, flagged in BLOCKERS.md since 2026-09-23.
 - ~50 `Event kehillah_debug.N is orphaned` lines — expected and correct;
   these are console-only by design.
-- Eight `gui/kehillah_community_map_view.gui` "Widget cannot have a
-  position in a layout" lines at load — cosmetic, pre-existing.
+- **`gui/kehillah_community_map_view.gui` "Widget cannot have a position in
+  a layout" — 8 lines at load, but 323 once the roster panel is opened.**
+  Cosmetic and pre-existing, and NOT the same thing as §4's storm (it is
+  bounded per panel-open, not per frame), but it is the same *shape* of
+  problem and it is noisy enough to bury a real error in a live pass.
+  Diagnosed but deliberately **not fixed this run** — it is a layout
+  change and needs a screenshot to confirm nothing shifted, and the panel
+  was in use by a test at the time. It is one coherent class: a child of a
+  layout container (`vbox`/`hbox`) declaring its own `parentanchor` or
+  `position`, which the engine ignores and complains about. Exactly 17
+  sites, so a future session can do this in one pass and one screenshot:
+
+  | line | widget |
+  |---|---|
+  | 555, 561, 581, 586, 606, 611, 631, 636 | `text_single` (the three pillar columns' number + label pairs) |
+  | 747 | `widget` |
+  | 767 | `vbox` |
+  | 803, 813, 820, 827 | `text_label_center` (the roster row's standing + pillar cells) |
+  | 846, 871, 903 | `button_round` |
+
+  Note before changing them: vanilla *does* use `parentanchor` inside a
+  `vbox` in a number of places and the engine complains about those too, so
+  this is a warning about a real no-op rather than a mod-specific mistake.
+  The fix is to delete the ignored anchor, not to restructure the layout —
+  but confirm the columns still read centred afterwards.
 - Missing coat-of-arms for the mapcolor/region titles, missing
   `bm_1066_kehillah_founder_test` bookmark art, missing
   `trait_level_tracks/{hashkafa,talmudics,parshanut}.dds` — cosmetic,
