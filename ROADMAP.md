@@ -83,9 +83,24 @@ short research bullets for when Daniel is back.
     so tier 2 failed its Greatness gate (150) and tiers 3–5 cascaded off the missing tier 2. V20's
     day-three snapshot was therefore keeping its "opening pillars equal the full baseline" promise
     faithfully against a baseline missing four synagogue tiers. Fixed by lifting Greatness for the
-    duration of the grant and restoring it immediately (commit `4267d36`); the fix itself is
-    **not yet live-verified** — that needs a fresh boot showing zero `add_domicile_building`
-    errors and a Synagogue at level 5 in the Jewish Quarter.
+    duration of the grant and restoring it immediately (commit `4267d36`).
+    **VERIFIED LIVE 2026-09-26 (heartbeat 5) — PASS.**
+    [log](docs/testing/2026-09-26-heartbeat5-live-test-log.md) §1.
+    `kehillah_debug.111` on a fresh Worms start reports `SYNAGOGUE 5` plus all eight other
+    buildings `PRESENT`, with **zero** `add_domicile_building` lines in `error.log` against a
+    pre-fix symptom of four. Note recorded there: zero errors alone was *not* accepted as the
+    pass, since a boot into any other community shows zero too — the positive `SYNAGOGUE 5`
+    reading is what closes it.
+    **This check also found a separate, previously unknown bug, now fixed (commit `9236d57`):**
+    every new 1066 game opened with a spurious "The Community Frays" collapse warning on day one,
+    because the first quarterly pulse (1066.9.16) consumed the pillars two days before day three
+    wrote them (1066.9.18) — reading all three as 0.00, seeding all three bands as Crisis, and
+    burning the five-year warning cooldown so a *genuine* early crisis would have gone unwarned.
+    Fixed by guarding the consumers on a new `kehillah_pillars_are_live_trigger` and having the
+    day-three snapshot seed the bands itself. See the log's §1a for why initializing earlier was
+    rejected (this codebase already rejected it, for a reason that still holds) and why the
+    obvious `kehillah_start_pillars_initialized_from_baseline` marker is a trap. Fix verification
+    is in flight as GROUP 1 of the S1 boot.
     **"The V16 §8 open tests" is under-specified as an S0 bullet — corrected 2026-09-26.** Read
     against the spec, V16 §8 is **nine** separate live tests, not a mop-up: several need multiple
     boots (host succession *and* a county changing realm by conquest; a fresh Christian *and*
@@ -128,7 +143,7 @@ short research bullets for when Daniel is back.
   swaps the modifier on the leader's character sheet, and the tooltip names the next band —
   downscaled screenshots in the test log. ck3-tiger clean. No change to how pillars are
   *calculated* in this item; that's S10's job if the soak test finds problems.
-  **PARTIAL — parts 1, 2 and 4 VERIFIED LIVE 2026-09-26**
+  **DONE, 2026-09-26 (all four parts live-verified). Parts 1, 2 and 4 verified 2026-09-26**
   ([log](docs/testing/2026-09-26-s0-s2-live-test-log.md) §3): pushing all three pillars up a band
   and then down a band produced the notice both ways (a real "The Community's Prosperity Has
   Shifted" banner), and `kehillah_debug.102` confirms exactly one band modifier per pillar
@@ -139,7 +154,19 @@ short research bullets for when Daniel is back.
   uses for the map-view widget's pillar rows. A 2026-09-26 tester reported it as dead code after
   hovering the *community-list interaction's* tooltip instead — the wrong surface, corrected in
   that log's §4.
-  **Part 3 UPDATE, 2026-09-26 (heartbeat 4)** —
+  **S2 IS NOW COMPLETE — part 3 VERIFIED LIVE 2026-09-26 (heartbeat 5)**,
+  [log](docs/testing/2026-09-26-heartbeat5-live-test-log.md) §2. All three pillar tooltips name
+  the correct next band with the exact right number, measured against `kehillah_debug.111`'s
+  independently-computed figures rather than against a tester's expectation: Prosperity 255
+  (Strained) → "145 more to Healthy", Stability 369 (Strained) → "31 more to Healthy", Greatness
+  459 (Healthy) → "241 more to Flourishing". `error.log` growth **+0 lines** on each of the three
+  hovers, against the old ~2,000 lines/second, and process working set *fell* across the hovers.
+  Worth keeping in mind for future checks of this kind: as originally briefed this test would have
+  been taken at game start, where all three pillars are 0 and the tooltip renders its
+  `always = yes` fallback — the very branch that produced the original wrong text. It was
+  redirected mid-run to advance past day three first, and that redirection is what also turned up
+  the day-one collapse-warning bug recorded under S0.
+  **Part 3 history, 2026-09-26 (heartbeat 4)** —
   [log](docs/testing/2026-09-26-s0-restitution-and-s2-tooltip-log.md) §4. The correct surface was
   finally hovered. The line **does render** (so it was never dead code), but it rendered *wrong*
   — "0 more to Strained" on a community not in Crisis — and spammed `error.log` at roughly
