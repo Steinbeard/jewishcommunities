@@ -502,11 +502,22 @@ kehillah_setup_worms_start_effect = {
 #     and a maxed synagogue" is what was asked for, and the reading that
 #     singles out the Synagogue as the maxed one. To max a family, add
 #     its tier-2/3 lines in the same shape as the Synagogue's.
-#   - No pillar values are inflated to match. The band gates on tier 2+
-#     of every family (can_construct, see the buildings file) are checks
-#     on the PLAYER's own construction, and add_domicile_building does
-#     not consult them -- so a maxed Synagogue here does not imply the
-#     Legendary Greatness band its tier 5 would normally demand. The
+#   - No pillar values are inflated to match -- **WRONG, CORRECTED
+#     2026-09-26, and it made this whole effect a no-op above synagogue
+#     tier 1.** This said the band gates on tier 2+ (can_construct) "are
+#     checks on the PLAYER's own construction, and add_domicile_building
+#     does not consult them." add_domicile_building DOES consult them,
+#     and live error.log said so: "Domicile owner failed to meet
+#     triggered requirements: 'kehillah_synagogue_02'". Greatness is now
+#     lifted for the duration of the grant and restored immediately
+#     after; see the block at the top of the effect body for the full
+#     account and for why the dependency is circular rather than merely
+#     misordered. The sentence is left here, struck, because a future
+#     reader is more likely to meet the wrong claim than the fix, and
+#     this is the paragraph they will read. So: a maxed Synagogue here
+#     does NOT imply the community has earned the Legendary Greatness
+#     band its tier 5 would normally demand -- that part was always
+#     right, and is why the lift is temporary. The
 #     pillars will climb on their own, because the pillar baselines in
 #     common/script_values/kehillah_script_values.txt are computed FROM
 #     the buildings; they just start low.
@@ -514,6 +525,62 @@ kehillah_setup_worms_start_effect = {
 # ---------------------------------------------------------------------
 
 kehillah_worms_developed_start_effect = {
+	# =================================================================
+	# LIFT THE GREATNESS GATE FOR THE DURATION OF THE GRANT, then put it
+	# straight back. ADDED 2026-09-26, fixing a real and previously
+	# silent failure of this whole effect.
+	#
+	# WHAT WAS ACTUALLY HAPPENING: Worms was getting synagogue tier 1 and
+	# nothing above it. Live error.log, at on_game_start_after_lobby:
+	#
+	#   add_domicile_building effect [ Domicile owner failed to meet
+	#     triggered requirements: 'kehillah_synagogue_02' ]
+	#   add_domicile_building effect [ Cannot construct an upgrade when
+	#     previous building has not been built: 'kehillah_synagogue_03' ]
+	#   ... and the same for 04 and 05, cascading off the missing 02.
+	#
+	# THE HEADER ABOVE WAS WRONG about this, and the claim is corrected
+	# here rather than quietly left standing. It asserted that "the band
+	# gates on tier 2+ of every family (can_construct) are checks on the
+	# PLAYER's own construction, and add_domicile_building does not
+	# consult them." It does consult them. That is exactly what
+	# "failed to meet triggered requirements" is reporting.
+	#
+	# WHY IT IS CIRCULAR, so the next person does not just reorder the
+	# calls and think it fixed. kehillah_synagogue_02..05 require
+	# Greatness at the Strained / Healthy / Flourishing / Legendary
+	# thresholds (150 / 400 / 700 / 950). Greatness is computed FROM the
+	# buildings -- kehillah_greatness_baseline_value reads the synagogue
+	# tier, among others -- so the buildings cannot wait for the pillar
+	# and the pillar cannot precede the buildings. Moving
+	# kehillah_seed_community_effect earlier does not help: it would seed
+	# Greatness from a community that has no buildings yet, which is far
+	# below 150.
+	#
+	# SO: set Greatness to the Legendary threshold, grant the buildings,
+	# and set it back to 0. Nothing is left inflated, and no other code
+	# observes the window -- this runs inside on_game_start_after_lobby,
+	# before the community is even registered.
+	#
+	# THE HONEST VALUE ARRIVES ON DAY THREE, unchanged by any of this:
+	# kehillah_settlement_conditions.0008 calls
+	# kehillah_initialize_historical_pillars_from_baseline_effect over
+	# every registered community, which SETS all three pillars from their
+	# computed baselines (v20-starting-pillars-equal-baseline.md). That
+	# snapshot now sees the complete building set it was always meant to,
+	# which is the second, quieter half of this bug: V20's "opening
+	# pillars equal the full baseline" promise was being kept against a
+	# baseline missing four synagogue tiers.
+	#
+	# Restoring to 0 rather than to the real baseline is deliberate --
+	# computing it here would duplicate V20's job three days early and
+	# give two places an opinion about the same number.
+	# =================================================================
+	primary_title ?= {
+		kehillah_init_pillars_effect = yes
+		set_variable = { name = kehillah_var_greatness value = kehillah_band_legendary_threshold }
+	}
+
 	domicile = {
 		# --- MAIN SLOT: the Synagogue, tier 1 through 5 in order. ---
 		if = {
@@ -578,6 +645,15 @@ kehillah_worms_developed_start_effect = {
 			limit = { NOT = { has_domicile_building_or_higher = kehillah_workshops_01 } }
 			add_domicile_building = kehillah_workshops_01
 		}
+	}
+
+	# Put the gate back. See this effect's own opening comment: the
+	# inflated Greatness exists only to get past kehillah_synagogue_02..05's
+	# can_construct checks, and day three's V20 snapshot is what sets the
+	# real opening figure -- now from the complete building set.
+	primary_title ?= {
+		set_variable = { name = kehillah_var_greatness value = 0 }
+		kehillah_update_standing_effect = yes
 	}
 }
 
