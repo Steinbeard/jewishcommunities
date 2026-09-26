@@ -1415,155 +1415,144 @@ kehillah_debug.106 = {
 	}
 }
 
-
 # =====================================================================
-# .108 / .109 -- THE add_gold CLAMP, MEASUREMENT ROUND TWO (added
-# 2026-09-26, after .103's result).
+# .108 -- THE RESTITUTION TRANSFER, VERIFYING THE 2026-09-26 FIX.
 #
-# WHAT .103 SETTLED, live: the probe characters hold gold exactly as
-# expected (0.00 -> 0.00 -> 3.00), and the SELF-REFERENTIAL shape was
-# refused identically to the SNAPSHOT shape. So neither of the two
-# hypotheses .103 was written to choose between is correct. The engine
-# refused `add_gold = -3` against a character script could read as holding
-# exactly 3.00.
+# HISTORY, so this is not re-litigated a fourth time. The Silversmiths'
+# Quarrel resolution moved restitution from the accused to the accuser
+# with a hand-rolled pair of add_gold calls, one of them negative. That
+# threw a real error in the 2026-09-24 live docket. Three probes and two
+# fixes chased it:
+#   .97  reproduced the error with the "fixed" clamp still in place.
+#   .103 ruled out both standing explanations -- the probe characters
+#        held gold exactly as script read them, and the self-referential
+#        shape failed identically to the snapshot shape.
+#   .108 (the previous, now-replaced version) was written to test a
+#        same-tick-commitment hypothesis, and answered the question by
+#        accident instead: its own three LITERAL negative add_gold calls
+#        were rejected at SCRIPT LOAD, before it ever ran. See commit
+#        fe8ba31 for that version and the log evidence.
 #
-# THE THIRD HYPOTHESIS, and the reason it matters more than the first two:
-# in BOTH .97 and .103 the gold being deducted had been GRANTED IN THE
-# SAME TICK, a few effects earlier. If the engine's affordability check
-# for a negative add_gold consults the character's COMMITTED treasury
-# rather than the value script can already read, then every refusal so far
-# is an artifact of the probe's own setup -- and
-# kehillah_bet_din_silversmiths_resolution_effect, which operates on real
-# litigants holding real gold from previous ticks, may never have been
-# broken at all. That would make .97/.103 misleading probes to retire
-# rather than a shipped bug to fix, and it is the cheapest possible
-# explanation for a result that otherwise looks like the engine refusing
-# arithmetic.
+# THE ACTUAL ANSWER, from the engine's own generated logs/effects.log:
+# add_gold "adds gold to a character" and is additive only. It refuses a
+# literal negative at load validation and a computed negative at runtime.
+# Gold is removed with remove_short_term_gold, and TRANSFERRED with
+# pay_short_term_gold = { target = X gold = Y }, which effects.log
+# describes as "the scope character pays gold to the target character."
+# Vanilla uses `add_gold = -` exactly zero times.
 #
-# THIS MEASURES THREE THINGS, and deliberately nothing else:
-#   C1  same tick, deduct STRICTLY LESS than the balance (5 of 20).
-#       If this is refused too, amount is irrelevant and it is the tick.
-#   C2  same tick, deduct the WHOLE balance (20 of 20). The .103 case,
-#       repeated at a larger figure so "3" being small is ruled out.
-#   C3  gold granted now, deducted A DAY LATER by .109. If C1/C2 fail and
-#       C3 succeeds, the answer is same-tick commitment, full stop.
+# WHAT THIS PROBE NOW DOES: runs the shipped effect's exact new shape --
+# one pay_short_term_gold under the same min/max clamp -- on two probe
+# characters, in the one configuration the original bug needed, a LOW-GOLD
+# accused who cannot cover the full medium_gold_value award. Both purses
+# are reported before and after. PASS means the accuser gained precisely
+# what the accused lost, the accused did not go negative, and error.log
+# gains no add_gold or pay_short_term_gold line at all.
 #
-# DO NOT FIX ANYTHING FROM THIS EVENT. Read the three results, then decide
-# -- the shipped effect is either fine (retire .97/.103) or needs a real
-# transfer primitive, and those are opposite conclusions.
+# This is a shape test, not a substitute for a real docket: it exercises
+# the transfer primitive under the clamp, not kehillah_bet_din.0051's
+# option-to-direction wiring. A genuine Silversmiths' case is still the
+# only end-to-end confirmation.
 # =====================================================================
 
 kehillah_debug.108 = {
 	type = character_event
 	hidden = yes
 	immediate = {
-		debug_log = "kehillah_debug.108: add_gold same-tick measurement -- START"
+		debug_log = "kehillah_debug.108: restitution transfer (pay_short_term_gold) -- START"
 
-		# --- C1: same tick, strictly less than the balance. ---
 		create_character = {
 			culture = root.culture
 			faith = root.faith
 			age = 40
 			gender_female_chance = 0
 			location = root.location
-			save_scope_as = kehillah_debug_c1
+			save_scope_as = kehillah_debug_accuser
 		}
-		scope:kehillah_debug_c1 = {
-			add_gold = { value = gold multiply = -1 }
-			add_gold = 20
-			save_scope_value_as = { name = kehillah_debug_c1_before value = gold }
-			add_gold = -5
-			save_scope_value_as = { name = kehillah_debug_c1_after value = gold }
-		}
-		debug_log = "kehillah_debug.108: C1 same tick, granted 20 then deducted 5 -- before/after below"
-		debug_log_scopes = yes
-		scope:kehillah_debug_c1 = {
-			if = {
-				limit = { gold < 16 }
-				debug_log = "kehillah_debug.108: C1 PASS a partial same-tick deduction WENT THROUGH -- so the amount matters, not the tick"
-			}
-			else = {
-				debug_log = "kehillah_debug.108: C1 FAIL even a partial same-tick deduction was refused -- points at same-tick commitment, not the amount"
-			}
-		}
-
-		# --- C2: same tick, the whole balance. ---
 		create_character = {
 			culture = root.culture
 			faith = root.faith
 			age = 40
 			gender_female_chance = 0
 			location = root.location
-			save_scope_as = kehillah_debug_c2
+			save_scope_as = kehillah_debug_accused
 		}
-		scope:kehillah_debug_c2 = {
-			add_gold = { value = gold multiply = -1 }
-			add_gold = 20
-			add_gold = -20
-			save_scope_value_as = { name = kehillah_debug_c2_after value = gold }
+
+		# Normalise both purses, then give the accused DELIBERATELY TOO
+		# LITTLE -- 7 gold against an award capped at medium_gold_value
+		# (50 in vanilla's own script_values). This is the exact
+		# configuration that errored in the 2026-09-24 live docket.
+		scope:kehillah_debug_accuser = { remove_short_term_gold = gold }
+		scope:kehillah_debug_accused = {
+			remove_short_term_gold = gold
+			add_gold = 7
 		}
-		debug_log = "kehillah_debug.108: C2 same tick, granted 20 then deducted all 20 -- after below"
+
+		scope:kehillah_debug_accuser = {
+			save_scope_value_as = { name = kehillah_debug_accuser_before value = gold }
+		}
+		scope:kehillah_debug_accused = {
+			save_scope_value_as = { name = kehillah_debug_accused_before value = gold }
+
+			# The shipped effect's exact shape, clamp and all.
+			save_scope_value_as = {
+				name = kehillah_debug_restitution
+				value = {
+					value = gold
+					min = 0
+					max = medium_gold_value
+				}
+			}
+			pay_short_term_gold = {
+				target = scope:kehillah_debug_accuser
+				gold = scope:kehillah_debug_restitution
+			}
+			save_scope_value_as = { name = kehillah_debug_accused_after value = gold }
+		}
+		scope:kehillah_debug_accuser = {
+			save_scope_value_as = { name = kehillah_debug_accuser_after value = gold }
+		}
+
+		debug_log = "kehillah_debug.108: accused started with 7, award capped at the accused's purse. Scope values below: *_before, *_after, and kehillah_debug_restitution."
 		debug_log_scopes = yes
-		scope:kehillah_debug_c2 = {
+
+		# The clamp should have set restitution to 7, not medium_gold_value.
+		if = {
+			limit = { scope:kehillah_debug_restitution = 7 }
+			debug_log = "kehillah_debug.108: CLAMP PASS the award was capped to the accused's actual 7 gold, not medium_gold_value"
+		}
+		else = {
+			debug_log = "kehillah_debug.108: CLAMP FAIL the award did not come out at the accused's purse of 7 -- read kehillah_debug_restitution above"
+		}
+
+		# The accused should be at 0, having paid all 7.
+		scope:kehillah_debug_accused = {
 			if = {
-				limit = { gold < 1 }
-				debug_log = "kehillah_debug.108: C2 PASS a full same-tick deduction went through"
+				limit = {
+					gold < 1
+					gold >= 0
+				}
+				debug_log = "kehillah_debug.108: DEBIT PASS the accused paid the full 7 and sits at 0 without going negative"
 			}
 			else = {
-				debug_log = "kehillah_debug.108: C2 FAIL a full same-tick deduction was refused -- the .103 result, reproduced at 20 rather than 3"
+				debug_log = "kehillah_debug.108: DEBIT FAIL the accused is not at 0 after paying -- read kehillah_debug_accused_after above"
 			}
 		}
 
-		# --- C3: granted now, deducted a day later. ---
-		create_character = {
-			culture = root.culture
-			faith = root.faith
-			age = 40
-			gender_female_chance = 0
-			location = root.location
-			save_scope_as = kehillah_debug_c3
-		}
-		scope:kehillah_debug_c3 = {
-			add_gold = { value = gold multiply = -1 }
-			add_gold = 20
-		}
-		debug_log = "kehillah_debug.108: C3 granted 20; .109 will deduct it a day from now. Advance a day and read the .109 lines."
-		trigger_event = {
-			id = kehillah_debug.109
-			days = 1
-		}
-
-		debug_log = "kehillah_debug.108: add_gold same-tick measurement -- END of the same-tick half"
-	}
-}
-
-# The deferred half of .108. Fires one day later, so the 20 gold granted to
-# scope:kehillah_debug_c3 has been committed for a full tick before anything
-# tries to take it back.
-kehillah_debug.109 = {
-	type = character_event
-	hidden = yes
-
-	trigger = {
-		exists = scope:kehillah_debug_c3
-	}
-
-	immediate = {
-		scope:kehillah_debug_c3 = {
-			save_scope_value_as = { name = kehillah_debug_c3_before value = gold }
-			add_gold = -20
-			save_scope_value_as = { name = kehillah_debug_c3_after value = gold }
-		}
-		debug_log = "kehillah_debug.109: C3 deducted 20 a DAY after it was granted -- before/after below"
-		debug_log_scopes = yes
-		scope:kehillah_debug_c3 = {
+		# And the accuser should hold exactly what the accused lost.
+		scope:kehillah_debug_accuser = {
 			if = {
-				limit = { gold < 1 }
-				debug_log = "kehillah_debug.109: C3 PASS a full deduction a day later WENT THROUGH -- the answer is same-tick commitment; .97/.103 are misleading probes and the shipped Bet Din effect is probably fine"
+				limit = {
+					gold >= 7
+					gold < 8
+				}
+				debug_log = "kehillah_debug.108: CREDIT PASS the accuser gained exactly the 7 the accused paid -- the transfer is zero-sum"
 			}
 			else = {
-				debug_log = "kehillah_debug.109: C3 FAIL refused even a day later -- same-tick commitment is NOT the explanation either. Report, do not patch."
+				debug_log = "kehillah_debug.108: CREDIT FAIL the accuser did not gain exactly 7 -- read kehillah_debug_accuser_after above"
 			}
 		}
+
+		debug_log = "kehillah_debug.108: restitution transfer (pay_short_term_gold) -- END"
 	}
 }

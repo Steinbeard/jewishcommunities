@@ -703,12 +703,38 @@ kehillah_bet_din_amulet_resolution_effect = {
 # see that event's own header for why each draws on a different stat.
 #
 # DIRECTIONS 1 AND 2 BOTH ORDER RESTITUTION -- up to medium_gold_value
-# moves from the accused to the accuser either way. This is a straight
-# character-to-character transfer (no dedicated "transfer_gold" effect
-# exists in the installed game), capped at the accused's actual purse.
-# The cap is load-bearing: add_gold rejects a negative deduction greater
-# than the character's gold, which produced an error in the 2026-09-24
-# live docket pass and previously left the intended transfer ambiguous.
+# moves from the accused to the accuser either way, via ONE call to
+# pay_short_term_gold, capped at the accused's actual purse.
+#
+# CORRECTED 2026-09-26. This effect was originally written as a pair of
+# add_gold calls (a negative one on the accused, a positive one on the
+# accuser) under the belief, stated in this comment, that "no dedicated
+# transfer_gold effect exists in the installed game." That premise was
+# simply wrong, and it cost three debug probes (kehillah_debug.97, .103,
+# .108) and two failed fixes to overturn. The engine documents the right
+# primitive itself, in its own generated logs/effects.log:
+#
+#   add_gold                - "adds gold to a character"
+#   remove_short_term_gold  - "removes gold from a character"
+#   pay_short_term_gold     - "the scope character pays gold to the
+#                              target character, { target = X gold = Y }"
+#
+# add_gold is ADDITIVE ONLY and cannot go negative by any shape: CK3
+# 1.19 rejects a literal negative at script-load validation ("add_gold
+# effect [ Negative value in ... ]") and a computed negative at runtime
+# ("Trying to add add_gold with negative value to ..."). Vanilla agrees
+# emphatically -- zero uses of `add_gold = -` anywhere in common/ or
+# events/, against 849 remove_short_term_gold and 925
+# pay_short_term_gold. This mod already used the correct primitives in
+# six other places (kehillah_loan_events.txt, kehillah_protection_
+# events.txt, jewish_holiday_events.txt, kehillah_decisions.txt); this
+# effect was the lone hand-rolled exception, which is exactly why it was
+# the lone site that errored.
+#
+# The min/max cap is kept, and is still load-bearing, but for a design
+# reason rather than an engine one: pay_short_term_gold would happily
+# push a poor accused into debt, and a Bet Din ordering restitution
+# beyond a litigant's means is not the intended ruling.
 # Direction 1 ALSO adds Cherem (add_trait = excommunicated, same real
 # mechanic as kehillah_bet_din_amulet_resolution_effect and kehillah_
 # bet_din_recalcitrant_husband_resolution_effect's own direction 1
@@ -748,12 +774,11 @@ kehillah_bet_din_silversmiths_resolution_effect = {
 					}
 				}
 				add_trait = excommunicated
-				add_gold = {
-					value = scope:kbd_silver_restitution
-					multiply = -1
+				pay_short_term_gold = {
+					target = scope:kbd_silver_accuser
+					gold = scope:kbd_silver_restitution
 				}
 			}
-			scope:kbd_silver_accuser = { add_gold = scope:kbd_silver_restitution }
 			custom_tooltip = kehillah_bet_din.0053.mesirah.tt
 		}
 	}
@@ -777,12 +802,11 @@ kehillah_bet_din_silversmiths_resolution_effect = {
 						max = medium_gold_value
 					}
 				}
-				add_gold = {
-					value = scope:kbd_silver_restitution
-					multiply = -1
+				pay_short_term_gold = {
+					target = scope:kbd_silver_accuser
+					gold = scope:kbd_silver_restitution
 				}
 			}
-			scope:kbd_silver_accuser = { add_gold = scope:kbd_silver_restitution }
 			custom_tooltip = kehillah_bet_din.0053.gerama.tt
 		}
 	}
