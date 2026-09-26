@@ -308,11 +308,87 @@ kehillah_on_title_gain = {
 		#
 		# Setting it here means the rule is simply: whoever holds this
 		# title leads a Kehillah. Which is what the title means.
+		#
+		# ---------------------------------------------------------
+		# S3(a), 2026-09-26 (Sukkot heartbeat 3) -- THE "ILLEGAL
+		# GOVERNMENT" ERROR. READ THIS BEFORE CHANGING THIS BLOCK.
+		#
+		# This line has thrown `change_government effect [ Trying to
+		# set illegal government ]` on every appointment succession on
+		# 2026-09-06, 2026-09-20 and again 2026-09-23. It has been
+		# "fixed" twice without ever being confirmed clean afterwards
+		# (see docs/implementation/v1-kehillah-implementation.md
+		# section 8's "STILL BROKEN as of 2026-09-23" note), which is
+		# how it survived two rewrites of the very field each fix
+		# targeted. So this pass does NOT guess a third fix. It does
+		# two things:
+		#
+		#   1. MEASURES. The trace block below, armed only by a debug
+		#      event, logs the exact state the engine sees at this
+		#      instant -- whether root already holds the gained title,
+		#      whether root holds ANY landless title, and what
+		#      government root currently has. can_get_government in
+		#      common/governments/kehillah_government.txt is exactly
+		#      `any_held_title = { is_landless_type_title = yes }`, so
+		#      if that reads false here, the cause is settled: the
+		#      title is not yet committed when on_title_gain fires, and
+		#      nothing about the predicate's logic is wrong.
+		#
+		#   2. STOPS ASKING FOR WHAT THE ENGINE WILL REFUSE. The
+		#      attempt is now guarded by the same predicate
+		#      can_get_government checks. If it passes, this behaves
+		#      exactly as before. If it fails, we skip the call that
+		#      would error and hand the job to a one-day-deferred
+		#      hidden event instead (kehillah_succession.0010,
+		#      events/kehillah_succession_events.txt), by which point
+		#      the title is certainly committed.
+		#
+		# WHY DEFERRING CANNOT REGRESS ANYTHING. On the appointment
+		# path this call is ALREADY a no-op today -- that is what the
+		# error means. Everything downstream (quarter, pillars, Host
+		# Charter, officers) has been confirmed to work correctly
+		# anyway across three separate live tests, i.e. the engine is
+		# propagating the government on its own after on_title_gain
+		# returns. Skipping a call that currently fails therefore
+		# cannot remove behaviour that currently exists. On every path
+		# where the predicate passes (founding, debug harness), the
+		# call happens inline exactly as it always did.
+		# ---------------------------------------------------------
+		if = {
+			limit = { exists = global_var:kehillah_debug_title_gain_trace }
+			kehillah_trace_title_gain_effect = yes
+		}
+
 		if = {
 			limit = {
 				NOT = { government_has_flag = government_is_kehillah }
+				any_held_title = { is_landless_type_title = yes }
 			}
 			change_government = kehillah_government
+		}
+		else_if = {
+			limit = {
+				NOT = { government_has_flag = government_is_kehillah }
+			}
+			# can_get_government would refuse right now. Retry once the
+			# title has certainly been committed.
+			trigger_event = {
+				id = kehillah_succession.0010
+				days = 1
+			}
+		}
+
+		# S3(d), 2026-09-26. An endorsement is the personal judgement of
+		# the leader who made it (kehillah_endorse_successor_interaction,
+		# common/character_interactions/kehillah_character_interactions.txt).
+		# Carrying a dead predecessor's favourite forward would silently
+		# pre-commit the new leader's own succession, so it is cleared
+		# here rather than inherited.
+		scope:title = {
+			if = {
+				limit = { exists = var:kehillah_var_endorsed_successor }
+				remove_variable = kehillah_var_endorsed_successor
+			}
 		}
 
 		# Rebuild the community's quarter. Deliberately ordered AFTER

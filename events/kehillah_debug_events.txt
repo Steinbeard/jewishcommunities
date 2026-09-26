@@ -1312,3 +1312,105 @@ kehillah_debug.103 = {
 		debug_log = "kehillah_debug.103: add_gold clamp isolation -- END"
 	}
 }
+
+
+# =====================================================================
+# S3 SUCCESSION HARNESS (added 2026-09-26, Sukkot heartbeat 3).
+#
+# .104  ARM the on_title_gain trace, then console-kill the leader and
+#       let the appointment succession run. Every line the trace writes
+#       is prefixed "kehillah_titlegain_trace:" in debug.log; the
+#       deferred handoff's own verdict line is prefixed
+#       "kehillah_succession.0010:". Together they answer S3(a):
+#       whether the `change_government [ Trying to set illegal
+#       government ]` error is an on_title_gain timing problem or
+#       something else.
+# .105  DISARM the trace.
+# .106  Report the succession pool and the endorsement state -- who is
+#       eligible, and who (if anyone) the leader has endorsed. Pair with
+#       the Endorse as Successor interaction to confirm S3(d) actually
+#       wrote the variable.
+#
+# S3(a) SEQUENCE: .104, then in the console `kill` the current leader
+# (or use vanilla's own die = yes via a run script), take the "continue
+# as successor" prompt, wait 2-3 in-game days so the one-day-deferred
+# kehillah_succession.0010 has fired, then read debug.log and error.log.
+# The pass condition for S3(a) is NOT "no lines" -- it is that
+# error.log gains no `Trying to set illegal government` line AND the
+# successor ends up with a kehillah government, a domicile, and the
+# community's pillars intact (.61 reports all of that already).
+# =====================================================================
+
+kehillah_debug.104 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		set_global_variable = {
+			name = kehillah_debug_title_gain_trace
+			value = 1
+		}
+		debug_log = "kehillah_debug.104: on_title_gain trace ARMED -- now kill the leader and watch for kehillah_titlegain_trace lines"
+	}
+}
+
+kehillah_debug.105 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { exists = global_var:kehillah_debug_title_gain_trace }
+			remove_global_variable = kehillah_debug_title_gain_trace
+		}
+		debug_log = "kehillah_debug.105: on_title_gain trace DISARMED"
+	}
+}
+
+# Scope: the community leader. Reports the endorsement state (S3(d)) and
+# walks the same candidate categories kehillah_leadership.txt's
+# default_candidates uses, so a live run can see WHO the engine is
+# actually choosing between before the succession happens rather than
+# inferring it afterwards from who won.
+kehillah_debug.106 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.106: succession pool and endorsement report -- START"
+
+		primary_title = {
+			if = {
+				limit = { exists = var:kehillah_var_endorsed_successor }
+				debug_log = "kehillah_debug.106: an endorsed successor IS recorded on the title"
+				var:kehillah_var_endorsed_successor = {
+					debug_log = "kehillah_debug.106: the endorsee is the character in scope below"
+					debug_log_scopes = yes
+					if = {
+						limit = { is_alive = yes }
+						debug_log = "kehillah_debug.106: endorsee is alive"
+					}
+					else = {
+						debug_log = "kehillah_debug.106: WARNING endorsee is DEAD -- the score term can never apply"
+					}
+				}
+			}
+			else = {
+				debug_log = "kehillah_debug.106: NO endorsed successor recorded on the title"
+			}
+		}
+
+		# The two candidate categories that actually contribute anybody
+		# here -- see kehillah_leadership.txt's header for why the
+		# vassal/noble-house categories contribute nobody.
+		every_court_position_holder = {
+			debug_log = "kehillah_debug.106: court-position holder in the pool (scope below)"
+			debug_log_scopes = yes
+		}
+
+		every_close_family_member = {
+			limit = { is_adult = yes }
+			debug_log = "kehillah_debug.106: adult close family member in the pool (scope below)"
+			debug_log_scopes = yes
+		}
+
+		debug_log = "kehillah_debug.106: succession pool and endorsement report -- END"
+	}
+}

@@ -309,3 +309,172 @@ kehillah_view_communities_interaction = {
 # ever needed for reference.
 # =====================================================================
 
+
+
+# =====================================================================
+# ENDORSE AS SUCCESSOR -- ROADMAP item S3(d), added 2026-09-26
+# (Sukkot heartbeat 3).
+#
+# THE PROBLEM THIS SOLVES. Kehillah succession is appointment-based
+# (common/succession_appointment/kehillah_leadership.txt) and the player
+# has had NO input into it at all: the engine ranks candidates by
+# candidate_score and hands the title to the winner. Leading a community
+# for thirty years and then watching the office go to whoever happened to
+# score highest is the opposite of the "meritocratic succession you take
+# part in" the v3 spec describes. This is the smallest real player lever:
+# the outgoing leader can name ONE candidate they favour, and the
+# congregation weighs that recommendation -- it does not obey it.
+#
+# WHY AN INTERACTION AND NOT A DECISION. Decisions cannot target a
+# character (see this file's own ENTRY POINT note above -- the same
+# research pass that established there is no scriptable way to open an
+# interaction from a decision). Naming a specific courtier needs a
+# character target, so an interaction is the only real mechanism.
+#
+# WHY auto_accept. Endorsement is the leader's own prerogative as head of
+# the community, not a bargain the endorsee can refuse. auto_accept = yes
+# with on_auto_accept is real, shipped vanilla syntax
+# (common/character_interactions/00_alliance.txt:3828, 4017; the field is
+# documented in _character_interactions.info:272).
+#
+# THE POOL IT RESPECTS. is_valid restricts targets to characters who are
+# actually in the succession pool that kehillah_leadership.txt's
+# default_candidates defines -- close family, or a holder of one of the
+# community's court positions. Endorsing someone outside the pool would
+# be a lie: the score term would never be read, because that character is
+# never scored. Gender eligibility follows the single existing hook,
+# kehillah_leadership_gender_eligible_trigger, rather than a second copy
+# of the rule.
+#
+# ONE AT A TIME. The endorsement is a single character variable on the
+# community title, so endorsing someone new silently replaces the
+# previous endorsement -- ROADMAP S3(d)'s "one at a time" requirement
+# falls out of the storage shape rather than needing a guard. The
+# prestige cost is what makes changing your mind a real choice.
+#
+# CLEARED ON SUCCESSION. kehillah_on_title_gain clears the variable when
+# the title changes hands: an endorsement is the personal judgement of
+# the leader who made it, and inheriting a dead predecessor's favourite
+# would silently pre-commit the new leader's own succession.
+# =====================================================================
+
+kehillah_endorse_successor_interaction = {
+	# The vanilla "name your heir" icon -- confirmed present:
+	# gfx/interface/icons/character_interactions/heir.dds
+	icon = heir
+	category = interaction_category_diplomacy
+	common_interaction = yes
+
+	# The candidates are the leader's own courtiers and kin, all of whom
+	# are by definition within reach.
+	use_diplomatic_range = no
+
+	desc = kehillah_endorse_successor_interaction_desc
+	prompt = kehillah_endorse_successor_interaction_prompt
+	notification_text = kehillah_endorse_successor_interaction_notification
+
+	auto_accept = yes
+
+	# Naming a successor is a public act that spends the leader's own
+	# standing. Cheap enough to do once a reign, expensive enough that
+	# swapping favourites every few years costs something real.
+	cost = {
+		prestige = {
+			value = kehillah_endorsement_prestige_cost_value
+			desc = kehillah_endorsement_prestige_cost_desc
+		}
+	}
+
+	is_shown = {
+		scope:actor = {
+			government_has_flag = government_is_kehillah
+			exists = primary_title
+			primary_title = { is_kehillah_title_trigger = yes }
+		}
+		NOT = { scope:actor = scope:recipient }
+	}
+
+	is_valid = {
+		scope:actor = {
+			is_adult = yes
+			is_alive = yes
+		}
+		scope:recipient = {
+			is_alive = yes
+
+			# allow_children = no in kehillah_leadership.txt: a minor
+			# cannot lead a congregation, so endorsing one is meaningless.
+			is_adult = yes
+
+			# The office IS ruling on this congregation's religious law
+			# -- the same reasoning behind kehillah_leadership.txt's own
+			# -500 wrong-faith term.
+			faith = scope:actor.faith
+
+			kehillah_leadership_gender_eligible_trigger = yes
+
+			# Must actually be in the succession pool. See the header.
+			custom_description = {
+				text = kehillah_endorse_successor_in_pool_tt
+				object = scope:recipient
+				OR = {
+					is_close_family_of = scope:actor
+					scope:actor = {
+						any_court_position_holder ?= { this = scope:recipient }
+					}
+				}
+			}
+
+			# Nothing to do if they are already the endorsed candidate.
+			custom_description = {
+				text = kehillah_endorse_successor_not_already_tt
+				object = scope:recipient
+				NOT = {
+					AND = {
+						exists = scope:actor.primary_title.var:kehillah_var_endorsed_successor
+						scope:actor.primary_title.var:kehillah_var_endorsed_successor ?= { this = scope:recipient }
+					}
+				}
+			}
+		}
+	}
+
+	on_auto_accept = {
+		scope:actor = {
+			primary_title = {
+				set_variable = {
+					name = kehillah_var_endorsed_successor
+					value = scope:recipient
+				}
+			}
+
+			# The congregation notices who the leader has begun to favour.
+			send_interface_message = {
+				type = msg_kehillah_endorsement
+				title = kehillah_endorse_successor_msg_title
+				desc = kehillah_endorse_successor_msg_desc
+				left_icon = scope:recipient
+			}
+		}
+
+		# Being named is a mark of standing in the community, and it ties
+		# the endorsee to the leader who named them.
+		scope:recipient = {
+			add_prestige = kehillah_endorsement_recipient_prestige_value
+			add_opinion = {
+				modifier = kehillah_endorsed_opinion
+				target = scope:actor
+			}
+		}
+	}
+
+	# NO AI USE, deliberately, and no ai_potential/is_available block
+	# either: an interaction's AI use is driven by ai_frequency, which
+	# defaults to 0, so omitting it is already "the AI never sends this"
+	# (ck3-tiger flags an ai_potential block as unused for exactly that
+	# reason). AI communities therefore never endorse anyone and their
+	# successions are unchanged -- this is the player's lever, per
+	# ROADMAP S3(d). Giving the AI its own endorsement behaviour is a
+	# separate feature and needs AI-parity thinking (V22 section 6.6),
+	# not a frequency number guessed here.
+}

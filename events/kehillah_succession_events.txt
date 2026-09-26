@@ -1,0 +1,81 @@
+﻿# =====================================================================
+# Kehillah succession events -- ROADMAP item S3, added 2026-09-26
+# (Sukkot heartbeat 3).
+#
+# One event today: the deferred government handoff for S3(a).
+#
+# WHY THIS EXISTS. kehillah_on_title_gain (common/on_action/
+# kehillah_on_actions.txt) has to give an appointed successor the
+# kehillah government, because nothing else does. But
+# can_get_government (common/governments/kehillah_government.txt)
+# requires the new leader to hold a landless-type title, and on every
+# appointment succession since 2026-09-06 that call has thrown
+# `change_government effect [ Trying to set illegal government ]` --
+# three separate live tests, two "fixes" of the predicate itself,
+# identical error each time (docs/implementation/
+# v1-kehillah-implementation.md section 8).
+#
+# The on_title_gain caller now guards the inline attempt with that same
+# predicate, and routes here when it would fail, one day later, by which
+# point the title is certainly committed. Read that caller's own comment
+# block for why deferring cannot regress anything: on the appointment
+# path the inline call is already a no-op today, which is exactly what
+# the error means.
+#
+# THIS EVENT IS ALSO THE VERDICT ON WHETHER THE GUARD WAS RIGHT. Its
+# debug_log lines are unconditional (there are at most a handful per
+# succession, not per tick) and say plainly whether the government still
+# needed setting a day later and whether setting it then worked. If the
+# real cause was never the timing, this event will report finding the
+# government already correct, and that is the answer, not a failure.
+# =====================================================================
+
+namespace = kehillah_succession
+
+
+# ---------------------------------------------------------------------
+# kehillah_succession.0010 -- DEFERRED GOVERNMENT HANDOFF
+#
+# root = the new leader. scope:kq_title = their community title, saved by
+# kehillah_on_title_gain before this is triggered.
+# ---------------------------------------------------------------------
+kehillah_succession.0010 = {
+	type = character_event
+	hidden = yes
+
+	trigger = {
+		exists = scope:kq_title
+	}
+
+	immediate = {
+		if = {
+			limit = { government_has_flag = government_is_kehillah }
+			# The engine propagated it on its own after on_title_gain
+			# returned. Nothing to do, and worth logging: it means the
+			# inline call was redundant all along, not merely mistimed.
+			debug_log = "kehillah_succession.0010: government was ALREADY kehillah one day after title gain -- engine propagated it, no action needed"
+		}
+		else_if = {
+			limit = { any_held_title = { is_landless_type_title = yes } }
+			debug_log = "kehillah_succession.0010: government was NOT kehillah, but can_get_government now passes -- setting it (deferral was the fix)"
+			change_government = kehillah_government
+
+			# Both of these were already run inline by
+			# kehillah_on_title_gain and are documented there as safe to
+			# call again (kehillah_restore_quarter_effect is a no-op with
+			# no stored building state; kehillah_maintain_host_charter_
+			# effect's own header says it is safe and cheap to call
+			# unconditionally, every time). They are repeated here
+			# because the inline pass ran before the domicile that
+			# change_government creates existed.
+			kehillah_restore_quarter_effect = yes
+			kehillah_maintain_host_charter_effect = yes
+		}
+		else = {
+			# Neither timing nor the predicate explains it. Do NOT guess
+			# from here -- this is the case the 2026-09-23 note meant
+			# when it said a fourth blind fix must not be attempted.
+			debug_log = "kehillah_succession.0010: STILL cannot get the kehillah government a day later -- root holds no landless-type title. Neither timing nor the predicate explains this; report, do not patch."
+		}
+	}
+}
