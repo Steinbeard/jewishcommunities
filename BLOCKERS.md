@@ -599,3 +599,129 @@ d945d6a Record that the unguarded-pillar-read audit came back clean
 5b39181 ROADMAP: warn that the V20 starting-pillars check must follow the Worms-start fix
 ```
 Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-26_090002.log
+
+## Sukkot heartbeat 2026-09-26 afternoon -- two items closed, S2 complete, and a day-one collapse warning nobody knew about
+
+**What this run did.** Worked the previous heartbeat's own "what the next
+run picks up" list top-down. Closed its items 1 and 2 (both VERIFIED
+LIVE), completed S2, found and fixed a new bug that the second of those
+checks exposed, and put S1 -- the highest never-tested item in the queue
+-- into a live boot. Full account:
+`docs/testing/2026-09-26-heartbeat5-live-test-log.md`.
+
+**Verified live (not just source-fixed):**
+
+- **S0's Worms developed start: PASS.** `kehillah_debug.111` on a fresh
+  1066 Worms start reports `SYNAGOGUE 5` plus all eight other buildings
+  `PRESENT`, with zero `add_domicile_building` lines in `error.log`
+  against a pre-fix symptom of four. Commit `4267d36` holds.
+  - *Recorded deliberately:* zero errors alone was **not** accepted as the
+    pass, because a boot into any other community would also show zero.
+    The positive `SYNAGOGUE 5` reading is what closes it. This is the same
+    false-pass shape that has bitten this repo repeatedly.
+- **S2 part 3: PASS, which completes S2.** All three pillar tooltips name
+  the correct next band with the exact right number -- 255 Strained ->
+  "145 more to Healthy", 369 Strained -> "31 more to Healthy", 459
+  Healthy -> "241 more to Flourishing" -- checked against
+  `kehillah_debug.111`'s independently computed figures rather than
+  against a tester's expectation. `error.log` growth **+0 lines** per
+  hover, against the old ~2,000 lines/second, and process working set
+  *fell* across the three hovers (1971.8MB -> 1644.3MB).
+
+**One new bug, found by the check that passed, root-caused and fixed
+(commit `9236d57`) -- source-verified and ck3-tiger clean, verification
+boot in flight when this was written:**
+
+**Every new 1066 game opened by telling the player their community was
+collapsing.** CK3's 1066 start is 1066.9.15; the first
+`quarterly_playable_pulse` lands 1066.9.16; the historical communities'
+real pillar values are not written until day three, 1066.9.18. So for two
+days all three pillars sit at exactly 0.00 and the pulse consumed them.
+Measured in `debug.log`, in order, not inferred. Four consequences:
+
+1. **The five-year warning cooldown was burned on day one** -- so a
+   *genuine* Stability crisis in the first five years would have gone
+   unwarned, defeating S1's own promise that "collapse is never a
+   surprise". This is the real harm.
+2. **"The Community Frays" fired on day one** on the strongest community
+   in the scenario -- worst possible first impression for the flagship
+   start, and a direct hit on your v0.1 feature 2.
+3. **All three bands seeded as Crisis**, applying -20% income, -20%
+   prestige and stress to a leader whose community is really
+   Strained/Strained/Healthy.
+4. The following quarter would then have sent three band-change notices
+   describing nothing but this bug.
+
+Fixed by teaching the consumers not to read a number that has not been
+written yet (new `kehillah_pillars_are_live_trigger`), plus having the
+day-three snapshot seed the bands itself so they are right from day three
+instead of up to a quarter late. **Initializing the pillars earlier was
+the obvious alternative and was deliberately not taken**, because this
+codebase already rejected it for a reason that still holds:
+`kehillah_worms_developed_start_effect`'s header records that restoring
+Greatness to 0 rather than to a real baseline is deliberate, since
+computing it there "would duplicate V20's job three days early and give
+two places an opinion about the same number."
+
+**One thing that wants your judgement, Daniel -- not a blocker, nothing
+is waiting on it:**
+
+**The Worms start opens roughly 2x over its courtier cap.** The Stability
+tooltip in an ordinary 1066.10.16 game reads "The quarter is overcrowded
+(15 of 8 places): **-8 each season**". That is much of why Stability sits
+at Strained on a community with a completely built Jewish Quarter. I did
+not touch it, because three readings are possible and they lead to
+different changes:
+
+1. *Intended tension* -- an overcrowded thriving quarter is a fair picture
+   of 11th-century Worms, and "build room for your people" is a reasonable
+   first objective, which is exactly the shape S6's community goals want.
+2. *An oversight* -- the developed start grants nine buildings and nothing
+   raises the cap to match, so the penalty may be an accident of the
+   building list.
+3. *A number that simply wants retuning.*
+
+It is a balance decision about the mod's headline scenario, so it is
+yours. Related, same section of the log: Worms holds a Synagogue at level
+5 whose own `can_construct` gate wants Greatness 950, while the community
+computes 459 -- the historical start is deliberately privileged past that
+gate, but it means Worms permanently holds a building it could never have
+built at its own standing.
+
+**What the next heartbeat should pick up, in order:**
+
+1. **Read this run's S1 result before doing anything else.** A live boot
+   was in flight when this entry was written, covering: GROUP 1, the
+   verification of the `9236d57` fix above (zero "below the Stability
+   floor" and zero "firing the Stability warning event" lines, bands not
+   all Crisis); then S1's own three done-when criteria -- voluntary
+   step-down with the community surviving under an AI successor
+   (`.112` -> decision -> `.113` + `.100`), re-founding as the resulting
+   adventurer, and the Stability collapse (`.98` -> `.99` -> resolve ->
+   `.113` must now say TITLE GONE). If it reported, the result is in the
+   testing log; if not, S1 is still untested and the harness is ready.
+   That boot also arms `kehillah_debug.104`, so it settles **S3(a)**'s
+   three-times-reproduced "illegal government" error at the same time --
+   the step-down hands a title to a living successor, which is that exact
+   code path.
+2. **S4(1)/(2)/(3) have still never been live-tested.** `.110` shows the
+   state is reachable at Worms today, so it is unblocked.
+3. **S3(b) and (c)** still need a console-kill succession observation.
+4. **V20 starting pillars.** Now unblocked *and* partly answered in
+   passing: the opening figures on a fixed Worms start are Prosperity 255,
+   Stability 369, Greatness 459. What is still unchecked is whether those
+   equal the computed baselines, which is V20's actual promise.
+5. **V16 section 8** remains nine separate live tests, not a mop-up (see
+   the correction already in S0). Pick individual numbered items.
+
+**Method note worth carrying forward.** As briefed, the S2 tooltip test
+would have been taken at game start -- where every pillar is 0, so the
+tooltip renders its `always = yes` fallback, which is the exact branch
+that produced the original wrong text. A pass there would have proved
+almost nothing. Reading `kehillah_debug.111` out of `debug.log` directly
+caught that before the tester finished, and the mid-run redirection to
+"advance past day three, then measure" is both what made the pass
+meaningful and what exposed the day-one collapse bug. Cheap parent-side
+log reads keep earning their keep; so does the tester briefing's
+instruction to volunteer observations nobody asked for -- both of this
+run's non-obvious findings came in that way.
