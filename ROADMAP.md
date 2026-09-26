@@ -86,6 +86,15 @@ short research bullets for when Daniel is back.
     duration of the grant and restoring it immediately (commit `4267d36`); the fix itself is
     **not yet live-verified** — that needs a fresh boot showing zero `add_domicile_building`
     errors and a Synagogue at level 5 in the Jewish Quarter.
+    **"The V16 §8 open tests" is under-specified as an S0 bullet — corrected 2026-09-26.** Read
+    against the spec, V16 §8 is **nine** separate live tests, not a mop-up: several need multiple
+    boots (host succession *and* a county changing realm by conquest; a fresh Christian *and*
+    Muslim start), one needs a save-migration fixture (§8.3), one is a performance measurement
+    rather than a pass/fail (§8.6's registry scan at scale), and **§8.8 (armed-watch retinue)
+    overlaps S12, which is DANIEL-REVIEW** — it should not be built or promised in player-facing
+    text before he weighs in, so testing it now would be testing ahead of a design decision.
+    Treat this bullet as a pointer to that list rather than as one task, and pick individual
+    numbered items off it; don't let it sit at the top of S0 looking like a single afternoon.
 - **S1. BUILD — Leave the Kehillah (ruler → landless adventurer), and Stability dissolution
   (V2 §4.4, Wave 4), sharing ONE teardown effect.** A voluntary decision ("Step Down and Take to
   the Road" or similar) and the Stability-floor collapse both call the same effect: narrate,
