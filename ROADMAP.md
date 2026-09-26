@@ -48,15 +48,26 @@ short research bullets for when Daniel is back.
     BLOCKERS.md left open after three failed mechanisms.
   - **Bet Din semicha guard: VERIFIED PASS** (2026-09-26), with a genuinely non-vacuous positive
     control this time.
-  - **Bet Din restitution clamp: STILL OPEN, but now MEASURED rather than guessed at.** The
-    2026-09-25 source fix does not work, and `kehillah_debug.103` ruled out *both* standing
-    explanations: the probe characters hold gold normally, and the self-referential shape fails
-    identically to the snapshot shape. The engine refuses a negative `add_gold` that lands a
-    character on exactly 0.00. Next step is one more measurement (deduct strictly less than the
-    balance), then most likely a rewrite of
-    `kehillah_bet_din_silversmiths_resolution_effect` onto a real transfer primitive
-    (`pay_treasury_or_gold`) rather than a hand-rolled `add_gold` pair. **Do not patch it blind** —
-    this bug has already survived one confident fix.
+  - **Bet Din restitution clamp: ROOT CAUSE FOUND AND FIXED IN SOURCE, 2026-09-26 (heartbeat 4);
+    live confirmation pending.** `add_gold` is **additive only** and cannot go negative by any
+    shape. The engine says so itself, in its own generated
+    `logs/effects.log`: `add_gold` — "adds gold to a character"; `remove_short_term_gold` —
+    "removes gold from a character"; `pay_short_term_gold` — "the scope character pays gold to the
+    target character, `{ target = X gold = Y }`". A literal negative is rejected at **script-load
+    validation**, a computed one at runtime, which is exactly why the 2026-09-25 clamp fix moved
+    the error's timing without removing it and why `.103` found the probe characters holding gold
+    exactly as script read it. **There was never an affordability check to outwit.** Vanilla uses
+    `add_gold = -` zero times in `common/` or `events/`, against 849 `remove_short_term_gold` and
+    925 `pay_short_term_gold`; this mod already used the correct primitives in six other places,
+    and this one effect was the lone hand-rolled exception — which is why it was the lone site
+    that errored. Both restitution branches now make one `pay_short_term_gold` call, zero-sum by
+    construction rather than by two calls agreeing. The min/max cap stays, for a design reason
+    now (a Bet Din should not order restitution beyond a litigant's means) rather than an engine
+    one. **How it was finally caught:** the previous heartbeat's own `.108` probe used three
+    *literal* negative `add_gold` calls and was rejected at script load before it ever ran,
+    logging the answer instead of the measurement it was written to take (commit `fe8ba31`).
+    **Tooling note: `ck3-tiger` does NOT flag `add_gold = -5`** — only the live game's load
+    validation does, so clean tiger output was never evidence here.
   - **V20 starting pillars and the V16 §8 open tests: NOT YET COVERED.** Neither run reached
     them. Still open for a later heartbeat.
 - **S1. BUILD — Leave the Kehillah (ruler → landless adventurer), and Stability dissolution
@@ -156,7 +167,22 @@ short research bullets for when Daniel is back.
   **Done when**, live: the player recruits a real rabbi from another community through the search
   event; Rashi begins a new 1066 game as Troyes's own Chief Rabbi and the breakdown tooltip shows
   his contribution; an AI community fills an empty seat.
-  **PARTS (1) AND (2) BUILT 2026-09-26, NOT YET LIVE-TESTED. Part (3) not built.**
+  **ALL THREE PARTS BUILT 2026-09-26, NOT YET LIVE-TESTED.**
+  - **(3) built 2026-09-26 (heartbeat 4).** `kehillah_install_chief_rabbi_effect` notes the
+    rabbi's old liege *before* `add_courtier` moves them (afterwards the link is gone), and if
+    that liege was a **different Kehillah**, fires `kehillah_rabbi_search.0002` to them 3–10 days
+    later. Hiring a stranger, a landless scholar or some bishop's courtier fires nothing. The
+    losing community *gains* Greatness (`kehillah_rabbi_departed_greatness_gain` = 6, against 10
+    for hiring) — a community whose scholars are wanted elsewhere has exactly the reputation
+    Greatness measures, and its real loss is already priced in without help, since the empty seat
+    stops contributing that same tick. The two figures differ on purpose so two AI communities
+    can't pump each other's Greatness by passing one rabbi back and forth.
+  - **The live-test blocker on (1) is now cleared: `kehillah_debug.110`** grants the Beit Midrash
+    (which is what gates the seat, via `has_domicile_parameter = kehillah_unlocks_chief_rabbi`),
+    clears the search cooldown, and reports the seat/toggle state — including whether the shared
+    `kehillah_has_acting_chief_rabbi_trigger` agrees with the seat's actual state, which is the
+    load-bearing check on part (2), since all four consumer sites were rewired onto that one
+    trigger.
   - (2) is built through one shared trio, as this item demands:
     `kehillah_has_acting_chief_rabbi_trigger`, `kehillah_acting_chief_rabbi_learning_value` and
     `kehillah_save_acting_chief_rabbi_effect`. All four previous call sites were rewired (the
