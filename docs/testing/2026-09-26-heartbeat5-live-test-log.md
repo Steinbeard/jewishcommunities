@@ -265,6 +265,92 @@ year apart. That is the fast-forward harness, not a feature bug.
 
 ---
 
+## 3a. S3(a) — **the "illegal government" error's three-session-old diagnosis is REFUTED, and the real cause is now evidenced**
+
+The voluntary step-down hands a Kehillah title to a living successor,
+which fires `on_title_gain` — the exact path this error has appeared on in
+2026-09-06, 2026-09-20 and 2026-09-23. `kehillah_debug.104` was armed
+first so one step-down would settle it. It did.
+
+**What the trace recorded, at the instant `on_title_gain` fired, before
+`change_government`:**
+
+```
+kehillah_titlegain_trace: YES root holds at least one landless-type title -- can_get_government WOULD pass
+kehillah_titlegain_trace: the gained title IS already in root's held-title list
+kehillah_titlegain_trace: root holds at least one title of some kind
+kehillah_titlegain_trace: scope:title.holder already reads as root
+kehillah_titlegain_trace: root has some other, non-kehillah government
+kehillah_titlegain_trace: root has NO domicile yet
+```
+
+**And `error.log` still gained the error anyway:**
+
+```
+change_government effect [ Trying to set illegal government ]
+  common/on_action/kehillah_on_actions.txt line: 366 (kehillah_on_title_gain)
+```
+
+Line 366 is the guarded inline `change_government = kehillah_government`.
+So the guard's predicate **passed**, the call ran, and the engine refused
+regardless.
+
+### What this rules out, definitively
+
+The standing hypothesis — recorded in the implementation doc §8 as
+"likely candidate, not verified: an on_title_gain-timing issue where
+`any_held_title` doesn't yet see the just-gained title as fully committed"
+— **is wrong.** The title is committed: `any_held_title` sees it, and the
+title's own `holder` already reads as the new character. `can_get_government`
+in `kehillah_government.txt` is *exactly* `any_held_title = {
+is_landless_type_title = yes }` and nothing else, and it is satisfied.
+
+**This is why two rewrites of that predicate never fixed it.** The
+predicate was never the problem, so every fix aimed at it was aimed at the
+wrong thing — including the guard added yesterday, which simply declines to
+call when the predicate fails and therefore changes nothing on the path
+that actually errors.
+
+### The real cause, with the evidence for it
+
+`kehillah_government.txt:117` declares **`domicile_type = kehillah_quarter`**,
+and the trace's last line says the successor has **no domicile yet** at
+that moment. A domicile-requiring government cannot be entered by a
+character the engine has nowhere to put: this repo already established the
+matching fact from the other direction, in
+`kehillah_found_community_effect`'s header — `change_government` destroys
+the current domicile without creating a replacement, and *nothing in
+script can create a domicile after the fact*; only
+`create_adventurer_title`'s `government` parameter makes the engine create
+one as part of the same operation.
+
+So the refusal is about the **domicile**, not the title. The Jewish Quarter
+travels with the title, but not within the same instant that
+`on_title_gain` fires.
+
+### What follows for the fix (not yet applied — see below)
+
+The guard's condition is wrong rather than insufficient: it should defer
+when the character has **no domicile yet**, not when `any_held_title`
+fails. As written, the `else_if` that schedules the deferred retry
+(`kehillah_succession.0010`, one day later) is unreachable on exactly the
+path that needs it, because the first branch is taken and then fails
+silently.
+
+**Deliberately not fixed in this run.** This is the highest-crash-risk
+area in the codebase and the error has now been "fixed" three times
+without confirmation; the one thing that would make a fourth attempt
+different is knowing that the deferred retry actually succeeds, i.e. that
+the successor has a domicile a day later. That is precisely what
+`kehillah_debug.113`'s "the new holder has a domicile" line reports, and it
+had not yet run when this was written. **Next heartbeat: read that line
+first, then gate the inline attempt on `exists = domicile` and let
+`.0010` do the work.** If `.113` shows the successor ends up a Kehillah
+anyway, then the engine is propagating the government by itself and the
+inline call is simply redundant — a different and even smaller fix.
+
+---
+
 ## 4. Volunteered observations — one of them wants Daniel's judgement
 
 Both came from the tester reporting things nobody asked about. That
