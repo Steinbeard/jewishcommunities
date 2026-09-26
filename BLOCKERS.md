@@ -725,3 +725,17 @@ meaningful and what exposed the day-one collapse bug. Cheap parent-side
 log reads keep earning their keep; so does the tester briefing's
 instruction to volunteer observations nobody asked for -- both of this
 run's non-obvious findings came in that way.
+
+## Heartbeat run status -- 2026-09-26_140002 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+df87950 S3(a): the illegal-government diagnosis is refuted, with the trace to prove it
+4e34b5b Fix the day-one collapse warning properly: the drift was the hole
+cb432b7 BLOCKERS: Sukkot heartbeat 5 entry
+fc2678b Record two verified passes and one new bug; S2 is complete
+9236d57 Don't judge or band a community whose pillars aren't written yet
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-26_140002.log
