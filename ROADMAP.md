@@ -48,8 +48,15 @@ short research bullets for when Daniel is back.
     BLOCKERS.md left open after three failed mechanisms.
   - **Bet Din semicha guard: VERIFIED PASS** (2026-09-26), with a genuinely non-vacuous positive
     control this time.
-  - **Bet Din restitution clamp: ROOT CAUSE FOUND AND FIXED IN SOURCE, 2026-09-26 (heartbeat 4);
-    live confirmation pending.** `add_gold` is **additive only** and cannot go negative by any
+  - **Bet Din restitution clamp: ROOT CAUSE FOUND, FIXED, AND VERIFIED LIVE, 2026-09-26
+    (heartbeat 4)** —
+    [log](docs/testing/2026-09-26-s0-restitution-and-s2-tooltip-log.md) §1. `kehillah_debug.108`
+    returns CLAMP PASS / DEBIT PASS / CREDIT PASS against a low-gold accused (7 against an award
+    capped at `medium_gold_value`), with zero `add_gold`/`pay_short_term_gold`/`Negative value`
+    lines anywhere in a fresh boot. *Caveat:* this exercises the transfer primitive under the real
+    clamp, not `kehillah_bet_din.0051`'s option-to-direction wiring — a genuine Silversmiths'
+    Quarrel on a real docket is still the only end-to-end confirmation.
+    `add_gold` is **additive only** and cannot go negative by any
     shape. The engine says so itself, in its own generated
     `logs/effects.log`: `add_gold` — "adds gold to a character"; `remove_short_term_gold` —
     "removes gold from a character"; `pay_short_term_gold` — "the scope character pays gold to the
@@ -113,7 +120,21 @@ short research bullets for when Daniel is back.
   kehillah_breakdown_l_english.yml:95-97`), which `gui/kehillah_community_map_view.gui:578,817`
   uses for the map-view widget's pillar rows. A 2026-09-26 tester reported it as dead code after
   hovering the *community-list interaction's* tooltip instead — the wrong surface, corrected in
-  that log's §4. Needs one hover of the map-view widget to close out.
+  that log's §4.
+  **Part 3 UPDATE, 2026-09-26 (heartbeat 4)** —
+  [log](docs/testing/2026-09-26-s0-restitution-and-s2-tooltip-log.md) §4. The correct surface was
+  finally hovered. The line **does render** (so it was never dead code), but it rendered *wrong*
+  — "0 more to Strained" on a community not in Crisis — and spammed `error.log` at roughly
+  **2,000 lines/second** while hovered: 288 lines → 378,909 across three hovers, and ~2.2GB →
+  ~5.1GB of process memory. One cause for both: the code was written for character scope and
+  hopped back to the title with `primary_title = { var:... }`, but the pillar variables live on
+  the **title** (implementation doc §10). Where that hop missed, the guarded custom-loc branches
+  fell through to their `always = yes` fallback (the Strained line) while the *unguarded* script
+  value threw every frame and clamped to 0. Now fixed by matching the sibling that always worked
+  in this same widget, `[Title.Custom('KehillahProsperityScore')]`: `type = landed_title`, direct
+  reads, `has_variable` on every branch, and all 15 loc call sites moved off `Title.GetHolder.*`.
+  **Source-fixed and ck3-tiger clean; the re-hover to confirm the correct band name AND a quiet
+  `error.log` is still outstanding.** Part 3 stays PARTIAL until then.
 - **S3. BUILD — Succession hardening.** (a) Root-cause the recurring non-fatal `change_government`
   "illegal government" error on appointment succession (implementation doc, 2026-09-23 addition).
   (b) Live-verify that an officer with a better score beats a family heir (the long-open
