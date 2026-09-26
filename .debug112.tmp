@@ -1,0 +1,115 @@
+
+
+# =====================================================================
+# .112 / .113 -- DOES THE COMMUNITY SURVIVE A VOLUNTARY DEPARTURE?
+# (added 2026-09-26, heartbeat 5, for S1's first done-when criterion.)
+#
+# S1 asks for two different fates from ONE shared teardown:
+#   VOLUNTARY step-down -- the leader leaves, the COMMUNITY CONTINUES
+#                          under its heir.
+#   COLLAPSE            -- the community title is DESTROYED.
+# .100 already reports the departing character's own invariants, but it
+# says nothing about what happened to the community behind them, which
+# is the entire difference between the two paths. These close that gap.
+#
+# .112  BEFORE stepping down: remember which title is being watched, in
+#       a global variable, and log its state now. Must be run while
+#       still the community's leader.
+# .113  AFTER stepping down: report that same title's fate.
+#
+# Watching a remembered title rather than scanning
+# kehillah_registered_communities is deliberate: after the departure the
+# player has no link to the community at all, and a scan would report
+# sixteen communities without saying which one was theirs.
+#
+# PASS for a voluntary departure is .113 reporting TITLE EXISTS + HOLDER
+# EXISTS + HOLDER IS NOT ROOT + HOLDER IS A KEHILLAH. For a collapse it
+# is the opposite: TITLE GONE.
+# =====================================================================
+
+kehillah_debug.112 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.112: marking the current community for the post-departure check"
+		if = {
+			limit = { exists = primary_title }
+			primary_title = { save_scope_as = kehillah_debug_watched }
+			set_global_variable = { name = kehillah_debug_watched_community value = scope:kehillah_debug_watched }
+			primary_title = {
+				if = {
+					limit = { is_kehillah_title_trigger = yes }
+					debug_log = "kehillah_debug.112: marked -- the primary title IS a Kehillah title, as expected"
+				}
+				else = {
+					debug_log = "kehillah_debug.112: marked, BUT the primary title is not a Kehillah title -- wrong character?"
+				}
+				if = {
+					limit = { exists = current_heir }
+					debug_log = "kehillah_debug.112: an heir EXISTS -- kehillah_step_down_decision should be valid"
+				}
+				else = {
+					debug_log = "kehillah_debug.112: NO heir -- kehillah_step_down_decision will be shown but INVALID, and its tooltip should say so"
+				}
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.112: FAIL no primary title to mark"
+		}
+	}
+}
+
+kehillah_debug.113 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.113: post-departure community fate -- START"
+		if = {
+			limit = { exists = global_var:kehillah_debug_watched_community }
+			global_var:kehillah_debug_watched_community = {
+				debug_log = "kehillah_debug.113: TITLE EXISTS the watched community title is still in the world"
+				if = {
+					limit = { exists = holder }
+					debug_log = "kehillah_debug.113: HOLDER EXISTS"
+					if = {
+						limit = { holder = { this = root } }
+						debug_log = "kehillah_debug.113: HOLDER IS ROOT -- the departure did NOT hand the community over"
+					}
+					else = {
+						debug_log = "kehillah_debug.113: HOLDER IS NOT ROOT -- handover happened, which is the voluntary-departure PASS"
+					}
+					holder = {
+						if = {
+							limit = { government_has_flag = government_is_kehillah }
+							debug_log = "kehillah_debug.113: HOLDER IS A KEHILLAH the new holder has the Kehillah government"
+						}
+						else = {
+							debug_log = "kehillah_debug.113: FAIL the new holder does NOT have the Kehillah government -- change_government did not run for them"
+						}
+						if = {
+							limit = { exists = domicile }
+							debug_log = "kehillah_debug.113: PASS the new holder has a domicile (the Jewish Quarter survived)"
+						}
+						else = {
+							debug_log = "kehillah_debug.113: FAIL the new holder has NO domicile -- the 15-25 day Game Over fuse, now pointed at an AI"
+						}
+					}
+				}
+				else = {
+					debug_log = "kehillah_debug.113: NO HOLDER the title exists but is unheld -- neither path intends this"
+				}
+				if = {
+					limit = { has_variable = kehillah_var_stability }
+					debug_log = "kehillah_debug.113: pillar variables still present on the title"
+				}
+				else = {
+					debug_log = "kehillah_debug.113: pillar variables GONE from the title -- expected after a collapse, a bug after a handover"
+				}
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.113: TITLE GONE the watched community no longer exists -- this is the COLLAPSE pass state, and a FAIL for a voluntary step-down"
+		}
+		debug_log = "kehillah_debug.113: post-departure community fate -- END"
+	}
+}
