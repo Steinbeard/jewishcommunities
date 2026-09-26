@@ -445,3 +445,20 @@ d38ee64 Record S0 live-regression results from the first Sukkot heartbeat
 b81d9e0 S2 part 3 (next-band tooltip line) + probe fixes from the first live run
 ```
 Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-25_230002.log
+
+## Heartbeat run status -- 2026-09-26_040002 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: YES --
+```
+M events/kehillah_debug_events.txt
+```
+- Last few commits:
+```
+f0bffb1 Record the 2026-09-26 S0/S2 live run, and correct one tester error
+11d4b65 S4(1): Seek a Chief Rabbi, a search over real rabbis in the world
+753cf77 S4(2): the leader may serve as the community's own Chief Rabbi
+974af54 S3(a) instrumentation + guard, and S3(d) Endorse as Successor
+bb657d5 Heartbeat run-status note (2026-09-25_230002)
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-26_040002.log
