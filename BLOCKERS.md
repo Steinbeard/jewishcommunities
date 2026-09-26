@@ -431,3 +431,17 @@ e755acc S0: add four narrow live-regression probes to the debug harness
 e00d164 S4: Rashi starts the game as Troyes's own Chief Rabbi
 ```
 Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-25_180001.log
+
+## Heartbeat run status -- 2026-09-25_230002 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+4f7476d Mark S11 research bullets done in the Sukkot queue
+03d30ac S11 research bullets: which vanilla 1.19 hooks the Crusade chain can use
+d38ee64 Record S0 live-regression results from the first Sukkot heartbeat
+669aea7 Heartbeat run-status note (2026-09-25_180001)
+b81d9e0 S2 part 3 (next-band tooltip line) + probe fixes from the first live run
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-25_230002.log
