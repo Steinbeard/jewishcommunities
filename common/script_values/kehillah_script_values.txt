@@ -1874,9 +1874,31 @@ kehillah_dissolution_warning_cooldown_years = 5
 #
 # Feeds the "next band" line added to each pillar's breakdown tooltip
 # (KehillahBdNextBand*, common/customizable_localization/
-# kehillah_breakdown_custom_loc.txt). Scope is the community's LEADER,
-# matching every other kehillah_bd_*_value in this file, because the
-# tooltip reaches these as [Title.GetHolder.MakeScope.ScriptValue(...)].
+# kehillah_breakdown_custom_loc.txt).
+#
+# SCOPE IS THE COMMUNITY TITLE, not its leader. CORRECTED 2026-09-26
+# after a live hover produced two symptoms with one cause: the line
+# rendered "0 more to Strained" for a healthy community, and every frame
+# the tooltip was open threw "Failed to fetch variable for
+# 'kehillah_var_prosperity' due to not being set" -- roughly 2,000 lines
+# a second, 379,000 error.log lines and ~3GB of extra memory across three
+# hovers.
+#
+# These values were originally written for character scope (reached as
+# [Title.GetHolder.MakeScope.ScriptValue(...)]) and then hopped back to
+# the title with `primary_title = { var:... }`. That round trip is both
+# fragile and unnecessary: the pillar variables live on the TITLE (see
+# the implementation doc section 10, "Pillar variables moved to the
+# title"), and the tooltip already has the title in hand -- the very same
+# string calls [Title.Custom('KehillahProsperityScore')], which is
+# type = landed_title, reads the variable directly, and has always
+# rendered correctly in this widget. So these now take title scope and
+# read it directly, matching that working sibling instead of routing
+# around it.
+#
+# Every branch is guarded with has_variable. The unguarded `var:` read
+# was what produced the storm, and it is the same idiom this repo has
+# already had to fix in bulk once (v5 section 9's 16 sites).
 #
 # Reads the same kehillah_band_*_threshold constants as the bands
 # themselves, so a retune of the thresholds moves the tooltip with them
@@ -1889,66 +1911,87 @@ kehillah_dissolution_warning_cooldown_years = 5
 kehillah_next_band_gap_prosperity_value = {
 	value = 0
 	if = {
-		limit = { primary_title = { var:kehillah_var_prosperity < kehillah_band_strained_threshold } }
+		limit = { has_variable = kehillah_var_prosperity
+			var:kehillah_var_prosperity < kehillah_band_strained_threshold }
 		add = kehillah_band_strained_threshold
 	}
 	else_if = {
-		limit = { primary_title = { var:kehillah_var_prosperity < kehillah_band_healthy_threshold } }
+		limit = { has_variable = kehillah_var_prosperity
+			var:kehillah_var_prosperity < kehillah_band_healthy_threshold }
 		add = kehillah_band_healthy_threshold
 	}
 	else_if = {
-		limit = { primary_title = { var:kehillah_var_prosperity < kehillah_band_flourishing_threshold } }
+		limit = { has_variable = kehillah_var_prosperity
+			var:kehillah_var_prosperity < kehillah_band_flourishing_threshold }
 		add = kehillah_band_flourishing_threshold
 	}
 	else_if = {
-		limit = { primary_title = { var:kehillah_var_prosperity < kehillah_band_legendary_threshold } }
+		limit = { has_variable = kehillah_var_prosperity
+			var:kehillah_var_prosperity < kehillah_band_legendary_threshold }
 		add = kehillah_band_legendary_threshold
 	}
-	subtract = primary_title.var:kehillah_var_prosperity
+	if = {
+		limit = { has_variable = kehillah_var_prosperity }
+		subtract = var:kehillah_var_prosperity
+	}
 	min = 0
 }
 
 kehillah_next_band_gap_stability_value = {
 	value = 0
 	if = {
-		limit = { primary_title = { var:kehillah_var_stability < kehillah_band_strained_threshold } }
+		limit = { has_variable = kehillah_var_stability
+			var:kehillah_var_stability < kehillah_band_strained_threshold }
 		add = kehillah_band_strained_threshold
 	}
 	else_if = {
-		limit = { primary_title = { var:kehillah_var_stability < kehillah_band_healthy_threshold } }
+		limit = { has_variable = kehillah_var_stability
+			var:kehillah_var_stability < kehillah_band_healthy_threshold }
 		add = kehillah_band_healthy_threshold
 	}
 	else_if = {
-		limit = { primary_title = { var:kehillah_var_stability < kehillah_band_flourishing_threshold } }
+		limit = { has_variable = kehillah_var_stability
+			var:kehillah_var_stability < kehillah_band_flourishing_threshold }
 		add = kehillah_band_flourishing_threshold
 	}
 	else_if = {
-		limit = { primary_title = { var:kehillah_var_stability < kehillah_band_legendary_threshold } }
+		limit = { has_variable = kehillah_var_stability
+			var:kehillah_var_stability < kehillah_band_legendary_threshold }
 		add = kehillah_band_legendary_threshold
 	}
-	subtract = primary_title.var:kehillah_var_stability
+	if = {
+		limit = { has_variable = kehillah_var_stability }
+		subtract = var:kehillah_var_stability
+	}
 	min = 0
 }
 
 kehillah_next_band_gap_greatness_value = {
 	value = 0
 	if = {
-		limit = { primary_title = { var:kehillah_var_greatness < kehillah_band_strained_threshold } }
+		limit = { has_variable = kehillah_var_greatness
+			var:kehillah_var_greatness < kehillah_band_strained_threshold }
 		add = kehillah_band_strained_threshold
 	}
 	else_if = {
-		limit = { primary_title = { var:kehillah_var_greatness < kehillah_band_healthy_threshold } }
+		limit = { has_variable = kehillah_var_greatness
+			var:kehillah_var_greatness < kehillah_band_healthy_threshold }
 		add = kehillah_band_healthy_threshold
 	}
 	else_if = {
-		limit = { primary_title = { var:kehillah_var_greatness < kehillah_band_flourishing_threshold } }
+		limit = { has_variable = kehillah_var_greatness
+			var:kehillah_var_greatness < kehillah_band_flourishing_threshold }
 		add = kehillah_band_flourishing_threshold
 	}
 	else_if = {
-		limit = { primary_title = { var:kehillah_var_greatness < kehillah_band_legendary_threshold } }
+		limit = { has_variable = kehillah_var_greatness
+			var:kehillah_var_greatness < kehillah_band_legendary_threshold }
 		add = kehillah_band_legendary_threshold
 	}
-	subtract = primary_title.var:kehillah_var_greatness
+	if = {
+		limit = { has_variable = kehillah_var_greatness }
+		subtract = var:kehillah_var_greatness
+	}
 	min = 0
 }
 
