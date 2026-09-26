@@ -261,3 +261,91 @@ mechanical verification loop itself.
   building-gate tests, which otherwise sit behind whatever's already mid-construction).
 - `debug_log` is **not** a console command (only a script effect) — typing it directly into the
   console returns `Unknown command`; it only works from inside a fired event or `run` script.
+
+---
+
+## What ck3-tiger does NOT catch — added 2026-09-26
+
+CLAUDE.md is right that tiger should run first on every session, and that it catches
+things which are silent in script but crash the live game. It is also worth writing
+down what it *misses*, because on 2026-09-26 a single heartbeat found three real
+bugs and **tiger was clean on every one of them.** Three sessions of the `add_gold`
+saga had treated clean tiger output as evidence that the script was fine.
+
+Confirmed blind spots, each from a real bug:
+
+- **Effect-argument domains.** Tiger does not flag `add_gold = -5`, even though the
+  live game rejects a literal negative at script-load validation. If a question is
+  "will the engine accept this value for this effect", tiger is not the oracle —
+  the engine's own generated `logs/effects.log` is. It documents every effect in
+  one line, and it is the thing that finally settled that saga: `add_gold` "adds
+  gold to a character", `remove_short_term_gold` "removes gold from a character",
+  `pay_short_term_gold` "the scope character pays gold to the target character".
+  **`logs/effects.log` and `logs/triggers.log` are underused in this repo.** Grep
+  them before inferring an effect's contract from how vanilla happens to use it.
+- **Scope correctness across the GUI chain.** A tooltip travels
+  `.gui` → `.yml` loc string → `customizable_localization` → `script_value`. Tiger
+  checks each file, not the scope the value ends up being evaluated in. The
+  next-band tooltip bug lived entirely in that seam: a `type = character` custom
+  loc reaching pillar variables that live on the *title*, reached through a
+  `primary_title` hop that missed. It rendered a confident wrong answer and threw
+  ~2,000 errors a second, with tiger clean throughout.
+- **Whether an effect's own gates will actually let it through.** `add_domicile_building`
+  consults the building's `can_construct`. Tiger does not simulate that, so a grant
+  that can never succeed looks identical to one that will. The Worms developed start
+  had been a no-op above synagogue tier 1 for an unknown length of time.
+
+The rule of thumb: **tiger rules out a class of error; it does not certify a
+feature.** A clean run means "no malformed script and no dangling references" — it
+never means "this works."
+
+## Read the error log even when the check passes — added 2026-09-26
+
+Two of the three bugs above were found *by checks that returned PASS on their own
+stated criteria.* The next-band tooltip check asked "does the line render" and the
+answer was genuinely yes; the bug was that the line rendered the wrong band, and
+that hovering it was flooding the log. The Worms building bug was found in the
+error log of a pass that was testing something else entirely.
+
+So, when briefing a live check:
+
+- Ask for the `error.log` **line count before and after** the interaction, not just
+  "were there errors". Growth is the signal. A tooltip that adds 2,000 lines a
+  second and a tooltip that adds none both "have no new errors" if you only grep
+  for your own feature's name.
+- Ask for the *content* the check renders, not only that it rendered. "Report the
+  exact text" catches a wrong number; "confirm it is not blank" does not.
+- Ask for anything surprising, explicitly, and treat volunteered observations as
+  valuable rather than off-scope. The error-storm finding came from a tester
+  reporting a line count nobody had asked for.
+- Give the check a way to be wrong that is *specific*. "PASS = the band named is
+  the one ABOVE the current band" catches what "PASS = a band is named" cannot.
+
+## Briefing a subagent tester: end every turn on an observation — added 2026-09-26
+
+A delegated tester that ends its turn on a blocking wait (`sleep 60` while CK3
+boots, a monitor that reports back later) stops there, and the parent has to
+notice and resume it. On 2026-09-26 one tester burned two full wake cycles and
+~130k tokens doing exactly this, twice, before completing any check.
+
+Put this in the brief verbatim:
+
+> **Never end a turn on a wait.** No blocking sleeps as your last action. If you
+> need time to pass, end the turn on an OBSERVATION instead — a screenshot, a log
+> read, a process check. Poll; don't sleep.
+
+And pair it with a non-abandonment clause, because the other failure mode is a
+tester that hits one impossible step and stops with nothing:
+
+> **If a step is genuinely impossible, mark it BLOCKED with what you actually saw
+> and move on to the next check.** Never abandon the whole run because one step
+> failed. A partial report with real evidence is much more valuable than stopping
+> early.
+
+One more thing the parent should do rather than the subagent: **read the cheap
+results yourself.** A `debug_log` verdict line is three greps away in
+`debug.log`, and reading it directly costs the parent almost nothing while
+removing any chance of a relay error. Delegation is for the expensive part — the
+boot, the clicking, the screenshots — not for facts the parent can read in one
+call. On 2026-09-26 the parent read the decisive `.108` verdict lines itself and
+had the answer well before the tester's report arrived.
