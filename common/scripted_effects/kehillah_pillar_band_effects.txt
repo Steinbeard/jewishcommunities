@@ -193,10 +193,56 @@ kehillah_update_all_pillar_bands_effect = {
 	# pulse after the pillars are real. kehillah_initialize_historical_
 	# pillars_from_baseline_effect also calls this directly now, so the
 	# bands are right from day three rather than up to a quarter late.
+	#
+	# The guard's predicate is the initialisation marker, NOT "some pillar
+	# is non-zero" -- that first version failed live, because the same
+	# pulse's convergence moves Stability off zero before any of this runs.
+	# kehillah_pillars_are_live_trigger's header has the full account.
 	if = {
 		limit = { kehillah_pillars_are_live_trigger = yes }
 		kehillah_update_pillar_band_effect = { PILLAR = kehillah_var_prosperity SHORT = prosperity }
 		kehillah_update_pillar_band_effect = { PILLAR = kehillah_var_stability SHORT = stability }
 		kehillah_update_pillar_band_effect = { PILLAR = kehillah_var_greatness SHORT = greatness }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_backfill_pillars_marker_effect
+# Scope: a character (the Kehillah leader).
+#
+# ADDED 2026-09-26 (heartbeat 5). Sets
+# kehillah_start_pillars_initialized_from_baseline on any community whose
+# pillars are demonstrably already real, so that
+# kehillah_pillars_are_live_trigger can be a simple marker check without
+# freezing the two populations that never set the marker themselves:
+# communities FOUNDED in play (which start at Stability 50) and
+# communities in saves made before that trigger existed.
+#
+# MUST BE CALLED BEFORE ANY GUARD THAT READS THE MARKER, and before
+# kehillah_quarterly_pillars_effect's convergence can move Stability off
+# zero -- see kehillah_pillars_are_live_trigger's header for the live
+# failure that ordering caused the first time round.
+#
+# Stability alone is the test, not "any pillar", on purpose: Mainz opens
+# with 650 Prosperity written directly at game start while its Stability
+# is still 0, so an any-pillar test would backfill Mainz during exactly
+# the pre-initialisation window this exists to protect.
+# ---------------------------------------------------------------------
+kehillah_backfill_pillars_marker_effect = {
+	if = {
+		limit = {
+			exists = primary_title
+			primary_title = { is_kehillah_title_trigger = yes }
+			primary_title = {
+				NOT = { has_variable = kehillah_start_pillars_initialized_from_baseline }
+				has_variable = kehillah_var_stability
+				var:kehillah_var_stability > 0
+			}
+		}
+		primary_title = {
+			set_variable = { name = kehillah_start_pillars_initialized_from_baseline value = 1 }
+		}
+		debug_log = "kehillah_backfill_pillars_marker_effect: marked an already-live community (founded in play, or from a save predating the marker)"
 	}
 }

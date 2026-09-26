@@ -1528,31 +1528,48 @@ kehillah_rabbi_search_candidate_trigger = {
 # opinion about the same number." Day three stays the single authority;
 # the CONSUMERS learn not to read a number that has not been written yet.
 #
-# WHY "AT LEAST ONE PILLAR ABOVE ZERO" AND NOT THE EXISTING MARKER.
-# kehillah_start_pillars_initialized_from_baseline looks like the natural
-# predicate, but it is set ONLY on the historical-start path. Founded
-# communities never set it (kehillah_found_community_effect gives them
-# kehillah_init_pillars_effect plus Stability +50, deliberately above the
-# dissolution floor), so guarding on that marker would disable the watch
-# for every founded community permanently -- and for every community in
-# an existing save, which has no marker either. "Some pillar is non-zero"
-# is true for all three of those populations and false only for the
-# uninitialised state this guards.
+# FIRST ATTEMPT, AND WHY IT FAILED LIVE -- 2026-09-26, same day. This
+# trigger originally read "at least one pillar is above zero", to avoid
+# depending on kehillah_start_pillars_initialized_from_baseline (which is
+# set only on the historical-start path). **It did not work, and the live
+# test caught it where ck3-tiger could not.** The verification boot still
+# logged the floor watch firing and the warning going out.
 #
-# The one false negative -- a live community at exactly 0.00 on all three
-# pillars -- is harmless: that is total collapse, and dissolution already
-# requires four consecutive quarters below the floor, so it costs one
-# quarter of delay in noticing, not a missed collapse.
+# The reason is ordering inside the pulse itself.
+# kehillah_quarterly_pulse calls kehillah_quarterly_pillars_effect FIRST,
+# whose baseline-convergence block adds (baseline - current) x
+# kehillah_convergence_rate_value to each pillar. From 0, against a real
+# Stability baseline of ~369 and a rate of 1/20, that is a jump to ~18.5:
+# non-zero, so the old predicate passed, but still below the dissolution
+# floor of 25, so the watch fired anyway. The guard was reading a number
+# the same pulse had already corrupted.
+#
+# SO THE PREDICATE IS NOW THE MARKER, and the drift is guarded too (see
+# kehillah_quarterly_pulse). The two objections to the marker are handled
+# rather than dodged:
+#
+#   - FOUNDED COMMUNITIES and COMMUNITIES IN EXISTING SAVES have no
+#     marker, and guarding on a missing marker would freeze their pillars
+#     forever -- much worse than the bug. kehillah_backfill_pillars_marker_
+#     effect, called at the top of the pulse before any guard, sets the
+#     marker for any community whose Stability is already above zero. That
+#     covers both populations on their first pulse: a founded community
+#     starts at Stability 50, and a save's communities carry whatever they
+#     had.
+#   - IT MUST NOT BACKFILL DURING THE PRE-INIT WINDOW. It cannot: with
+#     the drift guarded, an uninitialised community's Stability stays at
+#     exactly 0. Verified by reading every writer -- only
+#     kehillah_init_pillars_effect (0), the day-three snapshot (baseline),
+#     the founding path (+50) and event-driven adds touch Stability, and
+#     no historical start effect touches it at all. Mainz's +650 opening
+#     Prosperity is deliberately NOT enough to trigger the backfill, which
+#     is why the predicate is Stability alone rather than any pillar.
+#
+# Residual false negative: a live, unmarked community sitting at exactly
+# 0.00 Stability would stay frozen. It needs a pre-fix save AND total
+# collapse simultaneously, and resolves the moment anything nudges
+# Stability.
 # ---------------------------------------------------------------------
 kehillah_pillars_are_live_trigger = {
-	primary_title = {
-		has_variable = kehillah_var_prosperity
-		has_variable = kehillah_var_stability
-		has_variable = kehillah_var_greatness
-		OR = {
-			var:kehillah_var_prosperity > 0
-			var:kehillah_var_stability > 0
-			var:kehillah_var_greatness > 0
-		}
-	}
+	primary_title = { has_variable = kehillah_start_pillars_initialized_from_baseline }
 }

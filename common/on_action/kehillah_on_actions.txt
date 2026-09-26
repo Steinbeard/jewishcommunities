@@ -601,7 +601,43 @@ kehillah_quarterly_pulse = {
 		# manual charter edit is reflected before this quarter's convergence
 		# without evaluating subject contracts during bootstrap/rendering.
 		kehillah_refresh_charter_state_cache_effect = yes
-		kehillah_quarterly_pillars_effect = yes
+
+		# --- THE PRE-INITIALISATION WINDOW (2026-09-26, heartbeat 5) ---
+		#
+		# The historical communities hold all three pillars at 0 from game
+		# start (1066.9.15) until the day-three snapshot writes their real
+		# values (1066.9.18, kehillah_settlement_conditions.0008). This
+		# pulse first fires on 1066.9.16, INSIDE that window.
+		#
+		# Everything below that reads a pillar must sit out those two
+		# days. The charter cache above must NOT -- the day-three snapshot
+		# reads it, so it has to keep running.
+		#
+		# THE DRIFT IS INCLUDED IN THE GUARD, and that is the part a first
+		# attempt at this fix got wrong and a live boot caught: guarding
+		# only the bands and the floor watch left
+		# kehillah_quarterly_pillars_effect converging Stability from 0
+		# toward its ~369 baseline at 1/20, i.e. to ~18.5 -- non-zero, so
+		# a "some pillar is non-zero" guard passed, yet still under the
+		# floor of 25, so the collapse warning fired anyway. Converging
+		# from a placeholder zero is not meaningful in the first place;
+		# there is nothing to drift from until day three.
+		#
+		# The backfill runs FIRST and unguarded: it is what lets the
+		# guard be a plain marker check without freezing communities
+		# founded in play or loaded from older saves. See
+		# kehillah_pillars_are_live_trigger and
+		# kehillah_backfill_pillars_marker_effect for the full reasoning.
+		# The bands and the floor watch carry the SAME guard inside their
+		# own effects rather than being wrapped here too, because they
+		# have other callers (kehillah_debug.101 and .99 respectively)
+		# that need it just as much. Only the drift is wrapped at the call
+		# site, since this pulse is its only caller.
+		kehillah_backfill_pillars_marker_effect = yes
+		if = {
+			limit = { kehillah_pillars_are_live_trigger = yes }
+			kehillah_quarterly_pillars_effect = yes
+		}
 
 		# HOST CHARTER, ADDED 2026-09-23 (Phase 4, v15). This is the
 		# backstop for a host changing hands by conquest (spike section 5
