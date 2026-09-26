@@ -48,6 +48,21 @@ kehillah_succession.0010 = {
 	}
 
 	immediate = {
+		# The single most important line this event logs, added
+		# 2026-09-26 (heartbeat 7). The refuted-timing trace showed the
+		# successor has no domicile at the instant on_title_gain fires,
+		# and kehillah_government.txt requires one
+		# (`domicile_type = kehillah_quarter`). Whether the quarter has
+		# arrived by a day later is the whole question this deferral
+		# rests on, so it is reported before anything is attempted.
+		if = {
+			limit = { exists = domicile }
+			debug_log = "kehillah_succession.0010: the new leader HAS a domicile one day after title gain -- the quarter travelled with the title"
+		}
+		else = {
+			debug_log = "kehillah_succession.0010: the new leader STILL has NO domicile one day after title gain -- deferring longer would not help either"
+		}
+
 		if = {
 			limit = { government_has_flag = government_is_kehillah }
 			# The engine propagated it on its own after on_title_gain
@@ -56,8 +71,11 @@ kehillah_succession.0010 = {
 			debug_log = "kehillah_succession.0010: government was ALREADY kehillah one day after title gain -- engine propagated it, no action needed"
 		}
 		else_if = {
-			limit = { any_held_title = { is_landless_type_title = yes } }
-			debug_log = "kehillah_succession.0010: government was NOT kehillah, but can_get_government now passes -- setting it (deferral was the fix)"
+			limit = {
+				any_held_title = { is_landless_type_title = yes }
+				exists = domicile
+			}
+			debug_log = "kehillah_succession.0010: government was NOT kehillah, and both a landless title and a domicile are now present -- setting it (deferral was the fix)"
 			change_government = kehillah_government
 
 			# Both of these were already run inline by
@@ -70,12 +88,31 @@ kehillah_succession.0010 = {
 			# change_government creates existed.
 			kehillah_restore_quarter_effect = yes
 			kehillah_maintain_host_charter_effect = yes
+
+			# Whether the deferred call was actually accepted, stated by
+			# the engine rather than assumed. If this reads FAIL, the
+			# error at the on_title_gain call site has simply moved here
+			# and the domicile theory is wrong too -- report it, do not
+			# patch a fifth time.
+			if = {
+				limit = { government_has_flag = government_is_kehillah }
+				debug_log = "kehillah_succession.0010: CONFIRMED the government IS kehillah after the deferred call -- deferral is the fix"
+			}
+			else = {
+				debug_log = "kehillah_succession.0010: FAIL the deferred change_government was refused as well -- the domicile theory is wrong; report, do not patch."
+			}
 		}
 		else = {
 			# Neither timing nor the predicate explains it. Do NOT guess
 			# from here -- this is the case the 2026-09-23 note meant
 			# when it said a fourth blind fix must not be attempted.
-			debug_log = "kehillah_succession.0010: STILL cannot get the kehillah government a day later -- root holds no landless-type title. Neither timing nor the predicate explains this; report, do not patch."
+			if = {
+				limit = { any_held_title = { is_landless_type_title = yes } }
+				debug_log = "kehillah_succession.0010: STILL cannot get the kehillah government a day later -- root holds a landless title but has NO domicile, so the engine has nowhere to put a kehillah_quarter. Report, do not patch."
+			}
+			else = {
+				debug_log = "kehillah_succession.0010: STILL cannot get the kehillah government a day later -- root holds no landless-type title. Neither timing nor the predicate explains this; report, do not patch."
+			}
 		}
 	}
 }

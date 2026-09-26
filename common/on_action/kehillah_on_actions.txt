@@ -359,10 +359,43 @@ kehillah_on_title_gain = {
 			kehillah_trace_title_gain_effect = yes
 		}
 
+		# ---------------------------------------------------------
+		# S3(a) CONTINUED, 2026-09-26 (Sukkot heartbeat 7) -- THE
+		# TIMING HYPOTHESIS ABOVE IS REFUTED; THE GUARD NOW TESTS THE
+		# DOMICILE INSTEAD. Evidence: docs/testing/
+		# 2026-09-26-heartbeat5-live-test-log.md section 3a. One live
+		# step-down with the trace armed recorded, at this instant:
+		#   - the gained title IS already in root's held-title list
+		#   - scope:title.holder already reads as root
+		#   - can_get_government's predicate WOULD pass
+		#   - root has NO domicile yet
+		# and error.log gained the error anyway, at this very line. So
+		# the predicate below was never the cause, which is why two
+		# rewrites of it changed nothing, and why the else_if under it
+		# was unreachable on the one path that needed it.
+		#
+		# kehillah_government.txt:117 declares
+		# `domicile_type = kehillah_quarter`. A domicile-requiring
+		# government cannot be entered by a character the engine has
+		# nowhere to put, and this repo already knows the matching fact
+		# from the other direction (kehillah_found_community_effect's
+		# header): change_government destroys the current domicile
+		# without creating a replacement, and nothing in script can
+		# create a domicile after the fact. The Jewish Quarter travels
+		# with the title, but not inside the instant on_title_gain
+		# fires.
+		#
+		# So: attempt inline only when a domicile is actually there
+		# (the founding path and the debug harness, where it always
+		# was), and otherwise hand the job to kehillah_succession.0010
+		# a day later -- which logs its own verdict either way, so this
+		# change measures itself rather than asking to be believed.
+		# ---------------------------------------------------------
 		if = {
 			limit = {
 				NOT = { government_has_flag = government_is_kehillah }
 				any_held_title = { is_landless_type_title = yes }
+				exists = domicile
 			}
 			change_government = kehillah_government
 		}
@@ -370,8 +403,9 @@ kehillah_on_title_gain = {
 			limit = {
 				NOT = { government_has_flag = government_is_kehillah }
 			}
-			# can_get_government would refuse right now. Retry once the
-			# title has certainly been committed.
+			# The engine would refuse right now -- no domicile to put
+			# this character in, or no landless title yet. Retry a day
+			# later, when the quarter has travelled with the title.
 			trigger_event = {
 				id = kehillah_succession.0010
 				days = 1
