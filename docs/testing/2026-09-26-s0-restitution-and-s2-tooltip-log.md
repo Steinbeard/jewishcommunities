@@ -226,6 +226,22 @@ checks. That is twice in one session that tiger was clean on a real bug,
 which is worth holding onto: tiger rules out a class of error, it does not
 certify a feature.
 
+### The rest of the mod was audited for the same class — it is clean
+
+Because an error storm from an unguarded `var:` read is expensive and
+invisible until someone hovers the right thing, every pillar-variable read
+in `common/script_values/` and
+`common/customizable_localization/` was checked for the same two defects:
+a `type = character` custom loc reaching pillar variables through
+`primary_title`, and a `var:kehillah_var_*` read without a `has_variable`
+guard. **No other instance exists.** Four candidates surfaced and all four
+turned out to carry their guard on the preceding line
+(`kehillah_bd_{prosperity,stability,greatness}_drift_value` and
+`kehillah_bet_din_judge_score_value`). The next-band trio was the only
+place the mod had got this wrong — everywhere else it is careful, and
+several of those sites say in comments that they are guarded precisely
+because of the v5 §9 storm.
+
 ---
 
 ## 5. Two unrelated real bugs found in passing, both fixed (commit `bf8bc5f`)
