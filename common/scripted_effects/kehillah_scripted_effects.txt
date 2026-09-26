@@ -2323,3 +2323,155 @@ kehillah_task_contract_pick_employer_effect = {
 		save_scope_as = employer
 	}
 }
+
+
+# ---------------------------------------------------------------------
+# kehillah_rabbi_search_price_effect
+# Scope: a candidate rabbi. scope:kehillah_rabbi_seeker = the hiring
+# Kehillah leader. SLOT = the saved-scope-value name to write the price
+# into.
+#
+# ROADMAP S4(1), added 2026-09-26: "cost scaled by Learning and by the
+# gap between their community's Greatness and yours".
+#
+# WHY A PARAMETERISED EFFECT AND NOT THREE SCRIPT VALUES. A script value
+# cannot take a parameter, so a per-tier cost would have meant three
+# near-identical copies of this formula -- exactly the duplication S4(2)'s
+# own "one shared resolver" instruction exists to avoid. A scripted effect
+# does take parameters, so the formula lives here once and each tier just
+# names the slot it wants the answer in. The event then reads the banked
+# value, which also means the price shown in the option tooltip and the
+# price actually charged are provably the same number.
+# ---------------------------------------------------------------------
+
+kehillah_rabbi_search_price_effect = {
+	save_scope_value_as = {
+		name = $SLOT$
+		value = {
+			value = kehillah_rabbi_hire_base_cost
+
+			# What they know. The dominant term, as it should be for this
+			# office.
+			add = {
+				value = learning
+				multiply = kehillah_rabbi_hire_cost_per_learning
+			}
+
+			# Leaving a more celebrated community for a lesser one costs
+			# more to arrange. The reverse is NOT a discount -- clamped at
+			# zero -- because a rabbi coming up in the world is not
+			# thereby cheaper, they simply have no premium to charge.
+			if = {
+				limit = {
+					exists = employer
+					employer = {
+						exists = primary_title
+						primary_title = {
+							is_kehillah_title_trigger = yes
+							has_variable = kehillah_var_greatness
+						}
+					}
+					scope:kehillah_rabbi_seeker.primary_title ?= { has_variable = kehillah_var_greatness }
+				}
+				add = {
+					value = employer.primary_title.var:kehillah_var_greatness
+					subtract = scope:kehillah_rabbi_seeker.primary_title.var:kehillah_var_greatness
+					multiply = kehillah_rabbi_hire_cost_per_greatness_gap
+					min = 0
+				}
+			}
+
+			# Never free, never absurd.
+			min = kehillah_rabbi_hire_base_cost
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_generate_rabbi_candidate_effect
+# Scope: the hiring Kehillah leader (scope:kehillah_rabbi_seeker is also
+# bound to them). SLOT = the scope name to save the new character under.
+#
+# ROADMAP S4(1), added 2026-09-26. The FALLBACK when the real world has
+# no rabbi of a given quality to offer -- see events/
+# kehillah_rabbi_search_events.txt's header for why real candidates come
+# first and this is the backstop, not the default.
+#
+# Mirrors kehillah_seed_community_effect's own create_character
+# conventions exactly, including gender_female_chance = 0 (a
+# create_character with no gender block is a script-LOAD error, found the
+# hard way -- BLOCKERS.md, 2026-09-24) and reading the location from the
+# domicile rather than the character, which is unreliable for a landless
+# ruler (same file's own note).
+# ---------------------------------------------------------------------
+
+kehillah_generate_rabbi_candidate_effect = {
+	create_character = {
+		dynasty = generate
+		age = { $AGE_MIN$ $AGE_MAX$ }
+		faith = root.faith
+		culture = root.culture
+		location = root.domicile.domicile_location
+		random_traits = yes
+		gender_female_chance = 0
+		trait = $EDUCATION$
+		trait = kehillah_rabbi_trait
+		learning = { $LEARNING_MIN$ $LEARNING_MAX$ }
+		save_scope_as = $SLOT$
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_install_chief_rabbi_effect
+# Scope: the hiring Kehillah leader. RABBI = the chosen candidate.
+#
+# ROADMAP S4(1), added 2026-09-26. The same two-step vanilla's own
+# set_court_physician_effect uses (common/scripted_effects/
+# 20_health_effects.txt:1308): move them into the court if they are not
+# already in it, then appoint. No replace_court_position branch is needed
+# -- both the decision and the event's own trigger require the seat to be
+# EMPTY, so there is never an incumbent to displace.
+#
+# Grants kehillah_rabbi_trait if they somehow lack it. The court position
+# itself already does this via its own on_court_position_received (common/
+# court_positions/types/kehillah_officers.txt), so this is belt-and-braces
+# for the generated-candidate path only, and harmless either way.
+# ---------------------------------------------------------------------
+
+kehillah_install_chief_rabbi_effect = {
+	$RABBI$ = {
+		if = {
+			limit = { NOT = { liege ?= root } }
+			root = { add_courtier = $RABBI$ }
+		}
+	}
+
+	appoint_court_position = {
+		recipient = $RABBI$
+		court_position = chief_rabbi_kehillah_position
+	}
+
+	reverse_add_opinion = {
+		target = $RABBI$
+		modifier = hired_me_opinion
+	}
+
+	$RABBI$ = {
+		if = {
+			limit = { NOT = { has_trait = kehillah_rabbi_trait } }
+			add_trait = kehillah_rabbi_trait
+		}
+	}
+
+	# A community that has found itself a rabbi has done something real.
+	# Small, and not a substitute for the standing contribution the seat
+	# itself feeds into Greatness every quarter.
+	primary_title = {
+		change_variable = {
+			name = kehillah_var_greatness
+			add = kehillah_rabbi_hired_greatness_gain
+		}
+	}
+}

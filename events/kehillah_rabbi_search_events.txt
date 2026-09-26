@@ -1,0 +1,287 @@
+﻿# =====================================================================
+# THE CHIEF RABBI SEARCH -- ROADMAP item S4(1), added 2026-09-26
+# (Sukkot heartbeat 3).
+#
+# MODELLED ON VANILLA'S PHYSICIAN RECRUITMENT, as S4(1) instructs: the
+# decision (kehillah_seek_chief_rabbi_decision, common/decisions/
+# kehillah_rabbi_office_decisions.txt) sets a cooldown flag and triggers
+# this event a week or two later; the event offers candidates at skill
+# tiers with gold costs; choosing one moves them to your court and
+# appoints them. That is the exact shape of hire_physician_decision ->
+# health.3001 (common/decisions/90_minor_decisions.txt:47,
+# events/health_events.txt:6667), including the pay_treasury_or_gold +
+# appoint_court_position pair vanilla's own set_court_physician_effect
+# uses (common/scripted_effects/20_health_effects.txt:1308).
+#
+# WHERE THE CANDIDATES COME FROM -- the one real departure from vanilla,
+# and the point of the feature. health.3001 draws on
+# random_pool_character from the ruler's capital province, i.e. invented
+# strangers. S4(1) asks instead for REAL existing rabbis, "preferring
+# other communities' courts and landless scholars". So the pool is built
+# by walking kehillah_registered_communities -- this mod's own global
+# registry of every community in the world -- and collecting each
+# community's eligible courtiers. A rabbi hired this way is a person who
+# already existed somewhere else in the world, and their old community
+# really does lose them.
+#
+# Generated candidates are the FALLBACK, not the default, for exactly the
+# case vanilla has to handle too: an early game, or an isolated
+# community, where the real pool is thin. Same create_character shape
+# this mod already uses in kehillah_seed_community_effect, including
+# gender_female_chance = 0 (a missing gender block is a script-load
+# error -- see BLOCKERS.md, 2026-09-24).
+#
+# THREE TIERS, mirroring health.3001's excellent/high/low structure but
+# named for what they are here. Every tier is optional: if no candidate
+# of that quality can be found or generated, that option is not shown,
+# and the last option is always available so the event is never a dead
+# end.
+# =====================================================================
+
+namespace = kehillah_rabbi_search
+
+
+# ---------------------------------------------------------------------
+# kehillah_rabbi_search.0001 -- WORD GOES OUT
+#
+# root = the Kehillah leader who took the decision.
+# ---------------------------------------------------------------------
+kehillah_rabbi_search.0001 = {
+	type = character_event
+	title = kehillah_rabbi_search.0001.t
+	desc = kehillah_rabbi_search.0001.desc
+	theme = learning
+
+	left_portrait = {
+		character = scope:kehillah_rabbi_eminent
+		animation = personality_zealous
+	}
+	right_portrait = {
+		character = scope:kehillah_rabbi_capable
+		animation = personality_rational
+	}
+	lower_right_portrait = scope:kehillah_rabbi_young
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+		NOT = { employs_court_position = chief_rabbi_kehillah_position }
+	}
+
+	immediate = {
+		save_scope_as = kehillah_rabbi_seeker
+
+		hidden_effect = {
+			# THE REAL POOL. Every registered community's court, minus our
+			# own. add_to_list is cumulative across the whole walk, so one
+			# pass collects the world's eligible rabbis and the tier picks
+			# below just filter that single list.
+			every_in_global_list = {
+				variable = kehillah_registered_communities
+				limit = {
+					exists = holder
+					NOT = { holder = scope:kehillah_rabbi_seeker }
+				}
+				holder = {
+					every_courtier = {
+						limit = { kehillah_rabbi_search_candidate_trigger = yes }
+						add_to_list = kehillah_rabbi_pool
+					}
+				}
+			}
+
+			# Landless scholars and anyone already in our own court who
+			# qualifies -- S4(1) names them explicitly. Our own courtiers
+			# are the cheapest real candidates in the game (no poaching
+			# premium), and it would be strange to search the world while
+			# ignoring the man down the street.
+			every_courtier = {
+				limit = { kehillah_rabbi_search_candidate_trigger = yes }
+				add_to_list = kehillah_rabbi_pool
+			}
+
+			# --- TIER 1: an eminent figure. -------------------------
+			random_in_list = {
+				list = kehillah_rabbi_pool
+				limit = { learning >= kehillah_rabbi_tier_eminent_learning }
+				weight = {
+					base = 1
+					modifier = {
+						has_trait = kehillah_rabbi_trait
+						factor = 10
+					}
+					modifier = {
+						has_trait = theologian
+						factor = 4
+					}
+					modifier = {
+						culture = scope:kehillah_rabbi_seeker.culture
+						factor = 2
+					}
+				}
+				save_scope_as = kehillah_rabbi_eminent
+			}
+			if = {
+				limit = { NOT = { exists = scope:kehillah_rabbi_eminent } }
+				kehillah_generate_rabbi_candidate_effect = {
+					SLOT = kehillah_rabbi_eminent
+					AGE_MIN = 48
+					AGE_MAX = 70
+					EDUCATION = education_learning_4
+					LEARNING_MIN = 14
+					LEARNING_MAX = 18
+				}
+			}
+
+			# --- TIER 2: a capable, settled rabbi. ------------------
+			random_in_list = {
+				list = kehillah_rabbi_pool
+				limit = {
+					learning >= kehillah_rabbi_tier_capable_learning
+					learning < kehillah_rabbi_tier_eminent_learning
+					NOT = { scope:kehillah_rabbi_eminent ?= this }
+				}
+				weight = {
+					base = 1
+					modifier = {
+						has_trait = kehillah_rabbi_trait
+						factor = 10
+					}
+					modifier = {
+						culture = scope:kehillah_rabbi_seeker.culture
+						factor = 2
+					}
+				}
+				save_scope_as = kehillah_rabbi_capable
+			}
+			if = {
+				limit = { NOT = { exists = scope:kehillah_rabbi_capable } }
+				kehillah_generate_rabbi_candidate_effect = {
+					SLOT = kehillah_rabbi_capable
+					AGE_MIN = 34
+					AGE_MAX = 55
+					EDUCATION = education_learning_3
+					LEARNING_MIN = 10
+					LEARNING_MAX = 13
+				}
+			}
+
+			# --- TIER 3: a young man, promising and cheap. ----------
+			random_in_list = {
+				list = kehillah_rabbi_pool
+				limit = {
+					learning < kehillah_rabbi_tier_capable_learning
+					NOT = { scope:kehillah_rabbi_eminent ?= this }
+					NOT = { scope:kehillah_rabbi_capable ?= this }
+				}
+				weight = {
+					base = 1
+					modifier = {
+						culture = scope:kehillah_rabbi_seeker.culture
+						factor = 2
+					}
+				}
+				save_scope_as = kehillah_rabbi_young
+			}
+			if = {
+				limit = { NOT = { exists = scope:kehillah_rabbi_young } }
+				kehillah_generate_rabbi_candidate_effect = {
+					SLOT = kehillah_rabbi_young
+					AGE_MIN = 22
+					AGE_MAX = 33
+					EDUCATION = education_learning_2
+					LEARNING_MIN = 6
+					LEARNING_MAX = 9
+				}
+			}
+
+			# Prices, banked so the tooltip and the charge cannot
+			# disagree. See kehillah_rabbi_search_price_effect's header.
+			scope:kehillah_rabbi_eminent ?= {
+				kehillah_rabbi_search_price_effect = { SLOT = kehillah_rabbi_price_eminent }
+			}
+			scope:kehillah_rabbi_capable ?= {
+				kehillah_rabbi_search_price_effect = { SLOT = kehillah_rabbi_price_capable }
+			}
+			scope:kehillah_rabbi_young ?= {
+				kehillah_rabbi_search_price_effect = { SLOT = kehillah_rabbi_price_young }
+			}
+		}
+	}
+
+	option = {
+		name = kehillah_rabbi_search.0001.a
+		trigger = {
+			exists = scope:kehillah_rabbi_eminent
+			exists = scope:kehillah_rabbi_price_eminent
+		}
+
+		pay_treasury_or_gold = {
+			target = scope:kehillah_rabbi_eminent
+			value = scope:kehillah_rabbi_price_eminent
+		}
+		kehillah_install_chief_rabbi_effect = { RABBI = scope:kehillah_rabbi_eminent }
+
+		ai_chance = {
+			factor = 200
+			modifier = {
+				factor = 0
+				short_term_gold < scope:kehillah_rabbi_price_eminent
+			}
+		}
+	}
+
+	option = {
+		name = kehillah_rabbi_search.0001.b
+		trigger = {
+			exists = scope:kehillah_rabbi_capable
+			exists = scope:kehillah_rabbi_price_capable
+		}
+
+		pay_treasury_or_gold = {
+			target = scope:kehillah_rabbi_capable
+			value = scope:kehillah_rabbi_price_capable
+		}
+		kehillah_install_chief_rabbi_effect = { RABBI = scope:kehillah_rabbi_capable }
+
+		ai_chance = {
+			factor = 100
+			modifier = {
+				factor = 0
+				short_term_gold < scope:kehillah_rabbi_price_capable
+			}
+		}
+	}
+
+	option = {
+		name = kehillah_rabbi_search.0001.c
+		trigger = {
+			exists = scope:kehillah_rabbi_young
+			exists = scope:kehillah_rabbi_price_young
+		}
+
+		pay_treasury_or_gold = {
+			target = scope:kehillah_rabbi_young
+			value = scope:kehillah_rabbi_price_young
+		}
+		kehillah_install_chief_rabbi_effect = { RABBI = scope:kehillah_rabbi_young }
+
+		ai_chance = {
+			factor = 60
+			modifier = {
+				factor = 0
+				short_term_gold < scope:kehillah_rabbi_price_young
+			}
+		}
+	}
+
+	# ALWAYS AVAILABLE, so the event can never be a dead end even if every
+	# tier came up empty and every generation failed.
+	option = {
+		name = kehillah_rabbi_search.0001.d
+		custom_tooltip = kehillah_rabbi_search.0001.d.tt
+
+		ai_chance = {
+			factor = 5
+		}
+	}
+}

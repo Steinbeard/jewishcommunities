@@ -1429,3 +1429,59 @@ kehillah_can_serve_as_own_rabbi_trigger = {
 	kehillah_leadership_gender_eligible_trigger = yes
 	learning >= kehillah_serve_as_rabbi_learning_threshold
 }
+
+
+# =====================================================================
+# THE CHIEF RABBI SEARCH -- ROADMAP item S4(1), added 2026-09-26.
+#
+# Modelled on vanilla's own physician recruitment: the decision opens an
+# event offering candidates at skill tiers and gold costs, with a
+# cooldown flag (common/decisions/90_minor_decisions.txt's
+# hire_physician_decision item -> events/health_events.txt's health.3001).
+# See events/kehillah_rabbi_search_events.txt for the pool construction.
+#
+# Scope: a prospective candidate. scope:kehillah_rabbi_seeker = the
+# Kehillah leader doing the searching.
+#
+# The conditions mirror chief_rabbi_kehillah_position's own
+# valid_character/is_shown_character blocks (common/court_positions/types/
+# kehillah_officers.txt) deliberately -- offering a candidate the engine
+# would then refuse to appoint would be a dead end the player can't see
+# into. If that position's gates change, change these with them.
+# =====================================================================
+
+kehillah_rabbi_search_candidate_trigger = {
+	is_alive = yes
+	is_adult = yes
+	is_incapable = no
+	is_imprisoned = no
+
+	# The office rules on this congregation's law. Same reasoning as the
+	# position's own valid_character faith gate.
+	faith = scope:kehillah_rabbi_seeker.faith
+
+	kehillah_leadership_gender_eligible_trigger = yes
+
+	# A community's own leader is not for hire -- they have a community.
+	# Checked through the title registry rather than "has a government",
+	# so a landless scholar who happens to hold some other title is still
+	# recruitable.
+	NOT = {
+		AND = {
+			exists = primary_title
+			primary_title = { is_kehillah_title_trigger = yes }
+		}
+	}
+
+	# Already serving someone as their rabbi. Poaching another
+	# community's sitting rabbi is a different (and more interesting)
+	# feature than this one; not built here.
+	NOT = { has_court_position = chief_rabbi_kehillah_position }
+
+	# Not a claimant: same reasoning vanilla gives in
+	# health_3001_physician_basic_requirements_trigger -- recruitment
+	# must not become a cheap route to importing claims.
+	is_claimant = no
+
+	NOT = { this = scope:kehillah_rabbi_seeker }
+}

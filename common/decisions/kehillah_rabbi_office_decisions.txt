@@ -124,3 +124,97 @@ kehillah_stand_down_as_rabbi_decision = {
 		always = no
 	}
 }
+
+
+# =====================================================================
+# SEEK A CHIEF RABBI -- ROADMAP item S4(1), added 2026-09-26.
+#
+# Modelled on vanilla's hire_physician_decision (common/decisions/
+# 90_minor_decisions.txt:47): a cooldown flag, then an event a week or two
+# later offering candidates at skill tiers and gold costs. Vanilla reaches
+# it through the combined recruit_court_position_decision widget; this mod
+# has no such widget and one decision per office is clearer at this scale,
+# so it is its own decision instead.
+#
+# The candidates and the whole selection event live in
+# events/kehillah_rabbi_search_events.txt -- read that file's header for
+# where the candidates come from, which is the part that differs from
+# vanilla on purpose.
+# =====================================================================
+
+kehillah_seek_chief_rabbi_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_recruitment.dds"
+	}
+
+	decision_group_type = kehillah
+	sort_order = 86
+	ai_check_interval = 24
+
+	is_shown = {
+		government_has_flag = government_is_kehillah
+
+		# The seat has to EXIST before it can be filled -- it is gated on
+		# the Beit Midrash, same as the court position itself
+		# (chief_rabbi_kehillah_position's valid_position, common/
+		# court_positions/types/kehillah_officers.txt). Showing a "find a
+		# rabbi" decision to a community with nowhere to put one would be
+		# a promise the appointment then refuses to keep.
+		domicile ?= { has_domicile_parameter = kehillah_unlocks_chief_rabbi }
+	}
+
+	is_valid = {
+		is_adult = yes
+		is_imprisoned = no
+
+		custom_description = {
+			text = kehillah_seek_chief_rabbi_seat_empty_tt
+			NOT = { employs_court_position = chief_rabbi_kehillah_position }
+		}
+
+		# Same custom_tooltip-wrapped cooldown flag shape vanilla's own
+		# physician item uses (recruit_court_physician_cooldown_tt), so the
+		# reason the decision is greyed out is readable rather than
+		# mysterious.
+		custom_description = {
+			text = kehillah_seek_chief_rabbi_cooldown_tt
+			NOT = { has_character_flag = kehillah_seek_chief_rabbi_cooldown }
+		}
+	}
+
+	effect = {
+		custom_tooltip = kehillah_seek_chief_rabbi_tt
+
+		hidden_effect = {
+			add_character_flag = {
+				flag = kehillah_seek_chief_rabbi_cooldown
+				years = 2
+			}
+			trigger_event = {
+				id = kehillah_rabbi_search.0001
+				days = { 7 14 }
+			}
+		}
+	}
+
+	# AI communities use the same search -- ROADMAP S4(1) asks for this
+	# explicitly ("AI communities with an empty seat use the same
+	# decision"), and it is the cheapest route to the AI parity V22
+	# section 6.6 wants.
+	ai_potential = {
+		government_has_flag = government_is_kehillah
+	}
+
+	ai_will_do = {
+		base = 80
+
+		# Don't bankrupt a poor community chasing the office. The event's
+		# own per-option ai_chance already refuses individual candidates
+		# it cannot afford; this stops the search being started at all
+		# when nothing on the list could possibly be paid for.
+		modifier = {
+			factor = 0
+			short_term_gold < kehillah_rabbi_hire_base_cost
+		}
+	}
+}
