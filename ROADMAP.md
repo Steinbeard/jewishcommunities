@@ -77,6 +77,15 @@ short research bullets for when Daniel is back.
     validation does, so clean tiger output was never evidence here.
   - **V20 starting pillars and the V16 §8 open tests: NOT YET COVERED.** Neither run reached
     them. Still open for a later heartbeat.
+    **Do the V20 check AFTER the 2026-09-26 Worms-start fix, or it verifies the wrong number.**
+    `kehillah_worms_developed_start_effect` had been a no-op above synagogue tier 1 —
+    `add_domicile_building` *does* consult `can_construct`, contrary to that effect's own header,
+    so tier 2 failed its Greatness gate (150) and tiers 3–5 cascaded off the missing tier 2. V20's
+    day-three snapshot was therefore keeping its "opening pillars equal the full baseline" promise
+    faithfully against a baseline missing four synagogue tiers. Fixed by lifting Greatness for the
+    duration of the grant and restoring it immediately (commit `4267d36`); the fix itself is
+    **not yet live-verified** — that needs a fresh boot showing zero `add_domicile_building`
+    errors and a Synagogue at level 5 in the Jewish Quarter.
 - **S1. BUILD — Leave the Kehillah (ruler → landless adventurer), and Stability dissolution
   (V2 §4.4, Wave 4), sharing ONE teardown effect.** A voluntary decision ("Step Down and Take to
   the Road" or similar) and the Stability-floor collapse both call the same effect: narrate,
