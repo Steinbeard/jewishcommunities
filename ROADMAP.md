@@ -99,8 +99,19 @@ short research bullets for when Daniel is back.
     Fixed by guarding the consumers on a new `kehillah_pillars_are_live_trigger` and having the
     day-three snapshot seed the bands itself. See the log's §1a for why initializing earlier was
     rejected (this codebase already rejected it, for a reason that still holds) and why the
-    obvious `kehillah_start_pillars_initialized_from_baseline` marker is a trap. Fix verification
-    is in flight as GROUP 1 of the S1 boot.
+    obvious `kehillah_start_pillars_initialized_from_baseline` marker is a trap.
+    **FIX VERIFIED 2026-09-27 (heartbeat 8) — PASS**,
+    [log](docs/testing/2026-09-27-heartbeat8-live-test-log.md) §1. It needed no boot: heartbeat 7's
+    usage limit left its CK3 process running overnight, and its logs held a complete fresh
+    1066-Worms boot no session had read. Zero `below the Stability floor`, zero `firing the
+    Stability warning`, zero `Community Frays` in a boot that demonstrably passed day three.
+    Zero was *not* accepted on its own (the watch logs nothing on the healthy path, so silence
+    would also mean "never ran") — the positive control is `seeded a band for a community that had
+    none recorded` appearing 45 times, all at day three, i.e. 15 communities × 3 pillars each
+    reporting no band on record, which the day-one pulse would have already written. Still
+    unverified: that the watch fires when Stability is *genuinely* low — that is S1 criterion 2.
+    Same logs also turned up a separate game-start `set_employer` error on the **Troyes** start
+    (Rashi's, so S4's and S7's showcase character), now fixed — log §2.
     **"The V16 §8 open tests" is under-specified as an S0 bullet — corrected 2026-09-26.** Read
     against the spec, V16 §8 is **nine** separate live tests, not a mop-up: several need multiple
     boots (host succession *and* a county changing realm by conquest; a fresh Christian *and*
