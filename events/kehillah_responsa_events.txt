@@ -1,0 +1,171 @@
+﻿# =====================================================================
+# Responsa -- she'elot u-teshuvot. ROADMAP S5, added 2026-09-27.
+#
+# A leader of another real community writes with a question. You rule on
+# it, and the ruling circulates further than you do.
+#
+# Effects: common/scripted_effects/kehillah_responsa_effects.txt
+# Values: common/script_values/kehillah_script_values.txt, "RESPONSA"
+# Pulse: common/on_action/kehillah_on_actions.txt (kehillah_responsa_pulse)
+# Compile: common/decisions/kehillah_responsa_decisions.txt
+# Debug: events/kehillah_debug_events.txt, kehillah_debug.116/.117
+#
+# ONE EVENT, SIX QUESTIONS -- not six events. The three options' effects
+# are question-independent (that is the whole point: a posek's reasoning
+# is the same instrument applied to different facts), so six events would
+# mean eighteen copies of the same three option blocks, drifting apart at
+# the first tuning pass. The question is picked once, in the immediate,
+# into var:kehillah_responsa_question, and only the flavour text branches
+# on it. Same structure the book chain uses for var:kehillah_book_genre,
+# and for the same reason: a random_list inside a desc rerolls every time
+# the tooltip system rebuilds the text under the player's cursor.
+#
+# THE THREE OPTIONS are lenient (meikil), stringent (machmir), and send
+# it to a greater authority. The first two are Learning-tiered and pay
+# out through one shared effect -- see
+# kehillah_responsa_apply_ruling_effect's header for why they are
+# arithmetically identical and differ only in flavour: a well-reasoned
+# stringency and a well-reasoned leniency are both good scholarship, and
+# this mod should not quietly reward one halakhic disposition over the
+# other.
+#
+# THE THIRD IS DELIBERATELY NOT TIERED, which departs from S5's own
+# wording ("each a Learning-tiered check"). Recording the reason rather
+# than silently following the letter: a deferral is not an exercise of
+# skill, it is a refusal to exercise it, so there is nothing for a
+# Learning check to test. Tiering it would produce the absurd reading
+# that a very learned person defers *better*. It is instead the safe
+# option -- a small, certain Greatness cost and a small, certain gain for
+# the asker, who will get their answer from someone greater. That makes it
+# a real choice for a leader who knows their own Learning is short of the
+# question, which is exactly the situation the poor tier punishes.
+#
+# WHAT COUNTS TOWARD THE COLLECTION. Only the two ruling options
+# increment kehillah_var_responsa_count. A question you passed along is
+# not a responsum of yours, and the counter is the basis of the compile
+# decision, so letting deferrals count would let a leader who never ruled
+# on anything publish a volume of rulings.
+#
+# TONE AND SOURCING. The six questions are ordinary halakhic and communal
+# matters of the period -- kashrut, an agunah, wine handled by non-Jews,
+# an orphan's upkeep, a Sabbath lamp, a convert's standing. Per this
+# repo's established norm (docs/iteration/v1-iteration-notes.md), they are
+# written as plausible questions of the kind the real responsa literature
+# is full of, and NOT attributed to named historical figures or presented
+# as any specific surviving teshuvah. The asker is whichever community
+# leader the registry supplies, so no ruling is put in a real person's
+# mouth.
+# =====================================================================
+
+namespace = kehillah_responsa
+
+# ---------------------------------------------------------------------
+# kehillah_responsa.0001 -- a question arrives.
+#
+# root = the Kehillah leader who received the letter
+# scope:kehillah_responsa_asker = the leader who sent it
+# scope:kehillah_responsa_asker_title = their community
+# scope:kehillah_responsa_answerer = whoever actually answers (the
+#     appointed Chief Rabbi, the leader serving as their own rabbi, or
+#     the leader) -- bound through S4(2)'s shared resolver
+# ---------------------------------------------------------------------
+
+kehillah_responsa.0001 = {
+	type = character_event
+	title = kehillah_responsa.0001.t
+	desc = kehillah_responsa.0001.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_responsa_asker
+		animation = worry
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+		is_adult = yes
+		is_imprisoned = no
+		kehillah_can_answer_responsa_trigger = yes
+	}
+
+	immediate = {
+		kehillah_responsa_pick_correspondent_effect = yes
+	}
+
+	# LENIENT -- meikil. Find the ground to permit.
+	option = {
+		name = kehillah_responsa.0001.a
+
+		if = {
+			limit = { kehillah_responsa_answerer_learning_value >= kehillah_responsa_learning_great }
+			kehillah_responsa_apply_ruling_effect = { TIER = flag:great }
+			custom_tooltip = kehillah_responsa.0001.a.great.tt
+		}
+		else_if = {
+			limit = { kehillah_responsa_answerer_learning_value >= kehillah_responsa_learning_good }
+			kehillah_responsa_apply_ruling_effect = { TIER = flag:good }
+			custom_tooltip = kehillah_responsa.0001.a.good.tt
+		}
+		else = {
+			kehillah_responsa_apply_ruling_effect = { TIER = flag:poor }
+			custom_tooltip = kehillah_responsa.0001.a.poor.tt
+		}
+	}
+
+	# STRINGENT -- machmir. Hold to the letter.
+	option = {
+		name = kehillah_responsa.0001.b
+
+		if = {
+			limit = { kehillah_responsa_answerer_learning_value >= kehillah_responsa_learning_great }
+			kehillah_responsa_apply_ruling_effect = { TIER = flag:great }
+			custom_tooltip = kehillah_responsa.0001.b.great.tt
+		}
+		else_if = {
+			limit = { kehillah_responsa_answerer_learning_value >= kehillah_responsa_learning_good }
+			kehillah_responsa_apply_ruling_effect = { TIER = flag:good }
+			custom_tooltip = kehillah_responsa.0001.b.good.tt
+		}
+		else = {
+			kehillah_responsa_apply_ruling_effect = { TIER = flag:poor }
+			custom_tooltip = kehillah_responsa.0001.b.poor.tt
+		}
+	}
+
+	# SEND IT ON to a greater authority. Flat, by design -- see the file
+	# header. Does NOT increment the responsa counter.
+	option = {
+		name = kehillah_responsa.0001.c
+
+		if = {
+			limit = { exists = primary_title }
+			primary_title = {
+				change_variable = { name = kehillah_var_greatness subtract = kehillah_responsa_defer_greatness_loss }
+			}
+		}
+		if = {
+			limit = { exists = scope:kehillah_responsa_asker_title }
+			scope:kehillah_responsa_asker_title = {
+				change_variable = { name = kehillah_var_stability add = kehillah_responsa_asker_stability_gain_defer }
+			}
+		}
+		if = {
+			limit = { exists = scope:kehillah_responsa_asker }
+			reverse_add_opinion = {
+				target = scope:kehillah_responsa_asker
+				modifier = kehillah_responsa_ruling_opinion
+				opinion = kehillah_responsa_opinion_defer
+				years = 3
+			}
+		}
+		custom_tooltip = kehillah_responsa.0001.c.tt
+	}
+
+	after = {
+		kehillah_responsa_cleanup_effect = yes
+	}
+}

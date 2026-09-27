@@ -2096,3 +2096,164 @@ kehillah_debug.115 = {
 		debug_log = "kehillah_debug.115: Chief Rabbi state (read-only) -- END"
 	}
 }
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.116 -- RESPONSA (ROADMAP S5): report the state, then
+# fire a real question.
+#
+# Added 2026-09-27. Reports every gate S5's pulse actually checks, so a
+# question that does not arrive can be told apart from a question that
+# arrived and rendered wrong -- then fires kehillah_responsa.0001 itself
+# so the event does not have to be waited for through a yearly pulse at
+# 55%.
+#
+# Fire it on the community LEADER. `event kehillah_debug.116` as the
+# player.
+# ---------------------------------------------------------------------
+kehillah_debug.116 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.116: responsa state -- START"
+
+		save_scope_value_as = { name = kehillah_debug_116_answerer_learning value = kehillah_responsa_answerer_learning_value }
+		save_scope_value_as = { name = kehillah_debug_116_threshold value = kehillah_responsa_learning_threshold }
+		save_scope_value_as = { name = kehillah_debug_116_great_cut value = kehillah_responsa_learning_great }
+		save_scope_value_as = { name = kehillah_debug_116_good_cut value = kehillah_responsa_learning_good }
+
+		if = {
+			limit = { government_has_flag = government_is_kehillah }
+			debug_log = "kehillah_debug.116: IS a Kehillah leader"
+		}
+		else = {
+			debug_log = "kehillah_debug.116: NOT a Kehillah leader -- kehillah_responsa.0001 will refuse to fire on this character"
+		}
+
+		# The two halves of the gate, reported separately: "no question
+		# arrived" has two completely different causes and they need
+		# different fixes.
+		if = {
+			limit = { kehillah_has_responsa_correspondent_trigger = yes }
+			debug_log = "kehillah_debug.116: CORRESPONDENT YES at least one other community has a living adult leader to write in"
+		}
+		else = {
+			debug_log = "kehillah_debug.116: CORRESPONDENT NO nobody in the registry could send a question -- the pulse can never fire here, and that is the registry's state, not a bug in the event"
+		}
+
+		if = {
+			limit = { kehillah_responsa_answerer_learning_value >= kehillah_responsa_learning_threshold }
+			debug_log = "kehillah_debug.116: LEARNING GATE PASS the answerer clears the threshold"
+		}
+		else = {
+			debug_log = "kehillah_debug.116: LEARNING GATE FAIL the answerer is below the threshold -- compare the two figures in the scope dump"
+		}
+
+		if = {
+			limit = { kehillah_can_answer_responsa_trigger = yes }
+			debug_log = "kehillah_debug.116: FULL GATE PASS the pulse would fire on this character"
+		}
+		else = {
+			debug_log = "kehillah_debug.116: FULL GATE FAIL the pulse would not fire -- one of the two halves above says why"
+		}
+
+		# WHICH TIER the answer will land in, stated before it is rolled,
+		# so the option's own tooltip can be checked against a number
+		# computed independently of it rather than against a tester's
+		# expectation. (That distinction is what made the S2 tooltip pass
+		# meaningful -- see docs/testing/2026-09-26-heartbeat5-live-test-log.md.)
+		if = {
+			limit = { kehillah_responsa_answerer_learning_value >= kehillah_responsa_learning_great }
+			debug_log = "kehillah_debug.116: EXPECT GREAT tier -- both ruling options should show their .great tooltip"
+		}
+		else_if = {
+			limit = { kehillah_responsa_answerer_learning_value >= kehillah_responsa_learning_good }
+			debug_log = "kehillah_debug.116: EXPECT GOOD tier -- both ruling options should show their .good tooltip"
+		}
+		else = {
+			debug_log = "kehillah_debug.116: EXPECT POOR tier -- both ruling options should show their .poor tooltip, and Greatness should FALL"
+		}
+
+		if = {
+			limit = { exists = primary_title }
+			primary_title = {
+				if = {
+					limit = { has_variable = kehillah_var_responsa_count }
+					save_scope_value_as = { name = kehillah_debug_116_count value = var:kehillah_var_responsa_count }
+					debug_log = "kehillah_debug.116: counter EXISTS -- its value is in the scope dump"
+				}
+				else = {
+					debug_log = "kehillah_debug.116: counter NOT SET yet -- expected before the first ruling"
+				}
+				save_scope_value_as = { name = kehillah_debug_116_greatness value = var:kehillah_var_greatness }
+			}
+		}
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.116: responsa state -- END, firing kehillah_responsa.0001 now"
+
+		trigger_event = { id = kehillah_responsa.0001 days = 0 }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.117 -- RESPONSA: jump the counter to the compile
+# threshold, so "Gather the Responsa" can be reached without answering
+# ten questions by hand.
+#
+# Sets the counter to exactly kehillah_responsa_compile_threshold rather
+# than to a comfortable margin above it, deliberately: the decision's
+# gate is >=, and a probe that sets 20 would pass even if the gate were
+# written wrong at the boundary. Setting the exact threshold tests the
+# boundary itself.
+#
+# Fire it on the community LEADER.
+# ---------------------------------------------------------------------
+kehillah_debug.117 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.117: arming the responsa compile decision -- START"
+
+		save_scope_value_as = { name = kehillah_debug_117_threshold value = kehillah_responsa_compile_threshold }
+		save_scope_value_as = { name = kehillah_debug_117_tally_per value = kehillah_responsa_compile_tally_per_answer }
+
+		if = {
+			limit = { exists = primary_title }
+			primary_title = {
+				set_variable = {
+					name = kehillah_var_responsa_count
+					value = kehillah_responsa_compile_threshold
+				}
+			}
+			debug_log = "kehillah_debug.117: counter set to exactly the compile threshold -- the gate is >=, so this tests the boundary"
+		}
+		else = {
+			debug_log = "kehillah_debug.117: FAIL no primary title to write the counter to"
+		}
+
+		# The decision refuses while a book is in progress, on purpose
+		# (see the decision's header). If a previous test left the book
+		# chain's variable set, the decision will be invalid and that
+		# would look like the responsa gate failing.
+		if = {
+			limit = { has_variable = kehillah_book_genre }
+			debug_log = "kehillah_debug.117: WARNING a book is in progress (var:kehillah_book_genre is set) -- the compile decision is SUPPOSED to be invalid now; that is not the responsa gate failing"
+		}
+		else = {
+			debug_log = "kehillah_debug.117: no book in progress -- the compile decision should now be valid"
+		}
+
+		if = {
+			limit = { kehillah_can_compile_responsa_trigger = yes }
+			debug_log = "kehillah_debug.117: COMPILE TRIGGER PASS"
+		}
+		else = {
+			debug_log = "kehillah_debug.117: COMPILE TRIGGER FAIL -- the counter was just set, so this is the trigger itself being wrong"
+		}
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.117: arming the responsa compile decision -- END"
+	}
+}
