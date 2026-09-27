@@ -753,3 +753,202 @@ df66353 Heartbeat 7 test log skeleton, written before the results
 1883ca5 S3(a): gate the inline change_government on the domicile, not the title
 ```
 Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-26_190002.log
+
+## Sukkot heartbeat 2026-09-27 early morning -- S3(a) is finally answered, and it needs one decision from you
+
+**Read this section if you read nothing else: "DECISION NEEDED" below.**
+Everything else in this entry is either verified or already recorded in
+ROADMAP.
+
+### What this run did
+
+Full account: `docs/testing/2026-09-27-heartbeat8-live-test-log.md`.
+
+**A free win first.** Heartbeat 7's usage limit cut it off with its CK3
+process still running -- it was still alive this morning, and its logs held
+a complete fresh 1066-Worms boot no session had ever read. That boot was
+exactly the verification heartbeats 5 *and* 7 both left "in flight". So the
+day-one collapse fix cost a log read instead of a boot. Logs archived to
+`logs\archive-heartbeat7\` before closing it.
+
+**Verified live this run (six things):**
+
+- **The day-one collapse warning is gone.** Zero dissolution-watch lines in
+  a boot that demonstrably passed day three. Zero was deliberately *not*
+  accepted on its own -- the watch logs nothing on the healthy path, so
+  silence would equally mean "never ran". The positive control is 45 band
+  seedings all reporting "none recorded" at day three, which the day-one
+  pulse would have pre-empted.
+- **V20 starting pillars: PASS.** All three stored values equal their
+  computed baselines. Heartbeat 5 had only shown the numbers were
+  *plausible*; this shows they are the baselines, which is V20's actual
+  promise.
+- **S4(1) "Seek a Chief Rabbi": PASS, end to end.** Three candidates at
+  real Learning/cost tiers; the one hired was a **real rabbi from a real
+  other community** -- Feivel Yitzhaki, son of Rav Shlomo, i.e. Rashi's own
+  son at Troyes. Picking a generated candidate instead would have passed
+  the item vacuously. Afterwards the appointed rabbi correctly displaced
+  the leader who had been serving.
+- **S4(2) Rashi as Troyes's own Chief Rabbi: PASS**, with no contradiction
+  between the seat, the toggle and the shared trigger.
+- **S1's departing-leader half: PASS**, six probe checks for six.
+- **A Troyes game-start error fixed** (`set_employer` on a courtier already
+  in that court) and confirmed gone.
+
+**Built this run, not yet live-tested:** **S5, responsa.** Questions arrive
+from other real communities by yearly pulse; three options (lenient,
+stringent, defer); ten rulings compile into a book through the *existing*
+book system rather than a second one. Harness and run files are ready, and
+a test of it is in flight as this is written.
+
+**One real bug fixed in passing, with a lesson attached.** The Distribute
+Tzedakah decision read a character-scope script value from inside its
+`primary_title` block, so the engine threw "domicile trigger [ Wrong scope
+for trigger: landed_title, expected character ]" -- on merely *opening* the
+decisions panel, since the preview evaluates it. Two things worth your
+attention:
+
+- The value already used the "safe" `?=` operator and it did not help.
+  `?=` guards against a missing target, not the wrong *kind* of scope.
+- **ck3-tiger had been reporting this all along**, precisely, as
+  `warning(scopes): ... expects scope to be character but scope seems to be
+  landed title` -- sitting inside the standing 59-warning baseline being
+  treated as a judgment call. It was not cosmetic; it predicted a real
+  runtime error. **Suggestion for CLAUDE.md: `warning(scopes)` specifically
+  should be read as near-blocking in this repo, not as a warning.** I swept
+  the whole tree for the same pattern (with a positive control proving the
+  detector actually catches the known instance) -- tzedakah was the only
+  one, and the only `warning(scopes)` in the tree, so this is closed rather
+  than the tip of something.
+
+### DECISION NEEDED -- the successor's Jewish Quarter
+
+**S3(a) -- the "illegal government" error that has been chased for four
+sessions -- is solved as a diagnosis and now blocked on a design choice
+only you should make.**
+
+**What is true, verified live, not inferred:**
+
+1. The `exists = domicile` gate added last night **works**. Zero
+   illegal-government errors on the exact path that produced them on
+   2026-09-06, 09-20, 09-23 and in heartbeat 6.
+2. **But the community is still left broken.** After a voluntary step-down,
+   the heir holds the community title and has **the wrong government and no
+   domicile** -- which by this repo's own earlier finding is a 15-25 day
+   silent slide into "Game Over: has lost all of his titles", now pointed at
+   an AI.
+3. The cause is not timing, and never was -- which is why two rewrites
+   aimed at timing both missed. `kehillah_succession.0010` said it itself:
+   *"root holds a landless title but has NO domicile, so the engine has
+   nowhere to put a kehillah_quarter."*
+4. **This failure is completely silent.** `error.log` did not grow at all
+   across that part of the test. Only the mod's own debug probes caught it.
+
+**Why there is no cheap fix, checked against the engine's own effect docs
+rather than guessed:**
+
+- **A domicile belongs to a character, not to a title.** So handing the
+  title over with `change_title_holder` cannot bring the Jewish Quarter
+  with it.
+- **No effect creates a domicile.** There is no `create_domicile`. The full
+  list of domicile effects is add/construct/lower/remove building,
+  change_herd, change_provisions, set culture/faith, and `move_domicile` --
+  which moves a domicile to a *location*, not to another character. So the
+  quarter can neither be created for the heir nor transferred to them.
+- **The only thing in the game that produces a kehillah_quarter is**
+  `create_adventurer_title = { holder = X government = kehillah_government }`
+  -- the undocumented `government` parameter the founding path already
+  depends on. It creates title + government + domicile in one operation,
+  and it creates a **new title**.
+- `change_title_holder`'s `government_base` parameter looked like the
+  answer and is not: **zero vanilla scripts use it**, and even if it set the
+  government correctly it still would not create a domicile, which is the
+  half that actually matters.
+
+**So the options, and what each costs:**
+
+- **(A) Re-found under the successor.** `create_adventurer_title` for the
+  heir with `government = kehillah_government`, migrate the community's
+  state (pillars, registry entry, charter, buildings) onto the new title,
+  destroy the old one. This is the only route that yields a *working*
+  community. The cost is that the title's identity changes, and the
+  registry, the Sh'um de jure nesting, the host charter and the map view
+  all key off that title. Buildings would have to be re-granted onto the
+  fresh quarter (mechanically fine -- the Worms developed start already
+  does exactly that).
+- **(B) Confine the damage.** If an ordinary death-succession turns out to
+  work (see below), leave inheritance alone and change only the step-down
+  decision -- e.g. it dissolves the community rather than pretending to
+  hand it on, which is honest about what the engine permits and is a much
+  smaller change.
+- **(C) Leave it and ship the step-down as a dissolution in disguise.** Not
+  recommended; it silently kills an AI community a month later.
+
+**The severity depends on one thing I put into a boot immediately and do
+not yet have the answer to as I write this: does a normal DEATH succession
+have the same problem?** The implementation doc's section 8 records a
+2026-09-06 console-kill succession where "government, courtiers, and the
+communal treasury all carried over" -- which suggests the engine moves the
+domicile on *inheritance* even though no script can. If that holds, this
+bug is confined to the voluntary step-down decision and option (B) is
+probably right and cheap. If death-succession is broken too, then every
+succession in the mod is broken, this is the single blocking bug for v0.1,
+and option (A) is unavoidable. **Read the next heartbeat's note, or the
+test log, for that answer before deciding.**
+
+**I deliberately did not build any of this.** It is the highest-crash-risk
+area in the codebase, the change is invasive, it touches title identity that
+four other systems depend on, and `kehillah_succession.0010`'s own comment
+says "Report, do not patch". A fifth blind attempt is exactly what this
+should not get.
+
+### Smaller things you may want to weigh in on
+
+- **A 30+ minute boot.** One launch today took over half an hour from
+  double-click to main menu, against a normal 1-3 minutes. Not a hang --
+  CPU busy, memory climbing steadily to ~7GB, Responding always True. One
+  sample, cause unknown. It matters because it changes how much a
+  five-hour heartbeat can attempt. Wants one more timed boot before anyone
+  treats it as real.
+- **31 missing-localization warnings** sit in the tiger baseline. Each is a
+  loc key referenced but not defined, which renders as a raw key to the
+  player -- ordinary v0.1 polish, and a good candidate for a cheap
+  dedicated pass.
+- **Two pre-existing bugs found in passing, neither investigated:**
+  `gui/kehillah_community_map_view.gui:555,606,631` throw "Widget cannot
+  have a position in a layout" on every reload; and `kehillah_debug.60`'s
+  `create_adventurer_title` throws "No save_scope_as set for the new
+  landless title" -- a bug in the debug event itself, in the same
+  adventurer-title machinery the succession problem lives in.
+- **The Worms overcrowding question from heartbeat 5 is still yours** and
+  still unanswered; nothing this run touched it.
+
+### My own mistake, recorded
+
+I built S5 in parallel with the first live boot. `-debug_mode` hot-reloads
+mod files on change, so the running game kept reloading half-written
+responsa files and filled `error.log` with undefined-trigger and
+missing-loc errors. **None were real** -- everything is defined in the
+committed tree and ck3-tiger reports zero errors -- but the tester
+correctly reported the feature as broken, because in the process they were
+watching, it was. Their error.log growth figures for two groups are
+therefore unusable. Build work and live-test work must not share a boot;
+written into the test log so the next session inherits the rule rather than
+the mistake.
+
+### What the next heartbeat should pick up, in order
+
+1. **Read this run's Group A result first** (death-succession: does the
+   domicile survive inheritance?). It decides whether the item above is a
+   small fix or the v0.1 blocker, and everything else about succession
+   waits on it.
+2. **Read the S5 result** from the same boot and close out whatever it
+   found. S5 is built, tiger-clean, and was in a boot; it is not verified
+   until those lines are read.
+3. **S4(3)** -- the "your student has been called to X" event to the
+   community that lost the rabbi -- was reachable in this run's Group 2 and
+   nobody looked. Cheapest remaining S4 item.
+4. **S6 (community goals)** is the next unbuilt BUILD item after S5.
+5. **V16 section 8** is still nine separate live tests, not a mop-up. Pick
+   individual numbered items; note that its item 8.8 overlaps S12, which is
+   DANIEL-REVIEW.
