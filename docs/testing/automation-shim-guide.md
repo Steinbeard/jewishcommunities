@@ -349,3 +349,36 @@ removing any chance of a relay error. Delegation is for the expensive part — t
 boot, the clicking, the screenshots — not for facts the parent can read in one
 call. On 2026-09-26 the parent read the decisive `.108` verdict lines itself and
 had the answer well before the tester's report arrived.
+
+
+## `event <id> <character>` does not retarget — use a run file — added 2026-09-27
+
+Found in the heartbeat-8 boot, and worth its own note because it silently produces a *plausible*
+wrong answer rather than an error.
+
+`kehillah_debug.115` was written as a read-only probe specifically so it could be pointed at
+another community's leader from the console, and its own header documented the usage as
+`event kehillah_debug.115 9000201` (Rashi, at Troyes). In a live boot, **five two-argument
+`event` calls of that shape produced output exactly once, and that once ran on the player, not on
+the named character.** The proof was internal to the same game, seconds apart: the probe reported
+`TOGGLE OFF` for that call and `TOGGLE ON` for Rashi immediately afterwards via a run file, and
+Rashi's toggle is on by design from `kehillah_setup_troyes_start_effect`.
+
+So the failure mode is not "nothing happens" — it is "the event fires on you and reports your own
+state under the other character's name." A tester who trusted the documented form would have
+recorded the player's Chief Rabbi state as Rashi's and called S4(2) a pass or a fail on it.
+
+**Use a run file to target a specific character.** This works:
+
+```
+# <ck3_user_dir>\run\probe.txt
+character:9000201 = {
+	debug_log = "PROBE: about to trigger kehillah_debug.115 on Rashi"
+	trigger_event = kehillah_debug.115
+}
+```
+
+then `run probe.txt`. Note the `debug_log` line *before* the `trigger_event`: it makes the
+targeting itself visible in `debug.log`, so a probe that silently ran on the wrong character can be
+told apart from one that ran on the right one. Cheap, and it is what made this diagnosis possible
+at all — put an identifying `debug_log` in every targeting run file for that reason.
