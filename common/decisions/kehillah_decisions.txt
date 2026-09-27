@@ -183,10 +183,35 @@ kehillah_distribute_tzedakah_decision = {
 	cooldown = { years = 2 }
 
 	effect = {
+		# EVALUATE THE VALUE IN CHARACTER SCOPE, THEN HOP. Fixed
+		# 2026-09-27 (heartbeat 8), caught live: this read
+		# kehillah_tzedakah_stability_gain from *inside* the
+		# primary_title block, where the scope is a landed_title, and
+		# that value's own `domicile ?= { ... }` check is a character
+		# link. The engine said so plainly -- "domicile trigger [ Wrong
+		# scope for trigger: landed_title, expected character ]",
+		# error.log against kehillah_script_values.txt:76.
+		#
+		# NOTE ON `?=`: the value already used the safe operator and it
+		# did NOT help. `?=` guards against a missing target, not against
+		# the wrong KIND of scope -- there is no domicile link on a title
+		# at all, so there was nothing for it to fail softly on. Worth
+		# remembering; `?=` reads like it makes a line unconditionally
+		# safe and it does not.
+		#
+		# This fires on merely OPENING the decisions panel, not only on
+		# taking the decision, since the cost/effect preview evaluates
+		# it -- the same tooltip-rebuild exposure as the 2026-09-26
+		# breakdown bug, and the reason it is worth fixing rather than
+		# tolerating.
+		save_scope_value_as = {
+			name = kehillah_tzedakah_gain
+			value = kehillah_tzedakah_stability_gain
+		}
 		primary_title = {
 			change_variable = {
 				name = kehillah_var_stability
-				add = kehillah_tzedakah_stability_gain
+				add = scope:kehillah_tzedakah_gain
 			}
 		}
 		add_piety = medium_piety_gain

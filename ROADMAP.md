@@ -132,6 +132,21 @@ short research bullets for when Daniel is back.
   plays on as an adventurer, and the community continues under an AI leader; (2) Stability forced
   to 0 via debug event shows the warning, then collapse, and the player plays on as an adventurer;
   (3) that adventurer can re-found a community; error.log clean of new errors throughout.
+  **CRITERION 1 LIVE-TESTED 2026-09-27 (heartbeat 8) — HALF PASS, and it found the real bug.**
+  [log](docs/testing/2026-09-27-heartbeat8-live-test-log.md) §6.
+  - **The departing leader's half: PASS.** The decision is available with a named heir, taking it
+    visibly works (adventurer decision list, changed portrait, vacated-office and realm-teardown
+    notices), and `kehillah_debug.100` returns **six for six**: landless_adventurer government, a
+    domicile (camp) exists, holds a primary title, that title is no longer a Kehillah title, the
+    adventurer succession law is active, the banked-Greatness scratch variable was cleaned up.
+  - **The community left behind: FAIL.** `kehillah_debug.113` reports the handover happened
+    (`HOLDER IS NOT ROOT`) and then: `FAIL the new holder does NOT have the Kehillah government`
+    and `FAIL the new holder has NO domicile -- the 15-25 day Game Over fuse, now pointed at an
+    AI`. Criterion 1 requires "**and the community continues under an AI leader**". It does not.
+  - **Same bug as S3(a), now confirmed — and it is SILENT.** `error.log` did not grow across that
+    group at all and holds no error text for any of it. Only the mod's own probes catch it; "error.log
+    is clean" has never been evidence that a succession worked.
+  - **Criteria 2 (collapse) and 3 (re-founding) remain untested.**
 - **S2. BUILD — Pillar transparency and impact.** State as of 2026-09-25 (read from code): bands
   only gate building tiers (Greatness, one Prosperity tier), courtier quality (Greatness), one
   Crisis-Stability random event, and map-view colour. There is no band-change notice, no ongoing
@@ -212,6 +227,30 @@ short research bullets for when Daniel is back.
   `kehillah_var_endorsed_successor` on the community title and
   `kehillah_leadership.txt` adds `kehillah_endorsement_score_value` (30) to that one candidate.
   (b) and (c) still need the live observation.
+  **(a) IS ANSWERED, 2026-09-27 (heartbeat 8) — cause CONFIRMED, deferral REFUTED, deliberately
+  NOT patched.** [log](docs/testing/2026-09-27-heartbeat8-live-test-log.md) §6. A real voluntary
+  step-down ran the exact path. Three findings, in order:
+  1. **The `exists = domicile` gate works.** Zero `illegal government` and zero
+     `change_government` errors anywhere in the boot, on the path that produced that error on
+     2026-09-06, 09-20, 09-23 and in heartbeat 6. Four sessions of a recurring error, silenced.
+  2. **The cause is the domicile, stated by the instrumentation rather than inferred.**
+     `kehillah_succession.0010` one day later: *"the new leader STILL has NO domicile one day after
+     title gain -- deferring longer would not help either"* and *"STILL cannot get the kehillah
+     government a day later -- root holds a landless title but has NO domicile, so the engine has
+     nowhere to put a kehillah_quarter."* `kehillah_government.txt:117` declares
+     `domicile_type = kehillah_quarter`; nothing on the handover path gives the successor one.
+     It was never a timing problem — which is why two rewrites aimed at timing both missed.
+  3. **So the one-day deferral is refuted as a fix.** Waiting cannot help; nothing is in flight to
+     wait for. Silencing the error also did not fix the succession — see S1 above for what the
+     community is actually left in.
+  **What makes it decidable now:** the *departing* leader's transition demonstrably DOES get a
+  domicile, by dedicated code — `kehillah_departure_finish_effect` logs "leader has no domicile
+  before the camp is created (expected)" → "created the wayfarer title" → "domicile exists after
+  create". So creating a domicile at transition time is possible in script; the arriving heir just
+  has no equivalent. **The remaining question is a design one — where does the successor's Jewish
+  Quarter come from — and it is the top item for the next heartbeat.** Do not attempt a fifth blind
+  fix: read implementation doc §6/§8 and the founding path first, and live-test any change on a
+  real step-down.
 - **S4. BUILD — Chief Rabbi: search like "Find a Physician", or serve yourself.** (Daniel,
   2026-09-25.) Build exactly:
   (1) **"Seek a Chief Rabbi" decision, modelled on vanilla's physician recruitment** (the
@@ -246,7 +285,23 @@ short research bullets for when Daniel is back.
   **Done when**, live: the player recruits a real rabbi from another community through the search
   event; Rashi begins a new 1066 game as Troyes's own Chief Rabbi and the breakdown tooltip shows
   his contribution; an AI community fills an empty seat.
-  **ALL THREE PARTS BUILT 2026-09-26, NOT YET LIVE-TESTED.**
+  **ALL THREE PARTS BUILT 2026-09-26. (1) AND (2) VERIFIED LIVE 2026-09-27 (heartbeat 8); (3)
+  STILL UNTESTED.** [log](docs/testing/2026-09-27-heartbeat8-live-test-log.md) §4-5.
+  - **(1) "Seek a Chief Rabbi" — PASS, end to end.** The decision showed un-greyed, and the event
+    "Word Comes Back" offered three candidates at real Learning/cost tiers: Ulla (16 Learning, 84
+    gold), **Feivel Yitzhaki, "Son of Rav Shlomo"** (13, 72), Shimshon Horowitz (3, 32). Feivel was
+    chosen deliberately as the one identifiable as a **real rabbi from a real other community**
+    (Rav Shlomo is Rashi, at Troyes) — a generated-candidate pick would have satisfied the item
+    vacuously. Afterwards: `SEAT FILLED`, `ACTING RABBI YES`, and `TOGGLE OFF` — **the appointed
+    rabbi displaced the serving leader, which is S4's own "the appointed rabbi always wins" rule
+    observed rather than assumed.**
+  - **(2) Rashi as Troyes's own Chief Rabbi — PASS**, with no `CONTRADICTION` line. That silence is
+    the load-bearing part: all four consumer sites read
+    `kehillah_has_acting_chief_rabbi_trigger`, so the trigger disagreeing with the seat and the
+    toggle would break every one of them at once.
+  - **(3) is now the cheapest remaining S4 item and was reachable in that very run** — Feivel
+    leaving Troyes should have fired `kehillah_rabbi_search.0002` at Rashi 3-10 days later. Nobody
+    looked; the session had moved on. Pick it up in the next boot.
   - **(3) built 2026-09-26 (heartbeat 4).** `kehillah_install_chief_rabbi_effect` notes the
     rabbi's old liege *before* `add_courtier` moves them (afterwards the link is gone), and if
     that liege was a **different Kehillah**, fires `kehillah_rabbi_search.0002` to them 3–10 days
