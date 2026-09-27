@@ -287,6 +287,28 @@ short research bullets for when Daniel is back.
   via the existing book system. **Done when**, live: the debug-fired event resolves all three
   options, the counter increments and displays, and the compile decision appears at the
   threshold.
+  **BUILT 2026-09-27 (heartbeat 8), ck3-tiger clean, NOT YET LIVE-TESTED.** Files:
+  `events/kehillah_responsa_events.txt` (one event, six questions — see its header for why one and
+  not six), `common/scripted_effects/kehillah_responsa_effects.txt`,
+  `common/decisions/kehillah_responsa_decisions.txt`,
+  `common/customizable_localization/kehillah_responsa_custom_loc.txt`,
+  `localization/english/kehillah_responsa_l_english.yml`, plus a `RESPONSA` section in
+  `kehillah_script_values.txt`, three triggers, one opinion modifier, and the pulse in
+  `kehillah_on_actions.txt`. Harness: **`kehillah_debug.116`** (reports every gate, states the tier
+  it EXPECTS before the roll, then fires the event) and **`kehillah_debug.117`** (sets the counter
+  to *exactly* the compile threshold, so the `>=` boundary itself is tested, not a comfortable
+  margin above it). Run files ready in `run/`: `s5_responsa_state.txt`,
+  `s5_responsa_arm_compile.txt`, `s5_responsa_readback.txt`.
+  Three design choices recorded in the commit and the file headers rather than decided silently:
+  the deferral is **not** Learning-tiered (a deferral is not an exercise of skill, and tiering it
+  would mean a learned person defers *better*), only rulings increment the counter (a question
+  passed along is not a responsum of yours), and the counter lives on the **title** because under
+  this government the next leader need not be your son. The compile decision reuses the existing
+  book system — genre `flag:talmudics`, tally 4/answer, which puts ten responsa at the book
+  system's middle (famed) tier and fourteen at illustrious, checked against its actual cuts.
+  **Still to verify live:** the event resolves all three options with the right tier tooltip, the
+  counter increments and shows in the Greatness tooltip, and "Gather the Responsa" appears at
+  exactly 10 and produces a book.
 - **S6. BUILD — Community goals.** Build exactly: a decision "Set the Community's Goal" (one active
   goal at a time, 10-year deadline, stored as title variables) offering 4 goals checked on the
   quarterly tick: **Build the Yeshiva** (the building exists at tier N), **A Name Among the
