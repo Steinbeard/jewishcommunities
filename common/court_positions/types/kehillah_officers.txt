@@ -10,15 +10,29 @@
 # -- vanilla's camp officers are court positions on a landless
 # government, and this file follows that precedent closely.
 #
-# THE GATING RULE, AND THE ONE EXCEPTION. Two of these three still gate
-# on buildings: no Chief Rabbi without a Beit Midrash, no Treasurer
-# without a Countinghouse. Each valid_position block below enforces
-# that by checking the domicile parameter its building sets. This is
-# what makes growing the quarter and populating it with people reinforce
-# each other instead of being two separate tracks.
+# THE GATING RULE, AND WHAT IS LEFT OF IT. UPDATED 2026-09-27 (S4c).
+# ONE of these three still gates on a building: no Treasurer without a
+# Countinghouse. Its valid_position enforces that by checking the domicile
+# parameter the building sets, and the original intent -- growing the
+# quarter and populating it with people reinforcing each other rather than
+# running as two separate tracks -- is still the reason it is there.
 #
-# The Shtadlan is deliberately NOT building-gated (see that office's own
-# header below for why) -- a rewrite from the original version of this
+# The CHIEF RABBI used to gate the same way, on the Beit Midrash. That
+# went 2026-09-27 at user request ("a community can always have one"); the
+# full reasoning is in that office's own valid_position below, but the
+# short version is that a rabbi is the first thing a Jewish community has
+# rather than a reward for having built a study hall, and gating him on a
+# building made the Chief Rabbi the one office a young community could not
+# fill at all. With S4b gating the Bet Din Conference on having an acting
+# Chief Rabbi, it was also gating the whole court system on masonry.
+#
+# So the rule now reads: an office gates on a building when the building
+# is the WORK -- a treasurer keeps a counting house, a sofer needs his
+# workshop -- and not when the building is merely where the work goes
+# better.
+#
+# The Shtadlan was never building-gated (see that office's own header
+# below for why) -- a rewrite from the original version of this
 # file, which gave him a "Shtadlan's Chambers" building purely because
 # spec section 3c's first draft mapped one Kehillah office onto each
 # vanilla estate skill slot, and Diplomacy needed a home. Minor communal
@@ -133,10 +147,36 @@ chief_rabbi_kehillah_position = {
 			text = kehillah_government_tt
 			government_has_flag = government_is_kehillah
 		}
-		custom_tooltip = {
-			text = kehillah_requires_beit_midrash_tt
-			domicile ?= { has_domicile_parameter = kehillah_unlocks_chief_rabbi }
-		}
+		# THE BEIT MIDRASH NO LONGER GATES THIS OFFICE. Removed 2026-09-27
+		# (S4c), at user request: "make it so that the chief rabbi isn't
+		# gated by the bet midrash, and a community can always have one."
+		# What used to be here was
+		#   custom_tooltip = { text = kehillah_requires_beit_midrash_tt
+		#       domicile ?= { has_domicile_parameter = kehillah_unlocks_chief_rabbi } }
+		# and the parameter is still set by all three Beit Midrash tiers
+		# (common/domiciles/buildings/kehillah_domicile_buildings.txt); it
+		# simply has no consumer now. Left in place rather than deleted --
+		# it is the natural hook for anything later that wants "the
+		# community has somewhere to STUDY", which is a different claim
+		# from "the community has a rabbi".
+		#
+		# WHY. A rabbi is the first thing a Jewish community has, not a
+		# reward for having built a study hall; gating him on a building
+		# had the causation backwards, and it made the Chief Rabbi the one
+		# office a young community could not fill at all. It was also the
+		# single biggest brake on Bet Din frequency, since S4b now gates
+		# convening a session on having an acting Chief Rabbi -- so a
+		# community without the building could hold no court either.
+		#
+		# The Beit Midrash keeps everything else it does: the Learn Torah
+		# study sessions, the library tiers, and its own Greatness
+		# contribution through kehillah_has_beit_midrash_value. It is now a
+		# multiplier on scholarship rather than the permission slip for it.
+		#
+		# NOTE the Treasurer below still gates on the Countinghouse, and
+		# deliberately: a treasurer with no counting house and no chest to
+		# keep is a title with no work attached, where a rabbi with no
+		# study hall still teaches, rules and buries the dead.
 
 		# S4b, 2026-09-27, at user request ("I want the chief rabbi
 		# position to only be available if you're not already the chief
@@ -257,22 +297,37 @@ chief_rabbi_kehillah_position = {
 		monthly_learning_lifestyle_xp_gain_mult = 0.1
 	}
 
-	# Holding the office earns the trait, not the other way around --
-	# see common/traits/kehillah_traits.txt's header for the full
-	# reasoning. Covers every way the office can end: an explicit
-	# revocation, the office being invalidated (e.g. the Beit Midrash
-	# is lost), or simply vacated (left court, died).
+	# Holding the office earns the trait -- see common/traits/
+	# kehillah_traits.txt's header for the full reasoning.
+	#
+	# SEMICHA IS PERMANENT. UPDATED 2026-09-27 (S4c), at user request:
+	# "let's not strip rabbi traits on removing a chief rabbi." Three
+	# teardown hooks used to sit here -- on_court_position_revoked,
+	# _invalidated and _vacated -- each removing kehillah_rabbi_trait
+	# again, so the trait behaved as a badge of CURRENT employment.
+	#
+	# That was wrong on both counts. Mechanically it made S4b's
+	# replacement path punitive in a way nobody asked for: taking the
+	# office for yourself unmade the other man's ordination, and the very
+	# quality that had qualified him for the seat vanished with the seat.
+	# On the merits it is worse still -- semicha is not a job title. A
+	# rabbi who loses a post, whose community is scattered, or whose
+	# community's beit midrash falls down is still a rabbi, and the whole
+	# point of the diaspora scholar this mod is about is that his standing
+	# travels with him rather than being held by an institution.
+	#
+	# So the trait is now granted once and kept. A dismissed Chief Rabbi
+	# stays eligible for the office elsewhere (which is exactly what
+	# S4(1)'s candidate pool wants to find in other communities' courts),
+	# and a leader who once held semicha keeps the route to
+	# kehillah_serve_as_rabbi_decision open.
+	#
+	# WHAT THIS DOES NOT DO: it is not a way to mint rabbis cheaply.
+	# Appointment is still gated by valid_character below (faith, adult,
+	# the gender hook), and the AI does not churn the office -- see
+	# kehillah_serve_as_rabbi_decision's ai_potential.
 	on_court_position_received = {
 		scope:employee = { add_trait = kehillah_rabbi_trait }
-	}
-	on_court_position_revoked = {
-		scope:employee = { remove_trait = kehillah_rabbi_trait }
-	}
-	on_court_position_invalidated = {
-		scope:employee = { remove_trait = kehillah_rabbi_trait }
-	}
-	on_court_position_vacated = {
-		scope:employee = { remove_trait = kehillah_rabbi_trait }
 	}
 
 	ai_candidate_score = {

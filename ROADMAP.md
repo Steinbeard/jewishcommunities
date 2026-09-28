@@ -406,16 +406,45 @@ short research bullets for when Daniel is back.
   chooses to act as Rabbi, Shtadlan, or Gabbai") is the part this item moves: the leader's choice
   to act as Rabbi is now exclusive and reversible, which is the precondition V23 names.
 
-  **Known wart, recorded not fixed:** the office's `on_court_position_revoked` strips
-  `kehillah_rabbi_trait`, so a rabbi dismissed by the replacement path loses his semicha even if
-  he arrived holding it. Pre-existing behaviour of that trait lifecycle, not introduced here;
-  untangling it means reworking all four of the office's exit paths.
+  **That wart is fixed** — see S4c below, same day. It read: the office's
+  `on_court_position_revoked` strips `kehillah_rabbi_trait`, so a rabbi dismissed by the
+  replacement path loses his semicha even if he arrived holding it.
 
   **Open for a live pass:** whether the preside gate is too tight in practice. It thins the pool
   of communities that can host, and hosting is how a leader without semicha gets it
   (`kehillah_bet_din_grant_rabbi_trait_effect`). AI leaders take the serve-as-rabbi decision at
   `base = 100` and three historical leaders ship with the trait, so the pool should not go empty —
   but that is reasoning, not an observation. Watch it in the S10 soak run.
+- **S4c. BUILD — Semicha is permanent; the Chief Rabbi is not a building unlock.** (Daniel,
+  2026-09-27, same session as S4b.) *"Let's not strip rabbi traits on removing a chief rabbi"* and
+  *"make it so that the chief rabbi isn't gated by the bet midrash, and a community can always have
+  one."*
+
+  **BUILT 2026-09-27, `ck3-tiger`-clean, NOT YET LIVE-TESTED.**
+  - **Semicha is permanent.** `chief_rabbi_kehillah_position`'s three teardown hooks
+    (`on_court_position_revoked` / `_invalidated` / `_vacated`, each removing
+    `kehillah_rabbi_trait`) are gone; the trait is granted on receipt and kept. It was making the
+    trait a badge of current employment: S4b's replacement path unmade the other man's ordination,
+    and a community whose beit midrash fell down unmade its rabbi. Semicha is not a job title. Side
+    benefit: a dismissed Chief Rabbi stays a candidate S4(1)'s search can find in another court,
+    which is exactly what that pool is trying to populate.
+  - **The Beit Midrash no longer gates the office**, in `valid_position` or on the search
+    decision's `is_shown`. A rabbi is the first thing a Jewish community has, not a reward for
+    having built a study hall, and with S4b gating the Bet Din on having an acting Chief Rabbi it
+    was gating the entire court system on masonry. The `kehillah_unlocks_chief_rabbi` domicile
+    parameter is still set by all three tiers but has no consumer — left as the hook for a future
+    "has somewhere to STUDY" check, which is a different claim. The Beit Midrash keeps Learn Torah,
+    the library tiers and its Greatness contribution: it is a multiplier on scholarship now, not
+    the permission slip. **The Treasurer still gates on the Countinghouse, deliberately** — the
+    rule is now "gate when the building IS the work", and a treasurer with no chest has no work
+    where a rabbi with no study hall still teaches, rules and buries the dead.
+  - **Bug fixed in S4b itself, found while doing the above.** The co-judge ranking in
+    `kehillah_bet_din_open_docket_effect` ran *before* the Av Beit Din was bound, and
+    `kehillah_bet_din_eligible_judge_trigger` excludes only the host — so an **appointed** Chief
+    Rabbi (a learned courtier, i.e. population 2 of that trigger) could be drawn into a co-judge
+    seat as well as the presiding one, staffing a court of three with two people and counting his
+    Learning twice in the tally. He is now resolved first and excluded from the pool. Note this
+    slightly *tightens* turnout math, which matters for the frequency question below.
 - **S5. BUILD — Responsa.** Build exactly: an on_action pulse (roughly one question every 1-2
   years for a leader or Chief Rabbi with Learning ≥ ~12) firing an event where a named leader of
   another real community sends a question (start with 6 question texts, halakhic/communal flavour,

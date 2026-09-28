@@ -1201,16 +1201,69 @@ kehillah_bet_din_save_presiding_effect = {
 kehillah_bet_din_open_docket_effect = {
 	scope:activity = { set_variable = { name = kehillah_bet_din_convening_title value = scope:host.primary_title } }
 
+	# WHO SITS AS AV BEIT DIN. ADDED 2026-09-27 (S4b), at user request:
+	# "chief rabbis should be the ones who preside over bet din
+	# conferences." The HOST of the activity is still the convening leader
+	# -- that is an engine fact, a courtier cannot host -- but the
+	# presiding seat on the bench is the community's acting Chief Rabbi,
+	# and when those are different people it is the rabbi's judgement the
+	# case tests. Resolved through the shared S4(2) resolver
+	# (kehillah_has_acting_chief_rabbi_trigger's header, common/
+	# scripted_triggers/kehillah_scripted_triggers.txt), which makes this
+	# that abstraction's sixth consumer site.
+	#
+	# Falls back to the host. can_start_showing_failures_only refuses a
+	# session with no rabbi at all, so the fallback should be unreachable
+	# in ordinary play -- it exists for a console-started session and for a
+	# save whose community predates the gate, where a docket with nobody on
+	# the presiding seat would read every skill check against an unset
+	# scope.
+	#
+	# RESOLVED BEFORE THE CO-JUDGE RANKING, and that ordering is a fix, not
+	# a tidy-up (S4c, 2026-09-27). An APPOINTED Chief Rabbi is a learned
+	# courtier of the host, which is precisely population 2 of
+	# kehillah_bet_din_eligible_judge_trigger -- so with the ranking run
+	# first he could be drawn into a co-judge seat as well as the presiding
+	# one, and a court of three would be staffed by two people with his
+	# Learning counted twice in the tally. He is excluded from the pool
+	# below instead. A quorum of three means three people.
+	kehillah_save_acting_chief_rabbi_effect = yes
+	if = {
+		limit = { exists = scope:kehillah_chief_rabbi }
+		scope:activity = { set_variable = { name = kehillah_bet_din_av_beit_din value = scope:kehillah_chief_rabbi } }
+	}
+	else = {
+		scope:activity = { set_variable = { name = kehillah_bet_din_av_beit_din value = scope:host } }
+	}
+
 	scope:activity = {
 		ordered_attending_character = {
 			order_by = { value = kehillah_bet_din_judge_score_value }
-			limit = { kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host } }
+			limit = {
+				kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host }
+				# Not the man already on the presiding seat -- see above.
+				# Written here rather than inside the shared eligibility
+				# trigger on purpose: that trigger is also read by
+				# can_be_activity_guest and kehillah_bet_din_available_co_
+				# judges_value, where there is no activity in scope to ask
+				# about, and this is the only caller that has one.
+				NAND = {
+					exists = scope:kehillah_chief_rabbi
+					this = scope:kehillah_chief_rabbi
+				}
+			}
 			position = 0
 			save_temporary_scope_as = kehillah_bet_din_judge2_candidate
 		}
 		ordered_attending_character = {
 			order_by = { value = kehillah_bet_din_judge_score_value }
-			limit = { kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host } }
+			limit = {
+				kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host }
+				NAND = {
+					exists = scope:kehillah_chief_rabbi
+					this = scope:kehillah_chief_rabbi
+				}
+			}
 			position = 1
 			save_temporary_scope_as = kehillah_bet_din_judge3_candidate
 		}
@@ -1233,32 +1286,6 @@ kehillah_bet_din_open_docket_effect = {
 	# panel -- see QUORUM above.
 	if = {
 		limit = { exists = scope:activity.var:kehillah_bet_din_judge3 }
-		# WHO SITS AS AV BEIT DIN. ADDED 2026-09-27 (S4b), at user request:
-		# "chief rabbis should be the ones who preside over bet din
-		# conferences." The HOST of the activity is still the convening
-		# leader -- that is an engine fact, a courtier cannot host -- but
-		# the presiding seat on the bench is the community's acting Chief
-		# Rabbi, and when those are different people it is the rabbi's
-		# judgement the case tests. Resolved through the shared S4(2)
-		# resolver (kehillah_has_acting_chief_rabbi_trigger's header,
-		# common/scripted_triggers/kehillah_scripted_triggers.txt), which
-		# makes this that abstraction's sixth consumer site.
-		#
-		# Falls back to the host. can_start_showing_failures_only now
-		# refuses a session with no rabbi at all, so the fallback should be
-		# unreachable in ordinary play -- it exists for a console-started
-		# session and for a save whose community predates that gate, where
-		# a docket with nobody on the presiding seat would read every skill
-		# check against an unset scope.
-		kehillah_save_acting_chief_rabbi_effect = yes
-		if = {
-			limit = { exists = scope:kehillah_chief_rabbi }
-			scope:activity = { set_variable = { name = kehillah_bet_din_av_beit_din value = scope:kehillah_chief_rabbi } }
-		}
-		else = {
-			scope:activity = { set_variable = { name = kehillah_bet_din_av_beit_din value = scope:host } }
-		}
-
 		scope:activity = { set_variable = { name = kehillah_bet_din_tally value = 0 } }
 		scope:activity = { set_variable = { name = kehillah_bet_din_session_score value = 0 } }
 		scope:activity = { set_variable = { name = kehillah_bet_din_cases_heard_count value = 0 } }
