@@ -147,6 +147,21 @@ short research bullets for when Daniel is back.
     group at all and holds no error text for any of it. Only the mod's own probes catch it; "error.log
     is clean" has never been evidence that a succession worked.
   - **Criteria 2 (collapse) and 3 (re-founding) remain untested.**
+  - **Criterion 1 is now a FULL LIVE PASS, 2026-09-27.** The successor-
+    domicile cause was fixed with the smallest engine-proven mechanism:
+    `kehillah_succession.0010` creates a temporary dynamic title with
+    `government = kehillah_government`, which atomically makes the Jewish
+    Quarter, restores the pre-existing community title as primary, then
+    destroys the scaffold. This preserves the title-owned pillars and the
+    recorded quarter state rather than copying either. A real Worms
+    **Step Down and Take to the Road** handoff passed the successor
+    government/domicile/primary-title breadcrumbs, all six departing-
+    adventurer invariants, and the watched community's continued holder,
+    domicile, and pillar state after further time; no new succession or
+    `change_government` errors. [Log](docs/testing/2026-09-27-successor-quarter-live-test-log.md).
+    The ordinary death/appointment route uses this same deferred event
+    but remains explicitly untested after a separate clean CK3 process
+    became unresponsive before it could accept New Game input.
 - **S2. BUILD — Pillar transparency and impact.** State as of 2026-09-25 (read from code): bands
   only gate building tiers (Greatness, one Prosperity tier), courtier quality (Greatness), one
   Crisis-Stability random event, and map-view colour. There is no band-change notice, no ongoing
@@ -251,6 +266,17 @@ short research bullets for when Daniel is back.
   Quarter come from — and it is the top item for the next heartbeat.** Do not attempt a fifth blind
   fix: read implementation doc §6/§8 and the founding path first, and live-test any change on a
   real step-down.
+  **FIXED AND LIVE-VERIFIED ON THE VOLUNTARY HANDOFF, 2026-09-27.** The
+  missing domicile is now provisioned in `kehillah_succession.0010` by a
+  temporary `create_adventurer_title` with `government =
+  kehillah_government`, then the real community title is restored as
+  primary and the temporary title is destroyed. This is the same
+  engine primitive already live-proven by the founding path; no new
+  timing guess or post-hoc `change_government` call is involved. The
+  live handoff retained the community title's pillars and restored its
+  recorded buildings. S3(b), (c), and (d) still need their own live
+  observations; ordinary death/appointment is also still a worthwhile
+  regression once CK3 accepts a new game.
 - **S4. BUILD — Chief Rabbi: search like "Find a Physician", or serve yourself.** (Daniel,
   2026-09-25.) Build exactly:
   (1) **"Seek a Chief Rabbi" decision, modelled on vanilla's physician recruitment** (the

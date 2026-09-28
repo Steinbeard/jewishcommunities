@@ -17,10 +17,11 @@
 #
 # The on_title_gain caller now guards the inline attempt with that same
 # predicate, and routes here when it would fail, one day later, by which
-# point the title is certainly committed. Read that caller's own comment
-# block for why deferring cannot regress anything: on the appointment
-# path the inline call is already a no-op today, which is exactly what
-# the error means.
+# point the title is certainly committed. The 2026-09-27 live trace
+# established that this was not a title-commit timing issue: the
+# successor has the title but no domicile. This event now uses the
+# proven create_adventurer_title government parameter to provision that
+# missing Quarter before it asks for the government again.
 #
 # THIS EVENT IS ALSO THE VERDICT ON WHETHER THE GUARD WAS RIGHT. Its
 # debug_log lines are unconditional (there are at most a handful per
@@ -48,19 +49,79 @@ kehillah_succession.0010 = {
 	}
 
 	immediate = {
-		# The single most important line this event logs, added
-		# 2026-09-26 (heartbeat 7). The refuted-timing trace showed the
-		# successor has no domicile at the instant on_title_gain fires,
-		# and kehillah_government.txt requires one
-		# (`domicile_type = kehillah_quarter`). Whether the quarter has
-		# arrived by a day later is the whole question this deferral
-		# rests on, so it is reported before anything is attempted.
+		# The pre-fix diagnosis, retained as a breadcrumb. A plain title
+		# transfer does not carry a character-owned domicile, so there is
+		# normally still none to find a day later.
 		if = {
 			limit = { exists = domicile }
 			debug_log = "kehillah_succession.0010: the new leader HAS a domicile one day after title gain -- the quarter travelled with the title"
 		}
 		else = {
-			debug_log = "kehillah_succession.0010: the new leader STILL has NO domicile one day after title gain -- deferring longer would not help either"
+			debug_log = "kehillah_succession.0010: the new leader still has NO domicile one day after title gain -- provisioning the Quarter now"
+
+			# `create_adventurer_title` with government = kehillah_government
+			# is the one engine primitive that creates a Jewish Quarter
+			# atomically with its government. It is proven live in both
+			# directions already: kehillah_found_community_effect makes a new
+			# community this way, and kehillah_departure_finish_effect makes
+			# the departing leader's camp with the same primitive. A plain
+			# change_government cannot repair a character with no domicile --
+			# it is refused before it can make one.
+			#
+			# The dynamic title is scaffolding, not a second community. It
+			# creates the successor's Quarter and Kehillah government; the
+			# real, already-held community title is immediately restored as
+			# primary and the scaffold is destroyed. That preserves the real
+			# title's pillars, recorded buildings, registry entry, history and
+			# succession law without copying any of them.
+			if = {
+				limit = { any_held_title = { this = scope:kq_title } }
+				create_adventurer_title = {
+					name = kehillah_successor_scaffold_title_name
+					holder = root
+					government = kehillah_government
+					article = kehillah_successor_scaffold_title_article
+					save_scope_as = kehillah_successor_scaffold_title
+				}
+				debug_log = "kehillah_succession.0010: created the temporary Kehillah scaffold"
+
+				if = {
+					limit = { exists = scope:kehillah_successor_scaffold_title }
+					hidden_effect = {
+						set_primary_title_to = scope:kq_title
+					}
+					destroy_title = scope:kehillah_successor_scaffold_title
+					debug_log = "kehillah_succession.0010: restored the real community as primary and destroyed the scaffold"
+				}
+				else = {
+					debug_log = "kehillah_succession.0010: FAIL create_adventurer_title returned no scaffold title"
+				}
+			}
+			else = {
+				debug_log = "kehillah_succession.0010: FAIL no held Kehillah title was available to restore as primary"
+			}
+
+			if = {
+				limit = { exists = domicile }
+				debug_log = "kehillah_succession.0010: PASS a domicile exists after provisioning"
+			}
+			else = {
+				debug_log = "kehillah_succession.0010: FAIL no domicile exists after provisioning"
+			}
+			if = {
+				limit = { government_has_flag = government_is_kehillah }
+				debug_log = "kehillah_succession.0010: PASS successor has Kehillah government after provisioning"
+			}
+			else = {
+				debug_log = "kehillah_succession.0010: FAIL successor does not have Kehillah government after provisioning"
+			}
+			if = {
+				limit = { primary_title = { this = scope:kq_title } }
+				debug_log = "kehillah_succession.0010: PASS the real community title is primary after cleanup"
+			}
+			else = {
+				debug_log = "kehillah_succession.0010: FAIL the real community title is not primary after cleanup"
+			}
 		}
 
 		if = {
@@ -75,19 +136,8 @@ kehillah_succession.0010 = {
 				any_held_title = { is_landless_type_title = yes }
 				exists = domicile
 			}
-			debug_log = "kehillah_succession.0010: government was NOT kehillah, and both a landless title and a domicile are now present -- setting it (deferral was the fix)"
+			debug_log = "kehillah_succession.0010: government was NOT kehillah, and both a landless title and a domicile are now present -- setting it"
 			change_government = kehillah_government
-
-			# Both of these were already run inline by
-			# kehillah_on_title_gain and are documented there as safe to
-			# call again (kehillah_restore_quarter_effect is a no-op with
-			# no stored building state; kehillah_maintain_host_charter_
-			# effect's own header says it is safe and cheap to call
-			# unconditionally, every time). They are repeated here
-			# because the inline pass ran before the domicile that
-			# change_government creates existed.
-			kehillah_restore_quarter_effect = yes
-			kehillah_maintain_host_charter_effect = yes
 
 			# Whether the deferred call was actually accepted, stated by
 			# the engine rather than assumed. If this reads FAIL, the
@@ -96,23 +146,35 @@ kehillah_succession.0010 = {
 			# patch a fifth time.
 			if = {
 				limit = { government_has_flag = government_is_kehillah }
-				debug_log = "kehillah_succession.0010: CONFIRMED the government IS kehillah after the deferred call -- deferral is the fix"
+				debug_log = "kehillah_succession.0010: CONFIRMED the government IS kehillah after the deferred call"
 			}
 			else = {
 				debug_log = "kehillah_succession.0010: FAIL the deferred change_government was refused as well -- the domicile theory is wrong; report, do not patch."
 			}
 		}
 		else = {
-			# Neither timing nor the predicate explains it. Do NOT guess
-			# from here -- this is the case the 2026-09-23 note meant
-			# when it said a fourth blind fix must not be attempted.
+			# Provisioning failed or the title itself has gone away. Report
+			# the exact state rather than attempting another transition.
 			if = {
 				limit = { any_held_title = { is_landless_type_title = yes } }
-				debug_log = "kehillah_succession.0010: STILL cannot get the kehillah government a day later -- root holds a landless title but has NO domicile, so the engine has nowhere to put a kehillah_quarter. Report, do not patch."
+				debug_log = "kehillah_succession.0010: FAIL cannot get the Kehillah government after Quarter provisioning -- root still has no domicile"
 			}
 			else = {
 				debug_log = "kehillah_succession.0010: STILL cannot get the kehillah government a day later -- root holds no landless-type title. Neither timing nor the predicate explains this; report, do not patch."
 			}
+		}
+
+		# The inline restore/charter calls ran before the former no-domicile
+		# path had a Quarter, so they were no-ops. Run them only after the
+		# final state is known good. Both are idempotent by design.
+		if = {
+			limit = {
+				government_has_flag = government_is_kehillah
+				exists = domicile
+			}
+			kehillah_restore_quarter_effect = yes
+			kehillah_maintain_host_charter_effect = yes
+			debug_log = "kehillah_succession.0010: restored the recorded Quarter and refreshed the host charter after a successful handoff"
 		}
 	}
 }
