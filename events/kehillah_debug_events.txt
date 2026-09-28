@@ -2749,3 +2749,72 @@ kehillah_debug.121 = {
 		debug_log = "kehillah_debug.121: S4c Beit Midrash ungating -- END (now let a month pass and re-run kehillah_debug.118)"
 	}
 }
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.122 -- RESPONSA: arm the gate on the LEADER himself, then
+# hand off to kehillah_debug.116.
+#
+# Why this exists. Post-S4b the responsa gate needs semicha, and
+# kehillah_responsa_answerer_is_rabbi_trigger resolves the APPOINTED Chief
+# Rabbi first when there is one. So on an ordinary Worms start the pulse is
+# silent for two unrelated reasons at once, and firing .116 there produces a
+# FULL GATE FAIL that says nothing about whether the feature works. This
+# puts the community into the one state where the gate's outcome is
+# attributable: no appointed rabbi, the leader holding semicha himself.
+#
+# It deliberately does NOT touch Learning. The tier the answer lands in is
+# then the leader's real Learning against the real cuts, reported by .116
+# before the roll -- a number computed independently of the tooltip it is
+# checked against, which is what made the S2 tooltip pass meaningful. Arming
+# the tier as well would be testing the probe's arithmetic.
+#
+# DESTRUCTIVE -- it dismisses a sitting Chief Rabbi and grants a trait.
+# Fire it on the community LEADER.
+# ---------------------------------------------------------------------
+kehillah_debug.122 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.122: arming the responsa gate on the leader -- START"
+
+		if = {
+			limit = { employs_court_position = chief_rabbi_kehillah_position }
+			debug_log = "kehillah_debug.122: an appointed Chief Rabbi holds the answerer slot -- dismissing him so the LEADER is the answerer and the gate below is attributable"
+			kehillah_replace_appointed_rabbi_effect = yes
+		}
+
+		if = {
+			limit = { has_trait = kehillah_rabbi_trait }
+			debug_log = "kehillah_debug.122: the leader already holds semicha"
+		}
+		else = {
+			add_trait = kehillah_rabbi_trait
+			debug_log = "kehillah_debug.122: granted the leader semicha (kehillah_rabbi_trait)"
+		}
+
+		save_scope_value_as = { name = kehillah_debug_122_learning value = learning }
+		save_scope_value_as = { name = kehillah_debug_122_threshold value = kehillah_responsa_learning_threshold }
+
+		if = {
+			limit = { kehillah_responsa_answerer_is_rabbi_trigger = yes }
+			debug_log = "kehillah_debug.122: SEMICHA GATE PASS"
+		}
+		else = {
+			debug_log = "kehillah_debug.122: SEMICHA GATE FAIL the trait was just granted, so this is the trigger resolving somebody else as the answerer"
+		}
+
+		if = {
+			limit = { kehillah_can_answer_responsa_trigger = yes }
+			debug_log = "kehillah_debug.122: ARMED the full gate now passes -- handing off to kehillah_debug.116, which will report the expected tier and fire the question"
+		}
+		else = {
+			debug_log = "kehillah_debug.122: NOT ARMED the full gate still fails -- .116 next will say which half (learning, or no other community to write in)"
+		}
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.122: arming the responsa gate on the leader -- END"
+
+		trigger_event = { id = kehillah_debug.116 days = 0 }
+	}
+}
