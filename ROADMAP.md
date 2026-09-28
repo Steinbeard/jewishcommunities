@@ -1,4 +1,4 @@
-# Roadmap
+﻿# Roadmap
 
 Working title: **Kehillah** (working name for the mod overall is still TBD — "Jewish Communities" is the folder/descriptor name for now).
 
@@ -415,6 +415,17 @@ short research bullets for when Daniel is back.
   (`kehillah_bet_din_grant_rabbi_trait_effect`). AI leaders take the serve-as-rabbi decision at
   `base = 100` and three historical leaders ship with the trait, so the pool should not go empty —
   but that is reasoning, not an observation. Watch it in the S10 soak run.
+  **S4b LIVE-VERIFIED 2026-09-28 -- PASS.** [Log](docs/testing/2026-09-28-heartbeat-s4bcd-s5-live-test-log.md) sections 1 and 4. `kehillah_debug.119`
+  returns five for five on the replacement path: `SEAT CLEARED PASS`, `TOGGLE EFFECTIVE PASS`,
+  `OPINION PASS`, `SEMICHA PERMANENT PASS`, `PRESIDE GATE PASS`. The semicha assertion was **added
+  for this run** -- `.119` exercised the replacement path but had never looked at the deposed
+  rabbi's trait, and that path is exactly the site whose teardown hooks used to strip it. Mutual
+  exclusion (`EXCLUSION PASS`) and the responsa semicha gate also read correctly.
+  **The preside-gate question is partly answered, and the answer is worth knowing: the gate is
+  visibly CLOSED on an untouched Worms start** (`PRESIDE GATE BLOCKED` -- no appointed rabbi, and
+  the leader has not taken the office). That is the rule working rather than a bug, but it means a
+  fresh community cannot convene a Bet Din until it settles its rabbinate. Not too tight here (the
+  seat is trivially fillable, see S4c), but a *young* community is still the untested case.
 - **S4c. BUILD — Semicha is permanent; the Chief Rabbi is not a building unlock.** (Daniel,
   2026-09-27, same session as S4b.) *"Let's not strip rabbi traits on removing a chief rabbi"* and
   *"make it so that the chief rabbi isn't gated by the bet midrash, and a community can always have
@@ -438,6 +449,17 @@ short research bullets for when Daniel is back.
     the permission slip. **The Treasurer still gates on the Countinghouse, deliberately** — the
     rule is now "gate when the building IS the work", and a treasurer with no chest has no work
     where a rabbi with no study hall still teaches, rules and buries the dead.
+    **S4c LIVE-VERIFIED 2026-09-28 -- PASS, both halves.** [Log](docs/testing/2026-09-28-heartbeat-s4bcd-s5-live-test-log.md) section 5. It needed a
+    new probe, `kehillah_debug.121`, because **every community in the 1066 setup starts with a Beit
+    Midrash -- so nothing in ordinary play reaches the state S4c is about.** The probe tests the
+    claim in the hard direction: demolish all three tiers, prove the demolition landed
+    (`STRIP PASS`, checked on the unlock parameter -- without that control a pass would equally be
+    satisfied by a probe that removed nothing), and only then appoint. `UNGATED PASS`,
+    `SEMICHA GRANTED PASS`, `PRESIDE GATE PASS`.
+    **The second half is the one the probe cannot do itself:** `valid_position` re-evaluates on a
+    monthly tick, so the session ran on to 1067.6.12 (about seven months) and `.118` re-read
+    `ACTING RABBI BOUND`. The un-gating survives revalidation, not merely the moment of
+    appointment. Semicha permanence is verified separately, under S4b above.
   - **Bug fixed in S4b itself, found while doing the above.** The co-judge ranking in
     `kehillah_bet_din_open_docket_effect` ran *before* the Av Beit Din was bound, and
     `kehillah_bet_din_eligible_judge_trigger` excludes only the host — so an **appointed** Chief
@@ -486,6 +508,17 @@ short research bullets for when Daniel is back.
   and own-household populations separately, both bars, the cooldown state and the S4b preside gate.
   The levers are otherwise invisible until a session runs or fails quorum months later.
 
+  **S4d LIVE-PROBED 2026-09-28 -- PASS on a healthy region; the Baghdad question is untouched.**
+  [Log](docs/testing/2026-09-28-heartbeat-s4bcd-s5-live-test-log.md) section 1. `kehillah_debug.120` on Worms: **co-judge count 30** against the
+  invalidation floor of 2, region leaders 5, own household 5, off cooldown, both bars reading 12
+  and 8 as set. Worms is the best case (the Rhineland cluster), so this shows the four levers did
+  not break a healthy region and that this one has room to spare -- **it says nothing about Baghdad
+  or Toledo, which is what the frequency problem was actually about.** Those two want the same
+  probe, and a community with no same-minhag-region peer is the case that decides whether the
+  unbuilt fifth lever is needed. Also recorded in the log because it is easy to misread later as a
+  bug: an **appointed** rabbi is excluded from the co-judge count by design -- he presides, so he
+  cannot also be one of the two judges beside the bench.
+
   **Open decision for Daniel, recorded not taken:** population 4 checks
   `kehillah_leadership_gender_eligible_trigger`, the hook every new leadership role in this mod goes
   through; the three older populations never have, so women can already sit as co-judges today via
@@ -531,9 +564,42 @@ short research bullets for when Daniel is back.
   this government the next leader need not be your son. The compile decision reuses the existing
   book system — genre `flag:talmudics`, tally 4/answer, which puts ten responsa at the book
   system's middle (famed) tier and fourteen at illustrious, checked against its actual cuts.
-  **Still to verify live:** the event resolves all three options with the right tier tooltip, the
-  counter increments and shows in the Greatness tooltip, and "Gather the Responsa" appears at
-  exactly 10 and produces a book.
+  **S5 LIVE-VERIFIED 2026-09-28 -- PASS on every criterion this item names.** [Log](docs/testing/2026-09-28-heartbeat-s4bcd-s5-live-test-log.md)
+  sections 2 and 3.
+  - **All three options resolve, and the counter reads exactly 2.** That last number is the
+    load-bearing one: a deferral is deliberately not a responsum of yours, so three firings
+    answered with lenient / stringent / defer must leave 2 on the books. They did.
+  - **The tier tooltips agree with an independently computed figure**, not with a tester's
+    expectation -- `.116` states the expected tier *before* the roll, and all three firings
+    reported `EXPECT GREAT` against tooltips showing the great-tier text.
+  - **The Greatness arithmetic was traced, not assumed:** 487 -> 501 (+14 great) -> 515 (+14 great)
+    -> 512 (-3 deferral penalty).
+  - **"Gather the Responsa" appears at exactly the threshold and produces a book.** `.117` sets the
+    counter to exactly 10 rather than to a comfortable margin, so the `>=` boundary itself is what
+    was tested. Taking it produced the artifact, reset the counter, set volumes to 1, and paid the
+    famed-tier +80 Greatness (base 60 + 20 for a tally of 40 clearing the famed cut of 30) --
+    computed independently and matched exactly.
+  - **Two real bugs surfaced here, both in the shipped BOOK system rather than in S5**, and both
+    fixed the same day. (1) **Every book this mod has ever produced came out masterwork**: eight
+    tier reads inside `scope:newly_created_artifact` asked the *artifact* for a character variable,
+    so all eight fell through to their masterwork `else`. The reward arithmetic reads the same
+    variable in character scope and was always right, which is exactly why this survived a live
+    test -- the numbers matched and nobody looked at the artifact. (2) **Compiling grew error.log by
+    ~250,000 lines in one second**: a decision's effect block is evaluated to build its tooltip, and
+    `set_variable` writes nothing in that pass, so calling `kehillah_book_complete_effect` inline
+    right after setting the variables it reads threw on every rebuild frame (1,853 rebuilds x 9 read
+    sites). Moved into a hidden `kehillah_responsa.0002` at `days = 0`. **The rule worth carrying
+    forward: never write a variable and read it back in the same decision effect.** Log sections 6-8
+    have the full account, including why `ck3-tiger` cannot catch either.
+  - **Design change made during the run:** `kehillah_responsa_learning_threshold` lowered 12 -> 8.
+    The gate was 12 and `kehillah_responsa_learning_good` is 12, so the gate admitted nobody who
+    could land *below* the good cut -- the whole POOR tier, the only outcome where answering costs
+    you standing, was unreachable script. 8 is `kehillah_bet_din_local_dayan_learning_threshold`,
+    S4d's own bar for a real judge. Log section 9.
+  - **Still untested:** the POOR and GOOD tiers (reachable now, but the Worms leader has Learning 32
+    so every firing landed GREAT -- needs a low-Learning answerer, and it is the cheapest thing left
+    on S5); and the yearly `on_action` pulse firing **on its own**, together with S4b's 40%
+    against-the-AI bias. Every firing in this run was armed and fired by probe.
 - **S6. BUILD — Community goals.** Build exactly: a decision "Set the Community's Goal" (one active
   goal at a time, 10-year deadline, stored as title variables) offering 4 goals checked on the
   quarterly tick: **Build the Yeshiva** (the building exists at tier N), **A Name Among the
