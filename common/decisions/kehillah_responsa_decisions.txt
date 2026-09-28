@@ -79,7 +79,22 @@ kehillah_compile_responsa_decision = {
 	is_valid = {
 		is_adult = yes
 		is_imprisoned = no
-		kehillah_can_compile_responsa_trigger = yes
+
+		# WRAPPED IN A custom_tooltip 2026-09-28, after a live pass read the
+		# requirement list and found two untranslatable lines in it:
+		#   "Has Variable: VARIABLE(BUG: has_variable missing perspective)"
+		#   "landed_title_var_greater_or_equal has no localization"
+		# Both came from kehillah_can_compile_responsa_trigger's raw
+		# has_variable / var:... >= reads inside a primary_title block. The
+		# engine has no loc for either shape, so it printed its own internal
+		# complaint to the player in broken-loc magenta. The gate itself was
+		# evaluating correctly -- both lines were checkmarked -- so this was
+		# only ever how it read, which is exactly the class of thing a live
+		# pass catches and a source read does not.
+		custom_tooltip = {
+			text = kehillah_compile_responsa_enough_tt
+			kehillah_can_compile_responsa_trigger = yes
+		}
 
 		# See the header: the Write a Book chain owns these two variables.
 		custom_tooltip = {
@@ -100,7 +115,31 @@ kehillah_compile_responsa_decision = {
 			}
 		}
 
-		kehillah_book_complete_effect = yes
+		# THE BOOK IS FINISHED IN AN EVENT, NOT HERE -- and this is the whole
+		# reason kehillah_responsa.0002 exists. Fixed 2026-09-28 after a live
+		# compile grew error.log by ~250,000 lines in about one second.
+		#
+		# A decision's `effect` block is evaluated to BUILD ITS TOOLTIP, and
+		# in that pass `set_variable` does not actually write anything. So
+		# kehillah_book_complete_effect, called inline here, ran against the
+		# two variables set immediately above it as though they did not
+		# exist -- because during a tooltip build they do not. Nine `var:`
+		# read sites inside it threw "Failed to fetch variable ... due to not
+		# being set", once each, on every tooltip rebuild frame: 1,853
+		# rebuilds while the decision panel was open.
+		#
+		# This is why the shipped Write a Book chain never did it: there the
+		# variables are set days earlier by kehillah_book.0001-0004, so by
+		# the time kehillah_book.0005's option previews the same effect the
+		# reads all succeed. The bug is not in the book effect at all -- it is
+		# in setting a variable and reading it back inside one previewable
+		# block. Deferring by a day is not needed; days = 0 fires after this
+		# block has actually been applied.
+		#
+		# The generalisation, worth carrying to any future decision: never
+		# write a variable and read it in the same decision effect. The
+		# tooltip pass will read it unwritten, every frame the panel is open.
+		trigger_event = { id = kehillah_responsa.0002 days = 0 }
 
 		primary_title = {
 			set_variable = { name = kehillah_var_responsa_count value = 0 }
