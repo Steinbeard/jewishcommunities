@@ -2416,6 +2416,72 @@ kehillah_end_serving_as_own_rabbi_effect = {
 
 
 # ---------------------------------------------------------------------
+# kehillah_replace_appointed_rabbi_effect
+# Scope: the Kehillah leader. Called from kehillah_serve_as_rabbi_
+# decision's effect, and only when the seat is actually filled.
+#
+# ADDED 2026-09-27 (S4b), at user request: "if there's already a chief
+# rabbi, maybe you can replace him with yourself with the decision."
+# Previously the decision simply refused while the seat was filled, which
+# left a learned leader who wanted the office with no route to it short of
+# dismissing the incumbent through the court UI first and then coming
+# back -- two steps for one intention, and the second one easy to forget.
+#
+# THIS IS A DISMISSAL, AND IS PRICED AS ONE. The incumbent is revoked
+# (vanilla's own block form, as 10_tgp_interactions.txt's favored-minister
+# swap uses -- `revoke_court_position = { court_position = X recipient =
+# court_position:X }`, not the bare one-line form the .info file
+# documents) and takes the same revoked_court_position_opinion vanilla
+# gives anyone fired from a court position. Nothing about it is free.
+#
+# KNOWN WART, deliberately left alone: chief_rabbi_kehillah_position's
+# on_court_position_revoked removes kehillah_rabbi_trait from the former
+# holder, so a rabbi dismissed this way loses his semicha even if he
+# arrived holding it. That is pre-existing behaviour of the office's own
+# trait lifecycle ("holding the office earns the trait" -- common/traits/
+# kehillah_traits.txt), not something this effect introduces, and
+# untangling it means reworking that lifecycle for all four exit paths.
+# Recorded rather than quietly patched around here.
+#
+# ORDER MATTERS. The revocation must land BEFORE the caller sets
+# kehillah_serving_as_own_rabbi: kehillah_serving_as_own_rabbi_trigger
+# reads false for as long as the court position is still employed (see its
+# header), so a flag set first would not take effect until the seat
+# cleared anyway.
+# ---------------------------------------------------------------------
+
+kehillah_replace_appointed_rabbi_effect = {
+	if = {
+		limit = { employs_court_position = chief_rabbi_kehillah_position }
+
+		court_position:chief_rabbi_kehillah_position = {
+			save_scope_as = kehillah_deposed_rabbi
+		}
+
+		revoke_court_position = {
+			court_position = chief_rabbi_kehillah_position
+			recipient = court_position:chief_rabbi_kehillah_position
+		}
+
+		scope:kehillah_deposed_rabbi = {
+			add_opinion = {
+				target = root
+				modifier = revoked_court_position_opinion
+			}
+		}
+
+		send_interface_message = {
+			type = msg_kehillah_endorsement
+			title = kehillah_rabbi_office_taken_over_msg_title
+			desc = kehillah_rabbi_office_taken_over_msg_desc
+			left_icon = root
+			right_icon = scope:kehillah_deposed_rabbi
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
 # kehillah_task_contract_pick_employer_effect
 # Scope: a character (the Kehillah leader). v8 spec section 2 point 1.
 #

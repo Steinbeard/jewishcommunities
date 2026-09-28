@@ -2272,3 +2272,222 @@ kehillah_debug.117 = {
 		debug_log = "kehillah_debug.117: arming the responsa compile decision -- END"
 	}
 }
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.118 -- S4b (2026-09-27): the Chief Rabbi office, read-only.
+#
+# .115 already reports the S4(2) acting-rabbi state and its own
+# contradiction check; this is the S4b layer on top of it, and the two are
+# meant to be read together (fire both). What S4b added, and what this
+# checks:
+#
+#   1. MUTUAL EXCLUSION. Toggle ON and seat FILLED at the same time is now
+#      a BUG, not merely untidy -- chief_rabbi_kehillah_position's
+#      valid_position refuses the appointment while the leader holds the
+#      office, and kehillah_serve_as_rabbi_decision dismisses the
+#      incumbent rather than coexisting with him. If both read true here,
+#      either that valid_position is not biting or the save predates S4b.
+#   2. THE BET DIN PRESIDE GATE. A session cannot be convened without an
+#      acting Chief Rabbi, and whoever that is sits as Av Beit Din -- so
+#      this reports both the gate and WHOSE skill the host bench will
+#      check (scope:kehillah_chief_rabbi in the dump below).
+#   3. THE RESPONSA RABBI GATE. Learning alone is no longer enough; the
+#      answerer needs semicha. Reported separately from the learning
+#      threshold so a silent responsa pulse can be attributed to the right
+#      half.
+#
+# Fire it on the community LEADER:
+#   effect = { every_ruler = { limit = { has_primary_title = title:d_kehillah_worms } trigger_event = kehillah_debug.118 } }
+# then `run <file>.txt` from the console.
+# ---------------------------------------------------------------------
+kehillah_debug.118 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.118: S4b Chief Rabbi office state (read-only) -- START"
+
+		save_scope_value_as = { name = kehillah_debug_118_learning value = learning }
+		save_scope_value_as = { name = kehillah_debug_118_responsa_answerer_learning value = kehillah_responsa_answerer_learning_value }
+		save_scope_value_as = { name = kehillah_debug_118_responsa_threshold value = kehillah_responsa_learning_threshold }
+
+		# Who the shared resolver binds -- this is the character whose
+		# skill every host-event bench check will read once a docket opens.
+		kehillah_save_acting_chief_rabbi_effect = yes
+		if = {
+			limit = { exists = scope:kehillah_chief_rabbi }
+			debug_log = "kehillah_debug.118: ACTING RABBI BOUND see scope:kehillah_chief_rabbi in the dump -- this is who sits as Av Beit Din and whose skill the host bench checks"
+		}
+		else = {
+			debug_log = "kehillah_debug.118: ACTING RABBI UNBOUND no rabbi by either route"
+		}
+
+		# 1. MUTUAL EXCLUSION.
+		if = {
+			limit = {
+				kehillah_has_taken_up_rabbinate_trigger = yes
+				employs_court_position = chief_rabbi_kehillah_position
+			}
+			debug_log = "kehillah_debug.118: EXCLUSION FAIL toggle ON and seat FILLED at once -- S4b makes this unreachable in play; report it unless this is a pre-S4b save or the state was forced from the console"
+		}
+		else = {
+			debug_log = "kehillah_debug.118: EXCLUSION PASS at most one of toggle/seat is set"
+		}
+
+		if = { limit = { kehillah_has_taken_up_rabbinate_trigger = yes } debug_log = "kehillah_debug.118: TOGGLE ON the leader holds the rabbinate himself -- appointment should be refused and Seek a Chief Rabbi greyed out" }
+		else = { debug_log = "kehillah_debug.118: TOGGLE OFF the leader does not hold the rabbinate himself" }
+
+		# 2. THE BET DIN PRESIDE GATE.
+		if = {
+			limit = { kehillah_has_acting_chief_rabbi_trigger = yes }
+			debug_log = "kehillah_debug.118: PRESIDE GATE PASS a Bet Din Conference can be convened (somebody can sit as Av Beit Din)"
+		}
+		else = {
+			debug_log = "kehillah_debug.118: PRESIDE GATE BLOCKED no acting Chief Rabbi -- can_start_showing_failures_only should refuse the conference, and that is correct behaviour, not a bug"
+		}
+
+		# 3. THE RESPONSA RABBI GATE, reported as its two independent halves.
+		if = {
+			limit = { kehillah_responsa_answerer_is_rabbi_trigger = yes }
+			debug_log = "kehillah_debug.118: RESPONSA SEMICHA PASS whoever would answer holds the rabbi trait"
+		}
+		else = {
+			debug_log = "kehillah_debug.118: RESPONSA SEMICHA FAIL the answerer has no semicha -- the pulse is SUPPOSED to be silent now (S4b); this is the gate working"
+		}
+		if = {
+			limit = { kehillah_responsa_answerer_learning_value >= kehillah_responsa_learning_threshold }
+			debug_log = "kehillah_debug.118: RESPONSA LEARNING PASS"
+		}
+		else = {
+			debug_log = "kehillah_debug.118: RESPONSA LEARNING FAIL compare the answerer-learning and threshold figures in the dump"
+		}
+		if = {
+			limit = { kehillah_can_answer_responsa_trigger = yes }
+			debug_log = "kehillah_debug.118: RESPONSA GATE PASS the pulse can fire on this community"
+		}
+		else = {
+			debug_log = "kehillah_debug.118: RESPONSA GATE BLOCKED -- the two halves above say which one, or there is no other registered community to write in"
+		}
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.118: S4b Chief Rabbi office state (read-only) -- END"
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.119 -- S4b: exercise the REPLACEMENT path.
+#
+# kehillah_serve_as_rabbi_decision can now take the office off a sitting
+# Chief Rabbi (kehillah_replace_appointed_rabbi_effect). Reaching that in
+# normal play needs an appointed rabbi AND a leader who qualifies to
+# replace him, which is a fair amount of setup; this does the whole thing
+# and asserts the result.
+#
+# NOT read-only. It appoints, then dismisses, then leaves the leader
+# holding the office. Run it on a throwaway save.
+#
+# WHY IT APPOINTS ITS OWN RABBI FIRST rather than requiring one to be
+# there: the assertion that matters is "the seat is empty and the toggle is
+# effective AFTERWARDS", and a probe that refuses to run without prior
+# setup tends to get skipped. If a rabbi is already employed, that one is
+# used and no appointment happens -- the more realistic case, so it is the
+# preferred one.
+#
+# Fire it on the community LEADER.
+# ---------------------------------------------------------------------
+kehillah_debug.119 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.119: S4b replace-the-rabbi path -- START"
+
+		# Setup: make sure somebody is in the seat.
+		if = {
+			limit = { employs_court_position = chief_rabbi_kehillah_position }
+			debug_log = "kehillah_debug.119: SETUP a chief rabbi is already employed -- using him"
+		}
+		else = {
+			# The leader may be holding the office himself, in which case
+			# appointment is refused (that is S4b working) -- clear it first
+			# so the probe can set up the state it means to test.
+			if = {
+				limit = { kehillah_has_taken_up_rabbinate_trigger = yes }
+				debug_log = "kehillah_debug.119: SETUP clearing the leader own rabbinate first, or the appointment below would be refused"
+				kehillah_end_serving_as_own_rabbi_effect = yes
+			}
+			random_courtier = {
+				limit = {
+					is_adult = yes
+					faith = root.faith
+					kehillah_leadership_gender_eligible_trigger = yes
+				}
+				save_scope_as = kehillah_debug_119_appointee
+			}
+			if = {
+				limit = { exists = scope:kehillah_debug_119_appointee }
+				appoint_court_position = {
+					recipient = scope:kehillah_debug_119_appointee
+					court_position = chief_rabbi_kehillah_position
+				}
+				debug_log = "kehillah_debug.119: SETUP appointed a courtier as chief rabbi -- see scope:kehillah_debug_119_appointee"
+			}
+			else = {
+				debug_log = "kehillah_debug.119: SETUP FAIL no eligible courtier to appoint -- the assertions below will not mean anything"
+			}
+		}
+
+		if = {
+			limit = { employs_court_position = chief_rabbi_kehillah_position }
+			debug_log = "kehillah_debug.119: SETUP OK the seat is filled, running the replacement"
+
+			# The decision own effect body, in order.
+			kehillah_replace_appointed_rabbi_effect = yes
+			add_character_flag = kehillah_serving_as_own_rabbi
+			add_character_modifier = kehillah_serving_as_own_rabbi_modifier
+
+			if = {
+				limit = { NOT = { employs_court_position = chief_rabbi_kehillah_position } }
+				debug_log = "kehillah_debug.119: SEAT CLEARED PASS the incumbent was revoked"
+			}
+			else = {
+				debug_log = "kehillah_debug.119: SEAT CLEARED FAIL somebody still holds the position after the revocation"
+			}
+
+			if = {
+				limit = { kehillah_serving_as_own_rabbi_trigger = yes }
+				debug_log = "kehillah_debug.119: TOGGLE EFFECTIVE PASS the leader now reads as acting chief rabbi"
+			}
+			else = {
+				debug_log = "kehillah_debug.119: TOGGLE EFFECTIVE FAIL the flag is set but the trigger still says no -- the revocation did not land before the flag"
+			}
+
+			if = {
+				limit = {
+					exists = scope:kehillah_deposed_rabbi
+					scope:kehillah_deposed_rabbi = {
+						has_opinion_modifier = {
+							modifier = revoked_court_position_opinion
+							target = root
+						}
+					}
+				}
+				debug_log = "kehillah_debug.119: OPINION PASS the deposed rabbi resents the leader for it"
+			}
+			else = {
+				debug_log = "kehillah_debug.119: OPINION FAIL no revoked_court_position_opinion on the deposed rabbi"
+			}
+
+			if = {
+				limit = { kehillah_has_acting_chief_rabbi_trigger = yes }
+				debug_log = "kehillah_debug.119: PRESIDE GATE PASS a Bet Din can still be convened afterwards"
+			}
+			else = {
+				debug_log = "kehillah_debug.119: PRESIDE GATE FAIL the community reads as having no rabbi at all after the handover"
+			}
+		}
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.119: S4b replace-the-rabbi path -- END"
+	}
+}

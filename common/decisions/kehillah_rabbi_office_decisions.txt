@@ -13,23 +13,63 @@
 # leader like Rashi presiding over a community recorded as having "no
 # rabbi" reads as a bug, not a design.
 #
-# The seat itself is untouched. What changes is that every consumer of it
-# now asks who is ACTING in the role -- see
+# Every consumer of the seat asks who is ACTING in the role -- see
 # kehillah_has_acting_chief_rabbi_trigger's header (common/
 # scripted_triggers/kehillah_scripted_triggers.txt) for the shared
 # trigger/value/effect trio this is built on and why it is deliberately
 # one place rather than a special case per site.
 #
-# APPOINTING A RABBI ENDS IT. Immediately in effect (the trigger itself
-# checks the seat), and cosmetically on the next quarterly pulse, which
-# is what clears the flag and stops charging the leader for two jobs --
-# see kehillah_clear_redundant_rabbi_toggle_effect for why a pulse and
-# not an on_action.
+# =====================================================================
+# UPDATED 2026-09-27 (S4b). THE OFFICE AND THE SEAT ARE NOW ONE THING.
+#
+# As first built, the toggle and the court position were independent: a
+# leader could take up the office and then also appoint somebody to it,
+# and the community read as having two rabbis. Two changes fixed that,
+# and they are deliberately ASYMMETRIC:
+#
+#   * FROM THE SEAT'S SIDE -- appointment is simply refused while the
+#     leader holds the office (chief_rabbi_kehillah_position's
+#     valid_position, common/court_positions/types/kehillah_officers.txt),
+#     and kehillah_seek_chief_rabbi_decision below is greyed out for the
+#     same reason rather than running a search whose prize cannot be
+#     seated.
+#   * FROM THE DECISION'S SIDE -- taking up the office DEPOSES a sitting
+#     Chief Rabbi (kehillah_replace_appointed_rabbi_effect), at the cost
+#     of the ordinary revoked-position opinion hit. Deciding the
+#     community's rabbi should be you is a real move a leader can make,
+#     not something the presence of an incumbent forbids.
+#
+# The asymmetry is the design: the leader's own intent wins over the
+# appointment system, and never the other way around.
+#
+# kehillah_clear_redundant_rabbi_toggle_effect (the quarterly sweep that
+# used to be the ONLY thing reconciling the two states) is kept, but it is
+# now unreachable in ordinary play -- nothing can produce the
+# both-at-once state it cleans up. It stays as a save-migration and
+# console-testing backstop, not as load-bearing logic.
 # =====================================================================
 
 kehillah_serve_as_rabbi_decision = {
 	picture = {
 		reference = "gfx/interface/illustrations/decisions/decision_personal_religious.dds"
+	}
+
+	# An explicit desc, ADDED 2026-09-27 (S4b), replacing the implicit
+	# kehillah_serve_as_rabbi_decision_desc this key used to resolve to on
+	# its own. The decision now has two genuinely different readings --
+	# filling an empty seat, or taking it off the man currently sitting in
+	# it -- and the second one should not be described as "the seat stands
+	# empty". Vanilla precedent for a first_valid decision desc:
+	# unity_establish_futuwaa_lodges_decision (game/common/decisions/
+	# 00_unity_decisions.txt).
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { employs_court_position = chief_rabbi_kehillah_position }
+				desc = kehillah_serve_as_rabbi_decision_replace_desc
+			}
+			desc = kehillah_serve_as_rabbi_decision_desc
+		}
 	}
 
 	decision_group_type = kehillah
@@ -49,11 +89,13 @@ kehillah_serve_as_rabbi_decision = {
 		is_adult = yes
 		is_imprisoned = no
 
-		# Someone already holds the seat. Two rabbis is not a thing.
-		custom_description = {
-			text = kehillah_serve_as_rabbi_seat_empty_tt
-			NOT = { employs_court_position = chief_rabbi_kehillah_position }
-		}
+		# NOTE, 2026-09-27 (S4b): a "the seat must be empty" refusal used
+		# to sit here. It is gone on purpose -- taking up the office now
+		# DEPOSES a sitting Chief Rabbi rather than being refused because
+		# of him (see the effect below and kehillah_replace_appointed_
+		# rabbi_effect). Two rabbis is still not a thing; the exclusion
+		# now lives on the appointment side instead, in chief_rabbi_
+		# kehillah_position's valid_position.
 
 		# Recognized standing plus real learning. See
 		# kehillah_serve_as_rabbi_learning_threshold's own comment
@@ -65,6 +107,36 @@ kehillah_serve_as_rabbi_decision = {
 	}
 
 	effect = {
+		# ONE branch, and it comes FIRST -- before anything touches the
+		# seat. Both halves of that matter:
+		#
+		#   * BEFORE the flag, because kehillah_serving_as_own_rabbi_
+		#     trigger yields to an employed court-position holder, so the
+		#     toggle does not take effect at all until the seat clears.
+		#   * BEFORE any other read of the seat, because an effect block is
+		#     walked in order both when it EXECUTES and when its tooltip is
+		#     GENERATED. A branch placed after the revocation would see an
+		#     empty seat at runtime and show the player the wrong line --
+		#     the two would disagree, which is exactly the bug a single
+		#     up-front branch cannot have.
+		if = {
+			limit = { employs_court_position = chief_rabbi_kehillah_position }
+
+			# Bound here, ahead of the tooltip that names him, rather than
+			# leaning on kehillah_replace_appointed_rabbi_effect below to
+			# have bound it first -- the tooltip is rendered in this
+			# position, so the scope has to exist in this position.
+			court_position:chief_rabbi_kehillah_position = {
+				save_scope_as = kehillah_deposed_rabbi
+			}
+			custom_tooltip = kehillah_serve_as_rabbi_replace_tt
+
+			kehillah_replace_appointed_rabbi_effect = yes
+		}
+		else = {
+			custom_tooltip = kehillah_serve_as_rabbi_tt
+		}
+
 		add_character_flag = kehillah_serving_as_own_rabbi
 
 		# No duration: the arrangement lasts until the leader stands
@@ -74,8 +146,6 @@ kehillah_serve_as_rabbi_decision = {
 		add_character_modifier = kehillah_serving_as_own_rabbi_modifier
 
 		add_piety = medium_piety_gain
-
-		custom_tooltip = kehillah_serve_as_rabbi_tt
 	}
 
 	# AI communities take it up readily -- an AI leader who qualifies has
@@ -85,6 +155,14 @@ kehillah_serve_as_rabbi_decision = {
 	ai_potential = {
 		government_has_flag = government_is_kehillah
 		has_trait = kehillah_rabbi_trait
+
+		# S4b, 2026-09-27: the AI fills an EMPTY seat eagerly and never
+		# deposes its own appointee. The replacement path the decision
+		# gained is a player choice about who should be judging -- an AI
+		# taking it would churn the office for no gain it can evaluate,
+		# and would quietly strip its own rabbi's semicha every time (see
+		# kehillah_replace_appointed_rabbi_effect's "KNOWN WART").
+		NOT = { employs_court_position = chief_rabbi_kehillah_position }
 	}
 
 	ai_will_do = {
@@ -172,6 +250,18 @@ kehillah_seek_chief_rabbi_decision = {
 			NOT = { employs_court_position = chief_rabbi_kehillah_position }
 		}
 
+		# S4b, 2026-09-27: nor while the leader is the Chief Rabbi himself.
+		# The search would otherwise run to completion and then hand the
+		# player a candidate chief_rabbi_kehillah_position's own
+		# valid_position now refuses to seat -- a dead end the player
+		# cannot see into, exactly the failure this decision's header
+		# already warns about for the Beit Midrash gate. Stand down first
+		# (kehillah_stand_down_as_rabbi_decision) to go looking.
+		custom_description = {
+			text = kehillah_seek_chief_rabbi_not_serving_tt
+			kehillah_has_taken_up_rabbinate_trigger = no
+		}
+
 		# Same custom_tooltip-wrapped cooldown flag shape vanilla's own
 		# physician item uses (recruit_court_physician_cooldown_tt), so the
 		# reason the decision is greyed out is readable rather than
@@ -203,6 +293,7 @@ kehillah_seek_chief_rabbi_decision = {
 	# section 6.6 wants.
 	ai_potential = {
 		government_has_flag = government_is_kehillah
+		kehillah_has_taken_up_rabbinate_trigger = no
 	}
 
 	ai_will_do = {

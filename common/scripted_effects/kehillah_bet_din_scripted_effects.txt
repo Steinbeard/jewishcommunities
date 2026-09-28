@@ -71,6 +71,12 @@
 #                        activity's on_phase_active.
 #   judge2 / judge3  -- the two co-judges (characters), set once from
 #                        the special_guest scopes, same place.
+#   av_beit_din      -- who sits on the PRESIDING seat (a character):
+#                        the community's acting Chief Rabbi, or the host
+#                        as a fallback. ADDED 2026-09-27 (S4b); set once,
+#                        in kehillah_bet_din_open_docket_effect, and read
+#                        by every host event through kehillah_bet_din_
+#                        save_presiding_effect.
 #   tally            -- running sum of all three judges' per-case skill
 #                        checks. Reset to 0 at session start and again
 #                        at the start of EACH case's host event -- see
@@ -1112,6 +1118,47 @@ kehillah_bet_din_grant_rabbi_trait_effect = {
 }
 
 # ---------------------------------------------------------------------
+# kehillah_bet_din_save_presiding_effect
+# Scope: the convening leader, in the `immediate` of every HOST event
+# (kehillah_bet_din.0001/.0011/.0021/.0031/.0041/.0051). Binds
+# scope:kehillah_av_beit_din.
+#
+# ADDED 2026-09-27 (S4b). The host events' skill checks used to read ROOT's
+# own skill -- the convening leader's -- which meant that a community with
+# an appointed Chief Rabbi had its rabbi sit on the panel for decoration
+# while the leader did all the judging. "Chief rabbis should be the ones
+# who preside over bet din conferences" (user, 2026-09-27); this is the
+# scope that makes that literal.
+#
+# WHY A SAVED SCOPE AND NOT A PARAMETERISED TRIGGER. The checks are not
+# uniform: most are a bare `<skill> >= N`, but case 3's is a compound
+# (learning >= 12 OR (learning >= 8 AND theologian)), and a $SKILL$/
+# $THRESHOLD$ trigger cannot express that without a second, differently
+# shaped trigger for the one site. A scope lets every site keep its own
+# check verbatim and only change WHOSE it is -- which is the entire edit,
+# and reviewable as such in a diff.
+#
+# NEVER UNSET. Falls back to root, so an event reached without a docket
+# (console `event kehillah_bet_din.0011`, or a pre-S4b save mid-session)
+# still checks somebody real rather than erroring per option under the
+# player's cursor -- the same tooltip-rebuild error-storm risk the
+# litigant reads in these events' immediates are already guarded against.
+#
+# THE CO-JUDGE EVENTS DO NOT CALL THIS. Their root is judge2, and their
+# checks are judge2's own -- the panel's two other seats answer for
+# themselves, exactly as before. Only the presiding seat moved.
+# ---------------------------------------------------------------------
+kehillah_bet_din_save_presiding_effect = {
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_av_beit_din }
+		involved_activity.var:kehillah_bet_din_av_beit_din = { save_scope_as = kehillah_av_beit_din }
+	}
+	else = {
+		save_scope_as = kehillah_av_beit_din
+	}
+}
+
+# ---------------------------------------------------------------------
 # kehillah_bet_din_open_docket_effect
 # Scope: the convening leader (character). Called ONCE, from the first
 # phase's on_phase_active, where scope:activity AND scope:host are both
@@ -1186,6 +1233,32 @@ kehillah_bet_din_open_docket_effect = {
 	# panel -- see QUORUM above.
 	if = {
 		limit = { exists = scope:activity.var:kehillah_bet_din_judge3 }
+		# WHO SITS AS AV BEIT DIN. ADDED 2026-09-27 (S4b), at user request:
+		# "chief rabbis should be the ones who preside over bet din
+		# conferences." The HOST of the activity is still the convening
+		# leader -- that is an engine fact, a courtier cannot host -- but
+		# the presiding seat on the bench is the community's acting Chief
+		# Rabbi, and when those are different people it is the rabbi's
+		# judgement the case tests. Resolved through the shared S4(2)
+		# resolver (kehillah_has_acting_chief_rabbi_trigger's header,
+		# common/scripted_triggers/kehillah_scripted_triggers.txt), which
+		# makes this that abstraction's sixth consumer site.
+		#
+		# Falls back to the host. can_start_showing_failures_only now
+		# refuses a session with no rabbi at all, so the fallback should be
+		# unreachable in ordinary play -- it exists for a console-started
+		# session and for a save whose community predates that gate, where
+		# a docket with nobody on the presiding seat would read every skill
+		# check against an unset scope.
+		kehillah_save_acting_chief_rabbi_effect = yes
+		if = {
+			limit = { exists = scope:kehillah_chief_rabbi }
+			scope:activity = { set_variable = { name = kehillah_bet_din_av_beit_din value = scope:kehillah_chief_rabbi } }
+		}
+		else = {
+			scope:activity = { set_variable = { name = kehillah_bet_din_av_beit_din value = scope:host } }
+		}
+
 		scope:activity = { set_variable = { name = kehillah_bet_din_tally value = 0 } }
 		scope:activity = { set_variable = { name = kehillah_bet_din_session_score value = 0 } }
 		scope:activity = { set_variable = { name = kehillah_bet_din_cases_heard_count value = 0 } }

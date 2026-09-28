@@ -1430,6 +1430,28 @@ kehillah_can_serve_as_own_rabbi_trigger = {
 	learning >= kehillah_serve_as_rabbi_learning_threshold
 }
 
+# Scope: the Kehillah leader. Has this leader TAKEN UP the office --
+# i.e. is the toggle set at all, regardless of whether a court-position
+# holder is also sitting?
+#
+# ADDED 2026-09-27 (S4b). This deliberately does NOT go through
+# kehillah_serving_as_own_rabbi_trigger above, and the difference is
+# load-bearing rather than a style choice. That trigger yields to an
+# appointed rabbi on purpose ("THE APPOINTED RABBI ALWAYS WINS"), which
+# makes it useless as an EXCLUSION gate on the appointment itself: asking
+# "is the leader already acting as rabbi?" inside
+# chief_rabbi_kehillah_position's valid_position would answer "no" the
+# moment the seat filled, i.e. exactly when the gate needed to bite, and
+# the gate would never block anything.
+#
+# So: consumers asking "who is acting as rabbi right now" keep using
+# kehillah_serving_as_own_rabbi_trigger; the two gates that must make the
+# office and the toggle MUTUALLY EXCLUSIVE (that valid_position, and
+# kehillah_seek_chief_rabbi_decision) use this one.
+kehillah_has_taken_up_rabbinate_trigger = {
+	has_character_flag = kehillah_serving_as_own_rabbi
+}
+
 
 # =====================================================================
 # THE CHIEF RABBI SEARCH -- ROADMAP item S4(1), added 2026-09-26.
@@ -1589,8 +1611,40 @@ kehillah_pillars_are_live_trigger = {
 # (kehillah_registered_communities, populated at game start).
 kehillah_can_answer_responsa_trigger = {
 	government_has_flag = government_is_kehillah
+	kehillah_responsa_answerer_is_rabbi_trigger = yes
 	kehillah_responsa_answerer_learning_value >= kehillah_responsa_learning_threshold
 	kehillah_has_responsa_correspondent_trigger = yes
+}
+
+# Scope: the Kehillah leader. Does whoever would ANSWER here hold
+# rabbinic standing?
+#
+# ADDED 2026-09-27 (S4b), at user request: "any rabbi can receive rabbinic
+# responsa, but it should be gated on rabbi trait". Learning alone was the
+# whole gate before, so a merely well-read leader with no semicha received
+# she'elot addressed to a posek -- the one thing responsa are NOT. A
+# question of halakha is sent to someone qualified to answer it.
+#
+# Kept in exact lockstep with kehillah_responsa_answerer_learning_value
+# (common/script_values/kehillah_script_values.txt) -- same two branches,
+# same precedence -- because the two must agree about WHO is being tested
+# or the gate and the skill check would be measuring different people.
+# The appointed-rabbi branch is effectively always true (the office grants
+# kehillah_rabbi_trait on receipt, common/court_positions/types/
+# kehillah_officers.txt), and is written out anyway rather than assumed:
+# it is what makes the trigger read as "the answerer is a rabbi" instead
+# of "the leader is a rabbi, unless".
+kehillah_responsa_answerer_is_rabbi_trigger = {
+	OR = {
+		AND = {
+			employs_court_position = chief_rabbi_kehillah_position
+			court_position:chief_rabbi_kehillah_position = { has_trait = kehillah_rabbi_trait }
+		}
+		AND = {
+			NOT = { employs_court_position = chief_rabbi_kehillah_position }
+			has_trait = kehillah_rabbi_trait
+		}
+	}
 }
 
 # Scope: the Kehillah leader. Does at least one OTHER community exist

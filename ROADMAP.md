@@ -358,6 +358,64 @@ short research bullets for when Daniel is back.
     that is what gates the court position itself.
   - Live-testing (1) needs a community that has actually built the Beit Midrash — a debug probe
     to reach that state is the missing piece for the next heartbeat.
+- **S4b. BUILD — Chief Rabbi coherence pass.** (Daniel, 2026-09-27, interactive session — an
+  unlisted item added above the remaining numbered ones because it is a correctness complaint
+  about shipped S4/S5 content, not new scope.) His report, verbatim in substance: *"you can
+  currently serve as chief rabbi and have an assigned chief rabbi"*; the office should only be
+  available if you are not already the chief rabbi, and *"if there's already a chief rabbi, maybe
+  you can replace him with yourself with the decision"*; *"chief rabbis should be the ones who
+  preside over bet din conferences"*; and responsa should be *"gated on rabbi trait (with
+  increased likelihood to target a player)"*.
+
+  **BUILT 2026-09-27, `ck3-tiger`-clean, NOT YET LIVE-TESTED.** Four changes:
+  - **The office and the seat are mutually exclusive, asymmetrically.** Appointment is refused
+    while the leader holds the rabbinate (`chief_rabbi_kehillah_position`'s `valid_position`, plus
+    `kehillah_seek_chief_rabbi_decision` greyed out so the search can't run for a prize that
+    cannot be seated). The decision, in the other direction, **deposes** a sitting Chief Rabbi
+    (`kehillah_replace_appointed_rabbi_effect`) at the cost of the ordinary
+    `revoked_court_position_opinion`. The leader's own intent wins over the appointment system,
+    never the reverse. The gate needed a new trigger,
+    `kehillah_has_taken_up_rabbinate_trigger` — the existing
+    `kehillah_serving_as_own_rabbi_trigger` yields to an appointed rabbi by design and so can
+    never block one; its own header records why.
+  - **The Chief Rabbi presides.** A Bet Din Conference cannot be convened without an acting Chief
+    Rabbi by either route, and whoever that is is bound as Av Beit Din
+    (`kehillah_bet_din_av_beit_din`, set in `kehillah_bet_din_open_docket_effect` through the
+    shared S4(2) resolver — its sixth consumer site). **All 14 host-bench skill checks across the
+    six cases now read the Av Beit Din's skill, not the convening leader's**, via
+    `scope:kehillah_av_beit_din`. The two co-judge seats are untouched and still answer for
+    themselves. Design consequence worth knowing: appointing a brilliant rabbi now genuinely
+    decides your dockets, and a leader who would rather be the one judging takes the office
+    himself — which is what ties this bullet to the one above.
+  - **Responsa need semicha.** `kehillah_responsa_answerer_is_rabbi_trigger`, in lockstep with
+    `kehillah_responsa_answerer_learning_value`'s two branches. Learning alone was the whole gate
+    before, so a well-read leader with no semicha received she'elot addressed to a posek.
+  - **The player is written to more often.** `chance_of_no_event` costs an AI 40% of its rolls
+    (~33%/yr against the player's 55%). Done that way because `chance_to_happen` takes a literal
+    only; `chance_of_no_event` takes a script value.
+
+  Probes: `kehillah_debug.118` (read-only state, meant to be read alongside `.115`) and
+  `kehillah_debug.119` (exercises the replacement path end to end and asserts seat/toggle/opinion).
+
+  **Relation to `docs/spec/v23-responsa-network-and-precedent.md`**, written the same day by a
+  parallel heartbeat run: V23 proposes retiring this automatic pulse as the *player-facing*
+  responsa loop, keeping it at most as "a passive, infrequent incoming letter ... for an
+  established scholar". The semicha gate and the player bias are exactly what that description
+  wants, and cost nothing if V23 lands — they harden the prototype in the meantime rather than
+  building against it. V23's own dependency note ("the office redesign must settle how a leader
+  chooses to act as Rabbi, Shtadlan, or Gabbai") is the part this item moves: the leader's choice
+  to act as Rabbi is now exclusive and reversible, which is the precondition V23 names.
+
+  **Known wart, recorded not fixed:** the office's `on_court_position_revoked` strips
+  `kehillah_rabbi_trait`, so a rabbi dismissed by the replacement path loses his semicha even if
+  he arrived holding it. Pre-existing behaviour of that trait lifecycle, not introduced here;
+  untangling it means reworking all four of the office's exit paths.
+
+  **Open for a live pass:** whether the preside gate is too tight in practice. It thins the pool
+  of communities that can host, and hosting is how a leader without semicha gets it
+  (`kehillah_bet_din_grant_rabbi_trait_effect`). AI leaders take the serve-as-rabbi decision at
+  `base = 100` and three historical leaders ship with the trait, so the pool should not go empty —
+  but that is reasoning, not an observation. Watch it in the S10 soak run.
 - **S5. BUILD — Responsa.** Build exactly: an on_action pulse (roughly one question every 1-2
   years for a leader or Chief Rabbi with Learning ≥ ~12) firing an event where a named leader of
   another real community sends a question (start with 6 question texts, halakhic/communal flavour,
