@@ -611,6 +611,46 @@ short research bullets for when Daniel is back.
   in the standing tooltip. AI communities pick a goal at random, weighted by their weakest pillar.
   **Done when**, live: one goal is set, completed via debug state, the reward and legacy appear,
   and a failed deadline applies its penalty.
+  **BUILT 2026-09-28 (Sukkot heartbeat), `ck3-tiger` clean — 0 fatal, 0 error, 58 warnings, which
+  is BELOW the standing 59-warning baseline and with nothing anchored on any file the build
+  touches.** Files: `common/scripted_triggers/kehillah_goal_triggers.txt` (read its header first —
+  it carries the design account), `common/scripted_effects/kehillah_goal_effects.txt`,
+  `common/decisions/kehillah_goal_decisions.txt`, `events/kehillah_goal_events.txt`,
+  `common/customizable_localization/kehillah_goal_custom_loc.txt`,
+  `localization/english/kehillah_goal_l_english.yml`, plus two message types, a COMMUNITY GOALS
+  block in `kehillah_script_values.txt`, the `KehillahBdGoal` row appended to
+  `KEHILLAH_BD_STANDING_TOOLTIP`, one call in the quarterly pulse and one in the founding effect.
+  - **The deadline is the ENGINE's, not a stored date.** `kehillah_var_goal_timer` is set with
+    `years = kehillah_goal_deadline_years` and CK3 removes it on expiry, so "goal set, timer gone"
+    IS the expired state. Nothing ticks and nothing compares dates. Vanilla's own
+    `00_councillor_effects.txt:690` uses a script value in that same `years` field, so the tunable
+    is not a guess.
+  - **Three design choices recorded rather than made silently** (full reasoning in the commit and
+    the file headers): the daughter-community goal detects **dynasty only** and is **pushed** from
+    `kehillah_found_community_effect` rather than polled, because a founder is a landless
+    adventurer by the founding decision's own gate and the link to whatever court they once sat in
+    is gone by then — the same erasure S4(3) works around by reading the old liege *before*
+    `add_courtier`; legacy is a **counter, not a title modifier** (S6 allows either); and AI
+    weighting is **absolute, not relative** — each pillar against the Healthy band rather than
+    against the other two, which is a shape this codebase uses everywhere instead of one it has
+    never used.
+  - Harness: `kehillah_debug.123` (read-only, and it reports which goals would be OFFERED, not
+    only the one set), `.124` (completion path end to end) and `.125` (failure path). Both `.124`
+    and `.125` assert the **arithmetic** — exactly pre-value plus the reward, exactly one more
+    completed goal, exactly pre-value minus the penalty — so a reward applied twice fails here
+    where a "did it go up" test would pass; `.125` additionally asserts the legacy counter does
+    **not** move on a failure. Run files: `s6_goal_state.txt`, `s6_goal_complete.txt`,
+    `s6_goal_fail.txt`.
+  - **KNOWN LIMITATION, found by source-reading during the build and NOT a live finding: "Secure
+    Our Rights" is currently unreachable by anything the player does.** The charter rungs it reads
+    (`kehillah_charter_cache_security` / `_construction`) are written once, at charter
+    establishment, from the host realm's Jewish Settlement Policy — and the only things that write
+    that policy today are debug events 72-75. `tributary_contract_set_obligation_level` appears in
+    exactly two files: the charter effects (all at establishment) and the debug events. So in
+    ordinary play the rung changes only when the **host changes**, via
+    `kehillah_maintain_host_charter_effect` re-pointing the charter after a conquest. **S9a, the
+    very next item in this queue, is what makes the goal player-drivable**; the goal was left in
+    rather than cut because its mechanism is sound and its dependency is one item away.
 - **S7. BUILD — Bookmark with the three prototype characters.** A 1066 bookmark featuring the
   Scholar (Rashi of Troyes), the Shtadlan (a Sh'um or Cologne leader), and the Financier (a landless
   Jewish adventurer near Rouen, created for this). ck3-tiger checks bookmark portraits — a missing
