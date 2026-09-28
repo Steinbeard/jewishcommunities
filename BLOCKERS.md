@@ -1036,3 +1036,17 @@ cdd87c9 S4b, S4c, S4d and S5 all verified live; ROADMAP and test log updated
 6e7014c Raise Bet Din frequency: shorter cooldown, wider bench
 ```
 Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-28_010003.log
+
+## Heartbeat run status -- 2026-09-28_060002 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+5a3d26d ROADMAP: S6 built, with the one limitation a source read found
+aadf648 S6: one ambition at a time, and ten years to reach it
+70a0990 Heartbeat run-status note (2026-09-28_010003)
+cdd87c9 S4b, S4c, S4d and S5 all verified live; ROADMAP and test log updated
+1866431 Every book came out masterwork, and compiling one cost 250,000 error lines
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-28_060002.log
