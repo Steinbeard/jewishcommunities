@@ -1022,3 +1022,17 @@ d988371 Heartbeat run-status note (2026-09-27_050002)
 5f3d0d4 BLOCKERS: Sukkot heartbeat 8 -- one decision needed, with the evidence
 ```
 Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-27_200002.log
+
+## Heartbeat run status -- 2026-09-28_010003 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+cdd87c9 S4b, S4c, S4d and S5 all verified live; ROADMAP and test log updated
+1866431 Every book came out masterwork, and compiling one cost 250,000 error lines
+3a57149 Responsa: open the gate at 8 so the POOR tier can actually happen
+75f55ee Harness for the three untested S4b/c/d claims, and fix debug.60
+6e7014c Raise Bet Din frequency: shorter cooldown, wider bench
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-28_010003.log
