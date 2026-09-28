@@ -33,6 +33,7 @@ kehillah_debug.60 = {
 		create_adventurer_title = {
 			name = adventurer_name_001
 			holder = root
+			save_scope_as = kehillah_debug_60_camp_title
 		}
 		add_realm_law = landless_adventurer_succession_law
 		change_government = landless_adventurer_government
@@ -2478,6 +2479,25 @@ kehillah_debug.119 = {
 				debug_log = "kehillah_debug.119: OPINION FAIL no revoked_court_position_opinion on the deposed rabbi"
 			}
 
+			# S4c: the trait is ordination, not a job title. This path is
+			# the one that used to strip it (the office's three teardown
+			# hooks), so a deposed rabbi who still holds kehillah_rabbi_trait
+			# here is S4c's whole claim, observed on the site that broke it.
+			if = {
+				limit = {
+					exists = scope:kehillah_deposed_rabbi
+					scope:kehillah_deposed_rabbi = { has_trait = kehillah_rabbi_trait }
+				}
+				debug_log = "kehillah_debug.119: SEMICHA PERMANENT PASS the deposed rabbi kept kehillah_rabbi_trait through the revocation"
+			}
+			else_if = {
+				limit = { exists = scope:kehillah_deposed_rabbi }
+				debug_log = "kehillah_debug.119: SEMICHA PERMANENT FAIL the deposed rabbi lost kehillah_rabbi_trait -- a teardown hook is still stripping it, or he never held it (check whether the appointment granted it: a courtier appointed by SETUP above gets it on receipt)"
+			}
+			else = {
+				debug_log = "kehillah_debug.119: SEMICHA PERMANENT UNTESTED no deposed rabbi in scope"
+			}
+
 			if = {
 				limit = { kehillah_has_acting_chief_rabbi_trigger = yes }
 				debug_log = "kehillah_debug.119: PRESIDE GATE PASS a Bet Din can still be convened afterwards"
@@ -2595,5 +2615,137 @@ kehillah_debug.120 = {
 
 		debug_log_scopes = yes
 		debug_log = "kehillah_debug.120: Beit Din panel availability (read-only) -- END"
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.121 -- S4c (2026-09-27): can a community seat a Chief
+# Rabbi with NO Beit Midrash at all?
+#
+# S4c removed the building gate from chief_rabbi_kehillah_position's
+# valid_position. Every existing community in this mod's 1066 setup starts
+# WITH a Beit Midrash, so nothing in ordinary play exercises the state the
+# change is about -- the ungating is invisible from a Worms start, which is
+# exactly why it needs a probe rather than an observation.
+#
+# It tests the claim in the hard direction: strip the study hall FIRST,
+# confirm the unlock parameter is really gone, and only then appoint. An
+# appointment that lands on a community with no Beit Midrash is the claim
+# itself, not a proxy for it.
+#
+# DESTRUCTIVE -- it demolishes a real building and installs a rabbi. Fire
+# it on the community LEADER, in a throwaway session.
+#
+# ONE THING THIS EVENT CANNOT SEE, and the tester must: valid_position is
+# re-evaluated on a monthly tick, not at appointment. Let a month or two
+# pass afterwards and re-run kehillah_debug.118 -- if the seat is still
+# filled there, the revalidation agrees with the appointment. That second
+# reading is the half that would have caught the old gate.
+# ---------------------------------------------------------------------
+kehillah_debug.121 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.121: S4c Beit Midrash ungating -- START"
+
+		if = {
+			limit = { exists = domicile }
+			domicile = {
+				if = {
+					limit = { has_domicile_building = kehillah_beit_midrash_03 }
+					remove_domicile_building = kehillah_beit_midrash_03
+					debug_log = "kehillah_debug.121: removed kehillah_beit_midrash_03"
+				}
+				if = {
+					limit = { has_domicile_building = kehillah_beit_midrash_02 }
+					remove_domicile_building = kehillah_beit_midrash_02
+					debug_log = "kehillah_debug.121: removed kehillah_beit_midrash_02"
+				}
+				if = {
+					limit = { has_domicile_building = kehillah_beit_midrash_01 }
+					remove_domicile_building = kehillah_beit_midrash_01
+					debug_log = "kehillah_debug.121: removed kehillah_beit_midrash_01"
+				}
+
+				# Positive control on the demolition. Without this line a PASS
+				# below would be satisfied by a probe that quietly removed
+				# nothing, which is the failure mode that makes "no errors"
+				# readings worthless.
+				if = {
+					limit = { has_domicile_parameter = kehillah_unlocks_chief_rabbi }
+					debug_log = "kehillah_debug.121: STRIP FAIL the quarter still has kehillah_unlocks_chief_rabbi -- a Beit Midrash tier survived, so nothing below tests the ungating"
+				}
+				else = {
+					debug_log = "kehillah_debug.121: STRIP PASS the quarter no longer has kehillah_unlocks_chief_rabbi"
+				}
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.121: ABORT no domicile on this character -- fire this on a community leader"
+		}
+
+		# Clear the two states that would refuse an appointment for reasons
+		# that have nothing to do with the building, so a FAIL below can only
+		# mean the gate.
+		if = {
+			limit = { kehillah_has_taken_up_rabbinate_trigger = yes }
+			debug_log = "kehillah_debug.121: SETUP the leader holds the rabbinate himself -- clearing it, or S4b would refuse the appointment"
+			kehillah_end_serving_as_own_rabbi_effect = yes
+		}
+		if = {
+			limit = { employs_court_position = chief_rabbi_kehillah_position }
+			debug_log = "kehillah_debug.121: SETUP the seat was already filled -- revoking first so the appointment below is a real one"
+			kehillah_replace_appointed_rabbi_effect = yes
+			kehillah_end_serving_as_own_rabbi_effect = yes
+		}
+
+		random_courtier = {
+			limit = {
+				is_adult = yes
+				faith = root.faith
+				kehillah_leadership_gender_eligible_trigger = yes
+				NOT = { this = root }
+			}
+			save_scope_as = kehillah_debug_121_appointee
+		}
+
+		if = {
+			limit = { exists = scope:kehillah_debug_121_appointee }
+			appoint_court_position = {
+				recipient = scope:kehillah_debug_121_appointee
+				court_position = chief_rabbi_kehillah_position
+			}
+
+			if = {
+				limit = { employs_court_position = chief_rabbi_kehillah_position }
+				debug_log = "kehillah_debug.121: UNGATED PASS a Chief Rabbi was seated in a quarter with no Beit Midrash"
+			}
+			else = {
+				debug_log = "kehillah_debug.121: UNGATED FAIL the appointment did not take -- something still gates the office on the building, or on a state this probe did not clear"
+			}
+
+			if = {
+				limit = { scope:kehillah_debug_121_appointee = { has_trait = kehillah_rabbi_trait } }
+				debug_log = "kehillah_debug.121: SEMICHA GRANTED PASS the appointee received kehillah_rabbi_trait on taking the office"
+			}
+			else = {
+				debug_log = "kehillah_debug.121: SEMICHA GRANTED FAIL on_court_position_received did not grant the trait"
+			}
+
+			if = {
+				limit = { kehillah_has_acting_chief_rabbi_trigger = yes }
+				debug_log = "kehillah_debug.121: PRESIDE GATE PASS the community can convene a Bet Din with no study hall -- which is the reason S4c matters, not a side effect"
+			}
+			else = {
+				debug_log = "kehillah_debug.121: PRESIDE GATE FAIL the shared resolver does not see the rabbi just appointed"
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.121: ABORT no eligible courtier to appoint -- nothing below was tested"
+		}
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.121: S4c Beit Midrash ungating -- END (now let a month pass and re-run kehillah_debug.118)"
 	}
 }
