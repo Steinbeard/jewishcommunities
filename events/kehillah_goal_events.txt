@@ -1,0 +1,144 @@
+﻿# =====================================================================
+# COMMUNITY GOALS -- ROADMAP S6, added 2026-09-28.
+#
+# One event, four goals and a way out. Opened only by
+# kehillah_set_community_goal_decision, which already refuses while a goal
+# is running, so this never has to handle the "you already have one" case.
+#
+# EVERY GOAL OPTION CARRIES A trigger, and three of the four can therefore
+# be absent: a community that already has a yeshiva cannot set building
+# one as its ambition, a community already at Flourishing Greatness cannot
+# set reaching it, and a charter already at the top of both rungs cannot
+# be improved. That is why option E exists -- with all four gated, an
+# event with no available option is a soft lock, and "the elders disperse
+# without deciding" is a better answer than a goal the community has
+# already met.
+#
+# AI WEIGHTING IS ABSOLUTE, NOT RELATIVE. S6 asks for "weighted by their
+# weakest pillar". Comparing two title variables against each other inside
+# an ai_chance is a shape this codebase has never used and cannot check
+# without a live run; comparing each against the Healthy band is a shape
+# it uses everywhere (kehillah_pillar_at_least_trigger). A community below
+# Healthy Greatness weights the two Greatness goals up and a community
+# below Healthy Stability weights the charter goal up, which is the
+# behaviour the item wants in every case that matters -- a community with
+# one genuinely weak pillar. Where two are weak it picks between them at
+# something closer to even, which is not wrong, only less pointed.
+# =====================================================================
+
+namespace = kehillah_goals
+
+kehillah_goals.0001 = {
+	type = character_event
+	title = kehillah_goals.0001.t
+	desc = kehillah_goals.0001.desc
+	theme = realm
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+		exists = primary_title
+		NOT = { kehillah_has_active_goal_trigger = yes }
+	}
+
+	# BUILD THE YESHIVA.
+	option = {
+		name = kehillah_goals.0001.a
+
+		trigger = {
+			NOT = { kehillah_goal_yeshiva_met_trigger = yes }
+		}
+
+		kehillah_set_community_goal_effect = { GOAL = flag:yeshiva }
+		custom_tooltip = kehillah_goals.0001.a.tt
+
+		ai_chance = {
+			base = 30
+			modifier = {
+				add = 50
+				# It has to be reachable: the tier-3 Beit Midrash itself
+				# requires Healthy Greatness to construct.
+				kehillah_pillar_at_least_trigger = {
+					PILLAR = kehillah_var_greatness
+					THRESHOLD = kehillah_band_healthy_threshold
+				}
+			}
+		}
+	}
+
+	# A NAME AMONG THE COMMUNITIES.
+	option = {
+		name = kehillah_goals.0001.b
+
+		trigger = {
+			NOT = { kehillah_goal_renown_met_trigger = yes }
+		}
+
+		kehillah_set_community_goal_effect = { GOAL = flag:renown }
+		custom_tooltip = kehillah_goals.0001.b.tt
+
+		ai_chance = {
+			base = 30
+			modifier = {
+				add = 60
+				NOT = {
+					kehillah_pillar_at_least_trigger = {
+						PILLAR = kehillah_var_greatness
+						THRESHOLD = kehillah_band_healthy_threshold
+					}
+				}
+			}
+		}
+	}
+
+	# SECURE OUR RIGHTS.
+	option = {
+		name = kehillah_goals.0001.c
+
+		trigger = {
+			kehillah_goal_rights_available_trigger = yes
+		}
+
+		kehillah_set_community_goal_effect = { GOAL = flag:rights }
+		custom_tooltip = kehillah_goals.0001.c.tt
+
+		ai_chance = {
+			base = 30
+			modifier = {
+				add = 60
+				NOT = {
+					kehillah_pillar_at_least_trigger = {
+						PILLAR = kehillah_var_stability
+						THRESHOLD = kehillah_band_healthy_threshold
+					}
+				}
+			}
+		}
+	}
+
+	# A DAUGHTER COMMUNITY. Deliberately the least-weighted AI choice: it
+	# depends on a kinsman leaving to found elsewhere, which no AI plans.
+	option = {
+		name = kehillah_goals.0001.d
+
+		kehillah_set_community_goal_effect = { GOAL = flag:daughter }
+		custom_tooltip = kehillah_goals.0001.d.tt
+
+		ai_chance = {
+			base = 10
+		}
+	}
+
+	# NO GOAL. Always available -- see the file header.
+	option = {
+		name = kehillah_goals.0001.e
+
+		ai_chance = {
+			base = 5
+		}
+	}
+}

@@ -2818,3 +2818,325 @@ kehillah_debug.122 = {
 		trigger_event = { id = kehillah_debug.116 days = 0 }
 	}
 }
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.123 -- S6 (2026-09-28): community goals, READ-ONLY.
+#
+# Everything about a goal is invisible from inside the game except one
+# tooltip row and, up to a quarter later, a message. This reports the
+# whole state at once: which goal is set, whether its decade is still
+# running, whether the goal's own condition is currently satisfied, what
+# the charter snapshot was taken at, and the permanent legacy counter.
+#
+# THE TIMER LINE IS THE LOAD-BEARING ONE. The deadline is not a date this
+# mod stores -- kehillah_var_goal_timer is set with a years = timeout and
+# the ENGINE removes it on expiry, so "goal set, timer gone" IS the
+# expired state and nothing else reports it.
+#
+# Fire it on the community LEADER.
+# ---------------------------------------------------------------------
+kehillah_debug.123 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.123: community goal state (read-only) -- START"
+
+		if = {
+			limit = { kehillah_has_active_goal_trigger = yes }
+			debug_log = "kehillah_debug.123: GOAL ACTIVE a goal is set on this community"
+
+			if = {
+				limit = { primary_title = { var:kehillah_var_goal = flag:yeshiva } }
+				debug_log = "kehillah_debug.123: GOAL IS yeshiva"
+			}
+			else_if = {
+				limit = { primary_title = { var:kehillah_var_goal = flag:renown } }
+				debug_log = "kehillah_debug.123: GOAL IS renown"
+			}
+			else_if = {
+				limit = { primary_title = { var:kehillah_var_goal = flag:rights } }
+				debug_log = "kehillah_debug.123: GOAL IS rights"
+			}
+			else_if = {
+				limit = { primary_title = { var:kehillah_var_goal = flag:daughter } }
+				debug_log = "kehillah_debug.123: GOAL IS daughter"
+			}
+			else = {
+				debug_log = "kehillah_debug.123: GOAL IS UNRECOGNISED -- the variable holds a flag none of the four triggers will ever match, so this goal can never complete"
+			}
+
+			if = {
+				limit = { primary_title = { has_variable = kehillah_var_goal_timer } }
+				debug_log = "kehillah_debug.123: DEADLINE RUNNING the ten-year timer variable is still present"
+			}
+			else = {
+				debug_log = "kehillah_debug.123: DEADLINE EXPIRED goal set but the timer is gone -- the next quarterly pulse will fail it"
+			}
+
+			if = {
+				limit = { kehillah_goal_is_met_trigger = yes }
+				debug_log = "kehillah_debug.123: CONDITION MET the next quarterly pulse will complete this goal"
+			}
+			else = {
+				debug_log = "kehillah_debug.123: CONDITION NOT MET"
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.123: NO GOAL nothing is running -- Set the Community's Goal should be available"
+		}
+
+		# The four per-goal conditions, reported whether or not that goal is
+		# the one set, so a tester can see which goals would be OFFERED.
+		if = {
+			limit = { kehillah_goal_yeshiva_met_trigger = yes }
+			debug_log = "kehillah_debug.123: YESHIVA ALREADY BUILT that goal will not be offered"
+		}
+		else = {
+			debug_log = "kehillah_debug.123: NO YESHIVA that goal is offerable"
+		}
+		if = {
+			limit = { kehillah_goal_renown_met_trigger = yes }
+			debug_log = "kehillah_debug.123: GREATNESS ALREADY FLOURISHING that goal will not be offered"
+		}
+		else = {
+			debug_log = "kehillah_debug.123: GREATNESS BELOW FLOURISHING that goal is offerable"
+		}
+		if = {
+			limit = { kehillah_goal_rights_available_trigger = yes }
+			debug_log = "kehillah_debug.123: CHARTER CAN IMPROVE that goal is offerable"
+		}
+		else = {
+			debug_log = "kehillah_debug.123: CHARTER AT ITS CEILING that goal will not be offered"
+		}
+		if = {
+			limit = { kehillah_goal_daughter_met_trigger = yes }
+			debug_log = "kehillah_debug.123: DAUGHTER CREDIT PRESENT a kinsman has founded a community since the goal was set"
+		}
+		else = {
+			debug_log = "kehillah_debug.123: NO DAUGHTER CREDIT"
+		}
+
+		save_scope_value_as = { name = kehillah_debug_123_goals_completed value = primary_title.var:kehillah_var_goals_completed }
+		save_scope_value_as = { name = kehillah_debug_123_greatness value = primary_title.var:kehillah_var_greatness }
+		save_scope_value_as = { name = kehillah_debug_123_stability value = primary_title.var:kehillah_var_stability }
+		save_scope_value_as = { name = kehillah_debug_123_prosperity value = primary_title.var:kehillah_var_prosperity }
+		save_scope_value_as = { name = kehillah_debug_123_reward value = kehillah_goal_reward_pillar }
+		save_scope_value_as = { name = kehillah_debug_123_penalty value = kehillah_goal_failure_stability_loss }
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.123: community goal state (read-only) -- END"
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.124 -- S6: the COMPLETION path, end to end, with its own
+# assertions.
+#
+# Sets the daughter-community goal, pushes the credit marker the founding
+# effect would have pushed, and then calls the same
+# kehillah_check_community_goal_effect the quarterly pulse calls -- so
+# what is exercised is the real completion path and not a shortcut into
+# the reward.
+#
+# THE DAUGHTER GOAL IS USED DELIBERATELY. It is the only one of the four
+# whose condition can be satisfied by a single set_variable, so the test
+# does not have to fake a building, a pillar or a charter rung and then
+# argue about whether the fake was faithful. Its reward pillar is
+# Greatness, the same as the yeshiva goal's.
+#
+# THE ARITHMETIC IS CHECKED, not just the fact of a change: Greatness must
+# land on exactly the pre-value plus kehillah_goal_reward_pillar, and the
+# legacy counter on exactly its pre-value plus one. A reward applied twice
+# by some double-call would pass a "did it go up" test and fails this one.
+#
+# Fire it on the community LEADER, on a community with NO goal running.
+# ---------------------------------------------------------------------
+kehillah_debug.124 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.124: S6 completion path -- START"
+
+		if = {
+			limit = { kehillah_has_active_goal_trigger = yes }
+			debug_log = "kehillah_debug.124: SETUP WARNING a goal was already running and is being overwritten -- the counter assertion still holds, the pre-existing goal is simply discarded"
+			primary_title = { kehillah_clear_community_goal_effect = yes }
+		}
+
+		if = {
+			limit = { primary_title = { NOT = { has_variable = kehillah_var_goals_completed } } }
+			primary_title = { set_variable = { name = kehillah_var_goals_completed value = 0 } }
+		}
+
+		save_scope_value_as = { name = kehillah_debug_124_greatness_before value = primary_title.var:kehillah_var_greatness }
+		save_scope_value_as = { name = kehillah_debug_124_completed_before value = primary_title.var:kehillah_var_goals_completed }
+		save_scope_value_as = {
+			name = kehillah_debug_124_greatness_expected
+			value = {
+				value = primary_title.var:kehillah_var_greatness
+				add = kehillah_goal_reward_pillar
+			}
+		}
+		save_scope_value_as = {
+			name = kehillah_debug_124_completed_expected
+			value = {
+				value = primary_title.var:kehillah_var_goals_completed
+				add = 1
+			}
+		}
+
+		kehillah_set_community_goal_effect = { GOAL = flag:daughter }
+
+		# What kehillah_goal_credit_daughter_community_effect would have
+		# stamped from inside the founding effect. Set directly here so the
+		# test does not need a second character to actually found anything.
+		primary_title = { set_variable = { name = kehillah_var_goal_daughter_credit value = 1 } }
+
+		if = {
+			limit = { kehillah_goal_is_met_trigger = yes }
+			debug_log = "kehillah_debug.124: PRE-CHECK PASS the dispatcher sees the daughter goal as met"
+		}
+		else = {
+			debug_log = "kehillah_debug.124: PRE-CHECK FAIL the dispatcher does NOT see the daughter goal as met -- nothing below will complete"
+		}
+
+		# The real path.
+		kehillah_check_community_goal_effect = yes
+
+		if = {
+			limit = { NOT = { kehillah_has_active_goal_trigger = yes } }
+			debug_log = "kehillah_debug.124: CLEARED PASS the goal is no longer running"
+		}
+		else = {
+			debug_log = "kehillah_debug.124: CLEARED FAIL the goal is still set after the check"
+		}
+
+		if = {
+			limit = { primary_title = { var:kehillah_var_greatness = scope:kehillah_debug_124_greatness_expected } }
+			debug_log = "kehillah_debug.124: REWARD PASS Greatness rose by exactly the goal reward"
+		}
+		else = {
+			debug_log = "kehillah_debug.124: REWARD FAIL Greatness is not pre-value plus the goal reward -- compare the before/expected figures in the dump"
+		}
+
+		if = {
+			limit = { primary_title = { var:kehillah_var_goals_completed = scope:kehillah_debug_124_completed_expected } }
+			debug_log = "kehillah_debug.124: LEGACY PASS the completed-goals counter rose by exactly one"
+		}
+		else = {
+			debug_log = "kehillah_debug.124: LEGACY FAIL the completed-goals counter did not rise by exactly one"
+		}
+
+		if = {
+			limit = { primary_title = { NOT = { has_variable = kehillah_var_goal_daughter_credit } } }
+			debug_log = "kehillah_debug.124: TEARDOWN PASS the daughter credit was cleared, so it cannot silently complete the NEXT goal too"
+		}
+		else = {
+			debug_log = "kehillah_debug.124: TEARDOWN FAIL the daughter credit survived the completion"
+		}
+
+		if = {
+			limit = { primary_title = { has_variable = kehillah_var_goal_last } }
+			debug_log = "kehillah_debug.124: NOTICE SOURCE PASS the resolved goal was recorded, so the message can still name it"
+		}
+		else = {
+			debug_log = "kehillah_debug.124: NOTICE SOURCE FAIL kehillah_var_goal_last is absent -- the notice will render the no-goal fallback"
+		}
+
+		save_scope_value_as = { name = kehillah_debug_124_greatness_after value = primary_title.var:kehillah_var_greatness }
+		save_scope_value_as = { name = kehillah_debug_124_completed_after value = primary_title.var:kehillah_var_goals_completed }
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.124: S6 completion path -- END"
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.125 -- S6: the FAILURE path, end to end.
+#
+# Sets the yeshiva goal, then removes kehillah_var_goal_timer to stand in
+# for the decade running out, then calls the real quarterly check. Removing
+# the timer is not a cheat around the mechanism: the engine's own timeout
+# does exactly this and nothing else, which is why
+# kehillah_goal_deadline_passed_trigger reads "goal set, timer absent".
+#
+# ASSERTS THE COUNTER DOES NOT MOVE as well as that Stability falls by
+# exactly the penalty. A failure that quietly incremented the legacy
+# counter would be a worse bug than one that applied the wrong number, and
+# only an explicit assertion catches it.
+#
+# Fire it on the community LEADER.
+# ---------------------------------------------------------------------
+kehillah_debug.125 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.125: S6 failure path -- START"
+
+		if = {
+			limit = { kehillah_has_active_goal_trigger = yes }
+			debug_log = "kehillah_debug.125: SETUP WARNING a goal was already running and is being overwritten"
+			primary_title = { kehillah_clear_community_goal_effect = yes }
+		}
+
+		if = {
+			limit = { primary_title = { NOT = { has_variable = kehillah_var_goals_completed } } }
+			primary_title = { set_variable = { name = kehillah_var_goals_completed value = 0 } }
+		}
+
+		save_scope_value_as = { name = kehillah_debug_125_stability_before value = primary_title.var:kehillah_var_stability }
+		save_scope_value_as = { name = kehillah_debug_125_completed_before value = primary_title.var:kehillah_var_goals_completed }
+		save_scope_value_as = {
+			name = kehillah_debug_125_stability_expected
+			value = {
+				value = primary_title.var:kehillah_var_stability
+				subtract = kehillah_goal_failure_stability_loss
+			}
+		}
+
+		kehillah_set_community_goal_effect = { GOAL = flag:yeshiva }
+		primary_title = { remove_variable = kehillah_var_goal_timer }
+
+		if = {
+			limit = { kehillah_goal_deadline_passed_trigger = yes }
+			debug_log = "kehillah_debug.125: PRE-CHECK PASS the expiry trigger reads this as an expired decade"
+		}
+		else = {
+			debug_log = "kehillah_debug.125: PRE-CHECK FAIL the expiry trigger does not read this as expired -- nothing below will fail the goal"
+		}
+
+		kehillah_check_community_goal_effect = yes
+
+		if = {
+			limit = { NOT = { kehillah_has_active_goal_trigger = yes } }
+			debug_log = "kehillah_debug.125: CLEARED PASS the goal is no longer running"
+		}
+		else = {
+			debug_log = "kehillah_debug.125: CLEARED FAIL the goal survived its own deadline"
+		}
+
+		if = {
+			limit = { primary_title = { var:kehillah_var_stability = scope:kehillah_debug_125_stability_expected } }
+			debug_log = "kehillah_debug.125: PENALTY PASS Stability fell by exactly the failure penalty"
+		}
+		else = {
+			debug_log = "kehillah_debug.125: PENALTY FAIL Stability is not pre-value minus the failure penalty"
+		}
+
+		if = {
+			limit = { primary_title = { var:kehillah_var_goals_completed = scope:kehillah_debug_125_completed_before } }
+			debug_log = "kehillah_debug.125: LEGACY PASS a failed goal did not touch the completed-goals counter"
+		}
+		else = {
+			debug_log = "kehillah_debug.125: LEGACY FAIL a failed goal moved the completed-goals counter"
+		}
+
+		save_scope_value_as = { name = kehillah_debug_125_stability_after value = primary_title.var:kehillah_var_stability }
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.125: S6 failure path -- END"
+	}
+}

@@ -1,0 +1,271 @@
+﻿# =====================================================================
+# COMMUNITY GOALS -- ROADMAP S6, added 2026-09-28.
+#
+# Triggers: common/scripted_triggers/kehillah_goal_triggers.txt (read
+# that file's header first -- it holds the design account, including the
+# recorded scope cut on the daughter-community goal).
+#
+# WHAT LIVES WHERE, all on the community TITLE:
+#   kehillah_var_goal                        the active goal (a flag)
+#   kehillah_var_goal_timer                  set with years = the deadline;
+#                                            the ENGINE removes it on expiry
+#   kehillah_var_goal_snapshot_security      charter rungs as they stood
+#   kehillah_var_goal_snapshot_construction  when the goal was set
+#   kehillah_var_goal_daughter_credit        pushed marker, see below
+#   kehillah_var_goal_last                   the goal just resolved, kept
+#                                            so the notice can name it
+#   kehillah_var_goals_completed             the permanent legacy counter
+#
+# WHY THE COUNTER AND NOT A TITLE MODIFIER. S6 allows either ("a permanent
+# title modifier or counter as legacy"). The counter is the smaller of the
+# two: it needs no new modifier definitions, it reads correctly in the
+# standing tooltip beside the responsa count that already works this way,
+# and it cannot drift out of step with a modifier that a later succession
+# or teardown forgets to carry. A modifier can be layered on later without
+# changing anything here.
+#
+# WHY THE NOTICE IS A MESSAGE AND NOT AN EVENT. Same call the band changes
+# make (common/scripted_effects/kehillah_pillar_band_effects.txt): this
+# fires on a quarterly pulse for every community in the world, and a popup
+# per AI community finishing a goal would be a popup storm. The player
+# gets a feed entry in the filter category they already have for community
+# standing.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# kehillah_set_community_goal_effect = { GOAL = flag:yeshiva/renown/rights/daughter }
+# Scope: the Kehillah leader. Called from the four options of
+# kehillah_goals.0001.
+#
+# Writes only. It must not read back anything it writes here, because an
+# event option's effect block is evaluated to build its tooltip and
+# set_variable writes nothing in that pass -- the rule the 2026-09-28
+# responsa compile bug wrote down the hard way (see
+# common/decisions/kehillah_responsa_decisions.txt's own account).
+#
+# The charter snapshot reads kehillah_charter_cache_*, which is written by
+# a different effect on the quarterly pulse, so reading it here is safe.
+# A community whose cache has not been written yet snapshots 0, which is
+# the most generous reading and the right one -- an unknown charter should
+# not make the goal harder.
+# ---------------------------------------------------------------------
+kehillah_set_community_goal_effect = {
+	if = {
+		limit = { exists = primary_title }
+		primary_title = {
+			set_variable = { name = kehillah_var_goal value = $GOAL$ }
+			set_variable = {
+				name = kehillah_var_goal_timer
+				value = 1
+				years = kehillah_goal_deadline_years
+			}
+
+			# A credit pushed before this goal was ever set is not this
+			# goal's. Cleared on every set, not only on the daughter goal.
+			remove_variable = kehillah_var_goal_daughter_credit
+
+			if = {
+				limit = { has_variable = kehillah_charter_cache_security }
+				set_variable = {
+					name = kehillah_var_goal_snapshot_security
+					value = var:kehillah_charter_cache_security
+				}
+			}
+			else = {
+				set_variable = { name = kehillah_var_goal_snapshot_security value = 0 }
+			}
+
+			if = {
+				limit = { has_variable = kehillah_charter_cache_construction }
+				set_variable = {
+					name = kehillah_var_goal_snapshot_construction
+					value = var:kehillah_charter_cache_construction
+				}
+			}
+			else = {
+				set_variable = { name = kehillah_var_goal_snapshot_construction value = 0 }
+			}
+		}
+		debug_log = "kehillah_set_community_goal_effect: a community set a goal and started its decade"
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_check_community_goal_effect
+# Scope: the Kehillah leader. The ONE call site is the quarterly pulse.
+#
+# Ordered there AFTER kehillah_quarterly_pillars_effect and after the
+# charter cache refresh, for the same reason the band swap and the
+# dissolution watch are: two of the four goals are read off numbers those
+# two effects write, and judging this quarter's goal on last quarter's
+# figures would report a completion a quarter late for no benefit.
+#
+# COMPLETION IS CHECKED BEFORE EXPIRY on purpose. A community that meets
+# its goal in the same quarter the decade runs out has met it; the engine
+# removes the timer at its own moment inside that quarter and this has no
+# way to know whether that came before or after the yeshiva was finished.
+# Ruling for the player is the smaller error of the two.
+# ---------------------------------------------------------------------
+kehillah_check_community_goal_effect = {
+	if = {
+		limit = {
+			kehillah_has_active_goal_trigger = yes
+			kehillah_goal_is_met_trigger = yes
+		}
+		kehillah_complete_community_goal_effect = yes
+	}
+	else_if = {
+		limit = { kehillah_goal_deadline_passed_trigger = yes }
+		kehillah_fail_community_goal_effect = yes
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_complete_community_goal_effect
+# Scope: the Kehillah leader.
+#
+# WHICH PILLAR EACH GOAL PAYS. One fixed pillar per goal, chosen so the
+# reward reads as a consequence rather than as a prize:
+#   yeshiva  -- Greatness: a hall of study is what Greatness measures
+#   renown   -- Prosperity: a community people have heard of draws trade
+#               and settlers; paying Greatness again would just be paying
+#               the goal with its own gate
+#   rights   -- Stability: a better charter is protection
+#   daughter -- Greatness: the community that sent them out is named
+#               wherever they settle
+#
+# The goal flag is copied to kehillah_var_goal_last BEFORE it is cleared,
+# because the interface message's text names the goal and a message in the
+# feed may be rendered well after this effect has finished. Reading a
+# variable this effect had already removed is exactly the shape of bug the
+# band notices avoided by keeping kehillah_band_now_* around.
+# ---------------------------------------------------------------------
+kehillah_complete_community_goal_effect = {
+	if = {
+		limit = { exists = primary_title }
+
+		primary_title = {
+			set_variable = { name = kehillah_var_goal_last value = var:kehillah_var_goal }
+
+			if = {
+				limit = { var:kehillah_var_goal = flag:renown }
+				change_variable = { name = kehillah_var_prosperity add = kehillah_goal_reward_pillar }
+			}
+			else_if = {
+				limit = { var:kehillah_var_goal = flag:rights }
+				change_variable = { name = kehillah_var_stability add = kehillah_goal_reward_pillar }
+			}
+			else = {
+				change_variable = { name = kehillah_var_greatness add = kehillah_goal_reward_pillar }
+			}
+
+			if = {
+				limit = { NOT = { has_variable = kehillah_var_goals_completed } }
+				set_variable = { name = kehillah_var_goals_completed value = 0 }
+			}
+			change_variable = { name = kehillah_var_goals_completed add = 1 }
+
+			kehillah_clear_community_goal_effect = yes
+		}
+
+		add_prestige = major_prestige_gain
+
+		send_interface_message = {
+			type = msg_kehillah_goal_achieved
+			title = kehillah_goal_achieved_title
+			desc = kehillah_goal_achieved_desc
+			left_icon = root
+		}
+
+		debug_log = "kehillah_complete_community_goal_effect: a community completed its goal, paid its pillar and incremented its legacy counter"
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_fail_community_goal_effect
+# Scope: the Kehillah leader.
+#
+# A missed decade is a small Stability loss and nothing else -- no lost
+# counter, no modifier, no cooldown before a new goal can be set. S6 asks
+# for "a small Stability loss"; making failure also lock the system for a
+# while would punish the same miss twice and, worse, would punish a
+# SUCCESSOR who inherited someone else's ambition three years from its
+# deadline.
+# ---------------------------------------------------------------------
+kehillah_fail_community_goal_effect = {
+	if = {
+		limit = { exists = primary_title }
+
+		primary_title = {
+			set_variable = { name = kehillah_var_goal_last value = var:kehillah_var_goal }
+			change_variable = { name = kehillah_var_stability subtract = kehillah_goal_failure_stability_loss }
+			kehillah_clear_community_goal_effect = yes
+		}
+
+		send_interface_message = {
+			type = msg_kehillah_goal_failed
+			title = kehillah_goal_failed_title
+			desc = kehillah_goal_failed_desc
+			left_icon = root
+		}
+
+		debug_log = "kehillah_fail_community_goal_effect: a community let its decade run out"
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_clear_community_goal_effect
+# Scope: the community TITLE. Shared teardown, so completion and failure
+# cannot drift into leaving different residue behind -- a stale snapshot
+# or a stale daughter credit would silently decide the NEXT goal.
+# kehillah_var_goal_last and kehillah_var_goals_completed deliberately
+# survive: they are the record, not the working state.
+# ---------------------------------------------------------------------
+kehillah_clear_community_goal_effect = {
+	remove_variable = kehillah_var_goal
+	remove_variable = kehillah_var_goal_timer
+	remove_variable = kehillah_var_goal_snapshot_security
+	remove_variable = kehillah_var_goal_snapshot_construction
+	remove_variable = kehillah_var_goal_daughter_credit
+}
+
+# ---------------------------------------------------------------------
+# kehillah_goal_credit_daughter_community_effect
+# Scope: whatever scope the founding effect is in; reads
+# scope:kehillah_founder explicitly rather than trusting root, because
+# kehillah_found_community_effect moves through several scopes and this
+# is called near its end.
+#
+# Called from kehillah_found_community_effect (common/scripted_effects/
+# kehillah_found_community_effects.txt), the single chokepoint every new
+# community goes through -- the founding decision and any future "found a
+# sister community" route both land there, so neither can bypass this.
+#
+# Walks kehillah_registered_communities, the same registry the rabbi
+# search and the book system walk. The brand-new community is skipped by
+# the holder-is-not-the-founder test rather than by ordering, since the
+# registry has already been appended to by the time this runs.
+# ---------------------------------------------------------------------
+kehillah_goal_credit_daughter_community_effect = {
+	if = {
+		limit = {
+			exists = scope:kehillah_founder
+			exists = scope:kehillah_founder.dynasty
+		}
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				has_variable = kehillah_var_goal
+				var:kehillah_var_goal = flag:daughter
+				exists = holder
+				holder = {
+					NOT = { this = scope:kehillah_founder }
+					exists = dynasty
+					dynasty = scope:kehillah_founder.dynasty
+				}
+			}
+			set_variable = { name = kehillah_var_goal_daughter_credit value = 1 }
+			debug_log = "kehillah_goal_credit_daughter_community_effect: credited a community whose kin founded a new one"
+		}
+	}
+}
