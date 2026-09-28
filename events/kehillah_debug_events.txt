@@ -2491,3 +2491,109 @@ kehillah_debug.119 = {
 		debug_log = "kehillah_debug.119: S4b replace-the-rabbi path -- END"
 	}
 }
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.120 -- S4d (2026-09-27): can this community actually sit
+# a Beit Din? Read-only.
+#
+# The four frequency levers of that pass are all invisible from inside the
+# game: a wider invite pool and a lower dayan bar change nothing a player
+# can see until a session either runs or gets invalidated for want of
+# quorum, months later. This reports the inputs directly.
+#
+# THE NUMBER THAT MATTERS is the co-judge count. kehillah_bet_din_open_
+# docket_effect invalidates a whole session outright if fewer than two
+# eligible people actually SHOW UP, and kehillah_region_can_field_bet_din_
+# panel_trigger gates planning on a count of two being theoretically
+# available. A count of 0 or 1 here means this community cannot hold court
+# at all, which was the pre-S4d state for Baghdad (no same-minhag-region
+# peer) and nearly so for Toledo.
+#
+# Counted availability is an ESTIMATE, not turnout -- it cannot know who
+# will accept an invitation or arrive in time. A community reading 2 here
+# and still failing quorum live is the arrival window, not this.
+#
+# Fire it on the community LEADER.
+# ---------------------------------------------------------------------
+kehillah_debug.120 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.120: Beit Din panel availability (read-only) -- START"
+
+		save_scope_value_as = { name = kehillah_debug_120_co_judges value = kehillah_bet_din_available_co_judges_value }
+		save_scope_value_as = { name = kehillah_debug_120_scholar_bar value = kehillah_bet_din_scholar_guest_learning_threshold }
+		save_scope_value_as = { name = kehillah_debug_120_local_bar value = kehillah_bet_din_local_dayan_learning_threshold }
+		save_scope_value_as = { name = kehillah_debug_120_cooldown_years value = kehillah_bet_din_conference_cooldown_years }
+
+		if = {
+			limit = { kehillah_region_can_field_bet_din_panel_trigger = yes }
+			debug_log = "kehillah_debug.120: PANEL AVAILABLE at least two eligible co-judges exist somewhere -- planning is allowed"
+		}
+		else = {
+			debug_log = "kehillah_debug.120: PANEL UNAVAILABLE fewer than two eligible co-judges exist at all -- this community cannot convene, and no cooldown change will help it"
+		}
+
+		# The three populations, counted separately, because which one is
+		# carrying a community is the whole question S4d was about.
+		save_scope_value_as = {
+			name = kehillah_debug_120_region_leaders
+			value = {
+				value = 0
+				every_in_global_list = {
+					variable = kehillah_registered_communities
+					limit = { exists = holder }
+					holder = {
+						if = {
+							limit = {
+								NOT = { this = root }
+								is_ruler = yes
+								is_jewish_character_trigger = yes
+								kehillah_shares_minhag_region_trigger = { OTHER = root }
+							}
+							add = 1
+						}
+					}
+				}
+			}
+		}
+		save_scope_value_as = {
+			name = kehillah_debug_120_own_household
+			value = {
+				value = 0
+				every_courtier = {
+					limit = {
+						is_jewish_character_trigger = yes
+						is_adult = yes
+						kehillah_leadership_gender_eligible_trigger = yes
+						OR = {
+							has_trait = kehillah_rabbi_trait
+							learning >= kehillah_bet_din_local_dayan_learning_threshold
+						}
+					}
+					add = 1
+				}
+			}
+		}
+
+		if = {
+			limit = { kehillah_has_acting_chief_rabbi_trigger = yes }
+			debug_log = "kehillah_debug.120: PRESIDE GATE PASS somebody can sit as Av Beit Din (S4b) -- note an APPOINTED rabbi is excluded from the co-judge count above by S4c, deliberately"
+		}
+		else = {
+			debug_log = "kehillah_debug.120: PRESIDE GATE BLOCKED no acting Chief Rabbi, so the conference is refused regardless of the panel numbers"
+		}
+
+		if = {
+			limit = { is_activity_type_on_cooldown = activity_kehillah_bet_din_conference }
+			debug_log = "kehillah_debug.120: ON COOLDOWN a session was held recently -- see the cooldown-years figure in the dump"
+		}
+		else = {
+			debug_log = "kehillah_debug.120: OFF COOLDOWN nothing is blocking a new session on timing grounds"
+		}
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.120: Beit Din panel availability (read-only) -- END"
+	}
+}

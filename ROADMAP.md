@@ -445,6 +445,63 @@ short research bullets for when Daniel is back.
     seat as well as the presiding one, staffing a court of three with two people and counting his
     Learning twice in the tally. He is now resolved first and excluded from the pool. Note this
     slightly *tightens* turnout math, which matters for the frequency question below.
+- **S4d. BUILD — Bet Din frequency, first tuning pass.** (Daniel, 2026-09-27: *"help me
+  brainstorm how to increase the bet din frequency"*, then approved levers 1-4 of the five
+  offered.) **BUILT 2026-09-27, `ck3-tiger`-clean, NOT YET LIVE-TESTED.**
+
+  What was actually braking it, read from code rather than guessed: 16 communities spread across 13
+  tagged minhag regions, so the only population that scores highly as a co-judge — same-region
+  community leaders — is typically 0–2 people. The Rhineland (Worms/Speyer/Mainz/Cologne) and
+  Provence (Narbonne/Béziers/Lunel) clusters were fine; **Baghdad has no same-region peer at all**
+  and Toledo is close to it, so both depended on a Learning-16 courtier or a wandering adventurer
+  turning up. On top of that, a hard 3-year per-host cooldown.
+
+  1. **Cooldown 3 → 2 years** (`kehillah_bet_din_conference_cooldown_years`). The hard ceiling;
+     nothing else matters until it moves. 2 not 1 because the guest-arrival window ahead of a
+     docket is up to three months, and a leader at a Beit Din more often than not stops reading as
+     a leader who sometimes holds court. One number if still too rare.
+  2. **Outside-scholar bar 16 → 12** (`kehillah_bet_din_scholar_guest_learning_threshold`). That
+     number was set as a *prestige* bar ("a renowned scholar, not merely a capable one") but was
+     doing duty as the *eligibility* bar in the shared judge trigger's population 2. 12 is what the
+     cases themselves treat as a genuinely learned judge, so the feature now means one thing by it.
+  3. **The host's own household can sit as dayanim**, at a new lower bar
+     `kehillah_bet_din_local_dayan_learning_threshold = 8`, or on holding `kehillah_rabbi_trait` at
+     any Learning. A Beit Din of three was normally three local men; requiring every seat but the
+     host's to come from outside structured a routine communal court as a diplomatic summit.
+     Implemented as population 4 of `kehillah_bet_din_eligible_judge_trigger` **and** a matching
+     widening of `kehillah_bet_din_invite_rule_jewish_courtiers` — both, because a man the invite
+     rules never offer a seat to never becomes an attendee and so can never be ranked into one,
+     however eligible the trigger thinks he is. Pairs with S4c: semicha is permanent now, so a
+     community accumulates eligible dayanim over a career instead of losing them.
+  4. **`max_guests` 6 → 8.** This *replaces* the fourth lever as originally proposed, which was to
+     halve the session length. **That proposal was wrong**: it read
+     `kehillah_bet_din_case_phase_days = 30` as the pace of a case and concluded a session occupied
+     the host ~90 days. It is a hang guard for an unanswered popup; a real docket runs about three
+     weeks (`2 * kehillah_bet_din_case_step_days + 1` per phase). That value's comment now says so
+     explicitly. What actually limits how often a Bet Din *happens* rather than is *attempted* is
+     turnout — a session with fewer than two eligible attendees is invalidated outright — so with
+     the invite pool widened by levers 2 and 3, six slots had become the binding constraint on it.
+
+  Probe: `kehillah_debug.120`, read-only, reports the available co-judge count, the region-leader
+  and own-household populations separately, both bars, the cooldown state and the S4b preside gate.
+  The levers are otherwise invisible until a session runs or fails quorum months later.
+
+  **Open decision for Daniel, recorded not taken:** population 4 checks
+  `kehillah_leadership_gender_eligible_trigger`, the hook every new leadership role in this mod goes
+  through; the three older populations never have, so women can already sit as co-judges today via
+  populations 2 and 3. Making the trigger consistent — in either direction — is one line, but it is
+  a design call and not a tuning one, so it was not taken inside a tuning pass.
+
+  **Not built, offered and deliberately left for review:** the fifth lever (adjacent-region or
+  distance fallback when the home region cannot field a panel, which is the structural fix for
+  Baghdad and Toledo rather than a probabilistic one), and the larger idea this conversation
+  actually pointed at — **a second, smaller local Beit Din that is not an activity at all** (a 2–4
+  event chain, own court, no travel, Chief Rabbi presiding, cooldown in months), fed by a **docket
+  that accumulates real pending business** (disputes, semicha requests, agunah cases) so that the
+  Chief Rabbi *asks permission to convene* when it fills. Frequency would then track how eventful
+  the community is instead of a flat timer, and the officer would behave like an agent rather than a
+  stat block. Also unbuilt: a landed or gentile host ruler convening a court for the Jews of his
+  realm (S9a/Track B territory, roughly doubles who can start one).
 - **S5. BUILD — Responsa.** Build exactly: an on_action pulse (roughly one question every 1-2
   years for a leader or Chief Rabbi with Learning ≥ ~12) firing an event where a named leader of
   another real community sends a question (start with 6 question texts, halakhic/communal flavour,
