@@ -22,6 +22,36 @@ this note referred to) are long since resolved and removed; numbering otherwise 
 than renumbered, since later items and other docs cross-reference these numbers by hand (e.g.
 `kehillah_breakdown_custom_loc.txt`'s own header cites "ROADMAP item 4").
 
+### Rabbi gameplay loop — interactive direction, 2026-09-29
+
+Daniel's current priority is to connect mentor/yeshiva semicha, book mastery, Bet Din
+participation, source-based rulings, responsa, authored world works, and the Chief Rabbi
+office. The incremental design and proof order are in
+[V24](docs/spec/v24-rabbi-gameplay-loop.md); V21 and V23 remain proposals, not shipped
+features. This explicitly takes priority over the older autonomous queue for this
+interactive pass.
+
+- **Bet Din participant reward slice: LIVE-PROBED 2026-09-29; AI-hosted player guest still open.** Good/great rulings
+  give the three actual ordained judges 1/3 Talmudics XP; a positive docket gives
+  non-host attendees small piety, prestige, Learning XP, and a relationship gain.
+  Book mastery remains the main Rabbi XP source. A dedicated console probe is in
+  `events/kehillah_rabbi_loop_debug_events.txt`. Do not mark the whole
+  participant experience done until an AI-hosted player guest is checked. The first
+  live pass (2026-09-29) confirmed a real case's +1 XP for all three judges,
+  then exposed an older closing-event bug: both score triggers still read
+  retired global variables even though the docket score lives on the activity.
+  This made all tiered session rewards silently fall through. The triggers
+  now read `involved_activity.var`. The fresh-boot retest reported a positive
+  score and displayed the **adequate** close: host Greatness +10, Stability
+  +5, Piety +50, and named non-host attendees each shown gaining +10
+  Prestige, +10 Piety, +15 Learning XP and opinion. The close executed
+  without a new reward error. This verifies the UI/effect path, though a
+  numeric before/after on an attendee and an AI-hosted player guest remain
+  untested. [Live log](docs/testing/2026-09-29-rabbi-loop-bet-din-live-test-log.md).
+- **Next:** V21 ordination through rabbi mentorship and local semicha, then one
+  source-aware Bet Din case and V23 letter from that case. Prove one dynamically
+  authored circulating sefer end to end before adding the historical catalog.
+
 ### v0.1 milestone — Sukkot autonomous queue (added 2026-09-25; works ABOVE the numbered items below)
 
 Daniel's v0.1 direction is in [docs/spec/v22-v0.1-milestone.md](docs/spec/v22-v0.1-milestone.md):
