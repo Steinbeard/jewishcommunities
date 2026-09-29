@@ -611,7 +611,16 @@ short research bullets for when Daniel is back.
   in the standing tooltip. AI communities pick a goal at random, weighted by their weakest pillar.
   **Done when**, live: one goal is set, completed via debug state, the reward and legacy appear,
   and a failed deadline applies its penalty.
-  **BUILT 2026-09-28 (Sukkot heartbeat), `ck3-tiger` clean — 0 fatal, 0 error, 58 warnings, which
+  **DONE — VERIFIED LIVE 2026-09-29**, [log](docs/testing/2026-09-29-s6-goals-live-test-log.md).
+  The decision and goal-choice event render with real text; after setting "A Name Among the
+  Communities", `.123` reports GOAL ACTIVE / DEADLINE RUNNING and the standing tooltip shows the
+  goal and "268 more Greatness to Flourishing" (432 + 268 = the 700 threshold). `.124`: all six
+  asserts PASS (Greatness 432 → 472, exactly the +40 reward; counter 0 → 1). `.125`: all four PASS
+  (Stability 369 → 344, exactly −25; counter unmoved), and the failure toast was seen rendering. No
+  new error.log lines from any goal file. One bug, in the debug probe only: `.123` read
+  `kehillah_var_goals_completed` unguarded and threw three error lines on any community that had
+  never completed a goal. Fixed the same day.
+  Original build note: **BUILT 2026-09-28 (Sukkot heartbeat), `ck3-tiger` clean — 0 fatal, 0 error, 58 warnings, which
   is BELOW the standing 59-warning baseline and with nothing anchored on any file the build
   touches.** Files: `common/scripted_triggers/kehillah_goal_triggers.txt` (read its header first —
   it carries the design account), `common/scripted_effects/kehillah_goal_effects.txt`,
