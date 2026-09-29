@@ -703,7 +703,14 @@ short research bullets for when Daniel is back.
   Scholar (Rashi of Troyes), the Shtadlan (a Sh'um or Cologne leader), and the Financier (a landless
   Jewish adventurer near Rouen, created for this). ck3-tiger checks bookmark portraits — a missing
   one crashes the game. Must boot and be selectable live.
-  **BUILT 2026-09-29, `ck3-tiger` 0 fatal / 0 error, NOT YET LIVE-TESTED.** Rashi (9000201, leads
+  **DONE — VERIFIED LIVE 2026-09-29**, [log](docs/testing/2026-09-29-s9a-s7-live-test-log.md). The
+  bookmark boots and lists all three with real text; Yosef starts as an adventurer ("The Rodom
+  Traders", "mi-Rodom", 406 gold = 300 scripted + the vanilla adventurer treasury), Rashi as leader
+  of the Kehillah of Troyes. One bug: the two new cards had no per-character background art
+  (`VFSOpen Error ... _troyes_rashi.dds / _rodom_yosef.dds`), so they drew a flat colour; fixed
+  with copies of Isaac's art as placeholders (the founder-test bookmark has the same gap, left
+  alone). Marker positions still unjudged against terrain.
+  Build note: **BUILT 2026-09-29, `ck3-tiger` 0 fatal / 0 error.** Rashi (9000201, leads
   Troyes) and a new, explicitly **invented** Financier — Yosef ben Menahem "mi-Rodom" (9000300,
   dynasty 9000060, `history/characters/rouen_1066.txt`), a landless adventurer whose company
   `d_kehillah_rodom` is set up exactly as vanilla's `d_laamp_wake` — were added to the existing
@@ -727,7 +734,16 @@ short research bullets for when Daniel is back.
   realm. Lowering: small piety gain, lost income expectation spelled out in the tooltip. **No AI use
   yet** (V17 wants event-led AI; that's with Daniel). **Done when**, live: a non-Jewish player moves
   the policy both ways and the Kehillah sees the notice and the changed charter outlook.
-  **BUILT 2026-09-29, `ck3-tiger` 0/0/59 (baseline), NOT YET LIVE-TESTED.** Files:
+  **DONE — VERIFIED LIVE 2026-09-29**, [log](docs/testing/2026-09-29-s9a-s7-live-test-log.md). `.127`/`.128`
+  RUNG PASS and COOLDOWN PASS in both directions (Allowed → Encouraged → Allowed → Discouraged), no
+  STORAGE FAIL, the Discouraged floor holds (`SKIP`, no `FLOOR FAIL`), six communities under the
+  Emperor each notified, and the Lowered notice rendered with real names. The ledger badge followed
+  every step, and at Discouraged the charter line reads "Grandfathered rights exceed the current
+  policy — charter review needed". Taken through the UI as the Emperor (`play` needs his INTERNAL
+  id): real text, 100 Piety paid exactly (963 → 863), the chaplain's −15 shown, Lower blocked with
+  the floor reason, the cooldown blocking both. Zero error.log lines from any S9a file. The
+  chaplain's actual opinion breakdown was not hovered (tool outage) — tooltip-evidenced only.
+  Build note: **BUILT 2026-09-29, `ck3-tiger` 0/0/59 (baseline).** Files:
   `common/decisions/kehillah_settlement_policy_decisions.txt` (header carries the design limits),
   `common/scripted_effects/kehillah_settlement_policy_effects.txt`, a values file, an opinion
   modifier, a loc file, two message types, `kehillah_policy_review_on_cooldown_trigger`. Choices

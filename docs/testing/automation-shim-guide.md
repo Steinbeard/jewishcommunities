@@ -54,6 +54,11 @@ types each command followed by Enter, then closes the console. This is the *only
 `event <id>`, `gold <amount>`, `run <file>.txt`, etc. — there's no other channel for console
 commands.
 
+**`play <id>` takes the character's INTERNAL id, not its history id** (found 2026-09-29): `play 1316`
+(Heinrich IV's history id) returned "Invalid Character"; `play 37029`, the internal id shown in a
+`debug_log_scopes` dump, worked. Have a probe log the target's scopes first to get it. After `play`,
+the character you left is AI-controlled, so a `send_interface_message` aimed at them is not shown.
+
 ### Mouse: `mouse_move(x, y)` / `mouse_click(x, y, button="left")`
 
 Coordinates are **actual screen pixels**, origin at the virtual-desktop top-left (handles
