@@ -1,11 +1,36 @@
 # V24: Rabbi Gameplay Loop
 
-**Status: DESIGN DIRECTION, 2026-09-29.** Daniel's proposed loop is recorded here for
-incremental implementation. Only the small Bet Din participant reward slice is built in
-this pass; ordination, source-based rulings, responsive correspondence, and authored
-world works remain planned until live-tested. [ROADMAP](../../ROADMAP.md) is authoritative
+**Status: DESIGN DIRECTION WITH PARTIAL IMPLEMENTATION, 2026-09-29.** Daniel's proposed loop is recorded here for
+incremental implementation. The small Bet Din participant reward slice is built and live
+probed; one historical case is scripted below. Ordination, book-gated rulings,
+responsive correspondence, and authored world works remain planned. [ROADMAP](../../ROADMAP.md) is authoritative
 for shipped status. This refines V21's ordination route and V23's responsa model; it
 does not retroactively describe their proposed mechanics as existing code.
+
+## 2026-09-29 case-writing addendum
+
+**Status: HOST-TO-RESOLUTION LIVE-PROBED, 2026-09-29.** The first historical case is
+"A Captive's Ransom." Its legal dilemma draws on [Mishnah Gittin 4:6](https://www.sefaria.org/Mishnah_Gittin.4.6)
+and the debate in [Gittin 45a](https://www.sefaria.org/Gittin.45a). Communal
+ransom collections and guarantees are attested in the [Alexandria Geniza
+letter](https://geniza.princeton.edu/en/documents/956/) and a [1021/22 legal
+record](https://geniza.princeton.edu/en/documents/7851/). The case deliberately
+rules on what a community will offer; there is no represented captive, so the
+event does not claim that a particular person was freed. Its public levy,
+customary cap, and voluntary collection trade different communal costs. The
+second judge may change the proposed policy by succeeding at a distinct
+Learning, Stewardship, or Diplomacy argument. This is a template for future
+source-aware rulings, but book mastery and responsa hooks have not yet been
+added to this case.
+
+The live pass is recorded in the [ransom test log](../testing/2026-09-29-bet-din-ransom-live-test-log.md).
+The player's host choice, AI continuation, and direction-specific verdict
+worked; a player-controlled second-judge override remains untested.
+
+The same response rule now applies to the existing Silversmiths' Quarrel:
+the second judge's successful Mesirah, Gerama, or dismissal argument changes
+the recorded direction. In the dowry case, mediation of a smaller agreement
+now tests Diplomacy, while enforcement of the original sum tests Stewardship.
 
 ## The loop the player should see
 

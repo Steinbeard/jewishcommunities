@@ -48,8 +48,17 @@ interactive pass.
   without a new reward error. This verifies the UI/effect path, though a
   numeric before/after on an attendee and an AI-hosted player guest remain
   untested. [Live log](docs/testing/2026-09-29-rabbi-loop-bet-din-live-test-log.md).
-- **Next:** V21 ordination through rabbi mentorship and local semicha, then one
-  source-aware Bet Din case and V23 letter from that case. Prove one dynamically
+- **Bet Din case-writing pass, 2026-09-29:** The docket now includes a communal
+  captive-ransom petition drawn from Mishnah Gittin 4:6 and Geniza evidence. The
+  presiding judge chooses a funding policy; the second judge can persuade the
+  bench to change it; ruling quality and funding cost resolve separately. The
+  silversmith case's successful second-judge argument now changes the verdict.
+  The dowry compromise now tests Diplomacy and its text no longer sides with
+  the family demanding the original sum. The ransom host-to-resolution chain
+  is [live-probed](docs/testing/2026-09-29-bet-din-ransom-live-test-log.md);
+  player-controlled dissent and the revised silversmith response remain open.
+- **Next:** V21 ordination through rabbi mentorship and local semicha, then a
+  book-mastery option in a Bet Din case and V23 letter from that case. Prove one dynamically
   authored circulating sefer end to end before adding the historical catalog.
 
 ### v0.1 milestone — Sukkot autonomous queue (added 2026-09-25; works ABOVE the numbered items below)
