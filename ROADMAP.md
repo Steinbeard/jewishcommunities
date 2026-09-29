@@ -664,6 +664,16 @@ short research bullets for when Daniel is back.
   Scholar (Rashi of Troyes), the Shtadlan (a Sh'um or Cologne leader), and the Financier (a landless
   Jewish adventurer near Rouen, created for this). ck3-tiger checks bookmark portraits — a missing
   one crashes the game. Must boot and be selectable live.
+  **BUILT 2026-09-29, `ck3-tiger` 0 fatal / 0 error, NOT YET LIVE-TESTED.** Rashi (9000201, leads
+  Troyes) and a new, explicitly **invented** Financier — Yosef ben Menahem "mi-Rodom" (9000300,
+  dynasty 9000060, `history/characters/rouen_1066.txt`), a landless adventurer whose company
+  `d_kehillah_rodom` is set up exactly as vanilla's `d_laamp_wake` — were added to the existing
+  `bm_1066_kehillah_worms` rather than a new bookmark, so its art is reused and Isaac is the
+  Shtadlan. Placeholder portraits (same shape as the founder test's). +4 tiger warnings, all the
+  same missing-portrait-art / missing-coat-of-arms kinds Isaac already has. **Deferred:** renaming
+  the bookmark away from "The Kehillah of Worms" (its loc is in `kehillah_l_english.yml`, which
+  had uncommitted parallel edits at the time); "Rodom" as Rouen's Hebrew name is marked TO VERIFY;
+  bookmark `position`s are guesses a screenshot should correct.
 - **S8. BUILD — The Financier path.** The S7 adventurer can take up the post-Conquest invitation and
   found an English community themselves (V18 currently founds them only as AI): after the Conquest
   resolves, the player adventurer gets an invitation event (accept → travel/found in London via the
@@ -678,6 +688,22 @@ short research bullets for when Daniel is back.
   realm. Lowering: small piety gain, lost income expectation spelled out in the tooltip. **No AI use
   yet** (V17 wants event-led AI; that's with Daniel). **Done when**, live: a non-Jewish player moves
   the policy both ways and the Kehillah sees the notice and the changed charter outlook.
+  **BUILT 2026-09-29, `ck3-tiger` 0/0/59 (baseline), NOT YET LIVE-TESTED.** Files:
+  `common/decisions/kehillah_settlement_policy_decisions.txt` (header carries the design limits),
+  `common/scripted_effects/kehillah_settlement_policy_effects.txt`, a values file, an opinion
+  modifier, a loc file, two message types, `kehillah_policy_review_on_cooldown_trigger`. Choices
+  made, smallest-reasonable: shown only to an **independent** non-Kehillah ruler (a vassal's title
+  is never the one its communities read); the cooldown lives on the **realm title**, so a successor
+  inherits it; **Lower stops at Discouraged** until S9b exists (Raise still climbs out of a
+  debug-set Banned); piety cost and chaplain objection are waived for a Jewish ruler/chaplain.
+  **Finding: the host draws no tribute from any charter today** (the contracts carry only
+  subject-side modifiers), so "lost income" is honestly phrased as lost future settlement — a real
+  host income stream is a design question for Daniel (V17 / S12). Harness: `kehillah_debug.126`
+  (state), `.127` raise and `.128` lower through the real effects asserting exactly one rung plus
+  cooldown plus "Allowed is stored as absence", `.129` clears the cooldown; run files
+  `s9a_state/raise/lower/clear_cooldown.txt`, fired **as the Kehillah player** against its host so
+  the notice lands on the player it is for. The decision UI itself needs a `play` switch to the
+  host (the Emperor, for Worms).
 - **S9b. BUILD — Expulsion.** Lowering to Banned starts a warning event for every community in the
   realm, then after ~1-2 years an expulsion event with counterplay options (petition/bribe the
   ruler via the Shtadlan → chance to restore Discouraged; leave in good order → S1's departure
