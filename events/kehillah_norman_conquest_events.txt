@@ -152,6 +152,8 @@ kehillah_norman_conquest.0011 = {
 					set_variable = { name = kehillah_norman_player_founded value = yes }
 				}
 				debug_log = "kehillah_norman_conquest.0011: PLAYER FOUNDED LONDON"
+				# S8b: a year on, the crown comes asking (.0020).
+				trigger_event = { id = kehillah_norman_conquest.0020 years = 1 }
 			}
 			else = {
 				debug_log = "kehillah_norman_conquest.0011: WARNING founding effect ran but the player is not in the Kehillah government"
@@ -179,6 +181,68 @@ kehillah_norman_conquest.0012 = {
 			remove_global_variable = kehillah_norman_london_offer_pending
 			debug_log = "kehillah_norman_conquest.0012: London offer lapsed unanswered -- founding it for the AI"
 			kehillah_norman_found_london_effect = yes
+		}
+	}
+}
+
+
+# =====================================================================
+# ROADMAP S8b (2026-09-29): the crown as a repeat borrower. Scope: the
+# player who founded London (.0011 schedules the first of these a year
+# after the founding). Every three years the community's host -- the
+# King, in any ordinary game -- asks for a loan through the ordinary
+# loan contract and its offer event (kehillah_task_contract.0003), at
+# kehillah_loan_royal_principal_multiplier times the usual sum. Skipped,
+# with a logged reason, while the crown still owes or the community
+# cannot lend that much; the chain reschedules itself either way and
+# ends when this character no longer leads a player-founded London.
+# =====================================================================
+kehillah_norman_conquest.0020 = {
+	type = character_event
+	hidden = yes
+
+	trigger = { is_alive = yes }
+
+	immediate = {
+		if = {
+			limit = {
+				government_has_flag = government_is_kehillah
+				exists = primary_title
+				primary_title = { has_variable = kehillah_norman_player_founded }
+				exists = domicile.domicile_location.county.holder.top_liege
+			}
+			domicile.domicile_location.county.holder.top_liege = { save_scope_as = employer }
+			set_variable = {
+				name = kehillah_loan_royal_request
+				value = yes
+				days = kehillah_loan_royal_request_days
+			}
+			if = {
+				limit = {
+					scope:employer = { NOT = { exists = var:kehillah_loan_amount_owed } }
+					can_create_task_contract = {
+						type_name = kehillah_loan_contract
+						employer = scope:employer
+					}
+				}
+				create_task_contract = {
+					task_contract_type = kehillah_loan_contract
+					task_contract_tier = root.task_contract_tier_value
+					location = root.domicile.domicile_location
+					task_contract_employer = scope:employer
+					save_scope_as = new_contract
+				}
+				debug_log = "kehillah_norman_conquest.0020: ROYAL REQUEST OFFERED the crown asks London for a loan"
+				trigger_event = kehillah_task_contract.0003
+			}
+			else = {
+				remove_variable = kehillah_loan_royal_request
+				debug_log = "kehillah_norman_conquest.0020: ROYAL REQUEST SKIPPED the crown still owes, or the community cannot lend this much (gold, Healthy Prosperity)"
+			}
+			trigger_event = { id = kehillah_norman_conquest.0020 years = 3 }
+		}
+		else = {
+			debug_log = "kehillah_norman_conquest.0020: chain ends -- no longer the leader of a player-founded London"
 		}
 	}
 }

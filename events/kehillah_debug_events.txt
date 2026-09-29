@@ -3480,3 +3480,110 @@ kehillah_debug.131 = {
 		debug_log = "kehillah_debug.131: S8 London state -- END"
 	}
 }
+
+
+# =====================================================================
+# ROADMAP S8b (2026-09-29) -- royal loans. Scope of all three: the player
+# who founded London (after .130/.0010/.0011).
+# .132 makes the preconditions true (tops gold up to the royal principal,
+# Prosperity up to Healthy -- each logged if it had to), then fires the
+# royal request (.0020) now. Expect the loan offer event.
+# .133 after the loan is sealed: moves the crown's loan to its last
+# quarter and makes sure the crown can pay, so the NEXT quarterly pulse
+# resolves it (repay expected). Everything it changes is logged.
+# .134 read-only: the crown's debt, the lender's standing with it.
+# =====================================================================
+
+kehillah_debug.132 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.132: S8b royal request -- START"
+		set_variable = { name = kehillah_loan_royal_request value = yes days = 1 }
+		if = {
+			limit = { gold < kehillah_loan_principal_value }
+			add_gold = kehillah_loan_principal_value
+			debug_log = "kehillah_debug.132: SETUP topped up gold to afford the royal principal"
+		}
+		remove_variable = kehillah_loan_royal_request
+		if = {
+			limit = { NOT = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_healthy_threshold } } }
+			primary_title = { set_variable = { name = kehillah_var_prosperity value = kehillah_band_healthy_threshold } }
+			debug_log = "kehillah_debug.132: SETUP raised Prosperity to the Healthy threshold"
+		}
+		debug_log_scopes = yes
+		trigger_event = kehillah_norman_conquest.0020
+		debug_log = "kehillah_debug.132: S8b royal request -- END (see the .0020 line above)"
+	}
+}
+
+kehillah_debug.133 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.133: S8b fast-forward -- START"
+		if = {
+			limit = {
+				exists = domicile.domicile_location.county.holder.top_liege
+				domicile.domicile_location.county.holder.top_liege = { exists = var:kehillah_loan_amount_owed }
+			}
+			domicile.domicile_location.county.holder.top_liege = {
+				set_variable = { name = kehillah_loan_years_elapsed value = kehillah_loan_term_years }
+				change_variable = { name = kehillah_loan_years_elapsed add = -0.25 }
+				debug_log = "kehillah_debug.133: SETUP the crown's loan is now in its last quarter"
+				if = {
+					limit = { gold < var:kehillah_loan_amount_owed }
+					add_gold = var:kehillah_loan_amount_owed
+					debug_log = "kehillah_debug.133: SETUP gave the crown enough gold to repay"
+				}
+				debug_log_scopes = yes
+			}
+			debug_log = "kehillah_debug.133: now wait for the next quarterly pulse; expect 'an AI borrower repaid at term'"
+		}
+		else = {
+			debug_log = "kehillah_debug.133: FAIL the crown owes nothing -- seal a royal loan first"
+		}
+	}
+}
+
+kehillah_debug.134 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.134: S8b royal loan state -- START"
+		if = {
+			limit = { exists = domicile.domicile_location.county.holder.top_liege }
+			domicile.domicile_location.county.holder.top_liege = {
+				save_scope_as = kehillah_dbg_crown
+				if = {
+					limit = { exists = var:kehillah_loan_amount_owed }
+					debug_log = "kehillah_debug.134: CROWN OWES (amount in the scopes dump)"
+					debug_log_scopes = yes
+				}
+				else = {
+					debug_log = "kehillah_debug.134: CROWN OWES NOTHING"
+				}
+				if = {
+					limit = { has_opinion_modifier = { target = root modifier = kehillah_royal_loan_favour_opinion } }
+					debug_log = "kehillah_debug.134: FAVOUR PASS the crown holds Royal Favour toward this lender"
+				}
+				else = {
+					debug_log = "kehillah_debug.134: NO FAVOUR"
+				}
+			}
+			if = {
+				limit = { has_variable = kehillah_loan_royal_request }
+				debug_log = "kehillah_debug.134: ROYAL REQUEST FLAG STILL SET"
+			}
+			primary_title = {
+				if = {
+					limit = {
+						is_target_in_variable_list = { name = kehillah_loan_debtors target = scope:kehillah_dbg_crown }
+					}
+					debug_log = "kehillah_debug.134: THE CROWN IS ON THIS COMMUNITY'S DEBTOR LIST"
+				}
+			}
+		}
+		debug_log = "kehillah_debug.134: S8b royal loan state -- END"
+	}
+}

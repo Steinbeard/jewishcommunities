@@ -2060,12 +2060,38 @@ kehillah_quarterly_pillars_effect = {
 				exists = var:kehillah_loan_amount_owed
 				var:kehillah_loan_years_elapsed >= kehillah_loan_term_years
 			}
+			# ROADMAP S8b (2026-09-29): AN AI BORROWER REPAYS AT TERM IF IT
+			# CAN. Before this, kehillah_repay_loan_decision (ai_potential
+			# always = no) was the only way a loan was ever repaid, so every
+			# loan to an AI ruler -- i.e. nearly every loan -- defaulted at
+			# term by construction. Same payment and rewards as that
+			# decision; a player borrower still repays by the decision, and
+			# anyone who cannot pay at term still defaults as before.
+			if = {
+				limit = {
+					is_ai = yes
+					exists = scope:kehillah_loan_title.holder
+					gold >= var:kehillah_loan_amount_owed
+				}
+				pay_short_term_gold = {
+					target = scope:kehillah_loan_title.holder
+					gold = var:kehillah_loan_amount_owed
+				}
+				scope:kehillah_loan_title = {
+					change_variable = { name = kehillah_var_prosperity add = kehillah_loan_repayment_prosperity_reward }
+					change_variable = { name = kehillah_var_greatness add = kehillah_loan_repayment_greatness_reward }
+				}
+				debug_log = "kehillah_quarterly_pillars_effect: an AI borrower repaid at term"
+			}
+			else = {
+				scope:kehillah_loan_title = {
+					change_variable = { name = kehillah_var_prosperity subtract = kehillah_loan_default_prosperity_loss }
+				}
+				debug_log = "kehillah_quarterly_pillars_effect: a borrower defaulted at term"
+			}
 			remove_variable = kehillah_loan_amount_owed
 			remove_variable = kehillah_loan_lender_title
 			remove_variable = kehillah_loan_years_elapsed
-			scope:kehillah_loan_title = {
-				change_variable = { name = kehillah_var_prosperity subtract = kehillah_loan_default_prosperity_loss }
-			}
 		}
 	}
 
