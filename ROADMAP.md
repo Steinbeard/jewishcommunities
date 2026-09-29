@@ -728,6 +728,18 @@ short research bullets for when Daniel is back.
   borrower (larger sums, royal favour as opinion + charter security) — no new finance system.
   **Done when**, live: the invitation appears for a player adventurer, accepting founds the
   community with the right charter, and a royal loan originates, accrues and repays.
+  **PART A (the invitation) DONE — VERIFIED LIVE 2026-09-29**,
+  [log](docs/testing/2026-09-29-s8a-london-invitation-live-test-log.md). As the S7 Financier:
+  accepting founds "Kehillah of London" under the player (Kehillah government, Jewish Quarter in
+  Middlesex, a host charter, England Encouraged) and it survived 46 days past founding with no
+  Game Over; declining leaves the AI to found it; exactly one London either way, and the 60-day
+  fallbacks found nothing pending afterwards. The first run found the invitation throwing ~15,600
+  tooltip-preview errors while on screen — the Decline option called the AI founding effect
+  directly, and CK3 dry-runs option effects for tooltips. Decline now hands off to `.0012` a day
+  later; retest: zero errors. The fallback is scheduled on both king and invitee (an event does
+  not fire on a dead character). Code: `kehillah_norman_conquest.0010`-`.0012`,
+  `kehillah_norman_london_invitation_eligible_trigger`, probes `kehillah_debug.130`/`.131`.
+  **Part B (royal loans) not yet built.**
 - **S9a. BUILD — Host-ruler settlement-policy decisions (non-Jewish player).** Two decisions, "Raise"
   and "Lower Jewish Settlement Policy" (one rung each, 5-year cooldown), writing the existing V16
   title variable. Raising: costs piety/clergy opinion, grants a notice to Jewish communities in the

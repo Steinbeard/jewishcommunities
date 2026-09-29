@@ -104,12 +104,20 @@ kehillah_norman_conquest.0010 = {
 	}
 
 	# Decline: London is founded by others, exactly as it would have been.
+	# NOT by calling kehillah_norman_found_london_effect here: CK3 walks an
+	# option's effects -- hidden_effect included -- to build its tooltip
+	# every frame the event is on screen, and in that dry run create_
+	# character makes no one, so the founding's scope:..._london_leader
+	# block errored ~15,600 times in one live test (2026-09-29 S8a log).
+	# Hand off instead to the fallback, .0012, a day later: it still sees
+	# the pending offer (left in place for it here) and founds the AI
+	# London outside any tooltip. Fired on root, not the king: .0012 reads
+	# nothing from its scope, and root is certainly alive to receive it.
 	option = {
 		name = kehillah_norman_conquest.0010.b
-		remove_global_variable = kehillah_norman_london_offer_pending
 		custom_tooltip = kehillah_norman_conquest.0010.b.tt
 		hidden_effect = {
-			kehillah_norman_found_london_effect = yes
+			trigger_event = { id = kehillah_norman_conquest.0012 days = 1 }
 		}
 	}
 }
@@ -158,7 +166,9 @@ kehillah_norman_conquest.0011 = {
 	}
 }
 
-# The fallback. Scope: the king who issued the offer.
+# The fallback. Scope: any character -- it reads only the global offer.
+# Fired by a decline (on the decliner, next day) and, as the unanswered-
+# offer backstop, on both the king and the invitee at sixty days.
 kehillah_norman_conquest.0012 = {
 	type = character_event
 	hidden = yes
