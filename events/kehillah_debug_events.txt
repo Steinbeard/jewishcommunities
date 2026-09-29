@@ -3152,3 +3152,224 @@ kehillah_debug.125 = {
 		debug_log = "kehillah_debug.125: S6 failure path -- END"
 	}
 }
+
+
+# =====================================================================
+# ROADMAP S9a (2026-09-29) -- Raise / Lower Jewish Settlement Policy.
+# Scope of all four: a KEHILLAH LEADER. Each resolves the host exactly as
+# the charter does (domicile county -> holder -> top_liege) and acts on
+# THAT ruler, so a tester playing the community can drive the host's side
+# without switching character, and then see the community-side notice
+# arrive as the player it is actually for.
+#
+# .126 read-only state. .127 raise one rung through the real effect and
+# assert the arithmetic (post = pre + 1, cooldown now set). .128 the
+# same for lower (post = pre - 1, and never below Discouraged when
+# started from Allowed or above). .129 clears the host's review cooldown
+# so the decisions themselves can be taken straight after a probe.
+# The notice count is the "notified a community under this host" line
+# the effect logs once per community.
+# =====================================================================
+
+kehillah_debug.126 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.126: S9a settlement policy state (read-only) -- START"
+		if = {
+			limit = { exists = domicile.domicile_location.county.holder.top_liege.primary_title }
+			domicile.domicile_location.county.holder.top_liege = {
+				save_scope_as = kehillah_dbg_host
+				debug_log_scopes = yes
+				debug_log = "kehillah_debug.126: HOST RESOLVED (scopes above name the host ruler and id)"
+				if = {
+					limit = { is_independent_ruler = yes }
+					debug_log = "kehillah_debug.126: HOST IS INDEPENDENT the decisions can be shown to it"
+				}
+				else = {
+					debug_log = "kehillah_debug.126: FAIL host is not independent -- the decisions would never be shown"
+				}
+				primary_title = {
+					if = {
+						limit = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+						debug_log = "kehillah_debug.126: POLICY Encouraged (3)"
+					}
+					else_if = {
+						limit = { kehillah_jewish_settlement_policy_banned_trigger = yes }
+						debug_log = "kehillah_debug.126: POLICY Banned (0)"
+					}
+					else_if = {
+						limit = { kehillah_jewish_settlement_policy_discouraged_trigger = yes }
+						debug_log = "kehillah_debug.126: POLICY Discouraged (1)"
+					}
+					else_if = {
+						limit = { has_variable = kehillah_jewish_settlement_policy }
+						debug_log = "kehillah_debug.126: POLICY Allowed (2, stored explicitly)"
+					}
+					else = {
+						debug_log = "kehillah_debug.126: POLICY Allowed (2, implicit -- no variable)"
+					}
+					if = {
+						limit = { kehillah_policy_review_on_cooldown_trigger = yes }
+						debug_log = "kehillah_debug.126: COOLDOWN ACTIVE both decisions are blocked"
+					}
+					else = {
+						debug_log = "kehillah_debug.126: NO COOLDOWN"
+					}
+				}
+			}
+			every_in_global_list = {
+				variable = kehillah_registered_communities
+				limit = {
+					exists = holder
+					holder = {
+						exists = domicile
+						exists = domicile.domicile_location.county.holder.top_liege
+						domicile.domicile_location.county.holder.top_liege = scope:kehillah_dbg_host
+					}
+				}
+				debug_log = "kehillah_debug.126: COMMUNITY UNDER THIS HOST (one line per community)"
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.126: FAIL no host resolvable from this character"
+		}
+		debug_log = "kehillah_debug.126: S9a settlement policy state -- END"
+	}
+}
+
+kehillah_debug.127 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.127: S9a raise path -- START"
+		if = {
+			limit = { exists = domicile.domicile_location.county.holder.top_liege.primary_title }
+			domicile.domicile_location.county.holder.top_liege = {
+				primary_title = {
+					set_variable = { name = kehillah_dbg_policy_expected value = kehillah_policy_rung_value }
+					change_variable = { name = kehillah_dbg_policy_expected add = 1 }
+				}
+				if = {
+					limit = { primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } }
+					debug_log = "kehillah_debug.127: SKIP host is already Encouraged -- run .128 first"
+				}
+				else = {
+					kehillah_raise_jewish_settlement_policy_effect = yes
+					primary_title = {
+						set_variable = { name = kehillah_dbg_policy_post value = kehillah_policy_rung_value }
+						if = {
+							limit = { var:kehillah_dbg_policy_post = var:kehillah_dbg_policy_expected }
+							debug_log = "kehillah_debug.127: RUNG PASS policy rose exactly one rung"
+						}
+						else = {
+							debug_log = "kehillah_debug.127: RUNG FAIL policy did not rise exactly one rung"
+						}
+						if = {
+							limit = { kehillah_policy_review_on_cooldown_trigger = yes }
+							debug_log = "kehillah_debug.127: COOLDOWN PASS the review cooldown is now set"
+						}
+						else = {
+							debug_log = "kehillah_debug.127: COOLDOWN FAIL no cooldown after a raise"
+						}
+						if = {
+							limit = {
+								has_variable = kehillah_jewish_settlement_policy
+								var:kehillah_jewish_settlement_policy = 2
+							}
+							debug_log = "kehillah_debug.127: STORAGE FAIL Allowed was stored as 2 instead of removed"
+						}
+						remove_variable = kehillah_dbg_policy_post
+					}
+				}
+				primary_title = { remove_variable = kehillah_dbg_policy_expected }
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.127: FAIL no host resolvable"
+		}
+		debug_log = "kehillah_debug.127: S9a raise path -- END"
+	}
+}
+
+kehillah_debug.128 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.128: S9a lower path -- START"
+		if = {
+			limit = { exists = domicile.domicile_location.county.holder.top_liege.primary_title }
+			domicile.domicile_location.county.holder.top_liege = {
+				primary_title = {
+					set_variable = { name = kehillah_dbg_policy_expected value = kehillah_policy_rung_value }
+					change_variable = { name = kehillah_dbg_policy_expected add = -1 }
+				}
+				if = {
+					limit = {
+						primary_title = {
+							OR = {
+								kehillah_jewish_settlement_policy_discouraged_trigger = yes
+								kehillah_jewish_settlement_policy_banned_trigger = yes
+							}
+						}
+					}
+					debug_log = "kehillah_debug.128: SKIP host is already at the Discouraged floor -- run .127 first"
+				}
+				else = {
+					kehillah_lower_jewish_settlement_policy_effect = yes
+					primary_title = {
+						set_variable = { name = kehillah_dbg_policy_post value = kehillah_policy_rung_value }
+						if = {
+							limit = { var:kehillah_dbg_policy_post = var:kehillah_dbg_policy_expected }
+							debug_log = "kehillah_debug.128: RUNG PASS policy fell exactly one rung"
+						}
+						else = {
+							debug_log = "kehillah_debug.128: RUNG FAIL policy did not fall exactly one rung"
+						}
+						if = {
+							limit = { kehillah_jewish_settlement_policy_banned_trigger = yes }
+							debug_log = "kehillah_debug.128: FLOOR FAIL lowering reached Banned"
+						}
+						if = {
+							limit = { kehillah_policy_review_on_cooldown_trigger = yes }
+							debug_log = "kehillah_debug.128: COOLDOWN PASS the review cooldown is now set"
+						}
+						else = {
+							debug_log = "kehillah_debug.128: COOLDOWN FAIL no cooldown after a lower"
+						}
+						if = {
+							limit = {
+								has_variable = kehillah_jewish_settlement_policy
+								var:kehillah_jewish_settlement_policy = 2
+							}
+							debug_log = "kehillah_debug.128: STORAGE FAIL Allowed was stored as 2 instead of removed"
+						}
+						remove_variable = kehillah_dbg_policy_post
+					}
+				}
+				primary_title = { remove_variable = kehillah_dbg_policy_expected }
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.128: FAIL no host resolvable"
+		}
+		debug_log = "kehillah_debug.128: S9a lower path -- END"
+	}
+}
+
+kehillah_debug.129 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { exists = domicile.domicile_location.county.holder.top_liege.primary_title }
+			domicile.domicile_location.county.holder.top_liege.primary_title = {
+				remove_variable = kehillah_var_policy_review_cooldown
+			}
+			debug_log = "kehillah_debug.129: host policy review cooldown cleared"
+		}
+		else = {
+			debug_log = "kehillah_debug.129: FAIL no host resolvable"
+		}
+	}
+}
