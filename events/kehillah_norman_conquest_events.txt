@@ -46,3 +46,129 @@ kehillah_norman_conquest.0001 = {
 		ai_chance = { base = 100 }
 	}
 }
+
+
+# =====================================================================
+# ROADMAP S8 (2026-09-29): the player's road to London. See
+# kehillah_norman_conquest_execute_effect's header for the three-event
+# shape. global_var:kehillah_norman_london_offer_pending holds the invitee
+# while the offer is open; whichever event resolves it removes it first.
+# =====================================================================
+
+# The invitation. Scope: the invitee.
+kehillah_norman_conquest.0010 = {
+	type = character_event
+	title = kehillah_norman_conquest.0010.t
+	desc = kehillah_norman_conquest.0010.desc
+	theme = realm
+
+	trigger = {
+		exists = global_var:kehillah_norman_london_offer_pending
+		global_var:kehillah_norman_london_offer_pending = root
+		kehillah_norman_london_invitation_eligible_trigger = yes
+	}
+
+	immediate = {
+		global_var:kehillah_norman_inviting_king ?= { save_scope_as = kehillah_norman_king }
+	}
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_norman_king
+		animation = personality_bold
+	}
+
+	# Accept: cross now, found tomorrow (.0011). The crossing and the
+	# founding are split across a day on purpose -- the founding effect
+	# names and places the community from root.location, and a same-block
+	# read straight after set_location is an assumption this mod has not
+	# tested; one day later it is not.
+	option = {
+		name = kehillah_norman_conquest.0010.a
+		remove_global_variable = kehillah_norman_london_offer_pending
+		custom_tooltip = kehillah_norman_conquest.0010.a.tt
+		hidden_effect = {
+			if = {
+				limit = { exists = domicile }
+				domicile = { move_domicile = title:c_middlesex.title_province }
+			}
+			set_location = {
+				location = title:c_middlesex.title_province
+				stick_to_location = yes
+			}
+			trigger_event = { id = kehillah_norman_conquest.0011 days = 1 }
+		}
+	}
+
+	# Decline: London is founded by others, exactly as it would have been.
+	option = {
+		name = kehillah_norman_conquest.0010.b
+		remove_global_variable = kehillah_norman_london_offer_pending
+		custom_tooltip = kehillah_norman_conquest.0010.b.tt
+		hidden_effect = {
+			kehillah_norman_found_london_effect = yes
+		}
+	}
+}
+
+# The founding, a day after the crossing. Scope: the (former) invitee.
+kehillah_norman_conquest.0011 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		if = {
+			limit = {
+				kehillah_norman_london_invitation_eligible_trigger = yes
+				exists = location.county
+				location.county = title:c_middlesex
+			}
+			# The king's welcome, BEFORE the charter is made, for the same
+			# reason kehillah_norman_conquest_finish_founding_effect sets it
+			# first: the fresh charter reads the policy at creation.
+			if = {
+				limit = { exists = title:c_middlesex.holder.top_liege.primary_title }
+				title:c_middlesex.holder.top_liege.primary_title = {
+					set_variable = { name = kehillah_jewish_settlement_policy value = 3 }
+				}
+			}
+			kehillah_found_community_effect = yes
+			if = {
+				limit = { government_has_flag = government_is_kehillah }
+				primary_title = {
+					set_title_name = kehillah_norman_london_title_name
+					set_variable = { name = kehillah_norman_founded value = yes }
+					set_variable = { name = kehillah_norman_player_founded value = yes }
+				}
+				debug_log = "kehillah_norman_conquest.0011: PLAYER FOUNDED LONDON"
+			}
+			else = {
+				debug_log = "kehillah_norman_conquest.0011: WARNING founding effect ran but the player is not in the Kehillah government"
+			}
+		}
+		else = {
+			# Died, lost eligibility, or never arrived: London must still
+			# exist, so found it for the AI rather than leave a hole.
+			debug_log = "kehillah_norman_conquest.0011: WARNING invitee not in London or no longer eligible -- founding London for the AI instead"
+			kehillah_norman_found_london_effect = yes
+		}
+	}
+}
+
+# The fallback. Scope: the king who issued the offer.
+kehillah_norman_conquest.0012 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		if = {
+			limit = { exists = global_var:kehillah_norman_london_offer_pending }
+			remove_global_variable = kehillah_norman_london_offer_pending
+			debug_log = "kehillah_norman_conquest.0012: London offer lapsed unanswered -- founding it for the AI"
+			kehillah_norman_found_london_effect = yes
+		}
+	}
+}

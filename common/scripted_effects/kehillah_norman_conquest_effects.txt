@@ -125,10 +125,35 @@ kehillah_norman_conquest_evaluate_effect = {
 
 # Scope: the new holder of title:k_england (unchanged from the effect
 # above -- random_list does not switch scope).
+#
+# S8 (2026-09-29): LONDON MAY BE THE PLAYER'S. If a Jewish player is a
+# landless adventurer when the Conquest resolves (the S7 Financier is the
+# intended case, but any qualifying player gets it), London is held back
+# and offered to that player instead of being founded for the AI:
+# kehillah_norman_conquest.0010 is the invitation, .0011 the founding one
+# day after the crossing, .0012 the king-side fallback that founds the AI
+# London if the offer is never answered (the invitee died, or the event's
+# trigger failed). The offer is a GLOBAL variable holding the invitee, so
+# exactly one of the three resolvers ever acts: each consumes it first.
+# York, Lincoln and Norwich are unaffected and still founded at once.
 kehillah_norman_conquest_execute_effect = {
 	debug_log = "kehillah_norman_conquest_execute_effect: founding Anglia's four Kehillot"
+	save_scope_as = kehillah_norman_king
 
-	kehillah_norman_found_london_effect = yes
+	if = {
+		limit = { any_player = { kehillah_norman_london_invitation_eligible_trigger = yes } }
+		set_global_variable = { name = kehillah_norman_inviting_king value = scope:kehillah_norman_king }
+		random_player = {
+			limit = { kehillah_norman_london_invitation_eligible_trigger = yes }
+			set_global_variable = { name = kehillah_norman_london_offer_pending value = this }
+			trigger_event = { id = kehillah_norman_conquest.0010 days = 3 }
+			debug_log = "kehillah_norman_conquest_execute_effect: London offered to a player adventurer"
+		}
+		trigger_event = { id = kehillah_norman_conquest.0012 days = 60 }
+	}
+	else = {
+		kehillah_norman_found_london_effect = yes
+	}
 	kehillah_norman_found_york_effect = yes
 	kehillah_norman_found_lincoln_effect = yes
 	kehillah_norman_found_norwich_effect = yes

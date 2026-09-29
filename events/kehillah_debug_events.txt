@@ -3373,3 +3373,110 @@ kehillah_debug.129 = {
 		}
 	}
 }
+
+
+# =====================================================================
+# ROADMAP S8 (2026-09-29) -- the player's road to London.
+# .130 (scope: a player, ideally the S7 Financier): runs the Conquest's
+# execute effect on the CURRENT holder of k_england exactly as a real
+# resolution would, William branch. It deliberately does not fake a
+# change of holder -- only the founding half is under test here; the
+# detection half is V18's and already verified. Expect the invitation
+# (.0010) three days later.
+# .131 (scope: the same player, after answering): who holds London, and
+# is there exactly one London.
+# =====================================================================
+
+kehillah_debug.130 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.130: S8 -- firing the Conquest founding as if William won"
+		if = {
+			limit = { kehillah_norman_london_invitation_eligible_trigger = yes }
+			debug_log = "kehillah_debug.130: ELIGIBLE this player will be offered London"
+		}
+		else = {
+			debug_log = "kehillah_debug.130: NOT ELIGIBLE this player will NOT be offered London (must be a Jewish landless adventurer)"
+		}
+		set_global_variable = { name = kehillah_norman_new_leader_dynasty_choice value = 1 }
+		title:k_england.holder = { kehillah_norman_conquest_execute_effect = yes }
+		if = {
+			limit = { exists = global_var:kehillah_norman_london_offer_pending }
+			debug_log = "kehillah_debug.130: OFFER PENDING London is being held for a player"
+		}
+		else = {
+			debug_log = "kehillah_debug.130: NO OFFER London was founded for the AI at once"
+		}
+	}
+}
+
+kehillah_debug.131 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.131: S8 London state -- START"
+		if = {
+			limit = { exists = global_var:kehillah_norman_london_offer_pending }
+			debug_log = "kehillah_debug.131: OFFER STILL PENDING nobody has answered yet"
+		}
+		if = {
+			limit = {
+				government_has_flag = government_is_kehillah
+				primary_title = { has_variable = kehillah_norman_player_founded }
+			}
+			debug_log = "kehillah_debug.131: PLAYER LEADS LONDON this player founded it"
+			if = {
+				limit = { exists = domicile }
+				debug_log = "kehillah_debug.131: DOMICILE PASS the player has a Jewish Quarter"
+			}
+			else = {
+				debug_log = "kehillah_debug.131: DOMICILE FAIL no domicile -- the Game Over fuse"
+			}
+			if = {
+				limit = {
+					exists = domicile.domicile_location.county
+					domicile.domicile_location.county = title:c_middlesex
+				}
+				debug_log = "kehillah_debug.131: LOCATION PASS the quarter is in London (Middlesex)"
+			}
+			else = {
+				debug_log = "kehillah_debug.131: LOCATION FAIL the quarter is not in Middlesex"
+			}
+			if = {
+				limit = { is_tributary = yes }
+				debug_log = "kehillah_debug.131: CHARTER PASS the community holds a host charter"
+			}
+			else = {
+				debug_log = "kehillah_debug.131: CHARTER NOT YET no charter (may need one more tick)"
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.131: PLAYER DOES NOT LEAD LONDON"
+		}
+		if = {
+			limit = { exists = title:c_middlesex.holder.top_liege.primary_title }
+			title:c_middlesex.holder.top_liege.primary_title = {
+				if = {
+					limit = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+					debug_log = "kehillah_debug.131: HOST POLICY PASS England's policy is Encouraged"
+				}
+				else = {
+					debug_log = "kehillah_debug.131: HOST POLICY FAIL England's policy is not Encouraged"
+				}
+			}
+		}
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = {
+					exists = domicile.domicile_location.county
+					domicile.domicile_location.county = title:c_middlesex
+				}
+			}
+			debug_log = "kehillah_debug.131: LONDON COMMUNITY (expect exactly one of these lines)"
+		}
+		debug_log = "kehillah_debug.131: S8 London state -- END"
+	}
+}
