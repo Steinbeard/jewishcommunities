@@ -739,7 +739,21 @@ short research bullets for when Daniel is back.
   later; retest: zero errors. The fallback is scheduled on both king and invitee (an event does
   not fire on a dead character). Code: `kehillah_norman_conquest.0010`-`.0012`,
   `kehillah_norman_london_invitation_eligible_trigger`, probes `kehillah_debug.130`/`.131`.
-  **Part B (royal loans) not yet built.**
+  **PART B (royal loans) BUILT 2026-09-29, PARTLY VERIFIED LIVE**,
+  [log](docs/testing/2026-09-29-s8b-royal-loans-live-test-log.md). Every three years the host of a
+  player-founded London asks it for a loan (`kehillah_norman_conquest.0020`) through the ordinary
+  loan contract at 2x principal; sealing it earns +20 decaying Royal Favour. Live: request offered,
+  full challenge chain, gold −300 exactly, crown owes 390, FAVOUR PASS, on the debtor list, and the
+  next yearly request correctly SKIPPED while the crown still owed. **Found and fixed on the way:**
+  (1) every loan to an AI ruler defaulted at term by construction (the repay decision is player-only)
+  — an AI borrower now repays at term when it can afford to, a change to every community's loans;
+  (2) `kehillah_loan_contract`'s `valid_to_continue` was false for the whole negotiation, so the
+  engine voided the contract mid-chain and the next stage silently never fired — every loan since
+  the 2026-09-17 chain overhaul. **Still unverified live:** repayment at term (the retest's borrower
+  lost his kingdom and was purged during unattended play). **Backlog:** a debtor who dies or is purged
+  takes the debt with him — no repayment, no default, a stale debtors-list entry; whether an heir
+  inherits a royal debt is a design question for Daniel. Deferred: the charter-security half of
+  royal favour (needs subject-contract writes).
 - **S9a. BUILD — Host-ruler settlement-policy decisions (non-Jewish player).** Two decisions, "Raise"
   and "Lower Jewish Settlement Policy" (one rung each, 5-year cooldown), writing the existing V16
   title variable. Raising: costs piety/clergy opinion, grants a notice to Jewish communities in the

@@ -1,6 +1,15 @@
 # Live test log — 2026-09-29: S8b, the crown as a repeat borrower
 
-**Status: FAIL — a real, reproducible (2/2) bug found and root-caused. The royal-loan request
+**2026-09-29 correction (retest after fix, same day): the `valid_to_continue` fix (commit
+3da0d51) works. The challenge chain reached `.0003` "Sealing the Loan" and resolved SUCCESS
+cleanly on the first attempt of the retest — see "Retest after valid_to_continue fix" below for
+full evidence (exact event dates, gold arithmetic, debug_log lines). Steps 5-6 (accrual over time,
+fast-forward repayment) were not completed this session, for reasons unrelated to the original bug
+(recorded below) — treat the core stall bug documented in this file's original FAIL record as
+RESOLVED, and steps 5-6 as still needing a follow-up live pass.**
+
+**Original status (superseded above for the core bug, kept intact as the historical record):
+FAIL — a real, reproducible (2/2) bug found and root-caused. The royal-loan request
 fires and the offer event renders correctly with real text, but the negotiation challenge chain
 (`events/kehillah_loan_events.txt`) never reaches its own resolving event
 (`kehillah_loan_challenge.0003`, "Sealing the Loan"). The underlying `kehillah_loan_contract`
@@ -289,3 +298,231 @@ Royal Favour opinion hover) — all gated on reaching "CROWN OWES", which bug 1 
 (`common/opinion_modifiers/kehillah_royal_finance_opinions.txt:7-11`: `opinion = 20, years = 10,
 decaying = yes`, matching the "+20 opinion, decaying" design) but its actual live grant was never
 exercised this session.
+
+---
+
+## Retest after valid_to_continue fix (2026-09-29)
+
+**Result: the fix works. PASS on steps 1-4 (the negotiation chain, the core bug under test).
+Steps 5-6 not completed — blocked by two issues unrelated to the fix itself, recorded below.**
+Fix verified: `common/task_contracts/kehillah_task_contracts.txt:584-593` — `valid_to_continue`
+now also passes `OR task_contract_taker ?= { has_variable = kehillah_loan_challenge_tally }`, and
+`on_invalidated` (same file, ~line 629-639) now clears `kehillah_loan_challenge_tally` and
+`kehillah_loan_royal_request` so a negotiation never leaves an orphaned tally behind.
+
+### Method
+
+Two `-debug_mode -develop` boot attempts of the installed 1.19 game (2 of the 3 allowed launches).
+Same character/bookmark/probe-file method as the original test above (`bm_1066_kehillah_worms`,
+Yosef ben Menahem, `s8_fire.txt`→`.130`, `s8_state.txt`→`.131`, `s8b_request.txt`→`.132`,
+`s8b_state.txt`→`.134`, plus new ad-hoc probes `s8b_owed_check.txt`, `s8b_contract_check2.txt`,
+`s8b_harold_check.txt`/`s8b_harold_check2.txt`, `s8b_liege_dump.txt` written this session to chase
+the incidental finding below). Gold read from cropped, enlarged top-bar screenshots. Screenshots
+downscaled to ~1024px before reading back. `winkeys.py` mouse clicks needed re-calibration this
+session — see "New shim-guide-worthy finding" below.
+
+### Step 0 — ck3-tiger
+
+```
+fatal: 0, error: 0, warning: 61, tips: 17
+```
+Matches the expected baseline exactly (same as the original test's run).
+
+### Step 1 — reach a player-led London — PASS
+
+`s8_fire.txt` → `.130`: identical log shape to the original test (`ELIGIBLE`, `founding Anglia's
+four Kehillot`, `London offered to a player adventurer`, `OFFER PENDING`). "An Invitation From the
+King" appeared 18 Sept 1066, accepted; "A Charter Is Sealed" resolved ~22 Sept 1066 with the same
+four terms (Free to Build / Recognized Communal Watch / Bet Din Discipline / Unrestricted Study).
+`s8_state.txt` → `.131`: `PLAYER LEADS LONDON` / `DOMICILE PASS` / `LOCATION PASS` / `CHARTER PASS`
+/ `HOST POLICY PASS` / `LONDON COMMUNITY` x1 — all present. **error.log baseline at this point: 222
+lines** (184 lines existed before Step 1 began, i.e. from boot + the pre-Step-1 flavor event).
+
+### Step 2 — the royal request fires, the offer renders — PASS
+
+Gold immediately before firing the request: **406**. `s8b_request.txt` → `.132`:
+```
+kehillah_debug.132: S8b royal request -- START
+kehillah_debug.132: SETUP raised Prosperity to the Healthy threshold
+kehillah_norman_conquest.0020: ROYAL REQUEST OFFERED the crown asks London for a loan
+kehillah_debug.132: S8b royal request -- END (see the .0020 line above)
+```
+(No gold top-up needed, same as the original test.) An unrelated vanilla/mod flavor event ("The
+Community Frays") appeared first and was dismissed, then "A Debtor Worth Having" appeared with
+identical real text to the original test. Accepted "Offer the loan." The same pre-existing
+`(BUG: invalidate_contract missing perspective)` cosmetic tooltip placeholder on the Decline hover
+reproduced again — not new, already documented.
+
+### Step 3 — the challenge chain reaches `.0003` and resolves SUCCESS — PASS (the fixed step)
+
+Offer accepted ~15 Oct 1066. All three stages fired **exactly on schedule, no stall**:
+
+- `.0001` "Assessing the Borrower" fired **20 Oct 1066** (+5 days). Selected option a ("Look into
+  it yourself.") — pass branch (stewardship ≥ 14, confirmed HIGH band from the original test).
+- `.0002` "Negotiating Terms" fired **25 Oct 1066** (+5 days after `.0001`). Selected option a
+  ("Press for firm terms.", guaranteed +10, the success-maximising choice per the chain's own
+  math — see the original test's step 3 for the worst-case arithmetic).
+- `.0003` "Sealing the Loan" fired **1 Nov 1066** (+7 days after `.0002`) — **this is the event the
+  original bug never let the game reach.** Its desc rendered the SUCCESS branch text ("Terms are
+  agreed, hands are shaken... the principal is ready to be counted out."), confirming
+  `kehillah_loan_challenge_tier = flag:success` resolved correctly. Resolved via its only option,
+  "See it through."
+
+Gold after `.0003` resolved: **106** (406 → 106, **exactly −300**, the principal). No stall, no
+silent no-op, no orphaned tally left mid-chain — the exact failure mode from the original test did
+not reproduce.
+
+### Step 4 — post-origination state — PASS
+
+`s8b_state.txt` → `.134`:
+```
+kehillah_debug.134: S8b royal loan state -- START
+kehillah_debug.134: CROWN OWES (amount in the scopes dump)
+kehillah_debug.134: FAVOUR PASS the crown holds Royal Favour toward this lender
+kehillah_debug.134: THE CROWN IS ON THIS COMMUNITY'S DEBTOR LIST
+kehillah_debug.134: S8b royal loan state -- END
+```
+`ROYAL REQUEST FLAG STILL SET` correctly did **not** appear (the flag is cleared by `.0003`'s
+option regardless of outcome). As the original test's log already noted, `debug_log_scopes` does
+not dump variable values, so two extra probes were written to get exact numbers without editing
+mod files:
+
+- `s8b_owed_check.txt`: `PROBE s8b_owed: EXACT MATCH -- owed is exactly 390` (matches
+  `kehillah_loan_amount_owed_value` = principal 300 × the documented interest multiplier).
+- `s8b_contract_check2.txt` (an existence check, `any_character_task_contract = { has_task_contract_type = kehillah_loan_contract }`
+  with no `count` param): `PROBE s8b_contract2: root HAS at least one kehillah_loan_contract` —
+  **the contract is confirmed still open/alive** while the debt is outstanding, as designed. (The
+  original test's own `s8b_contract_check.txt`, reused verbatim first, gave an apparently
+  contradictory pair of lines — `num_taken_task_contracts > 0` TRUE but the `any_character_task_contract`
+  check with `count = all` FALSE. Resolved: `count = all` requires *every* task contract on the
+  character to be of type `kehillah_loan_contract`; Yosef had at least one other, unrelated task
+  contract at this point in the session, so that specific check's semantics don't mean what its own
+  debug label says. Not a bug in the mod — a quirk of that particular probe's `count = all` choice.
+  `s8b_contract_check2.txt`'s plain existence check is the reliable form.)
+
+**Not obtained: a live screenshot of the King's opinion-of-Yosef tooltip showing "Royal Favour."**
+Two navigation paths were tried — Harold's own "Subjects" panel (18 entries, sorted by military
+strength, Yosef as a landless 0-strength community would sort near the bottom; `winkeys.py` has no
+scroll-wheel support to reach it) and Yosef's own character panel's rotating relation-icon slot
+(cycles between Suzerain/Heir/Spouse on its own timer, so a `move`+screenshot can land on the wrong
+one, as it did here — see "New shim-guide-worthy finding" below). Given the `FAVOUR PASS` debug_log
+line already directly evaluates `has_opinion_modifier = { target = root modifier =
+kehillah_royal_loan_favour_opinion }` from the crown's own perspective, and the modifier's
+definition was already source-confirmed well-formed in the original test
+(`opinion = 20, years = 10, decaying = yes`), this was judged sufficient per this repo's own
+testing philosophy (script/log confirmation is stronger evidence than a screenshot for a pure
+data question) rather than spending further budget chasing the UI path.
+
+### Steps 5-6 — NOT COMPLETED (blocked by issues unrelated to the fix under test)
+
+**Finding A — an unrelated historical war purged the debtor character before steps 5-6 could run.**
+While navigating menus for the (optional) Royal Favour screenshot above, real/game time was left
+running unattended for far longer than intended — from the loan's origination (1 Nov 1066) to the
+next state check, the in-game date had reached **12 Jan 1068 → 9 Apr 1068 → 18 Jul 1068** across a
+sequence of screenshots, i.e. well over a year passed. In that window, King Harold II (the debtor,
+internal character ID 30945) lost an entirely unrelated, normal CK3 war — `debug.log` shows his
+role shift from `Harold of Godwin of k_england` to `Harold of Godwin of x_d_laamp_793` tagged
+`defender`/`war_loser`, and later simply `adventurer` (landless). By the next `s8b_state.txt` run,
+the result was:
+```
+kehillah_debug.134: S8b royal loan state -- START
+kehillah_debug.134: CROWN OWES NOTHING
+kehillah_debug.134: NO FAVOUR
+kehillah_debug.134: S8b royal loan state -- END
+```
+with **no** `kehillah_quarterly_pillars_effect: an AI borrower repaid at term` or `a borrower
+defaulted at term` line anywhere in `debug.log` — neither of the mod's own two resolution paths
+ran. A direct probe at Harold's own internal ID confirmed why:
+```
+[E][history.cpp:644]: Referencing non-existent character in script link character:30945
+```
+Harold had been fully purged from the game's live character memory (a known CK3 engine behavior
+for AI characters who become landless/insignificant enough after losing everything). Since
+`kehillah_loan_amount_owed` was a variable on that specific character object, not on the crown
+title, the debt vanished along with him — orphaned, with no repayment and no default ever
+triggering. A follow-up probe confirmed the *current* holder of the top-liege chain (a new king,
+post-succession) correctly has no loan variable and is not on `kehillah_loan_debtors` — i.e. this
+is not a case of checking the wrong character now, the original debtor and his debt are just gone.
+
+This is a genuine, interesting edge case worth a line in `ROADMAP.md`'s backlog (a royal loan's
+debtor can be entirely removed from the engine's memory by an unrelated life event, leaving the
+debt un-resolved by either of `kehillah_quarterly_pillars_effect`'s own paths, and potentially
+leaving a stale entry on the lender's `kehillah_loan_debtors` variable list forever, since neither
+outcome path calls `remove_from_variable_list` on it) — **but it is not a reproduction of the bug
+this retest was checking.** The chain had already fully and cleanly resolved SUCCESS, with gold
+moved and state confirmed, well before this happened.
+
+**Finding B — the second boot attempt hung at GUI asset loading, never reaching the main menu.**
+To redo steps 5-6 properly (fast-forward immediately after reaching "CROWN OWES" rather than
+letting real years pass), CK3 was closed and relaunched (2nd of the 3 allowed launches). This boot
+never completed: `debug.log` progressed normally through `[LoadAssetsGUI]` file-by-file loading and
+then stopped dead at `gui/tools/dropdown.gui` — no further log line appeared for **13+ minutes**
+while the process's CPU time kept climbing at a steady ~5-6 cores' worth the entire time
+(`Get-Process ... Responding` = `False` throughout, but CPU time genuinely still accumulating, not
+a flat deadlock). No error.log entries, no script-system errors — this looks like an environment-
+level stall (resource contention, disk/AV interference) rather than anything in the mod's own
+script, since GUI asset loading is generic engine machinery unrelated to task contracts. Killed
+after 13+ minutes. Given the core bug under test was already conclusively confirmed fixed on the
+first attempt, and per this task's "at most 3 launches" / "diagnose from source and stop" guidance,
+the 3rd launch was not spent chasing this — it's recorded here as a blocker for whoever next
+attempts steps 5-6, not as a mod bug.
+
+### New shim-guide-worthy finding: `winkeys.py` coordinate reading from a downscaled screenshot
+
+The 1024px-wide downscaled screenshot's on-screen text position does not reliably map to
+`actual = displayed × (actual_width / displayed_width)` for *small UI text rows* the way it does
+for large buttons/portraits — two clicks on "We cross to London." at the naively-scaled coordinate
+landed above the actual clickable row by ~15-20px and did nothing (silently, no error — `mouse_click`
+"succeeds" but hits nothing). Cropping the **native-resolution** screenshot around the target
+(no downscale) and reading pixel offsets directly from that crop, rather than back-computing from
+the 1024px copy, fixed it immediately. Worth adding to the shim guide's coordinate-scaling note:
+for small text rows, crop-and-read-native beats scale-the-downscaled-estimate.
+
+### Step 7 — error.log accounting (Launch 1 only; Launch 2 never got far enough to matter)
+
+Pre-Step-1 baseline: **184 lines** (boot + the pre-Step-1 flavor event). End of the tested session
+(Launch 1, saved to `run/s8b_retest_launch1_error.log`): **854 lines** (+670). Of those 670 new
+lines, checked verbatim against `loan|royal|norman|0020|13[234]|task_contract` (case-insensitive):
+**zero matches** — the fix produces no new loan/royal-adjacent error output, success or otherwise,
+consistent with the original bug's own silent-failure signature (this subsystem doesn't throw when
+things go right OR wrong; only `debug_log`/screenshots reveal state). The +670 lines break down as:
+
+- 59 lines `gui/kehillah_community_map_view.gui` "Widget cannot have a position in a layout" —
+  same pre-existing GUI-layout gap documented in every prior 2026-09-29 log. **Ours, pre-existing,
+  not new.**
+- 11 lines `run/*.txt` "should be in utf8-bom encoding" + the `arabic`/`masterwork`/
+  `kehillah_egalitarian_succession`/`community` boilerplate — same harmless per-`run`-invocation
+  noise every prior session documents. **Ours, pre-existing, not new.**
+- 4 lines `Referencing non-existent character in script link character:30945` + matching
+  `Scoped object ... not valid` cascade (16 lines total across `s8b_harold_check.txt`/
+  `s8b_harold_check2.txt`) — **self-inflicted by this session's own diagnostic probes** written to
+  chase Finding A above, after Harold was already purged; not a mod bug, just a probe reaching for
+  an ID that no longer resolves. Confirms Finding A independently.
+- The remainder (accolade squire creation errors, `tgp_tribute_mission` decision errors, debate
+  event errors, elder event errors, `create_character`/`capital_province` scope errors) is vanilla/
+  other-DLC noise from unrelated AI characters, the same category every prior session's log
+  documents as background simulation noise. **Not ours.**
+
+### Bugs / findings from this retest
+
+1. **(Confirmed fixed)** The original blocking bug — `valid_to_continue` structurally false for the
+   whole negotiation window — no longer reproduces. 1/1 clean pass this session (chain reached
+   `.0003`, SUCCESS, exact gold movement, correct post-state).
+2. **(New, minor, backlog-worthy, not blocking)** A royal (or any) loan's debtor character can be
+   fully purged from the game's live memory after an unrelated life event (losing a war into
+   landlessness), orphaning the debt with neither `kehillah_quarterly_pillars_effect`'s repayment
+   nor default path ever running, and potentially leaving a stale entry on the lender's
+   `kehillah_loan_debtors` variable list. Not reproduced from a controlled setup — found
+   incidentally from real game time elapsing. Worth a `character_is_alive`/`OnCharacterDeath`-style
+   guard or a periodic cleanup pass if this repo wants to treat it as more than a rare edge case.
+3. **(Pre-existing, already documented)** The Decline-option tooltip's `(BUG: invalidate_contract
+   missing perspective)` placeholder text reproduces again. Cosmetic, not new.
+
+### Not verified this session
+
+Steps 5 (accrual over 3+ months) and 6 (fast-forward to term, exact `+390` gold, `debug.log`'s
+"an AI borrower repaid at term" line, the `+50`/`+20` pillar rewards) — blocked by Findings A and B
+above, neither of which is a reproduction of the original bug. A follow-up session should redo
+steps 1-4 (now known-fast: ~15 real minutes end to end) and immediately run `kehillah_debug.133`
+(`s8b_fastforward.txt`) right after confirming "CROWN OWES", rather than doing any UI exploration
+in between, to avoid Finding A's unrelated-war/purge risk recurring.

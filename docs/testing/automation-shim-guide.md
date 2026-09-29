@@ -59,6 +59,12 @@ commands.
 `debug_log_scopes` dump, worked. Have a probe log the target's scopes first to get it. After `play`,
 the character you left is AI-controlled, so a `send_interface_message` aimed at them is not shown.
 
+**Click coordinates for small targets come from a native-resolution crop, not the downscaled copy**
+(found 2026-09-29): a coordinate read off a 1024px downscale mis-landed ~15-20px on a one-line event
+option and silently missed. Downscale for *reading*; for a precise click, crop the native capture
+around the target and read pixels there. And never leave the game unpaused while navigating menus
+— 1.5 unattended years once cost a test its borrower.
+
 ### Mouse: `mouse_move(x, y)` / `mouse_click(x, y, button="left")`
 
 Coordinates are **actual screen pixels**, origin at the virtual-desktop top-left (handles
