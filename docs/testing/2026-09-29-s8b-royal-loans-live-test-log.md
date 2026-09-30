@@ -1,5 +1,16 @@
 # Live test log — 2026-09-29: S8b, the crown as a repeat borrower
 
+**2026-09-29 correction #2 (repayment-at-term test, same day): steps 5-6 are now done. Accrual
+confirmed (source + live), and an AI borrower repayment at term is confirmed live —
+`kehillah_quarterly_pillars_effect: an AI borrower repaid at term` fired, gold moved (+391, i.e.
+the expected +390 principal-owed repayment plus ~1 gold of ordinary income), CROWN OWES NOTHING
+afterward. One genuine new finding along the way: the debug fast-forward helper (`kehillah_debug.133`)
+tops the crown up to *exactly* the owed amount, and an AI king can spend that exact top-up back
+down before the next quarterly pulse resolves the loan, producing a real (non-buggy) default
+instead of the intended repayment test case — reproduced once, worked around with a larger gold
+buffer on retry. Full evidence in "Repayment-at-term test (2026-09-29)" below. Everything above
+this note (the `valid_to_continue` fix and steps 1-4) remains RESOLVED/PASS as already recorded.**
+
 **2026-09-29 correction (retest after fix, same day): the `valid_to_continue` fix (commit
 3da0d51) works. The challenge chain reached `.0003` "Sealing the Loan" and resolved SUCCESS
 cleanly on the first attempt of the retest — see "Retest after valid_to_continue fix" below for
@@ -526,3 +537,215 @@ above, neither of which is a reproduction of the original bug. A follow-up sessi
 steps 1-4 (now known-fast: ~15 real minutes end to end) and immediately run `kehillah_debug.133`
 (`s8b_fastforward.txt`) right after confirming "CROWN OWES", rather than doing any UI exploration
 in between, to avoid Finding A's unrelated-war/purge risk recurring.
+
+---
+
+## Repayment-at-term test (2026-09-29)
+
+**Result: PASS on the core ask.** An AI borrower (King Harold II) repaid a royal loan at term live:
+`kehillah_quarterly_pillars_effect: an AI borrower repaid at term` fired, Yosef's gold rose by
++391 (expected +390 principal-owed, +~1 incidental ordinary income), and a follow-up
+`kehillah_debug.134` read `CROWN OWES NOTHING`. One real finding surfaced along the way (see
+Attempt 1 below): the debug fast-forward helper's exact-amount gold top-up can be spent by the AI
+before the next quarterly pulse resolves the loan, producing a genuine default instead of exercising
+the repay path — not a bug in the repay/default logic itself, which is confirmed correctly gated.
+
+### Method
+
+One `-debug_mode -develop` boot (1 of 2 allowed launches; the game was closed cleanly afterward, so
+the 2nd was not needed). Same bookmark/character as the prior sessions in this file
+(`bm_1066_kehillah_worms`, Yosef ben Menahem). Steps 1-4 repeated via the exact same probes and UI
+option choices already validated above (`s8_fire.txt`→`.130`, `s8_state.txt`→`.131`,
+`s8b_request.txt`→`.132`, accept "Offer the loan.", `.0001` "Look into it yourself.", `.0002`
+"Press for firm terms.", `.0003` "See it through."). Pause/run state was verified throughout by
+cropping the native screenshot's game-speed bar (bottom right) — red = paused, green = running —
+rather than trusting the "Paused" text overlay alone (see new shim-guide finding below). New ad-hoc
+probes written this session, all in `run/` (none are mod-file edits): `s9_snapshot_before.txt`
+(stashes `kehillah_var_prosperity`/`kehillah_var_greatness` onto the title as
+`kehillah_dbg_prosperity_before`/`kehillah_dbg_greatness_before` for a later exact diff),
+`s9_pillar_diff.txt` (computes the diff and exact-matches it against +50/+20, the existing
+`s8b_owed_check.txt`-style pattern), `s9_pillar_diff_bracket.txt` (brackets the diff into ranges
+when the exact match misses, to characterize *how far* off it is), `s9_years_after_quarter.txt`
+(exact-matches `kehillah_loan_years_elapsed` against 0/0.25/0.5), `s9_diag_default.txt` (diagnoses
+a defaulted loan: crown alive/AI, crown gold vs. 50/200/390, lender title's holder), and
+`s9_topup_extra.txt` (`add_gold = 3000` on the crown, used on the second attempt to rule out the
+AI-spend race found on the first). Gold read from cropped, enlarged top-bar screenshots.
+
+### Steps 1-4 — PASS (repeat of the already-verified retest)
+
+Fired fresh: `.130` → `ELIGIBLE`/`OFFER PENDING`; "An Invitation From the King" accepted; "A
+Charter Is Sealed" received; `.131` → all PASS lines. `.132` → `ROYAL REQUEST OFFERED`; "A Debtor
+Worth Having" accepted; `.0001`/`.0002`/`.0003` all fired on schedule (+5/+5/+7 days) and resolved
+SUCCESS. No new behavior here beyond what the "Retest after valid_to_continue fix" section above
+already established — recorded only to timestamp this session's own loan instance. Gold before the
+offer: 406; after `.0003` sealed: 106 (exactly −300, the principal) — same arithmetic as the retest.
+
+### Step 5 — accrual — PASS, with a timing caveat
+
+Right after sealing, `kehillah_debug.134` → `CROWN OWES`. The intended "advance exactly one
+quarterly pulse (~3 months), pause, recheck" procedure did not stay clean: dismissing the sealing
+event and an unrelated vanilla flavor event ("The Community Frays") left the game running at speed
+4 longer than intended (a repeat, on a smaller scale, of the prior session's Finding A) — by the
+time `s9_snapshot_before.txt` ran, roughly a year of game time had passed rather than 3 months
+(confirmed via screenshot: sealed ~15 Oct 1066, checked 22 Oct **1067**). Despite that, the probe
+read `kehillah_loan_years_elapsed EXACT 0.25` — i.e. only **one** quarterly increment had actually
+landed in that year, not four. This is consistent with vanilla's own documented semantics for
+`quarterly_playable_pulse` (`common/on_action/_on_actions.info:13`: "relative to the
+`on_yearly_playable` pulse, and not calendar quarters") — the pulse cadence for this character
+evidently does not track real calendar quarters 1:1, so "advance ~3 months" is not a reliable way
+to target exactly one pulse for this on_action. **Accrual itself is confirmed working** (0 at
+sealing, per `events/kehillah_loan_events.txt:238-240`; 0.25 at both checks this session — this
+loan and the repeat loan below both independently read `EXACT 0.25` shortly after sealing) — but
+the *timing* of "one quarter" should not be assumed to be ~91 real-time days for this character;
+a follow-up wanting a clean single-pulse window should watch for the `kehillah_loan_years_elapsed`
+value to change rather than budgeting a fixed real-time wait. Given the risk of repeating the prior
+session's debtor-purge finding, this session moved straight to step 6 rather than trying to
+re-isolate a clean single quarter.
+
+### Step 6, attempt 1 — a genuine default, root-caused as a fast-forward helper race, not a mod bug
+
+`kehillah_debug.133` fired normally: `SETUP the crown's loan is now in its last quarter` /
+`SETUP gave the crown enough gold to repay` (gold topped up to exactly
+`kehillah_loan_amount_owed_value` = 390, per `common/scripted_effects/kehillah_scripted_effects.txt:3535-3537`
+in the debug event). 23 real seconds later at game speed 2, the next quarterly pulse resolved —
+but with `kehillah_quarterly_pillars_effect: a borrower defaulted at term`, not the expected repay
+line. `s9_diag_default.txt` immediately afterward confirmed why: the crown was alive, still AI,
+still held gold ≥200 but **<390** — i.e. Harold had already spent part of the exact top-up on
+something else (ordinary AI spending) in the game-time window between `.133`'s `add_gold` and the
+pulse evaluating `gold >= var:kehillah_loan_amount_owed`. This is a real, reproducible gap in the
+*debug fast-forward helper* (`kehillah_debug.133`, `events/kehillah_debug_events.txt:3520-3547`):
+topping up to the exact owed amount leaves no margin against the AI spending some of it before the
+very next pulse, which converts what should be a "can it repay" test into a coin-flip against AI
+spending. It is not a bug in the repay/default logic itself — `gold >= var:kehillah_loan_amount_owed`
+(`kehillah_scripted_effects.txt:2070`) is exactly the intended real-repayment gate, and a real AI
+ruler who spent down to below what they owe legitimately should default. Loan variables were fully
+cleared by the default branch (`remove_variable` x3), so this loan instance was spent; a second loan
+was needed to test the repay branch.
+
+### Step 6, attempt 2 (fresh loan, extra gold buffer) — PASS
+
+Re-ran `.132` on the same character/session (charter already established, so this skipped straight
+back to the royal request — no need to restart steps 1). `ROYAL REQUEST OFFERED` again; "A Debtor
+Worth Having" → "Offer the loan." (gold 413→114 after sealing, exactly −300, confirmed via
+screenshot at 26 Dec 1068 "Sealing the Loan" / 29 Dec 1068 post-dismiss); `.0001`/`.0002`/`.0003`
+all fired on schedule and resolved SUCCESS again. `kehillah_debug.134` → `CROWN OWES`,
+`s9_snapshot_before.txt` → `kehillah_loan_years_elapsed EXACT 0.25` (again just days after sealing,
+consistent with the step-5 finding above). Yosef's gold immediately before the fast-forward: **114**
+(29 Dec 1068). This time, **before** firing `.133`, `s9_topup_extra.txt` gave the crown a 3000-gold
+buffer (`add_gold = 3000`, a probe-file addition, not a mod edit) specifically to rule out the
+attempt-1 race. `.133` then logged `SETUP the crown's loan is now in its last quarter` only — no
+"gave the crown enough gold" line, confirming the buffer had already satisfied that branch's own
+gold check. Game unpaused at speed 3; a Monitor watch on `debug.log` for
+`repaid at term|defaulted at term` caught the resolution without manual polling:
+
+```
+[20:04:17][D][jomini_effect_impl.cpp:450]: file: common/scripted_effects/kehillah_scripted_effects.txt line: 2084 (kehillah_quarterly_pillars_effect): kehillah_quarterly_pillars_effect: an AI borrower repaid at term
+```
+
+Paused immediately (confirmed via the native speed-bar crop, red). Date at this point: 2 May 1069.
+Yosef's gold: **505**. `kehillah_debug.134` → `CROWN OWES NOTHING` (the `THE CROWN IS ON THIS
+COMMUNITY'S DEBTOR LIST` line still printed — expected and already documented above: neither the
+repay nor default branch calls `remove_from_variable_list` on `kehillah_loan_debtors`, so a
+resolved debtor is left as a harmless inert list entry, same as the earlier-documented default
+case).
+
+**Gold arithmetic:** 114 (before, 29 Dec 1068) → 505 (after, 2 May 1069) = **+391**. Expected
+repayment is exactly +390 (`kehillah_loan_amount_owed_value` = principal 300 × the 1.3 multiplier).
+The extra +1 over ~124 days is consistent with ordinary passive income (the top-bar showed a
++0.2-to-+0.3/turn rate at various points this session, but that appears to be an instantaneous rate
+that does not hold constant across the whole window — a constant +0.3/day would predict roughly
++35 over 124 days, well above the +1 actually observed, so the community's realized income over
+this particular window was much lower than the instantaneous rate suggested. Income-adjusted
+reading: **the +391 is overwhelmingly the +390 loan repayment**, with at most a few gold of
+incidental income folded in — not a discrepancy in the repayment amount itself.
+
+**Pillar rewards — inconclusive on the exact numbers, mechanism confirmed.** `s9_pillar_diff.txt`
+(exact match against +50/+20) reported `PROSPERITY DELTA NOT +50` and `GREATNESS DELTA NOT +20`.
+`s9_pillar_diff_bracket.txt` narrowed this: prosperity delta fell **between 30 and 45**, greatness
+delta fell **between 20 and 25**. (First version of this bracket probe used `[`/`]` characters in
+its `debug_log` strings and hit `pdx_data_localize_helper.cpp` "Unterminated '['" errors that
+silently ate the affected branches — rewritten without brackets and re-run cleanly; recorded under
+the shim-guide finding below.) This is judged **not a bug**: the snapshot (`s9_snapshot_before.txt`)
+was taken right after confirming "CROWN OWES" on the fresh loan, and the repayment resolved roughly
+4 months later — long enough for `kehillah_quarterly_pillars_effect`'s own *unrelated* baseline
+convergence step (documented in `common/on_action/kehillah_on_actions.txt` as running every quarter
+alongside the loan bookkeeping) to have also moved prosperity/greatness in the same window,
+independent of the +50/+20 reward. Greatness landing just above +20 (20-25) and prosperity landing
+below +50 (30-45) is consistent with convergence nudging each pillar toward its own baseline by a
+few points on top of/against the flat reward, not with the reward failing to apply. The
+`debug_log = "kehillah_quarterly_pillars_effect: an AI borrower repaid at term"` line firing from
+exactly the code path that applies `add = kehillah_loan_repayment_prosperity_reward` and
+`add = kehillah_loan_repayment_greatness_reward` (`kehillah_scripted_effects.txt:2078-2082`, the
+same three lines immediately above the debug_log) is the more direct evidence that the reward
+itself did apply; a clean isolated ±50/±20 read would need a probe taken immediately before/after
+the single quarterly pulse that resolves the loan, with no other pulses in between — not achieved
+this session given the "advance ~3 months" real-time budget consistently overshot to include a
+second pulse's worth of convergence (see step 5's timing caveat above).
+
+### Step 7 — error.log accounting
+
+Boot-to-close baseline: **0 → 2902 lines** (this session's `logs/error.log` starts fresh at this
+boot's `[19:38:32]` first line; there was no pre-existing content to net against). Grepped
+case-insensitively for `loan|royal|norman|0020|13[234]|task_contract` per the task brief: **150
+matching lines**, all classified, **zero** from `kehillah_loan_events.txt`, `kehillah_task_contracts.txt`,
+`kehillah_royal_finance_values.txt`, or `kehillah_norman_conquest_events.txt` (confirmed by a direct
+grep for each filename against the whole log — no matches at all). The 150 matches break down as:
+
+- **108 lines** `Variable 'agi_ck3_bridge_task_contract_*' is set but is never used` — the
+  eval-harness bridge mod's own unused-variable boilerplate (matches the grep only via the literal
+  substring `task_contract` in the variable name), logged once at boot (`19:39:47`), before any
+  kehillah loan action. **Not ours, not new, boot-time only.**
+- **21 lines** `Title 'd_kehillah_mapcolor_*' needs ... Coat of Arms` / `Dynasty 'dynn_X' had no
+  founder` — boot-time map-color/dynasty coat-of-arms generation notices (`19:42:16`), matched only
+  because the log line's own `[coat_of_arms_utilities.cpp:132]` file:line tag contains `132`, which
+  the `13[234]` pattern matches — coincidental tag match, not content. **Not ours.**
+- **12 lines** `kehillah_restore_track_N_effect` / `kehillah_restore_quarter_effect` script-location
+  traces — real errors, but from the library/Bet Din restore-track feature that another agent's
+  uncommitted changes in this tree own (explicitly out of scope per this task's brief), not from
+  loans. **Not ours to fix, not loan-related.**
+- **3 lines** `Event kehillah_debug.13{2,3,4} is orphaned` — the same harmless boot-time "hidden
+  debug event not reached via its own trigger path" notice already documented in this file's
+  original test (there at lines 207-209 of that session's log). **Pre-existing, not new.**
+- **3 lines** `tgp_east_asia_mandala_task_contract_events` / `laamp_base_contract_schemes` —
+  vanilla DLC (Tours and Pilgrimages / Legends of the Dead-adjacent) task-contract and scheme
+  content from unrelated AI characters, matched only via the substring `task_contract`. **Not ours.**
+- **1 line** `kehillah_repay_loan_decision has 'ai_check_interval'/... negative or unset` — the same
+  boot-time-only lint already noted as "not new, not counted" in this file's original test section.
+  **Pre-existing.**
+
+**Zero** new script errors trace to the royal-loan feature itself across either loan instance,
+including the one that defaulted — consistent with this subsystem's established silent-success/
+silent-failure signature (see the original test's own note on this).
+
+### New shim-guide-worthy findings this session
+
+1. **The game-speed bar (bottom-right corner), not the "Paused" text overlay, is the reliable pause
+   indicator.** The center-screen "Paused" label is drawn by whichever UI element most recently
+   requested a pause (e.g. an event dialog) and does not reliably reflect current state once that
+   dialog is dismissed — this session repeatedly found the game already running (confirmed via a
+   native-resolution crop of the speed bar: green segments = running, red = paused) while a stale
+   "Paused" label was still visible in the same screenshot. Cropping
+   `Rectangle(2350, 1370, 210, 70)` of the native capture and checking bar color is a cheap, reliable
+   substitute. This also explains why simply pressing space after dismissing a dialog is unreliable
+   as a "make sure it's paused" step — sometimes the dialog had already unpaused nothing (still
+   paused) and the toggle unpaused it by mistake, sometimes the opposite. Always crop-and-check
+   after any pause/unpause toggle rather than assuming the toggle's direction.
+2. **`quarterly_playable_pulse`'s cadence should not be assumed to track real calendar quarters for
+   a given character.** See step 5 above — one full year of elapsed game time produced only one
+   0.25 increment on a freshly-created loan, not four. Vanilla's own on_actions.info note ("relative
+   to the on_yearly_playable pulse, and not calendar quarters") is the authoritative statement; a
+   probe wanting to catch "exactly one pulse" should watch the value change rather than budget a
+   fixed real-time wait.
+3. **`debug_log` strings containing literal `[`/`]` characters silently break** — they hit CK3's own
+   loc-string bracket-property parser (`pdx_data_localize_helper.cpp`: `Unterminated '['`) and the
+   affected `debug_log` call (and, empirically, anything chained after it in the same `if`/`else_if`
+   branch) produces no console output at all, with only an error.log entry as a clue. Avoid `[`/`]`
+   in ad-hoc probe `debug_log` text; spell out ranges in words instead (`"between 30 and 45"` not
+   `"in [30,45)"`).
+4. **A debug fast-forward helper that tops a character up to an exact required amount is racy
+   against that character's own ordinary AI spending** if any game time elapses before the effect
+   that checks the amount runs. `kehillah_debug.133`'s exact top-up to `kehillah_loan_amount_owed_value`
+   is a real instance of this (see step 6 attempt 1) — worth a note in
+   `docs/testing/automation-shim-guide.md` as a general debug-probe design point: prefer a generous
+   buffer over an exact minimum when the probe's purpose is "make sure a downstream `>=` check
+   passes," not "test the exact boundary."

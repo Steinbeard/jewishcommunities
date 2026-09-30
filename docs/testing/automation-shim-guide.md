@@ -65,6 +65,15 @@ option and silently missed. Downscale for *reading*; for a precise click, crop t
 around the target and read pixels there. And never leave the game unpaused while navigating menus
 — 1.5 unattended years once cost a test its borrower.
 
+**Pause state: read the speed bar, not the "Paused" overlay** (2026-09-29). The centre-screen
+"Paused" text reflects whichever UI element last requested a pause, not the actual state; a
+native-resolution crop of the bottom-right speed control (green = running, red = paused) is reliable.
+Also: `quarterly_playable_pulse` is relative to each character's yearly pulse, not calendar quarters,
+so "advance three months" does not reliably land exactly one pulse — assert on the logged effect, not
+the elapsed time. And keep `[` / `]` out of `debug_log` strings: CK3 parses them as loc and the line
+fails with only an "Unterminated '['" error.log entry. Test helpers that top a value up should use a
+generous buffer, not the exact minimum, or AI spending races the check.
+
 ### Mouse: `mouse_move(x, y)` / `mouse_click(x, y, button="left")`
 
 Coordinates are **actual screen pixels**, origin at the virtual-desktop top-left (handles
