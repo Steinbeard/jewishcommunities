@@ -1,6 +1,6 @@
 version="0.1"
 tags={
-	"1.19 'Scribe'"
+	"1.20 'Crozier'"
 }
 name="Jewish Communities"
-supported_version="1.19.0.6"
+supported_version="1.20.0.2"

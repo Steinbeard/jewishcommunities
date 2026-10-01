@@ -5,7 +5,7 @@ A Crusader Kings III mod about Jewish diaspora communities, built around the Keh
 ## Current Version
 
 - Mod version: `0.1`
-- CK3 version: `1.19.0.6` (`Scribe`)
+- CK3 version: `1.20.0.2` (`Crozier`)
 - Current scenario: Kehillah of Worms, 1066
 
 ## Current Features
@@ -29,7 +29,7 @@ A Crusader Kings III mod about Jewish diaspora communities, built around the Keh
 3. Enable **Jewish Communities** in the CK3 launcher.
 4. Start the Kehillah of Worms bookmark to play the current scenario.
 
-The mod targets CK3 `1.19.0.6`. Other game versions may require script or GUI updates.
+The mod targets CK3 `1.20.0.2`. Other game versions may require script or GUI updates.
 
 ## Design
 

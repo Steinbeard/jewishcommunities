@@ -5,10 +5,12 @@
 # THE ACTUAL ROOT CAUSE OF THE BOOKMARK-GENERATION CRASH, FOUND AFTER AN
 # EXHAUSTIVE PROCESS OF ELIMINATION.
 #
-# is_playable_character is a closed, hardcoded list:
+# In 1.19, is_playable_character was a closed, hardcoded list:
 #
 #   is_landed | is_landless_administrative | is_landless_adventurer |
 #   is_landless_nomad | is_landless_soryo | tgp_is_any_minister
+#
+# (CK3 1.20 rewrote it - see the 1.20 note at the bottom of this header.)
 #
 # There is no generic branch for "any government with landless_playable
 # = yes in its government_rules". Setting that rule (which
@@ -41,16 +43,41 @@
 # wrapper -- that also removes vanilla's DLC-gating for
 # theocracy/republic/mercenary/holy_order governments, which this fork
 # does not touch.
+#
+# CK3 1.20 (Crozier) NOTE, 2026-09-30: vanilla rewrote this trigger to
+# `is_ruler = yes` AND (exists = domicile | non-baron landed/theocracy |
+# tgp_is_any_minister | has_variable = laamp_transition). A Kehillah leader
+# holding the community title with a domicile may now pass vanilla on its
+# own, but that is unverified, and this override is what fixed a crash.
+# Conservative re-base: vanilla 1.20's logic verbatim as one branch, OR the
+# Kehillah flag on its own - so the Kehillah case behaves exactly as it did
+# in 1.19 (no new is_ruler requirement) and everyone else gets 1.20
+# vanilla behaviour unchanged. Revisit whether the override can be dropped
+# once a 1.20 boot + succession playtest passes. See
+# docs/implementation/ck3-1.20-crozier-port.md.
 # =====================================================================
 
 is_playable_character = {
 	OR = {
-		is_landed = yes
-		is_landless_administrative = yes
-		is_landless_adventurer = yes
-		is_landless_nomad = yes
-		is_landless_soryo = yes
-		tgp_is_any_minister = yes
+		# --- vanilla 1.20, verbatim ---
+		AND = {
+			is_ruler = yes
+			OR = {
+				exists = domicile
+				# exclude barons
+				trigger_if = {
+					limit = {
+						OR = {
+							is_landed = yes
+							government_has_flag = government_is_theocracy
+						}
+					}
+					highest_held_title_tier > tier_barony
+				}
+				tgp_is_any_minister = yes # To keep ministers playable, regardless of having a noble family title or not
+				has_variable = laamp_transition
+			}
+		}
 
 		# --- added by the Jewish Communities mod ---
 		government_has_flag = government_is_kehillah
