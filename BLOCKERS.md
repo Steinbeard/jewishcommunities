@@ -414,3 +414,639 @@ things were left in.
     new leaders read as an unrelated generated family instead of Rashi's own, with no other effect on
     gameplay.
 
+
+## Heartbeat run status -- 2026-09-25_180001 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: YES --
+```
+?? docs/testing/2026-09-25-s0-regression-live-test-log.md
+```
+- Last few commits:
+```
+b81d9e0 S2 part 3 (next-band tooltip line) + probe fixes from the first live run
+39783ea S2: per-band leader modifiers and band-change notices
+bb442af S1: leave the Kehillah, and the Stability floor, sharing one teardown
+e755acc S0: add four narrow live-regression probes to the debug harness
+e00d164 S4: Rashi starts the game as Troyes's own Chief Rabbi
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-25_180001.log
+
+## Heartbeat run status -- 2026-09-25_230002 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+4f7476d Mark S11 research bullets done in the Sukkot queue
+03d30ac S11 research bullets: which vanilla 1.19 hooks the Crusade chain can use
+d38ee64 Record S0 live-regression results from the first Sukkot heartbeat
+669aea7 Heartbeat run-status note (2026-09-25_180001)
+b81d9e0 S2 part 3 (next-band tooltip line) + probe fixes from the first live run
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-25_230002.log
+
+## Heartbeat run status -- 2026-09-26_040002 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: YES --
+```
+M events/kehillah_debug_events.txt
+```
+- Last few commits:
+```
+f0bffb1 Record the 2026-09-26 S0/S2 live run, and correct one tester error
+11d4b65 S4(1): Seek a Chief Rabbi, a search over real rabbis in the world
+753cf77 S4(2): the leader may serve as the community's own Chief Rabbi
+974af54 S3(a) instrumentation + guard, and S3(d) Endorse as Successor
+bb657d5 Heartbeat run-status note (2026-09-25_230002)
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-26_040002.log
+
+## Sukkot heartbeat 2026-09-26 morning -- the `add_gold` saga is over; S2(3) and the Worms start both had real bugs hiding behind "passing" checks
+
+**What this run did.** Worked the Sukkot queue top-down. Closed S0's last open
+item (live-verified), built S4's last unbuilt part, and fixed three real bugs
+found by the live passes -- two of which were sitting underneath checks that
+looked like they were passing. Full account:
+`docs/testing/2026-09-26-s0-restitution-and-s2-tooltip-log.md`.
+
+**Verified live (not just source-fixed):**
+
+- **S0's Bet Din restitution bug is CLOSED.** Root cause: `add_gold` is
+  additive only and cannot go negative by any shape -- rejected at script-load
+  validation for a literal, at runtime for a computed one. The engine documents
+  this itself in its own generated `logs/effects.log`, which also names the
+  right primitive: `pay_short_term_gold = { target = X gold = Y }`, "the scope
+  character pays gold to the target character". Vanilla uses `add_gold = -`
+  **zero** times; this mod already used the correct primitives in six other
+  places and this one effect was the lone hand-rolled exception. Both
+  restitution branches are now one `pay_short_term_gold`. `kehillah_debug.108`
+  returns CLAMP/DEBIT/CREDIT all PASS against the low-gold accused that
+  originally broke it.
+  - *How it was caught:* the previous heartbeat's own `.108` probe used literal
+    negative `add_gold` calls and was rejected at script load before it ever
+    ran -- logging the answer instead of taking the measurement it was written
+    for. That version is preserved in commit `fe8ba31`.
+  - *Still worth doing once:* a genuine Silversmiths' Quarrel on a real Bet Din
+    docket. The probe exercises the primitive under the real clamp, not
+    `kehillah_bet_din.0051`'s option-to-direction wiring.
+- **The previous run's suspected reload artifacts were artifacts.** All five
+  names (`kehillah_endorse_successor_interaction`, the three rabbi-office
+  names, `kehillah_serve_as_rabbi_learning_threshold`) are 0-hit on a fresh
+  boot. Dev-mode hot-reload does not re-read localization or instantiate new
+  database objects.
+
+**Built this run, source-verified and ck3-tiger clean, NOT yet live-tested:**
+
+- **S4(3)**, the last unbuilt part of S4: a rabbi you raised being called away
+  to another community. Fires only when the hire actually takes someone out of
+  another Kehillah's court. The losing community *gains* Greatness (6, against
+  10 for hiring) -- a community whose scholars are wanted elsewhere has the
+  reputation Greatness measures, and the loss is already priced in since the
+  empty seat stops contributing that tick. The two figures differ on purpose so
+  two AI communities can't pump each other by passing one rabbi back and forth.
+- **`kehillah_debug.110`**, the probe S4's live test was said to be blocked on.
+  It also revealed the stated blocker was wrong about Worms: **Worms already
+  has a Beit Midrash at game start**, so S4(1) was testable all along.
+
+**Three real bugs found and fixed, none of which was what was being tested:**
+
+1. **S2 part 3's tooltip rendered, and rendered WRONG.** The narrow check
+   ("does the line appear") passed -- so the earlier "dead code" verdict is now
+   doubly refuted -- but it showed "0 more to Strained" on a community not in
+   Crisis, *and* spammed `error.log` at ~2,000 lines/second while hovered:
+   288 lines to 378,909 across three hovers, ~2.2GB to ~5.1GB of process
+   memory. One cause: the code was written for character scope and hopped back
+   to the title via `primary_title = { var:... }`, but the pillar variables live
+   on the title. Where the hop missed, the guarded custom-loc branches fell
+   through to their `always = yes` fallback (the Strained line) while the
+   *unguarded* script value threw every frame and clamped to 0. Fixed by
+   matching the sibling that always worked in this same widget
+   (`[Title.Custom('KehillahProsperityScore')]`): `type = landed_title`, direct
+   reads, `has_variable` everywhere, all 15 call sites moved off
+   `Title.GetHolder.*`.
+2. **Ten `reverse_add_opinion` errors in `kehillah_task_contracts.txt`**, all
+   `Modifier 'X' with monthly_change cannot have a specified duration`. The
+   four modifiers involved are declared `monthly_change = 0.1, decaying = yes`
+   and the engine refuses a caller-imposed duration; the `years = N` was
+   redundant as well as invalid. Vanilla: 88 uses of `pleased_opinion`, none
+   with `years`. All ten removed.
+3. **The Worms developed start has been a no-op above synagogue tier 1**, and
+   nobody noticed. `add_domicile_building` **does** consult `can_construct`,
+   contrary to what that effect's own header asserted -- so tier 2 failed its
+   Greatness gate and tiers 3-5 cascaded off the missing tier 2. This is
+   circular, not merely misordered: tiers 2-5 need Greatness at 150/400/700/950,
+   and Greatness is computed *from* the buildings. Fixed by lifting Greatness to
+   the Legendary threshold for the duration of the grant and restoring it
+   immediately; day three's V20 snapshot then computes the real opening figure
+   from the complete building set -- which is the quieter half of this bug, since
+   V20's "opening pillars equal the full baseline" promise was being kept
+   against a baseline missing four synagogue tiers.
+
+**Two things worth more than the items they came from, for future sessions:**
+
+- **`ck3-tiger` was clean on every real bug found today.** It does not flag
+  `add_gold = -5` (only the live game's load validation does), and it does not
+  check scope correctness across the `.gui` -> `.yml` -> `custom_loc` ->
+  `script_value` chain. Tiger rules out a class of error; it does not certify a
+  feature. Three sessions of this saga treated clean tiger output as evidence.
+- **A check can pass and still be hiding the real bug.** Two of the three bugs
+  above were found *by* checks that returned PASS on their own stated criteria.
+  Worth briefing testers to report what they saw around the check, not only the
+  verdict -- the error-storm finding came from a tester volunteering a line
+  count nobody asked for.
+
+**What the next heartbeat should pick up, in order:**
+
+1. **Re-hover the three pillar tooltips** (map-view widget, not the
+   community-list interaction) to close out S2(3): confirm the band named is
+   genuinely the one above the current band, and that `error.log` stays quiet.
+2. **Re-boot and confirm the Worms start now gets all five synagogue tiers** --
+   grep `error.log` for `add_domicile_building` (expect 0) and check the
+   Jewish Quarter shows Synagogue level 5.
+3. **S1 has never been live-tested at all** and is the highest unverified item
+   in the queue. Harness ready: `.98` -> `.99` -> resolve the collapse event ->
+   `.100`. A live pass was in flight when this entry was written; if it reported,
+   the result is in the testing log, and if not, S1 is still untested.
+4. **S4(1)/(2)/(3) have never been live-tested.** `.110` shows the state is
+   reachable at Worms today, so this is now unblocked.
+5. **S3 (b) and (c)** still need a console-kill succession observation.
+6. **V20 starting pillars and the V16 section 8 open tests** remain the last
+   uncovered parts of S0.
+
+**Nothing needs Daniel's decision from this run.** Every choice made was the
+small, reversible one, and each is argued in the file it touches. The one
+judgement worth flagging for review rather than action: the Worms start fix
+temporarily writes an inflated Greatness during `on_game_start_after_lobby` and
+restores it in the same effect. It is invisible to any other code (the community
+is not even registered yet) and day three overwrites it regardless, but it is a
+deliberate lie told briefly to the engine to get past a circular gate, and if
+you would rather the synagogue tiers' `can_construct` gates were themselves
+relaxed for the historical start, say so and it can be rewritten that way
+instead.
+
+## Heartbeat run status -- 2026-09-26_090002 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+e79f80f Log the 17 GUI-layout warning sites precisely, without fixing them
+067cfc9 Shim guide: what ck3-tiger misses, and two tester-briefing lessons
+d0b1af9 ROADMAP: correct S0 stale claim that V16 section 8 is a mop-up
+d945d6a Record that the unguarded-pillar-read audit came back clean
+5b39181 ROADMAP: warn that the V20 starting-pillars check must follow the Worms-start fix
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-26_090002.log
+
+## Sukkot heartbeat 2026-09-26 afternoon -- two items closed, S2 complete, and a day-one collapse warning nobody knew about
+
+**What this run did.** Worked the previous heartbeat's own "what the next
+run picks up" list top-down. Closed its items 1 and 2 (both VERIFIED
+LIVE), completed S2, found and fixed a new bug that the second of those
+checks exposed, and put S1 -- the highest never-tested item in the queue
+-- into a live boot. Full account:
+`docs/testing/2026-09-26-heartbeat5-live-test-log.md`.
+
+**Verified live (not just source-fixed):**
+
+- **S0's Worms developed start: PASS.** `kehillah_debug.111` on a fresh
+  1066 Worms start reports `SYNAGOGUE 5` plus all eight other buildings
+  `PRESENT`, with zero `add_domicile_building` lines in `error.log`
+  against a pre-fix symptom of four. Commit `4267d36` holds.
+  - *Recorded deliberately:* zero errors alone was **not** accepted as the
+    pass, because a boot into any other community would also show zero.
+    The positive `SYNAGOGUE 5` reading is what closes it. This is the same
+    false-pass shape that has bitten this repo repeatedly.
+- **S2 part 3: PASS, which completes S2.** All three pillar tooltips name
+  the correct next band with the exact right number -- 255 Strained ->
+  "145 more to Healthy", 369 Strained -> "31 more to Healthy", 459
+  Healthy -> "241 more to Flourishing" -- checked against
+  `kehillah_debug.111`'s independently computed figures rather than
+  against a tester's expectation. `error.log` growth **+0 lines** per
+  hover, against the old ~2,000 lines/second, and process working set
+  *fell* across the three hovers (1971.8MB -> 1644.3MB).
+
+**One new bug, found by the check that passed, root-caused and fixed
+(commit `9236d57`) -- source-verified and ck3-tiger clean, verification
+boot in flight when this was written:**
+
+**Every new 1066 game opened by telling the player their community was
+collapsing.** CK3's 1066 start is 1066.9.15; the first
+`quarterly_playable_pulse` lands 1066.9.16; the historical communities'
+real pillar values are not written until day three, 1066.9.18. So for two
+days all three pillars sit at exactly 0.00 and the pulse consumed them.
+Measured in `debug.log`, in order, not inferred. Four consequences:
+
+1. **The five-year warning cooldown was burned on day one** -- so a
+   *genuine* Stability crisis in the first five years would have gone
+   unwarned, defeating S1's own promise that "collapse is never a
+   surprise". This is the real harm.
+2. **"The Community Frays" fired on day one** on the strongest community
+   in the scenario -- worst possible first impression for the flagship
+   start, and a direct hit on your v0.1 feature 2.
+3. **All three bands seeded as Crisis**, applying -20% income, -20%
+   prestige and stress to a leader whose community is really
+   Strained/Strained/Healthy.
+4. The following quarter would then have sent three band-change notices
+   describing nothing but this bug.
+
+Fixed by teaching the consumers not to read a number that has not been
+written yet (new `kehillah_pillars_are_live_trigger`), plus having the
+day-three snapshot seed the bands itself so they are right from day three
+instead of up to a quarter late. **Initializing the pillars earlier was
+the obvious alternative and was deliberately not taken**, because this
+codebase already rejected it for a reason that still holds:
+`kehillah_worms_developed_start_effect`'s header records that restoring
+Greatness to 0 rather than to a real baseline is deliberate, since
+computing it there "would duplicate V20's job three days early and give
+two places an opinion about the same number."
+
+**One thing that wants your judgement, Daniel -- not a blocker, nothing
+is waiting on it:**
+
+**The Worms start opens roughly 2x over its courtier cap.** The Stability
+tooltip in an ordinary 1066.10.16 game reads "The quarter is overcrowded
+(15 of 8 places): **-8 each season**". That is much of why Stability sits
+at Strained on a community with a completely built Jewish Quarter. I did
+not touch it, because three readings are possible and they lead to
+different changes:
+
+1. *Intended tension* -- an overcrowded thriving quarter is a fair picture
+   of 11th-century Worms, and "build room for your people" is a reasonable
+   first objective, which is exactly the shape S6's community goals want.
+2. *An oversight* -- the developed start grants nine buildings and nothing
+   raises the cap to match, so the penalty may be an accident of the
+   building list.
+3. *A number that simply wants retuning.*
+
+It is a balance decision about the mod's headline scenario, so it is
+yours. Related, same section of the log: Worms holds a Synagogue at level
+5 whose own `can_construct` gate wants Greatness 950, while the community
+computes 459 -- the historical start is deliberately privileged past that
+gate, but it means Worms permanently holds a building it could never have
+built at its own standing.
+
+**What the next heartbeat should pick up, in order:**
+
+1. **Read this run's S1 result before doing anything else.** A live boot
+   was in flight when this entry was written, covering: GROUP 1, the
+   verification of the `9236d57` fix above (zero "below the Stability
+   floor" and zero "firing the Stability warning event" lines, bands not
+   all Crisis); then S1's own three done-when criteria -- voluntary
+   step-down with the community surviving under an AI successor
+   (`.112` -> decision -> `.113` + `.100`), re-founding as the resulting
+   adventurer, and the Stability collapse (`.98` -> `.99` -> resolve ->
+   `.113` must now say TITLE GONE). If it reported, the result is in the
+   testing log; if not, S1 is still untested and the harness is ready.
+   That boot also arms `kehillah_debug.104`, so it settles **S3(a)**'s
+   three-times-reproduced "illegal government" error at the same time --
+   the step-down hands a title to a living successor, which is that exact
+   code path.
+2. **S4(1)/(2)/(3) have still never been live-tested.** `.110` shows the
+   state is reachable at Worms today, so it is unblocked.
+3. **S3(b) and (c)** still need a console-kill succession observation.
+4. **V20 starting pillars.** Now unblocked *and* partly answered in
+   passing: the opening figures on a fixed Worms start are Prosperity 255,
+   Stability 369, Greatness 459. What is still unchecked is whether those
+   equal the computed baselines, which is V20's actual promise.
+5. **V16 section 8** remains nine separate live tests, not a mop-up (see
+   the correction already in S0). Pick individual numbered items.
+
+**Method note worth carrying forward.** As briefed, the S2 tooltip test
+would have been taken at game start -- where every pillar is 0, so the
+tooltip renders its `always = yes` fallback, which is the exact branch
+that produced the original wrong text. A pass there would have proved
+almost nothing. Reading `kehillah_debug.111` out of `debug.log` directly
+caught that before the tester finished, and the mid-run redirection to
+"advance past day three, then measure" is both what made the pass
+meaningful and what exposed the day-one collapse bug. Cheap parent-side
+log reads keep earning their keep; so does the tester briefing's
+instruction to volunteer observations nobody asked for -- both of this
+run's non-obvious findings came in that way.
+
+## Heartbeat run status -- 2026-09-26_140002 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+df87950 S3(a): the illegal-government diagnosis is refuted, with the trace to prove it
+4e34b5b Fix the day-one collapse warning properly: the drift was the hole
+cb432b7 BLOCKERS: Sukkot heartbeat 5 entry
+fc2678b Record two verified passes and one new bug; S2 is complete
+9236d57 Don't judge or band a community whose pillars aren't written yet
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-26_140002.log
+
+## Heartbeat run status -- 2026-09-26_190002 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+914f5b1 ROADMAP: correct S4's stale "~14" Learning threshold to the built 12
+807732f kehillah_debug.115: read Rashi's Chief Rabbi state without playing as him
+58a08e7 kehillah_debug.114: check V20's actual promise, not a plausible number
+df66353 Heartbeat 7 test log skeleton, written before the results
+1883ca5 S3(a): gate the inline change_government on the domicile, not the title
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-26_190002.log
+
+## Sukkot heartbeat 2026-09-27 early morning -- S3(a) is finally answered, and it needs one decision from you
+
+**Read this section if you read nothing else: "DECISION NEEDED" below.**
+Everything else in this entry is either verified or already recorded in
+ROADMAP.
+
+### What this run did
+
+Full account: `docs/testing/2026-09-27-heartbeat8-live-test-log.md`.
+
+**A free win first.** Heartbeat 7's usage limit cut it off with its CK3
+process still running -- it was still alive this morning, and its logs held
+a complete fresh 1066-Worms boot no session had ever read. That boot was
+exactly the verification heartbeats 5 *and* 7 both left "in flight". So the
+day-one collapse fix cost a log read instead of a boot. Logs archived to
+`logs\archive-heartbeat7\` before closing it.
+
+**Verified live this run (six things):**
+
+- **The day-one collapse warning is gone.** Zero dissolution-watch lines in
+  a boot that demonstrably passed day three. Zero was deliberately *not*
+  accepted on its own -- the watch logs nothing on the healthy path, so
+  silence would equally mean "never ran". The positive control is 45 band
+  seedings all reporting "none recorded" at day three, which the day-one
+  pulse would have pre-empted.
+- **V20 starting pillars: PASS.** All three stored values equal their
+  computed baselines. Heartbeat 5 had only shown the numbers were
+  *plausible*; this shows they are the baselines, which is V20's actual
+  promise.
+- **S4(1) "Seek a Chief Rabbi": PASS, end to end.** Three candidates at
+  real Learning/cost tiers; the one hired was a **real rabbi from a real
+  other community** -- Feivel Yitzhaki, son of Rav Shlomo, i.e. Rashi's own
+  son at Troyes. Picking a generated candidate instead would have passed
+  the item vacuously. Afterwards the appointed rabbi correctly displaced
+  the leader who had been serving.
+- **S4(2) Rashi as Troyes's own Chief Rabbi: PASS**, with no contradiction
+  between the seat, the toggle and the shared trigger.
+- **S1's departing-leader half: PASS**, six probe checks for six.
+- **A Troyes game-start error fixed** (`set_employer` on a courtier already
+  in that court) and confirmed gone.
+
+**Built this run, not yet live-tested:** **S5, responsa.** Questions arrive
+from other real communities by yearly pulse; three options (lenient,
+stringent, defer); ten rulings compile into a book through the *existing*
+book system rather than a second one. Harness and run files are ready, and
+a test of it is in flight as this is written.
+
+**One real bug fixed in passing, with a lesson attached.** The Distribute
+Tzedakah decision read a character-scope script value from inside its
+`primary_title` block, so the engine threw "domicile trigger [ Wrong scope
+for trigger: landed_title, expected character ]" -- on merely *opening* the
+decisions panel, since the preview evaluates it. Two things worth your
+attention:
+
+- The value already used the "safe" `?=` operator and it did not help.
+  `?=` guards against a missing target, not the wrong *kind* of scope.
+- **ck3-tiger had been reporting this all along**, precisely, as
+  `warning(scopes): ... expects scope to be character but scope seems to be
+  landed title` -- sitting inside the standing 59-warning baseline being
+  treated as a judgment call. It was not cosmetic; it predicted a real
+  runtime error. **Suggestion for CLAUDE.md: `warning(scopes)` specifically
+  should be read as near-blocking in this repo, not as a warning.** I swept
+  the whole tree for the same pattern (with a positive control proving the
+  detector actually catches the known instance) -- tzedakah was the only
+  one, and the only `warning(scopes)` in the tree, so this is closed rather
+  than the tip of something.
+
+### DECISION NEEDED -- the successor's Jewish Quarter
+
+**S3(a) -- the "illegal government" error that has been chased for four
+sessions -- is solved as a diagnosis and now blocked on a design choice
+only you should make.**
+
+**What is true, verified live, not inferred:**
+
+1. The `exists = domicile` gate added last night **works**. Zero
+   illegal-government errors on the exact path that produced them on
+   2026-09-06, 09-20, 09-23 and in heartbeat 6.
+2. **But the community is still left broken.** After a voluntary step-down,
+   the heir holds the community title and has **the wrong government and no
+   domicile** -- which by this repo's own earlier finding is a 15-25 day
+   silent slide into "Game Over: has lost all of his titles", now pointed at
+   an AI.
+3. The cause is not timing, and never was -- which is why two rewrites
+   aimed at timing both missed. `kehillah_succession.0010` said it itself:
+   *"root holds a landless title but has NO domicile, so the engine has
+   nowhere to put a kehillah_quarter."*
+4. **This failure is completely silent.** `error.log` did not grow at all
+   across that part of the test. Only the mod's own debug probes caught it.
+
+**Why there is no cheap fix, checked against the engine's own effect docs
+rather than guessed:**
+
+- **A domicile belongs to a character, not to a title.** So handing the
+  title over with `change_title_holder` cannot bring the Jewish Quarter
+  with it.
+- **No effect creates a domicile.** There is no `create_domicile`. The full
+  list of domicile effects is add/construct/lower/remove building,
+  change_herd, change_provisions, set culture/faith, and `move_domicile` --
+  which moves a domicile to a *location*, not to another character. So the
+  quarter can neither be created for the heir nor transferred to them.
+- **The only thing in the game that produces a kehillah_quarter is**
+  `create_adventurer_title = { holder = X government = kehillah_government }`
+  -- the undocumented `government` parameter the founding path already
+  depends on. It creates title + government + domicile in one operation,
+  and it creates a **new title**.
+- `change_title_holder`'s `government_base` parameter looked like the
+  answer and is not: **zero vanilla scripts use it**, and even if it set the
+  government correctly it still would not create a domicile, which is the
+  half that actually matters.
+
+**So the options, and what each costs:**
+
+- **(A) Re-found under the successor.** `create_adventurer_title` for the
+  heir with `government = kehillah_government`, migrate the community's
+  state (pillars, registry entry, charter, buildings) onto the new title,
+  destroy the old one. This is the only route that yields a *working*
+  community. The cost is that the title's identity changes, and the
+  registry, the Sh'um de jure nesting, the host charter and the map view
+  all key off that title. Buildings would have to be re-granted onto the
+  fresh quarter (mechanically fine -- the Worms developed start already
+  does exactly that).
+- **(B) Confine the damage.** If an ordinary death-succession turns out to
+  work (see below), leave inheritance alone and change only the step-down
+  decision -- e.g. it dissolves the community rather than pretending to
+  hand it on, which is honest about what the engine permits and is a much
+  smaller change.
+- **(C) Leave it and ship the step-down as a dissolution in disguise.** Not
+  recommended; it silently kills an AI community a month later.
+
+**The severity depends on one thing I put into a boot immediately and do
+not yet have the answer to as I write this: does a normal DEATH succession
+have the same problem?** The implementation doc's section 8 records a
+2026-09-06 console-kill succession where "government, courtiers, and the
+communal treasury all carried over" -- which suggests the engine moves the
+domicile on *inheritance* even though no script can. If that holds, this
+bug is confined to the voluntary step-down decision and option (B) is
+probably right and cheap. If death-succession is broken too, then every
+succession in the mod is broken, this is the single blocking bug for v0.1,
+and option (A) is unavoidable. **Read the next heartbeat's note, or the
+test log, for that answer before deciding.**
+
+**I deliberately did not build any of this.** It is the highest-crash-risk
+area in the codebase, the change is invasive, it touches title identity that
+four other systems depend on, and `kehillah_succession.0010`'s own comment
+says "Report, do not patch". A fifth blind attempt is exactly what this
+should not get.
+
+### Smaller things you may want to weigh in on
+
+- **A 30+ minute boot.** One launch today took over half an hour from
+  double-click to main menu, against a normal 1-3 minutes. Not a hang --
+  CPU busy, memory climbing steadily to ~7GB, Responding always True. One
+  sample, cause unknown. It matters because it changes how much a
+  five-hour heartbeat can attempt. Wants one more timed boot before anyone
+  treats it as real.
+- **31 missing-localization warnings** sit in the tiger baseline. Each is a
+  loc key referenced but not defined, which renders as a raw key to the
+  player -- ordinary v0.1 polish, and a good candidate for a cheap
+  dedicated pass.
+- **Two pre-existing bugs found in passing, neither investigated:**
+  `gui/kehillah_community_map_view.gui:555,606,631` throw "Widget cannot
+  have a position in a layout" on every reload; and `kehillah_debug.60`'s
+  `create_adventurer_title` throws "No save_scope_as set for the new
+  landless title" -- a bug in the debug event itself, in the same
+  adventurer-title machinery the succession problem lives in.
+- **The Worms overcrowding question from heartbeat 5 is still yours** and
+  still unanswered; nothing this run touched it.
+
+### My own mistake, recorded
+
+I built S5 in parallel with the first live boot. `-debug_mode` hot-reloads
+mod files on change, so the running game kept reloading half-written
+responsa files and filled `error.log` with undefined-trigger and
+missing-loc errors. **None were real** -- everything is defined in the
+committed tree and ck3-tiger reports zero errors -- but the tester
+correctly reported the feature as broken, because in the process they were
+watching, it was. Their error.log growth figures for two groups are
+therefore unusable. Build work and live-test work must not share a boot;
+written into the test log so the next session inherits the rule rather than
+the mistake.
+
+### What the next heartbeat should pick up, in order
+
+1. **Read this run's Group A result first** (death-succession: does the
+   domicile survive inheritance?). It decides whether the item above is a
+   small fix or the v0.1 blocker, and everything else about succession
+   waits on it.
+2. **Read the S5 result** from the same boot and close out whatever it
+   found. S5 is built, tiger-clean, and was in a boot; it is not verified
+   until those lines are read.
+3. **S4(3)** -- the "your student has been called to X" event to the
+   community that lost the rabbi -- was reachable in this run's Group 2 and
+   nobody looked. Cheapest remaining S4 item.
+4. **S6 (community goals)** is the next unbuilt BUILD item after S5.
+5. **V16 section 8** is still nine separate live tests, not a mop-up. Pick
+   individual numbered items; note that its item 8.8 overlaps S12, which is
+   DANIEL-REVIEW.
+
+## Heartbeat run status -- 2026-09-27_000002 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+5f3d0d4 BLOCKERS: Sukkot heartbeat 8 -- one decision needed, with the evidence
+fe8dfb9 S4 verified live, S1 half-verified, and S3(a) is finally ANSWERED
+a7dee5a ROADMAP: S5 built, with its harness and the boundary it tests
+bc4c68d V20 and S4(2) both VERIFIED LIVE, and .115's own usage note was wrong
+094edf6 S5: responsa -- questions arrive, rulings travel, ten make a book
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-27_000002.log
+
+## Heartbeat run status -- 2026-09-27_050002 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+56dc4d5 Heartbeat run-status note (2026-09-27_000002)
+5f3d0d4 BLOCKERS: Sukkot heartbeat 8 -- one decision needed, with the evidence
+fe8dfb9 S4 verified live, S1 half-verified, and S3(a) is finally ANSWERED
+a7dee5a ROADMAP: S5 built, with its harness and the boundary it tests
+bc4c68d V20 and S4(2) both VERIFIED LIVE, and .115's own usage note was wrong
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-27_050002.log
+
+## Heartbeat run status -- 2026-09-27_100002 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+d988371 Heartbeat run-status note (2026-09-27_050002)
+56dc4d5 Heartbeat run-status note (2026-09-27_000002)
+5f3d0d4 BLOCKERS: Sukkot heartbeat 8 -- one decision needed, with the evidence
+fe8dfb9 S4 verified live, S1 half-verified, and S3(a) is finally ANSWERED
+a7dee5a ROADMAP: S5 built, with its harness and the boundary it tests
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-27_100002.log
+
+## Heartbeat run status -- 2026-09-27_150002 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+2750629 Heartbeat run-status note (2026-09-27_100002)
+d988371 Heartbeat run-status note (2026-09-27_050002)
+56dc4d5 Heartbeat run-status note (2026-09-27_000002)
+5f3d0d4 BLOCKERS: Sukkot heartbeat 8 -- one decision needed, with the evidence
+fe8dfb9 S4 verified live, S1 half-verified, and S3(a) is finally ANSWERED
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-27_150002.log
+
+## Heartbeat run status -- 2026-09-27_200002 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+9f8feb3 Heartbeat run-status note (2026-09-27_150002)
+2750629 Heartbeat run-status note (2026-09-27_100002)
+d988371 Heartbeat run-status note (2026-09-27_050002)
+56dc4d5 Heartbeat run-status note (2026-09-27_000002)
+5f3d0d4 BLOCKERS: Sukkot heartbeat 8 -- one decision needed, with the evidence
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-27_200002.log
+
+## Heartbeat run status -- 2026-09-28_010003 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+cdd87c9 S4b, S4c, S4d and S5 all verified live; ROADMAP and test log updated
+1866431 Every book came out masterwork, and compiling one cost 250,000 error lines
+3a57149 Responsa: open the gate at 8 so the POOR tier can actually happen
+75f55ee Harness for the three untested S4b/c/d claims, and fix debug.60
+6e7014c Raise Bet Din frequency: shorter cooldown, wider bench
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-28_010003.log
+
+## Heartbeat run status -- 2026-09-28_060002 (autonomous/sukkot-2026)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+5a3d26d ROADMAP: S6 built, with the one limitation a source read found
+aadf648 S6: one ambition at a time, and ten years to reach it
+70a0990 Heartbeat run-status note (2026-09-28_010003)
+cdd87c9 S4b, S4c, S4d and S5 all verified live; ROADMAP and test log updated
+1866431 Every book came out masterwork, and compiling one cost 250,000 error lines
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-28_060002.log

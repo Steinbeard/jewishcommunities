@@ -172,6 +172,23 @@ activity_kehillah_bet_din_conference = {
 			text = kehillah_requires_regional_panel_tt
 			kehillah_region_can_field_bet_din_panel_trigger = yes
 		}
+
+		# ADDED 2026-09-27 (S4b), at user request: "chief rabbis should be
+		# the ones who preside over bet din conferences." A community with
+		# no rabbi at all has nobody qualified to sit as Av Beit Din, so it
+		# cannot convene a court -- it can still send its leader to
+		# somebody else's, which is how a leader without semicha gets it
+		# (kehillah_bet_din_grant_rabbi_trait_effect).
+		#
+		# Either route to a rabbi satisfies this, via the shared resolver
+		# rather than the court position directly -- appointed holder OR a
+		# leader who has taken up the office himself. Which of the two it
+		# is decides who actually sits on the bench once the docket opens;
+		# see kehillah_bet_din_save_presiding_effect.
+		custom_tooltip = {
+			text = kehillah_requires_chief_rabbi_to_preside_tt
+			kehillah_has_acting_chief_rabbi_trigger = yes
+		}
 	}
 
 	is_valid = {
@@ -287,7 +304,25 @@ activity_kehillah_bet_din_conference = {
 	# file's guest_invite_rules already cite for staying bounded to
 	# every_independent_ruler/every_courtier rather than every character
 	# in the world.
-	max_guests = 6
+	# RAISED 6 -> 8, 2026-09-27 (S4d). This replaces the fourth frequency
+	# lever originally proposed, which was to halve the session length --
+	# that proposal rested on misreading kehillah_bet_din_case_phase_days
+	# (30) as the pace of a case when it is only a hang guard; a real docket
+	# runs about three weeks, so there was nothing there to win. See that
+	# value's own comment, now corrected.
+	#
+	# What actually limits how often a Bet Din HAPPENS, as against how often
+	# one is attempted, is turnout: kehillah_bet_din_open_docket_effect
+	# invalidates the whole session outright if fewer than two eligible
+	# people show up, so every invitation that could not be accepted for
+	# want of a slot is a quorum failure waiting to happen. With the invite
+	# pool widened in the same pass (own household at the local dayan bar,
+	# outside scholars at 12 instead of 16), 6 slots became the binding
+	# constraint on that wider pool. 8 keeps the list bounded -- a Beit Din
+	# is a docket of named judges plus a few onlookers, per the note below,
+	# not an open assembly -- while leaving room for the people now being
+	# asked.
+	max_guests = 8
 
 	###################
 	# GRAPHICS
@@ -497,7 +532,7 @@ activity_kehillah_bet_din_conference = {
 	}
 
 	# The docket closes here, not in an event chain. kehillah_bet_din.
-	# 0099 reads global_var:kehillah_bet_din_session_score -- the sum of
+	# 0099 reads involved_activity.var:kehillah_bet_din_session_score -- the sum of
 	# the three cases' verdict tiers -- and applies the session's own
 	# reward on top of the per-case effects, then clears the session
 	# scratch state. Guarded to the host: on_complete, like

@@ -825,7 +825,20 @@ kehillah_courtier_defection_chance_value = 8
 # multiplier is the "light" version of interest the task asks for.
 # ---------------------------------------------------------------------
 
-kehillah_loan_principal_value = 150
+# ROADMAP S8b (2026-09-29): a royal request (kehillah_norman_conquest.0020)
+# marks the LENDER with kehillah_loan_royal_request for a short window;
+# while it is set the principal -- and with it every affordability check,
+# payout and owed sum -- scales by kehillah_loan_royal_principal_multiplier
+# (kehillah_royal_finance_values.txt). Read on ROOT deliberately: the owed
+# sum is evaluated inside the borrower's scope, where the lender's flag is
+# otherwise invisible, and root is the lender on every path that uses it.
+kehillah_loan_principal_value = {
+	value = 150
+	if = {
+		limit = { root = { has_variable = kehillah_loan_royal_request } }
+		multiply = kehillah_loan_royal_principal_multiplier
+	}
+}
 kehillah_loan_repayment_multiplier = 1.3
 kehillah_loan_term_years = 6
 
@@ -887,17 +900,61 @@ kehillah_takkanah_widows_greatness_gain = 35
 # same reason: one community bears the effect, not three.
 # =====================================================================
 
-kehillah_bet_din_conference_cooldown_years = 3
+# LOWERED 3 -> 2, 2026-09-27 (S4d), as the first of four frequency levers
+# Daniel approved. This is the HARD CEILING on the whole feature: no
+# community can convene more often than this no matter what else changes,
+# so nothing else in this pass matters until it moves. 2 rather than 1
+# because a session costs the host real time even now (the docket itself is
+# only about three weeks -- see kehillah_bet_din_case_phase_days below for
+# why it is not the 90 days it looks like -- but the guest-arrival window
+# ahead of it is up to three months), and a leader who is at a Beit Din
+# more often than he is not stops reading as a community leader who
+# sometimes holds court. If it still feels rare after a live pass this is
+# one number.
+kehillah_bet_din_conference_cooldown_years = 2
 
 # ADDED 2026-09-09, guest widening: how high Learning has to be for
 # kehillah_bet_din_invite_rule_jewish_scholars (common/activities/
 # guest_invite_rules/kehillah_bet_din_invite_rules.txt) to consider an
 # independent Jewish ruler a "particularly high learning individual"
-# worth inviting. 16 deliberately reads as rare -- case 3's own
-# theologian-alternate threshold above tops out at 12 for "a genuinely
-# learned judge"; this is meant to be a level above that, a renowned
-# scholar rather than merely a capable one.
-kehillah_bet_din_scholar_guest_learning_threshold = 16
+# worth inviting.
+#
+# LOWERED 16 -> 12, 2026-09-27 (S4d), lever 2 of four. 16 was set to read
+# as "a renowned scholar rather than merely a capable one", a level above
+# case 3's own 12 for "a genuinely learned judge". The trouble is that this
+# same number is ALSO the eligibility bar in kehillah_bet_din_eligible_
+# judge_trigger's population 2, so a prestige threshold was doing duty as
+# a quorum threshold -- and at 16 the only population that could reliably
+# fill a bench was same-minhag-region community leaders. With 16
+# communities across 13 tagged minhag regions, that left the Rhineland and
+# Provence clusters fine and Baghdad (no same-region peer at all) and
+# Toledo unable to convene except by a wandering adventurer's luck.
+#
+# 12 now means the same thing everywhere in this feature: the bar the cases
+# themselves treat as a genuinely learned judge.
+kehillah_bet_din_scholar_guest_learning_threshold = 12
+
+# ADDED 2026-09-27 (S4d), lever 3 of four: the bar for the host's OWN
+# household to sit as dayanim, as against an outside scholar's bar above.
+#
+# WHY A SECOND, LOWER NUMBER. A Beit Din of three was normally three local
+# men -- the rabbi and two of the community's own -- not an international
+# congress. This mod had it the other way round: every seat but the host's
+# had to be filled from outside, or by a courtier clearing a bar set for
+# renowned scholars, so a routine communal court was structured as a
+# diplomatic summit and simply could not sit in a small community.
+#
+# 8 is "a man of some learning" rather than a scholar: enough that seating
+# him is not a joke, low enough that an established community's officers
+# and its rabbi's students qualify. Holding kehillah_rabbi_trait qualifies
+# on its own regardless of Learning -- semicha is exactly the thing that
+# makes somebody fit to sit, and after S4c it is permanent, so a community
+# accumulates eligible dayanim over a career instead of losing them.
+#
+# The bench polices itself: an unlearned dayan fails his own skill check
+# and drags the case tally down (events/kehillah_bet_din_events.txt), so
+# seating a weak panel costs the verdict rather than being free.
+kehillah_bet_din_local_dayan_learning_threshold = 8
 
 # ADDED 2026-09-15, REWRITTEN 2026-09-17 (see kehillah_bet_din_judge_
 # score_value below and kehillah_bet_din_eligible_judge_trigger, common/
@@ -1105,6 +1162,18 @@ kehillah_bet_din_case6_stability_gain_good = 15
 kehillah_bet_din_case6_prosperity_gain_good = 10
 kehillah_bet_din_case6_stability_loss_poor = 20
 
+# Case 7 -- A Captive's Ransom. Resolution quality affects communal
+# trust; the chosen funding policy has its own cost regardless of tier.
+# The public levy is deliberately costlier than voluntary pledges.
+kehillah_bet_din_case7_stability_gain_great = 30
+kehillah_bet_din_case7_greatness_gain_great = 15
+kehillah_bet_din_case7_stability_gain_good = 12
+kehillah_bet_din_case7_stability_loss_poor = 20
+kehillah_bet_din_case7_public_levy_cost = 18
+kehillah_bet_din_case7_public_levy_piety = 20
+kehillah_bet_din_case7_private_collection_cost = 6
+kehillah_bet_din_case7_private_collection_prestige = 10
+
 # The "beat him up" direction's opinion collapse lives as a literal -70
 # directly in common/opinion_modifiers/kehillah_opinion_modifiers.txt's
 # kehillah_bet_din_beaten_husband_opinion instead of a script value here
@@ -1146,10 +1215,15 @@ kehillah_bet_din_docket_case_count = 3
 # kehillah_bet_din_case_phase_days below.
 kehillah_bet_din_case_step_days = 3
 
-# Hang guard, not the intended pace. A case's own resolution event
-# advances the phase as soon as the verdict lands (kehillah_bet_din_
-# advance_docket_effect), so in normal play a phase lasts about
-# 2 * kehillah_bet_din_case_step_days + 1 days. This ceiling only
+# Hang guard, not the intended pace -- SO DO NOT READ THIS AS THE SESSION
+# LENGTH. (Misread exactly that way in a 2026-09-27 frequency review, which
+# concluded a session occupied the host 3 * 30 = 90 days and proposed
+# halving this to speed it up. It does not: a real docket is about three
+# weeks.) A case's own resolution event advances the phase as soon as the
+# verdict lands (kehillah_bet_din_advance_docket_effect), so in normal play
+# a phase lasts about 2 * kehillah_bet_din_case_step_days + 1 days. The
+# host's real waiting is the guest-arrival window before the docket opens,
+# not this. This ceiling only
 # matters if a player leaves a case's popup unanswered for a long time:
 # the phase progresses anyway rather than the activity sitting open
 # forever, which is exactly the failure this whole fix is about. Keep it
@@ -1161,11 +1235,11 @@ kehillah_bet_din_case_phase_days = 30
 # SESSION SCORE.
 #
 # Two separate scores exist and they are not the same thing:
-#   global_var:kehillah_bet_din_tally         -- per CASE, reset at the
+#   involved_activity.var:kehillah_bet_din_tally         -- per CASE, reset at the
 #     start of each case, sums the three judges' skill checks for that
 #     one case, read by that case's own resolution event to pick a
 #     great/good/poor verdict tier. Unchanged by this fix.
-#   global_var:kehillah_bet_din_session_score -- per SESSION, reset when
+#   involved_activity.var:kehillah_bet_din_session_score -- per SESSION, reset when
 #     the docket opens, and each case's resolution adds the value of the
 #     tier it landed in (below). Read once, by kehillah_bet_din.0099 at
 #     the close, for the session's overall reward.
@@ -1179,6 +1253,11 @@ kehillah_bet_din_case_phase_days = 30
 kehillah_bet_din_case_score_great = 2
 kehillah_bet_din_case_score_good = 1
 kehillah_bet_din_case_score_poor = -1
+
+# A good ruling teaches the three actual judges a little. A newly mastered
+# work gives 15 Rabbi XP; a three-case landmark docket can give at most 9.
+kehillah_bet_din_case_rabbi_xp_great = 3
+kehillah_bet_din_case_rabbi_xp_good = 1
 
 # Session tiers against that -3..+6 range. A session is only a landmark
 # if most of it was outstanding (e.g. two great rulings and a good one,
@@ -1212,6 +1291,12 @@ kehillah_bet_din_session_greatness_gain_adequate = 10
 kehillah_bet_din_session_stability_gain_adequate = 5
 kehillah_bet_din_session_greatness_loss_failed = 20
 kehillah_bet_din_session_stability_loss_failed = 25
+
+# One reward per invited attendee when a docket finishes positively. Judges
+# also receive this; the convening leader already has the tiered payout.
+kehillah_bet_din_attendee_prestige_gain = 10
+kehillah_bet_din_attendee_piety_gain = 10
+kehillah_bet_din_attendee_learning_xp = 15
 
 
 # =====================================================================
@@ -1821,3 +1906,526 @@ kehillah_learn_torah_xp_repeat_fail = 2
 # alias, matching this file's own "genuinely new numbers only" rule
 # already established for Task Contracts and reaffirmed for Bet Din
 # case 6's restitution. No script value needed here for that reason.
+
+# ---------------------------------------------------------------------
+# S1 DEPARTURE: the legacy fragment of Greatness.
+#
+# What a leader carries away when they step down (or when the community
+# collapses under them) is reputation, not the institution. Scaled from
+# the community's Greatness as banked by kehillah_departure_prepare_
+# effect (common/scripted_effects/kehillah_departure_effects.txt) onto
+# the departing character, since a dissolved community's title variables
+# are gone by the time the award is paid.
+#
+# Divisor 5 puts the award on a legible scale against this file's own
+# band thresholds: a Crisis-Greatness community (under 150) leaves under
+# 30 prestige, a Healthy one (400) leaves 80, a Legendary one (950+)
+# leaves 190+. Deliberately a plain prestige award and not a modifier --
+# the smallest thing that makes the years count, with no new modifier
+# definition, art or loc key to maintain. One number, tunable here.
+# ---------------------------------------------------------------------
+kehillah_departure_legacy_prestige_value = {
+	value = var:kehillah_departure_greatness_banked
+	divide = 5
+	min = 0
+}
+
+# ---------------------------------------------------------------------
+# S1 DISSOLUTION: the Stability floor and its countdown.
+#
+# Read by kehillah_dissolution_watch_effect (common/scripted_effects/
+# kehillah_departure_effects.txt) once per quarter.
+#
+# The FLOOR is deliberately well below the bottom of the Crisis band
+# (Crisis is 0-149, see kehillah_band_strained_threshold above), not at
+# its top: Crisis is a bad state a community should be able to live in
+# and climb out of -- it already costs courtier defections and gates
+# buildings -- whereas the floor is the point of no return. Putting them
+# at the same number would make every Crisis community a dissolving one.
+#
+# FOUR QUARTERS is a full in-game year below the floor before the
+# community ends, and the counter resets the moment Stability rises back
+# above it. Together with the warning event one band up, that is the
+# "collapse is never a surprise" requirement in ROADMAP item S1: a
+# player has a year of visible countdown plus prior notice.
+# ---------------------------------------------------------------------
+kehillah_dissolution_floor_threshold = 25
+kehillah_dissolution_quarters_required = 4
+kehillah_dissolution_warning_cooldown_years = 5
+
+
+# ---------------------------------------------------------------------
+# S2 part 3: how many points to the next band up.
+#
+# Feeds the "next band" line added to each pillar's breakdown tooltip
+# (KehillahBdNextBand*, common/customizable_localization/
+# kehillah_breakdown_custom_loc.txt).
+#
+# SCOPE IS THE COMMUNITY TITLE, not its leader. CORRECTED 2026-09-26
+# after a live hover produced two symptoms with one cause: the line
+# rendered "0 more to Strained" for a healthy community, and every frame
+# the tooltip was open threw "Failed to fetch variable for
+# 'kehillah_var_prosperity' due to not being set" -- roughly 2,000 lines
+# a second, 379,000 error.log lines and ~3GB of extra memory across three
+# hovers.
+#
+# These values were originally written for character scope (reached as
+# [Title.GetHolder.MakeScope.ScriptValue(...)]) and then hopped back to
+# the title with `primary_title = { var:... }`. That round trip is both
+# fragile and unnecessary: the pillar variables live on the TITLE (see
+# the implementation doc section 10, "Pillar variables moved to the
+# title"), and the tooltip already has the title in hand -- the very same
+# string calls [Title.Custom('KehillahProsperityScore')], which is
+# type = landed_title, reads the variable directly, and has always
+# rendered correctly in this widget. So these now take title scope and
+# read it directly, matching that working sibling instead of routing
+# around it.
+#
+# Every branch is guarded with has_variable. The unguarded `var:` read
+# was what produced the storm, and it is the same idiom this repo has
+# already had to fix in bulk once (v5 section 9's 16 sites).
+#
+# Reads the same kehillah_band_*_threshold constants as the bands
+# themselves, so a retune of the thresholds moves the tooltip with them
+# and the two cannot disagree.
+#
+# At Legendary no branch adds anything, so the result goes negative and
+# the min clamps it to 0 -- harmless, because the Legendary line of the
+# custom loc does not print a number at all.
+# ---------------------------------------------------------------------
+kehillah_next_band_gap_prosperity_value = {
+	value = 0
+	if = {
+		limit = { has_variable = kehillah_var_prosperity
+			var:kehillah_var_prosperity < kehillah_band_strained_threshold }
+		add = kehillah_band_strained_threshold
+	}
+	else_if = {
+		limit = { has_variable = kehillah_var_prosperity
+			var:kehillah_var_prosperity < kehillah_band_healthy_threshold }
+		add = kehillah_band_healthy_threshold
+	}
+	else_if = {
+		limit = { has_variable = kehillah_var_prosperity
+			var:kehillah_var_prosperity < kehillah_band_flourishing_threshold }
+		add = kehillah_band_flourishing_threshold
+	}
+	else_if = {
+		limit = { has_variable = kehillah_var_prosperity
+			var:kehillah_var_prosperity < kehillah_band_legendary_threshold }
+		add = kehillah_band_legendary_threshold
+	}
+	if = {
+		limit = { has_variable = kehillah_var_prosperity }
+		subtract = var:kehillah_var_prosperity
+	}
+	min = 0
+}
+
+kehillah_next_band_gap_stability_value = {
+	value = 0
+	if = {
+		limit = { has_variable = kehillah_var_stability
+			var:kehillah_var_stability < kehillah_band_strained_threshold }
+		add = kehillah_band_strained_threshold
+	}
+	else_if = {
+		limit = { has_variable = kehillah_var_stability
+			var:kehillah_var_stability < kehillah_band_healthy_threshold }
+		add = kehillah_band_healthy_threshold
+	}
+	else_if = {
+		limit = { has_variable = kehillah_var_stability
+			var:kehillah_var_stability < kehillah_band_flourishing_threshold }
+		add = kehillah_band_flourishing_threshold
+	}
+	else_if = {
+		limit = { has_variable = kehillah_var_stability
+			var:kehillah_var_stability < kehillah_band_legendary_threshold }
+		add = kehillah_band_legendary_threshold
+	}
+	if = {
+		limit = { has_variable = kehillah_var_stability }
+		subtract = var:kehillah_var_stability
+	}
+	min = 0
+}
+
+kehillah_next_band_gap_greatness_value = {
+	value = 0
+	if = {
+		limit = { has_variable = kehillah_var_greatness
+			var:kehillah_var_greatness < kehillah_band_strained_threshold }
+		add = kehillah_band_strained_threshold
+	}
+	else_if = {
+		limit = { has_variable = kehillah_var_greatness
+			var:kehillah_var_greatness < kehillah_band_healthy_threshold }
+		add = kehillah_band_healthy_threshold
+	}
+	else_if = {
+		limit = { has_variable = kehillah_var_greatness
+			var:kehillah_var_greatness < kehillah_band_flourishing_threshold }
+		add = kehillah_band_flourishing_threshold
+	}
+	else_if = {
+		limit = { has_variable = kehillah_var_greatness
+			var:kehillah_var_greatness < kehillah_band_legendary_threshold }
+		add = kehillah_band_legendary_threshold
+	}
+	if = {
+		limit = { has_variable = kehillah_var_greatness }
+		subtract = var:kehillah_var_greatness
+	}
+	min = 0
+}
+
+
+# =====================================================================
+# SUCCESSION ENDORSEMENT -- ROADMAP S3(d), added 2026-09-26 (Sukkot
+# heartbeat 3). Read by kehillah_endorse_successor_interaction
+# (common/character_interactions/) and by the endorsement term in
+# common/succession_appointment/kehillah_leadership.txt.
+# =====================================================================
+
+# HOW BIG 30 IS, against the real scale of kehillah_leadership.txt's own
+# candidate_score terms: Learning contributes learning*3 (so ~0-60),
+# Stewardship stewardship*2 (~0-40), holding a community office a flat
+# 25, and the whole realistic total runs 200-250. 30 is therefore
+# deliberately just above the officer bonus and worth about 10 points of
+# Learning: an endorsement decides a close race and is visible in the
+# breakdown, but it cannot install an unqualified favourite over a
+# markedly better candidate. That ceiling is the design -- the office is
+# meritocratic, and the leader recommends rather than appoints. If this
+# ever needs to be a true appointment, that is a different feature (and a
+# law), not a bigger number here.
+kehillah_endorsement_score_value = {
+	value = 30
+}
+
+# Naming a successor publicly spends the leader's own standing. Sized
+# against a landless ruler's income of prestige rather than a king's:
+# affordable once a reign without planning for it, noticeable if the
+# leader keeps changing their mind.
+kehillah_endorsement_prestige_cost_value = {
+	value = 100
+}
+
+# What the endorsee gains from being named. Small -- the real reward is
+# the succession score above, not this.
+kehillah_endorsement_recipient_prestige_value = {
+	value = 50
+}
+
+
+# =====================================================================
+# SERVING AS THE COMMUNITY'S OWN RABBI -- ROADMAP S4(2), added
+# 2026-09-26 (Sukkot heartbeat 3). See kehillah_has_acting_chief_rabbi_
+# trigger's header (common/scripted_triggers/kehillah_scripted_triggers.txt)
+# for the whole design.
+# =====================================================================
+
+# The Learning a leader needs to take up the office themselves. 12 is a
+# real, high value on vanilla's own scale (vanilla's own history files
+# reserve learning = 12 for genuinely notable scholars, e.g.
+# history/characters/andalusian.txt:6546), and it is deliberately set so
+# that the scenario's actual rabbinic leaders clear it and an ordinary
+# competent administrator does not. Rashi of Troyes is given an explicit
+# learning = 12 in history/characters/troyes_1066.txt for exactly this
+# reason -- leaving the flagship Scholar character's defining stat to the
+# RNG would have made his own documented starting state a coin flip.
+kehillah_serve_as_rabbi_learning_threshold = {
+	value = 12
+}
+
+# The Chief Rabbi's contribution to Greatness, resolved through whoever
+# is ACTUALLY acting in the role. This is the shared value ROADMAP S4(2)
+# asks for: kehillah_bd_chief_rabbi_value (common/script_values/
+# kehillah_breakdown_values.txt) now just calls this, so there is exactly
+# one place that knows the appointed-rabbi-or-serving-leader rule.
+#
+# Scope: the Kehillah leader.
+kehillah_acting_chief_rabbi_learning_value = {
+	value = 0
+
+	# The appointed rabbi always wins where both could apply -- see the
+	# trigger header. This ordering is what guarantees a community never
+	# counts two rabbis.
+	if = {
+		limit = { employs_court_position = chief_rabbi_kehillah_position }
+		court_position:chief_rabbi_kehillah_position = {
+			add = {
+				value = learning
+				multiply = kehillah_baseline_officer_stat_weight
+			}
+		}
+	}
+	else_if = {
+		limit = { kehillah_serving_as_own_rabbi_trigger = yes }
+		add = {
+			value = learning
+			multiply = kehillah_baseline_officer_stat_weight
+		}
+	}
+}
+
+
+# =====================================================================
+# THE CHIEF RABBI SEARCH -- ROADMAP S4(1), added 2026-09-26. Read by
+# kehillah_rabbi_search_price_effect (common/scripted_effects/
+# kehillah_scripted_effects.txt).
+#
+# WORKED EXAMPLES against a community's real means (the Worms start holds
+# 90 gold, Troyes 90, Paris 60):
+#   a Learning-8 local scholar, no Greatness gap ..... 20 + 32 =  52
+#   a Learning-15 rabbi, no gap ..................... 20 + 60 =  80
+#   a Learning-15 rabbi from a community 400 points
+#     of Greatness above yours ................ 20 + 60 + 20 = 100
+# So the low tier is affordable at once, the high tier is a real saving
+# decision, and poaching upward from a great community is the priciest
+# thing on the list -- which is the intended reading.
+# =====================================================================
+
+kehillah_rabbi_hire_base_cost = {
+	value = 20
+}
+
+kehillah_rabbi_hire_cost_per_learning = {
+	value = 4
+}
+
+# Deliberately small per point: pillar values run 0-1000, so 0.05 turns a
+# 400-point Greatness gap into 20 gold rather than a prohibitive figure.
+kehillah_rabbi_hire_cost_per_greatness_gap = {
+	value = 0.05
+}
+
+
+# Tier boundaries for the Chief Rabbi search (S4(1)). Chosen against
+# vanilla's own named skill ratings so the tiers read the same way a
+# player already reads a physician's: 14 is between vanilla's
+# decent_skill_rating (12) and high_skill_rating (15), 10 is its
+# medium_skill_rating. A candidate below 10 is the "young and promising"
+# tier.
+kehillah_rabbi_tier_eminent_learning = {
+	value = 14
+}
+
+kehillah_rabbi_tier_capable_learning = {
+	value = 10
+}
+
+# One-off recognition for filling the seat at all. Deliberately small
+# next to the ~0-45 per-quarter contribution the seat itself feeds into
+# Greatness through kehillah_acting_chief_rabbi_learning_value -- the
+# rabbi's value is their work over years, not the day they arrived.
+kehillah_rabbi_hired_greatness_gain = {
+	value = 10
+}
+
+# S4(3). The OTHER side of a hire: the community that raised a rabbi
+# good enough to be called away. Smaller than the hiring community's
+# gain on purpose -- being chosen from is worth less than choosing
+# well, and if the two were equal a pair of AI communities could pump
+# each other's Greatness indefinitely by passing one rabbi back and
+# forth. Their real loss needs no number here: the seat is empty the
+# moment he goes, so its per-quarter contribution through
+# kehillah_acting_chief_rabbi_learning_value simply stops.
+kehillah_rabbi_departed_greatness_gain = {
+	value = 6
+}
+
+
+# DISPLAY WRAPPERS for the three banked Chief Rabbi prices (S4(1)).
+#
+# WHY THESE EXIST. The price formula lives in exactly one place
+# (kehillah_rabbi_search_price_effect) and banks its answer as a saved
+# scope value per tier, so the number charged and the number shown are
+# provably identical. But localization reaches a number through
+# ScriptValue('<name>'), which resolves a DEFINED script value -- a saved
+# scope value is not one. These three one-line wrappers bridge that gap
+# without duplicating the formula: each simply reads the banked value for
+# its tier.
+#
+# Guarded with exists because the event only banks a tier's price when
+# that tier actually produced a candidate, and the option that displays it
+# is hidden in that case -- but loc can still be evaluated defensively by
+# the tooltip system, and reading an unset scope throws.
+kehillah_rabbi_price_eminent_display = {
+	value = 0
+	if = {
+		limit = { exists = scope:kehillah_rabbi_price_eminent }
+		add = scope:kehillah_rabbi_price_eminent
+	}
+}
+
+kehillah_rabbi_price_capable_display = {
+	value = 0
+	if = {
+		limit = { exists = scope:kehillah_rabbi_price_capable }
+		add = scope:kehillah_rabbi_price_capable
+	}
+}
+
+kehillah_rabbi_price_young_display = {
+	value = 0
+	if = {
+		limit = { exists = scope:kehillah_rabbi_price_young }
+		add = scope:kehillah_rabbi_price_young
+	}
+}
+
+
+# =====================================================================
+# RESPONSA (ROADMAP S5). She'elot u-teshuvot: another community's leader
+# writes with a question, and the answer travels further than the
+# answerer does.
+#
+# ADDED 2026-09-27. Events in events/kehillah_responsa_events.txt, pulse
+# in common/on_action/kehillah_on_actions.txt
+# (kehillah_responsa_pulse), compile decision in
+# common/decisions/kehillah_responsa_decisions.txt.
+#
+# WHY GREATNESS AND NOT STABILITY for the answerer: answering responsa
+# is exactly what Greatness measures in this mod -- learning, piety,
+# scholarship, reputation beyond your own walls (see ROADMAP's pillar
+# definitions). The ASKING community gets a Stability effect instead,
+# because what a ruling does for them is settle a quarrel.
+#
+# Magnitudes are deliberately small next to the Bet Din's (whose
+# stability_gain_great is 40): a conference is a once-every-three-years
+# set piece that three communities travel to, a letter is a letter. They
+# are set in the same range as the dispute-ruling family so that a
+# scholar's decade of correspondence adds up to something comparable to
+# a decade of good governance at home, without either eclipsing the
+# other.
+# =====================================================================
+
+# The gate on both the pulse and the decision.
+#
+# LOWERED 12 -> 8, 2026-09-28. At 12 this number was exactly
+# kehillah_responsa_learning_good below, which made the POOR tier
+# unreachable: the gate admitted nobody who could then fall below the good
+# cut, so kehillah_responsa.0001's three `.poor` tooltips and
+# kehillah_responsa_greatness_loss_poor were dead script. That tier is the
+# only thing at stake in the whole feature -- a ruling can cost you
+# standing -- so a gate that removed it removed the risk from the loop.
+#
+# 8 is not a new bar invented for this: it is
+# kehillah_bet_din_local_dayan_learning_threshold, which S4d set as the
+# point at which this mod treats someone as a real judge rather than a
+# renowned one. The two questions ("may he sit as a dayan", "may he be
+# written to") deserve the same answer, and having them share a number is
+# why 8 rather than 10.
+#
+# This also follows S4b's own shift of emphasis, at Daniel's instruction:
+# responsa are gated on SEMICHA now (kehillah_responsa_answerer_is_rabbi_
+# trigger), so Learning has stopped being the thing that decides whether a
+# letter arrives and has become the thing that decides how well it is
+# answered. A rabbi of modest learning receiving a hard question and ruling
+# badly on it is the feature working, not a hole in it.
+#
+# Rashi still clears it on day one (his history pins learning = 12 for
+# S4(2)'s own threshold, which is unchanged at 12).
+kehillah_responsa_learning_threshold = 8
+
+# Tier cuts for the answer's quality, on the ANSWERER's Learning (see
+# kehillah_responsa_answerer_learning_value). Above the great cut the
+# ruling is remembered; between the two it is respected; below, it is
+# second-guessed -- and the poor tier is the only one that can lose
+# Greatness, because a bad ruling circulated under your name is worse
+# for your standing than never having been asked.
+kehillah_responsa_learning_great = 16
+kehillah_responsa_learning_good = 12
+
+kehillah_responsa_greatness_gain_great = 14
+kehillah_responsa_greatness_gain_good = 7
+kehillah_responsa_greatness_loss_poor = 5
+
+# The asking community's Stability. A ruling they can act on settles
+# something; a ruling that misreads their situation makes it worse.
+kehillah_responsa_asker_stability_gain_great = 12
+kehillah_responsa_asker_stability_gain_good = 6
+kehillah_responsa_asker_stability_loss_poor = 6
+
+# Deferring to a greater authority (option 3). Flat, NOT Learning-tiered
+# -- see the event file's header for why a deferral is not a skill test.
+# It costs a little standing (you were asked and did not answer) and
+# still helps the asker a little (they will get an answer, from someone
+# greater than you).
+kehillah_responsa_defer_greatness_loss = 3
+kehillah_responsa_asker_stability_gain_defer = 3
+
+# Opinion the asker holds of the answerer afterwards.
+kehillah_responsa_opinion_great = 25
+kehillah_responsa_opinion_good = 12
+kehillah_responsa_opinion_poor = -10
+kehillah_responsa_opinion_defer = -5
+
+# How many answered responsa before they can be compiled into a book.
+# Only options 1 and 2 count -- a deferral is not a responsum of yours,
+# which is what keeps the counter an honest measure of rulings given.
+kehillah_responsa_compile_threshold = 10
+
+# What the compiled collection is worth, fed into the existing book
+# system as its tally (see the compile decision's own header). Pitched so
+# a collection of exactly ten lands in the book system's middle tier and
+# a long career of correspondence can reach its top one, rather than
+# handing out an illustrious artifact for clearing the minimum.
+kehillah_responsa_compile_tally_per_answer = 4
+
+# RAW Learning of whoever actually answers: the appointed Chief Rabbi if
+# there is one, the leader serving as their own rabbi, or failing both,
+# the leader themselves. This is the fifth consumer of S4's acting-rabbi
+# abstraction and follows its rule exactly -- THE APPOINTED RABBI ALWAYS
+# WINS (see kehillah_has_acting_chief_rabbi_trigger's header).
+#
+# Deliberately NOT kehillah_acting_chief_rabbi_learning_value, which
+# multiplies by kehillah_baseline_officer_stat_weight because it feeds a
+# pillar baseline. This one is compared against a Learning threshold, so
+# it must stay in Learning's own units.
+#
+# Scope: the Kehillah leader.
+kehillah_responsa_answerer_learning_value = {
+	value = 0
+
+	if = {
+		limit = { employs_court_position = chief_rabbi_kehillah_position }
+		court_position:chief_rabbi_kehillah_position = {
+			add = learning
+		}
+	}
+	else = {
+		# Covers both the leader-serving-as-own-rabbi case and the plain
+		# no-rabbi case: either way the person answering is the leader,
+		# and it is their own Learning that is tested.
+		add = learning
+	}
+}
+
+
+# =====================================================================
+# COMMUNITY GOALS (ROADMAP S6, added 2026-09-28). One ambition at a time,
+# a decade to reach it. See common/scripted_triggers/
+# kehillah_goal_triggers.txt for the design account.
+# =====================================================================
+
+# The decade. Read by kehillah_set_community_goal_effect as the timeout on
+# kehillah_var_goal_timer, so the deadline is enforced by the engine
+# removing the variable rather than by this mod storing and comparing a
+# date. Ten years is one leader's working life under this government, not
+# one reign: a goal is meant to be inheritable, and a successor picking up
+# a half-run decade is the point rather than an edge case.
+kehillah_goal_deadline_years = 10
+
+# What completing a goal pays into its designated pillar. Pitched against
+# the band gaps the player already reads in the pillar tooltips: 40 is
+# roughly a quarter of the distance between two adjacent bands at the
+# lower end of the scale, so a goal is a real push and not a band skip.
+kehillah_goal_reward_pillar = 40
+
+# What letting the decade run out costs. Deliberately smaller than the
+# reward -- S6 asks for "a small Stability loss", and a failure that hurt
+# as much as a success helped would make setting a goal a gamble rather
+# than a direction.
+kehillah_goal_failure_stability_loss = 25

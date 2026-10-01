@@ -93,9 +93,24 @@ kehillah_norman_conquest_evaluate_effect = {
 			limit = { dynasty = dynasty:752 }
 			debug_log = "kehillah_norman_conquest_evaluate_effect: William branch"
 			set_global_variable = { name = kehillah_norman_new_leader_dynasty_choice value = 1 }
-			random_list = {
-				80 = { kehillah_norman_conquest_execute_effect = yes }
-				20 = { debug_log = "kehillah_norman_conquest_evaluate_effect: declined, William branch" }
+			# 2026-10-01 (user decision): William bringing the Jews of Rouen
+			# to London is the historical event and the point of the Rouen
+			# Financier start, so an eligible player (a Jewish landless
+			# adventurer, kehillah_norman_london_invitation_eligible_trigger)
+			# is ALWAYS invited -- no silent 20% "nothing happens" for the
+			# player. The 80/20 roll still governs the AI-only case. William
+			# branch only: the Harald/other branches are counterfactual and
+			# keep their rolls.
+			if = {
+				limit = { any_player = { kehillah_norman_london_invitation_eligible_trigger = yes } }
+				debug_log = "kehillah_norman_conquest_evaluate_effect: eligible player, William always invites"
+				kehillah_norman_conquest_execute_effect = yes
+			}
+			else = {
+				random_list = {
+					80 = { kehillah_norman_conquest_execute_effect = yes }
+					20 = { debug_log = "kehillah_norman_conquest_evaluate_effect: declined, William branch" }
+				}
 			}
 		}
 		else_if = {
@@ -125,10 +140,40 @@ kehillah_norman_conquest_evaluate_effect = {
 
 # Scope: the new holder of title:k_england (unchanged from the effect
 # above -- random_list does not switch scope).
+#
+# S8 (2026-09-29): LONDON MAY BE THE PLAYER'S. If a Jewish player is a
+# landless adventurer when the Conquest resolves (the S7 Financier is the
+# intended case, but any qualifying player gets it), London is held back
+# and offered to that player instead of being founded for the AI:
+# kehillah_norman_conquest.0010 is the invitation, .0011 the founding one
+# day after the crossing, .0012 the king-side fallback that founds the AI
+# London if the offer is never answered (the invitee died, or the event's
+# trigger failed). The offer is a GLOBAL variable holding the invitee, so
+# exactly one of the three resolvers ever acts: each consumes it first.
+# York, Lincoln and Norwich are unaffected and still founded at once.
 kehillah_norman_conquest_execute_effect = {
 	debug_log = "kehillah_norman_conquest_execute_effect: founding Anglia's four Kehillot"
+	save_scope_as = kehillah_norman_king
 
-	kehillah_norman_found_london_effect = yes
+	if = {
+		limit = { any_player = { kehillah_norman_london_invitation_eligible_trigger = yes } }
+		set_global_variable = { name = kehillah_norman_inviting_king value = scope:kehillah_norman_king }
+		random_player = {
+			limit = { kehillah_norman_london_invitation_eligible_trigger = yes }
+			set_global_variable = { name = kehillah_norman_london_offer_pending value = this }
+			trigger_event = { id = kehillah_norman_conquest.0010 days = 3 }
+			# The fallback is scheduled on BOTH the invitee and the king:
+			# an event does not fire on a dead character, and either might
+			# die inside sixty days. Whichever copy runs first consumes the
+			# offer; the other then finds nothing pending and does nothing.
+			trigger_event = { id = kehillah_norman_conquest.0012 days = 60 }
+			debug_log = "kehillah_norman_conquest_execute_effect: London offered to a player adventurer"
+		}
+		trigger_event = { id = kehillah_norman_conquest.0012 days = 60 }
+	}
+	else = {
+		kehillah_norman_found_london_effect = yes
+	}
 	kehillah_norman_found_york_effect = yes
 	kehillah_norman_found_lincoln_effect = yes
 	kehillah_norman_found_norwich_effect = yes
@@ -221,7 +266,8 @@ kehillah_norman_found_london_effect = {
 	if = {
 		limit = { global_var:kehillah_norman_new_leader_dynasty_choice = 1 }
 		create_character = {
-			faith = faith:rabbinism
+			faith = faith:rabbinic_faith
+			rite = rite:rabbinism
 			culture = culture:ashkenazi
 			age = { 25 45 }
 			location = title:c_middlesex.title_province
@@ -235,7 +281,8 @@ kehillah_norman_found_london_effect = {
 	else_if = {
 		limit = { global_var:kehillah_norman_new_leader_dynasty_choice = 2 }
 		create_character = {
-			faith = faith:rabbinism
+			faith = faith:rabbinic_faith
+			rite = rite:rabbinism
 			culture = culture:ashkenazi
 			age = { 25 45 }
 			location = title:c_middlesex.title_province
@@ -247,7 +294,8 @@ kehillah_norman_found_london_effect = {
 	}
 	else = {
 		create_character = {
-			faith = faith:rabbinism
+			faith = faith:rabbinic_faith
+			rite = rite:rabbinism
 			culture = culture:ashkenazi
 			age = { 25 45 }
 			location = title:c_middlesex.title_province
@@ -273,7 +321,8 @@ kehillah_norman_found_york_effect = {
 	if = {
 		limit = { global_var:kehillah_norman_new_leader_dynasty_choice = 1 }
 		create_character = {
-			faith = faith:rabbinism
+			faith = faith:rabbinic_faith
+			rite = rite:rabbinism
 			culture = culture:ashkenazi
 			age = { 25 45 }
 			location = title:c_north_riding.title_province
@@ -287,7 +336,8 @@ kehillah_norman_found_york_effect = {
 	else_if = {
 		limit = { global_var:kehillah_norman_new_leader_dynasty_choice = 2 }
 		create_character = {
-			faith = faith:rabbinism
+			faith = faith:rabbinic_faith
+			rite = rite:rabbinism
 			culture = culture:ashkenazi
 			age = { 25 45 }
 			location = title:c_north_riding.title_province
@@ -299,7 +349,8 @@ kehillah_norman_found_york_effect = {
 	}
 	else = {
 		create_character = {
-			faith = faith:rabbinism
+			faith = faith:rabbinic_faith
+			rite = rite:rabbinism
 			culture = culture:ashkenazi
 			age = { 25 45 }
 			location = title:c_north_riding.title_province
@@ -325,7 +376,8 @@ kehillah_norman_found_lincoln_effect = {
 	if = {
 		limit = { global_var:kehillah_norman_new_leader_dynasty_choice = 1 }
 		create_character = {
-			faith = faith:rabbinism
+			faith = faith:rabbinic_faith
+			rite = rite:rabbinism
 			culture = culture:ashkenazi
 			age = { 25 45 }
 			location = title:c_lincolnshire.title_province
@@ -339,7 +391,8 @@ kehillah_norman_found_lincoln_effect = {
 	else_if = {
 		limit = { global_var:kehillah_norman_new_leader_dynasty_choice = 2 }
 		create_character = {
-			faith = faith:rabbinism
+			faith = faith:rabbinic_faith
+			rite = rite:rabbinism
 			culture = culture:ashkenazi
 			age = { 25 45 }
 			location = title:c_lincolnshire.title_province
@@ -351,7 +404,8 @@ kehillah_norman_found_lincoln_effect = {
 	}
 	else = {
 		create_character = {
-			faith = faith:rabbinism
+			faith = faith:rabbinic_faith
+			rite = rite:rabbinism
 			culture = culture:ashkenazi
 			age = { 25 45 }
 			location = title:c_lincolnshire.title_province
@@ -377,7 +431,8 @@ kehillah_norman_found_norwich_effect = {
 	if = {
 		limit = { global_var:kehillah_norman_new_leader_dynasty_choice = 1 }
 		create_character = {
-			faith = faith:rabbinism
+			faith = faith:rabbinic_faith
+			rite = rite:rabbinism
 			culture = culture:ashkenazi
 			age = { 25 45 }
 			location = title:c_norfolk.title_province
@@ -391,7 +446,8 @@ kehillah_norman_found_norwich_effect = {
 	else_if = {
 		limit = { global_var:kehillah_norman_new_leader_dynasty_choice = 2 }
 		create_character = {
-			faith = faith:rabbinism
+			faith = faith:rabbinic_faith
+			rite = rite:rabbinism
 			culture = culture:ashkenazi
 			age = { 25 45 }
 			location = title:c_norfolk.title_province
@@ -403,7 +459,8 @@ kehillah_norman_found_norwich_effect = {
 	}
 	else = {
 		create_character = {
-			faith = faith:rabbinism
+			faith = faith:rabbinic_faith
+			rite = rite:rabbinism
 			culture = culture:ashkenazi
 			age = { 25 45 }
 			location = title:c_norfolk.title_province

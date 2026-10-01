@@ -1,0 +1,180 @@
+﻿# =====================================================================
+# Kehillah succession events -- ROADMAP item S3, added 2026-09-26
+# (Sukkot heartbeat 3).
+#
+# One event today: the deferred government handoff for S3(a).
+#
+# WHY THIS EXISTS. kehillah_on_title_gain (common/on_action/
+# kehillah_on_actions.txt) has to give an appointed successor the
+# kehillah government, because nothing else does. But
+# can_get_government (common/governments/kehillah_government.txt)
+# requires the new leader to hold a landless-type title, and on every
+# appointment succession since 2026-09-06 that call has thrown
+# `change_government effect [ Trying to set illegal government ]` --
+# three separate live tests, two "fixes" of the predicate itself,
+# identical error each time (docs/implementation/
+# v1-kehillah-implementation.md section 8).
+#
+# The on_title_gain caller now guards the inline attempt with that same
+# predicate, and routes here when it would fail, one day later, by which
+# point the title is certainly committed. The 2026-09-27 live trace
+# established that this was not a title-commit timing issue: the
+# successor has the title but no domicile. This event now uses the
+# proven create_adventurer_title government parameter to provision that
+# missing Quarter before it asks for the government again.
+#
+# THIS EVENT IS ALSO THE VERDICT ON WHETHER THE GUARD WAS RIGHT. Its
+# debug_log lines are unconditional (there are at most a handful per
+# succession, not per tick) and say plainly whether the government still
+# needed setting a day later and whether setting it then worked. If the
+# real cause was never the timing, this event will report finding the
+# government already correct, and that is the answer, not a failure.
+# =====================================================================
+
+namespace = kehillah_succession
+
+
+# ---------------------------------------------------------------------
+# kehillah_succession.0010 -- DEFERRED GOVERNMENT HANDOFF
+#
+# root = the new leader. scope:kq_title = their community title, saved by
+# kehillah_on_title_gain before this is triggered.
+# ---------------------------------------------------------------------
+kehillah_succession.0010 = {
+	type = character_event
+	hidden = yes
+
+	trigger = {
+		exists = scope:kq_title
+	}
+
+	immediate = {
+		# The pre-fix diagnosis, retained as a breadcrumb. A plain title
+		# transfer does not carry a character-owned domicile, so there is
+		# normally still none to find a day later.
+		if = {
+			limit = { exists = domicile }
+			debug_log = "kehillah_succession.0010: the new leader HAS a domicile one day after title gain -- the quarter travelled with the title"
+		}
+		else = {
+			debug_log = "kehillah_succession.0010: the new leader still has NO domicile one day after title gain -- provisioning the Quarter now"
+
+			# `create_adventurer_title` with government = kehillah_government
+			# is the one engine primitive that creates a Jewish Quarter
+			# atomically with its government. It is proven live in both
+			# directions already: kehillah_found_community_effect makes a new
+			# community this way, and kehillah_departure_finish_effect makes
+			# the departing leader's camp with the same primitive. A plain
+			# change_government cannot repair a character with no domicile --
+			# it is refused before it can make one.
+			#
+			# The dynamic title is scaffolding, not a second community. It
+			# creates the successor's Quarter and Kehillah government; the
+			# real, already-held community title is immediately restored as
+			# primary and the scaffold is destroyed. That preserves the real
+			# title's pillars, recorded buildings, registry entry, history and
+			# succession law without copying any of them.
+			if = {
+				limit = { any_held_title = { this = scope:kq_title } }
+				create_adventurer_title = {
+					name = kehillah_successor_scaffold_title_name
+					holder = root
+					government = kehillah_government
+					article = kehillah_successor_scaffold_title_article
+					save_scope_as = kehillah_successor_scaffold_title
+				}
+				debug_log = "kehillah_succession.0010: created the temporary Kehillah scaffold"
+
+				if = {
+					limit = { exists = scope:kehillah_successor_scaffold_title }
+					hidden_effect = {
+						set_primary_title_to = scope:kq_title
+					}
+					destroy_title = scope:kehillah_successor_scaffold_title
+					debug_log = "kehillah_succession.0010: restored the real community as primary and destroyed the scaffold"
+				}
+				else = {
+					debug_log = "kehillah_succession.0010: FAIL create_adventurer_title returned no scaffold title"
+				}
+			}
+			else = {
+				debug_log = "kehillah_succession.0010: FAIL no held Kehillah title was available to restore as primary"
+			}
+
+			if = {
+				limit = { exists = domicile }
+				debug_log = "kehillah_succession.0010: PASS a domicile exists after provisioning"
+			}
+			else = {
+				debug_log = "kehillah_succession.0010: FAIL no domicile exists after provisioning"
+			}
+			if = {
+				limit = { government_has_flag = government_is_kehillah }
+				debug_log = "kehillah_succession.0010: PASS successor has Kehillah government after provisioning"
+			}
+			else = {
+				debug_log = "kehillah_succession.0010: FAIL successor does not have Kehillah government after provisioning"
+			}
+			if = {
+				limit = { primary_title = { this = scope:kq_title } }
+				debug_log = "kehillah_succession.0010: PASS the real community title is primary after cleanup"
+			}
+			else = {
+				debug_log = "kehillah_succession.0010: FAIL the real community title is not primary after cleanup"
+			}
+		}
+
+		if = {
+			limit = { government_has_flag = government_is_kehillah }
+			# The engine propagated it on its own after on_title_gain
+			# returned. Nothing to do, and worth logging: it means the
+			# inline call was redundant all along, not merely mistimed.
+			debug_log = "kehillah_succession.0010: government was ALREADY kehillah one day after title gain -- engine propagated it, no action needed"
+		}
+		else_if = {
+			limit = {
+				any_held_title = { is_landless_type_title = yes }
+				exists = domicile
+			}
+			debug_log = "kehillah_succession.0010: government was NOT kehillah, and both a landless title and a domicile are now present -- setting it"
+			change_government = kehillah_government
+
+			# Whether the deferred call was actually accepted, stated by
+			# the engine rather than assumed. If this reads FAIL, the
+			# error at the on_title_gain call site has simply moved here
+			# and the domicile theory is wrong too -- report it, do not
+			# patch a fifth time.
+			if = {
+				limit = { government_has_flag = government_is_kehillah }
+				debug_log = "kehillah_succession.0010: CONFIRMED the government IS kehillah after the deferred call"
+			}
+			else = {
+				debug_log = "kehillah_succession.0010: FAIL the deferred change_government was refused as well -- the domicile theory is wrong; report, do not patch."
+			}
+		}
+		else = {
+			# Provisioning failed or the title itself has gone away. Report
+			# the exact state rather than attempting another transition.
+			if = {
+				limit = { any_held_title = { is_landless_type_title = yes } }
+				debug_log = "kehillah_succession.0010: FAIL cannot get the Kehillah government after Quarter provisioning -- root still has no domicile"
+			}
+			else = {
+				debug_log = "kehillah_succession.0010: STILL cannot get the kehillah government a day later -- root holds no landless-type title. Neither timing nor the predicate explains this; report, do not patch."
+			}
+		}
+
+		# The inline restore/charter calls ran before the former no-domicile
+		# path had a Quarter, so they were no-ops. Run them only after the
+		# final state is known good. Both are idempotent by design.
+		if = {
+			limit = {
+				government_has_flag = government_is_kehillah
+				exists = domicile
+			}
+			kehillah_restore_quarter_effect = yes
+			kehillah_maintain_host_charter_effect = yes
+			debug_log = "kehillah_succession.0010: restored the recorded Quarter and refreshed the host charter after a successful handoff"
+		}
+	}
+}

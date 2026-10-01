@@ -1,0 +1,159 @@
+﻿# =====================================================================
+# COMMUNITY GOALS -- ROADMAP S6, added 2026-09-28.
+#
+# "Right now there are many systems but few OBJECTIVES" (V22 section 6.2).
+# A community sets one goal at a time, has ten years to reach it, and
+# either earns a reward and a permanent mark on its record or takes a
+# small Stability loss for letting the decade go.
+#
+# Effects: common/scripted_effects/kehillah_goal_effects.txt
+# Decision: common/decisions/kehillah_goal_decisions.txt
+# Event: events/kehillah_goal_events.txt
+# Values: common/script_values/kehillah_script_values.txt, "COMMUNITY GOALS"
+#
+# EVERYTHING HERE IS CHARACTER-SCOPED, on the leader, and hops to
+# primary_title for the state -- the same shape kehillah_pillar_at_least_
+# trigger uses, and for the same reason: the goal is the COMMUNITY's, so
+# it lives on the title (implementation doc section 10) and survives the
+# leader who set it. A successor inherits the decade already running.
+#
+# THE FOUR GOALS ARE FOUR SEPARATE TRIGGERS, not one switch, because the
+# event that offers them needs to ask "is this one already true?" per
+# option before it offers it -- a community that already has a yeshiva
+# should not be allowed to set building one as its ambition.
+# =====================================================================
+
+kehillah_has_active_goal_trigger = {
+	exists = primary_title
+	primary_title = { has_variable = kehillah_var_goal }
+}
+
+# ---------------------------------------------------------------------
+# BUILD THE YESHIVA. The full Beit Midrash, tier 3 -- the building that
+# sets kehillah_has_yeshiva (common/domiciles/buildings/
+# kehillah_domicile_buildings.txt). Read off the domicile parameter
+# rather than has_domicile_building so a future renaming or re-tiering of
+# the building does not silently break the goal, the same way every other
+# consumer in this mod reads parameters.
+# ---------------------------------------------------------------------
+kehillah_goal_yeshiva_met_trigger = {
+	domicile ?= { has_domicile_parameter = kehillah_has_yeshiva }
+}
+
+# ---------------------------------------------------------------------
+# A NAME AMONG THE COMMUNITIES. Greatness reaches Flourishing -- the
+# band, not an invented number, so the goal moves if the bands are ever
+# retuned and the player is chasing something the rest of the UI already
+# names.
+# ---------------------------------------------------------------------
+kehillah_goal_renown_met_trigger = {
+	kehillah_pillar_at_least_trigger = {
+		PILLAR = kehillah_var_greatness
+		THRESHOLD = kehillah_band_flourishing_threshold
+	}
+}
+
+# ---------------------------------------------------------------------
+# SECURE OUR RIGHTS. Either the security or the construction term of the
+# host charter improves on what it was THE DAY THE GOAL WAS SET, which is
+# why this needs a snapshot and the other three do not. Both rungs run
+# 0-2 (kehillah_refresh_charter_state_cache_effect); the snapshot is
+# taken there and then by kehillah_set_community_goal_effect.
+#
+# Guarded on the snapshot existing as well as the cache, because a
+# community whose charter cache has not been written yet (the pulse runs
+# quarterly) would otherwise compare against nothing.
+# ---------------------------------------------------------------------
+kehillah_goal_rights_met_trigger = {
+	exists = primary_title
+	primary_title = {
+		OR = {
+			AND = {
+				has_variable = kehillah_charter_cache_security
+				has_variable = kehillah_var_goal_snapshot_security
+				var:kehillah_charter_cache_security > var:kehillah_var_goal_snapshot_security
+			}
+			AND = {
+				has_variable = kehillah_charter_cache_construction
+				has_variable = kehillah_var_goal_snapshot_construction
+				var:kehillah_charter_cache_construction > var:kehillah_var_goal_snapshot_construction
+			}
+		}
+	}
+}
+
+# A charter already at the top of both rungs cannot improve, so the goal
+# is not offered -- otherwise it would be an automatic ten-year failure.
+kehillah_goal_rights_available_trigger = {
+	exists = primary_title
+	primary_title = {
+		NOT = {
+			AND = {
+				has_variable = kehillah_charter_cache_security
+				var:kehillah_charter_cache_security >= 2
+				has_variable = kehillah_charter_cache_construction
+				var:kehillah_charter_cache_construction >= 2
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# A DAUGHTER COMMUNITY. PUSHED, NOT POLLED: there is nothing to read
+# afterwards that says "this community came out of yours", so
+# kehillah_goal_credit_daughter_community_effect stamps the marker at the
+# moment of founding and this only reads the stamp.
+#
+# SCOPE CUT, RECORDED RATHER THAN HIDDEN. S6 asks for "founded by one of
+# your courtiers or dynasty". Only the dynasty half is detectable: a
+# founder is a landless adventurer (kehillah_found_community_decision's
+# own gate), and by the time they found anything the link to whatever
+# court they once sat in is gone -- the same erasure S4(3) works around
+# by reading the old liege BEFORE add_courtier moves the rabbi. Dynasty
+# survives. It is also the link that matters most in play, since the
+# realistic route to a second community is a former leader taking to the
+# road (S1) and founding again.
+# ---------------------------------------------------------------------
+kehillah_goal_daughter_met_trigger = {
+	exists = primary_title
+	primary_title = { has_variable = kehillah_var_goal_daughter_credit }
+}
+
+# ---------------------------------------------------------------------
+# The dispatcher the quarterly check actually calls. Reads which goal is
+# set and asks that goal's own trigger.
+# ---------------------------------------------------------------------
+kehillah_goal_is_met_trigger = {
+	exists = primary_title
+	primary_title = { has_variable = kehillah_var_goal }
+	OR = {
+		AND = {
+			primary_title = { var:kehillah_var_goal = flag:yeshiva }
+			kehillah_goal_yeshiva_met_trigger = yes
+		}
+		AND = {
+			primary_title = { var:kehillah_var_goal = flag:renown }
+			kehillah_goal_renown_met_trigger = yes
+		}
+		AND = {
+			primary_title = { var:kehillah_var_goal = flag:rights }
+			kehillah_goal_rights_met_trigger = yes
+		}
+		AND = {
+			primary_title = { var:kehillah_var_goal = flag:daughter }
+			kehillah_goal_daughter_met_trigger = yes
+		}
+	}
+}
+
+# The deadline is the ENGINE's, not a date this mod stores and compares:
+# kehillah_var_goal_timer is set with years = kehillah_goal_deadline_years
+# and the engine removes it when it expires. So "the goal is still set but
+# its timer is gone" is exactly "the decade ran out". Nothing has to tick.
+kehillah_goal_deadline_passed_trigger = {
+	exists = primary_title
+	primary_title = {
+		has_variable = kehillah_var_goal
+		NOT = { has_variable = kehillah_var_goal_timer }
+	}
+}

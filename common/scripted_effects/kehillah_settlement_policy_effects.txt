@@ -1,0 +1,166 @@
+﻿# =====================================================================
+# Raise / Lower Jewish Settlement Policy effects. ROADMAP S9a, added
+# 2026-09-29. Called by common/decisions/kehillah_settlement_policy_
+# decisions.txt (read its header for the design limits) and by the S9a
+# debug probes.
+#
+# Scope: THE HOST RULER, i.e. the independent ruler whose primary title
+# holds the policy. Neither effect relies on ROOT: the debug probes run
+# them on a Kehillah player's host, where ROOT is the Kehillah player.
+# Everything that needs the host uses scope:kehillah_policy_host.
+#
+# STORAGE RULE (V16 §3, kehillah_settlement_policy_triggers.txt header):
+# absence means Allowed, and only deviations are stored. So a move INTO
+# Allowed removes the variable rather than writing 2.
+# =====================================================================
+
+kehillah_raise_jewish_settlement_policy_effect = {
+	save_scope_as = kehillah_policy_host
+	primary_title = { save_scope_as = kehillah_policy_realm }
+
+	if = {
+		limit = { primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } }
+		custom_tooltip = {
+			text = kehillah_policy_raise_to_discouraged_tt
+			primary_title = {
+				set_variable = { name = kehillah_jewish_settlement_policy value = 1 }
+			}
+		}
+	}
+	else_if = {
+		limit = { primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } }
+		custom_tooltip = {
+			text = kehillah_policy_raise_to_allowed_tt
+			primary_title = { remove_variable = kehillah_jewish_settlement_policy }
+		}
+	}
+	else = {
+		custom_tooltip = {
+			text = kehillah_policy_raise_to_encouraged_tt
+			primary_title = {
+				set_variable = { name = kehillah_jewish_settlement_policy value = 3 }
+			}
+		}
+	}
+
+	custom_tooltip = {
+		text = kehillah_policy_existing_charters_kept_tt
+	}
+
+	# The clergy's objection. A Jewish chaplain has none. No chaplain, no
+	# objection: vanilla guards cp:councillor_court_chaplain the same way
+	# (00_major_decisions_iberia_north_africa.txt).
+	if = {
+		limit = {
+			exists = cp:councillor_court_chaplain
+			cp:councillor_court_chaplain = { NOT = { is_jewish_character_trigger = yes } }
+		}
+		cp:councillor_court_chaplain = {
+			add_opinion = {
+				target = scope:kehillah_policy_host
+				modifier = kehillah_settlement_policy_raised_clergy_opinion
+			}
+		}
+	}
+
+	kehillah_start_policy_review_cooldown_effect = yes
+
+	kehillah_notify_communities_of_policy_change_effect = {
+		TYPE = msg_kehillah_policy_raised
+		TITLE = kehillah_policy_raised_msg_title
+		DESC = kehillah_policy_raised_msg_desc
+	}
+
+	debug_log_scopes = yes
+	debug_log = "kehillah_raise_jewish_settlement_policy_effect: host realm policy raised one rung"
+}
+
+kehillah_lower_jewish_settlement_policy_effect = {
+	save_scope_as = kehillah_policy_host
+	primary_title = { save_scope_as = kehillah_policy_realm }
+
+	if = {
+		limit = { primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } }
+		custom_tooltip = {
+			text = kehillah_policy_lower_to_allowed_tt
+			primary_title = { remove_variable = kehillah_jewish_settlement_policy }
+		}
+	}
+	else_if = {
+		# Allowed (stored or implicit). Discouraged is the floor for now --
+		# the decision's is_valid enforces it, and this branch never writes
+		# Banned whatever calls it.
+		limit = { primary_title = { kehillah_jewish_settlement_policy_allowed_trigger = yes } }
+		custom_tooltip = {
+			text = kehillah_policy_lower_to_discouraged_tt
+			primary_title = {
+				set_variable = { name = kehillah_jewish_settlement_policy value = 1 }
+			}
+		}
+	}
+
+	custom_tooltip = {
+		text = kehillah_policy_lower_consequence_tt
+	}
+	custom_tooltip = {
+		text = kehillah_policy_existing_charters_kept_tt
+	}
+
+	if = {
+		limit = { NOT = { is_jewish_character_trigger = yes } }
+		add_piety = kehillah_policy_lower_piety_gain
+	}
+
+	kehillah_start_policy_review_cooldown_effect = yes
+
+	kehillah_notify_communities_of_policy_change_effect = {
+		TYPE = msg_kehillah_policy_lowered
+		TITLE = kehillah_policy_lowered_msg_title
+		DESC = kehillah_policy_lowered_msg_desc
+	}
+
+	debug_log_scopes = yes
+	debug_log = "kehillah_lower_jewish_settlement_policy_effect: host realm policy lowered one rung"
+}
+
+# Scope: the host ruler. The timer variable expires by itself (the same
+# engine-owned deadline S6's goal timer uses), so nothing ticks.
+kehillah_start_policy_review_cooldown_effect = {
+	primary_title = {
+		set_variable = {
+			name = kehillah_var_policy_review_cooldown
+			value = 1
+			years = kehillah_policy_review_cooldown_years
+		}
+	}
+}
+
+# Scope: the host ruler, with scope:kehillah_policy_host and
+# scope:kehillah_policy_realm saved. Every registered community whose
+# charter host is this ruler -- resolved exactly as the charter resolves
+# it -- gets one notice. send_interface_message only reaches players, so
+# this costs nothing for AI-led communities; the debug_log is the
+# assertion the S9a probe greps for.
+kehillah_notify_communities_of_policy_change_effect = {
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			exists = holder
+			holder = {
+				exists = domicile
+				exists = domicile.domicile_location.county.holder.top_liege
+				domicile.domicile_location.county.holder.top_liege = scope:kehillah_policy_host
+			}
+		}
+		save_scope_as = kehillah_policy_community
+		holder = {
+			send_interface_message = {
+				type = $TYPE$
+				title = $TITLE$
+				desc = $DESC$
+				left_icon = scope:kehillah_policy_host
+			}
+		}
+		debug_log = "kehillah_notify_communities_of_policy_change_effect: notified a community under this host"
+	}
+}

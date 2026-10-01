@@ -296,11 +296,26 @@ kehillah_translation_contract = {
 				task_contract_taker = {
 					play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract"
 					add_gold = major_gold_value
+
+					# NO `years` HERE, and none at the nine sibling sites in
+					# this file. REMOVED 2026-09-26 after all ten threw
+					# `reverse_add_opinion effect [ Modifier 'X' with
+					# monthly_change cannot have a specified duration ]` live.
+					# flattered/pleased/disappointed/angry_opinion are all
+					# declared `monthly_change = 0.1, decaying = yes` with no
+					# duration of their own (common/opinion_modifiers/
+					# 00_opinion_modifiers.txt), and the engine refuses to let
+					# a caller impose one. The duration was redundant as well
+					# as invalid: these modifiers already decay on their own,
+					# which is what monthly_change means. Vanilla agrees --
+					# 88 uses of pleased_opinion, not one of them with `years`.
+					# Contrast the `opinion` field, which these modifiers DO
+					# require from the call site because they define no value
+					# of their own.
 					reverse_add_opinion = {
 						target = scope:task_contract.task_contract_employer
 						modifier = flattered_opinion
 						opinion = 40
-						years = 5
 					}
 					primary_title = {
 						change_variable = { name = kehillah_var_greatness add = kehillah_translation_greatness_reward }
@@ -322,7 +337,6 @@ kehillah_translation_contract = {
 						target = scope:task_contract.task_contract_employer
 						modifier = pleased_opinion
 						opinion = 20
-						years = 5
 					}
 					primary_title = {
 						change_variable = { name = kehillah_var_greatness add = kehillah_translation_greatness_reward }
@@ -343,7 +357,6 @@ kehillah_translation_contract = {
 						target = scope:task_contract.task_contract_employer
 						modifier = disappointed_opinion
 						opinion = -15
-						years = 3
 					}
 				}
 				custom_tooltip = kehillah_translation_failure_tt
@@ -386,7 +399,6 @@ kehillah_translation_contract = {
 						target = scope:task_contract.task_contract_employer
 						modifier = angry_opinion
 						opinion = -40
-						years = 8
 					}
 				}
 				custom_tooltip = kehillah_translation_stolen_caught_tt
@@ -559,9 +571,24 @@ kehillah_loan_contract = {
 	# type's header for why the contract cannot distinguish repayment
 	# from default at this point and deliberately does not try. The debt
 	# now lives on task_contract_employer (the borrower), not the taker.
+	#
+	# FIXED 2026-09-29 (found live, S8b log): the debt is only written by
+	# the challenge chain's LAST event (kehillah_loan_challenge.0003), so
+	# for the whole ~17-day negotiation this was structurally false. The
+	# engine's periodic validity sweep then invalidated the contract mid-
+	# chain, the chain's `exists = scope:task_contract` trigger went false,
+	# and the next stage silently never fired -- every loan through this
+	# contract since the 2026-09-17 chain overhaul was exposed to it. The
+	# open negotiation tally on the lender (set in on_accepted, removed by
+	# .0003 on either outcome) now also keeps the contract alive.
 	valid_to_continue = {
-		task_contract_employer = {
-			exists = var:kehillah_loan_amount_owed
+		OR = {
+			task_contract_employer = {
+				exists = var:kehillah_loan_amount_owed
+			}
+			task_contract_taker ?= {
+				has_variable = kehillah_loan_challenge_tally
+			}
 		}
 	}
 
@@ -602,6 +629,14 @@ kehillah_loan_contract = {
 	on_invalidated = {
 		task_contract_taker ?= {
 			custom_tooltip = kehillah_loan_contract_concluded_tt
+			# 2026-09-29: never leave a negotiation half-open. If the contract
+			# ends for any reason before .0003 resolved it (the borrower died,
+			# say), clear the chain's scratch state and any royal window, so
+			# neither can keep a later contract alive or inflate a later loan.
+			hidden_effect = {
+				remove_variable = kehillah_loan_challenge_tally
+				remove_variable = kehillah_loan_royal_request
+			}
 		}
 	}
 
@@ -727,7 +762,6 @@ kehillah_exotic_goods_contract = {
 						target = scope:task_contract.task_contract_employer
 						modifier = flattered_opinion
 						opinion = 35
-						years = 5
 					}
 				}
 				custom_tooltip = kehillah_exotic_goods_great_tt
@@ -746,7 +780,6 @@ kehillah_exotic_goods_contract = {
 						target = scope:task_contract.task_contract_employer
 						modifier = pleased_opinion
 						opinion = 20
-						years = 5
 					}
 				}
 				custom_tooltip = kehillah_exotic_goods_good_tt
@@ -764,7 +797,6 @@ kehillah_exotic_goods_contract = {
 						target = scope:task_contract.task_contract_employer
 						modifier = disappointed_opinion
 						opinion = -20
-						years = 3
 					}
 				}
 				custom_tooltip = kehillah_exotic_goods_poor_tt
@@ -899,7 +931,6 @@ kehillah_hebrew_tutor_contract = {
 						target = scope:task_contract.task_contract_employer
 						modifier = flattered_opinion
 						opinion = 30
-						years = 5
 					}
 				}
 				custom_tooltip = kehillah_hebrew_tutor_great_tt
@@ -919,7 +950,6 @@ kehillah_hebrew_tutor_contract = {
 						target = scope:task_contract.task_contract_employer
 						modifier = pleased_opinion
 						opinion = 15
-						years = 5
 					}
 				}
 				custom_tooltip = kehillah_hebrew_tutor_good_tt
@@ -937,7 +967,6 @@ kehillah_hebrew_tutor_contract = {
 						target = scope:task_contract.task_contract_employer
 						modifier = disappointed_opinion
 						opinion = -20
-						years = 3
 					}
 				}
 				custom_tooltip = kehillah_hebrew_tutor_poor_tt

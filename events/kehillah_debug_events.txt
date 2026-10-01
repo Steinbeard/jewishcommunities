@@ -33,6 +33,7 @@ kehillah_debug.60 = {
 		create_adventurer_title = {
 			name = adventurer_name_001
 			holder = root
+			save_scope_as = kehillah_debug_60_camp_title
 		}
 		add_realm_law = landless_adventurer_succession_law
 		change_government = landless_adventurer_government
@@ -625,6 +626,7 @@ kehillah_debug.90 = {
 			dynasty_house = house:house_evreux
 			culture = root.culture
 			faith = root.faith
+			rite = root.rite
 			age = { 30 45 }
 			gender_female_chance = 0
 			location = root.location
@@ -656,6 +658,7 @@ kehillah_debug.91 = {
 			dynasty = generate
 			culture = culture:norwegian
 			faith = root.faith
+			rite = root.rite
 			age = { 30 45 }
 			gender_female_chance = 0
 			location = root.location
@@ -677,6 +680,7 @@ kehillah_debug.92 = {
 			dynasty = generate
 			culture = root.culture
 			faith = root.faith
+			rite = root.rite
 			age = { 30 45 }
 			gender_female_chance = 0
 			location = root.location
@@ -740,5 +744,2858 @@ kehillah_debug.93 = {
 			debug_log = "kehillah_debug.93: total Norman-founded titles found"
 			debug_log_scopes = yes
 		}
+	}
+}
+
+# =====================================================================
+# S0 REGRESSION PROBES (added 2026-09-25, Sukkot heartbeat 1).
+#
+# These exist to turn three "source-fixed, awaiting live regression"
+# items into verified-or-not with ONE boot instead of a full hosted Bet
+# Din docket plus a simulated Norman Conquest. Each is a narrow probe of
+# the exact primitive that was broken, not a replay of the whole feature
+# -- see docs/testing/ for the run that uses them.
+#
+# .94  V18 dynasty tie report (BLOCKERS 2026-09-24, attempt 4)
+# .95  Semicha guard, POSITIVE control -- must fire
+# .96  Semicha guard, NEGATIVE test -- must NOT fire; also cleans up .95
+# .97  Silversmiths restitution clamp against a low-gold accused
+#
+# RUN ORDER MATTERS for .95/.96: .95 sets the global convening title,
+# .96 clears it again. Running .96 alone is still a valid negative test
+# provided no Bet Din is actually convening.
+# =====================================================================
+
+# V18 dynasty tie (BLOCKERS 2026-09-24): does attempt 4 -- a deceased
+# history-file anchor (character:9000218 "Meir", dynasty 9000003) plus
+# `father = character:9000218` + `dynasty = inherit` inside
+# create_character -- actually put the four Norman-founded Anglia
+# leaders in Rashi's own dynn_Yitzhaki dynasty, where three previous
+# mechanisms each silently failed?
+#
+# Two separate things are checked, because they fail differently:
+#   1. the ANCHOR itself loaded and reads as dynasty:9000003 (if this
+#      fails, the history file is wrong and nothing downstream can work)
+#   2. each founded leader INHERITED it (the actual open question)
+# Run AFTER .90 (or .91/.92) has founded the communities, then .93 for
+# the rest of the founding report.
+kehillah_debug.94 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.94: V18 dynasty tie report -- START"
+		if = {
+			limit = { exists = character:9000218 }
+			debug_log = "kehillah_debug.94: anchor character:9000218 EXISTS"
+			character:9000218 = {
+				if = {
+					limit = { dynasty = dynasty:9000003 }
+					debug_log = "kehillah_debug.94: PASS anchor 9000218 reads as dynasty:9000003 (dynn_Yitzhaki)"
+				}
+				else = {
+					debug_log = "kehillah_debug.94: FAIL anchor 9000218 exists but is NOT dynasty:9000003 -- history file did not take"
+				}
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.94: FAIL anchor character:9000218 does NOT exist -- history/characters/yitzhaki_anglia_anchor.txt did not load"
+		}
+		set_variable = { name = kehillah_debug_dyn_total value = 0 }
+		set_variable = { name = kehillah_debug_dyn_tied value = 0 }
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = { has_variable = kehillah_norman_founded }
+			root = { change_variable = { name = kehillah_debug_dyn_total add = 1 } }
+			holder = {
+				if = {
+					limit = { dynasty = dynasty:9000003 }
+					root = { change_variable = { name = kehillah_debug_dyn_tied add = 1 } }
+					debug_log = "kehillah_debug.94: PASS a Norman-founded leader reads as dynasty:9000003 (dynn_Yitzhaki)"
+				}
+				else = {
+					debug_log = "kehillah_debug.94: FAIL a Norman-founded leader is NOT dynasty:9000003 -- dynasty tie still broken for this one"
+					debug_log_scopes = yes
+				}
+			}
+		}
+		if = {
+			limit = { var:kehillah_debug_dyn_total = 0 }
+			debug_log = "kehillah_debug.94: INCONCLUSIVE zero Norman-founded titles registered -- run .90 first, then re-run .94"
+		}
+		else_if = {
+			limit = { var:kehillah_debug_dyn_tied = var:kehillah_debug_dyn_total }
+			debug_log = "kehillah_debug.94: OVERALL PASS every Norman-founded leader is in dynn_Yitzhaki"
+		}
+		else = {
+			debug_log = "kehillah_debug.94: OVERALL FAIL at least one Norman-founded leader is outside dynn_Yitzhaki"
+		}
+		debug_log = "kehillah_debug.94: V18 dynasty tie report -- END"
+	}
+}
+
+# Semicha guard, POSITIVE control. The 2026-09-25 fix added
+# `exists = global_var:kehillah_bet_din_convening_title` to
+# kehillah_bet_din_semicha.0001's trigger. A guard that blocks
+# everything would "pass" the negative test below while silently killing
+# the feature, so prove the event still fires when the global IS set.
+#
+# Uses trigger_event, NOT the console `event` command, deliberately --
+# console `event` bypasses an event's own trigger block, which is
+# precisely what is under test here.
+#
+# Logs each of the other trigger conditions separately so a non-fire can
+# be attributed to the right cause rather than blamed on the new guard.
+# EXPECT: the semicha event window opens, and no unset-scope error.
+kehillah_debug.95 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.95: semicha guard POSITIVE control -- START"
+		if = {
+			limit = { government_has_flag = government_is_kehillah }
+			debug_log = "kehillah_debug.95: precondition OK government_is_kehillah"
+		}
+		else = { debug_log = "kehillah_debug.95: precondition FAILS not a Kehillah government -- test will be vacuous, run as a community leader" }
+		if = {
+			limit = { NOT = { has_trait = kehillah_rabbi_trait } }
+			debug_log = "kehillah_debug.95: precondition OK does not already hold kehillah_rabbi_trait"
+		}
+		else = {
+			# SELF-HEALING, ADDED 2026-09-25 after the first live run came
+			# back VACUOUS on exactly this branch: the Worms 1066 leader
+			# (Isaac ben Eliezer ha-Levi) starts the game already holding
+			# kehillah_rabbi_trait, so the positive control could never
+			# fire and the guard was never actually proven non-blocking.
+			# Strip the trait so the control means something. Accepting the
+			# event's own first option re-grants it, so the usual path
+			# leaves the character exactly as it found them.
+			remove_trait = kehillah_rabbi_trait
+			debug_log = "kehillah_debug.95: root was already a rabbi -- trait removed so the positive control is not vacuous. Accept the event's first option to restore it."
+		}
+		if = {
+			limit = { kehillah_leadership_gender_eligible_trigger = yes }
+			debug_log = "kehillah_debug.95: precondition OK gender-eligible under current flag state"
+		}
+		else = { debug_log = "kehillah_debug.95: precondition FAILS gender-ineligible -- test will be vacuous" }
+		if = {
+			limit = { exists = primary_title }
+			set_global_variable = { name = kehillah_bet_din_convening_title value = root.primary_title }
+			debug_log = "kehillah_debug.95: set global_var:kehillah_bet_din_convening_title to root's primary title"
+			trigger_event = kehillah_bet_din_semicha.0001
+			debug_log = "kehillah_debug.95: called trigger_event -- EXPECT the semicha window to open. Run .96 afterwards to clear the global."
+		}
+		else = {
+			debug_log = "kehillah_debug.95: INCONCLUSIVE root has no primary_title to use as a stand-in convening title"
+		}
+		debug_log = "kehillah_debug.95: semicha guard POSITIVE control -- END"
+	}
+}
+
+# Semicha guard, NEGATIVE test (the actual regression) AND cleanup for
+# .95. Clears the convening-title global, then calls trigger_event on
+# kehillah_bet_din_semicha.0001 -- reproducing the 2026-09-24 live bug,
+# where a deferred offer was evaluated after the activity had already
+# cleared its scratch global, and the event's immediate block
+# dereferenced an unset scope ("Event target link 'global_var' returned
+# an unset scope").
+#
+# EXPECT: no window opens, and error.log gains NO new unset-variable /
+# unset-scope line. A window opening here, or a fresh error, is a FAIL.
+kehillah_debug.96 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.96: semicha guard NEGATIVE test -- START"
+		if = {
+			limit = { exists = global_var:kehillah_bet_din_convening_title }
+			remove_global_variable = kehillah_bet_din_convening_title
+			debug_log = "kehillah_debug.96: cleared global_var:kehillah_bet_din_convening_title"
+		}
+		else = {
+			debug_log = "kehillah_debug.96: global_var:kehillah_bet_din_convening_title was already unset"
+		}
+		trigger_event = kehillah_bet_din_semicha.0001
+		debug_log = "kehillah_debug.96: called trigger_event with the global UNSET -- EXPECT no window and no new error.log line"
+		debug_log = "kehillah_debug.96: semicha guard NEGATIVE test -- END"
+	}
+}
+
+# Silversmiths Quarrel restitution clamp (BLOCKERS 2026-09-25). The bug
+# was an unaffordable negative add_gold on an accused with less gold than
+# medium_gold_value. The fix computes the transfer as
+# min(max(gold,0), medium_gold_value) via save_scope_value_as and uses
+# that one value for both the deduction and the accuser's credit.
+#
+# This probe reproduces the FIXED ARITHMETIC AND THE add_gold CALLS on a
+# deliberately poor accused. It does NOT re-run
+# kehillah_bet_din_silversmiths_resolution_effect itself: that effect
+# reads involved_activity variables and is only reachable inside a real
+# hosted docket. What was broken was the clamp and the add_gold pair, and
+# that is exactly what is exercised here -- the activity-variable
+# plumbing around it was never implicated and is unchanged.
+#
+# EXPECT: accused ends at 0 gold, accuser is credited exactly 3, and
+# error.log gains NO "Trying to add add_gold with negative value" line.
+kehillah_debug.97 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.97: restitution clamp probe -- START"
+		create_character = {
+			culture = root.culture
+			faith = root.faith
+			rite = root.rite
+			age = 40
+			gender_female_chance = 0
+			location = root.location
+			save_scope_as = kehillah_debug_probe_accuser
+		}
+		create_character = {
+			culture = root.culture
+			faith = root.faith
+			rite = root.rite
+			age = 40
+			gender_female_chance = 0
+			location = root.location
+			save_scope_as = kehillah_debug_probe_accused
+		}
+		# Normalise both purses to a known state. add_gold with a negative
+		# value exactly equal to the character own gold is always
+		# affordable, so this cannot itself trip the bug under test.
+		scope:kehillah_debug_probe_accuser = { add_gold = { value = gold multiply = -1 } }
+		scope:kehillah_debug_probe_accused = {
+			add_gold = { value = gold multiply = -1 }
+			add_gold = 3
+		}
+		# The exact shape shipped in kehillah_bet_din_silversmiths_resolution_effect.
+		scope:kehillah_debug_probe_accused = {
+			save_scope_value_as = {
+				name = kehillah_debug_probe_restitution
+				value = {
+					value = gold
+					min = 0
+					max = medium_gold_value
+				}
+			}
+			add_gold = {
+				value = scope:kehillah_debug_probe_restitution
+				multiply = -1
+			}
+		}
+		scope:kehillah_debug_probe_accuser = { add_gold = scope:kehillah_debug_probe_restitution }
+		if = {
+			limit = { scope:kehillah_debug_probe_restitution = 3 }
+			debug_log = "kehillah_debug.97: PASS restitution clamped to the accused actual 3 gold, not medium_gold_value"
+		}
+		else = {
+			debug_log = "kehillah_debug.97: FAIL restitution is not the accused 3 gold -- clamp did not bind"
+			debug_log_scopes = yes
+		}
+		scope:kehillah_debug_probe_accused = {
+			if = {
+				limit = { gold = 0 }
+				debug_log = "kehillah_debug.97: PASS accused ends at exactly 0 gold"
+			}
+			else = {
+				debug_log = "kehillah_debug.97: FAIL accused did not end at 0 gold"
+				debug_log_scopes = yes
+			}
+		}
+		scope:kehillah_debug_probe_accuser = {
+			if = {
+				limit = { gold = 3 }
+				debug_log = "kehillah_debug.97: PASS accuser credited exactly 3 -- transfer is zero-sum"
+			}
+			else = {
+				debug_log = "kehillah_debug.97: FAIL accuser was not credited 3 -- transfer is not zero-sum"
+				debug_log_scopes = yes
+			}
+		}
+		debug_log = "kehillah_debug.97: restitution clamp probe -- END"
+	}
+}
+
+# =====================================================================
+# S1 DEPARTURE / DISSOLUTION HARNESS (added 2026-09-25, Sukkot heartbeat 1).
+#
+# .98   drop Stability below the dissolution floor and clear the warning
+#       cooldown, so the next watch tick starts the countdown
+# .99   fast-forward a full year at the floor (four watch ticks) so the
+#       collapse event fires now instead of after four real quarters
+# .100  post-departure invariant report -- run after stepping down OR
+#       after a collapse, to confirm the character landed in a valid
+#       landless-adventurer state rather than the no-domicile state that
+#       is a 15-25 day fuse to Game Over
+#
+# Typical sequences:
+#   VOLUNTARY: take the "Step Down and Take to the Road" decision, then
+#              run .100.
+#   COLLAPSE:  .98, then .99, resolve the collapse event, then .100.
+# =====================================================================
+
+# Stability -> 10, which is below kehillah_dissolution_floor_threshold
+# (25) but not negative, so the countdown starts on the next watch tick.
+# Also clears the warning cooldown flag so the warning event can fire
+# again immediately in a session that has already seen it.
+kehillah_debug.98 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title = {
+			set_variable = { name = kehillah_var_stability value = 10 }
+			set_variable = { name = kehillah_var_dissolution_quarters value = 0 }
+		}
+		remove_character_flag = kehillah_dissolution_warned_flag
+		debug_log = "kehillah_debug.98: Stability forced to 10 (below the floor), countdown reset, warning cooldown cleared"
+	}
+}
+
+# Four watch ticks = kehillah_dissolution_quarters_required = one full
+# year below the floor. The fourth should fire kehillah_dissolution.0002
+# on a one-day delay. Run .98 first.
+#
+# The watch effect is called directly rather than waiting for four real
+# quarterly_playable_pulse ticks; it reads and writes only the title
+# counter and the leader's warning flag, so calling it four times in
+# succession is exactly equivalent to four quarters at the floor.
+kehillah_debug.99 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.99: fast-forwarding four quarters at the Stability floor"
+		kehillah_dissolution_watch_effect = yes
+		kehillah_dissolution_watch_effect = yes
+		kehillah_dissolution_watch_effect = yes
+		kehillah_dissolution_watch_effect = yes
+		debug_log = "kehillah_debug.99: four watch ticks done -- EXPECT the collapse event within a day"
+	}
+}
+
+# Post-departure invariants. The domicile check is the important one:
+# kehillah_found_community_effect's header records that a landless ruler
+# in a domicile government with NO domicile is tolerated for 15-25 days
+# and then Game-Overs, so "no domicile" here is a real failure even
+# though nothing visible has gone wrong yet.
+kehillah_debug.100 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.100: post-departure invariant report -- START"
+		if = {
+			limit = { has_government = landless_adventurer_government }
+			debug_log = "kehillah_debug.100: PASS government is landless_adventurer_government"
+		}
+		else = {
+			debug_log = "kehillah_debug.100: FAIL government is NOT landless_adventurer_government"
+			debug_log_scopes = yes
+		}
+		if = {
+			limit = { exists = domicile }
+			debug_log = "kehillah_debug.100: PASS a domicile exists (expected: a camp)"
+		}
+		else = {
+			debug_log = "kehillah_debug.100: FAIL no domicile -- this is the 15-25 day Game Over fuse"
+		}
+		if = {
+			limit = { exists = primary_title }
+			debug_log = "kehillah_debug.100: PASS holds a primary title"
+			if = {
+				limit = { primary_title = { is_kehillah_title_trigger = yes } }
+				debug_log = "kehillah_debug.100: FAIL primary title is STILL a Kehillah title -- the teardown did not complete"
+			}
+			else = {
+				debug_log = "kehillah_debug.100: PASS primary title is no longer a Kehillah title"
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.100: FAIL holds no primary title at all -- Game Over is imminent"
+		}
+		if = {
+			limit = { has_realm_law = landless_adventurer_succession_law }
+			debug_log = "kehillah_debug.100: PASS landless_adventurer_succession_law is active"
+		}
+		else = {
+			debug_log = "kehillah_debug.100: FAIL landless_adventurer_succession_law is missing"
+		}
+		if = {
+			limit = { has_variable = kehillah_departure_greatness_banked }
+			debug_log = "kehillah_debug.100: WARNING the banked-Greatness scratch variable was not cleaned up"
+		}
+		else = {
+			debug_log = "kehillah_debug.100: PASS the banked-Greatness scratch variable was cleaned up"
+		}
+		debug_log = "kehillah_debug.100: post-departure invariant report -- END"
+	}
+}
+
+# =====================================================================
+# S2 PILLAR-BAND HARNESS (added 2026-09-25, Sukkot heartbeat 1).
+#
+# .101  run the band update NOW, instead of waiting for the next
+#       quarterly pulse -- pair with .1-.5 (or .11-.13) to drive any
+#       pillar to any band and see the notice and modifier swap at once
+# .102  report each pillar's recorded band and which band modifiers the
+#       leader is actually wearing, so "the notice fired" and "the
+#       modifier really changed" can be checked separately
+#
+# Typical sequence for S2's own done-when criteria: .102 (before), then
+# .3 (all pillars -> Healthy) + .101, then .4 (-> Flourishing) + .101 to
+# see an upward notice, then .2 (-> Strained) + .101 for a downward one,
+# then .102 again.
+# =====================================================================
+
+kehillah_debug.101 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.101: forcing a pillar-band update outside the quarterly pulse"
+		kehillah_update_all_pillar_bands_effect = yes
+		debug_log = "kehillah_debug.101: band update done"
+	}
+}
+
+kehillah_debug.102 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.102: pillar band report -- START"
+
+		primary_title = {
+			if = { limit = { has_variable = kehillah_band_prev_prosperity } debug_log = "kehillah_debug.102: Prosperity has a recorded band" }
+			else = { debug_log = "kehillah_debug.102: Prosperity has NO recorded band yet" }
+			if = { limit = { has_variable = kehillah_band_prev_stability } debug_log = "kehillah_debug.102: Stability has a recorded band" }
+			else = { debug_log = "kehillah_debug.102: Stability has NO recorded band yet" }
+			if = { limit = { has_variable = kehillah_band_prev_greatness } debug_log = "kehillah_debug.102: Greatness has a recorded band" }
+			else = { debug_log = "kehillah_debug.102: Greatness has NO recorded band yet" }
+			debug_log_scopes = yes
+		}
+
+		# Which modifiers are actually on the leader. Exactly one per
+		# pillar should be present, or none if that pillar is Healthy --
+		# two at once for the same pillar is the bug this reports.
+		if = { limit = { has_character_modifier = kehillah_band_prosperity_crisis_modifier } debug_log = "kehillah_debug.102: wearing Prosperity CRISIS modifier" }
+		if = { limit = { has_character_modifier = kehillah_band_prosperity_strained_modifier } debug_log = "kehillah_debug.102: wearing Prosperity STRAINED modifier" }
+		if = { limit = { has_character_modifier = kehillah_band_prosperity_flourishing_modifier } debug_log = "kehillah_debug.102: wearing Prosperity FLOURISHING modifier" }
+		if = { limit = { has_character_modifier = kehillah_band_prosperity_legendary_modifier } debug_log = "kehillah_debug.102: wearing Prosperity LEGENDARY modifier" }
+
+		if = { limit = { has_character_modifier = kehillah_band_stability_crisis_modifier } debug_log = "kehillah_debug.102: wearing Stability CRISIS modifier" }
+		if = { limit = { has_character_modifier = kehillah_band_stability_strained_modifier } debug_log = "kehillah_debug.102: wearing Stability STRAINED modifier" }
+		if = { limit = { has_character_modifier = kehillah_band_stability_flourishing_modifier } debug_log = "kehillah_debug.102: wearing Stability FLOURISHING modifier" }
+		if = { limit = { has_character_modifier = kehillah_band_stability_legendary_modifier } debug_log = "kehillah_debug.102: wearing Stability LEGENDARY modifier" }
+
+		if = { limit = { has_character_modifier = kehillah_band_greatness_crisis_modifier } debug_log = "kehillah_debug.102: wearing Greatness CRISIS modifier" }
+		if = { limit = { has_character_modifier = kehillah_band_greatness_strained_modifier } debug_log = "kehillah_debug.102: wearing Greatness STRAINED modifier" }
+		if = { limit = { has_character_modifier = kehillah_band_greatness_flourishing_modifier } debug_log = "kehillah_debug.102: wearing Greatness FLOURISHING modifier" }
+		if = { limit = { has_character_modifier = kehillah_band_greatness_legendary_modifier } debug_log = "kehillah_debug.102: wearing Greatness LEGENDARY modifier" }
+
+		debug_log = "kehillah_debug.102: pillar band report -- END"
+	}
+}
+
+# =====================================================================
+# .103 -- ISOLATING THE add_gold CLAMP FAILURE (added 2026-09-25, after
+# the first Sukkot live run).
+#
+# WHAT .97 ACTUALLY FOUND, live: with the accused holding 3 gold, the
+# clamp computed restitution = 3.00 exactly (logged, and the accuser was
+# credited exactly 3), and yet `add_gold = { value = <that scope value>
+# multiply = -1 }` STILL threw "Trying to add add_gold with negative
+# value", and the accused did not end at 0. So the deduction was refused
+# even though, by every number the probe could read, it was affordable.
+#
+# That is not what the 2026-09-25 source fix assumed. It means the
+# engine's affordability check for a negative add_gold is NOT simply
+# |value| <= gold, and the same shape is what currently ships inside
+# kehillah_bet_din_silversmiths_resolution_effect -- so the "resolved in
+# source" claim in BLOCKERS.md is in doubt, not confirmed.
+#
+# DO NOT GUESS A FIX FROM HERE. This event measures instead:
+#   A. what gold a freshly created character actually has at each step
+#      (probe characters may simply not behave like the real litigants
+#      the shipped effect operates on -- that alone would explain
+#      everything and would mean the shipped fix is fine)
+#   B. whether the SNAPSHOT shape (save_scope_value_as, then deduct that
+#      value) fails where the SELF-REFERENTIAL shape (deduct `gold`
+#      computed at deduction time) succeeds
+#
+# If B is the difference, the self-referential shape is the fix and it
+# is provably always affordable. If A shows the probe characters are the
+# anomaly, the shipped effect needs re-testing on real litigants in a
+# real docket instead, and .97/.103 should be retired as misleading.
+# =====================================================================
+kehillah_debug.103 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.103: add_gold clamp isolation -- START"
+
+		# --- A. What does a freshly created character actually hold? ---
+		create_character = {
+			culture = root.culture
+			faith = root.faith
+			rite = root.rite
+			age = 40
+			gender_female_chance = 0
+			location = root.location
+			save_scope_as = kehillah_debug_snap_target
+		}
+		scope:kehillah_debug_snap_target = {
+			save_scope_value_as = { name = kehillah_debug_gold_at_creation value = gold }
+		}
+		debug_log = "kehillah_debug.103: A1 gold at creation (see kehillah_debug_gold_at_creation below)"
+		debug_log_scopes = yes
+
+		scope:kehillah_debug_snap_target = {
+			add_gold = { value = gold multiply = -1 }
+			save_scope_value_as = { name = kehillah_debug_gold_after_zeroing value = gold }
+		}
+		debug_log = "kehillah_debug.103: A2 gold after zeroing -- should be 0.00; anything else is the anomaly"
+		debug_log_scopes = yes
+
+		scope:kehillah_debug_snap_target = {
+			add_gold = 3
+			save_scope_value_as = { name = kehillah_debug_gold_after_grant value = gold }
+		}
+		debug_log = "kehillah_debug.103: A3 gold after adding 3 -- should be 3.00"
+		debug_log_scopes = yes
+
+		# --- B1. The SNAPSHOT shape, i.e. exactly what ships today. ---
+		scope:kehillah_debug_snap_target = {
+			save_scope_value_as = {
+				name = kehillah_debug_snap_restitution
+				value = { value = gold min = 0 max = medium_gold_value }
+			}
+			add_gold = { value = scope:kehillah_debug_snap_restitution multiply = -1 }
+			save_scope_value_as = { name = kehillah_debug_gold_after_snapshot_deduct value = gold }
+		}
+		debug_log = "kehillah_debug.103: B1 SNAPSHOT shape attempted -- if gold_after_snapshot_deduct is still 3.00, the deduction was refused"
+		debug_log_scopes = yes
+		scope:kehillah_debug_snap_target = {
+			if = {
+				limit = { gold < 1 }
+				debug_log = "kehillah_debug.103: B1 PASS snapshot deduction went through"
+			}
+			else = {
+				debug_log = "kehillah_debug.103: B1 FAIL snapshot deduction was refused -- reproduces the shipped bug"
+			}
+		}
+
+		# --- B2. The SELF-REFERENTIAL shape, on a second fresh character. ---
+		# `gold` is evaluated by the engine at deduction time against the
+		# very character being deducted from, so this cannot ask for more
+		# than exists, whatever the affordability check is really doing.
+		create_character = {
+			culture = root.culture
+			faith = root.faith
+			rite = root.rite
+			age = 40
+			gender_female_chance = 0
+			location = root.location
+			save_scope_as = kehillah_debug_selfref_target
+		}
+		scope:kehillah_debug_selfref_target = {
+			add_gold = { value = gold multiply = -1 }
+			add_gold = 3
+			# Bank what we are about to take, so a caller could still pay it
+			# to the other party -- the transfer has to stay zero-sum.
+			save_scope_value_as = {
+				name = kehillah_debug_selfref_restitution
+				value = { value = gold min = 0 max = medium_gold_value }
+			}
+			add_gold = { value = gold multiply = -1 }
+			save_scope_value_as = { name = kehillah_debug_gold_after_selfref_deduct value = gold }
+		}
+		debug_log = "kehillah_debug.103: B2 SELF-REFERENTIAL shape attempted"
+		debug_log_scopes = yes
+		scope:kehillah_debug_selfref_target = {
+			if = {
+				limit = { gold < 1 }
+				debug_log = "kehillah_debug.103: B2 PASS self-referential deduction went through -- this is the candidate fix"
+			}
+			else = {
+				debug_log = "kehillah_debug.103: B2 FAIL self-referential deduction was ALSO refused -- the problem is not the snapshot"
+			}
+		}
+
+		debug_log = "kehillah_debug.103: add_gold clamp isolation -- END"
+	}
+}
+
+
+# =====================================================================
+# S3 SUCCESSION HARNESS (added 2026-09-26, Sukkot heartbeat 3).
+#
+# .104  ARM the on_title_gain trace, then console-kill the leader and
+#       let the appointment succession run. Every line the trace writes
+#       is prefixed "kehillah_titlegain_trace:" in debug.log; the
+#       deferred handoff's own verdict line is prefixed
+#       "kehillah_succession.0010:". Together they answer S3(a):
+#       whether the `change_government [ Trying to set illegal
+#       government ]` error is an on_title_gain timing problem or
+#       something else.
+# .105  DISARM the trace.
+# .106  Report the succession pool and the endorsement state -- who is
+#       eligible, and who (if anyone) the leader has endorsed. Pair with
+#       the Endorse as Successor interaction to confirm S3(d) actually
+#       wrote the variable.
+#
+# S3(a) SEQUENCE: .104, then in the console `kill` the current leader
+# (or use vanilla's own die = yes via a run script), take the "continue
+# as successor" prompt, wait 2-3 in-game days so the one-day-deferred
+# kehillah_succession.0010 has fired, then read debug.log and error.log.
+# The pass condition for S3(a) is NOT "no lines" -- it is that
+# error.log gains no `Trying to set illegal government` line AND the
+# successor ends up with a kehillah government, a domicile, and the
+# community's pillars intact (.61 reports all of that already).
+# =====================================================================
+
+kehillah_debug.104 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		set_global_variable = {
+			name = kehillah_debug_title_gain_trace
+			value = 1
+		}
+		debug_log = "kehillah_debug.104: on_title_gain trace ARMED -- now kill the leader and watch for kehillah_titlegain_trace lines"
+	}
+}
+
+kehillah_debug.105 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { exists = global_var:kehillah_debug_title_gain_trace }
+			remove_global_variable = kehillah_debug_title_gain_trace
+		}
+		debug_log = "kehillah_debug.105: on_title_gain trace DISARMED"
+	}
+}
+
+# Scope: the community leader. Reports the endorsement state (S3(d)) and
+# walks the same candidate categories kehillah_leadership.txt's
+# default_candidates uses, so a live run can see WHO the engine is
+# actually choosing between before the succession happens rather than
+# inferring it afterwards from who won.
+kehillah_debug.106 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.106: succession pool and endorsement report -- START"
+
+		primary_title = {
+			if = {
+				limit = { exists = var:kehillah_var_endorsed_successor }
+				debug_log = "kehillah_debug.106: an endorsed successor IS recorded on the title"
+				var:kehillah_var_endorsed_successor = {
+					debug_log = "kehillah_debug.106: the endorsee is the character in scope below"
+					debug_log_scopes = yes
+					if = {
+						limit = { is_alive = yes }
+						debug_log = "kehillah_debug.106: endorsee is alive"
+					}
+					else = {
+						debug_log = "kehillah_debug.106: WARNING endorsee is DEAD -- the score term can never apply"
+					}
+				}
+			}
+			else = {
+				debug_log = "kehillah_debug.106: NO endorsed successor recorded on the title"
+			}
+		}
+
+		# The two candidate categories that actually contribute anybody
+		# here -- see kehillah_leadership.txt's header for why the
+		# vassal/noble-house categories contribute nobody.
+		every_court_position_holder = {
+			debug_log = "kehillah_debug.106: court-position holder in the pool (scope below)"
+			debug_log_scopes = yes
+		}
+
+		every_close_family_member = {
+			limit = { is_adult = yes }
+			debug_log = "kehillah_debug.106: adult close family member in the pool (scope below)"
+			debug_log_scopes = yes
+		}
+
+		debug_log = "kehillah_debug.106: succession pool and endorsement report -- END"
+	}
+}
+
+# =====================================================================
+# .108 -- THE RESTITUTION TRANSFER, VERIFYING THE 2026-09-26 FIX.
+#
+# HISTORY, so this is not re-litigated a fourth time. The Silversmiths'
+# Quarrel resolution moved restitution from the accused to the accuser
+# with a hand-rolled pair of add_gold calls, one of them negative. That
+# threw a real error in the 2026-09-24 live docket. Three probes and two
+# fixes chased it:
+#   .97  reproduced the error with the "fixed" clamp still in place.
+#   .103 ruled out both standing explanations -- the probe characters
+#        held gold exactly as script read them, and the self-referential
+#        shape failed identically to the snapshot shape.
+#   .108 (the previous, now-replaced version) was written to test a
+#        same-tick-commitment hypothesis, and answered the question by
+#        accident instead: its own three LITERAL negative add_gold calls
+#        were rejected at SCRIPT LOAD, before it ever ran. See commit
+#        fe8ba31 for that version and the log evidence.
+#
+# THE ACTUAL ANSWER, from the engine's own generated logs/effects.log:
+# add_gold "adds gold to a character" and is additive only. It refuses a
+# literal negative at load validation and a computed negative at runtime.
+# Gold is removed with remove_short_term_gold, and TRANSFERRED with
+# pay_short_term_gold = { target = X gold = Y }, which effects.log
+# describes as "the scope character pays gold to the target character."
+# Vanilla uses `add_gold = -` exactly zero times.
+#
+# WHAT THIS PROBE NOW DOES: runs the shipped effect's exact new shape --
+# one pay_short_term_gold under the same min/max clamp -- on two probe
+# characters, in the one configuration the original bug needed, a LOW-GOLD
+# accused who cannot cover the full medium_gold_value award. Both purses
+# are reported before and after. PASS means the accuser gained precisely
+# what the accused lost, the accused did not go negative, and error.log
+# gains no add_gold or pay_short_term_gold line at all.
+#
+# This is a shape test, not a substitute for a real docket: it exercises
+# the transfer primitive under the clamp, not kehillah_bet_din.0051's
+# option-to-direction wiring. A genuine Silversmiths' case is still the
+# only end-to-end confirmation.
+# =====================================================================
+
+kehillah_debug.108 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.108: restitution transfer (pay_short_term_gold) -- START"
+
+		create_character = {
+			culture = root.culture
+			faith = root.faith
+			rite = root.rite
+			age = 40
+			gender_female_chance = 0
+			location = root.location
+			save_scope_as = kehillah_debug_accuser
+		}
+		create_character = {
+			culture = root.culture
+			faith = root.faith
+			rite = root.rite
+			age = 40
+			gender_female_chance = 0
+			location = root.location
+			save_scope_as = kehillah_debug_accused
+		}
+
+		# Normalise both purses, then give the accused DELIBERATELY TOO
+		# LITTLE -- 7 gold against an award capped at medium_gold_value
+		# (50 in vanilla's own script_values). This is the exact
+		# configuration that errored in the 2026-09-24 live docket.
+		scope:kehillah_debug_accuser = { remove_short_term_gold = gold }
+		scope:kehillah_debug_accused = {
+			remove_short_term_gold = gold
+			add_gold = 7
+		}
+
+		scope:kehillah_debug_accuser = {
+			save_scope_value_as = { name = kehillah_debug_accuser_before value = gold }
+		}
+		scope:kehillah_debug_accused = {
+			save_scope_value_as = { name = kehillah_debug_accused_before value = gold }
+
+			# The shipped effect's exact shape, clamp and all.
+			save_scope_value_as = {
+				name = kehillah_debug_restitution
+				value = {
+					value = gold
+					min = 0
+					max = medium_gold_value
+				}
+			}
+			pay_short_term_gold = {
+				target = scope:kehillah_debug_accuser
+				gold = scope:kehillah_debug_restitution
+			}
+			save_scope_value_as = { name = kehillah_debug_accused_after value = gold }
+		}
+		scope:kehillah_debug_accuser = {
+			save_scope_value_as = { name = kehillah_debug_accuser_after value = gold }
+		}
+
+		debug_log = "kehillah_debug.108: accused started with 7, award capped at the accused's purse. Scope values below: *_before, *_after, and kehillah_debug_restitution."
+		debug_log_scopes = yes
+
+		# The clamp should have set restitution to 7, not medium_gold_value.
+		if = {
+			limit = { scope:kehillah_debug_restitution = 7 }
+			debug_log = "kehillah_debug.108: CLAMP PASS the award was capped to the accused's actual 7 gold, not medium_gold_value"
+		}
+		else = {
+			debug_log = "kehillah_debug.108: CLAMP FAIL the award did not come out at the accused's purse of 7 -- read kehillah_debug_restitution above"
+		}
+
+		# The accused should be at 0, having paid all 7.
+		scope:kehillah_debug_accused = {
+			if = {
+				limit = {
+					gold < 1
+					gold >= 0
+				}
+				debug_log = "kehillah_debug.108: DEBIT PASS the accused paid the full 7 and sits at 0 without going negative"
+			}
+			else = {
+				debug_log = "kehillah_debug.108: DEBIT FAIL the accused is not at 0 after paying -- read kehillah_debug_accused_after above"
+			}
+		}
+
+		# And the accuser should hold exactly what the accused lost.
+		scope:kehillah_debug_accuser = {
+			if = {
+				limit = {
+					gold >= 7
+					gold < 8
+				}
+				debug_log = "kehillah_debug.108: CREDIT PASS the accuser gained exactly the 7 the accused paid -- the transfer is zero-sum"
+			}
+			else = {
+				debug_log = "kehillah_debug.108: CREDIT FAIL the accuser did not gain exactly 7 -- read kehillah_debug_accuser_after above"
+			}
+		}
+
+		debug_log = "kehillah_debug.108: restitution transfer (pay_short_term_gold) -- END"
+	}
+}
+
+# =====================================================================
+# .110 -- S4 SETUP AND REPORT: reach the Chief Rabbi state, then read it.
+#
+# WHY THIS EXISTS. S4's own ROADMAP entry names the blocker outright:
+# "Live-testing (1) needs a community that has actually built the Beit
+# Midrash -- a debug probe to reach that state is the missing piece for
+# the next heartbeat." Both halves of S4 hang off that one building:
+#
+#   kehillah_seek_chief_rabbi_decision's is_shown reads
+#   `domicile ?= { has_domicile_parameter = kehillah_unlocks_chief_rabbi }`
+#   which only kehillah_beit_midrash_01/02/03 grant, exactly as
+#   chief_rabbi_kehillah_position's own valid_position does. Without the
+#   building there is no seat, so there is nothing for either the search
+#   decision or the serve-yourself toggle to be about.
+#
+# Reaching that state in normal play means banking Greatness to the right
+# band and then waiting out a real construction. This grants the tier-1
+# building directly instead, which is the same end state the construction
+# would produce -- add_domicile_building is the effect the mod's own
+# kehillah_seed_beit_midrash_effect already uses for the library seeding.
+#
+# It then REPORTS the things S4's live test needs to know before any
+# clicking starts, so a tester is never guessing which decision should be
+# available and why:
+#   - is the seat unlocked (the domicile parameter)
+#   - is it empty (no appointed chief rabbi)
+#   - is the leader already serving as their own rabbi
+#   - does the shared kehillah_has_acting_chief_rabbi_trigger agree with
+#     those two facts -- this is the ONE trigger S4 part (2) rewired all
+#     four consumer sites onto, so a disagreement here is the whole
+#     mechanism failing, not a cosmetic issue
+#   - would the serve-yourself toggle be takeable (rabbi trait, Learning
+#     against kehillah_serve_as_rabbi_learning_threshold)
+#   - the leader's actual Learning, since S4 fixed Rashi at 12 on purpose
+#     and the threshold is tuned to it
+#
+# Also clears the search cooldown flag, so the search can be re-run
+# repeatedly in one session instead of once.
+#
+# SAFE TO RE-RUN. The building grant is guarded on absence, and every
+# other line is a read.
+# =====================================================================
+
+kehillah_debug.110 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.110: S4 Chief Rabbi setup and report -- START"
+
+		if = {
+			limit = {
+				domicile ?= { NOT = { has_domicile_building_or_higher = kehillah_beit_midrash_01 } }
+			}
+			domicile ?= { add_domicile_building = kehillah_beit_midrash_01 }
+			debug_log = "kehillah_debug.110: granted kehillah_beit_midrash_01 (the domicile had none)"
+		}
+		else = {
+			debug_log = "kehillah_debug.110: the domicile already had a Beit Midrash -- left alone"
+		}
+
+		remove_character_flag = kehillah_seek_chief_rabbi_cooldown
+		debug_log = "kehillah_debug.110: cleared the kehillah_seek_chief_rabbi_cooldown flag"
+
+		# --- Is the seat unlocked at all? ---
+		if = {
+			limit = { domicile ?= { has_domicile_parameter = kehillah_unlocks_chief_rabbi } }
+			debug_log = "kehillah_debug.110: SEAT UNLOCKED the domicile grants kehillah_unlocks_chief_rabbi -- Seek a Chief Rabbi should now be SHOWN"
+		}
+		else = {
+			debug_log = "kehillah_debug.110: SEAT LOCKED the domicile does NOT grant kehillah_unlocks_chief_rabbi -- Seek a Chief Rabbi will stay hidden, investigate before testing further"
+		}
+
+		# --- Is it empty? ---
+		if = {
+			limit = { employs_court_position = chief_rabbi_kehillah_position }
+			debug_log = "kehillah_debug.110: SEAT FILLED a chief rabbi is already appointed -- both S4 decisions are correctly unavailable in this state"
+		}
+		else = {
+			debug_log = "kehillah_debug.110: SEAT EMPTY no appointed chief rabbi"
+		}
+
+		# --- The self-service toggle's own state. ---
+		if = {
+			limit = { has_character_flag = kehillah_serving_as_own_rabbi }
+			debug_log = "kehillah_debug.110: TOGGLE ON the leader is serving as the community's own rabbi"
+		}
+		else = {
+			debug_log = "kehillah_debug.110: TOGGLE OFF the leader is not serving as their own rabbi"
+		}
+
+		# --- The shared trigger every consumer site was rewired onto. ---
+		# This is the load-bearing check of S4 part (2): it must agree with
+		# the two facts above, and disagreeing means the pillar
+		# contribution, the breakdown row and both dispute events are all
+		# reading the seat wrongly at once.
+		if = {
+			limit = { kehillah_has_acting_chief_rabbi_trigger = yes }
+			debug_log = "kehillah_debug.110: ACTING RABBI YES the shared trigger reports someone is acting as Chief Rabbi"
+		}
+		else = {
+			debug_log = "kehillah_debug.110: ACTING RABBI NO the shared trigger reports nobody is acting as Chief Rabbi"
+		}
+
+		# --- Would the toggle be takeable? ---
+		if = {
+			limit = { has_trait = kehillah_rabbi_trait }
+			debug_log = "kehillah_debug.110: the leader HAS the rabbi trait"
+		}
+		else = {
+			debug_log = "kehillah_debug.110: the leader does NOT have the rabbi trait -- Serve as the Community's Rabbi will stay hidden for them"
+		}
+		if = {
+			limit = { kehillah_can_serve_as_own_rabbi_trigger = yes }
+			debug_log = "kehillah_debug.110: CAN SERVE the serve-yourself gate passes -- the toggle should be takeable"
+		}
+		else = {
+			debug_log = "kehillah_debug.110: CANNOT SERVE the serve-yourself gate fails (trait, Learning, or the seat already being filled)"
+		}
+
+		debug_log = "kehillah_debug.110: leader Learning and the threshold it is judged against, below"
+		save_scope_value_as = { name = kehillah_debug_leader_learning value = learning }
+		save_scope_value_as = { name = kehillah_debug_rabbi_threshold value = kehillah_serve_as_rabbi_learning_threshold }
+		save_scope_value_as = { name = kehillah_debug_acting_rabbi_learning value = kehillah_acting_chief_rabbi_learning_value }
+		debug_log_scopes = yes
+
+		debug_log = "kehillah_debug.110: S4 Chief Rabbi setup and report -- END"
+	}
+}
+
+
+# =====================================================================
+# .111 -- THE WORMS DEVELOPED START AND THE NEXT-BAND TOOLTIP, MEASURED
+# (added 2026-09-26, heartbeat 5).
+#
+# Two outstanding checks, one probe, because both are answered by the
+# same read of the player's own community and neither needs the UI:
+#
+#   1. The Worms developed start was a NO-OP above synagogue tier 1
+#      until commit 4267d36 (add_domicile_building does consult
+#      can_construct, and tiers 2-5 gate on Greatness, which is computed
+#      FROM the buildings). This lists every building that start is
+#      supposed to grant, so "did the fix take" is a log line rather
+#      than a hunt through the Jewish Quarter panel.
+#
+#   2. S2 part 3's next-band tooltip line rendered the WRONG band name
+#      and threw ~2,000 error lines a second (BLOCKERS 2026-09-26). It
+#      was fixed by moving the custom loc and script values to title
+#      scope. This computes, IN TITLE SCOPE exactly as the tooltip now
+#      does, each pillar's value, the band the tooltip should name, and
+#      the gap it should print -- so a hover can be checked against a
+#      number instead of against a tester's expectation.
+#
+# READ-ONLY. Every line here is a read or a scope save; nothing is
+# granted, set or cleared. Safe to run at any time, as often as wanted.
+# =====================================================================
+
+kehillah_debug.111 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.111: Worms start buildings + next-band expectations -- START"
+
+		# --- 1. The building set the developed start grants. ---
+		domicile ?= {
+			if = { limit = { has_domicile_building_or_higher = kehillah_synagogue_05 } debug_log = "kehillah_debug.111: SYNAGOGUE 5 -- the developed start full main slot (this is the PASS state for commit 4267d36)" }
+			else_if = { limit = { has_domicile_building_or_higher = kehillah_synagogue_04 } debug_log = "kehillah_debug.111: SYNAGOGUE 4 -- short of the 5 the developed start grants" }
+			else_if = { limit = { has_domicile_building_or_higher = kehillah_synagogue_03 } debug_log = "kehillah_debug.111: SYNAGOGUE 3 -- short of the 5 the developed start grants" }
+			else_if = { limit = { has_domicile_building_or_higher = kehillah_synagogue_02 } debug_log = "kehillah_debug.111: SYNAGOGUE 2 -- short of the 5 the developed start grants" }
+			else_if = { limit = { has_domicile_building_or_higher = kehillah_synagogue_01 } debug_log = "kehillah_debug.111: SYNAGOGUE 1 ONLY -- this is the PRE-FIX symptom, tiers 2-5 were refused" }
+			else = { debug_log = "kehillah_debug.111: NO SYNAGOGUE AT ALL -- not a developed start; check the community" }
+
+			if = { limit = { has_domicile_building_or_higher = kehillah_mikvah_01 } debug_log = "kehillah_debug.111: mikvah PRESENT" }
+			else = { debug_log = "kehillah_debug.111: mikvah MISSING" }
+			if = { limit = { has_domicile_building_or_higher = kehillah_sofer_workshop_01 } debug_log = "kehillah_debug.111: sofer workshop PRESENT" }
+			else = { debug_log = "kehillah_debug.111: sofer workshop MISSING" }
+			if = { limit = { has_domicile_building_or_higher = kehillah_beit_midrash_01 } debug_log = "kehillah_debug.111: beit midrash PRESENT" }
+			else = { debug_log = "kehillah_debug.111: beit midrash MISSING" }
+			if = { limit = { has_domicile_building_or_higher = kehillah_countinghouse_01 } debug_log = "kehillah_debug.111: countinghouse PRESENT" }
+			else = { debug_log = "kehillah_debug.111: countinghouse MISSING" }
+			if = { limit = { has_domicile_building_or_higher = kehillah_hekdesh_01 } debug_log = "kehillah_debug.111: hekdesh PRESENT" }
+			else = { debug_log = "kehillah_debug.111: hekdesh MISSING" }
+			if = { limit = { has_domicile_building_or_higher = kehillah_slaughterhouse_01 } debug_log = "kehillah_debug.111: slaughterhouse PRESENT" }
+			else = { debug_log = "kehillah_debug.111: slaughterhouse MISSING" }
+			if = { limit = { has_domicile_building_or_higher = kehillah_market_stalls_01 } debug_log = "kehillah_debug.111: market stalls PRESENT" }
+			else = { debug_log = "kehillah_debug.111: market stalls MISSING" }
+			if = { limit = { has_domicile_building_or_higher = kehillah_workshops_01 } debug_log = "kehillah_debug.111: workshops PRESENT" }
+			else = { debug_log = "kehillah_debug.111: workshops MISSING" }
+		}
+
+		# --- 2. What the next-band tooltip line must say, per pillar. ---
+		# Title scope, direct variable reads, the same thresholds the
+		# custom loc branches on -- so these ARE the tooltip's own
+		# numbers, not an independent reimplementation that could drift.
+		primary_title ?= {
+			if = {
+				limit = { has_variable = kehillah_var_prosperity }
+				save_scope_value_as = { name = kehillah_debug_prosperity value = var:kehillah_var_prosperity }
+				save_scope_value_as = { name = kehillah_debug_prosperity_gap value = kehillah_next_band_gap_prosperity_value }
+				if = { limit = { var:kehillah_var_prosperity >= kehillah_band_legendary_threshold } debug_log = "kehillah_debug.111: PROSPERITY is Legendary -- tooltip must say Legendary is the highest band, with NO number" }
+				else_if = { limit = { var:kehillah_var_prosperity >= kehillah_band_flourishing_threshold } debug_log = "kehillah_debug.111: PROSPERITY is Flourishing -- tooltip must name LEGENDARY as the next band" }
+				else_if = { limit = { var:kehillah_var_prosperity >= kehillah_band_healthy_threshold } debug_log = "kehillah_debug.111: PROSPERITY is Healthy -- tooltip must name FLOURISHING as the next band" }
+				else_if = { limit = { var:kehillah_var_prosperity >= kehillah_band_strained_threshold } debug_log = "kehillah_debug.111: PROSPERITY is Strained -- tooltip must name HEALTHY as the next band" }
+				else = { debug_log = "kehillah_debug.111: PROSPERITY is Crisis -- tooltip must name STRAINED as the next band" }
+			}
+			else = { debug_log = "kehillah_debug.111: PROSPERITY variable NOT SET -- every guarded tooltip branch will fall through; investigate before judging the text" }
+
+			if = {
+				limit = { has_variable = kehillah_var_stability }
+				save_scope_value_as = { name = kehillah_debug_stability value = var:kehillah_var_stability }
+				save_scope_value_as = { name = kehillah_debug_stability_gap value = kehillah_next_band_gap_stability_value }
+				if = { limit = { var:kehillah_var_stability >= kehillah_band_legendary_threshold } debug_log = "kehillah_debug.111: STABILITY is Legendary -- tooltip must say Legendary is the highest band, with NO number" }
+				else_if = { limit = { var:kehillah_var_stability >= kehillah_band_flourishing_threshold } debug_log = "kehillah_debug.111: STABILITY is Flourishing -- tooltip must name LEGENDARY as the next band" }
+				else_if = { limit = { var:kehillah_var_stability >= kehillah_band_healthy_threshold } debug_log = "kehillah_debug.111: STABILITY is Healthy -- tooltip must name FLOURISHING as the next band" }
+				else_if = { limit = { var:kehillah_var_stability >= kehillah_band_strained_threshold } debug_log = "kehillah_debug.111: STABILITY is Strained -- tooltip must name HEALTHY as the next band" }
+				else = { debug_log = "kehillah_debug.111: STABILITY is Crisis -- tooltip must name STRAINED as the next band" }
+			}
+			else = { debug_log = "kehillah_debug.111: STABILITY variable NOT SET -- every guarded tooltip branch will fall through; investigate before judging the text" }
+
+			if = {
+				limit = { has_variable = kehillah_var_greatness }
+				save_scope_value_as = { name = kehillah_debug_greatness value = var:kehillah_var_greatness }
+				save_scope_value_as = { name = kehillah_debug_greatness_gap value = kehillah_next_band_gap_greatness_value }
+				if = { limit = { var:kehillah_var_greatness >= kehillah_band_legendary_threshold } debug_log = "kehillah_debug.111: GREATNESS is Legendary -- tooltip must say Legendary is the highest band, with NO number" }
+				else_if = { limit = { var:kehillah_var_greatness >= kehillah_band_flourishing_threshold } debug_log = "kehillah_debug.111: GREATNESS is Flourishing -- tooltip must name LEGENDARY as the next band" }
+				else_if = { limit = { var:kehillah_var_greatness >= kehillah_band_healthy_threshold } debug_log = "kehillah_debug.111: GREATNESS is Healthy -- tooltip must name FLOURISHING as the next band" }
+				else_if = { limit = { var:kehillah_var_greatness >= kehillah_band_strained_threshold } debug_log = "kehillah_debug.111: GREATNESS is Strained -- tooltip must name HEALTHY as the next band" }
+				else = { debug_log = "kehillah_debug.111: GREATNESS is Crisis -- tooltip must name STRAINED as the next band" }
+			}
+			else = { debug_log = "kehillah_debug.111: GREATNESS variable NOT SET -- every guarded tooltip branch will fall through; investigate before judging the text" }
+
+			# The three values and the three gaps the tooltip must print.
+			debug_log_scopes = yes
+		}
+
+		debug_log = "kehillah_debug.111: Worms start buildings + next-band expectations -- END"
+	}
+}
+
+
+# =====================================================================
+# .112 / .113 -- DOES THE COMMUNITY SURVIVE A VOLUNTARY DEPARTURE?
+# (added 2026-09-26, heartbeat 5, for S1's first done-when criterion.)
+#
+# S1 asks for two different fates from ONE shared teardown:
+#   VOLUNTARY step-down -- the leader leaves, the COMMUNITY CONTINUES
+#                          under its heir.
+#   COLLAPSE            -- the community title is DESTROYED.
+# .100 already reports the departing character's own invariants, but it
+# says nothing about what happened to the community behind them, which
+# is the entire difference between the two paths. These close that gap.
+#
+# .112  BEFORE stepping down: remember which title is being watched, in
+#       a global variable, and log its state now. Must be run while
+#       still the community's leader.
+# .113  AFTER stepping down: report that same title's fate.
+#
+# Watching a remembered title rather than scanning
+# kehillah_registered_communities is deliberate: after the departure the
+# player has no link to the community at all, and a scan would report
+# sixteen communities without saying which one was theirs.
+#
+# PASS for a voluntary departure is .113 reporting TITLE EXISTS + HOLDER
+# EXISTS + HOLDER IS NOT ROOT + HOLDER IS A KEHILLAH. For a collapse it
+# is the opposite: TITLE GONE.
+# =====================================================================
+
+kehillah_debug.112 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.112: marking the current community for the post-departure check"
+		if = {
+			limit = { exists = primary_title }
+			primary_title = { save_scope_as = kehillah_debug_watched }
+			set_global_variable = { name = kehillah_debug_watched_community value = scope:kehillah_debug_watched }
+			primary_title = {
+				if = {
+					limit = { is_kehillah_title_trigger = yes }
+					debug_log = "kehillah_debug.112: marked -- the primary title IS a Kehillah title, as expected"
+				}
+				else = {
+					debug_log = "kehillah_debug.112: marked, BUT the primary title is not a Kehillah title -- wrong character?"
+				}
+				if = {
+					limit = { exists = current_heir }
+					debug_log = "kehillah_debug.112: an heir EXISTS -- kehillah_step_down_decision should be valid"
+				}
+				else = {
+					debug_log = "kehillah_debug.112: NO heir -- kehillah_step_down_decision will be shown but INVALID, and its tooltip should say so"
+				}
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.112: FAIL no primary title to mark"
+		}
+	}
+}
+
+kehillah_debug.113 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.113: post-departure community fate -- START"
+		if = {
+			limit = { exists = global_var:kehillah_debug_watched_community }
+			global_var:kehillah_debug_watched_community = {
+				debug_log = "kehillah_debug.113: TITLE EXISTS the watched community title is still in the world"
+				if = {
+					limit = { exists = holder }
+					debug_log = "kehillah_debug.113: HOLDER EXISTS"
+					if = {
+						limit = { holder = { this = root } }
+						debug_log = "kehillah_debug.113: HOLDER IS ROOT -- the departure did NOT hand the community over"
+					}
+					else = {
+						debug_log = "kehillah_debug.113: HOLDER IS NOT ROOT -- handover happened, which is the voluntary-departure PASS"
+					}
+					holder = {
+						if = {
+							limit = { government_has_flag = government_is_kehillah }
+							debug_log = "kehillah_debug.113: HOLDER IS A KEHILLAH the new holder has the Kehillah government"
+						}
+						else = {
+							debug_log = "kehillah_debug.113: FAIL the new holder does NOT have the Kehillah government -- change_government did not run for them"
+						}
+						if = {
+							limit = { exists = domicile }
+							debug_log = "kehillah_debug.113: PASS the new holder has a domicile (the Jewish Quarter survived)"
+						}
+						else = {
+							debug_log = "kehillah_debug.113: FAIL the new holder has NO domicile -- the 15-25 day Game Over fuse, now pointed at an AI"
+						}
+					}
+				}
+				else = {
+					debug_log = "kehillah_debug.113: NO HOLDER the title exists but is unheld -- neither path intends this"
+				}
+				if = {
+					limit = { has_variable = kehillah_var_stability }
+					debug_log = "kehillah_debug.113: pillar variables still present on the title"
+				}
+				else = {
+					debug_log = "kehillah_debug.113: pillar variables GONE from the title -- expected after a collapse, a bug after a handover"
+				}
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.113: TITLE GONE the watched community no longer exists -- this is the COLLAPSE pass state, and a FAIL for a voluntary step-down"
+		}
+		debug_log = "kehillah_debug.113: post-departure community fate -- END"
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_debug.114 -- V20's ACTUAL PROMISE: do a historical start's
+# opening pillars equal their computed baselines?
+#
+# Added 2026-09-26 (heartbeat 7). The Sukkot queue has carried "V20
+# starting pillars" as an open live check for days, and heartbeat 5
+# answered half of it in passing (Worms opens at Prosperity 255,
+# Stability 369, Greatness 459). What was never checked is the part V20
+# actually promises: that those figures ARE the baselines the breakdown
+# computes, not merely plausible numbers.
+#
+# Scope: the community's LEADER, because that is the scope the three
+# baseline values are written for (see kehillah_breakdown_values.txt's
+# header). The stored values live on the title (implementation doc
+# section 10), so this reads both and compares them within a tolerance
+# of 1, to survive float rounding rather than pretend it does not exist.
+#
+# WHEN TO FIRE IT: between the day-three snapshot (1066.9.18) and the
+# NEXT quarterly pulse after it. The pulse's convergence deliberately
+# moves each pillar a twentieth of the way toward its baseline every
+# quarter, so a mismatch measured later is drift doing its job, not a
+# failed promise. Fire it on 1066.9.19-1066.12.15 and the comparison is
+# meaningful; fire it in 1071 and it proves nothing.
+# ---------------------------------------------------------------------
+kehillah_debug.114 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.114: V20 opening-pillars-equal-baseline check -- START"
+
+		save_scope_value_as = { name = kehillah_debug_base_prosperity value = kehillah_prosperity_baseline_value }
+		save_scope_value_as = { name = kehillah_debug_base_stability value = kehillah_stability_baseline_value }
+		save_scope_value_as = { name = kehillah_debug_base_greatness value = kehillah_greatness_baseline_value }
+
+		save_scope_value_as = { name = kehillah_debug_base_prosperity_lo value = { value = kehillah_prosperity_baseline_value add = -1 } }
+		save_scope_value_as = { name = kehillah_debug_base_prosperity_hi value = { value = kehillah_prosperity_baseline_value add = 1 } }
+		save_scope_value_as = { name = kehillah_debug_base_stability_lo value = { value = kehillah_stability_baseline_value add = -1 } }
+		save_scope_value_as = { name = kehillah_debug_base_stability_hi value = { value = kehillah_stability_baseline_value add = 1 } }
+		save_scope_value_as = { name = kehillah_debug_base_greatness_lo value = { value = kehillah_greatness_baseline_value add = -1 } }
+		save_scope_value_as = { name = kehillah_debug_base_greatness_hi value = { value = kehillah_greatness_baseline_value add = 1 } }
+
+		primary_title ?= {
+			if = {
+				limit = { has_variable = kehillah_start_pillars_initialized_from_baseline }
+				debug_log = "kehillah_debug.114: the day-three snapshot HAS run on this community -- the comparison below is meaningful"
+			}
+			else = {
+				debug_log = "kehillah_debug.114: the day-three snapshot has NOT run yet -- every comparison below will fail for that reason alone, not because V20 is broken"
+			}
+
+			if = {
+				limit = { has_variable = kehillah_var_prosperity }
+				save_scope_value_as = { name = kehillah_debug_stored_prosperity value = var:kehillah_var_prosperity }
+				if = {
+					limit = {
+						var:kehillah_var_prosperity >= scope:kehillah_debug_base_prosperity_lo
+						var:kehillah_var_prosperity <= scope:kehillah_debug_base_prosperity_hi
+					}
+					debug_log = "kehillah_debug.114: PROSPERITY PASS stored value equals its computed baseline (within 1)"
+				}
+				else = {
+					debug_log = "kehillah_debug.114: PROSPERITY MISMATCH stored value is not its computed baseline -- read the two numbers in the scope dump below before concluding anything"
+				}
+			}
+			else = { debug_log = "kehillah_debug.114: PROSPERITY variable NOT SET" }
+
+			if = {
+				limit = { has_variable = kehillah_var_stability }
+				save_scope_value_as = { name = kehillah_debug_stored_stability value = var:kehillah_var_stability }
+				if = {
+					limit = {
+						var:kehillah_var_stability >= scope:kehillah_debug_base_stability_lo
+						var:kehillah_var_stability <= scope:kehillah_debug_base_stability_hi
+					}
+					debug_log = "kehillah_debug.114: STABILITY PASS stored value equals its computed baseline (within 1)"
+				}
+				else = {
+					debug_log = "kehillah_debug.114: STABILITY MISMATCH stored value is not its computed baseline -- read the two numbers in the scope dump below before concluding anything"
+				}
+			}
+			else = { debug_log = "kehillah_debug.114: STABILITY variable NOT SET" }
+
+			if = {
+				limit = { has_variable = kehillah_var_greatness }
+				save_scope_value_as = { name = kehillah_debug_stored_greatness value = var:kehillah_var_greatness }
+				if = {
+					limit = {
+						var:kehillah_var_greatness >= scope:kehillah_debug_base_greatness_lo
+						var:kehillah_var_greatness <= scope:kehillah_debug_base_greatness_hi
+					}
+					debug_log = "kehillah_debug.114: GREATNESS PASS stored value equals its computed baseline (within 1)"
+				}
+				else = {
+					debug_log = "kehillah_debug.114: GREATNESS MISMATCH stored value is not its computed baseline -- read the two numbers in the scope dump below before concluding anything"
+				}
+			}
+			else = { debug_log = "kehillah_debug.114: GREATNESS variable NOT SET" }
+
+			# Both halves of every comparison, by name, for the record.
+			debug_log_scopes = yes
+		}
+
+		debug_log = "kehillah_debug.114: V20 opening-pillars-equal-baseline check -- END"
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_debug.115 -- READ-ONLY Chief Rabbi state for ANY character.
+#
+# Added 2026-09-26 (heartbeat 7). kehillah_debug.110 reports the same
+# ground but also GRANTS a Beit Midrash and clears a cooldown, so it can
+# only be pointed at the character under test. This one changes nothing,
+# which means it can be fired at another community's leader without a
+# second boot or a character switch. That is S4(2)'s "Rashi begins a new
+# 1066 game as Troyes's own Chief Rabbi" answered from inside an ordinary
+# Worms game.
+#
+# HOW TO TARGET IT -- CORRECTED 2026-09-27 (heartbeat 8), after the
+# original instruction here was found to be wrong in a live boot. This
+# header used to say `event kehillah_debug.115 9000201`. That does NOT
+# work: of five such two-argument console calls in that session, four
+# produced no output whatsoever and the one that did ran on the PLAYER,
+# not on the named character (proved by the toggle reading OFF for it and
+# ON for Rashi moments later in the same game). Use a run file instead:
+#
+#   # <CK3 user dir>\run\probe.txt
+#   character:9000201 = {
+#       trigger_event = kehillah_debug.115
+#   }
+#
+# then `run probe.txt` from the console. Same mechanism the shim guide's
+# "run <file>.txt + debug_log" section describes.
+#
+# The load-bearing line is the CONTRADICTION check at the end: all four
+# consumer sites now read kehillah_has_acting_chief_rabbi_trigger, so
+# that trigger disagreeing with the seat and the toggle would break every
+# one of them at once.
+# ---------------------------------------------------------------------
+kehillah_debug.115 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.115: Chief Rabbi state (read-only) -- START"
+
+		save_scope_value_as = { name = kehillah_debug_115_learning value = learning }
+		save_scope_value_as = { name = kehillah_debug_115_threshold value = kehillah_serve_as_rabbi_learning_threshold }
+		save_scope_value_as = { name = kehillah_debug_115_acting_learning value = kehillah_acting_chief_rabbi_learning_value }
+
+		if = {
+			limit = { government_has_flag = government_is_kehillah }
+			debug_log = "kehillah_debug.115: this character IS a Kehillah leader"
+		}
+		else = {
+			debug_log = "kehillah_debug.115: this character is NOT a Kehillah leader -- the rest is reported anyway, but read it with that in mind"
+		}
+
+		if = { limit = { has_trait = kehillah_rabbi_trait } debug_log = "kehillah_debug.115: HAS the rabbi trait" }
+		else = { debug_log = "kehillah_debug.115: does NOT have the rabbi trait" }
+
+		if = {
+			limit = { kehillah_can_serve_as_own_rabbi_trigger = yes }
+			debug_log = "kehillah_debug.115: COULD serve as own rabbi (trait, gender gate and Learning threshold all satisfied)"
+		}
+		else = {
+			debug_log = "kehillah_debug.115: could NOT serve as own rabbi -- compare the learning and threshold figures in the scope dump"
+		}
+
+		if = { limit = { has_character_flag = kehillah_serving_as_own_rabbi } debug_log = "kehillah_debug.115: TOGGLE ON serving as the community's own rabbi" }
+		else = { debug_log = "kehillah_debug.115: TOGGLE OFF not serving as own rabbi" }
+
+		if = { limit = { employs_court_position = chief_rabbi_kehillah_position } debug_log = "kehillah_debug.115: SEAT FILLED an appointed chief rabbi is employed" }
+		else = { debug_log = "kehillah_debug.115: SEAT EMPTY no appointed chief rabbi" }
+
+		if = { limit = { kehillah_has_acting_chief_rabbi_trigger = yes } debug_log = "kehillah_debug.115: ACTING RABBI YES the shared trigger reports an acting chief rabbi" }
+		else = { debug_log = "kehillah_debug.115: ACTING RABBI NO the shared trigger reports none" }
+
+		# The contradiction check. If this fires, all four consumer sites
+		# are wrong together and nothing downstream of them can be trusted.
+		if = {
+			limit = {
+				kehillah_has_acting_chief_rabbi_trigger = yes
+				NOT = { employs_court_position = chief_rabbi_kehillah_position }
+				NOT = { has_character_flag = kehillah_serving_as_own_rabbi }
+			}
+			debug_log = "kehillah_debug.115: CONTRADICTION the shared trigger says yes while both the seat and the toggle say no -- report this, it breaks all four consumer sites at once"
+		}
+		if = {
+			limit = {
+				NOT = { kehillah_has_acting_chief_rabbi_trigger = yes }
+				OR = {
+					employs_court_position = chief_rabbi_kehillah_position
+					has_character_flag = kehillah_serving_as_own_rabbi
+				}
+			}
+			debug_log = "kehillah_debug.115: CONTRADICTION the shared trigger says no while the seat or the toggle says yes -- report this, it breaks all four consumer sites at once"
+		}
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.115: Chief Rabbi state (read-only) -- END"
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.116 -- RESPONSA (ROADMAP S5): report the state, then
+# fire a real question.
+#
+# Added 2026-09-27. Reports every gate S5's pulse actually checks, so a
+# question that does not arrive can be told apart from a question that
+# arrived and rendered wrong -- then fires kehillah_responsa.0001 itself
+# so the event does not have to be waited for through a yearly pulse at
+# 55%.
+#
+# Fire it on the community LEADER. `event kehillah_debug.116` as the
+# player.
+# ---------------------------------------------------------------------
+kehillah_debug.116 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.116: responsa state -- START"
+
+		save_scope_value_as = { name = kehillah_debug_116_answerer_learning value = kehillah_responsa_answerer_learning_value }
+		save_scope_value_as = { name = kehillah_debug_116_threshold value = kehillah_responsa_learning_threshold }
+		save_scope_value_as = { name = kehillah_debug_116_great_cut value = kehillah_responsa_learning_great }
+		save_scope_value_as = { name = kehillah_debug_116_good_cut value = kehillah_responsa_learning_good }
+
+		if = {
+			limit = { government_has_flag = government_is_kehillah }
+			debug_log = "kehillah_debug.116: IS a Kehillah leader"
+		}
+		else = {
+			debug_log = "kehillah_debug.116: NOT a Kehillah leader -- kehillah_responsa.0001 will refuse to fire on this character"
+		}
+
+		# The two halves of the gate, reported separately: "no question
+		# arrived" has two completely different causes and they need
+		# different fixes.
+		if = {
+			limit = { kehillah_has_responsa_correspondent_trigger = yes }
+			debug_log = "kehillah_debug.116: CORRESPONDENT YES at least one other community has a living adult leader to write in"
+		}
+		else = {
+			debug_log = "kehillah_debug.116: CORRESPONDENT NO nobody in the registry could send a question -- the pulse can never fire here, and that is the registry's state, not a bug in the event"
+		}
+
+		if = {
+			limit = { kehillah_responsa_answerer_learning_value >= kehillah_responsa_learning_threshold }
+			debug_log = "kehillah_debug.116: LEARNING GATE PASS the answerer clears the threshold"
+		}
+		else = {
+			debug_log = "kehillah_debug.116: LEARNING GATE FAIL the answerer is below the threshold -- compare the two figures in the scope dump"
+		}
+
+		if = {
+			limit = { kehillah_can_answer_responsa_trigger = yes }
+			debug_log = "kehillah_debug.116: FULL GATE PASS the pulse would fire on this character"
+		}
+		else = {
+			debug_log = "kehillah_debug.116: FULL GATE FAIL the pulse would not fire -- one of the two halves above says why"
+		}
+
+		# WHICH TIER the answer will land in, stated before it is rolled,
+		# so the option's own tooltip can be checked against a number
+		# computed independently of it rather than against a tester's
+		# expectation. (That distinction is what made the S2 tooltip pass
+		# meaningful -- see docs/testing/2026-09-26-heartbeat5-live-test-log.md.)
+		if = {
+			limit = { kehillah_responsa_answerer_learning_value >= kehillah_responsa_learning_great }
+			debug_log = "kehillah_debug.116: EXPECT GREAT tier -- both ruling options should show their .great tooltip"
+		}
+		else_if = {
+			limit = { kehillah_responsa_answerer_learning_value >= kehillah_responsa_learning_good }
+			debug_log = "kehillah_debug.116: EXPECT GOOD tier -- both ruling options should show their .good tooltip"
+		}
+		else = {
+			debug_log = "kehillah_debug.116: EXPECT POOR tier -- both ruling options should show their .poor tooltip, and Greatness should FALL"
+		}
+
+		if = {
+			limit = { exists = primary_title }
+			primary_title = {
+				if = {
+					limit = { has_variable = kehillah_var_responsa_count }
+					save_scope_value_as = { name = kehillah_debug_116_count value = var:kehillah_var_responsa_count }
+					debug_log = "kehillah_debug.116: counter EXISTS -- its value is in the scope dump"
+				}
+				else = {
+					debug_log = "kehillah_debug.116: counter NOT SET yet -- expected before the first ruling"
+				}
+				save_scope_value_as = { name = kehillah_debug_116_greatness value = var:kehillah_var_greatness }
+			}
+		}
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.116: responsa state -- END, firing kehillah_responsa.0001 now"
+
+		trigger_event = { id = kehillah_responsa.0001 days = 0 }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.117 -- RESPONSA: jump the counter to the compile
+# threshold, so "Gather the Responsa" can be reached without answering
+# ten questions by hand.
+#
+# Sets the counter to exactly kehillah_responsa_compile_threshold rather
+# than to a comfortable margin above it, deliberately: the decision's
+# gate is >=, and a probe that sets 20 would pass even if the gate were
+# written wrong at the boundary. Setting the exact threshold tests the
+# boundary itself.
+#
+# Fire it on the community LEADER.
+# ---------------------------------------------------------------------
+kehillah_debug.117 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.117: arming the responsa compile decision -- START"
+
+		save_scope_value_as = { name = kehillah_debug_117_threshold value = kehillah_responsa_compile_threshold }
+		save_scope_value_as = { name = kehillah_debug_117_tally_per value = kehillah_responsa_compile_tally_per_answer }
+
+		if = {
+			limit = { exists = primary_title }
+			primary_title = {
+				set_variable = {
+					name = kehillah_var_responsa_count
+					value = kehillah_responsa_compile_threshold
+				}
+			}
+			debug_log = "kehillah_debug.117: counter set to exactly the compile threshold -- the gate is >=, so this tests the boundary"
+		}
+		else = {
+			debug_log = "kehillah_debug.117: FAIL no primary title to write the counter to"
+		}
+
+		# The decision refuses while a book is in progress, on purpose
+		# (see the decision's header). If a previous test left the book
+		# chain's variable set, the decision will be invalid and that
+		# would look like the responsa gate failing.
+		if = {
+			limit = { has_variable = kehillah_book_genre }
+			debug_log = "kehillah_debug.117: WARNING a book is in progress (var:kehillah_book_genre is set) -- the compile decision is SUPPOSED to be invalid now; that is not the responsa gate failing"
+		}
+		else = {
+			debug_log = "kehillah_debug.117: no book in progress -- the compile decision should now be valid"
+		}
+
+		if = {
+			limit = { kehillah_can_compile_responsa_trigger = yes }
+			debug_log = "kehillah_debug.117: COMPILE TRIGGER PASS"
+		}
+		else = {
+			debug_log = "kehillah_debug.117: COMPILE TRIGGER FAIL -- the counter was just set, so this is the trigger itself being wrong"
+		}
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.117: arming the responsa compile decision -- END"
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.118 -- S4b (2026-09-27): the Chief Rabbi office, read-only.
+#
+# .115 already reports the S4(2) acting-rabbi state and its own
+# contradiction check; this is the S4b layer on top of it, and the two are
+# meant to be read together (fire both). What S4b added, and what this
+# checks:
+#
+#   1. MUTUAL EXCLUSION. Toggle ON and seat FILLED at the same time is now
+#      a BUG, not merely untidy -- chief_rabbi_kehillah_position's
+#      valid_position refuses the appointment while the leader holds the
+#      office, and kehillah_serve_as_rabbi_decision dismisses the
+#      incumbent rather than coexisting with him. If both read true here,
+#      either that valid_position is not biting or the save predates S4b.
+#   2. THE BET DIN PRESIDE GATE. A session cannot be convened without an
+#      acting Chief Rabbi, and whoever that is sits as Av Beit Din -- so
+#      this reports both the gate and WHOSE skill the host bench will
+#      check (scope:kehillah_chief_rabbi in the dump below).
+#   3. THE RESPONSA RABBI GATE. Learning alone is no longer enough; the
+#      answerer needs semicha. Reported separately from the learning
+#      threshold so a silent responsa pulse can be attributed to the right
+#      half.
+#
+# Fire it on the community LEADER:
+#   effect = { every_ruler = { limit = { has_primary_title = title:d_kehillah_worms } trigger_event = kehillah_debug.118 } }
+# then `run <file>.txt` from the console.
+# ---------------------------------------------------------------------
+kehillah_debug.118 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.118: S4b Chief Rabbi office state (read-only) -- START"
+
+		save_scope_value_as = { name = kehillah_debug_118_learning value = learning }
+		save_scope_value_as = { name = kehillah_debug_118_responsa_answerer_learning value = kehillah_responsa_answerer_learning_value }
+		save_scope_value_as = { name = kehillah_debug_118_responsa_threshold value = kehillah_responsa_learning_threshold }
+
+		# Who the shared resolver binds -- this is the character whose
+		# skill every host-event bench check will read once a docket opens.
+		kehillah_save_acting_chief_rabbi_effect = yes
+		if = {
+			limit = { exists = scope:kehillah_chief_rabbi }
+			debug_log = "kehillah_debug.118: ACTING RABBI BOUND see scope:kehillah_chief_rabbi in the dump -- this is who sits as Av Beit Din and whose skill the host bench checks"
+		}
+		else = {
+			debug_log = "kehillah_debug.118: ACTING RABBI UNBOUND no rabbi by either route"
+		}
+
+		# 1. MUTUAL EXCLUSION.
+		if = {
+			limit = {
+				kehillah_has_taken_up_rabbinate_trigger = yes
+				employs_court_position = chief_rabbi_kehillah_position
+			}
+			debug_log = "kehillah_debug.118: EXCLUSION FAIL toggle ON and seat FILLED at once -- S4b makes this unreachable in play; report it unless this is a pre-S4b save or the state was forced from the console"
+		}
+		else = {
+			debug_log = "kehillah_debug.118: EXCLUSION PASS at most one of toggle/seat is set"
+		}
+
+		if = { limit = { kehillah_has_taken_up_rabbinate_trigger = yes } debug_log = "kehillah_debug.118: TOGGLE ON the leader holds the rabbinate himself -- appointment should be refused and Seek a Chief Rabbi greyed out" }
+		else = { debug_log = "kehillah_debug.118: TOGGLE OFF the leader does not hold the rabbinate himself" }
+
+		# 2. THE BET DIN PRESIDE GATE.
+		if = {
+			limit = { kehillah_has_acting_chief_rabbi_trigger = yes }
+			debug_log = "kehillah_debug.118: PRESIDE GATE PASS a Bet Din Conference can be convened (somebody can sit as Av Beit Din)"
+		}
+		else = {
+			debug_log = "kehillah_debug.118: PRESIDE GATE BLOCKED no acting Chief Rabbi -- can_start_showing_failures_only should refuse the conference, and that is correct behaviour, not a bug"
+		}
+
+		# 3. THE RESPONSA RABBI GATE, reported as its two independent halves.
+		if = {
+			limit = { kehillah_responsa_answerer_is_rabbi_trigger = yes }
+			debug_log = "kehillah_debug.118: RESPONSA SEMICHA PASS whoever would answer holds the rabbi trait"
+		}
+		else = {
+			debug_log = "kehillah_debug.118: RESPONSA SEMICHA FAIL the answerer has no semicha -- the pulse is SUPPOSED to be silent now (S4b); this is the gate working"
+		}
+		if = {
+			limit = { kehillah_responsa_answerer_learning_value >= kehillah_responsa_learning_threshold }
+			debug_log = "kehillah_debug.118: RESPONSA LEARNING PASS"
+		}
+		else = {
+			debug_log = "kehillah_debug.118: RESPONSA LEARNING FAIL compare the answerer-learning and threshold figures in the dump"
+		}
+		if = {
+			limit = { kehillah_can_answer_responsa_trigger = yes }
+			debug_log = "kehillah_debug.118: RESPONSA GATE PASS the pulse can fire on this community"
+		}
+		else = {
+			debug_log = "kehillah_debug.118: RESPONSA GATE BLOCKED -- the two halves above say which one, or there is no other registered community to write in"
+		}
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.118: S4b Chief Rabbi office state (read-only) -- END"
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.119 -- S4b: exercise the REPLACEMENT path.
+#
+# kehillah_serve_as_rabbi_decision can now take the office off a sitting
+# Chief Rabbi (kehillah_replace_appointed_rabbi_effect). Reaching that in
+# normal play needs an appointed rabbi AND a leader who qualifies to
+# replace him, which is a fair amount of setup; this does the whole thing
+# and asserts the result.
+#
+# NOT read-only. It appoints, then dismisses, then leaves the leader
+# holding the office. Run it on a throwaway save.
+#
+# WHY IT APPOINTS ITS OWN RABBI FIRST rather than requiring one to be
+# there: the assertion that matters is "the seat is empty and the toggle is
+# effective AFTERWARDS", and a probe that refuses to run without prior
+# setup tends to get skipped. If a rabbi is already employed, that one is
+# used and no appointment happens -- the more realistic case, so it is the
+# preferred one.
+#
+# Fire it on the community LEADER.
+# ---------------------------------------------------------------------
+kehillah_debug.119 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.119: S4b replace-the-rabbi path -- START"
+
+		# Setup: make sure somebody is in the seat.
+		if = {
+			limit = { employs_court_position = chief_rabbi_kehillah_position }
+			debug_log = "kehillah_debug.119: SETUP a chief rabbi is already employed -- using him"
+		}
+		else = {
+			# The leader may be holding the office himself, in which case
+			# appointment is refused (that is S4b working) -- clear it first
+			# so the probe can set up the state it means to test.
+			if = {
+				limit = { kehillah_has_taken_up_rabbinate_trigger = yes }
+				debug_log = "kehillah_debug.119: SETUP clearing the leader own rabbinate first, or the appointment below would be refused"
+				kehillah_end_serving_as_own_rabbi_effect = yes
+			}
+			random_courtier = {
+				limit = {
+					is_adult = yes
+					faith = root.faith
+					kehillah_leadership_gender_eligible_trigger = yes
+				}
+				save_scope_as = kehillah_debug_119_appointee
+			}
+			if = {
+				limit = { exists = scope:kehillah_debug_119_appointee }
+				appoint_court_position = {
+					recipient = scope:kehillah_debug_119_appointee
+					court_position = chief_rabbi_kehillah_position
+				}
+				debug_log = "kehillah_debug.119: SETUP appointed a courtier as chief rabbi -- see scope:kehillah_debug_119_appointee"
+			}
+			else = {
+				debug_log = "kehillah_debug.119: SETUP FAIL no eligible courtier to appoint -- the assertions below will not mean anything"
+			}
+		}
+
+		if = {
+			limit = { employs_court_position = chief_rabbi_kehillah_position }
+			debug_log = "kehillah_debug.119: SETUP OK the seat is filled, running the replacement"
+
+			# The decision own effect body, in order.
+			kehillah_replace_appointed_rabbi_effect = yes
+			add_character_flag = kehillah_serving_as_own_rabbi
+			add_character_modifier = kehillah_serving_as_own_rabbi_modifier
+
+			if = {
+				limit = { NOT = { employs_court_position = chief_rabbi_kehillah_position } }
+				debug_log = "kehillah_debug.119: SEAT CLEARED PASS the incumbent was revoked"
+			}
+			else = {
+				debug_log = "kehillah_debug.119: SEAT CLEARED FAIL somebody still holds the position after the revocation"
+			}
+
+			if = {
+				limit = { kehillah_serving_as_own_rabbi_trigger = yes }
+				debug_log = "kehillah_debug.119: TOGGLE EFFECTIVE PASS the leader now reads as acting chief rabbi"
+			}
+			else = {
+				debug_log = "kehillah_debug.119: TOGGLE EFFECTIVE FAIL the flag is set but the trigger still says no -- the revocation did not land before the flag"
+			}
+
+			if = {
+				limit = {
+					exists = scope:kehillah_deposed_rabbi
+					scope:kehillah_deposed_rabbi = {
+						has_opinion_modifier = {
+							modifier = revoked_court_position_opinion
+							target = root
+						}
+					}
+				}
+				debug_log = "kehillah_debug.119: OPINION PASS the deposed rabbi resents the leader for it"
+			}
+			else = {
+				debug_log = "kehillah_debug.119: OPINION FAIL no revoked_court_position_opinion on the deposed rabbi"
+			}
+
+			# S4c: the trait is ordination, not a job title. This path is
+			# the one that used to strip it (the office's three teardown
+			# hooks), so a deposed rabbi who still holds kehillah_rabbi_trait
+			# here is S4c's whole claim, observed on the site that broke it.
+			if = {
+				limit = {
+					exists = scope:kehillah_deposed_rabbi
+					scope:kehillah_deposed_rabbi = { has_trait = kehillah_rabbi_trait }
+				}
+				debug_log = "kehillah_debug.119: SEMICHA PERMANENT PASS the deposed rabbi kept kehillah_rabbi_trait through the revocation"
+			}
+			else_if = {
+				limit = { exists = scope:kehillah_deposed_rabbi }
+				debug_log = "kehillah_debug.119: SEMICHA PERMANENT FAIL the deposed rabbi lost kehillah_rabbi_trait -- a teardown hook is still stripping it, or he never held it (check whether the appointment granted it: a courtier appointed by SETUP above gets it on receipt)"
+			}
+			else = {
+				debug_log = "kehillah_debug.119: SEMICHA PERMANENT UNTESTED no deposed rabbi in scope"
+			}
+
+			if = {
+				limit = { kehillah_has_acting_chief_rabbi_trigger = yes }
+				debug_log = "kehillah_debug.119: PRESIDE GATE PASS a Bet Din can still be convened afterwards"
+			}
+			else = {
+				debug_log = "kehillah_debug.119: PRESIDE GATE FAIL the community reads as having no rabbi at all after the handover"
+			}
+		}
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.119: S4b replace-the-rabbi path -- END"
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.120 -- S4d (2026-09-27): can this community actually sit
+# a Beit Din? Read-only.
+#
+# The four frequency levers of that pass are all invisible from inside the
+# game: a wider invite pool and a lower dayan bar change nothing a player
+# can see until a session either runs or gets invalidated for want of
+# quorum, months later. This reports the inputs directly.
+#
+# THE NUMBER THAT MATTERS is the co-judge count. kehillah_bet_din_open_
+# docket_effect invalidates a whole session outright if fewer than two
+# eligible people actually SHOW UP, and kehillah_region_can_field_bet_din_
+# panel_trigger gates planning on a count of two being theoretically
+# available. A count of 0 or 1 here means this community cannot hold court
+# at all, which was the pre-S4d state for Baghdad (no same-minhag-region
+# peer) and nearly so for Toledo.
+#
+# Counted availability is an ESTIMATE, not turnout -- it cannot know who
+# will accept an invitation or arrive in time. A community reading 2 here
+# and still failing quorum live is the arrival window, not this.
+#
+# Fire it on the community LEADER.
+# ---------------------------------------------------------------------
+kehillah_debug.120 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.120: Beit Din panel availability (read-only) -- START"
+
+		save_scope_value_as = { name = kehillah_debug_120_co_judges value = kehillah_bet_din_available_co_judges_value }
+		save_scope_value_as = { name = kehillah_debug_120_scholar_bar value = kehillah_bet_din_scholar_guest_learning_threshold }
+		save_scope_value_as = { name = kehillah_debug_120_local_bar value = kehillah_bet_din_local_dayan_learning_threshold }
+		save_scope_value_as = { name = kehillah_debug_120_cooldown_years value = kehillah_bet_din_conference_cooldown_years }
+
+		if = {
+			limit = { kehillah_region_can_field_bet_din_panel_trigger = yes }
+			debug_log = "kehillah_debug.120: PANEL AVAILABLE at least two eligible co-judges exist somewhere -- planning is allowed"
+		}
+		else = {
+			debug_log = "kehillah_debug.120: PANEL UNAVAILABLE fewer than two eligible co-judges exist at all -- this community cannot convene, and no cooldown change will help it"
+		}
+
+		# The three populations, counted separately, because which one is
+		# carrying a community is the whole question S4d was about.
+		save_scope_value_as = {
+			name = kehillah_debug_120_region_leaders
+			value = {
+				value = 0
+				every_in_global_list = {
+					variable = kehillah_registered_communities
+					limit = { exists = holder }
+					holder = {
+						if = {
+							limit = {
+								NOT = { this = root }
+								is_ruler = yes
+								is_jewish_character_trigger = yes
+								kehillah_shares_minhag_region_trigger = { OTHER = root }
+							}
+							add = 1
+						}
+					}
+				}
+			}
+		}
+		save_scope_value_as = {
+			name = kehillah_debug_120_own_household
+			value = {
+				value = 0
+				every_courtier = {
+					limit = {
+						is_jewish_character_trigger = yes
+						is_adult = yes
+						kehillah_leadership_gender_eligible_trigger = yes
+						OR = {
+							has_trait = kehillah_rabbi_trait
+							learning >= kehillah_bet_din_local_dayan_learning_threshold
+						}
+					}
+					add = 1
+				}
+			}
+		}
+
+		if = {
+			limit = { kehillah_has_acting_chief_rabbi_trigger = yes }
+			debug_log = "kehillah_debug.120: PRESIDE GATE PASS somebody can sit as Av Beit Din (S4b) -- note an APPOINTED rabbi is excluded from the co-judge count above by S4c, deliberately"
+		}
+		else = {
+			debug_log = "kehillah_debug.120: PRESIDE GATE BLOCKED no acting Chief Rabbi, so the conference is refused regardless of the panel numbers"
+		}
+
+		if = {
+			limit = { is_activity_type_on_cooldown = activity_kehillah_bet_din_conference }
+			debug_log = "kehillah_debug.120: ON COOLDOWN a session was held recently -- see the cooldown-years figure in the dump"
+		}
+		else = {
+			debug_log = "kehillah_debug.120: OFF COOLDOWN nothing is blocking a new session on timing grounds"
+		}
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.120: Beit Din panel availability (read-only) -- END"
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.121 -- S4c (2026-09-27): can a community seat a Chief
+# Rabbi with NO Beit Midrash at all?
+#
+# S4c removed the building gate from chief_rabbi_kehillah_position's
+# valid_position. Every existing community in this mod's 1066 setup starts
+# WITH a Beit Midrash, so nothing in ordinary play exercises the state the
+# change is about -- the ungating is invisible from a Worms start, which is
+# exactly why it needs a probe rather than an observation.
+#
+# It tests the claim in the hard direction: strip the study hall FIRST,
+# confirm the unlock parameter is really gone, and only then appoint. An
+# appointment that lands on a community with no Beit Midrash is the claim
+# itself, not a proxy for it.
+#
+# DESTRUCTIVE -- it demolishes a real building and installs a rabbi. Fire
+# it on the community LEADER, in a throwaway session.
+#
+# ONE THING THIS EVENT CANNOT SEE, and the tester must: valid_position is
+# re-evaluated on a monthly tick, not at appointment. Let a month or two
+# pass afterwards and re-run kehillah_debug.118 -- if the seat is still
+# filled there, the revalidation agrees with the appointment. That second
+# reading is the half that would have caught the old gate.
+# ---------------------------------------------------------------------
+kehillah_debug.121 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.121: S4c Beit Midrash ungating -- START"
+
+		if = {
+			limit = { exists = domicile }
+			domicile = {
+				if = {
+					limit = { has_domicile_building = kehillah_beit_midrash_03 }
+					remove_domicile_building = kehillah_beit_midrash_03
+					debug_log = "kehillah_debug.121: removed kehillah_beit_midrash_03"
+				}
+				if = {
+					limit = { has_domicile_building = kehillah_beit_midrash_02 }
+					remove_domicile_building = kehillah_beit_midrash_02
+					debug_log = "kehillah_debug.121: removed kehillah_beit_midrash_02"
+				}
+				if = {
+					limit = { has_domicile_building = kehillah_beit_midrash_01 }
+					remove_domicile_building = kehillah_beit_midrash_01
+					debug_log = "kehillah_debug.121: removed kehillah_beit_midrash_01"
+				}
+
+				# Positive control on the demolition. Without this line a PASS
+				# below would be satisfied by a probe that quietly removed
+				# nothing, which is the failure mode that makes "no errors"
+				# readings worthless.
+				if = {
+					limit = { has_domicile_parameter = kehillah_unlocks_chief_rabbi }
+					debug_log = "kehillah_debug.121: STRIP FAIL the quarter still has kehillah_unlocks_chief_rabbi -- a Beit Midrash tier survived, so nothing below tests the ungating"
+				}
+				else = {
+					debug_log = "kehillah_debug.121: STRIP PASS the quarter no longer has kehillah_unlocks_chief_rabbi"
+				}
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.121: ABORT no domicile on this character -- fire this on a community leader"
+		}
+
+		# Clear the two states that would refuse an appointment for reasons
+		# that have nothing to do with the building, so a FAIL below can only
+		# mean the gate.
+		if = {
+			limit = { kehillah_has_taken_up_rabbinate_trigger = yes }
+			debug_log = "kehillah_debug.121: SETUP the leader holds the rabbinate himself -- clearing it, or S4b would refuse the appointment"
+			kehillah_end_serving_as_own_rabbi_effect = yes
+		}
+		if = {
+			limit = { employs_court_position = chief_rabbi_kehillah_position }
+			debug_log = "kehillah_debug.121: SETUP the seat was already filled -- revoking first so the appointment below is a real one"
+			kehillah_replace_appointed_rabbi_effect = yes
+			kehillah_end_serving_as_own_rabbi_effect = yes
+		}
+
+		random_courtier = {
+			limit = {
+				is_adult = yes
+				faith = root.faith
+				kehillah_leadership_gender_eligible_trigger = yes
+				NOT = { this = root }
+			}
+			save_scope_as = kehillah_debug_121_appointee
+		}
+
+		if = {
+			limit = { exists = scope:kehillah_debug_121_appointee }
+			appoint_court_position = {
+				recipient = scope:kehillah_debug_121_appointee
+				court_position = chief_rabbi_kehillah_position
+			}
+
+			if = {
+				limit = { employs_court_position = chief_rabbi_kehillah_position }
+				debug_log = "kehillah_debug.121: UNGATED PASS a Chief Rabbi was seated in a quarter with no Beit Midrash"
+			}
+			else = {
+				debug_log = "kehillah_debug.121: UNGATED FAIL the appointment did not take -- something still gates the office on the building, or on a state this probe did not clear"
+			}
+
+			if = {
+				limit = { scope:kehillah_debug_121_appointee = { has_trait = kehillah_rabbi_trait } }
+				debug_log = "kehillah_debug.121: SEMICHA GRANTED PASS the appointee received kehillah_rabbi_trait on taking the office"
+			}
+			else = {
+				debug_log = "kehillah_debug.121: SEMICHA GRANTED FAIL on_court_position_received did not grant the trait"
+			}
+
+			if = {
+				limit = { kehillah_has_acting_chief_rabbi_trigger = yes }
+				debug_log = "kehillah_debug.121: PRESIDE GATE PASS the community can convene a Bet Din with no study hall -- which is the reason S4c matters, not a side effect"
+			}
+			else = {
+				debug_log = "kehillah_debug.121: PRESIDE GATE FAIL the shared resolver does not see the rabbi just appointed"
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.121: ABORT no eligible courtier to appoint -- nothing below was tested"
+		}
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.121: S4c Beit Midrash ungating -- END (now let a month pass and re-run kehillah_debug.118)"
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.122 -- RESPONSA: arm the gate on the LEADER himself, then
+# hand off to kehillah_debug.116.
+#
+# Why this exists. Post-S4b the responsa gate needs semicha, and
+# kehillah_responsa_answerer_is_rabbi_trigger resolves the APPOINTED Chief
+# Rabbi first when there is one. So on an ordinary Worms start the pulse is
+# silent for two unrelated reasons at once, and firing .116 there produces a
+# FULL GATE FAIL that says nothing about whether the feature works. This
+# puts the community into the one state where the gate's outcome is
+# attributable: no appointed rabbi, the leader holding semicha himself.
+#
+# It deliberately does NOT touch Learning. The tier the answer lands in is
+# then the leader's real Learning against the real cuts, reported by .116
+# before the roll -- a number computed independently of the tooltip it is
+# checked against, which is what made the S2 tooltip pass meaningful. Arming
+# the tier as well would be testing the probe's arithmetic.
+#
+# DESTRUCTIVE -- it dismisses a sitting Chief Rabbi and grants a trait.
+# Fire it on the community LEADER.
+# ---------------------------------------------------------------------
+kehillah_debug.122 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.122: arming the responsa gate on the leader -- START"
+
+		if = {
+			limit = { employs_court_position = chief_rabbi_kehillah_position }
+			debug_log = "kehillah_debug.122: an appointed Chief Rabbi holds the answerer slot -- dismissing him so the LEADER is the answerer and the gate below is attributable"
+			kehillah_replace_appointed_rabbi_effect = yes
+		}
+
+		if = {
+			limit = { has_trait = kehillah_rabbi_trait }
+			debug_log = "kehillah_debug.122: the leader already holds semicha"
+		}
+		else = {
+			add_trait = kehillah_rabbi_trait
+			debug_log = "kehillah_debug.122: granted the leader semicha (kehillah_rabbi_trait)"
+		}
+
+		save_scope_value_as = { name = kehillah_debug_122_learning value = learning }
+		save_scope_value_as = { name = kehillah_debug_122_threshold value = kehillah_responsa_learning_threshold }
+
+		if = {
+			limit = { kehillah_responsa_answerer_is_rabbi_trigger = yes }
+			debug_log = "kehillah_debug.122: SEMICHA GATE PASS"
+		}
+		else = {
+			debug_log = "kehillah_debug.122: SEMICHA GATE FAIL the trait was just granted, so this is the trigger resolving somebody else as the answerer"
+		}
+
+		if = {
+			limit = { kehillah_can_answer_responsa_trigger = yes }
+			debug_log = "kehillah_debug.122: ARMED the full gate now passes -- handing off to kehillah_debug.116, which will report the expected tier and fire the question"
+		}
+		else = {
+			debug_log = "kehillah_debug.122: NOT ARMED the full gate still fails -- .116 next will say which half (learning, or no other community to write in)"
+		}
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.122: arming the responsa gate on the leader -- END"
+
+		trigger_event = { id = kehillah_debug.116 days = 0 }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.123 -- S6 (2026-09-28): community goals, READ-ONLY.
+#
+# Everything about a goal is invisible from inside the game except one
+# tooltip row and, up to a quarter later, a message. This reports the
+# whole state at once: which goal is set, whether its decade is still
+# running, whether the goal's own condition is currently satisfied, what
+# the charter snapshot was taken at, and the permanent legacy counter.
+#
+# THE TIMER LINE IS THE LOAD-BEARING ONE. The deadline is not a date this
+# mod stores -- kehillah_var_goal_timer is set with a years = timeout and
+# the ENGINE removes it on expiry, so "goal set, timer gone" IS the
+# expired state and nothing else reports it.
+#
+# Fire it on the community LEADER.
+# ---------------------------------------------------------------------
+kehillah_debug.123 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.123: community goal state (read-only) -- START"
+
+		if = {
+			limit = { kehillah_has_active_goal_trigger = yes }
+			debug_log = "kehillah_debug.123: GOAL ACTIVE a goal is set on this community"
+
+			if = {
+				limit = { primary_title = { var:kehillah_var_goal = flag:yeshiva } }
+				debug_log = "kehillah_debug.123: GOAL IS yeshiva"
+			}
+			else_if = {
+				limit = { primary_title = { var:kehillah_var_goal = flag:renown } }
+				debug_log = "kehillah_debug.123: GOAL IS renown"
+			}
+			else_if = {
+				limit = { primary_title = { var:kehillah_var_goal = flag:rights } }
+				debug_log = "kehillah_debug.123: GOAL IS rights"
+			}
+			else_if = {
+				limit = { primary_title = { var:kehillah_var_goal = flag:daughter } }
+				debug_log = "kehillah_debug.123: GOAL IS daughter"
+			}
+			else = {
+				debug_log = "kehillah_debug.123: GOAL IS UNRECOGNISED -- the variable holds a flag none of the four triggers will ever match, so this goal can never complete"
+			}
+
+			if = {
+				limit = { primary_title = { has_variable = kehillah_var_goal_timer } }
+				debug_log = "kehillah_debug.123: DEADLINE RUNNING the ten-year timer variable is still present"
+			}
+			else = {
+				debug_log = "kehillah_debug.123: DEADLINE EXPIRED goal set but the timer is gone -- the next quarterly pulse will fail it"
+			}
+
+			if = {
+				limit = { kehillah_goal_is_met_trigger = yes }
+				debug_log = "kehillah_debug.123: CONDITION MET the next quarterly pulse will complete this goal"
+			}
+			else = {
+				debug_log = "kehillah_debug.123: CONDITION NOT MET"
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.123: NO GOAL nothing is running -- Set the Community's Goal should be available"
+		}
+
+		# The four per-goal conditions, reported whether or not that goal is
+		# the one set, so a tester can see which goals would be OFFERED.
+		if = {
+			limit = { kehillah_goal_yeshiva_met_trigger = yes }
+			debug_log = "kehillah_debug.123: YESHIVA ALREADY BUILT that goal will not be offered"
+		}
+		else = {
+			debug_log = "kehillah_debug.123: NO YESHIVA that goal is offerable"
+		}
+		if = {
+			limit = { kehillah_goal_renown_met_trigger = yes }
+			debug_log = "kehillah_debug.123: GREATNESS ALREADY FLOURISHING that goal will not be offered"
+		}
+		else = {
+			debug_log = "kehillah_debug.123: GREATNESS BELOW FLOURISHING that goal is offerable"
+		}
+		if = {
+			limit = { kehillah_goal_rights_available_trigger = yes }
+			debug_log = "kehillah_debug.123: CHARTER CAN IMPROVE that goal is offerable"
+		}
+		else = {
+			debug_log = "kehillah_debug.123: CHARTER AT ITS CEILING that goal will not be offered"
+		}
+		if = {
+			limit = { kehillah_goal_daughter_met_trigger = yes }
+			debug_log = "kehillah_debug.123: DAUGHTER CREDIT PRESENT a kinsman has founded a community since the goal was set"
+		}
+		else = {
+			debug_log = "kehillah_debug.123: NO DAUGHTER CREDIT"
+		}
+
+		# Guarded read, not .124/.125's initialise-then-read: this probe is
+		# read-only, and a community that never completed a goal has no
+		# counter at all (fixed 2026-09-29, found in the S6 live test).
+		save_scope_value_as = {
+			name = kehillah_debug_123_goals_completed
+			value = {
+				value = 0
+				if = {
+					limit = { primary_title = { has_variable = kehillah_var_goals_completed } }
+					value = primary_title.var:kehillah_var_goals_completed
+				}
+			}
+		}
+		save_scope_value_as = { name = kehillah_debug_123_greatness value = primary_title.var:kehillah_var_greatness }
+		save_scope_value_as = { name = kehillah_debug_123_stability value = primary_title.var:kehillah_var_stability }
+		save_scope_value_as = { name = kehillah_debug_123_prosperity value = primary_title.var:kehillah_var_prosperity }
+		save_scope_value_as = { name = kehillah_debug_123_reward value = kehillah_goal_reward_pillar }
+		save_scope_value_as = { name = kehillah_debug_123_penalty value = kehillah_goal_failure_stability_loss }
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.123: community goal state (read-only) -- END"
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.124 -- S6: the COMPLETION path, end to end, with its own
+# assertions.
+#
+# Sets the daughter-community goal, pushes the credit marker the founding
+# effect would have pushed, and then calls the same
+# kehillah_check_community_goal_effect the quarterly pulse calls -- so
+# what is exercised is the real completion path and not a shortcut into
+# the reward.
+#
+# THE DAUGHTER GOAL IS USED DELIBERATELY. It is the only one of the four
+# whose condition can be satisfied by a single set_variable, so the test
+# does not have to fake a building, a pillar or a charter rung and then
+# argue about whether the fake was faithful. Its reward pillar is
+# Greatness, the same as the yeshiva goal's.
+#
+# THE ARITHMETIC IS CHECKED, not just the fact of a change: Greatness must
+# land on exactly the pre-value plus kehillah_goal_reward_pillar, and the
+# legacy counter on exactly its pre-value plus one. A reward applied twice
+# by some double-call would pass a "did it go up" test and fails this one.
+#
+# Fire it on the community LEADER, on a community with NO goal running.
+# ---------------------------------------------------------------------
+kehillah_debug.124 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.124: S6 completion path -- START"
+
+		if = {
+			limit = { kehillah_has_active_goal_trigger = yes }
+			debug_log = "kehillah_debug.124: SETUP WARNING a goal was already running and is being overwritten -- the counter assertion still holds, the pre-existing goal is simply discarded"
+			primary_title = { kehillah_clear_community_goal_effect = yes }
+		}
+
+		if = {
+			limit = { primary_title = { NOT = { has_variable = kehillah_var_goals_completed } } }
+			primary_title = { set_variable = { name = kehillah_var_goals_completed value = 0 } }
+		}
+
+		save_scope_value_as = { name = kehillah_debug_124_greatness_before value = primary_title.var:kehillah_var_greatness }
+		save_scope_value_as = { name = kehillah_debug_124_completed_before value = primary_title.var:kehillah_var_goals_completed }
+		save_scope_value_as = {
+			name = kehillah_debug_124_greatness_expected
+			value = {
+				value = primary_title.var:kehillah_var_greatness
+				add = kehillah_goal_reward_pillar
+			}
+		}
+		save_scope_value_as = {
+			name = kehillah_debug_124_completed_expected
+			value = {
+				value = primary_title.var:kehillah_var_goals_completed
+				add = 1
+			}
+		}
+
+		kehillah_set_community_goal_effect = { GOAL = flag:daughter }
+
+		# What kehillah_goal_credit_daughter_community_effect would have
+		# stamped from inside the founding effect. Set directly here so the
+		# test does not need a second character to actually found anything.
+		primary_title = { set_variable = { name = kehillah_var_goal_daughter_credit value = 1 } }
+
+		if = {
+			limit = { kehillah_goal_is_met_trigger = yes }
+			debug_log = "kehillah_debug.124: PRE-CHECK PASS the dispatcher sees the daughter goal as met"
+		}
+		else = {
+			debug_log = "kehillah_debug.124: PRE-CHECK FAIL the dispatcher does NOT see the daughter goal as met -- nothing below will complete"
+		}
+
+		# The real path.
+		kehillah_check_community_goal_effect = yes
+
+		if = {
+			limit = { NOT = { kehillah_has_active_goal_trigger = yes } }
+			debug_log = "kehillah_debug.124: CLEARED PASS the goal is no longer running"
+		}
+		else = {
+			debug_log = "kehillah_debug.124: CLEARED FAIL the goal is still set after the check"
+		}
+
+		if = {
+			limit = { primary_title = { var:kehillah_var_greatness = scope:kehillah_debug_124_greatness_expected } }
+			debug_log = "kehillah_debug.124: REWARD PASS Greatness rose by exactly the goal reward"
+		}
+		else = {
+			debug_log = "kehillah_debug.124: REWARD FAIL Greatness is not pre-value plus the goal reward -- compare the before/expected figures in the dump"
+		}
+
+		if = {
+			limit = { primary_title = { var:kehillah_var_goals_completed = scope:kehillah_debug_124_completed_expected } }
+			debug_log = "kehillah_debug.124: LEGACY PASS the completed-goals counter rose by exactly one"
+		}
+		else = {
+			debug_log = "kehillah_debug.124: LEGACY FAIL the completed-goals counter did not rise by exactly one"
+		}
+
+		if = {
+			limit = { primary_title = { NOT = { has_variable = kehillah_var_goal_daughter_credit } } }
+			debug_log = "kehillah_debug.124: TEARDOWN PASS the daughter credit was cleared, so it cannot silently complete the NEXT goal too"
+		}
+		else = {
+			debug_log = "kehillah_debug.124: TEARDOWN FAIL the daughter credit survived the completion"
+		}
+
+		if = {
+			limit = { primary_title = { has_variable = kehillah_var_goal_last } }
+			debug_log = "kehillah_debug.124: NOTICE SOURCE PASS the resolved goal was recorded, so the message can still name it"
+		}
+		else = {
+			debug_log = "kehillah_debug.124: NOTICE SOURCE FAIL kehillah_var_goal_last is absent -- the notice will render the no-goal fallback"
+		}
+
+		save_scope_value_as = { name = kehillah_debug_124_greatness_after value = primary_title.var:kehillah_var_greatness }
+		save_scope_value_as = { name = kehillah_debug_124_completed_after value = primary_title.var:kehillah_var_goals_completed }
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.124: S6 completion path -- END"
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_debug.125 -- S6: the FAILURE path, end to end.
+#
+# Sets the yeshiva goal, then removes kehillah_var_goal_timer to stand in
+# for the decade running out, then calls the real quarterly check. Removing
+# the timer is not a cheat around the mechanism: the engine's own timeout
+# does exactly this and nothing else, which is why
+# kehillah_goal_deadline_passed_trigger reads "goal set, timer absent".
+#
+# ASSERTS THE COUNTER DOES NOT MOVE as well as that Stability falls by
+# exactly the penalty. A failure that quietly incremented the legacy
+# counter would be a worse bug than one that applied the wrong number, and
+# only an explicit assertion catches it.
+#
+# Fire it on the community LEADER.
+# ---------------------------------------------------------------------
+kehillah_debug.125 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.125: S6 failure path -- START"
+
+		if = {
+			limit = { kehillah_has_active_goal_trigger = yes }
+			debug_log = "kehillah_debug.125: SETUP WARNING a goal was already running and is being overwritten"
+			primary_title = { kehillah_clear_community_goal_effect = yes }
+		}
+
+		if = {
+			limit = { primary_title = { NOT = { has_variable = kehillah_var_goals_completed } } }
+			primary_title = { set_variable = { name = kehillah_var_goals_completed value = 0 } }
+		}
+
+		save_scope_value_as = { name = kehillah_debug_125_stability_before value = primary_title.var:kehillah_var_stability }
+		save_scope_value_as = { name = kehillah_debug_125_completed_before value = primary_title.var:kehillah_var_goals_completed }
+		save_scope_value_as = {
+			name = kehillah_debug_125_stability_expected
+			value = {
+				value = primary_title.var:kehillah_var_stability
+				subtract = kehillah_goal_failure_stability_loss
+			}
+		}
+
+		kehillah_set_community_goal_effect = { GOAL = flag:yeshiva }
+		primary_title = { remove_variable = kehillah_var_goal_timer }
+
+		if = {
+			limit = { kehillah_goal_deadline_passed_trigger = yes }
+			debug_log = "kehillah_debug.125: PRE-CHECK PASS the expiry trigger reads this as an expired decade"
+		}
+		else = {
+			debug_log = "kehillah_debug.125: PRE-CHECK FAIL the expiry trigger does not read this as expired -- nothing below will fail the goal"
+		}
+
+		kehillah_check_community_goal_effect = yes
+
+		if = {
+			limit = { NOT = { kehillah_has_active_goal_trigger = yes } }
+			debug_log = "kehillah_debug.125: CLEARED PASS the goal is no longer running"
+		}
+		else = {
+			debug_log = "kehillah_debug.125: CLEARED FAIL the goal survived its own deadline"
+		}
+
+		if = {
+			limit = { primary_title = { var:kehillah_var_stability = scope:kehillah_debug_125_stability_expected } }
+			debug_log = "kehillah_debug.125: PENALTY PASS Stability fell by exactly the failure penalty"
+		}
+		else = {
+			debug_log = "kehillah_debug.125: PENALTY FAIL Stability is not pre-value minus the failure penalty"
+		}
+
+		if = {
+			limit = { primary_title = { var:kehillah_var_goals_completed = scope:kehillah_debug_125_completed_before } }
+			debug_log = "kehillah_debug.125: LEGACY PASS a failed goal did not touch the completed-goals counter"
+		}
+		else = {
+			debug_log = "kehillah_debug.125: LEGACY FAIL a failed goal moved the completed-goals counter"
+		}
+
+		save_scope_value_as = { name = kehillah_debug_125_stability_after value = primary_title.var:kehillah_var_stability }
+
+		debug_log_scopes = yes
+		debug_log = "kehillah_debug.125: S6 failure path -- END"
+	}
+}
+
+
+# =====================================================================
+# ROADMAP S9a (2026-09-29) -- Raise / Lower Jewish Settlement Policy.
+# Scope of all four: a KEHILLAH LEADER. Each resolves the host exactly as
+# the charter does (domicile county -> holder -> top_liege) and acts on
+# THAT ruler, so a tester playing the community can drive the host's side
+# without switching character, and then see the community-side notice
+# arrive as the player it is actually for.
+#
+# .126 read-only state. .127 raise one rung through the real effect and
+# assert the arithmetic (post = pre + 1, cooldown now set). .128 the
+# same for lower (post = pre - 1, and never below Discouraged when
+# started from Allowed or above). .129 clears the host's review cooldown
+# so the decisions themselves can be taken straight after a probe.
+# The notice count is the "notified a community under this host" line
+# the effect logs once per community.
+# =====================================================================
+
+kehillah_debug.126 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.126: S9a settlement policy state (read-only) -- START"
+		if = {
+			limit = { exists = domicile.domicile_location.county.holder.top_liege.primary_title }
+			domicile.domicile_location.county.holder.top_liege = {
+				save_scope_as = kehillah_dbg_host
+				debug_log_scopes = yes
+				debug_log = "kehillah_debug.126: HOST RESOLVED (scopes above name the host ruler and id)"
+				if = {
+					limit = { is_independent_ruler = yes }
+					debug_log = "kehillah_debug.126: HOST IS INDEPENDENT the decisions can be shown to it"
+				}
+				else = {
+					debug_log = "kehillah_debug.126: FAIL host is not independent -- the decisions would never be shown"
+				}
+				primary_title = {
+					if = {
+						limit = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+						debug_log = "kehillah_debug.126: POLICY Encouraged (3)"
+					}
+					else_if = {
+						limit = { kehillah_jewish_settlement_policy_banned_trigger = yes }
+						debug_log = "kehillah_debug.126: POLICY Banned (0)"
+					}
+					else_if = {
+						limit = { kehillah_jewish_settlement_policy_discouraged_trigger = yes }
+						debug_log = "kehillah_debug.126: POLICY Discouraged (1)"
+					}
+					else_if = {
+						limit = { has_variable = kehillah_jewish_settlement_policy }
+						debug_log = "kehillah_debug.126: POLICY Allowed (2, stored explicitly)"
+					}
+					else = {
+						debug_log = "kehillah_debug.126: POLICY Allowed (2, implicit -- no variable)"
+					}
+					if = {
+						limit = { kehillah_policy_review_on_cooldown_trigger = yes }
+						debug_log = "kehillah_debug.126: COOLDOWN ACTIVE both decisions are blocked"
+					}
+					else = {
+						debug_log = "kehillah_debug.126: NO COOLDOWN"
+					}
+				}
+			}
+			every_in_global_list = {
+				variable = kehillah_registered_communities
+				limit = {
+					exists = holder
+					holder = {
+						exists = domicile
+						exists = domicile.domicile_location.county.holder.top_liege
+						domicile.domicile_location.county.holder.top_liege = scope:kehillah_dbg_host
+					}
+				}
+				debug_log = "kehillah_debug.126: COMMUNITY UNDER THIS HOST (one line per community)"
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.126: FAIL no host resolvable from this character"
+		}
+		debug_log = "kehillah_debug.126: S9a settlement policy state -- END"
+	}
+}
+
+kehillah_debug.127 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.127: S9a raise path -- START"
+		if = {
+			limit = { exists = domicile.domicile_location.county.holder.top_liege.primary_title }
+			domicile.domicile_location.county.holder.top_liege = {
+				primary_title = {
+					set_variable = { name = kehillah_dbg_policy_expected value = kehillah_policy_rung_value }
+					change_variable = { name = kehillah_dbg_policy_expected add = 1 }
+				}
+				if = {
+					limit = { primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } }
+					debug_log = "kehillah_debug.127: SKIP host is already Encouraged -- run .128 first"
+				}
+				else = {
+					kehillah_raise_jewish_settlement_policy_effect = yes
+					primary_title = {
+						set_variable = { name = kehillah_dbg_policy_post value = kehillah_policy_rung_value }
+						if = {
+							limit = { var:kehillah_dbg_policy_post = var:kehillah_dbg_policy_expected }
+							debug_log = "kehillah_debug.127: RUNG PASS policy rose exactly one rung"
+						}
+						else = {
+							debug_log = "kehillah_debug.127: RUNG FAIL policy did not rise exactly one rung"
+						}
+						if = {
+							limit = { kehillah_policy_review_on_cooldown_trigger = yes }
+							debug_log = "kehillah_debug.127: COOLDOWN PASS the review cooldown is now set"
+						}
+						else = {
+							debug_log = "kehillah_debug.127: COOLDOWN FAIL no cooldown after a raise"
+						}
+						if = {
+							limit = {
+								has_variable = kehillah_jewish_settlement_policy
+								var:kehillah_jewish_settlement_policy = 2
+							}
+							debug_log = "kehillah_debug.127: STORAGE FAIL Allowed was stored as 2 instead of removed"
+						}
+						remove_variable = kehillah_dbg_policy_post
+					}
+				}
+				primary_title = { remove_variable = kehillah_dbg_policy_expected }
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.127: FAIL no host resolvable"
+		}
+		debug_log = "kehillah_debug.127: S9a raise path -- END"
+	}
+}
+
+kehillah_debug.128 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.128: S9a lower path -- START"
+		if = {
+			limit = { exists = domicile.domicile_location.county.holder.top_liege.primary_title }
+			domicile.domicile_location.county.holder.top_liege = {
+				primary_title = {
+					set_variable = { name = kehillah_dbg_policy_expected value = kehillah_policy_rung_value }
+					change_variable = { name = kehillah_dbg_policy_expected add = -1 }
+				}
+				if = {
+					limit = {
+						primary_title = {
+							OR = {
+								kehillah_jewish_settlement_policy_discouraged_trigger = yes
+								kehillah_jewish_settlement_policy_banned_trigger = yes
+							}
+						}
+					}
+					debug_log = "kehillah_debug.128: SKIP host is already at the Discouraged floor -- run .127 first"
+				}
+				else = {
+					kehillah_lower_jewish_settlement_policy_effect = yes
+					primary_title = {
+						set_variable = { name = kehillah_dbg_policy_post value = kehillah_policy_rung_value }
+						if = {
+							limit = { var:kehillah_dbg_policy_post = var:kehillah_dbg_policy_expected }
+							debug_log = "kehillah_debug.128: RUNG PASS policy fell exactly one rung"
+						}
+						else = {
+							debug_log = "kehillah_debug.128: RUNG FAIL policy did not fall exactly one rung"
+						}
+						if = {
+							limit = { kehillah_jewish_settlement_policy_banned_trigger = yes }
+							debug_log = "kehillah_debug.128: FLOOR FAIL lowering reached Banned"
+						}
+						if = {
+							limit = { kehillah_policy_review_on_cooldown_trigger = yes }
+							debug_log = "kehillah_debug.128: COOLDOWN PASS the review cooldown is now set"
+						}
+						else = {
+							debug_log = "kehillah_debug.128: COOLDOWN FAIL no cooldown after a lower"
+						}
+						if = {
+							limit = {
+								has_variable = kehillah_jewish_settlement_policy
+								var:kehillah_jewish_settlement_policy = 2
+							}
+							debug_log = "kehillah_debug.128: STORAGE FAIL Allowed was stored as 2 instead of removed"
+						}
+						remove_variable = kehillah_dbg_policy_post
+					}
+				}
+				primary_title = { remove_variable = kehillah_dbg_policy_expected }
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.128: FAIL no host resolvable"
+		}
+		debug_log = "kehillah_debug.128: S9a lower path -- END"
+	}
+}
+
+kehillah_debug.129 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { exists = domicile.domicile_location.county.holder.top_liege.primary_title }
+			domicile.domicile_location.county.holder.top_liege.primary_title = {
+				remove_variable = kehillah_var_policy_review_cooldown
+			}
+			debug_log = "kehillah_debug.129: host policy review cooldown cleared"
+		}
+		else = {
+			debug_log = "kehillah_debug.129: FAIL no host resolvable"
+		}
+	}
+}
+
+
+# =====================================================================
+# ROADMAP S8 (2026-09-29) -- the player's road to London.
+# .130 (scope: a player, ideally the S7 Financier): runs the Conquest's
+# execute effect on the CURRENT holder of k_england exactly as a real
+# resolution would, William branch. It deliberately does not fake a
+# change of holder -- only the founding half is under test here; the
+# detection half is V18's and already verified. Expect the invitation
+# (.0010) three days later.
+# .131 (scope: the same player, after answering): who holds London, and
+# is there exactly one London.
+# =====================================================================
+
+kehillah_debug.130 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.130: S8 -- firing the Conquest founding as if William won"
+		if = {
+			limit = { kehillah_norman_london_invitation_eligible_trigger = yes }
+			debug_log = "kehillah_debug.130: ELIGIBLE this player will be offered London"
+		}
+		else = {
+			debug_log = "kehillah_debug.130: NOT ELIGIBLE this player will NOT be offered London (must be a Jewish landless adventurer)"
+		}
+		set_global_variable = { name = kehillah_norman_new_leader_dynasty_choice value = 1 }
+		title:k_england.holder = { kehillah_norman_conquest_execute_effect = yes }
+		if = {
+			limit = { exists = global_var:kehillah_norman_london_offer_pending }
+			debug_log = "kehillah_debug.130: OFFER PENDING London is being held for a player"
+		}
+		else = {
+			debug_log = "kehillah_debug.130: NO OFFER London was founded for the AI at once"
+		}
+	}
+}
+
+kehillah_debug.131 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.131: S8 London state -- START"
+		if = {
+			limit = { exists = global_var:kehillah_norman_london_offer_pending }
+			debug_log = "kehillah_debug.131: OFFER STILL PENDING nobody has answered yet"
+		}
+		if = {
+			limit = {
+				government_has_flag = government_is_kehillah
+				primary_title = { has_variable = kehillah_norman_player_founded }
+			}
+			debug_log = "kehillah_debug.131: PLAYER LEADS LONDON this player founded it"
+			if = {
+				limit = { exists = domicile }
+				debug_log = "kehillah_debug.131: DOMICILE PASS the player has a Jewish Quarter"
+			}
+			else = {
+				debug_log = "kehillah_debug.131: DOMICILE FAIL no domicile -- the Game Over fuse"
+			}
+			if = {
+				limit = {
+					exists = domicile.domicile_location.county
+					domicile.domicile_location.county = title:c_middlesex
+				}
+				debug_log = "kehillah_debug.131: LOCATION PASS the quarter is in London (Middlesex)"
+			}
+			else = {
+				debug_log = "kehillah_debug.131: LOCATION FAIL the quarter is not in Middlesex"
+			}
+			if = {
+				limit = { is_tributary = yes }
+				debug_log = "kehillah_debug.131: CHARTER PASS the community holds a host charter"
+			}
+			else = {
+				debug_log = "kehillah_debug.131: CHARTER NOT YET no charter (may need one more tick)"
+			}
+		}
+		else = {
+			debug_log = "kehillah_debug.131: PLAYER DOES NOT LEAD LONDON"
+		}
+		if = {
+			limit = { exists = title:c_middlesex.holder.top_liege.primary_title }
+			title:c_middlesex.holder.top_liege.primary_title = {
+				if = {
+					limit = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+					debug_log = "kehillah_debug.131: HOST POLICY PASS England's policy is Encouraged"
+				}
+				else = {
+					debug_log = "kehillah_debug.131: HOST POLICY FAIL England's policy is not Encouraged"
+				}
+			}
+		}
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = {
+					exists = domicile.domicile_location.county
+					domicile.domicile_location.county = title:c_middlesex
+				}
+			}
+			debug_log = "kehillah_debug.131: LONDON COMMUNITY (expect exactly one of these lines)"
+		}
+		debug_log = "kehillah_debug.131: S8 London state -- END"
+	}
+}
+
+
+# =====================================================================
+# ROADMAP S8b (2026-09-29) -- royal loans. Scope of all three: the player
+# who founded London (after .130/.0010/.0011).
+# .132 makes the preconditions true (tops gold up to the royal principal,
+# Prosperity up to Healthy -- each logged if it had to), then fires the
+# royal request (.0020) now. Expect the loan offer event.
+# .133 after the loan is sealed: moves the crown's loan to its last
+# quarter and makes sure the crown can pay, so the NEXT quarterly pulse
+# resolves it (repay expected). Everything it changes is logged.
+# .134 read-only: the crown's debt, the lender's standing with it.
+# =====================================================================
+
+kehillah_debug.132 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.132: S8b royal request -- START"
+		set_variable = { name = kehillah_loan_royal_request value = yes days = 1 }
+		if = {
+			limit = { gold < kehillah_loan_principal_value }
+			add_gold = kehillah_loan_principal_value
+			debug_log = "kehillah_debug.132: SETUP topped up gold to afford the royal principal"
+		}
+		remove_variable = kehillah_loan_royal_request
+		if = {
+			limit = { NOT = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_healthy_threshold } } }
+			primary_title = { set_variable = { name = kehillah_var_prosperity value = kehillah_band_healthy_threshold } }
+			debug_log = "kehillah_debug.132: SETUP raised Prosperity to the Healthy threshold"
+		}
+		debug_log_scopes = yes
+		trigger_event = kehillah_norman_conquest.0020
+		debug_log = "kehillah_debug.132: S8b royal request -- END (see the .0020 line above)"
+	}
+}
+
+kehillah_debug.133 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.133: S8b fast-forward -- START"
+		if = {
+			limit = {
+				exists = domicile.domicile_location.county.holder.top_liege
+				domicile.domicile_location.county.holder.top_liege = { exists = var:kehillah_loan_amount_owed }
+			}
+			domicile.domicile_location.county.holder.top_liege = {
+				set_variable = { name = kehillah_loan_years_elapsed value = kehillah_loan_term_years }
+				change_variable = { name = kehillah_loan_years_elapsed add = -0.25 }
+				debug_log = "kehillah_debug.133: SETUP the crown's loan is now in its last quarter"
+				# A generous buffer, not the exact sum: topped up to exactly
+				# what it owed, the AI crown spent some of it before the pulse
+				# and defaulted (live, 2026-09-29) -- a false negative.
+				add_gold = {
+					value = var:kehillah_loan_amount_owed
+					multiply = 3
+				}
+				debug_log = "kehillah_debug.133: SETUP gave the crown three times its debt, so ordinary AI spending cannot make it default"
+				debug_log_scopes = yes
+			}
+			debug_log = "kehillah_debug.133: now wait for the next quarterly pulse; expect 'an AI borrower repaid at term'"
+		}
+		else = {
+			debug_log = "kehillah_debug.133: FAIL the crown owes nothing -- seal a royal loan first"
+		}
+	}
+}
+
+kehillah_debug.134 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.134: S8b royal loan state -- START"
+		if = {
+			limit = { exists = domicile.domicile_location.county.holder.top_liege }
+			domicile.domicile_location.county.holder.top_liege = {
+				save_scope_as = kehillah_dbg_crown
+				if = {
+					limit = { exists = var:kehillah_loan_amount_owed }
+					debug_log = "kehillah_debug.134: CROWN OWES (amount in the scopes dump)"
+					debug_log_scopes = yes
+				}
+				else = {
+					debug_log = "kehillah_debug.134: CROWN OWES NOTHING"
+				}
+				if = {
+					limit = { has_opinion_modifier = { target = root modifier = kehillah_royal_loan_favour_opinion } }
+					debug_log = "kehillah_debug.134: FAVOUR PASS the crown holds Royal Favour toward this lender"
+				}
+				else = {
+					debug_log = "kehillah_debug.134: NO FAVOUR"
+				}
+			}
+			if = {
+				limit = { has_variable = kehillah_loan_royal_request }
+				debug_log = "kehillah_debug.134: ROYAL REQUEST FLAG STILL SET"
+			}
+			primary_title = {
+				if = {
+					limit = {
+						is_target_in_variable_list = { name = kehillah_loan_debtors target = scope:kehillah_dbg_crown }
+					}
+					debug_log = "kehillah_debug.134: THE CROWN IS ON THIS COMMUNITY'S DEBTOR LIST"
+				}
+			}
+		}
+		debug_log = "kehillah_debug.134: S8b royal loan state -- END"
 	}
 }

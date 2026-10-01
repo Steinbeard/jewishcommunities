@@ -71,6 +71,12 @@
 #                        activity's on_phase_active.
 #   judge2 / judge3  -- the two co-judges (characters), set once from
 #                        the special_guest scopes, same place.
+#   av_beit_din      -- who sits on the PRESIDING seat (a character):
+#                        the community's acting Chief Rabbi, or the host
+#                        as a fallback. ADDED 2026-09-27 (S4b); set once,
+#                        in kehillah_bet_din_open_docket_effect, and read
+#                        by every host event through kehillah_bet_din_
+#                        save_presiding_effect.
 #   tally            -- running sum of all three judges' per-case skill
 #                        checks. Reset to 0 at session start and again
 #                        at the start of EACH case's host event -- see
@@ -703,12 +709,38 @@ kehillah_bet_din_amulet_resolution_effect = {
 # see that event's own header for why each draws on a different stat.
 #
 # DIRECTIONS 1 AND 2 BOTH ORDER RESTITUTION -- up to medium_gold_value
-# moves from the accused to the accuser either way. This is a straight
-# character-to-character transfer (no dedicated "transfer_gold" effect
-# exists in the installed game), capped at the accused's actual purse.
-# The cap is load-bearing: add_gold rejects a negative deduction greater
-# than the character's gold, which produced an error in the 2026-09-24
-# live docket pass and previously left the intended transfer ambiguous.
+# moves from the accused to the accuser either way, via ONE call to
+# pay_short_term_gold, capped at the accused's actual purse.
+#
+# CORRECTED 2026-09-26. This effect was originally written as a pair of
+# add_gold calls (a negative one on the accused, a positive one on the
+# accuser) under the belief, stated in this comment, that "no dedicated
+# transfer_gold effect exists in the installed game." That premise was
+# simply wrong, and it cost three debug probes (kehillah_debug.97, .103,
+# .108) and two failed fixes to overturn. The engine documents the right
+# primitive itself, in its own generated logs/effects.log:
+#
+#   add_gold                - "adds gold to a character"
+#   remove_short_term_gold  - "removes gold from a character"
+#   pay_short_term_gold     - "the scope character pays gold to the
+#                              target character, { target = X gold = Y }"
+#
+# add_gold is ADDITIVE ONLY and cannot go negative by any shape: CK3
+# 1.19 rejects a literal negative at script-load validation ("add_gold
+# effect [ Negative value in ... ]") and a computed negative at runtime
+# ("Trying to add add_gold with negative value to ..."). Vanilla agrees
+# emphatically -- zero uses of `add_gold = -` anywhere in common/ or
+# events/, against 849 remove_short_term_gold and 925
+# pay_short_term_gold. This mod already used the correct primitives in
+# six other places (kehillah_loan_events.txt, kehillah_protection_
+# events.txt, jewish_holiday_events.txt, kehillah_decisions.txt); this
+# effect was the lone hand-rolled exception, which is exactly why it was
+# the lone site that errored.
+#
+# The min/max cap is kept, and is still load-bearing, but for a design
+# reason rather than an engine one: pay_short_term_gold would happily
+# push a poor accused into debt, and a Bet Din ordering restitution
+# beyond a litigant's means is not the intended ruling.
 # Direction 1 ALSO adds Cherem (add_trait = excommunicated, same real
 # mechanic as kehillah_bet_din_amulet_resolution_effect and kehillah_
 # bet_din_recalcitrant_husband_resolution_effect's own direction 1
@@ -748,12 +780,11 @@ kehillah_bet_din_silversmiths_resolution_effect = {
 					}
 				}
 				add_trait = excommunicated
-				add_gold = {
-					value = scope:kbd_silver_restitution
-					multiply = -1
+				pay_short_term_gold = {
+					target = scope:kbd_silver_accuser
+					gold = scope:kbd_silver_restitution
 				}
 			}
-			scope:kbd_silver_accuser = { add_gold = scope:kbd_silver_restitution }
 			custom_tooltip = kehillah_bet_din.0053.mesirah.tt
 		}
 	}
@@ -777,12 +808,11 @@ kehillah_bet_din_silversmiths_resolution_effect = {
 						max = medium_gold_value
 					}
 				}
-				add_gold = {
-					value = scope:kbd_silver_restitution
-					multiply = -1
+				pay_short_term_gold = {
+					target = scope:kbd_silver_accuser
+					gold = scope:kbd_silver_restitution
 				}
 			}
-			scope:kbd_silver_accuser = { add_gold = scope:kbd_silver_restitution }
 			custom_tooltip = kehillah_bet_din.0053.gerama.tt
 		}
 	}
@@ -1088,6 +1118,47 @@ kehillah_bet_din_grant_rabbi_trait_effect = {
 }
 
 # ---------------------------------------------------------------------
+# kehillah_bet_din_save_presiding_effect
+# Scope: the convening leader, in the `immediate` of every HOST event
+# (kehillah_bet_din.0001/.0011/.0021/.0031/.0041/.0051). Binds
+# scope:kehillah_av_beit_din.
+#
+# ADDED 2026-09-27 (S4b). The host events' skill checks used to read ROOT's
+# own skill -- the convening leader's -- which meant that a community with
+# an appointed Chief Rabbi had its rabbi sit on the panel for decoration
+# while the leader did all the judging. "Chief rabbis should be the ones
+# who preside over bet din conferences" (user, 2026-09-27); this is the
+# scope that makes that literal.
+#
+# WHY A SAVED SCOPE AND NOT A PARAMETERISED TRIGGER. The checks are not
+# uniform: most are a bare `<skill> >= N`, but case 3's is a compound
+# (learning >= 12 OR (learning >= 8 AND theologian)), and a $SKILL$/
+# $THRESHOLD$ trigger cannot express that without a second, differently
+# shaped trigger for the one site. A scope lets every site keep its own
+# check verbatim and only change WHOSE it is -- which is the entire edit,
+# and reviewable as such in a diff.
+#
+# NEVER UNSET. Falls back to root, so an event reached without a docket
+# (console `event kehillah_bet_din.0011`, or a pre-S4b save mid-session)
+# still checks somebody real rather than erroring per option under the
+# player's cursor -- the same tooltip-rebuild error-storm risk the
+# litigant reads in these events' immediates are already guarded against.
+#
+# THE CO-JUDGE EVENTS DO NOT CALL THIS. Their root is judge2, and their
+# checks are judge2's own -- the panel's two other seats answer for
+# themselves, exactly as before. Only the presiding seat moved.
+# ---------------------------------------------------------------------
+kehillah_bet_din_save_presiding_effect = {
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_av_beit_din }
+		involved_activity.var:kehillah_bet_din_av_beit_din = { save_scope_as = kehillah_av_beit_din }
+	}
+	else = {
+		save_scope_as = kehillah_av_beit_din
+	}
+}
+
+# ---------------------------------------------------------------------
 # kehillah_bet_din_open_docket_effect
 # Scope: the convening leader (character). Called ONCE, from the first
 # phase's on_phase_active, where scope:activity AND scope:host are both
@@ -1130,16 +1201,69 @@ kehillah_bet_din_grant_rabbi_trait_effect = {
 kehillah_bet_din_open_docket_effect = {
 	scope:activity = { set_variable = { name = kehillah_bet_din_convening_title value = scope:host.primary_title } }
 
+	# WHO SITS AS AV BEIT DIN. ADDED 2026-09-27 (S4b), at user request:
+	# "chief rabbis should be the ones who preside over bet din
+	# conferences." The HOST of the activity is still the convening leader
+	# -- that is an engine fact, a courtier cannot host -- but the
+	# presiding seat on the bench is the community's acting Chief Rabbi,
+	# and when those are different people it is the rabbi's judgement the
+	# case tests. Resolved through the shared S4(2) resolver
+	# (kehillah_has_acting_chief_rabbi_trigger's header, common/
+	# scripted_triggers/kehillah_scripted_triggers.txt), which makes this
+	# that abstraction's sixth consumer site.
+	#
+	# Falls back to the host. can_start_showing_failures_only refuses a
+	# session with no rabbi at all, so the fallback should be unreachable
+	# in ordinary play -- it exists for a console-started session and for a
+	# save whose community predates the gate, where a docket with nobody on
+	# the presiding seat would read every skill check against an unset
+	# scope.
+	#
+	# RESOLVED BEFORE THE CO-JUDGE RANKING, and that ordering is a fix, not
+	# a tidy-up (S4c, 2026-09-27). An APPOINTED Chief Rabbi is a learned
+	# courtier of the host, which is precisely population 2 of
+	# kehillah_bet_din_eligible_judge_trigger -- so with the ranking run
+	# first he could be drawn into a co-judge seat as well as the presiding
+	# one, and a court of three would be staffed by two people with his
+	# Learning counted twice in the tally. He is excluded from the pool
+	# below instead. A quorum of three means three people.
+	kehillah_save_acting_chief_rabbi_effect = yes
+	if = {
+		limit = { exists = scope:kehillah_chief_rabbi }
+		scope:activity = { set_variable = { name = kehillah_bet_din_av_beit_din value = scope:kehillah_chief_rabbi } }
+	}
+	else = {
+		scope:activity = { set_variable = { name = kehillah_bet_din_av_beit_din value = scope:host } }
+	}
+
 	scope:activity = {
 		ordered_attending_character = {
 			order_by = { value = kehillah_bet_din_judge_score_value }
-			limit = { kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host } }
+			limit = {
+				kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host }
+				# Not the man already on the presiding seat -- see above.
+				# Written here rather than inside the shared eligibility
+				# trigger on purpose: that trigger is also read by
+				# can_be_activity_guest and kehillah_bet_din_available_co_
+				# judges_value, where there is no activity in scope to ask
+				# about, and this is the only caller that has one.
+				NAND = {
+					exists = scope:kehillah_chief_rabbi
+					this = scope:kehillah_chief_rabbi
+				}
+			}
 			position = 0
 			save_temporary_scope_as = kehillah_bet_din_judge2_candidate
 		}
 		ordered_attending_character = {
 			order_by = { value = kehillah_bet_din_judge_score_value }
-			limit = { kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host } }
+			limit = {
+				kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host }
+				NAND = {
+					exists = scope:kehillah_chief_rabbi
+					this = scope:kehillah_chief_rabbi
+				}
+			}
 			position = 1
 			save_temporary_scope_as = kehillah_bet_din_judge3_candidate
 		}
@@ -1219,6 +1343,10 @@ kehillah_bet_din_open_docket_effect = {
 		if = {
 			limit = { exists = scope:activity.var:kehillah_bet_din_case6_direction }
 			scope:activity = { remove_variable = kehillah_bet_din_case6_direction }
+		}
+		if = {
+			limit = { exists = scope:activity.var:kehillah_bet_din_case7_direction }
+			scope:activity = { remove_variable = kehillah_bet_din_case7_direction }
 		}
 		if = {
 			limit = { exists = scope:activity.var:kehillah_bet_din_agunah_husband }
@@ -1419,12 +1547,27 @@ kehillah_bet_din_draw_case_effect = {
 			scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 1 } }
 			trigger_event = kehillah_bet_din.0051
 		}
+
+		# CASE 7 -- A Captive's Ransom. The ransom is a communal question;
+		# it needs no fabricated captive or courtier to appear.
+		10 = {
+			trigger = {
+				NOT = { scope:activity = { is_target_in_variable_list = {
+					name = kehillah_bet_din_cases_heard
+					target = flag:kehillah_bet_din_case_ransom
+				} } }
+			}
+			scope:activity = { add_to_variable_list = {
+				name = kehillah_bet_din_cases_heard
+				target = flag:kehillah_bet_din_case_ransom
+			} }
+			scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 1 } }
+			trigger_event = kehillah_bet_din.0061
+		}
 	}
 
 	# NO CASE WAS ELIGIBLE. Possible in a thin court, or in a session
-	# whose pool has been exhausted (with only the three cases above, it
-	# takes a court that cannot stage cases 1-2 and a faith that already
-	# forbids polygamy). Nothing is fired; the phase is cut short instead
+	# whose pool has been exhausted. Nothing is fired; the phase is cut short instead
 	# of idling for kehillah_bet_din_case_phase_days with nothing in it,
 	# and the closing event scores however many cases were actually heard.
 	if = {
@@ -1530,17 +1673,61 @@ kehillah_bet_din_record_case_result_effect = {
 		}
 	}
 
-	# RABBI TRAIT TRACK XP -- REMOVED 2026-09-19 at user request. Bet Din
-	# case resolutions (added 2026-09-09, this effect's own git history)
-	# used to grant kehillah_rabbi_trait's talmudics track here on every
-	# tier, win or lose. The docket's reward is now the session-closing
-	# event's tiered Stability/Piety/Prestige payout ONLY (kehillah_bet_
-	# din.0099, events/kehillah_bet_din_events.txt) -- contingent on the
-	# WHOLE docket having gone well, not paid out per case regardless of
-	# outcome. See kehillah_rabbi_trait's own header (common/traits/
-	# kehillah_traits.txt) for what still trains the rabbi trait's tracks
-	# now that Bet Din no longer does: kehillah_learn_torah_decision is the
-	# sole remaining route.
+}
+
+# The Av Beit Din can be an appointed rabbi rather than the host. Reward the
+# actual three judges only on good/great verdicts, and only if ordained. This
+# effect is called once from each positive verdict branch, not from the
+# session close; a skipped or poor case therefore never gives Rabbi XP.
+kehillah_bet_din_reward_judges_for_ruling_effect = {
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_av_beit_din }
+		involved_activity.var:kehillah_bet_din_av_beit_din = {
+			if = {
+				limit = { has_trait = kehillah_rabbi_trait }
+				add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = $XP$ }
+			}
+		}
+	}
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_judge2 }
+		involved_activity.var:kehillah_bet_din_judge2 = {
+			if = {
+				limit = { has_trait = kehillah_rabbi_trait }
+				add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = $XP$ }
+			}
+		}
+	}
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_judge3 }
+		involved_activity.var:kehillah_bet_din_judge3 = {
+			if = {
+				limit = { has_trait = kehillah_rabbi_trait }
+				add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = $XP$ }
+			}
+		}
+	}
+}
+
+# All other attendees also studied the docket. The session close calls this
+# exactly once after checking for a positive score. Root is the convening
+# leader, whose larger tiered reward is already applied by .0099.
+kehillah_bet_din_reward_attendees_effect = {
+	if = {
+		limit = { exists = involved_activity }
+		involved_activity = {
+			every_attending_character = {
+				limit = { this != root }
+				add_prestige = kehillah_bet_din_attendee_prestige_gain
+				add_piety = kehillah_bet_din_attendee_piety_gain
+				add_learning_lifestyle_xp = kehillah_bet_din_attendee_learning_xp
+				reverse_add_opinion = {
+					target = root
+					modifier = kehillah_bet_din_pulse_favor_opinion
+				}
+			}
+		}
+	}
 }
 
 # ---------------------------------------------------------------------

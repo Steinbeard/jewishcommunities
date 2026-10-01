@@ -308,11 +308,121 @@ kehillah_on_title_gain = {
 		#
 		# Setting it here means the rule is simply: whoever holds this
 		# title leads a Kehillah. Which is what the title means.
+		#
+		# ---------------------------------------------------------
+		# S3(a), 2026-09-26 (Sukkot heartbeat 3) -- THE "ILLEGAL
+		# GOVERNMENT" ERROR. READ THIS BEFORE CHANGING THIS BLOCK.
+		#
+		# This line has thrown `change_government effect [ Trying to
+		# set illegal government ]` on every appointment succession on
+		# 2026-09-06, 2026-09-20 and again 2026-09-23. It has been
+		# "fixed" twice without ever being confirmed clean afterwards
+		# (see docs/implementation/v1-kehillah-implementation.md
+		# section 8's "STILL BROKEN as of 2026-09-23" note), which is
+		# how it survived two rewrites of the very field each fix
+		# targeted. So this pass does NOT guess a third fix. It does
+		# two things:
+		#
+		#   1. MEASURES. The trace block below, armed only by a debug
+		#      event, logs the exact state the engine sees at this
+		#      instant -- whether root already holds the gained title,
+		#      whether root holds ANY landless title, and what
+		#      government root currently has. can_get_government in
+		#      common/governments/kehillah_government.txt is exactly
+		#      `any_held_title = { is_landless_type_title = yes }`, so
+		#      if that reads false here, the cause is settled: the
+		#      title is not yet committed when on_title_gain fires, and
+		#      nothing about the predicate's logic is wrong.
+		#
+		#   2. STOPS ASKING FOR WHAT THE ENGINE WILL REFUSE. The
+		#      attempt is now guarded by the same predicate
+		#      can_get_government checks. If it passes, this behaves
+		#      exactly as before. If it fails, we skip the call that
+		#      would error and hand the job to a one-day-deferred
+		#      hidden event instead (kehillah_succession.0010,
+		#      events/kehillah_succession_events.txt), by which point
+		#      the title is certainly committed.
+		#
+		# WHY DEFERRING CANNOT REGRESS ANYTHING. On the appointment
+		# path this call is ALREADY a no-op today -- that is what the
+		# error means. Everything downstream (quarter, pillars, Host
+		# Charter, officers) has been confirmed to work correctly
+		# anyway across three separate live tests, i.e. the engine is
+		# propagating the government on its own after on_title_gain
+		# returns. Skipping a call that currently fails therefore
+		# cannot remove behaviour that currently exists. On every path
+		# where the predicate passes (founding, debug harness), the
+		# call happens inline exactly as it always did.
+		# ---------------------------------------------------------
+		if = {
+			limit = { exists = global_var:kehillah_debug_title_gain_trace }
+			kehillah_trace_title_gain_effect = yes
+		}
+
+		# ---------------------------------------------------------
+		# S3(a) CONTINUED, 2026-09-26 (Sukkot heartbeat 7) -- THE
+		# TIMING HYPOTHESIS ABOVE IS REFUTED; THE GUARD NOW TESTS THE
+		# DOMICILE INSTEAD. Evidence: docs/testing/
+		# 2026-09-26-heartbeat5-live-test-log.md section 3a. One live
+		# step-down with the trace armed recorded, at this instant:
+		#   - the gained title IS already in root's held-title list
+		#   - scope:title.holder already reads as root
+		#   - can_get_government's predicate WOULD pass
+		#   - root has NO domicile yet
+		# and error.log gained the error anyway, at this very line. So
+		# the predicate below was never the cause, which is why two
+		# rewrites of it changed nothing, and why the else_if under it
+		# was unreachable on the one path that needed it.
+		#
+		# kehillah_government.txt:117 declares
+		# `domicile_type = kehillah_quarter`. A domicile-requiring
+		# government cannot be entered by a character the engine has
+		# nowhere to put, and this repo already knows the matching fact
+		# from the other direction (kehillah_found_community_effect's
+		# header): change_government destroys the current domicile
+		# without creating a replacement, and nothing in script can
+		# create a domicile after the fact. The Jewish Quarter travels
+		# with the title, but not inside the instant on_title_gain
+		# fires.
+		#
+		# So: attempt inline only when a domicile is actually there
+		# (the founding path and the debug harness, where it always
+		# was), and otherwise hand the job to kehillah_succession.0010
+		# a day later -- which logs its own verdict either way, so this
+		# change measures itself rather than asking to be believed.
+		# ---------------------------------------------------------
 		if = {
 			limit = {
 				NOT = { government_has_flag = government_is_kehillah }
+				any_held_title = { is_landless_type_title = yes }
+				exists = domicile
 			}
 			change_government = kehillah_government
+		}
+		else_if = {
+			limit = {
+				NOT = { government_has_flag = government_is_kehillah }
+			}
+			# The engine would refuse right now -- no domicile to put
+			# this character in, or no landless title yet. Retry a day
+			# later, when the quarter has travelled with the title.
+			trigger_event = {
+				id = kehillah_succession.0010
+				days = 1
+			}
+		}
+
+		# S3(d), 2026-09-26. An endorsement is the personal judgement of
+		# the leader who made it (kehillah_endorse_successor_interaction,
+		# common/character_interactions/kehillah_character_interactions.txt).
+		# Carrying a dead predecessor's favourite forward would silently
+		# pre-commit the new leader's own succession, so it is cleared
+		# here rather than inherited.
+		scope:title = {
+			if = {
+				limit = { exists = var:kehillah_var_endorsed_successor }
+				remove_variable = kehillah_var_endorsed_successor
+			}
 		}
 
 		# Rebuild the community's quarter. Deliberately ordered AFTER
@@ -525,7 +635,43 @@ kehillah_quarterly_pulse = {
 		# manual charter edit is reflected before this quarter's convergence
 		# without evaluating subject contracts during bootstrap/rendering.
 		kehillah_refresh_charter_state_cache_effect = yes
-		kehillah_quarterly_pillars_effect = yes
+
+		# --- THE PRE-INITIALISATION WINDOW (2026-09-26, heartbeat 5) ---
+		#
+		# The historical communities hold all three pillars at 0 from game
+		# start (1066.9.15) until the day-three snapshot writes their real
+		# values (1066.9.18, kehillah_settlement_conditions.0008). This
+		# pulse first fires on 1066.9.16, INSIDE that window.
+		#
+		# Everything below that reads a pillar must sit out those two
+		# days. The charter cache above must NOT -- the day-three snapshot
+		# reads it, so it has to keep running.
+		#
+		# THE DRIFT IS INCLUDED IN THE GUARD, and that is the part a first
+		# attempt at this fix got wrong and a live boot caught: guarding
+		# only the bands and the floor watch left
+		# kehillah_quarterly_pillars_effect converging Stability from 0
+		# toward its ~369 baseline at 1/20, i.e. to ~18.5 -- non-zero, so
+		# a "some pillar is non-zero" guard passed, yet still under the
+		# floor of 25, so the collapse warning fired anyway. Converging
+		# from a placeholder zero is not meaningful in the first place;
+		# there is nothing to drift from until day three.
+		#
+		# The backfill runs FIRST and unguarded: it is what lets the
+		# guard be a plain marker check without freezing communities
+		# founded in play or loaded from older saves. See
+		# kehillah_pillars_are_live_trigger and
+		# kehillah_backfill_pillars_marker_effect for the full reasoning.
+		# The bands and the floor watch carry the SAME guard inside their
+		# own effects rather than being wrapped here too, because they
+		# have other callers (kehillah_debug.101 and .99 respectively)
+		# that need it just as much. Only the drift is wrapped at the call
+		# site, since this pulse is its only caller.
+		kehillah_backfill_pillars_marker_effect = yes
+		if = {
+			limit = { kehillah_pillars_are_live_trigger = yes }
+			kehillah_quarterly_pillars_effect = yes
+		}
 
 		# HOST CHARTER, ADDED 2026-09-23 (Phase 4, v15). This is the
 		# backstop for a host changing hands by conquest (spike section 5
@@ -537,6 +683,44 @@ kehillah_quarterly_pulse = {
 		# effect's own header for why that lag is a deliberate trade
 		# against the tick-deferral constraint, not an oversight.
 		kehillah_maintain_host_charter_effect = yes
+
+		# PILLAR BANDS (S2). Swaps the leader's per-band modifiers and
+		# sends the band-change notice. Ordered after the pillars are
+		# written for the same reason the floor watch below is -- it must
+		# judge this quarter's numbers, not last quarter's.
+		kehillah_update_all_pillar_bands_effect = yes
+
+		# THE RABBI'S OFFICE (S4(2), 2026-09-26). Clears the serve-as-own-
+		# rabbi toggle once a real rabbi has been appointed. Ordered after
+		# the pillars deliberately: it only removes a now-redundant flag
+		# and modifier, and kehillah_serving_as_own_rabbi_trigger already
+		# returns false the instant the seat is filled, so this quarter's
+		# pillar maths has already stopped counting the leader in the role
+		# whether or not this has run yet. See
+		# kehillah_clear_redundant_rabbi_toggle_effect's own header.
+		kehillah_clear_redundant_rabbi_toggle_effect = yes
+
+		# COMMUNITY GOALS (S6, 2026-09-28). Completes or fails the one goal
+		# a community has running. Ordered after the pillars and after the
+		# charter cache refresh above, because two of the four goals are read
+		# off numbers those two effects write this quarter -- see
+		# kehillah_check_community_goal_effect's own header (common/
+		# scripted_effects/kehillah_goal_effects.txt). Deliberately BEFORE the
+		# Stability floor below: a completed Secure Our Rights pays Stability,
+		# and a community that earned its way back over the floor this quarter
+		# should not also get a collapse warning for the number it held before
+		# the payment.
+		kehillah_check_community_goal_effect = yes
+
+		# THE STABILITY FLOOR (S1 / v2 section 4.4). Ordered LAST on
+		# purpose: it reads the Stability that kehillah_quarterly_pillars_
+		# effect just finished writing this quarter, and the charter cache
+		# above is one of that value's own inputs. Running it earlier would
+		# judge a community on last quarter's number. See
+		# kehillah_dissolution_watch_effect (common/scripted_effects/
+		# kehillah_departure_effects.txt) for the warning/countdown/collapse
+		# states -- this call is the only thing that drives them.
+		kehillah_dissolution_watch_effect = yes
 	}
 }
 
@@ -919,5 +1103,73 @@ kehillah_norman_conquest_check_on_title_gain = {
 	}
 	effect = {
 		kehillah_norman_conquest_evaluate_effect = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# RESPONSA PULSE (ROADMAP S5). ADDED 2026-09-27.
+#
+# root = the character
+#
+# A THIRD random_yearly_playable_pulse block, alongside
+# kehillah_yearly_pulse (external threats) and kehillah_dispute_pulse
+# (internal friction), for the same reason the dispute pulse is separate
+# from the protection one -- see its header. Correspondence with distant
+# scholars is a different layer of the game from either, and it should be
+# tunable without touching the rate at which a community gets harassed or
+# its families quarrel. Same-key blocks in this file merge by key, as
+# this file's own header describes.
+#
+# chance_to_happen = 55, with no "quiet year" slot in the pool: S5 asks
+# for "roughly one question every 1-2 years", and the gate
+# (kehillah_can_answer_responsa_trigger) is already a real filter -- a
+# community whose most learned figure is below 12, or whose answerer holds
+# no semicha, never sees this at all, so the rate only applies to
+# communities that have earned the correspondence. The other two pulses
+# reserve a 100-weight zero slot because they fire on ANY Kehillah; this
+# one does not need to.
+#
+# THE PLAYER IS WRITTEN TO MORE OFTEN. ADDED 2026-09-27 (S4b), at user
+# request ("with increased likelihood to target a player"). A responsum is
+# a decision the player makes and the AI resolves by ai_chance, so the
+# event is worth far more when it lands on a human: an AI community
+# answering its post is bookkeeping, and the pillar movement it produces
+# is the same either way.
+#
+# Done with chance_of_no_event rather than by raising chance_to_happen,
+# because chance_to_happen takes a literal only (checked: every vanilla
+# use in common/on_action/ is an integer) while chance_of_no_event takes a
+# full script value -- faith_holy_order_land_acquisition_pulse (game/
+# common/on_action/religion_on_actions.txt) is the precedent for a
+# computed one. A player keeps the bare 55% rate; an AI loses 40% of its
+# rolls on top, landing near 33% -- roughly one question every three
+# years for an AI community against one every two for the player, without
+# making the player's own rate busier than S5 asked for.
+# ---------------------------------------------------------------------
+
+random_yearly_playable_pulse = {
+	on_actions = { kehillah_responsa_pulse }
+}
+
+kehillah_responsa_pulse = {
+	trigger = {
+		government_has_flag = government_is_kehillah
+		is_adult = yes
+		is_imprisoned = no
+		kehillah_can_answer_responsa_trigger = yes
+	}
+	random_events = {
+		chance_to_happen = 55
+
+		chance_of_no_event = {
+			value = 0
+			if = {
+				limit = { is_ai = yes }
+				value = 40
+			}
+		}
+
+		100 = kehillah_responsa.0001
 	}
 }

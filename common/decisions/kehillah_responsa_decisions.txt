@@ -1,0 +1,167 @@
+﻿# =====================================================================
+# Compile the Responsa. ROADMAP S5, added 2026-09-27.
+#
+# "At 10 answered, a decision to compile them into a book via the
+# existing book system" (S5). This does exactly that and adds no second
+# book system: it hands the existing kehillah_book_complete_effect a
+# genre and a tally and lets that effect produce the artifact, its name,
+# its modifier, its rarity tier and its Greatness/piety/prestige reward,
+# then fires kehillah_book.0006 so the collection is sent out to the
+# other communities through the same path a written book takes.
+#
+# GENRE = flag:talmudics, not a new "responsa" genre. Two reasons, one
+# design and one scope. Design: responsa ARE halakhic writing, and
+# Halakha was merged into the Talmudics track on 2026-09-15 (see
+# kehillah_book_complete_effect's own note at that branch), so Talmudics
+# is where a volume of rulings genuinely belongs. Scope: a new genre means
+# two artifact names, two artifact modifiers, three rarity descriptions
+# and their loc, all for a volume that is already well described by an
+# existing track -- a real cost for no gain the player can perceive.
+#
+# TALLY = kehillah_responsa_compile_tally_per_answer x answers, checked
+# against the book system's own cuts (famed >= 30, illustrious >= 55). At
+# 4 per answer, the ten-responsum minimum lands at 40 -- a FAMED volume,
+# the middle tier -- and fourteen answered questions reach illustrious. So
+# clearing the bar gets you a good book and a career of correspondence
+# gets you a great one, rather than the minimum handing out the best
+# artifact in the system.
+#
+# THE COUNTER RESETS, and a separate one remembers. kehillah_var_
+# responsa_count goes back to 0 so a second volume needs a second ten
+# rulings, while kehillah_var_responsa_volumes accumulates and never
+# resets -- that is the permanent, legible record of the community's
+# scholarly output, and what the Greatness breakdown row reads once a
+# community has published anything.
+#
+# WHY is_valid REFUSES WHILE A BOOK IS IN PROGRESS. var:kehillah_book_
+# genre and var:kehillah_book_tally are per-character state owned by the
+# Write a Book chain (kehillah_book_effects.txt's header says so
+# explicitly). Compiling mid-book would overwrite a half-written book's
+# genre and tally with this one's, so the chain would finish as the wrong
+# book at the wrong quality. Blocking the overlap is the cheap, correct
+# answer; saving and restoring the other chain's state would be a second
+# mechanism for no benefit.
+#
+# ONE INHERITED ck3-tiger WARNING, deliberately not "fixed":
+# warning(strict-scopes) "`kehillah_book_complete_effect` expects
+# scope:story to be set". It originates in vanilla's own
+# create_artifact_book_effect reading scope:story, and it ALREADY fires on
+# the shipped, live-tested book chain at
+# events/kehillah_book_events.txt:433 (and on the translation chain) --
+# it is part of this mod's standing 59-warning baseline, not something
+# this decision introduced. Calling the effect differently here would mean
+# diverging from the one call pattern known to work in a running game,
+# which is the wrong trade. Checked rather than assumed: tiger was run
+# before and after this file was added, and the only new warning was this
+# one, at this line.
+# =====================================================================
+
+kehillah_compile_responsa_decision = {
+	# decision_tale.dds, the same illustration kehillah_write_book_decision
+	# uses -- this produces a book, so it should look like the other one
+	# that does. (decision_faith.dds was the first choice and does not
+	# exist in 1.19; checked against the installed game rather than
+	# assumed.)
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_tale.dds"
+	}
+
+	decision_group_type = kehillah
+	sort_order = 94
+	ai_check_interval = 60
+
+	is_shown = {
+		government_has_flag = government_is_kehillah
+		exists = primary_title
+		primary_title = { has_variable = kehillah_var_responsa_count }
+	}
+
+	is_valid = {
+		is_adult = yes
+		is_imprisoned = no
+
+		# WRAPPED IN A custom_tooltip 2026-09-28, after a live pass read the
+		# requirement list and found two untranslatable lines in it:
+		#   "Has Variable: VARIABLE(BUG: has_variable missing perspective)"
+		#   "landed_title_var_greater_or_equal has no localization"
+		# Both came from kehillah_can_compile_responsa_trigger's raw
+		# has_variable / var:... >= reads inside a primary_title block. The
+		# engine has no loc for either shape, so it printed its own internal
+		# complaint to the player in broken-loc magenta. The gate itself was
+		# evaluating correctly -- both lines were checkmarked -- so this was
+		# only ever how it read, which is exactly the class of thing a live
+		# pass catches and a source read does not.
+		custom_tooltip = {
+			text = kehillah_compile_responsa_enough_tt
+			kehillah_can_compile_responsa_trigger = yes
+		}
+
+		# See the header: the Write a Book chain owns these two variables.
+		custom_tooltip = {
+			text = kehillah_compile_responsa_not_mid_book_tt
+			NOT = { has_variable = kehillah_book_genre }
+		}
+	}
+
+	effect = {
+		# Feed the existing book system. The tally is computed BEFORE the
+		# counter is reset, for obvious reasons.
+		set_variable = { name = kehillah_book_genre value = flag:talmudics }
+		set_variable = {
+			name = kehillah_book_tally
+			value = {
+				value = primary_title.var:kehillah_var_responsa_count
+				multiply = kehillah_responsa_compile_tally_per_answer
+			}
+		}
+
+		# THE BOOK IS FINISHED IN AN EVENT, NOT HERE -- and this is the whole
+		# reason kehillah_responsa.0002 exists. Fixed 2026-09-28 after a live
+		# compile grew error.log by ~250,000 lines in about one second.
+		#
+		# A decision's `effect` block is evaluated to BUILD ITS TOOLTIP, and
+		# in that pass `set_variable` does not actually write anything. So
+		# kehillah_book_complete_effect, called inline here, ran against the
+		# two variables set immediately above it as though they did not
+		# exist -- because during a tooltip build they do not. Nine `var:`
+		# read sites inside it threw "Failed to fetch variable ... due to not
+		# being set", once each, on every tooltip rebuild frame: 1,853
+		# rebuilds while the decision panel was open.
+		#
+		# This is why the shipped Write a Book chain never did it: there the
+		# variables are set days earlier by kehillah_book.0001-0004, so by
+		# the time kehillah_book.0005's option previews the same effect the
+		# reads all succeed. The bug is not in the book effect at all -- it is
+		# in setting a variable and reading it back inside one previewable
+		# block. Deferring by a day is not needed; days = 0 fires after this
+		# block has actually been applied.
+		#
+		# The generalisation, worth carrying to any future decision: never
+		# write a variable and read it in the same decision effect. The
+		# tooltip pass will read it unwritten, every frame the panel is open.
+		trigger_event = { id = kehillah_responsa.0002 days = 0 }
+
+		primary_title = {
+			set_variable = { name = kehillah_var_responsa_count value = 0 }
+			if = {
+				limit = { NOT = { has_variable = kehillah_var_responsa_volumes } }
+				set_variable = { name = kehillah_var_responsa_volumes value = 0 }
+			}
+			change_variable = { name = kehillah_var_responsa_volumes add = 1 }
+		}
+
+		# The same "copies go out to the other communities" tail a written
+		# book gets. This event's immediate calls
+		# kehillah_book_send_copies_effect, which is also what clears
+		# var:kehillah_book_genre once every recipient has read it.
+		trigger_event = { id = kehillah_book.0006 days = 10 }
+	}
+
+	ai_potential = {
+		government_has_flag = government_is_kehillah
+	}
+
+	ai_will_do = {
+		base = 75
+	}
+}

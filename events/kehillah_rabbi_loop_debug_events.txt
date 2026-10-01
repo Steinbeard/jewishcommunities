@@ -1,0 +1,96 @@
+﻿# Console-only probes for the rabbi loop. Never called from game content.
+# While hosting an active Bet Din, run `event kehillah_rabbi_loop_debug.1`
+# to inspect bench/scoring; .2 forces one good-ruling XP grant and a positive
+# closing event for reward QA. Use a disposable save for .2.
+namespace = kehillah_rabbi_loop_debug
+
+kehillah_rabbi_loop_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_rabbi_loop_debug.1: Bet Din reward state START"
+		if = {
+			limit = { exists = involved_activity }
+			debug_log = "kehillah_rabbi_loop_debug.1: ACTIVITY PRESENT"
+			if = {
+				limit = { exists = involved_activity.var:kehillah_bet_din_convening_title }
+				debug_log = "kehillah_rabbi_loop_debug.1: CONVENING TITLE PRESENT"
+			}
+			if = {
+				limit = { exists = involved_activity.var:kehillah_bet_din_av_beit_din }
+				debug_log = "kehillah_rabbi_loop_debug.1: AV BEIT DIN PRESENT"
+				involved_activity.var:kehillah_bet_din_av_beit_din = {
+					if = {
+						limit = { has_trait = kehillah_rabbi_trait }
+						debug_log = "kehillah_rabbi_loop_debug.1: AV HAS SEMICHA"
+					}
+					if = {
+						limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 1 } }
+						debug_log = "kehillah_rabbi_loop_debug.1: AV TALMUDICS XP AT LEAST 1"
+					}
+				}
+			}
+			if = {
+				limit = { exists = involved_activity.var:kehillah_bet_din_judge2 }
+				debug_log = "kehillah_rabbi_loop_debug.1: JUDGE 2 PRESENT"
+			}
+			if = {
+				limit = { exists = involved_activity.var:kehillah_bet_din_judge3 }
+				debug_log = "kehillah_rabbi_loop_debug.1: JUDGE 3 PRESENT"
+			}
+			if = {
+				limit = { kehillah_bet_din_session_score_at_least_trigger = { THRESHOLD = kehillah_bet_din_session_threshold_adequate } }
+				debug_log = "kehillah_rabbi_loop_debug.1: SESSION SCORE POSITIVE"
+			}
+		}
+		else = {
+			debug_log = "kehillah_rabbi_loop_debug.1: NO ACTIVITY"
+		}
+		debug_log_scopes = yes
+		debug_log = "kehillah_rabbi_loop_debug.1: Bet Din reward state END"
+	}
+}
+
+kehillah_rabbi_loop_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = {
+				exists = involved_activity.var:kehillah_bet_din_convening_title
+				exists = involved_activity.var:kehillah_bet_din_av_beit_din
+				exists = involved_activity.var:kehillah_bet_din_judge2
+				exists = involved_activity.var:kehillah_bet_din_judge3
+			}
+			debug_log = "kehillah_rabbi_loop_debug.2: forcing one good ruling and positive close"
+			kehillah_bet_din_reward_judges_for_ruling_effect = { XP = kehillah_bet_din_case_rabbi_xp_good }
+			involved_activity = {
+				set_variable = { name = kehillah_bet_din_session_score value = kehillah_bet_din_session_threshold_adequate }
+				set_variable = { name = kehillah_bet_din_cases_heard_count value = 1 }
+			}
+			trigger_event = kehillah_bet_din.0099
+		}
+		else = {
+			debug_log = "kehillah_rabbi_loop_debug.2: BLOCKED no fully staffed Bet Din activity"
+		}
+	}
+}
+
+# Console-only case 7 probe on a disposable save during a fully staffed
+# Bet Din. It starts the real host -> co-judge -> resolution chain.
+kehillah_rabbi_loop_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = {
+				exists = involved_activity.var:kehillah_bet_din_convening_title
+				exists = involved_activity.var:kehillah_bet_din_judge2
+				exists = involved_activity.var:kehillah_bet_din_judge3
+			}
+			debug_log = "kehillah_rabbi_loop_debug.3: starting captive ransom case"
+			trigger_event = kehillah_bet_din.0061
+		}
+		else = { debug_log = "kehillah_rabbi_loop_debug.3: BLOCKED no fully staffed Bet Din activity" }
+	}
+}

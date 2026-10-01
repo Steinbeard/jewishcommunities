@@ -502,11 +502,22 @@ kehillah_setup_worms_start_effect = {
 #     and a maxed synagogue" is what was asked for, and the reading that
 #     singles out the Synagogue as the maxed one. To max a family, add
 #     its tier-2/3 lines in the same shape as the Synagogue's.
-#   - No pillar values are inflated to match. The band gates on tier 2+
-#     of every family (can_construct, see the buildings file) are checks
-#     on the PLAYER's own construction, and add_domicile_building does
-#     not consult them -- so a maxed Synagogue here does not imply the
-#     Legendary Greatness band its tier 5 would normally demand. The
+#   - No pillar values are inflated to match -- **WRONG, CORRECTED
+#     2026-09-26, and it made this whole effect a no-op above synagogue
+#     tier 1.** This said the band gates on tier 2+ (can_construct) "are
+#     checks on the PLAYER's own construction, and add_domicile_building
+#     does not consult them." add_domicile_building DOES consult them,
+#     and live error.log said so: "Domicile owner failed to meet
+#     triggered requirements: 'kehillah_synagogue_02'". Greatness is now
+#     lifted for the duration of the grant and restored immediately
+#     after; see the block at the top of the effect body for the full
+#     account and for why the dependency is circular rather than merely
+#     misordered. The sentence is left here, struck, because a future
+#     reader is more likely to meet the wrong claim than the fix, and
+#     this is the paragraph they will read. So: a maxed Synagogue here
+#     does NOT imply the community has earned the Legendary Greatness
+#     band its tier 5 would normally demand -- that part was always
+#     right, and is why the lift is temporary. The
 #     pillars will climb on their own, because the pillar baselines in
 #     common/script_values/kehillah_script_values.txt are computed FROM
 #     the buildings; they just start low.
@@ -514,6 +525,62 @@ kehillah_setup_worms_start_effect = {
 # ---------------------------------------------------------------------
 
 kehillah_worms_developed_start_effect = {
+	# =================================================================
+	# LIFT THE GREATNESS GATE FOR THE DURATION OF THE GRANT, then put it
+	# straight back. ADDED 2026-09-26, fixing a real and previously
+	# silent failure of this whole effect.
+	#
+	# WHAT WAS ACTUALLY HAPPENING: Worms was getting synagogue tier 1 and
+	# nothing above it. Live error.log, at on_game_start_after_lobby:
+	#
+	#   add_domicile_building effect [ Domicile owner failed to meet
+	#     triggered requirements: 'kehillah_synagogue_02' ]
+	#   add_domicile_building effect [ Cannot construct an upgrade when
+	#     previous building has not been built: 'kehillah_synagogue_03' ]
+	#   ... and the same for 04 and 05, cascading off the missing 02.
+	#
+	# THE HEADER ABOVE WAS WRONG about this, and the claim is corrected
+	# here rather than quietly left standing. It asserted that "the band
+	# gates on tier 2+ of every family (can_construct) are checks on the
+	# PLAYER's own construction, and add_domicile_building does not
+	# consult them." It does consult them. That is exactly what
+	# "failed to meet triggered requirements" is reporting.
+	#
+	# WHY IT IS CIRCULAR, so the next person does not just reorder the
+	# calls and think it fixed. kehillah_synagogue_02..05 require
+	# Greatness at the Strained / Healthy / Flourishing / Legendary
+	# thresholds (150 / 400 / 700 / 950). Greatness is computed FROM the
+	# buildings -- kehillah_greatness_baseline_value reads the synagogue
+	# tier, among others -- so the buildings cannot wait for the pillar
+	# and the pillar cannot precede the buildings. Moving
+	# kehillah_seed_community_effect earlier does not help: it would seed
+	# Greatness from a community that has no buildings yet, which is far
+	# below 150.
+	#
+	# SO: set Greatness to the Legendary threshold, grant the buildings,
+	# and set it back to 0. Nothing is left inflated, and no other code
+	# observes the window -- this runs inside on_game_start_after_lobby,
+	# before the community is even registered.
+	#
+	# THE HONEST VALUE ARRIVES ON DAY THREE, unchanged by any of this:
+	# kehillah_settlement_conditions.0008 calls
+	# kehillah_initialize_historical_pillars_from_baseline_effect over
+	# every registered community, which SETS all three pillars from their
+	# computed baselines (v20-starting-pillars-equal-baseline.md). That
+	# snapshot now sees the complete building set it was always meant to,
+	# which is the second, quieter half of this bug: V20's "opening
+	# pillars equal the full baseline" promise was being kept against a
+	# baseline missing four synagogue tiers.
+	#
+	# Restoring to 0 rather than to the real baseline is deliberate --
+	# computing it here would duplicate V20's job three days early and
+	# give two places an opinion about the same number.
+	# =================================================================
+	primary_title ?= {
+		kehillah_init_pillars_effect = yes
+		set_variable = { name = kehillah_var_greatness value = kehillah_band_legendary_threshold }
+	}
+
 	domicile = {
 		# --- MAIN SLOT: the Synagogue, tier 1 through 5 in order. ---
 		if = {
@@ -578,6 +645,15 @@ kehillah_worms_developed_start_effect = {
 			limit = { NOT = { has_domicile_building_or_higher = kehillah_workshops_01 } }
 			add_domicile_building = kehillah_workshops_01
 		}
+	}
+
+	# Put the gate back. See this effect's own opening comment: the
+	# inflated Greatness exists only to get past kehillah_synagogue_02..05's
+	# can_construct checks, and day three's V20 snapshot is what sets the
+	# real opening figure -- now from the complete building set.
+	primary_title ?= {
+		set_variable = { name = kehillah_var_greatness value = 0 }
+		kehillah_update_standing_effect = yes
 	}
 }
 
@@ -779,6 +855,27 @@ kehillah_setup_troyes_start_effect = {
 		kehillah_seed_community_effect = yes
 		kehillah_record_quarter_effect = yes
 		kehillah_update_leader_flavor_effect = yes
+
+		# RASHI BEGINS AS TROYES'S OWN CHIEF RABBI (Daniel, 2026-09-25;
+		# ROADMAP S4(2), built 2026-09-26). He holds kehillah_rabbi_trait
+		# and, from history/characters/troyes_1066.txt, an explicit
+		# learning = 12 set for exactly this purpose -- so he clears
+		# kehillah_serve_as_rabbi_learning_threshold deterministically
+		# rather than by a lucky roll.
+		#
+		# Set through the trigger rather than assumed: if a future edit
+		# lowers his Learning or drops the trait, Troyes starts with an
+		# empty seat and the "Seek a Chief Rabbi" path instead, which is a
+		# sane outcome. Silently flagging him regardless would produce a
+		# leader "serving" in an office he no longer qualifies for.
+		if = {
+			limit = {
+				kehillah_can_serve_as_own_rabbi_trigger = yes
+				NOT = { employs_court_position = chief_rabbi_kehillah_position }
+			}
+			add_character_flag = kehillah_serving_as_own_rabbi
+			add_character_modifier = kehillah_serving_as_own_rabbi_modifier
+		}
 	}
 }
 
@@ -1256,6 +1353,7 @@ kehillah_seed_community_effect = {
 			dynasty = inherit
 			age = { 26 38 }
 			faith = scope:kehillah_leader.faith
+			rite = scope:kehillah_leader.rite
 			culture = scope:kehillah_leader.culture
 			# scope:kehillah_leader.location is unreliable here: this
 			# effect runs the same tick as change_government creates the
@@ -1271,7 +1369,21 @@ kehillah_seed_community_effect = {
 			save_scope_as = kehillah_seeded_heir
 		}
 		scope:kehillah_seeded_heir = {
-			set_employer = scope:kehillah_leader
+			# GUARDED, 2026-09-27. Unlike the three notable families
+			# below, this character is created with `father =`, and
+			# create_character puts a generated child in the father's
+			# court already -- so the call was redundant and the engine
+			# rejected it outright: "Trying to put character (...) in the
+			# court they're already in", twice per fresh 1066 boot, from
+			# kehillah_setup_troyes_start_effect and one other young
+			# leader's start (the only two whose leaders have no adult
+			# child, which is the only case this branch runs at all).
+			# Kept rather than deleted so the intent stays visible and the
+			# floor still holds if that auto-courting ever stops.
+			if = {
+				limit = { NOT = { is_courtier_of = scope:kehillah_leader } }
+				set_employer = scope:kehillah_leader
+			}
 		}
 	}
 
@@ -1301,6 +1413,7 @@ kehillah_seed_community_effect = {
 		dynasty = generate
 		age = { 30 55 }
 		faith = scope:kehillah_leader.faith
+		rite = scope:kehillah_leader.rite
 		culture = scope:kehillah_leader.culture
 		location = scope:kehillah_leader.domicile.domicile_location
 		random_traits = yes
@@ -1321,6 +1434,7 @@ kehillah_seed_community_effect = {
 		dynasty = generate
 		age = { 30 55 }
 		faith = scope:kehillah_leader.faith
+		rite = scope:kehillah_leader.rite
 		culture = scope:kehillah_leader.culture
 		location = scope:kehillah_leader.domicile.domicile_location
 		random_traits = yes
@@ -1342,6 +1456,7 @@ kehillah_seed_community_effect = {
 		dynasty = generate
 		age = { 30 55 }
 		faith = scope:kehillah_leader.faith
+		rite = scope:kehillah_leader.rite
 		culture = scope:kehillah_leader.culture
 		location = scope:kehillah_leader.domicile.domicile_location
 		random_traits = yes
@@ -1609,6 +1724,24 @@ kehillah_initialize_historical_pillars_from_baseline_effect = {
 				set_variable = { name = kehillah_start_pillars_initialized_from_baseline value = 1 }
 				kehillah_update_standing_effect = yes
 			}
+
+			# BAND THE COMMUNITY THE MOMENT ITS PILLARS BECOME REAL.
+			# ADDED 2026-09-26 (heartbeat 5). Until now the bands were
+			# only ever set by the quarterly pulse, so between this
+			# snapshot (day three) and the next pulse (up to a quarter
+			# later) the leader wore whatever band the pulse had already
+			# guessed from the pre-initialisation zeroes -- measured live
+			# as three CRISIS modifiers on a Strained/Strained/Healthy
+			# community. kehillah_update_all_pillar_bands_effect now
+			# refuses to band an uninitialised community at all
+			# (kehillah_pillars_are_live_trigger), so this call is what
+			# performs the FIRST, correct seeding, and it does so on the
+			# quiet seed branch -- no spurious band-change notice.
+			#
+			# Character scope, not title: the band modifiers live on the
+			# leader. Ordered after the primary_title block above so the
+			# pillars it reads are the ones just written.
+			kehillah_update_all_pillar_bands_effect = yes
 		}
 	}
 }
@@ -1931,12 +2064,38 @@ kehillah_quarterly_pillars_effect = {
 				exists = var:kehillah_loan_amount_owed
 				var:kehillah_loan_years_elapsed >= kehillah_loan_term_years
 			}
+			# ROADMAP S8b (2026-09-29): AN AI BORROWER REPAYS AT TERM IF IT
+			# CAN. Before this, kehillah_repay_loan_decision (ai_potential
+			# always = no) was the only way a loan was ever repaid, so every
+			# loan to an AI ruler -- i.e. nearly every loan -- defaulted at
+			# term by construction. Same payment and rewards as that
+			# decision; a player borrower still repays by the decision, and
+			# anyone who cannot pay at term still defaults as before.
+			if = {
+				limit = {
+					is_ai = yes
+					exists = scope:kehillah_loan_title.holder
+					gold >= var:kehillah_loan_amount_owed
+				}
+				pay_short_term_gold = {
+					target = scope:kehillah_loan_title.holder
+					gold = var:kehillah_loan_amount_owed
+				}
+				scope:kehillah_loan_title = {
+					change_variable = { name = kehillah_var_prosperity add = kehillah_loan_repayment_prosperity_reward }
+					change_variable = { name = kehillah_var_greatness add = kehillah_loan_repayment_greatness_reward }
+				}
+				debug_log = "kehillah_quarterly_pillars_effect: an AI borrower repaid at term"
+			}
+			else = {
+				scope:kehillah_loan_title = {
+					change_variable = { name = kehillah_var_prosperity subtract = kehillah_loan_default_prosperity_loss }
+				}
+				debug_log = "kehillah_quarterly_pillars_effect: a borrower defaulted at term"
+			}
 			remove_variable = kehillah_loan_amount_owed
 			remove_variable = kehillah_loan_lender_title
 			remove_variable = kehillah_loan_years_elapsed
-			scope:kehillah_loan_title = {
-				change_variable = { name = kehillah_var_prosperity subtract = kehillah_loan_default_prosperity_loss }
-			}
 		}
 	}
 
@@ -2185,8 +2344,171 @@ kehillah_dispute_pick_parties_effect = {
 		}
 		save_scope_as = kehillah_party_b
 	}
-	root.court_position:chief_rabbi_kehillah_position ?= {
+	# S4(2), 2026-09-26: goes through the shared resolver so a leader
+	# serving as their own community's rabbi is bound here too. See
+	# kehillah_has_acting_chief_rabbi_trigger's header (common/
+	# scripted_triggers/kehillah_scripted_triggers.txt).
+	kehillah_save_acting_chief_rabbi_effect = yes
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_save_acting_chief_rabbi_effect
+# Scope: the Kehillah leader.
+#
+# ROADMAP S4(2), added 2026-09-26. Binds scope:kehillah_chief_rabbi to
+# whoever is ACTUALLY acting as the community's Chief Rabbi -- the
+# appointed court-position holder, or the leader themselves if they have
+# taken up the office (kehillah_serve_as_rabbi_decision).
+#
+# The appointed rabbi always wins where both could apply, matching
+# kehillah_acting_chief_rabbi_learning_value and
+# kehillah_serving_as_own_rabbi_trigger. Every consumer that needs the
+# rabbi as a SCOPE calls this; every consumer that only needs "is the
+# seat filled" calls kehillah_has_acting_chief_rabbi_trigger. Between
+# them there is no site left that reads the court position directly, which
+# is the point -- see that trigger's header.
+#
+# Leaves the scope UNSET when there is no rabbi at all, which is why
+# every reader guards with ?=.
+# ---------------------------------------------------------------------
+
+kehillah_save_acting_chief_rabbi_effect = {
+	if = {
+		limit = { employs_court_position = chief_rabbi_kehillah_position }
+		court_position:chief_rabbi_kehillah_position = {
+			save_scope_as = kehillah_chief_rabbi
+		}
+	}
+	else_if = {
+		limit = { kehillah_serving_as_own_rabbi_trigger = yes }
 		save_scope_as = kehillah_chief_rabbi
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_clear_redundant_rabbi_toggle_effect
+# Scope: the Kehillah leader. Called from the quarterly pulse.
+#
+# ROADMAP S4(2), added 2026-09-26. "Appointing a rabbi ends the toggle."
+#
+# WHY THE QUARTERLY PULSE AND NOT AN on_action. There is no "a court
+# position was filled" on_action in 1.19 -- checked: common/on_action/
+# court_position_on_action.txt contains only scripted per-position task
+# effects (caravan_master_prepare_travels_on_action and friends), no
+# appointment hook, and nothing anywhere else in common/on_action/
+# references court positions being granted. So this is swept up on the
+# pulse instead.
+#
+# The lag is cosmetic ONLY, by construction: kehillah_serving_as_own_
+# rabbi_trigger itself returns false the instant a real rabbi is
+# appointed, so the leader stops acting in the role immediately and
+# nothing is ever double-counted. What this effect cleans up is the stale
+# flag and, more importantly, the two-jobs modifier the leader should no
+# longer be paying for.
+# ---------------------------------------------------------------------
+
+kehillah_clear_redundant_rabbi_toggle_effect = {
+	if = {
+		limit = {
+			has_character_flag = kehillah_serving_as_own_rabbi
+			employs_court_position = chief_rabbi_kehillah_position
+		}
+		kehillah_end_serving_as_own_rabbi_effect = yes
+
+		send_interface_message = {
+			type = msg_kehillah_endorsement
+			title = kehillah_rabbi_office_handed_over_msg_title
+			desc = kehillah_rabbi_office_handed_over_msg_desc
+			left_icon = root
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_end_serving_as_own_rabbi_effect
+# Scope: the Kehillah leader. ROADMAP S4(2), added 2026-09-26.
+#
+# The single teardown for the toggle, so the decision that stands down,
+# the quarterly cleanup, and anything added later cannot disagree about
+# what "no longer serving" involves.
+# ---------------------------------------------------------------------
+
+kehillah_end_serving_as_own_rabbi_effect = {
+	remove_character_flag = kehillah_serving_as_own_rabbi
+	if = {
+		limit = { has_character_modifier = kehillah_serving_as_own_rabbi_modifier }
+		remove_character_modifier = kehillah_serving_as_own_rabbi_modifier
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_replace_appointed_rabbi_effect
+# Scope: the Kehillah leader. Called from kehillah_serve_as_rabbi_
+# decision's effect, and only when the seat is actually filled.
+#
+# ADDED 2026-09-27 (S4b), at user request: "if there's already a chief
+# rabbi, maybe you can replace him with yourself with the decision."
+# Previously the decision simply refused while the seat was filled, which
+# left a learned leader who wanted the office with no route to it short of
+# dismissing the incumbent through the court UI first and then coming
+# back -- two steps for one intention, and the second one easy to forget.
+#
+# THIS IS A DISMISSAL, AND IS PRICED AS ONE. The incumbent is revoked
+# (vanilla's own block form, as 10_tgp_interactions.txt's favored-minister
+# swap uses -- `revoke_court_position = { court_position = X recipient =
+# court_position:X }`, not the bare one-line form the .info file
+# documents) and takes the same revoked_court_position_opinion vanilla
+# gives anyone fired from a court position. Nothing about it is free.
+#
+# WART FIXED, same day (S4c, 2026-09-27). As first written this note
+# recorded a real problem and declined to fix it: chief_rabbi_kehillah_
+# position's on_court_position_revoked removed kehillah_rabbi_trait from
+# the former holder, so a rabbi dismissed here lost his semicha even if he
+# had arrived holding it -- the dismissal unmade the ordination. Daniel's
+# answer was to fix it ("let's not strip rabbi traits on removing a chief
+# rabbi"), so the three teardown hooks are gone and the trait is granted
+# once and kept; that office's own on_court_position_received block has the
+# full reasoning. A rabbi dismissed by this effect keeps his standing, and
+# stays a candidate S4(1)'s search can find in whatever court he lands in.
+#
+# ORDER MATTERS. The revocation must land BEFORE the caller sets
+# kehillah_serving_as_own_rabbi: kehillah_serving_as_own_rabbi_trigger
+# reads false for as long as the court position is still employed (see its
+# header), so a flag set first would not take effect until the seat
+# cleared anyway.
+# ---------------------------------------------------------------------
+
+kehillah_replace_appointed_rabbi_effect = {
+	if = {
+		limit = { employs_court_position = chief_rabbi_kehillah_position }
+
+		court_position:chief_rabbi_kehillah_position = {
+			save_scope_as = kehillah_deposed_rabbi
+		}
+
+		revoke_court_position = {
+			court_position = chief_rabbi_kehillah_position
+			recipient = court_position:chief_rabbi_kehillah_position
+		}
+
+		scope:kehillah_deposed_rabbi = {
+			add_opinion = {
+				target = root
+				modifier = revoked_court_position_opinion
+			}
+		}
+
+		send_interface_message = {
+			type = msg_kehillah_endorsement
+			title = kehillah_rabbi_office_taken_over_msg_title
+			desc = kehillah_rabbi_office_taken_over_msg_desc
+			left_icon = root
+			right_icon = scope:kehillah_deposed_rabbi
+		}
 	}
 }
 
@@ -2205,5 +2527,198 @@ kehillah_dispute_pick_parties_effect = {
 kehillah_task_contract_pick_employer_effect = {
 	domicile.domicile_location.county.holder = {
 		save_scope_as = employer
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_rabbi_search_price_effect
+# Scope: a candidate rabbi. scope:kehillah_rabbi_seeker = the hiring
+# Kehillah leader. SLOT = the saved-scope-value name to write the price
+# into.
+#
+# ROADMAP S4(1), added 2026-09-26: "cost scaled by Learning and by the
+# gap between their community's Greatness and yours".
+#
+# WHY A PARAMETERISED EFFECT AND NOT THREE SCRIPT VALUES. A script value
+# cannot take a parameter, so a per-tier cost would have meant three
+# near-identical copies of this formula -- exactly the duplication S4(2)'s
+# own "one shared resolver" instruction exists to avoid. A scripted effect
+# does take parameters, so the formula lives here once and each tier just
+# names the slot it wants the answer in. The event then reads the banked
+# value, which also means the price shown in the option tooltip and the
+# price actually charged are provably the same number.
+# ---------------------------------------------------------------------
+
+kehillah_rabbi_search_price_effect = {
+	save_scope_value_as = {
+		name = $SLOT$
+		value = {
+			value = kehillah_rabbi_hire_base_cost
+
+			# What they know. The dominant term, as it should be for this
+			# office.
+			add = {
+				value = learning
+				multiply = kehillah_rabbi_hire_cost_per_learning
+			}
+
+			# Leaving a more celebrated community for a lesser one costs
+			# more to arrange. The reverse is NOT a discount -- clamped at
+			# zero -- because a rabbi coming up in the world is not
+			# thereby cheaper, they simply have no premium to charge.
+			if = {
+				limit = {
+					exists = employer
+					employer = {
+						exists = primary_title
+						primary_title = {
+							is_kehillah_title_trigger = yes
+							has_variable = kehillah_var_greatness
+						}
+					}
+					scope:kehillah_rabbi_seeker.primary_title ?= { has_variable = kehillah_var_greatness }
+				}
+				add = {
+					value = employer.primary_title.var:kehillah_var_greatness
+					subtract = scope:kehillah_rabbi_seeker.primary_title.var:kehillah_var_greatness
+					multiply = kehillah_rabbi_hire_cost_per_greatness_gap
+					min = 0
+				}
+			}
+
+			# Never free, never absurd.
+			min = kehillah_rabbi_hire_base_cost
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_generate_rabbi_candidate_effect
+# Scope: the hiring Kehillah leader (scope:kehillah_rabbi_seeker is also
+# bound to them). SLOT = the scope name to save the new character under.
+#
+# ROADMAP S4(1), added 2026-09-26. The FALLBACK when the real world has
+# no rabbi of a given quality to offer -- see events/
+# kehillah_rabbi_search_events.txt's header for why real candidates come
+# first and this is the backstop, not the default.
+#
+# Mirrors kehillah_seed_community_effect's own create_character
+# conventions exactly, including gender_female_chance = 0 (a
+# create_character with no gender block is a script-LOAD error, found the
+# hard way -- BLOCKERS.md, 2026-09-24) and reading the location from the
+# domicile rather than the character, which is unreliable for a landless
+# ruler (same file's own note).
+# ---------------------------------------------------------------------
+
+kehillah_generate_rabbi_candidate_effect = {
+	create_character = {
+		dynasty = generate
+		age = { $AGE_MIN$ $AGE_MAX$ }
+		faith = root.faith
+		rite = root.rite
+		culture = root.culture
+		location = root.domicile.domicile_location
+		random_traits = yes
+		gender_female_chance = 0
+		trait = $EDUCATION$
+		trait = kehillah_rabbi_trait
+		learning = { $LEARNING_MIN$ $LEARNING_MAX$ }
+		save_scope_as = $SLOT$
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_install_chief_rabbi_effect
+# Scope: the hiring Kehillah leader. RABBI = the chosen candidate.
+#
+# ROADMAP S4(1), added 2026-09-26. The same two-step vanilla's own
+# set_court_physician_effect uses (common/scripted_effects/
+# 20_health_effects.txt:1308): move them into the court if they are not
+# already in it, then appoint. No replace_court_position branch is needed
+# -- both the decision and the event's own trigger require the seat to be
+# EMPTY, so there is never an incumbent to displace.
+#
+# Grants kehillah_rabbi_trait if they somehow lack it. The court position
+# itself already does this via its own on_court_position_received (common/
+# court_positions/types/kehillah_officers.txt), so this is belt-and-braces
+# for the generated-candidate path only, and harmless either way.
+# ---------------------------------------------------------------------
+
+kehillah_install_chief_rabbi_effect = {
+	# S4(3), added 2026-09-26. Note WHERE they are coming from BEFORE
+	# add_courtier moves them, because afterwards the old liege link is
+	# gone and there is no way back to it. Only a rabbi leaving another
+	# KEHILLAH matters here: poaching from a bishop's court or taking on
+	# a landless scholar costs no other community anything, and should
+	# not fire a "we have lost our teacher" event at somebody.
+	$RABBI$ = {
+		if = {
+			limit = {
+				exists = liege
+				NOT = { liege = root }
+				liege = { government_has_flag = government_is_kehillah }
+			}
+			liege = { save_scope_as = kehillah_rabbi_former_liege }
+		}
+	}
+
+	$RABBI$ = {
+		if = {
+			limit = { NOT = { liege ?= root } }
+			root = { add_courtier = $RABBI$ }
+		}
+	}
+
+	appoint_court_position = {
+		recipient = $RABBI$
+		court_position = chief_rabbi_kehillah_position
+	}
+
+	reverse_add_opinion = {
+		target = $RABBI$
+		modifier = hired_me_opinion
+	}
+
+	$RABBI$ = {
+		if = {
+			limit = { NOT = { has_trait = kehillah_rabbi_trait } }
+			add_trait = kehillah_rabbi_trait
+		}
+	}
+
+	# A community that has found itself a rabbi has done something real.
+	# Small, and not a substitute for the standing contribution the seat
+	# itself feeds into Greatness every quarter.
+	primary_title = {
+		change_variable = {
+			name = kehillah_var_greatness
+			add = kehillah_rabbi_hired_greatness_gain
+		}
+	}
+
+	# S4(3): "your student has been called to X". The community that
+	# RAISED this rabbi hears about it, and gains Greatness for it --
+	# S4(3)'s own framing, and the right one: a community whose scholars
+	# are wanted elsewhere is a community with a reputation, even though
+	# it has just lost a person. The loss is real and already priced in
+	# (the seat is empty now, so the per-quarter contribution through
+	# kehillah_acting_chief_rabbi_learning_value stops); this is the
+	# other half of the ledger, not a free gift.
+	#
+	# Fired to the FORMER liege, so root of .0002 is the community that
+	# lost the rabbi, not the one that hired them.
+	if = {
+		limit = { exists = scope:kehillah_rabbi_former_liege }
+		$RABBI$ = { save_scope_as = kehillah_rabbi_departed }
+		save_scope_as = kehillah_rabbi_new_patron
+		scope:kehillah_rabbi_former_liege = {
+			trigger_event = {
+				id = kehillah_rabbi_search.0002
+				days = { 3 10 }
+			}
+		}
 	}
 }

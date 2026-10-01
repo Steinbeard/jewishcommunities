@@ -1,4 +1,4 @@
-# Roadmap
+﻿# Roadmap
 
 Working title: **Kehillah** (working name for the mod overall is still TBD — "Jewish Communities" is the folder/descriptor name for now).
 
@@ -22,6 +22,45 @@ this note referred to) are long since resolved and removed; numbering otherwise 
 than renumbered, since later items and other docs cross-reference these numbers by hand (e.g.
 `kehillah_breakdown_custom_loc.txt`'s own header cites "ROADMAP item 4").
 
+### Rabbi gameplay loop — interactive direction, 2026-09-29
+
+Daniel's current priority is to connect mentor/yeshiva semicha, book mastery, Bet Din
+participation, source-based rulings, responsa, authored world works, and the Chief Rabbi
+office. The incremental design and proof order are in
+[V24](docs/spec/v24-rabbi-gameplay-loop.md); V21 and V23 remain proposals, not shipped
+features. This explicitly takes priority over the older autonomous queue for this
+interactive pass.
+
+- **Bet Din participant reward slice: LIVE-PROBED 2026-09-29; AI-hosted player guest still open.** Good/great rulings
+  give the three actual ordained judges 1/3 Talmudics XP; a positive docket gives
+  non-host attendees small piety, prestige, Learning XP, and a relationship gain.
+  Book mastery remains the main Rabbi XP source. A dedicated console probe is in
+  `events/kehillah_rabbi_loop_debug_events.txt`. Do not mark the whole
+  participant experience done until an AI-hosted player guest is checked. The first
+  live pass (2026-09-29) confirmed a real case's +1 XP for all three judges,
+  then exposed an older closing-event bug: both score triggers still read
+  retired global variables even though the docket score lives on the activity.
+  This made all tiered session rewards silently fall through. The triggers
+  now read `involved_activity.var`. The fresh-boot retest reported a positive
+  score and displayed the **adequate** close: host Greatness +10, Stability
+  +5, Piety +50, and named non-host attendees each shown gaining +10
+  Prestige, +10 Piety, +15 Learning XP and opinion. The close executed
+  without a new reward error. This verifies the UI/effect path, though a
+  numeric before/after on an attendee and an AI-hosted player guest remain
+  untested. [Live log](docs/testing/2026-09-29-rabbi-loop-bet-din-live-test-log.md).
+- **Bet Din case-writing pass, 2026-09-29:** The docket now includes a communal
+  captive-ransom petition drawn from Mishnah Gittin 4:6 and Geniza evidence. The
+  presiding judge chooses a funding policy; the second judge can persuade the
+  bench to change it; ruling quality and funding cost resolve separately. The
+  silversmith case's successful second-judge argument now changes the verdict.
+  The dowry compromise now tests Diplomacy and its text no longer sides with
+  the family demanding the original sum. The ransom host-to-resolution chain
+  is [live-probed](docs/testing/2026-09-29-bet-din-ransom-live-test-log.md);
+  player-controlled dissent and the revised silversmith response remain open.
+- **Next:** V21 ordination through rabbi mentorship and local semicha, then a
+  book-mastery option in a Bet Din case and V23 letter from that case. Prove one dynamically
+  authored circulating sefer end to end before adding the historical catalog.
+
 ### v0.1 milestone — Sukkot autonomous queue (added 2026-09-25; works ABOVE the numbered items below)
 
 Daniel's v0.1 direction is in [docs/spec/v22-v0.1-milestone.md](docs/spec/v22-v0.1-milestone.md):
@@ -41,6 +80,86 @@ short research bullets for when Daniel is back.
   guard + restitution cap (item 7), V18 Norman Conquest founding (dynasty tie), V20 starting
   pillars, V16 §8 open tests. Turns "source-fixed" into "verified". One pass, record results, move
   on — don't let it eat the window.
+  **PARTIAL, 2026-09-26.** Two runs, logged in
+  [docs/testing/2026-09-25-s0-regression-live-test-log.md](docs/testing/2026-09-25-s0-regression-live-test-log.md)
+  and [docs/testing/2026-09-26-s0-s2-live-test-log.md](docs/testing/2026-09-26-s0-s2-live-test-log.md).
+  - **V18 Norman Conquest founding + dynasty tie: VERIFIED PASS** (2026-09-25). Closes the item
+    BLOCKERS.md left open after three failed mechanisms.
+  - **Bet Din semicha guard: VERIFIED PASS** (2026-09-26), with a genuinely non-vacuous positive
+    control this time.
+  - **Bet Din restitution clamp: ROOT CAUSE FOUND, FIXED, AND VERIFIED LIVE, 2026-09-26
+    (heartbeat 4)** —
+    [log](docs/testing/2026-09-26-s0-restitution-and-s2-tooltip-log.md) §1. `kehillah_debug.108`
+    returns CLAMP PASS / DEBIT PASS / CREDIT PASS against a low-gold accused (7 against an award
+    capped at `medium_gold_value`), with zero `add_gold`/`pay_short_term_gold`/`Negative value`
+    lines anywhere in a fresh boot. *Caveat:* this exercises the transfer primitive under the real
+    clamp, not `kehillah_bet_din.0051`'s option-to-direction wiring — a genuine Silversmiths'
+    Quarrel on a real docket is still the only end-to-end confirmation.
+    `add_gold` is **additive only** and cannot go negative by any
+    shape. The engine says so itself, in its own generated
+    `logs/effects.log`: `add_gold` — "adds gold to a character"; `remove_short_term_gold` —
+    "removes gold from a character"; `pay_short_term_gold` — "the scope character pays gold to the
+    target character, `{ target = X gold = Y }`". A literal negative is rejected at **script-load
+    validation**, a computed one at runtime, which is exactly why the 2026-09-25 clamp fix moved
+    the error's timing without removing it and why `.103` found the probe characters holding gold
+    exactly as script read it. **There was never an affordability check to outwit.** Vanilla uses
+    `add_gold = -` zero times in `common/` or `events/`, against 849 `remove_short_term_gold` and
+    925 `pay_short_term_gold`; this mod already used the correct primitives in six other places,
+    and this one effect was the lone hand-rolled exception — which is why it was the lone site
+    that errored. Both restitution branches now make one `pay_short_term_gold` call, zero-sum by
+    construction rather than by two calls agreeing. The min/max cap stays, for a design reason
+    now (a Bet Din should not order restitution beyond a litigant's means) rather than an engine
+    one. **How it was finally caught:** the previous heartbeat's own `.108` probe used three
+    *literal* negative `add_gold` calls and was rejected at script load before it ever ran,
+    logging the answer instead of the measurement it was written to take (commit `fe8ba31`).
+    **Tooling note: `ck3-tiger` does NOT flag `add_gold = -5`** — only the live game's load
+    validation does, so clean tiger output was never evidence here.
+  - **V20 starting pillars and the V16 §8 open tests: NOT YET COVERED.** Neither run reached
+    them. Still open for a later heartbeat.
+    **Do the V20 check AFTER the 2026-09-26 Worms-start fix, or it verifies the wrong number.**
+    `kehillah_worms_developed_start_effect` had been a no-op above synagogue tier 1 —
+    `add_domicile_building` *does* consult `can_construct`, contrary to that effect's own header,
+    so tier 2 failed its Greatness gate (150) and tiers 3–5 cascaded off the missing tier 2. V20's
+    day-three snapshot was therefore keeping its "opening pillars equal the full baseline" promise
+    faithfully against a baseline missing four synagogue tiers. Fixed by lifting Greatness for the
+    duration of the grant and restoring it immediately (commit `4267d36`).
+    **VERIFIED LIVE 2026-09-26 (heartbeat 5) — PASS.**
+    [log](docs/testing/2026-09-26-heartbeat5-live-test-log.md) §1.
+    `kehillah_debug.111` on a fresh Worms start reports `SYNAGOGUE 5` plus all eight other
+    buildings `PRESENT`, with **zero** `add_domicile_building` lines in `error.log` against a
+    pre-fix symptom of four. Note recorded there: zero errors alone was *not* accepted as the
+    pass, since a boot into any other community shows zero too — the positive `SYNAGOGUE 5`
+    reading is what closes it.
+    **This check also found a separate, previously unknown bug, now fixed (commit `9236d57`):**
+    every new 1066 game opened with a spurious "The Community Frays" collapse warning on day one,
+    because the first quarterly pulse (1066.9.16) consumed the pillars two days before day three
+    wrote them (1066.9.18) — reading all three as 0.00, seeding all three bands as Crisis, and
+    burning the five-year warning cooldown so a *genuine* early crisis would have gone unwarned.
+    Fixed by guarding the consumers on a new `kehillah_pillars_are_live_trigger` and having the
+    day-three snapshot seed the bands itself. See the log's §1a for why initializing earlier was
+    rejected (this codebase already rejected it, for a reason that still holds) and why the
+    obvious `kehillah_start_pillars_initialized_from_baseline` marker is a trap.
+    **FIX VERIFIED 2026-09-27 (heartbeat 8) — PASS**,
+    [log](docs/testing/2026-09-27-heartbeat8-live-test-log.md) §1. It needed no boot: heartbeat 7's
+    usage limit left its CK3 process running overnight, and its logs held a complete fresh
+    1066-Worms boot no session had read. Zero `below the Stability floor`, zero `firing the
+    Stability warning`, zero `Community Frays` in a boot that demonstrably passed day three.
+    Zero was *not* accepted on its own (the watch logs nothing on the healthy path, so silence
+    would also mean "never ran") — the positive control is `seeded a band for a community that had
+    none recorded` appearing 45 times, all at day three, i.e. 15 communities × 3 pillars each
+    reporting no band on record, which the day-one pulse would have already written. Still
+    unverified: that the watch fires when Stability is *genuinely* low — that is S1 criterion 2.
+    Same logs also turned up a separate game-start `set_employer` error on the **Troyes** start
+    (Rashi's, so S4's and S7's showcase character), now fixed — log §2.
+    **"The V16 §8 open tests" is under-specified as an S0 bullet — corrected 2026-09-26.** Read
+    against the spec, V16 §8 is **nine** separate live tests, not a mop-up: several need multiple
+    boots (host succession *and* a county changing realm by conquest; a fresh Christian *and*
+    Muslim start), one needs a save-migration fixture (§8.3), one is a performance measurement
+    rather than a pass/fail (§8.6's registry scan at scale), and **§8.8 (armed-watch retinue)
+    overlaps S12, which is DANIEL-REVIEW** — it should not be built or promised in player-facing
+    text before he weighs in, so testing it now would be testing ahead of a design decision.
+    Treat this bullet as a pointer to that list rather than as one task, and pick individual
+    numbered items off it; don't let it sit at the top of S0 looking like a single afternoon.
 - **S1. BUILD — Leave the Kehillah (ruler → landless adventurer), and Stability dissolution
   (V2 §4.4, Wave 4), sharing ONE teardown effect.** A voluntary decision ("Step Down and Take to
   the Road" or similar) and the Stability-floor collapse both call the same effect: narrate,
@@ -52,6 +171,36 @@ short research bullets for when Daniel is back.
   plays on as an adventurer, and the community continues under an AI leader; (2) Stability forced
   to 0 via debug event shows the warning, then collapse, and the player plays on as an adventurer;
   (3) that adventurer can re-found a community; error.log clean of new errors throughout.
+  **CRITERION 1 LIVE-TESTED 2026-09-27 (heartbeat 8) — HALF PASS, and it found the real bug.**
+  [log](docs/testing/2026-09-27-heartbeat8-live-test-log.md) §6.
+  - **The departing leader's half: PASS.** The decision is available with a named heir, taking it
+    visibly works (adventurer decision list, changed portrait, vacated-office and realm-teardown
+    notices), and `kehillah_debug.100` returns **six for six**: landless_adventurer government, a
+    domicile (camp) exists, holds a primary title, that title is no longer a Kehillah title, the
+    adventurer succession law is active, the banked-Greatness scratch variable was cleaned up.
+  - **The community left behind: FAIL.** `kehillah_debug.113` reports the handover happened
+    (`HOLDER IS NOT ROOT`) and then: `FAIL the new holder does NOT have the Kehillah government`
+    and `FAIL the new holder has NO domicile -- the 15-25 day Game Over fuse, now pointed at an
+    AI`. Criterion 1 requires "**and the community continues under an AI leader**". It does not.
+  - **Same bug as S3(a), now confirmed — and it is SILENT.** `error.log` did not grow across that
+    group at all and holds no error text for any of it. Only the mod's own probes catch it; "error.log
+    is clean" has never been evidence that a succession worked.
+  - **Criteria 2 (collapse) and 3 (re-founding) remain untested.**
+  - **Criterion 1 is now a FULL LIVE PASS, 2026-09-27.** The successor-
+    domicile cause was fixed with the smallest engine-proven mechanism:
+    `kehillah_succession.0010` creates a temporary dynamic title with
+    `government = kehillah_government`, which atomically makes the Jewish
+    Quarter, restores the pre-existing community title as primary, then
+    destroys the scaffold. This preserves the title-owned pillars and the
+    recorded quarter state rather than copying either. A real Worms
+    **Step Down and Take to the Road** handoff passed the successor
+    government/domicile/primary-title breadcrumbs, all six departing-
+    adventurer invariants, and the watched community's continued holder,
+    domicile, and pillar state after further time; no new succession or
+    `change_government` errors. [Log](docs/testing/2026-09-27-successor-quarter-live-test-log.md).
+    The ordinary death/appointment route uses this same deferred event
+    but remains explicitly untested after a separate clean CK3 process
+    became unresponsive before it could accept New Game input.
 - **S2. BUILD — Pillar transparency and impact.** State as of 2026-09-25 (read from code): bands
   only gate building tiers (Greatness, one Prosperity tier), courtier quality (Greatness), one
   Crisis-Stability random event, and map-view colour. There is no band-change notice, no ongoing
@@ -74,6 +223,43 @@ short research bullets for when Daniel is back.
   swaps the modifier on the leader's character sheet, and the tooltip names the next band —
   downscaled screenshots in the test log. ck3-tiger clean. No change to how pillars are
   *calculated* in this item; that's S10's job if the soak test finds problems.
+  **DONE, 2026-09-26 (all four parts live-verified). Parts 1, 2 and 4 verified 2026-09-26**
+  ([log](docs/testing/2026-09-26-s0-s2-live-test-log.md) §3): pushing all three pillars up a band
+  and then down a band produced the notice both ways (a real "The Community's Prosperity Has
+  Shifted" banner), and `kehillah_debug.102` confirms exactly one band modifier per pillar
+  afterwards with no stale leftovers from the previous band. **Part 3 (next-band text) is built and
+  wired but NOT yet confirmed rendering** — it lives in `KehillahBdNextBand{Prosperity,Stability,
+  Greatness}`, called from `KEHILLAH_BD_*_TOOLTIP` (`localization/english/
+  kehillah_breakdown_l_english.yml:95-97`), which `gui/kehillah_community_map_view.gui:578,817`
+  uses for the map-view widget's pillar rows. A 2026-09-26 tester reported it as dead code after
+  hovering the *community-list interaction's* tooltip instead — the wrong surface, corrected in
+  that log's §4.
+  **S2 IS NOW COMPLETE — part 3 VERIFIED LIVE 2026-09-26 (heartbeat 5)**,
+  [log](docs/testing/2026-09-26-heartbeat5-live-test-log.md) §2. All three pillar tooltips name
+  the correct next band with the exact right number, measured against `kehillah_debug.111`'s
+  independently-computed figures rather than against a tester's expectation: Prosperity 255
+  (Strained) → "145 more to Healthy", Stability 369 (Strained) → "31 more to Healthy", Greatness
+  459 (Healthy) → "241 more to Flourishing". `error.log` growth **+0 lines** on each of the three
+  hovers, against the old ~2,000 lines/second, and process working set *fell* across the hovers.
+  Worth keeping in mind for future checks of this kind: as originally briefed this test would have
+  been taken at game start, where all three pillars are 0 and the tooltip renders its
+  `always = yes` fallback — the very branch that produced the original wrong text. It was
+  redirected mid-run to advance past day three first, and that redirection is what also turned up
+  the day-one collapse-warning bug recorded under S0.
+  **Part 3 history, 2026-09-26 (heartbeat 4)** —
+  [log](docs/testing/2026-09-26-s0-restitution-and-s2-tooltip-log.md) §4. The correct surface was
+  finally hovered. The line **does render** (so it was never dead code), but it rendered *wrong*
+  — "0 more to Strained" on a community not in Crisis — and spammed `error.log` at roughly
+  **2,000 lines/second** while hovered: 288 lines → 378,909 across three hovers, and ~2.2GB →
+  ~5.1GB of process memory. One cause for both: the code was written for character scope and
+  hopped back to the title with `primary_title = { var:... }`, but the pillar variables live on
+  the **title** (implementation doc §10). Where that hop missed, the guarded custom-loc branches
+  fell through to their `always = yes` fallback (the Strained line) while the *unguarded* script
+  value threw every frame and clamped to 0. Now fixed by matching the sibling that always worked
+  in this same widget, `[Title.Custom('KehillahProsperityScore')]`: `type = landed_title`, direct
+  reads, `has_variable` on every branch, and all 15 loc call sites moved off `Title.GetHolder.*`.
+  **Source-fixed and ck3-tiger clean; the re-hover to confirm the correct band name AND a quiet
+  `error.log` is still outstanding.** Part 3 stays PARTIAL until then.
 - **S3. BUILD — Succession hardening.** (a) Root-cause the recurring non-fatal `change_government`
   "illegal government" error on appointment succession (implementation doc, 2026-09-23 addition).
   (b) Live-verify that an officer with a better score beats a family heir (the long-open
@@ -83,6 +269,53 @@ short research bullets for when Daniel is back.
   eligible courtier (one at a time, adds a fixed score in `kehillah_leadership.txt`, shown in the
   succession candidate tooltip). **Done when**: (a) is fixed or its cause documented with
   evidence; (b), (c), (d) each observed in a live console-kill succession.
+  **BUILT 2026-09-26, live test in flight.** (a) is deliberately *instrumented* rather than
+  blind-fixed for the third time: `kehillah_trace_title_gain_effect`
+  (`common/scripted_effects/kehillah_succession_effects.txt`, armed by `kehillah_debug.104`) logs
+  whether the just-gained title is yet visible to `any_held_title` at the instant `on_title_gain`
+  fires — which is `can_get_government`'s entire predicate — and
+  `kehillah_on_title_gain` now guards the inline `change_government` with that same predicate,
+  deferring to `kehillah_succession.0010` a day later when it would fail. That event logs its own
+  verdict, so one live succession settles the cause and validates or refutes the guard at once.
+  (d) is built: `kehillah_endorse_successor_interaction` writes
+  `kehillah_var_endorsed_successor` on the community title and
+  `kehillah_leadership.txt` adds `kehillah_endorsement_score_value` (30) to that one candidate.
+  (b) and (c) still need the live observation.
+  **(a) IS ANSWERED, 2026-09-27 (heartbeat 8) — cause CONFIRMED, deferral REFUTED, deliberately
+  NOT patched.** [log](docs/testing/2026-09-27-heartbeat8-live-test-log.md) §6. A real voluntary
+  step-down ran the exact path. Three findings, in order:
+  1. **The `exists = domicile` gate works.** Zero `illegal government` and zero
+     `change_government` errors anywhere in the boot, on the path that produced that error on
+     2026-09-06, 09-20, 09-23 and in heartbeat 6. Four sessions of a recurring error, silenced.
+  2. **The cause is the domicile, stated by the instrumentation rather than inferred.**
+     `kehillah_succession.0010` one day later: *"the new leader STILL has NO domicile one day after
+     title gain -- deferring longer would not help either"* and *"STILL cannot get the kehillah
+     government a day later -- root holds a landless title but has NO domicile, so the engine has
+     nowhere to put a kehillah_quarter."* `kehillah_government.txt:117` declares
+     `domicile_type = kehillah_quarter`; nothing on the handover path gives the successor one.
+     It was never a timing problem — which is why two rewrites aimed at timing both missed.
+  3. **So the one-day deferral is refuted as a fix.** Waiting cannot help; nothing is in flight to
+     wait for. Silencing the error also did not fix the succession — see S1 above for what the
+     community is actually left in.
+  **What makes it decidable now:** the *departing* leader's transition demonstrably DOES get a
+  domicile, by dedicated code — `kehillah_departure_finish_effect` logs "leader has no domicile
+  before the camp is created (expected)" → "created the wayfarer title" → "domicile exists after
+  create". So creating a domicile at transition time is possible in script; the arriving heir just
+  has no equivalent. **The remaining question is a design one — where does the successor's Jewish
+  Quarter come from — and it is the top item for the next heartbeat.** Do not attempt a fifth blind
+  fix: read implementation doc §6/§8 and the founding path first, and live-test any change on a
+  real step-down.
+  **FIXED AND LIVE-VERIFIED ON THE VOLUNTARY HANDOFF, 2026-09-27.** The
+  missing domicile is now provisioned in `kehillah_succession.0010` by a
+  temporary `create_adventurer_title` with `government =
+  kehillah_government`, then the real community title is restored as
+  primary and the temporary title is destroyed. This is the same
+  engine primitive already live-proven by the founding path; no new
+  timing guess or post-hoc `change_government` call is involved. The
+  live handoff retained the community title's pillars and restored its
+  recorded buildings. S3(b), (c), and (d) still need their own live
+  observations; ordinary death/appointment is also still a worthwhile
+  regression once CK3 accepts a new game.
 - **S4. BUILD — Chief Rabbi: search like "Find a Physician", or serve yourself.** (Daniel,
   2026-09-25.) Build exactly:
   (1) **"Seek a Chief Rabbi" decision, modelled on vanilla's physician recruitment** (the
@@ -98,7 +331,9 @@ short research bullets for when Daniel is back.
   (`ai_chance`).
   (2) **The leader as their own Chief Rabbi.** A ruler can't hold a court position in their own
   court, so model it as an explicit toggle decision, "Serve as the Community's Rabbi": available
-  when the leader has the rabbi trait and Learning ≥ a script_value threshold (~14), and no rabbi
+  when the leader has the rabbi trait and Learning ≥ a script_value threshold (~14 — **corrected
+  2026-09-26: the build chose 12**, `kehillah_serve_as_rabbi_learning_threshold`, and Rashi's
+  history was pinned to `learning = 12` to clear it exactly; read 12, not 14), and no rabbi
   is appointed. While active (character flag), every consumer of the Chief Rabbi seat — the pillar
   contribution in `kehillah_breakdown_values.txt`/`kehillah_scripted_effects.txt` and the dispute
   events in `kehillah_dispute_events.txt` — reads "the appointed Chief Rabbi, or the leader if
@@ -115,6 +350,230 @@ short research bullets for when Daniel is back.
   **Done when**, live: the player recruits a real rabbi from another community through the search
   event; Rashi begins a new 1066 game as Troyes's own Chief Rabbi and the breakdown tooltip shows
   his contribution; an AI community fills an empty seat.
+  **ALL THREE PARTS BUILT 2026-09-26. (1) AND (2) VERIFIED LIVE 2026-09-27 (heartbeat 8); (3)
+  STILL UNTESTED.** [log](docs/testing/2026-09-27-heartbeat8-live-test-log.md) §4-5.
+  - **(1) "Seek a Chief Rabbi" — PASS, end to end.** The decision showed un-greyed, and the event
+    "Word Comes Back" offered three candidates at real Learning/cost tiers: Ulla (16 Learning, 84
+    gold), **Feivel Yitzhaki, "Son of Rav Shlomo"** (13, 72), Shimshon Horowitz (3, 32). Feivel was
+    chosen deliberately as the one identifiable as a **real rabbi from a real other community**
+    (Rav Shlomo is Rashi, at Troyes) — a generated-candidate pick would have satisfied the item
+    vacuously. Afterwards: `SEAT FILLED`, `ACTING RABBI YES`, and `TOGGLE OFF` — **the appointed
+    rabbi displaced the serving leader, which is S4's own "the appointed rabbi always wins" rule
+    observed rather than assumed.**
+  - **(2) Rashi as Troyes's own Chief Rabbi — PASS**, with no `CONTRADICTION` line. That silence is
+    the load-bearing part: all four consumer sites read
+    `kehillah_has_acting_chief_rabbi_trigger`, so the trigger disagreeing with the seat and the
+    toggle would break every one of them at once.
+  - **(3) is now the cheapest remaining S4 item and was reachable in that very run** — Feivel
+    leaving Troyes should have fired `kehillah_rabbi_search.0002` at Rashi 3-10 days later. Nobody
+    looked; the session had moved on. Pick it up in the next boot.
+  - **(3) built 2026-09-26 (heartbeat 4).** `kehillah_install_chief_rabbi_effect` notes the
+    rabbi's old liege *before* `add_courtier` moves them (afterwards the link is gone), and if
+    that liege was a **different Kehillah**, fires `kehillah_rabbi_search.0002` to them 3–10 days
+    later. Hiring a stranger, a landless scholar or some bishop's courtier fires nothing. The
+    losing community *gains* Greatness (`kehillah_rabbi_departed_greatness_gain` = 6, against 10
+    for hiring) — a community whose scholars are wanted elsewhere has exactly the reputation
+    Greatness measures, and its real loss is already priced in without help, since the empty seat
+    stops contributing that same tick. The two figures differ on purpose so two AI communities
+    can't pump each other's Greatness by passing one rabbi back and forth.
+  - **The live-test blocker on (1) is now cleared: `kehillah_debug.110`** grants the Beit Midrash
+    (which is what gates the seat, via `has_domicile_parameter = kehillah_unlocks_chief_rabbi`),
+    clears the search cooldown, and reports the seat/toggle state — including whether the shared
+    `kehillah_has_acting_chief_rabbi_trigger` agrees with the seat's actual state, which is the
+    load-bearing check on part (2), since all four consumer sites were rewired onto that one
+    trigger.
+  - (2) is built through one shared trio, as this item demands:
+    `kehillah_has_acting_chief_rabbi_trigger`, `kehillah_acting_chief_rabbi_learning_value` and
+    `kehillah_save_acting_chief_rabbi_effect`. All four previous call sites were rewired (the
+    pillar value, the breakdown custom-loc row, the dispute-scope effect, both dispute events'
+    Chief-Rabbi option gates). Toggle: `kehillah_serve_as_rabbi_decision`, drawback is stress
+    (Influence is retired from this government, so an influence cost would cost nothing).
+    Rashi now has an explicit `learning = 12` in `history/characters/troyes_1066.txt` so his
+    documented starting state is deterministic rather than a stat roll.
+  - (1) is built as `kehillah_seek_chief_rabbi_decision` →
+    `events/kehillah_rabbi_search_events.txt`, on vanilla's physician-recruitment shape, with the
+    candidate pool walked out of `kehillah_registered_communities` (real rabbis in real courts)
+    and generated candidates only as a thin-pool fallback. Gated on the Beit Midrash, because
+    that is what gates the court position itself.
+  - Live-testing (1) needs a community that has actually built the Beit Midrash — a debug probe
+    to reach that state is the missing piece for the next heartbeat.
+- **S4b. BUILD — Chief Rabbi coherence pass.** (Daniel, 2026-09-27, interactive session — an
+  unlisted item added above the remaining numbered ones because it is a correctness complaint
+  about shipped S4/S5 content, not new scope.) His report, verbatim in substance: *"you can
+  currently serve as chief rabbi and have an assigned chief rabbi"*; the office should only be
+  available if you are not already the chief rabbi, and *"if there's already a chief rabbi, maybe
+  you can replace him with yourself with the decision"*; *"chief rabbis should be the ones who
+  preside over bet din conferences"*; and responsa should be *"gated on rabbi trait (with
+  increased likelihood to target a player)"*.
+
+  **BUILT 2026-09-27, `ck3-tiger`-clean, NOT YET LIVE-TESTED.** Four changes:
+  - **The office and the seat are mutually exclusive, asymmetrically.** Appointment is refused
+    while the leader holds the rabbinate (`chief_rabbi_kehillah_position`'s `valid_position`, plus
+    `kehillah_seek_chief_rabbi_decision` greyed out so the search can't run for a prize that
+    cannot be seated). The decision, in the other direction, **deposes** a sitting Chief Rabbi
+    (`kehillah_replace_appointed_rabbi_effect`) at the cost of the ordinary
+    `revoked_court_position_opinion`. The leader's own intent wins over the appointment system,
+    never the reverse. The gate needed a new trigger,
+    `kehillah_has_taken_up_rabbinate_trigger` — the existing
+    `kehillah_serving_as_own_rabbi_trigger` yields to an appointed rabbi by design and so can
+    never block one; its own header records why.
+  - **The Chief Rabbi presides.** A Bet Din Conference cannot be convened without an acting Chief
+    Rabbi by either route, and whoever that is is bound as Av Beit Din
+    (`kehillah_bet_din_av_beit_din`, set in `kehillah_bet_din_open_docket_effect` through the
+    shared S4(2) resolver — its sixth consumer site). **All 14 host-bench skill checks across the
+    six cases now read the Av Beit Din's skill, not the convening leader's**, via
+    `scope:kehillah_av_beit_din`. The two co-judge seats are untouched and still answer for
+    themselves. Design consequence worth knowing: appointing a brilliant rabbi now genuinely
+    decides your dockets, and a leader who would rather be the one judging takes the office
+    himself — which is what ties this bullet to the one above.
+  - **Responsa need semicha.** `kehillah_responsa_answerer_is_rabbi_trigger`, in lockstep with
+    `kehillah_responsa_answerer_learning_value`'s two branches. Learning alone was the whole gate
+    before, so a well-read leader with no semicha received she'elot addressed to a posek.
+  - **The player is written to more often.** `chance_of_no_event` costs an AI 40% of its rolls
+    (~33%/yr against the player's 55%). Done that way because `chance_to_happen` takes a literal
+    only; `chance_of_no_event` takes a script value.
+
+  Probes: `kehillah_debug.118` (read-only state, meant to be read alongside `.115`) and
+  `kehillah_debug.119` (exercises the replacement path end to end and asserts seat/toggle/opinion).
+
+  **Relation to `docs/spec/v23-responsa-network-and-precedent.md`**, written the same day by a
+  parallel heartbeat run: V23 proposes retiring this automatic pulse as the *player-facing*
+  responsa loop, keeping it at most as "a passive, infrequent incoming letter ... for an
+  established scholar". The semicha gate and the player bias are exactly what that description
+  wants, and cost nothing if V23 lands — they harden the prototype in the meantime rather than
+  building against it. V23's own dependency note ("the office redesign must settle how a leader
+  chooses to act as Rabbi, Shtadlan, or Gabbai") is the part this item moves: the leader's choice
+  to act as Rabbi is now exclusive and reversible, which is the precondition V23 names.
+
+  **That wart is fixed** — see S4c below, same day. It read: the office's
+  `on_court_position_revoked` strips `kehillah_rabbi_trait`, so a rabbi dismissed by the
+  replacement path loses his semicha even if he arrived holding it.
+
+  **Open for a live pass:** whether the preside gate is too tight in practice. It thins the pool
+  of communities that can host, and hosting is how a leader without semicha gets it
+  (`kehillah_bet_din_grant_rabbi_trait_effect`). AI leaders take the serve-as-rabbi decision at
+  `base = 100` and three historical leaders ship with the trait, so the pool should not go empty —
+  but that is reasoning, not an observation. Watch it in the S10 soak run.
+  **S4b LIVE-VERIFIED 2026-09-28 -- PASS.** [Log](docs/testing/2026-09-28-heartbeat-s4bcd-s5-live-test-log.md) sections 1 and 4. `kehillah_debug.119`
+  returns five for five on the replacement path: `SEAT CLEARED PASS`, `TOGGLE EFFECTIVE PASS`,
+  `OPINION PASS`, `SEMICHA PERMANENT PASS`, `PRESIDE GATE PASS`. The semicha assertion was **added
+  for this run** -- `.119` exercised the replacement path but had never looked at the deposed
+  rabbi's trait, and that path is exactly the site whose teardown hooks used to strip it. Mutual
+  exclusion (`EXCLUSION PASS`) and the responsa semicha gate also read correctly.
+  **The preside-gate question is partly answered, and the answer is worth knowing: the gate is
+  visibly CLOSED on an untouched Worms start** (`PRESIDE GATE BLOCKED` -- no appointed rabbi, and
+  the leader has not taken the office). That is the rule working rather than a bug, but it means a
+  fresh community cannot convene a Bet Din until it settles its rabbinate. Not too tight here (the
+  seat is trivially fillable, see S4c), but a *young* community is still the untested case.
+- **S4c. BUILD — Semicha is permanent; the Chief Rabbi is not a building unlock.** (Daniel,
+  2026-09-27, same session as S4b.) *"Let's not strip rabbi traits on removing a chief rabbi"* and
+  *"make it so that the chief rabbi isn't gated by the bet midrash, and a community can always have
+  one."*
+
+  **BUILT 2026-09-27, `ck3-tiger`-clean, NOT YET LIVE-TESTED.**
+  - **Semicha is permanent.** `chief_rabbi_kehillah_position`'s three teardown hooks
+    (`on_court_position_revoked` / `_invalidated` / `_vacated`, each removing
+    `kehillah_rabbi_trait`) are gone; the trait is granted on receipt and kept. It was making the
+    trait a badge of current employment: S4b's replacement path unmade the other man's ordination,
+    and a community whose beit midrash fell down unmade its rabbi. Semicha is not a job title. Side
+    benefit: a dismissed Chief Rabbi stays a candidate S4(1)'s search can find in another court,
+    which is exactly what that pool is trying to populate.
+  - **The Beit Midrash no longer gates the office**, in `valid_position` or on the search
+    decision's `is_shown`. A rabbi is the first thing a Jewish community has, not a reward for
+    having built a study hall, and with S4b gating the Bet Din on having an acting Chief Rabbi it
+    was gating the entire court system on masonry. The `kehillah_unlocks_chief_rabbi` domicile
+    parameter is still set by all three tiers but has no consumer — left as the hook for a future
+    "has somewhere to STUDY" check, which is a different claim. The Beit Midrash keeps Learn Torah,
+    the library tiers and its Greatness contribution: it is a multiplier on scholarship now, not
+    the permission slip. **The Treasurer still gates on the Countinghouse, deliberately** — the
+    rule is now "gate when the building IS the work", and a treasurer with no chest has no work
+    where a rabbi with no study hall still teaches, rules and buries the dead.
+    **S4c LIVE-VERIFIED 2026-09-28 -- PASS, both halves.** [Log](docs/testing/2026-09-28-heartbeat-s4bcd-s5-live-test-log.md) section 5. It needed a
+    new probe, `kehillah_debug.121`, because **every community in the 1066 setup starts with a Beit
+    Midrash -- so nothing in ordinary play reaches the state S4c is about.** The probe tests the
+    claim in the hard direction: demolish all three tiers, prove the demolition landed
+    (`STRIP PASS`, checked on the unlock parameter -- without that control a pass would equally be
+    satisfied by a probe that removed nothing), and only then appoint. `UNGATED PASS`,
+    `SEMICHA GRANTED PASS`, `PRESIDE GATE PASS`.
+    **The second half is the one the probe cannot do itself:** `valid_position` re-evaluates on a
+    monthly tick, so the session ran on to 1067.6.12 (about seven months) and `.118` re-read
+    `ACTING RABBI BOUND`. The un-gating survives revalidation, not merely the moment of
+    appointment. Semicha permanence is verified separately, under S4b above.
+  - **Bug fixed in S4b itself, found while doing the above.** The co-judge ranking in
+    `kehillah_bet_din_open_docket_effect` ran *before* the Av Beit Din was bound, and
+    `kehillah_bet_din_eligible_judge_trigger` excludes only the host — so an **appointed** Chief
+    Rabbi (a learned courtier, i.e. population 2 of that trigger) could be drawn into a co-judge
+    seat as well as the presiding one, staffing a court of three with two people and counting his
+    Learning twice in the tally. He is now resolved first and excluded from the pool. Note this
+    slightly *tightens* turnout math, which matters for the frequency question below.
+- **S4d. BUILD — Bet Din frequency, first tuning pass.** (Daniel, 2026-09-27: *"help me
+  brainstorm how to increase the bet din frequency"*, then approved levers 1-4 of the five
+  offered.) **BUILT 2026-09-27, `ck3-tiger`-clean, NOT YET LIVE-TESTED.**
+
+  What was actually braking it, read from code rather than guessed: 16 communities spread across 13
+  tagged minhag regions, so the only population that scores highly as a co-judge — same-region
+  community leaders — is typically 0–2 people. The Rhineland (Worms/Speyer/Mainz/Cologne) and
+  Provence (Narbonne/Béziers/Lunel) clusters were fine; **Baghdad has no same-region peer at all**
+  and Toledo is close to it, so both depended on a Learning-16 courtier or a wandering adventurer
+  turning up. On top of that, a hard 3-year per-host cooldown.
+
+  1. **Cooldown 3 → 2 years** (`kehillah_bet_din_conference_cooldown_years`). The hard ceiling;
+     nothing else matters until it moves. 2 not 1 because the guest-arrival window ahead of a
+     docket is up to three months, and a leader at a Beit Din more often than not stops reading as
+     a leader who sometimes holds court. One number if still too rare.
+  2. **Outside-scholar bar 16 → 12** (`kehillah_bet_din_scholar_guest_learning_threshold`). That
+     number was set as a *prestige* bar ("a renowned scholar, not merely a capable one") but was
+     doing duty as the *eligibility* bar in the shared judge trigger's population 2. 12 is what the
+     cases themselves treat as a genuinely learned judge, so the feature now means one thing by it.
+  3. **The host's own household can sit as dayanim**, at a new lower bar
+     `kehillah_bet_din_local_dayan_learning_threshold = 8`, or on holding `kehillah_rabbi_trait` at
+     any Learning. A Beit Din of three was normally three local men; requiring every seat but the
+     host's to come from outside structured a routine communal court as a diplomatic summit.
+     Implemented as population 4 of `kehillah_bet_din_eligible_judge_trigger` **and** a matching
+     widening of `kehillah_bet_din_invite_rule_jewish_courtiers` — both, because a man the invite
+     rules never offer a seat to never becomes an attendee and so can never be ranked into one,
+     however eligible the trigger thinks he is. Pairs with S4c: semicha is permanent now, so a
+     community accumulates eligible dayanim over a career instead of losing them.
+  4. **`max_guests` 6 → 8.** This *replaces* the fourth lever as originally proposed, which was to
+     halve the session length. **That proposal was wrong**: it read
+     `kehillah_bet_din_case_phase_days = 30` as the pace of a case and concluded a session occupied
+     the host ~90 days. It is a hang guard for an unanswered popup; a real docket runs about three
+     weeks (`2 * kehillah_bet_din_case_step_days + 1` per phase). That value's comment now says so
+     explicitly. What actually limits how often a Bet Din *happens* rather than is *attempted* is
+     turnout — a session with fewer than two eligible attendees is invalidated outright — so with
+     the invite pool widened by levers 2 and 3, six slots had become the binding constraint on it.
+
+  Probe: `kehillah_debug.120`, read-only, reports the available co-judge count, the region-leader
+  and own-household populations separately, both bars, the cooldown state and the S4b preside gate.
+  The levers are otherwise invisible until a session runs or fails quorum months later.
+
+  **S4d LIVE-PROBED 2026-09-28 -- PASS on a healthy region; the Baghdad question is untouched.**
+  [Log](docs/testing/2026-09-28-heartbeat-s4bcd-s5-live-test-log.md) section 1. `kehillah_debug.120` on Worms: **co-judge count 30** against the
+  invalidation floor of 2, region leaders 5, own household 5, off cooldown, both bars reading 12
+  and 8 as set. Worms is the best case (the Rhineland cluster), so this shows the four levers did
+  not break a healthy region and that this one has room to spare -- **it says nothing about Baghdad
+  or Toledo, which is what the frequency problem was actually about.** Those two want the same
+  probe, and a community with no same-minhag-region peer is the case that decides whether the
+  unbuilt fifth lever is needed. Also recorded in the log because it is easy to misread later as a
+  bug: an **appointed** rabbi is excluded from the co-judge count by design -- he presides, so he
+  cannot also be one of the two judges beside the bench.
+
+  **Open decision for Daniel, recorded not taken:** population 4 checks
+  `kehillah_leadership_gender_eligible_trigger`, the hook every new leadership role in this mod goes
+  through; the three older populations never have, so women can already sit as co-judges today via
+  populations 2 and 3. Making the trigger consistent — in either direction — is one line, but it is
+  a design call and not a tuning one, so it was not taken inside a tuning pass.
+
+  **Not built, offered and deliberately left for review:** the fifth lever (adjacent-region or
+  distance fallback when the home region cannot field a panel, which is the structural fix for
+  Baghdad and Toledo rather than a probabilistic one), and the larger idea this conversation
+  actually pointed at — **a second, smaller local Beit Din that is not an activity at all** (a 2–4
+  event chain, own court, no travel, Chief Rabbi presiding, cooldown in months), fed by a **docket
+  that accumulates real pending business** (disputes, semicha requests, agunah cases) so that the
+  Chief Rabbi *asks permission to convene* when it fills. Frequency would then track how eventful
+  the community is instead of a flat timer, and the officer would behave like an agent rather than a
+  stat block. Also unbuilt: a landed or gentile host ruler convening a court for the Jews of his
+  realm (S9a/Track B territory, roughly doubles who can start one).
 - **S5. BUILD — Responsa.** Build exactly: an on_action pulse (roughly one question every 1-2
   years for a leader or Chief Rabbi with Learning ≥ ~12) firing an event where a named leader of
   another real community sends a question (start with 6 question texts, halakhic/communal flavour,
@@ -125,6 +584,61 @@ short research bullets for when Daniel is back.
   via the existing book system. **Done when**, live: the debug-fired event resolves all three
   options, the counter increments and displays, and the compile decision appears at the
   threshold.
+  **BUILT 2026-09-27 (heartbeat 8), ck3-tiger clean, NOT YET LIVE-TESTED.** Files:
+  `events/kehillah_responsa_events.txt` (one event, six questions — see its header for why one and
+  not six), `common/scripted_effects/kehillah_responsa_effects.txt`,
+  `common/decisions/kehillah_responsa_decisions.txt`,
+  `common/customizable_localization/kehillah_responsa_custom_loc.txt`,
+  `localization/english/kehillah_responsa_l_english.yml`, plus a `RESPONSA` section in
+  `kehillah_script_values.txt`, three triggers, one opinion modifier, and the pulse in
+  `kehillah_on_actions.txt`. Harness: **`kehillah_debug.116`** (reports every gate, states the tier
+  it EXPECTS before the roll, then fires the event) and **`kehillah_debug.117`** (sets the counter
+  to *exactly* the compile threshold, so the `>=` boundary itself is tested, not a comfortable
+  margin above it). Run files ready in `run/`: `s5_responsa_state.txt`,
+  `s5_responsa_arm_compile.txt`, `s5_responsa_readback.txt`.
+  Three design choices recorded in the commit and the file headers rather than decided silently:
+  the deferral is **not** Learning-tiered (a deferral is not an exercise of skill, and tiering it
+  would mean a learned person defers *better*), only rulings increment the counter (a question
+  passed along is not a responsum of yours), and the counter lives on the **title** because under
+  this government the next leader need not be your son. The compile decision reuses the existing
+  book system — genre `flag:talmudics`, tally 4/answer, which puts ten responsa at the book
+  system's middle (famed) tier and fourteen at illustrious, checked against its actual cuts.
+  **S5 LIVE-VERIFIED 2026-09-28 -- PASS on every criterion this item names.** [Log](docs/testing/2026-09-28-heartbeat-s4bcd-s5-live-test-log.md)
+  sections 2 and 3.
+  - **All three options resolve, and the counter reads exactly 2.** That last number is the
+    load-bearing one: a deferral is deliberately not a responsum of yours, so three firings
+    answered with lenient / stringent / defer must leave 2 on the books. They did.
+  - **The tier tooltips agree with an independently computed figure**, not with a tester's
+    expectation -- `.116` states the expected tier *before* the roll, and all three firings
+    reported `EXPECT GREAT` against tooltips showing the great-tier text.
+  - **The Greatness arithmetic was traced, not assumed:** 487 -> 501 (+14 great) -> 515 (+14 great)
+    -> 512 (-3 deferral penalty).
+  - **"Gather the Responsa" appears at exactly the threshold and produces a book.** `.117` sets the
+    counter to exactly 10 rather than to a comfortable margin, so the `>=` boundary itself is what
+    was tested. Taking it produced the artifact, reset the counter, set volumes to 1, and paid the
+    famed-tier +80 Greatness (base 60 + 20 for a tally of 40 clearing the famed cut of 30) --
+    computed independently and matched exactly.
+  - **Two real bugs surfaced here, both in the shipped BOOK system rather than in S5**, and both
+    fixed the same day. (1) **Every book this mod has ever produced came out masterwork**: eight
+    tier reads inside `scope:newly_created_artifact` asked the *artifact* for a character variable,
+    so all eight fell through to their masterwork `else`. The reward arithmetic reads the same
+    variable in character scope and was always right, which is exactly why this survived a live
+    test -- the numbers matched and nobody looked at the artifact. (2) **Compiling grew error.log by
+    ~250,000 lines in one second**: a decision's effect block is evaluated to build its tooltip, and
+    `set_variable` writes nothing in that pass, so calling `kehillah_book_complete_effect` inline
+    right after setting the variables it reads threw on every rebuild frame (1,853 rebuilds x 9 read
+    sites). Moved into a hidden `kehillah_responsa.0002` at `days = 0`. **The rule worth carrying
+    forward: never write a variable and read it back in the same decision effect.** Log sections 6-8
+    have the full account, including why `ck3-tiger` cannot catch either.
+  - **Design change made during the run:** `kehillah_responsa_learning_threshold` lowered 12 -> 8.
+    The gate was 12 and `kehillah_responsa_learning_good` is 12, so the gate admitted nobody who
+    could land *below* the good cut -- the whole POOR tier, the only outcome where answering costs
+    you standing, was unreachable script. 8 is `kehillah_bet_din_local_dayan_learning_threshold`,
+    S4d's own bar for a real judge. Log section 9.
+  - **Still untested:** the POOR and GOOD tiers (reachable now, but the Worms leader has Learning 32
+    so every firing landed GREAT -- needs a low-Learning answerer, and it is the cheapest thing left
+    on S5); and the yearly `on_action` pulse firing **on its own**, together with S4b's 40%
+    against-the-AI bias. Every firing in this run was armed and fired by probe.
 - **S6. BUILD — Community goals.** Build exactly: a decision "Set the Community's Goal" (one active
   goal at a time, 10-year deadline, stored as title variables) offering 4 goals checked on the
   quarterly tick: **Build the Yeshiva** (the building exists at tier N), **A Name Among the
@@ -136,10 +650,76 @@ short research bullets for when Daniel is back.
   in the standing tooltip. AI communities pick a goal at random, weighted by their weakest pillar.
   **Done when**, live: one goal is set, completed via debug state, the reward and legacy appear,
   and a failed deadline applies its penalty.
+  **DONE — VERIFIED LIVE 2026-09-29**, [log](docs/testing/2026-09-29-s6-goals-live-test-log.md).
+  The decision and goal-choice event render with real text; after setting "A Name Among the
+  Communities", `.123` reports GOAL ACTIVE / DEADLINE RUNNING and the standing tooltip shows the
+  goal and "268 more Greatness to Flourishing" (432 + 268 = the 700 threshold). `.124`: all six
+  asserts PASS (Greatness 432 → 472, exactly the +40 reward; counter 0 → 1). `.125`: all four PASS
+  (Stability 369 → 344, exactly −25; counter unmoved), and the failure toast was seen rendering. No
+  new error.log lines from any goal file. One bug, in the debug probe only: `.123` read
+  `kehillah_var_goals_completed` unguarded and threw three error lines on any community that had
+  never completed a goal. Fixed the same day.
+  Original build note: **BUILT 2026-09-28 (Sukkot heartbeat), `ck3-tiger` clean — 0 fatal, 0 error, 58 warnings, which
+  is BELOW the standing 59-warning baseline and with nothing anchored on any file the build
+  touches.** Files: `common/scripted_triggers/kehillah_goal_triggers.txt` (read its header first —
+  it carries the design account), `common/scripted_effects/kehillah_goal_effects.txt`,
+  `common/decisions/kehillah_goal_decisions.txt`, `events/kehillah_goal_events.txt`,
+  `common/customizable_localization/kehillah_goal_custom_loc.txt`,
+  `localization/english/kehillah_goal_l_english.yml`, plus two message types, a COMMUNITY GOALS
+  block in `kehillah_script_values.txt`, the `KehillahBdGoal` row appended to
+  `KEHILLAH_BD_STANDING_TOOLTIP`, one call in the quarterly pulse and one in the founding effect.
+  - **The deadline is the ENGINE's, not a stored date.** `kehillah_var_goal_timer` is set with
+    `years = kehillah_goal_deadline_years` and CK3 removes it on expiry, so "goal set, timer gone"
+    IS the expired state. Nothing ticks and nothing compares dates. Vanilla's own
+    `00_councillor_effects.txt:690` uses a script value in that same `years` field, so the tunable
+    is not a guess.
+  - **Three design choices recorded rather than made silently** (full reasoning in the commit and
+    the file headers): the daughter-community goal detects **dynasty only** and is **pushed** from
+    `kehillah_found_community_effect` rather than polled, because a founder is a landless
+    adventurer by the founding decision's own gate and the link to whatever court they once sat in
+    is gone by then — the same erasure S4(3) works around by reading the old liege *before*
+    `add_courtier`; legacy is a **counter, not a title modifier** (S6 allows either); and AI
+    weighting is **absolute, not relative** — each pillar against the Healthy band rather than
+    against the other two, which is a shape this codebase uses everywhere instead of one it has
+    never used.
+  - Harness: `kehillah_debug.123` (read-only, and it reports which goals would be OFFERED, not
+    only the one set), `.124` (completion path end to end) and `.125` (failure path). Both `.124`
+    and `.125` assert the **arithmetic** — exactly pre-value plus the reward, exactly one more
+    completed goal, exactly pre-value minus the penalty — so a reward applied twice fails here
+    where a "did it go up" test would pass; `.125` additionally asserts the legacy counter does
+    **not** move on a failure. Run files: `s6_goal_state.txt`, `s6_goal_complete.txt`,
+    `s6_goal_fail.txt`.
+  - **KNOWN LIMITATION, found by source-reading during the build and NOT a live finding: "Secure
+    Our Rights" is currently unreachable by anything the player does.** The charter rungs it reads
+    (`kehillah_charter_cache_security` / `_construction`) are written once, at charter
+    establishment, from the host realm's Jewish Settlement Policy — and the only things that write
+    that policy today are debug events 72-75. `tributary_contract_set_obligation_level` appears in
+    exactly two files: the charter effects (all at establishment) and the debug events. So in
+    ordinary play the rung changes only when the **host changes**, via
+    `kehillah_maintain_host_charter_effect` re-pointing the charter after a conquest. **S9a, the
+    very next item in this queue, is what makes the goal player-drivable**; the goal was left in
+    rather than cut because its mechanism is sound and its dependency is one item away.
 - **S7. BUILD — Bookmark with the three prototype characters.** A 1066 bookmark featuring the
   Scholar (Rashi of Troyes), the Shtadlan (a Sh'um or Cologne leader), and the Financier (a landless
   Jewish adventurer near Rouen, created for this). ck3-tiger checks bookmark portraits — a missing
   one crashes the game. Must boot and be selectable live.
+  **DONE — VERIFIED LIVE 2026-09-29**, [log](docs/testing/2026-09-29-s9a-s7-live-test-log.md). The
+  bookmark boots and lists all three with real text; Yosef starts as an adventurer ("The Rodom
+  Traders", "mi-Rodom", 406 gold = 300 scripted + the vanilla adventurer treasury), Rashi as leader
+  of the Kehillah of Troyes. One bug: the two new cards had no per-character background art
+  (`VFSOpen Error ... _troyes_rashi.dds / _rodom_yosef.dds`), so they drew a flat colour; fixed
+  with copies of Isaac's art as placeholders (the founder-test bookmark has the same gap, left
+  alone). Marker positions still unjudged against terrain.
+  Build note: **BUILT 2026-09-29, `ck3-tiger` 0 fatal / 0 error.** Rashi (9000201, leads
+  Troyes) and a new, explicitly **invented** Financier — Yosef ben Menahem "mi-Rodom" (9000300,
+  dynasty 9000060, `history/characters/rouen_1066.txt`), a landless adventurer whose company
+  `d_kehillah_rodom` is set up exactly as vanilla's `d_laamp_wake` — were added to the existing
+  `bm_1066_kehillah_worms` rather than a new bookmark, so its art is reused and Isaac is the
+  Shtadlan. Placeholder portraits (same shape as the founder test's). +4 tiger warnings, all the
+  same missing-portrait-art / missing-coat-of-arms kinds Isaac already has. **Deferred:** renaming
+  the bookmark away from "The Kehillah of Worms" (its loc is in `kehillah_l_english.yml`, which
+  had uncommitted parallel edits at the time); "Rodom" as Rouen's Hebrew name is marked TO VERIFY;
+  bookmark `position`s are guesses a screenshot should correct.
 - **S8. BUILD — The Financier path.** The S7 adventurer can take up the post-Conquest invitation and
   found an English community themselves (V18 currently founds them only as AI): after the Conquest
   resolves, the player adventurer gets an invitation event (accept → travel/found in London via the
@@ -148,12 +728,64 @@ short research bullets for when Daniel is back.
   borrower (larger sums, royal favour as opinion + charter security) — no new finance system.
   **Done when**, live: the invitation appears for a player adventurer, accepting founds the
   community with the right charter, and a royal loan originates, accrues and repays.
+  **PART A (the invitation) DONE — VERIFIED LIVE 2026-09-29**,
+  [log](docs/testing/2026-09-29-s8a-london-invitation-live-test-log.md). As the S7 Financier:
+  accepting founds "Kehillah of London" under the player (Kehillah government, Jewish Quarter in
+  Middlesex, a host charter, England Encouraged) and it survived 46 days past founding with no
+  Game Over; declining leaves the AI to found it; exactly one London either way, and the 60-day
+  fallbacks found nothing pending afterwards. The first run found the invitation throwing ~15,600
+  tooltip-preview errors while on screen — the Decline option called the AI founding effect
+  directly, and CK3 dry-runs option effects for tooltips. Decline now hands off to `.0012` a day
+  later; retest: zero errors. The fallback is scheduled on both king and invitee (an event does
+  not fire on a dead character). Code: `kehillah_norman_conquest.0010`-`.0012`,
+  `kehillah_norman_london_invitation_eligible_trigger`, probes `kehillah_debug.130`/`.131`.
+  **PART B (royal loans) DONE — VERIFIED LIVE 2026-09-29 (S8 COMPLETE)**,
+  [log](docs/testing/2026-09-29-s8b-royal-loans-live-test-log.md). Every three years the host of a
+  player-founded London asks it for a loan (`kehillah_norman_conquest.0020`) through the ordinary
+  loan contract at 2x principal; sealing it earns +20 decaying Royal Favour. Live: request offered,
+  full challenge chain, gold −300 exactly, crown owes 390, FAVOUR PASS, on the debtor list, and the
+  next yearly request correctly SKIPPED while the crown still owed. **Found and fixed on the way:**
+  (1) every loan to an AI ruler defaulted at term by construction (the repay decision is player-only)
+  — an AI borrower now repays at term when it can afford to, a change to every community's loans;
+  (2) `kehillah_loan_contract`'s `valid_to_continue` was false for the whole negotiation, so the
+  engine voided the contract mid-chain and the next stage silently never fired — every loan since
+  the 2026-09-17 chain overhaul. Repayment at term then verified in a focused run: accrual +0.25 per
+  pulse, `an AI borrower repaid at term`, lender gold +391 over the window (390 + ordinary income),
+  CROWN OWES NOTHING. **Backlog:** a debtor who dies or is purged
+  takes the debt with him — no repayment, no default, a stale debtors-list entry; whether an heir
+  inherits a royal debt is a design question for Daniel. Deferred: the charter-security half of
+  royal favour (needs subject-contract writes).
 - **S9a. BUILD — Host-ruler settlement-policy decisions (non-Jewish player).** Two decisions, "Raise"
   and "Lower Jewish Settlement Policy" (one rung each, 5-year cooldown), writing the existing V16
   title variable. Raising: costs piety/clergy opinion, grants a notice to Jewish communities in the
   realm. Lowering: small piety gain, lost income expectation spelled out in the tooltip. **No AI use
   yet** (V17 wants event-led AI; that's with Daniel). **Done when**, live: a non-Jewish player moves
   the policy both ways and the Kehillah sees the notice and the changed charter outlook.
+  **DONE — VERIFIED LIVE 2026-09-29**, [log](docs/testing/2026-09-29-s9a-s7-live-test-log.md). `.127`/`.128`
+  RUNG PASS and COOLDOWN PASS in both directions (Allowed → Encouraged → Allowed → Discouraged), no
+  STORAGE FAIL, the Discouraged floor holds (`SKIP`, no `FLOOR FAIL`), six communities under the
+  Emperor each notified, and the Lowered notice rendered with real names. The ledger badge followed
+  every step, and at Discouraged the charter line reads "Grandfathered rights exceed the current
+  policy — charter review needed". Taken through the UI as the Emperor (`play` needs his INTERNAL
+  id): real text, 100 Piety paid exactly (963 → 863), the chaplain's −15 shown, Lower blocked with
+  the floor reason, the cooldown blocking both. Zero error.log lines from any S9a file. The
+  chaplain's actual opinion breakdown was not hovered (tool outage) — tooltip-evidenced only.
+  Build note: **BUILT 2026-09-29, `ck3-tiger` 0/0/59 (baseline).** Files:
+  `common/decisions/kehillah_settlement_policy_decisions.txt` (header carries the design limits),
+  `common/scripted_effects/kehillah_settlement_policy_effects.txt`, a values file, an opinion
+  modifier, a loc file, two message types, `kehillah_policy_review_on_cooldown_trigger`. Choices
+  made, smallest-reasonable: shown only to an **independent** non-Kehillah ruler (a vassal's title
+  is never the one its communities read); the cooldown lives on the **realm title**, so a successor
+  inherits it; **Lower stops at Discouraged** until S9b exists (Raise still climbs out of a
+  debug-set Banned); piety cost and chaplain objection are waived for a Jewish ruler/chaplain.
+  **Finding: the host draws no tribute from any charter today** (the contracts carry only
+  subject-side modifiers), so "lost income" is honestly phrased as lost future settlement — a real
+  host income stream is a design question for Daniel (V17 / S12). Harness: `kehillah_debug.126`
+  (state), `.127` raise and `.128` lower through the real effects asserting exactly one rung plus
+  cooldown plus "Allowed is stored as absence", `.129` clears the cooldown; run files
+  `s9a_state/raise/lower/clear_cooldown.txt`, fired **as the Kehillah player** against its host so
+  the notice lands on the player it is for. The decision UI itself needs a `play` switch to the
+  host (the Emperor, for Worms).
 - **S9b. BUILD — Expulsion.** Lowering to Banned starts a warning event for every community in the
   realm, then after ~1-2 years an expulsion event with counterplay options (petition/bribe the
   ruler via the Shtadlan → chance to restore Discouraged; leave in good order → S1's departure
@@ -166,7 +798,10 @@ short research bullets for when Daniel is back.
 - **S11. DANIEL-REVIEW — Friendliness toward Jews and the Crusades chain.** Top priorities for v0.1
   but design-heavy; to be designed with Daniel after Sukkot. Runs may only add short research
   bullets to V22 §5 (e.g. which vanilla 1.19 on_actions/GHW hooks exist for a crusade call and army
-  movement). No spec docs, no builds.
+  movement). No spec docs, no builds. **Research bullets DONE, 2026-09-25 (heartbeat 2)** --
+  V22 §5's new "Vanilla 1.19 hooks available for the Crusade chain" block: no
+  "crusade declared" on_action exists, but `on_army_enter_province` does and vanilla's own
+  `great_holy_war.0060` already uses it to spot a crusading host arriving. Nothing built.
 - **S12. DANIEL-REVIEW — Host charter polish; community watch → landed military force (vassal or
   independent).** Short research bullets at most.
 

@@ -203,7 +203,10 @@ KehillahBdTreasurer = {
 KehillahBdChiefRabbi = {
 	type = character
 	text = {
-		trigger = { employs_court_position = chief_rabbi_kehillah_position }
+		# S4(2), 2026-09-26: the shared trigger, so the breakdown row
+		# shows the contribution of a leader serving as their own
+		# community's rabbi instead of reading "no rabbi".
+		trigger = { kehillah_has_acting_chief_rabbi_trigger = yes }
 		localization_key = kehillah_bd_chief_rabbi
 	}
 	text = {
@@ -572,5 +575,193 @@ KehillahBdGreatnessFloor = {
 	text = {
 		trigger = { always = yes }
 		localization_key = kehillah_bd_greatness_floor
+	}
+}
+
+
+# =====================================================================
+# S2 part 3: the "next band" line, one per pillar.
+#
+# ROADMAP S2.3 -- "current band, points to the next band up, and what
+# that band adds". The current band was already in each tooltip's header
+# line; these functions add the other two.
+#
+# Same one-function-per-line shape as every other KehillahBd* above, and
+# the same top-down ordering the band-name functions use (common/
+# customizable_localization/kehillah_pillar_band_custom_loc.txt): the
+# first matching text wins, so the highest band is checked first. The
+# band matched here is the CURRENT one; the line it selects describes
+# the band ABOVE it, which is why the Legendary branch gets its own
+# "nothing above this" text instead of a number.
+#
+# The has_variable guard on every branch mirrors the band-name
+# functions' own guards -- a community mid-initialisation must not throw
+# on a tooltip rebuild, which in this repo has meant error-log storms
+# before now (v5 section 9).
+# =====================================================================
+KehillahBdNextBandProsperity = {
+	type = landed_title
+	text = {
+		trigger = {
+			has_variable = kehillah_var_prosperity
+			var:kehillah_var_prosperity >= kehillah_band_legendary_threshold
+		}
+		localization_key = kehillah_bd_next_band_prosperity_max
+	}
+	text = {
+		trigger = {
+			has_variable = kehillah_var_prosperity
+			var:kehillah_var_prosperity >= kehillah_band_flourishing_threshold
+		}
+		localization_key = kehillah_bd_next_band_prosperity_legendary
+	}
+	text = {
+		trigger = {
+			has_variable = kehillah_var_prosperity
+			var:kehillah_var_prosperity >= kehillah_band_healthy_threshold
+		}
+		localization_key = kehillah_bd_next_band_prosperity_flourishing
+	}
+	text = {
+		trigger = {
+			has_variable = kehillah_var_prosperity
+			var:kehillah_var_prosperity >= kehillah_band_strained_threshold
+		}
+		localization_key = kehillah_bd_next_band_prosperity_healthy
+	}
+	text = {
+		trigger = { always = yes }
+		localization_key = kehillah_bd_next_band_prosperity_strained
+		fallback = yes
+	}
+}
+
+KehillahBdNextBandStability = {
+	type = landed_title
+	text = {
+		trigger = {
+			has_variable = kehillah_var_stability
+			var:kehillah_var_stability >= kehillah_band_legendary_threshold
+		}
+		localization_key = kehillah_bd_next_band_stability_max
+	}
+	text = {
+		trigger = {
+			has_variable = kehillah_var_stability
+			var:kehillah_var_stability >= kehillah_band_flourishing_threshold
+		}
+		localization_key = kehillah_bd_next_band_stability_legendary
+	}
+	text = {
+		trigger = {
+			has_variable = kehillah_var_stability
+			var:kehillah_var_stability >= kehillah_band_healthy_threshold
+		}
+		localization_key = kehillah_bd_next_band_stability_flourishing
+	}
+	text = {
+		trigger = {
+			has_variable = kehillah_var_stability
+			var:kehillah_var_stability >= kehillah_band_strained_threshold
+		}
+		localization_key = kehillah_bd_next_band_stability_healthy
+	}
+	text = {
+		trigger = { always = yes }
+		localization_key = kehillah_bd_next_band_stability_strained
+		fallback = yes
+	}
+}
+
+KehillahBdNextBandGreatness = {
+	type = landed_title
+	text = {
+		trigger = {
+			has_variable = kehillah_var_greatness
+			var:kehillah_var_greatness >= kehillah_band_legendary_threshold
+		}
+		localization_key = kehillah_bd_next_band_greatness_max
+	}
+	text = {
+		trigger = {
+			has_variable = kehillah_var_greatness
+			var:kehillah_var_greatness >= kehillah_band_flourishing_threshold
+		}
+		localization_key = kehillah_bd_next_band_greatness_legendary
+	}
+	text = {
+		trigger = {
+			has_variable = kehillah_var_greatness
+			var:kehillah_var_greatness >= kehillah_band_healthy_threshold
+		}
+		localization_key = kehillah_bd_next_band_greatness_flourishing
+	}
+	text = {
+		trigger = {
+			has_variable = kehillah_var_greatness
+			var:kehillah_var_greatness >= kehillah_band_strained_threshold
+		}
+		localization_key = kehillah_bd_next_band_greatness_healthy
+	}
+	text = {
+		trigger = { always = yes }
+		localization_key = kehillah_bd_next_band_greatness_strained
+		fallback = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# KehillahBdResponsa -- ROADMAP S5, added 2026-09-27.
+#
+# type = landed_title, and called as [Title.Custom('KehillahBdResponsa')]
+# rather than [Title.GetHolder.Custom(...)] like the building rows above.
+# That is not a style choice: kehillah_var_responsa_count and
+# kehillah_var_responsa_volumes live on the TITLE (implementation doc
+# section 10), and the 2026-09-26 heartbeat-4 bug was exactly this --
+# title variables read through a character-scoped custom loc that hopped
+# back with primary_title, which fell through to its fallback branch and
+# threw every frame while hovered, at roughly 2,000 error.log lines a
+# second. The working sibling in this same widget is
+# KehillahBdNextBandGreatness above; this follows it exactly, including
+# has_variable on EVERY branch rather than only the first.
+#
+# Three states, most specific first: published volumes and rulings in
+# hand, published volumes only (the counter resets on compile, so a
+# community between volumes still shows its legacy), rulings not yet
+# gathered. Communities that have never answered a responsum get
+# kehillah_bd_none and no row at all, like every other optional
+# contributor here.
+# ---------------------------------------------------------------------
+
+KehillahBdResponsa = {
+	type = landed_title
+	text = {
+		trigger = {
+			has_variable = kehillah_var_responsa_volumes
+			var:kehillah_var_responsa_volumes >= 1
+			has_variable = kehillah_var_responsa_count
+			var:kehillah_var_responsa_count >= 1
+		}
+		localization_key = kehillah_bd_responsa_volumes_and_count
+	}
+	text = {
+		trigger = {
+			has_variable = kehillah_var_responsa_volumes
+			var:kehillah_var_responsa_volumes >= 1
+		}
+		localization_key = kehillah_bd_responsa_volumes
+	}
+	text = {
+		trigger = {
+			has_variable = kehillah_var_responsa_count
+			var:kehillah_var_responsa_count >= 1
+		}
+		localization_key = kehillah_bd_responsa_count
+	}
+	text = {
+		trigger = { always = yes }
+		localization_key = kehillah_bd_none
+		fallback = yes
 	}
 }

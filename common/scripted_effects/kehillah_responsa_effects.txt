@@ -1,0 +1,210 @@
+﻿# =====================================================================
+# Responsa -- she'elot u-teshuvot. ROADMAP S5, added 2026-09-27.
+#
+# Events: events/kehillah_responsa_events.txt
+# Pulse: common/on_action/kehillah_on_actions.txt (kehillah_responsa_pulse)
+# Values: common/script_values/kehillah_script_values.txt, "RESPONSA"
+# Compile decision: common/decisions/kehillah_responsa_decisions.txt
+#
+# WHERE THE COUNTER LIVES. kehillah_var_responsa_count is on the
+# community TITLE, not on the leader -- implementation doc section 10's
+# rule for every pillar-adjacent number in this mod, and the right answer
+# on the merits too: a collection of rulings is the community's
+# accumulated authority, and it should survive the leader who wrote most
+# of it. Under this government the next leader need not be your son (the
+# bookmark's own closing line), so a character variable would quietly
+# throw away the community's scholarly record at every succession.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# kehillah_responsa_pick_correspondent_effect
+# Scope: the Kehillah leader (root of kehillah_responsa.0001).
+#
+# Binds:
+#   scope:kehillah_responsa_asker      -- the leader who wrote
+#   scope:kehillah_responsa_asker_title -- their community title
+#   scope:kehillah_responsa_answerer   -- who actually answers here
+#
+# The asker is drawn from kehillah_registered_communities, the same
+# global registry S4's rabbi search and the book system's "send copies"
+# step both walk, so a question always comes from a community that really
+# exists in this world rather than from a generated name.
+#
+# HONEST SCOPE CUT, matching the one kehillah_book_send_copies_effect
+# already records: this is not distance-ranked. Any other community may
+# write, not only a near one. Responsa genuinely did travel absurd
+# distances -- Rhineland to Iberia to Baghdad -- so "anywhere" is a more
+# defensible stand-in here than it is for sending out book copies, but it
+# is still a cut, and a later pass may want to weight nearer communities
+# up. ordered_in_global_list with a squared_distance order_by is the tool
+# if so.
+# ---------------------------------------------------------------------
+
+kehillah_responsa_pick_correspondent_effect = {
+	random_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			exists = holder
+			NOT = { holder = root }
+			holder = {
+				is_adult = yes
+				is_alive = yes
+			}
+		}
+		save_scope_as = kehillah_responsa_asker_title
+		holder = { save_scope_as = kehillah_responsa_asker }
+	}
+
+	# Who answers. Goes through S4(2)'s shared resolver rather than
+	# checking the court position directly, so a leader serving as their
+	# own rabbi is bound here too -- this is that abstraction's fifth
+	# consumer site. See kehillah_has_acting_chief_rabbi_trigger's header.
+	kehillah_save_acting_chief_rabbi_effect = yes
+	if = {
+		limit = { exists = scope:kehillah_chief_rabbi }
+		scope:kehillah_chief_rabbi = { save_scope_as = kehillah_responsa_answerer }
+	}
+	else = {
+		save_scope_as = kehillah_responsa_answerer
+	}
+
+	# WHICH QUESTION. Stored as a variable on the leader rather than
+	# picked inside the desc, because the desc is re-evaluated every time
+	# the tooltip system rebuilds -- a random_list in there would reroll
+	# the question under the player's cursor. Same reasoning the book
+	# chain uses for var:kehillah_book_genre.
+	random_list = {
+		100 = { set_variable = { name = kehillah_responsa_question value = flag:oven } }
+		100 = { set_variable = { name = kehillah_responsa_question value = flag:agunah } }
+		100 = { set_variable = { name = kehillah_responsa_question value = flag:wine } }
+		100 = { set_variable = { name = kehillah_responsa_question value = flag:orphan } }
+		100 = { set_variable = { name = kehillah_responsa_question value = flag:sabbath_lamp } }
+		100 = { set_variable = { name = kehillah_responsa_question value = flag:convert } }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_responsa_count_answer_effect
+# Scope: the Kehillah leader. Called by the two options that actually
+# RULE (lenient and stringent), never by the deferral -- see the event
+# file's header for why the counter only counts rulings given.
+# ---------------------------------------------------------------------
+
+kehillah_responsa_count_answer_effect = {
+	if = {
+		limit = { exists = primary_title }
+		primary_title = {
+			if = {
+				limit = { NOT = { has_variable = kehillah_var_responsa_count } }
+				set_variable = { name = kehillah_var_responsa_count value = 0 }
+			}
+			change_variable = { name = kehillah_var_responsa_count add = 1 }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_responsa_cleanup_effect
+# Scope: the Kehillah leader. Clears the per-question variable once every
+# option has finished reading it, the way
+# kehillah_book_send_copies_effect clears var:kehillah_book_genre only
+# after the last consumer is done with it.
+# ---------------------------------------------------------------------
+
+kehillah_responsa_cleanup_effect = {
+	remove_variable = kehillah_responsa_question
+}
+
+# ---------------------------------------------------------------------
+# kehillah_responsa_apply_ruling_effect = { TIER = flag:great/good/poor }
+# Scope: the Kehillah leader.
+#
+# The one place the Greatness / asker-Stability / opinion payout lives,
+# so the lenient and stringent options cannot drift apart in magnitude.
+# What distinguishes them is their FLAVOUR TEXT and which way the
+# Learning check reads, not their arithmetic -- a well-reasoned stringent
+# ruling and a well-reasoned lenient one are both good scholarship, and
+# the mod should not quietly reward one halakhic disposition over the
+# other.
+# ---------------------------------------------------------------------
+
+kehillah_responsa_apply_ruling_effect = {
+	kehillah_responsa_count_answer_effect = yes
+
+	if = {
+		limit = { $TIER$ = flag:great }
+		if = {
+			limit = { exists = primary_title }
+			primary_title = {
+				change_variable = { name = kehillah_var_greatness add = kehillah_responsa_greatness_gain_great }
+			}
+		}
+		if = {
+			limit = { exists = scope:kehillah_responsa_asker_title }
+			scope:kehillah_responsa_asker_title = {
+				change_variable = { name = kehillah_var_stability add = kehillah_responsa_asker_stability_gain_great }
+			}
+		}
+		if = {
+			limit = { exists = scope:kehillah_responsa_asker }
+			reverse_add_opinion = {
+				target = scope:kehillah_responsa_asker
+				modifier = kehillah_responsa_ruling_opinion
+				opinion = kehillah_responsa_opinion_great
+				years = 10
+			}
+		}
+		add_piety = medium_piety_gain
+	}
+	else_if = {
+		limit = { $TIER$ = flag:good }
+		if = {
+			limit = { exists = primary_title }
+			primary_title = {
+				change_variable = { name = kehillah_var_greatness add = kehillah_responsa_greatness_gain_good }
+			}
+		}
+		if = {
+			limit = { exists = scope:kehillah_responsa_asker_title }
+			scope:kehillah_responsa_asker_title = {
+				change_variable = { name = kehillah_var_stability add = kehillah_responsa_asker_stability_gain_good }
+			}
+		}
+		if = {
+			limit = { exists = scope:kehillah_responsa_asker }
+			reverse_add_opinion = {
+				target = scope:kehillah_responsa_asker
+				modifier = kehillah_responsa_ruling_opinion
+				opinion = kehillah_responsa_opinion_good
+				years = 5
+			}
+		}
+		add_piety = minor_piety_gain
+	}
+	else = {
+		# POOR. The only tier that can cost Greatness: a ruling given
+		# under your name and then found wanting travels just as far as a
+		# good one.
+		if = {
+			limit = { exists = primary_title }
+			primary_title = {
+				change_variable = { name = kehillah_var_greatness subtract = kehillah_responsa_greatness_loss_poor }
+			}
+		}
+		if = {
+			limit = { exists = scope:kehillah_responsa_asker_title }
+			scope:kehillah_responsa_asker_title = {
+				change_variable = { name = kehillah_var_stability subtract = kehillah_responsa_asker_stability_loss_poor }
+			}
+		}
+		if = {
+			limit = { exists = scope:kehillah_responsa_asker }
+			reverse_add_opinion = {
+				target = scope:kehillah_responsa_asker
+				modifier = kehillah_responsa_ruling_opinion
+				opinion = kehillah_responsa_opinion_poor
+				years = 5
+			}
+		}
+	}
+}

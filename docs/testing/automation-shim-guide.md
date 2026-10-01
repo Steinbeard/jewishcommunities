@@ -54,6 +54,26 @@ types each command followed by Enter, then closes the console. This is the *only
 `event <id>`, `gold <amount>`, `run <file>.txt`, etc. — there's no other channel for console
 commands.
 
+**`play <id>` takes the character's INTERNAL id, not its history id** (found 2026-09-29): `play 1316`
+(Heinrich IV's history id) returned "Invalid Character"; `play 37029`, the internal id shown in a
+`debug_log_scopes` dump, worked. Have a probe log the target's scopes first to get it. After `play`,
+the character you left is AI-controlled, so a `send_interface_message` aimed at them is not shown.
+
+**Click coordinates for small targets come from a native-resolution crop, not the downscaled copy**
+(found 2026-09-29): a coordinate read off a 1024px downscale mis-landed ~15-20px on a one-line event
+option and silently missed. Downscale for *reading*; for a precise click, crop the native capture
+around the target and read pixels there. And never leave the game unpaused while navigating menus
+— 1.5 unattended years once cost a test its borrower.
+
+**Pause state: read the speed bar, not the "Paused" overlay** (2026-09-29). The centre-screen
+"Paused" text reflects whichever UI element last requested a pause, not the actual state; a
+native-resolution crop of the bottom-right speed control (green = running, red = paused) is reliable.
+Also: `quarterly_playable_pulse` is relative to each character's yearly pulse, not calendar quarters,
+so "advance three months" does not reliably land exactly one pulse — assert on the logged effect, not
+the elapsed time. And keep `[` / `]` out of `debug_log` strings: CK3 parses them as loc and the line
+fails with only an "Unterminated '['" error.log entry. Test helpers that top a value up should use a
+generous buffer, not the exact minimum, or AI spending races the check.
+
 ### Mouse: `mouse_move(x, y)` / `mouse_click(x, y, button="left")`
 
 Coordinates are **actual screen pixels**, origin at the virtual-desktop top-left (handles
@@ -261,3 +281,124 @@ mechanical verification loop itself.
   building-gate tests, which otherwise sit behind whatever's already mid-construction).
 - `debug_log` is **not** a console command (only a script effect) — typing it directly into the
   console returns `Unknown command`; it only works from inside a fired event or `run` script.
+
+---
+
+## What ck3-tiger does NOT catch — added 2026-09-26
+
+CLAUDE.md is right that tiger should run first on every session, and that it catches
+things which are silent in script but crash the live game. It is also worth writing
+down what it *misses*, because on 2026-09-26 a single heartbeat found three real
+bugs and **tiger was clean on every one of them.** Three sessions of the `add_gold`
+saga had treated clean tiger output as evidence that the script was fine.
+
+Confirmed blind spots, each from a real bug:
+
+- **Effect-argument domains.** Tiger does not flag `add_gold = -5`, even though the
+  live game rejects a literal negative at script-load validation. If a question is
+  "will the engine accept this value for this effect", tiger is not the oracle —
+  the engine's own generated `logs/effects.log` is. It documents every effect in
+  one line, and it is the thing that finally settled that saga: `add_gold` "adds
+  gold to a character", `remove_short_term_gold` "removes gold from a character",
+  `pay_short_term_gold` "the scope character pays gold to the target character".
+  **`logs/effects.log` and `logs/triggers.log` are underused in this repo.** Grep
+  them before inferring an effect's contract from how vanilla happens to use it.
+- **Scope correctness across the GUI chain.** A tooltip travels
+  `.gui` → `.yml` loc string → `customizable_localization` → `script_value`. Tiger
+  checks each file, not the scope the value ends up being evaluated in. The
+  next-band tooltip bug lived entirely in that seam: a `type = character` custom
+  loc reaching pillar variables that live on the *title*, reached through a
+  `primary_title` hop that missed. It rendered a confident wrong answer and threw
+  ~2,000 errors a second, with tiger clean throughout.
+- **Whether an effect's own gates will actually let it through.** `add_domicile_building`
+  consults the building's `can_construct`. Tiger does not simulate that, so a grant
+  that can never succeed looks identical to one that will. The Worms developed start
+  had been a no-op above synagogue tier 1 for an unknown length of time.
+
+The rule of thumb: **tiger rules out a class of error; it does not certify a
+feature.** A clean run means "no malformed script and no dangling references" — it
+never means "this works."
+
+## Read the error log even when the check passes — added 2026-09-26
+
+Two of the three bugs above were found *by checks that returned PASS on their own
+stated criteria.* The next-band tooltip check asked "does the line render" and the
+answer was genuinely yes; the bug was that the line rendered the wrong band, and
+that hovering it was flooding the log. The Worms building bug was found in the
+error log of a pass that was testing something else entirely.
+
+So, when briefing a live check:
+
+- Ask for the `error.log` **line count before and after** the interaction, not just
+  "were there errors". Growth is the signal. A tooltip that adds 2,000 lines a
+  second and a tooltip that adds none both "have no new errors" if you only grep
+  for your own feature's name.
+- Ask for the *content* the check renders, not only that it rendered. "Report the
+  exact text" catches a wrong number; "confirm it is not blank" does not.
+- Ask for anything surprising, explicitly, and treat volunteered observations as
+  valuable rather than off-scope. The error-storm finding came from a tester
+  reporting a line count nobody had asked for.
+- Give the check a way to be wrong that is *specific*. "PASS = the band named is
+  the one ABOVE the current band" catches what "PASS = a band is named" cannot.
+
+## Briefing a subagent tester: end every turn on an observation — added 2026-09-26
+
+A delegated tester that ends its turn on a blocking wait (`sleep 60` while CK3
+boots, a monitor that reports back later) stops there, and the parent has to
+notice and resume it. On 2026-09-26 one tester burned two full wake cycles and
+~130k tokens doing exactly this, twice, before completing any check.
+
+Put this in the brief verbatim:
+
+> **Never end a turn on a wait.** No blocking sleeps as your last action. If you
+> need time to pass, end the turn on an OBSERVATION instead — a screenshot, a log
+> read, a process check. Poll; don't sleep.
+
+And pair it with a non-abandonment clause, because the other failure mode is a
+tester that hits one impossible step and stops with nothing:
+
+> **If a step is genuinely impossible, mark it BLOCKED with what you actually saw
+> and move on to the next check.** Never abandon the whole run because one step
+> failed. A partial report with real evidence is much more valuable than stopping
+> early.
+
+One more thing the parent should do rather than the subagent: **read the cheap
+results yourself.** A `debug_log` verdict line is three greps away in
+`debug.log`, and reading it directly costs the parent almost nothing while
+removing any chance of a relay error. Delegation is for the expensive part — the
+boot, the clicking, the screenshots — not for facts the parent can read in one
+call. On 2026-09-26 the parent read the decisive `.108` verdict lines itself and
+had the answer well before the tester's report arrived.
+
+
+## `event <id> <character>` does not retarget — use a run file — added 2026-09-27
+
+Found in the heartbeat-8 boot, and worth its own note because it silently produces a *plausible*
+wrong answer rather than an error.
+
+`kehillah_debug.115` was written as a read-only probe specifically so it could be pointed at
+another community's leader from the console, and its own header documented the usage as
+`event kehillah_debug.115 9000201` (Rashi, at Troyes). In a live boot, **five two-argument
+`event` calls of that shape produced output exactly once, and that once ran on the player, not on
+the named character.** The proof was internal to the same game, seconds apart: the probe reported
+`TOGGLE OFF` for that call and `TOGGLE ON` for Rashi immediately afterwards via a run file, and
+Rashi's toggle is on by design from `kehillah_setup_troyes_start_effect`.
+
+So the failure mode is not "nothing happens" — it is "the event fires on you and reports your own
+state under the other character's name." A tester who trusted the documented form would have
+recorded the player's Chief Rabbi state as Rashi's and called S4(2) a pass or a fail on it.
+
+**Use a run file to target a specific character.** This works:
+
+```
+# <ck3_user_dir>\run\probe.txt
+character:9000201 = {
+	debug_log = "PROBE: about to trigger kehillah_debug.115 on Rashi"
+	trigger_event = kehillah_debug.115
+}
+```
+
+then `run probe.txt`. Note the `debug_log` line *before* the `trigger_event`: it makes the
+targeting itself visible in `debug.log`, so a probe that silently ran on the wrong character can be
+told apart from one that ran on the right one. Cheap, and it is what made this diagnosis possible
+at all — put an identifying `debug_log` in every targeting run file for that reason.

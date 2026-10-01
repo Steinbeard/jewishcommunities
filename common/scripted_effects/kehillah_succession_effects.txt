@@ -1,0 +1,101 @@
+﻿# =====================================================================
+# Kehillah succession effects -- ROADMAP item S3, added 2026-09-26
+# (Sukkot heartbeat 3).
+#
+# One effect today: the on_title_gain diagnostic trace for S3(a), the
+# recurring `change_government effect [ Trying to set illegal government
+# ]` error on appointment succession.
+#
+# WHY A TRACE AND NOT A FIX. This error has been "fixed" twice --
+# 2026-09-06 (tier = tier_duchy -> title_tier = duchy) and 2026-09-20
+# (the whole predicate rewritten to any_held_title = {
+# is_landless_type_title = yes }) -- and reappeared identically both
+# times, because neither fix was ever re-tested against the error it
+# claimed to close. docs/implementation/v1-kehillah-implementation.md
+# section 8 records that history and says explicitly: do not attempt a
+# fourth blind fix. So this measures the one thing nobody has ever
+# actually looked at -- what the engine can see at the instant
+# on_title_gain fires.
+#
+# ARMED, NOT ALWAYS ON. Gated on global_var:kehillah_debug_title_gain_
+# trace, set by kehillah_debug.104 and cleared by .105. An unconditional
+# debug_log here would write ~10 lines on every single title change of
+# every Kehillah in the world, for the entire length of every game.
+# =====================================================================
+
+# Scope: the character who just gained a Kehillah title.
+# scope:title = the title gained. Called from kehillah_on_title_gain
+# (common/on_action/kehillah_on_actions.txt) immediately before the
+# change_government attempt.
+kehillah_trace_title_gain_effect = {
+	debug_log = "kehillah_titlegain_trace: ---- on_title_gain reached, BEFORE change_government ----"
+	debug_log_scopes = yes
+
+	# THE DECIDING QUESTION. can_get_government (common/governments/
+	# kehillah_government.txt) is exactly this predicate and nothing
+	# else. If this logs NO, the cause of the error is settled: the
+	# gained title is not yet visible to any_held_title at this instant,
+	# and no rewrite of the predicate could ever have helped.
+	if = {
+		limit = { any_held_title = { is_landless_type_title = yes } }
+		debug_log = "kehillah_titlegain_trace: YES root holds at least one landless-type title -- can_get_government WOULD pass"
+	}
+	else = {
+		debug_log = "kehillah_titlegain_trace: NO root holds no landless-type title -- can_get_government WOULD FAIL, this is the error"
+	}
+
+	# Narrower version of the same question: is it specifically the
+	# just-gained title that is missing, or does root hold no titles at
+	# all yet?
+	if = {
+		limit = { any_held_title = { this = scope:title } }
+		debug_log = "kehillah_titlegain_trace: the gained title IS already in root's held-title list"
+	}
+	else = {
+		debug_log = "kehillah_titlegain_trace: the gained title is NOT yet in root's held-title list"
+	}
+
+	if = {
+		limit = { any_held_title = { count >= 1 } }
+		debug_log = "kehillah_titlegain_trace: root holds at least one title of some kind"
+	}
+	else = {
+		debug_log = "kehillah_titlegain_trace: root holds NO titles at all at this instant"
+	}
+
+	# And from the other direction: does the title itself know its new
+	# holder yet? A mismatch between these two answers would mean the
+	# holder link is committed one-way at this point.
+	if = {
+		limit = { scope:title.holder ?= { this = root } }
+		debug_log = "kehillah_titlegain_trace: scope:title.holder already reads as root"
+	}
+	else = {
+		debug_log = "kehillah_titlegain_trace: scope:title.holder does NOT yet read as root"
+	}
+
+	# What root currently is, for context -- the comment in
+	# kehillah_on_title_gain assumes an appointed successor arrives with
+	# no government at all, which has never been checked either.
+	if = {
+		limit = { government_has_flag = government_is_kehillah }
+		debug_log = "kehillah_titlegain_trace: root ALREADY has a kehillah government (change_government will be skipped)"
+	}
+	else_if = {
+		limit = { government_has_flag = government_is_landless_adventurer }
+		debug_log = "kehillah_titlegain_trace: root currently has landless_adventurer government"
+	}
+	else = {
+		debug_log = "kehillah_titlegain_trace: root has some other, non-kehillah government"
+	}
+
+	if = {
+		limit = { exists = domicile }
+		debug_log = "kehillah_titlegain_trace: root already has a domicile"
+	}
+	else = {
+		debug_log = "kehillah_titlegain_trace: root has NO domicile yet"
+	}
+
+	debug_log = "kehillah_titlegain_trace: ---- end ----"
+}

@@ -357,6 +357,33 @@ kehillah_region_can_field_bet_din_panel_trigger = {
 #      file's git history) -- narrowing it now would be a real behavior
 #      change smuggled into what is otherwise a pure refactor.
 #   3. A landless Jewish adventurer, learned or not.
+#   4. THE HOST'S OWN HOUSEHOLD, at a lower bar -- see below.
+#
+# POPULATION 4, ADDED 2026-09-27 (S4d), lever 3 of the four frequency
+# levers. A Beit Din of three was normally three local men; this trigger
+# required every seat but the host's to come from outside or to clear a bar
+# set for renowned scholars, which structured a routine communal court as a
+# diplomatic summit and made it unsittable in a small community. The host's
+# own adult Jewish courtiers now qualify at
+# kehillah_bet_din_local_dayan_learning_threshold (8), or on holding
+# kehillah_rabbi_trait at any Learning -- semicha being precisely what
+# makes a man fit to sit, and permanent as of S4c.
+#
+# THE GENDER HOOK APPLIES TO POPULATION 4 ONLY, and that asymmetry is
+# deliberate, not an oversight. New leadership-role content in this mod
+# goes through kehillah_leadership_gender_eligible_trigger so that one
+# future reform unlocks every such role together (see that trigger's own
+# header). The three older populations above have never checked it, so
+# women can already sit today via 2 or 3 -- adding the check to them now
+# would be a silent behaviour change smuggled into a tuning pass. Making
+# the whole trigger consistent, in either direction, is a one-line decision
+# recorded in ROADMAP's S4d item for Daniel rather than taken here.
+#
+# NOTE: whatever this trigger admits, the invite rules must OFFER, or the
+# new population never becomes an attendee and the change does nothing.
+# kehillah_bet_din_invite_rule_jewish_courtiers was widened in the same
+# pass and is kept in lockstep with this by hand, the same way the invite
+# rules and this trigger have always had to be.
 # ---------------------------------------------------------------------
 
 kehillah_bet_din_eligible_judge_trigger = {
@@ -369,6 +396,15 @@ kehillah_bet_din_eligible_judge_trigger = {
 		}
 		has_government = landless_adventurer_government
 		learning >= kehillah_bet_din_scholar_guest_learning_threshold
+		AND = {
+			is_courtier_of = $HOST$
+			is_adult = yes
+			kehillah_leadership_gender_eligible_trigger = yes
+			OR = {
+				has_trait = kehillah_rabbi_trait
+				learning >= kehillah_bet_din_local_dayan_learning_threshold
+			}
+		}
 	}
 }
 
@@ -647,18 +683,20 @@ kehillah_has_dispute_candidates_trigger = {
 
 # ---------------------------------------------------------------------
 # kehillah_bet_din_session_score_at_least_trigger = { THRESHOLD = <sv> }
-# Scope: anything (it only reads a global_var). ADDED 2026-09-08 with
-# the Bet Din docket loop fix.
+# Scope: the convening leader during an active Bet Din (reads that
+# character's involved_activity). ADDED 2026-09-08 with the Bet Din
+# docket loop fix; corrected 2026-09-29 after a live closing event
+# always fell through to its generic text and paid no session rewards.
 #
 # "Did this Bet Din session's docket score at least THRESHOLD?" --
-# global_var:kehillah_bet_din_session_score against the
+# involved_activity.var:kehillah_bet_din_session_score against the
 # kehillah_bet_din_session_threshold_* values (common/script_values/
 # kehillah_script_values.txt). Used by kehillah_bet_din.0099, the
 # closing event, for both its triggered desc and its reward branches.
 #
 # THE exists = IS THE WHOLE POINT of it being a scripted trigger rather
 # than an inline comparison. This is read from an OPTION effect's limit,
-# and an unguarded global_var read there does not fail once -- CK3
+# and an unguarded activity-variable read there does not fail once -- CK3
 # re-evaluates an option's effect on every tooltip-rebuild frame while
 # the cursor rests on it, which is how a single unset variable produced
 # a ~28MB error.log in under a minute during the 2026-09-08 live test
@@ -668,13 +706,15 @@ kehillah_has_dispute_candidates_trigger = {
 # ---------------------------------------------------------------------
 
 kehillah_bet_din_session_score_at_least_trigger = {
-	exists = global_var:kehillah_bet_din_session_score
-	global_var:kehillah_bet_din_session_score >= $THRESHOLD$
+	exists = involved_activity.var:kehillah_bet_din_session_score
+	involved_activity.var:kehillah_bet_din_session_score >= $THRESHOLD$
 }
 
 # ---------------------------------------------------------------------
 # kehillah_bet_din_session_heard_any_case_trigger
-# Scope: anything. ADDED 2026-09-08 with the Bet Din docket loop fix.
+# Scope: the convening leader during an active Bet Din. ADDED
+# 2026-09-08 with the Bet Din docket loop fix; corrected 2026-09-29
+# alongside the score trigger above.
 #
 # "Did this Bet Din session actually get a verdict out of at least one
 # case?" Separates the two ways a docket can end with nothing to its
@@ -689,8 +729,8 @@ kehillah_bet_din_session_score_at_least_trigger = {
 # ---------------------------------------------------------------------
 
 kehillah_bet_din_session_heard_any_case_trigger = {
-	exists = global_var:kehillah_bet_din_cases_heard_count
-	global_var:kehillah_bet_din_cases_heard_count >= 1
+	exists = involved_activity.var:kehillah_bet_din_cases_heard_count
+	involved_activity.var:kehillah_bet_din_cases_heard_count >= 1
 }
 
 # ---------------------------------------------------------------------
@@ -1359,5 +1399,315 @@ kehillah_study_torah_has_same_track_reference_trigger = {
 				is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_kuzari }
 			}
 		}
+	}
+}
+
+
+# =====================================================================
+# THE ACTING CHIEF RABBI -- ROADMAP item S4(2), added 2026-09-26
+# (Sukkot heartbeat 3).
+#
+# THE PROBLEM. A ruler cannot hold a court position in their own court,
+# so a Kehillah leader who IS a rabbi -- which the Worms, Mainz and
+# Troyes starting leaders all are, kehillah_rabbi_trait and all -- could
+# not serve as their own community's Chief Rabbi. The seat sat empty and
+# the community lost the Chief Rabbi's whole contribution, which reads
+# as a bug rather than a choice: Rashi of Troyes leading a community
+# with "no rabbi" is absurd on its face.
+#
+# THE SHAPE. An explicit opt-in toggle (kehillah_serve_as_rabbi_decision,
+# common/decisions/kehillah_rabbi_office_decisions.txt) sets a character
+# flag on the leader. Every consumer of the Chief Rabbi seat then asks
+# "who is ACTING as Chief Rabbi" rather than "who holds the position".
+#
+# ROADMAP S4(2) requires this to go through ONE shared
+# trigger/value/effect trio used at every call site, not per-site special
+# cases, precisely so the next consumer added cannot forget the
+# serving-leader case. The trio is:
+#
+#   kehillah_has_acting_chief_rabbi_trigger  -- is the seat filled at all
+#   kehillah_acting_chief_rabbi_learning_value  -- the pillar contribution
+#       (common/script_values/kehillah_script_values.txt)
+#   kehillah_save_acting_chief_rabbi_effect  -- bind scope:kehillah_chief_rabbi
+#       (common/scripted_effects/kehillah_scripted_effects.txt)
+#
+# THE APPOINTED RABBI ALWAYS WINS. Where both could apply, every member
+# of the trio prefers the court-position holder, so there is no window in
+# which a community counts two rabbis -- not even between the moment a
+# rabbi is appointed and the quarterly tick that clears the now-redundant
+# toggle (kehillah_clear_redundant_rabbi_toggle_effect).
+# =====================================================================
+
+# Scope: a character. True if THIS character is a Kehillah leader
+# currently serving as their own community's Chief Rabbi.
+kehillah_serving_as_own_rabbi_trigger = {
+	has_character_flag = kehillah_serving_as_own_rabbi
+
+	# Defensive, and the reason the appointed rabbi always wins: if a
+	# real rabbi has been appointed, the leader is no longer acting in
+	# the role even if the flag has not been cleaned up yet.
+	NOT = { employs_court_position = chief_rabbi_kehillah_position }
+}
+
+# Scope: the Kehillah leader. True if the community has a Chief Rabbi at
+# all, by either route. Replaces bare `employs_court_position =
+# chief_rabbi_kehillah_position` checks at every consumer site.
+kehillah_has_acting_chief_rabbi_trigger = {
+	OR = {
+		employs_court_position = chief_rabbi_kehillah_position
+		kehillah_serving_as_own_rabbi_trigger = yes
+	}
+}
+
+# Scope: the Kehillah leader. Can this leader take up the office
+# themselves? Recognized rabbinic standing plus real learning -- the
+# same gender hook every other Kehillah leadership role uses, so a
+# single future reform unlocks all of them together rather than this one
+# needing its own.
+kehillah_can_serve_as_own_rabbi_trigger = {
+	has_trait = kehillah_rabbi_trait
+	kehillah_leadership_gender_eligible_trigger = yes
+	learning >= kehillah_serve_as_rabbi_learning_threshold
+}
+
+# Scope: the Kehillah leader. Has this leader TAKEN UP the office --
+# i.e. is the toggle set at all, regardless of whether a court-position
+# holder is also sitting?
+#
+# ADDED 2026-09-27 (S4b). This deliberately does NOT go through
+# kehillah_serving_as_own_rabbi_trigger above, and the difference is
+# load-bearing rather than a style choice. That trigger yields to an
+# appointed rabbi on purpose ("THE APPOINTED RABBI ALWAYS WINS"), which
+# makes it useless as an EXCLUSION gate on the appointment itself: asking
+# "is the leader already acting as rabbi?" inside
+# chief_rabbi_kehillah_position's valid_position would answer "no" the
+# moment the seat filled, i.e. exactly when the gate needed to bite, and
+# the gate would never block anything.
+#
+# So: consumers asking "who is acting as rabbi right now" keep using
+# kehillah_serving_as_own_rabbi_trigger; the two gates that must make the
+# office and the toggle MUTUALLY EXCLUSIVE (that valid_position, and
+# kehillah_seek_chief_rabbi_decision) use this one.
+kehillah_has_taken_up_rabbinate_trigger = {
+	has_character_flag = kehillah_serving_as_own_rabbi
+}
+
+
+# =====================================================================
+# THE CHIEF RABBI SEARCH -- ROADMAP item S4(1), added 2026-09-26.
+#
+# Modelled on vanilla's own physician recruitment: the decision opens an
+# event offering candidates at skill tiers and gold costs, with a
+# cooldown flag (common/decisions/90_minor_decisions.txt's
+# hire_physician_decision item -> events/health_events.txt's health.3001).
+# See events/kehillah_rabbi_search_events.txt for the pool construction.
+#
+# Scope: a prospective candidate. scope:kehillah_rabbi_seeker = the
+# Kehillah leader doing the searching.
+#
+# The conditions mirror chief_rabbi_kehillah_position's own
+# valid_character/is_shown_character blocks (common/court_positions/types/
+# kehillah_officers.txt) deliberately -- offering a candidate the engine
+# would then refuse to appoint would be a dead end the player can't see
+# into. If that position's gates change, change these with them.
+# =====================================================================
+
+kehillah_rabbi_search_candidate_trigger = {
+	is_alive = yes
+	is_adult = yes
+	is_incapable = no
+	is_imprisoned = no
+
+	# The office rules on this congregation's law. Same reasoning as the
+	# position's own valid_character faith gate.
+	faith = scope:kehillah_rabbi_seeker.faith
+
+	kehillah_leadership_gender_eligible_trigger = yes
+
+	# A community's own leader is not for hire -- they have a community.
+	# Checked through the title registry rather than "has a government",
+	# so a landless scholar who happens to hold some other title is still
+	# recruitable.
+	NOT = {
+		AND = {
+			exists = primary_title
+			primary_title = { is_kehillah_title_trigger = yes }
+		}
+	}
+
+	# Already serving someone as their rabbi. Poaching another
+	# community's sitting rabbi is a different (and more interesting)
+	# feature than this one; not built here.
+	NOT = { has_court_position = chief_rabbi_kehillah_position }
+
+	# Not a claimant: same reasoning vanilla gives in
+	# health_3001_physician_basic_requirements_trigger -- recruitment
+	# must not become a cheap route to importing claims.
+	is_claimant = no
+
+	NOT = { this = scope:kehillah_rabbi_seeker }
+}
+
+
+# ---------------------------------------------------------------------
+# kehillah_pillars_are_live_trigger
+# Scope: a character (the Kehillah leader), matching
+# kehillah_pillar_at_least_trigger above.
+#
+# ADDED 2026-09-26 (heartbeat 5) after a live find. "Have this
+# community's opening pillars actually been written yet?"
+#
+# WHY THIS EXISTS. The historical communities are seeded at
+# on_game_start_after_lobby with all three pillars at 0, and their REAL
+# opening values are set three days later by
+# kehillah_settlement_conditions.0008 -> kehillah_initialize_historical_
+# pillars_from_baseline_effect. That three-day delay is deliberate and
+# load-bearing (see kehillah_on_actions.txt:218-225: the snapshot must
+# see .0001's nearby-community cache and .0002/.0003's committed charter
+# terms rather than a bootstrap-time approximation).
+#
+# But CK3's 1066 start is 1066.9.15 and the first
+# quarterly_playable_pulse lands on 1066.9.16 -- TWO DAYS BEFORE the
+# snapshot. Measured live, not inferred: debug.log for a fresh Worms
+# start shows the pulse's band seeding and
+# kehillah_dissolution_watch_effect running at 1066.9.16 against
+# Prosperity/Stability/Greatness all exactly 0.00, then the initialization
+# logging at 1066.9.18. Consequences, all confirmed in that same log:
+#   - all three bands seeded as CRISIS, applying the Crisis modifiers
+#     (-20% income, -20% prestige, stress) to a leader whose community is
+#     really Strained/Strained/Healthy;
+#   - the dissolution countdown advanced to 1;
+#   - "The Community Frays" fired on day one of a new game, and with it
+#     the five-year kehillah_dissolution_warned_flag cooldown -- so a
+#     GENUINE early crisis would then go unwarned, defeating S1's own
+#     promise that "collapse is never a surprise".
+#
+# WHY NOT FIX IT BY INITIALIZING EARLIER. Because the codebase already
+# decided against that, explicitly, and the reason still holds:
+# kehillah_worms_developed_start_effect's header says restoring Greatness
+# to 0 rather than to a real baseline is deliberate, since "computing it
+# here would duplicate V20's job three days early and give two places an
+# opinion about the same number." Day three stays the single authority;
+# the CONSUMERS learn not to read a number that has not been written yet.
+#
+# FIRST ATTEMPT, AND WHY IT FAILED LIVE -- 2026-09-26, same day. This
+# trigger originally read "at least one pillar is above zero", to avoid
+# depending on kehillah_start_pillars_initialized_from_baseline (which is
+# set only on the historical-start path). **It did not work, and the live
+# test caught it where ck3-tiger could not.** The verification boot still
+# logged the floor watch firing and the warning going out.
+#
+# The reason is ordering inside the pulse itself.
+# kehillah_quarterly_pulse calls kehillah_quarterly_pillars_effect FIRST,
+# whose baseline-convergence block adds (baseline - current) x
+# kehillah_convergence_rate_value to each pillar. From 0, against a real
+# Stability baseline of ~369 and a rate of 1/20, that is a jump to ~18.5:
+# non-zero, so the old predicate passed, but still below the dissolution
+# floor of 25, so the watch fired anyway. The guard was reading a number
+# the same pulse had already corrupted.
+#
+# SO THE PREDICATE IS NOW THE MARKER, and the drift is guarded too (see
+# kehillah_quarterly_pulse). The two objections to the marker are handled
+# rather than dodged:
+#
+#   - FOUNDED COMMUNITIES and COMMUNITIES IN EXISTING SAVES have no
+#     marker, and guarding on a missing marker would freeze their pillars
+#     forever -- much worse than the bug. kehillah_backfill_pillars_marker_
+#     effect, called at the top of the pulse before any guard, sets the
+#     marker for any community whose Stability is already above zero. That
+#     covers both populations on their first pulse: a founded community
+#     starts at Stability 50, and a save's communities carry whatever they
+#     had.
+#   - IT MUST NOT BACKFILL DURING THE PRE-INIT WINDOW. It cannot: with
+#     the drift guarded, an uninitialised community's Stability stays at
+#     exactly 0. Verified by reading every writer -- only
+#     kehillah_init_pillars_effect (0), the day-three snapshot (baseline),
+#     the founding path (+50) and event-driven adds touch Stability, and
+#     no historical start effect touches it at all. Mainz's +650 opening
+#     Prosperity is deliberately NOT enough to trigger the backfill, which
+#     is why the predicate is Stability alone rather than any pillar.
+#
+# Residual false negative: a live, unmarked community sitting at exactly
+# 0.00 Stability would stay frozen. It needs a pre-fix save AND total
+# collapse simultaneously, and resolves the moment anything nudges
+# Stability.
+# ---------------------------------------------------------------------
+kehillah_pillars_are_live_trigger = {
+	primary_title = { has_variable = kehillah_start_pillars_initialized_from_baseline }
+}
+
+
+# =====================================================================
+# RESPONSA (ROADMAP S5). ADDED 2026-09-27.
+# =====================================================================
+
+# Scope: the Kehillah leader. Is this community learned enough to be
+# written to, and is there anybody out there to write?
+#
+# The second half matters more than it looks: responsa are correspondence
+# BETWEEN communities, so a world with exactly one registered community
+# has nobody to ask. The registry is the same one the book system's
+# "send copies" step and S4's rabbi search both walk
+# (kehillah_registered_communities, populated at game start).
+kehillah_can_answer_responsa_trigger = {
+	government_has_flag = government_is_kehillah
+	kehillah_responsa_answerer_is_rabbi_trigger = yes
+	kehillah_responsa_answerer_learning_value >= kehillah_responsa_learning_threshold
+	kehillah_has_responsa_correspondent_trigger = yes
+}
+
+# Scope: the Kehillah leader. Does whoever would ANSWER here hold
+# rabbinic standing?
+#
+# ADDED 2026-09-27 (S4b), at user request: "any rabbi can receive rabbinic
+# responsa, but it should be gated on rabbi trait". Learning alone was the
+# whole gate before, so a merely well-read leader with no semicha received
+# she'elot addressed to a posek -- the one thing responsa are NOT. A
+# question of halakha is sent to someone qualified to answer it.
+#
+# Kept in exact lockstep with kehillah_responsa_answerer_learning_value
+# (common/script_values/kehillah_script_values.txt) -- same two branches,
+# same precedence -- because the two must agree about WHO is being tested
+# or the gate and the skill check would be measuring different people.
+# The appointed-rabbi branch is effectively always true (the office grants
+# kehillah_rabbi_trait on receipt, common/court_positions/types/
+# kehillah_officers.txt), and is written out anyway rather than assumed:
+# it is what makes the trigger read as "the answerer is a rabbi" instead
+# of "the leader is a rabbi, unless".
+kehillah_responsa_answerer_is_rabbi_trigger = {
+	OR = {
+		AND = {
+			employs_court_position = chief_rabbi_kehillah_position
+			court_position:chief_rabbi_kehillah_position = { has_trait = kehillah_rabbi_trait }
+		}
+		AND = {
+			NOT = { employs_court_position = chief_rabbi_kehillah_position }
+			has_trait = kehillah_rabbi_trait
+		}
+	}
+}
+
+# Scope: the Kehillah leader. Does at least one OTHER community exist
+# with a living leader who could send a question?
+kehillah_has_responsa_correspondent_trigger = {
+	any_in_global_list = {
+		variable = kehillah_registered_communities
+		exists = holder
+		NOT = { holder = root }
+		holder = {
+			is_adult = yes
+			is_alive = yes
+		}
+	}
+}
+
+# Scope: the Kehillah leader. Enough answered rulings on the books to
+# gather them into a volume.
+kehillah_can_compile_responsa_trigger = {
+	government_has_flag = government_is_kehillah
+	exists = primary_title
+	primary_title = {
+		has_variable = kehillah_var_responsa_count
+		var:kehillah_var_responsa_count >= kehillah_responsa_compile_threshold
 	}
 }
