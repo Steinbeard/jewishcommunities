@@ -1,0 +1,57 @@
+﻿# Vanilla on_birth_child already has an effect block. Extend it indirectly.
+# Parentage here means public faith and rite at birth, not dynasty or culture.
+on_birth_child = {
+	on_actions = { kehillah_apply_jewish_descent_on_birth }
+}
+
+kehillah_apply_jewish_descent_on_birth = {
+	effect = {
+		# Only mixed Jewish/non-Jewish unions need a correction. When both
+		# parents are Jewish, vanilla chooses the child's rite as usual.
+		if = {
+			limit = {
+				scope:mother = { faith.religion = religion:judaism_religion }
+				OR = {
+					NOT = { exists = scope:father }
+					scope:father = { faith.religion != religion:judaism_religion }
+				}
+			}
+			if = {
+				limit = {
+					scope:mother.rite = {
+						OR = {
+							rite_has_doctrine = kehillah_jewish_descent_matrilineal
+							rite_has_doctrine = kehillah_jewish_descent_either_parent
+						}
+					}
+				}
+				scope:child = { set_character_rite = scope:mother.rite }
+			}
+			else_if = {
+				limit = { exists = scope:father }
+				scope:child = { set_character_rite = scope:father.rite }
+			}
+		}
+		else_if = {
+			limit = {
+				scope:mother = { faith.religion != religion:judaism_religion }
+				exists = scope:father
+				scope:father = { faith.religion = religion:judaism_religion }
+			}
+			if = {
+				limit = {
+					scope:father.rite = {
+						OR = {
+							rite_has_doctrine = kehillah_jewish_descent_patrilineal
+							rite_has_doctrine = kehillah_jewish_descent_either_parent
+						}
+					}
+				}
+				scope:child = { set_character_rite = scope:father.rite }
+			}
+			else = {
+				scope:child = { set_character_rite = scope:mother.rite }
+			}
+		}
+	}
+}
