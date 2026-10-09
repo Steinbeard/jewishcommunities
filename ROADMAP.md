@@ -31,6 +31,19 @@ office. The incremental design and proof order are in
 features. This explicitly takes priority over the older autonomous queue for this
 interactive pass.
 
+- **Source-aware ransom ruling and named responsum: SCRIPTED, CK3-TIGER CLEAN,
+  FULL LIVE EXCHANGE PENDING 2026-09-29.** `kehillah_mastered_works` now records
+  successful study separately from encountered works. Mishnah and Bavli Nashim
+  mastery unlock different arguments for the acting judges in the captive-ransom
+  case. If all three judges lack both works, the host can choose a named outside
+  Rabbi who mastered one; a delayed question and answer return to the current
+  holder of the asking community, who may adopt the argument before the docket
+  continues. The old generic annual responsa pulse is retired. The delayed
+  title-routing primitive passed a live [scope spike](docs/testing/2026-09-29-responsa-letter-scope-spike.md),
+  but the whole player-facing exchange and player-recipient path still need
+  live proof. This is the first V24/V23 case slice, not source integration for
+  all cases or a full precedent archive; see the dated [V24 addendum](docs/spec/v24-rabbi-gameplay-loop.md).
+
 - **Bet Din participant reward slice: LIVE-PROBED 2026-09-29; AI-hosted player guest still open.** Good/great rulings
   give the three actual ordained judges 1/3 Talmudics XP; a positive docket gives
   non-host attendees small piety, prestige, Learning XP, and a relationship gain.

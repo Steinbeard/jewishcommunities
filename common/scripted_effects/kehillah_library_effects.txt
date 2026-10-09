@@ -172,7 +172,7 @@ kehillah_seed_one_random_torah_work_effect = {
 # by the CALLER (the journey's own per-option trigger; the scheme's own
 # pick-next-work effect, which is what decides which work becomes
 # "current" in the first place) -- this effect only ever touches the
-# STUDYING character's own kehillah_studied_works, never a library.
+# STUDYING character's own encountered and mastered work lists, never a library.
 # random_list and a custom_tooltip-per-branch reveal are also absent here
 # for the same reason: whichever caller already knows the specific work
 # (the journey's own clicked option; the scheme's own numeric-ID
@@ -182,11 +182,16 @@ kehillah_seed_one_random_torah_work_effect = {
 
 kehillah_study_specific_work_effect = {
 	if = {
-		limit = { is_target_in_variable_list = { name = kehillah_studied_works target = $WORK$ } }
+		limit = { is_target_in_variable_list = { name = kehillah_mastered_works target = $WORK$ } }
 		set_variable = { name = kehillah_learn_torah_repeat value = 1 }
 	}
 	else = {
 		set_variable = { name = kehillah_learn_torah_repeat value = 0 }
+	}
+	# This older list means encountered. Preserve it for travel discovery and
+	# existing saves; a failed first reading does not confer mastery.
+	if = {
+		limit = { NOT = { is_target_in_variable_list = { name = kehillah_studied_works target = $WORK$ } } }
 		add_to_variable_list = { name = kehillah_studied_works target = $WORK$ }
 	}
 
@@ -218,6 +223,7 @@ kehillah_study_specific_work_effect = {
 				}
 			}
 			set_variable = { name = kehillah_study_torah_last_result value = 1 }
+			add_to_variable_list = { name = kehillah_mastered_works target = $WORK$ }
 			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_pass }
 			custom_tooltip = kehillah_study_torah.pass.tt
 		}
@@ -309,9 +315,11 @@ kehillah_study_specific_work_effect = {
 # should be very clear that the rewards are now much less"). The pick
 # below draws from EVERY work the library owns, not just unstudied ones --
 # no separate "out of books" gate is needed because kehillah_study_
-# specific_work_effect already pays the smaller kehillah_learn_torah_xp_
-# repeat_pass/_fail tiers (not zero) the moment a work is already in
-# kehillah_studied_works, exactly the "much smaller boost, not zero"
+# specific_work_effect pays the smaller kehillah_learn_torah_xp_
+# repeat_pass/_fail tiers (not zero) once a work is in
+# kehillah_mastered_works. An encountered but failed work can still
+# earn its full first-mastery reward on a later successful reading. This
+# preserves the "much smaller boost, not zero"
 # tiering that effect was built with on 2026-09-15. Nothing new to build
 # for the reward side; the only real requirement is surfacing that
 # downgrade clearly, which the reused per-work custom_tooltip below does

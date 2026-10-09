@@ -2,10 +2,43 @@
 
 **Status: DESIGN DIRECTION WITH PARTIAL IMPLEMENTATION, 2026-09-29.** Daniel's proposed loop is recorded here for
 incremental implementation. The small Bet Din participant reward slice is built and live
-probed; one historical case is scripted below. Ordination, book-gated rulings,
-responsive correspondence, and authored world works remain planned. [ROADMAP](../../ROADMAP.md) is authoritative
+probed; one historical case is scripted below. Its book-gated rulings and named
+responsa correspondence are now implemented as the first slice, pending a full
+live exchange test. Ordination and authored world works remain planned. [ROADMAP](../../ROADMAP.md) is authoritative
 for shipped status. This refines V21's ordination route and V23's responsa model; it
 does not retroactively describe their proposed mechanics as existing code.
+
+## 2026-09-29 source and correspondence addendum
+
+**Status: SCRIPTED AND CK3-TIGER CLEAN; LIVE EXCHANGE TEST PENDING.** This
+supersedes the case-writing addendum's statement below that book mastery and
+responsa hooks have not been added. A successful first reading now records a
+work in `kehillah_mastered_works`; the older `kehillah_studied_works` remains
+an encounter record for existing saves. A failed first reading can be tried
+again, including during a yeshiva journey. The first mastery keeps its larger
+Rabbi XP reward.
+
+The ransom case offers separate Mishnah Gittin and Bavli Gittin arguments to
+the presiding and second judges only when that acting judge personally
+mastered the relevant work. A third judge's mastery improves the tally. When
+none of the three judges has either source, the host can address up to two
+named outside Rabbis found among registered communities. The chosen Rabbi
+receives a delayed question, may answer from a mastered source or decline,
+and the answer returns after another delay. The host chooses whether to
+adopt the argument before the other judges continue. An adopted answer
+records its named author and direction on the asking title. A later ransom
+case in that community can cite the archived answer at a smaller tally bonus
+than firsthand mastery, even if its current bench lacks the book. The earlier
+generic annual responsa pulse is retired; its old events remain for save
+compatibility.
+
+This is one case and one latest-precedent record, not the full V23 network.
+Correspondents are currently appointed Chief Rabbis or ordained community
+leaders; ordinary courtiers and adventurer Rabbis are not searched yet.
+Other Bet Din cases do not yet have source-specific options. The delayed
+title-routing primitive passed its [scope spike](../testing/2026-09-29-responsa-letter-scope-spike.md);
+the complete case still needs live validation, including player receipt of
+the question, succession during transit, and abnormal activity endings.
 
 ## 2026-09-29 case-writing addendum
 
