@@ -31,31 +31,47 @@ make small design choices and note them; no long specs. CK3 runs on a **virtual 
 the shim guide. Current state is in the
 [clerical succession log](docs/testing/2026-10-09-clerical-succession-live-test-log.md).
 
-- **H1. BUILD — Clerical continuation for lay (Parnas) leaders, WITHOUT a new trait.** Daniel,
-  2026-10-09: "try to make something without a trait work. Base game doesn't have a trait I think
-  for Christian cleric players? Not all clerical rulers are monks."
-  - Known: the Rabbi trait's `clergy = yes` works for rabbinic leaders. Script
-    `join_organization` makes a lay leader a member but gives no player heir, so he still gets
-    Game Over.
-  - First research how vanilla 1.20 makes **non-monk Christian clerical rulers** (bishops under
-    `ecclesiastical_government`, theocrats) clergy or produces their non-dynastic player heir:
-    `is_clergy` sources, government flags such as `government_is_theocracy` or
-    `government_uses_church_authority`, `_governments.info`, `common/on_action/death.txt`,
-    `00_government_triggers.txt`.
-  - Then try the smallest trait-free mechanism and live-test a Parnas leader's death screen.
-    Probe `kehillah_household_debug.7` strips the Rabbi trait and re-runs the leader setup.
-  - If nothing trait-free works, write the options in BLOCKERS.md for Daniel. **Do not add a
-    trait** (Daniel wants fewer traits).
-  - Also find out why the `join_organization` in `kehillah_update_leader_flavor_effect` wasn't in
-    effect after an appointment succession.
-  - Also isolate the one rabbinic-path Game Over: rerun with and without `kehillah_debug.104`, and
-    probe Isaac's `organization` and `player_heir` just before the kill.
+- **H1. SCRIPTED AND CK3-TIGER CLEAN 2026-10-09 (Shabbat heartbeat 1); LIVE RESULT PENDING.**
+  Clerical continuation for lay (Parnas) leaders without a new trait. **The answer was a
+  government field, not a trait.** `_governments.info` documents `mechanic_type = theocracy`
+  as, verbatim, "Should rulers be considered clergy" — that is how vanilla's non-monk clerical
+  rulers (bishops under `ecclesiastical_government`, `theocracy_government` holders) are
+  clergy at all; neither carries the `devoted` monk trait. `kehillah_government` now sets
+  it. Deliberately NOT the `government_is_theocracy` flag: church authority,
+  bishop-theocratic succession and theocratic elective all gate on the flag or on a doctrine
+  rabbinism lacks.
+  - **Why the scripted `join_organization` never worked** (the other half of H1's question):
+    vanilla keeps a faith organization's membership equal to its clergy — "A faith's
+    organization members are exactly its clergy, so this never touches the laity"
+    (`common/on_action/game_start.txt`) — so a script join onto a non-clergy character is
+    reverted. That is also why the join read as absent on all three lay appointees right after an
+    appointment succession. The call is left in `kehillah_update_leader_flavor_effect` as an
+    inert fallback.
+  - **One collision, guarded:** vanilla's `clerical_appointment_law` starts on any ruler with
+    the theocracy mechanic at county tier or above, and `_laws.info` says starting laws are
+    picked in *definition order* (index is display order only), so vanilla's file would win and
+    the Kehillah would silently lose `kehillah_appointment_succession_law`.
+    `common/scripted_triggers/kehillah_clerical_appointment_law_override.txt` forks vanilla's
+    trigger with one exclusion for this government.
+  - **Probes:** `kehillah_household_debug.8` reports clergy / organization / player heir /
+    title heir / which succession law is actually in force, read-only; `.9` strips the Rabbi
+    trait first so the pure lay path can be checked on its own.
+  - **Still open:** the live death screen for a lay leader, and the one unexplained rabbinic-path
+    Game Over from 2026-10-09 (rerun with and without `kehillah_debug.104`).
+
 - **H2. BUILD — Ba'alei batim, untested paths.** Observe a natural yearly arrival or departure.
   Exercise the arrival fee and refuse options, the departure pay and persuade options, and a
   player receiving an AI community's departing family (`kehillah_household.0003`).
-- **H3. BUILD — `kehillah_restore_quarter_effect` errors** ("Failed to fetch variable for
-  kq_countinghouse/kq_workshops/kq_market_stalls") on `kehillah_on_title_gain`. Find out whether
-  they predate today and fix them.
+- **H3. DONE 2026-10-09 (Shabbat heartbeat 1).** The `kehillah_restore_quarter_effect` /
+  `kehillah_restore_track_2/3_effect` "Failed to fetch variable for 'kq_countinghouse' /
+  'kq_workshops' / 'kq_market_stalls'" errors on `kehillah_on_title_gain`. They **predate
+  today**: only the first `if` in each restore helper checked `exists = var:$VAR$`, so
+  every tier comparison after it read `var:$VAR$ >= N` on a track the community never built —
+  and that is from the file's first commit (7a64e2a, 2026-09-07). Pure log noise, never a
+  behaviour bug: "no variable" and "variable below this tier" both correctly restore nothing.
+  Every comparison is now paired with its own existence check, and ck3-tiger's warning count
+  drops 127 → 111 on that change alone, so it was seeing all sixteen of them too.
+
 - **H4.** Then the rabbi-loop direction below (V21 ordination through mentorship and local
   semicha).
 
