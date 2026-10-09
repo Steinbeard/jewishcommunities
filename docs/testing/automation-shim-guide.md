@@ -33,6 +33,20 @@ first before concluding it's structurally impossible — it isn't.
 
 ---
 
+## Boot stalls until the window gets input — added 2026-10-09
+
+A direct `ck3.exe -debug_mode -develop` launch can stall during database setup and show "Not
+Responding" indefinitely. On 2026-10-09 `debug.log` went silent for 46 minutes after
+`CJominiInGameMusicDatabase`. It resumed within seconds of Daniel clicking the window. Earlier
+"slow boots" fit the same pattern: an 11-minute "Not Responding" boot the same day, and a
+stall at "Initializing Game..." on 2026-10-02. These are stalls, not slow loads, and the mod
+is not the cause.
+
+**While waiting for a boot, click inside the CK3 window (or bring it to the foreground) every
+minute or so.** Do not just poll the log. If `debug.log` hasn't grown for two minutes during a
+boot, assume this stall and click before suspecting the mod. Unconfirmed alternative: the
+launcher's Debug + Develop button passes `-gdpr-compliant`, which the direct launch doesn't.
+
 ## The two shims
 
 Both live in `C:\Users\Daniel\Documents\AGI-CK3\src\ck3env\winkeys.py`, a Win32 `SendInput` shim

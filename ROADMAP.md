@@ -22,6 +22,43 @@ this note referred to) are long since resolved and removed; numbering otherwise 
 than renumbered, since later items and other docs cross-reference these numbers by hand (e.g.
 `kehillah_breakdown_custom_loc.txt`'s own header cites "ROADMAP item 4").
 
+### Shabbat autonomous queue — 2026-10-09 evening to 2026-10-11 morning (works ABOVE everything below)
+
+Daniel is offline for Shabbat. The `JewishCommunities-ShabbatHeartbeat` task runs every 5 hours on
+branch `autonomous/shabbat-2026-10`. Same rules as Sukkot: BUILD means implement and live-test;
+make small design choices and note them; no long specs. CK3 runs on a **virtual display**
+(VirtualDrivers VDD, duplicating the 2560×1440 screen), so the physical monitor may be off; see
+the shim guide. Current state is in the
+[clerical succession log](docs/testing/2026-10-09-clerical-succession-live-test-log.md).
+
+- **H1. BUILD — Clerical continuation for lay (Parnas) leaders, WITHOUT a new trait.** Daniel,
+  2026-10-09: "try to make something without a trait work. Base game doesn't have a trait I think
+  for Christian cleric players? Not all clerical rulers are monks."
+  - Known: the Rabbi trait's `clergy = yes` works for rabbinic leaders. Script
+    `join_organization` makes a lay leader a member but gives no player heir, so he still gets
+    Game Over.
+  - First research how vanilla 1.20 makes **non-monk Christian clerical rulers** (bishops under
+    `ecclesiastical_government`, theocrats) clergy or produces their non-dynastic player heir:
+    `is_clergy` sources, government flags such as `government_is_theocracy` or
+    `government_uses_church_authority`, `_governments.info`, `common/on_action/death.txt`,
+    `00_government_triggers.txt`.
+  - Then try the smallest trait-free mechanism and live-test a Parnas leader's death screen.
+    Probe `kehillah_household_debug.7` strips the Rabbi trait and re-runs the leader setup.
+  - If nothing trait-free works, write the options in BLOCKERS.md for Daniel. **Do not add a
+    trait** (Daniel wants fewer traits).
+  - Also find out why the `join_organization` in `kehillah_update_leader_flavor_effect` wasn't in
+    effect after an appointment succession.
+  - Also isolate the one rabbinic-path Game Over: rerun with and without `kehillah_debug.104`, and
+    probe Isaac's `organization` and `player_heir` just before the kill.
+- **H2. BUILD — Ba'alei batim, untested paths.** Observe a natural yearly arrival or departure.
+  Exercise the arrival fee and refuse options, the departure pay and persuade options, and a
+  player receiving an AI community's departing family (`kehillah_household.0003`).
+- **H3. BUILD — `kehillah_restore_quarter_effect` errors** ("Failed to fetch variable for
+  kq_countinghouse/kq_workshops/kq_market_stalls") on `kehillah_on_title_gain`. Find out whether
+  they predate today and fix them.
+- **H4.** Then the rabbi-loop direction below (V21 ordination through mentorship and local
+  semicha).
+
 ### Kehillah council (V26) — added 2026-10-09
 
 Built 2026-10-01/02 on `kehillah-council` but never entered here; see

@@ -5,6 +5,10 @@
 #   event kehillah_household_debug.3  -- force a departure attempt
 #   event kehillah_household_debug.4  -- run the full yearly pass
 #   event kehillah_household_debug.5  -- report every community's count
+#   event kehillah_household_debug.6  -- why the succession standing term
+#                                        does or doesn't apply, per councillor
+#   event kehillah_household_debug.7  -- make root a lay leader and check
+#                                        faith-organization membership
 namespace = kehillah_household_debug
 
 kehillah_household_debug.1 = {
@@ -98,6 +102,82 @@ kehillah_household_debug.4 = {
 		debug_log = "kehillah_household_debug.4: yearly pass -- START"
 		kehillah_household_yearly_effect = yes
 		debug_log = "kehillah_household_debug.4: yearly pass -- END"
+	}
+}
+
+kehillah_household_debug.6 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.6: succession standing term -- START"
+		primary_title = { save_scope_as = kh_dbg_title }
+		every_councillor = {
+			save_scope_as = kh_dbg_councillor
+			debug_log = "kehillah_household_debug.6: COUNCILLOR (scopes dump follows)"
+			debug_log_scopes = yes
+			house ?= {
+				save_scope_as = kh_dbg_house
+				debug_log = "kehillah_household_debug.6: HOUSE resolves via house ?="
+				if = {
+					limit = { has_variable = kehillah_household_of }
+					if = {
+						limit = { var:kehillah_household_of = scope:kh_dbg_title }
+						if = {
+							limit = { has_variable = kehillah_household_standing }
+							debug_log = "kehillah_household_debug.6: PASS registered here with standing (term should apply)"
+						}
+						else = { debug_log = "kehillah_household_debug.6: registered here but NO standing yet" }
+					}
+					else = { debug_log = "kehillah_household_debug.6: registered to ANOTHER community" }
+				}
+				else = { debug_log = "kehillah_household_debug.6: house is NOT a registered household" }
+			}
+			if = {
+				limit = { exists = house }
+				debug_log = "kehillah_household_debug.6: exists = house is TRUE"
+			}
+			else = { debug_log = "kehillah_household_debug.6: exists = house is FALSE" }
+		}
+		debug_log = "kehillah_household_debug.6: succession standing term -- END"
+	}
+}
+
+# Lay-leader clerical succession check: strips the Rabbi trait from root,
+# re-runs the leader setup (which should join the faith's organization by
+# script), and reports membership. Kill root afterwards to see the death
+# screen a Parnas gets.
+kehillah_household_debug.7 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.7: lay leader organization -- START"
+		if = {
+			limit = { exists = organization }
+			debug_log = "kehillah_household_debug.7: BEFORE member of an organization"
+		}
+		else = { debug_log = "kehillah_household_debug.7: BEFORE not a member" }
+		if = {
+			limit = { exists = faith.organization }
+			debug_log = "kehillah_household_debug.7: the faith HAS an organization"
+		}
+		else = { debug_log = "kehillah_household_debug.7: the faith has NO organization" }
+		if = {
+			limit = { has_trait = kehillah_rabbi_trait }
+			remove_trait = kehillah_rabbi_trait
+			debug_log = "kehillah_household_debug.7: removed the Rabbi trait"
+		}
+		if = {
+			limit = { exists = organization }
+			debug_log = "kehillah_household_debug.7: AFTER REMOVAL still a member"
+		}
+		else = { debug_log = "kehillah_household_debug.7: AFTER REMOVAL no longer a member" }
+		kehillah_update_leader_flavor_effect = yes
+		if = {
+			limit = { exists = organization }
+			debug_log = "kehillah_household_debug.7: PASS lay leader is a member after the leader setup"
+		}
+		else = { debug_log = "kehillah_household_debug.7: FAIL lay leader is not a member after the leader setup" }
+		debug_log = "kehillah_household_debug.7: lay leader organization -- END"
 	}
 }
 
