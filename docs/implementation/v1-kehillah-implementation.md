@@ -1,4 +1,4 @@
-# V1 Implementation: The Kehillah Community Baseline
+﻿# V1 Implementation: The Kehillah Community Baseline
 
 Status: **core loop (government, succession, buildings, Gold/treasury)
 verified working live, end to end, as of 2026-09-06 — but sections 9
@@ -853,3 +853,130 @@ diff review:** `common/domiciles/types/kehillah_domicile_types.txt`,
 `common/flavorization/kehillah_title_holders.txt` and
 `common/traits/kehillah_traits.txt` (the latter now shared with the
 concurrent session's kohen/levite additions).
+
+
+## 13. Clerical continuation: the player heir for a non-dynastic appointee, 2026-10-09
+
+**Read this alongside sections 6 and 8 before touching succession or the
+government body again.** It records a departure from the spec that the
+spec never anticipated, and a vanilla mechanism this repo had not used.
+
+### The problem the appointment fix created
+
+Making appointment succession actually run (`min_appointment_tier =
+county`, 2026-10-09 -- see
+`docs/testing/2026-10-09-clerical-succession-live-test-log.md`) worked:
+the title passes by `kehillah_leadership` to the top-scoring candidate.
+But that candidate is almost always from another dynasty, and CK3 ends
+the player's game when the dying character has no player heir. The merit
+succession this mod is built around therefore produced **Game Over on
+every leader's death** -- the mechanic working as designed was the thing
+breaking the playthrough.
+
+### What actually produces a non-dynastic player heir
+
+Vanilla states the rule in
+`ECCLESIASTICAL_RULER_SUCCESSION_DESCRIPTION`
+(`localization/english/gui/succession_event_window_l_english.yml:270`):
+"When dying as a member of an Organization, your Heir will be the next
+person to receive your Primary Title. This is usually not a member of
+your Dynasty."
+
+Two things that look like the answer are not:
+
+1. **A trait with `clergy = yes`** does work -- clergy "automatically
+   join faith organization" (`common/traits/_traits.info:108`), which is
+   why `kehillah_rabbi_trait` got the flag and why the rabbinic path
+   passed first. But it only ever covers rabbis, and Daniel's
+   instruction was explicitly to solve the lay (Parnas) case *without*
+   adding a trait.
+2. **A scripted `join_organization`** does not work, and this is the
+   trap worth remembering. It makes the character a member for that
+   instant -- probe `kehillah_household_debug.7` read "PASS lay leader is
+   a member" -- and still produced no player heir, and after an
+   appointment succession all three lay appointees read as non-members
+   again. Vanilla says why, in a comment in
+   `common/on_action/game_start.txt`: "A faith's organization members are
+   exactly its clergy, so this never touches the laity." The engine keeps
+   membership synced to clergy status, so a script join onto a non-clergy
+   character is reverted. No vanilla file uses `join_organization` at
+   all.
+
+### The mechanism, and where it is written down
+
+`common/governments/_governments.info` documents `mechanic_type` and
+lists, for the value `theocracy`, exactly one line: **"Should rulers be
+considered clergy"**. That is how vanilla's non-monk clerical rulers are
+clergy -- bishops under `ecclesiastical_government` and holders of
+`theocracy_government`, neither of whom carries the `devoted` monk
+trait. Both governments set it.
+
+`kehillah_government` now sets `mechanic_type = theocracy`. One line, no
+new trait, no vanilla trait borrowed either.
+
+**The distinction that makes this safe is mechanic vs. flag.** Vanilla
+gates its theocratic *content* on flags, not on the mechanic:
+`church_authority` needs `government_uses_church_authority`
+(`common/law_groups/00_realm_law_groups.txt`),
+`bishop_theocratic_succession_law` needs `government_is_theocracy`
+(`can_have_bishop_theocratic_succession_law_trigger`), and
+`theocratic_elective_succession_law` needs the `has_clerical_electors`
+doctrine, which rabbinism does not have. This government has none of
+those, and must not get them. Only eight places in all of vanilla read
+`government_has_mechanic = theocracy`; seven are inert here, and one is
+actively wanted -- `common/important_actions/00_inheritance_actions.txt`
+suppresses the "your primary heir is of another dynasty" nag for exactly
+this mechanic.
+
+### The one collision, and the guard
+
+`clerical_appointment_law`'s `can_have` / `can_keep` / `can_pass` /
+`should_start_with` are all just
+`should_use_clerical_appointment_law_trigger`, which is
+`government_has_mechanic = theocracy` plus a county-tier floor. Setting
+the mechanic therefore makes vanilla's law valid for Kehillah leaders,
+and `common/laws/_laws.info` says a group's starting law is found by
+checking its laws **"in definition order"** -- `index` is display order
+within the group and nothing more. Vanilla's `00_succession_laws.txt`
+loads before this mod's `kehillah_succession_laws.txt`, so without a
+guard vanilla's law is checked first and the Kehillah silently loses
+`kehillah_appointment_succession_law` -- the appointment type, the
+male-only lock and the whole merit score.
+
+The guard is
+`common/scripted_triggers/kehillah_clerical_appointment_law_override.txt`:
+vanilla's trigger body verbatim plus `NOT = { government_has_flag =
+government_is_kehillah }`. Same additive-fork pattern as
+`kehillah_is_playable_character_override.txt`. Regenerate from vanilla on
+every game patch.
+
+Belt and braces, independently: every community in
+`history/titles/kehillah_titles.txt` sets `succession_laws = {
+kehillah_appointment_succession_law }` explicitly (15 of 15), and
+`kehillah_found_community_effect` calls `add_realm_law` for it. The live
+run below cannot distinguish "the override prevented the swap" from "it
+would not have happened anyway"; the override stays as insurance for any
+future path that sets neither.
+
+### Verified live, 2026-10-09 evening
+
+`docs/testing/2026-10-09-lay-clerical-continuation-live-test-log.md`.
+With `kehillah_household_debug.9` stripping the Rabbi trait first, so no
+trait-sourced clergy is in the picture at all, the lay leader read
+`CLERGY YES`, `ORGANIZATION YES`, `PLAYER HEIR YES` and *non-dynastic*
+heir; `kill 29176` produced **"Continue as Rav Mishael"** and "Choose a
+New Destiny...", not Game Over; continuing worked and the successor held
+Kehillah of Worms with no errors.
+
+### Two things to know about the probes
+
+- `kehillah_household_debug.8` is read-only and safe to repeat; `.9`
+  removes the Rabbi trait and does not put it back.
+- The succession-law check must read the **realm** law. A Kehillah's
+  appointment law arrives as a realm law on the holder, so
+  `has_title_law` is false for it -- as it is for most of vanilla's
+  appointment laws, which is why vanilla pairs `holder ?= {
+  has_realm_law = X }` with `has_title_law = X` in an OR
+  (`common/character_interactions/pam_interactions.txt:443-444`). The
+  first version of the probe reported this as a failure; it is the
+  expected, healthy state.

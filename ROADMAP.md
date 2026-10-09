@@ -31,7 +31,8 @@ make small design choices and note them; no long specs. CK3 runs on a **virtual 
 the shim guide. Current state is in the
 [clerical succession log](docs/testing/2026-10-09-clerical-succession-live-test-log.md).
 
-- **H1. SCRIPTED AND CK3-TIGER CLEAN 2026-10-09 (Shabbat heartbeat 1); LIVE RESULT PENDING.**
+- **H1. DONE — VERIFIED LIVE 2026-10-09 (Shabbat heartbeat 1)**
+  ([log](docs/testing/2026-10-09-lay-clerical-continuation-live-test-log.md)).
   Clerical continuation for lay (Parnas) leaders without a new trait. **The answer was a
   government field, not a trait.** `_governments.info` documents `mechanic_type = theocracy`
   as, verbatim, "Should rulers be considered clergy" — that is how vanilla's non-monk clerical
@@ -56,12 +57,28 @@ the shim guide. Current state is in the
   - **Probes:** `kehillah_household_debug.8` reports clergy / organization / player heir /
     title heir / which succession law is actually in force, read-only; `.9` strips the Rabbi
     trait first so the pure lay path can be checked on its own.
-  - **Still open:** the live death screen for a lay leader, and the one unexplained rabbinic-path
-    Game Over from 2026-10-09 (rerun with and without `kehillah_debug.104`).
+  - **Live result:** with the Rabbi trait stripped, a pure lay leader reads `CLERGY YES`,
+    `ORGANIZATION YES`, `PLAYER HEIR YES` and *non-dynastic* heir, and `kill 29176` produced
+    **"Continue as Rav Mishael"** plus "Choose a New Destiny..." — not Game Over. Continuing
+    worked: "Rav Mishael, 42 — This is you", holding Kehillah of Worms. The realm law was still
+    `kehillah_appointment_succession_law`, so vanilla's `clerical_appointment_law` did not take the
+    slot. No new `kehillah` errors.
+  - **Still open, no longer gating:** the one unexplained rabbinic-path Game Over from the morning
+    run. `kehillah_debug.104` only arms a trace flag, so it cannot have caused it, and clergy
+    status no longer depends on a trait at all. Worth one rerun.
 
-- **H2. BUILD — Ba'alei batim, untested paths.** Observe a natural yearly arrival or departure.
-  Exercise the arrival fee and refuse options, the departure pay and persuade options, and a
-  player receiving an AI community's departing family (`kehillah_household.0003`).
+- **H2. BUILD — Ba'alei batim, untested paths. NEXT UP; harness ready 2026-10-09.** Observe a
+  natural yearly arrival or departure. Exercise the arrival fee and refuse options
+  (`kehillah_household.0001` options b and c), the departure pay and persuade options
+  (`kehillah_household.0002` options b and c, gated on gold and Diplomacy 12), and a player
+  receiving an AI community's departing family (`kehillah_household.0003`).
+  - That last path now has a probe: **`event kehillah_household_debug.10`** finds a real AI
+    community with a household, lets the real lowest-standing pick happen, and runs the real
+    `kehillah_household_leave_effect` with root's community forced as the destination — so
+    `.0003` fires on the player. It asserts the register moved and left the donor. Written and
+    ck3-tiger clean, **not yet run live.** It moves real courtiers, so it is not read-only.
+  - The option paths still need actual clicks, and "natural" arrivals need a year or two of
+    unpaused time with the yearly pulse (not `.4`, which forces the pass).
 - **H3. DONE 2026-10-09 (Shabbat heartbeat 1).** The `kehillah_restore_quarter_effect` /
   `kehillah_restore_track_2/3_effect` "Failed to fetch variable for 'kq_countinghouse' /
   'kq_workshops' / 'kq_market_stalls'" errors on `kehillah_on_title_gain`. They **predate
