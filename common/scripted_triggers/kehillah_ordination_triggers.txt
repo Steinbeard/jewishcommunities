@@ -1,0 +1,74 @@
+﻿# =====================================================================
+# Ordination (semicha) eligibility -- V21 slice 1, added 2026-10-09
+# (Shabbat heartbeat 1, ROADMAP item H4).
+#
+# Source of truth: docs/spec/v21-rabbi-ordination-paths.md. Its section 6
+# makes slice 1 exactly this file's job: "Add a named reusable
+# rabbi-ordination candidate trigger that composes the rabbinic-authority,
+# adult/free/capable, Learning, and current gender checks. Do not paste
+# the conditions into Learn Torah, the scheme, office, and event
+# separately."
+#
+# So: every later slice (the widened Learn Torah gate, Seek Semicha, the
+# education apprenticeship, the Chief Rabbi/Bet Din reconciliation) calls
+# these and nothing re-derives them. Two deliberate reuses rather than
+# new rules:
+#
+#   - is_rabbinic_authority_jewish_trigger (common/scripted_triggers/
+#     jewish_holiday_scripted_triggers.txt) is the faith gate, NOT the
+#     broader is_jewish_character_trigger. Section 2: Karaism,
+#     Samaritanism, Haymanot and Malabarism must not receive a trait
+#     called Rabbi by accident, and adding a future rabbinic faith means
+#     extending that one shared trigger, not editing a faith list here.
+#
+#   - kehillah_leadership_gender_eligible_trigger (common/scripted_
+#     triggers/kehillah_scripted_triggers.txt) is the gender gate. It
+#     already governs the Rabbi trait, the Chief Rabbi office and
+#     semicha, and it already carries the egalitarian-reform hook that
+#     opens the rule later. Section 2 is explicit that V21 reuses it
+#     rather than inventing an incompatible fourth gender rule.
+#
+# NOTHING CALLS THESE YET, on purpose. Slice 1 is inert by design: this
+# commit changes no behaviour at all, so the gate can be reviewed on its
+# own before the slices that widen the Learn Torah decision and add Seek
+# Semicha start depending on it.
+# =====================================================================
+
+# A character who may ENTER the ordination path: study Torah as an
+# apprentice, accumulate the curriculum, and eventually seek semicha.
+# Says nothing about whether they have met the curriculum yet.
+kehillah_rabbi_ordination_candidate_trigger = {
+	is_adult = yes
+	is_imprisoned = no
+	is_incapable = no
+	is_rabbinic_authority_jewish_trigger = yes
+	kehillah_leadership_gender_eligible_trigger = yes
+	learning >= kehillah_ordination_learning_floor_value
+}
+
+# The same, at the lower Learning band of section 3.3 -- enough for a
+# rabbinic education to count as a FOUNDATION worth one study field, but
+# not enough to ordain on its own.
+kehillah_rabbi_ordination_foundation_candidate_trigger = {
+	is_adult = yes
+	is_imprisoned = no
+	is_incapable = no
+	is_rabbinic_authority_jewish_trigger = yes
+	kehillah_leadership_gender_eligible_trigger = yes
+	learning >= kehillah_ordination_foundation_learning_floor_value
+}
+
+# Who may study at a library: an ordained rabbi, OR a candidate.
+#
+# The two halves are deliberately asymmetric. An existing rabbi is
+# admitted on the trait alone, with no faith or gender re-check, because
+# the trait is already held -- historical trait holders, Chief Rabbi
+# appointees and Bet Din grantees must not lose access to study because
+# a gate written later would not have let them in. Section 2: V21 "does
+# not retcon an existing character's trait".
+kehillah_rabbi_study_eligible_trigger = {
+	OR = {
+		has_trait = kehillah_rabbi_trait
+		kehillah_rabbi_ordination_candidate_trigger = yes
+	}
+}
