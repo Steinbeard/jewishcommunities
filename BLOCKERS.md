@@ -1050,3 +1050,81 @@ cdd87c9 S4b, S4c, S4d and S5 all verified live; ROADMAP and test log updated
 1866431 Every book came out masterwork, and compiling one cost 250,000 error lines
 ```
 Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-28_060002.log
+
+## Shabbat heartbeat 2026-10-09 ~19:30 -- H1 solved without a trait and verified live; H3 closed; H2 in flight
+
+**Nothing here needs a decision from you.** H1's constraint ("no new trait") turned out to be
+satisfiable, so there is no options list to choose from.
+
+### H1 -- DONE, VERIFIED LIVE
+
+A lay (Parnas) Kehillah leader's death now offers **"Continue as Rav Mishael"** instead of Game
+Over. Log: `docs/testing/2026-10-09-lay-clerical-continuation-live-test-log.md`. Full mechanism
+write-up: implementation doc **section 13**.
+
+Your question was "base game doesn't have a trait for Christian cleric players? Not all clerical
+rulers are monks." The answer: vanilla does not do it with a trait at all for rulers. It is a
+government field. `common/governments/_governments.info` documents `mechanic_type` and, for the
+value `theocracy`, says exactly one thing -- **"Should rulers be considered clergy"**. Both
+`theocracy_government` and `ecclesiastical_government` set it; their bishops carry no monk trait.
+`kehillah_government` now sets it too. One line, no new trait, and no vanilla trait borrowed
+either.
+
+(Vanilla *does* also ship a hidden non-monk `cleric` trait, localized for Judaism as "Hazzan" --
+so a trait-reuse answer existed as a fallback. It was not needed, and "Hazzan" would have been
+wrong for a lay warden anyway.)
+
+The other half of H1 -- why the scripted `join_organization` was not in effect after an appointment
+succession -- is also answered, and it was never going to work. Vanilla keeps a faith
+organization's membership equal to its clergy: "A faith's organization members are exactly its
+clergy, so this never touches the laity" (`common/on_action/game_start.txt`). A script join onto a
+non-clergy character gets reverted. No vanilla file uses `join_organization` anywhere. The call is
+left in place as an inert fallback with a comment saying so.
+
+**One thing I guarded that you should know about, because it touches succession.** Setting the
+theocracy mechanic also makes vanilla's `clerical_appointment_law` valid for Kehillah leaders, and
+`common/laws/_laws.info` says a group's starting law is chosen by checking laws *in definition
+order* (`index` is only display order). Vanilla's file loads first, so it would have taken the
+succession slot and the Kehillah would have silently lost `kehillah_appointment_succession_law` --
+the appointment type, the male-only lock and the merit score. New additive fork:
+`common/scripted_triggers/kehillah_clerical_appointment_law_override.txt`, vanilla's trigger
+verbatim plus one exclusion for this government. Same pattern as the existing
+`kehillah_is_playable_character_override.txt`. **Regenerate it from vanilla on every game patch.**
+The live run confirmed the realm law is still ours.
+
+### H3 -- DONE
+
+The "Failed to fetch variable for 'kq_countinghouse' / 'kq_workshops' / 'kq_market_stalls'" errors
+on every succession **predate today** -- they are from the first commit of
+`kehillah_scripted_effects.txt` (7a64e2a, 2026-09-07). Only the first `if` in each restore helper
+checked `exists = var:$VAR$`; every tier comparison after it read the variable unguarded, so a
+track the community never built logged a fetch failure. Pure noise, never a behaviour bug. Fixed;
+ck3-tiger's warning count drops 127 -> 111 on that change alone.
+
+### H2 -- in flight as this was written
+
+A second subagent is live-testing the ba'alei batim paths the 2026-10-09 log lists as untested: the
+arrival fee and refuse options, the departure pay and persuade options, a natural (not forced)
+yearly move, and the player-receives-an-AI-family path. That last one had no way to be reached in
+normal play, so it now has a probe: `event kehillah_household_debug.10` forces an AI community's
+lowest-standing family to move to the player's community through the real effects. It is **not**
+read-only (it moves real courtiers), and its header says so.
+
+### Two corrections to a tester's report, for the record
+
+The H1 tester flagged two things that reading the logs directly disproved, which is worth noting
+because both would have looked alarming in a hand-off:
+
+1. A "LAW FAIL" line was my probe asserting the wrong law level. A Kehillah's appointment law is a
+   **realm** law on the holder, so `has_title_law` is false for it -- as it is for most of
+   vanilla's appointment laws, which is why vanilla pairs `has_realm_law` and `has_title_law` in an
+   OR. The probe now treats the realm law as the verdict.
+2. "144 error lines in one second" was the engine's ordinary script-validation dump, which repeats
+   once per validation pass. `error.log` is 469 lines for the entire session.
+
+### Next heartbeat should pick up
+
+H2's remaining gaps after the run in flight reports, then **H4** (the rabbi-loop direction, V21
+ordination through mentorship and local semicha). One optional loose end: rerun the morning's
+unexplained rabbinic-path Game Over. It is no longer gating -- `kehillah_debug.104` only arms a
+trace flag so it cannot have caused it, and clergy status no longer depends on a trait.
