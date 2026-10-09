@@ -14,6 +14,9 @@
 #                                        player heir, title heir
 #   event kehillah_household_debug.9  -- strip the Rabbi trait (pure lay
 #                                        leader), then run .8's report
+#   event kehillah_household_debug.10 -- have an AI community's lowest
+#                                        household move to YOUR community,
+#                                        firing the .0003 arrival event
 namespace = kehillah_household_debug
 
 kehillah_household_debug.1 = {
@@ -331,5 +334,92 @@ kehillah_household_debug.9 = {
 		else = { debug_log = "kehillah_household_debug.9: already lay, no Rabbi trait to remove" }
 		trigger_event = kehillah_household_debug.8
 		debug_log = "kehillah_household_debug.9: force a pure lay leader -- END"
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# .10 -- the player-RECEIVES-a-family path (ROADMAP H2).
+#
+# kehillah_household.0003 only fires when an AI community loses its
+# lowest-standing household TO the player's community, and the yearly
+# pass picks its destination at random out of every community with room.
+# Waiting for that to happen naturally is the reason this path has never
+# been exercised. This probe forces exactly it, through the real
+# effects -- kehillah_household_save_lowest_effect picks the same family
+# the yearly pass would, and kehillah_household_leave_effect does the
+# whole move -- with only the DESTINATION forced to root's community.
+#
+# Run it on the player's Kehillah leader. Needs at least one other
+# registered community with a household; probe .5 reports which have
+# any. It migrates real courtiers between real courts, so it is not
+# read-only: use it on a throwaway run, not one you want to keep.
+# ---------------------------------------------------------------------
+
+kehillah_household_debug.10 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.10: forced arrival from another community -- START"
+
+		primary_title = { save_scope_as = kh_dep_dest }
+
+		random_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				NOT = { this = root.primary_title }
+				exists = holder
+				holder = {
+					government_has_flag = government_is_kehillah
+					is_ai = yes
+				}
+				kehillah_household_count_value >= 1
+			}
+			holder = { save_scope_as = kh_dep_leader }
+			kehillah_household_save_lowest_effect = yes
+		}
+
+		if = {
+			limit = {
+				exists = scope:kh_dep_leader
+				exists = scope:kh_low_house
+			}
+			scope:kh_low_house = { save_scope_as = kh_dep_house }
+			debug_log = "kehillah_household_debug.10: DONOR FOUND an AI community and its lowest household (scopes dump follows)"
+			debug_log_scopes = yes
+
+			# The real move. This is what tells a player recipient, via
+			# kehillah_household.0003 -- so root should see the event.
+			kehillah_household_leave_effect = yes
+
+			if = {
+				limit = {
+					primary_title = {
+						any_in_list = {
+							variable = kehillah_households
+							this = scope:kh_dep_house
+						}
+					}
+				}
+				debug_log = "kehillah_household_debug.10: PASS the family is now registered at root's community"
+			}
+			else = { debug_log = "kehillah_household_debug.10: FAIL the family did not end up registered at root's community" }
+
+			if = {
+				limit = {
+					scope:kh_dep_leader.primary_title = {
+						any_in_list = {
+							variable = kehillah_households
+							this = scope:kh_dep_house
+						}
+					}
+				}
+				debug_log = "kehillah_household_debug.10: FAIL the family is still registered at the donor community too"
+			}
+			else = { debug_log = "kehillah_household_debug.10: PASS the family is no longer registered at the donor community" }
+		}
+		else = { debug_log = "kehillah_household_debug.10: BLOCKED no other AI community with a household (run .5 to see counts)" }
+
+		debug_log = "kehillah_household_debug.10: forced arrival from another community -- END"
 	}
 }
