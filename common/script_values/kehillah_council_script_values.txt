@@ -1,0 +1,105 @@
+﻿# =====================================================================
+# Kehillah council tunables. Design: docs/spec/v26-kehillah-council-and-
+# baalei-batim.md. Tasks: common/council_tasks/kehillah_council_tasks.txt.
+#
+# No direct pillar bonuses (Daniel, 2026-10-01): these values drive
+# concrete effects -- income, construction, petitions, the bet din
+# cooldown, the watch -- and the pillars respond through their existing
+# inputs. (The first build's kehillah_bd_council_*_value baseline terms
+# were removed 2026-10-02.)
+# =====================================================================
+
+# --- Skill scales, 0..1: the councillor's seat skill, capped at 20.
+# Scope: the councillor (council_owner_modifier scale scope).
+kehillah_council_skill_cap = 20
+
+kehillah_council_stewardship_scale = {
+	value = stewardship
+	max = kehillah_council_skill_cap
+	divide = kehillah_council_skill_cap
+}
+kehillah_council_diplomacy_scale = {
+	value = diplomacy
+	max = kehillah_council_skill_cap
+	divide = kehillah_council_skill_cap
+}
+kehillah_council_learning_scale = {
+	value = learning
+	max = kehillah_council_skill_cap
+	divide = kehillah_council_skill_cap
+}
+
+# --- Shtadlan: Petition the Host. Monthly chance (percent) that the host
+# raises the Jewish settlement policy one rung, given the policy is not
+# Encouraged and its review is off cooldown (checked in the task).
+# Scope: the Shtadlan; scope:kehillah_petition_host and
+# scope:councillor_liege set. Up to 2%/month at Diplomacy 20 (~22%/year),
+# x1.5 when the host's opinion of the leader is 50+.
+kehillah_shtadlan_petition_max_monthly_chance = 2
+
+kehillah_shtadlan_petition_monthly_chance_value = {
+	value = kehillah_shtadlan_petition_max_monthly_chance
+	multiply = kehillah_council_diplomacy_scale
+	if = {
+		limit = {
+			scope:kehillah_petition_host ?= {
+				opinion = { target = scope:councillor_liege value >= 50 }
+			}
+		}
+		multiply = 1.5
+	}
+}
+
+# --- Dayyan: Prepare the Bet Din. Conference cooldown in months: the
+# base (kehillah_bet_din_conference_cooldown_years, 2) less up to 12
+# months at Learning 20 while a Dayyan performs the task. Scope: the
+# conference host (the Kehillah leader).
+kehillah_bet_din_prepare_max_months_saved = 12
+
+kehillah_bet_din_conference_cooldown_months = {
+	value = kehillah_bet_din_conference_cooldown_years
+	multiply = 12
+	cp:councillor_court_chaplain ?= {
+		if = {
+			limit = { is_performing_council_task = task_kehillah_prepare_bet_din }
+			subtract = {
+				value = kehillah_bet_din_prepare_max_months_saved
+				multiply = kehillah_council_learning_scale
+			}
+		}
+	}
+	round = yes
+	min = 6
+}
+
+# --- Rosh ha-Shmirah: Keep the Night Watch. Weight multiplier applied to
+# the yearly protection events (events/kehillah_protection_events.txt):
+# 1.0 with no watch, down to 0.5 at Martial 20. Scope: the Kehillah leader.
+kehillah_night_watch_event_weight_value = {
+	value = 1
+	cp:councillor_marshal ?= {
+		if = {
+			limit = { is_performing_council_task = task_kehillah_night_watch }
+			subtract = {
+				value = martial
+				max = kehillah_council_skill_cap
+				divide = kehillah_council_skill_cap
+				multiply = 0.5
+			}
+		}
+	}
+}
+
+# --- Tooltip display values. Scope: the councillor (the SCOPE of a council
+# task's effect_desc).
+kehillah_council_revenue_pct_value = { value = kehillah_council_stewardship_scale multiply = 25 round = yes }
+kehillah_council_construction_pct_value = { value = kehillah_council_stewardship_scale multiply = 25 round = yes }
+kehillah_council_bet_din_months_saved_value = { value = kehillah_council_learning_scale multiply = kehillah_bet_din_prepare_max_months_saved round = yes }
+kehillah_council_petition_chance_display_value = { value = kehillah_council_diplomacy_scale multiply = kehillah_shtadlan_petition_max_monthly_chance }
+kehillah_council_night_watch_pct_value = {
+	value = martial
+	max = kehillah_council_skill_cap
+	divide = kehillah_council_skill_cap
+	multiply = 50
+	round = yes
+}

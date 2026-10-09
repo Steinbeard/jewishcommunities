@@ -462,7 +462,9 @@ is_kehillah_leader_trigger = {
 # ---------------------------------------------------------------------
 
 kehillah_has_shtadlan_trigger = {
-	employs_court_position = shtadlan_kehillah_position
+	# v26 (2026-10-01): the Shtadlan is now the chancellor council seat
+	# (renamed for Kehillot), no longer a court position.
+	exists = cp:councillor_chancellor
 }
 
 
@@ -494,7 +496,14 @@ kehillah_shtadlan_prevails_trigger = {
 }
 
 kehillah_watch_prevails_trigger = {
-	martial >= $THRESHOLD$
+	OR = {
+		martial >= $THRESHOLD$
+		# v26: a Rosh ha-Shmirah keeping the night watch lends his Martial.
+		cp:councillor_marshal ?= {
+			is_performing_council_task = task_kehillah_night_watch
+			martial >= $THRESHOLD$
+		}
+	}
 }
 
 
@@ -1697,6 +1706,66 @@ kehillah_has_responsa_correspondent_trigger = {
 		holder = {
 			is_adult = yes
 			is_alive = yes
+		}
+	}
+}
+
+# Case 7's two relevant works: the Mishnah's ransom rule (Gittin 4:6)
+# and the Bavli's discussion in tractate Gittin (Nashim). This list is
+# character mastery, never mere possession by a community library.
+kehillah_has_ransom_source_trigger = {
+	OR = {
+		is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mishnah }
+		is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim }
+	}
+}
+
+# Scope: host of an active Bet Din. All three seated judges count; a
+# third judge with the source should prevent a needless outside letter.
+kehillah_bet_din_case7_panel_has_source_trigger = {
+	OR = {
+		AND = {
+			exists = involved_activity.var:kehillah_bet_din_av_beit_din
+			involved_activity.var:kehillah_bet_din_av_beit_din = { kehillah_has_ransom_source_trigger = yes }
+		}
+		AND = {
+			exists = involved_activity.var:kehillah_bet_din_judge2
+			involved_activity.var:kehillah_bet_din_judge2 = { kehillah_has_ransom_source_trigger = yes }
+		}
+		AND = {
+			exists = involved_activity.var:kehillah_bet_din_judge3
+			involved_activity.var:kehillah_bet_din_judge3 = { kehillah_has_ransom_source_trigger = yes }
+		}
+	}
+}
+
+# The asking leader may have changed, or the conference may have ended
+# while a letter travelled. A reply applies to the case only while this
+# exact Bet Din activity still holds its pending marker.
+kehillah_bet_din_case7_pending_trigger = {
+	exists = involved_activity
+	involved_activity = { has_variable = kehillah_bet_din_case7_pending_responsum }
+}
+
+# Scope: another registered community's leader. The actual addressee is
+# the appointed Chief Rabbi, or an ordained, source-mastering leader if
+# no appointment exists. This permits historical Rabbi leaders to answer
+# before they choose the separate self-service office toggle.
+kehillah_has_ransom_correspondent_trigger = {
+	OR = {
+		AND = {
+			employs_court_position = chief_rabbi_kehillah_position
+			court_position:chief_rabbi_kehillah_position = {
+				is_alive = yes
+				has_trait = kehillah_rabbi_trait
+				kehillah_has_ransom_source_trigger = yes
+			}
+		}
+		AND = {
+			NOT = { employs_court_position = chief_rabbi_kehillah_position }
+			is_alive = yes
+			has_trait = kehillah_rabbi_trait
+			kehillah_has_ransom_source_trigger = yes
 		}
 	}
 }

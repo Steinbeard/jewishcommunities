@@ -4,6 +4,26 @@
 Daniel's request to remove fluffy and unnatural prose. Gameplay and historical
 design remain governed by [ROADMAP.md](../../ROADMAP.md) and the relevant specs.
 
+## Bet Din and responsa direction — 2026-10-09
+
+Daniel extended this guidance to court cases and correspondence. Give each
+litigant a concrete concern and distinguish a persuasive argument from a just
+outcome. A learned judge should have more ways to reason, not a universal
+button that makes every dispute disappear. Personality and complementary
+skills on the bench should matter alongside personal book mastery.
+
+Use the books as the library already represents them. A choice can require
+Bavli Nashim while its hover text cites Gittin 45a. Short transliterated Hebrew
+or Aramaic quotations use vanilla's `Glossary()` markup, with a translation,
+precise citation and any qualification needed to avoid presenting a disputed
+interpretation as settled law. Quotations must support the actual argument.
+
+A responsum is a named scholar's advice on a specific question. The recipient
+needs an interesting choice about the answer and the work it demands; the
+asking court retains responsibility for adopting or rejecting it. Historical
+sources inspire fictional cases, which must not be presented as transcripts
+of documented medieval proceedings.
+
 Describe what people do, what they want, and what the player can choose. Keep
 Jewish terminology and concrete details of communal life; explain unfamiliar
 roles through their duties.

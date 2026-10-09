@@ -1,0 +1,289 @@
+﻿# =====================================================================
+# Kehillah council tasks. Design: docs/spec/v26-kehillah-council-and-
+# baalei-batim.md ("Task plan").
+#
+# The Kehillah reuses vanilla's council seats, renamed
+# (kehillah_vanilla_council_overrides.txt): chancellor = Shtadlan,
+# steward = Gabbai, marshal = Rosh ha-Shmirah, spymaster = Ne'eman, court
+# chaplain = Dayyan. Every task here is is_shown only on a Kehillah's
+# council. Vanilla tasks unsuitable for a landless community are hidden
+# for Kehillot in kehillah_vanilla_task_overrides.txt.
+#
+# DESIGN RULE (Daniel, 2026-10-01): no direct pillar bonuses. A task does
+# concrete work -- income, construction, petitions, the bet din, the
+# watch -- and the pillars rise through the systems that already feed
+# them.
+#
+# NO default_task here. The engine allows one default per position for
+# every government; vanilla keeps its defaults, and Kehillah councillors
+# are switched to the Kehillah default on taking the seat
+# (on_get_position in the seat overrides) plus a quarterly fix-up
+# (common/on_action/kehillah_council_on_actions.txt).
+#
+# WAVE 1 (built 2026-10-02): Raise Communal Revenue, Oversee Construction,
+# Petition the Host, Prepare the Bet Din, Keep the Night Watch, and the
+# six spouse tasks. Waves 2-3 add the rest of the plan.
+#
+# Scales: kehillah_council_<skill>_scale (0..1, the seat skill capped at
+# 20) -- common/script_values/kehillah_council_script_values.txt.
+# =====================================================================
+
+# --- Shtadlan (chancellor, diplomacy). Vanilla Foreign Affairs stays the default.
+
+# The host's settlement-policy decision is never taken by the AI on its
+# own (ai_will_do = 0). This task is what moves it: while the Shtadlan
+# petitions, the host warms to the community's leader, and each month
+# there is a chance -- scaled by the Shtadlan's diplomacy and the host's
+# opinion -- that the host raises the policy one rung, if it is not
+# already Encouraged and its review is off cooldown. The raise runs the
+# same effect as the host's own decision (cooldown + notifications).
+task_kehillah_petition_host = {
+	position = councillor_chancellor
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	asset = {
+		icon = "gfx/interface/icons/council_task_types/task_domestic_affairs.dds"
+		background = "gfx/interface/buttons/button_round_bg.dds"
+		frame = "gfx/interface/buttons/button_round_frame.dds"
+		glow = "gfx/particles/halo.dds"
+	}
+	effect_desc = task_kehillah_petition_host_effect_desc
+
+	on_monthly = {
+		scope:councillor_liege.domicile.domicile_location.county.holder.top_liege ?= {
+			save_scope_as = kehillah_petition_host
+		}
+		if = {
+			limit = {
+				exists = scope:kehillah_petition_host
+				NOT = { scope:kehillah_petition_host = scope:councillor_liege }
+			}
+			scope:kehillah_petition_host = {
+				add_opinion = {
+					target = scope:councillor_liege
+					modifier = kehillah_shtadlan_petition_opinion
+				}
+			}
+			if = {
+				limit = {
+					scope:kehillah_petition_host = {
+						is_landed = yes
+						exists = primary_title
+						NOT = { government_has_flag = government_is_kehillah }
+						primary_title = {
+							NOT = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+							NOT = { kehillah_policy_review_on_cooldown_trigger = yes }
+						}
+						opinion = { target = scope:councillor_liege value >= 0 }
+					}
+				}
+				random = {
+					chance = kehillah_shtadlan_petition_monthly_chance_value
+					scope:kehillah_petition_host = {
+						kehillah_raise_jewish_settlement_policy_effect = yes
+					}
+				}
+			}
+		}
+	}
+	ai_will_do = { value = 1 }
+}
+
+# --- Gabbai (steward, stewardship)
+
+task_kehillah_raise_revenue = { # Kehillah default (set on taking the seat)
+	position = councillor_steward
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	asset = {
+		icon = "gfx/interface/icons/council_task_types/task_collect_taxes.dds"
+		background = "gfx/interface/buttons/button_round_bg.dds"
+		frame = "gfx/interface/buttons/button_round_frame.dds"
+		glow = "gfx/particles/halo.dds"
+	}
+	effect_desc = task_kehillah_raise_revenue_effect_desc
+	council_owner_modifier = {
+		name = task_kehillah_raise_revenue_modifier
+		domicile_monthly_gold_mult = 0.25 # up to +25% at Stewardship 20
+		scale = kehillah_council_stewardship_scale
+	}
+	ai_will_do = { value = 2 }
+}
+
+task_kehillah_oversee_construction = {
+	position = councillor_steward
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	asset = {
+		icon = "gfx/interface/icons/council_task_types/task_great_project.dds"
+		background = "gfx/interface/buttons/button_round_bg.dds"
+		frame = "gfx/interface/buttons/button_round_frame.dds"
+		glow = "gfx/particles/halo.dds"
+	}
+	effect_desc = task_kehillah_oversee_construction_effect_desc
+	council_owner_modifier = {
+		name = task_kehillah_oversee_construction_modifier
+		domicile_build_gold_cost = -0.25 # up to -25% at Stewardship 20
+		domicile_build_speed = 0.25 # up to +25%
+		scale = kehillah_council_stewardship_scale
+	}
+	ai_will_do = { value = 1 }
+}
+
+# --- Rosh ha-Shmirah (marshal, martial). Vanilla Manage Guards stays available.
+
+# The watch acts in events/kehillah_protection_events.txt: while a Rosh
+# ha-Shmirah keeps it, the yearly protection events fire less often
+# (weight_multiplier) and their watch checks use his Martial when it
+# beats the leader's (kehillah_watch_prevails_trigger).
+task_kehillah_night_watch = { # Kehillah default (set on taking the seat)
+	position = councillor_marshal
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	asset = {
+		icon = "gfx/interface/icons/council_task_types/task_manage_guards.dds"
+		background = "gfx/interface/buttons/button_round_bg.dds"
+		frame = "gfx/interface/buttons/button_round_frame.dds"
+		glow = "gfx/particles/halo.dds"
+	}
+	effect_desc = task_kehillah_night_watch_effect_desc
+	ai_will_do = { value = 2 }
+}
+
+# --- Dayyan (court chaplain, learning). Vanilla Religious Relations is hidden
+# (rabbinic_faith has no Head of Faith).
+
+# Shortens the Bet Din Conference cooldown by up to 12 months at Learning
+# 20 -- kehillah_bet_din_conference_cooldown_months, read by
+# common/activities/activity_types/kehillah_bet_din_conference.txt.
+task_kehillah_prepare_bet_din = { # Kehillah default (set on taking the seat)
+	position = councillor_court_chaplain
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	asset = {
+		icon = "gfx/interface/icons/council_task_types/task_justify_rule.dds"
+		background = "gfx/interface/buttons/button_round_bg.dds"
+		frame = "gfx/interface/buttons/button_round_frame.dds"
+		glow = "gfx/particles/halo.dds"
+	}
+	effect_desc = task_kehillah_prepare_bet_din_effect_desc
+	ai_will_do = { value = 2 }
+}
+
+# --- Spouse: vanilla's six tasks, cloned with identical stat mechanics and
+# Kehillah names (the originals are hidden for Kehillot). Vanilla's
+# monthly flavour on_actions are kept, except Chivalry's knightly one.
+
+task_kehillah_assist_parnas = { # = task_spouse_default; Kehillah default (set on taking the seat)
+	position = councillor_spouse
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	effect_desc = task_spouse_default_effect_desc
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	council_owner_modifier = {
+		name = task_spouse_default_diplomacy_modifier
+		diplomacy = 1
+		scale = spouse_default_task_diplomacy_scale
+	}
+	council_owner_modifier = {
+		name = task_spouse_default_martial_modifier
+		martial = 1
+		scale = spouse_default_task_martial_scale
+	}
+	council_owner_modifier = {
+		name = task_spouse_default_stewardship_modifier
+		stewardship = 1
+		scale = spouse_default_task_stewardship_scale
+	}
+	council_owner_modifier = {
+		name = task_spouse_default_intrigue_modifier
+		intrigue = 1
+		scale = spouse_default_task_intrigue_scale
+	}
+	council_owner_modifier = {
+		name = task_spouse_default_learning_modifier
+		learning = 1
+		scale = spouse_default_task_learning_scale
+	}
+	monthly_on_action = spouse_councillor_default_on_action
+	ai_will_do = { value = 1 }
+}
+
+task_kehillah_open_house = { # = task_court_politics (diplomacy)
+	position = councillor_spouse
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	effect_desc = task_court_politics_effect_desc
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	council_owner_modifier = {
+		name = task_court_politics_modifier
+		diplomacy = 1
+		scale = spouse_task_court_politics_scale
+	}
+	monthly_on_action = court_politics_setup
+	ai_will_do = { value = 0 }
+}
+
+task_kehillah_guard_household = { # = task_chivalry (martial), without its knightly on_action
+	position = councillor_spouse
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	effect_desc = task_chivalry_effect_desc
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	council_owner_modifier = {
+		name = task_chivalry_modifier
+		martial = 1
+		scale = spouse_task_chivalry_scale
+	}
+	ai_will_do = { value = 0 }
+}
+
+task_kehillah_family_business = { # = task_manage_domain (stewardship)
+	position = councillor_spouse
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	effect_desc = task_manage_domain_effect_desc
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	council_owner_modifier = {
+		name = task_manage_domain_modifier
+		stewardship = 1
+		scale = spouse_task_manage_domain_scale
+	}
+	monthly_on_action = manage_domain_setup
+	ai_will_do = { value = 0 }
+}
+
+task_kehillah_market_talk = { # = task_court_intrigue (intrigue)
+	position = councillor_spouse
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	effect_desc = task_court_intrigue_effect_desc
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	council_owner_modifier = {
+		name = task_court_intrigue_modifier
+		intrigue = 1
+		scale = spouse_task_court_intrigue_scale
+	}
+	monthly_on_action = court_intrigue_setup
+	ai_will_do = { value = 0 }
+}
+
+task_kehillah_support_scholars = { # = task_patronage (learning)
+	position = councillor_spouse
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	effect_desc = task_patronage_effect_desc
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	council_owner_modifier = {
+		name = task_patronage_modifier
+		learning = 1
+		scale = spouse_task_patronage_scale
+	}
+	monthly_on_action = patronage_setup
+	ai_will_do = { value = 0 }
+}

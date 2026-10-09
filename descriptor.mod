@@ -3,4 +3,4 @@ tags={
 	"1.20 'Crozier'"
 }
 name="Jewish Communities"
-supported_version="1.20.0.2"
+supported_version="1.20.*"
