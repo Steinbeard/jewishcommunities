@@ -1,0 +1,124 @@
+﻿# Console-only probes for the ba'alei batim (V26 part 2); never called by
+# gameplay. Play or select a Kehillah leader, then:
+#   event kehillah_household_debug.1  -- register, refresh, report
+#   event kehillah_household_debug.2  -- force an arrival
+#   event kehillah_household_debug.3  -- force a departure attempt
+#   event kehillah_household_debug.4  -- run the full yearly pass
+#   event kehillah_household_debug.5  -- report every community's count
+namespace = kehillah_household_debug
+
+kehillah_household_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.1: households -- START"
+		kehillah_household_bootstrap_effect = yes
+		kehillah_household_refresh_effect = yes
+		primary_title = {
+			if = {
+				limit = { kehillah_household_count_value >= 2 }
+				debug_log = "kehillah_household_debug.1: FLOOR PASS at least two households"
+			}
+			else = { debug_log = "kehillah_household_debug.1: FLOOR FAIL fewer than two households" }
+			if = {
+				limit = { kehillah_household_count_value <= kehillah_household_cap_value }
+				debug_log = "kehillah_household_debug.1: CAP PASS count within cap"
+			}
+			else = { debug_log = "kehillah_household_debug.1: CAP OVER count above cap (departures will trim it)" }
+			if = {
+				limit = { any_in_list = { variable = kehillah_households this = root.house } }
+				debug_log = "kehillah_household_debug.1: LEADER-HOUSE FAIL leader's own house is registered"
+			}
+			else = { debug_log = "kehillah_household_debug.1: LEADER-HOUSE PASS leader's house not registered" }
+			if = {
+				limit = {
+					any_in_list = {
+						variable = kehillah_households
+						NOT = { exists = var:kehillah_household_head }
+					}
+				}
+				debug_log = "kehillah_household_debug.1: HEAD FAIL a household has no head"
+			}
+			else = { debug_log = "kehillah_household_debug.1: HEAD PASS every household has a head" }
+			every_in_list = {
+				variable = kehillah_households
+				var:kehillah_household_head = {
+					save_scope_as = kh_dbg_head
+					debug_log = "kehillah_household_debug.1: HOUSEHOLD (head and standing in scopes dump)"
+					debug_log_scopes = yes
+				}
+			}
+		}
+		debug_log = "kehillah_household_debug.1: households -- END"
+	}
+}
+
+kehillah_household_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.2: forced arrival -- START"
+		domicile.domicile_location = { save_scope_as = kh_here_location }
+		kehillah_household_arrival_effect = yes
+		if = {
+			limit = { exists = scope:kh_arr_house }
+			debug_log = "kehillah_household_debug.2: ORIGIN HOUSEHOLD an existing household is moving (event for players)"
+		}
+		else_if = {
+			limit = { exists = scope:kh_arr_origin }
+			debug_log = "kehillah_household_debug.2: NEW FAMILY from a named community (event for players)"
+		}
+		else = { debug_log = "kehillah_household_debug.2: NEW FAMILY with no origin" }
+		debug_log = "kehillah_household_debug.2: forced arrival -- END"
+	}
+}
+
+kehillah_household_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.3: forced departure -- START"
+		domicile.domicile_location = { save_scope_as = kh_here_location }
+		kehillah_household_refresh_effect = yes
+		kehillah_household_departure_effect = yes
+		if = {
+			limit = { exists = scope:kh_dep_dest }
+			debug_log = "kehillah_household_debug.3: DESTINATION found (event for players; moved at once for AI)"
+			scope:kh_dep_dest = { debug_log_scopes = yes }
+		}
+		else = { debug_log = "kehillah_household_debug.3: NO DESTINATION with room (or no household)" }
+		debug_log = "kehillah_household_debug.3: forced departure -- END"
+	}
+}
+
+kehillah_household_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.4: yearly pass -- START"
+		kehillah_household_yearly_effect = yes
+		debug_log = "kehillah_household_debug.4: yearly pass -- END"
+	}
+}
+
+kehillah_household_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.5: all communities -- START"
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = { exists = holder }
+			if = {
+				limit = { kehillah_household_count_value >= 2 }
+				debug_log = "kehillah_household_debug.5: community with 2+ households"
+			}
+			else_if = {
+				limit = { kehillah_household_count_value >= 1 }
+				debug_log = "kehillah_household_debug.5: community with ONE household"
+			}
+			else = { debug_log = "kehillah_household_debug.5: community with NO households" }
+		}
+		debug_log = "kehillah_household_debug.5: all communities -- END"
+	}
+}

@@ -35,9 +35,15 @@ construction, bet din cooldown, host petition, Night Watch, spouse clones).
   rulers' councils, and the "Rebbetzin" spouse card all pass. Two bugs were found and fixed:
   `on_get_position` gated on an unset scope, and the spouse card read "Duchess". Probe:
   `events/kehillah_council_debug_events.txt`. Not yet measured: the wave 1 effect magnitudes.
-- **Next (V26 build order step 2):** contracts/loans, sefarim, disputes, scholars, sister
-  communities, charter petition. Ba'alei batim (part 2) is still a proposal; its defaults are
-  recorded in V26.
+- **Ba'alei batim slice 1: VERIFIED LIVE 2026-10-09** ([log](docs/testing/2026-10-09-baalei-batim-live-test-log.md); natural yearly moves not yet observed). Daniel asked for
+  communities that feel alive and interconnected. Each community now keeps 2–4 registered
+  householder families with standing. Families arrive from, and leave for, other real
+  communities, nearby ones far likelier. Player events cover arrivals and departures, and a
+  "Review the Householders" decision shows the register. See V26's "Slice 1 built" section.
+  **Next: slice 2**, standing as a `kehillah_leadership` candidate-score term, so leading
+  families compete for the leadership (succession code: needs a live succession test).
+- **Later (V26 council build order step 2):** contracts/loans, sefarim, disputes, scholars,
+  sister communities, charter petition.
 
 ### Rabbi gameplay loop — interactive direction, 2026-09-29
 

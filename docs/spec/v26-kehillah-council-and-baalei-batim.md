@@ -1,7 +1,7 @@
 # V26: The Kehillah council and the ba'alei batim
 
 **Status:** Council (part 1): Phase A **built 2026-10-01** on branch `kehillah-council`. The first
-build was reworked after a live test, and the rework is now under test. Ba'alei batim (part 2) is **a design proposal, not built**. Daniel asked for both on
+build was reworked after a live test, and the rework is now under test. Ba'alei batim (part 2): **slice 1 built 2026-10-09** (register, standing display, arrivals and departures between communities); standing in succession and rivalries are still proposals. Daniel asked for both on
 2026-10-01. Builds on [v25](v25-by-god-alone-adaptation-proposals.md) (By God Alone research)
 and [v3](v3-meritocratic-succession.md) (succession), and changes the "no council" decision in
 [v1 implementation](../implementation/v1-kehillah-implementation.md).
@@ -201,6 +201,52 @@ at the cap, and a community never drops below 2: it re-seeds if departures or de
 - The leader's own house is **not** counted as a household; it competes as family, as now.
 - Rivalries come **after** the first version.
 - The guaranteed-adult-son safety net is **kept** for now.
+
+### Slice 1 built — 2026-10-09 (verified live: [log](../testing/2026-10-09-baalei-batim-live-test-log.md))
+
+Daniel asked on 2026-10-09 for communities that feel alive and interconnected. Slice 1 builds
+items 1 and 3 above, the households panel's minimal form, and standing as a displayed number.
+Standing does **not** yet feed succession; that is slice 2 and needs a live succession test.
+
+- **Register:** each community title's `kehillah_households` list holds dynasty houses. The
+  founding seed flags its three notables (`kehillah_household_founder`), gives each a wife and
+  0–2 children, and records their trade. A quarterly pass registers them. It also recounts
+  each household's adults at court, its council seats and its head (oldest adult at court),
+  and recomputes standing. A household drops off the list when no adult is left at court or
+  when it becomes the leader's house.
+- **Standing** (`kehillah_household_standing_value`): half the head's diplomacy + stewardship
+  + learning; 5 per adult at court, capped at 20; 15 per council seat; half a point per year in
+  the community, capped at 20. Bands are Minor, Respected (25) and Leading (45).
+- **Cap:** 2, +1 at Strained Prosperity, +1 at Healthy. Lowered after the live test, where three
+  founders exceeded a Healthy/Flourishing cap of 2.
+- **Yearly pass:**
+  - Under 2 households: a family always arrives.
+  - Under the cap at Healthy Prosperity: 30% chance of an arrival.
+  - Stability below Strained with more than 2 households: 30% chance the lowest-standing
+    household leaves.
+  - Above the cap: 15% chance the lowest-standing household leaves.
+- **Movement between communities (the interconnection):**
+  - Arrivals come from another registered community, weighted heavily toward nearby ones
+    (×21 within `squared_distance_medium`, ×6 within `squared_distance_large`). If that
+    community has more than 2 households and an AI leader, its lowest-standing household
+    actually moves. Otherwise a new family arrives, recorded as coming from there.
+  - Departures go to a community with room, weighted toward nearby and Healthy-Stability
+    ones. The household's members at court and their spouses change court; a player who
+    receives a family gets a notice.
+- **Player choices:** an arrival can be welcomed, admitted for an entry fee (gold; the head
+  takes a −10 opinion), or refused (a new family then settles where it came from). A departure
+  can be allowed, paid off (`medium_gold_value`), or talked down at Diplomacy 12.
+- **Register UI:** the "Review the Householders" decision lists each household's house, trade,
+  head and standing.
+- **Files:** `common/scripted_effects/kehillah_household_effects.txt`,
+  `common/script_values/kehillah_household_values.txt`,
+  `common/on_action/kehillah_household_on_actions.txt`,
+  `events/kehillah_household_events.txt`, `common/decisions/kehillah_household_decisions.txt`,
+  `localization/english/kehillah_household_l_english.yml`, and the probe
+  `events/kehillah_household_debug_events.txt`.
+- **Next:** slice 2, a standing term in `kehillah_leadership` (succession-risk area: needs a
+  live succession test). Then registering the old leader's house as a household after a
+  succession, and rivalries.
 
 **Original questions for Daniel:**
 - ~~Household cap per community?~~ Answered: 2–4.
