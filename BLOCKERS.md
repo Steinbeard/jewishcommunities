@@ -1133,3 +1133,29 @@ H2's remaining gaps after the run in flight reports, then **H4** (the rabbi-loop
 ordination through mentorship and local semicha). One optional loose end: rerun the morning's
 unexplained rabbinic-path Game Over. It is no longer gating -- `kehillah_debug.104` only arms a
 trace flag so it cannot have caused it, and clergy status no longer depends on a trait.
+
+## Heartbeat run status -- 2026-10-09_185001 (autonomous/shabbat-2026-10)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: YES --
+```
+M common/decisions/kehillah_learn_torah_decisions.txt
+ M common/schemes/scheme_types/kehillah_study_torah_scheme.txt
+ M common/script_values/kehillah_ordination_values.txt
+ M common/scripted_effects/kehillah_library_effects.txt
+ M common/scripted_triggers/kehillah_ordination_triggers.txt
+ M localization/english/kehillah_l_english.yml
+?? common/decisions/kehillah_semicha_decisions.txt
+?? common/scripted_effects/kehillah_ordination_effects.txt
+?? events/kehillah_semicha_debug_events.txt
+?? events/kehillah_semicha_events.txt
+```
+- Last few commits:
+```
+2a8e0c0 H4 slice 2: apprentice study records, and ck3-tiger counts are not evidence
+8f3cee7 H4 slice 1: one named ordination gate, and the thresholds as values
+6691485 BLOCKERS: Shabbat heartbeat 1 -- H1 solved trait-free and verified, H3 closed
+9d0c8a9 H1 VERIFIED LIVE: a lay Parnas leader's death offers continuation
+eef6276 Probe .8: the realm law is the verdict, the title law is information
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-shabbat-2026-10-09_185001.log
