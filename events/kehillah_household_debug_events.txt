@@ -9,6 +9,11 @@
 #                                        does or doesn't apply, per councillor
 #   event kehillah_household_debug.7  -- make root a lay leader and check
 #                                        faith-organization membership
+#   event kehillah_household_debug.8  -- READ-ONLY clerical-continuation
+#                                        report: clergy, organization,
+#                                        player heir, title heir
+#   event kehillah_household_debug.9  -- strip the Rabbi trait (pure lay
+#                                        leader), then run .8's report
 namespace = kehillah_household_debug
 
 kehillah_household_debug.1 = {
@@ -200,5 +205,107 @@ kehillah_household_debug.5 = {
 			else = { debug_log = "kehillah_household_debug.5: community with NO households" }
 		}
 		debug_log = "kehillah_household_debug.5: all communities -- END"
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# .8 / .9 -- the clerical-continuation probe (ROADMAP H1).
+#
+# .8 reports, and changes nothing, so it is safe to run before AND after
+# anything else. Run it on the Kehillah leader immediately before a
+# `kill <id>`: the single thing that decides Game Over vs. "Continue as
+# <appointee>" is whether PLAYER HEIR exists at that instant, and the
+# only reason this mod has one for a non-dynastic appointee is clergy
+# status (see common/governments/kehillah_government.txt's
+# mechanic_type = theocracy comment).
+#
+# .9 makes the leader a PURE LAY leader first -- no Rabbi trait, so no
+# trait-sourced clergy -- and then reports. If mechanic_type = theocracy
+# is doing its job, .9 must still report CLERGY YES, ORGANIZATION YES
+# and PLAYER HEIR YES. Unlike .7 it does not call the leader-setup
+# effect, so nothing can mask the government's own contribution.
+# ---------------------------------------------------------------------
+
+kehillah_household_debug.8 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.8: clerical continuation -- START"
+		debug_log_scopes = yes
+
+		if = {
+			limit = { has_trait = kehillah_rabbi_trait }
+			debug_log = "kehillah_household_debug.8: LEADER IS RABBINIC (has kehillah_rabbi_trait)"
+		}
+		else = { debug_log = "kehillah_household_debug.8: LEADER IS LAY (no kehillah_rabbi_trait)" }
+
+		if = {
+			limit = { government_has_mechanic = theocracy }
+			debug_log = "kehillah_household_debug.8: MECHANIC YES government_has_mechanic = theocracy"
+		}
+		else = { debug_log = "kehillah_household_debug.8: MECHANIC NO government_has_mechanic = theocracy is false" }
+
+		if = {
+			limit = { is_clergy = yes }
+			debug_log = "kehillah_household_debug.8: CLERGY YES is_clergy = yes"
+		}
+		else = { debug_log = "kehillah_household_debug.8: CLERGY NO is_clergy = no" }
+
+		if = {
+			limit = { exists = organization }
+			debug_log = "kehillah_household_debug.8: ORGANIZATION YES member of an organization"
+		}
+		else_if = {
+			limit = { exists = faith.organization }
+			debug_log = "kehillah_household_debug.8: ORGANIZATION NO the faith has one, root is not in it"
+		}
+		else = { debug_log = "kehillah_household_debug.8: ORGANIZATION NO the faith has no organization at all" }
+
+		# The decisive one.
+		if = {
+			limit = { exists = player_heir }
+			debug_log = "kehillah_household_debug.8: PLAYER HEIR YES -- death should offer Continue as the heir"
+			if = {
+				limit = {
+					exists = dynasty
+					player_heir = { dynasty ?= root.dynasty }
+				}
+				debug_log = "kehillah_household_debug.8: player heir is of root's OWN dynasty (not the clerical path)"
+			}
+			else = { debug_log = "kehillah_household_debug.8: player heir is NON-DYNASTIC -- this is the clerical path" }
+		}
+		else = { debug_log = "kehillah_household_debug.8: PLAYER HEIR NO -- death would be Game Over" }
+
+		# Separate from player heir: who the title itself would pass to.
+		if = {
+			limit = {
+				exists = primary_title
+				primary_title = { any_title_heir = { always = yes } }
+			}
+			debug_log = "kehillah_household_debug.8: TITLE HEIR YES the primary title has at least one heir"
+			primary_title = {
+				every_title_heir = { debug_log_scopes = yes }
+			}
+		}
+		else = { debug_log = "kehillah_household_debug.8: TITLE HEIR NO the primary title has no heir" }
+
+		debug_log = "kehillah_household_debug.8: clerical continuation -- END"
+	}
+}
+
+kehillah_household_debug.9 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.9: force a pure lay leader -- START"
+		if = {
+			limit = { has_trait = kehillah_rabbi_trait }
+			remove_trait = kehillah_rabbi_trait
+			debug_log = "kehillah_household_debug.9: removed the Rabbi trait"
+		}
+		else = { debug_log = "kehillah_household_debug.9: already lay, no Rabbi trait to remove" }
+		trigger_event = kehillah_household_debug.8
+		debug_log = "kehillah_household_debug.9: force a pure lay leader -- END"
 	}
 }
