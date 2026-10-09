@@ -180,6 +180,36 @@ kehillah_seed_one_random_torah_work_effect = {
 # <track>.<work>_tt lines, before this effect ever runs.
 # =====================================================================
 
+# ---------------------------------------------------------------------
+# V21 SLICE 2, 2026-10-09 (Shabbat heartbeat 1, ROADMAP H4). TWO
+# CHANGES, BOTH INERT UNTIL THE LEARN TORAH GATE IS WIDENED.
+#
+# 1. Every add_trait_xp below is guarded on actually holding
+#    kehillah_rabbi_trait. docs/spec/v21-rabbi-ordination-paths.md
+#    section 3.2: "Trait XP is only meaningful after a character has the
+#    lifestyle trait. An apprentice must therefore use separate
+#    character-scoped study records, not attempt to add
+#    kehillah_rabbi_trait XP before the trait exists." Today the Learn
+#    Torah decision requires the trait outright, so these guards cannot
+#    change anything yet; they are what makes it safe for slice 3 to let
+#    an unordained candidate in.
+#
+# 2. A FIRST mastery also records the work's FIELD in
+#    kehillah_apprentice_fields. The spec's curriculum is "2 distinct
+#    completed works, from 2 distinct fields", and the distinct-works
+#    half is already recorded -- kehillah_mastered_works is exactly
+#    that list -- so this adds only the part that was missing rather
+#    than a parallel work list that could drift out of step with it.
+#    flag:$TRACK$ works because macro substitution is textual: $TRACK$
+#    is already the literal track token (parshanut/talmudics/hashkafa)
+#    this effect's callers pass.
+#
+#    Recorded for a rabbi too, not just an apprentice. It is one list
+#    append, it keeps the branch count down, and section 3.4 says the
+#    apprentice records survive ordination as biography anyway; the
+#    readiness trigger is what refuses to count them twice, not this.
+# ---------------------------------------------------------------------
+
 kehillah_study_specific_work_effect = {
 	if = {
 		limit = { is_target_in_variable_list = { name = kehillah_mastered_works target = $WORK$ } }
@@ -205,12 +235,18 @@ kehillah_study_specific_work_effect = {
 				}
 			}
 			set_variable = { name = kehillah_study_torah_last_result value = 2 }
-			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_repeat_pass }
+			if = {
+				limit = { has_trait = kehillah_rabbi_trait }
+				add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_repeat_pass }
+			}
 			custom_tooltip = kehillah_study_torah.repeat_pass.tt
 		}
 		else = {
 			set_variable = { name = kehillah_study_torah_last_result value = 3 }
-			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_repeat_fail }
+			if = {
+				limit = { has_trait = kehillah_rabbi_trait }
+				add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_repeat_fail }
+			}
 			custom_tooltip = kehillah_study_torah.repeat_fail.tt
 		}
 	}
@@ -224,12 +260,23 @@ kehillah_study_specific_work_effect = {
 			}
 			set_variable = { name = kehillah_study_torah_last_result value = 1 }
 			add_to_variable_list = { name = kehillah_mastered_works target = $WORK$ }
-			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_pass }
+			# The field half of V21's curriculum -- see this effect's header.
+			if = {
+				limit = { NOT = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:$TRACK$ } } }
+				add_to_variable_list = { name = kehillah_apprentice_fields target = flag:$TRACK$ }
+			}
+			if = {
+				limit = { has_trait = kehillah_rabbi_trait }
+				add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_pass }
+			}
 			custom_tooltip = kehillah_study_torah.pass.tt
 		}
 		else = {
 			set_variable = { name = kehillah_study_torah_last_result value = 0 }
-			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_fail }
+			if = {
+				limit = { has_trait = kehillah_rabbi_trait }
+				add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_fail }
+			}
 			custom_tooltip = kehillah_study_torah.fail.tt
 		}
 	}

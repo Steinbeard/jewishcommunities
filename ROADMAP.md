@@ -86,8 +86,12 @@ the shim guide. Current state is in the
   every tier comparison after it read `var:$VAR$ >= N` on a track the community never built —
   and that is from the file's first commit (7a64e2a, 2026-09-07). Pure log noise, never a
   behaviour bug: "no variable" and "variable below this tier" both correctly restore nothing.
-  Every comparison is now paired with its own existence check, and ck3-tiger's warning count
-  drops 127 → 111 on that change alone, so it was seeing all sixteen of them too.
+  Every comparison is now paired with its own existence check. (**Correction, same session:** an
+  earlier version of this entry credited the fix with dropping ck3-tiger's warning count from 127
+  to 111. Don't rely on that — a controlled A/B of the same tree showed tiger's own totals move
+  by ~10 warnings run to run, in vanilla files, so its counts are not a usable before/after
+  measurement. The fix stands on the source read and on the error lines matching exactly the three
+  unbuilt tracks.)
 
 - **H4.** Then the rabbi-loop direction below (V21 ordination through mentorship and local
   semicha).

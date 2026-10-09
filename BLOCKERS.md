@@ -1098,8 +1098,13 @@ The "Failed to fetch variable for 'kq_countinghouse' / 'kq_workshops' / 'kq_mark
 on every succession **predate today** -- they are from the first commit of
 `kehillah_scripted_effects.txt` (7a64e2a, 2026-09-07). Only the first `if` in each restore helper
 checked `exists = var:$VAR$`; every tier comparison after it read the variable unguarded, so a
-track the community never built logged a fetch failure. Pure noise, never a behaviour bug. Fixed;
-ck3-tiger's warning count drops 127 -> 111 on that change alone.
+track the community never built logged a fetch failure. Pure noise, never a behaviour bug. Fixed.
+
+(Correction, later the same session: I first credited that fix with dropping ck3-tiger's warning
+count 127 -> 111, and the H4 slice-1 commit message repeats it. **Ignore that number.** A
+controlled A/B on an unchanged tree showed tiger's totals move by about ten warnings run to run,
+all in vanilla files, so its counts are not a before/after measurement. The H3 fix stands on the
+source read and on the error lines naming exactly the three tracks the Worms start never builds.)
 
 ### H2 -- in flight as this was written
 
