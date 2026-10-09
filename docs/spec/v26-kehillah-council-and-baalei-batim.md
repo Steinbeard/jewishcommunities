@@ -97,8 +97,11 @@ These decisions are Daniel's.
   - **Rosh ha-Shmirah:** the protection events' `weight_multiplier` drops to as low as 0.5, and
     `kehillah_watch_prevails_trigger` accepts his Martial.
   - **Spouse:** six clones of vanilla's tasks; Guard the Household drops Chivalry's knightly hook.
-- **Known gap:** the council window's spouse card still shows "Duchess", while the character panel
-  shows "Rebbetzin". The card reads a different name path; not yet investigated.
+- **Known gap (fixed 2026-10-09):** the council window's spouse card showed "Duchess". The card
+  shows the `councillor_spouse` position name, not flavourization; that name now has Kehillah
+  cases. The same live test found that the seats' `on_get_position` gated on
+  `scope:councillor_liege`, which is unset there, so it now uses `liege_or_court_owner`. Wave 1
+  is verified live: [log](../testing/2026-10-09-council-wave1-live-test-log.md).
 
 **Build order:**
 1. Existing hooks: revenue, construction, bet din cooldown, the policy petition, Night Watch on

@@ -22,6 +22,23 @@ this note referred to) are long since resolved and removed; numbering otherwise 
 than renumbered, since later items and other docs cross-reference these numbers by hand (e.g.
 `kehillah_breakdown_custom_loc.txt`'s own header cites "ROADMAP item 4").
 
+### Kehillah council (V26) — added 2026-10-09
+
+Built 2026-10-01/02 on `kehillah-council` but never entered here; see
+[V26](docs/spec/v26-kehillah-council-and-baalei-batim.md). The council is on for Kehillot,
+using vanilla's five seats renamed (Shtadlan, Gabbai, Rosh ha-Shmirah, Ne'eman, Dayyan), with
+the Gabbai and Shtadlan court positions retired. Wave 1 task effects are scripted (revenue,
+construction, bet din cooldown, host petition, Night Watch, spouse clones).
+
+- **Wave 1: VERIFIED LIVE 2026-10-09** ([log](docs/testing/2026-10-09-council-wave1-live-test-log.md)).
+  Seat names, Kehillah default tasks at game start, the quarterly fix-up, no leakage onto other
+  rulers' councils, and the "Rebbetzin" spouse card all pass. Two bugs were found and fixed:
+  `on_get_position` gated on an unset scope, and the spouse card read "Duchess". Probe:
+  `events/kehillah_council_debug_events.txt`. Not yet measured: the wave 1 effect magnitudes.
+- **Next (V26 build order step 2):** contracts/loans, sefarim, disputes, scholars, sister
+  communities, charter petition. Ba'alei batim (part 2) is still a proposal; its defaults are
+  recorded in V26.
+
 ### Rabbi gameplay loop — interactive direction, 2026-09-29
 
 Daniel's current priority is to connect mentor/yeshiva semicha, book mastery, Bet Din
