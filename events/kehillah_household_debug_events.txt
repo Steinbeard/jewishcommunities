@@ -284,25 +284,38 @@ kehillah_household_debug.8 = {
 		# Kehillah must still be on its own appointment law and not on
 		# vanilla's clerical_appointment_law. See common/scripted_triggers/
 		# kehillah_clerical_appointment_law_override.txt.
-		if = {
-			limit = { primary_title ?= { has_title_law = kehillah_appointment_succession_law } }
-			debug_log = "kehillah_household_debug.8: LAW PASS title law is kehillah_appointment_succession_law"
-		}
-		else_if = {
-			limit = { primary_title ?= { has_title_law = clerical_appointment_law } }
-			debug_log = "kehillah_household_debug.8: LAW FAIL title law is vanilla clerical_appointment_law"
-		}
-		else = { debug_log = "kehillah_household_debug.8: LAW FAIL title law is neither of the two expected ones" }
-
+		#
+		# THE REALM LAW IS THE VERDICT, not the title law. The Kehillah's
+		# law arrives as a realm law on the holder -- history writes
+		# `succession_laws = { ... }` and kehillah_found_community_effect
+		# calls add_realm_law -- so has_title_law is false for it, as it
+		# is for most of vanilla's appointment laws too. Vanilla's own
+		# checks pair the two in an OR for exactly this reason
+		# (common/character_interactions/pam_interactions.txt:443-444:
+		# `holder ?= { has_realm_law = clerical_appointment_law }` OR
+		# `has_title_law = clerical_appointment_law`). The title-law lines
+		# below are INFORMATIONAL; a 2026-10-09 live run read
+		# "no title-level law" with REALM LAW PASS at the same instant,
+		# and that is the correct, healthy state.
 		if = {
 			limit = { has_realm_law = kehillah_appointment_succession_law }
 			debug_log = "kehillah_household_debug.8: REALM LAW PASS kehillah_appointment_succession_law"
 		}
 		else_if = {
 			limit = { has_realm_law = clerical_appointment_law }
-			debug_log = "kehillah_household_debug.8: REALM LAW FAIL vanilla clerical_appointment_law"
+			debug_log = "kehillah_household_debug.8: REALM LAW FAIL vanilla clerical_appointment_law took the slot"
 		}
-		else = { debug_log = "kehillah_household_debug.8: REALM LAW neither expected law (check the realm law list in scopes)" }
+		else = { debug_log = "kehillah_household_debug.8: REALM LAW FAIL neither expected law (check the realm law list in scopes)" }
+
+		if = {
+			limit = { primary_title ?= { has_title_law = kehillah_appointment_succession_law } }
+			debug_log = "kehillah_household_debug.8: (info) the title ALSO carries a title-level kehillah_appointment_succession_law"
+		}
+		else_if = {
+			limit = { primary_title ?= { has_title_law = clerical_appointment_law } }
+			debug_log = "kehillah_household_debug.8: LAW FAIL the title carries a title-level clerical_appointment_law"
+		}
+		else = { debug_log = "kehillah_household_debug.8: (info) no title-level succession law, which is expected here" }
 
 		# Separate from player heir: who the title itself would pass to.
 		if = {
