@@ -1,21 +1,20 @@
 # V27: Interfaith marriage and Jewish descent — 2026-10-02
 
-**Status: scripted for CK3 1.20; live mixed-marriage and birth verification pending.**
+**Status: corrected 2026-10-02; scripted for CK3 1.20, with the corrected marriage gate and mixed-parent births awaiting live verification.**
 
 Depends on vanilla Judaism and the existing 1.20 Judaism religion override in
 `common/religion/religion_types/kehillah_judaism_reserved_names.txt`. This is a
 focused addition to the Track A Jewish family loop; it does not change the
 community's government, succession law, dynasty, or culture inheritance.
 
-Jewish faiths inherit two new religion-level doctrines. Interfaith Marriage is
-**Permitted** by default. When a proposed spouse practices a Jewish rite with
-that doctrine, CK3's AI Evil-faith marriage cutoff is raised beyond the maximum
-hostility level. The existing acceptance score, diplomatic range, consent, and
-other vanilla constraints still apply. A newly created Jewish faith can choose
-**Community Endogamy** to retain vanilla AI reluctance. Players were already
-able to propose cross-faith marriages under CK3 1.20; this change addresses
-the AI-only cutoff and its matching acceptance penalty. It does not make an
-interfaith match automatic.
+Jewish faiths inherit two new religion-level doctrines. **Marriage Outside
+Judaism: Forbidden** is the default for every existing Jewish faith. The
+marriage eligibility trigger rejects a Jewish/non-Jewish pair on either the
+player or AI path. A newly created Jewish faith may choose **Permitted**;
+this lifts the new gate and CK3's AI Evil-faith marriage cutoff, but normal
+acceptance, diplomatic range, consent, and other constraints still apply.
+Different faiths within `judaism_religion` remain marriageable. Conversion
+to a Jewish faith also makes a prospective spouse eligible.
 
 Jewish Descent is **Matrilineal** by default. New Jewish faiths can choose
 **Patrilineal** or **Either Parent**. For a child born to one Jewish and one
@@ -33,3 +32,18 @@ CK3's culture and dynasty inheritance. A child can still convert later through
 ordinary gameplay. `events/kehillah_interfaith_debug_events.txt` contains
 console-only probes for the doctrine on a selected character and the resulting
 faith of a selected mixed-parent child.
+
+## 2026-10-02 correction
+
+This supersedes the first version of this document and commit `fddcfae` on
+interfaith marriage. That version defaulted to Permitted and its Restricted
+choice only left the vanilla AI reluctance in place; players could still
+propose a mixed-religion marriage. Daniel specified the historical default
+should prohibit such marriages for the Jewish faiths, so the default and the
+actual eligibility gate were both corrected. This applies to marriages
+outside Judaism; it does not prohibit Karaite/Rabbinite marriages within
+Judaism. The latter distinction follows the account of medieval Karaite
+marriages between Karaites and Rabbanites in
+[this Karaite marriage discussion](https://www.myjewishlearning.com/article/who-could-karaites-marry/).
+The default prohibition follows the traditional Jewish-law account summarized
+in [this intermarriage discussion](https://www.myjewishlearning.com/article/is-intermarriage-against-jewish-law/).

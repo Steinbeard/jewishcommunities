@@ -1,6 +1,6 @@
 # Interfaith marriage and descent live test — 2026-10-02
 
-**Status: fresh-boot smoke test passed; doctrine probe, marriage acceptance, and mixed-parent birth pending.**
+**Status: first-version fresh-boot smoke test passed; corrected default and marriage gate need a new live check, and mixed-parent birth is pending.**
 
 ## Baseline and method
 
@@ -33,3 +33,12 @@
 - Run a controlled interfaith marriage proposal with AI acceptance and a
   mixed-parent birth for each descent option. Source reading confirms the
   six-way parent/choice branch matrix; no natural birth has yet exercised it.
+
+## Correction after the first smoke test — 2026-10-02
+
+The first build defaulted to Permitted and only influenced AI willingness.
+After Daniel's correction, all existing Jewish faiths default to Forbidden,
+and `can_marry_character_trigger` now rejects a Jewish/non-Jewish marriage for
+both player and AI. The successful fresh boot above predates this correction.
+The corrected build requires a fresh boot and a proposal UI check before its
+live behavior can be called verified.

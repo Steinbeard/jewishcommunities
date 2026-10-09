@@ -1,0 +1,56 @@
+﻿# CK3 1.20 override of can_marry_character_trigger from
+# common/scripted_triggers/00_marriage_triggers.txt. The vanilla trigger no
+# longer enforces faith hostility, even for player proposals. Preserve its
+# full 1.20 body, adding only the final outside-Judaism check. Refresh this
+# override if vanilla changes can_marry_character_trigger in a later patch.
+
+can_marry_character_trigger = {
+	save_temporary_scope_as = can_marry_char_check
+	OR = {
+		AND = {
+			is_betrothed = yes
+			betrothed = $CHARACTER$
+		}
+		AND = {
+			can_marry_trigger = yes
+			$CHARACTER$ = { can_marry_trigger = yes }
+		}
+	}
+	trigger_if = {
+		limit = { $CHARACTER$ = { is_concubine = yes } }
+		$CHARACTER$ = { is_concubine_of = scope:can_marry_char_check }
+	}
+	trigger_if = {
+		limit = { is_concubine = yes }
+		is_concubine_of = $CHARACTER$
+		$CHARACTER$ = { could_marry_character_trigger = { CHARACTER = scope:can_marry_char_check } }
+	}
+	trigger_else = {
+		could_marry_character_trigger = { CHARACTER = $CHARACTER$ }
+	}
+	# The restriction belongs to the Jewish prospective spouse, not the
+	# arranging rulers. Different Jewish faiths are still within Judaism.
+	trigger_if = {
+		limit = {
+			OR = {
+				AND = {
+					faith.religion = religion:judaism_religion
+					$CHARACTER$ = { faith.religion != religion:judaism_religion }
+				}
+				AND = {
+					faith.religion != religion:judaism_religion
+					$CHARACTER$ = { faith.religion = religion:judaism_religion }
+				}
+			}
+		}
+		custom_description = {
+			text = kehillah_interfaith_marriage_forbidden
+			subject = scope:can_marry_char_check
+			object = $CHARACTER$
+			OR = {
+				rite = { rite_has_doctrine = kehillah_interfaith_marriage_permitted }
+				$CHARACTER$.rite = { rite_has_doctrine = kehillah_interfaith_marriage_permitted }
+			}
+		}
+	}
+}
