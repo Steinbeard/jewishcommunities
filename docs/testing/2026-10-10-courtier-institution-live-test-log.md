@@ -138,3 +138,97 @@ of `debug.log` after heartbeat 3 was cut off by a usage limit mid-run:
 The habit worth keeping from this: **check `debug.log` before relaunching a cut-off live
 run.** The log survived the cutoff intact and contained the verdict line that made this
 session's work possible.
+
+## Follow-up run, same day: the apprenticeship credit bands, and a fix
+
+This log's Check A carried a qualification — that run proved the institution branch but
+**not** the curriculum/foundation credit bands, because that pupil's Learning sat below the
+foundation band. Chasing that gap by source review turned up a defect, which was then fixed
+and live-tested in a third boot. Recorded here because it closes this log's own open
+qualification.
+
+### The defect, found by source review
+
+Heartbeat 3's recovered log showed one pupil holding **both** `FULL CURRICULUM CREDIT held`
+and `FOUNDATION FIELD CREDIT held` — a state the Learning bands are not supposed to be able
+to produce, since the bands are exclusive.
+
+`kehillah_award_apprenticeship_credit_effect` had tangled the band decision together with
+its "don't re-award" check:
+
+```
+if      = { ... learning >= FULL_FLOOR        NOT = { has_variable = curriculum } }
+else_if = { ... learning >= FOUNDATION_FLOOR  NOT = { field already present } }
+```
+
+A pupil who already held the curriculum failed the first limit **on the idempotence clause**
+and then fell through to the `else_if` — where a Learning-8 pupil also satisfies
+`learning >= FOUNDATION_FLOOR`, the full floor being the higher of the two. So a second
+invocation handed a top-band student the consolation prize on top of the full award.
+
+Not merely untidy: `kehillah_rabbi_ordination_curriculum_met_trigger` is an OR whose other
+arm counts `kehillah_apprentice_fields` against the required field count. The stray field
+means one apprenticeship can be counted twice, letting a pupil reach the two-field
+requirement on a single genuine field of adult study.
+
+**Ordinary play was not exposed.** The only caller is `kehillah_semicha.0002`, scheduled from
+`on_16th_birthday` (`common/on_action/kehillah_ordination_on_actions.txt`), which fires once
+per character. It is the debug sorter `kehillah_semicha_debug.7`, which fires on demand, that
+reaches it — and that is how the state was produced in the first place. Fixed anyway: an
+effect whose correctness depends on never being called twice is a trap for the next caller,
+and the misleading state cost a reader of the log real time.
+
+The fix checks idempotence once, for both credits together, so an already-credited pupil
+exits instead of falling through; the band choice then happens on its own.
+
+### The live verification, and why it was worth a boot
+
+The restructured outer condition sits in the path real play uses. Had it been wrong in the
+other direction, **no pupil would ever receive credit** and slice 4 would be silently dead
+again — the exact failure mode this whole heartbeat has been digging out. So the regression
+half mattered more than the bug half.
+
+Root's band was established first: `.1` reported `LEARNING PASS at or above the ordination
+floor`, so the full curriculum is the credit to expect. Then the sorter was fired three times,
+with a read-only `.5` dump after each:
+
+| `.5` dump | full curriculum | foundation field |
+|---|---|---|
+| before anything | not held | not held |
+| after `.6` (grants the years record) | not held | not held |
+| after 1st `.7` | **held** | not held |
+| after 2nd `.7` | **held** | not held |
+| after 3rd `.7` | **held** | not held |
+
+- **Regression check: PASS.** Exactly one credit after the first sorter run, and it is the one
+  root's Learning band calls for.
+- **Double-credit: PASS.** The credit set is identical across the 2nd and 3rd runs. Under the
+  old shape the 2nd run would have added the foundation field; it does not.
+
+Verified independently against `debug.log`: three `sorter fired` lines, and the ten credit
+lines in exactly the order above. `error.log` contains **zero** mentions of
+`kehillah_award_apprenticeship_credit_effect`, `kehillah_apprenticeship_curriculum`,
+`kehillah_apprentice_fields` or `is_target_in_variable_list`.
+
+The Rabbi trait was never granted: all three sorter runs logged `NO ENDORSEMENT no qualifying
+guardian willing`, because root has no guardian relation in this scenario, and
+`kehillah_semicha.0003` never appeared. That is the mechanic behaving, not a defect — and it
+is also why this run does not re-test the endorsement path, which was already verified
+separately.
+
+### One behaviour deliberately dropped
+
+The old shape also permitted an **upgrade**: a pupil credited at the foundation band who later
+crossed Learning 8 would, on a second invocation, be promoted to the full curriculum. The new
+outer limit refuses that. This is the better reading of V21 section 3.3, which says the
+Learning 6–7 band "requires the ordinary adult Learn Torah route until Learning reaches 8 and
+supplies one separate field of adult study" — that student is meant to earn the rest by
+studying, not be retroactively promoted. Unreachable either way while `.0002` fires once.
+Noted so a future caller that *does* want an upgrade path adds it on purpose.
+
+### Still open from this log's Check A
+
+The **foundation band itself** (Learning 6–7 earning one field and nothing more) has still
+never been exercised live — this run was a full-band pupil. The bands are exclusive branches
+of one `if`/`else_if`, so the structure is shared, but the lower branch has no live verdict.
+A pupil whose Learning sits in 6–7 would close it.
