@@ -67,7 +67,12 @@ the shim guide. Current state is in the
     run. `kehillah_debug.104` only arms a trace flag, so it cannot have caused it, and clergy
     status no longer depends on a trait at all. Worth one rerun.
 
-- **H2. VERIFIED LIVE 2026-10-10 (Shabbat heartbeat 3), one path still open**
+- **H2. CLOSED — VERIFIED LIVE 2026-10-10 (Shabbat heartbeats 3 and 4)**
+  *(header corrected 2026-10-10, heartbeat 5: it still read "one path still open" while this
+  entry's own body already said "H2 is now closed". The only remaining item is the honestly-null
+  natural-move-on-an-unpaused-clock observation below, which the body calls close to settled. A
+  stale header is exactly what made heartbeat 4 build a duplicate succession term today — see
+  the ba'alei batim slice 2 entry.)*
   ([log](docs/testing/2026-10-10-baalei-batim-paths-live-test-log.md)). All four player-facing
   option paths exercised with real clicks and a real negative control, and the exact household
   count measured on each side of every click with a purpose-written `h2_count.txt` run file.
