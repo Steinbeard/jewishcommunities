@@ -141,6 +141,34 @@ kehillah_household_refresh_effect = {
 # ---------------------------------------------------------------------
 # Scope: a community title. Saves its lowest-standing household as
 # scope:kh_low_house (does nothing if it has none).
+#
+# order_by is 0 - standing because ordered_in_list takes the HIGHEST
+# scoring entry at the default position, so negating turns "highest
+# score" into "lowest standing".
+#
+# HARDENED 2026-10-10 (Shabbat heartbeat 4). A household with no
+# kehillah_household_standing variable used to score exactly 0, and
+# since every real standing is positive every real family scored
+# NEGATIVE -- so the entry with no standing at all beat all of them and
+# was always chosen to leave. That is backwards: an entry with no
+# standing is one the refresh pass has never costed, i.e. the least
+# trustworthy thing on the register, not the family with the weakest
+# claim to stay.
+#
+# In ordinary play this was unreachable, which is why it survived: the
+# yearly pass is refresh-then-depart (kehillah_household_yearly_effect),
+# and the refresh writes standing on every entry it keeps and drops the
+# rest, so by the time this runs every entry has standing. It bit only
+# a register nothing had refreshed yet -- which is exactly what
+# kehillah_household_debug.10 reached into on an AI donor, and the
+# reason that probe kept migrating a family with no members and no head.
+#
+# So missing standing now sorts LAST rather than first. Deliberately a
+# large negative sentinel rather than excluding the entry: if NOTHING on
+# the register has standing they all tie here and one is still picked,
+# so a community can always lose a family. Behaviour is identical on any
+# register whose entries all have standing, which is every register in
+# normal play.
 # ---------------------------------------------------------------------
 kehillah_household_save_lowest_effect = {
 	ordered_in_list = {
@@ -151,6 +179,7 @@ kehillah_household_save_lowest_effect = {
 				limit = { has_variable = kehillah_household_standing }
 				subtract = var:kehillah_household_standing
 			}
+			else = { subtract = 1000 }
 		}
 		save_scope_as = kh_low_house
 	}
