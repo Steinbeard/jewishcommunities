@@ -310,3 +310,40 @@ institution branch, the readiness gate with real negative controls, and the rewa
 did not cover the landed-ruler or landless-adventurer branches, losing access to a Beit Midrash,
 the defer option across a save/load, any part of the education path, the balance measurement, or
 the AI-load observer test. The slice-3 log's own "Not covered" section is the live list.
+
+---
+
+## Addendum, 2026-10-10 (Shabbat heartbeat 3): two of section 7's gaps settled by source
+
+Neither needed the live game, which is worth recording because section 7 lists both as spikes.
+
+**1. The institution gate had no branch for an eligible courtier — the slice 4 build was dead on
+arrival for its own main case.** Section 2 says, in so many words, that "a Kehillah leader, landed
+ruler, landless adventurer, and eligible courtier use the same candidate definition."
+`kehillah_semicha_institution_available_trigger` had exactly three branches — Kehillah government
+holder, landed ruler via `capital_province`, landless adventurer via `location` — and a courtier is
+none of the three: no government flag, not a ruler, no capital province, not the adventurer
+government. So the trigger was **false for every courtier in the game**. And
+`kehillah_semicha.0002`, the coming-of-age sorter, requires it. A child who had served his four
+years under a rabbi and come of age with Learning 8 could therefore never be endorsed — the entire
+population slice 4 exists to create.
+
+Fixed 2026-10-10 by widening the third branch from "has the adventurer government" to "has the
+adventurer government **or holds nothing at all**", resolving by the community standing where the
+character is standing, with the same widening mirrored in
+`kehillah_semicha_resolve_institution_effect` so the Greatness reward has a community to land on.
+Purely additive — a Kehillah leader and a landed ruler are both rulers, so neither reaches the new
+clause, and nothing that passed before stops passing. Live confirmation is one line in a probe
+(`H4PUPIL: INSTITUTION PASS`) in the H4 slice 4 run.
+
+Worth noting what this says about method: a live pass over slice 4 before this fix would have
+reported "the endorsement never fires" without saying why — the same shape of unhelpful answer the
+silently-failing `trigger_event` gave in ROADMAP H2 the same day. Reading the gate was faster and
+more informative than playing to it, which is what CLAUDE.md's testing section says to expect.
+
+**2. "The defer option across a save/load" is not a real spike.** `kehillah_semicha.0001`'s
+option b carries a `custom_tooltip`, an `ai_chance = { base = 0 }`, and **no effects at all** — it
+writes no variable, sets no flag, starts no cooldown. There is therefore nothing for a save/load to
+lose or corrupt, and the decision remains available afterwards because its `is_valid` reads only
+the same triggers it read before. Section 3.4's requirement that deferring cost nothing is
+satisfied structurally, not behaviourally, and no save/load cycle can disturb it. Closed.

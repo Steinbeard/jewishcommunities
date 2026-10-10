@@ -1260,3 +1260,89 @@ ea58030 README: add the council, the householder families, and the study/ordinat
 23ed1c1 H4 slice 3 VERIFIED LIVE, and a readiness trigger that errored for everyone
 ```
 Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-shabbat-2026-10-09_235002.log
+
+## Shabbat heartbeat 2026-10-10 05:00 -- H2 verified live and one silent event fixed; H4 slices 4-5 in flight
+
+Provisional entry, written mid-run as insurance against a usage cutoff. If no later entry
+supersedes it, read it as the final state of this heartbeat.
+
+### Where the tree was at the start
+
+Clean, on `autonomous/shabbat-2026-10`. Heartbeat 2's run-status note said "cut off: true" and
+ROADMAP carried its correction that H2 was untouched, not in progress -- correct: no H2 test log
+existed and `kehillah_household_debug.10` had never been run live. A stale `ck3.exe` from that
+cut-off run was still alive with its logs frozen since 00:30; killed before booting fresh.
+
+### H2 -- VERIFIED LIVE, and a family arrival nobody was ever told about
+
+[Live log](docs/testing/2026-10-10-baalei-batim-paths-live-test-log.md). All four player-facing
+ba'alei batim option paths exercised with real clicks, the exact register count measured either
+side of every one with a purpose-written `h2_count.txt`. Arrival-for-a-fee pays +15 and the
+register goes 3 -> 4; refusing holds the count and renders the refused-return variant; paying 50
+keeps a family; persuading keeps one for nothing; and **"let them go" drops the count by exactly
+1**, which is the control that makes the two "stays" PASSes mean anything -- those options have no
+departure effect to cancel, so a no-op event would have faked both.
+
+**The bug.** `kehillah_household.0003` gates on
+`exists = scope:kh_mig_house.var:kehillah_household_head`. That variable is written in exactly one
+place in the system, `kehillah_household_refresh_effect`, and
+`kehillah_household_migrate_effect` does not write it. So when `kehillah_household_leave_effect`
+fired the event, the head was either absent -- any AI donor whose yearly pass had never run, which
+is every AI community in the first year of a game -- or stale, naming the donor's pick. A
+`trigger_event` onto a false `trigger` fails **silently**: no event, no error, nothing in
+`debug.log`. The register moved correctly on every single invocation and the player was never
+informed. Fixed by refreshing the recipient before the event (which also fixes the new community's
+stale adults/seats/standing), plus a `debug_log` for the no-head case so the next silent
+non-firing is visible. **The fix is source-verified and ck3-tiger clean; `.0003` rendering is being
+re-verified live right now** -- see "in flight" below.
+
+A natural move on an unpaused clock was **NOT OBSERVED** across ~2y9m, reported as an honest null.
+It is close to settled anyway: `.4` ran the real yearly effect, its real 30% roll hit, and a
+genuine `.0002` fired and resolved end to end.
+
+### H4 -- one real bug found by source review, before spending a live pass on it
+
+`kehillah_semicha_institution_available_trigger` had three branches (Kehillah holder, landed ruler
+via `capital_province`, landless adventurer via `location`) and **no branch for a courtier**, who
+is none of the three. The coming-of-age sorter `kehillah_semicha.0002` requires that trigger, so a
+child who had served his four years under a rabbi and come of age with Learning 8 could never be
+endorsed -- the whole population slice 4 exists to create. V21 section 2 says an "eligible
+courtier" uses the same definition as everyone else; the eligible courtier had no branch. Widened
+additively (adventurer government OR holds nothing at all), mirrored in the resolver so the
+Greatness reward has a community to land on. ck3-tiger clean. Recorded as a dated addendum in V21.
+
+Also closed by source, no live test needed: **"the defer option across a save/load"** (V21 section
+7) is not a real spike -- `kehillah_semicha.0001` option b has no effects at all, so there is
+nothing for a save/load to lose.
+
+### In flight when this was written
+
+A Sonnet subagent is live-testing, in one session: (A) the H2 `.0003` fix via a re-run of
+`kehillah_household_debug.10`, (B) slice 4's accumulation mechanics via `h4_child.txt` /
+`h4_nogap.txt` (the guardianless negative control) / `h4_child_sort.txt` / `h4_pupil_check.txt`,
+(C) the player-visible endorsement `kehillah_semicha.0003` via `h4_guardian.txt` plus
+`kehillah_semicha_debug.2` -> `.6` -> `.7`, testing both decline and accept, and (D) that slice 5's
+faith gates did not make the Chief Rabbi office unfillable at Worms.
+
+**If no later heartbeat entry reports these results, that run was lost and should be relaunched** --
+exactly the failure mode heartbeat 1 hit. The run files it uses are all written and committed-adjacent
+(they live in the CK3 `run\` directory, outside the repo): `h2_count.txt`, `h2_setup.txt`,
+`h4_child.txt`, `h4_nogap.txt`, `h4_child_sort.txt`, `h4_pupil_check.txt`, `h4_guardian.txt`.
+The single most important line in the whole run is `H4PUPIL: INSTITUTION PASS` or `INSTITUTION
+FAIL` -- that is the live verdict on the courtier-branch fix above.
+
+### Two smaller things now recorded in the shim guide
+
+- **Where `ck3.exe` actually is.** `E:\Program Files (x86)\Steam\steamapps\common\Crusader Kings
+  III\binaries\ck3.exe`. The guide had never said, and the `D:` Steam library has an empty
+  "Crusader Kings III" shell that looks like the install. Finding it cost several tool calls and one
+  runaway recursive `Get-ChildItem`; the registry (`HKLM:\SOFTWARE\WOW6432Node\Valve\Steam`) is the
+  cheap way.
+- **A skill change does not reach a trigger on a paused game.** `add_diplomacy_skill` needs
+  `force_character_skill_recalculation = yes` or the value never publishes, because the daily tick
+  never comes. `+12`, `+15` and `+100` all read as FAIL before this was found.
+
+### Nothing for Daniel to decide
+
+No blockers. Nothing destructive was done or avoided; the only deletion was killing a stale
+`ck3.exe` process from the cut-off run.
