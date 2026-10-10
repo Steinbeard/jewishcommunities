@@ -1,7 +1,7 @@
 # V26: The Kehillah council and the ba'alei batim
 
 **Status:** Council (part 1): Phase A **built 2026-10-01** on branch `kehillah-council`. The first
-build was reworked after a live test, and the rework is now under test. Ba'alei batim (part 2): **slice 1 built 2026-10-09** (register, standing display, arrivals and departures between communities); standing in succession and rivalries are still proposals. Daniel asked for both on
+build was reworked after a live test, and the rework is now under test. Ba'alei batim (part 2): **slice 1 built 2026-10-09** (register, standing display, arrivals and departures between communities) and **slice 2's succession term also shipped 2026-10-09**, in commit 84242d9 -- see the dated correction in the slice 1 section below. Rivalries, and registering the old leader's house after a succession, are still proposals. Daniel asked for both on
 2026-10-01. Builds on [v25](v25-by-god-alone-adaptation-proposals.md) (By God Alone research)
 and [v3](v3-meritocratic-succession.md) (succession), and changes the "no council" decision in
 [v1 implementation](../implementation/v1-kehillah-implementation.md).
@@ -208,6 +208,16 @@ Daniel asked on 2026-10-09 for communities that feel alive and interconnected. S
 items 1 and 3 above, the households panel's minimal form, and standing as a displayed number.
 Standing does **not** yet feed succession; that is slice 2 and needs a live succession test.
 
+> **Correction, 2026-10-10 (Shabbat heartbeat 5).** The sentence above was already false
+> when it was written. A `kehillah_leadership` candidate-score term reading
+> `house.var:kehillah_household_standing` went in the same day, in commit
+> 84242d9 alongside H1's succession work -- so slice 2's core landed together with slice 1
+> and nobody recorded it. This stale line then did real damage: a heartbeat run on
+> 2026-10-10 read it, believed the term was missing, and added a **second** one, which
+> double-counted every family's standing. The duplicate was caught while still uncommitted
+> and the two were merged into a single term. See the slice 2 section below for what is
+> actually in the build.
+
 - **Register:** each community title's `kehillah_households` list holds dynasty houses. The
   founding seed flags its three notables (`kehillah_household_founder`), gives each a wife and
   0–2 children, and records their trade. A quarterly pass registers them. It also recounts
@@ -244,9 +254,46 @@ Standing does **not** yet feed succession; that is slice 2 and needs a live succ
   `events/kehillah_household_events.txt`, `common/decisions/kehillah_household_decisions.txt`,
   `localization/english/kehillah_household_l_english.yml`, and the probe
   `events/kehillah_household_debug_events.txt`.
-- **Next:** slice 2, a standing term in `kehillah_leadership` (succession-risk area: needs a
-  live succession test). Then registering the old leader's house as a household after a
-  succession, and rivalries.
+- **Next** (as written 2026-10-09; see the 2026-10-10 correction above -- the standing
+  term it names had already shipped): registering the old leader's house as a household
+  after a succession, and rivalries.
+
+### Slice 2 — standing feeds succession
+
+**Status: shipped 2026-10-09** in commit 84242d9 (undocumented at the time); de-duplicated
+and hardened 2026-10-10 (Shabbat heartbeat 5).
+
+One term in `kehillah_leadership`'s `candidate_score`:
+
+- Fires only for a candidate whose **dynasty house** is on *this* community's register --
+  guarded on `has_variable = kehillah_household_standing`, `has_variable =
+  kehillah_household_of`, and `var:kehillah_household_of ?= scope:title`. The last of
+  those is load-bearing: a house keeps its standing when it migrates, so without it a family
+  registered at Speyer would bring Speyer's standing into a Worms succession.
+- Adds `house.var:kehillah_household_standing` times `kehillah_household_standing_score_weight_value`
+  (0.5), capped at **30**.
+- Reads **root's own house**, not `scope:title` -- which is what makes it
+  differentiate candidates at all. The removed `influence_level` term documented
+  at the top of `kehillah_leadership.txt` is the cautionary case: it read through
+  `scope:title`, which is the same for every candidate in one succession, so it
+  added an identical number to everyone and ordered nothing.
+- Scores the **house**, not the head, so every member of a registered family benefits -- V26
+  wants leading *families* competing, not just whoever is currently the oldest adult.
+- The leader's own house is never registered, so his children score nothing here. That is the
+  mechanism by which other families compete at all.
+
+At standing 45 (the Leading band) the term is worth 22.5 -- below holding an office (25) and
+below the outgoing leader's endorsement (30), and it loses to Learning in every band.
+Deliberate: family standing puts a candidate in contention, it does not decide the succession.
+
+**Known, accepted partial double-count:** `kehillah_household_standing_value` already
+includes half the head's diplomacy + stewardship + learning, and `candidate_score`
+scores those same skills directly, so for a household *head* the two overlap. For any other
+family member they do not overlap at all. The low weight keeps this from mattering; unpicking
+it would mean a second standing formula that could drift from the first.
+
+**Still to verify live:** a succession in which a registered householder actually appears in
+the candidate list, so the term is seen to move an ordering rather than merely to parse.
 
 **Original questions for Daniel:**
 - ~~Household cap per community?~~ Answered: 2–4.
