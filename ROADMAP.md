@@ -110,8 +110,16 @@ the shim guide. Current state is in the
     represents the path it claims to test. Speyer's register gave it away — six entries, the
     first with neither `kehillah_household_of` nor `kehillah_household_head`, and
     `kehillah_household_add_effect` sets `household_of` unconditionally, so that entry cannot
-    have arrived by the normal route. **Source-verified and ck3-tiger clean; the live re-run of
-    `.10` was in flight when this was written.**
+    have arrived by the normal route. **VERIFIED LIVE 2026-10-10**
+    ([log](docs/testing/2026-10-10-courtier-institution-live-test-log.md)): zero occurrences of
+    the no-head guard line, both `.10` assertions pass, and the popup renders in real English
+    naming the donor ("A Family Arrives" / "...has arrived from Kehillah of Córdoba..."). The
+    migration's own delta is a clean +1, confirmed two ways — the `.10` internal assertions and
+    a `kehillah_household_origin` probe — after the raw count (0 → 3) turned out to include two
+    locally-founded households swept in by root's own bootstrap. Independent corroboration that
+    a real person moved, which was the whole point: the arrived migrant appears as a Chief Rabbi
+    candidate in Check C's appointment panel, which a ghost family could not do. **H2 is now
+    closed.**
   - **A natural move on an unpaused clock: NOT OBSERVED**, honestly null — ≈2y9m of unpaused
     time, no popup. Close to settled anyway, because `.4` ran the real
     `kehillah_household_yearly_effect`, its real 30% roll **hit**, and a genuine `.0002` fired
@@ -138,8 +146,12 @@ the shim guide. Current state is in the
   measurement. The fix stands on the source read and on the error lines matching exactly the three
   unbuilt tracks.)
 
-- **H4. All five slices built; slice 3 VERIFIED LIVE 2026-10-10 (Shabbat heartbeat 2),
-  slices 4-5 source-verified and ck3-tiger clean, NOT live-tested.** V21's ordination path: the Rabbi trait stops being
+- **H4. All five slices built. Slices 3, 4 and 5 VERIFIED LIVE (slice 3 on 2026-10-10,
+  heartbeat 2; slices 4-5 on 2026-10-10, heartbeat 4 —
+  [log](docs/testing/2026-10-10-courtier-institution-live-test-log.md)). Slices 1-2 are the
+  inert gate and the records layer both of the above exercise.** One qualification carried
+  below: slice 4's live pass proves the institution branch and the years record, not the
+  curriculum/foundation credit bands. V21's ordination path: the Rabbi trait stops being
   reachable only through history, an office, or a Bet Din invitation. Slice numbering is
   [V21 section 6](docs/spec/v21-rabbi-ordination-paths.md)'s own.
   - **Slice 1 (gates) — built.** `common/scripted_triggers/kehillah_ordination_triggers.txt`:
@@ -206,12 +218,22 @@ the shim guide. Current state is in the
     and the mirrored resolver needed no change. Full write-up, the rule it implies, and an audit
     of every other `government_has_flag` call site in the mod (all already safe, so nothing else
     changed) are in **[implementation doc section 14](docs/implementation/v1-kehillah-implementation.md)**.
-    **Source-verified and ck3-tiger clean; the live re-test was in flight when this was written
-    — look for `H4PUPIL: INSTITUTION PASS`.**
-  - **Next for H4:** confirm the live verdict above, then the V21 section 7 gaps slice 3's log
-    still lists as genuinely open — the landed-ruler and landless-adventurer institution
-    branches, and losing access to the Beit Midrash. (The "defer across a save/load" gap is
-    already closed by source: `.0001` option b has no effects, so there is nothing to lose.)
+    **VERIFIED LIVE 2026-10-10**
+    ([log](docs/testing/2026-10-10-courtier-institution-live-test-log.md)): the same probe that
+    reported `INSTITUTION FAIL` before the fix now reports
+    `H4PUPIL: INSTITUTION PASS -- the courtier branch added 2026-10-10 is working`, with the
+    years record surviving the sorter as biography. Note this run does **not** re-prove the
+    curriculum/foundation credit bands — that pupil's Learning was below the foundation band, so
+    both credits were correctly absent; the bands passed in heartbeat 3's recovered run on a
+    pupil in range.
+  - **Slice 5 — VERIFIED LIVE 2026-10-10 (same log).** The faith gates did not make the Chief
+    Rabbi office unfillable at the only playable start: the appointment panel at Worms offers
+    7 of 7 characters as candidates.
+  - **Next for H4:** the V21 section 7 gaps slice 3's log still lists as genuinely open — the
+    landed-ruler and landless-adventurer institution branches, and losing access to the Beit
+    Midrash. (The "defer across a save/load" gap is already closed by source: `.0001` option b
+    has no effects, so there is nothing to lose.) A slice-4 run on a pupil whose Learning sits
+    in each band would also finish what this run left — see the qualification above.
 
 ### Kehillah council (V26) — added 2026-10-09
 
