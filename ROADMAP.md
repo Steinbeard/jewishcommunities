@@ -79,6 +79,10 @@ the shim guide. Current state is in the
     ck3-tiger clean, **not yet run live.** It moves real courtiers, so it is not read-only.
   - The option paths still need actual clicks, and "natural" arrivals need a year or two of
     unpaused time with the yearly pulse (not `.4`, which forces the pass).
+  - **Correction, 2026-10-09 night (Shabbat heartbeat 2): still untested.** Heartbeat 1's
+    BLOCKERS entry says an H2 live test was "in flight" when it was written; that run was cut off
+    by a usage limit and left no test log and no results, so nothing in this item has been
+    verified since. `.10` has still never been run live. Treat H2 as untouched, not in progress.
 - **H3. DONE 2026-10-09 (Shabbat heartbeat 1).** The `kehillah_restore_quarter_effect` /
   `kehillah_restore_track_2/3_effect` "Failed to fetch variable for 'kq_countinghouse' /
   'kq_workshops' / 'kq_market_stalls'" errors on `kehillah_on_title_gain`. They **predate
@@ -93,8 +97,33 @@ the shim guide. Current state is in the
   measurement. The fix stands on the source read and on the error lines matching exactly the three
   unbuilt tracks.)
 
-- **H4.** Then the rabbi-loop direction below (V21 ordination through mentorship and local
-  semicha).
+- **H4. IN PROGRESS — slices 1-3 of 5 built, ck3-tiger clean; slice 3's live test run on
+  2026-10-09 night (Shabbat heartbeat 2).** V21's ordination path: the Rabbi trait stops being
+  reachable only through history, an office, or a Bet Din invitation. Slice numbering is
+  [V21 section 6](docs/spec/v21-rabbi-ordination-paths.md)'s own.
+  - **Slice 1 (gates) — built.** `common/scripted_triggers/kehillah_ordination_triggers.txt`:
+    one named candidate trigger composing the faith, adult/free/capable, Learning and gender
+    checks, reusing `is_rabbinic_authority_jewish_trigger` (not the broader Jewish trigger — a
+    Karaite must not receive a trait called Rabbi) and the existing
+    `kehillah_leadership_gender_eligible_trigger`. Thresholds live in
+    `common/script_values/kehillah_ordination_values.txt`. Committed inert on purpose.
+  - **Slice 2 (records) — built.** `kehillah_study_specific_work_effect` now guards every
+    `add_trait_xp` and records an unordained reader's progress instead
+    (`kehillah_mastered_works` plus `kehillah_apprentice_fields`).
+  - **Slice 3 (Seek Semicha) — built.** Learn Torah's decision and the study scheme admit a
+    candidate, not only an ordained rabbi; a candidate with two works from two fields can
+    present himself at a Beit Midrash and be recognised
+    (`common/decisions/kehillah_semicha_decisions.txt`, `events/kehillah_semicha_events.txt`,
+    `common/scripted_effects/kehillah_ordination_effects.txt`). Tier 1 is enough to ordain;
+    a Yeshiva only improves the ceremony. **No roll on the outcome** — section 3.4 forbids a
+    permanent random rejection after the player's investment — and deferring touches no
+    variable at all, so recorded progress cannot be erased. Probes:
+    `events/kehillah_semicha_debug_events.txt` (`.1` read-only state dump; `.2`/`.3`/`.4` force
+    candidate, curriculum, study hall).
+  - **Next: slice 4** (the guarded education-observation effect, accumulated qualified years
+    under a rabbi guardian, and the coming-of-age endorsement), then **slice 5** (reconcile the
+    Chief Rabbi and Bet Din grants with the shared faith gate without retconning historical
+    trait holders).
 
 ### Kehillah council (V26) — added 2026-10-09
 
