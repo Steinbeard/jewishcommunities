@@ -386,6 +386,35 @@ The rule of thumb: **tiger rules out a class of error; it does not certify a
 feature.** A clean run means "no malformed script and no dangling references" — it
 never means "this works."
 
+### Tiger's summary totals are not a before/after measurement — added 2026-10-10
+
+ROADMAP's H3 entry already carries a correction warning that tiger's own counts "move
+by ~10 warnings run to run, in vanilla files". That understates it. Four consecutive
+runs against an **unchanged** tree on 2026-10-10 gave:
+
+```
+error: 682   error: 612   error: 616   error: 616
+```
+
+A 70-error spread with nothing edited between runs. The 682 was the first run taken
+immediately after appending to a file, which is the exact moment a session is most
+likely to read a jump as "I just broke something" — and act on it.
+
+So do not use the `fatal/error/warning` totals to judge your own change at all. The
+usable signals are:
+
+1. **Does tiger name a file you touched?** Grep its output for your filename. Silence
+   on your file is the real clean result. (Tiger prints file references as
+   `--> [MOD] path\to\file.txt`, several lines *after* the severity line, so a
+   `grep -B` window around the filename is what shows the actual message.)
+2. **Is `fatal` non-zero?** That number has been stable.
+3. **Did a specific message you were chasing go away?**
+
+And the standing caveat from CLAUDE.md still applies on top of this: tiger targets
+1.19, so many 1.20 tokens (`rite`, `clergy`, `organization`, `government_has_mechanic`,
+…) are false positives. The bulk of this repo's ~616 errors are exactly that — vanilla
+1.20 faiths tiger has never heard of.
+
 ## Read the error log even when the check passes — added 2026-09-26
 
 Two of the three bugs above were found *by checks that returned PASS on their own
