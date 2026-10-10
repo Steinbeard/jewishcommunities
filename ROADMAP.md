@@ -90,6 +90,28 @@ the shim guide. Current state is in the
     adults/seats/standing, plus a `debug_log` so the next silent non-firing is visible.
     **The fix is source-verified and ck3-tiger clean, NOT yet re-run live** — the next heartbeat
     should re-run `.10` and confirm `.0003` appears with its description naming the donor.
+  - **Update 2026-10-10 (Shabbat heartbeat 4): the re-run happened, in heartbeat 3's lost
+    subagent session, and its result was recovered from `debug.log`. The fix above is right
+    and stays, but it could not be proven, because the family `.10` was handing over did not
+    exist as people** — the new guard fired twice ("a player received a family with no head at
+    their court"). No recipient-side refresh can invent a head for a family with no members.
+    Two donor-side defects behind it, both now fixed:
+    - `kehillah_household_save_lowest_effect` **preferred the ghost**. `order_by` is
+      `0 - standing`, so every real family scored negative while an entry with no standing
+      variable scored exactly 0 and beat all of them — the least-trustworthy entry on the
+      register was always the one chosen to leave. Missing standing now sorts last, via a
+      sentinel rather than an exclusion, so a community can always still lose a family.
+    - **`.10` was not testing the real path.** Real play is refresh-then-depart
+      (`kehillah_household_yearly_effect`), so a genuine departure always picks from a
+      just-recounted register where every entry has a head and a standing. `.10` reached into
+      an AI register nothing had ever refreshed; it now refreshes the donor first.
+    Note the consequence: **ordinary play was never exposed to the first defect**, since
+    refresh writes standing on every entry it keeps. Both are hardening, plus a probe that now
+    represents the path it claims to test. Speyer's register gave it away — six entries, the
+    first with neither `kehillah_household_of` nor `kehillah_household_head`, and
+    `kehillah_household_add_effect` sets `household_of` unconditionally, so that entry cannot
+    have arrived by the normal route. **Source-verified and ck3-tiger clean; the live re-run of
+    `.10` was in flight when this was written.**
   - **A natural move on an unpaused clock: NOT OBSERVED**, honestly null — ≈2y9m of unpaused
     time, no popup. Close to settled anyway, because `.4` ran the real
     `kehillah_household_yearly_effect`, its real 30% roll **hit**, and a genuine `.0002` fired
@@ -169,9 +191,27 @@ the shim guide. Current state is in the
     removed from anyone. The slice-3 run's probe reporting `FAITH PASS` at Worms is what makes
     this safe — without it this was a plausible way to make the office unfillable at the only
     playable start.
-  - **Next for H4:** a live pass over slices 4 and 5 — `.6` then `.7` on a child reaches the
-    endorsement without waiting ten in-game years — plus the V21 section 7 gaps slice 3's log
-    lists.
+  - **Slice 4's courtier branch was still broken, and fixed 2026-10-10 (Shabbat heartbeat 4).**
+    Heartbeat 3 added the courtier branch to `kehillah_semicha_institution_available_trigger`
+    and its live verdict — recovered from the lost run's `debug.log` — was
+    `H4PUPIL: INSTITUTION FAIL`. The cause is one clause, and not the one anyone was looking at:
+    **`government_has_flag` is TRUE for a COURTIER of a Kehillah ruler**, not only the ruler.
+    Measured directly on the H4 pupil Huna Landsberg (65937), a titleless child ward at Worms:
+    "pupil IS a Kehillah government holder". That single fact closed all three branches at once
+    — branch 1 matched the flag then demanded `exists = domicile`, which a courtier has not got,
+    while the `NOT = { government_has_flag ... }` guard shut branches 2 and 3. The community data
+    was never at fault: Worms MATCHES his location and HAS a Beit Midrash tier 1+. Fixed by
+    dropping that guard from branch 3; a Kehillah leader still cannot reach it (`is_ruler = no`
+    is false for them), so leaders are still judged on their own quarter alone. Purely additive,
+    and the mirrored resolver needed no change. Full write-up, the rule it implies, and an audit
+    of every other `government_has_flag` call site in the mod (all already safe, so nothing else
+    changed) are in **[implementation doc section 14](docs/implementation/v1-kehillah-implementation.md)**.
+    **Source-verified and ck3-tiger clean; the live re-test was in flight when this was written
+    — look for `H4PUPIL: INSTITUTION PASS`.**
+  - **Next for H4:** confirm the live verdict above, then the V21 section 7 gaps slice 3's log
+    still lists as genuinely open — the landed-ruler and landless-adventurer institution
+    branches, and losing access to the Beit Midrash. (The "defer across a save/load" gap is
+    already closed by source: `.0001` option b has no effects, so there is nothing to lose.)
 
 ### Kehillah council (V26) — added 2026-10-09
 
