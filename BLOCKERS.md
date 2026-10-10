@@ -1465,3 +1465,89 @@ today's finding shows answers a different question than "is this the holder". H1
 `change_government` or the `kehillah_succession.0010` retry is what carries it. That is
 succession code -- this repo's highest-crash-risk area -- so it is written down with
 the cheap way to settle it rather than changed blind on a night with nobody watching.
+
+## Shabbat heartbeat 2026-10-10 10:15 -- live results in: all three checks PASS, H2 closed, H4 slices 4-5 verified
+
+Supersedes the 09:50 provisional entry above, which was written mid-run as cutoff
+insurance. Everything in it still holds; this adds the live verdicts.
+
+### The live pass
+
+[Log](docs/testing/2026-10-10-courtier-institution-live-test-log.md). Fresh boot after
+killing the stale pre-fix `ck3.exe` heartbeat 3 left running. Three checks, all PASS. The
+two decisive claims were re-verified directly against `debug.log` by this session rather
+than taken on the subagent's report:
+
+- **H4 slice 4 courtier branch: PASS.** `H4PUPIL: INSTITUTION PASS -- the courtier branch
+  added 2026-10-10 is working`, from the same probe that returned `INSTITUTION FAIL` before
+  the fix. Years record survived the sorter, as intended.
+- **H2 `.0003`: PASS.** **Zero** occurrences of the no-head guard line (that absence is the
+  pass condition), both `.10` assertions pass, and the popup renders in real English naming
+  the donor: "A Family Arrives" / "Daniel of the house of Alconstantini has arrived from
+  Kehillah of Córdoba...". **H2 is closed.**
+- **Slice 5 Chief Rabbi fillability: PASS.** 7 of 7 candidates at Worms; the faith gates did
+  not make the office unfillable at the only playable start.
+
+No new distinct `kehillah` error content or error types in `error.log` (checked by content,
+not line count — the same lint lines re-emit on every console call, so a count comparison
+would have misled).
+
+### Three things recorded honestly rather than smoothed over
+
+1. **Slice 4's run does not re-prove the curriculum/foundation credit bands.** That pupil's
+   Learning fell below the foundation band, so both credits were correctly absent. The bands
+   passed in heartbeat 3's recovered run on a pupil in range. Left in H4's Next list.
+2. **H2's raw register count went 0 → 3, not the predicted +1.** Traced to ground truth with
+   a `kehillah_household_origin` probe: 2 locally-founded entries swept in by root's own
+   bootstrap, 1 migrated. The migration delta is a clean +1, confirmed two independent ways.
+   Not a defect in either fix.
+3. **`.0003` has no `debug_log` of its own**, so its rendering rests on the screenshot read.
+   The independent corroboration is Check C's appointment panel listing the just-arrived
+   migrant as a Chief Rabbi candidate — a ghost family cannot supply a courtier to a
+   candidate list, which is exactly what the H2 fix was about.
+
+One null left as a null: which call bootstrapped root's two pre-existing households
+mid-sequence was not pinned down. Test-infrastructure trivia; it affected no verdict.
+
+### Housekeeping
+
+- **This run's logs are archived** to `logs\archive-shabbat-heartbeat4\` (debug.log +
+  error.log), because CK3 overwrites `debug.log` on every boot — which is how heartbeat 3's
+  recovered evidence was lost once it had been read. The `H4PUPIL: INSTITUTION PASS` line is
+  preserved there.
+- **`ck3.exe` was stopped at the end of this run** (PID 26908, confirmed gone). Deliberate:
+  a stale instance with pre-fix scripts loaded is exactly what cost this heartbeat time at
+  the start, and the next heartbeat will likely change script again. Next session should
+  boot fresh.
+
+### What the next heartbeat should pick up
+
+The Shabbat queue's H1, H2 and H3 are now closed, and H4 is verified except for the V21
+section 7 gaps. In priority order:
+
+1. **H4's remaining V21 section 7 gaps:** the landed-ruler institution branch (branch 2) and
+   the landless-adventurer branch, and losing access to the Beit Midrash. All three are
+   reachable with scripted probes on synthetic characters — cheaper than UI work, and
+   branch 2 in particular is worth a look now that branch 3's guard turned out to be wrong.
+2. **A slice-4 run on a pupil in each Learning band**, to finish what qualification 1 above
+   leaves open.
+3. **V26 ba'alei batim slice 2** — standing as a `kehillah_leadership` candidate-score term.
+   Per CLAUDE.md this touches succession scoring, so it needs the implementation doc read
+   first and a live succession test before it is called done.
+
+### For Daniel
+
+Nothing blocking. Nothing destructive was done or avoided; the only process killed was the
+test instance of CK3, and the only deletions were two of my own temp files.
+
+One open question is **recorded rather than acted on**, deliberately — see implementation
+doc section 14's last part. Two `change_government` guards in the succession path use
+`government_has_flag`, which today's finding shows answers "what government does this
+character fall under", not "is this the holder". H1's live `CLERGY YES` proves that path
+works; it does not prove whether the inline `change_government` or the
+`kehillah_succession.0010` retry is what carries it. That is succession code -- this repo's
+highest-crash-risk area -- so it is written down with the cheap way to settle it (run an
+appointment succession to a courtier heir and read `.0010`'s verdict in `debug.log`) rather
+than changed blind on a night with nobody watching. **If the inline branch is in fact being
+skipped, the retry is silently carrying every succession in the game**, which is worth
+knowing either way.
