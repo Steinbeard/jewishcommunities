@@ -1872,3 +1872,20 @@ unchanged item from the earlier entries — **implementation doc section 14's tw
 `change_government` guards** in the succession path that use `government_has_flag`.
 Still written down rather than changed unattended, for the same reason as before: that is the code
 that has crashed this game.
+
+## Heartbeat run status -- 2026-10-10_145002 (autonomous/shabbat-2026-10)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: YES --
+```
+?? _roadmap_ransom.py
+```
+- Last few commits:
+```
+2561829 BLOCKERS: the ransom run, and the correction I owed this entry
+5cddc46 The first Bet Din case was copied eight times, defect included
+a06aa95 Retracting my own screenshot claim: capture is live
+a1fc059 H2's header contradicted its own body
+d0d59b9 A baseline read before boot is the previous session's baseline
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-shabbat-2026-10-10_145002.log
