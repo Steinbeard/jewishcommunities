@@ -980,3 +980,141 @@ Kehillah of Worms with no errors.
   (`common/character_interactions/pam_interactions.txt:443-444`). The
   first version of the probe reported this as a failure; it is the
   expected, healthy state.
+
+
+## 14. `government_has_flag` is true for a ruler's COURTIERS, 2026-10-10
+
+**Status:** engine behaviour, measured live on 2026-10-10 (Shabbat heartbeat 3's
+recovered run; the bug it caused fixed in heartbeat 4). One real bug found and
+fixed because of it; every other call site in the mod audited and found already
+safe.
+
+### The measurement
+
+A child courtier in the Worms court — Huna Landsberg, character `65937`, a ward of
+the community's holder Isaac HaLevi (`29176`) — reads:
+
+```
+government_has_flag = government_is_kehillah   ==> TRUE
+```
+
+He holds no title, is `is_ruler = no`, and has no domicile. The line is from
+`run/h4_institution_diag.txt` via `debug.log`:
+
+> `H4INSTDIAG: pupil IS a Kehillah government holder (branch 1 territory, unexpected for a child)`
+
+The diagnostic was written expecting that branch to be dead code for a child. It
+was not.
+
+**What is measured** is the quoted result: the flag is true for a landless,
+titleless courtier of a Kehillah ruler. **The likely mechanism** — that a landless
+character's government resolves through their liege or employer rather than being
+unset — is inference, not measurement. Nothing in this build depends on the
+mechanism being right; the behaviour is enough. `_governments.info` documents the
+`flags` field ("Can be defined as any string that can be referenced by
+`government_has_flag = some_flag`") without saying anything about the scoped
+character needing to be landed.
+
+Corroborating, circumstantially: vanilla pairs `government_has_flag` with
+`is_landed = yes` / `is_independent_ruler = yes` guards throughout
+`common/decisions/`. That is weak evidence on its own, since a decision usually
+needs a landed ruler anyway — but it is consistent, and across ~5700 vanilla uses
+the flag is essentially never read on a character who might be a courtier.
+
+### The bug it caused
+
+`kehillah_semicha_institution_available_trigger`
+(`common/scripted_triggers/kehillah_ordination_triggers.txt`) is an OR of three
+branches, and on 2026-10-10 a courtier clause was added to the third because V21
+section 2 says "a Kehillah leader, landed ruler, landless adventurer, and eligible
+courtier use the same candidate definition". It still returned FALSE for the exact
+pupil it was written for, because branches 2 and 3 each opened with:
+
+```
+NOT = { $CHARACTER$ = { government_has_flag = government_is_kehillah } }
+```
+
+One true flag closed all three at once:
+
+| branch | intended population | why it failed for the pupil |
+|---|---|---|
+| 1 | the community's own leader | flag matched, then `exists = domicile` failed — domiciles belong to the ruler, not to their household |
+| 2 | a landed ruler at their capital | excluded by the `NOT` |
+| 3 | adventurer / courtier | excluded by the `NOT` |
+
+The community data was never at fault: the same diagnostic shows Worms MATCHES the
+pupil's location and HAS a Beit Midrash tier 1+.
+
+This mattered because the coming-of-age sorter `kehillah_semicha.0002` requires
+this trigger, so a child who had served the four years under a rabbi could never be
+endorsed — i.e. the entire population V21 slice 4 exists to create.
+
+**The fix** drops the `NOT` from branch 3 rather than touching the location test. A
+Kehillah *leader* still cannot reach branch 3, which is what that guard was actually
+protecting: a leader holds `d_kehillah_*`, so `is_ruler = no` is false for them and
+they have not got the adventurer government. Leaders are therefore still judged on
+their own quarter alone and cannot borrow a neighbouring community's study hall.
+Purely additive — nothing that passed before stops passing.
+
+The mirrored resolver `kehillah_semicha_resolve_institution_effect` needed no
+change: it is an `if`/`else_if` chain whose first branch also requires
+`exists = primary_title`, which a courtier fails, so it already falls through to the
+courtier branch and credits the right community.
+
+### The rule to follow
+
+**Do not use `government_has_flag` to mean "this character is a Kehillah leader"
+unless the scope is already known to be a ruler.** It answers "what government does
+this character fall under", which includes everybody in the court. When the question
+is really "is this the holder", use `is_ruler`, `is_landed`, `exists = domicile`, or
+`exists = primary_title`, which distinguish a holder from their household and the
+flag does not.
+
+### Audit of every other call site, 2026-10-10
+
+All remaining uses in the mod were checked. **All are already safe**, each for a
+stated reason — no other changes were made on the back of this finding. The audit is
+source-only; it reasons from each site's own surrounding guards rather than from a
+live probe per site.
+
+| site | why the leak cannot bite |
+|---|---|
+| `kehillah_settlement_policy_decisions.txt:47,89` | `is_shown` also requires `is_landed = yes` + `is_independent_ruler = yes`; a courtier is neither |
+| `kehillah_scripted_triggers.txt:842` | scope is `domicile.domicile_location.county.holder` — a holder by construction |
+| `kehillah_scripted_triggers.txt:1314` | the library trigger's branch 2, already gated by `is_ruler = yes` + `exists = capital_province` |
+| `kehillah_council_tasks.txt:73` | `scope:kehillah_petition_host` is gated `is_landed = yes` |
+| `kehillah_vanilla_task_overrides.txt` (x19) | all read `scope:councillor_liege`, i.e. the liege explicitly — the liege's government is the intended answer |
+| `kehillah_task_contracts.txt:226,564,706,875` | `scope:employer` comes from the county-holder selection above |
+| `kehillah_clerical_appointment_law_override.txt:45` | vanilla's own trigger also requires `highest_held_title_tier >= tier_county`, which no courtier meets |
+| `kehillah_council_debug_events.txt:102,123` | console-only probes |
+
+### One question left open, deliberately not changed
+
+Two sites guard a **government change** with this flag:
+
+- `common/on_action/kehillah_on_actions.txt:422,430` (`kehillah_on_title_gain`)
+- `common/scripted_effects/kehillah_found_community_effects.txt:178`
+
+Both read `NOT = { government_has_flag = government_is_kehillah }` before
+`change_government = kehillah_government` — the guard exists because changing to the
+government you are already in is refused with "Trying to set illegal government".
+
+The open question: when an appointed successor who was a **courtier of the previous
+leader** gains the community title, does the flag already read true at that instant
+and skip both branches, leaving the new leader without `kehillah_government`?
+
+This was **not** changed, for two reasons. First, succession and government laws are
+this codebase's highest-crash-risk area (sections 6 and 8), and this is exactly that
+code. Second, the evidence says the live path works: H1's 2026-10-09 test ran a real
+appointment succession to a lay appointee and the probe reported `CLERGY YES`, which
+depends on `mechanic_type = theocracy` and so can only come from
+`kehillah_government`. What that evidence does *not* settle is **which** path got it
+there — the inline `change_government`, or the `kehillah_succession.0010` retry a day
+later, which exists precisely because the inline attempt can fail and which logs its
+own verdict either way.
+
+Cheap to settle whenever someone is next in a live session: run an appointment
+succession to a courtier heir and read `.0010`'s verdict line in `debug.log`. If the
+inline branch is being skipped, the retry is silently carrying every succession, and
+the guard there should move to `is_ruler`-style tests for the same reason branch 3's
+did.
