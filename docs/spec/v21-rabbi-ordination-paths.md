@@ -1,7 +1,11 @@
-# V21 Spec: Rabbi Ordination Paths
+﻿# V21 Spec: Rabbi Ordination Paths
 
-**Status: PROPOSAL — approved design direction; no implementation.**
-**Date: 2026-09-25.** Depends on the existing Rabbi trait, Learn Torah
+**Status: BUILT 2026-10-09/10 — all five of section 6's slices are implemented. Slice 3
+(Seek Semicha) is VERIFIED LIVE; slices 4 and 5 are source-verified and ck3-tiger clean but not
+live-tested. See the dated addendum at the end of this doc for what the build actually does, and
+[ROADMAP.md](../../ROADMAP.md)'s H4 for current state — ROADMAP wins over this file.**
+**Originally: PROPOSAL — approved design direction; no implementation.**
+**Date: 2026-09-25; status line updated 2026-10-10.** Depends on the existing Rabbi trait, Learn Torah
 scheme, community library, Beit Midrash, Chief Rabbi office, and Bet Din
 Conference. It supersedes the *future acquisition* portion of the Rabbi-trait
 backlog: the trait must no longer be reachable only through history, an office,
@@ -261,3 +265,48 @@ instead of hiding a one-time reward in an unrelated score.
 - **AI load:** run an observer test before expanding AI beyond Kehillah
   leaders; count schemes and inspect `error.log`/save growth rather than
   assuming the narrow existing policy remains safe once candidates broaden.
+
+
+---
+
+## Addendum — what was built, 2026-10-09/10 (Shabbat heartbeats 1 and 2)
+
+**This addendum does not supersede the design above; it records where the build departs from it,
+and nothing more.** The implementation account of record is
+[ROADMAP.md](../../ROADMAP.md)'s H4 entry, plus
+[the slice-3 live test log](../testing/2026-10-10-semicha-ordination-live-test-log.md). Section 6's
+five slices were built in order and in that order committed, each one ck3-tiger clean.
+
+Three places where the build made a choice this spec left open, recorded here because a later
+session will otherwise re-litigate them:
+
+1. **The Learning 6-7 foundation is one entry in `kehillah_apprentice_fields`, not an exception
+   branch.** Section 3.3 says it is "worth one study field" and still "requires the ordinary adult
+   Learn Torah route". Implementing it as a field flag rather than as its own case in the
+   curriculum trigger means it flows through the ordinary two-works/two-fields counting: a student
+   who arrives at adulthood in that band can then ordain on two works in a *single* field, which
+   he could not otherwise. The full Learning-8+ credit is the one that gets its own variable
+   (`kehillah_apprenticeship_curriculum`), because section 3.2's count cannot express "a childhood"
+   without inventing the fake named books section 3.3 forbids.
+
+2. **The coming-of-age check runs five days after the birthday, not on it.** Vanilla applies the
+   education trait at birthday+2 days (`childhood_education.0007`, in `on_16th_birthday`'s own
+   event list), and that trait is frequently what carries a student across Learning 8. Checking on
+   the day would have systematically under-credited exactly the students section 3.3 is about.
+   This is why the endorsement arrives as a hidden sorter (`kehillah_semicha.0002`) plus a visible
+   event (`.0003`) rather than as one event.
+
+3. **Section 5's faith reconciliation turned out to be three gaps, not one.** The Bet Din offer had
+   no faith check at all — `government_has_flag = government_is_kehillah` says a character leads a
+   Kehillah, not what the Kehillah believes. The Chief Rabbi office checked only
+   `faith = scope:liege.faith`, which a Karaite leader's Karaite appointee passes cleanly. And
+   `kehillah_hire_rabbi_effect` granted the trait on the strength of not already having it. All
+   three now read `is_rabbinic_authority_jewish_trigger`; the Chief Rabbi *grant* is behind the
+   check as well as the appointment, because court positions are also filled by AI paths and by
+   scripted `appoint_court_position` calls.
+
+**Section 7's required spikes are mostly still open.** The slice-3 run covered the Kehillah-leader
+institution branch, the readiness gate with real negative controls, and the reward magnitude. It
+did not cover the landed-ruler or landless-adventurer branches, losing access to a Beit Midrash,
+the defer option across a save/load, any part of the education path, the balance measurement, or
+the AI-load observer test. The slice-3 log's own "Not covered" section is the live list.
