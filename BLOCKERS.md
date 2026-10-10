@@ -1551,3 +1551,114 @@ appointment succession to a courtier heir and read `.0010`'s verdict in `debug.l
 than changed blind on a night with nobody watching. **If the inline branch is in fact being
 skipped, the retry is silently carrying every succession in the game**, which is worth
 knowing either way.
+
+## Shabbat heartbeat 2026-10-10 11:20 -- section 7 gaps, three probe bugs, and a double-credit fix
+
+Continues the 10:15 entry above (which stands). Three more live runs since then, all on
+fresh boots, each decisive line re-verified against `debug.log` by the orchestrating session
+rather than taken on the subagent's report. **The Shabbat queue H1-H4 is now complete except
+for two honest nulls that need specific world states.**
+
+### V21 section 7's institution gaps -- two of three CLOSED
+
+[Log](docs/testing/2026-10-10-section7-institution-gaps-live-test-log.md). Built two probes:
+`kehillah_semicha_debug.8` (read-only, one subject per branch) and `.9` (destroy the study
+hall).
+
+- **Landed-ruler branch: CLOSED, both directions.** `BRANCH 2b PASS`, subject Al-Qa'im
+  Abbasid (31533) seated in Baghdad -- the province `d_kehillah_baghdad` occupies, found by
+  scanning rather than hardcoding. Plus a correct negative at Worms, where the host county's
+  holder rules from another seat. **This is a mechanics result, not a claim a caliph can be
+  ordained** -- the institution trigger has no faith gate by design; the candidate trigger
+  refuses him.
+- **Losing the Beit Midrash: CLOSED.** Reproduced twice: every branch flips to FAIL when the
+  building goes, and the student's records survive (section 3.4 -- only the ceremony needs an
+  institution).
+- **Landless-adventurer branch: STILL OPEN, honest null.** No character with
+  `landless_adventurer_government` stands in any community's province in 1066. Needs a save
+  where one actually does. Manufacturing one would test the probe's own character, not the
+  game, so the probe reports NOT OBSERVED by design.
+
+### Three probe bugs, one of them a probe that lied
+
+1. **`.4` reported a study-hall rebuild that never happened.** It logged success while the
+   engine threw "Domicile owner failed to meet triggered requirements" and built nothing.
+   **The refusal is correct V16 behaviour** -- the Worms start sits under an unresolved
+   Christian host charter, which blocks new communal buildings. The probe lying about it was
+   the defect. Exposed by `.8` still reporting every branch FAIL after a "successful" rebuild
+   -- an assertion catching a log line. `.4` now verifies and names the cause.
+   **Second time this shape has bitten**; the shim guide already documented the trap. An audit
+   of every `add_domicile_building` call site in the mod found **no gameplay bug** --
+   `kehillah_worms_developed_start_effect` was already hardened on 2026-09-26.
+2. **`.9` advertised a reversibility it usually does not have.** It now evaluates the charter
+   *before* removing anything and prints REVERSIBLE or WARNING, ONE-WAY.
+3. **`.8`'s control message told the reader to distrust a passing test** -- it cried "CONTROL
+   BROKEN" whenever `.9` had deliberately demolished the hall. Now distinguishes the two.
+
+All three verified live afterwards.
+
+### A double-credit bug, and a correction to this heartbeat's own earlier claim
+
+Found by source review while chasing why one pupil in heartbeat 3's recovered log held
+**both** `FULL CURRICULUM CREDIT` and `FOUNDATION FIELD CREDIT`.
+
+`kehillah_award_apprenticeship_credit_effect` tangled the Learning-band test with its
+don't-re-award test, so an already-credited pupil failed the first limit *on the idempotence
+clause* and fell through to the `else_if` -- where a Learning-8 pupil also clears the
+foundation floor. A top-band student collected the consolation prize as well. That matters
+because the readiness trigger's other OR arm counts `kehillah_apprentice_fields`, so one
+apprenticeship could be counted twice, reaching the two-field requirement on a single genuine
+field of adult study.
+
+**Ordinary play was never exposed:** the only caller, `kehillah_semicha.0002`, is scheduled
+from `on_16th_birthday` and fires once per character. The debug sorter `.7` is what reached
+it. Fixed anyway -- an effect whose correctness depends on never being called twice is a trap
+for the next caller.
+
+Verified live across three sorter runs: exactly one credit after the first, unchanged after
+the second and third. The regression half mattered more than the bug half -- had the
+restructured condition been wrong the other way, **no pupil would ever receive credit** and
+slice 4 would have been silently dead again.
+
+**Correction made in both ROADMAP and the live log:** earlier today I recorded heartbeat 3's
+run as having *passed* the credit bands, citing that both were held. That was wrong -- the
+bands are exclusive, so holding both was the symptom, not the proof. Dated correction notes
+left in both documents rather than silent edits.
+
+### Housekeeping
+
+- Logs archived per run: `logs\archive-shabbat-heartbeat4\`, `...-run2\`, `...-run3\`, since
+  CK3 overwrites `debug.log` on every boot.
+- **`ck3.exe` stopped at the end of each run**; none is running now. Next session should boot
+  fresh.
+- One commit message (the probe-fix commit) is missing four backticked tokens -- the shell ate
+  them as command substitution. Content loss is cosmetic only; the full explanation lives in
+  the code comments. **Not amended, because that would need a force-push.** Lesson: no
+  backticks in commit messages written through this shell.
+
+### What the next heartbeat should pick up
+
+1. **V26 ba'alei batim slice 2** -- standing as a `kehillah_leadership` candidate-score term.
+   This is the top unblocked item now that H1-H4 are done. Per CLAUDE.md it touches succession
+   scoring, so read implementation doc sections 6, 8 and 14 first and budget for a live
+   succession test; do not call it done on a tiger-clean source check.
+2. **The FOUNDATION credit band** (Learning 6-7 earning one field and nothing more) has no
+   live verdict -- the verification run used a full-band pupil. Needs a pupil whose Learning
+   sits in 6-7, and note the shim guide's warning that a skill change does not publish on a
+   paused game without `force_character_skill_recalculation`.
+3. **The landless-adventurer institution branch**, if a save ever has an adventurer standing
+   in a community's province.
+
+### For Daniel
+
+Nothing blocking, nothing destructive done or avoided. The only processes killed were test
+instances of CK3; the only deletions were my own temp files.
+
+The one judgement call still parked for you is unchanged from the 10:15 entry and now has
+more weight behind it: **implementation doc section 14's last part**, the two
+`change_government` guards in the succession path that use `government_has_flag`. Today
+proved that flag answers "what government does this character fall under", not "is this the
+holder" -- and it had already silently disabled an entire feature population before anyone
+noticed. The same question in the succession path is written down with the cheap way to
+settle it rather than changed unattended, because that is the code that has crashed this game
+before.
