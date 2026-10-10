@@ -225,7 +225,10 @@ interactive pass.
   the family demanding the original sum. The ransom host-to-resolution chain
   is [live-probed](docs/testing/2026-09-29-bet-din-ransom-live-test-log.md);
   player-controlled dissent and the revised silversmith response remain open.
-- **Next:** V21 ordination through rabbi mentorship and local semicha, then a
+- **V21 ordination through rabbi mentorship and local semicha: BUILT 2026-10-09/10**, all five
+  slices, slice 3 verified live -- see the Shabbat queue's H4 above, which is the current account.
+  This line previously read "Next: V21 ordination..."; it is kept so the ordering below still
+  makes sense. **Next from here:** a
   book-mastery option in a Bet Din case and V23 letter from that case. Prove one dynamically
   authored circulating sefer end to end before adding the historical catalog.
 
