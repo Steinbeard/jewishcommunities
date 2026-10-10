@@ -244,6 +244,9 @@ kehillah_semicha_debug.4 = {
 #                                      directly (sets the years counter
 #                                      to the required number), then
 #                                      report
+#   event kehillah_semicha_debug.10 -- drive Learning through all three
+#                                      credit bands and check which
+#                                      credit each one awards
 #   event kehillah_semicha_debug.7  -- run the coming-of-age sorter
 #                                      (kehillah_semicha.0002) NOW,
 #                                      without waiting for a birthday
@@ -670,5 +673,245 @@ kehillah_semicha_debug.9 = {
 		debug_log = "kehillah_semicha_debug.9: re-running branch coverage; expect every branch that PASSed before to FAIL now"
 		trigger_event = kehillah_semicha_debug.8
 		debug_log = "kehillah_semicha_debug.9: destroy the study hall -- END; .4 rebuilds it ONLY if the REVERSIBLE line above said so, otherwise reload"
+	}
+}
+
+# ---------------------------------------------------------------------
+# V21 SLICE 4 -- THE THREE CREDIT BANDS, added 2026-10-10 (Shabbat
+# heartbeat 5).
+#
+#   event kehillah_semicha_debug.10 -- CHANGES STATE. Drives root's
+#                                      Learning through all three bands
+#                                      and checks which credit
+#                                      kehillah_award_apprenticeship_
+#                                      credit_effect awards in each.
+#
+# Why: heartbeat 4 fixed a double-credit bug in that effect and verified
+# the FULL band live, but the FOUNDATION band (Learning 6-7 earning one
+# field and nothing more) has never had a live verdict -- the
+# verification run happened to use a full-band pupil. This probe tests
+# the band that was never seen, plus the two either side of it, so a
+# fix in one direction cannot hide a break in another. That regression
+# half is the half that mattered last time: had the restructured
+# condition been wrong the other way, NO pupil would ever receive credit
+# and slice 4 would have been silently dead again.
+#
+# It calls the credit effect DIRECTLY rather than through the sorter
+# (.7 / kehillah_semicha.0002), because the sorter is scheduled from
+# on_16th_birthday and fires once per character -- which is exactly why
+# ordinary play never reached the double-credit bug. Testing the effect
+# on its own is the point.
+#
+# TWO THINGS THIS PROBE DELIBERATELY DOES NOT DO:
+#
+# It does not trust the skill it just set. There is no set_learning_skill
+# in 1.20, only the additive add_learning_skill, and that moves the BASE
+# skill while the learning trigger reads the TOTAL including education
+# and trait modifiers. A character can therefore end up in a different
+# band than the number added. Each case re-checks the band against the
+# mod's own floor values and reports BAND NOT REACHED / SKIPPED instead
+# of a verdict when it missed. A probe that assumed the set value is
+# exactly the shape that made .4 lie about a building it never built.
+#
+# It does not report success from having run. Every case asks the
+# character what credit it actually holds afterwards, and the first
+# thing it checks is whether BOTH credits are held -- the 2026-10-10
+# bug's own signature -- because holding both once read as a pass.
+#
+# LEAVES ROOT'S LEARNING AT 5 AND CLEARS BOTH CREDITS. Throwaway runs
+# only; reload afterwards rather than keeping the save.
+# ---------------------------------------------------------------------
+kehillah_semicha_debug.10 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.10: credit bands -- START"
+		debug_log_scopes = yes
+
+		# The effect gates on faith before anything else, so on a non-Jewish
+		# root every case below would report a correct refusal that looks like
+		# a band failure. Refuse to run instead of producing that.
+		if = {
+			limit = { NOT = { is_rabbinic_authority_jewish_trigger = yes } }
+			debug_log = "kehillah_semicha_debug.10: ABORT root is not rabbinic-authority Jewish -- the effect gates on faith, so every band would refuse for the wrong reason. Switch to a Jewish character."
+		}
+		else = {
+			# The effect also requires a completed apprenticeship. Granting it
+			# the same way .6 does, so this probe does not depend on run order.
+			set_variable = {
+				name = kehillah_apprentice_rabbi_years
+				value = kehillah_ordination_apprenticeship_years_value
+			}
+			if = {
+				limit = { kehillah_rabbinic_apprenticeship_complete_trigger = yes }
+				debug_log = "kehillah_semicha_debug.10: apprenticeship reads COMPLETE -- the band is now the only thing being tested"
+			}
+			else = { debug_log = "kehillah_semicha_debug.10: ABORT apprenticeship still reads incomplete after setting the years counter -- every band below would refuse on that, not on Learning" }
+
+			# ---- FULL: aim for Learning 10, expect CURRICULUM ----
+			debug_log = "kehillah_semicha_debug.10: ---- FULL: aiming for Learning 10 ----"
+			# Floor it first. There is no set_learning_skill in 1.20 -- only the
+			# additive add_learning_skill -- so -100 against the engine's floor of
+			# 0 is how an absolute starting point is reached.
+			add_learning_skill = -100
+			add_learning_skill = 10
+			# Without this the new value does not publish on a paused game and
+			# every trigger below would read the OLD skill (shim guide).
+			force_character_skill_recalculation = yes
+
+			# VERIFY rather than assume. add_learning_skill moves the BASE skill,
+			# while the learning trigger reads the total including education and
+			# trait modifiers -- so the character can land in a different band
+			# than the number just added. If that happens, say so and do not
+			# dress the result up as a verdict on this band.
+			set_local_variable = { name = kh_band_ok value = 0 }
+			if = {
+				limit = { learning >= kehillah_ordination_learning_floor_value }
+				set_local_variable = { name = kh_band_ok value = 1 }
+			debug_log = "kehillah_semicha_debug.10: FULL BAND REACHED Learning is at or above the ordination floor"
+			}
+			else = { debug_log = "kehillah_semicha_debug.10:FULL BAND NOT REACHED Learning is below the ordination floor -- NOT OBSERVED, not a FAIL" }
+
+			# Clear any credit from an earlier case, so each band is judged on
+			# its own and the effect's idempotence clause does not refuse.
+			remove_variable = kehillah_apprenticeship_curriculum
+			remove_list_variable = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+
+			kehillah_award_apprenticeship_credit_effect = yes
+
+			if = {
+				limit = { local_var:kh_band_ok = 1 }
+				if = {
+					limit = {
+						has_variable = kehillah_apprenticeship_curriculum
+						is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+					}
+			debug_log = "kehillah_semicha_debug.10: FULL FAIL BOTH credits held at once -- the bands are exclusive; this is the 2026-10-10 double-credit bug back"
+				}
+				else_if = {
+					limit = { has_variable = kehillah_apprenticeship_curriculum }
+			debug_log = "kehillah_semicha_debug.10: FULL PASS full curriculum credit only"
+				}
+				else_if = {
+					limit = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship } }
+			debug_log = "kehillah_semicha_debug.10: FULL FAIL got the foundation field credit, expected CURRICULUM"
+				}
+				else = { debug_log = "kehillah_semicha_debug.10:FULL FAIL no credit awarded at all, expected CURRICULUM" }
+			}
+			else = { debug_log = "kehillah_semicha_debug.10:FULL SKIPPED verdict withheld -- the intended band was never reached" }
+
+			# ---- FOUNDATION: aim for Learning 7, expect FIELD ----
+			debug_log = "kehillah_semicha_debug.10: ---- FOUNDATION: aiming for Learning 7 ----"
+			# Floor it first. There is no set_learning_skill in 1.20 -- only the
+			# additive add_learning_skill -- so -100 against the engine's floor of
+			# 0 is how an absolute starting point is reached.
+			add_learning_skill = -100
+			add_learning_skill = 7
+			# Without this the new value does not publish on a paused game and
+			# every trigger below would read the OLD skill (shim guide).
+			force_character_skill_recalculation = yes
+
+			# VERIFY rather than assume. add_learning_skill moves the BASE skill,
+			# while the learning trigger reads the total including education and
+			# trait modifiers -- so the character can land in a different band
+			# than the number just added. If that happens, say so and do not
+			# dress the result up as a verdict on this band.
+			set_local_variable = { name = kh_band_ok value = 0 }
+			if = {
+				limit = {
+					learning >= kehillah_ordination_foundation_learning_floor_value
+					NOT = { learning >= kehillah_ordination_learning_floor_value }
+				}
+				set_local_variable = { name = kh_band_ok value = 1 }
+			debug_log = "kehillah_semicha_debug.10: FOUNDATION BAND REACHED Learning is inside the foundation band (6-7)"
+			}
+			else_if = {
+				limit = { learning >= kehillah_ordination_learning_floor_value }
+			debug_log = "kehillah_semicha_debug.10: FOUNDATION BAND NOT REACHED Learning overshot into the full band -- modifiers are lifting it; NOT OBSERVED, not a FAIL"
+			}
+			else = { debug_log = "kehillah_semicha_debug.10:FOUNDATION BAND NOT REACHED Learning fell below the foundation floor -- NOT OBSERVED, not a FAIL" }
+
+			# Clear any credit from an earlier case, so each band is judged on
+			# its own and the effect's idempotence clause does not refuse.
+			remove_variable = kehillah_apprenticeship_curriculum
+			remove_list_variable = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+
+			kehillah_award_apprenticeship_credit_effect = yes
+
+			if = {
+				limit = { local_var:kh_band_ok = 1 }
+				if = {
+					limit = {
+						has_variable = kehillah_apprenticeship_curriculum
+						is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+					}
+			debug_log = "kehillah_semicha_debug.10: FOUNDATION FAIL BOTH credits held at once -- the bands are exclusive; this is the 2026-10-10 double-credit bug back"
+				}
+				else_if = {
+					limit = { has_variable = kehillah_apprenticeship_curriculum }
+			debug_log = "kehillah_semicha_debug.10: FOUNDATION FAIL got the full curriculum credit, expected FIELD"
+				}
+				else_if = {
+					limit = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship } }
+			debug_log = "kehillah_semicha_debug.10: FOUNDATION PASS foundation field credit only"
+				}
+				else = { debug_log = "kehillah_semicha_debug.10:FOUNDATION FAIL no credit awarded at all, expected FIELD" }
+			}
+			else = { debug_log = "kehillah_semicha_debug.10:FOUNDATION SKIPPED verdict withheld -- the intended band was never reached" }
+
+			# ---- BELOW: aim for Learning 5, expect NEITHER ----
+			debug_log = "kehillah_semicha_debug.10: ---- BELOW: aiming for Learning 5 ----"
+			# Floor it first. There is no set_learning_skill in 1.20 -- only the
+			# additive add_learning_skill -- so -100 against the engine's floor of
+			# 0 is how an absolute starting point is reached.
+			add_learning_skill = -100
+			add_learning_skill = 5
+			# Without this the new value does not publish on a paused game and
+			# every trigger below would read the OLD skill (shim guide).
+			force_character_skill_recalculation = yes
+
+			# VERIFY rather than assume. add_learning_skill moves the BASE skill,
+			# while the learning trigger reads the total including education and
+			# trait modifiers -- so the character can land in a different band
+			# than the number just added. If that happens, say so and do not
+			# dress the result up as a verdict on this band.
+			set_local_variable = { name = kh_band_ok value = 0 }
+			if = {
+				limit = { NOT = { learning >= kehillah_ordination_foundation_learning_floor_value } }
+				set_local_variable = { name = kh_band_ok value = 1 }
+			debug_log = "kehillah_semicha_debug.10: BELOW BAND REACHED Learning is below the foundation floor"
+			}
+			else = { debug_log = "kehillah_semicha_debug.10:BELOW BAND NOT REACHED Learning is still at or above the foundation floor -- NOT OBSERVED, not a FAIL" }
+
+			# Clear any credit from an earlier case, so each band is judged on
+			# its own and the effect's idempotence clause does not refuse.
+			remove_variable = kehillah_apprenticeship_curriculum
+			remove_list_variable = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+
+			kehillah_award_apprenticeship_credit_effect = yes
+
+			if = {
+				limit = { local_var:kh_band_ok = 1 }
+				if = {
+					limit = {
+						has_variable = kehillah_apprenticeship_curriculum
+						is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+					}
+			debug_log = "kehillah_semicha_debug.10: BELOW FAIL BOTH credits held at once -- the bands are exclusive; this is the 2026-10-10 double-credit bug back"
+				}
+				else_if = {
+					limit = { has_variable = kehillah_apprenticeship_curriculum }
+			debug_log = "kehillah_semicha_debug.10: BELOW FAIL got the full curriculum credit, expected NEITHER"
+				}
+				else_if = {
+					limit = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship } }
+			debug_log = "kehillah_semicha_debug.10: BELOW FAIL got the foundation field credit, expected NEITHER"
+				}
+				else = { debug_log = "kehillah_semicha_debug.10:BELOW PASS no credit, correctly" }
+			}
+			else = { debug_log = "kehillah_semicha_debug.10:BELOW SKIPPED verdict withheld -- the intended band was never reached" }
+
+		}
+		debug_log = "kehillah_semicha_debug.10: credit bands -- END"
 	}
 }
