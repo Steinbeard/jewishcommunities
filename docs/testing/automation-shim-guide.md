@@ -33,6 +33,40 @@ first before concluding it's structurally impossible — it isn't.
 
 ---
 
+## Where the game actually is — added 2026-10-10
+
+Every launch instruction in this doc says `ck3.exe` and never said where it is, which cost a
+heartbeat session a handful of tool calls and one runaway recursive `Get-ChildItem` over two
+drives. It is on the **E: drive**, not C: and not the D: Steam library:
+
+```
+E:\Program Files (x86)\Steam\steamapps\common\Crusader Kings III\binaries\ck3.exe
+```
+
+`D:\SteamLibrary\steamapps\common\Crusader Kings III\` exists but is an empty shell — a leftover,
+not the install. Don't trust it. If this path ever moves, the cheap way to re-find it is the
+registry, not a filesystem walk:
+
+```powershell
+(Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Valve\Steam").InstallPath
+```
+
+`logs\system.log` in the CK3 user directory is empty and will not tell you, and
+`steamapps\libraryfolders.vdf` is not under the C: Steam directory either.
+
+The game *data* root (vanilla script, for checking a token against 1.20 rather than trusting
+ck3-tiger's 1.19 vocabulary) is the `game` folder beside `binaries`:
+
+```
+E:\Program Files (x86)\Steam\steamapps\common\Crusader Kings III\game\
+```
+
+Note that greps over it from Git Bash are slow enough to hit a 120-second tool timeout — scope
+them to a subdirectory (`game\common\scripted_relations\`, `game\common\on_action\`) rather than
+recursing the whole tree.
+
+---
+
 ## Boot stalls until the window gets input — added 2026-10-09
 
 A direct `ck3.exe -debug_mode -develop` launch can stall during database setup and show "Not
