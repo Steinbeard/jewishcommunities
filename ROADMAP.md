@@ -229,11 +229,36 @@ the shim guide. Current state is in the
   - **Slice 5 — VERIFIED LIVE 2026-10-10 (same log).** The faith gates did not make the Chief
     Rabbi office unfillable at the only playable start: the appointment panel at Worms offers
     7 of 7 characters as candidates.
-  - **Next for H4:** the V21 section 7 gaps slice 3's log still lists as genuinely open — the
-    landed-ruler and landless-adventurer institution branches, and losing access to the Beit
-    Midrash. (The "defer across a save/load" gap is already closed by source: `.0001` option b
-    has no effects, so there is nothing to lose.) A slice-4 run on a pupil whose Learning sits
-    in each band would also finish what this run left — see the qualification above.
+  - **V21 section 7 gaps — two of three CLOSED 2026-10-10 (Shabbat heartbeat 4)**
+    ([log](docs/testing/2026-10-10-section7-institution-gaps-live-test-log.md)). Two new probes
+    for this: `kehillah_semicha_debug.8` (read-only branch coverage, one subject per branch) and
+    `.9` (destroy the study hall; **often a one-way door** — it now says so before removing
+    anything).
+    - **Landed-ruler branch: CLOSED, both directions.** Positive verdict `BRANCH 2b PASS` with
+      subject Al-Qa'im Abbasid (31533), seated in Baghdad — the province `d_kehillah_baghdad`
+      occupies, found by scanning rather than hardcoding. Correct negative at Worms, where the
+      host county's holder rules from another seat, so `capital_province` doesn't match. Note
+      this is a *mechanics* result: the institution trigger has no faith gate by design, so a
+      caliph passing it is not a claim he could be ordained — the candidate trigger refuses him.
+    - **Losing the Beit Midrash: CLOSED.** Reproduced twice. Every branch flips to FAIL when the
+      building goes, and the student's records survive — section 3.4's rule that only the
+      *ceremony* needs an institution.
+    - **Landless-adventurer branch: STILL OPEN, honest null.** No character with
+      `landless_adventurer_government` stands in any community's province in 1066. Needs a save
+      where one actually does; manufacturing one would test the probe's own character rather
+      than the game.
+    - **A real bug found along the way, in a different probe.** `.4` ("rebuild the study hall")
+      reported success while `add_domicile_building` was being refused by `can_construct` — the
+      stock Worms start sits under an unresolved Christian host charter, so new communal
+      buildings are blocked, which is correct V16 behaviour wrongly reported. `.4` now asserts
+      the building exists afterwards. **Second time this shape has bitten** (see the shim
+      guide's "What ck3-tiger does NOT catch"); an audit of every `add_domicile_building` call
+      site found no *gameplay* bug — `kehillah_worms_developed_start_effect` was already
+      hardened on 2026-09-26.
+  - **Next for H4:** the landless-adventurer branch above, and a slice-4 run on a pupil whose
+    Learning sits in each band, to finish what the slice-4 pass left open (see the
+    curriculum/foundation qualification above). (The "defer across a save/load" gap is already
+    closed by source: `.0001` option b has no effects, so there is nothing to lose.)
 
 ### Kehillah council (V26) — added 2026-10-09
 
