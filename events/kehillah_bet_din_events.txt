@@ -1,4 +1,4 @@
-# =====================================================================
+﻿# =====================================================================
 # Kehillah Bet Din Conference -- the docket.
 #
 # Source of truth: docs/spec/v5-bet-din-conference.md. Fired from
@@ -6,6 +6,49 @@
 # on_phase_active. PART 1 began with three cases on 2026-09-08; the
 # pool now has seven, still short of v5 Part 2's long-term docket.
 #
+# =====================================================================
+# THE kehillah_din_advice_case GUARD (added 2026-10-10, Shabbat
+# heartbeat 5). READ BEFORE ADDING A NEW CASE TO THIS DOCKET.
+#
+# Every case's "cite a source" option has a trigger of the shape
+#
+#   trigger = { OR = {
+#       <a judge mastered the relevant work>
+#       AND = { exists = involved_activity.var:kehillah_din_advice_case
+#               involved_activity.var:kehillah_din_advice_case = <N> }
+#       involved_activity.var:kehillah_bet_din_convening_title = { has_variable = kehillah_din_precedent_<N> }
+#   } }
+#
+# and a matching else_if whose limit carries the same exists.
+#
+# THE exists IS NOT OPTIONAL, and a new case that copies an older one
+# must copy it too. kehillah_din_advice_case is written in exactly one
+# place -- the delayed-reply events in
+# events/kehillah_bet_din_sources_events.txt -- so it is UNSET every
+# time a case opens for the first time, which is the normal path. Read
+# bare, it produced three engine errors on a live 2026-10-10 run:
+#
+#   Failed to fetch variable for 'kehillah_din_advice_case' due to not being set
+#   Event target link 'var' returned an unset scope
+#   Invalid left side during comparison 'var'
+#
+# All nine cases had it unguarded (seven here, two in
+# kehillah_bet_din_historical_events.txt), i.e. the first case was
+# copied eight times along with the defect.
+#
+# This is log noise rather than a behaviour bug, the same verdict ROADMAP
+# H3 reached for the identical shape in kehillah_restore_quarter_effect:
+# an invalid comparison evaluates false, and false is also the correct
+# answer when no reply has arrived. It is still worth fixing -- H3's
+# flood is what made the error log unreadable, and an error log nobody
+# can read is how the two real bugs this week went unnoticed.
+#
+# kehillah_din_advice_quality needs no separate guard: the reply events
+# set it in the same statement as advice_case, so the guard above covers
+# both. kehillah_bet_din_convening_title needs none either -- it is set
+# when the Bet Din convenes (kehillah_bet_din_scripted_effects.txt), so
+# it is always present by the time any option is evaluated.
+# =====================================================================
 # =====================================================================
 # THE LOOP BUG, AND WHAT THE DOCKET LOOKS LIKE NOW (fixed 2026-09-08,
 # NOT YET LIVE-TESTED -- the mechanics below are unverified against a
@@ -238,11 +281,11 @@ kehillah_bet_din.0001 = {
 	# comment's twin on the first one where it's explained, not repeated.
 	option = {
 		name = kehillah_din_source_1
-		trigger = { OR = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } } involved_activity.var:kehillah_din_advice_case = 1 involved_activity.var:kehillah_bet_din_convening_title = { has_variable = kehillah_din_precedent_1 } } }
+		trigger = { OR = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } } AND = { exists = involved_activity.var:kehillah_din_advice_case involved_activity.var:kehillah_din_advice_case = 1 } involved_activity.var:kehillah_bet_din_convening_title = { has_variable = kehillah_din_precedent_1 } } }
 		custom_tooltip = kehillah_din_source_1_tt
 		involved_activity = { set_variable = { name = kehillah_bet_din_case1_direction value = 2 } }
 		if = { limit = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } } } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_din_mastery_tally } } }
-		else_if = { limit = { involved_activity.var:kehillah_din_advice_case = 1 }
+		else_if = { limit = { exists = involved_activity.var:kehillah_din_advice_case involved_activity.var:kehillah_din_advice_case = 1 }
 			involved_activity = { change_variable = { name = kehillah_bet_din_tally add = var:kehillah_din_advice_quality } }
 			kehillah_din_adopt_advice_effect = { CASE = 1 }
 		}
@@ -546,11 +589,11 @@ kehillah_bet_din.0011 = {
 	# Guarded -- see kehillah_bet_din.0001's "after" for why.
 	option = {
 		name = kehillah_din_source_2
-		trigger = { OR = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } } involved_activity.var:kehillah_din_advice_case = 2 involved_activity.var:kehillah_bet_din_convening_title = { has_variable = kehillah_din_precedent_2 } } }
+		trigger = { OR = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } } AND = { exists = involved_activity.var:kehillah_din_advice_case involved_activity.var:kehillah_din_advice_case = 2 } involved_activity.var:kehillah_bet_din_convening_title = { has_variable = kehillah_din_precedent_2 } } }
 		custom_tooltip = kehillah_din_source_2_tt
 		involved_activity = { set_variable = { name = kehillah_bet_din_case2_direction value = 0 } }
 		if = { limit = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } } } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_din_mastery_tally } } }
-		else_if = { limit = { involved_activity.var:kehillah_din_advice_case = 2 }
+		else_if = { limit = { exists = involved_activity.var:kehillah_din_advice_case involved_activity.var:kehillah_din_advice_case = 2 }
 			involved_activity = { change_variable = { name = kehillah_bet_din_tally add = var:kehillah_din_advice_quality } }
 			kehillah_din_adopt_advice_effect = { CASE = 2 }
 		}
@@ -856,11 +899,11 @@ kehillah_bet_din.0021 = {
 	# Guarded -- see kehillah_bet_din.0001's "after" for why.
 	option = {
 		name = kehillah_din_source_3
-		trigger = { OR = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mekhilta } } involved_activity.var:kehillah_din_advice_case = 3 involved_activity.var:kehillah_bet_din_convening_title = { has_variable = kehillah_din_precedent_3 } } }
+		trigger = { OR = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mekhilta } } AND = { exists = involved_activity.var:kehillah_din_advice_case involved_activity.var:kehillah_din_advice_case = 3 } involved_activity.var:kehillah_bet_din_convening_title = { has_variable = kehillah_din_precedent_3 } } }
 		custom_tooltip = kehillah_din_source_3_tt
 		involved_activity = { set_variable = { name = kehillah_bet_din_case3_direction value = 0 } }
 		if = { limit = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mekhilta } } } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_din_mastery_tally } } }
-		else_if = { limit = { involved_activity.var:kehillah_din_advice_case = 3 }
+		else_if = { limit = { exists = involved_activity.var:kehillah_din_advice_case involved_activity.var:kehillah_din_advice_case = 3 }
 			involved_activity = { change_variable = { name = kehillah_bet_din_tally add = var:kehillah_din_advice_quality } }
 			kehillah_din_adopt_advice_effect = { CASE = 3 }
 		}
@@ -1203,11 +1246,11 @@ kehillah_bet_din.0031 = {
 	# Guarded -- see kehillah_bet_din.0001's "after" for why.
 	option = {
 		name = kehillah_din_source_4
-		trigger = { OR = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } } involved_activity.var:kehillah_din_advice_case = 4 involved_activity.var:kehillah_bet_din_convening_title = { has_variable = kehillah_din_precedent_4 } } }
+		trigger = { OR = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } } AND = { exists = involved_activity.var:kehillah_din_advice_case involved_activity.var:kehillah_din_advice_case = 4 } involved_activity.var:kehillah_bet_din_convening_title = { has_variable = kehillah_din_precedent_4 } } }
 		custom_tooltip = kehillah_din_source_4_tt
 		involved_activity = { set_variable = { name = kehillah_bet_din_case4_direction value = 3 } }
 		if = { limit = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } } } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_din_mastery_tally } } }
-		else_if = { limit = { involved_activity.var:kehillah_din_advice_case = 4 }
+		else_if = { limit = { exists = involved_activity.var:kehillah_din_advice_case involved_activity.var:kehillah_din_advice_case = 4 }
 			involved_activity = { change_variable = { name = kehillah_bet_din_tally add = var:kehillah_din_advice_quality } }
 			kehillah_din_adopt_advice_effect = { CASE = 4 }
 		}
@@ -1648,11 +1691,11 @@ kehillah_bet_din.0041 = {
 	# Guarded -- see kehillah_bet_din.0001's "after" for why.
 	option = {
 		name = kehillah_din_source_5
-		trigger = { OR = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_moed } } involved_activity.var:kehillah_din_advice_case = 5 involved_activity.var:kehillah_bet_din_convening_title = { has_variable = kehillah_din_precedent_5 } } }
+		trigger = { OR = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_moed } } AND = { exists = involved_activity.var:kehillah_din_advice_case involved_activity.var:kehillah_din_advice_case = 5 } involved_activity.var:kehillah_bet_din_convening_title = { has_variable = kehillah_din_precedent_5 } } }
 		custom_tooltip = kehillah_din_source_5_tt
 		involved_activity = { set_variable = { name = kehillah_bet_din_case5_direction value = 0 } }
 		if = { limit = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_moed } } } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_din_mastery_tally } } }
-		else_if = { limit = { involved_activity.var:kehillah_din_advice_case = 5 }
+		else_if = { limit = { exists = involved_activity.var:kehillah_din_advice_case involved_activity.var:kehillah_din_advice_case = 5 }
 			involved_activity = { change_variable = { name = kehillah_bet_din_tally add = var:kehillah_din_advice_quality } }
 			kehillah_din_adopt_advice_effect = { CASE = 5 }
 		}
@@ -2003,11 +2046,11 @@ kehillah_bet_din.0051 = {
 	# Guarded -- see kehillah_bet_din.0001's "after" for why.
 	option = {
 		name = kehillah_din_source_6
-		trigger = { OR = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nezikin } } involved_activity.var:kehillah_din_advice_case = 6 involved_activity.var:kehillah_bet_din_convening_title = { has_variable = kehillah_din_precedent_6 } } }
+		trigger = { OR = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nezikin } } AND = { exists = involved_activity.var:kehillah_din_advice_case involved_activity.var:kehillah_din_advice_case = 6 } involved_activity.var:kehillah_bet_din_convening_title = { has_variable = kehillah_din_precedent_6 } } }
 		custom_tooltip = kehillah_din_source_6_tt
 		involved_activity = { set_variable = { name = kehillah_bet_din_case6_direction value = 3 } }
 		if = { limit = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nezikin } } } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_din_mastery_tally } } }
-		else_if = { limit = { involved_activity.var:kehillah_din_advice_case = 6 }
+		else_if = { limit = { exists = involved_activity.var:kehillah_din_advice_case involved_activity.var:kehillah_din_advice_case = 6 }
 			involved_activity = { change_variable = { name = kehillah_bet_din_tally add = var:kehillah_din_advice_quality } }
 			kehillah_din_adopt_advice_effect = { CASE = 6 }
 		}
@@ -2332,11 +2375,11 @@ kehillah_bet_din.0061 = {
 
 	option = {
 		name = kehillah_din_source_7
-		trigger = { OR = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mishnah } } involved_activity.var:kehillah_din_advice_case = 7 involved_activity.var:kehillah_bet_din_convening_title = { has_variable = kehillah_din_precedent_7 } } }
+		trigger = { OR = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mishnah } } AND = { exists = involved_activity.var:kehillah_din_advice_case involved_activity.var:kehillah_din_advice_case = 7 } involved_activity.var:kehillah_bet_din_convening_title = { has_variable = kehillah_din_precedent_7 } } }
 		custom_tooltip = kehillah_din_source_7_tt
 		involved_activity = { set_variable = { name = kehillah_bet_din_case7_direction value = 2 } }
 		if = { limit = { scope:kehillah_av_beit_din = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mishnah } } } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_din_mastery_tally } } }
-		else_if = { limit = { involved_activity.var:kehillah_din_advice_case = 7 }
+		else_if = { limit = { exists = involved_activity.var:kehillah_din_advice_case involved_activity.var:kehillah_din_advice_case = 7 }
 			involved_activity = { change_variable = { name = kehillah_bet_din_tally add = var:kehillah_din_advice_quality } }
 			kehillah_din_adopt_advice_effect = { CASE = 7 }
 		}
