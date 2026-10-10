@@ -108,8 +108,93 @@ kehillah_grant_semicha_effect = {
 	# because change_variable is a silent no-op on a variable that was
 	# never set -- the same ordering kehillah_on_title_gain uses and for
 	# the same reason.
-	scope:kehillah_semicha_community = {
-		kehillah_init_pillars_effect = yes
-		change_variable = { name = kehillah_var_greatness add = kehillah_semicha_greatness_reward }
+	#
+	# GUARDED as of V21 slice 4 (2026-10-10), when this effect gained a
+	# second caller. From the Seek Semicha decision the scope is certain,
+	# because is_valid ran the institution trigger first. From the
+	# coming-of-age endorsement it is resolved a few lines earlier in a
+	# delayed event, where the community could in principle have been
+	# destroyed in between -- and an unguarded change_variable on a
+	# missing scope is an error line per ordination, not a no-op.
+	if = {
+		limit = { exists = scope:kehillah_semicha_community }
+		scope:kehillah_semicha_community = {
+			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_greatness add = kehillah_semicha_greatness_reward }
+		}
+	}
+}
+
+
+# =====================================================================
+# RABBINIC APPRENTICESHIP -- V21 slice 4, added 2026-10-10.
+# Gates in common/scripted_triggers/kehillah_ordination_triggers.txt,
+# the on_action wiring in common/on_action/kehillah_ordination_on_actions.txt.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# Scope: a child, on a childhood birthday. Adds one year to the
+# apprenticeship record if a qualifying rabbi is their guardian RIGHT
+# NOW.
+#
+# Counting on birthdays rather than tracking a start date is what makes
+# section 3.3's "four accumulated years" literally true: four separate
+# birthdays under a qualifying guardian, in any order, with any number of
+# gaps. Swapping a rabbi in at 15 therefore buys one year, not four.
+#
+# set_variable before change_variable because change_variable is a silent
+# no-op on a variable that was never set -- the same ordering, and the
+# same reason, as kehillah_on_title_gain's pillar init.
+# ---------------------------------------------------------------------
+kehillah_observe_rabbinic_education_effect = {
+	if = {
+		limit = { kehillah_has_rabbinic_guardian_trigger = yes }
+		if = {
+			limit = { NOT = { has_variable = kehillah_apprentice_rabbi_years } }
+			set_variable = { name = kehillah_apprentice_rabbi_years value = 0 }
+		}
+		change_variable = { name = kehillah_apprentice_rabbi_years add = 1 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# Scope: a character who has just come of age. Converts a completed
+# apprenticeship into study credit, in the band section 3.3 assigns:
+#
+#   Learning 8+  -> the whole curriculum (kehillah_apprenticeship_curriculum,
+#                   which kehillah_rabbi_ordination_curriculum_met_trigger
+#                   accepts in place of the two-works/two-fields count).
+#   Learning 6-7 -> a FOUNDATION worth one study field, and nothing more.
+#                   He must still read real works as an adult.
+#   Learning <6  -> nothing. "Learning below 6 is too low for a completed
+#                   rabbinic curriculum."
+#
+# The years record itself is never cleared: section 3.3 wants every
+# non-endorsement to preserve "a viable adult path", and the record is
+# biography the Seek Semicha route can still read years later.
+#
+# Both branches are idempotent -- the field flag is only added if absent,
+# and the curriculum variable is only set if absent -- because this runs
+# from a delayed event, and a delayed event is the one place in this
+# codebase where "it cannot possibly fire twice" has been wrong before.
+# ---------------------------------------------------------------------
+kehillah_award_apprenticeship_credit_effect = {
+	if = {
+		limit = {
+			kehillah_rabbinic_apprenticeship_complete_trigger = yes
+			is_rabbinic_authority_jewish_trigger = yes
+			learning >= kehillah_ordination_learning_floor_value
+			NOT = { has_variable = kehillah_apprenticeship_curriculum }
+		}
+		set_variable = { name = kehillah_apprenticeship_curriculum value = 1 }
+	}
+	else_if = {
+		limit = {
+			kehillah_rabbinic_apprenticeship_complete_trigger = yes
+			is_rabbinic_authority_jewish_trigger = yes
+			learning >= kehillah_ordination_foundation_learning_floor_value
+			NOT = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship } }
+		}
+		add_to_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
 	}
 }

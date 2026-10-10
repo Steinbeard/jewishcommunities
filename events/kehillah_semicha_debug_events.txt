@@ -186,3 +186,126 @@ kehillah_semicha_debug.4 = {
 		debug_log = "kehillah_semicha_debug.4: build a study hall -- END"
 	}
 }
+
+
+# ---------------------------------------------------------------------
+# V21 slice 4 (the rabbinic apprenticeship), added 2026-10-10.
+#   event kehillah_semicha_debug.5  -- READ-ONLY: guardian, accumulated
+#                                      years, credit, endorsement
+#   event kehillah_semicha_debug.6  -- grant a completed apprenticeship
+#                                      directly (sets the years counter
+#                                      to the required number), then
+#                                      report
+#   event kehillah_semicha_debug.7  -- run the coming-of-age sorter
+#                                      (kehillah_semicha.0002) NOW,
+#                                      without waiting for a birthday
+#
+# The ordinary way to test slice 4 without waiting ten in-game years, on
+# a child: .6, then .7. On an adult, .6 then .7 also works -- the sorter
+# itself does not check age, only the records.
+#
+# .6 CHANGES STATE. .7 can grant the Rabbi trait, which is the point.
+# ---------------------------------------------------------------------
+
+kehillah_semicha_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.5: apprenticeship state -- START"
+		debug_log_scopes = yes
+
+		if = {
+			limit = {
+				any_relation = {
+					type = guardian
+					always = yes
+				}
+			}
+			debug_log = "kehillah_semicha_debug.5: HAS A GUARDIAN relation"
+			random_relation = {
+				type = guardian
+				debug_log_scopes = yes
+				if = {
+					limit = { kehillah_rabbinic_guardian_trigger = yes }
+					debug_log = "kehillah_semicha_debug.5: GUARDIAN QUALIFIES rabbi, rabbinic-authority, gender-eligible"
+				}
+				else = { debug_log = "kehillah_semicha_debug.5: GUARDIAN DOES NOT QUALIFY" }
+			}
+		}
+		else = { debug_log = "kehillah_semicha_debug.5: NO GUARDIAN relation at all" }
+
+		if = {
+			limit = { kehillah_has_rabbinic_guardian_trigger = yes }
+			debug_log = "kehillah_semicha_debug.5: QUALIFYING GUARDIAN YES a birthday now would add a year"
+		}
+		else = { debug_log = "kehillah_semicha_debug.5: QUALIFYING GUARDIAN NO a birthday now would add nothing" }
+
+		if = {
+			limit = { has_variable = kehillah_apprentice_rabbi_years }
+			debug_log = "kehillah_semicha_debug.5: years record EXISTS"
+			if = {
+				limit = { var:kehillah_apprentice_rabbi_years >= kehillah_ordination_apprenticeship_years_value }
+				debug_log = "kehillah_semicha_debug.5: APPRENTICESHIP COMPLETE at or above the required years"
+			}
+			else = { debug_log = "kehillah_semicha_debug.5: APPRENTICESHIP INCOMPLETE below the required years" }
+		}
+		else = { debug_log = "kehillah_semicha_debug.5: no years record -- never had a qualifying guardian on a birthday" }
+
+		if = {
+			limit = { has_variable = kehillah_apprenticeship_curriculum }
+			debug_log = "kehillah_semicha_debug.5: FULL CURRICULUM CREDIT held (Learning 8+ band at adulthood)"
+		}
+		else = { debug_log = "kehillah_semicha_debug.5: no full curriculum credit" }
+
+		if = {
+			limit = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship } }
+			debug_log = "kehillah_semicha_debug.5: FOUNDATION FIELD CREDIT held (Learning 6-7 band at adulthood)"
+		}
+		else = { debug_log = "kehillah_semicha_debug.5: no foundation field credit" }
+
+		if = {
+			limit = { kehillah_rabbi_ordination_curriculum_met_trigger = yes }
+			debug_log = "kehillah_semicha_debug.5: CURRICULUM MET by one route or the other"
+		}
+		else = { debug_log = "kehillah_semicha_debug.5: CURRICULUM NOT MET" }
+
+		if = {
+			limit = {
+				any_relation = {
+					type = guardian
+					kehillah_rabbinic_guardian_trigger = yes
+					kehillah_mentor_endorses_trigger = { PUPIL = root }
+				}
+			}
+			debug_log = "kehillah_semicha_debug.5: ENDORSEMENT AVAILABLE a qualifying guardian would endorse"
+		}
+		else = { debug_log = "kehillah_semicha_debug.5: NO ENDORSEMENT no qualifying guardian willing (opinion <= -50, or cynical+arbitrary, or none qualifies)" }
+
+		debug_log = "kehillah_semicha_debug.5: apprenticeship state -- END"
+	}
+}
+
+kehillah_semicha_debug.6 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.6: grant a completed apprenticeship -- START"
+		set_variable = {
+			name = kehillah_apprentice_rabbi_years
+			value = kehillah_ordination_apprenticeship_years_value
+		}
+		debug_log = "kehillah_semicha_debug.6: years counter set to the required number"
+		trigger_event = kehillah_semicha_debug.5
+		debug_log = "kehillah_semicha_debug.6: grant a completed apprenticeship -- END"
+	}
+}
+
+kehillah_semicha_debug.7 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.7: run the coming-of-age sorter now -- START"
+		trigger_event = kehillah_semicha.0002
+		debug_log = "kehillah_semicha_debug.7: sorter fired -- if it endorsed, kehillah_semicha.0003 follows; .5 after this shows the credit"
+	}
+}

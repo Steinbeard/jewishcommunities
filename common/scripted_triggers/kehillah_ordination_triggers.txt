@@ -91,14 +91,34 @@ kehillah_rabbi_study_eligible_trigger = {
 # per the spec's own instruction to keep them tunable.
 # =====================================================================
 
+# WIDENED 2026-10-10 (V21 slice 4) with the rabbinic-apprenticeship
+# branch. Section 3.3 requires a childhood spent under a rabbi to satisfy
+# this curriculum WITHOUT faking library history: "The record is
+# intentionally a curriculum equivalent -- not two fake named books -- so
+# it satisfies the two-field requirement for Seek Semicha without
+# corrupting the library's work history." Hence a separate variable the
+# OR accepts, rather than two invented entries in kehillah_mastered_works.
+#
+# The Learning 6-7 FOUNDATION band is not here, on purpose. It is worth
+# one study FIELD (kehillah_award_apprenticeship_credit_effect adds
+# flag:rabbinic_apprenticeship to kehillah_apprentice_fields), so it
+# flows through the ordinary counting branch below and still demands real
+# adult study -- which is exactly section 3.3's "requires the ordinary
+# adult Learn Torah route until Learning reaches 8 and supplies one
+# separate field of adult study".
 kehillah_rabbi_ordination_curriculum_met_trigger = {
-	variable_list_size = {
-		name = kehillah_mastered_works
-		value >= kehillah_ordination_works_required_value
-	}
-	variable_list_size = {
-		name = kehillah_apprentice_fields
-		value >= kehillah_ordination_fields_required_value
+	OR = {
+		AND = {
+			variable_list_size = {
+				name = kehillah_mastered_works
+				value >= kehillah_ordination_works_required_value
+			}
+			variable_list_size = {
+				name = kehillah_apprentice_fields
+				value >= kehillah_ordination_fields_required_value
+			}
+		}
+		has_variable = kehillah_apprenticeship_curriculum
 	}
 }
 
@@ -173,6 +193,78 @@ kehillah_semicha_institution_available_trigger = {
 					domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_01 }
 				}
 			}
+		}
+	}
+}
+
+
+# =====================================================================
+# RABBINIC APPRENTICESHIP -- V21 slice 4, added 2026-10-10.
+#
+# Section 3.3: "A Jewish student who spends a substantial part of their
+# education under a rabbi should be able to emerge as one, rather than
+# being forced to repeat their childhood study as an adult scheme."
+#
+# The guardian is found the way vanilla finds one -- any_relation with
+# type = guardian (see education_point_acquisition_support_effect in
+# common/scripted_effects/00_education_effects.txt, which resolves the
+# educator as random_relation type = guardian first and only then falls
+# back to a court tutor). This deliberately does NOT accept the court
+# tutor fallback: section 3.3 requires a named qualifying guardian, and
+# a community that happens to employ a tutor is not an apprenticeship.
+# =====================================================================
+
+# Scope: a prospective GUARDIAN. The same three conditions the Rabbi
+# trait itself is gated on, so a guardian who could not be ordained
+# today cannot ordain someone else.
+kehillah_rabbinic_guardian_trigger = {
+	has_trait = kehillah_rabbi_trait
+	is_rabbinic_authority_jewish_trigger = yes
+	kehillah_leadership_gender_eligible_trigger = yes
+}
+
+# Scope: the PUPIL. Section 3.3: "The pupil must share that
+# rabbinic-authority tradition" -- so the faith check is on both sides,
+# not just the teacher's.
+kehillah_has_rabbinic_guardian_trigger = {
+	is_rabbinic_authority_jewish_trigger = yes
+	any_relation = {
+		type = guardian
+		kehillah_rabbinic_guardian_trigger = yes
+	}
+}
+
+# Scope: the PUPIL. Accumulated years, not "the guardian on the final
+# day" -- section 3.3 is explicit that "replacing a guardian near
+# adulthood cannot manufacture an ordination", which is why this reads a
+# counter incremented once per childhood birthday rather than testing
+# the current guardian at 16.
+#
+# has_variable first: var:X on a never-set variable is the "Failed to
+# fetch variable" log noise this repo spent ROADMAP H3 cleaning out.
+kehillah_rabbinic_apprenticeship_complete_trigger = {
+	has_variable = kehillah_apprentice_rabbi_years
+	var:kehillah_apprentice_rabbi_years >= kehillah_ordination_apprenticeship_years_value
+}
+
+# Scope: the MENTOR. $PUPIL$ = the student.
+#
+# Section 3.3 withholds endorsement for exactly two reasons, and is
+# emphatic that neither is a permanent bar: an opinion of the pupil at or
+# below -50, and cynical+arbitrary TOGETHER. Either trait alone is only a
+# modest negative compatibility signal on the Rabbi trait and is
+# deliberately not a veto here.
+kehillah_mentor_endorses_trigger = {
+	NOT = {
+		opinion = {
+			target = $PUPIL$
+			value <= -50
+		}
+	}
+	NOT = {
+		AND = {
+			has_trait = cynical
+			has_trait = arbitrary
 		}
 	}
 }

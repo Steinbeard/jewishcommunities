@@ -75,3 +75,109 @@ kehillah_semicha.0001 = {
 		ai_chance = { base = 0 }
 	}
 }
+
+
+# =====================================================================
+# SEMICHA OF A STUDENT -- V21 slice 4, added 2026-10-10.
+#
+# Section 3.3: "At adulthood, a student with Learning 8 or higher,
+# completed apprenticeship, and access to an eligible Beit Midrash
+# receives a Semicha of a Student event. Accepting the mentor's
+# endorsement grants the Rabbi trait; declining preserves the
+# apprenticeship record for a later Seek Semicha. If there is no
+# accessible Beit Midrash at that moment, the record is also preserved
+# rather than losing a childhood's work to a location change."
+#
+# So .0002 is a hidden sorter, fired five days after the sixteenth
+# birthday, and .0003 is the only thing the player ever sees. Everything
+# .0002 declines to do is silent AND non-destructive: the years record
+# and any credit it just awarded stay, and Seek Semicha remains open for
+# the rest of the character's life.
+# =====================================================================
+
+# Hidden. Awards the study credit the apprenticeship earned, then decides
+# whether an endorsement is actually on the table.
+kehillah_semicha.0002 = {
+	type = character_event
+	hidden = yes
+
+	trigger = {
+		is_rabbinic_authority_jewish_trigger = yes
+		kehillah_rabbinic_apprenticeship_complete_trigger = yes
+	}
+
+	immediate = {
+		kehillah_award_apprenticeship_credit_effect = yes
+
+		if = {
+			limit = {
+				NOT = { has_trait = kehillah_rabbi_trait }
+				kehillah_rabbi_ordination_candidate_trigger = yes
+				kehillah_rabbi_ordination_curriculum_met_trigger = yes
+				kehillah_semicha_institution_available_trigger = { CHARACTER = root }
+				any_relation = {
+					type = guardian
+					kehillah_rabbinic_guardian_trigger = yes
+					kehillah_mentor_endorses_trigger = { PUPIL = root }
+				}
+			}
+			random_relation = {
+				type = guardian
+				limit = {
+					kehillah_rabbinic_guardian_trigger = yes
+					kehillah_mentor_endorses_trigger = { PUPIL = root }
+				}
+				save_scope_as = kehillah_semicha_mentor
+			}
+			kehillah_semicha_resolve_institution_effect = { CHARACTER = root }
+			trigger_event = kehillah_semicha.0003
+		}
+	}
+}
+
+# The endorsement itself. No roll, for the same reason .0001 has none:
+# section 3.4 forbids a permanent random rejection after the investment,
+# and a childhood is a larger investment than an adult scheme.
+kehillah_semicha.0003 = {
+	type = character_event
+	title = kehillah_semicha.0003.t
+	desc = kehillah_semicha.0003.desc
+	theme = learning
+
+	left_portrait = {
+		character = root
+		animation = personality_honorable
+	}
+
+	right_portrait = {
+		character = scope:kehillah_semicha_mentor
+		animation = personality_content
+		trigger = { exists = scope:kehillah_semicha_mentor }
+	}
+
+	option = {
+		name = kehillah_semicha.0003.a
+		kehillah_grant_semicha_effect = yes
+		# The teacher's own standing, and the bond. A mentor who ordains
+		# his student is not neutral about it.
+		if = {
+			limit = { exists = scope:kehillah_semicha_mentor }
+			scope:kehillah_semicha_mentor = {
+				add_prestige = minor_prestige_gain
+				add_opinion = {
+					target = root
+					modifier = pleased_opinion
+					opinion = 20
+				}
+			}
+		}
+	}
+
+	# Declining keeps everything: the years record, the credit just
+	# awarded, and Seek Semicha. Section 3.3 requires exactly that.
+	option = {
+		name = kehillah_semicha.0003.b
+		custom_tooltip = kehillah_semicha.0003.b.tt
+		ai_chance = { base = 0 }
+	}
+}
