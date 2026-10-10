@@ -1082,6 +1082,7 @@ live probe per site.
 | `kehillah_settlement_policy_decisions.txt:47,89` | `is_shown` also requires `is_landed = yes` + `is_independent_ruler = yes`; a courtier is neither |
 | `kehillah_scripted_triggers.txt:842` | scope is `domicile.domicile_location.county.holder` — a holder by construction |
 | `kehillah_scripted_triggers.txt:1314` | the library trigger's branch 2, already gated by `is_ruler = yes` + `exists = capital_province` |
+| `kehillah_ordination_triggers.txt:183` | branch 2 of the very trigger fixed above, and the same reasoning: `is_ruler = yes` + `exists = capital_province` already exclude every courtier, so its `NOT` is redundant rather than harmful. Left in place — removing a redundant guard from working succession-adjacent code buys nothing |
 | `kehillah_council_tasks.txt:73` | `scope:kehillah_petition_host` is gated `is_landed = yes` |
 | `kehillah_vanilla_task_overrides.txt` (x19) | all read `scope:councillor_liege`, i.e. the liege explicitly — the liege's government is the intended answer |
 | `kehillah_task_contracts.txt:226,564,706,875` | `scope:employer` comes from the county-holder selection above |
