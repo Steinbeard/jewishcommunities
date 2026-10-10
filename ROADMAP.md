@@ -97,8 +97,8 @@ the shim guide. Current state is in the
   measurement. The fix stands on the source read and on the error lines matching exactly the three
   unbuilt tracks.)
 
-- **H4. IN PROGRESS — slices 1-3 of 5 built, ck3-tiger clean; slice 3's live test run on
-  2026-10-09 night (Shabbat heartbeat 2).** V21's ordination path: the Rabbi trait stops being
+- **H4. All five slices built; slice 3 VERIFIED LIVE 2026-10-10 (Shabbat heartbeat 2),
+  slices 4-5 source-verified and ck3-tiger clean, NOT live-tested.** V21's ordination path: the Rabbi trait stops being
   reachable only through history, an office, or a Bet Din invitation. Slice numbering is
   [V21 section 6](docs/spec/v21-rabbi-ordination-paths.md)'s own.
   - **Slice 1 (gates) — built.** `common/scripted_triggers/kehillah_ordination_triggers.txt`:
@@ -110,7 +110,16 @@ the shim guide. Current state is in the
   - **Slice 2 (records) — built.** `kehillah_study_specific_work_effect` now guards every
     `add_trait_xp` and records an unordained reader's progress instead
     (`kehillah_mastered_works` plus `kehillah_apprentice_fields`).
-  - **Slice 3 (Seek Semicha) — built.** Learn Torah's decision and the study scheme admit a
+  - **Slice 3 (Seek Semicha) — VERIFIED LIVE 2026-10-10**
+    ([log](docs/testing/2026-10-10-semicha-ordination-live-test-log.md)). All eleven checks pass,
+    with non-vacuous negative controls: the Greatness reward landed at exactly 15, the three
+    requirement lines render as real English, and the ceremony shows one portrait because the
+    player is the community's own holder. **One real bug found and fixed:** the readiness trigger
+    read `variable_list_size` on lists that do not exist until a character has studied, which the
+    engine logs as an error for most of the population the decision is shown to — the same shape
+    of bug as H3, now paired with `has_variable_list`. Still untested: the landed-ruler and
+    landless-adventurer institution branches, the defer option across a save/load, and losing
+    access to the Beit Midrash (all V21 section 7). Learn Torah's decision and the study scheme admit a
     candidate, not only an ordained rabbi; a candidate with two works from two fields can
     present himself at a Beit Midrash and be recognised
     (`common/decisions/kehillah_semicha_decisions.txt`, `events/kehillah_semicha_events.txt`,
@@ -120,10 +129,30 @@ the shim guide. Current state is in the
     variable at all, so recorded progress cannot be erased. Probes:
     `events/kehillah_semicha_debug_events.txt` (`.1` read-only state dump; `.2`/`.3`/`.4` force
     candidate, curriculum, study hall).
-  - **Next: slice 4** (the guarded education-observation effect, accumulated qualified years
-    under a rabbi guardian, and the coming-of-age endorsement), then **slice 5** (reconcile the
-    Chief Rabbi and Bet Din grants with the shared faith gate without retconning historical
-    trait holders).
+  - **Slice 4 (the rabbinic apprenticeship) — built 2026-10-10, NOT live-tested.** Section 3.3.
+    One year per childhood birthday on which a qualifying rabbi is the guardian right then
+    (`kehillah_observe_rabbinic_education_effect`, on vanilla's `on_birthday_childhood`), so four
+    *accumulated* years in any order — swapping a rabbi in at fifteen buys one year, not four.
+    At adulthood, Learning 8+ earns the whole curriculum as a variable the curriculum trigger
+    accepts (not two fake library entries, per the spec); Learning 6-7 earns one study FIELD and
+    nothing more; below 6, nothing, but the years record survives as biography.
+    `kehillah_semicha.0002` is a hidden sorter five days after the sixteenth birthday — five
+    because vanilla applies the education trait at birthday+2 and that trait is often what carries
+    a student across Learning 8 — and `.0003` is the endorsement the player sees. Withheld only
+    for mentor opinion at or below -50, or cynical AND arbitrary together. Probes: `.5` read-only,
+    `.6` grant a completed apprenticeship, `.7` run the sorter without waiting for a birthday.
+  - **Slice 5 (the older routes) — built 2026-10-10, NOT live-tested.** The Bet Din semicha offer,
+    the Chief Rabbi office and `kehillah_hire_rabbi_effect` all now read
+    `is_rabbinic_authority_jewish_trigger`. The Bet Din path had no faith check at all
+    (`government_has_flag` says a character leads a Kehillah, not what it believes) and the office
+    checked only same-faith-as-employer, which a Karaite leader's Karaite appointee passes. The
+    Chief Rabbi grant itself is now behind the check too, not just the appointment. Nothing is
+    removed from anyone. The slice-3 run's probe reporting `FAITH PASS` at Worms is what makes
+    this safe — without it this was a plausible way to make the office unfillable at the only
+    playable start.
+  - **Next for H4:** a live pass over slices 4 and 5 — `.6` then `.7` on a child reaches the
+    endorsement without waiting ten in-game years — plus the V21 section 7 gaps slice 3's log
+    lists.
 
 ### Kehillah council (V26) — added 2026-10-09
 

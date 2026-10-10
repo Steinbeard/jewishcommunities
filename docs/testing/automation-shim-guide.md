@@ -1,4 +1,4 @@
-# Live-test automation: shims, navigation, and testing philosophy — 2026-09-07
+﻿# Live-test automation: shims, navigation, and testing philosophy — 2026-09-07
 
 Status: **working, verified live.** Companion to
 [wave3-testing-runbook.md](wave3-testing-runbook.md) (what to test) and
@@ -416,3 +416,44 @@ then `run probe.txt`. Note the `debug_log` line *before* the `trigger_event`: it
 targeting itself visible in `debug.log`, so a probe that silently ran on the wrong character can be
 told apart from one that ran on the right one. Cheap, and it is what made this diagnosis possible
 at all — put an identifying `debug_log` in every targeting run file for that reason.
+
+---
+
+## CK3 hot-reloads script files — don't edit the mod while a test is running — added 2026-10-10
+
+Found by doing it. During the Shabbat heartbeat-2 slice-3 live test, the orchestrator kept
+building the next slice in the same working tree while the delegated tester drove the booted
+game. That is not safe, and the reason is worth stating plainly because the opposite assumption
+is the natural one: **CK3 in `-debug_mode -develop` reloads script files from disk while the game
+is running.** Content is not frozen at boot.
+
+The symptom was an error line in the tester's `debug.log` for an event that very much existed on
+disk:
+
+```
+Error: trigger_event effect [ Event [kehillah_semicha_debug.5] not found ]
+  Script location: ... line: 297 (kehillah_semicha_debug.6:immediate)
+...
+Loaded [7] events from 'events/kehillah_semicha_debug_events.txt'
+```
+
+The engine had picked the file up **mid-write** — `.6` was parsed before `.5` had been flushed —
+then reloaded the complete file seconds later. Harmless in itself, and it resolved on its own.
+The hazard is what it implies:
+
+- A tester's `error.log` diff stops being trustworthy. New lines may be the orchestrator's
+  half-written file rather than a defect in the thing under test, and the two are not
+  distinguishable from the log alone.
+- A probe or effect can run against a *partially reloaded* definition, producing a result that is
+  not what either version of the file would produce.
+
+**So: while a delegated live test is in flight, the parent session does docs, not script.**
+ROADMAP, BLOCKERS, the specs and the test logs are all safe to write — the game never reads them.
+If a script change genuinely cannot wait, say so to the tester, name the files, and tell it to
+flag any new error line naming them as probably yours (which is what that session did, after the
+fact). Better still, finish the test first; a live test is minutes, not hours.
+
+A corollary worth keeping, because the same mechanism is useful on purpose: a one-line script fix
+can be verified without a relaunch — save the file, re-fire the probe, read the log. That is not
+a reason to edit during *someone else's* test. It is a reason to keep a fix-and-reprobe cycle
+inside the one session that owns the game.
