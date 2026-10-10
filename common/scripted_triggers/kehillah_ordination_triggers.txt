@@ -112,3 +112,67 @@ kehillah_rabbi_ordination_ready_trigger = {
 	kehillah_rabbi_ordination_candidate_trigger = yes
 	kehillah_rabbi_ordination_curriculum_met_trigger = yes
 }
+
+
+# =====================================================================
+# THE INSTITUTION -- V21 slice 3, added 2026-10-09.
+#
+# Section 3.4: semicha requires being at, or associated through the same
+# library-resolution rules with, a community holding at least
+# kehillah_beit_midrash_01. "A book cache alone is enough to read; a
+# functioning study hall is the minimum institution that can recognise an
+# ordination." Tier 3 (the Yeshiva) improves the ceremony, and is not
+# required.
+#
+# This is deliberately the SAME three populations, in the same order, as
+# kehillah_study_torah_has_accessible_library_trigger (common/scripted_
+# triggers/kehillah_scripted_triggers.txt) -- a Kehillah leader's own
+# quarter, a landed ruler's co-located community at their capital, and a
+# landless adventurer's current location. Only the test on the community
+# changes: "owns any Torah work" becomes "has a Beit Midrash". If that
+# trigger's population rules ever change, change these together; the
+# whole point of section 3.4 is that a student does not have to be at a
+# DIFFERENT place to ordain than the one they studied at.
+#
+# The exists = domicile guards are not decoration. The 2026-09-23 finding
+# recorded in the library trigger's own comment (~990 errors a load) was
+# exactly this: a landless independent ruler -- which every other Kehillah
+# leader in the game is -- has no capital_province, and a chained scope
+# reference through an unset link is what produced the flood.
+# =====================================================================
+
+kehillah_semicha_institution_available_trigger = {
+	OR = {
+		AND = {
+			$CHARACTER$ = { government_has_flag = government_is_kehillah }
+			exists = $CHARACTER$.domicile
+			$CHARACTER$.domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_01 }
+		}
+		AND = {
+			NOT = { $CHARACTER$ = { government_has_flag = government_is_kehillah } }
+			$CHARACTER$ = { is_ruler = yes }
+			exists = $CHARACTER$.capital_province
+			any_in_global_list = {
+				variable = kehillah_registered_communities
+				exists = holder
+				holder = {
+					exists = domicile
+					domicile.domicile_location = $CHARACTER$.capital_province
+					domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_01 }
+				}
+			}
+		}
+		AND = {
+			$CHARACTER$ = { has_government = landless_adventurer_government }
+			any_in_global_list = {
+				variable = kehillah_registered_communities
+				exists = holder
+				holder = {
+					exists = domicile
+					domicile.domicile_location = $CHARACTER$.location
+					domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_01 }
+				}
+			}
+		}
+	}
+}

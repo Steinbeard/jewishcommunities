@@ -1,0 +1,115 @@
+﻿# =====================================================================
+# Ordination (semicha) -- V21 slice 3, added 2026-10-09 (Shabbat
+# heartbeat 1, ROADMAP item H4).
+#
+# Source of truth: docs/spec/v21-rabbi-ordination-paths.md section 3.4.
+# Gates live in common/scripted_triggers/kehillah_ordination_triggers.txt
+# and tunables in common/script_values/kehillah_ordination_values.txt;
+# this file only resolves WHERE the ordination happens and then performs
+# it.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# Scope: anything. Saves scope:kehillah_semicha_community -- the
+# community title whose Beit Midrash recognises this ordination -- when
+# one applies, and nothing when none does.
+#
+# Mirrors kehillah_study_torah_resolve_library_effect (common/scripted_
+# effects/kehillah_library_effects.txt) branch for branch, including its
+# use of every_in_global_list with a save_scope_as inside rather than
+# random_in_global_list: communities are co-located one per province in
+# practice, and copying the established shape keeps the two resolvers
+# comparable when one of them has to change.
+#
+# Deliberately does NOT re-check the candidate. The decision's own
+# is_valid has already run kehillah_semicha_institution_available_trigger
+# with the same three branches, so by the time this runs a match exists.
+# ---------------------------------------------------------------------
+kehillah_semicha_resolve_institution_effect = {
+	if = {
+		limit = {
+			$CHARACTER$ = { government_has_flag = government_is_kehillah }
+			exists = $CHARACTER$.primary_title
+		}
+		$CHARACTER$.primary_title = { save_scope_as = kehillah_semicha_community }
+	}
+	else_if = {
+		limit = {
+			$CHARACTER$ = { is_ruler = yes }
+			exists = $CHARACTER$.capital_province
+		}
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = {
+					exists = domicile
+					domicile.domicile_location = $CHARACTER$.capital_province
+					domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_01 }
+				}
+			}
+			save_scope_as = kehillah_semicha_community
+		}
+	}
+	else_if = {
+		limit = { $CHARACTER$ = { has_government = landless_adventurer_government } }
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = {
+					exists = domicile
+					domicile.domicile_location = $CHARACTER$.location
+					domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_01 }
+				}
+			}
+			save_scope_as = kehillah_semicha_community
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# Scope: the newly ordained character. Requires
+# scope:kehillah_semicha_community.
+#
+# Section 3.4 is explicit that the outcome must be RELIABLE: "There must
+# be no permanent random rejection after a player has made the
+# investment." So there is no roll here at all. Learning and the
+# institution's tier colour the reward; they cannot withhold the trait.
+#
+# The trait is added with no track XP. An apprentice's study records were
+# never trait XP (that is V21 slice 2's whole point), and inventing a
+# starting-XP rule here would quietly make the ordination route better
+# than the historical, office and Bet Din routes, which all grant the
+# bare trait.
+# ---------------------------------------------------------------------
+kehillah_grant_semicha_effect = {
+	add_trait = kehillah_rabbi_trait
+
+	add_piety = major_piety_gain
+	add_prestige = medium_prestige_gain
+
+	# A yeshiva ordains more grandly than a study hall. Flavour and
+	# magnitude only -- tier 1 is already enough to ordain at all.
+	if = {
+		limit = {
+			scope:kehillah_semicha_community.holder ?= {
+				exists = domicile
+				domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_03 }
+			}
+		}
+		add_prestige = medium_prestige_gain
+	}
+
+	# The community that recognised him gains standing for it. Greatness
+	# lives on the TITLE, not the character (see
+	# kehillah_quarterly_pillars_effect's "WHY THE TITLE, NOT THE
+	# CHARACTER" note), and kehillah_init_pillars_effect runs first
+	# because change_variable is a silent no-op on a variable that was
+	# never set -- the same ordering kehillah_on_title_gain uses and for
+	# the same reason.
+	scope:kehillah_semicha_community = {
+		kehillah_init_pillars_effect = yes
+		change_variable = { name = kehillah_var_greatness add = kehillah_semicha_greatness_reward }
+	}
+}

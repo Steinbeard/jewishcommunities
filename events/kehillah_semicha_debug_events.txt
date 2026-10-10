@@ -1,0 +1,188 @@
+﻿# Console-only probes for ordination / semicha (V21 slice 3); never
+# called by gameplay. Play or select a character, then:
+#   event kehillah_semicha_debug.1  -- READ-ONLY: candidate, curriculum,
+#                                      institution, readiness
+#   event kehillah_semicha_debug.2  -- make root an unordained candidate:
+#                                      strip the Rabbi trait, raise
+#                                      Learning to the floor if needed
+#   event kehillah_semicha_debug.3  -- grant the curriculum directly (two
+#                                      works, two fields), then report
+#   event kehillah_semicha_debug.4  -- build a Beit Midrash on root's own
+#                                      quarter, then report
+#
+# The usual shortest path to testing Seek Semicha on the Worms start, as
+# the Kehillah leader: .2, then .3, then .4 if the quarter has no study
+# hall yet, then open Decisions. .1 after each to see what moved.
+#
+# .2/.3/.4 all CHANGE STATE (a trait, a skill, variable lists, a domicile
+# building). Use them on a throwaway run.
+
+namespace = kehillah_semicha_debug
+
+kehillah_semicha_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.1: ordination state -- START"
+		debug_log_scopes = yes
+
+		if = {
+			limit = { has_trait = kehillah_rabbi_trait }
+			debug_log = "kehillah_semicha_debug.1: ALREADY ORDAINED has kehillah_rabbi_trait (Seek Semicha is hidden for him)"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: UNORDAINED no kehillah_rabbi_trait" }
+
+		if = {
+			limit = { is_rabbinic_authority_jewish_trigger = yes }
+			debug_log = "kehillah_semicha_debug.1: FAITH PASS rabbinic-authority Jewish"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: FAITH FAIL not a rabbinic-authority Jewish faith" }
+
+		if = {
+			limit = { kehillah_leadership_gender_eligible_trigger = yes }
+			debug_log = "kehillah_semicha_debug.1: GENDER PASS eligible under the current leadership rule"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: GENDER FAIL not eligible under the current leadership rule" }
+
+		if = {
+			limit = { learning >= kehillah_ordination_learning_floor_value }
+			debug_log = "kehillah_semicha_debug.1: LEARNING PASS at or above the ordination floor"
+		}
+		else_if = {
+			limit = { learning >= kehillah_ordination_foundation_learning_floor_value }
+			debug_log = "kehillah_semicha_debug.1: LEARNING FOUNDATION BAND only (6-7), below the floor to ordain"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: LEARNING FAIL below the foundation band" }
+
+		if = {
+			limit = { kehillah_rabbi_ordination_candidate_trigger = yes }
+			debug_log = "kehillah_semicha_debug.1: CANDIDATE PASS may enter the ordination path"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: CANDIDATE FAIL may not enter the ordination path" }
+
+		if = {
+			limit = { kehillah_rabbi_study_eligible_trigger = yes }
+			debug_log = "kehillah_semicha_debug.1: STUDY PASS Learn Torah's widened gate admits him"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: STUDY FAIL Learn Torah's gate refuses him" }
+
+		if = {
+			limit = {
+				variable_list_size = {
+					name = kehillah_mastered_works
+					value >= kehillah_ordination_works_required_value
+				}
+			}
+			debug_log = "kehillah_semicha_debug.1: WORKS PASS enough distinct mastered works"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: WORKS FAIL not enough distinct mastered works" }
+
+		if = {
+			limit = {
+				variable_list_size = {
+					name = kehillah_apprentice_fields
+					value >= kehillah_ordination_fields_required_value
+				}
+			}
+			debug_log = "kehillah_semicha_debug.1: FIELDS PASS enough distinct study fields"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: FIELDS FAIL not enough distinct study fields" }
+
+		if = {
+			limit = { kehillah_semicha_institution_available_trigger = { CHARACTER = root } }
+			debug_log = "kehillah_semicha_debug.1: INSTITUTION PASS a Beit Midrash within reach"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: INSTITUTION FAIL no Beit Midrash within reach" }
+
+		# The one that decides whether Seek Semicha is selectable, given
+		# the institution above.
+		if = {
+			limit = { kehillah_rabbi_ordination_ready_trigger = yes }
+			debug_log = "kehillah_semicha_debug.1: READY PASS Seek Semicha should be available"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: READY FAIL Seek Semicha should be greyed out" }
+
+		kehillah_semicha_resolve_institution_effect = { CHARACTER = root }
+		if = {
+			limit = { exists = scope:kehillah_semicha_community }
+			debug_log = "kehillah_semicha_debug.1: resolved institution community (scopes dump follows)"
+			scope:kehillah_semicha_community = { debug_log_scopes = yes }
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: no institution community resolved" }
+
+		debug_log = "kehillah_semicha_debug.1: ordination state -- END"
+	}
+}
+
+kehillah_semicha_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.2: make root an unordained candidate -- START"
+		if = {
+			limit = { has_trait = kehillah_rabbi_trait }
+			remove_trait = kehillah_rabbi_trait
+			debug_log = "kehillah_semicha_debug.2: removed the Rabbi trait"
+		}
+		if = {
+			limit = { learning < kehillah_ordination_learning_floor_value }
+			add_learning_skill = 10
+			debug_log = "kehillah_semicha_debug.2: added 10 Learning to clear the floor"
+		}
+		trigger_event = kehillah_semicha_debug.1
+		debug_log = "kehillah_semicha_debug.2: make root an unordained candidate -- END"
+	}
+}
+
+kehillah_semicha_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.3: grant the curriculum -- START"
+
+		# Two real works from two different fields, matching what
+		# kehillah_study_specific_work_effect would have recorded:
+		# Targum Onkelos (parshanut) and the Mishnah (talmudics).
+		if = {
+			limit = { NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_targum_onkelos } } }
+			add_to_variable_list = { name = kehillah_mastered_works target = flag:work_targum_onkelos }
+		}
+		if = {
+			limit = { NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mishnah } } }
+			add_to_variable_list = { name = kehillah_mastered_works target = flag:work_mishnah }
+		}
+		if = {
+			limit = { NOT = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:parshanut } } }
+			add_to_variable_list = { name = kehillah_apprentice_fields target = flag:parshanut }
+		}
+		if = {
+			limit = { NOT = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:talmudics } } }
+			add_to_variable_list = { name = kehillah_apprentice_fields target = flag:talmudics }
+		}
+
+		trigger_event = kehillah_semicha_debug.1
+		debug_log = "kehillah_semicha_debug.3: grant the curriculum -- END"
+	}
+}
+
+kehillah_semicha_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.4: build a study hall -- START"
+		if = {
+			limit = { exists = domicile }
+			domicile = {
+				if = {
+					limit = { NOT = { has_domicile_building_or_higher = kehillah_beit_midrash_01 } }
+					add_domicile_building = kehillah_beit_midrash_01
+					debug_log = "kehillah_semicha_debug.4: added kehillah_beit_midrash_01"
+				}
+				else = { debug_log = "kehillah_semicha_debug.4: a Beit Midrash is already here" }
+			}
+		}
+		else = { debug_log = "kehillah_semicha_debug.4: BLOCKED root has no domicile" }
+		trigger_event = kehillah_semicha_debug.1
+		debug_log = "kehillah_semicha_debug.4: build a study hall -- END"
+	}
+}

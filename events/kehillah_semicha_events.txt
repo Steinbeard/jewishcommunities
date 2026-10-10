@@ -1,0 +1,77 @@
+﻿# =====================================================================
+# The semicha ceremony -- V21 slice 3, added 2026-10-09 (Shabbat
+# heartbeat 1, ROADMAP item H4).
+#
+# Source of truth: docs/spec/v21-rabbi-ordination-paths.md section 3.4.
+# Fired only from kehillah_seek_semicha_decision, which has already
+# resolved scope:kehillah_semicha_community.
+#
+# Two options, and the second one matters as much as the first: "A defer
+# option may leave the candidate studying, but must not erase their
+# recorded progress." Deferring here does nothing at all -- no variable
+# is touched, no cooldown is set -- so the decision simply becomes
+# available again. That is the cheapest possible way to honour the
+# requirement, and the hardest to get wrong later.
+# =====================================================================
+
+namespace = kehillah_semicha
+
+kehillah_semicha.0001 = {
+	type = character_event
+	title = kehillah_semicha.0001.t
+	desc = {
+		desc = kehillah_semicha.0001.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:kehillah_semicha_community.holder ?= {
+						exists = domicile
+						domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_03 }
+					}
+				}
+				desc = kehillah_semicha.0001.desc_yeshiva
+			}
+			desc = kehillah_semicha.0001.desc_beit_midrash
+		}
+	}
+	theme = learning
+
+	left_portrait = {
+		character = root
+		animation = personality_zealous
+	}
+
+	# The examining authority, when there is one to show: the head of the
+	# community whose study hall this is. A Kehillah leader seeking his
+	# own semicha IS that holder, so he is skipped rather than shown
+	# twice.
+	right_portrait = {
+		character = scope:kehillah_semicha_examiner
+		animation = personality_honorable
+		trigger = { exists = scope:kehillah_semicha_examiner }
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				exists = scope:kehillah_semicha_community.holder
+				NOT = { scope:kehillah_semicha_community.holder = root }
+			}
+			scope:kehillah_semicha_community.holder = { save_scope_as = kehillah_semicha_examiner }
+		}
+	}
+
+	# Accept. No roll -- section 3.4: "There must be no permanent random
+	# rejection after a player has made the investment."
+	option = {
+		name = kehillah_semicha.0001.a
+		kehillah_grant_semicha_effect = yes
+	}
+
+	# Defer. Deliberately empty of effects; see this file's header.
+	option = {
+		name = kehillah_semicha.0001.b
+		custom_tooltip = kehillah_semicha.0001.b.tt
+		ai_chance = { base = 0 }
+	}
+}
