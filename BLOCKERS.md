@@ -1360,3 +1360,108 @@ bf328d2 BLOCKERS + V21: heartbeat 3 state, written mid-run as cutoff insurance
 4ea033d Heartbeat run-status note (2026-10-09_235002)
 ```
 Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-shabbat-2026-10-10_045002.log
+
+## Shabbat heartbeat 2026-10-10 09:50 -- heartbeat 3's lost run recovered from debug.log, and the courtier bug it had already found
+
+Provisional entry, written mid-run as insurance against a usage cutoff, following
+heartbeat 3's practice. If no later entry supersedes it, read it as the final state
+of this heartbeat.
+
+### Where the tree was at the start
+
+Clean, on `autonomous/shabbat-2026-10`. Heartbeat 3's run-status note said
+"cut off: true", and its own provisional entry said a Sonnet subagent was live-testing
+four things with the warning: "If no later heartbeat entry reports these results, that
+run was lost and should be relaunched." No later entry existed. The run was lost.
+
+**But its output was not.** `debug.log` had survived with the whole session in it,
+including the verdict line heartbeat 3 had called "the single most important line in
+the whole run". So this heartbeat read the results out of the log instead of
+re-running blind, which is what made the rest of it possible. Worth remembering as a
+habit: check `debug.log` before relaunching a cut-off live run.
+
+### The headline: H4's courtier branch was still broken, and the reason was not where anyone was looking
+
+Recovered verdict: `H4PUPIL: INSTITUTION FAIL -- the courtier branch is NOT resolving`.
+
+Heartbeat 3 had added a courtier branch to
+`kehillah_semicha_institution_available_trigger` and it was still FALSE for the exact
+pupil it was written for. Cause, measured directly in the recovered log:
+**`government_has_flag` is TRUE for a COURTIER of a Kehillah ruler**, not just the
+ruler. The H4 pupil Huna Landsberg (65937), a titleless child ward at Worms, logged
+"pupil IS a Kehillah government holder".
+
+That one fact closed all three branches at once: branch 1 matched the flag and then
+demanded `exists = domicile`, which a courtier has not got, while the
+`NOT = { government_has_flag ... }` guard shut branches 2 and 3. The community data
+was never at fault -- the same diagnostic shows Worms MATCHES his location and HAS a
+Beit Midrash tier 1+.
+
+Fixed by dropping that guard from branch 3. A Kehillah leader still cannot reach it
+(`is_ruler = no` is false for them), so leaders are still judged on their own quarter
+and cannot borrow a neighbour's study hall. Purely additive. The mirrored resolver
+needed no change -- its `if`/`else_if` chain already falls through on
+`exists = primary_title`.
+
+Recorded as **implementation doc section 14**, with the rule it implies (do not use
+`government_has_flag` to mean "is this the holder") and an audit of every other call
+site in the mod. All the others are already safe, each for a stated reason, so nothing
+else was changed.
+
+### H2: the recipient-refresh fix was fine; the family being handed over was not
+
+Recovered: heartbeat 3's `.0003` fix could not be proven because the re-run hit its own
+new guard twice -- "a player received a family with no head at their court". The fix is
+right and stays; it cannot invent a head for a family that has no members, and that is
+what `.10` was moving. Two donor-side defects behind it:
+
+1. `kehillah_household_save_lowest_effect` **preferred the ghost**. `order_by` is
+   `0 - standing`, so every real family scored negative while an entry with no standing
+   variable scored exactly 0 and beat all of them. Backwards. Missing standing now sorts
+   last, via a sentinel rather than an exclusion, so a community can always still lose a
+   family.
+2. **`.10` was not testing the real path.** Real play is refresh-then-depart
+   (`kehillah_household_yearly_effect`), so a genuine departure always picks from a
+   just-recounted register. `.10` reached into an AI register nothing had ever
+   refreshed. It now refreshes the donor first.
+
+Note the consequence: **ordinary play was never exposed to defect 1**, because refresh
+writes standing on every entry it keeps. Both changes are hardening plus a probe that
+now represents the path it claims to test. Speyer's register is what gave it away --
+six entries, the first with neither `kehillah_household_of` nor
+`kehillah_household_head`, and `kehillah_household_add_effect` sets `household_of`
+unconditionally, so that entry cannot have arrived by the normal route.
+
+### Verified vs. not
+
+- **Source-verified and ck3-tiger clean, live re-test IN FLIGHT at the time of
+  writing:** the H4 courtier fix (`H4PUPIL: INSTITUTION PASS` is the line to look for),
+  the H2 donor-side fixes and whether `kehillah_household.0003` now renders naming the
+  donor community.
+- ck3-tiger: error count unchanged at 616 across all of today's edits, all pre-existing
+  1.19-vs-1.20 faith/`rite` false positives. Nothing new on any touched file.
+- **If no later entry reports the live results, that subagent run was lost too** --
+  check `debug.log` for `H4PUPIL:` and `H2COUNT:` lines before relaunching, for the same
+  reason it worked this time.
+
+### What the next heartbeat should pick up
+
+1. The live verdict above, if this entry is still the newest one.
+2. The V21 section 7 gaps slice 3's log lists that are still genuinely open: the
+   landed-ruler and landless-adventurer institution branches, and losing access to the
+   Beit Midrash. (The "defer across a save/load" gap was already closed by source in
+   heartbeat 3 -- `.0001` option b has no effects, so there is nothing to lose.)
+3. V26 ba'alei batim slice 2 -- standing as a `kehillah_leadership` candidate-score
+   term. Note this touches succession scoring, so per CLAUDE.md it needs the
+   implementation doc read first and a live succession test before it is called done.
+
+### For Daniel
+
+Nothing blocking, and nothing destructive was done or avoided. One open question is
+recorded in implementation doc section 14 rather than acted on, deliberately: two
+`change_government` guards in the succession path use `government_has_flag`, which
+today's finding shows answers a different question than "is this the holder". H1's live
+`CLERGY YES` proves the path works; it does not prove whether the inline
+`change_government` or the `kehillah_succession.0010` retry is what carries it. That is
+succession code -- this repo's highest-crash-risk area -- so it is written down with
+the cheap way to settle it rather than changed blind on a night with nobody watching.
