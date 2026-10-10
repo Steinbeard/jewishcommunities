@@ -1662,3 +1662,21 @@ holder" -- and it had already silently disabled an entire feature population bef
 noticed. The same question in the succession path is written down with the cheap way to
 settle it rather than changed unattended, because that is the code that has crashed this game
 before.
+
+## Heartbeat run status -- 2026-10-10_095002 (autonomous/shabbat-2026-10)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: YES --
+```
+M common/script_values/kehillah_script_values.txt
+ M common/succession_appointment/kehillah_leadership.txt
+```
+- Last few commits:
+```
+9696f42 BLOCKERS: section 7 gaps, three probe bugs, the double-credit fix
+74d2bf4 Correction: heartbeat 3's "both credits" was the bug, not the proof
+389ec99 Credit-band fix verified live, closing this log's own qualification
+9be7644 A top-band student could collect the consolation prize as well
+8dafcff ROADMAP: section 7's institution gaps, two of three closed
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-shabbat-2026-10-10_095002.log
