@@ -209,8 +209,40 @@ kehillah_semicha_institution_available_trigger = {
 		# served four years under a rabbi could never be endorsed. The
 		# clause is purely additive -- nothing that passed before stops
 		# passing.
+		#
+		# LIVE-TEST FIX, 2026-10-10 (Shabbat heartbeat 4). The widening
+		# above was still FALSE for the exact pupil it was written for, and
+		# the reason is the clause that used to head this branch:
+		#
+		#     NOT = { $CHARACTER$ = { government_has_flag = government_is_kehillah } }
+		#
+		# **government_has_flag is TRUE for a COURTIER of a Kehillah ruler**,
+		# not only for the ruler. A landless character's government resolves
+		# through their liege, so every member of Isaac HaLevi's court reads
+		# as a Kehillah government holder. Measured directly: the H4 pupil
+		# Huna Landsberg (65937), a child ward in the Worms court, logged
+		# "pupil IS a Kehillah government holder" from
+		# run/h4_institution_diag.txt. That single fact closed all three
+		# branches against him at once -- branch 1 matched the flag but then
+		# demanded `exists = domicile`, which a courtier has not got
+		# (domiciles belong to the ruler), while this NOT shut branches 2
+		# and 3. The community data was never the problem: the same
+		# diagnostic shows Worms MATCHES his location and HAS a Beit Midrash
+		# tier 1+.
+		#
+		# So the guard is dropped rather than the location test changed. The
+		# branch is still not reachable by a Kehillah LEADER, which is what
+		# that NOT was actually protecting -- a leader holds d_kehillah_*,
+		# so `is_ruler = no` is false for them, and they do not have the
+		# adventurer government. A leader is therefore still judged only on
+		# their own quarter (branch 1) and cannot borrow a neighbouring
+		# community's study hall. Dropping it is purely additive, same as
+		# the 2026-10-10 widening itself.
+		#
+		# Do NOT re-add a government_has_flag exclusion to a branch that is
+		# meant to catch courtiers; use is_ruler / exists = domicile, which
+		# distinguish a holder from their household and the flag does not.
 		AND = {
-			NOT = { $CHARACTER$ = { government_has_flag = government_is_kehillah } }
 			OR = {
 				$CHARACTER$ = { has_government = landless_adventurer_government }
 				$CHARACTER$ = { is_ruler = no }
