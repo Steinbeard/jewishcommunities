@@ -1246,3 +1246,17 @@ session does docs, not script.**
   test before broadening the AI population, and that has not been run. If you see rabbi inflation
   in a long game, that is the first thing to look at -- the cheap fix is a guard limiting the
   observation effect to Kehillah courts.
+
+## Heartbeat run status -- 2026-10-09_235002 (autonomous/shabbat-2026-10)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+ce83809 ROADMAP: the rabbi-loop section still listed V21 as the next thing to build
+ea58030 README: add the council, the householder families, and the study/ordination loop
+596ab59 BLOCKERS: Shabbat heartbeat 2 -- H4 complete, slice 3 verified, H2 in flight
+1672db6 V21: the Status line said "no implementation" after it was all built
+23ed1c1 H4 slice 3 VERIFIED LIVE, and a readiness trigger that errored for everyone
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-shabbat-2026-10-09_235002.log
