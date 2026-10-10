@@ -311,3 +311,222 @@ kehillah_semicha_debug.7 = {
 		debug_log = "kehillah_semicha_debug.7: sorter fired -- if it endorsed, kehillah_semicha.0003 follows; .5 after this shows the credit"
 	}
 }
+
+
+# ---------------------------------------------------------------------
+# V21 section 7 gaps -- institution branch coverage and losing the study
+# hall, added 2026-10-10 (Shabbat heartbeat 4).
+#
+#   event kehillah_semicha_debug.8  -- READ-ONLY. Runs kehillah_semicha_
+#                                      institution_available_trigger
+#                                      against one subject per branch and
+#                                      reports each verdict, with enough
+#                                      detail to tell a real FAIL from a
+#                                      correct one.
+#   event kehillah_semicha_debug.9  -- CHANGES STATE. Destroys the
+#                                      community's Beit Midrash, whatever
+#                                      tier it is, then re-runs .8.
+#                                      kehillah_semicha_debug.4 rebuilds
+#                                      it, so the pair is reversible.
+#
+# Why these exist: V21 section 7 lists the landed-ruler branch, the
+# landless-adventurer branch, and losing access to the Beit Midrash as
+# never tested. Heartbeat 4 is also the session that found the COURTIER
+# branch had been false for every courtier in the game, because
+# government_has_flag is true for a ruler's whole court (implementation
+# doc section 14). So "this branch has never been exercised" is a
+# statement with a track record behind it here, not a formality -- two of
+# the three remaining branches have never had a single live verdict.
+#
+# Note the institution trigger carries NO faith gate of its own (faith
+# lives in kehillah_rabbi_ordination_candidate_trigger), which is what
+# makes the host county's Christian holder a legitimate subject for the
+# MECHANICS of branch 2. It is not asserting that a Christian count may
+# be ordained -- the candidate trigger refuses him long before this.
+# ---------------------------------------------------------------------
+
+kehillah_semicha_debug.8 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.8: institution branch coverage -- START"
+
+		# The community's own province, which every branch below compares
+		# against. Guarded: a chained reference through an unset domicile
+		# is the ~990-errors-a-load mistake recorded in the library
+		# trigger's header.
+		if = {
+			limit = { exists = domicile.domicile_location }
+			domicile.domicile_location = { save_scope_as = kds8_here }
+			debug_log = "kehillah_semicha_debug.8: community province (scopes dump follows)"
+			domicile.domicile_location = { debug_log_scopes = yes }
+		}
+		else = { debug_log = "kehillah_semicha_debug.8: BLOCKED root has no domicile_location -- run this as a Kehillah leader" }
+
+		# --- BRANCH 1: the leader's own quarter. Already proven live, kept
+		# here as the control: if this one ever FAILs, the probe itself or
+		# the start is wrong, not the branch under test.
+		if = {
+			limit = { kehillah_semicha_institution_available_trigger = { CHARACTER = root } }
+			debug_log = "kehillah_semicha_debug.8: BRANCH 1 PASS the leader's own quarter (control)"
+		}
+		else = { debug_log = "kehillah_semicha_debug.8: BRANCH 1 FAIL the leader's own quarter -- CONTROL BROKEN, distrust the rest of this run" }
+
+		# --- BRANCH 2: a landed ruler whose capital province holds a
+		# community. Subject derived from the community's own province
+		# rather than hardcoding c_worms, so this probe keeps working at
+		# any start and in any community.
+		if = {
+			limit = { exists = scope:kds8_here.county.holder }
+			scope:kds8_here.county.holder = { save_scope_as = kds8_landed }
+			debug_log = "kehillah_semicha_debug.8: BRANCH 2 subject is the host county's holder (scopes dump follows)"
+			scope:kds8_landed = {
+				debug_log_scopes = yes
+				if = {
+					limit = { is_ruler = yes }
+					debug_log = "kehillah_semicha_debug.8:   is_ruler YES"
+				}
+				else = { debug_log = "kehillah_semicha_debug.8:   is_ruler NO" }
+				if = {
+					limit = { exists = capital_province }
+					debug_log = "kehillah_semicha_debug.8:   HAS a capital_province"
+					if = {
+						limit = { capital_province = scope:kds8_here }
+						debug_log = "kehillah_semicha_debug.8:   capital_province IS the community's province (expect BRANCH 2 PASS)"
+					}
+					else = { debug_log = "kehillah_semicha_debug.8:   capital_province is ELSEWHERE -- e.g. a duke holding this county from another seat. A BRANCH 2 FAIL below is then CORRECT, not a bug" }
+				}
+				else = { debug_log = "kehillah_semicha_debug.8:   has NO capital_province -- a BRANCH 2 FAIL below is CORRECT" }
+			}
+			if = {
+				limit = { kehillah_semicha_institution_available_trigger = { CHARACTER = scope:kds8_landed } }
+				debug_log = "kehillah_semicha_debug.8: BRANCH 2 PASS a landed ruler at the community's province"
+			}
+			else = { debug_log = "kehillah_semicha_debug.8: BRANCH 2 FAIL a landed ruler at the community's province -- read the three lines above before calling it a bug" }
+		}
+		else = { debug_log = "kehillah_semicha_debug.8: BRANCH 2 BLOCKED the community's province has no county holder" }
+
+		# --- BRANCH 3a: a courtier. This is the population slice 4's
+		# apprenticeship produces, and the one the 2026-10-10 fix was for.
+		if = {
+			limit = {
+				any_courtier = {
+					NOT = { this = root }
+					is_alive = yes
+				}
+			}
+			random_courtier = {
+				limit = {
+					NOT = { this = root }
+					is_alive = yes
+				}
+				save_scope_as = kds8_courtier
+			}
+			if = {
+				limit = { kehillah_semicha_institution_available_trigger = { CHARACTER = scope:kds8_courtier } }
+				debug_log = "kehillah_semicha_debug.8: BRANCH 3a PASS a courtier of the community's leader"
+			}
+			else = { debug_log = "kehillah_semicha_debug.8: BRANCH 3a FAIL a courtier of the community's leader" }
+		}
+		else = { debug_log = "kehillah_semicha_debug.8: BRANCH 3a BLOCKED root has no other living courtier" }
+
+		# --- BRANCH 3b: a landless adventurer standing in the community's
+		# province. Reported as an honest null when none exists -- there is
+		# no guarantee one is anywhere near Worms in 1066, and inventing
+		# one would test a character this probe built rather than the game.
+		if = {
+			limit = {
+				exists = scope:kds8_here
+				any_living_character = {
+					has_government = landless_adventurer_government
+					exists = location
+					location = scope:kds8_here
+				}
+			}
+			random_living_character = {
+				limit = {
+					has_government = landless_adventurer_government
+					exists = location
+					location = scope:kds8_here
+				}
+				save_scope_as = kds8_adventurer
+			}
+			debug_log = "kehillah_semicha_debug.8: BRANCH 3b subject found (scopes dump follows)"
+			scope:kds8_adventurer = { debug_log_scopes = yes }
+			if = {
+				limit = { kehillah_semicha_institution_available_trigger = { CHARACTER = scope:kds8_adventurer } }
+				debug_log = "kehillah_semicha_debug.8: BRANCH 3b PASS a landless adventurer in the community's province"
+			}
+			else = { debug_log = "kehillah_semicha_debug.8: BRANCH 3b FAIL a landless adventurer in the community's province" }
+		}
+		else = { debug_log = "kehillah_semicha_debug.8: BRANCH 3b NOT OBSERVED no landless adventurer is standing in the community's province -- an honest null, not a failure" }
+
+		debug_log = "kehillah_semicha_debug.8: institution branch coverage -- END"
+	}
+}
+
+
+kehillah_semicha_debug.9 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.9: destroy the study hall -- START"
+		if = {
+			limit = {
+				exists = domicile
+				domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_01 }
+			}
+			domicile = {
+				# Each tier is its own building id, so "remove the Beit
+				# Midrash" means removing whichever tier is actually there
+				# -- the same shape as vanilla's
+				# destroy_or_downgrade_estate_building_N_effect
+				# (common/scripted_effects/00_building_effects.txt), which
+				# also tests tier by tier rather than assuming one.
+				if = {
+					limit = { has_domicile_building = kehillah_beit_midrash_03 }
+					remove_domicile_building_no_refund = kehillah_beit_midrash_03
+					debug_log = "kehillah_semicha_debug.9: removed kehillah_beit_midrash_03"
+				}
+				if = {
+					limit = { has_domicile_building = kehillah_beit_midrash_02 }
+					remove_domicile_building_no_refund = kehillah_beit_midrash_02
+					debug_log = "kehillah_semicha_debug.9: removed kehillah_beit_midrash_02"
+				}
+				if = {
+					limit = { has_domicile_building = kehillah_beit_midrash_01 }
+					remove_domicile_building_no_refund = kehillah_beit_midrash_01
+					debug_log = "kehillah_semicha_debug.9: removed kehillah_beit_midrash_01"
+				}
+				if = {
+					limit = { NOT = { has_domicile_building_or_higher = kehillah_beit_midrash_01 } }
+					debug_log = "kehillah_semicha_debug.9: CONFIRMED no Beit Midrash of any tier remains"
+				}
+				else = { debug_log = "kehillah_semicha_debug.9: FAIL a Beit Midrash is still here after the removals" }
+			}
+		}
+		else = { debug_log = "kehillah_semicha_debug.9: nothing to do -- no Beit Midrash here, or no domicile" }
+
+		# Section 3.4 is explicit that recorded progress is not erased, and
+		# that only the CEREMONY needs an institution. So losing the study
+		# hall must close the door without burning the student's work.
+		if = {
+			limit = { has_variable = kehillah_apprenticeship_curriculum }
+			debug_log = "kehillah_semicha_debug.9: curriculum record SURVIVED the loss (required)"
+		}
+		if = {
+			limit = { has_variable_list = kehillah_mastered_works }
+			debug_log = "kehillah_semicha_debug.9: mastered-works list SURVIVED the loss (required)"
+		}
+		if = {
+			limit = { has_variable = kehillah_apprentice_rabbi_years }
+			debug_log = "kehillah_semicha_debug.9: apprenticeship years SURVIVED the loss (required)"
+		}
+
+		# Every branch should now refuse, because every branch ends in the
+		# same has_domicile_building_or_higher test.
+		debug_log = "kehillah_semicha_debug.9: re-running branch coverage; expect every branch that PASSed before to FAIL now"
+		trigger_event = kehillah_semicha_debug.8
+		debug_log = "kehillah_semicha_debug.9: destroy the study hall -- END; kehillah_semicha_debug.4 rebuilds it"
+	}
+}
