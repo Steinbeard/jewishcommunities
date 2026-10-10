@@ -244,6 +244,10 @@ kehillah_semicha_debug.4 = {
 #                                      directly (sets the years counter
 #                                      to the required number), then
 #                                      report
+#   event kehillah_semicha_debug.11 -- the same three credit bands, but
+#                                      on a subject already IN each band;
+#                                      use this one, not .10, unless root
+#                                      has no Learning modifiers
 #   event kehillah_semicha_debug.10 -- drive Learning through all three
 #                                      credit bands and check which
 #                                      credit each one awards
@@ -913,5 +917,226 @@ kehillah_semicha_debug.10 = {
 
 		}
 		debug_log = "kehillah_semicha_debug.10: credit bands -- END"
+	}
+}
+
+# ---------------------------------------------------------------------
+# V21 SLICE 4 -- THE CREDIT BANDS, TAKE 2, added 2026-10-10 (Shabbat
+# heartbeat 5, after .10 could not reach two of the three bands).
+#
+#   event kehillah_semicha_debug.11 -- CHANGES STATE on courtiers.
+#                                      Same three-band question as .10,
+#                                      but it SELECTS a subject already
+#                                      in each band instead of trying to
+#                                      move anyone's Learning.
+#
+# WHY .10 WAS NOT ENOUGH, measured rather than assumed. Run live on the
+# Worms leader, .10 confirmed the FULL band and correctly withheld a
+# verdict on the other two. The reason was then measured directly: Isaac
+# HaLevi reads Learning 17 with his BASE skill floored to 0. 1.20 has no
+# set_learning_skill, only the additive add_learning_skill, which moves
+# the base; the engine floors the base at 0; and the learning trigger
+# reads the TOTAL including education, trait and lifestyle modifiers. So
+# on a scholarly character the foundation band (6-7) and the below band
+# (<6) are simply not reachable by adding skill, in either direction.
+#
+# This probe inverts the approach: do not move anyone into a band, go
+# find someone already in it. A Kehillah court is full of Jewish
+# courtiers across the whole Learning range, and the effect reads the
+# same total `learning` either way -- so a selected subject tests the
+# real gate more faithfully than a manufactured one, with no modifier
+# arithmetic to get wrong.
+#
+# Each case still reports NOT OBSERVED when the court has nobody in that
+# band, rather than widening the band until something matches. A test
+# that moves its own goalposts to produce a PASS is worse than no test.
+#
+# STATE: sets kehillah_apprentice_rabbi_years on up to three courtiers
+# and clears their apprenticeship credit. Throwaway runs only; reload
+# afterwards rather than keeping the save.
+# ---------------------------------------------------------------------
+kehillah_semicha_debug.11 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.11: credit bands by selected subject -- START"
+		debug_log_scopes = yes
+		if = {
+			limit = { NOT = { any_courtier = { is_rabbinic_authority_jewish_trigger = yes } } }
+			debug_log = "kehillah_semicha_debug.11: ABORT this leader has no Jewish courtiers at all -- every case below would report NOT OBSERVED for the wrong reason. Switch to a Kehillah leader."
+		}
+		else = {
+			# ---------------- FULL: expect CURRICULUM ----------------
+			debug_log = "kehillah_semicha_debug.11: ---- FULL: looking for a subject already in this band ----"
+			if = {
+				limit = {
+					any_courtier = {
+						is_rabbinic_authority_jewish_trigger = yes
+						learning >= kehillah_ordination_learning_floor_value
+					}
+				}
+				random_courtier = {
+					limit = {
+						is_rabbinic_authority_jewish_trigger = yes
+						learning >= kehillah_ordination_learning_floor_value
+					}
+					save_scope_as = kh_band_subject
+					debug_log = "kehillah_semicha_debug.11: FULL SUBJECT chosen (identity in scopes dump)"
+					debug_log_scopes = yes
+
+					# The apprenticeship must read complete, or the effect refuses
+					# on that and not on Learning -- which would look like a band
+					# failure. Granted the same way .6 does.
+					set_variable = {
+						name = kehillah_apprentice_rabbi_years
+						value = kehillah_ordination_apprenticeship_years_value
+					}
+					# Clear any credit the subject already carries, so the verdict
+					# is about this call and not about their history.
+					remove_variable = kehillah_apprenticeship_curriculum
+					remove_list_variable = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+
+					if = {
+						limit = { kehillah_rabbinic_apprenticeship_complete_trigger = yes }
+						kehillah_award_apprenticeship_credit_effect = yes
+
+						if = {
+							limit = {
+								has_variable = kehillah_apprenticeship_curriculum
+								is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+							}
+							debug_log = "kehillah_semicha_debug.11: FULL FAIL BOTH credits held at once -- the bands are exclusive; the 2026-10-10 double-credit bug is back"
+						}
+						else_if = {
+							limit = { has_variable = kehillah_apprenticeship_curriculum }
+							debug_log = "kehillah_semicha_debug.11: FULL PASS full curriculum credit only"
+						}
+						else_if = {
+							limit = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship } }
+							debug_log = "kehillah_semicha_debug.11: FULL FAIL got the foundation field credit, expected CURRICULUM"
+						}
+						else = { debug_log = "kehillah_semicha_debug.11: FULL FAIL no credit awarded at all, expected CURRICULUM" }
+					}
+					else = { debug_log = "kehillah_semicha_debug.11: FULL SKIPPED apprenticeship still reads incomplete -- the refusal would not be about Learning" }
+				}
+			}
+			else = { debug_log = "kehillah_semicha_debug.11:FULL NOT OBSERVED no Jewish courtier of this leader sits in this band -- try a bigger court or another community; NOT a FAIL" }
+
+			# ---------------- FOUNDATION: expect FIELD ----------------
+			debug_log = "kehillah_semicha_debug.11: ---- FOUNDATION: looking for a subject already in this band ----"
+			if = {
+				limit = {
+					any_courtier = {
+						is_rabbinic_authority_jewish_trigger = yes
+						learning >= kehillah_ordination_foundation_learning_floor_value
+						NOT = { learning >= kehillah_ordination_learning_floor_value }
+					}
+				}
+				random_courtier = {
+					limit = {
+						is_rabbinic_authority_jewish_trigger = yes
+						learning >= kehillah_ordination_foundation_learning_floor_value
+						NOT = { learning >= kehillah_ordination_learning_floor_value }
+					}
+					save_scope_as = kh_band_subject
+					debug_log = "kehillah_semicha_debug.11: FOUNDATION SUBJECT chosen (identity in scopes dump)"
+					debug_log_scopes = yes
+
+					# The apprenticeship must read complete, or the effect refuses
+					# on that and not on Learning -- which would look like a band
+					# failure. Granted the same way .6 does.
+					set_variable = {
+						name = kehillah_apprentice_rabbi_years
+						value = kehillah_ordination_apprenticeship_years_value
+					}
+					# Clear any credit the subject already carries, so the verdict
+					# is about this call and not about their history.
+					remove_variable = kehillah_apprenticeship_curriculum
+					remove_list_variable = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+
+					if = {
+						limit = { kehillah_rabbinic_apprenticeship_complete_trigger = yes }
+						kehillah_award_apprenticeship_credit_effect = yes
+
+						if = {
+							limit = {
+								has_variable = kehillah_apprenticeship_curriculum
+								is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+							}
+							debug_log = "kehillah_semicha_debug.11: FOUNDATION FAIL BOTH credits held at once -- the bands are exclusive; the 2026-10-10 double-credit bug is back"
+						}
+						else_if = {
+							limit = { has_variable = kehillah_apprenticeship_curriculum }
+							debug_log = "kehillah_semicha_debug.11: FOUNDATION FAIL got the full curriculum credit, expected FIELD"
+						}
+						else_if = {
+							limit = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship } }
+							debug_log = "kehillah_semicha_debug.11: FOUNDATION PASS foundation field credit only"
+						}
+						else = { debug_log = "kehillah_semicha_debug.11: FOUNDATION FAIL no credit awarded at all, expected FIELD" }
+					}
+					else = { debug_log = "kehillah_semicha_debug.11: FOUNDATION SKIPPED apprenticeship still reads incomplete -- the refusal would not be about Learning" }
+				}
+			}
+			else = { debug_log = "kehillah_semicha_debug.11:FOUNDATION NOT OBSERVED no Jewish courtier of this leader sits in this band -- try a bigger court or another community; NOT a FAIL" }
+
+			# ---------------- BELOW: expect NEITHER ----------------
+			debug_log = "kehillah_semicha_debug.11: ---- BELOW: looking for a subject already in this band ----"
+			if = {
+				limit = {
+					any_courtier = {
+						is_rabbinic_authority_jewish_trigger = yes
+						NOT = { learning >= kehillah_ordination_foundation_learning_floor_value }
+					}
+				}
+				random_courtier = {
+					limit = {
+						is_rabbinic_authority_jewish_trigger = yes
+						NOT = { learning >= kehillah_ordination_foundation_learning_floor_value }
+					}
+					save_scope_as = kh_band_subject
+					debug_log = "kehillah_semicha_debug.11: BELOW SUBJECT chosen (identity in scopes dump)"
+					debug_log_scopes = yes
+
+					# The apprenticeship must read complete, or the effect refuses
+					# on that and not on Learning -- which would look like a band
+					# failure. Granted the same way .6 does.
+					set_variable = {
+						name = kehillah_apprentice_rabbi_years
+						value = kehillah_ordination_apprenticeship_years_value
+					}
+					# Clear any credit the subject already carries, so the verdict
+					# is about this call and not about their history.
+					remove_variable = kehillah_apprenticeship_curriculum
+					remove_list_variable = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+
+					if = {
+						limit = { kehillah_rabbinic_apprenticeship_complete_trigger = yes }
+						kehillah_award_apprenticeship_credit_effect = yes
+
+						if = {
+							limit = {
+								has_variable = kehillah_apprenticeship_curriculum
+								is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+							}
+							debug_log = "kehillah_semicha_debug.11: BELOW FAIL BOTH credits held at once -- the bands are exclusive; the 2026-10-10 double-credit bug is back"
+						}
+						else_if = {
+							limit = { has_variable = kehillah_apprenticeship_curriculum }
+							debug_log = "kehillah_semicha_debug.11: BELOW FAIL got the full curriculum credit, expected NEITHER"
+						}
+						else_if = {
+							limit = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship } }
+							debug_log = "kehillah_semicha_debug.11: BELOW FAIL got the foundation field credit, expected NEITHER"
+						}
+						else = { debug_log = "kehillah_semicha_debug.11: BELOW PASS no credit, correctly" }
+					}
+					else = { debug_log = "kehillah_semicha_debug.11: BELOW SKIPPED apprenticeship still reads incomplete -- the refusal would not be about Learning" }
+				}
+			}
+			else = { debug_log = "kehillah_semicha_debug.11:BELOW NOT OBSERVED no Jewish courtier of this leader sits in this band -- try a bigger court or another community; NOT a FAIL" }
+
+		}
+		debug_log = "kehillah_semicha_debug.11: credit bands by selected subject -- END"
 	}
 }
