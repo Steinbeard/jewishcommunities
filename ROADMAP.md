@@ -67,22 +67,41 @@ the shim guide. Current state is in the
     run. `kehillah_debug.104` only arms a trace flag, so it cannot have caused it, and clergy
     status no longer depends on a trait at all. Worth one rerun.
 
-- **H2. BUILD — Ba'alei batim, untested paths. NEXT UP; harness ready 2026-10-09.** Observe a
-  natural yearly arrival or departure. Exercise the arrival fee and refuse options
-  (`kehillah_household.0001` options b and c), the departure pay and persuade options
-  (`kehillah_household.0002` options b and c, gated on gold and Diplomacy 12), and a player
-  receiving an AI community's departing family (`kehillah_household.0003`).
-  - That last path now has a probe: **`event kehillah_household_debug.10`** finds a real AI
-    community with a household, lets the real lowest-standing pick happen, and runs the real
-    `kehillah_household_leave_effect` with root's community forced as the destination — so
-    `.0003` fires on the player. It asserts the register moved and left the donor. Written and
-    ck3-tiger clean, **not yet run live.** It moves real courtiers, so it is not read-only.
-  - The option paths still need actual clicks, and "natural" arrivals need a year or two of
-    unpaused time with the yearly pulse (not `.4`, which forces the pass).
-  - **Correction, 2026-10-09 night (Shabbat heartbeat 2): still untested.** Heartbeat 1's
-    BLOCKERS entry says an H2 live test was "in flight" when it was written; that run was cut off
-    by a usage limit and left no test log and no results, so nothing in this item has been
-    verified since. `.10` has still never been run live. Treat H2 as untouched, not in progress.
+- **H2. VERIFIED LIVE 2026-10-10 (Shabbat heartbeat 3), one path still open**
+  ([log](docs/testing/2026-10-10-baalei-batim-paths-live-test-log.md)). All four player-facing
+  option paths exercised with real clicks and a real negative control, and the exact household
+  count measured on each side of every click with a purpose-written `h2_count.txt` run file.
+  - **All four options behave.** Arrival option b pays the player **+15** and the register goes
+    3 → 4; option c refuses and the count holds, rendering the **refused-return** variant
+    ("the family settles in the community it came from instead" — the origin holder, Speyer,
+    existed). Departure option b costs **−50** and the family stays; option c costs nothing and
+    the family stays; option a — the control — drops the count by exactly 1. That control is the
+    load-bearing part: the "stays" options have no departure effect to cancel, so a no-op event
+    would have faked both PASSes.
+  - **One real bug, found and fixed: a player who receives a family was never told.**
+    `kehillah_household.0003` gates on `exists = scope:kh_mig_house.var:kehillah_household_head`,
+    but that variable is written in exactly one place (`kehillah_household_refresh_effect`) and
+    `kehillah_household_migrate_effect` does not write it — so at the moment
+    `kehillah_household_leave_effect` fires the event the head is absent (any AI donor whose
+    yearly pass has never run, i.e. the normal early-game state) or stale (naming the *donor's*
+    pick). `trigger_event` onto a false `trigger` fails **silently**: no event, no error, nothing
+    in `debug.log`. The register moved correctly every time; nobody was informed. Fixed by
+    refreshing the recipient before the event, which also fixes the new community's stale
+    adults/seats/standing, plus a `debug_log` so the next silent non-firing is visible.
+    **The fix is source-verified and ck3-tiger clean, NOT yet re-run live** — the next heartbeat
+    should re-run `.10` and confirm `.0003` appears with its description naming the donor.
+  - **A natural move on an unpaused clock: NOT OBSERVED**, honestly null — ≈2y9m of unpaused
+    time, no popup. Close to settled anyway, because `.4` ran the real
+    `kehillah_household_yearly_effect`, its real 30% roll **hit**, and a genuine `.0002` fired
+    and resolved end to end. At 30% a year against a community sitting exactly at its cap, the
+    null is unremarkable.
+  - Also recorded from this run, in [the shim guide](docs/testing/automation-shim-guide.md): a
+    skill change does not reach a trigger on a **paused** game without
+    `force_character_skill_recalculation`, which is why `h2_setup.txt` could not clear
+    `diplomacy >= 12` at +12, +15 or +100; and where `ck3.exe` actually lives (the E: drive).
+  - *Historical note, superseded:* heartbeat 1 recorded an H2 test as "in flight" that was cut
+    off and produced nothing, and heartbeat 2 correctly reset this item to untouched. Both are
+    now moot.
 - **H3. DONE 2026-10-09 (Shabbat heartbeat 1).** The `kehillah_restore_quarter_effect` /
   `kehillah_restore_track_2/3_effect` "Failed to fetch variable for 'kq_countinghouse' /
   'kq_workshops' / 'kq_market_stalls'" errors on `kehillah_on_title_gain`. They **predate

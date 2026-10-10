@@ -67,6 +67,25 @@ recursing the whole tree.
 
 ---
 
+## A skill change does not reach a trigger on a paused game — added 2026-10-10
+
+`add_diplomacy_skill = 12` (and its siblings) do not take effect in a *trigger* until the next
+daily tick, and on a paused game that tick never arrives. A helper that tops up a skill to clear a
+`diplomacy >= 12` gate therefore reads stale forever: +12, +15 and +100 all produced
+`DIPLOMACY FAIL` on the same paused save during the 2026-10-10 H2 run. Add
+
+```
+force_character_skill_recalculation = yes
+```
+
+after the skill change in the same run file — `logs\effects.log` documents it as "forces a
+character's skills to be recalculated immediately, bypassing the wait for the daily tick".
+
+This is a cousin of the gold-buffer note further down: a test helper that tops a value up should
+not assume the engine has published the new value by the time the next line reads it.
+
+---
+
 ## Boot stalls until the window gets input — added 2026-10-09
 
 A direct `ck3.exe -debug_mode -develop` launch can stall during database setup and show "Not

@@ -461,9 +461,41 @@ kehillah_household_leave_effect = {
 		FROM = scope:kh_dep_leader
 		TO = scope:kh_dep_dest.holder
 	}
+
+	# Recount the family at the court it has just joined, BEFORE telling
+	# anyone about it.
+	#
+	# kehillah_household_head is written in exactly one place -- the
+	# refresh pass above -- and it names the family's oldest adult *at
+	# that leader's court*. kehillah_household_migrate_effect does not
+	# write it. So without this line the variable is either absent (a
+	# donor community whose yearly pass has never run, which is the normal
+	# state in the first year of a game) or still names whoever the
+	# DONOR's last refresh picked. kehillah_household.0003 gates on
+	# `exists = scope:kh_mig_house.var:kehillah_household_head`, and a
+	# trigger_event whose trigger is false fails SILENTLY -- no event, no
+	# error line. The register moved correctly and the player was simply
+	# never told.
+	#
+	# Found live 2026-10-10 (ROADMAP H2): the register-move assertions
+	# passed and .0003 never fired. Refreshing is the right fix rather
+	# than setting the head directly, because migration also leaves the
+	# new community's adults/seats/standing stale, and the movers are
+	# already courtiers of the recipient by this point
+	# (migrate_effect's set_employer), so refresh sees them.
+	scope:kh_dep_dest.holder = { kehillah_household_refresh_effect = yes }
+
 	scope:kh_dep_dest.holder = {
 		if = {
 			limit = { is_ai = no }
+			# If the refresh found no adult to head the family, .0003's own
+			# trigger will refuse it. That is the correct outcome -- there
+			# is no one to show a portrait of -- but say so in the log, so
+			# the next silent non-firing is not invisible the way this one was.
+			if = {
+				limit = { NOT = { exists = scope:kh_dep_house.var:kehillah_household_head } }
+				debug_log = "kehillah_household_leave_effect: a player received a family with no head at their court, so kehillah_household.0003 will not fire"
+			}
 			trigger_event = kehillah_household.0003
 		}
 	}
