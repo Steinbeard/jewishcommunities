@@ -1346,3 +1346,17 @@ FAIL` -- that is the live verdict on the courtier-branch fix above.
 
 No blockers. Nothing destructive was done or avoided; the only deletion was killing a stale
 `ck3.exe` process from the cut-off run.
+
+## Heartbeat run status -- 2026-10-10_045002 (autonomous/shabbat-2026-10)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+bf328d2 BLOCKERS + V21: heartbeat 3 state, written mid-run as cutoff insurance
+2367e45 Slice 4's apprentice could never be endorsed: courtiers had no institution branch
+0a0126a H2 VERIFIED LIVE, and a family arrival nobody was ever told about
+4a8fbfd Shim guide: where ck3.exe actually is (E: drive, not C: or D:)
+4ea033d Heartbeat run-status note (2026-10-09_235002)
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-shabbat-2026-10-10_045002.log
