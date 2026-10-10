@@ -1680,3 +1680,106 @@ M common/script_values/kehillah_script_values.txt
 8dafcff ROADMAP: section 7's institution gaps, two of three closed
 ```
 Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-shabbat-2026-10-10_095002.log
+
+## Shabbat heartbeat 2026-10-10 15:30 — a stale status line caused a real bug; slice 2 works and reaches nobody
+
+### First: the tree was dirty, and what was in it was a duplicate
+
+Heartbeat 4 was cut off mid-task, leaving an uncommitted household-standing candidate-score term
+in `kehillah_leadership.txt` plus a weight script value. **The term it was adding already
+existed.** V26 slice 2's succession term shipped on 2026-10-09 in commit 84242d9, alongside H1's
+work, and nobody wrote it down — so both ROADMAP and v26's spec still said standing "does not yet
+feed succession; that is slice 2". That run read the docs, did the correct thing given what they
+said, and built it a second time. Two terms, same family standing, counted twice.
+
+Nothing shipped broken — it was caught uncommitted. But it is worth naming the mechanism, because
+this repo's whole working model is "the docs are the memory": **a stale status line is not
+cosmetic, it is an instruction to the next session.** The duplicate was the docs working exactly
+as designed on wrong input.
+
+Resolved by merging rather than reverting, because the new block carried two real improvements the
+shipped one lacked (a `has_variable` guard on `kehillah_household_of` before the
+`var:` read — the H3 log-flood shape; and the weight as a script value per CLAUDE.md). The
+weight stays at the shipped **0.5**, not the 0.4 that run proposed: retuning succession scoring in
+the same unattended change as a refactor would have left the live test unable to say which edit
+moved an ordering. Both stale doc claims now carry dated corrections.
+
+### Then: slice 2 live-tested, and the result needs your decision
+
+[Log](docs/testing/2026-10-10-household-standing-succession-live-test-log.md). Three new probes
+(`.11` read-only report, `.12` boost-and-save, `.13` restore).
+
+**The term is correct and reaches nobody.** Guard passes 3/3 registered households — it reads
+their standing properly. Pool fails 3/3. The candidate list says it harder than the probe's own
+verdict does: all six candidates for the Worms succession were either **Lowborn with no dynasty at
+all**, so `exists = house` fails before standing is ever consulted, or **of the leader's own
+house**, which V26 never registers by design. The pool is composed entirely of the two groups the
+term cannot score.
+
+The A/B is recorded as **NOT OBSERVED, not PASS and not FAIL.** The family `.12` boosted was
+POOL NO, so the unchanged heir ordering is what should happen whether the multiply-and-cap works
+or not. Calling that a pass is the mistake heartbeat 3 made with the credit bands, so I did not
+make it. The probe machinery itself is proven and will give a real verdict on a save that has a
+POOL YES household.
+
+**NEEDS DANIEL — the one genuine design call.** This is not structurally impossible, just
+unreached: slice 1's own `kehillah_household_refresh_effect` already counts
+`kehillah_household_seats` as `is_councillor_of` over `every_house_member`, and
+standing pays 15 per seat — so a householder on the council *would* be both in the pool and
+high-standing. Nothing in the mod ever seats one. The register and the officer corps are two
+populations that never meet. Three ways to close it, written up with trade-offs in v26's slice 2
+section:
+
+1. **Seat householders** — prefer registered-family members when filling council seats and court
+   positions. My recommendation: it keeps the existing pool, makes standing matter through the
+   seats term that already exists, and is **the only option that needs no succession edit** —
+   which matters in this repo's highest-crash-risk area.
+2. **Give Kehillah officers dynasties** — they are generated Lowborn, which is the actual cause
+   of the `exists = house` failure. Broader blast radius: character generation, not just
+   succession.
+3. **Accept it and narrow the spec's prose** — only seated families compete. Defensible (the board
+   competes for the leadership), but it is a smaller claim than v26 currently makes.
+
+I did not pick one. It changes what V26 means rather than how it is implemented.
+
+### Three environment findings that outlast this test
+
+All three recorded in the shim guide; they affect every future session, not just this one.
+
+1. **The logs are in `<user dir>\logs\`, not the user-dir root.** Verified directly — the
+   root copies do not exist. Every "check `error.log`" instruction in this repo gives no
+   path. Greping the root is at least loud; the real risk is a session treating an empty result as
+   a clean log it never read.
+2. **Screenshots came back frozen — and it fails silently.** Pixel-identical captures across
+   console commands that demonstrably landed, while input kept working. Not the VDD setup, which
+   has been fine for days; probably GDI `CopyFromScreen` against exclusive-fullscreen.
+   **This is the one worth your attention**, because a locked desktop returns black (obvious)
+   whereas this returns a plausible frame of the wrong moment. Any screenshot-based check in this
+   environment would silently compare two copies of the before-state. Worth trying
+   borderless/windowed, or a DirectX-aware capture. Nothing in this heartbeat depended on a
+   screenshot — every verdict came from the console and `debug.log`.
+3. **A direct launch auto-continued into a leftover unrelated character** (Duke Gottfried III,
+   from an earlier session's `play <id>`) with nothing announcing it. A Kehillah probe on a
+   non-Kehillah ruler reports coherent nonsense. An identity check now belongs at step 0.
+
+### What the next heartbeat should pick up
+
+1. **The FOUNDATION credit band** (Learning 6-7 earning one field and nothing more) still has no
+   live verdict — carried over from heartbeat 4, which verified the full band only. Needs a pupil
+   whose Learning sits in 6-7, and note the shim guide's warning that a skill change does not
+   publish on a paused game without `force_character_skill_recalculation`.
+2. **Slice 2's pool gap** is blocked on Daniel's choice above — do not pick one unattended.
+3. **The landless-adventurer institution branch**, if a save ever has an adventurer standing in a
+   community's province. Still an honest null, not a failure.
+
+### For Daniel
+
+Nothing destructive done or avoided. No force-push, no history rewrite, no deletions beyond my own
+temp scripts. `ck3.exe` was stopped at the end of the run; none is running now. Logs archived
+at `logs\archive-shabbat-heartbeat5-household-slice2\`.
+
+Two decisions waiting on you: **slice 2's pool gap** (above, with a recommendation), and the
+unchanged item from the earlier entries — **implementation doc section 14's two
+`change_government` guards** in the succession path that use `government_has_flag`.
+Still written down rather than changed unattended, for the same reason as before: that is the code
+that has crashed this game.
