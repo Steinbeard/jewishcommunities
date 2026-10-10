@@ -292,8 +292,9 @@ construction, bet din cooldown, host petition, Night Watch, spouse clones).
   householder families with standing. Families arrive from, and leave for, other real
   communities, nearby ones far likelier. Player events cover arrivals and departures, and a
   "Review the Householders" decision shows the register. See V26's "Slice 1 built" section.
-- **Ba'alei batim slice 2: SHIPPED 2026-10-09, de-duplicated 2026-10-10 (Shabbat heartbeat 5).
-  Source-verified and ck3-tiger clean; a live succession test is still outstanding.**
+- **Ba'alei batim slice 2: SHIPPED 2026-10-09, de-duplicated and LIVE-TESTED 2026-10-10
+  (Shabbat heartbeat 5) — the term is correct and reaches nobody**
+  ([log](docs/testing/2026-10-10-household-standing-succession-live-test-log.md)).
   A household-standing term in `kehillah_leadership`'s `candidate_score`, so leading families
   compete for the leadership. See V26's new "Slice 2" section.
   - **Correction, 2026-10-10.** The line above this entry used to read "Next: slice 2", and
@@ -313,6 +314,27 @@ construction, bet din cooldown, host petition, Night Watch, spouse clones).
     which edit moved an ordering. Cap stays 30.
   - Net behaviour change is therefore just the bug fix: a family that has **migrated** no longer
     carries its former community's standing into a succession elsewhere.
+  - **Live verdict 2026-10-10: GUARD passes 3/3 households, POOL fails 3/3.** The term reads a
+    registered family's standing correctly. It then applies to nobody, because the candidate
+    list contains no character it can reach. All six candidates for the Worms succession were
+    either **Lowborn with no dynasty at all** — so `exists = house`, the term's first
+    condition, fails before standing is consulted — or **of the leader's own house**, which V26
+    never registers by design. The pool is composed entirely of the two groups the term cannot
+    score.
+  - **The A/B is NOT OBSERVED, not PASS and not FAIL.** The boosted family was POOL NO, so the
+    unchanged heir ordering is what should happen whether the multiply-and-cap works or not;
+    recording it as a pass would repeat heartbeat 3's credit-band mistake. It needs a save with
+    a POOL YES household. The probe machinery is proven — `.12` saved and boosted, `.13` restored.
+  - **Not structurally impossible, just unreached.** `kehillah_household_refresh_effect`
+    already counts `kehillah_household_seats` as `is_councillor_of` over
+    `every_house_member`, and standing pays 15 per seat — so a householder on the council
+    would be both in the pool and high-standing. Nothing in the mod ever puts one there. The
+    register and the officer corps are two populations that never meet.
+  - **OPEN, needs Daniel (logged in BLOCKERS.md).** Connecting them is a design call, not an
+    unattended fix: seat householders preferentially when filling council/court slots; give
+    Kehillah officers dynasties so they have houses at all; or accept that only seated families
+    compete and say so in the spec. Clean otherwise — no new `kehillah` errors, no
+    `Failed to fetch variable`.
 - **Later (V26 council build order step 2):** contracts/loans, sefarim, disputes, scholars,
   sister communities, charter petition.
 

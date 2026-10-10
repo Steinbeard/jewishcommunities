@@ -292,8 +292,31 @@ scores those same skills directly, so for a household *head* the two overlap. Fo
 family member they do not overlap at all. The low weight keeps this from mattering; unpicking
 it would mean a second standing formula that could drift from the first.
 
-**Still to verify live:** a succession in which a registered householder actually appears in
-the candidate list, so the term is seen to move an ordering rather than merely to parse.
+**Live-tested 2026-10-10 ([log](../testing/2026-10-10-household-standing-succession-live-test-log.md)):
+the term is correct and reaches nobody.** The guard passed for all three registered households;
+the candidate pool contained no character the term can apply to. Every candidate was either
+Lowborn with no dynasty — failing `exists = house` before standing is read — or of the
+leader's own house, which this spec deliberately never registers. The two groups the term cannot
+score are the only two groups in the pool.
+
+**This is a gap in this spec's premise, not a bug in the term.** "Leading families compete for
+the leadership" requires the register and the officer corps to meet, and nothing makes them.
+It is reachable in principle: slice 1's own refresh counts `kehillah_household_seats` as
+`is_councillor_of` and standing pays 15 per seat, so a householder on the council would be
+both a candidate and high-standing. Nothing ever seats one.
+
+**Open question for Daniel** (logged in `BLOCKERS.md` 2026-10-10, not decided
+unattended) — three ways to close it:
+
+1. **Seat householders.** Prefer registered-family members when filling Kehillah council seats
+   and court positions. Keeps the pool as it is and makes standing matter through the existing
+   seats term. Most in keeping with slice 1, and the only option that needs no succession edit.
+2. **Give Kehillah officers dynasties.** They are generated Lowborn, which is what makes
+   `exists = house` fail. Houses would also let officers' families register as
+   households over time. Touches character generation, and would change more than succession.
+3. **Accept it and say so.** Only families with a seat compete — arguably coherent (the board
+   competes for the leadership) but it is a narrower claim than this spec currently makes, and
+   the prose should be rewritten rather than left to imply more.
 
 **Original questions for Daniel:**
 - ~~Household cap per community?~~ Answered: 2–4.
