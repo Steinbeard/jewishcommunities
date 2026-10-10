@@ -292,8 +292,27 @@ construction, bet din cooldown, host petition, Night Watch, spouse clones).
   householder families with standing. Families arrive from, and leave for, other real
   communities, nearby ones far likelier. Player events cover arrivals and departures, and a
   "Review the Householders" decision shows the register. See V26's "Slice 1 built" section.
-  **Next: slice 2**, standing as a `kehillah_leadership` candidate-score term, so leading
-  families compete for the leadership (succession code: needs a live succession test).
+- **Ba'alei batim slice 2: SHIPPED 2026-10-09, de-duplicated 2026-10-10 (Shabbat heartbeat 5).
+  Source-verified and ck3-tiger clean; a live succession test is still outstanding.**
+  A household-standing term in `kehillah_leadership`'s `candidate_score`, so leading families
+  compete for the leadership. See V26's new "Slice 2" section.
+  - **Correction, 2026-10-10.** The line above this entry used to read "Next: slice 2", and
+    v26's spec said standing "does not yet feed succession". Both were already false: the term
+    went in on 2026-10-09 in commit 84242d9, alongside H1's succession work, and nobody
+    recorded it. The stale claim then caused a bug. Heartbeat 4 was cut off mid-task having
+    read it, concluded the term was missing, and **added a second one** -- two terms counting
+    the same family standing twice. Caught uncommitted at the start of heartbeat 5 and merged
+    into one term. The lesson is the repo's own: a stale status line is not cosmetic, it is
+    an instruction to the next session.
+  - The merge kept the cut-off run's two genuine improvements -- a `has_variable`
+    guard on `kehillah_household_of` before the `var:` read (the
+    H3 "Failed to fetch variable" shape; most houses in a candidate pool have neither
+    variable), and the weight extracted to `kehillah_household_standing_score_weight_value`.
+    The weight stays at the shipped **0.5**, not the 0.4 that run proposed: retuning succession
+    scoring in the same unattended change as a refactor would leave the live test unable to say
+    which edit moved an ordering. Cap stays 30.
+  - Net behaviour change is therefore just the bug fix: a family that has **migrated** no longer
+    carries its former community's standing into a succession elsewhere.
 - **Later (V26 council build order step 2):** contracts/loans, sefarim, disputes, scholars,
   sister communities, charter petition.
 
