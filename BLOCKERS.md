@@ -1774,7 +1774,7 @@ All three recorded in the shim guide; they affect every future session, not just
    root copies do not exist. Every "check `error.log`" instruction in this repo gives no
    path. Greping the root is at least loud; the real risk is a session treating an empty result as
    a clean log it never read.
-2. **Screenshots came back frozen — and it fails silently.** Pixel-identical captures across
+2. **~~Screenshots came back frozen~~ — RETRACTED later the same run, see the correction at the bottom of this entry. Capture is live.** The original report read: Pixel-identical captures across
    console commands that demonstrably landed, while input kept working. Not the VDD setup, which
    has been fine for days; probably GDI `CopyFromScreen` against exclusive-fullscreen.
    **This is the one worth your attention**, because a locked desktop returns black (obvious)

@@ -555,10 +555,33 @@ session that greps the root path gets "No such file or directory", which is at l
 worse failure is a session that treats an empty result as "no errors" and reports a clean log it
 never read. Archive directories go in `logs\` too, alongside the files they copy.
 
-## Screenshots can come back frozen — and it fails silently — added 2026-10-10
+## A screenshot that looks stale, and how to tell — added 2026-10-10,
+## **substantially corrected the same day**
 
-**During the 2026-10-10 slice 2 test, screen captures returned pixel-identical images across
-console commands that demonstrably landed** (confirmed independently through
+> **CORRECTION, 2026-10-10 (Shabbat heartbeat 5), read this before the section below.**
+> This section originally asserted that screen capture in this environment was broken and that
+> any screenshot-based verdict should be treated as unproven. **That was wrong, and it was
+> written on weaker evidence than it deserved** — one session's impression that captures
+> "looked identical", with no byte-level check.
+>
+> A later run the same day settled it properly, with the test this very section recommends: two
+> before/after pairs, each with a large deliberate UI change (map → Decisions panel, Decisions
+> → character window), compared by **SHA-256**. All three hashes differed, and every one of
+> ~20 further screenshots in that session reflected current state. **Capture is live. Exclusive
+> fullscreen is not a problem, and windowed mode is not needed.**
+>
+> The earlier symptom was most likely a capture taken before the frame it was meant to show, or
+> a tooling difference between sessions — not a standing fault.
+>
+> **What to keep from this section is the method, not the warning.** Proving a capture is live
+> costs two screenshots and a hash, so do it when a screenshot is load-bearing. What is no
+> longer true is the blanket advice to distrust screenshots here; that would have blocked every
+> UI check for the rest of this window on the strength of an unverified impression. The irony is
+> the point: this doc's own standard of evidence applies to this doc.
+
+**The original observation, now believed mistaken:** during the 2026-10-10 slice 2 test,
+screen captures appeared to return identical images across console commands that
+demonstrably landed (confirmed independently through
 `console_history.txt` and `debug.log`), while keyboard and mouse input kept working
 normally. Probably GDI `CopyFromScreen` reading a stale front buffer under
 exclusive-fullscreen; it is **not** the known VDD virtual-display setup, which has been fine for
@@ -570,10 +593,9 @@ not the current state. Every rule in this guide about screenshots assumes that w
 corresponds to now. A session checking "did the tooltip change after I clicked" would compare two
 copies of the before-state and confidently report no change.
 
-Until someone diagnoses it (worth trying borderless/windowed, or a DirectX-aware capture instead
-of GDI):
+What survives, as a cheap habit rather than a prohibition:
 
-- **Treat a screenshot-only verdict as unproven.** This is a stronger version of the advice in
+- ~~Treat a screenshot-only verdict as unproven.~~ **Withdrawn — see the correction above.** The advice in
   "Testing philosophy" below — there the console is *preferred*; here it is the only channel
   that was trustworthy.
 - **If you must screenshot, prove the capture is live first.** Take one, change something
