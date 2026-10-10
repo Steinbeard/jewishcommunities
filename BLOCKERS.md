@@ -936,6 +936,69 @@ therefore unusable. Build work and live-test work must not share a boot;
 written into the test log so the next session inherits the rule rather than
 the mistake.
 
+### CORRECTION to this entry's own finding 2: screenshots are fine
+
+**I retract the frozen-screenshot claim above.** I wrote it, flagged it to you as the
+environment item most worth your attention, and briefed two subagents to distrust screenshots on
+the strength of it. It was based on one session's *impression* that captures "looked identical" --
+no byte-level check.
+
+A later run the same day settled it with the test my own shim-guide note recommended: two
+before/after pairs with large deliberate UI changes (map to Decisions panel, Decisions to
+character window), compared by **SHA-256**. All three hashes differed, and ~20 further
+screenshots in that session all reflected current state. **Capture is live. Exclusive fullscreen
+is not a problem and windowed mode is not needed** -- nothing for you to fix here.
+
+Kept visible rather than deleted because it had already been acted on, and because the lesson is
+the uncomfortable one: I reported an unverified impression as an environment fact, in the same
+session where I was careful not to report an unverified PASS as a test result. The shim guide's
+section is now headed by the correction, with the cheap liveness check retained as a habit.
+
+### A fourth item, from a live run of the ransom ruling
+
+ROADMAP's next unblocked item was the source-aware ransom ruling ("FULL LIVE EXCHANGE
+PENDING"). Partly good news:
+
+- **The named-outside-Rabbi exchange works end-to-end in the UI.** Reached through its real entry
+  point, the case opens as "A Captive's Ransom" in clean English, offers "Ask Rav Isaac for a
+  responsum", and dispatching it produced zero new script errors; the docket then ran on to its
+  closing ruling. The correspondent was confirmed by tooltip to be a genuinely different
+  character (Rav Isaac the Bearded of Mainz, 9000101 -- a coincidental first-name match with the
+  player, not a self-consult bug). **The 25-day letter round-trip did not complete inside the
+  observation window and is still unproven** -- not faked.
+
+**One real bug, found and fixed.** Every case's "cite a source" option read
+`involved_activity.var:kehillah_din_advice_case` bare. That variable is written in exactly
+one place -- the delayed-reply events -- so it is unset whenever a case opens for the first time,
+which is the normal path, and the engine threw three errors on it. **All nine cases were
+unguarded**: one defect, authored once and copied eight times. Now paired with `exists`
+across 18 sites. Scoped honestly as **log noise, not a behaviour bug** -- the same verdict H3
+reached for this identical shape; an invalid comparison evaluates false, and false is also
+correct when no reply has arrived. I did not repeat the stronger claim that it blocked the option
+from appearing, because I could not verify it and the engine's behaviour suggests otherwise.
+
+**NEEDS DANIEL -- a second, fully-authored, completely unreachable implementation of this same
+feature.** The `kehillah_bet_din_case7_*` / `kehillah_case7_*` family
+(`kehillah_bet_din_scripted_effects.txt`, events `.0064`/`.0065`) has real
+localization, tooltips and a richer precedent-archiving design -- and
+`kehillah_bet_din_case7_pick_correspondents_effect` has **zero call sites**; I verified it
+appears exactly once in the repo, its own definition. The engine's static analysis agrees
+("Variable 'kehillah_case7_asking_title' is used but is never set"). What is actually wired up is
+a differently-named generic-per-case chain (`kehillah_din_sources.71`-`.76`).
+Two implementations of one feature, one of them dead. **Wire the richer one in, or delete it --
+either is a design call, so I did neither.** Leaving it is the worst option: it is what misled
+the probe below.
+
+- **Probe `kehillah_rabbi_loop_debug.8` tests the dead path** and so can never report true
+  on its candidate/letter checks, whatever the live game does. A probe that cannot pass is worse
+  than no probe. **Not repointed at the live chain**, because which chain is "live" is exactly
+  the decision above; repointing it now could mean repointing it back.
+- **A log flood worth knowing about:** ~21,000 of the ~21,100 new `error.log` lines in that
+  run were one repeating cosmetic miss -- a missing on-demand texture for the Bet Din conference
+  activity (and the Learn Torah equivalent), logged per frame for the ~20 minutes the activity
+  window was open. Already-known missing art, but at that volume it will bury anything real in
+  the same session, which is the H3 lesson again.
+
 ### What the next heartbeat should pick up, in order
 
 1. **Read this run's Group A result first** (death-succession: does the
@@ -1789,8 +1852,12 @@ All three recorded in the shim guide; they affect every future session, not just
 ### What the next heartbeat should pick up
 
 1. ~~The FOUNDATION credit band~~ — **DONE this run**, see above. All three bands verified live.
-2. **Slice 2's pool gap** is blocked on Daniel's choice above — do not pick one unattended.
-3. **The landless-adventurer institution branch**, if a save ever has an adventurer standing in a
+2. **The ransom ruling's 25-day letter round-trip** — the one part of that exchange still
+   unproven. Everything up to dispatch is verified; the reply leg fires on the AI correspondent,
+   so it needs either a longer unpaused window or a probe that fast-forwards the letter.
+3. **Blocked on Daniel, do not decide unattended:** slice 2's pool gap, and which of the two
+   case-7 consult implementations survives (both above).
+4. **The landless-adventurer institution branch**, if a save ever has an adventurer standing in a
    community's province. Still an honest null, not a failure.
 
 ### For Daniel
@@ -1799,7 +1866,8 @@ Nothing destructive done or avoided. No force-push, no history rewrite, no delet
 temp scripts. `ck3.exe` was stopped at the end of the run; none is running now. Logs archived
 at `logs\archive-shabbat-heartbeat5-household-slice2\`.
 
-Two decisions waiting on you: **slice 2's pool gap** (above, with a recommendation), and the
+Three decisions waiting on you: **slice 2's pool gap** (with a recommendation), **which of the
+two case-7 consult implementations survives**, and the
 unchanged item from the earlier entries — **implementation doc section 14's two
 `change_government` guards** in the succession path that use `government_has_flag`.
 Still written down rather than changed unattended, for the same reason as before: that is the code
