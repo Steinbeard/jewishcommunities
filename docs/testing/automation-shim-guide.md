@@ -612,3 +612,21 @@ Isaac HaLevi, 29176.) Note that CK3 wants run files in **UTF-8 with BOM** — a 
 executes but logs
 `File 'run/whoami.txt' should be in utf8-bom encoding`, which is easy to mistake for a real
 finding when scanning a log.
+
+## `error.log` is overwritten per session too — added 2026-10-10
+
+CLAUDE.md and both playtest logs say to take a clean `kehillah`-tagged baseline from
+`error.log` before live-testing, so new errors are distinguishable from pre-existing ones.
+What none of them say is that **`error.log` is rewritten on every boot, exactly like
+`debug.log`**.
+
+So a baseline read *before* launching is a baseline of the **previous** session. On 2026-10-10 a
+run did precisely that, took 165 as its starting count, and then measured 196 afterwards — an
+apparent 31 new errors that were nothing of the kind. The real post-boot baseline was 138, and the
+true delta was zero. Taken at face value that reads as a regression introduced by the change under
+test.
+
+**Take the baseline after boot and before the first probe**, not before launching. If you want a
+pre-boot copy as well, archive it under a different name (`error-before.log`) and be
+explicit about which one you are diffing against — the two answer different questions, and only
+the post-boot one answers "did my change add an error".

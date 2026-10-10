@@ -1742,6 +1742,30 @@ section:
 
 I did not pick one. It changes what V26 means rather than how it is implemented.
 
+### Also closed this run: the foundation credit band
+
+[Log](docs/testing/2026-10-10-credit-bands-live-test-log.md). V21 slice 4's FOUNDATION band
+(Learning 6-7 earning one field and nothing more) had never been observed live — heartbeat 4's
+run used a full-band pupil. **All three bands now pass**, on three distinct real courtiers at
+Worms: FULL (Naftali_Hertz Epstein, 65975), **FOUNDATION (Uriel Lowborn, 52527 — first live
+observation)**, BELOW (Hadassah Lowborn, 65973). No double-credit in either run, no new
+`kehillah` errors, no `Failed to fetch variable`. H4's carried qualification is
+closed.
+
+**The first attempt's refusal to answer is the more useful half.** `kehillah_semicha_debug.10`
+*sets* the subject's Learning per band; it confirmed FULL, then correctly **withheld** a verdict
+on the other two instead of reporting the band it aimed at. Measured reason: the Worms leader
+reads **Learning 17 with his base skill floored to 0**, because 1.20 has no
+`set_learning_skill` — only the additive `add_learning_skill`, which moves the BASE
+while the `learning` trigger reads the TOTAL with modifiers. The foundation band is
+unreachable in either direction on a scholarly character, i.e. on exactly the person one would
+naturally test on. `.11` inverts it and selects a courtier already in each band.
+
+Recorded as a transferable lesson rather than a one-off fix: **prefer selecting a subject who
+already satisfies a condition over manufacturing one who does.** A probe that sets a skill and
+assumes the band is the same mistake as a probe that assumes a building got built — the shape
+that has now bitten this repo three times.
+
 ### Three environment findings that outlast this test
 
 All three recorded in the shim guide; they affect every future session, not just this one.
@@ -1764,10 +1788,7 @@ All three recorded in the shim guide; they affect every future session, not just
 
 ### What the next heartbeat should pick up
 
-1. **The FOUNDATION credit band** (Learning 6-7 earning one field and nothing more) still has no
-   live verdict — carried over from heartbeat 4, which verified the full band only. Needs a pupil
-   whose Learning sits in 6-7, and note the shim guide's warning that a skill change does not
-   publish on a paused game without `force_character_skill_recalculation`.
+1. ~~The FOUNDATION credit band~~ — **DONE this run**, see above. All three bands verified live.
 2. **Slice 2's pool gap** is blocked on Daniel's choice above — do not pick one unattended.
 3. **The landless-adventurer institution branch**, if a save ever has an adventurer standing in a
    community's province. Still an honest null, not a failure.
