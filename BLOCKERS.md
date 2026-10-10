@@ -1159,3 +1159,90 @@ M common/decisions/kehillah_learn_torah_decisions.txt
 eef6276 Probe .8: the realm law is the verdict, the title law is information
 ```
 Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-shabbat-2026-10-09_185001.log
+
+
+## Shabbat heartbeat 2026-10-10 ~01:30 -- H4 finished end to end; slice 3 verified live; H2 in flight
+
+**Nothing here needs a decision from you.** Two judgment calls are flagged at the bottom for when
+you are back, neither blocking.
+
+### First: I finished the previous heartbeat's uncommitted work before starting anything
+
+Heartbeat 1 was cut off by a usage limit with ten files dirty -- all of it V21 slice 3 (Seek
+Semicha), written but never validated or committed. I read it as written, verified every identifier
+it referenced actually resolves (including vanilla's `minor_piety_value`, `major_piety_gain`,
+`medium_prestige_gain`), found and fixed one real flaw in it, ran ck3-tiger, and committed it. That
+is why H4 got worked before H2, which sits above it in the queue: the tree was already full of H4.
+H2's live test was launched as soon as the carried-over work was safe.
+
+The flaw: `is_valid` put the whole of `kehillah_rabbi_ordination_ready_trigger` under a single
+"you have completed a course of study" tooltip, so a Learning-5 adult would have been told he had
+not finished his reading. Split into candidate / curriculum / institution.
+
+### H4 -- all five V21 slices built. Slice 3 VERIFIED LIVE
+
+[Live log](docs/testing/2026-10-10-semicha-ordination-live-test-log.md). Eleven checks, all pass,
+with non-vacuous negative controls: stripping the trait produced three genuine FAILs before the
+curriculum turned them into PASSes. A candidate with two works from two fields presents himself at
+the Worms Beit Midrash, the ceremony renders in real English with no raw loc keys, accepting grants
+the Rabbi trait, and the community's Greatness rises by **exactly 15** -- measured with a pair of
+run-file probes, since `debug_log` cannot print a number.
+
+**One real bug found, in production code and not in the probe.** The readiness trigger read
+`variable_list_size` on `kehillah_mastered_works` / `kehillah_apprentice_fields`, which do not
+exist until a character has studied something -- so the engine logged an error every time the Seek
+Semicha decision was evaluated for anyone who had not, which is most of the population it is shown
+to. The verdict was always correct; the log was wrong. Same shape as H3's restore helpers, fixed
+the same way (`has_variable_list` paired with every size read).
+
+Slices 4 and 5 are **source-verified and ck3-tiger clean but NOT live-tested**:
+
+- **Slice 4, the rabbinic apprenticeship.** One year per childhood birthday on which a qualifying
+  rabbi is the guardian right then, so four *accumulated* years in any order -- swapping a rabbi in
+  at fifteen buys one year, not four. At adulthood: Learning 8+ earns the whole curriculum,
+  Learning 6-7 earns one study field and nothing more, below 6 nothing but the years record
+  survives. The check runs five days after the birthday, because vanilla applies the education
+  trait at birthday+2 and that trait is often what carries a student across Learning 8.
+- **Slice 5, the three older routes.** The Bet Din semicha offer had **no faith check at all**
+  (`government_has_flag` says a character leads a Kehillah, not what it believes), and the Chief
+  Rabbi office checked only same-faith-as-employer, which a Karaite leader's Karaite appointee
+  passes cleanly -- and then got handed a trait called Rabbi. All three routes now read
+  `is_rabbinic_authority_jewish_trigger`. Nothing was removed from any existing trait holder.
+
+### A process mistake of mine, now written into the shim guide
+
+I kept building slice 4 in the same working tree while the delegated tester drove the booted game,
+assuming content is frozen at boot. **It is not -- CK3 hot-reloads script files.** It picked up a
+half-written events file mid-write, and the tester's `error.log` filled with
+`kehillah_semicha.0003` "not found" plus unrecognized loc keys that had nothing to do with what it
+was testing. It separated them correctly, but only because I warned it mid-run. Rule now recorded
+in `docs/testing/automation-shim-guide.md`: **while a delegated live test is in flight, the parent
+session does docs, not script.**
+
+### What the next heartbeat should pick up
+
+1. **H2's result, if its run was cut off.** A tester was live-testing the ba'alei batim option
+   paths (arrival fee/refuse, departure pay/persuade, `.10`'s player-receives-an-AI-family path,
+   and a natural yearly move) when this entry was written. If no H2 section appears below this one
+   and no `docs/testing/2026-10-10-*baalei*` log exists, that run was lost -- relaunch it. Note
+   that heartbeat 1 made exactly this mistake in reverse: it recorded H2 as "in flight" and the
+   result never materialised, so ROADMAP now carries a dated correction saying H2 is untouched.
+2. **A live pass over slices 4 and 5.** `event kehillah_semicha_debug.6` then `.7` on a child
+   reaches the endorsement without waiting ten in-game years; `.5` is the read-only state dump.
+   Worth also confirming on a fresh boot that `kehillah_semicha.0003`'s four loc keys render --
+   they appeared as unrecognized during the slice-3 run purely because of the hot-reload above.
+3. **The V21 section 7 gaps** listed at the end of the slice-3 log: the landed-ruler and
+   landless-adventurer institution branches, losing access to a Beit Midrash, and the defer option
+   across a save/load.
+
+### Two things for you, neither blocking
+
+- **The semicha reward magnitudes are my guesses, not measured.** 15 Greatness to the recognising
+  community (against a book's), major piety, medium prestige, doubled prestige at a Yeshiva. The
+  spec said "a modest Piety cost/reward" and left numbers open. They are all in
+  `common/script_values/kehillah_ordination_values.txt` and change without touching logic.
+- **Slice 4 gives the AI this path too**, via vanilla's `on_birthday_childhood` for every
+  rabbinic-authority Jewish child in the world. V21 section 7 explicitly wants an AI-load observer
+  test before broadening the AI population, and that has not been run. If you see rabbi inflation
+  in a long game, that is the first thing to look at -- the cheap fix is a guard limiting the
+  observation effect to Kehillah courts.
