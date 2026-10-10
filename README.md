@@ -1,4 +1,4 @@
-# Jewish Communities
+﻿# Jewish Communities
 
 A Crusader Kings III mod about Jewish diaspora communities, built around the Kehillah of Worms bookmark and a playable non-landed community government.
 
@@ -15,6 +15,11 @@ A Crusader Kings III mod about Jewish diaspora communities, built around the Keh
 - Chief Rabbi, Treasurer, Shtadlan, and minor communal positions
 - Appointment-based community leadership and succession systems
 - Community decisions for mediation, charity, and scholarly work
+- A communal council with five renamed seats (Shtadlan, Gabbai, Rosh ha-Shmirah, Ne'eman, Dayyan)
+- Registered householder families (ba'alei batim) who arrive from, and leave for, other communities
+- A community library, continuous Torah study, and ordination: a character becomes a rabbi by
+  studying real works at a Beit Midrash and seeking semicha, or by spending his education under a
+  rabbi, as well as through the Chief Rabbi office or a Bet Din's invitation
 - Jewish holiday flavor events with seasonal scheduling
 - Patrilineal Kohen and Levite traits with small monthly prestige bonuses
 - Custom historical and generated Jewish dynasty names
