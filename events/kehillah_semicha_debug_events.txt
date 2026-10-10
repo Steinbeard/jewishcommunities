@@ -178,7 +178,53 @@ kehillah_semicha_debug.4 = {
 				if = {
 					limit = { NOT = { has_domicile_building_or_higher = kehillah_beit_midrash_01 } }
 					add_domicile_building = kehillah_beit_midrash_01
-					debug_log = "kehillah_semicha_debug.4: added kehillah_beit_midrash_01"
+					# FOUND LIVE 2026-10-10 (Shabbat heartbeat 4): this used to
+					# log "added kehillah_beit_midrash_01" right here,
+					# unconditionally, and it was LYING. add_domicile_building
+					# consults the building's own can_construct, and
+					# kehillah_beit_midrash_01's can_construct requires
+					# kehillah_charter_allows_new_communal_building_trigger --
+					# which is FALSE on the stock Worms 1066 start, because the
+					# community sits under kehillah_christian_host_charter_
+					# prototype with no construction right cached yet (V16
+					# regional charters; the gate fails closed on purpose).
+					#
+					# So the engine threw "Domicile owner failed to meet
+					# triggered requirements" into error.log, nothing was built,
+					# and this probe reported success. A later .8 run is what
+					# exposed it, by still reporting every branch FAIL after a
+					# supposedly successful rebuild.
+					#
+					# The shim guide's "What ck3-tiger does NOT catch" section had
+					# already written this exact trap down -- add_domicile_building
+					# consults can_construct and tiger cannot simulate it, and the
+					# Worms start had silently been a no-op above synagogue tier 1
+					# for an unknown length of time. Second time this shape of bug
+					# has bitten; hence an assertion rather than a log line.
+					if = {
+						limit = { has_domicile_building_or_higher = kehillah_beit_midrash_01 }
+						debug_log = "kehillah_semicha_debug.4: ADDED kehillah_beit_midrash_01, and confirmed present"
+					}
+					else = {
+						debug_log = "kehillah_semicha_debug.4: FAILED to add kehillah_beit_midrash_01 -- can_construct refused it; see error.log. Nothing was built"
+						# root, not a domicile -> owner link: this is root's own
+						# domicile (the enclosing block is `domicile = { ... }`
+						# on root), so the owner is root by construction. Said
+						# explicitly because `domicile_owner` looks like the
+						# natural link and is NOT one -- ck3-tiger flagged it as
+						# an unknown token and tiger was RIGHT. The vanilla hits
+						# that seemed to confirm it were `nearby_domicile_owners`
+						# and `top_realm_domicile_owners`, which are
+						# `ai_recipients` VALUES in character_interactions, not a
+						# scope link. A substring match is not a verification.
+						if = {
+							limit = { root = { kehillah_charter_allows_new_communal_building_trigger = yes } }
+							debug_log = "kehillah_semicha_debug.4:   the charter DOES allow new communal buildings, so the refusal is something else (slots? cost?)"
+						}
+						else = {
+							debug_log = "kehillah_semicha_debug.4:   CAUSE: the host charter does not (yet) allow new communal buildings. This is correct V16 behaviour, not a bug -- a study hall cannot be conjured under an unresolved Christian host charter"
+						}
+					}
 				}
 				else = { debug_log = "kehillah_semicha_debug.4: a Beit Midrash is already here" }
 			}
@@ -326,8 +372,13 @@ kehillah_semicha_debug.7 = {
 #   event kehillah_semicha_debug.9  -- CHANGES STATE. Destroys the
 #                                      community's Beit Midrash, whatever
 #                                      tier it is, then re-runs .8.
-#                                      kehillah_semicha_debug.4 rebuilds
-#                                      it, so the pair is reversible.
+#                                      **OFTEN A ONE-WAY DOOR** -- .4 can
+#                                      only rebuild where the host charter
+#                                      allows new communal buildings, which
+#                                      the stock Worms 1066 start does not.
+#                                      .9 reports REVERSIBLE or WARNING,
+#                                      ONE-WAY before it removes anything.
+#                                      Reload rather than relying on .4.
 #
 # Why these exist: V21 section 7 lists the landed-ruler branch, the
 # landless-adventurer branch, and losing access to the Beit Midrash as
@@ -364,13 +415,30 @@ kehillah_semicha_debug.8 = {
 		else = { debug_log = "kehillah_semicha_debug.8: BLOCKED root has no domicile_location -- run this as a Kehillah leader" }
 
 		# --- BRANCH 1: the leader's own quarter. Already proven live, kept
-		# here as the control: if this one ever FAILs, the probe itself or
-		# the start is wrong, not the branch under test.
+		# here as the control: if this one FAILs while a study hall is
+		# standing, the probe itself or the start is wrong, not the branch
+		# under test.
+		#
+		# WORDING FIX 2026-10-10, same session: the FAIL branch used to say
+		# "CONTROL BROKEN, distrust the rest of this run" unconditionally,
+		# which is actively misleading when .9 has just demolished the study
+		# hall on purpose -- that FAIL is the expected result, and the log
+		# was telling the reader to throw out a passing test. The two cases
+		# are now distinguished by the one thing that separates them.
 		if = {
 			limit = { kehillah_semicha_institution_available_trigger = { CHARACTER = root } }
 			debug_log = "kehillah_semicha_debug.8: BRANCH 1 PASS the leader's own quarter (control)"
 		}
-		else = { debug_log = "kehillah_semicha_debug.8: BRANCH 1 FAIL the leader's own quarter -- CONTROL BROKEN, distrust the rest of this run" }
+		else_if = {
+			limit = {
+				OR = {
+					NOT = { exists = domicile }
+					domicile = { NOT = { has_domicile_building_or_higher = kehillah_beit_midrash_01 } }
+				}
+			}
+			debug_log = "kehillah_semicha_debug.8: BRANCH 1 FAIL the leader's own quarter -- EXPECTED, there is no Beit Midrash here right now (e.g. .9 has just removed it). Not a control break"
+		}
+		else = { debug_log = "kehillah_semicha_debug.8: BRANCH 1 FAIL the leader's own quarter WITH a Beit Midrash standing -- CONTROL BROKEN, distrust the rest of this run" }
 
 		# --- BRANCH 2: a landed ruler whose capital province holds a
 		# community. Subject derived from the community's own province
@@ -405,6 +473,60 @@ kehillah_semicha_debug.8 = {
 			else = { debug_log = "kehillah_semicha_debug.8: BRANCH 2 FAIL a landed ruler at the community's province -- read the three lines above before calling it a bug" }
 		}
 		else = { debug_log = "kehillah_semicha_debug.8: BRANCH 2 BLOCKED the community's province has no county holder" }
+
+		# --- BRANCH 2b: the same branch, but hunting a subject that SHOULD
+		# pass, anywhere in the world.
+		#
+		# ADDED 2026-10-10, after 2's first live verdict. At Worms the host
+		# county's holder rules from another seat, so branch 2 returned FAIL
+		# -- correctly, but a correct FAIL is a negative control, not proof
+		# the branch can ever say yes. With a dozen-plus registered
+		# communities, somewhere there is probably a count actually seated in
+		# the province their community occupies; that character is the
+		# positive test.
+		#
+		# Scanning for the subject instead of hardcoding one keeps this
+		# honest: if nobody in the world qualifies, the probe says NOT
+		# OBSERVED rather than manufacturing a ruler, exactly as 3b does.
+		# Written as an effect-side scan with save_temporary_scope_as rather
+		# than a `limit` that passes the character into the trigger. Textual
+		# substitution of `this` into kehillah_semicha_institution_available_
+		# trigger would re-bind inside its own any_in_global_list / holder
+		# blocks and silently compare the wrong characters -- the same class
+		# of scope mistake this trigger has already produced once today.
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = { exists = domicile.domicile_location }
+			}
+			holder.domicile.domicile_location = { save_temporary_scope_as = kds8_prov }
+			if = {
+				limit = {
+					holder.domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_01 }
+					exists = scope:kds8_prov.county.holder
+					scope:kds8_prov.county.holder = {
+						is_ruler = yes
+						exists = capital_province
+						capital_province = scope:kds8_prov
+						NOT = { government_has_flag = government_is_kehillah }
+						NOT = { has_government = landless_adventurer_government }
+					}
+				}
+				scope:kds8_prov.county.holder = { save_scope_as = kds8_landed2 }
+			}
+		}
+		if = {
+			limit = { exists = scope:kds8_landed2 }
+			debug_log = "kehillah_semicha_debug.8: BRANCH 2b subject found -- a county holder seated in their own community's province (scopes dump follows)"
+			scope:kds8_landed2 = { debug_log_scopes = yes }
+			if = {
+				limit = { kehillah_semicha_institution_available_trigger = { CHARACTER = scope:kds8_landed2 } }
+				debug_log = "kehillah_semicha_debug.8: BRANCH 2b PASS the landed-ruler branch CAN resolve -- branch 2 positively verified"
+			}
+			else = { debug_log = "kehillah_semicha_debug.8: BRANCH 2b FAIL a seated county holder still does not resolve -- this one IS a bug, unlike the branch 2 FAIL above" }
+		}
+		else = { debug_log = "kehillah_semicha_debug.8: BRANCH 2b NOT OBSERVED no registered community anywhere has a county holder seated in its own province -- honest null, branch 2 stays positively unverified" }
 
 		# --- BRANCH 3a: a courtier. This is the population slice 4's
 		# apprenticeship produces, and the one the 2026-10-10 fix was for.
@@ -471,6 +593,26 @@ kehillah_semicha_debug.9 = {
 	hidden = yes
 	immediate = {
 		debug_log = "kehillah_semicha_debug.9: destroy the study hall -- START"
+
+		# Say UP FRONT whether this is reversible on this save, because it
+		# often is not. Found live 2026-10-10, the first time .9 ran: the
+		# rebuild path (.4 -> add_domicile_building) consults
+		# kehillah_beit_midrash_01's can_construct, which requires the host
+		# charter to allow new communal buildings. On the stock Worms 1066
+		# start it does NOT -- so .9 is a ONE-WAY door there, and the
+		# original version of this event cheerfully advertised ".4 rebuilds
+		# it" regardless.
+		#
+		# Checked before the removal rather than after, so the operator is
+		# told while they still have the building.
+		if = {
+			limit = { kehillah_charter_allows_new_communal_building_trigger = yes }
+			debug_log = "kehillah_semicha_debug.9: REVERSIBLE -- the charter allows new communal buildings, so .4 should be able to rebuild"
+		}
+		else = {
+			debug_log = "kehillah_semicha_debug.9: WARNING, ONE-WAY on this save -- the host charter does not allow new communal buildings, so .4 will NOT be able to rebuild. Reload rather than expecting a restore"
+		}
+
 		if = {
 			limit = {
 				exists = domicile
@@ -527,6 +669,6 @@ kehillah_semicha_debug.9 = {
 		# same has_domicile_building_or_higher test.
 		debug_log = "kehillah_semicha_debug.9: re-running branch coverage; expect every branch that PASSed before to FAIL now"
 		trigger_event = kehillah_semicha_debug.8
-		debug_log = "kehillah_semicha_debug.9: destroy the study hall -- END; kehillah_semicha_debug.4 rebuilds it"
+		debug_log = "kehillah_semicha_debug.9: destroy the study hall -- END; .4 rebuilds it ONLY if the REVERSIBLE line above said so, otherwise reload"
 	}
 }
