@@ -149,9 +149,11 @@ the shim guide. Current state is in the
 - **H4. All five slices built. Slices 3, 4 and 5 VERIFIED LIVE (slice 3 on 2026-10-10,
   heartbeat 2; slices 4-5 on 2026-10-10, heartbeat 4 —
   [log](docs/testing/2026-10-10-courtier-institution-live-test-log.md)). Slices 1-2 are the
-  inert gate and the records layer both of the above exercise.** One qualification carried
-  below: the FOUNDATION credit band (Learning 6-7) still has no live verdict. The full band
-  does, after a same-day fix to a double-credit bug — see the credit-bands entry below.
+  inert gate and the records layer both of the above exercise.**
+  **The one carried qualification is now CLOSED: all three credit bands have a live verdict
+  as of 2026-10-10 (Shabbat heartbeat 5) — [log](docs/testing/2026-10-10-credit-bands-live-test-log.md).**
+  The FOUNDATION band (Learning 6-7) had never been observed; it now passes, on a real
+  courtier, awarding the field credit and only the field credit.
   V21's ordination path: the Rabbi trait stops being
   reachable only through history, an office, or a Bet Din invitation. Slice numbering is
   [V21 section 6](docs/spec/v21-rabbi-ordination-paths.md)'s own.
@@ -237,9 +239,27 @@ the shim guide. Current state is in the
     counted twice. **Ordinary play was never exposed** — the only caller, `kehillah_semicha.0002`,
     is scheduled from `on_16th_birthday` and fires once per character; the debug sorter `.7` is
     what reached it. Now idempotent, and live-verified across three sorter runs: exactly one
-    credit after the first, unchanged after the second and third. **Still open:** the FOUNDATION
-    band (Learning 6-7, one field and nothing more) has no live verdict — that run used a
-    full-band pupil.
+    credit after the first, unchanged after the second and third.
+  - **The FOUNDATION band: CLOSED, VERIFIED LIVE 2026-10-10 (Shabbat heartbeat 5)**
+    ([log](docs/testing/2026-10-10-credit-bands-live-test-log.md)). All three bands pass, on three
+    distinct real courtiers at Worms: FULL (Naftali_Hertz Epstein, 65975), **FOUNDATION (Uriel
+    Lowborn, 52527 — the first live observation of this band)**, BELOW (Hadassah Lowborn,
+    65973). No double-credit in either run, no new `kehillah` errors.
+    - **Two probes, and the first one's failure is the useful part.** `kehillah_semicha_debug.10`
+      *sets* the subject's Learning per band. It confirmed FULL and then correctly **withheld**
+      a verdict on the other two rather than reporting the band it aimed at. Measured reason:
+      the Worms leader reads **Learning 17 with his base skill floored to 0**. 1.20 has no
+      `set_learning_skill`, only the additive `add_learning_skill`, which moves the
+      BASE while the `learning` trigger reads the TOTAL including modifiers — so the
+      foundation band is unreachable in either direction on a scholarly character, i.e. on
+      exactly the person one would naturally test on.
+    - `kehillah_semicha_debug.11` inverts it: **select a courtier already in each band**
+      instead of moving anyone into one. No modifier arithmetic, and it exercises the gate
+      against a Learning value the game actually produces. `.10` is kept for
+      modifier-free subjects, with a header pointing at `.11`.
+    - Transferable: **prefer selecting a subject who already satisfies a condition over
+      manufacturing one who does.** A probe that sets a skill and assumes the band is the same
+      mistake as a probe that assumes a building got built.
   - **Slice 5 — VERIFIED LIVE 2026-10-10 (same log).** The faith gates did not make the Chief
     Rabbi office unfillable at the only playable start: the appointment panel at Worms offers
     7 of 7 characters as candidates.
