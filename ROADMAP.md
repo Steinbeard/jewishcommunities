@@ -150,8 +150,9 @@ the shim guide. Current state is in the
   heartbeat 2; slices 4-5 on 2026-10-10, heartbeat 4 —
   [log](docs/testing/2026-10-10-courtier-institution-live-test-log.md)). Slices 1-2 are the
   inert gate and the records layer both of the above exercise.** One qualification carried
-  below: slice 4's live pass proves the institution branch and the years record, not the
-  curriculum/foundation credit bands. V21's ordination path: the Rabbi trait stops being
+  below: the FOUNDATION credit band (Learning 6-7) still has no live verdict. The full band
+  does, after a same-day fix to a double-credit bug — see the credit-bands entry below.
+  V21's ordination path: the Rabbi trait stops being
   reachable only through history, an office, or a Bet Din invitation. Slice numbering is
   [V21 section 6](docs/spec/v21-rabbi-ordination-paths.md)'s own.
   - **Slice 1 (gates) — built.** `common/scripted_triggers/kehillah_ordination_triggers.txt`:
@@ -222,10 +223,23 @@ the shim guide. Current state is in the
     ([log](docs/testing/2026-10-10-courtier-institution-live-test-log.md)): the same probe that
     reported `INSTITUTION FAIL` before the fix now reports
     `H4PUPIL: INSTITUTION PASS -- the courtier branch added 2026-10-10 is working`, with the
-    years record surviving the sorter as biography. Note this run does **not** re-prove the
+    years record surviving the sorter as biography. Note this run does **not** prove the
     curriculum/foundation credit bands — that pupil's Learning was below the foundation band, so
-    both credits were correctly absent; the bands passed in heartbeat 3's recovered run on a
-    pupil in range.
+    both credits were correctly absent.
+  - **The credit bands, and a double-credit bug: fixed and VERIFIED LIVE 2026-10-10**
+    (same log, "Follow-up run, same day"). **Correction:** an earlier note here credited
+    heartbeat 3's recovered run with passing the bands, because its pupil held *both* credits.
+    That was not a pass — the bands are exclusive, so holding both was the **symptom** of a
+    defect. `kehillah_award_apprenticeship_credit_effect` tangled the band test with its
+    don't-re-award test, so an already-credited pupil fell through to the lesser award and a
+    Learning-8 student collected the consolation prize too. That matters because the readiness
+    trigger's other OR arm counts `kehillah_apprentice_fields`, so one apprenticeship could be
+    counted twice. **Ordinary play was never exposed** — the only caller, `kehillah_semicha.0002`,
+    is scheduled from `on_16th_birthday` and fires once per character; the debug sorter `.7` is
+    what reached it. Now idempotent, and live-verified across three sorter runs: exactly one
+    credit after the first, unchanged after the second and third. **Still open:** the FOUNDATION
+    band (Learning 6-7, one field and nothing more) has no live verdict — that run used a
+    full-band pupil.
   - **Slice 5 — VERIFIED LIVE 2026-10-10 (same log).** The faith gates did not make the Chief
     Rabbi office unfillable at the only playable start: the appointment panel at Worms offers
     7 of 7 characters as candidates.

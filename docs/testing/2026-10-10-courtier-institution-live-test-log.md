@@ -45,10 +45,18 @@ trait):
 **One honest qualification.** In this run the pupil showed *no* full-curriculum and *no*
 foundation-field credit, because the preceding `H4SORT:` probe put this pupil's Learning
 below the foundation band. That is the correct behaviour for that Learning, not a
-regression: both credits had already passed independently in heartbeat 3's recovered run,
-on a pupil in the right band. So this run proves the institution branch, and does not
-re-prove the credit bands. The years record surviving the sorter is confirmed here, which
-matters because it is meant to persist as biography.
+regression. So this run proves the institution branch, and does not re-prove the credit
+bands. The years record surviving the sorter is confirmed here, which matters because it is
+meant to persist as biography.
+
+> **Correction, later the same day.** An earlier version of this paragraph said the credit
+> bands "had already passed independently in heartbeat 3's recovered run, on a pupil in the
+> right band", citing that run's pupil holding both `FULL CURRICULUM CREDIT held` and
+> `FOUNDATION FIELD CREDIT held`. **That was not a pass — it was the double-credit bug.** The
+> bands are exclusive, so holding both was the symptom, not the evidence. See
+> "Follow-up run, same day" at the bottom of this log for the defect, the fix, and the run
+> that does legitimately verify the full band. Do not cite heartbeat 3's recovered log as
+> credit-band verification.
 
 ## Check B — H2: `kehillah_household.0003`. **PASS**
 
