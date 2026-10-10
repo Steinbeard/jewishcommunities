@@ -539,3 +539,76 @@ A corollary worth keeping, because the same mechanism is useful on purpose: a on
 can be verified without a relaunch — save the file, re-fire the probe, read the log. That is not
 a reason to edit during *someone else's* test. It is a reason to keep a fix-and-reprobe cycle
 inside the one session that owns the game.
+
+## The logs are in `logs\`, not the user-dir root — added 2026-10-10
+
+Every instruction in this doc and in both CLAUDE.md and the playtest logs says "check
+`error.log`" or "read `debug.log`" without a path. On this install they are at:
+
+```
+C:\Users\Daniel\Documents\Paradox Interactive\Crusader Kings III\logs\debug.log
+C:\Users\Daniel\Documents\Paradox Interactive\Crusader Kings III\logs\error.log
+```
+
+The user-dir root copies **do not exist** — verified directly on 2026-10-10, not inferred. A
+session that greps the root path gets "No such file or directory", which is at least loud. The
+worse failure is a session that treats an empty result as "no errors" and reports a clean log it
+never read. Archive directories go in `logs\` too, alongside the files they copy.
+
+## Screenshots can come back frozen — and it fails silently — added 2026-10-10
+
+**During the 2026-10-10 slice 2 test, screen captures returned pixel-identical images across
+console commands that demonstrably landed** (confirmed independently through
+`console_history.txt` and `debug.log`), while keyboard and mouse input kept working
+normally. Probably GDI `CopyFromScreen` reading a stale front buffer under
+exclusive-fullscreen; it is **not** the known VDD virtual-display setup, which has been fine for
+days.
+
+**Why this one is worth a section of its own: it does not fail loudly.** A locked desktop returns
+black, which is obvious. This returns a *plausible* frame — the right game, the right UI, just
+not the current state. Every rule in this guide about screenshots assumes that what comes back
+corresponds to now. A session checking "did the tooltip change after I clicked" would compare two
+copies of the before-state and confidently report no change.
+
+Until someone diagnoses it (worth trying borderless/windowed, or a DirectX-aware capture instead
+of GDI):
+
+- **Treat a screenshot-only verdict as unproven.** This is a stronger version of the advice in
+  "Testing philosophy" below — there the console is *preferred*; here it is the only channel
+  that was trustworthy.
+- **If you must screenshot, prove the capture is live first.** Take one, change something
+  visible, take another, and diff the bytes. Identical bytes across a real change means the
+  capture is stale, not that nothing happened.
+- A probe plus `debug.log` answered every question in that session without a single
+  screenshot. That is the shape to aim for anyway.
+
+## Check who `root` is before anything else — added 2026-10-10
+
+A direct launch on the shared test save **auto-continued into Duke Gottfried III of Lower
+Lotharingia** — a vanilla character, left over from an earlier session's `play <id>` —
+instead of the Kehillah leader. Nothing about this announces itself: the game loads, the HUD is
+normal, the console works. Probes fired at that point run against the wrong character, and a
+Kehillah probe on a non-Kehillah ruler reports perfectly coherent nonsense.
+
+**Make an identity check step 0 of every session on the shared save**, before the first real
+probe:
+
+```
+# <ck3_user_dir>\run\whoami.txt
+debug_log = "whoami: identity check"
+debug_log_scopes = yes
+```
+
+then `run whoami.txt` and read the `Root:` line. To recover, dump the title to find
+its actual holder and switch:
+
+```
+# <ck3_user_dir>\run\find_leader.txt
+title:d_kehillah_worms = { debug_log_scopes = yes }
+```
+
+then `play <id>` and re-run the identity check to confirm it took. (On 2026-10-10 that was
+Isaac HaLevi, 29176.) Note that CK3 wants run files in **UTF-8 with BOM** — a BOM-less one still
+executes but logs
+`File 'run/whoami.txt' should be in utf8-bom encoding`, which is easy to mistake for a real
+finding when scanning a log.
