@@ -192,23 +192,72 @@ kehillah_observe_rabbinic_education_effect = {
 # from a delayed event, and a delayed event is the one place in this
 # codebase where "it cannot possibly fire twice" has been wrong before.
 # ---------------------------------------------------------------------
+# RESTRUCTURED 2026-10-10 (Shabbat heartbeat 4) to be genuinely
+# idempotent. The band decision and the "have I already been credited"
+# decision used to be tangled into the same two limits:
+#
+#     if      = { ... learning >= FULL   NOT = { has_variable = curriculum } }
+#     else_if = { ... learning >= FOUND  NOT = { field already present } }
+#
+# which means a pupil who ALREADY held the curriculum failed the first
+# limit on the idempotence clause and then **fell through to the
+# else_if** -- where a Learning-8 pupil also passes `learning >=
+# FOUNDATION`, since the full floor is above the foundation floor. So a
+# second invocation handed a top-band student the consolation prize on
+# top of the full curriculum. Observed exactly that way: heartbeat 3's
+# recovered log shows one pupil holding FULL CURRICULUM CREDIT and
+# FOUNDATION FIELD CREDIT at once, which the bands are not supposed to
+# be able to produce.
+#
+# That is not only untidy. kehillah_rabbi_ordination_curriculum_met_
+# trigger is an OR, and its other arm counts kehillah_apprentice_fields
+# against kehillah_ordination_fields_required_value -- so the stray
+# field means one apprenticeship could be counted twice, letting a
+# pupil reach the two-field requirement on a single genuine field of
+# adult study.
+#
+# ORDINARY PLAY WAS NOT EXPOSED: the only caller is kehillah_semicha
+# .0002, scheduled from on_16th_birthday (common/on_action/kehillah_
+# ordination_on_actions.txt), which fires once per character. It is the
+# debug path -- kehillah_semicha_debug.7, which fires the sorter on
+# demand -- that reaches it, and that is how the double credit was seen.
+# Fixed anyway: an effect whose correctness depends on never being
+# called twice is a trap for the next caller, and the misleading state
+# it produces costs a reader of the log real time.
+#
+# The fix separates the two questions. Idempotence is checked ONCE, for
+# both credits together, so an already-credited pupil exits instead of
+# falling through; the band choice then happens on its own.
+#
+# ONE BEHAVIOUR DELIBERATELY DROPPED, stated rather than slipped in. The
+# old shape also permitted an UPGRADE: a pupil credited at the
+# foundation band who later crossed Learning 8 would, on a second
+# invocation, pass the first limit (no curriculum yet, Learning now high
+# enough) and be handed the full curriculum. The new outer limit refuses
+# that, because it requires neither credit to be present.
+#
+# This is the better reading of section 3.3, which says the Learning 6-7
+# band "requires the ordinary adult Learn Torah route until Learning
+# reaches 8 and supplies one separate field of adult study" -- i.e. the
+# foundation student is meant to earn the rest by studying, not to be
+# retroactively promoted. And it is unreachable either way while .0002
+# is the only caller, since it fires once. Noted so that a future caller
+# that DOES want an upgrade path adds it on purpose.
 kehillah_award_apprenticeship_credit_effect = {
 	if = {
 		limit = {
 			kehillah_rabbinic_apprenticeship_complete_trigger = yes
 			is_rabbinic_authority_jewish_trigger = yes
-			learning >= kehillah_ordination_learning_floor_value
 			NOT = { has_variable = kehillah_apprenticeship_curriculum }
-		}
-		set_variable = { name = kehillah_apprenticeship_curriculum value = 1 }
-	}
-	else_if = {
-		limit = {
-			kehillah_rabbinic_apprenticeship_complete_trigger = yes
-			is_rabbinic_authority_jewish_trigger = yes
-			learning >= kehillah_ordination_foundation_learning_floor_value
 			NOT = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship } }
 		}
-		add_to_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+		if = {
+			limit = { learning >= kehillah_ordination_learning_floor_value }
+			set_variable = { name = kehillah_apprenticeship_curriculum value = 1 }
+		}
+		else_if = {
+			limit = { learning >= kehillah_ordination_foundation_learning_floor_value }
+			add_to_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+		}
 	}
 }
