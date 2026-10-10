@@ -1,9 +1,12 @@
 # Live playtest — V21 section 7's institution gaps, and a probe that lied
 
-**Status:** run 1 complete, 2026-10-10 (Shabbat heartbeat 4). Two of the three gaps
-settled; the third could not be settled on this save, for a reason that turned out to be
-a real bug in a different probe. Run 2 (verifying the fixes below) is recorded in its own
-section at the bottom.
+**Status:** complete, 2026-10-10 (Shabbat heartbeat 4), across two runs.
+**Gaps 1 and 3 are CLOSED; gap 2 remains open as an honest null** (no landless adventurer
+stands in any community's province in 1066, and manufacturing one would test the probe's own
+character rather than the game). Run 1 also turned up a real bug in a *different* probe —
+`kehillah_semicha_debug.4` was reporting a building the engine had refused to construct —
+which is what made gap 1 unclosable on the first pass. Run 2, at the bottom, verifies the
+three fixes made in response and closes gap 1 positively.
 
 Tests the two probes added this heartbeat — `kehillah_semicha_debug.8` (read-only branch
 coverage) and `.9` (destroy the study hall) — against V21 section 7's list of never-tested
@@ -22,7 +25,9 @@ immediately restart it, but a screenshot showed the game had **already reached t
 menu**. The stall note in the log was stale, not a hang. Take the screenshot before
 concluding a boot has hung.
 
-## Gap 1 — the landed-ruler branch. Correct FAIL, but still no positive verdict
+## Run 1, gap 1 — the landed-ruler branch. Correct FAIL, but still no positive verdict
+
+(Closed positively in run 2 below, by the BRANCH 2b added in response to this result.)
 
 ```
 kehillah_semicha_debug.8: BRANCH 1 PASS the leader's own quarter (control)
@@ -160,9 +165,81 @@ Separately, tiger's summary totals swung 682 / 612 / 616 / 616 errors across fou
 **unchanged** tree; see the shim guide's new "Tiger's summary totals are not a before/after
 measurement" section.
 
-## Run 2 — verifying the three fixes
+## Run 2 — all three fixes verified, and gap 1 closed positively
 
-Pending at the time of writing. Looks for: `.4` printing `FAILED ...` plus the charter cause
-line instead of the old lie; `.9` printing `WARNING, ONE-WAY on this save`; `.8`'s branch-1
-FAIL printing the `EXPECTED ... Not a control break` wording; and **BRANCH 2b's verdict**,
-which is the first attempt ever at a positive result from the landed-ruler branch.
+Fresh boot after killing run 1's instance. All four results confirmed, and each decisive
+line re-verified against `debug.log` by the orchestrating session.
+
+### Gap 1 is now positively verified: `BRANCH 2b PASS`
+
+```
+kehillah_semicha_debug.8: BRANCH 2b subject found -- a county holder seated in their own community's province (scopes dump follows)
+kehillah_semicha_debug.8: BRANCH 2b PASS the landed-ruler branch CAN resolve -- branch 2 positively verified
+```
+
+**Subject: Al-Qa'im Abbasid, character `31533`, seated in Baghdad (province 4828)** — the
+Abbasid Caliph, whose capital province is the one `d_kehillah_baghdad` occupies. The scan
+found him without being told where to look.
+
+This is the first time the landed-ruler branch has ever returned true. Taken with run 1's
+correct FAIL at Worms, gap 1 now has **both** controls: the branch resolves for a ruler
+seated where a community with a study hall stands, and refuses one who holds the county from
+another seat.
+
+Worth being explicit about what this does *not* claim: the institution trigger carries no
+faith gate of its own — faith lives in `kehillah_rabbi_ordination_candidate_trigger` — so
+a Muslim caliph satisfying the *institution* test is the intended mechanics, not a statement
+that he could be ordained. The candidate trigger refuses him long before semicha.
+
+`BRANCH 2b` also stayed PASS in the post-demolition re-run, correctly: Baghdad's study hall
+was never touched by a demolition at Worms. That makes it an incidental control on the
+demolition being local rather than global.
+
+### The three fixes, each confirmed
+
+| fix | expected on this save | observed |
+|---|---|---|
+| `.4` reports honestly | `FAILED to add ... can_construct refused it` | **confirmed**, plus the `CAUSE: the host charter does not (yet) allow new communal buildings` line. Not the old `ADDED ... and confirmed present` lie |
+| `.9` warns before demolishing | `WARNING, ONE-WAY on this save` | **confirmed** — "the host charter does not allow new communal buildings, so .4 will NOT be able to rebuild. Reload rather than expecting a restore" |
+| `.8`'s control wording | `EXPECTED ... Not a control break` | **confirmed**; the `CONTROL BROKEN` string did not appear |
+
+Gap 3 reproduced cleanly a second time: `CONFIRMED no Beit Midrash of any tier remains`,
+`apprenticeship years SURVIVED the loss (required)`, and branches 1 and 3a both flipping to
+FAIL — 3a because the courtier resolves through the Worms community that just lost its
+building, which is the right coupling.
+
+### error.log
+
+**No new distinct `kehillah` lines versus baseline, and zero fatal lines.** The
+`add_domicile_building ... failed to meet triggered requirements` error did appear, as it
+should — the engine still refuses the build; the fix was only that the probe stops lying
+about it.
+
+One useful confirmation: three `Unknown trigger` parse errors present in the earlier
+baseline — `domicile_location_county_holder_qualifies_for_branch2_trigger` (twice) and
+`domicile_owner` — are **gone** in this run. Those were from the first, broken draft of
+branch 2b and the bad `domicile_owner` link, so their disappearance is independent evidence
+the replacement code parses cleanly rather than merely failing quietly.
+
+## Audit: does any real gameplay code assume `add_domicile_building` succeeded?
+
+Checked every call site in the mod after run 1, because this is the second time the trap has
+bitten. **No gameplay bug found.** `kehillah_worms_developed_start_effect`
+(`common/scripted_effects/kehillah_scripted_effects.txt`) was already hardened on 2026-09-26
+against exactly this: it lifts the Greatness gate for the duration of the grant and restores
+it immediately after, because the dependency is genuinely circular (synagogue tiers 2–5
+require Greatness thresholds, and Greatness is computed *from* the buildings). That fix also
+left the original wrong claim in place, struck, on the grounds that a future reader is more
+likely to meet the wrong claim than the fix — which is why this session recognised the shape
+immediately.
+
+So the production seeding path verifies its own work, and only the debug probe was
+unguarded. Recorded here so the audit does not have to be repeated.
+
+## Where the three gaps now stand
+
+| gap | state |
+|---|---|
+| 1. landed-ruler branch | **CLOSED** — positive verdict (Al-Qa'im at Baghdad) and correct negative (Worms) |
+| 2. landless-adventurer branch | **OPEN, honest null** — no adventurer stands in a community's province in 1066. Needs a save where one actually does; manufacturing one would test the probe's own character, not the game |
+| 3. losing the Beit Midrash | **CLOSED** — reproduced twice, door closes, recorded progress survives |
