@@ -690,3 +690,41 @@ They are cheaper to consult than a vanilla grep, and more trustworthy than ck3-t
 vocabulary is 1.19. Re-dump them with `script_docs` after a game patch. This is the same lesson as
 1.20 having `add_learning_skill` but no `set_learning_skill` (see the credit-bands section) —
 asked of the dump, that question takes one grep.
+
+## Settling a ck3-tiger missing-localization warning: count vanilla — added 2026-10-10
+
+CLAUDE.md says a tiger complaint is "a strong lead to go verify, not an automatic truth to patch
+around". For `missing-localization` there is a one-command way to verify, and it gave opposite
+answers for two warnings in the same baseline:
+
+**Count how many of vanilla's own instances of that key shape are localized.** If vanilla
+localizes nearly all of them, the key is really expected and the mod has a player-visible gap. If
+vanilla ships most of them undefined, tiger's rule is stricter than the engine and the warning is
+noise.
+
+Worked, on the two that were sitting in this mod's baseline:
+
+- `domicile_building_parameter_kehillah_*` (ten of them) — **real.** A script pass over
+  `game\common\domiciles\buildings\*.txt` found 570 vanilla domicile building parameters, of
+  which **567** have a `domicile_building_parameter_<name>` loc key. Three do not, and those read
+  as vanilla bugs. So the key is genuinely rendered — it is the line in a building's tooltip
+  explaining what the parameter does — and ten unlocalized ones means ten raw keys in the Jewish
+  Quarter's own tooltips.
+- `domicile_kehillah_quarter` — **false positive.** Vanilla has five domicile types and defines
+  `domicile_<type>` for exactly **two** of them (`domicile_estate`,
+  `domicile_ecclesiastical_domicile`); `camp`, `yurt` and `east_asian_estate` ship without it.
+  The convention the engine actually uses for a type's name is `<type>_domicile_type` /
+  `<type>_domicile_title`, and this mod already defines both
+  (`kehillah_quarter_domicile_type:0 "Jewish Quarter"`). Nothing to fix; adding the key on
+  tiger's say-so would have been cargo cult.
+
+The whole check is one script: pull the names out of the vanilla definition files, concatenate
+`game\localization\english\**\*.yml`, and ask how many names are absent. Two cautions learned
+doing it: use a **Windows** path (`E:/Program Files...`) when the script is Python, because a
+Git-Bash `/e/...` path silently matches zero files and a zero-file audit looks exactly like a
+clean one; and assert the file count, since "0 problems found" is the same output as "0 files
+read".
+
+The same counting trick answers "is this token real in 1.20" for triggers and effects — but
+`logs\effects.log` and `logs\triggers.log` answer that one directly, see the activity section
+above.
