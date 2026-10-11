@@ -47,15 +47,31 @@ the shim guide. Current state is in the
     live:** a lay Parnas died and vanilla's screen offered "Continue as Parnas Amos". Amos was lay
     afterwards. No trait was added, and rabbis stay clergy through their trait. See implementation doc
     section 15.
-  - **Next (Daniel, 2026-10-11):**
-    - Rename the faith organization for Judaism to "Jewish Communal Leadership".
-    - Only characters with the Rabbi trait can hold the Dayyan seat. Rabbis must reach AI Kehillot first,
-      or their seats sit empty.
-    - Show the seat holder as "Rav <name>".
+  - **Done 2026-10-11 (implementation doc section 16):**
+    - Leaders are named "Rav" only when they have the Rabbi trait, otherwise "Parnas".
+    - "Rabbenu" is earned at piety level 4 and kept once earned.
+    - The Dayyan must be a rabbi, and is styled "Rav <name>".
+    - The rabbinic organization is named "Hakhamim".
+    - The Chief Rabbi court position and its toggle decisions are removed. The community rabbi is the
+      leader if he is a Rav, otherwise the Dayyan. "Seek a Rabbi" seats its find as Dayyan.
+    - **Verified live:** the names, Rabbenu, Hakhamim, the Catholic fallback, and the Dayyan's "Rav"
+      styling.
+    - **The Chief Rabbi refactor, verified live (fresh boot):**
+      - All 15 Dayyan seats were filled by rabbis at game start, with no seating errors.
+      - `kehillah_debug.118` bound Isaac as the community rabbi while he was a Rav, and the Dayyan once
+        his trait was removed.
+      - Only "Seek a Rabbi" remains among the rabbi decisions.
+      - A full search, from an empty seat to a candidate chosen, seated Rav Gad as Dayyan, and the
+        Greatness term rose from 43.2 to 55.2.
+      - No new errors and no missing localization.
   - **Follow-ups:**
+    - **The Dayyan cannot be fired.** This is vanilla's court chaplain `can_fire` under rabbinism's
+      clerical doctrine. Seek a Rabbi needs an empty seat, so a player cannot replace a weak Dayyan
+      until he dies. Consider a Kehillah exception in the `can_fire` override, or a "retire the
+      Dayyan" decision.
+    - Vanilla's notification on seating reads "New Realm Priest". Re-flavor it.
     - Removing the Rabbi trait does not remove organization membership.
-    - On Isaac's death screen, the lay successor Kehat was labelled "Rav Kehat"; check the leader
-      flavor.
+    - The Bet Din's "rabbi to sit as Av Beit Din" requirement line was not checked in the UI.
 
 - **H1. DONE — VERIFIED LIVE 2026-10-09 (Shabbat heartbeat 1)**
   *(SUPERSEDED 2026-10-11: the theocracy mechanic below was removed; see the lay-courtier entry above)*

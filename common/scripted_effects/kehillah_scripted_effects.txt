@@ -893,26 +893,11 @@ kehillah_setup_troyes_start_effect = {
 		kehillah_record_quarter_effect = yes
 		kehillah_update_leader_flavor_effect = yes
 
-		# RASHI BEGINS AS TROYES'S OWN CHIEF RABBI (Daniel, 2026-09-25;
-		# ROADMAP S4(2), built 2026-09-26). He holds kehillah_rabbi_trait
-		# and, from history/characters/troyes_1066.txt, an explicit
-		# learning = 12 set for exactly this purpose -- so he clears
-		# kehillah_serve_as_rabbi_learning_threshold deterministically
-		# rather than by a lucky roll.
-		#
-		# Set through the trigger rather than assumed: if a future edit
-		# lowers his Learning or drops the trait, Troyes starts with an
-		# empty seat and the "Seek a Chief Rabbi" path instead, which is a
-		# sane outcome. Silently flagging him regardless would produce a
-		# leader "serving" in an office he no longer qualifies for.
-		if = {
-			limit = {
-				kehillah_can_serve_as_own_rabbi_trigger = yes
-				NOT = { employs_court_position = chief_rabbi_kehillah_position }
-			}
-			add_character_flag = kehillah_serving_as_own_rabbi
-			add_character_modifier = kehillah_serving_as_own_rabbi_modifier
-		}
+		# Rashi is Troyes's rabbi from the start simply by carrying
+		# kehillah_rabbi_trait (history/characters/troyes_1066.txt): the
+		# community rabbi is the leader whenever he is a rabbi
+		# (kehillah_has_community_rabbi_trigger, 2026-10-11). The old
+		# serve-as-own-rabbi flag this used to set is gone.
 	}
 }
 
@@ -1444,8 +1429,11 @@ kehillah_seed_community_effect = {
 	# not an oversight: build the Beit Midrash and the community's own
 	# future Chief Rabbi is already standing there waiting.
 
-	# The scholar. Reads as a plausible future Chief Rabbi or, later, a
-	# second learned hand for the Sofer's Workshop.
+	# The scholar: the community's starting Dayyan (seated below). Since
+	# 2026-10-11 the Dayyan seat requires kehillah_rabbi_trait, so he is
+	# made a rabbi here -- behind the same rabbinic-authority gate every
+	# other grant of the trait uses. A live boot without this left all 15
+	# communities with an empty seat and no eligible candidate.
 	create_character = {
 		dynasty = generate
 		age = { 30 55 }
@@ -1463,6 +1451,10 @@ kehillah_seed_community_effect = {
 	}
 	scope:kehillah_seeded_scholar = {
 		set_employer = scope:kehillah_leader
+		if = {
+			limit = { is_rabbinic_authority_jewish_trigger = yes }
+			add_trait = kehillah_rabbi_trait
+		}
 		# V26 ba'alei batim: registered as a household on the first pulse.
 		add_character_flag = kehillah_household_founder
 		house = { set_variable = { name = kehillah_household_trade value = flag:scholar } }
@@ -2230,12 +2222,23 @@ kehillah_update_leader_flavor_effect = {
 		}
 		leave_organization = yes
 	}
+	# Rav vs Parnas (2026-10-11): the Rabbi trait alone decides it -- see
+	# kehillah_leader_is_rav_trigger. kehillah_rabbinic_leader_flag keeps
+	# its name because the flavorization and the spouse seat key on it.
 	if = {
-		limit = { kehillah_leader_is_rabbinic_trigger = yes }
+		limit = { kehillah_leader_is_rav_trigger = yes }
 		add_character_flag = kehillah_rabbinic_leader_flag
 	}
 	else = {
 		remove_character_flag = kehillah_rabbinic_leader_flag
+	}
+	# Rabbenu: earned by devotion, then kept (kehillah_leader_earns_
+	# rabbenu_trigger). Also run from the quarterly pulse, so a rabbi who
+	# reaches the piety level in office is promoted without a change of
+	# leader.
+	if = {
+		limit = { kehillah_leader_earns_rabbenu_trigger = yes }
+		add_character_flag = kehillah_rabbenu_leader_flag
 	}
 }
 
@@ -2497,169 +2500,34 @@ kehillah_dispute_pick_parties_effect = {
 	}
 	# S4(2), 2026-09-26: goes through the shared resolver so a leader
 	# serving as their own community's rabbi is bound here too. See
-	# kehillah_has_acting_chief_rabbi_trigger's header (common/
+	# kehillah_has_community_rabbi_trigger's header (common/
 	# scripted_triggers/kehillah_scripted_triggers.txt).
-	kehillah_save_acting_chief_rabbi_effect = yes
+	kehillah_save_community_rabbi_effect = yes
 }
 
 
 # ---------------------------------------------------------------------
-# kehillah_save_acting_chief_rabbi_effect
+# kehillah_save_community_rabbi_effect
 # Scope: the Kehillah leader.
 #
-# ROADMAP S4(2), added 2026-09-26. Binds scope:kehillah_chief_rabbi to
-# whoever is ACTUALLY acting as the community's Chief Rabbi -- the
-# appointed court-position holder, or the leader themselves if they have
-# taken up the office (kehillah_serve_as_rabbi_decision).
-#
-# The appointed rabbi always wins where both could apply, matching
-# kehillah_acting_chief_rabbi_learning_value and
-# kehillah_serving_as_own_rabbi_trigger. Every consumer that needs the
-# rabbi as a SCOPE calls this; every consumer that only needs "is the
-# seat filled" calls kehillah_has_acting_chief_rabbi_trigger. Between
-# them there is no site left that reads the court position directly, which
-# is the point -- see that trigger's header.
+# 2026-10-11 (Daniel). Binds scope:kehillah_community_rabbi to the
+# community's rabbi: the leader himself if he carries kehillah_rabbi_
+# trait, otherwise the Dayyan (councillor_court_chaplain, which requires
+# the trait). See kehillah_has_community_rabbi_trigger's header. Replaces
+# kehillah_save_community_rabbi_effect; the Chief Rabbi court position,
+# the serve-as-own-rabbi toggle and its clean-up effects are gone.
 #
 # Leaves the scope UNSET when there is no rabbi at all, which is why
 # every reader guards with ?=.
 # ---------------------------------------------------------------------
-
-kehillah_save_acting_chief_rabbi_effect = {
+kehillah_save_community_rabbi_effect = {
 	if = {
-		limit = { employs_court_position = chief_rabbi_kehillah_position }
-		court_position:chief_rabbi_kehillah_position = {
-			save_scope_as = kehillah_chief_rabbi
-		}
+		limit = { has_trait = kehillah_rabbi_trait }
+		save_scope_as = kehillah_community_rabbi
 	}
 	else_if = {
-		limit = { kehillah_serving_as_own_rabbi_trigger = yes }
-		save_scope_as = kehillah_chief_rabbi
-	}
-}
-
-
-# ---------------------------------------------------------------------
-# kehillah_clear_redundant_rabbi_toggle_effect
-# Scope: the Kehillah leader. Called from the quarterly pulse.
-#
-# ROADMAP S4(2), added 2026-09-26. "Appointing a rabbi ends the toggle."
-#
-# WHY THE QUARTERLY PULSE AND NOT AN on_action. There is no "a court
-# position was filled" on_action in 1.19 -- checked: common/on_action/
-# court_position_on_action.txt contains only scripted per-position task
-# effects (caravan_master_prepare_travels_on_action and friends), no
-# appointment hook, and nothing anywhere else in common/on_action/
-# references court positions being granted. So this is swept up on the
-# pulse instead.
-#
-# The lag is cosmetic ONLY, by construction: kehillah_serving_as_own_
-# rabbi_trigger itself returns false the instant a real rabbi is
-# appointed, so the leader stops acting in the role immediately and
-# nothing is ever double-counted. What this effect cleans up is the stale
-# flag and, more importantly, the two-jobs modifier the leader should no
-# longer be paying for.
-# ---------------------------------------------------------------------
-
-kehillah_clear_redundant_rabbi_toggle_effect = {
-	if = {
-		limit = {
-			has_character_flag = kehillah_serving_as_own_rabbi
-			employs_court_position = chief_rabbi_kehillah_position
-		}
-		kehillah_end_serving_as_own_rabbi_effect = yes
-
-		send_interface_message = {
-			type = msg_kehillah_endorsement
-			title = kehillah_rabbi_office_handed_over_msg_title
-			desc = kehillah_rabbi_office_handed_over_msg_desc
-			left_icon = root
-		}
-	}
-}
-
-
-# ---------------------------------------------------------------------
-# kehillah_end_serving_as_own_rabbi_effect
-# Scope: the Kehillah leader. ROADMAP S4(2), added 2026-09-26.
-#
-# The single teardown for the toggle, so the decision that stands down,
-# the quarterly cleanup, and anything added later cannot disagree about
-# what "no longer serving" involves.
-# ---------------------------------------------------------------------
-
-kehillah_end_serving_as_own_rabbi_effect = {
-	remove_character_flag = kehillah_serving_as_own_rabbi
-	if = {
-		limit = { has_character_modifier = kehillah_serving_as_own_rabbi_modifier }
-		remove_character_modifier = kehillah_serving_as_own_rabbi_modifier
-	}
-}
-
-
-# ---------------------------------------------------------------------
-# kehillah_replace_appointed_rabbi_effect
-# Scope: the Kehillah leader. Called from kehillah_serve_as_rabbi_
-# decision's effect, and only when the seat is actually filled.
-#
-# ADDED 2026-09-27 (S4b), at user request: "if there's already a chief
-# rabbi, maybe you can replace him with yourself with the decision."
-# Previously the decision simply refused while the seat was filled, which
-# left a learned leader who wanted the office with no route to it short of
-# dismissing the incumbent through the court UI first and then coming
-# back -- two steps for one intention, and the second one easy to forget.
-#
-# THIS IS A DISMISSAL, AND IS PRICED AS ONE. The incumbent is revoked
-# (vanilla's own block form, as 10_tgp_interactions.txt's favored-minister
-# swap uses -- `revoke_court_position = { court_position = X recipient =
-# court_position:X }`, not the bare one-line form the .info file
-# documents) and takes the same revoked_court_position_opinion vanilla
-# gives anyone fired from a court position. Nothing about it is free.
-#
-# WART FIXED, same day (S4c, 2026-09-27). As first written this note
-# recorded a real problem and declined to fix it: chief_rabbi_kehillah_
-# position's on_court_position_revoked removed kehillah_rabbi_trait from
-# the former holder, so a rabbi dismissed here lost his semicha even if he
-# had arrived holding it -- the dismissal unmade the ordination. Daniel's
-# answer was to fix it ("let's not strip rabbi traits on removing a chief
-# rabbi"), so the three teardown hooks are gone and the trait is granted
-# once and kept; that office's own on_court_position_received block has the
-# full reasoning. A rabbi dismissed by this effect keeps his standing, and
-# stays a candidate S4(1)'s search can find in whatever court he lands in.
-#
-# ORDER MATTERS. The revocation must land BEFORE the caller sets
-# kehillah_serving_as_own_rabbi: kehillah_serving_as_own_rabbi_trigger
-# reads false for as long as the court position is still employed (see its
-# header), so a flag set first would not take effect until the seat
-# cleared anyway.
-# ---------------------------------------------------------------------
-
-kehillah_replace_appointed_rabbi_effect = {
-	if = {
-		limit = { employs_court_position = chief_rabbi_kehillah_position }
-
-		court_position:chief_rabbi_kehillah_position = {
-			save_scope_as = kehillah_deposed_rabbi
-		}
-
-		revoke_court_position = {
-			court_position = chief_rabbi_kehillah_position
-			recipient = court_position:chief_rabbi_kehillah_position
-		}
-
-		scope:kehillah_deposed_rabbi = {
-			add_opinion = {
-				target = root
-				modifier = revoked_court_position_opinion
-			}
-		}
-
-		send_interface_message = {
-			type = msg_kehillah_endorsement
-			title = kehillah_rabbi_office_taken_over_msg_title
-			desc = kehillah_rabbi_office_taken_over_msg_desc
-			left_icon = root
-			right_icon = scope:kehillah_deposed_rabbi
-		}
+		limit = { cp:councillor_court_chaplain ?= { has_trait = kehillah_rabbi_trait } }
+		cp:councillor_court_chaplain = { save_scope_as = kehillah_community_rabbi }
 	}
 }
 
@@ -2782,8 +2650,13 @@ kehillah_generate_rabbi_candidate_effect = {
 
 
 # ---------------------------------------------------------------------
-# kehillah_install_chief_rabbi_effect
+# kehillah_install_rabbi_effect
 # Scope: the hiring Kehillah leader. RABBI = the chosen candidate.
+#
+# 2026-10-11: seats the rabbi as the community's DAYYAN
+# (councillor_court_chaplain) instead of the retired Chief Rabbi court
+# position. The trait grant now runs BEFORE the seating, because the
+# Dayyan seat requires kehillah_rabbi_trait.
 #
 # ROADMAP S4(1), added 2026-09-26. The same two-step vanilla's own
 # set_court_physician_effect uses (common/scripted_effects/
@@ -2798,7 +2671,7 @@ kehillah_generate_rabbi_candidate_effect = {
 # for the generated-candidate path only, and harmless either way.
 # ---------------------------------------------------------------------
 
-kehillah_install_chief_rabbi_effect = {
+kehillah_install_rabbi_effect = {
 	# S4(3), added 2026-09-26. Note WHERE they are coming from BEFORE
 	# add_courtier moves them, because afterwards the old liege link is
 	# gone and there is no way back to it. Only a rabbi leaving another
@@ -2823,16 +2696,6 @@ kehillah_install_chief_rabbi_effect = {
 		}
 	}
 
-	appoint_court_position = {
-		recipient = $RABBI$
-		court_position = chief_rabbi_kehillah_position
-	}
-
-	reverse_add_opinion = {
-		target = $RABBI$
-		modifier = hired_me_opinion
-	}
-
 	# V21 slice 5, 2026-10-10: is_rabbinic_authority_jewish_trigger added,
 	# the same gate the Chief Rabbi office and the Bet Din offer now
 	# carry. Nothing is removed from anyone -- a character who already
@@ -2847,6 +2710,19 @@ kehillah_install_chief_rabbi_effect = {
 			add_trait = kehillah_rabbi_trait
 		}
 	}
+
+	# Seat him as Dayyan. The decision and the search event both require
+	# the seat to be empty, so there is no incumbent to displace.
+	assign_councillor_type = {
+		type = councillor_court_chaplain
+		target = $RABBI$
+	}
+
+	reverse_add_opinion = {
+		target = $RABBI$
+		modifier = hired_me_opinion
+	}
+
 
 	# A community that has found itself a rabbi has done something real.
 	# Small, and not a substitute for the standing contribution the seat
@@ -2864,7 +2740,7 @@ kehillah_install_chief_rabbi_effect = {
 	# are wanted elsewhere is a community with a reputation, even though
 	# it has just lost a person. The loss is real and already priced in
 	# (the seat is empty now, so the per-quarter contribution through
-	# kehillah_acting_chief_rabbi_learning_value stops); this is the
+	# kehillah_community_rabbi_learning_value stops); this is the
 	# other half of the ledger, not a free gift.
 	#
 	# Fired to the FORMER liege, so root of .0002 is the community that

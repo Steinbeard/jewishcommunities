@@ -1197,3 +1197,77 @@ Rabbis stay clergy permanently through their trait.
   Heaven "Ceremonial liege family" case.
 - **"Choose a New Destiny":** it needs an existing player heir and only offers your own dynasty, so it
   cannot reach a non-dynastic successor.
+
+## 16. Rav, Rabbenu, the Dayyan, Hakhamim, and the end of the Chief Rabbi, 2026-10-11
+
+**Status:** shipped on 2026-10-11 in an interactive session, at Daniel's direction, and all of it was
+verified live; the results and the follow-ups are in ROADMAP.
+This section supersedes ROADMAP S4(1)/S4(2)/S4b/S4c (the Chief Rabbi office, the serve-as-own-rabbi
+toggle, and the Beit Midrash ungating).
+
+### Who is a rabbi
+
+A rabbi is a character with `kehillah_rabbi_trait`, and nobody else. It is the one `clergy = yes`
+trait the mod keeps (implementation doc section 15 explains why lay leaders are not clergy).
+
+### Leader names
+
+- **"Rav":** a Kehillah leader with the Rabbi trait (`kehillah_leader_is_rav_trigger`). Every other
+  leader is "Parnas". The old scholarly test, `kehillah_leader_is_rabbinic_trigger` (learning 12,
+  theologian, top learning education), used to decide this too; that is how a lay Kehat read "Rav
+  Kehat". It now gates only founding a community, where a learned layman should still qualify.
+- **"Rabbenu":** a Rav-leader at piety level 4 (Paragon of Virtue) or higher
+  (`kehillah_leader_earns_rabbenu_trigger`). The title is sticky once earned, as the historical
+  honorific was: Rabbenu Gershom, Rabbenu Tam. `kehillah_update_leader_flavor_effect` now also runs
+  quarterly, so ordination or a rise in piety takes effect without a change of leader.
+
+### The Dayyan
+
+- The Kehillah's `councillor_court_chaplain` seat requires the Rabbi trait.
+- Its holder is styled "Rav <name>" through the councillor flavorization `kehillah_dayyan_rav_male`
+  (priority 299 beats vanilla's 298).
+- Each community's seeded starting scholar, who is its first Dayyan, gets the trait at creation. The
+  first live boot without this left all 15 seats empty, with nobody eligible to fill them.
+
+### The community rabbi, which replaces the Chief Rabbi
+
+The community rabbi is **the leader if he is a Rav, otherwise the Dayyan.** Every role reads it
+through `kehillah_has_community_rabbi_trigger` or `kehillah_save_community_rabbi_effect`:
+
+- presiding as Av Beit Din,
+- dispute rulings,
+- the responsa answerer,
+- ransom correspondents.
+
+The Greatness term, `kehillah_community_rabbi_learning_value`, deliberately reads the **Dayyan
+first**. The leader's own Learning is already counted at full weight, so a Rav-leader stands in only
+when the seat is empty; otherwise his Learning would count twice.
+
+What was removed:
+- the `chief_rabbi_kehillah_position` court position;
+- the Serve as Rabbi and Lay Down decisions;
+- `kehillah_serving_as_own_rabbi_modifier`;
+- the toggle clean-up effects.
+
+"Seek a Chief Rabbi" became **Seek a Rabbi**. It is shown when the Dayyan seat is empty, and the chosen
+candidate is given the trait and seated with `assign_councillor_type`. The AI uses it, and it is now
+the main way a rabbi reaches an AI community, since the Chief Rabbi's appointment used to be what
+granted the trait. `kehillah_debug.110`, `.115`, `.119` and `.121` are retired stubs, and `.118` is
+the new community-rabbi probe. Saves from before this change lose the Chief Rabbi position.
+
+### Hakhamim
+
+Vanilla's global `FAITH_ORGANIZATION_NAME` is replaced (`localization/english/replace/`) with the
+custom localization `KehillahFaithOrganizationName`:
+
+| Faith | Organization name |
+|---|---|
+| `rabbinic_faith` | "Hakhamim" |
+| `karaism` | "Karaite Hakhamim" |
+| everything else | vanilla's "<adjective> Clergy", via `[ROOT.Faith.GetAdjectiveNoTooltip]` |
+
+Verified live: Isaac's badge read "Hakhamim", and the Archbishop of Mainz's read "Catholic Clergy".
+
+ck3-tiger false positives here: tiger looks for faiths in the 1.19 path `religions/`, but 1.20 keeps
+them in `faith_types/`. Its `FAITH.Custom` "expected one of" list misses faith-type custom
+localization, which vanilla itself uses (`CoronationRequiresArtifact`).

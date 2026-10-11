@@ -460,7 +460,7 @@ kehillah_greatness_baseline_value = {
 	# the top-N-aggregate approximation these implement: the leader at
 	# full weight, the Chief Rabbi at discounted weight if in post.
 	add = kehillah_bd_leader_learning_value
-	add = kehillah_bd_chief_rabbi_value
+	add = kehillah_bd_dayyan_value
 }
 
 # ---------------------------------------------------------------------
@@ -2156,41 +2156,29 @@ kehillah_endorsement_recipient_prestige_value = {
 
 
 # =====================================================================
-# SERVING AS THE COMMUNITY'S OWN RABBI -- ROADMAP S4(2), added
-# 2026-09-26 (Sukkot heartbeat 3). See kehillah_has_acting_chief_rabbi_
-# trigger's header (common/scripted_triggers/kehillah_scripted_triggers.txt)
-# for the whole design.
-# =====================================================================
-
-# The Learning a leader needs to take up the office themselves. 12 is a
-# real, high value on vanilla's own scale (vanilla's own history files
-# reserve learning = 12 for genuinely notable scholars, e.g.
-# history/characters/andalusian.txt:6546), and it is deliberately set so
-# that the scenario's actual rabbinic leaders clear it and an ordinary
-# competent administrator does not. Rashi of Troyes is given an explicit
-# learning = 12 in history/characters/troyes_1066.txt for exactly this
-# reason -- leaving the flagship Scholar character's defining stat to the
-# RNG would have made his own documented starting state a coin flip.
-kehillah_serve_as_rabbi_learning_threshold = {
-	value = 12
-}
-
-# The Chief Rabbi's contribution to Greatness, resolved through whoever
-# is ACTUALLY acting in the role. This is the shared value ROADMAP S4(2)
-# asks for: kehillah_bd_chief_rabbi_value (common/script_values/
-# kehillah_breakdown_values.txt) now just calls this, so there is exactly
-# one place that knows the appointed-rabbi-or-serving-leader rule.
+# THE COMMUNITY RABBI'S CONTRIBUTION TO GREATNESS (2026-10-11).
+#
+# Read by kehillah_bd_dayyan_value (common/script_values/
+# kehillah_breakdown_values.txt), which kehillah_greatness_baseline adds
+# ON TOP OF kehillah_bd_leader_learning_value -- the leader's own Learning
+# is already counted at full weight there.
+#
+# So this reads the DAYYAN first, deliberately unlike
+# kehillah_has_community_rabbi_trigger's leader-first rule for roles: a
+# Rav-leader who also seats a learned Dayyan should gain from him, and
+# a leader's Learning must not be counted twice. Only when the seat is
+# empty does a Rav-leader stand in, at the discounted officer weight --
+# what the retired serve-as-own-rabbi toggle used to give, minus the
+# toggle, its stress cost and its Learning 12 bar.
 #
 # Scope: the Kehillah leader.
-kehillah_acting_chief_rabbi_learning_value = {
+# =====================================================================
+kehillah_community_rabbi_learning_value = {
 	value = 0
 
-	# The appointed rabbi always wins where both could apply -- see the
-	# trigger header. This ordering is what guarantees a community never
-	# counts two rabbis.
 	if = {
-		limit = { employs_court_position = chief_rabbi_kehillah_position }
-		court_position:chief_rabbi_kehillah_position = {
+		limit = { cp:councillor_court_chaplain ?= { has_trait = kehillah_rabbi_trait } }
+		cp:councillor_court_chaplain = {
 			add = {
 				value = learning
 				multiply = kehillah_baseline_officer_stat_weight
@@ -2198,7 +2186,7 @@ kehillah_acting_chief_rabbi_learning_value = {
 		}
 	}
 	else_if = {
-		limit = { kehillah_serving_as_own_rabbi_trigger = yes }
+		limit = { has_trait = kehillah_rabbi_trait }
 		add = {
 			value = learning
 			multiply = kehillah_baseline_officer_stat_weight
@@ -2208,7 +2196,7 @@ kehillah_acting_chief_rabbi_learning_value = {
 
 
 # =====================================================================
-# THE CHIEF RABBI SEARCH -- ROADMAP S4(1), added 2026-09-26. Read by
+# THE RABBI SEARCH -- ROADMAP S4(1), added 2026-09-26. Read by
 # kehillah_rabbi_search_price_effect (common/scripted_effects/
 # kehillah_scripted_effects.txt).
 #
@@ -2254,7 +2242,7 @@ kehillah_rabbi_tier_capable_learning = {
 
 # One-off recognition for filling the seat at all. Deliberately small
 # next to the ~0-45 per-quarter contribution the seat itself feeds into
-# Greatness through kehillah_acting_chief_rabbi_learning_value -- the
+# Greatness through kehillah_community_rabbi_learning_value -- the
 # rabbi's value is their work over years, not the day they arrived.
 kehillah_rabbi_hired_greatness_gain = {
 	value = 10
@@ -2267,7 +2255,7 @@ kehillah_rabbi_hired_greatness_gain = {
 # each other's Greatness indefinitely by passing one rabbi back and
 # forth. Their real loss needs no number here: the seat is empty the
 # moment he goes, so its per-quarter contribution through
-# kehillah_acting_chief_rabbi_learning_value simply stops.
+# kehillah_community_rabbi_learning_value simply stops.
 kehillah_rabbi_departed_greatness_gain = {
 	value = 6
 }
@@ -2411,13 +2399,11 @@ kehillah_responsa_compile_threshold = 10
 # handing out an illustrious artifact for clearing the minimum.
 kehillah_responsa_compile_tally_per_answer = 4
 
-# RAW Learning of whoever actually answers: the appointed Chief Rabbi if
-# there is one, the leader serving as their own rabbi, or failing both,
-# the leader themselves. This is the fifth consumer of S4's acting-rabbi
-# abstraction and follows its rule exactly -- THE APPOINTED RABBI ALWAYS
-# WINS (see kehillah_has_acting_chief_rabbi_trigger's header).
+# RAW Learning of whoever actually answers: the community rabbi -- the
+# leader if he is a Rav, otherwise the Dayyan -- or, failing both, the
+# leader himself. Same rule as kehillah_has_community_rabbi_trigger.
 #
-# Deliberately NOT kehillah_acting_chief_rabbi_learning_value, which
+# Deliberately NOT kehillah_community_rabbi_learning_value, which
 # multiplies by kehillah_baseline_officer_stat_weight because it feeds a
 # pillar baseline. This one is compared against a Learning threshold, so
 # it must stay in Learning's own units.
@@ -2426,16 +2412,18 @@ kehillah_responsa_compile_tally_per_answer = 4
 kehillah_responsa_answerer_learning_value = {
 	value = 0
 
+	# 2026-10-11: the community rabbi (leader if a Rav, else the Dayyan);
+	# failing both, the leader himself answers.
 	if = {
-		limit = { employs_court_position = chief_rabbi_kehillah_position }
-		court_position:chief_rabbi_kehillah_position = {
+		limit = {
+			NOT = { has_trait = kehillah_rabbi_trait }
+			cp:councillor_court_chaplain ?= { has_trait = kehillah_rabbi_trait }
+		}
+		cp:councillor_court_chaplain = {
 			add = learning
 		}
 	}
 	else = {
-		# Covers both the leader-serving-as-own-rabbi case and the plain
-		# no-rabbi case: either way the person answering is the leader,
-		# and it is their own Learning that is tested.
 		add = learning
 	}
 }
