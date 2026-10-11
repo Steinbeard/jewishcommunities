@@ -162,6 +162,17 @@ Fixes are in `444bdde`; run 7 re-tests them.
   (no crossing).
 - **error.log:** nothing new from the feature.
 
+## Run 9 (`c25c5f7`): round 2, ALL PASS in natural play
+
+- **Hold a Zman** reads: "Our yeshiva is Respected (fame 60) -- 20 more to Renowned."
+- **During the term,** "A Quarrel on the Benches" fired on day 20, naming two real students, and
+  resolved cleanly.
+- **"The Zman Ends"** read: "2 were found ready ... 1 went home ... The first to stand before Isaac
+  was Aaron ... Aaron has already set out for Kehillah of Mainz ... The yeshiva is Respected (fame
+  76) -- 4 more to Renowned."
+- **Forced fires after the term** (`.0206`/`.0207` with no students left) showed unresolved names.
+  They are now guarded by triggers that require students.
+
 ## Not covered yet
 
 - The traveller point of interest (`poi_kehillah_yeshiva`) and events `.0101`/`.0102`. These only
