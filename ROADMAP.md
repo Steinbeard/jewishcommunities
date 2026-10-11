@@ -31,6 +31,12 @@ make small design choices and note them; no long specs. CK3 runs on a **virtual 
 the shim guide. Current state is in the
 [clerical succession log](docs/testing/2026-10-09-clerical-succession-live-test-log.md).
 
+- **Patronyms and priestly lines — BUILT 2026-10-11, not live-tested** (interactive, Daniel's request;
+  [v28](docs/spec/v28-patronyms-and-priestly-lines.md)). Israelite cultures now print "ben"/"bat"
+  patronyms; `kohen`/`levite` are seeded on generated Jewish characters and inherited father to son; 26
+  random `dynn_Ben_*` names were pruned. Live check: `event kehillah_patronym_debug.1` and look at a
+  named character with a defined father. Exilarch "Ben David" guidance is in the spec.
+
 - **Lay courtiers as "Jewish Clergy" — FIXED 2026-10-10 (interactive, Daniel's report), mechanism
   verified live, shipped effect awaits a fresh boot**
   ([log](docs/testing/2026-10-10-lay-courtier-clergy-live-test-log.md)). A side effect of H1's
