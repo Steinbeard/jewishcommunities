@@ -823,21 +823,31 @@ kehillah_on_join_court = {
 #
 # root = the dying character, still alive while on_death runs.
 #
-# A Kehillah's leader is appointed by merit and is usually from another
-# dynasty. CK3 only offers "Continue as <heir>" when there is a player
-# heir, and for a lay leader there is none, so his death would be Game
-# Over. Instead, just before he dies, the player is handed to the
-# character the title is about to pass to. Vanilla's only on_death use
-# of set_player_character is a narrow All Under Heaven case
-# (common/on_action/death.txt, "Ceremonial liege family"); it is not
-# how administrative governments continue in general. Known cost: the
-# vanilla death screen does not appear, because the player is no longer
-# the dying character by the time it would.
+# THE RULE, measured live 2026-10-11 (implementation doc section 15).
+# CK3 gives a non-dynastic player heir -- vanilla's own "Continue as
+# <successor>" death screen -- only when BOTH the ruler AND the next
+# holder of his primary title are members of the faith's organization.
+# Either one alone is not enough: a member leader with a lay heir has no
+# player heir, and neither has a lay leader with a member heir. The
+# player heir appeared the instant the second of the two joined, with
+# no recalculation needed.
 #
-# Only fires when the engine has no player heir of its own. A rabbinic
-# leader is still in the faith's organization through kehillah_rabbi_
-# trait's clergy = yes, and a same-dynasty successor is a player heir
-# anyway; both keep vanilla's normal succession screen.
+# So a lay Parnas is enrolled JUST IN TIME: here, as he dies, together
+# with his successor. Neither carries clergy status in life.
+# kehillah_update_leader_flavor_effect takes the successor back out once
+# he is in office, unless he is clergy in his own right (a rabbi). No
+# trait, no theocracy mechanic.
+#
+# FALLBACK. If the engine still has no player heir after the enrolment,
+# the player is handed to the successor with set_player_character, just
+# before the death. That loses the vanilla death screen (the player is
+# no longer the dying character by the time it would show), but beats
+# Game Over. Vanilla's only on_death use of set_player_character is a
+# narrow All Under Heaven case (common/on_action/death.txt, "Ceremonial
+# liege family"); it is not how governments continue in general.
+#
+# Does nothing when the engine already has a player heir (a rabbi leader
+# with a rabbi or Dayyan successor, or a same-dynasty successor).
 # ---------------------------------------------------------------------
 
 on_death = {
@@ -872,9 +882,35 @@ kehillah_on_death_player_continuation = {
 		}
 		if = {
 			limit = { exists = scope:kehillah_continuation_successor }
-			debug_log = "kehillah_on_death_player_continuation: handing the player to the community's successor"
-			debug_log_scopes = yes
-			set_player_character = scope:kehillah_continuation_successor
+
+			# Just-in-time enrolment of both ends of the succession.
+			if = {
+				limit = {
+					NOT = { exists = organization }
+					exists = faith.organization
+				}
+				join_organization = faith.organization
+			}
+			scope:kehillah_continuation_successor = {
+				if = {
+					limit = {
+						NOT = { exists = organization }
+						exists = faith.organization
+					}
+					join_organization = faith.organization
+				}
+			}
+
+			if = {
+				limit = { exists = player_heir }
+				debug_log = "kehillah_on_death_player_continuation: enrolled leader and successor, vanilla player heir is set"
+				debug_log_scopes = yes
+			}
+			else = {
+				debug_log = "kehillah_on_death_player_continuation: still no player heir after enrolment, falling back to set_player_character"
+				debug_log_scopes = yes
+				set_player_character = scope:kehillah_continuation_successor
+			}
 		}
 		else = {
 			debug_log = "kehillah_on_death_player_continuation: no successor found, vanilla Game Over stands"

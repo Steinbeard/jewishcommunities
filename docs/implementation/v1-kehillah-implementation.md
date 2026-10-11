@@ -1123,59 +1123,77 @@ inline branch is being skipped, the retry is silently carrying every succession,
 the guard there should move to `is_ruler`-style tests for the same reason branch 3's
 did.
 
-## 15. Player continuation without clergy: `set_player_character` on death, 2026-10-11
+## 15. Player continuation without clergy, 2026-10-11
 
-**Status:** shipped and verified live 2026-10-11 (interactive, at Daniel's direction).
+**Status:** shipped and verified live on 2026-10-11 in an interactive session, at Daniel's
+direction. It supersedes section 13.
 
-**What it replaces.** Section 13's `mechanic_type = theocracy` made every lay Parnas clergy, and
-it made the engine generate Kehillah courtiers as faith-organization members, wives included.
-A live count on 2026-10-10 found 76 courtiers with no clerical role
-(`docs/testing/2026-10-10-lay-courtier-clergy-live-test-log.md`). Daniel's call: a Kehillah should
-not carry base-game clergy baggage. The mechanic, and the
-`kehillah_clerical_appointment_law_override.txt` fork that only existed because of it, are gone.
+### Why section 13 went
 
-**The mechanism.** `kehillah_on_death_player_continuation` (`common/on_action/kehillah_on_actions.txt`)
-runs from `on_death`, while the dying character is still alive. It applies to a player-controlled
-Kehillah ruler with no `player_heir`, and calls `set_player_character` onto `primary_heir`. If
-`primary_heir` is missing, it falls back to the top title heir ordered by
-`appointment_candidate_score`. *(Corrected 2026-10-11: an earlier draft said vanilla does this for
-administrative governments. It does not. The only on_death `set_player_character` in vanilla is the
-narrow All Under Heaven "Ceremonial liege family" case in `common/on_action/death.txt`.)*
+`mechanic_type = theocracy` made every lay Parnas clergy. It also made the engine generate Kehillah
+courtiers as faith-organization members, wives included: 76 such courtiers with no clerical role
+were counted live (`docs/testing/2026-10-10-lay-courtier-clergy-live-test-log.md`). Those are engine
+behaviours that script cannot override. Daniel's call: no grafting onto theocracy, and no new office
+trait either. The mechanic is gone, and so is `kehillah_clerical_appointment_law_override.txt`, which
+only existed because of it.
 
-**Membership at death does not help (live, 2026-10-11).** `join_organization` on a lay leader sticks,
-and he was still a member several in-game days later, but `player_heir` stayed empty. A plain
-organization member gets no non-dynastic player heir. Only real clergy status does (a clergy trait, a
-clergy seat, or the theocracy mechanic). So "join only at death" is not a way to get vanilla's
-death screen.
+### The engine rule, measured live
 
-**What stays clergy.** Rabbis, through `kehillah_rabbi_trait`'s `clergy = yes`. Rabbinism has
-`doctrine_clerical_marriage_allowed`, so the trait costs a rabbi little (he can still marry and
-inherit). A rabbinic leader is therefore still an organization member, still has a vanilla player
-heir, and still gets the normal "Continue as" screen. The new hook stays out of his way because it
-requires `NOT = { exists = player_heir }`. The Dayyan seat (`is_clergy_position`) stays clergy as
-in vanilla.
+CK3 gives a **non-dynastic player heir** (vanilla's "Continue as <successor>") only when **both** the
+ruler **and** the next holder of his primary title are members of the faith's organization. The table
+was measured on Ovadya Ginzburg, a lay leader, with `run` probes in a live game:
 
-**Leftovers.** `kehillah_laicize_court_effect` still runs quarterly. It strips organization
-membership from lay courtiers that older saves already have; the engine does not undo those on
-its own.
+| leader | successor | `player_heir` |
+|---|---|---|
+| member (`join_organization`, or the Rabbi trait added mid-game) | not a member | none, even after in-game days and `scriptedtests_recalculate_succession` |
+| member | member | **set immediately** |
+| not a member | member | none |
 
-**Note for "Choose a New Destiny".** Daniel asked about using it. Vanilla only shows that button
-when a player heir exists (`gui/window_succession_event.gui`,
-`SuccessionEventWindow.GetPlayerHeir.IsValid`), and it only offers members of your own dynasty. It
-cannot reach a non-dynastic successor, which is why this hook exists. A rabbinic leader's death
-screen still shows the button.
+Notes:
+- `join_organization` does make a character clergy: `is_clergy` reads yes. Section 13 claimed a
+  scripted join "is reverted"; that was a misreading. The membership sticks.
+- The Rabbi trait has no special status here. Isaac's game-start continuation worked because his
+  successor (Kehat) was also a member, most likely through the Dayyan seat (`is_clergy_position`).
+- The old theocracy route "worked" for the same reason: it made the courtiers members.
+- Removing the Rabbi trait does **not** remove membership (Isaac, 2026-10-11). Only
+  `leave_organization` does.
 
-**Live test, 2026-10-11.** Fresh boot with this build, Worms 1066.
-1. Isaac (rabbi) had his trait stripped with `kehillah_household_debug.9`, but he still read CLERGY
-   YES and ORGANIZATION YES. **Removing the Rabbi trait does not remove organization membership**:
-   the trait enrolled him at game start, and nothing takes him out again. A rabbi who loses the trait
-   in play would stay "clergy" until something calls `leave_organization`. That is a known gap, not
-   fixed here. His `kill` went through vanilla's "Continue as Rav Kehat" screen.
-2. Kehat, the lay successor, read CLERGY NO and player heir NO. That is the new behaviour.
-   `kill 41660` logged `kehillah_on_death_player_continuation: handing the player to the
-   community's successor` with successor Ovadya Ginzburg (66032), who was `primary_heir`. Afterwards
-   the player was Ovadya: alive, holding `d_kehillah_worms`, and the title's holder. No Game Over.
-3. No death screen appears. The player sees vanilla's "Appointed to Title" and "Realm Law Changed"
-   toasts only. Follow-up: tell the player the old leader died.
-4. Courtier sweep at game start: 290 Jewish courtiers in Kehillah courts, 14 clergy, all of them
-   Dayyan-seat holders or carriers of a clergy trait. No strays without the theocracy mechanic.
+### The mechanism
+
+`kehillah_on_death_player_continuation` (`common/on_action/kehillah_on_actions.txt`) runs in `on_death`,
+while the dying character is still alive. It acts only for a player-controlled Kehillah ruler who has
+no player heir:
+
+1. It finds the successor: `primary_heir`, or failing that the top title heir by
+   `appointment_candidate_score`.
+2. It enrols both the ruler and the successor with `join_organization`, just in time.
+3. If a player heir now exists, vanilla's death screen takes over. If not, it falls back to
+   `set_player_character` onto the successor, which loses the death screen but avoids Game Over.
+
+`kehillah_update_leader_flavor_effect` then takes the new leader back out of the organization once he is
+in office, unless he carries `kehillah_rabbi_trait`, `devoted` or `cleric`. A lay Parnas is clergy only
+for the instant of his own death, and his successor only between that death and taking office.
+Rabbis stay clergy permanently through their trait.
+
+### Live verification, 2026-10-11 (fresh boot, Worms 1066)
+
+- **Isaac (rabbi) killed:** vanilla screen, "Continue as Rav Kehat". The hook did not fire, because
+  Isaac already had a player heir.
+- **Kehat, a lay leader, before the test:** no rabbi trait, not a member, not clergy, no player heir.
+  His primary heir was Amos Ben Aharon, also not a member.
+- **`kill 41660`:** the log read `kehillah_on_death_player_continuation: enrolled leader and successor,
+  vanilla player heir is set`. Vanilla's "You have died" screen appeared, offering **"Continue as
+  Parnas Amos"**. The fallback line never appeared.
+- **After Continue:** Amos, a lay leader, holds `d_kehillah_worms`. He is not a member and not clergy,
+  both immediately and 3 in-game days later.
+- **error.log:** no new lines beyond the usual validation dump.
+
+### Earlier wrong turns, kept for the record
+
+- **The character switch on its own:** the first version of this hook (commit `bc4ba75`). It works but
+  skips the death screen. It is now only the fallback.
+- **The vanilla "precedent":** an earlier draft cited vanilla's administrative governments as doing
+  this. They don't; the only `on_death` `set_player_character` in vanilla is the narrow All Under
+  Heaven "Ceremonial liege family" case.
+- **"Choose a New Destiny":** it needs an existing player heir and only offers your own dynasty, so it
+  cannot reach a non-dynastic successor.

@@ -39,17 +39,23 @@ the shim guide. Current state is in the
   courtiers with no clerical role, live). `kehillah_laicize_character_effect` strips the
   membership on court arrival and in a quarterly sweep, keeping it for the Rabbi trait,
   `devoted`/`cleric` and the Dayyan seat. A probe showed `leave_organization` sticks.
-  - **Superseded 2026-10-11 (Daniel's call): Parnasim are no longer clergy.** H1's
-    `mechanic_type = theocracy` has been removed. A lay leader's death now hands the player to the
-    community's successor through `set_player_character` in `on_death`
-    (`kehillah_on_death_player_continuation`). Rabbis stay clergy through their trait. "Choose a New
-    Destiny" can't do this job: it needs an existing player heir and only offers your own dynasty.
-    See implementation doc section 15. **Verified live 2026-10-11.** A lay Parnas (Kehat, not clergy,
-    no player heir) was killed. The hook fired and the player became Ovadya Ginzburg, holding the
-    Kehillah of Worms, with no Game Over and no new `kehillah` errors. A rabbinic leader still gets
-    vanilla's "Continue as" screen. **Follow-up (UX):** the handoff is silent. The player sees only
-    "Appointed to Title" and "Realm Law Changed" and is never told the old leader died. Add an
-    event or notice for it.
+  - **Superseded 2026-10-11 (Daniel's call): Parnasim are no longer clergy, and vanilla's death
+    screen still works.** H1's `mechanic_type = theocracy` was removed. CK3 gives a non-dynastic
+    "Continue as" only when **both** the dying ruler and his successor are faith-organization members,
+    measured live. So `kehillah_on_death_player_continuation` enrols a dying lay Parnas and his
+    successor just in time, and the new leader leaves the organization on taking office. **Verified
+    live:** a lay Parnas died and vanilla's screen offered "Continue as Parnas Amos". Amos was lay
+    afterwards. No trait was added, and rabbis stay clergy through their trait. See implementation doc
+    section 15.
+  - **Next (Daniel, 2026-10-11):**
+    - Rename the faith organization for Judaism to "Jewish Communal Leadership".
+    - Only characters with the Rabbi trait can hold the Dayyan seat. Rabbis must reach AI Kehillot first,
+      or their seats sit empty.
+    - Show the seat holder as "Rav <name>".
+  - **Follow-ups:**
+    - Removing the Rabbi trait does not remove organization membership.
+    - On Isaac's death screen, the lay successor Kehat was labelled "Rav Kehat"; check the leader
+      flavor.
 
 - **H1. DONE — VERIFIED LIVE 2026-10-09 (Shabbat heartbeat 1)**
   *(SUPERSEDED 2026-10-11: the theocracy mechanic below was removed; see the lay-courtier entry above)*
