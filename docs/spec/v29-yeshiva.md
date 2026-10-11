@@ -3,7 +3,8 @@
 **Status: PROPOSAL, 2026-10-11, not implemented. Under Daniel's review.** Requested in the
 interactive session of 2026-10-11. Daniel's decisions so far: the yeshiva stays **separate from the
 Bet Din** (§7.1), and building it is a **payoff**, gated on **Stability** and paying into Greatness, so that
-the pillars support each other rather than snowball (§3.1). How it appears in game is proposed in §3.5. Builds on [V21](v21-rabbi-ordination-paths.md) (ordination) and
+the pillars support each other rather than snowball (§3.1). The leader can be Rosh Yeshiva (§3.2).
+It appears as a domicile institution with a map building as its public face (§3.5). Builds on [V21](v21-rabbi-ordination-paths.md) (ordination) and
 [V24](v24-rabbi-gameplay-loop.md) (the rabbi loop), and would supersede parts of both (section 5). The
 rabbi model it assumes is the one shipped earlier that night: a rabbi is a character with the Rabbi
 trait, and the community rabbi is the leader if he is a Rav, otherwise the Dayyan
@@ -78,9 +79,10 @@ XP to the leader, and a flat +60 to the Greatness baseline (+150 across all thre
   stats.
 - He is the yeshiva's examiner: he grants semicha at the Yeshiva and is the preferred guardian for
   wards sent to study.
-- The leader cannot hold a court position in his own court (an engine rule). A Rav-leader with no
-  Rosh Yeshiva can stand in, under the same "leader if a Rav" rule the community rabbi uses, with
-  no toggle.
+- **The leader can be the Rosh Yeshiva** (Daniel, 2026-10-11). A ruler cannot hold a court
+  position in his own court (an engine rule), so it works the way the community rabbi does: **a
+  Rav-leader *is* the Rosh Yeshiva whenever he has not appointed one.** No toggle is needed; to
+  choose himself, he simply leaves the seat empty. His own aptitude (Learning and tracks) is used.
 - The Dayyan and the Rosh Yeshiva are different jobs, one judging and one teaching. One character
   may hold both.
 
@@ -107,27 +109,67 @@ XP to the leader, and a flat +60 to the Greatness baseline (+150 across all thre
 
 ### 3.5 How the yeshiva appears in game
 
-Three vanilla surfaces were considered:
+Revised 2026-10-11 after investigating vanilla's buildings. The recommendation is **a hybrid: the
+institution lives in the domicile, and its public face is a map building in the host's province.**
 
-| Surface | Fit |
-|---|---|
-| **Domicile building** (the Jewish Quarter window) | **Recommended home.** The Kehillah *is* its domicile: it already holds the Beit Midrash line, the library panel (V13) and the building tooltips. The community owns it outright and it travels with the community, which is right for an institution of the community. |
-| **Special building** (vanilla's universities, such as Bologna and Sankore) | **Rejected.** A special building belongs to the *county*, so it would be the host lord's, not the community's. It would stay behind if the community left, and the host would own its upkeep and effects. It does give vanilla university status and a map presence, but the ownership is wrong. |
-| **Great project** (1.20) | **Possible later, for the founding only.** Projects are province-founded, take contributions from several people and show a pin and illustration on the map, which would suit "the founding of the great Yeshiva of Worms" as a public undertaking that patrons pay into. Whether a landless Kehillah can found or own one is unknown (spike 5, §6). Even then it would be the *construction*, completing into the domicile building. |
+**What vanilla offers (from `common/buildings/_buildings.info`, the effect and trigger docs, and
+`00_special_buildings.txt`):**
+
+- **Special buildings** (universities, Notre Dame, the House of Wisdom):
+  - They have a map model, and script can place and remove them anywhere: `add_special_building`
+    (which creates the slot if needed) and `remove_building`.
+  - Vanilla's **Found a University** decision grants a `generic_university` this way, which is the
+    template for a "Found a Yeshiva" moment.
+  - Building **flags** do real work:
+    - `travel_point_of_interest_learning` makes the place a travel point of interest, so passing
+      scholars stop there;
+    - `religious_studies_location` makes the province a valid **University Visit** destination
+      through `is_religious_studies_location`, with no trigger fork. The domicile-parameter route
+      needed one, because its "cathedral school" check wants the student's archdiocese.
+  - **Cost: one special slot per province, and placing a building replaces what is there.** At game
+    start, Worms, Mainz, Speyer and Troyes have free slots. Paris (Notre Dame), Toledo (city walls),
+    Cordoba (the Great Mosque), Granada (the Alhambra) and Baghdad (the House of Wisdom) are taken,
+    and there the building would go in another barony of the same county.
+- **Great buildings** (1.20):
+  - They use their **own slot type**, so they never collide with a special building.
+  - They are the only buildings that can be **ruined and repaired**, with a `fallback` set of
+    modifiers while ruined, which matches "the payoff can be lost by neglect" (§3.1).
+  - They are **upgraded through great projects**, which would give "the founding of the great Yeshiva
+    of Worms" a natural home.
+  - Placed with `add_great_building`.
+  - Vanilla only uses them for the All Under Heaven mandala capitals and the Great Wall, so whether
+    they render and behave outside that content is unproven.
+- **Ownership, for either kind:** the building's modifiers go to the **barony holder**, i.e. the host
+  lord, not the community. That can be a feature: hosting a famous yeshiva benefits the lord
+  (development growth, a little Learning), which gives hosts a reason to value their Jews and ties
+  into the charter system (V15–V17). The community's own benefits come from our script (the
+  domicile building, fame, the Rosh Yeshiva), not from the map building.
+- **Models:** vanilla ships no Jewish building meshes. Reuse a neutral vanilla model (a university
+  or scholarly building); a custom model is optional polish.
 
 **Proposal:**
 
-- **The building:** the Yeshiva stays a domicile building. Its tooltip shows the Rosh Yeshiva, fame
-  and student count.
-- **A Yeshiva panel in the domicile window,** built like the V13 library panel: the Rosh Yeshiva's
-  portrait and aptitude, current students on a zman, wards, recent ordinations, notable alumni, and
-  fame with its trend.
-- **On the map:** the community map view (V12) shows a yeshiva marker and fame for communities that
-  have one, so the player can see where the famous academies are.
-- **Notices:** ordinations, an alumnus taking a seat elsewhere, and fame milestones arrive as
-  messages, not events, so they don't interrupt play.
-- Alumni carry a record of their yeshiva (`kehillah_alma_mater`). That gives flavor ("a student
-  of Rabbenu Isaac at Worms") and a small opinion bond between alumni.
+1. **The institution stays a domicile building** (the Yeshiva tier). It carries the gameplay: the
+   Rosh Yeshiva, students, ordinations, fame, and the Yeshiva panel in the domicile window. The
+   community owns it, and it moves with the community.
+2. **Its public face is a map building**, named for the place ("the Yeshiva of Worms"). Our script
+   places it in the host's province when the Yeshiva tier completes, through a short event in the
+   style of vanilla's Found a University:
+   - flags `travel_point_of_interest_learning` and `religious_studies_location`, making it a travel
+     stop and a University Visit destination;
+   - a small benefit to the host;
+   - a reused vanilla model.
+3. **Kind of building: a great building if spike 6 passes, otherwise a special building.** A great
+   building avoids slot collisions and gives the "ruined by neglect" state for free. As a special
+   building, it needs the same-county fallback for occupied slots, and neglect is modelled through
+   fame alone.
+4. **If the community leaves or dissolves,** the building is ruined (great) or removed (special). A
+   ruined yeshiva left behind is historically apt.
+5. **A known side effect:** University Visit has no faith check, so Christian rulers could choose to
+   study at a famous yeshiva. That is rare, but Christian Hebraists did consult rabbis. Accept it,
+   or find out in spike 2 whether the destination can be faith-limited without overriding the
+   2,540-line activity.
+6. The **map view marker** and **messages, not events** stay as before.
 
 ## 4. Where the tracks finally matter
 
@@ -166,6 +208,9 @@ Three vanilla surfaces were considered:
 4. **Spiritual fulfillment.** Can anything other than a monastic order generate it?
 5. **Great project ownership.** Can a landless Kehillah leader found and own a great project in his
    host's province? This only matters if the founding becomes a project (§3.5).
+6. **Great building outside All Under Heaven.** Does `add_great_building` with a reused vanilla
+   model render on the map, ruin, and repair without the DLC content around it? It decides great
+   versus special building (§3.5).
 
 If spikes 1–3 fail, build a mod-owned "Zman at the Yeshiva" activity modeled on University Visit.
 Most of the design survives; we lose vanilla's own rewards and UI text.
@@ -175,8 +220,8 @@ Most of the design survives; we lose vanilla's own rewards and UI text.
 1. ~~The Bet Din conference.~~ **DECIDED 2026-10-11: separate.** The Bet Din stays the community's
    court. A *kallah* (a yeshiva-hosted gathering for hard cases) is out of scope; reopen it later only
    if the yeshiva needs a prestige event.
-2. **Can the leader himself be the Rosh Yeshiva?** The proposal (§3.2) says a Rav-leader stands in
-   when the seat is empty, as with the community rabbi.
+2. ~~Can the leader be the Rosh Yeshiva?~~ **DECIDED 2026-10-11: yes**, by leaving the seat
+   empty (§3.2).
 3. **Should non-Kehillah Jewish rulers (Track B landed realms) get yeshivot?** Proposal: not in
    this spec.
 
@@ -189,7 +234,7 @@ usual.
 2. The Rosh Yeshiva court position, with track-based aptitude and the Rav-leader stand-in.
 3. The zman: study credit, track XP, and ordination at the end. Retire the Learn Torah journey and
    Seek Semicha.
-4. Fame and alumni, the raised build gate (§3.1), the scaling Greatness term, and the Yeshiva
-   panel and map marker (§3.5).
+4. Fame and alumni, the raised build gate (§3.1), the scaling Greatness term, the Yeshiva panel
+   and map marker, and the map building in the host's province (§3.5).
 5. The tracks' effects on the Bet Din, responsa and charter petitions (§4).
 6. *(Optional, later)* the founding as a great project (§3.5, if spike 5 passes).
