@@ -63,6 +63,7 @@ kehillah_establish_yeshiva_effect = {
 	}
 
 	kehillah_place_yeshiva_map_building_effect = yes
+	kehillah_yeshiva_check_tier_effect = yes
 
 	# A head. A Rav-leader heads it himself (leaving the seat empty);
 	# otherwise the most learned qualified courtier is appointed.
@@ -335,21 +336,17 @@ kehillah_yeshiva_check_tier_effect = {
 	save_scope_as = kehillah_tier_leader
 	if = {
 		limit = { kehillah_has_yeshiva_trigger = yes }
-		primary_title = {
-			if = {
-				limit = { NOT = { has_variable = kehillah_yeshiva_tier_seen } }
-				set_variable = { name = kehillah_yeshiva_tier_seen value = 0 }
-			}
+		# First sight: record the current tier SILENTLY -- a seeded or
+		# founded yeshiva starts at its tier without announcing it (live
+		# 2026-10-11: a spurious notice fired on the first fame change).
+		if = {
+			limit = { primary_title = { NOT = { has_variable = kehillah_yeshiva_tier_seen } } }
+			primary_title = { set_variable = { name = kehillah_yeshiva_tier_seen value = scope:kehillah_tier_leader.kehillah_yeshiva_fame_tier_value } }
 		}
 		if = {
 			limit = {
-				OR = {
-					primary_title = { NOT = { has_variable = kehillah_yeshiva_tier_seen } }
-					AND = {
-						primary_title = { has_variable = kehillah_yeshiva_tier_seen }
-						kehillah_yeshiva_fame_tier_value > primary_title.var:kehillah_yeshiva_tier_seen
-					}
-				}
+				primary_title = { has_variable = kehillah_yeshiva_tier_seen }
+				kehillah_yeshiva_fame_tier_value > primary_title.var:kehillah_yeshiva_tier_seen
 			}
 			primary_title = { set_variable = { name = kehillah_yeshiva_tier_seen value = scope:kehillah_tier_leader.kehillah_yeshiva_fame_tier_value } }
 			send_interface_message = {
@@ -506,6 +503,10 @@ kehillah_place_alumnus_effect = {
 	# 60-day title variable, which other alumni skip), move him now, and
 	# seat him a day later from the destination's own event
 	# (kehillah_yeshiva.0210), which logs only a real seating.
+	# Saved scopes live for the whole conclusion: without this the third
+	# alumnus reused the second's destination when no seat was left
+	# (live 2026-10-11).
+	clear_saved_scope = kehillah_alumnus_destination
 	random_in_global_list = {
 		variable = kehillah_registered_communities
 		limit = {
