@@ -342,7 +342,15 @@ kehillah_yeshiva_check_tier_effect = {
 			}
 		}
 		if = {
-			limit = { kehillah_yeshiva_fame_tier_value > primary_title.var:kehillah_yeshiva_tier_seen }
+			limit = {
+				OR = {
+					primary_title = { NOT = { has_variable = kehillah_yeshiva_tier_seen } }
+					AND = {
+						primary_title = { has_variable = kehillah_yeshiva_tier_seen }
+						kehillah_yeshiva_fame_tier_value > primary_title.var:kehillah_yeshiva_tier_seen
+					}
+				}
+			}
 			primary_title = { set_variable = { name = kehillah_yeshiva_tier_seen value = scope:kehillah_tier_leader.kehillah_yeshiva_fame_tier_value } }
 			send_interface_message = {
 				type = msg_kehillah_band_improved
@@ -363,8 +371,11 @@ kehillah_raise_great_yeshiva_effect = {
 	if = {
 		limit = { exists = domicile.domicile_location }
 		domicile.domicile_location = {
+			# One great building per province (live 2026-10-11: "Province
+			# already has a great building"), so the hall is removed first.
 			if = {
 				limit = { has_building = kehillah_yeshiva_hall }
+				remove_building = kehillah_yeshiva_hall
 				add_great_building = kehillah_great_yeshiva_hall
 			}
 			if = {
@@ -489,11 +500,18 @@ kehillah_conclude_zman_effect = {
 # ordained VISITING student: he goes home to a community with no Dayyan
 # and takes the seat -- this yeshiva's alumnus. Stays if no seat is free.
 kehillah_place_alumnus_effect = {
+	# Live 2026-10-11: assigning the seat in the same effect as add_courtier
+	# was refused ("doesn't have an open council position"), and all three
+	# alumni went to the same community. So: reserve the destination (a
+	# 60-day title variable, which other alumni skip), move him now, and
+	# seat him a day later from the destination's own event
+	# (kehillah_yeshiva.0210), which logs only a real seating.
 	random_in_global_list = {
 		variable = kehillah_registered_communities
 		limit = {
 			exists = holder
 			NOT = { this = root.primary_title }
+			NOT = { has_variable = kehillah_alumnus_incoming }
 			holder = {
 				NOT = { exists = cp:councillor_court_chaplain }
 				faith = scope:kehillah_zman_this_student.faith
@@ -503,16 +521,16 @@ kehillah_place_alumnus_effect = {
 	}
 	if = {
 		limit = { exists = scope:kehillah_alumnus_destination }
+		scope:kehillah_alumnus_destination = {
+			set_variable = { name = kehillah_alumnus_incoming value = scope:kehillah_zman_this_student days = 60 }
+		}
 		scope:kehillah_alumnus_destination.holder = {
 			add_courtier = scope:kehillah_zman_this_student
-			assign_councillor_type = {
-				type = councillor_court_chaplain
-				target = scope:kehillah_zman_this_student
-			}
+			trigger_event = { id = kehillah_yeshiva.0210 days = 1 }
 		}
 		scope:kehillah_zman_this_student = { remove_character_flag = kehillah_visiting_student }
 		change_variable = { name = kehillah_zman_alumni_count add = 1 }
 		kehillah_add_yeshiva_fame_effect = { AMOUNT = kehillah_yeshiva_fame_per_alumnus }
-		debug_log = "kehillah_place_alumnus_effect: an alumnus took a Dayyan seat elsewhere"
+		debug_log = "kehillah_place_alumnus_effect: an alumnus is going home to take a Dayyan seat"
 	}
 }
