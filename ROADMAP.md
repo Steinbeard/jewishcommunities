@@ -410,17 +410,21 @@ interactive pass.
     reports its variables as used-but-never-set. The wired-up mechanism is the generic per-case
     `kehillah_din_sources.71`–`.76` chain. Wire the richer one in or delete it;
     leaving it is what misled probe `kehillah_rabbi_loop_debug.8`, which tests the dead
-    path and therefore can never pass. `kehillah_mastered_works` now records
-  successful study separately from encountered works. Mishnah and Bavli Nashim
-  mastery unlock different arguments for the acting judges in the captive-ransom
-  case. If all three judges lack both works, the host can choose a named outside
-  Rabbi who mastered one; a delayed question and answer return to the current
-  holder of the asking community, who may adopt the argument before the docket
-  continues. The old generic annual responsa pulse is retired. The delayed
-  title-routing primitive passed a live [scope spike](docs/testing/2026-09-29-responsa-letter-scope-spike.md),
-  but the whole player-facing exchange and player-recipient path still need
-  live proof. This is the first V24/V23 case slice, not source integration for
-  all cases or a full precedent archive; see the dated [V24 addendum](docs/spec/v24-rabbi-gameplay-loop.md).
+    path and therefore can never pass.
+  - **What the feature is**, kept verbatim from the entry this header replaced:
+    `kehillah_mastered_works` records
+    successful study separately from encountered works. Mishnah and Bavli Nashim
+    mastery unlock different arguments for the acting judges in the captive-ransom
+    case. If all three judges lack both works, the host can choose a named outside
+    Rabbi who mastered one; a delayed question and answer return to the current
+    holder of the asking community, who may adopt the argument before the docket
+    continues. The old generic annual responsa pulse is retired. The delayed
+    title-routing primitive passed a live [scope spike](docs/testing/2026-09-29-responsa-letter-scope-spike.md),
+    and the player-facing exchange is now proven too (see the verdict at the top of this
+    entry). The player-recipient leg -- the reply arriving back -- is the part still
+    unproven. *(That sentence read "the whole player-facing exchange and player-recipient
+    path still need live proof" until 2026-10-10.)* This is the first V24/V23 case slice, not source integration for
+    all cases or a full precedent archive; see the dated [V24 addendum](docs/spec/v24-rabbi-gameplay-loop.md).
 
 - **Bet Din participant reward slice: LIVE-PROBED 2026-09-29; AI-hosted player guest still open.** Good/great rulings
   give the three actual ordained judges 1/3 Talmudics XP; a positive docket gives
