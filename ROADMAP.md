@@ -31,6 +31,15 @@ make small design choices and note them; no long specs. CK3 runs on a **virtual 
 the shim guide. Current state is in the
 [clerical succession log](docs/testing/2026-10-09-clerical-succession-live-test-log.md).
 
+- **Interfaith marriage and Jewish descent — corrected 2026-10-11 (interactive,
+  Daniel's request):** all existing Jewish faiths default to Forbidden outside
+  Judaism and Matrilineal descent. The corrected marriage trigger was verified
+  live with an eligible Jewish/Jewish pass and Jewish/Christian denial. The
+  rite-creation UI showed Forbidden/Permitted and all three descent choices.
+  Completed rite creation and mixed-parent birth checks are still open; see
+  [v27](docs/spec/v27-interfaith-marriage-and-descent.md) and the
+  [live test](docs/testing/2026-10-11-interfaith-marriage-live-test-log.md).
+
 - **Patronyms and priestly lines — BUILT 2026-10-11, not live-tested** (interactive, Daniel's request;
   [v28](docs/spec/v28-patronyms-and-priestly-lines.md)). Israelite cultures now print "ben"/"bat"
   patronyms; `kohen`/`levite` are seeded on generated Jewish characters and inherited father to son; 26

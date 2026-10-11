@@ -1,6 +1,6 @@
 # Interfaith marriage and descent live test — 2026-10-02
 
-**Status: first-version fresh-boot smoke test passed; corrected default and marriage gate need a new live check, and mixed-parent birth is pending.**
+**Status: historical first-version smoke test. The corrected default and marriage gate were verified on 2026-10-11; see [the later live test](2026-10-11-interfaith-marriage-live-test-log.md). Mixed-parent birth remains pending.**
 
 ## Baseline and method
 

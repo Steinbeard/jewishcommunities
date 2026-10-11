@@ -1,13 +1,15 @@
 # V27: Interfaith marriage and Jewish descent — 2026-10-02
 
-**Status: corrected 2026-10-02; scripted for CK3 1.20, with the corrected marriage gate and mixed-parent births awaiting live verification.**
+**Status: corrected 2026-10-02; default doctrines and the marriage eligibility gate verified live 2026-10-11 on CK3 1.20.0.4. Rite-creation choices are visible in the UI; completed creation and mixed-parent births still need live verification.**
 
 Depends on vanilla Judaism and the existing 1.20 Judaism religion override in
 `common/religion/religion_types/kehillah_judaism_reserved_names.txt`. This is a
 focused addition to the Track A Jewish family loop; it does not change the
 community's government, succession law, dynasty, or culture inheritance.
 
-Jewish faiths inherit two new religion-level doctrines. **Marriage Outside
+Jewish faiths inherit two new default doctrines from the religion definition.
+The doctrine groups use CK3 1.20's religion lock, which preserves their
+inheritance when a Rite branches within Judaism. **Marriage Outside
 Judaism: Forbidden** is the default for every existing Jewish faith. The
 marriage eligibility trigger rejects a Jewish/non-Jewish pair on either the
 player or AI path. A newly created Jewish faith may choose **Permitted**;
@@ -47,3 +49,20 @@ marriages between Karaites and Rabbanites in
 [this Karaite marriage discussion](https://www.myjewishlearning.com/article/who-could-karaites-marry/).
 The default prohibition follows the traditional Jewish-law account summarized
 in [this intermarriage discussion](https://www.myjewishlearning.com/article/is-intermarriage-against-jewish-law/).
+
+## 2026-10-11 verification
+
+A read-only live probe on eligible unmarried characters found that a Jewish/Jewish
+pair passed `can_marry_character_trigger`, while a Jewish/Christian pair that
+passed vanilla's `could_marry_character_trigger` failed the modded eligibility
+trigger. The earlier live doctrine probe reported Forbidden and Matrilineal for
+Rabbinism. See [the 2026-10-11 test log](../testing/2026-10-11-interfaith-marriage-live-test-log.md).
+
+The paused game's rite-creation UI showed both custom doctrine groups, with
+Forbidden/Permitted and Matrilineal/Patrilineal/Either Parent available in the
+draft. Selecting Permitted changed the draft summary. No rite was actually
+created. The original `doctrine_lock = religion` remains: Paradox's
+[1.20 update notes](https://steamcommunity.com/app/1158310/?curator_clanid=4777282)
+explain that the lock controls whether a doctrine survives moving or creating
+a Rite across faith or religion boundaries, rather than whether a choice is
+selectable in the creation screen.

@@ -50,3 +50,91 @@ kehillah_interfaith_debug.2 = {
 		debug_log_scopes = yes
 	}
 }
+
+# Read-only marriage gate probe for a 1066-scale world. It first selects an
+# unmarried Jewish man, then compatible unmarried Jewish/Christian women so a
+# failure cannot be explained by vanilla's basic marriage compatibility rules.
+kehillah_interfaith_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = {
+				any_living_character = {
+					faith.religion = religion:judaism_religion
+					is_male = yes
+					can_marry_trigger = yes
+					age >= 16
+				}
+			}
+			random_living_character = {
+				limit = {
+					faith.religion = religion:judaism_religion
+					is_male = yes
+					can_marry_trigger = yes
+					age >= 16
+				}
+				save_temporary_scope_as = kehillah_probe_man
+			}
+			if = {
+				limit = {
+					any_living_character = {
+						faith.religion = religion:judaism_religion
+						is_female = yes
+						can_marry_trigger = yes
+						age >= 16
+						could_marry_character_trigger = { CHARACTER = scope:kehillah_probe_man }
+					}
+				}
+				random_living_character = {
+					limit = {
+						faith.religion = religion:judaism_religion
+						is_female = yes
+						can_marry_trigger = yes
+						age >= 16
+						could_marry_character_trigger = { CHARACTER = scope:kehillah_probe_man }
+					}
+					save_temporary_scope_as = kehillah_probe_jewish_woman
+				}
+				scope:kehillah_probe_man = {
+					if = {
+						limit = { can_marry_character_trigger = { CHARACTER = scope:kehillah_probe_jewish_woman } }
+						debug_log = "kehillah_interfaith_debug.3: JEWISH JEWISH PASS"
+					}
+					else = { debug_log = "kehillah_interfaith_debug.3: JEWISH JEWISH FAIL" }
+				}
+			}
+			else = { debug_log = "kehillah_interfaith_debug.3: NO JEWISH WOMAN CONTROL" }
+			if = {
+				limit = {
+					any_living_character = {
+						faith.religion = religion:christianity_religion
+						is_female = yes
+						can_marry_trigger = yes
+						age >= 16
+						could_marry_character_trigger = { CHARACTER = scope:kehillah_probe_man }
+					}
+				}
+				random_living_character = {
+					limit = {
+						faith.religion = religion:christianity_religion
+						is_female = yes
+						can_marry_trigger = yes
+						age >= 16
+						could_marry_character_trigger = { CHARACTER = scope:kehillah_probe_man }
+					}
+					save_temporary_scope_as = kehillah_probe_christian_woman
+				}
+				scope:kehillah_probe_man = {
+					if = {
+						limit = { can_marry_character_trigger = { CHARACTER = scope:kehillah_probe_christian_woman } }
+						debug_log = "kehillah_interfaith_debug.3: JEWISH CHRISTIAN PASS"
+					}
+					else = { debug_log = "kehillah_interfaith_debug.3: JEWISH CHRISTIAN FAIL" }
+				}
+			}
+			else = { debug_log = "kehillah_interfaith_debug.3: NO CHRISTIAN WOMAN CONTROL" }
+		}
+		else = { debug_log = "kehillah_interfaith_debug.3: NO JEWISH MAN CONTROL" }
+	}
+}
