@@ -258,3 +258,53 @@ kehillah_study_zman_effect = {
 		trigger_event = kehillah_semicha.0001
 	}
 }
+
+# ---------------------------------------------------------------------
+# kehillah_seed_yeshiva_effect. Scope: a Kehillah leader, at game start
+# (from his community's kehillah_setup_<town>_start_effect, which saves
+# scope:kehillah_leader). FAME = starting fame.
+#
+# The yeshivot active in 1066 (Daniel, 2026-10-11): Worms (seeded from its
+# developed-start effect), Narbonne, Baghdad -- the heir of Sura and
+# Pumbedita, seeded at low fame because the Geonic academies had
+# effectively ended about 1040 -- and Lucena once that community exists.
+#
+# A leader who is not a rabbi cannot head it, so the seed brings the
+# academy's head: a learned rabbi deep in Talmud, appointed Rosh Yeshiva.
+# Built here from scope:kehillah_leader rather than through
+# kehillah_generate_rabbi_candidate_effect, which reads `root` -- not
+# safe at game start, where root is not the leader.
+# ---------------------------------------------------------------------
+kehillah_seed_yeshiva_effect = {
+	kehillah_establish_yeshiva_effect = { FAME = $FAME$ }
+	if = {
+		limit = {
+			NOT = { has_trait = kehillah_rabbi_trait }
+			NOT = { employs_court_position = rosh_yeshiva_kehillah_position }
+		}
+		create_character = {
+			dynasty = generate
+			age = { 45 65 }
+			faith = scope:kehillah_leader.faith
+			rite = scope:kehillah_leader.rite
+			culture = scope:kehillah_leader.culture
+			location = scope:kehillah_leader.domicile.domicile_location
+			random_traits = yes
+			gender_female_chance = 0
+			trait = education_learning_4
+			trait = kehillah_rabbi_trait
+			learning = { 15 19 }
+			save_scope_as = kehillah_seeded_rosh_yeshiva
+		}
+		scope:kehillah_seeded_rosh_yeshiva = {
+			add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = 70 }
+		}
+		add_courtier = scope:kehillah_seeded_rosh_yeshiva
+		appoint_court_position = {
+			recipient = scope:kehillah_seeded_rosh_yeshiva
+			court_position = rosh_yeshiva_kehillah_position
+		}
+		debug_log = "kehillah_seed_yeshiva_effect: seeded a Rosh Yeshiva (the leader is not a rabbi)"
+	}
+	debug_log = "kehillah_seed_yeshiva_effect: yeshiva seeded"
+}

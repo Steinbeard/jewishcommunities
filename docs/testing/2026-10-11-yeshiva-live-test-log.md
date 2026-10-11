@@ -75,6 +75,25 @@ Spec: [docs/spec/v29-yeshiva.md](../spec/v29-yeshiva.md). Code is in the commits
   warnings (no default guest intent, max_guests below 0, a missing phase texture) and orphaned debug
   events.
 
+## Run 4 (`e42b38d`): the rabbi tracks change outcomes (V29 §4), ALL PASS
+
+- **Talmudics:** Isaac's judicial Learning was 27 at Learning 27 (Talmudics below 30, so no bonus).
+  After +70 Talmudics, Learning was 29 (the trait level's own +2) and judicial Learning **33 =
+  Learning + 4**.
+- **Bet Din:** a full docket ran at Worms. Case 1 ("The Charity Chest"), Case 2 ("The Agunah's
+  Plea") and Case 3 ("A Cursed Amulet") each showed their options and rulings, followed by "The
+  Docket Is Closed" and the conclusion with its rewards. None of the 74 converted judge checks logged
+  an error, and no text was blank or marked BUG.
+- **Hashkafa:** the Shtadlan's displayed petition chance went from 1.0% to **1.5%** after +70
+  Hashkafa, which is the expected x1.5.
+- **Track descriptions:** the new lines are in the source. The per-track hover could not be held
+  open in the UI for a screenshot.
+- **Found while testing, older problems not caused by this work:**
+  - `kehillah_din_sources.81`'s option tooltip logs four "variable not set" errors, for
+    `kehillah_bet_din_litigant_a` and `_b`, through `kehillah_bet_din.0071`.
+  - The three track icons are missing: `gfx/interface/icons/trait_level_tracks/{parshanut,talmudics,hashkafa}.dds`.
+- **Not exercised:** Parshanut ward teaching, which needs a childhood birthday.
+
 ## Not covered yet
 
 - The traveller point of interest (`poi_kehillah_yeshiva`) and events `.0101`/`.0102`. These only
