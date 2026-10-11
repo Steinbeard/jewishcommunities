@@ -1894,3 +1894,17 @@ a1fc059 H2's header contradicted its own body
 d0d59b9 A baseline read before boot is the previous session's baseline
 ```
 Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-shabbat-2026-10-10_145002.log
+
+## Heartbeat run status -- 2026-10-10_195002 (autonomous/shabbat-2026-10)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+f661f21 Shim guide: how to tell a real missing-loc warning from tiger noise
+2c94dd6 The ransom entry's old description was glued to its new last bullet
+6acef91 Shim guide: no probe can conjure a Bet Din, and the dump that proves it
+0fef704 Two of heartbeat 5's sections were filed 800 lines from their entry
+0cb155f The ransom run finally has the log and ROADMAP entry it earned
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-shabbat-2026-10-10_195002.log
