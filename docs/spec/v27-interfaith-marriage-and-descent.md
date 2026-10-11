@@ -1,6 +1,6 @@
 # V27: Interfaith marriage and Jewish descent — 2026-10-02
 
-**Status: corrected 2026-10-02; default doctrines and the marriage eligibility gate verified live 2026-10-11 on CK3 1.20.0.4. Rite-creation choices are visible in the UI; completed creation and mixed-parent births still need live verification.**
+**Status: corrected 2026-10-02; default doctrines, marriage eligibility gate, and Jewish spouse finder verified live 2026-10-11 on CK3 1.20.0.4. Rite-creation choices are visible in the UI; completed creation and mixed-parent births still need live verification.**
 
 Depends on vanilla Judaism and the existing 1.20 Judaism religion override in
 `common/religion/religion_types/kehillah_judaism_reserved_names.txt`. This is a
@@ -57,6 +57,9 @@ pair passed `can_marry_character_trigger`, while a Jewish/Christian pair that
 passed vanilla's `could_marry_character_trigger` failed the modded eligibility
 trigger. The earlier live doctrine probe reported Forbidden and Matrilineal for
 Rabbinism. See [the 2026-10-11 test log](../testing/2026-10-11-interfaith-marriage-live-test-log.md).
+The live Find Spouse pool for an unmarried Rabbinic courtier showed no
+non-Jewish candidates: filtering the 125 default candidates to **Not Judaism**
+returned zero.
 
 The paused game's rite-creation UI showed both custom doctrine groups, with
 Forbidden/Permitted and Matrilineal/Patrilineal/Either Parent available in the

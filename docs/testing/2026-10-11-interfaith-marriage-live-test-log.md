@@ -1,6 +1,6 @@
 # Interfaith marriage eligibility — 2026-10-11
 
-**Status: default doctrine and corrected marriage gate VERIFIED LIVE on CK3 1.20.0.4. Rite-creation choices appeared in the UI; completed creation and mixed-parent births remain untested live.**
+**Status: default doctrine, marriage eligibility gate, and Jewish spouse finder pool VERIFIED LIVE on CK3 1.20.0.4. Rite-creation choices appeared in the UI; completed creation and mixed-parent births remain untested live.**
 
 ## Method
 
@@ -43,6 +43,21 @@ Clicking each opened the alternatives: Forbidden/Permitted, and Matrilineal/
 Patrilineal/Either Parent. Selecting Permitted changed the draft summary.
 The editor was cancelled without creating a rite, and the game remained paused.
 
+## Marriage finder UI — follow-up on 2026-10-11
+
+Opened **Find Spouse / Arrange Marriage** for unmarried Rabbinic Jewish
+courtier Nechunya (debug ID 52579, age 28) from the Worms court. The finder
+showed 125/125 candidates with a blank search, Relevance sort, and Religion
+filter set to **All**. The first visible candidate, Leah bat Eliyahu HaLevi,
+showed Rabbinic faith in her tooltip.
+
+Changing only the Religion filter to **Not Judaism** yielded **No valid
+Characters found** and **0 of 125 Characters**. Thus the live finder pool for
+this fixed Jewish spouse contained no non-Jewish candidates, even with the
+default All filter. This checks the finder list, not every CK3 marriage path.
+The filter was reset to defaults, the finder closed, and the original paused
+Decisions view restored. No proposal was sent or save changed.
+
 The groups retain `doctrine_lock = religion`. Paradox's
 [1.20 update notes](https://steamcommunity.com/app/1158310/?curator_clanid=4777282)
 describe that lock as governing doctrine retention when a rite changes or
@@ -62,4 +77,5 @@ console-only read-only version of the temporary probe.
   doctrine persists on its new rite after leaving the creation screen.
 - Exercise both directions of a mixed-parent birth under Matrilineal,
   Patrilineal, and Either Parent, checking the newborn's public faith and rite.
-- Confirm the full marriage proposal UI reports the forbidden match clearly.
+- If a different interaction path offers a non-Jewish match, confirm its
+  proposal UI displays the forbidden-marriage reason clearly.

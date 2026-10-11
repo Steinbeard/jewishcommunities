@@ -36,6 +36,8 @@ the shim guide. Current state is in the
   Judaism and Matrilineal descent. The corrected marriage trigger was verified
   live with an eligible Jewish/Jewish pass and Jewish/Christian denial. The
   rite-creation UI showed Forbidden/Permitted and all three descent choices.
+  The Find Spouse list for a Jewish courtier returned 0/125 with the Religion
+  filter set to Not Judaism, confirming no non-Jewish candidate appeared.
   Completed rite creation and mixed-parent birth checks are still open; see
   [v27](docs/spec/v27-interfaith-marriage-and-descent.md) and the
   [live test](docs/testing/2026-10-11-interfaith-marriage-live-test-log.md).
