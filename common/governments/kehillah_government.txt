@@ -212,79 +212,22 @@ kehillah_government = {
 	# duchy tier.
 	min_appointment_tier = county
 
-	# ADDED 2026-10-09 (Shabbat heartbeat 1). THE TRAIT-FREE CLERICAL
-	# CONTINUATION FIX -- ROADMAP item H1. READ BEFORE CHANGING.
+	# NO mechanic_type -- REMOVED 2026-10-11 (Daniel). From 2026-10-09
+	# (H1) to 2026-10-11 this government set mechanic_type = theocracy,
+	# which _governments.info documents as "Should rulers be considered
+	# clergy". Membership in the faith organization was what got a dying lay
+	# leader a non-dynastic player heir instead of Game Over. It also made
+	# every Parnas "Jewish Clergy", and the engine filled Kehillah courts
+	# with clergy-generated courtiers, women and spouses among them (live
+	# 2026-10-10, docs/testing/2026-10-10-lay-courtier-clergy-live-test-log.md).
+	# Daniel: a Kehillah should not lean on base-game clergy baggage.
 	#
-	# Problem: CK3 1.20 only hands a player a NON-DYNASTIC heir when the
-	# dying character belongs to a faith organization -- vanilla's own
-	# words, ECCLESIASTICAL_RULER_SUCCESSION_DESCRIPTION: "When dying as
-	# a member of an Organization, your Heir will be the next person to
-	# receive your Primary Title. This is usually not a member of your
-	# Dynasty." The Kehillah's appointed successor is almost always from
-	# another dynasty, so without this the player gets Game Over the
-	# moment a leader dies (live 2026-10-09, docs/testing/
-	# 2026-10-09-clerical-succession-live-test-log.md).
-	#
-	# A trait with clergy = yes fixes it, because clergy "automatically
-	# join faith organization" (common/traits/_traits.info). That is why
-	# kehillah_rabbi_trait got clergy = yes and why the RABBINIC path
-	# already passes. It does nothing for a LAY (Parnas) leader, and
-	# Daniel's instruction was explicitly to solve the lay case WITHOUT
-	# adding a trait.
-	#
-	# A scripted join_organization is NOT a substitute. It does make the
-	# character a member for that instant (probe kehillah_household_
-	# debug.7 confirmed "PASS lay leader is a member"), but he still had
-	# no player heir, and after an appointment succession all three lay
-	# appointees read as non-members again. Vanilla says why, in
-	# common/on_action/game_start.txt: "A faith's organization members
-	# are exactly its clergy, so this never touches the laity." The
-	# engine keeps membership synced to clergy status, so a script join
-	# onto a non-clergy character is reverted and buys nothing.
-	#
-	# The trait-free lever is this one line. _governments.info documents
-	# mechanic_type = theocracy as, verbatim, "Should rulers be
-	# considered clergy". That is the mechanism by which vanilla's
-	# non-monk clerical rulers -- bishops under ecclesiastical_government
-	# and theocracy_government holders, none of whom carry the devoted
-	# (monk) trait -- are clergy at all. Both of those governments set
-	# it; nothing else about them is needed here.
-	#
-	# WHAT THIS DELIBERATELY DOES NOT DO. mechanic_type is not the
-	# government_is_theocracy FLAG, and that distinction is the whole
-	# reason this is safe. Vanilla gates its theocratic *content* on the
-	# flags (government_is_theocracy, government_is_ecclesiastical,
-	# government_uses_church_authority), which this government does not
-	# have and must not get:
-	#   - church_authority law group needs the flag (common/law_groups/
-	#     00_realm_law_groups.txt) -- not gained.
-	#   - bishop_theocratic_succession_law needs the flag
-	#     (can_have_bishop_theocratic_succession_law_trigger) -- not
-	#     gained.
-	#   - theocratic_elective_succession_law needs the
-	#     has_clerical_electors doctrine, which rabbinism does not have
-	#     -- not gained.
-	# Only eight places in all of vanilla read government_has_mechanic =
-	# theocracy, and seven are harmless here (AI head-of-faith request
-	# availability, PAM claim-beseeching, the church-treasury budget
-	# events, which need has_treasury = yes, and the administrative
-	# puppet letter). One is actively WANTED: common/important_actions/
-	# 00_inheritance_actions.txt suppresses the "your primary heir is of
-	# another dynasty" nag for exactly this mechanic.
-	#
-	# THE ONE REAL COLLISION, and its guard: vanilla's
-	# clerical_appointment_law has should_start_with =
-	# should_use_clerical_appointment_law_trigger, which is only
-	# `government_has_mechanic = theocracy` plus a county-tier floor. Per
-	# common/laws/_laws.info, default laws are "checked in definition
-	# order" (NOT index order -- index is display order only), and
-	# vanilla's file loads before this mod's, so clerical_appointment_law
-	# would be checked first and would take the Kehillah's succession
-	# law slot away from kehillah_appointment_succession_law. See
-	# common/scripted_triggers/kehillah_clerical_appointment_law_override.txt
-	# for the one-branch fork that excludes this government. Do not
-	# remove that file while this line is here.
-	mechanic_type = theocracy
+	# Player continuation now comes from kehillah_on_death_player_continuation
+	# (common/on_action/kehillah_on_actions.txt), which hands the player to the
+	# community's successor with set_player_character, as vanilla's own
+	# on_death does for administrative noble families. Rabbis stay clergy
+	# through kehillah_rabbi_trait's clergy = yes. Do not put the mechanic
+	# back without re-reading the courtier log above.
 
 	color = { 58 84 130 }
 }

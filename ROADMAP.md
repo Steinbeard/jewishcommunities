@@ -39,13 +39,20 @@ the shim guide. Current state is in the
   courtiers with no clerical role, live). `kehillah_laicize_character_effect` strips the
   membership on court arrival and in a quarterly sweep, keeping it for the Rabbi trait,
   `devoted`/`cleric` and the Dayyan seat. A probe showed `leave_organization` sticks.
-  - **Open design question (not decided): Parnasim still read as clergy.** That is load-bearing.
-    H1's no-Game-Over continuation depends on the leader being an organization member. Options if
-    it should change: re-flavor the organization's name for Judaism (a loc-only change of
-    `FAITH_ORGANIZATION_NAME`, e.g. "Jewish Communal Leadership"), or find a continuation path
-    that doesn't use the organization. Needs Daniel's call.
+  - **Superseded 2026-10-11 (Daniel's call): Parnasim are no longer clergy.** H1's
+    `mechanic_type = theocracy` has been removed. A lay leader's death now hands the player to the
+    community's successor through `set_player_character` in `on_death`
+    (`kehillah_on_death_player_continuation`). Rabbis stay clergy through their trait. "Choose a New
+    Destiny" can't do this job: it needs an existing player heir and only offers your own dynasty.
+    See implementation doc section 15. **Verified live 2026-10-11.** A lay Parnas (Kehat, not clergy,
+    no player heir) was killed. The hook fired and the player became Ovadya Ginzburg, holding the
+    Kehillah of Worms, with no Game Over and no new `kehillah` errors. A rabbinic leader still gets
+    vanilla's "Continue as" screen. **Follow-up (UX):** the handoff is silent. The player sees only
+    "Appointed to Title" and "Realm Law Changed" and is never told the old leader died. Add an
+    event or notice for it.
 
 - **H1. DONE — VERIFIED LIVE 2026-10-09 (Shabbat heartbeat 1)**
+  *(SUPERSEDED 2026-10-11: the theocracy mechanic below was removed; see the lay-courtier entry above)*
   ([log](docs/testing/2026-10-09-lay-clerical-continuation-live-test-log.md)).
   Clerical continuation for lay (Parnas) leaders without a new trait. **The answer was a
   government field, not a trait.** `_governments.info` documents `mechanic_type = theocracy`

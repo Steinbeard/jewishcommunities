@@ -815,6 +815,71 @@ kehillah_on_join_court = {
 	}
 }
 
+
+# ---------------------------------------------------------------------
+# PLAYER CONTINUATION -- the player follows the community, not the
+# bloodline. ADDED 2026-10-11 (Daniel), replacing H1's
+# mechanic_type = theocracy (see kehillah_government.txt).
+#
+# root = the dying character, still alive while on_death runs.
+#
+# A Kehillah's leader is appointed by merit and is usually from another
+# dynasty. CK3 only offers "Continue as <heir>" when there is a player
+# heir, and for a lay leader there is none, so his death would be Game
+# Over. Instead, just before he dies, the player is handed to the
+# character the title is about to pass to. This is what vanilla's own
+# on_death does for administrative noble families
+# (common/on_action/death.txt, "Ceremonial liege family":
+# set_player_character to the family's new holder).
+#
+# Only fires when the engine has no player heir of its own. A rabbinic
+# leader is still in the faith's organization through kehillah_rabbi_
+# trait's clergy = yes, and a same-dynasty successor is a player heir
+# anyway; both keep vanilla's normal succession screen.
+# ---------------------------------------------------------------------
+
+on_death = {
+	on_actions = { kehillah_on_death_player_continuation }
+}
+
+kehillah_on_death_player_continuation = {
+	trigger = {
+		is_ai = no
+		# is_ruler: government_has_flag alone is also true for a Kehillah's
+		# courtiers (v1 implementation doc, section 14).
+		is_ruler = yes
+		government_has_flag = government_is_kehillah
+		NOT = { exists = player_heir }
+		exists = primary_title
+	}
+	effect = {
+		if = {
+			limit = {
+				primary_heir ?= { is_ai = yes }
+			}
+			primary_heir = { save_scope_as = kehillah_continuation_successor }
+		}
+		else = {
+			primary_title = {
+				ordered_title_heir = {
+					order_by = "appointment_candidate_score(root.primary_title)"
+					limit = { is_ai = yes }
+					save_scope_as = kehillah_continuation_successor
+				}
+			}
+		}
+		if = {
+			limit = { exists = scope:kehillah_continuation_successor }
+			debug_log = "kehillah_on_death_player_continuation: handing the player to the community's successor"
+			debug_log_scopes = yes
+			set_player_character = scope:kehillah_continuation_successor
+		}
+		else = {
+			debug_log = "kehillah_on_death_player_continuation: no successor found, vanilla Game Over stands"
+		}
+	}
+}
+
 kehillah_yearly_pulse = {
 	trigger = {
 		government_has_flag = government_is_kehillah

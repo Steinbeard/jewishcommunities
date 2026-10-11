@@ -857,6 +857,9 @@ concurrent session's kohen/levite additions).
 
 ## 13. Clerical continuation: the player heir for a non-dynastic appointee, 2026-10-09
 
+**SUPERSEDED 2026-10-11 by section 15.** `mechanic_type = theocracy` has been removed. The
+mechanism below is kept as history. Do not restore it without reading section 15.
+
 **Read this alongside sections 6 and 8 before touching succession or the
 government body again.** It records a departure from the spec that the
 spec never anticipated, and a vanilla mechanism this repo had not used.
@@ -1119,3 +1122,53 @@ succession to a courtier heir and read `.0010`'s verdict line in `debug.log`. If
 inline branch is being skipped, the retry is silently carrying every succession, and
 the guard there should move to `is_ruler`-style tests for the same reason branch 3's
 did.
+
+## 15. Player continuation without clergy: `set_player_character` on death, 2026-10-11
+
+**Status:** shipped and verified live 2026-10-11 (interactive, at Daniel's direction).
+
+**What it replaces.** Section 13's `mechanic_type = theocracy` made every lay Parnas clergy, and
+it made the engine generate Kehillah courtiers as faith-organization members, wives included.
+A live count on 2026-10-10 found 76 courtiers with no clerical role
+(`docs/testing/2026-10-10-lay-courtier-clergy-live-test-log.md`). Daniel's call: a Kehillah should
+not carry base-game clergy baggage. The mechanic, and the
+`kehillah_clerical_appointment_law_override.txt` fork that only existed because of it, are gone.
+
+**The mechanism.** `kehillah_on_death_player_continuation` (`common/on_action/kehillah_on_actions.txt`)
+runs from `on_death`, while the dying character is still alive. It applies to a player-controlled
+Kehillah ruler with no `player_heir`, and calls `set_player_character` onto `primary_heir`. If
+`primary_heir` is missing, it falls back to the top title heir ordered by
+`appointment_candidate_score`. Vanilla does the same thing in `common/on_action/death.txt` for
+administrative noble families ("Ceremonial liege family").
+
+**What stays clergy.** Rabbis, through `kehillah_rabbi_trait`'s `clergy = yes`. Rabbinism has
+`doctrine_clerical_marriage_allowed`, so the trait costs a rabbi little (he can still marry and
+inherit). A rabbinic leader is therefore still an organization member, still has a vanilla player
+heir, and still gets the normal "Continue as" screen. The new hook stays out of his way because it
+requires `NOT = { exists = player_heir }`. The Dayyan seat (`is_clergy_position`) stays clergy as
+in vanilla.
+
+**Leftovers.** `kehillah_laicize_court_effect` still runs quarterly. It strips organization
+membership from lay courtiers that older saves already have; the engine does not undo those on
+its own.
+
+**Note for "Choose a New Destiny".** Daniel asked about using it. Vanilla only shows that button
+when a player heir exists (`gui/window_succession_event.gui`,
+`SuccessionEventWindow.GetPlayerHeir.IsValid`), and it only offers members of your own dynasty. It
+cannot reach a non-dynastic successor, which is why this hook exists. A rabbinic leader's death
+screen still shows the button.
+
+**Live test, 2026-10-11.** Fresh boot with this build, Worms 1066.
+1. Isaac (rabbi) had his trait stripped with `kehillah_household_debug.9`, but he still read CLERGY
+   YES and ORGANIZATION YES. **Removing the Rabbi trait does not remove organization membership**:
+   the trait enrolled him at game start, and nothing takes him out again. A rabbi who loses the trait
+   in play would stay "clergy" until something calls `leave_organization`. That is a known gap, not
+   fixed here. His `kill` went through vanilla's "Continue as Rav Kehat" screen.
+2. Kehat, the lay successor, read CLERGY NO and player heir NO. That is the new behaviour.
+   `kill 41660` logged `kehillah_on_death_player_continuation: handing the player to the
+   community's successor` with successor Ovadya Ginzburg (66032), who was `primary_heir`. Afterwards
+   the player was Ovadya: alive, holding `d_kehillah_worms`, and the title's holder. No Game Over.
+3. No death screen appears. The player sees vanilla's "Appointed to Title" and "Realm Law Changed"
+   toasts only. Follow-up: tell the player the old leader died.
+4. Courtier sweep at game start: 290 Jewish courtiers in Kehillah courts, 14 clergy, all of them
+   Dayyan-seat holders or carriers of a clergy trait. No strays without the theocracy mechanic.
