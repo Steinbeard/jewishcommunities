@@ -1334,10 +1334,33 @@ kehillah_setup_baghdad_start_effect = {
 		kehillah_seed_community_effect = yes
 		kehillah_record_quarter_effect = yes
 		kehillah_update_leader_flavor_effect = yes
-		# V29 (Daniel, 2026-10-11): the yeshiva of Baghdad, heir of Sura and
-		# Pumbedita. Both academies had moved to Baghdad and effectively
-		# ended about 1040 (Hai Gaon d. 1038), so it is seeded at LOW fame:
-		# a great name in decline the player can restore.
+		# V29 (Daniel, 2026-10-11): Baghdad is the Exilarch's seat and keeps
+		# the Yeshiva of Pumbedita, which had moved here about 890 and
+		# effectively ended about 1040 -- seeded at LOW fame, a great name in
+		# decline the player can restore. The Exilarch is not a rabbi, so he
+		# appoints its Gaon: Natan (9000217, history/characters/
+		# baghdad_1066.txt), set up here BEFORE the seed so the seed does not
+		# generate a stranger for the post.
+		character:9000217 ?= {
+			if = {
+				limit = { is_alive = yes }
+				set_employer = scope:kehillah_leader
+				add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = 70 }
+				save_scope_as = kehillah_pumbedita_gaon
+			}
+		}
+		kehillah_establish_yeshiva_effect = { FAME = kehillah_yeshiva_fame_seed_baghdad }
+		if = {
+			limit = {
+				exists = scope:kehillah_pumbedita_gaon
+				NOT = { employs_court_position = rosh_yeshiva_kehillah_position }
+			}
+			appoint_court_position = {
+				recipient = scope:kehillah_pumbedita_gaon
+				court_position = rosh_yeshiva_kehillah_position
+			}
+			debug_log = "kehillah_setup_baghdad_start_effect: Natan appointed Gaon of Pumbedita"
+		}
 		kehillah_seed_yeshiva_effect = { FAME = kehillah_yeshiva_fame_seed_baghdad }
 	}
 }
@@ -1412,6 +1435,24 @@ kehillah_setup_mahdia_start_effect = {
 				debug_log = "kehillah_setup_mahdia_start_effect: could NOT place the Kairouan hall"
 			}
 		}
+	}
+}
+
+# Sura: the Gaon of Sura at the academy's old site -- a gameplay liberty,
+# very low fame (history/characters/sura_1066.txt).
+kehillah_setup_sura_start_effect = {
+	if = {
+		limit = {
+			exists = domicile
+			NOT = { has_character_flag = kehillah_start_configured }
+		}
+		add_character_flag = kehillah_start_configured
+		save_scope_as = kehillah_leader
+		add_gold = 40
+		kehillah_seed_community_effect = yes
+		kehillah_record_quarter_effect = yes
+		kehillah_update_leader_flavor_effect = yes
+		kehillah_seed_yeshiva_effect = { FAME = kehillah_yeshiva_fame_seed_sura }
 	}
 }
 
@@ -2333,6 +2374,26 @@ kehillah_update_leader_flavor_effect = {
 	if = {
 		limit = { kehillah_leader_earns_rabbenu_trigger = yes }
 		add_character_flag = kehillah_rabbenu_leader_flag
+	}
+	# V29 (2026-10-11): the Babylonian offices. Whoever leads Baghdad is the
+	# Exilarch; a rabbi leading Sura is its Gaon. Follows the title, so a
+	# successor inherits the style and a leader who moves on loses it.
+	if = {
+		limit = { primary_title ?= { this = title:d_kehillah_baghdad } }
+		add_character_flag = kehillah_exilarch_flag
+	}
+	else = {
+		remove_character_flag = kehillah_exilarch_flag
+	}
+	if = {
+		limit = {
+			has_trait = kehillah_rabbi_trait
+			primary_title ?= { this = title:d_kehillah_sura }
+		}
+		add_character_flag = kehillah_gaon_flag
+	}
+	else = {
+		remove_character_flag = kehillah_gaon_flag
 	}
 }
 
