@@ -1,7 +1,9 @@
 # V29: The Yeshiva
 
-**Status: PROPOSAL, 2026-10-11, not implemented. For Daniel's review.** Requested in the
-interactive session of 2026-10-11. Builds on [V21](v21-rabbi-ordination-paths.md) (ordination) and
+**Status: PROPOSAL, 2026-10-11, not implemented. Under Daniel's review.** Requested in the
+interactive session of 2026-10-11. Daniel's decisions so far: the yeshiva stays **separate from the
+Bet Din** (§7.1), and building it is a **payoff**, gated on the community's pillars and paying into
+Greatness (§3.1). How it appears in game is proposed in §3.5. Builds on [V21](v21-rabbi-ordination-paths.md) (ordination) and
 [V24](v24-rabbi-gameplay-loop.md) (the rabbi loop), and would supersede parts of both (section 5). The
 rabbi model it assumes is the one shipped earlier that night: a rabbi is a character with the Rabbi
 trait, and the community rabbi is the leader if he is a Rav, otherwise the Dayyan
@@ -34,11 +36,33 @@ doc §15).
 
 ## 3. Components
 
-### 3.1 The Yeshiva building
+### 3.1 The Yeshiva building: a payoff
 
-The existing Beit Midrash line stays as is: Beit Midrash → House of Debate → Yeshiva. Tier 3, the
-Yeshiva, gains `domicile_building_is_university = yes` (pending the §6 spike) and unlocks the
-Rosh Yeshiva seat.
+The existing Beit Midrash line stays: Beit Midrash → House of Debate → Yeshiva. The Yeshiva (tier 3)
+is the line's payoff. It is what a community earns once it is both great and settled, not a routine
+upgrade.
+
+**Today**, it requires Greatness at the Healthy band. It adds +2 Learning and +15% learning-lifestyle
+XP to the leader, and a flat +60 to the Greatness baseline (+150 across all three tiers).
+
+**Proposed:**
+
+- **To build:** Greatness at the **Flourishing** band (raised from Healthy) **and** Stability at the
+  **Healthy** band. A yeshiva needs a famous community to attract students and a settled one to keep
+  them. Both checks reuse `kehillah_pillar_at_least_trigger` with the existing band thresholds, and
+  both appear as requirement lines in the building's tooltip.
+- **What it pays:** the Rosh Yeshiva seat (§3.2), vanilla higher-studies status
+  (`domicile_building_is_university`, pending the §6 spike), and a Greatness contribution that
+  **grows**. The current flat +60 stays, plus a term that scales with yeshiva fame (§3.4), capped so
+  that one famous yeshiva cannot carry a community's Greatness alone. The new term appears as its own
+  row in the Greatness breakdown tooltip.
+- **If the pillars fall:** the building stays, because buildings are never destroyed by a pillar.
+  But fame decays faster while Stability is below Healthy (students drift away from a troubled
+  community), and no new students arrive while Stability is in Crisis. The payoff can be lost by
+  neglect without demolishing anything.
+- **Balance:** a band rather than a raw number means Worms and the other starts are unaffected until
+  they grow into it. Tune both bands after a 50-year observation run; the targets are a first
+  Yeshiva in a well-run player game around 20–30 years in, and few AI communities.
 
 ### 3.2 The Rosh Yeshiva, a court position
 
@@ -71,8 +95,31 @@ Rosh Yeshiva seat.
 - `kehillah_yeshiva_fame`, a variable on the community title, grows with every ordination, with
   alumni who later hold a Dayyan seat, Rosh Yeshiva seat or Kehillah leadership, and with books
   its alumni write. It decays slowly.
-- Fame feeds Greatness. It raises the quality of students the yeshiva attracts, and weights where AI
-  students go (a famous yeshiva draws from farther away).
+- Fame feeds Greatness through the scaling term in §3.1. It raises the quality of students the
+  yeshiva attracts, and weights where AI students go (a famous yeshiva draws from farther away).
+- Fame decays faster while the community's Stability is below Healthy (§3.1).
+
+### 3.5 How the yeshiva appears in game
+
+Three vanilla surfaces were considered:
+
+| Surface | Fit |
+|---|---|
+| **Domicile building** (the Jewish Quarter window) | **Recommended home.** The Kehillah *is* its domicile: it already holds the Beit Midrash line, the library panel (V13) and the building tooltips. The community owns it outright and it travels with the community, which is right for an institution of the community. |
+| **Special building** (vanilla's universities, such as Bologna and Sankore) | **Rejected.** A special building belongs to the *county*, so it would be the host lord's, not the community's. It would stay behind if the community left, and the host would own its upkeep and effects. It does give vanilla university status and a map presence, but the ownership is wrong. |
+| **Great project** (1.20) | **Possible later, for the founding only.** Projects are province-founded, take contributions from several people and show a pin and illustration on the map, which would suit "the founding of the great Yeshiva of Worms" as a public undertaking that patrons pay into. Whether a landless Kehillah can found or own one is unknown (spike 5, §6). Even then it would be the *construction*, completing into the domicile building. |
+
+**Proposal:**
+
+- **The building:** the Yeshiva stays a domicile building. Its tooltip shows the Rosh Yeshiva, fame
+  and student count.
+- **A Yeshiva panel in the domicile window,** built like the V13 library panel: the Rosh Yeshiva's
+  portrait and aptitude, current students on a zman, wards, recent ordinations, notable alumni, and
+  fame with its trend.
+- **On the map:** the community map view (V12) shows a yeshiva marker and fame for communities that
+  have one, so the player can see where the famous academies are.
+- **Notices:** ordinations, an alumnus taking a seat elsewhere, and fame milestones arrive as
+  messages, not events, so they don't interrupt play.
 - Alumni carry a record of their yeshiva (`kehillah_alma_mater`). That gives flavor ("a student
   of Rabbenu Isaac at Worms") and a small opinion bond between alumni.
 
@@ -91,7 +138,7 @@ Rosh Yeshiva seat.
 | **Yeshiva Visit / Learn Torah journey** (`activity_kehillah_learn_torah_journey`) | **Replaced** by the zman, a University Visit to a yeshiva. Its library-browsing role (reading one specific work in another community's library) folds into the zman's study intent. |
 | **Seek Semicha** decision | **Replaced** by ordination at the end of a zman. Kept only as the fallback for a leader at his own Yeshiva. |
 | **Learn Torah decision / study scheme** | **Kept**, as home study between terms. It is cheaper and slower than a zman. |
-| **Bet Din conference** | **Open question for Daniel (§7).** |
+| **Bet Din conference** | **Kept, unchanged and separate** (Daniel, §7.1). A yeshiva's Rosh Yeshiva and alumni are simply strong judges to invite. |
 | **Seek a Rabbi** | **Kept.** Candidates may now be the alumni of famous yeshivot. |
 
 ## 6. Spikes before building (each is one short live probe)
@@ -111,24 +158,17 @@ Rosh Yeshiva seat.
    2,540-line vanilla activity? The candidate is the `completed_adult_education` memory, whose
    `education_destination` is the province.
 4. **Spiritual fulfillment.** Can anything other than a monastic order generate it?
+5. **Great project ownership.** Can a landless Kehillah leader found and own a great project in his
+   host's province? This only matters if the founding becomes a project (§3.5).
 
 If spikes 1–3 fail, build a mod-owned "Zman at the Yeshiva" activity modeled on University Visit.
 Most of the design survives; we lose vanilla's own rewards and UI text.
 
 ## 7. Open questions for Daniel
 
-1. **The Bet Din conference.** You suggested it might become the yeshiva visit. Options:
-   - **(a) Keep it as the community's court**, separate from the yeshiva. A yeshiva's Rosh Yeshiva
-     and alumni are simply the best judges to invite.
-   - **(b) Fold it into the yeshiva as a *kallah*.** This was the Babylonian academies' twice-yearly
-     gathering, where scholars came to study a set tractate and the head of the academy ruled on
-     questions sent in from communities. Cases and responsa would become part of the gathering, and
-     it would be hosted by the yeshiva, not the community.
-   - **(c) Both:** a local Bet Din for communal disputes, plus a kallah at famous yeshivot for hard
-     cases and responsa.
-
-   Recommendation: **(c), built in that order.** Keep the court, which already works and is
-   live-verified, and add the kallah later as the yeshiva's prestige event.
+1. ~~The Bet Din conference.~~ **DECIDED 2026-10-11: separate.** The Bet Din stays the community's
+   court. A *kallah* (a yeshiva-hosted gathering for hard cases) is out of scope; reopen it later only
+   if the yeshiva needs a prestige event.
 2. **Can the leader himself be the Rosh Yeshiva?** The proposal (§3.2) says a Rav-leader stands in
    when the seat is empty, as with the community rabbi.
 3. **Should non-Kehillah Jewish rulers (Track B landed realms) get yeshivot?** Proposal: not in
@@ -143,6 +183,7 @@ usual.
 2. The Rosh Yeshiva court position, with track-based aptitude and the Rav-leader stand-in.
 3. The zman: study credit, track XP, and ordination at the end. Retire the Learn Torah journey and
    Seek Semicha.
-4. Fame and alumni, and fame feeding Greatness.
+4. Fame and alumni, the raised build gate (§3.1), the scaling Greatness term, and the Yeshiva
+   panel and map marker (§3.5).
 5. The tracks' effects on the Bet Din, responsa and charter petitions (§4).
-6. *(Optional, later)* the kallah (§7.1c).
+6. *(Optional, later)* the founding as a great project (§3.5, if spike 5 passes).
