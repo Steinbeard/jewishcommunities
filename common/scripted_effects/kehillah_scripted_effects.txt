@@ -2248,6 +2248,51 @@ kehillah_update_leader_flavor_effect = {
 	}
 }
 
+# ---------------------------------------------------------------------
+# LAY COURTIERS ARE LAY (2026-10-10). Root = a Kehillah ruler, or a
+# character who has just joined one's court (see the two callers below).
+#
+# Problem: since kehillah_government took mechanic_type = theocracy (H1,
+# 2026-10-09), a Kehillah's court fills with "Jewish Clergy" -- women,
+# spouses and ordinary townsfolk with no clerical office. The engine
+# generates courtiers for a theocratic ruler as members of the faith's
+# organization, as it does for a bishop's court, and organization
+# membership is what is_clergy reads for a non-ruler. Measured live
+# 2026-10-10 (docs/testing/2026-10-10-lay-courtier-clergy-live-test-log.md):
+# 91 clergy courtiers across the Kehillot, 76 with no clerical role; under
+# vanilla theocrats it is 881 of 1,055 courtiers, so this is engine
+# behaviour, not a mod bug in the narrow sense.
+#
+# leave_organization on such a courtier sticks: all 76 read lay at once
+# and were still lay after game time had run on, with no new strays. The
+# engine does not re-sync them the way it does a ruler.
+#
+# Left alone, because their clergy status is a real office: the ruler
+# himself (mechanic_type, which H1's player-heir continuation depends on
+# -- this effect never touches the ruler), the Rabbi trait and vanilla's
+# other clergy = yes traits (devoted, cleric), and the Dayyan seat
+# (councillor_court_chaplain, is_clergy_position = yes).
+# ---------------------------------------------------------------------
+kehillah_laicize_character_effect = {
+	if = {
+		limit = {
+			exists = organization
+			is_ruler = no
+			NOT = { has_trait = kehillah_rabbi_trait }
+			NOT = { has_trait = devoted }
+			NOT = { has_trait = cleric }
+			NOT = { has_council_position = councillor_court_chaplain }
+		}
+		leave_organization = yes
+	}
+}
+
+kehillah_laicize_court_effect = {
+	every_courtier = {
+		kehillah_laicize_character_effect = yes
+	}
+}
+
 
 # ---------------------------------------------------------------------
 # kehillah_refresh_shum_bond_effect

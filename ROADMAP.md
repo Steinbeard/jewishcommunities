@@ -31,6 +31,20 @@ make small design choices and note them; no long specs. CK3 runs on a **virtual 
 the shim guide. Current state is in the
 [clerical succession log](docs/testing/2026-10-09-clerical-succession-live-test-log.md).
 
+- **Lay courtiers as "Jewish Clergy" — FIXED 2026-10-10 (interactive, Daniel's report), mechanism
+  verified live, shipped effect awaits a fresh boot**
+  ([log](docs/testing/2026-10-10-lay-courtier-clergy-live-test-log.md)). A side effect of H1's
+  `mechanic_type = theocracy`: the engine generates a theocratic ruler's courtiers as
+  faith-organization members, so Kehillah courts filled with clergy wives and townsfolk (76
+  courtiers with no clerical role, live). `kehillah_laicize_character_effect` strips the
+  membership on court arrival and in a quarterly sweep, keeping it for the Rabbi trait,
+  `devoted`/`cleric` and the Dayyan seat. A probe showed `leave_organization` sticks.
+  - **Open design question (not decided): Parnasim still read as clergy.** That is load-bearing.
+    H1's no-Game-Over continuation depends on the leader being an organization member. Options if
+    it should change: re-flavor the organization's name for Judaism (a loc-only change of
+    `FAITH_ORGANIZATION_NAME`, e.g. "Jewish Communal Leadership"), or find a continuation path
+    that doesn't use the organization. Needs Daniel's call.
+
 - **H1. DONE — VERIFIED LIVE 2026-10-09 (Shabbat heartbeat 1)**
   ([log](docs/testing/2026-10-09-lay-clerical-continuation-live-test-log.md)).
   Clerical continuation for lay (Parnas) leaders without a new trait. **The answer was a
