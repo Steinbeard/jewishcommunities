@@ -1138,8 +1138,15 @@ not carry base-game clergy baggage. The mechanic, and the
 runs from `on_death`, while the dying character is still alive. It applies to a player-controlled
 Kehillah ruler with no `player_heir`, and calls `set_player_character` onto `primary_heir`. If
 `primary_heir` is missing, it falls back to the top title heir ordered by
-`appointment_candidate_score`. Vanilla does the same thing in `common/on_action/death.txt` for
-administrative noble families ("Ceremonial liege family").
+`appointment_candidate_score`. *(Corrected 2026-10-11: an earlier draft said vanilla does this for
+administrative governments. It does not. The only on_death `set_player_character` in vanilla is the
+narrow All Under Heaven "Ceremonial liege family" case in `common/on_action/death.txt`.)*
+
+**Membership at death does not help (live, 2026-10-11).** `join_organization` on a lay leader sticks,
+and he was still a member several in-game days later, but `player_heir` stayed empty. A plain
+organization member gets no non-dynastic player heir. Only real clergy status does (a clergy trait, a
+clergy seat, or the theocracy mechanic). So "join only at death" is not a way to get vanilla's
+death screen.
 
 **What stays clergy.** Rabbis, through `kehillah_rabbi_trait`'s `clergy = yes`. Rabbinism has
 `doctrine_clerical_marriage_allowed`, so the trait costs a rabbi little (he can still marry and
