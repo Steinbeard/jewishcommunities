@@ -1,0 +1,99 @@
+﻿# =====================================================================
+# THE YESHIVA -- console-only debug probes for V29. Fire on a Kehillah
+# leader with `event kehillah_yeshiva_debug.<n>`. Hidden; they only
+# debug_log into debug.log (and .2/.3/.4 change state, on purpose).
+#
+#   .1  read-only state report
+#   .2  make root able to Found a Yeshiva (pillars, House of Debate,
+#       gold, and root himself a qualified head)
+#   .3  place the map building only (V29 spike 1: great vs special)
+#   .4  a scholar arrives now (kehillah_yeshiva.0010)
+# =====================================================================
+
+namespace = kehillah_yeshiva_debug
+
+kehillah_yeshiva_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_yeshiva_debug.1: yeshiva state -- START"
+		if = { limit = { kehillah_has_yeshiva_trigger = yes } debug_log = "kehillah_yeshiva_debug.1: HAS YESHIVA" }
+		else = { debug_log = "kehillah_yeshiva_debug.1: no yeshiva" }
+		if = {
+			limit = { primary_title ?= { has_variable = kehillah_yeshiva_fame } }
+			primary_title = { save_scope_value_as = { name = kehillah_debug_yeshiva_fame value = var:kehillah_yeshiva_fame } }
+			debug_log = "kehillah_yeshiva_debug.1: FAME see kehillah_debug_yeshiva_fame in the dump"
+		}
+		save_scope_value_as = { name = kehillah_debug_yeshiva_greatness_term value = kehillah_bd_yeshiva_fame_value }
+		kehillah_save_rosh_yeshiva_effect = yes
+		if = { limit = { exists = scope:kehillah_rosh_yeshiva } debug_log = "kehillah_yeshiva_debug.1: ROSH YESHIVA BOUND see scope:kehillah_rosh_yeshiva" }
+		else = { debug_log = "kehillah_yeshiva_debug.1: no Rosh Yeshiva" }
+		if = { limit = { kehillah_qualified_rosh_yeshiva_trigger = yes } debug_log = "kehillah_yeshiva_debug.1: leader IS a qualified head" }
+		if = { limit = { kehillah_has_qualified_rosh_yeshiva_candidate_trigger = yes } debug_log = "kehillah_yeshiva_debug.1: a qualified head EXISTS in the community" }
+		else = { debug_log = "kehillah_yeshiva_debug.1: no qualified head in the community" }
+		if = { limit = { kehillah_can_found_yeshiva_pillars_trigger = yes } debug_log = "kehillah_yeshiva_debug.1: PILLAR GATES PASS" }
+		else = { debug_log = "kehillah_yeshiva_debug.1: pillar gates fail" }
+		if = {
+			limit = { exists = domicile.domicile_location }
+			domicile.domicile_location = {
+				if = { limit = { has_building = kehillah_yeshiva_hall } debug_log = "kehillah_yeshiva_debug.1: MAP BUILDING great" }
+				else_if = { limit = { has_building = kehillah_yeshiva_hall_special } debug_log = "kehillah_yeshiva_debug.1: MAP BUILDING special" }
+				else = { debug_log = "kehillah_yeshiva_debug.1: no map building" }
+				if = { limit = { has_special_building = yes } debug_log = "kehillah_yeshiva_debug.1: (province has a special building)" }
+			}
+		}
+		debug_log_scopes = yes
+		debug_log = "kehillah_yeshiva_debug.1: yeshiva state -- END"
+	}
+}
+
+kehillah_yeshiva_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_yeshiva_debug.2: make Found a Yeshiva available -- START"
+		primary_title ?= {
+			set_variable = { name = kehillah_var_stability value = kehillah_band_healthy_threshold }
+			change_variable = { name = kehillah_var_stability add = 5 }
+			set_variable = { name = kehillah_var_greatness value = kehillah_band_strained_threshold }
+			change_variable = { name = kehillah_var_greatness add = 5 }
+		}
+		domicile = {
+			if = {
+				limit = { NOT = { has_domicile_building_or_higher = kehillah_beit_midrash_01 } }
+				add_domicile_building = kehillah_beit_midrash_01
+			}
+			if = {
+				limit = { NOT = { has_domicile_building_or_higher = kehillah_beit_midrash_02 } }
+				add_domicile_building = kehillah_beit_midrash_02
+			}
+		}
+		if = {
+			limit = { NOT = { has_trait = kehillah_rabbi_trait } }
+			add_trait = kehillah_rabbi_trait
+		}
+		add_learning_skill = 16
+		add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = 70 }
+		add_gold = 600
+		debug_log = "kehillah_yeshiva_debug.2: END -- open Decisions and look for Found a Yeshiva"
+	}
+}
+
+kehillah_yeshiva_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_yeshiva_debug.3: place the map building -- START"
+		kehillah_place_yeshiva_map_building_effect = yes
+		debug_log = "kehillah_yeshiva_debug.3: END"
+	}
+}
+
+kehillah_yeshiva_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_yeshiva_debug.4: a scholar arrives now"
+		trigger_event = kehillah_yeshiva.0010
+	}
+}

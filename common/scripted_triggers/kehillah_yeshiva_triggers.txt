@@ -1,0 +1,59 @@
+﻿# =====================================================================
+# THE YESHIVA -- V29 (docs/spec/v29-yeshiva.md), first implementation
+# pass 2026-10-11.
+#
+# A Kehillah "has a yeshiva" when its domicile holds the third tier of
+# the Beit Midrash line, kehillah_beit_midrash_03. Since V29 that tier is
+# not built from the domicile menu but founded through
+# kehillah_found_yeshiva_decision (or seeded at Worms), so holding it IS
+# having founded one.
+# =====================================================================
+
+# Scope: a Kehillah leader (or any character with a domicile).
+kehillah_has_yeshiva_trigger = {
+	exists = domicile
+	domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_03 }
+}
+
+# Scope: a character. Could this rabbi head a yeshiva -- the teacher
+# students travel for (V29 section 3.1)? High Learning AND real depth in
+# one of the two teaching tracks.
+kehillah_qualified_rosh_yeshiva_trigger = {
+	has_trait = kehillah_rabbi_trait
+	is_adult = yes
+	is_incapable = no
+	learning >= kehillah_rosh_yeshiva_min_learning
+	OR = {
+		has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= kehillah_rosh_yeshiva_min_track_xp }
+		has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= kehillah_rosh_yeshiva_min_track_xp }
+	}
+}
+
+# Scope: a Kehillah leader. Is there someone in this community -- the
+# leader himself or a courtier -- who could head a yeshiva?
+kehillah_has_qualified_rosh_yeshiva_candidate_trigger = {
+	OR = {
+		kehillah_qualified_rosh_yeshiva_trigger = yes
+		any_courtier = { kehillah_qualified_rosh_yeshiva_trigger = yes }
+	}
+}
+
+# Scope: a Kehillah leader. Does the yeshiva have a head right now? The
+# appointed Rosh Yeshiva, or -- V29 section 3.2, Daniel 2026-10-11 -- a
+# Rav-leader, who IS the Rosh Yeshiva whenever he has not appointed one.
+kehillah_has_rosh_yeshiva_trigger = {
+	kehillah_has_yeshiva_trigger = yes
+	OR = {
+		employs_court_position = rosh_yeshiva_kehillah_position
+		has_trait = kehillah_rabbi_trait
+	}
+}
+
+# Scope: a Kehillah leader. Found a Yeshiva's gates (V29 section 3.1):
+# Stability Healthy (the main gate -- order lets learning flourish),
+# Greatness only Strained (low on purpose, so Greatness does not
+# snowball), the House of Debate standing, and no yeshiva yet.
+kehillah_can_found_yeshiva_pillars_trigger = {
+	kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_stability THRESHOLD = kehillah_band_healthy_threshold }
+	kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_strained_threshold }
+}

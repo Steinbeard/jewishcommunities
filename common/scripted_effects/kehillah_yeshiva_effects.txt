@@ -1,0 +1,252 @@
+﻿# =====================================================================
+# THE YESHIVA -- V29 (docs/spec/v29-yeshiva.md), first implementation
+# pass 2026-10-11. Triggers: common/scripted_triggers/
+# kehillah_yeshiva_triggers.txt. Numbers: common/script_values/
+# kehillah_yeshiva_values.txt.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# kehillah_save_rosh_yeshiva_effect. Scope: a Kehillah leader.
+# Binds scope:kehillah_rosh_yeshiva to the head of the community's
+# yeshiva: the appointed Rosh Yeshiva, or a Rav-leader, who IS the Rosh
+# Yeshiva whenever he has not appointed one (V29 section 3.2, Daniel
+# 2026-10-11). Leaves the scope unset when there is no yeshiva or no head.
+# ---------------------------------------------------------------------
+kehillah_save_rosh_yeshiva_effect = {
+	if = {
+		limit = { kehillah_has_yeshiva_trigger = yes }
+		if = {
+			limit = { employs_court_position = rosh_yeshiva_kehillah_position }
+			court_position:rosh_yeshiva_kehillah_position = { save_scope_as = kehillah_rosh_yeshiva }
+		}
+		else_if = {
+			limit = { has_trait = kehillah_rabbi_trait }
+			save_scope_as = kehillah_rosh_yeshiva
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_establish_yeshiva_effect. Scope: a Kehillah leader.
+# FAME = the starting fame.
+#
+# The shared core of founding (the decision) and seeding (Worms at game
+# start): the building, its record on the title (so succession restores
+# it -- kehillah_record_quarter_effect), starting fame, the map building,
+# and a head.
+# ---------------------------------------------------------------------
+kehillah_establish_yeshiva_effect = {
+	domicile = {
+		if = {
+			limit = { NOT = { has_domicile_building_or_higher = kehillah_beit_midrash_01 } }
+			add_domicile_building = kehillah_beit_midrash_01
+		}
+		if = {
+			limit = { NOT = { has_domicile_building_or_higher = kehillah_beit_midrash_02 } }
+			add_domicile_building = kehillah_beit_midrash_02
+		}
+		if = {
+			limit = { NOT = { has_domicile_building_or_higher = kehillah_beit_midrash_03 } }
+			add_domicile_building = kehillah_beit_midrash_03
+		}
+	}
+	kehillah_record_quarter_effect = yes
+
+	primary_title = {
+		if = {
+			limit = { NOT = { has_variable = kehillah_yeshiva_fame } }
+			set_variable = { name = kehillah_yeshiva_fame value = $FAME$ }
+		}
+	}
+
+	kehillah_place_yeshiva_map_building_effect = yes
+
+	# A head. A Rav-leader heads it himself (leaving the seat empty);
+	# otherwise the most learned qualified courtier is appointed.
+	if = {
+		limit = {
+			NOT = { has_trait = kehillah_rabbi_trait }
+			NOT = { employs_court_position = rosh_yeshiva_kehillah_position }
+			any_courtier = { kehillah_qualified_rosh_yeshiva_trigger = yes }
+		}
+		ordered_courtier = {
+			limit = { kehillah_qualified_rosh_yeshiva_trigger = yes }
+			order_by = learning
+			save_scope_as = kehillah_new_rosh_yeshiva
+		}
+		appoint_court_position = {
+			recipient = scope:kehillah_new_rosh_yeshiva
+			court_position = rosh_yeshiva_kehillah_position
+		}
+	}
+	debug_log = "kehillah_establish_yeshiva_effect: yeshiva established"
+}
+
+# ---------------------------------------------------------------------
+# kehillah_place_yeshiva_map_building_effect. Scope: a Kehillah leader.
+#
+# The yeshiva's public face (V29 section 3.5): a building in the host's
+# province, where the community's quarter stands. A GREAT building first
+# -- its own slot type, so it never displaces Notre Dame or the
+# Alhambra, and it falls back to reduced modifiers when disabled. If the
+# engine will not place one (unproven outside All Under Heaven -- V29
+# spike 1), a SPECIAL building, but only into an EMPTY special slot:
+# add_special_building replaces whatever is there, and this must never
+# demolish a province's own landmark. If neither can be placed, the
+# yeshiva still works; it simply has no map building.
+# ---------------------------------------------------------------------
+kehillah_place_yeshiva_map_building_effect = {
+	if = {
+		limit = { exists = domicile.domicile_location }
+		domicile.domicile_location = {
+			if = {
+				limit = {
+					NOR = {
+						has_building = kehillah_yeshiva_hall
+						has_building = kehillah_yeshiva_hall_special
+					}
+				}
+				add_great_building = kehillah_yeshiva_hall
+			}
+			if = {
+				limit = {
+					NOR = {
+						has_building = kehillah_yeshiva_hall
+						has_building = kehillah_yeshiva_hall_special
+						has_special_building = yes
+					}
+				}
+				add_special_building = kehillah_yeshiva_hall_special
+			}
+			if = {
+				limit = { has_building = kehillah_yeshiva_hall }
+				debug_log = "kehillah_place_yeshiva_map_building_effect: GREAT building placed"
+			}
+			else_if = {
+				limit = { has_building = kehillah_yeshiva_hall_special }
+				debug_log = "kehillah_place_yeshiva_map_building_effect: SPECIAL building placed (great building refused)"
+			}
+			else = {
+				debug_log = "kehillah_place_yeshiva_map_building_effect: NO map building (great refused, special slot occupied)"
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_found_yeshiva_effect. Scope: a Kehillah leader. The decision's
+# effect (common/decisions/kehillah_yeshiva_decisions.txt).
+# ---------------------------------------------------------------------
+kehillah_found_yeshiva_effect = {
+	kehillah_establish_yeshiva_effect = { FAME = kehillah_yeshiva_fame_on_founding }
+	trigger_event = kehillah_yeshiva.0001
+	# A founding draws scholars (V29 section 3.1): ordained rabbis come
+	# looking for a place, as Dayyan candidates and Bet Din judges.
+	trigger_event = { id = kehillah_yeshiva.0010 days = { 180 400 } }
+	trigger_event = { id = kehillah_yeshiva.0010 days = { 700 1100 } }
+}
+
+# ---------------------------------------------------------------------
+# kehillah_add_yeshiva_fame_effect. Scope: a Kehillah leader.
+# AMOUNT = how much. Clamped to [0, kehillah_yeshiva_fame_max].
+# ---------------------------------------------------------------------
+kehillah_add_yeshiva_fame_effect = {
+	if = {
+		limit = { kehillah_has_yeshiva_trigger = yes }
+		primary_title = {
+			if = {
+				limit = { NOT = { has_variable = kehillah_yeshiva_fame } }
+				set_variable = { name = kehillah_yeshiva_fame value = 0 }
+			}
+			change_variable = { name = kehillah_yeshiva_fame add = $AMOUNT$ }
+			clamp_variable = { name = kehillah_yeshiva_fame min = 0 max = kehillah_yeshiva_fame_max }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_yeshiva_quarterly_effect. Scope: a Kehillah leader. From
+# kehillah_quarterly_pulse. Fame decays slowly, faster while Stability is
+# below Healthy (V29 section 3.1). A qualified head -- a teacher worth
+# travelling to -- sustains it by +1, which offsets the stable decay but
+# not the troubled one.
+# ---------------------------------------------------------------------
+kehillah_yeshiva_quarterly_effect = {
+	kehillah_save_rosh_yeshiva_effect = yes
+	if = {
+		limit = {
+			kehillah_has_yeshiva_trigger = yes
+			scope:kehillah_rosh_yeshiva ?= { kehillah_qualified_rosh_yeshiva_trigger = yes }
+		}
+		kehillah_add_yeshiva_fame_effect = { AMOUNT = 1 }
+	}
+	if = {
+		limit = {
+			kehillah_has_yeshiva_trigger = yes
+			primary_title ?= { has_variable = kehillah_yeshiva_fame }
+		}
+		if = {
+			limit = {
+				kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_stability THRESHOLD = kehillah_band_healthy_threshold }
+			}
+			primary_title = {
+				change_variable = { name = kehillah_yeshiva_fame subtract = kehillah_yeshiva_fame_decay_stable }
+				clamp_variable = { name = kehillah_yeshiva_fame min = 0 max = kehillah_yeshiva_fame_max }
+			}
+		}
+		else = {
+			primary_title = {
+				change_variable = { name = kehillah_yeshiva_fame subtract = kehillah_yeshiva_fame_decay_troubled }
+				clamp_variable = { name = kehillah_yeshiva_fame min = 0 max = kehillah_yeshiva_fame_max }
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_study_zman_effect. Scope: the student, arrived at the
+# community whose yeshiva he is studying in. Requires
+# scope:kehillah_journey_destination_title (kehillah_learn_torah_journey.
+# 0001) and scope:kehillah_rosh_yeshiva.
+#
+# One zman (V29 section 3.3):
+# - an ordained student gains track XP in his teacher's strongest
+#   teaching track;
+# - an unordained student earns zman credit, which the ordination
+#   curriculum accepts (kehillah_rabbi_ordination_curriculum_met_trigger);
+# - the yeshiva gains a little fame;
+# - a student who is now ready is examined on the spot by the Rosh
+#   Yeshiva (kehillah_semicha.0001, which examines by the community's
+#   Rosh Yeshiva since V29).
+# ---------------------------------------------------------------------
+kehillah_study_zman_effect = {
+	add_piety = minor_piety_gain
+	add_learning_lifestyle_xp = minor_lifestyle_xp
+	if = {
+		limit = { has_trait = kehillah_rabbi_trait }
+		if = {
+			limit = {
+				# Talmudics if the teacher is deep in it, otherwise Parshanut
+				# (the other teaching track a Rosh Yeshiva can qualify by).
+				scope:kehillah_rosh_yeshiva = {
+					has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= kehillah_rosh_yeshiva_min_track_xp }
+				}
+			}
+			add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = kehillah_zman_track_xp }
+		}
+		else = {
+			add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_zman_track_xp }
+		}
+	}
+	else = {
+		set_variable = { name = kehillah_zman_credit value = scope:kehillah_journey_destination_title }
+	}
+	scope:kehillah_journey_destination_title.holder ?= {
+		kehillah_add_yeshiva_fame_effect = { AMOUNT = kehillah_yeshiva_fame_per_zman }
+	}
+	if = {
+		limit = { kehillah_rabbi_ordination_ready_trigger = yes }
+		scope:kehillah_journey_destination_title = { save_scope_as = kehillah_semicha_community }
+		trigger_event = kehillah_semicha.0001
+	}
+}
