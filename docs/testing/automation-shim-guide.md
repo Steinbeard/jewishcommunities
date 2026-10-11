@@ -652,3 +652,41 @@ test.
 pre-boot copy as well, archive it under a different name (`error-before.log`) and be
 explicit about which one you are diffing against — the two answer different questions, and only
 the post-boot one answers "did my change add an error".
+
+## An activity cannot be started from script, and `logs\effects.log` is how you know — added 2026-10-10
+
+A test that needs the player sitting in a Bet Din has to pay for one through the UI. There is no
+script effect that creates or starts an activity. Checked against the installed 1.20 vocabulary
+rather than guessed: `logs\effects.log` (dumped 2026-10-01 by the `script_docs` console command)
+has no `create_activity` and no `start_activity`. What it does have, and all it has, is:
+
+- `ai_attempt_to_host_activity` — makes an **AI** re-evaluate hosting, overriding its check
+  interval and the activity cooldown. Nothing equivalent for the player.
+- `invite_to_activity`, `accept_activity_invite`, `accept_activity_invite_without_travel`,
+  `add_to_activity`, `add_to_activity_without_travel`, `remove_from_activity`
+- `set_activity_host`, `set_activity_intent`, `invalidate_activity`
+
+So a probe cannot conjure a Bet Din conference, and `kehillah_rabbi_loop_debug.1`/`.3`/`.7` are
+written the way they are — refusing with "BLOCKED no fully staffed Bet Din activity" — because
+that is the only honest option available to them.
+
+**What hosting one actually costs, measured.** From heartbeat 5's archived run
+(`logs\archive-shabbat-heartbeat5-ransom\debug.log`): launch at 15:43:55, `.1` reporting
+`ACTIVITY PRESENT` with no convening title yet at 15:52:42, and a fully staffed bench — convening
+title, Av Beit Din, judge 2, judge 3 — at 16:00:35. **About 17 minutes of wall clock including
+boot**, with `province_filter = capital` meaning the host does not travel. Budget twenty minutes
+for "get me into a Bet Din", not two. Note the two-stage shape: the activity object exists while
+it is still scheduled, and the mod's own variables only arrive when it starts, so
+`exists = involved_activity` is not the same question as "is the court sitting".
+
+If a future test only needs the player *inside* someone else's activity, the untried shortcut is
+`ai_attempt_to_host_activity` on an AI Kehillah leader and then
+`add_to_activity_without_travel` (plus `set_activity_host` if the player has to be the host for
+the events to fire on them). Recorded as a lead, not a working recipe — nobody has run it.
+
+**The general point is the file, not the activity.** `logs\effects.log`, `logs\triggers.log` and
+`logs\event_targets.log` are the authoritative list of what this install's 1.20 actually accepts.
+They are cheaper to consult than a vanilla grep, and more trustworthy than ck3-tiger, whose
+vocabulary is 1.19. Re-dump them with `script_docs` after a game patch. This is the same lesson as
+1.20 having `add_learning_skill` but no `set_learning_skill` (see the credit-bands section) —
+asked of the dump, that question takes one grep.
