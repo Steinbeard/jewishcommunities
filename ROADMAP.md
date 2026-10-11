@@ -92,6 +92,18 @@ the shim guide. Current state is in the
     - Learn Torah journey: "no default guest intent" and "max_guests below 0".
     - The Bet Din's four default invite rules are "already an entry in the valid invite rules".
 
+- **V29 THE YESHIVA: PROPOSAL, awaiting Daniel's review (2026-10-11)**
+  ([spec](docs/spec/v29-yeshiva.md)). The plan:
+  - a Rosh Yeshiva court position whose aptitude depends on the rabbi tracks;
+  - adult students on a zman, with vanilla University Visit as the first candidate if the spikes pass;
+  - children as wards of the Rosh Yeshiva;
+  - ordination at the end of a zman;
+  - yeshiva fame and alumni.
+  It would replace the Learn Torah journey and Seek Semicha. Open questions: the Bet Din
+  conference's fate (recommended: keep the court, add a *kallah* later), and whether the leader can be
+  Rosh Yeshiva. Monastic holy orders were considered and rejected as a base. Not to be built before
+  the review.
+
 - **H1. DONE — VERIFIED LIVE 2026-10-09 (Shabbat heartbeat 1)**
   *(SUPERSEDED 2026-10-11: the theocracy mechanic below was removed; see the lay-courtier entry above)*
   ([log](docs/testing/2026-10-09-lay-clerical-continuation-live-test-log.md)).
