@@ -936,69 +936,6 @@ therefore unusable. Build work and live-test work must not share a boot;
 written into the test log so the next session inherits the rule rather than
 the mistake.
 
-### CORRECTION to this entry's own finding 2: screenshots are fine
-
-**I retract the frozen-screenshot claim above.** I wrote it, flagged it to you as the
-environment item most worth your attention, and briefed two subagents to distrust screenshots on
-the strength of it. It was based on one session's *impression* that captures "looked identical" --
-no byte-level check.
-
-A later run the same day settled it with the test my own shim-guide note recommended: two
-before/after pairs with large deliberate UI changes (map to Decisions panel, Decisions to
-character window), compared by **SHA-256**. All three hashes differed, and ~20 further
-screenshots in that session all reflected current state. **Capture is live. Exclusive fullscreen
-is not a problem and windowed mode is not needed** -- nothing for you to fix here.
-
-Kept visible rather than deleted because it had already been acted on, and because the lesson is
-the uncomfortable one: I reported an unverified impression as an environment fact, in the same
-session where I was careful not to report an unverified PASS as a test result. The shim guide's
-section is now headed by the correction, with the cheap liveness check retained as a habit.
-
-### A fourth item, from a live run of the ransom ruling
-
-ROADMAP's next unblocked item was the source-aware ransom ruling ("FULL LIVE EXCHANGE
-PENDING"). Partly good news:
-
-- **The named-outside-Rabbi exchange works end-to-end in the UI.** Reached through its real entry
-  point, the case opens as "A Captive's Ransom" in clean English, offers "Ask Rav Isaac for a
-  responsum", and dispatching it produced zero new script errors; the docket then ran on to its
-  closing ruling. The correspondent was confirmed by tooltip to be a genuinely different
-  character (Rav Isaac the Bearded of Mainz, 9000101 -- a coincidental first-name match with the
-  player, not a self-consult bug). **The 25-day letter round-trip did not complete inside the
-  observation window and is still unproven** -- not faked.
-
-**One real bug, found and fixed.** Every case's "cite a source" option read
-`involved_activity.var:kehillah_din_advice_case` bare. That variable is written in exactly
-one place -- the delayed-reply events -- so it is unset whenever a case opens for the first time,
-which is the normal path, and the engine threw three errors on it. **All nine cases were
-unguarded**: one defect, authored once and copied eight times. Now paired with `exists`
-across 18 sites. Scoped honestly as **log noise, not a behaviour bug** -- the same verdict H3
-reached for this identical shape; an invalid comparison evaluates false, and false is also
-correct when no reply has arrived. I did not repeat the stronger claim that it blocked the option
-from appearing, because I could not verify it and the engine's behaviour suggests otherwise.
-
-**NEEDS DANIEL -- a second, fully-authored, completely unreachable implementation of this same
-feature.** The `kehillah_bet_din_case7_*` / `kehillah_case7_*` family
-(`kehillah_bet_din_scripted_effects.txt`, events `.0064`/`.0065`) has real
-localization, tooltips and a richer precedent-archiving design -- and
-`kehillah_bet_din_case7_pick_correspondents_effect` has **zero call sites**; I verified it
-appears exactly once in the repo, its own definition. The engine's static analysis agrees
-("Variable 'kehillah_case7_asking_title' is used but is never set"). What is actually wired up is
-a differently-named generic-per-case chain (`kehillah_din_sources.71`-`.76`).
-Two implementations of one feature, one of them dead. **Wire the richer one in, or delete it --
-either is a design call, so I did neither.** Leaving it is the worst option: it is what misled
-the probe below.
-
-- **Probe `kehillah_rabbi_loop_debug.8` tests the dead path** and so can never report true
-  on its candidate/letter checks, whatever the live game does. A probe that cannot pass is worse
-  than no probe. **Not repointed at the live chain**, because which chain is "live" is exactly
-  the decision above; repointing it now could mean repointing it back.
-- **A log flood worth knowing about:** ~21,000 of the ~21,100 new `error.log` lines in that
-  run were one repeating cosmetic miss -- a missing on-demand texture for the Bet Din conference
-  activity (and the Learn Torah equivalent), logged per frame for the ~20 minutes the activity
-  window was open. Already-known missing art, but at that volume it will bury anything real in
-  the same session, which is the H3 lesson again.
-
 ### What the next heartbeat should pick up, in order
 
 1. **Read this run's Group A result first** (death-succession: does the
@@ -1848,6 +1785,74 @@ All three recorded in the shim guide; they affect every future session, not just
 3. **A direct launch auto-continued into a leftover unrelated character** (Duke Gottfried III,
    from an earlier session's `play <id>`) with nothing announcing it. A Kehillah probe on a
    non-Kehillah ruler reports coherent nonsense. An identity check now belongs at step 0.
+
+*(Moved here 2026-10-10 by Shabbat heartbeat 6: heartbeat 5 appended these two sections into
+the middle of the 2026-09-27 Sukkot entry, about 800 lines above, which is also what the
+screenshot retraction's own "see the correction at the bottom of this entry" pointed at and
+missed. The text is unchanged; only its position is.)*
+
+### CORRECTION to this entry's own finding 2: screenshots are fine
+
+**I retract the frozen-screenshot claim above.** I wrote it, flagged it to you as the
+environment item most worth your attention, and briefed two subagents to distrust screenshots on
+the strength of it. It was based on one session's *impression* that captures "looked identical" --
+no byte-level check.
+
+A later run the same day settled it with the test my own shim-guide note recommended: two
+before/after pairs with large deliberate UI changes (map to Decisions panel, Decisions to
+character window), compared by **SHA-256**. All three hashes differed, and ~20 further
+screenshots in that session all reflected current state. **Capture is live. Exclusive fullscreen
+is not a problem and windowed mode is not needed** -- nothing for you to fix here.
+
+Kept visible rather than deleted because it had already been acted on, and because the lesson is
+the uncomfortable one: I reported an unverified impression as an environment fact, in the same
+session where I was careful not to report an unverified PASS as a test result. The shim guide's
+section is now headed by the correction, with the cheap liveness check retained as a habit.
+
+### A fourth item, from a live run of the ransom ruling
+
+ROADMAP's next unblocked item was the source-aware ransom ruling ("FULL LIVE EXCHANGE
+PENDING"). Partly good news:
+
+- **The named-outside-Rabbi exchange works end-to-end in the UI.** Reached through its real entry
+  point, the case opens as "A Captive's Ransom" in clean English, offers "Ask Rav Isaac for a
+  responsum", and dispatching it produced zero new script errors; the docket then ran on to its
+  closing ruling. The correspondent was confirmed by tooltip to be a genuinely different
+  character (Rav Isaac the Bearded of Mainz, 9000101 -- a coincidental first-name match with the
+  player, not a self-consult bug). **The 25-day letter round-trip did not complete inside the
+  observation window and is still unproven** -- not faked.
+
+**One real bug, found and fixed.** Every case's "cite a source" option read
+`involved_activity.var:kehillah_din_advice_case` bare. That variable is written in exactly
+one place -- the delayed-reply events -- so it is unset whenever a case opens for the first time,
+which is the normal path, and the engine threw three errors on it. **All nine cases were
+unguarded**: one defect, authored once and copied eight times. Now paired with `exists`
+across 18 sites. Scoped honestly as **log noise, not a behaviour bug** -- the same verdict H3
+reached for this identical shape; an invalid comparison evaluates false, and false is also
+correct when no reply has arrived. I did not repeat the stronger claim that it blocked the option
+from appearing, because I could not verify it and the engine's behaviour suggests otherwise.
+
+**NEEDS DANIEL -- a second, fully-authored, completely unreachable implementation of this same
+feature.** The `kehillah_bet_din_case7_*` / `kehillah_case7_*` family
+(`kehillah_bet_din_scripted_effects.txt`, events `.0064`/`.0065`) has real
+localization, tooltips and a richer precedent-archiving design -- and
+`kehillah_bet_din_case7_pick_correspondents_effect` has **zero call sites**; I verified it
+appears exactly once in the repo, its own definition. The engine's static analysis agrees
+("Variable 'kehillah_case7_asking_title' is used but is never set"). What is actually wired up is
+a differently-named generic-per-case chain (`kehillah_din_sources.71`-`.76`).
+Two implementations of one feature, one of them dead. **Wire the richer one in, or delete it --
+either is a design call, so I did neither.** Leaving it is the worst option: it is what misled
+the probe below.
+
+- **Probe `kehillah_rabbi_loop_debug.8` tests the dead path** and so can never report true
+  on its candidate/letter checks, whatever the live game does. A probe that cannot pass is worse
+  than no probe. **Not repointed at the live chain**, because which chain is "live" is exactly
+  the decision above; repointing it now could mean repointing it back.
+- **A log flood worth knowing about:** ~21,000 of the ~21,100 new `error.log` lines in that
+  run were one repeating cosmetic miss -- a missing on-demand texture for the Bet Din conference
+  activity (and the Learn Torah equivalent), logged per frame for the ~20 minutes the activity
+  window was open. Already-known missing art, but at that volume it will bury anything real in
+  the same session, which is the H3 lesson again.
 
 ### What the next heartbeat should pick up
 
