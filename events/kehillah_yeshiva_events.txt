@@ -226,6 +226,8 @@ kehillah_yeshiva.0201 = {
 	immediate = {
 		kehillah_save_rosh_yeshiva_effect = yes
 		kehillah_gather_zman_students_effect = yes
+		# Something happens during the term, most of the time (.0205).
+		trigger_event = { id = kehillah_yeshiva.0205 days = { 15 30 } }
 	}
 
 	# Talmud: the head (and a rabbi leader) deepen in Talmudics.
@@ -281,7 +283,18 @@ kehillah_yeshiva.0201 = {
 kehillah_yeshiva.0202 = {
 	type = character_event
 	title = kehillah_yeshiva.0202.t
-	desc = kehillah_yeshiva.0202.desc
+	desc = {
+		desc = kehillah_yeshiva.0202.desc
+		triggered_desc = {
+			trigger = { exists = scope:kehillah_zman_first_ordained }
+			desc = kehillah_yeshiva.0202.desc.ordained
+		}
+		triggered_desc = {
+			trigger = { exists = scope:kehillah_zman_first_alumnus }
+			desc = kehillah_yeshiva.0202.desc.alumnus
+		}
+		desc = kehillah_yeshiva.0202.desc.fame
+	}
 	theme = learning
 	left_portrait = {
 		character = scope:kehillah_rosh_yeshiva
@@ -331,6 +344,154 @@ kehillah_yeshiva.0210 = {
 				debug_log = "kehillah_yeshiva.0210: the alumnus could NOT be seated (he stays as a rabbi at court)"
 			}
 			primary_title = { remove_variable = kehillah_alumnus_incoming }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# DURING THE TERM -- V29 section 9.1 (2026-10-11). Root = the leader;
+# this term's students carry kehillah_zman_student.
+#   .0205  hidden: pick what happens (or nothing)
+#   .0206  a brilliant student
+#   .0207  two students quarrel over a ruling
+# ---------------------------------------------------------------------
+kehillah_yeshiva.0205 = {
+	type = character_event
+	hidden = yes
+	trigger = { has_character_flag = kehillah_zman_in_progress }
+	immediate = {
+		random_list = {
+			45 = {
+				trigger = { any_courtier = { has_character_flag = kehillah_zman_student } }
+				trigger_event = kehillah_yeshiva.0206
+			}
+			35 = {
+				trigger = {
+					any_courtier = {
+						count >= 2
+						has_character_flag = kehillah_zman_student
+					}
+				}
+				trigger_event = kehillah_yeshiva.0207
+			}
+			20 = {}
+		}
+	}
+}
+
+kehillah_yeshiva.0206 = {
+	type = character_event
+	title = kehillah_yeshiva.0206.t
+	desc = kehillah_yeshiva.0206.desc
+	theme = learning
+	left_portrait = {
+		character = scope:kehillah_bright_student
+		animation = personality_rational
+	}
+	right_portrait = {
+		character = scope:kehillah_rosh_yeshiva
+		animation = happiness
+		trigger = { exists = scope:kehillah_rosh_yeshiva }
+	}
+
+	immediate = {
+		kehillah_save_rosh_yeshiva_effect = yes
+		random_courtier = {
+			limit = { has_character_flag = kehillah_zman_student }
+			weight = {
+				base = 1
+				modifier = { factor = 3 learning >= 10 }
+			}
+			save_scope_as = kehillah_bright_student
+		}
+	}
+
+	# Give him the head's own time: he learns fast.
+	option = {
+		name = kehillah_yeshiva.0206.a
+		scope:kehillah_bright_student = {
+			add_learning_skill = 3
+			add_character_flag = kehillah_promising_student
+			add_opinion = {
+				target = root
+				modifier = grateful_opinion
+				opinion = 20
+			}
+		}
+	}
+	# Treat all alike: the whole class benefits a little.
+	option = {
+		name = kehillah_yeshiva.0206.b
+		every_courtier = {
+			limit = { has_character_flag = kehillah_zman_student }
+			add_learning_lifestyle_xp = minor_lifestyle_xp
+		}
+		add_piety = minor_piety_gain
+	}
+}
+
+kehillah_yeshiva.0207 = {
+	type = character_event
+	title = kehillah_yeshiva.0207.t
+	desc = kehillah_yeshiva.0207.desc
+	theme = learning
+	left_portrait = {
+		character = scope:kehillah_disputant_a
+		animation = anger
+	}
+	right_portrait = {
+		character = scope:kehillah_disputant_b
+		animation = disapproval
+	}
+
+	immediate = {
+		kehillah_save_rosh_yeshiva_effect = yes
+		random_courtier = {
+			limit = { has_character_flag = kehillah_zman_student }
+			save_scope_as = kehillah_disputant_a
+		}
+		random_courtier = {
+			limit = {
+				has_character_flag = kehillah_zman_student
+				NOT = { this = scope:kehillah_disputant_a }
+			}
+			save_scope_as = kehillah_disputant_b
+		}
+	}
+
+	# Let them argue it out: that is how a yeshiva learns.
+	option = {
+		name = kehillah_yeshiva.0207.a
+		scope:kehillah_disputant_a = { add_learning_skill = 1 }
+		scope:kehillah_disputant_b = { add_learning_skill = 1 }
+		random = {
+			chance = 25
+			scope:kehillah_disputant_a = {
+				set_relation_rival = {
+					target = scope:kehillah_disputant_b
+					reason = kehillah_rival_yeshiva_quarrel
+				}
+			}
+		}
+	}
+	# The Rosh Yeshiva rules. A good ruling raises the yeshiva's name.
+	option = {
+		name = kehillah_yeshiva.0207.b
+		trigger = { exists = scope:kehillah_rosh_yeshiva }
+		if = {
+			limit = { scope:kehillah_rosh_yeshiva = { kehillah_judicial_learning_value >= kehillah_zman_quality_good } }
+			custom_tooltip = kehillah_yeshiva.0207.b.good.tt
+			kehillah_add_yeshiva_fame_effect = { AMOUNT = 2 }
+		}
+		else = {
+			custom_tooltip = kehillah_yeshiva.0207.b.poor.tt
+			scope:kehillah_disputant_a = {
+				add_opinion = {
+					target = scope:kehillah_rosh_yeshiva
+					modifier = disappointed_opinion
+					opinion = -10
+				}
+			}
 		}
 	}
 }

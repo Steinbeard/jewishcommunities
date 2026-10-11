@@ -94,6 +94,74 @@ Spec: [docs/spec/v29-yeshiva.md](../spec/v29-yeshiva.md). Code is in the commits
   - The three track icons are missing: `gfx/interface/icons/trait_level_tracks/{parshanut,talmudics,hashkafa}.dds`.
 - **Not exercised:** Parshanut ward teaching, which needs a childhood birthday.
 
+## Run 5 (`73d1d95`, `d28b03f`, `ca9a033`): seeds and new communities, ALL PASS
+
+- **Seeds:**
+  - Worms: fame 60, headed by Isaac.
+  - Narbonne: fame 40, headed by Todros.
+  - Baghdad: the Yeshiva of Pumbedita, fame 20, headed by Natan, now its Gaon, appointed under the
+    representative Exilarch David.
+  - Every seed has a great map hall.
+- **New communities, all with a domicile and the Kehillah government:**
+  - Lucena, in `c_cabra`: Isaac ibn Ghiyyat, fame 50.
+  - Jerusalem: Elijah ha-Kohen, fame 80.
+  - Mahdia: Labrat ibn Sighmar, no yeshiva.
+  - Sura, in `c_kufa`: Gaon Sherira, fame 15.
+- **The Kairouan ruin:** the disabled hall shows its requirement line, "A Jewish community here keeps
+  its Yeshiva", in red, with its fallback modifiers.
+- **The Jewish Communities panel** lists every new community. Its leader titles read "Exilarch David"
+  and "Gaon Sherira".
+- **Pre-existing:** `dynn_Gaon` is a duplicate localization key (a vanilla file also defines it).
+
+## Run 6 (`ab9dc64`): Hold a Zman, first run
+
+**Passed:**
+- The decision ran and cost 40 gold.
+- "The Zman Begins" showed 8 students, 3 of them visiting at Renowned, and all three focus
+  options.
+- "The Zman Ends" reported 3 ordained.
+- The tier message appeared.
+- The Greatness row read "Yeshiva's Fame (Illustrious): +82".
+- No students were left flagged afterwards.
+- The cooldown applied.
+
+**Failed:**
+- **The Great Yeshiva was not raised:** "Province 'Worms' already has a great building".
+- **Alumni:** `assign_councillor_type` refused the seat in the same effect as `add_courtier`, and
+  all three alumni went to Mainz.
+- **Tier check:** it read `kehillah_yeshiva_tier_seen` before that variable was set.
+- **Fame grew too fast:** one term gave +29.
+
+**Notes:**
+- On day one every pillar reads 0, so Hold a Zman is locked until the day-three snapshot.
+- The decision's hover tooltip lists unmet requirements only as a generic line. The decision panel
+  lists them in full, which is engine behaviour, as with Seek a Rabbi.
+
+Fixes are in `444bdde`; run 7 re-tests them.
+
+## Run 7 (`444bdde`)
+
+- **PASS: the Great Yeshiva.** The log read "the Great Yeshiva stands". The hall was replaced, and the
+  county slot shows "Great Yeshiva" with development growth +0.20, and Learning +1 and Prestige +0.50
+  for the holder.
+- **PASS: alumni seated a day later in different communities**, one at Mainz and one at Speyer, with
+  no assignment refused.
+- **PASS: no tier-variable errors.**
+- **PASS: fame from one term was +20, down from +29.**
+- **Two remaining bugs:**
+  - With no free seat left, the third alumnus reused a stale saved destination.
+  - A spurious tier notice fired on the first change in fame.
+- Both are fixed in `f9607af`.
+
+## Run 8 (`f9607af`): ALL PASS
+
+- **Alumni:** with exactly one free seat (Mainz), one alumnus went home and was seated there by
+  `.0210`. The second ordained visitor stayed at the Worms court. There was exactly one "going home"
+  line and one "took a Dayyan seat" line.
+- **Tier notice:** none appeared at the start, nor during a term that left fame between 70 and 79
+  (no crossing).
+- **error.log:** nothing new from the feature.
+
 ## Not covered yet
 
 - The traveller point of interest (`poi_kehillah_yeshiva`) and events `.0101`/`.0102`. These only
