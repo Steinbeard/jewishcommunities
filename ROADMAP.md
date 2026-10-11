@@ -107,21 +107,20 @@ the shim guide. Current state is in the
   This affects every building and the balance. Decide after V29's Stability-gated Yeshiva has been
   seen in play.
 
-- **V29 THE YESHIVA: PROPOSAL, awaiting Daniel's review (2026-10-11)**
-  ([spec](docs/spec/v29-yeshiva.md)). The plan:
-  - a Rosh Yeshiva court position whose aptitude depends on the rabbi tracks;
-  - adult students on a zman, with vanilla University Visit as the first candidate if the spikes pass;
-  - children as wards of the Rosh Yeshiva;
-  - ordination at the end of a zman;
-  - yeshiva fame and alumni.
-  It would replace the Learn Torah journey and Seek Semicha. **Decided 2026-10-11:**
-  - it stays separate from the Bet Din;
-  - the Yeshiva building is a payoff: Stability Healthy to build (not Greatness, so the pillars
-    support each other rather than snowball), and a Greatness contribution that grows with fame.
-  **Proposed:** it appears as a domicile building with its own panel and a map marker (not a special
-  building, which would belong to the host). The founding could later become a great project.
-  **Still open:** whether the leader can be Rosh Yeshiva. Monastic holy orders were considered and rejected as a base. Not to be built before
-  the review.
+- **V29 THE YESHIVA: DESIGN AGREED with Daniel 2026-10-11; spikes next, not built**
+  ([spec](docs/spec/v29-yeshiva.md)).
+  - **Founding:** a rare "Found a Yeshiva" decision, aiming for 10–25% of communities. It needs
+    Stability Healthy, Greatness Strained, the House of Debate, a qualified Rav (high Learning, a
+    track at 65+) and gold. There is no regional cap. A founding draws ordained rabbis as Dayyan
+    candidates and judges.
+  - **Rosh Yeshiva:** the leader can hold it.
+  - **The zman:** a mod-owned activity grown from today's Yeshiva Visit, not vanilla University
+    Visit.
+  - **Map building:** a great or special building in the host's province. Its host benefits are tied
+    to Jewish attractiveness, development, a little prestige and charter goodwill.
+  - **Travellers:** a vanilla travel point of interest whose events reach Jewish and non-Jewish
+    travellers.
+  - **Seeding:** Worms only. Not Baghdad: the Geonic academies had ended by about 1040.
 
 - **H1. DONE — VERIFIED LIVE 2026-10-09 (Shabbat heartbeat 1)**
   *(SUPERSEDED 2026-10-11: the theocracy mechanic below was removed; see the lay-courtier entry above)*
