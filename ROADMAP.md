@@ -64,14 +64,27 @@ the shim guide. Current state is in the
       - A full search, from an empty seat to a candidate chosen, seated Rav Gad as Dayyan, and the
         Greatness term rose from 43.2 to 55.2.
       - No new errors and no missing localization.
-  - **Follow-ups:**
-    - **The Dayyan cannot be fired.** This is vanilla's court chaplain `can_fire` under rabbinism's
-      clerical doctrine. Seek a Rabbi needs an empty seat, so a player cannot replace a weak Dayyan
-      until he dies. Consider a Kehillah exception in the `can_fire` override, or a "retire the
-      Dayyan" decision.
-    - Vanilla's notification on seating reads "New Realm Priest". Re-flavor it.
-    - Removing the Rabbi trait does not remove organization membership.
-    - The Bet Din's "rabbi to sit as Av Beit Din" requirement line was not checked in the UI.
+  - **Follow-ups, all done 2026-10-11 and verified live:**
+    - **The Dayyan can be fired and reassigned in a Kehillah.** Two vanilla locks were exempted in
+      the council override: the clerical-doctrine `can_fire`/`can_reassign` rule and
+      `can_change_once`. Firing him through the UI empties the seat, at a -20 opinion cost, and
+      Seek a Rabbi becomes available.
+    - **"New Realm Priest" now reads "New Dayyan"** with "Your Dayyan, X, takes his seat on the Bet
+      Din with your blessing", through custom localization on the engine message. Other realms keep
+      vanilla's text.
+    - **Removing the Rabbi trait now also removes organization membership** via
+      `kehillah_remove_rabbi_trait_effect`. Only debug events remove the trait; debug event .9 now
+      yields a truly lay leader.
+    - **The Bet Din's "rabbi to sit as Av Beit Din" requirement line** shows in red when unmet and
+      disappears when met.
+    - **Bonus: header art.** The Bet Din and Yeshiva Visit activities had no header image, which left
+      a blank planner header, about 16,000 "Missing on demand texture" lines and a boot "missing
+      Header Background texture" error. They now use vanilla's Adult Education study hall
+      (`header_background` field plus the list icons). The header renders and the boot error is
+      gone. The new list icons have not yet been looked at in the UI.
+  - **Pre-existing activity errors noticed, not touched:**
+    - Learn Torah journey: "no default guest intent" and "max_guests below 0".
+    - The Bet Din's four default invite rules are "already an entry in the valid invite rules".
 
 - **H1. DONE — VERIFIED LIVE 2026-10-09 (Shabbat heartbeat 1)**
   *(SUPERSEDED 2026-10-11: the theocracy mechanic below was removed; see the lay-courtier entry above)*
