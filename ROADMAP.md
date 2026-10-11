@@ -372,8 +372,45 @@ office. The incremental design and proof order are in
 features. This explicitly takes priority over the older autonomous queue for this
 interactive pass.
 
-- **Source-aware ransom ruling and named responsum: SCRIPTED, CK3-TIGER CLEAN,
-  FULL LIVE EXCHANGE PENDING 2026-09-29.** `kehillah_mastered_works` now records
+- **Source-aware ransom ruling and named responsum: PLAYER-FACING EXCHANGE VERIFIED LIVE
+  2026-10-10 (Shabbat heartbeat 5); the letter round-trip still unproven**
+  ([log](docs/testing/2026-10-10-ransom-ruling-live-test-log.md)).
+  *(Header corrected 2026-10-10: it read "FULL LIVE EXCHANGE PENDING 2026-09-29".)*
+  - **Verified live:** reached through its real entry point (`kehillah_din_sources.71`),
+    the case opens as "A Captive's Ransom" in clean English and offers the named-outside-Rabbi
+    option ("Ask Rav Isaac for a responsum") with no missing loc keys. Dispatching it produced
+    zero new script errors, and the docket ran on through judge 2, judge 3 and the closing
+    ruling. The correspondent was confirmed by tooltip to be a different character (Rav Isaac
+    the Bearded of Mainz, 9000101) — the first-name match with the player is coincidence, not a
+    self-consult bug.
+  - **Still unproven:** the 25-day letter round-trip (`.72` → `.73` → `.76`),
+    which fires on the AI correspondent and did not complete inside the observation window.
+    Reported as NOT OBSERVED rather than inferred from the dispatch succeeding.
+  - **Probes for it, built 2026-10-10 (Shabbat heartbeat 6), NOT yet run live:**
+    `kehillah_rabbi_loop_debug.9` (read-only: is a letter out, and who holds it),
+    `.10` (deliver `.72` now, skipping its 3-day post), `.11` (fire `.73` now,
+    skipping the second 3 days). `.11` refuses until the AI has actually answered, tested by
+    the reply quality the AI's own option writes, so a PASS cannot come from poking a hidden
+    event. The chain itself now logs `.72`'s arrival and chosen option, `.73` reached vs.
+    discarded, and `.76` shown. Source note: the leg needs about **6** unpaused days, not
+    25 — the 25 is the lifetime of the correspondent's reservation variables, and `.74`'s
+    timeout sits at day 12.
+  - **One real bug, found and fixed: all nine cases read**
+    `involved_activity.var:kehillah_din_advice_case` **unguarded.** Written in exactly one
+    place (the delayed-reply events), so it is unset whenever a case first opens — three engine
+    errors per opening. One defect authored once and copied eight times; now paired with
+    `exists` across 18 sites. **Log noise, not a behaviour bug** — the same verdict H3
+    reached for this identical shape. See the header comment in
+    `events/kehillah_bet_din_events.txt` before adding a tenth case.
+  - **OPEN, needs Daniel (BLOCKERS 2026-10-10): there are two implementations of this consult,
+    one of them dead code.** The `kehillah_bet_din_case7_*` / `kehillah_case7_*`
+    family has real loc, tooltips and richer precedent archiving, but
+    `kehillah_bet_din_case7_pick_correspondents_effect` has **zero call sites** (verified:
+    it appears exactly once in the repo, its own definition), and the engine's static analysis
+    reports its variables as used-but-never-set. The wired-up mechanism is the generic per-case
+    `kehillah_din_sources.71`–`.76` chain. Wire the richer one in or delete it;
+    leaving it is what misled probe `kehillah_rabbi_loop_debug.8`, which tests the dead
+    path and therefore can never pass. `kehillah_mastered_works` now records
   successful study separately from encountered works. Mishnah and Bavli Nashim
   mastery unlock different arguments for the acting judges in the captive-ransom
   case. If all three judges lack both works, the host can choose a named outside
