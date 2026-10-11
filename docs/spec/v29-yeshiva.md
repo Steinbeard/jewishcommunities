@@ -257,3 +257,58 @@ usual.
 5. The yeshiva point of interest and the traveller events (§3.5).
 6. The tracks' effects on the Bet Din, responsa and charter petitions (§4).
 7. *(Optional, later)* the founding as a great project (if spike 4 passes).
+
+## 9. Addendum, 2026-10-11: the yeshiva as a gameplay loop (Worms first)
+
+**Status:** being built 2026-10-11, at Daniel's direction ("focus on implementing the yeshiva well in
+Worms … a clear gameplay loop").
+
+**The gap after the first pass:** a player at Worms had no verb.
+
+- Fame ticked on its own.
+- The zman only worked by travelling to *another* yeshiva, and the nearest are far away.
+- Scholars arrived only after a founding, so the seeded Worms never got any.
+- Fame had no visible milestones and no payoff beyond the Greatness number.
+
+**The loop:**
+
+> **Hold a Zman** (a term at your own yeshiva) → students gather (your court's young men, plus
+> visiting students drawn by fame) → choose the term's focus → the term ends: students advance,
+> ready students are ordained by the Rosh Yeshiva, fame grows by the head's quality → ordained
+> visiting students go home to communities that lack a Dayyan (alumni) → fame tiers bring more
+> students, the Great Yeshiva, and Greatness.
+
+### 9.1 Hold a Zman (decision, then events)
+
+- **Availability:** a community with a yeshiva and a head. The cooldown is 1 year, the cost is a
+  modest amount of gold, and it is unavailable while Stability is in Crisis. The AI uses it too.
+  That is how AI yeshivot keep producing rabbis for the world.
+- **The beginning:**
+  - Students gather: unordained Jewish men aged 12–30 at court, plus **visiting students** drawn by
+    fame. There is 1 at Modest fame, 2 at Respected, 3 at Renowned and 4 at Illustrious.
+  - The player picks the term's focus:
+    - **Talmud:** Talmudics XP for the head and for a rabbi leader;
+    - **Scripture and commentary:** Parshanut;
+    - **Philosophy:** Hashkafa.
+  - Each student gains Learning.
+- **The end, about 6–9 weeks later:**
+  - The term's quality comes from the head's judicial Learning, plus a Stability bonus.
+  - **Every student earns zman credit.** Those now ready are **ordained by the Rosh Yeshiva**,
+    gaining fame per ordination as usual.
+  - Fame grows +2 to +8 by quality.
+- **Alumni:** an ordained *visiting* student goes home to a registered community with no Dayyan and
+  takes the seat. He records the yeshiva as his alma mater, and his yeshiva gains fame.
+
+### 9.2 Fame tiers
+
+| Fame | Tier |
+|---|---|
+| 0–39 | **Modest** |
+| 40–79 | **Respected** |
+| 80–139 | **Renowned** |
+| 140+ | **Illustrious** |
+
+- The tier name appears in the Greatness tooltip row and in the Hold a Zman tooltip.
+- Crossing a tier upward sends a message.
+- **Illustrious** raises the map hall to the **Great Yeshiva**, a second-tier great building with
+  stronger host effects. It is not torn down if fame later falls.
