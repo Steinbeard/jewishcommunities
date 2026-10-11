@@ -92,6 +92,21 @@ the shim guide. Current state is in the
     - Learn Torah journey: "no default guest intent" and "max_guests below 0".
     - The Bet Din's four default invite rules are "already an entry in the valid invite rules".
 
+- **PROPOSAL: cross-pillar building gates (Daniel's question, 2026-10-11; not decided).** Every
+  building line is gated today on the pillar it feeds:
+  - Synagogue, Beit Midrash and Sofer's Workshop are gated on Greatness and feed it.
+  - Countinghouse, Market Stalls and Workshops are gated on Prosperity and feed it.
+  - Hekdesh is gated on Stability and feeds it.
+
+  So a strong pillar snowballs and a weak one stays weak. The idea is that each line's upper tiers are
+  gated on a different pillar:
+  - learning on Stability;
+  - communal institutions on Prosperity;
+  - commerce on Stability or Greatness.
+
+  This affects every building and the balance. Decide after V29's Stability-gated Yeshiva has been
+  seen in play.
+
 - **V29 THE YESHIVA: PROPOSAL, awaiting Daniel's review (2026-10-11)**
   ([spec](docs/spec/v29-yeshiva.md)). The plan:
   - a Rosh Yeshiva court position whose aptitude depends on the rabbi tracks;
@@ -101,8 +116,8 @@ the shim guide. Current state is in the
   - yeshiva fame and alumni.
   It would replace the Learn Torah journey and Seek Semicha. **Decided 2026-10-11:**
   - it stays separate from the Bet Din;
-  - the Yeshiva building is a payoff: Greatness Flourishing plus Stability Healthy to build, and a
-    Greatness contribution that grows with fame.
+  - the Yeshiva building is a payoff: Stability Healthy to build (not Greatness, so the pillars
+    support each other rather than snowball), and a Greatness contribution that grows with fame.
   **Proposed:** it appears as a domicile building with its own panel and a map marker (not a special
   building, which would belong to the host). The founding could later become a great project.
   **Still open:** whether the leader can be Rosh Yeshiva. Monastic holy orders were considered and rejected as a base. Not to be built before

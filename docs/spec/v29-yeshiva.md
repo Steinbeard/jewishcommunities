@@ -2,8 +2,8 @@
 
 **Status: PROPOSAL, 2026-10-11, not implemented. Under Daniel's review.** Requested in the
 interactive session of 2026-10-11. Daniel's decisions so far: the yeshiva stays **separate from the
-Bet Din** (§7.1), and building it is a **payoff**, gated on the community's pillars and paying into
-Greatness (§3.1). How it appears in game is proposed in §3.5. Builds on [V21](v21-rabbi-ordination-paths.md) (ordination) and
+Bet Din** (§7.1), and building it is a **payoff**, gated on **Stability** and paying into Greatness, so that
+the pillars support each other rather than snowball (§3.1). How it appears in game is proposed in §3.5. Builds on [V21](v21-rabbi-ordination-paths.md) (ordination) and
 [V24](v24-rabbi-gameplay-loop.md) (the rabbi loop), and would supersede parts of both (section 5). The
 rabbi model it assumes is the one shipped earlier that night: a rabbi is a character with the Rabbi
 trait, and the community rabbi is the leader if he is a Rav, otherwise the Dayyan
@@ -47,10 +47,15 @@ XP to the leader, and a flat +60 to the Greatness baseline (+150 across all thre
 
 **Proposed:**
 
-- **To build:** Greatness at the **Flourishing** band (raised from Healthy) **and** Stability at the
-  **Healthy** band. A yeshiva needs a famous community to attract students and a settled one to keep
-  them. Both checks reuse `kehillah_pillar_at_least_trigger` with the existing band thresholds, and
-  both appear as requirement lines in the building's tooltip.
+- **To build:** Stability at the **Healthy** band, replacing today's Greatness gate, plus the gold
+  cost, which leans on Prosperity. *(Daniel, 2026-10-11: gate it on a different pillar so the pillars
+  support each other instead of snowballing.)* Academies flourished where communities were secure
+  and settled, not merely famous. The check reuses `kehillah_pillar_at_least_trigger` with the
+  existing band threshold and shows as a requirement line in the building's tooltip.
+- **Why not Greatness:** every building line today is gated on the pillar it feeds, so a strong
+  pillar buys buildings that make it stronger. Gating the Yeshiva on Stability makes order the
+  precondition for learning, and the Yeshiva repays it in Greatness. The same principle for the other
+  building lines is a separate ROADMAP proposal ("Cross-pillar building gates").
 - **What it pays:** the Rosh Yeshiva seat (§3.2), vanilla higher-studies status
   (`domicile_building_is_university`, pending the §6 spike), and a Greatness contribution that
   **grows**. The current flat +60 stays, plus a term that scales with yeshiva fame (§3.4), capped so
@@ -60,8 +65,9 @@ XP to the leader, and a flat +60 to the Greatness baseline (+150 across all thre
   But fame decays faster while Stability is below Healthy (students drift away from a troubled
   community), and no new students arrive while Stability is in Crisis. The payoff can be lost by
   neglect without demolishing anything.
-- **Balance:** a band rather than a raw number means Worms and the other starts are unaffected until
-  they grow into it. Tune both bands after a 50-year observation run; the targets are a first
+- **Balance:** a band rather than a raw number means the starting communities are unaffected until
+  they grow into it. Check how many starts already sit at Stability Healthy, because with the
+  Greatness gate gone a stable start could reach the Yeshiva early. Tune both bands after a 50-year observation run; the targets are a first
   Yeshiva in a well-run player game around 20–30 years in, and few AI communities.
 
 ### 3.2 The Rosh Yeshiva, a court position
