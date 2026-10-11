@@ -1,6 +1,6 @@
 # V29: The Yeshiva
 
-**Status: PROPOSAL, 2026-10-11, not implemented. Design agreed with Daniel; spikes next.** Requested
+**Status: FIRST IMPLEMENTATION PASS BUILT 2026-10-11** (see ROADMAP for what is verified and what is not built yet). Design agreed with Daniel the same day. Requested
 in the interactive session of 2026-10-11. Builds on [V21](v21-rabbi-ordination-paths.md) (ordination)
 and [V24](v24-rabbi-gameplay-loop.md) (the rabbi loop), and would supersede parts of both (section
 5). The rabbi model it assumes is the one shipped earlier that night: a rabbi is a character with

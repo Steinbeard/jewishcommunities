@@ -107,7 +107,20 @@ the shim guide. Current state is in the
   This affects every building and the balance. Decide after V29's Stability-gated Yeshiva has been
   seen in play.
 
-- **V29 THE YESHIVA: DESIGN AGREED with Daniel 2026-10-11; spikes next, not built**
+- **V29 THE YESHIVA: FIRST IMPLEMENTATION PASS BUILT AND VERIFIED LIVE 2026-10-11**
+  ([log](docs/testing/2026-10-11-yeshiva-live-test-log.md)).
+  - **Verified live:** the Worms seed; the great map building (spike 1 passed); the Rosh Yeshiva
+    position; the scholar event; founding at Mainz; and the Greatness fame row.
+  - **Verified live in a third run:** the quarterly fame pulse; the zman, ordained (+10 track XP,
+    +2 fame) and unordained (credit, then ordained on the spot).
+  - **Not covered:** traveller events.
+  - **Not built yet:**
+    - V29 section 4, where the tracks affect the Bet Din, responsa and charters;
+    - Seek Semicha's retirement (kept for now);
+    - the host's "Jewish attractiveness" benefit (needs V16/V18 hooks);
+    - the Yeshiva panel in the domicile window;
+    - the map-view marker.
+  The design, agreed with Daniel 2026-10-11:
   ([spec](docs/spec/v29-yeshiva.md)).
   - **Founding:** a rare "Found a Yeshiva" decision, aiming for 10–25% of communities. It needs
     Stability Healthy, Greatness Strained, the House of Debate, a qualified Rav (high Learning, a
