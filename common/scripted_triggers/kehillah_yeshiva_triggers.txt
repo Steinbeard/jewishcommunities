@@ -19,7 +19,7 @@ kehillah_has_yeshiva_trigger = {
 # students travel for (V29 section 3.1)? High Learning AND real depth in
 # one of the two teaching tracks.
 kehillah_qualified_rosh_yeshiva_trigger = {
-	has_trait = kehillah_rabbi_trait
+	kehillah_is_ordained_rabbi_trigger = yes
 	is_adult = yes
 	is_incapable = no
 	learning >= kehillah_rosh_yeshiva_min_learning
@@ -45,7 +45,7 @@ kehillah_has_rosh_yeshiva_trigger = {
 	kehillah_has_yeshiva_trigger = yes
 	OR = {
 		employs_court_position = rosh_yeshiva_kehillah_position
-		has_trait = kehillah_rabbi_trait
+		kehillah_is_ordained_rabbi_trigger = yes
 	}
 }
 
@@ -80,4 +80,57 @@ kehillah_can_hold_zman_trigger = {
 	kehillah_has_rosh_yeshiva_trigger = yes
 	NOT = { has_character_flag = kehillah_zman_cooldown }
 	NOT = { has_character_flag = kehillah_zman_in_progress }
+}
+
+# =====================================================================
+# V29 section 10 (2026-10-11): the living yeshiva.
+# =====================================================================
+
+# Scope: a character. An ORDAINED rabbi: the Rabbi trait, and not still a
+# student. Enrolment grants the trait (its tracks are where study
+# accumulates), so every OFFICE gate -- Dayyan, Rosh Yeshiva, Rav
+# naming, the community rabbi -- reads this, not the bare trait.
+kehillah_is_ordained_rabbi_trigger = {
+	has_trait = kehillah_rabbi_trait
+	NOT = { has_variable = kehillah_yeshiva_enrolled }
+	# A student who withdrew before graduating keeps the trait (and what
+	# he learned) but is not ordained.
+	NOT = { has_variable = kehillah_yeshiva_unfinished }
+}
+
+# Scope: a character. Could he enrol at a yeshiva? An unordained rabbinic
+# Jewish man of 16+ with Learning above 8.
+kehillah_yeshiva_enrollable_trigger = {
+	is_male = yes
+	age >= kehillah_yeshiva_min_age
+	learning > kehillah_yeshiva_min_learning
+	is_incapable = no
+	is_imprisoned = no
+	# Not yet a rabbi -- or a student who withdrew and may return.
+	OR = {
+		NOT = { has_trait = kehillah_rabbi_trait }
+		has_variable = kehillah_yeshiva_unfinished
+	}
+	NOT = { has_variable = kehillah_yeshiva_enrolled }
+	is_rabbinic_authority_jewish_trigger = yes
+}
+
+# Scope: an enrolled student. Is he at his yeshiva's town right now?
+# Study counts only while present (V29 section 10.2).
+kehillah_yeshiva_student_present_trigger = {
+	has_variable = kehillah_yeshiva_enrolled
+	exists = var:kehillah_yeshiva_enrolled.holder.domicile
+	location = var:kehillah_yeshiva_enrolled.holder.domicile.domicile_location
+}
+
+# Scope: a character. Is there any yeshiva of his faith to go to?
+kehillah_any_yeshiva_for_me_trigger = {
+	any_in_global_list = {
+		variable = kehillah_registered_communities
+		exists = holder
+		holder = {
+			kehillah_has_yeshiva_trigger = yes
+			faith = root.faith
+		}
+	}
 }
