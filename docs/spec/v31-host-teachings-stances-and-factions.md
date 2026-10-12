@@ -380,7 +380,20 @@ recipient who is the actor's **tributary**, and the Host Charter is a tributary 
 
 **What happened when a leader converted:** nothing. He kept leading the community.
 
-### 10.2 Built 2026-10-12 (not yet live-tested)
+### 10.2 Built 2026-10-12, live-tested the same day
+
+**Live-tested PASS** ([log](../testing/2026-10-12-forced-conversion-live-test-log.md)). The gate held
+before and after Banned; five AI communities under the Emperor became valid. The sweep stepped
+the convert down to a Jewish successor, who kept the Quarter, the Kehillah government and a
+charter. The convert played on as a wayfarer, and the game ran on with no crash. The first run
+found two bugs, both fixed and re-tested:
+- the sweep stepped down mid-pulse, and the same pulse's charter upkeep then gave the wayfarer's
+  camp a Host Charter. `kehillah_conversion.0001` is now sent a day later;
+- the notice styled the successor "Duke", because it arrived before his government updated. It
+  is now sent two days later.
+
+The convert also sees vanilla's "Tributary Invalidated" toast when his charter ends. That is
+expected.
 
 1. **The gate.** `kehillah_host_demand_conversion_allowed_trigger`
    (`common/scripted_triggers/kehillah_conversion_triggers.txt`), added as one line to the
