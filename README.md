@@ -61,8 +61,7 @@ bands.
 ### Council, officers and householders
 
 <p align="center">
-  <img src="docs/images/council.jpg" alt="The Kehillah council, with its Dayyan, Shtadlan, Gabbai, Rosh ha-Shmirah and Ne'emanah" width="320">
-  <img src="docs/images/communities.jpg" alt="The View Kehillah Communities list" width="320">
+  <img src="docs/images/council.jpg" alt="The Kehillah council, with its Dayyan, Shtadlan, Gabbai, Rosh ha-Shmirah and Ne'emanah" width="360">
 </p>
 
 - A **communal council** with five seats: Shtadlan (the community's advocate), Gabbai (treasurer),
@@ -81,8 +80,8 @@ bands.
 - A **community library**. Commission copies of real works for the Beit Midrash, study them
   with **Learn Torah** or the **Study Torah** scheme, donate them, or **write a sefer** of your
   own.
-- **Several ways to be ordained:** study the curriculum and **Seek Semicha** at a Beit Midrash,
-  grow up as a rabbi's ward, enrol in a yeshiva, or be invited by a Bet Din.
+- **Ordination** comes mainly through a yeshiva (below). A child raised as a rabbi's ward can earn
+  his endorsement for yeshiva study, and a Bet Din can invite a scholar to be ordained.
 - **Yeshivot.** A rare decision founds a yeshiva, which appears as a building on the map and is
   led by a Rosh Yeshiva. Young scholars enrol and travel there over time. They study under a
   rebbe and with a study partner (chavruta), and are ordained after two years. A yeshiva's
@@ -92,8 +91,7 @@ bands.
 ### The Bet Din and responsa
 
 <p align="center">
-  <img src="docs/images/bet-din.jpg" alt="Planning a Bet Din" width="320">
-  <img src="docs/images/decisions.jpg" alt="The Community Decisions list" width="320">
+  <img src="docs/images/bet-din.jpg" alt="Planning a Bet Din" width="360">
 </p>
 
 - **Convene a Bet Din**, an activity where three judges hear a docket of cases: a captive's
@@ -123,8 +121,7 @@ bands.
   one of four goals.
 - Yearly **family disputes** for the leader to rule on, and **protection events** when the
   community is threatened.
-- A **community map mode** and a clickable list of every Kehillah and its pillars (the "View
-  Kehillah Communities" interaction).
+- A **community map view** with a roster of every Kehillah and a breakdown of its pillars.
 
 ### Faith, family and culture
 
