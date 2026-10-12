@@ -108,6 +108,7 @@ kehillah_yeshiva_debug.5 = {
 	hidden = yes
 	immediate = {
 		debug_log = "kehillah_yeshiva_debug.5: students -- START"
+		kehillah_save_rosh_yeshiva_effect = yes
 		save_scope_value_as = { name = kehillah_debug_student_count value = kehillah_yeshiva_student_count_value }
 		primary_title ?= {
 			every_in_list = {
@@ -121,6 +122,28 @@ kehillah_yeshiva_debug.5 = {
 				else_if = { limit = { var:kehillah_yeshiva_quarters < 8 } debug_log = "kehillah_yeshiva_debug.5:   quarters 4-7" }
 				else = { debug_log = "kehillah_yeshiva_debug.5:   quarters 8+" }
 				if = { limit = { any_relation = { type = kehillah_rebbe } } debug_log = "kehillah_yeshiva_debug.5:   has a REBBE" }
+				else = {
+					debug_log = "kehillah_yeshiva_debug.5:   NO REBBE -- diagnostics:"
+					if = { limit = { exists = scope:kehillah_rosh_yeshiva } debug_log = "kehillah_yeshiva_debug.5:     a head exists" }
+					else = { debug_log = "kehillah_yeshiva_debug.5:     no head bound" }
+					if = { limit = { exists = scope:kehillah_rosh_yeshiva this = scope:kehillah_rosh_yeshiva } debug_log = "kehillah_yeshiva_debug.5:     IS the head" }
+					if = { limit = { exists = scope:kehillah_rosh_yeshiva is_close_family_of = scope:kehillah_rosh_yeshiva } debug_log = "kehillah_yeshiva_debug.5:     close family of the head" }
+					if = { limit = { exists = scope:kehillah_rosh_yeshiva is_child_of = scope:kehillah_rosh_yeshiva } debug_log = "kehillah_yeshiva_debug.5:     CHILD of the head" }
+					if = { limit = { exists = scope:kehillah_rosh_yeshiva has_relation_kehillah_talmid = scope:kehillah_rosh_yeshiva } debug_log = "kehillah_yeshiva_debug.5:     has TALMID relation toward the head (reversed?)" }
+					if = { limit = { exists = scope:kehillah_rosh_yeshiva scope:kehillah_rosh_yeshiva = { has_relation_kehillah_talmid = prev } } debug_log = "kehillah_yeshiva_debug.5:     head HAS talmid relation toward him (one-sided?)" }
+					if = { limit = { has_character_flag = kehillah_visiting_student } debug_log = "kehillah_yeshiva_debug.5:     a visiting student" }
+					if = { limit = { is_courtier = yes } debug_log = "kehillah_yeshiva_debug.5:     a courtier" }
+					if = { limit = { any_relation = { type = guardian } } debug_log = "kehillah_yeshiva_debug.5:     has a guardian relation" }
+					if = { limit = { any_relation = { type = ward } } debug_log = "kehillah_yeshiva_debug.5:     has a ward relation" }
+					# Try now, and report whether it took.
+					if = {
+						limit = { exists = scope:kehillah_rosh_yeshiva NOT = { this = scope:kehillah_rosh_yeshiva } }
+						save_scope_as = kehillah_diag_student
+						scope:kehillah_rosh_yeshiva = { set_relation_kehillah_talmid = scope:kehillah_diag_student }
+						if = { limit = { any_relation = { type = kehillah_rebbe } } debug_log = "kehillah_yeshiva_debug.5:     set_relation NOW WORKED" }
+						else = { debug_log = "kehillah_yeshiva_debug.5:     set_relation REFUSED" }
+					}
+				}
 				if = { limit = { any_relation = { type = kehillah_chavruta } } debug_log = "kehillah_yeshiva_debug.5:   has a CHAVRUTA" }
 				if = { limit = { kehillah_is_ordained_rabbi_trigger = yes } debug_log = "kehillah_yeshiva_debug.5:   BUG reads as ordained" }
 				if = { limit = { has_character_flag = kehillah_visiting_student } debug_log = "kehillah_yeshiva_debug.5:   visiting student" }
