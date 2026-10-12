@@ -22,6 +22,10 @@ this note referred to) are long since resolved and removed; numbering otherwise 
 than renumbered, since later items and other docs cross-reference these numbers by hand (e.g.
 `kehillah_breakdown_custom_loc.txt`'s own header cites "ROADMAP item 4").
 
+### Holiday event variety — 2026-10-12, Daniel's request
+
+Five one-step events for Yom Kippur, Sukkot and Shavuot are scripted. Two use named Jewish courtiers; the others remain available without them. The Purim gift event now always has an affordable choice. Source checks passed; live rendering and seasonal delivery are pending. See [the implementation note](docs/implementation/jewish-holiday-variety.md).
+
 ### Expulsion and the householders (v30) — 2026-10-12, interactive
 
 Daniel asked for expulsion and for the householder system to be rebuilt ("very tacked on ...
