@@ -17,6 +17,16 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Kehillah death-screen wording — 2026-10-12, Daniel's request
+
+The vanilla death screen described Kehillah leaders and their appointed successors
+as feudal rulers, speaking of thrones, vassals, peasants, armies, and dynastic
+heirs. Selected epitaph and successor lines now use communal language for
+characters marked as Kehillah leaders. The same vanilla lines remain intact for
+other characters. This is a localization change only; succession and player
+continuation are untouched. Source and `ck3-tiger` checks passed. Fresh-game
+death-screen rendering and a feudal control case remain to be checked live.
+
 ### Dynasty succession warning and holiday modifier colors — 2026-10-12
 
 Vanilla's "Primary Heir of the wrong Dynasty" warning is inaccurate for Kehillah rulers:
