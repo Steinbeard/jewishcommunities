@@ -201,10 +201,15 @@ formula and the standing succession term.
   - a family is counted;
   - a family is raised from within;
   - a family arrives or a newcomer settles;
-  - a family leaves;
-  - a family is no longer counted.
+  - a family leaves.
 
   The first refresh of a game or save announces nothing.
+
+  **2026-10-12 correction (Daniel's screenshot):** The passive "A Household Is No Longer
+  Counted" notice is removed. A refresh knows only that no eligible head of that house is
+  currently at court; it cannot name a definite cause. The message presented that bookkeeping
+  change as a major loss, with an empty body in the reported UI. Register and pillar effects
+  still update, while an actual move between communities keeps its named departure notice.
 - **AI leaders seat householders** in empty lay council seats (Shtadlan, Gabbai,
   Rosh ha-Shmirah, Ne'eman).
 - **Seeded and generated families.** The 19 historical communities still start with three

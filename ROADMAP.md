@@ -65,6 +65,9 @@ without clear connection to the rest of the kehillah mechanics"). Design and dec
     .11–.13. Dynasty prestige already covers it.
   - No opinion effects.
   - AI leaders fill empty lay council seats from householders.
+  - **2026-10-12 notification correction:** passive removal from the observed register is
+    silent; the report showed an empty, overly prominent "A Household Is No Longer Counted"
+    notice. Actual family moves still notify the player. See v30 §2.
 - **Next:** the live test in v30 §3. It is also the first live run of S1's collapse path
   (criterion 2).
 
