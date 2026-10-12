@@ -57,7 +57,7 @@ kehillah_din_sources.12 = {
 	}
 	option = {
 		name = kehillah_din_careful
-		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } kehillah_judicial_learning_value >= 12 OR = { has_trait = diligent has_trait = erudite has_trait = patient } }
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } OR = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } AND = { kehillah_judicial_learning_value >= 12 OR = { has_trait = diligent has_trait = erudite has_trait = patient } } } }
 		set_variable = { name = kehillah_din_reply_quality value = 24 days = 25 }
 		add_learning_lifestyle_xp = 10
 		add_stress = 10
@@ -97,33 +97,23 @@ kehillah_din_sources.13 = {
 }
 
 
+# The answer reaches the docket directly. The host decides whether to cite it
+# when choosing a ruling, without a second acceptance popup.
 kehillah_din_sources.16 = {
-	type = character_event
-	title = kehillah_din_reply_title
-	desc = { first_valid = { triggered_desc = { trigger = { involved_activity.var:kehillah_din_reply_quality > 0 } desc = kehillah_din_answer_1 } desc = kehillah_din_refusal_desc } }
-	theme = faith
-	left_portrait = { character = root animation = thinking }
-	trigger = { exists = involved_activity involved_activity.var:kehillah_din_case = 1 involved_activity.var:kehillah_din_pending = 1 }
-	immediate = {
-		involved_activity.var:kehillah_din_reply_author = { save_scope_as = kds_author }
-	}
-	option = {
-		name = kehillah_din_accept
-		trigger = { involved_activity.var:kehillah_din_reply_quality > 0 }
-		involved_activity = { set_variable = { name = kehillah_din_advice_case value = 1 } set_variable = { name = kehillah_din_advice_quality value = var:kehillah_din_reply_quality } }
-		kehillah_din_start_case_effect = { CASE = 1 EVENT = kehillah_bet_din.0001 }
-		custom_tooltip = kehillah_din_accept_tt
-		ai_chance = { base = 65 }
-	}
-	option = {
-		name = kehillah_din_set_aside
-		kehillah_din_start_case_effect = { CASE = 1 EVENT = kehillah_bet_din.0001 }
-		ai_chance = { base = 20 }
-	}
-
-	after = {  }
+    type = character_event
+    hidden = yes
+    trigger = { exists = involved_activity involved_activity.var:kehillah_din_case = 1 involved_activity.var:kehillah_din_pending = 1 }
+    immediate = {
+        if = { limit = { involved_activity.var:kehillah_din_reply_quality > 0 }
+            involved_activity = {
+                set_variable = { name = kehillah_din_advice_case value = 1 }
+                set_variable = { name = kehillah_din_advice_quality value = var:kehillah_din_reply_quality }
+            }
+        }
+        else = { involved_activity = { set_variable = { name = kehillah_din_reply_refused value = 1 } } }
+        kehillah_din_start_case_effect = { CASE = 1 EVENT = kehillah_bet_din.0001 }
+    }
 }
-
 
 kehillah_din_sources.14 = {
 	type = character_event
@@ -131,6 +121,7 @@ kehillah_din_sources.14 = {
 	immediate = {
         if = { limit = { exists = scope:kds_activity exists = involved_activity involved_activity = scope:kds_activity exists = involved_activity involved_activity.var:kehillah_din_case = 1 involved_activity.var:kehillah_din_pending = 1 }
             debug_log = "kehillah_din_sources: reply timeout; resuming case 1"
+            involved_activity = { set_variable = { name = kehillah_din_reply_timed_out value = 1 } }
             kehillah_din_start_case_effect = { CASE = 1 EVENT = kehillah_bet_din.0001 }
         }
 	}
@@ -149,7 +140,7 @@ kehillah_din_sources.15 = {
 	}
 	option = {
 		name = kehillah_din_review
-		if = { limit = { kehillah_judicial_learning_value >= 10 } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } } }
+		if = { limit = { OR = { kehillah_judicial_learning_value >= 10 has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } } }
 		else = { involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } } }
 		custom_tooltip = kehillah_din_review_tt
 		ai_chance = { base = 35 }
@@ -165,7 +156,7 @@ kehillah_din_sources.15 = {
 	}
 	option = {
 		name = kehillah_din_combo_1
-		trigger = { root = { has_trait = compassionate diplomacy >= 10 } OR = { involved_activity.var:kehillah_bet_din_av_beit_din = { NOT = { this = root } stewardship >= 12 } involved_activity.var:kehillah_bet_din_judge2 = { NOT = { this = root } stewardship >= 12 } involved_activity.var:kehillah_bet_din_judge3 = { NOT = { this = root } stewardship >= 12 } } }
+		trigger = { root = { OR = { has_trait = compassionate has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } diplomacy >= 10 } OR = { involved_activity.var:kehillah_bet_din_av_beit_din = { NOT = { this = root } stewardship >= 12 } involved_activity.var:kehillah_bet_din_judge2 = { NOT = { this = root } stewardship >= 12 } involved_activity.var:kehillah_bet_din_judge3 = { NOT = { this = root } stewardship >= 12 } } }
 		custom_tooltip = kehillah_din_combo_1_tt
 		involved_activity = { set_variable = { name = kehillah_bet_din_case1_direction value = 2 } change_variable = { name = kehillah_bet_din_tally add = kehillah_din_combination_tally } }
 		ai_chance = { base = 40 }
@@ -230,7 +221,7 @@ kehillah_din_sources.22 = {
 	}
 	option = {
 		name = kehillah_din_careful
-		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } kehillah_judicial_learning_value >= 12 OR = { has_trait = diligent has_trait = erudite has_trait = patient } }
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } OR = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } AND = { kehillah_judicial_learning_value >= 12 OR = { has_trait = diligent has_trait = erudite has_trait = patient } } } }
 		set_variable = { name = kehillah_din_reply_quality value = 24 days = 25 }
 		add_learning_lifestyle_xp = 10
 		add_stress = 10
@@ -270,33 +261,23 @@ kehillah_din_sources.23 = {
 }
 
 
+# The answer reaches the docket directly. The host decides whether to cite it
+# when choosing a ruling, without a second acceptance popup.
 kehillah_din_sources.26 = {
-	type = character_event
-	title = kehillah_din_reply_title
-	desc = { first_valid = { triggered_desc = { trigger = { involved_activity.var:kehillah_din_reply_quality > 0 } desc = kehillah_din_answer_2 } desc = kehillah_din_refusal_desc } }
-	theme = faith
-	left_portrait = { character = root animation = thinking }
-	trigger = { exists = involved_activity involved_activity.var:kehillah_din_case = 2 involved_activity.var:kehillah_din_pending = 2 }
-	immediate = {
-		involved_activity.var:kehillah_din_reply_author = { save_scope_as = kds_author }
-	}
-	option = {
-		name = kehillah_din_accept
-		trigger = { involved_activity.var:kehillah_din_reply_quality > 0 }
-		involved_activity = { set_variable = { name = kehillah_din_advice_case value = 2 } set_variable = { name = kehillah_din_advice_quality value = var:kehillah_din_reply_quality } }
-		kehillah_din_start_case_effect = { CASE = 2 EVENT = kehillah_bet_din.0011 }
-		custom_tooltip = kehillah_din_accept_tt
-		ai_chance = { base = 65 }
-	}
-	option = {
-		name = kehillah_din_set_aside
-		kehillah_din_start_case_effect = { CASE = 2 EVENT = kehillah_bet_din.0011 }
-		ai_chance = { base = 20 }
-	}
-
-	after = {  }
+    type = character_event
+    hidden = yes
+    trigger = { exists = involved_activity involved_activity.var:kehillah_din_case = 2 involved_activity.var:kehillah_din_pending = 2 }
+    immediate = {
+        if = { limit = { involved_activity.var:kehillah_din_reply_quality > 0 }
+            involved_activity = {
+                set_variable = { name = kehillah_din_advice_case value = 2 }
+                set_variable = { name = kehillah_din_advice_quality value = var:kehillah_din_reply_quality }
+            }
+        }
+        else = { involved_activity = { set_variable = { name = kehillah_din_reply_refused value = 1 } } }
+        kehillah_din_start_case_effect = { CASE = 2 EVENT = kehillah_bet_din.0011 }
+    }
 }
-
 
 kehillah_din_sources.24 = {
 	type = character_event
@@ -304,6 +285,7 @@ kehillah_din_sources.24 = {
 	immediate = {
         if = { limit = { exists = scope:kds_activity exists = involved_activity involved_activity = scope:kds_activity exists = involved_activity involved_activity.var:kehillah_din_case = 2 involved_activity.var:kehillah_din_pending = 2 }
             debug_log = "kehillah_din_sources: reply timeout; resuming case 2"
+            involved_activity = { set_variable = { name = kehillah_din_reply_timed_out value = 1 } }
             kehillah_din_start_case_effect = { CASE = 2 EVENT = kehillah_bet_din.0011 }
         }
 	}
@@ -322,7 +304,7 @@ kehillah_din_sources.25 = {
 	}
 	option = {
 		name = kehillah_din_review
-		if = { limit = { kehillah_judicial_learning_value >= 10 } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } } }
+		if = { limit = { OR = { kehillah_judicial_learning_value >= 10 has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } } }
 		else = { involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } } }
 		custom_tooltip = kehillah_din_review_tt
 		ai_chance = { base = 35 }
@@ -338,7 +320,7 @@ kehillah_din_sources.25 = {
 	}
 	option = {
 		name = kehillah_din_combo_2
-		trigger = { root = { has_trait = patient kehillah_judicial_learning_value >= 12 } OR = { involved_activity.var:kehillah_bet_din_av_beit_din = { NOT = { this = root } intrigue >= 12 } involved_activity.var:kehillah_bet_din_judge2 = { NOT = { this = root } intrigue >= 12 } involved_activity.var:kehillah_bet_din_judge3 = { NOT = { this = root } intrigue >= 12 } } }
+		trigger = { root = { OR = { has_trait = patient has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } kehillah_judicial_learning_value >= 12 } OR = { involved_activity.var:kehillah_bet_din_av_beit_din = { NOT = { this = root } intrigue >= 12 } involved_activity.var:kehillah_bet_din_judge2 = { NOT = { this = root } intrigue >= 12 } involved_activity.var:kehillah_bet_din_judge3 = { NOT = { this = root } intrigue >= 12 } } }
 		custom_tooltip = kehillah_din_combo_2_tt
 		involved_activity = { set_variable = { name = kehillah_bet_din_case2_direction value = 0 } change_variable = { name = kehillah_bet_din_tally add = kehillah_din_combination_tally } }
 		ai_chance = { base = 40 }
@@ -403,7 +385,7 @@ kehillah_din_sources.32 = {
 	}
 	option = {
 		name = kehillah_din_careful
-		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mekhilta } kehillah_judicial_learning_value >= 12 OR = { has_trait = diligent has_trait = erudite has_trait = patient } }
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mekhilta } OR = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } AND = { kehillah_judicial_learning_value >= 12 OR = { has_trait = diligent has_trait = erudite has_trait = patient } } } }
 		set_variable = { name = kehillah_din_reply_quality value = 24 days = 25 }
 		add_learning_lifestyle_xp = 10
 		add_stress = 10
@@ -443,33 +425,23 @@ kehillah_din_sources.33 = {
 }
 
 
+# The answer reaches the docket directly. The host decides whether to cite it
+# when choosing a ruling, without a second acceptance popup.
 kehillah_din_sources.36 = {
-	type = character_event
-	title = kehillah_din_reply_title
-	desc = { first_valid = { triggered_desc = { trigger = { involved_activity.var:kehillah_din_reply_quality > 0 } desc = kehillah_din_answer_3 } desc = kehillah_din_refusal_desc } }
-	theme = faith
-	left_portrait = { character = root animation = thinking }
-	trigger = { exists = involved_activity involved_activity.var:kehillah_din_case = 3 involved_activity.var:kehillah_din_pending = 3 }
-	immediate = {
-		involved_activity.var:kehillah_din_reply_author = { save_scope_as = kds_author }
-	}
-	option = {
-		name = kehillah_din_accept
-		trigger = { involved_activity.var:kehillah_din_reply_quality > 0 }
-		involved_activity = { set_variable = { name = kehillah_din_advice_case value = 3 } set_variable = { name = kehillah_din_advice_quality value = var:kehillah_din_reply_quality } }
-		kehillah_din_start_case_effect = { CASE = 3 EVENT = kehillah_bet_din.0021 }
-		custom_tooltip = kehillah_din_accept_tt
-		ai_chance = { base = 65 }
-	}
-	option = {
-		name = kehillah_din_set_aside
-		kehillah_din_start_case_effect = { CASE = 3 EVENT = kehillah_bet_din.0021 }
-		ai_chance = { base = 20 }
-	}
-
-	after = {  }
+    type = character_event
+    hidden = yes
+    trigger = { exists = involved_activity involved_activity.var:kehillah_din_case = 3 involved_activity.var:kehillah_din_pending = 3 }
+    immediate = {
+        if = { limit = { involved_activity.var:kehillah_din_reply_quality > 0 }
+            involved_activity = {
+                set_variable = { name = kehillah_din_advice_case value = 3 }
+                set_variable = { name = kehillah_din_advice_quality value = var:kehillah_din_reply_quality }
+            }
+        }
+        else = { involved_activity = { set_variable = { name = kehillah_din_reply_refused value = 1 } } }
+        kehillah_din_start_case_effect = { CASE = 3 EVENT = kehillah_bet_din.0021 }
+    }
 }
-
 
 kehillah_din_sources.34 = {
 	type = character_event
@@ -477,6 +449,7 @@ kehillah_din_sources.34 = {
 	immediate = {
         if = { limit = { exists = scope:kds_activity exists = involved_activity involved_activity = scope:kds_activity exists = involved_activity involved_activity.var:kehillah_din_case = 3 involved_activity.var:kehillah_din_pending = 3 }
             debug_log = "kehillah_din_sources: reply timeout; resuming case 3"
+            involved_activity = { set_variable = { name = kehillah_din_reply_timed_out value = 1 } }
             kehillah_din_start_case_effect = { CASE = 3 EVENT = kehillah_bet_din.0021 }
         }
 	}
@@ -495,7 +468,7 @@ kehillah_din_sources.35 = {
 	}
 	option = {
 		name = kehillah_din_review
-		if = { limit = { kehillah_judicial_learning_value >= 10 } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } } }
+		if = { limit = { OR = { kehillah_judicial_learning_value >= 10 has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } } }
 		else = { involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } } }
 		custom_tooltip = kehillah_din_review_tt
 		ai_chance = { base = 35 }
@@ -511,7 +484,7 @@ kehillah_din_sources.35 = {
 	}
 	option = {
 		name = kehillah_din_combo_3
-		trigger = { root = { has_trait = just stewardship >= 12 } OR = { involved_activity.var:kehillah_bet_din_av_beit_din = { NOT = { this = root } kehillah_judicial_learning_value >= 12 } involved_activity.var:kehillah_bet_din_judge2 = { NOT = { this = root } kehillah_judicial_learning_value >= 12 } involved_activity.var:kehillah_bet_din_judge3 = { NOT = { this = root } kehillah_judicial_learning_value >= 12 } } }
+		trigger = { root = { OR = { has_trait = just has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } stewardship >= 12 } OR = { involved_activity.var:kehillah_bet_din_av_beit_din = { NOT = { this = root } kehillah_judicial_learning_value >= 12 } involved_activity.var:kehillah_bet_din_judge2 = { NOT = { this = root } kehillah_judicial_learning_value >= 12 } involved_activity.var:kehillah_bet_din_judge3 = { NOT = { this = root } kehillah_judicial_learning_value >= 12 } } }
 		custom_tooltip = kehillah_din_combo_3_tt
 		involved_activity = { set_variable = { name = kehillah_bet_din_case3_direction value = 0 } change_variable = { name = kehillah_bet_din_tally add = kehillah_din_combination_tally } }
 		ai_chance = { base = 40 }
@@ -576,7 +549,7 @@ kehillah_din_sources.42 = {
 	}
 	option = {
 		name = kehillah_din_careful
-		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } kehillah_judicial_learning_value >= 12 OR = { has_trait = diligent has_trait = erudite has_trait = patient } }
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } OR = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } AND = { kehillah_judicial_learning_value >= 12 OR = { has_trait = diligent has_trait = erudite has_trait = patient } } } }
 		set_variable = { name = kehillah_din_reply_quality value = 24 days = 25 }
 		add_learning_lifestyle_xp = 10
 		add_stress = 10
@@ -616,33 +589,23 @@ kehillah_din_sources.43 = {
 }
 
 
+# The answer reaches the docket directly. The host decides whether to cite it
+# when choosing a ruling, without a second acceptance popup.
 kehillah_din_sources.46 = {
-	type = character_event
-	title = kehillah_din_reply_title
-	desc = { first_valid = { triggered_desc = { trigger = { involved_activity.var:kehillah_din_reply_quality > 0 } desc = kehillah_din_answer_4 } desc = kehillah_din_refusal_desc } }
-	theme = faith
-	left_portrait = { character = root animation = thinking }
-	trigger = { exists = involved_activity involved_activity.var:kehillah_din_case = 4 involved_activity.var:kehillah_din_pending = 4 }
-	immediate = {
-		involved_activity.var:kehillah_din_reply_author = { save_scope_as = kds_author }
-	}
-	option = {
-		name = kehillah_din_accept
-		trigger = { involved_activity.var:kehillah_din_reply_quality > 0 }
-		involved_activity = { set_variable = { name = kehillah_din_advice_case value = 4 } set_variable = { name = kehillah_din_advice_quality value = var:kehillah_din_reply_quality } }
-		kehillah_din_start_case_effect = { CASE = 4 EVENT = kehillah_bet_din.0031 }
-		custom_tooltip = kehillah_din_accept_tt
-		ai_chance = { base = 65 }
-	}
-	option = {
-		name = kehillah_din_set_aside
-		kehillah_din_start_case_effect = { CASE = 4 EVENT = kehillah_bet_din.0031 }
-		ai_chance = { base = 20 }
-	}
-
-	after = {  }
+    type = character_event
+    hidden = yes
+    trigger = { exists = involved_activity involved_activity.var:kehillah_din_case = 4 involved_activity.var:kehillah_din_pending = 4 }
+    immediate = {
+        if = { limit = { involved_activity.var:kehillah_din_reply_quality > 0 }
+            involved_activity = {
+                set_variable = { name = kehillah_din_advice_case value = 4 }
+                set_variable = { name = kehillah_din_advice_quality value = var:kehillah_din_reply_quality }
+            }
+        }
+        else = { involved_activity = { set_variable = { name = kehillah_din_reply_refused value = 1 } } }
+        kehillah_din_start_case_effect = { CASE = 4 EVENT = kehillah_bet_din.0031 }
+    }
 }
-
 
 kehillah_din_sources.44 = {
 	type = character_event
@@ -650,6 +613,7 @@ kehillah_din_sources.44 = {
 	immediate = {
         if = { limit = { exists = scope:kds_activity exists = involved_activity involved_activity = scope:kds_activity exists = involved_activity involved_activity.var:kehillah_din_case = 4 involved_activity.var:kehillah_din_pending = 4 }
             debug_log = "kehillah_din_sources: reply timeout; resuming case 4"
+            involved_activity = { set_variable = { name = kehillah_din_reply_timed_out value = 1 } }
             kehillah_din_start_case_effect = { CASE = 4 EVENT = kehillah_bet_din.0031 }
         }
 	}
@@ -668,7 +632,7 @@ kehillah_din_sources.45 = {
 	}
 	option = {
 		name = kehillah_din_review
-		if = { limit = { kehillah_judicial_learning_value >= 10 } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } } }
+		if = { limit = { OR = { kehillah_judicial_learning_value >= 10 has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } } }
 		else = { involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } } }
 		custom_tooltip = kehillah_din_review_tt
 		ai_chance = { base = 35 }
@@ -684,7 +648,7 @@ kehillah_din_sources.45 = {
 	}
 	option = {
 		name = kehillah_din_combo_4
-		trigger = { root = { has_trait = compassionate diplomacy >= 12 } OR = { involved_activity.var:kehillah_bet_din_av_beit_din = { NOT = { this = root } kehillah_judicial_learning_value >= 12 } involved_activity.var:kehillah_bet_din_judge2 = { NOT = { this = root } kehillah_judicial_learning_value >= 12 } involved_activity.var:kehillah_bet_din_judge3 = { NOT = { this = root } kehillah_judicial_learning_value >= 12 } } }
+		trigger = { root = { OR = { has_trait = compassionate has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } diplomacy >= 12 } OR = { involved_activity.var:kehillah_bet_din_av_beit_din = { NOT = { this = root } kehillah_judicial_learning_value >= 12 } involved_activity.var:kehillah_bet_din_judge2 = { NOT = { this = root } kehillah_judicial_learning_value >= 12 } involved_activity.var:kehillah_bet_din_judge3 = { NOT = { this = root } kehillah_judicial_learning_value >= 12 } } }
 		custom_tooltip = kehillah_din_combo_4_tt
 		involved_activity = { set_variable = { name = kehillah_bet_din_case4_direction value = 1 } change_variable = { name = kehillah_bet_din_tally add = kehillah_din_combination_tally } }
 		ai_chance = { base = 40 }
@@ -749,7 +713,7 @@ kehillah_din_sources.52 = {
 	}
 	option = {
 		name = kehillah_din_careful
-		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_moed } kehillah_judicial_learning_value >= 12 OR = { has_trait = diligent has_trait = erudite has_trait = patient } }
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_moed } OR = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } AND = { kehillah_judicial_learning_value >= 12 OR = { has_trait = diligent has_trait = erudite has_trait = patient } } } }
 		set_variable = { name = kehillah_din_reply_quality value = 24 days = 25 }
 		add_learning_lifestyle_xp = 10
 		add_stress = 10
@@ -789,33 +753,23 @@ kehillah_din_sources.53 = {
 }
 
 
+# The answer reaches the docket directly. The host decides whether to cite it
+# when choosing a ruling, without a second acceptance popup.
 kehillah_din_sources.56 = {
-	type = character_event
-	title = kehillah_din_reply_title
-	desc = { first_valid = { triggered_desc = { trigger = { involved_activity.var:kehillah_din_reply_quality > 0 } desc = kehillah_din_answer_5 } desc = kehillah_din_refusal_desc } }
-	theme = faith
-	left_portrait = { character = root animation = thinking }
-	trigger = { exists = involved_activity involved_activity.var:kehillah_din_case = 5 involved_activity.var:kehillah_din_pending = 5 }
-	immediate = {
-		involved_activity.var:kehillah_din_reply_author = { save_scope_as = kds_author }
-	}
-	option = {
-		name = kehillah_din_accept
-		trigger = { involved_activity.var:kehillah_din_reply_quality > 0 }
-		involved_activity = { set_variable = { name = kehillah_din_advice_case value = 5 } set_variable = { name = kehillah_din_advice_quality value = var:kehillah_din_reply_quality } }
-		kehillah_din_start_case_effect = { CASE = 5 EVENT = kehillah_bet_din.0041 }
-		custom_tooltip = kehillah_din_accept_tt
-		ai_chance = { base = 65 }
-	}
-	option = {
-		name = kehillah_din_set_aside
-		kehillah_din_start_case_effect = { CASE = 5 EVENT = kehillah_bet_din.0041 }
-		ai_chance = { base = 20 }
-	}
-
-	after = {  }
+    type = character_event
+    hidden = yes
+    trigger = { exists = involved_activity involved_activity.var:kehillah_din_case = 5 involved_activity.var:kehillah_din_pending = 5 }
+    immediate = {
+        if = { limit = { involved_activity.var:kehillah_din_reply_quality > 0 }
+            involved_activity = {
+                set_variable = { name = kehillah_din_advice_case value = 5 }
+                set_variable = { name = kehillah_din_advice_quality value = var:kehillah_din_reply_quality }
+            }
+        }
+        else = { involved_activity = { set_variable = { name = kehillah_din_reply_refused value = 1 } } }
+        kehillah_din_start_case_effect = { CASE = 5 EVENT = kehillah_bet_din.0041 }
+    }
 }
-
 
 kehillah_din_sources.54 = {
 	type = character_event
@@ -823,6 +777,7 @@ kehillah_din_sources.54 = {
 	immediate = {
         if = { limit = { exists = scope:kds_activity exists = involved_activity involved_activity = scope:kds_activity exists = involved_activity involved_activity.var:kehillah_din_case = 5 involved_activity.var:kehillah_din_pending = 5 }
             debug_log = "kehillah_din_sources: reply timeout; resuming case 5"
+            involved_activity = { set_variable = { name = kehillah_din_reply_timed_out value = 1 } }
             kehillah_din_start_case_effect = { CASE = 5 EVENT = kehillah_bet_din.0041 }
         }
 	}
@@ -841,7 +796,7 @@ kehillah_din_sources.55 = {
 	}
 	option = {
 		name = kehillah_din_review
-		if = { limit = { kehillah_judicial_learning_value >= 10 } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } } }
+		if = { limit = { OR = { kehillah_judicial_learning_value >= 10 has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } } }
 		else = { involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } } }
 		custom_tooltip = kehillah_din_review_tt
 		ai_chance = { base = 35 }
@@ -857,7 +812,7 @@ kehillah_din_sources.55 = {
 	}
 	option = {
 		name = kehillah_din_combo_5
-		trigger = { root = { has_trait = diligent kehillah_judicial_learning_value >= 12 } OR = { involved_activity.var:kehillah_bet_din_av_beit_din = { NOT = { this = root } intrigue >= 12 } involved_activity.var:kehillah_bet_din_judge2 = { NOT = { this = root } intrigue >= 12 } involved_activity.var:kehillah_bet_din_judge3 = { NOT = { this = root } intrigue >= 12 } } }
+		trigger = { root = { OR = { has_trait = diligent has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } kehillah_judicial_learning_value >= 12 } OR = { involved_activity.var:kehillah_bet_din_av_beit_din = { NOT = { this = root } intrigue >= 12 } involved_activity.var:kehillah_bet_din_judge2 = { NOT = { this = root } intrigue >= 12 } involved_activity.var:kehillah_bet_din_judge3 = { NOT = { this = root } intrigue >= 12 } } }
 		custom_tooltip = kehillah_din_combo_5_tt
 		involved_activity = { set_variable = { name = kehillah_bet_din_case5_direction value = var:kehillah_bet_din_case5_truth } change_variable = { name = kehillah_bet_din_tally add = kehillah_din_combination_tally } }
 		ai_chance = { base = 40 }
@@ -922,7 +877,7 @@ kehillah_din_sources.62 = {
 	}
 	option = {
 		name = kehillah_din_careful
-		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nezikin } kehillah_judicial_learning_value >= 12 OR = { has_trait = diligent has_trait = erudite has_trait = patient } }
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nezikin } OR = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } AND = { kehillah_judicial_learning_value >= 12 OR = { has_trait = diligent has_trait = erudite has_trait = patient } } } }
 		set_variable = { name = kehillah_din_reply_quality value = 24 days = 25 }
 		add_learning_lifestyle_xp = 10
 		add_stress = 10
@@ -962,33 +917,23 @@ kehillah_din_sources.63 = {
 }
 
 
+# The answer reaches the docket directly. The host decides whether to cite it
+# when choosing a ruling, without a second acceptance popup.
 kehillah_din_sources.66 = {
-	type = character_event
-	title = kehillah_din_reply_title
-	desc = { first_valid = { triggered_desc = { trigger = { involved_activity.var:kehillah_din_reply_quality > 0 } desc = kehillah_din_answer_6 } desc = kehillah_din_refusal_desc } }
-	theme = faith
-	left_portrait = { character = root animation = thinking }
-	trigger = { exists = involved_activity involved_activity.var:kehillah_din_case = 6 involved_activity.var:kehillah_din_pending = 6 }
-	immediate = {
-		involved_activity.var:kehillah_din_reply_author = { save_scope_as = kds_author }
-	}
-	option = {
-		name = kehillah_din_accept
-		trigger = { involved_activity.var:kehillah_din_reply_quality > 0 }
-		involved_activity = { set_variable = { name = kehillah_din_advice_case value = 6 } set_variable = { name = kehillah_din_advice_quality value = var:kehillah_din_reply_quality } }
-		kehillah_din_start_case_effect = { CASE = 6 EVENT = kehillah_bet_din.0051 }
-		custom_tooltip = kehillah_din_accept_tt
-		ai_chance = { base = 65 }
-	}
-	option = {
-		name = kehillah_din_set_aside
-		kehillah_din_start_case_effect = { CASE = 6 EVENT = kehillah_bet_din.0051 }
-		ai_chance = { base = 20 }
-	}
-
-	after = {  }
+    type = character_event
+    hidden = yes
+    trigger = { exists = involved_activity involved_activity.var:kehillah_din_case = 6 involved_activity.var:kehillah_din_pending = 6 }
+    immediate = {
+        if = { limit = { involved_activity.var:kehillah_din_reply_quality > 0 }
+            involved_activity = {
+                set_variable = { name = kehillah_din_advice_case value = 6 }
+                set_variable = { name = kehillah_din_advice_quality value = var:kehillah_din_reply_quality }
+            }
+        }
+        else = { involved_activity = { set_variable = { name = kehillah_din_reply_refused value = 1 } } }
+        kehillah_din_start_case_effect = { CASE = 6 EVENT = kehillah_bet_din.0051 }
+    }
 }
-
 
 kehillah_din_sources.64 = {
 	type = character_event
@@ -996,6 +941,7 @@ kehillah_din_sources.64 = {
 	immediate = {
         if = { limit = { exists = scope:kds_activity exists = involved_activity involved_activity = scope:kds_activity exists = involved_activity involved_activity.var:kehillah_din_case = 6 involved_activity.var:kehillah_din_pending = 6 }
             debug_log = "kehillah_din_sources: reply timeout; resuming case 6"
+            involved_activity = { set_variable = { name = kehillah_din_reply_timed_out value = 1 } }
             kehillah_din_start_case_effect = { CASE = 6 EVENT = kehillah_bet_din.0051 }
         }
 	}
@@ -1014,7 +960,7 @@ kehillah_din_sources.65 = {
 	}
 	option = {
 		name = kehillah_din_review
-		if = { limit = { kehillah_judicial_learning_value >= 10 } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } } }
+		if = { limit = { OR = { kehillah_judicial_learning_value >= 10 has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } } }
 		else = { involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } } }
 		custom_tooltip = kehillah_din_review_tt
 		ai_chance = { base = 35 }
@@ -1030,7 +976,7 @@ kehillah_din_sources.65 = {
 	}
 	option = {
 		name = kehillah_din_combo_6
-		trigger = { root = { has_trait = just intrigue >= 12 } OR = { involved_activity.var:kehillah_bet_din_av_beit_din = { NOT = { this = root } stewardship >= 12 } involved_activity.var:kehillah_bet_din_judge2 = { NOT = { this = root } stewardship >= 12 } involved_activity.var:kehillah_bet_din_judge3 = { NOT = { this = root } stewardship >= 12 } } }
+		trigger = { root = { OR = { has_trait = just has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } intrigue >= 12 } OR = { involved_activity.var:kehillah_bet_din_av_beit_din = { NOT = { this = root } stewardship >= 12 } involved_activity.var:kehillah_bet_din_judge2 = { NOT = { this = root } stewardship >= 12 } involved_activity.var:kehillah_bet_din_judge3 = { NOT = { this = root } stewardship >= 12 } } }
 		custom_tooltip = kehillah_din_combo_6_tt
 		involved_activity = { set_variable = { name = kehillah_bet_din_case6_direction value = 2 } change_variable = { name = kehillah_bet_din_tally add = kehillah_din_combination_tally } }
 		ai_chance = { base = 40 }
@@ -1098,7 +1044,7 @@ kehillah_din_sources.72 = {
 	option = {
 		name = kehillah_din_careful
 		debug_log = "kehillah_din_sources.72: correspondent chose the careful answer"
-		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mishnah } kehillah_judicial_learning_value >= 12 OR = { has_trait = diligent has_trait = erudite has_trait = patient } }
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mishnah } OR = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } AND = { kehillah_judicial_learning_value >= 12 OR = { has_trait = diligent has_trait = erudite has_trait = patient } } } }
 		set_variable = { name = kehillah_din_reply_quality value = 24 days = 25 }
 		add_learning_lifestyle_xp = 10
 		add_stress = 10
@@ -1141,34 +1087,23 @@ kehillah_din_sources.73 = {
 }
 
 
+# The answer reaches the docket directly. The host decides whether to cite it
+# when choosing a ruling, without a second acceptance popup.
 kehillah_din_sources.76 = {
-	type = character_event
-	title = kehillah_din_reply_title
-	desc = { first_valid = { triggered_desc = { trigger = { involved_activity.var:kehillah_din_reply_quality > 0 } desc = kehillah_din_answer_7 } desc = kehillah_din_refusal_desc } }
-	theme = faith
-	left_portrait = { character = root animation = thinking }
-	trigger = { exists = involved_activity involved_activity.var:kehillah_din_case = 7 involved_activity.var:kehillah_din_pending = 7 }
-	immediate = {
-		debug_log = "kehillah_din_sources.76: the responsum is being shown to the court"
-		involved_activity.var:kehillah_din_reply_author = { save_scope_as = kds_author }
-	}
-	option = {
-		name = kehillah_din_accept
-		trigger = { involved_activity.var:kehillah_din_reply_quality > 0 }
-		involved_activity = { set_variable = { name = kehillah_din_advice_case value = 7 } set_variable = { name = kehillah_din_advice_quality value = var:kehillah_din_reply_quality } }
-		kehillah_din_start_case_effect = { CASE = 7 EVENT = kehillah_bet_din.0061 }
-		custom_tooltip = kehillah_din_accept_tt
-		ai_chance = { base = 65 }
-	}
-	option = {
-		name = kehillah_din_set_aside
-		kehillah_din_start_case_effect = { CASE = 7 EVENT = kehillah_bet_din.0061 }
-		ai_chance = { base = 20 }
-	}
-
-	after = {  }
+    type = character_event
+    hidden = yes
+    trigger = { exists = involved_activity involved_activity.var:kehillah_din_case = 7 involved_activity.var:kehillah_din_pending = 7 }
+    immediate = {
+        if = { limit = { involved_activity.var:kehillah_din_reply_quality > 0 }
+            involved_activity = {
+                set_variable = { name = kehillah_din_advice_case value = 7 }
+                set_variable = { name = kehillah_din_advice_quality value = var:kehillah_din_reply_quality }
+            }
+        }
+        else = { involved_activity = { set_variable = { name = kehillah_din_reply_refused value = 1 } } }
+        kehillah_din_start_case_effect = { CASE = 7 EVENT = kehillah_bet_din.0061 }
+    }
 }
-
 
 kehillah_din_sources.74 = {
 	type = character_event
@@ -1176,6 +1111,7 @@ kehillah_din_sources.74 = {
 	immediate = {
         if = { limit = { exists = scope:kds_activity exists = involved_activity involved_activity = scope:kds_activity exists = involved_activity involved_activity.var:kehillah_din_case = 7 involved_activity.var:kehillah_din_pending = 7 }
             debug_log = "kehillah_din_sources: reply timeout; resuming case 7"
+            involved_activity = { set_variable = { name = kehillah_din_reply_timed_out value = 1 } }
             kehillah_din_start_case_effect = { CASE = 7 EVENT = kehillah_bet_din.0061 }
         }
 	}
@@ -1194,7 +1130,7 @@ kehillah_din_sources.75 = {
 	}
 	option = {
 		name = kehillah_din_review
-		if = { limit = { kehillah_judicial_learning_value >= 10 } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } } }
+		if = { limit = { OR = { kehillah_judicial_learning_value >= 10 has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } } }
 		else = { involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } } }
 		custom_tooltip = kehillah_din_review_tt
 		ai_chance = { base = 35 }
@@ -1210,7 +1146,7 @@ kehillah_din_sources.75 = {
 	}
 	option = {
 		name = kehillah_din_combo_7
-		trigger = { root = { has_trait = compassionate diplomacy >= 12 } OR = { involved_activity.var:kehillah_bet_din_av_beit_din = { NOT = { this = root } stewardship >= 12 } involved_activity.var:kehillah_bet_din_judge2 = { NOT = { this = root } stewardship >= 12 } involved_activity.var:kehillah_bet_din_judge3 = { NOT = { this = root } stewardship >= 12 } } }
+		trigger = { root = { OR = { has_trait = compassionate has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } diplomacy >= 12 } OR = { involved_activity.var:kehillah_bet_din_av_beit_din = { NOT = { this = root } stewardship >= 12 } involved_activity.var:kehillah_bet_din_judge2 = { NOT = { this = root } stewardship >= 12 } involved_activity.var:kehillah_bet_din_judge3 = { NOT = { this = root } stewardship >= 12 } } }
 		custom_tooltip = kehillah_din_combo_7_tt
 		involved_activity = { set_variable = { name = kehillah_bet_din_case7_direction value = 3 } change_variable = { name = kehillah_bet_din_tally add = kehillah_din_combination_tally } }
 		ai_chance = { base = 40 }
@@ -1275,7 +1211,7 @@ kehillah_din_sources.82 = {
 	}
 	option = {
 		name = kehillah_din_careful
-		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nezikin } kehillah_judicial_learning_value >= 12 OR = { has_trait = diligent has_trait = erudite has_trait = patient } }
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nezikin } OR = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } AND = { kehillah_judicial_learning_value >= 12 OR = { has_trait = diligent has_trait = erudite has_trait = patient } } } }
 		set_variable = { name = kehillah_din_reply_quality value = 24 days = 25 }
 		add_learning_lifestyle_xp = 10
 		add_stress = 10
@@ -1315,33 +1251,23 @@ kehillah_din_sources.83 = {
 }
 
 
+# The answer reaches the docket directly. The host decides whether to cite it
+# when choosing a ruling, without a second acceptance popup.
 kehillah_din_sources.86 = {
-	type = character_event
-	title = kehillah_din_reply_title
-	desc = { first_valid = { triggered_desc = { trigger = { involved_activity.var:kehillah_din_reply_quality > 0 } desc = kehillah_din_answer_8 } desc = kehillah_din_refusal_desc } }
-	theme = faith
-	left_portrait = { character = root animation = thinking }
-	trigger = { exists = involved_activity involved_activity.var:kehillah_din_case = 8 involved_activity.var:kehillah_din_pending = 8 }
-	immediate = {
-		involved_activity.var:kehillah_din_reply_author = { save_scope_as = kds_author }
-	}
-	option = {
-		name = kehillah_din_accept
-		trigger = { involved_activity.var:kehillah_din_reply_quality > 0 }
-		involved_activity = { set_variable = { name = kehillah_din_advice_case value = 8 } set_variable = { name = kehillah_din_advice_quality value = var:kehillah_din_reply_quality } }
-		kehillah_din_start_case_effect = { CASE = 8 EVENT = kehillah_bet_din.0071 }
-		custom_tooltip = kehillah_din_accept_tt
-		ai_chance = { base = 65 }
-	}
-	option = {
-		name = kehillah_din_set_aside
-		kehillah_din_start_case_effect = { CASE = 8 EVENT = kehillah_bet_din.0071 }
-		ai_chance = { base = 20 }
-	}
-
-	after = {  }
+    type = character_event
+    hidden = yes
+    trigger = { exists = involved_activity involved_activity.var:kehillah_din_case = 8 involved_activity.var:kehillah_din_pending = 8 }
+    immediate = {
+        if = { limit = { involved_activity.var:kehillah_din_reply_quality > 0 }
+            involved_activity = {
+                set_variable = { name = kehillah_din_advice_case value = 8 }
+                set_variable = { name = kehillah_din_advice_quality value = var:kehillah_din_reply_quality }
+            }
+        }
+        else = { involved_activity = { set_variable = { name = kehillah_din_reply_refused value = 1 } } }
+        kehillah_din_start_case_effect = { CASE = 8 EVENT = kehillah_bet_din.0071 }
+    }
 }
-
 
 kehillah_din_sources.84 = {
 	type = character_event
@@ -1349,6 +1275,7 @@ kehillah_din_sources.84 = {
 	immediate = {
         if = { limit = { exists = scope:kds_activity exists = involved_activity involved_activity = scope:kds_activity exists = involved_activity involved_activity.var:kehillah_din_case = 8 involved_activity.var:kehillah_din_pending = 8 }
             debug_log = "kehillah_din_sources: reply timeout; resuming case 8"
+            involved_activity = { set_variable = { name = kehillah_din_reply_timed_out value = 1 } }
             kehillah_din_start_case_effect = { CASE = 8 EVENT = kehillah_bet_din.0071 }
         }
 	}
@@ -1367,7 +1294,7 @@ kehillah_din_sources.85 = {
 	}
 	option = {
 		name = kehillah_din_review
-		if = { limit = { kehillah_judicial_learning_value >= 10 } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } } }
+		if = { limit = { OR = { kehillah_judicial_learning_value >= 10 has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } } }
 		else = { involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } } }
 		custom_tooltip = kehillah_din_review_tt
 		ai_chance = { base = 35 }
@@ -1383,7 +1310,7 @@ kehillah_din_sources.85 = {
 	}
 	option = {
 		name = kehillah_din_combo_8
-		trigger = { root = { has_trait = generous stewardship >= 12 } OR = { involved_activity.var:kehillah_bet_din_av_beit_din = { NOT = { this = root } diplomacy >= 12 } involved_activity.var:kehillah_bet_din_judge2 = { NOT = { this = root } diplomacy >= 12 } involved_activity.var:kehillah_bet_din_judge3 = { NOT = { this = root } diplomacy >= 12 } } }
+		trigger = { root = { OR = { has_trait = generous has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } stewardship >= 12 } OR = { involved_activity.var:kehillah_bet_din_av_beit_din = { NOT = { this = root } diplomacy >= 12 } involved_activity.var:kehillah_bet_din_judge2 = { NOT = { this = root } diplomacy >= 12 } involved_activity.var:kehillah_bet_din_judge3 = { NOT = { this = root } diplomacy >= 12 } } }
 		custom_tooltip = kehillah_din_combo_8_tt
 		involved_activity = { set_variable = { name = kehillah_bet_din_case8_direction value = 2 } change_variable = { name = kehillah_bet_din_tally add = kehillah_din_combination_tally } }
 		ai_chance = { base = 40 }
@@ -1448,7 +1375,7 @@ kehillah_din_sources.92 = {
 	}
 	option = {
 		name = kehillah_din_careful
-		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nezikin } kehillah_judicial_learning_value >= 12 OR = { has_trait = diligent has_trait = erudite has_trait = patient } }
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nezikin } OR = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } AND = { kehillah_judicial_learning_value >= 12 OR = { has_trait = diligent has_trait = erudite has_trait = patient } } } }
 		set_variable = { name = kehillah_din_reply_quality value = 24 days = 25 }
 		add_learning_lifestyle_xp = 10
 		add_stress = 10
@@ -1488,33 +1415,23 @@ kehillah_din_sources.93 = {
 }
 
 
+# The answer reaches the docket directly. The host decides whether to cite it
+# when choosing a ruling, without a second acceptance popup.
 kehillah_din_sources.96 = {
-	type = character_event
-	title = kehillah_din_reply_title
-	desc = { first_valid = { triggered_desc = { trigger = { involved_activity.var:kehillah_din_reply_quality > 0 } desc = kehillah_din_answer_9 } desc = kehillah_din_refusal_desc } }
-	theme = faith
-	left_portrait = { character = root animation = thinking }
-	trigger = { exists = involved_activity involved_activity.var:kehillah_din_case = 9 involved_activity.var:kehillah_din_pending = 9 }
-	immediate = {
-		involved_activity.var:kehillah_din_reply_author = { save_scope_as = kds_author }
-	}
-	option = {
-		name = kehillah_din_accept
-		trigger = { involved_activity.var:kehillah_din_reply_quality > 0 }
-		involved_activity = { set_variable = { name = kehillah_din_advice_case value = 9 } set_variable = { name = kehillah_din_advice_quality value = var:kehillah_din_reply_quality } }
-		kehillah_din_start_case_effect = { CASE = 9 EVENT = kehillah_bet_din.0081 }
-		custom_tooltip = kehillah_din_accept_tt
-		ai_chance = { base = 65 }
-	}
-	option = {
-		name = kehillah_din_set_aside
-		kehillah_din_start_case_effect = { CASE = 9 EVENT = kehillah_bet_din.0081 }
-		ai_chance = { base = 20 }
-	}
-
-	after = {  }
+    type = character_event
+    hidden = yes
+    trigger = { exists = involved_activity involved_activity.var:kehillah_din_case = 9 involved_activity.var:kehillah_din_pending = 9 }
+    immediate = {
+        if = { limit = { involved_activity.var:kehillah_din_reply_quality > 0 }
+            involved_activity = {
+                set_variable = { name = kehillah_din_advice_case value = 9 }
+                set_variable = { name = kehillah_din_advice_quality value = var:kehillah_din_reply_quality }
+            }
+        }
+        else = { involved_activity = { set_variable = { name = kehillah_din_reply_refused value = 1 } } }
+        kehillah_din_start_case_effect = { CASE = 9 EVENT = kehillah_bet_din.0081 }
+    }
 }
-
 
 kehillah_din_sources.94 = {
 	type = character_event
@@ -1522,6 +1439,7 @@ kehillah_din_sources.94 = {
 	immediate = {
         if = { limit = { exists = scope:kds_activity exists = involved_activity involved_activity = scope:kds_activity exists = involved_activity involved_activity.var:kehillah_din_case = 9 involved_activity.var:kehillah_din_pending = 9 }
             debug_log = "kehillah_din_sources: reply timeout; resuming case 9"
+            involved_activity = { set_variable = { name = kehillah_din_reply_timed_out value = 1 } }
             kehillah_din_start_case_effect = { CASE = 9 EVENT = kehillah_bet_din.0081 }
         }
 	}
@@ -1540,7 +1458,7 @@ kehillah_din_sources.95 = {
 	}
 	option = {
 		name = kehillah_din_review
-		if = { limit = { kehillah_judicial_learning_value >= 10 } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } } }
+		if = { limit = { OR = { kehillah_judicial_learning_value >= 10 has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } } involved_activity = { change_variable = { name = kehillah_bet_din_tally add = kehillah_bet_din_judge_pass_tally } } }
 		else = { involved_activity = { change_variable = { name = kehillah_bet_din_tally subtract = kehillah_bet_din_judge_fail_tally } } }
 		custom_tooltip = kehillah_din_review_tt
 		ai_chance = { base = 35 }
@@ -1556,7 +1474,7 @@ kehillah_din_sources.95 = {
 	}
 	option = {
 		name = kehillah_din_combo_9
-		trigger = { root = { has_trait = patient diplomacy >= 12 } OR = { involved_activity.var:kehillah_bet_din_av_beit_din = { NOT = { this = root } stewardship >= 12 } involved_activity.var:kehillah_bet_din_judge2 = { NOT = { this = root } stewardship >= 12 } involved_activity.var:kehillah_bet_din_judge3 = { NOT = { this = root } stewardship >= 12 } } }
+		trigger = { root = { OR = { has_trait = patient has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } diplomacy >= 12 } OR = { involved_activity.var:kehillah_bet_din_av_beit_din = { NOT = { this = root } stewardship >= 12 } involved_activity.var:kehillah_bet_din_judge2 = { NOT = { this = root } stewardship >= 12 } involved_activity.var:kehillah_bet_din_judge3 = { NOT = { this = root } stewardship >= 12 } } }
 		custom_tooltip = kehillah_din_combo_9_tt
 		involved_activity = { set_variable = { name = kehillah_bet_din_case9_direction value = 2 } change_variable = { name = kehillah_bet_din_tally add = kehillah_din_combination_tally } }
 		ai_chance = { base = 40 }

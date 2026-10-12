@@ -529,6 +529,19 @@ office. The incremental design and proof order are in
 features. This explicitly takes priority over the older autonomous queue for this
 interactive pass.
 
+- **Bet Din writing and choice pass, scripted 2026-10-12; live UI check pending.**
+  All nine case openings, outgoing questions and incoming letters now use one
+  set of facts and the [writing guide](docs/implementation/kehillah-writing-style.md).
+  Translated source context appears on citation-choice hovers. A returned
+  responsum appears in the hearing, where the host may cite or ignore it,
+  instead of stopping at a separate acceptance event. Trait and skill pairs,
+  Talmudics experience, and specific mastered works now offer distinct routes
+  to stronger arguments. Verdict events state the ruling and its quality.
+  The detailed [implementation note](docs/implementation/kehillah-bet-din-writing-pass.md)
+  records the score changes, remaining limits and source references. The
+  active CK3 session was left untouched; the letter round-trip and UI text
+  still need a live check.
+
 - **Source-aware ransom ruling and named responsum: PLAYER-FACING EXCHANGE VERIFIED LIVE
   2026-10-10 (Shabbat heartbeat 5); the letter round-trip still unproven**
   ([log](docs/testing/2026-10-10-ransom-ruling-live-test-log.md)).
