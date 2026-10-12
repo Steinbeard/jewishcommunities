@@ -105,3 +105,27 @@ basic_allowed_to_imprison, kehillah_crime.
 ## Daniel's original game
 
 Saved before closing, as `Rav_Pinchas_1066_10_07before_v32_test.ck3` in `save games\`.
+
+## Follow-up: refusal UI (commit c33a762), 2026-10-12
+
+Fresh boot and new game (Isaac of Worms), played to 18 Sept 1066, `.2` then `.3`. **PASS.**
+
+- **On Decline tab**, "Effects on you": "Flee into exile: Eliyahu takes up Kehillah of Worms, and you
+  takes to the road as a landless wanderer, beyond Kaiser Heinrich IV's realm"; "Loses 40 Opinion of
+  Kaiser Heinrich IV for 15 years (Attempted Arrest)"; "Crime - Rightful imprisonment". "Effects on
+  Kaiser Heinrich": the known-Criminal line. The old lines (Ends the Host Charter contract, Adopts
+  Adventurer Government, Adopts the Camp Succession Law, heir gains title) are gone. Grammar nit:
+  "you takes to the road". No tooltip on hovering Decline. Screenshot: scratchpad `shot_decline.png`.
+- **Into Exile** (19 Sept, after refusing): "Kaiser Heinrich sent men to take me, and I would not go to
+  his dungeon. Before they reached the quarter I gave the keys of the synagogue and the community's
+  seal to Eliyahu, who leads Kehillah of Worms now. Its charter, its buildings and its people stay
+  behind with him. / I am no longer the community's leader, only the head of a household on the road,
+  under no lord's charter. What we own is what our wagons carry. / We are making for Prince-Bishopric
+  of Chalons, the nearest land beyond Kaiser Heinrich IV's reach." Option: "Better a wanderer than a
+  prisoner." Option tooltip: "Parnas Eliyahu now leads Kehillah of Worms; You now lead a landless camp
+  of wanderers. Its provisions are low.; To lead a community again, gather followers and take the
+  decision Found a Jewish Community". Nit: body says "Eliyahu", tooltip "Parnas Eliyahu". Screenshot:
+  scratchpad `shot_exile.png`.
+- No unresolved `[scope.Function]` text seen. `error.log` diff against a post-boot baseline: no new
+  lines at all; the only hits for the feature and loc-key names are the four expected debug-event
+  "orphaned" lines at boot.
