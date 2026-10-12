@@ -723,12 +723,27 @@ kehillah_yeshiva_tick_effect = {
 	}
 
 	# 3. Every student on the roll: study if present, graduate if done.
+	# (Re-read the head: a student who died or left loses his rebbe.)
+	clear_saved_scope = kehillah_rosh_yeshiva
+	kehillah_save_rosh_yeshiva_effect = yes
 	scope:kehillah_tick_title = {
 		every_in_list = {
 			variable = kehillah_yeshiva_students
 			limit = {
 				is_alive = yes
 				var:kehillah_yeshiva_enrolled ?= scope:kehillah_tick_title
+			}
+			# A student whose teacher died or left takes the current head.
+			if = {
+				limit = {
+					NOT = { any_relation = { type = kehillah_rebbe } }
+					exists = scope:kehillah_rosh_yeshiva
+					NOT = { this = scope:kehillah_rosh_yeshiva }
+				}
+				save_scope_as = kehillah_new_talmid
+				scope:kehillah_rosh_yeshiva = {
+					set_relation_kehillah_talmid = { target = scope:kehillah_new_talmid reason = kehillah_relation_reason_yeshiva }
+				}
 			}
 			if = {
 				limit = { kehillah_yeshiva_student_present_trigger = yes }
