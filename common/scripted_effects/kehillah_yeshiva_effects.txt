@@ -420,6 +420,7 @@ kehillah_yeshiva_enroll_effect = {
 		add_character_modifier = kehillah_yeshiva_student_modifier
 	}
 	save_scope_as = kehillah_new_talmid
+	add_to_list = kehillah_new_enrolees
 	scope:kehillah_enroll_title = {
 		add_to_variable_list = { name = kehillah_yeshiva_students target = scope:kehillah_new_talmid }
 	}
@@ -458,6 +459,7 @@ kehillah_yeshiva_enroll_effect = {
 			scope:kehillah_new_chavruta = { NOT = { any_relation = { type = kehillah_chavruta } } }
 		}
 		hidden_effect = { set_relation_kehillah_chavruta = { target = scope:kehillah_new_chavruta reason = kehillah_relation_reason_yeshiva } }
+		add_to_list = kehillah_new_chavruta_pairs
 	}
 	debug_log = "kehillah_yeshiva_enroll_effect: a student enrolled"
 }
@@ -485,6 +487,19 @@ kehillah_yeshiva_leave_effect = {
 # quarter of study: the specialization gains most, under a master head.
 kehillah_yeshiva_study_quarter_effect = {
 	change_variable = { name = kehillah_yeshiva_quarters add = 1 }
+	# Which subjects he has not yet mastered, to notice the quarter he does.
+	if = {
+		limit = { NOT = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= kehillah_rosh_yeshiva_min_track_xp } } }
+		add_character_flag = kehillah_tmp_below_talmudics
+	}
+	if = {
+		limit = { NOT = { has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= kehillah_rosh_yeshiva_min_track_xp } } }
+		add_character_flag = kehillah_tmp_below_parshanut
+	}
+	if = {
+		limit = { NOT = { has_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value >= kehillah_rosh_yeshiva_min_track_xp } } }
+		add_character_flag = kehillah_tmp_below_hashkafa
+	}
 	if = {
 		limit = { scope:kehillah_tick_title = { var:kehillah_yeshiva_specialization ?= flag:parshanut } }
 		add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = scope:kehillah_head_teaching_xp }
@@ -502,6 +517,14 @@ kehillah_yeshiva_study_quarter_effect = {
 		add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_yeshiva_xp_other }
 		add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = kehillah_yeshiva_xp_other }
 	}
+	# Sometimes a work from the community's library is mastered.
+	random = {
+		chance = kehillah_yeshiva_work_mastery_chance
+		kehillah_yeshiva_master_a_work_effect = yes
+	}
+	kehillah_yeshiva_track_mastery_news_effect = { TRACK = talmudics }
+	kehillah_yeshiva_track_mastery_news_effect = { TRACK = parshanut }
+	kehillah_yeshiva_track_mastery_news_effect = { TRACK = hashkafa }
 	# A player student meets his studies in a light event now and then.
 	if = {
 		limit = { is_ai = no }
@@ -546,6 +569,15 @@ kehillah_yeshiva_tick_effect = {
 			}
 		}
 		kehillah_yeshiva_travelling_student_effect = yes
+	}
+
+	# 2b. The quarter's newcomers, as news for a player leader.
+	if = {
+		limit = {
+			is_ai = no
+			any_in_list = { list = kehillah_new_enrolees count >= 1 }
+		}
+		kehillah_yeshiva_newcomer_news_effect = yes
 	}
 
 	# 3. Every student on the roll studies, if present. (Re-read the
@@ -783,5 +815,439 @@ kehillah_yeshiva_travel_to_effect = {
 			players_use_planner = yes
 			on_arrival_event = kehillah_yeshiva.0301
 		}
+	}
+}
+
+# =====================================================================
+# V29 section 12 (2026-10-12): THE YESHIVA'S NEWS. Quiet feed messages
+# (common/messages/kehillah_messages.txt) to the player who leads a
+# yeshiva -- newcomers, chavrutot, works and subjects mastered -- so
+# the yeshiva feels alive without interrupting play.
+# =====================================================================
+
+# Scope: a player Kehillah leader, in the tick. The quarter's newcomers
+# (list kehillah_new_enrolees, filled by kehillah_yeshiva_enroll_effect):
+# one by name, or a busy quarter in one line; and, on a quiet quarter,
+# each new chavruta pair.
+kehillah_yeshiva_newcomer_news_effect = {
+	set_variable = { name = kehillah_new_student_count value = 0 }
+	every_in_list = {
+		list = kehillah_new_enrolees
+		scope:kehillah_tick_leader = { change_variable = { name = kehillah_new_student_count add = 1 } }
+	}
+	random_in_list = {
+		list = kehillah_new_enrolees
+		save_scope_as = kehillah_msg_talmid
+	}
+	if = {
+		limit = { var:kehillah_new_student_count > kehillah_yeshiva_quiet_news_max }
+		send_interface_message = {
+			type = msg_kehillah_yeshiva_arrival
+			title = kehillah_yeshiva_msg_arrivals_t
+			desc = kehillah_yeshiva_msg_arrivals_d
+			left_icon = scope:kehillah_msg_talmid
+		}
+	}
+	else = {
+		every_in_list = {
+			list = kehillah_new_enrolees
+			save_scope_as = kehillah_msg_talmid
+			if = {
+				limit = { has_character_flag = kehillah_visiting_student }
+				scope:kehillah_tick_leader = {
+					send_interface_message = {
+						type = msg_kehillah_yeshiva_arrival
+						title = kehillah_yeshiva_msg_arrival_t
+						desc = kehillah_yeshiva_msg_arrival_far_d
+						left_icon = scope:kehillah_msg_talmid
+					}
+				}
+			}
+			else = {
+				scope:kehillah_tick_leader = {
+					send_interface_message = {
+						type = msg_kehillah_yeshiva_arrival
+						title = kehillah_yeshiva_msg_arrival_t
+						desc = kehillah_yeshiva_msg_arrival_d
+						left_icon = scope:kehillah_msg_talmid
+					}
+				}
+			}
+		}
+		every_in_list = {
+			list = kehillah_new_chavruta_pairs
+			save_scope_as = kehillah_msg_talmid
+			random_relation = {
+				type = kehillah_chavruta
+				save_scope_as = kehillah_msg_chavruta
+			}
+			if = {
+				limit = { exists = scope:kehillah_msg_chavruta }
+				scope:kehillah_tick_leader = {
+					send_interface_message = {
+						type = msg_kehillah_yeshiva_chavruta
+						title = kehillah_yeshiva_msg_chavruta_t
+						desc = kehillah_yeshiva_msg_chavruta_d
+						left_icon = scope:kehillah_msg_talmid
+						right_icon = scope:kehillah_msg_chavruta
+					}
+				}
+			}
+		}
+	}
+}
+
+# Scope: a present student, in the tick (scope:kehillah_tick_title,
+# scope:kehillah_tick_leader). He masters one work the community's
+# library holds and he has not mastered -- a work of the yeshiva's focus
+# three times as likely.
+kehillah_yeshiva_master_a_work_effect = {
+	random_list = {
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_targum_onkelos } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = { var:kehillah_yeshiva_specialization ?= flag:parshanut }
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_targum_onkelos TRACK = parshanut }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mekhilta } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mekhilta } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = { var:kehillah_yeshiva_specialization ?= flag:parshanut }
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_mekhilta TRACK = parshanut }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_genesis_rabbah } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_genesis_rabbah } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = { var:kehillah_yeshiva_specialization ?= flag:parshanut }
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_genesis_rabbah TRACK = parshanut }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_pirkei_derabbi_eliezer } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_pirkei_derabbi_eliezer } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = { var:kehillah_yeshiva_specialization ?= flag:parshanut }
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_pirkei_derabbi_eliezer TRACK = parshanut }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mishnah } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mishnah } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = {
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:parshanut }
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+				}
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_mishnah TRACK = talmudics }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_zeraim } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_zeraim } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = {
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:parshanut }
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+				}
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_bavli_zeraim TRACK = talmudics }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_moed } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = {
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:parshanut }
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+				}
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_bavli_moed TRACK = talmudics }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nashim } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = {
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:parshanut }
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+				}
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_bavli_nashim TRACK = talmudics }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nezikin } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nezikin } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = {
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:parshanut }
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+				}
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_bavli_nezikin TRACK = talmudics }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_kodashim } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_kodashim } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = {
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:parshanut }
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+				}
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_bavli_kodashim TRACK = talmudics }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_tahorot } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_tahorot } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = {
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:parshanut }
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+				}
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_bavli_tahorot TRACK = talmudics }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_zeraim } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_yerushalmi_zeraim } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = {
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:parshanut }
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+				}
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_yerushalmi_zeraim TRACK = talmudics }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_moed } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_yerushalmi_moed } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = {
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:parshanut }
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+				}
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_yerushalmi_moed TRACK = talmudics }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_nashim } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_yerushalmi_nashim } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = {
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:parshanut }
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+				}
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_yerushalmi_nashim TRACK = talmudics }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_nezikin } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_yerushalmi_nezikin } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = {
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:parshanut }
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+				}
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_yerushalmi_nezikin TRACK = talmudics }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_halakhot_gedolot } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = {
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:parshanut }
+					NOT = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+				}
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_halakhot_gedolot TRACK = talmudics }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_yetzirah } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_sefer_yetzirah } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_sefer_yetzirah TRACK = hashkafa }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_hekhalot_rabbati } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_hekhalot_rabbati } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_hekhalot_rabbati TRACK = hashkafa }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_shiur_qomah } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_shiur_qomah } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_shiur_qomah TRACK = hashkafa }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_harazim } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_sefer_harazim } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_sefer_harazim TRACK = hashkafa }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_emunot_vedeot } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_emunot_vedeot } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_emunot_vedeot TRACK = hashkafa }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_chovot_halevavot } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_chovot_halevavot } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_chovot_halevavot TRACK = hashkafa }
+		}
+		1 = {
+			trigger = {
+				scope:kehillah_tick_title = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_kuzari } }
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_kuzari } }
+			}
+			modifier = {
+				add = 2
+				scope:kehillah_tick_title = { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+			}
+			kehillah_yeshiva_record_work_effect = { WORK = work_kuzari TRACK = hashkafa }
+		}
+	}
+}
+
+# Scope: the student. Records a work mastered at the yeshiva (the same
+# lists Learn Torah keeps: mastered, encountered, and the field) and tells
+# a player leader.
+kehillah_yeshiva_record_work_effect = {
+	add_to_variable_list = { name = kehillah_mastered_works target = flag:$WORK$ }
+	if = {
+		limit = { NOT = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:$WORK$ } } }
+		add_to_variable_list = { name = kehillah_studied_works target = flag:$WORK$ }
+	}
+	if = {
+		limit = { NOT = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:$TRACK$ } } }
+		add_to_variable_list = { name = kehillah_apprentice_fields target = flag:$TRACK$ }
+	}
+	add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_yeshiva_work_mastery_xp }
+	save_scope_as = kehillah_msg_talmid
+	scope:kehillah_tick_leader = {
+		if = {
+			limit = { is_ai = no }
+			send_interface_message = {
+				type = msg_kehillah_yeshiva_milestone
+				title = kehillah_yeshiva_msg_work_t
+				desc = kehillah_yeshiva_msg_work_$WORK$
+				left_icon = scope:kehillah_msg_talmid
+			}
+		}
+	}
+	debug_log = "kehillah_yeshiva_record_work_effect: a student mastered a work"
+}
+
+# Scope: a student, after a quarter's study. If he crossed into mastery
+# of $TRACK$ this quarter, a player leader hears of it.
+kehillah_yeshiva_track_mastery_news_effect = {
+	if = {
+		limit = {
+			has_character_flag = kehillah_tmp_below_$TRACK$
+			has_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value >= kehillah_rosh_yeshiva_min_track_xp }
+		}
+		save_scope_as = kehillah_msg_talmid
+		scope:kehillah_tick_leader = {
+			if = {
+				limit = { is_ai = no }
+				send_interface_message = {
+					type = msg_kehillah_yeshiva_milestone
+					title = kehillah_yeshiva_msg_track_t
+					desc = kehillah_yeshiva_msg_track_$TRACK$_d
+					left_icon = scope:kehillah_msg_talmid
+				}
+			}
+		}
+		debug_log = "kehillah_yeshiva_track_mastery_news_effect: a student mastered a subject"
+	}
+	if = {
+		limit = { has_character_flag = kehillah_tmp_below_$TRACK$ }
+		remove_character_flag = kehillah_tmp_below_$TRACK$
 	}
 }

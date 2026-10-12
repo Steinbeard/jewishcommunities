@@ -477,3 +477,20 @@ choices, and make the head's learning matter.
 - **Code:** scripted GUIs in `common/scripted_guis/kehillah_yeshiva_gui.txt`.
 - **Daniel's caveat:** a custom UI may be hard to make look good and intuitive. Judge it from a
   screenshot, and fall back if needed.
+
+## 12. Addendum, 2026-10-12: the yeshiva's news
+
+**Status:** requested by Daniel 2026-10-12 ("a little side popup ... non-disruptive ... feel that the Yeshiva is alive"), built the same day.
+
+- **What:** quiet feed messages (no events) to the player who leads a yeshiva.
+- **Types:** three message types, each on a vanilla filter the player can mute:
+  - `msg_kehillah_yeshiva_arrival` (courtier_arrived);
+  - `msg_kehillah_yeshiva_chavruta` (relationship_gained);
+  - `msg_kehillah_yeshiva_milestone` (character_lifestyle).
+- **New students:** reported by name.
+  - A visiting student "has come from afar".
+  - A quarter with more than 2 newcomers is one line ("N new students, among them X").
+- **New chavrutot:** reported on quiet quarters only.
+- **A work mastered:** 10% a quarter per present student, drawn from the community's library and weighted 3x to the focus. It is recorded in the same lists Learn Torah keeps (mastered works, studied works, fields), plus 4 track XP.
+- **A subject mastered:** reported when a student crosses 65 in a track.
+- **Debug:** `kehillah_yeshiva_debug.10` makes every present student master a work now.
