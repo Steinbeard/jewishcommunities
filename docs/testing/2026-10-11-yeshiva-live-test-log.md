@@ -281,6 +281,14 @@ Driven by console probes `kehillah_yeshiva_debug.5` (student report), `.6` (one 
 **Console note:** in this build, `event <id> <character id>` did retarget once. This contradicts the
 shim guide's 2026-09-27 note, so it is unconfirmed.
 
+## Run 15 (`5485dd6`): rebbe-link diagnostic, NOT REPRODUCED
+
+- Fresh Worms game, 12 ticks through `debug.6`, `debug.5` (now with no-rebbe diagnostics) after every 4.
+- 9, then 1, then 0 students: the first cohort graduated at quarter 8.
+- Every student had a rebbe each time, including a travelling student.
+- Run 13's 5-of-9 stays unexplained. Since `dc506a1` each tick relinks rebbe-less students to the head, so a gap would heal within a quarter.
+- The diagnostics stay in `debug.5` in case it recurs.
+
 ## Not covered yet
 
 - The arrival event `.0301` was fired directly; the trip itself has not yet ended in an arrival.
