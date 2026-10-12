@@ -29,6 +29,11 @@ community roster. See [v12 §10](../spec/v12-community-map-view.md#10-your-own-c
   produced 668 errors elsewhere against the installed 1.20.0.4 game data;
   those were not treated as new issues from this UI change.
 
+## Screenshots
+
+- [Pillar HUD close-up](2026-10-12-pillar-hud-strip.png)
+- [Stability hover breakdown](2026-10-12-pillar-hud-hover.png)
+
 ## Limit
 
 Only the paused save and one hover were rendered in this pass. The trend
