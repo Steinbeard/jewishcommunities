@@ -1,0 +1,51 @@
+﻿# =====================================================================
+# FORCED CONVERSION OF A KEHILLAH LEADER -- who may demand it.
+# Design: docs/spec/v31-host-teachings-stances-and-factions.md, section
+# 10.1.
+#
+# Vanilla already lets a host demand a Kehillah leader's conversion: the
+# vassal-ruler Demand Conversion interaction (00_religious_interactions
+# .txt, demand_conversion_vassal_ruler_interaction) is shown for an AI
+# recipient who is the actor's TRIBUTARY, and the Host Charter is a
+# tributary contract. The player-recipient variant needs a liege, so a
+# player-led community is not reachable by it.
+#
+# V31 gates that interaction by the host's teaching on the Jews. Until
+# the teachings exist (V31 Slice A), every host is treated as holding a
+# protective teaching (Witness, Dhimma, Imperial Law without a decree),
+# under which forced conversion is forbidden, EXCEPT where the host's
+# realm has banned Jewish settlement: the edict is the convert-or-leave
+# moment. Slice A replaces the Banned check with the teaching check;
+# the call site and the tooltip key stay.
+#
+# Voluntary asking (valid_ask_for_conversion_conditions_trigger) is NOT
+# gated: a free conversion was always possible under every teaching.
+# =====================================================================
+
+# $ACTOR$ demands that scope:recipient convert. Called only from the
+# overridden valid_demand_conversion_conditions_trigger
+# (kehillah_forced_conversion_override.txt).
+kehillah_host_demand_conversion_allowed_trigger = {
+	custom_tooltip = {
+		text = kehillah_host_demand_conversion_protected_tt
+		trigger_if = {
+			limit = {
+				scope:recipient = {
+					government_has_flag = government_is_kehillah
+					is_jewish_character_trigger = yes
+				}
+				$ACTOR$ = { is_jewish_character_trigger = no }
+			}
+			scope:recipient = { kehillah_host_bans_jewish_settlement_trigger = yes }
+		}
+	}
+}
+
+# Scope: a character. A Kehillah leader who no longer holds a Jewish
+# faith, i.e. who must leave office.
+kehillah_leader_left_judaism_trigger = {
+	government_has_flag = government_is_kehillah
+	exists = primary_title
+	primary_title = { is_kehillah_title_trigger = yes }
+	is_jewish_character_trigger = no
+}

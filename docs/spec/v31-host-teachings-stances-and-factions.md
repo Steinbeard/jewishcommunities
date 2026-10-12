@@ -47,11 +47,13 @@ The host relationship is the mod's main challenge, but today it:
 6. **An anti-Jewish vassal faction** pushing debt relief, restriction, then expulsion. *Daniel.*
 7. **Personal ruler stances** on top of the teaching (§6). Claude.
 8. **One unified tribute system** for every host, a share of the community's income, named by
-   region (§8). *Daniel.* The rate is to be tuned.
+   region (§8). *Daniel.* Starting rate **20% of income**, to be tuned.
 9. **No war over a refused ultimatum.** *Daniel.* Refusal costs a large opinion penalty instead
    (§7.4).
-10. **Forced conversion of Jews uses vanilla's conversion,** bridged to reach Kehillah members
-    (§10.1). *Daniel* (vanilla); the bridge is Claude's.
+10. **Forced conversion of Jews uses vanilla's conversion** (§10.1). *Daniel.* The teaching gate
+    is Claude's.
+11. **Every convert steps down**, including a secret one, and remains playable as a wayfarer
+    (§10.2). *Daniel.*
 
 ## 3. Historical basis
 
@@ -284,10 +286,10 @@ the same everywhere. Only the name changes by region: **Jizya** for a host whose
 `special_doctrine_jizya`, **Tallage** for a Christian host, **Tribute** elsewhere (worded for
 `tenet_tax_nonbelievers` where present).
 
-1. **The ordinary term:** a charter term with levels (for example None / Customary / Heavy), each
-   a **percentage of the community's income**, paid to the host. It gives the host a stake he can
-   see in his own income breakdown. The rates are a tuning question for the soak test (S10). One
-   script value per level, so tuning is a one-line change.
+1. **The ordinary term:** a charter term with levels, each a **percentage of the community's
+   income**, paid to the host. *Daniel: start at 20%.* First pass: None 0%, Customary 20%,
+   Heavy 30%; the soak test (S10) tunes them. One script value per level, so tuning is a
+   one-line change. It gives the host a stake he can see in his own income breakdown.
 2. **The extraordinary levy:** a host decision, "Levy the Jews" (named by region as above), for a
    one-off sum. Fast gold for the host, at a cost to the community's Prosperity and opinion, with
    a cooldown. Repeated levies hollow out the community, which is the historical trap. It is
@@ -362,41 +364,54 @@ and whether it falls under V22's proposed depiction game rule.
 a separate forced-conversion design. Vanilla's own interactions do all the converting; the mod
 adds only what vanilla cannot reach.
 
-**What vanilla cannot do today (verified).** Vanilla's Demand Conversion interactions
-(`common/character_interactions/00_religious_interactions.txt`) target your own house members
-(`demand_conversion_interaction`, ~508), your vassals (`_vassal_ruler_`, ~780) and players
-(`_player_ruler_`, ~1385). A host is the Kehillah's tributary suzerain, not its liege, so **no
-host can demand a Kehillah leader's conversion.** This is the same gap V32 closed for
-imprisonment.
+**Correction, same day (verified while building).** The first draft of this section said no
+host could demand a Kehillah leader's conversion. That was wrong for AI leaders:
+`demand_conversion_vassal_ruler_interaction` (`00_religious_interactions.txt` ~780) is shown for a
+recipient who is the actor's **tributary**, and the Host Charter is a tributary contract. So:
+- a host **can** already demand an **AI** Kehillah leader's conversion, with vanilla's AI accept
+  logic, and nothing stopped it;
+- a **player-led** community cannot be reached: the player-recipient variant
+  (`_player_ruler_`, ~1385) requires a liege. Reaching it needs a copied vanilla interaction or a
+  mod path (the community-wide decree below). Not built;
+- vanilla's forced conversion changes faith with `set_character_rite`
+  (`convert_to_rite_with_consequences_effect`, `11_dlc_pam_scripted_effects.txt`, "avoids
+  cascade"), which **fires no `on_faith_conversion`**. So the apostasy on_action never saw a
+  forced convert.
 
-**What happens today when a leader converts:** he gains `kehillah_apostate_trait`
-(`common/on_action/kehillah_apostasy_on_actions.txt`) and keeps leading the community. Nothing
-else happens, so a Christian can lead a Kehillah.
+**What happened when a leader converted:** nothing. He kept leading the community.
 
-Three changes, all small:
+### 10.2 Built 2026-10-12 (not yet live-tested)
 
-1. **The bridge.** A host whose realm holds the community's quarter may use vanilla's Demand
-   Conversion on the Kehillah leader, through one added branch, as V32 did for imprisonment. It
-   is **gated by teaching**:
-   - **Witness, Separation and Mission, Dhimma:** not available. Fourth Toledo and Gregory I
-     condemn forced baptism; the Pact guarantees the faith. The tooltip says so.
-   - **Imperial Law:** available only with a **conversion decree** active in the realm (a host
-     decision; the Heraclius, Basil I and Romanos I shape), which lapses with the ruler.
-   - **Exclusion, Strict Pact, Abolition:** available.
+1. **The gate.** `kehillah_host_demand_conversion_allowed_trigger`
+   (`common/scripted_triggers/kehillah_conversion_triggers.txt`), added as one line to the
+   demand trigger in V27's override (`kehillah_forced_conversion_override.txt`). Asking for a
+   voluntary conversion is not gated. **Until the teachings exist (Slice A), every host is
+   treated as holding a protective teaching**, so forcing is refused unless the host's realm has
+   **Banned** Jewish settlement: the edict is the convert-or-leave moment. Slice A swaps the
+   Banned check for the teaching check (Exclusion, Strict Pact, Abolition, or Imperial Law with a
+   decree); the call site and tooltip key stay.
+2. **The converted leader steps down.** *Daniel: every convert steps down*, including one who
+   keeps his faith in secret (this supersedes the draft's "secret convert stays in office").
+   `kehillah_conversion.0001` (`events/kehillah_conversion_events.txt`) gives the apostate trait
+   if missing, removes the Rabbi trait, and runs `kehillah_step_down_effect`. The leader becomes a
+   landless wayfarer, so **a player keeps playing the convert**. With no successor, the community
+   dissolves through `kehillah_dissolve_community_effect`. A player gets a notice
+   (`kehillah_conversion.0002`). Two hooks send the event:
+   - the apostasy on_action, a day after a convert-window conversion;
+   - a quarterly sweep (`common/on_action/kehillah_conversion_on_actions.txt`) for vanilla's
+     forced conversion and any other silent faith change. A forced convert therefore leaves
+     office within a quarter, not at once.
+3. **Succession scoring.** The appointment score's wrong-faith penalty compared candidates with
+   the outgoing holder's faith. With a converted holder, that would have penalised every Jewish
+   candidate and favoured his co-converts. It now penalises non-Jewish candidates when the holder
+   has left Judaism (`common/succession_appointment/kehillah_leadership.txt`).
+4. **Probes:** `kehillah_conversion_debug.1` (per community: host, Banned, Demand Conversion
+   valid), `.2` (convert the player leader the way vanilla's forced conversion does), `.3` (run
+   the leave-office event now).
 
-   Refusing is a crime under vanilla's `refusing_conversion_is_crime_trigger` where it applies,
-   and otherwise through V32's `kehillah_host_crime_effect`. So the arrest and exile V32 just built
-   is the consequence, and no new punishment is needed. V27's override file
-   (`kehillah_forced_conversion_override.txt`) already wraps the vanilla validity triggers, so the
-   gate belongs there.
-2. **The converted leader steps down.** A leader who leaves Judaism leaves office through the S1
-   step-down teardown, which V32 already uses, and appointment succession picks a Jewish
-   successor. **Exception:** a leader who converts but keeps his faith in secret (vanilla's
-   crypto-religionist secret) stays in office, at risk of exposure. That is the anusim and
-   conversos of history, through vanilla's secrets system.
-3. **Return.** Converting back is vanilla. The mod adds only the community's side: the apostate
-   trait is already removed on return, and a later flavour event can carry Rashi's lenient
-   ruling on receiving forced converts back (V22 §5).
+**Not built yet:** refusal as a crime. Vanilla's vassal-ruler variant has no hook for a mod to add
+a crime on refusal without copying the interaction; the community-wide decree is the better
+place for it. Return to Judaism flavour (Rashi's ruling) also waits.
 
 **What stays mod content:** the **decree that hits a whole community at once** (Imperial Law's
 decree, Abolition's convert-or-leave). It runs vanilla's conversion character by character, and
@@ -451,15 +466,21 @@ In order, after V30's live test:
 
 ## 14. Open questions for Daniel
 
-Answered 2026-10-12: faction refusal (no war; §7.4), tribute (unified; §8.2), Eastern rites
-(Claude's discretion; §4.3), forced conversion (vanilla; §10.1), the Talmud trial (the Talmudic
-Study term; detail deferred, §9.1). Still open:
+Answered 2026-10-12: faction refusal (no war; an opinion cost scaled by strength, §7.4), tribute
+(unified, 20% to start; §8.2), Eastern rites (Imperial Law; §4.3), forced conversion (vanilla, with
+a teaching gate; §10), every convert steps down (§10.2), the Talmud trial (the Talmudic Study term;
+detail deferred, §9.1). Still open:
 
-1. Does the refusal cost in §7.4 (opinion scaled by strength, rather than an unrefusable
-   ultimatum) match what you had in mind?
-2. Tribute rates per level. Tune in the soak test.
-3. A secretly-Jewish convert staying in office (§10.1, change 2): keep, or should every convert
-   step down?
+1. **Secret Jews (anusim, conversos).** After stepping down, what can a secretly Jewish wayfarer
+   do? Claude's proposal: the vanilla crypto-religionist secret carries it. In a realm that does
+   not ban Jews he can return openly (vanilla conversion back; the apostate trait is removed) and
+   then found a community with the existing decision. A Rashi-style ruling welcomes him back. In
+   the realm that forced him, exposure is a crime (relapse; Fourth Lateran canon 70), feeding
+   V32's arrest. Should the forced convert be offered the secret at the moment of conversion?
+   Vanilla gives no such choice through Demand Conversion.
+2. **Non-rabbinic Jewish faiths** (Karaite, Samaritan, Beta Israel, Malabar and others). See §16.
+3. **Reaching a player-led community** with forced conversion: copy vanilla's player-recipient
+   interaction, or only through a community-wide decree event?
 
 ## 15. Non-goals
 
@@ -469,3 +490,23 @@ Study term; detail deferred, §9.1). Still open:
 - No date-scripted change of teaching. Councils and reform movements move it.
 - No popular violence presented as church teaching.
 - No teaching for non-Abrahamic hosts until a separate regional design exists.
+
+## 16. Non-rabbinic Jewish faiths (open)
+
+Today the mod's Jewish checks are religion-level (`is_jewish_character_trigger`: any faith of
+`judaism_religion`), so a Karaite or Samaritan can lead a Kehillah, and changing between Jewish
+faiths is not apostasy. The rabbinic systems (the Rabbi trait and semicha, the Talmudic Study
+term, the yeshiva, responsa, study of the Bavli) assume Rabbinic Judaism. Karaites reject the
+Talmud and rabbinic authority; Samaritans are a separate people with their own priesthood.
+
+Claude's recommendation, for Daniel to decide:
+- **The host relationship applies to every Jewish faith.** Charters, policy, teachings, factions,
+  tribute and forced conversion treat any Jewish minority alike. That is how hosts saw them.
+- **The Kehillah government stays open to all Jewish faiths,** with the leader sharing the
+  community's faith (the appointment score already penalises a different faith).
+- **The rabbinic systems are gated to Rabbinic Judaism.** Other faiths get equivalents later, as
+  their own designs: Karaite communities with their own scholars and nesi'im (Cairo, Jerusalem,
+  Constantinople, Crimea); Samaritans under their high priest at Nablus; Beta Israel and the
+  Malabar communities as regional designs, the way V17 treats non-Abrahamic hosts.
+- **A leader moving from one Jewish faith to another** steps down like any convert, since the
+  community's faith is what the office rules on.

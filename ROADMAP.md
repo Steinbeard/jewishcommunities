@@ -82,7 +82,16 @@ is the S11 "friendliness" design review; the Crusades chain stays separate and b
 - Personal ruler stances: Protector, Convinced, Predator, Pragmatist.
 - An anti-Jewish vassal faction: debt relief, then restriction, then expulsion.
 - A tribute term: jizya, or tallage plus a confirmation fee.
-- **Next:** v30's live test first, then v31 §11's spikes (doctrine group on rites, tributary
+- **Forced conversion, built 2026-10-12, NOT live-tested** (v31 §10.2). A host may demand an
+  AI Kehillah leader's conversion only when his realm bans Jewish settlement. This is a
+  stand-in until the teachings exist. Any leader who leaves Judaism steps down within a quarter
+  and becomes a playable wayfarer; the community dissolves if he has no successor. Succession
+  scoring no longer favours the convert's co-converts. Probes: `kehillah_conversion_debug.1`–`.3`.
+  Touches succession, so a live pass is required.
+- **Decided 2026-10-12:** tribute starts at 20% of income; every convert steps down. Still open
+  (v31 §14, §16): secret Jews after conversion, non-rabbinic Jewish faiths, reaching a
+  player-led community with forced conversion.
+- **Next:** live-test v30 and the forced-conversion slice. Then v31 §11's spikes (doctrine group on rites, tributary
   tax on a Kehillah, custom faction), then the slices in §12. Open questions for Daniel: §14.
 
 ### Shabbat autonomous queue — 2026-10-09 evening to 2026-10-11 morning (works ABOVE everything below)

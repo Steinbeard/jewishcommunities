@@ -1,0 +1,84 @@
+﻿# =====================================================================
+# FORCED CONVERSION -- console-only debug probes. Never fired by
+# gameplay. Run as `event kehillah_conversion_debug.N` with the player
+# leading a Kehillah; results go to debug.log. Design: docs/spec/
+# v31-host-teachings-stances-and-factions.md, section 10.1.
+#
+#   .1  read-only: for every registered community, its leader's host,
+#       whether the host bans Jewish settlement, and whether the host's
+#       Demand Conversion is valid against the leader (vanilla shows it
+#       for AI leaders only). Expect VALID only under Banned.
+#   .2  convert the player leader to the host's rite the way vanilla's
+#       forced conversion does (set_character_rite, no on_action). The
+#       quarterly sweep should then step him down; .3 skips the wait.
+#   .3  run the leave-office event now.
+# =====================================================================
+
+namespace = kehillah_conversion_debug
+
+kehillah_conversion_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_conversion_debug.1: START"
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = { exists = holder }
+			holder = {
+				save_temporary_scope_as = kehillah_conversion_probe_leader
+				debug_log = "kehillah_conversion_debug.1: community"
+				debug_log_scopes = yes
+				if = {
+					limit = { kehillah_host_charter_host_available_trigger = yes }
+					domicile.domicile_location.county.holder.top_liege = { save_temporary_scope_as = kehillah_conversion_probe_host }
+					if = {
+						limit = { kehillah_host_bans_jewish_settlement_trigger = yes }
+						debug_log = "kehillah_conversion_debug.1: host BANS Jewish settlement"
+					}
+					else = { debug_log = "kehillah_conversion_debug.1: host does not ban" }
+					if = {
+						limit = {
+							scope:kehillah_conversion_probe_host = {
+								is_character_interaction_valid = {
+									recipient = scope:kehillah_conversion_probe_leader
+									interaction = demand_conversion_vassal_ruler_interaction
+								}
+							}
+						}
+						debug_log = "kehillah_conversion_debug.1: DEMAND CONVERSION VALID"
+					}
+					else = { debug_log = "kehillah_conversion_debug.1: demand conversion not valid" }
+				}
+				else = { debug_log = "kehillah_conversion_debug.1: no host resolvable" }
+			}
+		}
+		debug_log = "kehillah_conversion_debug.1: END"
+	}
+}
+
+kehillah_conversion_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { kehillah_host_charter_host_available_trigger = yes }
+			debug_log = "kehillah_conversion_debug.2: converting the leader to the host's rite"
+			set_character_rite = domicile.domicile_location.county.holder.top_liege.rite
+			if = {
+				limit = { kehillah_leader_left_judaism_trigger = yes }
+				debug_log = "kehillah_conversion_debug.2: LEADER IS NO LONGER JEWISH (sweep or .3 should step him down)"
+			}
+			else = { debug_log = "kehillah_conversion_debug.2: FAIL leader still reads as Jewish" }
+		}
+		else = { debug_log = "kehillah_conversion_debug.2: no host resolvable, nothing done" }
+	}
+}
+
+kehillah_conversion_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_conversion_debug.3: running kehillah_conversion.0001 now"
+		trigger_event = kehillah_conversion.0001
+	}
+}
