@@ -17,6 +17,17 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Dynasty succession warning and holiday modifier colors — 2026-10-12
+
+Vanilla's "Primary Heir of the wrong Dynasty" warning is inaccurate for Kehillah rulers:
+leadership passes by appointment, and a non-dynastic successor does not end the player's game.
+The theocracy mechanic used to suppress the warning was removed because it made lay leaders
+clergy. Both vanilla primary-heir dynasty alerts are now overridden to exempt the Kehillah
+government flag while retaining their vanilla behavior for other governments. Source checked
+against CK3 1.20.0.4; fresh-game UI confirmation remains open. The holiday modifier icons also
+used the opposite positive/negative suffixes, which colored their names backwards in event
+outcome previews. Their icon suffixes now match the effects.
+
 Written 2026-09-07. Roughly priority order. Items 1-3 (the original correctness/verification work
 this note referred to) are long since resolved and removed; numbering otherwise kept stable rather
 than renumbered, since later items and other docs cross-reference these numbers by hand (e.g.

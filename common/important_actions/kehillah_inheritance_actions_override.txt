@@ -1,0 +1,94 @@
+# Suppress vanilla's dynasty inheritance warnings for Kehillah rulers.
+#
+# The community title passes by appointment, so a non-dynastic primary heir
+# does not mean that the player will lose the Kehillah. Vanilla previously
+# suppressed these warnings through mechanic_type = theocracy; that mechanic
+# was removed because it made lay Kehillah leaders clergy. Keep vanilla's
+# checks for every other government and add the Kehillah government flag to
+# each warning's existing exemption list.
+#
+# These action definitions are copied from CK3 1.20.0.4:
+# common/important_actions/00_inheritance_actions.txt
+# Re-diff against vanilla if that file changes in a game patch.
+
+action_primary_heir_wrong_dynasty_no_replacement_exists = {
+	type = alert
+	icon = action_primary_heir_wrong_dynasty_but_replacement_exists
+
+	check_create_action = {
+		if = {
+			limit = {
+				exists = primary_heir
+				exists = player_heir
+				primary_heir = {
+					dynasty != root.dynasty
+				}
+
+				NOT = {
+					primary_title = {
+						any_title_heir = {
+							dynasty = root.dynasty
+						}
+					}
+				}
+				NOR = {
+					government_has_mechanic = theocracy
+					government_has_mechanic = administrative # Admin doesn't care if primary heir is of another dynasty, as long as they have a player heir.
+					government_has_flag = government_is_kehillah
+				}
+			}
+			try_create_important_action = {
+				important_action_type = action_primary_heir_wrong_dynasty_no_replacement_exists
+				landed_title = root.primary_title
+				actor = root
+			}
+		}
+	}
+
+	effect = {
+		scope:landed_title = {
+			open_view_data = {
+				view = title_view_window
+			}
+		}
+	}
+}
+
+action_primary_heir_wrong_dynasty_but_replacement_exists = {
+	type = alert
+
+	check_create_action = {
+		if = {
+			limit = {
+				exists = primary_heir
+				exists = player_heir
+				primary_heir = {
+					dynasty != root.dynasty
+				}
+				primary_title = {
+					any_title_heir = {
+						dynasty = root.dynasty
+					}
+				}
+				NOR = {
+					government_has_mechanic = theocracy
+					government_has_mechanic = administrative # Admin doesn't care if primary heir is of another dynasty, as long as they have a player heir.
+					government_has_flag = government_is_kehillah
+				}
+			}
+			try_create_important_action = {
+				important_action_type = action_primary_heir_wrong_dynasty_but_replacement_exists
+				actor = root
+				recipient = primary_heir
+			}
+		}
+	}
+
+	effect = {
+		scope:recipient = {
+			open_view_data = {
+				view = character
+			}
+		}
+	}
+}
