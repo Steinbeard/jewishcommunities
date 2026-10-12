@@ -359,6 +359,23 @@ shim guide's 2026-09-27 note, so it is unconfirmed.
   - Unrelated finds, outside this feature:
     - `kehillah_settlement_conditions.0004` showed raw loc keys;
     - an "Unknown formatting tag 'vgrant'" when opening the Message Log.
+## Run 20 (`280e795`, 2026-10-12): V30 community news, ALL PASS
+
+Spec: [docs/spec/v30-community-news.md](../spec/v30-community-news.md). Each item was triggered by a console run file, and its body was read from the side feed. None appeared as a banner.
+
+- **"Your Lord Has Died":** "Kaiser Heinrich, lord over your community, has died. Duke Gottfried is his heir -- what he will make of the Jews remains to be seen." (He holds c_worms and is also its top liege.)
+- **"New Leadership":** "Parnas Shaul now leads the Kehillah of Speyer."
+- **"A Community in Crisis":** "The Kehillah of Mainz is in crisis: its people are divided and its order is failing."
+- **"A New Yeshiva":** "The Kehillah of Mainz has founded a yeshiva under Rav Isaac."
+- **Bet Din and charter texts, through the helper:**
+  - "The Bet Din convened by Rav Isaac of the Kehillah of Mainz has concluded. Its rulings were sound, and the parties went home satisfied."
+  - "The Kehillah of Mainz has passed to a new lord. Its Jews must seek a new charter."
+- **Negative check:** news about Isaac's own community is not sent to Isaac.
+- **Settings:** "Community News" appears in Message Settings, set to Feed.
+- **Volume:** exactly one entry per trigger, and no other spam.
+- **error.log:** nothing from the feature. (The test's own kill commands used an invalid `death_reason`.)
+- **Not exercised naturally:** a real Bet Din session closing, and a real realm change ending a charter. Only their texts and the helper were tested.
+- **Unrelated:** `kehillah_settlement_conditions.0004` still shows raw loc keys. That file has uncommitted changes from another session.
 ## Not covered yet
 
 - The arrival event `.0301` was fired directly; the trip itself has not yet ended in an arrival.

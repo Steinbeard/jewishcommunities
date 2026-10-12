@@ -164,6 +164,11 @@ the shim guide. Current state is in the
   This affects every building and the balance. Decide after V29's Stability-gated Yeshiva has been
   seen in play.
 
+- **V30, COMMUNITY NEWS: built and verified live 2026-10-12** ([spec](docs/spec/v30-community-news.md); test log run 20).
+  - Quiet feed notices under a 'Community News' filter: your host lord dies; and, in your minhag region, a charter ends, new leadership, a pillar in Crisis, a new or Renowned+ yeshiva, a Bet Din concludes.
+  - V29 §12 also added 'Yeshiva News' (newcomers, chavrutot, works and subjects mastered), and fixed every mod message's blank body.
+  - Open: the 'minhag practice' line in the Bet Din notice is waiting for takkanot (v25 P7).
+
 - **V29 §11, THE LEADER'S YESHIVA: built and verified live 2026-10-12** (test log runs 16-17; the
   "send to a community with no rabbi" option is not yet exercised)
   ([spec §11](docs/spec/v29-yeshiva.md)).
