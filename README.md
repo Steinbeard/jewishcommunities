@@ -36,6 +36,12 @@ A Crusader Kings III mod about Jewish diaspora communities, built around the Keh
 
 The mod targets CK3 `1.20.0.2`. Other game versions may require script or GUI updates.
 
+## Editing localization
+
+Run `python scripts/kehillah_loc_editor.py` for a searchable, local editor of
+English text. It saves changes back to the existing `.yml` files. See
+[scripts/README.md](scripts/README.md) for usage and safeguards.
+
 ## Design
 
 The community is organized around three long-term outcomes:
