@@ -69,3 +69,25 @@ created. The original `doctrine_lock = religion` remains: Paradox's
 explain that the lock controls whether a doctrine survives moving or creating
 a Rite across faith or religion boundaries, rather than whether a choice is
 selectable in the creation screen.
+
+## 2026-10-12 addendum: Proselytism doctrine
+
+Extends this spec; supersedes nothing. Vanilla By God Alone's Mass Conversion
+great project (`pam_mass_rite_conversion`) was visible to every Kehillah ruler
+because its only gate is the DLC plus a duchy-tier title, and Kehillah titles
+are duchies. A third doctrine group, **Proselytism**, follows the V27 pattern
+(`doctrine_lock = religion`, creation limited to Judaism): **Discouraged**
+(default for every Jewish faith) or **Encouraged**. Discouraged hides Mass
+Conversion; sincere individual converts are still accepted. Encouraged leaves
+vanilla behavior. Rites without the doctrine (all non-Jewish rites) are
+unaffected.
+
+The gate is a Kehillah override of `pam_mass_rite_conversion_requirements_trigger`
+(`common/scripted_triggers/kehillah_mass_conversion_override.txt`), which hides
+the project and its "can plan" action; refresh it if vanilla changes the
+trigger. The group icon is a placeholder copy of the interfaith-marriage icon.
+Source-checked and `ck3-tiger`-reviewed only (its 1.19 schema flags the 1.20
+doctrine fields and `rite` as unknown, as for the existing V27 content); not
+live-tested. `kehillah_interfaith_debug.1` now also reports the Proselytism
+doctrine and whether the Mass Conversion requirements pass. A "Closed" tier
+(blocking conversion into a rite, e.g. for Druze) was considered and deferred.
