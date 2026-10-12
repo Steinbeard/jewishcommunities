@@ -2082,6 +2082,13 @@ of truth, so live feedback can tune contributors instead of arbitrary opening
 bonuses. New founders remain a separate difficulty model and do not receive
 this historical snapshot.
 
+**2026-10-12 — BUILT, not live-tested: host arrest and exile
+([V32](docs/spec/v32-host-arrest-and-exile.md)).** Daniel approved implementing it the same day,
+with refusal meaning exile (leader steps down into an adventurer; a courtier becomes a wanderer).
+It uses the scripted-crime + gate-override route rather than the custom "Arrest" interaction
+sketched below. Needs the live pass in V32's "Live test" section, since a refusal runs the
+step-down succession handoff. The original candidate note follows, kept for the record.
+
 **2026-10-12 — candidate, not approved: host arrest of Kehillah members.** Raised by Daniel
 while reviewing forced conversion (V27 2026-10-12 addendum). Today the host cannot imprison a
 Kehillah leader or courtier at all: `cannot_be_vassal_or_liege` keeps the leader independent, and

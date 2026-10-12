@@ -1,0 +1,275 @@
+﻿# =====================================================================
+# HOST ARREST -- what happens around an arrest of a Kehillah member.
+# Design: docs/spec/v32-host-arrest-and-exile.md. The gate that lets the
+# host imprison at all is in common/scripted_triggers/
+# kehillah_host_arrest_triggers.txt.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# CRIMES. Scope: the Kehillah leader who committed one. The host (the top
+# liege of the quarter's county, the same host the V15 charter binds)
+# gains an opinion modifier carrying imprisonment_reason = yes, which is
+# all vanilla's has_imprisonment_reason looks for.
+# $CRIME$ = an opinion modifier from
+# common/opinion_modifiers/kehillah_host_arrest_opinions.txt.
+# ---------------------------------------------------------------------
+kehillah_host_crime_effect = {
+	save_scope_as = kehillah_crime_offender
+	if = {
+		limit = { kehillah_host_charter_host_available_trigger = yes }
+		domicile.domicile_location.county.holder.top_liege = {
+			add_opinion = {
+				target = scope:kehillah_crime_offender
+				modifier = $CRIME$
+			}
+			save_scope_as = kehillah_crime_host
+		}
+		if = {
+			limit = { is_ai = no }
+			send_interface_toast = {
+				type = event_toast_effect_bad
+				title = kehillah_host_crime_toast_title
+				left_icon = scope:kehillah_crime_host
+				custom_tooltip = kehillah_host_crime_toast_tt
+			}
+		}
+		debug_log = "kehillah_host_crime_effect: the host now holds an imprisonment reason against the leader"
+		debug_log_scopes = yes
+	}
+}
+
+# ---------------------------------------------------------------------
+# AI HOSTS. Scope: a Kehillah leader, from kehillah_quarterly_pulse.
+# Vanilla's AI only considers vassals and courtiers for imprisonment
+# (imprison_interaction's ai_targets), so an AI host never looks at a
+# Kehillah on its own. Once a quarter, a host holding a crime against
+# the leader may send the real interaction. send_threshold = decline
+# always sends it, so the recipient answers it: a player gets the
+# ordinary popup, an AI leader answers through vanilla's ai_accept, and
+# refusal runs the exile below either way.
+# ---------------------------------------------------------------------
+kehillah_host_arrest_ai_check_effect = {
+	save_scope_as = kehillah_arrest_suspect
+	if = {
+		limit = {
+			is_imprisoned = no
+			kehillah_host_charter_host_available_trigger = yes
+		}
+		domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_arrest_host }
+		if = {
+			limit = {
+				scope:kehillah_arrest_host = {
+					is_ai = yes
+					is_imprisoned = no
+					has_imprisonment_reason = scope:kehillah_arrest_suspect
+					is_character_interaction_valid = {
+						recipient = scope:kehillah_arrest_suspect
+						interaction = imprison_interaction
+					}
+				}
+			}
+			random = {
+				chance = kehillah_host_arrest_quarterly_chance_value
+				debug_log = "kehillah_host_arrest_ai_check_effect: the host sends an arrest"
+				debug_log_scopes = yes
+				scope:kehillah_arrest_host = {
+					run_interaction = {
+						interaction = imprison_interaction
+						actor = scope:kehillah_arrest_host
+						recipient = scope:kehillah_arrest_suspect
+						send_threshold = decline
+					}
+				}
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# REFUSAL = EXILE. Called from the war_for_imprison_effect override
+# below, which is where vanilla's imprison_interaction on_decline sends a
+# refusing ruler above barony tier (vanilla would start a rebellion war;
+# a community with no army cannot fight one).
+#
+# A refusing COURTIER never reaches this: vanilla's own decline branch
+# already moves an unlanded refuser to the wandering pool
+# (select_and_move_to_pool_effect), which is the "normal wanderer" exile.
+#
+# The leader leaves through the existing, live-tested step-down teardown
+# (kehillah_step_down_effect, common/scripted_effects/
+# kehillah_departure_effects.txt): the community passes to its
+# appointment heir and he takes to the road as a landless adventurer.
+# kehillah_arrest.0010 then moves his camp out of the host's realm.
+#
+# NO HEIR, NO FLIGHT. With nobody to leave the community to, stepping
+# down would have to destroy it. Destroying a community is irreversible
+# and an imprisonment is not (ransom, release, escape), so in that case
+# the arrest goes through instead. The decline tooltip says so in advance
+# (KehillahImprisonDeclineSummary).
+# ---------------------------------------------------------------------
+kehillah_arrest_refused_effect = {
+	$HOST$ = { save_scope_as = kehillah_arrest_host }
+	$LEADER$ = { save_scope_as = kehillah_arrest_refuser }
+	debug_log = "kehillah_arrest_refused_effect: begin"
+	debug_log_scopes = yes
+	scope:kehillah_arrest_refuser = {
+		if = {
+			limit = {
+				exists = primary_title
+				primary_title = { is_kehillah_title_trigger = yes }
+				exists = primary_title.current_heir
+			}
+			add_opinion = {
+				target = scope:kehillah_arrest_host
+				modifier = attempted_arrest_opinion
+			}
+			kehillah_step_down_effect = yes
+			trigger_event = { id = kehillah_arrest.0010 days = 1 }
+			debug_log = "kehillah_arrest_refused_effect: stepped down into exile"
+		}
+		else = {
+			scope:kehillah_arrest_host = {
+				imprison = {
+					target = scope:kehillah_arrest_refuser
+					type = dungeon
+				}
+			}
+			debug_log = "kehillah_arrest_refused_effect: no heir -- imprisoned instead"
+		}
+	}
+	debug_log = "kehillah_arrest_refused_effect: end"
+}
+
+# ---------------------------------------------------------------------
+# OVERRIDE of war_for_imprison_effect (CK3 1.20, common/scripted_effects/
+# 00_interaction_effects.txt). The else branch is vanilla's body
+# verbatim; the only change is the Kehillah branch in front of it. Every
+# vanilla caller (imprison refusal, and two yearly events) passes the
+# refusing character as REBEL; a Kehillah leader goes into exile instead
+# of starting a war. Refresh the copy if vanilla changes the effect.
+# ---------------------------------------------------------------------
+war_for_imprison_effect = {
+	if = {
+		limit = {
+			$REBEL$ = { government_has_flag = government_is_kehillah }
+		}
+		kehillah_arrest_refused_effect = {
+			HOST = $LIEGE$
+			LEADER = $REBEL$
+		}
+	}
+	else = {
+		$LIEGE$ = { save_temporary_scope_as = liege_temp }
+		$REBEL$ = {
+			save_temporary_scope_as = rebel_temp
+			save_scope_value_as = {
+				name = war_for_imprisonment_flavour
+				value = yes
+			}
+			start_war = {
+				casus_belli = refused_liege_demand_war
+				target = scope:liege_temp
+			}
+		}
+		# Disgruntled vassals
+		if = {
+			limit = {
+				scope:liege_temp = { NOT = { has_imprisonment_reason = scope:rebel_temp } }
+			}
+			scope:liege_temp = {
+				every_vassal = { #Vassals joining the rebel.
+					limit = {
+						vassal_would_join_rebel_faction_base_trigger = yes
+						OR = {
+							#Lovers and friends always back rebel (unless also lovers/friends of the liege)
+							vassal_would_join_rebel_faction_relation_trigger = yes
+							#Vassals that either like recipient or have high honor will rally if the liege is being tyrannical.
+							AND = {
+								# Special imprisonment checks
+								NOT = {
+									scope:liege_temp = { has_imprisonment_reason = scope:rebel_temp }
+								}
+								# If they can't join a faction against the liege they should not revolt
+								vassal_would_join_rebel_faction_tyranny_trigger = yes
+							}
+							#And finally, vassals that really hate their liege will join regardless (provided that they also do not hate recipient).
+							AND = {
+								OR = {
+									opinion = {
+										target = scope:rebel_temp
+										value >= -25
+									}
+									AND = {
+										has_game_rule = hard_difficulty
+										scope:liege_temp = { is_ai = no }
+										opinion = {
+											target = scope:rebel_temp
+											value >= -50
+										}
+									}
+									AND = {
+										has_game_rule = very_hard_difficulty
+										scope:liege_temp = { is_ai = no }
+										opinion = {
+											target = scope:rebel_temp
+											value >= -75
+										}
+									}
+								}
+								OR = {
+									opinion = {
+										target = scope:liege_temp
+										value <= -40
+									}
+									AND = {
+										has_game_rule = hard_difficulty
+										scope:liege_temp = { is_ai = no }
+										opinion = {
+											target = scope:liege_temp
+											value <= -20
+										}
+									}
+									AND = {
+										has_game_rule = very_hard_difficulty
+										scope:liege_temp = { is_ai = no }
+										opinion = {
+											target = scope:liege_temp
+											value <= 0
+										}
+									}
+								}
+							}
+						}
+						# TGP bloc members follow their leader
+						trigger_if = {
+							limit = { exists = house.house_confederation.leading_house.house_head }
+							house.house_confederation.leading_house.house_head = this
+						}
+					}
+					add_to_list = joining_vassals
+				}
+			}
+		}
+		# Bloc members join despite legality
+		bloc_member_join_war_effect = yes
+		every_in_list = {
+			list = joining_vassals
+			vassal_join_rebel_war_effect = yes
+		}
+		every_player = {
+			limit = { is_vassal_of = scope:liege_temp }
+			scope:liege_temp = {
+				save_scope_as = actor
+				save_scope_as = puppet_or_actor
+			}
+			scope:rebel_temp = { save_scope_as = recipient }
+			trigger_event = char_interaction.0232
+		}
+		scope:rebel_temp = {
+			add_opinion = {
+				target = scope:liege_temp
+				modifier = attempted_arrest_opinion
+			}
+		}
+	}
+}

@@ -1,0 +1,88 @@
+﻿# =====================================================================
+# HOST ARREST -- who may imprison a Kehillah member. Design:
+# docs/spec/v32-host-arrest-and-exile.md.
+#
+# A Kehillah leader is an independent ruler (cannot_be_vassal_or_liege)
+# and the host is only his tributary suzerain, so vanilla's imprison
+# interaction never reaches him or his courtiers: its gate,
+# basic_allowed_to_imprison_character_trigger, follows liege chains and
+# guest status only. Vanilla already has one exception of exactly this
+# shape -- a landless adventurer who ignored an eviction may be
+# imprisoned by the realm he camps in -- and this file adds a second,
+# modelled on it: a Kehillah member may be imprisoned by any ruler whose
+# realm contains the community's quarter, if that ruler holds an
+# imprisonment reason (a crime) against him.
+#
+# The override below is vanilla's body verbatim (CK3 1.20,
+# common/scripted_triggers/00_scripted_triggers.txt) plus the one
+# kehillah_subject_to_host_arrest_trigger line in the OR. Refresh it if
+# vanilla changes the trigger in a later patch.
+# =====================================================================
+
+# Scope: the prospective prisoner. Reads scope:allowed_imprisoner, which
+# vanilla's trigger saves before calling into the character.
+kehillah_subject_to_host_arrest_trigger = {
+	save_temporary_scope_as = kehillah_arrest_prisoner
+	OR = {
+		# The community's leader.
+		AND = {
+			government_has_flag = government_is_kehillah
+			kehillah_quarter_under_imprisoner_trigger = yes
+		}
+		# A courtier of the community (officers, rabbi, family at court).
+		AND = {
+			is_ruler = no
+			liege ?= {
+				government_has_flag = government_is_kehillah
+				kehillah_quarter_under_imprisoner_trigger = yes
+			}
+		}
+	}
+	scope:allowed_imprisoner = {
+		has_imprisonment_reason = scope:kehillah_arrest_prisoner
+	}
+}
+
+# Scope: a Kehillah leader. The quarter sits in scope:allowed_imprisoner's
+# realm: he holds its county, or is a de facto liege of it at any level.
+# The second line is the predicate vanilla's adventurer check uses.
+kehillah_quarter_under_imprisoner_trigger = {
+	exists = domicile.domicile_location.county.holder
+	OR = {
+		domicile.domicile_location.county.holder = scope:allowed_imprisoner
+		domicile.domicile_location.county = {
+			target_is_de_facto_liege_or_above = scope:allowed_imprisoner.primary_title
+		}
+	}
+}
+
+basic_allowed_to_imprison_character_trigger = { #Only to be used in is_shown for imprison interaction and similar
+	save_temporary_scope_as = allowed_imprisoner
+	$CHARACTER$ = {
+		OR = {
+			AND = {
+				target_is_liege_or_above = scope:allowed_imprisoner
+				trigger_if = {
+					limit = { is_foreign_court_guest = yes }
+					host = {
+						target_is_liege_or_above = scope:allowed_imprisoner
+					}
+				}
+			}
+			is_foreign_court_or_pool_guest_of = scope:allowed_imprisoner
+			AND = {
+				# EP3 EVICTION
+				has_government = landless_adventurer_government
+				reverse_has_opinion_modifier = {
+					target = scope:allowed_imprisoner
+					modifier = eviction_ignored_opinion
+				}
+			}
+			# KEHILLAH HOST ARREST (the only change from vanilla)
+			kehillah_subject_to_host_arrest_trigger = yes
+		}
+		NOT = {
+			is_imprisoned_by = scope:allowed_imprisoner
+		}
+	}
+}
