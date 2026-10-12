@@ -173,6 +173,22 @@ Fixes are in `444bdde`; run 7 re-tests them.
 - **Forced fires after the term** (`.0206`/`.0207` with no students left) showed unresolved names.
   They are now guarded by triggers that require students.
 
+## Run 10 (`b2acc38`): the Yeshiva section of the library panel, ALL PASS
+
+- **Worms:** "The Yeshiva -- Respected (fame 60), 20 more to Renowned. / Head: Rav Isaac in person /
+  Greatness from its fame: +30 / Zman: ready -- Hold a Zman from Decisions".
+- **During a term:** "Zman: a term is in progress".
+- **After it:** fame 65, "held this year; the next term opens in time", "Last zman: 0 ordained, 0
+  sent out as Dayyanim."
+- **The standalone roster panel:**
+  - Narbonne: Modest, 38.
+  - Jerusalem: Respected, 78.
+  - Both have drifted about 2 below their seeds over four months, which is ordinary decay before
+    their AI holds a zman.
+  - Mahdia: no yeshiva section, as intended.
+- **Layout:** no clipping and no overlap with the library list.
+- **error.log:** nothing new from the panel.
+
 ## Not covered yet
 
 - The traveller point of interest (`poi_kehillah_yeshiva`) and events `.0101`/`.0102`. These only

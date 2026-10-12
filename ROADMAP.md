@@ -125,6 +125,18 @@ the shim guide. Current state is in the
   - **Verified live in a third run:** the quarterly fame pulse; the zman, ordained (+10 track XP,
     +2 fame) and unordained (credit, then ordained on the spot).
   - **Not covered:** traveller events.
+  - **Section 9, the Worms gameplay loop: BUILT AND VERIFIED LIVE 2026-10-11** (test log runs 6-10).
+    - Hold a Zman, with events during the term.
+    - Ordinations by the Rosh Yeshiva, with two terms needed for semicha.
+    - Alumni seated as Dayyanim elsewhere.
+    - Fame tiers and their notices, and the Great Yeshiva.
+    - The Yeshiva section of the library panel.
+  - **New communities and seeds (2026-10-11):**
+    - Lucena, Jerusalem, Mahdia (with the ruined Kairouan hall) and Sura.
+    - Baghdad is now the Exilarch's seat with the Yeshiva of Pumbedita.
+    - Narbonne is seeded.
+  - **Open question for Daniel:** present fame as "renown" (tier words; the number only as progress),
+    so it does not read as a second Greatness.
   - **Not built yet:**
     - V29 section 4, where the tracks affect the Bet Din, responsa and charters;
     - Seek Semicha's retirement (kept for now);
