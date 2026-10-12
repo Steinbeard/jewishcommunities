@@ -289,6 +289,50 @@ shim guide's 2026-09-27 note, so it is unconfirmed.
 - Run 13's 5-of-9 stays unexplained. Since `dc506a1` each tick relinks rebbe-less students to the head, so a gap would heal within a quarter.
 - The diagnostics stay in `debug.5` in case it recurs.
 
+## Run 16 (`4be9040`, 2026-10-12): V29 section 11, function ALL PASS, two UX bugs
+
+- **Seeded heads, PASS.** `kehillah_yeshiva_debug.9` on Worms, Narbonne, Jerusalem, Lucena, Baghdad
+  and Sura reads "MASTER head" with focus depth 65+ and teaching XP 8.
+  - Narbonne's focus is PARSHANUT; the others' is TALMUDICS.
+- **Yearly class, PASS.**
+  - Eight September ticks graduated no one.
+  - `debug.8` ordained 6 students, and "The Graduating Class" named Asher.
+  - "Recommend him to Kaiser Heinrich" moved him to that court, with +20 opinion.
+  - "Send him where a community has no rabbi" was hidden: no community lacked one. It is not yet
+    exercised.
+- **Focus change, PASS.**
+  - After Isaac got Parshanut 80, the Parshanut button enabled.
+  - Clicking it set the focus, and `debug.9` read PARSHANUT with the cooldown on.
+- **Narbonne's panel, PASS:** "Teaching: Scripture and its commentators", with no buttons.
+- **BUG:** the current focus did not stand out. A disabled button never shows `down`, so all three
+  looked alike.
+- **BUG:** the best graduate was the player's heir. Recommending him silently replaced the heir.
+- **Fixes in `2115290`:**
+  - Each button's text carries its state (bright, plain or grey), and its tooltip opens with a
+    status line.
+  - The heir is never the class's pick.
+  - Close kin is never offered to the lord.
+- **Label:** "Teaching" became "Teaching focus" (`852c357`).
+
+## Run 17 (`2115290`): the fixes, ALL PASS
+
+- **Panel:**
+  - "Teaching focus:" is followed by the buttons. Talmud is bright; Parshanut and Hashkafa are grey
+    italic.
+  - The tooltips open with "Taught here now." and "Not available now: ...".
+  - After Parshanut 80, Parshanut is plain with "Click to make this what the yeshiva teaches."
+  - After clicking, Parshanut is bright and the others are grey.
+- **Class:**
+  - 9 ordained. The pick, Gavriel, was the leader's grandson but not his heir.
+  - Only "Keep him here" was offered: the lord option is hidden for kin, as intended.
+- **error.log:** nothing from the scripted GUIs or loc functions.
+- **CRASH on the first boot, attributed to the session, not the mod.**
+  - An ACCESS_VIOLATION right after the game-start autosave (`crashes/ck3_20261012_011814`).
+  - The loc file was edited and committed at 01:18:13-14, while the test game was starting. Debug
+    mode hot-reloaded localization (errors stamped 01:18:16) and crashed.
+  - The relaunch with identical files ran clean.
+  - **Rule:** no mod-file edits while a debug-mode test game is booting.
+
 ## Not covered yet
 
 - The arrival event `.0301` was fired directly; the trip itself has not yet ended in an arrival.

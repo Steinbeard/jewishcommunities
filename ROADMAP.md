@@ -118,7 +118,8 @@ the shim guide. Current state is in the
   This affects every building and the balance. Decide after V29's Stability-gated Yeshiva has been
   seen in play.
 
-- **V29 §11, THE LEADER'S YESHIVA: built 2026-10-12, live test pending**
+- **V29 §11, THE LEADER'S YESHIVA: built and verified live 2026-10-12** (test log runs 16-17; the
+  "send to a community with no rabbi" option is not yet exercised)
   ([spec §11](docs/spec/v29-yeshiva.md)).
   - Yearly ordination with "The Graduating Class" choice (keep / send / recommend to the lord).
   - The head's depth in the focus sets study XP and whether renown holds.
