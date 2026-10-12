@@ -68,6 +68,23 @@ without clear connection to the rest of the kehillah mechanics"). Design and dec
 - **Next:** the live test in v30 §3. It is also the first live run of S1's collapse path
   (criterion 2).
 
+### The host relationship (v31) — 2026-10-12, interactive
+
+Daniel wants the host relationship to be the core challenge: dynamic, tied into vanilla, and
+driven by personality, economics and ideology. Design:
+[v31](docs/spec/v31-host-teachings-stances-and-factions.md). **PROPOSAL, nothing built.** This
+is the S11 "friendliness" design review; the Crusades chain stays separate and builds on it.
+
+- A "Teaching on the Jews" doctrine on each rite. Latin: Witness → Separation and Mission →
+  Exclusion. Byzantine: Imperial Law. Muslim: Dhimma → Strict Pact → Abolition, on top of
+  vanilla's jizya. Councils and reform movements change it.
+- Zeal is scaled by the teaching. A zealous Witness bishop protects.
+- Personal ruler stances: Protector, Convinced, Predator, Pragmatist.
+- An anti-Jewish vassal faction: debt relief, then restriction, then expulsion.
+- A tribute term: jizya, or tallage plus a confirmation fee.
+- **Next:** v30's live test first, then v31 §11's spikes (doctrine group on rites, tributary
+  tax on a Kehillah, custom faction), then the slices in §12. Open questions for Daniel: §14.
+
 ### Shabbat autonomous queue — 2026-10-09 evening to 2026-10-11 morning (works ABOVE everything below)
 
 Daniel is offline for Shabbat. The `JewishCommunities-ShabbatHeartbeat` task runs every 5 hours on
