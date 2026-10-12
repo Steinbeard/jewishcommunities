@@ -3,49 +3,39 @@
 # their movement between communities.
 #
 # REWORKED 2026-10-12 (docs/spec/v30-expulsion-and-householders.md),
-# from Daniel's playtest and his direction the same night: the system
-# runs in the background, with side notifications when a family comes or
-# goes, no events asking the player to choose, and no register decision.
-# A family's head carries the Ba'al Bayit character modifier (a marker
-# in the character window; Daniel preferred it to a trait, 2026-10-12)
-# and expects a voice on the board, the way a powerful vassal expects a
-# council seat.
+# from Daniel's playtest and his direction the same night, then stripped
+# back: the system runs in the background with side notifications, has
+# no register screen, no standing and no opinion effects.
 #
 #   - THE REGISTER IS OBSERVED from the court each refresh: the ruling
 #     house, plus every house with a householder at court
-#     (kehillah_householder_trigger). It is internal data now -- read by
-#     the succession term, the pillars and the movement rules -- and has
-#     no screen of its own.
-#   - THE RULING HOUSE is on the register (kehillah_household_ruling) but
-#     neither counts against the room, nor feeds a pillar, nor scores the
-#     succession term, nor carries the Ba'al Bayit marker.
-#   - FAMILIES FEED THE PILLARS by trade: merchants Prosperity, scholars
-#     Greatness, advocates Stability (capped per pillar).
-#   - A HEAD EXPECTS A VOICE. A family with a seat or an office is
-#     content; a Respected or Leading family without one resents it.
+#     (kehillah_householder_trigger). It is internal data -- read by the
+#     pillars and the movement rules, and by future events that need a
+#     ba'al bayit to point at.
+#   - A HEAD IS MARKED Ba'al Bayit (kehillah_baal_bayit_modifier): flavour
+#     in the character window, and a small income so the family builds
+#     wealth. The ruling house is on the register but carries no marker
+#     and feeds no pillar.
+#   - FAMILIES FEED THE PILLARS by trade, one flat amount each (capped).
 #   - WHEN THE COMMUNITY HAS ROOM, it finds its next family in this order
 #     (kehillah_household_recruit_effect): a councillor who is not yet a
-#     householder; a skilled or wealthy courtier; a family from another
-#     community; and only then a newcomer generated for the purpose.
+#     householder; an established, skilled or wealthy courtier (dynasty
+#     prestige first); a family from another community; and only then a
+#     newcomer generated for the purpose.
 #   - FAMILIES LEAVE (push): low Stability, a hostile host, an edict of
-#     expulsion, or a head who resents being passed over. A family with a
-#     seat or office never leaves.
-#   - AI LEADERS SEAT HOUSEHOLDERS in empty lay council seats, which puts
-#     leading families into the succession pool.
+#     expulsion. A family with a seat or office never leaves; otherwise
+#     the least established goes first.
+#   - AI LEADERS SEAT HOUSEHOLDERS in empty lay council seats.
 #
 # DATA. On the house:
 #   kehillah_household_of      the community title it belongs to
 #   kehillah_household_ruling  set while it is the leader's own house
 #   kehillah_household_head    its head (the leader, for the ruling house)
-#   kehillah_household_adults  adult members at court
 #   kehillah_household_seats   council seats and offices its members hold
-#   kehillah_household_years   years in this community
 #   kehillah_household_origin  community it last came from (if any)
 #   kehillah_household_trade   flag:scholar / flag:merchant / flag:advocate
-#   kehillah_household_standing
-# The head carries copies of kehillah_household_standing and
-# kehillah_household_contribution, and the Ba'al Bayit modifier. A courtier
-# raised to found a household carries kehillah_baal_bayit_promoted.
+# The head carries kehillah_baal_bayit_modifier. A courtier raised to
+# found a household carries kehillah_baal_bayit_promoted.
 # On the community title: kehillah_households (the register),
 # kehillah_households_prosperity / _stability / _greatness, and
 # kehillah_households_observed (set after the first refresh, so the
@@ -66,7 +56,6 @@ kehillah_household_add_effect = {
 		add_to_variable_list = { name = kehillah_households target = scope:kh_add_house }
 		scope:kh_add_house = {
 			set_variable = { name = kehillah_household_of value = scope:kh_add_title }
-			set_variable = { name = kehillah_household_years value = 0 }
 		}
 	}
 }
@@ -117,9 +106,9 @@ kehillah_household_infer_trade_effect = {
 
 # ---------------------------------------------------------------------
 # Scope: a Kehillah leader. Rebuilds the register from the court and
-# recomputes every family's people, seats, head, standing, marker,
-# expectations and pillar contribution. Announces families that joined
-# or dropped off on their own (marriage, a new rabbi, a death).
+# recomputes every family's seats, head, marker and pillar contribution.
+# Announces families that joined or dropped off on their own (marriage,
+# a new rabbi, a death).
 # ---------------------------------------------------------------------
 kehillah_household_refresh_effect = {
 	if = {
@@ -195,27 +184,16 @@ kehillah_household_refresh_effect = {
 		every_in_list = {
 			list = kh_ref_seen
 			save_scope_as = kh_ref_house
-			set_variable = { name = kehillah_household_adults value = 0 }
 			set_variable = { name = kehillah_household_seats value = 0 }
 			every_house_member = {
 				limit = {
-					is_adult = yes
+					is_courtier_of = scope:kh_ref_leader
 					OR = {
-						this = scope:kh_ref_leader
-						is_courtier_of = scope:kh_ref_leader
+						is_councillor_of = scope:kh_ref_leader
+						has_any_court_position = yes
 					}
 				}
-				scope:kh_ref_house = { change_variable = { name = kehillah_household_adults add = 1 } }
-				if = {
-					limit = {
-						OR = {
-							this = scope:kh_ref_leader
-							is_councillor_of = scope:kh_ref_leader
-							has_any_court_position = yes
-						}
-					}
-					scope:kh_ref_house = { change_variable = { name = kehillah_household_seats add = 1 } }
-				}
+				scope:kh_ref_house = { change_variable = { name = kehillah_household_seats add = 1 } }
 			}
 			if = {
 				limit = { scope:kh_ref_leader.house ?= this }
@@ -234,17 +212,11 @@ kehillah_household_refresh_effect = {
 				}
 			}
 			kehillah_household_infer_trade_effect = yes
-			set_variable = { name = kehillah_household_standing value = kehillah_household_standing_value }
-			var:kehillah_household_head ?= {
-				set_variable = { name = kehillah_household_standing value = scope:kh_ref_house.var:kehillah_household_standing }
-				set_variable = { name = kehillah_household_contribution value = scope:kh_ref_house.kehillah_household_contribution_value }
-			}
 
 			# A family new to this community, counted on its own: announce it.
 			if = {
 				limit = { NOT = { var:kehillah_household_of ?= scope:kh_ref_title } }
 				set_variable = { name = kehillah_household_of value = scope:kh_ref_title }
-				set_variable = { name = kehillah_household_years value = 0 }
 				if = {
 					limit = {
 						scope:kh_ref_title = { has_variable = kehillah_households_observed }
@@ -264,31 +236,30 @@ kehillah_household_refresh_effect = {
 			}
 			scope:kh_ref_title = { add_to_variable_list = { name = kehillah_households target = scope:kh_ref_house } }
 
-			# 4. CONTRIBUTE, and 5. EXPECT. Every family but the ruling house.
+			# 4. CONTRIBUTE, and MARK the head. Every family but the ruling house.
 			if = {
 				limit = { NOT = { has_variable = kehillah_household_ruling } }
 				if = {
 					limit = { var:kehillah_household_trade ?= flag:merchant }
-					scope:kh_ref_title = { change_variable = { name = kehillah_households_prosperity add = scope:kh_ref_house.kehillah_household_contribution_value } }
+					scope:kh_ref_title = { change_variable = { name = kehillah_households_prosperity add = kehillah_household_contribution_value } }
 				}
 				else_if = {
 					limit = { var:kehillah_household_trade ?= flag:scholar }
-					scope:kh_ref_title = { change_variable = { name = kehillah_households_greatness add = scope:kh_ref_house.kehillah_household_contribution_value } }
+					scope:kh_ref_title = { change_variable = { name = kehillah_households_greatness add = kehillah_household_contribution_value } }
 				}
 				else = {
-					scope:kh_ref_title = { change_variable = { name = kehillah_households_stability add = scope:kh_ref_house.kehillah_household_contribution_value } }
+					scope:kh_ref_title = { change_variable = { name = kehillah_households_stability add = kehillah_household_contribution_value } }
 				}
 				var:kehillah_household_head ?= {
 					if = {
 						limit = { NOT = { has_character_modifier = kehillah_baal_bayit_modifier } }
 						add_character_modifier = kehillah_baal_bayit_modifier
 					}
-					kehillah_household_set_expectation_effect = { LEADER = scope:kh_ref_leader HOUSE = scope:kh_ref_house }
 				}
 			}
 		}
 
-		# 6. THE MARKER follows the head: anyone at court still carrying it
+		# 5. THE MARKER follows the head: anyone at court still carrying it
 		#    who no longer heads a family here loses it (a head succeeded by
 		#    an older brother, a son whose father returned, the leader).
 		every_courtier = {
@@ -303,7 +274,6 @@ kehillah_household_refresh_effect = {
 				}
 			}
 			remove_character_modifier = kehillah_baal_bayit_modifier
-			kehillah_household_clear_expectation_effect = { LEADER = scope:kh_ref_leader }
 		}
 		if = {
 			limit = { has_character_modifier = kehillah_baal_bayit_modifier }
@@ -315,49 +285,10 @@ kehillah_household_refresh_effect = {
 }
 
 # ---------------------------------------------------------------------
-# Scope: a household head. What he expects of leader $LEADER$: a family
-# with a seat or an office is heard; a Respected or Leading family
-# without one feels passed over. Opinion modifiers without expiry,
-# replaced each refresh (the powerful-vassal pattern).
-# ---------------------------------------------------------------------
-kehillah_household_set_expectation_effect = {
-	kehillah_household_clear_expectation_effect = { LEADER = $LEADER$ }
-	if = {
-		limit = { $HOUSE$ = { kehillah_household_has_seat_trigger = yes } }
-		add_opinion = { target = $LEADER$ modifier = kehillah_baal_bayit_heard_opinion }
-	}
-	else_if = {
-		limit = {
-			$HOUSE$ = {
-				has_variable = kehillah_household_standing
-				var:kehillah_household_standing >= kehillah_household_standing_leading_threshold
-			}
-		}
-		add_opinion = { target = $LEADER$ modifier = kehillah_baal_bayit_passed_over_major_opinion }
-	}
-	else_if = {
-		limit = {
-			$HOUSE$ = {
-				has_variable = kehillah_household_standing
-				var:kehillah_household_standing >= kehillah_household_standing_respected_threshold
-			}
-		}
-		add_opinion = { target = $LEADER$ modifier = kehillah_baal_bayit_passed_over_opinion }
-	}
-}
-
-# Scope: a character. Removes every Ba'al Bayit expectation toward $LEADER$.
-kehillah_household_clear_expectation_effect = {
-	remove_opinion = { target = $LEADER$ modifier = kehillah_baal_bayit_heard_opinion }
-	remove_opinion = { target = $LEADER$ modifier = kehillah_baal_bayit_passed_over_opinion }
-	remove_opinion = { target = $LEADER$ modifier = kehillah_baal_bayit_passed_over_major_opinion }
-}
-
-
-# ---------------------------------------------------------------------
 # Scope: a community title. Saves as scope:kh_low_house the household
-# most likely to leave: the lowest-standing family with no seat or
-# office, never the ruling house. Saves nothing if there is none.
+# most likely to leave: the least established family (lowest dynasty
+# prestige) with no seat or office, never the ruling house. Saves
+# nothing if there is none.
 # ---------------------------------------------------------------------
 kehillah_household_save_lowest_effect = {
 	if = {
@@ -374,14 +305,7 @@ kehillah_household_save_lowest_effect = {
 				NOT = { has_variable = kehillah_household_ruling }
 				NOT = { kehillah_household_has_seat_trigger = yes }
 			}
-			order_by = {
-				value = 0
-				if = {
-					limit = { has_variable = kehillah_household_standing }
-					subtract = var:kehillah_household_standing
-				}
-				else = { subtract = 1000 }
-			}
+			order_by = kehillah_household_leave_order_value
 			save_scope_as = kh_low_house
 		}
 	}
@@ -423,10 +347,6 @@ kehillah_household_migrate_effect = {
 	}
 	every_in_list = {
 		list = kh_mig_movers
-		if = {
-			limit = { has_character_modifier = kehillah_baal_bayit_modifier }
-			kehillah_household_clear_expectation_effect = { LEADER = scope:kh_mig_from }
-		}
 		set_employer = scope:kh_mig_to
 	}
 	scope:kh_mig_house = {
@@ -652,7 +572,8 @@ kehillah_household_promote_effect = {
 # Scope: a Kehillah leader whose community has room for another family.
 # Finds it, in Daniel's order (2026-10-12):
 #   1. a councillor who is not yet a householder;
-#   2. a skilled or wealthy courtier;
+#   2. an established, skilled or wealthy courtier (dynasty prestige
+#      counts most -- kehillah_household_promotion_score_value);
 #   3. a family from another community (AI-led, nearby or under
 #      pressure likelier, and only one without a seat or office);
 #   4. a newcomer generated for the purpose.
@@ -948,12 +869,6 @@ kehillah_household_seat_householders_effect = {
 # ---------------------------------------------------------------------
 kehillah_household_yearly_effect = {
 	kehillah_household_bootstrap_effect = yes
-	primary_title = {
-		every_in_list = {
-			variable = kehillah_households
-			change_variable = { name = kehillah_household_years add = 1 }
-		}
-	}
 	kehillah_household_refresh_effect = yes
 	if = {
 		limit = { exists = domicile.domicile_location }

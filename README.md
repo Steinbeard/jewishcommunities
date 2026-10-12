@@ -70,14 +70,12 @@ bands.
   Host, Keep the Night Watch, Prepare the Bet Din, and others.
 - **Court positions:** Rosh Yeshiva, Sofer, Shochet, Gabbai Tzedakah and Mikvah Attendant.
 - **Householder families (ba'alei batim).** Every Jewish family settled at the leader's court
-  counts. Each family's trade adds to a pillar: merchants to Prosperity, scholars to Greatness,
-  and advocates to Stability. The head of a family is marked **Ba'al Bayit** and expects a voice
-  on the board. A family left without a seat or office resents it, and is likelier to leave.
-  When the community has room it grows from within first: a councillor or a capable or wealthy
-  courtier sets up a household of his own. After that, families come from other communities.
-  Families leave when Stability falls or the host turns hostile. All of this happens in the
-  background, with a notification when a family comes or goes. AI leaders seat householders on
-  the council, which puts their families in the running for the leadership.
+  counts. The head of each family is marked **Ba'al Bayit** and earns a modest income. Each
+  family's trade adds to a pillar: merchants to Prosperity, scholars to Greatness, and advocates
+  to Stability. When the community has room, it grows from within first: a councillor, or an
+  established, capable or wealthy courtier, sets up a household of his own. After that, families
+  come from other communities. Families leave when Stability falls or the host turns hostile.
+  All of this happens in the background, with a notification when a family comes or goes.
 
 ### Rabbis, study and the yeshiva
 

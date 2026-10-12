@@ -1,87 +1,23 @@
 ﻿# =====================================================================
 # Ba'alei batim (V26 part 2): the community's householder families.
-# Reworked 2026-10-12 (docs/spec/v30-expulsion-and-householders.md).
-#
-# A household is a dynasty house registered on the community title's
-# kehillah_households list. kehillah_household_refresh_effect writes the
-# inputs below onto each house; these values only read them.
+# Reworked 2026-10-12 (docs/spec/v30-expulsion-and-householders.md) and
+# stripped back the same night at Daniel's direction: no standing, no
+# bands, no opinions. Dynasty prestige already says how established a
+# family is.
 # =====================================================================
 
-# Scope: a household (dynasty house). Standing is a household's weight in
-# the community: its head's ability, its people, the seats and offices
-# its members hold, and how long it has been here.
-kehillah_household_standing_value = {
-	value = 0
-	# Head's ability: half the sum of the three civic skills (about 0-30).
-	if = {
-		limit = { exists = var:kehillah_household_head }
-		add = {
-			value = var:kehillah_household_head.diplomacy
-			add = var:kehillah_household_head.stewardship
-			add = var:kehillah_household_head.learning
-			divide = 2
-		}
-	}
-	# People: 5 per adult member living in the community, at most 20.
-	if = {
-		limit = { exists = var:kehillah_household_adults }
-		add = {
-			value = var:kehillah_household_adults
-			multiply = 5
-			max = 20
-		}
-	}
-	# Council seats and offices held by members (the leader's own office
-	# counts for the ruling house).
-	if = {
-		limit = { exists = var:kehillah_household_seats }
-		add = {
-			value = var:kehillah_household_seats
-			multiply = 15
-		}
-	}
-	# Years in the community, half a point each, at most 20.
-	if = {
-		limit = { exists = var:kehillah_household_years }
-		add = {
-			value = var:kehillah_household_years
-			divide = 2
-			max = 20
-		}
-	}
-	round = yes
-}
+# What each householder family adds to its trade's pillar baseline
+# (merchants Prosperity, scholars Greatness, advocates Stability). One
+# flat number; sized against a building tier (40-90).
+kehillah_household_contribution_value = 25
 
-kehillah_household_standing_respected_threshold = 25
-kehillah_household_standing_leading_threshold = 45
-
-# Scope: a household. What it adds to its trade's pillar baseline
-# (merchants Prosperity, scholars Greatness, advocates Stability), by
-# standing band. Sized against a building tier (40-90).
-kehillah_household_contribution_value = {
-	value = 15
-	if = {
-		limit = {
-			has_variable = kehillah_household_standing
-			var:kehillah_household_standing >= kehillah_household_standing_respected_threshold
-		}
-		value = 30
-	}
-	if = {
-		limit = {
-			has_variable = kehillah_household_standing
-			var:kehillah_household_standing >= kehillah_household_standing_leading_threshold
-		}
-		value = 50
-	}
-}
+# The most the householders can add to any one pillar.
+kehillah_household_pillar_cap = 100
 
 # Scope: a community title. Room for householder families besides the
 # ruling house: 3, plus one at Healthy Prosperity and one at
 # Flourishing. Room only limits ARRIVALS; a community over its room never
-# sheds a family for that reason (the 2026-10-12 rework removed the
-# over-cap departure that told a poor community a family "would be
-# forced to leave").
+# sheds a family for that reason.
 kehillah_household_cap_value = {
 	value = 3
 	if = {
@@ -106,8 +42,8 @@ kehillah_household_count_value = {
 }
 
 # Scope: a Kehillah leader. Yearly chance, in percent, that a family
-# settles, when there is room. Pulled by Prosperity, gated by the host
-# realm's policy.
+# comes from outside, when there is room. Pulled by Prosperity, gated by
+# the host realm's policy.
 kehillah_household_arrival_chance_value = {
 	value = 0
 	if = {
@@ -137,9 +73,14 @@ kehillah_household_arrival_chance_value = {
 	round = yes
 }
 
+# Yearly chance, in percent, that a community with room raises one of
+# its own (a councillor, or an established, skilled or wealthy courtier)
+# to head a household, when no family would come from outside.
+kehillah_household_promotion_chance = 40
+
 # Scope: a Kehillah leader. Yearly chance, in percent, that a family
-# without a seat leaves. Pushed by low Stability, a hostile host realm,
-# and an edict of expulsion.
+# without a seat or office leaves. Pushed by low Stability, a hostile
+# host realm, and an edict of expulsion.
 kehillah_household_departure_chance_value = {
 	value = 0
 	if = {
@@ -154,45 +95,39 @@ kehillah_household_departure_chance_value = {
 		limit = { kehillah_expulsion_pending_trigger = yes }
 		add = 35
 	}
-	# A head who resents being passed over for a seat looks elsewhere.
-	if = {
-		limit = {
-			primary_title = {
-				any_in_list = {
-					variable = kehillah_households
-					NOT = { has_variable = kehillah_household_ruling }
-					NOT = { kehillah_household_has_seat_trigger = yes }
-					var:kehillah_household_head ?= {
-						has_opinion_modifier = { target = root modifier = kehillah_baal_bayit_passed_over_major_opinion }
-					}
-				}
-			}
-		}
-		add = 15
-	}
 }
 
-# Yearly chance, in percent, that a community with room raises one of
-# its own (a councillor, or a skilled or wealthy courtier) to head a
-# household, when no family would come from outside.
-kehillah_household_promotion_chance = 40
-
-# Scope: a courtier. Who is raised first: the most capable and the
-# richest.
+# Scope: a courtier. Who is raised to head a household first. Dynasty
+# prestige leads (Daniel, 2026-10-12): an established family name counts
+# for more than anything else; then ability, then wealth.
 kehillah_household_promotion_score_value = {
-	value = learning
+	value = 0
+	if = {
+		limit = { exists = dynasty }
+		add = {
+			value = dynasty.dynasty_prestige_level
+			multiply = 20
+		}
+	}
+	add = learning
 	add = stewardship
 	add = diplomacy
 	add = {
 		value = gold
 		divide = 10
+		min = 0
 		max = 30
 	}
 }
 
-# What persuading a household to stay costs.
-kehillah_household_persuade_gold_value = {
-	value = medium_gold_value
+# Scope: a house. Which family leaves first: the least established
+# (lowest dynasty prestige) scores highest.
+kehillah_household_leave_order_value = {
+	value = 0
+	if = {
+		limit = { exists = dynasty }
+		subtract = dynasty.dynasty_prestige_level
+	}
 }
 
 # Scope: a candidate destination or origin community title, with
@@ -218,9 +153,6 @@ kehillah_household_distance_weight_value = {
 		add = 5
 	}
 }
-
-# The most the householders can add to any one pillar.
-kehillah_household_pillar_cap = 100
 
 # Scope: the Kehillah leader. The householders' contribution to each
 # pillar's baseline, as recorded by the last refresh (one line each in

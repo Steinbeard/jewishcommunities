@@ -123,15 +123,16 @@ Daniel's playtest (Troyes, 2026-10-12):
   to leave";
 - the families were random strangers with a child, connected to nothing.
 
-His direction the same night:
-- run the system in the background;
-- tell the player with side notifications when a family comes or goes;
+His direction the same night, in two rounds:
+- run the system in the background, with side notifications when a family comes or goes;
 - grow the community from within before inventing anyone;
 - drop the register decision;
-- mark a householder the way vanilla marks a powerful vassal.
+- mark a householder for flavour, and make ba'alei batim available as targets for events;
+- no standing, no opinion effects, few numbers. Dynasty prestige already shows how established a
+  family is.
 
-This supersedes V26 part 2's register, cap, events and decision. V26's standing formula and its
-succession term stand.
+This supersedes V26 part 2's register, cap, events and decision, and removes its standing
+formula and the standing succession term.
 
 ### Who counts
 - **The register is observed.** Each quarterly refresh rebuilds it from the court:
@@ -139,82 +140,79 @@ succession term stand.
   - A householder is a Jewish man who is married, aged 25 or over, or raised to head a household
     (`kehillah_householder_trigger`). Visiting yeshiva students don't count.
   - A house already registered in another community is left to it.
-- **The register has no screen.** It is internal data, read by the succession term, the pillars
-  and the movement rules. The "Review the Householders" decision and its event are removed.
-- **The ruling house** is on the register (`kehillah_household_ruling`). It does not:
-  - count against room;
-  - feed a pillar;
-  - score the succession term;
-  - carry the marker.
+- **The register has no screen.** It is internal data, read by the pillars, the movement rules
+  and future events. The "Review the Householders" decision and its event are removed.
+- **The ruling house** is on the register (`kehillah_household_ruling`). It doesn't count
+  against room, feed a pillar or carry the marker.
 
-### What a family does
-- **It feeds the pillars.** Every family but the ruling house adds 15, 30 or 50
-  (Minor/Respected/Leading standing) to the baseline of its trade's pillar:
+### What a ba'al bayit is
+- **A marker.** The head of each family carries the "Ba'al Bayit" character modifier
+  (`kehillah_baal_bayit_modifier`, vanilla's family icon). It shows in the character window and
+  moves to the new head when the head changes.
+  - It gives **+0.5 gold a month**, so the family builds some wealth.
+  - Loans and contracts by ba'alei batim are deferred.
+  - Events can target a ba'al bayit through `kehillah_is_baal_bayit_trigger`.
+  - Vanilla's powerful-vassal portrait icon couldn't be reused. It is engine-only
+    (`Character.IsMyPowerfulVassal`), and a lookalike would mean forking
+    `gui/shared/portraits.gui`.
+- **A pillar contribution.** Every family but the ruling house adds a flat 25 to the baseline
+  of its trade's pillar:
   - merchants: Prosperity;
   - scholars: Greatness;
   - advocates: Stability.
 
   Each pillar's total from householders is capped at 100. A family with no recorded trade takes
   its head's best civic skill. The pillar tooltips show one line per pillar.
-- **The head is marked Ba'al Bayit.** It's a character modifier (`kehillah_baal_bayit_modifier`)
-  that shows with its icon and description in the character window. It moves to the new head
-  when the head changes.
-  - Why not vanilla's powerful-vassal marker: that portrait icon is engine-only
-    (`Character.IsMyPowerfulVassal`) and lives in `gui/shared/portraits.gui`. A matching icon
-    would mean forking that file, about 3,000 lines used across the UI, which this mod avoids.
-  - A trait was the first option, and Daniel preferred something other than a trait.
-- **It expects a voice** (the powerful-vassal pattern). The head's opinion of the leader:
-  - +10 if the family holds a council seat or an office;
-  - −10 for a Respected family without one;
-  - −25 for a Leading family without one.
-
-  These modifiers have no expiry; each refresh removes and re-adds them. A Leading family that
-  is passed over adds 15 points to the community's yearly chance of losing a family.
+- **No standing, no opinions.** Succession is unchanged by householders. They reach the
+  candidate pool the ordinary way, through council seats and offices. Dynasty prestige was
+  already in the candidate score.
 
 ### Coming and going
 - **Room limits arrivals only.** Room is 3 families besides the ruling house, plus 1 at Healthy
   Prosperity and 1 more at Flourishing. No family is pushed out by the cap.
 - **Finding the next family** (`kehillah_household_recruit_effect`), in Daniel's order:
   1. a councillor who is not yet a householder;
-  2. a skilled or wealthy courtier (a skill of 12 or more, or 100 gold);
-  3. a family from another community, AI-led, with nearby and pressed communities likelier,
-     and only a family without a seat or office;
+  2. an established, skilled or wealthy courtier: dynasty prestige level 1+, a civic skill of
+     12+, or 100 gold;
+  3. a family from another community, AI-led, with nearby and pressed communities likelier, and
+     only a family without a seat or office;
   4. a newcomer generated for the purpose.
 
-  A lowborn man raised in steps 1–2 founds a family name of his own (`create_dynasty`, named
-  from his culture). The yearly roll for steps 3–4:
+  Within steps 1 and 2, dynasty prestige ranks first, then ability, then wealth. A lowborn man
+  who is raised founds a family name of his own (`create_dynasty`, named from his culture).
+
+  The yearly roll for steps 3–4:
   - 15% at Strained Prosperity, 30% at Healthy;
   - +20 with fewer than two families;
   - ×1.5 when the host encourages Jews, none when it discourages them.
 
   When no one would come from outside, the community still grows from within: a 40% yearly
   chance for steps 1–2 only.
-- **Families leave**, with a yearly chance of up to 95%:
+- **Families leave**, with a yearly chance of up to 80%:
   - 30 for Stability below Strained;
   - 15 for a host that discourages or bans Jews;
-  - 35 for a pending edict;
-  - 15 for a Leading family passed over.
+  - 35 for a pending edict.
 
-  They only go to communities in welcoming realms that have room. A family with a council seat
-  or office never leaves, and movers never include the leader's close family or anyone holding
-  a seat or office.
+  The least established family (lowest dynasty prestige) without a seat or office goes first,
+  and only to a community in a welcoming realm with room. A family with a council seat or office
+  never leaves, and movers never include the leader's close family or anyone holding a seat or
+  office.
 - **Everything happens in the background.** A player leader gets a side notification when:
   - a family is counted;
   - a family is raised from within;
   - a family arrives or a newcomer settles;
   - a family leaves;
-  - a family is no longer counted because no one who could head it remains.
+  - a family is no longer counted.
 
   The first refresh of a game or save announces nothing.
 - **AI leaders seat householders** in empty lay council seats (Shtadlan, Gabbai,
-  Rosh ha-Shmirah, Ne'eman). This is V26 slice 2's open question, option 1, and it puts leading
-  families into the succession pool.
+  Rosh ha-Shmirah, Ne'eman).
 - **Seeded and generated families.** The 19 historical communities still start with three
   generated notable families. Newcomers have a wife close to the head's age and 1–4 children,
   and a head of 44 or older often has a grown son.
 
 ### Still open
-- Rivalries (V26 item 4).
+- Events that use ba'alei batim as their actors: disputes, petitions, loans and contracts.
 - A grown son founding a branch household of his own (`create_cadet_branch`).
 - Whether the leader's guaranteed adult son in the founding seed is still needed.
 - Communities founded in play get no seeded families. They grow through the recruit order.
@@ -240,7 +238,7 @@ Use the probes in `events/kehillah_expulsion_debug_events.txt` (`.1` is read-onl
    reason. Use `.7` to undo the fake debt.
 6. **Householders.** In Troyes, run the household probe `.1`:
    - the register holds the ruling house plus the founding families;
-   - each head has the Ba'al Bayit modifier and the matching opinion of the leader;
+   - each non-ruling head has the Ba'al Bayit modifier and earns its income;
    - the pillar tooltips show the householder lines.
 
    `.2` forces a recruitment: expect a promoted councillor or courtier where one qualifies, and

@@ -47,19 +47,20 @@ without clear connection to the rest of the kehillah mechanics"). Design and dec
   - Banned needs Discouraged first and two distinct pressures.
   - The reason prints in the policy notices.
   - The host decision now reaches Banned.
-- **Householders reworked: built** (revised the same night at Daniel's direction).
-  - It runs in the background with side notifications. The arrival and departure events and the
-    "Review the Householders" decision are removed.
+- **Householders reworked: built**, then stripped back the same night at Daniel's direction.
+  - It runs in the background with side notifications. The register decision and the
+    arrival/departure events are removed.
   - The register is observed from the court.
-  - A head carries a "Ba'al Bayit" character modifier and expects a voice on the board: +10 with
-    a seat, −10/−25 without (the powerful-vassal pattern).
-  - Room limits arrivals only.
-  - The next family is found in this order: a councillor, then a skilled or wealthy courtier
-    (lowborn men found a family name), then a family from another community, then a newcomer.
-  - Each family's trade feeds a pillar, capped at 100.
-  - Seated families never leave.
-  - AI leaders fill empty lay council seats from householders, which answers the slice 2 pool
-    question below with option 1.
+  - A head carries a "Ba'al Bayit" character modifier: flavour, +0.5 gold a month, and a target
+    for future events.
+  - Each family adds a flat 25 to its trade's pillar, capped at 100.
+  - The next family is found in this order: a councillor, then an established, skilled or
+    wealthy courtier (dynasty prestige first; lowborn men found a family name), then a family
+    from another community, then a newcomer.
+  - **Household standing is removed**, along with its succession term and its debug probes
+    .11–.13. Dynasty prestige already covers it.
+  - No opinion effects.
+  - AI leaders fill empty lay council seats from householders.
 - **Next:** the live test in v30 §3. It is also the first live run of S1's collapse path
   (criterion 2).
 
@@ -2180,6 +2181,15 @@ before building it; nothing here is approved by default.
   Independent of case 2 ("The Agunah's Plea") — no shared state, can be drawn in the same session
   or neither. See kehillah_bet_din_recalcitrant_husband_resolution_effect (common/scripted_effects/
   kehillah_bet_din_scripted_effects.txt) for the full account.
+
+  **2026-10-12 update:** Cases 10–13, covering a schoolroom, a slaughterer's knife,
+  a Shabbat alley entrance, and a marked purse, are scripted after user approval.
+  The pool is now thirteen; each conference still hears three. The new cases have
+  case-specific sefer, trait, rabbinic-experience, co-judge and named-responsum
+  choices, with visible direction and quality outcomes. Source checks and ck3-tiger
+  have run; live rendering and letter-flow checks remain. See
+  `docs/implementation/kehillah-bet-din-case-expansion.md` for the case matrix and
+  the deliberate off-map inventory limit.
 
   **Drafted, not built: "The Returning Husband."** Raised by the user in the same conversation as
   case 4 — a genuine follow-on to case 2 this time, not independent: a husband case 2's DEAD
