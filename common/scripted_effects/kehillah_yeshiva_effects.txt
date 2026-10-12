@@ -237,54 +237,6 @@ kehillah_yeshiva_quarterly_effect = {
 }
 
 # ---------------------------------------------------------------------
-# kehillah_study_zman_effect. Scope: the student, arrived at the
-# community whose yeshiva he is studying in. Requires
-# scope:kehillah_journey_destination_title (kehillah_learn_torah_journey.
-# 0001) and scope:kehillah_rosh_yeshiva.
-#
-# One zman (V29 section 3.3):
-# - an ordained student gains track XP in his teacher's strongest
-#   teaching track;
-# - an unordained student earns zman credit, which the ordination
-#   curriculum accepts (kehillah_rabbi_ordination_curriculum_met_trigger);
-# - the yeshiva gains a little fame;
-# - a student who is now ready is examined on the spot by the Rosh
-#   Yeshiva (kehillah_semicha.0001, which examines by the community's
-#   Rosh Yeshiva since V29).
-# ---------------------------------------------------------------------
-kehillah_study_zman_effect = {
-	add_piety = minor_piety_gain
-	add_learning_lifestyle_xp = minor_lifestyle_xp
-	if = {
-		limit = { has_trait = kehillah_rabbi_trait }
-		if = {
-			limit = {
-				# Talmudics if the teacher is deep in it, otherwise Parshanut
-				# (the other teaching track a Rosh Yeshiva can qualify by).
-				scope:kehillah_rosh_yeshiva = {
-					has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= kehillah_rosh_yeshiva_min_track_xp }
-				}
-			}
-			add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = kehillah_zman_track_xp }
-		}
-		else = {
-			add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_zman_track_xp }
-		}
-	}
-	else = {
-		kehillah_add_zman_term_effect = yes
-	}
-	scope:kehillah_journey_destination_title.holder ?= {
-		kehillah_add_yeshiva_fame_effect = { AMOUNT = kehillah_yeshiva_fame_per_zman }
-	}
-	if = {
-		limit = { kehillah_rabbi_ordination_ready_trigger = yes }
-		scope:kehillah_journey_destination_title = { save_scope_as = kehillah_semicha_community }
-		trigger_event = kehillah_semicha.0001
-	}
-}
-
-# ---------------------------------------------------------------------
 # kehillah_seed_yeshiva_effect. Scope: a Kehillah leader, at game start
 # (from his community's kehillah_setup_<town>_start_effect, which saves
 # scope:kehillah_leader). FAME = starting fame.
@@ -335,26 +287,17 @@ kehillah_seed_yeshiva_effect = {
 }
 
 # =====================================================================
-# V29 section 9 (2026-10-11): THE GAMEPLAY LOOP -- Hold a Zman, fame
-# tiers, alumni. docs/spec/v29-yeshiva.md section 9.
+# V29 section 9 (2026-10-11): renown tiers and alumni. (Hold a Zman,
+# the rest of section 9, was retired for section 10 the same day.)
 # =====================================================================
-
-# Scope: a student. One completed term toward semicha.
-kehillah_add_zman_term_effect = {
-	if = {
-		limit = { NOT = { has_variable = kehillah_zman_terms } }
-		set_variable = { name = kehillah_zman_terms value = 0 }
-	}
-	change_variable = { name = kehillah_zman_terms add = 1 }
-}
 
 # Scope: a Kehillah leader. Notices a fame tier crossed upward, sends the
 # message, and at Illustrious raises the hall to the Great Yeshiva. The
 # highest tier reached is remembered on the title, so falling back and
 # climbing again does not repeat the notice.
 kehillah_yeshiva_check_tier_effect = {
-	# Not `root`: a travelling student's zman calls this through the
-	# destination's holder, where root is the student.
+	# Not `root`: this can run through another character's scope (a
+	# graduating student's), where root is not the leader.
 	save_scope_as = kehillah_tier_leader
 	if = {
 		limit = { kehillah_has_yeshiva_trigger = yes }
@@ -408,119 +351,7 @@ kehillah_raise_great_yeshiva_effect = {
 	}
 }
 
-# Scope: a Kehillah leader, at the start of a zman. Flags this term's
-# students: the court's eligible young men, plus visiting students drawn
-# by the yeshiva's fame (1 / 2 / 3 / 4 by tier), who join the court.
-kehillah_gather_zman_students_effect = {
-	every_courtier = {
-		limit = { kehillah_zman_student_candidate_trigger = yes }
-		add_character_flag = { flag = kehillah_zman_student months = 6 }
-	}
-	kehillah_zman_visiting_student_effect = yes
-	if = {
-		limit = { kehillah_yeshiva_fame_tier_value >= 1 }
-		kehillah_zman_visiting_student_effect = yes
-	}
-	if = {
-		limit = { kehillah_yeshiva_fame_tier_value >= 2 }
-		kehillah_zman_visiting_student_effect = yes
-	}
-	if = {
-		limit = { kehillah_yeshiva_fame_tier_value >= 3 }
-		kehillah_zman_visiting_student_effect = yes
-	}
-	set_variable = { name = kehillah_zman_student_count value = 0 }
-	every_courtier = {
-		limit = { has_character_flag = kehillah_zman_student }
-		root = { change_variable = { name = kehillah_zman_student_count add = 1 } }
-	}
-}
-
-# Scope: a Kehillah leader. One visiting student arrives for the term.
-kehillah_zman_visiting_student_effect = {
-	create_character = {
-		dynasty = generate
-		age = { 16 24 }
-		faith = root.faith
-		rite = root.rite
-		culture = root.culture
-		location = root.domicile.domicile_location
-		random_traits = yes
-		gender_female_chance = 0
-		trait = education_learning_2
-		learning = { 7 11 }
-		save_scope_as = kehillah_new_student
-	}
-	add_courtier = scope:kehillah_new_student
-	scope:kehillah_new_student = {
-		add_character_flag = { flag = kehillah_zman_student months = 6 }
-		add_character_flag = kehillah_visiting_student
-		set_variable = { name = kehillah_alma_mater value = root.primary_title }
-	}
-}
-
-# Scope: a Kehillah leader, at the end of a zman. scope:kehillah_rosh_yeshiva
-# must be bound. Advances every student, ordains the ready, places
-# ordained visiting students as Dayyanim elsewhere, and grows fame.
-kehillah_conclude_zman_effect = {
-	primary_title = { save_scope_as = kehillah_semicha_community }
-	set_variable = { name = kehillah_zman_ordained_count value = 0 }
-	set_variable = { name = kehillah_zman_alumni_count value = 0 }
-
-	every_courtier = {
-		limit = { has_character_flag = kehillah_zman_student }
-		save_scope_as = kehillah_zman_this_student
-		add_learning_skill = 1
-		kehillah_add_zman_term_effect = yes
-		if = {
-			limit = { kehillah_rabbi_ordination_ready_trigger = yes }
-			kehillah_grant_semicha_effect = yes
-			root = { change_variable = { name = kehillah_zman_ordained_count add = 1 } }
-			# Named in the end-of-term event (kehillah_yeshiva.0202).
-			if = {
-				limit = { NOT = { exists = scope:kehillah_zman_first_ordained } }
-				save_scope_as = kehillah_zman_first_ordained
-			}
-			if = {
-				limit = { has_character_flag = kehillah_visiting_student }
-				root = { kehillah_place_alumnus_effect = yes }
-			}
-		}
-		remove_character_flag = kehillah_zman_student
-	}
-
-	# Fame by the head's quality.
-	scope:kehillah_rosh_yeshiva ?= {
-		save_scope_value_as = { name = kehillah_zman_quality value = kehillah_judicial_learning_value }
-	}
-	if = {
-		limit = {
-			exists = scope:kehillah_zman_quality
-			scope:kehillah_zman_quality >= kehillah_zman_quality_great
-		}
-		kehillah_add_yeshiva_fame_effect = { AMOUNT = kehillah_zman_fame_great }
-	}
-	else_if = {
-		limit = {
-			exists = scope:kehillah_zman_quality
-			scope:kehillah_zman_quality >= kehillah_zman_quality_good
-		}
-		kehillah_add_yeshiva_fame_effect = { AMOUNT = kehillah_zman_fame_good }
-	}
-	else = {
-		kehillah_add_yeshiva_fame_effect = { AMOUNT = kehillah_zman_fame_poor }
-	}
-	if = {
-		limit = {
-			kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_stability THRESHOLD = kehillah_band_healthy_threshold }
-		}
-		kehillah_add_yeshiva_fame_effect = { AMOUNT = 2 }
-	}
-	remove_character_flag = kehillah_zman_in_progress
-	debug_log = "kehillah_conclude_zman_effect: the zman is concluded"
-}
-
-# Scope: a Kehillah leader. scope:kehillah_zman_this_student is a newly
+# Scope: a Kehillah leader. scope:kehillah_graduate is a newly
 # ordained VISITING student: he goes home to a community with no Dayyan
 # and takes the seat -- this yeshiva's alumnus. Stays if no seat is free.
 kehillah_place_alumnus_effect = {
@@ -530,9 +361,9 @@ kehillah_place_alumnus_effect = {
 	# 60-day title variable, which other alumni skip), move him now, and
 	# seat him a day later from the destination's own event
 	# (kehillah_yeshiva.0210), which logs only a real seating.
-	# Saved scopes live for the whole conclusion: without this the third
-	# alumnus reused the second's destination when no seat was left
-	# (live 2026-10-11).
+	# Saved scopes outlive one call: without this the third alumnus
+	# reused the second's destination when no seat was left (live
+	# 2026-10-11).
 	clear_saved_scope = kehillah_alumnus_destination
 	random_in_global_list = {
 		variable = kehillah_registered_communities
@@ -542,7 +373,7 @@ kehillah_place_alumnus_effect = {
 			NOT = { has_variable = kehillah_alumnus_incoming }
 			holder = {
 				NOT = { exists = cp:councillor_court_chaplain }
-				faith = scope:kehillah_zman_this_student.faith
+				faith = scope:kehillah_graduate.faith
 			}
 		}
 		save_scope_as = kehillah_alumnus_destination
@@ -550,19 +381,13 @@ kehillah_place_alumnus_effect = {
 	if = {
 		limit = { exists = scope:kehillah_alumnus_destination }
 		scope:kehillah_alumnus_destination = {
-			set_variable = { name = kehillah_alumnus_incoming value = scope:kehillah_zman_this_student days = 60 }
+			set_variable = { name = kehillah_alumnus_incoming value = scope:kehillah_graduate days = 60 }
 		}
 		scope:kehillah_alumnus_destination.holder = {
-			add_courtier = scope:kehillah_zman_this_student
+			add_courtier = scope:kehillah_graduate
 			trigger_event = { id = kehillah_yeshiva.0210 days = 1 }
 		}
-		scope:kehillah_zman_this_student = { remove_character_flag = kehillah_visiting_student }
-		if = {
-			limit = { NOT = { exists = scope:kehillah_zman_first_alumnus } }
-			scope:kehillah_zman_this_student = { save_scope_as = kehillah_zman_first_alumnus }
-			scope:kehillah_alumnus_destination = { save_scope_as = kehillah_zman_first_alumnus_home }
-		}
-		change_variable = { name = kehillah_zman_alumni_count add = 1 }
+		scope:kehillah_graduate = { remove_character_flag = kehillah_visiting_student }
 		kehillah_add_yeshiva_fame_effect = { AMOUNT = kehillah_yeshiva_fame_per_alumnus }
 		debug_log = "kehillah_place_alumnus_effect: an alumnus is going home to take a Dayyan seat"
 	}
@@ -808,7 +633,7 @@ kehillah_yeshiva_travelling_student_effect = {
 # Scope: the student. scope:kehillah_tick_title / kehillah_tick_leader
 # set. Two years done: the Rosh Yeshiva ordains him.
 kehillah_yeshiva_graduate_effect = {
-	save_scope_as = kehillah_zman_this_student
+	save_scope_as = kehillah_graduate
 	kehillah_yeshiva_leave_effect = yes
 	set_variable = { name = kehillah_alma_mater value = scope:kehillah_tick_title }
 	scope:kehillah_tick_title = { save_scope_as = kehillah_semicha_community }
@@ -822,7 +647,7 @@ kehillah_yeshiva_graduate_effect = {
 				type = msg_kehillah_band_improved
 				title = kehillah_yeshiva_graduate_msg_title
 				desc = kehillah_yeshiva_graduate_msg_desc
-				left_icon = scope:kehillah_zman_this_student
+				left_icon = scope:kehillah_graduate
 			}
 		}
 	}

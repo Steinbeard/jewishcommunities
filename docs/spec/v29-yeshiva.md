@@ -414,6 +414,14 @@ The existing brilliant-student and quarrel events are retired or folded into the
   - **kept:** the childhood apprenticeship under a rabbi guardian, which feeds Learning and readiness;
   - **kept:** institutional recognition (the Bet Din, Seek a Rabbi).
 
+**Done 2026-10-11 (cleanup):**
+- **Removed:** the zman system (effects, triggers, values, panel status) and the zman branch of
+  the ordination curriculum.
+- **Removed:** Seek Semicha (`kehillah_semicha_decisions.txt`) and its ceremony event
+  `kehillah_semicha.0001`.
+- **Kept:** the childhood path, `kehillah_semicha.0002`/`.0003`. Its decline option and the
+  apprentice tooltips now point to yeshiva study.
+
 ### 10.7 Later, not now
 
 - **Upkeep:** a monthly cost per student, so a big yeshiva is something you sustain.

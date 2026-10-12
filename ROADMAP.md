@@ -120,6 +120,10 @@ the shim guide. Current state is in the
 
 - **V29 §10, THE LIVING YESHIVA: built and verified live 2026-10-11** (test log runs 12-13;
   open: the arrival event `.0301` was not reached live, and only some students got a rebbe link)
+  - **Cleanup 2026-10-11:**
+    - Removed the zman system and Seek Semicha (decision plus ceremony event `kehillah_semicha.0001`).
+    - Kept the childhood guardian-endorsement path (`.0002`/`.0003`).
+    - Checked with ck3-tiger and a scan for dangling references; not booted live.
   ([spec §10](docs/spec/v29-yeshiva.md)).
   - **Enrolment:** continuous, for unordained rabbinic Jewish men aged 16+ with Learning above 8.
     Courtiers enrol automatically, travelling students arrive over time, and rabbinic players of any
