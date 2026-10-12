@@ -189,6 +189,18 @@ Fixes are in `444bdde`; run 7 re-tests them.
 - **Layout:** no clipping and no overlap with the library list.
 - **error.log:** nothing new from the panel.
 
+## Run 11 (`0ebe7c1`): renown shown as tiers only, ALL PASS
+
+- **Panel at the start:** "The Yeshiva -- Respected, growing toward Renowned. / Head: Rav Isaac in
+  person / Its renown adds to the community's Greatness. / Zman: ready". No numbers, and no "fame".
+- **Decision:** "Our yeshiva is Respected, growing toward Renowned."
+- **Greatness row:** "Yeshiva's renown (Respected): +30".
+- **Fame 75:** "Respected, nearly Renowned" in the panel and the decision.
+- **Fame 145:** "Illustrious, the highest renown a yeshiva can have."
+- **error.log:** nothing new from the loc.
+- **Note:** Hold a Zman is greyed on day one, as expected, until the day-three snapshot fills in the
+  pillars.
+
 ## Not covered yet
 
 - The traveller point of interest (`poi_kehillah_yeshiva`) and events `.0101`/`.0102`. These only
