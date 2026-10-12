@@ -2258,6 +2258,13 @@ before building it; nothing here is approved by default.
   `docs/implementation/kehillah-bet-din-case-expansion.md` for the case matrix and
   the deliberate off-map inventory limit.
 
+  **2026-10-12 balance addendum:** Cases 11 and 13 now draw a visible evidence fact
+  before any letter is sent. It changes which argument is easier to defend and the
+  direction's costs; case 12's continued alley use has a trade benefit. Cases 1 and
+  8–13 now give litigants reactions based on the order and the quality of the
+  reasoning. Source and ck3-tiger checks passed; live fact, tooltip and letter
+  round-trip checks remain. See `docs/implementation/kehillah-bet-din-balance-pass.md`.
+
   **Drafted, not built: "The Returning Husband."** Raised by the user in the same conversation as
   case 4 — a genuine follow-on to case 2 this time, not independent: a husband case 2's DEAD
   branch declared gone returns after his widow has already remarried on the Bet Din's own
