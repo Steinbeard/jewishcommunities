@@ -2065,6 +2065,19 @@ of truth, so live feedback can tune contributors instead of arbitrary opening
 bonuses. New founders remain a separate difficulty model and do not receive
 this historical snapshot.
 
+**2026-10-12 — candidate, not approved: host arrest of Kehillah members.** Raised by Daniel
+while reviewing forced conversion (V27 2026-10-12 addendum). Today the host cannot imprison a
+Kehillah leader or courtier at all: `cannot_be_vassal_or_liege` keeps the leader independent, and
+the V15 tributary charter makes the host a suzerain, not a liege, which vanilla's
+`basic_allowed_to_imprison_character_trigger` does not recognise. War capture is the only route.
+Proposed shape, to be specced before building: a host-side "Arrest" interaction that calls
+`imprison` directly, gated on the charter relationship and real grounds (charter breach,
+royal-loan default, proselytizing a Christian under an Encouraged rite). The community answers by
+ransoming from its treasury, appealing upward, or refusing ransom, after Meir of Rothenburg,
+imprisoned by Rudolf of Habsburg in 1286. **Risk:** an imprisoned leader touches succession, the
+mod's crash-prone subsystem (implementation doc sections 6 and 8), so this needs a live test,
+not just a source check.
+
 ### Phase 5 — Crypto-Jewish Survival Loop
 The secret-practice/detection/forced-conversion system for communities that
 lose the Phase 4 expulsion/purge struggle. Depends on Phase 4 existing.

@@ -91,3 +91,41 @@ doctrine fields and `rite` as unknown, as for the existing V27 content); not
 live-tested. `kehillah_interfaith_debug.1` now also reports the Proselytism
 doctrine and whether the Mass Conversion requirements pass. A "Closed" tier
 (blocking conversion into a rite, e.g. for Druze) was considered and deferred.
+
+## 2026-10-12 addendum: Forced conversion
+
+Extends the Proselytism addendum above; supersedes nothing. Live feedback
+(Daniel, 2026-10-12): a Kehillah leader could use vanilla's **Demand
+Conversion** on a Catholic courtier and make him Rabbinite, with the warning
+that he "may continue to practice Catholicism in secret". Under Jewish law that
+is not a conversion at all: a convert must accept the commandments freely,
+before a court of three.
+
+Every vanilla Demand Conversion interaction (courtier, vassal ruler, player
+ruler, house head, minister, local ruler) checks either
+`valid_demand_conversion_conditions_trigger` or
+`valid_ask_for_conversion_conditions_trigger`. Both are overridden in
+`common/scripted_triggers/kehillah_forced_conversion_override.txt`: vanilla
+bodies verbatim, plus `kehillah_forced_conversion_allowed_trigger`. An actor
+whose rite has **Proselytism: Discouraged** cannot demand conversion from anyone
+outside Judaism. The interaction stays visible but disabled, with the tooltip
+"A coerced conversion is no conversion". Decisions:
+
+- **Jewish to Jewish stays allowed** (e.g. Karaite to Rabbinite), matching the
+  marriage doctrine's within-Judaism exception.
+- **Encouraged restores vanilla behavior**, as it already does for Mass
+  Conversion.
+- Non-Jewish rites have no Proselytism doctrine and are unaffected. Vanilla has
+  no comparable gate for any faith, Dharmic ones included; pluralism only
+  changes hostility and opinion.
+
+The alternative raised first, making forced conversion a crime the host could
+imprison for, was not taken. The host is the Kehillah's suzerain through the
+V15 tributary charter, but vanilla's imprison interaction follows liege chains
+only, so the host cannot imprison Kehillah members today. Host arrest is
+recorded as a Phase 4 candidate in ROADMAP.md.
+
+Source-checked and `ck3-tiger`-reviewed. Tiger reports the known 1.19-schema
+`rite` false positive and a strict-scope `puppet_or_actor` warning that comes
+from the copied vanilla body. Not live-tested: the courtier from the report
+should show Demand Conversion disabled with the new tooltip.

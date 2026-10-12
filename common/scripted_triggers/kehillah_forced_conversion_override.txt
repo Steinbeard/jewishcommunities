@@ -1,0 +1,172 @@
+# CK3 1.20 overrides of valid_demand_conversion_conditions_trigger and
+# valid_ask_for_conversion_conditions_trigger from
+# common/scripted_triggers/00_religious_triggers.txt. Each vanilla body is
+# copied verbatim; the only Kehillah addition is the
+# kehillah_forced_conversion_allowed_trigger line at the end of each.
+#
+# Every vanilla "Demand Conversion" interaction (courtier, vassal ruler, player
+# ruler, house head, minister, local ruler) checks one of these two triggers,
+# so this blocks them all in one place. A rite with Proselytism: Discouraged
+# (default for every Jewish faith) cannot demand conversion of anyone outside
+# Judaism; a coerced conversion is no conversion under Jewish law. Conversion
+# between rites within Judaism stays allowed, and an Encouraged rite gets
+# vanilla behavior back. Rites without the doctrine (all non-Jewish rites) are
+# unaffected. Docs: docs/spec/v27-interfaith-marriage-and-descent.md,
+# 2026-10-12 forced-conversion addendum.
+#
+# Refresh both copies if vanilla changes either trigger in a later patch.
+
+# The interaction's actor (scope:actor or scope:puppet_or_actor) is passed as
+# ACTOR; scope:recipient is the character being asked to convert.
+kehillah_forced_conversion_allowed_trigger = {
+	custom_tooltip = {
+		text = kehillah_forced_conversion_forbidden_tt
+		NAND = {
+			$ACTOR$ = { rite = { rite_has_doctrine = kehillah_proselytism_discouraged } }
+			scope:recipient = {
+				NOT = { faith.religion = religion:judaism_religion }
+			}
+		}
+	}
+}
+
+valid_demand_conversion_conditions_trigger = {
+	scope:recipient = {
+		NOR = {
+			has_strong_hook = scope:puppet_or_actor
+			has_trait = devoted
+			has_trait = order_member
+			is_imprisoned_by = scope:puppet_or_actor
+			is_at_war_with = scope:puppet_or_actor
+		}
+	}
+	scope:puppet_or_actor = {
+		trigger_if = {
+			limit = {
+				government_has_flag = government_is_landless_adventurer
+				scope:recipient = { is_courtier_of = scope:puppet_or_actor }
+			}
+			custom_tooltip = {
+				text = valid_demand_conversion_conditions_trigger.tt.domicile_requires_shrine
+				domicile = { has_domicile_parameter = camp_enable_conversion }
+			}
+		}
+		custom_tooltip = {
+			text = demand_conversion_nomadic_zealous_tt
+			NAND = {
+				has_trait = nomadic_philosophy
+				has_trait = zealous
+			}
+		}
+	}
+
+	custom_description = {
+		text = "is_head_of_religion"
+		subject = scope:recipient
+		scope:recipient.faith.religious_head != scope:recipient
+	}
+	custom_description = {
+		text = "is_protected_via_contract"
+		subject = scope:recipient
+		# Vassal Contract forbids meddling by liege
+		NAND = {
+			exists = scope:recipient.liege
+			scope:recipient.liege = scope:puppet_or_actor
+			scope:recipient = {
+				is_ruler = yes
+				vassal_contract_has_flag = religiously_protected
+			}
+		}
+	}
+	trigger_if = {
+		limit = {
+			scope:recipient = {
+				AND = {
+					has_variable = cannot_be_converted_by_value
+					var:cannot_be_converted_by_value = scope:puppet_or_actor
+				}
+			}
+		}
+		custom_tooltip = {
+			text = promised_to_not_convert_character
+			scope:recipient = {
+				NOR = {
+					has_variable = cannot_be_converted_by_value
+					var:cannot_be_converted_by_value = scope:puppet_or_actor
+				}
+			}
+		}
+	}
+	custom_tooltip = {
+		text = cannot_take_overt_hostile_actions_against_diarch.tt
+		NOT = { scope:recipient ?= scope:puppet_or_actor.diarch }
+	}
+	kehillah_forced_conversion_allowed_trigger = { ACTOR = scope:puppet_or_actor }
+}
+
+valid_ask_for_conversion_conditions_trigger = { # Deliberate variant of the above, so you can ask your diarch nicely to convert if you made a new faith
+	scope:recipient = {
+		NOR = {
+			has_strong_hook = scope:actor
+			has_trait = devoted
+			has_trait = order_member
+			is_imprisoned_by = scope:actor
+			is_at_war_with = scope:actor
+		}
+	}
+	scope:actor = {
+		trigger_if = {
+			limit = {
+				government_has_flag = government_is_landless_adventurer
+				scope:recipient = { is_courtier_of = scope:actor }
+			}
+			custom_tooltip = {
+				text = valid_demand_conversion_conditions_trigger.tt.domicile_requires_shrine
+				domicile = { has_domicile_parameter = camp_enable_conversion }
+			}
+		}
+		trigger_if = {
+			limit = { has_trait = nomadic_philosophy }
+			has_trait = zealous
+		}
+	}
+
+	custom_description = {
+		text = "is_head_of_religion"
+		subject = scope:recipient
+		scope:recipient.faith.religious_head != scope:recipient
+	}
+	custom_description = {
+		text = "is_protected_via_contract"
+		subject = scope:recipient
+		# Vassal Contract forbids meddling by liege
+		NAND = {
+			exists = scope:recipient.liege
+			scope:recipient.liege = scope:actor
+			scope:recipient = {
+				is_ruler = yes
+				vassal_contract_has_flag = religiously_protected
+			}
+		}
+	}
+	trigger_if = {
+		limit = {
+			scope:recipient = {
+				AND = {
+					has_variable = cannot_be_converted_by_value
+					var:cannot_be_converted_by_value = scope:actor
+				}
+			}
+		}
+		custom_tooltip = {
+			text = promised_to_not_convert_character
+			scope:recipient = {
+				NOR = {
+					has_variable = cannot_be_converted_by_value
+					var:cannot_be_converted_by_value = scope:actor
+				}
+			}
+		}
+	}
+	kehillah_forced_conversion_allowed_trigger = { ACTOR = scope:actor }
+}
