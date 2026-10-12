@@ -135,8 +135,9 @@ the shim guide. Current state is in the
     - Lucena, Jerusalem, Mahdia (with the ruined Kairouan hall) and Sura.
     - Baghdad is now the Exilarch's seat with the Yeshiva of Pumbedita.
     - Narbonne is seeded.
-  - **Open question for Daniel:** present fame as "renown" (tier words; the number only as progress),
-    so it does not read as a second Greatness.
+  - **Decided 2026-10-11:** players see the yeshiva's **renown** as tiers only (Modest, Respected,
+    Renowned, Illustrious, with "growing toward" or "nearly" the next). The number stays behind the
+    scenes.
   - **Not built yet:**
     - V29 section 4, where the tracks affect the Bet Din, responsa and charters;
     - Seek Semicha's retirement (kept for now);

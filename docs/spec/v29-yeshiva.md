@@ -308,7 +308,13 @@ Worms … a clear gameplay loop").
 | 80–139 | **Renowned** |
 | 140+ | **Illustrious** |
 
-- The tier name appears in the Greatness tooltip row and in the Hold a Zman tooltip.
+- **Players see tiers, not numbers** (Daniel, 2026-10-11: "another score is too many scores ... just
+  tiers feels better"). Fame stays a number behind the scenes, and the UI calls it the yeshiva's
+  **renown**:
+  - the tier word, plus "growing toward" or "nearly" (within 10) the next tier;
+  - the panel says only that renown adds to Greatness;
+  - the Greatness tooltip row keeps its contribution number, like every other row, labelled
+    "Yeshiva's renown (Tier)".
 - Crossing a tier upward sends a message.
 - **Illustrious** raises the map hall to the **Great Yeshiva**, a second-tier great building with
   stronger host effects. It is not torn down if fame later falls.
