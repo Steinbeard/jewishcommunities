@@ -251,8 +251,39 @@ Driven by console probes `kehillah_yeshiva_debug.5` (student report), `.6` (one 
   - The `kehillah_community_map_view.gui` "Widget cannot have a position in a layout" warnings
     predate this work.
 
+## Run 14 (`8b5220f`): the student events, ALL PASS
+
+**Method:**
+- Isaac ticked once, enrolling 4 students, each with a rebbe (Isaac) and a chavruta.
+- Then `play` the heir Chevel, a student.
+
+**Fired directly on Chevel:**
+- `.0311` "This Season's Study": "The yeshiva teaches *the Talmud* above all"; three options.
+  Hovering Parshanut shows +8 Parshanut XP.
+- `.0312` "My Chavruta": names his partner Elisha, whose portrait shows "Your Chavruta". "Argue it
+  through" gives +6 Talmudics XP and +10 opinion each way.
+- `.0313` "My Rebbe": "Rav Isaac stops at your place on the bench ..."; Isaac shows as "Your Liege
+  and Rebbe".
+- `.0301` "On the Benches" and `.0302` "Semicha" render cleanly.
+- None of them showed a raw key, an unresolved name, or a missing portrait.
+
+**Natural flow:**
+- Isaac's tick was run 8 times through a run file
+  (`character:9000002 = { trigger_event = kehillah_yeshiva_debug.6 }`).
+- Study events popped on ticks 3-7 (`.0313`, `.0312`, `.0313`, `.0312`, `.0311`).
+- On tick 8, "Semicha" appeared and Chevel read as ORDAINED, no longer enrolled.
+
+**error.log:**
+- Nothing from the yeshiva.
+- Playing a landless student spams vanilla `capital_province` errors from
+  `convert_to_administrative_decision`, which is a vanilla decision evaluated for a landless player.
+
+**Console note:** in this build, `event <id> <character id>` did retarget once. This contradicts the
+shim guide's 2026-09-27 note, so it is unconfirmed.
+
 ## Not covered yet
 
+- The arrival event `.0301` was fired directly; the trip itself has not yet ended in an arrival.
 - The traveller point of interest (`poi_kehillah_yeshiva`) and events `.0101`/`.0102`. These only
   fire for characters travelling through a yeshiva town.
 - The Found a Yeshiva decision's UI for a community without a yeshiva. The hover tooltip itemises
