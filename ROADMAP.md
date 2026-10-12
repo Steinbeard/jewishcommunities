@@ -1551,9 +1551,11 @@ short research bullets for when Daniel is back.
    desc block. Item 5's research has landed; this is now unblocked, just not built.
    **2026-10-12 UI polish:** the already-shipped HUD strip now shows each pillar's
    trend and a colored Roman tier (I–V), with a wider explicit background;
-   exact scores and contributors remain on hover. Source checks passed.
-   The final rendering check is still pending because two fresh CK3 boots
-   stalled at “Initializing Game” ([log](docs/testing/2026-10-12-pillar-hud-polish-live-check.md)).
+   exact scores and contributors remain on hover. **Verified live after
+   the 2026-10-12 reboot:** the first rendering revealed a short background
+   and displaced hover hitboxes; both were fixed with a fixed window/hbox
+   layout. All three visible tiles and their matching breakdown hovers passed
+   ([log](docs/testing/2026-10-12-pillar-hud-polish-live-check.md)).
    **Worth a second look now that item 4 is closed (2026-09-23) for the same underlying reason**:
    the map view (v12/v13) already shows your own community's row (highlighted) alongside everyone
    else's, with the same pillar/breakdown data this item wants. Not closed here unilaterally, since

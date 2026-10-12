@@ -1,7 +1,8 @@
 # Pillar HUD polish live check — 2026-10-12
 
-**Status:** Not verified live. Two fresh CK3 1.20.0.4 launches stalled at
-“Initializing Game” before a save or the HUD appeared.
+**Status:** PASS after the 2026-10-12 post-reboot retry. The background,
+Roman tiers, trend labels, and matching hover regions were verified in CK3
+1.20.0.4. The two earlier stalled launches are retained below as history.
 
 ## Change under test
 
@@ -24,9 +25,32 @@ for the plain tier/trend strip is [here](2026-10-12-pillar-hud-live-playtest-log
   screenshot or tooltip result was available, and no post-load `error.log`
   baseline could be taken.
 
-## Still to verify
+## Post-reboot retry and fix
 
-On a loaded Kehillah save, check that the gray background contains all three
-tiles, including Greatness; the Roman levels and five colors appear; and a
-pillar hover still opens its score breakdown. Save a downscaled screenshot
-once the game reaches that state.
+- A fresh CK3 launch reached the paused Troyes Kehillah save. The initial
+  tier strip exposed two real faults: the gray background stopped before
+  Greatness, and text was displaced about 180–200 native pixels from its
+  tooltip hitbox. Hovering visible Stability opened Greatness's breakdown.
+- The scripted HUD root was changed from a flowcontainer to a fixed window
+  with a centered hbox and three 170-pixel cells. Anchors on text inside
+  each vbox were replaced by expanding, centered text rows. `reload gui`
+  picked up the revised file in the running game.
+- The final native crop shows the dark background from approximately
+  x=116–940, with the rightmost Greatness text ending near x=870. All three
+  labels, Roman levels (I/II in this save), colored tiers, and trends are
+  legible inside it.
+- Hovers over visible Prosperity, Stability, and Greatness opened their own
+  numeric breakdowns: 114 (Crisis), 303 (Strained), and 398 (Strained),
+  respectively. No raw localization keys appeared.
+- `error.log` stayed at 772 lines across the three hovers. Two `reload gui`
+  cycles had earlier increased it from 256 to 772 with vanilla
+  `tgp_traditions.txt` culture-head context errors; none named the HUD GUI.
+  The game stayed responsive.
+
+Screenshots: [final HUD crop](2026-10-12-pillar-hud-polish-pass.png) and
+[Stability hover](2026-10-12-pillar-hud-polish-stability-hover.png).
+
+## Coverage limit
+
+This save rendered levels I and II. Levels III–V follow the same custom-loc
+branches and have not been individually inspected in this pass.
