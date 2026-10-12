@@ -22,6 +22,47 @@ this note referred to) are long since resolved and removed; numbering otherwise 
 than renumbered, since later items and other docs cross-reference these numbers by hand (e.g.
 `kehillah_breakdown_custom_loc.txt`'s own header cites "ROADMAP item 4").
 
+### Expulsion and the householders (v30) — 2026-10-12, interactive
+
+Daniel asked for expulsion and for the householder system to be rebuilt ("very tacked on ...
+without clear connection to the rest of the kehillah mechanics"). Design and decisions:
+[v30](docs/spec/v30-expulsion-and-householders.md).
+**Built and `ck3-tiger`-checked, NOT yet live-tested**; v30 §3 is the test plan.
+
+- **Expulsion (S9b): built.**
+  - **Edict:** a realm going Banned issues an edict to every community in it, with a year's
+    grace.
+  - **Counterplay:** plead through the Shtadlan, offer a ransom (a deceitful host may keep it),
+    leave in good order, or wait.
+  - **Enforcement:** leave (the crown seizes half the leader's gold and voids the community's
+    debts) or stay in hiding (a heavy Stability drag, and driven out a year later).
+  - **The ending** is the existing dissolution teardown. Daniel chose this over relocating the
+    Quarter.
+  - Probes: `events/kehillah_expulsion_debug_events.txt`.
+- **AI policy review (V17 Slice B, first pass): built.**
+  - AI rulers move the policy one rung per review, with a 10% yearly chance per host and the
+    five-year cooldown.
+  - Named pressures only: zeal, a zealous chaplain, debts to Jews, grievance, temper, against
+    justice, compassion, a patron or a prosperous community.
+  - Banned needs Discouraged first and two distinct pressures.
+  - The reason prints in the policy notices.
+  - The host decision now reaches Banned.
+- **Householders reworked: built** (revised the same night at Daniel's direction).
+  - It runs in the background with side notifications. The arrival and departure events and the
+    "Review the Householders" decision are removed.
+  - The register is observed from the court.
+  - A head carries a "Ba'al Bayit" character modifier and expects a voice on the board: +10 with
+    a seat, −10/−25 without (the powerful-vassal pattern).
+  - Room limits arrivals only.
+  - The next family is found in this order: a councillor, then a skilled or wealthy courtier
+    (lowborn men found a family name), then a family from another community, then a newcomer.
+  - Each family's trade feeds a pillar, capped at 100.
+  - Seated families never leave.
+  - AI leaders fill empty lay council seats from householders, which answers the slice 2 pool
+    question below with option 1.
+- **Next:** the live test in v30 §3. It is also the first live run of S1's collapse path
+  (criterion 2).
+
 ### Shabbat autonomous queue — 2026-10-09 evening to 2026-10-11 morning (works ABOVE everything below)
 
 Daniel is offline for Shabbat. The `JewishCommunities-ShabbatHeartbeat` task runs every 5 hours on
@@ -512,6 +553,9 @@ construction, bet din cooldown, host petition, Night Watch, spouse clones).
     `every_house_member`, and standing pays 15 per seat — so a householder on the council
     would be both in the pool and high-standing. Nothing in the mod ever puts one there. The
     register and the officer corps are two populations that never meet.
+  - **DECIDED 2026-10-12 (Daniel, v30): option 1, seat householders.** AI leaders now fill empty lay
+    council seats from registered families, and the register is observed from the court. The text
+    below is the original question.
   - **OPEN, needs Daniel (logged in BLOCKERS.md).** Connecting them is a design call, not an
     unattended fix: seat householders preferentially when filling council/court slots; give
     Kehillah officers dynasties so they have houses at all; or accept that only seated families
@@ -1354,6 +1398,9 @@ short research bullets for when Daniel is back.
   `s9a_state/raise/lower/clear_cooldown.txt`, fired **as the Kehillah player** against its host so
   the notice lands on the player it is for. The decision UI itself needs a `play` switch to the
   host (the Emperor, for Worms).
+- **S9b: BUILT 2026-10-12, not live-tested** ([v30](docs/spec/v30-expulsion-and-householders.md)).
+  The ending is dissolution (Daniel's call), not "S1's departure path with followers and treasury
+  share" as written below. The original item:
 - **S9b. BUILD — Expulsion.** Lowering to Banned starts a warning event for every community in the
   realm, then after ~1-2 years an expulsion event with counterplay options (petition/bribe the
   ruler via the Shtadlan → chance to restore Discouraged; leave in good order → S1's departure

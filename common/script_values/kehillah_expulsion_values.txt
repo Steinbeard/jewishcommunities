@@ -1,0 +1,288 @@
+﻿# =====================================================================
+# Expulsion (ROADMAP S9b) and the AI ruler's settlement-policy review
+# (V17 Slice B, first pass). Tunables. Design: docs/spec/v30-expulsion-
+# and-householders.md. Effects: common/scripted_effects/
+# kehillah_expulsion_effects.txt.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# THE EXPULSION CLOCK
+# ---------------------------------------------------------------------
+
+# Quarters between the edict and its enforcement. Counted on the
+# community title by the quarterly pulse, so the clock survives a change
+# of leader (the dissolution watch counts the same way).
+kehillah_expulsion_grace_quarters = 4
+
+# Quarters a community that stays in hiding has before it is driven out.
+kehillah_expulsion_defiance_quarters = 4
+
+# Share of the leader's gold the host seizes, by how the community left.
+kehillah_expulsion_good_order_seizure = 0.15
+kehillah_expulsion_forced_seizure = 0.5
+kehillah_expulsion_driven_out_seizure = 0.8
+
+# Scope: a Kehillah leader. The gold the host takes when the community
+# leaves, one value per route (forced, good order, driven out).
+kehillah_expulsion_seized_gold_value = {
+	value = 0
+	if = {
+		limit = { gold > 0 }
+		value = gold
+		multiply = kehillah_expulsion_forced_seizure
+	}
+	round = yes
+}
+kehillah_expulsion_seized_gold_good_order_value = {
+	value = 0
+	if = {
+		limit = { gold > 0 }
+		value = gold
+		multiply = kehillah_expulsion_good_order_seizure
+	}
+	round = yes
+}
+kehillah_expulsion_seized_gold_driven_out_value = {
+	value = 0
+	if = {
+		limit = { gold > 0 }
+		value = gold
+		multiply = kehillah_expulsion_driven_out_seizure
+	}
+	round = yes
+}
+
+# Stability lost at once by a community that chooses to stay in hiding,
+# and the drag on its Stability baseline while it does. Large on purpose:
+# a community living outside the law falls toward the dissolution floor.
+kehillah_expulsion_defiance_stability_hit = 150
+kehillah_bd_expulsion_defiance_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_expulsion_defiant } }
+		value = -250
+	}
+}
+
+# Scope: a Kehillah leader. The ransom the community offers for a repeal:
+# a fixed sum plus a share of the leader's purse, so a rich community's
+# offer is worth the host's attention.
+kehillah_expulsion_ransom_value = {
+	value = major_gold_value
+	if = {
+		limit = { gold > 0 }
+		add = {
+			value = gold
+			multiply = 0.25
+		}
+	}
+	round = yes
+}
+
+# ---------------------------------------------------------------------
+# THE HOST'S ANSWER TO A PLEA
+#
+# Scope: the host ruler, with scope:kehillah_exp_leader (the community's
+# leader) saved, and scope:kehillah_exp_ransom set when gold is offered.
+# Used as the "repeal" option's ai_chance. The "stand" option has a flat
+# weight of 50 (events/kehillah_expulsion_events.txt, .0002).
+# ---------------------------------------------------------------------
+
+kehillah_expulsion_plea_repeal_weight_value = {
+	value = 15
+	# The plea itself: the Shtadlan's diplomacy.
+	if = {
+		limit = { exists = scope:kehillah_exp_leader.cp:councillor_chancellor }
+		add = {
+			value = scope:kehillah_exp_leader.cp:councillor_chancellor.diplomacy
+			multiply = 2
+		}
+	}
+	# Gold talks, to a greedy ruler most of all.
+	if = {
+		limit = { exists = scope:kehillah_exp_ransom }
+		add = 25
+		if = {
+			limit = { has_trait = greedy }
+			add = 25
+		}
+	}
+	# What the ruler thinks of the community's leader.
+	add = {
+		value = "opinion(scope:kehillah_exp_leader)"
+		divide = 2
+	}
+	if = {
+		limit = { has_trait = just }
+		add = 15
+	}
+	if = {
+		limit = { has_trait = compassionate }
+		add = 15
+	}
+	if = {
+		limit = { has_trait = zealous }
+		add = -30
+	}
+	if = {
+		limit = { has_trait = stubborn }
+		add = -15
+	}
+	min = 0
+}
+
+# ---------------------------------------------------------------------
+# THE AI RULER'S POLICY REVIEW (V17 Slice B, first pass)
+#
+# A host ruler is reviewed at most once a year (the first of its
+# communities whose yearly pulse rolls the chance below), and never
+# while the policy's five-year review cooldown is running.
+#
+# V17 rules kept: no scalar hostility meter, only named pressures; one
+# rung per review; Banned only from Discouraged, and only when at least
+# two DIFFERENT restrictive pressures are present (V17 4.2's "acute
+# incident or coalition"); a Jewish ruler never restricts.
+# ---------------------------------------------------------------------
+
+# Chance, per community per year, that it triggers a review of its host.
+kehillah_policy_review_chance = 10
+
+# Net pressure needed to move the policy one rung.
+kehillah_policy_review_lower_threshold = 4
+kehillah_policy_review_ban_threshold = 6
+kehillah_policy_review_raise_threshold = 4
+# The same, as the negative net pressure a review must reach to raise.
+kehillah_policy_review_raise_threshold_negative = -4
+
+# Scope: the host ruler. Each restrictive pressure in turn. They are
+# separate values so the review can count how many are present.
+kehillah_policy_pressure_zeal_value = {
+	value = 0
+	if = {
+		limit = { has_trait = zealous }
+		add = 3
+	}
+}
+kehillah_policy_pressure_clergy_value = {
+	value = 0
+	if = {
+		limit = {
+			exists = cp:councillor_court_chaplain
+			cp:councillor_court_chaplain = {
+				NOT = { is_jewish_character_trigger = yes }
+				has_trait = zealous
+			}
+		}
+		add = 2
+	}
+}
+kehillah_policy_pressure_debts_value = {
+	value = 0
+	if = {
+		limit = { exists = var:kehillah_loan_amount_owed }
+		add = 3
+		if = {
+			limit = { has_trait = greedy }
+			add = 2
+		}
+	}
+}
+kehillah_policy_pressure_grievance_value = {
+	value = 0
+	if = {
+		limit = { kehillah_policy_has_grievance_trigger = yes }
+		add = 2
+	}
+}
+kehillah_policy_pressure_temper_value = {
+	value = 0
+	if = {
+		limit = { has_trait = paranoid }
+		add = 1
+	}
+	if = {
+		limit = { has_trait = arbitrary }
+		add = 1
+	}
+	if = {
+		limit = { has_trait = callous }
+		add = 1
+	}
+	if = {
+		limit = { has_trait = sadistic }
+		add = 1
+	}
+}
+
+kehillah_policy_restrictive_pressure_value = {
+	value = 0
+	add = kehillah_policy_pressure_zeal_value
+	add = kehillah_policy_pressure_clergy_value
+	add = kehillah_policy_pressure_debts_value
+	add = kehillah_policy_pressure_grievance_value
+	add = kehillah_policy_pressure_temper_value
+}
+
+# How many distinct restrictive pressures are present (temper excluded:
+# personality alone is never a coalition).
+kehillah_policy_restrictive_count_value = {
+	value = 0
+	if = {
+		limit = { kehillah_policy_pressure_zeal_value > 0 }
+		add = 1
+	}
+	if = {
+		limit = { kehillah_policy_pressure_clergy_value > 0 }
+		add = 1
+	}
+	if = {
+		limit = { kehillah_policy_pressure_debts_value > 0 }
+		add = 1
+	}
+	if = {
+		limit = { kehillah_policy_pressure_grievance_value > 0 }
+		add = 1
+	}
+}
+
+# Scope: the host ruler. The counter-pressures.
+kehillah_policy_protective_pressure_value = {
+	value = 0
+	if = {
+		limit = { has_trait = just }
+		add = 2
+	}
+	if = {
+		limit = { has_trait = compassionate }
+		add = 2
+	}
+	if = {
+		limit = { has_trait = generous }
+		add = 1
+	}
+	if = {
+		limit = { has_trait = cynical }
+		add = 1
+	}
+	# A greedy ruler who owes the Jews nothing values them as revenue.
+	if = {
+		limit = {
+			has_trait = greedy
+			NOT = { exists = var:kehillah_loan_amount_owed }
+		}
+		add = 1
+	}
+	if = {
+		limit = { kehillah_policy_has_patron_trigger = yes }
+		add = 2
+	}
+	if = {
+		limit = { kehillah_policy_has_prosperous_community_trigger = yes }
+		add = 2
+	}
+}
+
+kehillah_policy_net_pressure_value = {
+	value = kehillah_policy_restrictive_pressure_value
+	subtract = kehillah_policy_protective_pressure_value
+}
