@@ -26,6 +26,17 @@ than renumbered, since later items and other docs cross-reference these numbers 
 
 Five one-step events for Yom Kippur, Sukkot and Shavuot are scripted. Two use named Jewish courtiers; the others remain available without them. The Purim gift event now always has an affordable choice. Source checks passed; live rendering and seasonal delivery are pending. See [the implementation note](docs/implementation/jewish-holiday-variety.md).
 
+### Exceptional sefarim — 2026-10-12, Daniel's request
+
+The `kehillah_book.0007` arrival event was misleading: it only granted Piety and
+Learning lifestyle XP, without adding a library work. Its wording now reports
+news and explicitly says no library copy arrived. **The larger system is a
+proposal, not built:** [v32](docs/spec/v32-exceptional-sefarim.md) describes rare
+named works created by qualifying scholars during play, with visible progress
+and real library copies. First next step is a one-work data/GUI spike, then an
+end-to-end vertical slice. This user-requested correction and design review
+precede the older v30 live-test TODO; they do not mark that test complete.
+
 ### Expulsion and the householders (v30) — 2026-10-12, interactive
 
 Daniel asked for expulsion and for the householder system to be rebuilt ("very tacked on ...
@@ -68,6 +79,9 @@ without clear connection to the rest of the kehillah mechanics"). Design and dec
   - **2026-10-12 notification correction:** passive removal from the observed register is
     silent; the report showed an empty, overly prominent "A Household Is No Longer Counted"
     notice. Actual family moves still notify the player. See v30 §2.
+  - **2026-10-12 presentation correction:** the remaining household messages use a dedicated
+    sidebar feed filter with full descriptions, instead of Court Grandeur's large banners.
+    This awaits a fresh-game UI check.
 - **Next:** the live test in v30 §3. It is also the first live run of S1's collapse path
   (criterion 2).
 

@@ -210,6 +210,13 @@ formula and the standing succession term.
   currently at court; it cannot name a definite cause. The message presented that bookkeeping
   change as a major loss, with an empty body in the reported UI. Register and pillar effects
   still update, while an actual move between communities keeps its named departure notice.
+
+  **2026-10-12 presentation correction (Daniel's second screenshot):** The remaining routine
+  household notices used the vanilla Court Grandeur filter, which displayed them as large
+  centre-screen banners. They now use their own `kehillah_household_news` filter with
+  `display = feed`; the player can mute Householder News separately in Message Settings.
+  Their message type also now displays its supplied description, rather than an empty
+  effect-only body. No full-screen household events are intended.
 - **AI leaders seat householders** in empty lay council seats (Shtadlan, Gabbai,
   Rosh ha-Shmirah, Ne'eman).
 - **Seeded and generated families.** The 19 historical communities still start with three
