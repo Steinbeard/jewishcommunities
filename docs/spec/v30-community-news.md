@@ -14,18 +14,19 @@ qualify.
 
 All of these are feed messages: never a banner, never an event. They use their own message
 filter, `kehillah_community_news`, which appears as "Community News" in Message Settings and is
-separate from "Yeshiva News". "Nearby" means the player's own minhag region,
-`kehillah_shares_minhag_region_trigger`, which is the Bet Din's own sense of nearby. It is not the whole world, and not diplomatic range. The community
+separate from "Yeshiva News". "Nearby" means **within the player's diplomatic range**
+(vanilla `in_diplomatic_range`). Daniel chose this on 2026-10-12; the first build used the minhag
+region. The community
 the news is about is never told of itself.
 
 | News | When | Who hears | Hook |
 |---|---|---|---|
 | Your lord has died | Death of the holder of your community's county, or of that county's top liege. Names the heir. | the player Kehillah leader | `on_death` → `kehillah_on_death_host_news` |
-| A charter revised | An EXISTING charter's terms change: building rights, security, jurisdiction, texts or market access, for example through a settlement-policy change. A first charter, or a new charter after the community passes to a new lord, is NOT reported (Daniel 2026-10-12: "only about charter modifications"). | the region | `kehillah_refresh_charter_state_cache_effect`, comparing last quarter's terms (`kehillah_charter_terms_signature_value`) |
-| New leadership | Someone gains a Kehillah title | the region | end of `kehillah_on_title_gain`, message only |
-| A community in crisis | A pillar falls into the Crisis band | the region | `kehillah_update_pillar_band_effect` |
-| A new yeshiva | Found a Yeshiva | the region | `kehillah_found_yeshiva_effect` |
-| A yeshiva's name grows | Renown reaches Renowned or Illustrious | the region | `kehillah_yeshiva_check_tier_effect` |
+| A charter revised | Names each changed term, old and new, by the charters' own obligation names (custom loc `KehillahCharterChange*`). Fires when an EXISTING charter's terms change: building rights, security, jurisdiction, texts or market access, for example through a settlement-policy change. A first charter, or a new charter after the community passes to a new lord, is NOT reported (Daniel 2026-10-12: "only about charter modifications"). | those in range | `kehillah_refresh_charter_state_cache_effect`, comparing last quarter's terms (`kehillah_charter_terms_signature_value`) |
+| New leadership | Someone gains a Kehillah title | those in range | end of `kehillah_on_title_gain`, message only |
+| A community in crisis | A pillar falls into the Crisis band | those in range | `kehillah_update_pillar_band_effect` |
+| A new yeshiva | Found a Yeshiva | those in range | `kehillah_found_yeshiva_effect` |
+| A yeshiva's name grows | Renown reaches Renowned or Illustrious | those in range | `kehillah_yeshiva_check_tier_effect` |
 | A Bet Din concludes | The session closes (`kehillah_bet_din.0099`). Says how it went: landmark, strong, adequate or failed. | the region, except the co-judges, who were there | `.0099` immediate |
 
 ## Daniel's direction on the Bet Din
