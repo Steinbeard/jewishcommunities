@@ -531,6 +531,21 @@ the type chain and couldn't be resolved from files. Left as is.
 
 ## 10. Your own community on the HUD (user request, 2026-09-15)
 
+**2026-10-12 second display revision (source checked; live rendering pending):**
+Daniel's screenshot review found that the gray strip ended before the last
+pillar and that plain tier names did not show the level clearly enough. This
+supersedes only the tier styling and geometry of the first 2026-10-12
+revision below. The strip now has an explicit 615×80 canvas with 170×64
+pillar tiles; tier names carry Roman levels I–V and the same five-step
+aptitude color ramp already used by the roster's scores. CK3's fame display
+uses level-specific visual treatment beside its value; the rank and color
+give the pillars the same glance value without adding textures. Trends and
+hover breakdowns remain as before. The 1.19 `ck3-tiger` build reported no
+findings in the touched files against installed CK3 1.20.0.4. A fresh live
+render check is still needed to confirm the background fit and colors.
+The attempted check and CK3 boot stall are recorded in
+[the polish test log](../testing/2026-10-12-pillar-hud-polish-live-check.md).
+
 **2026-10-12 display revision (built and verified live):** This paragraph
 supersedes §10's four numeric HUD tiles. The HUD now shows only Prosperity, Stability, and
 Greatness, each as a named band plus Rising/Falling/Steady. The trend uses the same signed
