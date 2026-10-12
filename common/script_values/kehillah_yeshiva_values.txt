@@ -1,0 +1,171 @@
+﻿# =====================================================================
+# THE YESHIVA -- V29 (docs/spec/v29-yeshiva.md). Tunable numbers. The
+# target is that 10-25% of communities hold a yeshiva; tune these after
+# a 50-year observation run, not by feel.
+# =====================================================================
+
+# Who can head a yeshiva (kehillah_qualified_rosh_yeshiva_trigger).
+# Learning 14 is high but reachable for a serious scholar; 65 is the
+# rabbi trait's middle track threshold -- roughly five works mastered in
+# one field.
+kehillah_rosh_yeshiva_min_learning = 14
+kehillah_rosh_yeshiva_min_track_xp = 65
+
+# Founding cost. Above the ordinary tier-3 internal building cost (400):
+# founding an academy is the community's great undertaking.
+kehillah_found_yeshiva_gold_cost = 500
+
+# Fame (kehillah_yeshiva_fame, on the community title).
+kehillah_yeshiva_fame_on_founding = 25
+kehillah_yeshiva_fame_seed_worms = 60
+kehillah_yeshiva_fame_seed_narbonne = 40
+# Low on purpose: the Geonic academies had effectively ended about 1040.
+# Baghdad holds the Yeshiva of Pumbedita; Sura (ended about 1034) is lower.
+kehillah_yeshiva_fame_seed_baghdad = 20
+kehillah_yeshiva_fame_seed_sura = 15
+# Lucena: the rising academy of al-Andalus. Jerusalem: the Palestinian
+# gaonate, the most prestigious academy still standing in 1066.
+kehillah_yeshiva_fame_seed_lucena = 50
+kehillah_yeshiva_fame_seed_jerusalem = 80
+# Per graduate (2026-10-11): a busy yeshiva ordains several a year.
+kehillah_yeshiva_fame_per_ordination = 3 # 3 not 5 (live 2026-10-11: one term gave +29)
+kehillah_yeshiva_fame_max = 200
+# Quarterly decay: slow while the community is stable, faster while
+# Stability is below Healthy (students drift away from a troubled
+# community -- V29 section 3.1).
+kehillah_yeshiva_fame_decay_stable = 1
+# 2 not 4 (live 2026-10-11): Worms opens below Stability Healthy, and at
+# -4 its seeded fame bled away in four years.
+kehillah_yeshiva_fame_decay_troubled = 2
+
+# Scope: the Kehillah leader. The growing Greatness term (V29 section
+# 3.1): half the fame, capped so one yeshiva cannot carry a community.
+# Added to the Greatness baseline on top of the Beit Midrash line's flat
+# +150, and shown as its own breakdown row (KehillahBdYeshiva).
+kehillah_bd_yeshiva_fame_value = {
+	value = 0
+	if = {
+		limit = {
+			kehillah_has_yeshiva_trigger = yes
+			primary_title ?= { has_variable = kehillah_yeshiva_fame }
+		}
+		add = primary_title.var:kehillah_yeshiva_fame
+		multiply = 0.5
+		max = 100
+	}
+}
+
+# =====================================================================
+# V29 section 9 (2026-10-11): renown tiers and alumni (Hold a Zman, also
+# section 9, was retired for section 10). docs/spec/v29-yeshiva.md.
+# =====================================================================
+
+# Fame tiers (kehillah_yeshiva_fame_tier_value): Modest / Respected /
+# Renowned / Illustrious.
+kehillah_yeshiva_tier_respected = 40
+kehillah_yeshiva_tier_renowned = 80
+kehillah_yeshiva_tier_illustrious = 140
+
+# Scope: a Kehillah leader. 0 Modest, 1 Respected, 2 Renowned,
+# 3 Illustrious (0 also without a yeshiva).
+kehillah_yeshiva_fame_tier_value = {
+	value = 0
+	if = {
+		limit = {
+			kehillah_has_yeshiva_trigger = yes
+			primary_title ?= { has_variable = kehillah_yeshiva_fame }
+		}
+		if = {
+			limit = { primary_title.var:kehillah_yeshiva_fame >= kehillah_yeshiva_tier_illustrious }
+			value = 3
+		}
+		else_if = {
+			limit = { primary_title.var:kehillah_yeshiva_fame >= kehillah_yeshiva_tier_renowned }
+			value = 2
+		}
+		else_if = {
+			limit = { primary_title.var:kehillah_yeshiva_fame >= kehillah_yeshiva_tier_respected }
+			value = 1
+		}
+	}
+}
+
+# An alumnus taking a Dayyan seat elsewhere.
+kehillah_yeshiva_fame_per_alumnus = 2
+
+# Scope: a Kehillah leader. Fame still needed for the next tier (0 at
+# Illustrious). Drives the words of KehillahYeshivaNextTier.
+kehillah_yeshiva_fame_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_yeshiva_fame } }
+		value = primary_title.var:kehillah_yeshiva_fame
+	}
+}
+kehillah_yeshiva_fame_to_next_value = {
+	value = 0
+	if = {
+		limit = { kehillah_yeshiva_fame_tier_value = 0 }
+		value = kehillah_yeshiva_tier_respected
+		subtract = kehillah_yeshiva_fame_value
+	}
+	else_if = {
+		limit = { kehillah_yeshiva_fame_tier_value = 1 }
+		value = kehillah_yeshiva_tier_renowned
+		subtract = kehillah_yeshiva_fame_value
+	}
+	else_if = {
+		limit = { kehillah_yeshiva_fame_tier_value = 2 }
+		value = kehillah_yeshiva_tier_illustrious
+		subtract = kehillah_yeshiva_fame_value
+	}
+	min = 0
+}
+
+# ---------------------------------------------------------------------
+# For the Yeshiva section of the library panel (gui/kehillah_domicile_
+# library.gui), 2026-10-11. Scope: a Kehillah leader.
+# ---------------------------------------------------------------------
+kehillah_has_yeshiva_value = {
+	value = 0
+	if = {
+		limit = { kehillah_has_yeshiva_trigger = yes }
+		value = 1
+	}
+}
+
+# =====================================================================
+# V29 section 10 (2026-10-11): the living yeshiva.
+# =====================================================================
+# Enrolment: 16 or older, Learning ABOVE this.
+kehillah_yeshiva_min_learning = 8
+kehillah_yeshiva_min_age = 16
+# Two years present.
+kehillah_yeshiva_quarters_to_graduate = 8
+# Track XP per quarter present: the yeshiva's specialization, and each
+# other track.
+kehillah_yeshiva_xp_specialization = 8
+kehillah_yeshiva_xp_other = 2
+# Quarterly chance (percent) that a travelling student arrives, by tier.
+kehillah_yeshiva_arrival_chance_modest = 15
+kehillah_yeshiva_arrival_chance_respected = 25
+kehillah_yeshiva_arrival_chance_renowned = 35
+kehillah_yeshiva_arrival_chance_illustrious = 50
+# Quarterly chance (percent) of a study event for a PLAYER student.
+kehillah_yeshiva_player_event_chance = 50
+# Scope: a Kehillah leader. Students on the roll (panel).
+kehillah_yeshiva_student_count_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable_list = kehillah_yeshiva_students } }
+		value = {
+			value = 0
+			primary_title = {
+				every_in_list = {
+					variable = kehillah_yeshiva_students
+					add = 1
+				}
+			}
+		}
+	}
+}

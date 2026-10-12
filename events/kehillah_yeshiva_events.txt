@@ -1,0 +1,494 @@
+﻿# =====================================================================
+# THE YESHIVA -- V29 (docs/spec/v29-yeshiva.md), events. 2026-10-11.
+#
+#   .0001  the yeshiva is founded (from kehillah_found_yeshiva_effect)
+#   .0010  a scholar arrives, drawn by the new yeshiva (V29 section 3.1)
+#   .0101  a Jewish traveller passes through a yeshiva town (POI)
+#   .0102  a non-Jewish traveller passes through (POI) -- V29 section 3.5
+# =====================================================================
+
+namespace = kehillah_yeshiva
+
+# ---------------------------------------------------------------------
+# .0001 -- the founding. Root = the founding leader.
+# ---------------------------------------------------------------------
+kehillah_yeshiva.0001 = {
+	type = character_event
+	title = kehillah_yeshiva.0001.t
+	desc = kehillah_yeshiva.0001.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+	right_portrait = {
+		character = scope:kehillah_rosh_yeshiva
+		animation = personality_rational
+		trigger = {
+			exists = scope:kehillah_rosh_yeshiva
+			NOT = { scope:kehillah_rosh_yeshiva = root }
+		}
+	}
+
+	immediate = {
+		kehillah_save_rosh_yeshiva_effect = yes
+	}
+
+	option = {
+		name = kehillah_yeshiva.0001.a
+		add_prestige = medium_prestige_gain
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0010 -- a scholar arrives. Root = the leader. Ordained rabbis come
+# looking for a place at a new yeshiva: candidates for the Dayyan seat,
+# judges for the Bet Din, and a supply of rabbis for the community.
+# ---------------------------------------------------------------------
+kehillah_yeshiva.0010 = {
+	type = character_event
+	title = kehillah_yeshiva.0010.t
+	desc = kehillah_yeshiva.0010.desc
+	theme = learning
+	left_portrait = {
+		character = scope:kehillah_yeshiva_scholar
+		animation = personality_rational
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+		is_ruler = yes
+		kehillah_has_yeshiva_trigger = yes
+	}
+
+	immediate = {
+		kehillah_generate_rabbi_candidate_effect = {
+			SLOT = kehillah_yeshiva_scholar
+			AGE_MIN = 28
+			AGE_MAX = 55
+			EDUCATION = education_learning_3
+			LEARNING_MIN = 10
+			LEARNING_MAX = 15
+		}
+		scope:kehillah_yeshiva_scholar = {
+			add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = 20 }
+		}
+	}
+
+	option = {
+		name = kehillah_yeshiva.0010.a
+		add_courtier = scope:kehillah_yeshiva_scholar
+	}
+	option = {
+		name = kehillah_yeshiva.0010.b
+		# Turned away -- he goes to the pool, where other communities' Seek
+		# a Rabbi can still find him.
+		ai_chance = { base = 0 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0101 -- a Jewish traveller at a yeshiva town (POI on_visit).
+# Root = the traveller. scope:kehillah_poi_title = the community.
+# ---------------------------------------------------------------------
+kehillah_yeshiva.0101 = {
+	type = character_event
+	title = kehillah_yeshiva.0101.t
+	desc = kehillah_yeshiva.0101.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_rosh_yeshiva
+		animation = personality_rational
+		trigger = { exists = scope:kehillah_rosh_yeshiva }
+	}
+
+	immediate = {
+		scope:kehillah_poi_title.holder ?= { kehillah_save_rosh_yeshiva_effect = yes }
+	}
+
+	# Sit in on a lecture.
+	option = {
+		name = kehillah_yeshiva.0101.a
+		add_learning_lifestyle_xp = medium_lifestyle_xp
+		add_piety = minor_piety_gain
+	}
+	# Speak with the Rosh Yeshiva himself.
+	option = {
+		name = kehillah_yeshiva.0101.b
+		trigger = {
+			exists = scope:kehillah_rosh_yeshiva
+			NOT = { scope:kehillah_rosh_yeshiva = root }
+		}
+		add_opinion = {
+			target = scope:kehillah_rosh_yeshiva
+			modifier = respect_opinion
+			opinion = 10
+		}
+		scope:kehillah_rosh_yeshiva = {
+			add_opinion = {
+				target = root
+				modifier = respect_opinion
+				opinion = 10
+			}
+		}
+		add_piety = minor_piety_gain
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0102 -- a non-Jewish traveller at a yeshiva town (POI on_visit).
+# Root = the traveller. Learning about the tenets of Judaism through a
+# curious scholar's eyes; respectful, never a conversion pitch.
+# ---------------------------------------------------------------------
+kehillah_yeshiva.0102 = {
+	type = character_event
+	title = kehillah_yeshiva.0102.t
+	desc = kehillah_yeshiva.0102.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_rosh_yeshiva
+		animation = personality_rational
+		trigger = { exists = scope:kehillah_rosh_yeshiva }
+	}
+
+	immediate = {
+		scope:kehillah_poi_title.holder ?= { kehillah_save_rosh_yeshiva_effect = yes }
+	}
+
+	# Ask about the Hebrew text of scripture -- the Christian Hebraist's
+	# question.
+	option = {
+		name = kehillah_yeshiva.0102.a
+		add_learning_lifestyle_xp = medium_lifestyle_xp
+		if = {
+			limit = { exists = scope:kehillah_rosh_yeshiva }
+			add_opinion = {
+				target = scope:kehillah_rosh_yeshiva
+				modifier = respect_opinion
+				opinion = 5
+			}
+		}
+	}
+	# Debate a student.
+	option = {
+		name = kehillah_yeshiva.0102.b
+		duel = {
+			skill = learning
+			value = 10
+			50 = {
+				compare_modifier = { value = scope:duel_value multiplier = 3.5 }
+				desc = kehillah_yeshiva.0102.b.win
+				add_prestige = minor_prestige_gain
+			}
+			50 = {
+				compare_modifier = { value = scope:duel_value multiplier = -3.5 }
+				desc = kehillah_yeshiva.0102.b.lose
+				add_learning_lifestyle_xp = minor_lifestyle_xp
+			}
+		}
+	}
+	# Pass on.
+	option = {
+		name = kehillah_yeshiva.0102.c
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0210 -- hidden. Root = the leader of the community an alumnus came
+# home to; his title's kehillah_alumnus_incoming names him. Seats him as
+# Dayyan if the seat is still free (see kehillah_place_alumnus_effect).
+# ---------------------------------------------------------------------
+kehillah_yeshiva.0210 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { primary_title ?= { has_variable = kehillah_alumnus_incoming } }
+			primary_title.var:kehillah_alumnus_incoming = { save_scope_as = kehillah_arriving_alumnus }
+			if = {
+				limit = {
+					NOT = { exists = cp:councillor_court_chaplain }
+					scope:kehillah_arriving_alumnus = {
+						is_alive = yes
+						liege ?= root
+					}
+				}
+				assign_councillor_type = {
+					type = councillor_court_chaplain
+					target = scope:kehillah_arriving_alumnus
+				}
+			}
+			if = {
+				limit = { cp:councillor_court_chaplain ?= scope:kehillah_arriving_alumnus }
+				debug_log = "kehillah_yeshiva.0210: an alumnus took a Dayyan seat"
+			}
+			else = {
+				debug_log = "kehillah_yeshiva.0210: the alumnus could NOT be seated (he stays as a rabbi at court)"
+			}
+			primary_title = { remove_variable = kehillah_alumnus_incoming }
+		}
+	}
+}
+
+# =====================================================================
+# THE LIVING YESHIVA -- V29 section 10 (2026-10-11). Few, light,
+# repeatable events, flavored by the student's rebbe and chavruta.
+#   .0300  choose a yeshiva to study at (player decision)
+#   .0301  arrival at the yeshiva (travel plan)
+#   .0302  semicha (a player student graduates)
+#   .0310  hidden dispatcher (study tick, player students)
+#   .0311  what to study this season
+#   .0312  the chavruta
+#   .0313  the rebbe
+# =====================================================================
+
+kehillah_yeshiva.0300 = {
+	type = character_event
+	title = kehillah_yeshiva.0300.t
+	desc = kehillah_yeshiva.0300.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	immediate = {
+		ordered_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = {
+					kehillah_has_yeshiva_trigger = yes
+					faith = root.faith
+				}
+			}
+			order_by = var:kehillah_yeshiva_fame
+			position = 0
+			save_scope_as = kehillah_yeshiva_choice_1
+		}
+		ordered_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = {
+					kehillah_has_yeshiva_trigger = yes
+					faith = root.faith
+				}
+			}
+			order_by = var:kehillah_yeshiva_fame
+			position = 1
+			save_scope_as = kehillah_yeshiva_choice_2
+		}
+		ordered_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = {
+					kehillah_has_yeshiva_trigger = yes
+					faith = root.faith
+				}
+			}
+			order_by = var:kehillah_yeshiva_fame
+			position = 2
+			save_scope_as = kehillah_yeshiva_choice_3
+		}
+	}
+
+	option = {
+		name = kehillah_yeshiva.0300.a
+		trigger = { exists = scope:kehillah_yeshiva_choice_1 }
+		scope:kehillah_yeshiva_choice_1 = { save_scope_as = kehillah_enroll_title }
+		kehillah_yeshiva_enroll_effect = yes
+		kehillah_yeshiva_travel_to_effect = yes
+	}
+	option = {
+		name = kehillah_yeshiva.0300.b
+		trigger = { exists = scope:kehillah_yeshiva_choice_2 }
+		scope:kehillah_yeshiva_choice_2 = { save_scope_as = kehillah_enroll_title }
+		kehillah_yeshiva_enroll_effect = yes
+		kehillah_yeshiva_travel_to_effect = yes
+	}
+	option = {
+		name = kehillah_yeshiva.0300.c
+		trigger = { exists = scope:kehillah_yeshiva_choice_3 }
+		scope:kehillah_yeshiva_choice_3 = { save_scope_as = kehillah_enroll_title }
+		kehillah_yeshiva_enroll_effect = yes
+		kehillah_yeshiva_travel_to_effect = yes
+	}
+	option = {
+		name = kehillah_yeshiva.0300.d
+	}
+}
+
+kehillah_yeshiva.0301 = {
+	type = character_event
+	title = kehillah_yeshiva.0301.t
+	desc = kehillah_yeshiva.0301.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+	right_portrait = {
+		character = scope:kehillah_rosh_yeshiva
+		animation = personality_rational
+		trigger = { exists = scope:kehillah_rosh_yeshiva }
+	}
+	trigger = { has_variable = kehillah_yeshiva_enrolled }
+	immediate = {
+		var:kehillah_yeshiva_enrolled.holder ?= { kehillah_save_rosh_yeshiva_effect = yes }
+	}
+	option = {
+		name = kehillah_yeshiva.0301.a
+	}
+}
+
+kehillah_yeshiva.0302 = {
+	type = character_event
+	title = kehillah_yeshiva.0302.t
+	desc = kehillah_yeshiva.0302.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+	option = {
+		name = kehillah_yeshiva.0302.a
+	}
+}
+
+kehillah_yeshiva.0310 = {
+	type = character_event
+	hidden = yes
+	trigger = { has_variable = kehillah_yeshiva_enrolled }
+	immediate = {
+		random_list = {
+			50 = { trigger_event = kehillah_yeshiva.0311 }
+			25 = {
+				trigger = { any_relation = { type = kehillah_chavruta } }
+				trigger_event = kehillah_yeshiva.0312
+			}
+			25 = {
+				trigger = { any_relation = { type = kehillah_rebbe } }
+				trigger_event = kehillah_yeshiva.0313
+			}
+		}
+	}
+}
+
+# What to study this season. The yeshiva's specialization pays extra.
+kehillah_yeshiva.0311 = {
+	type = character_event
+	title = kehillah_yeshiva.0311.t
+	desc = kehillah_yeshiva.0311.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	trigger = { has_variable = kehillah_yeshiva_enrolled }
+	immediate = {
+		var:kehillah_yeshiva_enrolled = { save_scope_as = kehillah_study_title }
+	}
+	option = {
+		name = kehillah_yeshiva.0311.a
+		add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = 8 }
+		if = {
+			limit = { scope:kehillah_study_title = { var:kehillah_yeshiva_specialization ?= flag:talmudics } }
+			add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = 6 }
+		}
+	}
+	option = {
+		name = kehillah_yeshiva.0311.b
+		add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = 8 }
+		if = {
+			limit = { scope:kehillah_study_title = { var:kehillah_yeshiva_specialization ?= flag:parshanut } }
+			add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = 6 }
+		}
+	}
+	option = {
+		name = kehillah_yeshiva.0311.c
+		add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = 8 }
+		if = {
+			limit = { scope:kehillah_study_title = { var:kehillah_yeshiva_specialization ?= flag:hashkafa } }
+			add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = 6 }
+		}
+	}
+}
+
+# The chavruta: argue it through together, or go it alone.
+kehillah_yeshiva.0312 = {
+	type = character_event
+	title = kehillah_yeshiva.0312.t
+	desc = kehillah_yeshiva.0312.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_my_chavruta
+		animation = personality_rational
+	}
+	trigger = { any_relation = { type = kehillah_chavruta } }
+	immediate = {
+		random_relation = {
+			type = kehillah_chavruta
+			save_scope_as = kehillah_my_chavruta
+		}
+	}
+	option = {
+		name = kehillah_yeshiva.0312.a
+		add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = 6 }
+		add_opinion = { target = scope:kehillah_my_chavruta modifier = friendliness_opinion opinion = 10 }
+		scope:kehillah_my_chavruta = {
+			add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = 6 }
+			add_opinion = { target = root modifier = friendliness_opinion opinion = 10 }
+		}
+	}
+	option = {
+		name = kehillah_yeshiva.0312.b
+		add_learning_lifestyle_xp = minor_lifestyle_xp
+	}
+}
+
+# The rebbe: ask to be examined, or listen and learn.
+kehillah_yeshiva.0313 = {
+	type = character_event
+	title = kehillah_yeshiva.0313.t
+	desc = kehillah_yeshiva.0313.desc
+	theme = learning
+	left_portrait = {
+		character = scope:kehillah_my_rebbe
+		animation = personality_rational
+	}
+	right_portrait = {
+		character = root
+		animation = thinking
+	}
+	trigger = { any_relation = { type = kehillah_rebbe } }
+	immediate = {
+		random_relation = {
+			type = kehillah_rebbe
+			save_scope_as = kehillah_my_rebbe
+		}
+	}
+	option = {
+		name = kehillah_yeshiva.0313.a
+		add_learning_lifestyle_xp = medium_lifestyle_xp
+		add_opinion = { target = scope:kehillah_my_rebbe modifier = respect_opinion opinion = 10 }
+	}
+	option = {
+		name = kehillah_yeshiva.0313.b
+		add_piety = minor_piety_gain
+		add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = 4 }
+	}
+}

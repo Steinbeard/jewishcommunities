@@ -160,6 +160,27 @@ kehillah_on_game_start = {
 				kehillah_setup_baghdad_start_effect = yes
 			}
 		}
+		# V29 (2026-10-11): Lucena, Jerusalem, Mahdia.
+		title:d_kehillah_lucena ?= {
+			holder ?= {
+				kehillah_setup_lucena_start_effect = yes
+			}
+		}
+		title:d_kehillah_jerusalem ?= {
+			holder ?= {
+				kehillah_setup_jerusalem_start_effect = yes
+			}
+		}
+		title:d_kehillah_mahdia ?= {
+			holder ?= {
+				kehillah_setup_mahdia_start_effect = yes
+			}
+		}
+		title:d_kehillah_sura ?= {
+			holder ?= {
+				kehillah_setup_sura_start_effect = yes
+			}
+		}
 
 		# COMMUNITY REGISTRY, ADDED 2026-09-09 at user request ("maybe we
 		# should register communities as a scope so that the event can
@@ -207,6 +228,10 @@ kehillah_on_game_start = {
 		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_cordoba }
 		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_granada }
 		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_baghdad }
+		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_lucena }
+		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_jerusalem }
+		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_mahdia }
+		add_to_global_variable_list = { name = kehillah_registered_communities target = title:d_kehillah_sura }
 
 		# V16 settlement-network cache. This comes only AFTER the full
 		# registry is complete, so every starting community sees all of its
@@ -237,6 +262,32 @@ kehillah_on_game_start = {
 		every_in_global_list = {
 			variable = kehillah_registered_communities
 			kehillah_seed_starting_library_effect = yes
+		}
+
+		# Documented 1066 rabbinic scholars enter with plausible pre-game
+		# mastery. Mere library possession does not qualify anyone for a
+		# source citation or incoming Bet Din responsum. Rashi has already
+		# studied Bavli Gittin (Nashim); Isaac ben Judah at Mainz has the
+		# Mishnah. Other characters earn mastery through Learn Torah.
+		character:9000201 ?= {
+			if = {
+				limit = { NOT = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_bavli_nashim } } }
+				add_to_variable_list = { name = kehillah_studied_works target = flag:work_bavli_nashim }
+			}
+			if = {
+				limit = { NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } } }
+				add_to_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim }
+			}
+		}
+		character:9000101 ?= {
+			if = {
+				limit = { NOT = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_mishnah } } }
+				add_to_variable_list = { name = kehillah_studied_works target = flag:work_mishnah }
+			}
+			if = {
+				limit = { NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mishnah } } }
+				add_to_variable_list = { name = kehillah_mastered_works target = flag:work_mishnah }
+			}
 		}
 
 		# HOST CHARTER, ADDED 2026-09-23 (Phase 4, v15). Must come AFTER
@@ -603,9 +654,8 @@ kehillah_on_domicile_building_completed = {
 # much darker game than v1 is trying to be.
 # ---------------------------------------------------------------------
 
-random_yearly_playable_pulse = {
-	on_actions = { kehillah_yearly_pulse }
-}
+# Retired 2026-10-09 at Daniel's request: routine management cases now belong to the Bet Din.
+# kehillah_yearly_pulse is retained below for old saves, without a pulse subscription.
 
 
 # ---------------------------------------------------------------------
@@ -690,16 +740,6 @@ kehillah_quarterly_pulse = {
 		# judge this quarter's numbers, not last quarter's.
 		kehillah_update_all_pillar_bands_effect = yes
 
-		# THE RABBI'S OFFICE (S4(2), 2026-09-26). Clears the serve-as-own-
-		# rabbi toggle once a real rabbi has been appointed. Ordered after
-		# the pillars deliberately: it only removes a now-redundant flag
-		# and modifier, and kehillah_serving_as_own_rabbi_trigger already
-		# returns false the instant the seat is filled, so this quarter's
-		# pillar maths has already stopped counting the leader in the role
-		# whether or not this has run yet. See
-		# kehillah_clear_redundant_rabbi_toggle_effect's own header.
-		kehillah_clear_redundant_rabbi_toggle_effect = yes
-
 		# COMMUNITY GOALS (S6, 2026-09-28). Completes or fails the one goal
 		# a community has running. Ordered after the pillars and after the
 		# charter cache refresh above, because two of the four goals are read
@@ -711,6 +751,25 @@ kehillah_quarterly_pulse = {
 		# should not also get a collapse warning for the number it held before
 		# the payment.
 		kehillah_check_community_goal_effect = yes
+
+		# LAY COURTIERS (2026-10-10). Strips the faith-organization
+		# membership the engine hands a theocratic ruler's generated
+		# courtiers. Catches whatever kehillah_on_join_court missed --
+		# including every court at game start, since this pulse first
+		# fires on 1066.9.16. See kehillah_laicize_character_effect.
+		kehillah_laicize_court_effect = yes
+
+		# LEADER NAMING (2026-10-11). Re-evaluates Rav/Parnas and Rabbenu,
+		# so ordination or a rise in piety shows up without a change of
+		# leader. See kehillah_update_leader_flavor_effect.
+		kehillah_update_leader_flavor_effect = yes
+
+		# THE YESHIVA (V29, 2026-10-11). Fame decays (faster while Stability
+		# is below Healthy) and a learned head sustains it. See
+		# kehillah_yeshiva_quarterly_effect. (A first pass put this call in
+		# kehillah_on_title_gain by mistake; live 2026-10-11 caught fame
+		# never moving.)
+		kehillah_yeshiva_quarterly_effect = yes
 
 		# THE STABILITY FLOOR (S1 / v2 section 4.4). Ordered LAST on
 		# purpose: it reads the Stability that kehillah_quarterly_pillars_
@@ -776,6 +835,112 @@ kehillah_on_join_court = {
 			# common/scripted_character_templates/
 			# kehillah_pool_repopulation_patch.txt as originally suggested.
 			kehillah_apply_courtier_quality_effect = yes
+			# A new arrival is lay unless they hold a clerical role; see
+			# kehillah_laicize_character_effect.
+			kehillah_laicize_character_effect = yes
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# PLAYER CONTINUATION -- the player follows the community, not the
+# bloodline. ADDED 2026-10-11 (Daniel), replacing H1's
+# mechanic_type = theocracy (see kehillah_government.txt).
+#
+# root = the dying character, still alive while on_death runs.
+#
+# THE RULE, measured live 2026-10-11 (implementation doc section 15).
+# CK3 gives a non-dynastic player heir -- vanilla's own "Continue as
+# <successor>" death screen -- only when BOTH the ruler AND the next
+# holder of his primary title are members of the faith's organization.
+# Either one alone is not enough: a member leader with a lay heir has no
+# player heir, and neither has a lay leader with a member heir. The
+# player heir appeared the instant the second of the two joined, with
+# no recalculation needed.
+#
+# So a lay Parnas is enrolled JUST IN TIME: here, as he dies, together
+# with his successor. Neither carries clergy status in life.
+# kehillah_update_leader_flavor_effect takes the successor back out once
+# he is in office, unless he is clergy in his own right (a rabbi). No
+# trait, no theocracy mechanic.
+#
+# FALLBACK. If the engine still has no player heir after the enrolment,
+# the player is handed to the successor with set_player_character, just
+# before the death. That loses the vanilla death screen (the player is
+# no longer the dying character by the time it would show), but beats
+# Game Over. Vanilla's only on_death use of set_player_character is a
+# narrow All Under Heaven case (common/on_action/death.txt, "Ceremonial
+# liege family"); it is not how governments continue in general.
+#
+# Does nothing when the engine already has a player heir (a rabbi leader
+# with a rabbi or Dayyan successor, or a same-dynasty successor).
+# ---------------------------------------------------------------------
+
+on_death = {
+	on_actions = { kehillah_on_death_player_continuation }
+}
+
+kehillah_on_death_player_continuation = {
+	trigger = {
+		is_ai = no
+		# is_ruler: government_has_flag alone is also true for a Kehillah's
+		# courtiers (v1 implementation doc, section 14).
+		is_ruler = yes
+		government_has_flag = government_is_kehillah
+		NOT = { exists = player_heir }
+		exists = primary_title
+	}
+	effect = {
+		if = {
+			limit = {
+				primary_heir ?= { is_ai = yes }
+			}
+			primary_heir = { save_scope_as = kehillah_continuation_successor }
+		}
+		else = {
+			primary_title = {
+				ordered_title_heir = {
+					order_by = "appointment_candidate_score(root.primary_title)"
+					limit = { is_ai = yes }
+					save_scope_as = kehillah_continuation_successor
+				}
+			}
+		}
+		if = {
+			limit = { exists = scope:kehillah_continuation_successor }
+
+			# Just-in-time enrolment of both ends of the succession.
+			if = {
+				limit = {
+					NOT = { exists = organization }
+					exists = faith.organization
+				}
+				join_organization = faith.organization
+			}
+			scope:kehillah_continuation_successor = {
+				if = {
+					limit = {
+						NOT = { exists = organization }
+						exists = faith.organization
+					}
+					join_organization = faith.organization
+				}
+			}
+
+			if = {
+				limit = { exists = player_heir }
+				debug_log = "kehillah_on_death_player_continuation: enrolled leader and successor, vanilla player heir is set"
+				debug_log_scopes = yes
+			}
+			else = {
+				debug_log = "kehillah_on_death_player_continuation: still no player heir after enrolment, falling back to set_player_character"
+				debug_log_scopes = yes
+				set_player_character = scope:kehillah_continuation_successor
+			}
+		}
+		else = {
+			debug_log = "kehillah_on_death_player_continuation: no successor found, vanilla Game Over stands"
 		}
 	}
 }
@@ -828,9 +993,8 @@ kehillah_yearly_pulse = {
 # of Jewish communal litigation.
 # ---------------------------------------------------------------------
 
-random_yearly_playable_pulse = {
-	on_actions = { kehillah_dispute_pulse }
-}
+# Retired 2026-10-09 at Daniel's request: routine management cases now belong to the Bet Din.
+# kehillah_dispute_pulse is retained below for old saves, without a pulse subscription.
 
 kehillah_dispute_pulse = {
 	trigger = {
@@ -1148,28 +1312,7 @@ kehillah_norman_conquest_check_on_title_gain = {
 # making the player's own rate busier than S5 asked for.
 # ---------------------------------------------------------------------
 
-random_yearly_playable_pulse = {
-	on_actions = { kehillah_responsa_pulse }
-}
-
-kehillah_responsa_pulse = {
-	trigger = {
-		government_has_flag = government_is_kehillah
-		is_adult = yes
-		is_imprisoned = no
-		kehillah_can_answer_responsa_trigger = yes
-	}
-	random_events = {
-		chance_to_happen = 55
-
-		chance_of_no_event = {
-			value = 0
-			if = {
-				limit = { is_ai = yes }
-				value = 40
-			}
-		}
-
-		100 = kehillah_responsa.0001
-	}
-}
+# Retired 2026-09-29: V23's first Bet Din-linked letter replaces this
+# generic annual question pulse. The old event and save counter remain
+# loadable for existing games, but no automatic second responsa economy
+# runs alongside named, source-specific case correspondence.

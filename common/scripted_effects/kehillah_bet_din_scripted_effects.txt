@@ -1111,6 +1111,11 @@ kehillah_bet_din_grant_rabbi_trait_effect = {
 	if = {
 		limit = {
 			NOT = { has_trait = kehillah_rabbi_trait }
+			# V21 slice 5, 2026-10-10. Deliberately duplicated with the
+			# event's own trigger, exactly as the gender check already is
+			# and for the reason that check's comment gives: either gate
+			# alone must be enough to refuse.
+			is_rabbinic_authority_jewish_trigger = yes
 			kehillah_leadership_gender_eligible_trigger = yes
 		}
 		trigger_event = kehillah_bet_din_semicha.0001
@@ -1199,6 +1204,13 @@ kehillah_bet_din_save_presiding_effect = {
 # remove of something absent is a logged error nobody needs.
 # ---------------------------------------------------------------------
 kehillah_bet_din_open_docket_effect = {
+	# An abandoned earlier session can leave a letter awaiting an answer.
+	# A new docket starts clean; a late recipient sees that the question
+	# is no longer pending and cannot alter this new session.
+	if = { limit = { primary_title = { has_variable = kehillah_case7_pending_responsum } } primary_title = { remove_variable = kehillah_case7_pending_responsum } }
+	if = { limit = { primary_title = { has_variable = kehillah_case7_correspondent } } primary_title = { remove_variable = kehillah_case7_correspondent } }
+	if = { limit = { primary_title = { has_variable = kehillah_case7_reply_direction } } primary_title = { remove_variable = kehillah_case7_reply_direction } }
+	if = { limit = { primary_title = { has_variable = kehillah_case7_reply_author } } primary_title = { remove_variable = kehillah_case7_reply_author } }
 	scope:activity = { set_variable = { name = kehillah_bet_din_convening_title value = scope:host.primary_title } }
 
 	# WHO SITS AS AV BEIT DIN. ADDED 2026-09-27 (S4b), at user request:
@@ -1208,7 +1220,7 @@ kehillah_bet_din_open_docket_effect = {
 	# presiding seat on the bench is the community's acting Chief Rabbi,
 	# and when those are different people it is the rabbi's judgement the
 	# case tests. Resolved through the shared S4(2) resolver
-	# (kehillah_has_acting_chief_rabbi_trigger's header, common/
+	# (kehillah_has_community_rabbi_trigger's header, common/
 	# scripted_triggers/kehillah_scripted_triggers.txt), which makes this
 	# that abstraction's sixth consumer site.
 	#
@@ -1227,10 +1239,10 @@ kehillah_bet_din_open_docket_effect = {
 	# one, and a court of three would be staffed by two people with his
 	# Learning counted twice in the tally. He is excluded from the pool
 	# below instead. A quorum of three means three people.
-	kehillah_save_acting_chief_rabbi_effect = yes
+	kehillah_save_community_rabbi_effect = yes
 	if = {
-		limit = { exists = scope:kehillah_chief_rabbi }
-		scope:activity = { set_variable = { name = kehillah_bet_din_av_beit_din value = scope:kehillah_chief_rabbi } }
+		limit = { exists = scope:kehillah_community_rabbi }
+		scope:activity = { set_variable = { name = kehillah_bet_din_av_beit_din value = scope:kehillah_community_rabbi } }
 	}
 	else = {
 		scope:activity = { set_variable = { name = kehillah_bet_din_av_beit_din value = scope:host } }
@@ -1248,8 +1260,8 @@ kehillah_bet_din_open_docket_effect = {
 				# judges_value, where there is no activity in scope to ask
 				# about, and this is the only caller that has one.
 				NAND = {
-					exists = scope:kehillah_chief_rabbi
-					this = scope:kehillah_chief_rabbi
+					exists = scope:kehillah_community_rabbi
+					this = scope:kehillah_community_rabbi
 				}
 			}
 			position = 0
@@ -1260,8 +1272,8 @@ kehillah_bet_din_open_docket_effect = {
 			limit = {
 				kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host }
 				NAND = {
-					exists = scope:kehillah_chief_rabbi
-					this = scope:kehillah_chief_rabbi
+					exists = scope:kehillah_community_rabbi
+					this = scope:kehillah_community_rabbi
 				}
 			}
 			position = 1
@@ -1348,6 +1360,10 @@ kehillah_bet_din_open_docket_effect = {
 			limit = { exists = scope:activity.var:kehillah_bet_din_case7_direction }
 			scope:activity = { remove_variable = kehillah_bet_din_case7_direction }
 		}
+		if = { limit = { exists = scope:activity.var:kehillah_bet_din_case7_pending_responsum } scope:activity = { remove_variable = kehillah_bet_din_case7_pending_responsum } }
+		if = { limit = { exists = scope:activity.var:kehillah_bet_din_case7_candidate_1 } scope:activity = { remove_variable = kehillah_bet_din_case7_candidate_1 } }
+		if = { limit = { exists = scope:activity.var:kehillah_bet_din_case7_candidate_2 } scope:activity = { remove_variable = kehillah_bet_din_case7_candidate_2 } }
+		if = { limit = { exists = scope:activity.var:kehillah_bet_din_case7_correspondent } scope:activity = { remove_variable = kehillah_bet_din_case7_correspondent } }
 		if = {
 			limit = { exists = scope:activity.var:kehillah_bet_din_agunah_husband }
 			scope:activity = { remove_variable = kehillah_bet_din_agunah_husband }
@@ -1414,7 +1430,8 @@ kehillah_bet_din_draw_case_effect = {
 				target = flag:kehillah_bet_din_case_dowry
 			} }
 			scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 1 } }
-			trigger_event = kehillah_bet_din.0001
+			scope:activity = { kehillah_din_reset_case_effect = yes set_variable = { name = kehillah_din_case value = 1 } }
+			trigger_event = kehillah_din_sources.11
 		}
 
 		# CASE 2 -- The Agunah's Plea. UPDATED 2026-09-09: litigant_a (the
@@ -1450,7 +1467,8 @@ kehillah_bet_din_draw_case_effect = {
 				target = flag:kehillah_bet_din_case_agunah
 			} }
 			scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 1 } }
-			trigger_event = kehillah_bet_din.0011
+			scope:activity = { kehillah_din_reset_case_effect = yes set_variable = { name = kehillah_din_case value = 2 } }
+			trigger_event = kehillah_din_sources.21
 		}
 
 		# CASE 3 -- The Second Wife. A communal policy question with no
@@ -1476,7 +1494,8 @@ kehillah_bet_din_draw_case_effect = {
 				target = flag:kehillah_bet_din_case_second_wife
 			} }
 			scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 1 } }
-			trigger_event = kehillah_bet_din.0021
+			scope:activity = { kehillah_din_reset_case_effect = yes set_variable = { name = kehillah_din_case value = 3 } }
+			trigger_event = kehillah_din_sources.31
 		}
 
 		# CASE 4 -- The Recalcitrant Husband. ADDED 2026-09-09, this
@@ -1500,7 +1519,8 @@ kehillah_bet_din_draw_case_effect = {
 				target = flag:kehillah_bet_din_case_recalcitrant
 			} }
 			scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 1 } }
-			trigger_event = kehillah_bet_din.0031
+			scope:activity = { kehillah_din_reset_case_effect = yes set_variable = { name = kehillah_din_case value = 4 } }
+			trigger_event = kehillah_din_sources.41
 		}
 
 		# CASE 5 -- A Cursed Amulet. ADDED 2026-09-15 at user request. Two
@@ -1523,7 +1543,8 @@ kehillah_bet_din_draw_case_effect = {
 				target = flag:kehillah_bet_din_case_amulet
 			} }
 			scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 1 } }
-			trigger_event = kehillah_bet_din.0041
+			scope:activity = { kehillah_din_reset_case_effect = yes set_variable = { name = kehillah_din_case value = 5 } }
+			trigger_event = kehillah_din_sources.51
 		}
 
 		# CASE 6 -- The Silversmiths' Quarrel. ADDED 2026-09-15 at user
@@ -1545,7 +1566,8 @@ kehillah_bet_din_draw_case_effect = {
 				target = flag:kehillah_bet_din_case_silversmiths
 			} }
 			scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 1 } }
-			trigger_event = kehillah_bet_din.0051
+			scope:activity = { kehillah_din_reset_case_effect = yes set_variable = { name = kehillah_din_case value = 6 } }
+			trigger_event = kehillah_din_sources.61
 		}
 
 		# CASE 7 -- A Captive's Ransom. The ransom is a communal question;
@@ -1562,9 +1584,40 @@ kehillah_bet_din_draw_case_effect = {
 				target = flag:kehillah_bet_din_case_ransom
 			} }
 			scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 1 } }
-			trigger_event = kehillah_bet_din.0061
+			scope:activity = { kehillah_din_reset_case_effect = yes set_variable = { name = kehillah_din_case value = 7 } }
+			trigger_event = kehillah_din_sources.71
 		}
-	}
+	
+        # Source-based communal case 8: The Charity Chest.
+        10 = {
+            trigger = {
+                kehillah_has_dispute_candidates_trigger = yes
+                NOT = { scope:activity = { is_target_in_variable_list = { name = kehillah_bet_din_cases_heard target = flag:kehillah_din_case8 } } }
+            }
+            scope:activity = {
+                add_to_variable_list = { name = kehillah_bet_din_cases_heard target = flag:kehillah_din_case8 }
+                set_variable = { name = kehillah_bet_din_case_drawn value = 1 }
+                kehillah_din_reset_case_effect = yes
+                set_variable = { name = kehillah_din_case value = 8 }
+            }
+            trigger_event = kehillah_din_sources.81
+        }
+
+        # Source-based communal case 9: A Shared Courtyard.
+        10 = {
+            trigger = {
+                kehillah_has_dispute_candidates_trigger = yes
+                NOT = { scope:activity = { is_target_in_variable_list = { name = kehillah_bet_din_cases_heard target = flag:kehillah_din_case9 } } }
+            }
+            scope:activity = {
+                add_to_variable_list = { name = kehillah_bet_din_cases_heard target = flag:kehillah_din_case9 }
+                set_variable = { name = kehillah_bet_din_case_drawn value = 1 }
+                kehillah_din_reset_case_effect = yes
+                set_variable = { name = kehillah_din_case value = 9 }
+            }
+            trigger_event = kehillah_din_sources.91
+        }
+}
 
 	# NO CASE WAS ELIGIBLE. Possible in a thin court, or in a session
 	# whose pool has been exhausted. Nothing is fired; the phase is cut short instead
@@ -1705,6 +1758,103 @@ kehillah_bet_din_reward_judges_for_ruling_effect = {
 				limit = { has_trait = kehillah_rabbi_trait }
 				add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = $XP$ }
 			}
+		}
+	}
+}
+
+# Scope: Bet Din host, after the case 7 bench has been seated. Offer up
+# to two named, distinct *outside* Rabbis who personally mastered a
+# relevant work. The candidate list is bounded by registered communities;
+# the appointed Chief Rabbi takes precedence over a serving leader.
+kehillah_bet_din_case7_pick_correspondents_effect = {
+	involved_activity = { save_scope_as = kbd_ransom_activity }
+	random_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			exists = holder
+			NOT = { this = root.primary_title }
+			holder = { kehillah_has_ransom_correspondent_trigger = yes }
+		}
+		save_scope_as = kbd_ransom_candidate_title_1
+		holder = {
+			# The community rabbi: leader if a Rav, else the Dayyan (2026-10-11).
+			if = {
+				limit = { has_trait = kehillah_rabbi_trait }
+				save_scope_as = kbd_ransom_candidate_1
+			}
+			else = { cp:councillor_court_chaplain ?= { save_scope_as = kbd_ransom_candidate_1 } }
+		}
+		if = {
+			limit = { exists = scope:kbd_ransom_candidate_1 }
+			scope:kbd_ransom_activity = {
+				set_variable = { name = kehillah_bet_din_case7_candidate_1 value = scope:kbd_ransom_candidate_1 }
+			}
+		}
+	}
+	if = {
+		limit = { exists = scope:kbd_ransom_candidate_title_1 }
+		random_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				NOT = { this = root.primary_title }
+				NOT = { this = scope:kbd_ransom_candidate_title_1 }
+				holder = { kehillah_has_ransom_correspondent_trigger = yes }
+			}
+			holder = {
+				# The community rabbi: leader if a Rav, else the Dayyan (2026-10-11).
+				if = {
+					limit = { has_trait = kehillah_rabbi_trait }
+					save_scope_as = kbd_ransom_candidate_2
+				}
+				else = { cp:councillor_court_chaplain ?= { save_scope_as = kbd_ransom_candidate_2 } }
+			}
+			if = {
+				limit = { exists = scope:kbd_ransom_candidate_2 }
+				scope:kbd_ransom_activity = {
+					set_variable = { name = kehillah_bet_din_case7_candidate_2 value = scope:kbd_ransom_candidate_2 }
+				}
+			}
+		}
+	}
+}
+
+# Scope: outside Rabbi receiving case 7's letter. The sender's title is
+# stored on this character and has survived a delayed cross-character
+# round trip in the 2026-09-29 live scope spike. Route to the title's
+# *current* holder, so succession does not misaddress the answer.
+kehillah_bet_din_case7_send_reply_effect = {
+	if = {
+		limit = {
+			exists = var:kehillah_case7_asking_title
+			var:kehillah_case7_asking_title = { has_variable = kehillah_case7_pending_responsum }
+		}
+		var:kehillah_case7_asking_title = {
+			set_variable = { name = kehillah_case7_reply_direction value = $DIRECTION$ }
+			set_variable = { name = kehillah_case7_reply_author value = root }
+			if = {
+				limit = { exists = holder }
+				holder = {
+					trigger_event = { id = kehillah_bet_din.0065 days = kehillah_bet_din_case7_letter_days }
+				}
+			}
+		}
+	}
+}
+
+# Scope: current leader receiving the answer, with an active case 7
+# awaiting it. The reply is an argument the host can adopt or set aside;
+# it never silently decides the case. Continue the ordinary co-judge and
+# verdict chain after that choice.
+kehillah_bet_din_case7_resume_docket_effect = {
+	if = {
+		limit = {
+			exists = involved_activity.var:kehillah_bet_din_judge2
+			kehillah_bet_din_case7_pending_trigger = yes
+		}
+		involved_activity = { remove_variable = kehillah_bet_din_case7_pending_responsum }
+		involved_activity.var:kehillah_bet_din_judge2 = {
+			trigger_event = { id = kehillah_bet_din.0062 days = kehillah_bet_din_case_step_days }
 		}
 	}
 }

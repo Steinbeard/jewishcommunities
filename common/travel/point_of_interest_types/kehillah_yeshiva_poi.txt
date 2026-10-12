@@ -1,0 +1,68 @@
+﻿# =====================================================================
+# The yeshiva as a travel point of interest -- V29 section 3.5
+# (docs/spec/v29-yeshiva.md), 2026-10-11.
+#
+# Vanilla's travel system lists points of interest by type; its own
+# poi_special_buildings_learning lists provinces whose SPECIAL building
+# carries travel_point_of_interest_learning. This type lists yeshiva
+# towns from the community registry instead, so it works whether or not
+# a map building could be placed. Travellers passing through get a toast
+# and sometimes an event: Jewish travellers attend a lecture or meet the
+# Rosh Yeshiva; others meet Judaism through a curious scholar's eyes.
+#
+# root = the traveller; scope:province = the province visited.
+# =====================================================================
+
+poi_kehillah_yeshiva = {
+	build_province_list = {
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = { kehillah_has_yeshiva_trigger = yes }
+			}
+			holder.domicile.domicile_location = { add_to_list = provinces }
+		}
+	}
+
+	on_visit = {
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = { exists = domicile }
+				holder.domicile.domicile_location = scope:province
+			}
+			save_scope_as = kehillah_poi_title
+		}
+
+		send_interface_toast = {
+			title = poi_kehillah_yeshiva.visit
+			left_icon = root
+			add_learning_lifestyle_xp = minor_lifestyle_xp
+			traveler_travel_xp_effect = {
+				MIN = 2
+				MAX = 4
+			}
+		}
+
+		if = {
+			limit = { exists = scope:kehillah_poi_title }
+			if = {
+				limit = { religion = religion:judaism_religion }
+				random = {
+					chance = 35
+					trigger_event = kehillah_yeshiva.0101
+				}
+			}
+			else = {
+				random = {
+					chance = 25
+					trigger_event = kehillah_yeshiva.0102
+				}
+			}
+		}
+
+		visiting_poi_effect = yes
+	}
+}

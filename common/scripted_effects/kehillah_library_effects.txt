@@ -172,7 +172,7 @@ kehillah_seed_one_random_torah_work_effect = {
 # by the CALLER (the journey's own per-option trigger; the scheme's own
 # pick-next-work effect, which is what decides which work becomes
 # "current" in the first place) -- this effect only ever touches the
-# STUDYING character's own kehillah_studied_works, never a library.
+# STUDYING character's own encountered and mastered work lists, never a library.
 # random_list and a custom_tooltip-per-branch reveal are also absent here
 # for the same reason: whichever caller already knows the specific work
 # (the journey's own clicked option; the scheme's own numeric-ID
@@ -180,13 +180,48 @@ kehillah_seed_one_random_torah_work_effect = {
 # <track>.<work>_tt lines, before this effect ever runs.
 # =====================================================================
 
+# ---------------------------------------------------------------------
+# V21 SLICE 2, 2026-10-09 (Shabbat heartbeat 1, ROADMAP H4). TWO
+# CHANGES, BOTH INERT UNTIL THE LEARN TORAH GATE IS WIDENED.
+#
+# 1. Every add_trait_xp below is guarded on actually holding
+#    kehillah_rabbi_trait. docs/spec/v21-rabbi-ordination-paths.md
+#    section 3.2: "Trait XP is only meaningful after a character has the
+#    lifestyle trait. An apprentice must therefore use separate
+#    character-scoped study records, not attempt to add
+#    kehillah_rabbi_trait XP before the trait exists." Today the Learn
+#    Torah decision requires the trait outright, so these guards cannot
+#    change anything yet; they are what makes it safe for slice 3 to let
+#    an unordained candidate in.
+#
+# 2. A FIRST mastery also records the work's FIELD in
+#    kehillah_apprentice_fields. The spec's curriculum is "2 distinct
+#    completed works, from 2 distinct fields", and the distinct-works
+#    half is already recorded -- kehillah_mastered_works is exactly
+#    that list -- so this adds only the part that was missing rather
+#    than a parallel work list that could drift out of step with it.
+#    flag:$TRACK$ works because macro substitution is textual: $TRACK$
+#    is already the literal track token (parshanut/talmudics/hashkafa)
+#    this effect's callers pass.
+#
+#    Recorded for a rabbi too, not just an apprentice. It is one list
+#    append, it keeps the branch count down, and section 3.4 says the
+#    apprentice records survive ordination as biography anyway; the
+#    readiness trigger is what refuses to count them twice, not this.
+# ---------------------------------------------------------------------
+
 kehillah_study_specific_work_effect = {
 	if = {
-		limit = { is_target_in_variable_list = { name = kehillah_studied_works target = $WORK$ } }
+		limit = { is_target_in_variable_list = { name = kehillah_mastered_works target = $WORK$ } }
 		set_variable = { name = kehillah_learn_torah_repeat value = 1 }
 	}
 	else = {
 		set_variable = { name = kehillah_learn_torah_repeat value = 0 }
+	}
+	# This older list means encountered. Preserve it for travel discovery and
+	# existing saves; a failed first reading does not confer mastery.
+	if = {
+		limit = { NOT = { is_target_in_variable_list = { name = kehillah_studied_works target = $WORK$ } } }
 		add_to_variable_list = { name = kehillah_studied_works target = $WORK$ }
 	}
 
@@ -200,12 +235,18 @@ kehillah_study_specific_work_effect = {
 				}
 			}
 			set_variable = { name = kehillah_study_torah_last_result value = 2 }
-			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_repeat_pass }
+			if = {
+				limit = { has_trait = kehillah_rabbi_trait }
+				add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_repeat_pass }
+			}
 			custom_tooltip = kehillah_study_torah.repeat_pass.tt
 		}
 		else = {
 			set_variable = { name = kehillah_study_torah_last_result value = 3 }
-			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_repeat_fail }
+			if = {
+				limit = { has_trait = kehillah_rabbi_trait }
+				add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_repeat_fail }
+			}
 			custom_tooltip = kehillah_study_torah.repeat_fail.tt
 		}
 	}
@@ -218,15 +259,44 @@ kehillah_study_specific_work_effect = {
 				}
 			}
 			set_variable = { name = kehillah_study_torah_last_result value = 1 }
-			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_pass }
+			add_to_variable_list = { name = kehillah_mastered_works target = $WORK$ }
+			# The field half of V21's curriculum -- see this effect's header.
+			if = {
+				limit = { NOT = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:$TRACK$ } } }
+				add_to_variable_list = { name = kehillah_apprentice_fields target = flag:$TRACK$ }
+			}
+			if = {
+				limit = { has_trait = kehillah_rabbi_trait }
+				add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_pass }
+			}
 			custom_tooltip = kehillah_study_torah.pass.tt
 		}
 		else = {
 			set_variable = { name = kehillah_study_torah_last_result value = 0 }
-			add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_fail }
+			if = {
+				limit = { has_trait = kehillah_rabbi_trait }
+				add_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value = kehillah_learn_torah_xp_fail }
+			}
 			custom_tooltip = kehillah_study_torah.fail.tt
 		}
 	}
+	# V21 slice 3: an unordained reader is told, every time, that he is an
+	# apprentice and where he stands. Section 3.1 asks for exactly this --
+	# the completion "should explain that an unordained reader is an
+	# apprentice, not award the lifestyle trait immediately" -- and without
+	# it a candidate would study for years with no visible signal at all
+	# that it leads anywhere.
+	if = {
+		limit = { NOT = { has_trait = kehillah_rabbi_trait } }
+		if = {
+			limit = { kehillah_rabbi_ordination_curriculum_met_trigger = yes }
+			custom_tooltip = kehillah_study_torah.apprentice_ready.tt
+		}
+		else = {
+			custom_tooltip = kehillah_study_torah.apprentice.tt
+		}
+	}
+
 	add_piety = minor_piety_gain
 	remove_variable = kehillah_study_torah_mastery_bonus
 	remove_variable = kehillah_learn_torah_repeat
@@ -309,9 +379,11 @@ kehillah_study_specific_work_effect = {
 # should be very clear that the rewards are now much less"). The pick
 # below draws from EVERY work the library owns, not just unstudied ones --
 # no separate "out of books" gate is needed because kehillah_study_
-# specific_work_effect already pays the smaller kehillah_learn_torah_xp_
-# repeat_pass/_fail tiers (not zero) the moment a work is already in
-# kehillah_studied_works, exactly the "much smaller boost, not zero"
+# specific_work_effect pays the smaller kehillah_learn_torah_xp_
+# repeat_pass/_fail tiers (not zero) once a work is in
+# kehillah_mastered_works. An encountered but failed work can still
+# earn its full first-mastery reward on a later successful reading. This
+# preserves the "much smaller boost, not zero"
 # tiering that effect was built with on 2026-09-15. Nothing new to build
 # for the reward side; the only real requirement is surfacing that
 # downgrade clearly, which the reused per-work custom_tooltip below does

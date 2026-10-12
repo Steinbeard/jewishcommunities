@@ -1,0 +1,47 @@
+﻿# =====================================================================
+# Kehillah council: default-task fix-up (docs/spec/v26-kehillah-council-
+# and-baalei-batim.md).
+#
+# The engine allows one default_task per council position for every
+# government, and vanilla keeps its defaults (Collect Taxes, Organize
+# Levies, Religious Relations, Assist Ruler). Those are hidden for
+# Kehillot. The seat overrides switch a Kehillah councillor to the
+# Kehillah default in on_get_position; this quarterly pass catches
+# anything that slipped past -- old saves, engine re-defaults, seats
+# filled before the government changed -- by moving a Kehillah
+# councillor off a hidden vanilla default.
+# =====================================================================
+
+quarterly_playable_pulse = {
+	on_actions = { kehillah_council_task_fixup }
+}
+
+kehillah_council_task_fixup = {
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+	effect = {
+		cp:councillor_steward ?= {
+			if = {
+				limit = { is_performing_council_task = task_collect_taxes }
+				set_council_task = { task_type = task_kehillah_raise_revenue }
+			}
+		}
+		cp:councillor_marshal ?= {
+			if = {
+				limit = { is_performing_council_task = task_organize_levies }
+				set_council_task = { task_type = task_kehillah_night_watch }
+			}
+		}
+		cp:councillor_court_chaplain ?= {
+			if = {
+				limit = { is_performing_council_task = task_religious_relations }
+				set_council_task = { task_type = task_kehillah_prepare_bet_din }
+			}
+		}
+		every_councillor = {
+			limit = { is_performing_council_task = task_spouse_default }
+			set_council_task = { task_type = task_kehillah_assist_parnas }
+		}
+	}
+}

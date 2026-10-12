@@ -94,3 +94,287 @@ kehillah_rabbi_loop_debug.3 = {
 		else = { debug_log = "kehillah_rabbi_loop_debug.3: BLOCKED no fully staffed Bet Din activity" }
 	}
 }
+
+# V23 delayed-letter scope spike. Run .4 as a Kehillah leader. It stores
+# the sender's TITLE on a different living community leader, delivers .5
+# after two days, and sends .6 to whoever holds that title on receipt.
+# No gameplay state is changed beyond temporary character variables.
+kehillah_rabbi_loop_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { exists = primary_title }
+			random_in_global_list = {
+				variable = kehillah_registered_communities
+				limit = {
+					exists = holder
+					NOT = { this = root.primary_title }
+					holder = { is_alive = yes }
+				}
+				holder = {
+					set_variable = { name = kehillah_debug_letter_asking_title value = root.primary_title }
+					debug_log = "kehillah_rabbi_loop_debug.4: scheduled letter on recipient"
+					trigger_event = { id = kehillah_rabbi_loop_debug.5 days = 2 }
+				}
+			}
+		}
+	}
+}
+
+kehillah_rabbi_loop_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { exists = var:kehillah_debug_letter_asking_title }
+			debug_log = "kehillah_rabbi_loop_debug.5: sender title survived delayed cross-character event"
+			var:kehillah_debug_letter_asking_title = {
+				if = {
+					limit = { exists = holder }
+					holder = { trigger_event = { id = kehillah_rabbi_loop_debug.6 days = 2 } }
+				}
+			}
+			remove_variable = kehillah_debug_letter_asking_title
+		}
+		else = { debug_log = "kehillah_rabbi_loop_debug.5: FAILED sender title lost" }
+	}
+}
+
+kehillah_rabbi_loop_debug.6 = {
+	type = character_event
+	hidden = yes
+	immediate = { debug_log = "kehillah_rabbi_loop_debug.6: reply reached current title holder" }
+}
+
+# Disposable-save case 7 integration probe. Make the seated bench lack
+# the two relevant mastered works, give the Baghdad leader semicha and
+# the Mishnah as an outside source, then open the real host event. This
+# exercises the no-local-source candidate and delayed-letter path.
+kehillah_rabbi_loop_debug.7 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = {
+				exists = involved_activity.var:kehillah_bet_din_convening_title
+				exists = involved_activity.var:kehillah_bet_din_av_beit_din
+				exists = involved_activity.var:kehillah_bet_din_judge2
+				exists = involved_activity.var:kehillah_bet_din_judge3
+			}
+			involved_activity.var:kehillah_bet_din_av_beit_din = { clear_variable_list = kehillah_mastered_works }
+			involved_activity.var:kehillah_bet_din_judge2 = { clear_variable_list = kehillah_mastered_works }
+			involved_activity.var:kehillah_bet_din_judge3 = { clear_variable_list = kehillah_mastered_works }
+			title:d_kehillah_baghdad.holder = {
+				if = { limit = { NOT = { has_trait = kehillah_rabbi_trait } } add_trait = kehillah_rabbi_trait }
+				if = {
+					limit = { NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mishnah } } }
+					add_to_variable_list = { name = kehillah_mastered_works target = flag:work_mishnah }
+				}
+			}
+			debug_log = "kehillah_rabbi_loop_debug.7: no-source bench and Baghdad correspondent prepared"
+			trigger_event = kehillah_bet_din.0061
+		}
+		else = { debug_log = "kehillah_rabbi_loop_debug.7: BLOCKED no fully staffed Bet Din activity" }
+	}
+}
+
+kehillah_rabbi_loop_debug.8 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = { limit = { kehillah_bet_din_case7_panel_has_source_trigger = yes } debug_log = "kehillah_rabbi_loop_debug.8: BENCH HAS SOURCE" }
+		else = { debug_log = "kehillah_rabbi_loop_debug.8: BENCH HAS NO SOURCE" }
+		if = { limit = { exists = involved_activity.var:kehillah_bet_din_case7_candidate_1 } debug_log = "kehillah_rabbi_loop_debug.8: CANDIDATE 1 PRESENT" }
+		if = { limit = { exists = involved_activity.var:kehillah_bet_din_case7_candidate_2 } debug_log = "kehillah_rabbi_loop_debug.8: CANDIDATE 2 PRESENT" }
+		if = { limit = { kehillah_bet_din_case7_pending_trigger = yes } debug_log = "kehillah_rabbi_loop_debug.8: CASE AWAITS LETTER" }
+		if = { limit = { primary_title = { has_variable = kehillah_case7_reply_author } } debug_log = "kehillah_rabbi_loop_debug.8: NAMED REPLY AUTHOR PRESENT" }
+		if = { limit = { primary_title = { has_variable = kehillah_case7_precedent_author } } debug_log = "kehillah_rabbi_loop_debug.8: ARCHIVED PRECEDENT AUTHOR PRESENT" }
+		if = { limit = { primary_title = { has_variable = kehillah_case7_precedent_direction } } debug_log = "kehillah_rabbi_loop_debug.8: ARCHIVED PRECEDENT DIRECTION PRESENT" }
+	}
+}
+
+# --- The case 7 letter round-trip: kehillah_din_sources .71 -> .72 -> .73 -> .76 ---
+# Added 2026-10-10 (Shabbat heartbeat 6). This is ROADMAP's one remaining unproven leg of the
+# source-aware ransom ruling: heartbeat 5 verified the dispatch and reported the reply leg as
+# NOT OBSERVED, because it fires on an AI correspondent three game days later and then hands
+# back three days after that.
+#
+# These probe the WIRED chain (kehillah_din_sources), NOT the dead kehillah_bet_din_case7_*
+# family that .8 above tests and can never pass -- see BLOCKERS.md 2026-10-10.
+#
+# Order of use, while hosting a Bet Din whose open case is 7 and after taking the
+# "Ask Rav <name> for a responsum" option:
+#   .9   read-only -- is a letter actually out, and who is holding it
+#   .10  fast-forward the correspondent's prompt (.72), skipping its 3-day post,
+#        then unpause about a day so the AI can answer it
+#   .11  fast-forward the handoff back (.73), skipping the second 3 days; expect .76
+#        on the player immediately
+# Each one refuses rather than guesses: .10 will not fire if no letter is out, and .11 will
+# not fire until the AI has actually answered (it checks for the reply quality the AI's own
+# option writes). A probe that reports a stage it did not reach is worse than no probe.
+
+kehillah_rabbi_loop_debug.9 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_rabbi_loop_debug.9: case 7 letter state START"
+		if = {
+			limit = { exists = involved_activity }
+			debug_log = "kehillah_rabbi_loop_debug.9: ACTIVITY PRESENT"
+			involved_activity = { save_scope_as = kdl_activity }
+			if = {
+				limit = { exists = involved_activity.var:kehillah_din_case }
+				if = {
+					limit = { involved_activity.var:kehillah_din_case = 7 }
+					debug_log = "kehillah_rabbi_loop_debug.9: OPEN CASE IS 7"
+				}
+				else = { debug_log = "kehillah_rabbi_loop_debug.9: OPEN CASE IS NOT 7 -- reach it with event kehillah_din_sources.71" }
+			}
+			else = { debug_log = "kehillah_rabbi_loop_debug.9: NO CASE OPEN ON THIS ACTIVITY" }
+			if = {
+				limit = { exists = involved_activity.var:kehillah_din_pending }
+				if = {
+					limit = { involved_activity.var:kehillah_din_pending = 7 }
+					debug_log = "kehillah_rabbi_loop_debug.9: PENDING 7 -- the court is waiting for a letter"
+				}
+				else = { debug_log = "kehillah_rabbi_loop_debug.9: PENDING SET BUT NOT 7" }
+			}
+			else = { debug_log = "kehillah_rabbi_loop_debug.9: NOT PENDING -- either the consult was never taken, or the case has already resumed" }
+			if = {
+				limit = { exists = involved_activity.var:kehillah_din_reply_author }
+				debug_log = "kehillah_rabbi_loop_debug.9: REPLY AUTHOR ALREADY RECORDED -- the round-trip has completed"
+				involved_activity.var:kehillah_din_reply_author = { debug_log_scopes = yes }
+			}
+			if = {
+				limit = { exists = involved_activity.var:kehillah_din_advice_case }
+				debug_log = "kehillah_rabbi_loop_debug.9: ADVICE ACCEPTED AND RECORDED ON THE ACTIVITY"
+			}
+			# Who is holding the letter. This mirrors kehillah_din_find_correspondent_7_effect's
+			# own search space (registered communities, holder or courtier) rather than assuming
+			# Baghdad or Mainz, and only counts a letter addressed to THIS court.
+			every_in_global_list = {
+				variable = kehillah_registered_communities
+				limit = { exists = holder }
+				holder = {
+					if = {
+						limit = { has_variable = kehillah_din_letter_activity var:kehillah_din_letter_activity = scope:kdl_activity }
+						debug_log = "kehillah_rabbi_loop_debug.9: LETTER HOLDER FOUND (community holder)"
+						debug_log_scopes = yes
+						if = {
+							limit = { has_variable = kehillah_din_reply_quality }
+							debug_log = "kehillah_rabbi_loop_debug.9: ...and they have already answered (reply quality written)"
+						}
+						else = { debug_log = "kehillah_rabbi_loop_debug.9: ...not answered yet (no reply quality)" }
+					}
+					every_courtier = {
+						limit = { has_variable = kehillah_din_letter_activity var:kehillah_din_letter_activity = scope:kdl_activity }
+						debug_log = "kehillah_rabbi_loop_debug.9: LETTER HOLDER FOUND (courtier)"
+						debug_log_scopes = yes
+						if = {
+							limit = { has_variable = kehillah_din_reply_quality }
+							debug_log = "kehillah_rabbi_loop_debug.9: ...and they have already answered (reply quality written)"
+						}
+						else = { debug_log = "kehillah_rabbi_loop_debug.9: ...not answered yet (no reply quality)" }
+					}
+				}
+			}
+		}
+		else = { debug_log = "kehillah_rabbi_loop_debug.9: BLOCKED no activity -- run this on the host, during the Bet Din" }
+		debug_log = "kehillah_rabbi_loop_debug.9: case 7 letter state END"
+	}
+}
+
+kehillah_rabbi_loop_debug.10 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = {
+				exists = involved_activity
+				exists = involved_activity.var:kehillah_din_pending
+				involved_activity.var:kehillah_din_pending = 7
+			}
+			involved_activity = { save_scope_as = kdl_activity }
+			set_variable = { name = kehillah_din_probe_letters value = 0 }
+			every_in_global_list = {
+				variable = kehillah_registered_communities
+				limit = { exists = holder }
+				holder = {
+					if = {
+						limit = { has_variable = kehillah_din_letter_activity var:kehillah_din_letter_activity = scope:kdl_activity }
+						root = { change_variable = { name = kehillah_din_probe_letters add = 1 } }
+						debug_log = "kehillah_rabbi_loop_debug.10: delivering the letter prompt now (community holder)"
+						debug_log_scopes = yes
+						trigger_event = kehillah_din_sources.72
+					}
+					every_courtier = {
+						limit = { has_variable = kehillah_din_letter_activity var:kehillah_din_letter_activity = scope:kdl_activity }
+						root = { change_variable = { name = kehillah_din_probe_letters add = 1 } }
+						debug_log = "kehillah_rabbi_loop_debug.10: delivering the letter prompt now (courtier)"
+						debug_log_scopes = yes
+						trigger_event = kehillah_din_sources.72
+					}
+				}
+			}
+			if = {
+				limit = { var:kehillah_din_probe_letters = 0 }
+				debug_log = "kehillah_rabbi_loop_debug.10: NO LETTER HOLDER FOUND -- pending is 7 but nobody holds a letter for this court. That is a bug, not a probe limitation."
+			}
+			else = { debug_log = "kehillah_rabbi_loop_debug.10: prompt delivered -- unpause about a day, then run kehillah_rabbi_loop_debug.11" }
+			remove_variable = kehillah_din_probe_letters
+		}
+		else = { debug_log = "kehillah_rabbi_loop_debug.10: BLOCKED -- no activity, or this court is not waiting for a case 7 letter. Run .9 first." }
+	}
+}
+
+kehillah_rabbi_loop_debug.11 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = {
+				exists = involved_activity
+				exists = involved_activity.var:kehillah_din_pending
+				involved_activity.var:kehillah_din_pending = 7
+			}
+			involved_activity = { save_scope_as = kdl_activity }
+			set_variable = { name = kehillah_din_probe_replies value = 0 }
+			every_in_global_list = {
+				variable = kehillah_registered_communities
+				limit = { exists = holder }
+				holder = {
+					if = {
+						limit = {
+							has_variable = kehillah_din_letter_activity
+							var:kehillah_din_letter_activity = scope:kdl_activity
+							has_variable = kehillah_din_reply_quality
+						}
+						root = { change_variable = { name = kehillah_din_probe_replies add = 1 } }
+						debug_log = "kehillah_rabbi_loop_debug.11: handing the answer back now (community holder)"
+						debug_log_scopes = yes
+						trigger_event = kehillah_din_sources.73
+					}
+					every_courtier = {
+						limit = {
+							has_variable = kehillah_din_letter_activity
+							var:kehillah_din_letter_activity = scope:kdl_activity
+							has_variable = kehillah_din_reply_quality
+						}
+						root = { change_variable = { name = kehillah_din_probe_replies add = 1 } }
+						debug_log = "kehillah_rabbi_loop_debug.11: handing the answer back now (courtier)"
+						debug_log_scopes = yes
+						trigger_event = kehillah_din_sources.73
+					}
+				}
+			}
+			if = {
+				limit = { var:kehillah_din_probe_replies = 0 }
+				debug_log = "kehillah_rabbi_loop_debug.11: NOT YET -- a letter is out but no answer is written. Unpause a day so the AI can take an option in .72, then run this again."
+			}
+			else = { debug_log = "kehillah_rabbi_loop_debug.11: answer handed back -- expect kehillah_din_sources.76 on the host" }
+			remove_variable = kehillah_din_probe_replies
+		}
+		else = { debug_log = "kehillah_rabbi_loop_debug.11: BLOCKED -- no activity, or this court is not waiting for a case 7 letter. Run .9 first." }
+	}
+}

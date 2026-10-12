@@ -1050,3 +1050,861 @@ cdd87c9 S4b, S4c, S4d and S5 all verified live; ROADMAP and test log updated
 1866431 Every book came out masterwork, and compiling one cost 250,000 error lines
 ```
 Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-heartbeat-2026-09-28_060002.log
+
+## Shabbat heartbeat 2026-10-09 ~19:30 -- H1 solved without a trait and verified live; H3 closed; H2 in flight
+
+**Nothing here needs a decision from you.** H1's constraint ("no new trait") turned out to be
+satisfiable, so there is no options list to choose from.
+
+### H1 -- DONE, VERIFIED LIVE
+
+A lay (Parnas) Kehillah leader's death now offers **"Continue as Rav Mishael"** instead of Game
+Over. Log: `docs/testing/2026-10-09-lay-clerical-continuation-live-test-log.md`. Full mechanism
+write-up: implementation doc **section 13**.
+
+Your question was "base game doesn't have a trait for Christian cleric players? Not all clerical
+rulers are monks." The answer: vanilla does not do it with a trait at all for rulers. It is a
+government field. `common/governments/_governments.info` documents `mechanic_type` and, for the
+value `theocracy`, says exactly one thing -- **"Should rulers be considered clergy"**. Both
+`theocracy_government` and `ecclesiastical_government` set it; their bishops carry no monk trait.
+`kehillah_government` now sets it too. One line, no new trait, and no vanilla trait borrowed
+either.
+
+(Vanilla *does* also ship a hidden non-monk `cleric` trait, localized for Judaism as "Hazzan" --
+so a trait-reuse answer existed as a fallback. It was not needed, and "Hazzan" would have been
+wrong for a lay warden anyway.)
+
+The other half of H1 -- why the scripted `join_organization` was not in effect after an appointment
+succession -- is also answered, and it was never going to work. Vanilla keeps a faith
+organization's membership equal to its clergy: "A faith's organization members are exactly its
+clergy, so this never touches the laity" (`common/on_action/game_start.txt`). A script join onto a
+non-clergy character gets reverted. No vanilla file uses `join_organization` anywhere. The call is
+left in place as an inert fallback with a comment saying so.
+
+**One thing I guarded that you should know about, because it touches succession.** Setting the
+theocracy mechanic also makes vanilla's `clerical_appointment_law` valid for Kehillah leaders, and
+`common/laws/_laws.info` says a group's starting law is chosen by checking laws *in definition
+order* (`index` is only display order). Vanilla's file loads first, so it would have taken the
+succession slot and the Kehillah would have silently lost `kehillah_appointment_succession_law` --
+the appointment type, the male-only lock and the merit score. New additive fork:
+`common/scripted_triggers/kehillah_clerical_appointment_law_override.txt`, vanilla's trigger
+verbatim plus one exclusion for this government. Same pattern as the existing
+`kehillah_is_playable_character_override.txt`. **Regenerate it from vanilla on every game patch.**
+The live run confirmed the realm law is still ours.
+
+### H3 -- DONE
+
+The "Failed to fetch variable for 'kq_countinghouse' / 'kq_workshops' / 'kq_market_stalls'" errors
+on every succession **predate today** -- they are from the first commit of
+`kehillah_scripted_effects.txt` (7a64e2a, 2026-09-07). Only the first `if` in each restore helper
+checked `exists = var:$VAR$`; every tier comparison after it read the variable unguarded, so a
+track the community never built logged a fetch failure. Pure noise, never a behaviour bug. Fixed.
+
+(Correction, later the same session: I first credited that fix with dropping ck3-tiger's warning
+count 127 -> 111, and the H4 slice-1 commit message repeats it. **Ignore that number.** A
+controlled A/B on an unchanged tree showed tiger's totals move by about ten warnings run to run,
+all in vanilla files, so its counts are not a before/after measurement. The H3 fix stands on the
+source read and on the error lines naming exactly the three tracks the Worms start never builds.)
+
+### H2 -- in flight as this was written
+
+A second subagent is live-testing the ba'alei batim paths the 2026-10-09 log lists as untested: the
+arrival fee and refuse options, the departure pay and persuade options, a natural (not forced)
+yearly move, and the player-receives-an-AI-family path. That last one had no way to be reached in
+normal play, so it now has a probe: `event kehillah_household_debug.10` forces an AI community's
+lowest-standing family to move to the player's community through the real effects. It is **not**
+read-only (it moves real courtiers), and its header says so.
+
+### Two corrections to a tester's report, for the record
+
+The H1 tester flagged two things that reading the logs directly disproved, which is worth noting
+because both would have looked alarming in a hand-off:
+
+1. A "LAW FAIL" line was my probe asserting the wrong law level. A Kehillah's appointment law is a
+   **realm** law on the holder, so `has_title_law` is false for it -- as it is for most of
+   vanilla's appointment laws, which is why vanilla pairs `has_realm_law` and `has_title_law` in an
+   OR. The probe now treats the realm law as the verdict.
+2. "144 error lines in one second" was the engine's ordinary script-validation dump, which repeats
+   once per validation pass. `error.log` is 469 lines for the entire session.
+
+### Next heartbeat should pick up
+
+H2's remaining gaps after the run in flight reports, then **H4** (the rabbi-loop direction, V21
+ordination through mentorship and local semicha). One optional loose end: rerun the morning's
+unexplained rabbinic-path Game Over. It is no longer gating -- `kehillah_debug.104` only arms a
+trace flag so it cannot have caused it, and clergy status no longer depends on a trait.
+
+## Heartbeat run status -- 2026-10-09_185001 (autonomous/shabbat-2026-10)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: YES --
+```
+M common/decisions/kehillah_learn_torah_decisions.txt
+ M common/schemes/scheme_types/kehillah_study_torah_scheme.txt
+ M common/script_values/kehillah_ordination_values.txt
+ M common/scripted_effects/kehillah_library_effects.txt
+ M common/scripted_triggers/kehillah_ordination_triggers.txt
+ M localization/english/kehillah_l_english.yml
+?? common/decisions/kehillah_semicha_decisions.txt
+?? common/scripted_effects/kehillah_ordination_effects.txt
+?? events/kehillah_semicha_debug_events.txt
+?? events/kehillah_semicha_events.txt
+```
+- Last few commits:
+```
+2a8e0c0 H4 slice 2: apprentice study records, and ck3-tiger counts are not evidence
+8f3cee7 H4 slice 1: one named ordination gate, and the thresholds as values
+6691485 BLOCKERS: Shabbat heartbeat 1 -- H1 solved trait-free and verified, H3 closed
+9d0c8a9 H1 VERIFIED LIVE: a lay Parnas leader's death offers continuation
+eef6276 Probe .8: the realm law is the verdict, the title law is information
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-shabbat-2026-10-09_185001.log
+
+
+## Shabbat heartbeat 2026-10-10 ~01:30 -- H4 finished end to end; slice 3 verified live; H2 in flight
+
+**Nothing here needs a decision from you.** Two judgment calls are flagged at the bottom for when
+you are back, neither blocking.
+
+### First: I finished the previous heartbeat's uncommitted work before starting anything
+
+Heartbeat 1 was cut off by a usage limit with ten files dirty -- all of it V21 slice 3 (Seek
+Semicha), written but never validated or committed. I read it as written, verified every identifier
+it referenced actually resolves (including vanilla's `minor_piety_value`, `major_piety_gain`,
+`medium_prestige_gain`), found and fixed one real flaw in it, ran ck3-tiger, and committed it. That
+is why H4 got worked before H2, which sits above it in the queue: the tree was already full of H4.
+H2's live test was launched as soon as the carried-over work was safe.
+
+The flaw: `is_valid` put the whole of `kehillah_rabbi_ordination_ready_trigger` under a single
+"you have completed a course of study" tooltip, so a Learning-5 adult would have been told he had
+not finished his reading. Split into candidate / curriculum / institution.
+
+### H4 -- all five V21 slices built. Slice 3 VERIFIED LIVE
+
+[Live log](docs/testing/2026-10-10-semicha-ordination-live-test-log.md). Eleven checks, all pass,
+with non-vacuous negative controls: stripping the trait produced three genuine FAILs before the
+curriculum turned them into PASSes. A candidate with two works from two fields presents himself at
+the Worms Beit Midrash, the ceremony renders in real English with no raw loc keys, accepting grants
+the Rabbi trait, and the community's Greatness rises by **exactly 15** -- measured with a pair of
+run-file probes, since `debug_log` cannot print a number.
+
+**One real bug found, in production code and not in the probe.** The readiness trigger read
+`variable_list_size` on `kehillah_mastered_works` / `kehillah_apprentice_fields`, which do not
+exist until a character has studied something -- so the engine logged an error every time the Seek
+Semicha decision was evaluated for anyone who had not, which is most of the population it is shown
+to. The verdict was always correct; the log was wrong. Same shape as H3's restore helpers, fixed
+the same way (`has_variable_list` paired with every size read).
+
+Slices 4 and 5 are **source-verified and ck3-tiger clean but NOT live-tested**:
+
+- **Slice 4, the rabbinic apprenticeship.** One year per childhood birthday on which a qualifying
+  rabbi is the guardian right then, so four *accumulated* years in any order -- swapping a rabbi in
+  at fifteen buys one year, not four. At adulthood: Learning 8+ earns the whole curriculum,
+  Learning 6-7 earns one study field and nothing more, below 6 nothing but the years record
+  survives. The check runs five days after the birthday, because vanilla applies the education
+  trait at birthday+2 and that trait is often what carries a student across Learning 8.
+- **Slice 5, the three older routes.** The Bet Din semicha offer had **no faith check at all**
+  (`government_has_flag` says a character leads a Kehillah, not what it believes), and the Chief
+  Rabbi office checked only same-faith-as-employer, which a Karaite leader's Karaite appointee
+  passes cleanly -- and then got handed a trait called Rabbi. All three routes now read
+  `is_rabbinic_authority_jewish_trigger`. Nothing was removed from any existing trait holder.
+
+### A process mistake of mine, now written into the shim guide
+
+I kept building slice 4 in the same working tree while the delegated tester drove the booted game,
+assuming content is frozen at boot. **It is not -- CK3 hot-reloads script files.** It picked up a
+half-written events file mid-write, and the tester's `error.log` filled with
+`kehillah_semicha.0003` "not found" plus unrecognized loc keys that had nothing to do with what it
+was testing. It separated them correctly, but only because I warned it mid-run. Rule now recorded
+in `docs/testing/automation-shim-guide.md`: **while a delegated live test is in flight, the parent
+session does docs, not script.**
+
+### What the next heartbeat should pick up
+
+1. **H2's result, if its run was cut off.** A tester was live-testing the ba'alei batim option
+   paths (arrival fee/refuse, departure pay/persuade, `.10`'s player-receives-an-AI-family path,
+   and a natural yearly move) when this entry was written. If no H2 section appears below this one
+   and no `docs/testing/2026-10-10-*baalei*` log exists, that run was lost -- relaunch it. Note
+   that heartbeat 1 made exactly this mistake in reverse: it recorded H2 as "in flight" and the
+   result never materialised, so ROADMAP now carries a dated correction saying H2 is untouched.
+2. **A live pass over slices 4 and 5.** `event kehillah_semicha_debug.6` then `.7` on a child
+   reaches the endorsement without waiting ten in-game years; `.5` is the read-only state dump.
+   Worth also confirming on a fresh boot that `kehillah_semicha.0003`'s four loc keys render --
+   they appeared as unrecognized during the slice-3 run purely because of the hot-reload above.
+3. **The V21 section 7 gaps** listed at the end of the slice-3 log: the landed-ruler and
+   landless-adventurer institution branches, losing access to a Beit Midrash, and the defer option
+   across a save/load.
+
+### Two things for you, neither blocking
+
+- **The semicha reward magnitudes are my guesses, not measured.** 15 Greatness to the recognising
+  community (against a book's), major piety, medium prestige, doubled prestige at a Yeshiva. The
+  spec said "a modest Piety cost/reward" and left numbers open. They are all in
+  `common/script_values/kehillah_ordination_values.txt` and change without touching logic.
+- **Slice 4 gives the AI this path too**, via vanilla's `on_birthday_childhood` for every
+  rabbinic-authority Jewish child in the world. V21 section 7 explicitly wants an AI-load observer
+  test before broadening the AI population, and that has not been run. If you see rabbi inflation
+  in a long game, that is the first thing to look at -- the cheap fix is a guard limiting the
+  observation effect to Kehillah courts.
+
+## Heartbeat run status -- 2026-10-09_235002 (autonomous/shabbat-2026-10)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+ce83809 ROADMAP: the rabbi-loop section still listed V21 as the next thing to build
+ea58030 README: add the council, the householder families, and the study/ordination loop
+596ab59 BLOCKERS: Shabbat heartbeat 2 -- H4 complete, slice 3 verified, H2 in flight
+1672db6 V21: the Status line said "no implementation" after it was all built
+23ed1c1 H4 slice 3 VERIFIED LIVE, and a readiness trigger that errored for everyone
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-shabbat-2026-10-09_235002.log
+
+## Shabbat heartbeat 2026-10-10 05:00 -- H2 verified live and one silent event fixed; H4 slices 4-5 in flight
+
+Provisional entry, written mid-run as insurance against a usage cutoff. If no later entry
+supersedes it, read it as the final state of this heartbeat.
+
+### Where the tree was at the start
+
+Clean, on `autonomous/shabbat-2026-10`. Heartbeat 2's run-status note said "cut off: true" and
+ROADMAP carried its correction that H2 was untouched, not in progress -- correct: no H2 test log
+existed and `kehillah_household_debug.10` had never been run live. A stale `ck3.exe` from that
+cut-off run was still alive with its logs frozen since 00:30; killed before booting fresh.
+
+### H2 -- VERIFIED LIVE, and a family arrival nobody was ever told about
+
+[Live log](docs/testing/2026-10-10-baalei-batim-paths-live-test-log.md). All four player-facing
+ba'alei batim option paths exercised with real clicks, the exact register count measured either
+side of every one with a purpose-written `h2_count.txt`. Arrival-for-a-fee pays +15 and the
+register goes 3 -> 4; refusing holds the count and renders the refused-return variant; paying 50
+keeps a family; persuading keeps one for nothing; and **"let them go" drops the count by exactly
+1**, which is the control that makes the two "stays" PASSes mean anything -- those options have no
+departure effect to cancel, so a no-op event would have faked both.
+
+**The bug.** `kehillah_household.0003` gates on
+`exists = scope:kh_mig_house.var:kehillah_household_head`. That variable is written in exactly one
+place in the system, `kehillah_household_refresh_effect`, and
+`kehillah_household_migrate_effect` does not write it. So when `kehillah_household_leave_effect`
+fired the event, the head was either absent -- any AI donor whose yearly pass had never run, which
+is every AI community in the first year of a game -- or stale, naming the donor's pick. A
+`trigger_event` onto a false `trigger` fails **silently**: no event, no error, nothing in
+`debug.log`. The register moved correctly on every single invocation and the player was never
+informed. Fixed by refreshing the recipient before the event (which also fixes the new community's
+stale adults/seats/standing), plus a `debug_log` for the no-head case so the next silent
+non-firing is visible. **The fix is source-verified and ck3-tiger clean; `.0003` rendering is being
+re-verified live right now** -- see "in flight" below.
+
+A natural move on an unpaused clock was **NOT OBSERVED** across ~2y9m, reported as an honest null.
+It is close to settled anyway: `.4` ran the real yearly effect, its real 30% roll hit, and a
+genuine `.0002` fired and resolved end to end.
+
+### H4 -- one real bug found by source review, before spending a live pass on it
+
+`kehillah_semicha_institution_available_trigger` had three branches (Kehillah holder, landed ruler
+via `capital_province`, landless adventurer via `location`) and **no branch for a courtier**, who
+is none of the three. The coming-of-age sorter `kehillah_semicha.0002` requires that trigger, so a
+child who had served his four years under a rabbi and come of age with Learning 8 could never be
+endorsed -- the whole population slice 4 exists to create. V21 section 2 says an "eligible
+courtier" uses the same definition as everyone else; the eligible courtier had no branch. Widened
+additively (adventurer government OR holds nothing at all), mirrored in the resolver so the
+Greatness reward has a community to land on. ck3-tiger clean. Recorded as a dated addendum in V21.
+
+Also closed by source, no live test needed: **"the defer option across a save/load"** (V21 section
+7) is not a real spike -- `kehillah_semicha.0001` option b has no effects at all, so there is
+nothing for a save/load to lose.
+
+### In flight when this was written
+
+A Sonnet subagent is live-testing, in one session: (A) the H2 `.0003` fix via a re-run of
+`kehillah_household_debug.10`, (B) slice 4's accumulation mechanics via `h4_child.txt` /
+`h4_nogap.txt` (the guardianless negative control) / `h4_child_sort.txt` / `h4_pupil_check.txt`,
+(C) the player-visible endorsement `kehillah_semicha.0003` via `h4_guardian.txt` plus
+`kehillah_semicha_debug.2` -> `.6` -> `.7`, testing both decline and accept, and (D) that slice 5's
+faith gates did not make the Chief Rabbi office unfillable at Worms.
+
+**If no later heartbeat entry reports these results, that run was lost and should be relaunched** --
+exactly the failure mode heartbeat 1 hit. The run files it uses are all written and committed-adjacent
+(they live in the CK3 `run\` directory, outside the repo): `h2_count.txt`, `h2_setup.txt`,
+`h4_child.txt`, `h4_nogap.txt`, `h4_child_sort.txt`, `h4_pupil_check.txt`, `h4_guardian.txt`.
+The single most important line in the whole run is `H4PUPIL: INSTITUTION PASS` or `INSTITUTION
+FAIL` -- that is the live verdict on the courtier-branch fix above.
+
+### Two smaller things now recorded in the shim guide
+
+- **Where `ck3.exe` actually is.** `E:\Program Files (x86)\Steam\steamapps\common\Crusader Kings
+  III\binaries\ck3.exe`. The guide had never said, and the `D:` Steam library has an empty
+  "Crusader Kings III" shell that looks like the install. Finding it cost several tool calls and one
+  runaway recursive `Get-ChildItem`; the registry (`HKLM:\SOFTWARE\WOW6432Node\Valve\Steam`) is the
+  cheap way.
+- **A skill change does not reach a trigger on a paused game.** `add_diplomacy_skill` needs
+  `force_character_skill_recalculation = yes` or the value never publishes, because the daily tick
+  never comes. `+12`, `+15` and `+100` all read as FAIL before this was found.
+
+### Nothing for Daniel to decide
+
+No blockers. Nothing destructive was done or avoided; the only deletion was killing a stale
+`ck3.exe` process from the cut-off run.
+
+## Heartbeat run status -- 2026-10-10_045002 (autonomous/shabbat-2026-10)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+bf328d2 BLOCKERS + V21: heartbeat 3 state, written mid-run as cutoff insurance
+2367e45 Slice 4's apprentice could never be endorsed: courtiers had no institution branch
+0a0126a H2 VERIFIED LIVE, and a family arrival nobody was ever told about
+4a8fbfd Shim guide: where ck3.exe actually is (E: drive, not C: or D:)
+4ea033d Heartbeat run-status note (2026-10-09_235002)
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-shabbat-2026-10-10_045002.log
+
+## Shabbat heartbeat 2026-10-10 09:50 -- heartbeat 3's lost run recovered from debug.log, and the courtier bug it had already found
+
+Provisional entry, written mid-run as insurance against a usage cutoff, following
+heartbeat 3's practice. If no later entry supersedes it, read it as the final state
+of this heartbeat.
+
+### Where the tree was at the start
+
+Clean, on `autonomous/shabbat-2026-10`. Heartbeat 3's run-status note said
+"cut off: true", and its own provisional entry said a Sonnet subagent was live-testing
+four things with the warning: "If no later heartbeat entry reports these results, that
+run was lost and should be relaunched." No later entry existed. The run was lost.
+
+**But its output was not.** `debug.log` had survived with the whole session in it,
+including the verdict line heartbeat 3 had called "the single most important line in
+the whole run". So this heartbeat read the results out of the log instead of
+re-running blind, which is what made the rest of it possible. Worth remembering as a
+habit: check `debug.log` before relaunching a cut-off live run.
+
+### The headline: H4's courtier branch was still broken, and the reason was not where anyone was looking
+
+Recovered verdict: `H4PUPIL: INSTITUTION FAIL -- the courtier branch is NOT resolving`.
+
+Heartbeat 3 had added a courtier branch to
+`kehillah_semicha_institution_available_trigger` and it was still FALSE for the exact
+pupil it was written for. Cause, measured directly in the recovered log:
+**`government_has_flag` is TRUE for a COURTIER of a Kehillah ruler**, not just the
+ruler. The H4 pupil Huna Landsberg (65937), a titleless child ward at Worms, logged
+"pupil IS a Kehillah government holder".
+
+That one fact closed all three branches at once: branch 1 matched the flag and then
+demanded `exists = domicile`, which a courtier has not got, while the
+`NOT = { government_has_flag ... }` guard shut branches 2 and 3. The community data
+was never at fault -- the same diagnostic shows Worms MATCHES his location and HAS a
+Beit Midrash tier 1+.
+
+Fixed by dropping that guard from branch 3. A Kehillah leader still cannot reach it
+(`is_ruler = no` is false for them), so leaders are still judged on their own quarter
+and cannot borrow a neighbour's study hall. Purely additive. The mirrored resolver
+needed no change -- its `if`/`else_if` chain already falls through on
+`exists = primary_title`.
+
+Recorded as **implementation doc section 14**, with the rule it implies (do not use
+`government_has_flag` to mean "is this the holder") and an audit of every other call
+site in the mod. All the others are already safe, each for a stated reason, so nothing
+else was changed.
+
+### H2: the recipient-refresh fix was fine; the family being handed over was not
+
+Recovered: heartbeat 3's `.0003` fix could not be proven because the re-run hit its own
+new guard twice -- "a player received a family with no head at their court". The fix is
+right and stays; it cannot invent a head for a family that has no members, and that is
+what `.10` was moving. Two donor-side defects behind it:
+
+1. `kehillah_household_save_lowest_effect` **preferred the ghost**. `order_by` is
+   `0 - standing`, so every real family scored negative while an entry with no standing
+   variable scored exactly 0 and beat all of them. Backwards. Missing standing now sorts
+   last, via a sentinel rather than an exclusion, so a community can always still lose a
+   family.
+2. **`.10` was not testing the real path.** Real play is refresh-then-depart
+   (`kehillah_household_yearly_effect`), so a genuine departure always picks from a
+   just-recounted register. `.10` reached into an AI register nothing had ever
+   refreshed. It now refreshes the donor first.
+
+Note the consequence: **ordinary play was never exposed to defect 1**, because refresh
+writes standing on every entry it keeps. Both changes are hardening plus a probe that
+now represents the path it claims to test. Speyer's register is what gave it away --
+six entries, the first with neither `kehillah_household_of` nor
+`kehillah_household_head`, and `kehillah_household_add_effect` sets `household_of`
+unconditionally, so that entry cannot have arrived by the normal route.
+
+### Verified vs. not
+
+- **Source-verified and ck3-tiger clean, live re-test IN FLIGHT at the time of
+  writing:** the H4 courtier fix (`H4PUPIL: INSTITUTION PASS` is the line to look for),
+  the H2 donor-side fixes and whether `kehillah_household.0003` now renders naming the
+  donor community.
+- ck3-tiger: error count unchanged at 616 across all of today's edits, all pre-existing
+  1.19-vs-1.20 faith/`rite` false positives. Nothing new on any touched file.
+- **If no later entry reports the live results, that subagent run was lost too** --
+  check `debug.log` for `H4PUPIL:` and `H2COUNT:` lines before relaunching, for the same
+  reason it worked this time.
+
+### What the next heartbeat should pick up
+
+1. The live verdict above, if this entry is still the newest one.
+2. The V21 section 7 gaps slice 3's log lists that are still genuinely open: the
+   landed-ruler and landless-adventurer institution branches, and losing access to the
+   Beit Midrash. (The "defer across a save/load" gap was already closed by source in
+   heartbeat 3 -- `.0001` option b has no effects, so there is nothing to lose.)
+3. V26 ba'alei batim slice 2 -- standing as a `kehillah_leadership` candidate-score
+   term. Note this touches succession scoring, so per CLAUDE.md it needs the
+   implementation doc read first and a live succession test before it is called done.
+
+### For Daniel
+
+Nothing blocking, and nothing destructive was done or avoided. One open question is
+recorded in implementation doc section 14 rather than acted on, deliberately: two
+`change_government` guards in the succession path use `government_has_flag`, which
+today's finding shows answers a different question than "is this the holder". H1's live
+`CLERGY YES` proves the path works; it does not prove whether the inline
+`change_government` or the `kehillah_succession.0010` retry is what carries it. That is
+succession code -- this repo's highest-crash-risk area -- so it is written down with
+the cheap way to settle it rather than changed blind on a night with nobody watching.
+
+## Shabbat heartbeat 2026-10-10 10:15 -- live results in: all three checks PASS, H2 closed, H4 slices 4-5 verified
+
+Supersedes the 09:50 provisional entry above, which was written mid-run as cutoff
+insurance. Everything in it still holds; this adds the live verdicts.
+
+### The live pass
+
+[Log](docs/testing/2026-10-10-courtier-institution-live-test-log.md). Fresh boot after
+killing the stale pre-fix `ck3.exe` heartbeat 3 left running. Three checks, all PASS. The
+two decisive claims were re-verified directly against `debug.log` by this session rather
+than taken on the subagent's report:
+
+- **H4 slice 4 courtier branch: PASS.** `H4PUPIL: INSTITUTION PASS -- the courtier branch
+  added 2026-10-10 is working`, from the same probe that returned `INSTITUTION FAIL` before
+  the fix. Years record survived the sorter, as intended.
+- **H2 `.0003`: PASS.** **Zero** occurrences of the no-head guard line (that absence is the
+  pass condition), both `.10` assertions pass, and the popup renders in real English naming
+  the donor: "A Family Arrives" / "Daniel of the house of Alconstantini has arrived from
+  Kehillah of Córdoba...". **H2 is closed.**
+- **Slice 5 Chief Rabbi fillability: PASS.** 7 of 7 candidates at Worms; the faith gates did
+  not make the office unfillable at the only playable start.
+
+No new distinct `kehillah` error content or error types in `error.log` (checked by content,
+not line count — the same lint lines re-emit on every console call, so a count comparison
+would have misled).
+
+### Three things recorded honestly rather than smoothed over
+
+1. **Slice 4's run does not re-prove the curriculum/foundation credit bands.** That pupil's
+   Learning fell below the foundation band, so both credits were correctly absent. The bands
+   passed in heartbeat 3's recovered run on a pupil in range. Left in H4's Next list.
+2. **H2's raw register count went 0 → 3, not the predicted +1.** Traced to ground truth with
+   a `kehillah_household_origin` probe: 2 locally-founded entries swept in by root's own
+   bootstrap, 1 migrated. The migration delta is a clean +1, confirmed two independent ways.
+   Not a defect in either fix.
+3. **`.0003` has no `debug_log` of its own**, so its rendering rests on the screenshot read.
+   The independent corroboration is Check C's appointment panel listing the just-arrived
+   migrant as a Chief Rabbi candidate — a ghost family cannot supply a courtier to a
+   candidate list, which is exactly what the H2 fix was about.
+
+One null left as a null: which call bootstrapped root's two pre-existing households
+mid-sequence was not pinned down. Test-infrastructure trivia; it affected no verdict.
+
+### Housekeeping
+
+- **This run's logs are archived** to `logs\archive-shabbat-heartbeat4\` (debug.log +
+  error.log), because CK3 overwrites `debug.log` on every boot — which is how heartbeat 3's
+  recovered evidence was lost once it had been read. The `H4PUPIL: INSTITUTION PASS` line is
+  preserved there.
+- **`ck3.exe` was stopped at the end of this run** (PID 26908, confirmed gone). Deliberate:
+  a stale instance with pre-fix scripts loaded is exactly what cost this heartbeat time at
+  the start, and the next heartbeat will likely change script again. Next session should
+  boot fresh.
+
+### What the next heartbeat should pick up
+
+The Shabbat queue's H1, H2 and H3 are now closed, and H4 is verified except for the V21
+section 7 gaps. In priority order:
+
+1. **H4's remaining V21 section 7 gaps:** the landed-ruler institution branch (branch 2) and
+   the landless-adventurer branch, and losing access to the Beit Midrash. All three are
+   reachable with scripted probes on synthetic characters — cheaper than UI work, and
+   branch 2 in particular is worth a look now that branch 3's guard turned out to be wrong.
+2. **A slice-4 run on a pupil in each Learning band**, to finish what qualification 1 above
+   leaves open.
+3. **V26 ba'alei batim slice 2** — standing as a `kehillah_leadership` candidate-score term.
+   Per CLAUDE.md this touches succession scoring, so it needs the implementation doc read
+   first and a live succession test before it is called done.
+
+### For Daniel
+
+Nothing blocking. Nothing destructive was done or avoided; the only process killed was the
+test instance of CK3, and the only deletions were two of my own temp files.
+
+One open question is **recorded rather than acted on**, deliberately — see implementation
+doc section 14's last part. Two `change_government` guards in the succession path use
+`government_has_flag`, which today's finding shows answers "what government does this
+character fall under", not "is this the holder". H1's live `CLERGY YES` proves that path
+works; it does not prove whether the inline `change_government` or the
+`kehillah_succession.0010` retry is what carries it. That is succession code -- this repo's
+highest-crash-risk area -- so it is written down with the cheap way to settle it (run an
+appointment succession to a courtier heir and read `.0010`'s verdict in `debug.log`) rather
+than changed blind on a night with nobody watching. **If the inline branch is in fact being
+skipped, the retry is silently carrying every succession in the game**, which is worth
+knowing either way.
+
+## Shabbat heartbeat 2026-10-10 11:20 -- section 7 gaps, three probe bugs, and a double-credit fix
+
+Continues the 10:15 entry above (which stands). Three more live runs since then, all on
+fresh boots, each decisive line re-verified against `debug.log` by the orchestrating session
+rather than taken on the subagent's report. **The Shabbat queue H1-H4 is now complete except
+for two honest nulls that need specific world states.**
+
+### V21 section 7's institution gaps -- two of three CLOSED
+
+[Log](docs/testing/2026-10-10-section7-institution-gaps-live-test-log.md). Built two probes:
+`kehillah_semicha_debug.8` (read-only, one subject per branch) and `.9` (destroy the study
+hall).
+
+- **Landed-ruler branch: CLOSED, both directions.** `BRANCH 2b PASS`, subject Al-Qa'im
+  Abbasid (31533) seated in Baghdad -- the province `d_kehillah_baghdad` occupies, found by
+  scanning rather than hardcoding. Plus a correct negative at Worms, where the host county's
+  holder rules from another seat. **This is a mechanics result, not a claim a caliph can be
+  ordained** -- the institution trigger has no faith gate by design; the candidate trigger
+  refuses him.
+- **Losing the Beit Midrash: CLOSED.** Reproduced twice: every branch flips to FAIL when the
+  building goes, and the student's records survive (section 3.4 -- only the ceremony needs an
+  institution).
+- **Landless-adventurer branch: STILL OPEN, honest null.** No character with
+  `landless_adventurer_government` stands in any community's province in 1066. Needs a save
+  where one actually does. Manufacturing one would test the probe's own character, not the
+  game, so the probe reports NOT OBSERVED by design.
+
+### Three probe bugs, one of them a probe that lied
+
+1. **`.4` reported a study-hall rebuild that never happened.** It logged success while the
+   engine threw "Domicile owner failed to meet triggered requirements" and built nothing.
+   **The refusal is correct V16 behaviour** -- the Worms start sits under an unresolved
+   Christian host charter, which blocks new communal buildings. The probe lying about it was
+   the defect. Exposed by `.8` still reporting every branch FAIL after a "successful" rebuild
+   -- an assertion catching a log line. `.4` now verifies and names the cause.
+   **Second time this shape has bitten**; the shim guide already documented the trap. An audit
+   of every `add_domicile_building` call site in the mod found **no gameplay bug** --
+   `kehillah_worms_developed_start_effect` was already hardened on 2026-09-26.
+2. **`.9` advertised a reversibility it usually does not have.** It now evaluates the charter
+   *before* removing anything and prints REVERSIBLE or WARNING, ONE-WAY.
+3. **`.8`'s control message told the reader to distrust a passing test** -- it cried "CONTROL
+   BROKEN" whenever `.9` had deliberately demolished the hall. Now distinguishes the two.
+
+All three verified live afterwards.
+
+### A double-credit bug, and a correction to this heartbeat's own earlier claim
+
+Found by source review while chasing why one pupil in heartbeat 3's recovered log held
+**both** `FULL CURRICULUM CREDIT` and `FOUNDATION FIELD CREDIT`.
+
+`kehillah_award_apprenticeship_credit_effect` tangled the Learning-band test with its
+don't-re-award test, so an already-credited pupil failed the first limit *on the idempotence
+clause* and fell through to the `else_if` -- where a Learning-8 pupil also clears the
+foundation floor. A top-band student collected the consolation prize as well. That matters
+because the readiness trigger's other OR arm counts `kehillah_apprentice_fields`, so one
+apprenticeship could be counted twice, reaching the two-field requirement on a single genuine
+field of adult study.
+
+**Ordinary play was never exposed:** the only caller, `kehillah_semicha.0002`, is scheduled
+from `on_16th_birthday` and fires once per character. The debug sorter `.7` is what reached
+it. Fixed anyway -- an effect whose correctness depends on never being called twice is a trap
+for the next caller.
+
+Verified live across three sorter runs: exactly one credit after the first, unchanged after
+the second and third. The regression half mattered more than the bug half -- had the
+restructured condition been wrong the other way, **no pupil would ever receive credit** and
+slice 4 would have been silently dead again.
+
+**Correction made in both ROADMAP and the live log:** earlier today I recorded heartbeat 3's
+run as having *passed* the credit bands, citing that both were held. That was wrong -- the
+bands are exclusive, so holding both was the symptom, not the proof. Dated correction notes
+left in both documents rather than silent edits.
+
+### Housekeeping
+
+- Logs archived per run: `logs\archive-shabbat-heartbeat4\`, `...-run2\`, `...-run3\`, since
+  CK3 overwrites `debug.log` on every boot.
+- **`ck3.exe` stopped at the end of each run**; none is running now. Next session should boot
+  fresh.
+- One commit message (the probe-fix commit) is missing four backticked tokens -- the shell ate
+  them as command substitution. Content loss is cosmetic only; the full explanation lives in
+  the code comments. **Not amended, because that would need a force-push.** Lesson: no
+  backticks in commit messages written through this shell.
+
+### What the next heartbeat should pick up
+
+1. **V26 ba'alei batim slice 2** -- standing as a `kehillah_leadership` candidate-score term.
+   This is the top unblocked item now that H1-H4 are done. Per CLAUDE.md it touches succession
+   scoring, so read implementation doc sections 6, 8 and 14 first and budget for a live
+   succession test; do not call it done on a tiger-clean source check.
+2. **The FOUNDATION credit band** (Learning 6-7 earning one field and nothing more) has no
+   live verdict -- the verification run used a full-band pupil. Needs a pupil whose Learning
+   sits in 6-7, and note the shim guide's warning that a skill change does not publish on a
+   paused game without `force_character_skill_recalculation`.
+3. **The landless-adventurer institution branch**, if a save ever has an adventurer standing
+   in a community's province.
+
+### For Daniel
+
+Nothing blocking, nothing destructive done or avoided. The only processes killed were test
+instances of CK3; the only deletions were my own temp files.
+
+The one judgement call still parked for you is unchanged from the 10:15 entry and now has
+more weight behind it: **implementation doc section 14's last part**, the two
+`change_government` guards in the succession path that use `government_has_flag`. Today
+proved that flag answers "what government does this character fall under", not "is this the
+holder" -- and it had already silently disabled an entire feature population before anyone
+noticed. The same question in the succession path is written down with the cheap way to
+settle it rather than changed unattended, because that is the code that has crashed this game
+before.
+
+## Heartbeat run status -- 2026-10-10_095002 (autonomous/shabbat-2026-10)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: YES --
+```
+M common/script_values/kehillah_script_values.txt
+ M common/succession_appointment/kehillah_leadership.txt
+```
+- Last few commits:
+```
+9696f42 BLOCKERS: section 7 gaps, three probe bugs, the double-credit fix
+74d2bf4 Correction: heartbeat 3's "both credits" was the bug, not the proof
+389ec99 Credit-band fix verified live, closing this log's own qualification
+9be7644 A top-band student could collect the consolation prize as well
+8dafcff ROADMAP: section 7's institution gaps, two of three closed
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-shabbat-2026-10-10_095002.log
+
+## Shabbat heartbeat 2026-10-10 15:30 — a stale status line caused a real bug; slice 2 works and reaches nobody
+
+### First: the tree was dirty, and what was in it was a duplicate
+
+Heartbeat 4 was cut off mid-task, leaving an uncommitted household-standing candidate-score term
+in `kehillah_leadership.txt` plus a weight script value. **The term it was adding already
+existed.** V26 slice 2's succession term shipped on 2026-10-09 in commit 84242d9, alongside H1's
+work, and nobody wrote it down — so both ROADMAP and v26's spec still said standing "does not yet
+feed succession; that is slice 2". That run read the docs, did the correct thing given what they
+said, and built it a second time. Two terms, same family standing, counted twice.
+
+Nothing shipped broken — it was caught uncommitted. But it is worth naming the mechanism, because
+this repo's whole working model is "the docs are the memory": **a stale status line is not
+cosmetic, it is an instruction to the next session.** The duplicate was the docs working exactly
+as designed on wrong input.
+
+Resolved by merging rather than reverting, because the new block carried two real improvements the
+shipped one lacked (a `has_variable` guard on `kehillah_household_of` before the
+`var:` read — the H3 log-flood shape; and the weight as a script value per CLAUDE.md). The
+weight stays at the shipped **0.5**, not the 0.4 that run proposed: retuning succession scoring in
+the same unattended change as a refactor would have left the live test unable to say which edit
+moved an ordering. Both stale doc claims now carry dated corrections.
+
+### Then: slice 2 live-tested, and the result needs your decision
+
+[Log](docs/testing/2026-10-10-household-standing-succession-live-test-log.md). Three new probes
+(`.11` read-only report, `.12` boost-and-save, `.13` restore).
+
+**The term is correct and reaches nobody.** Guard passes 3/3 registered households — it reads
+their standing properly. Pool fails 3/3. The candidate list says it harder than the probe's own
+verdict does: all six candidates for the Worms succession were either **Lowborn with no dynasty at
+all**, so `exists = house` fails before standing is ever consulted, or **of the leader's own
+house**, which V26 never registers by design. The pool is composed entirely of the two groups the
+term cannot score.
+
+The A/B is recorded as **NOT OBSERVED, not PASS and not FAIL.** The family `.12` boosted was
+POOL NO, so the unchanged heir ordering is what should happen whether the multiply-and-cap works
+or not. Calling that a pass is the mistake heartbeat 3 made with the credit bands, so I did not
+make it. The probe machinery itself is proven and will give a real verdict on a save that has a
+POOL YES household.
+
+**NEEDS DANIEL — the one genuine design call.** This is not structurally impossible, just
+unreached: slice 1's own `kehillah_household_refresh_effect` already counts
+`kehillah_household_seats` as `is_councillor_of` over `every_house_member`, and
+standing pays 15 per seat — so a householder on the council *would* be both in the pool and
+high-standing. Nothing in the mod ever seats one. The register and the officer corps are two
+populations that never meet. Three ways to close it, written up with trade-offs in v26's slice 2
+section:
+
+1. **Seat householders** — prefer registered-family members when filling council seats and court
+   positions. My recommendation: it keeps the existing pool, makes standing matter through the
+   seats term that already exists, and is **the only option that needs no succession edit** —
+   which matters in this repo's highest-crash-risk area.
+2. **Give Kehillah officers dynasties** — they are generated Lowborn, which is the actual cause
+   of the `exists = house` failure. Broader blast radius: character generation, not just
+   succession.
+3. **Accept it and narrow the spec's prose** — only seated families compete. Defensible (the board
+   competes for the leadership), but it is a smaller claim than v26 currently makes.
+
+I did not pick one. It changes what V26 means rather than how it is implemented.
+
+### Also closed this run: the foundation credit band
+
+[Log](docs/testing/2026-10-10-credit-bands-live-test-log.md). V21 slice 4's FOUNDATION band
+(Learning 6-7 earning one field and nothing more) had never been observed live — heartbeat 4's
+run used a full-band pupil. **All three bands now pass**, on three distinct real courtiers at
+Worms: FULL (Naftali_Hertz Epstein, 65975), **FOUNDATION (Uriel Lowborn, 52527 — first live
+observation)**, BELOW (Hadassah Lowborn, 65973). No double-credit in either run, no new
+`kehillah` errors, no `Failed to fetch variable`. H4's carried qualification is
+closed.
+
+**The first attempt's refusal to answer is the more useful half.** `kehillah_semicha_debug.10`
+*sets* the subject's Learning per band; it confirmed FULL, then correctly **withheld** a verdict
+on the other two instead of reporting the band it aimed at. Measured reason: the Worms leader
+reads **Learning 17 with his base skill floored to 0**, because 1.20 has no
+`set_learning_skill` — only the additive `add_learning_skill`, which moves the BASE
+while the `learning` trigger reads the TOTAL with modifiers. The foundation band is
+unreachable in either direction on a scholarly character, i.e. on exactly the person one would
+naturally test on. `.11` inverts it and selects a courtier already in each band.
+
+Recorded as a transferable lesson rather than a one-off fix: **prefer selecting a subject who
+already satisfies a condition over manufacturing one who does.** A probe that sets a skill and
+assumes the band is the same mistake as a probe that assumes a building got built — the shape
+that has now bitten this repo three times.
+
+### Three environment findings that outlast this test
+
+All three recorded in the shim guide; they affect every future session, not just this one.
+
+1. **The logs are in `<user dir>\logs\`, not the user-dir root.** Verified directly — the
+   root copies do not exist. Every "check `error.log`" instruction in this repo gives no
+   path. Greping the root is at least loud; the real risk is a session treating an empty result as
+   a clean log it never read.
+2. **~~Screenshots came back frozen~~ — RETRACTED later the same run, see the correction at the bottom of this entry. Capture is live.** The original report read: Pixel-identical captures across
+   console commands that demonstrably landed, while input kept working. Not the VDD setup, which
+   has been fine for days; probably GDI `CopyFromScreen` against exclusive-fullscreen.
+   **This is the one worth your attention**, because a locked desktop returns black (obvious)
+   whereas this returns a plausible frame of the wrong moment. Any screenshot-based check in this
+   environment would silently compare two copies of the before-state. Worth trying
+   borderless/windowed, or a DirectX-aware capture. Nothing in this heartbeat depended on a
+   screenshot — every verdict came from the console and `debug.log`.
+3. **A direct launch auto-continued into a leftover unrelated character** (Duke Gottfried III,
+   from an earlier session's `play <id>`) with nothing announcing it. A Kehillah probe on a
+   non-Kehillah ruler reports coherent nonsense. An identity check now belongs at step 0.
+
+*(Moved here 2026-10-10 by Shabbat heartbeat 6: heartbeat 5 appended these two sections into
+the middle of the 2026-09-27 Sukkot entry, about 800 lines above, which is also what the
+screenshot retraction's own "see the correction at the bottom of this entry" pointed at and
+missed. The text is unchanged; only its position is.)*
+
+### CORRECTION to this entry's own finding 2: screenshots are fine
+
+**I retract the frozen-screenshot claim above.** I wrote it, flagged it to you as the
+environment item most worth your attention, and briefed two subagents to distrust screenshots on
+the strength of it. It was based on one session's *impression* that captures "looked identical" --
+no byte-level check.
+
+A later run the same day settled it with the test my own shim-guide note recommended: two
+before/after pairs with large deliberate UI changes (map to Decisions panel, Decisions to
+character window), compared by **SHA-256**. All three hashes differed, and ~20 further
+screenshots in that session all reflected current state. **Capture is live. Exclusive fullscreen
+is not a problem and windowed mode is not needed** -- nothing for you to fix here.
+
+Kept visible rather than deleted because it had already been acted on, and because the lesson is
+the uncomfortable one: I reported an unverified impression as an environment fact, in the same
+session where I was careful not to report an unverified PASS as a test result. The shim guide's
+section is now headed by the correction, with the cheap liveness check retained as a habit.
+
+### A fourth item, from a live run of the ransom ruling
+
+ROADMAP's next unblocked item was the source-aware ransom ruling ("FULL LIVE EXCHANGE
+PENDING"). Partly good news:
+
+- **The named-outside-Rabbi exchange works end-to-end in the UI.** Reached through its real entry
+  point, the case opens as "A Captive's Ransom" in clean English, offers "Ask Rav Isaac for a
+  responsum", and dispatching it produced zero new script errors; the docket then ran on to its
+  closing ruling. The correspondent was confirmed by tooltip to be a genuinely different
+  character (Rav Isaac the Bearded of Mainz, 9000101 -- a coincidental first-name match with the
+  player, not a self-consult bug). **The 25-day letter round-trip did not complete inside the
+  observation window and is still unproven** -- not faked.
+
+**One real bug, found and fixed.** Every case's "cite a source" option read
+`involved_activity.var:kehillah_din_advice_case` bare. That variable is written in exactly
+one place -- the delayed-reply events -- so it is unset whenever a case opens for the first time,
+which is the normal path, and the engine threw three errors on it. **All nine cases were
+unguarded**: one defect, authored once and copied eight times. Now paired with `exists`
+across 18 sites. Scoped honestly as **log noise, not a behaviour bug** -- the same verdict H3
+reached for this identical shape; an invalid comparison evaluates false, and false is also
+correct when no reply has arrived. I did not repeat the stronger claim that it blocked the option
+from appearing, because I could not verify it and the engine's behaviour suggests otherwise.
+
+**NEEDS DANIEL -- a second, fully-authored, completely unreachable implementation of this same
+feature.** The `kehillah_bet_din_case7_*` / `kehillah_case7_*` family
+(`kehillah_bet_din_scripted_effects.txt`, events `.0064`/`.0065`) has real
+localization, tooltips and a richer precedent-archiving design -- and
+`kehillah_bet_din_case7_pick_correspondents_effect` has **zero call sites**; I verified it
+appears exactly once in the repo, its own definition. The engine's static analysis agrees
+("Variable 'kehillah_case7_asking_title' is used but is never set"). What is actually wired up is
+a differently-named generic-per-case chain (`kehillah_din_sources.71`-`.76`).
+Two implementations of one feature, one of them dead. **Wire the richer one in, or delete it --
+either is a design call, so I did neither.** Leaving it is the worst option: it is what misled
+the probe below.
+
+- **Probe `kehillah_rabbi_loop_debug.8` tests the dead path** and so can never report true
+  on its candidate/letter checks, whatever the live game does. A probe that cannot pass is worse
+  than no probe. **Not repointed at the live chain**, because which chain is "live" is exactly
+  the decision above; repointing it now could mean repointing it back.
+- **A log flood worth knowing about:** ~21,000 of the ~21,100 new `error.log` lines in that
+  run were one repeating cosmetic miss -- a missing on-demand texture for the Bet Din conference
+  activity (and the Learn Torah equivalent), logged per frame for the ~20 minutes the activity
+  window was open. Already-known missing art, but at that volume it will bury anything real in
+  the same session, which is the H3 lesson again.
+
+### What the next heartbeat should pick up
+
+1. ~~The FOUNDATION credit band~~ — **DONE this run**, see above. All three bands verified live.
+2. **The ransom ruling's 25-day letter round-trip** — the one part of that exchange still
+   unproven. Everything up to dispatch is verified; the reply leg fires on the AI correspondent,
+   so it needs either a longer unpaused window or a probe that fast-forwards the letter.
+3. **Blocked on Daniel, do not decide unattended:** slice 2's pool gap, and which of the two
+   case-7 consult implementations survives (both above).
+4. **The landless-adventurer institution branch**, if a save ever has an adventurer standing in a
+   community's province. Still an honest null, not a failure.
+
+### For Daniel
+
+Nothing destructive done or avoided. No force-push, no history rewrite, no deletions beyond my own
+temp scripts. `ck3.exe` was stopped at the end of the run; none is running now. Logs archived
+at `logs\archive-shabbat-heartbeat5-household-slice2\`.
+
+Three decisions waiting on you: **slice 2's pool gap** (with a recommendation), **which of the
+two case-7 consult implementations survives**, and the
+unchanged item from the earlier entries — **implementation doc section 14's two
+`change_government` guards** in the succession path that use `government_has_flag`.
+Still written down rather than changed unattended, for the same reason as before: that is the code
+that has crashed this game.
+
+## Heartbeat run status -- 2026-10-10_145002 (autonomous/shabbat-2026-10)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: YES --
+```
+?? _roadmap_ransom.py
+```
+- Last few commits:
+```
+2561829 BLOCKERS: the ransom run, and the correction I owed this entry
+5cddc46 The first Bet Din case was copied eight times, defect included
+a06aa95 Retracting my own screenshot claim: capture is live
+a1fc059 H2's header contradicted its own body
+d0d59b9 A baseline read before boot is the previous session's baseline
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-shabbat-2026-10-10_145002.log
+
+## Heartbeat run status -- 2026-10-10_195002 (autonomous/shabbat-2026-10)
+- Cut off by a usage/session limit (detected in log): True
+- claude exit code: 0
+- Uncommitted changes at run end: none
+- Last few commits:
+```
+f661f21 Shim guide: how to tell a real missing-loc warning from tiger noise
+2c94dd6 The ransom entry's old description was glued to its new last bullet
+6acef91 Shim guide: no probe can conjure a Bet Din, and the dump that proves it
+0fef704 Two of heartbeat 5's sections were filed 800 lines from their entry
+0cb155f The ransom run finally has the log and ROADMAP entry it earned
+```
+Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-shabbat-2026-10-10_195002.log

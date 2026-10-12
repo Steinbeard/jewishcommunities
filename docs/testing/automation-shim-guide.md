@@ -1,4 +1,4 @@
-# Live-test automation: shims, navigation, and testing philosophy — 2026-09-07
+﻿# Live-test automation: shims, navigation, and testing philosophy — 2026-09-07
 
 Status: **working, verified live.** Companion to
 [wave3-testing-runbook.md](wave3-testing-runbook.md) (what to test) and
@@ -32,6 +32,73 @@ was good enough. If keyboard injection ever appears to stop working again, check
 first before concluding it's structurally impossible — it isn't.
 
 ---
+
+## Where the game actually is — added 2026-10-10
+
+Every launch instruction in this doc says `ck3.exe` and never said where it is, which cost a
+heartbeat session a handful of tool calls and one runaway recursive `Get-ChildItem` over two
+drives. It is on the **E: drive**, not C: and not the D: Steam library:
+
+```
+E:\Program Files (x86)\Steam\steamapps\common\Crusader Kings III\binaries\ck3.exe
+```
+
+`D:\SteamLibrary\steamapps\common\Crusader Kings III\` exists but is an empty shell — a leftover,
+not the install. Don't trust it. If this path ever moves, the cheap way to re-find it is the
+registry, not a filesystem walk:
+
+```powershell
+(Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Valve\Steam").InstallPath
+```
+
+`logs\system.log` in the CK3 user directory is empty and will not tell you, and
+`steamapps\libraryfolders.vdf` is not under the C: Steam directory either.
+
+The game *data* root (vanilla script, for checking a token against 1.20 rather than trusting
+ck3-tiger's 1.19 vocabulary) is the `game` folder beside `binaries`:
+
+```
+E:\Program Files (x86)\Steam\steamapps\common\Crusader Kings III\game\
+```
+
+Note that greps over it from Git Bash are slow enough to hit a 120-second tool timeout — scope
+them to a subdirectory (`game\common\scripted_relations\`, `game\common\on_action\`) rather than
+recursing the whole tree.
+
+---
+
+## A skill change does not reach a trigger on a paused game — added 2026-10-10
+
+`add_diplomacy_skill = 12` (and its siblings) do not take effect in a *trigger* until the next
+daily tick, and on a paused game that tick never arrives. A helper that tops up a skill to clear a
+`diplomacy >= 12` gate therefore reads stale forever: +12, +15 and +100 all produced
+`DIPLOMACY FAIL` on the same paused save during the 2026-10-10 H2 run. Add
+
+```
+force_character_skill_recalculation = yes
+```
+
+after the skill change in the same run file — `logs\effects.log` documents it as "forces a
+character's skills to be recalculated immediately, bypassing the wait for the daily tick".
+
+This is a cousin of the gold-buffer note further down: a test helper that tops a value up should
+not assume the engine has published the new value by the time the next line reads it.
+
+---
+
+## Boot stalls until the window gets input — added 2026-10-09
+
+A direct `ck3.exe -debug_mode -develop` launch can stall during database setup and show "Not
+Responding" indefinitely. On 2026-10-09 `debug.log` went silent for 46 minutes after
+`CJominiInGameMusicDatabase`. It resumed within seconds of Daniel clicking the window. Earlier
+"slow boots" fit the same pattern: an 11-minute "Not Responding" boot the same day, and a
+stall at "Initializing Game..." on 2026-10-02. These are stalls, not slow loads, and the mod
+is not the cause.
+
+**While waiting for a boot, click inside the CK3 window (or bring it to the foreground) every
+minute or so.** Do not just poll the log. If `debug.log` hasn't grown for two minutes during a
+boot, assume this stall and click before suspecting the mod. Unconfirmed alternative: the
+launcher's Debug + Develop button passes `-gdpr-compliant`, which the direct launch doesn't.
 
 ## The two shims
 
@@ -319,6 +386,35 @@ The rule of thumb: **tiger rules out a class of error; it does not certify a
 feature.** A clean run means "no malformed script and no dangling references" — it
 never means "this works."
 
+### Tiger's summary totals are not a before/after measurement — added 2026-10-10
+
+ROADMAP's H3 entry already carries a correction warning that tiger's own counts "move
+by ~10 warnings run to run, in vanilla files". That understates it. Four consecutive
+runs against an **unchanged** tree on 2026-10-10 gave:
+
+```
+error: 682   error: 612   error: 616   error: 616
+```
+
+A 70-error spread with nothing edited between runs. The 682 was the first run taken
+immediately after appending to a file, which is the exact moment a session is most
+likely to read a jump as "I just broke something" — and act on it.
+
+So do not use the `fatal/error/warning` totals to judge your own change at all. The
+usable signals are:
+
+1. **Does tiger name a file you touched?** Grep its output for your filename. Silence
+   on your file is the real clean result. (Tiger prints file references as
+   `--> [MOD] path\to\file.txt`, several lines *after* the severity line, so a
+   `grep -B` window around the filename is what shows the actual message.)
+2. **Is `fatal` non-zero?** That number has been stable.
+3. **Did a specific message you were chasing go away?**
+
+And the standing caveat from CLAUDE.md still applies on top of this: tiger targets
+1.19, so many 1.20 tokens (`rite`, `clergy`, `organization`, `government_has_mechanic`,
+…) are false positives. The bulk of this repo's ~616 errors are exactly that — vanilla
+1.20 faiths tiger has never heard of.
+
 ## Read the error log even when the check passes — added 2026-09-26
 
 Two of the three bugs above were found *by checks that returned PASS on their own
@@ -402,3 +498,233 @@ then `run probe.txt`. Note the `debug_log` line *before* the `trigger_event`: it
 targeting itself visible in `debug.log`, so a probe that silently ran on the wrong character can be
 told apart from one that ran on the right one. Cheap, and it is what made this diagnosis possible
 at all — put an identifying `debug_log` in every targeting run file for that reason.
+
+---
+
+## CK3 hot-reloads script files — don't edit the mod while a test is running — added 2026-10-10
+
+Found by doing it. During the Shabbat heartbeat-2 slice-3 live test, the orchestrator kept
+building the next slice in the same working tree while the delegated tester drove the booted
+game. That is not safe, and the reason is worth stating plainly because the opposite assumption
+is the natural one: **CK3 in `-debug_mode -develop` reloads script files from disk while the game
+is running.** Content is not frozen at boot.
+
+The symptom was an error line in the tester's `debug.log` for an event that very much existed on
+disk:
+
+```
+Error: trigger_event effect [ Event [kehillah_semicha_debug.5] not found ]
+  Script location: ... line: 297 (kehillah_semicha_debug.6:immediate)
+...
+Loaded [7] events from 'events/kehillah_semicha_debug_events.txt'
+```
+
+The engine had picked the file up **mid-write** — `.6` was parsed before `.5` had been flushed —
+then reloaded the complete file seconds later. Harmless in itself, and it resolved on its own.
+The hazard is what it implies:
+
+- A tester's `error.log` diff stops being trustworthy. New lines may be the orchestrator's
+  half-written file rather than a defect in the thing under test, and the two are not
+  distinguishable from the log alone.
+- A probe or effect can run against a *partially reloaded* definition, producing a result that is
+  not what either version of the file would produce.
+
+**So: while a delegated live test is in flight, the parent session does docs, not script.**
+ROADMAP, BLOCKERS, the specs and the test logs are all safe to write — the game never reads them.
+If a script change genuinely cannot wait, say so to the tester, name the files, and tell it to
+flag any new error line naming them as probably yours (which is what that session did, after the
+fact). Better still, finish the test first; a live test is minutes, not hours.
+
+A corollary worth keeping, because the same mechanism is useful on purpose: a one-line script fix
+can be verified without a relaunch — save the file, re-fire the probe, read the log. That is not
+a reason to edit during *someone else's* test. It is a reason to keep a fix-and-reprobe cycle
+inside the one session that owns the game.
+
+## The logs are in `logs\`, not the user-dir root — added 2026-10-10
+
+Every instruction in this doc and in both CLAUDE.md and the playtest logs says "check
+`error.log`" or "read `debug.log`" without a path. On this install they are at:
+
+```
+C:\Users\Daniel\Documents\Paradox Interactive\Crusader Kings III\logs\debug.log
+C:\Users\Daniel\Documents\Paradox Interactive\Crusader Kings III\logs\error.log
+```
+
+The user-dir root copies **do not exist** — verified directly on 2026-10-10, not inferred. A
+session that greps the root path gets "No such file or directory", which is at least loud. The
+worse failure is a session that treats an empty result as "no errors" and reports a clean log it
+never read. Archive directories go in `logs\` too, alongside the files they copy.
+
+## A screenshot that looks stale, and how to tell — added 2026-10-10,
+## **substantially corrected the same day**
+
+> **CORRECTION, 2026-10-10 (Shabbat heartbeat 5), read this before the section below.**
+> This section originally asserted that screen capture in this environment was broken and that
+> any screenshot-based verdict should be treated as unproven. **That was wrong, and it was
+> written on weaker evidence than it deserved** — one session's impression that captures
+> "looked identical", with no byte-level check.
+>
+> A later run the same day settled it properly, with the test this very section recommends: two
+> before/after pairs, each with a large deliberate UI change (map → Decisions panel, Decisions
+> → character window), compared by **SHA-256**. All three hashes differed, and every one of
+> ~20 further screenshots in that session reflected current state. **Capture is live. Exclusive
+> fullscreen is not a problem, and windowed mode is not needed.**
+>
+> The earlier symptom was most likely a capture taken before the frame it was meant to show, or
+> a tooling difference between sessions — not a standing fault.
+>
+> **What to keep from this section is the method, not the warning.** Proving a capture is live
+> costs two screenshots and a hash, so do it when a screenshot is load-bearing. What is no
+> longer true is the blanket advice to distrust screenshots here; that would have blocked every
+> UI check for the rest of this window on the strength of an unverified impression. The irony is
+> the point: this doc's own standard of evidence applies to this doc.
+
+**The original observation, now believed mistaken:** during the 2026-10-10 slice 2 test,
+screen captures appeared to return identical images across console commands that
+demonstrably landed (confirmed independently through
+`console_history.txt` and `debug.log`), while keyboard and mouse input kept working
+normally. Probably GDI `CopyFromScreen` reading a stale front buffer under
+exclusive-fullscreen; it is **not** the known VDD virtual-display setup, which has been fine for
+days.
+
+**Why this one is worth a section of its own: it does not fail loudly.** A locked desktop returns
+black, which is obvious. This returns a *plausible* frame — the right game, the right UI, just
+not the current state. Every rule in this guide about screenshots assumes that what comes back
+corresponds to now. A session checking "did the tooltip change after I clicked" would compare two
+copies of the before-state and confidently report no change.
+
+What survives, as a cheap habit rather than a prohibition:
+
+- ~~Treat a screenshot-only verdict as unproven.~~ **Withdrawn — see the correction above.** The advice in
+  "Testing philosophy" below — there the console is *preferred*; here it is the only channel
+  that was trustworthy.
+- **If you must screenshot, prove the capture is live first.** Take one, change something
+  visible, take another, and diff the bytes. Identical bytes across a real change means the
+  capture is stale, not that nothing happened.
+- A probe plus `debug.log` answered every question in that session without a single
+  screenshot. That is the shape to aim for anyway.
+
+## Check who `root` is before anything else — added 2026-10-10
+
+A direct launch on the shared test save **auto-continued into Duke Gottfried III of Lower
+Lotharingia** — a vanilla character, left over from an earlier session's `play <id>` —
+instead of the Kehillah leader. Nothing about this announces itself: the game loads, the HUD is
+normal, the console works. Probes fired at that point run against the wrong character, and a
+Kehillah probe on a non-Kehillah ruler reports perfectly coherent nonsense.
+
+**Make an identity check step 0 of every session on the shared save**, before the first real
+probe:
+
+```
+# <ck3_user_dir>\run\whoami.txt
+debug_log = "whoami: identity check"
+debug_log_scopes = yes
+```
+
+then `run whoami.txt` and read the `Root:` line. To recover, dump the title to find
+its actual holder and switch:
+
+```
+# <ck3_user_dir>\run\find_leader.txt
+title:d_kehillah_worms = { debug_log_scopes = yes }
+```
+
+then `play <id>` and re-run the identity check to confirm it took. (On 2026-10-10 that was
+Isaac HaLevi, 29176.) Note that CK3 wants run files in **UTF-8 with BOM** — a BOM-less one still
+executes but logs
+`File 'run/whoami.txt' should be in utf8-bom encoding`, which is easy to mistake for a real
+finding when scanning a log.
+
+## `error.log` is overwritten per session too — added 2026-10-10
+
+CLAUDE.md and both playtest logs say to take a clean `kehillah`-tagged baseline from
+`error.log` before live-testing, so new errors are distinguishable from pre-existing ones.
+What none of them say is that **`error.log` is rewritten on every boot, exactly like
+`debug.log`**.
+
+So a baseline read *before* launching is a baseline of the **previous** session. On 2026-10-10 a
+run did precisely that, took 165 as its starting count, and then measured 196 afterwards — an
+apparent 31 new errors that were nothing of the kind. The real post-boot baseline was 138, and the
+true delta was zero. Taken at face value that reads as a regression introduced by the change under
+test.
+
+**Take the baseline after boot and before the first probe**, not before launching. If you want a
+pre-boot copy as well, archive it under a different name (`error-before.log`) and be
+explicit about which one you are diffing against — the two answer different questions, and only
+the post-boot one answers "did my change add an error".
+
+## An activity cannot be started from script, and `logs\effects.log` is how you know — added 2026-10-10
+
+A test that needs the player sitting in a Bet Din has to pay for one through the UI. There is no
+script effect that creates or starts an activity. Checked against the installed 1.20 vocabulary
+rather than guessed: `logs\effects.log` (dumped 2026-10-01 by the `script_docs` console command)
+has no `create_activity` and no `start_activity`. What it does have, and all it has, is:
+
+- `ai_attempt_to_host_activity` — makes an **AI** re-evaluate hosting, overriding its check
+  interval and the activity cooldown. Nothing equivalent for the player.
+- `invite_to_activity`, `accept_activity_invite`, `accept_activity_invite_without_travel`,
+  `add_to_activity`, `add_to_activity_without_travel`, `remove_from_activity`
+- `set_activity_host`, `set_activity_intent`, `invalidate_activity`
+
+So a probe cannot conjure a Bet Din conference, and `kehillah_rabbi_loop_debug.1`/`.3`/`.7` are
+written the way they are — refusing with "BLOCKED no fully staffed Bet Din activity" — because
+that is the only honest option available to them.
+
+**What hosting one actually costs, measured.** From heartbeat 5's archived run
+(`logs\archive-shabbat-heartbeat5-ransom\debug.log`): launch at 15:43:55, `.1` reporting
+`ACTIVITY PRESENT` with no convening title yet at 15:52:42, and a fully staffed bench — convening
+title, Av Beit Din, judge 2, judge 3 — at 16:00:35. **About 17 minutes of wall clock including
+boot**, with `province_filter = capital` meaning the host does not travel. Budget twenty minutes
+for "get me into a Bet Din", not two. Note the two-stage shape: the activity object exists while
+it is still scheduled, and the mod's own variables only arrive when it starts, so
+`exists = involved_activity` is not the same question as "is the court sitting".
+
+If a future test only needs the player *inside* someone else's activity, the untried shortcut is
+`ai_attempt_to_host_activity` on an AI Kehillah leader and then
+`add_to_activity_without_travel` (plus `set_activity_host` if the player has to be the host for
+the events to fire on them). Recorded as a lead, not a working recipe — nobody has run it.
+
+**The general point is the file, not the activity.** `logs\effects.log`, `logs\triggers.log` and
+`logs\event_targets.log` are the authoritative list of what this install's 1.20 actually accepts.
+They are cheaper to consult than a vanilla grep, and more trustworthy than ck3-tiger, whose
+vocabulary is 1.19. Re-dump them with `script_docs` after a game patch. This is the same lesson as
+1.20 having `add_learning_skill` but no `set_learning_skill` (see the credit-bands section) —
+asked of the dump, that question takes one grep.
+
+## Settling a ck3-tiger missing-localization warning: count vanilla — added 2026-10-10
+
+CLAUDE.md says a tiger complaint is "a strong lead to go verify, not an automatic truth to patch
+around". For `missing-localization` there is a one-command way to verify, and it gave opposite
+answers for two warnings in the same baseline:
+
+**Count how many of vanilla's own instances of that key shape are localized.** If vanilla
+localizes nearly all of them, the key is really expected and the mod has a player-visible gap. If
+vanilla ships most of them undefined, tiger's rule is stricter than the engine and the warning is
+noise.
+
+Worked, on the two that were sitting in this mod's baseline:
+
+- `domicile_building_parameter_kehillah_*` (ten of them) — **real.** A script pass over
+  `game\common\domiciles\buildings\*.txt` found 570 vanilla domicile building parameters, of
+  which **567** have a `domicile_building_parameter_<name>` loc key. Three do not, and those read
+  as vanilla bugs. So the key is genuinely rendered — it is the line in a building's tooltip
+  explaining what the parameter does — and ten unlocalized ones means ten raw keys in the Jewish
+  Quarter's own tooltips.
+- `domicile_kehillah_quarter` — **false positive.** Vanilla has five domicile types and defines
+  `domicile_<type>` for exactly **two** of them (`domicile_estate`,
+  `domicile_ecclesiastical_domicile`); `camp`, `yurt` and `east_asian_estate` ship without it.
+  The convention the engine actually uses for a type's name is `<type>_domicile_type` /
+  `<type>_domicile_title`, and this mod already defines both
+  (`kehillah_quarter_domicile_type:0 "Jewish Quarter"`). Nothing to fix; adding the key on
+  tiger's say-so would have been cargo cult.
+
+The whole check is one script: pull the names out of the vanilla definition files, concatenate
+`game\localization\english\**\*.yml`, and ask how many names are absent. Two cautions learned
+doing it: use a **Windows** path (`E:/Program Files...`) when the script is Python, because a
+Git-Bash `/e/...` path silently matches zero files and a zero-file audit looks exactly like a
+clean one; and assert the file count, since "0 problems found" is the same output as "0 files
+read".
+
+The same counting trick answers "is this token real in 1.20" for triggers and effects — but
+`logs\effects.log` and `logs\triggers.log` answer that one directly, see the activity section
+above.

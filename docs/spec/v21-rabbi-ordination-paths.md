@@ -1,7 +1,11 @@
-# V21 Spec: Rabbi Ordination Paths
+﻿# V21 Spec: Rabbi Ordination Paths
 
-**Status: PROPOSAL — approved design direction; no implementation.**
-**Date: 2026-09-25.** Depends on the existing Rabbi trait, Learn Torah
+**Status: BUILT 2026-10-09/10 — all five of section 6's slices are implemented. Slice 3
+(Seek Semicha) is VERIFIED LIVE; slices 4 and 5 are source-verified and ck3-tiger clean but not
+live-tested. See the dated addendum at the end of this doc for what the build actually does, and
+[ROADMAP.md](../../ROADMAP.md)'s H4 for current state — ROADMAP wins over this file.**
+**Originally: PROPOSAL — approved design direction; no implementation.**
+**Date: 2026-09-25; status line updated 2026-10-10.** Depends on the existing Rabbi trait, Learn Torah
 scheme, community library, Beit Midrash, Chief Rabbi office, and Bet Din
 Conference. It supersedes the *future acquisition* portion of the Rabbi-trait
 backlog: the trait must no longer be reachable only through history, an office,
@@ -261,3 +265,85 @@ instead of hiding a one-time reward in an unrelated score.
 - **AI load:** run an observer test before expanding AI beyond Kehillah
   leaders; count schemes and inspect `error.log`/save growth rather than
   assuming the narrow existing policy remains safe once candidates broaden.
+
+
+---
+
+## Addendum — what was built, 2026-10-09/10 (Shabbat heartbeats 1 and 2)
+
+**This addendum does not supersede the design above; it records where the build departs from it,
+and nothing more.** The implementation account of record is
+[ROADMAP.md](../../ROADMAP.md)'s H4 entry, plus
+[the slice-3 live test log](../testing/2026-10-10-semicha-ordination-live-test-log.md). Section 6's
+five slices were built in order and in that order committed, each one ck3-tiger clean.
+
+Three places where the build made a choice this spec left open, recorded here because a later
+session will otherwise re-litigate them:
+
+1. **The Learning 6-7 foundation is one entry in `kehillah_apprentice_fields`, not an exception
+   branch.** Section 3.3 says it is "worth one study field" and still "requires the ordinary adult
+   Learn Torah route". Implementing it as a field flag rather than as its own case in the
+   curriculum trigger means it flows through the ordinary two-works/two-fields counting: a student
+   who arrives at adulthood in that band can then ordain on two works in a *single* field, which
+   he could not otherwise. The full Learning-8+ credit is the one that gets its own variable
+   (`kehillah_apprenticeship_curriculum`), because section 3.2's count cannot express "a childhood"
+   without inventing the fake named books section 3.3 forbids.
+
+2. **The coming-of-age check runs five days after the birthday, not on it.** Vanilla applies the
+   education trait at birthday+2 days (`childhood_education.0007`, in `on_16th_birthday`'s own
+   event list), and that trait is frequently what carries a student across Learning 8. Checking on
+   the day would have systematically under-credited exactly the students section 3.3 is about.
+   This is why the endorsement arrives as a hidden sorter (`kehillah_semicha.0002`) plus a visible
+   event (`.0003`) rather than as one event.
+
+3. **Section 5's faith reconciliation turned out to be three gaps, not one.** The Bet Din offer had
+   no faith check at all — `government_has_flag = government_is_kehillah` says a character leads a
+   Kehillah, not what the Kehillah believes. The Chief Rabbi office checked only
+   `faith = scope:liege.faith`, which a Karaite leader's Karaite appointee passes cleanly. And
+   `kehillah_hire_rabbi_effect` granted the trait on the strength of not already having it. All
+   three now read `is_rabbinic_authority_jewish_trigger`; the Chief Rabbi *grant* is behind the
+   check as well as the appointment, because court positions are also filled by AI paths and by
+   scripted `appoint_court_position` calls.
+
+**Section 7's required spikes are mostly still open.** The slice-3 run covered the Kehillah-leader
+institution branch, the readiness gate with real negative controls, and the reward magnitude. It
+did not cover the landed-ruler or landless-adventurer branches, losing access to a Beit Midrash,
+the defer option across a save/load, any part of the education path, the balance measurement, or
+the AI-load observer test. The slice-3 log's own "Not covered" section is the live list.
+
+---
+
+## Addendum, 2026-10-10 (Shabbat heartbeat 3): two of section 7's gaps settled by source
+
+Neither needed the live game, which is worth recording because section 7 lists both as spikes.
+
+**1. The institution gate had no branch for an eligible courtier — the slice 4 build was dead on
+arrival for its own main case.** Section 2 says, in so many words, that "a Kehillah leader, landed
+ruler, landless adventurer, and eligible courtier use the same candidate definition."
+`kehillah_semicha_institution_available_trigger` had exactly three branches — Kehillah government
+holder, landed ruler via `capital_province`, landless adventurer via `location` — and a courtier is
+none of the three: no government flag, not a ruler, no capital province, not the adventurer
+government. So the trigger was **false for every courtier in the game**. And
+`kehillah_semicha.0002`, the coming-of-age sorter, requires it. A child who had served his four
+years under a rabbi and come of age with Learning 8 could therefore never be endorsed — the entire
+population slice 4 exists to create.
+
+Fixed 2026-10-10 by widening the third branch from "has the adventurer government" to "has the
+adventurer government **or holds nothing at all**", resolving by the community standing where the
+character is standing, with the same widening mirrored in
+`kehillah_semicha_resolve_institution_effect` so the Greatness reward has a community to land on.
+Purely additive — a Kehillah leader and a landed ruler are both rulers, so neither reaches the new
+clause, and nothing that passed before stops passing. Live confirmation is one line in a probe
+(`H4PUPIL: INSTITUTION PASS`) in the H4 slice 4 run.
+
+Worth noting what this says about method: a live pass over slice 4 before this fix would have
+reported "the endorsement never fires" without saying why — the same shape of unhelpful answer the
+silently-failing `trigger_event` gave in ROADMAP H2 the same day. Reading the gate was faster and
+more informative than playing to it, which is what CLAUDE.md's testing section says to expect.
+
+**2. "The defer option across a save/load" is not a real spike.** `kehillah_semicha.0001`'s
+option b carries a `custom_tooltip`, an `ai_chance = { base = 0 }`, and **no effects at all** — it
+writes no variable, sets no flag, starts no cooldown. There is therefore nothing for a save/load to
+lose or corrupt, and the decision remains available afterwards because its `is_valid` reads only
+the same triggers it read before. Section 3.4's requirement that deferring cost nothing is
+satisfied structurally, not behaviourally, and no save/load cycle can disturb it. Closed.

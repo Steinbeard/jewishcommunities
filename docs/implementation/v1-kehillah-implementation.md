@@ -1,4 +1,4 @@
-# V1 Implementation: The Kehillah Community Baseline
+﻿# V1 Implementation: The Kehillah Community Baseline
 
 Status: **core loop (government, succession, buildings, Gold/treasury)
 verified working live, end to end, as of 2026-09-06 — but sections 9
@@ -853,3 +853,421 @@ diff review:** `common/domiciles/types/kehillah_domicile_types.txt`,
 `common/flavorization/kehillah_title_holders.txt` and
 `common/traits/kehillah_traits.txt` (the latter now shared with the
 concurrent session's kohen/levite additions).
+
+
+## 13. Clerical continuation: the player heir for a non-dynastic appointee, 2026-10-09
+
+**SUPERSEDED 2026-10-11 by section 15.** `mechanic_type = theocracy` has been removed. The
+mechanism below is kept as history. Do not restore it without reading section 15.
+
+**Read this alongside sections 6 and 8 before touching succession or the
+government body again.** It records a departure from the spec that the
+spec never anticipated, and a vanilla mechanism this repo had not used.
+
+### The problem the appointment fix created
+
+Making appointment succession actually run (`min_appointment_tier =
+county`, 2026-10-09 -- see
+`docs/testing/2026-10-09-clerical-succession-live-test-log.md`) worked:
+the title passes by `kehillah_leadership` to the top-scoring candidate.
+But that candidate is almost always from another dynasty, and CK3 ends
+the player's game when the dying character has no player heir. The merit
+succession this mod is built around therefore produced **Game Over on
+every leader's death** -- the mechanic working as designed was the thing
+breaking the playthrough.
+
+### What actually produces a non-dynastic player heir
+
+Vanilla states the rule in
+`ECCLESIASTICAL_RULER_SUCCESSION_DESCRIPTION`
+(`localization/english/gui/succession_event_window_l_english.yml:270`):
+"When dying as a member of an Organization, your Heir will be the next
+person to receive your Primary Title. This is usually not a member of
+your Dynasty."
+
+Two things that look like the answer are not:
+
+1. **A trait with `clergy = yes`** does work -- clergy "automatically
+   join faith organization" (`common/traits/_traits.info:108`), which is
+   why `kehillah_rabbi_trait` got the flag and why the rabbinic path
+   passed first. But it only ever covers rabbis, and Daniel's
+   instruction was explicitly to solve the lay (Parnas) case *without*
+   adding a trait.
+2. **A scripted `join_organization`** does not work, and this is the
+   trap worth remembering. It makes the character a member for that
+   instant -- probe `kehillah_household_debug.7` read "PASS lay leader is
+   a member" -- and still produced no player heir, and after an
+   appointment succession all three lay appointees read as non-members
+   again. Vanilla says why, in a comment in
+   `common/on_action/game_start.txt`: "A faith's organization members are
+   exactly its clergy, so this never touches the laity." The engine keeps
+   membership synced to clergy status, so a script join onto a non-clergy
+   character is reverted. No vanilla file uses `join_organization` at
+   all.
+
+### The mechanism, and where it is written down
+
+`common/governments/_governments.info` documents `mechanic_type` and
+lists, for the value `theocracy`, exactly one line: **"Should rulers be
+considered clergy"**. That is how vanilla's non-monk clerical rulers are
+clergy -- bishops under `ecclesiastical_government` and holders of
+`theocracy_government`, neither of whom carries the `devoted` monk
+trait. Both governments set it.
+
+`kehillah_government` now sets `mechanic_type = theocracy`. One line, no
+new trait, no vanilla trait borrowed either.
+
+**The distinction that makes this safe is mechanic vs. flag.** Vanilla
+gates its theocratic *content* on flags, not on the mechanic:
+`church_authority` needs `government_uses_church_authority`
+(`common/law_groups/00_realm_law_groups.txt`),
+`bishop_theocratic_succession_law` needs `government_is_theocracy`
+(`can_have_bishop_theocratic_succession_law_trigger`), and
+`theocratic_elective_succession_law` needs the `has_clerical_electors`
+doctrine, which rabbinism does not have. This government has none of
+those, and must not get them. Only eight places in all of vanilla read
+`government_has_mechanic = theocracy`; seven are inert here, and one is
+actively wanted -- `common/important_actions/00_inheritance_actions.txt`
+suppresses the "your primary heir is of another dynasty" nag for exactly
+this mechanic.
+
+### The one collision, and the guard
+
+`clerical_appointment_law`'s `can_have` / `can_keep` / `can_pass` /
+`should_start_with` are all just
+`should_use_clerical_appointment_law_trigger`, which is
+`government_has_mechanic = theocracy` plus a county-tier floor. Setting
+the mechanic therefore makes vanilla's law valid for Kehillah leaders,
+and `common/laws/_laws.info` says a group's starting law is found by
+checking its laws **"in definition order"** -- `index` is display order
+within the group and nothing more. Vanilla's `00_succession_laws.txt`
+loads before this mod's `kehillah_succession_laws.txt`, so without a
+guard vanilla's law is checked first and the Kehillah silently loses
+`kehillah_appointment_succession_law` -- the appointment type, the
+male-only lock and the whole merit score.
+
+The guard is
+`common/scripted_triggers/kehillah_clerical_appointment_law_override.txt`:
+vanilla's trigger body verbatim plus `NOT = { government_has_flag =
+government_is_kehillah }`. Same additive-fork pattern as
+`kehillah_is_playable_character_override.txt`. Regenerate from vanilla on
+every game patch.
+
+Belt and braces, independently: every community in
+`history/titles/kehillah_titles.txt` sets `succession_laws = {
+kehillah_appointment_succession_law }` explicitly (15 of 15), and
+`kehillah_found_community_effect` calls `add_realm_law` for it. The live
+run below cannot distinguish "the override prevented the swap" from "it
+would not have happened anyway"; the override stays as insurance for any
+future path that sets neither.
+
+### Verified live, 2026-10-09 evening
+
+`docs/testing/2026-10-09-lay-clerical-continuation-live-test-log.md`.
+With `kehillah_household_debug.9` stripping the Rabbi trait first, so no
+trait-sourced clergy is in the picture at all, the lay leader read
+`CLERGY YES`, `ORGANIZATION YES`, `PLAYER HEIR YES` and *non-dynastic*
+heir; `kill 29176` produced **"Continue as Rav Mishael"** and "Choose a
+New Destiny...", not Game Over; continuing worked and the successor held
+Kehillah of Worms with no errors.
+
+### Two things to know about the probes
+
+- `kehillah_household_debug.8` is read-only and safe to repeat; `.9`
+  removes the Rabbi trait and does not put it back.
+- The succession-law check must read the **realm** law. A Kehillah's
+  appointment law arrives as a realm law on the holder, so
+  `has_title_law` is false for it -- as it is for most of vanilla's
+  appointment laws, which is why vanilla pairs `holder ?= {
+  has_realm_law = X }` with `has_title_law = X` in an OR
+  (`common/character_interactions/pam_interactions.txt:443-444`). The
+  first version of the probe reported this as a failure; it is the
+  expected, healthy state.
+
+
+## 14. `government_has_flag` is true for a ruler's COURTIERS, 2026-10-10
+
+**Status:** engine behaviour, measured live on 2026-10-10 (Shabbat heartbeat 3's
+recovered run; the bug it caused fixed in heartbeat 4). One real bug found and
+fixed because of it; every other call site in the mod audited and found already
+safe.
+
+### The measurement
+
+A child courtier in the Worms court — Huna Landsberg, character `65937`, a ward of
+the community's holder Isaac HaLevi (`29176`) — reads:
+
+```
+government_has_flag = government_is_kehillah   ==> TRUE
+```
+
+He holds no title, is `is_ruler = no`, and has no domicile. The line is from
+`run/h4_institution_diag.txt` via `debug.log`:
+
+> `H4INSTDIAG: pupil IS a Kehillah government holder (branch 1 territory, unexpected for a child)`
+
+The diagnostic was written expecting that branch to be dead code for a child. It
+was not.
+
+**What is measured** is the quoted result: the flag is true for a landless,
+titleless courtier of a Kehillah ruler. **The likely mechanism** — that a landless
+character's government resolves through their liege or employer rather than being
+unset — is inference, not measurement. Nothing in this build depends on the
+mechanism being right; the behaviour is enough. `_governments.info` documents the
+`flags` field ("Can be defined as any string that can be referenced by
+`government_has_flag = some_flag`") without saying anything about the scoped
+character needing to be landed.
+
+Corroborating, circumstantially: vanilla pairs `government_has_flag` with
+`is_landed = yes` / `is_independent_ruler = yes` guards throughout
+`common/decisions/`. That is weak evidence on its own, since a decision usually
+needs a landed ruler anyway — but it is consistent, and across ~5700 vanilla uses
+the flag is essentially never read on a character who might be a courtier.
+
+### The bug it caused
+
+`kehillah_semicha_institution_available_trigger`
+(`common/scripted_triggers/kehillah_ordination_triggers.txt`) is an OR of three
+branches, and on 2026-10-10 a courtier clause was added to the third because V21
+section 2 says "a Kehillah leader, landed ruler, landless adventurer, and eligible
+courtier use the same candidate definition". It still returned FALSE for the exact
+pupil it was written for, because branches 2 and 3 each opened with:
+
+```
+NOT = { $CHARACTER$ = { government_has_flag = government_is_kehillah } }
+```
+
+One true flag closed all three at once:
+
+| branch | intended population | why it failed for the pupil |
+|---|---|---|
+| 1 | the community's own leader | flag matched, then `exists = domicile` failed — domiciles belong to the ruler, not to their household |
+| 2 | a landed ruler at their capital | excluded by the `NOT` |
+| 3 | adventurer / courtier | excluded by the `NOT` |
+
+The community data was never at fault: the same diagnostic shows Worms MATCHES the
+pupil's location and HAS a Beit Midrash tier 1+.
+
+This mattered because the coming-of-age sorter `kehillah_semicha.0002` requires
+this trigger, so a child who had served the four years under a rabbi could never be
+endorsed — i.e. the entire population V21 slice 4 exists to create.
+
+**The fix** drops the `NOT` from branch 3 rather than touching the location test. A
+Kehillah *leader* still cannot reach branch 3, which is what that guard was actually
+protecting: a leader holds `d_kehillah_*`, so `is_ruler = no` is false for them and
+they have not got the adventurer government. Leaders are therefore still judged on
+their own quarter alone and cannot borrow a neighbouring community's study hall.
+Purely additive — nothing that passed before stops passing.
+
+The mirrored resolver `kehillah_semicha_resolve_institution_effect` needed no
+change: it is an `if`/`else_if` chain whose first branch also requires
+`exists = primary_title`, which a courtier fails, so it already falls through to the
+courtier branch and credits the right community.
+
+### The rule to follow
+
+**Do not use `government_has_flag` to mean "this character is a Kehillah leader"
+unless the scope is already known to be a ruler.** It answers "what government does
+this character fall under", which includes everybody in the court. When the question
+is really "is this the holder", use `is_ruler`, `is_landed`, `exists = domicile`, or
+`exists = primary_title`, which distinguish a holder from their household and the
+flag does not.
+
+### Audit of every other call site, 2026-10-10
+
+All remaining uses in the mod were checked. **All are already safe**, each for a
+stated reason — no other changes were made on the back of this finding. The audit is
+source-only; it reasons from each site's own surrounding guards rather than from a
+live probe per site.
+
+| site | why the leak cannot bite |
+|---|---|
+| `kehillah_settlement_policy_decisions.txt:47,89` | `is_shown` also requires `is_landed = yes` + `is_independent_ruler = yes`; a courtier is neither |
+| `kehillah_scripted_triggers.txt:842` | scope is `domicile.domicile_location.county.holder` — a holder by construction |
+| `kehillah_scripted_triggers.txt:1314` | the library trigger's branch 2, already gated by `is_ruler = yes` + `exists = capital_province` |
+| `kehillah_ordination_triggers.txt:183` | branch 2 of the very trigger fixed above, and the same reasoning: `is_ruler = yes` + `exists = capital_province` already exclude every courtier, so its `NOT` is redundant rather than harmful. Left in place — removing a redundant guard from working succession-adjacent code buys nothing |
+| `kehillah_council_tasks.txt:73` | `scope:kehillah_petition_host` is gated `is_landed = yes` |
+| `kehillah_vanilla_task_overrides.txt` (x19) | all read `scope:councillor_liege`, i.e. the liege explicitly — the liege's government is the intended answer |
+| `kehillah_task_contracts.txt:226,564,706,875` | `scope:employer` comes from the county-holder selection above |
+| `kehillah_clerical_appointment_law_override.txt:45` | vanilla's own trigger also requires `highest_held_title_tier >= tier_county`, which no courtier meets |
+| `kehillah_council_debug_events.txt:102,123` | console-only probes |
+
+### One question left open, deliberately not changed
+
+Two sites guard a **government change** with this flag:
+
+- `common/on_action/kehillah_on_actions.txt:422,430` (`kehillah_on_title_gain`)
+- `common/scripted_effects/kehillah_found_community_effects.txt:178`
+
+Both read `NOT = { government_has_flag = government_is_kehillah }` before
+`change_government = kehillah_government` — the guard exists because changing to the
+government you are already in is refused with "Trying to set illegal government".
+
+The open question: when an appointed successor who was a **courtier of the previous
+leader** gains the community title, does the flag already read true at that instant
+and skip both branches, leaving the new leader without `kehillah_government`?
+
+This was **not** changed, for two reasons. First, succession and government laws are
+this codebase's highest-crash-risk area (sections 6 and 8), and this is exactly that
+code. Second, the evidence says the live path works: H1's 2026-10-09 test ran a real
+appointment succession to a lay appointee and the probe reported `CLERGY YES`, which
+depends on `mechanic_type = theocracy` and so can only come from
+`kehillah_government`. What that evidence does *not* settle is **which** path got it
+there — the inline `change_government`, or the `kehillah_succession.0010` retry a day
+later, which exists precisely because the inline attempt can fail and which logs its
+own verdict either way.
+
+Cheap to settle whenever someone is next in a live session: run an appointment
+succession to a courtier heir and read `.0010`'s verdict line in `debug.log`. If the
+inline branch is being skipped, the retry is silently carrying every succession, and
+the guard there should move to `is_ruler`-style tests for the same reason branch 3's
+did.
+
+## 15. Player continuation without clergy, 2026-10-11
+
+**Status:** shipped and verified live on 2026-10-11 in an interactive session, at Daniel's
+direction. It supersedes section 13.
+
+### Why section 13 went
+
+`mechanic_type = theocracy` made every lay Parnas clergy. It also made the engine generate Kehillah
+courtiers as faith-organization members, wives included: 76 such courtiers with no clerical role
+were counted live (`docs/testing/2026-10-10-lay-courtier-clergy-live-test-log.md`). Those are engine
+behaviours that script cannot override. Daniel's call: no grafting onto theocracy, and no new office
+trait either. The mechanic is gone, and so is `kehillah_clerical_appointment_law_override.txt`, which
+only existed because of it.
+
+### The engine rule, measured live
+
+CK3 gives a **non-dynastic player heir** (vanilla's "Continue as <successor>") only when **both** the
+ruler **and** the next holder of his primary title are members of the faith's organization. The table
+was measured on Ovadya Ginzburg, a lay leader, with `run` probes in a live game:
+
+| leader | successor | `player_heir` |
+|---|---|---|
+| member (`join_organization`, or the Rabbi trait added mid-game) | not a member | none, even after in-game days and `scriptedtests_recalculate_succession` |
+| member | member | **set immediately** |
+| not a member | member | none |
+
+Notes:
+- `join_organization` does make a character clergy: `is_clergy` reads yes. Section 13 claimed a
+  scripted join "is reverted"; that was a misreading. The membership sticks.
+- The Rabbi trait has no special status here. Isaac's game-start continuation worked because his
+  successor (Kehat) was also a member, most likely through the Dayyan seat (`is_clergy_position`).
+- The old theocracy route "worked" for the same reason: it made the courtiers members.
+- Removing the Rabbi trait does **not** remove membership (Isaac, 2026-10-11). Only
+  `leave_organization` does.
+
+### The mechanism
+
+`kehillah_on_death_player_continuation` (`common/on_action/kehillah_on_actions.txt`) runs in `on_death`,
+while the dying character is still alive. It acts only for a player-controlled Kehillah ruler who has
+no player heir:
+
+1. It finds the successor: `primary_heir`, or failing that the top title heir by
+   `appointment_candidate_score`.
+2. It enrols both the ruler and the successor with `join_organization`, just in time.
+3. If a player heir now exists, vanilla's death screen takes over. If not, it falls back to
+   `set_player_character` onto the successor, which loses the death screen but avoids Game Over.
+
+`kehillah_update_leader_flavor_effect` then takes the new leader back out of the organization once he is
+in office, unless he carries `kehillah_rabbi_trait`, `devoted` or `cleric`. A lay Parnas is clergy only
+for the instant of his own death, and his successor only between that death and taking office.
+Rabbis stay clergy permanently through their trait.
+
+### Live verification, 2026-10-11 (fresh boot, Worms 1066)
+
+- **Isaac (rabbi) killed:** vanilla screen, "Continue as Rav Kehat". The hook did not fire, because
+  Isaac already had a player heir.
+- **Kehat, a lay leader, before the test:** no rabbi trait, not a member, not clergy, no player heir.
+  His primary heir was Amos Ben Aharon, also not a member.
+- **`kill 41660`:** the log read `kehillah_on_death_player_continuation: enrolled leader and successor,
+  vanilla player heir is set`. Vanilla's "You have died" screen appeared, offering **"Continue as
+  Parnas Amos"**. The fallback line never appeared.
+- **After Continue:** Amos, a lay leader, holds `d_kehillah_worms`. He is not a member and not clergy,
+  both immediately and 3 in-game days later.
+- **error.log:** no new lines beyond the usual validation dump.
+
+### Earlier wrong turns, kept for the record
+
+- **The character switch on its own:** the first version of this hook (commit `bc4ba75`). It works but
+  skips the death screen. It is now only the fallback.
+- **The vanilla "precedent":** an earlier draft cited vanilla's administrative governments as doing
+  this. They don't; the only `on_death` `set_player_character` in vanilla is the narrow All Under
+  Heaven "Ceremonial liege family" case.
+- **"Choose a New Destiny":** it needs an existing player heir and only offers your own dynasty, so it
+  cannot reach a non-dynastic successor.
+
+## 16. Rav, Rabbenu, the Dayyan, Hakhamim, and the end of the Chief Rabbi, 2026-10-11
+
+**Status:** shipped on 2026-10-11 in an interactive session, at Daniel's direction, and all of it was
+verified live; the results and the follow-ups are in ROADMAP.
+This section supersedes ROADMAP S4(1)/S4(2)/S4b/S4c (the Chief Rabbi office, the serve-as-own-rabbi
+toggle, and the Beit Midrash ungating).
+
+### Who is a rabbi
+
+A rabbi is a character with `kehillah_rabbi_trait`, and nobody else. It is the one `clergy = yes`
+trait the mod keeps (implementation doc section 15 explains why lay leaders are not clergy).
+
+### Leader names
+
+- **"Rav":** a Kehillah leader with the Rabbi trait (`kehillah_leader_is_rav_trigger`). Every other
+  leader is "Parnas". The old scholarly test, `kehillah_leader_is_rabbinic_trigger` (learning 12,
+  theologian, top learning education), used to decide this too; that is how a lay Kehat read "Rav
+  Kehat". It now gates only founding a community, where a learned layman should still qualify.
+- **"Rabbenu":** a Rav-leader at piety level 4 (Paragon of Virtue) or higher
+  (`kehillah_leader_earns_rabbenu_trigger`). The title is sticky once earned, as the historical
+  honorific was: Rabbenu Gershom, Rabbenu Tam. `kehillah_update_leader_flavor_effect` now also runs
+  quarterly, so ordination or a rise in piety takes effect without a change of leader.
+
+### The Dayyan
+
+- The Kehillah's `councillor_court_chaplain` seat requires the Rabbi trait.
+- Its holder is styled "Rav <name>" through the councillor flavorization `kehillah_dayyan_rav_male`
+  (priority 299 beats vanilla's 298).
+- Each community's seeded starting scholar, who is its first Dayyan, gets the trait at creation. The
+  first live boot without this left all 15 seats empty, with nobody eligible to fill them.
+
+### The community rabbi, which replaces the Chief Rabbi
+
+The community rabbi is **the leader if he is a Rav, otherwise the Dayyan.** Every role reads it
+through `kehillah_has_community_rabbi_trigger` or `kehillah_save_community_rabbi_effect`:
+
+- presiding as Av Beit Din,
+- dispute rulings,
+- the responsa answerer,
+- ransom correspondents.
+
+The Greatness term, `kehillah_community_rabbi_learning_value`, deliberately reads the **Dayyan
+first**. The leader's own Learning is already counted at full weight, so a Rav-leader stands in only
+when the seat is empty; otherwise his Learning would count twice.
+
+What was removed:
+- the `chief_rabbi_kehillah_position` court position;
+- the Serve as Rabbi and Lay Down decisions;
+- `kehillah_serving_as_own_rabbi_modifier`;
+- the toggle clean-up effects.
+
+"Seek a Chief Rabbi" became **Seek a Rabbi**. It is shown when the Dayyan seat is empty, and the chosen
+candidate is given the trait and seated with `assign_councillor_type`. The AI uses it, and it is now
+the main way a rabbi reaches an AI community, since the Chief Rabbi's appointment used to be what
+granted the trait. `kehillah_debug.110`, `.115`, `.119` and `.121` are retired stubs, and `.118` is
+the new community-rabbi probe. Saves from before this change lose the Chief Rabbi position.
+
+### Hakhamim
+
+Vanilla's global `FAITH_ORGANIZATION_NAME` is replaced (`localization/english/replace/`) with the
+custom localization `KehillahFaithOrganizationName`:
+
+| Faith | Organization name |
+|---|---|
+| `rabbinic_faith` | "Hakhamim" |
+| `karaism` | "Karaite Hakhamim" |
+| everything else | vanilla's "<adjective> Clergy", via `[ROOT.Faith.GetAdjectiveNoTooltip]` |
+
+Verified live: Isaac's badge read "Hakhamim", and the Archbishop of Mainz's read "Catholic Clergy".
+
+ck3-tiger false positives here: tiger looks for faiths in the 1.19 path `religions/`, but 1.20 keeps
+them in `faith_types/`. Its `FAITH.Custom` "expected one of" list misses faith-type custom
+localization, which vanilla itself uses (`CoronationRequiresArtifact`).

@@ -147,6 +147,22 @@ kehillah_rabbi_trait = {
 
 	shown_in_ruler_designer = no
 
+	# 2026-10-09 (Daniel): rabbis are clergy. Clergy automatically join
+	# their faith's organization, and when an organization member dies
+	# CK3 makes the player heir the next holder of their primary title --
+	# vanilla 1.20's clerical succession. A rabbinic Kehillah leader's
+	# death screen therefore offers the community's appointee, plus
+	# Select your Destiny for the dynasty. Jewish rites keep
+	# doctrine_clerical_marriage_allowed, so rabbis can still marry.
+	#
+	# 2026-10-09 UPDATE: lay (Parnas) leaders are covered WITHOUT a trait
+	# of their own -- kehillah_government now sets
+	# `mechanic_type = theocracy`, documented in _governments.info as
+	# "Should rulers be considered clergy", which is how vanilla's own
+	# non-monk clerical rulers are clergy. This line stays anyway,
+	# because a rabbi is clergy whether or not he holds office.
+	clergy = yes
+
 	compatibility = {
 		theologian = @pos_compat_medium
 		erudite = @pos_compat_medium # 1.20: was scholar, merged into erudite
@@ -234,11 +250,41 @@ kehillah_rabbi_trait = {
 	}
 }
 
+# Kohen and Levite status passes father to child (parent_inheritance_sex = male),
+# so lines propagate on their own. random_creation seeds generated characters at
+# roughly the traditional share of the population (about 5% / 4%); `potential`
+# keeps it off everyone outside Judaism. See docs/spec/v28-patronyms-and-priestly-lines.md.
+# Apostate: someone who left Judaism for another faith. Vanilla has no such trait
+# (only the `excommunicated` trait, the `apostate_perk` perk and the "the Apostate"
+# nickname), so this is new. Granted on conversion away from Judaism and removed on
+# return -- see common/on_action/kehillah_apostasy_on_actions.txt. Not a cherem:
+# that stays vanilla's `excommunicated`. Icon reuses excommunicated.dds, per this
+# mod's art policy.
+# The only penalty is opinion: every Jewish observer gets the modifier below.
+# `jewish_syncretic_recipient` is a parameter of vanilla's
+# special_doctrine_is_jewish_faith, which all Jewish faiths carry. Value is a first
+# pass. Revised 2026-10-11 (Daniel): dropped the piety-gain penalties.
+kehillah_apostate_trait = {
+	category = fame
+	icon = excommunicated.dds
+
+	triggered_opinion = {
+		parameter = jewish_syncretic_recipient
+		opinion_modifier = kehillah_apostate_opinion
+	}
+
+	shown_in_ruler_designer = no
+}
+
 kohen = {
 	category = fame
 	icon = theologian.dds
 
 	monthly_prestige = 0.1
+
+	potential = { faith.religion = religion:judaism_religion }
+	genetic = yes
+	random_creation = 0.05
 
 	inherit_chance = 100
 	parent_inheritance_sex = male
@@ -252,6 +298,10 @@ levite = {
 	icon = theologian.dds
 
 	monthly_prestige = 0.1
+
+	potential = { faith.religion = religion:judaism_religion }
+	genetic = yes
+	random_creation = 0.04
 
 	inherit_chance = 100
 	parent_inheritance_sex = male

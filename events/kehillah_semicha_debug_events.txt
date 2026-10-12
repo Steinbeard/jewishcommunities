@@ -1,0 +1,1142 @@
+﻿# Console-only probes for ordination / semicha (V21 slice 3); never
+# called by gameplay. Play or select a character, then:
+#   event kehillah_semicha_debug.1  -- READ-ONLY: candidate, curriculum,
+#                                      institution, readiness
+#   event kehillah_semicha_debug.2  -- make root an unordained candidate:
+#                                      strip the Rabbi trait, raise
+#                                      Learning to the floor if needed
+#   event kehillah_semicha_debug.3  -- grant the curriculum directly (two
+#                                      works, two fields), then report
+#   event kehillah_semicha_debug.4  -- build a Beit Midrash on root's own
+#                                      quarter, then report
+#
+# The usual shortest path to testing Seek Semicha on the Worms start, as
+# the Kehillah leader: .2, then .3, then .4 if the quarter has no study
+# hall yet, then open Decisions. .1 after each to see what moved.
+#
+# .2/.3/.4 all CHANGE STATE (a trait, a skill, variable lists, a domicile
+# building). Use them on a throwaway run.
+
+namespace = kehillah_semicha_debug
+
+kehillah_semicha_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.1: ordination state -- START"
+		debug_log_scopes = yes
+
+		if = {
+			limit = { has_trait = kehillah_rabbi_trait }
+			debug_log = "kehillah_semicha_debug.1: ALREADY ORDAINED has kehillah_rabbi_trait (Seek Semicha is hidden for him)"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: UNORDAINED no kehillah_rabbi_trait" }
+
+		if = {
+			limit = { is_rabbinic_authority_jewish_trigger = yes }
+			debug_log = "kehillah_semicha_debug.1: FAITH PASS rabbinic-authority Jewish"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: FAITH FAIL not a rabbinic-authority Jewish faith" }
+
+		if = {
+			limit = { kehillah_leadership_gender_eligible_trigger = yes }
+			debug_log = "kehillah_semicha_debug.1: GENDER PASS eligible under the current leadership rule"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: GENDER FAIL not eligible under the current leadership rule" }
+
+		if = {
+			limit = { learning >= kehillah_ordination_learning_floor_value }
+			debug_log = "kehillah_semicha_debug.1: LEARNING PASS at or above the ordination floor"
+		}
+		else_if = {
+			limit = { learning >= kehillah_ordination_foundation_learning_floor_value }
+			debug_log = "kehillah_semicha_debug.1: LEARNING FOUNDATION BAND only (6-7), below the floor to ordain"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: LEARNING FAIL below the foundation band" }
+
+		if = {
+			limit = { kehillah_rabbi_ordination_candidate_trigger = yes }
+			debug_log = "kehillah_semicha_debug.1: CANDIDATE PASS may enter the ordination path"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: CANDIDATE FAIL may not enter the ordination path" }
+
+		if = {
+			limit = { kehillah_rabbi_study_eligible_trigger = yes }
+			debug_log = "kehillah_semicha_debug.1: STUDY PASS Learn Torah's widened gate admits him"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: STUDY FAIL Learn Torah's gate refuses him" }
+
+		if = {
+			limit = {
+				has_variable_list = kehillah_mastered_works
+				variable_list_size = {
+					name = kehillah_mastered_works
+					value >= kehillah_ordination_works_required_value
+				}
+			}
+			debug_log = "kehillah_semicha_debug.1: WORKS PASS enough distinct mastered works"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: WORKS FAIL not enough distinct mastered works" }
+
+		if = {
+			limit = {
+				has_variable_list = kehillah_apprentice_fields
+				variable_list_size = {
+					name = kehillah_apprentice_fields
+					value >= kehillah_ordination_fields_required_value
+				}
+			}
+			debug_log = "kehillah_semicha_debug.1: FIELDS PASS enough distinct study fields"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: FIELDS FAIL not enough distinct study fields" }
+
+		if = {
+			limit = { kehillah_semicha_institution_available_trigger = { CHARACTER = root } }
+			debug_log = "kehillah_semicha_debug.1: INSTITUTION PASS a Beit Midrash within reach"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: INSTITUTION FAIL no Beit Midrash within reach" }
+
+		# The one that decides whether Seek Semicha is selectable, given
+		# the institution above.
+		if = {
+			limit = { kehillah_rabbi_ordination_ready_trigger = yes }
+			debug_log = "kehillah_semicha_debug.1: READY PASS Seek Semicha should be available"
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: READY FAIL Seek Semicha should be greyed out" }
+
+		kehillah_semicha_resolve_institution_effect = { CHARACTER = root }
+		if = {
+			limit = { exists = scope:kehillah_semicha_community }
+			debug_log = "kehillah_semicha_debug.1: resolved institution community (scopes dump follows)"
+			scope:kehillah_semicha_community = { debug_log_scopes = yes }
+		}
+		else = { debug_log = "kehillah_semicha_debug.1: no institution community resolved" }
+
+		debug_log = "kehillah_semicha_debug.1: ordination state -- END"
+	}
+}
+
+kehillah_semicha_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.2: make root an unordained candidate -- START"
+		if = {
+			limit = { has_trait = kehillah_rabbi_trait }
+			kehillah_remove_rabbi_trait_effect = yes
+			debug_log = "kehillah_semicha_debug.2: removed the Rabbi trait"
+		}
+		if = {
+			limit = { learning < kehillah_ordination_learning_floor_value }
+			add_learning_skill = 10
+			debug_log = "kehillah_semicha_debug.2: added 10 Learning to clear the floor"
+		}
+		trigger_event = kehillah_semicha_debug.1
+		debug_log = "kehillah_semicha_debug.2: make root an unordained candidate -- END"
+	}
+}
+
+kehillah_semicha_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.3: grant the curriculum -- START"
+
+		# Two real works from two different fields, matching what
+		# kehillah_study_specific_work_effect would have recorded:
+		# Targum Onkelos (parshanut) and the Mishnah (talmudics).
+		if = {
+			limit = { NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_targum_onkelos } } }
+			add_to_variable_list = { name = kehillah_mastered_works target = flag:work_targum_onkelos }
+		}
+		if = {
+			limit = { NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mishnah } } }
+			add_to_variable_list = { name = kehillah_mastered_works target = flag:work_mishnah }
+		}
+		if = {
+			limit = { NOT = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:parshanut } } }
+			add_to_variable_list = { name = kehillah_apprentice_fields target = flag:parshanut }
+		}
+		if = {
+			limit = { NOT = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:talmudics } } }
+			add_to_variable_list = { name = kehillah_apprentice_fields target = flag:talmudics }
+		}
+
+		trigger_event = kehillah_semicha_debug.1
+		debug_log = "kehillah_semicha_debug.3: grant the curriculum -- END"
+	}
+}
+
+kehillah_semicha_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.4: build a study hall -- START"
+		if = {
+			limit = { exists = domicile }
+			domicile = {
+				if = {
+					limit = { NOT = { has_domicile_building_or_higher = kehillah_beit_midrash_01 } }
+					add_domicile_building = kehillah_beit_midrash_01
+					# FOUND LIVE 2026-10-10 (Shabbat heartbeat 4): this used to
+					# log "added kehillah_beit_midrash_01" right here,
+					# unconditionally, and it was LYING. add_domicile_building
+					# consults the building's own can_construct, and
+					# kehillah_beit_midrash_01's can_construct requires
+					# kehillah_charter_allows_new_communal_building_trigger --
+					# which is FALSE on the stock Worms 1066 start, because the
+					# community sits under kehillah_christian_host_charter_
+					# prototype with no construction right cached yet (V16
+					# regional charters; the gate fails closed on purpose).
+					#
+					# So the engine threw "Domicile owner failed to meet
+					# triggered requirements" into error.log, nothing was built,
+					# and this probe reported success. A later .8 run is what
+					# exposed it, by still reporting every branch FAIL after a
+					# supposedly successful rebuild.
+					#
+					# The shim guide's "What ck3-tiger does NOT catch" section had
+					# already written this exact trap down -- add_domicile_building
+					# consults can_construct and tiger cannot simulate it, and the
+					# Worms start had silently been a no-op above synagogue tier 1
+					# for an unknown length of time. Second time this shape of bug
+					# has bitten; hence an assertion rather than a log line.
+					if = {
+						limit = { has_domicile_building_or_higher = kehillah_beit_midrash_01 }
+						debug_log = "kehillah_semicha_debug.4: ADDED kehillah_beit_midrash_01, and confirmed present"
+					}
+					else = {
+						debug_log = "kehillah_semicha_debug.4: FAILED to add kehillah_beit_midrash_01 -- can_construct refused it; see error.log. Nothing was built"
+						# root, not a domicile -> owner link: this is root's own
+						# domicile (the enclosing block is `domicile = { ... }`
+						# on root), so the owner is root by construction. Said
+						# explicitly because `domicile_owner` looks like the
+						# natural link and is NOT one -- ck3-tiger flagged it as
+						# an unknown token and tiger was RIGHT. The vanilla hits
+						# that seemed to confirm it were `nearby_domicile_owners`
+						# and `top_realm_domicile_owners`, which are
+						# `ai_recipients` VALUES in character_interactions, not a
+						# scope link. A substring match is not a verification.
+						if = {
+							limit = { root = { kehillah_charter_allows_new_communal_building_trigger = yes } }
+							debug_log = "kehillah_semicha_debug.4:   the charter DOES allow new communal buildings, so the refusal is something else (slots? cost?)"
+						}
+						else = {
+							debug_log = "kehillah_semicha_debug.4:   CAUSE: the host charter does not (yet) allow new communal buildings. This is correct V16 behaviour, not a bug -- a study hall cannot be conjured under an unresolved Christian host charter"
+						}
+					}
+				}
+				else = { debug_log = "kehillah_semicha_debug.4: a Beit Midrash is already here" }
+			}
+		}
+		else = { debug_log = "kehillah_semicha_debug.4: BLOCKED root has no domicile" }
+		trigger_event = kehillah_semicha_debug.1
+		debug_log = "kehillah_semicha_debug.4: build a study hall -- END"
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# V21 slice 4 (the rabbinic apprenticeship), added 2026-10-10.
+#   event kehillah_semicha_debug.5  -- READ-ONLY: guardian, accumulated
+#                                      years, credit, endorsement
+#   event kehillah_semicha_debug.6  -- grant a completed apprenticeship
+#                                      directly (sets the years counter
+#                                      to the required number), then
+#                                      report
+#   event kehillah_semicha_debug.11 -- the same three credit bands, but
+#                                      on a subject already IN each band;
+#                                      use this one, not .10, unless root
+#                                      has no Learning modifiers
+#   event kehillah_semicha_debug.10 -- drive Learning through all three
+#                                      credit bands and check which
+#                                      credit each one awards
+#   event kehillah_semicha_debug.7  -- run the coming-of-age sorter
+#                                      (kehillah_semicha.0002) NOW,
+#                                      without waiting for a birthday
+#
+# The ordinary way to test slice 4 without waiting ten in-game years, on
+# a child: .6, then .7. On an adult, .6 then .7 also works -- the sorter
+# itself does not check age, only the records.
+#
+# .6 CHANGES STATE. .7 can grant the Rabbi trait, which is the point.
+# ---------------------------------------------------------------------
+
+kehillah_semicha_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.5: apprenticeship state -- START"
+		debug_log_scopes = yes
+
+		if = {
+			limit = {
+				any_relation = {
+					type = guardian
+					always = yes
+				}
+			}
+			debug_log = "kehillah_semicha_debug.5: HAS A GUARDIAN relation"
+			random_relation = {
+				type = guardian
+				debug_log_scopes = yes
+				if = {
+					limit = { kehillah_rabbinic_guardian_trigger = yes }
+					debug_log = "kehillah_semicha_debug.5: GUARDIAN QUALIFIES rabbi, rabbinic-authority, gender-eligible"
+				}
+				else = { debug_log = "kehillah_semicha_debug.5: GUARDIAN DOES NOT QUALIFY" }
+			}
+		}
+		else = { debug_log = "kehillah_semicha_debug.5: NO GUARDIAN relation at all" }
+
+		if = {
+			limit = { kehillah_has_rabbinic_guardian_trigger = yes }
+			debug_log = "kehillah_semicha_debug.5: QUALIFYING GUARDIAN YES a birthday now would add a year"
+		}
+		else = { debug_log = "kehillah_semicha_debug.5: QUALIFYING GUARDIAN NO a birthday now would add nothing" }
+
+		if = {
+			limit = { has_variable = kehillah_apprentice_rabbi_years }
+			debug_log = "kehillah_semicha_debug.5: years record EXISTS"
+			if = {
+				limit = { var:kehillah_apprentice_rabbi_years >= kehillah_ordination_apprenticeship_years_value }
+				debug_log = "kehillah_semicha_debug.5: APPRENTICESHIP COMPLETE at or above the required years"
+			}
+			else = { debug_log = "kehillah_semicha_debug.5: APPRENTICESHIP INCOMPLETE below the required years" }
+		}
+		else = { debug_log = "kehillah_semicha_debug.5: no years record -- never had a qualifying guardian on a birthday" }
+
+		if = {
+			limit = { has_variable = kehillah_apprenticeship_curriculum }
+			debug_log = "kehillah_semicha_debug.5: FULL CURRICULUM CREDIT held (Learning 8+ band at adulthood)"
+		}
+		else = { debug_log = "kehillah_semicha_debug.5: no full curriculum credit" }
+
+		if = {
+			limit = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship } }
+			debug_log = "kehillah_semicha_debug.5: FOUNDATION FIELD CREDIT held (Learning 6-7 band at adulthood)"
+		}
+		else = { debug_log = "kehillah_semicha_debug.5: no foundation field credit" }
+
+		if = {
+			limit = { kehillah_rabbi_ordination_curriculum_met_trigger = yes }
+			debug_log = "kehillah_semicha_debug.5: CURRICULUM MET by one route or the other"
+		}
+		else = { debug_log = "kehillah_semicha_debug.5: CURRICULUM NOT MET" }
+
+		if = {
+			limit = {
+				any_relation = {
+					type = guardian
+					kehillah_rabbinic_guardian_trigger = yes
+					kehillah_mentor_endorses_trigger = { PUPIL = root }
+				}
+			}
+			debug_log = "kehillah_semicha_debug.5: ENDORSEMENT AVAILABLE a qualifying guardian would endorse"
+		}
+		else = { debug_log = "kehillah_semicha_debug.5: NO ENDORSEMENT no qualifying guardian willing (opinion <= -50, or cynical+arbitrary, or none qualifies)" }
+
+		debug_log = "kehillah_semicha_debug.5: apprenticeship state -- END"
+	}
+}
+
+kehillah_semicha_debug.6 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.6: grant a completed apprenticeship -- START"
+		set_variable = {
+			name = kehillah_apprentice_rabbi_years
+			value = kehillah_ordination_apprenticeship_years_value
+		}
+		debug_log = "kehillah_semicha_debug.6: years counter set to the required number"
+		trigger_event = kehillah_semicha_debug.5
+		debug_log = "kehillah_semicha_debug.6: grant a completed apprenticeship -- END"
+	}
+}
+
+kehillah_semicha_debug.7 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.7: run the coming-of-age sorter now -- START"
+		trigger_event = kehillah_semicha.0002
+		debug_log = "kehillah_semicha_debug.7: sorter fired -- if it endorsed, kehillah_semicha.0003 follows; .5 after this shows the credit"
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# V21 section 7 gaps -- institution branch coverage and losing the study
+# hall, added 2026-10-10 (Shabbat heartbeat 4).
+#
+#   event kehillah_semicha_debug.8  -- READ-ONLY. Runs kehillah_semicha_
+#                                      institution_available_trigger
+#                                      against one subject per branch and
+#                                      reports each verdict, with enough
+#                                      detail to tell a real FAIL from a
+#                                      correct one.
+#   event kehillah_semicha_debug.9  -- CHANGES STATE. Destroys the
+#                                      community's Beit Midrash, whatever
+#                                      tier it is, then re-runs .8.
+#                                      **OFTEN A ONE-WAY DOOR** -- .4 can
+#                                      only rebuild where the host charter
+#                                      allows new communal buildings, which
+#                                      the stock Worms 1066 start does not.
+#                                      .9 reports REVERSIBLE or WARNING,
+#                                      ONE-WAY before it removes anything.
+#                                      Reload rather than relying on .4.
+#
+# Why these exist: V21 section 7 lists the landed-ruler branch, the
+# landless-adventurer branch, and losing access to the Beit Midrash as
+# never tested. Heartbeat 4 is also the session that found the COURTIER
+# branch had been false for every courtier in the game, because
+# government_has_flag is true for a ruler's whole court (implementation
+# doc section 14). So "this branch has never been exercised" is a
+# statement with a track record behind it here, not a formality -- two of
+# the three remaining branches have never had a single live verdict.
+#
+# Note the institution trigger carries NO faith gate of its own (faith
+# lives in kehillah_rabbi_ordination_candidate_trigger), which is what
+# makes the host county's Christian holder a legitimate subject for the
+# MECHANICS of branch 2. It is not asserting that a Christian count may
+# be ordained -- the candidate trigger refuses him long before this.
+# ---------------------------------------------------------------------
+
+kehillah_semicha_debug.8 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.8: institution branch coverage -- START"
+
+		# The community's own province, which every branch below compares
+		# against. Guarded: a chained reference through an unset domicile
+		# is the ~990-errors-a-load mistake recorded in the library
+		# trigger's header.
+		if = {
+			limit = { exists = domicile.domicile_location }
+			domicile.domicile_location = { save_scope_as = kds8_here }
+			debug_log = "kehillah_semicha_debug.8: community province (scopes dump follows)"
+			domicile.domicile_location = { debug_log_scopes = yes }
+		}
+		else = { debug_log = "kehillah_semicha_debug.8: BLOCKED root has no domicile_location -- run this as a Kehillah leader" }
+
+		# --- BRANCH 1: the leader's own quarter. Already proven live, kept
+		# here as the control: if this one FAILs while a study hall is
+		# standing, the probe itself or the start is wrong, not the branch
+		# under test.
+		#
+		# WORDING FIX 2026-10-10, same session: the FAIL branch used to say
+		# "CONTROL BROKEN, distrust the rest of this run" unconditionally,
+		# which is actively misleading when .9 has just demolished the study
+		# hall on purpose -- that FAIL is the expected result, and the log
+		# was telling the reader to throw out a passing test. The two cases
+		# are now distinguished by the one thing that separates them.
+		if = {
+			limit = { kehillah_semicha_institution_available_trigger = { CHARACTER = root } }
+			debug_log = "kehillah_semicha_debug.8: BRANCH 1 PASS the leader's own quarter (control)"
+		}
+		else_if = {
+			limit = {
+				OR = {
+					NOT = { exists = domicile }
+					domicile = { NOT = { has_domicile_building_or_higher = kehillah_beit_midrash_01 } }
+				}
+			}
+			debug_log = "kehillah_semicha_debug.8: BRANCH 1 FAIL the leader's own quarter -- EXPECTED, there is no Beit Midrash here right now (e.g. .9 has just removed it). Not a control break"
+		}
+		else = { debug_log = "kehillah_semicha_debug.8: BRANCH 1 FAIL the leader's own quarter WITH a Beit Midrash standing -- CONTROL BROKEN, distrust the rest of this run" }
+
+		# --- BRANCH 2: a landed ruler whose capital province holds a
+		# community. Subject derived from the community's own province
+		# rather than hardcoding c_worms, so this probe keeps working at
+		# any start and in any community.
+		if = {
+			limit = { exists = scope:kds8_here.county.holder }
+			scope:kds8_here.county.holder = { save_scope_as = kds8_landed }
+			debug_log = "kehillah_semicha_debug.8: BRANCH 2 subject is the host county's holder (scopes dump follows)"
+			scope:kds8_landed = {
+				debug_log_scopes = yes
+				if = {
+					limit = { is_ruler = yes }
+					debug_log = "kehillah_semicha_debug.8:   is_ruler YES"
+				}
+				else = { debug_log = "kehillah_semicha_debug.8:   is_ruler NO" }
+				if = {
+					limit = { exists = capital_province }
+					debug_log = "kehillah_semicha_debug.8:   HAS a capital_province"
+					if = {
+						limit = { capital_province = scope:kds8_here }
+						debug_log = "kehillah_semicha_debug.8:   capital_province IS the community's province (expect BRANCH 2 PASS)"
+					}
+					else = { debug_log = "kehillah_semicha_debug.8:   capital_province is ELSEWHERE -- e.g. a duke holding this county from another seat. A BRANCH 2 FAIL below is then CORRECT, not a bug" }
+				}
+				else = { debug_log = "kehillah_semicha_debug.8:   has NO capital_province -- a BRANCH 2 FAIL below is CORRECT" }
+			}
+			if = {
+				limit = { kehillah_semicha_institution_available_trigger = { CHARACTER = scope:kds8_landed } }
+				debug_log = "kehillah_semicha_debug.8: BRANCH 2 PASS a landed ruler at the community's province"
+			}
+			else = { debug_log = "kehillah_semicha_debug.8: BRANCH 2 FAIL a landed ruler at the community's province -- read the three lines above before calling it a bug" }
+		}
+		else = { debug_log = "kehillah_semicha_debug.8: BRANCH 2 BLOCKED the community's province has no county holder" }
+
+		# --- BRANCH 2b: the same branch, but hunting a subject that SHOULD
+		# pass, anywhere in the world.
+		#
+		# ADDED 2026-10-10, after 2's first live verdict. At Worms the host
+		# county's holder rules from another seat, so branch 2 returned FAIL
+		# -- correctly, but a correct FAIL is a negative control, not proof
+		# the branch can ever say yes. With a dozen-plus registered
+		# communities, somewhere there is probably a count actually seated in
+		# the province their community occupies; that character is the
+		# positive test.
+		#
+		# Scanning for the subject instead of hardcoding one keeps this
+		# honest: if nobody in the world qualifies, the probe says NOT
+		# OBSERVED rather than manufacturing a ruler, exactly as 3b does.
+		# Written as an effect-side scan with save_temporary_scope_as rather
+		# than a `limit` that passes the character into the trigger. Textual
+		# substitution of `this` into kehillah_semicha_institution_available_
+		# trigger would re-bind inside its own any_in_global_list / holder
+		# blocks and silently compare the wrong characters -- the same class
+		# of scope mistake this trigger has already produced once today.
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = { exists = domicile.domicile_location }
+			}
+			holder.domicile.domicile_location = { save_temporary_scope_as = kds8_prov }
+			if = {
+				limit = {
+					holder.domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_01 }
+					exists = scope:kds8_prov.county.holder
+					scope:kds8_prov.county.holder = {
+						is_ruler = yes
+						exists = capital_province
+						capital_province = scope:kds8_prov
+						NOT = { government_has_flag = government_is_kehillah }
+						NOT = { has_government = landless_adventurer_government }
+					}
+				}
+				scope:kds8_prov.county.holder = { save_scope_as = kds8_landed2 }
+			}
+		}
+		if = {
+			limit = { exists = scope:kds8_landed2 }
+			debug_log = "kehillah_semicha_debug.8: BRANCH 2b subject found -- a county holder seated in their own community's province (scopes dump follows)"
+			scope:kds8_landed2 = { debug_log_scopes = yes }
+			if = {
+				limit = { kehillah_semicha_institution_available_trigger = { CHARACTER = scope:kds8_landed2 } }
+				debug_log = "kehillah_semicha_debug.8: BRANCH 2b PASS the landed-ruler branch CAN resolve -- branch 2 positively verified"
+			}
+			else = { debug_log = "kehillah_semicha_debug.8: BRANCH 2b FAIL a seated county holder still does not resolve -- this one IS a bug, unlike the branch 2 FAIL above" }
+		}
+		else = { debug_log = "kehillah_semicha_debug.8: BRANCH 2b NOT OBSERVED no registered community anywhere has a county holder seated in its own province -- honest null, branch 2 stays positively unverified" }
+
+		# --- BRANCH 3a: a courtier. This is the population slice 4's
+		# apprenticeship produces, and the one the 2026-10-10 fix was for.
+		if = {
+			limit = {
+				any_courtier = {
+					NOT = { this = root }
+					is_alive = yes
+				}
+			}
+			random_courtier = {
+				limit = {
+					NOT = { this = root }
+					is_alive = yes
+				}
+				save_scope_as = kds8_courtier
+			}
+			if = {
+				limit = { kehillah_semicha_institution_available_trigger = { CHARACTER = scope:kds8_courtier } }
+				debug_log = "kehillah_semicha_debug.8: BRANCH 3a PASS a courtier of the community's leader"
+			}
+			else = { debug_log = "kehillah_semicha_debug.8: BRANCH 3a FAIL a courtier of the community's leader" }
+		}
+		else = { debug_log = "kehillah_semicha_debug.8: BRANCH 3a BLOCKED root has no other living courtier" }
+
+		# --- BRANCH 3b: a landless adventurer standing in the community's
+		# province. Reported as an honest null when none exists -- there is
+		# no guarantee one is anywhere near Worms in 1066, and inventing
+		# one would test a character this probe built rather than the game.
+		if = {
+			limit = {
+				exists = scope:kds8_here
+				any_living_character = {
+					has_government = landless_adventurer_government
+					exists = location
+					location = scope:kds8_here
+				}
+			}
+			random_living_character = {
+				limit = {
+					has_government = landless_adventurer_government
+					exists = location
+					location = scope:kds8_here
+				}
+				save_scope_as = kds8_adventurer
+			}
+			debug_log = "kehillah_semicha_debug.8: BRANCH 3b subject found (scopes dump follows)"
+			scope:kds8_adventurer = { debug_log_scopes = yes }
+			if = {
+				limit = { kehillah_semicha_institution_available_trigger = { CHARACTER = scope:kds8_adventurer } }
+				debug_log = "kehillah_semicha_debug.8: BRANCH 3b PASS a landless adventurer in the community's province"
+			}
+			else = { debug_log = "kehillah_semicha_debug.8: BRANCH 3b FAIL a landless adventurer in the community's province" }
+		}
+		else = { debug_log = "kehillah_semicha_debug.8: BRANCH 3b NOT OBSERVED no landless adventurer is standing in the community's province -- an honest null, not a failure" }
+
+		debug_log = "kehillah_semicha_debug.8: institution branch coverage -- END"
+	}
+}
+
+
+kehillah_semicha_debug.9 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.9: destroy the study hall -- START"
+
+		# Say UP FRONT whether this is reversible on this save, because it
+		# often is not. Found live 2026-10-10, the first time .9 ran: the
+		# rebuild path (.4 -> add_domicile_building) consults
+		# kehillah_beit_midrash_01's can_construct, which requires the host
+		# charter to allow new communal buildings. On the stock Worms 1066
+		# start it does NOT -- so .9 is a ONE-WAY door there, and the
+		# original version of this event cheerfully advertised ".4 rebuilds
+		# it" regardless.
+		#
+		# Checked before the removal rather than after, so the operator is
+		# told while they still have the building.
+		if = {
+			limit = { kehillah_charter_allows_new_communal_building_trigger = yes }
+			debug_log = "kehillah_semicha_debug.9: REVERSIBLE -- the charter allows new communal buildings, so .4 should be able to rebuild"
+		}
+		else = {
+			debug_log = "kehillah_semicha_debug.9: WARNING, ONE-WAY on this save -- the host charter does not allow new communal buildings, so .4 will NOT be able to rebuild. Reload rather than expecting a restore"
+		}
+
+		if = {
+			limit = {
+				exists = domicile
+				domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_01 }
+			}
+			domicile = {
+				# Each tier is its own building id, so "remove the Beit
+				# Midrash" means removing whichever tier is actually there
+				# -- the same shape as vanilla's
+				# destroy_or_downgrade_estate_building_N_effect
+				# (common/scripted_effects/00_building_effects.txt), which
+				# also tests tier by tier rather than assuming one.
+				if = {
+					limit = { has_domicile_building = kehillah_beit_midrash_03 }
+					remove_domicile_building_no_refund = kehillah_beit_midrash_03
+					debug_log = "kehillah_semicha_debug.9: removed kehillah_beit_midrash_03"
+				}
+				if = {
+					limit = { has_domicile_building = kehillah_beit_midrash_02 }
+					remove_domicile_building_no_refund = kehillah_beit_midrash_02
+					debug_log = "kehillah_semicha_debug.9: removed kehillah_beit_midrash_02"
+				}
+				if = {
+					limit = { has_domicile_building = kehillah_beit_midrash_01 }
+					remove_domicile_building_no_refund = kehillah_beit_midrash_01
+					debug_log = "kehillah_semicha_debug.9: removed kehillah_beit_midrash_01"
+				}
+				if = {
+					limit = { NOT = { has_domicile_building_or_higher = kehillah_beit_midrash_01 } }
+					debug_log = "kehillah_semicha_debug.9: CONFIRMED no Beit Midrash of any tier remains"
+				}
+				else = { debug_log = "kehillah_semicha_debug.9: FAIL a Beit Midrash is still here after the removals" }
+			}
+		}
+		else = { debug_log = "kehillah_semicha_debug.9: nothing to do -- no Beit Midrash here, or no domicile" }
+
+		# Section 3.4 is explicit that recorded progress is not erased, and
+		# that only the CEREMONY needs an institution. So losing the study
+		# hall must close the door without burning the student's work.
+		if = {
+			limit = { has_variable = kehillah_apprenticeship_curriculum }
+			debug_log = "kehillah_semicha_debug.9: curriculum record SURVIVED the loss (required)"
+		}
+		if = {
+			limit = { has_variable_list = kehillah_mastered_works }
+			debug_log = "kehillah_semicha_debug.9: mastered-works list SURVIVED the loss (required)"
+		}
+		if = {
+			limit = { has_variable = kehillah_apprentice_rabbi_years }
+			debug_log = "kehillah_semicha_debug.9: apprenticeship years SURVIVED the loss (required)"
+		}
+
+		# Every branch should now refuse, because every branch ends in the
+		# same has_domicile_building_or_higher test.
+		debug_log = "kehillah_semicha_debug.9: re-running branch coverage; expect every branch that PASSed before to FAIL now"
+		trigger_event = kehillah_semicha_debug.8
+		debug_log = "kehillah_semicha_debug.9: destroy the study hall -- END; .4 rebuilds it ONLY if the REVERSIBLE line above said so, otherwise reload"
+	}
+}
+
+# ---------------------------------------------------------------------
+# V21 SLICE 4 -- THE THREE CREDIT BANDS, added 2026-10-10 (Shabbat
+# heartbeat 5).
+#
+#   event kehillah_semicha_debug.10 -- CHANGES STATE. Drives root's
+#                                      Learning through all three bands
+#                                      and checks which credit
+#                                      kehillah_award_apprenticeship_
+#                                      credit_effect awards in each.
+#
+# Why: heartbeat 4 fixed a double-credit bug in that effect and verified
+# the FULL band live, but the FOUNDATION band (Learning 6-7 earning one
+# field and nothing more) has never had a live verdict -- the
+# verification run happened to use a full-band pupil. This probe tests
+# the band that was never seen, plus the two either side of it, so a
+# fix in one direction cannot hide a break in another. That regression
+# half is the half that mattered last time: had the restructured
+# condition been wrong the other way, NO pupil would ever receive credit
+# and slice 4 would have been silently dead again.
+#
+# It calls the credit effect DIRECTLY rather than through the sorter
+# (.7 / kehillah_semicha.0002), because the sorter is scheduled from
+# on_16th_birthday and fires once per character -- which is exactly why
+# ordinary play never reached the double-credit bug. Testing the effect
+# on its own is the point.
+#
+# TWO THINGS THIS PROBE DELIBERATELY DOES NOT DO:
+#
+# It does not trust the skill it just set. There is no set_learning_skill
+# in 1.20, only the additive add_learning_skill, and that moves the BASE
+# skill while the learning trigger reads the TOTAL including education
+# and trait modifiers. A character can therefore end up in a different
+# band than the number added. Each case re-checks the band against the
+# mod's own floor values and reports BAND NOT REACHED / SKIPPED instead
+# of a verdict when it missed. A probe that assumed the set value is
+# exactly the shape that made .4 lie about a building it never built.
+#
+# It does not report success from having run. Every case asks the
+# character what credit it actually holds afterwards, and the first
+# thing it checks is whether BOTH credits are held -- the 2026-10-10
+# bug's own signature -- because holding both once read as a pass.
+#
+# LEAVES ROOT'S LEARNING AT 5 AND CLEARS BOTH CREDITS. Throwaway runs
+# only; reload afterwards rather than keeping the save.
+# ---------------------------------------------------------------------
+kehillah_semicha_debug.10 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.10: credit bands -- START"
+		debug_log_scopes = yes
+
+		# The effect gates on faith before anything else, so on a non-Jewish
+		# root every case below would report a correct refusal that looks like
+		# a band failure. Refuse to run instead of producing that.
+		if = {
+			limit = { NOT = { is_rabbinic_authority_jewish_trigger = yes } }
+			debug_log = "kehillah_semicha_debug.10: ABORT root is not rabbinic-authority Jewish -- the effect gates on faith, so every band would refuse for the wrong reason. Switch to a Jewish character."
+		}
+		else = {
+			# The effect also requires a completed apprenticeship. Granting it
+			# the same way .6 does, so this probe does not depend on run order.
+			set_variable = {
+				name = kehillah_apprentice_rabbi_years
+				value = kehillah_ordination_apprenticeship_years_value
+			}
+			if = {
+				limit = { kehillah_rabbinic_apprenticeship_complete_trigger = yes }
+				debug_log = "kehillah_semicha_debug.10: apprenticeship reads COMPLETE -- the band is now the only thing being tested"
+			}
+			else = { debug_log = "kehillah_semicha_debug.10: ABORT apprenticeship still reads incomplete after setting the years counter -- every band below would refuse on that, not on Learning" }
+
+			# ---- FULL: aim for Learning 10, expect CURRICULUM ----
+			debug_log = "kehillah_semicha_debug.10: ---- FULL: aiming for Learning 10 ----"
+			# Floor it first. There is no set_learning_skill in 1.20 -- only the
+			# additive add_learning_skill -- so -100 against the engine's floor of
+			# 0 is how an absolute starting point is reached.
+			add_learning_skill = -100
+			add_learning_skill = 10
+			# Without this the new value does not publish on a paused game and
+			# every trigger below would read the OLD skill (shim guide).
+			force_character_skill_recalculation = yes
+
+			# VERIFY rather than assume. add_learning_skill moves the BASE skill,
+			# while the learning trigger reads the total including education and
+			# trait modifiers -- so the character can land in a different band
+			# than the number just added. If that happens, say so and do not
+			# dress the result up as a verdict on this band.
+			set_local_variable = { name = kh_band_ok value = 0 }
+			if = {
+				limit = { learning >= kehillah_ordination_learning_floor_value }
+				set_local_variable = { name = kh_band_ok value = 1 }
+			debug_log = "kehillah_semicha_debug.10: FULL BAND REACHED Learning is at or above the ordination floor"
+			}
+			else = { debug_log = "kehillah_semicha_debug.10:FULL BAND NOT REACHED Learning is below the ordination floor -- NOT OBSERVED, not a FAIL" }
+
+			# Clear any credit from an earlier case, so each band is judged on
+			# its own and the effect's idempotence clause does not refuse.
+			remove_variable = kehillah_apprenticeship_curriculum
+			remove_list_variable = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+
+			kehillah_award_apprenticeship_credit_effect = yes
+
+			if = {
+				limit = { local_var:kh_band_ok = 1 }
+				if = {
+					limit = {
+						has_variable = kehillah_apprenticeship_curriculum
+						is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+					}
+			debug_log = "kehillah_semicha_debug.10: FULL FAIL BOTH credits held at once -- the bands are exclusive; this is the 2026-10-10 double-credit bug back"
+				}
+				else_if = {
+					limit = { has_variable = kehillah_apprenticeship_curriculum }
+			debug_log = "kehillah_semicha_debug.10: FULL PASS full curriculum credit only"
+				}
+				else_if = {
+					limit = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship } }
+			debug_log = "kehillah_semicha_debug.10: FULL FAIL got the foundation field credit, expected CURRICULUM"
+				}
+				else = { debug_log = "kehillah_semicha_debug.10:FULL FAIL no credit awarded at all, expected CURRICULUM" }
+			}
+			else = { debug_log = "kehillah_semicha_debug.10:FULL SKIPPED verdict withheld -- the intended band was never reached" }
+
+			# ---- FOUNDATION: aim for Learning 7, expect FIELD ----
+			debug_log = "kehillah_semicha_debug.10: ---- FOUNDATION: aiming for Learning 7 ----"
+			# Floor it first. There is no set_learning_skill in 1.20 -- only the
+			# additive add_learning_skill -- so -100 against the engine's floor of
+			# 0 is how an absolute starting point is reached.
+			add_learning_skill = -100
+			add_learning_skill = 7
+			# Without this the new value does not publish on a paused game and
+			# every trigger below would read the OLD skill (shim guide).
+			force_character_skill_recalculation = yes
+
+			# VERIFY rather than assume. add_learning_skill moves the BASE skill,
+			# while the learning trigger reads the total including education and
+			# trait modifiers -- so the character can land in a different band
+			# than the number just added. If that happens, say so and do not
+			# dress the result up as a verdict on this band.
+			set_local_variable = { name = kh_band_ok value = 0 }
+			if = {
+				limit = {
+					learning >= kehillah_ordination_foundation_learning_floor_value
+					NOT = { learning >= kehillah_ordination_learning_floor_value }
+				}
+				set_local_variable = { name = kh_band_ok value = 1 }
+			debug_log = "kehillah_semicha_debug.10: FOUNDATION BAND REACHED Learning is inside the foundation band (6-7)"
+			}
+			else_if = {
+				limit = { learning >= kehillah_ordination_learning_floor_value }
+			debug_log = "kehillah_semicha_debug.10: FOUNDATION BAND NOT REACHED Learning overshot into the full band -- modifiers are lifting it; NOT OBSERVED, not a FAIL"
+			}
+			else = { debug_log = "kehillah_semicha_debug.10:FOUNDATION BAND NOT REACHED Learning fell below the foundation floor -- NOT OBSERVED, not a FAIL" }
+
+			# Clear any credit from an earlier case, so each band is judged on
+			# its own and the effect's idempotence clause does not refuse.
+			remove_variable = kehillah_apprenticeship_curriculum
+			remove_list_variable = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+
+			kehillah_award_apprenticeship_credit_effect = yes
+
+			if = {
+				limit = { local_var:kh_band_ok = 1 }
+				if = {
+					limit = {
+						has_variable = kehillah_apprenticeship_curriculum
+						is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+					}
+			debug_log = "kehillah_semicha_debug.10: FOUNDATION FAIL BOTH credits held at once -- the bands are exclusive; this is the 2026-10-10 double-credit bug back"
+				}
+				else_if = {
+					limit = { has_variable = kehillah_apprenticeship_curriculum }
+			debug_log = "kehillah_semicha_debug.10: FOUNDATION FAIL got the full curriculum credit, expected FIELD"
+				}
+				else_if = {
+					limit = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship } }
+			debug_log = "kehillah_semicha_debug.10: FOUNDATION PASS foundation field credit only"
+				}
+				else = { debug_log = "kehillah_semicha_debug.10:FOUNDATION FAIL no credit awarded at all, expected FIELD" }
+			}
+			else = { debug_log = "kehillah_semicha_debug.10:FOUNDATION SKIPPED verdict withheld -- the intended band was never reached" }
+
+			# ---- BELOW: aim for Learning 5, expect NEITHER ----
+			debug_log = "kehillah_semicha_debug.10: ---- BELOW: aiming for Learning 5 ----"
+			# Floor it first. There is no set_learning_skill in 1.20 -- only the
+			# additive add_learning_skill -- so -100 against the engine's floor of
+			# 0 is how an absolute starting point is reached.
+			add_learning_skill = -100
+			add_learning_skill = 5
+			# Without this the new value does not publish on a paused game and
+			# every trigger below would read the OLD skill (shim guide).
+			force_character_skill_recalculation = yes
+
+			# VERIFY rather than assume. add_learning_skill moves the BASE skill,
+			# while the learning trigger reads the total including education and
+			# trait modifiers -- so the character can land in a different band
+			# than the number just added. If that happens, say so and do not
+			# dress the result up as a verdict on this band.
+			set_local_variable = { name = kh_band_ok value = 0 }
+			if = {
+				limit = { NOT = { learning >= kehillah_ordination_foundation_learning_floor_value } }
+				set_local_variable = { name = kh_band_ok value = 1 }
+			debug_log = "kehillah_semicha_debug.10: BELOW BAND REACHED Learning is below the foundation floor"
+			}
+			else = { debug_log = "kehillah_semicha_debug.10:BELOW BAND NOT REACHED Learning is still at or above the foundation floor -- NOT OBSERVED, not a FAIL" }
+
+			# Clear any credit from an earlier case, so each band is judged on
+			# its own and the effect's idempotence clause does not refuse.
+			remove_variable = kehillah_apprenticeship_curriculum
+			remove_list_variable = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+
+			kehillah_award_apprenticeship_credit_effect = yes
+
+			if = {
+				limit = { local_var:kh_band_ok = 1 }
+				if = {
+					limit = {
+						has_variable = kehillah_apprenticeship_curriculum
+						is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+					}
+			debug_log = "kehillah_semicha_debug.10: BELOW FAIL BOTH credits held at once -- the bands are exclusive; this is the 2026-10-10 double-credit bug back"
+				}
+				else_if = {
+					limit = { has_variable = kehillah_apprenticeship_curriculum }
+			debug_log = "kehillah_semicha_debug.10: BELOW FAIL got the full curriculum credit, expected NEITHER"
+				}
+				else_if = {
+					limit = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship } }
+			debug_log = "kehillah_semicha_debug.10: BELOW FAIL got the foundation field credit, expected NEITHER"
+				}
+				else = { debug_log = "kehillah_semicha_debug.10:BELOW PASS no credit, correctly" }
+			}
+			else = { debug_log = "kehillah_semicha_debug.10:BELOW SKIPPED verdict withheld -- the intended band was never reached" }
+
+		}
+		debug_log = "kehillah_semicha_debug.10: credit bands -- END"
+	}
+}
+
+# ---------------------------------------------------------------------
+# V21 SLICE 4 -- THE CREDIT BANDS, TAKE 2, added 2026-10-10 (Shabbat
+# heartbeat 5, after .10 could not reach two of the three bands).
+#
+#   event kehillah_semicha_debug.11 -- CHANGES STATE on courtiers.
+#                                      Same three-band question as .10,
+#                                      but it SELECTS a subject already
+#                                      in each band instead of trying to
+#                                      move anyone's Learning.
+#
+# WHY .10 WAS NOT ENOUGH, measured rather than assumed. Run live on the
+# Worms leader, .10 confirmed the FULL band and correctly withheld a
+# verdict on the other two. The reason was then measured directly: Isaac
+# HaLevi reads Learning 17 with his BASE skill floored to 0. 1.20 has no
+# set_learning_skill, only the additive add_learning_skill, which moves
+# the base; the engine floors the base at 0; and the learning trigger
+# reads the TOTAL including education, trait and lifestyle modifiers. So
+# on a scholarly character the foundation band (6-7) and the below band
+# (<6) are simply not reachable by adding skill, in either direction.
+#
+# This probe inverts the approach: do not move anyone into a band, go
+# find someone already in it. A Kehillah court is full of Jewish
+# courtiers across the whole Learning range, and the effect reads the
+# same total `learning` either way -- so a selected subject tests the
+# real gate more faithfully than a manufactured one, with no modifier
+# arithmetic to get wrong.
+#
+# Each case still reports NOT OBSERVED when the court has nobody in that
+# band, rather than widening the band until something matches. A test
+# that moves its own goalposts to produce a PASS is worse than no test.
+#
+# STATE: sets kehillah_apprentice_rabbi_years on up to three courtiers
+# and clears their apprenticeship credit. Throwaway runs only; reload
+# afterwards rather than keeping the save.
+# ---------------------------------------------------------------------
+kehillah_semicha_debug.11 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_semicha_debug.11: credit bands by selected subject -- START"
+		debug_log_scopes = yes
+		if = {
+			limit = { NOT = { any_courtier = { is_rabbinic_authority_jewish_trigger = yes } } }
+			debug_log = "kehillah_semicha_debug.11: ABORT this leader has no Jewish courtiers at all -- every case below would report NOT OBSERVED for the wrong reason. Switch to a Kehillah leader."
+		}
+		else = {
+			# ---------------- FULL: expect CURRICULUM ----------------
+			debug_log = "kehillah_semicha_debug.11: ---- FULL: looking for a subject already in this band ----"
+			if = {
+				limit = {
+					any_courtier = {
+						is_rabbinic_authority_jewish_trigger = yes
+						learning >= kehillah_ordination_learning_floor_value
+					}
+				}
+				random_courtier = {
+					limit = {
+						is_rabbinic_authority_jewish_trigger = yes
+						learning >= kehillah_ordination_learning_floor_value
+					}
+					save_scope_as = kh_band_subject
+					debug_log = "kehillah_semicha_debug.11: FULL SUBJECT chosen (identity in scopes dump)"
+					debug_log_scopes = yes
+
+					# The apprenticeship must read complete, or the effect refuses
+					# on that and not on Learning -- which would look like a band
+					# failure. Granted the same way .6 does.
+					set_variable = {
+						name = kehillah_apprentice_rabbi_years
+						value = kehillah_ordination_apprenticeship_years_value
+					}
+					# Clear any credit the subject already carries, so the verdict
+					# is about this call and not about their history.
+					remove_variable = kehillah_apprenticeship_curriculum
+					remove_list_variable = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+
+					if = {
+						limit = { kehillah_rabbinic_apprenticeship_complete_trigger = yes }
+						kehillah_award_apprenticeship_credit_effect = yes
+
+						if = {
+							limit = {
+								has_variable = kehillah_apprenticeship_curriculum
+								is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+							}
+							debug_log = "kehillah_semicha_debug.11: FULL FAIL BOTH credits held at once -- the bands are exclusive; the 2026-10-10 double-credit bug is back"
+						}
+						else_if = {
+							limit = { has_variable = kehillah_apprenticeship_curriculum }
+							debug_log = "kehillah_semicha_debug.11: FULL PASS full curriculum credit only"
+						}
+						else_if = {
+							limit = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship } }
+							debug_log = "kehillah_semicha_debug.11: FULL FAIL got the foundation field credit, expected CURRICULUM"
+						}
+						else = { debug_log = "kehillah_semicha_debug.11: FULL FAIL no credit awarded at all, expected CURRICULUM" }
+					}
+					else = { debug_log = "kehillah_semicha_debug.11: FULL SKIPPED apprenticeship still reads incomplete -- the refusal would not be about Learning" }
+				}
+			}
+			else = { debug_log = "kehillah_semicha_debug.11:FULL NOT OBSERVED no Jewish courtier of this leader sits in this band -- try a bigger court or another community; NOT a FAIL" }
+
+			# ---------------- FOUNDATION: expect FIELD ----------------
+			debug_log = "kehillah_semicha_debug.11: ---- FOUNDATION: looking for a subject already in this band ----"
+			if = {
+				limit = {
+					any_courtier = {
+						is_rabbinic_authority_jewish_trigger = yes
+						learning >= kehillah_ordination_foundation_learning_floor_value
+						NOT = { learning >= kehillah_ordination_learning_floor_value }
+					}
+				}
+				random_courtier = {
+					limit = {
+						is_rabbinic_authority_jewish_trigger = yes
+						learning >= kehillah_ordination_foundation_learning_floor_value
+						NOT = { learning >= kehillah_ordination_learning_floor_value }
+					}
+					save_scope_as = kh_band_subject
+					debug_log = "kehillah_semicha_debug.11: FOUNDATION SUBJECT chosen (identity in scopes dump)"
+					debug_log_scopes = yes
+
+					# The apprenticeship must read complete, or the effect refuses
+					# on that and not on Learning -- which would look like a band
+					# failure. Granted the same way .6 does.
+					set_variable = {
+						name = kehillah_apprentice_rabbi_years
+						value = kehillah_ordination_apprenticeship_years_value
+					}
+					# Clear any credit the subject already carries, so the verdict
+					# is about this call and not about their history.
+					remove_variable = kehillah_apprenticeship_curriculum
+					remove_list_variable = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+
+					if = {
+						limit = { kehillah_rabbinic_apprenticeship_complete_trigger = yes }
+						kehillah_award_apprenticeship_credit_effect = yes
+
+						if = {
+							limit = {
+								has_variable = kehillah_apprenticeship_curriculum
+								is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+							}
+							debug_log = "kehillah_semicha_debug.11: FOUNDATION FAIL BOTH credits held at once -- the bands are exclusive; the 2026-10-10 double-credit bug is back"
+						}
+						else_if = {
+							limit = { has_variable = kehillah_apprenticeship_curriculum }
+							debug_log = "kehillah_semicha_debug.11: FOUNDATION FAIL got the full curriculum credit, expected FIELD"
+						}
+						else_if = {
+							limit = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship } }
+							debug_log = "kehillah_semicha_debug.11: FOUNDATION PASS foundation field credit only"
+						}
+						else = { debug_log = "kehillah_semicha_debug.11: FOUNDATION FAIL no credit awarded at all, expected FIELD" }
+					}
+					else = { debug_log = "kehillah_semicha_debug.11: FOUNDATION SKIPPED apprenticeship still reads incomplete -- the refusal would not be about Learning" }
+				}
+			}
+			else = { debug_log = "kehillah_semicha_debug.11:FOUNDATION NOT OBSERVED no Jewish courtier of this leader sits in this band -- try a bigger court or another community; NOT a FAIL" }
+
+			# ---------------- BELOW: expect NEITHER ----------------
+			debug_log = "kehillah_semicha_debug.11: ---- BELOW: looking for a subject already in this band ----"
+			if = {
+				limit = {
+					any_courtier = {
+						is_rabbinic_authority_jewish_trigger = yes
+						NOT = { learning >= kehillah_ordination_foundation_learning_floor_value }
+					}
+				}
+				random_courtier = {
+					limit = {
+						is_rabbinic_authority_jewish_trigger = yes
+						NOT = { learning >= kehillah_ordination_foundation_learning_floor_value }
+					}
+					save_scope_as = kh_band_subject
+					debug_log = "kehillah_semicha_debug.11: BELOW SUBJECT chosen (identity in scopes dump)"
+					debug_log_scopes = yes
+
+					# The apprenticeship must read complete, or the effect refuses
+					# on that and not on Learning -- which would look like a band
+					# failure. Granted the same way .6 does.
+					set_variable = {
+						name = kehillah_apprentice_rabbi_years
+						value = kehillah_ordination_apprenticeship_years_value
+					}
+					# Clear any credit the subject already carries, so the verdict
+					# is about this call and not about their history.
+					remove_variable = kehillah_apprenticeship_curriculum
+					remove_list_variable = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+
+					if = {
+						limit = { kehillah_rabbinic_apprenticeship_complete_trigger = yes }
+						kehillah_award_apprenticeship_credit_effect = yes
+
+						if = {
+							limit = {
+								has_variable = kehillah_apprenticeship_curriculum
+								is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+							}
+							debug_log = "kehillah_semicha_debug.11: BELOW FAIL BOTH credits held at once -- the bands are exclusive; the 2026-10-10 double-credit bug is back"
+						}
+						else_if = {
+							limit = { has_variable = kehillah_apprenticeship_curriculum }
+							debug_log = "kehillah_semicha_debug.11: BELOW FAIL got the full curriculum credit, expected NEITHER"
+						}
+						else_if = {
+							limit = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship } }
+							debug_log = "kehillah_semicha_debug.11: BELOW FAIL got the foundation field credit, expected NEITHER"
+						}
+						else = { debug_log = "kehillah_semicha_debug.11: BELOW PASS no credit, correctly" }
+					}
+					else = { debug_log = "kehillah_semicha_debug.11: BELOW SKIPPED apprenticeship still reads incomplete -- the refusal would not be about Learning" }
+				}
+			}
+			else = { debug_log = "kehillah_semicha_debug.11:BELOW NOT OBSERVED no Jewish courtier of this leader sits in this band -- try a bigger court or another community; NOT a FAIL" }
+
+		}
+		debug_log = "kehillah_semicha_debug.11: credit bands by selected subject -- END"
+	}
+}

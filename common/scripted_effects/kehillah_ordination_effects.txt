@@ -1,0 +1,282 @@
+﻿# =====================================================================
+# Ordination (semicha) -- V21 slice 3, added 2026-10-09 (Shabbat
+# heartbeat 1, ROADMAP item H4).
+#
+# Source of truth: docs/spec/v21-rabbi-ordination-paths.md section 3.4.
+# Gates live in common/scripted_triggers/kehillah_ordination_triggers.txt
+# and tunables in common/script_values/kehillah_ordination_values.txt;
+# this file only resolves WHERE the ordination happens and then performs
+# it.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# Scope: anything. Saves scope:kehillah_semicha_community -- the
+# community title whose Beit Midrash recognises this ordination -- when
+# one applies, and nothing when none does.
+#
+# Mirrors kehillah_study_torah_resolve_library_effect (common/scripted_
+# effects/kehillah_library_effects.txt) branch for branch, including its
+# use of every_in_global_list with a save_scope_as inside rather than
+# random_in_global_list: communities are co-located one per province in
+# practice, and copying the established shape keeps the two resolvers
+# comparable when one of them has to change.
+#
+# Deliberately does NOT re-check the candidate. The decision's own
+# is_valid has already run kehillah_semicha_institution_available_trigger
+# with the same three branches, so by the time this runs a match exists.
+# ---------------------------------------------------------------------
+kehillah_semicha_resolve_institution_effect = {
+	if = {
+		limit = {
+			$CHARACTER$ = { government_has_flag = government_is_kehillah }
+			exists = $CHARACTER$.primary_title
+		}
+		$CHARACTER$.primary_title = { save_scope_as = kehillah_semicha_community }
+	}
+	else_if = {
+		limit = {
+			$CHARACTER$ = { is_ruler = yes }
+			exists = $CHARACTER$.capital_province
+		}
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = {
+					exists = domicile
+					domicile.domicile_location = $CHARACTER$.capital_province
+					domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_01 }
+				}
+			}
+			save_scope_as = kehillah_semicha_community
+		}
+	}
+	# Mirrors the third branch of kehillah_semicha_institution_available_trigger,
+	# including its 2026-10-10 widening to a character who holds nothing at
+	# all -- an eligible courtier. These two must keep agreeing: the trigger
+	# decides whether there IS an institution, and this decides which
+	# community gets credited for the ordination. A courtier who passed the
+	# trigger and resolved to no community would be ordained with the
+	# Greatness reward going nowhere.
+	else_if = {
+		limit = {
+			$CHARACTER$ = {
+				OR = {
+					has_government = landless_adventurer_government
+					is_ruler = no
+				}
+			}
+		}
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = {
+					exists = domicile
+					domicile.domicile_location = $CHARACTER$.location
+					domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_01 }
+				}
+			}
+			save_scope_as = kehillah_semicha_community
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# Scope: the newly ordained character. Requires
+# scope:kehillah_semicha_community.
+#
+# Section 3.4 is explicit that the outcome must be RELIABLE: "There must
+# be no permanent random rejection after a player has made the
+# investment." So there is no roll here at all. Learning and the
+# institution's tier colour the reward; they cannot withhold the trait.
+#
+# The trait is added with no track XP. An apprentice's study records were
+# never trait XP (that is V21 slice 2's whole point), and inventing a
+# starting-XP rule here would quietly make the ordination route better
+# than the historical, office and Bet Din routes, which all grant the
+# bare trait.
+# ---------------------------------------------------------------------
+kehillah_grant_semicha_effect = {
+	add_trait = kehillah_rabbi_trait
+
+	# V29 (2026-10-11): every ordination at a yeshiva raises its fame.
+	scope:kehillah_semicha_community.holder ?= {
+		kehillah_add_yeshiva_fame_effect = { AMOUNT = kehillah_yeshiva_fame_per_ordination }
+	}
+
+	add_piety = major_piety_gain
+	add_prestige = medium_prestige_gain
+
+	# A yeshiva ordains more grandly than a study hall. Flavour and
+	# magnitude only -- tier 1 is already enough to ordain at all.
+	if = {
+		limit = {
+			scope:kehillah_semicha_community.holder ?= {
+				exists = domicile
+				domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_03 }
+			}
+		}
+		add_prestige = medium_prestige_gain
+	}
+
+	# The community that recognised him gains standing for it. Greatness
+	# lives on the TITLE, not the character (see
+	# kehillah_quarterly_pillars_effect's "WHY THE TITLE, NOT THE
+	# CHARACTER" note), and kehillah_init_pillars_effect runs first
+	# because change_variable is a silent no-op on a variable that was
+	# never set -- the same ordering kehillah_on_title_gain uses and for
+	# the same reason.
+	#
+	# GUARDED as of V21 slice 4 (2026-10-10), when this effect gained a
+	# second caller. From the Seek Semicha decision the scope is certain,
+	# because is_valid ran the institution trigger first. From the
+	# coming-of-age endorsement it is resolved a few lines earlier in a
+	# delayed event, where the community could in principle have been
+	# destroyed in between -- and an unguarded change_variable on a
+	# missing scope is an error line per ordination, not a no-op.
+	if = {
+		limit = { exists = scope:kehillah_semicha_community }
+		scope:kehillah_semicha_community = {
+			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_greatness add = kehillah_semicha_greatness_reward }
+		}
+	}
+}
+
+
+# =====================================================================
+# RABBINIC APPRENTICESHIP -- V21 slice 4, added 2026-10-10.
+# Gates in common/scripted_triggers/kehillah_ordination_triggers.txt,
+# the on_action wiring in common/on_action/kehillah_ordination_on_actions.txt.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# Scope: a child, on a childhood birthday. Adds one year to the
+# apprenticeship record if a qualifying rabbi is their guardian RIGHT
+# NOW.
+#
+# Counting on birthdays rather than tracking a start date is what makes
+# section 3.3's "four accumulated years" literally true: four separate
+# birthdays under a qualifying guardian, in any order, with any number of
+# gaps. Swapping a rabbi in at 15 therefore buys one year, not four.
+#
+# set_variable before change_variable because change_variable is a silent
+# no-op on a variable that was never set -- the same ordering, and the
+# same reason, as kehillah_on_title_gain's pillar init.
+# ---------------------------------------------------------------------
+kehillah_observe_rabbinic_education_effect = {
+	if = {
+		limit = { kehillah_has_rabbinic_guardian_trigger = yes }
+		if = {
+			limit = { NOT = { has_variable = kehillah_apprentice_rabbi_years } }
+			set_variable = { name = kehillah_apprentice_rabbi_years value = 0 }
+		}
+		change_variable = { name = kehillah_apprentice_rabbi_years add = 1 }
+		# V29 section 4 (2026-10-11): PARSHANUT IS TEACHING. A year under a
+		# guardian rabbi with Parshanut 65+ is a year well taught: +1
+		# Learning, which also lifts the child's band at the sixteenth-
+		# birthday credit (kehillah_award_apprenticeship_credit_effect).
+		if = {
+			limit = {
+				any_relation = {
+					type = guardian
+					kehillah_rabbinic_guardian_trigger = yes
+					has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 65 }
+				}
+			}
+			add_learning_skill = 1
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# Scope: a character who has just come of age. Converts a completed
+# apprenticeship into study credit, in the band section 3.3 assigns:
+#
+#   Learning 8+  -> the whole curriculum (kehillah_apprenticeship_curriculum,
+#                   which kehillah_rabbi_ordination_curriculum_met_trigger
+#                   accepts in place of the two-works/two-fields count).
+#   Learning 6-7 -> a FOUNDATION worth one study field, and nothing more.
+#                   He must still read real works as an adult.
+#   Learning <6  -> nothing. "Learning below 6 is too low for a completed
+#                   rabbinic curriculum."
+#
+# The years record itself is never cleared: section 3.3 wants every
+# non-endorsement to preserve "a viable adult path", and the record is
+# biography the Seek Semicha route can still read years later.
+#
+# Both branches are idempotent -- the field flag is only added if absent,
+# and the curriculum variable is only set if absent -- because this runs
+# from a delayed event, and a delayed event is the one place in this
+# codebase where "it cannot possibly fire twice" has been wrong before.
+# ---------------------------------------------------------------------
+# RESTRUCTURED 2026-10-10 (Shabbat heartbeat 4) to be genuinely
+# idempotent. The band decision and the "have I already been credited"
+# decision used to be tangled into the same two limits:
+#
+#     if      = { ... learning >= FULL   NOT = { has_variable = curriculum } }
+#     else_if = { ... learning >= FOUND  NOT = { field already present } }
+#
+# which means a pupil who ALREADY held the curriculum failed the first
+# limit on the idempotence clause and then **fell through to the
+# else_if** -- where a Learning-8 pupil also passes `learning >=
+# FOUNDATION`, since the full floor is above the foundation floor. So a
+# second invocation handed a top-band student the consolation prize on
+# top of the full curriculum. Observed exactly that way: heartbeat 3's
+# recovered log shows one pupil holding FULL CURRICULUM CREDIT and
+# FOUNDATION FIELD CREDIT at once, which the bands are not supposed to
+# be able to produce.
+#
+# That is not only untidy. kehillah_rabbi_ordination_curriculum_met_
+# trigger is an OR, and its other arm counts kehillah_apprentice_fields
+# against kehillah_ordination_fields_required_value -- so the stray
+# field means one apprenticeship could be counted twice, letting a
+# pupil reach the two-field requirement on a single genuine field of
+# adult study.
+#
+# ORDINARY PLAY WAS NOT EXPOSED: the only caller is kehillah_semicha
+# .0002, scheduled from on_16th_birthday (common/on_action/kehillah_
+# ordination_on_actions.txt), which fires once per character. It is the
+# debug path -- kehillah_semicha_debug.7, which fires the sorter on
+# demand -- that reaches it, and that is how the double credit was seen.
+# Fixed anyway: an effect whose correctness depends on never being
+# called twice is a trap for the next caller, and the misleading state
+# it produces costs a reader of the log real time.
+#
+# The fix separates the two questions. Idempotence is checked ONCE, for
+# both credits together, so an already-credited pupil exits instead of
+# falling through; the band choice then happens on its own.
+#
+# ONE BEHAVIOUR DELIBERATELY DROPPED, stated rather than slipped in. The
+# old shape also permitted an UPGRADE: a pupil credited at the
+# foundation band who later crossed Learning 8 would, on a second
+# invocation, pass the first limit (no curriculum yet, Learning now high
+# enough) and be handed the full curriculum. The new outer limit refuses
+# that, because it requires neither credit to be present.
+#
+# This is the better reading of section 3.3, which says the Learning 6-7
+# band "requires the ordinary adult Learn Torah route until Learning
+# reaches 8 and supplies one separate field of adult study" -- i.e. the
+# foundation student is meant to earn the rest by studying, not to be
+# retroactively promoted. And it is unreachable either way while .0002
+# is the only caller, since it fires once. Noted so that a future caller
+# that DOES want an upgrade path adds it on purpose.
+kehillah_award_apprenticeship_credit_effect = {
+	if = {
+		limit = {
+			kehillah_rabbinic_apprenticeship_complete_trigger = yes
+			is_rabbinic_authority_jewish_trigger = yes
+			NOT = { has_variable = kehillah_apprenticeship_curriculum }
+			NOT = { is_target_in_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship } }
+		}
+		if = {
+			limit = { learning >= kehillah_ordination_learning_floor_value }
+			set_variable = { name = kehillah_apprenticeship_curriculum value = 1 }
+		}
+		else_if = {
+			limit = { learning >= kehillah_ordination_foundation_learning_floor_value }
+			add_to_variable_list = { name = kehillah_apprentice_fields target = flag:rabbinic_apprenticeship }
+		}
+	}
+}

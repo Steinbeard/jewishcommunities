@@ -201,6 +201,14 @@ later Codex) never started. Each "overnight" branch got only the wrapper's mecha
 all real work on those branches came from interactive sessions. Fixed in the script (now
 `Out-File`). The wrapper also switched to Codex (reading `AGENTS.md`) around 2026-09-20.
 
+**Shabbat heartbeat (2026-10-09 18:50 → 2026-10-11 ~06:00):** the task
+`JewishCommunities-ShabbatHeartbeat` runs
+`C:\Users\Daniel\Documents\claude-automation\jewishcommunities-shabbat-heartbeat.ps1` every 5 hours
+on the shared branch `autonomous/shabbat-2026-10`, working ROADMAP's "Shabbat autonomous queue".
+It is the Sukkot wrapper with a new branch, prompt (`jewishcommunities-shabbat-prompt.md`) and lock.
+CK3 runs on a virtual display (VirtualDrivers VDD, installed 2026-10-09, duplicating the
+2560×1440 desktop), so the physical monitor can be off.
+
 **Sukkot 2026 heartbeat (2026-09-25 18:00 → 2026-09-28 morning):** a separate task,
 `JewishCommunities-SukkotHeartbeat`, runs
 `C:\Users\Daniel\Documents\claude-automation\jewishcommunities-heartbeat.ps1` every 5 hours. All

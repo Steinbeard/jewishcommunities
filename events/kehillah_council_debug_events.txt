@@ -1,0 +1,162 @@
+﻿# Console-only probes for the V26 council (docs/spec/v26-kehillah-council-
+# and-baalei-batim.md); never called by gameplay. Select or play a Kehillah
+# leader, then:
+#   event kehillah_council_debug.1  -- report seats, tasks, and leakage
+#   event kehillah_council_debug.2  -- force the steward onto vanilla's
+#                                      hidden default, run the quarterly
+#                                      fix-up, then report again
+namespace = kehillah_council_debug
+
+kehillah_council_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_council_debug.1: council state -- START"
+		if = {
+			limit = { government_has_flag = government_is_kehillah }
+			debug_log = "kehillah_council_debug.1: GOVERNMENT PASS root is a Kehillah"
+		}
+		else = { debug_log = "kehillah_council_debug.1: GOVERNMENT FAIL root is not a Kehillah" }
+
+		# --- Seats filled -------------------------------------------------
+		if = {
+			limit = { exists = cp:councillor_chancellor }
+			debug_log = "kehillah_council_debug.1: SEAT Shtadlan filled"
+		}
+		else = { debug_log = "kehillah_council_debug.1: SEAT Shtadlan EMPTY" }
+		if = {
+			limit = { exists = cp:councillor_steward }
+			debug_log = "kehillah_council_debug.1: SEAT Gabbai filled"
+		}
+		else = { debug_log = "kehillah_council_debug.1: SEAT Gabbai EMPTY" }
+		if = {
+			limit = { exists = cp:councillor_marshal }
+			debug_log = "kehillah_council_debug.1: SEAT Rosh ha-Shmirah filled"
+		}
+		else = { debug_log = "kehillah_council_debug.1: SEAT Rosh ha-Shmirah EMPTY" }
+		if = {
+			limit = { exists = cp:councillor_spymaster }
+			debug_log = "kehillah_council_debug.1: SEAT Ne'eman filled"
+		}
+		else = { debug_log = "kehillah_council_debug.1: SEAT Ne'eman EMPTY" }
+		if = {
+			limit = { exists = cp:councillor_court_chaplain }
+			debug_log = "kehillah_council_debug.1: SEAT Dayyan filled"
+		}
+		else = { debug_log = "kehillah_council_debug.1: SEAT Dayyan EMPTY" }
+
+		# --- No Kehillah councillor sits on a hidden vanilla default -------
+		if = {
+			limit = {
+				any_councillor = {
+					OR = {
+						is_performing_council_task = task_collect_taxes
+						is_performing_council_task = task_organize_levies
+						is_performing_council_task = task_religious_relations
+						is_performing_council_task = task_spouse_default
+					}
+				}
+			}
+			debug_log = "kehillah_council_debug.1: HIDDEN-DEFAULT FAIL a councillor is on a vanilla default hidden for Kehillot"
+		}
+		else = { debug_log = "kehillah_council_debug.1: HIDDEN-DEFAULT PASS no councillor on a hidden vanilla default" }
+
+		# --- Kehillah defaults in place ------------------------------------
+		cp:councillor_steward ?= {
+			if = {
+				limit = { is_performing_council_task = task_kehillah_raise_revenue }
+				debug_log = "kehillah_council_debug.1: TASK Gabbai on Raise Communal Revenue"
+			}
+			else_if = {
+				limit = { is_performing_council_task = task_kehillah_oversee_construction }
+				debug_log = "kehillah_council_debug.1: TASK Gabbai on Oversee Construction"
+			}
+			else = { debug_log = "kehillah_council_debug.1: TASK Gabbai on some other task" }
+		}
+		cp:councillor_marshal ?= {
+			if = {
+				limit = { is_performing_council_task = task_kehillah_night_watch }
+				debug_log = "kehillah_council_debug.1: TASK Rosh ha-Shmirah on Keep the Night Watch"
+			}
+			else = { debug_log = "kehillah_council_debug.1: TASK Rosh ha-Shmirah on some other task" }
+		}
+		cp:councillor_court_chaplain ?= {
+			if = {
+				limit = { is_performing_council_task = task_kehillah_prepare_bet_din }
+				debug_log = "kehillah_council_debug.1: TASK Dayyan on Prepare the Bet Din"
+			}
+			else = { debug_log = "kehillah_council_debug.1: TASK Dayyan on some other task" }
+		}
+		cp:councillor_chancellor ?= {
+			if = {
+				limit = { is_performing_council_task = task_kehillah_petition_host }
+				debug_log = "kehillah_council_debug.1: TASK Shtadlan on Petition the Host"
+			}
+			else = { debug_log = "kehillah_council_debug.1: TASK Shtadlan on some other task (vanilla default is Foreign Affairs)" }
+		}
+
+		# --- Leakage: no non-Kehillah ruler's council uses Kehillah tasks --
+		if = {
+			limit = {
+				any_ruler = {
+					NOT = { government_has_flag = government_is_kehillah }
+					any_councillor = {
+						OR = {
+							is_performing_council_task = task_kehillah_raise_revenue
+							is_performing_council_task = task_kehillah_oversee_construction
+							is_performing_council_task = task_kehillah_night_watch
+							is_performing_council_task = task_kehillah_prepare_bet_din
+							is_performing_council_task = task_kehillah_petition_host
+							is_performing_council_task = task_kehillah_assist_parnas
+						}
+					}
+				}
+			}
+			debug_log = "kehillah_council_debug.1: LEAK FAIL a non-Kehillah ruler's councillor is on a Kehillah task"
+		}
+		else = { debug_log = "kehillah_council_debug.1: LEAK PASS no non-Kehillah councillor on a Kehillah task" }
+
+		# Positive control: vanilla defaults still exist for everyone else.
+		if = {
+			limit = {
+				any_ruler = {
+					NOT = { government_has_flag = government_is_kehillah }
+					any_councillor = { is_performing_council_task = task_collect_taxes }
+				}
+			}
+			debug_log = "kehillah_council_debug.1: CONTROL PASS some feudal steward still collects taxes"
+		}
+		else = { debug_log = "kehillah_council_debug.1: CONTROL FAIL no ruler anywhere is on Collect Taxes" }
+
+		debug_log = "kehillah_council_debug.1: council state -- END"
+	}
+}
+
+kehillah_council_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_council_debug.2: fix-up -- START"
+		if = {
+			limit = { exists = cp:councillor_steward }
+			cp:councillor_steward = { set_council_task = { task_type = task_collect_taxes } }
+			cp:councillor_steward = {
+				if = {
+					limit = { is_performing_council_task = task_collect_taxes }
+					debug_log = "kehillah_council_debug.2: SETUP Gabbai forced onto Collect Taxes"
+				}
+				else = { debug_log = "kehillah_council_debug.2: SETUP the engine refused Collect Taxes (hidden task); fix-up not exercised" }
+			}
+			trigger_event = { on_action = kehillah_council_task_fixup }
+			cp:councillor_steward = {
+				if = {
+					limit = { is_performing_council_task = task_kehillah_raise_revenue }
+					debug_log = "kehillah_council_debug.2: FIXUP PASS Gabbai moved back to Raise Communal Revenue"
+				}
+				else = { debug_log = "kehillah_council_debug.2: FIXUP FAIL Gabbai not on Raise Communal Revenue" }
+			}
+		}
+		else = { debug_log = "kehillah_council_debug.2: no Gabbai seated; nothing to test" }
+		debug_log = "kehillah_council_debug.2: fix-up -- END"
+	}
+}

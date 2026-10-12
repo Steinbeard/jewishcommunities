@@ -1,0 +1,672 @@
+﻿# Console-only probes for the ba'alei batim (V26 part 2); never called by
+# gameplay. Play or select a Kehillah leader, then:
+#   event kehillah_household_debug.1  -- register, refresh, report
+#   event kehillah_household_debug.2  -- force an arrival
+#   event kehillah_household_debug.3  -- force a departure attempt
+#   event kehillah_household_debug.4  -- run the full yearly pass
+#   event kehillah_household_debug.5  -- report every community's count
+#   event kehillah_household_debug.6  -- why the succession standing term
+#                                        does or doesn't apply, per councillor
+#   event kehillah_household_debug.7  -- make root a lay leader and check
+#                                        faith-organization membership
+#   event kehillah_household_debug.8  -- READ-ONLY clerical-continuation
+#                                        report: clergy, organization,
+#                                        player heir, title heir
+#   event kehillah_household_debug.9  -- strip the Rabbi trait (pure lay
+#                                        leader), then run .8's report
+#   event kehillah_household_debug.10 -- have an AI community's lowest
+#                                        household move to YOUR community,
+#                                        firing the .0003 arrival event
+#   event kehillah_household_debug.11 -- READ-ONLY. V26 slice 2: per
+#                                        household, whether the standing
+#                                        term's guard passes AND whether
+#                                        default_candidates can reach the
+#                                        family at all; plus the current
+#                                        title heir ordering
+#   event kehillah_household_debug.12 -- A/B step: max one household's
+#                                        standing (saving the old value),
+#                                        then unpause and re-run .11
+#   event kehillah_household_debug.13 -- undo .12, restoring the saved
+#                                        standing
+namespace = kehillah_household_debug
+
+kehillah_household_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.1: households -- START"
+		kehillah_household_bootstrap_effect = yes
+		kehillah_household_refresh_effect = yes
+		primary_title = {
+			if = {
+				limit = { kehillah_household_count_value >= 2 }
+				debug_log = "kehillah_household_debug.1: FLOOR PASS at least two households"
+			}
+			else = { debug_log = "kehillah_household_debug.1: FLOOR FAIL fewer than two households" }
+			if = {
+				limit = { kehillah_household_count_value <= kehillah_household_cap_value }
+				debug_log = "kehillah_household_debug.1: CAP PASS count within cap"
+			}
+			else = { debug_log = "kehillah_household_debug.1: CAP OVER count above cap (departures will trim it)" }
+			if = {
+				limit = { any_in_list = { variable = kehillah_households this = root.house } }
+				debug_log = "kehillah_household_debug.1: LEADER-HOUSE FAIL leader's own house is registered"
+			}
+			else = { debug_log = "kehillah_household_debug.1: LEADER-HOUSE PASS leader's house not registered" }
+			if = {
+				limit = {
+					any_in_list = {
+						variable = kehillah_households
+						NOT = { exists = var:kehillah_household_head }
+					}
+				}
+				debug_log = "kehillah_household_debug.1: HEAD FAIL a household has no head"
+			}
+			else = { debug_log = "kehillah_household_debug.1: HEAD PASS every household has a head" }
+			every_in_list = {
+				variable = kehillah_households
+				var:kehillah_household_head = {
+					save_scope_as = kh_dbg_head
+					debug_log = "kehillah_household_debug.1: HOUSEHOLD (head and standing in scopes dump)"
+					debug_log_scopes = yes
+				}
+			}
+		}
+		debug_log = "kehillah_household_debug.1: households -- END"
+	}
+}
+
+kehillah_household_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.2: forced arrival -- START"
+		domicile.domicile_location = { save_scope_as = kh_here_location }
+		kehillah_household_arrival_effect = yes
+		if = {
+			limit = { exists = scope:kh_arr_house }
+			debug_log = "kehillah_household_debug.2: ORIGIN HOUSEHOLD an existing household is moving (event for players)"
+		}
+		else_if = {
+			limit = { exists = scope:kh_arr_origin }
+			debug_log = "kehillah_household_debug.2: NEW FAMILY from a named community (event for players)"
+		}
+		else = { debug_log = "kehillah_household_debug.2: NEW FAMILY with no origin" }
+		debug_log = "kehillah_household_debug.2: forced arrival -- END"
+	}
+}
+
+kehillah_household_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.3: forced departure -- START"
+		domicile.domicile_location = { save_scope_as = kh_here_location }
+		kehillah_household_refresh_effect = yes
+		kehillah_household_departure_effect = yes
+		if = {
+			limit = { exists = scope:kh_dep_dest }
+			debug_log = "kehillah_household_debug.3: DESTINATION found (event for players; moved at once for AI)"
+			scope:kh_dep_dest = { debug_log_scopes = yes }
+		}
+		else = { debug_log = "kehillah_household_debug.3: NO DESTINATION with room (or no household)" }
+		debug_log = "kehillah_household_debug.3: forced departure -- END"
+	}
+}
+
+kehillah_household_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.4: yearly pass -- START"
+		kehillah_household_yearly_effect = yes
+		debug_log = "kehillah_household_debug.4: yearly pass -- END"
+	}
+}
+
+kehillah_household_debug.6 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.6: succession standing term -- START"
+		primary_title = { save_scope_as = kh_dbg_title }
+		every_councillor = {
+			save_scope_as = kh_dbg_councillor
+			debug_log = "kehillah_household_debug.6: COUNCILLOR (scopes dump follows)"
+			debug_log_scopes = yes
+			house ?= {
+				save_scope_as = kh_dbg_house
+				debug_log = "kehillah_household_debug.6: HOUSE resolves via house ?="
+				if = {
+					limit = { has_variable = kehillah_household_of }
+					if = {
+						limit = { var:kehillah_household_of = scope:kh_dbg_title }
+						if = {
+							limit = { has_variable = kehillah_household_standing }
+							debug_log = "kehillah_household_debug.6: PASS registered here with standing (term should apply)"
+						}
+						else = { debug_log = "kehillah_household_debug.6: registered here but NO standing yet" }
+					}
+					else = { debug_log = "kehillah_household_debug.6: registered to ANOTHER community" }
+				}
+				else = { debug_log = "kehillah_household_debug.6: house is NOT a registered household" }
+			}
+			if = {
+				limit = { exists = house }
+				debug_log = "kehillah_household_debug.6: exists = house is TRUE"
+			}
+			else = { debug_log = "kehillah_household_debug.6: exists = house is FALSE" }
+		}
+		debug_log = "kehillah_household_debug.6: succession standing term -- END"
+	}
+}
+
+# Lay-leader clerical succession check: strips the Rabbi trait from root,
+# re-runs the leader setup (which should join the faith's organization by
+# script), and reports membership. Kill root afterwards to see the death
+# screen a Parnas gets.
+kehillah_household_debug.7 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.7: lay leader organization -- START"
+		if = {
+			limit = { exists = organization }
+			debug_log = "kehillah_household_debug.7: BEFORE member of an organization"
+		}
+		else = { debug_log = "kehillah_household_debug.7: BEFORE not a member" }
+		if = {
+			limit = { exists = faith.organization }
+			debug_log = "kehillah_household_debug.7: the faith HAS an organization"
+		}
+		else = { debug_log = "kehillah_household_debug.7: the faith has NO organization" }
+		if = {
+			limit = { has_trait = kehillah_rabbi_trait }
+			kehillah_remove_rabbi_trait_effect = yes
+			debug_log = "kehillah_household_debug.7: removed the Rabbi trait"
+		}
+		if = {
+			limit = { exists = organization }
+			debug_log = "kehillah_household_debug.7: AFTER REMOVAL still a member"
+		}
+		else = { debug_log = "kehillah_household_debug.7: AFTER REMOVAL no longer a member" }
+		kehillah_update_leader_flavor_effect = yes
+		if = {
+			limit = { exists = organization }
+			debug_log = "kehillah_household_debug.7: PASS lay leader is a member after the leader setup"
+		}
+		else = { debug_log = "kehillah_household_debug.7: FAIL lay leader is not a member after the leader setup" }
+		debug_log = "kehillah_household_debug.7: lay leader organization -- END"
+	}
+}
+
+kehillah_household_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.5: all communities -- START"
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = { exists = holder }
+			if = {
+				limit = { kehillah_household_count_value >= 2 }
+				debug_log = "kehillah_household_debug.5: community with 2+ households"
+			}
+			else_if = {
+				limit = { kehillah_household_count_value >= 1 }
+				debug_log = "kehillah_household_debug.5: community with ONE household"
+			}
+			else = { debug_log = "kehillah_household_debug.5: community with NO households" }
+		}
+		debug_log = "kehillah_household_debug.5: all communities -- END"
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# .8 / .9 -- the clerical-continuation probe (ROADMAP H1).
+#
+# .8 reports, and changes nothing, so it is safe to run before AND after
+# anything else. Run it on the Kehillah leader immediately before a
+# `kill <id>`: the single thing that decides Game Over vs. "Continue as
+# <appointee>" is whether PLAYER HEIR exists at that instant, and the
+# only reason this mod has one for a non-dynastic appointee is clergy
+# status (see common/governments/kehillah_government.txt's
+# mechanic_type = theocracy comment).
+#
+# .9 makes the leader a PURE LAY leader first -- no Rabbi trait, so no
+# trait-sourced clergy -- and then reports. If mechanic_type = theocracy
+# is doing its job, .9 must still report CLERGY YES, ORGANIZATION YES
+# and PLAYER HEIR YES. Unlike .7 it does not call the leader-setup
+# effect, so nothing can mask the government's own contribution.
+# ---------------------------------------------------------------------
+
+kehillah_household_debug.8 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.8: clerical continuation -- START"
+		debug_log_scopes = yes
+
+		if = {
+			limit = { has_trait = kehillah_rabbi_trait }
+			debug_log = "kehillah_household_debug.8: LEADER IS RABBINIC (has kehillah_rabbi_trait)"
+		}
+		else = { debug_log = "kehillah_household_debug.8: LEADER IS LAY (no kehillah_rabbi_trait)" }
+
+		if = {
+			limit = { government_has_mechanic = theocracy }
+			debug_log = "kehillah_household_debug.8: MECHANIC YES government_has_mechanic = theocracy"
+		}
+		else = { debug_log = "kehillah_household_debug.8: MECHANIC NO government_has_mechanic = theocracy is false" }
+
+		if = {
+			limit = { is_clergy = yes }
+			debug_log = "kehillah_household_debug.8: CLERGY YES is_clergy = yes"
+		}
+		else = { debug_log = "kehillah_household_debug.8: CLERGY NO is_clergy = no" }
+
+		if = {
+			limit = { exists = organization }
+			debug_log = "kehillah_household_debug.8: ORGANIZATION YES member of an organization"
+		}
+		else_if = {
+			limit = { exists = faith.organization }
+			debug_log = "kehillah_household_debug.8: ORGANIZATION NO the faith has one, root is not in it"
+		}
+		else = { debug_log = "kehillah_household_debug.8: ORGANIZATION NO the faith has no organization at all" }
+
+		# The decisive one.
+		if = {
+			limit = { exists = player_heir }
+			debug_log = "kehillah_household_debug.8: PLAYER HEIR YES -- death should offer Continue as the heir"
+			if = {
+				limit = {
+					exists = dynasty
+					player_heir = { dynasty ?= root.dynasty }
+				}
+				debug_log = "kehillah_household_debug.8: player heir is of root's OWN dynasty (not the clerical path)"
+			}
+			else = { debug_log = "kehillah_household_debug.8: player heir is NON-DYNASTIC -- this is the clerical path" }
+		}
+		else = { debug_log = "kehillah_household_debug.8: PLAYER HEIR NO -- death would be Game Over" }
+
+		# REGRESSION GUARD for the mechanic_type = theocracy change: the
+		# Kehillah must still be on its own appointment law and not on
+		# vanilla's clerical_appointment_law. See common/scripted_triggers/
+		# kehillah_clerical_appointment_law_override.txt.
+		#
+		# THE REALM LAW IS THE VERDICT, not the title law. The Kehillah's
+		# law arrives as a realm law on the holder -- history writes
+		# `succession_laws = { ... }` and kehillah_found_community_effect
+		# calls add_realm_law -- so has_title_law is false for it, as it
+		# is for most of vanilla's appointment laws too. Vanilla's own
+		# checks pair the two in an OR for exactly this reason
+		# (common/character_interactions/pam_interactions.txt:443-444:
+		# `holder ?= { has_realm_law = clerical_appointment_law }` OR
+		# `has_title_law = clerical_appointment_law`). The title-law lines
+		# below are INFORMATIONAL; a 2026-10-09 live run read
+		# "no title-level law" with REALM LAW PASS at the same instant,
+		# and that is the correct, healthy state.
+		if = {
+			limit = { has_realm_law = kehillah_appointment_succession_law }
+			debug_log = "kehillah_household_debug.8: REALM LAW PASS kehillah_appointment_succession_law"
+		}
+		else_if = {
+			limit = { has_realm_law = clerical_appointment_law }
+			debug_log = "kehillah_household_debug.8: REALM LAW FAIL vanilla clerical_appointment_law took the slot"
+		}
+		else = { debug_log = "kehillah_household_debug.8: REALM LAW FAIL neither expected law (check the realm law list in scopes)" }
+
+		if = {
+			limit = { primary_title ?= { has_title_law = kehillah_appointment_succession_law } }
+			debug_log = "kehillah_household_debug.8: (info) the title ALSO carries a title-level kehillah_appointment_succession_law"
+		}
+		else_if = {
+			limit = { primary_title ?= { has_title_law = clerical_appointment_law } }
+			debug_log = "kehillah_household_debug.8: LAW FAIL the title carries a title-level clerical_appointment_law"
+		}
+		else = { debug_log = "kehillah_household_debug.8: (info) no title-level succession law, which is expected here" }
+
+		# Separate from player heir: who the title itself would pass to.
+		if = {
+			limit = {
+				exists = primary_title
+				primary_title = { any_title_heir = { always = yes } }
+			}
+			debug_log = "kehillah_household_debug.8: TITLE HEIR YES the primary title has at least one heir"
+			primary_title = {
+				every_title_heir = { debug_log_scopes = yes }
+			}
+		}
+		else = { debug_log = "kehillah_household_debug.8: TITLE HEIR NO the primary title has no heir" }
+
+		debug_log = "kehillah_household_debug.8: clerical continuation -- END"
+	}
+}
+
+kehillah_household_debug.9 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.9: force a pure lay leader -- START"
+		if = {
+			limit = { has_trait = kehillah_rabbi_trait }
+			kehillah_remove_rabbi_trait_effect = yes
+			debug_log = "kehillah_household_debug.9: removed the Rabbi trait"
+		}
+		else = { debug_log = "kehillah_household_debug.9: already lay, no Rabbi trait to remove" }
+		trigger_event = kehillah_household_debug.8
+		debug_log = "kehillah_household_debug.9: force a pure lay leader -- END"
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# .10 -- the player-RECEIVES-a-family path (ROADMAP H2).
+#
+# kehillah_household.0003 only fires when an AI community loses its
+# lowest-standing household TO the player's community, and the yearly
+# pass picks its destination at random out of every community with room.
+# Waiting for that to happen naturally is the reason this path has never
+# been exercised. This probe forces exactly it, through the real
+# effects -- kehillah_household_save_lowest_effect picks the same family
+# the yearly pass would, and kehillah_household_leave_effect does the
+# whole move -- with only the DESTINATION forced to root's community.
+#
+# Run it on the player's Kehillah leader. Needs at least one other
+# registered community with a household; probe .5 reports which have
+# any. It migrates real courtiers between real courts, so it is not
+# read-only: use it on a throwaway run, not one you want to keep.
+# ---------------------------------------------------------------------
+
+kehillah_household_debug.10 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.10: forced arrival from another community -- START"
+
+		primary_title = { save_scope_as = kh_dep_dest }
+
+		random_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				NOT = { this = root.primary_title }
+				exists = holder
+				holder = {
+					government_has_flag = government_is_kehillah
+					is_ai = yes
+				}
+				kehillah_household_count_value >= 1
+			}
+			holder = { save_scope_as = kh_dep_leader }
+
+			# Refresh the DONOR before picking who leaves, because that is
+			# the order real play uses: kehillah_household_yearly_effect is
+			# bootstrap -> years -> refresh -> arrival/departure, so a
+			# genuine departure always chooses from a register whose entries
+			# have each just been recounted and given a head and a standing.
+			#
+			# ADDED 2026-10-10 (Shabbat heartbeat 4). Without this the probe
+			# was not testing the real path. It reached into an AI
+			# community's register that nothing had ever refreshed, where
+			# entries can still be present with no head and no members at
+			# court, and (before the same day's fix to
+			# kehillah_household_save_lowest_effect) a standing-less entry
+			# was precisely the one the "lowest standing" pick preferred.
+			# So .10 migrated a family that did not exist as people: the
+			# register count moved, nobody arrived, and kehillah_household
+			# .0003 correctly refused to fire for want of anyone to show --
+			# which read as the recipient-refresh fix having failed, when
+			# what it actually caught was a ghost on the donor's books.
+			holder = { kehillah_household_refresh_effect = yes }
+
+			kehillah_household_save_lowest_effect = yes
+		}
+
+		if = {
+			limit = {
+				exists = scope:kh_dep_leader
+				exists = scope:kh_low_house
+			}
+			scope:kh_low_house = { save_scope_as = kh_dep_house }
+			debug_log = "kehillah_household_debug.10: DONOR FOUND an AI community and its lowest household (scopes dump follows)"
+			debug_log_scopes = yes
+
+			# The real move. This is what tells a player recipient, via
+			# kehillah_household.0003 -- so root should see the event.
+			kehillah_household_leave_effect = yes
+
+			if = {
+				limit = {
+					primary_title = {
+						any_in_list = {
+							variable = kehillah_households
+							this = scope:kh_dep_house
+						}
+					}
+				}
+				debug_log = "kehillah_household_debug.10: PASS the family is now registered at root's community"
+			}
+			else = { debug_log = "kehillah_household_debug.10: FAIL the family did not end up registered at root's community" }
+
+			if = {
+				limit = {
+					scope:kh_dep_leader.primary_title = {
+						any_in_list = {
+							variable = kehillah_households
+							this = scope:kh_dep_house
+						}
+					}
+				}
+				debug_log = "kehillah_household_debug.10: FAIL the family is still registered at the donor community too"
+			}
+			else = { debug_log = "kehillah_household_debug.10: PASS the family is no longer registered at the donor community" }
+		}
+		else = { debug_log = "kehillah_household_debug.10: BLOCKED no other AI community with a household (run .5 to see counts)" }
+
+		debug_log = "kehillah_household_debug.10: forced arrival from another community -- END"
+	}
+}
+
+# ---------------------------------------------------------------------
+# V26 BA'ALEI BATIM SLICE 2 -- DOES STANDING ACTUALLY MOVE A SUCCESSION?
+# Added 2026-10-10 (Shabbat heartbeat 5).
+#
+# The standing term in common/succession_appointment/kehillah_leadership.txt
+# shipped 2026-10-09 and has never had a live verdict. Two separate
+# questions, and .11 is built to keep them apart, because passing the first
+# while failing the second is precisely the state the term was in:
+#
+#   1. GUARD -- would the term read this family's standing at all?
+#      (has_variable standing, has_variable household_of, household_of
+#      pointing at THIS title.) This is what the older .6 probe checks.
+#   2. POOL -- can default_candidates even reach a member of this family?
+#      The pool is holder_close_family + holder_court_position +
+#      holder_councilor. A registered householder is a COURTIER, which is
+#      none of those. So a Leading family with no office and no council
+#      seat cannot be a candidate, and the term scores nobody, however
+#      high its standing. .6 cannot see this, because it iterates
+#      every_councillor and so only ever looks at characters that are
+#      already in the pool.
+#
+# If POOL NO comes back for every household in a real game, the term is
+# inert in ordinary play and V26's "leading families compete" premise needs
+# a pool change (an invested/appointment candidate category, or seating
+# householders), not a scoring change. Record the answer either way.
+# ---------------------------------------------------------------------
+kehillah_household_debug.11 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.11: slice 2 standing-in-succession -- START"
+		primary_title = {
+			save_scope_as = kh_ab_title
+
+			# The ordering as it stands. Run .11, then .12, then unpause a few
+			# days, then .11 again: if the heir named here changes, standing
+			# demonstrably moved the succession. Do NOT read a no-change result
+			# as a FAIL on its own -- check the POOL lines below first, and see
+			# .12's note on recalculation.
+			if = {
+				limit = { any_title_heir = { always = yes } }
+				every_title_heir = {
+					debug_log = "kehillah_household_debug.11: TITLE HEIR (identity in scopes dump)"
+					debug_log_scopes = yes
+				}
+			}
+			else = { debug_log = "kehillah_household_debug.11: TITLE HEIR NONE -- nothing to order, the rest of this report cannot mean anything" }
+
+			if = {
+				limit = { any_in_list = { variable = kehillah_households count >= 1 } }
+				debug_log = "kehillah_household_debug.11: REGISTER has at least one household"
+			}
+			else = { debug_log = "kehillah_household_debug.11: REGISTER EMPTY -- run .1 first, this report is vacuous" }
+
+			every_in_list = {
+				variable = kehillah_households
+				save_scope_as = kh_ab_house
+				debug_log = "kehillah_household_debug.11: HOUSEHOLD (house and standing in scopes dump)"
+				debug_log_scopes = yes
+
+				# Question 1: the guard.
+				if = {
+					limit = {
+						has_variable = kehillah_household_standing
+						has_variable = kehillah_household_of
+						var:kehillah_household_of = scope:kh_ab_title
+					}
+					debug_log = "kehillah_household_debug.11: GUARD PASS the term would read this family's standing"
+				}
+				else_if = {
+					limit = { NOT = { has_variable = kehillah_household_standing } }
+					debug_log = "kehillah_household_debug.11: GUARD FAIL no standing variable yet (refresh has not run)"
+				}
+				else_if = {
+					limit = { NOT = { has_variable = kehillah_household_of } }
+					debug_log = "kehillah_household_debug.11: GUARD FAIL no household_of variable"
+				}
+				else = { debug_log = "kehillah_household_debug.11: GUARD FAIL registered to ANOTHER community -- this is the migration case the 2026-10-10 fix added" }
+
+				# Question 2: the pool. Counted per member rather than asked as
+				# one any_house_member trigger, so the log names WHICH relative
+				# is the family's way into the candidate list.
+				set_local_variable = { name = kh_ab_pool value = 0 }
+				every_house_member = {
+					save_scope_as = kh_ab_member
+					if = {
+						limit = { is_councillor_of = scope:kh_ab_title.holder }
+						change_local_variable = { name = kh_ab_pool add = 1 }
+						debug_log = "kehillah_household_debug.11: POOL MEMBER holds a COUNCIL SEAT (scopes dump follows)"
+						debug_log_scopes = yes
+					}
+					else_if = {
+						limit = {
+							scope:kh_ab_title.holder ?= {
+								any_court_position_holder ?= { this = scope:kh_ab_member }
+							}
+						}
+						change_local_variable = { name = kh_ab_pool add = 1 }
+						debug_log = "kehillah_household_debug.11: POOL MEMBER holds a COURT POSITION (scopes dump follows)"
+						debug_log_scopes = yes
+					}
+					else_if = {
+						limit = { scope:kh_ab_title.holder ?= { is_close_family_of = scope:kh_ab_member } }
+						change_local_variable = { name = kh_ab_pool add = 1 }
+						debug_log = "kehillah_household_debug.11: POOL MEMBER is CLOSE FAMILY of the leader (scopes dump follows)"
+						debug_log_scopes = yes
+					}
+				}
+				if = {
+					limit = { local_var:kh_ab_pool > 0 }
+					debug_log = "kehillah_household_debug.11: POOL YES this family can be reached by default_candidates, so its standing can score"
+				}
+				else = { debug_log = "kehillah_household_debug.11: POOL NO no member holds a seat, an office, or close kinship -- default_candidates cannot reach this family, so its standing scores NOBODY" }
+			}
+		}
+		debug_log = "kehillah_household_debug.11: slice 2 standing-in-succession -- END"
+	}
+}
+
+# A/B step. Maxes the standing of the FIRST household the register yields
+# that the term's guard actually passes, saving the old value on the house
+# so .13 can put it back. 60 is chosen because the term multiplies by 0.5
+# and caps at 30, so 60 is the smallest value that pins the term at its
+# ceiling -- a bigger number would change nothing and would hide a broken
+# cap.
+#
+# RECALCULATION. The engine does not necessarily recompute an appointment
+# title's heir inside the same effect that moves the inputs, so reading the
+# heir back immediately here could report a stale ordering and look like a
+# FAIL. That is why this probe deliberately does NOT report the heir: run
+# .11, then .12, then let the game TICK (unpause a few days), then .11
+# again. Splitting it is the whole point.
+kehillah_household_debug.12 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.12: max one household's standing -- START"
+		primary_title = {
+			save_scope_as = kh_ab_title
+			if = {
+				limit = {
+					any_in_list = {
+						variable = kehillah_households
+						has_variable = kehillah_household_standing
+						has_variable = kehillah_household_of
+						var:kehillah_household_of = scope:kh_ab_title
+					}
+				}
+				random_in_list = {
+					variable = kehillah_households
+					limit = {
+						has_variable = kehillah_household_standing
+						has_variable = kehillah_household_of
+						var:kehillah_household_of = scope:kh_ab_title
+					}
+					save_scope_as = kh_ab_house
+					if = {
+						limit = { NOT = { has_variable = kh_ab_saved_standing } }
+						set_variable = { name = kh_ab_saved_standing value = var:kehillah_household_standing }
+						debug_log = "kehillah_household_debug.12: SAVED the old standing (both values in scopes dump)"
+					}
+					else = { debug_log = "kehillah_household_debug.12: a saved standing ALREADY EXISTS -- .12 was run twice without .13; keeping the original save" }
+					set_variable = { name = kehillah_household_standing value = 60 }
+					debug_log = "kehillah_household_debug.12: BOOSTED this family to standing 60 (term pinned at its cap of 30)"
+					debug_log_scopes = yes
+				}
+				debug_log = "kehillah_household_debug.12: now UNPAUSE a few days and run .11 again"
+			}
+			else = { debug_log = "kehillah_household_debug.12: NO ELIGIBLE HOUSEHOLD -- nothing on the register passes the term's guard; run .1 first" }
+		}
+		debug_log = "kehillah_household_debug.12: max one household's standing -- END"
+	}
+}
+
+# Undo .12. Restores the saved standing and clears the save, so the A/B can
+# be run again. Reports whether it had anything to restore rather than
+# claiming success unconditionally -- the trap that made .4 lie about a
+# building it never built.
+kehillah_household_debug.13 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_household_debug.13: restore the boosted standing -- START"
+		primary_title = {
+			if = {
+				limit = { any_in_list = { variable = kehillah_households has_variable = kh_ab_saved_standing } }
+				every_in_list = {
+					variable = kehillah_households
+					limit = { has_variable = kh_ab_saved_standing }
+					save_scope_as = kh_ab_house
+					set_variable = { name = kehillah_household_standing value = var:kh_ab_saved_standing }
+					remove_variable = kh_ab_saved_standing
+					debug_log = "kehillah_household_debug.13: RESTORED (restored standing in scopes dump)"
+					debug_log_scopes = yes
+				}
+			}
+			else = { debug_log = "kehillah_household_debug.13: NOTHING TO RESTORE -- .12 has not run, or .13 already did. No standing was changed by this call." }
+		}
+		debug_log = "kehillah_household_debug.13: restore the boosted standing -- END"
+	}
+}
