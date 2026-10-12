@@ -484,13 +484,22 @@ Answered 2026-10-12: faction refusal (no war; an opinion cost scaled by strength
 a teaching gate; §10), every convert steps down (§10.2), the Talmud trial (the Talmudic Study term;
 detail deferred, §9.1). Still open:
 
-1. **Secret Jews (anusim, conversos).** After stepping down, what can a secretly Jewish wayfarer
-   do? Claude's proposal: the vanilla crypto-religionist secret carries it. In a realm that does
-   not ban Jews he can return openly (vanilla conversion back; the apostate trait is removed) and
-   then found a community with the existing decision. A Rashi-style ruling welcomes him back. In
-   the realm that forced him, exposure is a crime (relapse; Fourth Lateran canon 70), feeding
-   V32's arrest. Should the forced convert be offered the secret at the moment of conversion?
-   Vanilla gives no such choice through Demand Conversion.
+1. **Secret Jews (anusim, conversos): vanilla already does this** (corrected 2026-10-12; the
+   earlier text here wrongly said vanilla offers no choice). Read from the 1.20 files, not
+   live-tested:
+   - Vanilla's Demand Conversion ends in `false_conversion.0900` → `.1000`/`.1010`, which offers
+     "keep [their faith] on my lips, but [Judaism] in my heart": the crypto-religionist secret,
+     open to every faith (the rite gate is commented out). The AI chooses by personality.
+   - The convert still steps down (§10.2), as a wayfarer carrying the secret. Exposure is
+     vanilla's secret system.
+   - The way back is vanilla's `revoke_false_conversion_decision` ("Reveal yourself"), with
+     wording for landless adventurers, a major piety cost and a 20-year cooldown. It converts
+     with `set_character_faith_with_conversion`, which fires the apostasy on_action, so the
+     Apostate trait is removed. He can then found a community with the existing decision.
+
+   Optional later touches: waive or reduce the reveal's piety cost for a forced convert
+   (vanilla waives it only for rites with `sanctioned_false_conversion`, which Rabbinic Judaism
+   lacks), and a welcome-back event in the spirit of Rashi's ruling.
 2. **Non-rabbinic Jewish faiths** (Karaite, Samaritan, Beta Israel, Malabar and others). See §16.
 3. **Reaching a player-led community** with forced conversion: copy vanilla's player-recipient
    interaction, or only through a community-wide decree event?
