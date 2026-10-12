@@ -8,6 +8,10 @@
 #       gold, and root himself a qualified head)
 #   .3  place the map building only (V29 spike 1: great vs special)
 #   .4  a scholar arrives now (kehillah_yeshiva.0010)
+#   .5  the living yeshiva (V29 section 10): the student body, read-only
+#   .6  run one yeshiva tick now (kehillah_yeshiva_tick_effect)
+#   .7  make root a would-be student (removes his ordination!) -- to
+#       test the player's Study at a Yeshiva decision
 # =====================================================================
 
 namespace = kehillah_yeshiva_debug
@@ -96,5 +100,55 @@ kehillah_yeshiva_debug.4 = {
 	immediate = {
 		debug_log = "kehillah_yeshiva_debug.4: a scholar arrives now"
 		trigger_event = kehillah_yeshiva.0010
+	}
+}
+
+kehillah_yeshiva_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_yeshiva_debug.5: students -- START"
+		save_scope_value_as = { name = kehillah_debug_student_count value = kehillah_yeshiva_student_count_value }
+		primary_title ?= {
+			every_in_list = {
+				variable = kehillah_yeshiva_students
+				debug_log = "kehillah_yeshiva_debug.5: STUDENT"
+				if = { limit = { kehillah_yeshiva_student_present_trigger = yes } debug_log = "kehillah_yeshiva_debug.5:   present" }
+				else = { debug_log = "kehillah_yeshiva_debug.5:   ABSENT" }
+				if = { limit = { var:kehillah_yeshiva_quarters ?= 0 } debug_log = "kehillah_yeshiva_debug.5:   quarters 0" }
+				else_if = { limit = { var:kehillah_yeshiva_quarters ?= 1 } debug_log = "kehillah_yeshiva_debug.5:   quarters 1" }
+				else_if = { limit = { var:kehillah_yeshiva_quarters < 4 } debug_log = "kehillah_yeshiva_debug.5:   quarters 2-3" }
+				else_if = { limit = { var:kehillah_yeshiva_quarters < 8 } debug_log = "kehillah_yeshiva_debug.5:   quarters 4-7" }
+				else = { debug_log = "kehillah_yeshiva_debug.5:   quarters 8+" }
+				if = { limit = { any_relation = { type = kehillah_rebbe } } debug_log = "kehillah_yeshiva_debug.5:   has a REBBE" }
+				if = { limit = { any_relation = { type = kehillah_chavruta } } debug_log = "kehillah_yeshiva_debug.5:   has a CHAVRUTA" }
+				if = { limit = { kehillah_is_ordained_rabbi_trigger = yes } debug_log = "kehillah_yeshiva_debug.5:   BUG reads as ordained" }
+				if = { limit = { has_character_flag = kehillah_visiting_student } debug_log = "kehillah_yeshiva_debug.5:   visiting student" }
+			}
+		}
+		if = { limit = { has_variable = kehillah_yeshiva_enrolled } debug_log = "kehillah_yeshiva_debug.5: ROOT IS ENROLLED" }
+		if = { limit = { has_variable = kehillah_yeshiva_unfinished } debug_log = "kehillah_yeshiva_debug.5: ROOT IS UNFINISHED (withdrew)" }
+		if = { limit = { kehillah_is_ordained_rabbi_trigger = yes } debug_log = "kehillah_yeshiva_debug.5: ROOT IS ORDAINED" }
+		debug_log = "kehillah_yeshiva_debug.5: students -- END"
+		debug_log_scopes = yes
+	}
+}
+
+kehillah_yeshiva_debug.6 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_yeshiva_debug.6: one tick"
+		kehillah_yeshiva_tick_effect = yes
+	}
+}
+
+kehillah_yeshiva_debug.7 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = { limit = { has_trait = kehillah_rabbi_trait } remove_trait = kehillah_rabbi_trait }
+		if = { limit = { learning <= 8 } add_learning_skill = 6 }
+		debug_log = "kehillah_yeshiva_debug.7: root is now a would-be student"
 	}
 }

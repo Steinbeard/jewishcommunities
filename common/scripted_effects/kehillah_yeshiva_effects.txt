@@ -613,7 +613,9 @@ kehillah_yeshiva_enroll_effect = {
 			set_relation_kehillah_talmid = { target = scope:kehillah_new_talmid reason = kehillah_relation_reason_yeshiva }
 		}
 	}
-	# A chavruta: another student without a study partner.
+	# A chavruta: another student without a study partner. (Saved scopes
+	# outlive one call -- clear the last enrolee's pick first.)
+	clear_saved_scope = kehillah_new_chavruta
 	scope:kehillah_enroll_title = {
 		random_in_list = {
 			variable = kehillah_yeshiva_students
@@ -629,6 +631,7 @@ kehillah_yeshiva_enroll_effect = {
 		limit = {
 			exists = scope:kehillah_new_chavruta
 			NOT = { any_relation = { type = kehillah_chavruta } }
+			scope:kehillah_new_chavruta = { NOT = { any_relation = { type = kehillah_chavruta } } }
 		}
 		set_relation_kehillah_chavruta = { target = scope:kehillah_new_chavruta reason = kehillah_relation_reason_yeshiva }
 	}
@@ -736,10 +739,11 @@ kehillah_yeshiva_tick_effect = {
 					var:kehillah_yeshiva_quarters >= kehillah_yeshiva_quarters_to_graduate
 					learning >= kehillah_ordination_learning_floor_value
 				}
-				kehillah_yeshiva_graduate_effect = yes
+				add_to_list = kehillah_graduands
 			}
 		}
-		# Tidy the roll: the dead and the departed.
+		# Graduation and tidying both edit the roll, so they act on
+		# temporary lists, not on the roll while walking it.
 		every_in_list = {
 			variable = kehillah_yeshiva_students
 			limit = {
@@ -748,10 +752,18 @@ kehillah_yeshiva_tick_effect = {
 					NOT = { var:kehillah_yeshiva_enrolled ?= scope:kehillah_tick_title }
 				}
 			}
-			save_scope_as = kehillah_stale_talmid
-			scope:kehillah_tick_title = {
-				remove_list_variable = { name = kehillah_yeshiva_students target = scope:kehillah_stale_talmid }
-			}
+			add_to_list = kehillah_stale_talmidim
+		}
+	}
+	every_in_list = {
+		list = kehillah_graduands
+		kehillah_yeshiva_graduate_effect = yes
+	}
+	every_in_list = {
+		list = kehillah_stale_talmidim
+		save_scope_as = kehillah_stale_talmid
+		scope:kehillah_tick_title = {
+			remove_list_variable = { name = kehillah_yeshiva_students target = scope:kehillah_stale_talmid }
 		}
 	}
 }
