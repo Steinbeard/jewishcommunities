@@ -333,6 +333,32 @@ shim guide's 2026-09-27 note, so it is unconfirmed.
   - The relaunch with identical files ran clean.
   - **Rule:** no mod-file edits while a debug-mode test game is booting.
 
+## Run 18 (`29e08ae`, 2026-10-12): the yeshiva's news (V29 section 12), PARTIAL
+
+- **Fired correctly:**
+  - The first tick produced one "New Students" feed entry for 6 enrolments, and no chavruta spam.
+  - Later travellers each produced "A New Student".
+  - Works and subjects mastered were logged and messaged.
+- **BUG:** every message body was blank. All kehillah message types used `desc = event_message_effect`, while each call passes its own desc. So the bodies of every mod message (band, goal, policy, endorsement) had always been blank.
+- **BUG:** "A Work Mastered" showed as a top-centre toast. Vanilla's `character_lifestyle` filter is a toast.
+- **Fixes in `583db48`:**
+  - `event_message_text_and_effect` for all types.
+  - A new `kehillah_yeshiva_news` filter (feed, court group), with a "Yeshiva News" settings row.
+- **First boot crashed** at 01:47:33, during another session's Bet Din writing pass (files saved 01:47:19-33). The relaunch was clean.
+
+## Run 19 (`583db48`): message text and feed, PASS
+
+- **Bodies render:**
+  - "6 new students have joined the yeshiva, among them Binyamin."
+  - "Yehoshua has mastered Mekhilta de-Rabbi Yishmael at the yeshiva."
+  - "New Dayyan" also has its body.
+- **Placement:** "A Work Mastered" now sits in the side feed. "Yeshiva News" is in Message Settings, set to Feed.
+- **Open:**
+  - `debug.10` gave all 5 present students the same work. That may be one random roll shared within a single effect execution. Natural mastery is 10% per student per quarter, so this rarely matters.
+  - "New Chavrutot" and the "from afar" text are not yet seen live.
+  - Unrelated finds, outside this feature:
+    - `kehillah_settlement_conditions.0004` showed raw loc keys;
+    - an "Unknown formatting tag 'vgrant'" when opening the Message Log.
 ## Not covered yet
 
 - The arrival event `.0301` was fired directly; the trip itself has not yet ended in an arrival.
