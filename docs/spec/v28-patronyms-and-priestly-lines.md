@@ -38,6 +38,16 @@ does not change any government, succession, or dynasty rule.
   `Mose`, `Ya_akov`, `Yeshayahu`, Radhanite `Yitzhak`/`Yaakov`/`Efraim`); they are less likely to double up
   and were left alone.
 
+## Replacement dynasty names — 2026-10-11
+
+61 historically flavoured family and toponymic names were added to the random pools (both dynasty and
+cadet lists) in place of the removed `dynn_Ben_*` entries: 14 Ashkenazi, 10 Sephardi, 10 Radhanite, 8 Bavlim,
+3 Kochini, 5 Romaniote, 11 Italki. Eight reuse vanilla's own localization (Landau, Trier, Balkhi, Basri,
+Qazwini, Khorasani, Baghdadi, Mala); the other 53 are in
+`localization/english/dynasties/kehillah_dynasty_pool_l_english.yml`. Some are later than 1066 (Ashkenazi
+surnames especially; the existing pool already had Horowitz and Epstein), and the Kochini ones are place
+names rather than attested families. Both are judgment calls, easy to prune.
+
 ## The Exilarch and "Ben David"
 
 "Ben David" for an Exilarch is a claim of Davidic descent, not a father's name. As a random dynasty it would
@@ -51,7 +61,8 @@ characters. So it is gone from the pool. For the Babylonia content (ROADMAP Phas
    exact name is a historical call to confirm before writing it).
 3. The Davidic claim should be a trait, flag or government feature on that line, not part of a name.
 
-No dynasty was added now: nothing in the build uses the Exilarch yet.
+Update: the V29 work has since defined `dynn_BenDavid` ("of the House of David") as a real dynasty in
+`ha_levi.txt`, which is the approach recommended above.
 
 ## Unverified (needs a live check)
 
