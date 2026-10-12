@@ -1,0 +1,340 @@
+﻿# =====================================================================
+# CK3 1.20 override of demand_conversion_player_ruler_interaction from
+# common/character_interactions/00_religious_interactions.txt. The body
+# is vanilla's VERBATIM except one marked change in is_shown: the
+# recipient may also be a Kehillah leader who is the actor's tributary.
+#
+# Why: a host may force a Kehillah leader to convert (V31 section 10.1,
+# docs/spec/v31-host-teachings-stances-and-factions.md). For an AI leader
+# vanilla's vassal-ruler variant already allows it; for a PLAYER-led
+# community nothing did, because the Host Charter makes the host a
+# tributary suzerain, not a liege. Who may actually send it is still
+# decided by valid_demand_conversion_conditions_trigger, overridden in
+# common/scripted_triggers/kehillah_forced_conversion_override.txt with
+# the Kehillah gates (Proselytism for Jewish actors, the host's teaching
+# for hosts).
+#
+# Refusing is vanilla: a crime where refusing_conversion_is_crime_trigger
+# holds (illegal_resisted_conversion_opinion, an imprisonment reason),
+# which V32's host-arrest bridge reads.
+#
+# Refresh this copy if vanilla changes the interaction in a later patch.
+# =====================================================================
+
+demand_conversion_player_ruler_interaction = {
+	category = interaction_category_religion
+	desc = ask_for_conversion_interaction_desc
+	notification_text = LIEGE_DEMAND_CONVERSION
+	popup_on_receive = yes
+	pause_on_receive = yes
+	icon = religious
+
+	ai_targets = {
+		ai_recipients = vassals
+	}
+	ai_target_quick_trigger = {
+		adult = yes
+	}
+	ai_frequency_by_tier = {
+		barony = 0
+		county = 0
+		duchy = 120
+		kingdom = 120
+		empire = 120
+		hegemony = 120
+	}
+
+	is_available = {
+		trigger_if = {
+			limit = { is_ai = yes }
+			is_adult = yes
+		}
+	}
+
+	is_shown = {
+		scope:puppet_or_actor ?= {
+			NOT = { faith = scope:recipient.faith }
+		}
+		scope:recipient = {
+			is_ai = no
+			# KEHILLAH (V31): also a player who is the actor's TRIBUTARY, i.e. a
+			# Kehillah leader under his Host Charter. Vanilla's AI-recipient
+			# variant (demand_conversion_vassal_ruler_interaction) already
+			# accepts tributaries; this player variant did not.
+			# Kehillah leaders only, so no other tributary relationship in
+			# vanilla play gains this interaction.
+			OR = {
+				target_is_liege_or_above = scope:puppet_or_actor
+				AND = {
+					government_has_flag = government_is_kehillah
+					is_tributary_of = scope:puppet_or_actor
+				}
+			}
+		}
+	}
+
+	cooldown_against_recipient = { years = 15 }
+
+	is_valid_showing_failures_only = {
+		valid_demand_conversion_conditions_trigger = yes
+	}
+
+	send_option = {
+		is_valid = {
+			scope:puppet_or_actor = {
+				has_strong_usable_hook = scope:recipient
+			}
+		}
+		flag = demand_conversion_hook
+		localization = GENERIC_SPEND_A_HOOK
+	}
+	should_use_extra_icon = {
+		scope:puppet_or_actor = { has_strong_usable_hook = scope:recipient }
+	}
+	extra_icon = "gfx/interface/icons/character_interactions/hook_icon.dds"
+
+
+	send_options_exclusive = no
+
+	auto_accept = {
+		custom_description = {
+			text = "spending_hook"
+			subject = scope:puppet_or_actor
+			object = scope:recipient
+			scope:demand_conversion_hook = yes
+		}
+	}
+
+	# Runs in addition to on_accept when auto-accepted, so no conversion effects here
+	on_auto_accept = {
+		scope:recipient = {
+			save_scope_value_as = {
+				name = forcibly_converted
+				value = yes
+			}
+			trigger_event = religious_interaction.2021
+		}
+	}
+
+	on_accept = {
+		# Do conversion
+		demand_conversion_player_ruler_interaction_effect = yes
+		scope:puppet_or_actor = {
+			trigger_event = char_interaction.0190
+		}
+
+		# If we're a clan this interaction affects unity
+		accept_faith_conversion_add_clan_unity_effect = yes
+
+		# If character is converting to the state faith, we add influence
+		state_faith_conversion_add_piety_effect = yes
+
+		scope:puppet_or_actor = {
+			if = {
+				limit = {
+					any_character_struggle = {
+						involvement = involved
+						has_struggle_phase_parameter = piety_from_converting_involved_rulers
+						is_secondary_character_involvement_involved_trigger = {
+							CHAR = scope:recipient
+						}
+					}
+				}
+				add_piety = medium_piety_gain
+			}
+		}
+
+		conversion_tenet_acts_of_the_apostles_effect = yes
+
+		# If you have the Mendicant Preaching personal tenet we give you SP
+		conversion_tenet_mendicant_preachers_effect = yes
+	}
+
+	on_decline = {
+		scope:puppet_or_actor = {
+			#Crime if relevant
+			if = {
+				limit = {
+					refusing_conversion_is_crime_trigger = {
+						CHARACTER = scope:recipient
+					}
+				}
+				add_opinion = {
+					target = scope:recipient
+					modifier = illegal_resisted_conversion_opinion
+					years = 15
+				}
+			}
+			else = {
+				add_opinion = {
+					target = scope:recipient
+					modifier = resisted_conversion_opinion
+					years = 15
+				}
+			}
+			trigger_event = char_interaction.0191
+		}
+
+		# If we're a clan this interaction affects unity
+		refuse_faith_conversion_add_clan_unity_effect = yes
+
+		state_faith_refuse_conversion_add_piety_effect = yes
+	}
+
+	ai_will_do = {
+		base = 100
+
+		modifier = {
+			scope:hook = yes
+			add = 1
+		}
+
+		modifier = {
+			# Deliberately no crime exemption here, unlike the vassal variant: don't hound zealous players
+			factor = 0
+			scope:recipient.demand_conversion_likelihood_calculation < 10
+		}
+
+		modifier = { # Do not convert Righteous faith subjects, unless disturbingly zealous
+			factor = 0
+			scope:puppet_or_actor = {
+				ai_zeal < 100
+				rite = {
+					rite_hostility_level = {
+						target = scope:recipient.rite
+						value <= faith_fully_accepted_level
+					}
+				}
+			}
+			NOT = { # If the subject has one of your holy sites, always try to convert
+				scope:puppet_or_actor.faith = {
+					any_holy_site = {
+						holy_site_county ?= {
+							holder ?= {
+								OR = {
+									this = scope:recipient
+									is_vassal_or_below_of = scope:recipient
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		modifier = { # Astray faiths require specific circumstances to demand conversion of
+			factor = 0
+			scope:puppet_or_actor = {
+				has_tolerant_faith_or_culture_trigger = yes
+				ai_zeal < 100
+				rite = {
+					rite_hostility_level = {
+						target = scope:recipient.rite
+						value <= faith_astray_level
+					}
+				}
+			}
+			NOT = { # If the subject has one of your holy sites, always try to convert
+				scope:puppet_or_actor.faith = {
+					any_holy_site = {
+						holy_site_county ?= {
+							holder ?= {
+								OR = {
+									this = scope:recipient
+									is_vassal_or_below_of = scope:recipient
+								}
+							}
+						}
+					}
+				}
+			}
+			NOT = {
+				scope:recipient = {
+					is_close_family_of = scope:puppet_or_actor
+				}
+			}
+		}
+
+		modifier = { # Astray faiths require specific circumstances to demand conversion of
+			factor = 0
+			scope:puppet_or_actor = {
+				rite = { rite_has_doctrine = doctrine_pluralism_fundamentalist }
+				ai_zeal < -10
+				rite = {
+					rite_hostility_level = {
+						target = scope:recipient.rite
+						value <= faith_astray_level
+					}
+				}
+			}
+			NOT = { # If the subject has one of your holy sites, always try to convert
+				scope:puppet_or_actor.faith = {
+					any_holy_site = {
+						holy_site_county ?= {
+							holder ?= {
+								OR = {
+									this = scope:recipient
+									is_vassal_or_below_of = scope:recipient
+								}
+							}
+						}
+					}
+				}
+			}
+			NOT = {
+				scope:recipient = {
+					is_close_family_of = scope:puppet_or_actor
+				}
+			}
+		}
+
+		modifier = { # Astray faiths require specific circumstances to demand conversion of
+			factor = 0
+			scope:puppet_or_actor = {
+				NOR = {
+					rite = { rite_has_doctrine = doctrine_pluralism_fundamentalist }
+					has_tolerant_faith_or_culture_trigger = yes
+				}
+				ai_zeal < 25
+				rite = {
+					rite_hostility_level = {
+						target = scope:recipient.rite
+						value <= faith_astray_level
+					}
+				}
+			}
+			NOT = { # If the subject has one of your holy sites, always try to convert
+				scope:puppet_or_actor.faith = {
+					any_holy_site = {
+						holy_site_county ?= {
+							holder ?= {
+								OR = {
+									this = scope:recipient
+									is_vassal_or_below_of = scope:recipient
+								}
+							}
+						}
+					}
+				}
+			}
+			NOT = {
+				scope:recipient = {
+					is_close_family_of = scope:puppet_or_actor
+				}
+			}
+		}
+
+		modifier = { # Rulers with state faith won't try to convert people with rites that are astray or better
+			factor = 0
+			scope:puppet_or_actor = {
+				government_allows = state_faith
+				primary_title.state_rite ?= {
+					rite_hostility_level = {
+						target = scope:recipient.rite
+						value <= faith_astray_level
+					}
+				}
+			}
+		}
+	}
+}

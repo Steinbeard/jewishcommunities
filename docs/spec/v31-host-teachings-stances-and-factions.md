@@ -426,6 +426,32 @@ expected.
 a crime on refusal without copying the interaction; the community-wide decree is the better
 place for it. Return to Judaism flavour (Rashi's ruling) also waits.
 
+### 10.3 Reaching every leader, the AI's demand, playing on as the heir (built 2026-10-12, NOT live-tested)
+
+*Daniel, 2026-10-12: hosts should be able to target Kehillah leaders, and a player whose leader is
+forced to convert may choose to play on as the heir.*
+
+1. **Player-led communities.** `common/character_interactions/kehillah_demand_conversion_override.txt`
+   is vanilla's `demand_conversion_player_ruler_interaction` verbatim, with one marked change: the
+   recipient may also be a **Kehillah leader** who is the actor's tributary (Kehillah only, so no
+   other tributary in vanilla play gains it). The gate in §10.2 still decides validity. Refusing
+   is vanilla's crime (`illegal_resisted_conversion_opinion`, an imprisonment reason), which V32's
+   arrest bridge already reads.
+2. **AI hosts use it.** Vanilla's AI aims Demand Conversion only at vassals. A quarterly pulse
+   (`kehillah_host_conversion_demand_pulse`, `kehillah_host_conversion_ai_check_effect`) lets an AI
+   host demand the leader's conversion **while an expulsion edict stands**, the "convert or leave"
+   moment: once per community per five years, chance `kehillah_host_conversion_demand_chance_value`
+   (25 a quarter, +25 zealous, -15 cynical, -10 compassionate, minimum 5; about two in three hosts
+   over the edict's year). It sends vanilla's player-recipient interaction to a player and the
+   vassal-ruler one to an AI leader, then checks again 30 days later so a convert leaves office
+   then rather than at the next quarterly sweep.
+3. **Play on as the heir.** The "Leaving the Kehillah" notice now offers "Carry on as [successor],
+   the community's new leader" (`set_player_character`), shown when the successor is a playable
+   AI-held Kehillah ruler, beside "Stay with [convert] on the road".
+4. **Probe:** `kehillah_conversion_debug.4`: the player's host demands his conversion now (needs
+   `kehillah_debug.75`, Banned). Accepting shows vanilla's "An End to [faith]" with its
+   keep-the-faith-in-secret option.
+
 **What stays mod content:** the **decree that hits a whole community at once** (Imperial Law's
 decree, Abolition's convert-or-leave). It runs vanilla's conversion character by character, and
 hands everyone who refuses to V30's expulsion and the V32 path. That content builds on the bridge
@@ -501,8 +527,7 @@ detail deferred, §9.1). Still open:
    (vanilla waives it only for rites with `sanctioned_false_conversion`, which Rabbinic Judaism
    lacks), and a welcome-back event in the spirit of Rashi's ruling.
 2. **Non-rabbinic Jewish faiths** (Karaite, Samaritan, Beta Israel, Malabar and others). See §16.
-3. **Reaching a player-led community** with forced conversion: copy vanilla's player-recipient
-   interaction, or only through a community-wide decree event?
+3. ~~Reaching a player-led community~~: answered, a copied vanilla interaction (§10.3).
 
 ## 15. Non-goals
 

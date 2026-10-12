@@ -89,9 +89,13 @@ is the S11 "friendliness" design review; the Crusades chain stays separate and b
   scoring no longer favours the convert's co-converts. Probes: `kehillah_conversion_debug.1`–`.3`.
   The live run found two bugs, both fixed and re-tested: a charter leaking onto the wayfarer,
   and the successor styled "Duke".
+- **Forced conversion, part 2, built 2026-10-12, NOT live-tested** (v31 §10.3). Hosts can reach
+  player-led communities through a copied vanilla interaction. AI hosts demand "convert or leave"
+  while an expulsion edict stands. A player convert may carry on as the heir. Probe:
+  `kehillah_conversion_debug.4`.
 - **Decided 2026-10-12:** tribute starts at 20% of income; every convert steps down. Still open
   (v31 §14, §16): secret Jews after conversion, non-rabbinic Jewish faiths, reaching a
-  player-led community with forced conversion.
+  player-led community with forced conversion (answered: v31 §10.3).
 - **Next:** live-test v30. Then v31 §11's spikes (doctrine group on rites, tributary
   tax on a Kehillah, custom faction), then the slices in §12. Open questions for Daniel: §14.
 

@@ -12,6 +12,10 @@
 #       forced conversion does (set_character_rite, no on_action). The
 #       quarterly sweep should then step him down; .3 skips the wait.
 #   .3  run the leave-office event now.
+#   .4  the player's host demands his conversion now, through vanilla's
+#       player-recipient interaction (overridden to reach a tributary),
+#       bypassing the AI chance. Needs the host's realm Banned
+#       (kehillah_debug.75). Logs whether the interaction is valid.
 # =====================================================================
 
 namespace = kehillah_conversion_debug
@@ -80,5 +84,39 @@ kehillah_conversion_debug.3 = {
 	immediate = {
 		debug_log = "kehillah_conversion_debug.3: running kehillah_conversion.0001 now"
 		trigger_event = kehillah_conversion.0001
+	}
+}
+
+kehillah_conversion_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		save_scope_as = kehillah_conversion_target
+		if = {
+			limit = { kehillah_host_charter_host_available_trigger = yes }
+			domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_conversion_host }
+			if = {
+				limit = {
+					scope:kehillah_conversion_host = {
+						is_character_interaction_valid = {
+							recipient = scope:kehillah_conversion_target
+							interaction = demand_conversion_player_ruler_interaction
+						}
+					}
+				}
+				debug_log = "kehillah_conversion_debug.4: PLAYER DEMAND VALID, host sends it"
+				scope:kehillah_conversion_host = {
+					run_interaction = {
+						interaction = demand_conversion_player_ruler_interaction
+						actor = scope:kehillah_conversion_host
+						recipient = scope:kehillah_conversion_target
+						send_threshold = decline
+					}
+				}
+				trigger_event = { id = kehillah_conversion.0001 days = 30 }
+			}
+			else = { debug_log = "kehillah_conversion_debug.4: player demand NOT valid (is the realm Banned?)" }
+		}
+		else = { debug_log = "kehillah_conversion_debug.4: no host resolvable" }
 	}
 }

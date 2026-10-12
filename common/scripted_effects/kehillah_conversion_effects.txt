@@ -1,0 +1,98 @@
+﻿# =====================================================================
+# FORCED CONVERSION -- the AI host's "convert or leave". Design: docs/
+# spec/v31-host-teachings-stances-and-factions.md, section 10.3.
+#
+# Vanilla's AI only aims Demand Conversion at vassals
+# (ai_recipients = vassals), so no AI host would ever send it to a
+# Kehillah leader, who is his tributary. This drives it, modelled on
+# V32's kehillah_host_arrest_ai_check_effect.
+#
+# When: only while an expulsion edict stands against the community
+# (kehillah_expulsion_pending_trigger), which is also the only state in
+# which the gate (kehillah_host_demand_conversion_allowed_trigger) lets a
+# host demand it until the teachings exist. Once per community per five
+# years, on a quarterly chance. The interaction itself is vanilla's:
+# the player-recipient one (overridden to reach a tributary,
+# kehillah_demand_conversion_override.txt) for a player, the
+# vassal-ruler one for an AI leader. Accepting runs vanilla's conversion
+# (with its "keep the faith in secret" choice); the converted leader then
+# steps down (kehillah_conversion.0001). Refusing is vanilla's crime,
+# which V32's arrest reads.
+# =====================================================================
+
+# Scope: a Kehillah leader.
+kehillah_host_conversion_ai_check_effect = {
+	save_scope_as = kehillah_conversion_target
+	if = {
+		limit = {
+			is_imprisoned = no
+			kehillah_host_charter_host_available_trigger = yes
+			primary_title = { NOT = { has_variable = kehillah_conversion_demanded } }
+		}
+		domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_conversion_host }
+		if = {
+			limit = {
+				scope:kehillah_conversion_host = {
+					is_ai = yes
+					is_adult = yes
+					is_imprisoned = no
+				}
+				OR = {
+					AND = {
+						is_ai = no
+						scope:kehillah_conversion_host = {
+							is_character_interaction_valid = {
+								recipient = scope:kehillah_conversion_target
+								interaction = demand_conversion_player_ruler_interaction
+							}
+						}
+					}
+					AND = {
+						is_ai = yes
+						scope:kehillah_conversion_host = {
+							is_character_interaction_valid = {
+								recipient = scope:kehillah_conversion_target
+								interaction = demand_conversion_vassal_ruler_interaction
+							}
+						}
+					}
+				}
+			}
+			random = {
+				chance = kehillah_host_conversion_demand_chance_value
+				primary_title = {
+					set_variable = { name = kehillah_conversion_demanded value = yes years = 5 }
+				}
+				debug_log = "kehillah_host_conversion_ai_check_effect: the host demands conversion"
+				debug_log_scopes = yes
+				if = {
+					limit = { is_ai = no }
+					scope:kehillah_conversion_host = {
+						run_interaction = {
+							interaction = demand_conversion_player_ruler_interaction
+							actor = scope:kehillah_conversion_host
+							recipient = scope:kehillah_conversion_target
+							send_threshold = decline
+						}
+					}
+				}
+				else = {
+					scope:kehillah_conversion_host = {
+						run_interaction = {
+							interaction = demand_conversion_vassal_ruler_interaction
+							actor = scope:kehillah_conversion_host
+							recipient = scope:kehillah_conversion_target
+							send_threshold = decline
+						}
+					}
+				}
+				# Vanilla converts without any on_action, so look again once
+				# the answer is in (AI replies take 4-9 days) rather than
+				# leaving a convert in office until the quarterly sweep.
+				# kehillah_conversion.0001 re-checks and does nothing if he
+				# refused.
+				trigger_event = { id = kehillah_conversion.0001 days = 30 }
+			}
+		}
+	}
+}
