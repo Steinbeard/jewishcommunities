@@ -206,10 +206,9 @@ kehillah_yeshiva_quarterly_effect = {
 	if = {
 		limit = {
 			kehillah_has_yeshiva_trigger = yes
-			scope:kehillah_rosh_yeshiva ?= {
-				has_trait = kehillah_rabbi_trait
-				learning >= kehillah_rosh_yeshiva_min_learning
-			}
+			# V29 section 11.2 (2026-10-12): a master of what the yeshiva
+			# teaches, not Learning alone. A shallow head lets it drift.
+			kehillah_yeshiva_master_head_trigger = yes
 		}
 		kehillah_add_yeshiva_fame_effect = { AMOUNT = 1 }
 	}
@@ -481,23 +480,25 @@ kehillah_yeshiva_leave_effect = {
 }
 
 # Scope: a student, present this quarter. scope:kehillah_tick_title = his
-# yeshiva. One quarter of study: the specialization gains most.
+# yeshiva; scope:kehillah_head_teaching_xp = what its head can teach of
+# the specialization (kehillah_yeshiva_head_teaching_xp_value). One
+# quarter of study: the specialization gains most, under a master head.
 kehillah_yeshiva_study_quarter_effect = {
 	change_variable = { name = kehillah_yeshiva_quarters add = 1 }
 	if = {
 		limit = { scope:kehillah_tick_title = { var:kehillah_yeshiva_specialization ?= flag:parshanut } }
-		add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_yeshiva_xp_specialization }
+		add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = scope:kehillah_head_teaching_xp }
 		add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = kehillah_yeshiva_xp_other }
 		add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = kehillah_yeshiva_xp_other }
 	}
 	else_if = {
 		limit = { scope:kehillah_tick_title = { var:kehillah_yeshiva_specialization ?= flag:hashkafa } }
-		add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = kehillah_yeshiva_xp_specialization }
+		add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = scope:kehillah_head_teaching_xp }
 		add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = kehillah_yeshiva_xp_other }
 		add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_yeshiva_xp_other }
 	}
 	else = {
-		add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = kehillah_yeshiva_xp_specialization }
+		add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = scope:kehillah_head_teaching_xp }
 		add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_yeshiva_xp_other }
 		add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = kehillah_yeshiva_xp_other }
 	}
@@ -547,10 +548,11 @@ kehillah_yeshiva_tick_effect = {
 		kehillah_yeshiva_travelling_student_effect = yes
 	}
 
-	# 3. Every student on the roll: study if present, graduate if done.
-	# (Re-read the head: a student who died or left loses his rebbe.)
+	# 3. Every student on the roll studies, if present. (Re-read the
+	# head: a student whose teacher died or left loses his rebbe.)
 	clear_saved_scope = kehillah_rosh_yeshiva
 	kehillah_save_rosh_yeshiva_effect = yes
+	save_scope_value_as = { name = kehillah_head_teaching_xp value = kehillah_yeshiva_head_teaching_xp_value }
 	scope:kehillah_tick_title = {
 		every_in_list = {
 			variable = kehillah_yeshiva_students
@@ -574,16 +576,9 @@ kehillah_yeshiva_tick_effect = {
 				limit = { kehillah_yeshiva_student_present_trigger = yes }
 				kehillah_yeshiva_study_quarter_effect = yes
 			}
-			if = {
-				limit = {
-					var:kehillah_yeshiva_quarters >= kehillah_yeshiva_quarters_to_graduate
-					learning >= kehillah_ordination_learning_floor_value
-				}
-				add_to_list = kehillah_graduands
-			}
 		}
-		# Graduation and tidying both edit the roll, so they act on
-		# temporary lists, not on the roll while walking it.
+		# Tidying edits the roll, so it acts on a temporary list, not on
+		# the roll while walking it.
 		every_in_list = {
 			variable = kehillah_yeshiva_students
 			limit = {
@@ -596,16 +591,123 @@ kehillah_yeshiva_tick_effect = {
 		}
 	}
 	every_in_list = {
-		list = kehillah_graduands
-		kehillah_yeshiva_graduate_effect = yes
-	}
-	every_in_list = {
 		list = kehillah_stale_talmidim
 		save_scope_as = kehillah_stale_talmid
 		scope:kehillah_tick_title = {
 			remove_list_variable = { name = kehillah_yeshiva_students target = scope:kehillah_stale_talmid }
 		}
 	}
+
+	# 4. Once a year, at the end of the winter term (the tick that falls in
+	# January-March), the class that has finished is ordained (V29
+	# section 11.1). The cooldown guards against a pulse drifting twice
+	# into the window.
+	if = {
+		limit = {
+			current_month <= 3
+			scope:kehillah_tick_title = { NOT = { has_variable = kehillah_yeshiva_graduation_cooldown } }
+		}
+		kehillah_yeshiva_graduation_effect = yes
+	}
+}
+
+# Scope: a Kehillah leader with a yeshiva. The yearly ordination: every
+# student with two years at the yeshiva and the Learning for it receives
+# semicha. A player leader then decides where the class's most promising
+# graduate goes (kehillah_yeshiva.0320); the rest follow the old rule
+# (a visiting student goes home if a community needs a rabbi).
+kehillah_yeshiva_graduation_effect = {
+	primary_title = { save_scope_as = kehillah_tick_title }
+	save_scope_as = kehillah_tick_leader
+	clear_saved_scope = kehillah_rosh_yeshiva
+	kehillah_save_rosh_yeshiva_effect = yes
+	clear_saved_scope = kehillah_valedictorian
+	scope:kehillah_tick_title = {
+		set_variable = { name = kehillah_yeshiva_graduation_cooldown value = yes days = 200 }
+		every_in_list = {
+			variable = kehillah_yeshiva_students
+			limit = {
+				is_alive = yes
+				var:kehillah_yeshiva_enrolled ?= scope:kehillah_tick_title
+				var:kehillah_yeshiva_quarters >= kehillah_yeshiva_quarters_to_graduate
+				learning >= kehillah_ordination_learning_floor_value
+			}
+			add_to_list = kehillah_graduands
+		}
+	}
+	set_variable = { name = kehillah_last_class_size value = 0 }
+	if = {
+		limit = { any_in_list = { list = kehillah_graduands count >= 1 } }
+		# The class's most promising AI graduate, for the player's choice.
+		if = {
+			limit = { is_ai = no }
+			ordered_in_list = {
+				list = kehillah_graduands
+				limit = { is_ai = yes }
+				order_by = learning
+				save_scope_as = kehillah_valedictorian
+			}
+		}
+		every_in_list = {
+			list = kehillah_graduands
+			kehillah_yeshiva_graduate_effect = yes
+			scope:kehillah_tick_leader = { change_variable = { name = kehillah_last_class_size add = 1 } }
+		}
+		if = {
+			limit = {
+				is_ai = no
+				exists = scope:kehillah_valedictorian
+			}
+			trigger_event = kehillah_yeshiva.0320
+		}
+		debug_log = "kehillah_yeshiva_graduation_effect: the yearly class was ordained"
+	}
+	else = {
+		debug_log = "kehillah_yeshiva_graduation_effect: no one finished this year"
+	}
+}
+
+# Scope: the player (a Kehillah leader). Sets the yeshiva's teaching focus
+# from the library panel (common/scripted_guis/kehillah_yeshiva_gui.txt).
+kehillah_yeshiva_set_focus_effect = {
+	primary_title = {
+		set_variable = { name = kehillah_yeshiva_specialization value = flag:$TRACK$ }
+		set_variable = { name = kehillah_yeshiva_focus_cooldown value = yes years = 5 }
+	}
+	debug_log = "kehillah_yeshiva_set_focus_effect: the yeshiva's focus changed"
+}
+
+# Scope: a Kehillah leader with a yeshiva, at game start. A seeded 1066
+# head is a master of what his academy teaches (Daniel, 2026-10-12): he
+# is given depth in its focus if he lacks it.
+kehillah_yeshiva_seed_head_depth_effect = {
+	# Not root: at game start root is not this leader.
+	save_scope_as = kehillah_seed_leader
+	clear_saved_scope = kehillah_rosh_yeshiva
+	kehillah_save_rosh_yeshiva_effect = yes
+	scope:kehillah_rosh_yeshiva ?= {
+		if = {
+			limit = { scope:kehillah_seed_leader.primary_title = { var:kehillah_yeshiva_specialization ?= flag:parshanut } }
+			if = {
+				limit = { NOT = { has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= kehillah_rosh_yeshiva_min_track_xp } } }
+				add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_yeshiva_seed_head_track_xp }
+			}
+		}
+		else_if = {
+			limit = { scope:kehillah_seed_leader.primary_title = { var:kehillah_yeshiva_specialization ?= flag:hashkafa } }
+			if = {
+				limit = { NOT = { has_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value >= kehillah_rosh_yeshiva_min_track_xp } } }
+				add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = kehillah_yeshiva_seed_head_track_xp }
+			}
+		}
+		else = {
+			if = {
+				limit = { NOT = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= kehillah_rosh_yeshiva_min_track_xp } } }
+				add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = kehillah_yeshiva_seed_head_track_xp }
+			}
+		}
+	}
+	debug_log = "kehillah_yeshiva_seed_head_depth_effect: the seeded head is a master of the focus"
 }
 
 # Scope: a Kehillah leader. A travelling student arrives and enrols.
@@ -639,26 +741,19 @@ kehillah_yeshiva_graduate_effect = {
 	scope:kehillah_tick_title = { save_scope_as = kehillah_semicha_community }
 	kehillah_grant_semicha_effect = yes
 	debug_log = "kehillah_yeshiva_graduate_effect: a student received semicha"
-	# Tell the yeshiva's leader, if a player.
-	scope:kehillah_tick_leader = {
-		if = {
-			limit = { is_ai = no }
-			send_interface_message = {
-				type = msg_kehillah_band_improved
-				title = kehillah_yeshiva_graduate_msg_title
-				desc = kehillah_yeshiva_graduate_msg_desc
-				left_icon = scope:kehillah_graduate
-			}
-		}
-	}
-	# A player student is told in person.
+	# A player student is told in person. (A player leader hears of the
+	# whole class at once: kehillah_yeshiva.0320.)
 	if = {
 		limit = { is_ai = no }
 		trigger_event = kehillah_yeshiva.0302
 	}
-	# A visiting AI student goes home to a community that needs a Dayyan.
+	# A visiting AI student goes home to a community that needs a Dayyan --
+	# except the graduate whose path the player leader is about to choose.
 	else_if = {
-		limit = { has_character_flag = kehillah_visiting_student }
+		limit = {
+			has_character_flag = kehillah_visiting_student
+			NOT = { scope:kehillah_valedictorian ?= this }
+		}
 		scope:kehillah_tick_leader = { kehillah_place_alumnus_effect = yes }
 	}
 }

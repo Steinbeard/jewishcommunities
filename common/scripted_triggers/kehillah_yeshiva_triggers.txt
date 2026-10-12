@@ -114,3 +114,93 @@ kehillah_any_yeshiva_for_me_trigger = {
 		}
 	}
 }
+
+# =====================================================================
+# V29 section 11 (2026-10-12): the head's depth.
+# =====================================================================
+
+# Scope: a Kehillah leader. Does the head of his yeshiva -- the appointed
+# Rosh Yeshiva, or the leader himself when he is an ordained rabbi and
+# has appointed none (kehillah_save_rosh_yeshiva_effect's rule) -- have
+# $VALUE$ XP in track $TRACK$?
+kehillah_yeshiva_head_track_trigger = {
+	OR = {
+		AND = {
+			employs_court_position = rosh_yeshiva_kehillah_position
+			any_court_position_holder = {
+				type = rosh_yeshiva_kehillah_position
+				has_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value >= $VALUE$ }
+			}
+		}
+		AND = {
+			NOT = { employs_court_position = rosh_yeshiva_kehillah_position }
+			kehillah_is_ordained_rabbi_trigger = yes
+			has_trait_xp = { trait = kehillah_rabbi_trait track = $TRACK$ value >= $VALUE$ }
+		}
+	}
+}
+
+# Scope: a Kehillah leader. Is the head $VALUE$ deep in what the yeshiva
+# teaches (its specialization; Talmudics by default)?
+kehillah_yeshiva_head_focus_depth_trigger = {
+	OR = {
+		AND = {
+			primary_title ?= { var:kehillah_yeshiva_specialization ?= flag:parshanut }
+			kehillah_yeshiva_head_track_trigger = { TRACK = parshanut VALUE = $VALUE$ }
+		}
+		AND = {
+			primary_title ?= { var:kehillah_yeshiva_specialization ?= flag:hashkafa }
+			kehillah_yeshiva_head_track_trigger = { TRACK = hashkafa VALUE = $VALUE$ }
+		}
+		AND = {
+			NOT = { primary_title ?= { var:kehillah_yeshiva_specialization ?= flag:parshanut } }
+			NOT = { primary_title ?= { var:kehillah_yeshiva_specialization ?= flag:hashkafa } }
+			kehillah_yeshiva_head_track_trigger = { TRACK = talmudics VALUE = $VALUE$ }
+		}
+	}
+}
+
+# Scope: a Kehillah leader. A master head: Learning and depth in the focus.
+# Only such a head holds the yeshiva's renown up each quarter.
+kehillah_yeshiva_master_head_trigger = {
+	kehillah_yeshiva_head_focus_depth_trigger = { VALUE = kehillah_rosh_yeshiva_min_track_xp }
+	OR = {
+		AND = {
+			employs_court_position = rosh_yeshiva_kehillah_position
+			any_court_position_holder = {
+				type = rosh_yeshiva_kehillah_position
+				learning >= kehillah_rosh_yeshiva_min_learning
+			}
+		}
+		AND = {
+			NOT = { employs_court_position = rosh_yeshiva_kehillah_position }
+			learning >= kehillah_rosh_yeshiva_min_learning
+		}
+	}
+}
+
+# Scope: a Kehillah leader. Is there a community that needs a rabbi, for
+# scope:kehillah_graduate (kehillah_place_alumnus_effect's own test)?
+kehillah_alumnus_destination_available_trigger = {
+	any_in_global_list = {
+		variable = kehillah_registered_communities
+		exists = holder
+		NOT = { this = root.primary_title }
+		NOT = { has_variable = kehillah_alumnus_incoming }
+		holder = {
+			NOT = { exists = cp:councillor_court_chaplain }
+			faith = scope:kehillah_graduate.faith
+		}
+	}
+}
+
+# Scope: the player (a Kehillah leader). May the yeshiva's focus be set to
+# $TRACK$ now? Not already it, not changed in the last five years, and a
+# head deep enough in it to teach it.
+kehillah_yeshiva_can_set_focus_trigger = {
+	government_has_flag = government_is_kehillah
+	kehillah_has_yeshiva_trigger = yes
+	NOT = { primary_title = { var:kehillah_yeshiva_specialization ?= flag:$TRACK$ } }
+	NOT = { primary_title = { has_variable = kehillah_yeshiva_focus_cooldown } }
+	kehillah_yeshiva_head_track_trigger = { TRACK = $TRACK$ VALUE = kehillah_rosh_yeshiva_min_track_xp }
+}

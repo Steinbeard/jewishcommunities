@@ -118,6 +118,14 @@ the shim guide. Current state is in the
   This affects every building and the balance. Decide after V29's Stability-gated Yeshiva has been
   seen in play.
 
+- **V29 §11, THE LEADER'S YESHIVA: built 2026-10-12, live test pending**
+  ([spec §11](docs/spec/v29-yeshiva.md)).
+  - Yearly ordination with "The Graduating Class" choice (keep / send / recommend to the lord).
+  - The head's depth in the focus sets study XP and whether renown holds.
+  - The 1066 heads are seeded as masters.
+  - Teaching-focus buttons in the library panel.
+  - Also removed 2026-10-12: Take Stock decision, View Kehillah Communities interaction.
+
 - **V29 §10, THE LIVING YESHIVA: built and verified live 2026-10-11** (test log runs 12-13;
   open: the arrival event `.0301` was not reached live, and only some students got a rebbe link)
   - **Cleanup 2026-10-11:**
