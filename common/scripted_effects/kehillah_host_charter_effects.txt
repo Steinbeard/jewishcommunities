@@ -65,14 +65,6 @@ kehillah_maintain_host_charter_effect = {
 				set_variable = { name = kehillah_charter_suzerain_changed value = 1 }
 			}
 			debug_log = "kehillah_maintain_host_charter_effect: host mismatch, ending stale charter"
-			# Community news (2026-10-12): the region hears that this
-			# community has passed to a new lord. Only here -- a real change
-			# of hands -- never at the first charter (game start, founding).
-			kehillah_notify_region_players_effect = {
-				TYPE = msg_kehillah_community_news_bad
-				TITLE = kehillah_news_charter_t
-				DESC = kehillah_news_charter_d
-			}
 			end_tributary = yes
 		}
 		else = {
@@ -216,6 +208,22 @@ kehillah_apply_fresh_charter_policy_effect = {
 # defensively if a malformed contract has none.
 # ---------------------------------------------------------------------
 kehillah_refresh_charter_state_cache_effect = {
+	# Community news (2026-10-12, Daniel: "only about charter
+	# modifications"): remember last quarter's terms, to notice below when
+	# an EXISTING charter's terms change. A first charter (game start,
+	# founding) or a new one after a change of lord starts from an empty
+	# cache -- the quarter between end_tributary and the fresh charter
+	# clears it -- so neither is reported.
+	primary_title = {
+		if = {
+			limit = { has_variable = kehillah_charter_cache_construction }
+			set_variable = { name = kehillah_charter_prev_terms value = kehillah_charter_terms_signature_value }
+		}
+		else_if = {
+			limit = { has_variable = kehillah_charter_prev_terms }
+			remove_variable = kehillah_charter_prev_terms
+		}
+	}
 	primary_title = {
 		remove_variable = kehillah_charter_cache_construction
 		remove_variable = kehillah_charter_cache_security
@@ -322,6 +330,21 @@ kehillah_refresh_charter_state_cache_effect = {
 		}
 		else = {
 			primary_title = { set_variable = { name = kehillah_charter_cache_market_access value = 0 } }
+		}
+	}
+
+	if = {
+		limit = {
+			primary_title = {
+				has_variable = kehillah_charter_prev_terms
+				has_variable = kehillah_charter_cache_construction
+				NOT = { var:kehillah_charter_prev_terms = kehillah_charter_terms_signature_value }
+			}
+		}
+		kehillah_notify_region_players_effect = {
+			TYPE = msg_kehillah_community_news
+			TITLE = kehillah_news_charter_t
+			DESC = kehillah_news_charter_d
 		}
 	}
 }
