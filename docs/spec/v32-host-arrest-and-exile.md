@@ -1,8 +1,10 @@
 # V32: Host arrest and exile — 2026-10-12
 
-**Status: implemented 2026-10-12; source-checked and `ck3-tiger`-reviewed, NOT live-tested.
-Touches succession (a refusing leader steps down), so it needs a live pass before it counts as
-done. See "Live test" below.**
+**Status: implemented and live-tested 2026-10-12 (CK3 1.20, Worms 1066). Arrest, refusal-as-exile
+(step-down, no war, Into Exile, camp leaves the host's realm, a month with no crash) and accept
+(imprisoned by the host) all pass; see [the test log](../testing/2026-10-12-host-arrest-live-test-log.md).
+Unverified: the overridden refusal warning (`ImprisonCharacterDeclineSummary`) never appeared in the
+recipient's popup, which shows the decline effects instead; it may only render on the sender's side.**
 
 Phase 4 (Host Dynamics). Builds on V15 (host charter), V30 (expulsion), V27 (forced-conversion
 addendum) and the S1 step-down teardown (`common/scripted_effects/kehillah_departure_effects.txt`).
@@ -95,3 +97,13 @@ leader with an AI host, from the console:
 5. `error.log`: no new `kehillah` lines.
 
 `kehillah_arrest_debug.4` removes the crimes.
+
+## Live result notes (2026-10-12)
+
+- Both overrides took effect: an error.log stack showed `war_for_imprison_effect` resolving to the
+  Kehillah copy, and the On Decline preview listed the step-down effects, not a war.
+- The exile's new camp starts nearly out of provisions, so vanilla starvation events fire within
+  days. That comes from the shared step-down teardown, not V32 itself. Whether exile should carry
+  some provisions is a design question for Daniel.
+- A tooltip-preview error in `kehillah_refresh_map_view_effect` (unset registry-size variable,
+  older save) was fixed with a `has_variable` guard.
