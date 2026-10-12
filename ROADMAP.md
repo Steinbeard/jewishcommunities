@@ -118,6 +118,20 @@ the shim guide. Current state is in the
   This affects every building and the balance. Decide after V29's Stability-gated Yeshiva has been
   seen in play.
 
+- **V29 §10, THE LIVING YESHIVA: design agreed 2026-10-11, being built**
+  ([spec §10](docs/spec/v29-yeshiva.md)).
+  - **Enrolment:** continuous, for unordained rabbinic Jewish men aged 16+ with Learning above 8.
+    Courtiers enrol automatically, travelling students arrive over time, and rabbinic players of any
+    government travel there and enrol.
+  - **On enrolment:** the Rabbi trait, but no offices until ordination.
+  - **Study:** counts only while the student is present (no activity a war can cancel).
+  - **Graduation:** a quarterly check (two years present), then ordination by the Rosh Yeshiva.
+  - **The yeshiva's specialization** gives a study bonus.
+  - **Relations:** rebbe/talmid (shown in the court list as "Rav X's Talmid") and chavruta.
+  - **Display:** a student list in the panel.
+  - **Replaces** Hold a Zman, Seek Semicha and the journey's zman option.
+  - **Later:** upkeep per student; richer events.
+
 - **V29 THE YESHIVA: FIRST IMPLEMENTATION PASS BUILT AND VERIFIED LIVE 2026-10-11**
   ([log](docs/testing/2026-10-11-yeshiva-live-test-log.md)).
   - **Verified live:** the Worms seed; the great map building (spike 1 passed); the Rosh Yeshiva

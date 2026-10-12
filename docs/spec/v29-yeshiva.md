@@ -278,7 +278,7 @@ Worms … a clear gameplay loop").
 > visiting students go home to communities that lack a Dayyan (alumni) → fame tiers bring more
 > students, the Great Yeshiva, and Greatness.
 
-### 9.1 Hold a Zman (decision, then events)
+### 9.1 Hold a Zman (decision, then events) -- SUPERSEDED by section 10 (2026-10-11)
 
 - **Availability:** a community with a yeshiva and a head. The cooldown is 1 year, the cost is a
   modest amount of gold, and it is unavailable while Stability is in Crisis. The AI uses it too.
@@ -318,3 +318,104 @@ Worms … a clear gameplay loop").
 - Crossing a tier upward sends a message.
 - **Illustrious** raises the map hall to the **Great Yeshiva**, a second-tier great building with
   stronger host effects. It is not torn down if fame later falls.
+
+## 10. Addendum, 2026-10-11: the living yeshiva (supersedes §9's Hold a Zman)
+
+**Status:** design agreed with Daniel 2026-10-11, being built.
+
+**Why:** a once-a-year decision made the yeshiva feel like a button. A yeshiva was a standing
+community of scholars, so it should be a living part of the world. Vanilla's universities do not
+model this. They are a modifier building plus a one-off University Visit, with no members and no
+graduates. Monastic orders come closest in *shape* (a standing, fluid membership), but §2 already
+rules them out as a base.
+
+### 10.1 Enrolment (continuous)
+
+- **Who:** unordained rabbinic Jewish men, **16 or older, with Learning above 8**.
+- **On enrolment the student gains the Rabbi trait.** Its tracks are where his study accumulates.
+  - **Ordination is still a separate step.** While he is enrolled he is a student, not an ordained
+    rabbi, and **cannot hold the Dayyan or Rosh Yeshiva seats or be styled Rav.**
+  - A shared trigger, `kehillah_is_ordained_rabbi_trigger` (trait and not enrolled), replaces bare
+    trait checks at those gates.
+- **Sources of students:**
+  - **The court's own young men,** enrolled automatically when they qualify. A player can withdraw
+    one.
+  - **Travelling students,** who arrive over time, more often the higher the yeshiva's renown, and
+    join the court.
+  - **Rabbinic Jewish *players* of any government:** a decision, **"Study at a Yeshiva"**, picks a
+    yeshiva and travels there with vanilla travel, and the character enrols on arrival. **This is
+    the mod's semicha path for players** (see 10.6).
+
+### 10.2 Presence, not activities
+
+**Study counts only while the student is physically at the yeshiva's town.**
+
+- This is a quarterly check: is his location the yeshiva's province?
+- There is **no activity** to be cancelled by a war, a summons, or a ruler's other duties. If a
+  player rides off to war, his studies **pause**, and his progress is kept; he resumes by returning.
+- Courtiers live at the court, so they are always present unless they travel.
+
+### 10.3 Progress and graduation
+
+- **Each quarter at the yeshiva counts as one quarter of study.**
+- The student gains XP in the rabbi tracks:
+  - the **yeshiva's specialization** gains the most;
+  - his teacher's strongest track adds some.
+- **Specialization:** each yeshiva has one, mostly **Talmudics** or **Parshanut**, and rarely
+  **Hashkafa**. It is seeded historically and otherwise set from the founding head's strongest
+  track. Studying the specialized subject earns a bonus.
+- **The graduation check, quarterly:** 8 quarters present (two years), plus Learning at the
+  ordination floor. Then the Rosh Yeshiva **ordains** him. There is a short notice, and the
+  yeshiva's renown grows.
+- **After graduation, the student:**
+  - **stays,** as an ordained rabbi at the court (a Dayyan or Bet Din candidate); or
+  - **goes home** to a community that needs a rabbi, as an alumnus (the seating code from §9);
+  - **for players:** they simply leave as rabbis.
+- The student remembers his yeshiva (`kehillah_alma_mater`).
+
+### 10.4 Relationships as the flavor, and how students are shown
+
+**New scripted relations, modelled on vanilla's `elder`/`disciple`:**
+
+- **`kehillah_rebbe` / `kehillah_talmid`:**
+  - the student's **teacher**: the Rosh Yeshiva, or another rabbi at the yeshiva;
+  - `special_guest = yes`, so students show in the court list as **"Rav Isaac's Talmid"**;
+  - a small learning modifier.
+- **`kehillah_chavruta`:** a two-way **study partner** relation, like vanilla's `blood_brother`,
+  with opinion. It is assigned on enrolment where a partner exists.
+
+**Visibility:**
+
+- the court-list labels;
+- the relations section of the character window;
+- a **"Studying at the Yeshiva of <town>" character modifier**;
+- the **library panel's Yeshiva section lists the current students** by portrait and name, using
+  the same pattern as the book list (a title variable list).
+
+### 10.5 Events: few, reusable, relationship-flavored
+
+Only light, repeatable events that read well in every playthrough, keyed on the chavruta and the
+teacher, on the study tick at a low chance and with cooldowns:
+
+- **What to study this season:** pick a track (with a bonus if it is the specialization);
+- **learning from a teacher:** deepen the rebbe bond, gain XP;
+- **the chavruta:** argue it through (XP for both, opinion), or study alone.
+
+The existing brilliant-student and quarrel events are retired or folded into these.
+
+### 10.6 What this replaces
+
+- **Hold a Zman** (§9.1), its start and end events, and zman terms: **retired**.
+- **Kept:** renown tiers (§9.2), the Great Yeshiva, alumni seating, the panel, Found a Yeshiva,
+  the Rosh Yeshiva.
+- **Semicha:**
+  - yeshiva study becomes the main path;
+  - Seek Semicha (V21) and the Yeshiva Visit zman option are retired as redundant;
+  - **kept:** the childhood apprenticeship under a rabbi guardian, which feeds Learning and readiness;
+  - **kept:** institutional recognition (the Bet Din, Seek a Rabbi).
+
+### 10.7 Later, not now
+
+- **Upkeep:** a monthly cost per student, so a big yeshiva is something you sustain.
+- **Richer events:** matches with householders' daughters, visiting lecturers, lean years.
+- **Talmidim:** keeping in touch after graduation.
