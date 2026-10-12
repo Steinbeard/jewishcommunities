@@ -3,7 +3,10 @@
 **Status: PROPOSAL — 2026-10-12 (interactive session). Nothing in this document is implemented.**
 Decisions marked *Daniel* were made in conversation on 2026-10-12. Everything else is Claude's
 recommendation, open to revision. Every vanilla fact below was read from the installed 1.20 game
-files (file and line given), not recalled.
+files (file and line given), not recalled. **Revised the same day with Daniel's answers**:
+faction refusal (§7.4), unified tribute (§8), Eastern rites (§4.3), forced conversion through
+vanilla (§10.1), and the Talmud trial as the Talmudic Study term (§9). The remaining open
+questions are in §14.
 
 This document:
 - gives V17 §3's "legal-religious context" the concrete doctrine design V17 said it was waiting
@@ -43,8 +46,12 @@ The host relationship is the mod's main challenge, but today it:
    *Daniel* (approach); the three steps are Claude's.
 6. **An anti-Jewish vassal faction** pushing debt relief, restriction, then expulsion. *Daniel.*
 7. **Personal ruler stances** on top of the teaching (§6). Claude.
-8. **A tribute term on the charter:** jizya for Muslim hosts, a tallage for Christian ones (§8).
-   *Daniel approved the scope; the numbers are open.*
+8. **One unified tribute system** for every host, a share of the community's income, named by
+   region (§8). *Daniel.* The rate is to be tuned.
+9. **No war over a refused ultimatum.** *Daniel.* Refusal costs a large opinion penalty instead
+   (§7.4).
+10. **Forced conversion of Jews uses vanilla's conversion,** bridged to reach Kehillah members
+    (§10.1). *Daniel* (vanilla); the bridge is Claude's.
 
 ## 3. Historical basis
 
@@ -103,10 +110,12 @@ teaching term in the review, and no regional charter vocabulary forced on it.
 ### 4.3 Starting assignments (1066)
 
 - **Witness:** Roman, Insular Celtic, Ambrosian, Beneventan, Carolingian, Mozarabic.
-- **Imperial Law:** Byzantine. Georgian and Slavic **to verify**; Imperial Law is the
-  conservative guess, since both took the Byzantine legal tradition.
-- **Witness, to verify:** Coptic and Armenian. Few hosts, and both lived under Muslim rule in
-  1066.
+- **Imperial Law:** Byzantine, Georgian, Slavic, Coptic and Armenian, and any other Eastern
+  Christian rite. *Daniel left this to Claude's discretion; Claude chose this.* Augustine's
+  witness doctrine is a Latin development. The Eastern churches' treatment of Jews ran through
+  Roman law and the canons, as Byzantium's did, so they share Byzantium's doctrine rather than
+  borrowing Rome's. For a rite without an emperor, the "decree" in §4.4 is issued by whatever
+  ruler holds the realm.
 - **Dhimma:** every rite of a faith with `special_doctrine_jizya` (Sunni, Shia, Kharijite,
   Quranist, Qarmatian; `00_faith_types.txt` ~2618–2853).
 - **New heresy rites** inherit the parent rite's teaching at spawn (spike, §11).
@@ -125,12 +134,12 @@ A teaching **never decides an outcome**. It does three things:
 | Teaching | Ceiling | Clergy ask for (charter terms) | Clergy when a mob comes | Incidents opened |
 |---|---|---|---|---|
 | Witness | Discouraged. Banned needs the V30 coalition **plus** a faction ultimatum or a Convinced/Predator ruler (§6). | Small: security or jurisdiction toward royal appeal | **Protect.** A zealous bishop shelters the community. | Sicut Judaeis petition |
-| Separation and Mission | Banned under V30's rules as they stand | Text licensing → proscription; no office; distinguishing dress | Protect lives; demand subordination | Disputation, compelled sermon, Talmud trial |
+| Separation and Mission | Banned under V30's rules as they stand | Talmudic Study licensing → proscription (the Talmud trial, §9); no office; distinguishing dress | Protect lives; demand subordination | Disputation, compelled sermon |
 | Exclusion | Banned at a lower threshold (§5) | Any restriction | Weak or absent | All of the above; expulsion petitions |
-| Imperial Law | Discouraged. **No Banned via review.** | Construction: repairs only, new institutions need permission | The state, not the clergy, protects | Imperial conversion decree (blocked, §10) |
+| Imperial Law | Discouraged. **No Banned via review.** | Construction: repairs only, new institutions need permission | The state, not the clergy, protects | Conversion decree (§10.1) |
 | Dhimma | Discouraged. No Banned. | Construction (no new houses of worship) | Protect (the Pact is a guarantee) | Lapses in enforcement, dress order |
 | Strict Pact | Discouraged, with strict agendas | Construction forbidden; market restricted | Conditional | Dress order, dismissal of officials, demolition |
-| Abolition | Banned | Everything | None | Convert, leave or die (blocked, §10) |
+| Abolition | Banned | Everything | None | Convert or leave (§10.1) |
 
 The charter terms named are the existing V16 terms (`kehillah_cached_charter_*` triggers in
 `kehillah_settlement_policy_triggers.txt`): construction free/permission/forbidden, security
@@ -220,11 +229,23 @@ Vassals of a host with at least one community, weighted by:
 
 ### 7.4 Refusal
 
-Vanilla factions declare war when refused. A barons' war over the Jews has precedent (Simon de
-Montfort's followers attacked London's Jews in 1264 and burned the debt records), but it is too
-heavy as the default. **First pass: no war.** Refusal costs the host opinion with members and a
-temporary realm-stability modifier, and the faction comes back stronger. War is a later option,
-pending §11's faction spike.
+**No war.** *Daniel.* A barons' war over the Jews has precedent (Simon de Montfort's followers
+attacked London's Jews in 1264 and burned the debt records), but not as the default.
+
+Daniel asked whether the ultimatum should simply be unrefusable. **Claude's recommendation:
+refusable, at a large cost that grows with the faction's strength.** An unrefusable ultimatum
+would erase the Protector: the ruler who defies his barons to keep his Jews, the Henry IV shape,
+is exactly the beat that makes a host worth cultivating. A cost that scales has the effect
+Daniel is after where it matters: a weak ruler facing a strong faction cannot afford to refuse,
+so in practice he concedes or bargains. Refusal gives:
+- a large opinion penalty from every member, scaled by faction strength (order of −40 at full
+  strength, decaying over ten years);
+- the faction cannot be dissolved for five years, and its next ultimatum comes sooner;
+- the Protector stance halves the opinion penalty. A host with a high tribute (§8) has a visible
+  reason to pay the price.
+
+A refusal is the community's moment too: its counterplay (§7.5) is what makes refusing
+affordable.
 
 ### 7.5 The community's counterplay
 
@@ -256,22 +277,29 @@ strength)". Its ultimatum is the acute form.
 - **A tributary contract can carry a tax obligation** (`default_tributary_taxes` in
   `default_tributary.txt`: `tax = normal_tributary_tax` / `high_tributary_tax`).
 
-### 8.2 The term
+### 8.2 One system, three parts
 
-- **Muslim hosts** (faith with `special_doctrine_jizya`): the charter gains a **Jizya** term. It
-  is the community's protected status in money, and it gives the host a stake he can see in his
-  own income.
-- **Christian hosts:** a **Tallage** term (ordinary annual levy), plus:
-  - a host decision, **"Tallage the Jews"**: a one-off extraordinary levy. Fast gold for the host;
-    costs the community Prosperity and opinion. Repeated tallages hollow out the community, which
-    is the historical trap;
-  - a **confirmation fee at a new ruler's accession**: the charter is confirmed for a payment,
-    making every succession a moment to negotiate.
-- **Other hosts:** a plain tribute term, worded for `tenet_tax_nonbelievers` where present.
-- **In the review:** tribute received is a protective pressure (`flag:revenue`). A heavy debt
-  owed *to* the community, relative to the host's income, is a restrictive one. V30's flat
-  "owes a loan" weight becomes a curve: a modest debt protects (he needs the credit), a crushing
-  one tempts expulsion (England 1290, France 1306).
+*Daniel: tribute is one unified system for every host; the rate is to be tuned.* The mechanics are
+the same everywhere. Only the name changes by region: **Jizya** for a host whose faith has
+`special_doctrine_jizya`, **Tallage** for a Christian host, **Tribute** elsewhere (worded for
+`tenet_tax_nonbelievers` where present).
+
+1. **The ordinary term:** a charter term with levels (for example None / Customary / Heavy), each
+   a **percentage of the community's income**, paid to the host. It gives the host a stake he can
+   see in his own income breakdown. The rates are a tuning question for the soak test (S10). One
+   script value per level, so tuning is a one-line change.
+2. **The extraordinary levy:** a host decision, "Levy the Jews" (named by region as above), for a
+   one-off sum. Fast gold for the host, at a cost to the community's Prosperity and opinion, with
+   a cooldown. Repeated levies hollow out the community, which is the historical trap. It is
+   available to every host, not only Christian ones.
+3. **The confirmation fee:** when a new ruler accedes, the charter is confirmed for a payment.
+   Every succession becomes a moment to negotiate. This goes into V16's existing "A New Steward"
+   notices.
+
+**In the review:** tribute received is a protective pressure (`flag:revenue`). A heavy debt owed
+*to* the community, relative to the host's income, is a restrictive one. V30's flat "owes a
+loan" weight becomes a curve: a modest debt protects (he needs the credit), a crushing one tempts
+expulsion (England 1290, France 1306).
 
 **Engine risk:** a tributary `tax` obligation is a share of the subject's income. A Kehillah's
 income runs through its domicile and may read as zero to the engine. If so, the term is
@@ -288,8 +316,6 @@ the realm title. First set:
 - **Disputation** (Separation and Mission): the community's rabbi must defend the Talmud in front
   of the host. Learning check; ties into the Rabbi and Bet Din systems.
 - **Compelled sermon** (Separation and Mission).
-- **Talmud trial** (Separation and Mission, Exclusion): ties to the text term and the library
-  (V13).
 - **The townsmen's petition** (any teaching): trade rivalry, which feeds the faction.
 - **The vizier's enemies** (Dhimma, Strict Pact): resentment of a Jewish official at a Muslim
   court. Granada, 30 December 1066, is the anchor. Joseph ibn Naghrilla is already in the mod
@@ -298,6 +324,20 @@ the realm title. First set:
 
 Violence and massacre content belongs to the Crusades chain (S11) and inherits its tone rules
 (V22 §5, §7).
+
+### 9.1 The Talmud trial is the Talmudic Study term
+
+*Daniel, 2026-10-12.* The Talmud trial is not a separate incident. It is how the charter's
+existing **Talmudic Study** term moves: Christian text unrestricted → licensed → proscribed
+(`kehillah_cached_charter_text_*`). A trial is the event that wraps a restrictive revision of
+that term, through V17 Slice C's one-term-at-a-time charter revision. A disputation the rabbi
+wins can stop it, and a proscription is reversible by a later, more favourable revision. This
+keeps it inside the pillar causality V16 already has: the term feeds Greatness, so the trial's
+consequence is visible in the community's own numbers.
+
+**Detailed design deferred** until after the rest of V31 is built; Daniel wants to iterate on it.
+Still open then: the trial's steps, how the library (V13) and the community's books are affected,
+and whether it falls under V22's proposed depiction game rule.
 
 ## 10. Changing the teaching
 
@@ -316,9 +356,52 @@ Violence and massacre content belongs to the Crusades chain (S11) and inherits i
   rite. The Almohad shape.
 - **Imperial Law** is moved off its track only by a council, onto Separation and Mission.
 
-**Blocked on Daniel's forced-conversion design (V22 §7):** the Imperial conversion decree and
-Abolition's "convert, leave or die". Until that exists, both stop at the warning and the
-expulsion state machine V30 already has.
+### 10.1 Forced conversion through vanilla
+
+*Daniel: forced conversion of Jews should be vanilla's.* This supersedes V22 §7's reservation of
+a separate forced-conversion design. Vanilla's own interactions do all the converting; the mod
+adds only what vanilla cannot reach.
+
+**What vanilla cannot do today (verified).** Vanilla's Demand Conversion interactions
+(`common/character_interactions/00_religious_interactions.txt`) target your own house members
+(`demand_conversion_interaction`, ~508), your vassals (`_vassal_ruler_`, ~780) and players
+(`_player_ruler_`, ~1385). A host is the Kehillah's tributary suzerain, not its liege, so **no
+host can demand a Kehillah leader's conversion.** This is the same gap V32 closed for
+imprisonment.
+
+**What happens today when a leader converts:** he gains `kehillah_apostate_trait`
+(`common/on_action/kehillah_apostasy_on_actions.txt`) and keeps leading the community. Nothing
+else happens, so a Christian can lead a Kehillah.
+
+Three changes, all small:
+
+1. **The bridge.** A host whose realm holds the community's quarter may use vanilla's Demand
+   Conversion on the Kehillah leader, through one added branch, as V32 did for imprisonment. It
+   is **gated by teaching**:
+   - **Witness, Separation and Mission, Dhimma:** not available. Fourth Toledo and Gregory I
+     condemn forced baptism; the Pact guarantees the faith. The tooltip says so.
+   - **Imperial Law:** available only with a **conversion decree** active in the realm (a host
+     decision; the Heraclius, Basil I and Romanos I shape), which lapses with the ruler.
+   - **Exclusion, Strict Pact, Abolition:** available.
+
+   Refusing is a crime under vanilla's `refusing_conversion_is_crime_trigger` where it applies,
+   and otherwise through V32's `kehillah_host_crime_effect`. So the arrest and exile V32 just built
+   is the consequence, and no new punishment is needed. V27's override file
+   (`kehillah_forced_conversion_override.txt`) already wraps the vanilla validity triggers, so the
+   gate belongs there.
+2. **The converted leader steps down.** A leader who leaves Judaism leaves office through the S1
+   step-down teardown, which V32 already uses, and appointment succession picks a Jewish
+   successor. **Exception:** a leader who converts but keeps his faith in secret (vanilla's
+   crypto-religionist secret) stays in office, at risk of exposure. That is the anusim and
+   conversos of history, through vanilla's secrets system.
+3. **Return.** Converting back is vanilla. The mod adds only the community's side: the apostate
+   trait is already removed on return, and a later flavour event can carry Rashi's lenient
+   ruling on receiving forced converts back (V22 §5).
+
+**What stays mod content:** the **decree that hits a whole community at once** (Imperial Law's
+decree, Abolition's convert-or-leave). It runs vanilla's conversion character by character, and
+hands everyone who refuses to V30's expulsion and the V32 path. That content builds on the bridge
+above and comes after it.
 
 ## 11. Spikes before building
 
@@ -330,6 +413,9 @@ expulsion state machine V30 already has.
 3. **A custom faction:** a scripted demand, AI join scores, refusal without war, and how the
    faction screen renders custom loc.
 4. **Era check:** read the council host's culture era from the council scope.
+5. **The conversion bridge:** whether a branch added to the overridden validity triggers is
+   enough to *show* Demand Conversion on a tributary, or whether the interactions' own
+   `is_shown` blocks also need it. V32's imprisonment bridge is the precedent.
 
 ## 12. Implementation slices
 
@@ -338,13 +424,17 @@ In order, after V30's live test:
 - **Slice A, teachings:** the doctrine group, the 1066 assignments, the review reading them
   (§5.1–5.3). Debug probe: report a host's rite, teaching, ceiling and scaled pressures.
 - **Slice B, stances:** set at accession, rewire the posture line, the review terms.
-- **Slice C, tribute:** the jizya and tallage terms, "Tallage the Jews", the confirmation fee,
-  the debt curve.
-- **Slice D, the faction:** membership, the three demands, the host's answer, counterplay.
+- **Slice C, tribute:** the unified term, the extraordinary levy, the confirmation fee, the debt
+  curve.
+- **Slice D, the faction:** membership, the three demands, the host's answer, the refusal cost,
+  counterplay.
 - **Slice E, changing the teaching:** the council guards, Sicut Judaeis and the community
   petition.
-- **Slice F, incidents** (§9), alongside V17 Slice C's charter agendas.
-- **Blocked:** the Imperial decree and Abolition's endgame (forced-conversion design).
+- **Slice F, forced conversion:** the converted leader steps down (do this first; it is a gap
+  today regardless of teachings), then the teaching-gated bridge, then the community-wide decree.
+  Touches succession, so it needs a live pass.
+- **Slice G, incidents** (§9), alongside V17 Slice C's charter agendas.
+- **Later:** the Talmud trial's detailed design (§9.1).
 
 ## 13. Testing
 
@@ -361,13 +451,15 @@ In order, after V30's live test:
 
 ## 14. Open questions for Daniel
 
-1. Faction refusal: no war in the first pass, as proposed, or a barons' war?
-2. Tribute numbers, and whether Christian hosts get both the tallage term and the one-off
-   decision.
-3. Starting teachings for the Georgian, Slavic, Coptic and Armenian rites.
-4. The forced-conversion design (already reserved in V22 §7), which unblocks §10's endgames.
-5. Tone of the Talmud trial and burning content, and whether it falls under the depiction game
-   rule V22 proposes.
+Answered 2026-10-12: faction refusal (no war; §7.4), tribute (unified; §8.2), Eastern rites
+(Claude's discretion; §4.3), forced conversion (vanilla; §10.1), the Talmud trial (the Talmudic
+Study term; detail deferred, §9.1). Still open:
+
+1. Does the refusal cost in §7.4 (opinion scaled by strength, rather than an unrefusable
+   ultimatum) match what you had in mind?
+2. Tribute rates per level. Tune in the soak test.
+3. A secretly-Jewish convert staying in office (§10.1, change 2): keep, or should every convert
+   step down?
 
 ## 15. Non-goals
 
