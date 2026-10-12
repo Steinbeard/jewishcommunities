@@ -118,7 +118,8 @@ the shim guide. Current state is in the
   This affects every building and the balance. Decide after V29's Stability-gated Yeshiva has been
   seen in play.
 
-- **V29 §10, THE LIVING YESHIVA: design agreed 2026-10-11, being built**
+- **V29 §10, THE LIVING YESHIVA: built and verified live 2026-10-11** (test log runs 12-13;
+  open: the arrival event `.0301` was not reached live, and only some students got a rebbe link)
   ([spec §10](docs/spec/v29-yeshiva.md)).
   - **Enrolment:** continuous, for unordained rabbinic Jewish men aged 16+ with Learning above 8.
     Courtiers enrol automatically, travelling students arrive over time, and rabbinic players of any

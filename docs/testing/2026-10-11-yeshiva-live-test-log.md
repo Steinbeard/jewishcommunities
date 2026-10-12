@@ -201,6 +201,56 @@ Fixes are in `444bdde`; run 7 re-tests them.
 - **Note:** Hold a Zman is greyed on day one, as expected, until the day-three snapshot fills in the
   pillars.
 
+## Run 12 (`4ec4d5d`): the living yeshiva (V29 section 10)
+
+Driven by console probes `kehillah_yeshiva_debug.5` (student report), `.6` (one tick) and `.7`
+(make the player a would-be student).
+
+- **Enrolment, PASS.** The first tick enrolled 5 of the Worms court's young men. All were present
+  at quarter 1, all had a rebbe (Isaac), and 4 of 5 had a chavruta (an odd number leaves one
+  without). None read as ordained.
+- **Graduation, PASS.**
+  - Over 8 ticks, two travelling students arrived (flagged `visiting student`).
+  - On tick 8 exactly the original 5 graduated and left the roll, and "Semicha Given" appeared.
+  - The two visitors stayed on at quarters 4-7.
+  - Isaac still read as head and as ordained afterwards.
+- **Player path, PASS.**
+  - After `.7`, "Study at a Yeshiva" appeared. "Where to Study" offered Jerusalem, Worms, Lucena,
+    and "Not now".
+  - Choosing Jerusalem granted the trait and opened vanilla's travel planner (11 months).
+  - While away, "Return to the Yeshiva" and "Leave the Yeshiva" showed, and "Study" was hidden.
+  - Leaving left the player marked unfinished and not enrolled, and "Study" reappeared.
+  - Arrival (`.0301`) was not reached: Isaac died in a storm at sea, a vanilla travel hazard.
+- **BUGS:**
+  - The court list showed the raw key "kehillah_talmid".
+  - `missing localization 'set_relation_kehillah_talmid_third'` / `'..._chavruta_first'`.
+  - The panel's portrait grid filled columns and overflowed at 5 or more students.
+  - Students left without a rebbe when the head died were never relinked.
+
+## Fixes in `dc506a1` and `d9a9913`
+
+- Label keys `kehillah_talmid` / `kehillah_rebbe` / `kehillah_chavruta` added.
+- `set_relation_*` calls now run in `hidden_effect`, so no tooltip keys are needed.
+  `set_relation_kehillah_chavruta_third` also collides by hash with a vanilla key (ck3-tiger).
+- The grid uses `flipdirection = yes` (rows of 4), as vanilla's own portrait grids do.
+- Each tick re-reads the head and relinks rebbe-less students.
+
+## Run 13 (`d9a9913`): ALL PASS
+
+- No `set_relation` or relation loc errors.
+- The court list reads "Your Player Heir, Shtadlan, and Talmid" and "Your Courtier and Talmid".
+- 9 students: a tidy 4 + 4 + 1 grid. The ninth row sits slightly past the panel's bottom frame,
+  which is cosmetic.
+- Killing Isaac passed leadership to a lay Parnas, with no Rosh Yeshiva. The students kept their
+  chavrutot and had no rebbe, as designed. The relink to a new *ordained* head was not exercised.
+- **Open:**
+  - With Isaac as head, only 5 of 9 students showed a rebbe after the first tick. These may be
+    relations the engine refuses (for example close kin), but this is not yet investigated.
+  - `kehillah_yeshiva_debug.1`'s "qualified head in the community" line reads false even with Isaac
+    as head. This predates section 10: the founding-level test needs track depth.
+  - The `kehillah_community_map_view.gui` "Widget cannot have a position in a layout" warnings
+    predate this work.
+
 ## Not covered yet
 
 - The traveller point of interest (`poi_kehillah_yeshiva`) and events `.0101`/`.0102`. These only
