@@ -105,5 +105,13 @@ leader with an AI host, from the console:
 - The exile's new camp starts nearly out of provisions, so vanilla starvation events fire within
   days. That comes from the shared step-down teardown, not V32 itself. Whether exile should carry
   some provisions is a design question for Daniel.
+- **Refusal preview and exile event reworked, same day (Daniel).** The popup's On Decline tab
+  listed the step-down teardown line by line ("Adopts the Camp Succession Law" and so on). The
+  teardown now runs in a `hidden_effect` behind one line: "Flee into exile: <heir> takes up
+  <community>, and <leader> takes to the road as a landless wanderer, beyond <host>'s realm". The
+  opinion loss stays visible. `kehillah_arrest.0010` now explains the exile in full: who holds the
+  keys and seal now, what stays behind, the destination by name (with a fallback paragraph if none
+  is found), and option tooltips for the new leader, the low provisions, and the way back
+  (Found a Jewish Community). Needs a screenshot check.
 - A tooltip-preview error in `kehillah_refresh_map_view_effect` (unset registry-size variable,
   older save) was fixed with a `has_variable` guard.
