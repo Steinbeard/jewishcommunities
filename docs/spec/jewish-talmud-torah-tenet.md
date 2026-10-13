@@ -27,4 +27,8 @@ The usual mastery check requires Learning 10 or a one-course intervention. A fol
 
 `kehillah_talmud_torah_debug.1` now reports whether the lower mastery floor is met. `.3` resolves a natural Mishnah course on an unstudied Learning-8/9 test character; `.2` remains the forced-success reward probe. Run these in a disposable save because study alters the character's records and rewards.
 
+## Rabbi as a virtue — 2026-10-13 addendum
+
+**Status: Implemented in script; ck3-tiger checked, live display pending.** At Daniel's suggestion, Talmud Torah also names `kehillah_rabbi_trait` as a virtue, with weight 15. This supersedes the first rule above only as to the tenet's virtue list: Diligent remains a virtue and Lazy remains a sin. Semicha still requires its existing curriculum and institution; the tenet does not grant the Rabbi trait. The virtue expresses esteem for a recognized teacher, while Diligent keeps a virtue available to every lay learner. The Rabbi trait already grants base monthly Piety and same-faith opinion, so this virtue is an additional reward to review in the live tenet and character tooltips.
+
 The first isolated boot of this addendum also exposed a pre-existing scheme-description error: the game expected `kehillah_study_torah_desc_general`, while the scheme and localization used a key with an extra `_scheme_`. Both now use the expected key. This is a presentation fix for the same Learn Torah scheme, not a change to its study rules.
