@@ -438,11 +438,14 @@ place for it. Return to Judaism flavour (Rashi's ruling) also waits.
   - the notice offers "Carry on as Parnas Akiva…", which switched the player to the heir, and Isaac
     played on as an AI wayfarer;
   - refusing gives the host `illegal_resisted_conversion_opinion`, and V32's arrest becomes valid.
-- **INCONCLUSIVE, the AI's own demand:** no natural demand in 2+ years. Henry IV's policy review
-  repealed Banned within months, so few community-quarters ever had an edict. A forced check sent
-  four demands (Speyer, Mainz, Praha, Vienna), and all four AI leaders refused. The logic works;
-  the window is short. This matches the soak finding (Jewish Settlement Policy rarely moves, never
-  to Banned), which is a balance question for the host-relationship work, not a bug here.
+- **INCONCLUSIVE, the AI's own demand:** no natural demand in 2+ years, because the ban was lifted
+  within months. **That was a test artifact** (session 8b, same day): `kehillah_debug.75` sets
+  Banned without the five-year review cooldown that every real route sets, so the AI review was
+  free to repeal it. A forced check sent four demands (Speyer, Mainz, Praha, Vienna), and all four
+  AI leaders refused. To hold Banned in a test, use `kehillah_expulsion_debug.2` (bans through the
+  real lower effect, with the cooldown), not `.75`. Re-test the natural demand that way.
+  Separately, the soak found that the policy rarely moves and never reached Banned. That is a
+  balance question for the host-relationship work.
 
 *Daniel, 2026-10-12: hosts should be able to target Kehillah leaders, and a player whose leader is
 forced to convert may choose to play on as the heir.*
@@ -465,7 +468,8 @@ forced to convert may choose to play on as the heir.*
    the community's new leader" (`set_player_character`), shown when the successor is a playable
    AI-held Kehillah ruler, beside "Stay with [convert] on the road".
 4. **Probe:** `kehillah_conversion_debug.4`: the player's host demands his conversion now (needs
-   `kehillah_debug.75`, Banned). Accepting shows vanilla's "An End to [faith]" with its
+   Banned: prefer `kehillah_expulsion_debug.2`, which keeps the review cooldown; `kehillah_debug.75`
+   is lifted by the next AI review). Accepting shows vanilla's "An End to [faith]" with its
    keep-the-faith-in-secret option.
 
 **What stays mod content:** the **decree that hits a whole community at once** (Imperial Law's

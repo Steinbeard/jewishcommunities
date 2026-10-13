@@ -141,7 +141,7 @@ is the S11 "friendliness" design review; the Crusades chain stays separate and b
   scoring no longer favours the convert's co-converts. Probes: `kehillah_conversion_debug.1`–`.3`.
   The live run found two bugs, both fixed and re-tested: a charter leaking onto the wayfarer,
   and the successor styled "Duke".
-- **Forced conversion, part 2, built and live-tested 2026-10-12** (v31 §10.3; the AI host's own demand is inconclusive because Banned never lasted). Hosts can reach
+- **Forced conversion, part 2, built and live-tested 2026-10-12** (v31 §10.3; the AI host's own demand is inconclusive: the test's debug ban skipped the review cooldown, so re-test with `kehillah_expulsion_debug.2`). Hosts can reach
   player-led communities through a copied vanilla interaction. AI hosts demand "convert or leave"
   while an expulsion edict stands. A player convert may carry on as the heir. Probe:
   `kehillah_conversion_debug.4`.
