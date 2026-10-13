@@ -44,7 +44,7 @@ pillar tooltip. "Host" means the top liege of the county the quarter stands in.
 | Realm's Jewish Settlement Policy | Encouraged +40, Discouraged −100, Banned −250 | +40 / −60 / −150 |
 | War in the county | occupied −200, raided −120, host at war −40 | −150 / −100 / −25 |
 | A holy war preached: the county's or host's faith has a great holy war in any stage | −150 | — |
-| Religious tension: the county's faith regards Judaism as evil / hostile / astray | −120 / −60 / −20 | — |
+| Religious tension: the county's faith regards Judaism as evil / hostile / astray (the local view; light, because every county reads "evil" at start) | −30 / −20 / −10 | — |
 | The county's economy | — | development × 4; −50 if county control is under 50 |
 | The host's Teaching on the Jews (v31 doctrines, on the host's rite) | protective +30, strict −80, exclusionary −200 | strict −40, exclusionary −100 |
 
@@ -65,3 +65,21 @@ defiance means Crisis.
 Run ck3-tiger, then a live probe that reads each term for Worms. The real test is a repeat soak:
 communities should spread across the bands, and the bands should move with wars, crusades and host
 changes.
+
+## Addendum, 2026-10-12: overcrowding is a population limit, not a Stability cost
+
+The live probe ([log](../testing/2026-10-12-v33-pressures-probe.md)) found two problems.
+
+**Overcrowding.** Worms has 33 courtiers and 8 places. The flat −8 a quarter outweighed the slow
+5% recovery, so Stability could never climb back. Daniel decided that the player has little
+control over population, so a full quarter should be a soft limit rather than a Stability cost.
+
+- **The Stability drain is removed.** The mild crowded-quarter modifier (−5 courtier opinion)
+  stays.
+- **Capacity:** the base goes from 4 to 20, plus the existing Prosperity bonuses.
+- **Arrivals:** a full quarter turns newcomers away. Arrival sources check
+  `kehillah_quarter_has_room_trigger`; the yeshiva's travelling students are the first.
+- **Next:** a housing building, a courtyard or *hazer*, that raises capacity.
+
+**Religious tension.** It read −120 ("evil") in every community. It is now light: −30, −20 or −10
+by the local faith's view. The teaching carries the ideology.
