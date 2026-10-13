@@ -299,3 +299,26 @@ pending.
   - Pledged to a great holy war (crusade fever, the Rhineland 1096): -10. The holy_warrior trait: -5.
 - **More personal-history shifts:** a Shtadlan's petition that moves a lord's policy gives him +5
   outlook.
+
+### 7b. Seek an Invitation: the Shtadlan's embassy (added 2026-10-13)
+
+**Status:** built 2026-10-13, autonomously; live test pending.
+
+The player's way to open a door. It is a Shtadlan council task (``task_kehillah_seek_invitation``),
+not a decision, because Daniel asked for no more decisions.
+- **Whom he courts:** the lord within reach (capital within ``squared_distance_large``) with the
+  warmest outlook on the Jews, among AI independent dukes or greater, Christian or Muslim, whose
+  policy is Discouraged or Allowed and off review cooldown. Never the community's own host, who has
+  Petition the Host. The lord is kept until no longer valid. A feed message names him when the
+  Shtadlan sets out.
+- **Each month:** the lord gets the petition's +15 opinion of the leader. The chance of an audience
+  is the same as Petition the Host's (diplomacy, hashkafa, yeshiva).
+- **At the audience:**
+  - **Granted:** the lord raises his policy one rung if his open-door net pressure is -2 or lower,
+    the hosts' -4 plus 2 for the embassy. His outlook gains +5. Reaching Encouraged sends the
+    invitation in the ordinary way.
+  - **Declined:** the lord's review cooldown starts (5 years), and the Shtadlan turns to the next
+    lord.
+  - Either way, the leader gets a feed message.
+- **The AI** does not use the task (``ai_will_do`` 0). AI lords open their doors through the
+  open-door review.

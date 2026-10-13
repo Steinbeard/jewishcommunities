@@ -105,3 +105,100 @@ kehillah_invitation_answered_effect = {
 		debug_log = "kehillah_invitation_answered_effect: settlers answered an invitation"
 	}
 }
+
+# Scope: the Shtadlan performing Seek an Invitation; scope:councillor_
+# liege set. Keeps (or picks: the warmest outlook) the lord he courts,
+# warms him, and each month may win an audience. At the audience the
+# lord raises his policy one rung if his open-door net pressure, with the
+# embassy's arguments, carries it (to Encouraged: an invitation, sent by
+# the ordinary raise effect); otherwise he declines and the question is
+# closed for the review cooldown, and the Shtadlan turns to another lord.
+kehillah_seek_invitation_monthly_effect = {
+	save_scope_as = kehillah_suitor_shtadlan
+	scope:councillor_liege = { save_scope_as = kehillah_suitor_leader }
+	scope:kehillah_suitor_leader = {
+		if = {
+			limit = {
+				exists = var:kehillah_invitation_suitor
+				var:kehillah_invitation_suitor = { kehillah_invitation_suitor_target_trigger = yes }
+			}
+			var:kehillah_invitation_suitor = { save_scope_as = kehillah_invitation_suitor }
+		}
+		else = {
+			if = {
+				limit = { has_variable = kehillah_invitation_suitor }
+				remove_variable = kehillah_invitation_suitor
+			}
+			ordered_ruler = {
+				limit = { kehillah_invitation_suitor_target_trigger = yes }
+				order_by = kehillah_outlook_on_jews_value
+				save_scope_as = kehillah_invitation_suitor
+			}
+			if = {
+				limit = { exists = scope:kehillah_invitation_suitor }
+				set_variable = { name = kehillah_invitation_suitor value = scope:kehillah_invitation_suitor }
+				if = {
+					limit = { is_ai = no }
+					send_interface_message = {
+						type = msg_kehillah_community_news
+						title = kehillah_seek_invitation_sets_out_t
+						desc = kehillah_seek_invitation_sets_out_d
+						left_icon = scope:kehillah_suitor_shtadlan
+						right_icon = scope:kehillah_invitation_suitor
+					}
+				}
+			}
+		}
+	}
+	if = {
+		limit = { exists = scope:kehillah_invitation_suitor }
+		scope:kehillah_invitation_suitor = {
+			add_opinion = {
+				target = scope:kehillah_suitor_leader
+				modifier = kehillah_shtadlan_petition_opinion
+			}
+		}
+		random = {
+			chance = kehillah_council_petition_chance_display_value
+			scope:kehillah_invitation_suitor = {
+				primary_title = { save_scope_as = kehillah_suitor_realm }
+				if = {
+					limit = { kehillah_open_door_net_pressure_value <= kehillah_invitation_embassy_threshold }
+					primary_title = { set_variable = { name = kehillah_policy_reason value = flag:petition } }
+					kehillah_raise_jewish_settlement_policy_effect = yes
+					kehillah_shift_outlook_effect = { AMOUNT = 5 }
+					debug_log = "kehillah_seek_invitation_monthly_effect: the lord heard the Shtadlan and raised his policy"
+					scope:kehillah_suitor_leader = {
+						if = {
+							limit = { is_ai = no }
+							send_interface_message = {
+								type = msg_kehillah_community_news
+								title = kehillah_seek_invitation_granted_t
+								desc = kehillah_seek_invitation_granted_d
+								left_icon = scope:kehillah_suitor_shtadlan
+								right_icon = scope:kehillah_invitation_suitor
+							}
+						}
+					}
+				}
+				else = {
+					kehillah_start_policy_review_cooldown_effect = yes
+					debug_log = "kehillah_seek_invitation_monthly_effect: the lord heard the Shtadlan and declined"
+					scope:kehillah_suitor_leader = {
+						if = {
+							limit = { is_ai = no }
+							send_interface_message = {
+								type = msg_kehillah_community_news_bad
+								title = kehillah_seek_invitation_declined_t
+								desc = kehillah_seek_invitation_declined_d
+								left_icon = scope:kehillah_suitor_shtadlan
+								right_icon = scope:kehillah_invitation_suitor
+							}
+						}
+					}
+				}
+			}
+			scope:kehillah_suitor_leader = { remove_variable = kehillah_invitation_suitor }
+		}
+	}
+}
