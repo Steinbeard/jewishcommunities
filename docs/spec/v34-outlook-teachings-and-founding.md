@@ -230,3 +230,47 @@ Send Out Settlers adds its reach from the mother community. The adventurer decis
     - if they have stopped at the goal, they arrive;
     - after about 13 months on the road, the camp is brought there (``move_domicile`` and
       ``set_location``) and they arrive.
+
+## 7. Invitations (added 2026-10-13)
+
+**Status:** built 2026-10-13; live test pending.
+
+Daniel 2026-10-13: the outlook on the Jews feeds an invitation mechanic, and setting the realm policy to
+Encouraged sends out the invitations.
+
+- **The gap:** the AI policy review ran only for rulers who already host a community (it is rolled
+  from a community's yearly pulse). A ruler with no Jews could never become Encouraged, so empty
+  realms stayed closed except through "near the diaspora" sites. Historical cases this should
+  allow: Bela IV of Hungary after the Mongols (1251), Boleslaw the Pious's Statute of Kalisz (1264),
+  Rudiger of Speyer's charter (1084).
+- **The open-door review** (``kehillah_invitation_on_actions.txt``):
+  - Who: AI independent rulers, duke or greater, Christian or Muslim, policy Discouraged or Allowed,
+    not on review cooldown, hosting no community.
+  - How often: a 5% chance a year (``kehillah_invitation_review_chance``).
+  - What it weighs: the hosts' review's net pressure (outlook, zeal, clergy, debts, temper; against
+    justice, compassion and outlook), less a motive of up to 2 (stewardship 12+, diligent, ambitious:
+    "towns and markets to fill").
+  - It raises one rung at net -4 or lower, the hosts' review's threshold. The reason is recorded as
+    "towns" when the motive counted, otherwise "justice".
+  - A failed review starts the 5-year cooldown, so the same ruler is not re-rolled every year.
+  - Raise-only: a ruler with no Jews has no reason to lower the policy.
+- **Encouraged is the invitation**, whoever raises it: this review, the hosts' review, or a player's
+  decree.
+  - The realm title holds ``kehillah_invitation_open`` for 20 years. Lowering from Encouraged
+    withdraws it.
+  - Kehillah players within diplomatic range of the ruler get "An Invitation to Settle" (Community
+    News). His own communities get the ordinary policy notice instead.
+- **Answering it:**
+  - **Send Out Settlers** is valid for a community that is not overcrowded when an invited
+    destination is within reach. The party is then the leader's household plus the minimum
+    overflow of one.
+  - The AI's chance per check gets +10, within the cap of 20 and the world-wide soft ceiling.
+  - An invited county weighs +8 as a settlers' destination and as an exiles' goal, on top of
+    Encouraged's +4.
+- **Reach is unchanged:** an Encouraged realm is a destination within ``squared_distance_large`` of
+  the mother community. An invitation from a far realm is heard (diplomatic range) but answered only
+  from within reach. Poland opens when a Polish ruler with the outlook for it opens the door, not by
+  default.
+- **Debug:**
+  - ``kehillah_outlook_debug.4`` lists every candidate with their outlook and net pressure.
+  - ``kehillah_outlook_debug.5`` has the warmest candidate issue an invitation now.

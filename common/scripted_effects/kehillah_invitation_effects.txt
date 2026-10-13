@@ -1,0 +1,65 @@
+﻿# =====================================================================
+# INVITATIONS -- V34 section 7 (docs/spec/v34-outlook-teachings-and-
+# founding.md), 2026-10-13. A ruler with no Jews in his realm may still
+# open the door: a yearly "open-door review", driven by his outlook on
+# the Jews and his wish to fill towns and markets, can raise his Jewish
+# Settlement Policy. Raising it to Encouraged -- by this review, the
+# hosts' review or the player's decree -- IS the invitation: Kehillah
+# players within diplomatic range hear of it, and for 20 years it draws
+# settlers (Send Out Settlers, exiles) and lets a community that is not
+# overcrowded answer the call.
+# (The historical shape: Bela IV of Hungary after the Mongols, 1251;
+# Boleslaw the Pious's Statute of Kalisz, 1264; the Rhineland bishops'
+# charters of 1084/1090.)
+# =====================================================================
+
+# Scope: an AI ruler passing kehillah_open_door_candidate_trigger. Raise
+# the policy one rung if the welcoming pressures carry it.
+kehillah_open_door_review_effect = {
+	save_scope_value_as = { name = kehillah_open_door_outlook value = kehillah_outlook_on_jews_value }
+	save_scope_value_as = { name = kehillah_open_door_net value = kehillah_open_door_net_pressure_value }
+	debug_log_scopes = yes
+	if = {
+		limit = { kehillah_open_door_net_pressure_value <= kehillah_policy_review_raise_threshold_negative }
+		primary_title = { save_scope_as = kehillah_reason_realm }
+		if = {
+			limit = { kehillah_invitation_motive_value > 0 }
+			scope:kehillah_reason_realm = { set_variable = { name = kehillah_policy_reason value = flag:towns } }
+		}
+		else = {
+			scope:kehillah_reason_realm = { set_variable = { name = kehillah_policy_reason value = flag:justice } }
+		}
+		debug_log = "kehillah_open_door_review_effect: a ruler with no Jews opens the door -- raising one rung"
+		kehillah_raise_jewish_settlement_policy_effect = yes
+	}
+	else = {
+		kehillah_start_policy_review_cooldown_effect = yes
+		debug_log = "kehillah_open_door_review_effect: no reason to open the door -- policy unchanged"
+	}
+}
+
+# Scope: the host ruler, just raised to Encouraged (end of kehillah_
+# raise_jewish_settlement_policy_effect); scope:kehillah_policy_host and
+# scope:kehillah_policy_realm saved. The invitation: open for 20 years,
+# announced to Kehillah players within diplomatic range (his own
+# communities already have the policy notice).
+kehillah_invitation_issue_effect = {
+	primary_title = {
+		set_variable = { name = kehillah_invitation_open value = yes years = 20 }
+	}
+	every_player = {
+		limit = {
+			government_has_flag = government_is_kehillah
+			in_diplomatic_range = scope:kehillah_policy_host
+			NOT = { domicile.domicile_location.county.holder.top_liege ?= scope:kehillah_policy_host }
+		}
+		send_interface_message = {
+			type = msg_kehillah_community_news
+			title = kehillah_news_invitation_t
+			desc = kehillah_news_invitation_d
+			left_icon = scope:kehillah_policy_host
+		}
+	}
+	debug_log_scopes = yes
+	debug_log = "kehillah_invitation_issue_effect: a ruler invites Jewish settlers"
+}
