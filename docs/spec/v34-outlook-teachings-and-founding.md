@@ -221,6 +221,9 @@ Send Out Settlers adds its reach from the mother community. The adventurer decis
     Mainz kept 7 of 41.
   - **"Near the diaspora" is now ``squared_distance_small``.** At ``medium``, the 19 communities
     covered most of the map, Krakow and Gyor included.
-  - **AI exiles no longer use vanilla travel.** The landless-camp AI cancelled the plan, so
-    ``on_arrival_event`` never fired. Now they record a goal, wait 90-240 days hidden, then
-    ``kehillah_exiles.0001`` moves them there (``set_location``) and founds.
+  - **AI exiles travel the way vanilla relocates a camp.** The first plan lacked
+    ``travel_with_domicile = yes``, so the leader left his camp and was pulled back before arriving.
+    Vanilla's ``relocate_camp_to_interaction`` sets it, and so do the exiles now. ``on_arrival_event``
+    founds the community.
+  - **A backstop** (``kehillah_exiles.0003``): if they are still on the road after a year, the camp
+    is brought to the goal (``move_domicile`` and ``set_location``) and they arrive.
