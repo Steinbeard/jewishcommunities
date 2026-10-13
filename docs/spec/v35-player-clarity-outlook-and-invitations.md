@@ -70,18 +70,21 @@ character window means a permanent fork of that file. So:
     outlook.
   - **Data:** mirrored quarterly onto the player (``kehillah_host_ref``, ``kehillah_invited_in_reach``)
     by ``kehillah_host_outlook_watch_effect``.
-- **Opinion (Daniel 2026-10-13: first "mostly it should mitigate the evil religion modifier, except
-  for the lowest outlook tiers", then "have opinion of Jews run from -50 to +50 ... directly on
+- **Opinion (Daniel 2026-10-13: "have opinion of Jews run from -50 to +50 ... directly on
   opinion"):**
-  - **The rule:** a lord's opinion of every Jewish character (vanilla ``judaism_religion_opinion``)
-    equals his outlook on the Jews, capped at ±50.
-  - **Steps:** a modifier holds a fixed number, so there are 21 modifiers in steps of 5
-    (``kehillah_jews_opinion_m50`` .. ``p50``), truncated toward zero so each step's band name matches
-    its band.
-  - **How it reads:** the character window shows "Outlook on the Jews: <band>". The opinion
-    breakdown shows the same line with its value.
-  - **Effect:** typical lords (outlook +5 to +45) offset much of vanilla's faith-hostility penalty
-    (astray -10, hostile -20, evil -30). Cold and hostile lords add to it.
-  - **Knock-on:** a host's opinion of a community leader now carries his outlook. That feeds the
-    host-attitude opinion tiers and the review's patron trigger.
-  - **Superseded:** the first build's five-step version (+30, +20, +10, 0, -15).
+  - **The rule:** a lord's opinion of a Jewish leader carries his outlook on the Jews, capped at
+    ±50. It is an opinion modifier (``kehillah_outlook_opinion``), shown in the opinion breakdown as
+    "Outlook on the Jews: +25".
+  - **Which lords:** for every community, its host and the lord of its county. For a player's
+    community, also every Christian or Muslim duke or greater within diplomatic range.
+  - **Refresh:** yearly, at game start, and quarterly for a player's host. The old modifier is
+    removed and the current value added.
+  - **Effect:** typical lords (+5 to +45) offset much of vanilla's faith-hostility penalty (astray
+    -10, hostile -20, evil -30). Cold and hostile ones add to it.
+  - **Knock-on:** it feeds the host-attitude opinion tiers, the review's patron trigger, and the
+    Shtadlan's choice of lord.
+  - **Two first builds that did not work** (2026-10-13): five steps, then 21 steps of vanilla's
+    ``judaism_religion_opinion``. That modifier is how *Jews* view the holder (the Bells of Santiago
+    use ``islam_religion_opinion``), so the lord's opinion never moved. There is no "opinion of
+    religion X" character modifier, hence one modifier per pair of lord and leader.
+  - **The character-window band marker** stays display-only.
