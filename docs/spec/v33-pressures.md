@@ -85,3 +85,19 @@ control over population, so a full quarter should be a soft limit rather than a 
 
 **Religious tension.** It read −120 ("evil") in every community. It is now light: −30, −20 or −10
 by the local faith's view. The teaching carries the ideology.
+
+## Addendum 2026-10-13: a Prosperity floor
+
+**Status:** built 2026-10-13 (autonomous session, V34 follow-up); live check pending.
+
+- **The problem:** the 51-year soak ([2026-10-13-v33-pressures-soak.md](../testing/2026-10-13-v33-pressures-soak.md))
+  found 21 of 23 communities pinned in Strained or Crisis for the whole game. Troyes sat at 77-124
+  for 50 years, and only Toledo ever reached Healthy. Prosperity-gated play (Send Out Settlers needs
+  Strained) was shut for good in much of the diaspora.
+- **The change:** `kehillah_prosperity_baseline_floor_value = 150`, at the Strained line. It is
+  added to the Prosperity baseline the way Stability's 500 and Greatness's 60 are, and shown as
+  "Every community's footing" in the breakdown tooltip.
+  - A peaceful community with nothing built rests just above Strained, plus its county's economy.
+  - War, a hostile policy or teaching, and occupation can still push it into Crisis.
+- **Not chosen:** the soak's alternative (development x8), and a larger floor of 250. The smaller
+  floor is the more reversible step. Revisit after the next soak.
