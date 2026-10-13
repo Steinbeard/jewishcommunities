@@ -322,3 +322,12 @@ not a decision, because Daniel asked for no more decisions.
   - Either way, the leader gets a feed message.
 - **The AI** does not use the task (``ai_will_do`` 0). AI lords open their doors through the
   open-door review.
+
+- **Tuning (2026-10-13, after the settlers-gates probe):**
+  - **The probe:** at 1072, 5 of 23 communities passed every Send Out Settlers gate. Overcrowding
+    was the usual block, and gold was short in about 40% of communities. The AI still never took the
+    decision: its weight (the overflow alone, +10 if invited) gave 1-11% per 3-yearly check.
+  - **AI weight is now ``kehillah_settlers_ai_weight_value``:** overcrowded gives 10 + 2 per person
+    over capacity, an invitation within reach +15, capped at 30. The soft world ceiling stays.
+  - **The Shtadlan's target** is ordered by outlook plus half the lord's opinion of the leader. In
+    the test he chose Denmark, whose opinion of the leader was -74.
