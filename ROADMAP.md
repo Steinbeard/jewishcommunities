@@ -73,6 +73,8 @@ Five one-step events for Yom Kippur, Sukkot and Shavuot are scripted. Two use na
 
 **Feast immersion audit, 2026-10-13:** The one-scene pilot does not yet make the whole vanilla activity read as Jewish. Vanilla food-name pickers still allow some non-kosher choices for Jewish hosts, and a Pesach-themed scene can be followed by ordinary bread text. See [the source audit](docs/iteration/2026-10-13-jewish-feast-immersion-audit.md) before extending Feast flavor or modifying food localization.
 
+**Feast presentation pass, 2026-10-13:** Jewish generic Feast hosts now receive the scene without the tenet; Ritual Celebrations adds its Piety and family opinion. A household invitation and host ending frame the vanilla activity, and scoped English food wording avoids the clear non-kosher picker results found by the audit. Holiday theme flags are narrowed to 8/8/2 days, with Pesach bread phrasing guarded where identified. Source checks and an isolated boot passed; live gameplay remains pending. See [the presentation note](docs/implementation/jewish-festival-feast-presentation.md). The Kehillah government still cannot host vanilla Feasts.
+
 ### Exceptional sefarim — 2026-10-12, Daniel's request
 
 The `kehillah_book.0007` arrival event was misleading: it only granted Piety and

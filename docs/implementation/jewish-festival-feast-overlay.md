@@ -1,6 +1,6 @@
 # Jewish festival observance on vanilla feasts — 2026-10-13
 
-**Status: Implemented as an opt-in Feast overlay; source verified, live event behavior pending.** Implements the narrow pilot in [Mo'adim le-Simchah](../spec/jewish-festival-observance.md) on branch `codex/festival-observance-2026-10-13`. This addendum records the first implementation and its differences from the proposal. It does not change rite slots, rename the shared vanilla tenet, create a decision, or add a feast intent.
+**Status: First pilot, partly superseded by the [presentation pass](jewish-festival-feast-presentation.md); its live event behavior was not verified.** Implements the narrow pilot in [Mo'adim le-Simchah](../spec/jewish-festival-observance.md) on branch `codex/festival-observance-2026-10-13`. This addendum records the first implementation and its differences from the proposal. It does not change rite slots, rename the shared vanilla tenet, create a decision, or add a feast intent.
 
 ## Player-facing behavior
 
