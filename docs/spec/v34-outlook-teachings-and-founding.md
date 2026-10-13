@@ -17,7 +17,35 @@ Daniel wanted three things:
 - **Scripted rites with harsher teachings**: the Almohads, and popular leaders who drive pogroms.
 - **A rigorous outlook toward Jews.**
 
-## 1. Natural founding
+## 1. Founding new communities: Send Out Settlers
+
+**Amended 2026-10-13.** Daniel replaced the random yearly pulse below with a decision, so that
+founding is a dynamic system rather than a scripted event. Quoting him: "an overpopulated
+community's leader can take a decision to encourage someone to take some members and found a new
+community."
+
+**The decision: "Send Out Settlers"** (`kehillah_settlers_decisions.txt`).
+- **Available when:**
+  - the quarter is over capacity;
+  - Prosperity is Strained or better;
+  - the community has not sent settlers in the last 10 years;
+  - a leader candidate and a destination exist.
+- **Cost:** medium gold.
+- **The player chooses** where to settle from up to three welcoming counties (`kehillah_settlers.0001`),
+  then who leads from the three best courtiers by stewardship plus learning (`.0002`). The heir, wife,
+  children and students are excluded.
+- **Who goes:** the leader takes his household, plus up to 4 other adult Jewish courtiers who are not
+  councillors or close family.
+- **The founding** runs the shared `kehillah_found_with_founder_effect`. The leader moves to the
+  county (`move_to_pool_at`), receives the title, and the full setup runs.
+- **The mother community** gains 20 Greatness and the daughter-community goal credit. The new
+  community remembers it.
+- **The AI** takes the decision too, with a world-wide gap of 3 years between AI foundings.
+
+**Probes:** `kehillah_founding_debug.2` (root sends out settlers now) and `.1` (a spawned founder,
+the old path).
+
+### Superseded: the random yearly pulse
 
 `kehillah_natural_founding_effects.txt` runs on `yearly_global_pulse` with a 20% chance a year,
 which gives one community every five years on average.
