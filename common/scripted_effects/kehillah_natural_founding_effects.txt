@@ -1,0 +1,179 @@
+﻿# =====================================================================
+# NATURAL FOUNDING -- 2026-10-13 (docs/spec/v34-outlook-teachings-and-
+# founding.md section 1).
+#
+# Global scope (yearly_global_pulse has no root). Picks a mother
+# community, then a county within reach of it that would take Jewish
+# settlers -- its host realm's Jewish Settlement Policy allows
+# settlement, Encouraged three times as likely: the realm policy is the
+# settlement-attractiveness signal (Daniel 2026-10-12) -- and founds a
+# Kehillah there the way the Norman-Conquest foundings do: a new leader,
+# create_adventurer_title with the Kehillah government, then the same
+# setup as kehillah_found_community_effect.
+# =====================================================================
+
+kehillah_natural_founding_effect = {
+	clear_saved_scope = kehillah_mother_title
+	clear_saved_scope = kehillah_founding_county
+	# 1. The mother community: established, not in crisis.
+	random_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			exists = holder
+			exists = holder.domicile.domicile_location
+			has_variable = kehillah_var_prosperity
+			var:kehillah_var_prosperity >= kehillah_band_strained_threshold
+		}
+		weight = {
+			base = 1
+			modifier = {
+				add = 2
+				var:kehillah_var_prosperity >= kehillah_band_healthy_threshold
+			}
+		}
+		save_scope_as = kehillah_mother_title
+	}
+	if = {
+		limit = { exists = scope:kehillah_mother_title }
+		scope:kehillah_mother_title.holder = { save_scope_as = kehillah_mother_leader }
+		# 2. A county within reach that would welcome Jewish settlers.
+		random_county = {
+			limit = {
+				exists = holder
+				exists = holder.top_liege.primary_title
+				holder = { is_at_war = no }
+				development_level >= kehillah_natural_founding_min_development
+				OR = {
+					faith.religion = religion:christianity_religion
+					faith.religion = religion:islam_religion
+				}
+				holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_allowed_trigger = yes }
+				title_province = {
+					squared_distance = {
+						target = scope:kehillah_mother_leader.domicile.domicile_location
+						value <= squared_distance_large
+					}
+				}
+				NOT = { this = scope:kehillah_mother_leader.domicile.domicile_location.county }
+				NOT = {
+					any_in_global_list = {
+						variable = kehillah_registered_communities
+						exists = holder.domicile.domicile_location
+						holder.domicile.domicile_location.county = prev
+					}
+				}
+			}
+			weight = {
+				base = 1
+				modifier = {
+					add = 2
+					holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+				}
+				modifier = {
+					add = 1
+					development_level >= 15
+				}
+			}
+			save_scope_as = kehillah_founding_county
+		}
+	}
+	if = {
+		limit = { exists = scope:kehillah_founding_county }
+		kehillah_natural_found_in_county_effect = yes
+	}
+	else = {
+		debug_log = "kehillah_natural_founding_effect: no mother community or no welcoming county this year"
+	}
+}
+
+# Global scope; scope:kehillah_mother_leader and scope:kehillah_founding_
+# county saved. Creates the founder and his followers and founds the
+# community. Also the target of kehillah_founding_debug.1.
+kehillah_natural_found_in_county_effect = {
+	create_character = {
+		faith = scope:kehillah_mother_leader.faith
+		culture = scope:kehillah_mother_leader.culture
+		age = { 28 45 }
+		location = scope:kehillah_founding_county.title_province
+		random_traits = yes
+		gender_female_chance = 0
+		dynasty = generate
+		learning = { 8 14 }
+		stewardship = { 8 14 }
+		save_scope_as = kehillah_natural_founder
+	}
+	scope:kehillah_natural_founder = {
+		create_adventurer_title = {
+			name = kehillah_found_community_title_name
+			holder = scope:kehillah_natural_founder
+			government = kehillah_government
+			article = kehillah_found_community_title_article
+			save_scope_as = kehillah_new_community_title
+		}
+		hidden_effect = { set_primary_title_to = scope:kehillah_new_community_title }
+		if = {
+			limit = { NOT = { government_has_flag = government_is_kehillah } }
+			change_government = kehillah_government
+		}
+		if = {
+			limit = { NOT = { has_realm_law = kehillah_appointment_succession_law } }
+			add_realm_law = kehillah_appointment_succession_law
+		}
+		# The families who came with him.
+		while = {
+			count = kehillah_natural_founding_followers
+			create_character = {
+				faith = scope:kehillah_mother_leader.faith
+				culture = scope:kehillah_mother_leader.culture
+				age = { 18 40 }
+				location = scope:kehillah_founding_county.title_province
+				random_traits = yes
+				dynasty = generate
+				save_scope_as = kehillah_natural_follower
+			}
+			add_courtier = scope:kehillah_natural_follower
+		}
+		hidden_effect = {
+			scope:kehillah_new_community_title = {
+				kehillah_init_pillars_effect = yes
+				change_variable = { name = kehillah_var_stability add = 50 }
+				change_variable = { name = kehillah_var_prosperity add = 50 }
+				set_variable = { name = kehillah_naturally_founded value = yes }
+				set_variable = { name = kehillah_mother_community value = scope:kehillah_mother_title }
+			}
+			kehillah_update_leader_flavor_effect = yes
+			add_to_global_variable_list = {
+				name = kehillah_registered_communities
+				target = scope:kehillah_new_community_title
+			}
+			kehillah_refresh_all_settlement_networks_effect = yes
+			scope:kehillah_new_community_title = {
+				kehillah_seed_starting_library_effect = yes
+			}
+			kehillah_refresh_map_view_for_players_effect = yes
+			kehillah_maintain_host_charter_effect = yes
+		}
+		# News: players in range, and the mother community if a player leads it.
+		kehillah_notify_region_players_effect = {
+			TYPE = msg_kehillah_community_news
+			TITLE = kehillah_news_founded_t
+			DESC = kehillah_news_founded_d
+		}
+		scope:kehillah_mother_leader = {
+			if = {
+				limit = {
+					is_ai = no
+					NOT = { in_diplomatic_range = scope:kehillah_natural_founder }
+				}
+				send_interface_message = {
+					type = msg_kehillah_community_news
+					title = kehillah_news_founded_t
+					desc = kehillah_news_founded_d
+					left_icon = scope:kehillah_natural_founder
+				}
+			}
+		}
+		debug_log = "kehillah_natural_found_in_county_effect: a new community was founded"
+		debug_log_scopes = yes
+	}
+}
