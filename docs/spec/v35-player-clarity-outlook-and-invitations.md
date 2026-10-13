@@ -70,6 +70,12 @@ character window means a permanent fork of that file. So:
     outlook.
   - **Data:** mirrored quarterly onto the player (``kehillah_host_ref``, ``kehillah_invited_in_reach``)
     by ``kehillah_host_outlook_watch_effect``.
-- **Not built (Daniel's call):** an *opinion* modifier ("Outlook on the Jews: Cold -10" in a lord's
-  opinion of Jewish leaders). It would sit exactly beside opinion, but it changes gameplay: a hostile
-  lord would truly like Jewish leaders less, feeding the host's attitude and the policy review.
+- **Opinion (Daniel 2026-10-13: "mostly it should mitigate the evil religion modifier, except for the
+  lowest outlook tiers"):**
+  - **How:** each band modifier also sets vanilla's ``judaism_religion_opinion``, the lord's opinion
+    of every Jewish character. It shows in the opinion breakdown under "Outlook on the Jews: <band>".
+  - **Values:** Protective +30, Well-disposed +20, Indifferent +10, Cold 0, Hostile -15. Against
+    vanilla's faith-hostility penalty (astray -10, hostile -20, evil -30), a Protective lord fully
+    offsets an "evil" view.
+  - **Knock-on:** a host's opinion of a community leader now carries his outlook. That feeds the
+    opinion tiers of the host-attitude term and the review's patron trigger.
