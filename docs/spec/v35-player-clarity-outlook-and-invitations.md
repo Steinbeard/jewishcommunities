@@ -58,7 +58,9 @@ character window means a permanent fork of that file. So:
   - **What it is:** five display-only modifiers (``common/modifiers/kehillah_outlook_modifiers.txt``),
     using the vanilla letter icon (positive, mixed or negative). The tooltip says what the band means
     and what moves an outlook.
-  - **Who carries one:** every landed non-Jewish ruler. Set at game start, refreshed yearly, and
+  - **Who carries one:** every landed Christian or Muslim ruler (non-Jewish). Others are left out,
+    since the teachings that shape an outlook are Christian and Muslim (live: a duke of Wuxi read
+    "Cold"). Set at game start, refreshed yearly, and
     quarterly for a player's host.
   - **Effect:** none, so no gameplay change.
 - **On the community's own strip (under the top bar): a "Your Host" block.**
