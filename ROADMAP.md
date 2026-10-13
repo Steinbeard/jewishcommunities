@@ -33,6 +33,11 @@ characters marked as Kehillah leaders. The same vanilla lines remain intact for
 other characters. This is a localization change only; succession and player
 continuation are untouched. Source and `ck3-tiger` checks passed. Fresh-game
 death-screen rendering and a feudal control case remain to be checked live.
+On 2026-10-12, Daniel spotted the remaining short heir line, "ascends to the throne."
+It now says the appointed Kehillah leader "takes office as the community's appointed
+leader," while other successors retain vanilla's motion text. Source and targeted
+`ck3-tiger` checks passed; live rendering remains open while CK3 is in use by
+another agent.
 
 ### Dynasty succession warning and holiday modifier colors — 2026-10-12
 
