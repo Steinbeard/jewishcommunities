@@ -21,8 +21,14 @@ subject to revision after each phase.
 
 Each Prosperity, Stability and Greatness breakdown now states the current level's applied
 leader modifier. The next and previous bands are shown as hoverable labels with their ranges and
-effects. Script/localization checks passed; nested tooltip rendering still needs a live UI check.
-See [implementation note §18](docs/implementation/v1-kehillah-implementation.md).
+effects. **2026-10-13 correction:** nested hover checks passed for all three HUD pillars at
+Flourishing, with matching roster spot-checks. Action Lock requires middle-clicking the parent
+tooltip. Four roster score labels also received a live-checked layout fix; other pre-existing row
+layout warnings remain. Exact threshold transitions were source-checked, not exhaustively rendered.
+See [implementation note §18](docs/implementation/v1-kehillah-implementation.md) and
+[the live test](docs/testing/2026-10-13-pillar-tooltip-live-playtest-log.md).
+**Remaining:** roster nesting for Stability and Greatness, then Crisis/Legendary endpoint
+spot-checks. These remain the first task for the next run, before the death-screen check.
 
 ### Kehillah death-screen wording — 2026-10-12, Daniel's request
 

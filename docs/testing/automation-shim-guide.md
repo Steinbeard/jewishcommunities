@@ -201,6 +201,21 @@ small loc text, checking an icon's exact pixels) — most boot/panel/"did it cra
 
 ---
 
+## Locking a tooltip for nested hover checks — added 2026-10-13
+
+Read `interface.tooltip` in the CK3 user directory's `pdx_settings.txt` before testing
+links inside a tooltip. This machine uses `SETTING_TOOLTIP_MODE_LOCK_ON_ACTION`:
+vanilla's `settings_l_english.yml` says **Middle Mouse** locks and unlocks tooltips.
+Waiting on the anchor does not lock a tooltip in this mode, even beyond the configured
+`tooltip_lock_time`. The 2026-10-13 pillar UI check initially lost its parent tooltip
+for exactly this reason.
+
+Hover the pillar, middle-click to lock its breakdown, then move to the neighboring
+band label. Capture the locked layout before choosing the label's coordinates.
+Keep the user's configured lock mode; use its action rather than changing settings.
+Record the mode and lock action in the test log so a disappearing unlocked parent
+is not mistaken for a broken nested link.
+
 ## Navigation map (this mod's HUD, `-debug_mode`)
 
 Found by hunting — every one of these took real trial and error, so recorded here to save the

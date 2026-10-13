@@ -1298,8 +1298,8 @@ memory now uses `stress_positive` even though it reduces stress gain, and the aw
 
 ## 18. Pillar band effects in the community roster tooltips, 2026-10-12
 
-**Status:** implemented and script/localization-checked; nested tooltip rendering still needs a
-live UI check.
+**Status:** implemented; HUD and roster nested-hover spot-checks passed live on 2026-10-13.
+Exact threshold transitions have been source-checked, not exhaustively rendered.
 
 The Prosperity, Stability and Greatness tooltips now state the current band's modifier on the
 community leader before the structural baseline and its contributors. The next band keeps its
@@ -1312,3 +1312,18 @@ The links use vanilla's `#tooltip:LOCALIZATION_KEY text#!` localization markup, 
 vanilla's holding-supply tooltip. The actual nested hover behavior must be confirmed in-game before
 calling this verified; source checks cannot establish where CK3 positions the second tooltip or
 whether it remains reachable while the parent tooltip is open.
+
+**Verification addendum, 2026-10-13:** a fresh Worms game at 750 in all three pillars showed
+the expected current modifiers and neighboring-band effects in the HUD. Roster spot-checks
+also rendered the nested details and kept the parent reachable. This supersedes the earlier
+pending-rendering status; see the [live test log](../testing/2026-10-13-pillar-tooltip-live-playtest-log.md)
+for the exact coverage and error deltas. This machine uses Action Lock, so middle-clicking
+the parent is required; waiting alone does not lock it. The testing guide now records this.
+
+The check also reproduced existing `Widget cannot have a position in a layout` errors on
+the roster's four score labels. Their `parentanchor = vcenter` was replaced by
+`layoutpolicy_vertical = expanding`, leaving vanilla's inherited centered text and the
+column widths intact. Live inspection confirmed aligned scores and no further errors for
+those four labels. The portrait, name block and action buttons retain separate pre-existing
+layout warnings; this increment does not claim the entire roster is error-free. No pillar
+logic, thresholds, modifier values or succession behavior changed.
