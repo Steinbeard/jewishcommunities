@@ -102,3 +102,26 @@ Bishop of Speyer sheltered the Jews and hanged rioters; elsewhere lords stood as
 - A blood-libel chain.
 - An anti-Jewish faction.
 - Trait additions (greedy as opportunist, and others), awaiting Daniel.
+
+## V36b (added 2026-10-13, autonomously; Daniel: "keep going and implementing improvements")
+
+- **The Lord's Favour** (``kehillah_host_crisis.0002``) is the positive mirror of the Lord's Demands.
+  - **Chance:** a Protective host (4% a quarter) or a Well-disposed one (1%) grants one charter term
+    a step better, unasked. At most once in 10 years, and only if some term can improve.
+  - **Order:** security up, building rights freer, jurisdiction up, then the text term
+    (``kehillah_charter_improve_one_term_effect``).
+  - **The leader:** may thank the lord with a gift (medium gold; his opinion +15, outlook +3) or in
+    the synagogue's prayers.
+  - **Reporting:** like a forced revision, it is reported at the next charter read even inside a new
+    charter's quiet window.
+- **Trait additions** to the outlook's "Character" source:
+  - Greedy, when not owing a Jewish lender, +5 (the opportunist; owing, the debt resentment applies
+    instead).
+  - Ambitious +5.
+  - Trusting +5.
+  - Wrathful -5.
+- **Live fixes, 2026-10-13:**
+  - The levy and the rising's text now read the leader's variables.
+  - The rising's losses moved into the event text.
+  - The gift cooldown now uses a custom_tooltip.
+  - A forced revision is reported to the community's own player, and even inside the quiet window.
