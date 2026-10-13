@@ -331,3 +331,17 @@ not a decision, because Daniel asked for no more decisions.
     over capacity, an invitation within reach +15, capped at 30. The soft world ceiling stays.
   - **The Shtadlan's target** is ordered by outlook plus half the lord's opinion of the leader. In
     the test he chose Denmark, whose opinion of the leader was -74.
+
+### 7c. The chaplain's sermons (added 2026-10-13)
+
+**Status:** built 2026-10-13, autonomously; live check pending.
+
+Outlook had many warming sources and few cooling ones besides crusades, rivals and risings. Yearly, an
+independent non-Jewish ruler's personal history drifts with his court chaplain
+(``kehillah_chaplain_sermons_effect``, ``kehillah_outlook_on_actions.txt``):
+- **Cooling:** a zealous chaplain under a strict or exclusionary teaching gives -2 a year. These are
+  the friars' sermons, the 13th-century turn.
+- **Warming:** a learned chaplain (learning 15+) under a protective teaching gives +1 a year.
+- **Limits:** both stay within the ±30 cap on personal history. A Jewish chaplain preaches neither.
+- **Effect:** over 15 years a zealous chaplain can take a lord from a +15 outlook to -15, enough to
+  change the policy review.
