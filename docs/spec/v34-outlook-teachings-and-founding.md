@@ -34,6 +34,14 @@ community."
   not.
 - **The AI** takes the Ba'al Bayit, then the rabbi, then the kinsman.
 
+- **Where settlers may go** (Daniel, "we're settling Poland too early"): only into a realm that already
+  hosts a Jewish community, or one whose ruler has invited them (Encouraged). An unset policy reads as
+  Allowed, so in the first version every realm was open in 1066, and Mainz settled Legnica in its first
+  year. Organized settlement in Poland followed the Statute of Kalisz (1264).
+  - **Not yet built:** rulers *inviting* Jewish settlers, which would raise an empty realm to
+    Encouraged. The drivers would be outlook, stewardship and empty towns: Boleslaw the Pious, Bela IV
+    after 1241, Casimir the Great.
+
 The rest of this section describes the first version; where they differ, the revisions above apply.
 
 **The decision: "Send Out Settlers"** (`kehillah_settlers_decisions.txt`).

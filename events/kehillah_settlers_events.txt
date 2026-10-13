@@ -1,7 +1,7 @@
 ﻿# =====================================================================
 # SEND OUT SETTLERS -- the player's choices (V34 section 1, amended
-# 2026-10-13). .0001 where, .0002 who. Scopes from kehillah_settlers_
-# pick_effect.
+# 2026-10-13). .0001 where, .0002 who, .0003 the founding (hidden), .0004
+# the AI's choice (hidden). Scopes from kehillah_settlers_pick_effect.
 # =====================================================================
 namespace = kehillah_settlers
 
@@ -51,35 +51,73 @@ kehillah_settlers.0002 = {
 		name = kehillah_settlers.0002.a
 		trigger = { exists = scope:kehillah_settlers_lead_baal }
 		scope:kehillah_settlers_lead_baal = { save_scope_as = kehillah_settlers_leader }
-		# hidden_effect: the engine dry-runs an option's effects to build its
-		# tooltip; before the founding the new title does not exist (live
-		# 2026-10-13: ~100k null-title errors and a multi-minute stall).
 		custom_tooltip = kehillah_settlers_go_tt
-		hidden_effect = { kehillah_settlers_go_effect = yes }
+		trigger_event = kehillah_settlers.0003
 	}
 	# A learned rabbi.
 	option = {
 		name = kehillah_settlers.0002.b
 		trigger = { exists = scope:kehillah_settlers_lead_rabbi }
 		scope:kehillah_settlers_lead_rabbi = { save_scope_as = kehillah_settlers_leader }
-		# hidden_effect: the engine dry-runs an option's effects to build its
-		# tooltip; before the founding the new title does not exist (live
-		# 2026-10-13: ~100k null-title errors and a multi-minute stall).
 		custom_tooltip = kehillah_settlers_go_tt
-		hidden_effect = { kehillah_settlers_go_effect = yes }
+		trigger_event = kehillah_settlers.0003
 	}
 	# A man of our own house.
 	option = {
 		name = kehillah_settlers.0002.c
 		trigger = { exists = scope:kehillah_settlers_lead_kin }
 		scope:kehillah_settlers_lead_kin = { save_scope_as = kehillah_settlers_leader }
-		# hidden_effect: the engine dry-runs an option's effects to build its
-		# tooltip; before the founding the new title does not exist (live
-		# 2026-10-13: ~100k null-title errors and a multi-minute stall).
 		custom_tooltip = kehillah_settlers_go_tt
-		hidden_effect = { kehillah_settlers_go_effect = yes }
+		trigger_event = kehillah_settlers.0003
 	}
 	option = {
 		name = kehillah_settlers.0002.d
+	}
+}
+
+# Hidden: the founding itself, fired by .0002's options and by the AI's
+# decision. Not in the option or decision effect, because the engine
+# dry-runs those to build their tooltips -- and even inside hidden_effect
+# that dry run reached the not-yet-created title (live 2026-10-13: ~70-
+# 100k null landed_title errors and a stall when .0002 opened). A
+# triggered event's immediate is not part of the tooltip. Saved scopes
+# kehillah_settlers_leader and kehillah_founding_county carry over.
+kehillah_settlers.0003 = {
+	type = character_event
+	hidden = yes
+	trigger = {
+		exists = scope:kehillah_settlers_leader
+		exists = scope:kehillah_founding_county
+	}
+	immediate = {
+		kehillah_settlers_go_effect = yes
+	}
+}
+
+# Hidden: the AI's whole choice (destination and leader), then .0003.
+kehillah_settlers.0004 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_settlers_pick_effect = yes
+		scope:kehillah_settlers_dest_1 ?= { save_scope_as = kehillah_founding_county }
+		if = {
+			limit = { exists = scope:kehillah_settlers_lead_baal }
+			scope:kehillah_settlers_lead_baal = { save_scope_as = kehillah_settlers_leader }
+		}
+		else_if = {
+			limit = { exists = scope:kehillah_settlers_lead_rabbi }
+			scope:kehillah_settlers_lead_rabbi = { save_scope_as = kehillah_settlers_leader }
+		}
+		else = {
+			scope:kehillah_settlers_lead_kin ?= { save_scope_as = kehillah_settlers_leader }
+		}
+		if = {
+			limit = {
+				exists = scope:kehillah_founding_county
+				exists = scope:kehillah_settlers_leader
+			}
+			kehillah_settlers_go_effect = yes
+		}
 	}
 }
