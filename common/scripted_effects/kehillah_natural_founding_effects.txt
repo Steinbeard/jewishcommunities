@@ -59,6 +59,8 @@ kehillah_found_with_founder_effect = {
 		TITLE = kehillah_news_founded_t
 		DESC = kehillah_news_founded_d
 	}
+	# V34 section 7: settling where a lord invited them.
+	kehillah_invitation_answered_effect = yes
 	debug_log = "kehillah_found_with_founder_effect: a new community was founded"
 	debug_log_scopes = yes
 }
@@ -75,44 +77,72 @@ kehillah_settlers_pick_effect = {
 	clear_saved_scope = kehillah_settlers_lead_baal
 	clear_saved_scope = kehillah_settlers_lead_rabbi
 	clear_saved_scope = kehillah_settlers_lead_kin
-	random_county = {
-		limit = { kehillah_settlers_destination_trigger = yes }
-		weight = {
-			base = 1
-			# Prefer staying close (Daniel 2026-10-13).
-			modifier = {
-				add = 8
-				title_province = {
-					squared_distance = {
-						target = scope:kehillah_mother_leader.domicile.domicile_location
-						value <= squared_distance_small
+	# V34 section 7 (live 2026-10-13: the invited realm was chosen 1 time
+	# in 4): an open invitation within reach is the first choice, 60% of
+	# the time; nearer invited counties likelier.
+	if = {
+		limit = { any_county = { kehillah_settlers_invited_destination_trigger = yes } }
+		random = {
+			chance = 60
+			random_county = {
+				limit = { kehillah_settlers_invited_destination_trigger = yes }
+				weight = {
+					base = 1
+					modifier = {
+						add = 4
+						title_province = {
+							squared_distance = {
+								target = scope:kehillah_mother_leader.domicile.domicile_location
+								value <= squared_distance_medium
+							}
+						}
 					}
 				}
-			}
-			modifier = {
-				add = 4
-				title_province = {
-					squared_distance = {
-						target = scope:kehillah_mother_leader.domicile.domicile_location
-						value <= squared_distance_medium
-					}
-				}
-			}
-			modifier = {
-				add = 4
-				holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
-			}
-			# V34 section 7: an open invitation.
-			modifier = {
-				add = 8
-				holder.top_liege.primary_title = { has_variable = kehillah_invitation_open }
-			}
-			modifier = {
-				add = 1
-				development_level >= 15
+				save_scope_as = kehillah_settlers_dest_1
 			}
 		}
-		save_scope_as = kehillah_settlers_dest_1
+	}
+	if = {
+		limit = { NOT = { exists = scope:kehillah_settlers_dest_1 } }
+		random_county = {
+			limit = { kehillah_settlers_destination_trigger = yes }
+			weight = {
+				base = 1
+				# Prefer staying close (Daniel 2026-10-13).
+				modifier = {
+					add = 8
+					title_province = {
+						squared_distance = {
+							target = scope:kehillah_mother_leader.domicile.domicile_location
+							value <= squared_distance_small
+						}
+					}
+				}
+				modifier = {
+					add = 4
+					title_province = {
+						squared_distance = {
+							target = scope:kehillah_mother_leader.domicile.domicile_location
+							value <= squared_distance_medium
+						}
+					}
+				}
+				modifier = {
+					add = 4
+					holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+				}
+				# V34 section 7: an open invitation.
+				modifier = {
+					add = 8
+					holder.top_liege.primary_title = { has_variable = kehillah_invitation_open }
+				}
+				modifier = {
+					add = 1
+					development_level >= 15
+				}
+			}
+			save_scope_as = kehillah_settlers_dest_1
+		}
 	}
 	random_county = {
 		limit = {

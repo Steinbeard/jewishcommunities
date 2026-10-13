@@ -274,3 +274,28 @@ Encouraged sends out the invitations.
 - **Debug:**
   - ``kehillah_outlook_debug.4`` lists every candidate with their outlook and net pressure.
   - ``kehillah_outlook_debug.5`` has the warmest candidate issue an invitation now.
+- **Tuning after the first live test (2026-10-13):**
+  - The test logged 80 candidates and 16 at net -4 or lower. In 10 years, 6 open-door raises and 8
+    natural invitations followed, several from realms no community could reach: Adal, Ta'izz,
+    Saryarka.
+  - Candidates now need a capital within ``squared_distance_large`` of a community.
+  - The AI chose an invited destination only 1 time in 4. The first destination is now an invited
+    county 60% of the time when one is in reach.
+
+### 7a. The invitation answered, and more outlook sources (added 2026-10-13)
+
+**Status:** built 2026-10-13, autonomously (Daniel: "keep building out this system"); live test
+pending.
+
+- **The invitation answered** (``kehillah_invitation_answered_effect``):
+  - **When:** at the end of every founding (Send Out Settlers, the Found a Jewish Community decision,
+    exiles arriving), if the lord's realm has an open invitation.
+  - **The community** starts with the promised privileges: +60 Prosperity, +30 Stability. It
+    remembers who invited it (``kehillah_founded_by_invitation``).
+  - **The lord** gains +5 outlook ("his settlers came"). A player lord is told.
+  - **News:** Kehillah players in range get "The Invitation Answered".
+- **More outlook sources** (``kehillah_outlook_on_jews_value``):
+  - A Jewish friend or lover: +10. A Jewish rival or nemesis: -10.
+  - Pledged to a great holy war (crusade fever, the Rhineland 1096): -10. The holy_warrior trait: -5.
+- **More personal-history shifts:** a Shtadlan's petition that moves a lord's policy gives him +5
+  outlook.

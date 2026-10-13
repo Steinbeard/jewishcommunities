@@ -63,3 +63,45 @@ kehillah_invitation_issue_effect = {
 	debug_log_scopes = yes
 	debug_log = "kehillah_invitation_issue_effect: a ruler invites Jewish settlers"
 }
+
+# Scope: the leader of a community just founded (Send Out Settlers, the
+# Found a Jewish Community decision, exiles arriving). If its lord's
+# realm has an open invitation, the invitation is answered: the
+# community starts with the privileges promised, remembers who invited
+# it, and the lord warms to the Jews (his settlers came). A player lord
+# is told; Kehillah players in range hear of it.
+kehillah_invitation_answered_effect = {
+	if = {
+		limit = {
+			exists = primary_title
+			domicile.domicile_location.county.holder.top_liege.primary_title ?= { has_variable = kehillah_invitation_open }
+		}
+		save_scope_as = kehillah_answering_leader
+		domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_inviter }
+		domicile.domicile_location.county = { save_scope_as = kehillah_invited_county }
+		primary_title = {
+			change_variable = { name = kehillah_var_prosperity add = kehillah_invitation_answered_prosperity }
+			change_variable = { name = kehillah_var_stability add = kehillah_invitation_answered_stability }
+			set_variable = { name = kehillah_founded_by_invitation value = scope:kehillah_inviter }
+		}
+		scope:kehillah_inviter = {
+			kehillah_shift_outlook_effect = { AMOUNT = kehillah_invitation_answered_outlook }
+			if = {
+				limit = { is_ai = no }
+				send_interface_message = {
+					type = msg_kehillah_community_news
+					title = kehillah_news_invitation_answered_t
+					desc = kehillah_news_invitation_answered_d
+					left_icon = scope:kehillah_answering_leader
+				}
+			}
+		}
+		kehillah_notify_region_players_effect = {
+			TYPE = msg_kehillah_community_news
+			TITLE = kehillah_news_invitation_answered_t
+			DESC = kehillah_news_invitation_answered_d
+		}
+		debug_log_scopes = yes
+		debug_log = "kehillah_invitation_answered_effect: settlers answered an invitation"
+	}
+}
