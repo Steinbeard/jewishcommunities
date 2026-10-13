@@ -88,3 +88,20 @@ character window means a permanent fork of that file. So:
     use ``islam_religion_opinion``), so the lord's opinion never moved. There is no "opinion of
     religion X" character modifier, hence one modifier per pair of lord and leader.
   - **The character-window band marker** stays display-only.
+
+## The outlook's breakdown (added 2026-10-13)
+
+Daniel: "It would be good to be able to see what's contributing to a character's Jewish outlook."
+
+- **Why not in the opinion breakdown:** a vanilla opinion breakdown lists each modifier as one
+  "Name: value" line, with no hover or sub-bullets. Splitting the outlook into one opinion modifier
+  per source would add up to nine lines to every lord's opinion of every Jewish leader. So the
+  opinion keeps one "Outlook on the Jews" line, and the breakdown is shown where the mod writes
+  the text.
+- **The sources** are now separate values (``kehillah_outlook_<source>_value``), summed by
+  ``kehillah_outlook_on_jews_value`` with the same numbers as before: teaching, zeal, character,
+  learning, Jews in their service, debts, Jewish friends and rivals, crusade, and history (personal
+  shifts and sermons).
+- **Bullets** (``KehillahOutlookBd<Source>``, one per non-zero source, green or red) appear in:
+  - the "Your Host" tooltip on the community strip;
+  - "The Lord Grows Warmer" and "The Lord Grows Colder" notices.
