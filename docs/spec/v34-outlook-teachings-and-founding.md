@@ -188,3 +188,21 @@ the Shepherds' Crusades (1251, 1320), Rintfleisch (1298), and the Armleder (1336
   `main_rite`, `create_dynamic_rite`, `rite:`) and the law-group false positive.
 - **Live probe:** run the debug events above, then a soak. Expect communities founded, teachings
   shifting, charters revised, and risings.
+
+## 6. Addendum, 2026-10-13: one founding rule, and exiles
+
+**One rule for every founding.** `kehillah_founding_site_trigger` (in `kehillah_settlers_triggers.txt`) applies to a county:
+- the realm allows Jewish settlement;
+- the county is near an existing community (`squared_distance_medium`) or the realm encourages settlement;
+- development of 8 or more;
+- at peace;
+- no community within 60 px.
+
+Send Out Settlers adds its reach from the mother community. The adventurer decision, Found a Jewish Community, checks the county where the adventurer stands; it used to check only the realm's policy.
+
+**Exiles** (Daniel, 2026-10-13):
+- **On expulsion** (`kehillah_expulsion_depart_effect`), the leader carries `kehillah_exiles_from`, the county he was driven from.
+- **His camp** is named "The Exiles of <county>" (`kehillah_departure_finish_effect`), not "<Name>'s Wayfarers". A Community News notice goes to players in range.
+- **Re-founding:** in Found a Jewish Community, exiles need no 10 followers and pay 10% of the gold. The AI's desire is +200.
+- **The community they found** starts with +100 Stability (shared purpose) and +40 Greatness (the learning carried), and records `kehillah_founded_by_exiles_from`. A notice goes to players in range.
+- **Next:** a spike on how an AI landless camp moves, so exiles can be pointed toward the nearest welcoming realm.

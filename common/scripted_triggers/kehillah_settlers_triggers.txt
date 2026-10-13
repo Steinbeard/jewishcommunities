@@ -7,7 +7,12 @@
 # Scope: a county; scope:kehillah_mother_leader saved. Would its lord
 # take Jewish settlers, and is it free of a community, settled enough,
 # at peace and within reach of the mother community?
-kehillah_settlers_destination_trigger = {
+# Scope: a county. Could a Jewish community be founded here at all? One
+# rule for every founding (Daniel 2026-10-13): settlers sent out, an
+# adventurer founding where he stands, exiles resettling. A realm that
+# allows Jewish settlement, near the existing diaspora or invited
+# (Encouraged); settled enough; at peace; not crowding a community.
+kehillah_founding_site_trigger = {
 	exists = holder
 	exists = holder.top_liege.primary_title
 	holder = { is_at_war = no }
@@ -16,19 +21,48 @@ kehillah_settlers_destination_trigger = {
 		faith.religion = religion:christianity_religion
 		faith.religion = religion:islam_religion
 	}
-	# Where settlers may go (Daniel 2026-10-13): a nearby realm that allows
-	# Jewish settlement, or a more distant one whose ruler encourages it.
-	# (An unset policy reads as Allowed, so "nearby" is what keeps 1066
-	# settlers from leaping to Poland: diffusion is one step at a time,
-	# and only an invitation pulls them far.)
+	holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_allowed_trigger = yes }
 	OR = {
-		AND = {
-			holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_allowed_trigger = yes }
-			title_province = {
+		holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+		any_in_global_list = {
+			variable = kehillah_registered_communities
+			exists = holder.domicile.domicile_location
+			holder.domicile.domicile_location = {
 				squared_distance = {
-					target = scope:kehillah_mother_leader.domicile.domicile_location
+					target = prev.title_province
 					value <= squared_distance_medium
 				}
+			}
+		}
+	}
+	NOT = {
+		any_in_global_list = {
+			variable = kehillah_registered_communities
+			exists = holder.domicile.domicile_location
+			OR = {
+				holder.domicile.domicile_location.county = prev
+				holder.domicile.domicile_location = {
+					squared_distance = {
+						target = prev.title_province
+						value < kehillah_settlers_min_spacing_squared
+					}
+				}
+			}
+		}
+	}
+}
+
+# Scope: a county; scope:kehillah_mother_leader saved. A founding site
+# within the settlers' reach of their mother community: a nearby realm
+# that allows settlement, or a more distant one that encourages it.
+kehillah_settlers_destination_trigger = {
+	kehillah_founding_site_trigger = yes
+	NOT = { this = scope:kehillah_mother_leader.domicile.domicile_location.county }
+	OR = {
+		title_province = {
+			squared_distance = {
+				target = scope:kehillah_mother_leader.domicile.domicile_location
+				value <= squared_distance_medium
 			}
 		}
 		AND = {
@@ -39,27 +73,6 @@ kehillah_settlers_destination_trigger = {
 					value <= squared_distance_large
 				}
 			}
-		}
-	}
-	# Not crowding an existing community (no clustering).
-	NOT = {
-		any_in_global_list = {
-			variable = kehillah_registered_communities
-			exists = holder.domicile.domicile_location
-			holder.domicile.domicile_location = {
-				squared_distance = {
-					target = prev.title_province
-					value < kehillah_settlers_min_spacing_squared
-				}
-			}
-		}
-	}
-	NOT = { this = scope:kehillah_mother_leader.domicile.domicile_location.county }
-	NOT = {
-		any_in_global_list = {
-			variable = kehillah_registered_communities
-			exists = holder.domicile.domicile_location
-			holder.domicile.domicile_location.county = prev
 		}
 	}
 }
