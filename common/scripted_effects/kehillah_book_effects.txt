@@ -334,16 +334,34 @@ kehillah_book_complete_effect = {
 kehillah_book_send_copies_effect = {
 	save_scope_as = kehillah_book_author
 
+	# 2026-10-12 (Daniel; the soak test saw this popup 39 times in 62
+	# years): news of a finished work is no longer the kehillah_book.0007
+	# popup to every community in the world. Within the author's
+	# diplomatic range, each community's ordained rabbis study it a little
+	# (kehillah_book_news_study_effect), and a player leader there gets a
+	# quiet Community News notice naming the work. .0007 stays defined for
+	# kehillah_book_news_debug's previews.
 	every_in_global_list = {
 		variable = kehillah_registered_communities
 		limit = {
 			NOT = { this = root.primary_title }
 			exists = holder
+			holder = { in_diplomatic_range = scope:kehillah_book_author }
 		}
 		holder = {
-			trigger_event = {
-				id = kehillah_book.0007
-				days = 30
+			kehillah_book_news_study_effect = yes
+			every_courtier = {
+				limit = { kehillah_is_ordained_rabbi_trigger = yes }
+				kehillah_book_news_study_effect = yes
+			}
+			if = {
+				limit = { is_ai = no }
+				send_interface_message = {
+					type = msg_kehillah_community_news
+					title = kehillah_book_news_msg_t
+					desc = kehillah_book_news_msg_d
+					left_icon = scope:kehillah_book_author
+				}
 			}
 		}
 	}
@@ -351,4 +369,53 @@ kehillah_book_send_copies_effect = {
 	# The notification fires 30 days later; the chosen work must remain
 	# readable on the author until then. The next manuscript clears it.
 	remove_variable = kehillah_book_genre
+}
+
+# Scope: a character in a community within the author's diplomatic range
+# (kehillah_book_send_copies_effect). An ordained rabbi gains a little in
+# the subject of scope:kehillah_book_author's finished work -- its
+# kehillah_book_work flag's prefix: talm_, parsh_, hash_. Poetry gives
+# nothing.
+kehillah_book_news_study_effect = {
+	if = {
+		limit = { kehillah_is_ordained_rabbi_trigger = yes }
+		if = {
+			limit = {
+				scope:kehillah_book_author = {
+					OR = {
+						var:kehillah_book_work ?= flag:talm_agunah
+						var:kehillah_book_work ?= flag:talm_damages
+						var:kehillah_book_work ?= flag:talm_dowry
+						var:kehillah_book_work ?= flag:talm_found
+						var:kehillah_book_work ?= flag:talm_witness
+					}
+				}
+			}
+			add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = kehillah_book_news_rabbi_xp }
+		}
+		else_if = {
+			limit = {
+				scope:kehillah_book_author = {
+					OR = {
+						var:kehillah_book_work ?= flag:parsh_ladder
+						var:kehillah_book_work ?= flag:parsh_shemot
+						var:kehillah_book_work ?= flag:parsh_wells
+					}
+				}
+			}
+			add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_book_news_rabbi_xp }
+		}
+		else_if = {
+			limit = {
+				scope:kehillah_book_author = {
+					OR = {
+						var:kehillah_book_work ?= flag:hash_depths
+						var:kehillah_book_work ?= flag:hash_discourses
+						var:kehillah_book_work ?= flag:hash_name
+					}
+				}
+			}
+			add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = kehillah_book_news_rabbi_xp }
+		}
+	}
 }

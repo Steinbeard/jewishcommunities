@@ -34,3 +34,19 @@ title, synopsis, artifact name and artifact description, then use console-only
 Bet Din subject in another registered community. A live pass should verify
 the event's rendered title/synopsis, artifact title, save/reload stability,
 and the absence of a new library row. No live pass is recorded yet.
+
+## Addendum, 2026-10-12: the news is a quiet notice
+
+Daniel decided this after the 62-year soak test (`docs/testing/2026-10-12-balance-soak-test.md`),
+which saw this popup 39 times with a single option.
+
+- **No popup.** `kehillah_book_send_copies_effect` no longer fires `kehillah_book.0007` to every
+  registered community in the world.
+- **Who it reaches:** communities within the author's **diplomatic range**.
+- **Effect:** each of those communities' ordained rabbis (the leader if ordained, plus ordained
+  courtiers) gains `kehillah_book_news_rabbi_xp` (2) in the work's subject, read from the
+  `kehillah_book_work` flag prefix: talm_, parsh_ or hash_. Poetry gives nothing.
+- **Notice:** a player leader there gets a quiet Community News feed notice with the work's title
+  and synopsis.
+- **Removed:** the old Piety and Learning XP for recipient leaders.
+- **Still defined:** `.0007` remains, for the preview debug events.
