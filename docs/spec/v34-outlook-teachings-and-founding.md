@@ -205,4 +205,12 @@ Send Out Settlers adds its reach from the mother community. The adventurer decis
 - **His camp** is named "The Exiles of <county>" (`kehillah_departure_finish_effect`), not "<Name>'s Wayfarers". A Community News notice goes to players in range.
 - **Re-founding:** in Found a Jewish Community, exiles need no 10 followers and pay 10% of the gold. The AI's desire is +200.
 - **The community they found** starts with +100 Stability (shared purpose) and +40 Greatness (the learning carried), and records `kehillah_founded_by_exiles_from`. A notice goes to players in range.
-- **Next:** a spike on how an AI landless camp moves, so exiles can be pointed toward the nearest welcoming realm.
+- **AI exiles seek a home** (``kehillah_exiles_on_actions.txt``, on ``yearly_playable_pulse``):
+  - If the county where the leader stands is a founding site, he founds there.
+  - Otherwise he picks a site within ``squared_distance_large``, weighted toward nearer ones and
+    Encouraged realms, and sets out with vanilla travel (``start_travel_plan``).
+  - On arrival, ``kehillah_exiles.0001`` re-checks the site and founds.
+  - The decision and the arrival share ``kehillah_found_community_here_effect``.
+  - The spike found vanilla's ``move_domicile`` and relocate-camp interaction, but travel is simpler
+    and shows the journey.
+- **Debug:** ``kehillah_exiles.0002`` turns root's community into exiles now.

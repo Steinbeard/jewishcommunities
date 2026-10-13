@@ -1,0 +1,104 @@
+﻿# =====================================================================
+# EXILES -- V34 section 6 (docs/spec/v34-outlook-teachings-and-founding.
+# md), 2026-10-13. An expelled community's leader carries kehillah_
+# exiles_from (the county he was driven from) and leads "The Exiles of
+# <county>" until they settle.
+# =====================================================================
+
+# Scope: a Jewish adventurer standing where he founds. The founding (the
+# Found a Jewish Community decision and the exiles' arrival event share
+# it), plus the exiles' welcome: shared purpose, the learning carried.
+kehillah_found_community_here_effect = {
+	clear_saved_scope = kehillah_exiles_county
+	if = {
+		limit = { has_variable = kehillah_exiles_from }
+		var:kehillah_exiles_from = { save_scope_as = kehillah_exiles_county }
+	}
+	kehillah_found_community_effect = yes
+	if = {
+		limit = { exists = scope:kehillah_exiles_county }
+		custom_tooltip = kehillah_exiles_resettle_tt
+		hidden_effect = {
+			primary_title ?= {
+				change_variable = { name = kehillah_var_stability add = kehillah_exiles_resettle_stability }
+				change_variable = { name = kehillah_var_greatness add = kehillah_exiles_resettle_greatness }
+				set_variable = { name = kehillah_founded_by_exiles_from value = scope:kehillah_exiles_county }
+			}
+			remove_variable = kehillah_exiles_from
+			kehillah_notify_region_players_effect = {
+				TYPE = msg_kehillah_community_news
+				TITLE = kehillah_news_exiles_settled_t
+				DESC = kehillah_news_exiles_settled_d
+			}
+		}
+	}
+}
+
+# Scope: an AI exile leader, yearly (kehillah_exiles_on_actions.txt).
+# Settle where he stands if he can; otherwise set out for a welcoming
+# county within reach, nearer ones likelier, and found on arrival
+# (kehillah_exiles.0001).
+kehillah_exiles_seek_home_effect = {
+	if = {
+		limit = {
+			is_travelling = no
+			exists = location.county
+			location.county = { kehillah_founding_site_trigger = yes }
+		}
+		kehillah_found_community_here_effect = yes
+		debug_log = "kehillah_exiles_seek_home_effect: exiles settled where they stood"
+	}
+	else_if = {
+		limit = { is_travelling = no }
+		clear_saved_scope = kehillah_exiles_goal
+		random_county = {
+			limit = {
+				kehillah_founding_site_trigger = yes
+				title_province = {
+					squared_distance = {
+						target = root.location
+						value <= squared_distance_large
+					}
+				}
+			}
+			weight = {
+				base = 1
+				modifier = {
+					add = 8
+					title_province = {
+						squared_distance = {
+							target = root.location
+							value <= squared_distance_small
+						}
+					}
+				}
+				modifier = {
+					add = 4
+					title_province = {
+						squared_distance = {
+							target = root.location
+							value <= squared_distance_medium
+						}
+					}
+				}
+				modifier = {
+					add = 4
+					holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+				}
+			}
+			save_scope_as = kehillah_exiles_goal
+		}
+		if = {
+			limit = { exists = scope:kehillah_exiles_goal }
+			start_travel_plan = {
+				destination = scope:kehillah_exiles_goal.title_province
+				return_trip = no
+				on_arrival_event = kehillah_exiles.0001
+			}
+			debug_log = "kehillah_exiles_seek_home_effect: exiles set out for a welcoming county"
+		}
+		else = {
+			debug_log = "kehillah_exiles_seek_home_effect: no welcoming county within reach this year"
+		}
+	}
+}
