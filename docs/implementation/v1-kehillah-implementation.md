@@ -1295,3 +1295,20 @@ from the icon's `_positive` or `_negative` suffix, not from the values of its ef
 memory now uses `stress_positive` even though it reduces stress gain, and the awkward memory uses
 `stress_negative` while increasing stress gain. Source reference: the installed game's
 `common/modifiers/_modifiers.info` and its positive/negative stress modifier precedents.
+
+## 18. Pillar band effects in the community roster tooltips, 2026-10-12
+
+**Status:** implemented and script/localization-checked; nested tooltip rendering still needs a
+live UI check.
+
+The Prosperity, Stability and Greatness tooltips now state the current band's modifier on the
+community leader before the structural baseline and its contributors. The next band keeps its
+distance-to-threshold line, with the band name linked to a hover detail. A second line links the
+previous band; Crisis correctly has no lower band, and Legendary correctly has no higher band.
+Each hover detail gives the score range and the exact modifier effects, using the same thresholds
+and values as `kehillah_script_values.txt` and `kehillah_modifiers.txt`.
+
+The links use vanilla's `#tooltip:LOCALIZATION_KEY text#!` localization markup, also used by
+vanilla's holding-supply tooltip. The actual nested hover behavior must be confirmed in-game before
+calling this verified; source checks cannot establish where CK3 positions the second tooltip or
+whether it remains reachable while the parent tooltip is open.

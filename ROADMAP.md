@@ -17,6 +17,13 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Pillar band effects in tooltips — 2026-10-12, Daniel's request
+
+Each Prosperity, Stability and Greatness breakdown now states the current level's applied
+leader modifier. The next and previous bands are shown as hoverable labels with their ranges and
+effects. Script/localization checks passed; nested tooltip rendering still needs a live UI check.
+See [implementation note §18](docs/implementation/v1-kehillah-implementation.md).
+
 ### Kehillah death-screen wording — 2026-10-12, Daniel's request
 
 The vanilla death screen described Kehillah leaders and their appointed successors
@@ -50,8 +57,15 @@ Five one-step events for Yom Kippur, Sukkot and Shavuot are scripted. Two use na
 ### Exceptional sefarim — 2026-10-12, Daniel's request
 
 The `kehillah_book.0007` arrival event was misleading: it only granted Piety and
-Learning lifestyle XP, without adding a library work. Its wording now reports
-news and explicitly says no library copy arrived. **The larger system is a
+Learning lifestyle XP, without adding a library work. The ordinary-book chain
+now chooses one of 14 stable named subjects at completion, including two
+subjects drawn from a remembered Bet Din case. The author's completion event,
+personal artifact, and delayed news event use the same title and description.
+The recipient event reports scholarly discussion without claiming a library
+copy or dwelling on its absence. Source checks passed; live rendering and
+save/reload confirmation remain open. See
+[the implementation note](docs/implementation/kehillah-ordinary-book-identities.md).
+**The larger system is a
 proposal, not built:** [v32](docs/spec/v32-exceptional-sefarim.md) describes rare
 named works created by qualifying scholars during play, with visible progress
 and real library copies. First next step is a one-work data/GUI spike, then an
