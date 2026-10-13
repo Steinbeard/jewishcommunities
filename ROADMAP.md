@@ -141,10 +141,14 @@ is the S11 "friendliness" design review; the Crusades chain stays separate and b
   scoring no longer favours the convert's co-converts. Probes: `kehillah_conversion_debug.1`–`.3`.
   The live run found two bugs, both fixed and re-tested: a charter leaking onto the wayfarer,
   and the successor styled "Duke".
-- **Forced conversion, part 2, built 2026-10-12, NOT live-tested** (v31 §10.3). Hosts can reach
+- **Forced conversion, part 2, built and live-tested 2026-10-12** (v31 §10.3; the AI host's own demand is inconclusive because Banned never lasted). Hosts can reach
   player-led communities through a copied vanilla interaction. AI hosts demand "convert or leave"
   while an expulsion edict stands. A player convert may carry on as the heir. Probe:
   `kehillah_conversion_debug.4`.
+- **Balance finding, 2026-10-12 soak (session 0f):** across about 58 logged years, the AI policy
+  review ran about 35 times and moved a policy 3 times (1 down, 2 up). Nothing reached Banned and
+  no edict was issued. Expulsion and forced conversion therefore never happen in ordinary play.
+  The host relationship needs pressure that builds over time (v31 incidents, the vassal faction).
 - **Decided 2026-10-12:** tribute starts at 20% of income; every convert steps down. Still open
   (v31 §14, §16): secret Jews after conversion, non-rabbinic Jewish faiths, reaching a
   player-led community with forced conversion (answered: v31 §10.3).

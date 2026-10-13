@@ -426,7 +426,23 @@ expected.
 a crime on refusal without copying the interaction; the community-wide decree is the better
 place for it. Return to Judaism flavour (Rashi's ruling) also waits.
 
-### 10.3 Reaching every leader, the AI's demand, playing on as the heir (built 2026-10-12, NOT live-tested)
+### 10.3 Reaching every leader, the AI's demand, playing on as the heir (built and live-tested 2026-10-12)
+
+**Live test** ([log](../testing/2026-10-12-forced-conversion-live-test-log.md), "Part 2"):
+- **PASS:**
+  - the gate (no demand before Banned);
+  - the player receives the Emperor's demand;
+  - vanilla's "An End to Rabbinic" offers "We will keep Catholicism on our lips, but Rabbinic in
+    our hearts";
+  - the convert steps down;
+  - the notice offers "Carry on as Parnas Akiva…", which switched the player to the heir, and Isaac
+    played on as an AI wayfarer;
+  - refusing gives the host `illegal_resisted_conversion_opinion`, and V32's arrest becomes valid.
+- **INCONCLUSIVE, the AI's own demand:** no natural demand in 2+ years. Henry IV's policy review
+  repealed Banned within months, so few community-quarters ever had an edict. A forced check sent
+  four demands (Speyer, Mainz, Praha, Vienna), and all four AI leaders refused. The logic works;
+  the window is short. This matches the soak finding (Jewish Settlement Policy rarely moves, never
+  to Banned), which is a balance question for the host-relationship work, not a bug here.
 
 *Daniel, 2026-10-12: hosts should be able to target Kehillah leaders, and a player whose leader is
 forced to convert may choose to play on as the heir.*

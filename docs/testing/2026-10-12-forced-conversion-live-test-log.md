@@ -126,3 +126,62 @@ Ran on to 1 Mar 1067. ck3.exe still alive (PID 2560), no Game Over or crash. err
 - The wayfarer Isaac stays Catholic and keeps a domicile (camp) as expected; no leakage of the Host Charter to him in the log.
 - Game speed was higher than the previous run's estimate; my timed unpauses overshot (80 days instead of 10).
 CK3 left running, paused (1 Mar 1067).
+
+---
+
+# Part 2 (v31 §10.3) live test
+
+**Status:** live-tested against commit bc2fdc1 (branch autonomous/shabbat-2026-10). Observations only; nothing fixed. Fresh `ck3.exe -debug_mode -develop` boot (PID 31528); `debug.log` showed `Jewish Communities|mod/jewishcommunities.mod|Enabled`. error.log baseline at the main menu: 232 lines. Before launching, the other session's CK3 (PID 27016) was ended with `taskkill /PID 27016 /F` (unsaved; no screenshot was taken of it). Game speed was driven by Space plus a pixel check of the speed bar; roughly 60 real seconds unpaused covered about 100 game days.
+
+## Game 1
+
+**1. Start as Isaac, ~5 days - PASS.** 15 Sep 1066 start; "A Charter Is Sealed" shown 18 Sep (accepted); paused 26 Sep 1066.
+
+**2. `kehillah_conversion_debug.4` before banning - PASS.**
+`kehillah_conversion_debug.4: player demand NOT valid (is the realm Banned?)`
+
+**3. `kehillah_debug.75` then `.4` - PASS.**
+`kehillah_debug.75: host realm policy set to Banned`, then `kehillah_conversion_debug.4: PLAYER DEMAND VALID, host sends it`. A "Demand Conversion" popup from Kaiser Heinrich reached Isaac ("Greetings Rav Isaac of Kehillah of Worms, It is time for you to abandon your errant ways and embrace the one true Faith, Catholicism!"), with On Accept / On Decline tabs (Sinner devotion, +60 stress, spends gold, Foolish Convert 5 years, Roman Rite, "You may continue to practice Rabbinic in secret") and Decline / Accept buttons.
+
+**4. Accept, vanilla follow-up - PASS.** Vanilla event "An End to Rabbinic" (false_conversion.1000; Shifra speaks). Two options seen:
+- "The old ways die today."
+- "We will keep Catholicism on our lips, but Rabbinic in our hearts." (chosen)
+Then an "Overwhelmed by Stress" toast.
+
+**5. Step-down and notice - PASS.** Logs (game about 28 Oct 1066):
+```
+kehillah_conversion.0001: a converted leader leaves office
+kehillah_conversion.0001: STEPPED DOWN to the appointment heir
+```
+"Leaving the Kehillah" showed real text: "You have left Judaism, and someone outside the faith cannot rule on its law for the congregation. The elders met without you. Parnas Akiva of Kehillah of Worms now leads Kehillah of Worms. You leave the Jewish Quarter and take to the road as a wayfarer." Two options: "Carry on as Parnas Akiva of Kehillah of Worms, the community's new leader" and "Stay with Isaac on the road". Successor styled Parnas, not Duke. A "Trait Gained: Apostate" toast sat beside it. It was already visible on 28 Oct, the same in-game day as the step-down log, when I looked (not 2 days later).
+
+**6. Carry on as the successor - PASS.** After the click the HUD portrait was Akiva, and `run v31probe.txt` (root = the new player) printed: tributary yes, "holds a Christian Kehillah charter", has a domicile, `holder has kehillah government`, `holder HAS a domicile`, `holder host resolvable`, `holder IS a tributary` (root and holder are both Akiva Epstein, Internal ID 43051; the "Isaac" labels in that probe now describe root = Akiva). A separate probe on Isaac (`character:9000002`): `Isaac is AI`, `Isaac is landless_adventurer`, `Isaac alive`; root `is PLAYER`. So Isaac is an AI wayfarer. After the switch: "Tributary Invalidated" toast (Isaac / Kaiser Heinrich) and a fresh "A Charter Is Sealed" for Akiva (Quarter Construction: New Construction Forbidden; Talmud Proscribed, i.e. Banned policy).
+
+**7. A year of play - INCONCLUSIVE for natural AI demands; PASS when forced.**
+- Ran 28 Oct 1066 to 25 Feb 1069 (well over a year; plain flavour popups clicked through). No "kehillah_host_conversion_ai_check_effect: the host demands conversion" line appeared naturally. No demand popup reached Akiva. No `kehillah_conversion.0001` for any AI leader.
+- Why (observed, not fixed): the Banned policy did NOT stay. `kehillah_conversion_debug.1` in Nov 1068 reported 0 of 23 communities "host BANS" (the AI host's policy review repealed it). Edict start lines appeared on 30 Oct 1066 (3x) and, after I re-set Banned with `kehillah_debug.75` on 10 Dec 1067, for Worms (Akiva) and Mainz (Isaac Landsberg) around Jan 1068 (`quarter: 4.00`). My probe of `has_variable = kehillah_expulsion_quarters` on the registered-community titles printed 0 edicts even then, so I do not trust it.
+- Forced check (throwaway run file in the user `run` folder): re-set Banned, set `kehillah_expulsion_quarters` on every AI community's title, ran `kehillah_host_conversion_ai_check_effect` six times each. Result: 4 x `kehillah_host_conversion_ai_check_effect: the host demands conversion`, targets Kalonymus (Speyer), Isaac Landsberg (Mainz), Avraham Horowitz (Praha), Dov Fuld (Vienna), host Heinrich Salian (e_hre). The same probe run while the ban was repealed gave 0 demands, and a gate probe showed both vanilla interactions "NOT valid" for all 22 AI communities while host available / AI / adult / free / not yet demanded were all true, so the ban gate was the only failing gate, as designed.
+- Two and a half months after those four demands (to 25 Feb 1069) no `kehillah_conversion.0001` line appeared: the AI leaders did not convert (Cologne was not asked). The player was never asked.
+
+## Game 2
+
+**8. Refusal - PASS.** New Worms 1066 game; `kehillah_debug.75` then `kehillah_conversion_debug.4`: `PLAYER DEMAND VALID, host sends it`; popup "To the heartless Rav Isaac, ...". Declined. Isaac stayed Jewish and free. Probe: `emperor holds resisted opinion of player` (illegal_resisted_conversion_opinion) and `has_imprisonment_reason` true.
+
+**9. `kehillah_arrest_debug.1` - PASS.**
+```
+kehillah_arrest_debug.1: START
+kehillah_arrest_debug.1: HOST HOLDS AN IMPRISONMENT REASON
+kehillah_arrest_debug.1: IMPRISON INTERACTION VALID
+kehillah_arrest_debug.1: HEIR EXISTS (refusal = exile)
+kehillah_arrest_debug.1: END
+```
+
+## 10. error.log
+
+Baseline 232 lines, end 932. No new line mentions conversion, demand_conversion, step_down, departure, set_player_character or imprison. Only expulsion-related hit: two `Data error in loc string 'kehillah_expulsion.0001.b.tt'` lines (20:43:16 and 20:50:34, when edicts started). The rest is vanilla `tgp_tribute_mission` script errors, "variable never set/used" lines re-emitted on each `run`, and `send_interface_toast Invalid scope type empty`.
+
+## Surprising
+1. The AI host repealed Banned within a year, so the natural demand pulse was never seen firing, only the forced one.
+2. The "Leaving the Kehillah" notice appeared on the step-down day, not two days later.
+3. `kehillah_expulsion.0001.b.tt` loc data error at edict start.
+CK3 left running, paused (Game 2, 30 Sep 1066).
