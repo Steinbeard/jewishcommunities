@@ -72,22 +72,37 @@ kehillah_exiles.0002 = {
 	}
 }
 
-# Backstop for the exiles' journey (kehillah_exiles_seek_home_effect): a
-# year on, if the vanilla travel plan never completed, bring the camp to
-# the goal (vanilla's own relocation also moves the domicile) and arrive.
+# Safety net for the exiles' journey (kehillah_exiles_seek_home_effect),
+# every 60 days while they have a goal: if they have stopped at the goal,
+# they arrive; if the road has outlasted kehillah_exiles_on_the_road
+# (~13 months), the camp is brought to the goal and they arrive; else
+# check again later.
 kehillah_exiles.0003 = {
 	type = character_event
 	hidden = yes
 	trigger = {
 		has_variable = kehillah_exiles_from
-		has_variable = kehillah_exiles_on_the_road
 		exists = var:kehillah_exiles_goal
 	}
 	immediate = {
 		var:kehillah_exiles_goal = { save_scope_as = kehillah_exiles_backstop_goal }
-		domicile ?= { move_domicile = scope:kehillah_exiles_backstop_goal.title_province }
-		set_location = scope:kehillah_exiles_backstop_goal.title_province
-		debug_log = "kehillah_exiles.0003: the road took too long; the exiles were brought to their goal"
-		trigger_event = kehillah_exiles.0001
+		if = {
+			limit = {
+				is_travelling = no
+				location.county ?= scope:kehillah_exiles_backstop_goal
+			}
+			debug_log = "kehillah_exiles.0003: the exiles stand at their goal"
+			trigger_event = kehillah_exiles.0001
+		}
+		else_if = {
+			limit = { NOT = { has_variable = kehillah_exiles_on_the_road } }
+			domicile ?= { move_domicile = scope:kehillah_exiles_backstop_goal.title_province }
+			set_location = scope:kehillah_exiles_backstop_goal.title_province
+			debug_log = "kehillah_exiles.0003: the road took too long; the exiles were brought to their goal"
+			trigger_event = kehillah_exiles.0001
+		}
+		else = {
+			trigger_event = { id = kehillah_exiles.0003 days = 60 }
+		}
 	}
 }

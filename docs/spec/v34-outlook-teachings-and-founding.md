@@ -223,7 +223,10 @@ Send Out Settlers adds its reach from the mother community. The adventurer decis
     covered most of the map, Krakow and Gyor included.
   - **AI exiles travel the way vanilla relocates a camp.** The first plan lacked
     ``travel_with_domicile = yes``, so the leader left his camp and was pulled back before arriving.
-    Vanilla's ``relocate_camp_to_interaction`` sets it, and so do the exiles now. ``on_arrival_event``
-    founds the community.
-  - **A backstop** (``kehillah_exiles.0003``): if they are still on the road after a year, the camp
-    is brought to the goal (``move_domicile`` and ``set_location``) and they arrive.
+    Vanilla's ``relocate_camp_to_interaction`` sets it, and so do the exiles now. Arrival goes
+    through ``on_arrival_on_action = kehillah_exiles_arrival``, as vanilla does it. With
+    ``on_arrival_event`` the camp reached Koblenz, but nothing fired.
+  - **A safety net** (``kehillah_exiles.0003``, every 60 days):
+    - if they have stopped at the goal, they arrive;
+    - after about 13 months on the road, the camp is brought there (``move_domicile`` and
+      ``set_location``) and they arrive.
