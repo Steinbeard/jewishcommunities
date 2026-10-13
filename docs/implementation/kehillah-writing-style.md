@@ -57,3 +57,23 @@ no findings in either edited localization file. Whole-mod results were
 the installed validator targets 1.19.0 and warns about the installed 1.20.0.3
 game. This does not establish a clean whole-mod build. No live rendering test
 was performed for this text-only pass.
+
+## Follow-up editorial pass — 2026-10-12
+
+Revised 227 English entries across the main Kehillah, community goal,
+responsa, bookmark and Norman settlement files. The heaviest edits replace
+generic verdicts and repeated claims of importance with the question heard,
+the choice made and the result. The ten translation offers and endings now
+name the requested work without repeating the same dramatic refrain.
+
+The dowry dispute's two named options previously described rulings for the
+opposite families from the opinion effects in the event script. Their wording
+now matches the favored party. The compromise also no longer claims the
+community chest pays toward the dowry; its script changes Stability only.
+
+The five files retain their keys and UTF-8 BOMs, and their edited entries
+have balanced bracket references and formatting. `git diff --check` passed.
+`ck3-tiger` reports no findings in the edited localization files. Its
+whole-mod output remains noisy (668 errors and 126 warnings), with a version
+warning because the installed validator targets CK3 1.19.0 and the installed
+game is 1.20.0.4. No live rendering test was performed for this text pass.

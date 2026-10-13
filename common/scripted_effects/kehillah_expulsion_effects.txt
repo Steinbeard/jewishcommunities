@@ -1,0 +1,323 @@
+﻿# =====================================================================
+# EXPULSION (ROADMAP S9b) and the AI ruler's settlement-policy review
+# (V17 Slice B, first pass). Design: docs/spec/v30-expulsion-and-
+# householders.md. Values: common/script_values/kehillah_expulsion_
+# values.txt. Events: events/kehillah_expulsion_events.txt.
+#
+# THE STATE MACHINE, on the community TITLE (so it survives a change of
+# leader, like the dissolution countdown):
+#   kehillah_expulsion_quarters  quarters since the edict (its presence
+#                                is what "an expulsion is pending" means)
+#   kehillah_expulsion_host      the ruler who issued it
+#   kehillah_expulsion_defiant   the community chose to stay in hiding
+#   kehillah_expulsion_pleaded   the Shtadlan has pleaded (once)
+#   kehillah_expulsion_ransomed  a ransom has been offered (once)
+#
+# BANNED IS WHAT EXPELS, whatever set it: the lower decision, the AI
+# review, a debug event, or a community whose county passes to a realm
+# that already bans. The quarterly pass starts an edict for any
+# community under a banning host that has none, and lifts it for any
+# whose host no longer bans (repeal, or the Quarter's county changing
+# realm). Nothing else has to remember to call the start effect.
+#
+# THE ENDING IS THE EXISTING TEARDOWN. A community that leaves runs
+# kehillah_dissolve_community_effect (kehillah_departure_effects.txt):
+# the title ends and the leader takes to the road as a landless
+# adventurer with his household and followers, free to found a new
+# community where Jews are allowed to settle. Expulsion adds only the
+# host's seizure of gold and debts before it. Daniel chose dissolution
+# over relocating the Quarter, 2026-10-12.
+# =====================================================================
+
+
+# ---------------------------------------------------------------------
+# Scope: a Kehillah leader. Starts an edict against this community.
+# $HOST$ is the ruler issuing it.
+# ---------------------------------------------------------------------
+kehillah_expulsion_start_effect = {
+	primary_title = {
+		set_variable = { name = kehillah_expulsion_quarters value = 0 }
+		set_variable = { name = kehillah_expulsion_host value = $HOST$ }
+		remove_variable = kehillah_expulsion_defiant
+		remove_variable = kehillah_expulsion_pleaded
+		remove_variable = kehillah_expulsion_ransomed
+	}
+	debug_log = "kehillah_expulsion_start_effect: an edict of expulsion now runs against this community"
+	debug_log_scopes = yes
+	trigger_event = kehillah_expulsion.0001
+}
+
+# Scope: a Kehillah leader. Removes every trace of an edict.
+kehillah_expulsion_clear_effect = {
+	primary_title = {
+		remove_variable = kehillah_expulsion_quarters
+		remove_variable = kehillah_expulsion_host
+		remove_variable = kehillah_expulsion_defiant
+		remove_variable = kehillah_expulsion_pleaded
+		remove_variable = kehillah_expulsion_ransomed
+	}
+}
+
+# ---------------------------------------------------------------------
+# Scope: the host ruler, the moment its realm bans Jewish settlement.
+# Every community under it receives the edict now, rather than waiting
+# for its next quarterly pass.
+# ---------------------------------------------------------------------
+kehillah_expulsion_proclaim_effect = {
+	save_scope_as = kehillah_proclaim_host
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			exists = holder
+			holder = {
+				government_has_flag = government_is_kehillah
+				kehillah_is_host_of_community_trigger = { HOST = scope:kehillah_proclaim_host }
+				NOT = { kehillah_expulsion_pending_trigger = yes }
+			}
+		}
+		holder = { kehillah_expulsion_start_effect = { HOST = scope:kehillah_proclaim_host } }
+	}
+}
+
+# ---------------------------------------------------------------------
+# Scope: the host ruler, the moment its realm stops banning. Every
+# pending edict it issued is withdrawn.
+# ---------------------------------------------------------------------
+kehillah_expulsion_lift_effect = {
+	save_scope_as = kehillah_lift_host
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			exists = holder
+			holder = {
+				kehillah_expulsion_pending_trigger = yes
+				kehillah_is_host_of_community_trigger = { HOST = scope:kehillah_lift_host }
+			}
+		}
+		holder = {
+			kehillah_expulsion_clear_effect = yes
+			trigger_event = kehillah_expulsion.0005
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# Scope: a Kehillah leader. The quarterly pass.
+# ---------------------------------------------------------------------
+kehillah_expulsion_quarterly_effect = {
+	if = {
+		limit = { kehillah_expulsion_pending_trigger = yes }
+		if = {
+			# The host no longer bans, or the Quarter now answers to a
+			# realm that does not: the edict lapses.
+			limit = { NOT = { kehillah_host_bans_jewish_settlement_trigger = yes } }
+			kehillah_expulsion_clear_effect = yes
+			trigger_event = kehillah_expulsion.0005
+			debug_log = "kehillah_expulsion_quarterly_effect: host no longer bans -- edict lapsed"
+		}
+		else = {
+			primary_title = { change_variable = { name = kehillah_expulsion_quarters add = 1 } }
+			if = {
+				limit = { primary_title = { has_variable = kehillah_expulsion_defiant } }
+				if = {
+					limit = { primary_title.var:kehillah_expulsion_quarters >= kehillah_expulsion_defiance_quarters }
+					debug_log = "kehillah_expulsion_quarterly_effect: the community in hiding is found out"
+					trigger_event = { id = kehillah_expulsion.0011 days = 1 }
+				}
+			}
+			else_if = {
+				limit = { primary_title.var:kehillah_expulsion_quarters >= kehillah_expulsion_grace_quarters }
+				debug_log = "kehillah_expulsion_quarterly_effect: the grace period is over -- the edict is enforced"
+				trigger_event = { id = kehillah_expulsion.0010 days = 1 }
+			}
+			else = {
+				debug_log = "kehillah_expulsion_quarterly_effect: edict pending, clock advanced"
+			}
+		}
+	}
+	else_if = {
+		limit = { kehillah_host_bans_jewish_settlement_trigger = yes }
+		domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_banning_host }
+		kehillah_expulsion_start_effect = { HOST = scope:kehillah_banning_host }
+	}
+}
+
+# ---------------------------------------------------------------------
+# Scope: a Kehillah leader. The community leaves its host realm. The
+# host seizes $SEIZURE$ (a gold script value read on the leader) and
+# every debt it owes the community, then the existing teardown ends the
+# community. $LOG$ names the route for debug.log.
+# ---------------------------------------------------------------------
+kehillah_expulsion_depart_effect = {
+	save_scope_as = kehillah_exp_departing
+	debug_log = "kehillah_expulsion_depart_effect: begin"
+	if = {
+		limit = { exists = domicile.domicile_location.county.holder.top_liege }
+		domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_exp_seizer }
+	}
+	else_if = {
+		limit = { exists = primary_title.var:kehillah_expulsion_host }
+		primary_title.var:kehillah_expulsion_host = { save_scope_as = kehillah_exp_seizer }
+	}
+
+	if = {
+		limit = { exists = scope:kehillah_exp_seizer }
+		# The host's seizure of the community's wealth.
+		if = {
+			limit = { $SEIZURE$ > 0 }
+			pay_short_term_gold = {
+				target = scope:kehillah_exp_seizer
+				gold = $SEIZURE$
+			}
+		}
+		# Debts the host and its realm owe the community are void.
+		primary_title = {
+			every_in_list = {
+				variable = kehillah_loan_debtors
+				limit = {
+					exists = var:kehillah_loan_amount_owed
+					OR = {
+						this = scope:kehillah_exp_seizer
+						top_liege ?= scope:kehillah_exp_seizer
+					}
+				}
+				remove_variable = kehillah_loan_amount_owed
+				remove_variable = kehillah_loan_lender_title
+				remove_variable = kehillah_loan_years_elapsed
+			}
+		}
+		add_opinion = {
+			target = scope:kehillah_exp_seizer
+			modifier = kehillah_expelled_us_opinion
+		}
+		primary_title = { save_scope_as = kehillah_exp_left_title }
+		scope:kehillah_exp_seizer = {
+			send_interface_message = {
+				type = msg_kehillah_expulsion_done
+				title = kehillah_expulsion_done_msg_title
+				desc = kehillah_expulsion_done_msg_desc
+				left_icon = scope:kehillah_exp_departing
+			}
+		}
+	}
+
+	kehillah_expulsion_clear_effect = yes
+	debug_log = "kehillah_expulsion_depart_effect: seizure done, handing over to the dissolution teardown"
+	kehillah_dissolve_community_effect = yes
+	debug_log = "kehillah_expulsion_depart_effect: end"
+}
+
+
+# =====================================================================
+# THE AI RULER'S POLICY REVIEW
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# Scope: a Kehillah leader, on its yearly pass. Gives its host one
+# chance a year (shared by all the host's communities) to review the
+# realm's policy.
+# ---------------------------------------------------------------------
+kehillah_policy_ai_review_try_effect = {
+	if = {
+		limit = {
+			exists = domicile.domicile_location.county.holder.top_liege.primary_title
+			domicile.domicile_location.county.holder.top_liege = {
+				is_ai = yes
+				NOT = { government_has_flag = government_is_kehillah }
+				NOT = { has_character_flag = kehillah_policy_reviewed_this_year }
+				primary_title = { NOT = { kehillah_policy_review_on_cooldown_trigger = yes } }
+			}
+		}
+		domicile.domicile_location.county.holder.top_liege = {
+			add_character_flag = { flag = kehillah_policy_reviewed_this_year years = 1 }
+			random = {
+				chance = kehillah_policy_review_chance
+				kehillah_policy_ai_review_effect = yes
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# Scope: the host ruler. Weighs the named pressures and moves the policy
+# at most one rung. The dominant pressure is recorded on the realm title
+# as kehillah_policy_reason, which the policy notices print.
+# ---------------------------------------------------------------------
+kehillah_policy_ai_review_effect = {
+	debug_log = "kehillah_policy_ai_review_effect: reviewing this ruler's Jewish Settlement Policy"
+	debug_log_scopes = yes
+	if = {
+		# RESTRICT. A Jewish ruler never does.
+		limit = {
+			NOT = { is_jewish_character_trigger = yes }
+			kehillah_policy_net_pressure_value >= kehillah_policy_review_lower_threshold
+			OR = {
+				primary_title = { kehillah_jewish_settlement_policy_allowed_trigger = yes }
+				AND = {
+					primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes }
+					kehillah_policy_net_pressure_value >= kehillah_policy_review_ban_threshold
+					kehillah_policy_restrictive_count_value >= 2
+				}
+			}
+		}
+		kehillah_policy_record_restrictive_reason_effect = yes
+		debug_log = "kehillah_policy_ai_review_effect: restrictive pressure prevails -- lowering one rung"
+		kehillah_lower_jewish_settlement_policy_effect = yes
+	}
+	else_if = {
+		# WELCOME.
+		limit = {
+			kehillah_policy_net_pressure_value <= kehillah_policy_review_raise_threshold_negative
+			NOT = { primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } }
+		}
+		kehillah_policy_record_protective_reason_effect = yes
+		debug_log = "kehillah_policy_ai_review_effect: protective pressure prevails -- raising one rung"
+		kehillah_raise_jewish_settlement_policy_effect = yes
+	}
+	else = {
+		debug_log = "kehillah_policy_ai_review_effect: no pressure strong enough -- policy unchanged"
+	}
+}
+
+# Scope: the host ruler. Records the strongest restrictive pressure.
+kehillah_policy_record_restrictive_reason_effect = {
+	primary_title = { save_scope_as = kehillah_reason_realm }
+	if = {
+		limit = {
+			kehillah_policy_pressure_debts_value > 0
+			kehillah_policy_pressure_debts_value >= kehillah_policy_pressure_zeal_value
+		}
+		scope:kehillah_reason_realm = { set_variable = { name = kehillah_policy_reason value = flag:debts } }
+	}
+	else_if = {
+		limit = { kehillah_policy_pressure_zeal_value > 0 }
+		scope:kehillah_reason_realm = { set_variable = { name = kehillah_policy_reason value = flag:zeal } }
+	}
+	else_if = {
+		limit = { kehillah_policy_pressure_grievance_value > 0 }
+		scope:kehillah_reason_realm = { set_variable = { name = kehillah_policy_reason value = flag:grievance } }
+	}
+	else_if = {
+		limit = { kehillah_policy_pressure_clergy_value > 0 }
+		scope:kehillah_reason_realm = { set_variable = { name = kehillah_policy_reason value = flag:clergy } }
+	}
+	else = {
+		scope:kehillah_reason_realm = { set_variable = { name = kehillah_policy_reason value = flag:temper } }
+	}
+}
+
+# Scope: the host ruler. Records the strongest protective pressure.
+kehillah_policy_record_protective_reason_effect = {
+	primary_title = { save_scope_as = kehillah_reason_realm }
+	if = {
+		limit = { kehillah_policy_has_prosperous_community_trigger = yes }
+		scope:kehillah_reason_realm = { set_variable = { name = kehillah_policy_reason value = flag:revenue } }
+	}
+	else_if = {
+		limit = { kehillah_policy_has_patron_trigger = yes }
+		scope:kehillah_reason_realm = { set_variable = { name = kehillah_policy_reason value = flag:patron } }
+	}
+	else = {
+		scope:kehillah_reason_realm = { set_variable = { name = kehillah_policy_reason value = flag:justice } }
+	}
+}

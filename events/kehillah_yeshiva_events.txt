@@ -492,3 +492,91 @@ kehillah_yeshiva.0313 = {
 		add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = 4 }
 	}
 }
+
+# =====================================================================
+# .0320 -- THE GRADUATING CLASS (V29 section 11.1, 2026-10-12). Once a
+# year, after the yearly ordination (kehillah_yeshiva_graduation_effect),
+# a player leader decides where the class's most promising graduate goes.
+# Each path feeds a different pillar.
+# =====================================================================
+kehillah_yeshiva.0320 = {
+	type = character_event
+	title = kehillah_yeshiva.0320.t
+	desc = kehillah_yeshiva.0320.desc
+	theme = learning
+	left_portrait = {
+		character = scope:kehillah_valedictorian
+		animation = happiness
+	}
+	right_portrait = {
+		character = scope:kehillah_rosh_yeshiva
+		animation = personality_rational
+		trigger = {
+			exists = scope:kehillah_rosh_yeshiva
+			NOT = { scope:kehillah_rosh_yeshiva = root }
+		}
+	}
+	trigger = {
+		exists = scope:kehillah_valedictorian
+		scope:kehillah_valedictorian = { is_alive = yes }
+	}
+	immediate = {
+		scope:kehillah_valedictorian = { save_scope_as = kehillah_graduate }
+		domicile.domicile_location.county.holder ?= {
+			if = {
+				limit = { NOT = { this = root } }
+				save_scope_as = kehillah_local_lord
+			}
+		}
+	}
+
+	# Keep him: a rabbi for the community's own courts.
+	option = {
+		name = kehillah_yeshiva.0320.a
+		scope:kehillah_valedictorian = {
+			if = {
+				limit = { has_character_flag = kehillah_visiting_student }
+				remove_character_flag = kehillah_visiting_student
+			}
+		}
+		primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_yeshiva_keep_graduate_stability } }
+		custom_tooltip = kehillah_yeshiva.0320.a.tt
+		ai_chance = { base = 50 }
+	}
+
+	# Send him where a community has no rabbi.
+	option = {
+		name = kehillah_yeshiva.0320.b
+		trigger = { kehillah_alumnus_destination_available_trigger = yes }
+		kehillah_place_alumnus_effect = yes
+		kehillah_add_yeshiva_fame_effect = { AMOUNT = kehillah_yeshiva_send_graduate_fame }
+		scope:kehillah_alumnus_destination.holder ?= {
+			add_opinion = { target = root modifier = respect_opinion opinion = kehillah_yeshiva_send_graduate_opinion }
+		}
+		custom_tooltip = kehillah_yeshiva.0320.b.tt
+		ai_chance = { base = 50 }
+	}
+
+	# Recommend him to the lord of the town.
+	option = {
+		name = kehillah_yeshiva.0320.c
+		trigger = {
+			exists = scope:kehillah_local_lord
+			# One's own kin is not handed to a Christian lord's court.
+			NOT = { scope:kehillah_valedictorian = { is_close_or_extended_family_of = root } }
+		}
+		scope:kehillah_local_lord = {
+			add_courtier = scope:kehillah_valedictorian
+			add_opinion = { target = root modifier = pleased_opinion opinion = kehillah_yeshiva_lord_graduate_opinion }
+		}
+		scope:kehillah_valedictorian = {
+			if = {
+				limit = { has_character_flag = kehillah_visiting_student }
+				remove_character_flag = kehillah_visiting_student
+			}
+		}
+		primary_title = { change_variable = { name = kehillah_var_prosperity add = kehillah_yeshiva_lord_graduate_prosperity } }
+		custom_tooltip = kehillah_yeshiva.0320.c.tt
+		ai_chance = { base = 0 }
+	}
+}

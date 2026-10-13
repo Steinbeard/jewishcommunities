@@ -198,74 +198,10 @@ kehillah_leadership = {
 				}
 			}
 
-			# -----------------------------------------------------
-			# HOUSEHOLD STANDING -- V26 ba'alei batim slice 2, added
-			# 2026-10-09 (in commit 84242d9, alongside H1's succession
-			# work), hardened and de-duplicated 2026-10-10.
-			#
-			# A candidate from one of THIS community's registered
-			# householder families carries a share of that family's
-			# standing (common/script_values/kehillah_household_values.txt),
-			# capped at 30 -- the same scale as the office bonus (25) and
-			# the endorsement (30), so a leading family can tip a close
-			# contest but never outweigh learning. This is what makes the
-			# registered families actually compete for the leadership
-			# instead of merely being listed. The leader's own house is
-			# never registered, so his children get nothing here: that is
-			# precisely what lets other families compete.
-			#
-			# READ THE REMOVED influence_level TERM ABOVE BEFORE CHANGING
-			# THIS. That term was deleted because it read scope:title.var:...,
-			# and candidate_score is evaluated once per candidate against the
-			# SAME title -- so it added an identical number to everyone and
-			# changed no ordering at all. This term is deliberately shaped to
-			# avoid exactly that trap: it reads ROOT'S OWN HOUSE, so a
-			# different candidate genuinely gets a different number.
-			#
-			# WHY THE HOUSE AND NOT THE HEAD. Standing is a property of the
-			# family (kehillah_household_refresh_effect writes
-			# kehillah_household_standing onto the dynasty house; the head
-			# carries a copy only so localization can read it off a
-			# character). V26 wants leading FAMILIES competing, so every
-			# member of a registered house benefits, not only whoever happens
-			# to be its oldest adult this year.
-			#
-			# THE kehillah_household_of GUARD IS LOAD-BEARING, not
-			# decoration. A house keeps kehillah_household_standing after it
-			# migrates, and kehillah_household_of is what says which
-			# community it belongs to NOW. Without the guard, a family
-			# registered at Speyer would bring its Speyer standing to a Worms
-			# succession -- and families move between communities constantly,
-			# which is the entire point of slice 1. It is read through
-			# has_variable rather than bare var:, because most houses in the
-			# pool have neither variable and an unguarded var: read is the
-			# "Failed to fetch variable" log flood this repo cleaned out in
-			# ROADMAP H3.
-			#
-			# 2026-10-10 NOTE -- DO NOT RE-ADD A SECOND STANDING TERM. A
-			# heartbeat run that was cut off mid-task added one, because both
-			# ROADMAP and v26's spec still said standing "does not yet feed
-			# succession; that is slice 2" after the term had in fact already
-			# shipped in 84242d9. Two terms double-counted the same family
-			# standing. The stale docs are now corrected; this is the one and
-			# only household-standing term.
-			# -----------------------------------------------------
-			if = {
-				limit = {
-					exists = house
-					house = {
-						has_variable = kehillah_household_standing
-						has_variable = kehillah_household_of
-						var:kehillah_household_of ?= scope:title
-					}
-				}
-				add = {
-					value = house.var:kehillah_household_standing
-					multiply = kehillah_household_standing_score_weight_value
-					max = 30
-					desc = kehillah_score_household_desc
-				}
-			}
+			# HOUSEHOLD STANDING -- REMOVED 2026-10-12 (Daniel, v30). The
+			# V26 standing term is gone with standing itself: dynasty prestige
+			# (scored below) already says how established a family is, and
+			# householders reach the pool through council seats and offices.
 
 			# Piety, as visible religious standing. Modest weight:
 			# this is a learned office, not a saintly one.
@@ -412,13 +348,28 @@ kehillah_leadership = {
 			# empties the game still has an answer instead of
 			# deadlocking.
 			# -----------------------------------------------------
+			#
+			# The outgoing holder's faith stands for the community's,
+			# EXCEPT when he has left Judaism (V31 section 10.1: a
+			# converted leader steps down). Then any non-Jewish candidate
+			# is the wrong faith and Jewish candidates are not; reading his
+			# new faith would have handed the community to his co-converts.
 			if = {
 				limit = {
 					# Guarded with ?= like every other scope:title.holder read in
 					# this file: the outgoing holder can already be gone when
 					# candidates are scored, and an unset scope here would throw
 					# rather than simply skipping the penalty.
-					scope:title.holder ?= { NOT = { faith = root.faith } }
+					OR = {
+						scope:title.holder ?= {
+							is_jewish_character_trigger = yes
+							NOT = { faith = root.faith }
+						}
+						AND = {
+							scope:title.holder ?= { is_jewish_character_trigger = no }
+							is_jewish_character_trigger = no
+						}
+					}
 				}
 				subtract = {
 					value = 500

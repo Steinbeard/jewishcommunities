@@ -289,6 +289,93 @@ shim guide's 2026-09-27 note, so it is unconfirmed.
 - Run 13's 5-of-9 stays unexplained. Since `dc506a1` each tick relinks rebbe-less students to the head, so a gap would heal within a quarter.
 - The diagnostics stay in `debug.5` in case it recurs.
 
+## Run 16 (`4be9040`, 2026-10-12): V29 section 11, function ALL PASS, two UX bugs
+
+- **Seeded heads, PASS.** `kehillah_yeshiva_debug.9` on Worms, Narbonne, Jerusalem, Lucena, Baghdad
+  and Sura reads "MASTER head" with focus depth 65+ and teaching XP 8.
+  - Narbonne's focus is PARSHANUT; the others' is TALMUDICS.
+- **Yearly class, PASS.**
+  - Eight September ticks graduated no one.
+  - `debug.8` ordained 6 students, and "The Graduating Class" named Asher.
+  - "Recommend him to Kaiser Heinrich" moved him to that court, with +20 opinion.
+  - "Send him where a community has no rabbi" was hidden: no community lacked one. It is not yet
+    exercised.
+- **Focus change, PASS.**
+  - After Isaac got Parshanut 80, the Parshanut button enabled.
+  - Clicking it set the focus, and `debug.9` read PARSHANUT with the cooldown on.
+- **Narbonne's panel, PASS:** "Teaching: Scripture and its commentators", with no buttons.
+- **BUG:** the current focus did not stand out. A disabled button never shows `down`, so all three
+  looked alike.
+- **BUG:** the best graduate was the player's heir. Recommending him silently replaced the heir.
+- **Fixes in `2115290`:**
+  - Each button's text carries its state (bright, plain or grey), and its tooltip opens with a
+    status line.
+  - The heir is never the class's pick.
+  - Close kin is never offered to the lord.
+- **Label:** "Teaching" became "Teaching focus" (`852c357`).
+
+## Run 17 (`2115290`): the fixes, ALL PASS
+
+- **Panel:**
+  - "Teaching focus:" is followed by the buttons. Talmud is bright; Parshanut and Hashkafa are grey
+    italic.
+  - The tooltips open with "Taught here now." and "Not available now: ...".
+  - After Parshanut 80, Parshanut is plain with "Click to make this what the yeshiva teaches."
+  - After clicking, Parshanut is bright and the others are grey.
+- **Class:**
+  - 9 ordained. The pick, Gavriel, was the leader's grandson but not his heir.
+  - Only "Keep him here" was offered: the lord option is hidden for kin, as intended.
+- **error.log:** nothing from the scripted GUIs or loc functions.
+- **CRASH on the first boot, attributed to the session, not the mod.**
+  - An ACCESS_VIOLATION right after the game-start autosave (`crashes/ck3_20261012_011814`).
+  - The loc file was edited and committed at 01:18:13-14, while the test game was starting. Debug
+    mode hot-reloaded localization (errors stamped 01:18:16) and crashed.
+  - The relaunch with identical files ran clean.
+  - **Rule:** no mod-file edits while a debug-mode test game is booting.
+
+## Run 18 (`29e08ae`, 2026-10-12): the yeshiva's news (V29 section 12), PARTIAL
+
+- **Fired correctly:**
+  - The first tick produced one "New Students" feed entry for 6 enrolments, and no chavruta spam.
+  - Later travellers each produced "A New Student".
+  - Works and subjects mastered were logged and messaged.
+- **BUG:** every message body was blank. All kehillah message types used `desc = event_message_effect`, while each call passes its own desc. So the bodies of every mod message (band, goal, policy, endorsement) had always been blank.
+- **BUG:** "A Work Mastered" showed as a top-centre toast. Vanilla's `character_lifestyle` filter is a toast.
+- **Fixes in `583db48`:**
+  - `event_message_text_and_effect` for all types.
+  - A new `kehillah_yeshiva_news` filter (feed, court group), with a "Yeshiva News" settings row.
+- **First boot crashed** at 01:47:33, during another session's Bet Din writing pass (files saved 01:47:19-33). The relaunch was clean.
+
+## Run 19 (`583db48`): message text and feed, PASS
+
+- **Bodies render:**
+  - "6 new students have joined the yeshiva, among them Binyamin."
+  - "Yehoshua has mastered Mekhilta de-Rabbi Yishmael at the yeshiva."
+  - "New Dayyan" also has its body.
+- **Placement:** "A Work Mastered" now sits in the side feed. "Yeshiva News" is in Message Settings, set to Feed.
+- **Open:**
+  - `debug.10` gave all 5 present students the same work. That may be one random roll shared within a single effect execution. Natural mastery is 10% per student per quarter, so this rarely matters.
+  - "New Chavrutot" and the "from afar" text are not yet seen live.
+  - Unrelated finds, outside this feature:
+    - `kehillah_settlement_conditions.0004` showed raw loc keys;
+    - an "Unknown formatting tag 'vgrant'" when opening the Message Log.
+## Run 20 (`280e795`, 2026-10-12): V30 community news, ALL PASS
+
+Spec: [docs/spec/v30-community-news.md](../spec/v30-community-news.md). Each item was triggered by a console run file, and its body was read from the side feed. None appeared as a banner.
+
+- **"Your Lord Has Died":** "Kaiser Heinrich, lord over your community, has died. Duke Gottfried is his heir -- what he will make of the Jews remains to be seen." (He holds c_worms and is also its top liege.)
+- **"New Leadership":** "Parnas Shaul now leads the Kehillah of Speyer."
+- **"A Community in Crisis":** "The Kehillah of Mainz is in crisis: its people are divided and its order is failing."
+- **"A New Yeshiva":** "The Kehillah of Mainz has founded a yeshiva under Rav Isaac."
+- **Bet Din and charter texts, through the helper:**
+  - "The Bet Din convened by Rav Isaac of the Kehillah of Mainz has concluded. Its rulings were sound, and the parties went home satisfied."
+  - "The Kehillah of Mainz has passed to a new lord. Its Jews must seek a new charter."
+- **Negative check:** news about Isaac's own community is not sent to Isaac.
+- **Settings:** "Community News" appears in Message Settings, set to Feed.
+- **Volume:** exactly one entry per trigger, and no other spam.
+- **error.log:** nothing from the feature. (The test's own kill commands used an invalid `death_reason`.)
+- **Not exercised naturally:** a real Bet Din session closing, and a real realm change ending a charter. Only their texts and the helper were tested.
+- **Unrelated:** `kehillah_settlement_conditions.0004` still shows raw loc keys. That file has uncommitted changes from another session.
 ## Not covered yet
 
 - The arrival event `.0301` was fired directly; the trip itself has not yet ended in an arrival.

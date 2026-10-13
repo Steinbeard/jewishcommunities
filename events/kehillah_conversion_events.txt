@@ -1,0 +1,117 @@
+﻿# =====================================================================
+# A CONVERTED KEHILLAH LEADER LEAVES OFFICE. Design: docs/spec/
+# v31-host-teachings-stances-and-factions.md, section 10.1 (Daniel,
+# 2026-10-12: "Converts should be forced to step down").
+#
+# The office is the person who rules on religious law for the
+# congregation, so a leader who has left Judaism cannot keep it. He
+# keeps his life and his household: kehillah_step_down_effect makes him
+# a landless wayfarer, so a player goes on playing him. If no Jewish
+# successor exists the community dissolves through the same teardown
+# Stability collapse and expulsion use.
+#
+# Sent by kehillah_apostasy_on_actions.txt (a day after the convert
+# window) and kehillah_conversion_on_actions.txt (the quarterly sweep
+# that catches vanilla's forced conversion, which fires no on_action).
+# The title transfer runs here, in a hidden event, never inside an
+# option: the tooltip dry-run hazard recorded for the Norman Conquest
+# chain and V30's departure events.
+#
+# A secret convert (vanilla's crypto-religionist secret) has changed
+# faith too, and steps down like any other. What a secretly Jewish
+# wayfarer can do afterwards is an open V31 question.
+# =====================================================================
+
+namespace = kehillah_conversion
+
+kehillah_conversion.0001 = {
+	type = character_event
+	hidden = yes
+
+	trigger = {
+		kehillah_leader_left_judaism_trigger = yes
+	}
+
+	immediate = {
+		debug_log = "kehillah_conversion.0001: a converted leader leaves office"
+		debug_log_scopes = yes
+		save_scope_as = kehillah_conversion_convert
+
+		# Vanilla's forced conversion fires no on_faith_conversion, so the
+		# apostate trait may not have been given yet.
+		if = {
+			limit = { NOT = { has_trait = kehillah_apostate_trait } }
+			add_trait = kehillah_apostate_trait
+		}
+		if = {
+			limit = { has_trait = kehillah_rabbi_trait }
+			kehillah_remove_rabbi_trait_effect = yes
+		}
+
+		if = {
+			limit = { exists = primary_title.current_heir }
+			primary_title = { save_scope_as = kehillah_conversion_community }
+			primary_title.current_heir = { save_scope_as = kehillah_conversion_successor }
+			kehillah_step_down_effect = yes
+			debug_log = "kehillah_conversion.0001: STEPPED DOWN to the appointment heir"
+		}
+		else = {
+			kehillah_dissolve_community_effect = yes
+			debug_log = "kehillah_conversion.0001: NO HEIR, the community dissolved"
+		}
+
+		# Two days on, so the successor has taken up the Kehillah government
+		# and is styled as its leader (live 2026-10-12: sent at once, the
+		# notice named him "Duke").
+		if = {
+			limit = { is_ai = no }
+			trigger_event = { id = kehillah_conversion.0002 days = 2 }
+		}
+	}
+}
+
+# The convert's notice (players only).
+kehillah_conversion.0002 = {
+	type = character_event
+	title = kehillah_conversion.0002.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:kehillah_conversion_successor }
+				desc = kehillah_conversion.0002.desc.successor
+			}
+			desc = kehillah_conversion.0002.desc.dissolved
+		}
+	}
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:kehillah_conversion_successor
+		trigger = { exists = scope:kehillah_conversion_successor }
+	}
+
+	# Daniel, 2026-10-12: a player may carry on as the community's new
+	# leader instead of the convert. Offered only when the successor is a
+	# playable ruler not already held by another player.
+	option = {
+		name = kehillah_conversion.0002.heir
+		trigger = {
+			exists = scope:kehillah_conversion_successor
+			scope:kehillah_conversion_successor = {
+				is_alive = yes
+				is_ai = yes
+				is_playable_character = yes
+				government_has_flag = government_is_kehillah
+			}
+		}
+		set_player_character = scope:kehillah_conversion_successor
+	}
+
+	option = {
+		name = kehillah_conversion.0002.a
+	}
+}

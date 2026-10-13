@@ -69,9 +69,13 @@ bands.
   The seats have their own tasks: Raise Communal Revenue, Oversee Construction, Petition the
   Host, Keep the Night Watch, Prepare the Bet Din, and others.
 - **Court positions:** Rosh Yeshiva, Sofer, Shochet, Gabbai Tzedakah and Mikvah Attendant.
-- **Registered householder families (ba'alei batim)** with their own standing. Families arrive
-  from other communities and leave for them, usually nearby ones. Leading families compete for
-  the leadership.
+- **Householder families (ba'alei batim).** Every Jewish family settled at the leader's court
+  counts. The head of each family is marked **Ba'al Bayit** and earns a modest income. Each
+  family's trade adds to a pillar: merchants to Prosperity, scholars to Greatness, and advocates
+  to Stability. When the community has room, it grows from within first: a councillor, or an
+  established, capable or wealthy courtier, sets up a household of his own. After that, families
+  come from other communities. Families leave when Stability falls or the host turns hostile.
+  All of this happens in the background, with a notification when a family comes or goes.
 
 ### Rabbis, study and the yeshiva
 
@@ -106,9 +110,16 @@ bands.
 - Each community holds a **charter** from its host, with different terms under Christian and
   Muslim rulers: the right to build, security, jurisdiction, market access, the right to lend
   at interest, a walled quarter, and the freedom to study the Talmud.
-- Every realm has a **Jewish Settlement Policy** (Discouraged, Allowed or Encouraged). It decides
-  whether new communities may be founded there and what charter terms they get. Non-Jewish
-  rulers can raise or lower it by decision.
+- Every realm has a **Jewish Settlement Policy** (Banned, Discouraged, Allowed or Encouraged). It
+  decides whether new communities may be founded there and what charter terms they get.
+  Non-Jewish rulers can raise or lower it by decision. AI rulers review it now and then. They
+  weigh their zeal, their debts to Jewish lenders and their grievances against their sense of
+  justice, their patrons and the community's value. The notice gives the reason for any change.
+- **Expulsion.** When a realm bans Jewish settlement, every community in it is given a year to
+  leave. A community can plead through its Shtadlan, offer a ransom, leave in good order, or
+  wait. When the year is up it must go, or live in hiding until it is driven out. The crown
+  seizes much of its wealth and voids its debts. The community ends and its leader takes to
+  the road, free to found a new community elsewhere.
 - **Contracts:** lend to a neighbouring ruler, commission a translation, or tutor a noble in
   Hebrew. Each is a chain of challenges that can succeed or fail.
 - **The Norman Conquest** brings an invitation to settle in England, followed by royal loans to
@@ -116,8 +127,8 @@ bands.
 
 ### Community life
 
-- **Community decisions:** Distribute Tzedakah, Secure Construction Permission, Review the
-  Householders, and **Set the Community's Goal**, which gives the community ten years to reach
+- **Community decisions:** Distribute Tzedakah, Secure Construction Permission, and **Set the
+  Community's Goal**, which gives the community ten years to reach
   one of four goals.
 - Yearly **family disputes** for the leader to rule on, and **protection events** when the
   community is threatened.
@@ -152,7 +163,8 @@ The mod is in active development, and not every system has been playtested to th
 The government, succession, Jewish Quarter, council, Bet Din, ordination and yeshiva systems
 have all been tested in the live game. The newest additions are less well covered. They
 include the patronyms and priestly lines, parts of the yeshiva's student life, and the
-responsa letter exchange. [ROADMAP.md](ROADMAP.md) has the detailed state of each feature.
+responsa letter exchange. Expulsion, the AI rulers' policy reviews and the reworked
+householders have not been tested in the live game yet. [ROADMAP.md](ROADMAP.md) has the detailed state of each feature.
 
 ## Design
 

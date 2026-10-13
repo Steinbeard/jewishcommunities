@@ -1,0 +1,108 @@
+﻿# =====================================================================
+# Ba'alei batim (V26 part 2, reworked 2026-10-12 per v30). Triggers.
+# docs/spec/v30-expulsion-and-householders.md
+# =====================================================================
+
+# Scope: a courtier. A householder: a Jewish man of the community who
+# heads, or could head, a household of his own -- married, or at least
+# 25. A yeshiva student enrolled away from home is a guest, not a
+# householder. The leader is always one, whatever his age or gender
+# (kehillah_household_refresh_effect adds his house separately).
+kehillah_householder_trigger = {
+	is_adult = yes
+	is_male = yes
+	exists = house
+	is_jewish_character_trigger = yes
+	NOT = { has_variable = kehillah_yeshiva_enrolled }
+	OR = {
+		is_married = yes
+		age >= 25
+		# Raised to head a household of his own when the community
+		# needed another family (kehillah_household_promote_effect).
+		has_variable = kehillah_baal_bayit_promoted
+	}
+}
+
+# Scope: a household (dynasty house) on a community's register. It holds
+# a council seat or an office there (kehillah_household_seats), so it has
+# a stake in staying and is never the family that leaves.
+kehillah_household_has_seat_trigger = {
+	has_variable = kehillah_household_seats
+	var:kehillah_household_seats > 0
+}
+
+# Scope: a community title. Its host realm (resolved through the
+# holder's Quarter) welcomes or allows Jewish settlement, so families
+# may move there.
+kehillah_household_destination_open_trigger = {
+	exists = holder
+	holder = {
+		government_has_flag = government_is_kehillah
+		kehillah_host_policy_allows_jewish_settlement_trigger = yes
+		NOT = { kehillah_expulsion_pending_trigger = yes }
+	}
+}
+
+# Scope: a community title. Families there are under pressure to leave:
+# low Stability, or a host realm that discourages or bans Jews.
+kehillah_household_community_pressed_trigger = {
+	exists = holder
+	OR = {
+		AND = {
+			has_variable = kehillah_var_stability
+			var:kehillah_var_stability < kehillah_band_strained_threshold
+		}
+		holder = { NOT = { kehillah_host_policy_allows_jewish_settlement_trigger = yes } }
+	}
+}
+
+# Scope: a courtier, with scope:kh_seat_leader saved. A householder an
+# AI leader may seat in an empty council seat: not already serving, not
+# of the ruling house (whose members already stand as the leader's
+# family), free and at court.
+kehillah_household_seat_candidate_trigger = {
+	kehillah_householder_trigger = yes
+	is_councillor = no
+	has_any_court_position = no
+	is_imprisoned = no
+	NOT = { house ?= scope:kh_seat_leader.house }
+}
+
+# Scope: a courtier, with scope:kh_rec_leader and scope:kh_rec_title
+# saved. A man the community could raise to head a household of its
+# own: a Jewish adult man at court who is not of the ruling house, not
+# already counted as a householder here, and not of a family that is
+# another community's. A lowborn man qualifies (he founds a family name).
+kehillah_household_promotable_trigger = {
+	is_adult = yes
+	is_male = yes
+	is_imprisoned = no
+	is_jewish_character_trigger = yes
+	NOT = { has_variable = kehillah_yeshiva_enrolled }
+	NOT = { this = scope:kh_rec_leader }
+	OR = {
+		NOT = { exists = house }
+		house ?= {
+			NOT = { this = scope:kh_rec_leader.house }
+			NOT = { exists = var:kehillah_household_of }
+		}
+	}
+}
+
+# Scope: a courtier. Established, skilled or wealthy enough to found a
+# household of his own.
+kehillah_household_notable_trigger = {
+	OR = {
+		dynasty ?= { dynasty_prestige_level >= 1 }
+		learning >= 12
+		stewardship >= 12
+		diplomacy >= 12
+		gold >= 100
+	}
+}
+
+# Scope: a character. A ba'al bayit: the head of one of a community's
+# householder families. For events that need one to point at.
+kehillah_is_baal_bayit_trigger = {
+	has_character_modifier = kehillah_baal_bayit_modifier
+}

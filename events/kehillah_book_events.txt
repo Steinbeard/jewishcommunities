@@ -22,20 +22,23 @@
 #   .0004 REVISE OR PUBLISH -- a Stress-for-quality tradeoff.
 #   .0005 THE BOOK IS FINISHED -- kehillah_book_complete_effect (common/
 #          scripted_effects/kehillah_book_effects.txt) reads the final
-#          tally, creates the artifact, pays out Greatness/Piety/
-#          Prestige.
-#   .0006 SENDING COPIES -- kehillah_book_send_copies_effect, read
+#          tally, chooses a stable work identity, creates the artifact,
+#          and pays out Greatness/Piety/Prestige.
+#   .0006 SPREADING NEWS -- kehillah_book_send_copies_effect, read
 #          against global_variable_list kehillah_registered_communities
 #          (common/on_action/kehillah_on_actions.txt).
-#   .0007 A NEW BOOK ARRIVES -- fired on every OTHER registered
+#   .0007 NEWS OF A NEW WORK -- fired on every OTHER registered
 #          community's leader, naming the author via scope:kehillah_
 #          book_author (saved before the scope switch into each
-#          recipient).
+#          recipient). It reads the author's chosen work identity rather
+#          than the genre, which has already been cleared by this point.
+#          It grants minor Piety and Learning XP; it does
+#          not add a library work or transfer the author's artifact.
 #
 # root is the SAME writing character throughout .0001-.0006 (no
 # cross-character retargeting needed, unlike the Bet Din docket, which
 # hops between three different judges by construction) -- var:kehillah_
-# book_genre/_tally/_tier are character variables on that one root, not
+# book_genre/_tally/_tier/_work are character variables on that one root, not
 # global_var, for exactly that reason (see kehillah_book_effects.txt's
 # own header). Only .0007 changes root, to each recipient leader.
 # =====================================================================
@@ -59,6 +62,11 @@ kehillah_book.0001 = {
 
 	trigger = {
 		government_has_flag = government_is_kehillah
+	}
+	immediate = {
+		# A previous work's identity must not bleed into a new manuscript.
+		remove_variable = kehillah_book_work
+		remove_variable = kehillah_book_bet_din_inspiration
 	}
 
 	option = {
@@ -210,6 +218,7 @@ kehillah_book.0002 = {
 			kehillah_has_good_bet_din_memory_trigger = yes
 		}
 		change_variable = { name = kehillah_book_tally add = kehillah_book_bet_din_memory_gain }
+		set_variable = { name = kehillah_book_bet_din_inspiration value = yes }
 		custom_tooltip = kehillah_book.0002.d.tt
 	}
 
@@ -443,7 +452,7 @@ kehillah_book.0005 = {
 }
 
 # ---------------------------------------------------------------------
-# kehillah_book.0006 -- SENDING COPIES
+# kehillah_book.0006 -- SPREADING NEWS
 # ---------------------------------------------------------------------
 
 kehillah_book.0006 = {
@@ -471,10 +480,12 @@ kehillah_book.0006 = {
 }
 
 # ---------------------------------------------------------------------
-# kehillah_book.0007 -- A NEW BOOK ARRIVES
+# kehillah_book.0007 -- NEWS OF A NEW WORK
 # Root: the RECIPIENT leader (an OTHER registered community's current
 # holder). scope:kehillah_book_author is the writer, saved before the
-# scope switch in kehillah_book_send_copies_effect.
+# scope switch in kehillah_book_send_copies_effect. Its work flag was
+# chosen at completion and remains on the author through this delayed
+# event, so the title and contents match the artifact even 30 days later.
 # ---------------------------------------------------------------------
 
 kehillah_book.0007 = {
@@ -483,29 +494,8 @@ kehillah_book.0007 = {
 	desc = {
 		first_valid = {
 			triggered_desc = {
-				trigger = {
-					exists = scope:kehillah_book_author
-					scope:kehillah_book_author = { var:kehillah_book_genre = flag:hashkafa }
-				}
-				desc = kehillah_book.0007.desc.hashkafa
-			}
-			triggered_desc = {
-				trigger = {
-					exists = scope:kehillah_book_author
-					scope:kehillah_book_author = { var:kehillah_book_genre = flag:parshanut }
-				}
-				desc = kehillah_book.0007.desc.parshanut
-			}
-			triggered_desc = {
-				trigger = {
-					exists = scope:kehillah_book_author
-					scope:kehillah_book_author = { var:kehillah_book_genre = flag:talmudics }
-				}
-				desc = kehillah_book.0007.desc.talmudics
-			}
-			triggered_desc = {
 				trigger = { exists = scope:kehillah_book_author }
-				desc = kehillah_book.0007.desc.poetry
+				desc = kehillah_book.0007.desc
 			}
 			desc = kehillah_book.0007.desc.generic
 		}

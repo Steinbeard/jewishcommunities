@@ -5,8 +5,8 @@
 #   event kehillah_household_debug.3  -- force a departure attempt
 #   event kehillah_household_debug.4  -- run the full yearly pass
 #   event kehillah_household_debug.5  -- report every community's count
-#   event kehillah_household_debug.6  -- why the succession standing term
-#                                        does or doesn't apply, per councillor
+#   event kehillah_household_debug.6  -- per councillor: is his family a
+#                                        householder family here
 #   event kehillah_household_debug.7  -- make root a lay leader and check
 #                                        faith-organization membership
 #   event kehillah_household_debug.8  -- READ-ONLY clerical-continuation
@@ -17,17 +17,6 @@
 #   event kehillah_household_debug.10 -- have an AI community's lowest
 #                                        household move to YOUR community,
 #                                        firing the .0003 arrival event
-#   event kehillah_household_debug.11 -- READ-ONLY. V26 slice 2: per
-#                                        household, whether the standing
-#                                        term's guard passes AND whether
-#                                        default_candidates can reach the
-#                                        family at all; plus the current
-#                                        title heir ordering
-#   event kehillah_household_debug.12 -- A/B step: max one household's
-#                                        standing (saving the old value),
-#                                        then unpause and re-run .11
-#   event kehillah_household_debug.13 -- undo .12, restoring the saved
-#                                        standing
 namespace = kehillah_household_debug
 
 kehillah_household_debug.1 = {
@@ -128,7 +117,7 @@ kehillah_household_debug.6 = {
 	type = character_event
 	hidden = yes
 	immediate = {
-		debug_log = "kehillah_household_debug.6: succession standing term -- START"
+		debug_log = "kehillah_household_debug.6: councillors and their households -- START"
 		primary_title = { save_scope_as = kh_dbg_title }
 		every_councillor = {
 			save_scope_as = kh_dbg_councillor
@@ -141,11 +130,7 @@ kehillah_household_debug.6 = {
 					limit = { has_variable = kehillah_household_of }
 					if = {
 						limit = { var:kehillah_household_of = scope:kh_dbg_title }
-						if = {
-							limit = { has_variable = kehillah_household_standing }
-							debug_log = "kehillah_household_debug.6: PASS registered here with standing (term should apply)"
-						}
-						else = { debug_log = "kehillah_household_debug.6: registered here but NO standing yet" }
+						debug_log = "kehillah_household_debug.6: PASS a householder family of this community"
 					}
 					else = { debug_log = "kehillah_household_debug.6: registered to ANOTHER community" }
 				}
@@ -157,7 +142,7 @@ kehillah_household_debug.6 = {
 			}
 			else = { debug_log = "kehillah_household_debug.6: exists = house is FALSE" }
 		}
-		debug_log = "kehillah_household_debug.6: succession standing term -- END"
+		debug_log = "kehillah_household_debug.6: councillors and their households -- END"
 	}
 }
 
@@ -469,204 +454,5 @@ kehillah_household_debug.10 = {
 	}
 }
 
-# ---------------------------------------------------------------------
-# V26 BA'ALEI BATIM SLICE 2 -- DOES STANDING ACTUALLY MOVE A SUCCESSION?
-# Added 2026-10-10 (Shabbat heartbeat 5).
-#
-# The standing term in common/succession_appointment/kehillah_leadership.txt
-# shipped 2026-10-09 and has never had a live verdict. Two separate
-# questions, and .11 is built to keep them apart, because passing the first
-# while failing the second is precisely the state the term was in:
-#
-#   1. GUARD -- would the term read this family's standing at all?
-#      (has_variable standing, has_variable household_of, household_of
-#      pointing at THIS title.) This is what the older .6 probe checks.
-#   2. POOL -- can default_candidates even reach a member of this family?
-#      The pool is holder_close_family + holder_court_position +
-#      holder_councilor. A registered householder is a COURTIER, which is
-#      none of those. So a Leading family with no office and no council
-#      seat cannot be a candidate, and the term scores nobody, however
-#      high its standing. .6 cannot see this, because it iterates
-#      every_councillor and so only ever looks at characters that are
-#      already in the pool.
-#
-# If POOL NO comes back for every household in a real game, the term is
-# inert in ordinary play and V26's "leading families compete" premise needs
-# a pool change (an invested/appointment candidate category, or seating
-# householders), not a scoring change. Record the answer either way.
-# ---------------------------------------------------------------------
-kehillah_household_debug.11 = {
-	type = character_event
-	hidden = yes
-	immediate = {
-		debug_log = "kehillah_household_debug.11: slice 2 standing-in-succession -- START"
-		primary_title = {
-			save_scope_as = kh_ab_title
-
-			# The ordering as it stands. Run .11, then .12, then unpause a few
-			# days, then .11 again: if the heir named here changes, standing
-			# demonstrably moved the succession. Do NOT read a no-change result
-			# as a FAIL on its own -- check the POOL lines below first, and see
-			# .12's note on recalculation.
-			if = {
-				limit = { any_title_heir = { always = yes } }
-				every_title_heir = {
-					debug_log = "kehillah_household_debug.11: TITLE HEIR (identity in scopes dump)"
-					debug_log_scopes = yes
-				}
-			}
-			else = { debug_log = "kehillah_household_debug.11: TITLE HEIR NONE -- nothing to order, the rest of this report cannot mean anything" }
-
-			if = {
-				limit = { any_in_list = { variable = kehillah_households count >= 1 } }
-				debug_log = "kehillah_household_debug.11: REGISTER has at least one household"
-			}
-			else = { debug_log = "kehillah_household_debug.11: REGISTER EMPTY -- run .1 first, this report is vacuous" }
-
-			every_in_list = {
-				variable = kehillah_households
-				save_scope_as = kh_ab_house
-				debug_log = "kehillah_household_debug.11: HOUSEHOLD (house and standing in scopes dump)"
-				debug_log_scopes = yes
-
-				# Question 1: the guard.
-				if = {
-					limit = {
-						has_variable = kehillah_household_standing
-						has_variable = kehillah_household_of
-						var:kehillah_household_of = scope:kh_ab_title
-					}
-					debug_log = "kehillah_household_debug.11: GUARD PASS the term would read this family's standing"
-				}
-				else_if = {
-					limit = { NOT = { has_variable = kehillah_household_standing } }
-					debug_log = "kehillah_household_debug.11: GUARD FAIL no standing variable yet (refresh has not run)"
-				}
-				else_if = {
-					limit = { NOT = { has_variable = kehillah_household_of } }
-					debug_log = "kehillah_household_debug.11: GUARD FAIL no household_of variable"
-				}
-				else = { debug_log = "kehillah_household_debug.11: GUARD FAIL registered to ANOTHER community -- this is the migration case the 2026-10-10 fix added" }
-
-				# Question 2: the pool. Counted per member rather than asked as
-				# one any_house_member trigger, so the log names WHICH relative
-				# is the family's way into the candidate list.
-				set_local_variable = { name = kh_ab_pool value = 0 }
-				every_house_member = {
-					save_scope_as = kh_ab_member
-					if = {
-						limit = { is_councillor_of = scope:kh_ab_title.holder }
-						change_local_variable = { name = kh_ab_pool add = 1 }
-						debug_log = "kehillah_household_debug.11: POOL MEMBER holds a COUNCIL SEAT (scopes dump follows)"
-						debug_log_scopes = yes
-					}
-					else_if = {
-						limit = {
-							scope:kh_ab_title.holder ?= {
-								any_court_position_holder ?= { this = scope:kh_ab_member }
-							}
-						}
-						change_local_variable = { name = kh_ab_pool add = 1 }
-						debug_log = "kehillah_household_debug.11: POOL MEMBER holds a COURT POSITION (scopes dump follows)"
-						debug_log_scopes = yes
-					}
-					else_if = {
-						limit = { scope:kh_ab_title.holder ?= { is_close_family_of = scope:kh_ab_member } }
-						change_local_variable = { name = kh_ab_pool add = 1 }
-						debug_log = "kehillah_household_debug.11: POOL MEMBER is CLOSE FAMILY of the leader (scopes dump follows)"
-						debug_log_scopes = yes
-					}
-				}
-				if = {
-					limit = { local_var:kh_ab_pool > 0 }
-					debug_log = "kehillah_household_debug.11: POOL YES this family can be reached by default_candidates, so its standing can score"
-				}
-				else = { debug_log = "kehillah_household_debug.11: POOL NO no member holds a seat, an office, or close kinship -- default_candidates cannot reach this family, so its standing scores NOBODY" }
-			}
-		}
-		debug_log = "kehillah_household_debug.11: slice 2 standing-in-succession -- END"
-	}
-}
-
-# A/B step. Maxes the standing of the FIRST household the register yields
-# that the term's guard actually passes, saving the old value on the house
-# so .13 can put it back. 60 is chosen because the term multiplies by 0.5
-# and caps at 30, so 60 is the smallest value that pins the term at its
-# ceiling -- a bigger number would change nothing and would hide a broken
-# cap.
-#
-# RECALCULATION. The engine does not necessarily recompute an appointment
-# title's heir inside the same effect that moves the inputs, so reading the
-# heir back immediately here could report a stale ordering and look like a
-# FAIL. That is why this probe deliberately does NOT report the heir: run
-# .11, then .12, then let the game TICK (unpause a few days), then .11
-# again. Splitting it is the whole point.
-kehillah_household_debug.12 = {
-	type = character_event
-	hidden = yes
-	immediate = {
-		debug_log = "kehillah_household_debug.12: max one household's standing -- START"
-		primary_title = {
-			save_scope_as = kh_ab_title
-			if = {
-				limit = {
-					any_in_list = {
-						variable = kehillah_households
-						has_variable = kehillah_household_standing
-						has_variable = kehillah_household_of
-						var:kehillah_household_of = scope:kh_ab_title
-					}
-				}
-				random_in_list = {
-					variable = kehillah_households
-					limit = {
-						has_variable = kehillah_household_standing
-						has_variable = kehillah_household_of
-						var:kehillah_household_of = scope:kh_ab_title
-					}
-					save_scope_as = kh_ab_house
-					if = {
-						limit = { NOT = { has_variable = kh_ab_saved_standing } }
-						set_variable = { name = kh_ab_saved_standing value = var:kehillah_household_standing }
-						debug_log = "kehillah_household_debug.12: SAVED the old standing (both values in scopes dump)"
-					}
-					else = { debug_log = "kehillah_household_debug.12: a saved standing ALREADY EXISTS -- .12 was run twice without .13; keeping the original save" }
-					set_variable = { name = kehillah_household_standing value = 60 }
-					debug_log = "kehillah_household_debug.12: BOOSTED this family to standing 60 (term pinned at its cap of 30)"
-					debug_log_scopes = yes
-				}
-				debug_log = "kehillah_household_debug.12: now UNPAUSE a few days and run .11 again"
-			}
-			else = { debug_log = "kehillah_household_debug.12: NO ELIGIBLE HOUSEHOLD -- nothing on the register passes the term's guard; run .1 first" }
-		}
-		debug_log = "kehillah_household_debug.12: max one household's standing -- END"
-	}
-}
-
-# Undo .12. Restores the saved standing and clears the save, so the A/B can
-# be run again. Reports whether it had anything to restore rather than
-# claiming success unconditionally -- the trap that made .4 lie about a
-# building it never built.
-kehillah_household_debug.13 = {
-	type = character_event
-	hidden = yes
-	immediate = {
-		debug_log = "kehillah_household_debug.13: restore the boosted standing -- START"
-		primary_title = {
-			if = {
-				limit = { any_in_list = { variable = kehillah_households has_variable = kh_ab_saved_standing } }
-				every_in_list = {
-					variable = kehillah_households
-					limit = { has_variable = kh_ab_saved_standing }
-					save_scope_as = kh_ab_house
-					set_variable = { name = kehillah_household_standing value = var:kh_ab_saved_standing }
-					remove_variable = kh_ab_saved_standing
-					debug_log = "kehillah_household_debug.13: RESTORED (restored standing in scopes dump)"
-					debug_log_scopes = yes
-				}
-			}
-			else = { debug_log = "kehillah_household_debug.13: NOTHING TO RESTORE -- .12 has not run, or .13 already did. No standing was changed by this call." }
-		}
-		debug_log = "kehillah_household_debug.13: restore the boosted standing -- END"
-	}
-}
+# .11-.13 (the V26 standing-term A/B probes) were removed 2026-10-12 with
+# household standing itself (docs/spec/v30-expulsion-and-householders.md).

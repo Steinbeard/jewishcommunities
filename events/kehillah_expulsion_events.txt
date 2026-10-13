@@ -1,0 +1,434 @@
+﻿# =====================================================================
+# EXPULSION (ROADMAP S9b). Design: docs/spec/v30-expulsion-and-
+# householders.md. Mechanism: common/scripted_effects/
+# kehillah_expulsion_effects.txt (read its header first).
+#
+#   .0001  the edict reaches the community (counterplay: plead through
+#          the Shtadlan, offer a ransom, leave in good order, or wait)
+#   .0002  the host hears the plea (AI hosts answer by ai_chance)
+#   .0003  the plea is refused
+#   .0004  the ransom is taken and the edict stands (a deceitful host)
+#   .0005  the edict is withdrawn
+#   .0010  the year is up: leave, or stay in hiding
+#   .0011  the community in hiding is driven out
+#   .0020-.0022  hidden: the departure itself, one per route
+#
+# THE DEPARTURE RUNS IN A HIDDEN FOLLOW-UP EVENT, never inside an
+# option. CK3 walks an option's effects -- hidden_effect included -- to
+# build its tooltip every frame the event is on screen, and the teardown
+# creates a title and saves scopes; the Norman Conquest chain logged
+# ~15,600 errors in one test from exactly this shape (2026-09-29 S8a log).
+#
+# Every event fires for AI communities too: an AI leader resolves the
+# same options by ai_chance, so expulsion reaches the whole world.
+# =====================================================================
+
+namespace = kehillah_expulsion
+
+
+# ---------------------------------------------------------------------
+# .0001 -- The edict. Fired by kehillah_expulsion_start_effect, and again
+# by the "Answer the Edict" decision while a plea route is still open.
+# ---------------------------------------------------------------------
+kehillah_expulsion.0001 = {
+	type = character_event
+	title = kehillah_expulsion.0001.t
+	desc = kehillah_expulsion.0001.desc
+	theme = realm
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+		kehillah_expulsion_pending_trigger = yes
+	}
+
+	immediate = {
+		save_scope_as = kehillah_exp_leader
+		primary_title = { save_scope_as = kehillah_exp_title }
+		primary_title.var:kehillah_expulsion_host ?= { save_scope_as = kehillah_exp_host }
+		# Display copy for the ransom option's tooltip. Not named
+		# kehillah_exp_ransom: .0002 reads that name as "a ransom was offered".
+		save_scope_value_as = { name = kehillah_exp_ransom_offer value = kehillah_expulsion_ransom_value }
+	}
+
+	left_portrait = {
+		character = root
+		animation = shock
+	}
+	right_portrait = {
+		character = scope:kehillah_exp_host
+		animation = dismissal
+	}
+
+	# Send the Shtadlan to plead.
+	option = {
+		name = kehillah_expulsion.0001.a
+		trigger = {
+			exists = cp:councillor_chancellor
+			exists = scope:kehillah_exp_host
+			NOT = { primary_title = { has_variable = kehillah_expulsion_pleaded } }
+		}
+		show_as_unavailable = { always = yes }
+		custom_tooltip = kehillah_expulsion.0001.a.tt
+		primary_title = { set_variable = kehillah_expulsion_pleaded }
+		scope:kehillah_exp_host = { trigger_event = { id = kehillah_expulsion.0002 days = 7 } }
+		ai_chance = {
+			base = 60
+		}
+	}
+
+	# Offer a ransom for the edict's repeal.
+	option = {
+		name = kehillah_expulsion.0001.b
+		trigger = {
+			exists = scope:kehillah_exp_host
+			gold >= kehillah_expulsion_ransom_value
+			NOT = { primary_title = { has_variable = kehillah_expulsion_ransomed } }
+		}
+		show_as_unavailable = { always = yes }
+		save_scope_value_as = { name = kehillah_exp_ransom value = kehillah_expulsion_ransom_value }
+		custom_tooltip = kehillah_expulsion.0001.b.tt
+		primary_title = { set_variable = kehillah_expulsion_ransomed }
+		scope:kehillah_exp_host = { trigger_event = { id = kehillah_expulsion.0002 days = 7 } }
+		ai_chance = {
+			base = 30
+		}
+	}
+
+	# Leave now, in good order, with most of what the community owns.
+	option = {
+		name = kehillah_expulsion.0001.c
+		custom_tooltip = kehillah_expulsion.0001.c.tt
+		hidden_effect = { trigger_event = kehillah_expulsion.0020 }
+		ai_chance = {
+			base = 10
+		}
+	}
+
+	# Wait, and hope.
+	option = {
+		name = kehillah_expulsion.0001.d
+		custom_tooltip = kehillah_expulsion.0001.d.tt
+		ai_chance = {
+			base = 20
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# .0002 -- The host hears the plea. Saved scopes: kehillah_exp_leader,
+# kehillah_exp_title, kehillah_exp_host; kehillah_exp_ransom if gold was
+# offered.
+# ---------------------------------------------------------------------
+kehillah_expulsion.0002 = {
+	type = character_event
+	title = kehillah_expulsion.0002.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:kehillah_exp_ransom }
+				desc = kehillah_expulsion.0002.desc_ransom
+			}
+			desc = kehillah_expulsion.0002.desc_plea
+		}
+	}
+	theme = realm
+
+	trigger = {
+		exists = scope:kehillah_exp_title.holder
+		scope:kehillah_exp_title.holder = { kehillah_expulsion_pending_trigger = yes }
+		primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes }
+	}
+
+	immediate = {
+		scope:kehillah_exp_title.holder = { save_scope_as = kehillah_exp_leader }
+		if = {
+			limit = { exists = scope:kehillah_exp_leader.cp:councillor_chancellor }
+			scope:kehillah_exp_leader.cp:councillor_chancellor = { save_scope_as = kehillah_exp_shtadlan }
+		}
+	}
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_exp_shtadlan
+		animation = beg
+	}
+	lower_right_portrait = scope:kehillah_exp_leader
+
+	# Repeal the edict.
+	option = {
+		name = kehillah_expulsion.0002.a
+		custom_tooltip = kehillah_expulsion.0002.a.tt
+		if = {
+			limit = {
+				exists = scope:kehillah_exp_ransom
+				scope:kehillah_exp_leader.gold >= scope:kehillah_exp_ransom
+			}
+			scope:kehillah_exp_leader = {
+				pay_short_term_gold = { target = root gold = scope:kehillah_exp_ransom }
+			}
+		}
+		primary_title = { set_variable = { name = kehillah_policy_reason value = flag:plea } }
+		kehillah_raise_jewish_settlement_policy_effect = yes
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = kehillah_expulsion_plea_repeal_weight_value
+			}
+		}
+	}
+
+	# The edict stands.
+	option = {
+		name = kehillah_expulsion.0002.b
+		custom_tooltip = kehillah_expulsion.0002.b.tt
+		scope:kehillah_exp_leader = { trigger_event = kehillah_expulsion.0003 }
+		ai_chance = {
+			base = 50
+		}
+	}
+
+	# Take the gold, and let the edict stand.
+	option = {
+		name = kehillah_expulsion.0002.c
+		trigger = { exists = scope:kehillah_exp_ransom }
+		custom_tooltip = kehillah_expulsion.0002.c.tt
+		if = {
+			limit = { scope:kehillah_exp_leader.gold >= scope:kehillah_exp_ransom }
+			scope:kehillah_exp_leader = {
+				pay_short_term_gold = { target = root gold = scope:kehillah_exp_ransom }
+			}
+		}
+		scope:kehillah_exp_leader = { trigger_event = kehillah_expulsion.0004 }
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 25
+				has_trait = deceitful
+			}
+			modifier = {
+				add = 15
+				has_trait = greedy
+			}
+			modifier = {
+				add = 10
+				has_trait = arbitrary
+			}
+			modifier = {
+				factor = 0
+				has_trait = honest
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# .0003 -- The plea is refused.
+# ---------------------------------------------------------------------
+kehillah_expulsion.0003 = {
+	type = character_event
+	title = kehillah_expulsion.0003.t
+	desc = kehillah_expulsion.0003.desc
+	theme = realm
+
+	trigger = { kehillah_expulsion_pending_trigger = yes }
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:kehillah_exp_host
+		animation = dismissal
+	}
+
+	option = {
+		name = kehillah_expulsion.0003.a
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# .0004 -- The ransom is taken, and the edict stands.
+# ---------------------------------------------------------------------
+kehillah_expulsion.0004 = {
+	type = character_event
+	title = kehillah_expulsion.0004.t
+	desc = kehillah_expulsion.0004.desc
+	theme = realm
+
+	trigger = { kehillah_expulsion_pending_trigger = yes }
+
+	left_portrait = {
+		character = root
+		animation = anger
+	}
+	right_portrait = {
+		character = scope:kehillah_exp_host
+		animation = scheme
+	}
+
+	option = {
+		name = kehillah_expulsion.0004.a
+		add_opinion = {
+			target = scope:kehillah_exp_host
+			modifier = kehillah_ransom_betrayed_opinion
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# .0005 -- The edict is withdrawn (repeal, or the Quarter's county now
+# answers to a realm that does not ban).
+# ---------------------------------------------------------------------
+kehillah_expulsion.0005 = {
+	type = character_event
+	title = kehillah_expulsion.0005.t
+	desc = kehillah_expulsion.0005.desc
+	theme = realm
+
+	trigger = { government_has_flag = government_is_kehillah }
+
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+
+	option = {
+		name = kehillah_expulsion.0005.a
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# .0010 -- The year of grace is over.
+# ---------------------------------------------------------------------
+kehillah_expulsion.0010 = {
+	type = character_event
+	title = kehillah_expulsion.0010.t
+	desc = kehillah_expulsion.0010.desc
+	theme = realm
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+		kehillah_expulsion_pending_trigger = yes
+		kehillah_host_bans_jewish_settlement_trigger = yes
+		NOT = { primary_title = { has_variable = kehillah_expulsion_defiant } }
+	}
+
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_exp_host }
+	}
+
+	left_portrait = {
+		character = root
+		animation = grief
+	}
+	right_portrait = {
+		character = scope:kehillah_exp_host
+		animation = dismissal
+	}
+
+	# Go.
+	option = {
+		name = kehillah_expulsion.0010.a
+		custom_tooltip = kehillah_expulsion.0010.a.tt
+		hidden_effect = { trigger_event = kehillah_expulsion.0021 }
+		ai_chance = {
+			base = 80
+		}
+	}
+
+	# Stay, and live in hiding.
+	option = {
+		name = kehillah_expulsion.0010.b
+		custom_tooltip = kehillah_expulsion.0010.b.tt
+		# V32: defying the edict is a crime the host may arrest the leader for.
+		custom_tooltip = kehillah_expulsion_defiance_crime_tt
+		hidden_effect = { kehillah_host_crime_effect = { CRIME = kehillah_crime_defied_expulsion_opinion } }
+		primary_title = {
+			set_variable = kehillah_expulsion_defiant
+			set_variable = { name = kehillah_expulsion_quarters value = 0 }
+			change_variable = { name = kehillah_var_stability subtract = kehillah_expulsion_defiance_stability_hit }
+			if = {
+				limit = { var:kehillah_var_stability < 0 }
+				set_variable = { name = kehillah_var_stability value = 0 }
+			}
+		}
+		add_stress = medium_stress_gain
+		ai_chance = {
+			base = 20
+			modifier = {
+				add = 30
+				has_trait = stubborn
+			}
+		}
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# .0011 -- The community in hiding is driven out. No choice left.
+# ---------------------------------------------------------------------
+kehillah_expulsion.0011 = {
+	type = character_event
+	title = kehillah_expulsion.0011.t
+	desc = kehillah_expulsion.0011.desc
+	theme = realm
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+		kehillah_expulsion_pending_trigger = yes
+		kehillah_host_bans_jewish_settlement_trigger = yes
+	}
+
+	left_portrait = {
+		character = root
+		animation = grief
+	}
+
+	option = {
+		name = kehillah_expulsion.0011.a
+		custom_tooltip = kehillah_expulsion.0011.a.tt
+		hidden_effect = { trigger_event = kehillah_expulsion.0022 }
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# .0020-.0022 -- the departure, outside any option tooltip.
+# ---------------------------------------------------------------------
+kehillah_expulsion.0020 = {
+	type = character_event
+	hidden = yes
+	trigger = { government_has_flag = government_is_kehillah }
+	immediate = {
+		debug_log = "kehillah_expulsion.0020: leaving in good order"
+		kehillah_expulsion_depart_effect = { SEIZURE = kehillah_expulsion_seized_gold_good_order_value }
+	}
+}
+
+kehillah_expulsion.0021 = {
+	type = character_event
+	hidden = yes
+	trigger = { government_has_flag = government_is_kehillah }
+	immediate = {
+		debug_log = "kehillah_expulsion.0021: leaving at the end of the grace period"
+		kehillah_expulsion_depart_effect = { SEIZURE = kehillah_expulsion_seized_gold_value }
+	}
+}
+
+kehillah_expulsion.0022 = {
+	type = character_event
+	hidden = yes
+	trigger = { government_has_flag = government_is_kehillah }
+	immediate = {
+		debug_log = "kehillah_expulsion.0022: driven out of hiding"
+		kehillah_expulsion_depart_effect = { SEIZURE = kehillah_expulsion_seized_gold_driven_out_value }
+	}
+}

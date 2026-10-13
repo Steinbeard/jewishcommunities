@@ -51,14 +51,12 @@
 # artifact (name/description/modifier) and, at the end, the same tiered
 # Greatness/Piety/Prestige reward regardless of which genre it was.
 #
-# NAME, per genre: two variants (kehillah_book_<genre>_name_1/_2),
-# picked 50/50 by random_list -- one built around the author's own name
-# (set_artifact_name's loc uses the "owner" link, confirmed vanilla
-# syntax: artifacts_l_english.yml's artifact_kris_name is literally
-# "[owner.GetTitledFirstNamePossessiveNoTooltip] Kris"), one a fixed
-# thematic title in the style of a real historical work's short name.
-# Not a large generated pool -- real variety across two axes (tier x
-# genre x name-variant) without an oversized loc surface.
+# NAME AND CONTENT, per genre: kehillah_book_choose_work_effect in
+# kehillah_book_news_effects.txt picks one stable identity. The artifact
+# title/description and the delayed recipient event use that same ID.
+# A Bet Din inspiration can select a subject from a case the author
+# actually remembers. The work flag stays on the character until a new
+# writing project begins; .0007 arrives 30 days after news is sent.
 #
 # MODIFIER, per genre: two variants (common/modifiers/kehillah_book_
 # modifiers.txt), also picked 50/50 -- independent of the name roll and
@@ -78,6 +76,8 @@ kehillah_book_complete_effect = {
 	else = {
 		set_variable = { name = kehillah_book_tier value = flag:masterwork }
 	}
+	kehillah_book_choose_work_effect = yes
+	remove_variable = kehillah_book_bet_din_inspiration
 
 	if = {
 		# UPDATED 2026-09-15: was flag:halakha -- Halakha merged into
@@ -93,10 +93,6 @@ kehillah_book_complete_effect = {
 				SET_TOPIC = flag:no
 			}
 			scope:newly_created_artifact ?= {
-				random_list = {
-					50 = { set_artifact_name = kehillah_book_hashkafa_name_1 }
-					50 = { set_artifact_name = kehillah_book_hashkafa_name_2 }
-				}
 				random_list = {
 					50 = { add_artifact_modifier = kehillah_book_hashkafa_modifier_1 }
 					50 = { add_artifact_modifier = kehillah_book_hashkafa_modifier_2 }
@@ -116,6 +112,7 @@ kehillah_book_complete_effect = {
 					set_artifact_description = kehillah_rabbi_hashkafa_book_desc_masterwork
 					set_artifact_rarity = masterwork
 				}
+				kehillah_book_apply_artifact_identity_effect = yes
 			}
 		}
 		if = {
@@ -142,10 +139,6 @@ kehillah_book_complete_effect = {
 			}
 			scope:newly_created_artifact ?= {
 				random_list = {
-					50 = { set_artifact_name = kehillah_book_parshanut_name_1 }
-					50 = { set_artifact_name = kehillah_book_parshanut_name_2 }
-				}
-				random_list = {
 					50 = { add_artifact_modifier = kehillah_book_parshanut_modifier_1 }
 					50 = { add_artifact_modifier = kehillah_book_parshanut_modifier_2 }
 				}
@@ -164,6 +157,7 @@ kehillah_book_complete_effect = {
 					set_artifact_description = kehillah_rabbi_parshanut_book_desc_masterwork
 					set_artifact_rarity = masterwork
 				}
+				kehillah_book_apply_artifact_identity_effect = yes
 			}
 		}
 		if = {
@@ -190,10 +184,6 @@ kehillah_book_complete_effect = {
 			}
 			scope:newly_created_artifact ?= {
 				random_list = {
-					50 = { set_artifact_name = kehillah_book_talmudics_name_1 }
-					50 = { set_artifact_name = kehillah_book_talmudics_name_2 }
-				}
-				random_list = {
 					50 = { add_artifact_modifier = kehillah_book_talmudics_modifier_1 }
 					50 = { add_artifact_modifier = kehillah_book_talmudics_modifier_2 }
 				}
@@ -212,6 +202,7 @@ kehillah_book_complete_effect = {
 					set_artifact_description = kehillah_rabbi_talmudics_book_desc_masterwork
 					set_artifact_rarity = masterwork
 				}
+				kehillah_book_apply_artifact_identity_effect = yes
 			}
 		}
 		if = {
@@ -238,10 +229,6 @@ kehillah_book_complete_effect = {
 			}
 			scope:newly_created_artifact ?= {
 				random_list = {
-					50 = { set_artifact_name = kehillah_book_poetry_name_1 }
-					50 = { set_artifact_name = kehillah_book_poetry_name_2 }
-				}
-				random_list = {
 					50 = { add_artifact_modifier = kehillah_book_poetry_modifier_1 }
 					50 = { add_artifact_modifier = kehillah_book_poetry_modifier_2 }
 				}
@@ -260,6 +247,7 @@ kehillah_book_complete_effect = {
 					set_artifact_description = kehillah_book_poetry_desc_masterwork
 					set_artifact_rarity = masterwork
 				}
+				kehillah_book_apply_artifact_identity_effect = yes
 			}
 		}
 		if = {
@@ -321,6 +309,8 @@ kehillah_book_complete_effect = {
 # communities (populated at game start, common/on_action/kehillah_on_
 # actions.txt) instead of naming Worms/Speyer/Mainz directly, which
 # several older places in this mod still do.
+# Despite the old effect name, this sends NEWS only. It creates no
+# recipient copy and does not modify kehillah_library_works.
 #
 # HONEST SCOPE CUT: "nearest" is not actually distance-ranked here --
 # every OTHER registered community gets notified, not just the closest
@@ -336,27 +326,96 @@ kehillah_book_complete_effect = {
 # "= {" scope change the way root/this do not, so kehillah_book.0007
 # (root = the RECIPIENT leader, not the author) can still reach
 # scope:kehillah_book_author to name who wrote the book and read their
-# var:kehillah_book_genre -- a character variable that lives on the
-# author, not the recipient, and is only cleared here, once every
-# recipient event has had the chance to read it.
+# var:kehillah_book_work. The old genre-based recipient text could not
+# work: kehillah_book_genre was cleared here, 30 days before recipients
+# saw their event. The stable work identity fixes that mismatch.
 # ---------------------------------------------------------------------
 
 kehillah_book_send_copies_effect = {
 	save_scope_as = kehillah_book_author
 
+	# 2026-10-12 (Daniel; the soak test saw this popup 39 times in 62
+	# years): news of a finished work is no longer the kehillah_book.0007
+	# popup to every community in the world. Within the author's
+	# diplomatic range, each community's ordained rabbis study it a little
+	# (kehillah_book_news_study_effect), and a player leader there gets a
+	# quiet Community News notice naming the work. .0007 stays defined for
+	# kehillah_book_news_debug's previews.
 	every_in_global_list = {
 		variable = kehillah_registered_communities
 		limit = {
 			NOT = { this = root.primary_title }
 			exists = holder
+			holder = { in_diplomatic_range = scope:kehillah_book_author }
 		}
 		holder = {
-			trigger_event = {
-				id = kehillah_book.0007
-				days = 30
+			kehillah_book_news_study_effect = yes
+			every_courtier = {
+				limit = { kehillah_is_ordained_rabbi_trigger = yes }
+				kehillah_book_news_study_effect = yes
+			}
+			if = {
+				limit = { is_ai = no }
+				send_interface_message = {
+					type = msg_kehillah_community_news
+					title = kehillah_book_news_msg_t
+					desc = kehillah_book_news_msg_d
+					left_icon = scope:kehillah_book_author
+				}
 			}
 		}
 	}
 
+	# The notification fires 30 days later; the chosen work must remain
+	# readable on the author until then. The next manuscript clears it.
 	remove_variable = kehillah_book_genre
+}
+
+# Scope: a character in a community within the author's diplomatic range
+# (kehillah_book_send_copies_effect). An ordained rabbi gains a little in
+# the subject of scope:kehillah_book_author's finished work -- its
+# kehillah_book_work flag's prefix: talm_, parsh_, hash_. Poetry gives
+# nothing.
+kehillah_book_news_study_effect = {
+	if = {
+		limit = { kehillah_is_ordained_rabbi_trigger = yes }
+		if = {
+			limit = {
+				scope:kehillah_book_author = {
+					OR = {
+						var:kehillah_book_work ?= flag:talm_agunah
+						var:kehillah_book_work ?= flag:talm_damages
+						var:kehillah_book_work ?= flag:talm_dowry
+						var:kehillah_book_work ?= flag:talm_found
+						var:kehillah_book_work ?= flag:talm_witness
+					}
+				}
+			}
+			add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = kehillah_book_news_rabbi_xp }
+		}
+		else_if = {
+			limit = {
+				scope:kehillah_book_author = {
+					OR = {
+						var:kehillah_book_work ?= flag:parsh_ladder
+						var:kehillah_book_work ?= flag:parsh_shemot
+						var:kehillah_book_work ?= flag:parsh_wells
+					}
+				}
+			}
+			add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_book_news_rabbi_xp }
+		}
+		else_if = {
+			limit = {
+				scope:kehillah_book_author = {
+					OR = {
+						var:kehillah_book_work ?= flag:hash_depths
+						var:kehillah_book_work ?= flag:hash_discourses
+						var:kehillah_book_work ?= flag:hash_name
+					}
+				}
+			}
+			add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = kehillah_book_news_rabbi_xp }
+		}
+	}
 }

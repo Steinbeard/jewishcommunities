@@ -1,0 +1,197 @@
+﻿# =====================================================================
+# Expulsion (ROADMAP S9b) -- console-only debug probes. Never fired by
+# gameplay. Run as `event kehillah_expulsion_debug.N` with the player
+# leading a Kehillah; results go to debug.log. Numbers are printed by
+# debug_log_scopes as saved scope values.
+#
+#   .1  read-only: the host, its policy, the edict's state and the
+#       review's pressures
+#   .2  ban: the host's realm goes Discouraged -> Banned through the
+#       real lower effect (so the edict fires exactly as in play)
+#   .3  advance the edict's clock to the brink and run the quarterly pass
+#       (the enforcement or driven-out event follows a day later)
+#   .4  run the AI policy review on the host now (no chance roll, no
+#       cooldown check, no is_ai check)
+#   .5  repeal: the host's realm rises one rung through the real effect
+#   .6  make the host a hard case for .4: zealous and greedy, policy
+#       Discouraged, and a FAKE debt variable (not a real loan contract;
+#       remove it with .7)
+#   .7  undo .6's fake debt
+# =====================================================================
+
+namespace = kehillah_expulsion_debug
+
+kehillah_expulsion_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_expulsion_debug.1: START"
+		if = {
+			limit = { exists = domicile.domicile_location.county.holder.top_liege }
+			domicile.domicile_location.county.holder.top_liege = { save_scope_as = kx_host }
+			debug_log = "kehillah_expulsion_debug.1: HOST found (kx_host below)"
+		}
+		else = { debug_log = "kehillah_expulsion_debug.1: HOST NONE -- no domicile county holder" }
+		if = {
+			limit = { exists = scope:kx_host }
+			scope:kx_host.primary_title = {
+				save_scope_as = kx_realm
+				save_scope_value_as = { name = kx_policy_rung value = kehillah_policy_rung_value }
+			}
+			scope:kx_host = {
+				save_scope_value_as = { name = kx_restrictive value = kehillah_policy_restrictive_pressure_value }
+				save_scope_value_as = { name = kx_protective value = kehillah_policy_protective_pressure_value }
+				save_scope_value_as = { name = kx_net value = kehillah_policy_net_pressure_value }
+				save_scope_value_as = { name = kx_restrictive_count value = kehillah_policy_restrictive_count_value }
+				if = {
+					limit = { is_ai = yes }
+					debug_log = "kehillah_expulsion_debug.1: HOST IS AI (the yearly review can run)"
+				}
+				else = { debug_log = "kehillah_expulsion_debug.1: HOST IS A PLAYER (no AI review)" }
+			}
+			if = {
+				limit = { scope:kx_realm = { kehillah_policy_review_on_cooldown_trigger = yes } }
+				debug_log = "kehillah_expulsion_debug.1: REVIEW COOLDOWN running"
+			}
+		}
+		if = {
+			limit = { kehillah_expulsion_pending_trigger = yes }
+			save_scope_value_as = { name = kx_quarters value = primary_title.var:kehillah_expulsion_quarters }
+			debug_log = "kehillah_expulsion_debug.1: EDICT PENDING (kx_quarters below)"
+			if = {
+				limit = { primary_title = { has_variable = kehillah_expulsion_defiant } }
+				debug_log = "kehillah_expulsion_debug.1: EDICT the community is IN HIDING"
+			}
+			if = {
+				limit = { primary_title = { has_variable = kehillah_expulsion_pleaded } }
+				debug_log = "kehillah_expulsion_debug.1: EDICT plea already made"
+			}
+			if = {
+				limit = { primary_title = { has_variable = kehillah_expulsion_ransomed } }
+				debug_log = "kehillah_expulsion_debug.1: EDICT ransom already offered"
+			}
+		}
+		else = { debug_log = "kehillah_expulsion_debug.1: EDICT NONE" }
+		if = {
+			limit = { kehillah_host_bans_jewish_settlement_trigger = yes }
+			debug_log = "kehillah_expulsion_debug.1: HOST BANS Jewish settlement"
+		}
+		debug_log_scopes = yes
+		debug_log = "kehillah_expulsion_debug.1: END"
+	}
+}
+
+kehillah_expulsion_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { exists = domicile.domicile_location.county.holder.top_liege.primary_title }
+			domicile.domicile_location.county.holder.top_liege = {
+				if = {
+					limit = { NOT = { primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } } }
+					primary_title = { set_variable = { name = kehillah_jewish_settlement_policy value = 1 } }
+				}
+				primary_title = { set_variable = { name = kehillah_policy_reason value = flag:decree } }
+				kehillah_lower_jewish_settlement_policy_effect = yes
+			}
+			if = {
+				limit = { kehillah_expulsion_pending_trigger = yes }
+				debug_log = "kehillah_expulsion_debug.2: PASS the host now bans and an edict is pending here"
+			}
+			else = { debug_log = "kehillah_expulsion_debug.2: FAIL no edict pending after the ban" }
+		}
+		else = { debug_log = "kehillah_expulsion_debug.2: FAIL no host" }
+	}
+}
+
+kehillah_expulsion_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { kehillah_expulsion_pending_trigger = yes }
+			# One short of both thresholds (grace and defiance are 4).
+			primary_title = { set_variable = { name = kehillah_expulsion_quarters value = 3 } }
+			debug_log = "kehillah_expulsion_debug.3: clock set to the brink, running the quarterly pass"
+			kehillah_expulsion_quarterly_effect = yes
+		}
+		else = { debug_log = "kehillah_expulsion_debug.3: FAIL no edict pending" }
+	}
+}
+
+kehillah_expulsion_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { exists = domicile.domicile_location.county.holder.top_liege.primary_title }
+			domicile.domicile_location.county.holder.top_liege = {
+				primary_title = { save_scope_value_as = { name = kx_rung_before value = kehillah_policy_rung_value } }
+				kehillah_policy_ai_review_effect = yes
+				primary_title = { save_scope_value_as = { name = kx_rung_after value = kehillah_policy_rung_value } }
+			}
+			debug_log = "kehillah_expulsion_debug.4: review ran (kx_rung_before / kx_rung_after below)"
+			debug_log_scopes = yes
+		}
+		else = { debug_log = "kehillah_expulsion_debug.4: FAIL no host" }
+	}
+}
+
+kehillah_expulsion_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { exists = domicile.domicile_location.county.holder.top_liege.primary_title }
+			domicile.domicile_location.county.holder.top_liege = {
+				primary_title = { set_variable = { name = kehillah_policy_reason value = flag:decree } }
+				kehillah_raise_jewish_settlement_policy_effect = yes
+			}
+			if = {
+				limit = { NOT = { kehillah_expulsion_pending_trigger = yes } }
+				debug_log = "kehillah_expulsion_debug.5: PASS no edict pending after the repeal"
+			}
+			else = { debug_log = "kehillah_expulsion_debug.5: FAIL an edict is still pending" }
+		}
+	}
+}
+
+kehillah_expulsion_debug.6 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { exists = domicile.domicile_location.county.holder.top_liege.primary_title }
+			domicile.domicile_location.county.holder.top_liege = {
+				if = { limit = { NOT = { has_trait = zealous } } add_trait = zealous }
+				if = { limit = { NOT = { has_trait = greedy } } add_trait = greedy }
+				if = {
+					limit = { NOT = { exists = var:kehillah_loan_amount_owed } }
+					set_variable = { name = kehillah_loan_amount_owed value = 100 }
+					set_variable = { name = kehillah_debug_fake_debt value = yes }
+				}
+				primary_title = {
+					set_variable = { name = kehillah_jewish_settlement_policy value = 1 }
+					remove_variable = kehillah_var_policy_review_cooldown
+				}
+			}
+			debug_log = "kehillah_expulsion_debug.6: host made zealous, greedy, indebted (FAKE), policy Discouraged"
+		}
+	}
+}
+
+kehillah_expulsion_debug.7 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege ?= {
+			if = {
+				limit = { has_variable = kehillah_debug_fake_debt }
+				remove_variable = kehillah_loan_amount_owed
+				remove_variable = kehillah_debug_fake_debt
+				debug_log = "kehillah_expulsion_debug.7: fake debt removed"
+			}
+		}
+	}
+}

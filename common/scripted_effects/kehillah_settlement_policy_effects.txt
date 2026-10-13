@@ -26,6 +26,9 @@ kehillah_raise_jewish_settlement_policy_effect = {
 				set_variable = { name = kehillah_jewish_settlement_policy value = 1 }
 			}
 		}
+		# S9b: leaving Banned withdraws every pending edict of expulsion.
+		custom_tooltip = kehillah_policy_lifts_expulsion_tt
+		hidden_effect = { kehillah_expulsion_lift_effect = yes }
 	}
 	else_if = {
 		limit = { primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } }
@@ -87,14 +90,24 @@ kehillah_lower_jewish_settlement_policy_effect = {
 		}
 	}
 	else_if = {
-		# Allowed (stored or implicit). Discouraged is the floor for now --
-		# the decision's is_valid enforces it, and this branch never writes
-		# Banned whatever calls it.
+		# Allowed (stored or implicit).
 		limit = { primary_title = { kehillah_jewish_settlement_policy_allowed_trigger = yes } }
 		custom_tooltip = {
 			text = kehillah_policy_lower_to_discouraged_tt
 			primary_title = {
 				set_variable = { name = kehillah_jewish_settlement_policy value = 1 }
+			}
+		}
+	}
+	else_if = {
+		# S9b, 2026-10-12: Banned. Reachable only from Discouraged, one rung
+		# at a time (V17 4.2). Every community in the realm receives an edict
+		# of expulsion with a year's grace (kehillah_expulsion_effects.txt).
+		limit = { primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } }
+		custom_tooltip = {
+			text = kehillah_policy_lower_to_banned_tt
+			primary_title = {
+				set_variable = { name = kehillah_jewish_settlement_policy value = 0 }
 			}
 		}
 	}
@@ -113,10 +126,18 @@ kehillah_lower_jewish_settlement_policy_effect = {
 
 	kehillah_start_policy_review_cooldown_effect = yes
 
-	kehillah_notify_communities_of_policy_change_effect = {
-		TYPE = msg_kehillah_policy_lowered
-		TITLE = kehillah_policy_lowered_msg_title
-		DESC = kehillah_policy_lowered_msg_desc
+	# A ban is announced by the edict itself (kehillah_expulsion.0001), not
+	# by the ordinary notice.
+	if = {
+		limit = { primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } }
+		hidden_effect = { kehillah_expulsion_proclaim_effect = yes }
+	}
+	else = {
+		kehillah_notify_communities_of_policy_change_effect = {
+			TYPE = msg_kehillah_policy_lowered
+			TITLE = kehillah_policy_lowered_msg_title
+			DESC = kehillah_policy_lowered_msg_desc
+		}
 	}
 
 	debug_log_scopes = yes

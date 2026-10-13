@@ -208,6 +208,64 @@ kehillah_apply_fresh_charter_policy_effect = {
 # defensively if a malformed contract has none.
 # ---------------------------------------------------------------------
 kehillah_refresh_charter_state_cache_effect = {
+	# Community news (2026-10-12, Daniel: "only about charter
+	# modifications"): remember last quarter's terms, to notice below when
+	# an EXISTING charter's terms change. A first charter (game start,
+	# founding) or a new one after a change of lord starts from an empty
+	# cache -- the quarter between end_tributary and the fresh charter
+	# clears it -- so neither is reported.
+	primary_title = {
+		if = {
+			limit = { has_variable = kehillah_charter_cache_construction }
+			set_variable = { name = kehillah_charter_prev_terms value = kehillah_charter_terms_signature_value }
+			# Each term's old value, so the notice can name what changed
+			# (Daniel 2026-10-12: "shows what the changed policy is").
+			if = {
+				limit = { has_variable = kehillah_charter_cache_construction }
+				set_variable = { name = kehillah_charter_prev_construction value = var:kehillah_charter_cache_construction }
+			}
+			else_if = {
+				limit = { has_variable = kehillah_charter_prev_construction }
+				remove_variable = kehillah_charter_prev_construction
+			}
+			if = {
+				limit = { has_variable = kehillah_charter_cache_security }
+				set_variable = { name = kehillah_charter_prev_security value = var:kehillah_charter_cache_security }
+			}
+			else_if = {
+				limit = { has_variable = kehillah_charter_prev_security }
+				remove_variable = kehillah_charter_prev_security
+			}
+			if = {
+				limit = { has_variable = kehillah_charter_cache_jurisdiction }
+				set_variable = { name = kehillah_charter_prev_jurisdiction value = var:kehillah_charter_cache_jurisdiction }
+			}
+			else_if = {
+				limit = { has_variable = kehillah_charter_prev_jurisdiction }
+				remove_variable = kehillah_charter_prev_jurisdiction
+			}
+			if = {
+				limit = { has_variable = kehillah_charter_cache_text_study }
+				set_variable = { name = kehillah_charter_prev_text_study value = var:kehillah_charter_cache_text_study }
+			}
+			else_if = {
+				limit = { has_variable = kehillah_charter_prev_text_study }
+				remove_variable = kehillah_charter_prev_text_study
+			}
+			if = {
+				limit = { has_variable = kehillah_charter_cache_market_access }
+				set_variable = { name = kehillah_charter_prev_market_access value = var:kehillah_charter_cache_market_access }
+			}
+			else_if = {
+				limit = { has_variable = kehillah_charter_prev_market_access }
+				remove_variable = kehillah_charter_prev_market_access
+			}
+		}
+		else_if = {
+			limit = { has_variable = kehillah_charter_prev_terms }
+			remove_variable = kehillah_charter_prev_terms
+		}
+	}
 	primary_title = {
 		remove_variable = kehillah_charter_cache_construction
 		remove_variable = kehillah_charter_cache_security
@@ -314,6 +372,36 @@ kehillah_refresh_charter_state_cache_effect = {
 		}
 		else = {
 			primary_title = { set_variable = { name = kehillah_charter_cache_market_access value = 0 } }
+		}
+	}
+
+	# A charter just filled (game start, founding, or a new lord's fresh
+	# charter) has its policy defaults written days later
+	# (kehillah_apply_fresh_charter_policy_effect). That settling-in is not
+	# a revision (live 2026-10-12: Granada's charter was "revised" at game
+	# start), so a fresh charter is quiet for its first 120 days.
+	if = {
+		limit = {
+			primary_title = {
+				has_variable = kehillah_charter_cache_construction
+				NOT = { has_variable = kehillah_charter_prev_terms }
+			}
+		}
+		primary_title = { set_variable = { name = kehillah_charter_fresh value = yes days = 120 } }
+	}
+	if = {
+		limit = {
+			primary_title = {
+				has_variable = kehillah_charter_prev_terms
+				has_variable = kehillah_charter_cache_construction
+				NOT = { has_variable = kehillah_charter_fresh }
+				NOT = { var:kehillah_charter_prev_terms = kehillah_charter_terms_signature_value }
+			}
+		}
+		kehillah_notify_region_players_effect = {
+			TYPE = msg_kehillah_community_news
+			TITLE = kehillah_news_charter_t
+			DESC = kehillah_news_charter_d
 		}
 	}
 }

@@ -17,10 +17,143 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Pillar band effects in tooltips — 2026-10-12, Daniel's request
+
+Each Prosperity, Stability and Greatness breakdown now states the current level's applied
+leader modifier. The next and previous bands are shown as hoverable labels with their ranges and
+effects. Script/localization checks passed; nested tooltip rendering still needs a live UI check.
+See [implementation note §18](docs/implementation/v1-kehillah-implementation.md).
+
+### Kehillah death-screen wording — 2026-10-12, Daniel's request
+
+The vanilla death screen described Kehillah leaders and their appointed successors
+as feudal rulers, speaking of thrones, vassals, peasants, armies, and dynastic
+heirs. Selected epitaph and successor lines now use communal language for
+characters marked as Kehillah leaders. The same vanilla lines remain intact for
+other characters. This is a localization change only; succession and player
+continuation are untouched. Source and `ck3-tiger` checks passed. Fresh-game
+death-screen rendering and a feudal control case remain to be checked live.
+
+### Dynasty succession warning and holiday modifier colors — 2026-10-12
+
+Vanilla's "Primary Heir of the wrong Dynasty" warning is inaccurate for Kehillah rulers:
+leadership passes by appointment, and a non-dynastic successor does not end the player's game.
+The theocracy mechanic used to suppress the warning was removed because it made lay leaders
+clergy. Both vanilla primary-heir dynasty alerts are now overridden to exempt the Kehillah
+government flag while retaining their vanilla behavior for other governments. Source checked
+against CK3 1.20.0.4; fresh-game UI confirmation remains open. The holiday modifier icons also
+used the opposite positive/negative suffixes, which colored their names backwards in event
+outcome previews. Their icon suffixes now match the effects.
+
 Written 2026-09-07. Roughly priority order. Items 1-3 (the original correctness/verification work
 this note referred to) are long since resolved and removed; numbering otherwise kept stable rather
 than renumbered, since later items and other docs cross-reference these numbers by hand (e.g.
 `kehillah_breakdown_custom_loc.txt`'s own header cites "ROADMAP item 4").
+
+### Holiday event variety — 2026-10-12, Daniel's request
+
+Five one-step events for Yom Kippur, Sukkot and Shavuot are scripted. Two use named Jewish courtiers; the others remain available without them. The Purim gift event now always has an affordable choice. Source checks passed; live rendering and seasonal delivery are pending. See [the implementation note](docs/implementation/jewish-holiday-variety.md).
+
+### Exceptional sefarim — 2026-10-12, Daniel's request
+
+The `kehillah_book.0007` arrival event was misleading: it only granted Piety and
+Learning lifestyle XP, without adding a library work. The ordinary-book chain
+now chooses one of 14 stable named subjects at completion, including two
+subjects drawn from a remembered Bet Din case. The author's completion event,
+personal artifact, and delayed news event use the same title and description.
+The recipient event reports scholarly discussion without claiming a library
+copy or dwelling on its absence. Source checks passed; live rendering and
+save/reload confirmation remain open. See
+[the implementation note](docs/implementation/kehillah-ordinary-book-identities.md).
+**The larger system is a proposal, not built:**
+[v32](docs/spec/v32-exceptional-sefarim.md) describes rare
+named works created by qualifying scholars during play, with visible progress
+and real library copies. First next step is a one-work data/GUI spike, then an
+end-to-end vertical slice. This user-requested correction and design review
+precede the older v30 live-test TODO; they do not mark that test complete.
+
+### Expulsion and the householders (v30) — 2026-10-12, interactive
+
+Daniel asked for expulsion and for the householder system to be rebuilt ("very tacked on ...
+without clear connection to the rest of the kehillah mechanics"). Design and decisions:
+[v30](docs/spec/v30-expulsion-and-householders.md).
+**Built and `ck3-tiger`-checked, NOT yet live-tested**; v30 §3 is the test plan.
+
+- **Expulsion (S9b): built.**
+  - **Edict:** a realm going Banned issues an edict to every community in it, with a year's
+    grace.
+  - **Counterplay:** plead through the Shtadlan, offer a ransom (a deceitful host may keep it),
+    leave in good order, or wait.
+  - **Enforcement:** leave (the crown seizes half the leader's gold and voids the community's
+    debts) or stay in hiding (a heavy Stability drag, and driven out a year later).
+  - **The ending** is the existing dissolution teardown. Daniel chose this over relocating the
+    Quarter.
+  - Probes: `events/kehillah_expulsion_debug_events.txt`.
+- **AI policy review (V17 Slice B, first pass): built.**
+  - AI rulers move the policy one rung per review, with a 10% yearly chance per host and the
+    five-year cooldown.
+  - Named pressures only: zeal, a zealous chaplain, debts to Jews, grievance, temper, against
+    justice, compassion, a patron or a prosperous community.
+  - Banned needs Discouraged first and two distinct pressures.
+  - The reason prints in the policy notices.
+  - The host decision now reaches Banned.
+- **Householders reworked: built**, then stripped back the same night at Daniel's direction.
+  - It runs in the background with side notifications. The register decision and the
+    arrival/departure events are removed.
+  - The register is observed from the court.
+  - A head carries a "Ba'al Bayit" character modifier: flavour, +0.5 gold a month, and a target
+    for future events.
+  - Each family adds a flat 25 to its trade's pillar, capped at 100.
+  - The next family is found in this order: a councillor, then an established, skilled or
+    wealthy courtier (dynasty prestige first; lowborn men found a family name), then a family
+    from another community, then a newcomer.
+  - **Household standing is removed**, along with its succession term and its debug probes
+    .11–.13. Dynasty prestige already covers it.
+  - No opinion effects.
+  - AI leaders fill empty lay council seats from householders.
+  - **2026-10-12 notification correction:** passive removal from the observed register is
+    silent; the report showed an empty, overly prominent "A Household Is No Longer Counted"
+    notice. Actual family moves still notify the player. See v30 §2.
+  - **2026-10-12 presentation correction:** the remaining household messages use a dedicated
+    sidebar feed filter with full descriptions, instead of Court Grandeur's large banners.
+    This awaits a fresh-game UI check.
+- **Next:** the live test in v30 §3. It is also the first live run of S1's collapse path
+  (criterion 2).
+
+### The host relationship (v31) — 2026-10-12, interactive
+
+Daniel wants the host relationship to be the core challenge: dynamic, tied into vanilla, and
+driven by personality, economics and ideology. Design:
+[v31](docs/spec/v31-host-teachings-stances-and-factions.md). **PROPOSAL, nothing built.** This
+is the S11 "friendliness" design review; the Crusades chain stays separate and builds on it.
+
+- A "Teaching on the Jews" doctrine on each rite. Latin: Witness → Separation and Mission →
+  Exclusion. Byzantine: Imperial Law. Muslim: Dhimma → Strict Pact → Abolition, on top of
+  vanilla's jizya. Councils and reform movements change it.
+- Zeal is scaled by the teaching. A zealous Witness bishop protects.
+- Personal ruler stances: Protector, Convinced, Predator, Pragmatist.
+- An anti-Jewish vassal faction: debt relief, then restriction, then expulsion.
+- A tribute term: jizya, or tallage plus a confirmation fee.
+- **Forced conversion, built and LIVE-TESTED 2026-10-12** (v31 §10.2, [log](docs/testing/2026-10-12-forced-conversion-live-test-log.md)). A host may demand an
+  AI Kehillah leader's conversion only when his realm bans Jewish settlement. This is a
+  stand-in until the teachings exist. Any leader who leaves Judaism steps down within a quarter
+  and becomes a playable wayfarer; the community dissolves if he has no successor. Succession
+  scoring no longer favours the convert's co-converts. Probes: `kehillah_conversion_debug.1`–`.3`.
+  The live run found two bugs, both fixed and re-tested: a charter leaking onto the wayfarer,
+  and the successor styled "Duke".
+- **Forced conversion, part 2, built and live-tested 2026-10-12** (v31 §10.3; the AI host's own demand is inconclusive: the test's debug ban skipped the review cooldown, so re-test with `kehillah_expulsion_debug.2`). Hosts can reach
+  player-led communities through a copied vanilla interaction. AI hosts demand "convert or leave"
+  while an expulsion edict stands. A player convert may carry on as the heir. Probe:
+  `kehillah_conversion_debug.4`.
+- **Balance finding, 2026-10-12 soak (session 0f):** across about 58 logged years, the AI policy
+  review ran about 35 times and moved a policy 3 times (1 down, 2 up). Nothing reached Banned and
+  no edict was issued. Expulsion and forced conversion therefore never happen in ordinary play.
+  The host relationship needs pressure that builds over time (v31 incidents, the vassal faction).
+- **Decided 2026-10-12:** tribute starts at 20% of income; every convert steps down. Still open
+  (v31 §14, §16): secret Jews after conversion, non-rabbinic Jewish faiths, reaching a
+  player-led community with forced conversion (answered: v31 §10.3).
+- **Next:** live-test v30. Then v31 §11's spikes (doctrine group on rites, tributary
+  tax on a Kehillah, custom faction), then the slices in §12. Open questions for Daniel: §14.
 
 ### Shabbat autonomous queue — 2026-10-09 evening to 2026-10-11 morning (works ABOVE everything below)
 
@@ -117,6 +250,20 @@ the shim guide. Current state is in the
 
   This affects every building and the balance. Decide after V29's Stability-gated Yeshiva has been
   seen in play.
+
+- **V30, COMMUNITY NEWS: built and verified live 2026-10-12** ([spec](docs/spec/v30-community-news.md); test log run 20).
+  - Quiet feed notices under a 'Community News' filter: your host lord dies; and, in your minhag region, a charter ends, new leadership, a pillar in Crisis, a new or Renowned+ yeshiva, a Bet Din concludes.
+  - V29 §12 also added 'Yeshiva News' (newcomers, chavrutot, works and subjects mastered), and fixed every mod message's blank body.
+  - Open: the 'minhag practice' line in the Bet Din notice is waiting for takkanot (v25 P7).
+
+- **V29 §11, THE LEADER'S YESHIVA: built and verified live 2026-10-12** (test log runs 16-17; the
+  "send to a community with no rabbi" option is not yet exercised)
+  ([spec §11](docs/spec/v29-yeshiva.md)).
+  - Yearly ordination with "The Graduating Class" choice (keep / send / recommend to the lord).
+  - The head's depth in the focus sets study XP and whether renown holds.
+  - The 1066 heads are seeded as masters.
+  - Teaching-focus buttons in the library panel.
+  - Also removed 2026-10-12: Take Stock decision, View Kehillah Communities interaction.
 
 - **V29 §10, THE LIVING YESHIVA: built and verified live 2026-10-11** (test log runs 12-13;
   open: the arrival event `.0301` was not reached live, and only some students got a rebbe link)
@@ -503,6 +650,9 @@ construction, bet din cooldown, host petition, Night Watch, spouse clones).
     `every_house_member`, and standing pays 15 per seat — so a householder on the council
     would be both in the pool and high-standing. Nothing in the mod ever puts one there. The
     register and the officer corps are two populations that never meet.
+  - **DECIDED 2026-10-12 (Daniel, v30): option 1, seat householders.** AI leaders now fill empty lay
+    council seats from registered families, and the register is observed from the court. The text
+    below is the original question.
   - **OPEN, needs Daniel (logged in BLOCKERS.md).** Connecting them is a design call, not an
     unattended fix: seat householders preferentially when filling council/court slots; give
     Kehillah officers dynasties so they have houses at all; or accept that only seated families
@@ -519,6 +669,19 @@ office. The incremental design and proof order are in
 [V24](docs/spec/v24-rabbi-gameplay-loop.md); V21 and V23 remain proposals, not shipped
 features. This explicitly takes priority over the older autonomous queue for this
 interactive pass.
+
+- **Bet Din writing and choice pass, scripted 2026-10-12; live UI check pending.**
+  All nine case openings, outgoing questions and incoming letters now use one
+  set of facts and the [writing guide](docs/implementation/kehillah-writing-style.md).
+  Translated source context appears on citation-choice hovers. A returned
+  responsum appears in the hearing, where the host may cite or ignore it,
+  instead of stopping at a separate acceptance event. Trait and skill pairs,
+  Talmudics experience, and specific mastered works now offer distinct routes
+  to stronger arguments. Verdict events state the ruling and its quality.
+  The detailed [implementation note](docs/implementation/kehillah-bet-din-writing-pass.md)
+  records the score changes, remaining limits and source references. The
+  active CK3 session was left untouched; the letter round-trip and UI text
+  still need a live check.
 
 - **Source-aware ransom ruling and named responsum: PLAYER-FACING EXCHANGE VERIFIED LIVE
   2026-10-10 (Shabbat heartbeat 5); the letter round-trip still unproven**
@@ -1332,6 +1495,9 @@ short research bullets for when Daniel is back.
   `s9a_state/raise/lower/clear_cooldown.txt`, fired **as the Kehillah player** against its host so
   the notice lands on the player it is for. The decision UI itself needs a `play` switch to the
   host (the Emperor, for Worms).
+- **S9b: BUILT 2026-10-12, not live-tested** ([v30](docs/spec/v30-expulsion-and-householders.md)).
+  The ending is dissolution (Daniel's call), not "S1's departure path with followers and treasury
+  share" as written below. The original item:
 - **S9b. BUILD — Expulsion.** Lowering to Banned starts a warning event for every community in the
   realm, then after ~1-2 years an expulsion event with counterplay options (petition/bribe the
   ruler via the Shtadlan → chance to restore Discouraged; leave in good order → S1's departure
@@ -1475,6 +1641,13 @@ short research bullets for when Daniel is back.
    this item, only its creation half.
 9. **Own-community GUI dashboard** — richer than `kehillah_view_standing_decision`'s current single
    desc block. Item 5's research has landed; this is now unblocked, just not built.
+   **2026-10-12 UI polish:** the already-shipped HUD strip now shows each pillar's
+   trend and a colored Roman tier (I–V), with a wider explicit background;
+   exact scores and contributors remain on hover. **Verified live after
+   the 2026-10-12 reboot:** the first rendering revealed a short background
+   and displaced hover hitboxes; both were fixed with a fixed window/hbox
+   layout. All three visible tiles and their matching breakdown hovers passed
+   ([log](docs/testing/2026-10-12-pillar-hud-polish-live-check.md)).
    **Worth a second look now that item 4 is closed (2026-09-23) for the same underlying reason**:
    the map view (v12/v13) already shows your own community's row (highlighted) alongside everyone
    else's, with the same pillar/breakdown data this item wants. Not closed here unilaterally, since
@@ -1979,6 +2152,26 @@ of truth, so live feedback can tune contributors instead of arbitrary opening
 bonuses. New founders remain a separate difficulty model and do not receive
 this historical snapshot.
 
+**2026-10-12 — BUILT, not live-tested: host arrest and exile
+([V32](docs/spec/v32-host-arrest-and-exile.md)).** Daniel approved implementing it the same day,
+with refusal meaning exile (leader steps down into an adventurer; a courtier becomes a wanderer).
+It uses the scripted-crime + gate-override route rather than the custom "Arrest" interaction
+sketched below. Needs the live pass in V32's "Live test" section, since a refusal runs the
+step-down succession handoff. The original candidate note follows, kept for the record.
+
+**2026-10-12 — candidate, not approved: host arrest of Kehillah members.** Raised by Daniel
+while reviewing forced conversion (V27 2026-10-12 addendum). Today the host cannot imprison a
+Kehillah leader or courtier at all: `cannot_be_vassal_or_liege` keeps the leader independent, and
+the V15 tributary charter makes the host a suzerain, not a liege, which vanilla's
+`basic_allowed_to_imprison_character_trigger` does not recognise. War capture is the only route.
+Proposed shape, to be specced before building: a host-side "Arrest" interaction that calls
+`imprison` directly, gated on the charter relationship and real grounds (charter breach,
+royal-loan default, proselytizing a Christian under an Encouraged rite). The community answers by
+ransoming from its treasury, appealing upward, or refusing ransom, after Meir of Rothenburg,
+imprisoned by Rudolf of Habsburg in 1286. **Risk:** an imprisoned leader touches succession, the
+mod's crash-prone subsystem (implementation doc sections 6 and 8), so this needs a live test,
+not just a source check.
+
 ### Phase 5 — Crypto-Jewish Survival Loop
 The secret-practice/detection/forced-conversion system for communities that
 lose the Phase 4 expulsion/purge struggle. Depends on Phase 4 existing.
@@ -2111,6 +2304,22 @@ before building it; nothing here is approved by default.
   Independent of case 2 ("The Agunah's Plea") — no shared state, can be drawn in the same session
   or neither. See kehillah_bet_din_recalcitrant_husband_resolution_effect (common/scripted_effects/
   kehillah_bet_din_scripted_effects.txt) for the full account.
+
+  **2026-10-12 update:** Cases 10–13, covering a schoolroom, a slaughterer's knife,
+  a Shabbat alley entrance, and a marked purse, are scripted after user approval.
+  The pool is now thirteen; each conference still hears three. The new cases have
+  case-specific sefer, trait, rabbinic-experience, co-judge and named-responsum
+  choices, with visible direction and quality outcomes. Source checks and ck3-tiger
+  have run; live rendering and letter-flow checks remain. See
+  `docs/implementation/kehillah-bet-din-case-expansion.md` for the case matrix and
+  the deliberate off-map inventory limit.
+
+  **2026-10-12 balance addendum:** Cases 11 and 13 now draw a visible evidence fact
+  before any letter is sent. It changes which argument is easier to defend and the
+  direction's costs; case 12's continued alley use has a trade benefit. Cases 1 and
+  8–13 now give litigants reactions based on the order and the quality of the
+  reasoning. Source and ck3-tiger checks passed; live fact, tooltip and letter
+  round-trip checks remain. See `docs/implementation/kehillah-bet-din-balance-pass.md`.
 
   **Drafted, not built: "The Returning Husband."** Raised by the user in the same conversation as
   case 4 — a genuine follow-on to case 2 this time, not independent: a husband case 2's DEAD

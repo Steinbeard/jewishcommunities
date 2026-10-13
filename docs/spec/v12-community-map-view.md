@@ -531,6 +531,36 @@ the type chain and couldn't be resolved from files. Left as is.
 
 ## 10. Your own community on the HUD (user request, 2026-09-15)
 
+**2026-10-12 second display revision (verified live after layout fix):**
+Daniel's screenshot review found that the gray strip ended before the last
+pillar and that plain tier names did not show the level clearly enough. This
+supersedes only the tier styling and geometry of the first 2026-10-12
+revision below. The strip now has an explicit 615×80 window with a centered
+hbox of 170×64 pillar tiles; tier names carry Roman levels I–V and the same five-step
+aptitude color ramp already used by the roster's scores. CK3's fame display
+uses level-specific visual treatment beside its value; the rank and color
+give the pillars the same glance value without adding textures. Trends and
+hover breakdowns remain as before. The 1.19 `ck3-tiger` build reported no
+findings in the touched files against installed CK3 1.20.0.4. The first
+post-reboot render exposed overflow and mismatched hover regions in the
+flowcontainer version. The fixed window/hbox version rendered all three
+tiles inside the background and gave each its own correct tooltip. The
+earlier boot stalls and the final pass are recorded in
+[the polish test log](../testing/2026-10-12-pillar-hud-polish-live-check.md).
+
+**2026-10-12 display revision (built and verified live):** This paragraph
+supersedes §10's four numeric HUD tiles. The HUD now shows only Prosperity, Stability, and
+Greatness, each as a named band plus Rising/Falling/Steady. The trend uses the same signed
+quarterly baseline-convergence value as the detailed tooltip, with ±0.05 treated as steady;
+events can change a pillar independently. The existing tooltip retains the numeric score,
+contributor breakdown, and next-band text. Standing remains in the menorah tooltip and the
+community roster. This keeps the always-visible display legible while preserving exact values
+on hover. A true inset in the vanilla Domain tab would require overriding
+`window_my_realm.gui` (its domain body is hand-written, with no additive child hook). The
+current scripted HUD widget avoids that maintenance cost; a Domain layout can be revisited if
+its stronger context proves worth a full-file GUI fork. The live result is recorded in
+[the HUD test log](../testing/2026-10-12-pillar-hud-live-playtest-log.md).
+
 A third scripted widget, `kehillah_own_community_strip`: the player's Standing and three pillars,
 coloured by band, always on screen, parked directly under vanilla's resource bar in the top-left
 and styled like its tiles. Hover any figure for the same breakdown tooltip the roster shows; the

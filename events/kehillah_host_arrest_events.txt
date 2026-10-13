@@ -1,0 +1,103 @@
+﻿# =====================================================================
+# HOST ARREST -- events. Design: docs/spec/v32-host-arrest-and-exile.md.
+# =====================================================================
+
+namespace = kehillah_arrest
+
+# ---------------------------------------------------------------------
+# .0010 -- Into exile. Fired one day after a leader refused arrest and
+# stepped down (kehillah_arrest_refused_effect). Root is the former
+# leader, by now a landless adventurer with a camp. Moves the camp to the
+# nearest county outside the host's realm, the same destination rule
+# vanilla uses for an evicted adventurer (remove_laamp_from_exiled_
+# county_automatically_effect), which cannot be called here because it
+# keys on eviction_ignored_opinion.
+#
+# The one-day delay keeps the travel order off the tick that created the
+# camp (kehillah_departure_finish_effect).
+# ---------------------------------------------------------------------
+kehillah_arrest.0010 = {
+	type = character_event
+	title = kehillah_arrest.0010.t
+	# EXPLAINS THE EXILE (2026-10-12, Daniel): what happened, who leads the
+	# community now, where the camp is going, and the way back. The
+	# destination is chosen in immediate (which runs before the text is
+	# drawn); the fallback paragraph covers the rare case where none is found.
+	desc = {
+		desc = kehillah_arrest.0010.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:kehillah_exile_destination }
+				desc = kehillah_arrest.0010.desc_road
+			}
+			desc = kehillah_arrest.0010.desc_road_unknown
+		}
+	}
+	theme = realm
+
+	trigger = {
+		is_alive = yes
+		is_imprisoned = no
+		exists = scope:kehillah_arrest_host
+	}
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:kehillah_arrest_host
+		animation = disapproval
+	}
+
+	immediate = {
+		save_scope_as = kehillah_exile_self
+		if = {
+			limit = {
+				exists = domicile
+				NOT = { exists = current_travel_plan }
+			}
+			scope:kehillah_arrest_host = {
+				every_neighboring_and_across_water_top_liege_realm_owner = {
+					limit = { NOT = { this = scope:kehillah_exile_self } }
+					every_realm_border_county = {
+						limit = { exists = holder }
+						add_to_list = kehillah_exile_counties
+					}
+				}
+			}
+			ordered_in_list = {
+				list = kehillah_exile_counties
+				order_by = {
+					value = "title_province.squared_distance(scope:kehillah_exile_self.location)"
+					multiply = -1
+				}
+				save_scope_as = kehillah_exile_destination
+			}
+			if = {
+				limit = { exists = scope:kehillah_exile_destination }
+				start_travel_plan = {
+					destination = scope:kehillah_exile_destination.title_province
+					travel_with_domicile = yes
+					return_trip = no
+					players_use_planner = no
+				}
+				debug_log = "kehillah_arrest.0010: the exile's camp is on the road out of the host's realm"
+			}
+			else = {
+				debug_log = "kehillah_arrest.0010: WARNING no county found outside the host's realm; the camp stays put"
+			}
+			debug_log_scopes = yes
+		}
+	}
+
+	option = {
+		name = kehillah_arrest.0010.a
+		if = {
+			limit = { exists = scope:kehillah_arrest_heir }
+			custom_tooltip = kehillah_arrest.0010.a.tt_successor
+		}
+		custom_tooltip = kehillah_arrest.0010.a.tt_camp
+		custom_tooltip = kehillah_arrest.0010.a.tt_return
+	}
+}

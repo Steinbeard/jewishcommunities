@@ -1271,3 +1271,44 @@ Verified live: Isaac's badge read "Hakhamim", and the Archbishop of Mainz's read
 ck3-tiger false positives here: tiger looks for faiths in the 1.19 path `religions/`, but 1.20 keeps
 them in `faith_types/`. Its `FAITH.Custom` "expected one of" list misses faith-type custom
 localization, which vanilla itself uses (`CoronationRequiresArtifact`).
+
+## 17. Inheritance warning and holiday modifier colors, 2026-10-12
+
+**Status:** implemented and source-checked; the inheritance alert has not yet been confirmed in a
+fresh-game UI session.
+
+Vanilla's `action_primary_heir_wrong_dynasty_no_replacement_exists` and
+`action_primary_heir_wrong_dynasty_but_replacement_exists` important actions warn when a primary
+heir is outside the player's dynasty. That warning is misleading for Kehillah rulers: their
+primary title passes by appointment, and the non-dynastic appointee does not end the player's
+game. The previous exemption came from `mechanic_type = theocracy`, removed in section 15 because
+it made lay leaders clergy and caused clergy courtiers to be generated in their courts.
+
+`common/important_actions/kehillah_inheritance_actions_override.txt` carries the two CK3 1.20.0.4
+action definitions with `government_is_kehillah` added to their vanilla exemption conditions. The
+original exemptions for theocracy and administrative governments remain. This is a narrow override
+of two action definitions in vanilla's `common/important_actions/00_inheritance_actions.txt`; re-diff
+it against that file after a game patch.
+
+The holiday memory modifier names were colored backwards because CK3 derives modifier-name color
+from the icon's `_positive` or `_negative` suffix, not from the values of its effects. The warm
+memory now uses `stress_positive` even though it reduces stress gain, and the awkward memory uses
+`stress_negative` while increasing stress gain. Source reference: the installed game's
+`common/modifiers/_modifiers.info` and its positive/negative stress modifier precedents.
+
+## 18. Pillar band effects in the community roster tooltips, 2026-10-12
+
+**Status:** implemented and script/localization-checked; nested tooltip rendering still needs a
+live UI check.
+
+The Prosperity, Stability and Greatness tooltips now state the current band's modifier on the
+community leader before the structural baseline and its contributors. The next band keeps its
+distance-to-threshold line, with the band name linked to a hover detail. A second line links the
+previous band; Crisis correctly has no lower band, and Legendary correctly has no higher band.
+Each hover detail gives the score range and the exact modifier effects, using the same thresholds
+and values as `kehillah_script_values.txt` and `kehillah_modifiers.txt`.
+
+The links use vanilla's `#tooltip:LOCALIZATION_KEY text#!` localization markup, also used by
+vanilla's holding-supply tooltip. The actual nested hover behavior must be confirmed in-game before
+calling this verified; source checks cannot establish where CK3 positions the second tooltip or
+whether it remains reachable while the parent tooltip is open.

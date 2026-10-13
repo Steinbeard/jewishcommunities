@@ -1,0 +1,100 @@
+﻿# =====================================================================
+# HOST ARREST -- console-only debug probes. Never fired by gameplay. Run
+# as `event kehillah_arrest_debug.N` with the player leading a Kehillah;
+# results go to debug.log. Design: docs/spec/v32-host-arrest-and-exile.md.
+#
+#   .1  read-only: the host, whether it holds an imprisonment reason, and
+#       whether the imprison interaction is valid against the leader
+#   .2  the host gains the defied-expulsion crime through the real effect
+#   .3  run the AI arrest now (no chance roll); the leader gets the real
+#       popup. Needs an AI host and a crime (.2)
+#   .4  undo .2: remove both Kehillah crimes from the host
+# =====================================================================
+
+namespace = kehillah_arrest_debug
+
+kehillah_arrest_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_arrest_debug.1: START"
+		save_scope_as = kehillah_arrest_suspect
+		if = {
+			limit = { kehillah_host_charter_host_available_trigger = yes }
+			domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_arrest_host }
+			if = {
+				limit = { scope:kehillah_arrest_host = { has_imprisonment_reason = scope:kehillah_arrest_suspect } }
+				debug_log = "kehillah_arrest_debug.1: HOST HOLDS AN IMPRISONMENT REASON"
+			}
+			else = { debug_log = "kehillah_arrest_debug.1: host holds NO imprisonment reason" }
+			if = {
+				limit = {
+					scope:kehillah_arrest_host = {
+						is_character_interaction_valid = {
+							recipient = scope:kehillah_arrest_suspect
+							interaction = imprison_interaction
+						}
+					}
+				}
+				debug_log = "kehillah_arrest_debug.1: IMPRISON INTERACTION VALID"
+			}
+			else = { debug_log = "kehillah_arrest_debug.1: imprison interaction NOT valid" }
+			if = {
+				limit = { exists = primary_title.current_heir }
+				debug_log = "kehillah_arrest_debug.1: HEIR EXISTS (refusal = exile)"
+			}
+			else = { debug_log = "kehillah_arrest_debug.1: NO HEIR (refusal = imprisoned anyway)" }
+		}
+		else = { debug_log = "kehillah_arrest_debug.1: no host resolvable" }
+		debug_log_scopes = yes
+		debug_log = "kehillah_arrest_debug.1: END"
+	}
+}
+
+kehillah_arrest_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_arrest_debug.2: granting the defied-expulsion crime"
+		kehillah_host_crime_effect = { CRIME = kehillah_crime_defied_expulsion_opinion }
+	}
+}
+
+kehillah_arrest_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		save_scope_as = kehillah_arrest_suspect
+		if = {
+			limit = { kehillah_host_charter_host_available_trigger = yes }
+			domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_arrest_host }
+			debug_log = "kehillah_arrest_debug.3: host sends the arrest"
+			debug_log_scopes = yes
+			scope:kehillah_arrest_host = {
+				run_interaction = {
+					interaction = imprison_interaction
+					actor = scope:kehillah_arrest_host
+					recipient = scope:kehillah_arrest_suspect
+					send_threshold = decline
+				}
+			}
+		}
+		else = { debug_log = "kehillah_arrest_debug.3: no host resolvable" }
+	}
+}
+
+kehillah_arrest_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		save_scope_as = kehillah_arrest_suspect
+		if = {
+			limit = { kehillah_host_charter_host_available_trigger = yes }
+			domicile.domicile_location.county.holder.top_liege = {
+				remove_opinion = { target = scope:kehillah_arrest_suspect modifier = kehillah_crime_defied_expulsion_opinion }
+				remove_opinion = { target = scope:kehillah_arrest_suspect modifier = kehillah_crime_proselytism_opinion }
+			}
+			debug_log = "kehillah_arrest_debug.4: removed the host's Kehillah crimes"
+		}
+	}
+}

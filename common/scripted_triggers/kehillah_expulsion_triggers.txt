@@ -1,0 +1,83 @@
+﻿# =====================================================================
+# Expulsion (ROADMAP S9b) and the AI policy review. Triggers.
+# Design: docs/spec/v30-expulsion-and-householders.md.
+# =====================================================================
+
+# Scope: a Kehillah leader. Its host realm (the top liege of the county
+# its Quarter stands in, resolved the way the charter and the policy
+# notices resolve it) has banned Jewish settlement.
+kehillah_host_bans_jewish_settlement_trigger = {
+	exists = domicile.domicile_location.county.holder.top_liege.primary_title
+	domicile.domicile_location.county.holder.top_liege.primary_title = {
+		kehillah_jewish_settlement_policy_banned_trigger = yes
+	}
+}
+
+# Scope: a Kehillah leader. An expulsion edict is running against this
+# community.
+kehillah_expulsion_pending_trigger = {
+	exists = primary_title
+	primary_title = { has_variable = kehillah_expulsion_quarters }
+}
+
+# Scope: a Kehillah leader. Whether $HOST$ is the ruler this community's
+# Quarter now answers to.
+kehillah_is_host_of_community_trigger = {
+	exists = domicile.domicile_location.county.holder.top_liege
+	domicile.domicile_location.county.holder.top_liege = $HOST$
+}
+
+# Scope: the host ruler. Some Kehillah leader under this ruler is someone
+# the ruler holds in contempt.
+kehillah_policy_has_grievance_trigger = {
+	save_temporary_scope_as = kehillah_grievance_host
+	any_in_global_list = {
+		variable = kehillah_registered_communities
+		exists = holder
+		holder = {
+			kehillah_is_host_of_community_trigger = { HOST = scope:kehillah_grievance_host }
+			reverse_opinion = { target = scope:kehillah_grievance_host value <= -25 }
+		}
+	}
+}
+
+# Scope: the host ruler. Some Kehillah leader under this ruler is held in
+# real regard: a patron's protection.
+kehillah_policy_has_patron_trigger = {
+	save_temporary_scope_as = kehillah_patron_host
+	any_in_global_list = {
+		variable = kehillah_registered_communities
+		exists = holder
+		holder = {
+			kehillah_is_host_of_community_trigger = { HOST = scope:kehillah_patron_host }
+			reverse_opinion = { target = scope:kehillah_patron_host value >= 30 }
+		}
+	}
+}
+
+# Scope: the host ruler. A community under this ruler is Flourishing in
+# Prosperity: it is worth too much to lose.
+kehillah_policy_has_prosperous_community_trigger = {
+	save_temporary_scope_as = kehillah_prosperous_host
+	any_in_global_list = {
+		variable = kehillah_registered_communities
+		exists = holder
+		has_variable = kehillah_var_prosperity
+		var:kehillah_var_prosperity >= kehillah_band_flourishing_threshold
+		holder = {
+			kehillah_is_host_of_community_trigger = { HOST = scope:kehillah_prosperous_host }
+		}
+	}
+}
+
+# Scope: the host ruler. Any registered community answers to this ruler.
+kehillah_ruler_hosts_a_community_trigger = {
+	save_temporary_scope_as = kehillah_any_host
+	any_in_global_list = {
+		variable = kehillah_registered_communities
+		exists = holder
+		holder = {
+			kehillah_is_host_of_community_trigger = { HOST = scope:kehillah_any_host }
+		}
+	}
+}

@@ -427,3 +427,70 @@ The existing brilliant-student and quarrel events are retired or folded into the
 - **Upkeep:** a monthly cost per student, so a big yeshiva is something you sustain.
 - **Richer events:** matches with householders' daughters, visiting lecturers, lean years.
 - **Talmidim:** keeping in touch after graduation.
+
+## 11. Addendum, 2026-10-12: the leader's yeshiva (amends §10.3)
+
+**Status:** agreed with Daniel 2026-10-12, built the same day; live test pending.
+
+**Why:** the living yeshiva runs itself. These additions give the Kehillah leader two recurring
+choices, and make the head's learning matter.
+
+### 11.1 Graduation once a year, and the Graduating Class
+
+- **Study is still quarterly; ordination is yearly.** Students keep studying every quarter, but
+  ordination happens once a year, at the tick that falls in January-March (the end of the winter
+  term). A 200-day cooldown guards against a drifting pulse.
+  - Code: `kehillah_yeshiva_graduation_effect`.
+- **The Graduating Class** (`kehillah_yeshiva.0320`) is shown to a player leader. It names the
+  year's class size and its most promising AI graduate. Where he goes:
+  - **Keep him:** Stability +25 (the Bet Din and Dayyan pool).
+  - **Send him to a community with no rabbi:** the alumnus seating, renown, and that leader's
+    respect (Greatness).
+  - **Recommend him to the town's lord:** Prosperity +25 and the lord's favour; he is lost to
+    learning.
+- **The rest of the class** follows the old rule: a visiting student goes home where a community
+  lacks a rabbi.
+- **Retired:** the per-graduate notification.
+
+### 11.2 The head's depth matters
+
+- **Study:** the head's depth in the yeshiva's focus sets how much of it students learn each
+  quarter: 8 XP for a master (65+), 5 for a journeyman (30+), and 3 otherwise.
+  - Code: `kehillah_yeshiva_head_teaching_xp_value`.
+- **Renown:** only a master head holds renown up each quarter (focus depth 65+ and Learning 14).
+  Under a shallow head it drifts down.
+  - Code: `kehillah_yeshiva_master_head_trigger`.
+- **Seeds:** every head seeded in 1066 is given 70 XP in his yeshiva's focus if he lacks it, in a
+  pass at the end of game start.
+  - Code: `kehillah_yeshiva_seed_head_depth_effect`.
+
+### 11.3 The teaching focus, chosen in the panel
+
+- **No decision.** The library panel's Yeshiva section shows, for your own community, a row of
+  three buttons: Talmud, Parshanut, Hashkafa.
+  - They use vanilla's filter-row style: `button_standard_list` with `down`, as in the
+    achievements window.
+  - The current focus is shown pressed.
+  - Another focus can be chosen if the head is a master of it (65) and the focus has not changed
+    in five years.
+- **Another community's panel** shows the focus as text.
+- **Code:** scripted GUIs in `common/scripted_guis/kehillah_yeshiva_gui.txt`.
+- **Daniel's caveat:** a custom UI may be hard to make look good and intuitive. Judge it from a
+  screenshot, and fall back if needed.
+
+## 12. Addendum, 2026-10-12: the yeshiva's news
+
+**Status:** requested by Daniel 2026-10-12 ("a little side popup ... non-disruptive ... feel that the Yeshiva is alive"), built the same day.
+
+- **What:** quiet feed messages (no events) to the player who leads a yeshiva.
+- **Types:** three message types, each on a vanilla filter the player can mute:
+  - `msg_kehillah_yeshiva_arrival` (courtier_arrived);
+  - `msg_kehillah_yeshiva_chavruta` (relationship_gained);
+  - `msg_kehillah_yeshiva_milestone` (character_lifestyle).
+- **New students:** reported by name.
+  - A visiting student "has come from afar".
+  - A quarter with more than 2 newcomers is one line ("N new students, among them X").
+- **New chavrutot:** reported on quiet quarters only.
+- **A work mastered:** 10% a quarter per present student, drawn from the community's library and weighted 3x to the focus. It is recorded in the same lists Learn Torah keeps (mastered works, studied works, fields), plus 4 track XP.
+- **A subject mastered:** reported when a student crosses 65 in a track.
+- **Debug:** `kehillah_yeshiva_debug.10` makes every present student master a work now.
