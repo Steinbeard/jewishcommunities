@@ -46,3 +46,28 @@ The gaps:
 - **Settlers' destinations** in "Where to Settle" carry a note: "(invited by its lord)" or "(Jewish
   settlement encouraged)".
 - **The graduate option** shows "<lord>'s outlook on the Jews warms (+10)".
+
+## UI (added 2026-10-13)
+
+Daniel asked to read a character's outlook on the character view, "alongside their opinion". This
+repo's GUI spikes found that a vanilla ``.gui`` cannot be extended piece by piece
+([gui-spike-community-list.md](gui-spike-community-list.md)). Showing anything inside the vanilla
+character window means a permanent fork of that file. So:
+
+- **On the character window: an "Outlook on the Jews: <band>" character modifier.**
+  - **What it is:** five display-only modifiers (``common/modifiers/kehillah_outlook_modifiers.txt``),
+    using the vanilla letter icon (positive, mixed or negative). The tooltip says what the band means
+    and what moves an outlook.
+  - **Who carries one:** every landed non-Jewish ruler. Set at game start, refreshed yearly, and
+    quarterly for a player's host.
+  - **Effect:** none, so no gameplay change.
+- **On the community's own strip (under the top bar): a "Your Host" block.**
+  - **Shows:** the host lord's name, his band and number, and "invited" when a lord within the
+    settlers' reach has an open invitation.
+  - **Its tooltip adds:** the realm's Jewish settlement policy, the invitation line, and what moves an
+    outlook.
+  - **Data:** mirrored quarterly onto the player (``kehillah_host_ref``, ``kehillah_invited_in_reach``)
+    by ``kehillah_host_outlook_watch_effect``.
+- **Not built (Daniel's call):** an *opinion* modifier ("Outlook on the Jews: Cold -10" in a lord's
+  opinion of Jewish leaders). It would sit exactly beside opinion, but it changes gameplay: a hostile
+  lord would truly like Jewish leaders less, feeding the host's attitude and the policy review.
