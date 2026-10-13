@@ -79,7 +79,9 @@ control over population, so a full quarter should be a soft limit rather than a 
 - **Capacity:** the base goes from 4 to 20, plus the existing Prosperity bonuses.
 - **Arrivals:** a full quarter turns newcomers away. Arrival sources check
   `kehillah_quarter_has_room_trigger`; the yeshiva's travelling students are the first.
-- **Next:** a housing building, a courtyard or *hazer*, that raises capacity.
+- **Capacity from buildings** (Daniel chose this over a separate housing building): each building
+  tier the community has built adds +2 places (`kehillah_courtier_capacity_buildings_value`). A
+  fully built quarter adds about +50.
 
 **Religious tension.** It read −120 ("evil") in every community. It is now light: −30, −20 or −10
 by the local faith's view. The teaching carries the ideology.
