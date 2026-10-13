@@ -75,6 +75,8 @@ Five one-step events for Yom Kippur, Sukkot and Shavuot are scripted. Two use na
 
 **Feast presentation pass, 2026-10-13:** Jewish generic Feast hosts now receive the scene without the tenet; Ritual Celebrations adds its Piety and family opinion. A household invitation and host ending frame the vanilla activity, and scoped English food wording avoids the clear non-kosher picker results found by the audit. Holiday theme flags are narrowed to 8/8/2 days, with Pesach bread phrasing guarded where identified. Source checks and an isolated boot passed; live gameplay remains pending. See [the presentation note](docs/implementation/jewish-festival-feast-presentation.md). The Kehillah government still cannot host vanilla Feasts.
 
+**Talmud Torah tenet, 2026-10-13, Daniel's request:** A new Jewish tenet replaces Rabbinism's generic Pursuit of Knowledge slot. It grants modest Scholar lifestyle growth, opens the existing Learn Torah scheme to eligible lay readers, and adds Piety and Learning XP for mastering library works without relying on the Scholar or Rabbi trait. Source and `ck3-tiger` checks passed apart from the known 1.19-linter/1.20-game `rite` mismatch; live display and reward probes remain pending. See [the tenet spec](docs/spec/jewish-talmud-torah-tenet.md). This user-requested feature runs in parallel with the higher-priority live-test TODOs above; it does not close them.
+
 ### Exceptional sefarim — 2026-10-12, Daniel's request
 
 The `kehillah_book.0007` arrival event was misleading: it only granted Piety and

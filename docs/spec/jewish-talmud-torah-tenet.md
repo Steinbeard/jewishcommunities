@@ -1,0 +1,20 @@
+# Talmud Torah tenet — 2026-10-13
+
+**Status: Implemented in the separate development branch; source checked, live gameplay pending.** This is the first new Jewish tenet proposed in [v25's tenet mapping](v25-by-god-alone-adaptation-proposals.md). It changes the starting `rabbinism` rite and the existing Learn Torah loop; it does not create another activity or use the vanilla Scholar trait as its reward.
+
+## Historical idea
+
+Talmud Torah means Torah study as an ongoing religious duty of ordinary life, including the transmission of learning in a household. Maimonides' *Mishneh Torah*, Laws of Torah Study 1:1 and 1:8, describes teaching children and setting aside regular study even while poor, ill, or supporting a family ([1:1](https://www.sefaria.org/Mishneh_Torah%2C_Torah_Study.1.1), [1:8](https://www.sefaria.org/Mishneh_Torah%2C_Torah_Study.1.8)). The mod expresses a rite's communal emphasis on that ideal. Its broad player access is a gameplay choice; it does not claim identical medieval rules for every person's formal education or ordination.
+
+## Implemented rules
+
+- Replaces Rabbinism's third starting tenet, vanilla `tenet_pursuit_of_knowledge`, with `tenet_talmud_torah`. Legalism and Religious Legal Pronouncements remain in their vanilla slots. Any Jewish rite may select the new tenet on reform; non-Jewish rites may not.
+- Grants +10% Scholar lifestyle XP to followers through a tenet character modifier. Diligent is a virtue and Lazy a sin. The tenet grants no Scholar trait or Rabbi trait.
+- Extends the existing Learn Torah scheme to adult lay Jewish rulers and landless adventurers of a rite with the tenet, subject to its existing accessible-library, capacity, imprisonment, and scheme checks. The established rabbi and ordination-candidate route still works without the tenet. The scheme's descriptions no longer call every reader a rabbi; semicha tooltips appear only for actual ordination candidates.
+- Mastering a new library work awards an additional 25 Piety and 50 Learning lifestyle XP. Rereading an already mastered work awards 10 Piety and 25 XP. An unmastered reading retains its baseline reward and gets no tenet bonus. The shared study effect covers both the continuous scheme and its journey variant; Rabbi trait XP remains separately guarded by possession of that trait.
+
+The tenet hooks into the mod's library rather than generic Learning actions: the player must spend time on an actual work. Its passive lifestyle modifier also touches a vanilla system. This first pass does not yet reward childhood teaching or book donations, which would need their own balanced actions rather than a second reward for the same study completion.
+
+## Compatibility and verification
+
+The `rabbinism` rite override copies the installed CK3 1.20.1 definition except for the tenet swap, and therefore needs review after a game update. The tenet uses a vanilla icon and its own English text. `ck3-tiger` 1.19.0 reports `unknown token rite` through the touched gates and shared effect; CK3 1.20.1 uses `rite = { rite_has_tenet = ... }` in vanilla character triggers. No other touched-file findings remain. The console-only probes are `kehillah_talmud_torah_debug.1` (eligibility) and `.2` (Mishnah mastery in a disposable save). Live boot, tenet display, scheme availability, and reward resolution are still to be checked.
