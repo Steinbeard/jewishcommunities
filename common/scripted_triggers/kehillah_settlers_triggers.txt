@@ -16,25 +16,42 @@ kehillah_settlers_destination_trigger = {
 		faith.religion = religion:christianity_religion
 		faith.religion = religion:islam_religion
 	}
-	holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_allowed_trigger = yes }
-	# Daughter communities spread within realms that already host Jews;
-	# a realm without any takes them only if its ruler has invited them
-	# (Encouraged). Daniel 2026-10-13, "we're settling Poland too early":
-	# an unset policy reads as Allowed, so every realm was open in 1066.
-	# Organized Jewish settlement in Poland followed Boleslaw the Pious's
-	# Statute of Kalisz (1264); in Hungary it stayed small until later.
+	# Where settlers may go (Daniel 2026-10-13): a nearby realm that allows
+	# Jewish settlement, or a more distant one whose ruler encourages it.
+	# (An unset policy reads as Allowed, so "nearby" is what keeps 1066
+	# settlers from leaping to Poland: diffusion is one step at a time,
+	# and only an invitation pulls them far.)
 	OR = {
-		holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
-		any_in_global_list = {
-			variable = kehillah_registered_communities
-			exists = holder.domicile.domicile_location.county.holder.top_liege
-			holder.domicile.domicile_location.county.holder.top_liege = prev.holder.top_liege
+		AND = {
+			holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_allowed_trigger = yes }
+			title_province = {
+				squared_distance = {
+					target = scope:kehillah_mother_leader.domicile.domicile_location
+					value <= squared_distance_medium
+				}
+			}
+		}
+		AND = {
+			holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+			title_province = {
+				squared_distance = {
+					target = scope:kehillah_mother_leader.domicile.domicile_location
+					value <= squared_distance_large
+				}
+			}
 		}
 	}
-	title_province = {
-		squared_distance = {
-			target = scope:kehillah_mother_leader.domicile.domicile_location
-			value <= squared_distance_large
+	# Not crowding an existing community (no clustering).
+	NOT = {
+		any_in_global_list = {
+			variable = kehillah_registered_communities
+			exists = holder.domicile.domicile_location
+			holder.domicile.domicile_location = {
+				squared_distance = {
+					target = prev.title_province
+					value < kehillah_settlers_min_spacing_squared
+				}
+			}
 		}
 	}
 	NOT = { this = scope:kehillah_mother_leader.domicile.domicile_location.county }

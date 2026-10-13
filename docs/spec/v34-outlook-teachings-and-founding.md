@@ -34,13 +34,19 @@ community."
   not.
 - **The AI** takes the Ba'al Bayit, then the rabbi, then the kinsman.
 
-- **Where settlers may go** (Daniel, "we're settling Poland too early"): only into a realm that already
-  hosts a Jewish community, or one whose ruler has invited them (Encouraged). An unset policy reads as
-  Allowed, so in the first version every realm was open in 1066, and Mainz settled Legnica in its first
-  year. Organized settlement in Poland followed the Statute of Kalisz (1264).
-  - **Not yet built:** rulers *inviting* Jewish settlers, which would raise an empty realm to
-    Encouraged. The drivers would be outlook, stewardship and empty towns: Boleslaw the Pious, Bela IV
-    after 1241, Casimir the Great.
+- **Where settlers may go** (Daniel, 2026-10-13, after "we're settling Poland too early"):
+  - **Eligible:** a realm that *allows* settlement within `squared_distance_medium` (about 250 map-px)
+    of the mother community, or one that *encourages* it within `squared_distance_large` (about 650
+    px).
+  - **Spacing:** never within 60 px of an existing community, so settlement does not cluster.
+  - **Weighting:** +8 within about 150 px, +4 within 250 px, +4 for an Encouraged realm, +1 for
+    development 15 or more.
+  - **Why the distance rule:** an unset policy reads as Allowed, so the distance is what stops a 1066
+    leap to Poland. Settlement diffuses outward a step at a time, and only an invitation pulls it far.
+    Organized settlement in Poland followed the Statute of Kalisz (1264).
+  - **Not yet built:** rulers *inviting* Jewish settlers, which would raise a realm to Encouraged. The
+    drivers would be outlook, stewardship and empty towns: Boleslaw the Pious, Bela IV after 1241,
+    Casimir the Great.
 
 The rest of this section describes the first version; where they differ, the revisions above apply.
 
