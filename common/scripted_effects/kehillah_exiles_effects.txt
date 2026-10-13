@@ -41,7 +41,7 @@ kehillah_found_community_here_effect = {
 kehillah_exiles_seek_home_effect = {
 	if = {
 		limit = {
-			is_travelling = no
+			NOT = { has_variable = kehillah_exiles_on_the_road }
 			exists = location.county
 			location.county = { kehillah_founding_site_trigger = yes }
 		}
@@ -49,7 +49,7 @@ kehillah_exiles_seek_home_effect = {
 		debug_log = "kehillah_exiles_seek_home_effect: exiles settled where they stood"
 	}
 	else_if = {
-		limit = { is_travelling = no }
+		limit = { NOT = { has_variable = kehillah_exiles_on_the_road } }
 		clear_saved_scope = kehillah_exiles_goal
 		random_county = {
 			limit = {
@@ -90,11 +90,12 @@ kehillah_exiles_seek_home_effect = {
 		}
 		if = {
 			limit = { exists = scope:kehillah_exiles_goal }
-			start_travel_plan = {
-				destination = scope:kehillah_exiles_goal.title_province
-				return_trip = no
-				on_arrival_event = kehillah_exiles.0001
-			}
+			# Not vanilla travel: the landless-camp AI cancels a scripted
+			# travel plan, so on_arrival_event never fired (live 2026-10-13).
+			# The journey is a hidden delay; .0001 brings them there.
+			set_variable = { name = kehillah_exiles_goal value = scope:kehillah_exiles_goal }
+			set_variable = { name = kehillah_exiles_on_the_road value = yes days = 365 }
+			trigger_event = { id = kehillah_exiles.0001 days = { 90 240 } }
 			debug_log = "kehillah_exiles_seek_home_effect: exiles set out for a welcoming county"
 		}
 		else = {

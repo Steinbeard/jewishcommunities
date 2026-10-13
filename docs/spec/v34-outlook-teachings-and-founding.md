@@ -214,3 +214,13 @@ Send Out Settlers adds its reach from the mother community. The adventurer decis
   - The spike found vanilla's ``move_domicile`` and relocate-camp interaction, but travel is simpler
     and shows the journey.
 - **Debug:** ``kehillah_exiles.0002`` turns root's community into exiles now.
+- **Live fixes, 2026-10-13:**
+  - **The site rule named the wrong scope.** Inside a domicile scope, ``prev`` pointed at the community
+    title, so no county qualified. The rule now uses ``save_temporary_scope_as kehillah_site_county``.
+  - **Exiles keep their Jews.** They are recorded before dissolution and re-attached; before this,
+    Mainz kept 7 of 41.
+  - **"Near the diaspora" is now ``squared_distance_small``.** At ``medium``, the 19 communities
+    covered most of the map, Krakow and Gyor included.
+  - **AI exiles no longer use vanilla travel.** The landless-camp AI cancelled the plan, so
+    ``on_arrival_event`` never fired. Now they record a goal, wait 90-240 days hidden, then
+    ``kehillah_exiles.0001`` moves them there (``set_location``) and founds.
