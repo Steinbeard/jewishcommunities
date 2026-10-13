@@ -21,14 +21,16 @@ subject to revision after each phase.
 
 Each Prosperity, Stability and Greatness breakdown now states the current level's applied
 leader modifier. The next and previous bands are shown as hoverable labels with their ranges and
-effects. **2026-10-13 correction:** nested hover checks passed for all three HUD pillars at
-Flourishing, with matching roster spot-checks. Action Lock requires middle-clicking the parent
-tooltip. Four roster score labels also received a live-checked layout fix; other pre-existing row
-layout warnings remain. Exact threshold transitions were source-checked, not exhaustively rendered.
-See [implementation note §18](docs/implementation/v1-kehillah-implementation.md) and
-[the live test](docs/testing/2026-10-13-pillar-tooltip-live-playtest-log.md).
-**Remaining:** roster nesting for Stability and Greatness, then Crisis/Legendary endpoint
-spot-checks. These remain the first task for the next run, before the death-screen check.
+effects. **Verification complete, 2026-10-13:** the 09:30 retry finished Stability and Greatness
+roster nesting at 750, Crisis/Legendary endpoint spot-checks, and rendered all three HUD bands
+at exactly 150/400/700/950. This closes the remaining checks from the morning pass.
+Action Lock requires a real middle-click; the input shim's `button="middle"` sends a right-click.
+The final hidden probe confirmed all three Legendary leader modifiers at 950 without new runtime
+script errors. Four roster score labels received the earlier live-checked layout fix; the five
+other pre-existing row layout warnings remain. See [implementation note §18](docs/implementation/v1-kehillah-implementation.md),
+[the morning test](docs/testing/2026-10-13-pillar-tooltip-live-playtest-log.md), and
+[the retry log](docs/testing/2026-10-13-pillar-tooltip-retry-live-test-log.md) for coverage and
+probe/ownership caveats. **This verification item is closed; the death-screen wording check is next.**
 
 ### Kehillah death-screen wording — 2026-10-12, Daniel's request
 
