@@ -145,6 +145,13 @@ is the S11 "friendliness" design review; the Crusades chain stays separate and b
   player-led communities through a copied vanilla interaction. AI hosts demand "convert or leave"
   while an expulsion edict stands. A player convert may carry on as the heir. Probe:
   `kehillah_conversion_debug.4`.
+- **Slice A, the teachings, built 2026-10-12, NOT live-tested** (v31 §4–5). Every Christian and
+  Muslim rite gets a "Teaching on the Jews" at game start: Witness, Imperial Law (Eastern) or
+  Dhimma. The AI policy review scales zeal by the teaching and refuses Banned under a protective
+  teaching. Forced conversion now follows the teaching: the Strict Pact, Exclusion or Abolition
+  allow it; a non-Abrahamic host still needs Banned. **In 1066 every host is protective**, so
+  this adds variety but no pressure until rites move (Slice E, councils and reform) or the
+  faction and incidents exist (Slices D and G). Probes: `kehillah_teaching_debug.1`–`.5`.
 - **Balance finding, 2026-10-12 soak (session 0f):** across about 58 logged years, the AI policy
   review ran about 35 times and moved a policy 3 times (1 down, 2 up). Nothing reached Banned and
   no edict was issued. Expulsion and forced conversion therefore never happen in ordinary play.

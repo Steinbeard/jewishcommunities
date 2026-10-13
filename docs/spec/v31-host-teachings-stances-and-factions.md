@@ -80,6 +80,33 @@ like Speyer's were trying to stop them.
 
 ## 4. The doctrine group
 
+**Slice A built 2026-10-12, NOT yet live-tested** (Daniel: "Let's implement!"). Files:
+- `common/religion/doctrine_group_types/kehillah_teaching_doctrine_groups.txt` (group
+  `kehillah_teaching_on_jews`, category `main_group`; offered when creating or reforming a
+  Christian or Muslim faith);
+- `common/religion/doctrine_types/kehillah_teaching_doctrines.txt` (seven doctrines, no modifiers);
+- `common/scripted_triggers/kehillah_teaching_triggers.txt` (rite reads with fallback; the
+  protective/strict/exclusionary/neutral bands; the ban ceiling; the forced-conversion gate);
+- `common/scripted_effects/kehillah_teaching_effects.txt` and
+  `common/on_action/kehillah_teaching_on_actions.txt` (assignment at game start);
+- `events/kehillah_teaching_debug_events.txt` (probes `.1`–`.5`);
+- `localization/english/kehillah_teaching_l_english.yml`;
+- group icon `gfx/interface/icons/faith_doctrine_groups/kehillah_teaching_on_jews.dds` (vanilla
+  theocracy icon as a placeholder).
+
+**How the spike in §11.1 was settled:** no vanilla religion or rite file is overridden. At game
+start `kehillah_assign_teachings_effect` walks `religion:christianity_religion` and
+`religion:islam_religion` → `every_faith` → `every_faith_rite` and calls `change_rite_doctrine`
+(the rite-scope effect vanilla's councils use) on every rite without a teaching. A rite created
+later, or a save begun before V31, **falls back by tradition** in the triggers: an Eastern
+Christian rite to Imperial Law, any other Christian rite to Witness, a Muslim rite to Dhimma.
+Whether `change_rite_doctrine` accepts a mod doctrine group, and whether the rite screen shows
+it, is what the live test must confirm.
+
+**Changed from §4.4 for now:** Witness's extra route to Banned (a faction ultimatum or a
+Convinced/Predator ruler) does not exist yet, so under Witness the review cannot reach Banned at
+all. Imperial Law has no decree yet, so it never permits forced conversion.
+
 ### 4.1 What vanilla provides (verified)
 
 - **Christian faiths have rites that hold doctrines** (`common/religion/rite_types/00_rite_types.txt`):
@@ -113,7 +140,9 @@ teaching term in the review, and no regional charter vocabulary forced on it.
 
 - **Witness:** Roman, Insular Celtic, Ambrosian, Beneventan, Carolingian, Mozarabic.
 - **Imperial Law:** Byzantine, Georgian, Slavic, Coptic and Armenian, and any other Eastern
-  Christian rite. *Daniel left this to Claude's discretion; Claude chose this.* Augustine's
+  Christian rite. As built: also Antiochian, Ethiopian, Nestorian, and the Eastern heresies
+  (Iconoclast, Bogomil, Paulician, Messalian). Every other Christian rite (the Latin heresies,
+  Conversos, the Bosnian Church) takes Witness. *Daniel left this to Claude's discretion; Claude chose this.* Augustine's
   witness doctrine is a Latin development. The Eastern churches' treatment of Jews ran through
   Roman law and the canons, as Byzantium's did, so they share Byzantium's doctrine rather than
   borrowing Rome's. For a rite without an emperor, the "decree" in §4.4 is issued by whatever
@@ -150,6 +179,14 @@ unrestricted/licensed/proscribed, Muslim market chartered/regional/local. The ag
 V17 Slice C's charter revision, one term at a time; no teaching writes a term directly.
 
 ## 5. Changes to the V30 review
+
+**Built 2026-10-12 with Slice A, NOT yet live-tested:** 5.1 (scaled zeal and clergy, and the
+Witness protective point), 5.2 (the ceiling, logged as "pressure would ban, but this ruler's
+teaching on the Jews forbids it"), and 5.3 (threshold 4 under Exclusion/Abolition, as
+`kehillah_policy_ban_threshold_value`). The reason recorder now picks the **largest** restrictive
+pressure rather than the first present, since zeal's weight varies. V17's rules are unchanged:
+one rung, Banned only from Discouraged with two distinct pressures, and a Jewish ruler never
+restricts. 5.4's new pressures (faction, stance, revenue) come with later slices.
 
 V30's review (`kehillah_policy_ai_review_effect`, values in `kehillah_expulsion_values.txt`)
 keeps its structure: named pressures, net thresholds, one rung, a five-year cooldown, and the

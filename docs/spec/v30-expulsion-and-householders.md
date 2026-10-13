@@ -70,6 +70,12 @@ because of the tooltip dry-run hazard recorded in the Norman Conquest chain.
 
 ### 1.3 The AI policy review (V17 Slice B, first pass)
 
+**2026-10-12 addendum:** V31 Slice A changes this review. Zeal and clergy weights now scale with
+the host's rite teaching on the Jews, the teaching sets a ceiling on Banned, and Exclusion or
+Abolition lowers the ban threshold to 4. The reason recorder picks the largest pressure. See
+[V31 §5](v31-host-teachings-stances-and-factions.md). The table below is the V30 baseline; it
+still applies to a host with no teaching (non-Abrahamic).
+
 Each community's yearly pass gives its AI host a chance to review the policy:
 - 10% a year per host, shared by all of its communities;
 - not while the five-year review cooldown runs.

@@ -255,7 +255,10 @@ kehillah_policy_ai_review_effect = {
 				primary_title = { kehillah_jewish_settlement_policy_allowed_trigger = yes }
 				AND = {
 					primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes }
-					kehillah_policy_net_pressure_value >= kehillah_policy_review_ban_threshold
+					# V31 section 4.4: the host's teaching must allow Banned at
+					# all, and Exclusion/Abolition lower the threshold.
+					kehillah_teaching_permits_ban_trigger = yes
+					kehillah_policy_net_pressure_value >= kehillah_policy_ban_threshold_value
 					kehillah_policy_restrictive_count_value >= 2
 				}
 			}
@@ -263,6 +266,18 @@ kehillah_policy_ai_review_effect = {
 		kehillah_policy_record_restrictive_reason_effect = yes
 		debug_log = "kehillah_policy_ai_review_effect: restrictive pressure prevails -- lowering one rung"
 		kehillah_lower_jewish_settlement_policy_effect = yes
+	}
+	else_if = {
+		# V31: a ban the pressures would carry, refused by the teaching.
+		# Logged for tuning; the policy stays Discouraged.
+		limit = {
+			NOT = { is_jewish_character_trigger = yes }
+			primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes }
+			NOT = { kehillah_teaching_permits_ban_trigger = yes }
+			kehillah_policy_net_pressure_value >= kehillah_policy_ban_threshold_value
+			kehillah_policy_restrictive_count_value >= 2
+		}
+		debug_log = "kehillah_policy_ai_review_effect: pressure would ban, but this ruler's teaching on the Jews forbids it -- policy unchanged"
 	}
 	else_if = {
 		# WELCOME.
@@ -282,19 +297,31 @@ kehillah_policy_ai_review_effect = {
 # Scope: the host ruler. Records the strongest restrictive pressure.
 kehillah_policy_record_restrictive_reason_effect = {
 	primary_title = { save_scope_as = kehillah_reason_realm }
+	# V31: the zeal and clergy weights now vary with the teaching, so the
+	# reason is the LARGEST pressure, not the first one present (ties go
+	# to the earlier line).
 	if = {
 		limit = {
 			kehillah_policy_pressure_debts_value > 0
 			kehillah_policy_pressure_debts_value >= kehillah_policy_pressure_zeal_value
+			kehillah_policy_pressure_debts_value >= kehillah_policy_pressure_grievance_value
+			kehillah_policy_pressure_debts_value >= kehillah_policy_pressure_clergy_value
 		}
 		scope:kehillah_reason_realm = { set_variable = { name = kehillah_policy_reason value = flag:debts } }
 	}
 	else_if = {
-		limit = { kehillah_policy_pressure_zeal_value > 0 }
+		limit = {
+			kehillah_policy_pressure_zeal_value > 0
+			kehillah_policy_pressure_zeal_value >= kehillah_policy_pressure_grievance_value
+			kehillah_policy_pressure_zeal_value >= kehillah_policy_pressure_clergy_value
+		}
 		scope:kehillah_reason_realm = { set_variable = { name = kehillah_policy_reason value = flag:zeal } }
 	}
 	else_if = {
-		limit = { kehillah_policy_pressure_grievance_value > 0 }
+		limit = {
+			kehillah_policy_pressure_grievance_value > 0
+			kehillah_policy_pressure_grievance_value >= kehillah_policy_pressure_clergy_value
+		}
 		scope:kehillah_reason_realm = { set_variable = { name = kehillah_policy_reason value = flag:grievance } }
 	}
 	else_if = {
