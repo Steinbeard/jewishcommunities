@@ -24,6 +24,18 @@ founding is a dynamic system rather than a scripted event. Quoting him: "an over
 community's leader can take a decision to encourage someone to take some members and found a new
 community."
 
+**Revised again 2026-10-13 (Daniel):**
+- **The overflow leaves.** The party is exactly enough to bring the quarter back to capacity: the
+  leader, his household, then others (never councillors, the heir, close family or students).
+- **No world-wide AI gap.** The per-community cooldown is 5 years. The decision rests until the
+  quarter fills again.
+- **Three kinds of leader:** a Ba'al Bayit (by stewardship), a learned rabbi (an ordained rabbi, by
+  learning), and a man of the leader's own house. A younger son may lead; the heir and the wife may
+  not.
+- **The AI** takes the Ba'al Bayit, then the rabbi, then the kinsman.
+
+The rest of this section describes the first version; where they differ, the revisions above apply.
+
 **The decision: "Send Out Settlers"** (`kehillah_settlers_decisions.txt`).
 - **Available when:**
   - the quarter is over capacity;

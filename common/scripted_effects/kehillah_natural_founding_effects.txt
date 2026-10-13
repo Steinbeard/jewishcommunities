@@ -4,9 +4,9 @@
 # one new community every five years; the same day he replaced the
 # random yearly pulse with a decision ("Send Out Settlers",
 # kehillah_settlers_decisions.txt): an overcrowded community sends one of
-# its own to found a daughter community. Player and AI leaders both take
-# it; an AI-wide gap of ~3 years keeps the world rate near one founding
-# every few years.
+# its own, with the overflow, to found a daughter community. Player and AI
+# leaders both take it; the quarter falls back to capacity, so the
+# decision rests until it fills again.
 # =====================================================================
 
 # Scope: the founder (an existing character -- a courtier, or a debug
@@ -72,9 +72,9 @@ kehillah_settlers_pick_effect = {
 	clear_saved_scope = kehillah_settlers_dest_1
 	clear_saved_scope = kehillah_settlers_dest_2
 	clear_saved_scope = kehillah_settlers_dest_3
-	clear_saved_scope = kehillah_settlers_lead_1
-	clear_saved_scope = kehillah_settlers_lead_2
-	clear_saved_scope = kehillah_settlers_lead_3
+	clear_saved_scope = kehillah_settlers_lead_baal
+	clear_saved_scope = kehillah_settlers_lead_rabbi
+	clear_saved_scope = kehillah_settlers_lead_kin
 	random_county = {
 		limit = { kehillah_settlers_destination_trigger = yes }
 		weight = {
@@ -104,23 +104,47 @@ kehillah_settlers_pick_effect = {
 		}
 		save_scope_as = kehillah_settlers_dest_3
 	}
+	# One of each kind of leader (Daniel 2026-10-13).
 	ordered_courtier = {
-		limit = { kehillah_settlers_leader_candidate_trigger = yes }
-		order_by = { value = stewardship add = learning }
-		position = 0
-		save_scope_as = kehillah_settlers_lead_1
+		limit = {
+			kehillah_settlers_leader_candidate_trigger = yes
+			kehillah_is_baal_bayit_trigger = yes
+		}
+		order_by = stewardship
+		save_scope_as = kehillah_settlers_lead_baal
 	}
 	ordered_courtier = {
-		limit = { kehillah_settlers_leader_candidate_trigger = yes }
-		order_by = { value = stewardship add = learning }
-		position = 1
-		save_scope_as = kehillah_settlers_lead_2
+		limit = {
+			kehillah_settlers_leader_candidate_trigger = yes
+			kehillah_is_ordained_rabbi_trigger = yes
+			NOT = { scope:kehillah_settlers_lead_baal ?= this }
+		}
+		order_by = learning
+		save_scope_as = kehillah_settlers_lead_rabbi
 	}
 	ordered_courtier = {
-		limit = { kehillah_settlers_leader_candidate_trigger = yes }
+		limit = {
+			kehillah_settlers_leader_candidate_trigger = yes
+			exists = dynasty
+			dynasty = scope:kehillah_mother_leader.dynasty
+			NOT = { scope:kehillah_settlers_lead_baal ?= this }
+			NOT = { scope:kehillah_settlers_lead_rabbi ?= this }
+		}
 		order_by = { value = stewardship add = learning }
-		position = 2
-		save_scope_as = kehillah_settlers_lead_3
+		save_scope_as = kehillah_settlers_lead_kin
+	}
+	# Whoever is left, if a kind is missing (the AI takes the first found).
+	if = {
+		limit = {
+			NOT = { exists = scope:kehillah_settlers_lead_baal }
+			NOT = { exists = scope:kehillah_settlers_lead_rabbi }
+			NOT = { exists = scope:kehillah_settlers_lead_kin }
+		}
+		ordered_courtier = {
+			limit = { kehillah_settlers_leader_candidate_trigger = yes }
+			order_by = { value = stewardship add = learning }
+			save_scope_as = kehillah_settlers_lead_baal
+		}
 	}
 }
 
@@ -133,32 +157,37 @@ kehillah_settlers_go_effect = {
 		save_scope_as = kehillah_mother_title
 		set_variable = { name = kehillah_settlers_cooldown value = yes years = kehillah_settlers_cooldown_years }
 	}
-	# Who goes with him: his own household first, then others.
+	# The party: exactly the overflow (Daniel 2026-10-13) -- his own
+	# household first, then others, until the quarter is back to capacity.
+	set_variable = { name = kehillah_settlers_to_send value = kehillah_settlers_overflow_value }
+	change_variable = { name = kehillah_settlers_to_send add = -1 } # the leader himself
 	scope:kehillah_settlers_leader = {
 		every_close_family_member = {
 			limit = {
 				is_courtier_of = scope:kehillah_mother_leader
 				NOT = { this = scope:kehillah_mother_leader }
+				NOT = { is_close_family_of = scope:kehillah_mother_leader }
+			}
+			add_to_list = kehillah_settlers_party
+			scope:kehillah_mother_leader = { change_variable = { name = kehillah_settlers_to_send add = -1 } }
+		}
+	}
+	while = {
+		limit = {
+			var:kehillah_settlers_to_send > 0
+			any_courtier = { kehillah_settlers_follower_candidate_trigger = yes }
+		}
+		random_courtier = {
+			limit = { kehillah_settlers_follower_candidate_trigger = yes }
+			weight = {
+				base = 1
+				modifier = { add = 2 is_adult = yes }
 			}
 			add_to_list = kehillah_settlers_party
 		}
+		change_variable = { name = kehillah_settlers_to_send add = -1 }
 	}
-	ordered_courtier = {
-		limit = {
-			is_adult = yes
-			is_jewish_character_trigger = yes
-			is_imprisoned = no
-			NOT = { this = scope:kehillah_settlers_leader }
-			NOT = { is_in_list = kehillah_settlers_party }
-			NOT = { has_variable = kehillah_yeshiva_enrolled }
-			NOT = { is_councillor = yes }
-			NOT = { scope:kehillah_mother_leader.player_heir ?= this }
-			NOT = { is_close_family_of = scope:kehillah_mother_leader }
-		}
-		order_by = age
-		max = kehillah_settlers_max_followers
-		add_to_list = kehillah_settlers_party
-	}
+	remove_variable = kehillah_settlers_to_send
 	scope:kehillah_settlers_leader = { kehillah_found_with_founder_effect = yes }
 	every_in_list = {
 		list = kehillah_settlers_party
@@ -168,10 +197,6 @@ kehillah_settlers_go_effect = {
 	# The mother community's credit: a daughter is greatness.
 	scope:kehillah_mother_title = {
 		change_variable = { name = kehillah_var_greatness add = 20 }
-	}
-	if = {
-		limit = { is_ai = yes }
-		set_global_variable = { name = kehillah_settlers_ai_gap value = yes years = 3 }
 	}
 	debug_log = "kehillah_settlers_go_effect: settlers left to found a daughter community"
 }

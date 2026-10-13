@@ -12,7 +12,7 @@ kehillah_send_out_settlers_decision = {
 	}
 	decision_group_type = kehillah
 	sort_order = 96
-	ai_check_interval = 24
+	ai_check_interval = 36
 
 	is_shown = {
 		government_has_flag = government_is_kehillah
@@ -61,7 +61,17 @@ kehillah_send_out_settlers_decision = {
 			}
 			else = {
 				scope:kehillah_settlers_dest_1 ?= { save_scope_as = kehillah_founding_county }
-				scope:kehillah_settlers_lead_1 ?= { save_scope_as = kehillah_settlers_leader }
+				if = {
+					limit = { exists = scope:kehillah_settlers_lead_baal }
+					scope:kehillah_settlers_lead_baal = { save_scope_as = kehillah_settlers_leader }
+				}
+				else_if = {
+					limit = { exists = scope:kehillah_settlers_lead_rabbi }
+					scope:kehillah_settlers_lead_rabbi = { save_scope_as = kehillah_settlers_leader }
+				}
+				else = {
+					scope:kehillah_settlers_lead_kin ?= { save_scope_as = kehillah_settlers_leader }
+				}
 				if = {
 					limit = {
 						exists = scope:kehillah_founding_county
@@ -75,10 +85,31 @@ kehillah_send_out_settlers_decision = {
 
 	ai_potential = {
 		government_has_flag = government_is_kehillah
-		NOT = { has_global_variable = kehillah_settlers_ai_gap }
 	}
 
+	# Daniel 2026-10-13: AI communities should found one every few years
+	# world-wide, balanced by communities collapsing. Chance per check
+	# (every 3 years) = the overflow, as a percent, capped at 20; halved at
+	# 30 communities world-wide and quartered at 40 -- a soft ceiling.
 	ai_will_do = {
-		base = 50
+		base = 0
+		modifier = {
+			add = kehillah_settlers_overflow_value
+		}
+		modifier = {
+			factor = 0.5
+			any_in_global_list = {
+				variable = kehillah_registered_communities
+				count >= 30
+			}
+		}
+		modifier = {
+			factor = 0.5
+			any_in_global_list = {
+				variable = kehillah_registered_communities
+				count >= 40
+			}
+		}
+		max = 20
 	}
 }
