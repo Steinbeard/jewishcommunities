@@ -1,0 +1,136 @@
+﻿# =====================================================================
+# V36 -- the host relationship, its levers and its crises (docs/spec/
+# v36-host-relationship-levers-and-crises.md), 2026-10-13.
+# =====================================================================
+
+# Present a Gift: a Kehillah leader sends a gift to a lord -- the host,
+# the county's lord, or a Christian or Muslim duke or greater. His opinion
+# +20 and his outlook on the Jews +5 (personal history, within +/-30).
+# Once in kehillah_gift_cooldown_years per community.
+kehillah_present_gift_interaction = {
+	icon = icon_gold
+	category = interaction_category_friendly
+	common_interaction = no
+	use_diplomatic_range = yes
+
+	desc = kehillah_present_gift_interaction_desc
+	auto_accept = yes
+
+	cost = {
+		gold = {
+			scope:actor = { value = medium_gold_value }
+		}
+	}
+
+	is_shown = {
+		scope:actor = { government_has_flag = government_is_kehillah }
+		NOT = { scope:actor = scope:recipient }
+		scope:recipient = {
+			is_landed = yes
+			NOT = { is_jewish_character_trigger = yes }
+			NOT = { government_has_flag = government_is_kehillah }
+			OR = {
+				faith.religion = religion:christianity_religion
+				faith.religion = religion:islam_religion
+			}
+			OR = {
+				highest_held_title_tier >= tier_duchy
+				this = scope:actor.domicile.domicile_location.county.holder
+				this = scope:actor.domicile.domicile_location.county.holder.top_liege
+			}
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			is_available_adult = yes
+			custom_description = {
+				text = kehillah_present_gift_cooldown_tt
+				NOT = { primary_title ?= { has_variable = kehillah_gift_cooldown } }
+			}
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			primary_title ?= {
+				set_variable = { name = kehillah_gift_cooldown value = yes years = kehillah_gift_cooldown_years }
+			}
+		}
+		scope:recipient = {
+			add_opinion = { target = scope:actor modifier = pleased_opinion opinion = 20 }
+			custom_tooltip = kehillah_present_gift_outlook_tt
+			hidden_effect = { kehillah_shift_outlook_effect = { AMOUNT = kehillah_gift_outlook } }
+		}
+	}
+
+	ai_targets = {
+		ai_recipients = suzerain
+	}
+	ai_frequency = 60
+	ai_will_do = {
+		base = 0
+		modifier = {
+			add = 30
+			scope:recipient = {
+				this = scope:actor.domicile.domicile_location.county.holder.top_liege
+				kehillah_outlook_on_jews_value < 15
+			}
+		}
+	}
+}
+
+# Forgive the Debt: a lord owing this community a loan is released from
+# it. His outlook +15, opinion +30; the community loses the money
+# (Prosperity) and gains a name for generosity (Greatness).
+kehillah_forgive_debt_interaction = {
+	icon = owner_in_debt
+	category = interaction_category_friendly
+	common_interaction = no
+	use_diplomatic_range = no
+
+	desc = kehillah_forgive_debt_interaction_desc
+	auto_accept = yes
+
+	is_shown = {
+		scope:actor = {
+			government_has_flag = government_is_kehillah
+			exists = primary_title
+		}
+		scope:recipient = {
+			exists = var:kehillah_loan_lender_title
+			var:kehillah_loan_lender_title = scope:actor.primary_title
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = { is_available_adult = yes }
+	}
+
+	on_accept = {
+		scope:actor.primary_title = { save_scope_as = kehillah_forgiving_title }
+		scope:recipient = {
+			remove_variable = kehillah_loan_amount_owed
+			remove_variable = kehillah_loan_lender_title
+			if = {
+				limit = { has_variable = kehillah_loan_years_elapsed }
+				remove_variable = kehillah_loan_years_elapsed
+			}
+			add_opinion = { target = scope:actor modifier = pleased_opinion opinion = 30 }
+			custom_tooltip = kehillah_forgive_debt_outlook_tt
+			hidden_effect = { kehillah_shift_outlook_effect = { AMOUNT = kehillah_forgive_debt_outlook } }
+		}
+		scope:kehillah_forgiving_title = {
+			remove_list_variable = {
+				name = kehillah_loan_debtors
+				target = scope:recipient
+			}
+			change_variable = { name = kehillah_var_prosperity add = kehillah_forgive_debt_prosperity }
+			change_variable = { name = kehillah_var_greatness add = kehillah_forgive_debt_greatness }
+			clamp_variable = { name = kehillah_var_prosperity min = 0 max = 100000 }
+		}
+		custom_tooltip = kehillah_forgive_debt_pillars_tt
+	}
+
+	ai_frequency = 0
+}

@@ -1,0 +1,126 @@
+﻿# =====================================================================
+# V36 -- the host relationship, its levers and its crises (docs/spec/
+# v36-host-relationship-levers-and-crises.md), 2026-10-13.
+# =====================================================================
+
+# --- 2. The Lord's Demands. Scope: a Kehillah leader, quarterly
+# (kehillah_on_actions.txt). A Cold or Hostile host may make demands --
+# once in kehillah_host_demands_cooldown_years.
+kehillah_host_demands_check_effect = {
+	if = {
+		limit = {
+			is_alive = yes
+			exists = primary_title
+			exists = domicile.domicile_location.county.holder.top_liege
+			NOT = { primary_title = { has_variable = kehillah_host_demands_cooldown } }
+			domicile.domicile_location.county.holder.top_liege = {
+				NOT = { is_jewish_character_trigger = yes }
+				NOT = { government_has_flag = government_is_kehillah }
+			}
+			kehillah_host_demands_chance_value > 0
+		}
+		random = {
+			chance = kehillah_host_demands_chance_value
+			primary_title = {
+				set_variable = { name = kehillah_host_demands_cooldown value = yes years = kehillah_host_demands_cooldown_years }
+			}
+			trigger_event = kehillah_host_crisis.0001
+		}
+	}
+}
+
+# Scope: a Kehillah leader. The host forces the charter one step worse:
+# security down, else building rights more restricted, else jurisdiction
+# down, else the text term (Christian censorship up / Muslim market
+# access down). Reads the cached terms (kehillah_charter_cache_*: the
+# same 0-2 levels as the contract, except text_study, which is 2 minus
+# the censorship level). The next quarterly charter read reports it as
+# "A Charter Revised". A term the policy set holds until the policy next
+# changes. Without a charter, nothing is changed here.
+kehillah_charter_worsen_one_term_effect = {
+	primary_title = { save_scope_as = kehillah_worsen_title }
+	if = {
+		limit = { has_subject_contract_group = kehillah_christian_host_charter_prototype }
+		if = {
+			limit = { scope:kehillah_worsen_title = { var:kehillah_charter_cache_security ?= 2 } }
+			tributary_contract_set_obligation_level = { type = kehillah_christian_community_security level = 1 }
+		}
+		else_if = {
+			limit = { scope:kehillah_worsen_title = { var:kehillah_charter_cache_security ?= 1 } }
+			tributary_contract_set_obligation_level = { type = kehillah_christian_community_security level = 0 }
+		}
+		else_if = {
+			limit = { scope:kehillah_worsen_title = { var:kehillah_charter_cache_construction ?= 0 } }
+			tributary_contract_set_obligation_level = { type = kehillah_christian_quarter_building_rights level = 1 }
+		}
+		else_if = {
+			limit = { scope:kehillah_worsen_title = { var:kehillah_charter_cache_construction ?= 1 } }
+			tributary_contract_set_obligation_level = { type = kehillah_christian_quarter_building_rights level = 2 }
+		}
+		else_if = {
+			limit = { scope:kehillah_worsen_title = { var:kehillah_charter_cache_jurisdiction ?= 2 } }
+			tributary_contract_set_obligation_level = { type = kehillah_christian_jurisdiction level = 1 }
+		}
+		else_if = {
+			limit = { scope:kehillah_worsen_title = { var:kehillah_charter_cache_jurisdiction ?= 1 } }
+			tributary_contract_set_obligation_level = { type = kehillah_christian_jurisdiction level = 0 }
+		}
+		else_if = {
+			limit = { scope:kehillah_worsen_title = { var:kehillah_charter_cache_text_study ?= 2 } }
+			tributary_contract_set_obligation_level = { type = kehillah_christian_text_censorship level = 1 }
+		}
+		else_if = {
+			limit = { scope:kehillah_worsen_title = { var:kehillah_charter_cache_text_study ?= 1 } }
+			tributary_contract_set_obligation_level = { type = kehillah_christian_text_censorship level = 2 }
+		}
+	}
+	else_if = {
+		limit = { has_subject_contract_group = kehillah_muslim_host_charter_prototype }
+		if = {
+			limit = { scope:kehillah_worsen_title = { var:kehillah_charter_cache_security ?= 2 } }
+			tributary_contract_set_obligation_level = { type = kehillah_muslim_community_security level = 1 }
+		}
+		else_if = {
+			limit = { scope:kehillah_worsen_title = { var:kehillah_charter_cache_security ?= 1 } }
+			tributary_contract_set_obligation_level = { type = kehillah_muslim_community_security level = 0 }
+		}
+		else_if = {
+			limit = { scope:kehillah_worsen_title = { var:kehillah_charter_cache_construction ?= 0 } }
+			tributary_contract_set_obligation_level = { type = kehillah_muslim_quarter_building_rights level = 1 }
+		}
+		else_if = {
+			limit = { scope:kehillah_worsen_title = { var:kehillah_charter_cache_construction ?= 1 } }
+			tributary_contract_set_obligation_level = { type = kehillah_muslim_quarter_building_rights level = 2 }
+		}
+		else_if = {
+			limit = { scope:kehillah_worsen_title = { var:kehillah_charter_cache_jurisdiction ?= 2 } }
+			tributary_contract_set_obligation_level = { type = kehillah_muslim_jurisdiction level = 1 }
+		}
+		else_if = {
+			limit = { scope:kehillah_worsen_title = { var:kehillah_charter_cache_jurisdiction ?= 1 } }
+			tributary_contract_set_obligation_level = { type = kehillah_muslim_jurisdiction level = 0 }
+		}
+		else_if = {
+			limit = { scope:kehillah_worsen_title = { var:kehillah_charter_cache_market_access ?= 2 } }
+			tributary_contract_set_obligation_level = { type = kehillah_muslim_market_access level = 1 }
+		}
+		else_if = {
+			limit = { scope:kehillah_worsen_title = { var:kehillah_charter_cache_market_access ?= 1 } }
+			tributary_contract_set_obligation_level = { type = kehillah_muslim_market_access level = 0 }
+		}
+	}
+	debug_log_scopes = yes
+	debug_log = "kehillah_charter_worsen_one_term_effect: the host forced the charter one step worse"
+}
+
+# Scope: a Kehillah leader; scope:kehillah_demanding_host saved. The cost
+# of a demand not met: a worse charter and a blow to Stability.
+kehillah_host_demands_refused_effect = {
+	custom_tooltip = kehillah_host_demands_charter_worse_tt
+	hidden_effect = { kehillah_charter_worsen_one_term_effect = yes }
+	primary_title = {
+		change_variable = { name = kehillah_var_stability add = kehillah_host_demands_refusal_stability }
+		clamp_variable = { name = kehillah_var_stability min = 0 max = 100000 }
+	}
+	custom_tooltip = kehillah_host_demands_stability_tt
+}

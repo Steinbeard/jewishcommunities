@@ -87,22 +87,47 @@ kehillah_popular_rising_strike_effect = {
 			debug_log = "kehillah_popular_rising_strike_effect: a rising's leader founded an Exclusion rite"
 		}
 	}
-	# The blow to the community.
+	# The blow to the community, scaled by the lord's protection (V36:
+	# kehillah_host_protection_mult_value -- his outlook and the charter's
+	# security term).
+	domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_rising_host }
+	save_scope_value_as = { name = kehillah_rising_mult value = kehillah_host_protection_mult_value }
 	primary_title = {
 		set_variable = { name = kehillah_rising_struck value = yes years = 5 }
-		change_variable = { name = kehillah_var_stability add = kehillah_rising_stability_loss }
-		change_variable = { name = kehillah_var_prosperity add = kehillah_rising_prosperity_loss }
+		set_variable = {
+			name = kehillah_rising_last_stability
+			value = {
+				value = kehillah_rising_stability_loss
+				multiply = scope:kehillah_rising_mult
+			}
+		}
+		set_variable = {
+			name = kehillah_rising_last_prosperity
+			value = {
+				value = kehillah_rising_prosperity_loss
+				multiply = scope:kehillah_rising_mult
+			}
+		}
+	}
+	# A hostile lord's men join the plunder.
+	if = {
+		limit = { kehillah_host_outlook_value <= -40 }
+		primary_title = {
+			change_variable = { name = kehillah_rising_last_prosperity add = kehillah_rising_plunder_prosperity }
+		}
+		scope:kehillah_rising_host ?= { add_gold = kehillah_rising_plunder_gold }
+	}
+	primary_title = {
+		change_variable = { name = kehillah_var_stability add = var:kehillah_rising_last_stability }
+		change_variable = { name = kehillah_var_prosperity add = var:kehillah_rising_last_prosperity }
 		clamp_variable = { name = kehillah_var_stability min = 0 max = 100000 }
 		clamp_variable = { name = kehillah_var_prosperity min = 0 max = 100000 }
 	}
+	# V36: for a player, an event -- the rising's leader, the lord, and
+	# what the lord did.
 	if = {
 		limit = { is_ai = no }
-		send_interface_message = {
-			type = msg_kehillah_community_news_bad
-			title = kehillah_news_rising_t
-			desc = kehillah_news_rising_self_d
-			left_icon = scope:kehillah_rising_leader
-		}
+		trigger_event = kehillah_host_crisis.0010
 	}
 	kehillah_notify_region_players_effect = {
 		TYPE = msg_kehillah_community_news_bad
