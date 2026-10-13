@@ -80,7 +80,23 @@ like Speyer's were trying to stop them.
 
 ## 4. The doctrine group
 
-**Slice A built 2026-10-12, NOT yet live-tested** (Daniel: "Let's implement!"). Files:
+**Slice A built and LIVE-TESTED 2026-10-12** ([log](../testing/2026-10-12-teachings-live-test-log.md);
+Daniel: "Let's implement!"):
+- **The spike is settled.** `change_rite_doctrine` accepts the mod group. At game start
+  roman_rite held Witness, byzantine_rite Imperial Law and maliki Dhimma.
+- **It renders.** The Emperor's rite window shows the doctrine tile under Main Doctrines, with
+  its icon and description. The group name is not shown on the tile, so the doctrine names were
+  then prefixed "Jews: …".
+- **Switching works.** Exclusion made the host EXCLUSIONARY: Banned permitted, and forced
+  conversion valid without any ban. Separation and Mission made him STRICT: Banned permitted,
+  forced conversion refused. Witness restored PROTECTIVE.
+- **The review runs** under each teaching without errors, and no new error.log lines came from
+  the mod.
+- **Not yet exercised live:** the ceiling actually refusing a ban, which needs a Discouraged
+  realm with enough restrictive pressure. The probe now prints its numbers (zeal, clergy,
+  threshold, which way the net pressure points) as debug.log lines.
+
+Files:
 - `common/religion/doctrine_group_types/kehillah_teaching_doctrine_groups.txt` (group
   `kehillah_teaching_on_jews`, category `main_group`; offered when creating or reforming a
   Christian or Muslim faith);
