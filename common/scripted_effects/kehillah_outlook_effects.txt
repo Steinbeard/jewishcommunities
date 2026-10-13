@@ -48,3 +48,53 @@ kehillah_chaplain_sermons_effect = {
 		}
 	}
 }
+
+# V35 (2026-10-13, player clarity). Scope: a Kehillah leader, quarterly.
+# For a player, when his host's outlook on the Jews moves to another band
+# (Hostile / Cold / Indifferent / Well-disposed / Protective), a feed
+# notice says so. A new host is recorded silently (the new lord has his
+# own news).
+kehillah_host_outlook_watch_effect = {
+	if = {
+		limit = {
+			is_ai = no
+			exists = primary_title
+			exists = domicile.domicile_location.county.holder.top_liege
+		}
+		domicile.domicile_location.county.holder.top_liege = {
+			save_scope_as = kehillah_mood_host
+			save_scope_value_as = { name = kehillah_mood_band value = kehillah_outlook_band_value }
+		}
+		primary_title = { save_scope_as = kehillah_mood_title }
+		if = {
+			limit = {
+				scope:kehillah_mood_title = {
+					has_variable = kehillah_host_outlook_seen_band
+					var:kehillah_host_outlook_seen_host ?= scope:kehillah_mood_host
+				}
+			}
+			if = {
+				limit = { scope:kehillah_mood_title = { var:kehillah_host_outlook_seen_band < scope:kehillah_mood_band } }
+				send_interface_message = {
+					type = msg_kehillah_community_news
+					title = kehillah_host_mood_warmer_t
+					desc = kehillah_host_mood_warmer_d
+					left_icon = scope:kehillah_mood_host
+				}
+			}
+			else_if = {
+				limit = { scope:kehillah_mood_title = { var:kehillah_host_outlook_seen_band > scope:kehillah_mood_band } }
+				send_interface_message = {
+					type = msg_kehillah_community_news_bad
+					title = kehillah_host_mood_colder_t
+					desc = kehillah_host_mood_colder_d
+					left_icon = scope:kehillah_mood_host
+				}
+			}
+		}
+		scope:kehillah_mood_title = {
+			set_variable = { name = kehillah_host_outlook_seen_host value = scope:kehillah_mood_host }
+			set_variable = { name = kehillah_host_outlook_seen_band value = scope:kehillah_mood_band }
+		}
+	}
+}

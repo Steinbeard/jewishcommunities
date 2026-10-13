@@ -111,8 +111,9 @@ upcoming trade DLC.
 
 - **Was:** a flat 4 per development level. Worms (about 12) got +48 against the 250-point gap from
   Strained to Healthy.
-- **Now** (``kehillah_bd_local_economy_value``): 8 per level up to level 20, then 2 per level beyond.
-  Worms gets about +96. A development-40 city gets +200 rather than +320.
+- **Now** (``kehillah_bd_local_economy_value``): 8 per level up to level 20, then 4 per level beyond.
+  Worms gets about +96. A development-40 city gets +240 (flat 8 would give +320). Daniel: big cities
+  should be richer, which is realistic, so the knee is a soft compromise (first built at 2 beyond 20).
 - **Why the knee:**
   - The old great cities (Baghdad, Constantinople, Cordoba, at 30-50 in 1066) would otherwise run far
     ahead of Ashkenaz (8-15).
