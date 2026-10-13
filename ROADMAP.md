@@ -67,6 +67,8 @@ than renumbered, since later items and other docs cross-reference these numbers 
 
 Five one-step events for Yom Kippur, Sukkot and Shavuot are scripted. Two use named Jewish courtiers; the others remain available without them. The Purim gift event now always has an affordable choice. Source checks passed; live rendering and seasonal delivery are pending. See [the implementation note](docs/implementation/jewish-holiday-variety.md).
 
+**Festival-observance refinement, 2026-10-13:** Daniel chose a Jewish flavor overlay for vanilla feasts instead of a separate Sukkot decision or new feast intent. The earlier three-choice decision prototype was removed. A source-checked hook modestly raises holiday-event frequency for Jewish rites with vanilla Ritual Celebrations. Feast themes and rewards remain a proposal, with the calendar and Kehillah hosting limits recorded in [Mo'adim le-Simchah](docs/spec/jewish-festival-observance.md). This user-requested tenet work ran in parallel with the higher-priority live-test TODOs above; it does not close them.
+
 ### Exceptional sefarim — 2026-10-12, Daniel's request
 
 The `kehillah_book.0007` arrival event was misleading: it only granted Piety and
