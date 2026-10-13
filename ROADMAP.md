@@ -69,6 +69,8 @@ Five one-step events for Yom Kippur, Sukkot and Shavuot are scripted. Two use na
 
 **Festival-observance refinement, 2026-10-13:** Daniel chose a Jewish flavor overlay for vanilla feasts instead of a separate Sukkot decision or new feast intent. The earlier three-choice decision prototype was removed. A source-checked hook modestly raises holiday-event frequency for Jewish rites with vanilla Ritual Celebrations. Feast themes and rewards remain a proposal, with the calendar and Kehillah hosting limits recorded in [Mo'adim le-Simchah](docs/spec/jewish-festival-observance.md). This user-requested tenet work ran in parallel with the higher-priority live-test TODOs above; it does not close them.
 
+**Feast overlay pilot, 2026-10-13:** A generic vanilla Feast hosted by a Jewish character with Ritual Celebrations now receives one Jewish meal scene, minor Piety, and +5 opinion from attending close family. Recent Pesach, Sukkot, or Shavuot events select the matching meal text; otherwise it stays generic. Source checks passed; live event behavior is pending. The first implementation is recorded in [the feast overlay note](docs/implementation/jewish-festival-feast-overlay.md). Kehillah hosting and Stability rewards remain future work.
+
 ### Exceptional sefarim — 2026-10-12, Daniel's request
 
 The `kehillah_book.0007` arrival event was misleading: it only granted Piety and
