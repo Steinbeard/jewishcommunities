@@ -51,14 +51,12 @@
 # artifact (name/description/modifier) and, at the end, the same tiered
 # Greatness/Piety/Prestige reward regardless of which genre it was.
 #
-# NAME, per genre: two variants (kehillah_book_<genre>_name_1/_2),
-# picked 50/50 by random_list -- one built around the author's own name
-# (set_artifact_name's loc uses the "owner" link, confirmed vanilla
-# syntax: artifacts_l_english.yml's artifact_kris_name is literally
-# "[owner.GetTitledFirstNamePossessiveNoTooltip] Kris"), one a fixed
-# thematic title in the style of a real historical work's short name.
-# Not a large generated pool -- real variety across two axes (tier x
-# genre x name-variant) without an oversized loc surface.
+# NAME AND CONTENT, per genre: kehillah_book_choose_work_effect in
+# kehillah_book_news_effects.txt picks one stable identity. The artifact
+# title/description and the delayed recipient event use that same ID.
+# A Bet Din inspiration can select a subject from a case the author
+# actually remembers. The work flag stays on the character until a new
+# writing project begins; .0007 arrives 30 days after news is sent.
 #
 # MODIFIER, per genre: two variants (common/modifiers/kehillah_book_
 # modifiers.txt), also picked 50/50 -- independent of the name roll and
@@ -78,6 +76,8 @@ kehillah_book_complete_effect = {
 	else = {
 		set_variable = { name = kehillah_book_tier value = flag:masterwork }
 	}
+	kehillah_book_choose_work_effect = yes
+	remove_variable = kehillah_book_bet_din_inspiration
 
 	if = {
 		# UPDATED 2026-09-15: was flag:halakha -- Halakha merged into
@@ -93,10 +93,6 @@ kehillah_book_complete_effect = {
 				SET_TOPIC = flag:no
 			}
 			scope:newly_created_artifact ?= {
-				random_list = {
-					50 = { set_artifact_name = kehillah_book_hashkafa_name_1 }
-					50 = { set_artifact_name = kehillah_book_hashkafa_name_2 }
-				}
 				random_list = {
 					50 = { add_artifact_modifier = kehillah_book_hashkafa_modifier_1 }
 					50 = { add_artifact_modifier = kehillah_book_hashkafa_modifier_2 }
@@ -116,6 +112,7 @@ kehillah_book_complete_effect = {
 					set_artifact_description = kehillah_rabbi_hashkafa_book_desc_masterwork
 					set_artifact_rarity = masterwork
 				}
+				kehillah_book_apply_artifact_identity_effect = yes
 			}
 		}
 		if = {
@@ -142,10 +139,6 @@ kehillah_book_complete_effect = {
 			}
 			scope:newly_created_artifact ?= {
 				random_list = {
-					50 = { set_artifact_name = kehillah_book_parshanut_name_1 }
-					50 = { set_artifact_name = kehillah_book_parshanut_name_2 }
-				}
-				random_list = {
 					50 = { add_artifact_modifier = kehillah_book_parshanut_modifier_1 }
 					50 = { add_artifact_modifier = kehillah_book_parshanut_modifier_2 }
 				}
@@ -164,6 +157,7 @@ kehillah_book_complete_effect = {
 					set_artifact_description = kehillah_rabbi_parshanut_book_desc_masterwork
 					set_artifact_rarity = masterwork
 				}
+				kehillah_book_apply_artifact_identity_effect = yes
 			}
 		}
 		if = {
@@ -190,10 +184,6 @@ kehillah_book_complete_effect = {
 			}
 			scope:newly_created_artifact ?= {
 				random_list = {
-					50 = { set_artifact_name = kehillah_book_talmudics_name_1 }
-					50 = { set_artifact_name = kehillah_book_talmudics_name_2 }
-				}
-				random_list = {
 					50 = { add_artifact_modifier = kehillah_book_talmudics_modifier_1 }
 					50 = { add_artifact_modifier = kehillah_book_talmudics_modifier_2 }
 				}
@@ -212,6 +202,7 @@ kehillah_book_complete_effect = {
 					set_artifact_description = kehillah_rabbi_talmudics_book_desc_masterwork
 					set_artifact_rarity = masterwork
 				}
+				kehillah_book_apply_artifact_identity_effect = yes
 			}
 		}
 		if = {
@@ -238,10 +229,6 @@ kehillah_book_complete_effect = {
 			}
 			scope:newly_created_artifact ?= {
 				random_list = {
-					50 = { set_artifact_name = kehillah_book_poetry_name_1 }
-					50 = { set_artifact_name = kehillah_book_poetry_name_2 }
-				}
-				random_list = {
 					50 = { add_artifact_modifier = kehillah_book_poetry_modifier_1 }
 					50 = { add_artifact_modifier = kehillah_book_poetry_modifier_2 }
 				}
@@ -260,6 +247,7 @@ kehillah_book_complete_effect = {
 					set_artifact_description = kehillah_book_poetry_desc_masterwork
 					set_artifact_rarity = masterwork
 				}
+				kehillah_book_apply_artifact_identity_effect = yes
 			}
 		}
 		if = {
@@ -338,9 +326,9 @@ kehillah_book_complete_effect = {
 # "= {" scope change the way root/this do not, so kehillah_book.0007
 # (root = the RECIPIENT leader, not the author) can still reach
 # scope:kehillah_book_author to name who wrote the book and read their
-# var:kehillah_book_genre -- a character variable that lives on the
-# author, not the recipient, and is only cleared here, once every
-# recipient event has had the chance to read it.
+# var:kehillah_book_work. The old genre-based recipient text could not
+# work: kehillah_book_genre was cleared here, 30 days before recipients
+# saw their event. The stable work identity fixes that mismatch.
 # ---------------------------------------------------------------------
 
 kehillah_book_send_copies_effect = {
@@ -360,5 +348,7 @@ kehillah_book_send_copies_effect = {
 		}
 	}
 
+	# The notification fires 30 days later; the chosen work must remain
+	# readable on the author until then. The next manuscript clears it.
 	remove_variable = kehillah_book_genre
 }

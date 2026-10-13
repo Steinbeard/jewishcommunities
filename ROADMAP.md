@@ -65,8 +65,8 @@ The recipient event reports scholarly discussion without claiming a library
 copy or dwelling on its absence. Source checks passed; live rendering and
 save/reload confirmation remain open. See
 [the implementation note](docs/implementation/kehillah-ordinary-book-identities.md).
-**The larger system is a
-proposal, not built:** [v32](docs/spec/v32-exceptional-sefarim.md) describes rare
+**The larger system is a proposal, not built:**
+[v32](docs/spec/v32-exceptional-sefarim.md) describes rare
 named works created by qualifying scholars during play, with visible progress
 and real library copies. First next step is a one-work data/GUI spike, then an
 end-to-end vertical slice. This user-requested correction and design review
