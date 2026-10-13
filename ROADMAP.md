@@ -269,6 +269,11 @@ the shim guide. Current state is in the
   This affects every building and the balance. Decide after V29's Stability-gated Yeshiva has been
   seen in play.
 
+- **V33 PRESSURES and V34 OUTLOOK: built 2026-10-12/13; V34 live test pending** ([v33](docs/spec/v33-pressures.md), [v34](docs/spec/v34-outlook-teachings-and-founding.md)).
+  - **V33:** Stability rests at Healthy and is pulled down by the host, policy, war, holy war, tension and teaching. It falls fast and recovers slowly. Prosperity follows the county. Overcrowding is a soft population limit. Soak: [2026-10-13](docs/testing/2026-10-13-v33-pressures-soak.md); Prosperity is still too flat.
+  - **V34:** an outlook on the Jews for every character. Teachings change by a head of faith's outlook (yearly, and at councils) and by vanilla rite drift. Masmudi (the Almohads) teaches Abolition. Popular risings found Exclusion rites. The policy review reads outlook, and a policy change revises existing charters. Natural founding: about one community every 5 years.
+  - **Next:** a V34 live probe, then a soak. Prosperity tuning (development x8 or a floor). More outlook sources. The anti-Jewish faction.
+
 - **V30, COMMUNITY NEWS: built and verified live 2026-10-12** ([spec](docs/spec/v30-community-news.md); test log run 20).
   - Quiet feed notices under a 'Community News' filter: your host lord dies; and, in your minhag region, a charter ends, new leadership, a pillar in Crisis, a new or Renowned+ yeshiva, a Bet Din concludes.
   - V29 §12 also added 'Yeshiva News' (newcomers, chavrutot, works and subjects mastered), and fixed every mod message's blank body.
