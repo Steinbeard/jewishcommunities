@@ -18,3 +18,13 @@ The tenet hooks into the mod's library rather than generic Learning actions: the
 ## Compatibility and verification
 
 The `rabbinism` rite override copies the installed CK3 1.20.1 definition except for the tenet swap, and therefore needs review after a game update. The tenet uses a vanilla icon and its own English text. `ck3-tiger` 1.19.0 reports `unknown token rite` through the touched gates and shared effect; CK3 1.20.1 uses `rite = { rite_has_tenet = ... }` in vanilla character triggers. No other touched-file findings remain. The console-only probes are `kehillah_talmud_torah_debug.1` (eligibility) and `.2` (Mishnah mastery in a disposable save). Live boot, tenet display, scheme availability, and reward resolution are still to be checked.
+
+## Rabbi and semicha synergy — 2026-10-13 addendum
+
+**Status: Implemented in script; source checked, live gameplay pending.** Daniel asked the tenet to help established rabbis grow and candidates study for semicha. Successful new-work study now adds 5 Rabbi trait XP in the work's own track to the existing 15; successful repeat study adds 2 to the existing 5. The added XP is still guarded by actual possession of `kehillah_rabbi_trait`. A lay reader or candidate without that trait receives none, and failed readings get no added trait XP.
+
+The usual mastery check requires Learning 10 or a one-course intervention. A follower of Talmud Torah may instead master a work at Learning 8, the [v21 candidate-entry floor](v21-rabbi-ordination-paths.md#31-admission-to-study). This lets a Learning-8 or Learning-9 candidate earn the two real mastered works and distinct study fields needed for semicha. It leaves the two-work/two-field curriculum, Learning-8 readiness, faith and leadership eligibility, and study-hall institution untouched. The lower mastery floor applies to the shared library study effect used by the continuous Learn Torah scheme and the journey variant. Script values hold the 8, 5, and 2 tuning numbers.
+
+`kehillah_talmud_torah_debug.1` now reports whether the lower mastery floor is met. `.3` resolves a natural Mishnah course on an unstudied Learning-8/9 test character; `.2` remains the forced-success reward probe. Run these in a disposable save because study alters the character's records and rewards.
+
+The first isolated boot of this addendum also exposed a pre-existing scheme-description error: the game expected `kehillah_study_torah_desc_general`, while the scheme and localization used a key with an extra `_scheme_`. Both now use the expected key. This is a presentation fix for the same Learn Torah scheme, not a change to its study rules.

@@ -77,6 +77,8 @@ Five one-step events for Yom Kippur, Sukkot and Shavuot are scripted. Two use na
 
 **Talmud Torah tenet, 2026-10-13, Daniel's request:** A new Jewish tenet replaces Rabbinism's generic Pursuit of Knowledge slot. It grants modest Scholar lifestyle growth, opens the existing Learn Torah scheme to eligible lay readers, and adds Piety and Learning XP for mastering library works without relying on the Scholar or Rabbi trait. Source and `ck3-tiger` checks passed apart from the known 1.19-linter/1.20-game `rite` mismatch; live display and reward probes remain pending. See [the tenet spec](docs/spec/jewish-talmud-torah-tenet.md). This user-requested feature runs in parallel with the higher-priority live-test TODOs above; it does not close them.
 
+**Talmud Torah Rabbi synergy, 2026-10-13, Daniel's follow-up:** Successful library study adds modest Rabbi track XP for actual trait holders, and the tenet lowers the work-mastery Learning floor from 10 to the existing semicha-entry floor of 8. The two-work/two-field curriculum and study-hall requirement remain. An isolated CK3 boot passed after correcting a pre-existing Learn Torah description-key error; gameplay probes remain pending. See [the dated addendum](docs/spec/jewish-talmud-torah-tenet.md#rabbi-and-semicha-synergy--2026-10-13-addendum) and [test log](docs/testing/2026-10-13-talmud-torah-tenet-check.md).
+
 ### Exceptional sefarim — 2026-10-12, Daniel's request
 
 The `kehillah_book.0007` arrival event was misleading: it only granted Piety and
