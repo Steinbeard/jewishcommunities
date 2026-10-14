@@ -41,11 +41,11 @@ incidents through it.
   accusation variant), and risings that raise a mob.
 - **Step 4b** passed its live test.
 - **Two soak tests:** pogroms fell from 37 to 9 in 30 years after the balance fixes.
-- **Refugees** are built.
+- **Refugees** are built and live-tested.
+- **AI communities** now ask their lord to ride out.
 - **Next:**
-  1. a live test of the refugees;
-  2. defences that save an AI community more often (9 of 11 mobs still win);
-  3. a second eastern host.
+  1. a soak to see how often the lord's men save an AI community;
+  2. a second eastern host.
 
 ### V40 Living crises and councils — 2026-10-13, Daniel's request
 

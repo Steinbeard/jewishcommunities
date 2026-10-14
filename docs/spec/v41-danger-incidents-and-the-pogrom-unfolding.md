@@ -565,3 +565,19 @@ The AI takes them in unless it is callous or poor.
 **Debug:** `kehillah_refugee.0003` sends root a band from the nearest other community, as after a
 pogrom of severity 80.
 
+**Refugees live test, 2026-10-14: passed.**
+- **The first band:** three people from Speyer, after a made-up pogrom of severity 80. The event came
+  19 days later and read "20 families", with the speaker, his portrait and pronoun.
+- **Take them in:** two of the band joined the court.
+- **The second band:** "Close the gate" cost Greatness 697 to 677, and they stayed out.
+- **The follow-up:** "The Families from the Road" rendered.
+- **A natural pogrom** during the run also sent a band.
+- **Fixed:** the tooltips did not show the pillar changes, because custom variables are invisible
+  in tooltips. They now state them, as the repo's other tooltips do. The same fix applies to the
+  step 4b incidents (the Talmud's burning and acquittal, the badge, Holy Week, the bonds).
+
+**The AI asks its lord to ride out** (`kehillah_mob_ai_answers_effect`). Soak 2 found 9 of 11 mobs
+won; the AI never asked for men, the one answer that can break a host. It now asks the county's
+lord, once there is a host to fight, at the player's odds (`kehillah_mob_ask_men_chance_value`, at
+most 30%). It asks once a year per community.
+
