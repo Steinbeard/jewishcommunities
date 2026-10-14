@@ -832,3 +832,23 @@ the antipope Clement III objected, and Rashi ruled leniently on receiving them b
   The returning converts take the community's faith, join the leader's court, and lose
   `kehillah_anus`. Those dead or far away are lost.
 
+**Slices 3a/3b live test (`7325251`), 2026-10-14.** No crash.
+
+**Passed:**
+- **The tenet** loads.
+- **Allies stay out:** Worms fell with no ally holding it ("defenders hold the town" 0 times); the
+  chain ran Worms, Speyer, Mainz.
+- **The Year of the Decrees** shows in the tooltips (-20 / +15).
+- **Leaders' personal tenets:** Kiddush ha-Shem at Worms, Speyer, Troyes, Paris and Lunel;
+  asceticism at Beziers.
+- **The Memorbuch** dialog.
+- **The converts' return:** "The Baptized Wish to Return" names Avraham; the petition was 46%
+  and granted. The Rashi ruling brought all three back to the court as Jews.
+- **The quiet return:** it was discovered, and the host's outlook fell by 5.
+
+**Fixed:**
+- **192 errors per run:** `add_known_tenet` on courtiers ("not playable"). Courtiers now get only
+  stress.
+- **Too wide:** the Year of the Decrees (and the leaders' tenet spread) reached Paris, Narbonne,
+  Praha and Vienna from the Rhineland. The radius is now medium distance (250 px).
+
