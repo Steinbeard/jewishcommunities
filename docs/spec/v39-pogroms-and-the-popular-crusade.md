@@ -516,3 +516,30 @@ includes a stress test (`kehillah_mob_spike.15`).
 
 **Load errors to fix:** the CB needed `war_name` and `on_invalidated_desc`. Both are fixed in
 `274d816`.
+
+## Spike 0b results (2026-10-13, live, commit `274d816`): the design for slice 1
+
+| Question | Result |
+|---|---|
+| Can the mob be at war with the community itself? | **Yes.** The landless leader declared war on Isaac. Isaac's diplomacy panel shows "Defending against ... the Preacher's Host", and a "War Declared" popup names the war. The Kehillah stays intact through the war and after it ends. |
+| Does the AI move the army? | **Never.** At peace with everyone but the community, it sat at Konstanz for 2.5 months. |
+| Does the scripted march work? | **Yes.** `kehillah_mob_step_toward_effect`, one county every 4 days, took it from Konstanz through Nellenburg, Zollern, Baden and Speyer to Worms (distance 32625 to 0). Every step logged an arrival, the AI did not undo the steps, and it looks acceptable on the map. |
+| What happens on arrival? | **Nothing,** as expected: no siege, no war score. |
+| Can a lord be brought in as a defender? | **Yes.** `add_defender` brought in the Emperor, with a feed message. His armies took about 2.5 months to reach Worms. They beat the mob (2020 to 1116, war score +41% for the defenders), which retreated west and was not destroyed. |
+| What does an attacker victory leave behind? | **The army,** at peace and moving. The Mob must kill its leader (`death_vanished`, which removes the army, spike 0 S7) when its story ends. |
+| Did the stress test crash? | **No crash:** eleven mobs raised, six killed outright. Heap corruption was not reproduced. |
+
+**What slice 1 builds on:**
+- **Movement:** the march is always scripted, one county every few days
+  (`kehillah_mob_step_toward_effect`). The AI never moves the mob.
+- **War resolution is ours:**
+  - the siege of the quarter is a countdown from arrival (§5.5);
+  - the pogrom ends the war (`end_war = attacker`), and the Mob's end kills the leader;
+  - a defending lord's victory is the engine's own war defeat (the CB's `on_defeat`), which
+    disperses the mob.
+- **A defending lord is slow.** The Emperor took 2.5 months to arrive. So the "raise his men" answer
+  must come early, and event troops spawned near the town are better than his main army.
+- **Display fixes:**
+  - the title's doubled "the" (fixed in `c66e6ba`);
+  - the leader shows as "Duke-Bishop", a Catholic duchy-tier theocracy name. Slice 1 needs a rank
+    name of its own: a county-tier title, or a flavourised government name.
