@@ -39,6 +39,8 @@ kehillah_mob_raise_effect = {
 		limit = {
 			exists = scope:kehillah_mob_town
 			NOT = { scope:kehillah_mob_victim_title = { has_variable = kehillah_mob_threat } }
+			# A caller may choose the place (Granada: the city itself).
+			NOT = { exists = scope:kehillah_mob_spawn }
 		}
 		# Where the host forms: a town of the lord's faith 100-200 map
 		# pixels away.
@@ -102,8 +104,16 @@ kehillah_mob_raise_effect = {
 				include_unknown = no
 				override_tenets_first = no
 			}
+			# Exclusion for a Christian preacher; its Muslim counterpart,
+			# Abolition, for a Muslim one (Granada).
 			scope:kehillah_mob_rite ?= {
-				change_rite_doctrine = kehillah_teaching_exclusion
+				if = {
+					limit = { rite_religion_tag = islam_religion }
+					change_rite_doctrine = kehillah_teaching_abolition
+				}
+				else = {
+					change_rite_doctrine = kehillah_teaching_exclusion
+				}
 			}
 			set_variable = { name = kehillah_mob_target_title value = scope:kehillah_mob_victim_title }
 			set_variable = { name = kehillah_mob_target_province value = scope:kehillah_mob_town }
@@ -169,7 +179,11 @@ kehillah_mob_raise_effect = {
 					set_variable = { name = kehillah_mob_ref value = scope:kehillah_mob_leader }
 					set_variable = { name = kehillah_mob_location_ref value = scope:kehillah_mob_spawn }
 					set_variable = { name = kehillah_mob_band value = scope:kehillah_mob_leader.var:kehillah_mob_band_now }
-					trigger_event = { id = kehillah_mob.0001 days = 1 }
+					# A mob that rises in the town itself gives no warning.
+					if = {
+						limit = { NOT = { scope:kehillah_mob_spawn = scope:kehillah_mob_town } }
+						trigger_event = { id = kehillah_mob.0001 days = 1 }
+					}
 					# A preacher's sermons are an incident in the county's faith (V40).
 					domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
 					kehillah_notify_region_players_effect = {
@@ -904,6 +918,10 @@ kehillah_mob_clear_title_effect = {
 	if = {
 		limit = { has_variable = kehillah_mob_near_warned }
 		remove_variable = kehillah_mob_near_warned
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_severity_adjust }
+		remove_variable = kehillah_mob_severity_adjust
 	}
 	if = {
 		limit = { has_variable = kehillah_mob_struck }

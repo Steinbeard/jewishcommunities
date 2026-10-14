@@ -852,3 +852,39 @@ the antipope Clement III objected, and Rashi ruled leniently on receiving them b
 - **Too wide:** the Year of the Decrees (and the leaders' tenet spread) reached Paris, Narbonne,
   Praha and Vienna from the Rhineland. The radius is now medium distance (250 px).
 
+## Slice 4, built (2026-10-14): Granada, 30 December 1066
+
+**Files:** `events/kehillah_granada_events.txt`, `common/scripted_effects/kehillah_granada_effects.txt`,
+`common/scripted_triggers/kehillah_granada_triggers.txt`, `localization/english/kehillah_granada_l_english.yml`,
+values in `kehillah_mob_values.txt`.
+
+**Game rules** (`common/game_rules/kehillah_game_rules.txt`):
+- **Popular Crusades against the Jews:** Dynamic / Off. It gates the yearly check.
+- **Historical Crises at Game Start:** On / Off. It gates Granada.
+
+**The chain.** It is scheduled at game start from the Granada setup (`kehillah_on_actions.txt`), if
+Joseph ibn Naghrela still leads the Kehillah of Granada.
+- **.0001, The Poem of Abu Ishaq (+30 days).** Options, with odds:
+  - ask the emir to silence the poet (20 + diplomacy + his outlook / 2 + his opinion / 4);
+  - double the guard (gold; martial x3 + 10: severity -15);
+  - seek a friend in Almeria (intrigue x3 + 5: an escape route). Failure is the historical
+    charge: the plot is discovered, the emir's outlook -10, severity +15, and the night comes
+    sooner;
+  - dismiss the poet.
+- **.0002, Whispers at Court (+65 days).** Options:
+  - swear loyalty to the emir (20 + diplomacy + his opinion / 4: severity -10, his opinion +15);
+  - make ready a flight to Lucena (gold);
+  - "I am the vizier of Granada" (arrogance).
+- **.0003, the night (30 December, +106 days).** If the poet was silenced, 50% the year ends
+  quietly (.0004). Otherwise the mob rises in Granada itself, with no warning event:
+  - 2500 men, base severity 85, and a Muslim preacher whose rite teaches Abolition;
+  - Joseph is marked: his chance of death +30;
+  - players see .0005, The Night of the Sanhaja.
+- **At the gates, Granada adds "Flee, and hide":** 20%, +40 with the flight ready, +30 with an
+  escape route. On success Joseph lives (no death roll), but the community faces the night alone.
+
+**Debug:** `kehillah_mob_debug.10` runs the chain on a short clock.
+
+**ck3-tiger:** `faith:catholic` and `rite_religion_tag` are 1.20 tokens that the 1.19 tiger does not
+know.
+
