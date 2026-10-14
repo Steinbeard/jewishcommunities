@@ -146,10 +146,18 @@ kehillah_mob_raise_effect = {
 				scope:kehillah_mob_victim_title = {
 					set_variable = { name = kehillah_mob_threat value = scope:kehillah_mob_leader }
 				}
+				random_army = {
+					save_scope_value_as = { name = kehillah_mob_spawned_men value = army_size }
+				}
+				if = {
+					limit = { exists = scope:kehillah_mob_spawned_men }
+					set_variable = { name = kehillah_mob_size value = scope:kehillah_mob_spawned_men }
+				}
+				kehillah_mob_set_band_effect = yes
 				scope:kehillah_mob_victim = {
 					set_variable = { name = kehillah_mob_ref value = scope:kehillah_mob_leader }
 					set_variable = { name = kehillah_mob_location_ref value = scope:kehillah_mob_spawn }
-					set_variable = { name = kehillah_mob_band value = scope:kehillah_mob_leader.kehillah_mob_band_value }
+					set_variable = { name = kehillah_mob_band value = scope:kehillah_mob_leader.var:kehillah_mob_band_now }
 					trigger_event = { id = kehillah_mob.0001 days = 1 }
 					# A preacher's sermons are an incident in the county's faith (V40).
 					domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
@@ -344,7 +352,8 @@ kehillah_mob_tick_effect = {
 # Scope: the mob leader. Records where the host is for the target's loc,
 # and tells a player when it draws nearer; the dire event at "days away".
 kehillah_mob_report_position_effect = {
-	save_scope_value_as = { name = kehillah_mob_new_band value = kehillah_mob_band_value }
+	kehillah_mob_set_band_effect = yes
+	save_scope_value_as = { name = kehillah_mob_new_band value = var:kehillah_mob_band_now }
 	scope:kehillah_mob_victim = {
 		# (Set every step: the community may have a new leader.)
 		set_variable = { name = kehillah_mob_ref value = scope:kehillah_mob_leader }
@@ -815,7 +824,17 @@ kehillah_mob_clear_title_effect = {
 	if = {
 		limit = { has_variable = kehillah_mob_struck }
 		remove_variable = kehillah_mob_struck
+	}	if = {
+		limit = { has_variable = kehillah_mob_tried_treat }
+		remove_variable = kehillah_mob_tried_treat
 	}
+	if = {
+		limit = { has_variable = kehillah_mob_tried_defence }
+		remove_variable = kehillah_mob_tried_defence
+	}
+	clear_variable_list = kehillah_mob_asked_refuge
+	clear_variable_list = kehillah_mob_asked_men
+	clear_variable_list = kehillah_mob_asked_condemn
 }
 
 # ---------------------------------------------------------------------
@@ -824,6 +843,7 @@ kehillah_mob_clear_title_effect = {
 # ---------------------------------------------------------------------
 
 # The Church condemns the host: a quarter of its men desert.
+# Each condemnation thins the host by a quarter; the severity is cut once.
 kehillah_mob_condemned_effect = {
 	primary_title = { set_variable = { name = kehillah_mob_condemned value = yes } }
 	scope:kehillah_mob_leader = {
@@ -832,6 +852,7 @@ kehillah_mob_condemned_effect = {
 }
 
 # The lord raises his men: his event troops beside the town, in the war.
+# DEFENDER: the lord who raises his men (the county's lord or the overlord).
 kehillah_mob_lord_raises_men_effect = {
 	domicile.domicile_location = { save_scope_as = kehillah_mob_victim_town }
 	# Christian levies who will not fight for the Jews: 35% of the time,
@@ -840,9 +861,7 @@ kehillah_mob_lord_raises_men_effect = {
 		35 = { save_scope_value_as = { name = kehillah_mob_desert value = 1 } }
 		65 = { save_scope_value_as = { name = kehillah_mob_desert value = 0 } }
 	}
-	domicile.domicile_location.county.holder ?= {
-		save_scope_as = kehillah_mob_defender
-	}
+	$DEFENDER$ = { save_scope_as = kehillah_mob_defender }
 	scope:kehillah_mob_leader = {
 		random_character_war = {
 			limit = { is_attacker = scope:kehillah_mob_leader }
@@ -871,6 +890,70 @@ kehillah_mob_lord_raises_men_effect = {
 				inheritable = no
 				uses_supply = yes
 			}
+		}
+	}
+}
+
+# The host's distance band (0-4), into var:kehillah_mob_band_now. Scope:
+# the mob leader.
+kehillah_mob_set_band_effect = {
+	var:kehillah_mob_target_province ?= { save_scope_as = kehillah_mob_band_target }
+	set_variable = { name = kehillah_mob_band_now value = kehillah_mob_band_value }
+}
+
+# Slice 1b: the AI community makes the same attempts a player would,
+# by its gold and the odds. Scope: the target (AI) Kehillah leader;
+# scope:kehillah_mob_leader saved.
+kehillah_mob_ai_answers_effect = {
+	save_scope_as = actor
+	# Refuge with the county's lord.
+	domicile.domicile_location.county.holder ?= {
+		if = {
+			limit = { NOT = { this = scope:actor } }
+			save_scope_as = recipient
+			scope:actor.primary_title = { add_to_variable_list = { name = kehillah_mob_asked_refuge target = scope:recipient } }
+			random = {
+				chance = scope:actor.kehillah_mob_ask_refuge_chance_value
+				scope:actor.primary_title = { set_variable = { name = kehillah_mob_refuge value = scope:recipient } }
+			}
+		}
+	}
+	# The Church, if it can pay.
+	if = {
+		limit = {
+			gold >= medium_gold_value
+			exists = scope:kehillah_mob_leader.faith.religious_head
+		}
+		scope:kehillah_mob_leader.faith.religious_head = { save_scope_as = recipient }
+		remove_short_term_gold = medium_gold_value
+		random = {
+			chance = kehillah_mob_ask_condemn_chance_value
+			kehillah_mob_condemned_effect = yes
+		}
+	}
+	# The defence of the quarter.
+	if = {
+		limit = {
+			exists = cp:councillor_marshal
+			gold >= minor_gold_value
+		}
+		remove_short_term_gold = minor_gold_value
+		random = {
+			chance = kehillah_mob_defence_chance_value
+			primary_title = { set_variable = { name = kehillah_mob_defended value = yes } }
+		}
+	}
+	# The silver, when it is likely to work.
+	scope:kehillah_mob_leader = { save_scope_as = recipient }
+	if = {
+		limit = {
+			gold >= kehillah_mob_treat_cost_value
+			kehillah_mob_treat_chance_value >= 30
+		}
+		remove_short_term_gold = kehillah_mob_treat_cost_value
+		random = {
+			chance = kehillah_mob_treat_chance_value
+			scope:kehillah_mob_leader = { kehillah_mob_bought_off_effect = yes }
 		}
 	}
 }

@@ -647,6 +647,39 @@ character interactions."
   keeps its last choice: the duel, the last bribe, the plea, prayer.
 - **AI communities** make the same attempts through a hidden effect, by gold and odds.
 
+**Built 2026-10-13, the same day.**
+- **The interactions:**
+  - Treat with the Preacher (with an option to offer half as much again);
+  - Ask for Refuge in the Garrison (with a gift option; the refuge variable now holds the lord, and
+    the hand-over chance follows his outlook);
+  - Ask Him to Raise His Men;
+  - Ask the Clergy to Condemn the Host (with a gift option);
+  - Ready the Quarter's Defences.
+- **The decision:** Scatter into the Villages.
+- **The events:** .0001 and .0002 are warnings that name whom to approach. AI communities answer
+  through `kehillah_mob_ai_answers_effect`, in .0001.
+
+**Slice 1 live test (`84eab34`), two runs; the fixes landed in 1b:**
+- **The band.** The first event said "only days away" for a host 100-200 px off: script errors in
+  `kehillah_mob_band_value`, because a nested `root` was empty. It now reads the target through a
+  saved scope (`kehillah_mob_set_band_effect`).
+- **The duel** showed 0% at the gate. Both branches now have a 5% floor.
+- **The men.** The first event said 1200 men and later events 1520 (the men-at-arms). The size is
+  now read from the spawned army.
+- **Timing.** The open town falls after 8 days (two 4-day steps), not 6.
+- **Passed:**
+  - **The answers:** refuge 55%, gift 70%, Church 80%, defence 14%, raise men 30%, plea 20%. A
+    successful bribe ended the host with a white peace.
+  - **The war, the rank and the army:** "The Holy Host against the Jews"; "Preacher Meginhard"; an
+    army of 1520.
+  - **The pressure lines:** -50 and -40, then the memory at -12.
+  - **The pogrom at severity about 25** (Heinrich Protective, multiplier 0.5): 3 dead, 4 baptized,
+    7 courtiers gone, Prosperity -125, Stability -100.
+  - **Refuge:** 120 days of siege (fort level 3), no hand-over (Protective), then a pogrom at
+    severity about 20.
+- **Untested:** martyrs, hostages and ransom, the leader's death, the lord raising his men, and a
+  player defender.
+
 ## Chaining (slice 2): one war at a time
 
 - **One target at a time.** The host is at war with one community only. After a town falls (or the

@@ -19,6 +19,8 @@ scripted_effect kehillah_mob_event_scopes_effect = {
 	var:kehillah_mob_location_ref ?= { save_scope_as = kehillah_mob_place }
 	domicile.domicile_location ?= { save_scope_as = kehillah_mob_town }
 	domicile.domicile_location.county.holder ?= { save_scope_as = kehillah_mob_lord }
+	domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_mob_overlord }
+	scope:kehillah_mob_leader.faith.religious_head ?= { save_scope_as = kehillah_mob_hof }
 	if = {
 		limit = { exists = scope:kehillah_mob_leader }
 		set_variable = { name = kehillah_mob_size_ref value = scope:kehillah_mob_leader.var:kehillah_mob_size }
@@ -43,118 +45,22 @@ kehillah_mob.0001 = {
 	}
 	immediate = {
 		kehillah_mob_event_scopes_effect = yes
+		# Slice 1b: an AI community makes its attempts here.
+		if = {
+			limit = { is_ai = yes }
+			kehillah_mob_ai_answers_effect = yes
+		}
 	}
 
-	# Ask the lord for refuge in his castle.
+	# Proclaim a fast, and set to work.
 	option = {
 		name = kehillah_mob.0001.a
-		random_list = {
-			0 = {
-				modifier = { add = kehillah_mob_refuge_chance_value }
-				desc = kehillah_mob_refuge_granted
-				primary_title = { set_variable = { name = kehillah_mob_refuge value = yes } }
-				custom_tooltip = kehillah_mob_refuge_granted_tt
-			}
-			0 = {
-				modifier = { add = kehillah_mob_refuge_fail_value }
-				desc = kehillah_mob_refuge_refused
-				custom_tooltip = kehillah_mob_refuge_refused_tt
-				scope:kehillah_mob_lord ?= {
-					hidden_effect = { kehillah_shift_outlook_effect = { AMOUNT = -3 } }
-				}
-			}
-		}
-		ai_chance = {
-			base = 40
-			modifier = { add = 30 kehillah_mob_refuge_chance_value >= 40 }
-		}
-	}
-
-	# The same, with a gift.
-	option = {
-		name = kehillah_mob.0001.b
-		trigger = { gold >= medium_gold_value }
-		show_as_unavailable = { always = yes }
-		remove_short_term_gold = medium_gold_value
-		random_list = {
-			0 = {
-				modifier = { add = kehillah_mob_refuge_gift_chance_value }
-				desc = kehillah_mob_refuge_granted
-				primary_title = { set_variable = { name = kehillah_mob_refuge value = yes } }
-				custom_tooltip = kehillah_mob_refuge_granted_tt
-			}
-			0 = {
-				modifier = { add = kehillah_mob_refuge_gift_fail_value }
-				desc = kehillah_mob_refuge_refused
-				custom_tooltip = kehillah_mob_refuge_refused_tt
-			}
-		}
-		ai_chance = {
-			base = 30
-			modifier = { add = 20 kehillah_mob_refuge_chance_value < 40 }
-		}
-	}
-
-	# Appeal to the Church to condemn the host.
-	option = {
-		name = kehillah_mob.0001.c
-		trigger = { gold >= medium_gold_value }
-		show_as_unavailable = { always = yes }
-		remove_short_term_gold = medium_gold_value
-		random_list = {
-			0 = {
-				modifier = { add = kehillah_mob_condemn_chance_value }
-				desc = kehillah_mob_condemned
-				kehillah_mob_condemned_effect = yes
-				custom_tooltip = kehillah_mob_condemned_tt
-			}
-			0 = {
-				modifier = { add = kehillah_mob_condemn_fail_value }
-				desc = kehillah_mob_not_condemned
-				custom_tooltip = kehillah_mob_not_condemned_tt
-			}
-		}
-		ai_chance = {
-			base = 20
-			modifier = { add = 20 kehillah_mob_condemn_chance_value >= 50 }
-		}
-	}
-
-	# Prepare the defence of the quarter.
-	option = {
-		name = kehillah_mob.0001.d
-		trigger = { gold >= minor_gold_value }
-		show_as_unavailable = { always = yes }
-		remove_short_term_gold = minor_gold_value
-		random_list = {
-			0 = {
-				modifier = { add = kehillah_mob_defence_chance_value }
-				desc = kehillah_mob_defended
-				primary_title = { set_variable = { name = kehillah_mob_defended value = yes } }
-				custom_tooltip = kehillah_mob_defended_tt
-			}
-			0 = {
-				modifier = { add = kehillah_mob_defence_fail_value }
-				desc = kehillah_mob_not_defended
-				custom_tooltip = kehillah_mob_not_defended_tt
-			}
-		}
-		ai_chance = {
-			base = 20
-			modifier = { add = 20 kehillah_mob_defence_chance_value >= 40 }
-		}
-	}
-
-	# Fast and pray.
-	option = {
-		name = kehillah_mob.0001.e
 		add_piety = minor_piety_gain
-		add_stress = minor_stress_loss
 		primary_title = {
 			change_variable = { name = kehillah_var_stability add = 20 }
 		}
 		custom_tooltip = kehillah_mob_fast_tt
-		ai_chance = { base = 5 }
+		custom_tooltip = kehillah_mob_how_to_act_tt
 	}
 }
 
@@ -178,105 +84,9 @@ kehillah_mob.0002 = {
 		kehillah_mob_event_scopes_effect = yes
 	}
 
-	# Buy off the host.
 	option = {
 		name = kehillah_mob.0002.a
-		trigger = { gold >= kehillah_mob_bribe_cost_value }
-		show_as_unavailable = { always = yes }
-		remove_short_term_gold = kehillah_mob_bribe_cost_value
-		random_list = {
-			0 = {
-				modifier = { add = kehillah_mob_bribe_chance_value }
-				desc = kehillah_mob_bribe_taken
-				custom_tooltip = kehillah_mob_bribe_taken_tt
-				hidden_effect = {
-					scope:kehillah_mob_leader = { kehillah_mob_bought_off_effect = yes }
-				}
-			}
-			0 = {
-				modifier = { add = kehillah_mob_bribe_fail_value }
-				desc = kehillah_mob_bribe_kept
-				custom_tooltip = kehillah_mob_bribe_kept_tt
-			}
-		}
-		ai_chance = {
-			base = 40
-			modifier = { add = 20 kehillah_mob_bribe_chance_value >= 40 }
-		}
-	}
-
-	# Move the lord to raise his men.
-	option = {
-		name = kehillah_mob.0002.b
-		trigger = {
-			exists = scope:kehillah_mob_lord
-			gold >= medium_gold_value
-		}
-		show_as_unavailable = { always = yes }
-		remove_short_term_gold = medium_gold_value
-		random_list = {
-			0 = {
-				modifier = { add = kehillah_mob_raise_men_chance_value }
-				desc = kehillah_mob_lord_raises_men
-				custom_tooltip = kehillah_mob_lord_raises_men_tt
-				hidden_effect = { kehillah_mob_lord_raises_men_effect = yes }
-			}
-			0 = {
-				modifier = { add = kehillah_mob_raise_men_fail_value }
-				desc = kehillah_mob_lord_will_not
-				custom_tooltip = kehillah_mob_lord_will_not_tt
-				scope:kehillah_mob_lord = {
-					hidden_effect = { kehillah_shift_outlook_effect = { AMOUNT = -5 } }
-				}
-			}
-		}
-		ai_chance = {
-			base = 5
-			modifier = { add = 25 kehillah_mob_raise_men_chance_value >= 20 }
-		}
-	}
-
-	# Ask again for refuge.
-	option = {
-		name = kehillah_mob.0002.c
-		trigger = {
-			primary_title = { NOT = { has_variable = kehillah_mob_refuge } }
-		}
-		random_list = {
-			0 = {
-				modifier = { add = kehillah_mob_refuge_late_chance_value }
-				desc = kehillah_mob_refuge_granted
-				primary_title = { set_variable = { name = kehillah_mob_refuge value = yes } }
-				custom_tooltip = kehillah_mob_refuge_granted_tt
-			}
-			0 = {
-				modifier = { add = kehillah_mob_refuge_late_fail_value }
-				desc = kehillah_mob_refuge_refused
-				custom_tooltip = kehillah_mob_refuge_refused_tt
-			}
-		}
-		ai_chance = { base = 25 }
-	}
-
-	# Scatter into the villages.
-	option = {
-		name = kehillah_mob.0002.d
-		primary_title = { set_variable = { name = kehillah_mob_scattered value = yes } }
-		custom_tooltip = kehillah_mob_scattered_tt
-		hidden_effect = {
-			random = {
-				chance = 30
-				primary_title = { set_variable = { name = kehillah_mob_scattered_found value = yes } }
-			}
-		}
-		ai_chance = { base = 15 }
-	}
-
-	# Wait, and trust in God.
-	option = {
-		name = kehillah_mob.0002.e
-		add_piety = minor_piety_gain
-		ai_chance = { base = 5 }
+		custom_tooltip = kehillah_mob_how_to_act_tt
 	}
 }
 
@@ -308,6 +118,11 @@ kehillah_mob.0003 = {
 	immediate = {
 		kehillah_mob_event_scopes_effect = yes
 		set_variable = { name = kehillah_mob_siege_days_ref value = scope:kehillah_mob_leader.var:kehillah_mob_siege_days }
+		primary_title.var:kehillah_mob_refuge ?= { save_scope_as = kehillah_mob_refuge_lord }
+		if = {
+			limit = { exists = scope:kehillah_mob_refuge_lord }
+			set_variable = { name = kehillah_mob_refuge_lord_ref value = scope:kehillah_mob_refuge_lord }
+		}
 	}
 
 	# Stand at the gate.
@@ -317,6 +132,7 @@ kehillah_mob.0003 = {
 			skill = prowess
 			target = scope:kehillah_mob_leader
 			50 = {
+				min = 5
 				compare_modifier = {
 					value = scope:duel_value
 					multiplier = 3.5
@@ -335,6 +151,7 @@ kehillah_mob.0003 = {
 				}
 			}
 			50 = {
+				min = 5
 				compare_modifier = {
 					value = scope:duel_value
 					multiplier = -3.5
