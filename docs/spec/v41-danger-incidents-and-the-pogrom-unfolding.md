@@ -251,3 +251,32 @@ children given up, captives not ransomed, and a leader.
   - **The captive leader killed under "We cannot pay":** no errors.
 - **Not seen:** a female neighbour; the captive leader baptized under "We cannot pay".
 
+## Step 2, built (2026-10-14): options that depend on the leader, and opposed checks
+
+**Before the lord** (.0110), when they apply:
+- **"Remind him of the money he owes us":** he owes the community a loan. Refuge +35.
+- **"Remind him of what you know about him":** a usable hook. `use_hook`, refuge certain.
+- **"Speak to him as an old friend":** friends. Refuge +30.
+- **"Remind him who sat up with his son through the fever":** a physician leader. Refuge +20.
+
+**In the preacher's camp** (.0140):
+- **"Answer him from Scripture, in front of his men":** Learning 15+ or theologian. The check is
+  30 + (learning - his) x3. Success: his host -20% and severity -10. Failure: severity +10.
+- **"Find the men who lead his men, and pay them":** Intrigue 12+, schemer or deceitful; gold. The
+  check is 30 + (intrigue - his) x3. Success: his host -30%. Failure: you are beaten.
+
+**At the gates** (.0003):
+- **"Hide in the cellar under the bathhouse":** craven. You are neither killed nor taken, but
+  Stability -30 and severity +5. At the font you can only stay where you are.
+- **"Take the families out by the cemetery gate tonight":** Intrigue 12+, deceitful or schemer.
+  The check is 25 + intrigue x3, deceitful +10. Success: the community scatters. Failure: severity
+  +10.
+
+**Opposed checks:**
+- **The plea:** diplomacy x2 + the preacher's opinion / 4; zealous -20, compassionate +15,
+  greedy +5; at most 40.
+- **The hand-over:** the sheltering lord's character. Just or honest x0.5; greedy, craven or
+  deceitful x1.5.
+
+`kehillah_mob_adjust_severity_effect` shifts the harm for any caller.
+

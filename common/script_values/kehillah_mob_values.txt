@@ -88,6 +88,29 @@ kehillah_mob_handover_tick_chance_value = {
 		limit = { primary_title.var:kehillah_mob_refuge ?= { kehillah_outlook_on_jews_value <= -15 } }
 		value = 5
 	}
+	# V41 step 2: the lord's character. A just or honest man keeps his
+	# word; a greedy, craven or deceitful one sells it.
+	primary_title.var:kehillah_mob_refuge ?= {
+		if = {
+			limit = {
+				OR = {
+					has_trait = just
+					has_trait = honest
+				}
+			}
+			multiply = 0.5
+		}
+		if = {
+			limit = {
+				OR = {
+					has_trait = greedy
+					has_trait = craven
+					has_trait = deceitful
+				}
+			}
+			multiply = 1.5
+		}
+	}
 }
 
 # --- The answers. Scope: the target Kehillah leader; scope:kehillah_mob_
@@ -239,8 +262,30 @@ kehillah_mob_raise_men_fail_value = {
 kehillah_mob_plead_chance_value = {
 	value = diplomacy
 	multiply = 2
+	# V41 step 2: the preacher's character and what he thinks of you.
+	if = {
+		limit = { exists = scope:kehillah_mob_leader }
+		add = {
+			value = "scope:kehillah_mob_leader.opinion(root)"
+			divide = 4
+		}
+		scope:kehillah_mob_leader = {
+			if = {
+				limit = { has_trait = zealous }
+				add = -20
+			}
+			if = {
+				limit = { has_trait = compassionate }
+				add = 15
+			}
+			if = {
+				limit = { has_trait = greedy }
+				add = 5
+			}
+		}
+	}
 	min = 2
-	max = 25
+	max = 40
 }
 kehillah_mob_plead_fail_value = {
 	value = 100
@@ -382,6 +427,11 @@ kehillah_pogrom_leader_death_chance_value = {
 	}
 	if = {
 		limit = { has_character_flag = kehillah_granada_escaped }
+		value = 0
+	}
+	# V41 step 2: hidden in the cellar.
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_scene_leader_hid } }
 		value = 0
 	}
 	min = 0
@@ -1155,4 +1205,102 @@ kehillah_anus_crypto_chance_value = {
 		}
 		value = 100
 	}
+}
+
+# --- V41 step 2 (2026-10-14): options and opposed checks that depend on
+# the leader and the people approached. Scope: the leader (scope:actor);
+# scope:recipient the person approached.
+
+# Before the lord: call in his debt (+35), an old friendship (+30), a
+# physician who has treated his household (+20).
+kehillah_mob_debt_chance_value = {
+	value = kehillah_mob_ask_refuge_chance_value
+	add = 35
+	max = 92
+}
+kehillah_mob_debt_fail_value = {
+	value = 100
+	subtract = kehillah_mob_debt_chance_value
+}
+kehillah_mob_friend_chance_value = {
+	value = kehillah_mob_ask_refuge_chance_value
+	add = 30
+	max = 92
+}
+kehillah_mob_friend_fail_value = {
+	value = 100
+	subtract = kehillah_mob_friend_chance_value
+}
+kehillah_mob_physician_chance_value = {
+	value = kehillah_mob_ask_refuge_chance_value
+	add = 20
+	max = 90
+}
+kehillah_mob_physician_fail_value = {
+	value = 100
+	subtract = kehillah_mob_physician_chance_value
+}
+
+# In the preacher's camp: answer him from Scripture -- 30 + (your learning
+# - his) x3; buy off his lieutenants -- 30 + (your intrigue - his) x3.
+# 5 to 75.
+kehillah_mob_scripture_chance_value = {
+	value = 30
+	add = {
+		value = learning
+		multiply = 3
+	}
+	if = {
+		limit = { exists = scope:recipient }
+		subtract = {
+			value = scope:recipient.learning
+			multiply = 3
+		}
+	}
+	min = 5
+	max = 75
+}
+kehillah_mob_scripture_fail_value = {
+	value = 100
+	subtract = kehillah_mob_scripture_chance_value
+}
+kehillah_mob_lieutenants_chance_value = {
+	value = 30
+	add = {
+		value = intrigue
+		multiply = 3
+	}
+	if = {
+		limit = { exists = scope:recipient }
+		subtract = {
+			value = scope:recipient.intrigue
+			multiply = 3
+		}
+	}
+	min = 5
+	max = 75
+}
+kehillah_mob_lieutenants_fail_value = {
+	value = 100
+	subtract = kehillah_mob_lieutenants_chance_value
+}
+
+# At the gates: the cemetery gate -- 25 + intrigue x3, deceitful +10. 5 to
+# 80.
+kehillah_mob_cemetery_chance_value = {
+	value = 25
+	add = {
+		value = intrigue
+		multiply = 3
+	}
+	if = {
+		limit = { has_trait = deceitful }
+		add = 10
+	}
+	min = 5
+	max = 80
+}
+kehillah_mob_cemetery_fail_value = {
+	value = 100
+	subtract = kehillah_mob_cemetery_chance_value
 }
