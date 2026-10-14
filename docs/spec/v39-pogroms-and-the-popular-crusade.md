@@ -1,0 +1,461 @@
+**Status:** proposal, 2026-10-13. Daniel asked for it the same day: "a really fleshed out crusades
+event chain that's a harrowing challenge for Ashkenaz communities". It is to be built in slices
+(section 10), starting with an engine spike. Nothing below is built yet.
+
+It answers [V22](v22-v0.1-milestone.md) feature 4 and its §5 open question: Daniel has now decided
+that the popular bands are a mod-side construct, a peasant army. It builds on:
+- [V36](v36-host-relationship-levers-and-crises.md): the lord's protection in violence, the
+  head-of-faith appeal and the risings;
+- [V37](v37-accusations.md): the accusation's four answers;
+- [V38](v38-anti-jewish-pressure.md): faith pressure and teachings;
+- the exiles, ransom and dissolution systems.
+
+# V39: Pogroms, and the popular crusade
+
+## 1. What Daniel asked for
+
+- **The crusade chain.** A peasant leader, a preacher with an anti-Jewish rite, leads an army around
+  the map. It besieges Jewish communities one by one, and a successful siege ends in a pogrom:
+  killing, forced conversion, hostages and destroyed buildings.
+- **Warnings.** Kehillah leaders are warned through the chain and can always see:
+  - where the army is and whom it is besieging;
+  - what it has done;
+  - how far it is from their own community.
+
+  They get a dire warning when it turns toward them.
+- **Responses:**
+  - de-escalate, or bribe the army;
+  - lean on the local lord, the bishop and the overlord for refuge in the garrison, which mitigates
+    but may fail;
+  - persuade the lord to raise an army against it. This is very hard: Christian levies may not want
+    to protect Jews;
+  - move the Pope or other churchmen to condemn or excommunicate the mob.
+
+  The charter, the outlook and the pillars all feed in. Skill checks, money sinks, and prowess and
+  martial checks are hard.
+- **Helping others** is possible, but it should not be easy even to protect yourself.
+- **The aftermath is profoundly felt:**
+  - asceticism and *kiddush ha-Shem* (martyrdom theology) grow more popular;
+  - survivors become more ascetic and pessimistic, and live with trauma and stress;
+  - many communities are heavily degraded and some collapse.
+- **Beyond Ashkenaz:** refugees arrive, and news of the pogroms spreads.
+- **Crusaders threaten others on their way,** perhaps outside this chain.
+- **A general pogrom mechanic,** always a peasant army besieging the community, that this chain and
+  others use. Granada 1066 needs it too. It is traumatic and devastating, and the tools to mitigate
+  it do not always work.
+
+Binding guidance from V22 §4–5 still holds:
+- **Hook the real crusade.** A vanilla Great Holy War triggers it, not a date. The 1096 names and
+  places are flavour for the Rhineland case.
+- **Tone.** This is atrocity content about real people, and is written with gravity: no gamified
+  massacre score. A game rule sets how explicit the text is.
+
+## 2. History it draws on
+
+- **1096, the Rhineland (*Gzerot Tatnu*).** Bands led by Emicho of Flonheim and others, separate
+  from the princes' armies. What happened turned on the local protector's choice:
+  - **Speyer, 3 May:** Bishop Johann protected the community; about a dozen died.
+  - **Worms, 18 and 25 May:** those at home were killed first, then those sheltering in the bishop's
+    palace a week later.
+  - **Mainz, 27 May:** Archbishop Ruthard took payment for protection, then withdrew. The community
+    was led by Kalonymus ben Meshullam, and there was mass martyrdom.
+  - **Cologne, June:** the Jews were hidden in villages around the city, and many were found there.
+  - **Trier, Metz, Regensburg and Prague:** mass forced baptism.
+  - **The end:** Emicho's host was destroyed in Hungary, at Wieselburg.
+- **Warnings and appeals.** The French communities wrote to the Rhineland to warn it. Kalonymus sent
+  to Henry IV in Italy, whose order to protect the Jews came too late.
+- **After.** In 1097 Henry IV let the forcibly baptized return, over the antipope's objection.
+  Then came the chronicles, the *kinot* and *Av HaRachamim*, and the memorial books. Under the
+  martyrs' shadow, the Hasidei Ashkenaz emerged in the 12th to 13th centuries.
+- **Later crusades.** In 1146 Bernard of Clairvaux stopped the monk Radulf's preaching. In 1190
+  there was York.
+- **Granada, 30 December 1066.**
+  - **The preacher:** Abu Ishaq of Elvira's poem against the vizier Joseph ibn Naghrela.
+  - **The charge:** that Joseph plotted with Almería.
+  - **The killing:** a mob of the city and the Sanhaja stormed the palace. Joseph was killed, and the
+    community with him.
+
+## 3. What vanilla gives us (read from the 1.20.1 files)
+
+- **Invaders are story cycles with scripted wars.** The Almohads use
+  `story_cycle_almohad_invasion.txt` and `00_almohad_invasion_effects.txt`:
+  - `create_character` makes the leader, and `create_story` gives him the story;
+  - `start_war` declares the war, with a claim CB and a target title;
+  - `spawn_army` raises event troops (levies, `inheritable = no`).
+
+  The AI does the marching. The Mongols use the same pattern.
+- **A peasant leader at war, landless, is precedented.** Vanilla's peasant revolt
+  (`00_peasant_faction_new.txt`, `setup_peasant_leader_effect`) creates a landless leader. It
+  spawns `pikemen_militia` and `torch_bearers` men-at-arms for him, with
+  `war_keep_on_attacker_victory = yes`, and he wages the war. His war starts through the faction
+  system, not `start_war`; that is spike question S1.
+- **`spawn_army`** only spawns while its owner is at war. With `war = ` set, the army disbands when
+  that war ends, unless the attacker wins and `war_keep_on_attacker_victory` is set.
+- **Army scope:**
+  - **Triggers:** `location`, `army_size`, `is_army_in_siege`, `army_is_moving`.
+  - **Effects:**
+    - `set_army_location` teleports the army (a fallback for steering it);
+    - `deplete_army_by_percentage` thins it (desertion);
+    - `add_supply` and `subtract_supply` change its supply.
+- **Hooks:**
+  - `on_army_enter_province` fires with root the owner and `scope:army`. Vanilla
+    `great_holy_war.0060` uses it to spot a crusading host's arrival.
+  - `on_siege_completion` fires with a character scope.
+- **The crusade itself:**
+  - `faith.great_holy_war` is readable monthly, and the call is `great_holy_war.0001`;
+  - `on_great_holy_war_countdown_end` fires at launch.
+- **Distance:** `"province.squared_distance(target)"` works as a value, and
+  `00_distance_values.txt` names the bands. Small is 150 map pixels (about Wales), medium 250
+  (Ireland), large 650 (France), huge 850 (the Empire, left to right).
+- **The camera:** `pan_camera_to_province` takes the camera to a place.
+- **Domicile buildings:** `lower_domicile_building` and `remove_domicile_building`.
+- **1.20 tenets** are their own database (`common/religion/tenet_types/`), with
+  `personal_tenet_modifier`, known tenets, desired tenets and spiritual fulfilment:
+  - `add_known_tenet` and `force_set_personal_tenet` act on characters;
+  - rite reform follows what tenets characters desire.
+
+  `tenet_asceticism` already exists. This is the native way for a tenet to grow popular.
+
+## 4. Architecture
+
+Two layers and three users:
+
+1. **The Mob** (`kehillah_mob_*`): a general pogrom mechanic. It is a story cycle owned by a
+   created mob leader. It has a list of targets (one or many), a real army on the map, the
+   approach, the community's answers, the siege or the breaking-in, and the outcome. Every user
+   below calls it.
+2. **The Pogrom outcome** (`kehillah_pogrom_outcome_effect`): one effect turns a severity into
+   deaths, forced baptisms, hostages, destroyed buildings, pillar losses and possible collapse.
+   It is shared with the V36 rising and the V37 accusation's violence when they are moved onto it.
+3. **Its users:**
+   - **The Popular Crusade** (Rhineland-style, many targets);
+   - **Granada 1066** (one city, a mob raised inside it);
+   - **later:** risings and accusations that escalate.
+
+The aftermath (section 8) hangs off the outcome, so every pogrom leaves its mark, not only the
+crusade's.
+
+## 5. The Mob
+
+### 5.1 Its leader and its army
+
+- **The leader:** a created character, a preacher (e.g. "Volkmar the Preacher") or a lesser lord
+  (an Emicho).
+  - **Faith:** the faith of the region, with his own rite: a dynamic rite holding the
+    **Exclusionary** teaching (V31). He carries the anti-Jewish rite himself; the counties he
+    passes are not converted to it.
+  - **Traits:** zealous, wrathful or callous; vanilla `peasant_leader` for a commoner. Prowess
+    10–16, martial 8–14.
+  - **Modifier:** "Preacher of the Cross".
+- **The army:** real event troops on the map, `pikemen_militia` and `torch_bearers` men-at-arms,
+  with `uses_supply = yes` and `inheritable = no`.
+  - **Size:** about twice the targeted county's levies, at least 1,500. The crusade's host starts
+    at 2,500–4,000.
+  - **Growth and shrinkage:** it grows a little after each sack (loot draws men), and shrinks by
+    attrition, by condemnation and by defeat.
+  - **Dispersal:** under 300 men it disperses.
+- **The war:** a hidden CB, `kehillah_mob_cb`, against the holder of the target community's county,
+  with that county as the target title.
+  - The AI attacker marches on the war target. The county's lord is the defender, but his AI will
+    not engage a host several times his size, which is the realistic default.
+  - His liege is not called. The overlord joins only if a response brings him in (5.4).
+  - The CB's on-victory effect is the pogrom, if it has not happened already.
+- **One target after another:** the war ends as an attacker victory (the army is kept), and a new
+  war opens on the next target's lord. If chaining wars fails, the fallback is
+  `set_army_location` step by step along neighbouring provinces (spike S4).
+
+### 5.2 The approach, and seeing it
+
+- **On the map.** The army is a real army, visible on the map.
+- **The HUD.** The community strip gains a **"Danger" block** while a mob exists within huge
+  distance:
+  - the leader, what he is doing ("besieging Mainz", "marching on Worms", "sacking Speyer"), and
+    the distance band;
+  - its tooltip lists the host's size, where it has been, and what happened at each place;
+  - a click pans the camera to it (`scripted_gui` + `pan_camera_to_province`).
+- **Distance bands** (squared distance between the army and the community):
+
+| Band | Map pixels |
+|---|---|
+| At the gates | same province |
+| Days away | under 60 |
+| A week or two away | under 150 |
+| Within the month | under 250 |
+| Far | more |
+
+- **Messages** to every player whose community is within large distance:
+  - **Ordinary messages:** "The host has entered [county]", "The host besieges [town]",
+    "[Town] has fallen" (with the outcome), "The host moves on".
+  - **A toast** when the band shrinks for one's own community.
+- **Events:**
+  - **The first sermon** (the host forms): to communities within large distance.
+  - **Letters from [the last town struck]**: a warning chain as each town falls; survivors write
+    to the next.
+  - **"They are coming for us":** the dire event when one's own community is chosen as the next
+    target. It opens the full response menu (5.4) with the time left shown.
+  - **"At the gates":** the last answers.
+  - **The outcome** (section 6).
+
+### 5.3 Where it goes
+
+The next target is the unattacked community within huge distance with the highest score:
+- **Nearness counts most.** The score falls with squared distance.
+- **Prosperity attracts plunder.** Score +1 per 100 Prosperity.
+- **Hostile ground is easier.** Score +2 if the lord is Cold or Hostile toward the Jews.
+- **A paid-off community is skipped** for a year (5.4).
+
+The host leaves when:
+- no target is left in range ("the host marches east, toward the Holy Land");
+- it has struck its target count (the crusade's host 4–7; a local mob 1);
+- it has fallen under 300 men;
+- its leader is dead or captured.
+
+### 5.4 The answers
+
+Every check is a `random_list` whose chances the engine shows on the option. A response's cost is
+paid win or lose.
+
+**Before the host arrives** (from "They are coming for us"):
+
+| Answer | Cost | Check | Success | Failure |
+|---|---|---|---|---|
+| **Buy off the host** (to the leader) | gold, 100 + 5% of the host's men (about 250 for 3,000) | 25% + leader's diplomacy x2 + 10 if the mob leader is greedy, - 20 if zealous; at most 75% | the host turns to another target; this community is skipped for a year | they take the money and come anyway |
+| **Ask the lord for refuge in his castle** | gold, medium (optional, +15%) | 20% + half the lord's outlook + 10 per charter-security step; at most 85% | the community shelters in the garrison (5.5) | the lord refuses; his outlook -3 from being asked |
+| **Ask the bishop for refuge** (the county's theocratic holder, or the realm's chaplain) | gold, medium | the same on the bishop's outlook, +10 under a protective teaching | as above, in the bishop's palace | as above |
+| **Move the lord to raise his men** | gold, major | (the lord's outlook - 15) + martial / 2; at most 30%; 0 if he is Cold or worse | he gets event troops of his levies x1.5 to fight the host; then "will the levies fight for Jews?" (35% they desert, less under a protective teaching) | he will not, and his outlook -5 |
+| **Appeal to the overlord** (the Shtadlan to the Emperor or king) | gold, medium; a council-task effort | 20% + half his outlook + the Shtadlan's diplomacy | after 60–150 days an **imperial order**: every lord in his realm +20 to refuge chances, and the host -10% men from the order's shame; often too late | silence |
+| **Appeal to the Pope or a bishop to condemn the host** | gold, major, or a learned Dayyan | the V36 head-of-faith value + the Dayyan's learning / 2; at most 80% | condemnation: -25% men (desertion), refuge chances +15 for every lord. If the host keeps going, its leader is excommunicated: -15% more men | none |
+| **Prepare the defence of the quarter** (the Rosh ha-Shmirah) | gold, minor | martial check: his martial x3 + 10, at most 70% | severity -15% (walls, barricades); more of the host's men die | none |
+| **Scatter into the villages** (the Cologne answer) | none | none | deaths and baptisms x0.5 | buildings x1.5, Prosperity x1.5, and 30% chance that some are found ("the villages were searched"); the community may not reform (collapse risk x2) |
+| **Fast and pray** | none | none | piety, stress relief, Stability +; no material effect | none |
+
+**At the gates**, the last answers:
+- **The leader stands at the gate.** A prowess duel against the mob leader, using vanilla `duel`,
+  with its odds shown.
+  - On a win, severity -10%. On a large win (rare) the mob leader is wounded or killed and the host
+    may break up.
+  - On a loss, the leader may be wounded, captured or killed.
+- **Send the elders out with silver:** a last bribe at double price, at half the chance.
+- **Open the gates and plead:** the leader's diplomacy x2; at most 25%. Success halves the
+  severity.
+
+**Helping others:**
+- **Send silver to a threatened community.** Its bribe gets cheaper by what you send. Your
+  Prosperity -, your Greatness +.
+- **Shelter refugees:** your Prosperity -, your Stability -, your Greatness +.
+- **The Shtadlan pleads for another town:** the same overlord appeal for a community not your own.
+
+None of these protect you, and all of them cost.
+
+### 5.5 Refuge in the garrison
+
+- **What refuge changes:** with refuge granted, arrival is not enough; the host must take the
+  castle, which is a real siege. Without refuge the quarter has no walls. The burghers open the
+  town, and the pogrom follows arrival after 3–10 days.
+- **What the siege depends on:**
+  - the fort level and garrison;
+  - the host's supply and attrition;
+  - time, which a condemnation or an imperial order can use.
+- **The lord's resolve.** Each month of the siege, the lord may give the Jews up, as at Worms and
+  Mainz:
+  - 5% if he is Well-disposed, 15% Indifferent, 35% Cold;
+  - x0.5 if the overlord has ordered protection;
+  - x1.5 if the mob leader has threatened him with excommunication.
+
+  If he gives them up, the full pogrom follows.
+- **If the castle falls,** the severity is x0.8 (some got away).
+- **If the host breaks off** (dispersed, condemned or turned away), the community is spared: Stability
+  -, and Greatness + for the lord's renown.
+
+## 6. The pogrom: the outcome
+
+`kehillah_pogrom_outcome_effect = { SEVERITY }`, on a scale of 0–100. The base is 70 for the
+crusade's host and 50 for a local mob.
+
+- **The base shrinks with:**
+  - the lord's protection multiplier (V36);
+  - the answers that worked;
+  - the defence of the quarter;
+  - the refuge.
+- **It grows with:**
+  - Hostile ground;
+  - the host's size against the county's levies.
+
+What the severity does:
+
+| Effect | At severity 50 | At 90 |
+|---|---|---|
+| Each Jewish courtier and family member dies | 20% | 45% |
+| The leader dies (his household guards and prowess reduce it) | 10% | 30% |
+| Each survivor is baptized by force | 15% | 35% |
+| Hostages taken (they go to the existing ransom system: pidyon shvuyim, the Bet Din) | 1–2 | 3–4 |
+| Domicile buildings lowered | 1 | 3, the synagogue among them |
+| Prosperity | -250 | -500 |
+| Stability | -200 | -400 |
+| Greatness | -50 (scholars lost) | -100 |
+
+- **Martyrdom.** A character who holds *Kiddush ha-Shem* (section 8), or a zealous one, chooses
+  death over baptism. Each martyr gives the community Greatness +10, which is how the chronicles
+  remembered Mainz. A craven or deceitful character is more likely to be baptized.
+- **Forced converts** carry `kehillah_anus` (the forced convert). They may return to Judaism if a
+  ruler permits it (section 8).
+- **Collapse.** If Stability falls to the floor, the community dissolves through the existing,
+  live-tested teardown, `kehillah_dissolve_community_effect`. This is the highest-risk code path in
+  the mod (the implementation doc §6 and §8); it is called, never changed. Its survivors become
+  **refugees** through the exiles system, toward the nearest community outside the host's path.
+- **The report event** names the dead, the baptized and the hostages, and what was destroyed.
+  "Restrained" depiction (the game rule) keeps the numbers and names but softer prose.
+
+## 7. The Popular Crusade
+
+- **When.** At a monthly check, a Catholic Great Holy War is declared
+  (`faith:catholic.great_holy_war` exists and is new). The first such call raises a host if at
+  least three communities sit in Catholic realms within huge distance of one another. Each later
+  call does so at 50%, and 25% once a pope has condemned a host in the last 50 years (Bernard,
+  1146).
+  - **Game rule:** "Popular crusades against the Jews": Dynamic (default) / Off.
+- **Where.** The host forms in the county with the most communities within medium distance:
+  Ashkenaz in the Rhineland, but it could be Tzarfat or England. A second, smaller host (a
+  Volkmar or Gottschalk) forms at 50%, two to three months later, farther east.
+- **The preparation.** Between the call and its first march are 30–90 days:
+  - the first sermons (events to every community in range);
+  - letters from communities farther west;
+  - the cheap, early answers. An early refuge request is +10%. Treasure can be sent away: half
+    the Prosperity loss is protected, for gold.
+- **The march.** As in section 5: 4–7 targets, each a war, each a siege or a breaking-in.
+- **The end.** The host "marches east" when no target is left, or disperses.
+  - **Players everywhere** get the news: "The host of [leader] has been destroyed in Hungary" (if it
+    broke up) or "has gone east".
+  - **Communities outside the region** get "News from the Rhine" events: refugees arrive and
+    fasts are proclaimed.
+- **Its own crusaders' threat to others** (the princes' armies and the Hungarian route) is out of
+  scope (Daniel: "maybe not as part of this main event chain").
+
+## 8. The aftermath
+
+- **Trauma.** Every Jewish character in a struck community gets stress (major), and survivors of
+  severity 60+ a chance of `melancholic` or `paranoid`. Communities within large distance are
+  hit too: all Jewish characters there get stress (minor), and the community gets **"The Year of the
+  Decrees"** for 10 years:
+  - Stability -;
+  - Greatness + for the memory;
+  - growth -.
+- **The tenets grow popular.** Martyrdom gets a new tenet, `tenet_kehillah_kiddush_hashem`
+  (*Kiddush ha-Shem*). Its holders:
+  - choose death over baptism in a pogrom (section 6);
+  - gain piety and stress resilience;
+  - and its personal modifier raises spiritual fulfilment in hard times.
+
+  How it spreads, with `tenet_asceticism` alongside it:
+  - every Jewish character in a struck community `add_known_tenet`s both;
+  - in range, 30% (severity 80+: 60%) `force_set_personal_tenet` one of them;
+  - faith-wide, a variable on `faith:rabbinism` counts pogroms. Each pogrom raises the chance a new
+    rabbi takes either tenet as a personal tenet.
+
+  Rite reform then follows naturally from what characters desire (1.20's own mechanism). The Bet
+  Din Conference (V5) can adopt *Kiddush ha-Shem* as a core tenet of the rite once enough leaders
+  hold it.
+- **Forced converts.** A yearly chance that a ruler (the overlord first, as Henry IV did) is asked
+  to let the baptized return. His outlook decides, and the Pope's anger follows if he agrees.
+  - **For a player overlord:** an event.
+  - **For the AI:** outlook ≥ 15 at 60%.
+
+  With his consent, the `kehillah_anus` characters in his realm may return:
+  - the community gets Stability +;
+  - his outlook +5;
+  - faith pressure +2 (V38).
+- **Memory.** Each community can keep a memorial book, the *Memorbuch*. The decision costs gold
+  and gives Greatness. *Av HaRachamim* is recited in the struck communities: a decade modifier,
+  Stability +.
+- **Rebuilding.** Struck communities rebuild through the ordinary pillar economy. Their degraded
+  pillars and lost buildings are the lasting cost.
+- **Refugees** go through the exiles system to communities outside the host's path. They give the
+  receiving community Prosperity - in the short run, then Greatness and population.
+
+## 9. Granada, 30 December 1066
+
+A one-time story at game start (the 1066 bookmark), using the Mob layer with one target and the mob
+raised inside the city. It runs if:
+- the Kehillah of Granada exists;
+- Joseph ibn Naghrela lives and leads it;
+- Badis ibn Habus holds Granada.
+
+The chain:
+1. **The poem** (about October 1066). Abu Ishaq of Elvira, a created character and a preacher,
+   denounces the vizier. Joseph's answers:
+   - **Ask Badis to silence him:** a diplomacy check on Badis's outlook.
+   - **Buy him off:** gold.
+   - **Strengthen your guard:** martial.
+   - **Make contact with Almería:** an intrigue check. This is the historical accusation; success
+     brings an ally, discovery brings the mob sooner.
+2. **The rumours** (November). Events report the accusation spreading and the faction at court
+   against him.
+3. **The night of 30 December.** The mob forms in Granada itself. Joseph's last answers:
+   - **Flee to Lucena:** a chance to save himself; the community loses its leader.
+   - **Hold the palace:** prowess and martial.
+   - **Appeal to Badis:** his outlook.
+
+   Then the outcome, at base severity 85.
+
+Historically everything failed. Here good play can save Joseph or part of the community, though
+rarely both. The **game rule** "Historical crises at game start": On (default) / Off.
+
+## 10. Slices
+
+0. **The engine spike** (debug events only, nothing player-facing):
+   - **S1.** Can a created landless character `start_war` with a custom CB against a count? If
+     not: a dynamic titular title, or a hidden faction.
+   - **S2.** Does `spawn_army` + the AI march on and besiege the county? Which communities'
+     `domicile_location` is their county's capital?
+   - **S3.** Does `on_army_enter_province` see the mob's army arrive?
+   - **S4.** Can wars be chained so the army survives? (`war_keep_on_attacker_victory`; otherwise
+     `set_army_location`.)
+   - **S5.** Does `pan_camera_to_province` work from an event option and from a `scripted_gui`?
+   - **S6.** Can loc read a province name from a variable (character `Var(...).Province`)?
+   - **S7.** Do non-inheritable armies vanish when their leader dies?
+   - **S8.** Does a new tenet load, and does `force_set_personal_tenet` work on a Jewish
+     character?
+1. **The Mob, one target:**
+   - the leader, the war, the army;
+   - the approach messages and the dire event;
+   - the answers, the refuge and siege, and the outcome effect;
+   - a debug event to raise a mob against your own community.
+2. **The Popular Crusade:**
+   - the trigger, the preparation, many targets and the target choice;
+   - the letters, the HUD Danger block with camera pan, and the help-others answers;
+   - the game rules.
+3. **The aftermath:**
+   - trauma, the decade modifier and refugees;
+   - *Kiddush ha-Shem*, the tenet spread and forced converts' return;
+   - the Memorbuch.
+4. **Granada 1066.**
+5. **Later:**
+   - the V36 rising and V37 accusation violence move onto the Mob (a local mob);
+   - the Bet Din Conference adopts the tenet;
+   - the Second-Crusade preacher stopped by a churchman.
+
+Each slice is ck3-tiger clean, live-tested by a subagent, then committed.
+
+## 11. Tuning targets (to check in soaks)
+
+- **In a 1096-like run,** with 6–9 communities in the Rhineland:
+  - 3–6 are struck;
+  - 1–2 collapse;
+  - the rest drop one or two pillar bands.
+- **One community** escapes entirely about one time in four, by the lord's refuge holding or the
+  host turning away.
+- **Even a player who answers well** loses something in most runs: gold spent, buildings, a few
+  dead. The best answers halve the harm, not erase it.
+- **Within 30 years of a crusade,** *Kiddush ha-Shem* and asceticism are personal tenets of a
+  visible minority (15–30%) of Ashkenazi rabbis and leaders.
+- **Performance:** checks are monthly per mob, not per community. Arrival rides
+  `on_army_enter_province`, filtered first by a flag on the mob leader.
+
+## 12. Assumptions made without asking
+
+Each is reversible:
+- **The local lord is the war's defender** but does not fight by default.
+- **Refuge needs a successful siege;** without refuge, arrival is enough.
+- **Forced converts' return** needs a ruler's consent.
+- **Two game rules** (crusade pogroms; historical crises at game start) and a depiction rule.
+- **Kiddush ha-Shem** is a new tenet. Asceticism is vanilla's.

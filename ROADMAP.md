@@ -17,6 +17,20 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### V39 Pogroms and the popular crusade — 2026-10-13, Daniel's request
+
+Spec: [v39](docs/spec/v39-pogroms-and-the-popular-crusade.md). It answers V22 feature 4 and closes
+S11's open question: the popular bands are a mod-side peasant army.
+
+**The plan:**
+- **The Mob:** a general pogrom mechanic. A preacher's real army besieges communities one by one.
+- **Its users:** the Popular Crusade, hooked on a Catholic Great Holy War, and Granada 1066.
+- **The aftermath:** trauma, *Kiddush ha-Shem* and asceticism as tenets, forced converts' return,
+  and refugees.
+
+**Slices:** 0, the engine spike (eight questions, §10), then 1 the Mob, 2 the Crusade, 3 the
+aftermath, and 4 Granada. **Next: slice 0.**
+
 ### Pillar band effects in tooltips — 2026-10-12, Daniel's request
 
 Each Prosperity, Stability and Greatness breakdown now states the current level's applied
