@@ -160,6 +160,17 @@ crusade's.
     not engage a host several times his size, which is the realistic default.
   - His liege is not called. The overlord joins only if a response brings him in (5.4).
   - The CB's on-victory effect is the pogrom, if it has not happened already.
+  - **Never the Emperor** (Daniel, 2026-10-13: the mob must not declare war on the overlord). The
+    engine makes a character outside any realm target the top liege, unless the CB sets
+    `target_top_liege_if_outside_realm = no` (vanilla's peasant revolt does). `kehillah_mob_cb`
+    must set it. The war is the mob against one count. His feudal liege is not called; his allies
+    can be, as in any defensive war.
+  - **The levies will not march.** While the mob's war lasts, the count carries a hidden modifier
+    that cuts his levies sharply. The AI count therefore keeps to his castle (the garrison is
+    untouched, so refuge still works) and cannot stumble into defending the Jews. Only "Move the
+    lord to raise his men" (5.4) lifts it and adds his event troops.
+  - **Why a war at all:** `spawn_army` creates nothing for a character at peace, and a siege needs
+    an enemy holding. A warless mob would have to be abstract, with nothing on the map.
 - **One target after another:** the war ends as an attacker victory (the army is kept), and a new
   war opens on the next target's lord. If chaining wars fails, the fallback is
   `set_army_location` step by step along neighbouring provinces (spike S4).
