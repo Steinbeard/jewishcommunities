@@ -715,3 +715,32 @@ the host keeps marching:
 
 Scattering into the villages is a hub option. Each audience's text follows the person's outlook:
 warm, indifferent or cold.
+
+**Slice 1c live test (`c935ccb`), 2026-10-14: passed.** No crash.
+
+**Errors:** none from the flow.
+
+**Passed:**
+- **The first event:** 3820 men, matching both stacks on the map; Heinrich is named once.
+- **The hub** opens after it. Its options: Heinrich; Archbishop Siegfried, his chaplain; a letter to Pope
+  Alexander; the preacher's camp; the Rosh ha-Shmirah; scatter; done.
+- **The visits:**
+  - Heinrich (3 days later): charter 42%, silver 57%, raise men 17%. The refusal cost outlook -3.
+  - The chaplain: Scripture 37% (it succeeded; the host fell from 3820 to 2865), gift 52%.
+  - The watch: barricades 19%, arming 18% (it failed).
+  - The camp: silver 37% for 291 gold, more silver 57% for 437 (it succeeded: white peace, army
+    gone), reasoning 2%.
+- **The hub** reopens a day after each visit, with the visit gone and the status lines updated.
+- **The march:** both stacks move together; "They Are Coming for Us" comes before "At the Gates".
+- **Refuge:** the gates name Heinrich's castle and 120 days.
+- **The reports:** 10 dead, 4 baptized, 1 building, 1 martyr, 1 captive (redeemed); and on another
+  host 5 dead, 4 baptized, 2 martyrs, 1 captive not ransomed.
+
+**Fixed after the test:**
+- **A visit could vanish** when the host reached the gates first. A "Too Late" toast now comes
+  (`on_trigger_fail`).
+- **The hub's men count** was stale after a condemnation; it is now refreshed.
+- **The Scripture failure** no longer says "the silver is spent".
+- **The first event** no longer names a Rosh ha-Shmirah who may not exist.
+- **New debug event:** `kehillah_mob_debug.7` makes the lord raise his men. Begging failed five
+  times at 15-30%, so "The Lord's Men" are not yet seen live.
