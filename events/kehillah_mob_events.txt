@@ -1,0 +1,556 @@
+﻿namespace = kehillah_mob
+
+# =====================================================================
+# V39 slice 1 -- the Mob's events (docs/spec/v39-pogroms-and-the-popular-
+# crusade.md section 5), 2026-10-13. The target community's leader, player
+# or AI, gets each; the AI answers by ai_chance.
+#   .0001 A Preacher Raises a Host   (the host forms: early answers)
+#   .0002 They Are Coming for Us     (days away: the last answers on the road)
+#   .0003 At the Gates               (arrival: the last answers)
+#   .0005 The Lord Gives Us Up       (refuge withdrawn; players)
+#   .0010 After the Pogrom           (the report; the hostages' ransom)
+#   .0020 The Host Is Broken         (spared; players)
+# Every check is a random_list, so the option shows its odds.
+# =====================================================================
+
+# Shared immediate: the host's leader, his place, the lord.
+scripted_effect kehillah_mob_event_scopes_effect = {
+	var:kehillah_mob_ref ?= { save_scope_as = kehillah_mob_leader }
+	var:kehillah_mob_location_ref ?= { save_scope_as = kehillah_mob_place }
+	domicile.domicile_location ?= { save_scope_as = kehillah_mob_town }
+	domicile.domicile_location.county.holder ?= { save_scope_as = kehillah_mob_lord }
+	if = {
+		limit = { exists = scope:kehillah_mob_leader }
+		set_variable = { name = kehillah_mob_size_ref value = scope:kehillah_mob_leader.var:kehillah_mob_size }
+	}
+}
+
+kehillah_mob.0001 = {
+	type = character_event
+	title = kehillah_mob.0001.t
+	desc = kehillah_mob.0001.desc
+	theme = dread
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+	right_portrait = {
+		character = scope:kehillah_mob_leader
+		animation = rage
+	}
+	trigger = {
+		exists = var:kehillah_mob_ref
+	}
+	immediate = {
+		kehillah_mob_event_scopes_effect = yes
+	}
+
+	# Ask the lord for refuge in his castle.
+	option = {
+		name = kehillah_mob.0001.a
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_refuge_chance_value }
+				desc = kehillah_mob_refuge_granted
+				primary_title = { set_variable = { name = kehillah_mob_refuge value = yes } }
+				custom_tooltip = kehillah_mob_refuge_granted_tt
+			}
+			0 = {
+				modifier = { add = kehillah_mob_refuge_fail_value }
+				desc = kehillah_mob_refuge_refused
+				custom_tooltip = kehillah_mob_refuge_refused_tt
+				scope:kehillah_mob_lord ?= {
+					hidden_effect = { kehillah_shift_outlook_effect = { AMOUNT = -3 } }
+				}
+			}
+		}
+		ai_chance = {
+			base = 40
+			modifier = { add = 30 kehillah_mob_refuge_chance_value >= 40 }
+		}
+	}
+
+	# The same, with a gift.
+	option = {
+		name = kehillah_mob.0001.b
+		trigger = { gold >= medium_gold_value }
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = medium_gold_value
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_refuge_gift_chance_value }
+				desc = kehillah_mob_refuge_granted
+				primary_title = { set_variable = { name = kehillah_mob_refuge value = yes } }
+				custom_tooltip = kehillah_mob_refuge_granted_tt
+			}
+			0 = {
+				modifier = { add = kehillah_mob_refuge_gift_fail_value }
+				desc = kehillah_mob_refuge_refused
+				custom_tooltip = kehillah_mob_refuge_refused_tt
+			}
+		}
+		ai_chance = {
+			base = 30
+			modifier = { add = 20 kehillah_mob_refuge_chance_value < 40 }
+		}
+	}
+
+	# Appeal to the Church to condemn the host.
+	option = {
+		name = kehillah_mob.0001.c
+		trigger = { gold >= medium_gold_value }
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = medium_gold_value
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_condemn_chance_value }
+				desc = kehillah_mob_condemned
+				kehillah_mob_condemned_effect = yes
+				custom_tooltip = kehillah_mob_condemned_tt
+			}
+			0 = {
+				modifier = { add = kehillah_mob_condemn_fail_value }
+				desc = kehillah_mob_not_condemned
+				custom_tooltip = kehillah_mob_not_condemned_tt
+			}
+		}
+		ai_chance = {
+			base = 20
+			modifier = { add = 20 kehillah_mob_condemn_chance_value >= 50 }
+		}
+	}
+
+	# Prepare the defence of the quarter.
+	option = {
+		name = kehillah_mob.0001.d
+		trigger = { gold >= minor_gold_value }
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = minor_gold_value
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_defence_chance_value }
+				desc = kehillah_mob_defended
+				primary_title = { set_variable = { name = kehillah_mob_defended value = yes } }
+				custom_tooltip = kehillah_mob_defended_tt
+			}
+			0 = {
+				modifier = { add = kehillah_mob_defence_fail_value }
+				desc = kehillah_mob_not_defended
+				custom_tooltip = kehillah_mob_not_defended_tt
+			}
+		}
+		ai_chance = {
+			base = 20
+			modifier = { add = 20 kehillah_mob_defence_chance_value >= 40 }
+		}
+	}
+
+	# Fast and pray.
+	option = {
+		name = kehillah_mob.0001.e
+		add_piety = minor_piety_gain
+		add_stress = minor_stress_loss
+		primary_title = {
+			change_variable = { name = kehillah_var_stability add = 20 }
+		}
+		custom_tooltip = kehillah_mob_fast_tt
+		ai_chance = { base = 5 }
+	}
+}
+
+kehillah_mob.0002 = {
+	type = character_event
+	title = kehillah_mob.0002.t
+	desc = kehillah_mob.0002.desc
+	theme = dread
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+	right_portrait = {
+		character = scope:kehillah_mob_leader
+		animation = rage
+	}
+	trigger = {
+		exists = var:kehillah_mob_ref
+	}
+	immediate = {
+		kehillah_mob_event_scopes_effect = yes
+	}
+
+	# Buy off the host.
+	option = {
+		name = kehillah_mob.0002.a
+		trigger = { gold >= kehillah_mob_bribe_cost_value }
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = kehillah_mob_bribe_cost_value
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_bribe_chance_value }
+				desc = kehillah_mob_bribe_taken
+				custom_tooltip = kehillah_mob_bribe_taken_tt
+				hidden_effect = {
+					scope:kehillah_mob_leader = { kehillah_mob_bought_off_effect = yes }
+				}
+			}
+			0 = {
+				modifier = { add = kehillah_mob_bribe_fail_value }
+				desc = kehillah_mob_bribe_kept
+				custom_tooltip = kehillah_mob_bribe_kept_tt
+			}
+		}
+		ai_chance = {
+			base = 40
+			modifier = { add = 20 kehillah_mob_bribe_chance_value >= 40 }
+		}
+	}
+
+	# Move the lord to raise his men.
+	option = {
+		name = kehillah_mob.0002.b
+		trigger = {
+			exists = scope:kehillah_mob_lord
+			gold >= medium_gold_value
+		}
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = medium_gold_value
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_raise_men_chance_value }
+				desc = kehillah_mob_lord_raises_men
+				custom_tooltip = kehillah_mob_lord_raises_men_tt
+				hidden_effect = { kehillah_mob_lord_raises_men_effect = yes }
+			}
+			0 = {
+				modifier = { add = kehillah_mob_raise_men_fail_value }
+				desc = kehillah_mob_lord_will_not
+				custom_tooltip = kehillah_mob_lord_will_not_tt
+				scope:kehillah_mob_lord = {
+					hidden_effect = { kehillah_shift_outlook_effect = { AMOUNT = -5 } }
+				}
+			}
+		}
+		ai_chance = {
+			base = 5
+			modifier = { add = 25 kehillah_mob_raise_men_chance_value >= 20 }
+		}
+	}
+
+	# Ask again for refuge.
+	option = {
+		name = kehillah_mob.0002.c
+		trigger = {
+			primary_title = { NOT = { has_variable = kehillah_mob_refuge } }
+		}
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_refuge_late_chance_value }
+				desc = kehillah_mob_refuge_granted
+				primary_title = { set_variable = { name = kehillah_mob_refuge value = yes } }
+				custom_tooltip = kehillah_mob_refuge_granted_tt
+			}
+			0 = {
+				modifier = { add = kehillah_mob_refuge_late_fail_value }
+				desc = kehillah_mob_refuge_refused
+				custom_tooltip = kehillah_mob_refuge_refused_tt
+			}
+		}
+		ai_chance = { base = 25 }
+	}
+
+	# Scatter into the villages.
+	option = {
+		name = kehillah_mob.0002.d
+		primary_title = { set_variable = { name = kehillah_mob_scattered value = yes } }
+		custom_tooltip = kehillah_mob_scattered_tt
+		hidden_effect = {
+			random = {
+				chance = 30
+				primary_title = { set_variable = { name = kehillah_mob_scattered_found value = yes } }
+			}
+		}
+		ai_chance = { base = 15 }
+	}
+
+	# Wait, and trust in God.
+	option = {
+		name = kehillah_mob.0002.e
+		add_piety = minor_piety_gain
+		ai_chance = { base = 5 }
+	}
+}
+
+kehillah_mob.0003 = {
+	type = character_event
+	title = kehillah_mob.0003.t
+	desc = {
+		desc = kehillah_mob.0003.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = { primary_title = { has_variable = kehillah_mob_refuge } }
+				desc = kehillah_mob.0003.desc_refuge
+			}
+			desc = kehillah_mob.0003.desc_open
+		}
+	}
+	theme = dread
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+	right_portrait = {
+		character = scope:kehillah_mob_leader
+		animation = rage
+	}
+	trigger = {
+		exists = var:kehillah_mob_ref
+	}
+	immediate = {
+		kehillah_mob_event_scopes_effect = yes
+		set_variable = { name = kehillah_mob_siege_days_ref value = scope:kehillah_mob_leader.var:kehillah_mob_siege_days }
+	}
+
+	# Stand at the gate.
+	option = {
+		name = kehillah_mob.0003.a
+		duel = {
+			skill = prowess
+			target = scope:kehillah_mob_leader
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+				}
+				desc = kehillah_mob_gate_held
+				primary_title = { set_variable = { name = kehillah_mob_stood_at_gate value = yes } }
+				custom_tooltip = kehillah_mob_gate_held_tt
+				hidden_effect = {
+					random = {
+						chance = 15
+						scope:kehillah_mob_leader = {
+							add_character_flag = kehillah_mob_defeated
+							increase_wounds_effect = { REASON = fight }
+						}
+					}
+				}
+			}
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+				}
+				desc = kehillah_mob_gate_lost
+				increase_wounds_effect = { REASON = fight }
+			}
+		}
+		ai_chance = {
+			base = 10
+			modifier = { add = 20 prowess >= 14 }
+		}
+	}
+
+	# Send the elders out with silver.
+	option = {
+		name = kehillah_mob.0003.b
+		trigger = { gold >= kehillah_mob_last_bribe_cost_value }
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = kehillah_mob_last_bribe_cost_value
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_last_bribe_chance_value }
+				desc = kehillah_mob_bribe_taken
+				custom_tooltip = kehillah_mob_bribe_taken_tt
+				hidden_effect = {
+					scope:kehillah_mob_leader = { kehillah_mob_bought_off_effect = yes }
+				}
+			}
+			0 = {
+				modifier = { add = kehillah_mob_last_bribe_fail_value }
+				desc = kehillah_mob_bribe_kept
+				custom_tooltip = kehillah_mob_bribe_kept_tt
+			}
+		}
+		ai_chance = { base = 30 }
+	}
+
+	# Open the gates and plead.
+	option = {
+		name = kehillah_mob.0003.c
+		trigger = {
+			primary_title = { NOT = { has_variable = kehillah_mob_refuge } }
+		}
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_plead_chance_value }
+				desc = kehillah_mob_plead_heard
+				primary_title = { set_variable = { name = kehillah_mob_pleaded value = yes } }
+				custom_tooltip = kehillah_mob_plead_heard_tt
+			}
+			0 = {
+				modifier = { add = kehillah_mob_plead_fail_value }
+				desc = kehillah_mob_plead_scorned
+				custom_tooltip = kehillah_mob_plead_scorned_tt
+			}
+		}
+		ai_chance = { base = 15 }
+	}
+
+	# Bar the doors and pray.
+	option = {
+		name = kehillah_mob.0003.d
+		add_piety = minor_piety_gain
+		ai_chance = { base = 10 }
+	}
+}
+
+# The lord gives the Jews up. Players only.
+kehillah_mob.0005 = {
+	type = character_event
+	title = kehillah_mob.0005.t
+	desc = kehillah_mob.0005.desc
+	theme = dread
+	left_portrait = {
+		character = root
+		animation = grief
+	}
+	right_portrait = {
+		character = scope:kehillah_mob_lord
+		animation = shame
+	}
+	immediate = {
+		kehillah_mob_event_scopes_effect = yes
+	}
+	option = {
+		name = kehillah_mob.0005.a
+	}
+}
+
+# After the pogrom: the report, and the hostages.
+kehillah_mob.0010 = {
+	type = character_event
+	title = kehillah_mob.0010.t
+	desc = {
+		desc = kehillah_mob.0010.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:kehillah_pogrom_martyrs > 0 }
+				desc = kehillah_mob.0010.desc_martyrs
+			}
+			desc = kehillah_mob.0010.desc_no_martyrs
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:kehillah_pogrom_hostages > 0 }
+				desc = kehillah_mob.0010.desc_hostages
+			}
+			desc = kehillah_mob.0010.desc_no_hostages
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { has_variable = kehillah_pogrom_leader_fell }
+				desc = kehillah_mob.0010.desc_leader_fell
+			}
+			desc = kehillah_mob.0010.desc_end
+		}
+	}
+	theme = dread
+	left_portrait = {
+		character = root
+		animation = grief
+	}
+	right_portrait = {
+		character = scope:kehillah_mob_leader
+		animation = rage
+	}
+	immediate = {
+		kehillah_mob_event_scopes_effect = yes
+		set_variable = { name = kehillah_pogrom_ransom_ref value = kehillah_pogrom_ransom_cost_value }
+	}
+
+	# Redeem the captives.
+	option = {
+		name = kehillah_mob.0010.a
+		trigger = {
+			var:kehillah_pogrom_hostages > 0
+			gold >= kehillah_pogrom_ransom_cost_value
+		}
+		show_as_unavailable = { var:kehillah_pogrom_hostages > 0 }
+		remove_short_term_gold = kehillah_pogrom_ransom_cost_value
+		custom_tooltip = kehillah_mob_ransomed_tt
+		hidden_effect = {
+			scope:kehillah_mob_leader ?= {
+				every_prisoner = { release_from_prison = yes }
+			}
+		}
+		ai_chance = { base = 80 }
+	}
+
+	# We cannot pay.
+	option = {
+		name = kehillah_mob.0010.b
+		trigger = { var:kehillah_pogrom_hostages > 0 }
+		custom_tooltip = kehillah_mob_not_ransomed_tt
+		hidden_effect = {
+			scope:kehillah_mob_leader ?= {
+				every_prisoner = {
+					release_from_prison = yes
+					random_list = {
+						50 = {
+							death = { death_reason = death_murder killer = scope:kehillah_mob_leader }
+							root = { change_variable = { name = kehillah_pogrom_dead add = 1 } }
+						}
+						50 = {
+							set_character_faith = scope:kehillah_mob_leader.faith
+							set_variable = { name = kehillah_anus value = root.primary_title }
+							move_to_pool_at = root.domicile.domicile_location
+							root = { change_variable = { name = kehillah_pogrom_baptized add = 1 } }
+						}
+					}
+				}
+			}
+		}
+		ai_chance = { base = 20 }
+	}
+
+	# We will remember them.
+	option = {
+		name = kehillah_mob.0010.c
+		trigger = { var:kehillah_pogrom_hostages <= 0 }
+		ai_chance = { base = 100 }
+	}
+
+	after = {
+		hidden_effect = {
+			scope:kehillah_mob_leader ?= {
+				if = {
+					limit = { is_alive = yes }
+					kehillah_mob_end_effect = yes
+				}
+			}
+			if = {
+				limit = { has_variable = kehillah_pogrom_leader_fell }
+				remove_variable = kehillah_pogrom_leader_fell
+				death = { death_reason = death_murder }
+			}
+		}
+	}
+}
+
+# The host is broken before it could strike. Players only.
+kehillah_mob.0020 = {
+	type = character_event
+	title = kehillah_mob.0020.t
+	desc = kehillah_mob.0020.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+	immediate = {
+		kehillah_mob_event_scopes_effect = yes
+	}
+	option = {
+		name = kehillah_mob.0020.a
+		add_piety = minor_piety_gain
+	}
+}

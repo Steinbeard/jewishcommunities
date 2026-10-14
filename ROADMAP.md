@@ -51,7 +51,8 @@ S11's open question: the popular bands are a mod-side peasant army.
   and refugees.
 
 **Slices:** 0, the engine spike (eight questions, §10), then 1 the Mob, 2 the Crusade, 3 the
-aftermath, and 4 Granada. **Next: slice 0.**
+aftermath, and 4 Granada. Spikes 0 and 0b passed live. **Slice 1 (the Mob, one target) built
+2026-10-13; live test pending.**
 
 ### Pillar band effects in tooltips — 2026-10-12, Daniel's request
 

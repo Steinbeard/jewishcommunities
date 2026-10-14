@@ -1,0 +1,372 @@
+﻿# =====================================================================
+# V39 slice 1 -- the Mob (docs/spec/v39-pogroms-and-the-popular-
+# crusade.md sections 5-6), 2026-10-13. Tunables.
+# =====================================================================
+
+# --- The host's size and the harm it means (base severity, 0-100).
+kehillah_mob_local_size = 1200
+kehillah_mob_local_severity = 50
+kehillah_mob_crusade_size = 3000
+kehillah_mob_crusade_severity = 70
+# Under this many men the host breaks up.
+kehillah_mob_disperse_size = 300
+# Where it forms: 100 to 200 map pixels from the town (squared).
+kehillah_mob_spawn_min_sq = 10000
+kehillah_mob_spawn_max_sq = 40000
+
+# --- The approach. Scope: the mob leader (var:kehillah_mob_location is
+# his army's province, var:kehillah_mob_target_province the town).
+# 0 at the gates, 1 days away (60 px), 2 a week or two (150 px), 3 within
+# the month (250 px), 4 far.
+kehillah_mob_band_value = {
+	value = 4
+	if = {
+		limit = {
+			exists = var:kehillah_mob_location
+			exists = var:kehillah_mob_target_province
+		}
+		if = {
+			limit = { var:kehillah_mob_location = var:kehillah_mob_target_province }
+			value = 0
+		}
+		else_if = {
+			limit = {
+				var:kehillah_mob_location = {
+					squared_distance = { target = root.var:kehillah_mob_target_province value < 3600 }
+				}
+			}
+			value = 1
+		}
+		else_if = {
+			limit = {
+				var:kehillah_mob_location = {
+					squared_distance = { target = root.var:kehillah_mob_target_province value < 22500 }
+				}
+			}
+			value = 2
+		}
+		else_if = {
+			limit = {
+				var:kehillah_mob_location = {
+					squared_distance = { target = root.var:kehillah_mob_target_province value < 62500 }
+				}
+			}
+			value = 3
+		}
+	}
+}
+
+# --- The siege of the quarter. Without refuge the burghers open the
+# town: 3-10 days. With refuge in the castle, the host must take it: 60
+# days + 20 per fort level. Scope: the mob leader.
+kehillah_mob_open_town_days = 6
+kehillah_mob_refuge_siege_days_value = {
+	value = 60
+	if = {
+		limit = { exists = var:kehillah_mob_target_province }
+		add = {
+			value = var:kehillah_mob_target_province.fort_level
+			multiply = 20
+		}
+	}
+}
+# The lord's resolve: the chance (percent) each 4-day tick of the siege
+# that he gives the Jews up (about 5% a month Well-disposed, 15%
+# Indifferent, 35% Cold). Scope: the target Kehillah leader.
+kehillah_mob_handover_tick_chance_value = {
+	value = 2
+	if = {
+		limit = { kehillah_host_outlook_value >= 15 }
+		value = 0.7
+	}
+	else_if = {
+		limit = { kehillah_host_outlook_value <= -15 }
+		value = 5
+	}
+	if = {
+		limit = { kehillah_host_outlook_value >= 40 }
+		value = 0
+	}
+}
+
+# --- The answers. Scope: the target Kehillah leader; scope:kehillah_mob_
+# leader is the host's leader.
+# Buy off the host: 100 + 5% of its men; at the gates, double.
+kehillah_mob_bribe_cost_value = {
+	value = 100
+	if = {
+		limit = { exists = scope:kehillah_mob_leader.var:kehillah_mob_size }
+		add = {
+			value = scope:kehillah_mob_leader.var:kehillah_mob_size
+			multiply = 0.05
+		}
+	}
+	round = yes
+}
+kehillah_mob_last_bribe_cost_value = {
+	value = kehillah_mob_bribe_cost_value
+	multiply = 2
+}
+# 25% + diplomacy x2, +10 if he is greedy, -20 if zealous; 5 to 75.
+kehillah_mob_bribe_chance_value = {
+	value = 25
+	add = {
+		value = diplomacy
+		multiply = 2
+	}
+	if = {
+		limit = { scope:kehillah_mob_leader = { has_trait = greedy } }
+		add = 10
+	}
+	if = {
+		limit = { scope:kehillah_mob_leader = { has_trait = zealous } }
+		add = -20
+	}
+	min = 5
+	max = 75
+}
+kehillah_mob_bribe_fail_value = {
+	value = 100
+	subtract = kehillah_mob_bribe_chance_value
+}
+kehillah_mob_last_bribe_chance_value = {
+	value = kehillah_mob_bribe_chance_value
+	multiply = 0.5
+}
+kehillah_mob_last_bribe_fail_value = {
+	value = 100
+	subtract = kehillah_mob_last_bribe_chance_value
+}
+# Refuge in the castle: (1.6 - the lord's protection multiplier) x 50 --
+# about 60% from a Protective lord under a strong charter, 30% from an
+# Indifferent one, 5% from a Hostile one; +15 with a gift; again later
+# -10. 5 to 85.
+kehillah_mob_refuge_chance_value = {
+	value = 1.6
+	subtract = kehillah_host_protection_mult_value
+	multiply = 50
+	min = 5
+	max = 85
+}
+kehillah_mob_refuge_fail_value = {
+	value = 100
+	subtract = kehillah_mob_refuge_chance_value
+}
+kehillah_mob_refuge_gift_chance_value = {
+	value = kehillah_mob_refuge_chance_value
+	add = 15
+	max = 90
+}
+kehillah_mob_refuge_gift_fail_value = {
+	value = 100
+	subtract = kehillah_mob_refuge_gift_chance_value
+}
+kehillah_mob_refuge_late_chance_value = {
+	value = kehillah_mob_refuge_chance_value
+	add = -10
+	min = 3
+}
+kehillah_mob_refuge_late_fail_value = {
+	value = 100
+	subtract = kehillah_mob_refuge_late_chance_value
+}
+# The Church condemns the host: the V36 head-of-faith value + the
+# Dayyan's learning / 2; at most 80.
+kehillah_mob_condemn_chance_value = {
+	value = kehillah_hof_appeal_success_value
+	if = {
+		limit = { exists = cp:councillor_court_chaplain }
+		add = {
+			value = cp:councillor_court_chaplain.learning
+			divide = 2
+		}
+	}
+	min = 5
+	max = 80
+}
+kehillah_mob_condemn_fail_value = {
+	value = 100
+	subtract = kehillah_mob_condemn_chance_value
+}
+# The defence of the quarter: the Rosh ha-Shmirah's martial x3 + 10, at
+# most 70 (the leader's own martial / 2 without one).
+kehillah_mob_defence_chance_value = {
+	value = 10
+	if = {
+		limit = { exists = cp:councillor_marshal }
+		add = {
+			value = cp:councillor_marshal.martial
+			multiply = 3
+		}
+	}
+	else = {
+		add = {
+			value = martial
+			multiply = 1.5
+		}
+	}
+	min = 5
+	max = 70
+}
+kehillah_mob_defence_fail_value = {
+	value = 100
+	subtract = kehillah_mob_defence_chance_value
+}
+# Move the lord to raise his men: (his outlook - 15) + his martial / 2;
+# at most 30; nothing below Indifferent.
+kehillah_mob_raise_men_chance_value = {
+	value = 0
+	domicile.domicile_location.county.holder ?= {
+		if = {
+			limit = { kehillah_outlook_on_jews_value > -15 }
+			add = kehillah_outlook_on_jews_value
+			add = -15
+			add = {
+				value = martial
+				divide = 2
+			}
+		}
+	}
+	min = 0
+	max = 30
+}
+kehillah_mob_raise_men_fail_value = {
+	value = 100
+	subtract = kehillah_mob_raise_men_chance_value
+}
+# Open the gates and plead: diplomacy x2, at most 25.
+kehillah_mob_plead_chance_value = {
+	value = diplomacy
+	multiply = 2
+	min = 2
+	max = 25
+}
+kehillah_mob_plead_fail_value = {
+	value = 100
+	subtract = kehillah_mob_plead_chance_value
+}
+
+# --- The outcome. Scope: the target Kehillah leader; scope:kehillah_mob_
+# leader the host's leader. Severity 10 to 100.
+kehillah_mob_severity_value = {
+	value = scope:kehillah_mob_leader.var:kehillah_mob_base_severity
+	multiply = kehillah_host_protection_mult_value
+	primary_title ?= {
+		if = {
+			limit = { has_variable = kehillah_mob_defended }
+			add = -15
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_condemned }
+			add = -10
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_stood_at_gate }
+			add = -10
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_pleaded }
+			multiply = 0.5
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_castle_fell }
+			multiply = 0.8
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_scattered_found }
+			add = 15
+		}
+	}
+	min = 10
+	max = 100
+	round = yes
+}
+# Each Jewish courtier: death (sev / 2 - 5), else baptism (sev x 0.4 -
+# 5); halved for a scattered community. Scope: the target leader.
+kehillah_pogrom_death_chance_value = {
+	value = scope:kehillah_pogrom_severity
+	divide = 2
+	add = -5
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_mob_scattered } }
+		multiply = 0.5
+	}
+	min = 0
+}
+kehillah_pogrom_baptism_chance_value = {
+	value = scope:kehillah_pogrom_severity
+	multiply = 0.4
+	add = -5
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_mob_scattered } }
+		multiply = 0.5
+	}
+	min = 0
+}
+# The leader himself: sev / 3 - 7 - prowess / 2.
+kehillah_pogrom_leader_death_chance_value = {
+	value = scope:kehillah_pogrom_severity
+	divide = 3
+	add = -7
+	subtract = {
+		value = prowess
+		divide = 2
+	}
+	min = 0
+}
+# The pillars: Prosperity -5, Stability -4, Greatness -1 per point;
+# a scattered community's Prosperity x1.5.
+kehillah_pogrom_prosperity_loss_value = {
+	value = scope:kehillah_pogrom_severity
+	multiply = -5
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_mob_scattered } }
+		multiply = 1.5
+	}
+}
+kehillah_pogrom_stability_loss_value = {
+	value = scope:kehillah_pogrom_severity
+	multiply = -4
+}
+kehillah_pogrom_greatness_loss_value = {
+	value = scope:kehillah_pogrom_severity
+	multiply = -1
+}
+kehillah_pogrom_martyr_greatness = 10
+# The ransom of hostages: 40 gold each.
+kehillah_pogrom_ransom_each = 40
+kehillah_pogrom_ransom_cost_value = {
+	value = 0
+	if = {
+		limit = { has_variable = kehillah_pogrom_hostages }
+		value = var:kehillah_pogrom_hostages
+		multiply = kehillah_pogrom_ransom_each
+	}
+}
+
+# --- Pressures (V33 breakdown lines). Scope: a Kehillah leader.
+# While a host marches on the community: Stability -50, Prosperity -40.
+# For ten years after a pogrom: Stability and Prosperity -(severity / 2).
+kehillah_mob_memory_years = 10
+kehillah_bd_mob_threat_stability_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_mob_threat } }
+		value = -50
+	}
+}
+kehillah_bd_mob_threat_prosperity_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_mob_threat } }
+		value = -40
+	}
+}
+kehillah_bd_pogrom_memory_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_pogrom_memory } }
+		value = primary_title.var:kehillah_pogrom_memory
+		divide = -2
+	}
+}

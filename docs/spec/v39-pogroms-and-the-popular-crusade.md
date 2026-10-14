@@ -543,3 +543,81 @@ includes a stress test (`kehillah_mob_spike.15`).
   - the title's doubled "the" (fixed in `c66e6ba`);
   - the leader shows as "Duke-Bishop", a Catholic duchy-tier theocracy name. Slice 1 needs a rank
     name of its own: a county-tier title, or a flavourised government name.
+
+## Slice 1, built (2026-10-13): the Mob, one target
+
+**The general entry point.** `kehillah_mob_raise_effect = { SIZE SEVERITY }`, on the target Kehillah
+leader. It is the call the Crusade, Granada, accusations and risings will use.
+
+**Files:**
+- `common/scripted_effects/kehillah_mob_effects.txt`
+- `common/script_values/kehillah_mob_values.txt`
+- `common/story_cycles/kehillah_mob_story_cycle.txt`
+- `events/kehillah_mob_events.txt`
+- `common/character_interactions/kehillah_mob_interactions.txt`
+- the community CB's `on_defeat`
+- a preacher rank flavour
+- pressure lines
+
+**The host:**
+- a created preacher (zealous, plus wrathful, callous, arrogant or vengeful; a peasant leader);
+- his own rite, teaching Exclusion;
+- a landless "Holy Host" title, and the rank "Preacher";
+- a hidden war on the community;
+- an army of levies, militia pikemen and torch-bearers.
+
+It forms 100-200 map pixels away, among the lord's faith.
+
+**The march.** One county every 4 days, by script (the story's effect group). At each step:
+- the community's leader's variables are updated for loc;
+- a player gets a toast when the host draws nearer.
+
+**The events, with the odds shown:**
+- **.0001 A Preacher Raises a Host:**
+  - refuge, (1.6 - protection multiplier) x 50, or +15 with a gift;
+  - the Church condemns: the head-of-faith value + learning / 2. A quarter of the host deserts, and
+    severity -10;
+  - the defence of the quarter: martial x3 + 10. Severity -15;
+  - a fast.
+- **.0002 They Are Coming for Us** (days away):
+  - a bribe: 100 + 5% of the men; 25 + diplomacy x2, +10 greedy, -20 zealous;
+  - the lord raises his men: at most 30%. Event troops at 75% of the host, halved 35% of the time,
+    beside the town, through `add_defender`;
+  - refuge again (-10);
+  - scatter into the villages;
+  - wait.
+- **.0003 At the Gates:**
+  - a prowess duel against the preacher. Severity -10; 15% the preacher is wounded and the host
+    breaks up;
+  - a last bribe: double the price, half the chance;
+  - plead: diplomacy x2, at most 25. Severity halved;
+  - pray.
+- **.0005 Given Up:** the lord's hand-over during the siege.
+- **.0010 After the Pogrom:** the report, and the ransom of the hostages, 40 gold each.
+- **.0020 The Host Is Broken.**
+
+**The siege.** Without refuge: 6 days. With refuge: 60 + 20 x fort level. Each 4-day step the lord
+may hand the Jews over (about 5% a month Well-disposed, 15% Indifferent, 35% Cold; never if
+Protective).
+
+**The outcome.** Severity is the base x the host's protection multiplier, plus the answers, from 10
+to 100.
+- **Each Jewish courtier** dies at sev / 2 - 5, or is baptized at sev x 0.4 - 5. The zealous choose
+  death: martyrs, Greatness +10 each. The baptized carry `kehillah_anus` and leave the court.
+- **Hostages:** 1-3, from severity 40/70/90.
+- **The leader** dies at sev / 3 - 7 - prowess / 2, after the report.
+- **Buildings:** an economic one from 30, the synagogue from 60, the house of study or the scribes'
+  workshop from 85; one more if the community scattered.
+- **The treasury** loses sev / 150 of its gold.
+- **The pillars:** Prosperity -5 per point (x1.5 if scattered), Stability -4, Greatness -1.
+- **Faith incidents** +4.
+- **Collapse** follows through the existing Stability-floor watch.
+
+**Pressure lines:**
+- a host marching on the community: Stability -50, Prosperity -40;
+- the memory of the pogrom, for 10 years: -severity / 2 to both.
+
+**Players** can join the war on the community's side ("Defend the Jews", `add_defender`).
+
+**Debug:** `kehillah_mob_debug.1` (local host), `.2` (crusade-sized), `.3` (report), `.4` (to the
+gates), `.5` (end the siege), `.6` (the host vanishes).
