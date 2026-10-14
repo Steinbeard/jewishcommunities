@@ -1,4 +1,4 @@
-**Status:** proposal, 2026-10-14, from Daniel's review of V39 the same day. It extends
+﻿**Status:** proposal, 2026-10-14, from Daniel's review of V39 the same day. It extends
 [V39](v39-pogroms-and-the-popular-crusade.md), V37 (accusations) and V38 (missions), and replaces their
 separate fixed-chance checks with one director. It coordinates with
 [V40](v40-living-crises-and-councils.md), which Codex is building: the incidents counter, the councils
@@ -164,3 +164,49 @@ The V40 Firebrand (Codex) drives incidents through the director when present.
 4. The danger score, the director, the new incidents, and uprisings (§6-7).
 
 Each step: a spec addendum, ck3-tiger, a live test, a commit.
+
+## Step 1a, built (2026-10-14): the scenes and the leader's fate
+
+**Files:** `events/kehillah_pogrom_scene_events.txt` (namespace `kehillah_pogrom`),
+`common/scripted_effects/kehillah_pogrom_scene_effects.txt`, values in `kehillah_mob_values.txt`, and
+edits to `kehillah_pogrom_effect`, the tick and the report.
+
+**How it runs.** At the siege's end a player gets three scenes a day apart. The host waits
+(`kehillah_mob_striking`, at most 60 days). The AI's communities keep the direct outcome. A Christian
+neighbour is created with random traits.
+
+**The scenes:**
+1. **How it begins.**
+   - **The River Gate or The Market** (at random). The options:
+     - **Bar everyone in the synagogue.**
+     - **Ask the neighbour to hide the children:** 35 + his opinion / 2, plus his character
+       (compassionate +20 ... zealous -15). If he betrays them, it shows only at the font: the
+       children are baptized.
+     - **Send the young men to hold the street:** the watch's martial x2 + prowess against the
+       preacher's martial x2.
+   - **The Castle Gate** (after refuge). The options:
+     - **Speak to him:** diplomacy x2 + his opinion / 4, -20 if he is zealous, +10 if learned.
+     - **Hold the door:** (your prowess - his) x4 + 40.
+     - **Stay in the hall.**
+2. **The fire.**
+   - **The Scrolls:** carry out the scrolls (Greatness loss halved; more dead; the leader +10 to
+     die), or the people (fewer dead; Greatness loss x1.5).
+   - **The Archive** (with a house of study or a scribes' workshop) poses the same choice with the
+     books.
+3. **The baptisms: The Font, or The River** in a riverside town. The options:
+   - **Refuse:** deaths x1.4, baptisms x0.3; the leader +30 to die, otherwise 50% taken with the
+     hostages.
+   - **Go to the font:** deaths x0.6, baptisms x1.6; the leader is baptized.
+   - **Offer everything:** all gold. The chance is 20 + diplomacy + gold / 10, greedy +25,
+     zealous -20. If he takes it, the leader is spared and deaths and baptisms x0.6.
+
+**The outcome** runs in the hidden `kehillah_pogrom.0090`, not inside an option.
+
+**The leader baptized.** He takes the preacher's faith, with the `kehillah_anus` and
+`kehillah_baptized_by_force` markers. The existing `kehillah_conversion.0001` then makes him step
+down to the appointment heir, and `.0002` lets a player continue as the successor
+(`set_player_character`) or remain as the convert. A captive leader who is not ransomed can be
+baptized the same way.
+
+**The named anusim rite is step 1b,** after an engine check of `create_rite_from_type`.
+

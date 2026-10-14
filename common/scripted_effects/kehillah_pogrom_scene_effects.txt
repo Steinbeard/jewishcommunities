@@ -1,0 +1,191 @@
+﻿# =====================================================================
+# V41 step 1 -- the pogrom unfolding (events/kehillah_pogrom_scene_
+# events.txt), 2026-10-14. Scope: the struck community's leader (a
+# player); scope:kehillah_mob_leader the preacher.
+# =====================================================================
+
+# When the siege ends (kehillah_mob_tick_effect). The host waits while
+# the scenes play (kehillah_mob_striking), at most 60 days.
+kehillah_pogrom_scenes_start_effect = {
+	scope:kehillah_mob_leader = {
+		add_character_flag = kehillah_mob_striking
+		set_variable = { name = kehillah_mob_wait value = 0 }
+	}
+	set_variable = { name = kehillah_mob_ref value = scope:kehillah_mob_leader }
+	# A Christian neighbour: a firewood seller, a carter, a widow with a
+	# loom -- whoever lives next to the quarter. His character decides
+	# whether he hides the children or gives them up.
+	domicile.domicile_location ?= {
+		save_scope_as = kehillah_pogrom_town
+		create_character = {
+			location = scope:kehillah_pogrom_town
+			faith = scope:kehillah_pogrom_town.county.faith
+			culture = scope:kehillah_pogrom_town.county.culture
+			age = { 25 60 }
+			gender_female_chance = 30
+			dynasty = none
+			save_scope_as = kehillah_pogrom_neighbor
+		}
+	}
+	scope:kehillah_pogrom_neighbor ?= {
+		root = { set_variable = { name = kehillah_pogrom_neighbor_ref value = scope:kehillah_pogrom_neighbor } }
+	}
+	if = {
+		limit = { primary_title = { has_variable = kehillah_mob_castle_fell } }
+		trigger_event = kehillah_pogrom.0010
+	}
+	else = {
+		random_list = {
+			50 = { trigger_event = kehillah_pogrom.0001 }
+			50 = { trigger_event = kehillah_pogrom.0002 }
+		}
+	}
+	debug_log = "kehillah_pogrom_scenes_start_effect: the pogrom begins (scenes)"
+}
+
+# Scene 2, a day later: the scrolls, or the archive where there are books.
+kehillah_pogrom_to_fire_effect = {
+	if = {
+		limit = {
+			domicile ?= {
+				OR = {
+					has_domicile_building_or_higher = kehillah_beit_midrash_01
+					has_domicile_building_or_higher = kehillah_sofer_workshop_01
+				}
+			}
+		}
+		random_list = {
+			50 = { trigger_event = { id = kehillah_pogrom.0020 days = 1 } }
+			50 = { trigger_event = { id = kehillah_pogrom.0021 days = 1 } }
+		}
+	}
+	else = {
+		trigger_event = { id = kehillah_pogrom.0020 days = 1 }
+	}
+}
+
+# Scene 3, a day later: the font, or the river in a riverside town.
+kehillah_pogrom_to_baptism_effect = {
+	if = {
+		limit = { domicile.domicile_location ?= { is_riverside_province = yes } }
+		random_list = {
+			50 = { trigger_event = { id = kehillah_pogrom.0030 days = 1 } }
+			50 = { trigger_event = { id = kehillah_pogrom.0031 days = 1 } }
+		}
+	}
+	else = {
+		trigger_event = { id = kehillah_pogrom.0030 days = 1 }
+	}
+}
+
+# The answers at the font. Each sets the community's choice and ends the
+# scenes; the pogrom itself runs in a hidden event (kehillah_pogrom.0090),
+# never inside the option (the tooltip builder would run it).
+kehillah_pogrom_refuse_effect = {
+	primary_title = { set_variable = { name = kehillah_scene_font_refused value = yes } }
+	custom_tooltip = kehillah_pogrom_refuse_tt
+	trigger_event = kehillah_pogrom.0090
+}
+
+kehillah_pogrom_accept_effect = {
+	primary_title = { set_variable = { name = kehillah_scene_font_accepted value = yes } }
+	custom_tooltip = kehillah_pogrom_accept_tt
+	trigger_event = kehillah_pogrom.0090
+}
+
+kehillah_pogrom_offer_all_effect = {
+	remove_short_term_gold = gold
+	random_list = {
+		0 = {
+			modifier = { add = kehillah_pogrom_offer_chance_value }
+			desc = kehillah_pogrom_offer_taken
+			custom_tooltip = kehillah_pogrom_offer_taken_tt
+			primary_title = { set_variable = { name = kehillah_scene_ransom_paid value = yes } }
+		}
+		0 = {
+			modifier = { add = kehillah_pogrom_offer_fail_value }
+			desc = kehillah_pogrom_offer_pocketed
+			custom_tooltip = kehillah_pogrom_offer_pocketed_tt
+		}
+	}
+	trigger_event = kehillah_pogrom.0090
+}
+
+# The leader baptized by force (after the report, kehillah_mob.0010).
+# Scope: the leader; scope:kehillah_mob_leader. He takes the preacher's
+# faith; kehillah_conversion.0001 then makes him step down to the
+# appointment heir, and a player chooses whom to play on as
+# (kehillah_conversion.0002, set_player_character).
+kehillah_pogrom_leader_baptized_effect = {
+	if = {
+		limit = {
+			is_alive = yes
+			exists = scope:kehillah_mob_leader
+		}
+		set_character_faith = scope:kehillah_mob_leader.faith
+		primary_title ?= { save_scope_as = kehillah_baptized_leader_title }
+		if = {
+			limit = { exists = scope:kehillah_baptized_leader_title }
+			set_variable = { name = kehillah_anus value = scope:kehillah_baptized_leader_title }
+		}
+		add_character_flag = kehillah_baptized_by_force
+		trigger_event = { id = kehillah_conversion.0001 days = 1 }
+		debug_log = "kehillah_pogrom_leader_baptized_effect: the leader was baptized by force"
+	}
+}
+
+# Clear the scene flags. Scope: a community title.
+kehillah_pogrom_clear_scenes_effect = {
+	if = {
+		limit = { has_variable = kehillah_scene_gathered }
+		remove_variable = kehillah_scene_gathered
+	}
+	if = {
+		limit = { has_variable = kehillah_scene_children_hidden }
+		remove_variable = kehillah_scene_children_hidden
+	}
+	if = {
+		limit = { has_variable = kehillah_scene_children_betrayed }
+		remove_variable = kehillah_scene_children_betrayed
+	}
+	if = {
+		limit = { has_variable = kehillah_scene_street_held }
+		remove_variable = kehillah_scene_street_held
+	}
+	if = {
+		limit = { has_variable = kehillah_scene_street_lost }
+		remove_variable = kehillah_scene_street_lost
+	}
+	if = {
+		limit = { has_variable = kehillah_scene_spoke_heard }
+		remove_variable = kehillah_scene_spoke_heard
+	}
+	if = {
+		limit = { has_variable = kehillah_scene_spoke_seized }
+		remove_variable = kehillah_scene_spoke_seized
+	}
+	if = {
+		limit = { has_variable = kehillah_scene_door_held }
+		remove_variable = kehillah_scene_door_held
+	}
+	if = {
+		limit = { has_variable = kehillah_scene_scrolls_saved }
+		remove_variable = kehillah_scene_scrolls_saved
+	}
+	if = {
+		limit = { has_variable = kehillah_scene_people_first }
+		remove_variable = kehillah_scene_people_first
+	}
+	if = {
+		limit = { has_variable = kehillah_scene_font_refused }
+		remove_variable = kehillah_scene_font_refused
+	}
+	if = {
+		limit = { has_variable = kehillah_scene_font_accepted }
+		remove_variable = kehillah_scene_font_accepted
+	}
+	if = {
+		limit = { has_variable = kehillah_scene_ransom_paid }
+		remove_variable = kehillah_scene_ransom_paid
+	}
+}

@@ -320,7 +320,10 @@ kehillah_pogrom_death_chance_value = {
 		limit = { primary_title ?= { has_variable = kehillah_mob_scattered } }
 		multiply = 0.5
 	}
+	# V41: the choices made in the scenes.
+	multiply = kehillah_pogrom_scene_death_mult_value
 	min = 0
+	max = 70
 }
 kehillah_pogrom_baptism_chance_value = {
 	value = scope:kehillah_pogrom_severity
@@ -330,7 +333,10 @@ kehillah_pogrom_baptism_chance_value = {
 		limit = { primary_title ?= { has_variable = kehillah_mob_scattered } }
 		multiply = 0.5
 	}
+	# V41: the choices made in the scenes.
+	multiply = kehillah_pogrom_scene_baptism_mult_value
 	min = 0
+	max = 29
 }
 # The leader himself: sev / 3 - 7 - prowess / 2.
 kehillah_pogrom_leader_death_chance_value = {
@@ -340,6 +346,34 @@ kehillah_pogrom_leader_death_chance_value = {
 	subtract = {
 		value = prowess
 		divide = 2
+	}
+	# V41: the choices made in the scenes.
+	primary_title ?= {
+		if = {
+			limit = { has_variable = kehillah_scene_font_refused }
+			add = 30
+		}
+		if = {
+			limit = { has_variable = kehillah_scene_scrolls_saved }
+			add = 10
+		}
+		if = {
+			limit = { has_variable = kehillah_scene_door_held }
+			add = -10
+		}
+		if = {
+			limit = { has_variable = kehillah_scene_street_held }
+			add = -5
+		}
+		if = {
+			limit = {
+				OR = {
+					has_variable = kehillah_scene_font_accepted
+					has_variable = kehillah_scene_ransom_paid
+				}
+			}
+			multiply = 0
+		}
 	}
 	# Granada: the vizier was the mob's quarry -- unless he got away.
 	if = {
@@ -369,6 +403,17 @@ kehillah_pogrom_stability_loss_value = {
 kehillah_pogrom_greatness_loss_value = {
 	value = scope:kehillah_pogrom_severity
 	multiply = -1
+	# V41: what was carried out of the fire.
+	primary_title ?= {
+		if = {
+			limit = { has_variable = kehillah_scene_scrolls_saved }
+			multiply = 0.5
+		}
+		if = {
+			limit = { has_variable = kehillah_scene_people_first }
+			multiply = 1.5
+		}
+	}
 }
 kehillah_pogrom_martyr_greatness = 10
 # The ransom of hostages: 40 gold each.
@@ -860,3 +905,235 @@ kehillah_granada_flee_fail_value = {
 # --- V39 slice 5 (2026-10-14): an accusation's mob, in the town itself.
 kehillah_accusation_mob_size = 1000
 kehillah_accusation_mob_severity = 45
+
+# --- V41 step 1 (2026-10-14): the pogrom unfolding. Scope: the struck
+# community's leader; scope:kehillah_mob_leader the preacher.
+
+# The neighbour hides the children: 35 + his opinion of you / 2; his
+# character -- compassionate +20, honest +10, just +10, greedy -20,
+# deceitful -15, callous -15, zealous -15. 5 to 90.
+kehillah_pogrom_neighbor_chance_value = {
+	value = 35
+	if = {
+		limit = { exists = scope:kehillah_pogrom_neighbor }
+		add = {
+			value = "scope:kehillah_pogrom_neighbor.opinion(root)"
+			divide = 2
+		}
+		scope:kehillah_pogrom_neighbor = {
+			if = {
+				limit = { has_trait = compassionate }
+				add = 20
+			}
+			if = {
+				limit = { has_trait = honest }
+				add = 10
+			}
+			if = {
+				limit = { has_trait = just }
+				add = 10
+			}
+			if = {
+				limit = { has_trait = greedy }
+				add = -20
+			}
+			if = {
+				limit = { has_trait = deceitful }
+				add = -15
+			}
+			if = {
+				limit = { has_trait = callous }
+				add = -15
+			}
+			if = {
+				limit = { has_trait = zealous }
+				add = -15
+			}
+		}
+	}
+	min = 5
+	max = 90
+}
+kehillah_pogrom_neighbor_fail_value = {
+	value = 100
+	subtract = kehillah_pogrom_neighbor_chance_value
+}
+
+# Hold the end of the street: 20 + the watch's martial x2 + its prowess
+# (yours without a Rosh ha-Shmirah) - the preacher's martial x2. 5 to 70.
+kehillah_pogrom_street_chance_value = {
+	value = 20
+	if = {
+		limit = { exists = cp:councillor_marshal }
+		add = {
+			value = cp:councillor_marshal.martial
+			multiply = 2
+		}
+		add = cp:councillor_marshal.prowess
+	}
+	else = {
+		add = {
+			value = martial
+			multiply = 2
+		}
+		add = prowess
+	}
+	if = {
+		limit = { exists = scope:kehillah_mob_leader }
+		subtract = {
+			value = scope:kehillah_mob_leader.martial
+			multiply = 2
+		}
+	}
+	min = 5
+	max = 70
+}
+kehillah_pogrom_street_fail_value = {
+	value = 100
+	subtract = kehillah_pogrom_street_chance_value
+}
+
+# Speak to them at the castle gate: 15 + diplomacy x2 + the preacher's
+# opinion of you / 4; -20 if he is zealous; +10 if you are learned. 5 to
+# 65.
+kehillah_pogrom_speak_chance_value = {
+	value = 15
+	add = {
+		value = diplomacy
+		multiply = 2
+	}
+	if = {
+		limit = { exists = scope:kehillah_mob_leader }
+		add = {
+			value = "scope:kehillah_mob_leader.opinion(root)"
+			divide = 4
+		}
+		if = {
+			limit = { scope:kehillah_mob_leader = { has_trait = zealous } }
+			add = -20
+		}
+	}
+	if = {
+		limit = { learning >= 15 }
+		add = 10
+	}
+	min = 5
+	max = 65
+}
+kehillah_pogrom_speak_fail_value = {
+	value = 100
+	subtract = kehillah_pogrom_speak_chance_value
+}
+
+# Hold the door: 40 + (your prowess - the preacher's) x4. 5 to 75.
+kehillah_pogrom_door_chance_value = {
+	value = 40
+	add = {
+		value = prowess
+		multiply = 4
+	}
+	if = {
+		limit = { exists = scope:kehillah_mob_leader }
+		subtract = {
+			value = scope:kehillah_mob_leader.prowess
+			multiply = 4
+		}
+	}
+	min = 5
+	max = 75
+}
+kehillah_pogrom_door_fail_value = {
+	value = 100
+	subtract = kehillah_pogrom_door_chance_value
+}
+
+# Offer everything: 20 + diplomacy + gold / 10 (at most 30); the
+# preacher greedy +25, zealous -20. 5 to 85.
+kehillah_pogrom_offer_chance_value = {
+	value = 20
+	add = diplomacy
+	add = {
+		value = gold
+		divide = 10
+		max = 30
+		min = 0
+	}
+	if = {
+		limit = { scope:kehillah_mob_leader ?= { has_trait = greedy } }
+		add = 25
+	}
+	if = {
+		limit = { scope:kehillah_mob_leader ?= { has_trait = zealous } }
+		add = -20
+	}
+	min = 5
+	max = 85
+}
+kehillah_pogrom_offer_fail_value = {
+	value = 100
+	subtract = kehillah_pogrom_offer_chance_value
+}
+
+# What the choices do to the dead and the baptized.
+kehillah_pogrom_scene_death_mult_value = {
+	value = 1
+	primary_title ?= {
+		if = {
+			limit = { has_variable = kehillah_scene_street_held }
+			multiply = 0.8
+		}
+		if = {
+			limit = { has_variable = kehillah_scene_street_lost }
+			multiply = 1.25
+		}
+		if = {
+			limit = { has_variable = kehillah_scene_spoke_heard }
+			multiply = 0.8
+		}
+		if = {
+			limit = { has_variable = kehillah_scene_door_held }
+			multiply = 0.85
+		}
+		if = {
+			limit = { has_variable = kehillah_scene_people_first }
+			multiply = 0.8
+		}
+		if = {
+			limit = { has_variable = kehillah_scene_scrolls_saved }
+			multiply = 1.1
+		}
+		if = {
+			limit = { has_variable = kehillah_scene_font_refused }
+			multiply = 1.4
+		}
+		if = {
+			limit = { has_variable = kehillah_scene_font_accepted }
+			multiply = 0.6
+		}
+		if = {
+			limit = { has_variable = kehillah_scene_ransom_paid }
+			multiply = 0.6
+		}
+	}
+}
+kehillah_pogrom_scene_baptism_mult_value = {
+	value = 1
+	primary_title ?= {
+		if = {
+			limit = { has_variable = kehillah_scene_spoke_heard }
+			multiply = 0.8
+		}
+		if = {
+			limit = { has_variable = kehillah_scene_font_refused }
+			multiply = 0.3
+		}
+		if = {
+			limit = { has_variable = kehillah_scene_font_accepted }
+			multiply = 1.6
+		}
+		if = {
+			limit = { has_variable = kehillah_scene_ransom_paid }
+			multiply = 0.6
+		}
+	}
+}

@@ -329,6 +329,15 @@ kehillah_mob_tick_effect = {
 		limit = { NOT = { any_army = { always = yes } } }
 		kehillah_mob_end_effect = yes
 	}
+	# V41: while a player's scenes play, the host waits (at most 60 days).
+	else_if = {
+		limit = { has_character_flag = kehillah_mob_striking }
+		change_variable = { name = kehillah_mob_wait add = 4 }
+		if = {
+			limit = { var:kehillah_mob_wait >= 60 }
+			var:kehillah_mob_target_title.holder ?= { kehillah_pogrom_effect = yes }
+		}
+	}
 	# After the pogrom it waits for the ransom (kehillah_mob.0011), at most
 	# 40 days.
 	else_if = {
@@ -407,7 +416,16 @@ kehillah_mob_tick_effect = {
 					limit = { scope:kehillah_mob_victim_title = { has_variable = kehillah_mob_refuge } }
 					scope:kehillah_mob_victim_title = { set_variable = { name = kehillah_mob_castle_fell value = yes } }
 				}
-				scope:kehillah_mob_victim = { kehillah_pogrom_effect = yes }
+				# V41: a player lives through it in scenes; the AI does not.
+				scope:kehillah_mob_victim = {
+					if = {
+						limit = { is_ai = no }
+						kehillah_pogrom_scenes_start_effect = yes
+					}
+					else = {
+						kehillah_pogrom_effect = yes
+					}
+				}
 			}
 		}
 	}
@@ -496,12 +514,36 @@ kehillah_pogrom_effect = {
 	set_variable = { name = kehillah_pogrom_buildings value = 0 }
 	debug_log = "kehillah_pogrom_effect: the pogrom"
 
+	# V41: the children given up by the neighbour are baptized together.
+	if = {
+		limit = { scope:kehillah_pogrom_title = { has_variable = kehillah_scene_children_betrayed } }
+		every_courtier = {
+			limit = {
+				is_alive = yes
+				is_adult = no
+				is_jewish_character_trigger = yes
+			}
+			scope:kehillah_pogrom_victim = { change_variable = { name = kehillah_pogrom_baptized add = 1 } }
+			set_character_faith = scope:kehillah_mob_leader.faith
+			set_variable = { name = kehillah_anus value = scope:kehillah_pogrom_title }
+			scope:kehillah_pogrom_title = {
+				add_to_variable_list = { name = kehillah_anusim target = prev }
+			}
+			move_to_pool_at = scope:kehillah_pogrom_victim.domicile.domicile_location
+		}
+	}
+
 	# The people of the community.
 	every_courtier = {
 		limit = {
 			is_alive = yes
 			is_jewish_character_trigger = yes
 			NOT = { this = scope:kehillah_pogrom_victim }
+			# V41: the children the neighbour hid are spared.
+			trigger_if = {
+				limit = { scope:kehillah_pogrom_title = { has_variable = kehillah_scene_children_hidden } }
+				is_adult = yes
+			}
 		}
 		random_list = {
 			0 = {
@@ -601,10 +643,46 @@ kehillah_pogrom_effect = {
 		}
 	}
 
-	# The leader himself.
-	random = {
-		chance = kehillah_pogrom_leader_death_chance_value
-		set_variable = { name = kehillah_pogrom_leader_fell value = yes }
+	# The leader himself (V41: by the choices in the scenes). Baptized if
+	# he went to the font; otherwise killed, or taken by the preacher with
+	# the hostages if he refused it or was seized at the gate.
+	if = {
+		limit = { scope:kehillah_pogrom_title = { has_variable = kehillah_scene_font_accepted } }
+		set_variable = { name = kehillah_pogrom_leader_baptized value = yes }
+	}
+	else = {
+		random = {
+			chance = kehillah_pogrom_leader_death_chance_value
+			set_variable = { name = kehillah_pogrom_leader_fell value = yes }
+		}
+		if = {
+			limit = {
+				NOT = { has_variable = kehillah_pogrom_leader_fell }
+				scope:kehillah_pogrom_title = {
+					OR = {
+						has_variable = kehillah_scene_spoke_seized
+						has_variable = kehillah_scene_font_refused
+					}
+				}
+			}
+			random = {
+				chance = {
+					value = 50
+					if = {
+						limit = { scope:kehillah_pogrom_title = { has_variable = kehillah_scene_spoke_seized } }
+						value = 100
+					}
+				}
+				scope:kehillah_mob_leader = {
+					imprison = {
+						target = scope:kehillah_pogrom_victim
+						type = dungeon
+					}
+				}
+				change_variable = { name = kehillah_pogrom_hostages add = 1 }
+				set_variable = { name = kehillah_pogrom_leader_taken value = yes }
+			}
+		}
 	}
 
 	# The Jewish Quarter.
@@ -666,6 +744,10 @@ kehillah_pogrom_effect = {
 
 	# The war is the host's.
 	scope:kehillah_mob_leader = {
+		if = {
+			limit = { has_character_flag = kehillah_mob_striking }
+			remove_character_flag = kehillah_mob_striking
+		}
 		add_character_flag = kehillah_mob_done
 		set_variable = { name = kehillah_mob_wait value = 0 }
 		random_character_war = {
@@ -947,6 +1029,7 @@ kehillah_mob_clear_title_effect = {
 		limit = { has_variable = kehillah_mob_armed_failed }
 		remove_variable = kehillah_mob_armed_failed
 	}
+	kehillah_pogrom_clear_scenes_effect = yes
 	clear_variable_list = kehillah_mob_asked_refuge
 	clear_variable_list = kehillah_mob_asked_men
 	clear_variable_list = kehillah_mob_asked_condemn
