@@ -48,26 +48,41 @@ kehillah_incident.0001 = {
 			dynasty = none
 			trait = zealous
 			learning = { 12 20 }
+			intrigue = { 6 14 }
 			save_scope_as = kehillah_incident_accuser
 		}
 		scope:kehillah_incident_host = { add_courtier = scope:kehillah_incident_accuser }
 	}
 
-	# We will answer him in the hall.
+	# We will answer him in the hall: your learning against his.
 	option = {
 		name = kehillah_incident.0001.a
-		random_list = {
-			0 = {
-				modifier = { add = kehillah_talmud_defend_chance_value }
+		duel = {
+			skill = learning
+			target = scope:kehillah_incident_accuser
+			50 = {
 				desc = kehillah_incident_out_acquitted
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+				}
+				kehillah_lord_outlook_odds_modifier = { HOST = scope:kehillah_incident_host }
+				modifier = {
+					add = 10
+					scope:kehillah_incident_host = { has_trait = just }
+				}
+				min = 5
 				custom_tooltip = kehillah_incident_talmud_safe_tt
-				custom_tooltip = kehillah_incident_acquitted_tt
-				primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_talmud_acquitted_greatness } }
+				kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_talmud_acquitted_greatness }
 				kehillah_incident_report_effect = { OUTCOME = talmud_acquitted }
 			}
-			0 = {
-				modifier = { add = kehillah_talmud_defend_fail_value }
+			50 = {
 				desc = kehillah_incident_out_condemned
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+				}
+				min = 5
 				kehillah_talmud_burned_effect = yes
 				kehillah_incident_report_effect = { OUTCOME = talmud_burned }
 			}
@@ -76,25 +91,77 @@ kehillah_incident.0001 = {
 			base = 25
 			modifier = {
 				add = 40
-				kehillah_talmud_defend_chance_value >= 45
+				learning > scope:kehillah_incident_accuser.learning
 			}
 		}
 	}
 
-	# The Shtadlan goes to the lord before the day comes.
+	# The Dayyan answers him: a more learned voice than yours.
+	option = {
+		name = kehillah_incident.0001.f
+		trigger = {
+			exists = scope:kehillah_incident_dayyan
+			scope:kehillah_incident_dayyan.learning > learning
+		}
+		random_list = {
+			50 = {
+				desc = kehillah_incident_out_acquitted
+				modifier = {
+					add = 15
+					scope:kehillah_incident_dayyan.learning > scope:kehillah_incident_accuser.learning
+				}
+				modifier = {
+					add = 15
+					scope:kehillah_incident_dayyan = { learning >= 18 }
+				}
+				kehillah_lord_outlook_odds_modifier = { HOST = scope:kehillah_incident_host }
+				min = 5
+				custom_tooltip = kehillah_incident_talmud_safe_tt
+				kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_talmud_acquitted_greatness }
+				kehillah_incident_report_effect = { OUTCOME = talmud_acquitted }
+			}
+			50 = {
+				desc = kehillah_incident_out_condemned
+				modifier = {
+					add = 15
+					scope:kehillah_incident_accuser.learning > scope:kehillah_incident_dayyan.learning
+				}
+				min = 5
+				kehillah_talmud_burned_effect = yes
+				kehillah_incident_report_effect = { OUTCOME = talmud_burned }
+			}
+		}
+		ai_chance = { base = 35 }
+	}
+
+	# The Shtadlan goes to the castle before the day comes.
 	option = {
 		name = kehillah_incident.0001.e
 		trigger = { exists = scope:kehillah_incident_shtadlan }
 		random_list = {
-			0 = {
-				modifier = { add = kehillah_talmud_shtadlan_chance_value }
+			30 = {
 				desc = kehillah_incident_out_dropped
+				modifier = {
+					add = 15
+					scope:kehillah_incident_shtadlan = { diplomacy >= 12 }
+				}
+				modifier = {
+					add = 15
+					scope:kehillah_incident_shtadlan = { diplomacy >= 18 }
+				}
+				opinion_modifier = {
+					who = scope:kehillah_incident_host
+					opinion_target = scope:kehillah_incident_shtadlan
+					multiplier = 0.25
+				}
+				kehillah_lord_outlook_odds_modifier = { HOST = scope:kehillah_incident_host }
+				min = 5
 				custom_tooltip = kehillah_incident_talmud_safe_tt
 				kehillah_incident_report_effect = { OUTCOME = talmud_dropped }
 			}
-			0 = {
-				modifier = { add = kehillah_talmud_shtadlan_fail_value }
+			70 = {
 				desc = kehillah_incident_out_condemned
+				min = 5
 				kehillah_talmud_burned_effect = yes
 				kehillah_incident_report_effect = { OUTCOME = talmud_burned }
 			}
@@ -102,22 +169,40 @@ kehillah_incident.0001 = {
 		ai_chance = { base = 30 }
 	}
 
-	# Hide the books.
+	# Hide the books: your intrigue against his (he knows which houses).
 	option = {
 		name = kehillah_incident.0001.b
-		random_list = {
-			0 = {
-				modifier = { add = kehillah_talmud_hide_chance_value }
+		duel = {
+			skill = intrigue
+			target = scope:kehillah_incident_accuser
+			40 = {
 				desc = kehillah_incident_out_hidden
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+				}
+				modifier = {
+					add = 10
+					has_trait = deceitful
+				}
+				modifier = {
+					add = 10
+					has_trait = schemer
+				}
+				min = 5
 				custom_tooltip = kehillah_incident_talmud_safe_tt
 				kehillah_incident_report_effect = { OUTCOME = talmud_hidden }
 			}
-			0 = {
-				modifier = { add = kehillah_talmud_hide_fail_value }
+			60 = {
 				desc = kehillah_incident_out_found
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+				}
+				min = 5
 				kehillah_talmud_burned_effect = yes
 				scope:kehillah_incident_host ?= {
-					kehillah_shift_outlook_effect = { AMOUNT = -5 }
+					hidden_effect = { kehillah_shift_outlook_effect = { AMOUNT = -5 } }
 				}
 				kehillah_incident_report_effect = { OUTCOME = talmud_found }
 			}
@@ -134,7 +219,7 @@ kehillah_incident.0001 = {
 		}
 	}
 
-	# Offer the lord silver to return them.
+	# Offer the lord silver to give them back.
 	option = {
 		name = kehillah_incident.0001.c
 		trigger = { gold >= kehillah_incident_bribe_cost_value }
@@ -144,15 +229,24 @@ kehillah_incident.0001 = {
 			gold = kehillah_incident_bribe_cost_value
 		}
 		random_list = {
-			0 = {
-				modifier = { add = kehillah_incident_bribe_chance_value }
+			40 = {
 				desc = kehillah_incident_out_redeemed
+				kehillah_lord_outlook_odds_modifier = { HOST = scope:kehillah_incident_host }
+				modifier = {
+					add = 20
+					scope:kehillah_incident_host = { has_trait = greedy }
+				}
+				min = 5
 				custom_tooltip = kehillah_incident_talmud_safe_tt
 				kehillah_incident_report_effect = { OUTCOME = talmud_redeemed }
 			}
-			0 = {
-				modifier = { add = kehillah_incident_bribe_fail_value }
+			60 = {
 				desc = kehillah_incident_out_cheated
+				modifier = {
+					add = 15
+					scope:kehillah_incident_host = { has_trait = just }
+				}
+				min = 5
 				kehillah_talmud_burned_effect = yes
 				kehillah_incident_report_effect = { OUTCOME = talmud_cheated }
 			}
@@ -258,8 +352,7 @@ kehillah_incident.0010 = {
 		kehillah_badge_decree_effect = yes
 		add_character_modifier = { modifier = kehillah_badge_modifier years = kehillah_badge_years }
 		add_piety = medium_piety_gain
-		primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_badge_pride_stability } }
-		custom_tooltip = kehillah_incident_badge_pride_tt
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_badge_pride_stability }
 		ai_chance = { base = 30 }
 	}
 
@@ -319,8 +412,7 @@ kehillah_incident.0020 = {
 		name = kehillah_incident.0020.a
 		add_piety = medium_piety_gain
 		add_stress = medium_stress_gain
-		primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_holy_week_self_stability } }
-		custom_tooltip = kehillah_incident_holy_week_self_tt
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_holy_week_self_stability }
 		random_list = {
 			0 = {
 				modifier = { add = kehillah_holy_week_wound_fail_value }
@@ -358,8 +450,7 @@ kehillah_incident.0020 = {
 				opinion = -25
 			}
 		}
-		primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_holy_week_sent_stability } }
-		custom_tooltip = kehillah_incident_holy_week_sent_tt
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_holy_week_sent_stability }
 		kehillah_incident_report_effect = { OUTCOME = holy_week_sent }
 		ai_chance = {
 			base = 40
@@ -390,8 +481,7 @@ kehillah_incident.0020 = {
 			0 = {
 				modifier = { add = kehillah_incident_bribe_fail_value }
 				desc = kehillah_incident_out_kept
-				primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_holy_week_sent_stability } }
-				custom_tooltip = kehillah_incident_holy_week_stones_tt
+				kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_holy_week_sent_stability }
 				kehillah_incident_report_effect = { OUTCOME = holy_week_kept }
 			}
 		}
@@ -412,8 +502,7 @@ kehillah_incident.0020 = {
 				modifier = { add = kehillah_holy_week_refuse_chance_value }
 				desc = kehillah_incident_out_refused
 				add_prestige = medium_prestige_gain
-				primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_holy_week_refuse_greatness } }
-				custom_tooltip = kehillah_incident_holy_week_refused_tt
+				kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_holy_week_refuse_greatness }
 				kehillah_incident_report_effect = { OUTCOME = holy_week_refused }
 			}
 			0 = {

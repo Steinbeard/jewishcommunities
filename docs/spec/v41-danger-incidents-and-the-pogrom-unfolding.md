@@ -581,3 +581,50 @@ won; the AI never asked for men, the one answer that can break a host. It now as
 lord, once there is a host to fight, at the player's odds (`kehillah_mob_ask_men_chance_value`, at
 most 30%). It asks once a year per community.
 
+**Soak 3, 2026-10-14 (c8a72bf): 1066 to 1086.**
+- **Violence:** 10 mobs, 10 pogroms, 10 of 10 mob wars won by the mob.
+- **"The lord rides out" never fired.** The AI answered only in the warning (`kehillah_mob.0001`).
+  A mob that rises in the town itself (an accusation, a riot) gives no warning, so it was never
+  answered. Its war also ended within days.
+- **Refugees:** bands set out 3 times.
+- **Fixed:**
+  - A town-born mob now sends an AI community the hidden `kehillah_mob.0031` a day later, which
+    makes its answers.
+  - Each ask for the lord's men is logged.
+  - Each refugee arrival and answer is logged.
+
+## Tooltips by vanilla systems (2026-10-14)
+
+**Daniel:** localization should not describe effects or probabilities. The option tooltip should
+show probabilities, their factors and skill challenges, through vanilla systems.
+
+**The pattern:**
+- **Skill against skill:** vanilla's `duel`. The tooltip shows both skills and the chance.
+- **Other odds:** a `random_list` whose factors are separate modifiers, so the tooltip lists them:
+  - a trait or condition, `modifier = { add = N <trigger> }`;
+  - an opinion, `opinion_modifier`;
+  - the lord's outlook band, `kehillah_lord_outlook_odds_modifier` in
+    `common/scripted_modifiers/kehillah_odds_modifiers.txt`, labelled through `custom_tooltip`.
+- **Pillar changes:** `kehillah_change_pillar_effect = { PILLAR AMOUNT }` uses `custom_description`
+  with `common/effect_localization/kehillah_pillar_effect_localization.txt`. The line reads
+  "Greatness: +30", with the number taken from the script.
+- **Text** names what happens when the game cannot show it, such as the Talmud burned. It never
+  gives numbers or odds.
+
+**The pilot:**
+- **The Talmud trial:**
+  - answer him: a Learning duel against the accuser;
+  - hide the books: an Intrigue duel;
+  - new, the Dayyan answers him, when more learned than the leader;
+  - the Shtadlan's odds: his Diplomacy, the lord's opinion of him, and the lord's outlook;
+  - the payment: the lord's outlook, greed and justice.
+- **Pillar changes:** every pillar change in the step 4b incidents and the refugees goes through
+  the new effect. Number tooltips are removed.
+
+**The rollout,** after the pilot renders in game:
+- the mob events and visits, the pogrom scenes, the accusation and the other three incidents;
+- older files with numbers in text: the Bet Din expansion, missions, Bet Din sources, host crisis,
+  Anusim, and the mob warning's "Every request can fail".
+
+Status displays, such as the danger and pillar breakdowns, are left as they are.
+
