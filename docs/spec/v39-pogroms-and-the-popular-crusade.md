@@ -621,3 +621,41 @@ to 100.
 
 **Debug:** `kehillah_mob_debug.1` (local host), `.2` (crusade-sized), `.3` (report), `.4` (to the
 gates), `.5` (end the siege), `.6` (the host vanishes).
+
+## Slice 1b (Daniel, 2026-10-13): crisis interactions instead of menus
+
+Daniel: "Instead of being a series of multiple choices of how to prepare, what if we let the kehillah
+leader try a few different choices with difficult skill or probability checks on each of them and
+character interactions."
+
+**The answers move into interactions.** While a host threatens the community (its title has
+`kehillah_mob_threat`), the leader has interactions on the people involved:
+- **Each is tried once per host and per target.**
+- **Each carries a cost.**
+- **Each resolves by a `random_list` in `on_accept`,** so the odds show before sending.
+
+| Interaction | On whom | Chance from | Success | Failure |
+|---|---|---|---|---|
+| Treat with the Preacher | the mob leader | diplomacy, his greed or zeal, the silver offered | bought off | the silver is kept |
+| Ask for Refuge in the Garrison | the county's lord; the overlord | his opinion, his outlook, diplomacy, the charter's security, a gift | refuge (§5.5) | outlook -3 |
+| Ask Him to Raise His Men | the county's lord; the overlord | outlook (none if Cold), opinion, diplomacy, his martial; at most about 30% | `add_defender` and event troops beside the town; the levies may desert | outlook -5 |
+| Ask the Clergy to Condemn the Host | the head of faith; a lord's chaplain; a theocratic ruler of the host's faith | the cleric's outlook, the Dayyan's learning, a gift | -25% men, severity -10 | the silver is spent |
+| Ready the Quarter's Defences | the Rosh ha-Shmirah (own courtier) | his martial | severity -15 | the silver is spent |
+| Scatter into the Villages | a decision | none | §5.4 | none |
+
+- **The events become warnings:** where the host is, and who can be approached. "At the Gates"
+  keeps its last choice: the duel, the last bribe, the plea, prayer.
+- **AI communities** make the same attempts through a hidden effect, by gold and odds.
+
+## Chaining (slice 2): one war at a time
+
+- **One target at a time.** The host is at war with one community only. After a town falls (or the
+  host is bought off), its war ends as an attacker victory, which keeps the army (spike 0 S4). The
+  next target is then chosen and a new hidden war declared on it.
+- **The next target:** the unattacked community within huge distance with the best score:
+  - nearer is better;
+  - Prosperity +1 per 100;
+  - +2 under a Cold or Hostile lord;
+  - a community that bought the host off is skipped for a year.
+- **The host ends** at its target count (a crusade 4-7, a local mob 1), under 300 men, when its
+  leader dies, or when nothing is in range.
