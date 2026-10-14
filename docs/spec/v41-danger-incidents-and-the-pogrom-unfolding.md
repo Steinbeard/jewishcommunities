@@ -208,5 +208,30 @@ down to the appointment heir, and `.0002` lets a player continue as the successo
 (`set_player_character`) or remain as the convert. A captive leader who is not ransomed can be
 baptized the same way.
 
-**The named anusim rite is step 1b,** after an engine check of `create_rite_from_type`.
+**Step 1b (below)** replaces the planned anusim rite.
+
+## Step 1b (Daniel, 2026-10-14): vanilla's Conversos and Anusim, not a new rite
+
+Daniel: "Anusim already exists in game!" and "Christianity has a crypto Jewish Christian rite no?" Both
+are vanilla 1.20:
+- **Conversos** (`faith:conversos`): a Western Christian faith with the Jewish Syncretism tenet. Its
+  description: "originated when Jewish communities were forcibly converted to Christianity... they
+  still remember their old traditions."
+- **Anusim:** the Jewish name of `tenet_false_conversion_sanction` (Sanctioned False Conversion),
+  which some Jewish rites hold. Its converts keep their old faith as a crypto-religionist secret
+  (`make_character_crypto_religionist_effect`).
+
+**This supersedes §2's custom anusim rite.**
+
+**One baptism effect** (`kehillah_anus_baptize_effect`) serves every forced baptism: courtiers,
+children given up, captives not ransomed, and a leader.
+- **The faith:** under a Christian mob the convert becomes a Converso; under a Muslim one (Granada),
+  the mob's faith.
+- **The secret:** the convert may keep the Jewish faith as vanilla's crypto-religionist secret.
+  - always if their rite holds the Anusim tenet, or they are zealous;
+  - 70% otherwise;
+  - 30% if cynical.
+- **What follows.** Discovery and exposure are vanilla's. The converts' return (V39 slice 3b) removes
+  the secret when they return openly. A baptized leader still steps down, and if the player
+  continues as him, he plays a Converso who may be a hidden Jew.
 
