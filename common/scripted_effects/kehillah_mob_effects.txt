@@ -74,29 +74,13 @@ kehillah_mob_raise_effect = {
 			# Never a second host on a community already threatened.
 			NOT = { scope:kehillah_mob_victim_title = { has_variable = kehillah_mob_threat } }
 		}
-		create_character = {
-			age = { 30 55 }
-			gender = male
-			faith = scope:kehillah_mob_spawn.county.faith
-			culture = scope:kehillah_mob_spawn.county.culture
-			location = scope:kehillah_mob_spawn
-			dynasty = none
-			trait = zealous
-			random_traits_list = {
-				count = 1
-				wrathful = {}
-				callous = {}
-				arrogant = {}
-				vengeful = {}
-			}
-			trait = peasant_leader
-			martial = { 8 14 }
-			prowess = { 10 16 }
-			diplomacy = { 6 12 }
-			learning = { 8 14 }
-			intrigue = { 3 8 }
-			stewardship = { 2 6 }
-			save_scope_as = kehillah_mob_leader
+		# V41 step 3: the preacher who has been preaching, if there is one.
+		if = {
+			limit = { exists = scope:kehillah_mob_preset_leader }
+			scope:kehillah_mob_preset_leader = { save_scope_as = kehillah_mob_leader }
+		}
+		else = {
+			kehillah_mob_create_preacher_effect = { PLACE = scope:kehillah_mob_spawn }
 		}
 		scope:kehillah_mob_leader = {
 			add_character_flag = kehillah_mob_leader
@@ -915,7 +899,12 @@ kehillah_mob_bought_off_effect = {
 	var:kehillah_mob_target_title ?= {
 		set_variable = { name = kehillah_mob_paid_off value = yes years = 1 }
 	}
+	# V41 step 3: still preaching -- he turns his sermons elsewhere.
 	if = {
+		limit = { has_character_flag = kehillah_mob_preaching }
+		kehillah_mob_preaching_turn_effect = yes
+	}
+	else_if = {
 		limit = {
 			has_character_flag = kehillah_mob_crusade
 			has_variable = kehillah_mob_targets_left
@@ -1045,7 +1034,7 @@ kehillah_mob_clear_title_effect = {
 kehillah_mob_condemned_effect = {
 	primary_title = { set_variable = { name = kehillah_mob_condemned value = yes } }
 	scope:kehillah_mob_leader = {
-		every_army = { deplete_army_by_percentage = 0.25 }
+		kehillah_mob_thin_host_effect = { FRACTION = 0.25 }
 		set_variable = { name = kehillah_mob_size value = kehillah_mob_total_men_value }
 	}
 	set_variable = { name = kehillah_mob_size_ref value = scope:kehillah_mob_leader.var:kehillah_mob_size }
@@ -1292,4 +1281,60 @@ kehillah_pogrom_take_tenet_effect = {
 # V41 step 2: shift the harm a pogrom will do. Scope: the Kehillah leader.
 kehillah_mob_adjust_severity_effect = {
 	kehillah_granada_adjust_severity_effect = { AMOUNT = $AMOUNT$ }
+}
+
+# A preacher. Scope: any; PLACE: the province he stands in. Saves
+# scope:kehillah_mob_leader.
+kehillah_mob_create_preacher_effect = {
+	create_character = {
+		age = { 30 55 }
+		gender = male
+		faith = $PLACE$.county.faith
+		culture = $PLACE$.county.culture
+		location = $PLACE$
+		dynasty = none
+		trait = zealous
+		random_traits_list = {
+			count = 1
+			wrathful = {}
+			callous = {}
+			arrogant = {}
+			vengeful = {}
+		}
+		trait = peasant_leader
+		martial = { 8 14 }
+		prowess = { 10 16 }
+		diplomacy = { 6 12 }
+		learning = { 8 14 }
+		intrigue = { 3 8 }
+		stewardship = { 2 6 }
+		save_scope_as = kehillah_mob_leader
+	}
+}
+
+# Thin a host -- or, while he is still preaching, his following. Scope:
+# the preacher. FRACTION: the share lost.
+kehillah_mob_thin_host_effect = {
+	every_army = { deplete_army_by_percentage = $FRACTION$ }
+	# (live 2026-10-14: the men count shown stayed at the old size)
+	if = {
+		limit = { has_variable = kehillah_mob_size }
+		change_variable = {
+			name = kehillah_mob_size
+			multiply = {
+				value = 1
+				subtract = $FRACTION$
+			}
+		}
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_following }
+		change_variable = {
+			name = kehillah_mob_following
+			multiply = {
+				value = 1
+				subtract = $FRACTION$
+			}
+		}
+	}
 }

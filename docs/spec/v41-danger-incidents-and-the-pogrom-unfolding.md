@@ -280,3 +280,34 @@ children given up, captives not ransomed, and a leader.
 
 `kehillah_mob_adjust_severity_effect` shifts the harm for any caller.
 
+**Step 2 live test, 2026-10-14: passed.**
+- **Before the lord:** debt 82% (47 + 35, which won refuge), physician 67%.
+- **In the preacher's camp:** Scripture 75% (the host shrank), lieutenants 24%.
+- **At the gates:** the cemetery gate 47%. Hiding in the cellar worked: the font offered only "Stay
+  where you are", and the leader was neither killed nor taken.
+- **Fixes in step 3's commit:**
+  - the men count now follows any thinning of the host;
+  - the plea's floor is 5% (it was 2% against a preacher at -51 opinion).
+
+## Step 3, built (2026-10-14): the preaching
+
+**The crusade call** now starts the preaching within 3-10 days, not the host. The preacher
+(`kehillah_mob_create_preacher_effect`, shared with the raise) appears 100-200 px from the community
+he means to strike, with no army and no title (`kehillah_mob_preaching`).
+- **The story** `story_kehillah_preacher` runs every 7 days:
+  - his following grows by 100-250, plus 10 per recent incident in his faith; it starts at 800;
+  - he preaches in another town near his quarry;
+  - the community gets a toast, "The Preacher Moves On".
+- **After 30-90 days** he sets out. `kehillah_mob_preaching_ends_effect` raises the host with the
+  preacher himself (`scope:kehillah_mob_preset_leader`), at the size of his following, from where
+  he last preached.
+- **The community** gets "The Preaching" (`kehillah_mob.0004`) and the elders' hub at once. AI
+  communities answer then.
+- **During the preaching:**
+  - a condemnation, Scripture or the lieutenants thin his following (`kehillah_mob_thin_host_effect`);
+  - buying him off turns his sermons on another community (`kehillah_mob_preaching_turn_effect`);
+  - no lord can ride out yet.
+
+**Debug:** `kehillah_mob_debug.8` (a crusade now; the preaching begins), `.11` (the preaching ends at
+the next sermon).
+
