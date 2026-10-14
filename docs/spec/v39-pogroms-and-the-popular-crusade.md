@@ -900,3 +900,19 @@ know.
 - **A second run as Chanoch:** the flight succeeded; he survived, and the report had no death line.
 - **Both game rules** show in the game-rules menu.
 
+## Slice 5, built (2026-10-14): accusations raise a mob
+
+When an accusation (V37) turns violent, the crowd now becomes a real mob in the town itself
+(`kehillah_accusation_violence_effect`): 1000 men, base severity 45.
+- **No warning event:** it rises in the town and reaches the gates at its first step.
+- **Bar the gates:** the accusation's barricade (MULT 0.6) shifts the severity by (MULT - 1) x 40,
+  that is -16.
+- **What the pogrom now provides:** the accusation's own instant losses, its 30% martyr and its +2
+  incident are gone. The pogrom brings the harm, martyrs, hostages and +4.
+- **The accusation's report** (.0002) now comes only when the accusation was defused.
+- **One host at a time:** a guard in `kehillah_mob_raise_effect` stops a second host on a community
+  that is already threatened.
+
+The V36 rising still strikes abstractly: its leader is a vanilla peasant-revolt leader, already at
+war with the county's lord.
+
