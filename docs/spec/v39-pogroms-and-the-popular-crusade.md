@@ -744,3 +744,18 @@ warm, indifferent or cold.
 - **The first event** no longer names a Rosh ha-Shmirah who may not exist.
 - **New debug event:** `kehillah_mob_debug.7` makes the lord raise his men. Begging failed five
   times at 15-30%, so "The Lord's Men" are not yet seen live.
+
+**The lord's men, live (2026-10-14).** First, as plain levies at 75% of the host: wiped out at
+Worms, while the host lost about 390. After `e6702da` (half the host in levies, armoured foot, light
+horse; the siege waits while defenders hold the town), three runs:
+1. **Intercepted on the road at Mainz:** the host was annihilated, and the lord lost about 135.
+2. **Deserted, at half strength:** his men chased the host around the Saar for months without a
+   battle, and it wasted from 3820 to 488 by attrition. Then the pogrom came.
+3. **Raised late:** they held Worms (the siege waited 9 steps) and were ground down; the pogrom
+   followed.
+
+**Fixed after:**
+- **A host destroyed in the field** now brings "The Host Is Broken" (it had ended silently).
+- **The march** never moves an army in combat (`set_army_location` had errored).
+- **The pogrom's severity** scales with the share of the host left, x(0.4 + 0.6 x share).
+

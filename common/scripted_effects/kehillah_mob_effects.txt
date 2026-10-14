@@ -149,6 +149,7 @@ kehillah_mob_raise_effect = {
 				# All its armies: the men-at-arms can spawn as a stack of their
 				# own (live: 3820 = 3000 + 820).
 				set_variable = { name = kehillah_mob_size value = kehillah_mob_total_men_value }
+				set_variable = { name = kehillah_mob_size_start value = var:kehillah_mob_size }
 				kehillah_mob_set_band_effect = yes
 				scope:kehillah_mob_victim = {
 					set_variable = { name = kehillah_mob_ref value = scope:kehillah_mob_leader }
@@ -234,6 +235,7 @@ kehillah_mob_step_toward_effect = {
 		if = {
 			limit = { exists = scope:kehillah_mob_next_county }
 			every_army = {
+				limit = { is_army_in_combat = no }
 				# The last step goes into the town itself, which need not be
 				# its county's capital.
 				if = {
@@ -249,7 +251,10 @@ kehillah_mob_step_toward_effect = {
 			# Already in the town's county: into the town.
 			if = {
 				limit = { scope:kehillah_mob_here.county = scope:kehillah_mob_target_province.county }
-				every_army = { set_army_location = scope:kehillah_mob_target_province }
+				every_army = {
+					limit = { is_army_in_combat = no }
+					set_army_location = scope:kehillah_mob_target_province
+				}
 			}
 		}
 	}
@@ -271,10 +276,23 @@ kehillah_mob_tick_effect = {
 			OR = {
 				NOT = { exists = var:kehillah_mob_target_title }
 				NOT = { exists = var:kehillah_mob_target_title.holder }
-				NOT = { any_army = { always = yes } }
 			}
 		}
-		debug_log = "kehillah_mob_tick_effect: no target or no army -- the host breaks up"
+		debug_log = "kehillah_mob_tick_effect: no target -- the host breaks up"
+		kehillah_mob_end_effect = yes
+	}
+	# Destroyed in the field (live 2026-10-14: the lord's men annihilated a
+	# host on the road): broken, and the community is told.
+	else_if = {
+		limit = {
+			NOT = { any_army = { always = yes } }
+			NOT = { has_character_flag = kehillah_mob_done }
+		}
+		debug_log = "kehillah_mob_tick_effect: no army left -- the host is broken"
+		kehillah_mob_dispersed_effect = yes
+	}
+	else_if = {
+		limit = { NOT = { any_army = { always = yes } } }
 		kehillah_mob_end_effect = yes
 	}
 	# After the pogrom it waits for the ransom (kehillah_mob.0011), at most
