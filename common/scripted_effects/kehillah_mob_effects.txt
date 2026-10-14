@@ -496,9 +496,18 @@ kehillah_pogrom_effect = {
 			}
 			0 = {
 				modifier = { add = scope:kehillah_pogrom_victim.kehillah_pogrom_baptism_chance_value }
-				# Kiddush ha-Shem: the zealous choose death over the font.
+				# Kiddush ha-Shem: the zealous choose death over the font, and
+				# half of the rest where the rite teaches it (V39 slice 3).
 				if = {
-					limit = { has_trait = zealous }
+					limit = {
+						OR = {
+							has_trait = zealous
+							AND = {
+								rite ?= { rite_has_parameter = kehillah_kiddush_hashem_rite }
+								scope:kehillah_pogrom_victim = { kehillah_coin_flip_trigger = yes }
+							}
+						}
+					}
 					scope:kehillah_pogrom_victim = {
 						change_variable = { name = kehillah_pogrom_dead add = 1 }
 						change_variable = { name = kehillah_pogrom_martyrs add = 1 }
@@ -517,6 +526,9 @@ kehillah_pogrom_effect = {
 					}
 					set_character_faith = scope:kehillah_mob_leader.faith
 					set_variable = { name = kehillah_anus value = scope:kehillah_pogrom_title }
+					scope:kehillah_pogrom_title = {
+						add_to_variable_list = { name = kehillah_anusim target = prev }
+					}
 					move_to_pool_at = scope:kehillah_pogrom_victim.domicile.domicile_location
 				}
 			}
@@ -642,6 +654,9 @@ kehillah_pogrom_effect = {
 			end_war = attacker
 		}
 	}
+
+	# The aftermath: trauma, the tenets of martyrdom, the Year of the Decrees.
+	kehillah_pogrom_aftermath_effect = yes
 
 	# News, and the report (for the AI: the ransom is decided at once).
 	kehillah_notify_region_players_effect = {
@@ -1069,5 +1084,99 @@ kehillah_mob_refuge_refused_effect = {
 	custom_tooltip = kehillah_mob_refuge_refused_tt
 	scope:kehillah_mob_patron = {
 		hidden_effect = { kehillah_shift_outlook_effect = { AMOUNT = -3 } }
+	}
+}
+
+# ---------------------------------------------------------------------
+# THE AFTERMATH (V39 slice 3, 2026-10-14). Scope: the struck Kehillah
+# leader; scope:kehillah_pogrom_severity saved.
+#   - The community's own: trauma (stress) and the tenets of martyrdom and
+#     asceticism become known to them.
+#   - Communities within large distance: "The Year of the Decrees" for
+#     ten years (Stability -, Greatness +), and their leaders may take
+#     Kiddush ha-Shem or asceticism as a personal tenet (30%, 60% from
+#     severity 80).
+#   - The leader of the struck community likewise (60%).
+# ---------------------------------------------------------------------
+kehillah_pogrom_aftermath_effect = {
+	save_scope_as = kehillah_aftermath_victim
+	domicile.domicile_location ?= { save_scope_as = kehillah_aftermath_town }
+	every_courtier = {
+		limit = {
+			is_alive = yes
+			is_jewish_character_trigger = yes
+		}
+		add_known_tenet = tenet_kehillah_kiddush_hashem
+		add_known_tenet = tenet_asceticism
+		add_stress = medium_stress_gain
+	}
+	add_known_tenet = tenet_kehillah_kiddush_hashem
+	add_known_tenet = tenet_asceticism
+	random = {
+		chance = 60
+		kehillah_pogrom_take_tenet_effect = yes
+	}
+	if = {
+		limit = { exists = scope:kehillah_aftermath_town }
+		every_ruler = {
+			limit = {
+				government_has_flag = government_is_kehillah
+				NOT = { this = scope:kehillah_aftermath_victim }
+				exists = primary_title
+				domicile.domicile_location ?= {
+					squared_distance = { target = scope:kehillah_aftermath_town value <= squared_distance_large }
+				}
+			}
+			primary_title = {
+				set_variable = {
+					name = kehillah_decrees_memory
+					value = yes
+					years = kehillah_mob_memory_years
+				}
+			}
+			add_known_tenet = tenet_kehillah_kiddush_hashem
+			add_known_tenet = tenet_asceticism
+			add_stress = minor_stress_gain
+			random = {
+				chance = {
+					value = 30
+					if = {
+						limit = { scope:kehillah_pogrom_severity >= 80 }
+						value = 60
+					}
+				}
+				kehillah_pogrom_take_tenet_effect = yes
+			}
+		}
+	}
+	# The faith remembers its martyrs (for the Bet Din Conference, later).
+	faith ?= {
+		if = {
+			limit = { NOT = { has_variable = kehillah_faith_martyrdom } }
+			set_variable = { name = kehillah_faith_martyrdom value = 0 }
+		}
+		change_variable = { name = kehillah_faith_martyrdom add = 1 }
+	}
+}
+
+# Scope: a Kehillah leader. Martyrdom or the ascetic's withdrawal.
+kehillah_pogrom_take_tenet_effect = {
+	if = {
+		limit = {
+			NOR = {
+				has_personal_tenet = tenet_kehillah_kiddush_hashem
+				has_personal_tenet = tenet_asceticism
+			}
+		}
+		random_list = {
+			60 = {
+				modifier = { add = 20 has_trait = zealous }
+				force_set_personal_tenet = tenet_kehillah_kiddush_hashem
+			}
+			40 = {
+				modifier = { add = 20 has_trait = temperate }
+				force_set_personal_tenet = tenet_asceticism
+			}
+		}
 	}
 }
