@@ -70,6 +70,7 @@ kehillah_mob_spike.1 = {
 			}
 			scope:kms_leader = {
 				add_character_flag = kehillah_mob_leader
+				kehillah_mob_make_ruler_effect = { COUNTY = scope:kms_spawn.county }
 				start_war = {
 					cb = kehillah_mob_cb
 					target = scope:kms_target_lord
@@ -314,5 +315,192 @@ kehillah_mob_spike.8 = {
 			debug_log = "kehillah_mob_spike.8 S8: asceticism NOT set"
 		}
 		debug_log_scopes = yes
+	}
+}
+
+# --- Spike 0b: the war on the community itself. Console, as a Kehillah
+# leader:
+#   .10 raise a mob 100-200 map pixels away at war with YOU (not a lord);
+#       then .2 reports it as before (it uses the same globals)
+#   .11 your county's lord joins the war as a defender (add_defender)
+#   .12 end the war as an attacker victory; is the Kehillah intact?
+kehillah_mob_spike.10 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		save_scope_as = kms_target_leader
+		domicile.domicile_location = { save_scope_as = kms_target_province }
+		random_province = {
+			limit = {
+				has_holding = yes
+				exists = county.holder
+				squared_distance = { target = scope:kms_target_province value >= 10000 }
+				squared_distance = { target = scope:kms_target_province value <= 40000 }
+			}
+			save_scope_as = kms_spawn
+		}
+		if = {
+			limit = { NOT = { exists = scope:kms_spawn } }
+			debug_log = "kehillah_mob_spike.10: no spawn province found"
+		}
+		else = {
+			save_scope_value_as = {
+				name = kms_distance
+				value = "scope:kms_spawn.squared_distance(scope:kms_target_province)"
+			}
+			create_character = {
+				age = 38
+				gender = male
+				faith = scope:kms_target_province.county.holder.faith
+				culture = scope:kms_spawn.county.culture
+				location = scope:kms_spawn
+				dynasty = none
+				trait = zealous
+				trait = wrathful
+				martial = 10
+				prowess = 14
+				diplomacy = 6
+				intrigue = 4
+				stewardship = 3
+				learning = 8
+				save_scope_as = kms_leader
+			}
+			scope:kms_leader = {
+				add_character_flag = kehillah_mob_leader
+				kehillah_mob_make_ruler_effect = { COUNTY = scope:kms_spawn.county }
+				start_war = {
+					cb = kehillah_mob_community_cb
+					target = scope:kms_target_leader
+				}
+				if = {
+					limit = { is_at_war_with = scope:kms_target_leader }
+					debug_log = "kehillah_mob_spike.10 S0b: the mob IS AT WAR WITH THE COMMUNITY"
+					random_character_war = { save_scope_as = kms_war }
+					spawn_army = {
+						name = kehillah_mob_army_name
+						levies = 1500
+						men_at_arms = {
+							type = pikemen_militia
+							stacks = 5
+						}
+						men_at_arms = {
+							type = torch_bearers
+							stacks = 2
+						}
+						location = scope:kms_spawn
+						war = scope:kms_war
+						war_keep_on_attacker_victory = yes
+						inheritable = no
+						uses_supply = yes
+						save_scope_as = kms_army
+					}
+					if = {
+						limit = { exists = scope:kms_army }
+						debug_log = "kehillah_mob_spike.10 S0b: the army SPAWNED"
+					}
+					else = {
+						debug_log = "kehillah_mob_spike.10 S0b: NO army"
+					}
+				}
+				else = {
+					debug_log = "kehillah_mob_spike.10 S0b: start_war on the community FAILED"
+				}
+			}
+			set_global_variable = { name = kehillah_spike_mob value = scope:kms_leader }
+			set_global_variable = { name = kehillah_spike_target_province value = scope:kms_target_province }
+		}
+		debug_log_scopes = yes
+		debug_log = "kehillah_mob_spike.10: done"
+	}
+}
+
+kehillah_mob_spike.11 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county.holder = { save_scope_as = kms_lord }
+		global_var:kehillah_spike_mob ?= {
+			random_character_war = {
+				add_defender = scope:kms_lord
+			}
+			if = {
+				limit = { is_at_war_with = scope:kms_lord }
+				debug_log = "kehillah_mob_spike.11: the lord JOINED as a defender"
+			}
+			else = {
+				debug_log = "kehillah_mob_spike.11: the lord did NOT join"
+			}
+		}
+		debug_log_scopes = yes
+	}
+}
+
+kehillah_mob_spike.12 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		global_var:kehillah_spike_mob ?= {
+			random_character_war = { end_war = attacker }
+		}
+		if = {
+			limit = {
+				government_has_flag = government_is_kehillah
+				exists = primary_title
+			}
+			debug_log = "kehillah_mob_spike.12: the Kehillah is INTACT after the war"
+		}
+		else = {
+			debug_log = "kehillah_mob_spike.12: the Kehillah is NOT intact"
+		}
+		debug_log_scopes = yes
+		trigger_event = { id = kehillah_mob_spike.2 days = 2 }
+	}
+}
+
+# --- Spike 0b, after spike 0: marching by script, and mob deaths at speed.
+#   .13 one step: the army moves one county toward the target
+#   .14 march: a step every 4 days until it stands in the target province
+#   .15 raise a mob (.10), then end it (.4) 10 days later -- run several
+#       times at speed to see whether a mob's death crashes the game
+kehillah_mob_spike.13 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		global_var:kehillah_spike_mob ?= {
+			kehillah_mob_step_toward_effect = { TARGET = global_var:kehillah_spike_target_province }
+		}
+		trigger_event = kehillah_mob_spike.2
+	}
+}
+kehillah_mob_spike.14 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		global_var:kehillah_spike_mob ?= {
+			if = {
+				limit = {
+					is_alive = yes
+					any_army = {
+						NOT = { location = global_var:kehillah_spike_target_province }
+					}
+				}
+				kehillah_mob_step_toward_effect = { TARGET = global_var:kehillah_spike_target_province }
+				debug_log = "kehillah_mob_spike.14: one step"
+				root = { trigger_event = { id = kehillah_mob_spike.14 days = 4 } }
+			}
+			else = {
+				debug_log = "kehillah_mob_spike.14: the march is over"
+			}
+		}
+		trigger_event = kehillah_mob_spike.2
+	}
+}
+kehillah_mob_spike.15 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		trigger_event = kehillah_mob_spike.10
+		trigger_event = { id = kehillah_mob_spike.4 days = 10 }
+		debug_log = "kehillah_mob_spike.15: a mob raised; it ends in 10 days"
 	}
 }
