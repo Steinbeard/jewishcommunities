@@ -39,10 +39,13 @@ incidents through it.
 - **Live-tested:** steps 1a, 1b, 2, 3 and 4a.
 - **Built:** step 4b, the Talmud trial, the badge, Holy Week, the bonds, host desecration (an
   accusation variant), and risings that raise a mob.
+- **Step 4b** passed its live test.
+- **Two soak tests:** pogroms fell from 37 to 9 in 30 years after the balance fixes.
+- **Refugees** are built.
 - **Next:**
-  1. a live test of 4b;
-  2. a 30-50 year soak test;
-  3. refugees (the exiles system).
+  1. a live test of the refugees;
+  2. defences that save an AI community more often (9 of 11 mobs still win);
+  3. a second eastern host.
 
 ### V40 Living crises and councils — 2026-10-13, Daniel's request
 

@@ -538,3 +538,30 @@ community about every 17 years, two to three times the historical rate.
 **Still open:** a mob that forms almost always wins. The defences (the lord's men, refuge, the
 watch) rarely save an AI community. Making them work more often is a balance question for a later
 pass.
+
+## Refugees, built (2026-10-14)
+
+This builds V39 sections 6 and 8 ("Refugees go through the exiles system to communities outside the
+host's path"). It does not use the exiles system: that system moves a whole community whose leader
+has been expelled. After a pogrom the community usually survives, so a band of its people leaves.
+
+**When:** at the end of `kehillah_pogrom_effect`, if the severity is at least 40.
+
+**Who leaves:** 1 + severity / 40 adults (at most 3). They are Jewish courtiers of the struck
+community, not the heir, the spouse or a councillor.
+
+**Where they go:** the nearest community within huge distance that is not threatened, not under a
+pogrom's memory, and not already receiving a band (`kehillah_refugee_haven_trigger`). They arrive
+10-30 days later.
+
+**`kehillah_refugee.0001` Refugees.** The haven's leader chooses:
+- **Take them in:** they join the court; Prosperity -40, Greatness +20. Five years later
+  (`.0002`), Prosperity +60.
+- **Silver for the road** (medium gold): Greatness +5.
+- **Close the gate:** Greatness -20, and stress.
+
+The AI takes them in unless it is callous or poor.
+
+**Debug:** `kehillah_refugee.0003` sends root a band from the nearest other community, as after a
+pogrom of severity 80.
+
