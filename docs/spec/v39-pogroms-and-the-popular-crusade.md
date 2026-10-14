@@ -792,6 +792,18 @@ horse; the siege waits while defenders hold the town), three runs:
   - a second, smaller host in the east;
   - early answers during the 30-90 days of preaching.
 
+**Slice 2 live test (`42ac6b0`), 2026-10-14.** No errors, no crash.
+- **The chain works.** One host (3820 men, 4 more targets) went from Worms to Mainz, Speyer, Cologne
+  and Troyes. It struck four communities (Worms: 10 dead, 8 baptized, 1 captive), turned after
+  each with "The Host Moves On", and grew to 4202 after the first sack. It broke at Troyes,
+  probably when the AI leader won the duel at the gate.
+- **"The Host Turns Toward Us"** names the town struck and the men.
+- **Found: AI communities call their allies.** In 3 of 4 runs with Worms under the AI, its allies
+  held the town ("the siege waits") until the host wore away. The crusade died at the first town,
+  and help came without any persuasion. **Fixed:** after each mob war is declared, the community's
+  allies are marked as already called (`set_called_to`). Armed help now comes only from a
+  persuaded lord or a player's "Defend the Jews".
+
 ## Slice 3b (Daniel, 2026-10-14): the forced converts' return
 
 Daniel asked about forced conversions being allowed to revert. History: Henry IV allowed it in 1097,
