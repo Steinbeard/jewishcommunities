@@ -152,6 +152,10 @@ kehillah_mob_raise_effect = {
 				set_variable = { name = kehillah_mob_size_start value = var:kehillah_mob_size }
 				kehillah_mob_set_band_effect = yes
 				scope:kehillah_mob_victim = {
+					if = {
+						limit = { has_variable = kehillah_mob_last_town_ref }
+						remove_variable = kehillah_mob_last_town_ref
+					}
 					set_variable = { name = kehillah_mob_ref value = scope:kehillah_mob_leader }
 					set_variable = { name = kehillah_mob_location_ref value = scope:kehillah_mob_spawn }
 					set_variable = { name = kehillah_mob_band value = scope:kehillah_mob_leader.var:kehillah_mob_band_now }
@@ -302,7 +306,7 @@ kehillah_mob_tick_effect = {
 		change_variable = { name = kehillah_mob_wait add = 4 }
 		if = {
 			limit = { var:kehillah_mob_wait >= 40 }
-			kehillah_mob_end_effect = yes
+			kehillah_mob_after_strike_effect = yes
 		}
 	}
 	else = {
@@ -781,11 +785,29 @@ kehillah_mob_dispersed_effect = {
 kehillah_mob_bought_off_effect = {
 	save_scope_as = kehillah_mob_leader
 	debug_log = "kehillah_mob_bought_off_effect: the host takes the silver and goes"
-	random_character_war = {
-		limit = { is_attacker = scope:kehillah_mob_leader }
-		end_war = white_peace
+	var:kehillah_mob_target_title ?= {
+		set_variable = { name = kehillah_mob_paid_off value = yes years = 1 }
 	}
-	kehillah_mob_end_effect = yes
+	if = {
+		limit = {
+			has_character_flag = kehillah_mob_crusade
+			has_variable = kehillah_mob_targets_left
+			var:kehillah_mob_targets_left >= 1
+		}
+		# A victory for the host keeps its army (spike 0, S4).
+		random_character_war = {
+			limit = { is_attacker = scope:kehillah_mob_leader }
+			end_war = attacker
+		}
+		kehillah_mob_retarget_effect = yes
+	}
+	else = {
+		random_character_war = {
+			limit = { is_attacker = scope:kehillah_mob_leader }
+			end_war = white_peace
+		}
+		kehillah_mob_end_effect = yes
+	}
 }
 
 # The end of any host: clear the community's state, release or keep the
@@ -795,6 +817,10 @@ kehillah_mob_end_effect = {
 	var:kehillah_mob_target_title ?= {
 		kehillah_mob_clear_title_effect = yes
 		holder ?= {
+			if = {
+				limit = { has_variable = kehillah_mob_last_town_ref }
+				remove_variable = kehillah_mob_last_town_ref
+			}
 			if = {
 				limit = { has_variable = kehillah_mob_ref }
 				remove_variable = kehillah_mob_ref

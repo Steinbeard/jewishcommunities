@@ -759,3 +759,36 @@ horse; the siege waits while defenders hold the town), three runs:
 - **The march** never moves an army in combat (`set_army_location` had errored).
 - **The pogrom's severity** scales with the share of the host left, x(0.4 + 0.6 x share).
 
+## Slice 2, built (2026-10-14): the Popular Crusade
+
+**Files:** `common/scripted_effects/kehillah_crusade_effects.txt`,
+`common/scripted_triggers/kehillah_crusade_triggers.txt`, `common/on_action/kehillah_crusade_on_actions.txt`
+(`yearly_global_pulse`), `events/kehillah_crusade_events.txt`, and values in `kehillah_mob_values.txt`.
+
+- **The call.** Yearly: if `faith:catholic` has a Great Holy War and the 15-year cooldown is clear, a
+  host is certain the first time and 50% after.
+  - Kehillah players under Catholic lords get "The Cross Is Preached".
+  - 30-90 days later (`kehillah_crusade.0001`), the host forms.
+- **Where it forms.** At the community with the most communities under Catholic lords within large
+  distance (650 px), at least 3 (`kehillah_crusade_cluster_value`).
+  - **Its strength:** 3000 men, base severity 70, and 3-6 more targets after the first.
+- **The chain.** After the pogrom's report (or the 40-day wait), `kehillah_mob_after_strike_effect`
+  turns the host to its next target (`kehillah_mob_retarget_effect`), or it marches east.
+  - **The next target:** the best-scoring community within large distance of the host, under a lord
+    of the host's religion, not yet struck and not paid off in the last year.
+  - **The score:** 100, -1 per 10000 squared map pixels, +1 per 100 Prosperity, +2 under a Cold
+    host.
+  - **The war:** a new one is declared, and the army is kept.
+  - **Loot draws men:** 10% more levies.
+  - **The new target** gets "The Host Turns Toward Us" (`.0001`, naming the town struck), and the
+    region gets "The Host Moves On".
+- **A bribe** spares the community for a year. A crusading host goes on: its war ends as its own
+  victory, so it keeps the army.
+- **The end.** No target in reach, or its count done: "The Host Marches East", to every Kehillah
+  player.
+- **Debug:** `kehillah_mob_debug.8` (start a crusade now), `.9` (the host moves on now).
+- **Not yet built:**
+  - the game rule;
+  - a second, smaller host in the east;
+  - early answers during the 30-90 days of preaching.
+
