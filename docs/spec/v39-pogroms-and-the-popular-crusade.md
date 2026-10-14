@@ -792,3 +792,31 @@ horse; the siege waits while defenders hold the town), three runs:
   - a second, smaller host in the east;
   - early answers during the 30-90 days of preaching.
 
+## Slice 3b (Daniel, 2026-10-14): the forced converts' return
+
+Daniel asked about forced conversions being allowed to revert. History: Henry IV allowed it in 1097,
+the antipope Clement III objected, and Rashi ruled leniently on receiving them back.
+
+- **The record.** The pogrom adds each baptized courtier to a list on the community's title
+  (`kehillah_anusim`), beside their `kehillah_anus` variable.
+- **The petition.** Yearly, while the community has living forced converts:
+  - **A player community leader** gets "The Baptized Wish to Return":
+    - **Petition the overlord:** the Shtadlan's diplomacy against his outlook, odds shown.
+    - **Receive them quietly, without leave:** they return now, but every year after there is a
+      chance the Church learns of it: an incident, the lord's outlook -, and a possible accusation.
+    - **Let them be:** they stay; the question comes again next year.
+  - **A player overlord** gets the petition as an event:
+    - **Allow:** his outlook +, the community's gratitude; his clergy are angered (piety -, an
+      incident in his faith).
+    - **Refuse.**
+  - **An AI overlord** decides by his outlook: allows at 60% if Well-disposed, 25% if Indifferent,
+    never if Cold.
+- **The return, and the Bet Din's ruling:**
+  - **"Receive them as Rashi taught, without reproach":** all return to the faith and the court,
+    and Stability +.
+  - **"Require penance first":** Greatness + (piety), but some are shamed and stay away, and
+    Stability + is smaller.
+
+  The returning converts take the community's faith, join the leader's court, and lose
+  `kehillah_anus`. Those dead or far away are lost.
+
