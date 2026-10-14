@@ -519,6 +519,22 @@ community about every 17 years, two to three times the historical rate.
 - the book artifact names `[creator.GetFirstNameNoTooltip]` (about one per book);
 - duplicate `SUCCESSION_EVENT_WINDOW_DEAD_OUTRO_*` loc keys.
 
-**Next soak:** rerun after these changes. Compare the mob count and the share of mobs among
-incidents.
+**Soak 2, 2026-10-14 (ba99511): 1066 to 1096, no crash.**
 
+| | Soak 1 (32 years) | Soak 2 (30 years) |
+|---|---|---|
+| director rolls | 72 | 57, of which 17 were "only talk" |
+| "a mob" | 24 | 5 |
+| accusations | 21 | 12: 5 riots, 5 defused |
+| mobs raised | 38 | 11 |
+| pogroms | 37 | 9 |
+| mob wars won by the mob | 37 of 39 | 9 of 11 |
+
+- **The rate:** about 0.3 pogroms a decade across 20 communities, a quarter of soak 1.
+- **Danger at Worms:** 0, then 39, 44, and 62 in 1096 (the crusade's hard times).
+- **The error flood is gone.** No "doesn't support variables" errors came from the outlook values.
+  The only new mod errors were the book artifact names.
+
+**Still open:** a mob that forms almost always wins. The defences (the lord's men, refuge, the
+watch) rarely save an AI community. Making them work more often is a balance question for a later
+pass.
