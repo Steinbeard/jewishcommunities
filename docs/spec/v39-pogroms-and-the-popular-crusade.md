@@ -888,3 +888,15 @@ Joseph ibn Naghrela still leads the Kehillah of Granada.
 **ck3-tiger:** `faith:catholic` and `rite_religion_tag` are 1.20 tokens that the 1.19 tiger does not
 know.
 
+**Slice 4 live test (`28bf5ef`), 2026-10-14: passed.** No errors from the mod, no crash.
+- **The setup.** `-play=d_kehillah_granada` lands as Joseph, and the schedule logs at boot.
+- **The poem:** silence 48%; Almeria 32%. The Almeria contact failed: the letter was found, and the
+  emir's opinion fell 15 to 5.
+- **The whispers:** loyalty 40%; the flight was made ready.
+- **The Night of the Sanhaja:** the mob (3120 men) rose in Granada with no warning event.
+  - "Flee, and hide" showed 60%. It failed: 13 dead, 8 baptized, 2 buildings lost, 3 captives
+    (120 gold), and Joseph was killed.
+  - Succession to his son Chanoch worked.
+- **A second run as Chanoch:** the flight succeeded; he survived, and the report had no death line.
+- **Both game rules** show in the game-rules menu.
+
