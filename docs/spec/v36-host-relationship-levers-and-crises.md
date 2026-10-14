@@ -125,3 +125,23 @@ Bishop of Speyer sheltered the Jews and hanged rioters; elsewhere lords stood as
   - The rising's losses moved into the event text.
   - The gift cooldown now uses a custom_tooltip.
   - A forced revision is reported to the community's own player, and even inside the quiet window.
+
+## V36c: a colder world (added 2026-10-13)
+
+- **The finding:** the 23-year soak at ``6a5cda0`` saw no Cold or Hostile host. All hosts sat at
+  +15 to +45, mean +28.
+  - So the Lord's Demands never fired, and there were no risings.
+  - 18 of 30 communities ended Flourishing in Stability.
+  - The cause: the protective teaching (+15) plus average traits made every lord a friend.
+- **Prejudice** (``kehillah_outlook_prejudice_value``, a new outlook source, "The prejudice of their
+  time and place"): Christians -15, Muslims -10.
+  - A typical lord now sits about Indifferent.
+  - Protectors (compassionate, just, a zealous Witness bishop) and enemies (zeal under a strict
+    teaching) stand apart.
+- **Sermons:** a zealous chaplain now preaches a little against the Jews even under a protective
+  teaching, -1 a year (the friars). A learned, non-zealous chaplain under a protective teaching
+  still gives +1.
+- **Knock-on:** host attitude (outlook × 1.5) falls by about 20-25 Stability for most communities.
+  Fewer lords qualify to open the door. The opinion modifier falls 10-15 points.
+- **Next:** re-soak, watching the share of Cold and Hostile hosts, demands, invitations and AI
+  foundings (7 of 8 answered an invitation before), and the Stability bands.
