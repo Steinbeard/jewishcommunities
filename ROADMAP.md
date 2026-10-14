@@ -37,13 +37,12 @@ incidents through it.
 
 **Status, 2026-10-14:**
 - **Live-tested:** steps 1a, 1b, 2, 3 and 4a.
-- **Built:** step 4b, the Talmud trial, the badge, Holy Week, the bonds, and risings that raise a
-  mob.
+- **Built:** step 4b, the Talmud trial, the badge, Holy Week, the bonds, host desecration (an
+  accusation variant), and risings that raise a mob.
 - **Next:**
   1. a live test of 4b;
   2. a 30-50 year soak test;
-  3. refugees (the exiles system);
-  4. host desecration as an accusation variant.
+  3. refugees (the exiles system).
 
 ### V40 Living crises and councils — 2026-10-13, Daniel's request
 

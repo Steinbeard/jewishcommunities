@@ -420,8 +420,10 @@ A 10-year cooldown.
 - **Forgive the ringleader's debt:** 40 + diplomacy x2 + his opinion of the leader / 4. Failure: the
   bonds burn anyway.
 
-**Not built:** host desecration as an accusation variant. The accusation event (V37) already
-carries the blood libel; a second charge text is left for a later pass.
+**Host desecration** (Rottingen 1298, Deggendorf 1338) is an accusation variant. From 1215, under
+a Christian host, 40% of accusations charge the desecration of the Host rather than the blood libel
+(`kehillah_accusation_desecration`, a 30-day variable read by `KehillahAccusationTale`). The text
+differs; the answers and odds are V37's.
 
 **Step 4b-2: a rising sends a mob.** When a vanilla peasant or populist revolt in the community's
 county turns on the Jews (V34 section 4, unchanged odds), it no longer deals an abstract blow. It
@@ -444,4 +446,29 @@ raises a mob of 1500 at severity 55 (`kehillah_rising_mob_size`, `_severity`).
 - `.16` Holy Week, in any month;
 - `.17` the bonds (the host borrows 100 if no lord of his realm owes us);
 - `.12` now logs `kmd_badge`.
+
+**Step 4b live test, 2026-10-14: passed, with one fix.**
+- **The Talmud trial:**
+  - The accuser and the lord were named, with the accuser as the portrait.
+  - The odds varied by option: answer 32%, Shtadlan 48%, hide 19%, pay 55%.
+  - "The Shtadlan goes first" led to the "matter was closed" scene.
+  - "Hide the books" failed. The bathhouse scene followed, and both Moed tractates left the library.
+- **The badge:**
+  - The petition succeeded at 66%, with its scene.
+  - "We will wear it" added the "The badge: +10" line to the danger.
+- **Holy Week:**
+  - "Send Elisha" gave him stress and anger, with the split-lip scene.
+- **The bonds:**
+  - The text read "owes us 100 gold".
+  - "Ask the lord" failed at 25% and became a riot. The mob reached the gates, with its scenes.
+- **The director, 8 forced rolls:** 2 disputations, 2 friars, 3 accusations, 1 Talmud trial. Natural
+  play added the badge twice.
+- **The rising:** "The Rising Turns on Us" named the rising's leader and showed 1920 men.
+  - **Fixed:** the V36 report "The Mob at the Gates" still fired with an empty lord and 0 losses. It
+    now fires only for the V36 blow.
+- **Errors:** no new errors on any mod key over three game years, and no crash.
+- **Not seen:**
+  - the "stones" variant of Holy Week;
+  - a paid option greyed out for lack of gold;
+  - the Greatness change from a burning.
 
