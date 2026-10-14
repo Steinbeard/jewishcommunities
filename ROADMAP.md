@@ -85,6 +85,8 @@ Five one-step events for Yom Kippur, Sukkot and Shavuot are scripted. Two use na
 
 **2026-10-14 map visibility pass, Daniel's follow-up:** The separate branch has brighter, more distinguishable customary-region colours and matching colour swatches in the community roster. Live Worms testing confirmed the Rhineland tint, host-barony highlights, swatches, and “Customary region” hover wording. An attempted province GUI pin rendered in Details mode but not in the custom map at the tested paper-map zooms; its vanilla GUI override was removed. A proven dynamic on-map pin and actual community Nusach remain open. See [the visibility log](docs/testing/2026-10-14-map-visibility-live-test.md). This user-requested map pass also ran ahead of the older live-test TODOs.
 
+**2026-10-14 Domain overview, Daniel's follow-up:** A Kehillah-only summary now sits below the Jewish Quarter card in My Realm > Domain. It shows Standing, pillar bands and trends, host ruler, and recorded charter terms; the redundant top-left score strip is retired. The Faith-family map button still opens the cross-community roster. This requires a full `window_my_realm.gui` override and will need review after game updates. See [the implementation note](docs/implementation/kehillah-domain-overview.md) and [the live test](docs/testing/2026-10-14-kehillah-domain-live-test.md). This user-requested UI pass ran ahead of the older live-test TODOs.
+
 ### Exceptional sefarim — 2026-10-12, Daniel's request
 
 The `kehillah_book.0007` arrival event was misleading: it only granted Piety and
