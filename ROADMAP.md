@@ -17,6 +17,28 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### V40 Living crises and councils — 2026-10-13, Daniel's request
+
+Spec: [v40](docs/spec/v40-living-crises-and-councils.md). Daniel wants crises to be character-driven
+event chains with variety, not pop-ups fired by statistics.
+
+**The plan:**
+- **The Firebrand:** a named, recurring instigator whose acts escalate: preaching, then a
+  disputation, an accusation and a mob.
+- **Named allies.**
+- **"Recent incidents" in a faith** (V38's pressure, made visible) call a **Council** (Christian) or
+  a petition to the **Caliph** (Muslim). The communities lobby there, with pooled petitions. The
+  outcome is a stricter teaching with a named decree, or protection reaffirmed.
+- **What it replaces:** V38's silent yearly hardening. Vanilla's council needs the By God Alone
+  DLC; this chain does not.
+
+**Slices:**
+1. The incidents counter.
+2. The Council and the Caliph.
+3. The Firebrand.
+4. Allies.
+5. Variants for the V36 events.
+
 ### V39 Pogroms and the popular crusade — 2026-10-13, Daniel's request
 
 Spec: [v39](docs/spec/v39-pogroms-and-the-popular-crusade.md). It answers V22 feature 4 and closes
