@@ -1298,8 +1298,8 @@ memory now uses `stress_positive` even though it reduces stress gain, and the aw
 
 ## 18. Pillar band effects in the community roster tooltips, 2026-10-12
 
-**Status:** implemented and script/localization-checked; nested tooltip rendering still needs a
-live UI check.
+**Status:** implemented; HUD/roster nested-hover, band endpoint and exact threshold-label
+spot-checks passed live on 2026-10-13. The 09:30 retry closed the morning pass's remaining checks.
 
 The Prosperity, Stability and Greatness tooltips now state the current band's modifier on the
 community leader before the structural baseline and its contributors. The next band keeps its
@@ -1309,6 +1309,31 @@ Each hover detail gives the score range and the exact modifier effects, using th
 and values as `kehillah_script_values.txt` and `kehillah_modifiers.txt`.
 
 The links use vanilla's `#tooltip:LOCALIZATION_KEY text#!` localization markup, also used by
-vanilla's holding-supply tooltip. The actual nested hover behavior must be confirmed in-game before
-calling this verified; source checks cannot establish where CK3 positions the second tooltip or
-whether it remains reachable while the parent tooltip is open.
+vanilla's holding-supply tooltip. Source checks cannot establish where CK3 positions the second
+tooltip or whether it remains reachable while the parent tooltip is open; the live checks below
+establish that behavior.
+
+**Verification addendum, 2026-10-13:** a fresh Worms game at 750 in all three pillars showed
+the expected current modifiers and neighboring-band effects in the HUD. Roster spot-checks
+also rendered the nested details and kept the parent reachable. This supersedes the earlier
+pending-rendering status; see the [live test log](../testing/2026-10-13-pillar-tooltip-live-playtest-log.md)
+for the exact coverage and error deltas. This machine uses Action Lock, so middle-clicking
+the parent is required; waiting alone does not lock it. The testing guide now records this.
+
+The check also reproduced existing `Widget cannot have a position in a layout` errors on
+the roster's four score labels. Their `parentanchor = vcenter` was replaced by
+`layoutpolicy_vertical = expanding`, leaving vanilla's inherited centered text and the
+column widths intact. Live inspection confirmed aligned scores and no further errors for
+those four labels. The portrait, name block and action buttons retain separate pre-existing
+layout warnings; this increment does not claim the entire roster is error-free. No pillar
+logic, thresholds, modifier values or succession behavior changed.
+
+**Verification addendum, 2026-10-13 09:30 retry:** both remaining roster nested pairs passed
+at 750. All three endpoint parents passed at 50 and 975, with representative Strained and
+Flourishing child links. At exactly 150/400/700/950, HUD labels and debug reports agreed on
+Strained/Healthy/Flourishing/Legendary for every pillar. A final hidden probe at 950 confirmed
+the three actual Legendary modifiers. This closes the earlier remaining-rendering items;
+see [the retry log](../testing/2026-10-13-pillar-tooltip-retry-live-test-log.md) for the source
+ownership caveat and console-probe errors isolated by the controlled replay. The fresh day-one
+game lacked the initialization marker, so calling the guarded public refresh alone had not
+applied modifiers. No game or GUI files changed in this verification increment.

@@ -1,0 +1,357 @@
+﻿# =====================================================================
+# V33 PRESSURES -- 2026-10-12 (docs/spec/v33-pressures.md). Stability now
+# rests at Healthy (kehillah_stability_baseline_floor_value 500) and is
+# pulled down by the live world; Prosperity follows the county's economy.
+# Each term is a breakdown value (scope: a Kehillah leader), added to the
+# pillar baselines in kehillah_script_values.txt and shown in the pillar
+# tooltips (kehillah_pressure_custom_loc.txt). Read every quarter, so a
+# war, a crusade or a hostile host is felt while it lasts.
+# =====================================================================
+
+# --- Asymmetric drift (kehillah_quarterly_pillars_effect): Stability and
+# Prosperity fall fast toward a lower target and recover slowly.
+kehillah_convergence_rate_down_value = 0.15
+
+# --- The host's attitude (Stability). The host is the top liege of the
+# county the quarter stands in. Since V34: his outlook on the Jews
+# (traits, teaching, interests, history) plus his opinion of the leader.
+kehillah_bd_host_attitude_value = {
+	value = 0
+	if = {
+		limit = { exists = domicile.domicile_location.county.holder.top_liege }
+		# V34 (2026-10-13): the host's outlook on the Jews (kehillah_
+		# outlook_values.txt) -- teaching, personality (zeal scaled by the
+		# teaching), interests, learning, personal history -- times 1.5.
+		add = {
+			value = domicile.domicile_location.county.holder.top_liege.kehillah_outlook_on_jews_value
+			multiply = 1.5
+		}
+		# And how he regards this community's leader in particular.
+		if = {
+			limit = { domicile.domicile_location.county.holder.top_liege = { opinion = { target = root value >= 40 } } }
+			add = 30
+		}
+		else_if = {
+			limit = { domicile.domicile_location.county.holder.top_liege = { opinion = { target = root value >= 10 } } }
+			add = 10
+		}
+		else_if = {
+			limit = { domicile.domicile_location.county.holder.top_liege = { opinion = { target = root value <= -40 } } }
+			add = -80
+		}
+		else_if = {
+			limit = { domicile.domicile_location.county.holder.top_liege = { opinion = { target = root value <= -10 } } }
+			add = -30
+		}
+	}
+}
+
+# --- The host realm's Jewish Settlement Policy.
+kehillah_bd_policy_stability_value = {
+	value = 0
+	if = {
+		limit = { exists = domicile.domicile_location.county.holder.top_liege.primary_title }
+		if = {
+			limit = { domicile.domicile_location.county.holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } }
+			add = 40
+		}
+		else_if = {
+			limit = { domicile.domicile_location.county.holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } }
+			add = -250
+		}
+		else_if = {
+			limit = { domicile.domicile_location.county.holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } }
+			add = -100
+		}
+	}
+}
+kehillah_bd_policy_prosperity_value = {
+	value = 0
+	if = {
+		limit = { exists = domicile.domicile_location.county.holder.top_liege.primary_title }
+		if = {
+			limit = { domicile.domicile_location.county.holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } }
+			add = 40
+		}
+		else_if = {
+			limit = { domicile.domicile_location.county.holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } }
+			add = -150
+		}
+		else_if = {
+			limit = { domicile.domicile_location.county.holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } }
+			add = -60
+		}
+	}
+}
+
+# --- War that comes through the county.
+kehillah_bd_war_stability_value = {
+	value = 0
+	if = {
+		limit = { exists = domicile.domicile_location }
+		if = {
+			limit = { domicile.domicile_location = { is_occupied = yes } }
+			add = -200
+		}
+		else_if = {
+			limit = { domicile.domicile_location = { is_raided = yes } }
+			add = -120
+		}
+		else_if = {
+			limit = { domicile.domicile_location.county.holder.top_liege ?= { is_at_war = yes } }
+			add = -40
+		}
+		# V36: the lord's protection (kehillah_host_crisis_values.txt).
+		multiply = kehillah_host_protection_mult_value
+	}
+}
+kehillah_bd_war_prosperity_value = {
+	value = 0
+	if = {
+		limit = { exists = domicile.domicile_location }
+		if = {
+			limit = { domicile.domicile_location = { is_occupied = yes } }
+			add = -150
+		}
+		else_if = {
+			limit = { domicile.domicile_location = { is_raided = yes } }
+			add = -100
+		}
+		else_if = {
+			limit = { domicile.domicile_location.county.holder.top_liege ?= { is_at_war = yes } }
+			add = -25
+		}
+		# V36: the lord's protection.
+		multiply = kehillah_host_protection_mult_value
+	}
+}
+
+# --- A crusade or jihad underway (the 1096 Rhineland massacres were the
+# Jewish experience of the First Crusade): the county's or host's faith
+# has a great holy war in any stage.
+kehillah_bd_holy_war_value = {
+	value = 0
+	if = {
+		limit = {
+			OR = {
+				domicile.domicile_location.county.faith ?= { exists = great_holy_war }
+				domicile.domicile_location.county.holder.top_liege.faith ?= { exists = great_holy_war }
+			}
+		}
+		add = -150
+		# V36: the lord's protection.
+		multiply = kehillah_host_protection_mult_value
+	}
+}
+
+# --- Religious tension: how the county's faith regards Judaism -- the
+# local population's view. Light on purpose (Daniel 2026-10-12): every
+# Christian and Muslim county reads "evil" at game start, so the teaching
+# (kehillah_bd_host_teaching_stability_value) carries the ideology, and
+# this term only shows a faith that comes to see Judaism as merely astray.
+kehillah_bd_religious_tension_value = {
+	value = 0
+	if = {
+		limit = { exists = domicile.domicile_location.county.faith }
+		if = {
+			limit = { domicile.domicile_location.county.faith = { faith_hostility_level = { target = root.faith value >= faith_evil_level } } }
+			add = -30
+		}
+		else_if = {
+			limit = { domicile.domicile_location.county.faith = { faith_hostility_level = { target = root.faith value >= faith_hostile_level } } }
+			add = -20
+		}
+		else_if = {
+			limit = { domicile.domicile_location.county.faith = { faith_hostility_level = { target = root.faith value >= faith_astray_level } } }
+			add = -10
+		}
+	}
+}
+
+# --- The county's economy (Prosperity): development, and order.
+# 2026-10-13 (Daniel: more impact from development): 8 per level up to
+# level 20, then 4 per level beyond (was a flat 4). Daniel: big cities
+# being richer is realistic, so the knee is soft -- Worms (12) +96, a
+# level-40 city +240 -- and it still tempers late-game development
+# growth inflating every community toward Flourishing. This value is the
+# single hook for the county's economy: when the trade DLC lands, its
+# market / trade-route data belongs here, beside or instead of
+# development.
+kehillah_local_economy_full_levels = 20
+kehillah_local_economy_per_level = 8
+kehillah_local_economy_per_level_beyond = 4
+kehillah_bd_local_economy_value = {
+	value = 0
+	if = {
+		limit = { exists = domicile.domicile_location.county }
+		add = {
+			value = domicile.domicile_location.county.development_level
+			max = kehillah_local_economy_full_levels
+			multiply = kehillah_local_economy_per_level
+		}
+		if = {
+			limit = { domicile.domicile_location.county.development_level > kehillah_local_economy_full_levels }
+			add = {
+				value = domicile.domicile_location.county.development_level
+				subtract = kehillah_local_economy_full_levels
+				multiply = kehillah_local_economy_per_level_beyond
+			}
+		}
+		if = {
+			limit = { domicile.domicile_location.county = { county_control < 50 } }
+			add = -50
+		}
+	}
+}
+
+# --- The host's Teaching on the Jews (v31 Slice A doctrines, on the
+# host's rite; kehillah_teaching_triggers.txt). The official position:
+# protective (Witness, Imperial Law, Dhimma), strict (Separation and
+# Mission, Strict Pact), exclusionary (Exclusion, Abolition). The local
+# population's view stays in kehillah_bd_religious_tension_value.
+kehillah_bd_host_teaching_stability_value = {
+	value = 0
+	if = {
+		limit = { exists = domicile.domicile_location.county.holder.top_liege }
+		if = {
+			limit = { domicile.domicile_location.county.holder.top_liege = { kehillah_teaching_protective_trigger = yes } }
+			add = 30
+		}
+		else_if = {
+			limit = { domicile.domicile_location.county.holder.top_liege = { kehillah_teaching_strict_trigger = yes } }
+			add = -80
+		}
+		else_if = {
+			limit = { domicile.domicile_location.county.holder.top_liege = { kehillah_teaching_exclusionary_trigger = yes } }
+			add = -200
+		}
+	}
+}
+kehillah_bd_host_teaching_prosperity_value = {
+	value = 0
+	if = {
+		limit = { exists = domicile.domicile_location.county.holder.top_liege }
+		if = {
+			limit = { domicile.domicile_location.county.holder.top_liege = { kehillah_teaching_strict_trigger = yes } }
+			add = -40
+		}
+		else_if = {
+			limit = { domicile.domicile_location.county.holder.top_liege = { kehillah_teaching_exclusionary_trigger = yes } }
+			add = -100
+		}
+	}
+}
+
+# --- The quarter's capacity grows with its buildings (Daniel 2026-10-12:
+# a soft population limit "based on the size of your buildings"). Each
+# building tier the community has built adds this many places -- a
+# Synagogue V counts five tiers, a second-level mikvah two.
+kehillah_courtier_capacity_per_building_tier = 2
+
+# Scope: a Kehillah leader. Added to kehillah_courtier_capacity_value.
+kehillah_courtier_capacity_buildings_value = {
+	value = 0
+	if = {
+		limit = { exists = domicile }
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_synagogue_01 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_synagogue_02 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_synagogue_03 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_synagogue_04 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_synagogue_05 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_01 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_02 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_beit_midrash_03 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_countinghouse_01 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_countinghouse_02 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_countinghouse_03 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_mikvah_01 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_mikvah_02 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_hekdesh_01 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_hekdesh_02 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_sofer_workshop_01 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_sofer_workshop_02 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_slaughterhouse_01 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_slaughterhouse_02 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_market_stalls_01 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_market_stalls_02 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_market_stalls_03 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_workshops_01 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_workshops_02 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+		if = {
+			limit = { domicile = { has_domicile_building_or_higher = kehillah_workshops_03 } }
+			add = kehillah_courtier_capacity_per_building_tier
+		}
+	}
+}

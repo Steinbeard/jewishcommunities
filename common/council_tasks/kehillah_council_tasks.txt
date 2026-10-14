@@ -83,12 +83,39 @@ task_kehillah_petition_host = {
 					scope:kehillah_petition_host = {
 						primary_title = { set_variable = { name = kehillah_policy_reason value = flag:petition } }
 						kehillah_raise_jewish_settlement_policy_effect = yes
+						# V34: the petition that moved him moves his outlook.
+						kehillah_shift_outlook_effect = { AMOUNT = 5 }
 					}
 				}
 			}
 		}
 	}
 	ai_will_do = { value = 1 }
+}
+
+# V34 section 7b (2026-10-13): the Shtadlan's embassy abroad. Instead of
+# the host, he courts the warmest lord within reach whose realm does not
+# yet encourage Jewish settlement, and argues for an invitation
+# (kehillah_seek_invitation_monthly_effect). A council task rather than a
+# decision (Daniel: not too many decisions). The AI keeps to Petition the
+# Host; AI lords open their doors through the open-door review.
+task_kehillah_seek_invitation = {
+	position = councillor_chancellor
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	asset = {
+		icon = "gfx/interface/icons/council_task_types/task_foreign_affairs.dds"
+		background = "gfx/interface/buttons/button_round_bg.dds"
+		frame = "gfx/interface/buttons/button_round_frame.dds"
+		glow = "gfx/particles/halo.dds"
+	}
+	effect_desc = task_kehillah_seek_invitation_effect_desc
+
+	on_monthly = {
+		kehillah_seek_invitation_monthly_effect = yes
+	}
+	ai_will_do = { value = 0 }
 }
 
 # --- Gabbai (steward, stewardship)
@@ -174,6 +201,48 @@ task_kehillah_prepare_bet_din = { # Kehillah default (set on taking the seat)
 	}
 	effect_desc = task_kehillah_prepare_bet_din_effect_desc
 	ai_will_do = { value = 2 }
+}
+
+# The Dayyan's Discourse (2026-10-13). The Dayyan goes to the host's court
+# to speak for the community: once a year a chance, learning + diplomacy
+# against the host's rank, teaching and zeal
+# (kehillah_discourse_yearly_chance_value), that the host's outlook on the
+# Jews rises +2. A lord hears one such discourse a year, from any
+# community, so an emperor with many communities is not warmed by all of
+# them. In place of the host's learned chaplain warming him unasked.
+task_kehillah_discourse_at_court = {
+	position = councillor_court_chaplain
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	asset = {
+		icon = "gfx/interface/icons/council_task_types/task_religious_relations.dds"
+		background = "gfx/interface/buttons/button_round_bg.dds"
+		frame = "gfx/interface/buttons/button_round_frame.dds"
+		glow = "gfx/particles/halo.dds"
+	}
+	effect_desc = task_kehillah_discourse_at_court_effect_desc
+
+	on_monthly = {
+		if = {
+			limit = { current_month = 1 }
+			kehillah_dayyan_discourse_yearly_effect = yes
+		}
+	}
+	# The AI sends its Dayyan when the host is not yet Well-disposed and
+	# the chance is worth it; otherwise he prepares the bet din (2).
+	ai_will_do = {
+		value = 0
+		if = {
+			limit = {
+				scope:councillor = { kehillah_discourse_yearly_chance_value >= 10 }
+				scope:councillor_liege.domicile.domicile_location.county.holder.top_liege ?= {
+					kehillah_outlook_on_jews_value < 15
+				}
+			}
+			value = 3
+		}
+	}
 }
 
 # --- Spouse: vanilla's six tasks, cloned with identical stat mechanics and

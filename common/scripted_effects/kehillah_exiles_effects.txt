@@ -1,0 +1,130 @@
+﻿# =====================================================================
+# EXILES -- V34 section 6 (docs/spec/v34-outlook-teachings-and-founding.
+# md), 2026-10-13. An expelled community's leader carries kehillah_
+# exiles_from (the county he was driven from) and leads "The Exiles of
+# <county>" until they settle.
+# =====================================================================
+
+# Scope: a Jewish adventurer standing where he founds. The founding (the
+# Found a Jewish Community decision and the exiles' arrival event share
+# it), plus the exiles' welcome: shared purpose, the learning carried.
+kehillah_found_community_here_effect = {
+	clear_saved_scope = kehillah_exiles_county
+	if = {
+		limit = { has_variable = kehillah_exiles_from }
+		var:kehillah_exiles_from = { save_scope_as = kehillah_exiles_county }
+	}
+	kehillah_found_community_effect = yes
+	if = {
+		limit = { exists = scope:kehillah_exiles_county }
+		custom_tooltip = kehillah_exiles_resettle_tt
+		hidden_effect = {
+			primary_title ?= {
+				change_variable = { name = kehillah_var_stability add = kehillah_exiles_resettle_stability }
+				change_variable = { name = kehillah_var_greatness add = kehillah_exiles_resettle_greatness }
+				set_variable = { name = kehillah_founded_by_exiles_from value = scope:kehillah_exiles_county }
+			}
+			remove_variable = kehillah_exiles_from
+			kehillah_notify_region_players_effect = {
+				TYPE = msg_kehillah_community_news
+				TITLE = kehillah_news_exiles_settled_t
+				DESC = kehillah_news_exiles_settled_d
+			}
+		}
+	}
+	# V34 section 7: settling where a lord invited them.
+	kehillah_invitation_answered_effect = yes
+	# A new community takes root before sending settlers (2026-10-13).
+	primary_title ?= {
+		set_variable = { name = kehillah_settlers_cooldown value = yes years = kehillah_settlers_new_community_years }
+	}
+}
+
+# Scope: an AI exile leader, yearly (kehillah_exiles_on_actions.txt).
+# Settle where he stands if he can; otherwise set out for a welcoming
+# county within reach, nearer ones likelier, and found on arrival
+# (kehillah_exiles.0001).
+kehillah_exiles_seek_home_effect = {
+	if = {
+		limit = {
+			NOT = { has_variable = kehillah_exiles_on_the_road }
+			exists = location.county
+			location.county = { kehillah_founding_site_trigger = yes }
+		}
+		kehillah_found_community_here_effect = yes
+		debug_log = "kehillah_exiles_seek_home_effect: exiles settled where they stood"
+	}
+	else_if = {
+		limit = { NOT = { has_variable = kehillah_exiles_on_the_road } }
+		clear_saved_scope = kehillah_exiles_goal
+		random_county = {
+			limit = {
+				kehillah_founding_site_trigger = yes
+				title_province = {
+					squared_distance = {
+						target = root.location
+						value <= squared_distance_large
+					}
+				}
+			}
+			weight = {
+				base = 1
+				modifier = {
+					add = 8
+					title_province = {
+						squared_distance = {
+							target = root.location
+							value <= squared_distance_small
+						}
+					}
+				}
+				modifier = {
+					add = 4
+					title_province = {
+						squared_distance = {
+							target = root.location
+							value <= squared_distance_medium
+						}
+					}
+				}
+				modifier = {
+					add = 4
+					holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+				}
+				# V34 section 7: an open invitation.
+				modifier = {
+					add = 8
+					holder.top_liege.primary_title = { has_variable = kehillah_invitation_open }
+				}
+			}
+			save_scope_as = kehillah_exiles_goal
+		}
+		if = {
+			limit = { exists = scope:kehillah_exiles_goal }
+			# Vanilla travel, the way vanilla relocates a camp
+			# (relocate_camp_to_interaction): travel_with_domicile = yes, so
+			# the whole camp goes. Without it the leader walked off alone and
+			# was pulled back to his camp before arriving (live 2026-10-13).
+			set_variable = { name = kehillah_exiles_goal value = scope:kehillah_exiles_goal }
+			set_variable = { name = kehillah_exiles_on_the_road value = yes days = 400 }
+			start_travel_plan = {
+				destination = scope:kehillah_exiles_goal.title_province
+				return_trip = no
+				travel_with_domicile = yes
+				# on_arrival_event did not fire for a camp's journey (live
+				# 2026-10-13: the camp reached Koblenz, no arrival); vanilla's
+				# camp relocation uses on_arrival_on_action.
+				on_arrival_on_action = kehillah_exiles_arrival
+				on_arrival_destinations = last
+			}
+			# Safety net: every 60 days, arrive if they stand at the goal and
+			# have stopped; past ~13 months on the road, bring them there
+			# (kehillah_exiles.0003).
+			trigger_event = { id = kehillah_exiles.0003 days = 60 }
+			debug_log = "kehillah_exiles_seek_home_effect: exiles set out for a welcoming county"
+		}
+		else = {
+			debug_log = "kehillah_exiles_seek_home_effect: no welcoming county within reach this year"
+		}
+	}
+}

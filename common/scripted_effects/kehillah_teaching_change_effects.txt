@@ -1,0 +1,187 @@
+﻿# =====================================================================
+# THE TEACHING CHANGES -- V34 section 3 (docs/spec/v34-outlook-teachings-
+# and-founding.md), 2026-10-13. A rite's Teaching on the Jews moves one
+# step at a time, driven by its head's outlook on the Jews: the 13th-
+# century Latin turn toward separation, mission and the burning of the
+# Talmud, or a reaffirmation of Sicut Judaeis.
+#
+# Routes: kehillah_rite_teaching_yearly_effect (main rites, yearly, the
+# head of faith's outlook), the council debate event kehillah_council.
+# 0001 (ecumenical councils), and vanilla's own head-of-rite drift and
+# heresies for other rites (the teachings carry divergence since V34).
+# Scope of the step effects: a rite.
+# =====================================================================
+
+kehillah_rite_teaching_stricter_effect = {
+	if = {
+		limit = { rite_has_doctrine = kehillah_teaching_witness }
+		change_rite_doctrine = kehillah_teaching_separation_mission
+	}
+	else_if = {
+		limit = { rite_has_doctrine = kehillah_teaching_imperial_law }
+		change_rite_doctrine = kehillah_teaching_separation_mission
+	}
+	else_if = {
+		limit = { rite_has_doctrine = kehillah_teaching_separation_mission }
+		change_rite_doctrine = kehillah_teaching_exclusion
+	}
+	else_if = {
+		limit = { rite_has_doctrine = kehillah_teaching_dhimma }
+		change_rite_doctrine = kehillah_teaching_strict_pact
+	}
+	else_if = {
+		limit = { rite_has_doctrine = kehillah_teaching_strict_pact }
+		change_rite_doctrine = kehillah_teaching_abolition
+	}
+}
+
+kehillah_rite_teaching_gentler_effect = {
+	if = {
+		limit = { rite_has_doctrine = kehillah_teaching_exclusion }
+		change_rite_doctrine = kehillah_teaching_separation_mission
+	}
+	else_if = {
+		limit = { rite_has_doctrine = kehillah_teaching_abolition }
+		change_rite_doctrine = kehillah_teaching_strict_pact
+	}
+	else_if = {
+		limit = { rite_has_doctrine = kehillah_teaching_strict_pact }
+		change_rite_doctrine = kehillah_teaching_dhimma
+	}
+	else_if = {
+		limit = {
+			rite_has_doctrine = kehillah_teaching_separation_mission
+			kehillah_rite_eastern_christian_trigger = yes
+		}
+		change_rite_doctrine = kehillah_teaching_imperial_law
+	}
+	else_if = {
+		limit = { rite_has_doctrine = kehillah_teaching_separation_mission }
+		change_rite_doctrine = kehillah_teaching_witness
+	}
+}
+
+# Scope: a rite whose teaching just changed (scope:kehillah_teaching_rite).
+# Sets the cooldown, and tells Kehillah players whose host follows it.
+kehillah_rite_teaching_changed_effect = {
+	save_scope_as = kehillah_teaching_rite
+	set_variable = { name = kehillah_teaching_change_cooldown value = yes years = 25 }
+	debug_log = "kehillah_rite_teaching_changed_effect: a rite's Teaching on the Jews changed"
+	every_player = {
+		limit = {
+			government_has_flag = government_is_kehillah
+			domicile.domicile_location.county.holder.top_liege.rite ?= scope:kehillah_teaching_rite
+		}
+		send_interface_message = {
+			type = msg_kehillah_community_news
+			title = kehillah_news_teaching_t
+			desc = kehillah_news_teaching_d
+		}
+	}
+}
+
+# Scope: a rite. Root of on_rite_yearly (vanilla's yearly rite pulse).
+# Main rites only: other rites drift through vanilla's own head-of-rite
+# divergence drift, which sees the teachings since V34.
+kehillah_rite_teaching_yearly_effect = {
+	# V38 (2026-10-13): the faith's anti-Jewish pressure decays by a fifth a
+	# year; at 10 or more, it reaches the head of the faith (-1 outlook).
+	if = {
+		limit = {
+			this = faith.main_rite
+			faith = { has_variable = kehillah_faith_pressure }
+		}
+		faith = {
+			change_variable = { name = kehillah_faith_pressure multiply = 0.8 }
+			if = {
+				limit = {
+					var:kehillah_faith_pressure >= kehillah_faith_pressure_head_mood_threshold
+					exists = religious_head
+				}
+				religious_head = { kehillah_shift_outlook_effect = { AMOUNT = -1 } }
+			}
+		}
+	}
+	if = {
+		limit = {
+			this = faith.main_rite
+			NOT = { has_variable = kehillah_teaching_change_cooldown }
+			kehillah_rite_has_teaching_trigger = yes
+			exists = faith.religious_head
+		}
+		faith.religious_head = { save_scope_as = kehillah_teaching_head }
+		# A convinced head pushes stricter.
+		if = {
+			limit = {
+				scope:kehillah_teaching_head = { kehillah_outlook_convinced_trigger = yes }
+				NOR = {
+					rite_has_doctrine = kehillah_teaching_exclusion
+					rite_has_doctrine = kehillah_teaching_abolition
+				}
+			}
+			random = {
+				chance = {
+					value = kehillah_teaching_yearly_chance
+					if = {
+						limit = { scope:kehillah_teaching_head = { has_trait = zealous } }
+						add = 2
+					}
+					if = {
+						limit = { faith = { exists = great_holy_war } }
+						add = 3
+					}
+					# V38: the faith's anti-Jewish pressure.
+					if = {
+						limit = { faith = { has_variable = kehillah_faith_pressure } }
+						add = {
+							value = faith.var:kehillah_faith_pressure
+							divide = 4
+						}
+					}
+				}
+				kehillah_rite_teaching_stricter_effect = yes
+				kehillah_rite_teaching_changed_effect = yes
+			}
+		}
+		# V38: without a Convinced head, pressure alone can harden the
+		# teaching -- unless the head is a Protector.
+		else_if = {
+			limit = {
+				faith = {
+					has_variable = kehillah_faith_pressure
+					var:kehillah_faith_pressure >= 4
+				}
+				scope:kehillah_teaching_head = { NOT = { kehillah_outlook_protector_trigger = yes } }
+				NOR = {
+					rite_has_doctrine = kehillah_teaching_exclusion
+					rite_has_doctrine = kehillah_teaching_abolition
+				}
+			}
+			random = {
+				chance = {
+					value = faith.var:kehillah_faith_pressure
+					divide = 4
+				}
+				kehillah_rite_teaching_stricter_effect = yes
+				kehillah_rite_teaching_changed_effect = yes
+				debug_log = "kehillah_rite_teaching_yearly_effect: pressure hardened the teaching"
+			}
+		}
+		# A protector reaffirms protection.
+		else_if = {
+			limit = {
+				scope:kehillah_teaching_head = { kehillah_outlook_protector_trigger = yes }
+				NOR = {
+					rite_has_doctrine = kehillah_teaching_witness
+					rite_has_doctrine = kehillah_teaching_imperial_law
+					rite_has_doctrine = kehillah_teaching_dhimma
+				}
+			}
+			random = {
+				chance = kehillah_teaching_yearly_chance
+				kehillah_rite_teaching_gentler_effect = yes
+				kehillah_rite_teaching_changed_effect = yes
+			}
+		}
+	}
+}

@@ -1,0 +1,103 @@
+﻿# =====================================================================
+# V37 -- Accusations (docs/spec/v37-accusations.md), 2026-10-13. The
+# blood libel (Norwich 1144, Blois 1171, Fulda 1235) and, under Muslim
+# rule, the charge of blasphemy: a rumour, a mob forming, and what the
+# community, its Shtadlan, its lord and the head of the faith do about it.
+# =====================================================================
+
+# Scope: a Kehillah leader, quarterly (kehillah_on_actions.txt).
+kehillah_accusation_check_effect = {
+	if = {
+		limit = {
+			is_alive = yes
+			exists = primary_title
+			exists = domicile.domicile_location.county.holder.top_liege
+			NOT = { primary_title = { has_variable = kehillah_accusation_cooldown } }
+			domicile.domicile_location.county.holder.top_liege = {
+				NOT = { is_jewish_character_trigger = yes }
+				OR = {
+					faith.religion = religion:christianity_religion
+					faith.religion = religion:islam_religion
+				}
+			}
+			kehillah_accusation_chance_value > 0
+		}
+		random = {
+			chance = kehillah_accusation_chance_value
+			primary_title = {
+				set_variable = { name = kehillah_accusation_cooldown value = yes years = kehillah_accusation_cooldown_years }
+			}
+			trigger_event = kehillah_accusation.0001
+		}
+	}
+}
+
+# Scope: a Kehillah leader. The accusation is defused: fear, not blood.
+kehillah_accusation_defused_effect = {
+	primary_title = {
+		change_variable = { name = kehillah_var_stability add = kehillah_accusation_defused_stability }
+		clamp_variable = { name = kehillah_var_stability min = 0 max = 100000 }
+	}
+	custom_tooltip = kehillah_accusation_defused_tt
+	debug_log = "kehillah_accusation: defused"
+}
+
+# Scope: a Kehillah leader. The mob comes. $MULT$ scales the harm on top
+# of the lord's protection (1, or the barricade's 0.6).
+kehillah_accusation_violence_effect = {
+	save_scope_value_as = {
+		name = kehillah_accusation_mult
+		value = {
+			value = kehillah_host_protection_mult_value
+			multiply = $MULT$
+		}
+	}
+	save_scope_value_as = {
+		name = kehillah_accusation_stab
+		value = {
+			value = kehillah_accusation_violence_stability
+			multiply = scope:kehillah_accusation_mult
+		}
+	}
+	save_scope_value_as = {
+		name = kehillah_accusation_pros
+		value = {
+			value = kehillah_accusation_violence_prosperity
+			multiply = scope:kehillah_accusation_mult
+		}
+	}
+	# For the report (kehillah_accusation.0002): loc reads a character's
+	# variables.
+	set_variable = { name = kehillah_accusation_last_stability value = scope:kehillah_accusation_stab }
+	set_variable = { name = kehillah_accusation_last_prosperity value = scope:kehillah_accusation_pros }
+	primary_title = {
+		change_variable = { name = kehillah_var_stability add = scope:kehillah_accusation_stab }
+		change_variable = { name = kehillah_var_prosperity add = scope:kehillah_accusation_pros }
+		clamp_variable = { name = kehillah_var_stability min = 0 max = 100000 }
+		clamp_variable = { name = kehillah_var_prosperity min = 0 max = 100000 }
+	}
+	custom_tooltip = kehillah_accusation_violence_tt
+	hidden_effect = {
+		random = {
+			chance = 30
+			random_courtier = {
+				limit = {
+					is_adult = yes
+					is_jewish_character_trigger = yes
+					NOT = { root.player_heir ?= this }
+					NOT = { is_spouse_of = root }
+				}
+				save_scope_as = kehillah_accusation_martyr
+				death = { death_reason = death_murder }
+			}
+		}
+		kehillah_notify_region_players_effect = {
+			TYPE = msg_kehillah_community_news_bad
+			TITLE = kehillah_news_accusation_t
+			DESC = kehillah_news_accusation_d
+		}
+	}
+	# V38: blood spilled hardens the faith of the county.
+	domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 2 } }
+	debug_log = "kehillah_accusation: violence"
+}

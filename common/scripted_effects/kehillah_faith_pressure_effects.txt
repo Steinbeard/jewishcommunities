@@ -1,0 +1,78 @@
+﻿# =====================================================================
+# V38 -- anti-Jewish pressure from the world (docs/spec/v38-anti-jewish-
+# pressure.md), 2026-10-13. Daniel: "add more interactions that build
+# anti-Jewish pressure ... more of a likelihood for the faith to shift in
+# an anti-Jewish direction".
+# =====================================================================
+
+# Scope: a faith. Adds $AMOUNT$ to its anti-Jewish pressure.
+kehillah_faith_pressure_add_effect = {
+	if = {
+		limit = { NOT = { has_variable = kehillah_faith_pressure } }
+		set_variable = { name = kehillah_faith_pressure value = 0 }
+	}
+	change_variable = { name = kehillah_faith_pressure add = $AMOUNT$ }
+	clamp_variable = { name = kehillah_faith_pressure min = 0 max = 100 }
+}
+
+# Scope: an independent Christian or Muslim ruler who hosts a community,
+# yearly. His zealous clergy may preach against the Jews.
+kehillah_court_preaching_yearly_effect = {
+	clear_saved_scope = kehillah_preacher
+	if = {
+		limit = {
+			exists = cp:councillor_court_chaplain
+			cp:councillor_court_chaplain = {
+				has_trait = zealous
+				faith = root.faith
+			}
+		}
+		cp:councillor_court_chaplain = { save_scope_as = kehillah_preacher }
+	}
+	else = {
+		random_vassal = {
+			limit = {
+				has_government = theocracy_government
+				has_trait = zealous
+				faith = root.faith
+			}
+			save_scope_as = kehillah_preacher
+		}
+	}
+	if = {
+		limit = { exists = scope:kehillah_preacher }
+		random = {
+			chance = kehillah_court_preaching_chance_value
+			save_scope_as = kehillah_preached_lord
+			if = {
+				limit = {
+					OR = {
+						kehillah_teaching_strict_trigger = yes
+						kehillah_teaching_exclusionary_trigger = yes
+					}
+				}
+				kehillah_shift_outlook_effect = { AMOUNT = -5 }
+			}
+			else = {
+				kehillah_shift_outlook_effect = { AMOUNT = -3 }
+			}
+			faith = { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
+			# Tell the players whose communities live under him.
+			every_player = {
+				limit = {
+					government_has_flag = government_is_kehillah
+					domicile.domicile_location.county.holder.top_liege ?= scope:kehillah_preached_lord
+				}
+				send_interface_message = {
+					type = msg_kehillah_community_news_bad
+					title = kehillah_news_preaching_t
+					desc = kehillah_news_preaching_d
+					left_icon = scope:kehillah_preacher
+					right_icon = scope:kehillah_preached_lord
+				}
+			}
+			debug_log_scopes = yes
+			debug_log = "kehillah_court_preaching_yearly_effect: a preacher at court"
+		}
+	}
+}

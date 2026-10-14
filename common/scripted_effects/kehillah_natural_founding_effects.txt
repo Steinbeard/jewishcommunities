@@ -1,0 +1,377 @@
+﻿# =====================================================================
+# FOUNDING NEW COMMUNITIES -- V34 section 1 (docs/spec/v34-outlook-
+# teachings-and-founding.md), 2026-10-13. Daniel first asked for about
+# one new community every five years; the same day he replaced the
+# random yearly pulse with a decision ("Send Out Settlers",
+# kehillah_settlers_decisions.txt): an overcrowded community sends one of
+# its own, with the overflow, to found a daughter community. Player and AI
+# leaders both take it; the quarter falls back to capacity, so the
+# decision rests until it fills again.
+# =====================================================================
+
+# Scope: the founder (an existing character -- a courtier, or a debug
+# spawn). scope:kehillah_founding_county, scope:kehillah_mother_leader
+# and scope:kehillah_mother_title saved. Moves him to the county and
+# founds a Kehillah there the way the Norman-Conquest foundings do.
+kehillah_found_with_founder_effect = {
+	save_scope_as = kehillah_natural_founder
+	save_scope_as = kehillah_founder
+	move_to_pool_at = scope:kehillah_founding_county.title_province
+	create_adventurer_title = {
+		name = kehillah_found_community_title_name
+		holder = scope:kehillah_natural_founder
+		government = kehillah_government
+		article = kehillah_found_community_title_article
+		save_scope_as = kehillah_new_community_title
+	}
+	hidden_effect = { set_primary_title_to = scope:kehillah_new_community_title }
+	if = {
+		limit = { NOT = { government_has_flag = government_is_kehillah } }
+		change_government = kehillah_government
+	}
+	if = {
+		limit = { NOT = { has_realm_law = kehillah_appointment_succession_law } }
+		add_realm_law = kehillah_appointment_succession_law
+	}
+	hidden_effect = {
+		scope:kehillah_new_community_title = {
+			kehillah_init_pillars_effect = yes
+			change_variable = { name = kehillah_var_stability add = 50 }
+			# At the Prosperity floor (2026-10-13; was 50, a Crisis start).
+			change_variable = { name = kehillah_var_prosperity add = kehillah_prosperity_baseline_floor_value }
+			set_variable = { name = kehillah_naturally_founded value = yes }
+			# Takes root before sending settlers of its own (2026-10-13).
+			set_variable = { name = kehillah_settlers_cooldown value = yes years = kehillah_settlers_new_community_years }
+			set_variable = { name = kehillah_mother_community value = scope:kehillah_mother_title }
+		}
+		kehillah_update_leader_flavor_effect = yes
+		add_to_global_variable_list = {
+			name = kehillah_registered_communities
+			target = scope:kehillah_new_community_title
+		}
+		kehillah_refresh_all_settlement_networks_effect = yes
+		scope:kehillah_new_community_title = {
+			kehillah_seed_starting_library_effect = yes
+		}
+		kehillah_refresh_map_view_for_players_effect = yes
+		kehillah_maintain_host_charter_effect = yes
+		kehillah_goal_credit_daughter_community_effect = yes
+	}
+	kehillah_notify_region_players_effect = {
+		TYPE = msg_kehillah_community_news
+		TITLE = kehillah_news_founded_t
+		DESC = kehillah_news_founded_d
+	}
+	# V34 section 7: settling where a lord invited them.
+	kehillah_invitation_answered_effect = yes
+	debug_log = "kehillah_found_with_founder_effect: a new community was founded"
+	debug_log_scopes = yes
+}
+
+# Scope: the mother community's leader. Saves up to three destination
+# counties (kehillah_settlers_dest_1..3) and three leader candidates
+# (kehillah_settlers_lead_1..3).
+kehillah_settlers_pick_effect = {
+	save_scope_as = kehillah_mother_leader
+	primary_title = { save_scope_as = kehillah_mother_title }
+	clear_saved_scope = kehillah_settlers_dest_1
+	clear_saved_scope = kehillah_settlers_dest_2
+	clear_saved_scope = kehillah_settlers_dest_3
+	clear_saved_scope = kehillah_settlers_lead_baal
+	clear_saved_scope = kehillah_settlers_lead_rabbi
+	clear_saved_scope = kehillah_settlers_lead_kin
+	# V34 section 7 (live 2026-10-13: the invited realm was chosen 1 time
+	# in 4): an open invitation within reach is the first choice, 60% of
+	# the time; nearer invited counties likelier.
+	if = {
+		limit = { any_county = { kehillah_settlers_invited_destination_trigger = yes } }
+		random = {
+			chance = 60
+			random_county = {
+				limit = { kehillah_settlers_invited_destination_trigger = yes }
+				weight = {
+					base = 1
+					modifier = {
+						add = 4
+						title_province = {
+							squared_distance = {
+								target = scope:kehillah_mother_leader.domicile.domicile_location
+								value <= squared_distance_medium
+							}
+						}
+					}
+				}
+				save_scope_as = kehillah_settlers_dest_1
+			}
+		}
+	}
+	if = {
+		limit = { NOT = { exists = scope:kehillah_settlers_dest_1 } }
+		random_county = {
+			limit = { kehillah_settlers_destination_trigger = yes }
+			weight = {
+				base = 1
+				# Prefer staying close (Daniel 2026-10-13).
+				modifier = {
+					add = 8
+					title_province = {
+						squared_distance = {
+							target = scope:kehillah_mother_leader.domicile.domicile_location
+							value <= squared_distance_small
+						}
+					}
+				}
+				modifier = {
+					add = 4
+					title_province = {
+						squared_distance = {
+							target = scope:kehillah_mother_leader.domicile.domicile_location
+							value <= squared_distance_medium
+						}
+					}
+				}
+				modifier = {
+					add = 4
+					holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+				}
+				# V34 section 7: an open invitation.
+				modifier = {
+					add = 8
+					holder.top_liege.primary_title = { has_variable = kehillah_invitation_open }
+				}
+				modifier = {
+					add = 1
+					development_level >= 15
+				}
+			}
+			save_scope_as = kehillah_settlers_dest_1
+		}
+	}
+	random_county = {
+		limit = {
+			kehillah_settlers_destination_trigger = yes
+			NOT = { this = scope:kehillah_settlers_dest_1 }
+		}
+		weight = {
+			base = 1
+			# Prefer staying close (Daniel 2026-10-13).
+			modifier = {
+				add = 8
+				title_province = {
+					squared_distance = {
+						target = scope:kehillah_mother_leader.domicile.domicile_location
+						value <= squared_distance_small
+					}
+				}
+			}
+			modifier = {
+				add = 4
+				title_province = {
+					squared_distance = {
+						target = scope:kehillah_mother_leader.domicile.domicile_location
+						value <= squared_distance_medium
+					}
+				}
+			}
+			modifier = {
+				add = 4
+				holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+			}
+			# V34 section 7: an open invitation.
+			modifier = {
+				add = 8
+				holder.top_liege.primary_title = { has_variable = kehillah_invitation_open }
+			}
+			modifier = {
+				add = 1
+				development_level >= 15
+			}
+		}
+		save_scope_as = kehillah_settlers_dest_2
+	}
+	random_county = {
+		limit = {
+			kehillah_settlers_destination_trigger = yes
+			NOT = { this = scope:kehillah_settlers_dest_1 }
+			trigger_if = {
+				limit = { exists = scope:kehillah_settlers_dest_2 }
+				NOT = { this = scope:kehillah_settlers_dest_2 }
+			}
+		}
+		weight = {
+			base = 1
+			# Prefer staying close (Daniel 2026-10-13).
+			modifier = {
+				add = 8
+				title_province = {
+					squared_distance = {
+						target = scope:kehillah_mother_leader.domicile.domicile_location
+						value <= squared_distance_small
+					}
+				}
+			}
+			modifier = {
+				add = 4
+				title_province = {
+					squared_distance = {
+						target = scope:kehillah_mother_leader.domicile.domicile_location
+						value <= squared_distance_medium
+					}
+				}
+			}
+			modifier = {
+				add = 4
+				holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+			}
+			# V34 section 7: an open invitation.
+			modifier = {
+				add = 8
+				holder.top_liege.primary_title = { has_variable = kehillah_invitation_open }
+			}
+			modifier = {
+				add = 1
+				development_level >= 15
+			}
+		}
+		save_scope_as = kehillah_settlers_dest_3
+	}
+	# One of each kind of leader (Daniel 2026-10-13).
+	ordered_courtier = {
+		limit = {
+			kehillah_settlers_leader_candidate_trigger = yes
+			kehillah_is_baal_bayit_trigger = yes
+		}
+		order_by = stewardship
+		save_scope_as = kehillah_settlers_lead_baal
+	}
+	ordered_courtier = {
+		limit = {
+			kehillah_settlers_leader_candidate_trigger = yes
+			kehillah_is_ordained_rabbi_trigger = yes
+			NOT = { scope:kehillah_settlers_lead_baal ?= this }
+		}
+		order_by = learning
+		save_scope_as = kehillah_settlers_lead_rabbi
+	}
+	ordered_courtier = {
+		limit = {
+			kehillah_settlers_leader_candidate_trigger = yes
+			exists = dynasty
+			dynasty = scope:kehillah_mother_leader.dynasty
+			NOT = { scope:kehillah_settlers_lead_baal ?= this }
+			NOT = { scope:kehillah_settlers_lead_rabbi ?= this }
+		}
+		order_by = { value = stewardship add = learning }
+		save_scope_as = kehillah_settlers_lead_kin
+	}
+	# Whoever is left, if a kind is missing (the AI takes the first found).
+	if = {
+		limit = {
+			NOT = { exists = scope:kehillah_settlers_lead_baal }
+			NOT = { exists = scope:kehillah_settlers_lead_rabbi }
+			NOT = { exists = scope:kehillah_settlers_lead_kin }
+		}
+		ordered_courtier = {
+			limit = { kehillah_settlers_leader_candidate_trigger = yes }
+			order_by = { value = stewardship add = learning }
+			save_scope_as = kehillah_settlers_lead_baal
+		}
+	}
+}
+
+# Scope: the mother leader; scope:kehillah_settlers_leader and scope:
+# kehillah_founding_county chosen. The leader goes, with his household and
+# up to kehillah_settlers_max_followers others; the community founded.
+kehillah_settlers_go_effect = {
+	save_scope_as = kehillah_mother_leader
+	primary_title = {
+		save_scope_as = kehillah_mother_title
+		set_variable = { name = kehillah_settlers_cooldown value = yes years = kehillah_settlers_cooldown_years }
+	}
+	# The party: exactly the overflow (Daniel 2026-10-13) -- his own
+	# household first, then others, until the quarter is back to capacity.
+	set_variable = { name = kehillah_settlers_to_send value = kehillah_settlers_overflow_value }
+	change_variable = { name = kehillah_settlers_to_send add = -1 } # the leader himself
+	scope:kehillah_settlers_leader = {
+		every_close_family_member = {
+			limit = {
+				is_courtier_of = scope:kehillah_mother_leader
+				NOT = { this = scope:kehillah_mother_leader }
+				NOT = { is_close_family_of = scope:kehillah_mother_leader }
+				NOT = { is_spouse_of = scope:kehillah_mother_leader }
+			}
+			add_to_list = kehillah_settlers_party
+			scope:kehillah_mother_leader = { change_variable = { name = kehillah_settlers_to_send add = -1 } }
+		}
+	}
+	while = {
+		limit = {
+			var:kehillah_settlers_to_send > 0
+			any_courtier = { kehillah_settlers_follower_candidate_trigger = yes }
+		}
+		random_courtier = {
+			limit = { kehillah_settlers_follower_candidate_trigger = yes }
+			weight = {
+				base = 1
+				modifier = { add = 2 is_adult = yes }
+			}
+			add_to_list = kehillah_settlers_party
+		}
+		change_variable = { name = kehillah_settlers_to_send add = -1 }
+	}
+	remove_variable = kehillah_settlers_to_send
+	scope:kehillah_settlers_leader = { kehillah_found_with_founder_effect = yes }
+	every_in_list = {
+		list = kehillah_settlers_party
+		# His household follows him when he takes the title; re-adding them
+		# logs "already in the court" (live 2026-10-13).
+		limit = { NOT = { is_courtier_of = scope:kehillah_natural_founder } }
+		save_scope_as = kehillah_settler
+		scope:kehillah_natural_founder = { add_courtier = scope:kehillah_settler }
+	}
+	# The mother community's credit: a daughter is greatness.
+	scope:kehillah_mother_title = {
+		change_variable = { name = kehillah_var_greatness add = 20 }
+	}
+	debug_log = "kehillah_settlers_go_effect: settlers left to found a daughter community"
+}
+
+# Debug only (kehillah_founding_debug.1): a founder is created rather than
+# sent from a court -- the old random founding, kept as a probe.
+kehillah_natural_founding_effect = {
+	clear_saved_scope = kehillah_mother_title
+	clear_saved_scope = kehillah_founding_county
+	random_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			exists = holder
+			exists = holder.domicile.domicile_location
+		}
+		save_scope_as = kehillah_mother_title
+	}
+	if = {
+		limit = { exists = scope:kehillah_mother_title }
+		scope:kehillah_mother_title.holder = { save_scope_as = kehillah_mother_leader }
+		random_county = {
+			limit = { kehillah_settlers_destination_trigger = yes }
+			save_scope_as = kehillah_founding_county
+		}
+	}
+	if = {
+		limit = { exists = scope:kehillah_founding_county }
+		create_character = {
+			faith = scope:kehillah_mother_leader.faith
+			culture = scope:kehillah_mother_leader.culture
+			age = { 28 45 }
+			location = scope:kehillah_founding_county.title_province
+			random_traits = yes
+			gender_female_chance = 0
+			dynasty = generate
+			save_scope_as = kehillah_debug_founder
+		}
+		scope:kehillah_debug_founder = { kehillah_found_with_founder_effect = yes }
+	}
+	else = {
+		debug_log = "kehillah_natural_founding_effect: no mother community or no welcoming county"
+	}
+}

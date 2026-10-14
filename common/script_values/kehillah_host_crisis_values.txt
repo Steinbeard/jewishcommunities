@@ -1,0 +1,258 @@
+﻿# =====================================================================
+# V36 -- the host relationship, its levers and its crises (docs/spec/
+# v36-host-relationship-levers-and-crises.md), 2026-10-13.
+# =====================================================================
+
+# --- 1. Protection during violence. Scope: a Kehillah leader. Multiplies
+# the harm of war, crusade and risings: the host's outlook band, then the
+# charter's community-security term.
+kehillah_host_protection_mult_value = {
+	value = 1
+	if = {
+		limit = { kehillah_host_outlook_value >= 40 }
+		value = 0.5
+	}
+	else_if = {
+		limit = { kehillah_host_outlook_value >= 15 }
+		value = 0.75
+	}
+	else_if = {
+		limit = { kehillah_host_outlook_value <= -40 }
+		value = 1.5
+	}
+	else_if = {
+		limit = { kehillah_host_outlook_value <= -15 }
+		value = 1.25
+	}
+	if = {
+		limit = { primary_title ?= { var:kehillah_charter_cache_security ?= 2 } }
+		multiply = 0.8
+	}
+	else_if = {
+		limit = { primary_title ?= { var:kehillah_charter_cache_security ?= 1 } }
+		multiply = 0.9
+	}
+}
+
+# A hostile lord's men join the plunder: extra Prosperity lost, and gold
+# the lord takes.
+kehillah_rising_plunder_prosperity = -40
+kehillah_rising_plunder_gold = 50
+
+# --- 2. The Lord's Demands. Scope: a Kehillah leader.
+# Quarterly chance (percent): Cold 4, Hostile 10.
+kehillah_host_demands_chance_value = {
+	value = 0
+	if = {
+		limit = { kehillah_host_outlook_value <= -40 }
+		value = 10
+	}
+	else_if = {
+		limit = { kehillah_host_outlook_value <= -15 }
+		value = 4
+	}
+}
+kehillah_host_demands_cooldown_years = 5
+# The levy: twice medium gold under a Cold lord, three times under a Hostile one.
+kehillah_host_levy_value = {
+	value = medium_gold_value
+	if = {
+		limit = { kehillah_host_outlook_value <= -40 }
+		multiply = 3
+	}
+	else = {
+		multiply = 2
+	}
+}
+kehillah_host_levy_prosperity = -30
+kehillah_host_demands_refusal_stability = -40
+# The Shtadlan's plea: 25 + 2 per point of his diplomacy (up to +40),
+# +10 if the lord's opinion of the leader is 0 or more.
+kehillah_shtadlan_plea_success_value = {
+	value = 25
+	if = {
+		limit = { exists = cp:councillor_chancellor }
+		add = {
+			value = cp:councillor_chancellor.diplomacy
+			multiply = 2
+			max = 40
+		}
+	}
+	if = {
+		limit = {
+			domicile.domicile_location.county.holder.top_liege ?= {
+				opinion = { target = root value >= 0 }
+			}
+		}
+		add = 10
+	}
+	max = 90
+}
+kehillah_shtadlan_plea_failure_value = {
+	value = 100
+	subtract = kehillah_shtadlan_plea_success_value
+}
+# The appeal to the head of the faith: 30 + his outlook, at most 85.
+kehillah_hof_appeal_success_value = {
+	value = 30
+	add = domicile.domicile_location.county.holder.top_liege.faith.religious_head.kehillah_outlook_on_jews_value
+	min = 5
+	max = 85
+}
+kehillah_hof_appeal_failure_value = {
+	value = 100
+	subtract = kehillah_hof_appeal_success_value
+}
+
+# --- 3. Levers.
+kehillah_gift_outlook = 5
+
+# Present a Gift has no cooldown (2026-10-13, Daniel: "you should be able
+# to give gifts whenever too but they should be expensive depending on the
+# status of the liege, his financial situation, your income"). Scope: the
+# giver (a Kehillah leader); scope:recipient set.
+# 25, plus three months of his income and three of yours;
+# x1.25 a duke, x1.5 a king, x2 an emperor;
+# x0.75 if he is in debt, x1.25 if his treasury holds two years' income;
+# x1.5, x2, x2.5 ... for each gift the community gave in the last three
+# years (kehillah_gift_recent on its title).
+# A count of 2/month from a community of 3/month: 40. A duke of 6/month:
+# 65. An emperor of 25/month: about 220.
+kehillah_gift_base_cost = 25
+kehillah_gift_escalation_years = 3
+
+kehillah_gift_cost_value = {
+	value = kehillah_gift_base_cost
+	add = {
+		value = monthly_character_income
+		multiply = 3
+		min = 0
+	}
+	scope:recipient = {
+		add = {
+			value = monthly_character_income
+			multiply = 3
+			min = 0
+		}
+	}
+	if = {
+		limit = { scope:recipient = { highest_held_title_tier >= tier_empire } }
+		multiply = 2
+	}
+	else_if = {
+		limit = { scope:recipient = { highest_held_title_tier >= tier_kingdom } }
+		multiply = 1.5
+	}
+	else_if = {
+		limit = { scope:recipient = { highest_held_title_tier >= tier_duchy } }
+		multiply = 1.25
+	}
+	if = {
+		limit = { scope:recipient = { gold < 0 } }
+		multiply = 0.75
+	}
+	else_if = {
+		limit = { scope:recipient = { gold >= kehillah_gift_full_treasury_value } }
+		multiply = 1.25
+	}
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_gift_recent } }
+		multiply = {
+			value = primary_title.var:kehillah_gift_recent
+			multiply = 0.5
+			add = 1
+		}
+	}
+	round = yes
+}
+
+# Scope: the recipient. Two years of his income, at least 300.
+kehillah_gift_full_treasury_value = {
+	value = monthly_character_income
+	multiply = 24
+	min = 300
+}
+kehillah_forgive_debt_outlook = 15
+kehillah_forgive_debt_prosperity = -40
+kehillah_forgive_debt_greatness = 20
+
+# --- V36b. The Lord's Favour: a Protective or Well-disposed host grants a
+# better charter term unasked. Quarterly chance (percent): Protective 4,
+# Well-disposed 1. At most once in kehillah_host_favour_cooldown_years.
+kehillah_host_favour_chance_value = {
+	value = 0
+	if = {
+		limit = { kehillah_host_outlook_value >= 40 }
+		value = 4
+	}
+	else_if = {
+		limit = { kehillah_host_outlook_value >= 15 }
+		value = 1
+	}
+}
+kehillah_host_favour_cooldown_years = 10
+
+# --- V37: Accusations (docs/spec/v37-accusations.md). Scope: a Kehillah
+# leader. Quarterly chance (percent).
+kehillah_accusation_chance_value = {
+	value = 0
+	if = {
+		limit = { kehillah_host_outlook_value < 40 }
+		add = 0.25
+	}
+	if = {
+		limit = { kehillah_host_outlook_value < 15 }
+		add = 0.5
+	}
+	if = {
+		limit = { kehillah_host_outlook_value <= -15 }
+		add = 0.75
+	}
+	if = {
+		limit = { kehillah_bd_holy_war_value < 0 }
+		add = 0.75
+	}
+}
+kehillah_accusation_cooldown_years = 20
+kehillah_accusation_defused_stability = -20
+kehillah_accusation_violence_stability = -100
+kehillah_accusation_violence_prosperity = -50
+kehillah_accusation_barricade_mult = 0.6
+kehillah_accusation_barricade_greatness = 10
+# The Shtadlan's plea for protection: 25 + half the lord's outlook + 10 per
+# charter-security step (5..90).
+kehillah_accusation_shtadlan_success_value = {
+	value = 25
+	add = {
+		value = kehillah_host_outlook_value
+		divide = 2
+	}
+	if = {
+		limit = { primary_title ?= { var:kehillah_charter_cache_security ?= 2 } }
+		add = 20
+	}
+	else_if = {
+		limit = { primary_title ?= { var:kehillah_charter_cache_security ?= 1 } }
+		add = 10
+	}
+	min = 5
+	max = 90
+}
+kehillah_accusation_shtadlan_failure_value = {
+	value = 100
+	subtract = kehillah_accusation_shtadlan_success_value
+}
+# Paying for protection: 50 + half the lord's outlook (10..95).
+kehillah_accusation_pay_success_value = {
+	value = 50
+	add = {
+		value = kehillah_host_outlook_value
+		divide = 2
+	}
+	min = 10
+	max = 95
+}
+kehillah_accusation_pay_failure_value = {
+	value = 100
+	subtract = kehillah_accusation_pay_success_value
+}

@@ -1,0 +1,109 @@
+﻿# =====================================================================
+# SEND OUT SETTLERS -- V34 section 1 (amended 2026-10-13). An overcrowded
+# community sends one of its own, with his household and a few others,
+# to found a daughter community where a lord will take Jewish settlers.
+# The player chooses where and who (kehillah_settlers.0001/.0002); the AI
+# picks the best. kehillah_settlers_go_effect does the founding.
+# =====================================================================
+
+kehillah_send_out_settlers_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_tale.dds"
+	}
+	decision_group_type = kehillah
+	sort_order = 96
+	# 12, was 36 (25-year soak 2026-10-13: 3-8 communities eligible at a time,
+	# yet 2 AI foundings in ~20 years; target one every 3-5 years).
+	ai_check_interval = 12
+
+	is_shown = {
+		government_has_flag = government_is_kehillah
+	}
+
+	is_valid = {
+		# Overcrowded, or a lord within reach has invited settlers (V34
+		# section 7): an invitation is answered even from a quarter with room.
+		custom_tooltip = {
+			text = kehillah_settlers_crowded_tt
+			save_temporary_scope_as = kehillah_mother_leader
+			OR = {
+				NOT = { kehillah_quarter_has_room_trigger = yes }
+				any_county = { kehillah_settlers_invited_destination_trigger = yes }
+			}
+		}
+		custom_tooltip = {
+			text = kehillah_settlers_prosperity_tt
+			kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_strained_threshold }
+		}
+		custom_tooltip = {
+			text = kehillah_settlers_cooldown_tt
+			primary_title = { NOT = { has_variable = kehillah_settlers_cooldown } }
+		}
+		custom_tooltip = {
+			text = kehillah_settlers_leader_tt
+			save_temporary_scope_as = kehillah_mother_leader
+			any_courtier = { kehillah_settlers_leader_candidate_trigger = yes }
+		}
+		custom_tooltip = {
+			text = kehillah_settlers_destination_tt
+			save_temporary_scope_as = kehillah_mother_leader
+			any_county = { kehillah_settlers_destination_trigger = yes }
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		is_available_adult = yes
+	}
+
+	cost = {
+		gold = medium_gold_value
+	}
+
+	effect = {
+		custom_tooltip = kehillah_send_out_settlers_tt
+		# The AI's choice and the founding run in hidden events, outside this
+		# effect's tooltip dry run (see kehillah_settlers.0003).
+		if = {
+			limit = { is_ai = no }
+			hidden_effect = {
+				kehillah_settlers_pick_effect = yes
+				trigger_event = kehillah_settlers.0001
+			}
+		}
+		else = {
+			trigger_event = kehillah_settlers.0004
+		}
+	}
+
+	ai_potential = {
+		government_has_flag = government_is_kehillah
+	}
+
+	# Daniel 2026-10-13: AI communities should found one every few years
+	# world-wide, balanced by communities collapsing. Chance per check
+	# (every 3 years) = the overflow, as a percent, capped at 20; halved at
+	# 30 communities world-wide and quartered at 40 -- a soft ceiling.
+	# 2026-10-13: kehillah_settlers_ai_weight_value (overcrowding and an
+	# invitation within reach; see its header for the live numbers).
+	ai_will_do = {
+		base = 0
+		modifier = {
+			add = kehillah_settlers_ai_weight_value
+		}
+		modifier = {
+			factor = 0.5
+			any_in_global_list = {
+				variable = kehillah_registered_communities
+				count >= 30
+			}
+		}
+		modifier = {
+			factor = 0.5
+			any_in_global_list = {
+				variable = kehillah_registered_communities
+				count >= 40
+			}
+		}
+		max = 30
+	}
+}

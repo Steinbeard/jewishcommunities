@@ -1,0 +1,223 @@
+﻿# =====================================================================
+# INVITATIONS -- V34 section 7 (docs/spec/v34-outlook-teachings-and-
+# founding.md), 2026-10-13. A ruler with no Jews in his realm may still
+# open the door: a yearly "open-door review", driven by his outlook on
+# the Jews and his wish to fill towns and markets, can raise his Jewish
+# Settlement Policy. Raising it to Encouraged -- by this review, the
+# hosts' review or the player's decree -- IS the invitation: Kehillah
+# players within diplomatic range hear of it, and for 20 years it draws
+# settlers (Send Out Settlers, exiles) and lets a community that is not
+# overcrowded answer the call.
+# (The historical shape: Bela IV of Hungary after the Mongols, 1251;
+# Boleslaw the Pious's Statute of Kalisz, 1264; the Rhineland bishops'
+# charters of 1084/1090.)
+# =====================================================================
+
+# Scope: an AI ruler passing kehillah_open_door_candidate_trigger. Raise
+# the policy one rung if the welcoming pressures carry it.
+kehillah_open_door_review_effect = {
+	save_scope_value_as = { name = kehillah_open_door_outlook value = kehillah_outlook_on_jews_value }
+	save_scope_value_as = { name = kehillah_open_door_net value = kehillah_open_door_net_pressure_value }
+	debug_log_scopes = yes
+	if = {
+		limit = { kehillah_open_door_net_pressure_value <= kehillah_policy_review_raise_threshold_negative }
+		primary_title = { save_scope_as = kehillah_reason_realm }
+		if = {
+			limit = { kehillah_invitation_motive_value > 0 }
+			scope:kehillah_reason_realm = { set_variable = { name = kehillah_policy_reason value = flag:towns } }
+		}
+		else = {
+			scope:kehillah_reason_realm = { set_variable = { name = kehillah_policy_reason value = flag:justice } }
+		}
+		debug_log = "kehillah_open_door_review_effect: a ruler with no Jews opens the door -- raising one rung"
+		kehillah_raise_jewish_settlement_policy_effect = yes
+	}
+	else = {
+		kehillah_start_policy_review_cooldown_effect = yes
+		debug_log = "kehillah_open_door_review_effect: no reason to open the door -- policy unchanged"
+	}
+}
+
+# Scope: the host ruler, just raised to Encouraged (end of kehillah_
+# raise_jewish_settlement_policy_effect); scope:kehillah_policy_host and
+# scope:kehillah_policy_realm saved. The invitation: open for 20 years,
+# announced to Kehillah players within diplomatic range (his own
+# communities already have the policy notice).
+kehillah_invitation_issue_effect = {
+	primary_title = {
+		set_variable = { name = kehillah_invitation_open value = yes years = 20 }
+	}
+	every_player = {
+		limit = {
+			government_has_flag = government_is_kehillah
+			in_diplomatic_range = scope:kehillah_policy_host
+			NOT = { domicile.domicile_location.county.holder.top_liege ?= scope:kehillah_policy_host }
+		}
+		# V35 (2026-10-13, player clarity): a community that could answer
+		# (an invited county within its settlers' reach) gets the letter
+		# as an event, the lord shown; others hear of it in the feed.
+		if = {
+			limit = {
+				save_temporary_scope_as = kehillah_mother_leader
+				any_county = { kehillah_settlers_invited_destination_trigger = yes }
+			}
+			trigger_event = kehillah_invitation.0001
+		}
+		else = {
+			send_interface_message = {
+				type = msg_kehillah_community_news
+				title = kehillah_news_invitation_t
+				desc = kehillah_news_invitation_d
+				left_icon = scope:kehillah_policy_host
+			}
+		}
+	}
+	debug_log_scopes = yes
+	debug_log = "kehillah_invitation_issue_effect: a ruler invites Jewish settlers"
+}
+
+# Scope: the leader of a community just founded (Send Out Settlers, the
+# Found a Jewish Community decision, exiles arriving). If its lord's
+# realm has an open invitation, the invitation is answered: the
+# community starts with the privileges promised, remembers who invited
+# it, and the lord warms to the Jews (his settlers came). A player lord
+# is told; Kehillah players in range hear of it.
+kehillah_invitation_answered_effect = {
+	if = {
+		limit = {
+			exists = primary_title
+			domicile.domicile_location.county.holder.top_liege.primary_title ?= { has_variable = kehillah_invitation_open }
+		}
+		save_scope_as = kehillah_answering_leader
+		domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_inviter }
+		domicile.domicile_location.county = { save_scope_as = kehillah_invited_county }
+		primary_title = {
+			change_variable = { name = kehillah_var_prosperity add = kehillah_invitation_answered_prosperity }
+			change_variable = { name = kehillah_var_stability add = kehillah_invitation_answered_stability }
+			set_variable = { name = kehillah_founded_by_invitation value = scope:kehillah_inviter }
+		}
+		scope:kehillah_inviter = {
+			kehillah_shift_outlook_effect = { AMOUNT = kehillah_invitation_answered_outlook }
+			if = {
+				limit = { is_ai = no }
+				send_interface_message = {
+					type = msg_kehillah_community_news
+					title = kehillah_news_invitation_answered_t
+					desc = kehillah_news_invitation_answered_d
+					left_icon = scope:kehillah_answering_leader
+				}
+			}
+		}
+		kehillah_notify_region_players_effect = {
+			TYPE = msg_kehillah_community_news
+			TITLE = kehillah_news_invitation_answered_t
+			DESC = kehillah_news_invitation_answered_d
+		}
+		debug_log_scopes = yes
+		debug_log = "kehillah_invitation_answered_effect: settlers answered an invitation"
+	}
+}
+
+# Scope: the Shtadlan performing Seek an Invitation; scope:councillor_
+# liege set. Keeps (or picks: the warmest outlook) the lord he courts,
+# warms him, and each month may win an audience. At the audience the
+# lord raises his policy one rung if his open-door net pressure, with the
+# embassy's arguments, carries it (to Encouraged: an invitation, sent by
+# the ordinary raise effect); otherwise he declines and the question is
+# closed for the review cooldown, and the Shtadlan turns to another lord.
+kehillah_seek_invitation_monthly_effect = {
+	save_scope_as = kehillah_suitor_shtadlan
+	scope:councillor_liege = { save_scope_as = kehillah_suitor_leader }
+	scope:kehillah_suitor_leader = {
+		if = {
+			limit = {
+				exists = var:kehillah_invitation_suitor
+				var:kehillah_invitation_suitor = { kehillah_invitation_suitor_target_trigger = yes }
+			}
+			var:kehillah_invitation_suitor = { save_scope_as = kehillah_invitation_suitor }
+		}
+		else = {
+			if = {
+				limit = { has_variable = kehillah_invitation_suitor }
+				remove_variable = kehillah_invitation_suitor
+			}
+			ordered_ruler = {
+				limit = { kehillah_invitation_suitor_target_trigger = yes }
+				order_by = kehillah_invitation_suitor_score_value
+				save_scope_as = kehillah_invitation_suitor
+			}
+			if = {
+				limit = { exists = scope:kehillah_invitation_suitor }
+				set_variable = { name = kehillah_invitation_suitor value = scope:kehillah_invitation_suitor }
+				if = {
+					limit = { is_ai = no }
+					send_interface_message = {
+						type = msg_kehillah_community_news
+						title = kehillah_seek_invitation_sets_out_t
+						desc = kehillah_seek_invitation_sets_out_d
+						left_icon = scope:kehillah_suitor_shtadlan
+						right_icon = scope:kehillah_invitation_suitor
+					}
+				}
+			}
+		}
+	}
+	if = {
+		limit = { exists = scope:kehillah_invitation_suitor }
+		scope:kehillah_invitation_suitor = {
+			add_opinion = {
+				target = scope:kehillah_suitor_leader
+				modifier = kehillah_shtadlan_petition_opinion
+			}
+		}
+		random = {
+			chance = kehillah_council_petition_chance_display_value
+			kehillah_seek_invitation_audience_effect = yes
+		}
+	}
+}
+
+# The audience (kehillah_seek_invitation_monthly_effect, or the debug
+# kehillah_outlook_debug.6). Scopes: kehillah_suitor_shtadlan,
+# kehillah_suitor_leader, kehillah_invitation_suitor saved.
+kehillah_seek_invitation_audience_effect = {
+	scope:kehillah_invitation_suitor = {
+		primary_title = { save_scope_as = kehillah_suitor_realm }
+		if = {
+			limit = { kehillah_open_door_net_pressure_value <= kehillah_invitation_embassy_threshold }
+			primary_title = { set_variable = { name = kehillah_policy_reason value = flag:petition } }
+			kehillah_raise_jewish_settlement_policy_effect = yes
+			kehillah_shift_outlook_effect = { AMOUNT = 5 }
+			debug_log = "kehillah_seek_invitation_monthly_effect: the lord heard the Shtadlan and raised his policy"
+			scope:kehillah_suitor_leader = {
+				if = {
+					limit = { is_ai = no }
+					send_interface_message = {
+						type = msg_kehillah_community_news
+						title = kehillah_seek_invitation_granted_t
+						desc = kehillah_seek_invitation_granted_d
+						left_icon = scope:kehillah_suitor_shtadlan
+						right_icon = scope:kehillah_invitation_suitor
+					}
+				}
+			}
+		}
+		else = {
+			kehillah_start_policy_review_cooldown_effect = yes
+			debug_log = "kehillah_seek_invitation_monthly_effect: the lord heard the Shtadlan and declined"
+			scope:kehillah_suitor_leader = {
+				if = {
+					limit = { is_ai = no }
+					send_interface_message = {
+						type = msg_kehillah_community_news_bad
+						title = kehillah_seek_invitation_declined_t
+						desc = kehillah_seek_invitation_declined_d
+						left_icon = scope:kehillah_suitor_shtadlan
+						right_icon = scope:kehillah_invitation_suitor
+					}
+				}
+			}
+		}
+	}
+	scope:kehillah_suitor_leader = { remove_variable = kehillah_invitation_suitor }
+}

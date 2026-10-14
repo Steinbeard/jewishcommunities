@@ -145,22 +145,47 @@ kehillah_expulsion_plea_repeal_weight_value = {
 # ---------------------------------------------------------------------
 
 # Chance, per community per year, that it triggers a review of its host.
-kehillah_policy_review_chance = 10
+# V34 (2026-10-13): 10 -> 15. The 2026-10-12 soaks found the review ran
+# ~0.6 times a year world-wide and moved a policy 3 times in ~58 years.
+kehillah_policy_review_chance = 15
 
 # Net pressure needed to move the policy one rung.
 kehillah_policy_review_lower_threshold = 4
 kehillah_policy_review_ban_threshold = 6
+# V31: under Exclusion or Abolition, Banned needs less (V31 section 5.3).
+kehillah_policy_review_ban_threshold_exclusionary = 4
 kehillah_policy_review_raise_threshold = 4
 # The same, as the negative net pressure a review must reach to raise.
 kehillah_policy_review_raise_threshold_negative = -4
 
 # Scope: the host ruler. Each restrictive pressure in turn. They are
 # separate values so the review can count how many are present.
+#
+# V31 (2026-10-12, docs/spec/v31-host-teachings-stances-and-factions.md
+# section 5): zeal applies the rite's teaching on the Jews harder, so its
+# weight depends on that teaching. Protective (Witness, Imperial Law,
+# Dhimma) 1 / Strict (Separation and Mission, Strict Pact) 3 /
+# Exclusionary (Exclusion, Abolition) 4 for the ruler; 1 / 2 / 3 for a
+# zealous chaplain. A host with no teaching keeps V30's 3 and 2.
 kehillah_policy_pressure_zeal_value = {
 	value = 0
 	if = {
 		limit = { has_trait = zealous }
-		add = 3
+		if = {
+			limit = { kehillah_teaching_protective_trigger = yes }
+			add = 1
+		}
+		else_if = {
+			limit = { kehillah_teaching_strict_trigger = yes }
+			add = 3
+		}
+		else_if = {
+			limit = { kehillah_teaching_exclusionary_trigger = yes }
+			add = 4
+		}
+		else = {
+			add = 3
+		}
 	}
 }
 kehillah_policy_pressure_clergy_value = {
@@ -173,7 +198,21 @@ kehillah_policy_pressure_clergy_value = {
 				has_trait = zealous
 			}
 		}
-		add = 2
+		if = {
+			limit = { kehillah_teaching_protective_trigger = yes }
+			add = 1
+		}
+		else_if = {
+			limit = { kehillah_teaching_strict_trigger = yes }
+			add = 2
+		}
+		else_if = {
+			limit = { kehillah_teaching_exclusionary_trigger = yes }
+			add = 3
+		}
+		else = {
+			add = 2
+		}
 	}
 }
 kehillah_policy_pressure_debts_value = {
@@ -214,8 +253,42 @@ kehillah_policy_pressure_temper_value = {
 	}
 }
 
+# V34 (2026-10-13): the ruler's overall outlook on the Jews (kehillah_
+# outlook_values.txt) weighs on each side of the review.
+kehillah_policy_pressure_outlook_value = {
+	value = 0
+	if = {
+		limit = { kehillah_outlook_on_jews_value <= -60 }
+		add = 3
+	}
+	else_if = {
+		limit = { kehillah_outlook_on_jews_value <= -30 }
+		add = 2
+	}
+	else_if = {
+		limit = { kehillah_outlook_on_jews_value <= -10 }
+		add = 1
+	}
+}
+kehillah_policy_protective_outlook_value = {
+	value = 0
+	if = {
+		limit = { kehillah_outlook_on_jews_value >= 60 }
+		add = 3
+	}
+	else_if = {
+		limit = { kehillah_outlook_on_jews_value >= 30 }
+		add = 2
+	}
+	else_if = {
+		limit = { kehillah_outlook_on_jews_value >= 10 }
+		add = 1
+	}
+}
+
 kehillah_policy_restrictive_pressure_value = {
 	value = 0
+	add = kehillah_policy_pressure_outlook_value
 	add = kehillah_policy_pressure_zeal_value
 	add = kehillah_policy_pressure_clergy_value
 	add = kehillah_policy_pressure_debts_value
@@ -227,6 +300,10 @@ kehillah_policy_restrictive_pressure_value = {
 # personality alone is never a coalition).
 kehillah_policy_restrictive_count_value = {
 	value = 0
+	if = {
+		limit = { kehillah_policy_pressure_outlook_value > 0 }
+		add = 1
+	}
 	if = {
 		limit = { kehillah_policy_pressure_zeal_value > 0 }
 		add = 1
@@ -248,6 +325,7 @@ kehillah_policy_restrictive_count_value = {
 # Scope: the host ruler. The counter-pressures.
 kehillah_policy_protective_pressure_value = {
 	value = 0
+	add = kehillah_policy_protective_outlook_value
 	if = {
 		limit = { has_trait = just }
 		add = 2
@@ -279,6 +357,24 @@ kehillah_policy_protective_pressure_value = {
 	if = {
 		limit = { kehillah_policy_has_prosperous_community_trigger = yes }
 		add = 2
+	}
+	# V31: a zealous ruler of the Witness teaching "will not suffer them to
+	# be harmed": his zeal protects as well as presses (V31 section 5.1).
+	if = {
+		limit = {
+			has_trait = zealous
+			rite ?= { kehillah_rite_teaching_witness_trigger = yes }
+		}
+		add = 1
+	}
+}
+
+# V31: the net pressure the review needs to ban (from Discouraged).
+kehillah_policy_ban_threshold_value = {
+	value = kehillah_policy_review_ban_threshold
+	if = {
+		limit = { kehillah_teaching_exclusionary_trigger = yes }
+		value = kehillah_policy_review_ban_threshold_exclusionary
 	}
 }
 

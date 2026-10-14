@@ -89,21 +89,22 @@ kehillah_found_community_decision = {
 		is_imprisoned = no
 		exists = location.county
 		kehillah_leader_is_rabbinic_trigger = yes
+		# The shared founding-site rule (kehillah_settlers_triggers.txt,
+		# 2026-10-13): realm allows settlement, near the diaspora or
+		# invited, settled, at peace, not crowding a community.
 		custom_tooltip = {
-			text = kehillah_found_community_host_policy_allows_tt
-			# Inline the two scope steps rather than hiding the location
-			# transition behind a character-scoped helper. CK3's decision
-			# parser validates the scope here, while the shared title-policy
-			# trigger still owns the actual band definition.
-			location.county.holder.top_liege.primary_title = {
-				kehillah_jewish_settlement_policy_allowed_trigger = yes
-			}
+			text = kehillah_found_community_site_tt
+			location.county ?= { kehillah_founding_site_trigger = yes }
 		}
+		# Exiles bring their community with them (2026-10-13).
 		custom_tooltip = {
 			text = kehillah_found_community_requires_ten_jewish_followers_tt
-			any_courtier = {
-				count >= 10
-				is_jewish_character_trigger = yes
+			OR = {
+				has_variable = kehillah_exiles_from
+				any_courtier = {
+					count >= 10
+					is_jewish_character_trigger = yes
+				}
 			}
 		}
 		custom_tooltip = {
@@ -126,11 +127,18 @@ kehillah_found_community_decision = {
 	}
 
 	cost = {
-		gold = massive_gold_value
+		gold = {
+			value = massive_gold_value
+			# Exiles had their gold seized on the way out.
+			if = {
+				limit = { has_variable = kehillah_exiles_from }
+				multiply = 0.1
+			}
+		}
 	}
 
 	effect = {
-		kehillah_found_community_effect = yes
+		kehillah_found_community_here_effect = yes
 	}
 
 	ai_potential = {
@@ -140,6 +148,11 @@ kehillah_found_community_decision = {
 
 	ai_will_do = {
 		base = 5
+		# Exiles want nothing more than a place to settle (2026-10-13).
+		modifier = {
+			add = 200
+			has_variable = kehillah_exiles_from
+		}
 		# V29 section 3.5 (2026-10-11): a renowned academy draws Jews to its
 		# region. +15 to found within medium distance of a yeshiva town.
 		modifier = {

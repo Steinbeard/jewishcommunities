@@ -201,6 +201,47 @@ small loc text, checking an icon's exact pixels) — most boot/panel/"did it cra
 
 ---
 
+## Locking a tooltip for nested hover checks — added 2026-10-13
+
+Read `interface.tooltip` in the CK3 user directory's `pdx_settings.txt` before testing
+links inside a tooltip. This machine uses `SETTING_TOOLTIP_MODE_LOCK_ON_ACTION`:
+vanilla's `settings_l_english.yml` says **Middle Mouse** locks and unlocks tooltips.
+Waiting on the anchor does not lock a tooltip in this mode, even beyond the configured
+`tooltip_lock_time`. The 2026-10-13 pillar UI check initially lost its parent tooltip
+for exactly this reason.
+
+Hover the pillar, middle-click to lock its breakdown, then move to the neighboring
+band label. Capture the locked layout before choosing the label's coordinates.
+Keep the user's configured lock mode; use its action rather than changing settings.
+Record the mode and lock action in the test log so a disappearing unlocked parent
+is not mistaken for a broken nested link.
+
+**Shim correction, 2026-10-13 09:30 retry:** this `winkeys.py` implements only left/right
+in `mouse_click`: any non-left button string becomes a right-click. Thus
+`mouse_click(x, y, button="middle")` does not send the Action Lock button. After focusing
+CK3 and hovering the anchor, send actual middle-button events through its existing shim:
+
+```python
+nx, ny = w._absolute(x, y)
+w.mouse_move(x, y)
+time.sleep(0.05)
+w._send([w._mouse_event(nx, ny, 0x0020 | w.MOUSEEVENTF_ABSOLUTE)])  # MIDDLEDOWN
+time.sleep(0.05)
+w._send([w._mouse_event(nx, ny, 0x0040 | w.MOUSEEVENTF_ABSOLUTE)])  # MIDDLEUP
+```
+
+**Band-probe correction, same retry:** a fresh paused day-one historical start lacks
+`kehillah_start_pillars_initialized_from_baseline`; the public
+`kehillah_update_all_pillar_bands_effect` intentionally waits for that marker. Score-setting
+debug events can therefore change rendered bands without applying leader modifiers. Verify
+the marker and use `kehillah_debug.102` to inspect actual modifiers. For a deliberate manual test before
+initialization, put the three parameterized `kehillah_update_pillar_band_effect` calls inside
+`hidden_effect` in the run file. The console's effect-description construction otherwise
+reads the as-yet-unset `kehillah_band_now_*` variables before execution and logs errors.
+The retry reproduced this, then cleared all six now/previous band cache variables in its
+throwaway game and reran the updates hidden: correct modifiers, zero new script-system errors.
+See [the retry log](2026-10-13-pillar-tooltip-retry-live-test-log.md) for the exact comparison.
+
 ## Navigation map (this mod's HUD, `-debug_mode`)
 
 Found by hunting — every one of these took real trial and error, so recorded here to save the
@@ -502,6 +543,13 @@ at all — put an identifying `debug_log` in every targeting run file for that r
 ---
 
 ## CK3 hot-reloads script files — don't edit the mod while a test is running — added 2026-10-10
+
+**Ownership-check addendum, 2026-10-13:** check `git rev-parse HEAD`, `git status --short` and recent agent transcript
+activity before each probe, alongside input-helper processes. A process-only check can miss
+an agent editing between tool calls. The 09:30 retry caught an unrelated settlers commit
+only during its final checkout review. Its pillar files were unchanged and final checks
+ran after that commit, but the whole checkout had not stayed fixed. Record such interference;
+do not describe that run as a frozen-source test. Stop input when active editing is detected.
 
 Found by doing it. During the Shabbat heartbeat-2 slice-3 live test, the orchestrator kept
 building the next slice in the same working tree while the delegated tester drove the booted

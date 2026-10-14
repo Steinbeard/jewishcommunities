@@ -21,8 +21,16 @@ subject to revision after each phase.
 
 Each Prosperity, Stability and Greatness breakdown now states the current level's applied
 leader modifier. The next and previous bands are shown as hoverable labels with their ranges and
-effects. Script/localization checks passed; nested tooltip rendering still needs a live UI check.
-See [implementation note §18](docs/implementation/v1-kehillah-implementation.md).
+effects. **Verification complete, 2026-10-13:** the 09:30 retry finished Stability and Greatness
+roster nesting at 750, Crisis/Legendary endpoint spot-checks, and rendered all three HUD bands
+at exactly 150/400/700/950. This closes the remaining checks from the morning pass.
+Action Lock requires a real middle-click; the input shim's `button="middle"` sends a right-click.
+The final hidden probe confirmed all three Legendary leader modifiers at 950 without new runtime
+script errors. Four roster score labels received the earlier live-checked layout fix; the five
+other pre-existing row layout warnings remain. See [implementation note §18](docs/implementation/v1-kehillah-implementation.md),
+[the morning test](docs/testing/2026-10-13-pillar-tooltip-live-playtest-log.md), and
+[the retry log](docs/testing/2026-10-13-pillar-tooltip-retry-live-test-log.md) for coverage and
+probe/ownership caveats. **This verification item is closed; the death-screen wording check is next.**
 
 ### Kehillah death-screen wording — 2026-10-12, Daniel's request
 
@@ -33,6 +41,11 @@ characters marked as Kehillah leaders. The same vanilla lines remain intact for
 other characters. This is a localization change only; succession and player
 continuation are untouched. Source and `ck3-tiger` checks passed. Fresh-game
 death-screen rendering and a feudal control case remain to be checked live.
+On 2026-10-12, Daniel spotted the remaining short heir line, "ascends to the throne."
+It now says the appointed Kehillah leader "takes office as the community's appointed
+leader," while other successors retain vanilla's motion text. Source and targeted
+`ck3-tiger` checks passed; live rendering remains open while CK3 is in use by
+another agent.
 
 ### Dynasty succession warning and holiday modifier colors — 2026-10-12
 
@@ -53,6 +66,8 @@ than renumbered, since later items and other docs cross-reference these numbers 
 ### Holiday event variety — 2026-10-12, Daniel's request
 
 Five one-step events for Yom Kippur, Sukkot and Shavuot are scripted. Two use named Jewish courtiers; the others remain available without them. The Purim gift event now always has an affordable choice. Source checks passed; live rendering and seasonal delivery are pending. See [the implementation note](docs/implementation/jewish-holiday-variety.md).
+
+**Festival-observance refinement, 2026-10-13:** Daniel chose a Jewish flavor overlay for vanilla feasts instead of a separate Sukkot decision or new feast intent. The earlier three-choice decision prototype was removed. A source-checked hook modestly raises holiday-event frequency for Jewish rites with vanilla Ritual Celebrations. Feast themes and rewards remain a proposal, with the calendar and Kehillah hosting limits recorded in [Mo'adim le-Simchah](docs/spec/jewish-festival-observance.md). This user-requested tenet work ran in parallel with the higher-priority live-test TODOs above; it does not close them.
 
 ### Exceptional sefarim — 2026-10-12, Daniel's request
 
@@ -145,6 +160,13 @@ is the S11 "friendliness" design review; the Crusades chain stays separate and b
   player-led communities through a copied vanilla interaction. AI hosts demand "convert or leave"
   while an expulsion edict stands. A player convert may carry on as the heir. Probe:
   `kehillah_conversion_debug.4`.
+- **Slice A, the teachings, built and LIVE-TESTED 2026-10-12** (v31 §4–5, [log](docs/testing/2026-10-12-teachings-live-test-log.md)). Every Christian and
+  Muslim rite gets a "Teaching on the Jews" at game start: Witness, Imperial Law (Eastern) or
+  Dhimma. The AI policy review scales zeal by the teaching and refuses Banned under a protective
+  teaching. Forced conversion now follows the teaching: the Strict Pact, Exclusion or Abolition
+  allow it; a non-Abrahamic host still needs Banned. **In 1066 every host is protective**, so
+  this adds variety but no pressure until rites move (Slice E, councils and reform) or the
+  faction and incidents exist (Slices D and G). Probes: `kehillah_teaching_debug.1`–`.5`.
 - **Balance finding, 2026-10-12 soak (session 0f):** across about 58 logged years, the AI policy
   review ran about 35 times and moved a policy 3 times (1 down, 2 up). Nothing reached Banned and
   no edict was issued. Expulsion and forced conversion therefore never happen in ordinary play.
@@ -250,6 +272,20 @@ the shim guide. Current state is in the
 
   This affects every building and the balance. Decide after V29's Stability-gated Yeshiva has been
   seen in play.
+
+- **V33 PRESSURES and V34 OUTLOOK: built 2026-10-12/13; V34 live test pending** ([v33](docs/spec/v33-pressures.md), [v34](docs/spec/v34-outlook-teachings-and-founding.md)).
+  - **V33:** Stability rests at Healthy and is pulled down by the host, policy, war, holy war, tension and teaching. It falls fast and recovers slowly. Prosperity follows the county. Overcrowding is a soft population limit. Soak: [2026-10-13](docs/testing/2026-10-13-v33-pressures-soak.md); Prosperity is still too flat.
+  - **V34:** an outlook on the Jews for every character. Teachings change by a head of faith's outlook (yearly, and at councils) and by vanilla rite drift. Masmudi (the Almohads) teaches Abolition. Popular risings found Exclusion rites. The policy review reads outlook, and a policy change revises existing charters. Natural founding: about one community every 5 years.
+  - **V34 section 7, invitations (2026-10-13):** a yearly open-door review lets a ruler with no Jews raise their policy by outlook, and Encouraged sends invitations: news, plus a pull on settlers and exiles.
+  - **Live-tested 2026-10-13.** An invitation answered gives +60 Prosperity / +30 Stability and +5 outlook for the lord. More outlook sources: Jewish friends and rivals, crusade pledges. The Shtadlan's **Seek an Invitation** council task courts lords abroad. A **Prosperity floor** of 150 (no community starts in Crisis). The AI's settlers weight was raised: the gates probe found 5 of 23 communities eligible, but the AI chance was 1-11%. A 25-year soak of the AI founding rate is pending.
+  - **V35 player clarity (2026-10-13)** ([v35](docs/spec/v35-player-clarity-outlook-and-invitations.md)): outlook bands in the host-attitude line, the invitation news and the Shtadlan's messages. "The Lord Grows Warmer/Colder" notices. An invitation event with the lord shown, for communities that can answer it. Settlers' destinations say why they draw.
+  - **V36 host levers and crises (2026-10-13)** ([v36](docs/spec/v36-host-relationship-levers-and-crises.md)): violence scaled by the lord's protection (his outlook and the charter's security term). "The Lord's Demands", in which a Cold or Hostile lord demands a levy or forces a worse charter, answered by paying, the Shtadlan, an appeal to the head of the faith, or refusal. Levers: Present a Gift, Forgive the Debt, and generous loan terms.
+  - **V36b/c and V37 (2026-10-13):**
+    - The Lord's Favour.
+    - Outlook traits.
+    - A colder world: outlook "prejudice", Christian -15, Muslim -10.
+    - Accusations ([v37](docs/spec/v37-accusations.md)): the blood libel or blasphemy, answered by the Shtadlan, paying for protection, an appeal, or barring the gates. The outcome is scaled by the lord's protection.
+  - **Next:** a V34 live probe, then a soak. Prosperity tuning (development x8 or a floor). More outlook sources. The anti-Jewish faction.
 
 - **V30, COMMUNITY NEWS: built and verified live 2026-10-12** ([spec](docs/spec/v30-community-news.md); test log run 20).
   - Quiet feed notices under a 'Community News' filter: your host lord dies; and, in your minhag region, a charter ends, new leadership, a pillar in Crisis, a new or Renowned+ yeshiva, a Bet Din concludes.

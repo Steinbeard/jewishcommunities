@@ -1,0 +1,107 @@
+﻿# =====================================================================
+# "Teaching on the Jews" -- console-only debug probes. Never fired by
+# gameplay. Run as `event kehillah_teaching_debug.N` with the player
+# leading a Kehillah; results go to debug.log. Design: docs/spec/
+# v31-host-teachings-stances-and-factions.md, sections 4 and 5.
+#
+#   .1  read-only: the player's host -- his rite, whether it HOLDS a
+#       teaching doctrine (or falls back), the band, the ceiling, the
+#       scaled zeal/clergy pressures, the ban threshold, which way the
+#       net pressure points, and whether he may force conversion. Also spot-checks the 1066
+#       assignment on named rites.
+#   .2  set the host's rite to Separation and Mission
+#   .3  set the host's rite to Exclusion
+#   .4  set the host's rite back to Witness
+#   .5  run the host's policy review now (no chance roll, no cooldown
+#       check), through the real effect
+# =====================================================================
+
+namespace = kehillah_teaching_debug
+
+kehillah_teaching_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_teaching_debug.1: START"
+		# The 1066 assignment, on named rites.
+		if = { limit = { rite:roman_rite = { rite_has_doctrine = kehillah_teaching_witness } } debug_log = "kehillah_teaching_debug.1: roman_rite HOLDS Witness" }
+		else = { debug_log = "kehillah_teaching_debug.1: roman_rite does NOT hold Witness" }
+		if = { limit = { rite:byzantine_rite = { rite_has_doctrine = kehillah_teaching_imperial_law } } debug_log = "kehillah_teaching_debug.1: byzantine_rite HOLDS Imperial Law" }
+		else = { debug_log = "kehillah_teaching_debug.1: byzantine_rite does NOT hold Imperial Law" }
+		if = { limit = { rite:maliki = { rite_has_doctrine = kehillah_teaching_dhimma } } debug_log = "kehillah_teaching_debug.1: maliki HOLDS Dhimma" }
+		else = { debug_log = "kehillah_teaching_debug.1: maliki does NOT hold Dhimma" }
+
+		save_scope_as = kehillah_teaching_probe_leader
+		if = {
+			limit = { kehillah_host_charter_host_available_trigger = yes }
+			domicile.domicile_location.county.holder.top_liege = {
+				debug_log = "kehillah_teaching_debug.1: host"
+				debug_log_scopes = yes
+				if = { limit = { exists = rite rite = { kehillah_rite_has_teaching_trigger = yes } } debug_log = "kehillah_teaching_debug.1: host rite HOLDS a teaching doctrine" }
+				else = { debug_log = "kehillah_teaching_debug.1: host rite holds no teaching doctrine (fallback applies)" }
+				if = { limit = { kehillah_teaching_protective_trigger = yes } debug_log = "kehillah_teaching_debug.1: band PROTECTIVE" }
+				if = { limit = { kehillah_teaching_strict_trigger = yes } debug_log = "kehillah_teaching_debug.1: band STRICT" }
+				if = { limit = { kehillah_teaching_exclusionary_trigger = yes } debug_log = "kehillah_teaching_debug.1: band EXCLUSIONARY" }
+				if = { limit = { kehillah_teaching_neutral_trigger = yes } debug_log = "kehillah_teaching_debug.1: band NEUTRAL" }
+				if = { limit = { kehillah_teaching_permits_ban_trigger = yes } debug_log = "kehillah_teaching_debug.1: ceiling PERMITS Banned" }
+				else = { debug_log = "kehillah_teaching_debug.1: ceiling FORBIDS Banned" }
+				if = { limit = { kehillah_teaching_permits_forced_conversion_trigger = { RECIPIENT = scope:kehillah_teaching_probe_leader } } debug_log = "kehillah_teaching_debug.1: forced conversion PERMITTED" }
+				else = { debug_log = "kehillah_teaching_debug.1: forced conversion FORBIDDEN" }
+				if = { limit = { has_trait = zealous } debug_log = "kehillah_teaching_debug.1: host is zealous" }
+				if = { limit = { kehillah_policy_pressure_zeal_value = 0 } debug_log = "kehillah_teaching_debug.1: zeal pressure = 0" }
+				if = { limit = { kehillah_policy_pressure_zeal_value = 1 } debug_log = "kehillah_teaching_debug.1: zeal pressure = 1" }
+				if = { limit = { kehillah_policy_pressure_zeal_value = 2 } debug_log = "kehillah_teaching_debug.1: zeal pressure = 2" }
+				if = { limit = { kehillah_policy_pressure_zeal_value = 3 } debug_log = "kehillah_teaching_debug.1: zeal pressure = 3" }
+				if = { limit = { kehillah_policy_pressure_zeal_value = 4 } debug_log = "kehillah_teaching_debug.1: zeal pressure = 4" }
+				if = { limit = { kehillah_policy_pressure_clergy_value = 0 } debug_log = "kehillah_teaching_debug.1: clergy pressure = 0" }
+				if = { limit = { kehillah_policy_pressure_clergy_value = 1 } debug_log = "kehillah_teaching_debug.1: clergy pressure = 1" }
+				if = { limit = { kehillah_policy_pressure_clergy_value = 2 } debug_log = "kehillah_teaching_debug.1: clergy pressure = 2" }
+				if = { limit = { kehillah_policy_pressure_clergy_value = 3 } debug_log = "kehillah_teaching_debug.1: clergy pressure = 3" }
+				if = { limit = { kehillah_policy_ban_threshold_value = 4 } debug_log = "kehillah_teaching_debug.1: ban threshold = 4" }
+				if = { limit = { kehillah_policy_ban_threshold_value = 6 } debug_log = "kehillah_teaching_debug.1: ban threshold = 6" }
+				if = { limit = { kehillah_policy_net_pressure_value >= kehillah_policy_review_lower_threshold } debug_log = "kehillah_teaching_debug.1: net pressure WOULD restrict one rung" }
+				else = { debug_log = "kehillah_teaching_debug.1: net pressure would not restrict" }
+				if = { limit = { kehillah_policy_net_pressure_value >= kehillah_policy_ban_threshold_value kehillah_policy_restrictive_count_value >= 2 } debug_log = "kehillah_teaching_debug.1: net pressure and coalition WOULD ban from Discouraged (if the ceiling permits)" }
+				if = { limit = { kehillah_policy_net_pressure_value <= kehillah_policy_review_raise_threshold_negative } debug_log = "kehillah_teaching_debug.1: net pressure WOULD raise one rung" }
+			}
+		}
+		else = { debug_log = "kehillah_teaching_debug.1: no host resolvable" }
+		debug_log = "kehillah_teaching_debug.1: END"
+	}
+}
+
+kehillah_teaching_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege.rite = { change_rite_doctrine = kehillah_teaching_separation_mission }
+		debug_log = "kehillah_teaching_debug.2: host rite set to Separation and Mission"
+	}
+}
+
+kehillah_teaching_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege.rite = { change_rite_doctrine = kehillah_teaching_exclusion }
+		debug_log = "kehillah_teaching_debug.3: host rite set to Exclusion"
+	}
+}
+
+kehillah_teaching_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege.rite = { change_rite_doctrine = kehillah_teaching_witness }
+		debug_log = "kehillah_teaching_debug.4: host rite set back to Witness"
+	}
+}
+
+kehillah_teaching_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_teaching_debug.5: running the host's policy review now"
+		domicile.domicile_location.county.holder.top_liege = { kehillah_policy_ai_review_effect = yes }
+	}
+}

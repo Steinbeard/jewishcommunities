@@ -1,0 +1,251 @@
+﻿# Console-only probes for V34 outlook (docs/spec/v34-outlook-teachings-
+# and-founding.md section 2). Fire on a Kehillah leader:
+#   event kehillah_outlook_debug.1 -- log the outlook of his host and of
+#     his host's head of faith, and their stances
+#   event kehillah_outlook_debug.2 -- the main rite of root's host's faith
+#     takes one step stricter now (as a head of faith or council would)
+#   event kehillah_outlook_debug.3 -- a popular rising led by a generated
+#     peasant leader strikes root's community now
+namespace = kehillah_outlook_debug
+
+kehillah_outlook_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_outlook_debug.1: outlook -- START"
+		domicile.domicile_location.county.holder.top_liege ?= {
+			save_scope_as = kehillah_dbg_host
+			save_scope_value_as = { name = kehillah_dbg_host_outlook value = kehillah_outlook_on_jews_value }
+			if = { limit = { kehillah_outlook_protector_trigger = yes } debug_log = "kehillah_outlook_debug.1: host PROTECTOR" }
+			else_if = { limit = { kehillah_outlook_convinced_trigger = yes } debug_log = "kehillah_outlook_debug.1: host CONVINCED" }
+			else_if = { limit = { kehillah_outlook_predator_trigger = yes } debug_log = "kehillah_outlook_debug.1: host PREDATOR" }
+			else = { debug_log = "kehillah_outlook_debug.1: host PRAGMATIST" }
+			faith.religious_head ?= {
+				save_scope_as = kehillah_dbg_hof
+				save_scope_value_as = { name = kehillah_dbg_hof_outlook value = kehillah_outlook_on_jews_value }
+			}
+		}
+		save_scope_value_as = { name = kehillah_dbg_host_attitude_term value = kehillah_bd_host_attitude_value }
+		debug_log_scopes = yes
+		debug_log = "kehillah_outlook_debug.1: outlook -- END"
+	}
+}
+
+kehillah_outlook_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege.faith.main_rite ?= {
+			kehillah_rite_teaching_stricter_effect = yes
+			kehillah_rite_teaching_changed_effect = yes
+		}
+		debug_log = "kehillah_outlook_debug.2: host's main rite one step stricter"
+	}
+}
+
+kehillah_outlook_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		create_character = {
+			faith = domicile.domicile_location.county.faith
+			culture = domicile.domicile_location.county.culture
+			age = { 25 40 }
+			location = domicile.domicile_location
+			trait = peasant_leader
+			trait = zealous
+			gender_female_chance = 0
+			save_scope_as = kehillah_rising_leader
+		}
+		kehillah_popular_rising_strike_effect = yes
+		debug_log = "kehillah_outlook_debug.3: a rising struck"
+	}
+}
+
+# Console: event kehillah_outlook_debug.4 -- every ruler who could open the
+# door (kehillah_open_door_candidate_trigger), with his outlook and the
+# open-door net pressure. Changes nothing.
+kehillah_outlook_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_outlook_debug.4: open-door candidates -- START"
+		every_ruler = {
+			limit = { kehillah_open_door_candidate_trigger = yes }
+			save_scope_value_as = { name = kehillah_dbg_outlook value = kehillah_outlook_on_jews_value }
+			save_scope_value_as = { name = kehillah_dbg_open_door_net value = kehillah_open_door_net_pressure_value }
+			debug_log_scopes = yes
+			debug_log = "kehillah_outlook_debug.4: candidate"
+		}
+		debug_log = "kehillah_outlook_debug.4: open-door candidates -- END"
+	}
+}
+
+# Console: event kehillah_outlook_debug.5 -- the candidate with the
+# warmest outlook issues an invitation now (his policy is set to Allowed,
+# then raised to Encouraged through the ordinary effect).
+kehillah_outlook_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		ordered_ruler = {
+			limit = { kehillah_open_door_candidate_trigger = yes }
+			order_by = kehillah_outlook_on_jews_value
+			primary_title = {
+				if = {
+					limit = { has_variable = kehillah_jewish_settlement_policy }
+					remove_variable = kehillah_jewish_settlement_policy
+				}
+				set_variable = { name = kehillah_policy_reason value = flag:towns }
+			}
+			kehillah_raise_jewish_settlement_policy_effect = yes
+			debug_log_scopes = yes
+			debug_log = "kehillah_outlook_debug.5: an invitation issued"
+		}
+	}
+}
+
+# Console: event kehillah_outlook_debug.6 on a Kehillah leader whose
+# Shtadlan is seeking an invitation -- the audience happens now.
+kehillah_outlook_debug.6 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		save_scope_as = kehillah_suitor_leader
+		if = {
+			limit = {
+				exists = cp:councillor_chancellor
+				exists = var:kehillah_invitation_suitor
+			}
+			cp:councillor_chancellor = { save_scope_as = kehillah_suitor_shtadlan }
+			var:kehillah_invitation_suitor = { save_scope_as = kehillah_invitation_suitor }
+			scope:kehillah_invitation_suitor = { save_scope_value_as = { name = kehillah_dbg_suitor_net value = kehillah_open_door_net_pressure_value } }
+			debug_log_scopes = yes
+			kehillah_seek_invitation_audience_effect = yes
+			debug_log = "kehillah_outlook_debug.6: an audience held"
+		}
+		else = {
+			debug_log = "kehillah_outlook_debug.6: no Shtadlan or no lord being courted"
+		}
+	}
+}
+
+# V36. Console, on a Kehillah leader:
+#   kehillah_outlook_debug.7 -- the Lord's Demands now (kehillah_host_crisis.0001).
+#   kehillah_outlook_debug.8 -- the host's protection multiplier and the
+#                              violence terms, logged.
+kehillah_outlook_debug.7 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		trigger_event = kehillah_host_crisis.0001
+		debug_log = "kehillah_outlook_debug.7: the Lord's Demands fired"
+	}
+}
+kehillah_outlook_debug.8 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		save_scope_value_as = { name = kehillah_dbg_protection value = kehillah_host_protection_mult_value }
+		save_scope_value_as = { name = kehillah_dbg_host_outlook value = kehillah_host_outlook_value }
+		save_scope_value_as = { name = kehillah_dbg_war_stab value = kehillah_bd_war_stability_value }
+		save_scope_value_as = { name = kehillah_dbg_holy_war value = kehillah_bd_holy_war_value }
+		save_scope_value_as = { name = kehillah_dbg_demands_chance value = kehillah_host_demands_chance_value }
+		debug_log_scopes = yes
+		debug_log = "kehillah_outlook_debug.8: protection"
+	}
+}
+
+# V36b. Console, on a Kehillah leader: the Lord's Favour now
+# (kehillah_host_crisis.0002), if a charter term can improve.
+kehillah_outlook_debug.9 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { kehillah_charter_can_improve_trigger = yes }
+			trigger_event = kehillah_host_crisis.0002
+			debug_log = "kehillah_outlook_debug.9: the Lord's Favour fired"
+		}
+		else = {
+			debug_log = "kehillah_outlook_debug.9: no charter term can improve"
+		}
+	}
+}
+
+# V37. Console, on a Kehillah leader: an accusation now.
+kehillah_outlook_debug.10 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		trigger_event = kehillah_accusation.0001
+		debug_log = "kehillah_outlook_debug.10: an accusation raised"
+	}
+}
+
+# V38. Console, on a Kehillah leader: the host's faith's anti-Jewish
+# pressure, logged; and a preacher at the host's court now.
+kehillah_outlook_debug.11 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege.faith ?= {
+			if = {
+				limit = { has_variable = kehillah_faith_pressure }
+				save_scope_value_as = { name = kehillah_dbg_faith_pressure value = var:kehillah_faith_pressure }
+			}
+		}
+		debug_log_scopes = yes
+		debug_log = "kehillah_outlook_debug.11: faith pressure"
+	}
+}
+kehillah_outlook_debug.12 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege ?= { kehillah_court_preaching_yearly_effect = yes }
+		debug_log = "kehillah_outlook_debug.12: preaching tried at the host's court"
+	}
+}
+
+# V38 slice 2. Console, on a Kehillah leader: a disputation (.13) or
+# compelled sermons (.14) now.
+kehillah_outlook_debug.13 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		trigger_event = kehillah_mission.0001
+		debug_log = "kehillah_outlook_debug.13: a disputation summoned"
+	}
+}
+kehillah_outlook_debug.14 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		trigger_event = kehillah_mission.0010
+		debug_log = "kehillah_outlook_debug.14: friars in the synagogue"
+	}
+}
+
+# The Dayyan's Discourse. Console, on a Kehillah leader with a Dayyan:
+# the host's yearly lock is cleared and the discourse runs now.
+kehillah_outlook_debug.15 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		save_scope_as = councillor_liege
+		domicile.domicile_location.county.holder.top_liege ?= {
+			if = {
+				limit = { has_variable = kehillah_discourse_heard }
+				remove_variable = kehillah_discourse_heard
+			}
+		}
+		if = {
+			limit = { exists = cp:councillor_court_chaplain }
+			cp:councillor_court_chaplain = { kehillah_dayyan_discourse_yearly_effect = yes }
+		}
+		else = {
+			debug_log = "kehillah_outlook_debug.15: no Dayyan"
+		}
+	}
+}

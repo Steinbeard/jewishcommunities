@@ -1,0 +1,108 @@
+﻿# =====================================================================
+# EXILES -- V34 section 6, 2026-10-13.
+#   .0001 hidden: an AI exile band arrives where it set out for, and
+#         founds there if the place still welcomes them.
+#   .0003 hidden: backstop -- a year after setting out, if still on the
+#         road, they are brought to the goal and arrive (.0001).
+#   .0002 debug: make root's community expelled exiles now (console).
+# =====================================================================
+namespace = kehillah_exiles
+
+kehillah_exiles.0001 = {
+	type = character_event
+	hidden = yes
+	trigger = { has_variable = kehillah_exiles_from }
+	immediate = {
+		# The end of the road (on_arrival_event, or the .0003 backstop).
+		if = {
+			limit = { has_variable = kehillah_exiles_goal }
+			remove_variable = kehillah_exiles_goal
+		}
+		if = {
+			limit = { has_variable = kehillah_exiles_on_the_road }
+			remove_variable = kehillah_exiles_on_the_road
+		}
+		if = {
+			limit = {
+				exists = location.county
+				location.county = { kehillah_founding_site_trigger = yes }
+			}
+			kehillah_found_community_here_effect = yes
+			debug_log = "kehillah_exiles.0001: exiles arrived and settled"
+		}
+		else = {
+			debug_log = "kehillah_exiles.0001: exiles arrived but the place no longer welcomes them"
+		}
+	}
+}
+
+# Console: event kehillah_exiles.0002 on a Kehillah leader -- his
+# community is driven out now (no seizure), and becomes exiles.
+kehillah_exiles.0002 = {
+	type = character_event
+	hidden = yes
+	trigger = { government_has_flag = government_is_kehillah }
+	immediate = {
+		if = {
+			limit = { exists = domicile.domicile_location.county }
+			set_variable = { name = kehillah_exiles_from value = domicile.domicile_location.county }
+		}
+		save_scope_as = kehillah_exile_leader
+		# Exiles keep their people (live 2026-10-13: Mainz's leader kept 7 of
+		# 41 -- dissolving the community scatters its court). Remember the
+		# community's Jews, and re-attach them to the camp after.
+		every_courtier = {
+			limit = {
+				is_jewish_character_trigger = yes
+				is_imprisoned = no
+			}
+			add_to_list = kehillah_exile_band
+		}
+		kehillah_dissolve_community_effect = yes
+		every_in_list = {
+			list = kehillah_exile_band
+			limit = {
+				is_alive = yes
+				NOT = { is_courtier_of = scope:kehillah_exile_leader }
+			}
+			save_scope_as = kehillah_exile_member
+			scope:kehillah_exile_leader = { add_courtier = scope:kehillah_exile_member }
+		}
+		debug_log = "kehillah_exiles.0002: community dissolved as exiles"
+	}
+}
+
+# Safety net for the exiles' journey (kehillah_exiles_seek_home_effect),
+# every 60 days while they have a goal: if they have stopped at the goal,
+# they arrive; if the road has outlasted kehillah_exiles_on_the_road
+# (~13 months), the camp is brought to the goal and they arrive; else
+# check again later.
+kehillah_exiles.0003 = {
+	type = character_event
+	hidden = yes
+	trigger = {
+		has_variable = kehillah_exiles_from
+		exists = var:kehillah_exiles_goal
+	}
+	immediate = {
+		var:kehillah_exiles_goal = { save_scope_as = kehillah_exiles_backstop_goal }
+		if = {
+			limit = {
+				is_travelling = no
+				location.county ?= scope:kehillah_exiles_backstop_goal
+			}
+			debug_log = "kehillah_exiles.0003: the exiles stand at their goal"
+			trigger_event = kehillah_exiles.0001
+		}
+		else_if = {
+			limit = { NOT = { has_variable = kehillah_exiles_on_the_road } }
+			domicile ?= { move_domicile = scope:kehillah_exiles_backstop_goal.title_province }
+			set_location = scope:kehillah_exiles_backstop_goal.title_province
+			debug_log = "kehillah_exiles.0003: the road took too long; the exiles were brought to their goal"
+			trigger_event = kehillah_exiles.0001
+		}
+		else = {
+			trigger_event = { id = kehillah_exiles.0003 days = 60 }
+		}
+	}
+}

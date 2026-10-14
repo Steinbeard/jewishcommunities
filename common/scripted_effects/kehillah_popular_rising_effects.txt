@@ -1,0 +1,148 @@
+﻿# =====================================================================
+# POPULAR RISINGS AGAINST THE JEWS -- V34 section 4 (docs/spec/v34-
+# outlook-teachings-and-founding.md), 2026-10-13. The Shepherds'
+# Crusades (Pastoureaux, 1251 and 1320), Rintfleisch (1298), the
+# Armleder (1336): popular movements that turned on the Jews.
+#
+# Scope: a Kehillah leader, from the quarterly pulse. If the county his
+# community stands in is held by someone at war with a popular revolt
+# (vanilla's peasant_leader / populist_leader), the revolt's leader may
+# turn it on the Jews -- likelier the worse his outlook on them. He then
+# founds a rite of his own (create_dynamic_rite) teaching Exclusion, and
+# the community suffers the blow once per rising.
+# =====================================================================
+
+kehillah_popular_rising_check_effect = {
+	clear_saved_scope = kehillah_rising_leader
+	domicile.domicile_location.county.holder ?= {
+		random_character_war = {
+			limit = {
+				any_war_attacker = {
+					OR = {
+						has_trait = peasant_leader
+						has_trait = populist_leader
+					}
+				}
+			}
+			random_war_attacker = {
+				limit = {
+					OR = {
+						has_trait = peasant_leader
+						has_trait = populist_leader
+					}
+				}
+				save_scope_as = kehillah_rising_leader
+			}
+		}
+	}
+	if = {
+		limit = {
+			exists = scope:kehillah_rising_leader
+			primary_title = { NOT = { has_variable = kehillah_rising_struck } }
+			scope:kehillah_rising_leader = {
+				OR = {
+					religion = religion:christianity_religion
+					religion = religion:islam_religion
+				}
+				kehillah_outlook_on_jews_value < 10
+			}
+		}
+		random = {
+			chance = {
+				value = kehillah_rising_turn_chance
+				if = {
+					limit = { scope:kehillah_rising_leader = { kehillah_outlook_convinced_trigger = yes } }
+					add = 20
+				}
+				if = {
+					limit = { scope:kehillah_rising_leader = { has_trait = zealous } }
+					add = 10
+				}
+			}
+			kehillah_popular_rising_strike_effect = yes
+		}
+	}
+}
+
+# Scope: the Kehillah leader; scope:kehillah_rising_leader saved.
+kehillah_popular_rising_strike_effect = {
+	save_scope_as = kehillah_rising_victim
+	# The rising's preacher founds his own rite, teaching Exclusion --
+	# once per leader.
+	scope:kehillah_rising_leader = {
+		if = {
+			limit = { NOT = { has_character_flag = kehillah_rising_preacher } }
+			add_character_flag = kehillah_rising_preacher
+			kehillah_shift_outlook_effect = { AMOUNT = -20 }
+			create_dynamic_rite = {
+				save_scope_as = kehillah_rising_rite
+				convert = yes
+				target_divergence = 20
+				include_unknown = no
+				override_tenets_first = no
+			}
+			scope:kehillah_rising_rite ?= {
+				change_rite_doctrine = kehillah_teaching_exclusion
+			}
+			debug_log = "kehillah_popular_rising_strike_effect: a rising's leader founded an Exclusion rite"
+		}
+	}
+	# The blow to the community, scaled by the lord's protection (V36:
+	# kehillah_host_protection_mult_value -- his outlook and the charter's
+	# security term).
+	domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_rising_host }
+	# For the event's text (custom loc can't see saved scopes; loc reads a
+	# character's variables -- live 2026-10-13).
+	if = {
+		limit = { exists = scope:kehillah_rising_host }
+		set_variable = { name = kehillah_rising_host_ref value = scope:kehillah_rising_host }
+	}
+	save_scope_value_as = { name = kehillah_rising_mult value = kehillah_host_protection_mult_value }
+	primary_title = {
+		set_variable = { name = kehillah_rising_struck value = yes years = 5 }
+		set_variable = {
+			name = kehillah_rising_last_stability
+			value = {
+				value = kehillah_rising_stability_loss
+				multiply = scope:kehillah_rising_mult
+			}
+		}
+		set_variable = {
+			name = kehillah_rising_last_prosperity
+			value = {
+				value = kehillah_rising_prosperity_loss
+				multiply = scope:kehillah_rising_mult
+			}
+		}
+	}
+	# A hostile lord's men join the plunder.
+	if = {
+		limit = { kehillah_host_outlook_value <= -40 }
+		primary_title = {
+			change_variable = { name = kehillah_rising_last_prosperity add = kehillah_rising_plunder_prosperity }
+		}
+		scope:kehillah_rising_host ?= { add_gold = kehillah_rising_plunder_gold }
+	}
+	set_variable = { name = kehillah_rising_last_stability value = primary_title.var:kehillah_rising_last_stability }
+	set_variable = { name = kehillah_rising_last_prosperity value = primary_title.var:kehillah_rising_last_prosperity }
+	primary_title = {
+		change_variable = { name = kehillah_var_stability add = var:kehillah_rising_last_stability }
+		change_variable = { name = kehillah_var_prosperity add = var:kehillah_rising_last_prosperity }
+		clamp_variable = { name = kehillah_var_stability min = 0 max = 100000 }
+		clamp_variable = { name = kehillah_var_prosperity min = 0 max = 100000 }
+	}
+	# V38: a rising hardens the faith of the county.
+	domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 3 } }
+	# V36: for a player, an event -- the rising's leader, the lord, and
+	# what the lord did.
+	if = {
+		limit = { is_ai = no }
+		trigger_event = kehillah_host_crisis.0010
+	}
+	kehillah_notify_region_players_effect = {
+		TYPE = msg_kehillah_community_news_bad
+		TITLE = kehillah_news_rising_t
+		DESC = kehillah_news_rising_d
+	}
+	debug_log = "kehillah_popular_rising_strike_effect: a rising struck a community"
+}

@@ -1,0 +1,121 @@
+﻿# =====================================================================
+# SEND OUT SETTLERS -- V34 section 1 (amended 2026-10-13, Daniel: "an
+# overpopulated community's leader can take a decision to encourage
+# someone to take some members and found a new community").
+# =====================================================================
+
+# Scope: a county; scope:kehillah_mother_leader saved. Would its lord
+# take Jewish settlers, and is it free of a community, settled enough,
+# at peace and within reach of the mother community?
+# Scope: a county. Could a Jewish community be founded here at all? One
+# rule for every founding (Daniel 2026-10-13): settlers sent out, an
+# adventurer founding where he stands, exiles resettling. A realm that
+# allows Jewish settlement, near the existing diaspora or invited
+# (Encouraged); settled enough; at peace; not crowding a community.
+kehillah_founding_site_trigger = {
+	# Name the candidate county: inside a community's domicile_location
+	# scope, `prev` is the community title, not this county (live 2026-10-13:
+	# the rule was false for every county on the map).
+	save_temporary_scope_as = kehillah_site_county
+	exists = holder
+	exists = holder.top_liege.primary_title
+	holder = { is_at_war = no }
+	development_level >= kehillah_natural_founding_min_development
+	OR = {
+		faith.religion = religion:christianity_religion
+		faith.religion = religion:islam_religion
+	}
+	holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_allowed_trigger = yes }
+	OR = {
+		holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+		any_in_global_list = {
+			variable = kehillah_registered_communities
+			exists = holder.domicile.domicile_location
+			holder.domicile.domicile_location = {
+				squared_distance = {
+					target = scope:kehillah_site_county.title_province
+					# A Wales away (live 2026-10-13: an Ireland around 19
+					# communities covered most of the map, Krakow and Gyor
+					# included). Settlers still reach an Ireland from their
+					# own mother community (kehillah_settlers_destination_
+					# trigger); farther needs an invitation.
+					value <= squared_distance_small
+				}
+			}
+		}
+	}
+	NOT = {
+		any_in_global_list = {
+			variable = kehillah_registered_communities
+			exists = holder.domicile.domicile_location
+			OR = {
+				holder.domicile.domicile_location.county = scope:kehillah_site_county
+				holder.domicile.domicile_location = {
+					squared_distance = {
+						target = scope:kehillah_site_county.title_province
+						value < kehillah_settlers_min_spacing_squared
+					}
+				}
+			}
+		}
+	}
+}
+
+# Scope: a county; scope:kehillah_mother_leader saved. A founding site
+# within the settlers' reach of their mother community: a nearby realm
+# that allows settlement, or a more distant one that encourages it.
+kehillah_settlers_destination_trigger = {
+	kehillah_founding_site_trigger = yes
+	NOT = { this = scope:kehillah_mother_leader.domicile.domicile_location.county }
+	OR = {
+		title_province = {
+			squared_distance = {
+				target = scope:kehillah_mother_leader.domicile.domicile_location
+				value <= squared_distance_medium
+			}
+		}
+		AND = {
+			holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+			title_province = {
+				squared_distance = {
+					target = scope:kehillah_mother_leader.domicile.domicile_location
+					value <= squared_distance_large
+				}
+			}
+		}
+	}
+}
+
+# Scope: a courtier; scope:kehillah_mother_leader saved. Could he lead
+# the settlers? Not the leader's heir or wife, not a student. The choice
+# offers one of each kind (kehillah_settlers.0002): a Ba'al Bayit, a
+# learned rabbi, a man of the leader's own house.
+kehillah_settlers_leader_candidate_trigger = {
+	is_adult = yes
+	is_male = yes
+	is_imprisoned = no
+	is_ruler = no
+	is_jewish_character_trigger = yes
+	NOT = { has_variable = kehillah_yeshiva_enrolled }
+	NOT = { scope:kehillah_mother_leader.player_heir ?= this }
+	NOT = { is_spouse_of = scope:kehillah_mother_leader }
+	# A younger son may lead (Daniel 2026-10-13: "a member of your
+	# dynasty"); the heir and the leader's wife may not.
+}
+
+# Scope: a courtier; scope:kehillah_mother_leader and list
+# kehillah_settlers_party. Could he go with the settlers as part of the
+# overflow? Not a councillor, the heir, the leader's close family, or a
+# yeshiva student; not already going.
+kehillah_settlers_follower_candidate_trigger = {
+	is_imprisoned = no
+	is_jewish_character_trigger = yes
+	NOT = { is_in_list = kehillah_settlers_party }
+	NOT = { this = scope:kehillah_settlers_leader }
+	NOT = { has_variable = kehillah_yeshiva_enrolled }
+	NOT = { is_councillor = yes }
+	NOT = { scope:kehillah_mother_leader.player_heir ?= this }
+	NOT = { is_close_family_of = scope:kehillah_mother_leader }
+	# A wife is not "close family" to CK3 (live 2026-10-13: Isaac's left).
+	NOT = { is_spouse_of = scope:kehillah_mother_leader }
+}

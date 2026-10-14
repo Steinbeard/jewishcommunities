@@ -1,0 +1,154 @@
+﻿# =====================================================================
+# "Teaching on the Jews" -- reading a rite's teaching. Design: docs/spec/
+# v31-host-teachings-stances-and-factions.md, sections 4 and 5.
+#
+# A rite's doctrine is authoritative when present. A rite without one (a
+# heresy or reformed faith created after game start, or a save begun
+# before V31) falls back by tradition: an Eastern Christian rite to
+# Imperial Law, any other Christian rite to Witness, a Muslim rite to
+# Dhimma. Any other rite has no teaching: V17's neutral case, under
+# which the review keeps its V30 rules and forced conversion needs
+# Banned.
+# =====================================================================
+
+# --- Rite scope ---------------------------------------------------------
+
+kehillah_rite_has_teaching_trigger = {
+	OR = {
+		rite_has_doctrine = kehillah_teaching_witness
+		rite_has_doctrine = kehillah_teaching_separation_mission
+		rite_has_doctrine = kehillah_teaching_exclusion
+		rite_has_doctrine = kehillah_teaching_imperial_law
+		rite_has_doctrine = kehillah_teaching_dhimma
+		rite_has_doctrine = kehillah_teaching_strict_pact
+		rite_has_doctrine = kehillah_teaching_abolition
+	}
+}
+
+# The Eastern Christian rites: the Byzantine legal tradition and the
+# Oriental churches, plus the Eastern heresies. Used for the 1066
+# assignment and the fallback.
+kehillah_rite_eastern_christian_trigger = {
+	OR = {
+		this = rite:byzantine_rite
+		this = rite:georgian_rite
+		this = rite:slavic_rite
+		this = rite:coptic_rite
+		this = rite:antiochian_rite
+		this = rite:ethiopian_rite
+		this = rite:armenian_rite
+		this = rite:nestorian
+		this = rite:iconoclast_rite
+		this = rite:bogomilist_rite
+		this = rite:paulician_rite
+		this = rite:messalian_rite
+	}
+}
+
+kehillah_rite_teaching_witness_trigger = {
+	OR = {
+		rite_has_doctrine = kehillah_teaching_witness
+		AND = {
+			NOT = { kehillah_rite_has_teaching_trigger = yes }
+			rite_religion_tag = christianity_religion
+			NOT = { kehillah_rite_eastern_christian_trigger = yes }
+		}
+	}
+}
+
+kehillah_rite_teaching_imperial_law_trigger = {
+	OR = {
+		rite_has_doctrine = kehillah_teaching_imperial_law
+		AND = {
+			NOT = { kehillah_rite_has_teaching_trigger = yes }
+			kehillah_rite_eastern_christian_trigger = yes
+		}
+	}
+}
+
+kehillah_rite_teaching_dhimma_trigger = {
+	OR = {
+		rite_has_doctrine = kehillah_teaching_dhimma
+		AND = {
+			NOT = { kehillah_rite_has_teaching_trigger = yes }
+			rite_religion_tag = islam_religion
+		}
+	}
+}
+
+# --- Character scope: the host's own rite -------------------------------
+#
+# The three bands the review and the gate read. Exactly one holds for a
+# Christian or Muslim host; none for any other (the neutral case).
+
+# Witness, Imperial Law, Dhimma: protection of life and faith.
+kehillah_teaching_protective_trigger = {
+	exists = rite
+	rite = {
+		OR = {
+			kehillah_rite_teaching_witness_trigger = yes
+			kehillah_rite_teaching_imperial_law_trigger = yes
+			kehillah_rite_teaching_dhimma_trigger = yes
+		}
+	}
+}
+
+# Separation and Mission, Strict Pact: tolerated, but marked and pressed.
+kehillah_teaching_strict_trigger = {
+	exists = rite
+	rite = {
+		OR = {
+			rite_has_doctrine = kehillah_teaching_separation_mission
+			rite_has_doctrine = kehillah_teaching_strict_pact
+		}
+	}
+}
+
+# Exclusion, Abolition: no protected place.
+kehillah_teaching_exclusionary_trigger = {
+	exists = rite
+	rite = {
+		OR = {
+			rite_has_doctrine = kehillah_teaching_exclusion
+			rite_has_doctrine = kehillah_teaching_abolition
+		}
+	}
+}
+
+kehillah_teaching_neutral_trigger = {
+	NOR = {
+		kehillah_teaching_protective_trigger = yes
+		kehillah_teaching_strict_trigger = yes
+		kehillah_teaching_exclusionary_trigger = yes
+	}
+}
+
+# The ceiling (V31 section 4.4): may the AI review take this ruler's
+# realm to Banned? Witness needs a faction ultimatum or a Convinced or
+# Predator ruler, neither built yet, so not today. Imperial Law, Dhimma
+# and the Strict Pact never through the review. Separation and Mission,
+# Exclusion and Abolition may; so may a neutral (non-Abrahamic) host,
+# under V30's rules as before.
+kehillah_teaching_permits_ban_trigger = {
+	OR = {
+		kehillah_teaching_neutral_trigger = yes
+		kehillah_teaching_exclusionary_trigger = yes
+		rite ?= { rite_has_doctrine = kehillah_teaching_separation_mission }
+	}
+}
+
+# May this ruler force a Jew to convert (V31 section 10.1)? Witness,
+# Separation and Mission and Dhimma forbid it; Imperial Law needs a
+# conversion decree (not built yet, so no); the Strict Pact, Exclusion
+# and Abolition allow it. A neutral host may only once his realm bans
+# Jewish settlement ($RECIPIENT$ is the Kehillah leader).
+kehillah_teaching_permits_forced_conversion_trigger = {
+	OR = {
+		kehillah_teaching_exclusionary_trigger = yes
+		rite ?= { rite_has_doctrine = kehillah_teaching_strict_pact }
+		AND = {
+			kehillah_teaching_neutral_trigger = yes
+			$RECIPIENT$ = { kehillah_host_bans_jewish_settlement_trigger = yes }
+		}
+	}
+}

@@ -202,8 +202,36 @@ kehillah_expulsion_depart_effect = {
 	}
 
 	kehillah_expulsion_clear_effect = yes
+	# Exiles (2026-10-13): the leader carries the county he was driven
+	# from; kehillah_departure_finish_effect names his camp for it, and the
+	# Found a Jewish Community decision welcomes them back.
+	if = {
+		limit = { exists = domicile.domicile_location.county }
+		set_variable = { name = kehillah_exiles_from value = domicile.domicile_location.county }
+	}
 	debug_log = "kehillah_expulsion_depart_effect: seizure done, handing over to the dissolution teardown"
+	save_scope_as = kehillah_exile_leader
+	# Exiles keep their people (live 2026-10-13: Mainz's leader kept 7 of
+	# 41 -- dissolving the community scatters its court). Remember the
+	# community's Jews, and re-attach them to the camp after.
+	every_courtier = {
+		limit = {
+			is_jewish_character_trigger = yes
+			is_imprisoned = no
+		}
+		add_to_list = kehillah_exile_band
+	}
 	kehillah_dissolve_community_effect = yes
+	every_in_list = {
+		list = kehillah_exile_band
+		limit = {
+			is_alive = yes
+			NOT = { is_courtier_of = scope:kehillah_exile_leader }
+		}
+		save_scope_as = kehillah_exile_member
+		scope:kehillah_exile_leader = { add_courtier = scope:kehillah_exile_member }
+	}
+
 	debug_log = "kehillah_expulsion_depart_effect: end"
 }
 
@@ -255,7 +283,10 @@ kehillah_policy_ai_review_effect = {
 				primary_title = { kehillah_jewish_settlement_policy_allowed_trigger = yes }
 				AND = {
 					primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes }
-					kehillah_policy_net_pressure_value >= kehillah_policy_review_ban_threshold
+					# V31 section 4.4: the host's teaching must allow Banned at
+					# all, and Exclusion/Abolition lower the threshold.
+					kehillah_teaching_permits_ban_trigger = yes
+					kehillah_policy_net_pressure_value >= kehillah_policy_ban_threshold_value
 					kehillah_policy_restrictive_count_value >= 2
 				}
 			}
@@ -263,6 +294,18 @@ kehillah_policy_ai_review_effect = {
 		kehillah_policy_record_restrictive_reason_effect = yes
 		debug_log = "kehillah_policy_ai_review_effect: restrictive pressure prevails -- lowering one rung"
 		kehillah_lower_jewish_settlement_policy_effect = yes
+	}
+	else_if = {
+		# V31: a ban the pressures would carry, refused by the teaching.
+		# Logged for tuning; the policy stays Discouraged.
+		limit = {
+			NOT = { is_jewish_character_trigger = yes }
+			primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes }
+			NOT = { kehillah_teaching_permits_ban_trigger = yes }
+			kehillah_policy_net_pressure_value >= kehillah_policy_ban_threshold_value
+			kehillah_policy_restrictive_count_value >= 2
+		}
+		debug_log = "kehillah_policy_ai_review_effect: pressure would ban, but this ruler's teaching on the Jews forbids it -- policy unchanged"
 	}
 	else_if = {
 		# WELCOME.
@@ -282,19 +325,31 @@ kehillah_policy_ai_review_effect = {
 # Scope: the host ruler. Records the strongest restrictive pressure.
 kehillah_policy_record_restrictive_reason_effect = {
 	primary_title = { save_scope_as = kehillah_reason_realm }
+	# V31: the zeal and clergy weights now vary with the teaching, so the
+	# reason is the LARGEST pressure, not the first one present (ties go
+	# to the earlier line).
 	if = {
 		limit = {
 			kehillah_policy_pressure_debts_value > 0
 			kehillah_policy_pressure_debts_value >= kehillah_policy_pressure_zeal_value
+			kehillah_policy_pressure_debts_value >= kehillah_policy_pressure_grievance_value
+			kehillah_policy_pressure_debts_value >= kehillah_policy_pressure_clergy_value
 		}
 		scope:kehillah_reason_realm = { set_variable = { name = kehillah_policy_reason value = flag:debts } }
 	}
 	else_if = {
-		limit = { kehillah_policy_pressure_zeal_value > 0 }
+		limit = {
+			kehillah_policy_pressure_zeal_value > 0
+			kehillah_policy_pressure_zeal_value >= kehillah_policy_pressure_grievance_value
+			kehillah_policy_pressure_zeal_value >= kehillah_policy_pressure_clergy_value
+		}
 		scope:kehillah_reason_realm = { set_variable = { name = kehillah_policy_reason value = flag:zeal } }
 	}
 	else_if = {
-		limit = { kehillah_policy_pressure_grievance_value > 0 }
+		limit = {
+			kehillah_policy_pressure_grievance_value > 0
+			kehillah_policy_pressure_grievance_value >= kehillah_policy_pressure_clergy_value
+		}
 		scope:kehillah_reason_realm = { set_variable = { name = kehillah_policy_reason value = flag:grievance } }
 	}
 	else_if = {
