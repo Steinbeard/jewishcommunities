@@ -65,8 +65,31 @@ S11's open question: the popular bands are a mod-side peasant army.
   and refugees.
 
 **Slices:** 0, the engine spike (eight questions, §10), then 1 the Mob, 2 the Crusade, 3 the
-aftermath, and 4 Granada. Spikes 0 and 0b passed live. **Slice 1 (the Mob, one target) built
-2026-10-13; live test pending.**
+aftermath, and 4 Granada. **Status 2026-10-14: slices 0-5 built and live-tested** (details
+and test results in the spec):
+- **The Mob, against one community:**
+  - the elders' hub, with visits that take travel time and show their odds;
+  - the scripted march, the siege of the quarter, and the lord's men;
+  - the pogrom outcome, the ransom, and pressure lines in the tooltips.
+- **The Popular Crusade:**
+  - a Catholic crusade call starts it, and it chains from town to town;
+  - allies do not answer a call to arms on their own.
+- **The aftermath:**
+  - Kiddush ha-Shem, a new tenet, and personal tenets;
+  - the Year of the Decrees and the Memorbuch;
+  - the forced converts' return (petition or quiet return; the Bet Din's ruling).
+- **Granada, 30 December 1066.**
+- **Game rules:** popular crusades, and historical crises at game start.
+- **Accusations** raise a real mob.
+
+**Open:**
+- refugees (via the exiles system);
+- a second, eastern host;
+- early answers during the months of preaching;
+- the V36 rising, still abstract;
+- a soak to tune how often and how hard.
+
+V40 (councils, the Firebrand) is Codex's.
 
 ### Pillar band effects in tooltips — 2026-10-12, Daniel's request
 
