@@ -1,4 +1,4 @@
-**Status:** proposal, 2026-10-13. Daniel asked for it the same day: "a really fleshed out crusades
+﻿**Status:** proposal, 2026-10-13. Daniel asked for it the same day: "a really fleshed out crusades
 event chain that's a harrowing challenge for Ashkenaz communities". It is to be built in slices
 (section 10), starting with an engine spike. Nothing below is built yet.
 
@@ -692,3 +692,26 @@ character interactions."
   - a community that bought the host off is skipped for a year.
 - **The host ends** at its target count (a crusade 4-7, a local mob 1), under 300 men, when its
   leader dies, or when nothing is in range.
+
+## Slice 1c (Daniel, 2026-10-13): the elders' hub and the visits, instead of interactions
+
+Daniel: "I was imagining more of an event menu of things to do and then firing events with that
+character where you try to persuade them." The slice 1b interactions are removed ("Defend the Jews",
+the other side's interaction, stays), and so is the scatter decision.
+
+**The hub, .0100 "The Elders Gather".** It opens from the first two warnings, and again after every
+visit while the host is on the road. It shows what is already won (refuge, condemnation, barricades,
+the families scattered). Each person can be visited once per host, and each visit takes time while
+the host keeps marching:
+
+| Visit | Travel time | Approaches (odds shown) |
+|---|---|---|
+| The county's lord (.0110) | 2-4 days | the charter's promise (refuge); silver (refuge +15); beg him to raise his men |
+| The overlord (.0110) | 6-12 days | the same |
+| The lord's chaplain (.0130) | 2-4 days | Scripture and the Church's law (condemnation); a gift for his church (+15) |
+| The head of the faith (.0130), by letter | 10-20 days | the same |
+| The preacher's camp (.0140) | 1-3 days | silver; more silver (+20); reason with him (2-30%, and a 35% chance of a beating on failure) |
+| The Rosh ha-Shmirah (.0150) | 1 day | barricades (martial x3 + 10: severity -15); arm the young men (martial x2 + prowess: -25, or +10 on failure) |
+
+Scattering into the villages is a hub option. Each audience's text follows the person's outlook:
+warm, indifferent or cold.

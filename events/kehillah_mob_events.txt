@@ -61,6 +61,7 @@ kehillah_mob.0001 = {
 		}
 		custom_tooltip = kehillah_mob_fast_tt
 		custom_tooltip = kehillah_mob_how_to_act_tt
+		trigger_event = kehillah_mob.0100
 	}
 }
 
@@ -87,6 +88,7 @@ kehillah_mob.0002 = {
 	option = {
 		name = kehillah_mob.0002.a
 		custom_tooltip = kehillah_mob_how_to_act_tt
+		trigger_event = kehillah_mob.0100
 	}
 }
 
@@ -369,5 +371,581 @@ kehillah_mob.0020 = {
 	option = {
 		name = kehillah_mob.0020.a
 		add_piety = minor_piety_gain
+	}
+}
+
+# =====================================================================
+# V39 slice 1c (Daniel, 2026-10-13): "an event menu of things to do and
+# then firing events with that character where you try to persuade
+# them." The elders gather (.0100, the hub); each choice sends the leader
+# to someone -- the lord, the overlord, the lord's chaplain, the head of
+# the faith, the preacher, the Rosh ha-Shmirah -- in a scene of its own,
+# after the time it takes to get there; then back to the elders. Each
+# person once per host. The host keeps marching meanwhile. Players only:
+# AI communities answer through kehillah_mob_ai_answers_effect.
+#   .0100 The Elders Gather (the hub)
+#   .0110 Before the lord / the overlord
+#   .0130 Before the churchman (the lord's chaplain, or the head of faith)
+#   .0140 Before the preacher
+#   .0150 With the Rosh ha-Shmirah
+# =====================================================================
+
+# The hub fires only while the host is still on the road.
+scripted_trigger kehillah_mob_hub_open_trigger = {
+	is_ai = no
+	exists = var:kehillah_mob_ref
+	var:kehillah_mob_ref = {
+		is_alive = yes
+		NOT = { has_character_flag = kehillah_mob_at_gates }
+		NOT = { has_character_flag = kehillah_mob_done }
+	}
+}
+
+# Back to the elders, a day later.
+scripted_effect kehillah_mob_back_to_hub_effect = {
+	trigger_event = { id = kehillah_mob.0100 days = 1 }
+}
+
+kehillah_mob.0100 = {
+	type = character_event
+	title = kehillah_mob.0100.t
+	desc = {
+		desc = kehillah_mob.0100.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = { primary_title = { has_variable = kehillah_mob_refuge } }
+				desc = kehillah_mob.0100.desc_refuge
+			}
+			desc = kehillah_mob.0100.desc_none
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { primary_title = { has_variable = kehillah_mob_condemned } }
+				desc = kehillah_mob.0100.desc_condemned
+			}
+			desc = kehillah_mob.0100.desc_none
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { primary_title = { has_variable = kehillah_mob_defended } }
+				desc = kehillah_mob.0100.desc_defended
+			}
+			desc = kehillah_mob.0100.desc_none
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { primary_title = { has_variable = kehillah_mob_scattered } }
+				desc = kehillah_mob.0100.desc_scattered
+			}
+			desc = kehillah_mob.0100.desc_none
+		}
+	}
+	theme = dread
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:kehillah_mob_leader
+		animation = rage
+	}
+	trigger = { kehillah_mob_hub_open_trigger = yes }
+	immediate = {
+		kehillah_mob_event_scopes_effect = yes
+		cp:councillor_marshal ?= { save_scope_as = kehillah_mob_marshal }
+		scope:kehillah_mob_lord.cp:councillor_court_chaplain ?= {
+			if = {
+				limit = { faith = scope:kehillah_mob_leader.faith }
+				save_scope_as = kehillah_mob_chaplain
+			}
+		}
+		primary_title.var:kehillah_mob_refuge ?= { save_scope_as = kehillah_mob_refuge_lord }
+		if = {
+			limit = { exists = scope:kehillah_mob_refuge_lord }
+			set_variable = { name = kehillah_mob_refuge_lord_ref value = scope:kehillah_mob_refuge_lord }
+		}
+	}
+
+	# Ride to the lord's castle.
+	option = {
+		name = kehillah_mob.0100.a
+		trigger = {
+			exists = scope:kehillah_mob_lord
+			NOT = { scope:kehillah_mob_lord = root }
+			primary_title = {
+				NOT = { is_target_in_variable_list = { name = kehillah_mob_asked_refuge target = scope:kehillah_mob_lord } }
+			}
+		}
+		primary_title = { add_to_variable_list = { name = kehillah_mob_asked_refuge target = scope:kehillah_mob_lord } }
+		custom_tooltip = kehillah_mob_travel_lord_tt
+		trigger_event = { id = kehillah_mob.0110 days = { 2 4 } }
+	}
+
+	# Send to the overlord.
+	option = {
+		name = kehillah_mob.0100.b
+		trigger = {
+			exists = scope:kehillah_mob_overlord
+			NOT = { scope:kehillah_mob_overlord = scope:kehillah_mob_lord }
+			primary_title = {
+				NOT = { is_target_in_variable_list = { name = kehillah_mob_asked_refuge target = scope:kehillah_mob_overlord } }
+			}
+		}
+		primary_title = { add_to_variable_list = { name = kehillah_mob_asked_refuge target = scope:kehillah_mob_overlord } }
+		custom_tooltip = kehillah_mob_travel_overlord_tt
+		save_scope_value_as = { name = kehillah_mob_to_overlord value = yes }
+		trigger_event = { id = kehillah_mob.0110 days = { 6 12 } }
+	}
+
+	# Go to the lord's chaplain.
+	option = {
+		name = kehillah_mob.0100.c
+		trigger = {
+			exists = scope:kehillah_mob_chaplain
+			primary_title = {
+				NOT = { is_target_in_variable_list = { name = kehillah_mob_asked_condemn target = scope:kehillah_mob_chaplain } }
+			}
+		}
+		primary_title = { add_to_variable_list = { name = kehillah_mob_asked_condemn target = scope:kehillah_mob_chaplain } }
+		custom_tooltip = kehillah_mob_travel_chaplain_tt
+		trigger_event = { id = kehillah_mob.0130 days = { 2 4 } }
+	}
+
+	# Write to the head of the faith.
+	option = {
+		name = kehillah_mob.0100.d
+		trigger = {
+			exists = scope:kehillah_mob_hof
+			primary_title = {
+				NOT = { is_target_in_variable_list = { name = kehillah_mob_asked_condemn target = scope:kehillah_mob_hof } }
+			}
+		}
+		primary_title = { add_to_variable_list = { name = kehillah_mob_asked_condemn target = scope:kehillah_mob_hof } }
+		custom_tooltip = kehillah_mob_travel_hof_tt
+		save_scope_value_as = { name = kehillah_mob_to_hof value = yes }
+		trigger_event = { id = kehillah_mob.0130 days = { 10 20 } }
+	}
+
+	# Go out to meet the preacher.
+	option = {
+		name = kehillah_mob.0100.e
+		trigger = {
+			primary_title = { NOT = { has_variable = kehillah_mob_tried_treat } }
+		}
+		primary_title = { set_variable = { name = kehillah_mob_tried_treat value = yes } }
+		custom_tooltip = kehillah_mob_travel_preacher_tt
+		trigger_event = { id = kehillah_mob.0140 days = { 1 3 } }
+	}
+
+	# The Rosh ha-Shmirah.
+	option = {
+		name = kehillah_mob.0100.f
+		trigger = {
+			exists = cp:councillor_marshal
+			primary_title = { NOT = { has_variable = kehillah_mob_tried_defence } }
+		}
+		primary_title = { set_variable = { name = kehillah_mob_tried_defence value = yes } }
+		trigger_event = { id = kehillah_mob.0150 days = 1 }
+	}
+
+	# Scatter into the villages.
+	option = {
+		name = kehillah_mob.0100.g
+		trigger = {
+			primary_title = { NOT = { has_variable = kehillah_mob_scattered } }
+		}
+		primary_title = { set_variable = { name = kehillah_mob_scattered value = yes } }
+		custom_tooltip = kehillah_mob_scattered_tt
+		hidden_effect = {
+			random = {
+				chance = 30
+				primary_title = { set_variable = { name = kehillah_mob_scattered_found value = yes } }
+			}
+		}
+		kehillah_mob_back_to_hub_effect = yes
+	}
+
+	# Enough.
+	option = {
+		name = kehillah_mob.0100.h
+		custom_tooltip = kehillah_mob_hub_reopen_tt
+	}
+}
+
+# Before the lord, or the overlord (scope:kehillah_mob_to_overlord).
+kehillah_mob.0110 = {
+	type = character_event
+	title = kehillah_mob.0110.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:kehillah_mob_patron = { kehillah_outlook_on_jews_value >= 15 } }
+				desc = kehillah_mob.0110.desc_warm
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_mob_patron = { kehillah_outlook_on_jews_value <= -15 } }
+				desc = kehillah_mob.0110.desc_cold
+			}
+			desc = kehillah_mob.0110.desc_neutral
+		}
+	}
+	theme = diplomacy
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:kehillah_mob_patron
+		animation = thinking
+	}
+	trigger = { kehillah_mob_hub_open_trigger = yes }
+	immediate = {
+		kehillah_mob_event_scopes_effect = yes
+		save_scope_as = actor
+		if = {
+			limit = {
+				exists = scope:kehillah_mob_to_overlord
+				exists = scope:kehillah_mob_overlord
+			}
+			scope:kehillah_mob_overlord = { save_scope_as = kehillah_mob_patron }
+		}
+		else = {
+			scope:kehillah_mob_lord = { save_scope_as = kehillah_mob_patron }
+		}
+		scope:kehillah_mob_patron = { save_scope_as = recipient }
+	}
+
+	# Remind him of the charter's promise of protection.
+	option = {
+		name = kehillah_mob.0110.a
+		trigger = { primary_title = { NOT = { has_variable = kehillah_mob_refuge } } }
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_ask_refuge_chance_value }
+				desc = kehillah_mob_refuge_granted
+				kehillah_mob_refuge_granted_effect = yes
+			}
+			0 = {
+				modifier = { add = kehillah_mob_ask_refuge_fail_value }
+				desc = kehillah_mob_refuge_refused
+				kehillah_mob_refuge_refused_effect = yes
+			}
+		}
+		kehillah_mob_back_to_hub_effect = yes
+	}
+
+	# Lay silver before him.
+	option = {
+		name = kehillah_mob.0110.b
+		trigger = {
+			primary_title = { NOT = { has_variable = kehillah_mob_refuge } }
+			gold >= medium_gold_value
+		}
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = medium_gold_value
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_ask_refuge_gift_chance_value }
+				desc = kehillah_mob_refuge_granted
+				kehillah_mob_refuge_granted_effect = yes
+			}
+			0 = {
+				modifier = { add = kehillah_mob_ask_refuge_gift_fail_value }
+				desc = kehillah_mob_refuge_refused
+				kehillah_mob_refuge_refused_effect = yes
+			}
+		}
+		kehillah_mob_back_to_hub_effect = yes
+	}
+
+	# Beg him to ride out against them.
+	option = {
+		name = kehillah_mob.0110.c
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_ask_men_chance_value }
+				desc = kehillah_mob_lord_raises_men
+				custom_tooltip = kehillah_mob_lord_raises_men_tt
+				hidden_effect = { kehillah_mob_lord_raises_men_effect = { DEFENDER = scope:kehillah_mob_patron } }
+			}
+			0 = {
+				modifier = { add = kehillah_mob_ask_men_fail_value }
+				desc = kehillah_mob_lord_will_not
+				custom_tooltip = kehillah_mob_lord_will_not_tt
+				scope:kehillah_mob_patron = {
+					hidden_effect = { kehillah_shift_outlook_effect = { AMOUNT = -5 } }
+				}
+			}
+		}
+		kehillah_mob_back_to_hub_effect = yes
+	}
+
+	# Take your leave.
+	option = {
+		name = kehillah_mob.0110.d
+		kehillah_mob_back_to_hub_effect = yes
+	}
+}
+
+# Before the churchman: the lord's chaplain, or (scope:kehillah_mob_to_hof)
+# the head of the faith.
+kehillah_mob.0130 = {
+	type = character_event
+	title = kehillah_mob.0130.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:kehillah_mob_to_hof }
+				desc = kehillah_mob.0130.desc_hof
+			}
+			desc = kehillah_mob.0130.desc_chaplain
+		}
+	}
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:kehillah_mob_cleric
+		animation = thinking
+	}
+	trigger = { kehillah_mob_hub_open_trigger = yes }
+	immediate = {
+		kehillah_mob_event_scopes_effect = yes
+		save_scope_as = actor
+		if = {
+			limit = {
+				exists = scope:kehillah_mob_to_hof
+				exists = scope:kehillah_mob_hof
+			}
+			scope:kehillah_mob_hof = { save_scope_as = kehillah_mob_cleric }
+		}
+		else = {
+			scope:kehillah_mob_lord.cp:councillor_court_chaplain ?= { save_scope_as = kehillah_mob_cleric }
+		}
+		scope:kehillah_mob_cleric ?= { save_scope_as = recipient }
+	}
+
+	# Argue from Scripture and the Church's own law.
+	option = {
+		name = kehillah_mob.0130.a
+		trigger = { exists = scope:kehillah_mob_cleric }
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_ask_condemn_chance_value }
+				desc = kehillah_mob_condemned
+				custom_tooltip = kehillah_mob_condemned_tt
+				hidden_effect = { kehillah_mob_condemned_effect = yes }
+			}
+			0 = {
+				modifier = { add = kehillah_mob_ask_condemn_fail_value }
+				desc = kehillah_mob_not_condemned
+				custom_tooltip = kehillah_mob_not_condemned_tt
+			}
+		}
+		kehillah_mob_back_to_hub_effect = yes
+	}
+
+	# Offer a gift for his church.
+	option = {
+		name = kehillah_mob.0130.b
+		trigger = {
+			exists = scope:kehillah_mob_cleric
+			gold >= medium_gold_value
+		}
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = medium_gold_value
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_ask_condemn_gift_chance_value }
+				desc = kehillah_mob_condemned
+				custom_tooltip = kehillah_mob_condemned_tt
+				hidden_effect = { kehillah_mob_condemned_effect = yes }
+			}
+			0 = {
+				modifier = { add = kehillah_mob_ask_condemn_gift_fail_value }
+				desc = kehillah_mob_not_condemned
+				custom_tooltip = kehillah_mob_not_condemned_tt
+			}
+		}
+		kehillah_mob_back_to_hub_effect = yes
+	}
+
+	# Take your leave.
+	option = {
+		name = kehillah_mob.0130.c
+		kehillah_mob_back_to_hub_effect = yes
+	}
+}
+
+# Before the preacher, in his camp.
+kehillah_mob.0140 = {
+	type = character_event
+	title = kehillah_mob.0140.t
+	desc = kehillah_mob.0140.desc
+	theme = dread
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+	right_portrait = {
+		character = scope:kehillah_mob_leader
+		animation = rage
+	}
+	trigger = { kehillah_mob_hub_open_trigger = yes }
+	immediate = {
+		kehillah_mob_event_scopes_effect = yes
+		save_scope_as = actor
+		scope:kehillah_mob_leader = { save_scope_as = recipient }
+	}
+
+	# Offer silver.
+	option = {
+		name = kehillah_mob.0140.a
+		trigger = { gold >= kehillah_mob_treat_cost_value }
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = kehillah_mob_treat_cost_value
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_treat_chance_value }
+				desc = kehillah_mob_bribe_taken
+				custom_tooltip = kehillah_mob_bribe_taken_tt
+				hidden_effect = { scope:kehillah_mob_leader = { kehillah_mob_bought_off_effect = yes } }
+			}
+			0 = {
+				modifier = { add = kehillah_mob_treat_fail_value }
+				desc = kehillah_mob_bribe_kept
+				custom_tooltip = kehillah_mob_bribe_kept_tt
+				kehillah_mob_back_to_hub_effect = yes
+			}
+		}
+	}
+
+	# Offer half as much again.
+	option = {
+		name = kehillah_mob.0140.b
+		trigger = { gold >= kehillah_mob_treat_more_cost_value }
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = kehillah_mob_treat_more_cost_value
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_treat_more_chance_value }
+				desc = kehillah_mob_bribe_taken
+				custom_tooltip = kehillah_mob_bribe_taken_tt
+				hidden_effect = { scope:kehillah_mob_leader = { kehillah_mob_bought_off_effect = yes } }
+			}
+			0 = {
+				modifier = { add = kehillah_mob_treat_more_fail_value }
+				desc = kehillah_mob_bribe_kept
+				custom_tooltip = kehillah_mob_bribe_kept_tt
+				kehillah_mob_back_to_hub_effect = yes
+			}
+		}
+	}
+
+	# Reason with him: a long chance, and his men may turn on you.
+	option = {
+		name = kehillah_mob.0140.c
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_reason_chance_value }
+				desc = kehillah_mob_reason_heard
+				custom_tooltip = kehillah_mob_reason_heard_tt
+				hidden_effect = { scope:kehillah_mob_leader = { kehillah_mob_bought_off_effect = yes } }
+			}
+			0 = {
+				modifier = { add = kehillah_mob_reason_fail_value }
+				desc = kehillah_mob_reason_scorned
+				custom_tooltip = kehillah_mob_reason_scorned_tt
+				random = {
+					chance = 35
+					increase_wounds_effect = { REASON = fight }
+				}
+				kehillah_mob_back_to_hub_effect = yes
+			}
+		}
+	}
+
+	# Leave before his men turn on you.
+	option = {
+		name = kehillah_mob.0140.d
+		kehillah_mob_back_to_hub_effect = yes
+	}
+}
+
+# With the Rosh ha-Shmirah.
+kehillah_mob.0150 = {
+	type = character_event
+	title = kehillah_mob.0150.t
+	desc = kehillah_mob.0150.desc
+	theme = martial
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:kehillah_mob_marshal
+		animation = personality_bold
+	}
+	trigger = {
+		kehillah_mob_hub_open_trigger = yes
+		exists = cp:councillor_marshal
+	}
+	immediate = {
+		kehillah_mob_event_scopes_effect = yes
+		cp:councillor_marshal ?= { save_scope_as = kehillah_mob_marshal }
+	}
+
+	# Barricade the streets.
+	option = {
+		name = kehillah_mob.0150.a
+		trigger = { gold >= minor_gold_value }
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = minor_gold_value
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_defence_chance_value }
+				desc = kehillah_mob_defended
+				custom_tooltip = kehillah_mob_defended_tt
+				primary_title = { set_variable = { name = kehillah_mob_defended value = yes } }
+			}
+			0 = {
+				modifier = { add = kehillah_mob_defence_fail_value }
+				desc = kehillah_mob_not_defended
+				custom_tooltip = kehillah_mob_not_defended_tt
+			}
+		}
+		kehillah_mob_back_to_hub_effect = yes
+	}
+
+	# Arm the young men: more to gain, more to lose.
+	option = {
+		name = kehillah_mob.0150.b
+		trigger = { gold >= minor_gold_value }
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = minor_gold_value
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_arm_chance_value }
+				desc = kehillah_mob_armed
+				custom_tooltip = kehillah_mob_armed_tt
+				primary_title = { set_variable = { name = kehillah_mob_armed value = yes } }
+			}
+			0 = {
+				modifier = { add = kehillah_mob_arm_fail_value }
+				desc = kehillah_mob_armed_failed
+				custom_tooltip = kehillah_mob_armed_failed_tt
+				primary_title = { set_variable = { name = kehillah_mob_armed_failed value = yes } }
+			}
+		}
+		kehillah_mob_back_to_hub_effect = yes
+	}
+
+	# Not yet.
+	option = {
+		name = kehillah_mob.0150.c
+		primary_title = { remove_variable = kehillah_mob_tried_defence }
+		kehillah_mob_back_to_hub_effect = yes
 	}
 }
