@@ -316,7 +316,23 @@ kehillah_mob_tick_effect = {
 		}
 		# --- At the gates: the siege counts down.
 		else = {
-			change_variable = { name = kehillah_mob_siege_days add = -4 }
+			# While an army at war with the host holds the town (the lord's
+			# men, a player defender), the siege does not advance.
+			if = {
+				limit = {
+					NOT = {
+						scope:kehillah_mob_here ?= {
+							any_army_in_location = {
+								army_owner ?= { is_at_war_with = scope:kehillah_mob_leader }
+							}
+						}
+					}
+				}
+				change_variable = { name = kehillah_mob_siege_days add = -4 }
+			}
+			else = {
+				debug_log = "kehillah_mob_tick_effect: defenders hold the town; the siege waits"
+			}
 			# A lord sheltering the Jews may give them up (Worms, Mainz).
 			if = {
 				limit = { scope:kehillah_mob_victim_title = { has_variable = kehillah_mob_refuge } }
@@ -883,12 +899,34 @@ kehillah_mob_lord_raises_men_effect = {
 		scope:kehillah_mob_defender = {
 			spawn_army = {
 				name = kehillah_mob_defenders_name
+				# Fewer than the host, but soldiers: live 2026-10-14, 2865
+				# levies alone were wiped out by a 3820-man host. Half the
+				# host in levies (halved again if they will not march), and a
+				# core of armoured foot and light horse that does not desert.
 				levies = {
 					value = scope:kehillah_mob_leader.var:kehillah_mob_size
-					multiply = 0.75
+					multiply = 0.5
 					if = {
 						limit = { scope:kehillah_mob_desert = 1 }
 						multiply = 0.5
+					}
+				}
+				men_at_arms = {
+					type = armored_footmen
+					stacks = {
+						value = scope:kehillah_mob_leader.var:kehillah_mob_size
+						divide = 600
+						round = yes
+						min = 2
+					}
+				}
+				men_at_arms = {
+					type = light_horsemen
+					stacks = {
+						value = scope:kehillah_mob_leader.var:kehillah_mob_size
+						divide = 1000
+						round = yes
+						min = 1
 					}
 				}
 				location = scope:kehillah_mob_victim_town
