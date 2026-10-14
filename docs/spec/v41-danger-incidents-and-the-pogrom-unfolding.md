@@ -472,3 +472,53 @@ raises a mob of 1500 at severity 55 (`kehillah_rising_mob_size`, `_severity`).
   - a paid option greyed out for lack of gold;
   - the Greatness change from a burning.
 
+## Soak test, 2026-10-14: 50 years from Worms 1066
+
+**Run:** 1066 to 1116 in 1h40m, with no crash. The player stayed a Kehillah leader through three
+successions. debug.log stopped taking script lines at about 27 MB (around 1098), so the counts
+cover 32 years.
+
+**Incidents:** 72 rolls across 21 communities, about 1.1 per community per decade:
+
+| Kind | Count |
+|---|---|
+| a mob | 24 |
+| an accusation | 21 |
+| the badge | 12 |
+| a disputation | 7 |
+| friars in the synagogue | 6 |
+| the Talmud on trial | 1 |
+| Holy Week | 1 |
+
+Worms had 4. Jerusalem had 9, Mahdia 7, and Baghdad and Granada 5 each, most of them mobs.
+
+**Violence:** 38 mobs and 37 pogroms; 37 of 39 mob wars were won by the mob. That is a pogrom per
+community about every 17 years, two to three times the historical rate.
+
+**Danger at Worms:** 0 at the start, then 36, 45 and 32 (during the lull after the 1096 decrees).
+
+**Changes made for this:**
+- **The director's "a mob by itself"** has a 15-year cooldown per community. A "only talk" branch
+  (weight 20) fills a quarter when nothing else fits. With the other incidents on cooldown, every
+  roll under a Muslim host had fallen to a mob.
+- **An accusation's violence** becomes a mob siege only at `kehillah_accusation_mob_chance_value`,
+  25 + danger / 2, from 15 to 75. Otherwise it is a riot in the street: V37's blow, restored as
+  `kehillah_accusation_riot_effect`, with a possible martyr. The roll is in the hidden
+  `kehillah_accusation.0003`.
+- **The HUD's "Your host"** read a host who had died, until the next refresh. That produced 11,400
+  "doesn't support variables" errors. The widget now hides for a dead host, and the outlook's
+  variable terms check `is_alive`.
+- **`kehillah_bd_court_jews_value`** walks its location chain step by step.
+- **`kehillah_bd_loans_greatness_value`** no longer counts defaulted debtors, who are left in the
+  list by design.
+
+**Errors outside V41, not fixed here:**
+- `kehillah_host_arrest_triggers.txt:54`, a null target title (163 errors);
+- `kehillah_pool_repopulation_patch.txt` lines 55, 80 and 90, a null `capital_province` (186);
+- `kehillah_on_actions.txt:931`, `scope:killer` undefined on death (4);
+- the book artifact names `[creator.GetFirstNameNoTooltip]` (about one per book);
+- duplicate `SUCCESSION_EVENT_WINDOW_DEAD_OUTRO_*` loc keys.
+
+**Next soak:** rerun after these changes. Compare the mob count and the share of mobs among
+incidents.
+
