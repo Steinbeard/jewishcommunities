@@ -120,37 +120,37 @@ kehillah_council_night_watch_pct_value = {
 	round = yes
 }
 
-# --- Dayyan: the Dayyan's Discourse (task_kehillah_discourse_at_court),
-# 2026-10-13. A skill check: (Learning + Diplomacy - the host's
-# difficulty) x 2, 0 to 50, a percent each year. Scope: the Dayyan.
-# A Dayyan of 14 + 7 moves a count 22% of years, a duke 12%, a king and
-# an emperor never; a great sage of 25 + 10 moves a count 50%, a duke
-# 40%, a king 26%, an emperor 10%.
-kehillah_discourse_max_chance = 50
-kehillah_discourse_outlook = 2
+# --- Shtadlan: the yearly audience (in task_kehillah_petition_host),
+# 2026-10-13; first built as the Dayyan's Discourse. A skill check:
+# (Diplomacy x 2 - the host's standing) x 2, 0 to 50, a percent each year.
+# Scope: the Shtadlan. Diplomacy 12 moves a count 28% of years, a duke
+# 18%, a king 4%, an emperor never; Diplomacy 18 moves a count 50%, a duke
+# 50%, a king 28%, an emperor 12%.
+kehillah_audience_max_chance = 50
+kehillah_audience_outlook = 2
 
-kehillah_discourse_yearly_chance_value = {
+kehillah_audience_yearly_chance_value = {
 	value = 0
 	if = {
 		limit = {
 			exists = employer.domicile.domicile_location.county.holder.top_liege
 		}
-		add = learning
 		add = diplomacy
-		subtract = employer.domicile.domicile_location.county.holder.top_liege.kehillah_discourse_difficulty_value
+		multiply = 2
+		subtract = employer.domicile.domicile_location.county.holder.top_liege.kehillah_audience_difficulty_value
 		multiply = 2
 	}
 	min = 0
-	max = kehillah_discourse_max_chance
+	max = kehillah_audience_max_chance
 	round = yes
 }
-kehillah_discourse_fail_chance_value = {
+kehillah_audience_fail_chance_value = {
 	value = 100
-	subtract = kehillah_discourse_yearly_chance_value
+	subtract = kehillah_audience_yearly_chance_value
 }
 
 # Scope: the host. His rank, his faith's teaching, his zeal.
-kehillah_discourse_difficulty_value = {
+kehillah_audience_difficulty_value = {
 	value = 10
 	if = {
 		limit = { highest_held_title_tier >= tier_empire }
@@ -175,5 +175,69 @@ kehillah_discourse_difficulty_value = {
 	if = {
 		limit = { has_trait = zealous }
 		add = 5
+	}
+}
+
+# --- Dayyan: A Learned Exchange (task_kehillah_learned_exchange),
+# 2026-10-13. A learning check against the county faith's teaching:
+# (Learning x 2 - its standing) x 1.5, 0 to 50, a percent each year.
+# Scope: the Dayyan. Learning 23: a protective faith 39%, a strict one
+# 24%, an exclusionary one 9%. Learning 15: 15%, 0, 0.
+kehillah_exchange_max_chance = 50
+kehillah_exchange_tension_years = 10
+kehillah_faith_goodwill_yearly_cap = 3
+
+kehillah_exchange_yearly_chance_value = {
+	value = 0
+	if = {
+		limit = {
+			exists = employer.domicile.domicile_location.county.faith
+			employer.domicile.domicile_location.county.faith = {
+				NOT = { religion = religion:judaism_religion }
+			}
+		}
+		add = learning
+		multiply = 2
+		subtract = employer.domicile.domicile_location.county.faith.kehillah_exchange_difficulty_value
+		multiply = 1.5
+	}
+	min = 0
+	max = kehillah_exchange_max_chance
+	round = yes
+}
+kehillah_exchange_fail_chance_value = {
+	value = 100
+	subtract = kehillah_exchange_yearly_chance_value
+}
+
+# Scope: a faith. Its main rite's teaching; +10 while it wages a great
+# holy war.
+kehillah_exchange_difficulty_value = {
+	value = 20
+	if = {
+		limit = {
+			main_rite = {
+				OR = {
+					rite_has_doctrine = kehillah_teaching_exclusion
+					rite_has_doctrine = kehillah_teaching_abolition
+				}
+			}
+		}
+		value = 40
+	}
+	else_if = {
+		limit = {
+			main_rite = {
+				OR = {
+					rite_has_doctrine = kehillah_teaching_separation_mission
+					rite_has_doctrine = kehillah_teaching_strict_pact
+				}
+			}
+		}
+		value = 30
+	}
+	if = {
+		limit = { exists = great_holy_war }
+		add = 10
 	}
 }

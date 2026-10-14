@@ -102,6 +102,16 @@ kehillah_rite_teaching_yearly_effect = {
 			}
 		}
 	}
+	# 2026-10-13: goodwill from learned exchanges decays by a fifth a year.
+	if = {
+		limit = {
+			this = faith.main_rite
+			faith = { has_variable = kehillah_faith_goodwill }
+		}
+		faith = {
+			change_variable = { name = kehillah_faith_goodwill multiply = 0.8 }
+		}
+	}
 	if = {
 		limit = {
 			this = faith.main_rite
@@ -150,6 +160,11 @@ kehillah_rite_teaching_yearly_effect = {
 				faith = {
 					has_variable = kehillah_faith_pressure
 					var:kehillah_faith_pressure >= 4
+					# 2026-10-13: pressure nets against goodwill.
+					OR = {
+						NOT = { has_variable = kehillah_faith_goodwill }
+						var:kehillah_faith_pressure > var:kehillah_faith_goodwill
+					}
 				}
 				scope:kehillah_teaching_head = { NOT = { kehillah_outlook_protector_trigger = yes } }
 				NOR = {
@@ -160,6 +175,10 @@ kehillah_rite_teaching_yearly_effect = {
 			random = {
 				chance = {
 					value = faith.var:kehillah_faith_pressure
+					if = {
+						limit = { faith = { has_variable = kehillah_faith_goodwill } }
+						subtract = faith.var:kehillah_faith_goodwill
+					}
 					divide = 4
 				}
 				kehillah_rite_teaching_stricter_effect = yes
@@ -178,9 +197,53 @@ kehillah_rite_teaching_yearly_effect = {
 				}
 			}
 			random = {
-				chance = kehillah_teaching_yearly_chance
+				chance = {
+					value = kehillah_teaching_yearly_chance
+					# 2026-10-13: goodwill helps a protector.
+					if = {
+						limit = { faith = { has_variable = kehillah_faith_goodwill } }
+						add = {
+							value = faith.var:kehillah_faith_goodwill
+							divide = 4
+						}
+					}
+				}
 				kehillah_rite_teaching_gentler_effect = yes
 				kehillah_rite_teaching_changed_effect = yes
+			}
+		}
+		# 2026-10-13: goodwill alone can soften the teaching (the mirror of
+		# pressure), unless the head is Convinced. Chance (goodwill -
+		# pressure) / 4.
+		else_if = {
+			limit = {
+				faith = {
+					has_variable = kehillah_faith_goodwill
+					var:kehillah_faith_goodwill >= kehillah_faith_goodwill_threshold
+					OR = {
+						NOT = { has_variable = kehillah_faith_pressure }
+						var:kehillah_faith_goodwill > var:kehillah_faith_pressure
+					}
+				}
+				scope:kehillah_teaching_head = { NOT = { kehillah_outlook_convinced_trigger = yes } }
+				NOR = {
+					rite_has_doctrine = kehillah_teaching_witness
+					rite_has_doctrine = kehillah_teaching_imperial_law
+					rite_has_doctrine = kehillah_teaching_dhimma
+				}
+			}
+			random = {
+				chance = {
+					value = faith.var:kehillah_faith_goodwill
+					if = {
+						limit = { faith = { has_variable = kehillah_faith_pressure } }
+						subtract = faith.var:kehillah_faith_pressure
+					}
+					divide = 4
+				}
+				kehillah_rite_teaching_gentler_effect = yes
+				kehillah_rite_teaching_changed_effect = yes
+				debug_log = "kehillah_rite_teaching_yearly_effect: goodwill softened the teaching"
 			}
 		}
 	}
