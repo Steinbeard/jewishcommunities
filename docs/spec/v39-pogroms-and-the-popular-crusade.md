@@ -495,3 +495,24 @@ Each is reversible:
 - **Forced converts' return** needs a ruler's consent.
 - **Two game rules** (crusade pogroms; historical crises at game start) and a depiction rule.
 - **Kiddush ha-Shem** is a new tenet. Asceticism is vanilla's.
+
+## Spike 0 results (2026-10-13, live, commit `4969686`)
+
+| Question | Result |
+|---|---|
+| Is Worms's province its county's capital? | Yes. Its holder is **the Emperor himself** (Heinrich holds c_worms), so the count-war design would have been a war on the Emperor. That is moot now the war is on the community. |
+| S1: can a created character be put at war? | **Fails as written:** "Scope character is not a ruler, cannot start a war". It works once he holds a dynamic landless title (vanilla's peasant-revolt pattern), now `kehillah_mob_make_ruler_effect`. |
+| S2: does the army spawn, and go to the target? | It **spawns** and shows on the map. The **AI does not go to the target.** It sieges the nearest enemy holdings and roams away (Coburg to Saxony to Silesia to Bohemia), shrinking by attrition until it is gone and the war ends in defeat, within 3 to 24 months. The march must be scripted: `kehillah_mob_step_toward_effect` moves it a county at a time. |
+| S3: does `on_army_enter_province` see it? | **Yes,** once per province. |
+| S4: can wars be chained? | **Yes.** An attacker victory keeps the army, and it joins the next war. |
+| S5: does the camera pan to it? | **Yes.** |
+| S6: can loc name its place and leader? | **Yes,** from a character variable (`Var(...).Province`, `.Char`) or a saved scope. |
+| S7: does the army go when its leader dies? | **Yes.** |
+| S8: can a personal tenet be set? | **Yes:** `force_set_personal_tenet` works on a Kehillah leader. |
+
+**A crash.** One heap-corruption crash (0xc0000374) came about 30 seconds after a mob's army was
+destroyed, at high speed. It was not reproduced in a second run through a similar death. Spike 0b
+includes a stress test (`kehillah_mob_spike.15`).
+
+**Load errors to fix:** the CB needed `war_name` and `on_invalidated_desc`. Both are fixed in
+`274d816`.
