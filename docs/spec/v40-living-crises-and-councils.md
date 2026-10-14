@@ -1,4 +1,6 @@
-**Status:** proposal, 2026-10-13. Daniel asked for it the same day. Nothing below is built yet.
+**Status:** proposal dated 2026-10-13; slice 1 built and source-checked 2026-10-14,
+live verification pending. Slices 2–5 remain proposals. The dated slice-1 addendum is
+[the implementation note](../implementation/kehillah-recent-incidents.md).
 - **Amends:**
   - [V38](v38-anti-jewish-pressure.md): the faith's pressure and goodwill, and the silent yearly
     hardening;

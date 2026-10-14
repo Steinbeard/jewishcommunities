@@ -1,0 +1,87 @@
+﻿# V40 slice 1. Console-only probes, never subscribed to an on_action.
+# .1 reports the host faith's HUD values. .2 checks the yearly wrapper
+# and counter clamps, then restores the original counters (including
+# absence). Low seeds do not cross the head-of-faith mood threshold.
+namespace = kehillah_incidents_debug
+
+kehillah_incidents_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege ?= {
+			save_scope_value_as = { name = kehillah_dbg_incidents value = kehillah_faith_recent_incidents_value }
+			save_scope_value_as = { name = kehillah_dbg_goodwill value = kehillah_faith_goodwill_value }
+			debug_log_scopes = yes
+			debug_log = "kehillah_incidents_debug.1: host faith HUD values"
+		}
+	}
+}
+
+kehillah_incidents_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege ?= {
+			save_scope_as = kehillah_incidents_debug_host
+			faith = {
+				save_scope_value_as = { name = kehillah_dbg_had_incidents value = 0 }
+				save_scope_value_as = { name = kehillah_dbg_had_goodwill value = 0 }
+				if = {
+					limit = { has_variable = kehillah_faith_pressure }
+					save_scope_value_as = { name = kehillah_dbg_had_incidents value = 1 }
+					save_scope_value_as = { name = kehillah_dbg_old_incidents value = var:kehillah_faith_pressure }
+				}
+				if = {
+					limit = { has_variable = kehillah_faith_goodwill }
+					save_scope_value_as = { name = kehillah_dbg_had_goodwill value = 1 }
+					save_scope_value_as = { name = kehillah_dbg_old_goodwill value = var:kehillah_faith_goodwill }
+				}
+				set_variable = { name = kehillah_faith_pressure value = 10 }
+				set_variable = { name = kehillah_faith_goodwill value = 5 }
+				main_rite = { kehillah_rite_teaching_yearly_effect = yes }
+				if = {
+					limit = { var:kehillah_faith_pressure = 8 var:kehillah_faith_goodwill = 4 }
+					debug_log = "kehillah_incidents_debug.2: PASS yearly decay 10/5 to 8/4"
+				}
+				else = { debug_log = "kehillah_incidents_debug.2: FAIL yearly decay" }
+				set_variable = { name = kehillah_faith_pressure value = 0 }
+				kehillah_faith_pressure_add_effect = { AMOUNT = 4 }
+				if = {
+					limit = { var:kehillah_faith_pressure = 4 }
+					debug_log = "kehillah_incidents_debug.2: PASS pogrom weight 4"
+				}
+				else = { debug_log = "kehillah_incidents_debug.2: FAIL pogrom weight" }
+				kehillah_faith_pressure_add_effect = { AMOUNT = -10 }
+				if = {
+					limit = { var:kehillah_faith_pressure = 0 }
+					debug_log = "kehillah_incidents_debug.2: PASS lower clamp 0"
+				}
+				else = { debug_log = "kehillah_incidents_debug.2: FAIL lower clamp" }
+				kehillah_faith_pressure_add_effect = { AMOUNT = 200 }
+				if = {
+					limit = { var:kehillah_faith_pressure = 100 }
+					debug_log = "kehillah_incidents_debug.2: PASS upper clamp 100"
+				}
+				else = { debug_log = "kehillah_incidents_debug.2: FAIL upper clamp" }
+				remove_variable = kehillah_faith_pressure
+				remove_variable = kehillah_faith_goodwill
+				scope:kehillah_incidents_debug_host = {
+					if = {
+						limit = { kehillah_faith_recent_incidents_value = 0 kehillah_faith_goodwill_value = 0 }
+						debug_log = "kehillah_incidents_debug.2: PASS absent HUD values 0/0"
+					}
+					else = { debug_log = "kehillah_incidents_debug.2: FAIL absent HUD values" }
+				}
+				if = {
+					limit = { scope:kehillah_dbg_had_incidents = 1 }
+					set_variable = { name = kehillah_faith_pressure value = scope:kehillah_dbg_old_incidents }
+				}
+				if = {
+					limit = { scope:kehillah_dbg_had_goodwill = 1 }
+					set_variable = { name = kehillah_faith_goodwill value = scope:kehillah_dbg_old_goodwill }
+				}
+				debug_log = "kehillah_incidents_debug.2: original counters restored"
+			}
+		}
+	}
+}

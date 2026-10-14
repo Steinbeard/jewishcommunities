@@ -39,6 +39,20 @@ event chains with variety, not pop-ups fired by statistics.
 4. Allies.
 5. Variants for the V36 events.
 
+**Slice 1, 2026-10-14:** built and source/Tiger-checked; live verification pending.
+Your Host now shows its faith's Recent incidents and Goodwill, retaining the existing
+save variables and yearly fifth-decay. A completed pogrom adds 4 incidents to its county
+faith. The silent annual teaching rolls are removed, including their softening mirror;
+the Learned Exchange tooltip no longer promises annual softening. The existing DLC
+council debate remains. The non-DLC Council/Caliph route is slice 2, not yet built;
+no council threshold is advertised until it exists. See
+[the implementation addendum](docs/implementation/kehillah-recent-incidents.md).
+The existing running game did not register the new debug-event namespace; no counter
+or tooltip assertion passed. It was left paused with its save untouched. First next
+step is a fresh-boot slice-1 check, then slice 2 (Council/Caliph); see
+[the actual test log](docs/testing/2026-10-14-recent-incidents-live-test-log.md).
+No lower TODO item was selected for this run.
+
 ### V39 Pogroms and the popular crusade — 2026-10-13, Daniel's request
 
 Spec: [v39](docs/spec/v39-pogroms-and-the-popular-crusade.md). It answers V22 feature 4 and closes
