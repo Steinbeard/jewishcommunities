@@ -1,0 +1,318 @@
+﻿namespace = kehillah_mob_spike
+
+# =====================================================================
+# V39 slice 0 -- the Mob engine spike (docs/spec/v39-pogroms-and-the-
+# popular-crusade.md section 10), 2026-10-13. Debug only: these answer the
+# engine questions S1-S8 before the Mob is built on them.
+# =====================================================================
+#
+# Console, as a Kehillah leader:
+#   .1  raise a mob 100-200 map pixels away against your county's lord
+#       (S1 war, S2 army, the capital question, the distance value)
+#   .2  report the mob: at war, armies, size, location, siege, moving
+#   .3  end its war as an attacker victory, then a new war on the same
+#       lord; .2 again two days later (S4 chaining)
+#   .4  the leader vanishes; two days later, is his army gone? (S7)
+#   .5  an event whose option pans the camera to the mob (S5)
+#   .6  an event that names the mob's province from a variable and a
+#       saved scope (S6)
+#   .8  personal tenets: asceticism known and set on you (S8)
+
+kehillah_mob_spike.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location = { save_scope_as = kms_target_province }
+		scope:kms_target_province.county = { save_scope_as = kms_target_county }
+		scope:kms_target_county.holder = { save_scope_as = kms_target_lord }
+		if = {
+			limit = { scope:kms_target_province = scope:kms_target_county.title_province }
+			debug_log = "kehillah_mob_spike.1: the community's province IS its county's capital"
+		}
+		else = {
+			debug_log = "kehillah_mob_spike.1: the community's province is NOT its county's capital"
+		}
+		random_province = {
+			limit = {
+				has_holding = yes
+				exists = county.holder
+				NOT = { county.holder = scope:kms_target_lord }
+				squared_distance = { target = scope:kms_target_province value >= 10000 }
+				squared_distance = { target = scope:kms_target_province value <= 40000 }
+			}
+			save_scope_as = kms_spawn
+		}
+		if = {
+			limit = { NOT = { exists = scope:kms_spawn } }
+			debug_log = "kehillah_mob_spike.1: no spawn province found"
+		}
+		else = {
+			save_scope_value_as = {
+				name = kms_distance
+				value = "scope:kms_spawn.squared_distance(scope:kms_target_province)"
+			}
+			create_character = {
+				age = 38
+				gender = male
+				faith = scope:kms_target_lord.faith
+				culture = scope:kms_spawn.county.culture
+				location = scope:kms_spawn
+				dynasty = none
+				trait = zealous
+				trait = wrathful
+				martial = 10
+				prowess = 14
+				diplomacy = 6
+				intrigue = 4
+				stewardship = 3
+				learning = 8
+				save_scope_as = kms_leader
+			}
+			scope:kms_leader = {
+				add_character_flag = kehillah_mob_leader
+				start_war = {
+					cb = kehillah_mob_cb
+					target = scope:kms_target_lord
+					target_title = scope:kms_target_county
+				}
+				if = {
+					limit = { is_at_war = yes }
+					debug_log = "kehillah_mob_spike.1 S1: the landless leader IS AT WAR"
+					random_character_war = { save_scope_as = kms_war }
+					spawn_army = {
+						name = kehillah_mob_army_name
+						levies = 1500
+						men_at_arms = {
+							type = pikemen_militia
+							stacks = 5
+						}
+						men_at_arms = {
+							type = torch_bearers
+							stacks = 2
+						}
+						location = scope:kms_spawn
+						war = scope:kms_war
+						war_keep_on_attacker_victory = yes
+						inheritable = no
+						uses_supply = yes
+						save_scope_as = kms_army
+					}
+					if = {
+						limit = { exists = scope:kms_army }
+						debug_log = "kehillah_mob_spike.1 S2: the army SPAWNED"
+					}
+					else = {
+						debug_log = "kehillah_mob_spike.1 S2: NO army"
+					}
+				}
+				else = {
+					debug_log = "kehillah_mob_spike.1 S1: start_war FAILED"
+				}
+			}
+			set_global_variable = { name = kehillah_spike_mob value = scope:kms_leader }
+			set_global_variable = { name = kehillah_spike_target_province value = scope:kms_target_province }
+		}
+		debug_log_scopes = yes
+		debug_log = "kehillah_mob_spike.1: done"
+	}
+}
+
+kehillah_mob_spike.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = {
+				NOT = { exists = global_var:kehillah_spike_mob }
+			}
+			debug_log = "kehillah_mob_spike.2: no mob"
+		}
+		else = {
+			global_var:kehillah_spike_mob = {
+				save_scope_as = kms_leader
+				if = {
+					limit = { is_alive = no }
+					debug_log = "kehillah_mob_spike.2: the leader is dead"
+				}
+				else = {
+					if = {
+						limit = { is_at_war = yes }
+						debug_log = "kehillah_mob_spike.2: at war"
+					}
+					else = {
+						debug_log = "kehillah_mob_spike.2: NOT at war"
+					}
+					save_scope_value_as = {
+						name = kms_army_count
+						value = {
+							value = 0
+							every_army = { add = 1 }
+						}
+					}
+					random_army = {
+						save_scope_as = kms_army
+						save_scope_value_as = { name = kms_army_size value = army_size }
+						location = { save_scope_as = kms_army_location }
+						if = {
+							limit = { is_army_in_siege = yes }
+							debug_log = "kehillah_mob_spike.2: the army is IN A SIEGE"
+						}
+						if = {
+							limit = { army_is_moving = yes }
+							debug_log = "kehillah_mob_spike.2: the army is moving"
+						}
+						if = {
+							limit = { location = global_var:kehillah_spike_target_province }
+							debug_log = "kehillah_mob_spike.2: the army is AT THE TARGET"
+						}
+					}
+					if = {
+						limit = { exists = scope:kms_army_location }
+						save_scope_value_as = {
+							name = kms_distance
+							value = "scope:kms_army_location.squared_distance(global_var:kehillah_spike_target_province)"
+						}
+					}
+				}
+			}
+		}
+		debug_log_scopes = yes
+		debug_log = "kehillah_mob_spike.2: done"
+	}
+}
+
+kehillah_mob_spike.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county = { save_scope_as = kms_target_county }
+		scope:kms_target_county.holder = { save_scope_as = kms_target_lord }
+		global_var:kehillah_spike_mob ?= {
+			random_character_war = {
+				end_war = attacker
+			}
+			debug_log = "kehillah_mob_spike.3: war ended as an attacker victory"
+			save_scope_value_as = {
+				name = kms_army_count_after_end
+				value = {
+					value = 0
+					every_army = { add = 1 }
+				}
+			}
+			start_war = {
+				cb = kehillah_mob_cb
+				target = scope:kms_target_lord
+				target_title = scope:kms_target_county
+			}
+			if = {
+				limit = { is_at_war = yes }
+				debug_log = "kehillah_mob_spike.3 S4: a new war is declared"
+			}
+			else = {
+				debug_log = "kehillah_mob_spike.3 S4: the new war FAILED"
+			}
+		}
+		debug_log_scopes = yes
+		trigger_event = { id = kehillah_mob_spike.2 days = 2 }
+	}
+}
+
+kehillah_mob_spike.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		global_var:kehillah_spike_mob ?= {
+			random_army = {
+				location = { save_scope_as = kms_army_location }
+			}
+			if = {
+				limit = { exists = scope:kms_army_location }
+				set_global_variable = { name = kehillah_spike_army_location value = scope:kms_army_location }
+			}
+			death = { death_reason = death_vanished }
+		}
+		debug_log = "kehillah_mob_spike.4: the leader vanished"
+		trigger_event = { id = kehillah_mob_spike.7 days = 2 }
+	}
+}
+
+# S7 follow-up: is any army left where the leader's army stood?
+kehillah_mob_spike.7 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		global_var:kehillah_spike_army_location ?= {
+			save_scope_as = kms_army_location
+			save_scope_value_as = {
+				name = kms_armies_left
+				value = {
+					value = 0
+					every_army_in_location = { add = 1 }
+				}
+			}
+		}
+		debug_log_scopes = yes
+		debug_log = "kehillah_mob_spike.7: armies left where the mob stood"
+	}
+}
+
+kehillah_mob_spike.5 = {
+	type = character_event
+	title = kehillah_mob_spike.5.t
+	desc = kehillah_mob_spike.5.desc
+	theme = war
+	left_portrait = { character = root }
+	immediate = {
+		global_var:kehillah_spike_mob ?= { save_scope_as = kms_leader }
+	}
+	option = {
+		name = kehillah_mob_spike.5.a
+		scope:kms_leader ?= {
+			location = { save_scope_as = kms_leader_location }
+		}
+		if = {
+			limit = { exists = scope:kms_leader_location }
+			pan_camera_to_province = scope:kms_leader_location
+		}
+	}
+}
+
+kehillah_mob_spike.6 = {
+	type = character_event
+	title = kehillah_mob_spike.6.t
+	desc = kehillah_mob_spike.6.desc
+	theme = war
+	left_portrait = { character = root }
+	immediate = {
+		global_var:kehillah_spike_mob ?= {
+			save_scope_as = kms_leader
+			location = { save_scope_as = kms_leader_location }
+		}
+		if = {
+			limit = { exists = scope:kms_leader }
+			set_variable = { name = kehillah_spike_leader value = scope:kms_leader }
+			set_variable = { name = kehillah_spike_location value = scope:kms_leader_location }
+		}
+	}
+	option = {
+		name = kehillah_mob_spike.6.a
+	}
+}
+
+kehillah_mob_spike.8 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		save_scope_value_as = { name = kms_free_tenet_slots value = free_personal_tenet_slots }
+		add_known_tenet = tenet_asceticism
+		force_set_personal_tenet = tenet_asceticism
+		if = {
+			limit = { has_personal_tenet = tenet_asceticism }
+			debug_log = "kehillah_mob_spike.8 S8: asceticism IS a personal tenet"
+		}
+		else = {
+			debug_log = "kehillah_mob_spike.8 S8: asceticism NOT set"
+		}
+		debug_log_scopes = yes
+	}
+}
