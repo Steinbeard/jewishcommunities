@@ -17,6 +17,24 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### V41 The danger of violence, the incidents, the pogrom unfolding — 2026-10-14, Daniel's request
+
+Spec: [v41](docs/spec/v41-danger-incidents-and-the-pogrom-unfolding.md).
+
+**The plan:**
+- **Character-driven checks,** and options unique to each leader.
+- **The pogrom unfolds** in scenes, with the leader's own fate at stake. A leader baptized by force
+  steps down; the player continues as the successor or as the convert. Forced converts take an
+  anusim rite.
+- **The crusade's preaching phase.**
+- **A danger-of-violence score** (Greatness, incidents, hard times, the teaching, the lord): hard
+  to reverse, possible to escape.
+- **One incident director** with new incidents: host desecration, the Talmud trial, sumptuary
+  laws, Holy Week humiliation, debt riots, uprisings.
+
+**Division:** the director and the incident catalogue are Claude's; V40's Firebrand (Codex) drives
+incidents through it. **Next: step 1, the pogrom unfolding.**
+
 ### V40 Living crises and councils — 2026-10-13, Daniel's request
 
 Spec: [v40](docs/spec/v40-living-crises-and-councils.md). Daniel wants crises to be character-driven
