@@ -20,9 +20,11 @@ kehillah_shift_outlook_effect = {
 # The chaplain's sermons (V34 section 7c, 2026-10-13). Scope: an
 # independent ruler, yearly. What is preached at his court drifts his
 # outlook on the Jews: a zealous chaplain under a strict or exclusionary
-# teaching -2 a year (the friars' sermons of the 13th century); a learned
-# chaplain under a protective teaching +1 a year (Sicut Judaeis read
-# aloud). Within the +/-30 cap of kehillah_shift_outlook_effect.
+# teaching -2 a year (the friars' sermons of the 13th century); a zealous
+# chaplain under any other teaching -1. Within the +/-30 cap of
+# kehillah_shift_outlook_effect. (A learned chaplain under a protective
+# teaching once warmed him +1 a year; 2026-10-13, Daniel: the warming is
+# now the community's own work -- the Dayyan's Discourse, below.)
 kehillah_chaplain_sermons_effect = {
 	if = {
 		limit = {
@@ -38,25 +40,6 @@ kehillah_chaplain_sermons_effect = {
 				}
 			}
 			kehillah_shift_outlook_effect = { AMOUNT = -2 }
-		}
-		else_if = {
-			limit = {
-				cp:councillor_court_chaplain = {
-					learning >= 15
-					# V38 (2026-10-13): and compassionate or just. Learning alone
-					# is common in a chaplain; the 24-year soak found it warming
-					# nearly every lord +1 a year.
-					OR = {
-						has_trait = compassionate
-						has_trait = just
-					}
-				}
-				kehillah_teaching_protective_trigger = yes
-				# V36c: a learned chaplain who is also zealous preaches the
-				# other way (below).
-				cp:councillor_court_chaplain = { NOT = { has_trait = zealous } }
-			}
-			kehillah_shift_outlook_effect = { AMOUNT = 1 }
 		}
 		else_if = {
 			# V36c (2026-10-13): even under a protective teaching, a zealous
@@ -259,6 +242,91 @@ kehillah_outlook_opinion_refresh_effect = {
 				NOT = { this = scope:kehillah_oo_target.domicile.domicile_location.county.holder }
 			}
 			kehillah_outlook_opinion_apply_effect = yes
+		}
+	}
+}
+
+# The Dayyan's Discourse (task_kehillah_discourse_at_court), 2026-10-13.
+# Daniel: "a percentage based learning and diplomacy challenge that could
+# be very challenging, and more difficult the higher the level of the
+# liege. That way many communities doing it won't overwhelm the liege."
+# Scope: the Dayyan, each January; scope:councillor_liege is his
+# community's leader. The chance is kehillah_discourse_yearly_chance_value.
+# A lord hears one such discourse a year, from any community
+# (kehillah_discourse_heard on the host, set win or lose).
+kehillah_dayyan_discourse_yearly_effect = {
+	save_scope_as = kehillah_discourse_dayyan
+	scope:councillor_liege = { save_scope_as = kehillah_discourse_leader }
+	scope:kehillah_discourse_leader.domicile.domicile_location.county.holder.top_liege ?= {
+		save_scope_as = kehillah_discourse_host
+	}
+	if = {
+		limit = {
+			exists = scope:kehillah_discourse_host
+			scope:kehillah_discourse_host = { kehillah_discourse_host_trigger = yes }
+		}
+		if = {
+			limit = { scope:kehillah_discourse_host = { has_variable = kehillah_discourse_heard } }
+			debug_log = "kehillah_dayyan_discourse_yearly_effect: the host already heard a sage this year"
+			scope:kehillah_discourse_leader = {
+				if = {
+					limit = { is_ai = no }
+					send_interface_message = {
+						type = msg_kehillah_community_news
+						title = kehillah_discourse_crowded_t
+						desc = kehillah_discourse_crowded_d
+						left_icon = scope:kehillah_discourse_dayyan
+						right_icon = scope:kehillah_discourse_host
+					}
+				}
+			}
+		}
+		else = {
+			scope:kehillah_discourse_host = {
+				set_variable = { name = kehillah_discourse_heard value = yes days = 360 }
+			}
+			random_list = {
+				0 = {
+					modifier = { add = kehillah_discourse_yearly_chance_value }
+					debug_log = "kehillah_dayyan_discourse_yearly_effect: the host was moved"
+					scope:kehillah_discourse_host = {
+						kehillah_shift_outlook_effect = { AMOUNT = kehillah_discourse_outlook }
+						add_opinion = {
+							target = scope:kehillah_discourse_leader
+							modifier = pleased_opinion
+							opinion = 10
+						}
+					}
+					scope:kehillah_discourse_leader = {
+						if = {
+							limit = { is_ai = no }
+							send_interface_message = {
+								type = msg_kehillah_community_news
+								title = kehillah_discourse_won_t
+								desc = kehillah_discourse_won_d
+								left_icon = scope:kehillah_discourse_dayyan
+								right_icon = scope:kehillah_discourse_host
+							}
+						}
+					}
+				}
+				0 = {
+					modifier = { add = kehillah_discourse_fail_chance_value }
+					debug_log = "kehillah_dayyan_discourse_yearly_effect: the host was not moved"
+					scope:kehillah_discourse_leader = {
+						if = {
+							limit = { is_ai = no }
+							send_interface_message = {
+								type = msg_kehillah_community_news_bad
+								title = kehillah_discourse_lost_t
+								desc = kehillah_discourse_lost_d
+								left_icon = scope:kehillah_discourse_dayyan
+								right_icon = scope:kehillah_discourse_host
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 }

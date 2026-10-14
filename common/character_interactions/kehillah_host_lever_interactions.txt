@@ -6,7 +6,8 @@
 # Present a Gift: a Kehillah leader sends a gift to a lord -- the host,
 # the county's lord, or a Christian or Muslim duke or greater. His opinion
 # +20 and his outlook on the Jews +5 (personal history, within +/-30).
-# Once in kehillah_gift_cooldown_years per community.
+# No cooldown: the price (kehillah_gift_cost_value) rises with his rank
+# and wealth, the giver's income, and each recent gift (2026-10-13).
 kehillah_present_gift_interaction = {
 	icon = icon_gold
 	category = interaction_category_friendly
@@ -18,7 +19,7 @@ kehillah_present_gift_interaction = {
 
 	cost = {
 		gold = {
-			scope:actor = { value = medium_gold_value }
+			scope:actor = { value = kehillah_gift_cost_value }
 		}
 	}
 
@@ -42,19 +43,27 @@ kehillah_present_gift_interaction = {
 	}
 
 	is_valid_showing_failures_only = {
-		scope:actor = {
-			is_available_adult = yes
-			custom_tooltip = {
-				text = kehillah_present_gift_cooldown_tt
-				NOT = { primary_title ?= { has_variable = kehillah_gift_cooldown } }
-			}
-		}
+		scope:actor = { is_available_adult = yes }
 	}
 
 	on_accept = {
 		scope:actor = {
+			custom_tooltip = kehillah_present_gift_escalation_tt
 			primary_title ?= {
-				set_variable = { name = kehillah_gift_cooldown value = yes years = kehillah_gift_cooldown_years }
+				if = {
+					limit = { has_variable = kehillah_gift_recent }
+					set_variable = {
+						name = kehillah_gift_recent
+						value = {
+							value = var:kehillah_gift_recent
+							add = 1
+						}
+						years = kehillah_gift_escalation_years
+					}
+				}
+				else = {
+					set_variable = { name = kehillah_gift_recent value = 1 years = kehillah_gift_escalation_years }
+				}
 			}
 		}
 		scope:recipient = {

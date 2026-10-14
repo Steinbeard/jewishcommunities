@@ -65,3 +65,78 @@ Cold. The cause was our own levers acting automatically:
 
 The soak also counted 17 favours, 9 invitations (2 answered), 1 rising, and 4 AI foundings in about
 24 years.
+
+## 5. Missionizing (slice 2, added 2026-10-13)
+
+Daniel: "more events about characters trying to missionize the community".
+
+- **The Disputation** (``kehillah_mission.0001``). Paris 1240, Barcelona 1263.
+  - **When:** Christian hosts only. The quarterly chance is 0.25%, rising to 1.5% under Separation
+    and Mission or 1% under an exclusionary teaching, with +0.75 when the faith's pressure is 10 or
+    more. Once in 15 years.
+  - **The two sides:** the community's most learned Jew answers a convert turned friar (created for
+    the event, learning 10-18).
+  - **Dispute boldly:** the chance is 40 + 4 × the learning gap.
+    - Won: Greatness +60, the lord's outlook +5, the faith's pressure -1.
+    - Lost: Greatness -30, Stability -40, the lord's outlook -5, the faith's pressure +2, and under a
+      Christian charter the Talmud is put on trial (the text term one step stricter).
+  - **Dispute cautiously:** the chance is 60 + 3 × the gap.
+    - Held: Greatness +20.
+    - Lost: Stability -20, the lord's outlook -2.
+  - **Pay to be excused:** Greatness -10, the lord's outlook -2.
+  - **A report** for players follows (``.0002``).
+- **Friars in the Synagogue** (``kehillah_mission.0010``).
+  - **When:** the quarterly chance is 2% under Separation and Mission and 1.5% under an exclusionary
+    teaching; under others, 0.5% when the faith's pressure is 10 or more. Once in 10 years.
+  - **Sit in silence:** Stability -20, and a 25% chance that a courtier converts and leaves for the
+    lord's court.
+  - **Answer them:** the chance is 35 + 2 × the leader's learning.
+    - Success: Greatness +20.
+    - Failure: Stability -30, the lord's outlook -5, the faith's pressure +1.
+  - **Pay the friars:** the lord's outlook -1.
+- **Debug:** ``kehillah_outlook_debug.13`` (a disputation) and ``.14`` (sermons).
+
+## 6. The vassal faction (next slice): research notes
+
+- **Feasible without war:** vanilla ``common/factions/_factions.info`` gives a faction a ``demand``
+  effect (root: the faction) that is just script. So the "Petition against the Jews" can deliver an
+  ultimatum event to the host with no war.
+- **Comes free:** faction power, discontent (``discontent_progress``, ``power_threshold``),
+  ``ai_join_score`` and ``ai_create_score``, ``is_valid`` and ``can_character_join``.
+- **To verify in the spike:** whether a faction with no ``casus_belli`` or war still runs its demand
+  cycle, and how the faction window renders custom loc.
+
+## Addendum (2026-10-13): the Dayyan's Discourse; gifts at a price
+
+Daniel: "instead of needing a personality for your chaplain instead it's a percentage based learning
+and diplomacy challenge that could be very challenging, and more difficult the higher the level of
+the liege. That way many communities doing it won't overwhelm the liege. I think you should be able
+to give gifts whenever too but they should be expensive depending on the status of the liege, his
+financial situation, your income, etc."
+
+**The warming sermon goes.** The host's learned (and compassionate or just) chaplain no longer warms
+him +1 a year. The zealous chaplain's cooling stays. The warming is now the community's own work.
+
+**The Dayyan's Discourse** (`task_kehillah_discourse_at_court`, a council task beside Prepare the
+Bet Din):
+- **The chance:** each January, (Learning + Diplomacy - the host's standing) x 2 percent, 0 to 50.
+- **Standing:**
+  - 10 for a count, 15 a duke, 22 a king, 30 an emperor;
+  - +5 under a strict teaching on the Jews, +10 under an exclusionary one;
+  - +5 if the host is zealous.
+- **Success:** outlook +2 (personal history, within +/-30) and opinion of the leader +10.
+- **One a year:** a lord hears one such discourse a year, from any community; the attempt is spent
+  win or lose. An emperor with many communities is not warmed by all of them.
+- **Examples:** a Dayyan of 14 + 7 moves a count in 22% of years and a duke in 12%, never a king; a
+  sage of 25 + 10 moves a count 50%, a duke 40%, a king 26%, an emperor 10%.
+- **AI:** it sends its Dayyan when the host is below Well-disposed and the chance is 10% or more.
+- **Players:** a feed message reports each attempt: moved, unmoved, or already heard this year.
+
+**Present a Gift** has no cooldown; the price (`kehillah_gift_cost_value`) does the work:
+- 25, plus three months of the lord's income and three of the community's;
+- x1.25 a duke, x1.5 a king, x2 an emperor;
+- x0.75 if he is in debt, x1.25 if his treasury holds two years' income (at least 300);
+- x1.5, x2, x2.5 and so on for each gift the community gave in the last three years.
+
+A count of 2 a month from a community of 3 a month costs 40; a duke of 6 a month 65; an emperor of
+25 a month about 220. The AI keeps to gifts as a rescue for a host already Cold or worse.
