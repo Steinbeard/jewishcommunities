@@ -352,6 +352,10 @@ What the severity does:
   - faith-wide, a variable on `faith:rabbinism` counts pogroms. Each pogrom raises the chance a new
     rabbi takes either tenet as a personal tenet.
 
+  **Engine limit:** personal tenets exist only for playable characters
+  (`free_personal_tenet_slots` is "always 0 for dead or non-playable characters"). They reach
+  Kehillah leaders and Jewish rulers. Courtiers only learn the tenets (`add_known_tenet`).
+
   Rite reform then follows naturally from what characters desire (1.20's own mechanism). The Bet
   Din Conference (V5) can adopt *Kiddush ha-Shem* as a core tenet of the rite once enough leaders
   hold it.
