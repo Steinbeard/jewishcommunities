@@ -145,3 +145,15 @@ Bishop of Speyer sheltered the Jews and hanged rioters; elsewhere lords stood as
   Fewer lords qualify to open the door. The opinion modifier falls 10-15 points.
 - **Next:** re-soak, watching the share of Cold and Hostile hosts, demands, invitations and AI
   foundings (7 of 8 answered an invitation before), and the Stability bands.
+
+**Superseded, same day: V36c's prejudice term is reverted.** Daniel called it "a dumb band aid": we
+should fine-tune the other systems instead. In its place:
+- **Personality now weighs more.**
+  - Warming: compassionate +20, just +15, cynical +15, humble +10, trusting +10, forgiving +5,
+    generous +5, ambitious +5, greedy without a Jewish debt +5, physician +5.
+  - Cooling: sadistic -25, paranoid -15, callous -10, arrogant -10, wrathful -10, vengeful -10,
+    arbitrary -5, and a theologian under a strict or exclusionary teaching -5.
+- **Anti-Jewish pressure from the world** is to come: preaching friars, disputations, compelled
+  sermons, faith drift tied to pressure, then the vassal faction of V31 §7.
+- **The sermons change stays:** a zealous chaplain preaches -1 a year even under a protective
+  teaching.

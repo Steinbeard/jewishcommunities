@@ -84,6 +84,24 @@ kehillah_rite_teaching_changed_effect = {
 # Main rites only: other rites drift through vanilla's own head-of-rite
 # divergence drift, which sees the teachings since V34.
 kehillah_rite_teaching_yearly_effect = {
+	# V38 (2026-10-13): the faith's anti-Jewish pressure decays by a fifth a
+	# year; at 10 or more, it reaches the head of the faith (-1 outlook).
+	if = {
+		limit = {
+			this = faith.main_rite
+			faith = { has_variable = kehillah_faith_pressure }
+		}
+		faith = {
+			change_variable = { name = kehillah_faith_pressure multiply = 0.8 }
+			if = {
+				limit = {
+					var:kehillah_faith_pressure >= kehillah_faith_pressure_head_mood_threshold
+					exists = religious_head
+				}
+				religious_head = { kehillah_shift_outlook_effect = { AMOUNT = -1 } }
+			}
+		}
+	}
 	if = {
 		limit = {
 			this = faith.main_rite
@@ -112,9 +130,41 @@ kehillah_rite_teaching_yearly_effect = {
 						limit = { faith = { exists = great_holy_war } }
 						add = 3
 					}
+					# V38: the faith's anti-Jewish pressure.
+					if = {
+						limit = { faith = { has_variable = kehillah_faith_pressure } }
+						add = {
+							value = faith.var:kehillah_faith_pressure
+							divide = 4
+						}
+					}
 				}
 				kehillah_rite_teaching_stricter_effect = yes
 				kehillah_rite_teaching_changed_effect = yes
+			}
+		}
+		# V38: without a Convinced head, pressure alone can harden the
+		# teaching -- unless the head is a Protector.
+		else_if = {
+			limit = {
+				faith = {
+					has_variable = kehillah_faith_pressure
+					var:kehillah_faith_pressure >= 4
+				}
+				scope:kehillah_teaching_head = { NOT = { kehillah_outlook_protector_trigger = yes } }
+				NOR = {
+					rite_has_doctrine = kehillah_teaching_exclusion
+					rite_has_doctrine = kehillah_teaching_abolition
+				}
+			}
+			random = {
+				chance = {
+					value = faith.var:kehillah_faith_pressure
+					divide = 4
+				}
+				kehillah_rite_teaching_stricter_effect = yes
+				kehillah_rite_teaching_changed_effect = yes
+				debug_log = "kehillah_rite_teaching_yearly_effect: pressure hardened the teaching"
 			}
 		}
 		# A protector reaffirms protection.

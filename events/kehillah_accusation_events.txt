@@ -1,0 +1,161 @@
+﻿# =====================================================================
+# V37 -- Accusations (docs/spec/v37-accusations.md), 2026-10-13. The
+# blood libel (Norwich 1144, Blois 1171, Fulda 1235) and, under Muslim
+# rule, the charge of blasphemy: a rumour, a mob forming, and what the
+# community, its Shtadlan, its lord and the head of the faith do about it.
+# =====================================================================
+#   .0001 An Accusation (kehillah_accusation_check_effect).
+#   .0002 What came of it (players): the outcome, the martyr if any.
+# =====================================================================
+namespace = kehillah_accusation
+
+kehillah_accusation.0001 = {
+	type = character_event
+	title = kehillah_accusation.0001.t
+	desc = kehillah_accusation.0001.desc
+	theme = dread
+	left_portrait = {
+		character = scope:kehillah_accusing_host
+		animation = disapproval
+	}
+	right_portrait = {
+		character = root
+		animation = fear
+	}
+
+	trigger = {
+		exists = domicile.domicile_location.county.holder.top_liege
+	}
+
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_accusing_host }
+		set_variable = { name = kehillah_accusing_host_ref value = scope:kehillah_accusing_host }
+		if = {
+			limit = {
+				exists = scope:kehillah_accusing_host.faith.religious_head
+				NOT = { scope:kehillah_accusing_host.faith.religious_head = scope:kehillah_accusing_host }
+				scope:kehillah_accusing_host.faith.religious_head = { kehillah_outlook_on_jews_value >= 15 }
+			}
+			scope:kehillah_accusing_host.faith.religious_head = { save_scope_as = kehillah_appeal_hof }
+		}
+		cp:councillor_chancellor ?= { save_scope_as = kehillah_plea_shtadlan }
+	}
+
+	# The Shtadlan goes to the lord.
+	option = {
+		name = kehillah_accusation.0001.a
+		trigger = { exists = scope:kehillah_plea_shtadlan }
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_accusation_shtadlan_success_value }
+				desc = kehillah_accusation_outcome_protected
+				kehillah_accusation_defused_effect = yes
+			}
+			0 = {
+				modifier = { add = kehillah_accusation_shtadlan_failure_value }
+				desc = kehillah_accusation_outcome_violence
+				kehillah_accusation_violence_effect = { MULT = 1 }
+			}
+		}
+		hidden_effect = { trigger_event = { id = kehillah_accusation.0002 days = 3 } }
+		ai_chance = { base = 40 }
+	}
+
+	# Pay for the lord's protection.
+	option = {
+		name = kehillah_accusation.0001.b
+		trigger = { gold >= medium_gold_value }
+		pay_short_term_gold = {
+			target = scope:kehillah_accusing_host
+			gold = medium_gold_value
+		}
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_accusation_pay_success_value }
+				desc = kehillah_accusation_outcome_protected
+				kehillah_accusation_defused_effect = yes
+			}
+			0 = {
+				modifier = { add = kehillah_accusation_pay_failure_value }
+				desc = kehillah_accusation_outcome_violence
+				kehillah_accusation_violence_effect = { MULT = 1 }
+			}
+		}
+		hidden_effect = { trigger_event = { id = kehillah_accusation.0002 days = 3 } }
+		ai_chance = { base = 30 }
+	}
+
+	# Appeal to the head of the faith.
+	option = {
+		name = kehillah_accusation.0001.c
+		trigger = { exists = scope:kehillah_appeal_hof }
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_hof_appeal_success_value }
+				desc = kehillah_accusation_outcome_rebuked
+				kehillah_accusation_defused_effect = yes
+				scope:kehillah_accusing_host = {
+					hidden_effect = { kehillah_shift_outlook_effect = { AMOUNT = -3 } }
+				}
+				custom_tooltip = kehillah_host_demands_appeal_resent_tt_accusation
+			}
+			0 = {
+				modifier = { add = kehillah_hof_appeal_failure_value }
+				desc = kehillah_accusation_outcome_violence
+				kehillah_accusation_violence_effect = { MULT = 1 }
+			}
+		}
+		hidden_effect = { trigger_event = { id = kehillah_accusation.0002 days = 3 } }
+		ai_chance = { base = 20 }
+	}
+
+	# Bar the gates.
+	option = {
+		name = kehillah_accusation.0001.d
+		kehillah_accusation_violence_effect = { MULT = kehillah_accusation_barricade_mult }
+		primary_title = {
+			change_variable = { name = kehillah_var_greatness add = kehillah_accusation_barricade_greatness }
+		}
+		custom_tooltip = kehillah_accusation_barricade_tt
+		hidden_effect = { trigger_event = { id = kehillah_accusation.0002 days = 3 } }
+		ai_chance = { base = 10 }
+	}
+}
+
+# What came of it (players only).
+kehillah_accusation.0002 = {
+	type = character_event
+	title = kehillah_accusation.0002.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:kehillah_accusation_martyr }
+				desc = kehillah_accusation.0002.martyr
+			}
+			triggered_desc = {
+				trigger = { has_variable = kehillah_accusation_last_stability }
+				desc = kehillah_accusation.0002.violence
+			}
+			desc = kehillah_accusation.0002.defused
+		}
+	}
+	theme = dread
+	trigger = { is_ai = no }
+	left_portrait = {
+		character = root
+		animation = grief
+	}
+	immediate = {
+		# One read: the violence variables are cleared after this report.
+	}
+	option = {
+		name = kehillah_accusation.0002.a
+		hidden_effect = {
+			if = {
+				limit = { has_variable = kehillah_accusation_last_stability }
+				remove_variable = kehillah_accusation_last_stability
+				remove_variable = kehillah_accusation_last_prosperity
+			}
+		}
+	}
+}
