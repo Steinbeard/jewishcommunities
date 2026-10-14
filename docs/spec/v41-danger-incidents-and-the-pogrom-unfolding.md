@@ -311,3 +311,43 @@ he means to strike, with no army and no title (`kehillah_mob_preaching`).
 **Debug:** `kehillah_mob_debug.8` (a crusade now; the preaching begins), `.11` (the preaching ends at
 the next sermon).
 
+**Step 3 live test, 2026-10-14: passed.**
+- **The preacher:** Tassilo preached in Ingolstadt, Würzburg, Wiesbaden and on to Faulquemont.
+  - **His following:** 800 rising to 1001 and 1320, with the preaching days falling by 7 a week.
+  - **No army** while he preached.
+  - **The council:** no "ride out" option at the lord's.
+- **He set out** on 1 December with 3207 men, exactly his following, from his last sermon town. The
+  story ended at the next weekly step.
+- **Fixed:** the events and the hub read "0 people" during the preaching. They read the army's size,
+  so they now fall back to his following.
+- **Not seen:** a successful condemnation thinning the following (two failed rolls); the
+  preaching-time bribe.
+
+## Step 4a, built (2026-10-14): the danger of violence and the director
+
+**`common/script_values/kehillah_danger_values.txt`** holds `kehillah_danger_value`, the sum of:
+- **prominence:** Greatness / 20;
+- **wealth:** Prosperity / 40;
+- **recent incidents in the county's faith:** x3;
+- **hard times:** an epidemic in the county +15, the lord at war +10, the faith on crusade +15;
+- **the host's teaching:** strict +10, exclusionary +20;
+- **the host's outlook:** -outlook / 3;
+- **the lull:** -15 while the Year of the Decrees lasts.
+
+It is shown with its terms at the foot of the Stability tooltip.
+
+**Prominence in Greatness:**
+- **Jews at the host's court:** +20 each, +30 if one sits on his council, at most 90.
+- **Lords in debt to the community:** +15 each, at most 60.
+
+**The director** (`common/scripted_effects/kehillah_incident_effects.txt`) replaces the quarterly
+accusation and mission checks in `kehillah_on_actions.txt`.
+- **The roll:** danger / 10 percent a quarter, at most 12, and one incident a year.
+- **The incidents,** weighted:
+  - an accusation (30);
+  - a disputation (20, +15 under a strict or exclusionary teaching; Christian hosts);
+  - friars in the synagogue (the same);
+  - a mob by itself (5, +10 in hard times), through `kehillah_mob.0030`.
+
+**Debug:** `kehillah_mob_debug.12` logs the danger and its terms; `.13` forces a roll.
+

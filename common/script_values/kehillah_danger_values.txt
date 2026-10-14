@@ -1,0 +1,154 @@
+﻿# =====================================================================
+# V41 step 4a -- the danger of violence (docs/spec/v41-danger-incidents-
+# and-the-pogrom-unfolding.md section 6), 2026-10-14. Daniel: the
+# factors that make a community prominent feed Greatness, and Greatness
+# feeds the danger; recent incidents and hard times raise it. Scope: a
+# Kehillah leader. Each term is its own line in the breakdown.
+# =====================================================================
+
+# Prominence: Greatness / 20 (400 -> 20, 900 -> 45).
+kehillah_danger_greatness_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_var_greatness } }
+		value = primary_title.var:kehillah_var_greatness
+		divide = 20
+	}
+	round = yes
+}
+
+# Wealth: Prosperity / 40 (400 -> 10, 800 -> 20).
+kehillah_danger_wealth_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_var_prosperity } }
+		value = primary_title.var:kehillah_var_prosperity
+		divide = 40
+	}
+	round = yes
+}
+
+# Recent incidents in the county's faith (V40), x3.
+kehillah_danger_incidents_value = {
+	value = 0
+	if = {
+		limit = { domicile.domicile_location.county.faith ?= { has_variable = kehillah_faith_pressure } }
+		value = domicile.domicile_location.county.faith.var:kehillah_faith_pressure
+		multiply = 3
+	}
+	round = yes
+}
+
+# Hard times: an epidemic in the county +15, the county's lord at war +10,
+# the county's faith on crusade +15.
+kehillah_danger_hard_times_value = {
+	value = 0
+	domicile.domicile_location.county ?= {
+		if = {
+			limit = { any_county_province_epidemic = { always = yes } }
+			add = 15
+		}
+		if = {
+			limit = { holder ?= { is_at_war = yes } }
+			add = 10
+		}
+		if = {
+			limit = { faith ?= { exists = great_holy_war } }
+			add = 15
+		}
+	}
+}
+
+# The teaching of the host's faith: strict +10, exclusionary +20.
+kehillah_danger_teaching_value = {
+	value = 0
+	domicile.domicile_location.county.holder.top_liege ?= {
+		if = {
+			limit = { kehillah_teaching_exclusionary_trigger = yes }
+			value = 20
+		}
+		else_if = {
+			limit = { kehillah_teaching_strict_trigger = yes }
+			value = 10
+		}
+	}
+}
+
+# The lord: -(his outlook) / 3 (Protective 45 -> -15, Hostile -50 -> +17).
+kehillah_danger_lord_value = {
+	value = 0
+	subtract = {
+		value = kehillah_host_outlook_value
+		divide = 3
+	}
+	round = yes
+}
+
+# The lull after a wave: while the Year of the Decrees lasts, -15.
+kehillah_danger_lull_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_decrees_memory } }
+		value = -15
+	}
+}
+
+kehillah_danger_value = {
+	value = 0
+	add = kehillah_danger_greatness_value
+	add = kehillah_danger_wealth_value
+	add = kehillah_danger_incidents_value
+	add = kehillah_danger_hard_times_value
+	add = kehillah_danger_teaching_value
+	add = kehillah_danger_lord_value
+	add = kehillah_danger_lull_value
+	min = 0
+}
+
+# The director's quarterly chance of an incident: danger / 10 percent, at
+# most 12 (danger 50 -> 5% a quarter, about one in five years).
+kehillah_incident_chance_value = {
+	value = kehillah_danger_value
+	divide = 10
+	max = 12
+	# (kehillah_mob_debug.13 forces a roll)
+	if = {
+		limit = { has_variable = kehillah_force_incident }
+		value = 100
+	}
+}
+
+# --- Prominence in Greatness (Daniel: these factors "contribute a lot
+# to greatness").
+# Jews at the host's court: +20 for each Jewish courtier of the host, at
+# most 60; +30 more if one of them sits on his council.
+kehillah_bd_court_jews_value = {
+	value = 0
+	domicile.domicile_location.county.holder.top_liege ?= {
+		if = {
+			limit = { NOT = { is_jewish_character_trigger = yes } }
+			every_courtier = {
+				limit = { is_jewish_character_trigger = yes }
+				add = 20
+			}
+			if = {
+				limit = {
+					any_councillor = { is_jewish_character_trigger = yes }
+				}
+				add = 30
+			}
+		}
+	}
+	max = 90
+}
+# Loans to the great: +15 for each lord who owes the community, at most 60.
+kehillah_bd_loans_greatness_value = {
+	value = 0
+	primary_title ?= {
+		every_in_list = {
+			variable = kehillah_loan_debtors
+			add = 15
+		}
+	}
+	max = 60
+}
