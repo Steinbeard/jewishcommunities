@@ -1,0 +1,693 @@
+﻿namespace = kehillah_incident
+
+# =====================================================================
+# V41 step 4b -- new incidents for the director (docs/spec/v41-danger-
+# incidents-and-the-pogrom-unfolding.md section 7), 2026-10-14. Each is an
+# incident in the county's faith (+1); the odds of each answer come from
+# the people involved (kehillah_incident_scene_values.txt).
+#   .0001 The Talmud on Trial  (Paris, 1240: Nicholas Donin)
+#   .0010 The Badge            (Lateran IV, 1215; the ghiyar under Islam)
+#   .0020 Holy Week            (the blow at Toulouse; the stones of
+#                               Beziers, ended for a payment in 1160)
+#   .0030 The Bonds            (York, 1190: the debt records burned)
+#   .0090 What came of it (players)
+# Scope: a Kehillah leader. Fired by kehillah_incident_director_effect.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# .0001 The Talmud on Trial. A Christian host.
+# ---------------------------------------------------------------------
+kehillah_incident.0001 = {
+	type = character_event
+	title = kehillah_incident.0001.t
+	desc = kehillah_incident.0001.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:kehillah_incident_accuser
+		animation = scheme
+	}
+	trigger = {
+		exists = primary_title
+		exists = domicile.domicile_location.county.holder.top_liege
+	}
+	immediate = {
+		kehillah_incident_scopes_effect = yes
+		domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
+		primary_title = { set_variable = { name = kehillah_talmud_cooldown value = yes years = kehillah_talmud_cooldown_years } }
+		# A man who studied among us and was baptized (Donin).
+		create_character = {
+			age = { 28 50 }
+			gender = male
+			faith = scope:kehillah_incident_host.faith
+			culture = root.culture
+			location = scope:kehillah_incident_town
+			dynasty = none
+			trait = zealous
+			learning = { 12 20 }
+			save_scope_as = kehillah_incident_accuser
+		}
+		scope:kehillah_incident_host = { add_courtier = scope:kehillah_incident_accuser }
+	}
+
+	# We will answer him in the hall.
+	option = {
+		name = kehillah_incident.0001.a
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_talmud_defend_chance_value }
+				desc = kehillah_incident_out_acquitted
+				custom_tooltip = kehillah_incident_talmud_safe_tt
+				primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_talmud_acquitted_greatness } }
+				kehillah_incident_report_effect = { OUTCOME = talmud_acquitted }
+			}
+			0 = {
+				modifier = { add = kehillah_talmud_defend_fail_value }
+				desc = kehillah_incident_out_condemned
+				kehillah_talmud_burned_effect = yes
+				kehillah_incident_report_effect = { OUTCOME = talmud_burned }
+			}
+		}
+		ai_chance = {
+			base = 25
+			modifier = {
+				add = 40
+				kehillah_talmud_defend_chance_value >= 45
+			}
+		}
+	}
+
+	# The Shtadlan goes to the lord before the day comes.
+	option = {
+		name = kehillah_incident.0001.e
+		trigger = { exists = scope:kehillah_incident_shtadlan }
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_talmud_shtadlan_chance_value }
+				desc = kehillah_incident_out_dropped
+				custom_tooltip = kehillah_incident_talmud_safe_tt
+				kehillah_incident_report_effect = { OUTCOME = talmud_dropped }
+			}
+			0 = {
+				modifier = { add = kehillah_talmud_shtadlan_fail_value }
+				desc = kehillah_incident_out_condemned
+				kehillah_talmud_burned_effect = yes
+				kehillah_incident_report_effect = { OUTCOME = talmud_burned }
+			}
+		}
+		ai_chance = { base = 30 }
+	}
+
+	# Hide the books.
+	option = {
+		name = kehillah_incident.0001.b
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_talmud_hide_chance_value }
+				desc = kehillah_incident_out_hidden
+				custom_tooltip = kehillah_incident_talmud_safe_tt
+				kehillah_incident_report_effect = { OUTCOME = talmud_hidden }
+			}
+			0 = {
+				modifier = { add = kehillah_talmud_hide_fail_value }
+				desc = kehillah_incident_out_found
+				kehillah_talmud_burned_effect = yes
+				scope:kehillah_incident_host ?= {
+					kehillah_shift_outlook_effect = { AMOUNT = -5 }
+				}
+				kehillah_incident_report_effect = { OUTCOME = talmud_found }
+			}
+		}
+		ai_chance = {
+			base = 15
+			modifier = {
+				add = 20
+				OR = {
+					has_trait = deceitful
+					has_trait = schemer
+				}
+			}
+		}
+	}
+
+	# Offer the lord silver to return them.
+	option = {
+		name = kehillah_incident.0001.c
+		trigger = { gold >= kehillah_incident_bribe_cost_value }
+		show_as_unavailable = { always = yes }
+		pay_short_term_gold = {
+			target = scope:kehillah_incident_host
+			gold = kehillah_incident_bribe_cost_value
+		}
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_incident_bribe_chance_value }
+				desc = kehillah_incident_out_redeemed
+				custom_tooltip = kehillah_incident_talmud_safe_tt
+				kehillah_incident_report_effect = { OUTCOME = talmud_redeemed }
+			}
+			0 = {
+				modifier = { add = kehillah_incident_bribe_fail_value }
+				desc = kehillah_incident_out_cheated
+				kehillah_talmud_burned_effect = yes
+				kehillah_incident_report_effect = { OUTCOME = talmud_cheated }
+			}
+		}
+		ai_chance = {
+			base = 15
+			modifier = {
+				add = 20
+				scope:kehillah_incident_host = { has_trait = greedy }
+			}
+		}
+	}
+
+	# Let them take the books.
+	option = {
+		name = kehillah_incident.0001.d
+		kehillah_talmud_burned_effect = yes
+		kehillah_incident_report_effect = { OUTCOME = talmud_burned }
+		ai_chance = { base = 5 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0010 The Badge. A Christian or Muslim host.
+# ---------------------------------------------------------------------
+kehillah_incident.0010 = {
+	type = character_event
+	title = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:kehillah_incident_host = { faith.religion = religion:islam_religion } }
+				desc = kehillah_incident.0010.t_ghiyar
+			}
+			desc = kehillah_incident.0010.t
+		}
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:kehillah_incident_host = { faith.religion = religion:islam_religion } }
+				desc = kehillah_incident.0010.desc_ghiyar
+			}
+			desc = kehillah_incident.0010.desc
+		}
+	}
+	theme = diplomacy
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:kehillah_incident_host
+		animation = dismissal
+	}
+	trigger = {
+		exists = primary_title
+		exists = domicile.domicile_location.county.holder.top_liege
+	}
+	immediate = {
+		kehillah_incident_scopes_effect = yes
+		domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
+	}
+
+	# The Shtadlan petitions the lord.
+	option = {
+		name = kehillah_incident.0010.a
+		trigger = { exists = scope:kehillah_incident_shtadlan }
+		kehillah_badge_petition_effect = yes
+		ai_chance = { base = 40 }
+	}
+
+	# I will petition the lord myself.
+	option = {
+		name = kehillah_incident.0010.e
+		trigger = { NOT = { exists = scope:kehillah_incident_shtadlan } }
+		kehillah_badge_petition_effect = yes
+		ai_chance = { base = 40 }
+	}
+
+	# Buy an exemption for my household.
+	option = {
+		name = kehillah_incident.0010.b
+		trigger = { gold >= kehillah_incident_small_bribe_cost_value }
+		show_as_unavailable = { always = yes }
+		pay_short_term_gold = {
+			target = scope:kehillah_incident_host
+			gold = kehillah_incident_small_bribe_cost_value
+		}
+		kehillah_badge_decree_effect = yes
+		custom_tooltip = kehillah_incident_badge_exempt_tt
+		ai_chance = { base = 20 }
+	}
+
+	# We will wear it as our fathers wore their names. (Zealous or stubborn.)
+	option = {
+		name = kehillah_incident.0010.d
+		trigger = {
+			OR = {
+				has_trait = zealous
+				has_trait = stubborn
+			}
+		}
+		kehillah_badge_decree_effect = yes
+		add_character_modifier = { modifier = kehillah_badge_modifier years = kehillah_badge_years }
+		add_piety = medium_piety_gain
+		primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_badge_pride_stability } }
+		ai_chance = { base = 30 }
+	}
+
+	# We will wear it.
+	option = {
+		name = kehillah_incident.0010.c
+		kehillah_badge_decree_effect = yes
+		add_character_modifier = { modifier = kehillah_badge_modifier years = kehillah_badge_years }
+		ai_chance = { base = 10 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0020 Holy Week. A Christian host, March or April.
+# ---------------------------------------------------------------------
+kehillah_incident.0020 = {
+	type = character_event
+	title = kehillah_incident.0020.t
+	desc = {
+		random_valid = {
+			desc = kehillah_incident.0020.desc_blow
+			desc = kehillah_incident.0020.desc_stones
+		}
+	}
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		trigger = { exists = scope:kehillah_incident_sent }
+		character = scope:kehillah_incident_sent
+		animation = fear
+	}
+	trigger = {
+		exists = primary_title
+		exists = domicile.domicile_location.county.holder.top_liege
+	}
+	immediate = {
+		kehillah_incident_scopes_effect = yes
+		domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
+		primary_title = { set_variable = { name = kehillah_holy_week_cooldown value = yes years = kehillah_holy_week_cooldown_years } }
+		random_courtier = {
+			limit = {
+				is_adult = yes
+				is_male = yes
+				is_jewish_character_trigger = yes
+				NOT = { root.player_heir ?= this }
+				NOT = { is_spouse_of = root }
+			}
+			save_scope_as = kehillah_incident_sent
+		}
+	}
+
+	# I will go myself.
+	option = {
+		name = kehillah_incident.0020.a
+		add_piety = medium_piety_gain
+		add_stress = medium_stress_gain
+		primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_holy_week_self_stability } }
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_holy_week_wound_fail_value }
+				desc = kehillah_incident_out_bruised
+				kehillah_incident_report_effect = { OUTCOME = holy_week_bruised }
+			}
+			0 = {
+				modifier = { add = kehillah_holy_week_wound_chance_value }
+				desc = kehillah_incident_out_wounded
+				increase_wounds_no_death_effect = { REASON = beaten }
+				kehillah_incident_report_effect = { OUTCOME = holy_week_wounded }
+			}
+		}
+		ai_chance = {
+			base = 20
+			modifier = {
+				add = 30
+				OR = {
+					has_trait = brave
+					has_trait = humble
+				}
+			}
+		}
+	}
+
+	# Send another man.
+	option = {
+		name = kehillah_incident.0020.b
+		trigger = { exists = scope:kehillah_incident_sent }
+		scope:kehillah_incident_sent = {
+			add_stress = medium_stress_gain
+			add_opinion = {
+				target = root
+				modifier = angry_opinion
+				opinion = -25
+			}
+		}
+		primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_holy_week_sent_stability } }
+		kehillah_incident_report_effect = { OUTCOME = holy_week_sent }
+		ai_chance = {
+			base = 40
+			modifier = {
+				add = 30
+				OR = {
+					has_trait = craven
+					has_trait = arrogant
+				}
+			}
+		}
+	}
+
+	# Pay the bishop to end the custom.
+	option = {
+		name = kehillah_incident.0020.c
+		trigger = { gold >= kehillah_incident_bribe_cost_value }
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = kehillah_incident_bribe_cost_value
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_incident_bribe_chance_value }
+				desc = kehillah_incident_out_ended
+				custom_tooltip = kehillah_incident_holy_week_ended_tt
+				primary_title = { set_variable = { name = kehillah_holy_week_redeemed value = yes } }
+				kehillah_incident_report_effect = { OUTCOME = holy_week_ended }
+			}
+			0 = {
+				modifier = { add = kehillah_incident_bribe_fail_value }
+				desc = kehillah_incident_out_kept
+				primary_title = { change_variable = { name = kehillah_var_stability add = kehillah_holy_week_sent_stability } }
+				kehillah_incident_report_effect = { OUTCOME = holy_week_kept }
+			}
+		}
+		ai_chance = { base = 15 }
+	}
+
+	# Nobody goes. (Brave or wrathful.)
+	option = {
+		name = kehillah_incident.0020.d
+		trigger = {
+			OR = {
+				has_trait = brave
+				has_trait = wrathful
+			}
+		}
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_holy_week_refuse_chance_value }
+				desc = kehillah_incident_out_refused
+				add_prestige = medium_prestige_gain
+				primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_holy_week_refuse_greatness } }
+				kehillah_incident_report_effect = { OUTCOME = holy_week_refused }
+			}
+			0 = {
+				modifier = { add = kehillah_holy_week_refuse_fail_value }
+				desc = kehillah_incident_out_riot
+				custom_tooltip = kehillah_incident_mob_tt
+				hidden_effect = { trigger_event = { id = kehillah_mob.0030 days = 1 } }
+				kehillah_incident_report_effect = { OUTCOME = holy_week_riot }
+			}
+		}
+		ai_chance = { base = 15 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0030 The Bonds. A lord in the host's realm owes the community.
+# ---------------------------------------------------------------------
+kehillah_incident.0030 = {
+	type = character_event
+	title = kehillah_incident.0030.t
+	desc = kehillah_incident.0030.desc
+	theme = dread
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+	right_portrait = {
+		character = scope:kehillah_incident_debtor
+		animation = scheme
+	}
+	trigger = {
+		exists = primary_title
+		exists = domicile.domicile_location.county.holder.top_liege
+	}
+	immediate = {
+		kehillah_incident_scopes_effect = yes
+		domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
+		primary_title = {
+			set_variable = { name = kehillah_bonds_cooldown value = yes years = kehillah_bonds_cooldown_years }
+			random_in_list = {
+				variable = kehillah_loan_debtors
+				limit = {
+					exists = var:kehillah_loan_amount_owed
+					OR = {
+						this = scope:kehillah_incident_host
+						top_liege ?= scope:kehillah_incident_host
+					}
+				}
+				save_scope_as = kehillah_incident_debtor
+			}
+		}
+	}
+
+	# Let them have the bonds.
+	option = {
+		name = kehillah_incident.0030.a
+		kehillah_bonds_burned_effect = yes
+		kehillah_incident_report_effect = { OUTCOME = bonds_burned }
+		ai_chance = { base = 20 }
+	}
+
+	# Move the strongbox tonight.
+	option = {
+		name = kehillah_incident.0030.b
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_bonds_hide_chance_value }
+				desc = kehillah_incident_out_bonds_hidden
+				custom_tooltip = kehillah_incident_bonds_safe_tt
+				kehillah_incident_report_effect = { OUTCOME = bonds_hidden }
+			}
+			0 = {
+				modifier = { add = kehillah_bonds_hide_fail_value }
+				desc = kehillah_incident_out_riot
+				kehillah_bonds_burned_effect = yes
+				custom_tooltip = kehillah_incident_mob_tt
+				hidden_effect = { trigger_event = { id = kehillah_mob.0030 days = 1 } }
+				kehillah_incident_report_effect = { OUTCOME = bonds_riot }
+			}
+		}
+		ai_chance = {
+			base = 20
+			modifier = {
+				add = 20
+				OR = {
+					has_trait = deceitful
+					has_trait = schemer
+				}
+			}
+		}
+	}
+
+	# Ask the lord to guard the house.
+	option = {
+		name = kehillah_incident.0030.c
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_bonds_lord_chance_value }
+				desc = kehillah_incident_out_guarded
+				custom_tooltip = kehillah_incident_bonds_safe_tt
+				kehillah_incident_report_effect = { OUTCOME = bonds_guarded }
+			}
+			0 = {
+				modifier = { add = kehillah_bonds_lord_fail_value }
+				desc = kehillah_incident_out_riot
+				kehillah_bonds_burned_effect = yes
+				custom_tooltip = kehillah_incident_mob_tt
+				hidden_effect = { trigger_event = { id = kehillah_mob.0030 days = 1 } }
+				kehillah_incident_report_effect = { OUTCOME = bonds_riot }
+			}
+		}
+		ai_chance = { base = 30 }
+	}
+
+	# Forgive his debt before they come.
+	option = {
+		name = kehillah_incident.0030.d
+		trigger = { exists = scope:kehillah_incident_debtor }
+		custom_tooltip = kehillah_incident_debt_forgiven_tt
+		hidden_effect = {
+			scope:kehillah_incident_debtor = {
+				remove_variable = kehillah_loan_amount_owed
+				remove_variable = kehillah_loan_lender_title
+				remove_variable = kehillah_loan_years_elapsed
+			}
+		}
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_bonds_forgive_chance_value }
+				desc = kehillah_incident_out_forgiven
+				custom_tooltip = kehillah_incident_bonds_safe_tt
+				scope:kehillah_incident_debtor = {
+					add_opinion = {
+						target = root
+						modifier = grateful_opinion
+						opinion = 20
+					}
+				}
+				kehillah_incident_report_effect = { OUTCOME = bonds_forgiven }
+			}
+			0 = {
+				modifier = { add = kehillah_bonds_forgive_fail_value }
+				desc = kehillah_incident_out_burned
+				kehillah_bonds_burned_effect = yes
+				kehillah_incident_report_effect = { OUTCOME = bonds_forgiven_failed }
+			}
+		}
+		ai_chance = {
+			base = 25
+			modifier = {
+				add = 25
+				has_trait = generous
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0090 What came of it. Players only; var:kehillah_incident_outcome.
+# ---------------------------------------------------------------------
+kehillah_incident.0090 = {
+	type = character_event
+	title = kehillah_incident.0090.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:talmud_acquitted }
+				desc = kehillah_incident.0090.talmud_acquitted
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:talmud_burned }
+				desc = kehillah_incident.0090.talmud_burned
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:talmud_dropped }
+				desc = kehillah_incident.0090.talmud_dropped
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:talmud_hidden }
+				desc = kehillah_incident.0090.talmud_hidden
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:talmud_found }
+				desc = kehillah_incident.0090.talmud_found
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:talmud_redeemed }
+				desc = kehillah_incident.0090.talmud_redeemed
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:talmud_cheated }
+				desc = kehillah_incident.0090.talmud_cheated
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:badge_revoked }
+				desc = kehillah_incident.0090.badge_revoked
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:badge_stands }
+				desc = kehillah_incident.0090.badge_stands
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:holy_week_bruised }
+				desc = kehillah_incident.0090.holy_week_bruised
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:holy_week_wounded }
+				desc = kehillah_incident.0090.holy_week_wounded
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:holy_week_sent }
+				desc = kehillah_incident.0090.holy_week_sent
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:holy_week_ended }
+				desc = kehillah_incident.0090.holy_week_ended
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:holy_week_kept }
+				desc = kehillah_incident.0090.holy_week_kept
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:holy_week_refused }
+				desc = kehillah_incident.0090.holy_week_refused
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:holy_week_riot }
+				desc = kehillah_incident.0090.holy_week_riot
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:bonds_burned }
+				desc = kehillah_incident.0090.bonds_burned
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:bonds_hidden }
+				desc = kehillah_incident.0090.bonds_hidden
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:bonds_guarded }
+				desc = kehillah_incident.0090.bonds_guarded
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:bonds_forgiven }
+				desc = kehillah_incident.0090.bonds_forgiven
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_incident_outcome ?= flag:bonds_forgiven_failed }
+				desc = kehillah_incident.0090.bonds_forgiven_failed
+			}
+			desc = kehillah_incident.0090.bonds_riot
+		}
+	}
+	theme = faith
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = {
+				OR = {
+					var:kehillah_incident_outcome ?= flag:talmud_acquitted
+					var:kehillah_incident_outcome ?= flag:talmud_dropped
+					var:kehillah_incident_outcome ?= flag:talmud_hidden
+					var:kehillah_incident_outcome ?= flag:talmud_redeemed
+					var:kehillah_incident_outcome ?= flag:badge_revoked
+					var:kehillah_incident_outcome ?= flag:holy_week_ended
+					var:kehillah_incident_outcome ?= flag:holy_week_refused
+					var:kehillah_incident_outcome ?= flag:bonds_hidden
+					var:kehillah_incident_outcome ?= flag:bonds_guarded
+					var:kehillah_incident_outcome ?= flag:bonds_forgiven
+				}
+			}
+			animation = happiness
+		}
+		animation = grief
+	}
+	trigger = {
+		is_ai = no
+		has_variable = kehillah_incident_outcome
+	}
+	option = {
+		name = kehillah_incident.0090.a
+		hidden_effect = { remove_variable = kehillah_incident_outcome }
+	}
+}

@@ -351,3 +351,97 @@ accusation and mission checks in `kehillah_on_actions.txt`.
 
 **Debug:** `kehillah_mob_debug.12` logs the danger and its terms; `.13` forces a roll.
 
+**Step 4a live test, 2026-10-14: passed.**
+- **The Stability tooltip** ends with the danger and its seven terms, rendered without blanks.
+- **The `.12` dump** matches the tooltip. After three game years: danger 53 = 40 + 14 + 2 + 10 + 0
+  - 13, and a 5.3% chance a quarter.
+- **The director** fired each kind: in three natural years, 3 accusations (each became a mob), 2
+  disputations, and friars in the synagogue.
+- **Fixed:** `.13` cleared only the director's cooldown, so forced rolls fell to "a mob" once the
+  three cooldown-gated incidents were used. It now clears each incident's cooldown.
+- **Not seen:** the Greatness lines for Jews at court and lords in debt (zero at start; not
+  re-hovered later).
+- **Noise from the debug path:** removing a mob with `.6` right after it forms leaves a vanilla
+  `on_war_started` "Scoped object is not valid (Casus_belli)" error.
+
+## Step 4b, built (2026-10-14): the new incidents and the risings
+
+**Files:**
+- `events/kehillah_incident_events.txt` (namespace `kehillah_incident`);
+- `common/scripted_effects/kehillah_incident_scene_effects.txt`;
+- `common/script_values/kehillah_incident_scene_values.txt`;
+- `common/scripted_triggers/kehillah_incident_triggers.txt`;
+- `common/modifiers/kehillah_incident_modifiers.txt`;
+- `localization/english/kehillah_incident_l_english.yml`.
+
+Each incident is +1 recent incident in the county's faith. A player gets a short scene two days later
+(`.0090`), with what came of the choice.
+
+**`.0001` The Talmud on Trial** (Paris, 1240). Christian hosts. The library must hold a tractate.
+Director weight 10, +10 under a strict teaching, +10 from 1230. A 30-year cooldown.
+- **The accuser:** a man who studied among us and was baptized (Donin), with learning 12-20. He joins
+  the host's court.
+- **Answer him in the hall:** 25 + (our best learning, the leader's or the Dayyan's, minus his) x3 +
+  the lord's outlook / 4; a zealous lord -10, a just lord +10.
+- **The Shtadlan goes first:** 10 + his diplomacy x2 + the lord's opinion of him / 4 + outlook / 4; a
+  zealous lord -15.
+- **Hide the books:** 15 + intrigue x2; deceitful +10, a schemer +10. A failure also costs 5 of the
+  lord's outlook.
+- **Pay** (major gold): 35 + outlook / 2; greedy +20, zealous -20, just -10. A lord who keeps the
+  silver and burns the books anyway is a possible outcome.
+- **The burning:** every Talmud tractate leaves the library, Greatness -40, and stress. Under a
+  Christian charter, the text term grows one step stricter.
+
+**`.0010` The Badge / the Ghiyar** (Lateran IV, 1215; the Pact of Umar). Christian or Muslim hosts.
+Weight 10, +10 under a strict teaching, +10 from 1215 (always for Muslim hosts).
+- **The decree:** 30 years, Stability -15, Greatness -15, and the danger +10 while it lasts (a new
+  line in the tooltip).
+- **The leader's modifier** `kehillah_badge_modifier`: prestige gain -15%, diplomacy -1.
+- **The petition,** by the Shtadlan or by the leader without one: 15 + diplomacy x2 + outlook / 3 +
+  the lord's opinion of the leader / 5; a zealous lord -15.
+- **Buy an exemption** for the household (medium gold): the decree without the modifier.
+- **Wear it as our fathers wore their names** (zealous or stubborn): the modifier, piety, Stability
+  +10.
+
+**`.0020` Holy Week** (the blow at Toulouse; the stones of Beziers, ended for a payment in 1160).
+Christian hosts, March and April. Weight 40. A 3-year cooldown.
+- **Go yourself:** piety, stress, Stability +10, and a real wound at 30 - prowess x2.
+- **Send a man:** he is angry with you; Stability -10.
+- **Pay the bishop** (major gold) to end it for good, at the bribe odds.
+- **Nobody goes** (brave or wrathful): 15 + outlook / 2 + prestige level x5 that the lord's men hold
+  the crowd off; otherwise a mob.
+
+**`.0030` The Bonds** (York, 1190). A lord of the host's realm owes us. Weight 10, +15 in hard times.
+A 10-year cooldown.
+- **Let them burn:** every debt the host and his lords owe us is void; Prosperity -40.
+- **Move the strongbox:** 25 + intrigue x3; deceitful +10. Failure: the bonds burn and a mob forms.
+- **Ask the lord to guard the house:** 30 + outlook / 2; -25 if he owes us himself; greedy -10.
+  Failure is the same.
+- **Forgive the ringleader's debt:** 40 + diplomacy x2 + his opinion of the leader / 4. Failure: the
+  bonds burn anyway.
+
+**Not built:** host desecration as an accusation variant. The accusation event (V37) already
+carries the blood libel; a second charge text is left for a later pass.
+
+**Step 4b-2: a rising sends a mob.** When a vanilla peasant or populist revolt in the community's
+county turns on the Jews (V34 section 4, unchanged odds), it no longer deals an abstract blow. It
+raises a mob of 1500 at severity 55 (`kehillah_rising_mob_size`, `_severity`).
+- **Where it forms:** where the rising's leader is, unless that is already at the gates (then the
+  usual 100-200 pixels away).
+- **Who leads it:** a preacher from the rebel camp, not the rising's leader. **This departs from
+  section 7's table,** which said the revolt leader declares the war. The mob's march moves every
+  army of its leader, so it would carry off the rising's own army.
+- **The warning,** `kehillah_mob.0001`, has a rising variant that names the rising's leader
+  (`kehillah_mob_sent_by` on the preacher).
+- **The rising's leader** still founds his Exclusion rite.
+- **Fallback:** if no mob can form, because the community already faces one, the V36 blow applies as
+  before.
+
+**Debug:**
+- `kehillah_mob_debug.14` fires the Talmud trial (it adds the Bavli's Moed if the library has no
+  Talmud);
+- `.15` the badge;
+- `.16` Holy Week, in any month;
+- `.17` the bonds (the host borrows 100 if no lord of his realm owes us);
+- `.12` now logs `kmd_badge`.
+
