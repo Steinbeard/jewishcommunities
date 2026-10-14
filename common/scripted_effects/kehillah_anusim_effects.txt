@@ -1,0 +1,164 @@
+﻿# =====================================================================
+# V39 slice 3b -- the forced converts' return (docs/spec/v39-pogroms-and-
+# the-popular-crusade.md, "Slice 3b"), 2026-10-14. Henry IV let the
+# baptized of 1096 return in 1097; the antipope objected; Rashi ruled
+# leniently on receiving them. The baptized are kept in a list on their
+# community's title (kehillah_anusim), each with var:kehillah_anus.
+# =====================================================================
+
+# Yearly. Scope: a Kehillah leader.
+kehillah_anusim_yearly_effect = {
+	primary_title ?= {
+		save_scope_as = kehillah_anusim_title
+		# Forget the dead and those who have already returned.
+		every_in_list = {
+			variable = kehillah_anusim
+			limit = {
+				OR = {
+					is_alive = no
+					is_jewish_character_trigger = yes
+				}
+			}
+			save_scope_as = kehillah_anusim_gone
+			scope:kehillah_anusim_title = {
+				remove_list_variable = { name = kehillah_anusim target = scope:kehillah_anusim_gone }
+			}
+		}
+		# A quiet return may come to the Church's ears.
+		if = {
+			limit = { has_variable = kehillah_anusim_hidden }
+			random = {
+				chance = kehillah_anusim_discovery_chance
+				remove_variable = kehillah_anusim_hidden
+				holder = { kehillah_anusim_discovered_effect = yes }
+			}
+		}
+	}
+	domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_anusim_overlord }
+	if = {
+		limit = {
+			exists = scope:kehillah_anusim_title
+			exists = scope:kehillah_anusim_overlord
+			NOT = { scope:kehillah_anusim_overlord = this }
+			scope:kehillah_anusim_title = {
+				NOT = { has_variable = kehillah_anusim_asked }
+				any_in_list = {
+					variable = kehillah_anusim
+					is_alive = yes
+					NOT = { is_jewish_character_trigger = yes }
+				}
+			}
+		}
+		scope:kehillah_anusim_title = {
+			set_variable = { name = kehillah_anusim_asked value = yes years = 1 }
+		}
+		if = {
+			limit = { is_ai = no }
+			trigger_event = kehillah_anusim.0001
+		}
+		# An AI community petitions the overlord.
+		else_if = {
+			limit = { scope:kehillah_anusim_overlord = { is_ai = no } }
+			save_scope_as = kehillah_anusim_petitioner
+			scope:kehillah_anusim_overlord = { trigger_event = kehillah_anusim.0010 }
+		}
+		else = {
+			random = {
+				chance = scope:kehillah_anusim_overlord.kehillah_anusim_ai_overlord_chance_value
+				kehillah_anusim_return_effect = yes
+				kehillah_anusim_overlord_allows_effect = yes
+			}
+		}
+	}
+}
+
+# The return, received without reproach: all who can come, come. Scope:
+# the Kehillah leader. (Two effects rather than a parameter branch: the
+# repo avoids `always = $PARAM$`, kehillah_departure_effects.txt header.)
+kehillah_anusim_return_effect = {
+	save_scope_as = kehillah_anusim_leader
+	primary_title = {
+		every_in_list = {
+			variable = kehillah_anusim
+			limit = {
+				is_alive = yes
+				NOT = { is_jewish_character_trigger = yes }
+				is_imprisoned = no
+			}
+			save_scope_as = kehillah_anusim_returning
+			kehillah_anusim_take_back_effect = yes
+		}
+		clear_variable_list = kehillah_anusim
+		change_variable = { name = kehillah_var_stability add = kehillah_anusim_return_stability }
+		clamp_variable = { name = kehillah_var_stability min = 0 max = 100000 }
+	}
+}
+
+# The return after penance: a third are shamed and stay away. Scope: the
+# Kehillah leader.
+kehillah_anusim_return_penance_effect = {
+	save_scope_as = kehillah_anusim_leader
+	primary_title = {
+		every_in_list = {
+			variable = kehillah_anusim
+			limit = {
+				is_alive = yes
+				NOT = { is_jewish_character_trigger = yes }
+				is_imprisoned = no
+			}
+			save_scope_as = kehillah_anusim_returning
+			random = {
+				chance = 67
+				kehillah_anusim_take_back_effect = yes
+			}
+		}
+		clear_variable_list = kehillah_anusim
+		change_variable = { name = kehillah_var_stability add = kehillah_anusim_return_stability }
+		change_variable = { name = kehillah_var_greatness add = kehillah_anusim_penance_greatness }
+		clamp_variable = { name = kehillah_var_stability min = 0 max = 100000 }
+	}
+}
+
+# Scope: one returning convert; scope:kehillah_anusim_leader.
+kehillah_anusim_take_back_effect = {
+	# V41: the crypto-religionist secret ends when they return openly.
+	every_secret = {
+		limit = { secret_type = secret_crypto_religionist }
+		remove_secret = yes
+	}
+	set_character_faith = scope:kehillah_anusim_leader.faith
+	if = {
+		limit = { has_variable = kehillah_anus }
+		remove_variable = kehillah_anus
+	}
+	scope:kehillah_anusim_leader = { add_courtier = scope:kehillah_anusim_returning }
+}
+
+# The overlord allowed it: his clergy object. Scope: anything;
+# scope:kehillah_anusim_overlord.
+kehillah_anusim_overlord_allows_effect = {
+	scope:kehillah_anusim_overlord = {
+		kehillah_shift_outlook_effect = { AMOUNT = 3 }
+		faith = { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
+	}
+}
+
+# A quiet return is discovered. Scope: the Kehillah leader.
+kehillah_anusim_discovered_effect = {
+	domicile.domicile_location.county.holder.top_liege ?= {
+		kehillah_shift_outlook_effect = { AMOUNT = -5 }
+	}
+	domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 2 } }
+	primary_title ?= {
+		change_variable = { name = kehillah_var_stability add = -60 }
+		clamp_variable = { name = kehillah_var_stability min = 0 max = 100000 }
+	}
+	if = {
+		limit = { is_ai = no }
+		send_interface_message = {
+			type = msg_kehillah_community_news_bad
+			title = kehillah_anusim_discovered_t
+			desc = kehillah_anusim_discovered_d
+		}
+	}
+}

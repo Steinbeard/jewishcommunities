@@ -1,0 +1,265 @@
+﻿# =====================================================================
+# V39 slice 2 -- the Popular Crusade (docs/spec/v39-pogroms-and-the-
+# popular-crusade.md section 7), 2026-10-14. When a Catholic crusade is
+# called, a preacher raises a host among the communities of a Catholic
+# realm and it goes from town to town: one war at a time, the army kept
+# between them (spike 0, S4).
+# =====================================================================
+
+# Yearly (yearly_global_pulse). A Catholic Great Holy War is underway:
+# the first time a host is certain, later 50%. Fifteen years between.
+kehillah_popular_crusade_check_effect = {
+	if = {
+		limit = {
+			NOT = { has_game_rule = kehillah_popular_crusades_off }
+			faith:catholic = { exists = great_holy_war }
+			NOT = { has_global_variable = kehillah_popular_crusade_cooldown }
+		}
+		set_global_variable = {
+			name = kehillah_popular_crusade_cooldown
+			value = yes
+			years = kehillah_popular_crusade_cooldown_years
+		}
+		random = {
+			chance = {
+				value = 50
+				if = {
+					limit = { NOT = { has_global_variable = kehillah_popular_crusade_first_done } }
+					value = 100
+				}
+			}
+			set_global_variable = { name = kehillah_popular_crusade_first_done value = yes }
+			debug_log = "kehillah_popular_crusade_check_effect: the cross is preached; a host will form"
+			every_player = {
+				limit = { kehillah_crusade_catholic_community_trigger = yes }
+				send_interface_message = {
+					type = msg_kehillah_community_news_bad
+					title = kehillah_crusade_preached_t
+					desc = kehillah_crusade_preached_d
+				}
+			}
+			trigger_event = {
+				id = kehillah_crusade.0001
+				days = { 30 90 }
+			}
+		}
+	}
+}
+
+# The host forms where the communities are thickest. Scope: any.
+kehillah_popular_crusade_start_effect = {
+	every_ruler = {
+		limit = { kehillah_crusade_catholic_community_trigger = yes }
+		save_scope_as = kehillah_crusade_center
+		set_variable = { name = kehillah_crusade_cluster value = kehillah_crusade_cluster_value }
+	}
+	ordered_ruler = {
+		limit = {
+			kehillah_crusade_catholic_community_trigger = yes
+			has_variable = kehillah_crusade_cluster
+			var:kehillah_crusade_cluster >= kehillah_crusade_min_cluster
+		}
+		order_by = var:kehillah_crusade_cluster
+		save_scope_as = kehillah_crusade_first
+	}
+	every_ruler = {
+		limit = { has_variable = kehillah_crusade_cluster }
+		remove_variable = kehillah_crusade_cluster
+	}
+	if = {
+		limit = { exists = scope:kehillah_crusade_first }
+		scope:kehillah_crusade_first = {
+			kehillah_mob_raise_effect = {
+				SIZE = kehillah_mob_crusade_size
+				SEVERITY = kehillah_mob_crusade_severity
+			}
+		}
+		scope:kehillah_mob_leader ?= {
+			if = {
+				limit = { is_alive = yes }
+				add_character_flag = kehillah_mob_crusade
+				set_variable = {
+					name = kehillah_mob_targets_left
+					value = {
+						integer_range = {
+							min = kehillah_crusade_extra_targets_min
+							max = kehillah_crusade_extra_targets_max
+						}
+					}
+				}
+				debug_log = "kehillah_popular_crusade_start_effect: a crusading host has formed"
+			}
+		}
+	}
+	else = {
+		debug_log = "kehillah_popular_crusade_start_effect: no cluster of communities under a Catholic lord"
+	}
+}
+
+# After a town is struck or pays: on to the next, or the end. Scope: the
+# mob leader.
+kehillah_mob_after_strike_effect = {
+	if = {
+		limit = {
+			has_character_flag = kehillah_mob_crusade
+			has_variable = kehillah_mob_targets_left
+			var:kehillah_mob_targets_left >= 1
+		}
+		kehillah_mob_retarget_effect = yes
+	}
+	else = {
+		kehillah_mob_end_effect = yes
+	}
+}
+
+# Turn the host toward its next community. Scope: the mob leader.
+kehillah_mob_retarget_effect = {
+	save_scope_as = kehillah_mob_leader
+	random_army = {
+		location = { save_scope_as = kehillah_mob_from }
+	}
+	# The community just struck: done with it.
+	var:kehillah_mob_target_title ?= {
+		save_scope_as = kehillah_mob_old_title
+		kehillah_mob_clear_title_effect = yes
+		holder ?= {
+			if = {
+				limit = { has_variable = kehillah_mob_last_town_ref }
+				remove_variable = kehillah_mob_last_town_ref
+			}
+			if = {
+				limit = { has_variable = kehillah_mob_ref }
+				remove_variable = kehillah_mob_ref
+			}
+			if = {
+				limit = { has_variable = kehillah_mob_band }
+				remove_variable = kehillah_mob_band
+			}
+		}
+	}
+	if = {
+		limit = { exists = scope:kehillah_mob_old_title }
+		add_to_variable_list = { name = kehillah_mob_struck_titles target = scope:kehillah_mob_old_title }
+	}
+	var:kehillah_mob_target_province ?= { save_scope_as = kehillah_mob_last_town }
+	change_variable = { name = kehillah_mob_targets_left add = -1 }
+	if = {
+		limit = { has_character_flag = kehillah_mob_at_gates }
+		remove_character_flag = kehillah_mob_at_gates
+	}
+	if = {
+		limit = { has_character_flag = kehillah_mob_done }
+		remove_character_flag = kehillah_mob_done
+	}
+	# The next: near, rich, under a cold lord (kehillah_mob_target_score_value).
+	if = {
+		limit = { exists = scope:kehillah_mob_from }
+		every_ruler = {
+			limit = { kehillah_mob_next_target_trigger = yes }
+			set_variable = { name = kehillah_mob_score value = kehillah_mob_target_score_value }
+		}
+		ordered_ruler = {
+			limit = {
+				kehillah_mob_next_target_trigger = yes
+				has_variable = kehillah_mob_score
+			}
+			order_by = var:kehillah_mob_score
+			save_scope_as = kehillah_mob_next
+		}
+		every_ruler = {
+			limit = { has_variable = kehillah_mob_score }
+			remove_variable = kehillah_mob_score
+		}
+	}
+	if = {
+		limit = { exists = scope:kehillah_mob_next }
+		scope:kehillah_mob_next = {
+			save_scope_as = kehillah_mob_victim
+			primary_title = { save_scope_as = kehillah_mob_victim_title }
+			domicile.domicile_location = { save_scope_as = kehillah_mob_town }
+		}
+		set_variable = { name = kehillah_mob_target_title value = scope:kehillah_mob_victim_title }
+		set_variable = { name = kehillah_mob_target_province value = scope:kehillah_mob_town }
+		set_variable = { name = kehillah_mob_location value = scope:kehillah_mob_from }
+		if = {
+			limit = { has_variable = kehillah_mob_wait }
+			remove_variable = kehillah_mob_wait
+		}
+		start_war = {
+			cb = kehillah_mob_community_cb
+			target = scope:kehillah_mob_victim
+		}
+		if = {
+			limit = { is_at_war_with = scope:kehillah_mob_victim }
+			# Loot draws men: a tenth more.
+			random_character_war = { save_scope_as = kehillah_mob_war }
+			# No ally answers a call to arms on its own (live 2026-10-14: AI
+			# communities called their allies, who held the town until the
+			# host wore away). Help comes only by persuasion
+			# (kehillah_mob_lord_raises_men_effect) or a player's choice.
+			scope:kehillah_mob_victim = {
+				every_ally = {
+					save_scope_as = kehillah_mob_ally
+					scope:kehillah_mob_war = { set_called_to = scope:kehillah_mob_ally }
+				}
+			}
+			spawn_army = {
+				name = kehillah_mob_army_name
+				levies = {
+					value = var:kehillah_mob_size
+					multiply = 0.1
+					round = yes
+					min = 50
+				}
+				location = scope:kehillah_mob_from
+				war = scope:kehillah_mob_war
+				war_keep_on_attacker_victory = yes
+				inheritable = no
+				uses_supply = yes
+			}
+			set_variable = { name = kehillah_mob_size value = kehillah_mob_total_men_value }
+			kehillah_mob_set_band_effect = yes
+			scope:kehillah_mob_victim_title = {
+				set_variable = { name = kehillah_mob_threat value = scope:kehillah_mob_leader }
+			}
+			scope:kehillah_mob_victim = {
+				set_variable = { name = kehillah_mob_ref value = scope:kehillah_mob_leader }
+				set_variable = { name = kehillah_mob_location_ref value = scope:kehillah_mob_from }
+				set_variable = { name = kehillah_mob_last_town_ref value = scope:kehillah_mob_last_town }
+				set_variable = { name = kehillah_mob_band value = scope:kehillah_mob_leader.var:kehillah_mob_band_now }
+				trigger_event = { id = kehillah_mob.0001 days = 1 }
+				kehillah_notify_region_players_effect = {
+					TYPE = msg_kehillah_community_news_bad
+					TITLE = kehillah_mob_news_turns_t
+					DESC = kehillah_mob_news_turns_d
+				}
+			}
+			debug_log = "kehillah_mob_retarget_effect: the host turns to its next community"
+		}
+		else = {
+			debug_log = "kehillah_mob_retarget_effect: the new war FAILED; the host breaks up"
+			kehillah_mob_end_effect = yes
+		}
+	}
+	else = {
+		kehillah_mob_marches_east_effect = yes
+	}
+}
+
+# Nothing left in reach, or its count done: it goes east, toward the
+# Holy Land (Emicho's host was destroyed in Hungary). Scope: the mob
+# leader.
+kehillah_mob_marches_east_effect = {
+	save_scope_as = kehillah_mob_leader
+	debug_log = "kehillah_mob_marches_east_effect: the host marches east"
+	every_player = {
+		limit = { government_has_flag = government_is_kehillah }
+		send_interface_message = {
+			type = msg_kehillah_community_news
+			title = kehillah_mob_news_east_t
+			desc = kehillah_mob_news_east_d
+			left_icon = scope:kehillah_mob_leader
+		}
+	}
+	kehillah_mob_end_effect = yes
+}

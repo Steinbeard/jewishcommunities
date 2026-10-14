@@ -42,62 +42,30 @@ kehillah_accusation_defused_effect = {
 	debug_log = "kehillah_accusation: defused"
 }
 
-# Scope: a Kehillah leader. The mob comes. $MULT$ scales the harm on top
-# of the lord's protection (1, or the barricade's 0.6).
+# Scope: a Kehillah leader. The mob comes. V39 slice 5 (2026-10-14): the
+# crowd becomes a real mob in the town itself (kehillah_mob_raise_effect,
+# 1000 men, base severity 45), so the accusation ends in the same siege of
+# the quarter and pogrom as any other host; its harm, martyrs, hostages
+# and the faith's incident are the pogrom's. $MULT$ (1, or the barricade's
+# 0.6) shifts the severity: (MULT - 1) x 40, so the barricade is -16.
 kehillah_accusation_violence_effect = {
-	save_scope_value_as = {
-		name = kehillah_accusation_mult
-		value = {
-			value = kehillah_host_protection_mult_value
-			multiply = $MULT$
+	primary_title ?= {
+		if = {
+			limit = { NOT = { has_variable = kehillah_mob_severity_adjust } }
+			set_variable = { name = kehillah_mob_severity_adjust value = 0 }
 		}
-	}
-	save_scope_value_as = {
-		name = kehillah_accusation_stab
-		value = {
-			value = kehillah_accusation_violence_stability
-			multiply = scope:kehillah_accusation_mult
-		}
-	}
-	save_scope_value_as = {
-		name = kehillah_accusation_pros
-		value = {
-			value = kehillah_accusation_violence_prosperity
-			multiply = scope:kehillah_accusation_mult
-		}
-	}
-	# For the report (kehillah_accusation.0002): loc reads a character's
-	# variables.
-	set_variable = { name = kehillah_accusation_last_stability value = scope:kehillah_accusation_stab }
-	set_variable = { name = kehillah_accusation_last_prosperity value = scope:kehillah_accusation_pros }
-	primary_title = {
-		change_variable = { name = kehillah_var_stability add = scope:kehillah_accusation_stab }
-		change_variable = { name = kehillah_var_prosperity add = scope:kehillah_accusation_pros }
-		clamp_variable = { name = kehillah_var_stability min = 0 max = 100000 }
-		clamp_variable = { name = kehillah_var_prosperity min = 0 max = 100000 }
-	}
-	custom_tooltip = kehillah_accusation_violence_tt
-	hidden_effect = {
-		random = {
-			chance = 30
-			random_courtier = {
-				limit = {
-					is_adult = yes
-					is_jewish_character_trigger = yes
-					NOT = { root.player_heir ?= this }
-					NOT = { is_spouse_of = root }
-				}
-				save_scope_as = kehillah_accusation_martyr
-				death = { death_reason = death_murder }
+		change_variable = {
+			name = kehillah_mob_severity_adjust
+			add = {
+				value = $MULT$
+				add = -1
+				multiply = 40
 			}
 		}
-		kehillah_notify_region_players_effect = {
-			TYPE = msg_kehillah_community_news_bad
-			TITLE = kehillah_news_accusation_t
-			DESC = kehillah_news_accusation_d
-		}
 	}
-	# V38: blood spilled hardens the faith of the county.
-	domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 2 } }
-	debug_log = "kehillah_accusation: violence"
+	custom_tooltip = kehillah_accusation_violence_tt
+	# The mob rises a day later, in a hidden event: raising it inside the
+	# option made the tooltip builder evaluate the raise (live 2026-10-14:
+	# 18,000 "no character" lines while the options were hovered).
+	trigger_event = { id = kehillah_mob.0030 days = 1 }
 }

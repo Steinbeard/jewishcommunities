@@ -1,4 +1,22 @@
-﻿
+﻿## Overnight V40 slice 1 -- 2026-10-14 05:22 America/New_York
+
+- Built the highest-priority incidents-counter slice on the existing
+  `autonomous/shabbat-2026-10` checkout; no branch/worktree created.
+- Source and Tiger checks pass for this increment (remaining touched-file
+  Tiger errors are verified CK3 1.20 rite-syntax false positives).
+- **LIVE VERIFICATION PENDING:** the preserved CK3 instance, PID 3320,
+  did not register the new debug-event namespace. Reload attempts did not
+  establish that new effect/value definitions were loaded; no live script
+  assertion or counter tooltip check passed. Game was left alive/paused,
+  no counter seeds applied, save untouched. Its error suppression further
+  limits runtime-error conclusions.
+- Needed next: fresh-boot slice-1 debug/HUD checks with unsuppressed logs,
+  then V40 slice 2, the Council/Caliph. No lower TODO selected. No immediate
+  Daniel action required; preserve the current game until it can end normally.
+- Evidence: docs/testing/2026-10-14-recent-incidents-live-test-log.md.
+  All five pre-existing tracked diffs and 16 untracked assets preserved.
+
+
 ## Automated run status -- 2026-09-09_020002 (overnight/2026-09-09)
 - Cut off by a usage/session limit (detected in this run's log): False
 - Uncommitted changes in the working tree at run end: YES --

@@ -1,0 +1,151 @@
+﻿namespace = kehillah_anusim
+
+# =====================================================================
+# V39 slice 3b -- the forced converts' return.
+#   .0001 The Baptized Wish to Return (the community's leader, a player)
+#   .0002 How Shall We Receive Them? (the Bet Din's ruling)
+#   .0010 A Petition for the Baptized (the overlord, a player)
+#   .0011 The Overlord's Answer (back to the community, a player)
+# =====================================================================
+
+kehillah_anusim.0001 = {
+	type = character_event
+	title = kehillah_anusim.0001.t
+	desc = kehillah_anusim.0001.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:kehillah_anusim_overlord
+		animation = thinking
+	}
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_anusim_overlord }
+		primary_title ?= {
+			random_in_list = {
+				variable = kehillah_anusim
+				limit = { is_alive = yes }
+				save_scope_as = kehillah_anusim_one
+			}
+		}
+	}
+
+	# Petition the overlord.
+	option = {
+		name = kehillah_anusim.0001.a
+		trigger = { exists = scope:kehillah_anusim_overlord }
+		if = {
+			limit = { scope:kehillah_anusim_overlord = { is_ai = no } }
+			custom_tooltip = kehillah_anusim_petition_player_tt
+			save_scope_as = kehillah_anusim_petitioner
+			scope:kehillah_anusim_overlord = { trigger_event = kehillah_anusim.0010 }
+		}
+		else = {
+			random_list = {
+				0 = {
+					modifier = { add = kehillah_anusim_petition_chance_value }
+					desc = kehillah_anusim_allowed
+					custom_tooltip = kehillah_anusim_allowed_tt
+					kehillah_anusim_overlord_allows_effect = yes
+					trigger_event = kehillah_anusim.0002
+				}
+				0 = {
+					modifier = { add = kehillah_anusim_petition_fail_value }
+					desc = kehillah_anusim_refused
+					custom_tooltip = kehillah_anusim_refused_tt
+				}
+			}
+		}
+	}
+
+	# Receive them quietly, without leave.
+	option = {
+		name = kehillah_anusim.0001.b
+		custom_tooltip = kehillah_anusim_quiet_tt
+		primary_title ?= {
+			set_variable = { name = kehillah_anusim_hidden value = yes years = 10 }
+		}
+		trigger_event = kehillah_anusim.0002
+	}
+
+	# Let them be.
+	option = {
+		name = kehillah_anusim.0001.c
+		custom_tooltip = kehillah_anusim_wait_tt
+	}
+}
+
+# The Bet Din's ruling on how to receive them.
+kehillah_anusim.0002 = {
+	type = character_event
+	title = kehillah_anusim.0002.t
+	desc = kehillah_anusim.0002.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	option = {
+		name = kehillah_anusim.0002.a
+		custom_tooltip = kehillah_anusim_lenient_tt
+		kehillah_anusim_return_effect = yes
+	}
+	option = {
+		name = kehillah_anusim.0002.b
+		custom_tooltip = kehillah_anusim_penance_tt
+		kehillah_anusim_return_penance_effect = yes
+	}
+}
+
+# A player overlord is petitioned. scope:kehillah_anusim_overlord is root;
+# the community's leader is the event's scope:kehillah_anusim_leader_ref
+# (saved by the sender as the root of .0001 -- carried in the event).
+kehillah_anusim.0010 = {
+	type = character_event
+	title = kehillah_anusim.0010.t
+	desc = kehillah_anusim.0010.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_anusim_petitioner
+		animation = worry
+	}
+	immediate = {
+		save_scope_as = kehillah_anusim_overlord
+	}
+	option = {
+		name = kehillah_anusim.0010.a
+		custom_tooltip = kehillah_anusim_allow_tt
+		add_piety = minor_piety_loss
+		kehillah_anusim_overlord_allows_effect = yes
+		scope:kehillah_anusim_petitioner ?= {
+			add_opinion = { target = root modifier = grateful_opinion opinion = 30 }
+			if = {
+				limit = { is_ai = no }
+				trigger_event = kehillah_anusim.0002
+			}
+			else = {
+				kehillah_anusim_return_effect = yes
+			}
+		}
+	}
+	option = {
+		name = kehillah_anusim.0010.b
+		scope:kehillah_anusim_petitioner ?= {
+			if = {
+				limit = { is_ai = no }
+				send_interface_message = {
+					type = msg_kehillah_community_news_bad
+					title = kehillah_anusim_refused
+					desc = kehillah_anusim_refused_tt
+					left_icon = root
+				}
+			}
+		}
+	}
+}

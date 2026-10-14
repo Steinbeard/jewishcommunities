@@ -17,6 +17,98 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### V41 The danger of violence, the incidents, the pogrom unfolding — 2026-10-14, Daniel's request
+
+Spec: [v41](docs/spec/v41-danger-incidents-and-the-pogrom-unfolding.md).
+
+**The plan:**
+- **Character-driven checks,** and options unique to each leader.
+- **The pogrom unfolds** in scenes, with the leader's own fate at stake. A leader baptized by force
+  steps down; the player continues as the successor or as the convert. Forced converts take an
+  anusim rite.
+- **The crusade's preaching phase.**
+- **A danger-of-violence score** (Greatness, incidents, hard times, the teaching, the lord): hard
+  to reverse, possible to escape.
+- **One incident director** with new incidents: host desecration, the Talmud trial, sumptuary
+  laws, Holy Week humiliation, debt riots, uprisings.
+
+**Division:** the director and the incident catalogue are Claude's; V40's Firebrand (Codex) drives
+incidents through it. **Next: step 1, the pogrom unfolding.**
+
+### V40 Living crises and councils — 2026-10-13, Daniel's request
+
+Spec: [v40](docs/spec/v40-living-crises-and-councils.md). Daniel wants crises to be character-driven
+event chains with variety, not pop-ups fired by statistics.
+
+**The plan:**
+- **The Firebrand:** a named, recurring instigator whose acts escalate: preaching, then a
+  disputation, an accusation and a mob.
+- **Named allies.**
+- **"Recent incidents" in a faith** (V38's pressure, made visible) call a **Council** (Christian) or
+  a petition to the **Caliph** (Muslim). The communities lobby there, with pooled petitions. The
+  outcome is a stricter teaching with a named decree, or protection reaffirmed.
+- **What it replaces:** V38's silent yearly hardening. Vanilla's council needs the By God Alone
+  DLC; this chain does not.
+
+**Slices:**
+1. The incidents counter.
+2. The Council and the Caliph.
+3. The Firebrand.
+4. Allies.
+5. Variants for the V36 events.
+
+**Slice 1, 2026-10-14:** built and source/Tiger-checked; live verification pending.
+Your Host now shows its faith's Recent incidents and Goodwill, retaining the existing
+save variables and yearly fifth-decay. A completed pogrom adds 4 incidents to its county
+faith. The silent annual teaching rolls are removed, including their softening mirror;
+the Learned Exchange tooltip no longer promises annual softening. The existing DLC
+council debate remains. The non-DLC Council/Caliph route is slice 2, not yet built;
+no council threshold is advertised until it exists. See
+[the implementation addendum](docs/implementation/kehillah-recent-incidents.md).
+The existing running game did not register the new debug-event namespace; no counter
+or tooltip assertion passed. It was left paused with its save untouched. First next
+step is a fresh-boot slice-1 check, then slice 2 (Council/Caliph); see
+[the actual test log](docs/testing/2026-10-14-recent-incidents-live-test-log.md).
+No lower TODO item was selected for this run.
+
+### V39 Pogroms and the popular crusade — 2026-10-13, Daniel's request
+
+Spec: [v39](docs/spec/v39-pogroms-and-the-popular-crusade.md). It answers V22 feature 4 and closes
+S11's open question: the popular bands are a mod-side peasant army.
+
+**The plan:**
+- **The Mob:** a general pogrom mechanic. A preacher's real army besieges communities one by one.
+- **Its users:** the Popular Crusade, hooked on a Catholic Great Holy War, and Granada 1066.
+- **The aftermath:** trauma, *Kiddush ha-Shem* and asceticism as tenets, forced converts' return,
+  and refugees.
+
+**Slices:** 0, the engine spike (eight questions, §10), then 1 the Mob, 2 the Crusade, 3 the
+aftermath, and 4 Granada. **Status 2026-10-14: slices 0-5 built and live-tested** (details
+and test results in the spec):
+- **The Mob, against one community:**
+  - the elders' hub, with visits that take travel time and show their odds;
+  - the scripted march, the siege of the quarter, and the lord's men;
+  - the pogrom outcome, the ransom, and pressure lines in the tooltips.
+- **The Popular Crusade:**
+  - a Catholic crusade call starts it, and it chains from town to town;
+  - allies do not answer a call to arms on their own.
+- **The aftermath:**
+  - Kiddush ha-Shem, a new tenet, and personal tenets;
+  - the Year of the Decrees and the Memorbuch;
+  - the forced converts' return (petition or quiet return; the Bet Din's ruling).
+- **Granada, 30 December 1066.**
+- **Game rules:** popular crusades, and historical crises at game start.
+- **Accusations** raise a real mob.
+
+**Open:**
+- refugees (via the exiles system);
+- a second, eastern host;
+- early answers during the months of preaching;
+- the V36 rising, still abstract;
+- a soak to tune how often and how hard.
+
+V40 (councils, the Firebrand) is Codex's.
+
 ### Pillar band effects in tooltips — 2026-10-12, Daniel's request
 
 Each Prosperity, Stability and Greatness breakdown now states the current level's applied

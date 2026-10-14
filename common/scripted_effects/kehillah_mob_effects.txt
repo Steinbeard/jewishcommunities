@@ -1,0 +1,1295 @@
+﻿# =====================================================================
+# V39 -- the Mob (docs/spec/v39-pogroms-and-the-popular-crusade.md),
+# 2026-10-13. A general pogrom mechanic: a preacher's host, a real army
+# on the map, marching on a Jewish community; the community's answers;
+# the siege of the quarter; the pogrom and what it leaves.
+#
+# How it runs (spike 0 and 0b, live 2026-10-13):
+#   - The leader is a created preacher holding a landless title
+#     (start_war needs a ruler -- vanilla's peasant-revolt pattern).
+#   - His hidden war (kehillah_mob_community_cb) is on the Kehillah
+#     leader himself: no lord is a party unless brought in (add_defender).
+#   - The AI never moves the army: the march is scripted, a county every
+#     4 days (story_kehillah_mob's effect group).
+#   - The siege is ours: a countdown from arrival.
+#   - The mob ends by killing its leader (death_vanished), which removes
+#     his army and ends the story.
+#
+# State. On the mob leader: kehillah_mob_target_title,
+# kehillah_mob_target_province, kehillah_mob_location, kehillah_mob_size,
+# kehillah_mob_base_severity, kehillah_mob_siege_days, flags
+# kehillah_mob_leader and kehillah_mob_at_gates. On the target community's
+# title: kehillah_mob_threat (the leader), kehillah_mob_refuge,
+# kehillah_mob_defended, kehillah_mob_condemned, kehillah_mob_scattered,
+# kehillah_mob_scattered_found, kehillah_mob_stood_at_gate,
+# kehillah_mob_pleaded, kehillah_mob_castle_fell, kehillah_mob_near_warned.
+# On the target leader (for loc): kehillah_mob_ref, kehillah_mob_band,
+# kehillah_mob_location_ref.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# RAISE. Scope: the target Kehillah leader. SIZE: men. SEVERITY: the base
+# harm (kehillah_mob_local_severity, kehillah_mob_crusade_severity).
+# ---------------------------------------------------------------------
+kehillah_mob_raise_effect = {
+	save_scope_as = kehillah_mob_victim
+	primary_title = { save_scope_as = kehillah_mob_victim_title }
+	domicile.domicile_location = { save_scope_as = kehillah_mob_town }
+	if = {
+		limit = {
+			exists = scope:kehillah_mob_town
+			NOT = { scope:kehillah_mob_victim_title = { has_variable = kehillah_mob_threat } }
+			# A caller may choose the place (Granada: the city itself).
+			NOT = { exists = scope:kehillah_mob_spawn }
+		}
+		# Where the host forms: a town of the lord's faith 100-200 map
+		# pixels away.
+		random_province = {
+			limit = {
+				has_holding = yes
+				exists = county.holder
+				county.faith = scope:kehillah_mob_town.county.faith
+				squared_distance = { target = scope:kehillah_mob_town value >= kehillah_mob_spawn_min_sq }
+				squared_distance = { target = scope:kehillah_mob_town value <= kehillah_mob_spawn_max_sq }
+			}
+			save_scope_as = kehillah_mob_spawn
+		}
+		if = {
+			limit = { NOT = { exists = scope:kehillah_mob_spawn } }
+			random_province = {
+				limit = {
+					has_holding = yes
+					exists = county.holder
+					squared_distance = { target = scope:kehillah_mob_town value >= kehillah_mob_spawn_min_sq }
+					squared_distance = { target = scope:kehillah_mob_town value <= kehillah_mob_spawn_max_sq }
+				}
+				save_scope_as = kehillah_mob_spawn
+			}
+		}
+	}
+	if = {
+		limit = {
+			exists = scope:kehillah_mob_spawn
+			exists = scope:kehillah_mob_town
+			# Never a second host on a community already threatened.
+			NOT = { scope:kehillah_mob_victim_title = { has_variable = kehillah_mob_threat } }
+		}
+		create_character = {
+			age = { 30 55 }
+			gender = male
+			faith = scope:kehillah_mob_spawn.county.faith
+			culture = scope:kehillah_mob_spawn.county.culture
+			location = scope:kehillah_mob_spawn
+			dynasty = none
+			trait = zealous
+			random_traits_list = {
+				count = 1
+				wrathful = {}
+				callous = {}
+				arrogant = {}
+				vengeful = {}
+			}
+			trait = peasant_leader
+			martial = { 8 14 }
+			prowess = { 10 16 }
+			diplomacy = { 6 12 }
+			learning = { 8 14 }
+			intrigue = { 3 8 }
+			stewardship = { 2 6 }
+			save_scope_as = kehillah_mob_leader
+		}
+		scope:kehillah_mob_leader = {
+			add_character_flag = kehillah_mob_leader
+			kehillah_mob_make_ruler_effect = { COUNTY = scope:kehillah_mob_spawn.county }
+			# His own rite, teaching Exclusion (as V34's risings).
+			create_dynamic_rite = {
+				save_scope_as = kehillah_mob_rite
+				convert = yes
+				target_divergence = 20
+				include_unknown = no
+				override_tenets_first = no
+			}
+			# Exclusion for a Christian preacher; its Muslim counterpart,
+			# Abolition, for a Muslim one (Granada).
+			scope:kehillah_mob_rite ?= {
+				if = {
+					limit = { rite_religion_tag = islam_religion }
+					change_rite_doctrine = kehillah_teaching_abolition
+				}
+				else = {
+					change_rite_doctrine = kehillah_teaching_exclusion
+				}
+			}
+			set_variable = { name = kehillah_mob_target_title value = scope:kehillah_mob_victim_title }
+			set_variable = { name = kehillah_mob_target_province value = scope:kehillah_mob_town }
+			set_variable = { name = kehillah_mob_location value = scope:kehillah_mob_spawn }
+			set_variable = { name = kehillah_mob_size value = $SIZE$ }
+			set_variable = { name = kehillah_mob_base_severity value = $SEVERITY$ }
+			start_war = {
+				cb = kehillah_mob_community_cb
+				target = scope:kehillah_mob_victim
+			}
+			if = {
+				limit = { is_at_war_with = scope:kehillah_mob_victim }
+				random_character_war = { save_scope_as = kehillah_mob_war }
+				# No ally answers a call to arms on its own (live 2026-10-14: AI
+				# communities called their allies, who held the town until the
+				# host wore away). Help comes only by persuasion
+				# (kehillah_mob_lord_raises_men_effect) or a player's choice.
+				scope:kehillah_mob_victim = {
+					every_ally = {
+						save_scope_as = kehillah_mob_ally
+						scope:kehillah_mob_war = { set_called_to = scope:kehillah_mob_ally }
+					}
+				}
+				spawn_army = {
+					name = kehillah_mob_army_name
+					levies = $SIZE$
+					men_at_arms = {
+						type = pikemen_militia
+						stacks = {
+							value = $SIZE$
+							divide = 400
+							round = yes
+							min = 1
+						}
+					}
+					men_at_arms = {
+						type = torch_bearers
+						stacks = 2
+					}
+					location = scope:kehillah_mob_spawn
+					war = scope:kehillah_mob_war
+					war_keep_on_attacker_victory = yes
+					inheritable = no
+					uses_supply = yes
+				}
+				create_story = {
+					type = story_kehillah_mob
+					save_scope_as = kehillah_mob_story
+				}
+				scope:kehillah_mob_victim_title = {
+					set_variable = { name = kehillah_mob_threat value = scope:kehillah_mob_leader }
+				}
+				# All its armies: the men-at-arms can spawn as a stack of their
+				# own (live: 3820 = 3000 + 820).
+				set_variable = { name = kehillah_mob_size value = kehillah_mob_total_men_value }
+				set_variable = { name = kehillah_mob_size_start value = var:kehillah_mob_size }
+				kehillah_mob_set_band_effect = yes
+				scope:kehillah_mob_victim = {
+					if = {
+						limit = { has_variable = kehillah_mob_last_town_ref }
+						remove_variable = kehillah_mob_last_town_ref
+					}
+					set_variable = { name = kehillah_mob_ref value = scope:kehillah_mob_leader }
+					set_variable = { name = kehillah_mob_location_ref value = scope:kehillah_mob_spawn }
+					set_variable = { name = kehillah_mob_band value = scope:kehillah_mob_leader.var:kehillah_mob_band_now }
+					# A mob that rises in the town itself gives no warning.
+					if = {
+						limit = { NOT = { scope:kehillah_mob_spawn = scope:kehillah_mob_town } }
+						trigger_event = { id = kehillah_mob.0001 days = 1 }
+					}
+					# A preacher's sermons are an incident in the county's faith (V40).
+					domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
+					kehillah_notify_region_players_effect = {
+						TYPE = msg_kehillah_community_news_bad
+						TITLE = kehillah_mob_news_forms_t
+						DESC = kehillah_mob_news_forms_d
+					}
+				}
+				debug_log = "kehillah_mob_raise_effect: a host has formed"
+			}
+			else = {
+				debug_log = "kehillah_mob_raise_effect: the war FAILED; the preacher vanishes"
+				death = { death_reason = death_vanished }
+			}
+		}
+	}
+	else = {
+		debug_log = "kehillah_mob_raise_effect: no host (no town, a host already coming, or no place to form)"
+	}
+}
+
+# Start war needs a ruler (spike 0): a dynamic landless title, as
+# vanilla's peasant revolt. Scope: the mob leader. COUNTY: the county the
+# title takes its colour from.
+kehillah_mob_make_ruler_effect = {
+	save_scope_as = kehillah_mob_new_leader
+	create_dynamic_title = {
+		tier = duchy
+		name = KEHILLAH_MOB_TITLE_NAME
+	}
+	create_title_and_vassal_change = {
+		type = created
+		save_scope_as = kehillah_mob_change
+		add_claim_on_loss = no
+	}
+	scope:new_title = {
+		set_capital_county = $COUNTY$
+		set_landless_title = yes
+		set_destroy_on_succession = yes
+		set_delete_on_destroy = yes
+		set_no_automatic_claims = yes
+		set_definitive_form = yes
+		set_can_be_named_after_dynasty = no
+		change_title_holder = {
+			holder = scope:kehillah_mob_new_leader
+			change = scope:kehillah_mob_change
+		}
+	}
+	resolve_title_and_vassal_change = scope:kehillah_mob_change
+	scope:new_title = { generate_coa = factions }
+	set_variable = { name = kehillah_mob_title value = scope:new_title }
+}
+
+# March one county toward the target (the AI never moves the host).
+# Scope: the mob leader. TARGET: the target province.
+kehillah_mob_step_toward_effect = {
+	$TARGET$ = { save_scope_as = kehillah_mob_target_province }
+	random_army = {
+		save_scope_as = kehillah_mob_stepping_army
+		location = { save_scope_as = kehillah_mob_here }
+	}
+	if = {
+		limit = {
+			exists = scope:kehillah_mob_here
+			NOT = { scope:kehillah_mob_here = scope:kehillah_mob_target_province }
+		}
+		scope:kehillah_mob_here.county = {
+			ordered_title_to_title_neighboring_county = {
+				order_by = {
+					value = "title_province.squared_distance(scope:kehillah_mob_target_province)"
+					multiply = -1
+				}
+				position = 0
+				save_scope_as = kehillah_mob_next_county
+			}
+		}
+		if = {
+			limit = { exists = scope:kehillah_mob_next_county }
+			every_army = {
+				limit = { is_army_in_combat = no }
+				# The last step goes into the town itself, which need not be
+				# its county's capital.
+				if = {
+					limit = { scope:kehillah_mob_next_county = scope:kehillah_mob_target_province.county }
+					set_army_location = scope:kehillah_mob_target_province
+				}
+				else = {
+					set_army_location = scope:kehillah_mob_next_county.title_province
+				}
+			}
+		}
+		else = {
+			# Already in the town's county: into the town.
+			if = {
+				limit = { scope:kehillah_mob_here.county = scope:kehillah_mob_target_province.county }
+				every_army = {
+					limit = { is_army_in_combat = no }
+					set_army_location = scope:kehillah_mob_target_province
+				}
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# THE TICK, every 4 days (story_kehillah_mob). Scope: the mob leader.
+# ---------------------------------------------------------------------
+kehillah_mob_tick_effect = {
+	save_scope_as = kehillah_mob_leader
+	# Beaten in the field (kehillah_mob_community_cb's on_defeat).
+	if = {
+		limit = { has_character_flag = kehillah_mob_defeated }
+		debug_log = "kehillah_mob_tick_effect: beaten (in battle, or its preacher struck down at the gate)"
+		kehillah_mob_dispersed_effect = yes
+	}
+	# The community is gone, or no longer anyone's: the host breaks up.
+	else_if = {
+		limit = {
+			OR = {
+				NOT = { exists = var:kehillah_mob_target_title }
+				NOT = { exists = var:kehillah_mob_target_title.holder }
+			}
+		}
+		debug_log = "kehillah_mob_tick_effect: no target -- the host breaks up"
+		kehillah_mob_end_effect = yes
+	}
+	# Destroyed in the field (live 2026-10-14: the lord's men annihilated a
+	# host on the road): broken, and the community is told.
+	else_if = {
+		limit = {
+			NOT = { any_army = { always = yes } }
+			NOT = { has_character_flag = kehillah_mob_done }
+		}
+		debug_log = "kehillah_mob_tick_effect: no army left -- the host is broken"
+		kehillah_mob_dispersed_effect = yes
+	}
+	else_if = {
+		limit = { NOT = { any_army = { always = yes } } }
+		kehillah_mob_end_effect = yes
+	}
+	# V41: while a player's scenes play, the host waits (at most 60 days).
+	else_if = {
+		limit = { has_character_flag = kehillah_mob_striking }
+		change_variable = { name = kehillah_mob_wait add = 4 }
+		if = {
+			limit = { var:kehillah_mob_wait >= 60 }
+			var:kehillah_mob_target_title.holder ?= { kehillah_pogrom_effect = yes }
+		}
+	}
+	# After the pogrom it waits for the ransom (kehillah_mob.0011), at most
+	# 40 days.
+	else_if = {
+		limit = { has_character_flag = kehillah_mob_done }
+		change_variable = { name = kehillah_mob_wait add = 4 }
+		if = {
+			limit = { var:kehillah_mob_wait >= 40 }
+			kehillah_mob_after_strike_effect = yes
+		}
+	}
+	else = {
+		var:kehillah_mob_target_title.holder = { save_scope_as = kehillah_mob_victim }
+		var:kehillah_mob_target_title = { save_scope_as = kehillah_mob_victim_title }
+		random_army = {
+			location = { save_scope_as = kehillah_mob_here }
+		}
+		save_scope_value_as = { name = kehillah_mob_men value = kehillah_mob_total_men_value }
+		set_variable = { name = kehillah_mob_size value = scope:kehillah_mob_men }
+		if = {
+			limit = { scope:kehillah_mob_men < kehillah_mob_disperse_size }
+			debug_log = "kehillah_mob_tick_effect: too few men -- the host breaks up"
+			kehillah_mob_dispersed_effect = yes
+		}
+		# --- On the march.
+		else_if = {
+			limit = { NOT = { has_character_flag = kehillah_mob_at_gates } }
+			kehillah_mob_step_toward_effect = { TARGET = var:kehillah_mob_target_province }
+			random_army = {
+				location = { save_scope_as = kehillah_mob_here_now }
+			}
+			set_variable = { name = kehillah_mob_location value = scope:kehillah_mob_here_now }
+			kehillah_mob_report_position_effect = yes
+			if = {
+				limit = { var:kehillah_mob_location = var:kehillah_mob_target_province }
+				kehillah_mob_arrive_effect = yes
+			}
+		}
+		# --- At the gates: the siege counts down.
+		else = {
+			# While an army at war with the host holds the town (the lord's
+			# men, a player defender), the siege does not advance.
+			if = {
+				limit = {
+					NOT = {
+						scope:kehillah_mob_here ?= {
+							any_army_in_location = {
+								army_owner ?= { is_at_war_with = scope:kehillah_mob_leader }
+							}
+						}
+					}
+				}
+				change_variable = { name = kehillah_mob_siege_days add = -4 }
+			}
+			else = {
+				debug_log = "kehillah_mob_tick_effect: defenders hold the town; the siege waits"
+			}
+			# A lord sheltering the Jews may give them up (Worms, Mainz).
+			if = {
+				limit = { scope:kehillah_mob_victim_title = { has_variable = kehillah_mob_refuge } }
+				random = {
+					chance = scope:kehillah_mob_victim.kehillah_mob_handover_tick_chance_value
+					scope:kehillah_mob_victim_title = { remove_variable = kehillah_mob_refuge }
+					set_variable = { name = kehillah_mob_siege_days value = 4 }
+					debug_log = "kehillah_mob_tick_effect: the lord gave the Jews up"
+					scope:kehillah_mob_victim = {
+						if = {
+							limit = { is_ai = no }
+							trigger_event = kehillah_mob.0005
+						}
+					}
+				}
+			}
+			if = {
+				limit = { var:kehillah_mob_siege_days <= 0 }
+				if = {
+					limit = { scope:kehillah_mob_victim_title = { has_variable = kehillah_mob_refuge } }
+					scope:kehillah_mob_victim_title = { set_variable = { name = kehillah_mob_castle_fell value = yes } }
+				}
+				# V41: a player lives through it in scenes; the AI does not.
+				scope:kehillah_mob_victim = {
+					if = {
+						limit = { is_ai = no }
+						kehillah_pogrom_scenes_start_effect = yes
+					}
+					else = {
+						kehillah_pogrom_effect = yes
+					}
+				}
+			}
+		}
+	}
+}
+
+# Scope: the mob leader. Records where the host is for the target's loc,
+# and tells a player when it draws nearer; the dire event at "days away".
+kehillah_mob_report_position_effect = {
+	kehillah_mob_set_band_effect = yes
+	save_scope_value_as = { name = kehillah_mob_new_band value = var:kehillah_mob_band_now }
+	scope:kehillah_mob_victim = {
+		# (Set every step: the community may have a new leader.)
+		set_variable = { name = kehillah_mob_ref value = scope:kehillah_mob_leader }
+		set_variable = { name = kehillah_mob_location_ref value = scope:kehillah_mob_leader.var:kehillah_mob_location }
+		if = {
+			limit = {
+				OR = {
+					NOT = { has_variable = kehillah_mob_band }
+					var:kehillah_mob_band > scope:kehillah_mob_new_band
+				}
+			}
+			set_variable = { name = kehillah_mob_band value = scope:kehillah_mob_new_band }
+			if = {
+				limit = {
+					is_ai = no
+					scope:kehillah_mob_new_band > 0
+				}
+				send_interface_toast = {
+					type = event_toast_effect_bad
+					title = kehillah_mob_nearer_t
+					desc = kehillah_mob_nearer_d
+					left_icon = scope:kehillah_mob_leader
+				}
+			}
+		}
+	}
+	if = {
+		limit = {
+			scope:kehillah_mob_new_band = 1
+			scope:kehillah_mob_victim_title = { NOT = { has_variable = kehillah_mob_near_warned } }
+		}
+		scope:kehillah_mob_victim_title = { set_variable = { name = kehillah_mob_near_warned value = yes } }
+		scope:kehillah_mob_victim = { trigger_event = kehillah_mob.0002 }
+	}
+}
+
+# Scope: the mob leader, in the town. The siege begins.
+kehillah_mob_arrive_effect = {
+	add_character_flag = kehillah_mob_at_gates
+	if = {
+		limit = { scope:kehillah_mob_victim_title = { has_variable = kehillah_mob_refuge } }
+		set_variable = { name = kehillah_mob_siege_days value = kehillah_mob_refuge_siege_days_value }
+	}
+	else = {
+		set_variable = { name = kehillah_mob_siege_days value = kehillah_mob_open_town_days }
+	}
+	debug_log = "kehillah_mob_arrive_effect: the host is at the gates"
+	scope:kehillah_mob_victim = {
+		trigger_event = kehillah_mob.0003
+		kehillah_notify_region_players_effect = {
+			TYPE = msg_kehillah_community_news_bad
+			TITLE = kehillah_mob_news_gates_t
+			DESC = kehillah_mob_news_gates_d
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# THE POGROM. Scope: the target Kehillah leader; scope:kehillah_mob_leader.
+# ---------------------------------------------------------------------
+kehillah_pogrom_effect = {
+	# V40: count the violence once when the pogrom actually occurs,
+	# before deaths or dissolution can remove its county/domicile scope.
+	domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 4 } }
+	save_scope_as = kehillah_pogrom_victim
+	primary_title = {
+		save_scope_as = kehillah_pogrom_title
+		set_variable = { name = kehillah_mob_struck value = yes }
+	}
+	save_scope_value_as = { name = kehillah_pogrom_severity value = kehillah_mob_severity_value }
+	set_variable = { name = kehillah_pogrom_severity value = scope:kehillah_pogrom_severity }
+	set_variable = { name = kehillah_pogrom_dead value = 0 }
+	set_variable = { name = kehillah_pogrom_martyrs value = 0 }
+	set_variable = { name = kehillah_pogrom_baptized value = 0 }
+	set_variable = { name = kehillah_pogrom_hostages value = 0 }
+	set_variable = { name = kehillah_pogrom_buildings value = 0 }
+	debug_log = "kehillah_pogrom_effect: the pogrom"
+
+	# V41: the children given up by the neighbour are baptized together.
+	if = {
+		limit = { scope:kehillah_pogrom_title = { has_variable = kehillah_scene_children_betrayed } }
+		every_courtier = {
+			limit = {
+				is_alive = yes
+				is_adult = no
+				is_jewish_character_trigger = yes
+			}
+			scope:kehillah_pogrom_victim = { change_variable = { name = kehillah_pogrom_baptized add = 1 } }
+			kehillah_anus_baptize_effect = yes
+			set_variable = { name = kehillah_anus value = scope:kehillah_pogrom_title }
+			scope:kehillah_pogrom_title = {
+				add_to_variable_list = { name = kehillah_anusim target = prev }
+			}
+			move_to_pool_at = scope:kehillah_pogrom_victim.domicile.domicile_location
+		}
+	}
+
+	# The people of the community.
+	every_courtier = {
+		limit = {
+			is_alive = yes
+			is_jewish_character_trigger = yes
+			NOT = { this = scope:kehillah_pogrom_victim }
+			# V41: the children the neighbour hid are spared.
+			trigger_if = {
+				limit = { scope:kehillah_pogrom_title = { has_variable = kehillah_scene_children_hidden } }
+				is_adult = yes
+			}
+		}
+		random_list = {
+			0 = {
+				modifier = { add = scope:kehillah_pogrom_victim.kehillah_pogrom_death_chance_value }
+				scope:kehillah_pogrom_victim = { change_variable = { name = kehillah_pogrom_dead add = 1 } }
+				if = {
+					limit = { NOT = { exists = scope:kehillah_pogrom_named_dead } }
+					save_scope_as = kehillah_pogrom_named_dead
+				}
+				death = { death_reason = death_murder killer = scope:kehillah_mob_leader }
+			}
+			0 = {
+				modifier = { add = scope:kehillah_pogrom_victim.kehillah_pogrom_baptism_chance_value }
+				# Kiddush ha-Shem: the zealous choose death over the font, and
+				# half of the rest where the rite teaches it (V39 slice 3).
+				if = {
+					limit = {
+						OR = {
+							has_trait = zealous
+							AND = {
+								rite ?= { rite_has_parameter = kehillah_kiddush_hashem_rite }
+								scope:kehillah_pogrom_victim = { kehillah_coin_flip_trigger = yes }
+							}
+						}
+					}
+					scope:kehillah_pogrom_victim = {
+						change_variable = { name = kehillah_pogrom_dead add = 1 }
+						change_variable = { name = kehillah_pogrom_martyrs add = 1 }
+					}
+					if = {
+						limit = { NOT = { exists = scope:kehillah_pogrom_named_martyr } }
+						save_scope_as = kehillah_pogrom_named_martyr
+					}
+					death = { death_reason = death_murder killer = scope:kehillah_mob_leader }
+				}
+				else = {
+					scope:kehillah_pogrom_victim = { change_variable = { name = kehillah_pogrom_baptized add = 1 } }
+					if = {
+						limit = { NOT = { exists = scope:kehillah_pogrom_named_baptized } }
+						save_scope_as = kehillah_pogrom_named_baptized
+					}
+					kehillah_anus_baptize_effect = yes
+					set_variable = { name = kehillah_anus value = scope:kehillah_pogrom_title }
+					scope:kehillah_pogrom_title = {
+						add_to_variable_list = { name = kehillah_anusim target = prev }
+					}
+					move_to_pool_at = scope:kehillah_pogrom_victim.domicile.domicile_location
+				}
+			}
+			100 = {
+				modifier = { add = { value = scope:kehillah_pogrom_victim.kehillah_pogrom_death_chance_value multiply = -1 } }
+				modifier = { add = { value = scope:kehillah_pogrom_victim.kehillah_pogrom_baptism_chance_value multiply = -1 } }
+				add_stress = major_stress_gain
+			}
+		}
+	}
+
+	# Hostages: 1 from severity 40, 2 from 70, 3 from 90.
+	save_scope_value_as = {
+		name = kehillah_pogrom_hostage_count
+		value = {
+			value = 0
+			if = {
+				limit = { scope:kehillah_pogrom_severity >= 90 }
+				value = 3
+			}
+			else_if = {
+				limit = { scope:kehillah_pogrom_severity >= 70 }
+				value = 2
+			}
+			else_if = {
+				limit = { scope:kehillah_pogrom_severity >= 40 }
+				value = 1
+			}
+		}
+	}
+	if = {
+		limit = { scope:kehillah_pogrom_hostage_count > 0 }
+		ordered_courtier = {
+		limit = {
+			is_alive = yes
+			is_adult = yes
+			is_imprisoned = no
+			is_jewish_character_trigger = yes
+			NOT = { this = scope:kehillah_pogrom_victim }
+		}
+		order_by = age
+		max = scope:kehillah_pogrom_hostage_count
+		check_range_bounds = no
+		scope:kehillah_mob_leader = {
+			imprison = {
+				target = prev
+				type = dungeon
+			}
+		}
+		scope:kehillah_pogrom_victim = { change_variable = { name = kehillah_pogrom_hostages add = 1 } }
+		}
+	}
+
+	# The leader himself (V41: by the choices in the scenes). Baptized if
+	# he went to the font; otherwise killed, or taken by the preacher with
+	# the hostages if he refused it or was seized at the gate.
+	if = {
+		limit = { scope:kehillah_pogrom_title = { has_variable = kehillah_scene_font_accepted } }
+		set_variable = { name = kehillah_pogrom_leader_baptized value = yes }
+	}
+	else = {
+		random = {
+			chance = kehillah_pogrom_leader_death_chance_value
+			set_variable = { name = kehillah_pogrom_leader_fell value = yes }
+		}
+		if = {
+			limit = {
+				NOT = { has_variable = kehillah_pogrom_leader_fell }
+				scope:kehillah_pogrom_title = {
+					OR = {
+						has_variable = kehillah_scene_spoke_seized
+						has_variable = kehillah_scene_font_refused
+					}
+				}
+			}
+			random = {
+				chance = {
+					value = 50
+					if = {
+						limit = { scope:kehillah_pogrom_title = { has_variable = kehillah_scene_spoke_seized } }
+						value = 100
+					}
+				}
+				scope:kehillah_mob_leader = {
+					imprison = {
+						target = scope:kehillah_pogrom_victim
+						type = dungeon
+					}
+				}
+				change_variable = { name = kehillah_pogrom_hostages add = 1 }
+				set_variable = { name = kehillah_pogrom_leader_taken value = yes }
+			}
+		}
+	}
+
+	# The Jewish Quarter.
+	domicile ?= {
+		if = {
+			limit = { scope:kehillah_pogrom_severity >= 30 }
+			kehillah_pogrom_plunder_one_effect = yes
+		}
+		if = {
+			limit = { scope:kehillah_pogrom_title = { has_variable = kehillah_mob_scattered } }
+			kehillah_pogrom_plunder_one_effect = yes
+		}
+		if = {
+			limit = { scope:kehillah_pogrom_severity >= 60 }
+			kehillah_pogrom_burn_synagogue_effect = yes
+		}
+		if = {
+			limit = { scope:kehillah_pogrom_severity >= 85 }
+			kehillah_pogrom_burn_learning_effect = yes
+		}
+	}
+
+	# The treasury.
+	if = {
+		limit = { gold > 0 }
+		remove_short_term_gold = {
+			value = gold
+			multiply = scope:kehillah_pogrom_severity
+			divide = 150
+		}
+	}
+
+	# The pillars.
+	primary_title = {
+		change_variable = { name = kehillah_var_prosperity add = scope:kehillah_pogrom_victim.kehillah_pogrom_prosperity_loss_value }
+		change_variable = { name = kehillah_var_stability add = scope:kehillah_pogrom_victim.kehillah_pogrom_stability_loss_value }
+		change_variable = { name = kehillah_var_greatness add = scope:kehillah_pogrom_victim.kehillah_pogrom_greatness_loss_value }
+		change_variable = {
+			name = kehillah_var_greatness
+			add = {
+				value = scope:kehillah_pogrom_victim.var:kehillah_pogrom_martyrs
+				multiply = kehillah_pogrom_martyr_greatness
+			}
+		}
+		clamp_variable = { name = kehillah_var_prosperity min = 0 max = 100000 }
+		clamp_variable = { name = kehillah_var_stability min = 0 max = 100000 }
+		clamp_variable = { name = kehillah_var_greatness min = 0 max = 100000 }
+		set_variable = {
+			name = kehillah_pogrom_memory
+			value = scope:kehillah_pogrom_severity
+			years = kehillah_mob_memory_years
+		}
+	}
+	set_variable = { name = kehillah_pogrom_last_prosperity value = kehillah_pogrom_prosperity_loss_value }
+	set_variable = { name = kehillah_pogrom_last_stability value = kehillah_pogrom_stability_loss_value }
+	add_stress = major_stress_gain
+
+	# (The pogrom's incident, +4, is counted once at the top of this effect.)
+
+	# The war is the host's.
+	scope:kehillah_mob_leader = {
+		if = {
+			limit = { has_character_flag = kehillah_mob_striking }
+			remove_character_flag = kehillah_mob_striking
+		}
+		add_character_flag = kehillah_mob_done
+		set_variable = { name = kehillah_mob_wait value = 0 }
+		random_character_war = {
+			limit = { is_attacker = scope:kehillah_mob_leader }
+			end_war = attacker
+		}
+	}
+
+	# The aftermath: trauma, the tenets of martyrdom, the Year of the Decrees.
+	kehillah_pogrom_aftermath_effect = yes
+
+	# News, and the report (for the AI: the ransom is decided at once).
+	kehillah_notify_region_players_effect = {
+		TYPE = msg_kehillah_community_news_bad
+		TITLE = kehillah_mob_news_pogrom_t
+		DESC = kehillah_mob_news_pogrom_d
+	}
+	trigger_event = kehillah_mob.0010
+}
+
+# Scope: a domicile. Plunder: lower one of the counting-house, the market
+# stalls or the workshops (whichever stands).
+kehillah_pogrom_plunder_one_effect = {
+	random_list = {
+		10 = {
+			trigger = {
+				OR = {
+					has_domicile_building = kehillah_countinghouse_01
+					has_domicile_building = kehillah_countinghouse_02
+					has_domicile_building = kehillah_countinghouse_03
+				}
+			}
+			kehillah_pogrom_lower_three_effect = { B = kehillah_countinghouse }
+		}
+		10 = {
+			trigger = {
+				OR = {
+					has_domicile_building = kehillah_market_stalls_01
+					has_domicile_building = kehillah_market_stalls_02
+					has_domicile_building = kehillah_market_stalls_03
+				}
+			}
+			kehillah_pogrom_lower_three_effect = { B = kehillah_market_stalls }
+		}
+		10 = {
+			trigger = {
+				OR = {
+					has_domicile_building = kehillah_workshops_01
+					has_domicile_building = kehillah_workshops_02
+					has_domicile_building = kehillah_workshops_03
+				}
+			}
+			kehillah_pogrom_lower_three_effect = { B = kehillah_workshops }
+		}
+		1 = {}
+	}
+}
+
+# Scope: a domicile. The synagogue is burned (one tier).
+kehillah_pogrom_burn_synagogue_effect = {
+	if = {
+		limit = { has_domicile_building = kehillah_synagogue_05 }
+		lower_domicile_building_no_refund = kehillah_synagogue_05
+		scope:kehillah_pogrom_victim = { change_variable = { name = kehillah_pogrom_buildings add = 1 } }
+	}
+	else_if = {
+		limit = { has_domicile_building = kehillah_synagogue_04 }
+		lower_domicile_building_no_refund = kehillah_synagogue_04
+		scope:kehillah_pogrom_victim = { change_variable = { name = kehillah_pogrom_buildings add = 1 } }
+	}
+	else_if = {
+		limit = { has_domicile_building = kehillah_synagogue_03 }
+		lower_domicile_building_no_refund = kehillah_synagogue_03
+		scope:kehillah_pogrom_victim = { change_variable = { name = kehillah_pogrom_buildings add = 1 } }
+	}
+	else_if = {
+		limit = { has_domicile_building = kehillah_synagogue_02 }
+		lower_domicile_building_no_refund = kehillah_synagogue_02
+		scope:kehillah_pogrom_victim = { change_variable = { name = kehillah_pogrom_buildings add = 1 } }
+	}
+	else_if = {
+		limit = { has_domicile_building = kehillah_synagogue_01 }
+		lower_domicile_building_no_refund = kehillah_synagogue_01
+		scope:kehillah_pogrom_victim = { change_variable = { name = kehillah_pogrom_buildings add = 1 } }
+	}
+}
+
+# Scope: a domicile. The house of study or the scribes' workshop burns.
+kehillah_pogrom_burn_learning_effect = {
+	random_list = {
+		10 = {
+			trigger = {
+				OR = {
+					has_domicile_building = kehillah_beit_midrash_01
+					has_domicile_building = kehillah_beit_midrash_02
+					has_domicile_building = kehillah_beit_midrash_03
+				}
+			}
+			kehillah_pogrom_lower_three_effect = { B = kehillah_beit_midrash }
+		}
+		10 = {
+			trigger = {
+				OR = {
+					has_domicile_building = kehillah_sofer_workshop_01
+					has_domicile_building = kehillah_sofer_workshop_02
+				}
+			}
+			if = {
+				limit = { has_domicile_building = kehillah_sofer_workshop_02 }
+				lower_domicile_building_no_refund = kehillah_sofer_workshop_02
+			}
+			else = {
+				lower_domicile_building_no_refund = kehillah_sofer_workshop_01
+			}
+			scope:kehillah_pogrom_victim = { change_variable = { name = kehillah_pogrom_buildings add = 1 } }
+		}
+		1 = {}
+	}
+}
+
+# Scope: a domicile. Lower the highest tier of a three-tier chain B.
+kehillah_pogrom_lower_three_effect = {
+	if = {
+		limit = { has_domicile_building = $B$_03 }
+		lower_domicile_building_no_refund = $B$_03
+		scope:kehillah_pogrom_victim = { change_variable = { name = kehillah_pogrom_buildings add = 1 } }
+	}
+	else_if = {
+		limit = { has_domicile_building = $B$_02 }
+		lower_domicile_building_no_refund = $B$_02
+		scope:kehillah_pogrom_victim = { change_variable = { name = kehillah_pogrom_buildings add = 1 } }
+	}
+	else_if = {
+		limit = { has_domicile_building = $B$_01 }
+		lower_domicile_building_no_refund = $B$_01
+		scope:kehillah_pogrom_victim = { change_variable = { name = kehillah_pogrom_buildings add = 1 } }
+	}
+}
+
+# ---------------------------------------------------------------------
+# ENDINGS. Scope: the mob leader.
+# ---------------------------------------------------------------------
+
+# Broken up: beaten in battle, too few men, its preacher fallen. The
+# community is spared.
+kehillah_mob_dispersed_effect = {
+	save_scope_as = kehillah_mob_leader
+	debug_log = "kehillah_mob_dispersed_effect: the host is broken"
+	var:kehillah_mob_target_title.holder ?= {
+		if = {
+			limit = {
+				is_ai = no
+				primary_title ?= { NOT = { has_variable = kehillah_mob_struck } }
+			}
+			trigger_event = kehillah_mob.0020
+		}
+	}
+	kehillah_mob_end_effect = yes
+}
+
+# Turned away by silver: the host leaves for other prey.
+kehillah_mob_bought_off_effect = {
+	save_scope_as = kehillah_mob_leader
+	debug_log = "kehillah_mob_bought_off_effect: the host takes the silver and goes"
+	var:kehillah_mob_target_title ?= {
+		set_variable = { name = kehillah_mob_paid_off value = yes years = 1 }
+	}
+	if = {
+		limit = {
+			has_character_flag = kehillah_mob_crusade
+			has_variable = kehillah_mob_targets_left
+			var:kehillah_mob_targets_left >= 1
+		}
+		# A victory for the host keeps its army (spike 0, S4).
+		random_character_war = {
+			limit = { is_attacker = scope:kehillah_mob_leader }
+			end_war = attacker
+		}
+		kehillah_mob_retarget_effect = yes
+	}
+	else = {
+		random_character_war = {
+			limit = { is_attacker = scope:kehillah_mob_leader }
+			end_war = white_peace
+		}
+		kehillah_mob_end_effect = yes
+	}
+}
+
+# The end of any host: clear the community's state, release or keep the
+# hostages (decided before), end the war, and the preacher goes. Scope:
+# the mob leader.
+kehillah_mob_end_effect = {
+	var:kehillah_mob_target_title ?= {
+		kehillah_mob_clear_title_effect = yes
+		holder ?= {
+			if = {
+				limit = { has_variable = kehillah_mob_last_town_ref }
+				remove_variable = kehillah_mob_last_town_ref
+			}
+			if = {
+				limit = { has_variable = kehillah_mob_ref }
+				remove_variable = kehillah_mob_ref
+			}
+			if = {
+				limit = { has_variable = kehillah_mob_band }
+				remove_variable = kehillah_mob_band
+			}
+		}
+	}
+	every_character_war = {
+		end_war = white_peace
+	}
+	death = { death_reason = death_vanished }
+}
+
+# Scope: a community title.
+kehillah_mob_clear_title_effect = {
+	if = {
+		limit = { has_variable = kehillah_mob_threat }
+		remove_variable = kehillah_mob_threat
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_refuge }
+		remove_variable = kehillah_mob_refuge
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_defended }
+		remove_variable = kehillah_mob_defended
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_condemned }
+		remove_variable = kehillah_mob_condemned
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_scattered }
+		remove_variable = kehillah_mob_scattered
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_scattered_found }
+		remove_variable = kehillah_mob_scattered_found
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_stood_at_gate }
+		remove_variable = kehillah_mob_stood_at_gate
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_pleaded }
+		remove_variable = kehillah_mob_pleaded
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_castle_fell }
+		remove_variable = kehillah_mob_castle_fell
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_near_warned }
+		remove_variable = kehillah_mob_near_warned
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_severity_adjust }
+		remove_variable = kehillah_mob_severity_adjust
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_struck }
+		remove_variable = kehillah_mob_struck
+	}	if = {
+		limit = { has_variable = kehillah_mob_tried_treat }
+		remove_variable = kehillah_mob_tried_treat
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_tried_defence }
+		remove_variable = kehillah_mob_tried_defence
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_armed }
+		remove_variable = kehillah_mob_armed
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_armed_failed }
+		remove_variable = kehillah_mob_armed_failed
+	}
+	kehillah_pogrom_clear_scenes_effect = yes
+	clear_variable_list = kehillah_mob_asked_refuge
+	clear_variable_list = kehillah_mob_asked_men
+	clear_variable_list = kehillah_mob_asked_condemn
+}
+
+# ---------------------------------------------------------------------
+# THE ANSWERS' EFFECTS. Scope: the target Kehillah leader;
+# scope:kehillah_mob_leader saved.
+# ---------------------------------------------------------------------
+
+# The Church condemns the host: a quarter of its men desert.
+# Each condemnation thins the host by a quarter; the severity is cut once.
+kehillah_mob_condemned_effect = {
+	primary_title = { set_variable = { name = kehillah_mob_condemned value = yes } }
+	scope:kehillah_mob_leader = {
+		every_army = { deplete_army_by_percentage = 0.25 }
+		set_variable = { name = kehillah_mob_size value = kehillah_mob_total_men_value }
+	}
+	set_variable = { name = kehillah_mob_size_ref value = scope:kehillah_mob_leader.var:kehillah_mob_size }
+}
+
+# The lord raises his men: his event troops beside the town, in the war.
+# DEFENDER: the lord who raises his men (the county's lord or the overlord).
+kehillah_mob_lord_raises_men_effect = {
+	domicile.domicile_location = { save_scope_as = kehillah_mob_victim_town }
+	# Christian levies who will not fight for the Jews: 35% of the time,
+	# half of them stay home.
+	random_list = {
+		35 = { save_scope_value_as = { name = kehillah_mob_desert value = 1 } }
+		65 = { save_scope_value_as = { name = kehillah_mob_desert value = 0 } }
+	}
+	$DEFENDER$ = { save_scope_as = kehillah_mob_defender }
+	scope:kehillah_mob_leader = {
+		random_character_war = {
+			limit = { is_attacker = scope:kehillah_mob_leader }
+			save_scope_as = kehillah_mob_war
+		}
+	}
+	if = {
+		limit = {
+			exists = scope:kehillah_mob_defender
+			exists = scope:kehillah_mob_war
+		}
+		scope:kehillah_mob_war = { add_defender = scope:kehillah_mob_defender }
+		scope:kehillah_mob_defender = {
+			spawn_army = {
+				name = kehillah_mob_defenders_name
+				# Fewer than the host, but soldiers: live 2026-10-14, 2865
+				# levies alone were wiped out by a 3820-man host. Half the
+				# host in levies (halved again if they will not march), and a
+				# core of armoured foot and light horse that does not desert.
+				levies = {
+					value = scope:kehillah_mob_leader.var:kehillah_mob_size
+					multiply = 0.5
+					if = {
+						limit = { scope:kehillah_mob_desert = 1 }
+						multiply = 0.5
+					}
+				}
+				men_at_arms = {
+					type = armored_footmen
+					stacks = {
+						value = scope:kehillah_mob_leader.var:kehillah_mob_size
+						divide = 600
+						round = yes
+						min = 2
+					}
+				}
+				men_at_arms = {
+					type = light_horsemen
+					stacks = {
+						value = scope:kehillah_mob_leader.var:kehillah_mob_size
+						divide = 1000
+						round = yes
+						min = 1
+					}
+				}
+				location = scope:kehillah_mob_victim_town
+				war = scope:kehillah_mob_war
+				inheritable = no
+				uses_supply = yes
+			}
+		}
+	}
+}
+
+# The host's distance band (0-4), into var:kehillah_mob_band_now. Scope:
+# the mob leader.
+kehillah_mob_set_band_effect = {
+	var:kehillah_mob_target_province ?= { save_scope_as = kehillah_mob_band_target }
+	set_variable = { name = kehillah_mob_band_now value = kehillah_mob_band_value }
+}
+
+# Slice 1b: the AI community makes the same attempts a player would,
+# by its gold and the odds. Scope: the target (AI) Kehillah leader;
+# scope:kehillah_mob_leader saved.
+kehillah_mob_ai_answers_effect = {
+	save_scope_as = actor
+	# Refuge with the county's lord.
+	domicile.domicile_location.county.holder ?= {
+		if = {
+			limit = { NOT = { this = scope:actor } }
+			save_scope_as = recipient
+			scope:actor.primary_title = { add_to_variable_list = { name = kehillah_mob_asked_refuge target = scope:recipient } }
+			random = {
+				chance = scope:actor.kehillah_mob_ask_refuge_chance_value
+				scope:actor.primary_title = { set_variable = { name = kehillah_mob_refuge value = scope:recipient } }
+			}
+		}
+	}
+	# The Church, if it can pay.
+	if = {
+		limit = {
+			gold >= medium_gold_value
+			exists = scope:kehillah_mob_leader.faith.religious_head
+		}
+		scope:kehillah_mob_leader.faith.religious_head = { save_scope_as = recipient }
+		remove_short_term_gold = medium_gold_value
+		random = {
+			chance = kehillah_mob_ask_condemn_chance_value
+			kehillah_mob_condemned_effect = yes
+		}
+	}
+	# The defence of the quarter.
+	if = {
+		limit = {
+			exists = cp:councillor_marshal
+			gold >= minor_gold_value
+		}
+		remove_short_term_gold = minor_gold_value
+		random = {
+			chance = kehillah_mob_defence_chance_value
+			primary_title = { set_variable = { name = kehillah_mob_defended value = yes } }
+		}
+	}
+	# The silver, when it is likely to work.
+	scope:kehillah_mob_leader = { save_scope_as = recipient }
+	if = {
+		limit = {
+			gold >= kehillah_mob_treat_cost_value
+			kehillah_mob_treat_chance_value >= 30
+		}
+		remove_short_term_gold = kehillah_mob_treat_cost_value
+		random = {
+			chance = kehillah_mob_treat_chance_value
+			scope:kehillah_mob_leader = { kehillah_mob_bought_off_effect = yes }
+		}
+	}
+}
+
+# Slice 1c: the lord's answer to a plea for refuge. Scope: the Kehillah
+# leader; scope:kehillah_mob_patron the lord.
+kehillah_mob_refuge_granted_effect = {
+	primary_title = { set_variable = { name = kehillah_mob_refuge value = scope:kehillah_mob_patron } }
+	custom_tooltip = kehillah_mob_refuge_granted_tt
+}
+kehillah_mob_refuge_refused_effect = {
+	custom_tooltip = kehillah_mob_refuge_refused_tt
+	scope:kehillah_mob_patron = {
+		hidden_effect = { kehillah_shift_outlook_effect = { AMOUNT = -3 } }
+	}
+}
+
+# ---------------------------------------------------------------------
+# THE AFTERMATH (V39 slice 3, 2026-10-14). Scope: the struck Kehillah
+# leader; scope:kehillah_pogrom_severity saved.
+#   - The community's own: trauma (stress) and the tenets of martyrdom and
+#     asceticism become known to them.
+#   - Communities within medium distance: "The Year of the Decrees" for
+#     ten years (Stability -, Greatness +), and their leaders may take
+#     Kiddush ha-Shem or asceticism as a personal tenet (30%, 60% from
+#     severity 80).
+#   - The leader of the struck community likewise (60%).
+# ---------------------------------------------------------------------
+kehillah_pogrom_aftermath_effect = {
+	save_scope_as = kehillah_aftermath_victim
+	domicile.domicile_location ?= { save_scope_as = kehillah_aftermath_town }
+	# (Known and personal tenets are for playable characters only -- live
+	# 2026-10-14: add_known_tenet on courtiers errors "not playable".)
+	every_courtier = {
+		limit = {
+			is_alive = yes
+			is_jewish_character_trigger = yes
+		}
+		add_stress = medium_stress_gain
+	}
+	add_known_tenet = tenet_kehillah_kiddush_hashem
+	add_known_tenet = tenet_asceticism
+	random = {
+		chance = 60
+		kehillah_pogrom_take_tenet_effect = yes
+	}
+	if = {
+		limit = { exists = scope:kehillah_aftermath_town }
+		every_ruler = {
+			limit = {
+				government_has_flag = government_is_kehillah
+				NOT = { this = scope:kehillah_aftermath_victim }
+				exists = primary_title
+				domicile.domicile_location ?= {
+					# Medium distance (250 px): the region, not half of Europe
+					# (live 2026-10-14: large reached Paris, Narbonne, Praha).
+					squared_distance = { target = scope:kehillah_aftermath_town value <= squared_distance_medium }
+				}
+			}
+			primary_title = {
+				set_variable = {
+					name = kehillah_decrees_memory
+					value = yes
+					years = kehillah_mob_memory_years
+				}
+			}
+			add_known_tenet = tenet_kehillah_kiddush_hashem
+			add_known_tenet = tenet_asceticism
+			add_stress = minor_stress_gain
+			random = {
+				chance = {
+					value = 30
+					if = {
+						limit = { scope:kehillah_pogrom_severity >= 80 }
+						value = 60
+					}
+				}
+				kehillah_pogrom_take_tenet_effect = yes
+			}
+		}
+	}
+	# The faith remembers its martyrs (for the Bet Din Conference, later).
+	faith ?= {
+		if = {
+			limit = { NOT = { has_variable = kehillah_faith_martyrdom } }
+			set_variable = { name = kehillah_faith_martyrdom value = 0 }
+		}
+		change_variable = { name = kehillah_faith_martyrdom add = 1 }
+	}
+}
+
+# Scope: a Kehillah leader. Martyrdom or the ascetic's withdrawal.
+kehillah_pogrom_take_tenet_effect = {
+	if = {
+		limit = {
+			NOR = {
+				has_personal_tenet = tenet_kehillah_kiddush_hashem
+				has_personal_tenet = tenet_asceticism
+			}
+		}
+		random_list = {
+			60 = {
+				modifier = { add = 20 has_trait = zealous }
+				force_set_personal_tenet = tenet_kehillah_kiddush_hashem
+			}
+			40 = {
+				modifier = { add = 20 has_trait = temperate }
+				force_set_personal_tenet = tenet_asceticism
+			}
+		}
+	}
+}
+
+# V41 step 2: shift the harm a pogrom will do. Scope: the Kehillah leader.
+kehillah_mob_adjust_severity_effect = {
+	kehillah_granada_adjust_severity_effect = { AMOUNT = $AMOUNT$ }
+}

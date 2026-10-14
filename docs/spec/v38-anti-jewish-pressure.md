@@ -140,3 +140,37 @@ Bet Din):
 
 A count of 2 a month from a community of 3 a month costs 40; a duke of 6 a month 65; an emperor of
 25 a month about 220. The AI keeps to gifts as a rescue for a host already Cold or worse.
+
+## Addendum (2026-10-13, later): the Shtadlan intercedes, the Dayyan meets the clergy
+
+Daniel: "why is the dayyan interceding, shouldn't the shtadlan? ... Maybe the dayyan can encourage
+positive relations with a county's rite/faith instead, increasing AI likelihood of adopting a more
+positive Jewish policy?"
+
+**The audience moves to the Shtadlan.** The Dayyan's Discourse task is gone. Its yearly check is now
+part of **Petition the Host**:
+- **The chance:** (Diplomacy x 2 - the host's standing) x 2, 0 to 50.
+- **Standing:** unchanged (10/15/22/30 by rank, +5/+10 by teaching, +5 zealous).
+- **The cap:** one audience per lord per year, from any community.
+- **Effect:** outlook +2 and opinion +10.
+
+**The Dayyan's new task: A Learned Exchange.** He sits with the clergy of the county's faith.
+- **The chance:** each January, (Learning x 2 - the faith's standing) x 1.5, 0 to 50.
+- **Standing:** 20 under a protective teaching, 30 strict, 40 exclusionary; +10 while the faith
+  wages a great holy war.
+- **On success:**
+  - the community's religious-tension pressure is halved for 10 years;
+  - the faith's anti-Jewish pressure falls 1;
+  - its **goodwill** rises 1, at most 3 a year per faith from all communities.
+- **Goodwill mirrors pressure.** It decays x0.8 a year and nets against pressure.
+  - At the yearly teaching review, goodwill of 4 or more beyond the pressure softens the teaching one
+    step, with chance (goodwill - pressure) / 4, unless the head of faith is Convinced.
+  - It also adds goodwill / 4 to a Protector head's chance.
+  - A gentler teaching raises every follower's outlook, and through it the AI's settlement policy
+    and invitations.
+- **AI:** it sends its Dayyan when the chance is 15% or more.
+
+**Debug:**
+- `kehillah_outlook_debug.15`: the Shtadlan's audience.
+- `.16`: the exchange.
+- `.17`: the county faith's pressure, goodwill and the tension term.
