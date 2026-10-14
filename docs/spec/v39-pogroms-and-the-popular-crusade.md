@@ -916,3 +916,16 @@ When an accusation (V37) turns violent, the crowd now becomes a real mob in the 
 The V36 rising still strikes abstractly: its leader is a vanilla peasant-revolt leader, already at
 war with the county's lord.
 
+**Slice 5 live test (`b30ac73`), 2026-10-14: passed.** No crash.
+- **The accusation.** Its odds were Shtadlan 40%, paying 65%, the Pope 85%; barring the gates
+  always brings violence.
+- **The mob.** It rose in Worms with no warning event: 1320 men, at the gates 4 days later. The
+  pogrom came 8 days after that, at severity about 18 (the adjustment was -16; Heinrich
+  Protective): 1 dead, 1 baptized, Prosperity -90.
+- **The accusation's report** did not appear after violence; it did appear after a successful
+  Shtadlan plea.
+- **No second host** formed while one stood.
+- **Fixed:** 18,260 tooltip-only error lines while the options were hovered. The raise ran inside
+  the option, so the tooltip builder evaluated it. The mob now rises a day later, in the hidden
+  event `kehillah_mob.0030`.
+
