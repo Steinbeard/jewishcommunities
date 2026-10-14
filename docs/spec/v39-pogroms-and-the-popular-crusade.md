@@ -160,6 +160,27 @@ crusade's.
     not engage a host several times his size, which is the realistic default.
   - His liege is not called. The overlord joins only if a response brings him in (5.4).
   - The CB's on-victory effect is the pogrom, if it has not happened already.
+  - **Superseded the same day: the war is on the community, not the lord.** Daniel asked for
+    "something more like raiding maybe? Or a 'siege' without it being a war?", hostile so that
+    players can attack it, while the AI usually does not. The design is now:
+    - **The parties.** The hidden war is the mob leader against the **Kehillah leader** (a ruler,
+      landless). No lord is a participant.
+    - **The AI lords.** They ignore the army as it passes. Only "Move the lord to raise his men"
+      adds a lord, through `add_defender`, with his event troops.
+    - **Players.** A player ruler can join through a "Protect the Jews of [town]" interaction
+      (`add_defender`) and attack it.
+    - **The siege.** The siege of the quarter is scripted, not the engine's: a countdown from the
+      army's arrival in the town. Refuge in the castle lengthens it by the lord's fort level and
+      garrison, and carries the monthly hand-over chance (5.5).
+    - **Rejected: raiding.** It needs a raid licence (government, faith or culture), the AI chooses
+      raid targets itself, and raid hostility would set every lord along the way against the mob.
+    - **Spike 0b:**
+      - Does the AI march an army whose enemy is landless toward that enemy's location (the
+        community's town), or must it be stepped county by county?
+      - How does war score behave against a landless defender?
+      - Is the Kehillah government safe as a war participant?
+
+    The bullets below describe the earlier count-war design; they still hold as the fallback.
   - **Never the Emperor** (Daniel, 2026-10-13: the mob must not declare war on the overlord). The
     engine makes a character outside any realm target the top liege, unless the CB sets
     `target_top_liege_if_outside_realm = no` (vanilla's peasant revolt does). `kehillah_mob_cb`
