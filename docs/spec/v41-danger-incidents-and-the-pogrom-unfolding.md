@@ -235,3 +235,19 @@ children given up, captives not ransomed, and a leader.
   the secret when they return openly. A baptized leader still steps down, and if the player
   continues as him, he plays a Converso who may be a hidden Jew.
 
+**Steps 1a/1b live tests, 2026-10-14: passed.** No crash.
+- **Three runs:**
+  - **Refusing:** the neighbour Karlotte gave up the children (16% to hide them), and the leader was
+    killed.
+  - **The font:** step-down, then "Carry on as Parnas Gad".
+  - **Refuge:** 60% with silver, the Castle Gate after 120 days, the leader seized, and killed
+    when not ransomed.
+- **After the fixes** (`9993d9f`):
+  - **Tooltips:** no "nothing happens" block; the neighbour's tooltip speaks of trust, not odds.
+  - **Pronouns:** follow the character (Tzila, "she says").
+  - **The conversion notice** reads "You were baptized at the font...".
+  - **The baptized leader** is a Converso, with `kehillah_anus` and `kehillah_baptized_by_force`.
+  - **Secrets:** 8 of the 11 baptized by force kept the crypto secret (about 73%).
+  - **The captive leader killed under "We cannot pay":** no errors.
+- **Not seen:** a female neighbour; the captive leader baptized under "We cannot pay".
+
