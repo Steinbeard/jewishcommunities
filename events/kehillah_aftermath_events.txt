@@ -1,0 +1,243 @@
+﻿namespace = kehillah_aftermath
+
+# =====================================================================
+# V43 slice 2 (docs/spec/v43-after-the-violence-and-granada.md), 2026-10-
+# 14. After a pogrom: the burial, the survivors, the rebuilding, the
+# year's mind. Players only; sent from the pogrom's report (kehillah_
+# mob.0010) when the community survives it.
+#   .0001 The Burial       (a week after)
+#   .0002 The Survivors    (a month after)
+#   .0003 Rebuilding       (three months after)
+#   .0004 The Year's Mind  (a year after)
+# Scope: the community's leader.
+# =====================================================================
+
+scripted_trigger kehillah_aftermath_valid_trigger = {
+	is_ai = no
+	is_jewish_character_trigger = yes
+	government_has_flag = government_is_kehillah
+	exists = primary_title
+	primary_title = { has_variable = kehillah_pogrom_memory }
+}
+
+# Scope: the leader. Who the survivors' scene is about.
+scripted_effect kehillah_aftermath_survivor_scopes_effect = {
+	# A child of the community whose father was killed.
+	random_courtier = {
+		limit = {
+			is_alive = yes
+			is_adult = no
+			is_jewish_character_trigger = yes
+			father ?= { is_alive = no }
+		}
+		save_scope_as = kehillah_aftermath_orphan
+	}
+	# One who was baptized, or said the words, and has come back to the
+	# edge of the community.
+	primary_title = {
+		random_in_list = {
+			variable = kehillah_anusim
+			limit = { is_alive = yes }
+			save_scope_as = kehillah_aftermath_convert
+		}
+	}
+}
+
+kehillah_aftermath.0001 = {
+	type = character_event
+	title = kehillah_aftermath.0001.t
+	desc = kehillah_aftermath.0001.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = grief
+	}
+	trigger = {
+		kehillah_aftermath_valid_trigger = yes
+		has_variable = kehillah_pogrom_dead
+		var:kehillah_pogrom_dead >= 1
+	}
+
+	# I will say it for them myself, every day of the year.
+	option = {
+		name = kehillah_aftermath.0001.a
+		add_piety = medium_piety_gain
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_aftermath_kaddish_stability }
+		ai_chance = { base = 40 }
+	}
+	# Write down their names. They will be read every year.
+	option = {
+		name = kehillah_aftermath.0001.b
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_aftermath_names_greatness }
+		ai_chance = { base = 40 }
+	}
+	# Bury them, and open the market again.
+	option = {
+		name = kehillah_aftermath.0001.c
+		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_aftermath_market_prosperity }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_aftermath_market_stability }
+		ai_chance = { base = 20 }
+	}
+}
+
+kehillah_aftermath.0002 = {
+	type = character_event
+	title = kehillah_aftermath.0002.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:kehillah_aftermath_convert }
+				desc = kehillah_aftermath.0002.desc_convert
+			}
+			triggered_desc = {
+				trigger = { exists = scope:kehillah_aftermath_orphan }
+				desc = kehillah_aftermath.0002.desc_orphan
+			}
+			desc = kehillah_aftermath.0002.desc
+		}
+	}
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		trigger = { exists = scope:kehillah_aftermath_convert }
+		character = scope:kehillah_aftermath_convert
+		animation = shame
+	}
+	lower_right_portrait = {
+		trigger = {
+			NOT = { exists = scope:kehillah_aftermath_convert }
+			exists = scope:kehillah_aftermath_orphan
+		}
+		character = scope:kehillah_aftermath_orphan
+	}
+	trigger = { kehillah_aftermath_valid_trigger = yes }
+	immediate = { kehillah_aftermath_survivor_scopes_effect = yes }
+
+	# The community chest will feed them until the spring.
+	option = {
+		name = kehillah_aftermath.0002.a
+		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_aftermath_chest_prosperity }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_aftermath_chest_stability }
+		ai_chance = { base = 40 }
+	}
+	# The families will take them into their houses.
+	option = {
+		name = kehillah_aftermath.0002.b
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_aftermath_houses_greatness }
+		ai_chance = { base = 30 }
+	}
+	# Find them work.
+	option = {
+		name = kehillah_aftermath.0002.c
+		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_aftermath_work_prosperity }
+		ai_chance = { base = 30 }
+	}
+}
+
+kehillah_aftermath.0003 = {
+	type = character_event
+	title = kehillah_aftermath.0003.t
+	desc = kehillah_aftermath.0003.desc
+	theme = stewardship
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		trigger = { exists = scope:kehillah_aftermath_lord }
+		character = scope:kehillah_aftermath_lord
+		animation = idle
+	}
+	trigger = { kehillah_aftermath_valid_trigger = yes }
+	immediate = {
+		domicile.domicile_location.county.holder ?= {
+			if = {
+				limit = { NOT = { this = root } }
+				save_scope_as = kehillah_aftermath_lord
+			}
+		}
+	}
+
+	# The synagogue first.
+	option = {
+		name = kehillah_aftermath.0003.a
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_aftermath_synagogue_greatness }
+		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_aftermath_synagogue_prosperity }
+		ai_chance = { base = 40 }
+	}
+	# The houses and the market first.
+	option = {
+		name = kehillah_aftermath.0003.b
+		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_aftermath_houses_prosperity }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_aftermath_houses_first_greatness }
+		ai_chance = { base = 40 }
+	}
+	# Ask the lord for timber from his forests.
+	option = {
+		name = kehillah_aftermath.0003.c
+		trigger = { exists = scope:kehillah_aftermath_lord }
+		random_list = {
+			40 = {
+				desc = kehillah_aftermath_timber_given
+				kehillah_lord_outlook_odds_modifier = { HOST = scope:kehillah_aftermath_lord }
+				modifier = {
+					add = 15
+					scope:kehillah_aftermath_lord = { has_trait = generous }
+				}
+				min = 5
+				kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_aftermath_timber_prosperity }
+			}
+			60 = {
+				desc = kehillah_aftermath_timber_refused
+				modifier = {
+					add = 20
+					scope:kehillah_aftermath_lord = { has_trait = greedy }
+				}
+				min = 5
+				kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_aftermath_timber_refused_stability }
+			}
+		}
+		ai_chance = { base = 20 }
+	}
+}
+
+kehillah_aftermath.0004 = {
+	type = character_event
+	title = kehillah_aftermath.0004.t
+	desc = kehillah_aftermath.0004.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = grief
+	}
+	trigger = { kehillah_aftermath_valid_trigger = yes }
+
+	# A fast on the day, every year.
+	option = {
+		name = kehillah_aftermath.0004.a
+		add_piety = medium_piety_gain
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_aftermath_fast_stability }
+		ai_chance = { base = 40 }
+	}
+	# A lament, to be read on the Ninth of Av.
+	option = {
+		name = kehillah_aftermath.0004.b
+		trigger = {
+			OR = {
+				learning >= 10
+				exists = cp:councillor_court_chaplain
+			}
+		}
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_aftermath_kinah_greatness }
+		ai_chance = { base = 40 }
+	}
+	# Let the year be enough.
+	option = {
+		name = kehillah_aftermath.0004.c
+		add_stress = medium_stress_loss
+		ai_chance = { base = 20 }
+	}
+}

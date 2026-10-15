@@ -1,4 +1,4 @@
-﻿**Status:** proposal, 2026-10-14, from Daniel's review of the V41/V42 chains. It extends
+﻿**Status:** slices 0-2 built, 2026-10-14 (slice 0 committed; 1-2 not yet live-tested); from Daniel's review of the V41/V42 chains. It extends
 [V39](v39-pogroms-and-the-popular-crusade.md) (Granada, section 9; the forced converts, slice 3b),
 [V41](v41-danger-incidents-and-the-pogrom-unfolding.md) and [V42](v42-the-crisis-as-a-place.md).
 Writing follows [the writing guide](../implementation/kehillah-writing-style.md).
@@ -104,3 +104,49 @@ It is very rare by construction.
 
 Slices 0 and 1 first: Granada falls three and a half months into the 1066 start, and it is the
 chain players meet first. Then 2, 3, 4 and 5.
+
+## Built, 2026-10-14
+
+**Slice 0, the captive's choice: `kehillah_pogrom.0040` "The Silver Did Not Come".**
+- **Refuse:** death, with the martyr's Greatness.
+- **Yield:** the water, or the words. This is the forced-conversion path, with its choice of
+  successor.
+- **Run:** a prowess duel against the captor.
+
+The AI keeps the roll.
+
+**Slice 1, Granada:**
+- **The family** (`history/characters/granada_1066.txt`):
+  - Samuel ha-Nagid (993-1056), 9000230;
+  - Elyasaf, 9000231 (dates estimated);
+  - Rabbi Nissim ben Jacob of Kairouan (d. 1062), 9000232;
+  - Joseph's wife, 9000233 (her name, Hannah, is not recorded and was chosen for the mod);
+  - Azariah, 9000234 (birth estimated).
+
+  Joseph has Samuel as father and the nickname "ha-Nagid" (`nick_kehillah_ha_nagid`).
+- **Joseph's events:** `.0006` "Azariah", about six weeks in. He sends his wife and son to Lucena,
+  keeps them, or sends the boy alone.
+- **The night:** the vizier is +50 likelier to be killed (was +30). If he falls,
+  `kehillah_granada_vizier_falls_effect` records it and, if his family is still in Granada, sends
+  them to Lucena.
+- **A fortnight later,** the relay `.0014`, on the emir:
+  - Granada's leader gets `.0007` "The City Gate": the death, told, not shown;
+  - the other Sephardi players get `.0013` "News from Granada", in three variants (fell, escaped,
+    spared) plus the family.
+- **Other Sephardi players, from the start:**
+  - `.0010` "A Letter from Granada" (day 20): Samuel's service, Joseph's succession, the Sanhaja;
+  - `.0011` "The Poem Travels" (day 50): Abu Ishaq's qasida;
+  - `.0012` "What They Say in Granada" (day 85): Buluggin's death, the Almeria rumour.
+
+**Slice 2, after a pogrom** (`events/kehillah_aftermath_events.txt`; players, when the community
+survives):
+- **`.0001` The Burial (day 7):** say Kaddish yourself, write down the names, or open the market.
+- **`.0002` The Survivors (day 30):** a convert at the back of the synagogue, or an orphan, or the
+  crowded houses. Feed them from the chest, take them into the houses, or find them work.
+- **`.0003` Rebuilding (day 90):** the synagogue first, the houses first, or the lord's timber (odds
+  by his outlook).
+- **`.0004` The Year's Mind (day 365):** a fast, a lament for the Ninth of Av, or letting the year be
+  enough.
+
+The values are in `kehillah_aftermath_values.txt`.
+
