@@ -28,9 +28,11 @@ The larger artifact inventory,
 named acquisition, scholar demand, exceptional authorship, rewards, and canon
 mechanics are staged in [V42](docs/spec/v42-sefarim-and-the-library.md).
 Daniel's follow-up on composition dates, corpus/tractate grouping, and evolving
-work standing is recorded in V42's dated addendum. Existing 933/1080/1140
-acquisition gates are a partial chronology; the first full catalog metadata
-pass and save-safe tractate migration remain future work.
+work standing is recorded in V42's dated addenda. The latest addendum adopts
+exact in-game composition and circulation dates, optional historical author
+links, and doctrine-based protected Torah/Tanakh and Rabbinic Bavli tiers.
+Existing 933/1080/1140 acquisition gates are a partial chronology; the first
+full catalog metadata pass and save-safe tractate migration remain future work.
 This user-directed slice was taken ahead of V41's soak and eastern-host tasks;
 those remain open in their current order. The next V42 gate is the focused UI
 check, including the book detail and mastery state, before widening the catalog
