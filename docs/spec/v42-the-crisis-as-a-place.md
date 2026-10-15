@@ -173,3 +173,36 @@ Each slice: ck3-tiger, a live test, a commit.
 - **Unchanged:** the severity, deaths and conversions overall still follow the pogrom. Only the choice
   between death and conversion changes.
 
+## Addendum, 2026-10-15: the Dayyan's defence at the Talmud trial
+
+**Status:** slice 3, one option built and source/Tiger/live-checked.
+The rest of slice 3 remains open. This extends section 6.3 above and supersedes
+the binary Learning bonuses in `kehillah_incident.0001.f` only.
+
+The Dayyan now makes a vanilla Learning challenge against the accuser. It runs
+in the Dayyan's scope, so the challenge describes the scholar actually defending
+the books. Both results explicitly return to the community leader's scope:
+acquittal grants the same 30 Greatness; condemnation uses the existing book
+burning, Greatness loss, stress and charter effects. The more-learned-than-the-
+leader gate and the AI's option weight stay the same.
+
+The odds use the leader's existing challenge pattern: opposing weights of 50,
+with 3.5 times the Learning difference added to success and subtracted from
+failure. This replaces the old single 15-point bonus for being more learned
+than the accuser. The Dayyan's additional 15-point bonus at Learning 18, the
+lord's outlook and the zealous penalty remain. Each outcome retains a minimum
+weight of 5, which is not a five-percent probability floor. This deliberate
+small balance change makes each improvement in the defending scholar's Learning
+matter rather than treating every advantage as equal.
+
+Console-only `kehillah_trial_debug.1` prepares a disposable trial with a new
+Dayyan, Greatness 500 and Bavli Moed. It replaces the current Dayyan and must
+never be used in a continuing save. After choosing the Dayyan's answer while
+paused, `.2` checks the community's actual result before the two-day report
+clears its marker. Neither event is subscribed to normal gameplay.
+
+The acquittal and rendered challenge passed in a fresh HaLevi game at Worms.
+The failed outcome remains source-checked rather than exercised live.
+Validation is recorded in
+[the focused test log](../testing/2026-10-15-dayyan-trial-live-test-log.md).
+

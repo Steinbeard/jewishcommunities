@@ -1,4 +1,20 @@
-﻿## Overnight V40 slice 1 -- 2026-10-14 05:22 America/New_York
+﻿## Overnight V42 slice 3, Dayyan trial -- 2026-10-15 05:17 America/New_York
+
+- Completed one option from the current highest-priority TODO: the Dayyan's
+  Talmud-trial defence now uses a vanilla Learning challenge against the accuser.
+  Outcomes return to the community leader; gates, rewards and AI weight remain.
+- Source and Tiger comparison passed (no new touched-file findings). Fresh
+  isolated HaLevi/Worms check passed the community's acquittal reward/book
+  assertion, no outcome on the Dayyan, and the rendered scholar/opponent/
+  percentages. Condemnation was source-checked, not selected live.
+- Existing branch/checkout retained; six pre-existing tracked edits and trait
+  sources preserved. No lower TODO selected. Next: another small V41 event
+  increment under V42 slice 3; the whole slice remains open.
+- Evidence: docs/testing/2026-10-15-dayyan-trial-live-test-log.md. Disposable
+  PID 10984 remains paused at a trial in its own artifact profile; existing
+  PID 22588 was left untouched. No Daniel action needed.
+
+## Overnight V40 slice 1 -- 2026-10-14 05:22 America/New_York
 
 - Built the highest-priority incidents-counter slice on the existing
   `autonomous/shabbat-2026-10` checkout; no branch/worktree created.
