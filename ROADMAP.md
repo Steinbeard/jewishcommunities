@@ -36,6 +36,31 @@ Spec: [v42](docs/spec/v42-the-crisis-as-a-place.md).
 2. slice 3, vanilla-only odds across the V41 events;
 3. slice 4, cleanup of numbers in older text.
 
+### V42 Sefer collection and scholarship — 2026-10-14, Daniel's request
+
+The first Books/Yeshiva panel split, clickable work descriptions, true mastery
+checklist, and tier-aware starting-library seed are scripted in the Codex
+worktree. **Fresh-boot seed verification passed** for Worms (tier 3, six
+distinct works) and Mainz (tier 1, three distinct works). Window-relative
+input later opened the Library and book detail; a primary-display check passed
+the revised own-quarter panel, detail containment, and Books/Yeshiva tabs.
+The standalone community-switch reset and personal mastery foldout still need
+a recheck, preferably in a fresh isolated process with unsuppressed logs.
+The larger artifact inventory,
+named acquisition, scholar demand, exceptional authorship, rewards, and canon
+mechanics are staged in [V42](docs/spec/v42-sefarim-and-the-library.md).
+Daniel's follow-up on composition dates, corpus/tractate grouping, and evolving
+work standing is recorded in V42's dated addenda. The latest addendum adopts
+exact in-game composition and circulation dates, optional historical author
+links, and doctrine-based protected Torah/Tanakh and Rabbinic Bavli tiers.
+Existing 933/1080/1140 acquisition gates are a partial chronology; the first
+full catalog metadata pass and save-safe tractate migration remain future work.
+This user-directed slice was taken ahead of V41's soak and eastern-host tasks;
+those remain open in their current order. The next V42 gate is the focused UI
+check of those remaining states before widening the catalog or replacing title
+flags. See the [seed check](docs/testing/2026-10-14-sefer-seed-live-check.md)
+and [primary UI check](docs/testing/2026-10-14-sefer-primary-ui-check.md).
+
 ### V41 The danger of violence, the incidents, the pogrom unfolding — 2026-10-14, Daniel's request
 
 Spec: [v41](docs/spec/v41-danger-incidents-and-the-pogrom-unfolding.md).
@@ -201,6 +226,8 @@ Five one-step events for Yom Kippur, Sukkot and Shavuot are scripted. Two use na
 **Talmud Torah tenet, 2026-10-13, Daniel's request:** A new Jewish tenet replaces Rabbinism's generic Pursuit of Knowledge slot. It grants modest Scholar lifestyle growth, opens the existing Learn Torah scheme to eligible lay readers, and adds Piety and Learning XP for mastering library works without relying on the Scholar or Rabbi trait. Source and `ck3-tiger` checks passed apart from the known 1.19-linter/1.20-game `rite` mismatch; live display and reward probes remain pending. See [the tenet spec](docs/spec/jewish-talmud-torah-tenet.md). This user-requested feature runs in parallel with the higher-priority live-test TODOs above; it does not close them.
 
 **Talmud Torah Rabbi synergy, 2026-10-13, Daniel's follow-up:** Successful library study adds modest Rabbi track XP for actual trait holders, and the tenet lowers the work-mastery Learning floor from 10 to the existing semicha-entry floor of 8. The two-work/two-field curriculum and study-hall requirement remain. An isolated CK3 boot passed after correcting a pre-existing Learn Torah description-key error; gameplay probes remain pending. See [the dated addendum](docs/spec/jewish-talmud-torah-tenet.md#rabbi-and-semicha-synergy--2026-10-13-addendum) and [test log](docs/testing/2026-10-13-talmud-torah-tenet-check.md).
+
+**2026-10-15 tenet presentation correction:** A live faith tooltip showed the Talmud Torah mastery rules but exposed the wrong passive modifier: Religious Scholar trait XP rather than Learning lifestyle XP. The script now uses the vanilla Learning-lifestyle modifier key, and a fresh live tooltip confirmed the correction. Ritual Celebrations retains its shared vanilla ID and effects, with a Jewish-specific Mo'adim le-Simchah subtitle, description, and existing holiday/feast hooks; a Samaritan live tooltip confirmed the name and text. Halakha retains its shared vanilla ID and existing Jewish tooltip subtitle. CK3's faith cards use generic base names; changing those labels would require a substantial vanilla GUI fork. See [the Talmud Torah correction](docs/spec/jewish-talmud-torah-tenet.md#live-tooltip-correction--2026-10-15-addendum) and [the festival addendum](docs/spec/jewish-festival-observance.md#named-jewish-tenet--2026-10-15-addendum). This user-requested correction runs alongside V42 and does not close earlier TODOs.
 
 **Ba'alei ha-Miqra and study fulfillment, 2026-10-13, Daniel's follow-up:** The separate branch now gives Karaism a scriptural-authority tenet in Literalism's slot and a continuing Examine Scripture course that progresses Religious Scholar instead of Rabbi. Rabbinic book mastery and successful Karaite scripture courses now grant small Spiritual Fulfillment gains for playable readers. Faith-level starting statuses prohibit the opposing authority tenet in Rabbinism and Karaism while leaving generic Torah study available. Source review and `ck3-tiger` checks passed with known 1.19/1.20 syntax-model mismatches. **2026-10-13 evening correction:** a separate CK3 instance mounted this worktree and reached the main menu on the extended virtual display; live gameplay and status display remain pending. See [the new addendum](docs/spec/jewish-baalei-hamiqra-tenet.md) and [source/boot log](docs/testing/2026-10-13-baalei-hamiqra-source-check.md). This user-requested pass continues in parallel with the older live-test TODOs above.
 

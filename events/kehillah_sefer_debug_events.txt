@@ -1,0 +1,62 @@
+﻿# Console-only, read-only collection probe. Run as a Kehillah leader:
+#   event kehillah_sefer_debug.1
+# Inspect debug.log for tier, held work flags, and personally mastered
+# work flags. This reads the same title and character lists as the panel.
+namespace = kehillah_sefer_debug
+
+kehillah_sefer_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_sefer_debug.1 START"
+		if = {
+			limit = { exists = primary_title }
+			primary_title = {
+				if = {
+					limit = { holder = { domicile ?= { has_domicile_building_or_higher = kehillah_beit_midrash_03 } } }
+					debug_log = "kehillah_sefer_debug.1 TIER 3"
+				}
+				else_if = {
+					limit = { holder = { domicile ?= { has_domicile_building_or_higher = kehillah_beit_midrash_02 } } }
+					debug_log = "kehillah_sefer_debug.1 TIER 2"
+				}
+				else = { debug_log = "kehillah_sefer_debug.1 TIER 1 OR NO HALL" }
+				if = {
+					limit = { has_variable_list = kehillah_library_works }
+					every_in_list = {
+						variable = kehillah_library_works
+						debug_log = "kehillah_sefer_debug.1 HELD WORK"
+						debug_log_scopes = yes
+					}
+				}
+			}
+		}
+		if = {
+			limit = { has_variable_list = kehillah_mastered_works }
+			every_in_list = {
+				variable = kehillah_mastered_works
+				debug_log = "kehillah_sefer_debug.1 MASTERED WORK"
+				debug_log_scopes = yes
+			}
+		}
+		debug_log = "kehillah_sefer_debug.1 END"
+	}
+}
+
+# In a fresh test save, make the personal-mastery foldout reachable.
+# Console only: event kehillah_sefer_debug.2
+kehillah_sefer_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { NOT = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:work_mishnah } } }
+			add_to_variable_list = { name = kehillah_studied_works target = flag:work_mishnah }
+		}
+		if = {
+			limit = { NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mishnah } } }
+			add_to_variable_list = { name = kehillah_mastered_works target = flag:work_mishnah }
+		}
+		debug_log = "kehillah_sefer_debug.2: gave this character Mishnah mastery for the library UI check"
+	}
+}

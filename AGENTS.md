@@ -142,6 +142,14 @@ instance separate**. The tested setup and its limits are recorded in
 See **[docs/testing/automation-shim-guide.md](docs/testing/automation-shim-guide.md)** for the
 full mechanics and philosophy; summary:
 
+- **GUI modding research:** Daniel approved consulting the CK3 Mod Co-op Discord's GUI modding
+  channel through computer use when an interface implementation needs a practical tip. Treat
+  Discord discussion as a lead, then verify it against the installed CK3 files and a live UI
+  test. Existing findings and channel links are recorded in
+  `docs/spec/2026-10-13-faith-map-navigation-and-nusach.md` and
+  `docs/implementation/kehillah-domain-overview.md`. Reading is authorized; ask Daniel before
+  posting to the channel.
+
 - **Run `ck3-tiger` before anything else, on every session that touches script/loc/gui.** Installed
   at `C:\Users\Daniel\Documents\ck3-tiger\ck3-tiger.exe`. It currently targets CK3 1.19.0 while
   the installed game is 1.20.1, so compare findings with a baseline and verify version-related
@@ -242,7 +250,13 @@ genuinely-blocked item, it means never skipping *silently*.
 
 ## Overnight automation
 
-A Windows Scheduled Task (`JewishCommunities-OvernightDev`, on Daniel's machine) runs an
+**Paused by Daniel on 2026-10-14:** Windows Scheduled Tasks
+`JewishCommunities-OvernightDev`, `JewishCommunities-ShabbatHeartbeat`, and
+`JewishCommunities-SukkotHeartbeat` all reported **Disabled** after his request.
+Do not re-enable them without a new instruction from Daniel. The description
+below records the former overnight workflow for context.
+
+A Windows Scheduled Task (`JewishCommunities-OvernightDev`, on Daniel's machine) formerly ran an
 unattended instance of this same "Working autonomously" workflow at **2:00 AM America/New_York,
 once a night**. (Was twice nightly at 1AM/5AM; cut to a single run 2026-09-08 to bound token
 spend per night while token-efficiency work — screenshot downscaling, subagent delegation, see

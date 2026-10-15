@@ -70,18 +70,12 @@
 # roster can open or the flag could stick. Since 2026-09-17 every Kehillah starts with a Beit
 # Midrash anyway, so the line is only ever seen on pre-seed saves.
 #
-# WHERE: the column LEFT of the domicile window, below its bookmark
-# tab strip. Below the window there are ~155 UI px before the bottom
-# HUD -- not enough for a list (the first builds sat there and could
-# never have shown more than a row). The window is 1390 x 694 centred
-# (window_domicile.gui:9-10); its tab strip hangs at { -49 25 } size
-# { 60 140 }, so the free column runs from the screen's left edge to
-# the window's left edge, from 165 px below the window's top down to
-# the bottom-left character portrait. Anchored to the screen's left so
-# a narrower UI puts the panel partly under the window rather than off
-# the screen. The domicile window draws above this panel (it is on
-# layer middle; a scripted widget needs windows_layer), so any overlap
-# hides the panel's right edge, never the window.
+# WHERE: initially the column left of the 1390 x 694 centred domicile
+# window. At 1538 x 890 the two windows overlap heavily; the 2026-10-14
+# live check found most of this panel hidden behind vanilla. The own and
+# other-quarter panels now use the top layer and a draggable position
+# near the upper-left corner, so the controls remain reachable at that
+# size. The map-roster standalone panel is another direct route.
 #
 # THE LIST IS DYNAMIC. datamodel = the title's kehillah_library_works
 # variable_list (Title.MakeScope.GetList -- confirmed live 2026-09-17
@@ -91,22 +85,23 @@
 # and tooltip on the row is then Localize( Concatenate( 'prefix_',
 # Scope.GetFlagName ) ) (vanilla: Localize( Concatenate(
 # 'COA_DESIGNER_CATEGORY_', CString.GetString ) )). So ADDING A BOOK IS
-# ZERO GUI WORK: one flag in script plus three loc lines --
+# ZERO GUI WORK: one flag in script plus its name, subject, hover, and
+# long-detail localization --
 #   kehillah_lib_name_<flag>, kehillah_lib_subject_<flag>,
-#   kehillah_lib_tt_<flag>
+#   kehillah_lib_tt_<flag>, kehillah_lib_detail_<flag>
 # -- see localization/english/kehillah_library_panel_l_english.yml.
 # Only what is HELD is listed (additive); nothing is said about works
 # the community lacks. The rows sit in a scrollbox (vanilla's own
 # blockoverride "scrollbox_content" idiom, window_domicile.gui:1170) so
 # a long library scrolls instead of running under the HUD.
 #
-# STUDIED BY YOU: each held row is marked (green name, check, and a
-# status line in its tooltip) when the PLAYER has studied that work --
+# MASTERED BY YOU: each held row is marked (green name, check, and a
+# status line in its tooltip) when the PLAYER has mastered that work --
 # asked of script per row through the per-work kehillah_lib_studied_
 # work_<flag> scripted_guis' IsValid (2026-09-19; GUI has no "is this
 # item in that other list" call of its own). A second dynamic list of
-# the player's kehillah_studied_works still follows under the roster,
-# for works studied elsewhere that this library does not hold.
+# the player's kehillah_mastered_works can be expanded below the roster,
+# for works mastered elsewhere that this library does not hold.
 #
 # STRUCTURE: vbox inside window, hboxes and vboxes nested freely, and
 # no vbox/hbox as a direct child of a (flow)container (live passes 3
@@ -116,7 +111,7 @@
 
 @lib_width = 272
 @lib_name_width = 132
-@lib_list_height = 290
+@lib_list_height = 230
 
 types KehillahLibrary
 {
@@ -127,6 +122,25 @@ types KehillahLibrary
 		spacing = 4
 		ignoreinvisible = yes
 
+		# Keep the collection and the yeshiva controls on separate pages.
+		hbox = {
+			layoutpolicy_horizontal = expanding
+			spacing = 4
+			button_standard_list = {
+				size = { 132 25 }
+				text = "KEHILLAH_LIB_TAB_COLLECTION"
+				down = "[Or( Not( GetVariableSystem.Exists( 'kehillah_lib_show_yeshiva' ) ), Not( GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_has_yeshiva_value' ), '(CFixedPoint)0' ) ) )]"
+				onclick = "[GetVariableSystem.Clear( 'kehillah_lib_show_yeshiva' )]"
+			}
+			button_standard_list = {
+				visible = "[GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_has_yeshiva_value' ), '(CFixedPoint)0' )]"
+				size = { 132 25 }
+				text = "KEHILLAH_LIB_TAB_YESHIVA"
+				down = "[GetVariableSystem.Exists( 'kehillah_lib_show_yeshiva' )]"
+				onclick = "[GetVariableSystem.Set( 'kehillah_lib_show_yeshiva', 'yes' )]"
+			}
+		}
+
 		### (The header lives in each window, not here: only the
 		### standalone window has a close button that does anything.)
 
@@ -135,7 +149,7 @@ types KehillahLibrary
 		### teaches, and its students. All text -- script values and custom loc on
 		### the same Character datacontext the library uses.
 		vbox = {
-			visible = "[GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_has_yeshiva_value' ), '(CFixedPoint)0' )]"
+			visible = "[And( GetVariableSystem.Exists( 'kehillah_lib_show_yeshiva' ), GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_has_yeshiva_value' ), '(CFixedPoint)0' ) )]"
 			layoutpolicy_horizontal = expanding
 			spacing = 2
 			ignoreinvisible = yes
@@ -230,7 +244,7 @@ types KehillahLibrary
 
 		### The library.
 		vbox = {
-			visible = "[GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_has_beit_midrash_value' ), '(CFixedPoint)0' )]"
+			visible = "[And( Or( Not( GetVariableSystem.Exists( 'kehillah_lib_show_yeshiva' ) ), Not( GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_has_yeshiva_value' ), '(CFixedPoint)0' ) ) ), GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_has_beit_midrash_value' ), '(CFixedPoint)0' ) )]"
 			layoutpolicy_horizontal = expanding
 			spacing = 4
 			ignoreinvisible = yes
@@ -248,6 +262,20 @@ types KehillahLibrary
 				text = "KEHILLAH_LIB_EMPTY"
 				default_format = "#weak;italic"
 				max_width = @lib_width
+			}
+			button_standard_list = {
+				visible = "[And( DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_mastered_works' ) ), Not( GetVariableSystem.Exists( 'kehillah_lib_show_studied' ) ) )]"
+				size = { 255 25 }
+				text = "KEHILLAH_LIB_STUDIED_LABEL"
+				onclick = "[GetVariableSystem.Set( 'kehillah_lib_show_studied', 'yes' )]"
+				tooltip = "KEHILLAH_LIB_STUDIED_TT"
+				using = tooltip_se
+			}
+			button_standard_list = {
+				visible = "[GetVariableSystem.Exists( 'kehillah_lib_show_studied' )]"
+				size = { 255 25 }
+				text = "KEHILLAH_LIB_HIDE_STUDIED"
+				onclick = "[GetVariableSystem.Clear( 'kehillah_lib_show_studied' )]"
 			}
 
 			scrollbox = {
@@ -267,93 +295,65 @@ types KehillahLibrary
 						spacing = 2
 						ignoreinvisible = yes
 
-						### The works held. One row per flag in the title's list.
-						vbox = {
-							layoutpolicy_horizontal = expanding
-							spacing = 2
+						### A two-column shelf of clickable book artifacts. The
+						### title list remains authoritative; these are GUI cards,
+						### not character-owned vanilla artifacts.
+						fixedgridbox = {
+							addcolumn = 128
+							addrow = 84
+							flipdirection = yes
+							datamodel_wrap = 2
 							datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
 
 							item = {
-								hbox = {
-									layoutpolicy_horizontal = expanding
-									spacing = 6
-									ignoreinvisible = yes
-									### The work's own line, then whether YOU have studied
-									### it -- Select_CString picks the status line (vanilla:
-									### frontend_main.gui's Select_CString on IsTutorialEnabled).
+								button_standard_list = {
+									size = { 121 79 }
 									tooltip = "[Concatenate( Localize( Concatenate( 'kehillah_lib_tt_', Scope.GetFlagName ) ), Select_CString( GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_LIB_TT_STUDIED' ), Localize( 'KEHILLAH_LIB_TT_UNSTUDIED' ) ) )]"
 									using = tooltip_se
-
+									onclick = "[GetVariableSystem.Set( 'kehillah_lib_selected_work', Scope.GetFlagName )]"
 									icon = {
-										size = { 20 20 }
-										texture = "gfx/interface/icons/domicile_building/domicile_building_library.dds"
+										parentanchor = top|hcenter
+										position = { 0 4 }
+										size = { 46 46 }
+										texture = "gfx/interface/icons/artifact/artifact_chronicle.dds"
 										alwaystransparent = yes
 									}
-									### STUDIED BY YOU (2026-09-19): green name and a check;
-									### otherwise the plain name. Always about the player,
-									### whichever community's library this is.
+									### Mastery follows the player, even in another
+									### community's collection.
 									text_single = {
 										visible = "[GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+										parentanchor = bottom|hcenter
+										position = { 0 -4 }
 										text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
 										default_format = "#P"
-										max_width = @lib_name_width
+										max_width = 115
 									}
 									icon = {
 										visible = "[GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-										size = { 16 16 }
+										parentanchor = top|right
+										position = { -5 5 }
+										size = { 18 18 }
 										texture = "gfx/interface/icons/symbols/icon_check.dds"
 										alwaystransparent = yes
 									}
 									text_single = {
 										visible = "[Not( GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) )]"
+										parentanchor = bottom|hcenter
+										position = { 0 -4 }
 										text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
 										default_format = "#high"
-										max_width = @lib_name_width
-									}
-									expand = {}
-									text_single = {
-										text = "[Localize( Concatenate( 'kehillah_lib_subject_', Scope.GetFlagName ) )]"
-										default_format = "#weak"
-									}
-
-									### INVENTORY ACTIONS -- your own library only. Donate
-									### (2026-09-18): picks the per-work scripted_gui by the
-									### row's flag name (a GetList item cannot be handed to
-									### script through AddScope -- see the scripted_guis
-									### file); the confirmation is event kehillah_library.
-									### 0001. More actions go here.
-									button_round = {
-										visible = "[Character.IsLocalPlayer]"
-										size = { 22 22 }
-										enabled = "[GetScriptedGui( Concatenate( 'kehillah_lib_donate_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-										onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_donate_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-										tooltip = "KEHILLAH_LIB_DONATE_TT"
-										using = tooltip_se
-
-										icon = {
-											parentanchor = center
-											size = { 16 16 }
-											texture = "gfx/interface/icons/flat_icons/piety.dds"
-											alwaystransparent = yes
-										}
+										max_width = 115
 									}
 								}
 							}
 						}
 
-						### What YOU have studied, wherever you studied it.
-						text_single = {
-							visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_studied_works' ) )]"
-							margin_top = 8
-							text = "KEHILLAH_LIB_STUDIED_LABEL"
-							default_format = "#weak"
-							tooltip = "KEHILLAH_LIB_STUDIED_TT"
-							using = tooltip_se
-						}
+						### What YOU have mastered, wherever you studied it.
 						vbox = {
 							layoutpolicy_horizontal = expanding
 							spacing = 2
-							datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_studied_works' )]"
+							visible = "[GetVariableSystem.Exists( 'kehillah_lib_show_studied' )]"
+							datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_mastered_works' )]"
 
 							item = {
 								hbox = {
@@ -379,6 +379,64 @@ types KehillahLibrary
 					}
 				}
 			}
+
+			# The selection is GUI-only; it never changes ownership or study state.
+			vbox = {
+				visible = "[GetVariableSystem.Exists( 'kehillah_lib_selected_work' )]"
+				layoutpolicy_horizontal = expanding
+				spacing = 3
+				ignoreinvisible = yes
+				divider_light = { layoutpolicy_horizontal = expanding }
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					text_single = {
+						text = "[Localize( Concatenate( 'kehillah_lib_name_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) )]"
+						default_format = "#high"
+						max_width = 242
+					}
+					expand = {}
+					button_close = {
+						size = { 20 20 }
+						onclick = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
+					}
+				}
+				scrollbox = {
+					layoutpolicy_horizontal = expanding
+					size = { @lib_width 115 }
+					blockoverride "scrollbox_margins"
+					{
+						margin = { 0 4 }
+						margin_right = 12
+					}
+					blockoverride "scrollbox_content"
+					{
+						vbox = {
+							layoutpolicy_horizontal = expanding
+							text_multi = {
+								layoutpolicy_horizontal = expanding
+								autoresize = yes
+								max_width = 250
+								text = "[Localize( Concatenate( 'kehillah_lib_detail_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) )]"
+							}
+						}
+					}
+				}
+				text_multi = {
+					layoutpolicy_horizontal = expanding
+					autoresize = yes
+					max_width = @lib_width
+					text = "[Select_CString( GetScriptedGui( Concatenate( 'kehillah_lib_studied_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_LIB_TT_STUDIED' ), Localize( 'KEHILLAH_LIB_TT_UNSTUDIED' ) )]"
+				}
+				button_standard_list = {
+					visible = "[Character.IsLocalPlayer]"
+					size = { 255 25 }
+					enabled = "[GetScriptedGui( Concatenate( 'kehillah_lib_donate_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+					onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_donate_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+					text = "KEHILLAH_LIB_DONATE_ACTION"
+					tooltip = "KEHILLAH_LIB_DONATE_TT"
+					using = tooltip_se
+				}
+			}
 		}
 	}
 }
@@ -389,15 +447,15 @@ window = {
 	parentanchor = left|vcenter
 	widgetanchor = top|left
 
-	# Left of the domicile window, under its bookmark tab strip (tab
-	# strip bottom = window top + 165 = centre - 182). Height keeps the
-	# panel clear of the bottom-left character portrait. Draggable.
-	position = { 6 -176 }
-	size = { 300 440 }
+	# At narrower game resolutions there is no free column beside the
+	# 1390-wide vanilla domicile. Draw this draggable panel above it so
+	# its controls remain reachable. The taller body contains open detail.
+	position = { 6 -340 }
+	size = { 300 660 }
 
 	movable = yes
 	resizable = no
-	layer = windows_layer
+	layer = top
 	alwaystransparent = no
 	filter_mouse = all
 	allow_outside = yes
@@ -410,6 +468,7 @@ window = {
 	state = {
 		name = _show
 		using = Animation_FadeIn_Quick
+		on_start = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
 	}
 	state = {
 		name = _hide
@@ -467,15 +526,14 @@ window = {
 	parentanchor = left|vcenter
 	widgetanchor = top|left
 
-	# Left of the domicile window, under its bookmark tab strip (tab
-	# strip bottom = window top + 165 = centre - 182). Height keeps the
-	# panel clear of the bottom-left character portrait. Draggable.
-	position = { 6 -176 }
-	size = { 300 440 }
+	# Match the own-quarter panel: reachable above the wide vanilla
+	# domicile, with space for the selected work's detail.
+	position = { 6 -340 }
+	size = { 300 660 }
 
 	movable = yes
 	resizable = no
-	layer = windows_layer
+	layer = top
 	alwaystransparent = no
 	filter_mouse = all
 	allow_outside = yes
@@ -487,6 +545,7 @@ window = {
 	state = {
 		name = _show
 		using = Animation_FadeIn_Quick
+		on_start = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
 	}
 	state = {
 		name = _hide
@@ -552,7 +611,7 @@ window = {
 	widgetanchor = bottom|right
 
 	position = { -702 -240 }
-	size = { 300 440 }
+	size = { 300 660 }
 
 	movable = yes
 	resizable = no
@@ -567,6 +626,7 @@ window = {
 	state = {
 		name = _show
 		using = Animation_FadeIn_Quick
+		on_start = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
 	}
 	state = {
 		name = _hide
