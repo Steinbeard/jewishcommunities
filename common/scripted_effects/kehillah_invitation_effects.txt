@@ -56,11 +56,28 @@ kehillah_invitation_issue_effect = {
 		# V35 (2026-10-13, player clarity): a community that could answer
 		# (an invited county within its settlers' reach) gets the letter
 		# as an event, the lord shown; others hear of it in the feed.
+		# V44 (2026-10-15): the letter itself only from a realm bordering this
+		# community (squared_distance_medium) and at most once in
+		# kehillah_invitation_letter_years; the rest is feed news.
 		if = {
 			limit = {
 				save_temporary_scope_as = kehillah_mother_leader
 				any_county = { kehillah_settlers_invited_destination_trigger = yes }
+				NOT = { has_character_flag = kehillah_invitation_letter_recent_flag }
+				exists = domicile.domicile_location
+				domicile.domicile_location = { save_temporary_scope_as = kehillah_letter_quarter }
+				scope:kehillah_policy_host = {
+					any_realm_county = {
+						title_province = {
+							squared_distance = {
+								target = scope:kehillah_letter_quarter
+								value <= squared_distance_medium
+							}
+						}
+					}
+				}
 			}
+			add_character_flag = { flag = kehillah_invitation_letter_recent_flag years = kehillah_invitation_letter_years }
 			trigger_event = kehillah_invitation.0001
 		}
 		else = {
@@ -220,4 +237,37 @@ kehillah_seek_invitation_audience_effect = {
 		}
 	}
 	scope:kehillah_suitor_leader = { remove_variable = kehillah_invitation_suitor }
+}
+
+# V44 (2026-10-15, Daniel). Scope: an AI Jewish landless adventurer. While
+# a realm within reach keeps its invitation open, he may take his band
+# there (kehillah_invitation.0010 on arrival), where Found a Jewish
+# Community weighs heavily with him.
+kehillah_invitation_adventurer_effect = {
+	save_scope_as = kehillah_drawn_adventurer
+	random_independent_ruler = {
+		limit = {
+			primary_title = { has_variable = kehillah_invitation_open }
+			exists = capital_province
+			capital_province = {
+				squared_distance = {
+					target = scope:kehillah_drawn_adventurer.location
+					value <= squared_distance_large
+				}
+			}
+		}
+		random_realm_county = {
+			limit = { kehillah_founding_site_trigger = yes }
+			title_province = { save_scope_as = kehillah_invited_site }
+		}
+	}
+	if = {
+		limit = { exists = scope:kehillah_invited_site }
+		start_travel_plan = {
+			destination = scope:kehillah_invited_site
+			return_trip = no
+			on_arrival_event = kehillah_invitation.0010
+		}
+		debug_log = "kehillah_invitation_adventurer_effect: a Jewish adventurer sets out for an inviting realm"
+	}
 }

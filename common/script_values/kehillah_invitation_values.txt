@@ -16,26 +16,67 @@
 # Chance a year that an eligible ruler (kehillah_open_door_candidate_
 # trigger) reviews his policy at all. Low: most years nothing happens,
 # and most reviews find no reason to change.
-kehillah_invitation_review_chance = 5
+# V44 (2026-10-15): was a flat 5 for every independent Christian or
+# Muslim duke within "one France" of any community -- eleven invitations
+# in fifteen years in the soak. Now 2, and 3 more for each motive, among
+# far fewer candidates. Target: an invitation every three to five years
+# world-wide.
+kehillah_invitation_review_chance = {
+	value = 2
+	add = {
+		value = kehillah_invitation_motive_value
+		multiply = 3
+	}
+}
+# V44: a ruler must be at least well-disposed toward the Jews
+# (kehillah_outlook_band_value 1: outlook 15 or more) to invite them.
+kehillah_invitation_min_outlook = 15
 
-# Scope: a ruler. The wish to fill towns and markets with traders and
-# craftsmen: an able steward, a diligent or ambitious ruler. 0..2.
+# Scope: a ruler. The concrete reasons to invite Jews (V44, 2026-10-15,
+# Daniel: "rulers who don't have Jewish communities yet but have
+# neighbors with Jewish communities ... a very high outlook ... their
+# economic focus is increasing development or they're short on cash"):
+# - a stewardship lifestyle aimed at wealth or the domain;
+# - short of cash;
+# - an able and driven steward (stewardship 14+ and diligent, ambitious
+#   or greedy);
+# - refugees at the border: a neighbour has just expelled its Jews
+#   (kehillah_open_door_refugees_flag, kehillah_expulsion_proclaim_effect).
+# 0..3. A candidate needs at least one.
 kehillah_invitation_motive_value = {
 	value = 0
 	if = {
-		limit = { stewardship >= 12 }
+		limit = {
+			OR = {
+				has_focus = stewardship_wealth_focus
+				has_focus = stewardship_domain_focus
+			}
+		}
 		add = 1
 	}
 	if = {
-		limit = { has_trait = diligent }
+		limit = { gold < kehillah_invitation_short_of_cash_gold }
 		add = 1
 	}
 	if = {
-		limit = { has_trait = ambitious }
+		limit = {
+			stewardship >= 14
+			OR = {
+				has_trait = diligent
+				has_trait = ambitious
+				has_trait = greedy
+			}
+		}
 		add = 1
 	}
-	max = 2
+	if = {
+		limit = { has_character_flag = kehillah_open_door_refugees_flag }
+		add = 2
+	}
+	max = 3
 }
+# V44: "short of cash" for the motive above.
+kehillah_invitation_short_of_cash_gold = 50
 
 # Scope: a ruler. The hosts' review's net pressure (kehillah_expulsion_
 # values.txt; negative = welcoming), less the motive above. It must
@@ -68,3 +109,15 @@ kehillah_invitation_suitor_score_value = {
 		divide = 2
 	}
 }
+
+# V44 (2026-10-15): how long a neighbour's expulsion counts as a reason to
+# invite the refugees (kehillah_open_door_refugees_flag).
+kehillah_open_door_refugees_years = 3
+# V44 (2026-10-15): a player community hears a lord's letter as an event at
+# most once in this many years; other invitations are feed news.
+kehillah_invitation_letter_years = 10
+# V44: thanking the inviting lord ("Write to thank ..."): his opinion.
+kehillah_invitation_thanks_opinion = 15
+# V44: the yearly chance a Jewish adventurer near an open invitation sets
+# out for the inviting realm.
+kehillah_invitation_adventurer_chance = 25

@@ -1,0 +1,210 @@
+﻿namespace = kehillah_jewish_pope
+
+# =====================================================================
+# V43 slice 5 (docs/spec/v43-after-the-violence-and-granada.md), 2026-10-
+# 14. The legend of the Jewish pope: Elhanan, son of Simeon the Great of
+# Mainz, stolen as a child by a Christian servant, raised in a monastery,
+# rose to the papacy; his father, come to Rome, knew him over a game of
+# chess, and he protected the Jews. Here: a child taken by the other
+# faith (the flag kehillah_stolen_child, slice 4) who becomes the head of
+# a Christian faith. Super rare by construction.
+#   .0001 A Pope from Our Town   (the community he was taken from; player)
+#   .0002 The Game of Chess      (in Rome)
+#   .0003 He Knows               (the recognition)
+#   .0010 The Pope Who Was a Jew (news to the other Jewish players)
+# Scope: the leader of the community the pope was taken from;
+# scope:kehillah_jp_pope the pope; scope:kehillah_jp_town his birth town.
+# =====================================================================
+
+kehillah_jewish_pope.0001 = {
+	type = character_event
+	title = kehillah_jewish_pope.0001.t
+	desc = kehillah_jewish_pope.0001.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_jp_pope
+		animation = idle
+	}
+	trigger = {
+		is_ai = no
+		exists = scope:kehillah_jp_pope
+		scope:kehillah_jp_pope = { is_alive = yes }
+		NOT = { has_variable = kehillah_jp_story_heard }
+	}
+	immediate = {
+		set_variable = { name = kehillah_jp_story_heard value = yes }
+	}
+
+	# Go to Rome, or send a learned man.
+	option = {
+		name = kehillah_jewish_pope.0001.a
+		trigger_event = { id = kehillah_jewish_pope.0002 days = 60 }
+	}
+	# It is a story the old women tell.
+	option = {
+		name = kehillah_jewish_pope.0001.b
+	}
+}
+
+kehillah_jewish_pope.0002 = {
+	type = character_event
+	title = kehillah_jewish_pope.0002.t
+	desc = kehillah_jewish_pope.0002.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:kehillah_jp_pope
+		animation = thinking
+	}
+	trigger = {
+		is_ai = no
+		scope:kehillah_jp_pope ?= { is_alive = yes }
+	}
+
+	# Play the opening that was taught in our town: your learning against his.
+	option = {
+		name = kehillah_jewish_pope.0002.a
+		duel = {
+			skill = learning
+			target = scope:kehillah_jp_pope
+			50 = {
+				desc = kehillah_jewish_pope_knows
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3
+				}
+				modifier = {
+					add = 30
+					scope:kehillah_jp_pope = {
+						OR = {
+							is_child_of = root
+							is_sibling_of = root
+						}
+					}
+				}
+				min = 10
+				trigger_event = kehillah_jewish_pope.0003
+			}
+			50 = {
+				desc = kehillah_jewish_pope_does_not
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3
+				}
+				min = 10
+				custom_tooltip = kehillah_jewish_pope_does_not_tt
+			}
+		}
+	}
+	# Speak plainly, and tell him where he was born.
+	option = {
+		name = kehillah_jewish_pope.0002.b
+		random_list = {
+			20 = {
+				desc = kehillah_jewish_pope_knows
+				opinion_modifier = {
+					who = scope:kehillah_jp_pope
+					opinion_target = root
+					multiplier = 0.3
+				}
+				min = 5
+				trigger_event = kehillah_jewish_pope.0003
+			}
+			80 = {
+				desc = kehillah_jewish_pope_angered
+				scope:kehillah_jp_pope = {
+					hidden_effect = { kehillah_shift_outlook_effect = { AMOUNT = -10 } }
+				}
+				custom_tooltip = kehillah_jewish_pope_angered_tt
+			}
+		}
+	}
+}
+
+kehillah_jewish_pope.0003 = {
+	type = character_event
+	title = kehillah_jewish_pope.0003.t
+	desc = kehillah_jewish_pope.0003.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+	right_portrait = {
+		character = scope:kehillah_jp_pope
+		animation = grief
+	}
+	trigger = { scope:kehillah_jp_pope ?= { is_alive = yes } }
+
+	# Ask him to protect the Jews.
+	option = {
+		name = kehillah_jewish_pope.0003.a
+		kehillah_jewish_pope_protects_effect = yes
+	}
+	# Ask him to come home.
+	option = {
+		name = kehillah_jewish_pope.0003.b
+		random_list = {
+			20 = {
+				desc = kehillah_jewish_pope_comes_home
+				custom_tooltip = kehillah_jewish_pope_comes_home_tt
+				hidden_effect = {
+					scope:kehillah_jp_pope = {
+						make_character_crypto_religionist_effect = { CRYPTO_RELIGION = root.faith }
+					}
+				}
+				kehillah_jewish_pope_protects_effect = yes
+			}
+			80 = {
+				desc = kehillah_jewish_pope_cannot
+				kehillah_jewish_pope_protects_effect = yes
+			}
+		}
+	}
+}
+
+kehillah_jewish_pope.0010 = {
+	type = character_event
+	title = kehillah_jewish_pope.0010.t
+	desc = kehillah_jewish_pope.0010.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_jp_pope
+		animation = idle
+	}
+	trigger = {
+		is_ai = no
+		exists = scope:kehillah_jp_pope
+	}
+	option = {
+		name = kehillah_jewish_pope.0010.a
+	}
+}
+
+# Console: event kehillah_jewish_pope.0099 on a Kehillah leader -- the
+# Catholic head of the faith is made one of this community's stolen
+# children, and the yearly check runs (debug only).
+kehillah_jewish_pope.0099 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title = { save_scope_as = kmd_jp_title }
+		faith:catholic.religious_head ?= {
+			add_character_flag = kehillah_stolen_child
+			set_variable = { name = kehillah_taken_from value = scope:kmd_jp_title }
+		}
+		kehillah_jewish_pope_check_effect = yes
+		debug_log = "kehillah_jewish_pope.0099: the pope made a stolen child"
+	}
+}

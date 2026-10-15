@@ -1,0 +1,77 @@
+﻿# V42 slice 3: console-only Dayyan trial checks, never fired by a pulse.
+# DISPOSABLE SAVE ONLY. .1 replaces the Dayyan, seeds Greatness/library,
+# and opens the real trial. Choose the Dayyan's option while paused, then
+# run .2 before the two-day outcome report clears its marker.
+namespace = kehillah_trial_debug
+
+kehillah_trial_debug.1 = {
+	type = character_event
+	hidden = yes
+	orphan = yes
+	trigger = { has_government = kehillah_government }
+	immediate = {
+		create_character = {
+			age = 45
+			gender = male
+			faith = root.faith
+			culture = root.culture
+			location = root.domicile.domicile_location
+			dynasty = none
+			trait = kehillah_rabbi_trait
+			learning = 35
+			save_scope_as = kehillah_trial_debug_dayyan
+		}
+		add_courtier = scope:kehillah_trial_debug_dayyan
+		assign_councillor_type = {
+			type = councillor_court_chaplain
+			target = scope:kehillah_trial_debug_dayyan
+			remove_existing_councillor = yes
+		}
+		scope:kehillah_trial_debug_dayyan = { force_character_skill_recalculation = yes }
+		primary_title = {
+			set_variable = { name = kehillah_var_greatness value = 500 }
+			if = {
+				limit = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed } } }
+				add_to_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed }
+			}
+		}
+		debug_log = "kehillah_trial_debug.1: disposable trial seeded; Greatness 500, Bavli Moed present"
+		trigger_event = kehillah_incident.0001
+	}
+}
+
+kehillah_trial_debug.2 = {
+	type = character_event
+	hidden = yes
+	orphan = yes
+	trigger = { has_government = kehillah_government }
+	immediate = {
+		if = {
+			limit = {
+				var:kehillah_incident_outcome ?= flag:talmud_acquitted
+				primary_title = {
+					var:kehillah_var_greatness = 530
+					is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed }
+				}
+			}
+			debug_log = "kehillah_trial_debug.2: PASS acquittal rewarded leader's community; book retained"
+		}
+		else_if = {
+			limit = {
+				var:kehillah_incident_outcome ?= flag:talmud_burned
+				primary_title = {
+					var:kehillah_var_greatness = 460
+					NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed } }
+				}
+			}
+			debug_log = "kehillah_trial_debug.2: PASS condemnation hit leader's community; book removed"
+		}
+		else = { debug_log = "kehillah_trial_debug.2: FAIL outcome or community state; inspect before report clears marker" }
+		if = {
+			limit = { cp:councillor_court_chaplain ?= { has_variable = kehillah_incident_outcome } }
+			debug_log = "kehillah_trial_debug.2: FAIL outcome wrongly stored on Dayyan"
+		}
+		else = { debug_log = "kehillah_trial_debug.2: PASS no outcome stored on Dayyan" }
+		debug_log_scopes = yes
+	}
+}

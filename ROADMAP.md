@@ -30,11 +30,13 @@ Spec: [v42](docs/spec/v42-the-crisis-as-a-place.md).
 - **Odds are shown the vanilla way:** percentages and skill-challenge duels, with no factor or
   number text.
 
-**Status:** slice 1 (the navigation, the answers, the odds table) built, not yet live-tested.
+**Status correction, 2026-10-15:** the V42 spec's dated 2026-10-14 addendum
+records the navigation, messenger, answer scenes, Church letter, preacher duels
+and own defence as live-tested, including fixes. The preceding "not yet
+live-tested" claim here was stale. Slices 1-2 are covered by that report.
 **Next:**
-1. its live test;
-2. slice 3, vanilla-only odds across the V41 events;
-3. slice 4, cleanup of numbers in older text.
+1. slice 3, vanilla-only odds across the V41 events (in small increments);
+2. slice 4, cleanup of numbers in older text.
 
 ### V42 Sefer collection and scholarship — 2026-10-14, Daniel's request
 

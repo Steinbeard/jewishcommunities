@@ -1,4 +1,4 @@
-﻿**Status:** slices 0-4 built, 2026-10-14 (0-2 live-tested and fixed; 3-4 not yet live-tested); from Daniel's review of the V41/V42 chains. It extends
+﻿**Status:** slices 0-5 built and live-tested, 2026-10-15; from Daniel's review of the V41/V42 chains. It extends
 [V39](v39-pogroms-and-the-popular-crusade.md) (Granada, section 9; the forced converts, slice 3b),
 [V41](v41-danger-incidents-and-the-pogrom-unfolding.md) and [V42](v42-the-crisis-as-a-place.md).
 Writing follows [the writing guide](../implementation/kehillah-writing-style.md).
@@ -192,4 +192,46 @@ The values are in `kehillah_aftermath_values.txt`.
 - **`.0010` A Child Is Missing:** a rare incident from the director (weight 3, +4 at danger 60;
   Christian hosts; once in 20 years). A servant takes a child with living parents to the font, and
   the petition follows.
+
+**Slice 5, the Jewish pope (built 2026-10-15)** (`events/kehillah_jewish_pope_events.txt`,
+`kehillah_jewish_pope_effects.txt`, a yearly check on `yearly_global_pulse`):
+- **The trigger:** a Christian head of the faith carrying the flag `kehillah_stolen_child` (slice 4)
+  is heard of, once.
+- **If a player leads the community he was taken from** (`var:kehillah_taken_from`):
+  - **`.0001` A Pope from Our Town:** the old women's story, the birthmark. Go to Rome, or let it be.
+  - **`.0002` The Game of Chess,** 60 days later:
+    - play the opening the town's rabbis taught their sons: a learning duel against the pope, +30
+      if he is the leader's son or brother;
+    - or speak plainly: a long chance, by his opinion, and he may be angered.
+  - **`.0003` He Knows:**
+    - ask him to protect his people: a bull of protection, his outlook +30, the faith's ruling that a
+      forced baptism binds withdrawn, the faith's incidents -10;
+    - or ask him to come home: 20% that he says the Shema in secret (a crypto-Jewish secret), with
+      the protection either way.
+- **Otherwise,** half of such popes protect the Jews of their own accord.
+- **`.0010` The Pope Who Was a Jew:** the story reaches the other Jewish players.
+- **It is super rare by construction:** a stolen child must rise from a monastery to the papacy on his
+  own.
+- **Debug:** `kehillah_jewish_pope.0099` makes the Catholic head of the faith one of root's community's
+  stolen children and runs the check.
+
+**Slices 3-5 live test (457ef1d): passed, with fixes.**
+- **The relays work.** Playing Cordoba, "A Letter from Granada" came on 5 October. The Burial came 7
+  days after the report, and the Year's Mind exactly a year after it.
+- **The children:**
+  - The theft fired "A Child Is Missing", then "The Children" 3 days later: 24% to ask for them. A
+    success brought the child home, Jewish again.
+  - **Fixed:** bishops in 1.20 have `ecclesiastical_government`, not `theocracy_government`, so the
+    monastery never matched (nor V38's preaching vassal). Both are now accepted.
+- **The head of the faith:** with the faith's counter at 2, a return brought the Pope's protest
+  (20 days) and his ruling (60 days).
+  - **Fixed:** the counter was read without a guard while the tooltip was built (about 4,000 log
+    errors on hovering the petition).
+- **The Jewish pope:** "A Pope from Our Town", then "The Game of Chess" (a 65% learning challenge),
+  then "He Knows". The protection withdrew the faith's ruling.
+  - **Fixed:** the story is now told to a community once (`kehillah_jp_story_heard`). The tester saw
+    it repeat, possibly from the test's own re-fires.
+- **Fixed:** `min` in two modifier-less outcomes (load errors).
+- **Not seen:** a child converted in the pogrom itself (the two converts were adults); "The Pope Who
+  Was a Jew" (no other players).
 
