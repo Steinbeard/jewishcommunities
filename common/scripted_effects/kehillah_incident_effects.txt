@@ -65,10 +65,13 @@ kehillah_incident_director_effect = {
 					trigger_event = kehillah_mission.0001
 					debug_log = "kehillah_incident_director_effect: a disputation"
 				}
-				# Friars in the synagogue (Christian hosts).
+				# Friars in the synagogue (Christian hosts). Not before
+				# kehillah_incident_christian_late_year (2026-10-15, 20-year soak:
+				# the mendicant orders are 13th-century; 1110 is Daniel's floor).
 				20 = {
 					trigger = {
 						scope:kehillah_incident_host = { faith.religion = religion:christianity_religion }
+						current_year >= kehillah_incident_christian_late_year
 						primary_title = { NOT = { has_variable = kehillah_sermon_cooldown } }
 					}
 					modifier = {
@@ -88,9 +91,12 @@ kehillah_incident_director_effect = {
 				}
 				# The Talmud on trial (V41 step 4b): Christian hosts, a library
 				# with the Talmud; likelier under a strict teaching and after 1230.
+				# Not before kehillah_incident_christian_late_year (2026-10-15,
+				# 20-year soak: it fired in 1085; Paris was 1240).
 				10 = {
 					trigger = {
 						scope:kehillah_incident_host = { faith.religion = religion:christianity_religion }
+						current_year >= kehillah_incident_christian_late_year
 						primary_title = {
 							kehillah_has_talmud_trigger = yes
 							NOT = { has_variable = kehillah_talmud_cooldown }
@@ -113,9 +119,18 @@ kehillah_incident_director_effect = {
 					debug_log = "kehillah_incident_director_effect: the Talmud on trial"
 				}
 				# The badge, or the ghiyar: likelier under a strict teaching and,
-				# for Christian hosts, after Lateran IV (1215).
+				# for Christian hosts, after Lateran IV (1215). A Christian host
+				# not before kehillah_incident_christian_late_year (2026-10-15,
+				# 20-year soak: a badge in 1080); the ghiyar has no floor
+				# (al-Hakim's decrees, 1009).
 				10 = {
-					trigger = { primary_title = { NOT = { has_variable = kehillah_badge } } }
+					trigger = {
+						primary_title = { NOT = { has_variable = kehillah_badge } }
+						OR = {
+							scope:kehillah_incident_host = { faith.religion = religion:islam_religion }
+							current_year >= kehillah_incident_christian_late_year
+						}
+					}
 					modifier = {
 						add = 10
 						scope:kehillah_incident_host = {
@@ -134,6 +149,38 @@ kehillah_incident_director_effect = {
 					}
 					trigger_event = kehillah_incident.0010
 					debug_log = "kehillah_incident_director_effect: the badge"
+				}
+				# The servants' decree (2026-10-15): the early restriction --
+				# no Christian servant or nurse in a Jewish house, no Jew in an
+				# office over Christians (Gregory VII's Roman council, 1078; his
+				# letter to Alfonso VI, 1081). Christian hosts, from the start;
+				# likelier under a strict teaching, rarer once the badge exists.
+				15 = {
+					trigger = {
+						scope:kehillah_incident_host = { faith.religion = religion:christianity_religion }
+						primary_title = {
+							NOT = { has_variable = kehillah_servants_decree }
+							NOT = { has_variable = kehillah_servants_decree_cooldown }
+						}
+					}
+					modifier = {
+						add = 10
+						scope:kehillah_incident_host = {
+							OR = {
+								kehillah_teaching_strict_trigger = yes
+								kehillah_teaching_exclusionary_trigger = yes
+							}
+						}
+					}
+					modifier = {
+						add = -10
+						current_year >= 1215
+					}
+					primary_title = {
+						set_variable = { name = kehillah_servants_decree_cooldown value = yes years = kehillah_servants_decree_cooldown_years }
+					}
+					trigger_event = kehillah_incident.0040
+					debug_log = "kehillah_incident_director_effect: the servants' decree"
 				}
 				# Holy Week: Christian hosts, March and April.
 				40 = {

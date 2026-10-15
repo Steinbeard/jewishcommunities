@@ -710,12 +710,52 @@ kehillah_yeshiva_graduation_effect = {
 			kehillah_yeshiva_graduate_effect = yes
 			scope:kehillah_tick_leader = { change_variable = { name = kehillah_last_class_size add = 1 } }
 		}
+		# 2026-10-15 (20-year soak: the popup came 14 times in 20 years with
+		# the same text): the player is asked only when the choice matters --
+		# a community lacks a rabbi he could fill -- and at most once in
+		# kehillah_yeshiva_graduation_choice_years. Otherwise the class is
+		# news in the feed, and the most promising graduate follows the
+		# same rule as his classmates (a visiting student goes home to a
+		# community that needs him; a local one stays).
 		if = {
 			limit = {
 				is_ai = no
 				exists = scope:kehillah_valedictorian
 			}
-			trigger_event = kehillah_yeshiva.0320
+			scope:kehillah_valedictorian = { save_scope_as = kehillah_graduate }
+			if = {
+				limit = {
+					NOT = { scope:kehillah_tick_title = { has_variable = kehillah_graduation_choice_cooldown } }
+					kehillah_alumnus_destination_available_trigger = yes
+				}
+				scope:kehillah_tick_title = {
+					set_variable = { name = kehillah_graduation_choice_cooldown value = yes years = kehillah_yeshiva_graduation_choice_years }
+				}
+				trigger_event = kehillah_yeshiva.0320
+			}
+			else = {
+				if = {
+					limit = { var:kehillah_last_class_size > 1 }
+					send_interface_message = {
+						type = msg_kehillah_yeshiva_milestone
+						title = kehillah_yeshiva_msg_class_t
+						desc = kehillah_yeshiva_msg_class_d
+						left_icon = scope:kehillah_valedictorian
+					}
+				}
+				else = {
+					send_interface_message = {
+						type = msg_kehillah_yeshiva_milestone
+						title = kehillah_yeshiva_msg_class_t
+						desc = kehillah_yeshiva_msg_class_one_d
+						left_icon = scope:kehillah_valedictorian
+					}
+				}
+				if = {
+					limit = { scope:kehillah_valedictorian = { has_character_flag = kehillah_visiting_student } }
+					kehillah_place_alumnus_effect = yes
+				}
+			}
 		}
 		debug_log = "kehillah_yeshiva_graduation_effect: the yearly class was ordained"
 	}
@@ -859,8 +899,14 @@ kehillah_yeshiva_newcomer_news_effect = {
 		list = kehillah_new_enrolees
 		save_scope_as = kehillah_msg_talmid
 	}
+	# 2026-10-15: at most one arrival notice and one chavruta notice a
+	# year (kehillah_yeshiva_news_*_days).
 	if = {
-		limit = { var:kehillah_new_student_count > kehillah_yeshiva_quiet_news_max }
+		limit = {
+			var:kehillah_new_student_count > kehillah_yeshiva_quiet_news_max
+			NOT = { primary_title = { has_variable = kehillah_yeshiva_news_cd_arrival } }
+		}
+		primary_title = { set_variable = { name = kehillah_yeshiva_news_cd_arrival value = yes days = kehillah_yeshiva_news_arrival_days } }
 		send_interface_message = {
 			type = msg_kehillah_yeshiva_arrival
 			title = kehillah_yeshiva_msg_arrivals_t
@@ -868,10 +914,13 @@ kehillah_yeshiva_newcomer_news_effect = {
 			left_icon = scope:kehillah_msg_talmid
 		}
 	}
-	else = {
+	else_if = {
+		limit = { var:kehillah_new_student_count <= kehillah_yeshiva_quiet_news_max }
 		every_in_list = {
 			list = kehillah_new_enrolees
+			limit = { NOT = { scope:kehillah_tick_leader.primary_title = { has_variable = kehillah_yeshiva_news_cd_arrival } } }
 			save_scope_as = kehillah_msg_talmid
+			scope:kehillah_tick_leader.primary_title = { set_variable = { name = kehillah_yeshiva_news_cd_arrival value = yes days = kehillah_yeshiva_news_arrival_days } }
 			if = {
 				limit = { has_character_flag = kehillah_visiting_student }
 				scope:kehillah_tick_leader = {
@@ -896,6 +945,7 @@ kehillah_yeshiva_newcomer_news_effect = {
 		}
 		every_in_list = {
 			list = kehillah_new_chavruta_pairs
+			limit = { NOT = { scope:kehillah_tick_leader.primary_title = { has_variable = kehillah_yeshiva_news_cd_chavruta } } }
 			save_scope_as = kehillah_msg_talmid
 			random_relation = {
 				type = kehillah_chavruta
@@ -903,6 +953,7 @@ kehillah_yeshiva_newcomer_news_effect = {
 			}
 			if = {
 				limit = { exists = scope:kehillah_msg_chavruta }
+				scope:kehillah_tick_leader.primary_title = { set_variable = { name = kehillah_yeshiva_news_cd_chavruta value = yes days = kehillah_yeshiva_news_chavruta_days } }
 				scope:kehillah_tick_leader = {
 					send_interface_message = {
 						type = msg_kehillah_yeshiva_chavruta
@@ -1232,7 +1283,11 @@ kehillah_yeshiva_record_work_effect = {
 	save_scope_as = kehillah_msg_talmid
 	scope:kehillah_tick_leader = {
 		if = {
-			limit = { is_ai = no }
+			limit = {
+				is_ai = no
+				NOT = { scope:kehillah_tick_title = { has_variable = kehillah_yeshiva_news_cd_work } }
+			}
+			scope:kehillah_tick_title = { set_variable = { name = kehillah_yeshiva_news_cd_work value = yes days = kehillah_yeshiva_news_work_days } }
 			send_interface_message = {
 				type = msg_kehillah_yeshiva_milestone
 				title = kehillah_yeshiva_msg_work_t
@@ -1255,7 +1310,11 @@ kehillah_yeshiva_track_mastery_news_effect = {
 		save_scope_as = kehillah_msg_talmid
 		scope:kehillah_tick_leader = {
 			if = {
-				limit = { is_ai = no }
+				limit = {
+					is_ai = no
+					NOT = { scope:kehillah_tick_title = { has_variable = kehillah_yeshiva_news_cd_track } }
+				}
+				scope:kehillah_tick_title = { set_variable = { name = kehillah_yeshiva_news_cd_track value = yes days = kehillah_yeshiva_news_track_days } }
 				send_interface_message = {
 					type = msg_kehillah_yeshiva_milestone
 					title = kehillah_yeshiva_msg_track_t

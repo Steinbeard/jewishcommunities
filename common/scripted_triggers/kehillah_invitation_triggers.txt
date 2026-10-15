@@ -17,9 +17,11 @@
 # independent duke or greater, Christian or Muslim (the faiths a founding
 # site needs), whose policy is Discouraged or Allowed and not under
 # review cooldown, and who hosts no community yet (the hosts' review,
-# kehillah_policy_ai_review_try_effect, covers those) -- and whose capital
-# is within reach of one (squared_distance_large; live 2026-10-13, rulers
-# in Adal and Saryarka were inviting settlers no community could send).
+# kehillah_policy_ai_review_try_effect, covers those). V44 (2026-10-15):
+# a theocracy may invite (Avignon and the Comtat's "Jews of the Pope",
+# Daniel); the ruler must be well-disposed, have a motive
+# (kehillah_invitation_motive_value), and border Jewish settlement
+# (kehillah_open_door_near_community_trigger).
 kehillah_open_door_candidate_trigger = {
 	is_ai = yes
 	is_landed = yes
@@ -37,15 +39,33 @@ kehillah_open_door_candidate_trigger = {
 		NOT = { kehillah_policy_review_on_cooldown_trigger = yes }
 	}
 	NOT = { kehillah_ruler_hosts_a_community_trigger = yes }
-	exists = capital_province
+	# V44 (2026-10-15, 20-year soak: eleven invitations in fifteen years,
+	# from Pisa to Kairouan): well-disposed or better, with a concrete
+	# reason, and Jews just over the border.
+	kehillah_outlook_on_jews_value >= kehillah_invitation_min_outlook
+	kehillah_invitation_motive_value > 0
+	kehillah_open_door_near_community_trigger = yes
+}
+
+# Scope: a ruler. Some county of his realm lies within
+# squared_distance_medium ("one Ireland") of a community's quarter. Read
+# from the realm, not the capital: a large realm's Jewish frontier can be
+# far from its capital (V44, 2026-10-15; was the capital within
+# squared_distance_large, "one France").
+kehillah_open_door_near_community_trigger = {
 	save_temporary_scope_as = kehillah_open_door_ruler
 	any_in_global_list = {
 		variable = kehillah_registered_communities
 		exists = holder.domicile.domicile_location
-		holder.domicile.domicile_location = {
-			squared_distance = {
-				target = scope:kehillah_open_door_ruler.capital_province
-				value <= squared_distance_large
+		holder.domicile.domicile_location = { save_temporary_scope_as = kehillah_open_door_quarter }
+		scope:kehillah_open_door_ruler = {
+			any_realm_county = {
+				title_province = {
+					squared_distance = {
+						target = scope:kehillah_open_door_quarter
+						value <= squared_distance_medium
+					}
+				}
 			}
 		}
 	}

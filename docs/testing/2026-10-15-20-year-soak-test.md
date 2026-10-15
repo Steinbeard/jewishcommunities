@@ -194,3 +194,31 @@ Knock-on: settlers and exiles depend on open invitations, so rarer invitations m
 - **Systems that never triggered in 1066-1087** — crusade, expulsion, conversion, mob and pogrom (except as feed notices in Jan 1084) — are untested here.
 - **Popup texts were read from screenshots.** Only one crop was saved, so the journal's wording is the record. The UI items (empty title, raw toast text) were not re-verified by a second screenshot.
 - **The other CK3 instance interfered.** One Codex CK3 window (PID 11076) sat TOPMOST on the primary monitor for much of the run. Two of the agent's screenshots captured that window instead, but no input went to it.
+
+## Addendum, 2026-10-15 afternoon: fixes and a partial verification run
+
+Daniel reviewed this report the same day. The fixes and new mechanics are recorded in [V44](../spec/v44-persistent-pressure.md). A second Sonnet agent played a fresh Worms 1066 game on an instrumented copy of the fixes. It ran from 11:41 until the session usage limit stopped it at about 1078 (12 game years); its journal is `C:\Users\Daniel\ck3soak\out2\journal.md`. That copy predated the invitation redesign, the Bet Din decision and suggestion, the treasury suggestion, the activity rename and the player holiday rate, so those are tiger-clean only.
+
+**Verified live:**
+- **Holidays fire again:** 61 holiday events for AI characters by 1078, after zero in the whole soak. None reached the player in 12 years, though. The old design rate (about 12% a year) was too low to be seen, so the player's rate is now about 60% a year (75% with Ritual Celebrations). This retune is not yet verified.
+- **Graduating Class:** a popup in Feb 1069 and Feb 1076 (7 years apart), otherwise notices. Yeshiva notices fell to about 2.7 a year (32 in 12 years).
+- **The Charter Renewed:** shown after Isaac's death in Nov 1077, with the clerk scene and the four terms.
+- **The Servants' Decree:** fired Nov 1076 under Heinrich IV. The petition succeeded, and "What Came of It" read correctly.
+- **Text fixes:**
+  - the Learn Torah requirements show "You are not incapable" and the new library line, with no BUG text;
+  - the Hekdesh tooltip reads "Residents gain ..." and no longer says "Camp";
+  - the Stability footing shows +400;
+  - "One More Pass" has its title.
+- **Bet Din:**
+  - The player hosted a full sitting from the Activities list (F9): three cases, rulings and "The Docket Is Closed". The soak agent had simply never found it there.
+  - **AI hosting is still unconfirmed.** The four AI-rooted Bet Din events by 1078 were all steps inside the player's own sitting (cases `.0042`/`.0062`/`.0082` and an invited judge's travel), interleaved with it in the log. No AI community hosted. Whether the invite-rule fix alone was enough is unknown. The yearly `ai_attempt_to_host_activity` nudge (V44 section 5) is the fix under test.
+- **New bug found:** a ruling tooltip showed the raw key `kehillah_bet_din_dismissed_mysticism_opinion`. That modifier and four other opinion modifiers had no loc; all five now do.
+
+**Not yet verified live:**
+- the invitation redesign;
+- Convene the Bet Din and Cases Await the Bet Din;
+- AI Bet Din hosting with the yearly nudge;
+- The Treasury Is Full;
+- the "Sitting of the Bet Din" rename;
+- the new pressure terms in an actual decline;
+- artifact names with the author's name (the run's book was an unnamed work type).
