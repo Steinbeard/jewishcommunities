@@ -21,9 +21,15 @@ scripted_effect kehillah_mob_event_scopes_effect = {
 	domicile.domicile_location.county.holder ?= { save_scope_as = kehillah_mob_lord }
 	domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_mob_overlord }
 	scope:kehillah_mob_leader.faith.religious_head ?= { save_scope_as = kehillah_mob_hof }
+	# The host's men -- or, while he is still preaching, his following
+	# (live 2026-10-14: "0 people" during the preaching).
 	if = {
-		limit = { exists = scope:kehillah_mob_leader }
+		limit = { scope:kehillah_mob_leader ?= { has_variable = kehillah_mob_size } }
 		set_variable = { name = kehillah_mob_size_ref value = scope:kehillah_mob_leader.var:kehillah_mob_size }
+	}
+	else_if = {
+		limit = { scope:kehillah_mob_leader ?= { has_variable = kehillah_mob_following } }
+		set_variable = { name = kehillah_mob_size_ref value = scope:kehillah_mob_leader.var:kehillah_mob_following }
 	}
 }
 
@@ -31,6 +37,10 @@ kehillah_mob.0001 = {
 	type = character_event
 	title = {
 		first_valid = {
+			triggered_desc = {
+				trigger = { scope:kehillah_mob_leader ?= { has_variable = kehillah_mob_sent_by } }
+				desc = kehillah_mob.0001.t_rising
+			}
 			triggered_desc = {
 				trigger = { exists = var:kehillah_mob_last_town_ref }
 				desc = kehillah_mob.0001.t_turned
@@ -40,6 +50,10 @@ kehillah_mob.0001 = {
 	}
 	desc = {
 		first_valid = {
+			triggered_desc = {
+				trigger = { scope:kehillah_mob_leader ?= { has_variable = kehillah_mob_sent_by } }
+				desc = kehillah_mob.0001.desc_rising
+			}
 			triggered_desc = {
 				trigger = { exists = var:kehillah_mob_last_town_ref }
 				desc = kehillah_mob.0001.desc_turned
@@ -76,6 +90,35 @@ kehillah_mob.0001 = {
 			change_variable = { name = kehillah_var_stability add = 20 }
 		}
 		custom_tooltip = kehillah_mob_fast_tt
+		custom_tooltip = kehillah_mob_how_to_act_tt
+		trigger_event = kehillah_mob.0100
+	}
+}
+
+# V41 step 3: a preacher has begun preaching against the community.
+kehillah_mob.0004 = {
+	type = character_event
+	title = kehillah_mob.0004.t
+	desc = kehillah_mob.0004.desc
+	theme = dread
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:kehillah_mob_leader
+		animation = rage
+	}
+	trigger = { exists = var:kehillah_mob_ref }
+	immediate = {
+		kehillah_mob_event_scopes_effect = yes
+		if = {
+			limit = { is_ai = yes }
+			kehillah_mob_ai_answers_effect = yes
+		}
+	}
+	option = {
+		name = kehillah_mob.0004.a
 		custom_tooltip = kehillah_mob_how_to_act_tt
 		trigger_event = kehillah_mob.0100
 	}
@@ -483,6 +526,22 @@ kehillah_mob.0030 = {
 	}
 }
 
+# A mob risen in the town itself: no warning, but an AI community still
+# makes its answers (hidden).
+kehillah_mob.0031 = {
+	type = character_event
+	hidden = yes
+	trigger = {
+		is_ai = yes
+		exists = var:kehillah_mob_ref
+	}
+	immediate = {
+		kehillah_mob_event_scopes_effect = yes
+		kehillah_mob_ai_answers_effect = yes
+		debug_log = "kehillah_mob.0031: an AI community answers a mob in its own town"
+	}
+}
+
 # The host is broken before it could strike. Players only.
 kehillah_mob.0020 = {
 	type = character_event
@@ -880,9 +939,10 @@ kehillah_mob.0110 = {
 		kehillah_mob_back_to_hub_effect = yes
 	}
 
-	# Beg him to ride out against them.
+	# Beg him to ride out against them (once there is a host to fight).
 	option = {
 		name = kehillah_mob.0110.c
+		trigger = { NOT = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_preaching } } }
 		random_list = {
 			0 = {
 				modifier = { add = kehillah_mob_ask_men_chance_value }
@@ -1082,9 +1142,7 @@ kehillah_mob.0140 = {
 				modifier = { add = kehillah_mob_scripture_chance_value }
 				desc = kehillah_mob_scripture_won
 				custom_tooltip = kehillah_mob_scripture_won_tt
-				scope:kehillah_mob_leader = {
-					every_army = { deplete_army_by_percentage = 0.2 }
-				}
+				scope:kehillah_mob_leader = { kehillah_mob_thin_host_effect = { FRACTION = 0.2 } }
 				kehillah_mob_adjust_severity_effect = { AMOUNT = -10 }
 			}
 			0 = {
@@ -1121,9 +1179,7 @@ kehillah_mob.0140 = {
 				modifier = { add = kehillah_mob_lieutenants_chance_value }
 				desc = kehillah_mob_lieutenants_bought
 				custom_tooltip = kehillah_mob_lieutenants_bought_tt
-				scope:kehillah_mob_leader = {
-					every_army = { deplete_army_by_percentage = 0.3 }
-				}
+				scope:kehillah_mob_leader = { kehillah_mob_thin_host_effect = { FRACTION = 0.3 } }
 			}
 			0 = {
 				modifier = { add = kehillah_mob_lieutenants_fail_value }

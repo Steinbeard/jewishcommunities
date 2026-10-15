@@ -1,0 +1,317 @@
+﻿# =====================================================================
+# V41 step 4b -- the odds and amounts of the new incidents (events/
+# kehillah_incident_events.txt), 2026-10-14. Each chance comes from the
+# people involved: skills, traits, and what the lord thinks of the Jews
+# (kehillah_host_outlook_value) and of the one who asks. Scope: a
+# Kehillah leader; the event's saved scopes (kehillah_incident_host,
+# _shtadlan, _dayyan, _accuser, _debtor).
+# =====================================================================
+
+# --- Cooldowns, years.
+kehillah_talmud_cooldown_years = 30
+kehillah_holy_week_cooldown_years = 3
+kehillah_bonds_cooldown_years = 10
+
+# --- Pillar changes.
+kehillah_talmud_acquitted_greatness = 30
+kehillah_talmud_burned_greatness = -40
+kehillah_badge_years = 30
+kehillah_badge_stability = -15
+kehillah_badge_greatness = -15
+kehillah_badge_pride_stability = 10
+kehillah_holy_week_self_stability = 10
+kehillah_holy_week_sent_stability = -10
+kehillah_holy_week_refuse_greatness = 15
+kehillah_bonds_burned_prosperity = -40
+
+# --- Silver.
+kehillah_incident_bribe_cost_value = {
+	value = major_gold_value
+}
+kehillah_incident_small_bribe_cost_value = {
+	value = medium_gold_value
+}
+
+# --- The Talmud on trial.
+# Whoever argues best for us: the leader, or the Dayyan if more learned.
+kehillah_talmud_defender_learning_value = {
+	value = learning
+	if = {
+		limit = {
+			exists = scope:kehillah_incident_dayyan
+			scope:kehillah_incident_dayyan.learning > learning
+		}
+		value = scope:kehillah_incident_dayyan.learning
+	}
+}
+# Answer him in the hall: 25 + (our best learning - his) x3 + the lord's
+# outlook / 4; a zealous lord -10, a just lord +10. 5 to 75.
+kehillah_talmud_defend_chance_value = {
+	value = 25
+	if = {
+		limit = { exists = scope:kehillah_incident_accuser }
+		add = {
+			value = kehillah_talmud_defender_learning_value
+			subtract = scope:kehillah_incident_accuser.learning
+			multiply = 3
+		}
+	}
+	add = {
+		value = kehillah_host_outlook_value
+		divide = 4
+	}
+	scope:kehillah_incident_host ?= {
+		if = {
+			limit = { has_trait = zealous }
+			add = -10
+		}
+		if = {
+			limit = { has_trait = just }
+			add = 10
+		}
+	}
+	min = 5
+	max = 75
+}
+kehillah_talmud_defend_fail_value = {
+	value = 100
+	subtract = kehillah_talmud_defend_chance_value
+}
+
+# The Shtadlan goes to the lord first: 10 + his diplomacy x2 + the lord's
+# opinion of him / 4 + the lord's outlook / 4; a zealous lord -15. 5 to 65.
+kehillah_talmud_shtadlan_chance_value = {
+	value = 10
+	if = {
+		limit = {
+			exists = scope:kehillah_incident_shtadlan
+			exists = scope:kehillah_incident_host
+		}
+		add = {
+			value = scope:kehillah_incident_shtadlan.diplomacy
+			multiply = 2
+		}
+		add = {
+			value = "scope:kehillah_incident_host.opinion(scope:kehillah_incident_shtadlan)"
+			divide = 4
+		}
+		if = {
+			limit = { scope:kehillah_incident_host = { has_trait = zealous } }
+			add = -15
+		}
+	}
+	add = {
+		value = kehillah_host_outlook_value
+		divide = 4
+	}
+	min = 5
+	max = 65
+}
+kehillah_talmud_shtadlan_fail_value = {
+	value = 100
+	subtract = kehillah_talmud_shtadlan_chance_value
+}
+
+# Hide the books: 15 + intrigue x2 (he knows which houses keep them);
+# deceitful +10, a schemer +10. 5 to 75.
+kehillah_talmud_hide_chance_value = {
+	value = 15
+	add = {
+		value = intrigue
+		multiply = 2
+	}
+	if = {
+		limit = { has_trait = deceitful }
+		add = 10
+	}
+	if = {
+		limit = { has_trait = schemer }
+		add = 10
+	}
+	min = 5
+	max = 75
+}
+kehillah_talmud_hide_fail_value = {
+	value = 100
+	subtract = kehillah_talmud_hide_chance_value
+}
+
+# --- Silver to a lord or a bishop: 35 + the lord's outlook / 2; greedy
+# +20, zealous -20, just -10. 10 to 90.
+kehillah_incident_bribe_chance_value = {
+	value = 35
+	add = {
+		value = kehillah_host_outlook_value
+		divide = 2
+	}
+	scope:kehillah_incident_host ?= {
+		if = {
+			limit = { has_trait = greedy }
+			add = 20
+		}
+		if = {
+			limit = { has_trait = zealous }
+			add = -20
+		}
+		if = {
+			limit = { has_trait = just }
+			add = -10
+		}
+	}
+	min = 10
+	max = 90
+}
+kehillah_incident_bribe_fail_value = {
+	value = 100
+	subtract = kehillah_incident_bribe_chance_value
+}
+
+# --- The badge. The petitioner is the Shtadlan, or the leader without one:
+# 15 + his diplomacy x2 + the lord's outlook / 3 + the lord's opinion of
+# the leader / 5; a zealous lord -15. 5 to 70.
+kehillah_badge_petitioner_diplomacy_value = {
+	value = diplomacy
+	if = {
+		limit = { exists = scope:kehillah_incident_shtadlan }
+		value = scope:kehillah_incident_shtadlan.diplomacy
+	}
+}
+kehillah_badge_petition_chance_value = {
+	value = 15
+	add = {
+		value = kehillah_badge_petitioner_diplomacy_value
+		multiply = 2
+	}
+	add = {
+		value = kehillah_host_outlook_value
+		divide = 3
+	}
+	if = {
+		limit = { exists = scope:kehillah_incident_host }
+		add = {
+			value = "scope:kehillah_incident_host.opinion(root)"
+			divide = 5
+		}
+		if = {
+			limit = { scope:kehillah_incident_host = { has_trait = zealous } }
+			add = -15
+		}
+	}
+	min = 5
+	max = 70
+}
+kehillah_badge_petition_fail_value = {
+	value = 100
+	subtract = kehillah_badge_petition_chance_value
+}
+
+# While the badge is worn, the danger of violence: +10.
+kehillah_danger_badge_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_badge } }
+		value = 10
+	}
+}
+
+# --- Holy Week.
+# Going yourself, the chance of a real wound: 30 - prowess x2. 5 to 40.
+kehillah_holy_week_wound_chance_value = {
+	value = 30
+	subtract = {
+		value = prowess
+		multiply = 2
+	}
+	min = 5
+	max = 40
+}
+kehillah_holy_week_wound_fail_value = {
+	value = 100
+	subtract = kehillah_holy_week_wound_chance_value
+}
+# Nobody goes: the lord's men keep the crowd off. 15 + the lord's outlook
+# / 2 + the leader's prestige level x5. 5 to 70.
+kehillah_holy_week_refuse_chance_value = {
+	value = 15
+	add = {
+		value = kehillah_host_outlook_value
+		divide = 2
+	}
+	add = {
+		value = prestige_level
+		multiply = 5
+	}
+	min = 5
+	max = 70
+}
+kehillah_holy_week_refuse_fail_value = {
+	value = 100
+	subtract = kehillah_holy_week_refuse_chance_value
+}
+
+# --- The bonds.
+# Move the strongbox: 25 + intrigue x3; deceitful +10. 5 to 80.
+kehillah_bonds_hide_chance_value = {
+	value = 25
+	add = {
+		value = intrigue
+		multiply = 3
+	}
+	if = {
+		limit = { has_trait = deceitful }
+		add = 10
+	}
+	min = 5
+	max = 80
+}
+kehillah_bonds_hide_fail_value = {
+	value = 100
+	subtract = kehillah_bonds_hide_chance_value
+}
+# The lord guards the house: 30 + his outlook / 2; -25 if he owes us
+# himself, greedy -10. 5 to 85.
+kehillah_bonds_lord_chance_value = {
+	value = 30
+	add = {
+		value = kehillah_host_outlook_value
+		divide = 2
+	}
+	scope:kehillah_incident_host ?= {
+		if = {
+			limit = { exists = var:kehillah_loan_amount_owed }
+			add = -25
+		}
+		if = {
+			limit = { has_trait = greedy }
+			add = -10
+		}
+	}
+	min = 5
+	max = 85
+}
+kehillah_bonds_lord_fail_value = {
+	value = 100
+	subtract = kehillah_bonds_lord_chance_value
+}
+# Forgive his debt: 40 + diplomacy x2 + his opinion of the leader / 4.
+# 10 to 90.
+kehillah_bonds_forgive_chance_value = {
+	value = 40
+	add = {
+		value = diplomacy
+		multiply = 2
+	}
+	if = {
+		limit = { exists = scope:kehillah_incident_debtor }
+		add = {
+			value = "scope:kehillah_incident_debtor.opinion(root)"
+			divide = 4
+		}
+	}
+	min = 10
+	max = 90
+}
+kehillah_bonds_forgive_fail_value = {
+	value = 100
+	subtract = kehillah_bonds_forgive_chance_value
+}

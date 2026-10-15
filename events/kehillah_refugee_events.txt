@@ -1,0 +1,150 @@
+﻿namespace = kehillah_refugee
+
+# =====================================================================
+# V41 -- refugees, 2026-10-14 (common/scripted_effects/kehillah_refugee_
+# effects.txt). Scope: the haven's leader; var:kehillah_refugees the band,
+# var:kehillah_refugees_from the town they fled.
+#   .0001 Refugees at the gate.
+#   .0002 Five years on: those taken in repay the community.
+#   .0003 debug: a band from a made-up pogrom of severity 80 nearby.
+# =====================================================================
+
+kehillah_refugee.0001 = {
+	type = character_event
+	title = kehillah_refugee.0001.t
+	desc = kehillah_refugee.0001.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		trigger = { exists = scope:kehillah_refugee_speaker }
+		character = scope:kehillah_refugee_speaker
+		animation = grief
+	}
+	trigger = {
+		exists = primary_title
+		has_variable = kehillah_refugees_from
+		any_in_list = {
+			variable = kehillah_refugees
+			is_alive = yes
+		}
+	}
+	on_trigger_fail = {
+		kehillah_refugees_clear_effect = yes
+	}
+	immediate = {
+		debug_log = "kehillah_refugee.0001: refugees at the gate"
+		random_in_list = {
+			variable = kehillah_refugees
+			limit = { is_alive = yes }
+			save_scope_as = kehillah_refugee_speaker
+		}
+		var:kehillah_refugees_from = { save_scope_as = kehillah_refugee_from }
+	}
+
+	# Take them in.
+	option = {
+		name = kehillah_refugee.0001.a
+		kehillah_refugees_take_in_effect = yes
+		ai_chance = {
+			base = 60
+			modifier = {
+				add = 30
+				has_trait = compassionate
+			}
+			modifier = {
+				add = -40
+				has_trait = callous
+			}
+			modifier = {
+				add = -30
+				primary_title = { var:kehillah_var_prosperity < 150 }
+			}
+		}
+	}
+
+	# Give them silver for the road.
+	option = {
+		name = kehillah_refugee.0001.b
+		trigger = { gold >= kehillah_incident_small_bribe_cost_value }
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = kehillah_incident_small_bribe_cost_value
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_refugee_road_greatness }
+		custom_tooltip = kehillah_refugee_road_tt
+		ai_chance = {
+			base = 25
+			modifier = {
+				add = 20
+				has_trait = greedy
+			}
+		}
+	}
+
+	# Close the gate.
+	option = {
+		name = kehillah_refugee.0001.c
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_refugee_refuse_greatness }
+		add_stress = minor_stress_gain
+		custom_tooltip = kehillah_refugee_refuse_tt
+		ai_chance = {
+			base = 10
+			modifier = {
+				add = 20
+				has_trait = callous
+			}
+		}
+	}
+
+	after = {
+		hidden_effect = { kehillah_refugees_clear_effect = yes }
+		debug_log = "kehillah_refugee.0001: answered"
+	}
+}
+
+kehillah_refugee.0002 = {
+	type = character_event
+	title = kehillah_refugee.0002.t
+	desc = kehillah_refugee.0002.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+	trigger = { exists = primary_title }
+	immediate = {
+		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_refugee_repay_prosperity }
+	}
+	option = {
+		name = kehillah_refugee.0002.a
+	}
+}
+
+# Console: event kehillah_refugee.0003 on a Kehillah leader -- the
+# nearest other community suffers a made-up pogrom (severity 80), and its
+# refugees come to root.
+kehillah_refugee.0003 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		save_scope_as = kehillah_refugee_haven_override
+		domicile.domicile_location ?= { save_scope_as = kmd_here }
+		ordered_ruler = {
+			limit = {
+				government_has_flag = government_is_kehillah
+				NOT = { this = root }
+				exists = domicile.domicile_location
+			}
+			order_by = {
+				value = 0
+				subtract = "domicile.domicile_location.squared_distance(scope:kmd_here)"
+			}
+			save_scope_as = kmd_struck
+		}
+		save_scope_value_as = { name = kehillah_pogrom_severity value = 80 }
+		scope:kmd_struck ?= { kehillah_pogrom_refugees_effect = yes }
+		debug_log = "kehillah_refugee.0003: a band from a made-up pogrom"
+		debug_log_scopes = yes
+	}
+}

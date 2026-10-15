@@ -33,7 +33,19 @@ Spec: [v41](docs/spec/v41-danger-incidents-and-the-pogrom-unfolding.md).
   laws, Holy Week humiliation, debt riots, uprisings.
 
 **Division:** the director and the incident catalogue are Claude's; V40's Firebrand (Codex) drives
-incidents through it. **Next: step 1, the pogrom unfolding.**
+incidents through it.
+
+**Status, 2026-10-14:**
+- **Live-tested:** steps 1a, 1b, 2, 3 and 4a.
+- **Built:** step 4b, the Talmud trial, the badge, Holy Week, the bonds, host desecration (an
+  accusation variant), and risings that raise a mob.
+- **Step 4b** passed its live test.
+- **Two soak tests:** pogroms fell from 37 to 9 in 30 years after the balance fixes.
+- **Refugees** are built and live-tested.
+- **AI communities** now ask their lord to ride out.
+- **Next:**
+  1. a soak to see how often the lord's men save an AI community;
+  2. a second eastern host.
 
 ### V40 Living crises and councils — 2026-10-13, Daniel's request
 

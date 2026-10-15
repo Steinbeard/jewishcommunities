@@ -74,29 +74,13 @@ kehillah_mob_raise_effect = {
 			# Never a second host on a community already threatened.
 			NOT = { scope:kehillah_mob_victim_title = { has_variable = kehillah_mob_threat } }
 		}
-		create_character = {
-			age = { 30 55 }
-			gender = male
-			faith = scope:kehillah_mob_spawn.county.faith
-			culture = scope:kehillah_mob_spawn.county.culture
-			location = scope:kehillah_mob_spawn
-			dynasty = none
-			trait = zealous
-			random_traits_list = {
-				count = 1
-				wrathful = {}
-				callous = {}
-				arrogant = {}
-				vengeful = {}
-			}
-			trait = peasant_leader
-			martial = { 8 14 }
-			prowess = { 10 16 }
-			diplomacy = { 6 12 }
-			learning = { 8 14 }
-			intrigue = { 3 8 }
-			stewardship = { 2 6 }
-			save_scope_as = kehillah_mob_leader
+		# V41 step 3: the preacher who has been preaching, if there is one.
+		if = {
+			limit = { exists = scope:kehillah_mob_preset_leader }
+			scope:kehillah_mob_preset_leader = { save_scope_as = kehillah_mob_leader }
+		}
+		else = {
+			kehillah_mob_create_preacher_effect = { PLACE = scope:kehillah_mob_spawn }
 		}
 		scope:kehillah_mob_leader = {
 			add_character_flag = kehillah_mob_leader
@@ -188,6 +172,13 @@ kehillah_mob_raise_effect = {
 					if = {
 						limit = { NOT = { scope:kehillah_mob_spawn = scope:kehillah_mob_town } }
 						trigger_event = { id = kehillah_mob.0001 days = 1 }
+					}
+					# But an AI community still answers it (soak 3, 2026-10-14:
+					# town-born mobs skipped the warning, the only place the AI
+					# answered, and won 10 of 10).
+					else_if = {
+						limit = { is_ai = yes }
+						trigger_event = { id = kehillah_mob.0031 days = 1 }
 					}
 					# A preacher's sermons are an incident in the county's faith (V40).
 					domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
@@ -758,6 +749,8 @@ kehillah_pogrom_effect = {
 
 	# The aftermath: trauma, the tenets of martyrdom, the Year of the Decrees.
 	kehillah_pogrom_aftermath_effect = yes
+	# Refugees take the road to the nearest safe community.
+	kehillah_pogrom_refugees_effect = yes
 
 	# News, and the report (for the AI: the ransom is decided at once).
 	kehillah_notify_region_players_effect = {
@@ -915,7 +908,12 @@ kehillah_mob_bought_off_effect = {
 	var:kehillah_mob_target_title ?= {
 		set_variable = { name = kehillah_mob_paid_off value = yes years = 1 }
 	}
+	# V41 step 3: still preaching -- he turns his sermons elsewhere.
 	if = {
+		limit = { has_character_flag = kehillah_mob_preaching }
+		kehillah_mob_preaching_turn_effect = yes
+	}
+	else_if = {
 		limit = {
 			has_character_flag = kehillah_mob_crusade
 			has_variable = kehillah_mob_targets_left
@@ -1045,7 +1043,7 @@ kehillah_mob_clear_title_effect = {
 kehillah_mob_condemned_effect = {
 	primary_title = { set_variable = { name = kehillah_mob_condemned value = yes } }
 	scope:kehillah_mob_leader = {
-		every_army = { deplete_army_by_percentage = 0.25 }
+		kehillah_mob_thin_host_effect = { FRACTION = 0.25 }
 		set_variable = { name = kehillah_mob_size value = kehillah_mob_total_men_value }
 	}
 	set_variable = { name = kehillah_mob_size_ref value = scope:kehillah_mob_leader.var:kehillah_mob_size }
@@ -1163,6 +1161,28 @@ kehillah_mob_ai_answers_effect = {
 		random = {
 			chance = kehillah_mob_defence_chance_value
 			primary_title = { set_variable = { name = kehillah_mob_defended value = yes } }
+		}
+	}
+	# Beg the lord to ride out, once there is a host to fight (soak
+	# 2026-10-14: 9 of 11 mobs won; the AI never asked for men). The player's
+	# odds (kehillah_mob.0110 option c): at most 30%.
+	if = {
+		limit = {
+			NOT = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_preaching } }
+			primary_title = { NOT = { has_variable = kehillah_mob_ai_asked_men } }
+		}
+		primary_title = { set_variable = { name = kehillah_mob_ai_asked_men value = yes years = 1 } }
+		domicile.domicile_location.county.holder ?= {
+			if = {
+				limit = { NOT = { this = scope:actor } }
+				save_scope_as = recipient
+				debug_log = "kehillah_mob_ai_answers_effect: asks the lord to ride out"
+				random = {
+					chance = scope:actor.kehillah_mob_ask_men_chance_value
+					scope:actor = { kehillah_mob_lord_raises_men_effect = { DEFENDER = scope:recipient } }
+					debug_log = "kehillah_mob_ai_answers_effect: the lord rides out"
+				}
+			}
 		}
 	}
 	# The silver, when it is likely to work.
@@ -1292,4 +1312,60 @@ kehillah_pogrom_take_tenet_effect = {
 # V41 step 2: shift the harm a pogrom will do. Scope: the Kehillah leader.
 kehillah_mob_adjust_severity_effect = {
 	kehillah_granada_adjust_severity_effect = { AMOUNT = $AMOUNT$ }
+}
+
+# A preacher. Scope: any; PLACE: the province he stands in. Saves
+# scope:kehillah_mob_leader.
+kehillah_mob_create_preacher_effect = {
+	create_character = {
+		age = { 30 55 }
+		gender = male
+		faith = $PLACE$.county.faith
+		culture = $PLACE$.county.culture
+		location = $PLACE$
+		dynasty = none
+		trait = zealous
+		random_traits_list = {
+			count = 1
+			wrathful = {}
+			callous = {}
+			arrogant = {}
+			vengeful = {}
+		}
+		trait = peasant_leader
+		martial = { 8 14 }
+		prowess = { 10 16 }
+		diplomacy = { 6 12 }
+		learning = { 8 14 }
+		intrigue = { 3 8 }
+		stewardship = { 2 6 }
+		save_scope_as = kehillah_mob_leader
+	}
+}
+
+# Thin a host -- or, while he is still preaching, his following. Scope:
+# the preacher. FRACTION: the share lost.
+kehillah_mob_thin_host_effect = {
+	every_army = { deplete_army_by_percentage = $FRACTION$ }
+	# (live 2026-10-14: the men count shown stayed at the old size)
+	if = {
+		limit = { has_variable = kehillah_mob_size }
+		change_variable = {
+			name = kehillah_mob_size
+			multiply = {
+				value = 1
+				subtract = $FRACTION$
+			}
+		}
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_following }
+		change_variable = {
+			name = kehillah_mob_following
+			multiply = {
+				value = 1
+				subtract = $FRACTION$
+			}
+		}
+	}
 }

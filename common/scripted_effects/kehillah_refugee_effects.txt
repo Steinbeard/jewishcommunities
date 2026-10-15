@@ -1,0 +1,110 @@
+﻿# =====================================================================
+# V39 section 8 / V41 -- refugees, 2026-10-14. After a pogrom, survivors
+# take the road to the nearest community that is not itself threatened or
+# still mourning, and ask to stay (kehillah_refugee.0001). Taken in, they
+# cost the haven at first and repay it later (.0002).
+# =====================================================================
+
+# Scope: the struck community's leader (end of kehillah_pogrom_effect);
+# scope:kehillah_pogrom_severity saved.
+kehillah_pogrom_refugees_effect = {
+	if = {
+		limit = {
+			scope:kehillah_pogrom_severity >= kehillah_refugee_min_severity
+			exists = domicile.domicile_location
+		}
+		save_scope_as = kehillah_refugee_victim
+		domicile.domicile_location = { save_scope_as = kehillah_refugee_from }
+		# (kehillah_refugee.0003, the debug event, names the haven)
+		scope:kehillah_refugee_haven_override ?= { save_scope_as = kehillah_refugee_haven }
+		ordered_ruler = {
+			limit = {
+				NOT = { exists = scope:kehillah_refugee_haven }
+				kehillah_refugee_haven_trigger = yes
+			}
+			order_by = {
+				value = 0
+				subtract = "domicile.domicile_location.squared_distance(scope:kehillah_refugee_from)"
+			}
+			save_scope_as = kehillah_refugee_haven
+		}
+		if = {
+			limit = { exists = scope:kehillah_refugee_haven }
+			# Who goes: adults of the community, not the leader's household
+			# or council.
+			kehillah_refugee_pick_one_effect = yes
+			if = {
+				limit = { kehillah_refugee_courtiers_value >= 2 }
+				kehillah_refugee_pick_one_effect = yes
+			}
+			if = {
+				limit = { kehillah_refugee_courtiers_value >= 3 }
+				kehillah_refugee_pick_one_effect = yes
+			}
+			if = {
+				limit = { any_in_list = { list = kehillah_refugee_band count >= 1 } }
+				scope:kehillah_refugee_haven = {
+					clear_variable_list = kehillah_refugees
+					every_in_list = {
+						list = kehillah_refugee_band
+						scope:kehillah_refugee_haven = { add_to_variable_list = { name = kehillah_refugees target = prev } }
+					}
+					set_variable = { name = kehillah_refugees_from value = scope:kehillah_refugee_from }
+					set_variable = { name = kehillah_refugees_from_title value = scope:kehillah_refugee_victim.primary_title }
+					set_variable = {
+						name = kehillah_refugees_families
+						value = {
+							value = scope:kehillah_pogrom_severity
+							divide = 4
+							round = yes
+						}
+					}
+					trigger_event = { id = kehillah_refugee.0001 days = { 10 30 } }
+				}
+				debug_log = "kehillah_pogrom_refugees_effect: refugees set out"
+			}
+		}
+	}
+}
+
+# Scope: the haven's leader. Take the refugees into the community.
+kehillah_refugees_take_in_effect = {
+	custom_tooltip = kehillah_refugee_take_in_tt
+	hidden_effect = {
+		every_in_list = {
+			variable = kehillah_refugees
+			limit = { is_alive = yes }
+			save_scope_as = kehillah_refugee_member
+			root = { add_courtier = scope:kehillah_refugee_member }
+		}
+	}
+	kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_refugee_take_in_prosperity }
+	kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_refugee_take_in_greatness }
+	hidden_effect = { trigger_event = { id = kehillah_refugee.0002 days = 1825 } }
+}
+
+# Scope: the haven's leader. Clear the band's variables.
+kehillah_refugees_clear_effect = {
+	clear_variable_list = kehillah_refugees
+	remove_variable = kehillah_refugees_from
+	remove_variable = kehillah_refugees_from_title
+	remove_variable = kehillah_refugees_families
+}
+
+# Scope: the struck community's leader. One more of its people joins the
+# band on the road.
+kehillah_refugee_pick_one_effect = {
+	random_courtier = {
+		limit = {
+			is_alive = yes
+			is_adult = yes
+			is_imprisoned = no
+			is_jewish_character_trigger = yes
+			NOT = { scope:kehillah_refugee_victim.player_heir ?= this }
+			NOT = { is_spouse_of = scope:kehillah_refugee_victim }
+			NOT = { is_councillor = yes }
+			NOT = { is_in_list = kehillah_refugee_band }
+		}
+		add_to_list = kehillah_refugee_band
+	}
+}

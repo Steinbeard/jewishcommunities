@@ -280,3 +280,351 @@ children given up, captives not ransomed, and a leader.
 
 `kehillah_mob_adjust_severity_effect` shifts the harm for any caller.
 
+**Step 2 live test, 2026-10-14: passed.**
+- **Before the lord:** debt 82% (47 + 35, which won refuge), physician 67%.
+- **In the preacher's camp:** Scripture 75% (the host shrank), lieutenants 24%.
+- **At the gates:** the cemetery gate 47%. Hiding in the cellar worked: the font offered only "Stay
+  where you are", and the leader was neither killed nor taken.
+- **Fixes in step 3's commit:**
+  - the men count now follows any thinning of the host;
+  - the plea's floor is 5% (it was 2% against a preacher at -51 opinion).
+
+## Step 3, built (2026-10-14): the preaching
+
+**The crusade call** now starts the preaching within 3-10 days, not the host. The preacher
+(`kehillah_mob_create_preacher_effect`, shared with the raise) appears 100-200 px from the community
+he means to strike, with no army and no title (`kehillah_mob_preaching`).
+- **The story** `story_kehillah_preacher` runs every 7 days:
+  - his following grows by 100-250, plus 10 per recent incident in his faith; it starts at 800;
+  - he preaches in another town near his quarry;
+  - the community gets a toast, "The Preacher Moves On".
+- **After 30-90 days** he sets out. `kehillah_mob_preaching_ends_effect` raises the host with the
+  preacher himself (`scope:kehillah_mob_preset_leader`), at the size of his following, from where
+  he last preached.
+- **The community** gets "The Preaching" (`kehillah_mob.0004`) and the elders' hub at once. AI
+  communities answer then.
+- **During the preaching:**
+  - a condemnation, Scripture or the lieutenants thin his following (`kehillah_mob_thin_host_effect`);
+  - buying him off turns his sermons on another community (`kehillah_mob_preaching_turn_effect`);
+  - no lord can ride out yet.
+
+**Debug:** `kehillah_mob_debug.8` (a crusade now; the preaching begins), `.11` (the preaching ends at
+the next sermon).
+
+**Step 3 live test, 2026-10-14: passed.**
+- **The preacher:** Tassilo preached in Ingolstadt, Würzburg, Wiesbaden and on to Faulquemont.
+  - **His following:** 800 rising to 1001 and 1320, with the preaching days falling by 7 a week.
+  - **No army** while he preached.
+  - **The council:** no "ride out" option at the lord's.
+- **He set out** on 1 December with 3207 men, exactly his following, from his last sermon town. The
+  story ended at the next weekly step.
+- **Fixed:** the events and the hub read "0 people" during the preaching. They read the army's size,
+  so they now fall back to his following.
+- **Not seen:** a successful condemnation thinning the following (two failed rolls); the
+  preaching-time bribe.
+
+## Step 4a, built (2026-10-14): the danger of violence and the director
+
+**`common/script_values/kehillah_danger_values.txt`** holds `kehillah_danger_value`, the sum of:
+- **prominence:** Greatness / 20;
+- **wealth:** Prosperity / 40;
+- **recent incidents in the county's faith:** x3;
+- **hard times:** an epidemic in the county +15, the lord at war +10, the faith on crusade +15;
+- **the host's teaching:** strict +10, exclusionary +20;
+- **the host's outlook:** -outlook / 3;
+- **the lull:** -15 while the Year of the Decrees lasts.
+
+It is shown with its terms at the foot of the Stability tooltip.
+
+**Prominence in Greatness:**
+- **Jews at the host's court:** +20 each, +30 if one sits on his council, at most 90.
+- **Lords in debt to the community:** +15 each, at most 60.
+
+**The director** (`common/scripted_effects/kehillah_incident_effects.txt`) replaces the quarterly
+accusation and mission checks in `kehillah_on_actions.txt`.
+- **The roll:** danger / 10 percent a quarter, at most 12, and one incident a year.
+- **The incidents,** weighted:
+  - an accusation (30);
+  - a disputation (20, +15 under a strict or exclusionary teaching; Christian hosts);
+  - friars in the synagogue (the same);
+  - a mob by itself (5, +10 in hard times), through `kehillah_mob.0030`.
+
+**Debug:** `kehillah_mob_debug.12` logs the danger and its terms; `.13` forces a roll.
+
+**Step 4a live test, 2026-10-14: passed.**
+- **The Stability tooltip** ends with the danger and its seven terms, rendered without blanks.
+- **The `.12` dump** matches the tooltip. After three game years: danger 53 = 40 + 14 + 2 + 10 + 0
+  - 13, and a 5.3% chance a quarter.
+- **The director** fired each kind: in three natural years, 3 accusations (each became a mob), 2
+  disputations, and friars in the synagogue.
+- **Fixed:** `.13` cleared only the director's cooldown, so forced rolls fell to "a mob" once the
+  three cooldown-gated incidents were used. It now clears each incident's cooldown.
+- **Not seen:** the Greatness lines for Jews at court and lords in debt (zero at start; not
+  re-hovered later).
+- **Noise from the debug path:** removing a mob with `.6` right after it forms leaves a vanilla
+  `on_war_started` "Scoped object is not valid (Casus_belli)" error.
+
+## Step 4b, built (2026-10-14): the new incidents and the risings
+
+**Files:**
+- `events/kehillah_incident_events.txt` (namespace `kehillah_incident`);
+- `common/scripted_effects/kehillah_incident_scene_effects.txt`;
+- `common/script_values/kehillah_incident_scene_values.txt`;
+- `common/scripted_triggers/kehillah_incident_triggers.txt`;
+- `common/modifiers/kehillah_incident_modifiers.txt`;
+- `localization/english/kehillah_incident_l_english.yml`.
+
+Each incident is +1 recent incident in the county's faith. A player gets a short scene two days later
+(`.0090`), with what came of the choice.
+
+**`.0001` The Talmud on Trial** (Paris, 1240). Christian hosts. The library must hold a tractate.
+Director weight 10, +10 under a strict teaching, +10 from 1230. A 30-year cooldown.
+- **The accuser:** a man who studied among us and was baptized (Donin), with learning 12-20. He joins
+  the host's court.
+- **Answer him in the hall:** 25 + (our best learning, the leader's or the Dayyan's, minus his) x3 +
+  the lord's outlook / 4; a zealous lord -10, a just lord +10.
+- **The Shtadlan goes first:** 10 + his diplomacy x2 + the lord's opinion of him / 4 + outlook / 4; a
+  zealous lord -15.
+- **Hide the books:** 15 + intrigue x2; deceitful +10, a schemer +10. A failure also costs 5 of the
+  lord's outlook.
+- **Pay** (major gold): 35 + outlook / 2; greedy +20, zealous -20, just -10. A lord who keeps the
+  silver and burns the books anyway is a possible outcome.
+- **The burning:** every Talmud tractate leaves the library, Greatness -40, and stress. Under a
+  Christian charter, the text term grows one step stricter.
+
+**`.0010` The Badge / the Ghiyar** (Lateran IV, 1215; the Pact of Umar). Christian or Muslim hosts.
+Weight 10, +10 under a strict teaching, +10 from 1215 (always for Muslim hosts).
+- **The decree:** 30 years, Stability -15, Greatness -15, and the danger +10 while it lasts (a new
+  line in the tooltip).
+- **The leader's modifier** `kehillah_badge_modifier`: prestige gain -15%, diplomacy -1.
+- **The petition,** by the Shtadlan or by the leader without one: 15 + diplomacy x2 + outlook / 3 +
+  the lord's opinion of the leader / 5; a zealous lord -15.
+- **Buy an exemption** for the household (medium gold): the decree without the modifier.
+- **Wear it as our fathers wore their names** (zealous or stubborn): the modifier, piety, Stability
+  +10.
+
+**`.0020` Holy Week** (the blow at Toulouse; the stones of Beziers, ended for a payment in 1160).
+Christian hosts, March and April. Weight 40. A 3-year cooldown.
+- **Go yourself:** piety, stress, Stability +10, and a real wound at 30 - prowess x2.
+- **Send a man:** he is angry with you; Stability -10.
+- **Pay the bishop** (major gold) to end it for good, at the bribe odds.
+- **Nobody goes** (brave or wrathful): 15 + outlook / 2 + prestige level x5 that the lord's men hold
+  the crowd off; otherwise a mob.
+
+**`.0030` The Bonds** (York, 1190). A lord of the host's realm owes us. Weight 10, +15 in hard times.
+A 10-year cooldown.
+- **Let them burn:** every debt the host and his lords owe us is void; Prosperity -40.
+- **Move the strongbox:** 25 + intrigue x3; deceitful +10. Failure: the bonds burn and a mob forms.
+- **Ask the lord to guard the house:** 30 + outlook / 2; -25 if he owes us himself; greedy -10.
+  Failure is the same.
+- **Forgive the ringleader's debt:** 40 + diplomacy x2 + his opinion of the leader / 4. Failure: the
+  bonds burn anyway.
+
+**Host desecration** (Rottingen 1298, Deggendorf 1338) is an accusation variant. From 1215, under
+a Christian host, 40% of accusations charge the desecration of the Host rather than the blood libel
+(`kehillah_accusation_desecration`, a 30-day variable read by `KehillahAccusationTale`). The text
+differs; the answers and odds are V37's.
+
+**Step 4b-2: a rising sends a mob.** When a vanilla peasant or populist revolt in the community's
+county turns on the Jews (V34 section 4, unchanged odds), it no longer deals an abstract blow. It
+raises a mob of 1500 at severity 55 (`kehillah_rising_mob_size`, `_severity`).
+- **Where it forms:** where the rising's leader is, unless that is already at the gates (then the
+  usual 100-200 pixels away).
+- **Who leads it:** a preacher from the rebel camp, not the rising's leader. **This departs from
+  section 7's table,** which said the revolt leader declares the war. The mob's march moves every
+  army of its leader, so it would carry off the rising's own army.
+- **The warning,** `kehillah_mob.0001`, has a rising variant that names the rising's leader
+  (`kehillah_mob_sent_by` on the preacher).
+- **The rising's leader** still founds his Exclusion rite.
+- **Fallback:** if no mob can form, because the community already faces one, the V36 blow applies as
+  before.
+
+**Debug:**
+- `kehillah_mob_debug.14` fires the Talmud trial (it adds the Bavli's Moed if the library has no
+  Talmud);
+- `.15` the badge;
+- `.16` Holy Week, in any month;
+- `.17` the bonds (the host borrows 100 if no lord of his realm owes us);
+- `.12` now logs `kmd_badge`.
+
+**Step 4b live test, 2026-10-14: passed, with one fix.**
+- **The Talmud trial:**
+  - The accuser and the lord were named, with the accuser as the portrait.
+  - The odds varied by option: answer 32%, Shtadlan 48%, hide 19%, pay 55%.
+  - "The Shtadlan goes first" led to the "matter was closed" scene.
+  - "Hide the books" failed. The bathhouse scene followed, and both Moed tractates left the library.
+- **The badge:**
+  - The petition succeeded at 66%, with its scene.
+  - "We will wear it" added the "The badge: +10" line to the danger.
+- **Holy Week:**
+  - "Send Elisha" gave him stress and anger, with the split-lip scene.
+- **The bonds:**
+  - The text read "owes us 100 gold".
+  - "Ask the lord" failed at 25% and became a riot. The mob reached the gates, with its scenes.
+- **The director, 8 forced rolls:** 2 disputations, 2 friars, 3 accusations, 1 Talmud trial. Natural
+  play added the badge twice.
+- **The rising:** "The Rising Turns on Us" named the rising's leader and showed 1920 men.
+  - **Fixed:** the V36 report "The Mob at the Gates" still fired with an empty lord and 0 losses. It
+    now fires only for the V36 blow.
+- **Errors:** no new errors on any mod key over three game years, and no crash.
+- **Not seen:**
+  - the "stones" variant of Holy Week;
+  - a paid option greyed out for lack of gold;
+  - the Greatness change from a burning.
+
+## Soak test, 2026-10-14: 50 years from Worms 1066
+
+**Run:** 1066 to 1116 in 1h40m, with no crash. The player stayed a Kehillah leader through three
+successions. debug.log stopped taking script lines at about 27 MB (around 1098), so the counts
+cover 32 years.
+
+**Incidents:** 72 rolls across 21 communities, about 1.1 per community per decade:
+
+| Kind | Count |
+|---|---|
+| a mob | 24 |
+| an accusation | 21 |
+| the badge | 12 |
+| a disputation | 7 |
+| friars in the synagogue | 6 |
+| the Talmud on trial | 1 |
+| Holy Week | 1 |
+
+Worms had 4. Jerusalem had 9, Mahdia 7, and Baghdad and Granada 5 each, most of them mobs.
+
+**Violence:** 38 mobs and 37 pogroms; 37 of 39 mob wars were won by the mob. That is a pogrom per
+community about every 17 years, two to three times the historical rate.
+
+**Danger at Worms:** 0 at the start, then 36, 45 and 32 (during the lull after the 1096 decrees).
+
+**Changes made for this:**
+- **The director's "a mob by itself"** has a 15-year cooldown per community. A "only talk" branch
+  (weight 20) fills a quarter when nothing else fits. With the other incidents on cooldown, every
+  roll under a Muslim host had fallen to a mob.
+- **An accusation's violence** becomes a mob siege only at `kehillah_accusation_mob_chance_value`,
+  25 + danger / 2, from 15 to 75. Otherwise it is a riot in the street: V37's blow, restored as
+  `kehillah_accusation_riot_effect`, with a possible martyr. The roll is in the hidden
+  `kehillah_accusation.0003`.
+- **The HUD's "Your host"** read a host who had died, until the next refresh. That produced 11,400
+  "doesn't support variables" errors. The widget now hides for a dead host, and the outlook's
+  variable terms check `is_alive`.
+- **`kehillah_bd_court_jews_value`** walks its location chain step by step.
+- **`kehillah_bd_loans_greatness_value`** no longer counts defaulted debtors, who are left in the
+  list by design.
+
+**Errors outside V41, not fixed here:**
+- `kehillah_host_arrest_triggers.txt:54`, a null target title (163 errors);
+- `kehillah_pool_repopulation_patch.txt` lines 55, 80 and 90, a null `capital_province` (186);
+- `kehillah_on_actions.txt:931`, `scope:killer` undefined on death (4);
+- the book artifact names `[creator.GetFirstNameNoTooltip]` (about one per book);
+- duplicate `SUCCESSION_EVENT_WINDOW_DEAD_OUTRO_*` loc keys.
+
+**Soak 2, 2026-10-14 (ba99511): 1066 to 1096, no crash.**
+
+| | Soak 1 (32 years) | Soak 2 (30 years) |
+|---|---|---|
+| director rolls | 72 | 57, of which 17 were "only talk" |
+| "a mob" | 24 | 5 |
+| accusations | 21 | 12: 5 riots, 5 defused |
+| mobs raised | 38 | 11 |
+| pogroms | 37 | 9 |
+| mob wars won by the mob | 37 of 39 | 9 of 11 |
+
+- **The rate:** about 0.3 pogroms a decade across 20 communities, a quarter of soak 1.
+- **Danger at Worms:** 0, then 39, 44, and 62 in 1096 (the crusade's hard times).
+- **The error flood is gone.** No "doesn't support variables" errors came from the outlook values.
+  The only new mod errors were the book artifact names.
+
+**Still open:** a mob that forms almost always wins. The defences (the lord's men, refuge, the
+watch) rarely save an AI community. Making them work more often is a balance question for a later
+pass.
+
+## Refugees, built (2026-10-14)
+
+This builds V39 sections 6 and 8 ("Refugees go through the exiles system to communities outside the
+host's path"). It does not use the exiles system: that system moves a whole community whose leader
+has been expelled. After a pogrom the community usually survives, so a band of its people leaves.
+
+**When:** at the end of `kehillah_pogrom_effect`, if the severity is at least 40.
+
+**Who leaves:** 1 + severity / 40 adults (at most 3). They are Jewish courtiers of the struck
+community, not the heir, the spouse or a councillor.
+
+**Where they go:** the nearest community within huge distance that is not threatened, not under a
+pogrom's memory, and not already receiving a band (`kehillah_refugee_haven_trigger`). They arrive
+10-30 days later.
+
+**`kehillah_refugee.0001` Refugees.** The haven's leader chooses:
+- **Take them in:** they join the court; Prosperity -40, Greatness +20. Five years later
+  (`.0002`), Prosperity +60.
+- **Silver for the road** (medium gold): Greatness +5.
+- **Close the gate:** Greatness -20, and stress.
+
+The AI takes them in unless it is callous or poor.
+
+**Debug:** `kehillah_refugee.0003` sends root a band from the nearest other community, as after a
+pogrom of severity 80.
+
+**Refugees live test, 2026-10-14: passed.**
+- **The first band:** three people from Speyer, after a made-up pogrom of severity 80. The event came
+  19 days later and read "20 families", with the speaker, his portrait and pronoun.
+- **Take them in:** two of the band joined the court.
+- **The second band:** "Close the gate" cost Greatness 697 to 677, and they stayed out.
+- **The follow-up:** "The Families from the Road" rendered.
+- **A natural pogrom** during the run also sent a band.
+- **Fixed:** the tooltips did not show the pillar changes, because custom variables are invisible
+  in tooltips. They now state them, as the repo's other tooltips do. The same fix applies to the
+  step 4b incidents (the Talmud's burning and acquittal, the badge, Holy Week, the bonds).
+
+**The AI asks its lord to ride out** (`kehillah_mob_ai_answers_effect`). Soak 2 found 9 of 11 mobs
+won; the AI never asked for men, the one answer that can break a host. It now asks the county's
+lord, once there is a host to fight, at the player's odds (`kehillah_mob_ask_men_chance_value`, at
+most 30%). It asks once a year per community.
+
+**Soak 3, 2026-10-14 (c8a72bf): 1066 to 1086.**
+- **Violence:** 10 mobs, 10 pogroms, 10 of 10 mob wars won by the mob.
+- **"The lord rides out" never fired.** The AI answered only in the warning (`kehillah_mob.0001`).
+  A mob that rises in the town itself (an accusation, a riot) gives no warning, so it was never
+  answered. Its war also ended within days.
+- **Refugees:** bands set out 3 times.
+- **Fixed:**
+  - A town-born mob now sends an AI community the hidden `kehillah_mob.0031` a day later, which
+    makes its answers.
+  - Each ask for the lord's men is logged.
+  - Each refugee arrival and answer is logged.
+
+## Tooltips by vanilla systems (2026-10-14)
+
+**Daniel:** localization should not describe effects or probabilities. The option tooltip should
+show probabilities, their factors and skill challenges, through vanilla systems.
+
+**The pattern:**
+- **Skill against skill:** vanilla's `duel`. The tooltip shows both skills and the chance.
+- **Other odds:** a `random_list` whose factors are separate modifiers, so the tooltip lists them:
+  - a trait or condition, `modifier = { add = N <trigger> }`;
+  - an opinion, `opinion_modifier`;
+  - the lord's outlook band, `kehillah_lord_outlook_odds_modifier` in
+    `common/scripted_modifiers/kehillah_odds_modifiers.txt`, labelled through `custom_tooltip`.
+- **Pillar changes:** `kehillah_change_pillar_effect = { PILLAR AMOUNT }` uses `custom_description`
+  with `common/effect_localization/kehillah_pillar_effect_localization.txt`. The line reads
+  "Greatness: +30", with the number taken from the script.
+- **Text** names what happens when the game cannot show it, such as the Talmud burned. It never
+  gives numbers or odds.
+
+**The pilot:**
+- **The Talmud trial:**
+  - answer him: a Learning duel against the accuser;
+  - hide the books: an Intrigue duel;
+  - new, the Dayyan answers him, when more learned than the leader;
+  - the Shtadlan's odds: his Diplomacy, the lord's opinion of him, and the lord's outlook;
+  - the payment: the lord's outlook, greed and justice.
+- **Pillar changes:** every pillar change in the step 4b incidents and the refugees goes through
+  the new effect. Number tooltips are removed.
+
+**The rollout,** after the pilot renders in game:
+- the mob events and visits, the pogrom scenes, the accusation and the other three incidents;
+- older files with numbers in text: the Bet Din expansion, missions, Bet Din sources, host crisis,
+  Anusim, and the mob warning's "Every request can fail".
+
+Status displays, such as the danger and pillar breakdowns, are left as they are.
+
