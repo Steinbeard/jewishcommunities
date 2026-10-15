@@ -1,0 +1,125 @@
+﻿# =====================================================================
+# V43 slice 4 (docs/spec/v43-after-the-violence-and-granada.md), 2026-10-
+# 14. Children converted at a pogrom, or stolen, are raised by the other
+# faith: in a monastery (a bishop's or an abbot's house) under a
+# Christian lord, else in the lord's own household. They are tracked --
+# kehillah_taken_children on the community's title, kehillah_taken_from
+# and the flag kehillah_stolen_child on the child -- so their community
+# may petition for them (events/kehillah_children_events.txt), and so
+# one of them, very rarely, may be heard of again (slice 5).
+# =====================================================================
+
+# Scope: a child of the community, just converted. scope:kehillah_
+# children_title is the community's title, scope:kehillah_children_town
+# its town.
+kehillah_child_taken_effect = {
+	save_scope_as = kehillah_taken_child
+	clear_saved_scope = kehillah_child_keeper
+	scope:kehillah_children_town.county.holder ?= { save_scope_as = kehillah_child_lord }
+	# A monastery: a churchman of the faith in the lord's realm.
+	scope:kehillah_child_lord.top_liege ?= {
+		random_vassal_or_below = {
+			limit = {
+				has_government = theocracy_government
+				faith = scope:kehillah_taken_child.faith
+			}
+			save_scope_as = kehillah_child_keeper
+		}
+	}
+	if = {
+		limit = { NOT = { exists = scope:kehillah_child_keeper } }
+		scope:kehillah_child_lord ?= { save_scope_as = kehillah_child_keeper }
+	}
+	if = {
+		limit = { exists = scope:kehillah_child_keeper }
+		scope:kehillah_child_keeper = { add_courtier = scope:kehillah_taken_child }
+	}
+	else = {
+		move_to_pool_at = scope:kehillah_children_town
+	}
+	add_character_flag = kehillah_stolen_child
+	set_variable = { name = kehillah_taken_from value = scope:kehillah_children_title }
+	scope:kehillah_children_title = {
+		add_to_variable_list = { name = kehillah_taken_children target = scope:kehillah_taken_child }
+	}
+}
+
+# Scope: the community's leader. The children come home: their faith
+# again, and the leader's household.
+kehillah_children_returned_effect = {
+	save_scope_as = kehillah_children_leader
+	custom_tooltip = kehillah_children_returned_tt
+	hidden_effect = {
+		primary_title = {
+			every_in_list = {
+				variable = kehillah_taken_children
+				limit = { is_alive = yes }
+				save_scope_as = kehillah_returning_child
+				set_character_faith = scope:kehillah_children_leader.faith
+				remove_character_flag = kehillah_stolen_child
+				remove_variable = kehillah_taken_from
+				if = {
+					limit = { has_variable = kehillah_anus }
+					remove_variable = kehillah_anus
+				}
+				scope:kehillah_children_leader = { add_courtier = scope:kehillah_returning_child }
+			}
+			clear_variable_list = kehillah_taken_children
+		}
+	}
+}
+
+# Scope: the community's leader. Who has the children: the keeper of the
+# first of them still alive.
+kehillah_children_scopes_effect = {
+	primary_title ?= {
+		random_in_list = {
+			variable = kehillah_taken_children
+			limit = { is_alive = yes }
+			save_scope_as = kehillah_children_one
+			employer ?= { save_scope_as = kehillah_children_keeper }
+		}
+	}
+	save_scope_value_as = {
+		name = kehillah_children_count
+		value = kehillah_children_count_value
+	}
+	set_variable = { name = kehillah_children_count_ref value = kehillah_children_count_value }
+	domicile.domicile_location.county.holder.top_liege ?= {
+		if = {
+			limit = { NOT = { this = root } }
+			save_scope_as = kehillah_children_lord
+		}
+	}
+	cp:councillor_chancellor ?= { save_scope_as = kehillah_children_shtadlan }
+}
+
+# The rare theft (the director): a child with living parents is taken by
+# a servant to a monastery. Scope: the community's leader.
+kehillah_child_stolen_effect = {
+	primary_title = { save_scope_as = kehillah_children_title }
+	domicile.domicile_location ?= { save_scope_as = kehillah_children_town }
+	random_courtier = {
+		limit = {
+			is_alive = yes
+			is_adult = no
+			age >= 2
+			is_jewish_character_trigger = yes
+			father ?= { is_alive = yes }
+		}
+		save_scope_as = kehillah_stolen_one
+	}
+	if = {
+		limit = { exists = scope:kehillah_stolen_one }
+		scope:kehillah_children_town.county.faith ?= { save_scope_as = kehillah_stolen_faith }
+		scope:kehillah_stolen_one = {
+			set_character_faith = scope:kehillah_stolen_faith
+			kehillah_child_taken_effect = yes
+		}
+		if = {
+			limit = { is_ai = no }
+			trigger_event = kehillah_children.0010
+		}
+		debug_log = "kehillah_child_stolen_effect: a child is taken"
+	}
+}

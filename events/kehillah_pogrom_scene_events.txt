@@ -314,7 +314,13 @@ kehillah_pogrom.0030 = {
 	type = character_event
 	title = kehillah_pogrom.0030.t
 	desc = {
-		desc = kehillah_pogrom.0030.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = { kehillah_mob_is_muslim_trigger = yes }
+				desc = kehillah_pogrom.0030.desc_islam
+			}
+			desc = kehillah_pogrom.0030.desc
+		}
 		first_valid = {
 			triggered_desc = {
 				trigger = { primary_title = { has_variable = kehillah_scene_children_betrayed } }
@@ -423,5 +429,101 @@ kehillah_pogrom.0090 = {
 	immediate = {
 		var:kehillah_mob_ref = { save_scope_as = kehillah_mob_leader }
 		kehillah_pogrom_effect = yes
+	}
+}
+
+# ---------------------------------------------------------------------
+# V43 slice 0 (2026-10-14): the silver did not come. A player's leader,
+# held with the captives, chooses: refuse and die, yield, or run.
+# ---------------------------------------------------------------------
+kehillah_pogrom.0040 = {
+	type = character_event
+	title = kehillah_pogrom.0040.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { kehillah_mob_is_muslim_trigger = yes }
+				desc = kehillah_pogrom.0040.desc_islam
+			}
+			desc = kehillah_pogrom.0040.desc
+		}
+	}
+	theme = dread
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+	right_portrait = {
+		trigger = { exists = scope:kehillah_mob_leader }
+		character = scope:kehillah_mob_leader
+		animation = dismissal
+	}
+	trigger = {
+		is_alive = yes
+		exists = var:kehillah_pogrom_captor_ref
+	}
+	immediate = {
+		var:kehillah_pogrom_captor_ref = { save_scope_as = kehillah_mob_leader }
+	}
+
+	# Refuse.
+	option = {
+		name = kehillah_pogrom.0040.a
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_pogrom_martyr_greatness }
+		death = {
+			death_reason = death_murder
+			killer = scope:kehillah_mob_leader
+		}
+		ai_chance = { base = 50 }
+	}
+
+	# Yield: the water, or the words.
+	option = {
+		name = kehillah_pogrom.0040.b
+		kehillah_pogrom_leader_baptized_effect = yes
+		ai_chance = { base = 50 }
+	}
+
+	# Wait for the dark, and run: your prowess against his.
+	option = {
+		name = kehillah_pogrom.0040.c
+		trigger = {
+			scope:kehillah_mob_leader = { is_alive = yes }
+			OR = {
+				prowess >= 10
+				intrigue >= 12
+				has_trait = brave
+			}
+		}
+		duel = {
+			skill = prowess
+			target = scope:kehillah_mob_leader
+			40 = {
+				desc = kehillah_pogrom.0040.escaped
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+				}
+				min = 5
+				custom_tooltip = kehillah_pogrom.0040.escaped_tt
+			}
+			60 = {
+				desc = kehillah_pogrom.0040.caught
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+				}
+				min = 5
+				death = {
+					death_reason = death_murder
+					killer = scope:kehillah_mob_leader
+				}
+			}
+		}
+		ai_chance = { base = 0 }
+	}
+
+	after = {
+		hidden_effect = { remove_variable = kehillah_pogrom_captor_ref }
 	}
 }

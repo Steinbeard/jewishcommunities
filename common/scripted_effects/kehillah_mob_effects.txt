@@ -126,27 +126,54 @@ kehillah_mob_raise_effect = {
 						scope:kehillah_mob_war = { set_called_to = scope:kehillah_mob_ally }
 					}
 				}
-				spawn_army = {
-					name = kehillah_mob_army_name
-					levies = $SIZE$
-					men_at_arms = {
-						type = pikemen_militia
-						stacks = {
-							value = $SIZE$
-							divide = 400
-							round = yes
-							min = 1
+				if = {
+					limit = { faith.religion = religion:islam_religion }
+					spawn_army = {
+						name = kehillah_mob_army_name_islam
+						levies = $SIZE$
+						men_at_arms = {
+							type = pikemen_militia
+							stacks = {
+								value = $SIZE$
+								divide = 400
+								round = yes
+								min = 1
+							}
 						}
+						men_at_arms = {
+							type = torch_bearers
+							stacks = 2
+						}
+						location = scope:kehillah_mob_spawn
+						war = scope:kehillah_mob_war
+						war_keep_on_attacker_victory = yes
+						inheritable = no
+						uses_supply = yes
 					}
-					men_at_arms = {
-						type = torch_bearers
-						stacks = 2
+				}
+				else = {
+					spawn_army = {
+						name = kehillah_mob_army_name
+						levies = $SIZE$
+						men_at_arms = {
+							type = pikemen_militia
+							stacks = {
+								value = $SIZE$
+								divide = 400
+								round = yes
+								min = 1
+							}
+						}
+						men_at_arms = {
+							type = torch_bearers
+							stacks = 2
+						}
+						location = scope:kehillah_mob_spawn
+						war = scope:kehillah_mob_war
+						war_keep_on_attacker_victory = yes
+						inheritable = no
+						uses_supply = yes
 					}
-					location = scope:kehillah_mob_spawn
-					war = scope:kehillah_mob_war
-					war_keep_on_attacker_victory = yes
-					inheritable = no
-					uses_supply = yes
 				}
 				create_story = {
 					type = story_kehillah_mob
@@ -289,6 +316,14 @@ kehillah_mob_step_toward_effect = {
 # ---------------------------------------------------------------------
 kehillah_mob_tick_effect = {
 	save_scope_as = kehillah_mob_leader
+	# A host condemned by the Church is condemned at every town (V42).
+	if = {
+		limit = {
+			has_variable_list = kehillah_mob_condemned_by
+			var:kehillah_mob_target_title ?= { NOT = { has_variable = kehillah_mob_condemned } }
+		}
+		var:kehillah_mob_target_title = { set_variable = { name = kehillah_mob_condemned value = yes } }
+	}
 	# Beaten in the field (kehillah_mob_community_cb's on_defeat).
 	if = {
 		limit = { has_character_flag = kehillah_mob_defeated }
@@ -494,8 +529,10 @@ kehillah_pogrom_effect = {
 	save_scope_as = kehillah_pogrom_victim
 	primary_title = {
 		save_scope_as = kehillah_pogrom_title
+		save_scope_as = kehillah_children_title
 		set_variable = { name = kehillah_mob_struck value = yes }
 	}
+	domicile.domicile_location ?= { save_scope_as = kehillah_children_town }
 	save_scope_value_as = { name = kehillah_pogrom_severity value = kehillah_mob_severity_value }
 	set_variable = { name = kehillah_pogrom_severity value = scope:kehillah_pogrom_severity }
 	set_variable = { name = kehillah_pogrom_dead value = 0 }
@@ -520,7 +557,14 @@ kehillah_pogrom_effect = {
 			scope:kehillah_pogrom_title = {
 				add_to_variable_list = { name = kehillah_anusim target = prev }
 			}
-			move_to_pool_at = scope:kehillah_pogrom_victim.domicile.domicile_location
+			# V43 slice 4: a child is raised by the other faith.
+			if = {
+				limit = { is_adult = no }
+				kehillah_child_taken_effect = yes
+			}
+			else = {
+				move_to_pool_at = scope:kehillah_pogrom_victim.domicile.domicile_location
+			}
 		}
 	}
 
@@ -550,13 +594,29 @@ kehillah_pogrom_effect = {
 				modifier = { add = scope:kehillah_pogrom_victim.kehillah_pogrom_baptism_chance_value }
 				# Kiddush ha-Shem: the zealous choose death over the font, and
 				# half of the rest where the rite teaches it (V39 slice 3).
+				# Before a Muslim mob, half as many (V42): outward conversion to
+				# Islam was not held to demand death (Maimonides).
 				if = {
 					limit = {
 						OR = {
-							has_trait = zealous
+							AND = {
+								has_trait = zealous
+								scope:kehillah_pogrom_victim = { NOT = { kehillah_mob_is_muslim_trigger = yes } }
+							}
+							AND = {
+								has_trait = zealous
+								scope:kehillah_pogrom_victim = {
+									kehillah_mob_is_muslim_trigger = yes
+									kehillah_coin_flip_trigger = yes
+								}
+							}
 							AND = {
 								rite ?= { rite_has_parameter = kehillah_kiddush_hashem_rite }
 								scope:kehillah_pogrom_victim = { kehillah_coin_flip_trigger = yes }
+								OR = {
+									scope:kehillah_pogrom_victim = { NOT = { kehillah_mob_is_muslim_trigger = yes } }
+									scope:kehillah_pogrom_victim = { kehillah_coin_flip_trigger = yes }
+								}
 							}
 						}
 					}
@@ -581,7 +641,14 @@ kehillah_pogrom_effect = {
 					scope:kehillah_pogrom_title = {
 						add_to_variable_list = { name = kehillah_anusim target = prev }
 					}
-					move_to_pool_at = scope:kehillah_pogrom_victim.domicile.domicile_location
+					# V43 slice 4: a child is raised by the other faith.
+			if = {
+				limit = { is_adult = no }
+				kehillah_child_taken_effect = yes
+			}
+			else = {
+				move_to_pool_at = scope:kehillah_pogrom_victim.domicile.domicile_location
+			}
 				}
 			}
 			100 = {
@@ -1027,6 +1094,117 @@ kehillah_mob_clear_title_effect = {
 		limit = { has_variable = kehillah_mob_armed_failed }
 		remove_variable = kehillah_mob_armed_failed
 	}
+	if = {
+		limit = { has_variable = kehillah_mob_men_by }
+		remove_variable = kehillah_mob_men_by
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_refuge_refused_by }
+		remove_variable = kehillah_mob_refuge_refused_by
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_men_refused_by }
+		remove_variable = kehillah_mob_men_refused_by
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_condemn_refused_by }
+		remove_variable = kehillah_mob_condemn_refused_by
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_bribe_refused }
+		remove_variable = kehillah_mob_bribe_refused
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_defence_failed }
+		remove_variable = kehillah_mob_defence_failed
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_thinned }
+		remove_variable = kehillah_mob_thinned
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_messenger }
+		remove_variable = kehillah_mob_messenger
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_messenger_to }
+		remove_variable = kehillah_mob_messenger_to
+	}
+	if = {
+		limit = { has_variable = kehillah_mob_letter_to }
+		remove_variable = kehillah_mob_letter_to
+	}
+	# V42: the leader's copies, for the text.
+	holder ?= {
+		if = {
+			limit = { has_variable = kehillah_mob_away }
+			remove_variable = kehillah_mob_away
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_offer }
+			remove_variable = kehillah_mob_offer
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_answer }
+			remove_variable = kehillah_mob_answer
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_msg_answer }
+			remove_variable = kehillah_mob_msg_answer
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_patron_ref }
+			remove_variable = kehillah_mob_patron_ref
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_patron_far }
+			remove_variable = kehillah_mob_patron_far
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_visit_asked_refuge }
+			remove_variable = kehillah_mob_visit_asked_refuge
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_visit_asked_men }
+			remove_variable = kehillah_mob_visit_asked_men
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_refuge_lord_ref }
+			remove_variable = kehillah_mob_refuge_lord_ref
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_men_ref }
+			remove_variable = kehillah_mob_men_ref
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_refuge_no_ref }
+			remove_variable = kehillah_mob_refuge_no_ref
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_men_no_ref }
+			remove_variable = kehillah_mob_men_no_ref
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_condemn_no_ref }
+			remove_variable = kehillah_mob_condemn_no_ref
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_messenger_ref }
+			remove_variable = kehillah_mob_messenger_ref
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_messenger_to_ref }
+			remove_variable = kehillah_mob_messenger_to_ref
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_harm_now }
+			remove_variable = kehillah_mob_harm_now
+		}
+		if = {
+			limit = { has_variable = kehillah_mob_letter_to_ref }
+			remove_variable = kehillah_mob_letter_to_ref
+		}
+	}
 	kehillah_pogrom_clear_scenes_effect = yes
 	clear_variable_list = kehillah_mob_asked_refuge
 	clear_variable_list = kehillah_mob_asked_men
@@ -1042,6 +1220,12 @@ kehillah_mob_clear_title_effect = {
 # Each condemnation thins the host by a quarter; the severity is cut once.
 kehillah_mob_condemned_effect = {
 	primary_title = { set_variable = { name = kehillah_mob_condemned value = yes } }
+	# The condemnation is of the preacher: it holds for every community
+	# his host threatens (kehillah_mob_tick_effect carries it on).
+	if = {
+		limit = { exists = scope:recipient }
+		scope:kehillah_mob_leader = { add_to_variable_list = { name = kehillah_mob_condemned_by target = scope:recipient } }
+	}
 	scope:kehillah_mob_leader = {
 		kehillah_mob_thin_host_effect = { FRACTION = 0.25 }
 		set_variable = { name = kehillah_mob_size value = kehillah_mob_total_men_value }
@@ -1138,17 +1322,26 @@ kehillah_mob_ai_answers_effect = {
 			}
 		}
 	}
-	# The Church, if it can pay.
+	# The Church, if it can pay, and if its head has not already decided
+	# about this preacher (V42).
 	if = {
 		limit = {
 			gold >= medium_gold_value
 			exists = scope:kehillah_mob_leader.faith.religious_head
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_leader.faith.religious_head LIST = kehillah_mob_condemned_by } }
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_leader.faith.religious_head LIST = kehillah_mob_condemn_refused_list } }
 		}
 		scope:kehillah_mob_leader.faith.religious_head = { save_scope_as = recipient }
 		remove_short_term_gold = medium_gold_value
-		random = {
-			chance = kehillah_mob_ask_condemn_chance_value
-			kehillah_mob_condemned_effect = yes
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_ask_condemn_chance_value }
+				kehillah_mob_condemned_effect = yes
+			}
+			0 = {
+				modifier = { add = kehillah_mob_ask_condemn_fail_value }
+				scope:kehillah_mob_leader = { add_to_variable_list = { name = kehillah_mob_condemn_refused_list target = scope:recipient } }
+			}
 		}
 	}
 	# The defence of the quarter.
@@ -1164,8 +1357,8 @@ kehillah_mob_ai_answers_effect = {
 		}
 	}
 	# Beg the lord to ride out, once there is a host to fight (soak
-	# 2026-10-14: 9 of 11 mobs won; the AI never asked for men). The player's
-	# odds (kehillah_mob.0110 option c): at most 30%.
+	# 2026-10-14: 9 of 11 mobs won; the AI never asked for men), at the
+	# player's odds (V42 section 4).
 	if = {
 		limit = {
 			NOT = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_preaching } }
@@ -1174,13 +1367,24 @@ kehillah_mob_ai_answers_effect = {
 		primary_title = { set_variable = { name = kehillah_mob_ai_asked_men value = yes years = 1 } }
 		domicile.domicile_location.county.holder ?= {
 			if = {
-				limit = { NOT = { this = scope:actor } }
+				limit = {
+					NOT = { this = scope:actor }
+					NOT = { kehillah_mob_decided_trigger = { WHO = this LIST = kehillah_mob_men_refused_list } }
+				}
 				save_scope_as = recipient
 				debug_log = "kehillah_mob_ai_answers_effect: asks the lord to ride out"
-				random = {
-					chance = scope:actor.kehillah_mob_ask_men_chance_value
-					scope:actor = { kehillah_mob_lord_raises_men_effect = { DEFENDER = scope:recipient } }
-					debug_log = "kehillah_mob_ai_answers_effect: the lord rides out"
+				scope:actor = {
+					random_list = {
+						0 = {
+							modifier = { add = kehillah_mob_ask_men_chance_value }
+							kehillah_mob_lord_raises_men_effect = { DEFENDER = scope:recipient }
+							debug_log = "kehillah_mob_ai_answers_effect: the lord rides out"
+						}
+						0 = {
+							modifier = { add = kehillah_mob_ask_men_fail_value }
+							scope:kehillah_mob_leader = { add_to_variable_list = { name = kehillah_mob_men_refused_list target = scope:recipient } }
+						}
+					}
 				}
 			}
 		}
@@ -1299,6 +1503,11 @@ kehillah_pogrom_take_tenet_effect = {
 		random_list = {
 			60 = {
 				modifier = { add = 20 has_trait = zealous }
+				# After a Muslim mob, martyrdom takes hold less (V42).
+				modifier = {
+					add = -40
+					scope:kehillah_aftermath_victim ?= { kehillah_mob_is_muslim_trigger = yes }
+				}
 				force_set_personal_tenet = tenet_kehillah_kiddush_hashem
 			}
 			40 = {
