@@ -531,6 +531,17 @@ the type chain and couldn't be resolved from files. Left as is.
 
 ## 10. Your own community on the HUD (user request, 2026-09-15)
 
+**2026-10-14 Domain revision:** Daniel chose a My Realm > Domain inset to reduce
+always-visible UI clutter. The separate branch now copies CK3 1.20.1's
+`window_my_realm.gui` and adds a Kehillah-only overview below the existing
+Jewish Quarter card. It shows Standing, the three pillar bands and trends,
+the host ruler, and cached charter terms. The top-left scripted HUD strip
+described below was retired; the Faith-family map button still opens the
+community roster. This paragraph supersedes the HUD-strip entry-point and
+placement decisions below, which remain as the record of the earlier build.
+See [the implementation note](../implementation/kehillah-domain-overview.md)
+for the override's maintenance cost and live-test status.
+
 **2026-10-12 second display revision (verified live after layout fix):**
 Daniel's screenshot review found that the gray strip ended before the last
 pillar and that plain tier names did not show the level clearly enough. This

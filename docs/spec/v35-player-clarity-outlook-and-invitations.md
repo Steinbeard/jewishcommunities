@@ -5,6 +5,8 @@ exiles) and [v30](v30-community-news.md) (Community News).
 
 # V35: Making outlook and invitations visible
 
+**2026-10-14 Domain placement revision:** The separate Codex branch's My Realm > Domain overview supersedes the HUD-strip placement described below. The host's name remains visible in Domain at a fresh paused start; after `kehillah_host_ref` is mirrored, a second line shows outlook and the invitation mark, with V35's host breakdown on hover. The character-window marker, opinion mechanics, and notifications below are unchanged. See [the Domain implementation note](../implementation/kehillah-domain-overview.md).
+
 ## The audit
 
 V34's systems already reach the player in these ways:
