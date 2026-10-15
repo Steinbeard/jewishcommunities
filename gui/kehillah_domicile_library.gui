@@ -91,6 +91,10 @@
 # and tooltip on the row is then Localize( Concatenate( 'prefix_',
 # Scope.GetFlagName ) ) (vanilla: Localize( Concatenate(
 # 'COA_DESIGNER_CATEGORY_', CString.GetString ) )). So ADDING A BOOK IS
+# (2026-10-15) Genre, rank, year and corpus are no longer per-work GUI or
+# prose: each work is a row in scripts/kehillah_library_catalog.json, which
+# scripts/kehillah_library_catalog.py turns into script values read here by
+# flag (kehillah_lib_genre_<flag> etc.). The shelf is collapsible genre boxes.
 # ZERO GUI WORK: one flag in script plus its name, subject, hover, and
 # long-detail localization --
 #   kehillah_lib_name_<flag>, kehillah_lib_subject_<flag>,
@@ -121,6 +125,118 @@
 
 types KehillahLibrary
 {
+	# One collapsible genre box on the Books page (2026-10-15). Open by default
+	# (vanilla's foldout idiom, window_domicile.gui overview groups). The shelf
+	# rows are driven by the catalog script values in common/script_values/
+	# kehillah_library_catalog_values.txt: each work's genre, rank frame and
+	# corpus are looked up by its flag, so no per-work GUI exists.
+	# Instances override "group_visible", "group_title", "group_extra" (cards
+	# shown above the rows) and "item_visible" (which works belong here).
+	type kehillah_library_genre_group = vbox {
+		layoutpolicy_horizontal = expanding
+		spacing = 2
+		ignoreinvisible = yes
+
+		oncreate = "[BindFoldOutContext]"
+		oncreate = "[PdxGuiFoldOut.Unfold]"
+
+		block "group_visible" {}
+
+		button_tertiary = {
+			layoutpolicy_horizontal = expanding
+			min_height = 34
+			onclick = "[PdxGuiFoldOut.Toggle]"
+			button_expand_fold_out = {
+				widgetanchor = left|vcenter
+				parentanchor = left|vcenter
+				position = { 8 0 }
+			}
+			text_single = {
+				parentanchor = left|vcenter
+				position = { 40 0 }
+				alwaystransparent = yes
+				default_format = "#high"
+				block "group_title" {}
+			}
+		}
+
+		vbox = {
+			visible = "[PdxGuiFoldOut.IsUnfolded]"
+			layoutpolicy_horizontal = expanding
+			spacing = 2
+			ignoreinvisible = yes
+
+			block "group_extra" {}
+
+			### A compact, reflowing inventory list. A fixed grid leaves
+			### holes when its model items hide.
+			vbox = {
+				layoutpolicy_horizontal = expanding
+				ignoreinvisible = yes
+				spacing = 2
+				datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
+				item = {
+					button_standard_list = {
+						block "item_visible" {}
+						size = { 482 70 }
+						onclick = "[GetVariableSystem.Clear( 'kehillah_lib_parent_corpus' )]"
+						onclick = "[GetScriptedGui( 'kehillah_lib_cache_saadia_author' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+						onclick = "[GetVariableSystem.Set( 'kehillah_lib_selected_work', Scope.GetFlagName )]"
+						tooltip = "[Localize( Concatenate( 'kehillah_lib_hover_', Scope.GetFlagName ) )]"
+						using = tooltip_se
+						icon = {
+							parentanchor = left|vcenter
+							position = { 2 0 }
+							size = { 54 54 }
+							texture = "gfx/interface/icons/kehillah_library/kehillah_sefer_rank_frames.dds"
+							framesize = { 64 64 }
+							frame = "[FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_frame_', Scope.GetFlagName ) ) )]"
+							alwaystransparent = yes
+						}
+						icon = {
+							parentanchor = left|vcenter
+							position = { 10 0 }
+							size = { 38 38 }
+							texture = "gfx/interface/icons/artifact/artifact_chronicle.dds"
+							alwaystransparent = yes
+						}
+						### Rank on top, mastery below -- the same order as the
+						### corpus cards.
+						text_single = {
+							parentanchor = top|left
+							position = { 57 10 }
+							text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
+							default_format = "#high"
+							max_width = 340
+						}
+						text_single = {
+							parentanchor = bottom|left
+							position = { 57 -10 }
+							text = "[Localize( Concatenate( 'kehillah_lib_subject_', Scope.GetFlagName ) )]"
+							default_format = "#weak"
+							max_width = 385
+						}
+						text_single = {
+							parentanchor = top|right
+							position = { -8 10 }
+							text = "[Localize( Concatenate( 'kehillah_lib_tier_short_', Scope.GetFlagName ) )]"
+							default_format = "#E"
+						}
+						icon = {
+							parentanchor = bottom|right
+							position = { -8 -7 }
+							size = { 25 25 }
+							texture = "gfx/interface/icons/kehillah_library/kehillah_mastery_ring_1.dds"
+							framesize = { 32 32 }
+							frame = "[Select_int32( GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), '(int32)2', '(int32)1' )]"
+							alwaystransparent = yes
+						}
+					}
+				}
+			}
+		}
+	}
+
 	# One community's library. Datacontexts are set by the instance:
 	# Character = the community's leader, Title = their primary title.
 	type kehillah_library_body = vbox {
@@ -312,36 +428,6 @@ types KehillahLibrary
 				onclick = "[GetVariableSystem.Clear( 'kehillah_lib_show_studied' )]"
 			}
 
-			hbox = {
-				visible = "[Not( GetVariableSystem.Exists( 'kehillah_lib_selected_work' ) )]"
-				layoutpolicy_horizontal = expanding
-				spacing = 2
-				button_standard_list = {
-					size = { 122 27 }
-					text = "KEHILLAH_LIB_FILTER_ALL"
-					down = "[Or( Not( GetVariableSystem.Exists( 'kehillah_lib_genre' ) ), EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_genre' ), 'all' ) )]"
-					onclick = "[GetVariableSystem.Set( 'kehillah_lib_genre', 'all' )]"
-				}
-				button_standard_list = {
-					size = { 122 27 }
-					text = "KEHILLAH_LIB_FILTER_PARSHANUT"
-					down = "[EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_genre' ), 'parshanut' )]"
-					onclick = "[GetVariableSystem.Set( 'kehillah_lib_genre', 'parshanut' )]"
-				}
-				button_standard_list = {
-					size = { 122 27 }
-					text = "KEHILLAH_LIB_FILTER_TALMUDICS"
-					down = "[EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_genre' ), 'talmudics' )]"
-					onclick = "[GetVariableSystem.Set( 'kehillah_lib_genre', 'talmudics' )]"
-				}
-				button_standard_list = {
-					size = { 122 27 }
-					text = "KEHILLAH_LIB_FILTER_HASHKAFA"
-					down = "[EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_genre' ), 'hashkafa' )]"
-					onclick = "[GetVariableSystem.Set( 'kehillah_lib_genre', 'hashkafa' )]"
-				}
-			}
-
 			scrollbox = {
 				visible = "[Not( GetVariableSystem.Exists( 'kehillah_lib_selected_work' ) )]"
 				layoutpolicy_horizontal = expanding
@@ -360,10 +446,22 @@ types KehillahLibrary
 						spacing = 2
 						ignoreinvisible = yes
 
+						### Genre boxes, open by default; the Talmud box also holds the two
+						### corpus cards (saved seder flags stay independent volumes).
+						kehillah_library_genre_group = {
+							blockoverride "group_visible" { visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_genre_1_held_count_value' ), '(CFixedPoint)0' )]" }
+							blockoverride "group_title" { text = "KEHILLAH_LIB_GROUP_PARSHANUT" }
+							blockoverride "item_visible" { visible = "[And( EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_genre_', Scope.GetFlagName ) ), '(CFixedPoint)1' ), EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_corpus_', Scope.GetFlagName ) ), '(CFixedPoint)0' ) )]" }
+						}
+
+						kehillah_library_genre_group = {
+							blockoverride "group_visible" { visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_genre_2_held_count_value' ), '(CFixedPoint)0' )]" }
+							blockoverride "group_title" { text = "KEHILLAH_LIB_GROUP_TALMUDICS" }
+							blockoverride "group_extra" {
 						### Corpora are one shelf entry; saved seder flags remain
 						### independent volumes for ownership, study and mastery.
 						button_standard_list = {
-							visible = "[And( GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_bavli_held_count_value' ), '(CFixedPoint)0' ), Or( Not( GetVariableSystem.Exists( 'kehillah_lib_genre' ) ), Or( EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_genre' ), 'all' ), EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_genre' ), 'talmudics' ) ) ) )]"
+							visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_bavli_held_count_value' ), '(CFixedPoint)0' )]"
 							size = { 482 76 }
 							onclick = "[GetVariableSystem.Clear( 'kehillah_lib_parent_corpus' )]"
 							onclick = "[GetVariableSystem.Set( 'kehillah_lib_selected_work', 'corpus_bavli' )]"
@@ -415,7 +513,7 @@ types KehillahLibrary
 						}
 
 						button_standard_list = {
-							visible = "[And( GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_yerushalmi_held_count_value' ), '(CFixedPoint)0' ), Or( Not( GetVariableSystem.Exists( 'kehillah_lib_genre' ) ), Or( EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_genre' ), 'all' ), EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_genre' ), 'talmudics' ) ) ) )]"
+							visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_yerushalmi_held_count_value' ), '(CFixedPoint)0' )]"
 							size = { 482 76 }
 							onclick = "[GetVariableSystem.Clear( 'kehillah_lib_parent_corpus' )]"
 							onclick = "[GetVariableSystem.Set( 'kehillah_lib_selected_work', 'corpus_yerushalmi' )]"
@@ -466,111 +564,14 @@ types KehillahLibrary
 							}
 						}
 
-						### A compact, reflowing inventory list for a selected genre.
-						### A fixed grid leaves holes when its model items hide.
-						vbox = {
-							visible = yes
-							layoutpolicy_horizontal = expanding
-							ignoreinvisible = yes
-							spacing = 2
-							datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
-							item = {
-								button_standard_list = {
-									visible = "[And( Not( GetScriptedGui( Concatenate( 'kehillah_lib_corpus_unit_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) ), Or( Or( Not( GetVariableSystem.Exists( 'kehillah_lib_genre' ) ), EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_genre' ), 'all' ) ), Or( And( EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_genre' ), 'parshanut' ), GetScriptedGui( Concatenate( 'kehillah_lib_is_parshanut_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) ), Or( And( EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_genre' ), 'talmudics' ), GetScriptedGui( Concatenate( 'kehillah_lib_is_talmudics_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) ), And( EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_genre' ), 'hashkafa' ), GetScriptedGui( Concatenate( 'kehillah_lib_is_hashkafa_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) ) ) ) ) )]"
-									size = { 482 70 }
-									onclick = "[GetVariableSystem.Clear( 'kehillah_lib_parent_corpus' )]"
-									onclick = "[GetScriptedGui( 'kehillah_lib_cache_saadia_author' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-									onclick = "[GetVariableSystem.Set( 'kehillah_lib_selected_work', Scope.GetFlagName )]"
-									tooltip = "[Localize( Concatenate( 'kehillah_lib_hover_', Scope.GetFlagName ) )]"
-									using = tooltip_se
-									icon = {
-										visible = "[GetScriptedGui( Concatenate( 'kehillah_lib_rank_foundational_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-										parentanchor = left|vcenter
-										position = { 2 0 }
-										size = { 54 54 }
-										texture = "gfx/interface/icons/kehillah_library/kehillah_sefer_rank_frames.dds"
-										framesize = { 64 64 }
-										frame = 1
-										alwaystransparent = yes
-									}
-									icon = {
-										visible = "[GetScriptedGui( Concatenate( 'kehillah_lib_rank_essential_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-										parentanchor = left|vcenter
-										position = { 2 0 }
-										size = { 54 54 }
-										texture = "gfx/interface/icons/kehillah_library/kehillah_sefer_rank_frames.dds"
-										framesize = { 64 64 }
-										frame = 1
-										alwaystransparent = yes
-									}
-									icon = {
-										visible = "[GetScriptedGui( Concatenate( 'kehillah_lib_rank_celebrated_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-										parentanchor = left|vcenter
-										position = { 2 0 }
-										size = { 54 54 }
-										texture = "gfx/interface/icons/kehillah_library/kehillah_sefer_rank_frames.dds"
-										framesize = { 64 64 }
-										frame = 2
-										alwaystransparent = yes
-									}
-									icon = {
-										visible = "[GetScriptedGui( Concatenate( 'kehillah_lib_rank_popular_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-										parentanchor = left|vcenter
-										position = { 2 0 }
-										size = { 54 54 }
-										texture = "gfx/interface/icons/kehillah_library/kehillah_sefer_rank_frames.dds"
-										framesize = { 64 64 }
-										frame = 3
-										alwaystransparent = yes
-									}
-									icon = {
-										visible = "[GetScriptedGui( Concatenate( 'kehillah_lib_rank_obscure_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-										parentanchor = left|vcenter
-										position = { 2 0 }
-										size = { 54 54 }
-										texture = "gfx/interface/icons/kehillah_library/kehillah_sefer_rank_frames.dds"
-										framesize = { 64 64 }
-										frame = 4
-										alwaystransparent = yes
-									}
-									icon = {
-										parentanchor = left|vcenter
-									position = { 10 0 }
-									size = { 38 38 }
-										texture = "gfx/interface/icons/artifact/artifact_chronicle.dds"
-										alwaystransparent = yes
-									}
-									text_single = {
-										parentanchor = top|left
-										position = { 57 10 }
-										text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
-										default_format = "#high"
-										max_width = 405
-									}
-									text_single = {
-										parentanchor = bottom|left
-										position = { 57 -10 }
-										text = "[Localize( Concatenate( 'kehillah_lib_subject_', Scope.GetFlagName ) )]"
-										default_format = "#weak"
-										max_width = 385
-									}
-									text_single = {
-										parentanchor = top|right
-										position = { -8 10 }
-										text = "[Localize( Concatenate( 'kehillah_lib_tier_short_', Scope.GetFlagName ) )]"
-										default_format = "#E"
-									}
-								icon = {
-										parentanchor = bottom|right
-									position = { -8 -7 }
-									size = { 25 25 }
-									texture = "gfx/interface/icons/kehillah_library/kehillah_mastery_ring_1.dds"
-									framesize = { 32 32 }
-									frame = "[Select_int32( GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), '(int32)2', '(int32)1' )]"
-										alwaystransparent = yes
-									}
-								}
 							}
+							blockoverride "item_visible" { visible = "[And( EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_genre_', Scope.GetFlagName ) ), '(CFixedPoint)2' ), EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_corpus_', Scope.GetFlagName ) ), '(CFixedPoint)0' ) )]" }
+						}
+
+						kehillah_library_genre_group = {
+							blockoverride "group_visible" { visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_genre_3_held_count_value' ), '(CFixedPoint)0' )]" }
+							blockoverride "group_title" { text = "KEHILLAH_LIB_GROUP_HASHKAFA" }
+							blockoverride "item_visible" { visible = "[And( EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_genre_', Scope.GetFlagName ) ), '(CFixedPoint)3' ), EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_corpus_', Scope.GetFlagName ) ), '(CFixedPoint)0' ) )]" }
 						}
 
 						### What YOU have mastered, wherever you studied it.
@@ -672,7 +673,7 @@ types KehillahLibrary
 							datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
 							item = {
 								button_standard_list = {
-									visible = "[Or( And( EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_selected_work' ), 'corpus_bavli' ), GetScriptedGui( Concatenate( 'kehillah_lib_bavli_unit_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) ), And( EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_selected_work' ), 'corpus_yerushalmi' ), GetScriptedGui( Concatenate( 'kehillah_lib_yerushalmi_unit_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) ) )]"
+									visible = "[Or( And( EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_selected_work' ), 'corpus_bavli' ), EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_corpus_', Scope.GetFlagName ) ), '(CFixedPoint)1' ) ), And( EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_selected_work' ), 'corpus_yerushalmi' ), EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_corpus_', Scope.GetFlagName ) ), '(CFixedPoint)2' ) ) )]"
 									size = { 482 55 }
 									onclick = "[GetVariableSystem.Set( 'kehillah_lib_parent_corpus', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) )]"
 									onclick = "[GetVariableSystem.Set( 'kehillah_lib_selected_work', Scope.GetFlagName )]"
@@ -737,20 +738,65 @@ types KehillahLibrary
 						vbox = {
 							layoutpolicy_horizontal = expanding
 							ignoreinvisible = yes
-							text_multi = {
-								visible = "[Not( EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_selected_work' ), 'work_emunot_vedeot' ) )]"
+							hbox = {
 								layoutpolicy_horizontal = expanding
-								autoresize = yes
-								max_width = 475
-								text = "[Localize( Concatenate( 'kehillah_lib_meta_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) )]"
+								spacing = 6
+								text_single = {
+									minimumsize = { 110 0 }
+									text = "KEHILLAH_LIB_ROW_GENRE"
+									default_format = "#high"
+								}
+								text_multi = {
+									autoresize = yes
+									max_width = 360
+									text = "[Localize( Concatenate( 'kehillah_lib_subject_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) )]"
+								}
 							}
-							text_multi = {
-								visible = "[EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_selected_work' ), 'work_emunot_vedeot' )]"
+							hbox = {
 								layoutpolicy_horizontal = expanding
-								autoresize = yes
-								max_width = 475
-								text = "kehillah_lib_meta_linked_work_emunot_vedeot"
+								spacing = 6
+								text_single = {
+									minimumsize = { 110 0 }
+									text = "KEHILLAH_LIB_ROW_RANK"
+									default_format = "#high"
+								}
+								text_multi = {
+									autoresize = yes
+									max_width = 360
+									text = "[Localize( Concatenate( 'kehillah_lib_rankdesc_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) )]"
+								}
 							}
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								spacing = 6
+								text_single = {
+									minimumsize = { 110 0 }
+									text = "KEHILLAH_LIB_ROW_COMPOSER"
+									default_format = "#high"
+								}
+								text_multi = {
+									autoresize = yes
+									max_width = 360
+									text = "[Select_CString( EqualTo_string( GetVariableSystem.Get( 'kehillah_lib_selected_work' ), 'work_emunot_vedeot' ), Localize( 'kehillah_lib_composer_linked_work_emunot_vedeot' ), Localize( Concatenate( 'kehillah_lib_composer_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ) )]"
+								}
+							}
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								spacing = 6
+								text_single = {
+									minimumsize = { 110 0 }
+									text = "KEHILLAH_LIB_ROW_COMPOSED"
+									default_format = "#high"
+								}
+								text_multi = {
+									autoresize = yes
+									max_width = 360
+									text = "[Localize( Concatenate( 'kehillah_lib_year_text_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) )]"
+									tooltip = "KEHILLAH_LIB_ROW_COMPOSED_TT"
+									using = tooltip_se
+								}
+							}
+							widget = { size = { 4 6 } }
 							text_multi = {
 								layoutpolicy_horizontal = expanding
 								autoresize = yes
@@ -852,6 +898,10 @@ types KehillahLibrary
 				}
 			}
 		}
+
+		### Absorbs spare height so the tab row stays pinned under the header
+		### on both pages (the Yeshiva page had its own spacer; Books did not).
+		expand = {}
 	}
 }
 
