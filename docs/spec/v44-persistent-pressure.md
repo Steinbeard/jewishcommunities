@@ -1,4 +1,4 @@
-**Status:** built 2026-10-15 from Daniel's review of the [20-year soak](../testing/2026-10-15-20-year-soak-test.md); ck3-tiger clean; sections 1-3 partly verified live on 2026-10-15, while sections 4-6 and the AI Bet Din nudge await a live pass (see the soak report's addendum). It amends the Stability floor of [V33](v33-pressures.md), the incident director of [V41](v41-danger-incidents-and-the-pogrom-unfolding.md), the yeshiva news of V29 section 12, and the invitations of [V34](v34-outlook-teachings-and-founding.md) section 7. It also adds ways to convene the Bet Din ([V5](v5-bet-din-conference.md)) and a treasury nudge.
+**Status:** built 2026-10-15 from Daniel's review of the [20-year soak](../testing/2026-10-15-20-year-soak-test.md); ck3-tiger clean; sections 1-3 partly verified live on 2026-10-15, while sections 4-6 and AI Bet Din hosting await a live pass (see the soak report's addendum). It amends the Stability floor of [V33](v33-pressures.md), the incident director of [V41](v41-danger-incidents-and-the-pogrom-unfolding.md), the yeshiva news of V29 section 12, and the invitations of [V34](v34-outlook-teachings-and-founding.md) section 7. It also adds ways to convene the Bet Din ([V5](v5-bet-din-conference.md)) and a treasury nudge.
 
 # V44 Persistent pressure, quieter yeshiva news, period-correct incidents
 
@@ -79,7 +79,7 @@ The soak found no Bet Din conference in 20 years, by the player or any AI. A liv
 - **Player:**
   - a Community decision, **Convene the Bet Din** (`kehillah_convene_bet_din_decision`), opens the activity planner on the conference;
   - an important action, **Cases Await the Bet Din**, does the same and is shown while `kehillah_can_convene_bet_din_trigger` holds.
-- **AI:** once a year an eligible AI leader has `kehillah_bet_din_ai_convene_chance` (25%) to be asked to host now (`ai_attempt_to_host_activity`), so that each community sits about once in four years.
+- **AI (root cause found 2026-10-15):** the AI Watch window (console `aiwatch`, a character's AI Watch > Activities > Calculate) showed the Bet Din as a valid candidate at priority 100, with guests willing to come, but its only location at weight 0. The activity had no `ai_will_select_province`, which every vanilla activity defines, so the AI could never choose a venue and silently dropped the plan. It now has `value = 10`, as `camp_party` does. With the activity's own AI (`ai_will_do` 100, checked every 6 months, 2-year cooldown), an eligible community should sit about every two to two and a half years. A yearly `ai_attempt_to_host_activity` nudge, tried first, was removed as redundant.
 
 ## 6. The treasury
 

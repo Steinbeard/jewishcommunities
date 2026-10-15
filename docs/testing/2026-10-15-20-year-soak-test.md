@@ -211,13 +211,13 @@ Daniel reviewed this report the same day. The fixes and new mechanics are record
   - "One More Pass" has its title.
 - **Bet Din:**
   - The player hosted a full sitting from the Activities list (F9): three cases, rulings and "The Docket Is Closed". The soak agent had simply never found it there.
-  - **AI hosting is still unconfirmed.** The four AI-rooted Bet Din events by 1078 were all steps inside the player's own sitting (cases `.0042`/`.0062`/`.0082` and an invited judge's travel), interleaved with it in the log. No AI community hosted. Whether the invite-rule fix alone was enough is unknown. The yearly `ai_attempt_to_host_activity` nudge (V44 section 5) is the fix under test.
+  - **AI hosting is still unconfirmed.** The four AI-rooted Bet Din events by 1078 were all steps inside the player's own sitting (cases `.0042`/`.0062`/`.0082` and an invited judge's travel), interleaved with it in the log. No AI community hosted. Whether the invite-rule fix alone was enough is unknown. **Root cause, found the same afternoon with AI Watch:** the Bet Din was a valid AI candidate (priority 100, guests willing), but its location weight was 0, because the activity lacked `ai_will_select_province`. Forcing `ai_attempt_to_host_activity` on all eighteen AI leaders produced nothing for the same reason. Fixed with `ai_will_select_province = { value = 10 }` (V44 section 5).
 - **New bug found:** a ruling tooltip showed the raw key `kehillah_bet_din_dismissed_mysticism_opinion`. That modifier and four other opinion modifiers had no loc; all five now do.
 
 **Not yet verified live:**
 - the invitation redesign;
 - Convene the Bet Din and Cases Await the Bet Din;
-- AI Bet Din hosting with the yearly nudge;
+- AI Bet Din hosting with `ai_will_select_province`;
 - The Treasury Is Full;
 - the "Sitting of the Bet Din" rename;
 - the new pressure terms in an actual decline;
