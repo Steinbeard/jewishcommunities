@@ -1,4 +1,4 @@
-﻿**Status:** slices 0-4 built, 2026-10-14 (0-2 live-tested and fixed; 3-4 not yet live-tested); from Daniel's review of the V41/V42 chains. It extends
+﻿**Status:** slices 0-5 built, 2026-10-15 (0-2 live-tested and fixed; 3-5 not yet live-tested); from Daniel's review of the V41/V42 chains. It extends
 [V39](v39-pogroms-and-the-popular-crusade.md) (Granada, section 9; the forced converts, slice 3b),
 [V41](v41-danger-incidents-and-the-pogrom-unfolding.md) and [V42](v42-the-crisis-as-a-place.md).
 Writing follows [the writing guide](../implementation/kehillah-writing-style.md).
@@ -192,4 +192,26 @@ The values are in `kehillah_aftermath_values.txt`.
 - **`.0010` A Child Is Missing:** a rare incident from the director (weight 3, +4 at danger 60;
   Christian hosts; once in 20 years). A servant takes a child with living parents to the font, and
   the petition follows.
+
+**Slice 5, the Jewish pope (built 2026-10-15)** (`events/kehillah_jewish_pope_events.txt`,
+`kehillah_jewish_pope_effects.txt`, a yearly check on `yearly_global_pulse`):
+- **The trigger:** a Christian head of the faith carrying the flag `kehillah_stolen_child` (slice 4)
+  is heard of, once.
+- **If a player leads the community he was taken from** (`var:kehillah_taken_from`):
+  - **`.0001` A Pope from Our Town:** the old women's story, the birthmark. Go to Rome, or let it be.
+  - **`.0002` The Game of Chess,** 60 days later:
+    - play the opening the town's rabbis taught their sons: a learning duel against the pope, +30
+      if he is the leader's son or brother;
+    - or speak plainly: a long chance, by his opinion, and he may be angered.
+  - **`.0003` He Knows:**
+    - ask him to protect his people: a bull of protection, his outlook +30, the faith's ruling that a
+      forced baptism binds withdrawn, the faith's incidents -10;
+    - or ask him to come home: 20% that he says the Shema in secret (a crypto-Jewish secret), with
+      the protection either way.
+- **Otherwise,** half of such popes protect the Jews of their own accord.
+- **`.0010` The Pope Who Was a Jew:** the story reaches the other Jewish players.
+- **It is super rare by construction:** a stolen child must rise from a monastery to the papacy on his
+  own.
+- **Debug:** `kehillah_jewish_pope.0099` makes the Catholic head of the faith one of root's community's
+  stolen children and runs the check.
 
