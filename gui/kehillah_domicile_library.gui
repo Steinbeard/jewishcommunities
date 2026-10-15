@@ -111,7 +111,7 @@
 
 @lib_width = 272
 @lib_name_width = 132
-@lib_list_height = 150
+@lib_list_height = 230
 
 types KehillahLibrary
 {
@@ -295,81 +295,54 @@ types KehillahLibrary
 						spacing = 2
 						ignoreinvisible = yes
 
-						### The works held. One row per flag in the title's list.
-						vbox = {
-							layoutpolicy_horizontal = expanding
-							spacing = 2
+						### A two-column shelf of clickable book artifacts. The
+						### title list remains authoritative; these are GUI cards,
+						### not character-owned vanilla artifacts.
+						fixedgridbox = {
+							addcolumn = 128
+							addrow = 84
+							flipdirection = yes
+							datamodel_wrap = 2
 							datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
 
 							item = {
-								hbox = {
-									layoutpolicy_horizontal = expanding
-									spacing = 6
-									ignoreinvisible = yes
-									### The work's own line, then whether YOU have mastered
-									### it -- Select_CString picks the status line (vanilla:
-									### frontend_main.gui's Select_CString on IsTutorialEnabled).
+								button_standard_list = {
+									size = { 121 79 }
 									tooltip = "[Concatenate( Localize( Concatenate( 'kehillah_lib_tt_', Scope.GetFlagName ) ), Select_CString( GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_LIB_TT_STUDIED' ), Localize( 'KEHILLAH_LIB_TT_UNSTUDIED' ) ) )]"
 									using = tooltip_se
-
-									button_round = {
-										size = { 22 22 }
-										tooltip = "KEHILLAH_LIB_OPEN_TT"
-										onclick = "[GetVariableSystem.Set( 'kehillah_lib_selected_work', Scope.GetFlagName )]"
-										icon = {
-											parentanchor = center
-											size = { 18 18 }
-											texture = "gfx/interface/icons/domicile_building/domicile_building_library.dds"
-											alwaystransparent = yes
-										}
+									onclick = "[GetVariableSystem.Set( 'kehillah_lib_selected_work', Scope.GetFlagName )]"
+									icon = {
+										parentanchor = top|hcenter
+										position = { 0 4 }
+										size = { 46 46 }
+										texture = "gfx/interface/icons/artifact/artifact_chronicle.dds"
+										alwaystransparent = yes
 									}
-									### MASTERED BY YOU: green name and a check;
-									### otherwise the plain name. Always about the player,
-									### whichever community's library this is.
+									### Mastery follows the player, even in another
+									### community's collection.
 									text_single = {
 										visible = "[GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+										parentanchor = bottom|hcenter
+										position = { 0 -4 }
 										text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
 										default_format = "#P"
-										max_width = @lib_name_width
+										max_width = 115
 									}
 									icon = {
 										visible = "[GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-										size = { 16 16 }
+										parentanchor = top|right
+										position = { -5 5 }
+										size = { 18 18 }
 										texture = "gfx/interface/icons/symbols/icon_check.dds"
 										alwaystransparent = yes
 									}
 									text_single = {
 										visible = "[Not( GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) )]"
+										parentanchor = bottom|hcenter
+										position = { 0 -4 }
 										text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
 										default_format = "#high"
-										max_width = @lib_name_width
-									}
-									expand = {}
-									text_single = {
-										text = "[Localize( Concatenate( 'kehillah_lib_subject_', Scope.GetFlagName ) )]"
-										default_format = "#weak"
-									}
-
-									### INVENTORY ACTIONS -- your own library only. Donate
-									### (2026-09-18): picks the per-work scripted_gui by the
-									### row's flag name (a GetList item cannot be handed to
-									### script through AddScope -- see the scripted_guis
-									### file); the confirmation is event kehillah_library.
-									### 0001. More actions go here.
-									button_round = {
-										visible = "[Character.IsLocalPlayer]"
-										size = { 22 22 }
-										enabled = "[GetScriptedGui( Concatenate( 'kehillah_lib_donate_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-										onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_donate_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-										tooltip = "KEHILLAH_LIB_DONATE_TT"
-										using = tooltip_se
-
-										icon = {
-											parentanchor = center
-											size = { 16 16 }
-											texture = "gfx/interface/icons/flat_icons/piety.dds"
-											alwaystransparent = yes
-										}
+										max_width = 115
 									}
 								}
 							}
@@ -454,6 +427,15 @@ types KehillahLibrary
 					max_width = @lib_width
 					text = "[Select_CString( GetScriptedGui( Concatenate( 'kehillah_lib_studied_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_LIB_TT_STUDIED' ), Localize( 'KEHILLAH_LIB_TT_UNSTUDIED' ) )]"
 				}
+				button_standard_list = {
+					visible = "[Character.IsLocalPlayer]"
+					size = { 255 25 }
+					enabled = "[GetScriptedGui( Concatenate( 'kehillah_lib_donate_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+					onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_donate_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+					text = "KEHILLAH_LIB_DONATE_ACTION"
+					tooltip = "KEHILLAH_LIB_DONATE_TT"
+					using = tooltip_se
+				}
 			}
 		}
 	}
@@ -469,7 +451,7 @@ window = {
 	# 1390-wide vanilla domicile. Draw this draggable panel above it so
 	# its controls remain reachable. The taller body contains open detail.
 	position = { 6 -340 }
-	size = { 300 550 }
+	size = { 300 660 }
 
 	movable = yes
 	resizable = no
@@ -547,7 +529,7 @@ window = {
 	# Match the own-quarter panel: reachable above the wide vanilla
 	# domicile, with space for the selected work's detail.
 	position = { 6 -340 }
-	size = { 300 550 }
+	size = { 300 660 }
 
 	movable = yes
 	resizable = no
@@ -629,7 +611,7 @@ window = {
 	widgetanchor = bottom|right
 
 	position = { -702 -240 }
-	size = { 300 550 }
+	size = { 300 660 }
 
 	movable = yes
 	resizable = no
