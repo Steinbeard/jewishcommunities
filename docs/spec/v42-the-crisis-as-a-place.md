@@ -1,0 +1,128 @@
+﻿**Status:** slice 1 built (not yet live-tested), 2026-10-14, from Daniel's review of the V41 mob preparation.
+It supersedes the hub layout of [V39 slice 1c](v39-pogroms-and-the-popular-crusade.md) (`kehillah_mob.0100`
+and its visits) and the "factors in the tooltip" pilot of
+[V41](v41-danger-incidents-and-the-pogrom-unfolding.md) ("Tooltips by vanilla systems"). The mob's
+mechanics (the march, the siege, the pogrom) are unchanged except for the timing in section 5.
+
+# V42 The crisis as a place: navigating the mob's approach
+
+## 1. What Daniel asked for
+
+- **Vanilla only.** Odds show as vanilla shows them: each outcome's percentage, and a skill-challenge
+  header (`duel`) where one person's skill meets another's. No text lists factors or numbers.
+- **The player can see their standing.** While preparing, the player sees:
+  - what protection they have secured;
+  - what failed;
+  - what is still pending;
+  - what each has done;
+  - the overall outlook.
+- **Three or four choices per event,** with "something else..." as the last when there are more, as
+  in vanilla's adventurer settlement visit (`ep3_laamp_decision_event.1000`, ".h: I was thinking of
+  something else...").
+- **A core navigation event** for the crisis, branching to pages and scenes.
+- **The one asked answers in a scene of their own,** to the leader or the messenger, explaining the
+  decision.
+- **Protective lords and overlords generally try to help.** It may not be enough.
+- **More time** between the warning and the host's arrival, if that helps.
+
+## 2. The navigation
+
+**`.0100` The Elders Gather (the hub).** The text is the state of things (section 3). Choices:
+1. **Seek protection** goes to `.0101`.
+2. **See to our own defence** goes to `.0103`: the Rosh ha-Shmirah, arms, the villages.
+3. **Go out to the preacher** goes to `.0140`.
+4. **Enough for now.** The hub reopens when news comes, as now.
+
+**`.0101` Protection.** The lord, the overlord, the Church (`.0102`: the lord's chaplain, the head of
+the faith), and "Back". A person already asked is not offered again.
+
+**Each person:** "Go yourself" or "Send [the Shtadlan]".
+- **Going yourself** takes the leader there; you cannot do anything else meanwhile.
+- **Sending a messenger** runs in parallel; the answer comes back later.
+- **Only one messenger can be on the road at a time.** The Shtadlan if there is one; otherwise a
+  trusted courtier.
+
+**Before the person** (`.0110` lord or overlord, `.0130` churchman, `.0140` the preacher): at most
+three requests and "Take your leave". For the lord, these are:
+- refuge in the castle;
+- his men;
+- what you can offer, which goes to `.0112`, listing the leader's own levers: silver, a debt, a
+  hook, friendship, a physician's service.
+
+  When there are more than three levers, the third choice is "something else...", which rotates in
+  the rest.
+
+**The answer is a scene,** `.0111` / `.0131` / `.0141`. The one asked gives a decision, with their
+portrait and the leader's or the messenger's. The text varies by outcome and by who they are:
+- the protective lord's open gate;
+- the greedy lord's price;
+- the zealous lord's refusal;
+- the cautious lord's half-measure.
+
+The roll happens in the request, which shows its percentage. The scene shows its result.
+
+## 3. The state of things (the hub's text, a status display)
+
+The hub text lists:
+- **The host:** its size, how far, and how many days until it reaches the town at its pace.
+- **Secured,** each with what it does:
+  - refuge in the castle (the host must take the castle);
+  - the Church's condemnation (the host thinned);
+  - the lord's men (how many);
+  - the watch;
+  - arms;
+  - the scattering.
+- **Refused,** by whom.
+- **On the road:** who was sent where, and when they are expected back.
+- **The outlook:** the harm if the host strikes now, from `kehillah_mob_severity_value` as a band
+  (light / grave / devastating). Whether the lord's men stand between the host and the town.
+
+This is the status-display exception in the "no effects or odds in localization" rule.
+
+## 4. Lords who help
+
+The answer to "refuge" and "his men" follows the lord's outlook band first:
+
+| Outlook | Refuge | His men |
+|---|---|---|
+| Protective | almost always | usually |
+| Well-disposed | usually | sometimes |
+| Indifferent | sometimes | seldom |
+| Cold | seldom | rarely |
+| Hostile | rarely | never |
+
+Opinion, traits (just, compassionate, greedy, zealous, craven) and the lever offered move these.
+Help is not certain to be enough:
+- the lord's men are fewer than the host and may desert;
+- refuge makes the host take the castle, which it may.
+
+AI communities ask through the same values (`kehillah_mob_ai_answers_effect`).
+
+## 5. Time
+
+- **The host forms farther away:** 150-300 map pixels (was 100-200), about half as much time again.
+- **Its pace stays at one county every 4 days.** The march tick also counts siege days in four-day
+  steps (`kehillah_mob_tick_effect`), so slowing it would have lengthened the sieges too.
+- **Effect:** a lord's visit (2-4 days each way), the overlord (6-12) and the head of the faith
+  (10-20) fit better, more so with a messenger running in parallel.
+- **Unchanged:** a mob that rises in the town itself (an accusation or a riot) still gives no
+  warning.
+
+## 6. Slices
+
+1. **The navigation:**
+   - the hub and its pages;
+   - the state of things;
+   - the messenger;
+   - the timing.
+2. **The answers as scenes:** the lord, the overlord, the churchman and the preacher, with the outlook
+   table of section 4.
+3. **Vanilla-only odds in all V41 events:**
+   - duels where one person's skill meets another's;
+   - percentages elsewhere;
+   - `kehillah_change_pillar_effect` for pillar changes;
+   - no numbers or odds in the text.
+4. **Cleanup** of numbers in older text: the Bet Din expansion, missions, Bet Din sources, host
+   crisis, Anusim, the mob warning.
+
+Each slice: ck3-tiger, a live test, a commit.

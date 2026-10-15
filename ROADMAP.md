@@ -17,6 +17,25 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### V42 The crisis as a place — 2026-10-14, Daniel's review of the mob preparation
+
+Spec: [v42](docs/spec/v42-the-crisis-as-a-place.md).
+- **The elders' hub** shows where things stand: secured, refused, on the road, and the harm if the
+  host struck today.
+- **At most four choices** an event, with "something else..." for more.
+- **The leader goes, or sends a messenger** (in parallel).
+- **Each person asked answers in a scene.**
+- **Protective lords generally help.**
+- **More warning time.**
+- **Odds are shown the vanilla way:** percentages and skill-challenge duels, with no factor or
+  number text.
+
+**Status:** slice 1 (the navigation, the answers, the odds table) built, not yet live-tested.
+**Next:**
+1. its live test;
+2. slice 3, vanilla-only odds across the V41 events;
+3. slice 4, cleanup of numbers in older text.
+
 ### V41 The danger of violence, the incidents, the pogrom unfolding — 2026-10-14, Daniel's request
 
 Spec: [v41](docs/spec/v41-danger-incidents-and-the-pogrom-unfolding.md).
