@@ -17,6 +17,25 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### V42 Sefer collection and scholarship — 2026-10-14, Daniel's request
+
+The first Books/Yeshiva panel split, clickable work descriptions, true mastery
+checklist, and tier-aware starting-library seed are scripted in the Codex
+worktree. **Fresh-boot seed verification passed** for Worms (tier 3, six
+distinct works) and Mainz (tier 1, three distinct works); **UI verification is
+pending** because isolated-display mouse targeting could not open the library.
+The larger artifact inventory,
+named acquisition, scholar demand, exceptional authorship, rewards, and canon
+mechanics are staged in [V42](docs/spec/v42-sefarim-and-the-library.md).
+Daniel's follow-up on composition dates, corpus/tractate grouping, and evolving
+work standing is recorded in V42's dated addendum. Existing 933/1080/1140
+acquisition gates are a partial chronology; the first full catalog metadata
+pass and save-safe tractate migration remain future work.
+This user-directed slice was taken ahead of V41's soak and eastern-host tasks;
+those remain open in their current order. The next V42 gate is the focused UI
+check, including the book detail and mastery state, before widening the catalog
+or replacing title flags. See the [seed live check](docs/testing/2026-10-14-sefer-seed-live-check.md).
+
 ### V41 The danger of violence, the incidents, the pogrom unfolding — 2026-10-14, Daniel's request
 
 Spec: [v41](docs/spec/v41-danger-incidents-and-the-pogrom-unfolding.md).
