@@ -1,4 +1,4 @@
-﻿**Status:** slices 0-5 built, 2026-10-15 (0-2 live-tested and fixed; 3-5 not yet live-tested); from Daniel's review of the V41/V42 chains. It extends
+﻿**Status:** slices 0-5 built and live-tested, 2026-10-15; from Daniel's review of the V41/V42 chains. It extends
 [V39](v39-pogroms-and-the-popular-crusade.md) (Granada, section 9; the forced converts, slice 3b),
 [V41](v41-danger-incidents-and-the-pogrom-unfolding.md) and [V42](v42-the-crisis-as-a-place.md).
 Writing follows [the writing guide](../implementation/kehillah-writing-style.md).
@@ -214,4 +214,24 @@ The values are in `kehillah_aftermath_values.txt`.
   own.
 - **Debug:** `kehillah_jewish_pope.0099` makes the Catholic head of the faith one of root's community's
   stolen children and runs the check.
+
+**Slices 3-5 live test (457ef1d): passed, with fixes.**
+- **The relays work.** Playing Cordoba, "A Letter from Granada" came on 5 October. The Burial came 7
+  days after the report, and the Year's Mind exactly a year after it.
+- **The children:**
+  - The theft fired "A Child Is Missing", then "The Children" 3 days later: 24% to ask for them. A
+    success brought the child home, Jewish again.
+  - **Fixed:** bishops in 1.20 have `ecclesiastical_government`, not `theocracy_government`, so the
+    monastery never matched (nor V38's preaching vassal). Both are now accepted.
+- **The head of the faith:** with the faith's counter at 2, a return brought the Pope's protest
+  (20 days) and his ruling (60 days).
+  - **Fixed:** the counter was read without a guard while the tooltip was built (about 4,000 log
+    errors on hovering the petition).
+- **The Jewish pope:** "A Pope from Our Town", then "The Game of Chess" (a 65% learning challenge),
+  then "He Knows". The protection withdrew the faith's ruling.
+  - **Fixed:** the story is now told to a community once (`kehillah_jp_story_heard`). The tester saw
+    it repeat, possibly from the test's own re-fires.
+- **Fixed:** `min` in two modifier-less outcomes (load errors).
+- **Not seen:** a child converted in the pogrom itself (the two converts were adults); "The Pope Who
+  Was a Jew" (no other players).
 
