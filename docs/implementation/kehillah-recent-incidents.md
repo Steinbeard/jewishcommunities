@@ -1,5 +1,7 @@
 **Status:** V40 slice 1 built and source-checked, 2026-10-14. Live verification pending.
 
+**2026-10-14 UI placement revision:** After merging the separate Codex branch, the existing Your Host hover is reached from My Realm > Domain's host outlook line. The incidents, goodwill, and teaching logic described below are unchanged. See [the Domain integration note](kehillah-domain-overview.md).
+
 # Recent incidents in the host's faith
 
 Implements [V40 §5.1 and slice 1](../spec/v40-living-crises-and-councils.md).

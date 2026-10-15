@@ -928,4 +928,3 @@ war with the county's lord.
 - **Fixed:** 18,260 tooltip-only error lines while the options were hovered. The raise ran inside
   the option, so the tooltip builder evaluated it. The mob now rises a day later, in the hidden
   event `kehillah_mob.0030`.
-

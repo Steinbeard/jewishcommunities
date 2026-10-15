@@ -1,0 +1,25 @@
+# Kehillah overview in My Realm > Domain
+
+**Status:** Implemented and verified in an isolated Worms 1066 CK3 1.20.1 session on the separate Codex branch 2026-10-14. The Domain overview, HUD-strip removal, and pending-charter text passed the [first live check](../testing/2026-10-14-kehillah-domain-live-test.md). The same-day merge of main's host outlook, invitation, goodwill, and recent incidents UI passed a [second live check](../testing/2026-10-14-domain-main-merge-check.md). Supersedes the decision in [v12 §10](../spec/v12-community-map-view.md) to use an always-visible HUD strip for the player's own pillar summary. It does not change the Jewish Communities map roster or its customary-region display.
+
+**2026-10-14 visual pass:** The header, Standing, pillar cards, and dividers were restyled and [verified in CK3](../testing/2026-10-14-domain-visual-polish-live-test.md), including a populated charter and both pillar and host hovers.
+
+The player already reaches the Jewish Quarter from My Realm (F2) > Domain. This pass places a Kehillah overview immediately below that existing domicile card. It shows the community's Standing; Prosperity, Stability, and Greatness with their band and trend; the host ruler when one exists; and the four cached Host Charter terms. Standing and pillar hover regions reuse the detailed breakdown tooltips already used by the roster and formerly by the HUD strip. Until the title's charter cache is set, the panel states that it is awaiting recorded terms rather than showing the fallback values as real rights. The new body is visible only when the Realm window's character has `kehillah_government`; the rest of the Domain body, including the vanilla domain-item model, is unchanged.
+
+## GUI override and maintenance
+
+This feature intentionally copies CK3 1.20.1's `game/gui/window_my_realm.gui` to `gui/window_my_realm.gui`. The installed vanilla source had SHA-256 `6F325B1978579474AB46F9CAA03F6851AA51C6EB04EA40FEF5A4F111329A8648` on 2026-10-14. The mod copy differs by one Kehillah-gated vbox inside `vbox_my_realm_domain_body`, after `vbox_domicile_button`. The companion text is in `localization/english/kehillah_domain_l_english.yml`; pillar labels, tiers, trends, and breakdowns reuse existing localization.
+
+Because CK3 loads this file as a full override, a game patch or another mod changing My Realm may conflict. On each CK3 update, compare this copy with the new vanilla `window_my_realm.gui`, rebase the one gated block, run `ck3-tiger`, and live-check both a Kehillah and an ordinary ruler's Domain tab. The Discord research behind accepting that cost is recorded in the 2026-10-14 conversation: [direct Realm-file edit](https://discord.com/channels/735413460439007241/735413461403566119/1414596433889202206) and [GUI-variable tab example](https://discord.com/channels/735413460439007241/735413461680652365/1216505142711681045). This build edits the existing Domain body rather than adding a tab, so it does not need custom tab state.
+
+The duplicate top-left HUD strip was retired after the first Domain live pass. Its three label/tier/trend localization keys are reused by the Domain overview; its scripted-widget registration and body were removed. The Faith-family map button remains available for the cross-community roster.
+
+## Main integration — 2026-10-14
+
+Main added a **Your Host** tile to the old HUD strip ([V35](../spec/v35-player-clarity-outlook-and-invitations.md)), then extended its hover with goodwill and recent incidents ([V40](kehillah-recent-incidents.md)). The merge keeps the new outlook and invitation data but displays it below the Domain overview's host-ruler line. The outlook line appears once `kehillah_host_ref` is mirrored onto the player; hovering it uses main's full host tooltip, including the source breakdown, Jewish settlement policy, invitation, goodwill, and recent incidents. The first paused frame still has the direct host-ruler line even before the quarterly mirror exists. Main's mob, incident, refugee, outlook, and faith mechanics remain intact.
+
+The conflict was limited to the old strip's GUI body. Its new host tile was not retained there because the strip has been retired; the Domain line is its replacement. Main's localization and scripted values for that tile are reused rather than duplicated.
+
+## Visual hierarchy — 2026-10-14
+
+The overview now uses the existing Judaism icon beside a compact “Your Kehillah” heading and the community name, with Standing grouped at the right. Three equal shaded cards make Prosperity, Stability, and Greatness readable at a glance, while light dividers separate the header and scores from the host and charter details. The tooltip hitboxes and underlying values are unchanged. The smaller outer spacing keeps the four recorded charter terms visible in the Domain panel. No new bitmap assets or localization keys were needed.

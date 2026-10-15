@@ -627,4 +627,3 @@ show probabilities, their factors and skill challenges, through vanilla systems.
   Anusim, and the mob warning's "Every request can fail".
 
 Status displays, such as the danger and pillar breakdowns, are left as they are.
-

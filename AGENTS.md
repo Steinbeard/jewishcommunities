@@ -77,7 +77,10 @@ it's the one deliberately kept current.
   Don't introduce one unless asked. **The one standing exception is the scheduled overnight
   runs** (see "Overnight automation" below), which branch and push a PR-link instead of
   committing to `master` directly — that's deliberate, not a mistake to "fix" back to direct
-  commits.
+  commits. **Daniel's 2026-10-14 direction adds an interactive Codex exception:** while Claude is
+  developing in the primary checkout, Codex works and commits in its own worktree/branch (currently
+  `codex/festival-observance-2026-10-13`) and pushes that branch for integration. Do not treat the
+  primary checkout as Codex's fallback working directory.
 
 ## Implementation approach
 
@@ -93,22 +96,67 @@ it's the one deliberately kept current.
    settle, write it down (a new doc or an addition to ROADMAP's backlog) rather than deciding
    silently — future sessions (including yourself) rely on the docs being the memory.
 
+## Parallel Codex checkout and CK3 test instance — 2026-10-14, Daniel's direction
+
+Codex and Claude may develop and live-test at the same time. Keep **both the files and the game
+instance separate**. The tested setup and its limits are recorded in
+[the isolated CK3 setup](docs/testing/2026-10-13-isolated-ck3-setup.md) and
+[the Domain live check](docs/testing/2026-10-14-domain-main-merge-check.md).
+
+- **Code checkout:** The current Codex working copy is
+  `C:\Users\Daniel\.codex\worktrees\jewish-festival-observance\jewishcommunities` on
+  `codex/festival-observance-2026-10-13`. This is a separate Git **worktree** of the same repo,
+  with its own working tree and branch. Run `git rev-parse --show-toplevel` and `git status -sb`
+  before editing; pass this directory as the working directory to shell tools. The primary
+  `C:\Users\Daniel\Documents\Paradox Interactive\Crusader Kings III\mod\jewishcommunities`
+  checkout is Claude's working copy and may contain uncommitted changes. Do not edit, reset,
+  switch branches, or clean it. If the Codex worktree is missing, create or attach a separate
+  worktree and update its test-mod registration; never silently fall back to the primary checkout.
+- **Game/profile:** Prefer the worktree's `scripts/kehillah_isolated_ck3_test.ps1 -Visible`, which
+  registers that checkout in `C:\Users\Daniel\.codex\ck3-test\festival-observance` and launches
+  CK3 with a separate `-userdir` for saves, settings, mod selection, and logs. Its hidden boot was
+  verified; confirm that a visible run is on the second display before interacting. The currently
+  proven visible route uses `mod/kehillah_codex_test.mod` (pointing to the Codex worktree),
+  `-window_title=Kehillah_Codex_Test`, and `-logprefix=codex_`. That route shares the normal CK3
+  user directory: back up `dlc_load.json` byte-for-byte before temporarily mounting the test mod,
+  restore it immediately after launch, and read only `codex_debug.log`/`codex_error.log` for the
+  Codex process. Use this shared-profile route only when Claude is not launching or reloading;
+  otherwise use the isolated `-userdir` profile or defer the boot. Never leave Claude's mod
+  selection changed.
+- **Second monitor:** Windows currently has the Dell primary display at `DISPLAY1`
+  (`0,0`, 2560×1440) and the extended Virtual Display Driver screen at `DISPLAY5`
+  (`2560,0`, 2048×1152). Re-query `System.Windows.Forms.Screen.AllScreens` before each test;
+  display numbers, bounds, and scaling can change. Put the Codex CK3 window wholly on the
+  **non-primary virtual display**. Target screenshots and mouse coordinates to that display,
+  accounting for virtual-desktop origin and DPI/image downscaling. Leave Claude's primary-display
+  window and input alone.
+- **Process ownership:** Before launching, moving, sending input to, or stopping CK3, inspect
+  `Get-CimInstance Win32_Process -Filter "name='ck3.exe'"` and identify the Codex process by its
+  `-userdir`, window title, or `-logprefix` command-line marker. Record its PID and re-check it
+  before control. Never use a generic `Stop-Process -Name ck3`, the first `ck3.exe` PID, or
+  `winkeys.py`'s ambiguous `ck3_pid()` when multiple instances run. If the displays or process
+  ownership are unclear, use source and `ck3-tiger` checks until they can be identified safely.
+
 ## Testing approach
 
 See **[docs/testing/automation-shim-guide.md](docs/testing/automation-shim-guide.md)** for the
 full mechanics and philosophy; summary:
 
 - **Run `ck3-tiger` before anything else, on every session that touches script/loc/gui.** Installed
-  at `C:\Users\Daniel\Documents\ck3-tiger\ck3-tiger.exe`, version-matched to this mod's target CK3
-  (1.19.0). Invoke as:
-  `ck3-tiger.exe "C:\Users\Daniel\Documents\Paradox Interactive\Crusader Kings III\mod\jewishcommunities\descriptor.mod" --no-color`
+  at `C:\Users\Daniel\Documents\ck3-tiger\ck3-tiger.exe`. It currently targets CK3 1.19.0 while
+  the installed game is 1.20.1, so compare findings with a baseline and verify version-related
+  reports against the installed game. Point it at the **checkout being edited** (the Codex
+  worktree for Codex sessions), not automatically at the primary mod directory. PowerShell:
+  `$modRoot = (git rev-parse --show-toplevel).Trim(); & 'C:\Users\Daniel\Documents\ck3-tiger\ck3-tiger.exe' (Join-Path $modRoot 'descriptor.mod') --no-color`
   (add `--json` for machine-readable output). It catches duplicate IDs, malformed script, dangling
   references, and — critically — things that are silent in script but **crash the live game**
   (e.g. a bookmark referencing a portrait that doesn't exist). This is seconds, not minutes; there
   is no reason to hand-verify anything it already checks, and no reason to boot the live game to
-  find a bug this would have caught standing still. Treat any `fatal`/`error` it reports on files
-  you touched as blocking; `warning`/`tips` are judgment calls, same as a human linter. It doesn't
-  know this mod's own custom logic (pillar thresholds, band gates, etc.) — that's still
+  find a bug this would have caught standing still. Treat a **new** `fatal`/`error` in code you
+  changed as blocking until verified or fixed; unchanged vanilla lines in a copied GUI and known
+  version mismatches need an explicit baseline note. `warning`/`tips` are judgment calls, same as
+  a human linter. It doesn't know this mod's own custom logic (pillar thresholds, band gates,
+  etc.) — that's still
   source-reading or a debug-event probe, below. **Its results can include false positives** — it's
   a generic linter, not one written for this mod's own scripted triggers/effects/values, so a
   flagged line is a strong lead to go verify against the actual vanilla/mod definition, not an
