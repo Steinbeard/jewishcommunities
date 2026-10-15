@@ -126,27 +126,54 @@ kehillah_mob_raise_effect = {
 						scope:kehillah_mob_war = { set_called_to = scope:kehillah_mob_ally }
 					}
 				}
-				spawn_army = {
-					name = kehillah_mob_army_name
-					levies = $SIZE$
-					men_at_arms = {
-						type = pikemen_militia
-						stacks = {
-							value = $SIZE$
-							divide = 400
-							round = yes
-							min = 1
+				if = {
+					limit = { faith.religion = religion:islam_religion }
+					spawn_army = {
+						name = kehillah_mob_army_name_islam
+						levies = $SIZE$
+						men_at_arms = {
+							type = pikemen_militia
+							stacks = {
+								value = $SIZE$
+								divide = 400
+								round = yes
+								min = 1
+							}
 						}
+						men_at_arms = {
+							type = torch_bearers
+							stacks = 2
+						}
+						location = scope:kehillah_mob_spawn
+						war = scope:kehillah_mob_war
+						war_keep_on_attacker_victory = yes
+						inheritable = no
+						uses_supply = yes
 					}
-					men_at_arms = {
-						type = torch_bearers
-						stacks = 2
+				}
+				else = {
+					spawn_army = {
+						name = kehillah_mob_army_name
+						levies = $SIZE$
+						men_at_arms = {
+							type = pikemen_militia
+							stacks = {
+								value = $SIZE$
+								divide = 400
+								round = yes
+								min = 1
+							}
+						}
+						men_at_arms = {
+							type = torch_bearers
+							stacks = 2
+						}
+						location = scope:kehillah_mob_spawn
+						war = scope:kehillah_mob_war
+						war_keep_on_attacker_victory = yes
+						inheritable = no
+						uses_supply = yes
 					}
-					location = scope:kehillah_mob_spawn
-					war = scope:kehillah_mob_war
-					war_keep_on_attacker_victory = yes
-					inheritable = no
-					uses_supply = yes
 				}
 				create_story = {
 					type = story_kehillah_mob
@@ -558,13 +585,29 @@ kehillah_pogrom_effect = {
 				modifier = { add = scope:kehillah_pogrom_victim.kehillah_pogrom_baptism_chance_value }
 				# Kiddush ha-Shem: the zealous choose death over the font, and
 				# half of the rest where the rite teaches it (V39 slice 3).
+				# Before a Muslim mob, half as many (V42): outward conversion to
+				# Islam was not held to demand death (Maimonides).
 				if = {
 					limit = {
 						OR = {
-							has_trait = zealous
+							AND = {
+								has_trait = zealous
+								scope:kehillah_pogrom_victim = { NOT = { kehillah_mob_is_muslim_trigger = yes } }
+							}
+							AND = {
+								has_trait = zealous
+								scope:kehillah_pogrom_victim = {
+									kehillah_mob_is_muslim_trigger = yes
+									kehillah_coin_flip_trigger = yes
+								}
+							}
 							AND = {
 								rite ?= { rite_has_parameter = kehillah_kiddush_hashem_rite }
 								scope:kehillah_pogrom_victim = { kehillah_coin_flip_trigger = yes }
+								OR = {
+									scope:kehillah_pogrom_victim = { NOT = { kehillah_mob_is_muslim_trigger = yes } }
+									scope:kehillah_pogrom_victim = { kehillah_coin_flip_trigger = yes }
+								}
 							}
 						}
 					}
@@ -1444,6 +1487,11 @@ kehillah_pogrom_take_tenet_effect = {
 		random_list = {
 			60 = {
 				modifier = { add = 20 has_trait = zealous }
+				# After a Muslim mob, martyrdom takes hold less (V42).
+				modifier = {
+					add = -40
+					scope:kehillah_aftermath_victim ?= { kehillah_mob_is_muslim_trigger = yes }
+				}
 				force_set_personal_tenet = tenet_kehillah_kiddush_hashem
 			}
 			40 = {

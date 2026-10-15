@@ -126,3 +126,50 @@ AI communities ask through the same values (`kehillah_mob_ai_answers_effect`).
    crisis, Anusim, the mob warning.
 
 Each slice: ck3-tiger, a live test, a commit.
+
+## Addendum, 2026-10-14: decisions per host, and a Muslim mob in its own terms
+
+**Slice 1 live test: passed.**
+- The hub, messenger, answer scenes, Church letter, preacher duels and own defence all worked.
+- The warning came 28 days before the host reached the gates.
+- **Fixed:**
+  - The offer page appears only with something to offer.
+  - "Something else..." appears only with more to offer.
+  - A letter shows as on the road.
+  - The preacher duels' outcomes say what they do.
+
+**One decision per person per host (Daniel: "the pope doesn't need to condemn the mob twice").**
+- **Where they are kept:** lists on the host's leader (`kehillah_mob_condemned_by`,
+  `kehillah_mob_condemn_refused_list`, `kehillah_mob_men_refused_list`).
+- **A condemnation holds at every town** the host targets. The tick carries it to the new target, and
+  the host is thinned only once.
+- **Whoever has decided is not asked again,** by a player or an AI community. The hub shows the
+  decision.
+- **Refuge stays per community,** since it is one castle and one town.
+
+**A Muslim mob in its own terms (Daniel: not "Preacher").**
+- **The leader is a Wa'iz (Wa'iza),** the popular preacher, by flavorization. The prose noun is
+  `KehillahPreacher`, read off the leader himself: "preacher" or "wa'iz".
+- **The clergy are the ulama,** and the law the Pact of Umar.
+- **The conversion scene is The Square:** a qadi has each person say the shahada. A Muslim mob has no
+  river scene.
+- **Shared lines are faith-neutral:** "converted", "the blood of the faithful", "the men of religion".
+- **The army is "The Wa'iz's Host".**
+- **The detection:** `kehillah_mob_is_muslim_trigger` uses the mob leader's faith, or the county's
+  once the host is gone.
+- **Live test of 226165f:** passed. The words still Christian in shared lines (the report, the
+  warning, the hub, the market scene, the forced-conversion notice) are fixed in the commit after
+  it.
+
+**Martyrdom under a Muslim mob (Daniel: "Muslims less likely to martyr themselves").**
+- **The history:** under the Almohads (1140s) most Jews converted outwardly and kept their faith in
+  secret. Maimonides' *Epistle on Martyrdom* held that outward conversion to Islam, which is not
+  idolatry, did not demand death. In Ashkenaz in 1096, forced baptism was met with Kiddush ha-Shem.
+- **The rule, before a Muslim mob:**
+  - the zealous choose death half the time, not always;
+  - where the rite teaches Kiddush ha-Shem, others choose death a quarter of the time, not half;
+  - converts keep their faith in secret 85% of the time (cynics 50%), against 70% (cynics 30%);
+  - afterwards Kiddush ha-Shem weighs 20 against asceticism's 40 as the tenet taken, not 60.
+- **Unchanged:** the severity, deaths and conversions overall still follow the pogrom. Only the choice
+  between death and conversion changes.
+
