@@ -26,7 +26,13 @@ distinct works) and Mainz (tier 1, three distinct works). Window-relative
 input later opened the Library and book detail; a primary-display check passed
 the revised own-quarter panel, detail containment, and Books/Yeshiva tabs.
 The standalone community-switch reset and personal mastery foldout still need
-a recheck, preferably in a fresh isolated process with unsuppressed logs.
+a recheck. The 2026-10-15 selected-book slice added a rabbi-only Learn Torah
+starter for each held work, genre filters and badges, static Rabbinic tier
+badges, attribution and representative game composition dates, and a recorded
+living-master roster. A live click on Mekhilta opened its named study event and
+spent 10 Piety. A fresh client showed localized metadata, a packed genre list,
+and the empty reader state; a populated reader portrait list remains untested.
+See the [selected-study live check](docs/testing/2026-10-15-sefer-selected-study-ui-check.md).
 The larger artifact inventory,
 named acquisition, scholar demand, exceptional authorship, rewards, and canon
 mechanics are staged in [V42](docs/spec/v42-sefarim-and-the-library.md).
@@ -34,12 +40,14 @@ Daniel's follow-up on composition dates, corpus/tractate grouping, and evolving
 work standing is recorded in V42's dated addenda. The latest addendum adopts
 exact in-game composition and circulation dates, optional historical author
 links, and doctrine-based protected Torah/Tanakh and Rabbinic Bavli tiers.
-Existing 933/1080/1140 acquisition gates are a partial chronology; the first
-full catalog metadata pass and save-safe tractate migration remain future work.
+Existing 933/1080/1140 acquisition gates are a partial chronology. The new
+display catalog uses representative dates; a single authoritative acquisition
+date table, historical author links, dynamic standing, and save-safe tractate
+migration remain future work.
 This user-directed slice was taken ahead of V41's soak and eastern-host tasks;
 those remain open in their current order. The next V42 gate is the focused UI
-check of those remaining states before widening the catalog or replacing title
-flags. See the [seed check](docs/testing/2026-10-14-sefer-seed-live-check.md)
+check of those remaining states and a populated reader roster before widening
+the catalog or replacing title flags. See the [seed check](docs/testing/2026-10-14-sefer-seed-live-check.md)
 and [primary UI check](docs/testing/2026-10-14-sefer-primary-ui-check.md).
 
 ### V41 The danger of violence, the incidents, the pogrom unfolding — 2026-10-14, Daniel's request
