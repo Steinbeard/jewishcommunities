@@ -289,6 +289,14 @@ kehillah_mob_step_toward_effect = {
 # ---------------------------------------------------------------------
 kehillah_mob_tick_effect = {
 	save_scope_as = kehillah_mob_leader
+	# A host condemned by the Church is condemned at every town (V42).
+	if = {
+		limit = {
+			has_variable_list = kehillah_mob_condemned_by
+			var:kehillah_mob_target_title ?= { NOT = { has_variable = kehillah_mob_condemned } }
+		}
+		var:kehillah_mob_target_title = { set_variable = { name = kehillah_mob_condemned value = yes } }
+	}
 	# Beaten in the field (kehillah_mob_community_cb's on_defeat).
 	if = {
 		limit = { has_character_flag = kehillah_mob_defeated }
@@ -1063,6 +1071,10 @@ kehillah_mob_clear_title_effect = {
 		limit = { has_variable = kehillah_mob_messenger_to }
 		remove_variable = kehillah_mob_messenger_to
 	}
+	if = {
+		limit = { has_variable = kehillah_mob_letter_to }
+		remove_variable = kehillah_mob_letter_to
+	}
 	# V42: the leader's copies, for the text.
 	holder ?= {
 		if = {
@@ -1129,6 +1141,10 @@ kehillah_mob_clear_title_effect = {
 			limit = { has_variable = kehillah_mob_harm_now }
 			remove_variable = kehillah_mob_harm_now
 		}
+		if = {
+			limit = { has_variable = kehillah_mob_letter_to_ref }
+			remove_variable = kehillah_mob_letter_to_ref
+		}
 	}
 	kehillah_pogrom_clear_scenes_effect = yes
 	clear_variable_list = kehillah_mob_asked_refuge
@@ -1145,6 +1161,12 @@ kehillah_mob_clear_title_effect = {
 # Each condemnation thins the host by a quarter; the severity is cut once.
 kehillah_mob_condemned_effect = {
 	primary_title = { set_variable = { name = kehillah_mob_condemned value = yes } }
+	# The condemnation is of the preacher: it holds for every community
+	# his host threatens (kehillah_mob_tick_effect carries it on).
+	if = {
+		limit = { exists = scope:recipient }
+		scope:kehillah_mob_leader = { add_to_variable_list = { name = kehillah_mob_condemned_by target = scope:recipient } }
+	}
 	scope:kehillah_mob_leader = {
 		kehillah_mob_thin_host_effect = { FRACTION = 0.25 }
 		set_variable = { name = kehillah_mob_size value = kehillah_mob_total_men_value }
@@ -1241,17 +1263,26 @@ kehillah_mob_ai_answers_effect = {
 			}
 		}
 	}
-	# The Church, if it can pay.
+	# The Church, if it can pay, and if its head has not already decided
+	# about this preacher (V42).
 	if = {
 		limit = {
 			gold >= medium_gold_value
 			exists = scope:kehillah_mob_leader.faith.religious_head
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_leader.faith.religious_head LIST = kehillah_mob_condemned_by } }
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_leader.faith.religious_head LIST = kehillah_mob_condemn_refused_list } }
 		}
 		scope:kehillah_mob_leader.faith.religious_head = { save_scope_as = recipient }
 		remove_short_term_gold = medium_gold_value
-		random = {
-			chance = kehillah_mob_ask_condemn_chance_value
-			kehillah_mob_condemned_effect = yes
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_mob_ask_condemn_chance_value }
+				kehillah_mob_condemned_effect = yes
+			}
+			0 = {
+				modifier = { add = kehillah_mob_ask_condemn_fail_value }
+				scope:kehillah_mob_leader = { add_to_variable_list = { name = kehillah_mob_condemn_refused_list target = scope:recipient } }
+			}
 		}
 	}
 	# The defence of the quarter.
@@ -1277,13 +1308,24 @@ kehillah_mob_ai_answers_effect = {
 		primary_title = { set_variable = { name = kehillah_mob_ai_asked_men value = yes years = 1 } }
 		domicile.domicile_location.county.holder ?= {
 			if = {
-				limit = { NOT = { this = scope:actor } }
+				limit = {
+					NOT = { this = scope:actor }
+					NOT = { kehillah_mob_decided_trigger = { WHO = this LIST = kehillah_mob_men_refused_list } }
+				}
 				save_scope_as = recipient
 				debug_log = "kehillah_mob_ai_answers_effect: asks the lord to ride out"
-				random = {
-					chance = scope:actor.kehillah_mob_ask_men_chance_value
-					scope:actor = { kehillah_mob_lord_raises_men_effect = { DEFENDER = scope:recipient } }
-					debug_log = "kehillah_mob_ai_answers_effect: the lord rides out"
+				scope:actor = {
+					random_list = {
+						0 = {
+							modifier = { add = kehillah_mob_ask_men_chance_value }
+							kehillah_mob_lord_raises_men_effect = { DEFENDER = scope:recipient }
+							debug_log = "kehillah_mob_ai_answers_effect: the lord rides out"
+						}
+						0 = {
+							modifier = { add = kehillah_mob_ask_men_fail_value }
+							scope:kehillah_mob_leader = { add_to_variable_list = { name = kehillah_mob_men_refused_list target = scope:recipient } }
+						}
+					}
 				}
 			}
 		}

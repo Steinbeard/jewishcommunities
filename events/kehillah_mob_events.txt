@@ -598,6 +598,29 @@ scripted_trigger kehillah_mob_hub_open_trigger = {
 }
 
 # Someone the elders can still ask for protection.
+# Scope: the leader; scope:kehillah_mob_patron. Something else to offer:
+# what you know of him, an old friendship, the physician's service.
+scripted_trigger kehillah_mob_more_offers_trigger = {
+	OR = {
+		has_usable_hook = scope:kehillah_mob_patron
+		has_relation_friend = scope:kehillah_mob_patron
+		has_trait = lifestyle_physician
+	}
+}
+
+# Anything at all to offer him.
+scripted_trigger kehillah_mob_any_offer_trigger = {
+	OR = {
+		kehillah_mob_more_offers_trigger = yes
+		gold >= medium_gold_value
+		scope:kehillah_mob_patron = { var:kehillah_loan_lender_title ?= root.primary_title }
+		primary_title = {
+			has_variable = kehillah_charter_cache_security
+			var:kehillah_charter_cache_security >= 1
+		}
+	}
+}
+
 scripted_trigger kehillah_mob_protection_left_trigger = {
 	OR = {
 		AND = {
@@ -613,10 +636,14 @@ scripted_trigger kehillah_mob_protection_left_trigger = {
 		AND = {
 			exists = scope:kehillah_mob_chaplain
 			primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_mob_asked_condemn target = scope:kehillah_mob_chaplain } } }
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_chaplain LIST = kehillah_mob_condemned_by } }
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_chaplain LIST = kehillah_mob_condemn_refused_list } }
 		}
 		AND = {
 			exists = scope:kehillah_mob_hof
 			primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_mob_asked_condemn target = scope:kehillah_mob_hof } } }
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_hof LIST = kehillah_mob_condemned_by } }
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_hof LIST = kehillah_mob_condemn_refused_list } }
 		}
 	}
 }
@@ -701,6 +728,42 @@ scripted_effect kehillah_mob_hub_scopes_effect = {
 		var:kehillah_mob_condemn_refused_by ?= { root = { set_variable = { name = kehillah_mob_condemn_no_ref value = prev } } }
 		var:kehillah_mob_messenger ?= { root = { set_variable = { name = kehillah_mob_messenger_ref value = prev } } }
 		var:kehillah_mob_messenger_to ?= { root = { set_variable = { name = kehillah_mob_messenger_to_ref value = prev } } }
+		var:kehillah_mob_letter_to ?= { root = { set_variable = { name = kehillah_mob_letter_to_ref value = prev } } }
+	}
+	# Decisions about this host made for other communities (V42).
+	if = {
+		limit = {
+			primary_title = { NOT = { has_variable = kehillah_mob_condemned } }
+			scope:kehillah_mob_leader ?= { has_variable_list = kehillah_mob_condemned_by }
+		}
+		primary_title = { set_variable = { name = kehillah_mob_condemned value = yes } }
+	}
+	if = {
+		limit = {
+			primary_title = { NOT = { has_variable = kehillah_mob_condemn_refused_by } }
+			scope:kehillah_mob_leader ?= { has_variable_list = kehillah_mob_condemn_refused_list }
+		}
+		scope:kehillah_mob_leader = {
+			random_in_list = {
+				variable = kehillah_mob_condemn_refused_list
+				save_scope_as = kehillah_mob_refuser
+			}
+		}
+		primary_title = { set_variable = { name = kehillah_mob_condemn_refused_by value = scope:kehillah_mob_refuser } }
+		set_variable = { name = kehillah_mob_condemn_no_ref value = scope:kehillah_mob_refuser }
+	}
+	if = {
+		limit = { primary_title = { NOT = { has_variable = kehillah_mob_men_refused_by } } }
+		if = {
+			limit = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_lord LIST = kehillah_mob_men_refused_list } }
+			primary_title = { set_variable = { name = kehillah_mob_men_refused_by value = scope:kehillah_mob_lord } }
+			set_variable = { name = kehillah_mob_men_no_ref value = scope:kehillah_mob_lord }
+		}
+		else_if = {
+			limit = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_overlord LIST = kehillah_mob_men_refused_list } }
+			primary_title = { set_variable = { name = kehillah_mob_men_refused_by value = scope:kehillah_mob_overlord } }
+			set_variable = { name = kehillah_mob_men_no_ref value = scope:kehillah_mob_overlord }
+		}
 	}
 	set_variable = { name = kehillah_mob_harm_now value = kehillah_mob_severity_value }
 }
@@ -785,6 +848,7 @@ scripted_effect kehillah_mob_lord_answer_effect = {
 			hidden_effect = { kehillah_shift_outlook_effect = { AMOUNT = -3 } }
 		}
 		primary_title = { set_variable = { name = kehillah_mob_men_refused_by value = scope:kehillah_mob_patron } }
+		scope:kehillah_mob_leader = { add_to_variable_list = { name = kehillah_mob_men_refused_list target = scope:kehillah_mob_patron } }
 	}
 	if = {
 		limit = { exists = scope:kehillah_mob_via_messenger }
@@ -865,6 +929,13 @@ kehillah_mob.0100 = {
 				primary_title = { has_variable = kehillah_mob_messenger }
 			}
 			desc = kehillah_mob.0100.p_messenger
+		}
+		triggered_desc = {
+			trigger = {
+				exists = var:kehillah_mob_letter_to_ref
+				primary_title = { has_variable = kehillah_mob_letter_to }
+			}
+			desc = kehillah_mob.0100.p_letter
 		}
 		# The outlook.
 		first_valid = {
@@ -969,10 +1040,14 @@ kehillah_mob.0101 = {
 				AND = {
 					exists = scope:kehillah_mob_chaplain
 					primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_mob_asked_condemn target = scope:kehillah_mob_chaplain } } }
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_chaplain LIST = kehillah_mob_condemned_by } }
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_chaplain LIST = kehillah_mob_condemn_refused_list } }
 				}
 				AND = {
 					exists = scope:kehillah_mob_hof
 					primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_mob_asked_condemn target = scope:kehillah_mob_hof } } }
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_hof LIST = kehillah_mob_condemned_by } }
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_hof LIST = kehillah_mob_condemn_refused_list } }
 				}
 			}
 		}
@@ -1004,6 +1079,8 @@ kehillah_mob.0102 = {
 		trigger = {
 			exists = scope:kehillah_mob_chaplain
 			primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_mob_asked_condemn target = scope:kehillah_mob_chaplain } } }
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_chaplain LIST = kehillah_mob_condemned_by } }
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_chaplain LIST = kehillah_mob_condemn_refused_list } }
 		}
 		primary_title = { add_to_variable_list = { name = kehillah_mob_asked_condemn target = scope:kehillah_mob_chaplain } }
 		set_variable = { name = kehillah_mob_away value = yes }
@@ -1016,6 +1093,8 @@ kehillah_mob.0102 = {
 			exists = scope:kehillah_mob_chaplain
 			exists = scope:kehillah_mob_messenger_cand
 			primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_mob_asked_condemn target = scope:kehillah_mob_chaplain } } }
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_chaplain LIST = kehillah_mob_condemned_by } }
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_chaplain LIST = kehillah_mob_condemn_refused_list } }
 		}
 		primary_title = { add_to_variable_list = { name = kehillah_mob_asked_condemn target = scope:kehillah_mob_chaplain } }
 		scope:kehillah_mob_chaplain = { save_scope_as = recipient }
@@ -1042,6 +1121,8 @@ kehillah_mob.0102 = {
 		trigger = {
 			exists = scope:kehillah_mob_hof
 			primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_mob_asked_condemn target = scope:kehillah_mob_hof } } }
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_hof LIST = kehillah_mob_condemned_by } }
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_hof LIST = kehillah_mob_condemn_refused_list } }
 		}
 		primary_title = { add_to_variable_list = { name = kehillah_mob_asked_condemn target = scope:kehillah_mob_hof } }
 		scope:kehillah_mob_hof = { save_scope_as = recipient }
@@ -1062,6 +1143,7 @@ kehillah_mob.0102 = {
 		set_variable = { name = kehillah_mob_msg_answer value = var:kehillah_mob_answer }
 		remove_variable = kehillah_mob_answer
 		save_scope_value_as = { name = kehillah_mob_via_letter value = yes }
+		primary_title = { set_variable = { name = kehillah_mob_letter_to value = scope:kehillah_mob_hof } }
 		trigger_event = { id = kehillah_mob.0131 days = { 10 20 } }
 		kehillah_mob_back_to_hub_effect = yes
 	}
@@ -1174,7 +1256,10 @@ kehillah_mob.0105 = {
 	# Ask him to ride out with his men.
 	option = {
 		name = kehillah_mob.0105.b
-		trigger = { NOT = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_preaching } } }
+		trigger = {
+			NOT = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_preaching } }
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_patron LIST = kehillah_mob_men_refused_list } }
+		}
 		primary_title = { add_to_variable_list = { name = kehillah_mob_asked_refuge target = scope:kehillah_mob_patron } }
 		random_list = {
 			0 = {
@@ -1270,6 +1355,7 @@ kehillah_mob.0110 = {
 			NOT = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_preaching } }
 			NOT = { has_variable = kehillah_mob_visit_asked_men }
 			primary_title = { NOT = { has_variable = kehillah_mob_men_by } }
+			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_patron LIST = kehillah_mob_men_refused_list } }
 		}
 		set_variable = { name = kehillah_mob_visit_asked_men value = yes }
 		random_list = {
@@ -1291,7 +1377,10 @@ kehillah_mob.0110 = {
 	# Offer him something first.
 	option = {
 		name = kehillah_mob.0110.b
-		trigger = { NOT = { has_variable = kehillah_mob_offer } }
+		trigger = {
+			NOT = { has_variable = kehillah_mob_offer }
+			kehillah_mob_any_offer_trigger = yes
+		}
 		trigger_event = kehillah_mob.0112
 	}
 
@@ -1358,7 +1447,14 @@ kehillah_mob.0112 = {
 	# Something else...
 	option = {
 		name = kehillah_mob.0112.d
+		trigger = { kehillah_mob_more_offers_trigger = yes }
 		trigger_event = kehillah_mob.0113
+	}
+	# Nothing, after all.
+	option = {
+		name = kehillah_mob.0113.d
+		trigger = { NOT = { kehillah_mob_more_offers_trigger = yes } }
+		trigger_event = kehillah_mob.0110
 	}
 }
 
@@ -1815,6 +1911,16 @@ kehillah_mob.0131 = {
 		}
 		else = {
 			primary_title = { set_variable = { name = kehillah_mob_condemn_refused_by value = scope:kehillah_mob_cleric } }
+			scope:kehillah_mob_leader = { add_to_variable_list = { name = kehillah_mob_condemn_refused_list target = scope:kehillah_mob_cleric } }
+		}
+		if = {
+			limit = { exists = scope:kehillah_mob_via_letter }
+			primary_title = {
+				if = {
+					limit = { has_variable = kehillah_mob_letter_to }
+					remove_variable = kehillah_mob_letter_to
+				}
+			}
 		}
 		if = {
 			limit = { exists = scope:kehillah_mob_via_messenger }
@@ -1977,6 +2083,7 @@ kehillah_mob.0142 = {
 					has_trait = theologian
 				}
 				min = 5
+				custom_tooltip = kehillah_mob_host_thinned_tt
 				set_variable = { name = kehillah_mob_answer value = flag:scripture_yes }
 			}
 			50 = {
@@ -1986,6 +2093,7 @@ kehillah_mob.0142 = {
 					multiplier = -3.5
 				}
 				min = 5
+				custom_tooltip = kehillah_mob_host_angered_tt
 				set_variable = { name = kehillah_mob_answer value = flag:scripture_no }
 			}
 		}
@@ -2016,6 +2124,7 @@ kehillah_mob.0142 = {
 					}
 				}
 				min = 5
+				custom_tooltip = kehillah_mob_host_thinned_tt
 				set_variable = { name = kehillah_mob_answer value = flag:lieutenants_yes }
 			}
 			50 = {
