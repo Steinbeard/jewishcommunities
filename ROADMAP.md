@@ -33,6 +33,7 @@ living-master roster. A live click on Mekhilta opened its named study event and
 spent 10 Piety. A fresh client showed localized metadata, a packed genre list,
 and both empty and populated reader states; a portrait opens the character panel.
 See the [selected-study live check](docs/testing/2026-10-15-sefer-selected-study-ui-check.md).
+The corpus-card rework is scripted and loaded in a fresh isolated 1.20.1 client, with no library-specific parse errors, but its opener and expanded order lists remain unverified because mouse input did not reliably activate the target on the secondary display. See the [corpus panel check](docs/testing/2026-10-15-sefer-corpus-panel-live-check.md); do not mark that UI slice live-passed until its click path is verified.
 The larger artifact inventory,
 named acquisition, scholar demand, exceptional authorship, rewards, and canon
 mechanics are staged in [V42](docs/spec/v42-sefarim-and-the-library.md).
