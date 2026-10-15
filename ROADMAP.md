@@ -193,6 +193,8 @@ Five one-step events for Yom Kippur, Sukkot and Shavuot are scripted. Two use na
 
 **2026-10-14 main integration, Daniel's request:** Main's V35 Your Host tile and V40 recent-incidents hover were reconciled with the Domain overview. The host outlook and invitation cue now appear in Domain when the quarterly host mirror exists; its hover retains the full outlook, goodwill, and incidents breakdown. The separate Faith-family map and roster remain available. See [the integration note](docs/implementation/kehillah-domain-overview.md) and [merged live check](docs/testing/2026-10-14-domain-main-merge-check.md).
 
+**2026-10-14 Domain visual polish, Daniel's follow-up:** The overview now has a compact icon/name/Standing header, three shaded pillar cards, and dividers before the host and charter details. A separate CK3 instance confirmed the fresh and populated charter states, the pillar and host tooltips, and no clipping or new GUI/localization errors. See [the visual check](docs/testing/2026-10-14-domain-visual-polish-live-test.md). This user-requested UI polish ran ahead of the older live-test TODOs.
+
 ### Exceptional sefarim — 2026-10-12, Daniel's request
 
 The `kehillah_book.0007` arrival event was misleading: it only granted Piety and
