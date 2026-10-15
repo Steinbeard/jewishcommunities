@@ -1,4 +1,4 @@
-﻿**Status:** slices 0-2 built, 2026-10-14 (slice 0 committed; 1-2 not yet live-tested); from Daniel's review of the V41/V42 chains. It extends
+﻿**Status:** slices 0-4 built, 2026-10-14 (0-2 live-tested and fixed; 3-4 not yet live-tested); from Daniel's review of the V41/V42 chains. It extends
 [V39](v39-pogroms-and-the-popular-crusade.md) (Granada, section 9; the forced converts, slice 3b),
 [V41](v41-danger-incidents-and-the-pogrom-unfolding.md) and [V42](v42-the-crisis-as-a-place.md).
 Writing follows [the writing guide](../implementation/kehillah-writing-style.md).
@@ -149,4 +149,47 @@ survives):
   enough.
 
 The values are in `kehillah_aftermath_values.txt`.
+
+**Slices 0-2 live test (5ae4146): passed, with two fixes.**
+- **Joseph's window** reads "Joseph 'ha-Nagid'". Samuel "ha-Nagid" shows as his late father; Hannah,
+  Elyasaf and Azariah are in his court.
+- **The AI Joseph sent Azariah to Lucena.** The night came on 30 December, and "News from Granada"
+  came on 14 January in its "spared" variant.
+- **The four scenes after a pogrom rendered,** with at most three choices each. The Survivors came
+  in its convert variant.
+- **The captive's scene renders** when forced.
+- **Fixed:**
+  - The Sephardi letters went only to whoever were players at game start. They now go through a
+    relay on the emir (`.0015`-`.0017`) to the Sephardi players of the day.
+  - The year after the pogrom was queued on the leader of the day, so a succession lost the Year's
+    Mind. It now goes through a relay on the county's lord (`kehillah_aftermath.0091`-`.0094`) to
+    the community's leader of the day.
+  - The family's `employer` lines failed at game start, and are removed. The family joins Joseph's
+    court anyway.
+
+**Slice 3, the head of the faith and the baptized** (`kehillah_anusim_hof_answers_effect`):
+- **When a prince lets the baptized return,** a Christian head of the faith protests. The base weight
+  is 60, +30 if he is zealous, -40 if he is Well-disposed or better, against 40 (+30 if
+  Well-disposed or better) that he lets it pass.
+- **On a protest:** the head of the faith is angered at the prince. The community's players get
+  `.0020` "A Letter from..."; a player prince gets `.0021` (stand by his word, or temporize).
+- **After three returns in the faith,** he rules that a baptism under compulsion binds
+  (`kehillah_faith_baptism_binds`). Every community of the faith gets `.0022` "The Baptized Belong to
+  the Church", and petitions and AI princes are -30 from then on.
+
+**Slice 4, the children** (`kehillah_children_effects.txt`, `events/kehillah_children_events.txt`):
+- **Children converted at a pogrom are kept, not dropped into the pool.** They go to a churchman of
+  the faith in the lord's realm (a monastery), else to the lord's household. They are tracked:
+  `kehillah_taken_children` on the community's title, `kehillah_taken_from` and the flag
+  `kehillah_stolen_child` on the child.
+- **`.0001` The Children,** 20-40 days after, for a player:
+  - go and ask for them (the keeper's outlook and opinion; +15 with a good Shtadlan);
+  - offer silver (+25 against a greedy keeper);
+  - appeal to the lord;
+  - or accept that they cannot be brought back.
+
+  A failure asks again a year later.
+- **`.0010` A Child Is Missing:** a rare incident from the director (weight 3, +4 at danger 60;
+  Christian hosts; once in 20 years). A servant takes a child with living parents to the font, and
+  the petition follows.
 
