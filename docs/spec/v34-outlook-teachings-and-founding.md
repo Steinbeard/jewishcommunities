@@ -345,3 +345,8 @@ independent non-Jewish ruler's personal history drifts with his court chaplain
 - **Limits:** both stay within the ±30 cap on personal history. A Jewish chaplain preaches neither.
 - **Effect:** over 15 years a zealous chaplain can take a lord from a +15 outlook to -15, enough to
   change the policy review.
+
+- **Founding rate, verified (2026-10-13):** with yearly AI checks, a 23-year soak gave 8 AI foundings
+  (one every ~2.9 years), 7 of which answered invitations. Communities went from 19 to 27 with no
+  runaway. A newly founded community now waits 10 years before sending settlers of its own
+  (``kehillah_settlers_new_community_years``), so foundings cannot chain.

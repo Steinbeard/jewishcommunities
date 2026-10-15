@@ -101,3 +101,25 @@ by the local faith's view. The teaching carries the ideology.
   - War, a hostile policy or teaching, and occupation can still push it into Crisis.
 - **Not chosen:** the soak's alternative (development x8), and a larger floor of 250. The smaller
   floor is the more reversible step. Revisit after the next soak.
+
+## Addendum 2026-10-13: the county's economy weighs more
+
+**Status:** built 2026-10-13; live check pending.
+
+Daniel asked for county development to matter more to Prosperity, without building ahead of the
+upcoming trade DLC.
+
+- **Was:** a flat 4 per development level. Worms (about 12) got +48 against the 250-point gap from
+  Strained to Healthy.
+- **Now** (``kehillah_bd_local_economy_value``): 8 per level up to level 20, then 4 per level beyond.
+  Worms gets about +96. A development-40 city gets +240 (flat 8 would give +320). Daniel: big cities
+  should be richer, which is realistic, so the knee is a soft compromise (first built at 2 beyond 20).
+- **Why the knee:**
+  - The old great cities (Baghdad, Constantinople, Cordoba, at 30-50 in 1066) would otherwise run far
+    ahead of Ashkenaz (8-15).
+  - Development roughly doubles by 1300, which would otherwise inflate every community toward
+    Flourishing.
+  - Development is not a community's own lever, so it should not dominate the pillar.
+- **The trade DLC:** this value is the single hook for the county's economy. When the DLC lands,
+  its market and trade-route data belongs here, beside or instead of development. Nothing
+  trade-like is built ahead of it.

@@ -87,22 +87,96 @@ kehillah_popular_rising_strike_effect = {
 			debug_log = "kehillah_popular_rising_strike_effect: a rising's leader founded an Exclusion rite"
 		}
 	}
-	# The blow to the community.
-	primary_title = {
-		set_variable = { name = kehillah_rising_struck value = yes years = 5 }
-		change_variable = { name = kehillah_var_stability add = kehillah_rising_stability_loss }
-		change_variable = { name = kehillah_var_prosperity add = kehillah_rising_prosperity_loss }
-		clamp_variable = { name = kehillah_var_stability min = 0 max = 100000 }
-		clamp_variable = { name = kehillah_var_prosperity min = 0 max = 100000 }
+	domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_rising_host }
+	# V41 step 4b-2 (2026-10-14): the rising sends a host against the
+	# community -- a mob out of the rebel camp, under one of its preachers
+	# (not the rising's leader himself: the mob's march moves every army of
+	# its leader, and would carry off the rising's own). It forms where the
+	# rising's leader is, if that is not already at the gates.
+	if = {
+		limit = { primary_title = { NOT = { has_variable = kehillah_mob_threat } } }
+		scope:kehillah_rising_leader.location ?= {
+			if = {
+				limit = {
+					squared_distance = { target = root.domicile.domicile_location value >= kehillah_mob_spawn_min_sq }
+				}
+				save_scope_as = kehillah_mob_spawn
+			}
+		}
+		kehillah_mob_raise_effect = {
+			SIZE = kehillah_rising_mob_size
+			SEVERITY = kehillah_rising_mob_severity
+		}
+		# For the warning's text: whose rising sent him.
+		if = {
+			limit = { primary_title = { has_variable = kehillah_mob_threat } }
+			scope:kehillah_mob_leader ?= {
+				set_variable = { name = kehillah_mob_sent_by value = scope:kehillah_rising_leader }
+			}
+		}
 	}
 	if = {
-		limit = { is_ai = no }
-		send_interface_message = {
-			type = msg_kehillah_community_news_bad
-			title = kehillah_news_rising_t
-			desc = kehillah_news_rising_self_d
-			left_icon = scope:kehillah_rising_leader
+		limit = { primary_title = { has_variable = kehillah_mob_threat } }
+		primary_title = { set_variable = { name = kehillah_rising_struck value = yes years = 5 } }
+		debug_log = "kehillah_popular_rising_strike_effect: a rising sent a host against a community"
+	}
+	# No host could form: the blow as before (V36).
+	else = {
+		# The blow to the community, scaled by the lord's protection (V36:
+		# kehillah_host_protection_mult_value -- his outlook and the charter's
+		# security term).
+		# For the event's text (custom loc can't see saved scopes; loc reads a
+		# character's variables -- live 2026-10-13).
+		if = {
+			limit = { exists = scope:kehillah_rising_host }
+			set_variable = { name = kehillah_rising_host_ref value = scope:kehillah_rising_host }
 		}
+		save_scope_value_as = { name = kehillah_rising_mult value = kehillah_host_protection_mult_value }
+		primary_title = {
+			set_variable = { name = kehillah_rising_struck value = yes years = 5 }
+			set_variable = {
+				name = kehillah_rising_last_stability
+				value = {
+					value = kehillah_rising_stability_loss
+					multiply = scope:kehillah_rising_mult
+				}
+			}
+			set_variable = {
+				name = kehillah_rising_last_prosperity
+				value = {
+					value = kehillah_rising_prosperity_loss
+					multiply = scope:kehillah_rising_mult
+				}
+			}
+		}
+		# A hostile lord's men join the plunder.
+		if = {
+			limit = { kehillah_host_outlook_value <= -40 }
+			primary_title = {
+				change_variable = { name = kehillah_rising_last_prosperity add = kehillah_rising_plunder_prosperity }
+			}
+			scope:kehillah_rising_host ?= { add_gold = kehillah_rising_plunder_gold }
+		}
+		set_variable = { name = kehillah_rising_last_stability value = primary_title.var:kehillah_rising_last_stability }
+		set_variable = { name = kehillah_rising_last_prosperity value = primary_title.var:kehillah_rising_last_prosperity }
+		primary_title = {
+			change_variable = { name = kehillah_var_stability add = var:kehillah_rising_last_stability }
+			change_variable = { name = kehillah_var_prosperity add = var:kehillah_rising_last_prosperity }
+			clamp_variable = { name = kehillah_var_stability min = 0 max = 100000 }
+			clamp_variable = { name = kehillah_var_prosperity min = 0 max = 100000 }
+		}
+	}
+	# V38: a rising hardens the faith of the county.
+	domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 3 } }
+	# V36: for a player, an event -- the rising's leader, the lord, and
+	# what the lord did. Only for the V36 blow: a host sent brings its own
+	# events (live 2026-10-14: this showed an empty lord and 0 losses).
+	if = {
+		limit = {
+			is_ai = no
+			primary_title = { NOT = { has_variable = kehillah_mob_threat } }
+		}
+		trigger_event = kehillah_host_crisis.0010
 	}
 	kehillah_notify_region_players_effect = {
 		TYPE = msg_kehillah_community_news_bad

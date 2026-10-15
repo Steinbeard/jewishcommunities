@@ -1,0 +1,298 @@
+﻿namespace = kehillah_mob_debug
+
+# =====================================================================
+# V39 slice 1 -- the Mob, debug (console, on a Kehillah leader).
+#   .1  raise a local host against your community (1200 men, severity 50)
+#   .2  raise a crusade-sized host (3000 men, severity 70)
+#   .3  report: debug.log dump of the host and your community's state
+#   .4  the host reaches your town at its next step
+#   .5  the siege ends at the host's next step (the pogrom follows)
+#   .6  the host vanishes (cleanup)
+#   .7  your county's lord raises his men (as if begged successfully)
+#   .8  start a popular crusade now; .9 the host moves on now
+#   .10 the Granada chain on a short clock (on Granada's leader)
+#   .11 the preaching ends at the next weekly sermon
+# =====================================================================
+
+kehillah_mob_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_mob_raise_effect = {
+			SIZE = kehillah_mob_local_size
+			SEVERITY = kehillah_mob_local_severity
+		}
+		debug_log = "kehillah_mob_debug.1: a local host raised"
+	}
+}
+
+kehillah_mob_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_mob_raise_effect = {
+			SIZE = kehillah_mob_crusade_size
+			SEVERITY = kehillah_mob_crusade_severity
+		}
+		debug_log = "kehillah_mob_debug.2: a crusade-sized host raised"
+	}
+}
+
+kehillah_mob_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title.var:kehillah_mob_threat ?= {
+			save_scope_as = kmd_leader
+			kehillah_mob_set_band_effect = yes
+			save_scope_value_as = { name = kmd_band value = var:kehillah_mob_band_now }
+			if = {
+				limit = { has_variable = kehillah_mob_size }
+				save_scope_value_as = { name = kmd_size value = var:kehillah_mob_size }
+			}
+			if = {
+				limit = { has_variable = kehillah_mob_siege_days }
+				save_scope_value_as = { name = kmd_siege_days value = var:kehillah_mob_siege_days }
+			}
+			var:kehillah_mob_location ?= { save_scope_as = kmd_location }
+			if = {
+				limit = { has_character_flag = kehillah_mob_at_gates }
+				debug_log = "kehillah_mob_debug.3: AT THE GATES"
+			}
+			if = {
+				limit = { has_character_flag = kehillah_mob_done }
+				debug_log = "kehillah_mob_debug.3: the pogrom is done; waiting for the ransom"
+			}
+		}
+		if = {
+			limit = { primary_title = { has_variable = kehillah_mob_refuge } }
+			debug_log = "kehillah_mob_debug.3: refuge in the castle"
+		}
+		if = {
+			limit = { primary_title = { has_variable = kehillah_mob_defended } }
+			debug_log = "kehillah_mob_debug.3: the quarter is defended"
+		}
+		if = {
+			limit = { primary_title = { has_variable = kehillah_mob_condemned } }
+			debug_log = "kehillah_mob_debug.3: the host is condemned"
+		}
+		if = {
+			limit = { primary_title = { has_variable = kehillah_mob_scattered } }
+			debug_log = "kehillah_mob_debug.3: the community has scattered"
+		}
+		save_scope_value_as = { name = kmd_stability_threat value = kehillah_bd_mob_threat_stability_value }
+		save_scope_value_as = { name = kmd_memory value = kehillah_bd_pogrom_memory_value }
+		debug_log_scopes = yes
+		debug_log = "kehillah_mob_debug.3: done"
+	}
+}
+
+kehillah_mob_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location = { save_scope_as = kmd_town }
+		primary_title.var:kehillah_mob_threat ?= {
+			every_army = { set_army_location = scope:kmd_town }
+			set_variable = { name = kehillah_mob_location value = scope:kmd_town }
+		}
+		debug_log = "kehillah_mob_debug.4: the host is moved to the town"
+	}
+}
+
+kehillah_mob_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title.var:kehillah_mob_threat ?= {
+			set_variable = { name = kehillah_mob_siege_days value = 0 }
+		}
+		debug_log = "kehillah_mob_debug.5: the siege ends at the next step"
+	}
+}
+
+kehillah_mob_debug.6 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title.var:kehillah_mob_threat ?= {
+			kehillah_mob_end_effect = yes
+		}
+		debug_log = "kehillah_mob_debug.6: the host vanished"
+	}
+}
+
+# Your county's lord raises his men now (as if begged successfully).
+kehillah_mob_debug.7 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title.var:kehillah_mob_threat ?= { save_scope_as = kehillah_mob_leader }
+		if = {
+			limit = { exists = scope:kehillah_mob_leader }
+			domicile.domicile_location.county.holder = { save_scope_as = kmd_lord }
+			kehillah_mob_lord_raises_men_effect = { DEFENDER = scope:kmd_lord }
+			debug_log = "kehillah_mob_debug.7: the lord raises his men"
+		}
+	}
+}
+
+# V39 slice 2. Start a popular crusade now (as if a Catholic crusade had
+# been called): the host forms where the communities are thickest.
+kehillah_mob_debug.8 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_popular_crusade_start_effect = yes
+		debug_log = "kehillah_mob_debug.8: a popular crusade started"
+	}
+}
+
+# Any host marching on you moves on to its next community now (as if the
+# town had been struck and the ransom settled).
+kehillah_mob_debug.9 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title.var:kehillah_mob_threat ?= {
+			kehillah_mob_after_strike_effect = yes
+		}
+		debug_log = "kehillah_mob_debug.9: the host moves on"
+	}
+}
+
+# V39 slice 4. The Granada chain on a short clock, on Granada's leader:
+# the poem now, the whispers in 3 days, the night in 6.
+kehillah_mob_debug.10 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		title:d_kehillah_granada.holder ?= {
+			trigger_event = kehillah_granada.0001
+			trigger_event = { id = kehillah_granada.0002 days = 3 }
+			trigger_event = { id = kehillah_granada.0003 days = 6 }
+		}
+		debug_log = "kehillah_mob_debug.10: the Granada chain on a short clock"
+	}
+}
+
+# V41 step 3. The preacher threatening you ends his preaching at his next
+# weekly sermon and sets out with his following.
+kehillah_mob_debug.11 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title.var:kehillah_mob_threat ?= {
+			if = {
+				limit = { has_character_flag = kehillah_mob_preaching }
+				set_variable = { name = kehillah_mob_preach_days value = 0 }
+			}
+		}
+		debug_log = "kehillah_mob_debug.11: the preaching ends at the next sermon"
+	}
+}
+
+# V41 step 4a. Log the danger of violence and its terms; .13 an incident
+# now (the director's roll forced).
+kehillah_mob_debug.12 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		save_scope_value_as = { name = kmd_danger value = kehillah_danger_value }
+		save_scope_value_as = { name = kmd_greatness value = kehillah_danger_greatness_value }
+		save_scope_value_as = { name = kmd_wealth value = kehillah_danger_wealth_value }
+		save_scope_value_as = { name = kmd_incidents value = kehillah_danger_incidents_value }
+		save_scope_value_as = { name = kmd_hard_times value = kehillah_danger_hard_times_value }
+		save_scope_value_as = { name = kmd_teaching value = kehillah_danger_teaching_value }
+		save_scope_value_as = { name = kmd_lord value = kehillah_danger_lord_value }
+		save_scope_value_as = { name = kmd_lull value = kehillah_danger_lull_value }
+		save_scope_value_as = { name = kmd_badge value = kehillah_danger_badge_value }
+		save_scope_value_as = { name = kmd_chance value = kehillah_incident_chance_value }
+		save_scope_value_as = { name = kmd_court_jews value = kehillah_bd_court_jews_value }
+		save_scope_value_as = { name = kmd_loans value = kehillah_bd_loans_greatness_value }
+		debug_log_scopes = yes
+		debug_log = "kehillah_mob_debug.12: the danger of violence"
+	}
+}
+kehillah_mob_debug.13 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title = {
+			if = {
+				limit = { has_variable = kehillah_incident_cooldown }
+				remove_variable = kehillah_incident_cooldown
+			}
+			# Each incident's own cooldown, so every kind can come up.
+			remove_variable = kehillah_accusation_cooldown
+			remove_variable = kehillah_disputation_cooldown
+			remove_variable = kehillah_sermon_cooldown
+			remove_variable = kehillah_talmud_cooldown
+			remove_variable = kehillah_holy_week_cooldown
+			remove_variable = kehillah_bonds_cooldown
+			remove_variable = kehillah_mob_alone_cooldown
+		}
+		set_variable = { name = kehillah_force_incident value = yes days = 1 }
+		kehillah_incident_director_effect = yes
+		debug_log = "kehillah_mob_debug.13: the director rolled"
+	}
+}
+
+# V41 step 4b. Each new incident now: .14 the Talmud on trial (adds the
+# Bavli's Moed to the library if it has no Talmud), .15 the badge, .16
+# Holy Week (any month), .17 the bonds (the host borrows 100 if no lord of
+# his realm owes us).
+kehillah_mob_debug.14 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title = {
+			if = {
+				limit = { NOT = { kehillah_has_talmud_trigger = yes } }
+				add_to_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed }
+			}
+		}
+		trigger_event = kehillah_incident.0001
+		debug_log = "kehillah_mob_debug.14: the Talmud on trial"
+	}
+}
+kehillah_mob_debug.15 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		trigger_event = kehillah_incident.0010
+		debug_log = "kehillah_mob_debug.15: the badge"
+	}
+}
+kehillah_mob_debug.16 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		trigger_event = kehillah_incident.0020
+		debug_log = "kehillah_mob_debug.16: Holy Week"
+	}
+}
+kehillah_mob_debug.17 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_incident_host }
+		if = {
+			limit = {
+				exists = scope:kehillah_incident_host
+				NOT = { kehillah_has_host_realm_debtor_trigger = yes }
+			}
+			primary_title = { save_scope_as = kmd_lender }
+			scope:kehillah_incident_host = {
+				set_variable = { name = kehillah_loan_amount_owed value = 100 }
+				set_variable = { name = kehillah_loan_lender_title value = scope:kmd_lender }
+				set_variable = { name = kehillah_loan_years_elapsed value = 0 }
+			}
+			primary_title = {
+				add_to_variable_list = { name = kehillah_loan_debtors target = scope:kehillah_incident_host }
+			}
+		}
+		trigger_event = kehillah_incident.0030
+		debug_log = "kehillah_mob_debug.17: the bonds"
+	}
+}

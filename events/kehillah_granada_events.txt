@@ -1,0 +1,241 @@
+﻿namespace = kehillah_granada
+
+# =====================================================================
+# V39 slice 4 -- Granada, 30 December 1066 (docs/spec/v39-pogroms-and-
+# the-popular-crusade.md section 9), 2026-10-14. Joseph ibn Naghrela,
+# vizier of the Zirid emir Badis ibn Habus, son of Samuel ha-Nagid. The
+# faqih and poet Abu Ishaq of Elvira's qasida against the Jewish vizier;
+# the charge that Joseph plotted with al-Mu'tasim of Almeria; the night
+# the Sanhaja and the city stormed the palace. Historically everything
+# failed: Joseph was killed and the community destroyed. Here good play
+# can save Joseph or part of the community, rarely both.
+#   .0001 The Poem of Abu Ishaq        (about a month after the start)
+#   .0002 Whispers at Court            (about two months later)
+#   .0003 (hidden) the night: the mob rises in the city, or the year ends
+#   .0004 The Year Ends Quietly        (the poet silenced, and luck)
+#   .0005 The Night of the Sanhaja     (the mob rises)
+# Scope: the leader of the Kehillah of Granada.
+# =====================================================================
+
+scripted_effect kehillah_granada_scopes_effect = {
+	domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_granada_emir }
+	title:c_almeria.holder ?= { save_scope_as = kehillah_granada_almeria }
+}
+
+kehillah_granada.0001 = {
+	type = character_event
+	title = kehillah_granada.0001.t
+	desc = kehillah_granada.0001.desc
+	theme = intrigue
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:kehillah_granada_emir
+		animation = thinking
+	}
+	trigger = { kehillah_granada_chain_valid_trigger = yes }
+	immediate = {
+		kehillah_granada_scopes_effect = yes
+	}
+
+	# Ask the emir to silence the poet.
+	option = {
+		name = kehillah_granada.0001.a
+		trigger = { exists = scope:kehillah_granada_emir }
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_granada_silence_chance_value }
+				desc = kehillah_granada_silenced
+				custom_tooltip = kehillah_granada_silenced_tt
+				add_character_flag = kehillah_granada_silenced
+			}
+			0 = {
+				modifier = { add = kehillah_granada_silence_fail_value }
+				desc = kehillah_granada_not_silenced
+				custom_tooltip = kehillah_granada_not_silenced_tt
+			}
+		}
+		ai_chance = { base = 40 }
+	}
+
+	# Double your guard.
+	option = {
+		name = kehillah_granada.0001.b
+		trigger = { gold >= minor_gold_value }
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = minor_gold_value
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_granada_guard_chance_value }
+				desc = kehillah_granada_guarded
+				custom_tooltip = kehillah_granada_guarded_tt
+				add_character_flag = kehillah_granada_guarded
+				kehillah_granada_adjust_severity_effect = { AMOUNT = -15 }
+			}
+			0 = {
+				modifier = { add = kehillah_granada_guard_fail_value }
+				desc = kehillah_granada_not_guarded
+				custom_tooltip = kehillah_granada_not_guarded_tt
+			}
+		}
+		ai_chance = { base = 25 }
+	}
+
+	# Seek a friend in Almeria.
+	option = {
+		name = kehillah_granada.0001.c
+		trigger = { exists = scope:kehillah_granada_almeria }
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_granada_almeria_chance_value }
+				desc = kehillah_granada_escape_route
+				custom_tooltip = kehillah_granada_escape_route_tt
+				add_character_flag = kehillah_granada_escape_route
+			}
+			0 = {
+				modifier = { add = kehillah_granada_almeria_fail_value }
+				desc = kehillah_granada_plot_discovered
+				custom_tooltip = kehillah_granada_plot_discovered_tt
+				add_character_flag = kehillah_granada_plot_discovered
+				kehillah_granada_adjust_severity_effect = { AMOUNT = 15 }
+				scope:kehillah_granada_emir ?= {
+					hidden_effect = { kehillah_shift_outlook_effect = { AMOUNT = -10 } }
+				}
+				# The night comes sooner.
+				trigger_event = { id = kehillah_granada.0003 days = 45 }
+			}
+		}
+		ai_chance = { base = 10 }
+	}
+
+	# He is a poet; poets rail.
+	option = {
+		name = kehillah_granada.0001.d
+		add_stress = minor_stress_loss
+		ai_chance = { base = 25 }
+	}
+}
+
+kehillah_granada.0002 = {
+	type = character_event
+	title = kehillah_granada.0002.t
+	desc = kehillah_granada.0002.desc
+	theme = intrigue
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:kehillah_granada_emir
+		animation = disapproval
+	}
+	trigger = {
+		kehillah_granada_chain_valid_trigger = yes
+		NOT = { has_character_flag = kehillah_granada_night_done }
+	}
+	immediate = {
+		kehillah_granada_scopes_effect = yes
+	}
+
+	# Go before Badis and swear your loyalty.
+	option = {
+		name = kehillah_granada.0002.a
+		trigger = { exists = scope:kehillah_granada_emir }
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_granada_loyalty_chance_value }
+				desc = kehillah_granada_believed
+				custom_tooltip = kehillah_granada_believed_tt
+				kehillah_granada_adjust_severity_effect = { AMOUNT = -10 }
+				scope:kehillah_granada_emir = {
+					add_opinion = { target = root modifier = pleased_opinion opinion = 15 }
+				}
+			}
+			0 = {
+				modifier = { add = kehillah_granada_loyalty_fail_value }
+				desc = kehillah_granada_disbelieved
+				custom_tooltip = kehillah_granada_disbelieved_tt
+			}
+		}
+		ai_chance = { base = 40 }
+	}
+
+	# Make ready a flight to Lucena.
+	option = {
+		name = kehillah_granada.0002.b
+		trigger = { gold >= minor_gold_value }
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = minor_gold_value
+		add_character_flag = kehillah_granada_flight_ready
+		custom_tooltip = kehillah_granada_flight_ready_tt
+		ai_chance = { base = 30 }
+	}
+
+	# I am the vizier of Granada.
+	option = {
+		name = kehillah_granada.0002.c
+		add_prestige = minor_prestige_gain
+		ai_chance = {
+			base = 10
+			modifier = { add = 30 has_trait = arrogant }
+		}
+	}
+}
+
+# The night. Hidden.
+kehillah_granada.0003 = {
+	type = character_event
+	hidden = yes
+	trigger = {
+		kehillah_granada_chain_valid_trigger = yes
+		NOT = { has_character_flag = kehillah_granada_night_done }
+	}
+	immediate = {
+		add_character_flag = kehillah_granada_night_done
+		if = {
+			limit = { has_character_flag = kehillah_granada_silenced }
+			random_list = {
+				50 = {
+					trigger_event = kehillah_granada.0004
+				}
+				50 = {
+					kehillah_granada_night_effect = yes
+				}
+			}
+		}
+		else = {
+			kehillah_granada_night_effect = yes
+		}
+	}
+}
+
+kehillah_granada.0004 = {
+	type = character_event
+	title = kehillah_granada.0004.t
+	desc = kehillah_granada.0004.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+	option = {
+		name = kehillah_granada.0004.a
+		add_piety = minor_piety_gain
+	}
+}
+
+kehillah_granada.0005 = {
+	type = character_event
+	title = kehillah_granada.0005.t
+	desc = kehillah_granada.0005.desc
+	theme = dread
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+	option = {
+		name = kehillah_granada.0005.a
+	}
+}

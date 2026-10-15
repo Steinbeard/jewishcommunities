@@ -20,9 +20,11 @@ kehillah_shift_outlook_effect = {
 # The chaplain's sermons (V34 section 7c, 2026-10-13). Scope: an
 # independent ruler, yearly. What is preached at his court drifts his
 # outlook on the Jews: a zealous chaplain under a strict or exclusionary
-# teaching -2 a year (the friars' sermons of the 13th century); a learned
-# chaplain under a protective teaching +1 a year (Sicut Judaeis read
-# aloud). Within the +/-30 cap of kehillah_shift_outlook_effect.
+# teaching -2 a year (the friars' sermons of the 13th century); a zealous
+# chaplain under any other teaching -1. Within the +/-30 cap of
+# kehillah_shift_outlook_effect. (A learned chaplain under a protective
+# teaching once warmed him +1 a year; 2026-10-13, Daniel: the warming is
+# now the community's own work -- the Dayyan's Discourse, below.)
 kehillah_chaplain_sermons_effect = {
 	if = {
 		limit = {
@@ -40,11 +42,394 @@ kehillah_chaplain_sermons_effect = {
 			kehillah_shift_outlook_effect = { AMOUNT = -2 }
 		}
 		else_if = {
+			# V36c (2026-10-13): even under a protective teaching, a zealous
+			# chaplain preaches against the Jews a little -- the friars of
+			# the 13th century, the drift of the centuries.
+			limit = { cp:councillor_court_chaplain = { has_trait = zealous } }
+			kehillah_shift_outlook_effect = { AMOUNT = -1 }
+		}
+	}
+}
+
+# V35 (2026-10-13, player clarity). Scope: a Kehillah leader, quarterly.
+# For a player, when his host's outlook on the Jews moves to another band
+# (Hostile / Cold / Indifferent / Well-disposed / Protective), a feed
+# notice says so. A new host is recorded silently (the new lord has his
+# own news).
+kehillah_host_outlook_watch_effect = {
+	if = {
+		limit = {
+			is_ai = no
+			exists = primary_title
+			exists = domicile.domicile_location.county.holder.top_liege
+		}
+		domicile.domicile_location.county.holder.top_liege = {
+			save_scope_as = kehillah_mood_host
+			save_scope_value_as = { name = kehillah_mood_band value = kehillah_outlook_band_value }
+		}
+		primary_title = { save_scope_as = kehillah_mood_title }
+		if = {
 			limit = {
-				cp:councillor_court_chaplain = { learning >= 15 }
-				kehillah_teaching_protective_trigger = yes
+				scope:kehillah_mood_title = {
+					has_variable = kehillah_host_outlook_seen_band
+					var:kehillah_host_outlook_seen_host ?= scope:kehillah_mood_host
+				}
 			}
-			kehillah_shift_outlook_effect = { AMOUNT = 1 }
+			if = {
+				limit = { scope:kehillah_mood_title = { var:kehillah_host_outlook_seen_band < scope:kehillah_mood_band } }
+				send_interface_message = {
+					type = msg_kehillah_community_news
+					title = kehillah_host_mood_warmer_t
+					desc = kehillah_host_mood_warmer_d
+					left_icon = scope:kehillah_mood_host
+				}
+			}
+			else_if = {
+				limit = { scope:kehillah_mood_title = { var:kehillah_host_outlook_seen_band > scope:kehillah_mood_band } }
+				send_interface_message = {
+					type = msg_kehillah_community_news_bad
+					title = kehillah_host_mood_colder_t
+					desc = kehillah_host_mood_colder_d
+					left_icon = scope:kehillah_mood_host
+				}
+			}
+		}
+		scope:kehillah_mood_title = {
+			set_variable = { name = kehillah_host_outlook_seen_host value = scope:kehillah_mood_host }
+			set_variable = { name = kehillah_host_outlook_seen_band value = scope:kehillah_mood_band }
+		}
+		# V35 UI: the Domain overview reads these host and invitation values.
+		set_variable = { name = kehillah_host_ref value = scope:kehillah_mood_host }
+		save_temporary_scope_as = kehillah_mother_leader
+		if = {
+			limit = { any_county = { kehillah_settlers_invited_destination_trigger = yes } }
+			set_variable = { name = kehillah_invited_in_reach value = yes }
+		}
+		else_if = {
+			limit = { has_variable = kehillah_invited_in_reach }
+			remove_variable = kehillah_invited_in_reach
+		}
+		scope:kehillah_mood_host = { kehillah_outlook_marker_refresh_effect = yes }
+		save_scope_as = kehillah_oo_target
+		scope:kehillah_mood_host = { kehillah_outlook_opinion_apply_effect = yes }
+	}
+}
+
+# V35 (2026-10-13). Scope: a character. Puts the right "Outlook on the
+# Jews" marker (common/modifiers/kehillah_outlook_modifiers.txt) on a
+# landed, non-Jewish, Christian or Muslim character, and clears it from
+# anyone else.
+kehillah_outlook_marker_refresh_effect = {
+	if = {
+		limit = { has_character_modifier = kehillah_outlook_protective_modifier }
+		remove_character_modifier = kehillah_outlook_protective_modifier
+	}
+	if = {
+		limit = { has_character_modifier = kehillah_outlook_well_disposed_modifier }
+		remove_character_modifier = kehillah_outlook_well_disposed_modifier
+	}
+	if = {
+		limit = { has_character_modifier = kehillah_outlook_indifferent_modifier }
+		remove_character_modifier = kehillah_outlook_indifferent_modifier
+	}
+	if = {
+		limit = { has_character_modifier = kehillah_outlook_cold_modifier }
+		remove_character_modifier = kehillah_outlook_cold_modifier
+	}
+	if = {
+		limit = { has_character_modifier = kehillah_outlook_hostile_modifier }
+		remove_character_modifier = kehillah_outlook_hostile_modifier
+	}
+	if = {
+		limit = {
+			is_landed = yes
+			NOT = { is_jewish_character_trigger = yes }
+			NOT = { government_has_flag = government_is_kehillah }
+			# Where the Teaching on the Jews applies (live 2026-10-13: a duke
+			# of Wuxi read "Cold" -- meaningless so far from any community).
+			OR = {
+				faith.religion = religion:christianity_religion
+				faith.religion = religion:islam_religion
+			}
+		}
+		if = {
+			limit = { kehillah_outlook_band_value >= 2 }
+			add_character_modifier = { modifier = kehillah_outlook_protective_modifier }
+		}
+		else_if = {
+			limit = { kehillah_outlook_band_value = 1 }
+			add_character_modifier = { modifier = kehillah_outlook_well_disposed_modifier }
+		}
+		else_if = {
+			limit = { kehillah_outlook_band_value = 0 }
+			add_character_modifier = { modifier = kehillah_outlook_indifferent_modifier }
+		}
+		else_if = {
+			limit = { kehillah_outlook_band_value = -1 }
+			add_character_modifier = { modifier = kehillah_outlook_cold_modifier }
+		}
+		else = {
+			add_character_modifier = { modifier = kehillah_outlook_hostile_modifier }
+		}
+	}
+}
+
+# V35 (2026-10-13). Scope: a lord; scope:kehillah_oo_target (a Jewish
+# leader) saved. Re-states the lord's "Outlook on the Jews" opinion of
+# him (common/opinion_modifiers/kehillah_outlook_opinions.txt): the old
+# one is removed, the current one added -- for a Christian or Muslim
+# lord with a non-zero value.
+kehillah_outlook_opinion_apply_effect = {
+	if = {
+		limit = {
+			has_opinion_modifier = {
+				target = scope:kehillah_oo_target
+				modifier = kehillah_outlook_opinion
+			}
+		}
+		remove_opinion = {
+			target = scope:kehillah_oo_target
+			modifier = kehillah_outlook_opinion
+		}
+	}
+	if = {
+		limit = {
+			NOT = { this = scope:kehillah_oo_target }
+			NOT = { is_jewish_character_trigger = yes }
+			OR = {
+				faith.religion = religion:christianity_religion
+				faith.religion = religion:islam_religion
+			}
+			NOT = { kehillah_jews_opinion_value = 0 }
+		}
+		add_opinion = {
+			target = scope:kehillah_oo_target
+			modifier = kehillah_outlook_opinion
+			opinion = kehillah_jews_opinion_value
+		}
+	}
+}
+
+# V35 (2026-10-13). Scope: a Kehillah leader. The lords whose view of him
+# matters carry their outlook into their opinion of him: his host (the
+# realm's ruler) and the lord of his county; for a player, also every
+# Christian or Muslim duke or greater within diplomatic range. Yearly
+# (kehillah_outlook_on_actions.txt), at game start, and quarterly for a
+# player's host (kehillah_host_outlook_watch_effect).
+kehillah_outlook_opinion_refresh_effect = {
+	save_scope_as = kehillah_oo_target
+	domicile.domicile_location.county.holder.top_liege ?= {
+		kehillah_outlook_opinion_apply_effect = yes
+	}
+	domicile.domicile_location.county.holder ?= {
+		if = {
+			limit = { NOT = { this = scope:kehillah_oo_target.domicile.domicile_location.county.holder.top_liege } }
+			kehillah_outlook_opinion_apply_effect = yes
+		}
+	}
+	if = {
+		limit = { is_ai = no }
+		every_ruler = {
+			limit = {
+				highest_held_title_tier >= tier_duchy
+				OR = {
+					faith.religion = religion:christianity_religion
+					faith.religion = religion:islam_religion
+				}
+				in_diplomatic_range = scope:kehillah_oo_target
+				NOT = { this = scope:kehillah_oo_target.domicile.domicile_location.county.holder.top_liege }
+				NOT = { this = scope:kehillah_oo_target.domicile.domicile_location.county.holder }
+			}
+			kehillah_outlook_opinion_apply_effect = yes
+		}
+	}
+}
+
+# The Shtadlan's audience (in task_kehillah_petition_host), 2026-10-13.
+# Daniel: "a percentage based ... challenge that could be very
+# challenging, and more difficult the higher the level of the liege. That
+# way many communities doing it won't overwhelm the liege." First built as
+# the Dayyan's Discourse; moved to the Shtadlan the same day (Daniel: "why
+# is the dayyan interceding, shouldn't the shtadlan?").
+# Scope: the Shtadlan, each January; scope:councillor_liege is his
+# community's leader. The chance is kehillah_audience_yearly_chance_value.
+# A lord hears one such audience a year, from any community
+# (kehillah_audience_heard on the host, set win or lose).
+kehillah_shtadlan_audience_yearly_effect = {
+	save_scope_as = kehillah_audience_shtadlan
+	scope:councillor_liege = { save_scope_as = kehillah_audience_leader }
+	scope:kehillah_audience_leader.domicile.domicile_location.county.holder.top_liege ?= {
+		save_scope_as = kehillah_audience_host
+	}
+	if = {
+		limit = {
+			exists = scope:kehillah_audience_host
+			scope:kehillah_audience_host = { kehillah_audience_host_trigger = yes }
+		}
+		if = {
+			limit = { scope:kehillah_audience_host = { has_variable = kehillah_audience_heard } }
+			debug_log = "kehillah_shtadlan_audience_yearly_effect: the host already gave an audience this year"
+			scope:kehillah_audience_leader = {
+				if = {
+					limit = { is_ai = no }
+					send_interface_message = {
+						type = msg_kehillah_community_news
+						title = kehillah_audience_crowded_t
+						desc = kehillah_audience_crowded_d
+						left_icon = scope:kehillah_audience_shtadlan
+						right_icon = scope:kehillah_audience_host
+					}
+				}
+			}
+		}
+		else = {
+			scope:kehillah_audience_host = {
+				set_variable = { name = kehillah_audience_heard value = yes days = 360 }
+			}
+			random_list = {
+				0 = {
+					modifier = { add = kehillah_audience_yearly_chance_value }
+					debug_log = "kehillah_shtadlan_audience_yearly_effect: the host was moved"
+					scope:kehillah_audience_host = {
+						kehillah_shift_outlook_effect = { AMOUNT = kehillah_audience_outlook }
+						add_opinion = {
+							target = scope:kehillah_audience_leader
+							modifier = pleased_opinion
+							opinion = 10
+						}
+					}
+					scope:kehillah_audience_leader = {
+						if = {
+							limit = { is_ai = no }
+							send_interface_message = {
+								type = msg_kehillah_community_news
+								title = kehillah_audience_won_t
+								desc = kehillah_audience_won_d
+								left_icon = scope:kehillah_audience_shtadlan
+								right_icon = scope:kehillah_audience_host
+							}
+						}
+					}
+				}
+				0 = {
+					modifier = { add = kehillah_audience_fail_chance_value }
+					debug_log = "kehillah_shtadlan_audience_yearly_effect: the host was not moved"
+					scope:kehillah_audience_leader = {
+						if = {
+							limit = { is_ai = no }
+							send_interface_message = {
+								type = msg_kehillah_community_news_bad
+								title = kehillah_audience_lost_t
+								desc = kehillah_audience_lost_d
+								left_icon = scope:kehillah_audience_shtadlan
+								right_icon = scope:kehillah_audience_host
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+# A Learned Exchange (task_kehillah_learned_exchange), 2026-10-13. Scope:
+# the Dayyan, each January; scope:councillor_liege is his community's
+# leader. The faith is the county's (the local clergy's).
+kehillah_learned_exchange_yearly_effect = {
+	save_scope_as = kehillah_exchange_dayyan
+	scope:councillor_liege = { save_scope_as = kehillah_exchange_leader }
+	scope:kehillah_exchange_leader.domicile.domicile_location.county.faith ?= {
+		save_scope_as = kehillah_exchange_faith
+	}
+	if = {
+		limit = {
+			exists = scope:kehillah_exchange_faith
+			scope:kehillah_exchange_faith = {
+				NOT = { religion = religion:judaism_religion }
+			}
+		}
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_exchange_yearly_chance_value }
+				debug_log = "kehillah_learned_exchange_yearly_effect: the clergy listened"
+				scope:kehillah_exchange_leader.primary_title ?= {
+					set_variable = {
+						name = kehillah_learned_exchange
+						value = yes
+						years = kehillah_exchange_tension_years
+					}
+				}
+				scope:kehillah_exchange_faith = {
+					if = {
+						limit = { has_variable = kehillah_faith_pressure }
+						change_variable = { name = kehillah_faith_pressure add = -1 }
+						clamp_variable = { name = kehillah_faith_pressure min = 0 max = 1000 }
+					}
+					if = {
+						limit = {
+							OR = {
+								NOT = { has_variable = kehillah_faith_goodwill_year }
+								var:kehillah_faith_goodwill_year < kehillah_faith_goodwill_yearly_cap
+							}
+						}
+						if = {
+							limit = { has_variable = kehillah_faith_goodwill_year }
+							change_variable = { name = kehillah_faith_goodwill_year add = 1 }
+						}
+						else = {
+							set_variable = { name = kehillah_faith_goodwill_year value = 1 days = 360 }
+						}
+						if = {
+							limit = { has_variable = kehillah_faith_goodwill }
+							change_variable = { name = kehillah_faith_goodwill add = 1 }
+						}
+						else = {
+							set_variable = { name = kehillah_faith_goodwill value = 1 }
+						}
+						debug_log = "kehillah_learned_exchange_yearly_effect: the faith's goodwill rose"
+						scope:kehillah_exchange_leader = {
+							if = {
+								limit = { is_ai = no }
+								send_interface_message = {
+									type = msg_kehillah_community_news
+									title = kehillah_exchange_won_t
+									desc = kehillah_exchange_won_d
+									left_icon = scope:kehillah_exchange_dayyan
+								}
+							}
+						}
+					}
+					else = {
+						debug_log = "kehillah_learned_exchange_yearly_effect: the faith's goodwill is full this year"
+						scope:kehillah_exchange_leader = {
+							if = {
+								limit = { is_ai = no }
+								send_interface_message = {
+									type = msg_kehillah_community_news
+									title = kehillah_exchange_won_t
+									desc = kehillah_exchange_won_full_d
+									left_icon = scope:kehillah_exchange_dayyan
+								}
+							}
+						}
+					}
+				}
+			}
+			0 = {
+				modifier = { add = kehillah_exchange_fail_chance_value }
+				debug_log = "kehillah_learned_exchange_yearly_effect: the clergy did not listen"
+				scope:kehillah_exchange_leader = {
+					if = {
+						limit = { is_ai = no }
+						send_interface_message = {
+							type = msg_kehillah_community_news_bad
+							title = kehillah_exchange_lost_t
+							desc = kehillah_exchange_lost_d
+							left_icon = scope:kehillah_exchange_dayyan
+						}
+					}
+				}
+			}
 		}
 	}
 }

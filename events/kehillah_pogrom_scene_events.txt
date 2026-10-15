@@ -1,0 +1,427 @@
+﻿namespace = kehillah_pogrom
+
+# =====================================================================
+# V41 step 1 -- the pogrom unfolding (docs/spec/v41-danger-incidents-and-
+# the-pogrom-unfolding.md section 3), 2026-10-14. Players only: the AI's
+# communities go straight to kehillah_pogrom_effect.
+#
+# When the siege of the quarter ends (kehillah_mob_tick_effect), three
+# scenes, a day apart, drawn from a small pool by the situation:
+#   1. how it begins: .0001/.0002 the street (two tellings), or .0010
+#      the castle gate (the community had refuge)
+#   2. the fire: .0020 the scrolls, or .0021 the archive (with a house of
+#      study or a scribes' workshop)
+#   3. the baptisms: .0030 the font, or .0031 the river
+# Each choice leaves a flag on the community's title (kehillah_scene_*),
+# read by kehillah_pogrom_effect: who dies, who is baptized, what is lost,
+# and the leader's own fate -- killed, taken for ransom, or baptized.
+# Then the report (kehillah_mob.0010).
+#
+# Saved scopes, set by kehillah_pogrom_scenes_start_effect and refreshed
+# here: kehillah_mob_leader (the preacher), kehillah_pogrom_neighbor (a
+# Christian neighbour), kehillah_mob_town.
+# =====================================================================
+
+scripted_effect kehillah_pogrom_scene_scopes_effect = {
+	var:kehillah_mob_ref ?= { save_scope_as = kehillah_mob_leader }
+	var:kehillah_pogrom_neighbor_ref ?= { save_scope_as = kehillah_pogrom_neighbor }
+	domicile.domicile_location ?= { save_scope_as = kehillah_mob_town }
+	cp:councillor_marshal ?= { save_scope_as = kehillah_pogrom_watchman }
+	random_courtier = {
+		limit = {
+			is_alive = yes
+			is_adult = yes
+			is_jewish_character_trigger = yes
+		}
+		save_scope_as = kehillah_pogrom_someone
+	}
+}
+
+scripted_trigger kehillah_pogrom_scene_valid_trigger = {
+	exists = var:kehillah_mob_ref
+	var:kehillah_mob_ref = { is_alive = yes }
+}
+
+# ---------------------------------------------------------------------
+# 1. How it begins: the street.
+# ---------------------------------------------------------------------
+kehillah_pogrom.0001 = {
+	type = character_event
+	title = kehillah_pogrom.0001.t
+	desc = kehillah_pogrom.0001.desc
+	theme = dread
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+	right_portrait = {
+		character = scope:kehillah_pogrom_neighbor
+		animation = thinking
+	}
+	trigger = { kehillah_pogrom_scene_valid_trigger = yes }
+	immediate = { kehillah_pogrom_scene_scopes_effect = yes }
+
+	# Bring everyone into the synagogue.
+	option = {
+		name = kehillah_pogrom.0001.a
+		primary_title = { set_variable = { name = kehillah_scene_gathered value = yes } }
+		custom_tooltip = kehillah_pogrom_gathered_tt
+		kehillah_pogrom_to_fire_effect = yes
+	}
+
+	# Ask the neighbour to hide the children.
+	option = {
+		name = kehillah_pogrom.0001.b
+		trigger = { exists = scope:kehillah_pogrom_neighbor }
+		custom_tooltip = kehillah_pogrom_ask_neighbor_tt
+		hidden_effect = {
+			random_list = {
+				0 = {
+					modifier = { add = kehillah_pogrom_neighbor_chance_value }
+					primary_title = { set_variable = { name = kehillah_scene_children_hidden value = yes } }
+				}
+				0 = {
+					modifier = { add = kehillah_pogrom_neighbor_fail_value }
+					primary_title = { set_variable = { name = kehillah_scene_children_betrayed value = yes } }
+				}
+			}
+		}
+		kehillah_pogrom_to_fire_effect = yes
+	}
+
+	# Send the young men to hold the end of the street.
+	option = {
+		name = kehillah_pogrom.0001.c
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_pogrom_street_chance_value }
+				desc = kehillah_pogrom_street_held
+				custom_tooltip = kehillah_pogrom_street_held_tt
+				primary_title = { set_variable = { name = kehillah_scene_street_held value = yes } }
+			}
+			0 = {
+				modifier = { add = kehillah_pogrom_street_fail_value }
+				desc = kehillah_pogrom_street_lost
+				custom_tooltip = kehillah_pogrom_street_lost_tt
+				primary_title = { set_variable = { name = kehillah_scene_street_lost value = yes } }
+			}
+		}
+		kehillah_pogrom_to_fire_effect = yes
+	}
+}
+
+# The same beginning, told from the market.
+kehillah_pogrom.0002 = {
+	type = character_event
+	title = kehillah_pogrom.0002.t
+	desc = kehillah_pogrom.0002.desc
+	theme = dread
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+	right_portrait = {
+		character = scope:kehillah_pogrom_neighbor
+		animation = worry
+	}
+	trigger = { kehillah_pogrom_scene_valid_trigger = yes }
+	immediate = { kehillah_pogrom_scene_scopes_effect = yes }
+
+	option = {
+		name = kehillah_pogrom.0001.a
+		primary_title = { set_variable = { name = kehillah_scene_gathered value = yes } }
+		custom_tooltip = kehillah_pogrom_gathered_tt
+		kehillah_pogrom_to_fire_effect = yes
+	}
+	option = {
+		name = kehillah_pogrom.0001.b
+		trigger = { exists = scope:kehillah_pogrom_neighbor }
+		custom_tooltip = kehillah_pogrom_ask_neighbor_tt
+		hidden_effect = {
+			random_list = {
+				0 = {
+					modifier = { add = kehillah_pogrom_neighbor_chance_value }
+					primary_title = { set_variable = { name = kehillah_scene_children_hidden value = yes } }
+				}
+				0 = {
+					modifier = { add = kehillah_pogrom_neighbor_fail_value }
+					primary_title = { set_variable = { name = kehillah_scene_children_betrayed value = yes } }
+				}
+			}
+		}
+		kehillah_pogrom_to_fire_effect = yes
+	}
+	option = {
+		name = kehillah_pogrom.0001.c
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_pogrom_street_chance_value }
+				desc = kehillah_pogrom_street_held
+				custom_tooltip = kehillah_pogrom_street_held_tt
+				primary_title = { set_variable = { name = kehillah_scene_street_held value = yes } }
+			}
+			0 = {
+				modifier = { add = kehillah_pogrom_street_fail_value }
+				desc = kehillah_pogrom_street_lost
+				custom_tooltip = kehillah_pogrom_street_lost_tt
+				primary_title = { set_variable = { name = kehillah_scene_street_lost value = yes } }
+			}
+		}
+		kehillah_pogrom_to_fire_effect = yes
+	}
+}
+
+# How it begins: the castle gate (the community had refuge).
+kehillah_pogrom.0010 = {
+	type = character_event
+	title = kehillah_pogrom.0010.t
+	desc = kehillah_pogrom.0010.desc
+	theme = dread
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+	right_portrait = {
+		character = scope:kehillah_mob_leader
+		animation = rage
+	}
+	trigger = { kehillah_pogrom_scene_valid_trigger = yes }
+	immediate = { kehillah_pogrom_scene_scopes_effect = yes }
+
+	# Go out first, and speak to them.
+	option = {
+		name = kehillah_pogrom.0010.a
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_pogrom_speak_chance_value }
+				desc = kehillah_pogrom_spoke_heard
+				custom_tooltip = kehillah_pogrom_spoke_heard_tt
+				primary_title = { set_variable = { name = kehillah_scene_spoke_heard value = yes } }
+			}
+			0 = {
+				modifier = { add = kehillah_pogrom_speak_fail_value }
+				desc = kehillah_pogrom_spoke_seized
+				custom_tooltip = kehillah_pogrom_spoke_seized_tt
+				primary_title = { set_variable = { name = kehillah_scene_spoke_seized value = yes } }
+			}
+		}
+		kehillah_pogrom_to_fire_effect = yes
+	}
+
+	# Hold the door of the hall.
+	option = {
+		name = kehillah_pogrom.0010.b
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_pogrom_door_chance_value }
+				desc = kehillah_pogrom_door_held
+				custom_tooltip = kehillah_pogrom_door_held_tt
+				primary_title = { set_variable = { name = kehillah_scene_door_held value = yes } }
+			}
+			0 = {
+				modifier = { add = kehillah_pogrom_door_fail_value }
+				desc = kehillah_pogrom_door_broken
+				increase_wounds_effect = { REASON = fight }
+			}
+		}
+		kehillah_pogrom_to_fire_effect = yes
+	}
+
+	# Stay in the hall with the others.
+	option = {
+		name = kehillah_pogrom.0010.c
+		primary_title = { set_variable = { name = kehillah_scene_gathered value = yes } }
+		custom_tooltip = kehillah_pogrom_hall_tt
+		kehillah_pogrom_to_fire_effect = yes
+	}
+}
+
+# ---------------------------------------------------------------------
+# 2. The fire.
+# ---------------------------------------------------------------------
+kehillah_pogrom.0020 = {
+	type = character_event
+	title = kehillah_pogrom.0020.t
+	desc = kehillah_pogrom.0020.desc
+	theme = dread
+	left_portrait = {
+		character = root
+		animation = grief
+	}
+	right_portrait = {
+		character = scope:kehillah_pogrom_someone
+		animation = fear
+	}
+	trigger = { kehillah_pogrom_scene_valid_trigger = yes }
+	immediate = {
+		kehillah_pogrom_scene_scopes_effect = yes
+	}
+
+	# Carry out the scrolls.
+	option = {
+		name = kehillah_pogrom.0020.a
+		primary_title = { set_variable = { name = kehillah_scene_scrolls_saved value = yes } }
+		custom_tooltip = kehillah_pogrom_scrolls_saved_tt
+		kehillah_pogrom_to_baptism_effect = yes
+	}
+
+	# Get the people out by the back.
+	option = {
+		name = kehillah_pogrom.0020.b
+		primary_title = { set_variable = { name = kehillah_scene_people_first value = yes } }
+		custom_tooltip = kehillah_pogrom_people_first_tt
+		kehillah_pogrom_to_baptism_effect = yes
+	}
+}
+
+kehillah_pogrom.0021 = {
+	type = character_event
+	title = kehillah_pogrom.0021.t
+	desc = kehillah_pogrom.0021.desc
+	theme = dread
+	left_portrait = {
+		character = root
+		animation = grief
+	}
+	right_portrait = {
+		character = scope:kehillah_pogrom_someone
+		animation = fear
+	}
+	trigger = { kehillah_pogrom_scene_valid_trigger = yes }
+	immediate = { kehillah_pogrom_scene_scopes_effect = yes }
+
+	# Carry out the books.
+	option = {
+		name = kehillah_pogrom.0021.a
+		primary_title = { set_variable = { name = kehillah_scene_scrolls_saved value = yes } }
+		custom_tooltip = kehillah_pogrom_books_saved_tt
+		kehillah_pogrom_to_baptism_effect = yes
+	}
+
+	# Leave them.
+	option = {
+		name = kehillah_pogrom.0021.b
+		primary_title = { set_variable = { name = kehillah_scene_people_first value = yes } }
+		custom_tooltip = kehillah_pogrom_people_first_tt
+		kehillah_pogrom_to_baptism_effect = yes
+	}
+}
+
+# ---------------------------------------------------------------------
+# 3. The baptisms: the font, or the river.
+# ---------------------------------------------------------------------
+kehillah_pogrom.0030 = {
+	type = character_event
+	title = kehillah_pogrom.0030.t
+	desc = {
+		desc = kehillah_pogrom.0030.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = { primary_title = { has_variable = kehillah_scene_children_betrayed } }
+				desc = kehillah_pogrom.0030.desc_children
+			}
+			desc = kehillah_pogrom.0030.desc_none
+		}
+	}
+	theme = dread
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+	right_portrait = {
+		character = scope:kehillah_mob_leader
+		animation = dismissal
+	}
+	trigger = { kehillah_pogrom_scene_valid_trigger = yes }
+	immediate = {
+		kehillah_pogrom_scene_scopes_effect = yes
+	}
+	option = {
+		name = kehillah_pogrom.0030.a
+		trigger = { NOT = { primary_title = { has_variable = kehillah_scene_leader_hid } } }
+		kehillah_pogrom_refuse_effect = yes
+	}
+	option = {
+		name = kehillah_pogrom.0030.b
+		trigger = { NOT = { primary_title = { has_variable = kehillah_scene_leader_hid } } }
+		kehillah_pogrom_accept_effect = yes
+	}
+	option = {
+		name = kehillah_pogrom.0030.c
+		trigger = {
+			gold > 0
+			NOT = { primary_title = { has_variable = kehillah_scene_leader_hid } }
+		}
+		kehillah_pogrom_offer_all_effect = yes
+	}
+	option = {
+		name = kehillah_pogrom.0030.hidden
+		trigger = { primary_title = { has_variable = kehillah_scene_leader_hid } }
+		custom_tooltip = kehillah_pogrom_hidden_tt
+		trigger_event = kehillah_pogrom.0090
+	}
+}
+
+
+kehillah_pogrom.0031 = {
+	type = character_event
+	title = kehillah_pogrom.0031.t
+	desc = {
+		desc = kehillah_pogrom.0031.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = { primary_title = { has_variable = kehillah_scene_children_betrayed } }
+				desc = kehillah_pogrom.0030.desc_children
+			}
+			desc = kehillah_pogrom.0030.desc_none
+		}
+	}
+	theme = dread
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+	right_portrait = {
+		character = scope:kehillah_mob_leader
+		animation = dismissal
+	}
+	trigger = { kehillah_pogrom_scene_valid_trigger = yes }
+	immediate = { kehillah_pogrom_scene_scopes_effect = yes }
+	option = {
+		name = kehillah_pogrom.0031.a
+		trigger = { NOT = { primary_title = { has_variable = kehillah_scene_leader_hid } } }
+		kehillah_pogrom_refuse_effect = yes
+	}
+	option = {
+		name = kehillah_pogrom.0031.b
+		trigger = { NOT = { primary_title = { has_variable = kehillah_scene_leader_hid } } }
+		kehillah_pogrom_accept_effect = yes
+	}
+	option = {
+		name = kehillah_pogrom.0030.c
+		trigger = {
+			gold > 0
+			NOT = { primary_title = { has_variable = kehillah_scene_leader_hid } }
+		}
+		kehillah_pogrom_offer_all_effect = yes
+	}
+	option = {
+		name = kehillah_pogrom.0030.hidden
+		trigger = { primary_title = { has_variable = kehillah_scene_leader_hid } }
+		custom_tooltip = kehillah_pogrom_hidden_tt
+		trigger_event = kehillah_pogrom.0090
+	}
+}
+
+# ---------------------------------------------------------------------
+# The scenes are over: the pogrom's outcome, then the report. Hidden.
+# ---------------------------------------------------------------------
+kehillah_pogrom.0090 = {
+	type = character_event
+	hidden = yes
+	trigger = { kehillah_pogrom_scene_valid_trigger = yes }
+	immediate = {
+		var:kehillah_mob_ref = { save_scope_as = kehillah_mob_leader }
+		kehillah_pogrom_effect = yes
+	}
+}

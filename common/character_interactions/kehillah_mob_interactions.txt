@@ -1,0 +1,68 @@
+﻿# =====================================================================
+# V39 -- the Mob (docs/spec/v39-pogroms-and-the-popular-crusade.md),
+# 2026-10-13. Daniel: the host should be something "player rulers could
+# attack, but AI usually shouldn't". A player ruler joins the host's war
+# on the community's side (add_defender) and may fight it. The AI never
+# does this on its own; an AI lord joins only when the community moves
+# him to raise his men (kehillah_mob.0002).
+# =====================================================================
+
+kehillah_defend_community_interaction = {
+	icon = icon_combat
+	category = interaction_category_diplomacy
+	common_interaction = no
+	use_diplomatic_range = no
+
+	desc = kehillah_defend_community_interaction_desc
+	auto_accept = yes
+
+	is_shown = {
+		scope:actor = {
+			is_ai = no
+			is_landed = yes
+			NOT = { government_has_flag = government_is_kehillah }
+		}
+		scope:recipient = {
+			government_has_flag = government_is_kehillah
+			primary_title ?= { has_variable = kehillah_mob_threat }
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			is_available_adult = yes
+			custom_tooltip = {
+				text = kehillah_defend_community_already_tt
+				NOT = { is_at_war_with = scope:recipient.primary_title.var:kehillah_mob_threat }
+			}
+		}
+	}
+
+	on_accept = {
+		scope:recipient.primary_title.var:kehillah_mob_threat = {
+			save_scope_as = kehillah_mob_leader
+			random_character_war = {
+				limit = { is_attacker = scope:kehillah_mob_leader }
+				add_defender = scope:actor
+			}
+		}
+		scope:recipient = {
+			add_opinion = {
+				target = scope:actor
+				modifier = grateful_opinion
+				opinion = 40
+			}
+			if = {
+				limit = { is_ai = no }
+				send_interface_message = {
+					type = msg_kehillah_community_news
+					title = kehillah_defend_community_msg_t
+					desc = kehillah_defend_community_msg_d
+					left_icon = scope:actor
+				}
+			}
+		}
+		custom_tooltip = kehillah_defend_community_tt
+	}
+
+}

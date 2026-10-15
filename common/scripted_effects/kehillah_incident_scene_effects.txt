@@ -1,0 +1,115 @@
+﻿# =====================================================================
+# V41 step 4b -- the effects of the new incidents (events/kehillah_
+# incident_events.txt), 2026-10-14. Scope: a Kehillah leader.
+# =====================================================================
+
+# The people of an incident: the host, the town, the Shtadlan, the Dayyan.
+kehillah_incident_scopes_effect = {
+	domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_incident_host }
+	domicile.domicile_location ?= { save_scope_as = kehillah_incident_town }
+	cp:councillor_chancellor ?= { save_scope_as = kehillah_incident_shtadlan }
+	cp:councillor_court_chaplain ?= { save_scope_as = kehillah_incident_dayyan }
+}
+
+# What came of it, for a player two days later (kehillah_incident.0090).
+kehillah_incident_report_effect = {
+	hidden_effect = {
+		set_variable = { name = kehillah_incident_outcome value = flag:$OUTCOME$ }
+		if = {
+			limit = { is_ai = no }
+			trigger_event = { id = kehillah_incident.0090 days = 2 }
+		}
+		else = {
+			remove_variable = kehillah_incident_outcome
+		}
+		debug_log = "kehillah_incident_report_effect: $OUTCOME$"
+	}
+}
+
+# The Talmud burned (Paris, 1242): every tractate of the Bavli and the
+# Yerushalmi leaves the library; Greatness falls; under a Christian
+# charter the text term grows one step stricter.
+kehillah_talmud_burned_effect = {
+	custom_tooltip = kehillah_incident_talmud_burned_tt
+	hidden_effect = {
+		primary_title = {
+			kehillah_library_lose_work_effect = { WORK = work_bavli_zeraim }
+			kehillah_library_lose_work_effect = { WORK = work_bavli_moed }
+			kehillah_library_lose_work_effect = { WORK = work_bavli_nashim }
+			kehillah_library_lose_work_effect = { WORK = work_bavli_nezikin }
+			kehillah_library_lose_work_effect = { WORK = work_bavli_kodashim }
+			kehillah_library_lose_work_effect = { WORK = work_bavli_tahorot }
+			kehillah_library_lose_work_effect = { WORK = work_yerushalmi_zeraim }
+			kehillah_library_lose_work_effect = { WORK = work_yerushalmi_moed }
+			kehillah_library_lose_work_effect = { WORK = work_yerushalmi_nashim }
+			kehillah_library_lose_work_effect = { WORK = work_yerushalmi_nezikin }
+			set_variable = { name = kehillah_talmud_burned value = yes years = 30 }
+		}
+	}
+	kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_talmud_burned_greatness }
+	add_stress = medium_stress_gain
+	kehillah_charter_censor_text_effect = yes
+}
+
+# Scope: a Kehillah title. One work leaves the library, if it is there.
+kehillah_library_lose_work_effect = {
+	if = {
+		limit = { is_target_in_variable_list = { name = kehillah_library_works target = flag:$WORK$ } }
+		remove_list_variable = { name = kehillah_library_works target = flag:$WORK$ }
+	}
+}
+
+# The badge decreed: 30 years, Stability and Greatness fall, the danger
+# rises while it lasts (kehillah_danger_badge_value). The leader's own
+# modifier is added by the option, so that a bought exemption skips it.
+kehillah_badge_decree_effect = {
+	custom_tooltip = kehillah_incident_badge_tt
+	primary_title = {
+		hidden_effect = { set_variable = { name = kehillah_badge value = yes years = kehillah_badge_years } }
+	}
+	kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_badge_stability }
+	kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_badge_greatness }
+}
+
+# A petition against the badge, by the Shtadlan or the leader.
+kehillah_badge_petition_effect = {
+	random_list = {
+		0 = {
+			modifier = { add = kehillah_badge_petition_chance_value }
+			desc = kehillah_incident_out_revoked
+			custom_tooltip = kehillah_incident_badge_lifted_tt
+			kehillah_incident_report_effect = { OUTCOME = badge_revoked }
+		}
+		0 = {
+			modifier = { add = kehillah_badge_petition_fail_value }
+			desc = kehillah_incident_out_stands
+			kehillah_badge_decree_effect = yes
+			add_character_modifier = { modifier = kehillah_badge_modifier years = kehillah_badge_years }
+			kehillah_incident_report_effect = { OUTCOME = badge_stands }
+		}
+	}
+}
+
+# The bonds burned (York, 1190): every debt owed to the community by the
+# host and the lords of his realm is void; Prosperity falls.
+kehillah_bonds_burned_effect = {
+	custom_tooltip = kehillah_incident_bonds_burned_tt
+	hidden_effect = {
+		primary_title = {
+			every_in_list = {
+				variable = kehillah_loan_debtors
+				limit = {
+					exists = var:kehillah_loan_amount_owed
+					OR = {
+						this = scope:kehillah_incident_host
+						top_liege ?= scope:kehillah_incident_host
+					}
+				}
+				remove_variable = kehillah_loan_amount_owed
+				remove_variable = kehillah_loan_lender_title
+				remove_variable = kehillah_loan_years_elapsed
+			}
+		}
+	}
+	kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_bonds_burned_prosperity }
+}

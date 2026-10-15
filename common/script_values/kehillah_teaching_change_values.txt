@@ -1,3 +1,122 @@
 ﻿# V34 section 3. Yearly chance (percent) a head of faith with a decided
 # outlook moves his main rite's Teaching on the Jews one step.
 kehillah_teaching_yearly_chance = 3
+
+# V38 (2026-10-13): the faith's anti-Jewish pressure.
+kehillah_faith_pressure_head_mood_threshold = 10
+# Yearly chance (percent) that a lord's zealous clergy preach against the
+# Jews: by the lord's teaching.
+kehillah_court_preaching_chance_value = {
+	value = 10
+	if = {
+		limit = { kehillah_teaching_strict_trigger = yes }
+		value = 25
+	}
+	else_if = {
+		limit = { kehillah_teaching_exclusionary_trigger = yes }
+		value = 40
+	}
+}
+
+# --- V38 slice 2: missionizing. Scope: a Kehillah leader.
+# Quarterly chance (percent) of a disputation: Christian hosts only.
+kehillah_disputation_chance_value = {
+	value = 0
+	if = {
+		limit = {
+			domicile.domicile_location.county.holder.top_liege ?= {
+				faith.religion = religion:christianity_religion
+			}
+		}
+		value = 0.25
+		if = {
+			limit = { domicile.domicile_location.county.holder.top_liege = { kehillah_teaching_strict_trigger = yes } }
+			value = 1.5
+		}
+		else_if = {
+			limit = { domicile.domicile_location.county.holder.top_liege = { kehillah_teaching_exclusionary_trigger = yes } }
+			value = 1
+		}
+		if = {
+			limit = {
+				domicile.domicile_location.county.holder.top_liege.faith = {
+					has_variable = kehillah_faith_pressure
+					var:kehillah_faith_pressure >= kehillah_faith_pressure_head_mood_threshold
+				}
+			}
+			add = 0.75
+		}
+	}
+}
+kehillah_disputation_cooldown_years = 15
+# Quarterly chance (percent) of compelled sermons: Separation and Mission
+# above all; Christian or Muslim hosts.
+kehillah_sermon_chance_value = {
+	value = 0
+	if = {
+		limit = { domicile.domicile_location.county.holder.top_liege ?= { kehillah_teaching_strict_trigger = yes } }
+		value = 2
+	}
+	else_if = {
+		limit = { domicile.domicile_location.county.holder.top_liege ?= { kehillah_teaching_exclusionary_trigger = yes } }
+		value = 1.5
+	}
+	else_if = {
+		limit = {
+			domicile.domicile_location.county.holder.top_liege.faith ?= {
+				has_variable = kehillah_faith_pressure
+				var:kehillah_faith_pressure >= kehillah_faith_pressure_head_mood_threshold
+			}
+		}
+		value = 0.5
+	}
+}
+kehillah_sermon_cooldown_years = 10
+# The disputation: the community's champion against the friar. Scope:
+# the Kehillah leader; scope:kehillah_disputant, scope:kehillah_friar.
+kehillah_disputation_bold_success_value = {
+	value = 40
+	add = {
+		value = scope:kehillah_disputant.learning
+		subtract = scope:kehillah_friar.learning
+		multiply = 4
+	}
+	min = 10
+	max = 90
+}
+kehillah_disputation_bold_failure_value = {
+	value = 100
+	subtract = kehillah_disputation_bold_success_value
+}
+kehillah_disputation_cautious_success_value = {
+	value = 60
+	add = {
+		value = scope:kehillah_disputant.learning
+		subtract = scope:kehillah_friar.learning
+		multiply = 3
+	}
+	min = 20
+	max = 95
+}
+kehillah_disputation_cautious_failure_value = {
+	value = 100
+	subtract = kehillah_disputation_cautious_success_value
+}
+# Answering the friars in the synagogue: 35 + 2 per point of the
+# leader's learning (to 85).
+kehillah_sermon_answer_success_value = {
+	value = 35
+	add = {
+		value = learning
+		multiply = 2
+	}
+	max = 85
+}
+kehillah_sermon_answer_failure_value = {
+	value = 100
+	subtract = kehillah_sermon_answer_success_value
+}
+
+# 2026-10-13: goodwill from learned exchanges (task_kehillah_learned_
+# exchange) softens a teaching at the yearly review from this level.
+kehillah_faith_goodwill_threshold = 4

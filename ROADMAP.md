@@ -17,6 +17,110 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### V41 The danger of violence, the incidents, the pogrom unfolding — 2026-10-14, Daniel's request
+
+Spec: [v41](docs/spec/v41-danger-incidents-and-the-pogrom-unfolding.md).
+
+**The plan:**
+- **Character-driven checks,** and options unique to each leader.
+- **The pogrom unfolds** in scenes, with the leader's own fate at stake. A leader baptized by force
+  steps down; the player continues as the successor or as the convert. Forced converts take an
+  anusim rite.
+- **The crusade's preaching phase.**
+- **A danger-of-violence score** (Greatness, incidents, hard times, the teaching, the lord): hard
+  to reverse, possible to escape.
+- **One incident director** with new incidents: host desecration, the Talmud trial, sumptuary
+  laws, Holy Week humiliation, debt riots, uprisings.
+
+**Division:** the director and the incident catalogue are Claude's; V40's Firebrand (Codex) drives
+incidents through it.
+
+**Status, 2026-10-14:**
+- **Live-tested:** steps 1a, 1b, 2, 3 and 4a.
+- **Built:** step 4b, the Talmud trial, the badge, Holy Week, the bonds, host desecration (an
+  accusation variant), and risings that raise a mob.
+- **Step 4b** passed its live test.
+- **Two soak tests:** pogroms fell from 37 to 9 in 30 years after the balance fixes.
+- **Refugees** are built and live-tested.
+- **AI communities** now ask their lord to ride out.
+- **Next:**
+  1. a soak to see how often the lord's men save an AI community;
+  2. a second eastern host.
+
+### V40 Living crises and councils — 2026-10-13, Daniel's request
+
+Spec: [v40](docs/spec/v40-living-crises-and-councils.md). Daniel wants crises to be character-driven
+event chains with variety, not pop-ups fired by statistics.
+
+**The plan:**
+- **The Firebrand:** a named, recurring instigator whose acts escalate: preaching, then a
+  disputation, an accusation and a mob.
+- **Named allies.**
+- **"Recent incidents" in a faith** (V38's pressure, made visible) call a **Council** (Christian) or
+  a petition to the **Caliph** (Muslim). The communities lobby there, with pooled petitions. The
+  outcome is a stricter teaching with a named decree, or protection reaffirmed.
+- **What it replaces:** V38's silent yearly hardening. Vanilla's council needs the By God Alone
+  DLC; this chain does not.
+
+**Slices:**
+1. The incidents counter.
+2. The Council and the Caliph.
+3. The Firebrand.
+4. Allies.
+5. Variants for the V36 events.
+
+**Slice 1, 2026-10-14:** built and source/Tiger-checked; live verification pending.
+Your Host now shows its faith's Recent incidents and Goodwill, retaining the existing
+save variables and yearly fifth-decay. A completed pogrom adds 4 incidents to its county
+faith. The silent annual teaching rolls are removed, including their softening mirror;
+the Learned Exchange tooltip no longer promises annual softening. The existing DLC
+council debate remains. The non-DLC Council/Caliph route is slice 2, not yet built;
+no council threshold is advertised until it exists. See
+[the implementation addendum](docs/implementation/kehillah-recent-incidents.md).
+The existing running game did not register the new debug-event namespace; no counter
+or tooltip assertion passed. It was left paused with its save untouched. First next
+step is a fresh-boot slice-1 check, then slice 2 (Council/Caliph); see
+[the actual test log](docs/testing/2026-10-14-recent-incidents-live-test-log.md).
+No lower TODO item was selected for this run.
+
+### V39 Pogroms and the popular crusade — 2026-10-13, Daniel's request
+
+Spec: [v39](docs/spec/v39-pogroms-and-the-popular-crusade.md). It answers V22 feature 4 and closes
+S11's open question: the popular bands are a mod-side peasant army.
+
+**The plan:**
+- **The Mob:** a general pogrom mechanic. A preacher's real army besieges communities one by one.
+- **Its users:** the Popular Crusade, hooked on a Catholic Great Holy War, and Granada 1066.
+- **The aftermath:** trauma, *Kiddush ha-Shem* and asceticism as tenets, forced converts' return,
+  and refugees.
+
+**Slices:** 0, the engine spike (eight questions, §10), then 1 the Mob, 2 the Crusade, 3 the
+aftermath, and 4 Granada. **Status 2026-10-14: slices 0-5 built and live-tested** (details
+and test results in the spec):
+- **The Mob, against one community:**
+  - the elders' hub, with visits that take travel time and show their odds;
+  - the scripted march, the siege of the quarter, and the lord's men;
+  - the pogrom outcome, the ransom, and pressure lines in the tooltips.
+- **The Popular Crusade:**
+  - a Catholic crusade call starts it, and it chains from town to town;
+  - allies do not answer a call to arms on their own.
+- **The aftermath:**
+  - Kiddush ha-Shem, a new tenet, and personal tenets;
+  - the Year of the Decrees and the Memorbuch;
+  - the forced converts' return (petition or quiet return; the Bet Din's ruling).
+- **Granada, 30 December 1066.**
+- **Game rules:** popular crusades, and historical crises at game start.
+- **Accusations** raise a real mob.
+
+**Open:**
+- refugees (via the exiles system);
+- a second, eastern host;
+- early answers during the months of preaching;
+- the V36 rising, still abstract;
+- a soak to tune how often and how hard.
+
+V40 (councils, the Firebrand) is Codex's.
+
 ### Pillar band effects in tooltips — 2026-10-12, Daniel's request
 
 Each Prosperity, Stability and Greatness breakdown now states the current level's applied
@@ -86,6 +190,8 @@ Five one-step events for Yom Kippur, Sukkot and Shavuot are scripted. Two use na
 **2026-10-14 map visibility pass, Daniel's follow-up:** The separate branch has brighter, more distinguishable customary-region colours and matching colour swatches in the community roster. Live Worms testing confirmed the Rhineland tint, host-barony highlights, swatches, and “Customary region” hover wording. An attempted province GUI pin rendered in Details mode but not in the custom map at the tested paper-map zooms; its vanilla GUI override was removed. A proven dynamic on-map pin and actual community Nusach remain open. See [the visibility log](docs/testing/2026-10-14-map-visibility-live-test.md). This user-requested map pass also ran ahead of the older live-test TODOs.
 
 **2026-10-14 Domain overview, Daniel's follow-up:** A Kehillah-only summary now sits below the Jewish Quarter card in My Realm > Domain. It shows Standing, pillar bands and trends, host ruler, and recorded charter terms; the redundant top-left score strip is retired. The Faith-family map button still opens the cross-community roster. This requires a full `window_my_realm.gui` override and will need review after game updates. See [the implementation note](docs/implementation/kehillah-domain-overview.md) and [the live test](docs/testing/2026-10-14-kehillah-domain-live-test.md). This user-requested UI pass ran ahead of the older live-test TODOs.
+
+**2026-10-14 main integration, Daniel's request:** Main's V35 Your Host tile and V40 recent-incidents hover were reconciled with the Domain overview. The host outlook and invitation cue now appear in Domain when the quarterly host mirror exists; its hover retains the full outlook, goodwill, and incidents breakdown. The separate Faith-family map and roster remain available. See [the integration note](docs/implementation/kehillah-domain-overview.md) and [merged live check](docs/testing/2026-10-14-domain-main-merge-check.md).
 
 ### Exceptional sefarim — 2026-10-12, Daniel's request
 
@@ -296,6 +402,13 @@ the shim guide. Current state is in the
   - **V34:** an outlook on the Jews for every character. Teachings change by a head of faith's outlook (yearly, and at councils) and by vanilla rite drift. Masmudi (the Almohads) teaches Abolition. Popular risings found Exclusion rites. The policy review reads outlook, and a policy change revises existing charters. Natural founding: about one community every 5 years.
   - **V34 section 7, invitations (2026-10-13):** a yearly open-door review lets a ruler with no Jews raise their policy by outlook, and Encouraged sends invitations: news, plus a pull on settlers and exiles.
   - **Live-tested 2026-10-13.** An invitation answered gives +60 Prosperity / +30 Stability and +5 outlook for the lord. More outlook sources: Jewish friends and rivals, crusade pledges. The Shtadlan's **Seek an Invitation** council task courts lords abroad. A **Prosperity floor** of 150 (no community starts in Crisis). The AI's settlers weight was raised: the gates probe found 5 of 23 communities eligible, but the AI chance was 1-11%. A 25-year soak of the AI founding rate is pending.
+  - **V35 player clarity (2026-10-13)** ([v35](docs/spec/v35-player-clarity-outlook-and-invitations.md)): outlook bands in the host-attitude line, the invitation news and the Shtadlan's messages. "The Lord Grows Warmer/Colder" notices. An invitation event with the lord shown, for communities that can answer it. Settlers' destinations say why they draw.
+  - **V36 host levers and crises (2026-10-13)** ([v36](docs/spec/v36-host-relationship-levers-and-crises.md)): violence scaled by the lord's protection (his outlook and the charter's security term). "The Lord's Demands", in which a Cold or Hostile lord demands a levy or forces a worse charter, answered by paying, the Shtadlan, an appeal to the head of the faith, or refusal. Levers: Present a Gift, Forgive the Debt, and generous loan terms.
+  - **V36b/c and V37 (2026-10-13):**
+    - The Lord's Favour.
+    - Outlook traits.
+    - A colder world: outlook "prejudice", Christian -15, Muslim -10.
+    - Accusations ([v37](docs/spec/v37-accusations.md)): the blood libel or blasphemy, answered by the Shtadlan, paying for protection, an appeal, or barring the gates. The outcome is scaled by the lord's protection.
   - **Next:** a V34 live probe, then a soak. Prosperity tuning (development x8 or a floor). More outlook sources. The anti-Jewish faction.
 
 - **V30, COMMUNITY NEWS: built and verified live 2026-10-12** ([spec](docs/spec/v30-community-news.md); test log run 20).
