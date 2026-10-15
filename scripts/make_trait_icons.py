@@ -82,7 +82,14 @@ def crop_and_square(img):
 
 
 def write_icon(name, img):
-    icon = crop_and_square(strip_background(img)).resize((ICON_SIZE, ICON_SIZE), Image.LANCZOS)
+    # Square, opaque sources are already finished game icons with their own
+    # background. Preserve that background instead of sending it through
+    # background removal; older transparent source art still uses the cutout
+    # and padding path below.
+    if img.width == img.height and img.getchannel("A").getextrema()[0] > 200:
+        icon = img.resize((ICON_SIZE, ICON_SIZE), Image.LANCZOS)
+    else:
+        icon = crop_and_square(strip_background(img)).resize((ICON_SIZE, ICON_SIZE), Image.LANCZOS)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     path = OUT_DIR / f"{name}.dds"
     icon.save(path)
