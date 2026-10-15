@@ -1,4 +1,4 @@
-﻿# Roadmap
+# Roadmap
 
 Working title: **Kehillah** (working name for the mod overall is still TBD — "Jewish Communities" is the folder/descriptor name for now).
 
@@ -31,7 +31,7 @@ starter for each held work, genre filters and badges, static Rabbinic tier
 badges, attribution and representative game composition dates, and a recorded
 living-master roster. A live click on Mekhilta opened its named study event and
 spent 10 Piety. A fresh client showed localized metadata, a packed genre list,
-and the empty reader state; a populated reader portrait list remains untested.
+and both empty and populated reader states; a portrait opens the character panel.
 See the [selected-study live check](docs/testing/2026-10-15-sefer-selected-study-ui-check.md).
 The larger artifact inventory,
 named acquisition, scholar demand, exceptional authorship, rewards, and canon
@@ -46,7 +46,7 @@ date table, historical author links, dynamic standing, and save-safe tractate
 migration remain future work.
 This user-directed slice was taken ahead of V41's soak and eastern-host tasks;
 those remain open in their current order. The next V42 gate is the focused UI
-check of those remaining states and a populated reader roster before widening
+check of those remaining states and natural-completion reader indexing before widening
 the catalog or replacing title flags. See the [seed check](docs/testing/2026-10-14-sefer-seed-live-check.md)
 and [primary UI check](docs/testing/2026-10-14-sefer-primary-ui-check.md).
 
