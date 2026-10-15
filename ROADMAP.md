@@ -33,7 +33,7 @@ living-master roster. A live click on Mekhilta opened its named study event and
 spent 10 Piety. A fresh client showed localized metadata, a packed genre list,
 and both empty and populated reader states; a portrait opens the character panel.
 See the [selected-study live check](docs/testing/2026-10-15-sefer-selected-study-ui-check.md).
-The corpus-card rework is scripted and loaded in a fresh isolated 1.20.1 client, with no library-specific parse errors, but its opener and expanded order lists remain unverified because mouse input did not reliably activate the target on the secondary display. See the [corpus panel check](docs/testing/2026-10-15-sefer-corpus-panel-live-check.md); do not mark that UI slice live-passed until its click path is verified.
+The corpus-card rework and its attached domicile tab are now live-verified in a fresh isolated 1.20.1 client. The repair fixed a full-width layout expansion, blocked clicks and tooltips from leaking to the quarter below, and replaced a dynamic corpus localization lookup that flooded the log after losing its `Title` context. The compact shelf, Jerusalem Talmud corpus, held-order list, Nezikin detail, progress count, and back navigation passed without a new `kehillah_lib` log entry. See the [corpus panel check](docs/testing/2026-10-15-sefer-corpus-panel-live-check.md).
 The larger artifact inventory,
 named acquisition, scholar demand, exceptional authorship, rewards, and canon
 mechanics are staged in [V42](docs/spec/v42-sefarim-and-the-library.md).
@@ -43,7 +43,7 @@ exact in-game composition and circulation dates, optional historical author
 links, and doctrine-based protected Torah/Tanakh and Rabbinic Bavli tiers.
 Existing 933/1080/1140 acquisition gates are a partial chronology. The new
 display catalog uses representative dates; a single authoritative acquisition
-date table, historical author links, dynamic standing, and save-safe tractate
+date table, broader historical author links, dynamic standing, and save-safe tractate
 migration remain future work.
 This user-directed slice was taken ahead of V41's soak and eastern-host tasks;
 those remain open in their current order. The next V42 gate is the focused UI
