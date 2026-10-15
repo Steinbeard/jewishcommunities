@@ -22,8 +22,11 @@ subject to revision after each phase.
 The first Books/Yeshiva panel split, clickable work descriptions, true mastery
 checklist, and tier-aware starting-library seed are scripted in the Codex
 worktree. **Fresh-boot seed verification passed** for Worms (tier 3, six
-distinct works) and Mainz (tier 1, three distinct works); **UI verification is
-pending** because isolated-display mouse targeting could not open the library.
+distinct works) and Mainz (tier 1, three distinct works). Window-relative
+input later opened the Library and book detail; a primary-display check passed
+the revised own-quarter panel, detail containment, and Books/Yeshiva tabs.
+The standalone community-switch reset and personal mastery foldout still need
+a recheck, preferably in a fresh isolated process with unsuppressed logs.
 The larger artifact inventory,
 named acquisition, scholar demand, exceptional authorship, rewards, and canon
 mechanics are staged in [V42](docs/spec/v42-sefarim-and-the-library.md).
@@ -35,8 +38,9 @@ Existing 933/1080/1140 acquisition gates are a partial chronology; the first
 full catalog metadata pass and save-safe tractate migration remain future work.
 This user-directed slice was taken ahead of V41's soak and eastern-host tasks;
 those remain open in their current order. The next V42 gate is the focused UI
-check, including the book detail and mastery state, before widening the catalog
-or replacing title flags. See the [seed live check](docs/testing/2026-10-14-sefer-seed-live-check.md).
+check of those remaining states before widening the catalog or replacing title
+flags. See the [seed check](docs/testing/2026-10-14-sefer-seed-live-check.md)
+and [primary UI check](docs/testing/2026-10-14-sefer-primary-ui-check.md).
 
 ### V41 The danger of violence, the incidents, the pogrom unfolding — 2026-10-14, Daniel's request
 
