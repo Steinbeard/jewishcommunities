@@ -52,8 +52,12 @@ CORPORA = {"": 0, "bavli": 1, "yerushalmi": 2}
 BOM = "﻿"
 
 
+AUTHOR_NAMES = {}
+
+
 def load():
     data = json.loads(CATALOG.read_text(encoding="utf-8"))
+    AUTHOR_NAMES.update(data.get("author_names", {}))
     return data["order"], data["works"]
 
 
@@ -94,18 +98,44 @@ def write_values(order, works):
         w = works[f]
         slot = 0 if CORPORA[w["corpus"]] else GENRES[w["genre"]] * 10 + RANKS[w["rank_name"]][0]
         out.append(f"kehillah_lib_slot_{f} = {slot}")
+    out += [
+        "",
+        "# 1 when the work's author is stored on the player (the history character exists in",
+        "# this save), else 0; scope: the player. Saves started before the author characters",
+        "# were added have none, so the hover card falls back to the plain name.",
+    ]
+    for f in order:
+        slug = works[f].get("composer_char")
+        if slug:
+            out += [
+                f"kehillah_lib_author_ready_{f} = {{",
+                "\tvalue = 0",
+                f"\tif = {{ limit = {{ exists = var:kehillah_lib_author_{slug} }} add = {{ value = 1 }} }}",
+                "}",
+            ]
+        else:
+            out.append(f"kehillah_lib_author_ready_{f} = 1")
     for genre, n in GENRES.items():
         out += [
             "",
-            f"# Works of this genre the title's library holds ({genre}); scope: title.",
+            f"# Shelf entries of this genre the title's library holds ({genre}); scope: title.",
+            "# A seder does not count on its own: each corpus held counts once (its card).",
             f"kehillah_lib_genre_{n}_held_count_value = {{",
             "\tvalue = 0",
         ]
         for f in order:
-            if works[f]["genre"] == genre:
+            if works[f]["genre"] == genre and not CORPORA[works[f]["corpus"]]:
                 out += [
                     "\tif = {",
                     f"\t\tlimit = {{ is_target_in_variable_list = {{ name = kehillah_library_works target = flag:{f} }} }}",
+                    "\t\tadd = { value = 1 }",
+                    "\t}",
+                ]
+        if genre == "talmudics":
+            for corpus in ("bavli", "yerushalmi"):
+                out += [
+                    "\tif = {",
+                    f"\t\tlimit = {{ kehillah_lib_{corpus}_held_count_value > 0 }}",
                     "\t\tadd = { value = 1 }",
                     "\t}",
                 ]
@@ -144,10 +174,13 @@ def write_loc(order, works):
         # The hover card's sentence; the author is a hoverable character link when
         # the catalog names one, plain text when the author is anonymous.
         who = author_link(w["composer_char"]) if w.get("composer_char") else w["composer_name"]
-        lines.append(
-            f' kehillah_lib_blurb_{f}:0 "A work of {GAMEPLAY}$kehillah_lib_subject_{f}$#! considered '
-            f'{GAMEPLAY}{w["rank_name"]}#! by the Rabbinic Faith. {w["credit"]} {who} around {w["year"]}."'
-        )
+        def blurb(name):
+            return (f"A work of {GAMEPLAY}$kehillah_lib_subject_{f}$#! considered "
+                    f"{GAMEPLAY}{w['rank_name']}#! by the Rabbinic Faith. {w['credit']} {name} around {w['year']}.")
+
+        lines.append(f' kehillah_lib_blurb_{f}:0 "{blurb(who)}"')
+        plain = AUTHOR_NAMES[w["composer_char"]] if w.get("composer_char") else who
+        lines.append(f' kehillah_lib_blurb_plain_{f}:0 "{blurb(plain)}"')
     write(LOC, lines)
 
 
