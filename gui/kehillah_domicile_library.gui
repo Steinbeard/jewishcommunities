@@ -126,8 +126,9 @@
 
 types KehillahLibrary
 {
-	# The hover card for a work, drawn from the catalog fields by flag (genre,
-	# rank, composer, year), not from a per-work pre-written string. Used as a
+	# The hover card for a work, drawn by flag from the catalog: a left-aligned
+	# title, then one sentence built from genre, rank, composer (a hoverable
+	# concept link) and year, then the short description. Used as a
 	# tooltipwidget inside any list item whose Scope is the work flag.
 	type kehillah_library_work_tooltip = widget {
 		using = GeneralTooltipSetup
@@ -137,87 +138,82 @@ types KehillahLibrary
 		vbox = {
 			set_parent_size_to_minimum = yes
 			margin = { 20 12 }
-			spacing = 4
+			spacing = 6
 			text_single = {
+				layoutpolicy_horizontal = expanding
+				align = left|nobaseline
 				text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
 				default_format = "#T"
-			}
-			hbox = {
-				layoutpolicy_horizontal = expanding
-				spacing = 6
-				text_single = {
-					minimumsize = { 100 0 }
-					align = left|nobaseline
-					text = "KEHILLAH_LIB_ROW_GENRE"
-					default_format = "#high"
-				}
-				text_multi = {
-					layoutpolicy_horizontal = expanding
-					autoresize = yes
-					max_width = 300
-					align = left|nobaseline
-					text = "[Localize( Concatenate( 'kehillah_lib_subject_', Scope.GetFlagName ) )]"
-						default_format = "#bold;color_porple"
-				}
-			}
-			hbox = {
-				layoutpolicy_horizontal = expanding
-				spacing = 6
-				text_single = {
-					minimumsize = { 100 0 }
-					align = left|nobaseline
-					text = "KEHILLAH_LIB_ROW_RANK"
-					default_format = "#high"
-				}
-				text_multi = {
-					layoutpolicy_horizontal = expanding
-					autoresize = yes
-					max_width = 300
-					align = left|nobaseline
-					text = "[Localize( Concatenate( 'kehillah_lib_rankdesc_', Scope.GetFlagName ) )]"
-				}
-			}
-			hbox = {
-				layoutpolicy_horizontal = expanding
-				spacing = 6
-				text_single = {
-					minimumsize = { 100 0 }
-					align = left|nobaseline
-					text = "KEHILLAH_LIB_ROW_COMPOSER"
-					default_format = "#high"
-				}
-				text_multi = {
-					layoutpolicy_horizontal = expanding
-					autoresize = yes
-					max_width = 300
-					align = left|nobaseline
-					text = "[Select_CString( EqualTo_string( Scope.GetFlagName, 'work_emunot_vedeot' ), Localize( 'kehillah_lib_composer_linked_work_emunot_vedeot' ), Localize( Concatenate( 'kehillah_lib_composer_', Scope.GetFlagName ) ) )]"
-				}
-			}
-			hbox = {
-				layoutpolicy_horizontal = expanding
-				spacing = 6
-				text_single = {
-					minimumsize = { 100 0 }
-					align = left|nobaseline
-					text = "KEHILLAH_LIB_ROW_COMPOSED"
-					default_format = "#high"
-				}
-				text_multi = {
-					layoutpolicy_horizontal = expanding
-					autoresize = yes
-					max_width = 300
-					align = left|nobaseline
-					text = "[Localize( Concatenate( 'kehillah_lib_year_text_', Scope.GetFlagName ) )]"
-				}
 			}
 			text_multi = {
 				layoutpolicy_horizontal = expanding
 				autoresize = yes
-				max_width = 400
+				max_width = 360
+				align = left|nobaseline
+				text = "[Select_CString( EqualTo_string( Scope.GetFlagName, 'work_emunot_vedeot' ), Localize( 'kehillah_lib_blurb_linked_work_emunot_vedeot' ), Localize( Concatenate( 'kehillah_lib_blurb_', Scope.GetFlagName ) ) )]"
+			}
+			text_multi = {
+				layoutpolicy_horizontal = expanding
+				autoresize = yes
+				max_width = 360
+				align = left|nobaseline
 				default_format = "#weak"
 				text = "[Localize( Concatenate( 'kehillah_lib_desc_', Scope.GetFlagName ) )]"
 			}
+		}
+	}
+
+	# One shelf row: NAME | rank and genre | mastery on a single line. Passes
+	# in the genre boxes override "row_visible" with a rank slot, which is how
+	# the shelf comes out in rank order (Foundational first).
+	type kehillah_library_work_row = button_standard_list {
+		block "row_visible" {}
+		size = { 482 42 }
+		onclick = "[GetVariableSystem.Clear( 'kehillah_lib_parent_corpus' )]"
+		onclick = "[GetScriptedGui( 'kehillah_lib_cache_saadia_author' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+		onclick = "[GetVariableSystem.Set( 'kehillah_lib_selected_work', Scope.GetFlagName )]"
+		tooltipwidget = {
+			kehillah_library_work_tooltip = {}
+		}
+		icon = {
+			parentanchor = left|vcenter
+			position = { 4 0 }
+			size = { 36 36 }
+			texture = "gfx/interface/icons/kehillah_library/kehillah_sefer_rank_frames.dds"
+			framesize = { 64 64 }
+			frame = "[FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_frame_', Scope.GetFlagName ) ) )]"
+			alwaystransparent = yes
+		}
+		icon = {
+			parentanchor = left|vcenter
+			position = { 10 0 }
+			size = { 24 24 }
+			texture = "gfx/interface/icons/artifact/artifact_chronicle.dds"
+			alwaystransparent = yes
+		}
+		### NAME | rank and genre | mastery, on one line.
+		text_single = {
+			parentanchor = left|vcenter
+			position = { 50 0 }
+			text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
+			default_format = "#high"
+			max_width = 215
+		}
+		text_single = {
+			parentanchor = left|vcenter
+			position = { 270 0 }
+			text = "[Localize( Concatenate( 'kehillah_lib_summary_', Scope.GetFlagName ) )]"
+			default_format = "#weak"
+			max_width = 160
+		}
+		icon = {
+			parentanchor = right|vcenter
+			position = { -10 0 }
+			size = { 25 25 }
+			texture = "gfx/interface/icons/kehillah_library/kehillah_mastery_ring_1.dds"
+			framesize = { 32 32 }
+			frame = "[Select_int32( GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), '(int32)2', '(int32)1' )]"
+			alwaystransparent = yes
 		}
 	}
 
@@ -226,8 +222,8 @@ types KehillahLibrary
 	# rows are driven by the catalog script values in common/script_values/
 	# kehillah_library_catalog_values.txt: each work's genre, rank frame and
 	# corpus are looked up by its flag, so no per-work GUI exists.
-	# Instances override "group_visible", "group_title", "group_extra" (cards
-	# shown above the rows) and "item_visible" (which works belong here).
+	# Instances override "group_title", "group_extra" (cards shown above the
+	# rows), "group_rows" (five rank passes of work rows) and "group_empty".
 	type kehillah_library_genre_group = vbox {
 		layoutpolicy_horizontal = expanding
 		spacing = 2
@@ -235,8 +231,6 @@ types KehillahLibrary
 
 		oncreate = "[BindFoldOutContext]"
 		oncreate = "[PdxGuiFoldOut.Unfold]"
-
-		block "group_visible" {}
 
 		button_tertiary = {
 			layoutpolicy_horizontal = expanding
@@ -264,178 +258,8 @@ types KehillahLibrary
 
 			block "group_extra" {}
 
-			### A compact, reflowing inventory list. A fixed grid leaves
-			### holes when its model items hide.
-			vbox = {
-				layoutpolicy_horizontal = expanding
-				ignoreinvisible = yes
-				spacing = 2
-				datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
-				item = {
-					button_standard_list = {
-						block "item_visible" {}
-						size = { 482 42 }
-						onclick = "[GetVariableSystem.Clear( 'kehillah_lib_parent_corpus' )]"
-						onclick = "[GetScriptedGui( 'kehillah_lib_cache_saadia_author' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-						onclick = "[GetVariableSystem.Set( 'kehillah_lib_selected_work', Scope.GetFlagName )]"
-						tooltipwidget = {
-							kehillah_library_work_tooltip = {}
-						}
-						icon = {
-							parentanchor = left|vcenter
-							position = { 4 0 }
-							size = { 36 36 }
-							texture = "gfx/interface/icons/kehillah_library/kehillah_sefer_rank_frames.dds"
-							framesize = { 64 64 }
-							frame = "[FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_frame_', Scope.GetFlagName ) ) )]"
-							alwaystransparent = yes
-						}
-						icon = {
-							parentanchor = left|vcenter
-							position = { 10 0 }
-							size = { 24 24 }
-							texture = "gfx/interface/icons/artifact/artifact_chronicle.dds"
-							alwaystransparent = yes
-						}
-						### NAME | rank and genre | mastery, on one line.
-						text_single = {
-							parentanchor = left|vcenter
-							position = { 50 0 }
-							text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
-							default_format = "#high"
-							max_width = 215
-						}
-						text_single = {
-							parentanchor = left|vcenter
-							position = { 270 0 }
-							text = "[Localize( Concatenate( 'kehillah_lib_summary_', Scope.GetFlagName ) )]"
-							default_format = "#weak"
-							max_width = 160
-						}
-						icon = {
-							parentanchor = right|vcenter
-							position = { -10 0 }
-							size = { 25 25 }
-							texture = "gfx/interface/icons/kehillah_library/kehillah_mastery_ring_1.dds"
-							framesize = { 32 32 }
-							frame = "[Select_int32( GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), '(int32)2', '(int32)1' )]"
-							alwaystransparent = yes
-						}
-					}
-				}
-			}
-		}
-	}
-
-	# One community's library. Datacontexts are set by the instance:
-	# Character = the community's leader, Title = their primary title.
-	type kehillah_library_body = vbox {
-		layoutpolicy_horizontal = expanding
-		layoutpolicy_vertical = expanding
-		spacing = 4
-		ignoreinvisible = yes
-
-		# Keep the collection and the yeshiva controls on separate pages.
-		hbox = {
-			layoutpolicy_horizontal = expanding
-			spacing = 4
-			button_standard_list = {
-				size = { 246 25 }
-				text = "KEHILLAH_LIB_TAB_COLLECTION"
-				down = "[Or( Not( GetVariableSystem.Exists( 'kehillah_lib_show_yeshiva' ) ), Not( GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_has_yeshiva_value' ), '(CFixedPoint)0' ) ) )]"
-				onclick = "[GetVariableSystem.Clear( 'kehillah_lib_show_yeshiva' )]"
-			}
-			button_standard_list = {
-				visible = "[GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_has_yeshiva_value' ), '(CFixedPoint)0' )]"
-				size = { 246 25 }
-				text = "KEHILLAH_LIB_TAB_YESHIVA"
-				down = "[GetVariableSystem.Exists( 'kehillah_lib_show_yeshiva' )]"
-				onclick = "[GetVariableSystem.Set( 'kehillah_lib_show_yeshiva', 'yes' )]"
-			}
-		}
-
-		### (The header lives in each window, not here: only the
-		### standalone window has a close button that does anything.)
-
-		### THE YESHIVA (V29 sections 9-10, 2026-10-11). Shown first, only
-		### for a community that has one: renown tier, who heads it, what it
-		### teaches, and its students. All text -- script values and custom loc on
-		### the same Character datacontext the library uses.
-		vbox = {
-			visible = "[And( GetVariableSystem.Exists( 'kehillah_lib_show_yeshiva' ), GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_has_yeshiva_value' ), '(CFixedPoint)0' ) )]"
-			layoutpolicy_horizontal = expanding
-			layoutpolicy_vertical = expanding
-			spacing = 2
-			ignoreinvisible = yes
-
-			### Breathing room under the tabs, then a title block: name and
-			### renown first, who/how many second, the Greatness note last.
-			widget = { size = { 4 14 } }
-			text_single = {
-				text = "KEHILLAH_YESHIVA_TITLE"
-				default_format = "#T"
-			}
-			### Renown carries the Greatness note as a hover, not a line of
-			### its own; the student count lives in the Students heading.
-			text_single = {
-				text = "KEHILLAH_YESHIVA_RENOWN_LINE"
-				tooltip = "KEHILLAH_YESHIVA_GREATNESS_NOTE"
-			}
-			text_single = {
-				text = "KEHILLAH_YESHIVA_HEAD_LINE"
-			}
-			widget = { size = { 4 8 } }
-			divider_light = {
-				layoutpolicy_horizontal = expanding
-			}
-			### What it teaches. Another community's: a line of text. Your
-			### own: vanilla's filter-row buttons (button_standard_list,
-			### jomini_achievements_window.gui), clickable when the head can
-			### teach that subject (V29 section 11.3). The current focus is
-			### disabled, and a disabled button never shows `down` (live
-			### 2026-10-12: all three looked alike), so each button's TEXT
-			### carries its state -- bright for the current focus, plain for
-			### one you can switch to, grey for one you cannot -- and its
-			### tooltip opens with a status line.
-			text_single = {
-				visible = "[Not( Character.IsLocalPlayer )]"
-				text = "KEHILLAH_YESHIVA_PANEL_FOCUS"
-			}
-			text_single = {
-				visible = "[Character.IsLocalPlayer]"
-				default_format = "#high"
-				text = "KEHILLAH_YESHIVA_FOCUS_LABEL"
-			}
-			hbox = {
-				visible = "[Character.IsLocalPlayer]"
-				layoutpolicy_horizontal = expanding
-				spacing = 4
-
-				button_standard_list = {
-					size = { 160 28 }
-					text = "[Select_CString( GetScriptedGui( 'kehillah_yeshiva_focus_is_talmudics' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_YESHIVA_FOCUS_TALMUDICS_ON' ), Select_CString( GetScriptedGui( 'kehillah_yeshiva_focus_talmudics' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_YESHIVA_FOCUS_TALMUDICS' ), Localize( 'KEHILLAH_YESHIVA_FOCUS_TALMUDICS_OFF' ) ) )]"
-					tooltip = "[Concatenate( Select_CString( GetScriptedGui( 'kehillah_yeshiva_focus_is_talmudics' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_YESHIVA_FOCUS_STATUS_ON' ), Select_CString( GetScriptedGui( 'kehillah_yeshiva_focus_talmudics' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_YESHIVA_FOCUS_STATUS_CAN' ), Localize( 'KEHILLAH_YESHIVA_FOCUS_STATUS_CANNOT' ) ) ), Localize( 'KEHILLAH_YESHIVA_FOCUS_TALMUDICS_TT' ) )]"
-					down = "[GetScriptedGui( 'kehillah_yeshiva_focus_is_talmudics' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-					enabled = "[GetScriptedGui( 'kehillah_yeshiva_focus_talmudics' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-					onclick = "[GetScriptedGui( 'kehillah_yeshiva_focus_talmudics' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-				}
-				button_standard_list = {
-					size = { 160 28 }
-					text = "[Select_CString( GetScriptedGui( 'kehillah_yeshiva_focus_is_parshanut' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_YESHIVA_FOCUS_PARSHANUT_ON' ), Select_CString( GetScriptedGui( 'kehillah_yeshiva_focus_parshanut' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_YESHIVA_FOCUS_PARSHANUT' ), Localize( 'KEHILLAH_YESHIVA_FOCUS_PARSHANUT_OFF' ) ) )]"
-					tooltip = "[Concatenate( Select_CString( GetScriptedGui( 'kehillah_yeshiva_focus_is_parshanut' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_YESHIVA_FOCUS_STATUS_ON' ), Select_CString( GetScriptedGui( 'kehillah_yeshiva_focus_parshanut' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_YESHIVA_FOCUS_STATUS_CAN' ), Localize( 'KEHILLAH_YESHIVA_FOCUS_STATUS_CANNOT' ) ) ), Localize( 'KEHILLAH_YESHIVA_FOCUS_PARSHANUT_TT' ) )]"
-					down = "[GetScriptedGui( 'kehillah_yeshiva_focus_is_parshanut' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-					enabled = "[GetScriptedGui( 'kehillah_yeshiva_focus_parshanut' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-					onclick = "[GetScriptedGui( 'kehillah_yeshiva_focus_parshanut' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-				}
-				button_standard_list = {
-					size = { 160 28 }
-					text = "[Select_CString( GetScriptedGui( 'kehillah_yeshiva_focus_is_hashkafa' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_YESHIVA_FOCUS_HASHKAFA_ON' ), Select_CString( GetScriptedGui( 'kehillah_yeshiva_focus_hashkafa' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_YESHIVA_FOCUS_HASHKAFA' ), Localize( 'KEHILLAH_YESHIVA_FOCUS_HASHKAFA_OFF' ) ) )]"
-					tooltip = "[Concatenate( Select_CString( GetScriptedGui( 'kehillah_yeshiva_focus_is_hashkafa' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_YESHIVA_FOCUS_STATUS_ON' ), Select_CString( GetScriptedGui( 'kehillah_yeshiva_focus_hashkafa' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_YESHIVA_FOCUS_STATUS_CAN' ), Localize( 'KEHILLAH_YESHIVA_FOCUS_STATUS_CANNOT' ) ) ), Localize( 'KEHILLAH_YESHIVA_FOCUS_HASHKAFA_TT' ) )]"
-					down = "[GetScriptedGui( 'kehillah_yeshiva_focus_is_hashkafa' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-					enabled = "[GetScriptedGui( 'kehillah_yeshiva_focus_hashkafa' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-					onclick = "[GetScriptedGui( 'kehillah_yeshiva_focus_hashkafa' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-				}
-			}
+			block "group_rows" {}
+			block "group_empty" {}
 			### The students (V29 section 10.4), by portrait -- vanilla's own
 			### list-of-characters pattern (window_situation_list.gui).
 			widget = { size = { 4 8 } }
@@ -539,13 +363,74 @@ types KehillahLibrary
 						### Genre boxes, open by default; the Talmud box also holds the two
 						### corpus cards (saved seder flags stay independent volumes).
 						kehillah_library_genre_group = {
-							blockoverride "group_visible" { visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_genre_1_held_count_value' ), '(CFixedPoint)0' )]" }
 							blockoverride "group_title" { text = "KEHILLAH_LIB_GROUP_PARSHANUT" }
-							blockoverride "item_visible" { visible = "[And( EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_genre_', Scope.GetFlagName ) ), '(CFixedPoint)1' ), EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_corpus_', Scope.GetFlagName ) ), '(CFixedPoint)0' ) )]" }
+							blockoverride "group_rows" {
+								vbox = {
+									layoutpolicy_horizontal = expanding
+									ignoreinvisible = yes
+									spacing = 2
+									datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
+									item = {
+										kehillah_library_work_row = {
+											blockoverride "row_visible" { visible = "[EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_slot_', Scope.GetFlagName ) ), '(CFixedPoint)11' )]" }
+										}
+									}
+								}
+								vbox = {
+									layoutpolicy_horizontal = expanding
+									ignoreinvisible = yes
+									spacing = 2
+									datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
+									item = {
+										kehillah_library_work_row = {
+											blockoverride "row_visible" { visible = "[EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_slot_', Scope.GetFlagName ) ), '(CFixedPoint)12' )]" }
+										}
+									}
+								}
+								vbox = {
+									layoutpolicy_horizontal = expanding
+									ignoreinvisible = yes
+									spacing = 2
+									datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
+									item = {
+										kehillah_library_work_row = {
+											blockoverride "row_visible" { visible = "[EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_slot_', Scope.GetFlagName ) ), '(CFixedPoint)13' )]" }
+										}
+									}
+								}
+								vbox = {
+									layoutpolicy_horizontal = expanding
+									ignoreinvisible = yes
+									spacing = 2
+									datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
+									item = {
+										kehillah_library_work_row = {
+											blockoverride "row_visible" { visible = "[EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_slot_', Scope.GetFlagName ) ), '(CFixedPoint)14' )]" }
+										}
+									}
+								}
+								vbox = {
+									layoutpolicy_horizontal = expanding
+									ignoreinvisible = yes
+									spacing = 2
+									datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
+									item = {
+										kehillah_library_work_row = {
+											blockoverride "row_visible" { visible = "[EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_slot_', Scope.GetFlagName ) ), '(CFixedPoint)15' )]" }
+										}
+									}
+								}
+							}
+							blockoverride "group_empty" {
+								text_single = {
+									visible = "[EqualTo_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_genre_1_held_count_value' ), '(CFixedPoint)0' )]"
+									text = "KEHILLAH_LIB_GROUP_EMPTY"
+									default_format = "#weak;italic"
+								}
+							}
 						}
 
 						kehillah_library_genre_group = {
-							blockoverride "group_visible" { visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_genre_2_held_count_value' ), '(CFixedPoint)0' )]" }
 							blockoverride "group_title" { text = "KEHILLAH_LIB_GROUP_TALMUDICS" }
 							blockoverride "group_extra" {
 						### Corpora are one shelf entry; saved seder flags remain
@@ -655,13 +540,138 @@ types KehillahLibrary
 						}
 
 							}
-							blockoverride "item_visible" { visible = "[And( EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_genre_', Scope.GetFlagName ) ), '(CFixedPoint)2' ), EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_corpus_', Scope.GetFlagName ) ), '(CFixedPoint)0' ) )]" }
+							blockoverride "group_rows" {
+								vbox = {
+									layoutpolicy_horizontal = expanding
+									ignoreinvisible = yes
+									spacing = 2
+									datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
+									item = {
+										kehillah_library_work_row = {
+											blockoverride "row_visible" { visible = "[EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_slot_', Scope.GetFlagName ) ), '(CFixedPoint)21' )]" }
+										}
+									}
+								}
+								vbox = {
+									layoutpolicy_horizontal = expanding
+									ignoreinvisible = yes
+									spacing = 2
+									datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
+									item = {
+										kehillah_library_work_row = {
+											blockoverride "row_visible" { visible = "[EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_slot_', Scope.GetFlagName ) ), '(CFixedPoint)22' )]" }
+										}
+									}
+								}
+								vbox = {
+									layoutpolicy_horizontal = expanding
+									ignoreinvisible = yes
+									spacing = 2
+									datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
+									item = {
+										kehillah_library_work_row = {
+											blockoverride "row_visible" { visible = "[EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_slot_', Scope.GetFlagName ) ), '(CFixedPoint)23' )]" }
+										}
+									}
+								}
+								vbox = {
+									layoutpolicy_horizontal = expanding
+									ignoreinvisible = yes
+									spacing = 2
+									datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
+									item = {
+										kehillah_library_work_row = {
+											blockoverride "row_visible" { visible = "[EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_slot_', Scope.GetFlagName ) ), '(CFixedPoint)24' )]" }
+										}
+									}
+								}
+								vbox = {
+									layoutpolicy_horizontal = expanding
+									ignoreinvisible = yes
+									spacing = 2
+									datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
+									item = {
+										kehillah_library_work_row = {
+											blockoverride "row_visible" { visible = "[EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_slot_', Scope.GetFlagName ) ), '(CFixedPoint)25' )]" }
+										}
+									}
+								}
+							}
+							blockoverride "group_empty" {
+								text_single = {
+									visible = "[EqualTo_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_genre_2_held_count_value' ), '(CFixedPoint)0' )]"
+									text = "KEHILLAH_LIB_GROUP_EMPTY"
+									default_format = "#weak;italic"
+								}
+							}
 						}
 
 						kehillah_library_genre_group = {
-							blockoverride "group_visible" { visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_genre_3_held_count_value' ), '(CFixedPoint)0' )]" }
 							blockoverride "group_title" { text = "KEHILLAH_LIB_GROUP_HASHKAFA" }
-							blockoverride "item_visible" { visible = "[And( EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_genre_', Scope.GetFlagName ) ), '(CFixedPoint)3' ), EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_corpus_', Scope.GetFlagName ) ), '(CFixedPoint)0' ) )]" }
+							blockoverride "group_rows" {
+								vbox = {
+									layoutpolicy_horizontal = expanding
+									ignoreinvisible = yes
+									spacing = 2
+									datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
+									item = {
+										kehillah_library_work_row = {
+											blockoverride "row_visible" { visible = "[EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_slot_', Scope.GetFlagName ) ), '(CFixedPoint)31' )]" }
+										}
+									}
+								}
+								vbox = {
+									layoutpolicy_horizontal = expanding
+									ignoreinvisible = yes
+									spacing = 2
+									datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
+									item = {
+										kehillah_library_work_row = {
+											blockoverride "row_visible" { visible = "[EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_slot_', Scope.GetFlagName ) ), '(CFixedPoint)32' )]" }
+										}
+									}
+								}
+								vbox = {
+									layoutpolicy_horizontal = expanding
+									ignoreinvisible = yes
+									spacing = 2
+									datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
+									item = {
+										kehillah_library_work_row = {
+											blockoverride "row_visible" { visible = "[EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_slot_', Scope.GetFlagName ) ), '(CFixedPoint)33' )]" }
+										}
+									}
+								}
+								vbox = {
+									layoutpolicy_horizontal = expanding
+									ignoreinvisible = yes
+									spacing = 2
+									datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
+									item = {
+										kehillah_library_work_row = {
+											blockoverride "row_visible" { visible = "[EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_slot_', Scope.GetFlagName ) ), '(CFixedPoint)34' )]" }
+										}
+									}
+								}
+								vbox = {
+									layoutpolicy_horizontal = expanding
+									ignoreinvisible = yes
+									spacing = 2
+									datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
+									item = {
+										kehillah_library_work_row = {
+											blockoverride "row_visible" { visible = "[EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_slot_', Scope.GetFlagName ) ), '(CFixedPoint)35' )]" }
+										}
+									}
+								}
+							}
+							blockoverride "group_empty" {
+								text_single = {
+									visible = "[EqualTo_CFixedPoint( Title.MakeScope.ScriptValue( 'kehillah_lib_genre_3_held_count_value' ), '(CFixedPoint)0' )]"
+									text = "KEHILLAH_LIB_GROUP_EMPTY"
+									default_format = "#weak;italic"
+								}
+							}
 						}
 
 						### What YOU have mastered, wherever you studied it.
@@ -695,6 +705,16 @@ types KehillahLibrary
 						}
 					}
 				}
+			}
+
+			### Not wired to the real acquire flow yet: opens a placeholder event.
+			button_standard_list = {
+				visible = "[And( Not( GetVariableSystem.Exists( 'kehillah_lib_selected_work' ) ), Character.IsLocalPlayer )]"
+				size = { 482 32 }
+				text = "KEHILLAH_LIB_ACQUIRE_ACTION"
+				tooltip = "KEHILLAH_LIB_ACQUIRE_TT"
+				using = tooltip_se
+				onclick = "[GetScriptedGui( 'kehillah_lib_acquire_more' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
 			}
 
 			# A corpus opens a distinct detail page.  Its orders are a clear
@@ -819,7 +839,7 @@ types KehillahLibrary
 				text_single = { text = "KEHILLAH_LIB_ABOUT_HEADING" default_format = "#high" }
 				scrollbox = {
 					layoutpolicy_horizontal = expanding
-					size = { @lib_width 175 }
+					size = { @lib_width 130 }
 					blockoverride "scrollbox_margins"
 					{
 						margin = { 0 4 }
@@ -983,7 +1003,7 @@ types KehillahLibrary
 					scrollbox = {
 						visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_lib_readers' ) )]"
 						layoutpolicy_horizontal = expanding
-						size = { @lib_width 86 }
+						size = { @lib_width 170 }
 						blockoverride "scrollbox_content"
 						{
 							fixedgridbox = {
