@@ -77,6 +77,42 @@ kehillah_expulsion_proclaim_effect = {
 		}
 		holder = { kehillah_expulsion_start_effect = { HOST = scope:kehillah_proclaim_host } }
 	}
+	# V44 (2026-10-15, Daniel): refugees at the border. Every AI ruler whose
+	# realm lies within squared_distance_medium of an expelled quarter now
+	# has a reason to open his door (kehillah_invitation_motive_value), and
+	# those who could invite review their policy at once.
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			exists = holder.domicile.domicile_location
+			holder = { kehillah_is_host_of_community_trigger = { HOST = scope:kehillah_proclaim_host } }
+		}
+		holder.domicile.domicile_location = { save_scope_as = kehillah_expelled_quarter }
+		every_independent_ruler = {
+			limit = {
+				is_ai = yes
+				NOT = { this = scope:kehillah_proclaim_host }
+				NOT = { has_character_flag = kehillah_open_door_refugees_flag }
+				any_realm_county = {
+					title_province = {
+						squared_distance = {
+							target = scope:kehillah_expelled_quarter
+							value <= squared_distance_medium
+						}
+					}
+				}
+			}
+			add_character_flag = { flag = kehillah_open_door_refugees_flag years = kehillah_open_door_refugees_years }
+		}
+	}
+	every_independent_ruler = {
+		limit = {
+			has_character_flag = kehillah_open_door_refugees_flag
+			kehillah_open_door_candidate_trigger = yes
+		}
+		debug_log = "kehillah_expulsion_proclaim_effect: a neighbour reviews its policy for the refugees"
+		kehillah_open_door_review_effect = yes
+	}
 }
 
 # ---------------------------------------------------------------------

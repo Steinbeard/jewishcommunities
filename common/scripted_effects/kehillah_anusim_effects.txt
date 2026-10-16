@@ -141,6 +141,97 @@ kehillah_anusim_overlord_allows_effect = {
 		kehillah_shift_outlook_effect = { AMOUNT = 3 }
 		faith = { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
 	}
+	# V43 slice 3: the head of the faith answers.
+	hidden_effect = { kehillah_anusim_hof_answers_effect = yes }
+}
+
+# V43 slice 3 (2026-10-14). Scope: anything; scope:kehillah_anusim_
+# overlord, who let the baptized return. A Christian head of the faith
+# protests (Clement III to Henry IV, 1097) -- likelier the colder he is to
+# the Jews -- and after three such returns in the faith rules for all of
+# it that a baptism under compulsion binds (Innocent III, 1201).
+kehillah_anusim_hof_answers_effect = {
+	scope:kehillah_anusim_overlord.faith ?= { save_scope_as = kehillah_anusim_faith }
+	if = {
+		limit = {
+			exists = scope:kehillah_anusim_faith
+			scope:kehillah_anusim_faith = {
+				religion = religion:christianity_religion
+				exists = religious_head
+			}
+			NOT = { scope:kehillah_anusim_faith.religious_head = scope:kehillah_anusim_overlord }
+		}
+		scope:kehillah_anusim_faith.religious_head = { save_scope_as = kehillah_anusim_hof }
+		scope:kehillah_anusim_faith = {
+			if = {
+				limit = { NOT = { has_variable = kehillah_faith_anusim_returns } }
+				set_variable = { name = kehillah_faith_anusim_returns value = 0 }
+			}
+			change_variable = { name = kehillah_faith_anusim_returns add = 1 }
+		}
+		random_list = {
+			# He protests.
+			60 = {
+				modifier = {
+					add = 30
+					scope:kehillah_anusim_hof = { has_trait = zealous }
+				}
+				modifier = {
+					add = -40
+					scope:kehillah_anusim_hof = { kehillah_outlook_band_value >= 1 }
+				}
+				min = 5
+				scope:kehillah_anusim_hof = {
+					add_opinion = {
+						target = scope:kehillah_anusim_overlord
+						modifier = angry_opinion
+						opinion = -25
+					}
+				}
+				# The community hears of the letter; a player prince gets it.
+				every_player = {
+					limit = {
+						government_has_flag = government_is_kehillah
+						domicile.domicile_location.county.holder.top_liege ?= scope:kehillah_anusim_overlord
+					}
+					trigger_event = { id = kehillah_anusim.0020 days = 20 }
+				}
+				scope:kehillah_anusim_overlord = {
+					if = {
+						limit = { is_ai = no }
+						trigger_event = { id = kehillah_anusim.0021 days = 20 }
+					}
+				}
+				# The ruling, after three returns in the faith.
+				if = {
+					limit = {
+						scope:kehillah_anusim_faith = {
+							has_variable = kehillah_faith_anusim_returns
+							var:kehillah_faith_anusim_returns >= 3
+							NOT = { has_variable = kehillah_faith_baptism_binds }
+						}
+					}
+					scope:kehillah_anusim_faith = { set_variable = { name = kehillah_faith_baptism_binds value = yes } }
+					every_player = {
+						limit = {
+							government_has_flag = government_is_kehillah
+							domicile.domicile_location.county.holder.top_liege.faith ?= scope:kehillah_anusim_faith
+						}
+						trigger_event = { id = kehillah_anusim.0022 days = 60 }
+					}
+					debug_log = "kehillah_anusim_hof_answers_effect: the head of the faith rules that baptism binds"
+				}
+				debug_log = "kehillah_anusim_hof_answers_effect: the head of the faith protests"
+			}
+			# He lets it pass.
+			40 = {
+				modifier = {
+					add = 30
+					scope:kehillah_anusim_hof = { kehillah_outlook_band_value >= 1 }
+				}
+			}
+		}
+	}
 }
 
 # A quiet return is discovered. Scope: the Kehillah leader.

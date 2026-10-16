@@ -14,6 +14,14 @@ kehillah_granada_schedule_effect = {
 		trigger_event = { id = kehillah_granada.0002 days = 65 }
 		# 30 December 1066 from the 15 September bookmark.
 		trigger_event = { id = kehillah_granada.0003 days = 106 }
+		# V43: Azariah, and the rest of Sepharad hears.
+		trigger_event = { id = kehillah_granada.0006 days = 45 }
+		# (through a relay on the emir, to whoever reads them on the day)
+		domicile.domicile_location.county.holder.top_liege ?= {
+			trigger_event = { id = kehillah_granada.0015 days = 20 }
+			trigger_event = { id = kehillah_granada.0016 days = 50 }
+			trigger_event = { id = kehillah_granada.0017 days = 85 }
+		}
 		debug_log = "kehillah_granada_schedule_effect: the Granada chain is scheduled"
 	}
 }
@@ -32,6 +40,11 @@ kehillah_granada_adjust_severity_effect = {
 # The mob rises in the city itself. Scope: the leader.
 kehillah_granada_night_effect = {
 	add_character_flag = kehillah_granada_marked
+	# V43: the gate scene and the news, a fortnight on.
+	set_global_variable = { name = kehillah_granada_night_came value = yes }
+	domicile.domicile_location.county.holder.top_liege ?= {
+		trigger_event = { id = kehillah_granada.0014 days = 15 }
+	}
 	domicile.domicile_location ?= { save_scope_as = kehillah_mob_spawn }
 	kehillah_mob_raise_effect = {
 		SIZE = kehillah_granada_mob_size
@@ -42,4 +55,50 @@ kehillah_granada_night_effect = {
 		trigger_event = kehillah_granada.0005
 	}
 	debug_log = "kehillah_granada_night_effect: the mob rises in Granada"
+}
+
+# V43. Scope: Joseph. His wife and son go to the court of Lucena.
+kehillah_granada_family_to_lucena_effect = {
+	title:d_kehillah_lucena.holder ?= { save_scope_as = kehillah_granada_lucena }
+	if = {
+		limit = { exists = scope:kehillah_granada_lucena }
+		character:9000233 ?= {
+			if = {
+				limit = { is_alive = yes }
+				scope:kehillah_granada_lucena = { add_courtier = prev }
+			}
+		}
+		character:9000234 ?= {
+			if = {
+				limit = { is_alive = yes }
+				scope:kehillah_granada_lucena = { add_courtier = prev }
+			}
+		}
+	}
+	custom_tooltip = kehillah_granada_family_sent_tt
+}
+
+# V43. Scope: Joseph, killed on the night (kehillah_mob.0010). His body
+# on the gate is told in .0007 and .0013; his widow and son escape to
+# Lucena, if they are still in Granada.
+kehillah_granada_vizier_falls_effect = {
+	set_global_variable = { name = kehillah_granada_vizier_fell value = yes }
+	if = {
+		limit = {
+			NOT = { has_character_flag = kehillah_granada_family_sent }
+			OR = {
+				character:9000233 ?= {
+					is_alive = yes
+					is_courtier_of = root
+				}
+				character:9000234 ?= {
+					is_alive = yes
+					is_courtier_of = root
+				}
+			}
+		}
+		set_global_variable = { name = kehillah_granada_family_fled value = yes }
+		hidden_effect = { kehillah_granada_family_to_lucena_effect = yes }
+	}
+	debug_log = "kehillah_granada_vizier_falls_effect: Joseph ha-Nagid is killed"
 }

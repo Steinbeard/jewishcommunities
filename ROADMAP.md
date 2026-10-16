@@ -17,6 +17,27 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### V42 The crisis as a place — 2026-10-14, Daniel's review of the mob preparation
+
+Spec: [v42](docs/spec/v42-the-crisis-as-a-place.md).
+- **The elders' hub** shows where things stand: secured, refused, on the road, and the harm if the
+  host struck today.
+- **At most four choices** an event, with "something else..." for more.
+- **The leader goes, or sends a messenger** (in parallel).
+- **Each person asked answers in a scene.**
+- **Protective lords generally help.**
+- **More warning time.**
+- **Odds are shown the vanilla way:** percentages and skill-challenge duels, with no factor or
+  number text.
+
+**Status correction, 2026-10-15:** the V42 spec's dated 2026-10-14 addendum
+records the navigation, messenger, answer scenes, Church letter, preacher duels
+and own defence as live-tested, including fixes. The preceding "not yet
+live-tested" claim here was stale. Slices 1-2 are covered by that report.
+**Next:**
+1. slice 3, vanilla-only odds across the V41 events (in small increments);
+2. slice 4, cleanup of numbers in older text.
+
 ### V42 Sefer collection and scholarship — 2026-10-14, Daniel's request
 
 The first Books/Yeshiva panel split, clickable work descriptions, true mastery

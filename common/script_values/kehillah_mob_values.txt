@@ -11,8 +11,9 @@ kehillah_mob_crusade_severity = 70
 # Under this many men the host breaks up.
 kehillah_mob_disperse_size = 300
 # Where it forms: 100 to 200 map pixels from the town (squared).
-kehillah_mob_spawn_min_sq = 10000
-kehillah_mob_spawn_max_sq = 40000
+# V42 (2026-10-14): farther, for more time to prepare (was 100-200).
+kehillah_mob_spawn_min_sq = 22500
+kehillah_mob_spawn_max_sq = 90000
 
 # --- The approach. Scope: the mob leader; scope:kehillah_mob_band_target
 # is the town (saved by kehillah_mob_set_band_effect -- a nested 'root'
@@ -420,10 +421,11 @@ kehillah_pogrom_leader_death_chance_value = {
 			multiply = 0
 		}
 	}
-	# Granada: the vizier was the mob's quarry -- unless he got away.
+	# Granada: the vizier was the mob's quarry -- unless he got away (V43:
+	# +50; historically he was found in the palace and killed).
 	if = {
 		limit = { has_character_flag = kehillah_granada_marked }
-		add = 30
+		add = 50
 	}
 	if = {
 		limit = { has_character_flag = kehillah_granada_escaped }
@@ -555,70 +557,176 @@ kehillah_mob_treat_fail_value = {
 	subtract = kehillah_mob_treat_chance_value
 }
 
-# Ask for Refuge: 15 + his outlook / 2 + his opinion of you / 4 + your
-# diplomacy; +15/+8 for the charter's security; +15 with a gift. 3 to 85.
+# V42 section 4 (2026-10-14): protective lords generally help. The lord's
+# outlook band sets the odds first; his opinion of the leader, his
+# character, the charter, the one who asks (scope:actor: the leader, or
+# the messenger) and what was offered (var:kehillah_mob_offer, on the
+# leader) move them. scope:recipient is the lord. AI communities ask with
+# the same values (kehillah_mob_ai_answers_effect).
+
+# Refuge in the castle: Protective 85, Well-disposed 65, Indifferent 35,
+# Cold 15, Hostile 3.
 kehillah_mob_ask_refuge_chance_value = {
-	value = 15
-	add = {
-		value = scope:recipient.kehillah_outlook_on_jews_value
-		divide = 2
+	value = 35
+	scope:recipient = {
+		if = {
+			limit = { kehillah_outlook_band_value >= 2 }
+			add = 50
+		}
+		else_if = {
+			limit = { kehillah_outlook_band_value = 1 }
+			add = 30
+		}
+		else_if = {
+			limit = { kehillah_outlook_band_value = -1 }
+			add = -20
+		}
+		else_if = {
+			limit = { kehillah_outlook_band_value <= -2 }
+			add = -32
+		}
+		if = {
+			limit = { has_trait = just }
+			add = 10
+		}
+		if = {
+			limit = { has_trait = compassionate }
+			add = 10
+		}
+		if = {
+			limit = { has_trait = zealous }
+			add = -15
+		}
+		if = {
+			limit = { has_trait = callous }
+			add = -10
+		}
 	}
 	add = {
-		value = "scope:recipient.opinion(scope:actor)"
-		divide = 4
+		value = "scope:recipient.opinion(root)"
+		divide = 5
 	}
-	add = diplomacy
+	add = {
+		value = scope:actor.diplomacy
+		add = -10
+	}
 	if = {
 		limit = { primary_title ?= { var:kehillah_charter_cache_security ?= 2 } }
-		add = 15
+		add = 10
 	}
 	else_if = {
 		limit = { primary_title ?= { var:kehillah_charter_cache_security ?= 1 } }
-		add = 8
+		add = 5
 	}
-	if = {
-		limit = {
-			exists = scope:kehillah_mob_gift
-			scope:kehillah_mob_gift = yes
-		}
-		add = 15
-	}
+	add = kehillah_mob_offer_odds_value
 	min = 3
-	max = 85
+	max = 97
+	if = {
+		limit = { var:kehillah_mob_offer ?= flag:hook }
+		value = 100
+	}
 }
 kehillah_mob_ask_refuge_fail_value = {
 	value = 100
 	subtract = kehillah_mob_ask_refuge_chance_value
 }
 
-# Ask Him to Raise His Men: (his outlook - 15) / 2 + his opinion / 5 +
-# your diplomacy + his martial / 2 - 10; 0 to 30; nothing if he is Cold.
+# His men: Protective 60, Well-disposed 40, Indifferent 15, Cold 5,
+# Hostile never.
 kehillah_mob_ask_men_chance_value = {
-	value = 0
-	if = {
-		limit = { scope:recipient = { kehillah_outlook_on_jews_value > -15 } }
+	value = 15
+	scope:recipient = {
+		if = {
+			limit = { kehillah_outlook_band_value >= 2 }
+			add = 45
+		}
+		else_if = {
+			limit = { kehillah_outlook_band_value = 1 }
+			add = 25
+		}
+		else_if = {
+			limit = { kehillah_outlook_band_value = -1 }
+			add = -10
+		}
 		add = {
-			value = scope:recipient.kehillah_outlook_on_jews_value
+			value = martial
+			divide = 2
+			add = -5
+		}
+		if = {
+			limit = { has_trait = brave }
+			add = 10
+		}
+		if = {
+			limit = { has_trait = just }
+			add = 5
+		}
+		if = {
+			limit = { has_trait = craven }
 			add = -15
-			divide = 2
 		}
-		add = {
-			value = "scope:recipient.opinion(scope:actor)"
-			divide = 5
+		if = {
+			limit = { has_trait = zealous }
+			add = -10
 		}
-		add = diplomacy
-		add = {
-			value = scope:recipient.martial
-			divide = 2
-		}
-		add = -10
 	}
+	add = {
+		value = "scope:recipient.opinion(root)"
+		divide = 5
+	}
+	add = {
+		value = scope:actor.diplomacy
+		add = -10
+		divide = 2
+	}
+	add = kehillah_mob_offer_odds_value
 	min = 0
-	max = 30
+	max = 90
+	if = {
+		limit = { var:kehillah_mob_offer ?= flag:hook }
+		value = 100
+	}
+	# A Hostile lord never rides out for the Jews.
+	if = {
+		limit = { scope:recipient = { kehillah_outlook_band_value <= -2 } }
+		value = 0
+	}
 }
 kehillah_mob_ask_men_fail_value = {
 	value = 100
 	subtract = kehillah_mob_ask_men_chance_value
+}
+
+# What was offered on this visit (var:kehillah_mob_offer, on the leader):
+# the charter's promise +10; silver +15 (+15 more from a greedy lord); the
+# debt he owes +20; an old friendship +25; the physician +20. (A hook
+# makes it certain, above.)
+kehillah_mob_offer_odds_value = {
+	value = 0
+	if = {
+		limit = { var:kehillah_mob_offer ?= flag:charter }
+		add = 10
+	}
+	else_if = {
+		limit = { var:kehillah_mob_offer ?= flag:silver }
+		add = 15
+		if = {
+			limit = { scope:recipient = { has_trait = greedy } }
+			add = 15
+		}
+	}
+	else_if = {
+		limit = { var:kehillah_mob_offer ?= flag:debt }
+		add = 20
+	}
+	else_if = {
+		limit = { var:kehillah_mob_offer ?= flag:friend }
+		add = 25
+	}
+	else_if = {
+		limit = { var:kehillah_mob_offer ?= flag:physician }
+		add = 20
+	}
 }
 
 # Ask the Clergy to Condemn: 15 + the cleric's outlook / 2 + the Dayyan's
@@ -839,6 +947,17 @@ kehillah_anusim_petition_chance_value = {
 	}
 	min = 5
 	max = 85
+	add = kehillah_anusim_binds_penalty_value
+	min = 0
+}
+# V43 slice 3: once the head of the faith has ruled that a baptism under
+# compulsion binds, princes seldom let the baptized go.
+kehillah_anusim_binds_penalty_value = {
+	value = 0
+	if = {
+		limit = { scope:kehillah_anusim_overlord.faith ?= { has_variable = kehillah_faith_baptism_binds } }
+		value = -30
+	}
 }
 kehillah_anusim_petition_fail_value = {
 	value = 100
@@ -856,6 +975,12 @@ kehillah_anusim_ai_overlord_chance_value = {
 		limit = { kehillah_outlook_on_jews_value <= -15 }
 		value = 0
 	}
+	# V43 slice 3: after the head of the faith's ruling.
+	if = {
+		limit = { faith ?= { has_variable = kehillah_faith_baptism_binds } }
+		add = -30
+	}
+	min = 0
 }
 # A quiet return discovered: 15% a year, for ten years.
 kehillah_anusim_discovery_chance = 15
@@ -1195,6 +1320,16 @@ kehillah_anus_crypto_chance_value = {
 	if = {
 		limit = { has_trait = cynical }
 		value = 30
+	}
+	# Converted to Islam: most kept their faith in secret (the Almohad
+	# persecution; V42).
+	if = {
+		limit = { faith.religion = religion:islam_religion }
+		value = 85
+		if = {
+			limit = { has_trait = cynical }
+			value = 50
+		}
 	}
 	if = {
 		limit = {

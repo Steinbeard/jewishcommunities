@@ -1,0 +1,76 @@
+﻿# =====================================================================
+# V43 slice 5 (2026-10-15): the Jewish pope (events/kehillah_jewish_pope_
+# events.txt).
+# =====================================================================
+
+# Yearly (yearly_global_pulse). A Christian head of the faith who was
+# once a stolen child of a community is heard of there.
+kehillah_jewish_pope_check_effect = {
+	religion:christianity_religion = {
+		every_faith = {
+			limit = {
+				exists = religious_head
+				religious_head = {
+					has_character_flag = kehillah_stolen_child
+					NOT = { has_character_flag = kehillah_jewish_pope_known }
+				}
+			}
+			clear_saved_scope = kehillah_jp_pope
+			clear_saved_scope = kehillah_jp_title
+			clear_saved_scope = kehillah_jp_leader
+			religious_head = {
+				add_character_flag = kehillah_jewish_pope_known
+				save_scope_as = kehillah_jp_pope
+				var:kehillah_taken_from ?= {
+					save_scope_as = kehillah_jp_title
+					holder ?= { save_scope_as = kehillah_jp_leader }
+				}
+				debug_log = "kehillah_jewish_pope_check_effect: a stolen child is the head of the faith"
+			}
+			# His own community, if a player leads it.
+			if = {
+				limit = { scope:kehillah_jp_leader ?= { is_ai = no } }
+				scope:kehillah_jp_leader = { trigger_event = { id = kehillah_jewish_pope.0001 days = 30 } }
+			}
+			# Otherwise, in time, half of them answer their own past.
+			else = {
+				random = {
+					chance = 50
+					kehillah_jewish_pope_protects_effect = yes
+				}
+			}
+			# The other Jewish players hear the story.
+			every_player = {
+				limit = {
+					government_has_flag = government_is_kehillah
+					NOT = { scope:kehillah_jp_leader ?= this }
+				}
+				trigger_event = { id = kehillah_jewish_pope.0010 days = 45 }
+			}
+		}
+	}
+}
+
+# Scope: anything; scope:kehillah_jp_pope. He protects the Jews, a bull of
+# protection for his faith (Sicut Judaeis): his outlook warmed, the
+# ruling that a forced baptism binds withdrawn, the faith's memory of
+# incidents eased.
+kehillah_jewish_pope_protects_effect = {
+	custom_tooltip = kehillah_jewish_pope_protects_tt
+	hidden_effect = {
+		scope:kehillah_jp_pope = {
+			kehillah_shift_outlook_effect = { AMOUNT = 30 }
+			faith = {
+				if = {
+					limit = { has_variable = kehillah_faith_baptism_binds }
+					remove_variable = kehillah_faith_baptism_binds
+				}
+				if = {
+					limit = { has_variable = kehillah_faith_pressure }
+					change_variable = { name = kehillah_faith_pressure add = -10 }
+					clamp_variable = { name = kehillah_faith_pressure min = 0 max = 100 }
+				}
+			}
+		}
+	}
+}

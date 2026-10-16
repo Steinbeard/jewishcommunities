@@ -1,0 +1,176 @@
+﻿namespace = kehillah_children
+
+# =====================================================================
+# V43 slice 4 (docs/spec/v43-after-the-violence-and-granada.md), 2026-10-
+# 14. The children taken by the other faith.
+#   .0001 The Children     (the petition to bring them home; players)
+#   .0010 A Child Is Missing (a theft; players)
+# Scope: the community's leader.
+# =====================================================================
+
+kehillah_children.0001 = {
+	type = character_event
+	title = kehillah_children.0001.t
+	desc = kehillah_children.0001.desc
+	theme = family
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		trigger = { exists = scope:kehillah_children_keeper }
+		character = scope:kehillah_children_keeper
+		animation = idle
+	}
+	lower_right_portrait = {
+		trigger = { exists = scope:kehillah_children_one }
+		character = scope:kehillah_children_one
+	}
+	trigger = {
+		is_ai = no
+		is_jewish_character_trigger = yes
+		exists = primary_title
+		primary_title = {
+			any_in_list = {
+				variable = kehillah_taken_children
+				is_alive = yes
+			}
+		}
+	}
+	immediate = { kehillah_children_scopes_effect = yes }
+
+	# Go to the keeper, or send the Shtadlan.
+	option = {
+		name = kehillah_children.0001.a
+		trigger = { exists = scope:kehillah_children_keeper }
+		random_list = {
+			25 = {
+				desc = kehillah_children_given_back
+				kehillah_lord_outlook_odds_modifier = { HOST = scope:kehillah_children_keeper }
+				opinion_modifier = {
+					who = scope:kehillah_children_keeper
+					opinion_target = root
+					multiplier = 0.25
+				}
+				modifier = {
+					add = 15
+					exists = scope:kehillah_children_shtadlan
+					scope:kehillah_children_shtadlan = { diplomacy >= 14 }
+				}
+				min = 3
+				kehillah_children_returned_effect = yes
+			}
+			75 = {
+				desc = kehillah_children_kept
+				modifier = {
+					add = 20
+					scope:kehillah_children_keeper = {
+						OR = {
+							has_government = theocracy_government
+							has_government = ecclesiastical_government
+						}
+					}
+				}
+				min = 5
+				hidden_effect = { trigger_event = { id = kehillah_children.0001 days = 365 } }
+			}
+		}
+		ai_chance = { base = 40 }
+	}
+
+	# Pay for them.
+	option = {
+		name = kehillah_children.0001.b
+		trigger = {
+			exists = scope:kehillah_children_keeper
+			gold >= medium_gold_value
+		}
+		show_as_unavailable = { exists = scope:kehillah_children_keeper }
+		pay_short_term_gold = {
+			target = scope:kehillah_children_keeper
+			gold = medium_gold_value
+		}
+		random_list = {
+			40 = {
+				desc = kehillah_children_given_back
+				modifier = {
+					add = 25
+					scope:kehillah_children_keeper = { has_trait = greedy }
+				}
+				kehillah_lord_outlook_odds_modifier = { HOST = scope:kehillah_children_keeper }
+				min = 5
+				kehillah_children_returned_effect = yes
+			}
+			60 = {
+				desc = kehillah_children_kept_silver
+				modifier = {
+					add = 20
+					scope:kehillah_children_keeper = { has_trait = zealous }
+				}
+				min = 5
+				hidden_effect = { trigger_event = { id = kehillah_children.0001 days = 365 } }
+			}
+		}
+		ai_chance = { base = 30 }
+	}
+
+	# Appeal to the lord.
+	option = {
+		name = kehillah_children.0001.c
+		trigger = {
+			exists = scope:kehillah_children_lord
+			NOT = { scope:kehillah_children_lord = scope:kehillah_children_keeper }
+		}
+		random_list = {
+			20 = {
+				desc = kehillah_children_lord_orders
+				kehillah_lord_outlook_odds_modifier = { HOST = scope:kehillah_children_lord }
+				modifier = {
+					add = 10
+					scope:kehillah_children_lord = { has_trait = just }
+				}
+				min = 3
+				kehillah_children_returned_effect = yes
+			}
+			80 = {
+				desc = kehillah_children_lord_will_not
+				hidden_effect = { trigger_event = { id = kehillah_children.0001 days = 365 } }
+			}
+		}
+		ai_chance = { base = 20 }
+	}
+
+	# We cannot bring them back.
+	option = {
+		name = kehillah_children.0001.d
+		add_stress = medium_stress_gain
+		ai_chance = { base = 10 }
+	}
+}
+
+kehillah_children.0010 = {
+	type = character_event
+	title = kehillah_children.0010.t
+	desc = kehillah_children.0010.desc
+	theme = family
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+	right_portrait = {
+		trigger = { exists = scope:kehillah_child_keeper }
+		character = scope:kehillah_child_keeper
+		animation = idle
+	}
+	trigger = { exists = scope:kehillah_stolen_one }
+
+	# We will get [him] back.
+	option = {
+		name = kehillah_children.0010.a
+		trigger_event = { id = kehillah_children.0001 days = 3 }
+	}
+	option = {
+		name = kehillah_children.0010.b
+		add_stress = medium_stress_gain
+	}
+}
