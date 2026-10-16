@@ -109,3 +109,19 @@ Nothing below has been played through; the script reloaded clean in the running 
 - **Study prose and variety.** "Your rite honors the time you gave to its study" is rewritten. A Course of Study Continues, A Companion in Study and This Season's Study each have two or three variants picked at random. Three new study interventions can fire during a Learn Torah course: A Note in the Margin, The Lamp Burns Low, and A Child's Question.
 
 Still open from this report: bugs 1, 3 (goal failure, not yet diagnosed), 5, 7, 10, 12-15, 17-20, the Bet Din ruling boilerplate, the AI Bet Din question, holiday variety (deferred by Daniel), and every balance item.
+
+## Probe: why no AI hosts a Bet Din (2026-10-16, same running game, Oct 1086)
+
+Method: `run` probes against the 24 community leaders, then AI Watch (console `aiwatch`, Mainz leader, Activities tab, Calculate) on a throwaway event that pops the leader's portrait.
+
+**Everything the mod controls is fine:**
+- For every leader (23 of 24 can host; the 24th has no rabbi, two others fail only the "not already in an activity" check): government flag, minhag region, adult, not on cooldown, regional panel (2+ co-judges), community rabbi, `kehillah_can_convene_bet_din_trigger` and the engine's own `can_host_activity` are all **yes**.
+- AI Watch, Mainz: "Sitting of the Bet Din" is the **only valid activity**, at **priority 100** (all 20 vanilla ones show -1000). Creation data: one province (Mainz) at weight 10 (the V44 fix works; it was 0), three phases, about ten guests with "Will accept: 1".
+
+**Yet nothing happens:**
+- Across 20 years, and again after forcing `ai_attempt_to_host_activity` on every eligible AI leader, no Bet Din is created. A live `every_activity` count shows 23 activities in the world and **0 Bet Dins, 0 Learn Torah journeys, and 0 hosted by any Kehillah leader**. The engine logs 237 "AI tried to create an invalid activity_hunt" lines for vanilla hosts but **none** for the Bet Din, so the AI never reaches the creation step: it is dropped at selection, silently, before any validity check that logs.
+- A priority of 100 clears the engine's score threshold (`ACTIVITY_SCORE_THRESHOLD = 20`), and a plain `ai_check_interval` is what vanilla coronation and camp party use, so neither explains it.
+
+**Not determined.** The remaining suspects are engine-side and not visible from script: how the AI treats a landless (Kehillah) ruler in the activity pass, or the `justice_intent` host intent. No Kehillah leader hosts any activity at all, which suggests a general rule about this government and not something specific to the Bet Din.
+
+**Practical option, needing a decision:** stop relying on the engine's AI planner. A yearly pulse for AI leaders who pass `kehillah_can_convene_bet_din_trigger` (with a chance, and using the existing cooldown) could start a Bet Din, or resolve a lighter off-screen sitting with the same pillar, judge-XP and news results, without the activity window. Nothing was changed.
