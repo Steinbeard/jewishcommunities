@@ -38,6 +38,9 @@ LOC = ROOT / "localization/english/kehillah_library_catalog_l_english.yml"
 GENRES = {"parshanut": 1, "talmudics": 2, "hashkafa": 3}
 # rank name -> (enum value, frame in the rank-frame strip)
 RANKS = {"Foundational": (1, 1), "Essential": (2, 1), "Celebrated": (3, 2), "Popular": (4, 3), "Obscure": (5, 4)}
+# Rank and genre are rules, not flavor (rank protects Bavli volumes, genre picks the
+# mastery track), so they are set apart in bold purple -- vanilla color_porple.
+GAMEPLAY = "#bold;color_porple "
 CORPORA = {"": 0, "bavli": 1, "yerushalmi": 2}
 
 
@@ -105,14 +108,14 @@ def write_loc(order, works):
     for f in order:
         w = works[f]
         lines.append(f' kehillah_lib_tier_short_{f}:0 "{w["rank_name"]}"')
-        lines.append(f' kehillah_lib_rankdesc_{f}:0 "{w["rank_name"]} — {w["rank_desc"]}"')
+        lines.append(f' kehillah_lib_rankdesc_{f}:0 "{GAMEPLAY}{w["rank_name"]}#! — {w["rank_desc"]}"')
         lines.append(f' kehillah_lib_composer_{f}:0 "{w["composer"]}"')
         if w.get("composer_linked"):
             lines.append(f' kehillah_lib_composer_linked_{f}:0 "{w["composer_linked"]}"')
         lines.append(f' kehillah_lib_year_text_{f}:0 "c. {w["year"]}"')
 
         # One-line shelf row: "Celebrated work of Parshanut".
-        lines.append(f' kehillah_lib_summary_{f}:0 "{w["rank_name"]} work of $kehillah_lib_subject_{f}$"')
+        lines.append(f' kehillah_lib_summary_{f}:0 "{GAMEPLAY}{w["rank_name"]}#! work of {GAMEPLAY}$kehillah_lib_subject_{f}$#!"')
     LOC.write_text("﻿" + "\r\n".join(lines) + "\r\n", encoding="utf-8", newline="")
 
 
