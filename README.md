@@ -8,6 +8,32 @@ host's favour and through changes of leadership.
 
 ![The Jewish Quarter of Troyes, with its Beit Midrash, Synagogue and community library](docs/images/jewish-quarter.jpg)
 
+## Screenshots
+
+Captured in a 20-year playthrough of the Worms 1066 start (see the [soak report](docs/testing/2026-10-16-20-year-soak-report.md)).
+
+<p align="center">
+  <img src="docs/images/realm-pillars.jpg" alt="The Kehillah of Worms: its Jewish Quarter, host charter and the Prosperity, Stability and Greatness pillars" width="360">
+  <img src="docs/images/decisions.jpg" alt="Community decisions: Write a Sefer, Send Out Settlers, Learn Torah, Distribute Tzedakah, Convene the Bet Din" width="360">
+</p>
+<p align="center">
+  <img src="docs/images/quarter-map.jpg" alt="The Jewish Quarter of Worms, with its Yeshiva, Great House of the Community, Countinghouse, Hekdesh and workshops" width="740">
+</p>
+<p align="center">
+  <img src="docs/images/library.jpg" alt="The community library, with works sorted by genre" width="740">
+</p>
+<p align="center">
+  <img src="docs/images/event-accusation.jpg" alt="An Accusation: a blood libel at the gates of the quarter" width="360">
+  <img src="docs/images/holiday-rosh-hashanah.jpg" alt="An Omen in the Honey, a Rosh Hashanah event" width="360">
+</p>
+<p align="center">
+  <img src="docs/images/bet-din-sitting.jpg" alt="A sitting of the Bet Din, with the host and two guest judges" width="360">
+  <img src="docs/images/charter-renewed.jpg" alt="The Charter Renewed, after a change of leader" width="360">
+</p>
+<p align="center">
+  <img src="docs/images/succession.jpg" alt="The leader has died; the player continues as the community's chosen successor" width="360">
+</p>
+
 ## Current Version
 
 - Mod version: `0.1`

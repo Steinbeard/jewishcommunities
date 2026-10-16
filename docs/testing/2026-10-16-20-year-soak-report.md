@@ -1,0 +1,96 @@
+**Status:** soak-test report, 2026-10-16. Findings only; nothing in the mod was changed. Build soaked: commit `3270c60` (tip of `codex/festival-observance-2026-10-13`, which already contained all of `origin/master`), as a `git archive` snapshot in an isolated profile (`C:\Users\Daniel\ck3soak4`), CK3 1.20.1 with `-debug_mode -develop`. A Sonnet subagent played Worms from 15 Sep 1066 to 19 Oct 1086; the orchestrator spot-checked a few script-error claims against source. Compare the [2026-10-15 soak](2026-10-15-20-year-soak-test.md), whose fixes (V44) this run partly re-tests. Unlike that run, this one had **no event instrumentation**, so counts are the player's reading of popups and are lower bounds.
+
+# 20-year soak, Worms 1066-1086
+
+## Run summary
+
+- **No crash, no hang.** Raw loc keys and "BUG:" text were not seen.
+- **One succession:** Isaac died 21 Oct 1082 aged 82 after about seven years of ill health. The screen said "No Player Heir!" and the player continued as Parnas Netaniel (39, the former court physician). The heir, Dayyan Feivel, did not inherit; why is unknown.
+- **Detector gap:** popup detection was unreliable from about May 1070 to Jan 1072, and unpaused time during screenshots let months pass. Some popups may have been missed.
+- Raw data (outside the repo): `C:\Users\Daniel\ck3soak4\out\` (`journal.md`, `report.md`, `logs\error_baseline.log` 408 lines and `error_final.log` 9,820 lines, `shots\` with `INDEX.md`).
+
+## Does it work as expected?
+
+Mostly yes. Working and applying effects: the government panel and pillar breakdown tooltips (excellent), charters, the yeshiva and graduations, the Sefer chain, a full Bet Din sitting (the player-side Bet Din now works, the 2026-10-15 headline gap), Send Out Settlers (Zutphen), Tzedakah, Quarter upgrades with construction art, succession with a charter renewal three days later, and the Library.
+
+Weak: sparse variety, verbatim repetition, most systems never firing for Worms, a gold economy with nothing to buy, four script errors, and several UI defects.
+
+## What fired (player-visible, lower bounds)
+
+- **Incidents: 4 popups in 20 years.** An Accusation and After the Accusation (1067); The Disputation and After the Disputation (1073).
+- **Charter:** A Charter Is Sealed, The Lord's Favour, The Charter Renewed (once each). The "A Charter Revised" toast about 25 times, all from other kehillot.
+- **Learning:** The Graduating Class 7+, A New Student about 10, New Chavrutot about 5, Subject/Work Mastered about 6, This Season's Study 2, A Course of Study Continues 5, A Companion in Study 3, My Chavruta 2, Semicha 1.
+- **Books:** one full Write a Sefer chain (1074) and one Learn Torah chain.
+- **Bet Din:** one sitting (Aug 1074), four cases (The Schoolroom Next Door, The Butcher's Knife, The Charity Chest, and one more). A second sitting could never be hosted (bug 9).
+- **Holidays: only about 11 in 20 years** (Light in the Window, Bedikat Chametz, Ad Lo Yada, Before the Fast x2, The Last Hour x2, A Gap in the Roof, The New Year's Reckoning, An Omen in the Honey). V44 raised the player's holiday rate to about 60% a year; about one holiday event every two years is far below what that implies, so the retune still needs checking.
+- **Vanilla noise:** the 1081 measles chain, A Prisoner In My Own Body x2, Dim Vision, A Scheme at Court x3, and "The End of Rabbinic Polygamy" on 2 Jan of every year 1082-1086 (a vanilla one-time event re-firing; cause not found).
+- **Never fired for Worms:** badge, Talmud trial, Holy Week, mob, expulsion, host arrest, loans, crusade, Anusim, Granada, conversion, children, exiles, missions, Jewish pope, dissolution. Some are gated by conditions this run never met; that was not checked per system.
+
+## Bugs
+
+Script errors (the cited lines were confirmed to exist in source; the mechanism is not yet diagnosed):
+
+1. **Landless imprison check.** About 30 log entries at game start: `target_is_de_facto_liege_or_above` with a null landed title. `common/scripted_triggers/kehillah_host_arrest_triggers.txt` around line 54 (`kehillah_quarter_under_imprisoner_trigger`), reached via `kehillah_subject_to_host_arrest_trigger` and the vanilla `basic_allowed_to_imprison_character_trigger`. A county whose holder has no primary title reaches a title-only trigger.
+2. **Bet Din litigants unset.** 4x each: "Failed to fetch variable for kehillah_bet_din_litigant_a/b ... not being set". `events/kehillah_bet_din_expansion_events.txt` lines 30-31 read `involved_activity.var:kehillah_bet_din_litigant_a` right after `kehillah_bet_din_pick_litigants_effect`, from `kehillah_din_start_case_effect` (`kehillah_din_sources.103/106`). Some case paths probably do not set them.
+3. **Goal failure.** `change_variable ... Variable not of the 'value' scope type. Type: empty` at `common/scripted_effects/kehillah_goal_effects.txt` line 201, `kehillah_fail_community_goal_effect` (subtracts `kehillah_goal_failure_stability_loss`), called from the quarterly pulse. Failing a goal may do nothing.
+4. **Anusim take-back.** `kehillah_anusim_take_back_effect` (`kehillah_anusim_effects.txt` around line 134) does `add_courtier` on a ruler, and on a character already in that court (2x).
+5. **Log noise.** Orphaned events at startup (`kehillah_bet_din.0064`, several `*_debug.*`) and about 40 dead-variable notes (`kehillah_mob_*`, `kehillah_case7_*`, `kehillah_pogrom_*`).
+
+Content and logic:
+
+6. **A ruling ignores the player's choice.** In The Charity Chest the player chose "Pay for this week's relief while the accounts are examined"; the ruling read "Two collectors and three distributors take charge of the fund. The accounts are reviewed while bread continues to be bought." (the other option's outcome). Every ruling also ends with the same boilerplate: "The judges explain the evidence and their reasons to both sides. The court gains standing from the hearing."
+7. **Name clash.** The Bet Din scene shows guest "Rav Isaac" while the host ("You") is Rav Isaac.
+8. **Own book credited to a gaon.** 22 May 1076 toast: "Gaon Sherira has completed The Bond and Its Witnesses", the player's own book title.
+9. **Bet Din cooldown unexplained.** The dialog first said "12 months"; in Jan 1084, nine years after the only sitting, it said "Cannot host another Sitting of the Bet Din for 17 months".
+10. **Unexplained disputation loss.** "The community has chosen Rav Isaac (learning 34) to answer him; the friar's learning is 10." The bold option was chosen and the court still "declared for the friar. There is talk of burning the community's books." No reason is shown.
+11. **Treasurer slot missing.** The Countinghouse tooltip says, in red, "Allows a Treasurer to be appointed.", but no Treasurer slot exists in the Court or Council panels.
+12. **Succession wipes resources.** Gold 504 to about 27, prestige 2193 to 468, piety 4627 to 148, plus a "Tributary Invalidated" toast.
+13. **Heir ethnicity.** Dayyan Feivel's hover shows "Ethnicity: Arabic" for an Ashkenazi rabbi.
+14. **Holiday dates are not calendar-true.** Light in the Window fired 27 Jan; Ad Lo Yada and Bedikat Chametz both 28 Apr; The Last Hour and A Gap in the Roof the same day (27 Oct 1077); Rosh Hashanah events on 27 Oct 1080 and 19 Oct 1086, at or after Yom Kippur.
+15. **Host outlook sign.** The Stability tooltip lists "The host's attitude (outlook on the Jews: Protective (42)): -17": the friendliest band gives a penalty. May be intended; it reads as a bug.
+
+UI and art:
+
+16. **Missing texture.** Court panel tiles for Sofer, Shochet, Gabbai Tzedakah and Mikvah Attendant show a magenta checkerboard (`bug-court-missing-icons.png`).
+17. **No visible confirm button** on Send Out Settlers and Host a Sitting of the Bet Din at a 2064x1150 window; only Enter worked. May depend on window size.
+18. **Label problems.** During an upgrade the name changes but the level does not ("Hekdesh and Hospice Level 1 - 2 years left"); "Yeshiva (Level 3)" offers "Upgrade to Level 3"; "The Great House of the Commu ... Level 5" is truncated; the Library's Yeshiva tab shows ghost text from the Books tab; hovering the Library leaks the Countinghouse tooltip; one Bet Din option is clipped ("...settles the contributo ...").
+19. **Vanilla text and art leaking in.** Learn Torah effect text: "I start a Study Torah Scheme against Rav Isaac" (the player himself). The Bet Din planner text is the vanilla "You seek to distribute justice to even the pettiest of criminals within your realm. This often leads to an increase in Control and Just characters may lose Stress." The Convene the Bet Din decision uses East Asian magistrate art.
+20. **Bookmark screen.** The Worms bookmark shows a blank grey map and bald placeholder portraits for several seconds after opening.
+
+## Writing and polish (exact quotes)
+
+**Strong:** A Charter Is Sealed, An Accusation, The Schoolroom Next Door, The Last Hour, A Gap in the Roof, Ad Lo Yada, Before the Fast, and The Charter Renewed ("Netaniel brought a silver cup for Kaiser Heinrich's chamberlain and waited three days in the antechamber. On the fourth the charter came back sealed.").
+
+**Weak:**
+- *A Course of Study Continues:* "Your rite honors the time you gave to its study." ("Your rite honors" is odd.) The second variant, "Returning to the book has opened passages you missed before. Your renewed study is valued, though the discovery is smaller than the first.", repeats verbatim.
+- *A Companion in Study:* identical all three times ("Someone in your household may be able to help with your studies. Discussing a difficult passage together could resolve questions you have struggled with alone.").
+- *This Season's Study:* "What will you give it to?" is clumsy, and the text was identical both times.
+- *After the Accusation:* "The crowd dispersed without blood. But the tale will be told again in the taverns, and the community will remember how near it came." It reads the same whether or not the envoy succeeded.
+- *Word of Your Book Spreads* repeats the whole blurb already shown in The Book Is Finished.
+- *Yom Kippur* has two events (Before the Fast, The Last Hour), each seen twice with identical text; only the courtier's name changes.
+- *Library:* "This collection models six orders as separate volumes and mastery milestones" reads like design-doc phrasing.
+
+## Balance
+
+- **Gold is nearly useless.** Income stayed at +3.0 a month all game; a Countinghouse level adds only +0.30. Gold sat between 150 and 500. Upgrades cost 220 and take 1.5-2 years; settlers cost 50 and Tzedakah 60. Nothing is worth saving for.
+- **Pillars never dipped.** From about 1074 Worms stayed Prosperity Healthy, Stability Flourishing, Greatness Legendary. In 1086 all three show red "Falling", but only regressing toward baseline (Greatness 1045 toward 883). Danger of violence was 53, yet only one accusation and one disputation happened in 20 years. V44's persistent pressure does not show up in this run.
+- **Pace:** about one mod popup a quarter after 1074, mostly low-stakes study and holiday micro-events.
+- Prestige and piety grow passively and are wiped on death.
+
+## Recommendations, in order
+
+1. Fix the four script errors (1-4); goal failure (3) may silently do nothing.
+2. Make a ruling reflect the chosen option (6), and vary the closing boilerplate.
+3. Find out why Bet Din hosting cannot repeat and what the cooldown is (9); check the AI side (the V44 `ai_will_select_province` fix is still unverified).
+4. Raise the incident and holiday rate for the player, and vary the repeating study texts.
+5. Give gold a sink and make the pillars able to dip.
+6. Fix the missing icons, the Treasurer slot, and the label/level mismatches (11, 16, 18).
+7. Rename or exclude the gaon toast (8) and the Rav Isaac guest (7).
+
+## Not verified
+
+Which toasts hid interactive events; whether popups were missed in May 1070 to Jan 1072; why the polygamy event repeats; whether the missing confirm button depends on window size; why the heir did not inherit; no map view with Worms was captured (the landless leader's map is a dark table with the camera over Iceland).
+
+## Screenshots
+
+Nine of the 26 captured frames were added to the README (`docs/images/`). The full set is in `C:\Users\Daniel\ck3soak4\out\shots\`.
