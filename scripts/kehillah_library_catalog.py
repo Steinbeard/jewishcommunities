@@ -19,7 +19,8 @@ this script writes everything derived from it:
       panel uses to hide a genre group the community holds nothing in.
   localization/english/kehillah_library_catalog_l_english.yml
       the per-work text built from the same row: rank label and note,
-      composer, year, the tooltip block and the hover.
+      composer, year and the one-line shelf summary.  (The hover card is
+      drawn in the GUI from the script values and these fields.)
 
 Names, subjects, descriptions and long details stay hand-written in
 kehillah_library_panel_l_english.yml: prose, not data.  Adding a work is:
@@ -35,7 +36,6 @@ VALUES = ROOT / "common/script_values/kehillah_library_catalog_values.txt"
 LOC = ROOT / "localization/english/kehillah_library_catalog_l_english.yml"
 
 GENRES = {"parshanut": 1, "talmudics": 2, "hashkafa": 3}
-GENRE_REWARD = {"parshanut": "Parshanut", "talmudics": "Talmudics", "hashkafa": "Hashkafa"}
 # rank name -> (enum value, frame in the rank-frame strip)
 RANKS = {"Foundational": (1, 1), "Essential": (2, 1), "Celebrated": (3, 2), "Popular": (4, 3), "Obscure": (5, 4)}
 CORPORA = {"": 0, "bavli": 1, "yerushalmi": 2}
@@ -95,7 +95,6 @@ def write_loc(order, works):
         ' KEHILLAH_LIB_ROW_RANK:0 "Library rank"',
         ' KEHILLAH_LIB_ROW_COMPOSER:0 "Composer"',
         ' KEHILLAH_LIB_ROW_COMPOSED:0 "Composed"',
-        ' KEHILLAH_LIB_ROW_COMPOSED_TT:0 "$KEHILLAH_LIB_DATE_NOTE$"',
     ]
     # Collapsible genre boxes on the Books page: name plus how many are held.
     for genre, n in GENRES.items():
@@ -112,23 +111,8 @@ def write_loc(order, works):
             lines.append(f' kehillah_lib_composer_linked_{f}:0 "{w["composer_linked"]}"')
         lines.append(f' kehillah_lib_year_text_{f}:0 "c. {w["year"]}"')
 
-        def meta(composer_key):
-            return (
-                f"#high Genre#!: $kehillah_lib_subject_{f}$\\n"
-                f"#high Library rank#!: $kehillah_lib_rankdesc_{f}$\\n"
-                f"#high Composer#!: ${composer_key}$\\n"
-                f"#high Composed#!: $kehillah_lib_year_text_{f}$\\n"
-                f"#weak $KEHILLAH_LIB_DATE_NOTE$#!\\n\\n"
-            )
-
-        lines.append(f' kehillah_lib_meta_{f}:0 "{meta(f"kehillah_lib_composer_{f}")}"')
-        if w.get("composer_linked"):
-            lines.append(f' kehillah_lib_meta_linked_{f}:0 "{meta(f"kehillah_lib_composer_linked_{f}")}"')
-        lines.append(
-            f' kehillah_lib_hover_{f}:0 "#T $kehillah_lib_name_{f}$#!\\n$kehillah_lib_meta_{f}$'
-            f"#high First mastery reward#!: Rabbi {GENRE_REWARD[w['genre']]} XP and Piety; "
-            f'Talmud Torah followers also gain Learning XP and Piety.\\n\\n$kehillah_lib_desc_{f}$"'
-        )
+        # One-line shelf row: "Celebrated work of Parshanut".
+        lines.append(f' kehillah_lib_summary_{f}:0 "{w["rank_name"]} work of $kehillah_lib_subject_{f}$"')
     LOC.write_text("﻿" + "\r\n".join(lines) + "\r\n", encoding="utf-8", newline="")
 
 
