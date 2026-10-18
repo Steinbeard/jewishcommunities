@@ -1,6 +1,6 @@
 ﻿# Bet Din AI hosting experiments
 
-Status: **experiment in progress** — 2026-10-17.
+Status: **experiment in progress** — 2026-10-18; the latest venue-preflight retry stopped before eligibility checks because fixed runtime character references did not resolve.
 
 ## Experiment 01 — renamed vanilla Camp Party baseline
 
@@ -247,3 +247,11 @@ After the branch merge and texture-reference correction, `ck3-tiger` reports **0
 - The planned four-class comparison constrained each probe's only venue to its fixed host's domicile location. Before unpausing, a console run file was to report the fixed representatives, their `can_host_activity` results, and resolved domicile province scopes. CK3 did not open the console for the common grave/shifted-key bindings; no census command or marker ran. The archived `debug.log` contains no census or probe-start marker.
 - **Result: not executed.** The campaign stayed paused at 11 June 1075; there was no scheduler observation, no new `can_host_activity` result, no explicit `ai_attempt_to_host_activity`, and no save. Do not count this as a scheduler failure or as a production `use_goals = yes` test. It does not replace or alter the separately documented three-year `use_goals = yes` observation.
 - **Cleanup:** stopped only verified PID 21344; archived logs and temporary instrumentation at `C:\Users\Daniel\.codex\ck3-test\scheduler-class-venue-20261018\logs\archive\2026-10-18-scheduler-class-venue\`. All temporary probe definitions/localization were reverted from the worktree; the census scripts and copied art were moved out of the mod tree into that archive. Production Bet Din/government files, `use_goals`, `ai_will_do`, and on-actions were unchanged. No further scheduler wait should begin until the census can be executed and venue evidence checked first.
+
+### Venue-preflight retry with documented console shim — fixed target IDs invalid — 2026-10-18
+
+- **Setup:** fresh isolated CK3 1.20.1.1 boot PID 17100 in profile `C:\Users\Daniel\.codex\ck3-test\scheduler-class-venue-20261018`, with the unchanged `KBD_GOALS_B_1075` observer save paused at 11 June 1075. No competing CK3 process was present.
+- **Console smoke:** the documented `winkeys.py` input shim successfully ran the smoke file; `debug.log` contains the unique `KEHILLAH_SCHEDULER_CONSOLE_SMOKE_20261018` marker at 09:49:08.
+- **Preflight:** the census file emitted BEGIN and END at 09:49:32, but none of its four fixed character references (65927, 64615, 33679, 33939) resolved in the fresh campaign. CK3 reported an invalid `(no character)` scope (`Character -4294967295`) from census line 5 and 20 invalid-scope errors overall. No character-class pass, `can_host_activity`, domicile venue, or unique-venue marker appeared.
+- **Result: stopped at target resolution.** This boot tested neither activity eligibility nor an explicit `ai_attempt_to_host_activity`, and generic autonomous scheduling was not observed. No time advanced and no save was created. The scope failure is not a negative eligibility or scheduler result, and it is not a new test of the separate production `use_goals = yes` observation.
+- **Cleanup/evidence:** archived this boot's `debug.log` and `error.log`, plus the temporary probe source/art and profile run files, under `C:\Users\Daniel\.codex\ck3-test\scheduler-class-venue-20261018\logs\archive\2026-10-18-scheduler-class-venue-retry\`. Stopped only PID 17100 after verifying its isolated `-userdir`; the save remained paused at 11 June 1075. No production Bet Din/government code, `use_goals`, `ai_will_do`, or on-action was changed. The next experiment needs an independently validated way to select/resolve one known character before repeating any eligibility or scheduler check.

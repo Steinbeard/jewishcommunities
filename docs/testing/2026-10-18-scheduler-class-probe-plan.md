@@ -1,4 +1,4 @@
-**Status: landed scheduler control positive; landless comparison early-stop/inconclusive; latest venue-preflight retry not executed because console input did not open — 2026-10-18.**
+**Status: landed scheduler control positive; landless comparison early-stop/inconclusive; latest venue-preflight retry stopped at invalid fixed-character scopes before eligibility checks — 2026-10-18.**
 
 # Landless government activity-scheduler comparison — 2026-10-18
 
@@ -176,3 +176,41 @@ probe passes `can_host_activity`. It changes no state and advances no time.
   the final source diff is documentation-only. The warning count differs from
   the earlier 123-warning snapshot, so re-establish the baseline on the next
   script change.
+
+## Venue-constrained retry — invalid runtime character scopes — 2026-10-18
+
+- **Setup:** a second fresh isolated CK3 1.20.1.1 boot (PID 17100; the same
+  dedicated `scheduler-class-venue-20261018` profile) loaded the unchanged
+  `KBD_GOALS_B_1075` observer save paused at 11 June 1075. It was the only CK3
+  process. The console was driven through the documented `winkeys.py` shim.
+- **Input smoke test:** `run kehillah_scheduler_console_smoke.txt` executed and
+  emitted the unique `KEHILLAH_SCHEDULER_CONSOLE_SMOKE_20261018` marker at
+  09:49:08. This establishes that the supported console route worked.
+- **Preflight result:** the census run file emitted BEGIN at 09:49:32 and END
+  without advancing time, but the four fixed references (admin 65927,
+  celestial 64615, Soryo 33679, landed 33939) did not resolve in this fresh
+  campaign load. CK3 reported an invalid `(no character)` scope
+  (`Character -4294967295`), beginning at census line 5, and logged 20
+  invalid-scope errors. No character-class PASS, `can_host_activity` result,
+  domicile venue result, or unique-venue marker was produced.
+- **Result: preflight failed; eligibility and scheduler stages not tested.**
+  This is a target-reference failure, not evidence that any character fails
+  `can_host_activity` or that the generic scheduler rejected an activity. No
+  `ai_attempt_to_host_activity` was called, no time advanced, no save was made,
+  and no scheduler observation began. This does not test production
+  `use_goals = yes` over time; that separate observation retains its documented
+  scope.
+- **Cleanup/evidence:** archived the exact boot's `debug.log` and `error.log`
+  under
+  `C:\Users\Daniel\.codex\ck3-test\scheduler-class-venue-20261018\logs\archive\2026-10-18-scheduler-class-venue-retry\`,
+  along with the temporary probe source/art and profile `run` files. Stopped
+  only PID 17100 after rechecking its isolated `-userdir`; the campaign was
+  still paused at 11 June 1075. Production Bet Din/government content,
+  `use_goals`, `ai_will_do`, and on-actions were unchanged. Do not proceed to
+  an autonomous scheduler interval until a fresh deterministic target-selection
+  method resolves a known character and passes the no-time-advance preflight.
+- **Post-cleanup `ck3-tiger`:** **0 fatal, 983 errors, 138 warnings, 1 untidy,
+  22 tips**. These are full-worktree diagnostics under the known Tiger 1.19.0
+  versus CK3 1.20.1.1 version mismatch; the temporary probe source is absent.
+  Counts differ from earlier snapshots, so the numeric change is not attributed
+  to this documentation-only result.
