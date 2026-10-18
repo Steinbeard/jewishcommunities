@@ -57,3 +57,11 @@ After the branch merge and texture-reference correction, `ck3-tiger` reports **0
 - **Crash note:** the process exited at 1086.1.1 with `pdx_assert.cpp:619` (`GetOriginalIDHash collision`) while the 1086.1.1 autosave was being processed. No probe/Camp Party record is present in that autosave. The log does not establish that this assertion was caused by the probe, so treat it as a separate unresolved live-test risk and inspect crash details before another long run.
 - **Reversion:** restored the probe score to 50 after the run; no failing mutation remains in the probe.
 - **Next experiment:** inspect the exact vanilla `ai_attempt_to_host_activity` call sites and active vanilla host scopes to find a more empirically reliable control, then test the existing clone's scheduler path without changing unrelated Bet Din fields. Camp Party remains the closest structural comparison but is not yet a known-good autonomous baseline.
+
+### Experiment 03 — targeted positive control (instrumentation attempt) — 2026-10-17
+
+- **Candidate:** Olaf, character ID 38393, appears as the host of a vanilla `activity_roaming` in the saved 1072 observer campaign. He is an adult in that snapshot. This makes him a candidate for the landless-adventurer control, but the diagnostic did not verify his current AI/government predicates.
+- **Instrumentation:** a one-off `run` file tried to target `character:38393` and check `is_ai`, landless-adventurer government, and `can_host_activity = activity_kehillah_ai_probe`. It did not call `ai_attempt_to_host_activity` and had no scheduler hook.
+- **Result:** **invalid diagnostic; no eligibility result.** It ran against the already-advanced live observer state, not the 1072 snapshot, and `error.log` reported `Referencing non-existent character in script link character:38393`; the conditions did not evaluate on a character. No explicit host attempt or generic scheduler test was made.
+- **Cleanup:** restored the probe's `ai_will_do` base to 50, removed the temporary on-action file, and paused the isolated CK3 process. The instrumentation script was removed. No feature conclusion is drawn from this run.
+- **Next:** use the exact 1072 save and target Olaf through a character-event invocation that accepts the runtime character ID. Run the three gates separately, advancing only when the preceding gate passes.
