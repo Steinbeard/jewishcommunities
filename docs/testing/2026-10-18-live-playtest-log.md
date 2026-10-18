@@ -1,6 +1,6 @@
-**Status:** targeted preflight completed; three of four classes pass `can_host_activity`; celestial fails; scheduler interval intentionally not run — 2026-10-18.
+**Status:** follow-up completed; all four class preflights passed and the ordinary scheduler produced one landed-control start, but the run ended 26 days past its six-month cutoff with unrelated yearly on-action errors; landless comparison is overrun/inconclusive — 2026-10-18.
 
-# Targeted scheduler-class preflight — 2026-10-18
+# Targeted scheduler-class preflight and bounded comparison — 2026-10-18
 
 ## Scope and setup
 
@@ -66,3 +66,66 @@ and the corresponding experiment-note updates remain. Final `ck3-tiger` output
 was 0 fatal, 988 errors, 133 warnings, 1 untidy item, and 22 tips. These are
 full-checkout counts under the known version mismatch, not new diagnostics in
 the documentation-only diff.
+
+## Follow-up: eligibility-aware selector and ordinary scheduler — 2026-10-18
+
+### Scope and setup
+
+One fresh isolated CK3 1.20.1.1 boot, PID 25192, used profile
+`C:\Users\Daniel\.codex\ck3-test\scheduler-class-dynamic-eligible-20261018`.
+It loaded the unchanged `KBD_GOALS_B_1075` observer save paused at 11 June
+1075. No competing CK3 process was present. The copied save SHA-256 remained
+`47DFEFAC8DF0FACA4D5A09E0081E1E60313DD8216BA65E2CCB7E1CFEFE7D64C5`.
+
+The selector iterated candidates inside each class and applied
+`can_host_activity` before retaining the first eligible character. One
+celestial candidate was rejected; the next passed. A separate validation
+confirmed exactly one sentinel, one flagged host, one PASS, zero FAIL, and one
+unique venue per class:
+
+| Class | Selected AI host | Domicile venue | `can_host_activity` |
+| --- | --- | --- | --- |
+| Administrative | Niketas Alopos (65927) | Byzantion (496) | PASS |
+| Celestial | Jing Changsha Lu (64615) | Bianzhou (9822) | PASS |
+| Soryo | Yoshimori Miyatsuko (33679) | Kii (10614) | PASS |
+| Landed control | Sharukan Çilbu (65959) | Jangyztau (7357) | PASS |
+
+No selector/validation script-system errors occurred. The ordinary generic
+scheduler stage began only after all four gates passed. No
+`ai_attempt_to_host_activity`, forced start, or scheduling on-action was used.
+
+### Result and limitations
+
+The planned endpoint was 11 December 1075. `debug.log` recorded one landed
+control `START` marker and no administrative, celestial, or Soryo markers.
+The final confirmed paused date was 6 January 1076, 26 days past the planned
+six-month boundary. Treat this as a protocol overrun: the landed positive
+shows the probe can be selected by the generic scheduler, while no landless
+start was observed in this run; it is not a clean fixed-window landless
+negative.
+
+During the late interval, `error.log` recorded 97 existing
+`dynastic_cycle_yearly_pulse` script-system errors at 1 January 1076 from
+`common/on_action/dynastic_cycle_on_actions.txt:161` (unset `situation`/`var`).
+No probe ID appeared in those errors. This cluster further limits confidence
+in interpreting the no-start observation. The run lasted months, not years.
+
+This did not establish whether production Kehillah `use_goals = yes` caused
+activities to be considered over time. The earlier roughly three-year B run
+remains confounded by the Hike-derived ordinary `domain` venue filter. No
+production `use_goals`, `ai_will_do`, government, on-action, or Bet Din
+activity content changed.
+
+### Cleanup and evidence
+
+All four temporary character flags and global sentinels were cleared before
+one uniquely named end save was written:
+`KBD_SCHEDULER_CLASS_ELIGIBLE_OVERRUN_1076_01.ck3`. The original baseline
+save hash stayed unchanged. `debug.log`, `error.log`, downscaled captures,
+and all temporary instrumentation are archived under
+`C:\Users\Daniel\.codex\ck3-test\scheduler-class-dynamic-eligible-20261018\logs\archive\2026-10-18-scheduler-class-dynamic-eligible-overrun\`.
+Disposable probe files were removed from the worktree, and only the
+documentation result remains for this follow-up. No multi-year passive
+simulation was run. Post-cleanup `ck3-tiger` returned 0 fatal, 983 errors,
+125 warnings, 1 untidy item, and 22 tips; it targets CK3 1.19.0 while the
+installed game is 1.20.1.1. This final diff changes documentation only.

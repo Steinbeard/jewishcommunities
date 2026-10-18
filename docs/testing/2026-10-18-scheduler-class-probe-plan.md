@@ -1,4 +1,4 @@
-**Status: landed scheduler control positive; corrected class preflight resolved unique hosts/venues, but celestial `can_host_activity` failed; scheduler comparison not run — 2026-10-18.**
+**Status: all four class preflights passed; ordinary scheduler produced one landed-control start and no landless starts, but the run ended 26 days past its six-month cutoff and overlapped unrelated yearly on-action errors — 2026-10-18. Landless outcome is overrun/inconclusive, not a clean bounded negative.**
 
 # Landless government activity-scheduler comparison — 2026-10-18
 
@@ -48,8 +48,10 @@ probe passes `can_host_activity`. It changes no state and advances no time.
    after all four gates pass.
 6. With all four classes eligible, advance ordinary AI for at most six
    months. Use no `ai_attempt_to_host_activity`, forced event, scheduling
-   on-action, or government mutation. Stop immediately if a phase-start marker
-   appears.
+   on-action, or government mutation. If a phase-start marker appears, pause
+   and inspect/log it, then resume the same bounded comparison unless the
+   cutoff has been reached; a positive landed control alone does not answer
+   the landless comparison.
 7. At the boundary, pause and save once under a unique name. Search both the
    log and end save for the four activity IDs. Record candidate denominators,
    exact dates, starts, host class, and any activity-specific error.
@@ -283,3 +285,34 @@ probe passes `can_host_activity`. It changes no state and advances no time.
   `use_goals`, `ai_will_do`, on-actions, and Bet Din activity content were
   untouched.
 - **Full live-test log:** [2026-10-18 live playtest log](2026-10-18-live-playtest-log.md).
+
+## Eligibility-aware selector and ordinary-scheduler follow-up — 2026-10-18
+
+- **Preflight:** a fresh isolated boot loaded `KBD_GOALS_B_1075` paused at 11
+  June 1075. The corrected deterministic selector applied the same
+  `can_host_activity` gate while iterating through every living character for
+  each class. It rejected one celestial candidate and retained the next
+  passing candidate. Administrative Niketas Alopos (65927), venue Byzantion
+  (496); celestial Jing Changsha Lu (64615), venue Bianzhou (9822); Soryo
+  Yoshimori Miyatsuko (33679), venue Kii (10614); landed control Sharukan
+  Çilbu (65959), venue Jangyztau (7357): all four passed. Validation confirmed
+  exactly one host, one PASS, and one unique venue per class.
+- **Scheduler:** only after all four preflights passed, ordinary AI ran without
+  an explicit attempt or forced start. One landed-control `START` marker was
+  logged; no administrative, celestial, or Soryo marker was observed.
+- **Timing caveat:** the planned 11 December 1075 cutoff was exceeded; the
+  final paused date was 6 January 1076 (26 days late). The late interval also
+  contained 97 existing `dynastic_cycle_yearly_pulse` errors at 1 January
+  1076 from `common/on_action/dynastic_cycle_on_actions.txt:161`; no probe ID
+  appeared in those errors. Therefore the landless no-start observation is
+  not a clean six-month bounded negative.
+- **Preserved scope:** no `ai_attempt_to_host_activity`, forced start,
+  production `use_goals`, `ai_will_do`, government, or on-action change. The
+  run was months, not years. The production Kehillah `use_goals = yes`
+  question remains unanswered, and the earlier roughly three-year B run is
+  still confounded by its ordinary `domain` venue filter.
+- **Cleanup:** cleared all four temporary flags/sentinels before saving once
+  as `KBD_SCHEDULER_CLASS_ELIGIBLE_OVERRUN_1076_01.ck3`; the baseline save
+  hash stayed unchanged. Archived logs, screenshots, and temporary source
+  files under `C:\Users\Daniel\.codex\ck3-test\scheduler-class-dynamic-eligible-20261018\logs\archive\2026-10-18-scheduler-class-dynamic-eligible-overrun\`,
+  then removed probe files from the worktree. See the [full live-test log](2026-10-18-live-playtest-log.md).
