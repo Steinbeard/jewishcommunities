@@ -1337,3 +1337,28 @@ see [the retry log](../testing/2026-10-13-pillar-tooltip-retry-live-test-log.md)
 ownership caveat and console-probe errors isolated by the controlled replay. The fresh day-one
 game lacked the initialization marker, so calling the guarded public refresh alone had not
 applied modifiers. No game or GUI files changed in this verification increment.
+
+## 19. AI goals, legends and religious reformation, 2026-10-18
+
+**Status:** implemented and source-checked; this policy change is not claimed to repair autonomous
+activity hosting.
+
+The Kehillah government previously opted out of three AI systems with `use_goals = no`,
+`use_legends = no`, and `perform_religious_reformation = no`. Daniel chose to enable all three so
+AI community leaders participate in more of CK3's strategic and emergent simulation. The settings
+are written explicitly as `yes` rather than merely omitted, even though the installed
+`_governments.info` schema defaults them to yes, because this is an intentional government policy.
+
+This change follows, but does not overturn, the controlled activity-scheduler findings in
+[`bet_din_ai_experiments.md`](../bet_din_ai_experiments.md). One eligible administrative,
+celestial, Soryo and landed host each received a matched high-weight probe with a proven domicile
+venue. The landed control started; all three landless probes produced zero starts during the
+declared six-month window. Those three vanilla landless governments already inherited
+`use_goals = yes`. Enabling goals is therefore desirable gameplay, but is not sufficient evidence
+of an activity fix. Legends and religious reformation are narrower systems with no documented
+activity-scheduler role.
+
+`perform_religious_reformation = yes` is the broadest design choice here. It deliberately permits
+an AI Kehillah leader to use the normal reformation system when all of that system's independent
+faith, doctrine and resource requirements are met. It does not create a custom Jewish faith,
+change the Worms start away from vanilla Rabbinism, or bypass vanilla eligibility.
