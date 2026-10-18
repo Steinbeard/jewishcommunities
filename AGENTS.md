@@ -73,14 +73,16 @@ it's the one deliberately kept current.
   dated, cross-referenced to the docs it supersedes or depends on. Don't silently edit an old
   spec to match a new decision — add a new doc or a dated addendum and say explicitly what it
   supersedes, the way `v2` and `v3` do to `v1`.
-- Single branch (`master`), direct commits — this repo has no feature-branch workflow today.
-  Don't introduce one unless asked. **The one standing exception is the scheduled overnight
-  runs** (see "Overnight automation" below), which branch and push a PR-link instead of
-  committing to `master` directly — that's deliberate, not a mistake to "fix" back to direct
-  commits. **Daniel's 2026-10-14 direction adds an interactive Codex exception:** while Claude is
-  developing in the primary checkout, Codex works and commits in its own worktree/branch (currently
-  `codex/festival-observance-2026-10-13`) and pushes that branch for integration. Do not treat the
-  primary checkout as Codex's fallback working directory.
+- **Feature branches and pull requests — Daniel's 2026-10-18 direction.** Start every coherent
+  unit of implementation or research on a fresh feature branch from the latest `origin/master`
+  (this repository has no `origin/main`). A research result recorded in the docs counts as its
+  own unit. Keep unrelated units out of the same branch. At the natural stop point, verify the
+  work, commit it, push the branch, and create a GitHub pull request against `master`; do not
+  merely leave a compare link when an interactive authenticated route can create the PR. After
+  opening the PR, start the next unit from a newly fetched `origin/master`, not from the previous
+  feature branch. If a unit truly depends on an unmerged PR, either wait for that PR to merge or
+  make the dependency and stacked base explicit in the new PR. Never commit directly to `master`.
+  Scheduled overnight runs retain their separately documented `overnight/<date>` wrapper behavior.
 
 ## Implementation approach
 
@@ -103,11 +105,12 @@ instance separate**. The tested setup and its limits are recorded in
 [the isolated CK3 setup](docs/testing/2026-10-13-isolated-ck3-setup.md) and
 [the Domain live check](docs/testing/2026-10-14-domain-main-merge-check.md).
 
-- **Code checkout:** The current Codex working copy is
-  `C:\Users\Daniel\.codex\worktrees\jewish-festival-observance\jewishcommunities` on
-  `codex/festival-observance-2026-10-13`. This is a separate Git **worktree** of the same repo,
-  with its own working tree and branch. Run `git rev-parse --show-toplevel` and `git status -sb`
-  before editing; pass this directory as the working directory to shell tools. The primary
+- **Code checkout:** The Codex working copy is
+  `C:\Users\Daniel\.codex\worktrees\jewish-festival-observance\jewishcommunities`. This is a
+  separate Git **worktree** of the same repo. Its branch changes per unit under the feature-branch
+  workflow above; do not assume a long-lived branch name. Run `git rev-parse --show-toplevel`,
+  `git status -sb`, and `git rev-parse --abbrev-ref HEAD` before editing; pass this directory as
+  the working directory to shell tools. The primary
   `C:\Users\Daniel\Documents\Paradox Interactive\Crusader Kings III\mod\jewishcommunities`
   checkout is Claude's working copy and may contain uncommitted changes. Do not edit, reset,
   switch branches, or clean it. If the Codex worktree is missing, create or attach a separate
@@ -115,7 +118,7 @@ instance separate**. The tested setup and its limits are recorded in
 - **Game/profile:** Prefer the worktree's `scripts/kehillah_isolated_ck3_test.ps1 -Visible`, which
   registers that checkout in `C:\Users\Daniel\.codex\ck3-test\festival-observance` and launches
   CK3 with a separate `-userdir` for saves, settings, mod selection, and logs. Its hidden boot was
-  verified; confirm that a visible run is on the second display before interacting. The currently
+  verified. The currently
   proven visible route uses `mod/kehillah_codex_test.mod` (pointing to the Codex worktree),
   `-window_title=Kehillah_Codex_Test`, and `-logprefix=codex_`. That route shares the normal CK3
   user directory: back up `dlc_load.json` byte-for-byte before temporarily mounting the test mod,
@@ -123,13 +126,16 @@ instance separate**. The tested setup and its limits are recorded in
   Codex process. Use this shared-profile route only when Claude is not launching or reloading;
   otherwise use the isolated `-userdir` profile or defer the boot. Never leave Claude's mod
   selection changed.
-- **Second monitor:** Windows currently has the Dell primary display at `DISPLAY1`
-  (`0,0`, 2560×1440) and the extended Virtual Display Driver screen at `DISPLAY5`
-  (`2560,0`, 2048×1152). Re-query `System.Windows.Forms.Screen.AllScreens` before each test;
-  display numbers, bounds, and scaling can change. Put the Codex CK3 window wholly on the
-  **non-primary virtual display**. Target screenshots and mouse coordinates to that display,
-  accounting for virtual-desktop origin and DPI/image downscaling. Leave Claude's primary-display
-  window and input alone.
+- **Second monitor:** The non-primary display is a preference, not a test precondition. Use it
+  when another CK3 instance is already running on the primary display, so the two processes and
+  their input remain visibly separate. If no other CK3 instance is using the primary display, the
+  Codex instance may stay there; window placement alone is never a reason to cancel or invalidate
+  a run. Windows currently has the Dell primary display at `DISPLAY1` (`0,0`, 2560×1440) and the
+  extended Virtual Display Driver screen at `DISPLAY5` (`2560,0`, 2048×1152). When a second
+  display is needed, re-query `System.Windows.Forms.Screen.AllScreens`; display numbers, bounds,
+  and scaling can change. Target screenshots and mouse coordinates to the display actually in
+  use, accounting for virtual-desktop origin and DPI/image downscaling. Never move or send input
+  to a different CK3 instance merely to satisfy this preference.
 - **Process ownership:** Before launching, moving, sending input to, or stopping CK3, inspect
   `Get-CimInstance Win32_Process -Filter "name='ck3.exe'"` and identify the Codex process by its
   `-userdir`, window title, or `-logprefix` command-line marker. Record its PID and re-check it
@@ -237,11 +243,10 @@ The exception is anything genuinely destructive or hard to reverse (force-pushin
 uncommitted work, deleting content, a change that would need real re-design if wrong) — pause for
 those, same as normal. Everything else: decide, document, proceed.
 
-**Commit (and push) at each natural stop point** — when a mini-feature is complete and its tests
-(source-check and/or debug-event/log verification, per Testing above) pass. Small, frequent,
-descriptive commits over one large one; this is how the existing history in this repo reads
-(`git log --oneline`), match that granularity. Don't leave a working tree with a passing,
-complete piece of work sitting uncommitted at the end of a session.
+**Commit, push, and open a pull request at each natural stop point** — when a mini-feature or
+research unit is complete and its tests/source audit pass. Small, focused, descriptive commits and
+PRs are preferred over one large mixed branch. Do not begin the next unit on the completed unit's
+branch. Don't leave passing work uncommitted, unpushed, or without a PR at the end of a session.
 
 **If you skip an item in the Near-term TODO order, say so explicitly** — a line in the commit
 message or a ROADMAP note ("skipping 1-2, they need a live playtest session rather than an
@@ -271,8 +276,8 @@ these scheduled runs, know the following:
   creates) `overnight/<YYYY-MM-DD>` *before* Codex starts — this isn't a judgment call the
   session makes, the branch is just already checked out when the session begins. Everything
   scheduled runs commit goes there, never to `master` directly, and the branch gets pushed at the
-  end of the run. This is the one deliberate exception to this repo's normal single-branch/
-  direct-commit convention (see Repository conventions above).
+  end of the run. This wrapper-managed branch naming remains distinct from the interactive
+  feature-branch-per-unit workflow above.
 - **No `gh` CLI / API token is configured on this machine**, so a scheduled run can't open the PR
   itself. Instead it writes a one-click GitHub compare link
   (`https://github.com/Steinbeard/jewishcommunities/compare/master...overnight/<date>?expand=1`)
