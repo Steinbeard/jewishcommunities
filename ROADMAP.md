@@ -970,6 +970,12 @@ interactive pass.
 - **Bet Din participant reward slice: LIVE-PROBED 2026-09-29; AI-hosted player guest still open.** Good/great rulings
   give the three actual ordained judges 1/3 Talmudics XP; a positive docket gives
   non-host attendees small piety, prestige, Learning XP, and a relationship gain.
+  **AI-host status correction, 2026-10-16:** no AI Kehillah has hosted one in the
+  20-year soak or the forced Jan-Dec 1087 retest. Eligibility, AI Watch priority,
+  venue weight, a +10000 override with forced attempt, and the landless venue
+  filter have all been checked or tried; the attempted activity never reaches
+  creation. The venue filter remains as a correct landless venue definition,
+  while AI hosting remains open. See the [soak report](docs/testing/2026-10-16-20-year-soak-report.md).
   Book mastery remains the main Rabbi XP source. A dedicated console probe is in
   `events/kehillah_rabbi_loop_debug_events.txt`. Do not mark the whole
   participant experience done until an AI-hosted player guest is checked. The first

@@ -97,3 +97,7 @@ While a Kehillah leader holds more than `kehillah_treasury_nudge_gold` (300), an
 - Course of Study / Learn Torah texts: waiting for the Sefer overhaul branch.
 - The "New Dayyan" notice at each succession stays (Daniel: "could be okay").
 - County-level invitations (section 4).
+
+## Dated correction — 2026-10-16: AI Bet Din hosting
+
+Section 5's claim that the zero-weight province was the root cause and that an eligible AI community should sit every two to two and a half years is superseded. The weight fix made the venue score 10 in AI Watch, but no AI community hosted a Bet Din in the next 20-year soak. A forced host attempt with a +10000 priority override still created none. Daniel then tested a landless `domicile_domain` venue filter through December 1087; it also created none. The venue filter remains because it names the correct location for a landless quarter, but it is not an AI-hosting fix. The scripted eligibility gates pass, while the engine does not reach Bet Din creation for these AI landless rulers. See the [2026-10-16 soak report](../testing/2026-10-16-20-year-soak-report.md) for the probes and limitations.
