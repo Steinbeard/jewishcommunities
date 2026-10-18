@@ -1,4 +1,4 @@
-**Status: run once; scheduler window invalid after uncontrolled overrun — 2026-10-18.**
+**Status: initial run overran; controlled landed scheduler positive, landless comparison stopped early — 2026-10-18.**
 
 # Landless government activity-scheduler comparison — 2026-10-18
 
@@ -65,7 +65,7 @@ probe passes `can_host_activity`. It changes no state and advances no time.
   retained `ai_province_filter = domain`, while Kehillah is landless and its
   known-valid Bet Din venue uses `domicile_domain`.
 
-## Execution result — 2026-10-18 (invalid scheduler window)
+## Initial execution result — 2026-10-18 (protocol overrun)
 
 - One fresh isolated boot (PID 27704, dedicated `scheduler-class-probe-20261018`
   profile) loaded `KBD_GOALS_B_1075` at 11 June 1075 in observer mode. No other
@@ -89,11 +89,12 @@ probe passes `can_host_activity`. It changes no state and advances no time.
   `ai_attempt_to_host_activity`, forced event, on-action, government mutation,
   or AI-weight change was used. The only source adjustment was the disposable
   probes' `max_guests` validation fix.
-- **Interpretation: invalid/inconclusive, not a bounded scheduler negative.**
+- **Interpretation: protocol overrun; strong negative observation but structurally uncontrolled.**
   The census establishes the `can_host_activity` counts at 11 June 1075. The
-  overrun and lack of START markers do not establish what happened in the
-  intended six-month window or whether any host was checked by the generic
-  scheduler. Do not infer scheduler rejection from this run.
+  absence of START markers despite the long overrun is a meaningful negative
+  signal, but does not establish whether any host was checked by the generic
+  scheduler or whether a valid venue was selected. Do not infer engine-level
+  scheduler rejection from this run.
 - The repository's disposable definitions, census script, localization
   additions, and probe-only art were removed after recording the result. The
   staged census copy remains inert in the closed isolated profile's `run/`
@@ -104,3 +105,36 @@ probe passes `can_host_activity`. It changes no state and advances no time.
 - Post-cleanup `ck3-tiger`: **0 fatal, 981 errors, 123 warnings, 1 untidy,
   22 tips** for the full worktree. The known Tiger 1.19.0 versus CK3 1.20.1.1
   mismatch applies; these are repo-wide findings, not a probe-specific result.
+
+## Controlled comparison result — 2026-10-18
+
+- A fresh isolated CK3 1.20.1.1 boot (PID 2376; profile
+  `scheduler-class-control-20261018`) loaded the unchanged `KBD_GOALS_B_1075`
+  save paused in observer mode at 11 June 1075. A read-only census, before any
+  time advance, found admin **8/8**, celestial **58/117**, Soryo **10/10**, and
+  broad landed adult AI **3125/3839** passing `can_host_activity`.
+- Four temporary probes were compared: the three landless classes plus a broad
+  landed AI control. All were zero-cost, score 5000, one-month interval,
+  `domicile_domain`, `max_guests = 1`, and one-year phase duration. The census
+  confirmed representative `domicile.domicile_location` scopes. `aiwatch` was
+  enabled, but no venue-selection result was visible; venue acceptance is not
+  claimed.
+- The landed control's first START occurred on 12 June. Pause was issued on
+  that marker, but CK3 processed a burst before reaching the paused state on
+  24 June (13 days; within the six-month cap, beyond the first-marker stop
+  condition). The log records **974** landed START markers. The saved activity
+  database has **1,346** landed-probe records, **974 active**, matching the
+  markers. No landless START marker or activity record appeared.
+- **Disposition:** landed generic-scheduler control **PASS**; landless
+  comparison **early-stop/inconclusive**, not a six-month negative. Saved once
+  at 24 June as `KBD_SCHEDULER_CLASS_CONTROL_LANDED_1075_06.ck3`; archived
+  `debug.log`, `error.log`, and a paused screenshot under
+  `C:\Users\Daniel\.codex\ck3-test\scheduler-class-control-20261018\logs\archive\2026-10-18-scheduler-class-control\`.
+  No probe-specific error-log entries. No explicit attempt, forced start,
+  on-action, government mutation, or AI-weight change was used. This does not
+  test production Kehillah `use_goal` behavior over years.
+- Post-cleanup `ck3-tiger`: **0 fatal, 1054 errors, 120 warnings, 1 untidy,
+  22 tips**. This differs from the earlier same-day 981-error/123-warning
+  snapshot. The temporary probes are absent from source and the current diff is
+  documentation-only, so these are repository-wide findings, not probe-specific
+  parser errors; re-establish the lint baseline before future script changes.
