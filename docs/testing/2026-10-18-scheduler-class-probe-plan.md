@@ -1,4 +1,4 @@
-**Status: prepared diagnostic; not yet run.**
+**Status: run once; scheduler window invalid after uncontrolled overrun — 2026-10-18.**
 
 # Landless government activity-scheduler comparison — 2026-10-18
 
@@ -64,3 +64,43 @@ probe passes `can_host_activity`. It changes no state and advances no time.
 - The previous `use_goals = yes` Hike derivative is not a clean comparison: it
   retained `ai_province_filter = domain`, while Kehillah is landless and its
   known-valid Bet Din venue uses `domicile_domain`.
+
+## Execution result — 2026-10-18 (invalid scheduler window)
+
+- One fresh isolated boot (PID 27704, dedicated `scheduler-class-probe-20261018`
+  profile) loaded `KBD_GOALS_B_1075` at 11 June 1075 in observer mode. No other
+  CK3 process was present. The optional Steam auto-login prompt was declined;
+  no credentials were entered.
+- The first parser pass rejected all three disposable probe definitions because
+  `max_guests = 0` is invalid in CK3 1.20.1.1. Each probe was corrected to
+  `max_guests = 1` and hot-reloaded before the read-only census. The census ran
+  at 08:36 with no time advance from that checkpoint. The external `run` copy
+  lacked a UTF-8 BOM; CK3 warned but executed it.
+- Runtime census: administrative **8/8** AI candidates passed
+  `can_host_activity`; celestial **58/117** passed; Soryo **10/10** passed.
+- The six-month scheduler limit was not maintained. The first reliable speed-bar
+  read showed the game still running at 28 September 1076; a PID-targeted pause
+  then stopped it at 13 January 1077 (save date `1077.1.13`). This is far beyond
+  the planned 11 December 1075 boundary. Game time is stopped and the isolated
+  process is closed.
+- There are **zero** phase-start markers for all three IDs in the archived
+  `debug.log`, and each ID occurs **zero** times in the one recovery save,
+  `KBD_SCHEDULER_CLASS_OVERRUN_1077.ck3`. No explicit
+  `ai_attempt_to_host_activity`, forced event, on-action, government mutation,
+  or AI-weight change was used. The only source adjustment was the disposable
+  probes' `max_guests` validation fix.
+- **Interpretation: invalid/inconclusive, not a bounded scheduler negative.**
+  The census establishes the `can_host_activity` counts at 11 June 1075. The
+  overrun and lack of START markers do not establish what happened in the
+  intended six-month window or whether any host was checked by the generic
+  scheduler. Do not infer scheduler rejection from this run.
+- The repository's disposable definitions, census script, localization
+  additions, and probe-only art were removed after recording the result. The
+  staged census copy remains inert in the closed isolated profile's `run/`
+  directory because the shell guard refused its deletion. Production Bet Din
+  and government files were not changed. Full logs are archived at
+  `C:\Users\Daniel\.codex\ck3-test\scheduler-class-probe-20261018\logs\archive\2026-10-18-scheduler-class-probe-overrun\`;
+  the recovery save remains in that profile's `save games` directory.
+- Post-cleanup `ck3-tiger`: **0 fatal, 981 errors, 123 warnings, 1 untidy,
+  22 tips** for the full worktree. The known Tiger 1.19.0 versus CK3 1.20.1.1
+  mismatch applies; these are repo-wide findings, not a probe-specific result.
