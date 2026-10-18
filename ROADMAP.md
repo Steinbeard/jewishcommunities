@@ -38,6 +38,17 @@ live-tested" claim here was stale. Slices 1-2 are covered by that report.
 1. slice 3, vanilla-only odds across the V41 events (in small increments);
 2. slice 4, cleanup of numbers in older text.
 
+**Localization cleanup, 2026-10-18:** a user-directed pass completed the
+older-text cleanup across Bet Din cases, council tasks, pillar notices, the
+library and several event families. Player-facing prose no longer uses em
+dashes or double hyphens. Static skill thresholds, tally formulas, band tables
+and fixed-duration explanations were replaced with concise descriptions of
+the actual tradeoffs; live script-value percentages remain where they tell the
+player the current result rather than restating an implementation formula.
+This was a localization-only pass. Source review and `ck3-tiger` completed
+without a new fatal or error against the existing 1.19/1.20 baseline; no live
+rendering pass was required for the shorter replacement text.
+
 ### V42 Sefer collection and scholarship — 2026-10-14, Daniel's request
 
 The first Books/Yeshiva panel split, clickable work descriptions, true mastery
@@ -2538,6 +2549,18 @@ before building it; nothing here is approved by default.
   have run; live rendering and letter-flow checks remain. See
   `docs/implementation/kehillah-bet-din-case-expansion.md` for the case matrix and
   the deliberate off-map inventory limit.
+
+  **2026-10-18 update:** Case 14, **“The Goose on the Driftwood,”** adds the
+  medieval barnacle-goose kashrut controversy at user request. A merchant seeks
+  certification for unfamiliar northern geese that sailors claim grow from shells
+  on timber; the court may permit them as fowl requiring shechita, forbid them, or
+  keep them alive while examining witnesses and the birds. The source choice uses
+  Mishnah Chullin 3:6 and Bavli Kodashim mastery. It deliberately names no later
+  rabbi or responsum, so it can run in both 876 and 1066. The fiction preserves the
+  legal puzzle without establishing spontaneous generation as game fact. The pool is now fourteen;
+  source checks, ck3-tiger and a fresh CK3 1.20.1.1 load check pass. Live rendering and
+  letter-flow verification remain pending; see the
+  [load report](docs/testing/2026-10-18-barnacle-goose-case-load-check.md).
 
   **2026-10-12 balance addendum:** Cases 11 and 13 now draw a visible evidence fact
   before any letter is sent. It changes which argument is easier to defend and the
