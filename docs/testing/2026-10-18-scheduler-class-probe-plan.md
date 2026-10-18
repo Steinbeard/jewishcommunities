@@ -1,4 +1,4 @@
-**Status: landed scheduler control positive; landless comparison early-stop/inconclusive; latest venue-preflight retry stopped at invalid fixed-character scopes before eligibility checks — 2026-10-18.**
+**Status: landed scheduler control positive; landless comparison early-stop/inconclusive; latest dynamic selector over-selected and failed preflight before eligibility checks — 2026-10-18.**
 
 # Landless government activity-scheduler comparison — 2026-10-18
 
@@ -214,3 +214,36 @@ probe passes `can_host_activity`. It changes no state and advances no time.
   versus CK3 1.20.1.1 version mismatch; the temporary probe source is absent.
   Counts differ from earlier snapshots, so the numeric change is not attributed
   to this documentation-only result.
+
+## Dynamic host-selector retry — one-shot guard failed — 2026-10-18
+
+- **Setup:** fresh isolated CK3 1.20.1.1 boot PID 18228, profile
+  `scheduler-class-dynamic-20261018`, loaded the unchanged `KBD_GOALS_B_1075`
+  observer save paused at 11 June 1075. No competing CK3 process was present.
+  The copied baseline save hash remained
+  `47DFEFAC8DF0FACA4D5A09E0081E1E60313DD8216BA65E2CCB7E1CFEFE7D64C5`.
+- **Console smoke:** the documented `winkeys.py` shim ran the smoke file and
+  emitted `KEHILLAH_SCHEDULER_DYNAMIC_SMOKE_20261018` before any probe run.
+- **Selector result:** the in-process selector emitted **8** administrative,
+  **87** celestial, **10** Soryo, and **443** landed `SELECTED` markers rather
+  than one per class. The one-shot global-variable condition in the candidate
+  loop did not constrain the iteration. In addition, negative
+  `has_activity_state` checks logged **3,288** script-system errors because
+  those candidates were not involved in an activity. The venue-scope markers
+  therefore describe multiple candidates, not a unique selected host.
+- **Result: preflight failed; eligibility and scheduler stages were not run.**
+  No `can_host_activity` validation was executed; no unique host/venue was
+  established. The game remained paused at 11 June 1075, no time advanced, and
+  no save was created. No `ai_attempt_to_host_activity`, forced start,
+  on-action, government change, or production AI-weight change was used.
+- **Cleanup/evidence:** the paused-session cleanup removed exactly 8/8 admin,
+  87/87 celestial, 10/10 Soryo, and 443/443 landed temporary host flags, and
+  cleared all four global sentinels. The copied baseline save hash was
+  unchanged. Stopped only verified isolated PID 18228. Archived selector-run
+  `debug.log`, `error.log`, the paused-state crop, and all temporary source,
+  art, localization, and `run` files under
+  `C:\Users\Daniel\.codex\ck3-test\scheduler-class-dynamic-20261018\logs\archive\2026-10-18-scheduler-dynamic\`.
+- **Post-cleanup `ck3-tiger`:** **0 fatal, 989 errors, 120 warnings, 1 untidy,
+  22 tips**. No temporary probe references remain in the worktree. The
+  full-tree findings are subject to the known Tiger 1.19.0 versus CK3 1.20.1.1
+  mismatch; aggregate counts have varied across snapshots.

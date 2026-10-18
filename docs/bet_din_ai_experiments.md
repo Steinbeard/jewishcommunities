@@ -1,6 +1,6 @@
 ﻿# Bet Din AI hosting experiments
 
-Status: **experiment in progress** — 2026-10-18; the latest venue-preflight retry stopped before eligibility checks because fixed runtime character references did not resolve.
+Status: **experiment in progress** — 2026-10-18; the latest dynamic-selector retry selected multiple candidates per class and stopped before eligibility checks.
 
 ## Experiment 01 — renamed vanilla Camp Party baseline
 
@@ -255,3 +255,12 @@ After the branch merge and texture-reference correction, `ck3-tiger` reports **0
 - **Preflight:** the census file emitted BEGIN and END at 09:49:32, but none of its four fixed character references (65927, 64615, 33679, 33939) resolved in the fresh campaign. CK3 reported an invalid `(no character)` scope (`Character -4294967295`) from census line 5 and 20 invalid-scope errors overall. No character-class pass, `can_host_activity`, domicile venue, or unique-venue marker appeared.
 - **Result: stopped at target resolution.** This boot tested neither activity eligibility nor an explicit `ai_attempt_to_host_activity`, and generic autonomous scheduling was not observed. No time advanced and no save was created. The scope failure is not a negative eligibility or scheduler result, and it is not a new test of the separate production `use_goals = yes` observation.
 - **Cleanup/evidence:** archived this boot's `debug.log` and `error.log`, plus the temporary probe source/art and profile run files, under `C:\Users\Daniel\.codex\ck3-test\scheduler-class-venue-20261018\logs\archive\2026-10-18-scheduler-class-venue-retry\`. Stopped only PID 17100 after verifying its isolated `-userdir`; the save remained paused at 11 June 1075. No production Bet Din/government code, `use_goals`, `ai_will_do`, or on-action was changed. The next experiment needs an independently validated way to select/resolve one known character before repeating any eligibility or scheduler check.
+
+### Dynamic host-selector retry — multiple candidates per class; stopped at preflight — 2026-10-18
+
+- **Setup:** fresh isolated CK3 1.20.1.1 boot PID 18228 in profile `C:\Users\Daniel\.codex\ck3-test\scheduler-class-dynamic-20261018`; the unchanged `KBD_GOALS_B_1075` observer save was paused at 11 June 1075. No competing CK3 process was present; the copied save hash stayed `47DFEFAC8DF0FACA4D5A09E0081E1E60313DD8216BA65E2CCB7E1CFEFE7D64C5`.
+- **Console route:** `winkeys.py` successfully ran the unique smoke marker `KEHILLAH_SCHEDULER_DYNAMIC_SMOKE_20261018`.
+- **Selector:** the first-match selector produced 8 admin, 87 celestial, 10 Soryo, and 443 landed selected-host markers. Its global-sentinel check in the candidate loop failed to enforce one match. Negative `has_activity_state` filters emitted 3,288 script-system errors for candidates not involved in an activity. Venue scopes were logged for the over-selected candidates and cannot be treated as a unique venue result.
+- **Result: stopped before eligibility validation.** The `can_host_activity` validation file was not run; there was no unique host or venue, no explicit attempt, and no generic scheduler observation. The campaign remained paused at 11 June 1075; no time advanced and no save was made. No forced start, on-action, government change, production `ai_will_do` change, or `use_goals` change was used.
+- **Cleanup/evidence:** the clear run removed exactly 8 admin, 87 celestial, 10 Soryo, and 443 landed temporary character flags, then cleared the four global sentinels. Stopped only verified isolated PID 18228. Archived logs, the paused-state crop, and all temporary source/art/localization/run files at `C:\Users\Daniel\.codex\ck3-test\scheduler-class-dynamic-20261018\logs\archive\2026-10-18-scheduler-dynamic\`.
+- **Post-cleanup `ck3-tiger`:** **0 fatal, 989 errors, 120 warnings, 1 untidy, 22 tips**. The worktree contains no temporary probe source; the full-checkout counts are version-sensitive under Tiger 1.19.0 versus CK3 1.20.1.1.
