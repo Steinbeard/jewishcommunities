@@ -1,4 +1,4 @@
-**Status:** follow-up completed; all four class preflights passed and the ordinary scheduler produced one landed-control start, but the run ended 26 days past its six-month cutoff with unrelated yearly on-action errors; landless comparison is overrun/inconclusive — 2026-10-18.
+**Status:** follow-up completed; all four initial preflights passed. The declared 11 June–11 December six-month window completed with one landed-control start and zero landless starts; the process then overran 26 days, with unrelated yearly on-action errors beginning after the window — 2026-10-18. Strong controlled evidence of a shared landless scheduling distinction, not proof of a hard block.
 
 # Targeted scheduler-class preflight and bounded comparison — 2026-10-18
 
@@ -96,25 +96,53 @@ scheduler stage began only after all four gates passed. No
 
 ### Result and limitations
 
-The planned endpoint was 11 December 1075. `debug.log` recorded one landed
-control `START` marker and no administrative, celestial, or Soryo markers.
-The final confirmed paused date was 6 January 1076, 26 days past the planned
-six-month boundary. Treat this as a protocol overrun: the landed positive
-shows the probe can be selected by the generic scheduler, while no landless
-start was observed in this run; it is not a clean fixed-window landless
-negative.
+The declared 11 June–11 December 1075 six-month window completed. `debug.log`
+contains exactly one class-probe `START` marker overall: landed control, at
+wall-clock `[10:38:48]`. That marker line does not include an in-game calendar
+date. There are zero administrative, celestial, or Soryo `START` markers
+through final pause; because the log covers the whole run, that global absence
+also establishes zero landless starts through the intended 11 December
+endpoint. The landed positive plus completed-window landless zeros are strong
+controlled evidence of a shared landless scheduling distinction, not proof of
+an engine hard block.
 
-During the late interval, `error.log` recorded 97 existing
-`dynastic_cycle_yearly_pulse` script-system errors at 1 January 1076 from
+The final confirmed paused date was 6 January 1076, 26 days after the planned
+endpoint. `error.log` recorded 97 existing `dynastic_cycle_yearly_pulse`
+script-system errors at 1 January 1076 from
 `common/on_action/dynastic_cycle_on_actions.txt:161` (unset `situation`/`var`).
-No probe ID appeared in those errors. This cluster further limits confidence
-in interpreting the no-start observation. The run lasted months, not years.
+No probe ID appeared in those errors. They began after the declared window and
+do not contaminate its result; the 26-day overrun remains a protocol deviation.
+The run lasted months, not years.
 
-This did not establish whether production Kehillah `use_goals = yes` caused
-activities to be considered over time. The earlier roughly three-year B run
-remains confounded by the Hike-derived ordinary `domain` venue filter. No
-production `use_goals`, `ai_will_do`, government, on-action, or Bet Din
-activity content changed.
+### Government AI source audit
+
+The installed schema at
+`E:\Program Files (x86)\Steam\steamapps\common\Crusader Kings III\game\common\governments\_governments.info`
+sets `ai.use_goals = yes` as the default (line 657). The installed
+`administrative_government`, `celestial_government`, and Soryo's
+`japan_feudal_government` definitions do not override that field; all three
+therefore use goals by default. This comparison's three landless classes had
+no starts despite that default, so `use_goals = yes` alone is not sufficient
+to explain scheduling. The mod's current `kehillah_government.txt` explicitly
+sets `use_goals = no` (line 170), which could still contribute; the earlier
+temporary-yes B run does not isolate it because its Hike-derived probe retained
+the ordinary `domain` venue filter.
+
+The selector retained one fixed host and venue per class. Eligibility and
+venue were proven at the beginning of the run, not continuously. The matched
+probes were custom and high-weight, not vanilla production activities. This
+argues against a broad claim that landless governments fail simply because
+their AI settings omit long-term goals: the three tested vanilla government
+classes have goals enabled by default yet had no starts. Kehillah's explicit
+`use_goals = no` remains a separate possible factor. This does not establish
+production Bet Din selection or the effect of a multi-year production
+`use_goals` run.
+
+This did not establish whether enabling `use_goals = yes` for Kehillah with a
+venue-valid probe causes activities to be considered over time. The earlier
+roughly three-year temporary-yes B run remains confounded by the Hike-derived
+ordinary `domain` venue filter. No production `use_goals`, `ai_will_do`,
+government, on-action, or Bet Din activity content changed in this comparison.
 
 ### Cleanup and evidence
 
