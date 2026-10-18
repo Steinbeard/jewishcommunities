@@ -1,4 +1,4 @@
-**Status: landed scheduler control positive; landless comparison early-stop/inconclusive; latest dynamic selector over-selected and failed preflight before eligibility checks — 2026-10-18.**
+**Status: landed scheduler control positive; corrected class preflight resolved unique hosts/venues, but celestial `can_host_activity` failed; scheduler comparison not run — 2026-10-18.**
 
 # Landless government activity-scheduler comparison — 2026-10-18
 
@@ -12,13 +12,14 @@ Kehillah observations, would support a hidden host-class or title-class gate.
 ## Prepared probes
 
 `common/activities/activity_types/kehillah_scheduler_class_probes.txt` defines
-three disposable probes. They are identical except for host classification:
+four disposable probes. They are identical except for host classification:
 
 - landless `administrative_government`;
 - landless `celestial_government`;
-- `is_landless_soryo`.
+- `is_landless_soryo`;
+- a landed AI control.
 
-All three use `domicile_domain` for player and AI venue selection, a flat
+All four use `domicile_domain` for player and AI venue selection, a flat
 province weight of 10, zero gold cost, an AI score of 5000, and a one-month AI
 check interval. A started probe stays active for one year and its first phase
 writes a unique `KEHILLAH_SCHEDULER_CLASS_PROBE ... START` line to `debug.log`.
@@ -40,16 +41,17 @@ probe passes `can_host_activity`. It changes no state and advances no time.
    optional yes/no prompt without entering credentials. Stop if an actual
    credential or authentication flow appears.
 3. Load the copied `KBD_GOALS_B_1075` baseline paused in observer mode.
-4. Execute the read-only census without advancing time. Count candidate and
-   eligible markers separately for all three classes.
-5. Skip any class with zero eligible candidates. If every class has zero,
-   stop; do not simulate.
-6. With at least one eligible class, advance ordinary AI for at most six
+4. Run the deterministic selector without advancing time; require exactly one
+   selected host and one domicile venue in each of the four classes.
+5. Run the separate `can_host_activity` validation. If any class fails or
+   lacks its unique venue, stop before simulation; run the comparison only
+   after all four gates pass.
+6. With all four classes eligible, advance ordinary AI for at most six
    months. Use no `ai_attempt_to_host_activity`, forced event, scheduling
    on-action, or government mutation. Stop immediately if a phase-start marker
    appears.
 7. At the boundary, pause and save once under a unique name. Search both the
-   log and end save for the three activity IDs. Record candidate denominators,
+   log and end save for the four activity IDs. Record candidate denominators,
    exact dates, starts, host class, and any activity-specific error.
 8. Remove the disposable probes and their localization after documenting the
    result. Production Bet Din and government definitions remain unchanged.
@@ -247,3 +249,37 @@ probe passes `can_host_activity`. It changes no state and advances no time.
   22 tips**. No temporary probe references remain in the worktree. The
   full-tree findings are subject to the known Tiger 1.19.0 versus CK3 1.20.1.1
   mismatch; aggregate counts have varied across snapshots.
+
+## Corrected dynamic-selector preflight — 2026-10-18
+
+- **Setup:** fresh isolated CK3 1.20.1.1 boot PID 28252 loaded the unchanged
+  `KBD_GOALS_B_1075` observer save paused at 11 June 1075. It was the only CK3
+  process. The copied save SHA-256 remained
+  `47DFEFAC8DF0FACA4D5A09E0081E1E60313DD8216BA65E2CCB7E1CFEFE7D64C5`.
+- **Deterministic selection:** the corrected run file used static class and
+  prerequisite filters, then checked each class sentinel inside that
+  character's nested `if`. It excluded busy characters with vanilla
+  `is_in_activity = no`. Exactly one host and one domicile venue resolved per
+  class: administrative Niketas Alopos (65927) / Byzantion (496); celestial
+  Huang Zhāng (65425) / Jiangning (10331); Soryo Yoshimori Miyatsuko (33679) /
+  Kii (10614); landed Sharukan Çilbu (65959) / Jangyztau (7357). The unique
+  smoke marker passed, and the selector produced no script-system errors.
+- **`can_host_activity`:** one host and one unique venue were confirmed for
+  each class. Administrative, Soryo, and landed control passed; celestial
+  failed. The selector flags/sentinels were cleared exactly once per class.
+- **Result: preflight gate failed; do not advance time.** No six-month generic
+  scheduler observation began, no explicit `ai_attempt_to_host_activity` was
+  called, and no save was made. This establishes an eligibility failure for
+  the selected celestial host/probe pair, not a scheduler failure. It does
+  not test the production Kehillah government's `use_goals = yes` behavior;
+  the earlier three-year B run remains confounded by Hike's ordinary `domain`
+  venue filter.
+- **Evidence and cleanup:** debug/error logs and a downscaled paused-state
+  capture are archived at
+  `C:\Users\Daniel\.codex\ck3-test\scheduler-class-dynamic-nested-20261018\logs\archive\2026-10-18-scheduler-class-dynamic-nested\`;
+  the exact temporary probe sources/art are archived beneath its
+  `repository-instrumentation` folder. The copied save hash stayed unchanged,
+  and only verified isolated PID 28252 was stopped. Production government,
+  `use_goals`, `ai_will_do`, on-actions, and Bet Din activity content were
+  untouched.
+- **Full live-test log:** [2026-10-18 live playtest log](2026-10-18-live-playtest-log.md).
