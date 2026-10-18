@@ -2533,6 +2533,18 @@ before building it; nothing here is approved by default.
   `docs/implementation/kehillah-bet-din-case-expansion.md` for the case matrix and
   the deliberate off-map inventory limit.
 
+  **2026-10-18 update:** Case 14, **“The Goose on the Driftwood,”** adds the
+  medieval barnacle-goose kashrut controversy at user request. A merchant seeks
+  certification for unfamiliar northern geese that sailors claim grow from shells
+  on timber; the court may permit them as fowl requiring shechita, forbid them, or
+  keep them alive while examining witnesses and the birds. The source choice uses
+  Mishnah Chullin 3:6 and Bavli Kodashim mastery. It deliberately names no later
+  rabbi or responsum, so it can run in both 876 and 1066. The fiction preserves the
+  legal puzzle without establishing spontaneous generation as game fact. The pool is now fourteen;
+  source checks, ck3-tiger and a fresh CK3 1.20.1.1 load check pass. Live rendering and
+  letter-flow verification remain pending; see the
+  [load report](docs/testing/2026-10-18-barnacle-goose-case-load-check.md).
+
   **2026-10-12 balance addendum:** Cases 11 and 13 now draw a visible evidence fact
   before any letter is sent. It changes which argument is easier to defend and the
   direction's costs; case 12's continued alley use has a trade benefit. Cases 1 and
