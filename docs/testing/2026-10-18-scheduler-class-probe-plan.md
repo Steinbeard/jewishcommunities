@@ -1,4 +1,4 @@
-**Status: initial run overran; controlled landed scheduler positive, landless comparison stopped early — 2026-10-18.**
+**Status: landed scheduler control positive; landless comparison early-stop/inconclusive; latest venue-preflight retry not executed because console input did not open — 2026-10-18.**
 
 # Landless government activity-scheduler comparison — 2026-10-18
 
@@ -138,3 +138,41 @@ probe passes `can_host_activity`. It changes no state and advances no time.
   snapshot. The temporary probes are absent from source and the current diff is
   documentation-only, so these are repository-wide findings, not probe-specific
   parser errors; re-establish the lint baseline before future script changes.
+
+## Venue-constrained retry — preflight not executed — 2026-10-18
+
+- **Setup:** one fresh isolated CK3 1.20.1.1 boot (PID 21344; profile
+  `C:\Users\Daniel\.codex\ck3-test\scheduler-class-venue-20261018`) loaded the
+  unchanged `KBD_GOALS_B_1075` save in observer mode, paused at 11 June 1075.
+  No competing CK3 process was present. The optional Steam auto-login prompt
+  was declined without entering credentials.
+- **Attempt:** prepared four temporary, otherwise-matched scheduler probes for
+  fixed administrative, celestial, Soryo, and landed representatives. Their
+  only valid venue was each host's `domicile.domicile_location`; a read-only
+  census run file was to verify class gates, `can_host_activity`, and the exact
+  domicile province before time advanced. The console did not open with the
+  common `grave`, `Shift+grave`, `Shift+3`, `Shift+6`, or `Shift+2` bindings;
+  `Escape` also produced no menu response. Mouse input did work. The census
+  `run` command was never issued and no census/start marker appears in this
+  boot's `debug.log`.
+- **Result: NOT EXECUTED; no new eligibility or scheduler evidence.** The game
+  remained paused at 11 June 1075; no time advanced and no save was created.
+  This retry establishes neither `can_host_activity`, domicile venue
+  resolution, nor generic scheduler selection for any class. It is not a
+  scheduler negative, and it is not a test of production Kehillah
+  `use_goals = yes` behavior. The earlier landed-control pass and earlier
+  `use_goals = yes` run retain their separate, previously documented scope.
+- **Cleanup/evidence:** stopped only isolated PID 21344 after rechecking its
+  `-userdir`. Archived `debug.log`, `error.log`, temporary census scripts, and
+  copied probe art at
+  `C:\Users\Daniel\.codex\ck3-test\scheduler-class-venue-20261018\logs\archive\2026-10-18-scheduler-class-venue\`.
+  Removed the temporary activity definition and restored localization; no
+  production Bet Din/government content, `ai_will_do`, `use_goals`, or on-action
+  was changed. Do not start another six-month observation until the console
+  census can be run and venue evidence is recorded first.
+- **Post-cleanup `ck3-tiger`:** **0 fatal, 988 errors, 145 warnings, 1 untidy,
+  22 tips**. The full-checkout findings are repo-wide, with the known Tiger
+  1.19.0 versus CK3 1.20.1.1 mismatch; no temporary probe source remains and
+  the final source diff is documentation-only. The warning count differs from
+  the earlier 123-warning snapshot, so re-establish the baseline on the next
+  script change.
