@@ -38,6 +38,17 @@ live-tested" claim here was stale. Slices 1-2 are covered by that report.
 1. slice 3, vanilla-only odds across the V41 events (in small increments);
 2. slice 4, cleanup of numbers in older text.
 
+**Localization cleanup, 2026-10-18:** a user-directed pass completed the
+older-text cleanup across Bet Din cases, council tasks, pillar notices, the
+library and several event families. Player-facing prose no longer uses em
+dashes or double hyphens. Static skill thresholds, tally formulas, band tables
+and fixed-duration explanations were replaced with concise descriptions of
+the actual tradeoffs; live script-value percentages remain where they tell the
+player the current result rather than restating an implementation formula.
+This was a localization-only pass. Source review and `ck3-tiger` completed
+without a new fatal or error against the existing 1.19/1.20 baseline; no live
+rendering pass was required for the shorter replacement text.
+
 ### V42 Sefer collection and scholarship — 2026-10-14, Daniel's request
 
 The first Books/Yeshiva panel split, clickable work descriptions, true mastery
