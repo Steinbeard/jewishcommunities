@@ -1,0 +1,142 @@
+﻿# V47 heads of rite (docs/spec/v47-gaon-and-the-seat-of-the-sanhedrin.md).
+#
+# d_kehillah_gaonate is Rabbinic Judaism's head_of_rite title. It is ALWAYS
+# destroyed on its holder's death (destroy_on_succession), and the two
+# modes differ in what happens next:
+#   - MERIT (the default): nothing. The rite has no head until another
+#     rabbi earns it (kehillah_seek_head_of_rite_decision).
+#   - OFFICE: after kehillah_establish_gaon_office_decision,
+#     global_var:kehillah_gaonate_office_academy names the academy's
+#     community. When that community gets a new rabbi-leader,
+#     kehillah_gaonate_academy_succession_effect grants him the title.
+#     A lay leader, or an academy with no holder, lets the office lapse.
+#     Why not set_always_follows_primary_heir: it only accepts yes
+#     (ck3-tiger), so an office set that way could never lapse.
+# Granting it never makes it the holder's primary title (never-primary
+# score, plus set_primary_title_to).
+
+# Refresh the engine's head of the holder's rite. Scope: a character.
+kehillah_gaonate_refresh_head_of_rite_effect = {
+	rite ?= { force_refresh_head_of_rite = yes }
+}
+
+# ---------------------------------------------------------------------
+# Grant the Gaonate to the scoped rabbi. Used both for merit and for the
+# office passing to the academy's next head.
+# ---------------------------------------------------------------------
+kehillah_gaonate_grant_effect = {
+	save_scope_as = kehillah_new_gaon
+	primary_title = { save_scope_as = kehillah_new_gaon_primary }
+	create_title_and_vassal_change = {
+		type = created
+		save_scope_as = change
+		add_claim_on_loss = no
+	}
+	title:d_kehillah_gaonate = {
+		change_title_holder = {
+			holder = scope:kehillah_new_gaon
+			change = scope:change
+		}
+	}
+	resolve_title_and_vassal_change = scope:change
+	set_primary_title_to = scope:kehillah_new_gaon_primary
+	title:d_kehillah_gaonate = {
+		set_destroy_on_succession = yes
+		set_capital_county = scope:kehillah_new_gaon_primary.title_capital_county
+	}
+	kehillah_gaonate_refresh_head_of_rite_effect = yes
+	kehillah_update_leader_flavor_effect = yes
+	kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_head_of_rite_greatness }
+	every_player = {
+		limit = {
+			NOT = { this = scope:kehillah_new_gaon }
+			faith = faith:rabbinic_faith
+		}
+		send_interface_message = {
+			type = msg_kehillah_community_news
+			title = kehillah_news_head_of_rite_t
+			desc = kehillah_news_head_of_rite_d
+			left_icon = scope:kehillah_new_gaon
+		}
+	}
+	debug_log = "KEHILLAH_GAONATE: granted"
+	debug_log_scopes = yes
+}
+
+# ---------------------------------------------------------------------
+# Make the scoped head of rite's recognition an office of his academy.
+# ---------------------------------------------------------------------
+kehillah_gaonate_establish_office_effect = {
+	save_scope_as = kehillah_gaon_founder
+	set_global_variable = { name = kehillah_gaonate_office_academy value = primary_title }
+	kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_gaon_office_greatness }
+	every_player = {
+		limit = {
+			NOT = { this = scope:kehillah_gaon_founder }
+			faith = faith:rabbinic_faith
+		}
+		send_interface_message = {
+			type = msg_kehillah_community_news
+			title = kehillah_news_gaon_office_t
+			desc = kehillah_news_gaon_office_d
+			left_icon = scope:kehillah_gaon_founder
+		}
+	}
+	debug_log = "KEHILLAH_GAONATE: office established"
+}
+
+# ---------------------------------------------------------------------
+# The academy's community has a new leader (root). If he is a rabbi, the
+# office makes him Gaon; otherwise it lapses to merit.
+# ---------------------------------------------------------------------
+kehillah_gaonate_academy_succession_effect = {
+	if = {
+		limit = {
+			has_trait = kehillah_rabbi_trait
+			faith = faith:rabbinic_faith
+			NOT = { kehillah_is_gaonate_holder_trigger = yes }
+			NOT = {
+				exists = title:d_kehillah_gaonate.holder
+				NOT = { title:d_kehillah_gaonate.holder = root }
+			}
+		}
+		kehillah_gaonate_grant_effect = yes
+		debug_log = "KEHILLAH_GAONATE: office passed to the academy's new head"
+	}
+	else_if = {
+		limit = { NOT = { has_trait = kehillah_rabbi_trait } }
+		remove_global_variable = kehillah_gaonate_office_academy
+		debug_log = "KEHILLAH_GAONATE: office lapsed (the academy's new leader is no rabbi)"
+	}
+}
+
+# ---------------------------------------------------------------------
+# Yearly. An office whose academy has no holder lapses to merit.
+# ---------------------------------------------------------------------
+kehillah_gaonate_yearly_effect = {
+	if = {
+		limit = {
+			exists = global_var:kehillah_gaonate_office_academy
+			NOT = { exists = global_var:kehillah_gaonate_office_academy.holder }
+		}
+		remove_global_variable = kehillah_gaonate_office_academy
+		debug_log = "KEHILLAH_GAONATE: office lapsed (the academy has no holder)"
+	}
+}
+
+# ---------------------------------------------------------------------
+# A new holder: keep his community primary, restyle him, and refresh his
+# rite's head.
+# ---------------------------------------------------------------------
+kehillah_gaonate_on_gain_effect = {
+	if = {
+		limit = { any_held_title = { is_kehillah_title_trigger = yes } }
+		random_held_title = {
+			limit = { is_kehillah_title_trigger = yes }
+			save_scope_as = kehillah_gaon_community
+		}
+		set_primary_title_to = scope:kehillah_gaon_community
+	}
+	kehillah_gaonate_refresh_head_of_rite_effect = yes
+	kehillah_update_leader_flavor_effect = yes
+}
