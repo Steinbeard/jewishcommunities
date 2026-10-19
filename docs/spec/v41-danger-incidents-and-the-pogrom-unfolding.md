@@ -627,3 +627,15 @@ show probabilities, their factors and skill challenges, through vanilla systems.
   Anusim, and the mob warning's "Every request can fail".
 
 Status displays, such as the danger and pillar breakdowns, are left as they are.
+
+## Addendum, 2026-10-18: incident odds shown as factors
+
+**Status:** built 2026-10-18; ck3-tiger clean; live test pending.
+
+Holy Week, the Bonds, and the petitions against the badge and the servants' decree now show the
+factors of their odds in the option tooltip (skills via compare_modifier, the lord's band via
+kehillah_lord_outlook_odds_modifier, opinions via opinion_modifier, traits as modifiers) instead of
+one opaque script value per outcome. The odds are tuned to stay close to the old formulas. The
+petitioner is the Shtadlan or the leader (kehillah_incident_petitioner). The Talmud trial already
+worked this way. Still to convert: the mob's hub and scenes (kehillah_mob_events.txt), the pogrom
+scenes, Granada and the anusim petition.
