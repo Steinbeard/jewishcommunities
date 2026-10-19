@@ -99,3 +99,40 @@ The history is kept here because it records engine rules this mod has to live wi
   dropping `cannot_be_vassal_or_liege` and reworking the host charter (implementation doc §2a).
   That is a Track B-sized project, not a change to the Sanhedrin. The `holds_landed_title`
   trigger also read YES for a barony Isaac did not hold, so it is unreliable here.
+
+## Spikes: the landed Nasi and the Gaon as head of rite (patch, reverted)
+
+The code is preserved as `docs/spikes/2026-10-19-landed-nasi-and-gaonate.patch`.
+
+**Spike edits:**
+- `d_kehillah_worms` without `require_landless`.
+- A landed `kehillah_nasi_government`: Rabbinic faith only, castle, city and temple holdings,
+  no `cannot_be_vassal_or_liege`.
+- A `d_kehillah_gaonate` title, set as `head_of_rite` on `rabbinic_faith`.
+- Debug events .6-.8.
+- A rewritten Sanhedrin hand-over.
+
+**Landed Nasi (two runs): PASS for a landed holder.**
+- Restoring while landless, then granting Isaac `c_worms` and switching him to the Nasi
+  government, left him: on the Nasi government, with no theocracy and his domicile and
+  buildings, landed and independent, holding Worms, `c_worms` and the Sanhedrin.
+- Setting the head link made him the temporal head of faith, with no Game Over. That was stable
+  past 1 January. The character window read "Communal Realm (Head of Faith)".
+
+**FAIL at succession, in both runs:**
+- **Run 1, the county followed the community.** The Worms successor took `c_worms` and the Nasi
+  government. The elected Nasi (Rashi, landless) was forced into theocracy and lost his domicile.
+- **Run 2, the county followed the Sanhedrin.** The new Nasi (Isaac ibn Ghiyyat of Lucena) got
+  `c_worms`, the Nasi government and the head link, but he lost his domicile in the landless
+  moment before the county reached him, and his primary title became the Sanhedrin. The Worms
+  successor stayed on the Nasi government; the fix-up never ran, because his title arrived
+  before his government changed.
+- **What it shows:** no effect can create a domicile.
+
+**Gaon as head of rite: PASS.**
+- Granting the Gaonate to the Mainz leader made `rite:rabbinism.head_of_rite` the Mainz leader.
+  He stayed on the Kehillah government with his domicile, unchanged after a month.
+- **Per rite:** after Mainz joined Minhag Ashkenaz, he was Ashkenaz's head of rite.
+- **A head of faith outranks him:** while Isaac was Nasi, Rabbinism had no separate head of rite.
+
+Design consequences: [v47](../spec/v47-gaon-and-the-seat-of-the-sanhedrin.md).
