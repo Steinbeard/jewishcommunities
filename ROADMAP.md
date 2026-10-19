@@ -17,6 +17,15 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Rouen and Orléans Kehillot — 2026-10-19, Daniel's request
+
+Both northern French communities now exist as titular Kehillot at the 1066 start, with title
+history, startup/registry wiring and representative lowborn leaders. Orléans begins under the
+rabbinic scholar Yitzhak; Rouen begins under the lay parnas Yaakov and remains explicitly separate
+from Yosef of Rodom's existing adventurer company. Historical basis, editorial limits and the
+future console probe are recorded in [the implementation note](docs/implementation/2026-10-19-rouen-orleans-kehillot.md).
+Per Daniel's instruction, this unit receives source review and `ck3-tiger` only, with no live boot.
+
 ### V46 The Sanhedrin — 2026-10-19, Daniel's request
 
 Spec: [v46](docs/spec/v46-the-sanhedrin.md).
