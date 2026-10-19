@@ -36,16 +36,24 @@ kehillah_sanhedrin_yearly_pulse = {
 	effect = {
 		kehillah_sanhedrin_lapse_check_effect = yes
 		kehillah_sanhedrin_refresh_seats_effect = yes
-		title:d_kehillah_sanhedrin.holder ?= { kehillah_sanhedrin_keep_kehillah_government_effect = yes }
+		# Catch any government transition the title hooks missed (spec s.9).
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			holder ?= { kehillah_reconcile_nasi_government_effect = yes }
+		}
 	}
 }
 
 on_title_gain = {
-	on_actions = { kehillah_sanhedrin_on_title_gain }
+	on_actions = {
+		kehillah_sanhedrin_on_title_gain
+		kehillah_nasi_community_on_title_gain
+	}
 }
 
 # A newly elected Nasi: he gives up his own seat (a Nasi does not sit in the
-# court he presides over) and keeps his community as primary title.
+# court he presides over), keeps his community as primary title, and takes
+# the government the head of faith needs.
 kehillah_sanhedrin_on_title_gain = {
 	trigger = {
 		scope:title = title:d_kehillah_sanhedrin
@@ -70,12 +78,39 @@ kehillah_sanhedrin_on_title_gain = {
 			}
 			set_primary_title_to = scope:kehillah_nasi_community
 		}
-		# A Nasi of another rite moves the faith's main rite to his: keep
-		# the head and clergy doctrines on whichever rite that is.
-		kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
-		kehillah_sanhedrin_keep_kehillah_government_effect = yes
+		# The new Nasi may be of another rite (the main rite follows him)
+		# or the other kind of Nasi (landed or not): reset the doctrines.
+		kehillah_sanhedrin_apply_head_doctrines_effect = yes
+		kehillah_reconcile_nasi_government_effect = yes
+		trigger_event = { id = kehillah_synod.0003 days = 1 }
+		# A previous holder still alive (title taken, not inherited) leaves
+		# the Nasi government.
+		scope:previous_holder ?= {
+			if = {
+				limit = { is_alive = yes }
+				kehillah_reconcile_nasi_government_effect = yes
+			}
+		}
 		# The court sits where its new Nasi leads a community.
 		kehillah_sanhedrin_sit_with_nasi_effect = yes
 		kehillah_update_leader_flavor_effect = yes
+	}
+}
+
+# Whoever takes a community, above all the successor of a Nasi, who
+# inherits the Nasi's government with the title. Runs alongside the
+# community's own kehillah_on_title_gain, which only acts when the
+# government is not a Kehillah one at all.
+kehillah_nasi_community_on_title_gain = {
+	trigger = {
+		scope:title = { is_kehillah_title_trigger = yes }
+		OR = {
+			has_government = kehillah_nasi_government
+			kehillah_is_sanhedrin_head_trigger = yes
+		}
+	}
+	effect = {
+		kehillah_reconcile_nasi_government_effect = yes
+		trigger_event = { id = kehillah_synod.0003 days = 1 }
 	}
 }

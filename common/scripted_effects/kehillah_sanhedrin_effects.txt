@@ -31,29 +31,21 @@ kehillah_restore_sanhedrin_effect = {
 	title:d_kehillah_sanhedrin = {
 		add_title_law = kehillah_sanhedrin_succession_law
 	}
-	# A TEMPORAL head, as Islam's Caliph is, with lay clergy, as Islam's
-	# clergy are (00_islam.txt). Live test 2026-10-19: a spiritual head, and
-	# a temporal head beside Judaism's vanilla doctrine_theocracy_temporal
-	# (which doctrine_temporal_head's own can_pick forbids), both forced the
-	# Nasi onto a theocracy government, stripping his domicile and ending
-	# the player's game. Rabbis were lay scholars, not a priesthood, so
-	# lay clergy also fits. Both groups are main-rite doctrines.
-	#
-	# LIVE TEST 2026-10-19 (third run): setting the head also switches the
-	# faith's main rite to the head's own rite (Minhag Ashkenaz for a
-	# Rhineland Nasi). Doctrines set on the old main rite beforehand were
-	# lost with it, so they are applied to every Rabbinic rite, after the
-	# head is set, and again for each new Nasi (kehillah_sanhedrin_on_title_gain).
-	# Before AND after: before, so whichever rite becomes main already
-	# carries them when the head is set; after, in case the switch reset it.
-	kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
+	# ORDER (spec section 9): doctrines, then government, then the head.
+	# A landless Nasi moves onto kehillah_nasi_government BEFORE he
+	# becomes head, so the engine's forced theocracy finds him already on
+	# the faith's theocracy government and has nothing to change. Setting
+	# the head also moves the faith's main rite to his rite, so the
+	# doctrines are applied to every rite, before and after.
+	kehillah_sanhedrin_apply_head_doctrines_effect = yes
+	kehillah_reconcile_nasi_government_effect = yes
 	faith:rabbinic_faith = {
 		set_religious_head_title = title:d_kehillah_sanhedrin
 	}
-	kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
-	# Belt and braces: a community leader who was pushed off his
-	# government anyway gets it, and his Quarter, back.
-	kehillah_sanhedrin_keep_kehillah_government_effect = yes
+	kehillah_sanhedrin_apply_head_doctrines_effect = yes
+	kehillah_reconcile_nasi_government_effect = yes
+	# The engine settles governments after effects return; check again.
+	trigger_event = { id = kehillah_synod.0003 days = 1 }
 	set_global_variable = { name = kehillah_sanhedrin_formed value = yes }
 	if = {
 		limit = { government_has_flag = government_is_kehillah }
@@ -64,25 +56,98 @@ kehillah_restore_sanhedrin_effect = {
 }
 
 # ---------------------------------------------------------------------
-# Scope: a Nasi. If he leads a community but the head-of-faith role put
-# him on another government (as a theocracy did in live tests), put him
-# back on the Kehillah government and restore his Quarter.
-# kehillah_restore_quarter_effect reads scope:kq_title.
+# The head-of-faith doctrines for the scoped Nasi, on every rite.
+#   A landless Nasi (a community rabbi): a SPIRITUAL head, the Pope's
+#   model, with Judaism's vanilla theocratic clergy. He sits on
+#   kehillah_nasi_government, the faith's theocracy government.
+#   A landed Nasi (a Jewish king): a TEMPORAL head, the Caliph's model,
+#   with lay clergy, which doctrine_temporal_head requires. A landed
+#   ruler keeps his own government. Not yet live-tested.
+# Run again for every new Nasi, since the next one may be the other kind.
 # ---------------------------------------------------------------------
-kehillah_sanhedrin_keep_kehillah_government_effect = {
+kehillah_sanhedrin_apply_head_doctrines_effect = {
+	if = {
+		limit = { is_landed = yes }
+		kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
+	}
+	else = {
+		kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_spiritual_head CLERGY = doctrine_theocracy_temporal }
+	}
+}
+
+# ---------------------------------------------------------------------
+# THE GOVERNMENT TRANSITIONS (spec section 9). Scope: any character. One
+# place that decides, run wherever Nasi status can change:
+#   - restoration (above), before and after the head is set;
+#   - kehillah_sanhedrin_on_title_gain: the new Nasi, and the previous
+#     holder if he is still alive;
+#   - kehillah_nasi_community_on_title_gain: whoever takes a community,
+#     typically the successor of a Nasi, who inherits the Nasi's
+#     government along with the title;
+#   - kehillah_synod.0003, a day after each of those;
+#   - the yearly pulse, for every community leader.
+#
+# Rules:
+#   1. A landless Nasi who leads a community -> kehillah_nasi_government.
+#   2. On kehillah_nasi_government but not Nasi -> kehillah_government.
+#   3. Leads a community, not Nasi, on some other government (a forced
+#      generic theocracy, say) -> kehillah_government.
+# change_government needs a domicile already there (kehillah_on_title_gain
+# notes, 2026-09); both governments share kehillah_quarter, so a switch
+# between them should keep it. kehillah_restore_quarter_effect runs after
+# each switch to rebuild from the recorded buildings if it did not.
+# Each switch logs a KEHILLAH_NASI_GOV line for live verification.
+# ---------------------------------------------------------------------
+kehillah_reconcile_nasi_government_effect = {
 	if = {
 		limit = {
 			is_ruler = yes
-			NOT = { government_has_flag = government_is_kehillah }
+			is_landed = no
+			kehillah_is_sanhedrin_head_trigger = yes
 			any_held_title = { is_kehillah_title_trigger = yes }
+			NOT = { has_government = kehillah_nasi_government }
+		}
+		change_government = kehillah_nasi_government
+		kehillah_nasi_government_restore_quarter_effect = yes
+		if = {
+			limit = { has_government = kehillah_nasi_government }
+			debug_log = "KEHILLAH_NASI_GOV: to Nasi government, accepted"
+		}
+		else = { debug_log = "KEHILLAH_NASI_GOV: to Nasi government, REFUSED" }
+		debug_log_scopes = yes
+	}
+	else_if = {
+		limit = {
+			is_ruler = yes
+			NOT = { kehillah_is_sanhedrin_head_trigger = yes }
+			any_held_title = { is_kehillah_title_trigger = yes }
+			OR = {
+				has_government = kehillah_nasi_government
+				NOT = { government_has_flag = government_is_kehillah }
+			}
 		}
 		change_government = kehillah_government
-		random_held_title = {
-			limit = { is_kehillah_title_trigger = yes }
-			save_scope_as = kq_title
+		kehillah_nasi_government_restore_quarter_effect = yes
+		if = {
+			limit = { has_government = kehillah_government }
+			debug_log = "KEHILLAH_NASI_GOV: back to Kehillah government, accepted"
 		}
+		else = { debug_log = "KEHILLAH_NASI_GOV: back to Kehillah government, REFUSED" }
+		debug_log_scopes = yes
+	}
+}
+
+# kehillah_restore_quarter_effect reads scope:kq_title.
+kehillah_nasi_government_restore_quarter_effect = {
+	random_held_title = {
+		limit = { is_kehillah_title_trigger = yes }
+		save_scope_as = kq_title
+	}
+	if = {
+		limit = { exists = domicile }
 		kehillah_restore_quarter_effect = yes
 	}
+	else = { debug_log = "KEHILLAH_NASI_GOV: no domicile after the switch" }
 }
 
 # ---------------------------------------------------------------------
