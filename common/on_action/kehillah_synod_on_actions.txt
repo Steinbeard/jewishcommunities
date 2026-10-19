@@ -41,7 +41,7 @@ kehillah_sanhedrin_yearly_pulse = {
 		# Catch any government transition the title hooks missed (spec s.9).
 		every_in_global_list = {
 			variable = kehillah_registered_communities
-			holder ?= { kehillah_reconcile_nasi_government_effect = yes }
+			holder ?= { kehillah_reconcile_landed_government_effect = yes }
 		}
 	}
 }
@@ -49,7 +49,7 @@ kehillah_sanhedrin_yearly_pulse = {
 on_title_gain = {
 	on_actions = {
 		kehillah_sanhedrin_on_title_gain
-		kehillah_nasi_community_on_title_gain
+		kehillah_landed_on_title_gain
 		kehillah_gaonate_on_title_gain
 	}
 }
@@ -77,10 +77,10 @@ kehillah_gaonate_on_title_gain = {
 }
 
 # V47 phase B: a new Nasi, elected to the Sanhedrin's seat county by its
-# members. He gives up his own seat and community, takes the seat
-# community, and moves onto the Nasi government
-# (kehillah_sanhedrin_install_nasi_effect). The founder's own grant does not
-# pass here: the seat variable is set only after his grant resolves.
+# members. He gives up his own seat and other communities, takes the seat
+# community if he leads one, and moves onto the landed Kehillah government
+# if he is a community leader (kehillah_sanhedrin_install_nasi_effect). The
+# founder does not pass here: he already held the county.
 kehillah_sanhedrin_on_title_gain = {
 	trigger = {
 		scope:title = { has_variable = kehillah_sanhedrin_seat_county }
@@ -91,26 +91,31 @@ kehillah_sanhedrin_on_title_gain = {
 		scope:previous_holder ?= {
 			if = {
 				limit = { is_alive = yes }
-				kehillah_reconcile_nasi_government_effect = yes
+				kehillah_reconcile_landed_government_effect = yes
 			}
 		}
 	}
 }
 
-# Whoever takes a community, above all the successor of a Nasi, who
-# inherits the Nasi's government with the title. Runs alongside the
+# A community leader who gains land (a county, or the seat by election), or
+# anyone on the landed government who gains a community, above all the
+# successor of a Nasi. Moves him between the two Kehillah governments
+# (kehillah_reconcile_landed_government_effect); a check a day later
+# catches a transfer that was still resolving. Runs alongside the
 # community's own kehillah_on_title_gain, which only acts when the
 # government is not a Kehillah one at all.
-kehillah_nasi_community_on_title_gain = {
+kehillah_landed_on_title_gain = {
 	trigger = {
-		scope:title = { is_kehillah_title_trigger = yes }
-		OR = {
-			has_government = kehillah_nasi_government
-			kehillah_is_sanhedrin_head_trigger = yes
+		government_has_flag = government_is_kehillah
+		scope:title = {
+			OR = {
+				is_kehillah_title_trigger = yes
+				tier = tier_county
+			}
 		}
 	}
 	effect = {
-		kehillah_reconcile_nasi_government_effect = yes
+		kehillah_reconcile_landed_government_effect = yes
 		trigger_event = { id = kehillah_synod.0003 days = 1 }
 	}
 }

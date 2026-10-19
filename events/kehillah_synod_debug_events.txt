@@ -152,8 +152,8 @@ kehillah_synod_debug.5 = {
 			debug_log = "synod_debug: scoped character is the Nasi"
 		}
 		if = {
-			limit = { has_government = kehillah_nasi_government }
-			debug_log = "synod_debug: scoped character on the Nasi government"
+			limit = { has_government = kehillah_landed_government }
+			debug_log = "synod_debug: scoped character on the landed Kehillah government"
 		}
 		if = {
 			limit = { is_landed = yes }
@@ -301,15 +301,48 @@ kehillah_synod_debug.7 = {
 }
 
 # V47 phase B.
-#   .8  restore the Sanhedrin for the scoped community rabbi directly,
-#       skipping the petition's odds (changes the save): the liege's grant
-#       of his community's county and everything after it
+#   .8  restore the Sanhedrin for the scoped character directly (changes the
+#       save). A landless community leader in the Land is granted his
+#       community's county first, skipping the petition's odds.
+#   .9  grant the scoped community leader his community's county directly,
+#       skipping the petition's odds (changes the save), then report
 kehillah_synod_debug.8 = {
 	type = character_event
 	hidden = yes
 	orphan = yes
 	immediate = {
-		kehillah_sanhedrin_restore_effect = yes
+		if = {
+			limit = {
+				is_landed = no
+				kehillah_community_in_the_land_trigger = yes
+				kehillah_liege_can_grant_county_trigger = yes
+			}
+			kehillah_grant_community_county_effect = yes
+		}
+		if = {
+			limit = { kehillah_holds_county_in_the_land_trigger = yes }
+			kehillah_sanhedrin_restore_effect = yes
+		}
+		else = { debug_log = "synod_debug: NO COUNTY IN THE LAND, not restored" }
+		trigger_event = kehillah_synod_debug.5
+	}
+}
+
+kehillah_synod_debug.9 = {
+	type = character_event
+	hidden = yes
+	orphan = yes
+	immediate = {
+		if = {
+			limit = { kehillah_liege_can_grant_county_trigger = yes }
+			debug_log = "synod_debug: liege can grant the county"
+		}
+		else = { debug_log = "synod_debug: liege CANNOT grant the county" }
+		kehillah_grant_community_county_effect = yes
+		if = {
+			limit = { kehillah_holds_county_in_the_land_trigger = yes }
+			debug_log = "synod_debug: scoped character holds a county in the Land"
+		}
 		trigger_event = kehillah_synod_debug.5
 	}
 }

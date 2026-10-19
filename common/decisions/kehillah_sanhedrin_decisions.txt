@@ -1,12 +1,16 @@
-﻿# V47 phase B (docs/spec/v47-gaon-and-the-seat-of-the-sanhedrin.md): restore
-# the Sanhedrin in the Land of Israel. Replaces V46's landless restoration.
+﻿# V47 phase B (docs/spec/v47-gaon-and-the-seat-of-the-sanhedrin.md): the
+# Sanhedrin in the Land of Israel. Replaces V46's landless restoration.
 #
-# Shown to every Rabbinic community rabbi while no Sanhedrin sits, so the
-# goal is visible. Valid only for a rabbi of the highest learning and
-# devotion who leads a community in the Land, whose liege holds that county
-# directly and not as his capital. The decision is the petition: the liege
-# grants the county, and the Sanhedrin is restored on it, all at once. A
-# player liege answers by event; an AI liege by the odds shown.
+# Two decisions (Daniel, 2026-10-19):
+#   - Restore the Sanhedrin: the visible goal, shown to every Rabbinic
+#     ruler while no Sanhedrin sits. Valid for one who holds a county in the
+#     Land and has the highest learning and devotion. Kings, lords and
+#     community leaders alike.
+#   - Petition for Land in Eretz Yisrael: one way to get that county. A
+#     community leader in the Land asks his liege for the county his
+#     community lives in. Rare by design: Kehillot may rule land, but only
+#     in extraordinary circumstances.
+
 kehillah_restore_sanhedrin_decision = {
 	picture = {
 		reference = "gfx/interface/illustrations/decisions/decision_major_religion.dds"
@@ -16,10 +20,8 @@ kehillah_restore_sanhedrin_decision = {
 	ai_check_interval = 60
 
 	is_shown = {
-		government_has_flag = government_is_kehillah
 		is_ruler = yes
 		faith = faith:rabbinic_faith
-		has_trait = kehillah_rabbi_trait
 		NOT = { exists = global_var:kehillah_sanhedrin_seat }
 	}
 
@@ -27,12 +29,8 @@ kehillah_restore_sanhedrin_decision = {
 		is_adult = yes
 		is_imprisoned = no
 		custom_tooltip = {
-			text = kehillah_sanhedrin_requires_the_land_tt
-			kehillah_community_in_the_land_trigger = yes
-		}
-		custom_tooltip = {
-			text = kehillah_sanhedrin_requires_grantable_county_tt
-			kehillah_liege_can_grant_county_trigger = yes
+			text = kehillah_sanhedrin_requires_county_in_the_land_tt
+			kehillah_holds_county_in_the_land_trigger = yes
 		}
 		custom_tooltip = {
 			text = kehillah_sanhedrin_requires_mastery_tt
@@ -47,10 +45,6 @@ kehillah_restore_sanhedrin_decision = {
 			text = kehillah_sanhedrin_requires_no_head_tt
 			NOT = { exists = faith.religious_head }
 		}
-		custom_tooltip = {
-			text = kehillah_sanhedrin_requires_no_recent_refusal_tt
-			NOT = { kehillah_sanhedrin_petition_refused_trigger = yes }
-		}
 	}
 
 	cost = {
@@ -59,18 +53,66 @@ kehillah_restore_sanhedrin_decision = {
 	}
 
 	effect = {
-		save_scope_as = kehillah_sanhedrin_petitioner
+		custom_tooltip = kehillah_restore_sanhedrin_effect_tt
+		hidden_effect = { kehillah_sanhedrin_restore_effect = yes }
+	}
+
+	ai_potential = {
+		kehillah_masters_all_rabbinic_tracks_trigger = yes
+		kehillah_holds_county_in_the_land_trigger = yes
+	}
+
+	ai_will_do = {
+		base = 100
+	}
+}
+
+kehillah_petition_for_land_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_realm.dds"
+	}
+	decision_group_type = major
+	sort_order = 89
+	ai_check_interval = 120
+
+	is_shown = {
+		is_ruler = yes
+		is_landed = no
+		government_has_flag = government_is_kehillah
+		kehillah_community_in_the_land_trigger = yes
+	}
+
+	is_valid = {
+		is_adult = yes
+		is_imprisoned = no
+		custom_tooltip = {
+			text = kehillah_land_requires_grantable_county_tt
+			kehillah_liege_can_grant_county_trigger = yes
+		}
+		prestige_level >= 3
+		custom_tooltip = {
+			text = kehillah_land_requires_no_recent_refusal_tt
+			NOT = { kehillah_land_petition_refused_trigger = yes }
+		}
+	}
+
+	cost = {
+		prestige = kehillah_land_petition_prestige_cost
+	}
+
+	effect = {
+		save_scope_as = kehillah_land_petitioner
 		if = {
 			limit = { suzerain = { is_ai = no } }
-			custom_tooltip = kehillah_sanhedrin_petition_player_liege_tt
+			custom_tooltip = kehillah_land_petition_player_liege_tt
 			suzerain = { trigger_event = kehillah_synod.0006 }
 		}
 		else = {
 			random_list = {
-				20 = {
-					desc = kehillah_sanhedrin_petition_granted
-					# A Jewish liege, or one with land to spare, gives
-					# more readily; a valuable county is harder to win.
+				10 = {
+					desc = kehillah_land_petition_granted
+					# A Jewish liege, or one with land to spare, gives more
+					# readily; a valuable county is harder to win.
 					modifier = { add = 40 suzerain = { religion = religion:judaism_religion } }
 					modifier = { add = 15 suzerain = { domain_size >= 8 } }
 					modifier = { add = -10 suzerain = { domain_size <= 3 } }
@@ -82,17 +124,16 @@ kehillah_restore_sanhedrin_decision = {
 						multiplier = 0.5
 					}
 					min = 1
-					custom_tooltip = kehillah_restore_sanhedrin_effect_tt
-					hidden_effect = { kehillah_sanhedrin_restore_effect = yes }
+					custom_tooltip = kehillah_land_petition_granted_tt
+					hidden_effect = { kehillah_grant_community_county_effect = yes }
 				}
-				60 = {
-					desc = kehillah_sanhedrin_petition_refused
-					min = 1
+				90 = {
+					desc = kehillah_land_petition_refused
 					set_variable = {
-						name = kehillah_sanhedrin_petition_refused
-						years = kehillah_sanhedrin_petition_cooldown_years
+						name = kehillah_land_petition_refused
+						years = kehillah_land_petition_cooldown_years
 					}
-					custom_tooltip = kehillah_sanhedrin_petition_refused_tt
+					custom_tooltip = kehillah_land_petition_refused_tt
 				}
 			}
 		}
@@ -100,7 +141,6 @@ kehillah_restore_sanhedrin_decision = {
 
 	ai_potential = {
 		kehillah_masters_all_rabbinic_tracks_trigger = yes
-		kehillah_community_in_the_land_trigger = yes
 	}
 
 	ai_will_do = {

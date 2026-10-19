@@ -75,7 +75,36 @@ Spec: [v47](docs/spec/v47-gaon-and-the-seat-of-the-sanhedrin.md).
   - Live PASS: the doctrine in the faith window; a player accepting (Rabbenu); an AI accepting
     (Gaon); the office passing through two rabbi successors; a lay lapse.
   - Fixed afterwards and not yet re-run: a lay heir kept the Gaon style.
-- **Next:** Phase B, the Sanhedrin in the Land (v47 build order, step 2).
+- **Phase B BUILT, 2026-10-19 (f75070a, then restructured the same day; see the v47 spec's
+  "Phase B restructure" addendum). Not yet live-tested in its restructured form.**
+  - **Restore the Sanhedrin** is a decision shown to every Rabbinic ruler while no Sanhedrin sits,
+    as a visible goal. Its requirements:
+    - holding a county in the Land (the de jure Kingdom of Jerusalem);
+    - all three rabbi tracks mastered;
+    - top piety;
+    - enough rabbi-led communities;
+    - no head of faith.
+
+    Kings, lords and community leaders can all take it. The seat is that county.
+  - **Petition for Land in Eretz Yisrael** is a separate, rare decision and one way to get that
+    county. A landless community leader in the Land asks his liege for his community's county,
+    when the liege holds it directly and not as his capital. The odds follow the vanilla model
+    (a Jewish liege, land to spare, a modest county, opinion). A player liege answers by event. A
+    refusal bars asking again for 5 years.
+  - **Kehillot may hold land** (Daniel). `require_landless` is removed from every community
+    title, and the Nasi government is renamed to **`kehillah_landed_government`** ("Kehillah of
+    the Land"), the government of any community leader who holds land. A grant switches the
+    government first, because the engine refuses land to a leader on `kehillah_government`.
+  - Earlier live-test findings fixed in this pass:
+    - the election's self-opinion error flood;
+    - a `min` on an unmodified `random_list` branch;
+    - an overlong decision description.
+- **Next:** a live test of the restructured Phase B. The checks:
+  - Worms boots and plays with its leader present;
+  - debug `.9` grants a community's county in the Land, and the government switches;
+  - debug `.8` restores the Sanhedrin on a held county;
+  - the election runs with no error flood;
+  - the Phase A lay-heir style fix.
 
 ### Open design: landed Jewish polities and other Jewish faiths (Daniel, 2026-10-19) — DANIEL-REVIEW
 

@@ -3,14 +3,16 @@
 # landless Sanhedrin (d_kehillah_sanhedrin, removed).
 #
 # THE SEAT. global_var:kehillah_sanhedrin_seat is a county in the de jure
-# Kingdom of Jerusalem, granted by the liege of the community there. It is
+# Kingdom of Jerusalem held by the founder (a king or lord of the Land, or a
+# community leader granted it, kehillah_petition_for_land_decision). It is
 # Rabbinic Judaism's head-of-faith title, and carries the members' election
 # (kehillah_sanhedrin_succession_law). Its holder is always LANDED, which is
 # why this works: live tests on 2026-10-19 showed CK3 forces any landless
 # head of faith onto vanilla theocracy and strips his Quarter, while a
-# landed one keeps kehillah_nasi_government.
-# global_var:kehillah_sanhedrin_seat_community is the community in the seat
-# county (Daniel: it becomes the seat). It always goes to the Nasi.
+# landed one keeps kehillah_landed_government.
+# global_var:kehillah_sanhedrin_seat_community is the
+# founder's community, if he led one (Daniel: it becomes the seat). It goes
+# to a Nasi who leads a community.
 # A Nasi elected from elsewhere gives up his own community to its heir.
 
 # ---------------------------------------------------------------------
@@ -44,48 +46,102 @@ kehillah_sanhedrin_set_rite_doctrines_effect = {
 }
 
 # ---------------------------------------------------------------------
-# Restore the Sanhedrin. Scope: the founder, a rabbi leading the community
-# in a county of the Land, once his liege has granted that county
-# (kehillah_restore_sanhedrin_decision). Everything happens at once, so
-# there is never a landed Kehillah leader who is not the Nasi.
+# A land grant (kehillah_petition_for_land_decision, or its player-liege
+# event). Scope: a landless Kehillah leader whose liege holds the
+# community's county directly. The government switch comes FIRST: on
+# kehillah_government (cannot_be_vassal_or_liege) the engine refuses him the
+# county and gives it to a generated lowborn (live 2026-10-19).
+# ---------------------------------------------------------------------
+kehillah_grant_community_county_effect = {
+	save_scope_as = kehillah_land_recipient
+	primary_title = { save_scope_as = kehillah_land_community }
+	scope:kehillah_land_community.title_capital_county = { save_scope_as = kehillah_land_county }
+	change_government = kehillah_landed_government
+	if = {
+		limit = { has_government = kehillah_landed_government }
+		create_title_and_vassal_change = {
+			type = granted
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+		scope:kehillah_land_county = {
+			change_title_holder = {
+				holder = scope:kehillah_land_recipient
+				change = scope:change
+			}
+		}
+		resolve_title_and_vassal_change = scope:change
+		set_primary_title_to = scope:kehillah_land_community
+		kehillah_landed_government_restore_quarter_effect = yes
+		debug_log = "KEHILLAH_LANDED_GOV: county granted"
+	}
+	else = { debug_log = "KEHILLAH_LANDED_GOV: switch REFUSED, no grant" }
+	debug_log_scopes = yes
+	# Back onto the ordinary government if the grant did not take.
+	kehillah_reconcile_landed_government_effect = yes
+}
+
+# ---------------------------------------------------------------------
+# Restore the Sanhedrin (kehillah_restore_sanhedrin_decision). Scope: the
+# founder, any Rabbinic ruler who holds a county in the Land. The seat is
+# the county of his own community if he holds it, else his capital if it
+# is in the Land, else his most developed county there. His community, if
+# he leads one, becomes the seat community (Daniel). A king keeps his own
+# government; a community leader is already on the landed one.
 # ---------------------------------------------------------------------
 kehillah_sanhedrin_restore_effect = {
 	save_scope_as = kehillah_sanhedrin_founder
-	primary_title = { save_scope_as = kehillah_sanhedrin_community }
-	scope:kehillah_sanhedrin_community.title_capital_county = { save_scope_as = kehillah_sanhedrin_county }
-
-	create_title_and_vassal_change = {
-		type = granted
-		save_scope_as = change
-		add_claim_on_loss = no
+	if = {
+		limit = { primary_title ?= { is_kehillah_title_trigger = yes } }
+		primary_title = { save_scope_as = kehillah_sanhedrin_community }
 	}
-	scope:kehillah_sanhedrin_county = {
-		change_title_holder = {
-			holder = scope:kehillah_sanhedrin_founder
-			change = scope:change
+	if = {
+		limit = {
+			exists = scope:kehillah_sanhedrin_community
+			scope:kehillah_sanhedrin_community.title_capital_county ?= {
+				holder ?= scope:kehillah_sanhedrin_founder
+				kehillah_county_in_the_land_trigger = yes
+			}
+		}
+		scope:kehillah_sanhedrin_community.title_capital_county = { save_scope_as = kehillah_sanhedrin_county }
+	}
+	else_if = {
+		limit = { capital_county ?= { kehillah_county_in_the_land_trigger = yes } }
+		capital_county = { save_scope_as = kehillah_sanhedrin_county }
+	}
+	else = {
+		ordered_held_title = {
+			limit = {
+				tier = tier_county
+				kehillah_county_in_the_land_trigger = yes
+			}
+			order_by = development_level
+			save_scope_as = kehillah_sanhedrin_county
 		}
 	}
-	resolve_title_and_vassal_change = scope:change
-	set_primary_title_to = scope:kehillah_sanhedrin_community
 
 	set_global_variable = { name = kehillah_sanhedrin_seat value = scope:kehillah_sanhedrin_county }
-	set_global_variable = { name = kehillah_sanhedrin_seat_community value = scope:kehillah_sanhedrin_community }
-	# Both seat titles carry the members' election, so the elected Nasi
-	# receives the county AND the community together. That also keeps
-	# player continuation right: "Continue as" follows the primary title,
-	# the community, which would otherwise pass by appointment to someone
-	# the install then strips (kehillah_sanhedrin_install_nasi_effect is
-	# kept as the backstop if the two elections ever differ).
+	# Both seat titles carry the members' election, so an elected Nasi who
+	# leads a community receives the county AND the community together. That
+	# also keeps player continuation right: "Continue as" follows the primary
+	# title, the community, which would otherwise pass by appointment to
+	# someone the install then strips (kehillah_sanhedrin_install_nasi_effect
+	# is kept as the backstop if the two elections ever differ).
 	scope:kehillah_sanhedrin_county = {
 		set_variable = kehillah_sanhedrin_seat_county
 		set_variable = kehillah_sanhedrin_seat_title
 		add_title_law = kehillah_sanhedrin_succession_law
 	}
-	scope:kehillah_sanhedrin_community = {
-		set_variable = kehillah_sanhedrin_seat_title
-		add_title_law = kehillah_sanhedrin_succession_law
+	if = {
+		limit = { exists = scope:kehillah_sanhedrin_community }
+		set_global_variable = { name = kehillah_sanhedrin_seat_community value = scope:kehillah_sanhedrin_community }
+		scope:kehillah_sanhedrin_community = {
+			set_variable = kehillah_sanhedrin_seat_title
+			add_title_law = kehillah_sanhedrin_succession_law
+		}
+		set_primary_title_to = scope:kehillah_sanhedrin_community
 	}
-	change_government = kehillah_nasi_government
+	kehillah_reconcile_landed_government_effect = yes
 
 	kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
 	faith:rabbinic_faith = { set_religious_head_title = scope:kehillah_sanhedrin_county }
@@ -110,9 +166,10 @@ kehillah_sanhedrin_restore_effect = {
 # A new Nasi takes the seat county (by the members' election). Scope: him.
 #   1. He gives up his own seat in the College.
 #   2. He gives up any OTHER community he leads, to its heir (Daniel).
-#   3. He takes the seat community, with its recorded Quarter.
-#   4. He goes onto kehillah_nasi_government, and the doctrines are reset
-#      (the main rite follows him).
+#   3. If he leads a community, he takes the seat community, with its
+#      recorded Quarter. A landed lord on his own government does not.
+#   4. A community leader goes onto kehillah_landed_government (he is now
+#      landed); the doctrines are reset (the main rite follows him).
 # ---------------------------------------------------------------------
 kehillah_sanhedrin_install_nasi_effect = {
 	save_scope_as = kehillah_new_nasi
@@ -153,6 +210,7 @@ kehillah_sanhedrin_install_nasi_effect = {
 	if = {
 		limit = {
 			exists = global_var:kehillah_sanhedrin_seat_community
+			government_has_flag = government_is_kehillah
 			NOT = { global_var:kehillah_sanhedrin_seat_community.holder ?= scope:kehillah_new_nasi }
 		}
 		create_title_and_vassal_change = {
@@ -170,10 +228,14 @@ kehillah_sanhedrin_install_nasi_effect = {
 		debug_log = "KEHILLAH_SANHEDRIN: the seat community passed to the new Nasi"
 	}
 	if = {
-		limit = { exists = global_var:kehillah_sanhedrin_seat_community }
+		limit = {
+			exists = global_var:kehillah_sanhedrin_seat_community
+			global_var:kehillah_sanhedrin_seat_community.holder ?= scope:kehillah_new_nasi
+			government_has_flag = government_is_kehillah
+		}
 		set_primary_title_to = global_var:kehillah_sanhedrin_seat_community
 	}
-	kehillah_reconcile_nasi_government_effect = yes
+	kehillah_reconcile_landed_government_effect = yes
 	kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
 	kehillah_update_leader_flavor_effect = yes
 	debug_log = "KEHILLAH_SANHEDRIN: Nasi installed"
@@ -182,47 +244,48 @@ kehillah_sanhedrin_install_nasi_effect = {
 
 # ---------------------------------------------------------------------
 # Government transitions. Scope: any character.
-#   1. The Nasi (holder of the seat) -> kehillah_nasi_government.
-#   2. Anyone else on kehillah_nasi_government, if landless ->
-#      kehillah_government.
-# After a switch, the Quarter is rebuilt from the seat or community record.
+#   1. A LANDED leader on kehillah_government -> kehillah_landed_government.
+#   2. A LANDLESS leader on kehillah_landed_government -> kehillah_government.
+# Other governments are never touched (a Jewish king keeps his own, even as
+# Nasi). After a switch, the Quarter is rebuilt from the community record.
+# The engine refuses land to a leader on kehillah_government, so case 1 is
+# a backstop; grants switch first (kehillah_grant_community_county_effect).
 # ---------------------------------------------------------------------
-kehillah_reconcile_nasi_government_effect = {
+kehillah_reconcile_landed_government_effect = {
 	if = {
 		limit = {
 			is_ruler = yes
-			kehillah_is_sanhedrin_head_trigger = yes
-			NOT = { has_government = kehillah_nasi_government }
+			is_landed = yes
+			has_government = kehillah_government
 		}
-		change_government = kehillah_nasi_government
-		kehillah_nasi_government_restore_quarter_effect = yes
+		change_government = kehillah_landed_government
+		kehillah_landed_government_restore_quarter_effect = yes
 		if = {
-			limit = { has_government = kehillah_nasi_government }
-			debug_log = "KEHILLAH_NASI_GOV: to Nasi government, accepted"
+			limit = { has_government = kehillah_landed_government }
+			debug_log = "KEHILLAH_LANDED_GOV: to landed government, accepted"
 		}
-		else = { debug_log = "KEHILLAH_NASI_GOV: to Nasi government, REFUSED" }
+		else = { debug_log = "KEHILLAH_LANDED_GOV: to landed government, REFUSED" }
 		debug_log_scopes = yes
 	}
 	else_if = {
 		limit = {
 			is_ruler = yes
 			is_landed = no
-			has_government = kehillah_nasi_government
-			NOT = { kehillah_is_sanhedrin_head_trigger = yes }
+			has_government = kehillah_landed_government
 		}
 		change_government = kehillah_government
-		kehillah_nasi_government_restore_quarter_effect = yes
+		kehillah_landed_government_restore_quarter_effect = yes
 		if = {
 			limit = { has_government = kehillah_government }
-			debug_log = "KEHILLAH_NASI_GOV: back to Kehillah government, accepted"
+			debug_log = "KEHILLAH_LANDED_GOV: back to Kehillah government, accepted"
 		}
-		else = { debug_log = "KEHILLAH_NASI_GOV: back to Kehillah government, REFUSED" }
+		else = { debug_log = "KEHILLAH_LANDED_GOV: back to Kehillah government, REFUSED" }
 		debug_log_scopes = yes
 	}
 }
 
 # kehillah_restore_quarter_effect reads scope:kq_title.
-kehillah_nasi_government_restore_quarter_effect = {
+kehillah_landed_government_restore_quarter_effect = {
 	random_held_title = {
 		limit = { is_kehillah_title_trigger = yes }
 		save_scope_as = kq_title
@@ -231,7 +294,7 @@ kehillah_nasi_government_restore_quarter_effect = {
 		limit = { exists = domicile exists = scope:kq_title }
 		kehillah_restore_quarter_effect = yes
 	}
-	else = { debug_log = "KEHILLAH_NASI_GOV: no domicile after the switch" }
+	else = { debug_log = "KEHILLAH_LANDED_GOV: no domicile after the switch" }
 }
 
 # ---------------------------------------------------------------------
@@ -335,7 +398,6 @@ kehillah_sanhedrin_lapse_check_effect = {
 			NOT = {
 				global_var:kehillah_sanhedrin_seat.holder ?= {
 					faith = faith:rabbinic_faith
-					has_government = kehillah_nasi_government
 				}
 			}
 		}
@@ -362,7 +424,10 @@ kehillah_sanhedrin_lapse_check_effect = {
 		}
 		kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_no_head CLERGY = doctrine_theocracy_temporal }
 		remove_global_variable = kehillah_sanhedrin_seat
-		remove_global_variable = kehillah_sanhedrin_seat_community
+		if = {
+			limit = { exists = global_var:kehillah_sanhedrin_seat_community }
+			remove_global_variable = kehillah_sanhedrin_seat_community
+		}
 		faith:rabbinic_faith = {
 			every_clerical_elector_title = {
 				limit = { has_variable = kehillah_sanhedrin_seat }
