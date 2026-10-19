@@ -17,6 +17,10 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Jewish lineage traits — 2026-10-18, Daniel's request
+
+Ben/Bat David is implemented as a paternal lineage trait modeled on Sayyid. Representative David of Baghdad starts with it, and Kehillah appointment scoring gives it a meaningful but non-dominating +15. The Kohen and Levite generated-character rates were corrected from accidental 0.05%/0.04% values to the intended 5%/4%; Elijah ha-Kohen now explicitly has the Kohen trait. Because CK3 name lists cannot condition a dynasty-name draw on a trait, HaLevi, Segal, Cohen and Cohen Tzedek were removed from random dynasty pools while authored matching families remain. Source/Tiger and live-probe status are recorded in [the implementation note](docs/implementation/2026-10-18-jewish-lineage-traits.md). This user-directed unit was taken alongside the V42/V41 queue and does not close those items.
+
 ### V42 The crisis as a place — 2026-10-14, Daniel's review of the mob preparation
 
 Spec: [v42](docs/spec/v42-the-crisis-as-a-place.md).
