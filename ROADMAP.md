@@ -32,10 +32,52 @@ Spec: [v46](docs/spec/v46-the-sanhedrin.md).
 - **Intents:** the Sanhedrin intent is now shown to everyone and selectable only by the Nasi; the
   Synod intent is unselectable for the Nasi.
 
-**Checks so far:** `ck3-tiger` shows only the 1.19-linter / 1.20 format mismatches.
+**Status correction, 2026-10-19: live-tested.** After eight live cycles, the shipped build
+(73ce2de) passes:
+- restoring the Sanhedrin gives no Game Over;
+- the Nasi keeps the Kehillah government, Quarter and buildings;
+- seats survive 1 January;
+- on the Nasi's death, play continues as the Worms successor, and the members elect Rashi of
+  Troyes.
 
-**NOT live-tested.** This is title and succession code; spec §7 lists the required live pass.
-Highest priority for the next session that can use CK3.
+**The engine rule found.** CK3 forces a **landless** head of faith onto vanilla theocracy and
+refuses the Kehillah government. So:
+- a community-rabbi Nasi is **not** an engine head of faith;
+- a landed Nasi (a king) is a temporal head of faith, an untested path.
+
+Ruled out:
+- the faith-level `theocracy_government_type`, which the engine ignores;
+- the religion-level setting, which would also reach Karaite, Samaritan and other heads;
+- the Nasi government (`kehillah_nasi_government`), kept but disabled;
+- temple baronies for Kehillah leaders.
+
+Full record: [the live test log](docs/testing/2026-10-19-synod-sanhedrin-live-test-log.md).
+Spec v46 §9-10.
+
+### Open design: landed Jewish polities and other Jewish faiths (Daniel, 2026-10-19) — DANIEL-REVIEW
+
+Raised while testing the Sanhedrin. These are design questions to settle with Daniel before any
+build. Do not build them unattended.
+1. **A landed Kehillah or Sanhedrin government.** The same community logic, but landed and a
+   *vassal* of the host instead of an independent tributary. This would let a Nasi be a real head
+   of faith, and would give Track B's landed Jewish realms a home. It needs:
+   - a vassal-contract replacement for every host-charter mechanic (protection, dues,
+     expulsion, settlement policy);
+   - a decision on whether the Quarter survives as a domicile on a landed ruler;
+   - adapting everything that reads the Kehillah government.
+
+   The 2026-10-19 spike showed a Kehillah leader cannot simply be given a barony
+   (`cannot_be_vassal_or_liege`). Independent baronies are not a CK3 concept.
+2. **Kehillot under a Jewish government.** Is a community under a Jewish ruler (Khazaria, a
+   restored Israel) still a separate tributary body, part of the realm, or something between?
+3. **Other Jewish faiths.**
+   - **Today's systems are Rabbinic-specific:** beit midrash and yeshiva, semicha, the rabbi
+     tracks, the Bet Din, the library.
+   - **Karaites and Samaritans fit badly.** Karaites reject rabbinic authority; Samaritans are a
+     separate tradition.
+   - **Working assumption:** Kehillot stay Rabbinic (Rabbinism and Minhag Ashkenaz) for now.
+     Karaite communities (their own sages, the Karaite nasi line in Egypt) and Samaritan ones
+     would be separate institutions, designed later.
 
 ### V45 Rabbinic synods and Minhag Ashkenaz — 2026-10-18, Daniel's request
 
