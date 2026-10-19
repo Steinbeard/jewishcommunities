@@ -40,6 +40,18 @@ court moves to wherever the new Nasi leads, as it historically moved from Yavne 
 Tiberias. New seats take the same capital. Tiberias is only the title's placeholder capital.
 There is no separate "move the court" action: the court moves when its Nasi changes.
 
+**The Nasi's style (Daniel asked, 2026-10-19):** Daniel would like the Nasi's primary title to
+be the Sanhedrin. That is deliberately **not** done.
+- **Why not.** The mod reads `primary_title` about 1,300 times across 167 files, and pillars,
+  the domicile, appointment succession and player continuation all assume it is the community.
+  Swapping it would be a large refactor in the mod's highest crash-risk area.
+- **What was done instead.** The Nasi is styled **"Nasi"**: `kehillah_nasi_male/female`
+  flavorization at priority 310, above Rav, Rabbenu, Gaon and Exilarch, driven by
+  `kehillah_nasi_flag` in `kehillah_update_leader_flavor_effect`. The flag is refreshed at
+  restoration, on a new Nasi's title gain, and by the existing pulses.
+- **Revisit** only if "Nasi <name>" alongside his community proves not to be enough. A real
+  swap would first need an audit of every primary-title reader.
+
 ## 2. Restoring it
 
 `kehillah_restore_sanhedrin_decision`, a major decision.
