@@ -136,11 +136,37 @@ kehillah_synod_debug.5 = {
 	orphan = yes
 	immediate = {
 		if = {
-			limit = { exists = title:d_kehillah_sanhedrin.holder }
-			debug_log = "synod_debug: sanhedrin exists"
-			title:d_kehillah_sanhedrin.holder = { debug_log_scopes = yes }
+			limit = { exists = global_var:kehillah_sanhedrin_seat }
+			debug_log = "synod_debug: sanhedrin exists, its seat county and Nasi follow"
+			global_var:kehillah_sanhedrin_seat = { debug_log_scopes = yes }
+			global_var:kehillah_sanhedrin_seat.holder ?= { debug_log_scopes = yes }
+			if = {
+				limit = { exists = global_var:kehillah_sanhedrin_seat_community }
+				debug_log = "synod_debug: seat community follows"
+				global_var:kehillah_sanhedrin_seat_community = { debug_log_scopes = yes }
+			}
 		}
 		else = { debug_log = "synod_debug: sanhedrin does not exist" }
+		if = {
+			limit = { kehillah_is_sanhedrin_head_trigger = yes }
+			debug_log = "synod_debug: scoped character is the Nasi"
+		}
+		if = {
+			limit = { has_government = kehillah_nasi_government }
+			debug_log = "synod_debug: scoped character on the Nasi government"
+		}
+		if = {
+			limit = { is_landed = yes }
+			debug_log = "synod_debug: scoped character is landed"
+		}
+		if = {
+			limit = { exists = domicile }
+			debug_log = "synod_debug: scoped character has a domicile"
+		}
+		if = {
+			limit = { faith:rabbinic_faith.religious_head ?= this }
+			debug_log = "synod_debug: scoped character is head of faith"
+		}
 		if = {
 			limit = { exists = faith:rabbinic_faith.religious_head }
 			debug_log = "synod_debug: rabbinic faith has a head"
@@ -271,5 +297,19 @@ kehillah_synod_debug.7 = {
 		}
 		else = { debug_log = "synod_debug: PRIMARY TITLE IS NOT THE COMMUNITY" }
 		debug_log_scopes = yes
+	}
+}
+
+# V47 phase B.
+#   .8  restore the Sanhedrin for the scoped community rabbi directly,
+#       skipping the petition's odds (changes the save): the liege's grant
+#       of his community's county and everything after it
+kehillah_synod_debug.8 = {
+	type = character_event
+	hidden = yes
+	orphan = yes
+	immediate = {
+		kehillah_sanhedrin_restore_effect = yes
+		trigger_event = kehillah_synod_debug.5
 	}
 }
