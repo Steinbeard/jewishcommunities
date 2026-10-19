@@ -31,13 +31,26 @@ kehillah_restore_sanhedrin_effect = {
 	title:d_kehillah_sanhedrin = {
 		add_title_law = kehillah_sanhedrin_succession_law
 	}
+	# A TEMPORAL head, as Islam's Caliph is, with lay clergy, as Islam's
+	# clergy are (00_islam.txt). Live test 2026-10-19: a spiritual head, and
+	# a temporal head beside Judaism's vanilla doctrine_theocracy_temporal
+	# (which doctrine_temporal_head's own can_pick forbids), both forced the
+	# Nasi onto a theocracy government, stripping his domicile and ending
+	# the player's game. Rabbis were lay scholars, not a priesthood, so
+	# lay clergy also fits. Both groups are main-rite doctrines.
 	faith:rabbinic_faith = {
-		main_rite = { change_rite_doctrine = doctrine_spiritual_head }
+		main_rite = {
+			change_rite_doctrine = doctrine_theocracy_lay_clergy
+			change_rite_doctrine = doctrine_temporal_head
+		}
 		set_religious_head_title = title:d_kehillah_sanhedrin
 	}
 	set_global_variable = { name = kehillah_sanhedrin_formed value = yes }
-	kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_sanhedrin_founding_greatness }
-	kehillah_update_leader_flavor_effect = yes
+	if = {
+		limit = { government_has_flag = government_is_kehillah }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_sanhedrin_founding_greatness }
+		kehillah_update_leader_flavor_effect = yes
+	}
 	kehillah_sanhedrin_refresh_seats_effect = yes
 }
 
@@ -95,15 +108,17 @@ kehillah_sanhedrin_grant_seat_effect = {
 	scope:new_title ?= {
 		save_scope_as = kehillah_new_seat
 		set_variable = kehillah_sanhedrin_seat
+		# Capital first: set_landless_title errors on a title with no
+		# preferred capital (live test 2026-10-19), and PAM sets it first.
+		set_capital_county = title:d_kehillah_sanhedrin.title_capital_county
+		set_coa = scope:kehillah_seat_primary
+		set_color_from_title = scope:kehillah_seat_primary
 		set_landless_title = yes
 		set_destroy_on_succession = yes
 		set_no_automatic_claims = yes
 		set_definitive_form = yes
 		set_can_be_named_after_dynasty = no
 		set_can_use_nomadic_naming = no
-		set_capital_county = title:d_kehillah_sanhedrin.title_capital_county
-		set_coa = scope:kehillah_seat_primary
-		set_color_from_title = scope:kehillah_seat_primary
 		change_title_holder = {
 			holder = scope:kehillah_seat_recipient
 			change = scope:change
@@ -141,6 +156,20 @@ kehillah_sanhedrin_refresh_seats_effect = {
 				change_global_variable = { name = kehillah_sanhedrin_seat_count add = 1 }
 			}
 		}
+		# Landed Jewish rulers who are rabbis (a king of Israel, say).
+		every_ruler = {
+			limit = {
+				is_landed = yes
+				faith = faith:rabbinic_faith
+				has_trait = kehillah_rabbi_trait
+				kehillah_sanhedrin_seat_eligible_trigger = yes
+			}
+			if = {
+				limit = { global_var:kehillah_sanhedrin_seat_count < kehillah_sanhedrin_seat_cap }
+				kehillah_sanhedrin_grant_seat_effect = yes
+				change_global_variable = { name = kehillah_sanhedrin_seat_count add = 1 }
+			}
+		}
 		remove_global_variable = kehillah_sanhedrin_seat_count
 	}
 }
@@ -158,7 +187,10 @@ kehillah_sanhedrin_lapse_check_effect = {
 		}
 		remove_global_variable = kehillah_sanhedrin_formed
 		faith:rabbinic_faith = {
-			main_rite = { change_rite_doctrine = doctrine_no_head }
+			main_rite = {
+				change_rite_doctrine = doctrine_no_head
+				change_rite_doctrine = doctrine_theocracy_temporal
+			}
 			every_clerical_elector_title = {
 				limit = { has_variable = kehillah_sanhedrin_seat }
 				add_to_list = kehillah_lapsed_seats
