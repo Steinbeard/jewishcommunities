@@ -78,6 +78,45 @@ later sections.
 5. **Does the Nasi of the Land head the faith while a Gaon heads each rite** (the engine's own
    order)? Or should a Gaon's authority be suspended while a Sanhedrin sits?
 
+## Daniel's decisions, 2026-10-19 (same day)
+
+- **Geonim are the head of the Rabbinic rite.** Historically that is the Babylonian Geonim
+  (Sura and Pumbedita) of 867. A faith has one head-of-rite title, so one Gaonate holder is the
+  engine head, probably Sura's, the senior academy. Note: the mod ships no 867 bookmark. In 1066
+  the Babylonian geonate has ended (Hai Gaon died in 1038), but the Palestinian Gaon Elijah
+  ha-Kohen of Jerusalem is alive and is a natural starting Gaon.
+- **The Nasi government is only for the real Sanhedrin, in the Land of Israel.**
+- **The Sanhedrin's succession is tied to the landed seat.**
+- **The electors are a College:** members, the equivalent of cardinals. Kehillah leaders can see
+  whether they are eligible.
+- **On election, a Kehillah leader gives up his Kehillah and takes over the Sanhedrin.**
+- **Rabbis who do not lead a community are eligible too.**
+- **The seat can move,** by changing the Sanhedrin's capital county or by special interactions.
+
+## How these could be built (proposed)
+
+- **The seat county as the head-of-faith title.** This is the only way that live tests support
+  for "succession tied to the landed seat" that never leaves a Nasi landless while he heads the
+  faith (that cost the Quarter). The county could be renamed for the court, for example "The
+  Sanhedrin at Tiberias". **Moving the seat** then means a special interaction that hands the
+  head-of-faith role and the election law to another county in the Land, along with the court.
+- **Candidates beyond Kehillah leaders.** The engine allows only rulers as **electors**, but
+  candidates can come from other sets. Seated members (rulers) remain the electors. Candidates
+  are members plus **claimants**: an eligible rabbi who leads no community receives a claim on
+  the seat (`title_claimants` is a vanilla candidate set), so he can be elected without being a
+  ruler.
+- **Eligibility shown to players.** A trigger, and a line in the Bet Din or character tooltip,
+  "Eligible for the Sanhedrin", built from the same trigger the election's candidate filter
+  uses.
+- **Giving up the Kehillah.** When elected, the Nasi's own community passes to its appointment
+  successor, with its recorded Quarter buildings. A courtier rabbi simply moves to the seat.
+
+## Still open
+
+- **The Gaon's tenure:** lifetime recognition by reputation, election, or appointment?
+- **Today's diaspora build** (a landless "Sanhedrin" anywhere): does it become the Gaonate, or a
+  Great Bet Din, once the Israel-only Sanhedrin exists?
+
 ## Engine checks still needed before building
 
 - A landed **county** as the religious head title: does `set_religious_head_title` accept one,
