@@ -10,10 +10,6 @@ kehillah_synod_on_game_start = {
 	effect = {
 		kehillah_restore_general_rite_polygamy_effect = yes
 
-		# The seat of the Sanhedrin: Jerusalem's Yeshiva of the Land of
-		# Israel, under the Gaon Elijah ha-Kohen in 1066.
-		title:d_kehillah_jerusalem ?= { set_variable = kehillah_sanhedrin_seat }
-
 		# The 1066 Rhineland synod: Worms convenes, Mainz if Worms is gone.
 		if = {
 			limit = { game_start_date >= 1066.1.1 }
@@ -25,6 +21,53 @@ kehillah_synod_on_game_start = {
 				limit = { exists = title:d_kehillah_mainz.holder }
 				title:d_kehillah_mainz.holder = { trigger_event = { id = kehillah_synod.0001 days = 30 } }
 			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# V46 the Sanhedrin (docs/spec/v46-the-sanhedrin.md).
+# ---------------------------------------------------------------------
+yearly_global_pulse = {
+	on_actions = { kehillah_sanhedrin_yearly_pulse }
+}
+
+kehillah_sanhedrin_yearly_pulse = {
+	effect = {
+		kehillah_sanhedrin_lapse_check_effect = yes
+		kehillah_sanhedrin_refresh_seats_effect = yes
+	}
+}
+
+on_title_gain = {
+	on_actions = { kehillah_sanhedrin_on_title_gain }
+}
+
+# A newly elected Nasi: he gives up his own seat (a Nasi does not sit in the
+# court he presides over) and keeps his community as primary title.
+kehillah_sanhedrin_on_title_gain = {
+	trigger = {
+		scope:title = title:d_kehillah_sanhedrin
+	}
+	effect = {
+		if = {
+			limit = { kehillah_holds_sanhedrin_seat_trigger = yes }
+			every_held_title = {
+				limit = { has_variable = kehillah_sanhedrin_seat }
+				add_to_list = kehillah_vacated_seats
+			}
+			every_in_list = {
+				list = kehillah_vacated_seats
+				root = { destroy_title = prev }
+			}
+		}
+		if = {
+			limit = { any_held_title = { is_kehillah_title_trigger = yes } }
+			random_held_title = {
+				limit = { is_kehillah_title_trigger = yes }
+				save_scope_as = kehillah_nasi_community
+			}
+			set_primary_title_to = scope:kehillah_nasi_community
 		}
 	}
 }

@@ -170,6 +170,9 @@ level above that where you need to be the head of the Sanhedrin to choose it."
     prestige for the motion.
   - The requirements are waived once the session opens (`kehillah_synod_in_session`). Otherwise
     the session's own cooldown would invalidate the intent and fire vanilla's "intent lost" event.
+- **Superseded 2026-10-19 by [v46](v46-the-sanhedrin.md):** the head of the Sanhedrin is now
+  the holder of a restorable head-of-faith title, and nobody holds it at game start. The
+  Jerusalem seat described next was removed.
 - **The head of the Sanhedrin** leads the community whose title carries
   `kehillah_sanhedrin_seat`. That is Jerusalem at game start: Elijah ha-Kohen's Yeshiva of the Land
   of Israel, which saw itself as the Great Sanhedrin's successor. It is a variable, so a later

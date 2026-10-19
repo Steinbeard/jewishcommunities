@@ -17,6 +17,26 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### V46 The Sanhedrin — 2026-10-19, Daniel's request
+
+Spec: [v46](docs/spec/v46-the-sanhedrin.md).
+
+**Built:**
+- **The Sanhedrin** is a restorable Rabbinic head-of-faith title (`d_kehillah_sanhedrin`). It does
+  not exist at any start.
+- **Restoring it** is a major decision that needs mastery of all three Rabbi tracks, the top
+  piety level, and enough rabbi-led communities.
+- **The College:** members hold cardinal-style seats, which are clerical elector titles given to
+  rabbis who lead communities. A title law makes them elect the next Nasi.
+- **One vanilla override:** PAM's elector-title strip, which would otherwise destroy the seats.
+- **Intents:** the Sanhedrin intent is now shown to everyone and selectable only by the Nasi; the
+  Synod intent is unselectable for the Nasi.
+
+**Checks so far:** `ck3-tiger` shows only the 1.19-linter / 1.20 format mismatches.
+
+**NOT live-tested.** This is title and succession code; spec §7 lists the required live pass.
+Highest priority for the next session that can use CK3.
+
 ### V45 Rabbinic synods and Minhag Ashkenaz — 2026-10-18, Daniel's request
 
 Spec: [v45](docs/spec/v45-rabbinic-synods-and-minhag-ashkenaz.md). It answers v25 §12 questions
