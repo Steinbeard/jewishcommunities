@@ -75,8 +75,8 @@ Spec: [v47](docs/spec/v47-gaon-and-the-seat-of-the-sanhedrin.md).
   - Live PASS: the doctrine in the faith window; a player accepting (Rabbenu); an AI accepting
     (Gaon); the office passing through two rabbi successors; a lay lapse.
   - Fixed afterwards and not yet re-run: a lay heir kept the Gaon style.
-- **Phase B BUILT, 2026-10-19 (f75070a, then restructured the same day; see the v47 spec's
-  "Phase B restructure" addendum). Not yet live-tested in its restructured form.**
+- **Phase B BUILT, 2026-10-19 (f75070a, then restructured the same day in 487dd08 and a0538e7;
+  see the v47 spec's "Phase B restructure" addendum).**
   - **Restore the Sanhedrin** is a decision shown to every Rabbinic ruler while no Sanhedrin sits,
     as a visible goal. Its requirements:
     - holding a county in the Land (the de jure Kingdom of Jerusalem);
@@ -99,11 +99,19 @@ Spec: [v47](docs/spec/v47-gaon-and-the-seat-of-the-sanhedrin.md).
     - the election's self-opinion error flood;
     - a `min` on an unmodified `random_list` branch;
     - an overlong decision description.
-- **Next:** a live test of the restructured Phase B. The checks:
-  - Worms boots and plays with its leader present;
-  - debug `.9` grants a community's county in the Land, and the government switches;
-  - debug `.8` restores the Sanhedrin on a held county;
-  - the election runs with no error flood;
+- **Restructured Phase B live PASS, 2026-10-19 (a0538e7;
+  docs/testing/2026-10-19-synod-sanhedrin-live-test-log.md).** The checks that passed:
+  - Worms plays with its leader present;
+  - a community leader granted his county in the Land moves to the landed government and keeps
+    his Quarter;
+  - the Sanhedrin can be restored on that county;
+  - the election installs a community leader as Nasi, and his old community passes to its heir;
+  - there is no error flood.
+- **Still to check:**
+  - the Petition for Land decision itself (its odds and the player-liege event 0006), since the
+    test used the debug grant;
+  - whether the Quarter's buildings survive a grant;
+  - a king elected Nasi (v47 addendum, "Still open");
   - the Phase A lay-heir style fix.
 
 ### Open design: landed Jewish polities and other Jewish faiths (Daniel, 2026-10-19) — DANIEL-REVIEW

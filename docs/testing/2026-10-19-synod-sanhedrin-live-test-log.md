@@ -136,3 +136,41 @@ The code is preserved as `docs/spikes/2026-10-19-landed-nasi-and-gaonate.patch`.
 - **A head of faith outranks him:** while Isaac was Nasi, Rabbinism had no separate head of rite.
 
 Design consequences: [v47](../spec/v47-gaon-and-the-seat-of-the-sanhedrin.md).
+
+## Phase B restructure: 487dd08, then a0538e7 (Sonnet agent, 1066, debug mode)
+
+**487dd08: partial.**
+- **Passed:**
+  - Play as Worms ran with its leader present after `require_landless` was removed from every
+    community title, and did not crash.
+  - The decision window lists "Restore the Sanhedrin" with "You hold a county in the Land" failing,
+    and hides "Petition for Land".
+  - The restore worked, and the founder became head of faith.
+  - The election raised zero `kehillah_sanhedrin_elective` errors, against about 100 before.
+- **Failed:**
+  - Switching to `kehillah_landed_government` before the grant left Elijah of Jerusalem on his
+    Fatimid liege's clan government, with no Quarter.
+  - The elected Nasi (Rashi) also had no Quarter.
+  - The decision tooltip logged about 2,800 unset `kehillah_sanhedrin_county` scopes.
+
+**a0538e7: PASS** (grant first, then switch; restore guarded; reconcile backstop).
+- **Grant.** `debug.9` on Elijah logged, in order:
+  1. `county granted`;
+  2. `Quarter LOST in the grant`;
+  3. `to landed government, accepted`.
+
+  He was then on the landed government, with a domicile, holding `c_jerusalem`, with the community
+  still his primary title. The day-after check (0003) agreed. The scaffold fallback never ran.
+- **Finding:** the grant drops the domicile, but `change_government` onto the landed government
+  (which has `domicile_type = kehillah_quarter`) gives it back, and the reconcile then restores
+  the recorded Quarter. Not yet checked: whether all buildings survive.
+- **Restore.** `debug.4` then `.8`: restored. The Nasi was on the landed government, had a domicile,
+  was head of faith, and had his community as primary title.
+- **Election.** After Elijah's death, Isaac HaLevi of Worms (the player) was elected. Each step
+  worked:
+  - Isaac gave up Worms to its heir, Ovadya HaLevi, who stayed on `kehillah_government` with a
+    domicile;
+  - Isaac moved onto the landed government with a domicile, holding `c_jerusalem`;
+  - there was no Game Over.
+- **Errors.** Zero `kehillah_sanhedrin_county` lines, zero election lines, and no other kehillah
+  script lines in the delta. No crash dump.
