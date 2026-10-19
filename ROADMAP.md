@@ -17,6 +17,10 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Auxerre Kehillah — 2026-10-18, Daniel's request
+
+Auxerre is added as a 1066 Western Ashkenaz community in response to the documented correspondence between Rashi and the sages of Auxerre. The start uses the vanilla `c_auxerre` host geography and an explicitly representative rabbinic leader because the evidence establishes an eleventh-century scholarly community but does not securely identify its 1066 officeholder. Implementation and sources are recorded in [the Auxerre implementation note](docs/implementation/2026-10-18-auxerre-kehillah.md). This user-directed unit was taken alongside the V42/V41 queue and does not close those items.
+
 ### V42 The crisis as a place — 2026-10-14, Daniel's review of the mob preparation
 
 Spec: [v42](docs/spec/v42-the-crisis-as-a-place.md).
