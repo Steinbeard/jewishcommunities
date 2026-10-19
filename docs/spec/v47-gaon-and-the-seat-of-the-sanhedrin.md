@@ -1,6 +1,7 @@
 # V47: the Gaon, and the seat of the Sanhedrin
 
-**Status:** proposal for Daniel's review, 2026-10-19. Nothing here is built. It comes from Daniel's
+**Status:** design agreed with Daniel, 2026-10-19 (see the decisions sections). Nothing here is
+built yet; the build order is at the end. It comes from Daniel's
 design conversation and three live spikes run the same day. The spike code is preserved as
 [a patch](../spikes/2026-10-19-landed-nasi-and-gaonate.patch); `git apply` restores it.
 **Revises** [v46](v46-the-sanhedrin.md), whose shipped build (73ce2de, live PASS) remains the
@@ -116,6 +117,92 @@ later sections.
 - **The Gaon's tenure:** lifetime recognition by reputation, election, or appointment?
 - **Today's diaspora build** (a landless "Sanhedrin" anywhere): does it become the Gaonate, or a
   Great Bet Din, once the Israel-only Sanhedrin exists?
+
+## Heads of rite across the eras (Daniel's decisions, 2026-10-19)
+
+Historical basis:
+- **867:** the Babylonian Geonim of Sura and Pumbedita were *offices* of their academies.
+- **1066:** no head of rite anywhere.
+  - The Babylonian geonate had ended (Hai Gaon died in 1038; the Exilarch-Gaon Hezekiah fell
+    about 1040).
+  - The Palestinian Gaon Elijah ha-Kohen's authority was regional, and was passing to Egypt's
+    *ra'is al-yahud*.
+  - Lucena, Kairouan and the Rhineland sages led locally.
+- **1178:** the Baghdad gaonate has revived (Samuel ben Ali), alongside the Exilarch. Maimonides,
+  in Fustat, completes the *Mishneh Torah*. The Ri leads the Tosafists. Provence (Rabad, Lunel)
+  is at its height, and Kabbalah surfaces (the *Bahir*).
+
+**The design:**
+- **Bookmark state.**
+  - **867:** head-of-rite **offices** (the Gaon of Sura, or of Pumbedita, at the head of a
+    unified Rabbinic rite).
+  - **1066:** **no heads of rite.**
+  - **1178:** an **office** again (the revived Baghdad gaonate).
+- **Merit, at any time.** In a rite with **no head**, a truly exceptional rabbi can become head
+  of rite **for his lifetime**. The title is destroyed on his death, so it can sit vacant until
+  someone earns it. Criteria to be set (a top-fame yeshiva, track mastery, piety). Live-tested
+  2026-10-19: a Kehillah leader holding the faith's `head_of_rite` title is the engine's head of
+  his rite and keeps the Kehillah government.
+- **"Establish the Office of the Gaon":** a decision that **requires being head of rite through
+  merit already**, while leading Sura (or the Exilarch's academy at Baghdad). It turns the
+  lifetime title into an **office** that passes to the academy's next head.
+  - **Mechanism:** the same title, with destroy-on-succession switched off, plus a succession tied
+    to the academy's community.
+  - **If the academy falls or is abandoned,** the office reverts to merit.
+- **Styles.**
+  - **Minhag Ashkenaz:** the head of rite is styled **Rabbenu** (Gershom, Rashi, Rabbenu Tam).
+    The current piety-earned "Rabbenu" style is **removed**.
+  - **Rabbinism:** the head of rite is **Gaon**. A possible Sephardi flavor is "Rosh Yeshivah" or
+    "ha-Rav", since Spain did not use "Gaon".
+- **Engine constraint.** A faith has **one** `head_of_rite` title, and it serves only its
+  holder's rite. A head of faith outranks it. Two simultaneous heads (for example a Baghdad Gaon
+  and an Ashkenazi Rabbenu) need a rule:
+  - proposed: the *office* holder has the engine role, and the other is styled at mod level only;
+  - to be tested: whether two titles can alternate.
+
+## Baghdad, the Exilarchate and the academies (Daniel's decisions, 2026-10-19)
+
+- **The Kehillah of Baghdad *is* the Exilarchate,** with leadership **limited to Ben Davids**
+  (the 2026-10-18 lineage trait). This is implemented as a very strong appointment preference,
+  **not a hard filter**: a filter that finds no candidate can leave the title vacant, the failure
+  seen repeatedly in live tests on 2026-10-19. Without a Ben David, the community is led without
+  the Exilarch style until one returns. Historically, the office had lapses too. There will be
+  **no separate Exilarch title**: holding any title makes a character a ruler who needs a
+  government, which is the hazard for courtier heirs.
+- **The Gaon of Pumbedita stays the Exilarch's Rosh Yeshiva,** a court office in Baghdad's
+  community (V29). As a courtier he cannot hold the head-of-rite title. In 1178 this is Samuel
+  ben Ali's position.
+- **Sura's Gaon leads his own community** (V29's restored academy at Kufa), so he can hold the
+  head-of-rite title. "Establish the Office of the Gaon" fits Sura naturally.
+- **The Exilarch's lever (later):** a decision to raise his academy to rival Sura, the central
+  drama of the geonic age.
+- **The Exilarch as temporal head of faith** (with a county, the "sceptre" of Sanhedrin 5a): an
+  idea for later, competing with a Nasi in the Land for the one head of faith.
+
+## 1178 rites (later, through events)
+
+Maimonides founded a school and a code, not a rite. The rationalist versus mystic split
+(the Maimonidean controversy, Kabbalah, and vanilla's **Merkabah** rite) could become rites
+through events, on the Minhag Ashkenaz model. Engine rites only where there is a mechanical
+difference; other minhagim (Romaniote, Italki, Eretz Yisrael, Sepharad) stay regional customs
+until they need one.
+
+## Build order (proposed)
+
+1. **The merit mechanic:**
+   - lifetime heads of rite (the Gaonate title as `head_of_rite`, destroyed on death, granted by a
+     yearly eligibility check);
+   - the Rabbenu and Gaon styles;
+   - removal of the piety Rabbenu style.
+2. **The Sanhedrin's landed seat in the Land:**
+   - the seat county as the head-of-faith title;
+   - the College, plus claimant rabbis as candidates, and an eligibility tooltip;
+   - Kehillah leaders giving up their community on election;
+   - moving the seat by interaction.
+3. **Baghdad as the Exilarchate** (the Ben David preference), and "Establish the Office of the
+   Gaon" for Sura.
+4. **The Exilarch's lever and temporal head of faith,** with the rivalry rules.
+5. **Era content:** 867 and 1178 bookmarks, and the rationalist and mystic rite events.
 
 ## Engine checks still needed before building
 
