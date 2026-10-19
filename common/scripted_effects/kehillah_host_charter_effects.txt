@@ -189,6 +189,115 @@ kehillah_apply_fresh_charter_policy_effect = {
 }
 
 # ---------------------------------------------------------------------
+# kehillah_predict_start_charter_effect
+# Scope: a Kehillah leader, at game start only (kehillah_on_game_start).
+#
+# ADDED 2026-10-18 (Daniel: "we don't need to wait for the contract... we can
+# guess what the contract will be"). The real fresh charter cannot be read at
+# bootstrap: start_tributary has not committed and subject-contract flags are
+# unsafe there (see the cache writer below), so the opening pillars used to wait
+# for day three. This writes the same title cache the writer will write, from
+# the terms kehillah_apply_fresh_charter_policy_effect is about to apply for
+# the host's settlement policy, so the opening pillars can be computed at game
+# start. kehillah_charter_predicted marks it so the contract-group triggers
+# (kehillah_settlement_policy_triggers.txt) accept it before the contract
+# exists; the first real cache refresh removes the marker and the guess, and
+# day three's reconcile (kehillah_reconcile_provisional_start_pillars_effect)
+# corrects any difference.
+#
+# KEEP IN STEP with kehillah_apply_fresh_charter_policy_effect above. Cache
+# value = obligation level for every row except text censorship, where level 0
+# (unrestricted) is cache 2 and level 2 (proscribed) is cache 0. Only
+# Christian and Muslim hosts get a regional charter; any other host falls back
+# to the legacy group, which has no cache, so nothing is written for it.
+# ---------------------------------------------------------------------
+kehillah_predict_start_charter_effect = {
+	if = {
+		limit = { kehillah_host_charter_host_available_trigger = yes }
+		domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_predict_host }
+
+		if = {
+			limit = { scope:kehillah_predict_host = { religion = religion:christianity_religion } }
+			primary_title = { set_variable = { name = kehillah_charter_predicted value = 1 } }
+			if = {
+				limit = { scope:kehillah_predict_host.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } }
+				primary_title = {
+					set_variable = { name = kehillah_charter_cache_construction value = 0 }
+					set_variable = { name = kehillah_charter_cache_security value = 2 }
+					set_variable = { name = kehillah_charter_cache_jurisdiction value = 2 }
+					set_variable = { name = kehillah_charter_cache_text_study value = 2 }
+				}
+			}
+			else_if = {
+				limit = { scope:kehillah_predict_host.primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } }
+				primary_title = {
+					set_variable = { name = kehillah_charter_cache_construction value = 1 }
+					set_variable = { name = kehillah_charter_cache_security value = 0 }
+					set_variable = { name = kehillah_charter_cache_jurisdiction value = 0 }
+					set_variable = { name = kehillah_charter_cache_text_study value = 1 }
+				}
+			}
+			else_if = {
+				limit = { scope:kehillah_predict_host.primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } }
+				primary_title = {
+					set_variable = { name = kehillah_charter_cache_construction value = 2 }
+					set_variable = { name = kehillah_charter_cache_security value = 0 }
+					set_variable = { name = kehillah_charter_cache_jurisdiction value = 0 }
+					set_variable = { name = kehillah_charter_cache_text_study value = 0 }
+				}
+			}
+			else = {
+				primary_title = {
+					set_variable = { name = kehillah_charter_cache_construction value = 0 }
+					set_variable = { name = kehillah_charter_cache_security value = 0 }
+					set_variable = { name = kehillah_charter_cache_jurisdiction value = 1 }
+					set_variable = { name = kehillah_charter_cache_text_study value = 2 }
+				}
+			}
+		}
+		else_if = {
+			limit = { scope:kehillah_predict_host = { religion = religion:islam_religion } }
+			primary_title = { set_variable = { name = kehillah_charter_predicted value = 2 } }
+			if = {
+				limit = { scope:kehillah_predict_host.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } }
+				primary_title = {
+					set_variable = { name = kehillah_charter_cache_construction value = 0 }
+					set_variable = { name = kehillah_charter_cache_security value = 2 }
+					set_variable = { name = kehillah_charter_cache_jurisdiction value = 2 }
+					set_variable = { name = kehillah_charter_cache_market_access value = 2 }
+				}
+			}
+			else_if = {
+				limit = { scope:kehillah_predict_host.primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } }
+				primary_title = {
+					set_variable = { name = kehillah_charter_cache_construction value = 1 }
+					set_variable = { name = kehillah_charter_cache_security value = 0 }
+					set_variable = { name = kehillah_charter_cache_jurisdiction value = 0 }
+					set_variable = { name = kehillah_charter_cache_market_access value = 0 }
+				}
+			}
+			else_if = {
+				limit = { scope:kehillah_predict_host.primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } }
+				primary_title = {
+					set_variable = { name = kehillah_charter_cache_construction value = 2 }
+					set_variable = { name = kehillah_charter_cache_security value = 0 }
+					set_variable = { name = kehillah_charter_cache_jurisdiction value = 0 }
+					set_variable = { name = kehillah_charter_cache_market_access value = 0 }
+				}
+			}
+			else = {
+				primary_title = {
+					set_variable = { name = kehillah_charter_cache_construction value = 0 }
+					set_variable = { name = kehillah_charter_cache_security value = 0 }
+					set_variable = { name = kehillah_charter_cache_jurisdiction value = 1 }
+					set_variable = { name = kehillah_charter_cache_market_access value = 1 }
+				}
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
 # V16 live-charter cache writer.
 #
 # Scope: a Kehillah leader / tributary. This is deliberately the ONLY
@@ -216,7 +325,13 @@ kehillah_refresh_charter_state_cache_effect = {
 	# clears it -- so neither is reported.
 	primary_title = {
 		if = {
-			limit = { has_variable = kehillah_charter_cache_construction }
+			# A start-up PREDICTION (kehillah_predict_start_charter_effect) is
+			# not a previous charter: counting it would suppress the "fresh
+			# charter" quiet period and could report a mis-guess as a revision.
+			limit = {
+				has_variable = kehillah_charter_cache_construction
+				NOT = { has_variable = kehillah_charter_predicted }
+			}
 			set_variable = { name = kehillah_charter_prev_terms value = kehillah_charter_terms_signature_value }
 			# Each term's old value, so the notice can name what changed
 			# (Daniel 2026-10-12: "shows what the changed policy is").
@@ -272,6 +387,11 @@ kehillah_refresh_charter_state_cache_effect = {
 		remove_variable = kehillah_charter_cache_jurisdiction
 		remove_variable = kehillah_charter_cache_text_study
 		remove_variable = kehillah_charter_cache_market_access
+		# The real contract, or its absence, supersedes any start-up guess.
+		if = {
+			limit = { has_variable = kehillah_charter_predicted }
+			remove_variable = kehillah_charter_predicted
+		}
 	}
 
 	if = {

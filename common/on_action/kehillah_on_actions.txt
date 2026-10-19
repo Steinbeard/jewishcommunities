@@ -309,16 +309,6 @@ kehillah_on_game_start = {
 			}
 		}
 
-		# MAP VIEW, ADDED 2026-09-14 (v12). Must come AFTER every
-		# add_to_global_variable_list above -- it mirrors that registry
-		# onto each player for the "Jewish Communities" widget to read
-		# (common/scripted_effects/kehillah_map_view_effects.txt explains
-		# why the GUI cannot read the global list directly). Registering
-		# a community without refreshing afterwards leaves it out of the
-		# roster until the next quarterly pulse, so if Wave 5 adds
-		# founding, its founding effect must call the refresh too.
-		kehillah_refresh_map_view_for_players_effect = yes
-	
 		# V29 section 11 (2026-10-12): every seeded yeshiva's head is a
 		# master of what it teaches. After every setup above, so each
 		# yeshiva's specialization (Narbonne's Parshanut) is already set.
@@ -330,6 +320,44 @@ kehillah_on_game_start = {
 			}
 			holder = { kehillah_yeshiva_seed_head_depth_effect = yes }
 		}
+
+		# PROVISIONAL OPENING PILLARS, ADDED 2026-10-18 (Daniel: "pillars
+		# initialized before game start... we can guess what the contract
+		# will be"). Last of the seeding, because the baseline reads the
+		# buildings, officers and yeshiva depth set above. The real charter
+		# has not committed and the real nearby-community cache is a day
+		# away, so: predict each charter from its host's settlement policy
+		# (kehillah_predict_start_charter_effect), scan the registry for
+		# neighbours now, then write the baseline and mark it provisional.
+		# Day three (kehillah_settlement_conditions.0008) reconciles against
+		# the real values. UNTESTED RISK: the nearby-community scan used to be
+		# deferred to day one because a registry walk at bootstrap was
+		# suspected of stalling the load (see the V16 note on
+		# kehillah_settlement_conditions.0001); if a fresh start hangs on
+		# "Initializing Game", move that one call back to .0001 first.
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = { exists = holder }
+			holder = { kehillah_predict_start_charter_effect = yes }
+		}
+		kehillah_refresh_all_settlement_networks_effect = yes
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = { exists = holder }
+			kehillah_initialize_historical_pillars_from_baseline_effect = yes
+			set_variable = { name = kehillah_start_pillars_provisional value = 1 }
+		}
+
+		# MAP VIEW, ADDED 2026-09-14 (v12). Must come AFTER every
+		# add_to_global_variable_list above -- it mirrors that registry
+		# onto each player for the "Jewish Communities" widget to read
+		# (common/scripted_effects/kehillah_map_view_effects.txt explains
+		# why the GUI cannot read the global list directly). Registering
+		# a community without refreshing afterwards leaves it out of the
+		# roster until the next quarterly pulse, so if Wave 5 adds
+		# founding, its founding effect must call the refresh too. Last,
+		# so the roster shows the provisional pillars above.
+		kehillah_refresh_map_view_for_players_effect = yes
 	}
 }
 
@@ -713,6 +741,12 @@ kehillah_quarterly_pulse = {
 		kehillah_refresh_charter_state_cache_effect = yes
 
 		# --- THE PRE-INITIALISATION WINDOW (2026-09-26, heartbeat 5) ---
+		#
+		# UPDATE 2026-10-18: for the historical communities this window no
+		# longer exists -- kehillah_on_game_start writes provisional pillars
+		# (and the marker) before the first pulse. The guards below remain for
+		# communities founded in play and saves from before this change. The
+		# account that follows describes the old behaviour.
 		#
 		# The historical communities hold all three pillars at 0 from game
 		# start (1066.9.15) until the day-three snapshot writes their real
