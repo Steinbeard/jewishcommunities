@@ -1,0 +1,374 @@
+﻿# V45 rabbinic synods (docs/spec/v45-rabbinic-synods-and-minhag-ashkenaz.md).
+#   0001        the 1066 Rhineland synod: Gershom's ordinances renewed
+#   0101-0103   the Regional Synod activity: opening, delegate vote, ruling
+namespace = kehillah_synod
+
+# ---------------------------------------------------------------------
+# kehillah_synod.0001 -- THE RHINELAND SYNOD, 1066
+# Fired from kehillah_synod_on_game_start, 30 days in, for the leader of
+# Worms (Mainz if Worms is gone). Gershom died in 1028; this is the
+# generation of his students' students ratifying his takkanot, which is
+# what founds Minhag Ashkenaz as a rite of its own.
+# ---------------------------------------------------------------------
+kehillah_synod.0001 = {
+	type = character_event
+	title = kehillah_synod.0001.t
+	desc = kehillah_synod.0001.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_synod_colleague
+		animation = personality_rational
+	}
+
+	trigger = {
+		faith = faith:rabbinic_faith
+		NOR = {
+			exists = global_var:kehillah_minhag_ashkenaz_founded
+			exists = global_var:kehillah_gershom_deferred
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				exists = title:d_kehillah_mainz.holder
+				NOT = { title:d_kehillah_mainz.holder = root }
+			}
+			title:d_kehillah_mainz.holder = { save_scope_as = kehillah_synod_colleague }
+		}
+		else_if = {
+			limit = { exists = title:d_kehillah_speyer.holder }
+			title:d_kehillah_speyer.holder = { save_scope_as = kehillah_synod_colleague }
+		}
+	}
+
+	# RENEW BOTH: no second wife, and no divorce against her will.
+	option = {
+		name = kehillah_synod.0001.a
+		custom_tooltip = kehillah_synod_found_ashkenaz_tt
+		hidden_effect = { kehillah_found_minhag_ashkenaz_effect = yes }
+		custom_tooltip = kehillah_synod_divorce_ordinance_tt
+		kehillah_synod_bind_region_effect = { VAR = kehillah_takkanah_gershom_divorce }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_1066_both_stability }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_1066_both_greatness }
+		ai_chance = { base = 70 }
+	}
+
+	# RENEW THE BAN ON A SECOND WIFE ALONE.
+	option = {
+		name = kehillah_synod.0001.b
+		custom_tooltip = kehillah_synod_found_ashkenaz_tt
+		hidden_effect = { kehillah_found_minhag_ashkenaz_effect = yes }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_1066_ban_greatness }
+		ai_chance = { base = 25 }
+	}
+
+	# LEAVE EACH COMMUNITY TO ITS CUSTOM.
+	option = {
+		name = kehillah_synod.0001.c
+		custom_tooltip = kehillah_synod_defer_tt
+		set_global_variable = { name = kehillah_gershom_deferred value = yes }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_1066_defer_greatness }
+		ai_chance = { base = 5 }
+	}
+
+	after = {
+		if = {
+			limit = { exists = global_var:kehillah_minhag_ashkenaz_founded }
+			kehillah_notify_region_players_effect = { TYPE = msg_kehillah_community_news TITLE = kehillah_news_synod_t DESC = kehillah_news_synod_ashkenaz_d }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_synod.0101 -- REGIONAL SYNOD, THE OPENING (host)
+# Fired by the activity's single phase. The host argues the takkanah the
+# planner chose; a won argument marks the activity, and the delegates'
+# votes lean on that mark.
+# ---------------------------------------------------------------------
+kehillah_synod.0101 = {
+	type = character_event
+	title = kehillah_synod.0101.t
+	desc = {
+		desc = kehillah_synod.0101.desc
+		first_valid = {
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:herem_polygamy } desc = kehillah_synod_motion_herem_polygamy }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:ketubbah_clause } desc = kehillah_synod_motion_ketubbah_clause }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:gentile_courts } desc = kehillah_synod_motion_gentile_courts }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:informers } desc = kehillah_synod_motion_informers }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:hayishuv } desc = kehillah_synod_motion_hayishuv }
+			desc = kehillah_synod_motion_letters
+		}
+	}
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = personality_bold
+	}
+
+	trigger = {
+		exists = involved_activity
+		involved_activity = { has_variable = kehillah_synod_takkanah }
+	}
+
+	# From the sources: the sages before us.
+	option = {
+		name = kehillah_synod.0101.a
+		duel = {
+			skill = learning
+			value = high_skill_rating
+			50 = {
+				desc = kehillah_synod_argument_won
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+				}
+				modifier = {
+					add = 10
+					has_trait = theologian
+				}
+				min = 5
+				involved_activity ?= { set_variable = kehillah_synod_persuaded }
+			}
+			50 = {
+				desc = kehillah_synod_argument_lost
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+				}
+				min = 5
+			}
+		}
+		ai_chance = {
+			base = 50
+			modifier = { add = 25 learning >= high_skill_rating }
+		}
+	}
+
+	# From the community's need: what the people suffer without it.
+	option = {
+		name = kehillah_synod.0101.b
+		duel = {
+			skill = diplomacy
+			value = high_skill_rating
+			50 = {
+				desc = kehillah_synod_argument_won
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+				}
+				modifier = {
+					add = 10
+					has_trait = just
+				}
+				min = 5
+				involved_activity ?= { set_variable = kehillah_synod_persuaded }
+			}
+			50 = {
+				desc = kehillah_synod_argument_lost
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+				}
+				min = 5
+			}
+		}
+		ai_chance = {
+			base = 50
+			modifier = { add = 25 diplomacy >= high_skill_rating }
+		}
+	}
+
+	# Say nothing; let the delegates weigh it themselves.
+	option = {
+		name = kehillah_synod.0101.c
+		ai_chance = { base = 5 }
+	}
+
+	after = {
+		if = {
+			limit = { exists = involved_activity }
+			involved_activity = {
+				every_attending_character = {
+					limit = { kehillah_synod_delegate_trigger = { HOST = root } }
+					trigger_event = { id = kehillah_synod.0102 days = kehillah_synod_vote_delay_days }
+				}
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_synod.0102 -- REGIONAL SYNOD, A DELEGATE VOTES
+# ---------------------------------------------------------------------
+kehillah_synod.0102 = {
+	type = character_event
+	title = kehillah_synod.0102.t
+	desc = {
+		desc = kehillah_synod.0102.desc
+		first_valid = {
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:herem_polygamy } desc = kehillah_synod_motion_herem_polygamy }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:ketubbah_clause } desc = kehillah_synod_motion_ketubbah_clause }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:gentile_courts } desc = kehillah_synod_motion_gentile_courts }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:informers } desc = kehillah_synod_motion_informers }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:hayishuv } desc = kehillah_synod_motion_hayishuv }
+			desc = kehillah_synod_motion_letters
+		}
+	}
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_synod_host
+		animation = personality_bold
+	}
+
+	trigger = {
+		exists = involved_activity
+		involved_activity = { has_variable = kehillah_synod_takkanah }
+	}
+
+	immediate = {
+		involved_activity.activity_host = { save_scope_as = kehillah_synod_host }
+	}
+
+	# FOR.
+	option = {
+		name = kehillah_synod.0102.a
+		involved_activity ?= { change_variable = { name = kehillah_synod_votes_for add = 1 } }
+		ai_chance = {
+			base = 50
+			opinion_modifier = {
+				who = root
+				opinion_target = scope:kehillah_synod_host
+				multiplier = 0.5
+			}
+			modifier = {
+				add = 25
+				involved_activity ?= { has_variable = kehillah_synod_persuaded }
+			}
+			modifier = {
+				add = 20
+				involved_activity.var:kehillah_synod_takkanah ?= flag:herem_polygamy
+				OR = { has_trait = zealous has_trait = chaste }
+			}
+			modifier = {
+				add = 20
+				involved_activity.var:kehillah_synod_takkanah ?= flag:gentile_courts
+				has_trait = just
+			}
+			modifier = {
+				add = 20
+				involved_activity.var:kehillah_synod_takkanah ?= flag:informers
+				has_trait = paranoid
+			}
+			modifier = {
+				add = 20
+				involved_activity.var:kehillah_synod_takkanah ?= flag:hayishuv
+				has_trait = greedy
+			}
+			min = 1
+		}
+	}
+
+	# AGAINST.
+	option = {
+		name = kehillah_synod.0102.b
+		involved_activity ?= { change_variable = { name = kehillah_synod_votes_against add = 1 } }
+		ai_chance = {
+			base = 40
+			modifier = {
+				add = 20
+				involved_activity.var:kehillah_synod_takkanah ?= flag:herem_polygamy
+				has_trait = lustful
+			}
+			modifier = {
+				add = 20
+				involved_activity.var:kehillah_synod_takkanah ?= flag:hayishuv
+				has_trait = generous
+			}
+			modifier = {
+				add = 15
+				has_trait = stubborn
+			}
+			min = 1
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_synod.0103 -- REGIONAL SYNOD, THE RULING (host)
+# Fired from the activity's on_complete, so the synod always reaches it
+# and nothing chains past it. The host's own vote is the 1 the phase seeds
+# into kehillah_synod_votes_for.
+# ---------------------------------------------------------------------
+kehillah_synod.0103 = {
+	type = character_event
+	title = kehillah_synod.0103.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { kehillah_synod_quorum_present_trigger = no }
+				desc = kehillah_synod.0103.desc.no_quorum
+			}
+			triggered_desc = {
+				trigger = { kehillah_synod_motion_carried_trigger = yes }
+				desc = kehillah_synod.0103.desc.passed
+			}
+			desc = kehillah_synod.0103.desc.failed
+		}
+	}
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = personality_bold
+	}
+
+	trigger = {
+		exists = involved_activity
+		involved_activity = { has_variable = kehillah_synod_takkanah }
+	}
+
+	immediate = {
+		save_scope_value_as = {
+			name = kehillah_synod_takkanah
+			value = involved_activity.var:kehillah_synod_takkanah
+		}
+	}
+
+	option = {
+		name = kehillah_synod.0103.a
+		if = {
+			limit = {
+				kehillah_synod_quorum_present_trigger = yes
+				kehillah_synod_motion_carried_trigger = yes
+			}
+			kehillah_synod_enact_takkanah_effect = yes
+		}
+		else_if = {
+			limit = { kehillah_synod_quorum_present_trigger = yes }
+			kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_failed_greatness }
+		}
+	}
+
+	after = {
+		if = {
+			limit = {
+				exists = involved_activity
+				kehillah_synod_quorum_present_trigger = yes
+				kehillah_synod_motion_carried_trigger = yes
+			}
+			kehillah_notify_region_players_effect = { TYPE = msg_kehillah_community_news TITLE = kehillah_news_synod_t DESC = kehillah_news_synod_passed_d }
+		}
+	}
+}

@@ -686,6 +686,13 @@ just shows raw text (verify one live).
    change *engine* doctrine (e.g. the herem at rite level), or only mod-level takkanot?
 8. **Herem no-op:** retire the Second Wife case's doctrine effect, re-scope it to a pre-1000
    start, or keep it for a future Sefarad rite?
+
+   **Answered 2026-10-18 (questions 6-8), in [v45](v45-rabbinic-synods-and-minhag-ashkenaz.md):**
+   - **Q6.** Rabbinism stays the general rite. A synod-founded Minhag Ashkenaz takes Ashkenazi
+     Jews.
+   - **Q7.** A synod binds the rite for marriage only. Every other takkanah binds the v7 minhag
+     region.
+   - **Q8.** The Second Wife now writes a community ketubbah clause.
 9. **Quotes:** OK with original translations for rabbinic texts plus JPS 1917 for Tanakh? Which
    transliteration (SBL-style vs Ashkenazi pronunciation)? Should real Hebrew stay off until the
    font probe is booted?
