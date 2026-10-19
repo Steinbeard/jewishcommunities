@@ -75,3 +75,27 @@ The history is kept here because it records engine rules this mod has to live wi
   for a duchy holder (the Sanhedrin is now a titular duchy). Not yet looked at.
 - **The Synod and Sanhedrin intents** were not run through a full Bet Din sitting.
 - **The religion-level `theocracy_government_type`** has not been tried; see v46 §10.
+
+## Spike: can a Kehillah leader hold land? (uncommitted edits, reverted)
+
+**Edits, both reverted afterwards:** `require_landless` removed from `d_kehillah_worms` only, and
+`church_holding` added to `kehillah_government`'s `valid_holdings`.
+
+- **Play: no crash and no "unplayable character" assert.** The header comment on
+  `require_landless` in `kehillah_landed_titles.txt` blames it for the old crash on Play. That
+  appears to be outdated: implementation doc §8 found the real cause was `is_playable_character`,
+  which the mod now overrides. A founded community's dynamic title has no `require_landless`
+  either.
+- **Isaac could not take the barony.** Granting `b_besensheim` (type `usurped`) logged no error.
+  The engine gave the barony to a freshly generated lowborn instead, twice. Isaac stayed
+  landless, independent, on the Kehillah government, with his Quarter. The likely cause is the
+  government's `cannot_be_vassal_or_liege`: holding a barony in the Kaiser's realm would make him
+  a vassal.
+- **A side effect:** a lowborn became Isaac's primary heir ("Son is Losing Kehillah of Worms").
+  Don't repeat this on a real save.
+- **Earlier, without the spike edits (P1):** the same grant destroyed the Worms title, forced
+  theocracy and made Isaac the Kaiser's vassal.
+- **Conclusion:** landed Kehillot need the vassal relationship itself redesigned, that is,
+  dropping `cannot_be_vassal_or_liege` and reworking the host charter (implementation doc §2a).
+  That is a Track B-sized project, not a change to the Sanhedrin. The `holds_landed_title`
+  trigger also read YES for a barony Isaac did not hold, so it is unreliable here.
