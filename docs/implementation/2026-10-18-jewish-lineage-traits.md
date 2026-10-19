@@ -6,7 +6,9 @@ Daniel requested a Davidic lineage marker modeled on vanilla's Sayyid trait, a s
 
 ## Ben David
 
-`ben_david` follows the mechanical shape of vanilla `sayyid`: it is a fame-category trait inherited with certainty through the publicly acknowledged father by sons and daughters. Its female display name is *Bat David*. It gives +5 Jewish opinion and vanilla's initial-legitimacy boost, and costs 25 points in the Ruler Designer. It is not randomly generated and is not removed by conversion; it records a lineage claim rather than current religious observance. Its dedicated `ben_david.dds` asset reuses vanilla's Sayyid artwork under the trait-key filename CK3 expects.
+`ben_david` follows the mechanical shape of vanilla `sayyid`: it is a fame-category trait inherited with certainty through the publicly acknowledged father by sons and daughters. Its female display name is *Bat David*. It gives +5 Jewish opinion and vanilla's initial-legitimacy boost, and costs 25 points in the Ruler Designer. It is not randomly generated and is not removed by conversion; it records a lineage claim rather than current religious observance.
+
+The final dedicated `ben_david.dds` icon uses a golden kinnor or Davidic lyre beneath a small crown, inside a blue-and-burgundy jeweled medallion. The lyre points specifically to King David and remains legible at trait-icon size; the crown communicates the royal-lineage claim without replacing the central symbol. A Star of David was deliberately avoided because it is a broader Jewish emblem, not a distinctive badge of Davidic descent, and its familiar modern use would make the icon less historically specific.
 
 Representative David of Baghdad (`9000222`) starts with the trait. Kehillah appointment scoring gives a Ben/Bat David candidate +15. That is enough to matter, but less than communal office (+25), endorsement (+30), or a substantial Learning and Stewardship advantage, so Davidic descent does not make the Kehillah hereditary.
 
@@ -20,7 +22,9 @@ The name-list format cannot make a dynasty-name draw conditional on a character 
 
 ## Verification
 
-A corrected fresh isolated boot reached the 1066 selector. David of Baghdad displayed the Ben David icon and localized tooltip, Elijah ha-Kohen displayed Kohen, and the focused error-log checks found no errors attributable to the lineage traits, their icons, the adjusted name lists, or the appointment score. See `docs/testing/2026-10-18-jewish-lineage-traits-live-test.md`.
+A corrected fresh isolated boot reached the 1066 selector. David of Baghdad displayed the original temporary Ben David icon and localized tooltip, Elijah ha-Kohen displayed Kohen, and the focused error-log checks found no errors attributable to the lineage traits, their icons, the adjusted name lists, or the appointment score. See `docs/testing/2026-10-18-jewish-lineage-traits-live-test.md`.
+
+The custom lyre-and-crown replacement added on 2026-10-19 is a 120×120 RGBA DDS with the same dimensions, format, and transparent-corner shape as the mod's existing lineage icons. `ck3-tiger` reports no error naming it, and a fresh isolated CK3 boot produced no `ben_david`, `ben_david.dds`, or `sayyid.dds` error. That client's bookmark canvas rendered mostly white, however, so the tester could not reach David's character panel and the final in-game visual comparison remains blocked rather than passed. See `docs/testing/2026-10-19-ben-david-custom-icon-live-test.md`.
 
 ### Still needed
 
