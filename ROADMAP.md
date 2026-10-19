@@ -54,6 +54,20 @@ Ruled out:
 Full record: [the live test log](docs/testing/2026-10-19-synod-sanhedrin-live-test-log.md).
 Spec v46 §9-10.
 
+### V47 Heads of rite, the Gaon and the seat of the Sanhedrin — 2026-10-19, design agreed
+
+Spec: [v47](docs/spec/v47-gaon-and-the-seat-of-the-sanhedrin.md).
+- **Agreed:**
+  - no heads of rite in 1066;
+  - merit-based lifetime heads of rite at any time (Rabbenu for Ashkenaz, Gaon for Rabbinism);
+  - "Establish the Office of the Gaon" for a merit head who leads Sura;
+  - Baghdad as the Exilarchate (strong Ben David preference);
+  - the Sanhedrin only in the Land of Israel, on a landed seat with a College election.
+- **Live-proven building blocks:** a Kehillah head of rite through `head_of_rite`; a landed Nasi
+  as head of faith. The spike code is in `docs/spikes/2026-10-19-landed-nasi-and-gaonate.patch`.
+- **Next:** build-order step 1, the merit mechanic. Unattended runs may BUILD it, with a live
+  test. It reuses the patch's Gaonate title and the `head_of_rite` field.
+
 ### Open design: landed Jewish polities and other Jewish faiths (Daniel, 2026-10-19) — DANIEL-REVIEW
 
 Raised while testing the Sanhedrin. These are design questions to settle with Daniel before any
