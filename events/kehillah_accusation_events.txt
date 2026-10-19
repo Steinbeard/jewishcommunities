@@ -3,16 +3,56 @@
 # blood libel (Norwich 1144, Blois 1171, Fulda 1235) and, under Muslim
 # rule, the charge of blasphemy: a rumour, a mob forming, and what the
 # community, its Shtadlan, its lord and the head of the faith do about it.
+# Reworked 2026-10-18 (docs/spec/v37-accusations.md, addendum): four
+# answers that differ in what they cost, not only in their odds; the
+# odds show their factors; no blood libel before 1144.
 # =====================================================================
-#   .0001 An Accusation (kehillah_accusation_check_effect).
+#   .0001 An Accusation (kehillah_incident_director_effect).
 #   .0002 What came of it (players): the outcome, the martyr if any.
+#   .0003 The violence, a day later (hidden).
 # =====================================================================
 namespace = kehillah_accusation
 
 kehillah_accusation.0001 = {
 	type = character_event
 	title = kehillah_accusation.0001.t
-	desc = kehillah_accusation.0001.desc
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:kehillah_accusation_tale = flag:blasphemy }
+				desc = kehillah_accusation_tale_blasphemy
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_accusation_tale = flag:desecration }
+				desc = kehillah_accusation_tale_desecration
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_accusation_tale = flag:mockery }
+				desc = kehillah_accusation_tale_mockery
+			}
+			desc = kehillah_accusation_tale_blood_libel
+		}
+		desc = kehillah_accusation.0001.crowd
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:kehillah_accusing_host = { kehillah_outlook_band_value >= 2 } }
+				desc = kehillah_accusation.0001.lord_protective
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_accusing_host = { kehillah_outlook_band_value = 1 } }
+				desc = kehillah_accusation.0001.lord_well_disposed
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_accusing_host = { kehillah_outlook_band_value <= -2 } }
+				desc = kehillah_accusation.0001.lord_hostile
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_accusing_host = { kehillah_outlook_band_value = -1 } }
+				desc = kehillah_accusation.0001.lord_cold
+			}
+			desc = kehillah_accusation.0001.lord_indifferent
+		}
+	}
 	theme = dread
 	left_portrait = {
 		character = scope:kehillah_accusing_host
@@ -29,7 +69,10 @@ kehillah_accusation.0001 = {
 
 	immediate = {
 		domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_accusing_host }
+		domicile.domicile_location = { save_scope_as = kehillah_accusation_town }
 		set_variable = { name = kehillah_accusing_host_ref value = scope:kehillah_accusing_host }
+		# A head of the faith who has forbidden violence against the Jews
+		# (Alexander II, 1063; Sicut Judaeis, c. 1120) strengthens a plea.
 		if = {
 			limit = {
 				exists = scope:kehillah_accusing_host.faith.religious_head
@@ -38,44 +81,106 @@ kehillah_accusation.0001 = {
 			}
 			scope:kehillah_accusing_host.faith.religious_head = { save_scope_as = kehillah_appeal_hof }
 		}
-		cp:councillor_chancellor ?= { save_scope_as = kehillah_plea_shtadlan }
-		# V41 step 4b: from Lateran IV (1215), which made the Host the body of
-		# Christ, the charge may be its desecration (Rottingen 1298,
-		# Deggendorf 1338) rather than the blood libel. The text only.
+		# The Shtadlan pleads; without one, the leader goes himself.
 		if = {
-			limit = {
-				current_year >= 1215
-				scope:kehillah_accusing_host.faith.religion = religion:christianity_religion
-			}
-			random = {
-				chance = 40
-				set_variable = { name = kehillah_accusation_desecration value = yes days = 30 }
+			limit = { exists = cp:councillor_chancellor }
+			cp:councillor_chancellor = { save_scope_as = kehillah_plea_envoy }
+		}
+		else = {
+			save_scope_as = kehillah_plea_envoy
+		}
+		# The charge. Under a Muslim lord, blasphemy. Under a Christian one,
+		# no blood libel before Norwich (1144): before it, the older charge
+		# that the Jews mocked the cross (Rome, 1020). From Lateran IV
+		# (1215), which made the Host the body of Christ, the charge may be
+		# its desecration (Rottingen 1298, Deggendorf 1338).
+		if = {
+			limit = { scope:kehillah_accusing_host.faith.religion = religion:islam_religion }
+			set_variable = { name = kehillah_accusation_tale value = flag:blasphemy days = 30 }
+		}
+		else_if = {
+			limit = { current_year < kehillah_accusation_blood_libel_year }
+			set_variable = { name = kehillah_accusation_tale value = flag:mockery days = 30 }
+		}
+		else = {
+			set_variable = { name = kehillah_accusation_tale value = flag:blood_libel days = 30 }
+			if = {
+				limit = { current_year >= kehillah_accusation_desecration_year }
+				random = {
+					chance = 40
+					set_variable = { name = kehillah_accusation_tale value = flag:desecration days = 30 }
+				}
 			}
 		}
 	}
 
-	# The Shtadlan goes to the lord.
+	# Plead with the lord: free, and only as good as the lord.
 	option = {
-		name = kehillah_accusation.0001.a
-		trigger = { exists = scope:kehillah_plea_shtadlan }
+		name = {
+			trigger = { NOT = { scope:kehillah_plea_envoy = root } }
+			text = kehillah_accusation.0001.a
+		}
+		name = {
+			trigger = { scope:kehillah_plea_envoy = root }
+			text = kehillah_accusation.0001.a_self
+		}
 		set_variable = { name = kehillah_accusation_route value = 1 days = 30 }
 		random_list = {
-			0 = {
-				modifier = { add = kehillah_accusation_shtadlan_success_value }
+			40 = {
 				desc = kehillah_accusation_outcome_protected
+				kehillah_lord_outlook_odds_modifier = { HOST = scope:kehillah_accusing_host }
+				compare_modifier = {
+					target = scope:kehillah_plea_envoy
+					value = diplomacy
+					multiplier = 2
+					offset = inverted_medium_skill_rating
+				}
+				opinion_modifier = {
+					who = scope:kehillah_accusing_host
+					opinion_target = root
+					multiplier = 0.25
+				}
+				modifier = {
+					add = 20
+					custom_tooltip = {
+						text = kehillah_factor_charter_protects
+						primary_title ?= { var:kehillah_charter_cache_security ?= 2 }
+					}
+				}
+				modifier = {
+					add = 10
+					custom_tooltip = {
+						text = kehillah_factor_charter_promises
+						primary_title ?= { var:kehillah_charter_cache_security ?= 1 }
+					}
+				}
+				modifier = {
+					add = 15
+					custom_tooltip = {
+						text = kehillah_factor_hof_forbids
+						exists = scope:kehillah_appeal_hof
+					}
+				}
+				min = 5
 				kehillah_accusation_defused_effect = yes
 			}
-			0 = {
-				modifier = { add = kehillah_accusation_shtadlan_failure_value }
+			60 = {
 				desc = kehillah_accusation_outcome_violence
+				min = 5
 				kehillah_accusation_violence_effect = { MULT = 1 }
 			}
 		}
 		hidden_effect = { trigger_event = { id = kehillah_accusation.0002 days = 3 } }
-		ai_chance = { base = 40 }
+		ai_chance = {
+			base = 40
+			modifier = {
+				add = 20
+				scope:kehillah_accusing_host = { kehillah_outlook_band_value >= 1 }
+			}
+		}
 	}
 
-	# Pay for the lord's protection.
+	# Pay for the lord's men: better odds, and he learns that the Jews pay.
 	option = {
 		name = kehillah_accusation.0001.b
 		trigger = { gold >= medium_gold_value }
@@ -85,56 +190,103 @@ kehillah_accusation.0001 = {
 		}
 		set_variable = { name = kehillah_accusation_route value = 2 days = 30 }
 		random_list = {
-			0 = {
-				modifier = { add = kehillah_accusation_pay_success_value }
+			65 = {
 				desc = kehillah_accusation_outcome_protected
-				kehillah_accusation_defused_effect = yes
-			}
-			0 = {
-				modifier = { add = kehillah_accusation_pay_failure_value }
-				desc = kehillah_accusation_outcome_violence
-				kehillah_accusation_violence_effect = { MULT = 1 }
-			}
-		}
-		hidden_effect = { trigger_event = { id = kehillah_accusation.0002 days = 3 } }
-		ai_chance = { base = 30 }
-	}
-
-	# Appeal to the head of the faith.
-	option = {
-		name = kehillah_accusation.0001.c
-		trigger = { exists = scope:kehillah_appeal_hof }
-		set_variable = { name = kehillah_accusation_route value = 3 days = 30 }
-		random_list = {
-			0 = {
-				modifier = { add = kehillah_hof_appeal_success_value }
-				desc = kehillah_accusation_outcome_rebuked
-				kehillah_accusation_defused_effect = yes
-				scope:kehillah_accusing_host = {
-					hidden_effect = { kehillah_shift_outlook_effect = { AMOUNT = -3 } }
+				kehillah_lord_outlook_odds_modifier = { HOST = scope:kehillah_accusing_host }
+				modifier = {
+					add = 15
+					scope:kehillah_accusing_host = { has_trait = greedy }
 				}
-				custom_tooltip = kehillah_host_demands_appeal_resent_tt_accusation
+				min = 5
+				kehillah_accusation_defused_effect = yes
 			}
-			0 = {
-				modifier = { add = kehillah_hof_appeal_failure_value }
+			35 = {
 				desc = kehillah_accusation_outcome_violence
+				min = 5
 				kehillah_accusation_violence_effect = { MULT = 1 }
 			}
 		}
+		# Whatever comes of it, he took the silver and will remember it.
+		primary_title = {
+			set_variable = {
+				name = kehillah_accusation_paid_host
+				value = scope:kehillah_accusing_host
+				years = kehillah_accusation_paid_precedent_years
+			}
+		}
+		custom_tooltip = kehillah_accusation_precedent_tt
 		hidden_effect = { trigger_event = { id = kehillah_accusation.0002 days = 3 } }
-		ai_chance = { base = 20 }
+		ai_chance = {
+			base = 30
+			modifier = {
+				add = 20
+				scope:kehillah_accusing_host = { kehillah_outlook_band_value <= -1 }
+			}
+		}
 	}
 
-	# Bar the gates.
+	# Break the lie: the leader's own cunning, whatever the lord thinks.
+	# Caught at it, the crowd hears that the Jews buy witnesses.
+	option = {
+		name = {
+			trigger = { var:kehillah_accusation_tale = flag:blood_libel }
+			text = kehillah_accusation.0001.c_killer
+		}
+		name = {
+			trigger = { NOT = { var:kehillah_accusation_tale = flag:blood_libel } }
+			text = kehillah_accusation.0001.c_witness
+		}
+		set_variable = { name = kehillah_accusation_route value = 3 days = 30 }
+		duel = {
+			skill = intrigue
+			value = medium_skill_rating
+			50 = {
+				desc = kehillah_accusation_outcome_exposed
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+				}
+				min = 5
+				kehillah_accusation_exposed_effect = yes
+			}
+			50 = {
+				desc = kehillah_accusation_outcome_caught
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+				}
+				min = 5
+				kehillah_accusation_violence_effect = { MULT = kehillah_accusation_caught_mult }
+			}
+		}
+		hidden_effect = { trigger_event = { id = kehillah_accusation.0002 days = 3 } }
+		ai_chance = {
+			base = 10
+			modifier = {
+				add = 30
+				intrigue >= decent_skill_rating
+			}
+		}
+	}
+
+	# Bar the gates: no gamble. The crowd riots outside, but it does not
+	# become a mob that takes the quarter.
 	option = {
 		name = kehillah_accusation.0001.d
-		kehillah_accusation_violence_effect = { MULT = kehillah_accusation_barricade_mult }
-		primary_title = {
-			change_variable = { name = kehillah_var_greatness add = kehillah_accusation_barricade_greatness }
-		}
-		custom_tooltip = kehillah_accusation_barricade_tt
+		set_variable = { name = kehillah_accusation_route value = 4 days = 30 }
+		set_variable = { name = kehillah_accusation_barred value = yes days = 30 }
+		set_variable = { name = kehillah_accusation_mult value = kehillah_accusation_barricade_mult days = 30 }
+		custom_tooltip = kehillah_accusation_barred_tt
+		hidden_effect = { trigger_event = { id = kehillah_accusation.0003 days = 1 } }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_accusation_barricade_greatness }
 		hidden_effect = { trigger_event = { id = kehillah_accusation.0002 days = 3 } }
-		ai_chance = { base = 10 }
+		ai_chance = {
+			base = 15
+			modifier = {
+				add = 20
+				scope:kehillah_accusing_host = { kehillah_outlook_band_value <= -2 }
+			}
+		}
 	}
 }
 
@@ -146,7 +298,8 @@ kehillah_accusation.0002 = {
 		first_valid = {
 			triggered_desc = { trigger = { has_variable = kehillah_accusation_last_stability var:kehillah_accusation_route = 1 } desc = kehillah_accusation.0002.late_shtadlan }
 			triggered_desc = { trigger = { has_variable = kehillah_accusation_last_stability var:kehillah_accusation_route = 2 } desc = kehillah_accusation.0002.late_paid }
-			triggered_desc = { trigger = { has_variable = kehillah_accusation_last_stability var:kehillah_accusation_route = 3 } desc = kehillah_accusation.0002.late_letter }
+			triggered_desc = { trigger = { has_variable = kehillah_accusation_last_stability var:kehillah_accusation_route = 3 } desc = kehillah_accusation.0002.late_caught }
+			triggered_desc = { trigger = { has_variable = kehillah_accusation_last_stability var:kehillah_accusation_route = 4 } desc = kehillah_accusation.0002.late_barred }
 		}
 		first_valid = {
 			triggered_desc = {
@@ -159,7 +312,7 @@ kehillah_accusation.0002 = {
 			}
 			triggered_desc = { trigger = { has_variable = kehillah_accusation_route var:kehillah_accusation_route = 1 } desc = kehillah_accusation.0002.defused_shtadlan }
 			triggered_desc = { trigger = { has_variable = kehillah_accusation_route var:kehillah_accusation_route = 2 } desc = kehillah_accusation.0002.defused_paid }
-			triggered_desc = { trigger = { has_variable = kehillah_accusation_route var:kehillah_accusation_route = 3 } desc = kehillah_accusation.0002.defused_letter }
+			triggered_desc = { trigger = { has_variable = kehillah_accusation_route var:kehillah_accusation_route = 3 } desc = kehillah_accusation.0002.exposed }
 			desc = kehillah_accusation.0002.defused
 		}
 	}
@@ -199,19 +352,26 @@ kehillah_accusation.0002 = {
 
 # The violence, a day later (hidden): a mob siege at
 # kehillah_accusation_mob_chance_value, otherwise a riot in the street.
-# The report (.0002) follows on day 3.
+# Behind barred gates, always the riot. The report (.0002) follows on day 3.
 kehillah_accusation.0003 = {
 	type = character_event
 	hidden = yes
 	immediate = {
-		random_list = {
-			0 = {
-				modifier = { add = kehillah_accusation_mob_chance_value }
-				trigger_event = kehillah_mob.0030
-			}
-			0 = {
-				modifier = { add = kehillah_accusation_riot_chance_value }
-				kehillah_accusation_riot_effect = yes
+		if = {
+			limit = { has_variable = kehillah_accusation_barred }
+			remove_variable = kehillah_accusation_barred
+			kehillah_accusation_riot_effect = yes
+		}
+		else = {
+			random_list = {
+				0 = {
+					modifier = { add = kehillah_accusation_mob_chance_value }
+					trigger_event = kehillah_mob.0030
+				}
+				0 = {
+					modifier = { add = kehillah_accusation_riot_chance_value }
+					kehillah_accusation_riot_effect = yes
+				}
 			}
 		}
 	}
