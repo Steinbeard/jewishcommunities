@@ -48,37 +48,43 @@ kehillah_sanhedrin_set_rite_doctrines_effect = {
 # ---------------------------------------------------------------------
 # A land grant (kehillah_petition_for_land_decision, or its player-liege
 # event). Scope: a landless Kehillah leader whose liege holds the
-# community's county directly. The government switch comes FIRST: on
-# kehillah_government (cannot_be_vassal_or_liege) the engine refuses him the
-# county and gives it to a generated lowborn (live 2026-10-19).
+# community's county directly. ORDER MATTERS (live 2026-10-19): the county
+# moves while he is still on kehillah_government, THEN he switches to
+# kehillah_landed_government. That is the order the landed-Nasi spike used,
+# and he kept his Quarter. Switching first and granting after put him on the
+# liege's vanilla government (clan, under a Fatimid liege) and lost his
+# Quarter. No effect can create a domicile on a landed ruler, so a lost
+# Quarter cannot be rebuilt; the debug_log lines say which happened.
 # ---------------------------------------------------------------------
 kehillah_grant_community_county_effect = {
 	save_scope_as = kehillah_land_recipient
 	primary_title = { save_scope_as = kehillah_land_community }
 	scope:kehillah_land_community.title_capital_county = { save_scope_as = kehillah_land_county }
-	change_government = kehillah_landed_government
+	create_title_and_vassal_change = {
+		type = granted
+		save_scope_as = change
+		add_claim_on_loss = no
+	}
+	scope:kehillah_land_county = {
+		change_title_holder = {
+			holder = scope:kehillah_land_recipient
+			change = scope:change
+		}
+	}
+	resolve_title_and_vassal_change = scope:change
+	set_primary_title_to = scope:kehillah_land_community
 	if = {
-		limit = { has_government = kehillah_landed_government }
-		create_title_and_vassal_change = {
-			type = granted
-			save_scope_as = change
-			add_claim_on_loss = no
-		}
-		scope:kehillah_land_county = {
-			change_title_holder = {
-				holder = scope:kehillah_land_recipient
-				change = scope:change
-			}
-		}
-		resolve_title_and_vassal_change = scope:change
-		set_primary_title_to = scope:kehillah_land_community
-		kehillah_landed_government_restore_quarter_effect = yes
+		limit = { scope:kehillah_land_county.holder ?= scope:kehillah_land_recipient }
 		debug_log = "KEHILLAH_LANDED_GOV: county granted"
 	}
-	else = { debug_log = "KEHILLAH_LANDED_GOV: switch REFUSED, no grant" }
-	debug_log_scopes = yes
-	# Back onto the ordinary government if the grant did not take.
+	else = { debug_log = "KEHILLAH_LANDED_GOV: county NOT granted to the leader" }
+	if = {
+		limit = { exists = domicile }
+		debug_log = "KEHILLAH_LANDED_GOV: Quarter kept through the grant"
+	}
+	else = { debug_log = "KEHILLAH_LANDED_GOV: Quarter LOST in the grant" }
 	kehillah_reconcile_landed_government_effect = yes
+	trigger_event = { id = kehillah_synod.0003 days = 1 }
 }
 
 # ---------------------------------------------------------------------
@@ -120,46 +126,53 @@ kehillah_sanhedrin_restore_effect = {
 		}
 	}
 
-	set_global_variable = { name = kehillah_sanhedrin_seat value = scope:kehillah_sanhedrin_county }
-	# Both seat titles carry the members' election, so an elected Nasi who
-	# leads a community receives the county AND the community together. That
-	# also keeps player continuation right: "Continue as" follows the primary
-	# title, the community, which would otherwise pass by appointment to
-	# someone the install then strips (kehillah_sanhedrin_install_nasi_effect
-	# is kept as the backstop if the two elections ever differ).
-	scope:kehillah_sanhedrin_county = {
-		set_variable = kehillah_sanhedrin_seat_county
-		set_variable = kehillah_sanhedrin_seat_title
-		add_title_law = kehillah_sanhedrin_succession_law
-	}
+	# The decision's tooltip evaluates this effect even for a ruler with no
+	# county in the Land; unguarded, that flooded error.log with unset
+	# kehillah_sanhedrin_county scopes (live 2026-10-19).
 	if = {
-		limit = { exists = scope:kehillah_sanhedrin_community }
-		set_global_variable = { name = kehillah_sanhedrin_seat_community value = scope:kehillah_sanhedrin_community }
-		scope:kehillah_sanhedrin_community = {
+		limit = { exists = scope:kehillah_sanhedrin_county }
+		set_global_variable = { name = kehillah_sanhedrin_seat value = scope:kehillah_sanhedrin_county }
+		# Both seat titles carry the members' election, so an elected Nasi who
+		# leads a community receives the county AND the community together. That
+		# also keeps player continuation right: "Continue as" follows the primary
+		# title, the community, which would otherwise pass by appointment to
+		# someone the install then strips (kehillah_sanhedrin_install_nasi_effect
+		# is kept as the backstop if the two elections ever differ).
+		scope:kehillah_sanhedrin_county = {
+			set_variable = kehillah_sanhedrin_seat_county
 			set_variable = kehillah_sanhedrin_seat_title
 			add_title_law = kehillah_sanhedrin_succession_law
 		}
-		set_primary_title_to = scope:kehillah_sanhedrin_community
-	}
-	kehillah_reconcile_landed_government_effect = yes
+		if = {
+			limit = { exists = scope:kehillah_sanhedrin_community }
+			set_global_variable = { name = kehillah_sanhedrin_seat_community value = scope:kehillah_sanhedrin_community }
+			scope:kehillah_sanhedrin_community = {
+				set_variable = kehillah_sanhedrin_seat_title
+				add_title_law = kehillah_sanhedrin_succession_law
+			}
+			set_primary_title_to = scope:kehillah_sanhedrin_community
+		}
+		kehillah_reconcile_landed_government_effect = yes
 
-	kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
-	faith:rabbinic_faith = { set_religious_head_title = scope:kehillah_sanhedrin_county }
-	kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
+		kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
+		faith:rabbinic_faith = { set_religious_head_title = scope:kehillah_sanhedrin_county }
+		kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
 
-	kehillah_update_leader_flavor_effect = yes
-	kehillah_sanhedrin_refresh_seats_effect = yes
-	debug_log = "KEHILLAH_SANHEDRIN: restored"
-	debug_log_scopes = yes
-	every_player = {
-		limit = { NOT = { this = scope:kehillah_sanhedrin_founder } }
-		send_interface_message = {
-			type = msg_kehillah_community_news
-			title = kehillah_news_sanhedrin_restored_t
-			desc = kehillah_news_sanhedrin_restored_d
-			left_icon = scope:kehillah_sanhedrin_founder
+		kehillah_update_leader_flavor_effect = yes
+		kehillah_sanhedrin_refresh_seats_effect = yes
+		debug_log = "KEHILLAH_SANHEDRIN: restored"
+		debug_log_scopes = yes
+		every_player = {
+			limit = { NOT = { this = scope:kehillah_sanhedrin_founder } }
+			send_interface_message = {
+				type = msg_kehillah_community_news
+				title = kehillah_news_sanhedrin_restored_t
+				desc = kehillah_news_sanhedrin_restored_d
+				left_icon = scope:kehillah_sanhedrin_founder
+			}
 		}
 	}
+	else = { debug_log = "KEHILLAH_SANHEDRIN: no county in the Land, not restored" }
 }
 
 # ---------------------------------------------------------------------
@@ -244,7 +257,9 @@ kehillah_sanhedrin_install_nasi_effect = {
 
 # ---------------------------------------------------------------------
 # Government transitions. Scope: any character.
-#   1. A LANDED leader on kehillah_government -> kehillah_landed_government.
+#   1. A LANDED leader on kehillah_government, or a landed leader whose
+#      primary title is a community but who is on a non-Kehillah government
+#      -> kehillah_landed_government.
 #   2. A LANDLESS leader on kehillah_landed_government -> kehillah_government.
 # Other governments are never touched (a Jewish king keeps his own, even as
 # Nasi). After a switch, the Quarter is rebuilt from the community record.
@@ -256,7 +271,16 @@ kehillah_reconcile_landed_government_effect = {
 		limit = {
 			is_ruler = yes
 			is_landed = yes
-			has_government = kehillah_government
+			OR = {
+				has_government = kehillah_government
+				# Moved off by the engine on gaining land (to the liege's
+				# government, live 2026-10-19). Only a leader whose PRIMARY
+				# title is a community: a king who holds one keeps his own.
+				AND = {
+					NOT = { government_has_flag = government_is_kehillah }
+					primary_title ?= { is_kehillah_title_trigger = yes }
+				}
+			}
 		}
 		change_government = kehillah_landed_government
 		kehillah_landed_government_restore_quarter_effect = yes

@@ -106,6 +106,44 @@ kehillah_synod.0003 = {
 			debug_log = "KEHILLAH_LANDED_GOV: day-after check, on the Kehillah government"
 		}
 		else = { debug_log = "KEHILLAH_LANDED_GOV: day-after check, on ANOTHER government" }
+		# EXPERIMENT (2026-10-19, not yet live-verified on a LANDED leader): a
+		# community leader who lost his Quarter on gaining land (the engine
+		# moves him onto the liege's government, which drops it). The
+		# temporary-title scaffold of kehillah_succession.0010, proven for
+		# landless successors, is the only known way to provision a domicile.
+		if = {
+			limit = {
+				is_landed = yes
+				NOT = { exists = domicile }
+				primary_title ?= { is_kehillah_title_trigger = yes }
+			}
+			primary_title = { save_scope_as = kq_title }
+			create_adventurer_title = {
+				name = kehillah_successor_scaffold_title_name
+				holder = root
+				government = kehillah_landed_government
+				article = kehillah_successor_scaffold_title_article
+				save_scope_as = kehillah_landed_scaffold_title
+			}
+			if = {
+				limit = { exists = scope:kehillah_landed_scaffold_title }
+				hidden_effect = { set_primary_title_to = scope:kq_title }
+				destroy_title = scope:kehillah_landed_scaffold_title
+			}
+			else = { debug_log = "KEHILLAH_LANDED_GOV: scaffold NOT created for a landed leader" }
+			if = {
+				limit = { exists = domicile }
+				debug_log = "KEHILLAH_LANDED_GOV: Quarter provisioned by the scaffold"
+				kehillah_restore_quarter_effect = yes
+			}
+			else = { debug_log = "KEHILLAH_LANDED_GOV: Quarter still MISSING after the scaffold" }
+			kehillah_reconcile_landed_government_effect = yes
+		}
+		if = {
+			limit = { exists = domicile }
+			debug_log = "KEHILLAH_LANDED_GOV: day-after check, has a domicile"
+		}
+		else = { debug_log = "KEHILLAH_LANDED_GOV: day-after check, NO domicile" }
 		debug_log_scopes = yes
 	}
 }
