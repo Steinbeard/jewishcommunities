@@ -1,0 +1,128 @@
+﻿namespace = kehillah_handoff_probe_debug
+
+# DISPOSABLE PROBE (2026-10-19): activity host handoff. All console-only.
+# Runbook: docs/testing/2026-10-19-activity-host-handoff-probe-plan.md.
+# Every line this probe writes to debug.log starts KEHILLAH_HANDOFF_PROBE.
+
+# Console: event kehillah_handoff_probe_debug.1
+# Default mode: the landed stand-in is removed after the handoff.
+# Schedules reports 1, 10 and 45 days later (keep the game running).
+kehillah_handoff_probe_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		remove_global_variable = kehillah_handoff_probe_keep_proxy
+		debug_log = "KEHILLAH_HANDOFF_PROBE RUN mode=remove-stand-in"
+		kehillah_handoff_probe_start_effect = yes
+		trigger_event = { id = kehillah_handoff_probe_debug.3 days = 1 }
+		trigger_event = { id = kehillah_handoff_probe_debug.3 days = 10 }
+		trigger_event = { id = kehillah_handoff_probe_debug.3 days = 45 }
+	}
+}
+
+# Console: event kehillah_handoff_probe_debug.2
+# Fallback mode, for when .1 fails at STEP3: the stand-in stays as a guest.
+kehillah_handoff_probe_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		set_global_variable = { name = kehillah_handoff_probe_keep_proxy value = yes }
+		debug_log = "KEHILLAH_HANDOFF_PROBE RUN mode=keep-stand-in"
+		kehillah_handoff_probe_start_effect = yes
+		trigger_event = { id = kehillah_handoff_probe_debug.3 days = 1 }
+		trigger_event = { id = kehillah_handoff_probe_debug.3 days = 10 }
+		trigger_event = { id = kehillah_handoff_probe_debug.3 days = 45 }
+	}
+}
+
+# Console: event kehillah_handoff_probe_debug.3
+# Read-only report on every probe activity.
+kehillah_handoff_probe_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "KEHILLAH_HANDOFF_PROBE REPORT begin"
+		if = {
+			limit = {
+				NOT = { any_activity = { has_activity_type = activity_kehillah_handoff_probe } }
+			}
+			debug_log = "KEHILLAH_HANDOFF_PROBE REPORT no probe activity exists"
+		}
+		every_activity = {
+			limit = { has_activity_type = activity_kehillah_handoff_probe }
+			debug_log = "KEHILLAH_HANDOFF_PROBE REPORT activity found; host follows"
+			activity_host = {
+				debug_log_scopes = no
+				if = {
+					limit = { government_has_flag = government_is_kehillah }
+					debug_log = "KEHILLAH_HANDOFF_PROBE REPORT host has Kehillah government"
+				}
+				else = {
+					debug_log = "KEHILLAH_HANDOFF_PROBE REPORT host does NOT have Kehillah government"
+				}
+			}
+			if = {
+				limit = {
+					exists = var:kehillah_handoff_probe_leader
+					activity_host = var:kehillah_handoff_probe_leader
+				}
+				debug_log = "KEHILLAH_HANDOFF_PROBE REPORT host matches the target leader"
+			}
+			if = {
+				limit = {
+					exists = var:kehillah_handoff_probe_leader
+					activity_location = var:kehillah_handoff_probe_leader.domicile.domicile_location
+				}
+				debug_log = "KEHILLAH_HANDOFF_PROBE REPORT venue is the leader's Quarter"
+			}
+			if = {
+				limit = { has_current_phase = phase_kehillah_handoff_probe }
+				debug_log = "KEHILLAH_HANDOFF_PROBE REPORT current phase is the probe phase"
+			}
+			if = {
+				limit = {
+					exists = var:kehillah_handoff_probe_proxy
+					var:kehillah_handoff_probe_proxy = { is_participant_in_activity = prev }
+				}
+				debug_log = "KEHILLAH_HANDOFF_PROBE REPORT stand-in is still a participant"
+			}
+			every_attending_character = {
+				debug_log = "KEHILLAH_HANDOFF_PROBE REPORT attendee follows"
+				debug_log_scopes = no
+			}
+		}
+		debug_log = "KEHILLAH_HANDOFF_PROBE REPORT end"
+	}
+}
+
+# Console: event kehillah_handoff_probe_debug.4
+# Cancels probe activities and clears all probe flags and variables.
+kehillah_handoff_probe_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_handoff_probe_cleanup_effect = yes
+	}
+}
+
+# Fired by the probe phase on the host, two days after it goes active.
+# Checks that an ordinary event run later still sees the leader as host.
+kehillah_handoff_probe_debug.10 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "KEHILLAH_HANDOFF_PROBE EVENT_FROM_PHASE root follows"
+		debug_log_scopes = no
+		if = {
+			limit = {
+				exists = involved_activity
+				involved_activity.activity_host = root
+				government_has_flag = government_is_kehillah
+			}
+			debug_log = "KEHILLAH_HANDOFF_PROBE PASS later event: Kehillah leader is still the host"
+		}
+		else = {
+			debug_log = "KEHILLAH_HANDOFF_PROBE FAIL later event: root is not a Kehillah host of its activity"
+		}
+	}
+}

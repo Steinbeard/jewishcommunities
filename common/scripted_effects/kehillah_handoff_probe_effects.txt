@@ -1,0 +1,160 @@
+﻿# DISPOSABLE PROBE (2026-10-19): see common/activities/activity_types/
+# kehillah_handoff_probe.txt for the question and the runbook link.
+
+# Pick one AI Kehillah leader and the landed AI holding the county its
+# Quarter sits in, mark both, and have the landed stand-in attempt the
+# probe activity. Any scope; nothing here depends on root.
+kehillah_handoff_probe_start_effect = {
+	random_living_character = {
+		limit = {
+			is_ai = yes
+			government_has_flag = government_is_kehillah
+			is_adult = yes
+			is_imprisoned = no
+			NOT = { exists = involved_activity }
+			exists = domicile
+			domicile.domicile_location.county.holder ?= {
+				kehillah_handoff_probe_stand_in_trigger = yes
+				is_at_war = no
+			}
+		}
+		save_scope_as = kehillah_handoff_leader
+	}
+	# Fallback: accept a stand-in at war if no peaceful pair exists.
+	if = {
+		limit = { NOT = { exists = scope:kehillah_handoff_leader } }
+		random_living_character = {
+			limit = {
+				is_ai = yes
+				government_has_flag = government_is_kehillah
+				is_adult = yes
+				is_imprisoned = no
+				NOT = { exists = involved_activity }
+				exists = domicile
+				domicile.domicile_location.county.holder ?= {
+					kehillah_handoff_probe_stand_in_trigger = yes
+				}
+			}
+			save_scope_as = kehillah_handoff_leader
+			debug_log = "KEHILLAH_HANDOFF_PROBE SETUP note: only a stand-in at war was available"
+		}
+	}
+
+	if = {
+		limit = { exists = scope:kehillah_handoff_leader }
+		scope:kehillah_handoff_leader.domicile.domicile_location.county.holder = {
+			save_scope_as = kehillah_handoff_proxy
+		}
+		scope:kehillah_handoff_leader = {
+			add_character_flag = { flag = kehillah_handoff_probe_allowed days = 90 }
+			debug_log = "KEHILLAH_HANDOFF_PROBE SETUP leader follows"
+			debug_log_scopes = no
+		}
+		scope:kehillah_handoff_proxy = {
+			set_variable = {
+				name = kehillah_handoff_probe_for
+				value = scope:kehillah_handoff_leader
+				days = 90
+			}
+			add_character_flag = { flag = kehillah_handoff_probe_allowed days = 90 }
+			debug_log = "KEHILLAH_HANDOFF_PROBE SETUP stand-in follows"
+			debug_log_scopes = no
+			if = {
+				limit = { can_host_activity = activity_kehillah_handoff_probe }
+				debug_log = "KEHILLAH_HANDOFF_PROBE GATE PASS stand-in can_host_activity"
+			}
+			else = {
+				debug_log = "KEHILLAH_HANDOFF_PROBE GATE FAIL stand-in can_host_activity"
+			}
+			ai_attempt_to_host_activity = activity_kehillah_handoff_probe
+			debug_log = "KEHILLAH_HANDOFF_PROBE ATTEMPT sent to stand-in"
+		}
+	}
+	else = {
+		debug_log = "KEHILLAH_HANDOFF_PROBE SETUP FAIL no AI leader with a free landed AI county holder"
+	}
+}
+
+# root = the activity (called from on_start).
+kehillah_handoff_probe_handoff_effect = {
+	debug_log = "KEHILLAH_HANDOFF_PROBE ON_START created; planner follows"
+	scope:host = {
+		save_scope_as = kehillah_handoff_proxy
+		debug_log_scopes = no
+	}
+	if = {
+		limit = { scope:kehillah_handoff_proxy = { has_variable = kehillah_handoff_probe_for } }
+		scope:kehillah_handoff_proxy.var:kehillah_handoff_probe_for = {
+			save_scope_as = kehillah_handoff_leader
+		}
+		set_variable = { name = kehillah_handoff_probe_leader value = scope:kehillah_handoff_leader }
+		set_variable = { name = kehillah_handoff_probe_proxy value = scope:kehillah_handoff_proxy }
+
+		# Step 1: put the leader in the activity at home.
+		scope:kehillah_handoff_leader = {
+			add_to_activity_without_travel = root
+		}
+		if = {
+			limit = { scope:kehillah_handoff_leader = { is_participant_in_activity = root } }
+			debug_log = "KEHILLAH_HANDOFF_PROBE STEP1 PASS leader is a participant"
+		}
+		else = {
+			debug_log = "KEHILLAH_HANDOFF_PROBE STEP1 FAIL leader is not a participant"
+		}
+
+		# Step 2: hand the activity over.
+		set_activity_host = scope:kehillah_handoff_leader
+		if = {
+			limit = { activity_host = scope:kehillah_handoff_leader }
+			debug_log = "KEHILLAH_HANDOFF_PROBE STEP2 PASS activity_host is the leader"
+		}
+		else = {
+			debug_log = "KEHILLAH_HANDOFF_PROBE STEP2 FAIL activity_host is not the leader"
+		}
+
+		# Step 3: drop the stand-in (default) or keep them as a guest (.2).
+		if = {
+			limit = { NOT = { has_global_variable = kehillah_handoff_probe_keep_proxy } }
+			scope:kehillah_handoff_proxy = {
+				remove_from_activity = root
+			}
+			if = {
+				limit = { scope:kehillah_handoff_proxy = { is_participant_in_activity = root } }
+				debug_log = "KEHILLAH_HANDOFF_PROBE STEP3 FAIL stand-in still a participant after removal"
+			}
+			else = {
+				debug_log = "KEHILLAH_HANDOFF_PROBE STEP3 PASS stand-in removed"
+			}
+		}
+		else = {
+			debug_log = "KEHILLAH_HANDOFF_PROBE STEP3 keep mode: stand-in left in as a guest"
+		}
+
+		scope:kehillah_handoff_proxy = {
+			remove_variable = kehillah_handoff_probe_for
+		}
+	}
+	else = {
+		debug_log = "KEHILLAH_HANDOFF_PROBE ON_START FAIL planner has no probe variable"
+	}
+}
+
+# Clears every probe marker and cancels any probe activity.
+kehillah_handoff_probe_cleanup_effect = {
+	every_activity = {
+		limit = { has_activity_type = activity_kehillah_handoff_probe }
+		invalidate_activity = this
+	}
+	every_living_character = {
+		limit = {
+			OR = {
+				has_character_flag = kehillah_handoff_probe_allowed
+				has_variable = kehillah_handoff_probe_for
+			}
+		}
+		remove_character_flag = kehillah_handoff_probe_allowed
+		remove_variable = kehillah_handoff_probe_for
+	}
+	remove_global_variable = kehillah_handoff_probe_keep_proxy
+	debug_log = "KEHILLAH_HANDOFF_PROBE CLEANUP done"
+}
