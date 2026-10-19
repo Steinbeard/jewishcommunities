@@ -31,6 +31,15 @@ live pass (§7) succeeds. **Supersedes** [v45](v45-rabbinic-synods-and-minhag-as
   - `kehillah_sanhedrin_on_title_gain`, which does the same for an elected successor and
     removes his own seat.
 
+**Where it sits (Daniel, 2026-10-19, same day):** the Sanhedrin can be restored anywhere, for
+example by "a really influential rabbi in Toledo", and it can move.
+`kehillah_sanhedrin_sit_with_nasi_effect` sets the title's capital to the Nasi's community. That
+is the community title's capital county, falling back to the Nasi's own capital county, then to
+his location. The effect runs at restoration and on every new Nasi's `on_title_gain`, so the
+court moves to wherever the new Nasi leads, as it historically moved from Yavne to Usha to
+Tiberias. New seats take the same capital. Tiberias is only the title's placeholder capital.
+There is no separate "move the court" action: the court moves when its Nasi changes.
+
 ## 2. Restoring it
 
 `kehillah_restore_sanhedrin_decision`, a major decision.

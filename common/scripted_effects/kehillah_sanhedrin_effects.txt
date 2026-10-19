@@ -26,6 +26,7 @@ kehillah_restore_sanhedrin_effect = {
 	}
 	resolve_title_and_vassal_change = scope:change
 	set_primary_title_to = scope:kehillah_founder_primary
+	kehillah_sanhedrin_sit_with_nasi_effect = yes
 
 	title:d_kehillah_sanhedrin = {
 		add_title_law = kehillah_sanhedrin_succession_law
@@ -37,6 +38,34 @@ kehillah_restore_sanhedrin_effect = {
 	set_global_variable = { name = kehillah_sanhedrin_formed value = yes }
 	kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_sanhedrin_founding_greatness }
 	kehillah_sanhedrin_refresh_seats_effect = yes
+}
+
+# ---------------------------------------------------------------------
+# The Sanhedrin sits wherever its Nasi leads a community (Daniel,
+# 2026-10-19): restored in Toledo, it sits in Toledo, and it moves when a
+# Nasi from elsewhere is elected, as the ancient court moved from Yavne to
+# Usha to Tiberias. Scope: the Nasi. Saves scope:kehillah_sanhedrin_city.
+# ---------------------------------------------------------------------
+kehillah_sanhedrin_sit_with_nasi_effect = {
+	if = {
+		limit = { exists = primary_title.title_capital_county }
+		primary_title.title_capital_county = { save_scope_as = kehillah_sanhedrin_city }
+	}
+	else_if = {
+		limit = { exists = capital_county }
+		capital_county = { save_scope_as = kehillah_sanhedrin_city }
+	}
+	else_if = {
+		limit = { exists = location.county }
+		location.county = { save_scope_as = kehillah_sanhedrin_city }
+	}
+	if = {
+		limit = { exists = scope:kehillah_sanhedrin_city }
+		title:d_kehillah_sanhedrin = {
+			set_capital_county = scope:kehillah_sanhedrin_city
+			set_variable = { name = kehillah_sanhedrin_city value = scope:kehillah_sanhedrin_city }
+		}
+	}
 }
 
 # ---------------------------------------------------------------------
@@ -71,7 +100,7 @@ kehillah_sanhedrin_grant_seat_effect = {
 		set_definitive_form = yes
 		set_can_be_named_after_dynasty = no
 		set_can_use_nomadic_naming = no
-		set_capital_county = title:c_tiberias
+		set_capital_county = title:d_kehillah_sanhedrin.title_capital_county
 		set_coa = scope:kehillah_seat_primary
 		set_color_from_title = scope:kehillah_seat_primary
 		change_title_holder = {
