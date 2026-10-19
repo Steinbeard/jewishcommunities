@@ -38,13 +38,22 @@ kehillah_restore_sanhedrin_effect = {
 	# Nasi onto a theocracy government, stripping his domicile and ending
 	# the player's game. Rabbis were lay scholars, not a priesthood, so
 	# lay clergy also fits. Both groups are main-rite doctrines.
+	#
+	# LIVE TEST 2026-10-19 (third run): setting the head also switches the
+	# faith's main rite to the head's own rite (Minhag Ashkenaz for a
+	# Rhineland Nasi). Doctrines set on the old main rite beforehand were
+	# lost with it, so they are applied to every Rabbinic rite, after the
+	# head is set, and again for each new Nasi (kehillah_sanhedrin_on_title_gain).
+	# Before AND after: before, so whichever rite becomes main already
+	# carries them when the head is set; after, in case the switch reset it.
+	kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
 	faith:rabbinic_faith = {
-		main_rite = {
-			change_rite_doctrine = doctrine_theocracy_lay_clergy
-			change_rite_doctrine = doctrine_temporal_head
-		}
 		set_religious_head_title = title:d_kehillah_sanhedrin
 	}
+	kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
+	# Belt and braces: a community leader who was pushed off his
+	# government anyway gets it, and his Quarter, back.
+	kehillah_sanhedrin_keep_kehillah_government_effect = yes
 	set_global_variable = { name = kehillah_sanhedrin_formed value = yes }
 	if = {
 		limit = { government_has_flag = government_is_kehillah }
@@ -52,6 +61,59 @@ kehillah_restore_sanhedrin_effect = {
 		kehillah_update_leader_flavor_effect = yes
 	}
 	kehillah_sanhedrin_refresh_seats_effect = yes
+}
+
+# ---------------------------------------------------------------------
+# Scope: a Nasi. If he leads a community but the head-of-faith role put
+# him on another government (as a theocracy did in live tests), put him
+# back on the Kehillah government and restore his Quarter.
+# kehillah_restore_quarter_effect reads scope:kq_title.
+# ---------------------------------------------------------------------
+kehillah_sanhedrin_keep_kehillah_government_effect = {
+	if = {
+		limit = {
+			is_ruler = yes
+			NOT = { government_has_flag = government_is_kehillah }
+			any_held_title = { is_kehillah_title_trigger = yes }
+		}
+		change_government = kehillah_government
+		random_held_title = {
+			limit = { is_kehillah_title_trigger = yes }
+			save_scope_as = kq_title
+		}
+		kehillah_restore_quarter_effect = yes
+	}
+}
+
+# ---------------------------------------------------------------------
+# Head-of-faith and clergy doctrines on every Rabbinic rite. Both groups
+# act through the main rite only, but the main rite follows the head of
+# faith's own rite, so every rite a Nasi might belong to carries them.
+# HEAD: doctrine_temporal_head / doctrine_no_head. CLERGY:
+# doctrine_theocracy_lay_clergy / doctrine_theocracy_temporal.
+# ---------------------------------------------------------------------
+kehillah_sanhedrin_set_rite_doctrines_effect = {
+	faith:rabbinic_faith.main_rite ?= {
+		change_rite_doctrine = $CLERGY$
+		change_rite_doctrine = $HEAD$
+	}
+	rite:rabbinism ?= {
+		change_rite_doctrine = $CLERGY$
+		change_rite_doctrine = $HEAD$
+	}
+	rite:merkabah ?= {
+		change_rite_doctrine = $CLERGY$
+		change_rite_doctrine = $HEAD$
+	}
+	# Guarded by the founding flag, not ?=: rite:minhag_ashkenaz errors
+	# before the rite exists (see kehillah_found_minhag_ashkenaz_effect).
+	if = {
+		limit = { exists = global_var:kehillah_minhag_ashkenaz_founded }
+		rite:minhag_ashkenaz = {
+			change_rite_doctrine = $CLERGY$
+			change_rite_doctrine = $HEAD$
+		}
+	}
 }
 
 # ---------------------------------------------------------------------
@@ -186,11 +248,8 @@ kehillah_sanhedrin_lapse_check_effect = {
 			NOT = { exists = title:d_kehillah_sanhedrin.holder }
 		}
 		remove_global_variable = kehillah_sanhedrin_formed
+		kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_no_head CLERGY = doctrine_theocracy_temporal }
 		faith:rabbinic_faith = {
-			main_rite = {
-				change_rite_doctrine = doctrine_no_head
-				change_rite_doctrine = doctrine_theocracy_temporal
-			}
 			every_clerical_elector_title = {
 				limit = { has_variable = kehillah_sanhedrin_seat }
 				add_to_list = kehillah_lapsed_seats
