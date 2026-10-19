@@ -90,6 +90,27 @@ build. Do not build them unattended.
    **First step before any build:** a one-cycle spike. Does a console-made landed Rabbinic
    count, holding the Sanhedrin as a spiritual head of faith, keep a non-theocratic government
    and stay playable?
+
+   **Daniel's decisions, 2026-10-19 (same day):**
+   - **The grant.**
+     - It starts simple: the liege grants **the county your Kehillah is in**, if it is a
+       **non-capital county in his own domain** and he is agreeable.
+     - Later, a liege who is willing but whose county is ineligible may offer an **obscure
+       county** instead.
+     - Purchase, pledges and exchanges are not planned for now.
+   - **Resistance.**
+     - A liege with **less land** resists more.
+     - A **more valuable** county is harder to obtain.
+   - **The Nasi government *replaces* the Kehillah government for the Nasi.**
+     - It is **landed** and **can be independent**.
+     - It has **no pillars**.
+     - It keeps the **domicile** and the **beit midrash**.
+     - Under a **non-Jewish liege** it still suffers the dangers, expulsion and Jewish-policy
+       effects that a Kehillah does.
+   - **Order:**
+     1. the spike;
+     2. the simple domain-county grant plus the Nasi government;
+     3. the Jewish-liege variant.
 2. **Kehillot under a Jewish government.** Is a community under a Jewish ruler (Khazaria, a
    restored Israel) still a separate tributary body, part of the realm, or something between?
 3. **Other Jewish faiths.**
