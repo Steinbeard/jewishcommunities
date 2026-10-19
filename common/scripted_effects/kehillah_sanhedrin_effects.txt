@@ -31,18 +31,8 @@ kehillah_restore_sanhedrin_effect = {
 	title:d_kehillah_sanhedrin = {
 		add_title_law = kehillah_sanhedrin_succession_law
 	}
-	# ORDER (spec section 9): doctrines, then government, then the head.
-	# A landless Nasi moves onto kehillah_nasi_government BEFORE he
-	# becomes head, so the engine's forced theocracy finds him already on
-	# the faith's theocracy government and has nothing to change. Setting
-	# the head also moves the faith's main rite to his rite, so the
-	# doctrines are applied to every rite, before and after.
-	kehillah_sanhedrin_apply_head_doctrines_effect = yes
-	kehillah_reconcile_nasi_government_effect = yes
-	faith:rabbinic_faith = {
-		set_religious_head_title = title:d_kehillah_sanhedrin
-	}
-	kehillah_sanhedrin_apply_head_doctrines_effect = yes
+	# The engine head-of-faith link only for a LANDED Nasi (spec section 10).
+	kehillah_sanhedrin_apply_head_link_effect = yes
 	kehillah_reconcile_nasi_government_effect = yes
 	# The engine settles governments after effects return; check again.
 	trigger_event = { id = kehillah_synod.0003 days = 1 }
@@ -56,22 +46,40 @@ kehillah_restore_sanhedrin_effect = {
 }
 
 # ---------------------------------------------------------------------
-# The head-of-faith doctrines for the scoped Nasi, on every rite.
-#   A landless Nasi (a community rabbi): a SPIRITUAL head, the Pope's
-#   model, with Judaism's vanilla theocratic clergy. He sits on
-#   kehillah_nasi_government, the faith's theocracy government.
-#   A landed Nasi (a Jewish king): a TEMPORAL head, the Caliph's model,
-#   with lay clergy, which doctrine_temporal_head requires. A landed
-#   ruler keeps his own government. Not yet live-tested.
-# Run again for every new Nasi, since the next one may be the other kind.
+# The engine head-of-faith link for the scoped Nasi (spec section 10).
+# Run at restoration and for every new Nasi, since the next may be the
+# other kind.
+#   A LANDED Nasi (a Jewish king): the Sanhedrin becomes the faith's
+#   head-of-faith title, a TEMPORAL head (the Caliph's model) with lay
+#   clergy, which doctrine_temporal_head requires. Not yet live-tested.
+#   A LANDLESS Nasi (a community rabbi): no engine head. Five live tests
+#   on 2026-10-19 showed CK3 forces a landless head of faith onto vanilla's
+#   generic theocracy government whatever the doctrines, and refuses the
+#   Kehillah government ("illegal government"), even kehillah_nasi_
+#   government with the theocracy mechanic. That cost the Quarter and
+#   ended the game. With the link removed and doctrine_no_head (test G),
+#   the Kehillah government stays. The Sanhedrin title, its election,
+#   seats, intent and takkanot all still work; only vanilla's own
+#   head-of-faith powers are absent. Order matters: link off first, then
+#   doctrines, then the government (test G's order).
+# Setting the head moves the faith's main rite to the head's rite, so the
+# doctrines go on every rite, before and after.
 # ---------------------------------------------------------------------
-kehillah_sanhedrin_apply_head_doctrines_effect = {
+kehillah_sanhedrin_apply_head_link_effect = {
 	if = {
 		limit = { is_landed = yes }
 		kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
+		faith:rabbinic_faith = {
+			set_religious_head_title = title:d_kehillah_sanhedrin
+		}
+		kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
 	}
 	else = {
-		kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_spiritual_head CLERGY = doctrine_theocracy_temporal }
+		if = {
+			limit = { exists = faith:rabbinic_faith.religious_head }
+			faith:rabbinic_faith = { remove_religious_head_title = yes }
+		}
+		kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_no_head CLERGY = doctrine_theocracy_temporal }
 	}
 }
 
@@ -99,8 +107,13 @@ kehillah_sanhedrin_apply_head_doctrines_effect = {
 # Each switch logs a KEHILLAH_NASI_GOV line for live verification.
 # ---------------------------------------------------------------------
 kehillah_reconcile_nasi_government_effect = {
+	# Rule 1 is OFF (spec section 10): a landless Nasi is no longer an
+	# engine head of faith, so he stays on the Kehillah government. The
+	# branch is kept, behind always = no, for a later attempt at the Nasi
+	# government; rules 2 and 3 still return anyone else to Kehillah.
 	if = {
 		limit = {
+			always = no
 			is_ruler = yes
 			is_landed = no
 			kehillah_is_sanhedrin_head_trigger = yes
