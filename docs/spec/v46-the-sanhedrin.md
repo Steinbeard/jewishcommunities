@@ -150,3 +150,26 @@ Run on a fresh 1066 boot, as Worms.
 
 **If electors come back empty:** the fallback is to make the members claimants of the title
 (the `title_claimants` set) instead of clerical electors. Record it in a dated addendum.
+
+## 9-10. Head of faith and government: what the live tests settled (2026-10-19)
+
+Full record: [the live test log](../testing/2026-10-19-synod-sanhedrin-live-test-log.md).
+
+- **The engine rule.** CK3 forces a **landless head of faith** onto the faith's theocracy
+  government (vanilla `theocracy_government` for Rabbinic Judaism). This happens whether the head
+  is spiritual or temporal, with theocratic or lay clergy, and whatever the title's landless flag.
+  The Kehillah government is then refused as illegal. The domicile is lost, and the player gets
+  Game Over. The community's succession also breaks: titles were left vacant.
+- **Shipped (73ce2de, live PASS).** `kehillah_sanhedrin_apply_head_link_effect` decides per Nasi:
+  - **a landless Nasi (a community rabbi):** no engine head, `doctrine_no_head`, the Kehillah
+    government kept. Title, election, seats, the Nasi style, intents and takkanot all work;
+  - **a landed Nasi (a king):** the Sanhedrin is a temporal head of faith with lay clergy, on the
+    Caliph's model. This path is untested.
+- **`kehillah_nasi_government` is defined but unused** (reconcile rule 1 is behind
+  `always = no`). The diagnostic showed the engine ignored the **faith-level**
+  `theocracy_government_type`; vanilla sets it only at **religion level**. A religion-level
+  setting is the one untried route to making a rabbi-Nasi a true head of faith. It would also
+  reach Karaite, Samaritan and other Jewish theocracies, so it needs its own design (for example
+  widening the Nasi government's `can_get_government`, or per-faith handling) and a live test.
+- **Tried and ruled out:** temple land for Kehillah leaders. Holding a barony destroyed the
+  community title (`require_landless`), forced theocracy, and made the leader the Kaiser's vassal.
