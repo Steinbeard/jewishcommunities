@@ -65,8 +65,17 @@ Spec: [v47](docs/spec/v47-gaon-and-the-seat-of-the-sanhedrin.md).
   - the Sanhedrin only in the Land of Israel, on a landed seat with a College election.
 - **Live-proven building blocks:** a Kehillah head of rite through `head_of_rite`; a landed Nasi
   as head of faith. The spike code is in `docs/spikes/2026-10-19-landed-nasi-and-gaonate.patch`.
-- **Next:** build-order step 1, the merit mechanic. Unattended runs may BUILD it, with a live
-  test. It reuses the patch's Gaonate title and the `head_of_rite` field.
+- **Phase A BUILT and live-tested, 2026-10-19 (8fd8737, 57fe3d8).**
+  - Heads of rite come from the **Recognition of the Sages** doctrine (Rabbinic faith and Minhag
+    Ashkenaz). A yearly acclamation event, "The Voice of the Generation", lets the most eminent
+    qualifying rabbi accept the headship for life, or decline it. He is styled Rabbenu in
+    Ashkenaz, Gaon otherwise.
+  - The **Office of the Gaon** decision, for Sura or Baghdad, makes the headship inherited with
+    the academy. A lay successor loses it.
+  - Live PASS: the doctrine in the faith window; a player accepting (Rabbenu); an AI accepting
+    (Gaon); the office passing through two rabbi successors; a lay lapse.
+  - Fixed afterwards and not yet re-run: a lay heir kept the Gaon style.
+- **Next:** Phase B, the Sanhedrin in the Land (v47 build order, step 2).
 
 ### Open design: landed Jewish polities and other Jewish faiths (Daniel, 2026-10-19) — DANIEL-REVIEW
 
