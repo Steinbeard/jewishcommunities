@@ -17,7 +17,10 @@
 
 # Refresh the engine's head of the holder's rite. Scope: a character.
 kehillah_gaonate_refresh_head_of_rite_effect = {
-	rite ?= { force_refresh_head_of_rite = yes }
+	# Hidden: the effect has no tooltip loc (live 2026-10-19).
+	hidden_effect = {
+		rite ?= { force_refresh_head_of_rite = yes }
+	}
 }
 
 # ---------------------------------------------------------------------
@@ -90,6 +93,8 @@ kehillah_gaonate_establish_office_effect = {
 # office makes him Gaon; otherwise it lapses to merit.
 # ---------------------------------------------------------------------
 kehillah_gaonate_academy_succession_effect = {
+	debug_log = "KEHILLAH_GAONATE: academy succession check"
+	debug_log_scopes = yes
 	if = {
 		limit = {
 			has_trait = kehillah_rabbi_trait
@@ -114,6 +119,20 @@ kehillah_gaonate_academy_succession_effect = {
 # Yearly. An office whose academy has no holder lapses to merit.
 # ---------------------------------------------------------------------
 kehillah_gaonate_yearly_effect = {
+	# Catch-up (live 2026-10-19: the day-after pass-on did not happen):
+	# an office with no Gaon, whose academy has a rabbi-leader, gives him
+	# the title. Succession cannot fail silently for more than a year.
+	if = {
+		limit = {
+			exists = global_var:kehillah_gaonate_office_academy
+			exists = global_var:kehillah_gaonate_office_academy.holder
+			NOT = { exists = title:d_kehillah_gaonate.holder }
+		}
+		global_var:kehillah_gaonate_office_academy.holder = {
+			debug_log = "KEHILLAH_GAONATE: yearly catch-up for the academy's leader"
+			kehillah_gaonate_academy_succession_effect = yes
+		}
+	}
 	if = {
 		limit = {
 			exists = global_var:kehillah_gaonate_office_academy
