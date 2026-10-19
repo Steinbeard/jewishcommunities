@@ -68,6 +68,28 @@ build. Do not build them unattended.
 
    The 2026-10-19 spike showed a Kehillah leader cannot simply be given a barony
    (`cannot_be_vassal_or_liege`). Independent baronies are not a CK3 concept.
+
+   **Daniel's direction, 2026-10-19:** a fully empowered Sanhedrin needs a **county**, granted by
+   the host. It should be very hard in the diaspora, through a demanding petition to one's
+   liege, after the Roman grant of the Patriarchate at Tiberias and the caliphs' recognition of
+   the Exilarch. That makes the Nasi a landed vassal, which the engine allows to be a head of
+   faith (as the Caliph is). It would also introduce a **Sanhedrin government**:
+   - landed, held as a vassal;
+   - built from Kehillah components (council and officers, pillars, the Bet Din, appointment
+     succession);
+   - parts reusable for Jewish kingdoms that should not be plain feudal or nomadic.
+
+   Open points:
+   - Does the Nasi leave his Kehillah for the county (the Pope leaving his diocese), or does the
+     community move with him?
+   - Is there a landless "Sanhedrin in exile" stage before the land is granted? Today's build is
+     effectively that stage.
+   - What does the petition cost, and how does it depend on the host's faith and teaching?
+   - Does the government need the theocracy mechanic?
+
+   **First step before any build:** a one-cycle spike. Does a console-made landed Rabbinic
+   count, holding the Sanhedrin as a spiritual head of faith, keep a non-theocratic government
+   and stay playable?
 2. **Kehillot under a Jewish government.** Is a community under a Jewish ruler (Khazaria, a
    restored Israel) still a separate tributary body, part of the realm, or something between?
 3. **Other Jewish faiths.**
