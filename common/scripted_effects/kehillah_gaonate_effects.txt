@@ -1,19 +1,37 @@
 ﻿# V47 heads of rite (docs/spec/v47-gaon-and-the-seat-of-the-sanhedrin.md).
 #
-# d_kehillah_gaonate is Rabbinic Judaism's head_of_rite title. It is ALWAYS
-# destroyed on its holder's death (destroy_on_succession), and the two
-# modes differ in what happens next:
-#   - MERIT (the default): nothing. The rite has no head until another
-#     rabbi earns it (kehillah_seek_head_of_rite_decision).
+# d_kehillah_gaonate is Rabbinic Judaism's head_of_rite title. Two modes
+# (kehillah_gaonate_set_mode_effect):
+#   - MERIT (the default): destroyed on its holder's death. The rite has no
+#     head until another rabbi earns it (kehillah_seek_head_of_rite_decision).
 #   - OFFICE: after kehillah_establish_gaon_office_decision,
 #     global_var:kehillah_gaonate_office_academy names the academy's
-#     community. When that community gets a new rabbi-leader,
-#     kehillah_gaonate_academy_succession_effect grants him the title.
-#     A lay leader, or an academy with no holder, lets the office lapse.
-#     Why not set_always_follows_primary_heir: it only accepts yes
-#     (ck3-tiger), so an office set that way could never lapse.
+#     community, and the title is NOT destroyed on succession, so the
+#     engine passes it with the community to the leader's appointed
+#     successor (Daniel's suggestion, 2026-10-19). A lay successor loses it
+#     and the office lapses (kehillah_gaonate_academy_succession_effect,
+#     run a day later by kehillah_synod.0004, which also re-grants the
+#     title if it was somehow lost). An academy with no holder lapses too.
+#     Not set_always_follows_primary_heir: it only accepts yes (ck3-tiger).
 # Granting it never makes it the holder's primary title (never-primary
 # score, plus set_primary_title_to).
+
+# The title's mode (Daniel, 2026-10-19). In OFFICE mode it is not
+# destroyed on succession, so the engine passes it with the academy's
+# community to the leader's appointed successor, like any title he holds.
+# In MERIT mode it dies with its holder. Scope: any.
+kehillah_gaonate_set_mode_effect = {
+	if = {
+		limit = { exists = title:d_kehillah_gaonate.holder }
+		if = {
+			limit = { exists = global_var:kehillah_gaonate_office_academy }
+			title:d_kehillah_gaonate = { set_destroy_on_succession = no }
+		}
+		else = {
+			title:d_kehillah_gaonate = { set_destroy_on_succession = yes }
+		}
+	}
+}
 
 # Refresh the engine's head of the holder's rite. Scope: a character.
 kehillah_gaonate_refresh_head_of_rite_effect = {
@@ -44,9 +62,11 @@ kehillah_gaonate_grant_effect = {
 	resolve_title_and_vassal_change = scope:change
 	set_primary_title_to = scope:kehillah_new_gaon_primary
 	title:d_kehillah_gaonate = {
-		set_destroy_on_succession = yes
 		set_capital_county = scope:kehillah_new_gaon_primary.title_capital_county
 	}
+	# Merit: the title dies with him. Office: it is inherited with the
+	# academy (kehillah_gaonate_establish_office_effect).
+	kehillah_gaonate_set_mode_effect = yes
 	kehillah_gaonate_refresh_head_of_rite_effect = yes
 	kehillah_update_leader_flavor_effect = yes
 	kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_head_of_rite_greatness }
@@ -72,6 +92,7 @@ kehillah_gaonate_grant_effect = {
 kehillah_gaonate_establish_office_effect = {
 	save_scope_as = kehillah_gaon_founder
 	set_global_variable = { name = kehillah_gaonate_office_academy value = primary_title }
+	kehillah_gaonate_set_mode_effect = yes
 	kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_gaon_office_greatness }
 	every_player = {
 		limit = {
@@ -111,6 +132,13 @@ kehillah_gaonate_academy_succession_effect = {
 	else_if = {
 		limit = { NOT = { has_trait = kehillah_rabbi_trait } }
 		remove_global_variable = kehillah_gaonate_office_academy
+		# With office-mode inheritance a lay heir receives the title with
+		# the community; a layman cannot head the rite.
+		if = {
+			limit = { kehillah_is_gaonate_holder_trigger = yes }
+			destroy_title = title:d_kehillah_gaonate
+			kehillah_gaonate_refresh_head_of_rite_effect = yes
+		}
 		debug_log = "KEHILLAH_GAONATE: office lapsed (the academy's new leader is no rabbi)"
 	}
 }
@@ -139,6 +167,7 @@ kehillah_gaonate_yearly_effect = {
 			NOT = { exists = global_var:kehillah_gaonate_office_academy.holder }
 		}
 		remove_global_variable = kehillah_gaonate_office_academy
+		kehillah_gaonate_set_mode_effect = yes
 		debug_log = "KEHILLAH_GAONATE: office lapsed (the academy has no holder)"
 	}
 }
