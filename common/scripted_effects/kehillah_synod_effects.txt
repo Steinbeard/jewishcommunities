@@ -84,29 +84,91 @@ kehillah_apply_ashkenaz_rite_effect = {
 	}
 }
 
+
+# ---------------------------------------------------------------------
+# Open a synod inside a Sitting of the Bet Din. Scope: the host, from
+# phase_bet_din_case_1's on_phase_active once the docket has opened
+# (scope:activity). The host's own vote is the 1 seeded into votes_for.
+# The cooldown starts now, and kehillah_synod_in_session waives the
+# intent's requirements for the rest of the sitting.
+# ---------------------------------------------------------------------
+kehillah_synod_open_session_effect = {
+	scope:activity = {
+		set_variable = { name = kehillah_synod_votes_for value = 1 }
+		set_variable = { name = kehillah_synod_votes_against value = 0 }
+	}
+	if = {
+		limit = { has_activity_intent = kehillah_bet_din_sanhedrin_intent }
+		scope:activity = { set_variable = { name = kehillah_synod_level value = flag:sanhedrin } }
+	}
+	else = {
+		scope:activity = { set_variable = { name = kehillah_synod_level value = flag:regional } }
+	}
+	set_variable = { name = kehillah_synod_in_session days = 365 }
+	set_variable = { name = kehillah_synod_cooldown years = kehillah_synod_cooldown_years }
+	if = {
+		limit = { kehillah_synod_has_marriage_motion_trigger = yes }
+		trigger_event = { id = kehillah_synod.0100 days = kehillah_synod_motion_delay_days }
+	}
+	else = {
+		trigger_event = { id = kehillah_synod.0105 days = kehillah_synod_motion_delay_days }
+	}
+}
+
+# Put the chosen motion before the sitting. Scope: the host, in a motion
+# event. MOTION: flag:<takkanah>.
+kehillah_synod_put_motion_effect = {
+	involved_activity ?= { set_variable = { name = kehillah_synod_takkanah value = $MOTION$ } }
+	add_prestige = {
+		value = kehillah_synod_prestige_cost
+		multiply = -1
+	}
+	trigger_event = kehillah_synod.0101
+}
+
 # ---------------------------------------------------------------------
 # Write a takkanah to the scoped leader's community and to every
-# registered community of the same minhag region. VAR: the variable name.
+# registered community it binds: the same minhag region at a Synod, every
+# community at a Sanhedrin (scope:kehillah_synod_level). VAR: the
+# variable name.
 # ---------------------------------------------------------------------
-kehillah_synod_bind_region_effect = {
+kehillah_synod_bind_effect = {
 	save_scope_as = kehillah_synod_binder
 	primary_title ?= { set_variable = $VAR$ }
-	every_in_global_list = {
-		variable = kehillah_registered_communities
-		limit = {
-			holder ?= {
-				NOT = { this = scope:kehillah_synod_binder }
-				government_has_flag = government_is_kehillah
-				kehillah_shares_minhag_region_trigger = { OTHER = scope:kehillah_synod_binder }
+	if = {
+		limit = { scope:kehillah_synod_level ?= flag:sanhedrin }
+		custom_tooltip = kehillah_sanhedrin_binds_all_tt
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				holder ?= {
+					NOT = { this = scope:kehillah_synod_binder }
+					government_has_flag = government_is_kehillah
+				}
 			}
+			set_variable = $VAR$
 		}
-		set_variable = $VAR$
+	}
+	else = {
+		custom_tooltip = kehillah_synod_binds_region_tt
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				holder ?= {
+					NOT = { this = scope:kehillah_synod_binder }
+					government_has_flag = government_is_kehillah
+					kehillah_shares_minhag_region_trigger = { OTHER = scope:kehillah_synod_binder }
+				}
+			}
+			set_variable = $VAR$
+		}
 	}
 }
 
 # ---------------------------------------------------------------------
-# Enact the takkanah a Regional Synod passed. Scope: the host.
-# scope:kehillah_synod_takkanah: the flag the planner option wrote.
+# Enact the takkanah a synod passed. Scope: the host.
+# scope:kehillah_synod_takkanah: the motion flag.
+# scope:kehillah_synod_level: flag:regional or flag:sanhedrin.
 # ---------------------------------------------------------------------
 kehillah_synod_enact_takkanah_effect = {
 	if = {
@@ -116,39 +178,44 @@ kehillah_synod_enact_takkanah_effect = {
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
 	}
 	else_if = {
+		limit = { scope:kehillah_synod_takkanah = flag:herem_all_israel }
+		custom_tooltip = kehillah_sanhedrin_herem_all_israel_tt
+		rite:rabbinism ?= { change_rite_doctrine = doctrine_monogamy }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
+	}
+	else_if = {
 		limit = { scope:kehillah_synod_takkanah = flag:ketubbah_clause }
-		custom_tooltip = kehillah_synod_binds_region_tt
-		kehillah_synod_bind_region_effect = { VAR = kehillah_takkanah_ketubbah_clause }
+		kehillah_synod_bind_effect = { VAR = kehillah_takkanah_ketubbah_clause }
 		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_ketubbah_stability }
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_ketubbah_greatness }
 	}
 	else_if = {
 		limit = { scope:kehillah_synod_takkanah = flag:gentile_courts }
-		custom_tooltip = kehillah_synod_binds_region_tt
-		kehillah_synod_bind_region_effect = { VAR = kehillah_takkanah_gentile_courts }
+		kehillah_synod_bind_effect = { VAR = kehillah_takkanah_gentile_courts }
 		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_gentile_courts_stability }
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
 	}
 	else_if = {
 		limit = { scope:kehillah_synod_takkanah = flag:informers }
-		custom_tooltip = kehillah_synod_binds_region_tt
-		kehillah_synod_bind_region_effect = { VAR = kehillah_takkanah_informers }
+		kehillah_synod_bind_effect = { VAR = kehillah_takkanah_informers }
 		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_informers_stability }
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
 	}
 	else_if = {
 		limit = { scope:kehillah_synod_takkanah = flag:hayishuv }
-		custom_tooltip = kehillah_synod_binds_region_tt
-		kehillah_synod_bind_region_effect = { VAR = kehillah_takkanah_hayishuv }
+		kehillah_synod_bind_effect = { VAR = kehillah_takkanah_hayishuv }
 		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_synod_hayishuv_prosperity }
 		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_hayishuv_stability }
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_hayishuv_greatness }
 	}
 	else_if = {
 		limit = { scope:kehillah_synod_takkanah = flag:letters }
-		custom_tooltip = kehillah_synod_binds_region_tt
-		kehillah_synod_bind_region_effect = { VAR = kehillah_takkanah_letters }
+		kehillah_synod_bind_effect = { VAR = kehillah_takkanah_letters }
 		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_letters_stability }
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_letters_greatness }
+	}
+	if = {
+		limit = { scope:kehillah_synod_level ?= flag:sanhedrin }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_sanhedrin_passed_greatness }
 	}
 }

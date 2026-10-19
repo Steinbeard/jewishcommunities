@@ -1,6 +1,10 @@
 ﻿# V45 rabbinic synods (docs/spec/v45-rabbinic-synods-and-minhag-ashkenaz.md).
 #   0001        the 1066 Rhineland synod: Gershom's ordinances renewed
-#   0101-0103   the Regional Synod activity: opening, delegate vote, ruling
+#   0100, 0105  a synod's motion (two pages: marriage, then communal order)
+#   0101-0103   the host argues, a delegate votes, the ruling
+# A synod is a Sitting of the Bet Din held with the Synod or Sanhedrin
+# intent. kehillah_synod_open_session_effect starts it beside the docket;
+# the conference's on_complete fires the ruling.
 namespace = kehillah_synod
 
 # ---------------------------------------------------------------------
@@ -34,6 +38,7 @@ kehillah_synod.0001 = {
 	}
 
 	immediate = {
+		save_scope_value_as = { name = kehillah_synod_level value = flag:regional }
 		if = {
 			limit = {
 				exists = title:d_kehillah_mainz.holder
@@ -53,7 +58,7 @@ kehillah_synod.0001 = {
 		custom_tooltip = kehillah_synod_found_ashkenaz_tt
 		hidden_effect = { kehillah_found_minhag_ashkenaz_effect = yes }
 		custom_tooltip = kehillah_synod_divorce_ordinance_tt
-		kehillah_synod_bind_region_effect = { VAR = kehillah_takkanah_gershom_divorce }
+		kehillah_synod_bind_effect = { VAR = kehillah_takkanah_gershom_divorce }
 		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_1066_both_stability }
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_1066_both_greatness }
 		ai_chance = { base = 70 }
@@ -86,10 +91,103 @@ kehillah_synod.0001 = {
 }
 
 # ---------------------------------------------------------------------
-# kehillah_synod.0101 -- REGIONAL SYNOD, THE OPENING (host)
-# Fired by the activity's single phase. The host argues the takkanah the
-# planner chose; a won argument marks the activity, and the delegates'
-# votes lean on that mark.
+# kehillah_synod.0100 -- THE MOTION, MARRIAGE (host)
+# kehillah_synod.0105 -- THE MOTION, COMMUNAL ORDER (host)
+# Two pages so no event offers more than four choices. Each option is
+# shown only while its takkanah is open to this host.
+# ---------------------------------------------------------------------
+kehillah_synod.0100 = {
+	type = character_event
+	title = kehillah_synod.0100.t
+	desc = kehillah_synod.0100.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = { exists = involved_activity }
+
+	option = {
+		name = kehillah_synod_option_herem_polygamy
+		trigger = { kehillah_synod_can_propose_herem_polygamy_trigger = yes }
+		custom_tooltip = kehillah_synod_option_herem_polygamy_desc
+		kehillah_synod_put_motion_effect = { MOTION = flag:herem_polygamy }
+		ai_chance = { base = 100 }
+	}
+	option = {
+		name = kehillah_synod_option_herem_all_israel
+		trigger = {
+			kehillah_synod_is_sanhedrin_trigger = yes
+			kehillah_synod_can_propose_herem_all_israel_trigger = yes
+		}
+		custom_tooltip = kehillah_synod_option_herem_all_israel_desc
+		kehillah_synod_put_motion_effect = { MOTION = flag:herem_all_israel }
+		ai_chance = { base = 5 }
+	}
+	option = {
+		name = kehillah_synod_option_ketubbah_clause
+		trigger = { kehillah_synod_can_propose_ketubbah_clause_trigger = yes }
+		custom_tooltip = kehillah_synod_option_ketubbah_clause_desc
+		kehillah_synod_put_motion_effect = { MOTION = flag:ketubbah_clause }
+		ai_chance = { base = 30 }
+	}
+	option = {
+		name = kehillah_synod.0100.other
+		trigger = { kehillah_synod_has_communal_motion_trigger = yes }
+		trigger_event = kehillah_synod.0105
+		ai_chance = { base = 30 }
+	}
+}
+
+kehillah_synod.0105 = {
+	type = character_event
+	title = kehillah_synod.0100.t
+	desc = kehillah_synod.0105.desc
+	theme = faith
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = { exists = involved_activity }
+
+	option = {
+		name = kehillah_synod_option_gentile_courts
+		trigger = { kehillah_synod_can_propose_gentile_courts_trigger = yes }
+		custom_tooltip = kehillah_synod_option_gentile_courts_desc
+		kehillah_synod_put_motion_effect = { MOTION = flag:gentile_courts }
+		ai_chance = { base = 30 }
+	}
+	option = {
+		name = kehillah_synod_option_informers
+		trigger = { kehillah_synod_can_propose_informers_trigger = yes }
+		custom_tooltip = kehillah_synod_option_informers_desc
+		kehillah_synod_put_motion_effect = { MOTION = flag:informers }
+		ai_chance = { base = 30 }
+	}
+	option = {
+		name = kehillah_synod_option_hayishuv
+		trigger = { kehillah_synod_can_propose_hayishuv_trigger = yes }
+		custom_tooltip = kehillah_synod_option_hayishuv_desc
+		kehillah_synod_put_motion_effect = { MOTION = flag:hayishuv }
+		ai_chance = { base = 20 }
+	}
+	option = {
+		name = kehillah_synod_option_letters
+		trigger = { kehillah_synod_can_propose_letters_trigger = yes }
+		custom_tooltip = kehillah_synod_option_letters_desc
+		kehillah_synod_put_motion_effect = { MOTION = flag:letters }
+		ai_chance = { base = 20 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_synod.0101 -- THE HOST ARGUES THE MOTION
+# A won argument marks the activity, and the delegates' votes lean on
+# that mark.
 # ---------------------------------------------------------------------
 kehillah_synod.0101 = {
 	type = character_event
@@ -98,6 +196,7 @@ kehillah_synod.0101 = {
 		desc = kehillah_synod.0101.desc
 		first_valid = {
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:herem_polygamy } desc = kehillah_synod_motion_herem_polygamy }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:herem_all_israel } desc = kehillah_synod_motion_herem_all_israel }
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:ketubbah_clause } desc = kehillah_synod_motion_ketubbah_clause }
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:gentile_courts } desc = kehillah_synod_motion_gentile_courts }
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:informers } desc = kehillah_synod_motion_informers }
@@ -205,7 +304,7 @@ kehillah_synod.0101 = {
 }
 
 # ---------------------------------------------------------------------
-# kehillah_synod.0102 -- REGIONAL SYNOD, A DELEGATE VOTES
+# kehillah_synod.0102 -- A DELEGATE VOTES
 # ---------------------------------------------------------------------
 kehillah_synod.0102 = {
 	type = character_event
@@ -214,6 +313,7 @@ kehillah_synod.0102 = {
 		desc = kehillah_synod.0102.desc
 		first_valid = {
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:herem_polygamy } desc = kehillah_synod_motion_herem_polygamy }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:herem_all_israel } desc = kehillah_synod_motion_herem_all_israel }
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:ketubbah_clause } desc = kehillah_synod_motion_ketubbah_clause }
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:gentile_courts } desc = kehillah_synod_motion_gentile_courts }
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:informers } desc = kehillah_synod_motion_informers }
@@ -305,11 +405,13 @@ kehillah_synod.0102 = {
 	}
 }
 
+
 # ---------------------------------------------------------------------
-# kehillah_synod.0103 -- REGIONAL SYNOD, THE RULING (host)
-# Fired from the activity's on_complete, so the synod always reaches it
-# and nothing chains past it. The host's own vote is the 1 the phase seeds
-# into kehillah_synod_votes_for.
+# kehillah_synod.0103 -- THE RULING (host)
+# Fired from the Bet Din's on_complete, so every synod reaches it and
+# nothing chains past it. Everything that reads the activity is settled in
+# immediate, while the activity still exists: the player may answer days
+# later. The host's own vote is the 1 seeded into votes_for.
 # ---------------------------------------------------------------------
 kehillah_synod.0103 = {
 	type = character_event
@@ -317,11 +419,11 @@ kehillah_synod.0103 = {
 	desc = {
 		first_valid = {
 			triggered_desc = {
-				trigger = { kehillah_synod_quorum_present_trigger = no }
+				trigger = { scope:kehillah_synod_outcome = flag:no_quorum }
 				desc = kehillah_synod.0103.desc.no_quorum
 			}
 			triggered_desc = {
-				trigger = { kehillah_synod_motion_carried_trigger = yes }
+				trigger = { scope:kehillah_synod_outcome = flag:passed }
 				desc = kehillah_synod.0103.desc.passed
 			}
 			desc = kehillah_synod.0103.desc.failed
@@ -344,30 +446,39 @@ kehillah_synod.0103 = {
 			name = kehillah_synod_takkanah
 			value = involved_activity.var:kehillah_synod_takkanah
 		}
+		save_scope_value_as = {
+			name = kehillah_synod_level
+			value = involved_activity.var:kehillah_synod_level
+		}
+		if = {
+			limit = { kehillah_synod_quorum_present_trigger = no }
+			save_scope_value_as = { name = kehillah_synod_outcome value = flag:no_quorum }
+		}
+		else_if = {
+			limit = { kehillah_synod_motion_carried_trigger = yes }
+			save_scope_value_as = { name = kehillah_synod_outcome value = flag:passed }
+		}
+		else = {
+			save_scope_value_as = { name = kehillah_synod_outcome value = flag:failed }
+		}
+		remove_variable = kehillah_synod_in_session
 	}
 
 	option = {
 		name = kehillah_synod.0103.a
 		if = {
-			limit = {
-				kehillah_synod_quorum_present_trigger = yes
-				kehillah_synod_motion_carried_trigger = yes
-			}
+			limit = { scope:kehillah_synod_outcome = flag:passed }
 			kehillah_synod_enact_takkanah_effect = yes
 		}
 		else_if = {
-			limit = { kehillah_synod_quorum_present_trigger = yes }
+			limit = { scope:kehillah_synod_outcome = flag:failed }
 			kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_failed_greatness }
 		}
 	}
 
 	after = {
 		if = {
-			limit = {
-				exists = involved_activity
-				kehillah_synod_quorum_present_trigger = yes
-				kehillah_synod_motion_carried_trigger = yes
-			}
+			limit = { scope:kehillah_synod_outcome = flag:passed }
 			kehillah_notify_region_players_effect = { TYPE = msg_kehillah_community_news TITLE = kehillah_news_synod_t DESC = kehillah_news_synod_passed_d }
 		}
 	}

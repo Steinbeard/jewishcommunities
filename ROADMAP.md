@@ -30,7 +30,13 @@ Spec: [v45](docs/spec/v45-rabbinic-synods-and-minhag-ashkenaz.md). It answers v2
 - **Polygamy restored to the general Rabbinic rite** in starts after 1000. Vanilla's yearly event
   is suppressed so it can't undo this.
 - **The 1066 Rhineland synod** (`kehillah_synod.0001`), 30 days in.
-- **The Regional Synod activity**, with six takkanot as planner options.
+- **The synod tiers.** Revised 2026-10-19, per Daniel: no separate activity. The Sitting of the
+  Bet Din has two gated host intents.
+  - **Synod:** for the region's leading community; its takkanot bind the region.
+  - **Sanhedrin:** only for the head of the Sanhedrin, the seat being Jerusalem in 1066; its
+    takkanot bind every community, and it alone may extend the herem to all Israel.
+  - The motion is chosen in an event when the docket opens, and the ruling comes at the close
+    (spec §8).
 - **The Second Wife case** now checks the host's rite and writes a ketubbah clause instead of
   editing the faith. It could not be drawn at all in a 1066 start before this.
 
@@ -45,7 +51,10 @@ Spec: [v45](docs/spec/v45-rabbinic-synods-and-minhag-ashkenaz.md). It answers v2
 2. Let `kehillah_synod.0001` fire, choose renew-both, then `kehillah_synod_debug.1` on the Worms
    leader and on a Lucena character.
 3. Confirm the rite window shows Minhag Ashkenaz.
-4. Host a Regional Synod from Worms (F9) after setting a rival community's Greatness below Worms's.
+4. Plan a Sitting of the Bet Din from Worms with the Synod intent (once Worms leads its region by
+   Greatness), and confirm the motion, the votes and the ruling at the close.
+5. Play as Jerusalem and repeat with the Sanhedrin intent, confirming that delegates come from
+   other regions.
 
 **Follow-ups:**
 - A lasting baseline term and breakdown line for each takkanah.

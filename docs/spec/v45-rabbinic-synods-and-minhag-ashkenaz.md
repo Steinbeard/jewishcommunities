@@ -1,8 +1,9 @@
 # V45: Rabbinic synods and Minhag Ashkenaz
 
-**Status:** Daniel's request and decisions, 2026-10-18. Slice 1 (the rite, the 1066 synod, the
-Second Wife fix) and slice 2 (the Regional Synod activity) are built in this pass. See §7 for what
-was verified and what still needs a live test.
+**Status:** Daniel's request and decisions, 2026-10-18. Built: the rite, the 1066 synod and the
+Second Wife fix. The synod tiers were revised on 2026-10-19 (§8): they are now Synod and
+Sanhedrin intents of the Bet Din, replacing §3's separate activity. Nothing here is live-tested
+yet (§7).
 
 **Answers, and so closes,** [v25](v25-by-god-alone-adaptation-proposals.md) §12 questions 6-8 (rite
 compat level, synod binding unit, the herem no-op). **Supersedes** the doctrine effect of
@@ -74,6 +75,11 @@ otherwise.
   `kehillah_notify_region_players_effect`.
 
 ## 3. The Regional Synod (`activity_kehillah_regional_synod`)
+
+> **Superseded 2026-10-19 by §8.** The separate activity was removed at Daniel's request. A synod
+> is now an intent of the Sitting of the Bet Din, and a Sanhedrin tier sits above it. The
+> takkanot table and the vote below still apply. The planner option, the activity's own phase and
+> its cooldown do not.
 
 This is a higher tier above the Sitting of the Bet Din. It is a sibling activity, not an option
 on the conference, because it needs a different phase and a quorum. It also must not touch the
@@ -147,3 +153,48 @@ conference's docket machinery (v5 §11).
 ## 7. Verification
 
 See the dated entry in [ROADMAP.md](../../ROADMAP.md) and the test log it links.
+
+## 8. Revision, 2026-10-19: Synod and Sanhedrin as Bet Din intents (Daniel)
+
+Daniel: not a new activity, but "a gated activity intent for the Beit din", and "a Sanhedrin
+level above that where you need to be the head of the Sanhedrin to choose it."
+
+- **Three host intents for `activity_kehillah_bet_din_conference`.**
+  - **Justice:** the ordinary sitting, unchanged.
+  - **Synod** (`kehillah_bet_din_synod_intent`). Shown to everyone except the head of the
+    Sanhedrin. It is valid for the highest-Greatness leader of a minhag region with a regional
+    quorum.
+  - **Sanhedrin** (`kehillah_bet_din_sanhedrin_intent`). Shown only to the head of the Sanhedrin,
+    and valid with a quorum anywhere.
+  - Both also need an open takkanah, no motion in the last `kehillah_synod_cooldown_years`, and
+    prestige for the motion.
+  - The requirements are waived once the session opens (`kehillah_synod_in_session`). Otherwise
+    the session's own cooldown would invalidate the intent and fire vanilla's "intent lost" event.
+- **The head of the Sanhedrin** leads the community whose title carries
+  `kehillah_sanhedrin_seat`. That is Jerusalem at game start: Elijah ha-Kohen's Yeshiva of the Land
+  of Israel, which saw itself as the Great Sanhedrin's successor. It is a variable, so a later
+  event can carry the seat with the academy to Tyre (c. 1073) and Fustat. That move is not built
+  yet.
+- **Flow within the sitting.**
+  1. Once the docket opens (phase 1, quorum met), `kehillah_synod_open_session_effect` seeds the
+     votes, records the level, and starts the cooldown.
+  2. A day later the host chooses the motion. It is offered on two pages, so no event has more
+     than four choices: marriage (`kehillah_synod.0100`) and communal order (`.0105`). Choosing
+     it pays the prestige.
+  3. The host argues the motion (`.0101`), and delegates vote (`.0102`) while the cases are
+     heard.
+  4. The conference's `on_complete` fires the ruling (`.0103`) beside the docket's own close
+     (`kehillah_bet_din.0099`). The ruling settles its outcome in `immediate`, while the activity
+     still exists.
+- **Delegates and binding.** At a Synod, the delegates are the region's community leaders and a
+  takkanah binds the region. At a Sanhedrin, any community leader present is a delegate, the
+  quorum is `kehillah_sanhedrin_quorum`, a takkanah binds every registered community, and
+  passing it adds extra Greatness.
+- **Sanhedrin attendance.** The head may seat any community leader
+  (`kehillah_bet_din_eligible_judge_trigger`). A new invite rule asks every community leader. The
+  planner fixes invitations before the intent is chosen, so this applies to every sitting the
+  head convenes.
+- **The Sanhedrin's own takkanah, still marriage only.** It is the herem against a second wife
+  for all Israel. `change_rite_doctrine = doctrine_monogamy` on the general Rabbinic rite carries
+  Gershom's ban beyond Ashkenaz, which history never did.
+- **Removed:** `activity_kehillah_regional_synod`, its planner options and icons.
