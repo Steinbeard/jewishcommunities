@@ -267,3 +267,30 @@ decision asked the liege for the community's county and restored the Sanhedrin o
     been audited for a landed one.
   - Daniel's earlier wish that the Nasi's government carry no pillars is not done. The landed
     government keeps the Kehillah flag, and with it the pillars.
+
+## The Sanhedrin's title and vassalage (Daniel's decisions, 2026-10-19, evening)
+
+Raised by Daniel while playing a restored Sanhedrin.
+
+- **The head-of-faith title is a duchy named for the seat, "Sanhedrin of Jerusalem"**, no longer
+  the county. Daniel chose to make the **seat community itself** that title. While it is the
+  seat, it is renamed (`set_title_name`, one key per county of the de jure Kingdom of Jerusalem,
+  else "Great Sanhedrin"). It stays the Nasi's primary title, so the Quarter, yeshiva, pillars
+  and officers keep working: about 1,300 `primary_title` reads assume a leader's primary title is
+  his community.
+  - The name reverts on lapse (`reset_title_name`).
+  - A founder with no community (a king or lord) gets a dynamic landless Sanhedrin duchy instead,
+    which carries the election and is destroyed on lapse.
+  - The county stays the seat's location (`global_var:kehillah_sanhedrin_seat`).
+  - `global_var:kehillah_sanhedrin_title` is the head-of-faith title.
+- **A community leader holds his county of his liege** (Daniel: he should be the Fatimids'
+  vassal).
+  - On `kehillah_government` the grant leaves him independent, so after the government switch he
+    swears fealty to the granting realm (`kehillah_become_vassal_of_realm_effect`).
+  - The seat county records the realm it is held of (`kehillah_sanhedrin_seat_liege_realm`,
+    refreshed yearly), and an elected Nasi is put back under it.
+  - A king is never made a vassal.
+- **Jewish rulers get no Jewish settlement-policy decisions** (Daniel).
+- **Save compatibility:** saves from before the 2026-10-19 rename of `kehillah_nasi_government`
+  fail to load that government. Their Nasi falls onto another government without a Quarter.
+  Daniel saw this on the 18:23 autosave. Such saves are not supported.

@@ -60,6 +60,7 @@ kehillah_grant_community_county_effect = {
 	save_scope_as = kehillah_land_recipient
 	primary_title = { save_scope_as = kehillah_land_community }
 	scope:kehillah_land_community.title_capital_county = { save_scope_as = kehillah_land_county }
+	scope:kehillah_land_county.holder.primary_title ?= { save_scope_as = kehillah_land_granter_realm }
 	create_title_and_vassal_change = {
 		type = granted
 		save_scope_as = change
@@ -84,7 +85,65 @@ kehillah_grant_community_county_effect = {
 	}
 	else = { debug_log = "KEHILLAH_LANDED_GOV: Quarter LOST in the grant" }
 	kehillah_reconcile_landed_government_effect = yes
+	# He holds the county OF his liege (Daniel). On kehillah_government
+	# (cannot_be_vassal_or_liege) the grant leaves him independent, so the
+	# vassalage is set after the switch.
+	if = {
+		limit = { exists = scope:kehillah_land_granter_realm }
+		kehillah_become_vassal_of_realm_effect = { REALM = scope:kehillah_land_granter_realm }
+	}
 	trigger_event = { id = kehillah_synod.0003 days = 1 }
+}
+
+# ---------------------------------------------------------------------
+# Scope: a landed community leader. Become the vassal of the holder of
+# $REALM$ (a realm's primary title), unless he already is, is that holder,
+# or is not on a Kehillah government (a king is never made a vassal).
+# ---------------------------------------------------------------------
+kehillah_become_vassal_of_realm_effect = {
+	if = {
+		limit = {
+			is_landed = yes
+			government_has_flag = government_is_kehillah
+			exists = $REALM$.holder
+			NOT = { $REALM$.holder = this }
+			NOT = { liege ?= $REALM$.holder }
+		}
+		create_title_and_vassal_change = {
+			type = swear_fealty
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+		change_liege = {
+			liege = $REALM$.holder
+			change = scope:change
+		}
+		resolve_title_and_vassal_change = scope:change
+		if = {
+			limit = { liege ?= $REALM$.holder }
+			debug_log = "KEHILLAH_LANDED_GOV: now a vassal of the granting realm"
+		}
+		else = { debug_log = "KEHILLAH_LANDED_GOV: vassalage REFUSED" }
+		debug_log_scopes = yes
+	}
+}
+
+# ---------------------------------------------------------------------
+# Name the Sanhedrin's head-of-faith title after its seat county (Daniel:
+# "Sanhedrin of Jerusalem"). Scope: the title. set_title_name takes only a
+# static key, so there is one per county of the de jure Kingdom of
+# Jerusalem; reset_title_name restores a community's own name on lapse.
+# ---------------------------------------------------------------------
+kehillah_sanhedrin_name_title_effect = {
+	if = { limit = { global_var:kehillah_sanhedrin_seat = title:c_jerusalem } set_title_name = kehillah_sanhedrin_of_jerusalem }
+	else_if = { limit = { global_var:kehillah_sanhedrin_seat = title:c_tiberias } set_title_name = kehillah_sanhedrin_of_tiberias }
+	else_if = { limit = { global_var:kehillah_sanhedrin_seat = title:c_acre } set_title_name = kehillah_sanhedrin_of_acre }
+	else_if = { limit = { global_var:kehillah_sanhedrin_seat = title:c_jaffa } set_title_name = kehillah_sanhedrin_of_jaffa }
+	else_if = { limit = { global_var:kehillah_sanhedrin_seat = title:c_ghazza } set_title_name = kehillah_sanhedrin_of_ghazza }
+	else_if = { limit = { global_var:kehillah_sanhedrin_seat = title:c_kerak } set_title_name = kehillah_sanhedrin_of_kerak }
+	else_if = { limit = { global_var:kehillah_sanhedrin_seat = title:c_negev } set_title_name = kehillah_sanhedrin_of_negev }
+	else_if = { limit = { global_var:kehillah_sanhedrin_seat = title:c_irbid } set_title_name = kehillah_sanhedrin_of_irbid }
+	else = { set_title_name = kehillah_sanhedrin_great }
 }
 
 # ---------------------------------------------------------------------
@@ -151,11 +210,57 @@ kehillah_sanhedrin_restore_effect = {
 				add_title_law = kehillah_sanhedrin_succession_law
 			}
 			set_primary_title_to = scope:kehillah_sanhedrin_community
+			# The head-of-faith title is the community itself, renamed for
+			# the seat (Daniel, 2026-10-19). It stays his primary title, so
+			# every Kehillah system keeps reading it.
+			scope:kehillah_sanhedrin_community = { kehillah_sanhedrin_name_title_effect = yes }
+			set_global_variable = { name = kehillah_sanhedrin_title value = scope:kehillah_sanhedrin_community }
+		}
+		else = {
+			# A founder with no community (a king or lord): a dynamic,
+			# landless Sanhedrin duchy carries the headship and the election.
+			create_dynamic_title = {
+				tier = duchy
+				name = kehillah_sanhedrin_great
+			}
+			create_title_and_vassal_change = {
+				type = created
+				save_scope_as = change
+				add_claim_on_loss = no
+			}
+			scope:new_title ?= {
+				save_scope_as = kehillah_sanhedrin_new_title
+				set_variable = kehillah_sanhedrin_dynamic_title
+				set_variable = kehillah_sanhedrin_seat_title
+				set_capital_county = scope:kehillah_sanhedrin_county
+				set_landless_title = yes
+				set_destroy_on_succession = no
+				set_no_automatic_claims = yes
+				set_definitive_form = yes
+				set_can_be_named_after_dynasty = no
+				set_can_use_nomadic_naming = no
+				kehillah_sanhedrin_name_title_effect = yes
+				change_title_holder = {
+					holder = scope:kehillah_sanhedrin_founder
+					change = scope:change
+				}
+			}
+			resolve_title_and_vassal_change = scope:change
+			if = {
+				limit = { exists = scope:kehillah_sanhedrin_new_title }
+				scope:kehillah_sanhedrin_new_title = { add_title_law = kehillah_sanhedrin_succession_law }
+				set_global_variable = { name = kehillah_sanhedrin_title value = scope:kehillah_sanhedrin_new_title }
+			}
 		}
 		kehillah_reconcile_landed_government_effect = yes
+		kehillah_sanhedrin_remember_liege_effect = yes
 
 		kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
-		faith:rabbinic_faith = { set_religious_head_title = scope:kehillah_sanhedrin_county }
+		if = {
+			limit = { exists = global_var:kehillah_sanhedrin_title }
+			faith:rabbinic_faith = { set_religious_head_title = global_var:kehillah_sanhedrin_title }
+		}
+		else = { faith:rabbinic_faith = { set_religious_head_title = scope:kehillah_sanhedrin_county } }
 		kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
 
 		kehillah_update_leader_flavor_effect = yes
@@ -173,6 +278,27 @@ kehillah_sanhedrin_restore_effect = {
 		}
 	}
 	else = { debug_log = "KEHILLAH_SANHEDRIN: no county in the Land, not restored" }
+}
+
+# ---------------------------------------------------------------------
+# Record the realm the seat county is held of, so an elected Nasi (who
+# arrives independent) can be put back under it. Scope: anyone. Run at
+# restoration and yearly; an independent Nasi clears the record.
+# ---------------------------------------------------------------------
+kehillah_sanhedrin_remember_liege_effect = {
+	if = {
+		limit = { exists = global_var:kehillah_sanhedrin_seat.holder }
+		global_var:kehillah_sanhedrin_seat = {
+			if = {
+				limit = { exists = holder.liege.primary_title }
+				set_variable = { name = kehillah_sanhedrin_seat_liege_realm value = holder.liege.primary_title }
+			}
+			else_if = {
+				limit = { has_variable = kehillah_sanhedrin_seat_liege_realm }
+				remove_variable = kehillah_sanhedrin_seat_liege_realm
+			}
+		}
+	}
 }
 
 # ---------------------------------------------------------------------
@@ -249,6 +375,12 @@ kehillah_sanhedrin_install_nasi_effect = {
 		set_primary_title_to = global_var:kehillah_sanhedrin_seat_community
 	}
 	kehillah_reconcile_landed_government_effect = yes
+	# The seat is held of the realm it lay in (Daniel); succession onto
+	# kehillah_government leaves the heir independent.
+	if = {
+		limit = { exists = global_var:kehillah_sanhedrin_seat.var:kehillah_sanhedrin_seat_liege_realm }
+		kehillah_become_vassal_of_realm_effect = { REALM = global_var:kehillah_sanhedrin_seat.var:kehillah_sanhedrin_seat_liege_realm }
+	}
 	kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
 	kehillah_update_leader_flavor_effect = yes
 	debug_log = "KEHILLAH_SANHEDRIN: Nasi installed"
@@ -375,6 +507,7 @@ kehillah_sanhedrin_grant_seat_effect = {
 kehillah_sanhedrin_refresh_seats_effect = {
 	if = {
 		limit = { exists = global_var:kehillah_sanhedrin_seat }
+		kehillah_sanhedrin_remember_liege_effect = yes
 		set_global_variable = { name = kehillah_sanhedrin_seat_count value = 0 }
 		faith:rabbinic_faith = {
 			every_clerical_elector_title = {
@@ -435,6 +568,21 @@ kehillah_sanhedrin_lapse_check_effect = {
 				limit = { has_variable = kehillah_sanhedrin_seat_title }
 				remove_variable = kehillah_sanhedrin_seat_title
 			}
+			if = {
+				limit = { has_variable = kehillah_sanhedrin_seat_liege_realm }
+				remove_variable = kehillah_sanhedrin_seat_liege_realm
+			}
+		}
+		if = {
+			limit = { exists = global_var:kehillah_sanhedrin_title }
+			global_var:kehillah_sanhedrin_title = {
+				if = {
+					limit = { has_variable = kehillah_sanhedrin_dynamic_title }
+					holder ?= { destroy_title = prev }
+				}
+				else = { reset_title_name = yes }
+			}
+			remove_global_variable = kehillah_sanhedrin_title
 		}
 		global_var:kehillah_sanhedrin_seat_community ?= {
 			if = {
