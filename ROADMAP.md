@@ -278,6 +278,8 @@ rendering pass was required for the shorter replacement text.
 
 ### V42 Sefer collection and scholarship — 2026-10-14, Daniel's request
 
+**Named acquisition, 2026-10-20:** [V48](docs/spec/v48-sefarim-acquisition.md) replaces the Library's placeholder with a named-work acquisition catalog. Unreleased works are absent rather than shown locked. After choosing a known source, a community may buy a surplus manuscript, employ the source's Scriptorium or copy a borrowed exemplar locally; facilities gate methods rather than the catalog itself. A distant-network fallback remains when no source is known. Pending work is title-owned and survives succession. The player-facing random acquisition decision is retired while its AI route uses the same flow. The 1066 source/method UI and a clean active-profile error log are live-verified; the full purchase/external-copy/completion/succession matrix remains follow-up verification rather than a blocker for the first playable slice.
+
 The first Books/Yeshiva panel split, clickable work descriptions, true mastery
 checklist, and tier-aware starting-library seed are scripted in the Codex
 worktree. **Fresh-boot seed verification passed** for Worms (tier 3, six

@@ -3,13 +3,10 @@
 # 2026-09-18 at user request ("an inventory management system... click
 # a donate book option for some piety"). v13 spec section 10.
 #
-# ONE EVENT SO FAR: kehillah_library.0001, the donate confirmation,
-# reached only from the library panel's per-row button (gui/kehillah_
-# domicile_library.gui -> scripted_gui kehillah_lib_donate_work, common/
-# scripted_guis/kehillah_map_view_gui.txt). It is a confirmation on
-# purpose: donating is irreversible, the work leaves the community's
-# library for good, and the only way back is the acquire decision's
-# random draw two years later.
+# kehillah_library.0001 is the donate confirmation. V48 adds .0002-.0005:
+# source and method selection, title-scoped delayed completion and delivery.
+# Donating is irreversible, while reacquisition now means commissioning a
+# named replacement through the Library rather than rolling a random work.
 #
 # WHICH WORK: scope:kehillah_donate_work, the flag scope the button
 # passed through. Localisation cannot look a key up by flag name, so
@@ -223,16 +220,27 @@ kehillah_library.0001 = {
 }
 
 # ---------------------------------------------------------------------
-# kehillah_library.0002 -- ACQUIRE MORE SEFARIM (PLACEHOLDER)
-# Opened by the library panel's "Acquire more sefarim" button. Does nothing
-# yet; it exists so the button has somewhere to go. Replace with the real
-# acquire flow (see kehillah_acquire_torah_work_decision).
+# kehillah_library.0002 -- CONFIRM A NAMED COMMISSION
+# The Library detail page has already chosen the exact work. Find up to two
+# registered communities that hold it; if none does, offer the slower distant
+# network. The source keeps its exemplar. The destination title owns the
+# pending state and the delayed completion event, so succession is safe.
 # ---------------------------------------------------------------------
 
 kehillah_library.0002 = {
 	type = character_event
 	title = kehillah_library.0002.t
-	desc = kehillah_library.0002.desc
+	desc = {
+		desc = kehillah_library.0002.desc_intro
+		triggered_desc = {
+			trigger = { exists = scope:kehillah_commission_source_1 }
+			desc = kehillah_library.0002.desc_known
+		}
+		triggered_desc = {
+			trigger = { NOT = { exists = scope:kehillah_commission_source_1 } }
+			desc = kehillah_library.0002.desc_distant
+		}
+	}
 	theme = faith
 
 	left_portrait = {
@@ -240,7 +248,267 @@ kehillah_library.0002 = {
 		animation = personality_zealous
 	}
 
+	trigger = {
+		government_has_flag = government_is_kehillah
+		exists = scope:kehillah_commission_work
+		primary_title = {
+			NOT = { has_variable_list = kehillah_library_commission_work }
+			is_target_in_variable_list = {
+				name = kehillah_library_acquisition_candidates
+				target = scope:kehillah_commission_work
+			}
+			NOT = {
+				is_target_in_variable_list = {
+					name = kehillah_library_works
+					target = scope:kehillah_commission_work
+				}
+			}
+		}
+	}
+
+	immediate = {
+		random_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				NOT = { this = root.primary_title }
+				exists = holder
+				is_target_in_variable_list = {
+					name = kehillah_library_works
+					target = scope:kehillah_commission_work
+				}
+			}
+			save_scope_as = kehillah_commission_source_1
+		}
+		if = {
+			limit = { exists = scope:kehillah_commission_source_1 }
+			random_in_global_list = {
+				variable = kehillah_registered_communities
+				limit = {
+					NOT = { this = root.primary_title }
+					NOT = { this = scope:kehillah_commission_source_1 }
+					exists = holder
+					is_target_in_variable_list = {
+						name = kehillah_library_works
+						target = scope:kehillah_commission_work
+					}
+				}
+				save_scope_as = kehillah_commission_source_2
+			}
+		}
+	}
+
 	option = {
 		name = kehillah_library.0002.a
+		trigger = { exists = scope:kehillah_commission_source_1 }
+		set_variable = { name = kehillah_commission_source_choice value = scope:kehillah_commission_source_1 }
+		set_variable = { name = kehillah_commission_work_choice value = scope:kehillah_commission_work }
+		trigger_event = kehillah_library.0005
+		ai_chance = { base = 100 }
+	}
+
+	option = {
+		name = kehillah_library.0002.b
+		trigger = { exists = scope:kehillah_commission_source_2 }
+		set_variable = { name = kehillah_commission_source_choice value = scope:kehillah_commission_source_2 }
+		set_variable = { name = kehillah_commission_work_choice value = scope:kehillah_commission_work }
+		trigger_event = kehillah_library.0005
+		ai_chance = { base = 0 }
+	}
+
+	option = {
+		name = kehillah_library.0002.c
+		trigger = {
+			NOT = { exists = scope:kehillah_commission_source_1 }
+			gold >= major_gold_value
+		}
+		remove_short_term_gold = major_gold_value
+		primary_title = {
+			clear_variable_list = kehillah_library_commission_work
+			add_to_variable_list = { name = kehillah_library_commission_work target = scope:kehillah_commission_work }
+			remove_variable = kehillah_library_commission_source
+			set_variable = kehillah_library_commission_distant
+			remove_variable = kehillah_library_commission_purchase
+			remove_variable = kehillah_library_commission_external
+			trigger_event = { id = kehillah_library.0003 days = kehillah_library_distant_copy_days }
+		}
+		remove_variable = kehillah_commission_work_loc
+		custom_tooltip = kehillah_library.0002.distant.tt
+		ai_chance = { base = 100 }
+	}
+
+	option = {
+		name = kehillah_library.0002.d
+		remove_variable = kehillah_commission_work_loc
+		remove_variable = kehillah_commission_source_choice
+		remove_variable = kehillah_commission_work_choice
+		ai_chance = { base = 0 }
+	}
+}
+
+# After choosing a known source, choose how the physical manuscript reaches
+# the destination. Buying needs no workshop; source copying needs the source's
+# tier-2 Scriptorium; local copying needs the destination's tier-1 workshop.
+kehillah_library.0005 = {
+	type = character_event
+	title = kehillah_library.0005.t
+	desc = kehillah_library.0005.desc
+	theme = faith
+	left_portrait = { character = root animation = personality_zealous }
+
+	trigger = {
+		exists = var:kehillah_commission_source_choice
+		exists = var:kehillah_commission_work_choice
+		primary_title = {
+			NOT = { has_variable_list = kehillah_library_commission_work }
+			is_target_in_variable_list = { name = kehillah_library_acquisition_candidates target = root.var:kehillah_commission_work_choice }
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = root.var:kehillah_commission_work_choice } }
+		}
+		var:kehillah_commission_source_choice = {
+			exists = holder
+			is_target_in_variable_list = { name = kehillah_library_works target = root.var:kehillah_commission_work_choice }
+		}
+	}
+
+	immediate = {
+		var:kehillah_commission_source_choice = { save_scope_as = kehillah_commission_source }
+		var:kehillah_commission_work_choice = { save_scope_as = kehillah_commission_work }
+	}
+
+	option = {
+		name = kehillah_library.0005.a
+		trigger = { gold >= major_gold_value }
+		remove_short_term_gold = major_gold_value
+		primary_title = {
+			clear_variable_list = kehillah_library_commission_work
+			add_to_variable_list = { name = kehillah_library_commission_work target = scope:kehillah_commission_work }
+			set_variable = { name = kehillah_library_commission_source value = scope:kehillah_commission_source }
+			set_variable = kehillah_library_commission_purchase
+			remove_variable = kehillah_library_commission_external
+			remove_variable = kehillah_library_commission_distant
+			trigger_event = { id = kehillah_library.0003 days = kehillah_library_purchase_days }
+		}
+		scope:kehillah_commission_source.holder = {
+			add_gold = medium_gold_value
+			add_opinion = { target = root modifier = grateful_opinion opinion = 10 }
+		}
+		remove_variable = kehillah_commission_work_loc
+		remove_variable = kehillah_commission_source_choice
+		remove_variable = kehillah_commission_work_choice
+		custom_tooltip = kehillah_library.0005.purchase.tt
+		ai_chance = { base = 20 }
+	}
+
+	option = {
+		name = kehillah_library.0005.b
+		trigger = {
+			gold >= medium_gold_value
+			scope:kehillah_commission_source.holder = {
+				domicile ?= { has_domicile_parameter = kehillah_has_scriptorium }
+			}
+		}
+		remove_short_term_gold = medium_gold_value
+		primary_title = {
+			clear_variable_list = kehillah_library_commission_work
+			add_to_variable_list = { name = kehillah_library_commission_work target = scope:kehillah_commission_work }
+			set_variable = { name = kehillah_library_commission_source value = scope:kehillah_commission_source }
+			remove_variable = kehillah_library_commission_purchase
+			set_variable = kehillah_library_commission_external
+			remove_variable = kehillah_library_commission_distant
+			trigger_event = { id = kehillah_library.0003 days = kehillah_library_external_copy_days }
+		}
+		scope:kehillah_commission_source.holder = {
+			add_gold = minor_gold_value
+			add_opinion = { target = root modifier = grateful_opinion opinion = 15 }
+		}
+		remove_variable = kehillah_commission_work_loc
+		remove_variable = kehillah_commission_source_choice
+		remove_variable = kehillah_commission_work_choice
+		custom_tooltip = kehillah_library.0005.external.tt
+		ai_chance = { base = 70 }
+	}
+
+	option = {
+		name = kehillah_library.0005.c
+		trigger = {
+			gold >= minor_gold_value
+			domicile ?= { has_domicile_parameter = kehillah_unlocks_sofer }
+		}
+		remove_short_term_gold = minor_gold_value
+		primary_title = {
+			clear_variable_list = kehillah_library_commission_work
+			add_to_variable_list = { name = kehillah_library_commission_work target = scope:kehillah_commission_work }
+			set_variable = { name = kehillah_library_commission_source value = scope:kehillah_commission_source }
+			remove_variable = kehillah_library_commission_purchase
+			remove_variable = kehillah_library_commission_external
+			remove_variable = kehillah_library_commission_distant
+			if = {
+				limit = { root = { domicile ?= { has_domicile_parameter = kehillah_has_scriptorium } } }
+				trigger_event = { id = kehillah_library.0003 days = kehillah_library_scriptorium_copy_days }
+			}
+			else = { trigger_event = { id = kehillah_library.0003 days = kehillah_library_local_copy_days } }
+		}
+		scope:kehillah_commission_source.holder = {
+			add_opinion = { target = root modifier = grateful_opinion opinion = 10 }
+		}
+		remove_variable = kehillah_commission_work_loc
+		remove_variable = kehillah_commission_source_choice
+		remove_variable = kehillah_commission_work_choice
+		custom_tooltip = kehillah_library.0005.local.tt
+		ai_chance = { base = 100 }
+	}
+
+	option = {
+		name = kehillah_library.0005.d
+		remove_variable = kehillah_commission_work_loc
+		remove_variable = kehillah_commission_source_choice
+		remove_variable = kehillah_commission_work_choice
+		ai_chance = { base = 0 }
+	}
+}
+
+# The delayed target is the community title itself. A change of leader cannot
+# cancel the copy or redirect it into a former leader's new library.
+kehillah_library.0003 = {
+	scope = landed_title
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { has_variable_list = kehillah_library_commission_work }
+			random_in_list = {
+				variable = kehillah_library_commission_work
+				save_scope_as = kehillah_commission_work
+			}
+			if = {
+				limit = {
+					exists = scope:kehillah_commission_work
+					NOT = { is_target_in_variable_list = { name = kehillah_library_works target = scope:kehillah_commission_work } }
+				}
+				add_to_variable_list = { name = kehillah_library_works target = scope:kehillah_commission_work }
+			}
+			if = {
+				limit = { exists = holder exists = scope:kehillah_commission_work }
+				holder = {
+					set_variable = { name = kehillah_commission_work_loc value = scope:kehillah_commission_work }
+					trigger_event = kehillah_library.0004
+				}
+			}
+		}
+		clear_variable_list = kehillah_library_commission_work
+		remove_variable = kehillah_library_commission_source
+		remove_variable = kehillah_library_commission_distant
+		remove_variable = kehillah_library_commission_purchase
+		remove_variable = kehillah_library_commission_external
+	}
+}
+
+kehillah_library.0004 = {
+	type = character_event
+	title = kehillah_library.0004.t
+	desc = kehillah_library.0004.desc
+	theme = faith
+	left_portrait = { character = root animation = personality_zealous }
+	option = {
+		name = kehillah_library.0004.a
+		remove_variable = kehillah_commission_work_loc
 	}
 }

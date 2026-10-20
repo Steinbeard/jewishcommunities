@@ -18,13 +18,10 @@
 # is RETIRED -- see that file's own retirement note for the full account,
 # and events/kehillah_study_torah_events.txt for its replacement.
 #
-# kehillah_acquire_torah_work_decision is UNCHANGED by this pass -- still
-# a flat, one-shot decision, commissioning a copy of a work the community
-# does NOT yet own, gated on the Sofer's Workshop's own scriptorium tier
-# (kehillah_has_scriptorium). "Commission a copy" is a single transaction
-# with a clear beginning and end; there is no equivalent "continuous"
-# framing for it the way there is for reading, so it had no reason to
-# follow Learn Torah into scheme form.
+# The player-facing acquisition decision was retired in V48: a leader now
+# chooses a named work in the Library and waits for its copy. This decision
+# remains AI-only so non-player communities use the same confirmation and
+# delayed title-owned commission state rather than an instant parallel route.
 #
 # THE LIBRARY ITSELF is a `variable_list` on each community's title
 # (kehillah_library_works), not a real artifact -- see common/scripted_
@@ -197,17 +194,17 @@ kehillah_acquire_torah_work_decision = {
 	sort_order = 93
 	ai_check_interval = 60
 
-	# Gated on the Sofer's Workshop's own scriptorium tier -- see this
-	# file's own header for why this specific building/tier, not a new
-	# one invented for the purpose.
+	# AI communities use the same source-and-method event flow as players.
 	is_shown = {
+		is_ai = yes
 		government_has_flag = government_is_kehillah
-		domicile ?= { has_domicile_parameter = kehillah_has_scriptorium }
 	}
 
 	is_valid = {
 		is_adult = yes
 		is_imprisoned = no
+		gold >= major_gold_value
+		primary_title = { NOT = { has_variable_list = kehillah_library_commission_work } }
 		OR = {
 			kehillah_missing_parshanut_work_trigger = { LIBRARY = primary_title }
 			kehillah_missing_talmudics_work_trigger = { LIBRARY = primary_title }
@@ -215,19 +212,23 @@ kehillah_acquire_torah_work_decision = {
 		}
 	}
 
-	cost = {
-		gold = medium_gold_value
-	}
-
-	cooldown = { years = 2 }
-
 	effect = {
-		trigger_event = kehillah_acquire_torah_work.0001
+		kehillah_library_refresh_acquisition_candidates_effect = yes
+		primary_title = {
+			random_in_list = {
+				variable = kehillah_library_acquisition_candidates
+				save_scope_as = kehillah_commission_work
+			}
+		}
+		if = {
+			limit = { exists = scope:kehillah_commission_work }
+			set_variable = { name = kehillah_commission_work_loc value = scope:kehillah_commission_work }
+			trigger_event = kehillah_library.0002
+		}
 	}
 
 	ai_potential = {
 		government_has_flag = government_is_kehillah
-		domicile ?= { has_domicile_parameter = kehillah_has_scriptorium }
 	}
 
 	ai_will_do = {
