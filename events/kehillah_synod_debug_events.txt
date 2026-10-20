@@ -1,8 +1,8 @@
 ﻿# Console-only probes for V45 (docs/spec/v45-rabbinic-synods-and-minhag-ashkenaz.md).
 #   .1  report: general rite's marriage doctrine, vanilla markers, Ashkenaz
-#       founded or deferred, and the scoped character's rite
-#   .2  fire the 1066 Rhineland synod on the scoped character
-#   .3  found Minhag Ashkenaz directly (changes the save), then report
+#       starting state, herem status, and the scoped character's rite
+#   .2  seed Minhag Ashkenaz directly (changes the save), then report
+#   .3  enact the monogamy result directly (changes the save), then report
 namespace = kehillah_synod_debug
 
 kehillah_synod_debug.1 = {
@@ -36,6 +36,10 @@ kehillah_synod_debug.1 = {
 				limit = { rite:minhag_ashkenaz = { rite_has_doctrine = doctrine_monogamy } }
 				debug_log = "synod_debug: ashkenaz monogamy"
 			}
+			else_if = {
+				limit = { rite:minhag_ashkenaz = { rite_has_doctrine = doctrine_polygamy } }
+				debug_log = "synod_debug: ashkenaz polygamy"
+			}
 			if = {
 				limit = { rite:minhag_ashkenaz = { rite_has_culture = culture:ashkenazi } }
 				debug_log = "synod_debug: ashkenaz has ashkenazi culture"
@@ -43,8 +47,8 @@ kehillah_synod_debug.1 = {
 		}
 		else = { debug_log = "synod_debug: ashkenaz not founded" }
 		if = {
-			limit = { exists = global_var:kehillah_gershom_deferred }
-			debug_log = "synod_debug: gershom deferred"
+			limit = { exists = global_var:kehillah_gershom_herem_renewed }
+			debug_log = "synod_debug: gershom herem renewed"
 		}
 		if = {
 			limit = { exists = global_var:kehillah_minhag_ashkenaz_founded rite = rite:minhag_ashkenaz }
@@ -92,8 +96,9 @@ kehillah_synod_debug.2 = {
 	hidden = yes
 	orphan = yes
 	immediate = {
-		trigger_event = kehillah_synod.0001
-		debug_log = "synod_debug: fired kehillah_synod.0001"
+		kehillah_seed_minhag_ashkenaz_effect = yes
+		debug_log = "synod_debug: seeded Minhag Ashkenaz"
+		trigger_event = kehillah_synod_debug.1
 	}
 }
 
@@ -102,7 +107,8 @@ kehillah_synod_debug.3 = {
 	hidden = yes
 	orphan = yes
 	immediate = {
-		kehillah_found_minhag_ashkenaz_effect = yes
+		rite:minhag_ashkenaz ?= { change_rite_doctrine = doctrine_monogamy }
+		set_global_variable = { name = kehillah_gershom_herem_renewed value = yes }
 		trigger_event = kehillah_synod_debug.1
 	}
 }
