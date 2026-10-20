@@ -17,6 +17,17 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### V48 world Kehillot, founded legacy, and pillar readability — 2026-10-20, Daniel's request
+
+**Built and `ck3-tiger` checked; live verification deferred by Daniel on 2026-10-20.** The held-title registry now supports distinct 867, 1066,
+and 1178 community snapshots (14 / 32 / 27 starts), while 1066 remains the primary scenario.
+Historical and runtime-founded communities record a visible founded year; institutional age adds
+a capped Greatness baseline contribution. The ledger and Standing tooltip show the date, pillar
+tooltips aggregate building effects and group durable/current/leadership/outlook terms, and timed
+effects show their expiry dates. Judah haNasi and Ravina II now carry history-only Nasi/Gaon office
+links. Design, roster, sources, editorial limits, and the required three-bookmark live test are in
+[V48](docs/spec/v48-world-kehillot-founded-legacy-and-pillar-ui.md).
+
 ### Rouen and Orléans Kehillot — 2026-10-19, Daniel's request
 
 Both northern French communities now exist as titular Kehillot at the 1066 start, with title
