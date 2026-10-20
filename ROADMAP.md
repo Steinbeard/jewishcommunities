@@ -212,16 +212,19 @@ Spec: [v45](docs/spec/v45-rabbinic-synods-and-minhag-ashkenaz.md). It answers v2
 - **Polygamy restored to the general Rabbinic rite** in starts after 1000. Vanilla's yearly event
   is suppressed so it can't undo this.
 - **The automatic 1066 event was removed on 2026-10-19 at Daniel's request.** There is no
-  conversion toast. The real Synod intent debates whether Gershom's herem makes the already
-  existing Ashkenazi rite monogamous.
+  conversion toast. Minhag Ashkenaz begins historically monogamous; the real Synod intent lets
+  the assembled Kehillot renew and ratify Gershom's existing herem.
 - **The synod tiers.** Revised 2026-10-19, per Daniel: no separate activity. The Sitting of the
   Bet Din has two gated host intents.
   - **Synod:** for the region's leading community. Every Kehillah leader is invited to debate
     and vote; its takkanot retain their defined regional or rite-level jurisdiction.
   - **Sanhedrin:** only for the head of the Sanhedrin, the seat being Jerusalem in 1066; its
     takkanot bind every community, and it alone may extend the herem to all Israel.
-  - The motion is chosen in an event when the docket opens, and the ruling comes at the close
-    (spec §8).
+  - Revised 2026-10-19: a Synod hears two ordinary cases, then reserves its third phase for a
+    rite-doctrine proposal and delegate vote. The doctrine ruling is presented before the
+    docket's leave-taking. Ordinary Justice sittings retain all three cases (spec §10).
+  - The Synod menu now contains only rite-doctrine proposals, modeled on vanilla's Ecumenical
+    Council doctrine debate; community-level takkanot are no longer mixed into this intent.
 - **The Second Wife case** now checks the host's rite and writes a ketubbah clause instead of
   editing the faith. It could not be drawn at all in a 1066 start before this.
 
@@ -230,7 +233,8 @@ Spec: [v45](docs/spec/v45-rabbinic-synods-and-minhag-ashkenaz.md). It answers v2
 
 **Revised-flow verification:** source and `ck3-tiger` checks are required, followed by a fresh
 1066 boot confirming Minhag Ashkenaz exists at start, no day-30 event fires, all Kehillah leaders
-are offered invitations, and carrying the herem motion changes only Minhag Ashkenaz to monogamy.
+are offered invitations, and the herem motion renews the existing Ashkenazi rule without changing
+general Rabbinism.
 
 **Follow-ups:**
 - A lasting baseline term and breakdown line for each takkanah.

@@ -88,7 +88,7 @@ kehillah_apply_ashkenaz_rite_effect = {
 
 # ---------------------------------------------------------------------
 # Open a synod inside a Sitting of the Bet Din. Scope: the host, from
-# phase_bet_din_case_1's on_phase_active once the docket has opened
+# phase_bet_din_case_3's on_phase_active after two ordinary rulings
 # (scope:activity). The host's own vote is the 1 seeded into votes_for.
 # The cooldown starts now, and kehillah_synod_in_session waives the
 # intent's requirements for the rest of the sitting.
@@ -107,17 +107,14 @@ kehillah_synod_open_session_effect = {
 	}
 	set_variable = { name = kehillah_synod_in_session days = 365 }
 	set_variable = { name = kehillah_synod_cooldown years = kehillah_synod_cooldown_years }
-	if = {
-		limit = { kehillah_synod_has_marriage_motion_trigger = yes }
-		trigger_event = { id = kehillah_synod.0100 days = kehillah_synod_motion_delay_days }
-	}
-	else = {
-		trigger_event = { id = kehillah_synod.0105 days = kehillah_synod_motion_delay_days }
-	}
+	trigger_event = { id = kehillah_synod.0100 days = kehillah_synod_motion_delay_days }
 }
 
 # Put the chosen motion before the sitting. Scope: the host, in a motion
-# event. MOTION: flag:<takkanah>.
+# event. Like vanilla's Ecumenical Council doctrine debate, the activity
+# stores the proposed doctrine as a scope as well as the local motion flag.
+# The doctrine is set by the doctrine-motion event before this shared helper.
+# MOTION: flag:<takkanah>.
 kehillah_synod_put_motion_effect = {
 	involved_activity ?= { set_variable = { name = kehillah_synod_takkanah value = $MOTION$ } }
 	add_prestige = {
@@ -169,20 +166,22 @@ kehillah_synod_bind_effect = {
 # ---------------------------------------------------------------------
 # Enact the takkanah a synod passed. Scope: the host.
 # scope:kehillah_synod_takkanah: the motion flag.
+# scope:kehillah_synod_proposed_doctrine: the doctrine scope saved from the
+# activity, following vanilla's Ecumenical Council proposal pattern.
 # scope:kehillah_synod_level: flag:regional or flag:sanhedrin.
 # ---------------------------------------------------------------------
 kehillah_synod_enact_takkanah_effect = {
 	if = {
 		limit = { scope:kehillah_synod_takkanah = flag:herem_polygamy }
 		custom_tooltip = kehillah_synod_renews_herem_tt
-		rite:minhag_ashkenaz ?= { change_rite_doctrine = doctrine_monogamy }
+		rite:minhag_ashkenaz ?= { change_rite_doctrine = scope:kehillah_synod_proposed_doctrine }
 		set_global_variable = { name = kehillah_gershom_herem_renewed value = yes }
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
 	}
 	else_if = {
 		limit = { scope:kehillah_synod_takkanah = flag:herem_all_israel }
 		custom_tooltip = kehillah_sanhedrin_herem_all_israel_tt
-		rite:rabbinism ?= { change_rite_doctrine = doctrine_monogamy }
+		rite:rabbinism ?= { change_rite_doctrine = scope:kehillah_synod_proposed_doctrine }
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
 	}
 	else_if = {

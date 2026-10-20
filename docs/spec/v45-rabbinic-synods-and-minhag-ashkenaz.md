@@ -210,13 +210,30 @@ This section supersedes §§1-2's founding flow and §8's region-only attendance
 - `on_game_start_after_lobby` creates `minhag_ashkenaz` during setup and immediately moves
   Ashkenazi characters, counties and Ashkenazi-region Kehillot into it. There is no visible
   founding event or news toast.
-- Minhag Ashkenaz begins with the older polygamous marriage doctrine. It is identity, not the
+- Minhag Ashkenaz begins monogamous. This is its established historical custom in 1066, not the
   result of a single player's event choice.
-- The Synod motion to renew Gershom's herem changes Minhag Ashkenaz to monogamy if the assembled
-  delegates carry it. Failure leaves the older law in place; another future Synod may try again.
+- The Synod motion renews and ratifies Gershom's existing herem for the generation. Carrying it
+  records the collective ruling and its rewards; failure does not make Ashkenazi households
+  abruptly polygamous.
 - Every Kehillah leader is invited to a Synod and may vote. The planner fixes invitations before
   the host chooses an intent, so a leader eligible to choose Synod receives the worldwide
   delegate rule even if they ultimately choose ordinary Justice. This engine limitation is
   preferred to presenting a supposed synod as a region-only event or toast.
 - Synod and Sanhedrin remain distinct in jurisdiction. The Ashkenazi herem changes only Minhag
   Ashkenaz. A restored Sanhedrin alone can extend monogamy to the general Rabbinic rite.
+
+## 10. Revision, 2026-10-19: the doctrine ruling is the third matter
+
+Daniel rejected presenting the Synod motion in the middle of the ordinary docket. This section
+supersedes §8's flow and its two-page takkanah menu.
+
+- A Justice sitting still hears three ordinary cases.
+- A Synod or Sanhedrin hears exactly two ordinary cases. Its third phase is reserved for one
+  exceptional proposal to change rite doctrine; no ordinary case is drawn in that phase.
+- The proposal follows vanilla's Ecumenical Council doctrine-debate pattern: the activity stores
+  the proposed doctrine as a doctrine scope, delegates debate and vote on it, and the doctrine is
+  changed only if the final resolution carries.
+- Synod intents therefore expose only rite-doctrine motions. The communal-order takkanot remain
+  defined for later design work but are not Synod motions in this implementation.
+- At completion, the doctrine ruling is queued before the ordinary docket's leave-taking event,
+  so the player receives it as the gathering's third decision rather than as an interruption.

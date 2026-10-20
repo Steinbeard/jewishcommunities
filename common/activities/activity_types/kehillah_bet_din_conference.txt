@@ -483,20 +483,6 @@ activity_kehillah_bet_din_conference = {
 						kehillah_bet_din_draw_case_effect = yes
 					}
 
-					# V45: a Synod or Sanhedrin intent puts a takkanah before
-					# the attendees alongside the docket. The motion opens a
-					# day in, the delegates vote while the cases are heard,
-					# and on_complete below announces the ruling.
-					if = {
-						limit = {
-							exists = scope:activity.var:kehillah_bet_din_judge3
-							OR = {
-								has_activity_intent = kehillah_bet_din_synod_intent
-								has_activity_intent = kehillah_bet_din_sanhedrin_intent
-							}
-						}
-						kehillah_synod_open_session_effect = yes
-					}
 				}
 			}
 		}
@@ -551,7 +537,19 @@ activity_kehillah_bet_din_conference = {
 					scope:activity = {
 						progress_activity_phase_after = { days = kehillah_bet_din_case_phase_days }
 					}
-					kehillah_bet_din_draw_case_effect = yes
+					# A normal Sitting hears a third ordinary case. A Synod or
+					# Sanhedrin instead reserves the third phase for its one
+					# exceptional matter: a proposed change to rite doctrine.
+					if = {
+						limit = {
+							OR = {
+								has_activity_intent = kehillah_bet_din_synod_intent
+								has_activity_intent = kehillah_bet_din_sanhedrin_intent
+							}
+						}
+						kehillah_synod_open_session_effect = yes
+					}
+					else = { kehillah_bet_din_draw_case_effect = yes }
 				}
 			}
 		}
@@ -559,7 +557,7 @@ activity_kehillah_bet_din_conference = {
 
 	# The docket closes here, not in an event chain. kehillah_bet_din.
 	# 0099 reads involved_activity.var:kehillah_bet_din_session_score -- the sum of
-	# the three cases' verdict tiers -- and applies the session's own
+	# the ordinary cases' verdict tiers (three for Justice, two for a Synod) -- and applies the session's own
 	# reward on top of the per-case effects, then clears the session
 	# scratch state. Guarded to the host: on_complete, like
 	# on_phase_active, runs once per attending character, and the closing
@@ -568,12 +566,14 @@ activity_kehillah_bet_din_conference = {
 	on_complete = {
 		if = {
 			limit = { this = scope:host }
-			trigger_event = kehillah_bet_din.0099
-			# V45: the synod's ruling, if a motion was put this sitting.
+			# The doctrine ruling is deliberately queued before the ordinary
+			# docket's leave-taking, so it is the Synod's third decision rather
+			# than an interruption in either of the first two cases.
 			if = {
 				limit = { scope:activity = { has_variable = kehillah_synod_takkanah } }
 				trigger_event = kehillah_synod.0103
 			}
+			trigger_event = kehillah_bet_din.0099
 		}
 	}
 
