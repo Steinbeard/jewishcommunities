@@ -17,6 +17,14 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Rouen and Orléans Kehillot — 2026-10-19, Daniel's request
+
+Both northern French communities now exist as titular Kehillot at the 1066 start, with title
+history, startup/registry wiring and representative lowborn leaders. Orléans begins under the
+rabbinic scholar Yitzhak; Rouen begins under the lay parnas Yaakov and remains explicitly separate
+from Yosef of Rodom's existing adventurer company. Historical basis, editorial limits and the
+future console probe are recorded in [the implementation note](docs/implementation/2026-10-19-rouen-orleans-kehillot.md).
+Per Daniel's instruction, this unit receives source review and `ck3-tiger` only, with no live boot.
 ### Auxerre Kehillah — 2026-10-18, Daniel's request
 
 Auxerre is added as a 1066 Western Ashkenaz community in response to the documented correspondence between Rashi and the sages of Auxerre. The start uses the vanilla `c_auxerre` host geography and an explicitly representative rabbinic leader because the evidence establishes an eleventh-century scholarly community but does not securely identify its 1066 officeholder. Implementation and sources are recorded in [the Auxerre implementation note](docs/implementation/2026-10-18-auxerre-kehillah.md). This user-directed unit was taken alongside the V42/V41 queue and does not close those items.
