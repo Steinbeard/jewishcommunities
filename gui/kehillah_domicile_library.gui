@@ -220,6 +220,47 @@ types KehillahLibrary
 			}
 		}
 	}
+
+	# A missing, already-circulating work on the acquisition page. The list is
+	# title-owned and rebuilt from the catalog when the page opens, so future
+	# works never exist here as disabled spoilers.
+	type kehillah_library_acquire_row = button_standard_list {
+		size = { 482 42 }
+		onclick = "[GetVariableSystem.Clear( 'kehillah_lib_parent_corpus' )]"
+		onclick = "[GetScriptedGui( 'kehillah_lib_cache_authors' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+		onclick = "[GetVariableSystem.Set( 'kehillah_lib_selected_work', Scope.GetFlagName )]"
+		tooltipwidget = { kehillah_library_work_tooltip = {} }
+		icon = {
+			parentanchor = left|vcenter
+			position = { 4 0 }
+			size = { 36 36 }
+			texture = "gfx/interface/icons/kehillah_library/kehillah_sefer_rank_frames.dds"
+			framesize = { 64 64 }
+			frame = "[FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_frame_', Scope.GetFlagName ) ) )]"
+			alwaystransparent = yes
+		}
+		icon = {
+			parentanchor = left|vcenter
+			position = { 10 0 }
+			size = { 24 24 }
+			texture = "gfx/interface/icons/artifact/artifact_chronicle.dds"
+			alwaystransparent = yes
+		}
+		text_single = {
+			parentanchor = left|vcenter
+			position = { 50 0 }
+			text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
+			default_format = "#high"
+			max_width = 215
+		}
+		text_single = {
+			parentanchor = left|vcenter
+			position = { 270 0 }
+			text = "[Localize( Concatenate( 'kehillah_lib_summary_', Scope.GetFlagName ) )]"
+			default_format = "#weak"
+			max_width = 190
+		}
+	}
 	# One collapsible genre box on the Books page (2026-10-15). Open by default
 	# (vanilla's foldout idiom, window_domicile.gui overview groups). The shelf
 	# rows are driven by the catalog script values in common/script_values/
@@ -429,13 +470,13 @@ types KehillahLibrary
 			ignoreinvisible = yes
 
 			text_single = {
-				visible = "[And( Not( GetVariableSystem.Exists( 'kehillah_lib_selected_work' ) ), DataModelHasItems( Title.MakeScope.GetList( 'kehillah_library_works' ) ) )]"
+				visible = "[And( Not( GetVariableSystem.Exists( 'kehillah_lib_acquire_mode' ) ), And( Not( GetVariableSystem.Exists( 'kehillah_lib_selected_work' ) ), DataModelHasItems( Title.MakeScope.GetList( 'kehillah_library_works' ) ) ) )]"
 				text = "KEHILLAH_LIB_SUBHEADER"
 				default_format = "#weak;italic"
 				max_width = @lib_width
 			}
 			text_multi = {
-				visible = "[Not( DataModelHasItems( Title.MakeScope.GetList( 'kehillah_library_works' ) ) )]"
+				visible = "[And( Not( GetVariableSystem.Exists( 'kehillah_lib_acquire_mode' ) ), Not( DataModelHasItems( Title.MakeScope.GetList( 'kehillah_library_works' ) ) ) )]"
 				layoutpolicy_horizontal = expanding
 				autoresize = yes
 				text = "KEHILLAH_LIB_EMPTY"
@@ -443,7 +484,7 @@ types KehillahLibrary
 				max_width = @lib_width
 			}
 			button_standard_list = {
-				visible = "[And( Not( GetVariableSystem.Exists( 'kehillah_lib_selected_work' ) ), And( DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_mastered_works' ) ), Not( GetVariableSystem.Exists( 'kehillah_lib_show_studied' ) ) ) )]"
+				visible = "[And( Not( GetVariableSystem.Exists( 'kehillah_lib_acquire_mode' ) ), And( Not( GetVariableSystem.Exists( 'kehillah_lib_selected_work' ) ), And( DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_mastered_works' ) ), Not( GetVariableSystem.Exists( 'kehillah_lib_show_studied' ) ) ) ) )]"
 				size = { 482 28 }
 				text = "KEHILLAH_LIB_STUDIED_LABEL"
 				onclick = "[GetVariableSystem.Set( 'kehillah_lib_show_studied', 'yes' )]"
@@ -451,14 +492,14 @@ types KehillahLibrary
 				using = tooltip_se
 			}
 			button_standard_list = {
-				visible = "[And( Not( GetVariableSystem.Exists( 'kehillah_lib_selected_work' ) ), GetVariableSystem.Exists( 'kehillah_lib_show_studied' ) )]"
+				visible = "[And( Not( GetVariableSystem.Exists( 'kehillah_lib_acquire_mode' ) ), And( Not( GetVariableSystem.Exists( 'kehillah_lib_selected_work' ) ), GetVariableSystem.Exists( 'kehillah_lib_show_studied' ) ) )]"
 				size = { 482 28 }
 				text = "KEHILLAH_LIB_HIDE_STUDIED"
 				onclick = "[GetVariableSystem.Clear( 'kehillah_lib_show_studied' )]"
 			}
 
 			scrollbox = {
-				visible = "[Not( GetVariableSystem.Exists( 'kehillah_lib_selected_work' ) )]"
+				visible = "[And( Not( GetVariableSystem.Exists( 'kehillah_lib_acquire_mode' ) ), Not( GetVariableSystem.Exists( 'kehillah_lib_selected_work' ) ) )]"
 				layoutpolicy_horizontal = expanding
 				size = { @lib_width @lib_list_height }
 
@@ -822,14 +863,95 @@ types KehillahLibrary
 				}
 			}
 
-			### Not wired to the real acquire flow yet: opens a placeholder event.
+			# A title-owned pending work remains visible through succession.
+			vbox = {
+				visible = "[And( Character.IsLocalPlayer, And( Not( GetVariableSystem.Exists( 'kehillah_lib_acquire_mode' ) ), And( Not( GetVariableSystem.Exists( 'kehillah_lib_selected_work' ) ), DataModelHasItems( Title.MakeScope.GetList( 'kehillah_library_commission_work' ) ) ) ) )]"
+				layoutpolicy_horizontal = expanding
+				spacing = 3
+				text_single = { text = "KEHILLAH_LIB_COMMISSION_ACTIVE" default_format = "#high" }
+				vbox = {
+					layoutpolicy_horizontal = expanding
+					datamodel = "[Title.MakeScope.GetList( 'kehillah_library_commission_work' )]"
+					item = {
+						hbox = {
+							layoutpolicy_horizontal = expanding
+							spacing = 8
+							icon = { size = { 24 24 } texture = "gfx/interface/icons/artifact/artifact_chronicle.dds" }
+							text_single = {
+								text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
+								default_format = "#high"
+								max_width = 430
+							}
+						}
+					}
+				}
+				text_multi = {
+					visible = "[Not( GetVariableSystem.Exists( 'kehillah_lib_acquire_mode' ) )]"
+					layoutpolicy_horizontal = expanding
+					autoresize = yes
+					max_width = @lib_width
+					default_format = "#weak;italic"
+					text = "[Select_CString( GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_library_commission_distant_value' ), '(CFixedPoint)0' ), Localize( 'KEHILLAH_LIB_COMMISSION_DISTANT' ), Select_CString( GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_library_commission_purchase_value' ), '(CFixedPoint)0' ), Localize( 'KEHILLAH_LIB_COMMISSION_PURCHASE' ), Select_CString( GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_library_commission_external_value' ), '(CFixedPoint)0' ), Localize( 'KEHILLAH_LIB_COMMISSION_EXTERNAL' ), Localize( 'KEHILLAH_LIB_COMMISSION_LOCAL' ) ) ) )]"
+				}
+			}
+
 			button_standard_list = {
-				visible = "[And( Not( GetVariableSystem.Exists( 'kehillah_lib_selected_work' ) ), Character.IsLocalPlayer )]"
+				visible = "[And( Not( GetVariableSystem.Exists( 'kehillah_lib_acquire_mode' ) ), And( Not( GetVariableSystem.Exists( 'kehillah_lib_selected_work' ) ), Character.IsLocalPlayer ) )]"
 				size = { 482 32 }
 				text = "KEHILLAH_LIB_ACQUIRE_ACTION"
 				tooltip = "KEHILLAH_LIB_ACQUIRE_TT"
 				using = tooltip_se
+				enabled = "[GetScriptedGui( 'kehillah_lib_acquire_more' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
 				onclick = "[GetScriptedGui( 'kehillah_lib_acquire_more' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+				onclick = "[GetVariableSystem.Set( 'kehillah_lib_acquire_mode', 'yes' )]"
+			}
+
+			# Missing-work catalog. Its list was filtered in script before this GUI
+			# opens, including the circulation-date rule.
+			vbox = {
+				visible = "[And( GetVariableSystem.Exists( 'kehillah_lib_acquire_mode' ), Not( GetVariableSystem.Exists( 'kehillah_lib_selected_work' ) ) )]"
+				layoutpolicy_horizontal = expanding
+				spacing = 5
+				ignoreinvisible = yes
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					text_single = { text = "KEHILLAH_LIB_ACQUIRE_HEADING" default_format = "#T" max_width = 330 }
+					expand = {}
+					button_standard_list = {
+						size = { 142 26 }
+						text = "KEHILLAH_LIB_ACQUIRE_BACK"
+						onclick = "[GetVariableSystem.Clear( 'kehillah_lib_acquire_mode' )]"
+					}
+				}
+				text_multi = {
+					layoutpolicy_horizontal = expanding
+					autoresize = yes
+					max_width = @lib_width
+					text = "KEHILLAH_LIB_ACQUIRE_HINT"
+					default_format = "#weak;italic"
+				}
+				text_multi = {
+					visible = "[Not( DataModelHasItems( Title.MakeScope.GetList( 'kehillah_library_acquisition_candidates' ) ) )]"
+					layoutpolicy_horizontal = expanding
+					autoresize = yes
+					max_width = @lib_width
+					text = "KEHILLAH_LIB_ACQUIRE_NONE"
+					default_format = "#weak;italic"
+				}
+				scrollbox = {
+					visible = "[DataModelHasItems( Title.MakeScope.GetList( 'kehillah_library_acquisition_candidates' ) )]"
+					layoutpolicy_horizontal = expanding
+					size = { @lib_width @lib_list_height }
+					blockoverride "scrollbox_margins" { margin = { 0 4 } margin_right = 12 }
+					blockoverride "scrollbox_content" {
+						vbox = {
+							layoutpolicy_horizontal = expanding
+							spacing = 2
+							datamodel = "[Title.MakeScope.GetList( 'kehillah_library_acquisition_candidates' )]"
+							item = { kehillah_library_acquire_row = {} }
+						}
+					}
+				}
 			}
 
 			# A corpus opens a distinct detail page.  Its orders are a clear
@@ -1045,6 +1167,7 @@ types KehillahLibrary
 					}
 				}
 				text_multi = {
+					visible = "[Not( GetVariableSystem.Exists( 'kehillah_lib_acquire_mode' ) )]"
 					layoutpolicy_horizontal = expanding
 					autoresize = yes
 					max_width = @lib_width
@@ -1053,7 +1176,25 @@ types KehillahLibrary
 				divider_light = { layoutpolicy_horizontal = expanding }
 				text_single = { text = "KEHILLAH_LIB_ACTIONS_HEADING" default_format = "#high" }
 				button_standard_list = {
-					visible = "[Character.IsLocalPlayer]"
+					visible = "[And( Character.IsLocalPlayer, GetVariableSystem.Exists( 'kehillah_lib_acquire_mode' ) )]"
+					size = { 482 38 }
+					enabled = "[GetScriptedGui( Concatenate( 'kehillah_lib_acquire_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+					onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_acquire_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+					onclick = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
+					onclick = "[GetVariableSystem.Clear( 'kehillah_lib_acquire_mode' )]"
+					text = "KEHILLAH_LIB_COMMISSION_ACTION"
+					tooltip = "KEHILLAH_LIB_COMMISSION_TT"
+					using = tooltip_se
+					icon = {
+						parentanchor = left|vcenter
+						position = { 11 0 }
+						size = { 26 26 }
+						texture = "gfx/interface/icons/artifact/artifact_chronicle.dds"
+						alwaystransparent = yes
+					}
+				}
+				button_standard_list = {
+					visible = "[And( Character.IsLocalPlayer, Not( GetVariableSystem.Exists( 'kehillah_lib_acquire_mode' ) ) )]"
 					size = { 482 38 }
 					enabled = "[GetScriptedGui( Concatenate( 'kehillah_lib_study_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
 					onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_study_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
@@ -1069,6 +1210,7 @@ types KehillahLibrary
 					}
 				}
 				hbox = {
+					visible = "[Not( GetVariableSystem.Exists( 'kehillah_lib_acquire_mode' ) )]"
 					layoutpolicy_horizontal = expanding
 					spacing = 8
 					button_standard_list = {
@@ -1103,7 +1245,7 @@ types KehillahLibrary
 					}
 				}
 				vbox = {
-					visible = "[GetScriptedGui( Concatenate( 'kehillah_lib_readers_loaded_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+					visible = "[And( Not( GetVariableSystem.Exists( 'kehillah_lib_acquire_mode' ) ), GetScriptedGui( Concatenate( 'kehillah_lib_readers_loaded_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) )]"
 					layoutpolicy_horizontal = expanding
 					text_single = {
 						text = "KEHILLAH_LIB_READERS_LABEL"

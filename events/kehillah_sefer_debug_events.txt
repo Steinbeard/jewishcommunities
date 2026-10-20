@@ -80,3 +80,54 @@ kehillah_sefer_debug.3 = {
 		debug_log = "kehillah_sefer_debug.3 END"
 	}
 }
+
+# Rebuild and inspect the acquisition catalog without starting a commission:
+#   event kehillah_sefer_debug.4
+kehillah_sefer_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_sefer_debug.4 ACQUISITION CANDIDATES START"
+		kehillah_library_refresh_acquisition_candidates_effect = yes
+		primary_title = {
+			every_in_list = {
+				variable = kehillah_library_acquisition_candidates
+				debug_log = "kehillah_sefer_debug.4 AVAILABLE MISSING WORK"
+				debug_log_scopes = yes
+			}
+			if = {
+				limit = {
+					current_date < 1080.1.1
+					is_target_in_variable_list = { name = kehillah_library_acquisition_candidates target = flag:work_chovot_halevavot }
+				}
+				debug_log = "kehillah_sefer_debug.4 FAIL CHOVOT SHOWN BEFORE CIRCULATION"
+			}
+			else = { debug_log = "kehillah_sefer_debug.4 PASS CHOVOT HIDDEN BEFORE CIRCULATION OR DATE REACHED" }
+			if = {
+				limit = {
+					current_date < 1140.1.1
+					is_target_in_variable_list = { name = kehillah_library_acquisition_candidates target = flag:work_kuzari }
+				}
+				debug_log = "kehillah_sefer_debug.4 FAIL KUZARI SHOWN BEFORE CIRCULATION"
+			}
+			else = { debug_log = "kehillah_sefer_debug.4 PASS KUZARI HIDDEN BEFORE CIRCULATION OR DATE REACHED" }
+		}
+		debug_log = "kehillah_sefer_debug.4 ACQUISITION CANDIDATES END"
+	}
+}
+
+# Finish the community's current copy immediately, preserving the exact title
+# event used by natural delayed delivery:
+#   event kehillah_sefer_debug.5
+kehillah_sefer_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { primary_title = { has_variable_list = kehillah_library_commission_work } }
+			primary_title = { trigger_event = kehillah_library.0003 }
+			debug_log = "kehillah_sefer_debug.5 FORCED CURRENT TITLE COMMISSION COMPLETION"
+		}
+		else = { debug_log = "kehillah_sefer_debug.5 NO ACTIVE COMMISSION" }
+	}
+}
