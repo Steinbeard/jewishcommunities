@@ -174,3 +174,30 @@ Design consequences: [v47](../spec/v47-gaon-and-the-seat-of-the-sanhedrin.md).
   - there was no Game Over.
 - **Errors.** Zero `kehillah_sanhedrin_county` lines, zero election lines, and no other kehillah
   script lines in the delta. No crash dump.
+
+## 2026-10-20: the Sanhedrin title, vassalage and the given-up community (309f7b7 to 2f057bf)
+
+- **309f7b7.** The "Sanhedrin of Jerusalem" head-of-faith title worked. Jewish rulers no longer see
+  the policy decisions. Seat holders no longer wear cardinal dress; the Nasi's red and white is
+  Levantine ruler's dress. Two failures:
+  - The vassalage was refused: a duchy-tier community cannot swear to a duke.
+  - The elected Nasi's title reverted to "Kehillah of Jerusalem".
+- **6776689 / ca26cfa: PASS on both.**
+  - Elijah is now a vassal of Caliph al-Mustansir.
+  - The name survives the election.
+  - The Domain tab reads "Danger of violence: Uneasy (6% this year)", with a rendered tooltip.
+  - **New failure:** the heir of Worms (Gershon) came out on a feudal government with no Quarter.
+    The `pdx_assert` "Trying to assign unplayable character" fired, and playing him gave a Game
+    Over.
+- **2f057bf: PASS.**
+  - Sherira of Sura was elected Nasi, and his heir Micha was repaired by the install's direct
+    check and `kehillah_succession.0010`. Micha ended on the Kehillah government, with a Quarter
+    and his community as primary title. `play` worked.
+  - The title-gain trace showed the cause: at `on_title_gain` the heir is already on a
+    non-Kehillah government with no domicile.
+  - The new Nasi had the Sanhedrin of Jerusalem title, the caliph as liege, the landed government
+    and a domicile.
+  - One error: the host-charter step tried to make the Nasi a tributary of the caliph while he was
+    already the caliph's vassal. Fixed afterwards: landed vassals get no tributary charter.
+    Source-checked only.
+- **Not yet tested:** the Synod's two-cases-then-doctrine flow (5f7864b).
