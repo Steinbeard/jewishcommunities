@@ -96,9 +96,14 @@ kehillah_grant_community_county_effect = {
 }
 
 # ---------------------------------------------------------------------
-# Scope: a landed community leader. Become the vassal of the holder of
-# $REALM$ (a realm's primary title), unless he already is, is that holder,
-# or is not on a Kehillah government (a king is never made a vassal).
+# Scope: a landed community leader. Become a vassal of the realm $REALM$
+# (a realm's primary title) belongs to. A community is DUCHY tier, and a
+# vassal must rank below his liege (live 2026-10-19: refused under the
+# Fatimid emir of Palestine, a duke), so the liege is the first ruler of
+# kingdom tier or above up that realm's chain: its holder, his liege, or
+# his top liege (the Fatimid caliph). Not if he already is that ruler's
+# vassal, is that ruler, or is not on a Kehillah government (a king is
+# never made a vassal).
 # ---------------------------------------------------------------------
 kehillah_become_vassal_of_realm_effect = {
 	if = {
@@ -106,25 +111,52 @@ kehillah_become_vassal_of_realm_effect = {
 			is_landed = yes
 			government_has_flag = government_is_kehillah
 			exists = $REALM$.holder
-			NOT = { $REALM$.holder = this }
-			NOT = { liege ?= $REALM$.holder }
 		}
-		create_title_and_vassal_change = {
-			type = swear_fealty
-			save_scope_as = change
-			add_claim_on_loss = no
+		$REALM$.holder = {
+			if = {
+				limit = { highest_held_title_tier >= tier_kingdom }
+				save_scope_as = kehillah_new_liege
+			}
+			else_if = {
+				limit = { liege ?= { highest_held_title_tier >= tier_kingdom } }
+				liege = { save_scope_as = kehillah_new_liege }
+			}
+			else_if = {
+				limit = {
+					exists = top_liege
+					NOT = { top_liege = this }
+					top_liege = { highest_held_title_tier >= tier_kingdom }
+				}
+				top_liege = { save_scope_as = kehillah_new_liege }
+			}
 		}
-		change_liege = {
-			liege = $REALM$.holder
-			change = scope:change
-		}
-		resolve_title_and_vassal_change = scope:change
 		if = {
-			limit = { liege ?= $REALM$.holder }
-			debug_log = "KEHILLAH_LANDED_GOV: now a vassal of the granting realm"
+			limit = {
+				exists = scope:kehillah_new_liege
+				NOT = { scope:kehillah_new_liege = this }
+				NOT = { liege ?= scope:kehillah_new_liege }
+			}
+			create_title_and_vassal_change = {
+				type = swear_fealty
+				save_scope_as = change
+				add_claim_on_loss = no
+			}
+			change_liege = {
+				liege = scope:kehillah_new_liege
+				change = scope:change
+			}
+			resolve_title_and_vassal_change = scope:change
+			if = {
+				limit = { liege ?= scope:kehillah_new_liege }
+				debug_log = "KEHILLAH_LANDED_GOV: now a vassal of the granting realm"
+			}
+			else = { debug_log = "KEHILLAH_LANDED_GOV: vassalage REFUSED" }
+			debug_log_scopes = yes
 		}
-		else = { debug_log = "KEHILLAH_LANDED_GOV: vassalage REFUSED" }
-		debug_log_scopes = yes
+		else_if = {
+			limit = { NOT = { exists = scope:kehillah_new_liege } }
+			debug_log = "KEHILLAH_LANDED_GOV: no ruler of kingdom tier above the grant, stays independent"
+		}
 	}
 }
 
@@ -281,11 +313,28 @@ kehillah_sanhedrin_restore_effect = {
 }
 
 # ---------------------------------------------------------------------
+# The head-of-faith title's Sanhedrin name. A change of holder resets a
+# title's name (the elected Nasi's community came back as "Kehillah of
+# Jerusalem", live 2026-10-19), so this runs at the install, the day after
+# (kehillah_synod.0003) and yearly. Scope: anyone.
+# ---------------------------------------------------------------------
+kehillah_sanhedrin_refresh_title_name_effect = {
+	if = {
+		limit = {
+			exists = global_var:kehillah_sanhedrin_seat
+			exists = global_var:kehillah_sanhedrin_title
+		}
+		global_var:kehillah_sanhedrin_title = { kehillah_sanhedrin_name_title_effect = yes }
+	}
+}
+
+# ---------------------------------------------------------------------
 # Record the realm the seat county is held of, so an elected Nasi (who
 # arrives independent) can be put back under it. Scope: anyone. Run at
 # restoration and yearly; an independent Nasi clears the record.
 # ---------------------------------------------------------------------
 kehillah_sanhedrin_remember_liege_effect = {
+	kehillah_sanhedrin_refresh_title_name_effect = yes
 	if = {
 		limit = { exists = global_var:kehillah_sanhedrin_seat.holder }
 		global_var:kehillah_sanhedrin_seat = {
@@ -381,6 +430,7 @@ kehillah_sanhedrin_install_nasi_effect = {
 		limit = { exists = global_var:kehillah_sanhedrin_seat.var:kehillah_sanhedrin_seat_liege_realm }
 		kehillah_become_vassal_of_realm_effect = { REALM = global_var:kehillah_sanhedrin_seat.var:kehillah_sanhedrin_seat_liege_realm }
 	}
+	kehillah_sanhedrin_refresh_title_name_effect = yes
 	kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
 	kehillah_update_leader_flavor_effect = yes
 	debug_log = "KEHILLAH_SANHEDRIN: Nasi installed"
