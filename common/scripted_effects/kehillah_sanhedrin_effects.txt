@@ -534,7 +534,30 @@ kehillah_landed_government_restore_quarter_effect = {
 # ---------------------------------------------------------------------
 kehillah_sanhedrin_grant_seat_effect = {
 	save_scope_as = kehillah_seat_recipient
-	primary_title = { save_scope_as = kehillah_seat_primary }
+	# A courtier rabbi has no title of his own: the seat takes the
+	# Sanhedrin's arms, and he takes the government of his court's lord
+	# (vanilla's government_base for a courtier cardinal), or of the
+	# community's host when that lord leads a community (a Kehillah
+	# government needs a Quarter he does not have).
+	if = {
+		limit = { exists = primary_title }
+		primary_title = { save_scope_as = kehillah_seat_primary }
+	}
+	else = {
+		global_var:kehillah_sanhedrin_title ?= { save_scope_as = kehillah_seat_primary }
+		if = {
+			limit = { liege ?= { NOT = { government_has_flag = government_is_kehillah } } }
+			liege = { save_scope_as = kehillah_seat_government_base }
+		}
+		else_if = {
+			limit = { exists = liege.suzerain }
+			liege.suzerain = { save_scope_as = kehillah_seat_government_base }
+		}
+		else_if = {
+			limit = { exists = global_var:kehillah_sanhedrin_seat.holder.liege }
+			global_var:kehillah_sanhedrin_seat.holder.liege = { save_scope_as = kehillah_seat_government_base }
+		}
+	}
 	create_dynamic_title = {
 		tier = duchy
 		name = KEHILLAH_SANHEDRIN_SEAT_NAME
@@ -551,22 +574,47 @@ kehillah_sanhedrin_grant_seat_effect = {
 		# Capital first: set_landless_title errors on a title with no
 		# preferred capital (live 2026-10-19).
 		set_capital_county = global_var:kehillah_sanhedrin_seat
-		set_coa = scope:kehillah_seat_primary
-		set_color_from_title = scope:kehillah_seat_primary
+		if = {
+			limit = { exists = scope:kehillah_seat_primary }
+			set_coa = scope:kehillah_seat_primary
+			set_color_from_title = scope:kehillah_seat_primary
+		}
 		set_landless_title = yes
 		set_destroy_on_succession = yes
 		set_no_automatic_claims = yes
 		set_definitive_form = yes
 		set_can_be_named_after_dynasty = no
 		set_can_use_nomadic_naming = no
-		change_title_holder = {
-			holder = scope:kehillah_seat_recipient
-			change = scope:change
+		if = {
+			limit = { exists = scope:kehillah_seat_government_base }
+			change_title_holder = {
+				holder = scope:kehillah_seat_recipient
+				change = scope:change
+				government_base = scope:kehillah_seat_government_base
+			}
+		}
+		else = {
+			change_title_holder = {
+				holder = scope:kehillah_seat_recipient
+				change = scope:change
+			}
 		}
 	}
 	resolve_title_and_vassal_change = scope:change
 	scope:kehillah_new_seat ?= { add_clerical_elector = faith:rabbinic_faith }
-	set_primary_title_to = scope:kehillah_seat_primary
+	# Only a ruler keeps his own primary title; the courtier's seat is his.
+	if = {
+		limit = {
+			exists = scope:kehillah_seat_primary
+			has_title = scope:kehillah_seat_primary
+		}
+		set_primary_title_to = scope:kehillah_seat_primary
+	}
+	if = {
+		limit = { exists = scope:kehillah_seat_government_base }
+		debug_log = "KEHILLAH_SANHEDRIN: seat granted to a courtier rabbi"
+		debug_log_scopes = yes
+	}
 }
 
 # ---------------------------------------------------------------------
@@ -578,6 +626,25 @@ kehillah_sanhedrin_refresh_seats_effect = {
 	if = {
 		limit = { exists = global_var:kehillah_sanhedrin_seat }
 		kehillah_sanhedrin_remember_liege_effect = yes
+		# Seats lapse when their holder is out of the Nasi's diplomatic range
+		# (Daniel, 2026-10-20), as when either of them moves, or a new Nasi
+		# sits elsewhere.
+		faith:rabbinic_faith = {
+			every_clerical_elector_title = {
+				limit = {
+					has_variable = kehillah_sanhedrin_seat
+					holder ?= { NOT = { kehillah_sanhedrin_in_nasi_range_trigger = yes } }
+				}
+				add_to_list = kehillah_out_of_range_seats
+			}
+		}
+		every_in_list = {
+			list = kehillah_out_of_range_seats
+			holder ?= {
+				debug_log = "KEHILLAH_SANHEDRIN: seat lapsed, out of the Nasi's range"
+				destroy_title = prev
+			}
+		}
 		set_global_variable = { name = kehillah_sanhedrin_seat_count value = 0 }
 		faith:rabbinic_faith = {
 			every_clerical_elector_title = {
@@ -603,6 +670,23 @@ kehillah_sanhedrin_refresh_seats_effect = {
 				has_trait = kehillah_rabbi_trait
 				kehillah_sanhedrin_seat_eligible_trigger = yes
 			}
+			if = {
+				limit = { global_var:kehillah_sanhedrin_seat_count < kehillah_sanhedrin_seat_cap }
+				kehillah_sanhedrin_grant_seat_effect = yes
+				change_global_variable = { name = kehillah_sanhedrin_seat_count add = 1 }
+			}
+		}
+		# Courtier rabbis (Daniel, 2026-10-20), the most learned first, in
+		# whatever seats remain. Cheap tests first: this scans the living.
+		ordered_living_character = {
+			limit = {
+				is_ruler = no
+				has_trait = kehillah_rabbi_trait
+				kehillah_sanhedrin_seat_eligible_trigger = yes
+			}
+			order_by = learning
+			max = kehillah_sanhedrin_seat_cap
+			check_range_bounds = no
 			if = {
 				limit = { global_var:kehillah_sanhedrin_seat_count < kehillah_sanhedrin_seat_cap }
 				kehillah_sanhedrin_grant_seat_effect = yes

@@ -294,3 +294,18 @@ Raised by Daniel while playing a restored Sanhedrin.
 - **Save compatibility:** saves from before the 2026-10-19 rename of `kehillah_nasi_government`
   fail to load that government. Their Nasi falls onto another government without a Quarter.
   Daniel saw this on the 18:23 autosave. Such saves are not supported.
+
+## The College's members (Daniel's decisions, 2026-10-20)
+
+- **Seats only within the Nasi's diplomatic range.** Seats of members out of range lapse at the
+  yearly refresh. The founding quorum (4 other rabbi-led communities) still counts worldwide, so
+  restoration stays possible in 1066.
+- **Courtier rabbis may hold seats as well** (Daniel: "why not?"). They must be of standing, at
+  piety level 2 or more, and the most learned are seated first, up to the cap of 70.
+  - A seat is a title, so a courtier who receives one becomes a landless ruler. He takes the
+    government of his court's lord, or of the community's host when that lord leads a community,
+    through vanilla's courtier-cardinal mechanism (`government_base`).
+  - How such a member behaves in play needs a live check.
+- **Lay rabbis keep their seats** (Daniel), unlike vanilla, which bars lay rulers from
+  cardinalates (`pam_can_receive_cardinalate_trigger`: theocracy, holy order, or not a ruler).
+  There is no Jewish theocracy government for a member to be on.
