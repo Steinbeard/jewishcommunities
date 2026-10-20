@@ -394,6 +394,26 @@ kehillah_sanhedrin_install_nasi_effect = {
 		}
 		resolve_title_and_vassal_change = scope:change
 		debug_log = "KEHILLAH_SANHEDRIN: the new Nasi gave up his community"
+		# Safety net (live 2026-10-20): this transfer runs nested inside the
+		# election's own change, and the heir of Worms came out on a feudal
+		# government with no Quarter (unplayable; Game Over when played),
+		# because kehillah_on_title_gain's deferred handoff never ran for
+		# him. Check the heir here and queue the proven repair
+		# (kehillah_succession.0010: Quarter scaffold, then the government).
+		scope:kehillah_given_up_community.holder ?= {
+			if = {
+				limit = { NOT = { government_has_flag = government_is_kehillah } }
+				scope:kehillah_given_up_community = { save_scope_as = kq_title }
+				if = {
+					limit = { exists = domicile }
+					change_government = kehillah_government
+					debug_log = "KEHILLAH_SANHEDRIN: the community's heir had a Quarter, Kehillah government set"
+				}
+				else = { debug_log = "KEHILLAH_SANHEDRIN: the community's heir has no Quarter, repair queued" }
+				trigger_event = { id = kehillah_succession.0010 days = 1 }
+				debug_log_scopes = yes
+			}
+		}
 	}
 	if = {
 		limit = {
