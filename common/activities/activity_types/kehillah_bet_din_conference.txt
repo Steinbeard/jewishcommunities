@@ -263,6 +263,7 @@ activity_kehillah_bet_din_conference = {
 			2 = kehillah_bet_din_invite_rule_jewish_courtiers
 			3 = kehillah_bet_din_invite_rule_jewish_scholars
 			4 = kehillah_bet_din_invite_rule_jewish_adventurers
+			5 = kehillah_bet_din_invite_rule_sanhedrin_delegates
 		}
 	}
 
@@ -481,6 +482,21 @@ activity_kehillah_bet_din_conference = {
 						limit = { exists = scope:activity.var:kehillah_bet_din_judge3 }
 						kehillah_bet_din_draw_case_effect = yes
 					}
+
+					# V45: a Synod or Sanhedrin intent puts a takkanah before
+					# the attendees alongside the docket. The motion opens a
+					# day in, the delegates vote while the cases are heard,
+					# and on_complete below announces the ruling.
+					if = {
+						limit = {
+							exists = scope:activity.var:kehillah_bet_din_judge3
+							OR = {
+								has_activity_intent = kehillah_bet_din_synod_intent
+								has_activity_intent = kehillah_bet_din_sanhedrin_intent
+							}
+						}
+						kehillah_synod_open_session_effect = yes
+					}
 				}
 			}
 		}
@@ -553,6 +569,11 @@ activity_kehillah_bet_din_conference = {
 		if = {
 			limit = { this = scope:host }
 			trigger_event = kehillah_bet_din.0099
+			# V45: the synod's ruling, if a motion was put this sitting.
+			if = {
+				limit = { scope:activity = { has_variable = kehillah_synod_takkanah } }
+				trigger_event = kehillah_synod.0103
+			}
 		}
 	}
 
@@ -705,9 +726,16 @@ activity_kehillah_bet_din_conference = {
 	# (common/activities/intents/kehillah_bet_din_intents.txt) is the same
 	# Justice intent, same icon and auto-completion, with a weight that is
 	# never below 10.
+	# V45 (docs/spec/v45-rabbinic-synods-and-minhag-ashkenaz.md): the
+	# Synod and Sanhedrin intents are the gated tiers of the same sitting
+	# (common/activities/intents/kehillah_synod_intents.txt). Host only.
 	host_intents = {
 		default = kehillah_bet_din_justice_intent
-		intents = { kehillah_bet_din_justice_intent }
+		intents = {
+			kehillah_bet_din_justice_intent
+			kehillah_bet_din_synod_intent
+			kehillah_bet_din_sanhedrin_intent
+		}
 	}
 
 	guest_intents = {

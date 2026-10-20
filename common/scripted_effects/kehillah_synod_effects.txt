@@ -1,0 +1,234 @@
+﻿# V45 rabbinic synods (docs/spec/v45-rabbinic-synods-and-minhag-ashkenaz.md).
+
+# ---------------------------------------------------------------------
+# Game start, after the lobby. Vanilla's on_game_start (game_start.txt,
+# "Rabbene Gershom outlaws polygamy") gives every start on or after
+# 1000.1.1 a monogamous Rabbinic main rite. That herem bound Ashkenaz
+# only, and in this mod Ashkenaz becomes its own rite at the 1066 synod,
+# so the general rite gets its polygamy back. Both of vanilla's marker
+# variables go on the rite: the yearly check in yearly_on_actions.txt
+# reads them there (NOT = { a b }, so it needs both), and would otherwise
+# fire jewish_events.0001 every year and undo this. Pre-1000 starts are
+# left to vanilla's own event.
+# ---------------------------------------------------------------------
+kehillah_restore_general_rite_polygamy_effect = {
+	if = {
+		limit = {
+			game_start_date >= 1000.1.1
+			exists = rite:rabbinism
+		}
+		rite:rabbinism = {
+			change_rite_doctrine = doctrine_polygamy
+			set_variable = rabbinicism_accepted_monogamy
+			set_variable = rabbinicism_rejected_monogamy
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# Found Minhag Ashkenaz. Scope: the founder (the synod's convener).
+# Callers show kehillah_synod_found_ashkenaz_tt themselves.
+#
+# LIVE-TEST FIX, 2026-10-19: the founding runs in the hidden event
+# kehillah_synod.0002, not inline. Inline, even inside hidden_effect, CK3
+# evaluated rite:minhag_ashkenaz while building the option's tooltip,
+# before the rite exists: about 99,000 "Failed to fetch a valid rite"
+# errors in five seconds of hovering. The event also carries the news, so
+# that it sees the founded rite.
+# ---------------------------------------------------------------------
+kehillah_found_minhag_ashkenaz_effect = {
+	if = {
+		limit = { NOT = { exists = global_var:kehillah_minhag_ashkenaz_founded } }
+		trigger_event = kehillah_synod.0002
+	}
+}
+
+# The founding itself. Only kehillah_synod.0002 calls this.
+kehillah_found_minhag_ashkenaz_now_effect = {
+	if = {
+		limit = {
+			NOT = { exists = global_var:kehillah_minhag_ashkenaz_founded }
+			faith = faith:rabbinic_faith
+		}
+		create_rite_from_type = {
+			type = minhag_ashkenaz
+			convert = yes
+		}
+		set_global_variable = { name = kehillah_minhag_ashkenaz_founded value = yes }
+		rite:minhag_ashkenaz = { add_rite_culture = culture:ashkenazi }
+		rite:rabbinism ?= { remove_rite_culture = culture:ashkenazi }
+		every_living_character = {
+			limit = {
+				faith = faith:rabbinic_faith
+				NOT = { rite = rite:minhag_ashkenaz }
+				OR = {
+					culture = culture:ashkenazi
+					kehillah_ashkenazi_kehillah_member_trigger = yes
+				}
+			}
+			set_character_rite = rite:minhag_ashkenaz
+		}
+		every_county = {
+			limit = {
+				faith = faith:rabbinic_faith
+				culture = culture:ashkenazi
+			}
+			set_county_rite = rite:minhag_ashkenaz
+		}
+	}
+}
+
+# Scope: a just-created character. Script that creates Ashkenazi Jews with
+# a hard-coded rite:rabbinism (the Norman-conquest founders, the pool
+# repopulation patch) calls this so they join Minhag Ashkenaz once it
+# exists. Births need nothing: children take their parents' rite.
+kehillah_apply_ashkenaz_rite_effect = {
+	if = {
+		limit = {
+			exists = global_var:kehillah_minhag_ashkenaz_founded
+			faith = faith:rabbinic_faith
+			rite = rite:rabbinism
+			OR = {
+				culture = culture:ashkenazi
+				kehillah_ashkenazi_kehillah_member_trigger = yes
+			}
+		}
+		set_character_rite = rite:minhag_ashkenaz
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# Open a synod inside a Sitting of the Bet Din. Scope: the host, from
+# phase_bet_din_case_1's on_phase_active once the docket has opened
+# (scope:activity). The host's own vote is the 1 seeded into votes_for.
+# The cooldown starts now, and kehillah_synod_in_session waives the
+# intent's requirements for the rest of the sitting.
+# ---------------------------------------------------------------------
+kehillah_synod_open_session_effect = {
+	scope:activity = {
+		set_variable = { name = kehillah_synod_votes_for value = 1 }
+		set_variable = { name = kehillah_synod_votes_against value = 0 }
+	}
+	if = {
+		limit = { has_activity_intent = kehillah_bet_din_sanhedrin_intent }
+		scope:activity = { set_variable = { name = kehillah_synod_level value = flag:sanhedrin } }
+	}
+	else = {
+		scope:activity = { set_variable = { name = kehillah_synod_level value = flag:regional } }
+	}
+	set_variable = { name = kehillah_synod_in_session days = 365 }
+	set_variable = { name = kehillah_synod_cooldown years = kehillah_synod_cooldown_years }
+	if = {
+		limit = { kehillah_synod_has_marriage_motion_trigger = yes }
+		trigger_event = { id = kehillah_synod.0100 days = kehillah_synod_motion_delay_days }
+	}
+	else = {
+		trigger_event = { id = kehillah_synod.0105 days = kehillah_synod_motion_delay_days }
+	}
+}
+
+# Put the chosen motion before the sitting. Scope: the host, in a motion
+# event. MOTION: flag:<takkanah>.
+kehillah_synod_put_motion_effect = {
+	involved_activity ?= { set_variable = { name = kehillah_synod_takkanah value = $MOTION$ } }
+	add_prestige = {
+		value = kehillah_synod_prestige_cost
+		multiply = -1
+	}
+	trigger_event = kehillah_synod.0101
+}
+
+# ---------------------------------------------------------------------
+# Write a takkanah to the scoped leader's community and to every
+# registered community it binds: the same minhag region at a Synod, every
+# community at a Sanhedrin (scope:kehillah_synod_level). VAR: the
+# variable name.
+# ---------------------------------------------------------------------
+kehillah_synod_bind_effect = {
+	save_scope_as = kehillah_synod_binder
+	primary_title ?= { set_variable = $VAR$ }
+	if = {
+		limit = { scope:kehillah_synod_level ?= flag:sanhedrin }
+		custom_tooltip = kehillah_sanhedrin_binds_all_tt
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				holder ?= {
+					NOT = { this = scope:kehillah_synod_binder }
+					government_has_flag = government_is_kehillah
+				}
+			}
+			set_variable = $VAR$
+		}
+	}
+	else = {
+		custom_tooltip = kehillah_synod_binds_region_tt
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				holder ?= {
+					NOT = { this = scope:kehillah_synod_binder }
+					government_has_flag = government_is_kehillah
+					kehillah_shares_minhag_region_trigger = { OTHER = scope:kehillah_synod_binder }
+				}
+			}
+			set_variable = $VAR$
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# Enact the takkanah a synod passed. Scope: the host.
+# scope:kehillah_synod_takkanah: the motion flag.
+# scope:kehillah_synod_level: flag:regional or flag:sanhedrin.
+# ---------------------------------------------------------------------
+kehillah_synod_enact_takkanah_effect = {
+	if = {
+		limit = { scope:kehillah_synod_takkanah = flag:herem_polygamy }
+		custom_tooltip = kehillah_synod_found_ashkenaz_tt
+		hidden_effect = { kehillah_found_minhag_ashkenaz_effect = yes }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
+	}
+	else_if = {
+		limit = { scope:kehillah_synod_takkanah = flag:herem_all_israel }
+		custom_tooltip = kehillah_sanhedrin_herem_all_israel_tt
+		rite:rabbinism ?= { change_rite_doctrine = doctrine_monogamy }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
+	}
+	else_if = {
+		limit = { scope:kehillah_synod_takkanah = flag:ketubbah_clause }
+		kehillah_synod_bind_effect = { VAR = kehillah_takkanah_ketubbah_clause }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_ketubbah_stability }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_ketubbah_greatness }
+	}
+	else_if = {
+		limit = { scope:kehillah_synod_takkanah = flag:gentile_courts }
+		kehillah_synod_bind_effect = { VAR = kehillah_takkanah_gentile_courts }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_gentile_courts_stability }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
+	}
+	else_if = {
+		limit = { scope:kehillah_synod_takkanah = flag:informers }
+		kehillah_synod_bind_effect = { VAR = kehillah_takkanah_informers }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_informers_stability }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
+	}
+	else_if = {
+		limit = { scope:kehillah_synod_takkanah = flag:hayishuv }
+		kehillah_synod_bind_effect = { VAR = kehillah_takkanah_hayishuv }
+		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_synod_hayishuv_prosperity }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_hayishuv_stability }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_hayishuv_greatness }
+	}
+	else_if = {
+		limit = { scope:kehillah_synod_takkanah = flag:letters }
+		kehillah_synod_bind_effect = { VAR = kehillah_takkanah_letters }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_letters_stability }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_letters_greatness }
+	}
+	if = {
+		limit = { scope:kehillah_synod_level ?= flag:sanhedrin }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_sanhedrin_passed_greatness }
+	}
+}

@@ -182,6 +182,14 @@ icon, activity header icon, activity header background, phase icon) -- a real, a
 - **The docket is fixed, not drawn from a pool.** Part 2 is unchanged: blocked on the case-idea
   draft per §5, not started.
 
+> **Case 3 superseded, 2026-10-18 ([v45](v45-rabbinic-synods-and-minhag-ashkenaz.md) §4).**
+> - **The old effect was a no-op.** Vanilla's game start already makes the faith monogamous in
+>   any start after 1000, so in 1066 the faith-doctrine effect described above did nothing.
+> - **The new draw.** The case is now drawn when the host's *rite* permits polygamy.
+> - **The new effect.** A great "forbid" ruling writes a community ketubbah clause. Doctrine
+>   changes belong to the Regional Synod.
+> - **The §9 probe** that saw the doctrine flip ran on a pre-fix build, from the console.
+
 ## 9. Live-test pass, 2026-09-08 -- PASS, with a real bug found and fixed live
 
 > **Partly superseded by §11.** This pass called the docket done, and two structural bugs -- the

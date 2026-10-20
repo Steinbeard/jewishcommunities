@@ -4,6 +4,10 @@
 # "more events about characters trying to missionize the community".
 # Paris 1240 (Nicholas Donin), Barcelona 1263 (Pablo Christiani and
 # Nachmanides), Tortosa 1413; the friars' sermons in the synagogues.
+# Reworked 2026-10-18 (v38 addendum): the odds are learning duels shown
+# in the tooltip, pillar changes go through kehillah_change_pillar_effect,
+# and before kehillah_friars_year (1216) the missionaries are monks and
+# priests, not friars.
 # =====================================================================
 #   .0001 The Disputation   .0002 its outcome report (players)
 #   .0010 Compelled Sermons
@@ -13,7 +17,16 @@ namespace = kehillah_mission
 kehillah_mission.0001 = {
 	type = character_event
 	title = kehillah_mission.0001.t
-	desc = kehillah_mission.0001.desc
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { current_year >= kehillah_friars_year }
+				desc = kehillah_mission.0001.desc_friar
+			}
+			desc = kehillah_mission.0001.desc_monk
+		}
+		desc = kehillah_mission.0001.desc_champion
+	}
 	theme = learning
 	left_portrait = {
 		character = scope:kehillah_friar
@@ -29,6 +42,7 @@ kehillah_mission.0001 = {
 
 	immediate = {
 		domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_mission_host }
+		domicile.domicile_location = { save_scope_as = kehillah_mission_town }
 		# The community's champion: its most learned adult Jew.
 		ordered_courtier = {
 			limit = {
@@ -47,7 +61,7 @@ kehillah_mission.0001 = {
 			}
 			save_scope_as = kehillah_disputant
 		}
-		# The challenger: a convert turned friar.
+		# The challenger: a convert, now a friar (or, earlier, a monk).
 		create_character = {
 			faith = scope:kehillah_mission_host.faith
 			culture = domicile.domicile_location.county.culture
@@ -61,36 +75,50 @@ kehillah_mission.0001 = {
 		set_variable = { name = kehillah_mission_host_ref value = scope:kehillah_mission_host }
 	}
 
-	# Dispute boldly.
+	# Dispute boldly: the champion's learning against his, and the lord
+	# judges. Much to win, more to lose.
 	option = {
 		name = kehillah_mission.0001.a
-		random_list = {
-			0 = {
-				modifier = { add = kehillah_disputation_bold_success_value }
-				desc = kehillah_mission_disputation_won
-				primary_title = { change_variable = { name = kehillah_var_greatness add = 60 } }
-				custom_tooltip = kehillah_mission_bold_won_tt
-				hidden_effect = {
-					scope:kehillah_mission_host = { kehillah_shift_outlook_effect = { AMOUNT = 5 } }
-					scope:kehillah_mission_host.faith = { kehillah_faith_pressure_add_effect = { AMOUNT = -1 } }
-					set_variable = { name = kehillah_mission_outcome value = flag:won }
+		scope:kehillah_disputant = {
+			duel = {
+				skill = learning
+				target = scope:kehillah_friar
+				50 = {
+					desc = kehillah_mission_disputation_won
+					compare_modifier = {
+						value = scope:duel_value
+						multiplier = 3.5
+					}
+					kehillah_lord_outlook_odds_modifier = { HOST = scope:kehillah_mission_host }
+					min = 5
+					root = {
+						kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_disputation_won_greatness }
+						custom_tooltip = kehillah_mission_bold_won_tt
+						hidden_effect = {
+							scope:kehillah_mission_host = { kehillah_shift_outlook_effect = { AMOUNT = 5 } }
+							scope:kehillah_mission_host.faith = { kehillah_faith_pressure_add_effect = { AMOUNT = -1 } }
+							set_variable = { name = kehillah_mission_outcome value = flag:won }
+						}
+					}
 				}
-			}
-			0 = {
-				modifier = { add = kehillah_disputation_bold_failure_value }
-				desc = kehillah_mission_disputation_lost
-				primary_title = {
-					change_variable = { name = kehillah_var_greatness add = -30 }
-					change_variable = { name = kehillah_var_stability add = -40 }
-					clamp_variable = { name = kehillah_var_greatness min = 0 max = 100000 }
-					clamp_variable = { name = kehillah_var_stability min = 0 max = 100000 }
-				}
-				custom_tooltip = kehillah_mission_bold_lost_tt
-				hidden_effect = {
-					scope:kehillah_mission_host = { kehillah_shift_outlook_effect = { AMOUNT = -5 } }
-					scope:kehillah_mission_host.faith = { kehillah_faith_pressure_add_effect = { AMOUNT = 2 } }
-					kehillah_charter_censor_text_effect = yes
-					set_variable = { name = kehillah_mission_outcome value = flag:lost }
+				50 = {
+					desc = kehillah_mission_disputation_lost
+					compare_modifier = {
+						value = scope:duel_value
+						multiplier = -3.5
+					}
+					min = 5
+					root = {
+						kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_disputation_bold_lost_greatness }
+						kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_disputation_bold_lost_stability }
+						custom_tooltip = kehillah_mission_bold_lost_tt
+						hidden_effect = {
+							scope:kehillah_mission_host = { kehillah_shift_outlook_effect = { AMOUNT = -5 } }
+							scope:kehillah_mission_host.faith = { kehillah_faith_pressure_add_effect = { AMOUNT = 2 } }
+							kehillah_charter_censor_text_effect = yes
+							set_variable = { name = kehillah_mission_outcome value = flag:lost }
+						}
+					}
 				}
 			}
 		}
@@ -104,28 +132,40 @@ kehillah_mission.0001 = {
 		}
 	}
 
-	# Dispute cautiously.
+	# Dispute cautiously: better odds of conceding nothing, little glory.
 	option = {
 		name = kehillah_mission.0001.b
-		random_list = {
-			0 = {
-				modifier = { add = kehillah_disputation_cautious_success_value }
-				desc = kehillah_mission_disputation_held
-				primary_title = { change_variable = { name = kehillah_var_greatness add = 20 } }
-				custom_tooltip = kehillah_mission_cautious_held_tt
-				hidden_effect = { set_variable = { name = kehillah_mission_outcome value = flag:held } }
-			}
-			0 = {
-				modifier = { add = kehillah_disputation_cautious_failure_value }
-				desc = kehillah_mission_disputation_lost
-				primary_title = {
-					change_variable = { name = kehillah_var_stability add = -20 }
-					clamp_variable = { name = kehillah_var_stability min = 0 max = 100000 }
+		scope:kehillah_disputant = {
+			duel = {
+				skill = learning
+				target = scope:kehillah_friar
+				65 = {
+					desc = kehillah_mission_disputation_held
+					compare_modifier = {
+						value = scope:duel_value
+						multiplier = 3
+					}
+					min = 5
+					root = {
+						kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_disputation_held_greatness }
+						hidden_effect = { set_variable = { name = kehillah_mission_outcome value = flag:held } }
+					}
 				}
-				custom_tooltip = kehillah_mission_cautious_lost_tt
-				hidden_effect = {
-					scope:kehillah_mission_host = { kehillah_shift_outlook_effect = { AMOUNT = -2 } }
-					set_variable = { name = kehillah_mission_outcome value = flag:lost }
+				35 = {
+					desc = kehillah_mission_disputation_lost
+					compare_modifier = {
+						value = scope:duel_value
+						multiplier = -3
+					}
+					min = 5
+					root = {
+						kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_disputation_cautious_lost_stability }
+						custom_tooltip = kehillah_mission_cautious_lost_tt
+						hidden_effect = {
+							scope:kehillah_mission_host = { kehillah_shift_outlook_effect = { AMOUNT = -2 } }
+							set_variable = { name = kehillah_mission_outcome value = flag:lost }
+						}
+					}
 				}
 			}
 		}
@@ -133,15 +173,13 @@ kehillah_mission.0001 = {
 		ai_chance = { base = 50 }
 	}
 
-	# Pay to be excused.
+	# Pay to be excused: certain, and a little shameful.
 	option = {
 		name = kehillah_mission.0001.c
 		trigger = { gold >= medium_gold_value }
+		show_as_unavailable = { always = yes }
 		remove_short_term_gold = medium_gold_value
-		primary_title = {
-			change_variable = { name = kehillah_var_greatness add = -10 }
-			clamp_variable = { name = kehillah_var_greatness min = 0 max = 100000 }
-		}
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_disputation_excused_greatness }
 		custom_tooltip = kehillah_mission_excused_tt
 		hidden_effect = { scope:kehillah_mission_host = { kehillah_shift_outlook_effect = { AMOUNT = -2 } } }
 		ai_chance = { base = 20 }
@@ -190,8 +228,24 @@ kehillah_mission.0002 = {
 
 kehillah_mission.0010 = {
 	type = character_event
-	title = kehillah_mission.0010.t
-	desc = kehillah_mission.0010.desc
+	title = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { current_year >= kehillah_friars_year }
+				desc = kehillah_mission.0010.t
+			}
+			desc = kehillah_mission.0010.t_priests
+		}
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { current_year >= kehillah_friars_year }
+				desc = kehillah_mission.0010.desc
+			}
+			desc = kehillah_mission.0010.desc_priests
+		}
+	}
 	theme = faith
 	left_portrait = {
 		character = scope:kehillah_mission_host
@@ -206,42 +260,50 @@ kehillah_mission.0010 = {
 
 	immediate = {
 		domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_mission_host }
+		domicile.domicile_location = { save_scope_as = kehillah_mission_town }
 	}
 
-	# Sit in silence.
+	# Sit in silence: no offence given, but the sermons wear on the
+	# congregation, and someone may listen too well.
 	option = {
 		name = kehillah_mission.0010.a
-		primary_title = {
-			change_variable = { name = kehillah_var_stability add = -20 }
-			clamp_variable = { name = kehillah_var_stability min = 0 max = 100000 }
-		}
-		custom_tooltip = kehillah_mission_silence_tt
-		hidden_effect = {
-			random = {
-				chance = 25
-				kehillah_mission_conversion_effect = yes
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_sermon_silence_stability }
+		random_list = {
+			75 = {
+				desc = kehillah_mission_silence_held
+			}
+			25 = {
+				desc = kehillah_mission_silence_convert
+				custom_tooltip = kehillah_mission_convert_tt
+				hidden_effect = { kehillah_mission_conversion_effect = yes }
 			}
 		}
 		ai_chance = { base = 50 }
 	}
 
-	# Answer them.
+	# Answer them from the Torah: your learning against trained preachers.
 	option = {
 		name = kehillah_mission.0010.b
-		random_list = {
-			0 = {
-				modifier = { add = kehillah_sermon_answer_success_value }
+		duel = {
+			skill = learning
+			value = decent_skill_rating
+			50 = {
 				desc = kehillah_mission_sermon_answered
-				primary_title = { change_variable = { name = kehillah_var_greatness add = 20 } }
-				custom_tooltip = kehillah_mission_answered_tt
-			}
-			0 = {
-				modifier = { add = kehillah_sermon_answer_failure_value }
-				desc = kehillah_mission_sermon_offended
-				primary_title = {
-					change_variable = { name = kehillah_var_stability add = -30 }
-					clamp_variable = { name = kehillah_var_stability min = 0 max = 100000 }
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
 				}
+				min = 5
+				kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_sermon_answered_greatness }
+			}
+			50 = {
+				desc = kehillah_mission_sermon_offended
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+				}
+				min = 5
+				kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_sermon_offended_stability }
 				custom_tooltip = kehillah_mission_offended_tt
 				hidden_effect = {
 					scope:kehillah_mission_host = { kehillah_shift_outlook_effect = { AMOUNT = -5 } }
@@ -258,10 +320,11 @@ kehillah_mission.0010 = {
 		}
 	}
 
-	# Pay the friars to preach elsewhere.
+	# Pay them to preach elsewhere.
 	option = {
 		name = kehillah_mission.0010.c
 		trigger = { gold >= minor_gold_value }
+		show_as_unavailable = { always = yes }
 		remove_short_term_gold = minor_gold_value
 		custom_tooltip = kehillah_mission_bribed_tt
 		hidden_effect = { scope:kehillah_mission_host = { kehillah_shift_outlook_effect = { AMOUNT = -1 } } }

@@ -1,0 +1,477 @@
+﻿# V47 phase B: the Sanhedrin in the Land of Israel
+# (docs/spec/v47-gaon-and-the-seat-of-the-sanhedrin.md). Replaces V46's
+# landless Sanhedrin (d_kehillah_sanhedrin, removed).
+#
+# THE SEAT. global_var:kehillah_sanhedrin_seat is a county in the de jure
+# Kingdom of Jerusalem held by the founder (a king or lord of the Land, or a
+# community leader granted it, kehillah_petition_for_land_decision). It is
+# Rabbinic Judaism's head-of-faith title, and carries the members' election
+# (kehillah_sanhedrin_succession_law). Its holder is always LANDED, which is
+# why this works: live tests on 2026-10-19 showed CK3 forces any landless
+# head of faith onto vanilla theocracy and strips his Quarter, while a
+# landed one keeps kehillah_landed_government.
+# global_var:kehillah_sanhedrin_seat_community is the
+# founder's community, if he led one (Daniel: it becomes the seat). It goes
+# to a Nasi who leads a community.
+# A Nasi elected from elsewhere gives up his own community to its heir.
+
+# ---------------------------------------------------------------------
+# Head-of-faith and clergy doctrines on every Rabbinic rite. Both groups act
+# through the main rite only, and the main rite follows the head of faith's
+# own rite (live 2026-10-19), so every rite carries them. HEAD:
+# doctrine_temporal_head / doctrine_no_head. CLERGY:
+# doctrine_theocracy_lay_clergy / doctrine_theocracy_temporal. A landed
+# temporal head with lay clergy is the live-verified combination.
+# ---------------------------------------------------------------------
+kehillah_sanhedrin_set_rite_doctrines_effect = {
+	faith:rabbinic_faith.main_rite ?= {
+		if = { limit = { NOT = { rite_has_doctrine = $CLERGY$ } } change_rite_doctrine = $CLERGY$ }
+		if = { limit = { NOT = { rite_has_doctrine = $HEAD$ } } change_rite_doctrine = $HEAD$ }
+	}
+	rite:rabbinism ?= {
+		if = { limit = { NOT = { rite_has_doctrine = $CLERGY$ } } change_rite_doctrine = $CLERGY$ }
+		if = { limit = { NOT = { rite_has_doctrine = $HEAD$ } } change_rite_doctrine = $HEAD$ }
+	}
+	rite:merkabah ?= {
+		if = { limit = { NOT = { rite_has_doctrine = $CLERGY$ } } change_rite_doctrine = $CLERGY$ }
+		if = { limit = { NOT = { rite_has_doctrine = $HEAD$ } } change_rite_doctrine = $HEAD$ }
+	}
+	if = {
+		limit = { exists = global_var:kehillah_minhag_ashkenaz_founded }
+		rite:minhag_ashkenaz = {
+			if = { limit = { NOT = { rite_has_doctrine = $CLERGY$ } } change_rite_doctrine = $CLERGY$ }
+			if = { limit = { NOT = { rite_has_doctrine = $HEAD$ } } change_rite_doctrine = $HEAD$ }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# A land grant (kehillah_petition_for_land_decision, or its player-liege
+# event). Scope: a landless Kehillah leader whose liege holds the
+# community's county directly. ORDER MATTERS (live 2026-10-19): the county
+# moves while he is still on kehillah_government, THEN he switches to
+# kehillah_landed_government. That is the order the landed-Nasi spike used,
+# and he kept his Quarter. Switching first and granting after put him on the
+# liege's vanilla government (clan, under a Fatimid liege) and lost his
+# Quarter. No effect can create a domicile on a landed ruler, so a lost
+# Quarter cannot be rebuilt; the debug_log lines say which happened.
+# ---------------------------------------------------------------------
+kehillah_grant_community_county_effect = {
+	save_scope_as = kehillah_land_recipient
+	primary_title = { save_scope_as = kehillah_land_community }
+	scope:kehillah_land_community.title_capital_county = { save_scope_as = kehillah_land_county }
+	create_title_and_vassal_change = {
+		type = granted
+		save_scope_as = change
+		add_claim_on_loss = no
+	}
+	scope:kehillah_land_county = {
+		change_title_holder = {
+			holder = scope:kehillah_land_recipient
+			change = scope:change
+		}
+	}
+	resolve_title_and_vassal_change = scope:change
+	set_primary_title_to = scope:kehillah_land_community
+	if = {
+		limit = { scope:kehillah_land_county.holder ?= scope:kehillah_land_recipient }
+		debug_log = "KEHILLAH_LANDED_GOV: county granted"
+	}
+	else = { debug_log = "KEHILLAH_LANDED_GOV: county NOT granted to the leader" }
+	if = {
+		limit = { exists = domicile }
+		debug_log = "KEHILLAH_LANDED_GOV: Quarter kept through the grant"
+	}
+	else = { debug_log = "KEHILLAH_LANDED_GOV: Quarter LOST in the grant" }
+	kehillah_reconcile_landed_government_effect = yes
+	trigger_event = { id = kehillah_synod.0003 days = 1 }
+}
+
+# ---------------------------------------------------------------------
+# Restore the Sanhedrin (kehillah_restore_sanhedrin_decision). Scope: the
+# founder, any Rabbinic ruler who holds a county in the Land. The seat is
+# the county of his own community if he holds it, else his capital if it
+# is in the Land, else his most developed county there. His community, if
+# he leads one, becomes the seat community (Daniel). A king keeps his own
+# government; a community leader is already on the landed one.
+# ---------------------------------------------------------------------
+kehillah_sanhedrin_restore_effect = {
+	save_scope_as = kehillah_sanhedrin_founder
+	if = {
+		limit = { primary_title ?= { is_kehillah_title_trigger = yes } }
+		primary_title = { save_scope_as = kehillah_sanhedrin_community }
+	}
+	if = {
+		limit = {
+			exists = scope:kehillah_sanhedrin_community
+			scope:kehillah_sanhedrin_community.title_capital_county ?= {
+				holder ?= scope:kehillah_sanhedrin_founder
+				kehillah_county_in_the_land_trigger = yes
+			}
+		}
+		scope:kehillah_sanhedrin_community.title_capital_county = { save_scope_as = kehillah_sanhedrin_county }
+	}
+	else_if = {
+		limit = { capital_county ?= { kehillah_county_in_the_land_trigger = yes } }
+		capital_county = { save_scope_as = kehillah_sanhedrin_county }
+	}
+	else = {
+		ordered_held_title = {
+			limit = {
+				tier = tier_county
+				kehillah_county_in_the_land_trigger = yes
+			}
+			order_by = development_level
+			save_scope_as = kehillah_sanhedrin_county
+		}
+	}
+
+	# The decision's tooltip evaluates this effect even for a ruler with no
+	# county in the Land; unguarded, that flooded error.log with unset
+	# kehillah_sanhedrin_county scopes (live 2026-10-19).
+	if = {
+		limit = { exists = scope:kehillah_sanhedrin_county }
+		set_global_variable = { name = kehillah_sanhedrin_seat value = scope:kehillah_sanhedrin_county }
+		# Both seat titles carry the members' election, so an elected Nasi who
+		# leads a community receives the county AND the community together. That
+		# also keeps player continuation right: "Continue as" follows the primary
+		# title, the community, which would otherwise pass by appointment to
+		# someone the install then strips (kehillah_sanhedrin_install_nasi_effect
+		# is kept as the backstop if the two elections ever differ).
+		scope:kehillah_sanhedrin_county = {
+			set_variable = kehillah_sanhedrin_seat_county
+			set_variable = kehillah_sanhedrin_seat_title
+			add_title_law = kehillah_sanhedrin_succession_law
+		}
+		if = {
+			limit = { exists = scope:kehillah_sanhedrin_community }
+			set_global_variable = { name = kehillah_sanhedrin_seat_community value = scope:kehillah_sanhedrin_community }
+			scope:kehillah_sanhedrin_community = {
+				set_variable = kehillah_sanhedrin_seat_title
+				add_title_law = kehillah_sanhedrin_succession_law
+			}
+			set_primary_title_to = scope:kehillah_sanhedrin_community
+		}
+		kehillah_reconcile_landed_government_effect = yes
+
+		kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
+		faith:rabbinic_faith = { set_religious_head_title = scope:kehillah_sanhedrin_county }
+		kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
+
+		kehillah_update_leader_flavor_effect = yes
+		kehillah_sanhedrin_refresh_seats_effect = yes
+		debug_log = "KEHILLAH_SANHEDRIN: restored"
+		debug_log_scopes = yes
+		every_player = {
+			limit = { NOT = { this = scope:kehillah_sanhedrin_founder } }
+			send_interface_message = {
+				type = msg_kehillah_community_news
+				title = kehillah_news_sanhedrin_restored_t
+				desc = kehillah_news_sanhedrin_restored_d
+				left_icon = scope:kehillah_sanhedrin_founder
+			}
+		}
+	}
+	else = { debug_log = "KEHILLAH_SANHEDRIN: no county in the Land, not restored" }
+}
+
+# ---------------------------------------------------------------------
+# A new Nasi takes the seat county (by the members' election). Scope: him.
+#   1. He gives up his own seat in the College.
+#   2. He gives up any OTHER community he leads, to its heir (Daniel).
+#   3. If he leads a community, he takes the seat community, with its
+#      recorded Quarter. A landed lord on his own government does not.
+#   4. A community leader goes onto kehillah_landed_government (he is now
+#      landed); the doctrines are reset (the main rite follows him).
+# ---------------------------------------------------------------------
+kehillah_sanhedrin_install_nasi_effect = {
+	save_scope_as = kehillah_new_nasi
+	if = {
+		limit = { kehillah_holds_sanhedrin_seat_trigger = yes }
+		every_held_title = {
+			limit = { has_variable = kehillah_sanhedrin_seat }
+			add_to_list = kehillah_vacated_seats
+		}
+		every_in_list = {
+			list = kehillah_vacated_seats
+			scope:kehillah_new_nasi = { destroy_title = prev }
+		}
+	}
+	every_held_title = {
+		limit = {
+			is_kehillah_title_trigger = yes
+			NOT = { this = global_var:kehillah_sanhedrin_seat_community }
+			exists = current_heir
+		}
+		add_to_list = kehillah_nasi_given_up
+	}
+	every_in_list = {
+		list = kehillah_nasi_given_up
+		save_scope_as = kehillah_given_up_community
+		create_title_and_vassal_change = {
+			type = stepped_down
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+		change_title_holder = {
+			holder = scope:kehillah_given_up_community.current_heir
+			change = scope:change
+		}
+		resolve_title_and_vassal_change = scope:change
+		debug_log = "KEHILLAH_SANHEDRIN: the new Nasi gave up his community"
+	}
+	if = {
+		limit = {
+			exists = global_var:kehillah_sanhedrin_seat_community
+			government_has_flag = government_is_kehillah
+			NOT = { global_var:kehillah_sanhedrin_seat_community.holder ?= scope:kehillah_new_nasi }
+		}
+		create_title_and_vassal_change = {
+			type = appointment
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+		global_var:kehillah_sanhedrin_seat_community = {
+			change_title_holder = {
+				holder = scope:kehillah_new_nasi
+				change = scope:change
+			}
+		}
+		resolve_title_and_vassal_change = scope:change
+		debug_log = "KEHILLAH_SANHEDRIN: the seat community passed to the new Nasi"
+	}
+	if = {
+		limit = {
+			exists = global_var:kehillah_sanhedrin_seat_community
+			global_var:kehillah_sanhedrin_seat_community.holder ?= scope:kehillah_new_nasi
+			government_has_flag = government_is_kehillah
+		}
+		set_primary_title_to = global_var:kehillah_sanhedrin_seat_community
+	}
+	kehillah_reconcile_landed_government_effect = yes
+	kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_lay_clergy }
+	kehillah_update_leader_flavor_effect = yes
+	debug_log = "KEHILLAH_SANHEDRIN: Nasi installed"
+	debug_log_scopes = yes
+}
+
+# ---------------------------------------------------------------------
+# Government transitions. Scope: any character.
+#   1. A LANDED leader on kehillah_government, or a landed leader whose
+#      primary title is a community but who is on a non-Kehillah government
+#      -> kehillah_landed_government.
+#   2. A LANDLESS leader on kehillah_landed_government -> kehillah_government.
+# Other governments are never touched (a Jewish king keeps his own, even as
+# Nasi). After a switch, the Quarter is rebuilt from the community record.
+# The engine refuses land to a leader on kehillah_government, so case 1 is
+# a backstop; grants switch first (kehillah_grant_community_county_effect).
+# ---------------------------------------------------------------------
+kehillah_reconcile_landed_government_effect = {
+	if = {
+		limit = {
+			is_ruler = yes
+			is_landed = yes
+			OR = {
+				has_government = kehillah_government
+				# Moved off by the engine on gaining land (to the liege's
+				# government, live 2026-10-19). Only a leader whose PRIMARY
+				# title is a community: a king who holds one keeps his own.
+				AND = {
+					NOT = { government_has_flag = government_is_kehillah }
+					primary_title ?= { is_kehillah_title_trigger = yes }
+				}
+			}
+		}
+		change_government = kehillah_landed_government
+		kehillah_landed_government_restore_quarter_effect = yes
+		if = {
+			limit = { has_government = kehillah_landed_government }
+			debug_log = "KEHILLAH_LANDED_GOV: to landed government, accepted"
+		}
+		else = { debug_log = "KEHILLAH_LANDED_GOV: to landed government, REFUSED" }
+		debug_log_scopes = yes
+	}
+	else_if = {
+		limit = {
+			is_ruler = yes
+			is_landed = no
+			has_government = kehillah_landed_government
+		}
+		change_government = kehillah_government
+		kehillah_landed_government_restore_quarter_effect = yes
+		if = {
+			limit = { has_government = kehillah_government }
+			debug_log = "KEHILLAH_LANDED_GOV: back to Kehillah government, accepted"
+		}
+		else = { debug_log = "KEHILLAH_LANDED_GOV: back to Kehillah government, REFUSED" }
+		debug_log_scopes = yes
+	}
+}
+
+# kehillah_restore_quarter_effect reads scope:kq_title.
+kehillah_landed_government_restore_quarter_effect = {
+	random_held_title = {
+		limit = { is_kehillah_title_trigger = yes }
+		save_scope_as = kq_title
+	}
+	if = {
+		limit = { exists = domicile exists = scope:kq_title }
+		kehillah_restore_quarter_effect = yes
+	}
+	else = { debug_log = "KEHILLAH_LANDED_GOV: no domicile after the switch" }
+}
+
+# ---------------------------------------------------------------------
+# Give the scoped character a seat in the College. Vanilla's cardinalate
+# pattern (11_dlc_pam_scripted_effects.txt): a dynamic, landless duchy
+# destroyed on succession, marked as a clerical elector of Rabbinic
+# Judaism. ORDER MATTERS: it is marked as an elector only AFTER the
+# transfer resolves (on_title_gain would otherwise treat it as a
+# cardinalate). The PAM strip is overridden in
+# kehillah_pam_strip_cardinalate_override.txt.
+# ---------------------------------------------------------------------
+kehillah_sanhedrin_grant_seat_effect = {
+	save_scope_as = kehillah_seat_recipient
+	primary_title = { save_scope_as = kehillah_seat_primary }
+	create_dynamic_title = {
+		tier = duchy
+		name = KEHILLAH_SANHEDRIN_SEAT_NAME
+		adj = KEHILLAH_SANHEDRIN_SEAT_ADJ
+	}
+	create_title_and_vassal_change = {
+		type = created
+		save_scope_as = change
+		add_claim_on_loss = no
+	}
+	scope:new_title ?= {
+		save_scope_as = kehillah_new_seat
+		set_variable = kehillah_sanhedrin_seat
+		# Capital first: set_landless_title errors on a title with no
+		# preferred capital (live 2026-10-19).
+		set_capital_county = global_var:kehillah_sanhedrin_seat
+		set_coa = scope:kehillah_seat_primary
+		set_color_from_title = scope:kehillah_seat_primary
+		set_landless_title = yes
+		set_destroy_on_succession = yes
+		set_no_automatic_claims = yes
+		set_definitive_form = yes
+		set_can_be_named_after_dynasty = no
+		set_can_use_nomadic_naming = no
+		change_title_holder = {
+			holder = scope:kehillah_seat_recipient
+			change = scope:change
+		}
+	}
+	resolve_title_and_vassal_change = scope:change
+	scope:kehillah_new_seat ?= { add_clerical_elector = faith:rabbinic_faith }
+	set_primary_title_to = scope:kehillah_seat_primary
+}
+
+# ---------------------------------------------------------------------
+# Seat every eligible rabbi, up to the cap. Run at restoration and yearly
+# while the Sanhedrin exists: seats are destroyed when their holders die,
+# and vanilla also destroys one when its holder changes rite.
+# ---------------------------------------------------------------------
+kehillah_sanhedrin_refresh_seats_effect = {
+	if = {
+		limit = { exists = global_var:kehillah_sanhedrin_seat }
+		set_global_variable = { name = kehillah_sanhedrin_seat_count value = 0 }
+		faith:rabbinic_faith = {
+			every_clerical_elector_title = {
+				limit = { has_variable = kehillah_sanhedrin_seat }
+				change_global_variable = { name = kehillah_sanhedrin_seat_count add = 1 }
+			}
+		}
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				holder ?= { kehillah_sanhedrin_seat_eligible_trigger = yes }
+			}
+			if = {
+				limit = { global_var:kehillah_sanhedrin_seat_count < kehillah_sanhedrin_seat_cap }
+				holder = { kehillah_sanhedrin_grant_seat_effect = yes }
+				change_global_variable = { name = kehillah_sanhedrin_seat_count add = 1 }
+			}
+		}
+		every_ruler = {
+			limit = {
+				is_landed = yes
+				faith = faith:rabbinic_faith
+				has_trait = kehillah_rabbi_trait
+				kehillah_sanhedrin_seat_eligible_trigger = yes
+			}
+			if = {
+				limit = { global_var:kehillah_sanhedrin_seat_count < kehillah_sanhedrin_seat_cap }
+				kehillah_sanhedrin_grant_seat_effect = yes
+				change_global_variable = { name = kehillah_sanhedrin_seat_count add = 1 }
+			}
+		}
+		remove_global_variable = kehillah_sanhedrin_seat_count
+	}
+}
+
+# ---------------------------------------------------------------------
+# Yearly. The Sanhedrin lapses when its seat has no Rabbinic holder (lost
+# to a liege, a war, or no valid successor). The faith returns to no head,
+# the seats dissolve, and a later rabbi may restore it.
+# ---------------------------------------------------------------------
+kehillah_sanhedrin_lapse_check_effect = {
+	if = {
+		limit = {
+			exists = global_var:kehillah_sanhedrin_seat
+			NOT = {
+				global_var:kehillah_sanhedrin_seat.holder ?= {
+					faith = faith:rabbinic_faith
+				}
+			}
+		}
+		debug_log = "KEHILLAH_SANHEDRIN: lapsed"
+		global_var:kehillah_sanhedrin_seat = {
+			if = {
+				limit = { has_variable = kehillah_sanhedrin_seat_county }
+				remove_variable = kehillah_sanhedrin_seat_county
+			}
+			if = {
+				limit = { has_variable = kehillah_sanhedrin_seat_title }
+				remove_variable = kehillah_sanhedrin_seat_title
+			}
+		}
+		global_var:kehillah_sanhedrin_seat_community ?= {
+			if = {
+				limit = { has_variable = kehillah_sanhedrin_seat_title }
+				remove_variable = kehillah_sanhedrin_seat_title
+			}
+		}
+		if = {
+			limit = { exists = faith:rabbinic_faith.religious_head }
+			faith:rabbinic_faith = { remove_religious_head_title = yes }
+		}
+		kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_no_head CLERGY = doctrine_theocracy_temporal }
+		remove_global_variable = kehillah_sanhedrin_seat
+		if = {
+			limit = { exists = global_var:kehillah_sanhedrin_seat_community }
+			remove_global_variable = kehillah_sanhedrin_seat_community
+		}
+		faith:rabbinic_faith = {
+			every_clerical_elector_title = {
+				limit = { has_variable = kehillah_sanhedrin_seat }
+				add_to_list = kehillah_lapsed_seats
+			}
+		}
+		if = {
+			limit = { faith:rabbinic_faith = { any_clerical_elector_title = { has_variable = kehillah_sanhedrin_seat } } }
+			every_in_list = {
+				list = kehillah_lapsed_seats
+				holder ?= { destroy_title = prev }
+			}
+		}
+		every_player = {
+			limit = { faith = faith:rabbinic_faith }
+			send_interface_message = {
+				type = msg_kehillah_community_news
+				title = kehillah_news_sanhedrin_lapsed_t
+				desc = kehillah_news_sanhedrin_lapsed_d
+			}
+		}
+	}
+}

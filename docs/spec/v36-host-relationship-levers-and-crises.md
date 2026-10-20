@@ -157,3 +157,17 @@ should fine-tune the other systems instead. In its place:
   sermons, faith drift tied to pressure, then the vassal faction of V31 §7.
 - **The sermons change stays:** a zealous chaplain preaches -1 a year even under a protective
   teaching.
+
+## Addendum, 2026-10-18: the Lord's Demands, odds shown
+
+**Status:** built 2026-10-18; ck3-tiger clean; live test pending.
+
+- The plea is made by the Shtadlan, or by the leader himself without one (it was hidden without a
+  Shtadlan). Base 50 against 50; factors: the lord's band, the envoy's diplomacy, the lord's opinion
+  of the leader, greedy -10. Demands come only from Cold or Hostile lords, so the typical odds stay
+  near the old 25 + diplomacy x2 + 10.
+- The appeal to the head of the faith: base 40 against 60; his band (+10 Well-disposed, +25
+  Protective) and +15 if the lord is zealous and fears the rebuke.
+- Prosperity and Stability changes go through kehillah_change_pillar_effect; the outlook number is
+  gone from the description and the outlook tooltips say the direction, not the number.
+- Paying off an accusation (v37 addendum) makes the same lord's Demands likelier for 10 years.

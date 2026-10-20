@@ -174,3 +174,22 @@ part of **Petition the Host**:
 - `kehillah_outlook_debug.15`: the Shtadlan's audience.
 - `.16`: the exchange.
 - `.17`: the county faith's pressure, goodwill and the tension term.
+
+## Addendum, 2026-10-18: the disputation and the sermons reworked
+
+**Status:** built 2026-10-18 (Daniel asked for the persecution events' choices to be reviewed after
+the accusation rework; see the v37 addendum). ck3-tiger clean; live test pending. Supersedes the
+odds and the loc of section 5.
+
+- **The Disputation** (kehillah_mission.0001). Bold and cautious are now learning duels between the
+  community's champion and the convert, shown in the tooltip: bold 50/50 plus the lord's band (he
+  judges), cautious 65/35. The pillar changes are unchanged in size and now come from
+  kehillah_change_pillar_effect (constants in kehillah_teaching_change_values.txt), not hand-written
+  loc. Before kehillah_friars_year (1216) the convert has taken a monk's cowl, not a friar's habit.
+- **Not before 1110.** The incident director no longer picks a disputation before
+  kehillah_incident_christian_late_year, the floor Daniel set on 2026-10-15 for the friars, the
+  badge and the Talmud trial. Gilbert Crispin's disputation (c. 1092) was a private, friendly one;
+  the summoned public disputation is 12th-13th century.
+- **Compelled Sermons** (kehillah_mission.0010). Silence shows its 25% chance that someone converts;
+  answering is a learning duel against decent_skill_rating. Before 1216 the preachers are the lord's
+  priests ("A Sermon in the Synagogue").

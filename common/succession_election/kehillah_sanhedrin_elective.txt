@@ -1,0 +1,103 @@
+﻿# V46 (docs/spec/v46-the-sanhedrin.md): electing the Nasi of the Sanhedrin.
+# Electors and candidates are the members: holders of Sanhedrin seats
+# (same_faith_clerical_electors, as vanilla's theocratic_elective uses for
+# cardinals). Seats go only to rabbis who lead a community or hold land
+# (kehillah_sanhedrin_seat_eligible_trigger), so every member is a ruler,
+# which the engine requires of electors.
+kehillah_sanhedrin_elective = {
+	elector_vote_strength = {
+		base = 1
+	}
+
+	electors = {
+		character_sets = {
+			kehillah_sanhedrin_members = {
+				type = same_faith_clerical_electors
+				limit = {
+					this != scope:holder
+				}
+			}
+		}
+	}
+
+	candidates = {
+		limit = {
+			is_adult = yes
+			is_incapable = no
+			has_trait = kehillah_rabbi_trait
+		}
+		character_sets = {
+			kehillah_sanhedrin_member_candidates = {
+				type = same_faith_clerical_electors
+			}
+		}
+	}
+
+	# root = the elector, scope:candidate = the candidate.
+	candidate_score = {
+		base = 0
+		# A member votes for himself if he thinks he can win.
+		modifier = {
+			add = 40
+			scope:candidate = root
+		}
+		# Learning above all.
+		modifier = {
+			add = {
+				value = scope:candidate.learning
+				multiply = 3
+			}
+		}
+		modifier = {
+			add = 30
+			scope:candidate = { piety_level >= 5 }
+		}
+		modifier = {
+			add = 15
+			scope:candidate = { piety_level = 4 }
+		}
+		modifier = {
+			add = 20
+			scope:candidate = { has_trait = theologian }
+		}
+		modifier = {
+			add = 25
+			scope:candidate = {
+				has_trait_xp = {
+					trait = kehillah_rabbi_trait
+					track = talmudics
+					value >= 100
+				}
+			}
+		}
+		# Members lean to one of their own region.
+		modifier = {
+			add = 25
+			kehillah_shares_minhag_region_trigger = { OTHER = scope:candidate }
+		}
+		# Opinion of the candidate, never of himself: an opinion_modifier here
+		# compared each member with himself and flooded error.log (live
+		# 2026-10-19), so tiered checks, vanilla's own election pattern.
+		modifier = {
+			add = 15
+			NOT = { scope:candidate = root }
+			opinion = { target = scope:candidate value >= 25 }
+		}
+		modifier = {
+			add = 15
+			NOT = { scope:candidate = root }
+			opinion = { target = scope:candidate value >= 60 }
+		}
+		modifier = {
+			add = -25
+			NOT = { scope:candidate = root }
+			opinion = { target = scope:candidate value <= -25 }
+		}
+		# The dying Nasi's preferred successor.
+		modifier = {
+			add = 20
+			exists = scope:holder_candidate
+			scope:candidate = scope:holder_candidate
+		}
+	}
+}
