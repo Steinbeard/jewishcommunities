@@ -17,6 +17,10 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Historical Jewish leadership roster — 2026-10-18, Daniel's implementation seed
+
+The researched Davidic/exilarchal, Sura, Pumbedita, Sanhedrin/patriarchal and Palestinian-Gaonate roster is now integrated as a staged, CK3-shaped source map with allocated IDs, proposed localized names, and institutional title-history assignments. The map reuses Saadia Gaon, Ravina II, Judah haNasi and the live 1066 Elijah ben Solomon; Hezekiah I/Gaon and Mar Zutra III each have one ID across their overlapping office lists; Pahda remains outside the Davidic dynasty. Every staged character is assigned to a relevant office sequence or explicitly marked as genealogy rather than title history. A fresh boot proved that undated records cannot live quietly in `history/characters` (one engine error per missing birth), so the 244 undated figures and proposed title histories remain under `docs/data` until defensible lifespans are sourced. Office years were not converted into invented lifespans, and the historical offices are not conflated with the current Baghdad, Sura, or Jerusalem community titles. No live title history or 1066 holder changed. See [the roster data note](docs/spec/historical-jewish-leadership-roster.md). This user-directed history-data seed was taken alongside the V42/V41 queue and does not close those items.
+
 ### V46 The Sanhedrin — 2026-10-19, Daniel's request
 
 Spec: [v46](docs/spec/v46-the-sanhedrin.md).
