@@ -1,9 +1,8 @@
 # V45: Rabbinic synods and Minhag Ashkenaz
 
-**Status:** Daniel's request and decisions, 2026-10-18. Built: the rite, the 1066 synod and the
-Second Wife fix. The synod tiers were revised on 2026-10-19 (§8): they are now Synod and
-Sanhedrin intents of the Bet Din, replacing §3's separate activity. Nothing here is live-tested
-yet (§7).
+**Status:** Built and live-tested in its original form on 2026-10-19. Daniel revised the starting
+rite and Synod presentation on 2026-10-19; §9 supersedes §§1-2 and the attendance rules in §8.
+The revised form is source-checked; its fresh-game live pass is recorded separately.
 
 **Answers, and so closes,** [v25](v25-by-god-alone-adaptation-proposals.md) §12 questions 6-8 (rite
 compat level, synod binding unit, the herem no-op). **Supersedes** the doctrine effect of
@@ -201,3 +200,23 @@ level above that where you need to be the head of the Sanhedrin to choose it."
   for all Israel. `change_rite_doctrine = doctrine_monogamy` on the general Rabbinic rite carries
   Gershom's ban beyond Ashkenaz, which history never did.
 - **Removed:** `activity_kehillah_regional_synod`, its planner options and icons.
+
+## 9. Revision, 2026-10-19: Ashkenaz at start; the gathering decides monogamy
+
+Daniel rejected the automatic day-30 event and conversion toast: Ashkenazi Kehillot should
+already be Ashkenazi in 1066, and the monogamy question should be debated by the real gathering.
+This section supersedes §§1-2's founding flow and §8's region-only attendance.
+
+- `on_game_start_after_lobby` creates `minhag_ashkenaz` during setup and immediately moves
+  Ashkenazi characters, counties and Ashkenazi-region Kehillot into it. There is no visible
+  founding event or news toast.
+- Minhag Ashkenaz begins with the older polygamous marriage doctrine. It is identity, not the
+  result of a single player's event choice.
+- The Synod motion to renew Gershom's herem changes Minhag Ashkenaz to monogamy if the assembled
+  delegates carry it. Failure leaves the older law in place; another future Synod may try again.
+- Every Kehillah leader is invited to a Synod and may vote. The planner fixes invitations before
+  the host chooses an intent, so a leader eligible to choose Synod receives the worldwide
+  delegate rule even if they ultimately choose ordinary Justice. This engine limitation is
+  preferred to presenting a supposed synod as a region-only event or toast.
+- Synod and Sanhedrin remain distinct in jurisdiction. The Ashkenazi herem changes only Minhag
+  Ashkenaz. A restored Sanhedrin alone can extend monogamy to the general Rabbinic rite.

@@ -207,13 +207,17 @@ Spec: [v45](docs/spec/v45-rabbinic-synods-and-minhag-ashkenaz.md). It answers v2
 - marriage is the only real doctrine a synod can change.
 
 **Built:**
-- **The `minhag_ashkenaz` rite** (`create = no`).
+- **The `minhag_ashkenaz` rite** (`create = no`), seeded during 1066 setup so Ashkenazi
+  characters and Kehillot begin play Ashkenazi.
 - **Polygamy restored to the general Rabbinic rite** in starts after 1000. Vanilla's yearly event
   is suppressed so it can't undo this.
-- **The 1066 Rhineland synod** (`kehillah_synod.0001`), 30 days in.
+- **The automatic 1066 event was removed on 2026-10-19 at Daniel's request.** There is no
+  conversion toast. The real Synod intent debates whether Gershom's herem makes the already
+  existing Ashkenazi rite monogamous.
 - **The synod tiers.** Revised 2026-10-19, per Daniel: no separate activity. The Sitting of the
   Bet Din has two gated host intents.
-  - **Synod:** for the region's leading community; its takkanot bind the region.
+  - **Synod:** for the region's leading community. Every Kehillah leader is invited to debate
+    and vote; its takkanot retain their defined regional or rite-level jurisdiction.
   - **Sanhedrin:** only for the head of the Sanhedrin, the seat being Jerusalem in 1066; its
     takkanot bind every community, and it alone may extend the herem to all Israel.
   - The motion is chosen in an event when the docket opens, and the ruling comes at the close
@@ -221,21 +225,12 @@ Spec: [v45](docs/spec/v45-rabbinic-synods-and-minhag-ashkenaz.md). It answers v2
 - **The Second Wife case** now checks the host's rite and writes a ketubbah clause instead of
   editing the faith. It could not be drawn at all in a 1066 start before this.
 
-**Checks so far:** `ck3-tiger` reports no new errors beyond the known 1.19-linter / 1.20-game
-`rite` mismatch.
+**Original live pass:** the superseded event flow and the Synod/Sanhedrin mechanics passed on
+2026-10-19; see `docs/testing/2026-10-19-synod-sanhedrin-live-test-log.md`.
 
-**Not yet live-tested.** CK3 was in use by another session.
-
-**Next, a live pass on a fresh 1066 boot:**
-1. `kehillah_synod_debug.1` before day 30, to confirm Rabbinism is polygamous and the vanilla
-   markers are set.
-2. Let `kehillah_synod.0001` fire, choose renew-both, then `kehillah_synod_debug.1` on the Worms
-   leader and on a Lucena character.
-3. Confirm the rite window shows Minhag Ashkenaz.
-4. Plan a Sitting of the Bet Din from Worms with the Synod intent (once Worms leads its region by
-   Greatness), and confirm the motion, the votes and the ruling at the close.
-5. Play as Jerusalem and repeat with the Sanhedrin intent, confirming that delegates come from
-   other regions.
+**Revised-flow verification:** source and `ck3-tiger` checks are required, followed by a fresh
+1066 boot confirming Minhag Ashkenaz exists at start, no day-30 event fires, all Kehillah leaders
+are offered invitations, and carrying the herem motion changes only Minhag Ashkenaz to monogamy.
 
 **Follow-ups:**
 - A lasting baseline term and breakdown line for each takkanah.
