@@ -1,6 +1,6 @@
 # V48: Acquiring sefarim through the Library
 
-**Status: FIRST NAMED-COMMISSION SLICE SCRIPTED, NOT YET LIVE-VERIFIED — 2026-10-19.** Requested and approved by Daniel on 2026-10-19. Builds on [V42](v42-sefarim-and-the-library.md), especially its acquisition-and-demand section, and supersedes the random player-facing acquisition flow in `kehillah_acquire_torah_work_decision`. ROADMAP remains authoritative for shipped status.
+**Status: IMPLEMENTED; SOURCE/METHOD UI LIVE-VERIFIED, EXTENDED COMPLETION/SUCCESSION MATRIX PENDING — 2026-10-20.** Requested and approved by Daniel on 2026-10-19, with the multi-route refinement approved on 2026-10-20. Builds on [V42](v42-sefarim-and-the-library.md), especially its acquisition-and-demand section, and supersedes the random player-facing acquisition flow in `kehillah_acquire_torah_work_decision`. See [the live-test record](../testing/2026-10-20-sefarim-acquisition-live-test.md). ROADMAP remains authoritative for shipped status.
 
 ## Decision
 
