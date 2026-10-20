@@ -1,0 +1,141 @@
+﻿# =====================================================================
+# DISPOSABLE PROBE (2026-10-19): activity host handoff.
+#
+# Question: can a landed AI create an activity (the engine's AI planner
+# works for landed hosts) and then hand it to an AI Kehillah leader with
+# set_activity_host, so the leader runs the host-gated phase code? If so,
+# the same pattern can give AI communities real Bet Din sittings.
+# Background: docs/bet_din_ai_experiments.md (landless hosts never get an
+# AI-created activity). Runbook: docs/testing/2026-10-19-activity-host-
+# handoff-probe-plan.md.
+#
+# Only a landed AI carrying var:kehillah_handoff_probe_for can see this
+# type, so neither the player nor ordinary AI planners ever pick it.
+# Started only from the console (kehillah_handoff_probe_debug.1/.2).
+# Remove this file and its effects/events/loc once the probe is recorded.
+# =====================================================================
+
+activity_kehillah_handoff_probe = {
+	header_background = "gfx/interface/illustrations/activity_header_backgrounds/activity_kehillah_bet_din_conference.dds"
+
+	is_shown = {
+		is_ai = yes
+		is_landed = yes
+		has_variable = kehillah_handoff_probe_for
+	}
+
+	# Deliberately host-agnostic: after the handoff the host is landless,
+	# and vanilla's invalidation_unlanded_non_nf_effect would cancel it.
+	is_valid = {
+		scope:host = {
+			is_alive = yes
+			is_imprisoned = no
+		}
+	}
+
+	on_invalidated = {
+		debug_log = "KEHILLAH_HANDOFF_PROBE INVALIDATED; host follows"
+		scope:host = { debug_log_scopes = no }
+	}
+
+	on_host_death = {
+		debug_log = "KEHILLAH_HANDOFF_PROBE HOST_DIED"
+	}
+
+	# The planner is the landed stand-in: offer its realm, but only the
+	# target leader's Quarter is a valid venue. After the handoff the host
+	# no longer carries the variable, so the check passes unconditionally.
+	province_filter = realm
+	ai_province_filter = realm
+	is_single_location = yes
+	max_province_icons = 1
+
+	is_location_valid = {
+		trigger_if = {
+			limit = { scope:host = { has_variable = kehillah_handoff_probe_for } }
+			this = scope:host.var:kehillah_handoff_probe_for.domicile.domicile_location
+		}
+	}
+
+	ai_will_select_province = {
+		value = 10
+	}
+
+	cooldown = { days = 1 }
+
+	allow_zero_guest_invites = yes
+	open_invite = no
+	max_guests = 4
+	max_guest_arrival_delay_time = { weeks = 1 }
+
+	# Only the target leader (and, in keep mode, the stand-in) may attend.
+	can_be_activity_guest = {
+		has_character_flag = kehillah_handoff_probe_allowed
+	}
+
+	host_intents = {
+		intents = { reduce_stress_intent }
+		default = reduce_stress_intent
+	}
+
+	guest_intents = {
+		intents = { reduce_stress_intent }
+		default = reduce_stress_intent
+	}
+
+	# root = the activity. The handoff happens here, at creation.
+	on_start = {
+		kehillah_handoff_probe_handoff_effect = yes
+	}
+
+	phases = {
+		phase_kehillah_handoff_probe = {
+			is_predefined = yes
+			location_source = pickable
+
+			on_phase_active = {
+				debug_log = "KEHILLAH_HANDOFF_PROBE PHASE_ACTIVE participant follows"
+				debug_log_scopes = no
+				# Same gate the Bet Din's docket code uses.
+				if = {
+					limit = { this = scope:host }
+					if = {
+						limit = { government_has_flag = government_is_kehillah }
+						debug_log = "KEHILLAH_HANDOFF_PROBE PASS host-gated phase ran for the Kehillah leader"
+					}
+					else = {
+						debug_log = "KEHILLAH_HANDOFF_PROBE FAIL host-gated phase ran for a non-Kehillah host"
+					}
+					scope:activity = {
+						progress_activity_phase_after = { days = 20 }
+					}
+					trigger_event = {
+						id = kehillah_handoff_probe_debug.10
+						days = 2
+					}
+				}
+			}
+		}
+	}
+
+	on_complete = {
+		if = {
+			limit = { this = scope:host }
+			if = {
+				limit = { government_has_flag = government_is_kehillah }
+				debug_log = "KEHILLAH_HANDOFF_PROBE PASS activity completed with the Kehillah leader as host"
+			}
+			else = {
+				debug_log = "KEHILLAH_HANDOFF_PROBE FAIL activity completed with a non-Kehillah host"
+			}
+		}
+	}
+
+	# Never planned on the AI's own schedule: is_shown needs the probe
+	# variable, which only the console setup event sets.
+	ai_will_do = {
+		value = 10000
+	}
+
+	ai_check_interval = 120
+}
