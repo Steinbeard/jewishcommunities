@@ -1942,3 +1942,26 @@ f661f21 Shim guide: how to tell a real missing-loc warning from tiger noise
 0cb155f The ransom run finally has the log and ROADMAP entry it earned
 ```
 Written mechanically by jewishcommunities-heartbeat.ps1, not by the agent. Log: logs\jewishcommunities-shabbat-2026-10-10_195002.log
+
+## Automated run status -- 2026-09-25_020003 (overnight/2026-09-25)
+- Cut off by a usage/session limit (detected in this run's log): False
+- Uncommitted changes in the working tree at run end: none
+- Commits on this branch not yet on origin at this point: 0
+- Last few commits on this branch:
+```
+20ac9a8 Merge pull request #7 from Steinbeard/overnight/2026-09-24
+22fd90b Record live charter cache initialization pass
+4e1f80a Record charter cache boot recheck
+9804f44 Cache deferred regional charter state
+1001354 Fix and live-verify fresh charter policy rungs
+```
+
+Written mechanically by the scheduled script itself (not the agent) as a fallback -- present every
+run regardless of whether the session reached its own end-of-run BLOCKERS.md write. If "cut off"
+is true above and there's no matching entry from the agent itself nearby explaining what it was
+mid-way through, treat this run as unresolved until a human or a later run reviews what state
+things were left in.
+
+## Ready for review -- overnight/2026-09-25
+- https://github.com/Steinbeard/jewishcommunities/compare/master...=1
+
