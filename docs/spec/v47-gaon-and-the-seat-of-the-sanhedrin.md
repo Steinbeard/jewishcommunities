@@ -309,3 +309,15 @@ Raised by Daniel while playing a restored Sanhedrin.
 - **Lay rabbis keep their seats** (Daniel), unlike vanilla, which bars lay rulers from
   cardinalates (`pam_can_receive_cardinalate_trigger`: theocracy, holy order, or not a ruler).
   There is no Jewish theocracy government for a member to be on.
+
+**Correction, 2026-10-20 (live test of 2213df0):**
+
+- **Courtier seats are reversed.** A courtier given a seat became an independent clan "High Chief"
+  of the seat, outside his court, with no domicile, and unplayable.
+  - Seats go only to rulers again.
+  - Courtier rabbis stand as **candidates** instead, through vanilla's `same_faith_clergy` set
+    (Rabbinic clergy councillors, piety level 2+). Electors remain the seat holders.
+- **`in_diplomatic_range` excluded nobody.** All 22 communities, the Rhineland included, were "in
+  range" of a Nasi in Jerusalem; a head of faith is apparently in range of his whole faith.
+  - "Within range" is now a distance: within 1,000 map pixels of the seat county (vanilla's
+    `MAXIMUM_DIPLOMATIC_RANGE`), measured with `squared_distance`.

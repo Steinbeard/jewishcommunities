@@ -64,48 +64,47 @@ kehillah_holds_sanhedrin_seat_trigger = {
 	any_held_title = { has_variable = kehillah_sanhedrin_seat }
 }
 
-# Scope: a character. May be given a seat (Daniel, 2026-10-20): a rabbi of
-# Rabbinic Judaism within the Nasi's DIPLOMATIC RANGE who leads a
-# community, rules land (a lay rabbi such as a King of Israel), or serves at
-# a court (a courtier rabbi, of standing: piety level 2 or more). Not the
-# Nasi, not already seated.
+# Scope: a character. May be given a seat: a rabbi of Rabbinic Judaism near
+# the seat (kehillah_sanhedrin_in_nasi_range_trigger, Daniel 2026-10-20)
+# who leads a community or rules land (a lay rabbi such as a King of
+# Israel). A seat is a title, so only rulers hold one: a courtier given a
+# seat became an independent clan "ruler" of it, outside his court and
+# unplayable (live 2026-10-20). Courtier rabbis stand as CANDIDATES instead
+# (kehillah_sanhedrin_elective.txt). Not the Nasi, not already seated.
 kehillah_sanhedrin_seat_eligible_trigger = {
 	is_alive = yes
 	is_adult = yes
 	is_incapable = no
-	is_imprisoned = no
+	is_ruler = yes
+	OR = {
+		AND = {
+			government_has_flag = government_is_kehillah
+			primary_title ?= { is_kehillah_title_trigger = yes }
+		}
+		is_landed = yes
+	}
 	faith = faith:rabbinic_faith
 	has_trait = kehillah_rabbi_trait
 	NOT = { has_trait = excommunicated }
 	NOT = { kehillah_is_sanhedrin_head_trigger = yes }
 	NOT = { kehillah_holds_sanhedrin_seat_trigger = yes }
-	OR = {
-		AND = {
-			is_ruler = yes
-			OR = {
-				AND = {
-					government_has_flag = government_is_kehillah
-					primary_title ?= { is_kehillah_title_trigger = yes }
-				}
-				is_landed = yes
-			}
-		}
-		AND = {
-			is_ruler = no
-			piety_level >= 2
-		}
-	}
 	kehillah_sanhedrin_in_nasi_range_trigger = yes
 }
 
-# Scope: a character. Within the sitting Nasi's diplomatic range (Daniel,
-# 2026-10-20). True while no Nasi sits, so the founding count is unaffected.
+# Scope: a character. Near the Sanhedrin's seat (Daniel, 2026-10-20: "within
+# diplomatic range"): within vanilla's maximum diplomatic range,
+# MAXIMUM_DIPLOMATIC_RANGE = 1000 map pixels, of the seat county.
+# in_diplomatic_range itself was tried first and excluded nobody, the
+# Rhineland included (live 2026-10-20): a head of faith is apparently in
+# range of all his faith. True while no Sanhedrin sits.
 kehillah_sanhedrin_in_nasi_range_trigger = {
 	trigger_if = {
-		limit = { exists = global_var:kehillah_sanhedrin_seat.holder }
-		OR = {
-			this = global_var:kehillah_sanhedrin_seat.holder
-			in_diplomatic_range = global_var:kehillah_sanhedrin_seat.holder
+		limit = { exists = global_var:kehillah_sanhedrin_seat }
+		location ?= {
+			squared_distance = {
+				target = global_var:kehillah_sanhedrin_seat
+				value <= kehillah_sanhedrin_range_squared
+			}
 		}
 	}
 }
