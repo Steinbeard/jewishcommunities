@@ -148,6 +148,11 @@ instance separate**. The tested setup and its limits are recorded in
 See **[docs/testing/automation-shim-guide.md](docs/testing/automation-shim-guide.md)** for the
 full mechanics and philosophy; summary:
 
+- **Codex must not use computer control for live tests.** Delegate every live-game test only to
+  a subagent running the Luna model. Codex itself must not take screenshots or other screen
+  captures unless Daniel explicitly asks for them. If a Luna subagent is unavailable, defer the
+  live test and report that it remains pending; do not substitute another model or run it inline.
+
 - **GUI modding research:** Daniel approved consulting the CK3 Mod Co-op Discord's GUI modding
   channel through computer use when an interface implementation needs a practical tip. Treat
   Discord discussion as a lead, then verify it against the installed CK3 files and a live UI

@@ -9,19 +9,10 @@ on_game_start_after_lobby = {
 kehillah_synod_on_game_start = {
 	effect = {
 		kehillah_restore_general_rite_polygamy_effect = yes
-
-		# The 1066 Rhineland synod: Worms convenes, Mainz if Worms is gone.
-		if = {
-			limit = { game_start_date >= 1066.1.1 }
-			if = {
-				limit = { exists = title:d_kehillah_worms.holder }
-				title:d_kehillah_worms.holder = { trigger_event = { id = kehillah_synod.0001 days = 30 } }
-			}
-			else_if = {
-				limit = { exists = title:d_kehillah_mainz.holder }
-				title:d_kehillah_mainz.holder = { trigger_event = { id = kehillah_synod.0001 days = 30 } }
-			}
-		}
+		# Minhag Ashkenaz is already an established rite in 1066. A
+		# playable Synod decides whether to renew Gershom's herem; it does
+		# not make Ashkenazi identity suddenly appear after play begins.
+		kehillah_seed_minhag_ashkenaz_effect = yes
 	}
 }
 
@@ -41,7 +32,7 @@ kehillah_sanhedrin_yearly_pulse = {
 		# Catch any government transition the title hooks missed (spec s.9).
 		every_in_global_list = {
 			variable = kehillah_registered_communities
-			holder ?= { kehillah_reconcile_nasi_government_effect = yes }
+			holder ?= { kehillah_reconcile_landed_government_effect = yes }
 		}
 	}
 }
@@ -49,7 +40,7 @@ kehillah_sanhedrin_yearly_pulse = {
 on_title_gain = {
 	on_actions = {
 		kehillah_sanhedrin_on_title_gain
-		kehillah_nasi_community_on_title_gain
+		kehillah_landed_on_title_gain
 		kehillah_gaonate_on_title_gain
 	}
 }
@@ -76,66 +67,46 @@ kehillah_gaonate_on_title_gain = {
 	}
 }
 
-# A newly elected Nasi: he gives up his own seat (a Nasi does not sit in the
-# court he presides over), keeps his community as primary title, and takes
-# the government the head of faith needs.
+# V47 phase B: a new Nasi, elected to the Sanhedrin's seat county by its
+# members. He gives up his own seat and other communities, takes the seat
+# community if he leads one, and moves onto the landed Kehillah government
+# if he is a community leader (kehillah_sanhedrin_install_nasi_effect). The
+# founder does not pass here: he already held the county.
 kehillah_sanhedrin_on_title_gain = {
 	trigger = {
-		scope:title = title:d_kehillah_sanhedrin
+		scope:title = { has_variable = kehillah_sanhedrin_seat_county }
 	}
 	effect = {
-		if = {
-			limit = { kehillah_holds_sanhedrin_seat_trigger = yes }
-			every_held_title = {
-				limit = { has_variable = kehillah_sanhedrin_seat }
-				add_to_list = kehillah_vacated_seats
-			}
-			every_in_list = {
-				list = kehillah_vacated_seats
-				root = { destroy_title = prev }
-			}
-		}
-		if = {
-			limit = { any_held_title = { is_kehillah_title_trigger = yes } }
-			random_held_title = {
-				limit = { is_kehillah_title_trigger = yes }
-				save_scope_as = kehillah_nasi_community
-			}
-			set_primary_title_to = scope:kehillah_nasi_community
-		}
-		# The new Nasi may be of another rite (the main rite follows him)
-		# or the other kind of Nasi (landed or not): reset the doctrines.
-		kehillah_sanhedrin_apply_head_link_effect = yes
-		kehillah_reconcile_nasi_government_effect = yes
+		kehillah_sanhedrin_install_nasi_effect = yes
 		trigger_event = { id = kehillah_synod.0003 days = 1 }
-		# A previous holder still alive (title taken, not inherited) leaves
-		# the Nasi government.
 		scope:previous_holder ?= {
 			if = {
 				limit = { is_alive = yes }
-				kehillah_reconcile_nasi_government_effect = yes
+				kehillah_reconcile_landed_government_effect = yes
 			}
 		}
-		# The court sits where its new Nasi leads a community.
-		kehillah_sanhedrin_sit_with_nasi_effect = yes
-		kehillah_update_leader_flavor_effect = yes
 	}
 }
 
-# Whoever takes a community, above all the successor of a Nasi, who
-# inherits the Nasi's government with the title. Runs alongside the
+# A community leader who gains land (a county, or the seat by election), or
+# anyone on the landed government who gains a community, above all the
+# successor of a Nasi. Moves him between the two Kehillah governments
+# (kehillah_reconcile_landed_government_effect); a check a day later
+# catches a transfer that was still resolving. Runs alongside the
 # community's own kehillah_on_title_gain, which only acts when the
 # government is not a Kehillah one at all.
-kehillah_nasi_community_on_title_gain = {
+kehillah_landed_on_title_gain = {
 	trigger = {
-		scope:title = { is_kehillah_title_trigger = yes }
-		OR = {
-			has_government = kehillah_nasi_government
-			kehillah_is_sanhedrin_head_trigger = yes
+		government_has_flag = government_is_kehillah
+		scope:title = {
+			OR = {
+				is_kehillah_title_trigger = yes
+				tier = tier_county
+			}
 		}
 	}
 	effect = {
-		kehillah_reconcile_nasi_government_effect = yes
+		kehillah_reconcile_landed_government_effect = yes
 		trigger_event = { id = kehillah_synod.0003 days = 1 }
 	}
 }

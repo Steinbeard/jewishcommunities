@@ -212,3 +212,85 @@ until they need one.
   landed Nasi keeps his domicile?
 - The Gaonate on a head of rite who changes rite mid-tenure (seen working once, for the
   Gershom founding).
+
+## Phase B restructure (Daniel's decisions, 2026-10-19, after the first Phase B test)
+
+**Supersedes** the petition-as-restoration design that f75070a built. In that design, one
+decision asked the liege for the community's county and restored the Sanhedrin on it.
+
+- **Restoring the Sanhedrin is a decision with a visible goal** (Daniel: "I want it to be a
+  visible goal"). It is shown to every Rabbinic ruler while no Sanhedrin sits. Its first
+  requirement is **holding a county in the Land** (the de jure Kingdom of Jerusalem), stated as
+  a clear requirement. The other requirements are unchanged:
+  - all three tracks mastered;
+  - top piety;
+  - enough rabbi-led communities;
+  - no head of faith.
+
+  It is open to **any Jewish ruler**, not only community leaders (Daniel). The seat is chosen in
+  this order:
+  1. the founder's community's county, if he holds it;
+  2. his capital, if it is in the Land;
+  3. otherwise, his most developed county there.
+
+  His community, if he leads one, becomes the seat community. A king keeps his own government.
+- **Getting the county is a separate mechanism.** The first one is **Petition for Land in Eretz
+  Yisrael**:
+  - **Who can petition:** a landless community leader in the Land.
+  - **What he asks for:** his community's county, which his liege must hold directly and not as
+    his capital.
+  - **Price:** 500 prestige, and the petitioner must be at prestige level 3.
+  - **Odds:** a base chance of 10 against 90, with vanilla-style modifiers (a Jewish liege, land
+    to spare, a modest county, opinion).
+  - **A player liege** answers by event.
+  - **A refusal** bars asking again for 5 years.
+
+  More mechanisms (a liege offering an obscure county, conquest, purchase) are left for later.
+- **Kehillot may rule land, rarely, in extraordinary circumstances** (Daniel). `require_landless`
+  is removed from every community title, because with it the engine destroyed a community whose
+  leader gained land. The old crash attributed to its absence did not recur on Play
+  (docs/testing/2026-10-19-synod-sanhedrin-live-test-log.md).
+
+  The Nasi government becomes the general **`kehillah_landed_government`** ("Kehillah of the
+  Land"). A community leader who holds land is on it, and one who loses his land returns to
+  `kehillah_government` (`kehillah_reconcile_landed_government_effect`). A grant switches the
+  government **before** the county moves. `kehillah_government` carries
+  `cannot_be_vassal_or_liege`, so the engine would otherwise give the county to a generated
+  lowborn.
+- **Still open:**
+  - A landed rabbi who is not a community leader (a king) can be elected Nasi. He takes the seat
+    county, and the seat community's election law would hand him the community too. The install
+    effect does not move a community to him, but the community's own election may still do so,
+    and the core `kehillah_on_title_gain` would then try to convert him. This needs a live check
+    or a guard.
+  - Community systems that assume a landless leader (dangers, expulsion, host dues) have not
+    been audited for a landed one.
+  - Daniel's earlier wish that the Nasi's government carry no pillars is not done. The landed
+    government keeps the Kehillah flag, and with it the pillars.
+
+## The Sanhedrin's title and vassalage (Daniel's decisions, 2026-10-19, evening)
+
+Raised by Daniel while playing a restored Sanhedrin.
+
+- **The head-of-faith title is a duchy named for the seat, "Sanhedrin of Jerusalem"**, no longer
+  the county. Daniel chose to make the **seat community itself** that title. While it is the
+  seat, it is renamed (`set_title_name`, one key per county of the de jure Kingdom of Jerusalem,
+  else "Great Sanhedrin"). It stays the Nasi's primary title, so the Quarter, yeshiva, pillars
+  and officers keep working: about 1,300 `primary_title` reads assume a leader's primary title is
+  his community.
+  - The name reverts on lapse (`reset_title_name`).
+  - A founder with no community (a king or lord) gets a dynamic landless Sanhedrin duchy instead,
+    which carries the election and is destroyed on lapse.
+  - The county stays the seat's location (`global_var:kehillah_sanhedrin_seat`).
+  - `global_var:kehillah_sanhedrin_title` is the head-of-faith title.
+- **A community leader holds his county of his liege** (Daniel: he should be the Fatimids'
+  vassal).
+  - On `kehillah_government` the grant leaves him independent, so after the government switch he
+    swears fealty to the granting realm (`kehillah_become_vassal_of_realm_effect`).
+  - The seat county records the realm it is held of (`kehillah_sanhedrin_seat_liege_realm`,
+    refreshed yearly), and an elected Nasi is put back under it.
+  - A king is never made a vassal.
+- **Jewish rulers get no Jewish settlement-policy decisions** (Daniel).
+- **Save compatibility:** saves from before the 2026-10-19 rename of `kehillah_nasi_government`
+  fail to load that government. Their Nasi falls onto another government without a Quarter.
+  Daniel saw this on the 18:23 autosave. Such saves are not supported.

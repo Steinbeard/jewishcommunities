@@ -17,6 +17,22 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Rouen and Orléans Kehillot — 2026-10-19, Daniel's request
+
+Both northern French communities now exist as titular Kehillot at the 1066 start, with title
+history, startup/registry wiring and representative lowborn leaders. Orléans begins under the
+rabbinic scholar Yitzhak; Rouen begins under the lay parnas Yaakov and remains explicitly separate
+from Yosef of Rodom's existing adventurer company. Historical basis, editorial limits and the
+future console probe are recorded in [the implementation note](docs/implementation/2026-10-19-rouen-orleans-kehillot.md).
+Per Daniel's instruction, this unit receives source review and `ck3-tiger` only, with no live boot.
+### Auxerre Kehillah — 2026-10-18, Daniel's request
+
+Auxerre is added as a 1066 Western Ashkenaz community in response to the documented correspondence between Rashi and the sages of Auxerre. The start uses the vanilla `c_auxerre` host geography and an explicitly representative rabbinic leader because the evidence establishes an eleventh-century scholarly community but does not securely identify its 1066 officeholder. Implementation and sources are recorded in [the Auxerre implementation note](docs/implementation/2026-10-18-auxerre-kehillah.md). This user-directed unit was taken alongside the V42/V41 queue and does not close those items.
+
+### Historical Jewish leadership roster — 2026-10-18, Daniel's implementation seed
+
+The researched Davidic/exilarchal, Sura, Pumbedita, Sanhedrin/patriarchal and Palestinian-Gaonate roster is now integrated as a staged, CK3-shaped source map with allocated IDs, proposed localized names, and institutional title-history assignments. The map reuses Saadia Gaon, Ravina II, Judah haNasi and the live 1066 Elijah ben Solomon; Hezekiah I/Gaon and Mar Zutra III each have one ID across their overlapping office lists; Pahda remains outside the Davidic dynasty. Every staged character is assigned to a relevant office sequence or explicitly marked as genealogy rather than title history. A fresh boot proved that undated records cannot live quietly in `history/characters` (one engine error per missing birth), so the 244 undated figures and proposed title histories remain under `docs/data` until defensible lifespans are sourced. Office years were not converted into invented lifespans, and the historical offices are not conflated with the current Baghdad, Sura, or Jerusalem community titles. No live title history or 1066 holder changed. See [the roster data note](docs/spec/historical-jewish-leadership-roster.md). This user-directed history-data seed was taken alongside the V42/V41 queue and does not close those items.
+
 ### V46 The Sanhedrin — 2026-10-19, Daniel's request
 
 Spec: [v46](docs/spec/v46-the-sanhedrin.md).
@@ -65,8 +81,54 @@ Spec: [v47](docs/spec/v47-gaon-and-the-seat-of-the-sanhedrin.md).
   - the Sanhedrin only in the Land of Israel, on a landed seat with a College election.
 - **Live-proven building blocks:** a Kehillah head of rite through `head_of_rite`; a landed Nasi
   as head of faith. The spike code is in `docs/spikes/2026-10-19-landed-nasi-and-gaonate.patch`.
-- **Next:** build-order step 1, the merit mechanic. Unattended runs may BUILD it, with a live
-  test. It reuses the patch's Gaonate title and the `head_of_rite` field.
+- **Phase A BUILT and live-tested, 2026-10-19 (8fd8737, 57fe3d8).**
+  - Heads of rite come from the **Recognition of the Sages** doctrine (Rabbinic faith and Minhag
+    Ashkenaz). A yearly acclamation event, "The Voice of the Generation", lets the most eminent
+    qualifying rabbi accept the headship for life, or decline it. He is styled Rabbenu in
+    Ashkenaz, Gaon otherwise.
+  - The **Office of the Gaon** decision, for Sura or Baghdad, makes the headship inherited with
+    the academy. A lay successor loses it.
+  - Live PASS: the doctrine in the faith window; a player accepting (Rabbenu); an AI accepting
+    (Gaon); the office passing through two rabbi successors; a lay lapse.
+  - Fixed afterwards and not yet re-run: a lay heir kept the Gaon style.
+- **Phase B BUILT, 2026-10-19 (f75070a, then restructured the same day in 487dd08 and a0538e7;
+  see the v47 spec's "Phase B restructure" addendum).**
+  - **Restore the Sanhedrin** is a decision shown to every Rabbinic ruler while no Sanhedrin sits,
+    as a visible goal. Its requirements:
+    - holding a county in the Land (the de jure Kingdom of Jerusalem);
+    - all three rabbi tracks mastered;
+    - top piety;
+    - enough rabbi-led communities;
+    - no head of faith.
+
+    Kings, lords and community leaders can all take it. The seat is that county.
+  - **Petition for Land in Eretz Yisrael** is a separate, rare decision and one way to get that
+    county. A landless community leader in the Land asks his liege for his community's county,
+    when the liege holds it directly and not as his capital. The odds follow the vanilla model
+    (a Jewish liege, land to spare, a modest county, opinion). A player liege answers by event. A
+    refusal bars asking again for 5 years.
+  - **Kehillot may hold land** (Daniel). `require_landless` is removed from every community
+    title, and the Nasi government is renamed to **`kehillah_landed_government`** ("Kehillah of
+    the Land"), the government of any community leader who holds land. A grant switches the
+    government first, because the engine refuses land to a leader on `kehillah_government`.
+  - Earlier live-test findings fixed in this pass:
+    - the election's self-opinion error flood;
+    - a `min` on an unmodified `random_list` branch;
+    - an overlong decision description.
+- **Restructured Phase B live PASS, 2026-10-19 (a0538e7;
+  docs/testing/2026-10-19-synod-sanhedrin-live-test-log.md).** The checks that passed:
+  - Worms plays with its leader present;
+  - a community leader granted his county in the Land moves to the landed government and keeps
+    his Quarter;
+  - the Sanhedrin can be restored on that county;
+  - the election installs a community leader as Nasi, and his old community passes to its heir;
+  - there is no error flood.
+- **Still to check:**
+  - the Petition for Land decision itself (its odds and the player-liege event 0006), since the
+    test used the debug grant;
+  - whether the Quarter's buildings survive a grant;
+  - a king elected Nasi (v47 addendum, "Still open");
+  - the Phase A lay-heir style fix.
 
 ### Open design: landed Jewish polities and other Jewish faiths (Daniel, 2026-10-19) — DANIEL-REVIEW
 
@@ -145,13 +207,17 @@ Spec: [v45](docs/spec/v45-rabbinic-synods-and-minhag-ashkenaz.md). It answers v2
 - marriage is the only real doctrine a synod can change.
 
 **Built:**
-- **The `minhag_ashkenaz` rite** (`create = no`).
+- **The `minhag_ashkenaz` rite** (`create = no`), seeded during 1066 setup so Ashkenazi
+  characters and Kehillot begin play Ashkenazi.
 - **Polygamy restored to the general Rabbinic rite** in starts after 1000. Vanilla's yearly event
   is suppressed so it can't undo this.
-- **The 1066 Rhineland synod** (`kehillah_synod.0001`), 30 days in.
+- **The automatic 1066 event was removed on 2026-10-19 at Daniel's request.** There is no
+  conversion toast. The real Synod intent debates whether Gershom's herem makes the already
+  existing Ashkenazi rite monogamous.
 - **The synod tiers.** Revised 2026-10-19, per Daniel: no separate activity. The Sitting of the
   Bet Din has two gated host intents.
-  - **Synod:** for the region's leading community; its takkanot bind the region.
+  - **Synod:** for the region's leading community. Every Kehillah leader is invited to debate
+    and vote; its takkanot retain their defined regional or rite-level jurisdiction.
   - **Sanhedrin:** only for the head of the Sanhedrin, the seat being Jerusalem in 1066; its
     takkanot bind every community, and it alone may extend the herem to all Israel.
   - The motion is chosen in an event when the docket opens, and the ruling comes at the close
@@ -159,21 +225,12 @@ Spec: [v45](docs/spec/v45-rabbinic-synods-and-minhag-ashkenaz.md). It answers v2
 - **The Second Wife case** now checks the host's rite and writes a ketubbah clause instead of
   editing the faith. It could not be drawn at all in a 1066 start before this.
 
-**Checks so far:** `ck3-tiger` reports no new errors beyond the known 1.19-linter / 1.20-game
-`rite` mismatch.
+**Original live pass:** the superseded event flow and the Synod/Sanhedrin mechanics passed on
+2026-10-19; see `docs/testing/2026-10-19-synod-sanhedrin-live-test-log.md`.
 
-**Not yet live-tested.** CK3 was in use by another session.
-
-**Next, a live pass on a fresh 1066 boot:**
-1. `kehillah_synod_debug.1` before day 30, to confirm Rabbinism is polygamous and the vanilla
-   markers are set.
-2. Let `kehillah_synod.0001` fire, choose renew-both, then `kehillah_synod_debug.1` on the Worms
-   leader and on a Lucena character.
-3. Confirm the rite window shows Minhag Ashkenaz.
-4. Plan a Sitting of the Bet Din from Worms with the Synod intent (once Worms leads its region by
-   Greatness), and confirm the motion, the votes and the ruling at the close.
-5. Play as Jerusalem and repeat with the Sanhedrin intent, confirming that delegates come from
-   other regions.
+**Revised-flow verification:** source and `ck3-tiger` checks are required, followed by a fresh
+1066 boot confirming Minhag Ashkenaz exists at start, no day-30 event fires, all Kehillah leaders
+are offered invitations, and carrying the herem motion changes only Minhag Ashkenaz to monogamy.
 
 **Follow-ups:**
 - A lasting baseline term and breakdown line for each takkanah.

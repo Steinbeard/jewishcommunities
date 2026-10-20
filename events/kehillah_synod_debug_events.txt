@@ -1,8 +1,8 @@
 ﻿# Console-only probes for V45 (docs/spec/v45-rabbinic-synods-and-minhag-ashkenaz.md).
 #   .1  report: general rite's marriage doctrine, vanilla markers, Ashkenaz
-#       founded or deferred, and the scoped character's rite
-#   .2  fire the 1066 Rhineland synod on the scoped character
-#   .3  found Minhag Ashkenaz directly (changes the save), then report
+#       starting state, herem status, and the scoped character's rite
+#   .2  seed Minhag Ashkenaz directly (changes the save), then report
+#   .3  enact the monogamy result directly (changes the save), then report
 namespace = kehillah_synod_debug
 
 kehillah_synod_debug.1 = {
@@ -36,6 +36,10 @@ kehillah_synod_debug.1 = {
 				limit = { rite:minhag_ashkenaz = { rite_has_doctrine = doctrine_monogamy } }
 				debug_log = "synod_debug: ashkenaz monogamy"
 			}
+			else_if = {
+				limit = { rite:minhag_ashkenaz = { rite_has_doctrine = doctrine_polygamy } }
+				debug_log = "synod_debug: ashkenaz polygamy"
+			}
 			if = {
 				limit = { rite:minhag_ashkenaz = { rite_has_culture = culture:ashkenazi } }
 				debug_log = "synod_debug: ashkenaz has ashkenazi culture"
@@ -43,8 +47,8 @@ kehillah_synod_debug.1 = {
 		}
 		else = { debug_log = "synod_debug: ashkenaz not founded" }
 		if = {
-			limit = { exists = global_var:kehillah_gershom_deferred }
-			debug_log = "synod_debug: gershom deferred"
+			limit = { exists = global_var:kehillah_gershom_herem_renewed }
+			debug_log = "synod_debug: gershom herem renewed"
 		}
 		if = {
 			limit = { exists = global_var:kehillah_minhag_ashkenaz_founded rite = rite:minhag_ashkenaz }
@@ -92,8 +96,9 @@ kehillah_synod_debug.2 = {
 	hidden = yes
 	orphan = yes
 	immediate = {
-		trigger_event = kehillah_synod.0001
-		debug_log = "synod_debug: fired kehillah_synod.0001"
+		kehillah_seed_minhag_ashkenaz_effect = yes
+		debug_log = "synod_debug: seeded Minhag Ashkenaz"
+		trigger_event = kehillah_synod_debug.1
 	}
 }
 
@@ -102,7 +107,8 @@ kehillah_synod_debug.3 = {
 	hidden = yes
 	orphan = yes
 	immediate = {
-		kehillah_found_minhag_ashkenaz_effect = yes
+		rite:minhag_ashkenaz ?= { change_rite_doctrine = doctrine_monogamy }
+		set_global_variable = { name = kehillah_gershom_herem_renewed value = yes }
 		trigger_event = kehillah_synod_debug.1
 	}
 }
@@ -136,11 +142,57 @@ kehillah_synod_debug.5 = {
 	orphan = yes
 	immediate = {
 		if = {
-			limit = { exists = title:d_kehillah_sanhedrin.holder }
-			debug_log = "synod_debug: sanhedrin exists"
-			title:d_kehillah_sanhedrin.holder = { debug_log_scopes = yes }
+			limit = { exists = global_var:kehillah_sanhedrin_seat }
+			debug_log = "synod_debug: sanhedrin exists, its seat county and Nasi follow"
+			global_var:kehillah_sanhedrin_seat = { debug_log_scopes = yes }
+			global_var:kehillah_sanhedrin_seat.holder ?= { debug_log_scopes = yes }
+			if = {
+				limit = { exists = global_var:kehillah_sanhedrin_seat_community }
+				debug_log = "synod_debug: seat community follows"
+				global_var:kehillah_sanhedrin_seat_community = { debug_log_scopes = yes }
+			}
 		}
 		else = { debug_log = "synod_debug: sanhedrin does not exist" }
+		if = {
+			limit = { exists = global_var:kehillah_sanhedrin_title }
+			debug_log = "synod_debug: the head-of-faith title follows"
+			global_var:kehillah_sanhedrin_title = { debug_log_scopes = yes }
+			if = {
+				limit = { faith:rabbinic_faith.religious_head_title ?= global_var:kehillah_sanhedrin_title }
+				debug_log = "synod_debug: it IS the faith's head title"
+			}
+			else = { debug_log = "synod_debug: it is NOT the faith's head title" }
+			if = {
+				limit = { primary_title ?= global_var:kehillah_sanhedrin_title }
+				debug_log = "synod_debug: it is the scoped character's primary title"
+			}
+		}
+		if = {
+			limit = { exists = liege }
+			debug_log = "synod_debug: scoped character's liege follows"
+			liege = { debug_log_scopes = yes }
+		}
+		else = { debug_log = "synod_debug: scoped character is INDEPENDENT" }
+		if = {
+			limit = { kehillah_is_sanhedrin_head_trigger = yes }
+			debug_log = "synod_debug: scoped character is the Nasi"
+		}
+		if = {
+			limit = { has_government = kehillah_landed_government }
+			debug_log = "synod_debug: scoped character on the landed Kehillah government"
+		}
+		if = {
+			limit = { is_landed = yes }
+			debug_log = "synod_debug: scoped character is landed"
+		}
+		if = {
+			limit = { exists = domicile }
+			debug_log = "synod_debug: scoped character has a domicile"
+		}
+		if = {
+			limit = { faith:rabbinic_faith.religious_head ?= this }
+			debug_log = "synod_debug: scoped character is head of faith"
+		}
 		if = {
 			limit = { exists = faith:rabbinic_faith.religious_head }
 			debug_log = "synod_debug: rabbinic faith has a head"
@@ -271,5 +323,52 @@ kehillah_synod_debug.7 = {
 		}
 		else = { debug_log = "synod_debug: PRIMARY TITLE IS NOT THE COMMUNITY" }
 		debug_log_scopes = yes
+	}
+}
+
+# V47 phase B.
+#   .8  restore the Sanhedrin for the scoped character directly (changes the
+#       save). A landless community leader in the Land is granted his
+#       community's county first, skipping the petition's odds.
+#   .9  grant the scoped community leader his community's county directly,
+#       skipping the petition's odds (changes the save), then report
+kehillah_synod_debug.8 = {
+	type = character_event
+	hidden = yes
+	orphan = yes
+	immediate = {
+		if = {
+			limit = {
+				is_landed = no
+				kehillah_community_in_the_land_trigger = yes
+				kehillah_liege_can_grant_county_trigger = yes
+			}
+			kehillah_grant_community_county_effect = yes
+		}
+		if = {
+			limit = { kehillah_holds_county_in_the_land_trigger = yes }
+			kehillah_sanhedrin_restore_effect = yes
+		}
+		else = { debug_log = "synod_debug: NO COUNTY IN THE LAND, not restored" }
+		trigger_event = kehillah_synod_debug.5
+	}
+}
+
+kehillah_synod_debug.9 = {
+	type = character_event
+	hidden = yes
+	orphan = yes
+	immediate = {
+		if = {
+			limit = { kehillah_liege_can_grant_county_trigger = yes }
+			debug_log = "synod_debug: liege can grant the county"
+		}
+		else = { debug_log = "synod_debug: liege CANNOT grant the county" }
+		kehillah_grant_community_county_effect = yes
+		if = {
+			limit = { kehillah_holds_county_in_the_land_trigger = yes }
+			debug_log = "synod_debug: scoped character holds a county in the Land"
+		}
+		trigger_event = kehillah_synod_debug.5
 	}
 }

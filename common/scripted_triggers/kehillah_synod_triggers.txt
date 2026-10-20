@@ -36,10 +36,12 @@ kehillah_ashkenazi_kehillah_member_trigger = {
 	}
 }
 
-# Scope: a character. The Nasi: holder of the Sanhedrin, which exists only
-# once restored by kehillah_restore_sanhedrin_decision (V46).
+# Scope: a character. The Nasi: holder of the Sanhedrin's seat county in the
+# Land, which exists only once restored (V47 phase B,
+# kehillah_restore_sanhedrin_decision).
 kehillah_is_sanhedrin_head_trigger = {
-	has_title = title:d_kehillah_sanhedrin
+	exists = global_var:kehillah_sanhedrin_seat
+	global_var:kehillah_sanhedrin_seat.holder ?= this
 }
 
 # Scope: the host's involved activity is a sitting with the Sanhedrin intent.
@@ -48,16 +50,12 @@ kehillah_synod_is_sanhedrin_trigger = {
 }
 
 # Scope: a character attending a synod. HOST: its host. Delegates vote: at
-# a Synod the other community leaders of the host's minhag region, at a
-# Sanhedrin every other community leader present.
+# both a Synod and a Sanhedrin, every other attending community leader.
+# Attendance and the reach of the resulting ruling are separate.
 kehillah_synod_delegate_trigger = {
 	NOT = { this = $HOST$ }
 	is_alive = yes
 	government_has_flag = government_is_kehillah
-	OR = {
-		$HOST$ = { kehillah_synod_is_sanhedrin_trigger = yes }
-		kehillah_shares_minhag_region_trigger = { OTHER = $HOST$ }
-	}
 }
 
 # Scope: the host, inside a synod event (root = the host).
@@ -89,7 +87,7 @@ kehillah_synod_motion_carried_trigger = {
 }
 
 # Scope: a would-be host. Enough other community leaders to make a quorum
-# if they come: in the region for a Synod, anywhere for a Sanhedrin.
+# if they come. Every Kehillah leader is invited to both tiers.
 kehillah_synod_region_has_quorum_trigger = {
 	any_in_global_list = {
 		variable = kehillah_registered_communities
@@ -97,7 +95,6 @@ kehillah_synod_region_has_quorum_trigger = {
 		holder ?= {
 			NOT = { this = root }
 			government_has_flag = government_is_kehillah
-			kehillah_shares_minhag_region_trigger = { OTHER = root }
 		}
 	}
 }
@@ -116,7 +113,9 @@ kehillah_sanhedrin_has_quorum_trigger = {
 # motion events and the intents' "anything left to enact" gate.
 kehillah_synod_can_propose_herem_polygamy_trigger = {
 	kehillah_in_ashkenazi_region_trigger = yes
-	NOT = { exists = global_var:kehillah_minhag_ashkenaz_founded }
+	exists = rite:minhag_ashkenaz
+	rite:minhag_ashkenaz = { rite_has_doctrine = doctrine_polygamy }
+	NOT = { exists = global_var:kehillah_gershom_herem_renewed }
 }
 # The Sanhedrin alone may bind the general rite to Gershom's herem.
 kehillah_synod_can_propose_herem_all_israel_trigger = {
