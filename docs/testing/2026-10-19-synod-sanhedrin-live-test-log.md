@@ -201,3 +201,25 @@ Design consequences: [v47](../spec/v47-gaon-and-the-seat-of-the-sanhedrin.md).
     already the caliph's vassal. Fixed afterwards: landed vassals get no tributary charter.
     Source-checked only.
 - **Not yet tested:** the Synod's two-cases-then-doctrine flow (5f7864b).
+
+## 2026-10-20: the College's range and its candidates (2213df0, e5b9bd2)
+
+- **2213df0: FAIL.**
+  - Courtier rabbis given seats became independent clan "High Chiefs" of their seats. They left
+    their courts, had no domicile, and were unplayable.
+  - `in_diplomatic_range` counted all 22 communities as in range of a Nasi in Jerusalem.
+  - The courtier loop logged 9 unset seat-count variable errors.
+- **e5b9bd2: PASS.**
+  - **Range.** With a distance check (1,000 map pixels of the seat county), only Baghdad, Sura and
+    Jerusalem are in range. The Rhineland, France, Provence, Iberia and Mahdia are excluded, so
+    the College has **2 members besides the Nasi** (Sherira of Sura, David of Baghdad).
+  - **Election.** Elijah died and Sherira of Sura was elected. He is on the landed government, has
+    a domicile, holds the "Sanhedrin of Jerusalem" title, has the caliph as liege, and is head of
+    faith. Sura passed to an heir who was repaired the next day.
+  - **Errors.** No mod script errors and no asserts.
+- **Not exercised: a courtier candidate winning.** Elijah's chaplain (`councillor_court_chaplain`,
+  a Rabbinic rabbi with piety level 2+) was the clergy candidate, but the election resolved in one
+  step and a member won. Whether he appeared in the candidate list was not seen.
+- **Design note for Daniel:** a College of two near Jerusalem in 1066 is thin. Options include
+  more communities in the Levant and Egypt, counting landed rabbis further out, or a larger
+  radius (`kehillah_sanhedrin_range_squared`).
