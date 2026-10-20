@@ -1,0 +1,351 @@
+diff --git a/common/governments/kehillah_nasi_government.txt b/common/governments/kehillah_nasi_government.txt
+index 244fae1..191aa24 100644
+--- a/common/governments/kehillah_nasi_government.txt
++++ b/common/governments/kehillah_nasi_government.txt
+@@ -47,15 +47,13 @@ kehillah_nasi_government = {
+ 	domicile_type = kehillah_quarter
+ 	mechanic_type = theocracy
+ 
+-	# A community leader who holds the Sanhedrin.
++	# SPIKE 2026-10-19 (landed Nasi), uncommitted: any Rabbinic ruler, and
++	# castle/city/temple holdings, so a granted county is valid.
+ 	can_get_government = {
+-		any_held_title = {
+-			is_landless_type_title = yes
+-		}
+-		has_title = title:d_kehillah_sanhedrin
++		faith = faith:rabbinic_faith
+ 	}
+ 
+-	valid_holdings = { city_holding }
++	valid_holdings = { castle_holding city_holding church_holding }
+ 
+ 	court_generate_commanders = no
+ 
+@@ -79,7 +77,8 @@ kehillah_nasi_government = {
+ 	flags = {
+ 		government_is_kehillah
+ 		government_is_kehillah_nasi
+-		cannot_be_vassal_or_liege
++		# SPIKE: cannot_be_vassal_or_liege removed, so the Nasi may be the
++		# host's vassal for his granted county.
+ 	}
+ 
+ 	min_appointment_tier = county
+diff --git a/common/landed_titles/kehillah_landed_titles.txt b/common/landed_titles/kehillah_landed_titles.txt
+index 2d0e5f7..d795546 100644
+--- a/common/landed_titles/kehillah_landed_titles.txt
++++ b/common/landed_titles/kehillah_landed_titles.txt
+@@ -137,7 +137,8 @@ d_kehillah_worms = {
+ 	# to assign unplayable character" -- and the game crashes on
+ 	# Play. Every vanilla d_laamp_* adventurer title carries this
+ 	# flag.
+-	require_landless = yes
++	# SPIKE 2026-10-19 (landed Nasi), uncommitted: Worms only
++	# require_landless = yes
+ 	definite_form = yes
+ 
+ 	# The holder is addressed by their own name and role, not as a
+diff --git a/common/landed_titles/kehillah_sanhedrin_landed_titles.txt b/common/landed_titles/kehillah_sanhedrin_landed_titles.txt
+index 7d4760b..23d27ae 100644
+--- a/common/landed_titles/kehillah_sanhedrin_landed_titles.txt
++++ b/common/landed_titles/kehillah_sanhedrin_landed_titles.txt
+@@ -33,3 +33,25 @@ d_kehillah_sanhedrin = {
+ 
+ 	color = { 230 205 120 }
+ }
++
++# SPIKE 2026-10-19, uncommitted: the Gaonate, Rabbinic Judaism's
++# head_of_rite title (kehillah_judaism_faith_names.txt), held by a great
++# rabbi alongside his community. Testing whether a landless head of rite
++# keeps the Kehillah government.
++d_kehillah_gaonate = {
++	capital = c_baghdad
++	landless = yes
++	allow_domicile = no
++	definite_form = yes
++	ruler_uses_title_name = no
++	can_be_named_after_dynasty = no
++	can_use_nomadic_naming = no
++	no_automatic_claims = yes
++	de_jure_drift_disabled = yes
++
++	ai_primary_priority = {
++		add = -1000
++	}
++
++	color = { 120 90 160 }
++}
+diff --git a/common/on_action/kehillah_synod_on_actions.txt b/common/on_action/kehillah_synod_on_actions.txt
+index 46b8760..a6d798c 100644
+--- a/common/on_action/kehillah_synod_on_actions.txt
++++ b/common/on_action/kehillah_synod_on_actions.txt
+@@ -78,10 +78,9 @@ kehillah_sanhedrin_on_title_gain = {
+ 			}
+ 			set_primary_title_to = scope:kehillah_nasi_community
+ 		}
+-		# The new Nasi may be of another rite (the main rite follows him)
+-		# or the other kind of Nasi (landed or not): reset the doctrines.
+-		kehillah_sanhedrin_apply_head_link_effect = yes
+-		kehillah_reconcile_nasi_government_effect = yes
++		# SPIKE (landed Nasi): head link off, the Sanhedrin's county to him,
++		# his government, then the head link back if he is landed.
++		kehillah_sanhedrin_install_nasi_effect = yes
+ 		trigger_event = { id = kehillah_synod.0003 days = 1 }
+ 		# A previous holder still alive (title taken, not inherited) leaves
+ 		# the Nasi government.
+diff --git a/common/religion/faith_types/kehillah_judaism_faith_names.txt b/common/religion/faith_types/kehillah_judaism_faith_names.txt
+index c57d79c..7d0161e 100644
+--- a/common/religion/faith_types/kehillah_judaism_faith_names.txt
++++ b/common/religion/faith_types/kehillah_judaism_faith_names.txt
+@@ -24,6 +24,9 @@ rabbinic_faith = {
+ 		# government is the Kehillah's theocratic twin. Christianity names
+ 		# ecclesiastical_government the same way (00_christianity.txt).
+ 		theocracy_government_type = kehillah_nasi_government
++		# SPIKE 2026-10-19, uncommitted: the Gaon heads his rite (vanilla
++		# sets head_of_rite at faith level for Catholicism and Orthodoxy).
++		head_of_rite = d_kehillah_gaonate
+ 	}
+ 
+ 	eminent_holy_sites = {
+diff --git a/common/scripted_effects/kehillah_sanhedrin_effects.txt b/common/scripted_effects/kehillah_sanhedrin_effects.txt
+index e20474c..833add6 100644
+--- a/common/scripted_effects/kehillah_sanhedrin_effects.txt
++++ b/common/scripted_effects/kehillah_sanhedrin_effects.txt
+@@ -107,17 +107,22 @@ kehillah_sanhedrin_apply_head_link_effect = {
+ # Each switch logs a KEHILLAH_NASI_GOV line for live verification.
+ # ---------------------------------------------------------------------
+ kehillah_reconcile_nasi_government_effect = {
+-	# Rule 1 is OFF (spec section 10): a landless Nasi is no longer an
+-	# engine head of faith, so he stays on the Kehillah government. The
+-	# branch is kept, behind always = no, for a later attempt at the Nasi
+-	# government; rules 2 and 3 still return anyone else to Kehillah.
++	# SPIKE 2026-10-19 (landed Nasi), uncommitted. The rules now follow the
++	# landed design (live: a landed Nasi on this government is a stable,
++	# playable head of faith; a landless one is forced into theocracy):
++	#   1. A LANDED Nasi -> kehillah_nasi_government.
++	#   2. A LANDLESS ruler on kehillah_nasi_government who is not a landed
++	#      Nasi -> kehillah_government.
++	#   3. A landless community leader on some other government (a forced
++	#      theocracy), who is not the faith's head -> kehillah_government.
++	#      A landless head cannot be moved (illegal government), so
++	#      kehillah_sanhedrin_install_nasi_effect removes the head link
++	#      first.
+ 	if = {
+ 		limit = {
+-			always = no
+ 			is_ruler = yes
+-			is_landed = no
++			is_landed = yes
+ 			kehillah_is_sanhedrin_head_trigger = yes
+-			any_held_title = { is_kehillah_title_trigger = yes }
+ 			NOT = { has_government = kehillah_nasi_government }
+ 		}
+ 		change_government = kehillah_nasi_government
+@@ -132,8 +137,9 @@ kehillah_reconcile_nasi_government_effect = {
+ 	else_if = {
+ 		limit = {
+ 			is_ruler = yes
+-			NOT = { kehillah_is_sanhedrin_head_trigger = yes }
++			is_landed = no
+ 			any_held_title = { is_kehillah_title_trigger = yes }
++			NOT = { faith.religious_head ?= this }
+ 			OR = {
+ 				has_government = kehillah_nasi_government
+ 				NOT = { government_has_flag = government_is_kehillah }
+@@ -350,3 +356,91 @@ kehillah_sanhedrin_lapse_check_effect = {
+ 		}
+ 	}
+ }
++
++# ---------------------------------------------------------------------
++# SPIKE 2026-10-19 (landed Nasi), uncommitted.
++# The liege grants the Nasi the county his community sits in, the simple
++# first case of Daniel's design (a non-capital county of the liege's own
++# domain). The county is recorded as the Sanhedrin's own, so it follows
++# the office, not the family or the community. Scope: the Nasi. Only the
++# debug event calls this for now; the petition decision comes later.
++# ---------------------------------------------------------------------
++kehillah_sanhedrin_grant_county_effect = {
++	save_scope_as = kehillah_sanhedrin_grantee
++	primary_title.title_capital_county ?= { save_scope_as = kehillah_sanhedrin_grant_county }
++	if = {
++		limit = { exists = scope:kehillah_sanhedrin_grant_county }
++		create_title_and_vassal_change = {
++			type = granted
++			save_scope_as = change
++			add_claim_on_loss = no
++		}
++		scope:kehillah_sanhedrin_grant_county = {
++			change_title_holder = {
++				holder = scope:kehillah_sanhedrin_grantee
++				change = scope:change
++			}
++		}
++		resolve_title_and_vassal_change = scope:change
++		title:d_kehillah_sanhedrin = {
++			set_variable = { name = kehillah_sanhedrin_county value = scope:kehillah_sanhedrin_grant_county }
++		}
++		debug_log = "KEHILLAH_NASI_GOV: Sanhedrin county granted"
++		debug_log_scopes = yes
++		kehillah_sanhedrin_install_nasi_effect = yes
++	}
++}
++
++# ---------------------------------------------------------------------
++# SPIKE 2026-10-19 (landed Nasi), uncommitted.
++# Put the scoped Nasi in office, in the only order the live tests allow:
++#   1. head link OFF (a landless head cannot leave theocracy; test G);
++#   2. the Sanhedrin's county to him, if it has one and he lacks it;
++#   3. government: a landed Nasi takes kehillah_nasi_government, a
++#      landless one returns to kehillah_government;
++#   4. head link ON again if he is landed (temporal head, the Caliph's
++#      model, live-verified on a landed Nasi).
++# Called when the Sanhedrin changes hands and when its county is granted.
++# ---------------------------------------------------------------------
++kehillah_sanhedrin_install_nasi_effect = {
++	save_scope_as = kehillah_new_nasi
++	if = {
++		limit = { exists = faith:rabbinic_faith.religious_head }
++		faith:rabbinic_faith = { remove_religious_head_title = yes }
++	}
++	kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_no_head CLERGY = doctrine_theocracy_temporal }
++	if = {
++		limit = {
++			exists = title:d_kehillah_sanhedrin.var:kehillah_sanhedrin_county
++			NOT = { title:d_kehillah_sanhedrin.var:kehillah_sanhedrin_county.holder ?= scope:kehillah_new_nasi }
++		}
++		create_title_and_vassal_change = {
++			type = granted
++			save_scope_as = change
++			add_claim_on_loss = no
++		}
++		title:d_kehillah_sanhedrin.var:kehillah_sanhedrin_county = {
++			change_title_holder = {
++				holder = scope:kehillah_new_nasi
++				change = scope:change
++			}
++		}
++		resolve_title_and_vassal_change = scope:change
++		debug_log = "KEHILLAH_NASI_GOV: Sanhedrin county passed to the new Nasi"
++	}
++	if = {
++		limit = { any_held_title = { is_kehillah_title_trigger = yes } }
++		random_held_title = {
++			limit = { is_kehillah_title_trigger = yes }
++			save_scope_as = kehillah_nasi_community
++		}
++		set_primary_title_to = scope:kehillah_nasi_community
++	}
++	kehillah_reconcile_nasi_government_effect = yes
++	if = {
++		limit = { is_landed = yes }
++		kehillah_sanhedrin_apply_head_link_effect = yes
++	}
++	debug_log = "KEHILLAH_NASI_GOV: Nasi installed"
++	debug_log_scopes = yes
++}
+diff --git a/events/kehillah_synod_debug_events.txt b/events/kehillah_synod_debug_events.txt
+index ae04d53..a1cd6f7 100644
+--- a/events/kehillah_synod_debug_events.txt
++++ b/events/kehillah_synod_debug_events.txt
+@@ -175,3 +175,86 @@ kehillah_synod_debug.5 = {
+ 		debug_log_scopes = yes
+ 	}
+ }
++
++# SPIKE 2026-10-19, uncommitted.
++#   .6  the liege grants the scoped Nasi his community's county (the
++#       Sanhedrin's county), then installs him (kehillah_sanhedrin_
++#       grant_county_effect)
++#   .7  make the scoped character Gaon: grant d_kehillah_gaonate, the
++#       faith's head_of_rite title, keep his community primary, and force
++#       the engine to recompute the head of each rite
++#   .8  report the head of rite of Rabbinism and Minhag Ashkenaz, and the
++#       head of faith
++kehillah_synod_debug.6 = {
++	type = character_event
++	hidden = yes
++	orphan = yes
++	immediate = {
++		kehillah_sanhedrin_grant_county_effect = yes
++		trigger_event = kehillah_synod_debug.5
++	}
++}
++
++kehillah_synod_debug.7 = {
++	type = character_event
++	hidden = yes
++	orphan = yes
++	immediate = {
++		save_scope_as = kehillah_gaon
++		primary_title = { save_scope_as = kehillah_gaon_primary }
++		create_title_and_vassal_change = {
++			type = created
++			save_scope_as = change
++			add_claim_on_loss = no
++		}
++		title:d_kehillah_gaonate = {
++			change_title_holder = {
++				holder = scope:kehillah_gaon
++				change = scope:change
++			}
++		}
++		resolve_title_and_vassal_change = scope:change
++		set_primary_title_to = scope:kehillah_gaon_primary
++		rite:rabbinism ?= { force_refresh_head_of_rite = yes }
++		if = {
++			limit = { exists = global_var:kehillah_minhag_ashkenaz_founded }
++			rite:minhag_ashkenaz = { force_refresh_head_of_rite = yes }
++		}
++		debug_log = "synod_debug: Gaonate granted, heads of rite refreshed"
++		trigger_event = kehillah_synod_debug.8
++	}
++}
++
++kehillah_synod_debug.8 = {
++	type = character_event
++	hidden = yes
++	orphan = yes
++	immediate = {
++		if = {
++			limit = { exists = rite:rabbinism.head_of_rite }
++			debug_log = "synod_debug: Rabbinism head of rite follows"
++			rite:rabbinism.head_of_rite = { debug_log_scopes = yes }
++		}
++		else = { debug_log = "synod_debug: Rabbinism has NO head of rite" }
++		if = {
++			limit = {
++				exists = global_var:kehillah_minhag_ashkenaz_founded
++				exists = rite:minhag_ashkenaz.head_of_rite
++			}
++			debug_log = "synod_debug: Minhag Ashkenaz head of rite follows"
++			rite:minhag_ashkenaz.head_of_rite = { debug_log_scopes = yes }
++		}
++		else = { debug_log = "synod_debug: Minhag Ashkenaz has NO head of rite (or is not founded)" }
++		if = {
++			limit = { exists = title:d_kehillah_gaonate.holder }
++			debug_log = "synod_debug: Gaonate holder follows"
++			title:d_kehillah_gaonate.holder = { debug_log_scopes = yes }
++		}
++		if = {
++			limit = { exists = faith:rabbinic_faith.religious_head }
++			debug_log = "synod_debug: head of faith follows"
++			faith:rabbinic_faith.religious_head = { debug_log_scopes = yes }
++		}
++		else = { debug_log = "synod_debug: no head of faith" }
++	}
++}
+diff --git a/localization/english/kehillah_sanhedrin_l_english.yml b/localization/english/kehillah_sanhedrin_l_english.yml
+index 20a41c5..b3ce95a 100644
+--- a/localization/english/kehillah_sanhedrin_l_english.yml
++++ b/localization/english/kehillah_sanhedrin_l_english.yml
+@@ -3,6 +3,8 @@
+ 
+  d_kehillah_sanhedrin:0 "The Sanhedrin"
+  d_kehillah_sanhedrin_adj:0 "Sanhedrin"
++ d_kehillah_gaonate:0 "The Gaonate"
++ d_kehillah_gaonate_adj:0 "Geonic"
+ 
+  kehillah_nasi_government:0 "Kehillah of the Nasi"
+  kehillah_nasi_government_adjective:0 "Communal"

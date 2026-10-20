@@ -916,6 +916,34 @@ kehillah_setup_troyes_start_effect = {
 
 
 # ---------------------------------------------------------------------
+# kehillah_setup_auxerre_start_effect
+# Scope: the Kehillah of Auxerre's leader (character).
+#
+# Auxerre was already an important scholarly community in the eleventh
+# century, and its sages corresponded with Rashi. Its representative
+# leader is therefore a rabbi, while the communal chest remains below
+# Troyes's: the evidence establishes intellectual standing, not wealth.
+# ---------------------------------------------------------------------
+
+kehillah_setup_auxerre_start_effect = {
+	if = {
+		limit = {
+			exists = domicile
+			NOT = { has_character_flag = kehillah_start_configured }
+		}
+		add_character_flag = kehillah_start_configured
+		save_scope_as = kehillah_leader
+
+		add_gold = 70
+
+		kehillah_seed_community_effect = yes
+		kehillah_record_quarter_effect = yes
+		kehillah_update_leader_flavor_effect = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
 # kehillah_setup_paris_start_effect
 # Scope: the Kehillah of Paris's leader (character).
 #
@@ -2496,13 +2524,18 @@ kehillah_update_leader_flavor_effect = {
 	else = {
 		remove_character_flag = kehillah_rabbinic_leader_flag
 	}
-	# Rabbenu: earned by devotion, then kept (kehillah_leader_earns_
-	# rabbenu_trigger). Also run from the quarterly pulse, so a rabbi who
-	# reaches the piety level in office is promoted without a change of
-	# leader.
+	# Rabbenu (CHANGED 2026-10-19, V47, Daniel): no longer earned by piety.
+	# It is now the style of Minhag Ashkenaz's head of rite, the holder of
+	# the Gaonate in that rite (Rabbenu Gershom, Rashi, Rabbenu Tam).
 	if = {
-		limit = { kehillah_leader_earns_rabbenu_trigger = yes }
+		limit = {
+			kehillah_is_gaonate_holder_trigger = yes
+			kehillah_is_minhag_ashkenaz_trigger = yes
+		}
 		add_character_flag = kehillah_rabbenu_leader_flag
+	}
+	else = {
+		remove_character_flag = kehillah_rabbenu_leader_flag
 	}
 	# V29 (2026-10-11): the Babylonian offices. Whoever leads Baghdad is the
 	# Exilarch; a rabbi leading Sura is its Gaon. Follows the title, so a
@@ -2514,10 +2547,19 @@ kehillah_update_leader_flavor_effect = {
 	else = {
 		remove_character_flag = kehillah_exilarch_flag
 	}
+	# V47 (2026-10-19): also the head of rite outside Minhag Ashkenaz.
 	if = {
 		limit = {
-			has_trait = kehillah_rabbi_trait
-			primary_title ?= { this = title:d_kehillah_sura }
+			OR = {
+				AND = {
+					has_trait = kehillah_rabbi_trait
+					primary_title ?= { this = title:d_kehillah_sura }
+				}
+				AND = {
+					kehillah_is_gaonate_holder_trigger = yes
+					NOT = { kehillah_is_minhag_ashkenaz_trigger = yes }
+				}
+			}
 		}
 		add_character_flag = kehillah_gaon_flag
 	}
