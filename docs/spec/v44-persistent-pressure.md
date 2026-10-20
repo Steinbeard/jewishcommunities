@@ -80,6 +80,13 @@ The soak found no Bet Din conference in 20 years, by the player or any AI. A liv
   - a Community decision, **Convene the Bet Din** (`kehillah_convene_bet_din_decision`), opens the activity planner on the conference;
   - an important action, **Cases Await the Bet Din**, does the same and is shown while `kehillah_can_convene_bet_din_trigger` holds.
 - **AI (root cause found 2026-10-15):** the AI Watch window (console `aiwatch`, a character's AI Watch > Activities > Calculate) showed the Bet Din as a valid candidate at priority 100, with guests willing to come, but its only location at weight 0. The activity had no `ai_will_select_province`, which every vanilla activity defines, so the AI could never choose a venue and silently dropped the plan. It now has `value = 10`, as `camp_party` does. With the activity's own AI (`ai_will_do` 100, checked every 6 months, 2-year cooldown), an eligible community should sit about every two to two and a half years. A yearly `ai_attempt_to_host_activity` nudge, tried first, was removed as redundant.
+- **Still none by 1071 (2026-10-15 evening).** A second live run with the venue fix (Worms 1066 to Nov 1071, cut off when the session ended) saw no AI sitting in five years. The source review that followed:
+  - The vanilla schema (`_activity_type.info`) describes the AI's steps: the activity's `ai_will_do` must exceed `ACTIVITY_SCORE_THRESHOLD` (20); the highest-scoring type is hosted with that score as a percent chance; a venue is drawn by weighted random from `ai_will_select_province`; and a host intent is drawn by weighted random from the intents' `ai_will_do`.
+  - The Bet Din offered one intent, vanilla `justice_intent`, weighted `ai_honor` (+-50 for traits). That is zero or below for many leaders, and all 23 vanilla AI-hosted activities offer an intent with a flat positive weight.
+  - It now uses its own `kehillah_bet_din_justice_intent` (`common/activities/intents/kehillah_bet_din_intents.txt`): the same icon and auto-completion, weighted 50 + honour/2 (+25 for just or arbitrary), never below 10.
+- **Not explained by the intent:** leaders with high honour (Toledo, Lucena, Mahdia at 100 in the 1087 probe) would already have had a positive weight, so another blocker may remain. Gates were ruled out: all communities pass from 1066, and only Cologne and Rouen start without a rabbi. No "AI tried to create an invalid activity" line was ever logged for the Bet Din, so the plan dies before creation.
+- **The next live step:** AI Watch on a high-honour AI leader in a fresh game (Activities > Calculate > the Bet Din's Calculate Creation > Calculate Phases) to see which stage comes back empty.
+- **Watch the invitations:** once AI sittings happen (weight 100, every 6 months, 2-year cooldown), check that the player is not invited too often.
 
 ## 6. The treasury
 
@@ -90,3 +97,7 @@ While a Kehillah leader holds more than `kehillah_treasury_nudge_gold` (300), an
 - Course of Study / Learn Torah texts: waiting for the Sefer overhaul branch.
 - The "New Dayyan" notice at each succession stays (Daniel: "could be okay").
 - County-level invitations (section 4).
+
+## Dated correction — 2026-10-16: AI Bet Din hosting
+
+Section 5's claim that the zero-weight province was the root cause and that an eligible AI community should sit every two to two and a half years is superseded. The weight fix made the venue score 10 in AI Watch, but no AI community hosted a Bet Din in the next 20-year soak. A forced host attempt with a +10000 priority override still created none. Daniel then tested a landless `domicile_domain` venue filter through December 1087; it also created none. The venue filter remains because it names the correct location for a landless quarter, but it is not an AI-hosting fix. The scripted eligibility gates pass, while the engine does not reach Bet Din creation for these AI landless rulers. See the [2026-10-16 soak report](../testing/2026-10-16-20-year-soak-report.md) for the probes and limitations.

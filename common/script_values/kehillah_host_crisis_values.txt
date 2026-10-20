@@ -51,6 +51,17 @@ kehillah_host_demands_chance_value = {
 		limit = { kehillah_host_outlook_value <= -15 }
 		value = 4
 	}
+	# He was paid to stop an accusation, and has learned the Jews will pay.
+	if = {
+		limit = {
+			kehillah_host_outlook_value < 15
+			primary_title ?= {
+				exists = var:kehillah_accusation_paid_host
+				var:kehillah_accusation_paid_host = holder.domicile.domicile_location.county.holder.top_liege
+			}
+		}
+		add = kehillah_accusation_paid_demands_chance
+	}
 }
 kehillah_host_demands_cooldown_years = 5
 # The levy: twice medium gold under a Cold lord, three times under a Hostile one.
@@ -66,42 +77,14 @@ kehillah_host_levy_value = {
 }
 kehillah_host_levy_prosperity = -30
 kehillah_host_demands_refusal_stability = -40
-# The Shtadlan's plea: 25 + 2 per point of his diplomacy (up to +40),
-# +10 if the lord's opinion of the leader is 0 or more.
-kehillah_shtadlan_plea_success_value = {
-	value = 25
-	if = {
-		limit = { exists = cp:councillor_chancellor }
-		add = {
-			value = cp:councillor_chancellor.diplomacy
-			multiply = 2
-			max = 40
-		}
-	}
-	if = {
-		limit = {
-			domicile.domicile_location.county.holder.top_liege ?= {
-				opinion = { target = root value >= 0 }
-			}
-		}
-		add = 10
-	}
-	max = 90
-}
-kehillah_shtadlan_plea_failure_value = {
-	value = 100
-	subtract = kehillah_shtadlan_plea_success_value
-}
-# The appeal to the head of the faith: 30 + his outlook, at most 85.
+# The appeal to the head of the faith: 30 + his outlook, at most 85. Read
+# by the mob's appeal (kehillah_mob_values.txt); the Demands' appeal shows
+# its own factors since 2026-10-18.
 kehillah_hof_appeal_success_value = {
 	value = 30
 	add = domicile.domicile_location.county.holder.top_liege.faith.religious_head.kehillah_outlook_on_jews_value
 	min = 5
 	max = 85
-}
-kehillah_hof_appeal_failure_value = {
-	value = 100
-	subtract = kehillah_hof_appeal_success_value
 }
 
 # --- 3. Levers.
@@ -217,42 +200,23 @@ kehillah_accusation_cooldown_years = 20
 kehillah_accusation_defused_stability = -20
 kehillah_accusation_violence_stability = -100
 kehillah_accusation_violence_prosperity = -50
+# Rework, 2026-10-18 (v37 addendum). The plea's and the payment's odds are
+# factors in the event itself (kehillah_accusation.0001), shown in its
+# tooltip. Barred gates: always a riot, never a siege, its harm x this.
 kehillah_accusation_barricade_mult = 0.6
 kehillah_accusation_barricade_greatness = 10
-# The Shtadlan's plea for protection: 25 + half the lord's outlook + 10 per
-# charter-security step (5..90).
-kehillah_accusation_shtadlan_success_value = {
-	value = 25
-	add = {
-		value = kehillah_host_outlook_value
-		divide = 2
-	}
-	if = {
-		limit = { primary_title ?= { var:kehillah_charter_cache_security ?= 2 } }
-		add = 20
-	}
-	else_if = {
-		limit = { primary_title ?= { var:kehillah_charter_cache_security ?= 1 } }
-		add = 10
-	}
-	min = 5
-	max = 90
-}
-kehillah_accusation_shtadlan_failure_value = {
-	value = 100
-	subtract = kehillah_accusation_shtadlan_success_value
-}
-# Paying for protection: 50 + half the lord's outlook (10..95).
-kehillah_accusation_pay_success_value = {
-	value = 50
-	add = {
-		value = kehillah_host_outlook_value
-		divide = 2
-	}
-	min = 10
-	max = 95
-}
-kehillah_accusation_pay_failure_value = {
-	value = 100
-	subtract = kehillah_accusation_pay_success_value
-}
+# The lie exposed (an intrigue duel against medium_skill_rating).
+kehillah_accusation_exposed_greatness = 15
+# Caught questioning witnesses: the mob's severity +10 (see
+# kehillah_accusation_violence_effect), a riot's harm x1.25.
+kehillah_accusation_caught_mult = 1.25
+# A lord who was paid remembers: for this many years, while he is
+# Indifferent or colder, his Demands are likelier by this many percent a
+# quarter (kehillah_host_demands_chance_value).
+kehillah_accusation_paid_precedent_years = 10
+kehillah_accusation_paid_demands_chance = 3
+# The charge by date, under a Christian lord: before Norwich (1144), that
+# the Jews mocked the cross; from Lateran IV (1215), sometimes the
+# desecration of the Host.
+kehillah_accusation_blood_libel_year = 1144
+kehillah_accusation_desecration_year = 1215

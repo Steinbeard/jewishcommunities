@@ -1911,48 +1911,89 @@ kehillah_init_pillars_effect = {
 kehillah_initialize_historical_pillars_from_baseline_effect = {
 	if = {
 		limit = { NOT = { exists = var:kehillah_start_pillars_initialized_from_baseline } }
+		kehillah_write_start_baseline_pillars_effect = yes
+	}
+}
 
-		holder = {
-			save_scope_value_as = {
-				name = kehillah_start_prosperity_baseline
-				value = kehillah_prosperity_baseline_value
-			}
-			save_scope_value_as = {
-				name = kehillah_start_stability_baseline
-				value = kehillah_stability_baseline_value
-			}
-			save_scope_value_as = {
-				name = kehillah_start_greatness_baseline
-				value = kehillah_greatness_baseline_value
-			}
+# ---------------------------------------------------------------------
+# kehillah_reconcile_provisional_start_pillars_effect
+# Scope: a pre-authored historical Kehillah title, on day three.
+#
+# CHANGED 2026-10-18 (Daniel: pillars should not wait for the contract). The
+# opening pillars are now written AT GAME START from a predicted charter and
+# network (kehillah_on_game_start; kehillah_predict_start_charter_effect), and
+# marked kehillah_start_pillars_provisional. Day three, when the real charter
+# and nearby-community cache have committed, rewrites them from the true
+# baseline once, so any wrong guess is corrected at the cost of at most a
+# small step instead of three days of zeroes. Bands are re-seeded quietly
+# (their previous-band markers are dropped) so the correction never sends a
+# band-change notice for a score the player has never been shown.
+# ---------------------------------------------------------------------
 
-			primary_title = {
-				kehillah_init_pillars_effect = yes
-				set_variable = { name = kehillah_var_prosperity value = scope:kehillah_start_prosperity_baseline }
-				set_variable = { name = kehillah_var_stability value = scope:kehillah_start_stability_baseline }
-				set_variable = { name = kehillah_var_greatness value = scope:kehillah_start_greatness_baseline }
-				set_variable = { name = kehillah_start_pillars_initialized_from_baseline value = 1 }
-				kehillah_update_standing_effect = yes
-			}
-
-			# BAND THE COMMUNITY THE MOMENT ITS PILLARS BECOME REAL.
-			# ADDED 2026-09-26 (heartbeat 5). Until now the bands were
-			# only ever set by the quarterly pulse, so between this
-			# snapshot (day three) and the next pulse (up to a quarter
-			# later) the leader wore whatever band the pulse had already
-			# guessed from the pre-initialisation zeroes -- measured live
-			# as three CRISIS modifiers on a Strained/Strained/Healthy
-			# community. kehillah_update_all_pillar_bands_effect now
-			# refuses to band an uninitialised community at all
-			# (kehillah_pillars_are_live_trigger), so this call is what
-			# performs the FIRST, correct seeding, and it does so on the
-			# quiet seed branch -- no spurious band-change notice.
-			#
-			# Character scope, not title: the band modifiers live on the
-			# leader. Ordered after the primary_title block above so the
-			# pillars it reads are the ones just written.
-			kehillah_update_all_pillar_bands_effect = yes
+kehillah_reconcile_provisional_start_pillars_effect = {
+	if = {
+		limit = { has_variable = kehillah_start_pillars_provisional }
+		remove_variable = kehillah_start_pillars_provisional
+		if = {
+			limit = { has_variable = kehillah_band_prev_prosperity }
+			remove_variable = kehillah_band_prev_prosperity
 		}
+		if = {
+			limit = { has_variable = kehillah_band_prev_stability }
+			remove_variable = kehillah_band_prev_stability
+		}
+		if = {
+			limit = { has_variable = kehillah_band_prev_greatness }
+			remove_variable = kehillah_band_prev_greatness
+		}
+		kehillah_write_start_baseline_pillars_effect = yes
+	}
+}
+
+# Scope: a Kehillah title. Writes all three pillars, standing and bands from
+# the holder's current baselines, and sets the initialised marker. Shared by
+# the (marker-guarded) initial snapshot and the day-three reconcile.
+kehillah_write_start_baseline_pillars_effect = {
+	holder = {
+		save_scope_value_as = {
+			name = kehillah_start_prosperity_baseline
+			value = kehillah_prosperity_baseline_value
+		}
+		save_scope_value_as = {
+			name = kehillah_start_stability_baseline
+			value = kehillah_stability_baseline_value
+		}
+		save_scope_value_as = {
+			name = kehillah_start_greatness_baseline
+			value = kehillah_greatness_baseline_value
+		}
+
+		primary_title = {
+			kehillah_init_pillars_effect = yes
+			set_variable = { name = kehillah_var_prosperity value = scope:kehillah_start_prosperity_baseline }
+			set_variable = { name = kehillah_var_stability value = scope:kehillah_start_stability_baseline }
+			set_variable = { name = kehillah_var_greatness value = scope:kehillah_start_greatness_baseline }
+			set_variable = { name = kehillah_start_pillars_initialized_from_baseline value = 1 }
+			kehillah_update_standing_effect = yes
+		}
+
+		# BAND THE COMMUNITY THE MOMENT ITS PILLARS BECOME REAL.
+		# ADDED 2026-09-26 (heartbeat 5). Until now the bands were
+		# only ever set by the quarterly pulse, so between this
+		# snapshot (day three) and the next pulse (up to a quarter
+		# later) the leader wore whatever band the pulse had already
+		# guessed from the pre-initialisation zeroes -- measured live
+		# as three CRISIS modifiers on a Strained/Strained/Healthy
+		# community. kehillah_update_all_pillar_bands_effect now
+		# refuses to band an uninitialised community at all
+		# (kehillah_pillars_are_live_trigger), so this call is what
+		# performs the FIRST, correct seeding, and it does so on the
+		# quiet seed branch -- no spurious band-change notice.
+		#
+		# Character scope, not title: the band modifiers live on the
+		# leader. Ordered after the primary_title block above so the
+		# pillars it reads are the ones just written.
+		kehillah_update_all_pillar_bands_effect = yes
 	}
 }
 
@@ -2399,13 +2440,18 @@ kehillah_update_leader_flavor_effect = {
 	else = {
 		remove_character_flag = kehillah_rabbinic_leader_flag
 	}
-	# Rabbenu: earned by devotion, then kept (kehillah_leader_earns_
-	# rabbenu_trigger). Also run from the quarterly pulse, so a rabbi who
-	# reaches the piety level in office is promoted without a change of
-	# leader.
+	# Rabbenu (CHANGED 2026-10-19, V47, Daniel): no longer earned by piety.
+	# It is now the style of Minhag Ashkenaz's head of rite, the holder of
+	# the Gaonate in that rite (Rabbenu Gershom, Rashi, Rabbenu Tam).
 	if = {
-		limit = { kehillah_leader_earns_rabbenu_trigger = yes }
+		limit = {
+			kehillah_is_gaonate_holder_trigger = yes
+			kehillah_is_minhag_ashkenaz_trigger = yes
+		}
 		add_character_flag = kehillah_rabbenu_leader_flag
+	}
+	else = {
+		remove_character_flag = kehillah_rabbenu_leader_flag
 	}
 	# V29 (2026-10-11): the Babylonian offices. Whoever leads Baghdad is the
 	# Exilarch; a rabbi leading Sura is its Gaon. Follows the title, so a
@@ -2417,15 +2463,34 @@ kehillah_update_leader_flavor_effect = {
 	else = {
 		remove_character_flag = kehillah_exilarch_flag
 	}
+	# V47 (2026-10-19): also the head of rite outside Minhag Ashkenaz.
 	if = {
 		limit = {
-			has_trait = kehillah_rabbi_trait
-			primary_title ?= { this = title:d_kehillah_sura }
+			OR = {
+				AND = {
+					has_trait = kehillah_rabbi_trait
+					primary_title ?= { this = title:d_kehillah_sura }
+				}
+				AND = {
+					kehillah_is_gaonate_holder_trigger = yes
+					NOT = { kehillah_is_minhag_ashkenaz_trigger = yes }
+				}
+			}
 		}
 		add_character_flag = kehillah_gaon_flag
 	}
 	else = {
 		remove_character_flag = kehillah_gaon_flag
+	}
+	# V46 (2026-10-19): the Nasi of a restored Sanhedrin. The Sanhedrin is
+	# never his primary title (pillars and succession read the community),
+	# so the style is how the head of the Jewish world is shown as such.
+	if = {
+		limit = { kehillah_is_sanhedrin_head_trigger = yes }
+		add_character_flag = kehillah_nasi_flag
+	}
+	else = {
+		remove_character_flag = kehillah_nasi_flag
 	}
 }
 

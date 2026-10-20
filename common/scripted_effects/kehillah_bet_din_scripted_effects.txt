@@ -117,6 +117,25 @@ kehillah_bet_din_pick_litigants_effect = {
 		}
 		save_scope_as = kbd_tmp_litigant_a
 	}
+	# 2026-10-16 soak: a small or single-family court has no second adult
+	# courtier of another dynasty, so a scope was never saved and the
+	# litigant variable stayed unset (log: "Failed to fetch variable for
+	# kehillah_bet_din_litigant_a/b"; the case text then had no names). Fall
+	# back to any other adult courtier, then to a townsperson created into
+	# the court, so both litigants always exist.
+	if = {
+		limit = { NOT = { exists = scope:kbd_tmp_litigant_a } }
+		create_character = {
+			dynasty = generate
+			age = { 25 55 }
+			gender_female_chance = 50
+			faith = root.faith
+			culture = root.culture
+			random_traits = yes
+			employer = root
+			save_scope_as = kbd_tmp_litigant_a
+		}
+	}
 	random_courtier = {
 		limit = {
 			is_adult = yes
@@ -126,8 +145,48 @@ kehillah_bet_din_pick_litigants_effect = {
 		}
 		save_scope_as = kbd_tmp_litigant_b
 	}
+	if = {
+		limit = { NOT = { exists = scope:kbd_tmp_litigant_b } }
+		random_courtier = {
+			limit = {
+				is_adult = yes
+				is_imprisoned = no
+				NOT = { this = scope:kbd_tmp_litigant_a }
+			}
+			save_scope_as = kbd_tmp_litigant_b
+		}
+	}
+	if = {
+		limit = { NOT = { exists = scope:kbd_tmp_litigant_b } }
+		create_character = {
+			dynasty = generate
+			age = { 25 55 }
+			gender_female_chance = 50
+			faith = root.faith
+			culture = root.culture
+			random_traits = yes
+			employer = root
+			save_scope_as = kbd_tmp_litigant_b
+		}
+	}
 	involved_activity = { set_variable = { name = kehillah_bet_din_litigant_a value = scope:kbd_tmp_litigant_a } }
 	involved_activity = { set_variable = { name = kehillah_bet_din_litigant_b value = scope:kbd_tmp_litigant_b } }
+}
+
+# ---------------------------------------------------------------------
+# kehillah_bet_din_default_direction_effect
+# Scope: the Bet Din activity. Records a case's ruling direction only if
+# the presiding judge has not already chosen one. The guest judges' events
+# (called a day after the host's) used to overwrite caseN_direction with
+# their own cited source, so the ruling text could describe an option the
+# host never picked (2026-10-16 soak: The Charity Chest). The host's own
+# choice now stands; a guest's source or combination still adds its tally.
+# ---------------------------------------------------------------------
+kehillah_bet_din_default_direction_effect = {
+	if = {
+		limit = { NOT = { has_variable = kehillah_bet_din_case$CASE$_direction } }
+		set_variable = { name = kehillah_bet_din_case$CASE$_direction value = $VALUE$ }
+	}
 }
 
 # ---------------------------------------------------------------------
@@ -1478,11 +1537,13 @@ kehillah_bet_din_draw_case_effect = {
 
 		# CASE 3 -- The Second Wife. A communal policy question with no
 		# litigants at all, so no court-size requirement -- but it is
-		# pointless to argue a herem against a practice the faith does not
-		# permit in the first place, so it only comes up while the faith
-		# still has doctrine_polygamy. (Rabbinism ships with it; a
-		# playthrough that has already passed this herem, here or
-		# elsewhere, should not be offered it twice.)
+		# pointless to argue a ban against a practice the host's rite does
+		# not permit, so it only comes up while the RITE permits it and the
+		# community has no ketubbah clause yet. V45 (2026-10-18): this was
+		# a faith check, and vanilla's game start makes the faith
+		# monogamous after 1000, so the case could never be drawn. Now the
+		# general Rabbinic rite permits polygamy and Minhag Ashkenaz does
+		# not, so this is a Sephardi and Mizrahi case.
 		10 = {
 			trigger = {
 				NOT = {
@@ -1491,7 +1552,8 @@ kehillah_bet_din_draw_case_effect = {
 						target = flag:kehillah_bet_din_case_second_wife
 					} }
 				}
-				faith = { has_doctrine = doctrine_polygamy }
+				rite = { rite_has_doctrine = doctrine_polygamy }
+				primary_title = { NOT = { has_variable = kehillah_takkanah_ketubbah_clause } }
 			}
 
 			scope:activity = { add_to_variable_list = {

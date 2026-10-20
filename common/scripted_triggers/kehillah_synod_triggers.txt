@@ -1,0 +1,169 @@
+﻿# V45 rabbinic synods (docs/spec/v45-rabbinic-synods-and-minhag-ashkenaz.md).
+# A synod is a Sitting of the Bet Din held with the Synod or Sanhedrin intent
+# (common/activities/intents/kehillah_synod_intents.txt).
+
+# Scope: a character with a capital county (a Kehillah leader). Ashkenaz is
+# the two Ashkenazi minhag regions, plus England, which
+# kehillah_shares_minhag_region_trigger already treats as one region of its
+# own and whose Jews came from Rouen.
+kehillah_in_ashkenazi_region_trigger = {
+	exists = capital_county
+	OR = {
+		capital_county = { empire = title:e_britannia }
+		AND = {
+			capital_county.de_jure_liege = { has_variable = kehillah_minhag }
+			OR = {
+				capital_county.de_jure_liege.var:kehillah_minhag = flag:western_ashkenaz
+				capital_county.de_jure_liege.var:kehillah_minhag = flag:eastern_ashkenaz
+			}
+		}
+	}
+}
+
+# Scope: a character. A Kehillah leader in Ashkenaz, or someone at such a
+# leader's court: the people Minhag Ashkenaz takes in when it is founded,
+# whatever culture the game gave them.
+kehillah_ashkenazi_kehillah_member_trigger = {
+	OR = {
+		AND = {
+			government_has_flag = government_is_kehillah
+			kehillah_in_ashkenazi_region_trigger = yes
+		}
+		employer ?= {
+			government_has_flag = government_is_kehillah
+			kehillah_in_ashkenazi_region_trigger = yes
+		}
+	}
+}
+
+# Scope: a character. The Nasi: holder of the Sanhedrin's seat county in the
+# Land, which exists only once restored (V47 phase B,
+# kehillah_restore_sanhedrin_decision).
+kehillah_is_sanhedrin_head_trigger = {
+	exists = global_var:kehillah_sanhedrin_seat
+	global_var:kehillah_sanhedrin_seat.holder ?= this
+}
+
+# Scope: the host's involved activity is a sitting with the Sanhedrin intent.
+kehillah_synod_is_sanhedrin_trigger = {
+	involved_activity.var:kehillah_synod_level ?= flag:sanhedrin
+}
+
+# Scope: a character attending a synod. HOST: its host. Delegates vote: at
+# a Synod the other community leaders of the host's minhag region, at a
+# Sanhedrin every other community leader present.
+kehillah_synod_delegate_trigger = {
+	NOT = { this = $HOST$ }
+	is_alive = yes
+	government_has_flag = government_is_kehillah
+	OR = {
+		$HOST$ = { kehillah_synod_is_sanhedrin_trigger = yes }
+		kehillah_shares_minhag_region_trigger = { OTHER = $HOST$ }
+	}
+}
+
+# Scope: the host, inside a synod event (root = the host).
+kehillah_synod_quorum_present_trigger = {
+	trigger_if = {
+		limit = { kehillah_synod_is_sanhedrin_trigger = yes }
+		involved_activity ?= {
+			any_attending_character = {
+				count >= kehillah_sanhedrin_quorum
+				kehillah_synod_delegate_trigger = { HOST = root }
+			}
+		}
+	}
+	trigger_else = {
+		involved_activity ?= {
+			any_attending_character = {
+				count >= kehillah_synod_quorum
+				kehillah_synod_delegate_trigger = { HOST = root }
+			}
+		}
+	}
+}
+kehillah_synod_motion_carried_trigger = {
+	involved_activity ?= {
+		has_variable = kehillah_synod_votes_for
+		has_variable = kehillah_synod_votes_against
+		var:kehillah_synod_votes_for > var:kehillah_synod_votes_against
+	}
+}
+
+# Scope: a would-be host. Enough other community leaders to make a quorum
+# if they come: in the region for a Synod, anywhere for a Sanhedrin.
+kehillah_synod_region_has_quorum_trigger = {
+	any_in_global_list = {
+		variable = kehillah_registered_communities
+		count >= kehillah_synod_quorum
+		holder ?= {
+			NOT = { this = root }
+			government_has_flag = government_is_kehillah
+			kehillah_shares_minhag_region_trigger = { OTHER = root }
+		}
+	}
+}
+kehillah_sanhedrin_has_quorum_trigger = {
+	any_in_global_list = {
+		variable = kehillah_registered_communities
+		count >= kehillah_sanhedrin_quorum
+		holder ?= {
+			NOT = { this = root }
+			government_has_flag = government_is_kehillah
+		}
+	}
+}
+
+# Scope: a would-be host. Each takkanah's own availability, shared by the
+# motion events and the intents' "anything left to enact" gate.
+kehillah_synod_can_propose_herem_polygamy_trigger = {
+	kehillah_in_ashkenazi_region_trigger = yes
+	NOT = { exists = global_var:kehillah_minhag_ashkenaz_founded }
+}
+# The Sanhedrin alone may bind the general rite to Gershom's herem.
+kehillah_synod_can_propose_herem_all_israel_trigger = {
+	kehillah_is_sanhedrin_head_trigger = yes
+	exists = rite:rabbinism
+	rite:rabbinism = { rite_has_doctrine = doctrine_polygamy }
+}
+kehillah_synod_can_propose_ketubbah_clause_trigger = {
+	rite = { rite_has_doctrine = doctrine_polygamy }
+	primary_title = { NOT = { has_variable = kehillah_takkanah_ketubbah_clause } }
+}
+kehillah_synod_can_propose_gentile_courts_trigger = {
+	primary_title = { NOT = { has_variable = kehillah_takkanah_gentile_courts } }
+}
+kehillah_synod_can_propose_informers_trigger = {
+	primary_title = { NOT = { has_variable = kehillah_takkanah_informers } }
+}
+kehillah_synod_can_propose_hayishuv_trigger = {
+	primary_title = { NOT = { has_variable = kehillah_takkanah_hayishuv } }
+}
+kehillah_synod_can_propose_letters_trigger = {
+	primary_title = { NOT = { has_variable = kehillah_takkanah_letters } }
+}
+
+# The first page of the motion holds the marriage questions.
+kehillah_synod_has_marriage_motion_trigger = {
+	OR = {
+		kehillah_synod_can_propose_herem_polygamy_trigger = yes
+		kehillah_synod_can_propose_herem_all_israel_trigger = yes
+		kehillah_synod_can_propose_ketubbah_clause_trigger = yes
+	}
+}
+kehillah_synod_has_communal_motion_trigger = {
+	OR = {
+		kehillah_synod_can_propose_gentile_courts_trigger = yes
+		kehillah_synod_can_propose_informers_trigger = yes
+		kehillah_synod_can_propose_hayishuv_trigger = yes
+		kehillah_synod_can_propose_letters_trigger = yes
+	}
+}
+
+kehillah_synod_has_open_takkanah_trigger = {
+	exists = primary_title
+	OR = {
+		kehillah_synod_has_marriage_motion_trigger = yes
+		kehillah_synod_has_communal_motion_trigger = yes
+	}
+}

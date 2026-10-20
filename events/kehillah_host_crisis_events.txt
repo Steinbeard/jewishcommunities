@@ -41,13 +41,21 @@ kehillah_host_crisis.0001 = {
 			}
 			scope:kehillah_demanding_host.faith.religious_head = { save_scope_as = kehillah_appeal_hof }
 		}
-		cp:councillor_chancellor ?= { save_scope_as = kehillah_plea_shtadlan }
+		# The Shtadlan pleads; without one, the leader goes himself.
+		if = {
+			limit = { exists = cp:councillor_chancellor }
+			cp:councillor_chancellor = { save_scope_as = kehillah_plea_envoy }
+		}
+		else = {
+			save_scope_as = kehillah_plea_envoy
+		}
 	}
 
-	# Pay the levy.
+	# Pay the levy: certain, and dear.
 	option = {
 		name = kehillah_host_crisis.0001.a
 		trigger = { gold >= scope:kehillah_levy }
+		show_as_unavailable = { always = yes }
 		pay_short_term_gold = {
 			target = scope:kehillah_demanding_host
 			gold = scope:kehillah_levy
@@ -55,33 +63,51 @@ kehillah_host_crisis.0001 = {
 		scope:kehillah_demanding_host = {
 			add_opinion = { target = root modifier = pleased_opinion opinion = 10 }
 		}
-		primary_title = {
-			change_variable = { name = kehillah_var_prosperity add = kehillah_host_levy_prosperity }
-			clamp_variable = { name = kehillah_var_prosperity min = 0 max = 100000 }
-		}
-		custom_tooltip = kehillah_host_demands_levy_prosperity_tt
+		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_host_levy_prosperity }
 		ai_chance = {
 			base = 50
 		}
 	}
 
-	# The Shtadlan pleads.
+	# Plead with the lord (2026-10-18: the odds' factors shown).
 	option = {
-		name = kehillah_host_crisis.0001.b
-		trigger = { exists = scope:kehillah_plea_shtadlan }
+		name = {
+			trigger = { NOT = { scope:kehillah_plea_envoy = root } }
+			text = kehillah_host_crisis.0001.b
+		}
+		name = {
+			trigger = { scope:kehillah_plea_envoy = root }
+			text = kehillah_host_crisis.0001.b_self
+		}
 		random_list = {
-			0 = {
-				modifier = { add = kehillah_shtadlan_plea_success_value }
+			50 = {
 				desc = kehillah_host_crisis_plea_success
+				kehillah_lord_outlook_odds_modifier = { HOST = scope:kehillah_demanding_host }
+				compare_modifier = {
+					target = scope:kehillah_plea_envoy
+					value = diplomacy
+					multiplier = 2
+					offset = inverted_medium_skill_rating
+				}
+				opinion_modifier = {
+					who = scope:kehillah_demanding_host
+					opinion_target = root
+					multiplier = 0.25
+				}
+				modifier = {
+					add = -10
+					scope:kehillah_demanding_host = { has_trait = greedy }
+				}
+				min = 5
 				custom_tooltip = kehillah_host_demands_dropped_tt
 				scope:kehillah_demanding_host = {
 					hidden_effect = { kehillah_shift_outlook_effect = { AMOUNT = 3 } }
 				}
 				custom_tooltip = kehillah_host_demands_plea_outlook_tt
 			}
-			0 = {
-				modifier = { add = kehillah_shtadlan_plea_failure_value }
+			50 = {
 				desc = kehillah_host_crisis_plea_failure
+				min = 5
 				kehillah_host_demands_refused_effect = yes
 			}
 		}
@@ -90,13 +116,32 @@ kehillah_host_crisis.0001 = {
 		}
 	}
 
-	# Appeal to the head of the faith.
+	# Appeal to the head of the faith: the lord resents it either way.
 	option = {
 		name = kehillah_host_crisis.0001.c
 		trigger = { exists = scope:kehillah_appeal_hof }
 		random_list = {
-			0 = {
-				modifier = { add = kehillah_hof_appeal_success_value }
+			40 = {
+				modifier = {
+					add = 25
+					custom_tooltip = {
+						text = kehillah_factor_hof_protective
+						scope:kehillah_appeal_hof = { kehillah_outlook_band_value >= 2 }
+					}
+				}
+				modifier = {
+					add = 10
+					custom_tooltip = {
+						text = kehillah_factor_hof_well_disposed
+						scope:kehillah_appeal_hof = { kehillah_outlook_band_value = 1 }
+					}
+				}
+				# A zealous lord fears the Church's rebuke.
+				modifier = {
+					add = 15
+					scope:kehillah_demanding_host = { has_trait = zealous }
+				}
+				min = 5
 				desc = kehillah_host_crisis_appeal_success
 				custom_tooltip = kehillah_host_demands_dropped_tt
 				scope:kehillah_demanding_host = {
@@ -105,8 +150,8 @@ kehillah_host_crisis.0001 = {
 				}
 				custom_tooltip = kehillah_host_demands_appeal_resent_tt
 			}
-			0 = {
-				modifier = { add = kehillah_hof_appeal_failure_value }
+			60 = {
+				min = 5
 				desc = kehillah_host_crisis_appeal_failure
 				kehillah_host_demands_refused_effect = yes
 				scope:kehillah_demanding_host = {

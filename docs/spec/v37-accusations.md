@@ -40,3 +40,29 @@ libel, and an appeal could save a community.
     killed. Community News reaches players in range.
 - **The AI** answers by ai_chance: the Shtadlan 40, pay 30 (if it can), appeal 20, bar the gates 10.
 - **Debug:** ``kehillah_outlook_debug.10`` fires an accusation on the leader.
+
+## Addendum, 2026-10-18: the answers reworked
+
+**Status:** built 2026-10-18 (Daniel: the four options were fixed odds with the same two outcomes,
+so the choice was just picking the biggest percentage; and the blood libel fired from 1066).
+ck3-tiger clean; live test pending. Supersedes "The event" and "Outcomes" above.
+
+- **Dates.** Under a Christian lord there is no blood libel before Norwich
+  (`kehillah_accusation_blood_libel_year`, 1144). Before it, the charge is the older one that
+  the Jews mocked the cross (Rome, 1020), and the incident director weights an accusation
+  x0.5. From 1215 the charge is the desecration of the Host 40% of the time, as before.
+- **Four answers, each with its own price** (at most four, as in V42):
+  - **Plead with the lord** (the Shtadlan, or the leader himself without one). Free. Base 40
+    against 60; factors in the tooltip: the lord's band (`kehillah_lord_outlook_odds_modifier`),
+    the envoy's diplomacy, the lord's opinion of the leader, the charter's security term, and a
+    head of the faith who has forbidden violence against the Jews (+15). That last factor replaces
+    the separate appeal to the head of the faith: a letter from Rome cannot arrive by nightfall.
+  - **Pay the lord** (medium gold). Base 65 against 35, the lord's band, +15 if greedy. Win or
+    lose, he remembers: for 10 years, while he is Indifferent or colder, his Demands are +3% a
+    quarter likelier.
+  - **Break the lie** (find the real killer, or who put the witness up to it). An intrigue duel
+    against `medium_skill_rating`, independent of the lord. Success: no fear, Greatness +15.
+    Failure: word spreads that the Jews buy witnesses; the violence is worse (x1.25, severity +10).
+  - **Bar the gates.** No gamble: always a riot, never a mob siege, its harm x0.6;
+    Greatness +10.
+- Pillar changes are shown with `kehillah_change_pillar_effect`; no numbers in the loc.

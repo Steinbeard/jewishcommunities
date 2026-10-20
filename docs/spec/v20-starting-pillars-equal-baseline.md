@@ -81,3 +81,34 @@ test must confirm the ledger settles cleanly after advancing three days.
   snapshot.
 - Use the observed ledger and contributor tooltips to tune actual inputs;
   do not restore literal starting grants merely to hit a target band.
+
+## 5. Addendum 2026-10-18: provisional opening pillars at game start
+
+**Supersedes section 2 (Bootstrap timing)** in content; sections 1 and 3 stand.
+Daniel: pillars should not wait for the contract, since the contract can be
+guessed. The historical communities now get their pillars at game start:
+
+- `kehillah_predict_start_charter_effect` writes the title charter cache a
+  Christian or Muslim host's settlement policy will produce, marked
+  `kehillah_charter_predicted`; the cached-charter triggers accept that marker
+  until the first real cache refresh removes it.
+- `kehillah_refresh_all_settlement_networks_effect` runs at the end of
+  `kehillah_on_game_start` instead of waiting for day one.
+- `kehillah_initialize_historical_pillars_from_baseline_effect` then writes the
+  snapshot and the title is marked `kehillah_start_pillars_provisional`.
+- Day three (`kehillah_settlement_conditions.0008`) now calls
+  `kehillah_reconcile_provisional_start_pillars_effect`, which rewrites the
+  pillars once from the real baseline and re-seeds the bands quietly.
+
+**Not yet live-tested.** Risk: the registry walk at bootstrap was previously
+deferred because it was suspected of stalling load (V16 note on
+`kehillah_settlement_conditions.0001`). If a fresh start hangs on
+"Initializing Game", move `kehillah_refresh_all_settlement_networks_effect`
+back to `.0001`. Check also that the day-three reconcile moves no pillar by
+more than a few points (the size of any wrong guess), and that `error.log`
+shows no duplicate-history warnings for `rabbinic_faith` / `karaism`.
+
+Also 2026-10-18: Ba'alei ha-Miqra's faith statuses (Rabbinic prohibits it;
+Karaism prohibits Rabbinic Halakha) moved from a game-start `set_tenet_status`
+on_action to `history/faiths/kehillah_baalei_hamiqra_faith_history.txt`, so
+they hold from the first tick.
