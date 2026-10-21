@@ -98,11 +98,13 @@ it's the one deliberately kept current.
 See **[docs/testing/automation-shim-guide.md](docs/testing/automation-shim-guide.md)** for the
 full mechanics and philosophy; summary:
 
-- **Run `ck3-tiger` before anything else, on every session that touches script/loc/gui.** Installed
-  at `C:\Users\Daniel\Documents\ck3-tiger\ck3-tiger.exe`, version-matched to this mod's target CK3
-  (1.19.0). Invoke as:
+- **Run `ck3-tiger` before anything else, on every session that touches script/loc/gui.** Use
+  **xTiger** (the CK3 1.20 fork), installed 2026-10-21 at
+  `D:\Documents_D\xTiger-1.6.10-portable\xTiger\ck3-tiger.exe`. Invoke as:
   `ck3-tiger.exe "C:\Users\Daniel\Documents\Paradox Interactive\Crusader Kings III\mod\jewishcommunities\descriptor.mod" --no-color`
-  (add `--json` for machine-readable output). It catches duplicate IDs, malformed script, dangling
+  (add `--json` for machine-readable output), or through the `xtiger_validate` MCP tool (below).
+  The old 1.19 tiger in `C:\Users\Daniel\Documents\ck3-tiger\` is superseded: on 1.20 it reported
+  ~1,200 errors, almost all false positives on 1.20 tokens, against xTiger's 16. It catches duplicate IDs, malformed script, dangling
   references, and — critically — things that are silent in script but **crash the live game**
   (e.g. a bookmark referencing a portrait that doesn't exist). This is seconds, not minutes; there
   is no reason to hand-verify anything it already checks, and no reason to boot the live game to
@@ -146,7 +148,18 @@ full mechanics and philosophy; summary:
   and/or report it via the `debug_log` effect into `debug.log`. This is the cheap, repeatable way
   to reach and inspect a state that's otherwise hard to get to in normal play (a specific pillar
   band, a specific loan/cooldown state, etc.), and it's reviewable in a diff like any other script.
-- **For anything that needs the live game** (does a tooltip actually render, does a decision
+- **For anything that needs the live game, prefer the `xtiger` MCP server** (registered for this
+  project 2026-10-21 at local scope; `xtiger-mcp.exe` sits next to the validator above).
+  `ck3_run` / `ck3_run_start` + `ck3_job` boot CK3 in debug mode to a bookmark, type console
+  commands and report new `error.log` lines; `ck3_script` / `ck3_cases` run effect scripts through
+  the `run` folder and return their `debug_log` lines; `ck3_events` fires events by id with
+  per-event verdicts; `ck3_logs` reads logs (`since` returns only new lines); `ck3_keys` /
+  `ck3_click` are for real UI checks. These return text rather than screenshots, so they are the
+  cheap path. Console commands need "Take over the screen" enabled in the xTiger app's Game tests
+  setting. `ck3_events` and character fixtures change the open game, so use a test save. Other
+  sessions share the one CK3, so verify which session owns a running game before closing it. Not
+  yet exercised on this mod as of 2026-10-21.
+- **Fallback when the MCP server is unavailable** (does a tooltip actually render, does a decision
   resolve correctly, does a UI panel show the right thing): CK3 is driven via
   `C:\Users\Daniel\Documents\AGI-CK3\src\ck3env\winkeys.py`'s keyboard and mouse `SendInput` shims
   plus screenshot readback — see the shim guide for exact usage, coordinate gotchas, and the
