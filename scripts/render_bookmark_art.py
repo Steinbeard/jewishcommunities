@@ -1,7 +1,7 @@
 """Render the 1066 Kehillah bookmark art: a painted-style map of Francia,
 the Rhineland and al-Andalus, drawn from the game's own heightmap and river
 map, with the three starting communities marked; one highlight overlay per
-bookmark character; and the two start-screen buttons.
+bookmark character; and the start-screen button and list icons.
 
 Run:  python -I scripts/render_bookmark_art.py
 Reads the installed game's map_data; writes into gfx/interface/bookmarks/.
@@ -167,14 +167,15 @@ def overlay(land, cx, cy, sigma=95, strength=185):
     return Image.fromarray(out, "RGBA")
 
 
-def button(bg, centre, span=1100):
-    h = int(span * 140 / 548)
+def button(bg, centre, span=1100, size=(548, 140)):
+    bw, bh = size
+    h = int(span * bh / bw)
     cx, cy = centre
     box = (int(cx - span / 2), int(cy - h / 2), int(cx + span / 2), int(cy + h / 2))
-    im = bg.crop(box).resize((548, 140), Image.LANCZOS)
+    im = bg.crop(box).resize((bw, bh), Image.LANCZOS)
     a = np.array(im).astype(np.float32)
-    yy, xx = np.mgrid[0:140, 0:548]
-    edge = np.minimum(np.minimum(xx, 547 - xx) / 40.0, np.minimum(yy, 139 - yy) / 20.0)
+    yy, xx = np.mgrid[0:bh, 0:bw]
+    edge = np.minimum(np.minimum(xx, bw - 1 - xx) / 40.0, np.minimum(yy, bh - 1 - yy) / 20.0)
     a[..., :3] *= (0.55 + 0.45 * np.clip(edge, 0, 1))[..., None]
     return Image.fromarray(a.clip(0, 255).astype(np.uint8), "RGBA")
 
@@ -190,17 +191,19 @@ def main():
     img, land = build_map()
     bg = annotate(img)
     save(bg, "bm_1066_kehillah_worms.dds")
-    save(bg, "bm_1066_kehillah_founder_test.dds")
 
     worms, troyes, granada = (to_img(CITIES[k]) for k in ("worms", "troyes", "granada"))
     save(overlay(land, *worms), "bm_1066_kehillah_worms_bookmark_kehillah_worms_isaac.dds")
     save(overlay(land, *troyes), "bm_1066_kehillah_worms_bookmark_kehillah_troyes_rashi.dds")
     save(overlay(land, *granada, sigma=110), "bm_1066_kehillah_worms_bookmark_kehillah_granada_joseph.dds")
-    save(overlay(land, 1300, 520, sigma=140, strength=110),
-         "bm_1066_kehillah_founder_test_bookmark_kehillah_founder_test.dds")
 
     save(button(bg, (860, 440)), "start_buttons", "bm_1066_kehillah_worms.dds")
-    save(button(bg, (1250, 600)), "start_buttons", "bm_1066_kehillah_founder_test.dds")
+    icons = os.path.join(MOD, "gfx", "interface", "icons")
+    for sub, size in (("bookmark_buttons", (580, 160)), ("bookmark_big", (336, 152))):
+        path = os.path.join(icons, sub, "bm_1066_kehillah_worms.dds")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        button(bg, (860, 440), size=size).save(path)
+        print("wrote", path)
     bg.convert("RGB").resize((1280, 720)).save(os.path.join(os.environ.get("TEMP", "."), "kehillah_bg_preview.png"))
 
 
