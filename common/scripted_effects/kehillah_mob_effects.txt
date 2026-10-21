@@ -85,28 +85,20 @@ kehillah_mob_raise_effect = {
 		scope:kehillah_mob_leader = {
 			add_character_flag = kehillah_mob_leader
 			kehillah_mob_make_ruler_effect = { COUNTY = scope:kehillah_mob_spawn.county }
-			# His own rite, teaching Exclusion (as V34's risings).
-			create_dynamic_rite = {
-				save_scope_as = kehillah_mob_rite
-				convert = yes
-				target_divergence = 20
-				include_unknown = no
-				override_tenets_first = no
+			# Reuse fixed extremist rites. A fresh dynamic rite for every mob
+			# polluted the religion window with short-lived copies.
+			if = {
+				limit = { faith.religion = religion:islam_religion }
+				set_character_rite = rite:kehillah_holy_host_muslim
 			}
-			# Exclusion for a Christian preacher; its Muslim counterpart,
-			# Abolition, for a Muslim one (Granada).
-			scope:kehillah_mob_rite ?= {
-				if = {
-					limit = { rite_religion_tag = islam_religion }
-					change_rite_doctrine = kehillah_teaching_abolition
-				}
-				else = {
-					change_rite_doctrine = kehillah_teaching_exclusion
-				}
+			else_if = {
+				limit = { faith.religion = religion:christianity_religion }
+				set_character_rite = rite:kehillah_holy_host_christian
 			}
 			set_variable = { name = kehillah_mob_target_title value = scope:kehillah_mob_victim_title }
 			set_variable = { name = kehillah_mob_target_province value = scope:kehillah_mob_town }
 			set_variable = { name = kehillah_mob_location value = scope:kehillah_mob_spawn }
+			set_variable = { name = kehillah_mob_march_delay value = 10 }
 			set_variable = { name = kehillah_mob_size value = $SIZE$ }
 			set_variable = { name = kehillah_mob_base_severity value = $SEVERITY$ }
 			start_war = {
@@ -188,6 +180,15 @@ kehillah_mob_raise_effect = {
 				set_variable = { name = kehillah_mob_size_start value = var:kehillah_mob_size }
 				kehillah_mob_set_band_effect = yes
 				scope:kehillah_mob_victim = {
+					# A lord who pledged support during the preaching now joins
+					# the declared war and calls up his men.
+					scope:kehillah_mob_victim_title.var:kehillah_mob_men_by ?= {
+						save_scope_as = kehillah_mob_pledged_lord
+					}
+					if = {
+						limit = { exists = scope:kehillah_mob_pledged_lord }
+						kehillah_mob_lord_raises_men_effect = { DEFENDER = scope:kehillah_mob_pledged_lord }
+					}
 					if = {
 						limit = { has_variable = kehillah_mob_last_town_ref }
 						remove_variable = kehillah_mob_last_town_ref
@@ -209,11 +210,6 @@ kehillah_mob_raise_effect = {
 					}
 					# A preacher's sermons are an incident in the county's faith (V40).
 					domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
-					kehillah_notify_region_players_effect = {
-						TYPE = msg_kehillah_community_news_bad
-						TITLE = kehillah_mob_news_forms_t
-						DESC = kehillah_mob_news_forms_d
-					}
 				}
 				debug_log = "kehillah_mob_raise_effect: a host has formed"
 			}
@@ -390,15 +386,22 @@ kehillah_mob_tick_effect = {
 		# --- On the march.
 		else_if = {
 			limit = { NOT = { has_character_flag = kehillah_mob_at_gates } }
-			kehillah_mob_step_toward_effect = { TARGET = var:kehillah_mob_target_province }
-			random_army = {
-				location = { save_scope_as = kehillah_mob_here_now }
-			}
-			set_variable = { name = kehillah_mob_location value = scope:kehillah_mob_here_now }
-			kehillah_mob_report_position_effect = yes
 			if = {
-				limit = { var:kehillah_mob_location = var:kehillah_mob_target_province }
-				kehillah_mob_arrive_effect = yes
+				limit = { var:kehillah_mob_march_delay > 0 }
+				change_variable = { name = kehillah_mob_march_delay add = -4 }
+				debug_log = "kehillah_mob_tick_effect: the host is mustering before its march"
+			}
+			else = {
+				kehillah_mob_step_toward_effect = { TARGET = var:kehillah_mob_target_province }
+				random_army = {
+					location = { save_scope_as = kehillah_mob_here_now }
+				}
+				set_variable = { name = kehillah_mob_location value = scope:kehillah_mob_here_now }
+				kehillah_mob_report_position_effect = yes
+				if = {
+					limit = { var:kehillah_mob_location = var:kehillah_mob_target_province }
+					kehillah_mob_arrive_effect = yes
+				}
 			}
 		}
 		# --- At the gates: the siege counts down.
@@ -441,6 +444,14 @@ kehillah_mob_tick_effect = {
 				if = {
 					limit = { scope:kehillah_mob_victim_title = { has_variable = kehillah_mob_refuge } }
 					scope:kehillah_mob_victim_title = { set_variable = { name = kehillah_mob_castle_fell value = yes } }
+				}
+				# The neighbouring communities hear when violence actually begins.
+				scope:kehillah_mob_victim = {
+					kehillah_notify_region_players_effect = {
+						TYPE = msg_kehillah_community_news_bad
+						TITLE = kehillah_mob_news_pogrom_t
+						DESC = kehillah_mob_news_pogrom_d
+					}
 				}
 				# V41: a player lives through it in scenes; the AI does not.
 				scope:kehillah_mob_victim = {
@@ -511,11 +522,6 @@ kehillah_mob_arrive_effect = {
 	debug_log = "kehillah_mob_arrive_effect: the host is at the gates"
 	scope:kehillah_mob_victim = {
 		trigger_event = kehillah_mob.0003
-		kehillah_notify_region_players_effect = {
-			TYPE = msg_kehillah_community_news_bad
-			TITLE = kehillah_mob_news_gates_t
-			DESC = kehillah_mob_news_gates_d
-		}
 	}
 }
 
@@ -531,6 +537,7 @@ kehillah_pogrom_effect = {
 		save_scope_as = kehillah_pogrom_title
 		save_scope_as = kehillah_children_title
 		set_variable = { name = kehillah_mob_struck value = yes }
+		set_variable = { name = kehillah_pogrom_recent_news value = yes years = 2 }
 	}
 	domicile.domicile_location ?= { save_scope_as = kehillah_children_town }
 	save_scope_value_as = { name = kehillah_pogrom_severity value = kehillah_mob_severity_value }
@@ -822,8 +829,8 @@ kehillah_pogrom_effect = {
 	# News, and the report (for the AI: the ransom is decided at once).
 	kehillah_notify_region_players_effect = {
 		TYPE = msg_kehillah_community_news_bad
-		TITLE = kehillah_mob_news_pogrom_t
-		DESC = kehillah_mob_news_pogrom_d
+		TITLE = kehillah_mob_news_result_t
+		DESC = kehillah_mob_news_result_d
 	}
 	trigger_event = kehillah_mob.0010
 }
