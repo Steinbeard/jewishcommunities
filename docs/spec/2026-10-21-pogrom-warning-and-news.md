@@ -17,3 +17,9 @@ Mob leaders and the leaders of popular risings against Jewish communities join o
 # Scope and verification
 
 Granada's scripted overnight eruption and a popular rising that is already at war still begin directly. The latter gets the minimum mustering interval after its war declaration. `ck3-tiger` 1.19 reports `set_character_rite` as unknown, including existing uses elsewhere in this 1.20 mod; xTiger 1.20 reports no findings in the changed script or localization files. The isolated boot loaded the mob events after encoding and localization fixes; [the test note](../testing/2026-10-21-pogrom-warning-live-test.md) records the pending gameplay checks. A live pass should verify the local warning, interruption or diversion, rite display, day of first siege tick, and both neighbouring notifications, including dissolution.
+
+## 2026-10-21 naming and Almohadi addendum
+
+Daniel's follow-up supersedes the fixed-rite names and Muslim rite choice in “Rites” above. The Christian fixed rite is **Chrysostomianism**: its followers invoke deicide and perfidy accusations and reject the witness teaching in favor of expelling Jewish communities. The description attributes its name and polemical influence to John Chrysostom; the expulsion program belongs to this fictional movement, not a claim that he personally organized pogroms.
+
+Muslim mob and popular-rising leaders now join vanilla's **Masmudi (Almohadi)** rite rather than a new Muslim rite. The existing `kehillah_assign_teachings_effect` assigns `kehillah_teaching_abolition` to `rite:masmudi` at game start, before the general Muslim Dhimma assignment. This is a deliberate game abstraction: a Muslim mob can display the Almohadi rite before the historical Almohad movement appears in vanilla's 12th-century story. No vanilla rite file is overridden. The rite display and teaching remain pending a live check.
