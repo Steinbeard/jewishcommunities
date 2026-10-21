@@ -21,8 +21,8 @@ subject to revision after each phase.
 
 **Built; live-tested 2026-10-21 through the xTiger MCP server**
 ([log](docs/testing/2026-10-21-v49-yeshiva-visit-live-test.md)). The flow passed end to end. A
-tooltip error flood and two presentation issues found in that test are fixed. Re-running the fixes
-in game is pending, because another agent's CK3 was running. A book's page in the Library lists every
+tooltip error flood and two presentation issues found in that test are fixed and re-tested in game
+the same day. Not yet clicked in game: the "Plan a Yeshiva Visit" decision and the browse path. A book's page in the Library lists every
 other community holding it. **Travel to study** opens the Yeshiva Visit planner with that
 community as the only destination. A new **Plan a Yeshiva Visit** decision suggests books by
 event, through the same plan. On arrival the traveller can take up the planned book directly. If

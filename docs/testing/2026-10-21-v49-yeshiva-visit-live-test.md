@@ -1,6 +1,6 @@
 # V49 Yeshiva Visit from the Library: live test, 2026-10-21
 
-**Status: PASS WITH FIXES — 2026-10-21.** This is the first live test of [V49](../spec/v49-yeshiva-visit-from-the-library.md) and the first use of the xTiger MCP server on this mod (see the [guide](xtiger-mcp-guide.md)). The flow passed end to end. The test found a tooltip-only error flood and two presentation problems; all three are fixed in source and xTiger-clean. Re-running the fixed build in game was blocked by another agent's CK3 and is recorded below.
+**Status: PASS — all fixes re-tested in game, 2026-10-21 (late morning).** This is the first live test of [V49](../spec/v49-yeshiva-visit-from-the-library.md) and the first use of the xTiger MCP server on this mod (see the [guide](xtiger-mcp-guide.md)). The flow passed end to end. The test found a tooltip-only error flood and two presentation problems. The first attempt at the flood fix (`hidden_effect`) failed in game; the replacement (a hidden resolution event) passed. See "Re-test" at the end.
 
 ## Method
 
@@ -28,20 +28,28 @@ The test used CK3 1.20.1.1 with only this mod loaded, through `xtiger-mcp.exe`. 
 
 ## Bugs found and fixed
 
-1. **Tooltip error flood.** About 30,000 `Script system error! (while building tooltip/description)` lines appeared while the arrival or per-book event was open. `kehillah_study_specific_work_effect` sets `kehillah_learn_torah_repeat` and `kehillah_study_torah_last_result` and reads them back, which fails when the game only builds the option tooltip. Fixed by running the study inside `hidden_effect` in `kehillah_journey_study_work_effect`; each option's per-work custom tooltip remains the preview. This covers the planned option and the `.0002`-`.0004` per-book options. The pattern predates V49; local Learn Torah study was not checked in this run.
+1. **Tooltip error flood.** About 30,000 `Script system error! (while building tooltip/description)` lines appeared while the arrival or per-book event was open. `kehillah_study_specific_work_effect` sets `kehillah_learn_torah_repeat` and `kehillah_study_torah_last_result` and reads them back, which fails when the game only builds the option tooltip. The first fix ran the study inside `hidden_effect`, and the re-test showed it **did not work**: the game still evaluates a `hidden_effect`'s contents when building tooltips, and about 24,000 errors came back. The final fix has the option record the work (`kehillah_journey_studied_work`) and fire the hidden event `kehillah_learn_torah_journey.0007`. That event runs the study (the generated `kehillah_journey_resolve_study_effect`) and then the copy offer. A hidden event's effects are never built into tooltips. Each option's per-work custom tooltip remains the preview. This covers the planned option and the `.0002`-`.0004` per-book options. The pattern predates V49; local Learn Torah study was not checked in this run.
 2. **Plan check with no plan.** `kehillah_journey_plan_valid_trigger` and the location filter dereferenced `var:kehillah_journey_plan_title` when it was unset. That was harmless to the logic, but planner tooltips logged about 2,000 "Failed to fetch variable" errors. Fixed with `has_variable` and `?=` access.
 3. **Planner hover tooltip.** Hovering an invalid province printed the whole trigger tree as "BUG: missing localization" lines. Fixed by wrapping `is_location_valid` in one `custom_tooltip` (`kehillah_journey_location_invalid_tt`).
 4. **Hidden hired-scribes option.** It now shows disabled, with "Their community has a Sofer's Workshop", via `show_as_unavailable`.
 
 After the fixes, `xtiger_validate` shows no report on V49 files except the pre-existing missing phase icon.
 
-## Not re-run in game
+## Re-test (2026-10-21, late morning, native xtiger MCP tools)
 
-The regression boot for the fixes was blocked: a Codex test session's CK3 (`-userdir=...\.codex\ck3-test\festival-observance`, started 00:34) was running, and `ck3_run` refuses to start a second game. Re-run when CK3 is free:
-1. Boot as above.
-2. Take up a planned book.
-3. Confirm that `error.log` gains no `kehillah_journey_study_work_effect` or `kehillah_journey_plan_valid_trigger` lines.
-4. Confirm the hired option shows disabled at Speyer.
-5. Check the planner tooltip.
+The first re-test, just after midnight, was blocked by a Codex test's CK3. Then four boots in a row failed to type their **boot** `commands`; see the guide. Booting with no commands and doing all setup through `ck3_script` worked every time. Starting libraries vary between games: in one game Worms already owned *Bavli Kodashim*, so no copy was offered, which is correct. The final pass planned *Mekhilta de-Rabbi Yishmael* at Speyer.
 
-The decision route (`kehillah_plan_yeshiva_visit_decision` → `.0010`) and the browse path (`.0005`) were not clicked in game. They share the effects and triggers verified above.
+| Check | Result |
+|---|---|
+| Planner hover on an invalid province | PASS. One line: "A community whose library holds a work worth the journey (or the community chosen in the Library)". |
+| Planner errors from the plan check | PASS. Zero V49 errors while the destination step was open. |
+| Arrival event open (the flood) | First fix (`hidden_effect`) FAILED: about 24,000 errors. Final fix (hidden `.0007`) PASS: 238 new log lines in all, none from the study. |
+| Study, then copy offer through `.0007` | PASS. Mekhilta mastered (+75 piety); "A Copy to Carry Home" offered. The copy-yourself tooltip reads: lose 15 gold, the stay text, and Parnas Kalonymus +10 opinion. |
+| Hired option without the host's Sofer's Workshop | PASS. Shown; clicking is refused, with a red "Their community has a Sofer's Workshop". Script confirmed Speyer has none. |
+| Copy it yourself | PASS. Pending work, carried marker, still at the visit. |
+| `xtiger_validate` after the fix | Back to the 155-report baseline. It first caught a **fatal** report: the 46 callers still passed `TRACK` to the reworked wrapper, an unneeded parameter that "often causes a crash". Fixed. |
+| `xtiger_game_gap` | No V49 file among the runtime errors tiger misses. |
+
+**Pre-existing, not V49:** `kehillah_learn_torah_journey_unstudied_*_count_value` (the planner's per-province description, 2026-09-17) logs about 14 "Undefined event target 'host'" errors per evaluation in some window where `scope:host` is unset. `xtiger_game_gap` also lists older runtime-only errors for a separate pass: about 96 `faith_hostility_level` null-faith errors in the startup pillar baseline, 49 duplicate localization keys, `random_list` entries using min/max chance without modifiers in several incident and accusation events, and portrait DNA missing `gene_age`.
+
+**Still not clicked in game:** the decision route (`kehillah_plan_yeshiva_visit_decision` → `.0010`) and the browse path (`.0005`). They share the effects and triggers verified above.

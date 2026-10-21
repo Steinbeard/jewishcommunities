@@ -1,6 +1,6 @@
 # V49: Planning a Yeshiva Visit from the Library
 
-**Status: IMPLEMENTED AND LIVE-TESTED, FIXES PENDING AN IN-GAME RE-RUN — 2026-10-21 (built 2026-10-20).** Live results and fixes: [2026-10-21 test log](../testing/2026-10-21-v49-yeshiva-visit-live-test.md). Requested by Daniel on 2026-10-20: "click through the library view or through the event and select a particular book you want to study, see who owns it, and have it plug in the travel destination for you. Maybe you could make a copy while you're there and bring it back?" Builds on the Yeshiva Visit activity (`activity_kehillah_learn_torah_journey`, 2026-09-15/17) and [V48](v48-sefarim-acquisition.md)'s title-owned acquisitions. It adds a fourth acquisition route to V48 and does not change V48's other three. ROADMAP remains authoritative for shipped status.
+**Status: IMPLEMENTED AND LIVE-TESTED, FIXES RE-TESTED IN GAME — 2026-10-21 (built 2026-10-20).** Live results and fixes: [2026-10-21 test log](../testing/2026-10-21-v49-yeshiva-visit-live-test.md). Requested by Daniel on 2026-10-20: "click through the library view or through the event and select a particular book you want to study, see who owns it, and have it plug in the travel destination for you. Maybe you could make a copy while you're there and bring it back?" Builds on the Yeshiva Visit activity (`activity_kehillah_learn_torah_journey`, 2026-09-15/17) and [V48](v48-sefarim-acquisition.md)'s title-owned acquisitions. It adds a fourth acquisition route to V48 and does not change V48's other three. ROADMAP remains authoritative for shipped status.
 
 ## Decision
 
@@ -44,7 +44,7 @@ An unplanned visit shows the original four options unchanged.
 | Plan, study, finish, carry-copy, pick-suggestion effects | `common/scripted_effects/kehillah_library_journey_effects.txt` |
 | Can-plan, plan-valid, can-carry triggers | `common/scripted_triggers/kehillah_library_journey_triggers.txt` |
 | Location filter, `on_start` and `on_complete` | `common/activities/activity_types/kehillah_learn_torah_journey.txt` |
-| `.0001` planned options; `.0005`, `.0006`, `.0010` | `events/kehillah_learn_torah_journey_events.txt` |
+| `.0001` planned options; `.0005`, `.0006`, `.0010`; hidden `.0007`, which runs every study abroad outside option tooltips (added 2026-10-21) | `events/kehillah_learn_torah_journey_events.txt` |
 | Decision | `common/decisions/kehillah_yeshiva_visit_decisions.txt` |
 | Book-page roster, carried route label | `gui/kehillah_domicile_library.gui` |
 | Console probe | `event kehillah_sefer_debug.6` |

@@ -385,7 +385,25 @@ def write_journey_effects(order, works):
             f"\t{'if' if i == 0 else 'else_if'} = {{",
             f"\t\tlimit = {{ scope:kehillah_journey_planned_work = flag:{f} }}",
             f"\t\tcustom_tooltip = {study_tt_key(f, w)}",
-            f"\t\tkehillah_journey_study_work_effect = {{ WORK = flag:{f} TRACK = {w['genre']} }}",
+            f"\t\tkehillah_journey_study_work_effect = {{ WORK = flag:{f} }}",
+            "\t}",
+        ]
+    out += [
+        "}",
+        "",
+        "# Run the study a journey option recorded in kehillah_journey_studied_work.",
+        "# Called only from the hidden event kehillah_learn_torah_journey.0007, never",
+        "# from an option: the study effect sets and re-reads its own variables, which",
+        "# floods error.log when the game builds an option tooltip (live test",
+        "# 2026-10-21; hidden_effect did not prevent it). Scope: the traveller.",
+        "kehillah_journey_resolve_study_effect = {",
+    ]
+    for i, f in enumerate(order):
+        w = works[f]
+        out += [
+            f"\t{'if' if i == 0 else 'else_if'} = {{",
+            f"\t\tlimit = {{ var:kehillah_journey_studied_work ?= flag:{f} }}",
+            f"\t\tkehillah_study_specific_work_effect = {{ WORK = flag:{f} TRACK = {w['genre']} }}",
             "\t}",
         ]
     out += [
