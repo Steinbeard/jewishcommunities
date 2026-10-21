@@ -19,7 +19,10 @@ subject to revision after each phase.
 
 ### V49 Yeshiva Visit from the Library — 2026-10-20, Daniel's request
 
-**Built and `ck3-tiger` clean; not yet live-tested.** A book's page in the Library lists every
+**Built; live-tested 2026-10-21 through the xTiger MCP server**
+([log](docs/testing/2026-10-21-v49-yeshiva-visit-live-test.md)). The flow passed end to end. A
+tooltip error flood and two presentation issues found in that test are fixed. Re-running the fixes
+in game is pending, because another agent's CK3 was running. A book's page in the Library lists every
 other community holding it. **Travel to study** opens the Yeshiva Visit planner with that
 community as the only destination. A new **Plan a Yeshiva Visit** decision suggests books by
 event, through the same plan. On arrival the traveller can take up the planned book directly. If

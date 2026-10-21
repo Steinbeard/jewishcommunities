@@ -161,12 +161,14 @@ full mechanics and philosophy; summary:
   `docs/implementation/kehillah-domain-overview.md`. Reading is authorized; ask Daniel before
   posting to the channel.
 
-- **Run `ck3-tiger` before anything else, on every session that touches script/loc/gui.** Installed
-  at `C:\Users\Daniel\Documents\ck3-tiger\ck3-tiger.exe`. It currently targets CK3 1.19.0 while
-  the installed game is 1.20.1, so compare findings with a baseline and verify version-related
-  reports against the installed game. Point it at the **checkout being edited** (the Codex
-  worktree for Codex sessions), not automatically at the primary mod directory. PowerShell:
-  `$modRoot = (git rev-parse --show-toplevel).Trim(); & 'C:\Users\Daniel\Documents\ck3-tiger\ck3-tiger.exe' (Join-Path $modRoot 'descriptor.mod') --no-color`
+- **Run `ck3-tiger` before anything else, on every session that touches script/loc/gui.** Use
+  **xTiger**, the CK3 1.20 fork, at `D:\Documents_D\xTiger-1.6.10-portable\xTiger\ck3-tiger.exe`
+  (since 2026-10-21). The old 1.19 build at `C:\Users\Daniel\Documents\ck3-tiger\ck3-tiger.exe` is
+  superseded: on this mod it reported about 1,200 errors, mostly false positives on 1.20 tokens,
+  where xTiger reports 16. Still compare findings with a baseline. Point it at the **checkout being
+  edited** (the Codex worktree for Codex sessions), not automatically at the primary mod
+  directory. PowerShell:
+  `$modRoot = (git rev-parse --show-toplevel).Trim(); & 'D:\Documents_D\xTiger-1.6.10-portable\xTiger\ck3-tiger.exe' (Join-Path $modRoot 'descriptor.mod') --no-color`
   (add `--json` for machine-readable output). It catches duplicate IDs, malformed script, dangling
   references, and — critically — things that are silent in script but **crash the live game**
   (e.g. a bookmark referencing a portrait that doesn't exist). This is seconds, not minutes; there
@@ -213,7 +215,27 @@ full mechanics and philosophy; summary:
   and/or report it via the `debug_log` effect into `debug.log`. This is the cheap, repeatable way
   to reach and inspect a state that's otherwise hard to get to in normal play (a specific pillar
   band, a specific loan/cooldown state, etc.), and it's reviewable in a diff like any other script.
-- **For anything that needs the live game** (does a tooltip actually render, does a decision
+- **For anything that needs the live game, prefer the xTiger MCP server** (`xtiger-mcp.exe`, next
+  to the validator above). It is registered for Claude Code. For Codex, add it to Codex's MCP
+  configuration as server `xtiger` with that executable as its command, and ask Daniel before
+  changing global configuration. Its tools return text rather than screenshots, so they are the
+  cheap path:
+  - `ck3_run_start` + `ck3_job` boot a debug-mode game to a bookmark and report `error.log`;
+  - `ck3_script` runs effects through the console `run` command and returns their `debug_log`
+    lines;
+  - `ck3_events` fires events;
+  - `ck3_logs` reads logs;
+  - `ck3_click` / `ck3_keys` are for real UI checks.
+
+  "Take over the screen" is enabled in the app's `data\settings.json`
+  (`game_tests_background: false`). **Read
+  [docs/testing/xtiger-mcp-guide.md](docs/testing/xtiger-mcp-guide.md) first.** It has this mod's
+  arguments and the lessons from the first run:
+  - `ck3_run` refuses while any CK3 runs; never close another agent's game;
+  - Codex tests use their own `-userdir=...\.codex\ck3-test\...`, and the tool's games do not;
+  - close the game you launched, by the PID in the job report;
+  - check `error.log` for tooltip-only error floods after UI steps.
+- **Fallback when the MCP server is unavailable** (does a tooltip actually render, does a decision
   resolve correctly, does a UI panel show the right thing): CK3 is driven via
   `C:\Users\Daniel\Documents\AGI-CK3\src\ck3env\winkeys.py`'s keyboard and mouse `SendInput` shims
   plus screenshot readback — see the shim guide for exact usage, coordinate gotchas, and the

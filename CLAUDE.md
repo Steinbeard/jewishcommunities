@@ -104,7 +104,8 @@ full mechanics and philosophy; summary:
   `ck3-tiger.exe "C:\Users\Daniel\Documents\Paradox Interactive\Crusader Kings III\mod\jewishcommunities\descriptor.mod" --no-color`
   (add `--json` for machine-readable output), or through the `xtiger_validate` MCP tool (below).
   The old 1.19 tiger in `C:\Users\Daniel\Documents\ck3-tiger\` is superseded: on 1.20 it reported
-  ~1,200 errors, almost all false positives on 1.20 tokens, against xTiger's 16. It catches duplicate IDs, malformed script, dangling
+  ~1,200 errors, almost all false positives on 1.20 tokens, against xTiger's 16. It catches
+  duplicate IDs, malformed script, dangling
   references, and — critically — things that are silent in script but **crash the live game**
   (e.g. a bookmark referencing a portrait that doesn't exist). This is seconds, not minutes; there
   is no reason to hand-verify anything it already checks, and no reason to boot the live game to
@@ -155,10 +156,16 @@ full mechanics and philosophy; summary:
   the `run` folder and return their `debug_log` lines; `ck3_events` fires events by id with
   per-event verdicts; `ck3_logs` reads logs (`since` returns only new lines); `ck3_keys` /
   `ck3_click` are for real UI checks. These return text rather than screenshots, so they are the
-  cheap path. Console commands need "Take over the screen" enabled in the xTiger app's Game tests
-  setting. `ck3_events` and character fixtures change the open game, so use a test save. Other
-  sessions share the one CK3, so verify which session owns a running game before closing it. Not
-  yet exercised on this mod as of 2026-10-21.
+  cheap path. "Take over the screen" is enabled (`game_tests_background: false` in the app's
+  `data\settings.json`); without it no console commands can be typed. `ck3_events` and character
+  fixtures change the open game, so use a test save. **Read
+  [docs/testing/xtiger-mcp-guide.md](docs/testing/xtiger-mcp-guide.md) before a live test.** It has
+  the exact arguments for this mod (bookmark `bm_1066_kehillah_worms`, `play` = `d_kehillah_worms`),
+  and the lessons from the first run (V49, 2026-10-21):
+  - `ck3_run` refuses while any CK3 runs; never close a game another agent launched;
+  - close the game you launched, by the PID in the job report;
+  - do setup through `ck3_script`, not boot `commands`;
+  - after any UI step, check `error.log` for tooltip-only error floods, which tiger cannot see.
 - **Fallback when the MCP server is unavailable** (does a tooltip actually render, does a decision
   resolve correctly, does a UI panel show the right thing): CK3 is driven via
   `C:\Users\Daniel\Documents\AGI-CK3\src\ck3env\winkeys.py`'s keyboard and mouse `SendInput` shims

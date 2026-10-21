@@ -1,6 +1,6 @@
 # V49: Planning a Yeshiva Visit from the Library
 
-**Status: IMPLEMENTED, `ck3-tiger` CLEAN, NOT YET LIVE-TESTED — 2026-10-20.** Requested by Daniel on 2026-10-20: "click through the library view or through the event and select a particular book you want to study, see who owns it, and have it plug in the travel destination for you. Maybe you could make a copy while you're there and bring it back?" Builds on the Yeshiva Visit activity (`activity_kehillah_learn_torah_journey`, 2026-09-15/17) and [V48](v48-sefarim-acquisition.md)'s title-owned acquisitions. It adds a fourth acquisition route to V48 and does not change V48's other three. ROADMAP remains authoritative for shipped status.
+**Status: IMPLEMENTED AND LIVE-TESTED, FIXES PENDING AN IN-GAME RE-RUN — 2026-10-21 (built 2026-10-20).** Live results and fixes: [2026-10-21 test log](../testing/2026-10-21-v49-yeshiva-visit-live-test.md). Requested by Daniel on 2026-10-20: "click through the library view or through the event and select a particular book you want to study, see who owns it, and have it plug in the travel destination for you. Maybe you could make a copy while you're there and bring it back?" Builds on the Yeshiva Visit activity (`activity_kehillah_learn_torah_journey`, 2026-09-15/17) and [V48](v48-sefarim-acquisition.md)'s title-owned acquisitions. It adds a fourth acquisition route to V48 and does not change V48's other three. ROADMAP remains authoritative for shipped status.
 
 ## Decision
 
@@ -51,7 +51,10 @@ An unplanned visit shows the original four options unchanged.
 
 The generated files come from `scripts/kehillah_library_catalog.py`. A new catalog work gets its roster, travel action, study branch, suggestion entry and names automatically.
 
-## Unverified assumptions (live test needed)
+## Assumptions (live-tested 2026-10-21; see the test log)
+
+All passed except number 2: the planner highlights only the planned community, but the player
+still clicks it once. No engine hook pre-selects it, so this is accepted.
 
 1. **`open_view_data` from a scripted GUI effect.** This is proven from a decision effect (Bet Din). It is assumed to behave the same from a scripted GUI and an event option.
 2. **The planner pre-selects a sole valid location.** If it only lists it, the player still has one click and nothing else to choose.
