@@ -1,0 +1,48 @@
+﻿# =====================================================================
+# V49 Yeshiva Visit from the Library -- ADDED 2026-10-20 at Daniel's
+# request. See docs/spec/v49-yeshiva-visit-from-the-library.md.
+# =====================================================================
+
+# May this character plan a Yeshiva Visit now? Mirrors the activity's own
+# is_shown plus the start blockers, so the Library's travel button and the
+# planning decision are disabled for exactly the cases the planner refuses.
+# Scope: the character.
+kehillah_journey_can_plan_trigger = {
+	government_has_flag = government_is_kehillah
+	has_trait = kehillah_rabbi_trait
+	is_adult = yes
+	is_imprisoned = no
+	NOT = { is_activity_type_on_cooldown = activity_kehillah_learn_torah_journey }
+}
+
+# Is the destination chosen in the Library (or the planning event) still
+# good? The title must still have a holder and still hold the book. While
+# this is true the activity offers only that community; when it lapses
+# the planner falls back to the ordinary field of libraries.
+# Scope: the planning character.
+kehillah_journey_plan_valid_trigger = {
+	exists = var:kehillah_journey_plan_title
+	has_variable = kehillah_journey_plan_work
+	var:kehillah_journey_plan_title = {
+		NOT = { this = prev.primary_title }
+		exists = holder
+		is_target_in_variable_list = { name = kehillah_library_works target = prev.var:kehillah_journey_plan_work }
+	}
+}
+
+# After studying a work abroad, can the traveller carry a copy home? The
+# destination must hold it, home must lack it, and home must not already
+# have an acquisition underway (V48 allows one at a time).
+# Scope: the traveller, inside the journey's arrival chain with
+# scope:kehillah_journey_destination_title saved.
+kehillah_journey_can_carry_copy_trigger = {
+	has_variable = kehillah_journey_studied_work
+	exists = scope:kehillah_journey_destination_title
+	scope:kehillah_journey_destination_title = {
+		is_target_in_variable_list = { name = kehillah_library_works target = root.var:kehillah_journey_studied_work }
+	}
+	primary_title = {
+		NOT = { has_variable_list = kehillah_library_commission_work }
+		NOT = { is_target_in_variable_list = { name = kehillah_library_works target = root.var:kehillah_journey_studied_work } }
+	}
+}

@@ -1,0 +1,100 @@
+﻿# =====================================================================
+# V49 Yeshiva Visit from the Library -- ADDED 2026-10-20 at Daniel's
+# request. See docs/spec/v49-yeshiva-visit-from-the-library.md. The
+# per-work branches live in the generated
+# kehillah_library_journey_generated_effects.txt.
+# =====================================================================
+
+# Record the chosen book and the community that holds it, then open the
+# Yeshiva Visit planner. The activity's is_location_valid reads the plan and
+# offers only that community, which is how the destination is "plugged in".
+# The plan expires on its own if the planner is closed without starting, and
+# activity on_start moves it onto the activity.
+# Scope: the planning character. $TITLE$ a community title, $WORK$ a work flag.
+kehillah_journey_set_plan_effect = {
+	set_variable = { name = kehillah_journey_plan_title value = $TITLE$ days = kehillah_journey_plan_days }
+	set_variable = { name = kehillah_journey_plan_work value = $WORK$ days = kehillah_journey_plan_days }
+	open_view_data = {
+		view = activity_list_detail_host_window
+		data = activity_type:activity_kehillah_learn_torah_journey
+		player = root
+	}
+}
+
+# Pick suggestion $N$ for the planning event (kehillah_learn_torah_journey.
+# 0010) from the lists kehillah_journey_build_offers_effect just built:
+# a work home lacks if there is one, else any unmastered work held
+# elsewhere. Removes the pick so the next suggestion differs, and saves a
+# community holding it. Scope: the planning character.
+kehillah_journey_pick_offer_effect = {
+	if = {
+		limit = { any_in_list = { variable = kehillah_journey_offer_priority } }
+		random_in_list = {
+			variable = kehillah_journey_offer_priority
+			save_scope_as = kehillah_journey_offer_$N$_work
+		}
+	}
+	else_if = {
+		limit = { any_in_list = { variable = kehillah_journey_offer_works } }
+		random_in_list = {
+			variable = kehillah_journey_offer_works
+			save_scope_as = kehillah_journey_offer_$N$_work
+		}
+	}
+	if = {
+		limit = { exists = scope:kehillah_journey_offer_$N$_work }
+		remove_list_variable = { name = kehillah_journey_offer_priority target = scope:kehillah_journey_offer_$N$_work }
+		remove_list_variable = { name = kehillah_journey_offer_works target = scope:kehillah_journey_offer_$N$_work }
+		set_variable = { name = kehillah_journey_offer_$N$_loc value = scope:kehillah_journey_offer_$N$_work }
+		random_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				NOT = { this = root.primary_title }
+				exists = holder
+				is_target_in_variable_list = { name = kehillah_library_works target = scope:kehillah_journey_offer_$N$_work }
+			}
+			save_scope_as = kehillah_journey_offer_$N$_title
+		}
+	}
+}
+
+# Study one named work during a journey and remember which one, so the
+# arrival chain can offer to copy it. Scope: the traveller.
+kehillah_journey_study_work_effect = {
+	kehillah_study_specific_work_effect = { WORK = $WORK$ TRACK = $TRACK$ }
+	set_variable = { name = kehillah_journey_studied_work value = $WORK$ }
+}
+
+# The last step of every study choice abroad: offer a copy when one can be
+# carried home, otherwise end the visit. Scope: the traveller.
+kehillah_journey_finish_study_effect = {
+	if = {
+		limit = { kehillah_journey_can_carry_copy_trigger = yes }
+		set_variable = { name = kehillah_journey_work_loc value = var:kehillah_journey_studied_work }
+		trigger_event = kehillah_learn_torah_journey.0006
+	}
+	else_if = {
+		limit = { exists = involved_activity }
+		involved_activity = {
+			progress_activity_phase_after = { days = 1 }
+		}
+	}
+}
+
+# Start the title-owned acquisition for the copy the traveller brings home.
+# It reuses V48's pending-commission state and its title-scoped delivery
+# event, so the copy survives the traveller's death or a succession on the
+# road. $DAYS$ is how long until it reaches the shelves.
+# Scope: the traveller, with scope:kehillah_journey_destination_title saved.
+kehillah_journey_carry_copy_effect = {
+	primary_title = {
+		clear_variable_list = kehillah_library_commission_work
+		add_to_variable_list = { name = kehillah_library_commission_work target = root.var:kehillah_journey_studied_work }
+		set_variable = { name = kehillah_library_commission_source value = scope:kehillah_journey_destination_title }
+		set_variable = kehillah_library_commission_carried
+		remove_variable = kehillah_library_commission_purchase
+		remove_variable = kehillah_library_commission_external
+		remove_variable = kehillah_library_commission_distant
+		trigger_event = { id = kehillah_library.0003 days = $DAYS$ }
+	}
+}

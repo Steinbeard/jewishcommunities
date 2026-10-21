@@ -17,6 +17,17 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### V49 Yeshiva Visit from the Library — 2026-10-20, Daniel's request
+
+**Built and `ck3-tiger` clean; not yet live-tested.** A book's page in the Library lists every
+other community holding it. **Travel to study** opens the Yeshiva Visit planner with that
+community as the only destination. A new **Plan a Yeshiva Visit** decision suggests books by
+event, through the same plan. On arrival the traveller can take up the planned book directly. If
+home lacks the work, they can copy it themselves (cheap, a long stay) or hire the host's scribes
+(dearer, needs their Sofer's Workshop) and bring it back as a title-owned V48 acquisition that
+survives succession. Design, assumptions and the live-test gate are in
+[V49](docs/spec/v49-yeshiva-visit-from-the-library.md). The probe is `event kehillah_sefer_debug.6`.
+
 ### 1066 start screen — 2026-10-20, Daniel's request
 
 **Status: built; source-checked, not yet seen in-game (textures need a CK3 restart).** The 1066

@@ -175,6 +175,7 @@ types KehillahLibrary
 			onclick = "[GetVariableSystem.Clear( 'kehillah_lib_parent_corpus' )]"
 			onclick = "[GetScriptedGui( 'kehillah_lib_cache_authors' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
 			onclick = "[GetVariableSystem.Set( 'kehillah_lib_selected_work', Scope.GetFlagName )]"
+			onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_holders_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
 			tooltipwidget = {
 				kehillah_library_work_tooltip = {}
 			}
@@ -229,6 +230,7 @@ types KehillahLibrary
 		onclick = "[GetVariableSystem.Clear( 'kehillah_lib_parent_corpus' )]"
 		onclick = "[GetScriptedGui( 'kehillah_lib_cache_authors' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
 		onclick = "[GetVariableSystem.Set( 'kehillah_lib_selected_work', Scope.GetFlagName )]"
+		onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_holders_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
 		tooltipwidget = { kehillah_library_work_tooltip = {} }
 		icon = {
 			parentanchor = left|vcenter
@@ -891,7 +893,7 @@ types KehillahLibrary
 					autoresize = yes
 					max_width = @lib_width
 					default_format = "#weak;italic"
-					text = "[Select_CString( GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_library_commission_distant_value' ), '(CFixedPoint)0' ), Localize( 'KEHILLAH_LIB_COMMISSION_DISTANT' ), Select_CString( GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_library_commission_purchase_value' ), '(CFixedPoint)0' ), Localize( 'KEHILLAH_LIB_COMMISSION_PURCHASE' ), Select_CString( GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_library_commission_external_value' ), '(CFixedPoint)0' ), Localize( 'KEHILLAH_LIB_COMMISSION_EXTERNAL' ), Localize( 'KEHILLAH_LIB_COMMISSION_LOCAL' ) ) ) )]"
+					text = "[Select_CString( GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_library_commission_carried_value' ), '(CFixedPoint)0' ), Localize( 'KEHILLAH_LIB_COMMISSION_CARRIED' ), Select_CString( GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_library_commission_distant_value' ), '(CFixedPoint)0' ), Localize( 'KEHILLAH_LIB_COMMISSION_DISTANT' ), Select_CString( GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_library_commission_purchase_value' ), '(CFixedPoint)0' ), Localize( 'KEHILLAH_LIB_COMMISSION_PURCHASE' ), Select_CString( GreaterThan_CFixedPoint( Character.MakeScope.ScriptValue( 'kehillah_library_commission_external_value' ), '(CFixedPoint)0' ), Localize( 'KEHILLAH_LIB_COMMISSION_EXTERNAL' ), Localize( 'KEHILLAH_LIB_COMMISSION_LOCAL' ) ) ) ) )]"
 				}
 			}
 
@@ -1025,6 +1027,7 @@ types KehillahLibrary
 									size = { 482 55 }
 									onclick = "[GetVariableSystem.Set( 'kehillah_lib_parent_corpus', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) )]"
 									onclick = "[GetVariableSystem.Set( 'kehillah_lib_selected_work', Scope.GetFlagName )]"
+									onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_holders_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
 									tooltipwidget = {
 										kehillah_library_work_tooltip = {}
 									}
@@ -1241,6 +1244,60 @@ types KehillahLibrary
 							size = { 20 20 }
 							texture = "gfx/interface/icons/flat_icons/three_people.dds"
 							alwaystransparent = yes
+						}
+					}
+				}
+				# V49: the other communities whose libraries hold this work, loaded
+				# when the work was selected. Each row plans a Yeshiva Visit there.
+				vbox = {
+					visible = "[GetScriptedGui( Concatenate( 'kehillah_lib_holders_loaded_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+					layoutpolicy_horizontal = expanding
+					spacing = 3
+					ignoreinvisible = yes
+					text_single = {
+						text = "KEHILLAH_LIB_HOLDERS_LABEL"
+						default_format = "#high"
+					}
+					text_multi = {
+						visible = "[Not( DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_lib_holders' ) ) )]"
+						autoresize = yes
+						max_width = @lib_width
+						default_format = "#weak;italic"
+						text = "KEHILLAH_LIB_HOLDERS_EMPTY"
+					}
+					scrollbox = {
+						visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_lib_holders' ) )]"
+						layoutpolicy_horizontal = expanding
+						size = { @lib_width 104 }
+						blockoverride "scrollbox_margins" { margin = { 0 2 } margin_right = 12 }
+						blockoverride "scrollbox_content" {
+							vbox = {
+								layoutpolicy_horizontal = expanding
+								spacing = 2
+								datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_lib_holders' )]"
+								item = {
+									hbox = {
+										layoutpolicy_horizontal = expanding
+										spacing = 6
+										portrait_head_small = { datacontext = "[Scope.Title.GetHolder]" }
+										text_single = {
+											text = "[Scope.Title.GetNameNoTooltip]"
+											default_format = "#high"
+											max_width = 220
+										}
+										expand = {}
+										button_standard_list = {
+											visible = "[Character.IsLocalPlayer]"
+											size = { 150 30 }
+											text = "KEHILLAH_LIB_JOURNEY_ACTION"
+											tooltip = "KEHILLAH_LIB_JOURNEY_TT"
+											using = tooltip_se
+											enabled = "[GetScriptedGui( Concatenate( 'kehillah_lib_journey_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'target', Scope.Title.MakeScope ).End )]"
+											onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_journey_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'target', Scope.Title.MakeScope ).End )]"
+										}
+									}
+								}
+							}
 						}
 					}
 				}
