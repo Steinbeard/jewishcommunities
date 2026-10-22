@@ -17,6 +17,20 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### V50 Bookmark rosters for 867, 1066 and 1178 — 2026-10-21, Daniel's request
+
+**Built 2026-10-22; `ck3-tiger` clean; NOT live-tested.** Three Kehillah bookmarks:
+- **1066** (five cards): Worms, Troyes, Granada, the Rif in Fez, and David ben Hezekiah as an adventurer.
+- **867** "Age of the Geonim": Amram Gaon, Moshe ben Asher, Shefatiah of Oria, a Kalonymide of Lucca,
+  Kairouan, and Eldad ha-Dani as an adventurer.
+- **1178** "The Paths of Torah": Maimonides, Samuel ben Eli, the Ri, Judah he-Hasid, the Raavad of
+  Posquières, and Joseph ibn Shoshan of Toledo.
+
+New seats: Fez, Oria, Lucca, Tiberias, Posquières, plus two adventurer companies. Karaite and
+Radhanite cards are recorded for later. The choices made while building, and the first-boot
+checklist, are in [V50](docs/spec/v50-bookmark-rosters.md) section 0. **Next:** boot each bookmark,
+press Play on a community card and an adventurer card, and calibrate portrait positions.
+
 ### V49 Yeshiva Visit from the Library — 2026-10-20, Daniel's request
 
 **Built; live-tested 2026-10-21 through the xTiger MCP server**

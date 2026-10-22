@@ -1,12 +1,14 @@
-"""Render the 1066 Kehillah bookmark art: a painted-style map of Francia,
-the Rhineland and al-Andalus, drawn from the game's own heightmap and river
-map, with the three starting communities marked; one highlight overlay per
+"""Render the Kehillah bookmark art for the 867, 1066 and 1178 start
+screens: a painted-style map drawn from the game's own heightmap and river
+map, with each start's communities marked; one highlight overlay per
 bookmark character; and the start-screen button and list icons.
 
-Run:  python -I scripts/render_bookmark_art.py
+Run:  python -I scripts/render_bookmark_art.py [bookmark_key ...]
+With no arguments every bookmark in BOOKMARKS is rendered.
 Reads the installed game's map_data; writes into gfx/interface/bookmarks/.
 """
 import os
+import sys
 import warnings
 
 import numpy as np
@@ -21,18 +23,97 @@ MOD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(MOD, "gfx", "interface", "bookmarks")
 W, H = 1920, 1080
 
-# Window onto the game map, in provinces.png pixel coordinates.
-SCALE = 0.9
-OX, OY = 394, 1302
-WIN_W, WIN_H = W / SCALE, H / SCALE
-
-# Community seats (province centroids in provinces.png space).
+# Community seats: the capital province centroid of each host county, in
+# provinces.png pixel coordinates.
 CITIES = {
     "worms": (1406.3, 1487.0),
     "troyes": (1172.1, 1579.8),
     "granada": (748.4, 2376.2),
+    "fez": (699.2, 2590.3),
+    "sura": (3387.5, 2633.8),      # c_kufa
+    "oria": (1982.8, 2221.3),      # c_lecce
+    "sanaa": (3430.4, 3474.1),
+    "lucca": (1544.9, 1943.6),
+    "tiberias": (2966.2, 2651.3),
+    "kairouan": (1557.4, 2541.9),
+    "fustat": (2766.2, 2827.6),    # c_cairo
+    "baghdad": (3378.1, 2537.0),
+    "speyer": (1406.1, 1511.8),
+    "posquieres": (1167.0, 1873.1),  # c_uses
+    "toledo": (732.5, 2186.8),
+}
+
+# One entry per bookmark. Window: top-left (ox, oy) in provinces.png space
+# and the scale from map pixels to the 1920x1080 image. Regions are the
+# names the communities themselves used, placed in map coordinates. Seats
+# are (city, label, label offset in image pixels). Characters map each
+# bookmark character key to the city its highlight glows over.
+BOOKMARKS = {
+    "bm_1066_kehillah_worms": {
+        "ox": 0, "oy": 1260, "scale": 0.697,
+        "regions": (("Sefarad", (720, 2050)), ("Tzarfat", (950, 1720)),
+                    ("Ashkenaz", (1580, 1420)), ("Maghreb", (1000, 2730))),
+        "seats": (("worms", "Worms", (22, -6)), ("troyes", "Troyes", (-100, 4)),
+                  ("granada", "Granada", (22, -8)), ("fez", "Fez", (22, -6))),
+        "characters": {
+            "bookmark_kehillah_worms_isaac": "worms",
+            "bookmark_kehillah_troyes_rashi": "troyes",
+            "bookmark_kehillah_granada_joseph": "granada",
+            "bookmark_kehillah_granada_david": "granada",
+            "bookmark_kehillah_fez_rif": "fez",
+        },
+        "button": (760, 520),
+    },
+    "bm_867_kehillah": {
+        "ox": 712, "oy": 1700, "scale": 0.54,
+        "regions": (("Italya", (1860, 2130)), ("Ifriqiya", (1420, 2760)),
+                    ("Eretz Yisrael", (3130, 2780)), ("Bavel", (3500, 2400)),
+                    ("Teiman", (3650, 3330))),
+        "seats": (("lucca", "Lucca", (22, -6)), ("oria", "Oria", (22, -6)),
+                  ("kairouan", "Kairouan", (22, -6)), ("tiberias", "Tiberias", (-118, -6)),
+                  ("sura", "Sura", (22, -6)), ("sanaa", "Sana'a", (22, -6))),
+        "characters": {
+            "bookmark_kehillah_sura_amram": "sura",
+            "bookmark_kehillah_tiberias_moshe": "tiberias",
+            "bookmark_kehillah_oria_shefatiah": "oria",
+            "bookmark_kehillah_lucca_kalonymus": "lucca",
+            "bookmark_kehillah_kairouan_hananel": "kairouan",
+            "bookmark_kehillah_eldad": "sanaa",
+        },
+        "button": (960, 420),
+    },
+    "bm_1178_kehillah": {
+        "ox": 520, "oy": 1250, "scale": 0.59,
+        "regions": (("Sefarad", (900, 2330)), ("Provence", (1150, 2010)),
+                    ("Tzarfat", (930, 1700)), ("Ashkenaz", (1620, 1440)),
+                    ("Mitzrayim", (2700, 2990)), ("Bavel", (3280, 2790))),
+        "seats": (("speyer", "Speyer", (22, -6)), ("troyes", "Troyes", (-100, 4)),
+                  ("posquieres", "Posquières", (22, -6)), ("toledo", "Toledo", (22, -6)),
+                  ("fustat", "Fustat", (22, -6)), ("baghdad", "Baghdad", (22, -6))),
+        "characters": {
+            "bookmark_kehillah_fustat_rambam": "fustat",
+            "bookmark_kehillah_baghdad_samuel": "baghdad",
+            "bookmark_kehillah_troyes_ri": "troyes",
+            "bookmark_kehillah_speyer_judah": "speyer",
+            "bookmark_kehillah_posquieres_raavad": "posquieres",
+            "bookmark_kehillah_toledo_shoshan": "toledo",
+        },
+        "button": (900, 500),
+    },
 }
 WATER = 4626  # heightmap value of the sea surface
+
+# The active window; set per bookmark by use_window().
+SCALE = 1.0
+OX, OY = 0, 0
+WIN_W, WIN_H = W, H
+
+
+def use_window(cfg):
+    global SCALE, OX, OY, WIN_W, WIN_H
+    SCALE = cfg["scale"]
+    OX, OY = cfg["ox"], cfg["oy"]
+    WIN_W, WIN_H = W / SCALE, H / SCALE
 
 
 def to_img(p):
@@ -126,28 +207,21 @@ def spaced_width(draw, text, fnt, spacing):
     return sum(draw.textlength(c, font=fnt) + spacing for c in text) - spacing
 
 
-def annotate(img):
+def annotate(img, cfg):
     base = Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).convert("RGBA")
     layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(layer)
 
     # Regions, as the community itself named them.
     big = font("GARAIT.TTF", 46)
-    for text, centre, alpha in (
-        ("Sefarad", (300, 690), 165),
-        ("Tzarfat", (600, 470), 165),
-        ("Ashkenaz", (1090, 215), 165),
-    ):
+    for text, where in cfg["regions"]:
+        centre = to_img(where)
         w = spaced_width(d, text, big, 14)
-        spaced(d, (centre[0] - w / 2, centre[1] - 25), text, big, (70, 52, 34, alpha), 14)
+        spaced(d, (centre[0] - w / 2, centre[1] - 25), text, big, (70, 52, 34, 165), 14)
 
     # Seats.
     lab = font("GARABD.TTF", 26)
-    for name, label, off in (
-        ("worms", "Worms", (22, -6)),
-        ("troyes", "Troyes", (-100, 4)),
-        ("granada", "Granada", (22, -8)),
-    ):
+    for name, label, off in cfg["seats"]:
         cx, cy = to_img(CITIES[name])
         d.ellipse((cx - 11, cy - 11, cx + 11, cy + 11), fill=(60, 40, 24, 230))
         d.ellipse((cx - 7, cy - 7, cx + 7, cy + 7), fill=(226, 184, 74, 255))
@@ -187,24 +261,32 @@ def save(im, *parts):
     print("wrote", path, os.path.getsize(path))
 
 
-def main():
+def render(key, cfg):
+    use_window(cfg)
     img, land = build_map()
-    bg = annotate(img)
-    save(bg, "bm_1066_kehillah_worms.dds")
+    bg = annotate(img, cfg)
+    save(bg, key + ".dds")
 
-    worms, troyes, granada = (to_img(CITIES[k]) for k in ("worms", "troyes", "granada"))
-    save(overlay(land, *worms), "bm_1066_kehillah_worms_bookmark_kehillah_worms_isaac.dds")
-    save(overlay(land, *troyes), "bm_1066_kehillah_worms_bookmark_kehillah_troyes_rashi.dds")
-    save(overlay(land, *granada, sigma=110), "bm_1066_kehillah_worms_bookmark_kehillah_granada_joseph.dds")
+    for character, city in cfg["characters"].items():
+        save(overlay(land, *to_img(CITIES[city]), sigma=95 * SCALE / 0.9),
+             f"{key}_{character}.dds")
 
-    save(button(bg, (860, 440)), "start_buttons", "bm_1066_kehillah_worms.dds")
+    save(button(bg, cfg["button"]), "start_buttons", key + ".dds")
     icons = os.path.join(MOD, "gfx", "interface", "icons")
     for sub, size in (("bookmark_buttons", (580, 160)), ("bookmark_big", (336, 152))):
-        path = os.path.join(icons, sub, "bm_1066_kehillah_worms.dds")
+        path = os.path.join(icons, sub, key + ".dds")
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        button(bg, (860, 440), size=size).save(path)
+        button(bg, cfg["button"], size=size).save(path)
         print("wrote", path)
-    bg.convert("RGB").resize((1280, 720)).save(os.path.join(os.environ.get("TEMP", "."), "kehillah_bg_preview.png"))
+    preview = os.path.join(os.environ.get("TEMP", "."), f"kehillah_bg_preview_{key}.png")
+    bg.convert("RGB").resize((1280, 720)).save(preview)
+    print("preview", preview)
+
+
+def main():
+    keys = sys.argv[1:] or list(BOOKMARKS)
+    for key in keys:
+        render(key, BOOKMARKS[key])
 
 
 if __name__ == "__main__":
