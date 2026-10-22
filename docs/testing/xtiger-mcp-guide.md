@@ -81,6 +81,15 @@ an explicit isolated `-userdir` loaded this mod, but `ck3_script` could not open
 Do not report that sequence as a scripted test pass. Recheck the process command line and
 mod mount before using xTiger's game tools.
 
+**Playable state and matching run folder (2026-10-21):** An xTiger script at character
+selection can open the console but CK3 responds `No game state`. Enter a playable campaign
+first. For an ephemeral MCP connection to an externally launched isolated game, set
+`CK3_USER_DIR` on the `xtiger-mcp.exe` process to exactly the game's `-userdir` path. xTiger
+writes `xtiger_script.txt` under that directory's `run/` folder; otherwise CK3 may execute
+a stale file from its own profile. Send a unique one-line `debug_log` marker first and
+confirm that exact marker in the isolated profile's `debug.log` before the real probe.
+This procedure succeeded in the [pogrom rite reuse test](2026-10-21-pogrom-warning-live-test.md).
+
 ## Lessons from the first run
 
 - **Another agent's CK3 blocks the tools.** `ck3_run` refuses to start while any `ck3.exe` runs. Check the owner first (`Get-CimInstance Win32_Process` command line: Codex tests use `-userdir=...\.codex\ck3-test\...`). Never close a game this session did not launch. The job report names the PID of the game the tool started.

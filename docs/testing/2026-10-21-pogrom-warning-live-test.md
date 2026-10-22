@@ -14,13 +14,21 @@
 ## Pending gameplay checks
 
 - Fire `kehillah_mob.0030` and confirm the local accusation warning, including whether it diverts the community's response before a mob forms.
-- Confirm mob leaders receive the fixed Christian or Muslim rite and that the rite is presented as intended in the religion UI.
+- Confirm the reused or newly created hostile rite is presented as intended in the religion UI; the scripted identity check below does not verify rendering.
 - Confirm the host's army cannot siege until at least 14 days after declaration and the required mustering interval has elapsed.
 - Confirm the nearby attack message and the result message render with the expected deaths, forced conversions, and captives; test the separate dissolution notice as well.
 - Verify the preacher reminder cadence after the latest four-week interval edit. It is unknown whether that edit preceded parsing during the boot, and no gameplay time was advanced.
 
-These checks remain pending for a run with a CUA-visible CK3 window. The boot log establishes that the mob event file loaded after the reported fixes; it does not establish any of the gameplay or notification assertions above.
+These rendering and pacing checks remain pending for a later live session. The boot log establishes that the mob event file loaded after the reported fixes; the later scripted check below establishes rite reuse only.
 
 ## Rite reuse probe attempted — 2026-10-21
 
 A Luna tester reached `xtiger-mcp.exe` through an ephemeral stdio connection without changing global Codex configuration. xTiger's `ck3_run_start` did not pass `-userdir` to CK3; its log lookup used the isolated profile while the game did not, so the mod was not mounted (0/1 mods). The tester then launched a single CK3 process with the explicit isolated `-userdir` and confirmed the mod's startup effects in that profile's logs. `ck3_script` could not open the console and ran no probe. The tester stopped only its own PID after checking the command line. First-rite creation, subsequent reuse, and cross-faith isolation remain **unverified in game**; the source and xTiger validator checks are not a substitute.
+
+## Rite reuse scripted live check — 2026-10-21
+
+**Status: passed for same-faith reuse and Shia isolation.** A Luna tester launched the worktree's isolated profile with `scripts/kehillah_isolated_ck3_test.ps1 -Visible`, entered Isaac ha-Levi's Worms 1066 campaign, and connected to `xtiger-mcp.exe` through an ephemeral stdio client with `CK3_USER_DIR` set to the same isolated profile. A unique one-line `ck3_script` marker appeared in that profile's `debug.log`, proving the console script reached the playable game. Attempts at character selection returned `No game state` and supplied no test evidence.
+
+The final valid scripted probe raised a local host through `kehillah_mob_debug.1`, saved its rite, cleaned the host through `.6`, then raised a second host. `debug.log` recorded `[RiteGen] Generated Rite` for the first host and `CODEX_POGROM_RITE_REUSE_PASS` after comparing the two rites; saved scopes showed both leaders held **French Christianity, Rite ID 151**. A second valid probe captured the Catholic rite, created a Shia character using `set_character_faith`, applied `kehillah_mob_join_hostile_rite_effect`, and logged `CODEX_POGROM_CROSS_FAITH_ISOLATION_PASS` and `CODEX_POGROM_SHIA_ABOLITION_PRESENT`. Its saved scopes showed the Catholic Rite ID 151 and a distinct Shia hostile rite, **Helleri, Rite ID 152**. Both hosts were cleaned up. The tester rechecked and stopped only isolated CK3 PID 37392; no CK3 process remained.
+
+The first Shia fixture used invalid test-only `set_faith` and was discarded; it logged `SHIA_ABOLITION_MISSING`. Only the corrected run's `SHIA_ABOLITION_PRESENT` is evidence. The profile's `error.log` contains that discarded script error, xTiger's documented tooltip-construction errors referencing the run file, and pre-existing startup variable/event-target diagnostics. No new execution error attributed to the successful mob rite effects appeared. This test covers rite creation, same-faith reuse, and Shia separation in one campaign. It does not cover the warning duration, siege timing, UI rendering, or neighbouring notifications.
