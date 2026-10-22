@@ -16,6 +16,41 @@ xTiger is a CK3 1.20 fork of ck3-tiger with an MCP server. It is installed at `D
 
 **Required setting.** `"game_tests_background": false` in `data\settings.json` (the app's Settings → Game tests → "Take over the screen"). It has been set since 2026-10-21. With the default `true`, every run is forced into background mode: the game starts minimized and the tools cannot type console commands. A running game takes the keyboard and the screen.
 
+## Start a CK3 instance for xTiger
+
+Use this when no suitable CK3 process is running. A Luna tester runs these live-game
+steps for Codex; the parent Codex agent does not take over CK3. Inspect process ownership
+first, and never attach to or stop another agent's game:
+
+```powershell
+Get-CimInstance Win32_Process -Filter "name='ck3.exe'" |
+    Select-Object ProcessId, CommandLine
+```
+
+If the isolated Codex test profile is free, launch the checkout being tested from its
+worktree (not the primary mod checkout):
+
+```powershell
+.\scripts\kehillah_isolated_ck3_test.ps1 -Visible
+```
+
+The script registers that checkout in the separate profile, enables its `.mod` entry in
+`dlc_load.json`, and starts CK3 with `-debug_mode -develop` and an explicit `-userdir`.
+Record the returned PID. Confirm that PID's command line includes the isolated
+`-userdir`, wait until the game reaches a playable bookmark, and check that the profile's
+`logs\debug.log` contains this mod's startup effects. Read the profile's `error.log`
+baseline. Once the correct visible game is in focus, try a minimal `ck3_script` probe
+that writes a unique `debug_log` line and verify that line before running the real test.
+If xTiger says its console did not open, do not assume the probe ran; refocus the
+owned CK3 window and retry once. Record a repeat failure and defer the scripted test.
+Recheck the command line, then stop only the recorded test PID when finished.
+
+For the isolated Codex profile, do not rely on `ck3_run_start` alone: on 2026-10-21
+it launched CK3 without `-userdir`, while its log lookup used `CK3_USER_DIR`; the game
+mounted 0/1 mods. `CK3_USER_DIR` by itself did not change CK3's launch arguments.
+For a non-isolated xTiger-owned run, `ck3_run_start` remains available when no CK3
+process is running, with the caveats under “Lessons from the first run.”
+
 ## Tools that matter here
 
 | Need | Tool |
