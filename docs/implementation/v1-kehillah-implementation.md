@@ -57,7 +57,8 @@ asked for.
 
 Pre-existing, written separately and not modified here:
 `common/dynasties/ha_levi.txt`, `history/characters/worms_1066.txt`,
-`localization/english/dynasties/ha_levi_dynasty_names_l_english.yml`.
+`localization/english/dynasties/ha_levi_dynasty_names_l_english.yml` (moved 2026-10-21 to
+`localization/english/replace/`, because it overrides vanilla `dynn_` keys).
 The only change made to that set was adding the UTF-8 byte order mark
 to the dynasty localization file, which CK3 requires and which was
 missing — it would have failed to load as written.
