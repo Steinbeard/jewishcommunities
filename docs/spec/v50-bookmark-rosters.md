@@ -62,6 +62,38 @@ session):
 5. Known gap, not new: `d_kehillah_rodom` (Yosef of Rodom) has no later `holder = 0`, unlike
    vanilla's adventurer titles, so it may carry into the 1178 start.
 
+## 0b. First look in game, and fixes, 2026-10-22
+
+Daniel loaded all three screens; nothing crashed. Problems seen, and what changed:
+
+- **Cards hidden by the interface.** The start screen draws the bookmark list (x < 295), the
+  description panel (x > 1480, y < 545) and the date tabs over the art. Amram, Samuel ben Eli,
+  the Ri and Ibn Shoshan sat under them. `render_bookmark_art.py` now knows those zones and a
+  card's footprint (measured from the screenshots), reads every `position` from the bookmark file,
+  reports overlaps (`--check`), drops region labels a card would cover, and writes a layout
+  preview with the zones shaded. All three screens check clean.
+- **867 recentred on Bavel** (Daniel: the Gaon belongs at the centre). Lucca, Oria and Kairouan
+  moved into an **inset box** in the top left (Daniel's suggestion), so the main map stays
+  readable. The script supports insets on any bookmark.
+- **The Khagan added to 867** (Daniel): vanilla's Manasseh (74025), holder of
+  `e_caspian-pontic_steppe`, Khazar rite (`kabarism`), played with vanilla's tribal government.
+  A Track B preview; nothing about him is changed. Arms added for his house (12270), which had none.
+- **Maimonides is vanilla's own `maimonides_1`** (Daniel noticed he exists). V50's duplicate
+  9001121 and its dynasty were removed; Fustat's 1178 holder is `maimonides_1`. Vanilla gives him
+  no DNA, so his portrait is still a copied face. **Rashi is not in vanilla**, so the mod's
+  character stays.
+- **Black shields.** No Kehillah title had arms. `kehillah_title_coas.txt` now gives all 42
+  community titles a menorah on a varied field (editorial, not historical).
+- **Faces, dress and expressions.** Animations are now calm personality poses, not map_worry,
+  storyteller or writing. Every V50 portrait keeps its copied face but now wears plain dress
+  (Abbasid/Mena commoner or low-court dress in the east, western commoner dress in the west), a
+  full beard (the long `orthodox_beards` for elder scholars), and no noble headgear, veil or cloak.
+  Still not likenesses. The better fix, when there is time in game, is the vanilla workflow: set
+  each character's look in the game and run `dump_bookmark_portraits`.
+- **Found, not fixed:** vanilla already defines Joseph ibn Naghrela (3221, with Samuel ha-Nagid
+  3220), so a 1066 game has two Josephs: vanilla's and the mod's 9000216, which the Granada
+  storyline is built on. Switching to vanilla's needs a careful pass through that storyline.
+
 ## Original proposal (2026-10-21)
 
 The 1066 roster below is agreed except for the sixth card. The 867 and 1178 rosters are proposals.
