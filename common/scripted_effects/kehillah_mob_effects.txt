@@ -27,6 +27,69 @@
 # kehillah_mob_location_ref.
 # =====================================================================
 
+# Scope: a Christian or Muslim mob or popular-rising leader. Reuse an
+# already hostile rite of this faith; only the first leader needs to found one.
+kehillah_mob_join_hostile_rite_effect = {
+	if = {
+		limit = { faith.religion = religion:christianity_religion }
+		if = {
+			limit = { NOT = { rite = { rite_has_doctrine = kehillah_teaching_exclusion } } }
+			clear_saved_scope = kehillah_mob_hostile_rite
+			faith = {
+				random_faith_rite = {
+					limit = { rite_has_doctrine = kehillah_teaching_exclusion }
+					save_scope_as = kehillah_mob_hostile_rite
+				}
+			}
+			if = {
+				limit = { exists = scope:kehillah_mob_hostile_rite }
+				set_character_rite = scope:kehillah_mob_hostile_rite
+			}
+			else = {
+				create_dynamic_rite = {
+					save_scope_as = kehillah_mob_hostile_rite
+					convert = yes
+					target_divergence = 20
+					include_unknown = no
+					override_tenets_first = no
+				}
+				scope:kehillah_mob_hostile_rite ?= {
+					change_rite_doctrine = kehillah_teaching_exclusion
+				}
+			}
+		}
+	}
+	else_if = {
+		limit = { faith.religion = religion:islam_religion }
+		if = {
+			limit = { NOT = { rite = { rite_has_doctrine = kehillah_teaching_abolition } } }
+			clear_saved_scope = kehillah_mob_hostile_rite
+			faith = {
+				random_faith_rite = {
+					limit = { rite_has_doctrine = kehillah_teaching_abolition }
+					save_scope_as = kehillah_mob_hostile_rite
+				}
+			}
+			if = {
+				limit = { exists = scope:kehillah_mob_hostile_rite }
+				set_character_rite = scope:kehillah_mob_hostile_rite
+			}
+			else = {
+				create_dynamic_rite = {
+					save_scope_as = kehillah_mob_hostile_rite
+					convert = yes
+					target_divergence = 20
+					include_unknown = no
+					override_tenets_first = no
+				}
+				scope:kehillah_mob_hostile_rite ?= {
+					change_rite_doctrine = kehillah_teaching_abolition
+				}
+			}
+		}
+	}
+}
+
 # ---------------------------------------------------------------------
 # RAISE. Scope: the target Kehillah leader. SIZE: men. SEVERITY: the base
 # harm (kehillah_mob_local_severity, kehillah_mob_crusade_severity).
@@ -85,16 +148,7 @@ kehillah_mob_raise_effect = {
 		scope:kehillah_mob_leader = {
 			add_character_flag = kehillah_mob_leader
 			kehillah_mob_make_ruler_effect = { COUNTY = scope:kehillah_mob_spawn.county }
-			# Reuse fixed extremist rites. A fresh dynamic rite for every mob
-			# polluted the religion window with short-lived copies.
-			if = {
-				limit = { faith.religion = religion:islam_religion }
-				set_character_rite = rite:masmudi
-			}
-			else_if = {
-				limit = { faith.religion = religion:christianity_religion }
-				set_character_rite = rite:kehillah_holy_host_christian
-			}
+			kehillah_mob_join_hostile_rite_effect = yes
 			set_variable = { name = kehillah_mob_target_title value = scope:kehillah_mob_victim_title }
 			set_variable = { name = kehillah_mob_target_province value = scope:kehillah_mob_town }
 			set_variable = { name = kehillah_mob_location value = scope:kehillah_mob_spawn }

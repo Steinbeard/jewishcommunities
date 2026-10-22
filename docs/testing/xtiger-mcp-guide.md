@@ -27,6 +27,25 @@ xTiger is a CK3 1.20 fork of ck3-tiger with an MCP server. It is installed at `D
 | Read logs | `ck3_logs` (`name`, `pattern`, `since`). `error.log` can reach hundreds of thousands of lines in a long run, so filter by time or pattern. |
 | UI | `ck3_click` (`x`/`y` as fractions of the full window, from a full-window screenshot) and `ck3_keys` (hex scancodes: `39` pause or unpause, `06` speed 5, `29` console, `01` Esc). Use `shot_region` and `shot_scale` to keep screenshots small. |
 
+## Scripted behavior checks
+
+When a change depends on CK3 runtime state, use `ck3_script` or `ck3_events` if the server is
+available. Keep the probe small: log the starting state, trigger the action, log the resulting
+state, repeat, and compare the IDs or scopes that should be reused. For mob rites, create the
+first leader, record its faith and rite, end that host, create another leader of the same faith,
+and check that both leaders used the same hostile rite. Use another faith to confirm it does
+not inherit that rite. Read `error.log` after the probe and record what actually ran. A boot or
+xTiger validation alone does not verify this behavior. If the MCP server is unavailable, mark
+the scripted test pending; do not infer a pass from source or a successful boot.
+
+**Codex isolated-profile limitation (2026-10-21):** An ephemeral stdio connection to
+`xtiger-mcp.exe` worked without changing global configuration, but `ck3_run_start` omitted
+`-userdir` from its CK3 command line while looking for logs in `CK3_USER_DIR`. The game then
+mounted 0/1 mods and the job could not find the expected log. A directly launched CK3 with
+an explicit isolated `-userdir` loaded this mod, but `ck3_script` could not open its console.
+Do not report that sequence as a scripted test pass. Recheck the process command line and
+mod mount before using xTiger's game tools.
+
 ## Lessons from the first run
 
 - **Another agent's CK3 blocks the tools.** `ck3_run` refuses to start while any `ck3.exe` runs. Check the owner first (`Get-CimInstance Win32_Process` command line: Codex tests use `-userdir=...\.codex\ck3-test\...`). Never close a game this session did not launch. The job report names the PID of the game the tool started.

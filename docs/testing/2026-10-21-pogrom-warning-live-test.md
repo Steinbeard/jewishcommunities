@@ -20,3 +20,7 @@
 - Verify the preacher reminder cadence after the latest four-week interval edit. It is unknown whether that edit preceded parsing during the boot, and no gameplay time was advanced.
 
 These checks remain pending for a run with a CUA-visible CK3 window. The boot log establishes that the mob event file loaded after the reported fixes; it does not establish any of the gameplay or notification assertions above.
+
+## Rite reuse probe attempted — 2026-10-21
+
+A Luna tester reached `xtiger-mcp.exe` through an ephemeral stdio connection without changing global Codex configuration. xTiger's `ck3_run_start` did not pass `-userdir` to CK3; its log lookup used the isolated profile while the game did not, so the mod was not mounted (0/1 mods). The tester then launched a single CK3 process with the explicit isolated `-userdir` and confirmed the mod's startup effects in that profile's logs. `ck3_script` could not open the console and ran no probe. The tester stopped only its own PID after checking the command line. First-rite creation, subsequent reuse, and cross-faith isolation remain **unverified in game**; the source and xTiger validator checks are not a substitute.
