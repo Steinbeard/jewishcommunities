@@ -1,0 +1,49 @@
+﻿# A local accusation may harden into a pogrom over three to six months.
+# The existing preacher story and elders' hub handle the intervening weeks.
+# Scope: the Kehillah leader chosen by kehillah_accusation.0003.
+kehillah_mob_local_warning_effect = {
+	save_scope_as = kehillah_mob_victim
+	primary_title = { save_scope_as = kehillah_mob_victim_title }
+	domicile.domicile_location = { save_scope_as = kehillah_mob_town }
+	if = {
+		limit = {
+			exists = scope:kehillah_mob_town
+			NOT = { scope:kehillah_mob_victim_title = { has_variable = kehillah_mob_threat } }
+		}
+		random_province = {
+			limit = {
+				has_holding = yes
+				exists = county.holder
+				county.faith = scope:kehillah_mob_town.county.faith
+				squared_distance = { target = scope:kehillah_mob_town value >= kehillah_mob_spawn_min_sq }
+				squared_distance = { target = scope:kehillah_mob_town value <= kehillah_mob_spawn_max_sq }
+			}
+			save_scope_as = kehillah_mob_preach_place
+		}
+		if = {
+			limit = { NOT = { exists = scope:kehillah_mob_preach_place } }
+			scope:kehillah_mob_town = { save_scope_as = kehillah_mob_preach_place }
+		}
+		if = {
+			limit = { exists = scope:kehillah_mob_preach_place }
+			kehillah_mob_create_preacher_effect = { PLACE = scope:kehillah_mob_preach_place }
+			scope:kehillah_mob_leader = {
+				add_character_flag = kehillah_mob_preaching
+				add_character_flag = kehillah_mob_local_preaching
+				set_variable = { name = kehillah_mob_following value = kehillah_accusation_mob_size }
+				set_variable = { name = kehillah_mob_base_severity value = kehillah_accusation_mob_severity }
+				set_variable = { name = kehillah_mob_preach_news_days value = 0 }
+				set_variable = {
+					name = kehillah_mob_preach_days
+					value = { integer_range = { min = 90 max = 180 } }
+				}
+				set_variable = { name = kehillah_mob_target_title value = scope:kehillah_mob_victim_title }
+				set_variable = { name = kehillah_mob_target_province value = scope:kehillah_mob_town }
+				set_variable = { name = kehillah_mob_location value = scope:kehillah_mob_preach_place }
+				create_story = { type = story_kehillah_preacher }
+			}
+			kehillah_mob_preaching_mark_target_effect = yes
+			debug_log = "kehillah_mob_local_warning_effect: a local agitator begins gathering a mob"
+		}
+	}
+}

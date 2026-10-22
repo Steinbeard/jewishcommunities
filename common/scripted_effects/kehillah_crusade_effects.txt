@@ -98,6 +98,7 @@ kehillah_mob_after_strike_effect = {
 # Turn the host toward its next community. Scope: the mob leader.
 kehillah_mob_retarget_effect = {
 	save_scope_as = kehillah_mob_leader
+	set_variable = { name = kehillah_mob_march_delay value = 10 }
 	random_army = {
 		location = { save_scope_as = kehillah_mob_from }
 	}
@@ -250,7 +251,7 @@ kehillah_mob_marches_east_effect = {
 # ---------------------------------------------------------------------
 # V41 step 3 -- the preaching (docs/spec/v41-danger-incidents-and-the-
 # pogrom-unfolding.md section 5), 2026-10-14. The preacher appears first,
-# with no army; for 30-90 days he preaches town by town near the
+# with no army; for 90-180 days he preaches town by town near the
 # community he means to strike, and his following grows each week. The
 # community gets the warning and the elders' hub at once; its neighbours
 # hear of the sermons. When he sets out, his army is his following
@@ -290,12 +291,14 @@ kehillah_mob_preaching_start_effect = {
 				}
 			}
 			set_variable = { name = kehillah_mob_following value = kehillah_mob_preaching_start_following }
+			set_variable = { name = kehillah_mob_base_severity value = kehillah_mob_crusade_severity }
+			set_variable = { name = kehillah_mob_preach_news_days value = 0 }
 			set_variable = {
 				name = kehillah_mob_preach_days
 				value = {
 					integer_range = {
-						min = 30
-						max = 90
+						min = 90
+						max = 180
 					}
 				}
 			}
@@ -323,10 +326,20 @@ kehillah_mob_preaching_mark_target_effect = {
 		set_variable = { name = kehillah_mob_location_ref value = scope:kehillah_mob_leader.var:kehillah_mob_location }
 		set_variable = { name = kehillah_mob_size_ref value = scope:kehillah_mob_leader.var:kehillah_mob_following }
 		trigger_event = kehillah_mob.0004
-		kehillah_notify_region_players_effect = {
-			TYPE = msg_kehillah_community_news_bad
-			TITLE = kehillah_mob_news_preaching_t
-			DESC = kehillah_mob_news_preaching_d
+		if = {
+			limit = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_local_preaching } }
+			kehillah_notify_region_players_effect = {
+				TYPE = msg_kehillah_community_news_bad
+				TITLE = kehillah_mob_news_local_preaching_t
+				DESC = kehillah_mob_news_local_preaching_d
+			}
+		}
+		else = {
+			kehillah_notify_region_players_effect = {
+				TYPE = msg_kehillah_community_news_bad
+				TITLE = kehillah_mob_news_preaching_t
+				DESC = kehillah_mob_news_preaching_d
+			}
 		}
 	}
 }
@@ -349,7 +362,11 @@ kehillah_mob_preaching_tick_effect = {
 		var:kehillah_mob_target_title.holder = { save_scope_as = kehillah_mob_victim }
 		var:kehillah_mob_target_province = { save_scope_as = kehillah_mob_town }
 		# His following grows.
-		change_variable = { name = kehillah_mob_following add = kehillah_mob_preaching_weekly_gain_value }
+		change_variable = { name = kehillah_mob_preach_news_days add = 7 }
+		if = {
+			limit = { NOT = { has_character_flag = kehillah_mob_local_preaching } }
+			change_variable = { name = kehillah_mob_following add = kehillah_mob_preaching_weekly_gain_value }
+		}
 		# He preaches in another town near his quarry.
 		random_province = {
 			limit = {
@@ -371,14 +388,32 @@ kehillah_mob_preaching_tick_effect = {
 			set_variable = { name = kehillah_mob_location_ref value = scope:kehillah_mob_leader.var:kehillah_mob_location }
 			set_variable = { name = kehillah_mob_size_ref value = scope:kehillah_mob_leader.var:kehillah_mob_following }
 			if = {
-				limit = { is_ai = no }
-				send_interface_toast = {
-					type = event_toast_effect_bad
-					title = kehillah_mob_preaching_week_t
-					desc = kehillah_mob_preaching_week_d
-					left_icon = scope:kehillah_mob_leader
+				limit = {
+					is_ai = no
+					scope:kehillah_mob_leader = { var:kehillah_mob_preach_news_days >= 28 }
+				}
+				if = {
+					limit = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_local_preaching } }
+					send_interface_toast = {
+						type = event_toast_effect_bad
+						title = kehillah_mob_preaching_week_t
+						desc = kehillah_mob_preaching_week_local_d
+						left_icon = scope:kehillah_mob_leader
+					}
+				}
+				else = {
+					send_interface_toast = {
+						type = event_toast_effect_bad
+						title = kehillah_mob_preaching_week_t
+						desc = kehillah_mob_preaching_week_d
+						left_icon = scope:kehillah_mob_leader
+					}
 				}
 			}
+		}
+		if = {
+			limit = { var:kehillah_mob_preach_news_days >= 28 }
+			set_variable = { name = kehillah_mob_preach_news_days value = 0 }
 		}
 		change_variable = { name = kehillah_mob_preach_days add = -7 }
 		if = {
@@ -401,9 +436,18 @@ kehillah_mob_preaching_ends_effect = {
 		}
 	}
 	var:kehillah_mob_target_title.holder ?= {
-		kehillah_mob_raise_effect = {
-			SIZE = scope:kehillah_mob_preached_size
-			SEVERITY = kehillah_mob_crusade_severity
+		if = {
+			limit = { scope:kehillah_mob_preset_leader = { has_character_flag = kehillah_mob_local_preaching } }
+			kehillah_mob_raise_effect = {
+				SIZE = scope:kehillah_mob_preached_size
+				SEVERITY = kehillah_accusation_mob_severity
+			}
+		}
+		else = {
+			kehillah_mob_raise_effect = {
+				SIZE = scope:kehillah_mob_preached_size
+				SEVERITY = kehillah_mob_crusade_severity
+			}
 		}
 	}
 	debug_log = "kehillah_mob_preaching_ends_effect: the preacher sets out with his following"

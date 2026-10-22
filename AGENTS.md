@@ -186,6 +186,13 @@ full mechanics and philosophy; summary:
 - **Prefer reading source over live-testing when the question is about logic**, not rendering —
   e.g. "does this gate check the right pillar" is answered faster and more reliably by reading
   the trigger than by playing to that state. Live-test only what source-reading can't settle.
+- **Use a scripted live probe when engine behavior is the question.** Source reading and
+  xTiger validation cannot establish that a dynamic rite is created, saved, selected, or
+  reused at runtime. For such changes, have the Luna tester run a small `ck3_script`/
+  `ck3_events` probe where the MCP tools are available: set up the state, log the relevant
+  objects before and after, repeat the action, and compare identities. Check `error.log`
+  against the boot baseline. Record an unavailable tool or blocked game as an unrun test,
+  never as a pass. The Luna-only live-control rule above still applies.
 - **When you do need the live game, script it before you screenshot it.** Source-reading first, a
   `debug_log`/`run <file>.txt` probe second (see below), and mouse+screenshot only for questions
   that are genuinely about *rendering* — does a tooltip show real text, does an option's wording
@@ -231,6 +238,11 @@ full mechanics and philosophy; summary:
   (`game_tests_background: false`). **Read
   [docs/testing/xtiger-mcp-guide.md](docs/testing/xtiger-mcp-guide.md) first.** It has this mod's
   arguments and the lessons from the first run:
+  - If no Codex-owned CK3 is running for a scripted probe, the Luna tester should
+    inspect process ownership, start `scripts/kehillah_isolated_ck3_test.ps1 -Visible`
+    from the worktree under test, verify its PID, `-userdir`, mod mount, and log
+    baseline, then let xTiger attach. If its console cannot open, record the probe
+    as unrun. See the guide's “Start a CK3 instance for xTiger” procedure;
   - `ck3_run` refuses while any CK3 runs; never close another agent's game;
   - Codex tests use their own `-userdir=...\.codex\ck3-test\...`, and the tool's games do not;
   - close the game you launched, by the PID in the job report;
