@@ -1547,114 +1547,27 @@ kehillah_setup_sura_start_effect = {
 # kehillah_seed_community_effect
 # Scope: the Kehillah leader (character).
 #
-# Populates the community with people. This exists to close a real gap
-# in how appointment succession interacts with this government, and the
-# reasoning matters more than the code:
-#
-# THE GAP. The candidate categories CK3 offers for appointment
-# succession are all structural -- close family, house members,
-# councillors, court position holders, vassals. There is deliberately no
-# "any courtier" category. A Kehillah leader has no vassals and no
-# council, and at game start holds no buildings, so no officers can be
-# appointed either. That leaves close family as the only populated
-# category. If the starting leader also had no living close family, the
-# candidate pool would be empty when he dies -- and an empty pool on the
-# player's own title is a game-over, in a mod whose entire premise is
-# that leadership survives the leader.
-#
-# THE FIX, AND WHY IT IS ALSO THE DESIGN. Two things are seeded:
-#
-#   1. An adult child, if the leader has none. This guarantees the pool
-#      is never empty. A floor, not a feature.
-#
-#   2. Three unrelated notable community members, each with their own
-#      family. These are spec section 3's "multiple prominent families
-#      exist alongside the ruling one". They are NOT eligible for
-#      succession on day one -- they become eligible only once you have
-#      built the Beit Midrash, Countinghouse or Chambers and appointed
-#      them to those offices.
-#
-# That produces a genuine progression rather than a workaround. Early
-# on, an undeveloped community really does pass leadership within the
-# family, because it has no institutions through which anyone else can
-# earn standing. Build the quarter, fill the offices, and the
-# succession opens up to the whole community. The open pool spec
-# section 5 asks for is something the player constructs, which is a
-# better answer than handing it to them at turn one.
+# Place historical households and fill remaining council seats with
+# generated notables. Council members are succession candidates under
+# kehillah_leadership, so an unrelated adult always remains available
+# without creating a biologically impossible adult child. Historical
+# families are never sent through the random family generator.
 # ---------------------------------------------------------------------
 
 kehillah_seed_community_effect = {
-	# The floor: never let the pool be empty.
-	if = {
-		limit = {
-			NOT = {
-				any_child = { is_adult = yes }
-			}
-		}
-		create_character = {
-			father = scope:kehillah_leader
-			dynasty = inherit
-			age = { 26 38 }
-			faith = scope:kehillah_leader.faith
-			rite = scope:kehillah_leader.rite
-			culture = scope:kehillah_leader.culture
-			# scope:kehillah_leader.location is unreliable here: this
-			# effect runs the same tick as change_government creates the
-			# domicile, and a landless character's own .location does not
-			# always resolve by then (vanilla's own
-			# create_landless_adventurer_title_effect guards the identical
-			# case with exists = location). The domicile's own placement
-			# is set synchronously with its creation, so read the
-			# location from there instead.
-			location = scope:kehillah_leader.domicile.domicile_location
-			random_traits = yes
-			gender_female_chance = 0
-			save_scope_as = kehillah_seeded_heir
-		}
-		scope:kehillah_seeded_heir = {
-			# GUARDED, 2026-09-27. Unlike the three notable families
-			# below, this character is created with `father =`, and
-			# create_character puts a generated child in the father's
-			# court already -- so the call was redundant and the engine
-			# rejected it outright: "Trying to put character (...) in the
-			# court they're already in", twice per fresh 1066 boot, from
-			# kehillah_setup_troyes_start_effect and one other young
-			# leader's start (the only two whose leaders have no adult
-			# child, which is the only case this branch runs at all).
-			# Kept rather than deleted so the intent stays visible and the
-			# floor still holds if that auto-courting ever stops.
-			if = {
-				limit = { NOT = { is_courtier_of = scope:kehillah_leader } }
-				set_employer = scope:kehillah_leader
-			}
-		}
-	}
+	# Historical households claim their seats first. The generic seats below
+	# still guarantee adult candidates for communities with no named roster.
+	kehillah_seed_historical_courtiers_effect = yes
 
-	# The notable families. Given their own dynasties on purpose: these
-	# are other households of the community, not branches of the
-	# leader's. Three distinct people, not three rolls of the same
-	# template -- each skewed and (education-)traited toward a
-	# specific communal role, so the community reads as populated by
-	# particular people rather than a generic pool the moment the game
-	# starts, per the "tied to different communal roles that feel
-	# realistic" design goal.
-	#
-	# Only one can actually hold a position on day one: the Shtadlan,
-	# because it is the only office that isn't building-gated (see
-	# common/court_positions/types/kehillah_officers.txt). The other two
-	# are deliberately NOT appointed to anything yet -- Worms starts
-	# with only a Synagogue (kehillah_setup_worms_start_effect above),
-	# so neither the Beit Midrash nor the Countinghouse their skills
-	# point toward exists. This is the same "growth is the player's
-	# job" principle the floor-heir comment below already documents,
-	# not an oversight: build the Beit Midrash and the community's own
-	# future Chief Rabbi is already standing there waiting.
+	# Generate one household only for each seat left vacant by history.
 
 	# The scholar: the community's starting Dayyan (seated below). Since
 	# 2026-10-11 the Dayyan seat requires kehillah_rabbi_trait, so he is
 	# made a rabbi here -- behind the same rabbinic-authority gate every
 	# other grant of the trait uses. A live boot without this left all 15
 	# communities with an empty seat and no eligible candidate.
+	if = {
+		limit = { NOT = { exists = cp:councillor_court_chaplain } }
 	create_character = {
 		dynasty = generate
 		age = { 30 55 }
@@ -1681,9 +1594,12 @@ kehillah_seed_community_effect = {
 		house = { set_variable = { name = kehillah_household_trade value = flag:scholar } }
 	}
 	kehillah_household_add_family_effect = { HEAD = scope:kehillah_seeded_scholar LEADER = scope:kehillah_leader }
+	}
 
 	# The merchant. Reads as a plausible future Treasurer once the
 	# community has a Countinghouse to keep its books in.
+	if = {
+		limit = { NOT = { exists = cp:councillor_steward } }
 	create_character = {
 		dynasty = generate
 		age = { 30 55 }
@@ -1706,10 +1622,13 @@ kehillah_seed_community_effect = {
 		house = { set_variable = { name = kehillah_household_trade value = flag:merchant } }
 	}
 	kehillah_household_add_family_effect = { HEAD = scope:kehillah_seeded_merchant LEADER = scope:kehillah_leader }
+	}
 
 	# The advocate. Appointed Shtadlan immediately below -- the one
 	# office this community can fill from day one, being a person and
 	# a function rather than a building (spec section 3c).
+	if = {
+		limit = { NOT = { exists = cp:councillor_chancellor } }
 	create_character = {
 		dynasty = generate
 		age = { 30 55 }
@@ -1732,6 +1651,7 @@ kehillah_seed_community_effect = {
 		house = { set_variable = { name = kehillah_household_trade value = flag:advocate } }
 	}
 	kehillah_household_add_family_effect = { HEAD = scope:kehillah_seeded_advocate LEADER = scope:kehillah_leader }
+	}
 
 	# CORRECTED 2026-09-07. This was assign_court_position_type, which is
 	# not an effect the game has -- error.log carried "Unknown effect:
@@ -1746,16 +1666,13 @@ kehillah_seed_community_effect = {
 	# common/scripted_effects/00_court_position_effects.txt and
 	# common/character_interactions/00_vassal_interactions.txt:3929.
 	#
-	# v26 (2026-10-01): the Shtadlan is now a council seat (chancellor,
-	# renamed for Kehillot), and the Kehillah has a council. The three
-	# seeded notables take the matching seats -- advocate -> Shtadlan,
-	# merchant -> Gabbai (steward), scholar -> Dayyan (court chaplain) --
-	# which also puts them in the succession pool (holder_councilor) from
-	# day one. remove_existing_councillor = no: never displace a seat the
-	# leader has already filled.
+	# The remaining generated notables take matching seats: advocate ->
+	# Shtadlan, merchant -> Gabbai, scholar -> Dayyan. Historical nominees
+	# are already seated above. Every filled seat contributes to the
+	# holder_councilor succession pool. Never displace a prior appointment.
 	scope:kehillah_leader = {
 		if = {
-			limit = { NOT = { exists = cp:councillor_chancellor } }
+			limit = { NOT = { exists = cp:councillor_chancellor } exists = scope:kehillah_seeded_advocate }
 			assign_councillor_type = {
 				type = councillor_chancellor
 				target = scope:kehillah_seeded_advocate
@@ -1763,7 +1680,7 @@ kehillah_seed_community_effect = {
 			}
 		}
 		if = {
-			limit = { NOT = { exists = cp:councillor_steward } }
+			limit = { NOT = { exists = cp:councillor_steward } exists = scope:kehillah_seeded_merchant }
 			assign_councillor_type = {
 				type = councillor_steward
 				target = scope:kehillah_seeded_merchant
@@ -1771,7 +1688,7 @@ kehillah_seed_community_effect = {
 			}
 		}
 		if = {
-			limit = { NOT = { exists = cp:councillor_court_chaplain } }
+			limit = { NOT = { exists = cp:councillor_court_chaplain } exists = scope:kehillah_seeded_scholar }
 			assign_councillor_type = {
 				type = councillor_court_chaplain
 				target = scope:kehillah_seeded_scholar
