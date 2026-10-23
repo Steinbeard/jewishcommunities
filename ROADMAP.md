@@ -19,7 +19,7 @@ subject to revision after each phase.
 
 ### Historical family roster research spike — 2026-10-22, Daniel's request
 
-**Status: research and tracker prepared; no game content changed.** The [dated spike](docs/research/2026-10-22-historical-character-roster-spike.md) and [CSV tracker](docs/data/historical-character-tracker.csv) queue attested and artistic-license additions for Ashkenaz, Sepharad, Kairouan/Mahdia/Sousse, and 867 Bodo. They record a confirmed source of implausibly older generated children in the start seeding effect and the fact that Sousse is a barony inside Mahdia's host county. The follow-up order is in the spike; gameplay accuracy caveats stay beside each proposed character. This user-directed research unit does not mark V50's pending live checks as passed.
+**Status: research and tracker prepared; no game content changed.** The [dated spike](docs/research/2026-10-22-historical-character-roster-spike.md) and [CSV tracker](docs/data/historical-character-tracker.csv) queue attested and artistically invented additions for Ashkenaz, Sepharad, Kairouan/Mahdia, and 867 Bodo. Daniel's 2026-10-23 refinement sets Rashi in 1066 as a young widower with three daughters, gives undocumented relatives plausible names without in-game caveat labels, and keeps Sousse within the existing Mahdia community. The tracker records which details are invented. It also identifies the source of implausibly older generated children in the start seeding effect. This user-directed research unit does not mark V50's pending live checks as passed.
 
 ### Pogrom warning and neighbouring news — 2026-10-21, Daniel's playthrough review
 
