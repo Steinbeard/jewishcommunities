@@ -626,3 +626,94 @@ kehillah_paint_communities_map_effect = {
 		}
 	}
 }
+
+# Map mode: current rite of each registered Kehillah. Scope is the
+# community title; its holder's rite is the live source of truth. The
+# fallback color catches other Jewish rites, including future additions.
+kehillah_pick_community_rite_map_color_effect = {
+	title:d_kehillah_mapcolor_rite_other = { save_scope_as = kehillah_rite_map_color }
+	holder = {
+		if = {
+			limit = { rite = rite:rabbinism }
+			title:d_kehillah_mapcolor_rite_rabbinism = { save_scope_as = kehillah_rite_map_color }
+		}
+		else_if = {
+			limit = { rite = rite:minhag_ashkenaz }
+			title:d_kehillah_mapcolor_rite_ashkenaz = { save_scope_as = kehillah_rite_map_color }
+		}
+		else_if = {
+			limit = { rite = rite:karaism }
+			title:d_kehillah_mapcolor_rite_karaism = { save_scope_as = kehillah_rite_map_color }
+		}
+		else_if = {
+			limit = { rite = rite:samaritan }
+			title:d_kehillah_mapcolor_rite_samaritan = { save_scope_as = kehillah_rite_map_color }
+		}
+		else_if = {
+			limit = { rite = rite:kabarism }
+			title:d_kehillah_mapcolor_rite_kabarism = { save_scope_as = kehillah_rite_map_color }
+		}
+	}
+}
+
+kehillah_paint_community_rites_map_effect = {
+	every_county = {
+		every_county_province = {
+			remove_variable = kehillah_map_community
+			barony ?= {
+				set_color_from_title = title:d_kehillah_mapcolor_rite_base
+			}
+		}
+	}
+
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = { exists = holder }
+		kehillah_cache_map_view_facts_effect = yes
+		if = {
+			limit = { exists = var:kehillah_ui_host_barony }
+			kehillah_pick_community_rite_map_color_effect = yes
+			var:kehillah_ui_host_barony = {
+				barony ?= {
+					set_color_from_title = scope:kehillah_rite_map_color
+				}
+			}
+		}
+	}
+}
+
+# Map mode: policy is stored on the top liege's primary title. Missing
+# values intentionally follow the policy trigger's default of Allowed.
+kehillah_pick_realm_policy_map_color_effect = {
+	title:d_kehillah_mapcolor_policy_allowed = { save_scope_as = kehillah_policy_map_color }
+	if = {
+		limit = { kehillah_jewish_settlement_policy_banned_trigger = yes }
+		title:d_kehillah_mapcolor_policy_banned = { save_scope_as = kehillah_policy_map_color }
+	}
+	else_if = {
+		limit = { kehillah_jewish_settlement_policy_discouraged_trigger = yes }
+		title:d_kehillah_mapcolor_policy_discouraged = { save_scope_as = kehillah_policy_map_color }
+	}
+	else_if = {
+		limit = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+		title:d_kehillah_mapcolor_policy_encouraged = { save_scope_as = kehillah_policy_map_color }
+	}
+}
+
+kehillah_paint_realm_jewish_policy_map_effect = {
+	every_county = {
+		title:d_kehillah_mapcolor_policy_base = { save_scope_as = kehillah_policy_map_color }
+		if = {
+			limit = { exists = holder.top_liege.primary_title }
+			holder.top_liege.primary_title = {
+				kehillah_pick_realm_policy_map_color_effect = yes
+			}
+		}
+		every_county_province = {
+			remove_variable = kehillah_map_community
+			barony ?= {
+				set_color_from_title = scope:kehillah_policy_map_color
+			}
+		}
+	}
+}
