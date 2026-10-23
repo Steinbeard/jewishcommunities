@@ -17,6 +17,10 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Historical family roster research spike — 2026-10-22, Daniel's request
+
+**Status: research and tracker prepared; no game content changed.** The [dated spike](docs/research/2026-10-22-historical-character-roster-spike.md) and [CSV tracker](docs/data/historical-character-tracker.csv) queue attested and artistic-license additions for Ashkenaz, Sepharad, Kairouan/Mahdia/Sousse, and 867 Bodo. They record a confirmed source of implausibly older generated children in the start seeding effect and the fact that Sousse is a barony inside Mahdia's host county. The follow-up order is in the spike; gameplay accuracy caveats stay beside each proposed character. This user-directed research unit does not mark V50's pending live checks as passed.
+
 ### Pogrom warning and neighbouring news — 2026-10-21, Daniel's playthrough review
 
 Built on a feature branch, **partly live-tested**: the [dated addendum](docs/spec/2026-10-21-pogrom-warning-and-news.md) records a 90–180 day warning, use of the elders' hub before local accusation mobs form, minimum post-declaration mustering, attack and outcome news, a dissolution notice, and hostile-rite reuse within the attacker’s faith (superseding fixed mob rites). This user-directed review takes priority over the standing TODO order. Source and xTiger checks found no changed-file findings. An [isolated boot](docs/testing/2026-10-21-pogrom-warning-live-test.md) loaded the mob events, and a subsequent scripted live check verified hostile-rite creation, same-faith reuse, and Shia isolation. Warning timing, rite UI display, siege timing, and notification rendering still require live verification.
