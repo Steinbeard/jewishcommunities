@@ -17,6 +17,14 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Community rite and realm Jewish-policy map modes — 2026-10-23, Daniel's request
+
+Two additional views are built beside the existing community map: **Community Rites** colours each
+Kehillah's occupied barony by its leader's current rite, and **Jewish Settlement Policy** colours
+each realm by its top liege's current policy. Source review, `git diff --check` and xTiger completed
+without new errors in the changed files. The live UI check is pending: a separate CK3 process was
+already running, so it was left untouched. See the [map-mode design note](docs/spec/2026-10-23-community-rite-and-realm-policy-maps.md).
+
 ### Pogrom warning and neighbouring news — 2026-10-21, Daniel's playthrough review
 
 Built on a feature branch, **partly live-tested**: the [dated addendum](docs/spec/2026-10-21-pogrom-warning-and-news.md) records a 90–180 day warning, use of the elders' hub before local accusation mobs form, minimum post-declaration mustering, attack and outcome news, a dissolution notice, and hostile-rite reuse within the attacker’s faith (superseding fixed mob rites). This user-directed review takes priority over the standing TODO order. Source and xTiger checks found no changed-file findings. An [isolated boot](docs/testing/2026-10-21-pogrom-warning-live-test.md) loaded the mob events, and a subsequent scripted live check verified hostile-rite creation, same-faith reuse, and Shia isolation. Warning timing, rite UI display, siege timing, and notification rendering still require live verification.
