@@ -19,7 +19,7 @@ subject to revision after each phase.
 
 ### V50 Community founding and place memory — 2026-10-23, Daniel's request
 
-[V50](docs/spec/v50-community-founding-and-place-memory.md) records the source and architecture audit. A founding year already exists, but founder/origin and loss/refounding chronology do not. Implement a county-owned record, shared event hooks, portable linked localization, and Domain placement in verified units. A vacant-place entry point and full chronological list require a GUI/save-load spike. This user-directed research unit was taken ahead of the older live-test queue below; it does not close or reorder it. **No V50 script or UI has been built yet.**
+[V50](docs/spec/v50-community-founding-and-place-memory.md) records the source and architecture audit. The [first implementation slice](docs/implementation/2026-10-23-community-history-first-slice.md) now has a county-owned original year, last loss/refounding, optional founder/origin, and portable Domain/map summary. Source and xTiger checks pass against the existing baseline. The 1066 Domain year and 867 Kairouan date gate passed live checks; the age suffix and dynamic founding cycle still await Daniel-approved live tests. An unlimited chronological list, save migration, and historically sourced named-founder authoring remain future units. This user-directed work was taken ahead of the older live-test queue below; it does not close or reorder it.
 
 ### Pogrom warning and neighbouring news — 2026-10-21, Daniel's playthrough review
 
