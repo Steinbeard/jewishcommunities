@@ -17,6 +17,13 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Ben David dynasty presentation — 2026-10-22, Daniel's historical-family request
+
+**Implemented; source and xTiger checked; live UI verification pending.** The
+Baghdad exilarch's dynasty now displays as Ben David, with symbolic lion arms
+and a Genesis 49:10 motto. The arms are an artistic gameplay choice rather
+than attested eleventh-century heraldry. See the [dated implementation note](docs/implementation/2026-10-22-ben-david-dynasty-presentation.md).
+
 ### Pogrom warning and neighbouring news — 2026-10-21, Daniel's playthrough review
 
 Built on a feature branch, **partly live-tested**: the [dated addendum](docs/spec/2026-10-21-pogrom-warning-and-news.md) records a 90–180 day warning, use of the elders' hub before local accusation mobs form, minimum post-declaration mustering, attack and outcome news, a dissolution notice, and hostile-rite reuse within the attacker’s faith (superseding fixed mob rites). This user-directed review takes priority over the standing TODO order. Source and xTiger checks found no changed-file findings. An [isolated boot](docs/testing/2026-10-21-pogrom-warning-live-test.md) loaded the mob events, and a subsequent scripted live check verified hostile-rite creation, same-faith reuse, and Shia isolation. Warning timing, rite UI display, siege timing, and notification rendering still require live verification.
