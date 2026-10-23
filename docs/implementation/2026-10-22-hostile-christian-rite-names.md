@@ -1,4 +1,4 @@
-**Status:** implemented 2026-10-22; source and xTiger checked, live display pending. This adds to [V39](../spec/v39-pogroms-and-the-popular-crusade.md)'s preacher rite and [V34](../spec/v34-outlook-teachings-and-founding.md)'s popular rising. It does not change [V31](../spec/v31-host-teachings-stances-and-factions.md)'s distinction between a rite's teaching and the violence of a particular mob.
+**Status:** implemented 2026-10-22; source and xTiger checked, isolated boot passed, live display pending. This adds to [V39](../spec/v39-pogroms-and-the-popular-crusade.md)'s preacher rite and [V34](../spec/v34-outlook-teachings-and-founding.md)'s popular rising. It does not change [V31](../spec/v31-host-teachings-stances-and-factions.md)'s distinction between a rite's teaching and the violence of a particular mob.
 
 # Names for newly founded exclusionary Christian rites
 
@@ -15,4 +15,4 @@ Each label is used once per game. When the local choices are exhausted, CK3's ge
 
 Sisebut is a defensible southern label: he ordered forced baptisms in the Visigothic kingdom in the seventh century. An English candidate was considered but not added. Thomas of Monmouth propagated the Norwich ritual murder accusation after 1144; V31 §3 classifies that accusation as an incident and mob pressure, not a rite doctrine. He belongs in an event, not this teaching's name pool.
 
-The console-only `kehillah_hostile_rite_name_debug.1` event creates a preacher at a Kehillah town and exercises the same reuse-or-found path. It is intended for a fresh isolated save and a display check of the rite's name and description. No new live run was performed for this naming slice.
+The console-only `kehillah_hostile_rite_name_debug.1` event creates a preacher at a Kehillah town and exercises the same reuse-or-found path. It is intended for a fresh isolated save and a display check of the rite's name and description. The [isolated live attempt](../testing/2026-10-22-hostile-christian-rite-name-check.md) reached CK3's main menu, but could not enter a campaign through the documented input fallback, so rite behavior and display remain pending.

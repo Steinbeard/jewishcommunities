@@ -24,7 +24,9 @@ Agobardism, Amulonianism, Sisebutianism and Chrysostomianism according to the
 founder's region. An existing suitable rite in the same faith remains the first
 choice. Each historical label is used once per game. The decision and the
 English-candidate limit are recorded in [the implementation note](docs/implementation/2026-10-22-hostile-christian-rite-names.md).
-Source and xTiger checks found no new changed-file errors; live display is pending.
+Source and xTiger checks found no new changed-file errors. An [isolated boot](docs/testing/2026-10-22-hostile-christian-rite-name-check.md)
+reached the main menu, but the input fallback could not enter a campaign; rite
+behavior and display remain pending.
 This Daniel-directed naming unit does not close the older items below.
 
 ### Pogrom warning and neighbouring news — 2026-10-21, Daniel's playthrough review
