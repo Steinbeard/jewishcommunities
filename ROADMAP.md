@@ -44,6 +44,17 @@ than attested eleventh-century heraldry. See the [dated implementation note](doc
 
 [V50](docs/spec/v50-community-founding-and-place-memory.md) records the source and architecture audit. The [first implementation slice](docs/implementation/2026-10-23-community-history-first-slice.md) now has a county-owned original year, last loss/refounding, optional founder/origin, and portable Domain/map summary. Source and xTiger checks pass against the existing baseline. The 1066 Domain year and 867 Kairouan date gate passed live checks; the age suffix and dynamic founding cycle still await Daniel-approved live tests. An unlimited chronological list, save migration, and historically sourced named-founder authoring remain future units. This user-directed work was taken ahead of the older live-test queue below; it does not close or reorder it.
 
+### Custom-map domicile pins — 2026-10-23 research
+
+Daniel requested another pin investigation. Previous GUI visibility and province-icon
+experiments did not show pins in the custom map, although Kehillah pins work in vanilla
+Landless Rulers. A new isolated prototype recoloured native `landless_rulers` with the
+community definition; xTiger found no new fatal/errors. Its Luna rendering check was
+blocked by another test using the only active display. The prototype was removed;
+[the research note](docs/spec/2026-10-23-custom-map-domicile-pin-research.md) records
+reproduction steps and the global vanilla-mode replacement tradeoff. No pin fix is
+claimed. This user-requested research ran ahead of the existing queue.
+
 ### Pogrom warning and neighbouring news — 2026-10-21, Daniel's playthrough review
 
 Built on a feature branch, **partly live-tested**: the [dated addendum](docs/spec/2026-10-21-pogrom-warning-and-news.md) records a 90–180 day warning, use of the elders' hub before local accusation mobs form, minimum post-declaration mustering, attack and outcome news, a dissolution notice, and hostile-rite reuse within the attacker’s faith (superseding fixed mob rites). This user-directed review takes priority over the standing TODO order. Source and xTiger checks found no changed-file findings. An [isolated boot](docs/testing/2026-10-21-pogrom-warning-live-test.md) loaded the mob events, and a subsequent scripted live check verified hostile-rite creation, same-faith reuse, and Shia isolation. Warning timing, rite UI display, siege timing, and notification rendering still require live verification.
