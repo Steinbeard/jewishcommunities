@@ -17,6 +17,10 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### V50 Community founding and place memory — 2026-10-23, Daniel's request
+
+[V50](docs/spec/v50-community-founding-and-place-memory.md) records the source and architecture audit. A founding year already exists, but founder/origin and loss/refounding chronology do not. Implement a county-owned record, shared event hooks, portable linked localization, and Domain placement in verified units. A vacant-place entry point and full chronological list require a GUI/save-load spike. This user-directed research unit was taken ahead of the older live-test queue below; it does not close or reorder it. **No V50 script or UI has been built yet.**
+
 ### Pogrom warning and neighbouring news — 2026-10-21, Daniel's playthrough review
 
 Built on a feature branch, **partly live-tested**: the [dated addendum](docs/spec/2026-10-21-pogrom-warning-and-news.md) records a 90–180 day warning, use of the elders' hub before local accusation mobs form, minimum post-declaration mustering, attack and outcome news, a dissolution notice, and hostile-rite reuse within the attacker’s faith (superseding fixed mob rites). This user-directed review takes priority over the standing TODO order. Source and xTiger checks found no changed-file findings. An [isolated boot](docs/testing/2026-10-21-pogrom-warning-live-test.md) loaded the mob events, and a subsequent scripted live check verified hostile-rite creation, same-faith reuse, and Shia isolation. Warning timing, rite UI display, siege timing, and notification rendering still require live verification.
