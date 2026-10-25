@@ -84,8 +84,9 @@ it's the one deliberately kept current.
   too; wait for them to merge before starting another unit. After each merge, fetch the latest
   `origin/master` and create the next feature branch from it. Do not stack PRs. Never commit
   directly to `master`. This policy change is a one-time bootstrap exception: PRs already open
-  when it is prepared may finish under the prior workflow. After this policy merges, keep only
-  one PR open at a time. Scheduled overnight runs retain their separately documented
+  when it is prepared may finish under the prior workflow. Do not start new work while that
+  existing PR queue drains. After this policy merges, keep only one PR open at a time. Scheduled
+  overnight runs retain their separately documented
   `overnight/<date>` wrapper behavior.
 
 ## Implementation approach
