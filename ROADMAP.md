@@ -17,6 +17,13 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Ben David dynasty presentation — 2026-10-22, Daniel's historical-family request
+
+**Implemented; source and xTiger checked; live UI verification pending.** The
+Baghdad exilarch's dynasty now displays as Ben David, with symbolic lion arms
+and a Genesis 49:10 motto. The arms are an artistic gameplay choice rather
+than attested eleventh-century heraldry. See the [dated implementation note](docs/implementation/2026-10-22-ben-david-dynasty-presentation.md).
+
 ### Historical family roster research spike — 2026-10-22, Daniel's request
 
 **Status: research and tracker prepared; no game content changed.** The [dated spike](docs/research/2026-10-22-historical-character-roster-spike.md) and [CSV tracker](docs/data/historical-character-tracker.csv) queue attested and artistically invented additions for Ashkenaz, Sepharad, Kairouan/Mahdia, and 867 Bodo. Daniel's 2026-10-23 refinement sets Rashi in 1066 as a young widower with three daughters, gives undocumented relatives plausible names without in-game caveat labels, and keeps Sousse within the existing Mahdia community. The tracker now holds 89 research rows across Europe, North Africa, Byzantium, Egypt, Bavel, Persia, Yemen, and the Silk Road, with deep cuts and 1066-presence confidence marked. It records which details are invented and explains the unfilled exilarch and gaon offices at Baghdad. It also identifies the source of implausibly older generated children in the start seeding effect. This user-directed research unit does not mark V50's pending live checks as passed.
