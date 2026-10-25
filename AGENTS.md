@@ -73,20 +73,21 @@ it's the one deliberately kept current.
   dated, cross-referenced to the docs it supersedes or depends on. Don't silently edit an old
   spec to match a new decision — add a new doc or a dated addendum and say explicitly what it
   supersedes, the way `v2` and `v3` do to `v1`.
-- **Feature branches and pull requests — Daniel's 2026-10-18 and 2026-10-25 directions.** Start
-  every coherent unit of implementation or research on a fresh feature branch from the latest
-  `origin/master` (this repository has no `origin/main`). A research result recorded in the docs
-  counts as its own unit. Keep unrelated units out of the same branch. At the natural stop point,
-  update `ROADMAP.md` in the same PR, verify the work, commit it, push the branch, and create a
-  GitHub pull request against `master`; do not merely leave a compare link when an interactive
-  authenticated route can create the PR. Keep PR work sequential: do not start the next unit or
-  open another PR until the current PR has merged. Check for open PRs from other coding sessions
-  too; wait for them to merge before starting another unit. After each merge, fetch the latest
-  `origin/master` and create the next feature branch from it. Do not stack PRs. Never commit
-  directly to `master`. This policy change is a one-time bootstrap exception: PRs already open
-  when it is prepared may finish under the prior workflow. Do not start new work while that
-  existing PR queue drains. After this policy merges, keep only one PR open at a time. Scheduled
-  overnight runs retain their separately documented
+- **Feature branches and pull requests — Daniel's 2026-10-18 direction, clarified 2026-10-25.**
+  Start every new, independent unit of implementation or research on a fresh feature branch from
+  the latest `origin/master` (this repository has no `origin/main`). A research result recorded
+  in the docs counts as its own unit. Keep unrelated units out of the same branch. At the natural
+  stop point, update `ROADMAP.md` in the same PR, verify the work, commit it, push the branch, and
+  create a GitHub pull request against `master`; do not merely leave a compare link when an
+  interactive authenticated route can create the PR. Do not wait for an open PR to merge before
+  continuing related or dependent work: continue on its branch and update that same PR. If the
+  scope has changed enough that the old PR should be replaced, prepare the replacement with the
+  combined intended changes, then close the superseded PR so there is one clear review target.
+  Independent work may proceed on its own branch and PR while another is open. When concurrent
+  PRs touch the same `ROADMAP.md` area, rebase onto the latest `origin/master` as needed and
+  reconcile both updates in the conflict resolution; never discard an already-merged entry.
+  After each merge, fetch the latest `origin/master` before starting a new independent unit. Never
+  commit directly to `master`. Scheduled overnight runs retain their separately documented
   `overnight/<date>` wrapper behavior.
 
 ## Implementation approach
