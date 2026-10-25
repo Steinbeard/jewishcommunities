@@ -25,6 +25,33 @@ each realm by its top liege's current policy. Source review, `git diff --check` 
 without new errors in the changed files. The live UI check is pending: a separate CK3 process was
 already running, so it was left untouched. See the [map-mode design note](docs/spec/2026-10-23-community-rite-and-realm-policy-maps.md).
 
+### Ben David dynasty presentation — 2026-10-22, Daniel's historical-family request
+
+**Implemented; source and xTiger checked; live UI verification pending.** The
+Baghdad exilarch's dynasty now displays as Ben David, with symbolic lion arms
+and a Genesis 49:10 motto. The arms are an artistic gameplay choice rather
+than attested eleventh-century heraldry. See the [dated implementation note](docs/implementation/2026-10-22-ben-david-dynasty-presentation.md).
+
+### Historical family roster research spike — 2026-10-22, Daniel's request
+
+**Status: research and tracker prepared; no game content changed.** The [dated spike](docs/research/2026-10-22-historical-character-roster-spike.md) and [CSV tracker](docs/data/historical-character-tracker.csv) queue attested and artistically invented additions for Ashkenaz, Sepharad, Kairouan/Mahdia, and 867 Bodo. Daniel's 2026-10-23 refinement sets Rashi in 1066 as a young widower with three daughters, gives undocumented relatives plausible names without in-game caveat labels, and keeps Sousse within the existing Mahdia community. The tracker now holds 89 research rows across Europe, North Africa, Byzantium, Egypt, Bavel, Persia, Yemen, and the Silk Road, with deep cuts and 1066-presence confidence marked. It records which details are invented and explains the unfilled exilarch and gaon offices at Baghdad. It also identifies the source of implausibly older generated children in the start seeding effect. This user-directed research unit does not mark V50's pending live checks as passed.
+
+### Hostile Christian rite names — 2026-10-22, Daniel's request
+
+New Exclusion rites founded by mob preachers or popular rising leaders draw from
+Agobardism, Amulonianism, Sisebutianism and Chrysostomianism according to the
+founder's region. An existing suitable rite in the same faith remains the first
+choice. Each historical label is used once per game. The decision and the
+English-candidate limit are recorded in [the implementation note](docs/implementation/2026-10-22-hostile-christian-rite-names.md).
+Source and xTiger checks found no new changed-file errors. An [isolated boot](docs/testing/2026-10-22-hostile-christian-rite-name-check.md)
+reached the main menu, but the input fallback could not enter a campaign; rite
+behavior and display remain pending.
+This Daniel-directed naming unit does not close the older items below.
+
+### V50 Community founding and place memory — 2026-10-23, Daniel's request
+
+[V50](docs/spec/v50-community-founding-and-place-memory.md) records the source and architecture audit. The [first implementation slice](docs/implementation/2026-10-23-community-history-first-slice.md) now has a county-owned original year, last loss/refounding, optional founder/origin, and portable Domain/map summary. Source and xTiger checks pass against the existing baseline. The 1066 Domain year and 867 Kairouan date gate passed live checks; the age suffix and dynamic founding cycle still await Daniel-approved live tests. An unlimited chronological list, save migration, and historically sourced named-founder authoring remain future units. This user-directed work was taken ahead of the older live-test queue below; it does not close or reorder it.
+
 ### Pogrom warning and neighbouring news — 2026-10-21, Daniel's playthrough review
 
 Built on a feature branch, **partly live-tested**: the [dated addendum](docs/spec/2026-10-21-pogrom-warning-and-news.md) records a 90–180 day warning, use of the elders' hub before local accusation mobs form, minimum post-declaration mustering, attack and outcome news, a dissolution notice, and hostile-rite reuse within the attacker’s faith (superseding fixed mob rites). This user-directed review takes priority over the standing TODO order. Source and xTiger checks found no changed-file findings. An [isolated boot](docs/testing/2026-10-21-pogrom-warning-live-test.md) loaded the mob events, and a subsequent scripted live check verified hostile-rite creation, same-faith reuse, and Shia isolation. Warning timing, rite UI display, siege timing, and notification rendering still require live verification.
