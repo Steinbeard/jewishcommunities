@@ -17,6 +17,14 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Community rite and realm Jewish-policy map modes — 2026-10-23, Daniel's request
+
+Two additional views are built beside the existing community map: **Community Rites** colours each
+Kehillah's occupied barony by its leader's current rite, and **Jewish Settlement Policy** colours
+each realm by its top liege's current policy. Source review, `git diff --check` and xTiger completed
+without new errors in the changed files. The live UI check is pending: a separate CK3 process was
+already running, so it was left untouched. See the [map-mode design note](docs/spec/2026-10-23-community-rite-and-realm-policy-maps.md).
+
 ### Ben David dynasty presentation — 2026-10-22, Daniel's historical-family request
 
 **Implemented; source and xTiger checked; live UI verification pending.** The
