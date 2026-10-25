@@ -17,6 +17,18 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Hostile Christian rite names — 2026-10-22, Daniel's request
+
+New Exclusion rites founded by mob preachers or popular rising leaders draw from
+Agobardism, Amulonianism, Sisebutianism and Chrysostomianism according to the
+founder's region. An existing suitable rite in the same faith remains the first
+choice. Each historical label is used once per game. The decision and the
+English-candidate limit are recorded in [the implementation note](docs/implementation/2026-10-22-hostile-christian-rite-names.md).
+Source and xTiger checks found no new changed-file errors. An [isolated boot](docs/testing/2026-10-22-hostile-christian-rite-name-check.md)
+reached the main menu, but the input fallback could not enter a campaign; rite
+behavior and display remain pending.
+This Daniel-directed naming unit does not close the older items below.
+
 ### Pogrom warning and neighbouring news — 2026-10-21, Daniel's playthrough review
 
 Built on a feature branch, **partly live-tested**: the [dated addendum](docs/spec/2026-10-21-pogrom-warning-and-news.md) records a 90–180 day warning, use of the elders' hub before local accusation mobs form, minimum post-declaration mustering, attack and outcome news, a dissolution notice, and hostile-rite reuse within the attacker’s faith (superseding fixed mob rites). This user-directed review takes priority over the standing TODO order. Source and xTiger checks found no changed-file findings. An [isolated boot](docs/testing/2026-10-21-pogrom-warning-live-test.md) loaded the mob events, and a subsequent scripted live check verified hostile-rite creation, same-faith reuse, and Shia isolation. Warning timing, rite UI display, siege timing, and notification rendering still require live verification.
