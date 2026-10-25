@@ -73,16 +73,20 @@ it's the one deliberately kept current.
   dated, cross-referenced to the docs it supersedes or depends on. Don't silently edit an old
   spec to match a new decision — add a new doc or a dated addendum and say explicitly what it
   supersedes, the way `v2` and `v3` do to `v1`.
-- **Feature branches and pull requests — Daniel's 2026-10-18 direction.** Start every coherent
-  unit of implementation or research on a fresh feature branch from the latest `origin/master`
-  (this repository has no `origin/main`). A research result recorded in the docs counts as its
-  own unit. Keep unrelated units out of the same branch. At the natural stop point, verify the
-  work, commit it, push the branch, and create a GitHub pull request against `master`; do not
-  merely leave a compare link when an interactive authenticated route can create the PR. After
-  opening the PR, start the next unit from a newly fetched `origin/master`, not from the previous
-  feature branch. If a unit truly depends on an unmerged PR, either wait for that PR to merge or
-  make the dependency and stacked base explicit in the new PR. Never commit directly to `master`.
-  Scheduled overnight runs retain their separately documented `overnight/<date>` wrapper behavior.
+- **Feature branches and pull requests — Daniel's 2026-10-18 and 2026-10-25 directions.** Start
+  every coherent unit of implementation or research on a fresh feature branch from the latest
+  `origin/master` (this repository has no `origin/main`). A research result recorded in the docs
+  counts as its own unit. Keep unrelated units out of the same branch. At the natural stop point,
+  update `ROADMAP.md` in the same PR, verify the work, commit it, push the branch, and create a
+  GitHub pull request against `master`; do not merely leave a compare link when an interactive
+  authenticated route can create the PR. Keep PR work sequential: do not start the next unit or
+  open another PR until the current PR has merged. Check for open PRs from other coding sessions
+  too; wait for them to merge before starting another unit. After each merge, fetch the latest
+  `origin/master` and create the next feature branch from it. Do not stack PRs. Never commit
+  directly to `master`. This policy change is a one-time bootstrap exception: PRs already open
+  when it is prepared may finish under the prior workflow. After this policy merges, keep only
+  one PR open at a time. Scheduled overnight runs retain their separately documented
+  `overnight/<date>` wrapper behavior.
 
 ## Implementation approach
 
