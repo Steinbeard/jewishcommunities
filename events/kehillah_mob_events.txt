@@ -99,7 +99,15 @@ kehillah_mob.0001 = {
 kehillah_mob.0004 = {
 	type = character_event
 	title = kehillah_mob.0004.t
-	desc = kehillah_mob.0004.desc
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_local_preaching } }
+				desc = kehillah_mob.0004.desc_local
+			}
+			desc = kehillah_mob.0004.desc
+		}
+	}
 	theme = dread
 	left_portrait = {
 		character = root
@@ -573,12 +581,8 @@ kehillah_mob.0030 = {
 	type = character_event
 	hidden = yes
 	immediate = {
-		domicile.domicile_location ?= { save_scope_as = kehillah_mob_spawn }
-		kehillah_mob_raise_effect = {
-			SIZE = kehillah_accusation_mob_size
-			SEVERITY = kehillah_accusation_mob_severity
-		}
-		debug_log = "kehillah_mob.0030: an accusation's crowd becomes a mob"
+		kehillah_mob_local_warning_effect = yes
+		debug_log = "kehillah_mob.0030: an accusation begins a period of local agitation"
 	}
 }
 
@@ -895,7 +899,10 @@ scripted_effect kehillah_mob_lord_answer_effect = {
 	}
 	else_if = {
 		limit = { var:kehillah_mob_answer ?= flag:men_yes }
-		hidden_effect = { kehillah_mob_lord_raises_men_effect = { DEFENDER = scope:kehillah_mob_patron } }
+		if = {
+			limit = { NOT = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_preaching } } }
+			hidden_effect = { kehillah_mob_lord_raises_men_effect = { DEFENDER = scope:kehillah_mob_patron } }
+		}
 		primary_title = { set_variable = { name = kehillah_mob_men_by value = scope:kehillah_mob_patron } }
 	}
 	else_if = {
@@ -922,14 +929,32 @@ kehillah_mob.0100 = {
 	type = character_event
 	title = kehillah_mob.0100.t
 	desc = {
-		desc = kehillah_mob.0100.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_preaching } }
+				desc = kehillah_mob.0100.desc_preaching
+			}
+			desc = kehillah_mob.0100.desc
+		}
 		# Secured.
 		triggered_desc = {
 			trigger = { exists = var:kehillah_mob_refuge_lord_ref primary_title = { has_variable = kehillah_mob_refuge } }
 			desc = kehillah_mob.0100.s_refuge
 		}
 		triggered_desc = {
-			trigger = { exists = var:kehillah_mob_men_ref primary_title = { has_variable = kehillah_mob_men_by } }
+			trigger = {
+				exists = var:kehillah_mob_men_ref
+				primary_title = { has_variable = kehillah_mob_men_by }
+				scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_preaching }
+			}
+			desc = kehillah_mob.0100.s_men_pledged
+		}
+		triggered_desc = {
+			trigger = {
+				exists = var:kehillah_mob_men_ref
+				primary_title = { has_variable = kehillah_mob_men_by }
+				NOT = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_preaching } }
+			}
 			desc = kehillah_mob.0100.s_men
 		}
 		triggered_desc = {
@@ -1313,7 +1338,6 @@ kehillah_mob.0105 = {
 	option = {
 		name = kehillah_mob.0105.b
 		trigger = {
-			NOT = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_preaching } }
 			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_patron LIST = kehillah_mob_men_refused_list } }
 		}
 		primary_title = { add_to_variable_list = { name = kehillah_mob_asked_refuge target = scope:kehillah_mob_patron } }
@@ -1408,7 +1432,6 @@ kehillah_mob.0110 = {
 	option = {
 		name = kehillah_mob.0110.c
 		trigger = {
-			NOT = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_preaching } }
 			NOT = { has_variable = kehillah_mob_visit_asked_men }
 			primary_title = { NOT = { has_variable = kehillah_mob_men_by } }
 			NOT = { kehillah_mob_decided_trigger = { WHO = scope:kehillah_mob_patron LIST = kehillah_mob_men_refused_list } }
@@ -1621,6 +1644,13 @@ kehillah_mob.0111 = {
 			triggered_desc = {
 				trigger = {
 					var:kehillah_mob_answer ?= flag:men_yes
+					scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_preaching }
+				}
+				desc = kehillah_mob.0111.men_pledged
+			}
+			triggered_desc = {
+				trigger = {
+					var:kehillah_mob_answer ?= flag:men_yes
 					scope:kehillah_mob_patron = { kehillah_outlook_on_jews_value >= 15 }
 				}
 				desc = kehillah_mob.0111.men_yes_warm
@@ -1742,7 +1772,6 @@ kehillah_mob.0111 = {
 				}
 				AND = {
 					NOT = { has_variable = kehillah_mob_visit_asked_men }
-					NOT = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_preaching } }
 					primary_title = { NOT = { has_variable = kehillah_mob_men_by } }
 				}
 			}

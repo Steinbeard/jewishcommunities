@@ -1,4 +1,6 @@
-# V50 — Bookmark character rosters for 867, 1066 and 1178
+# V51 — Bookmark character rosters for 867, 1066 and 1178
+
+**Renumbered V50 -> V51 on 2026-10-25: master already had a V50 (community founding and place memory). Commits b3a3b9e and 914c6fa say V50.**
 
 **Status: built 2026-10-22; `ck3-tiger` clean on every touched file; NOT live-tested.** Section 0
 records what was built and the choices made while building; sections 1–6 are the original
@@ -37,16 +39,16 @@ interesting enough, Elijah ha-Kohen dropped because Jerusalem would stretch the 
   `kehillah_dynasty_coas.txt`).
 - Cultures use the closest the mod has: sephardi for the Rif and the Raavad, bavlim for Eldad and
   Moshe ben Asher, italki for Shefatiah and Kalonymus.
-- Every birth and death in `history/characters/kehillah_v50_bookmark_characters.txt` is marked
+- Every birth and death in `history/characters/kehillah_v51_bookmark_characters.txt` is marked
   documented, approximate or estimated.
 - Portraits are copies of vanilla bookmark portraits with key, id and age changed (headgear
   removed from western nobles); none is a likeness.
 - `d_kehillah_mahdia_desc` was softened: Mahdia is an older community that took in some of
   Kairouan's refugees, not Kairouan relocated.
 
-**Files.** New: `history/characters/kehillah_v50_bookmark_characters.txt`,
-`history/titles/kehillah_v50_bookmark_titles.txt`,
-`localization/english/kehillah_v50_bookmarks_l_english.yml`, and the art in
+**Files.** New: `history/characters/kehillah_v51_bookmark_characters.txt`,
+`history/titles/kehillah_v51_bookmark_titles.txt`,
+`localization/english/kehillah_v51_bookmarks_l_english.yml`, and the art in
 `gfx/interface/bookmarks/` and `gfx/interface/icons/`. Changed: the bookmark, portrait, dynasty,
 coat of arms, landed title, title history and on_action files, and `scripts/render_bookmark_art.py`
 (now renders all three bookmarks from one table).
@@ -78,14 +80,14 @@ Daniel loaded all three screens; nothing crashed. Problems seen, and what change
 - **The Khagan added to 867** (Daniel): vanilla's Manasseh (74025), holder of
   `e_caspian-pontic_steppe`, Khazar rite (`kabarism`), played with vanilla's tribal government.
   A Track B preview; nothing about him is changed. Arms added for his house (12270), which had none.
-- **Maimonides is vanilla's own `maimonides_1`** (Daniel noticed he exists). V50's duplicate
+- **Maimonides is vanilla's own `maimonides_1`** (Daniel noticed he exists). V51's duplicate
   9001121 and its dynasty were removed; Fustat's 1178 holder is `maimonides_1`. Vanilla gives him
   no DNA, so his portrait is still a copied face. **Rashi is not in vanilla**, so the mod's
   character stays.
 - **Black shields.** No Kehillah title had arms. `kehillah_title_coas.txt` now gives all 42
   community titles a menorah on a varied field (editorial, not historical).
 - **Faces, dress and expressions.** Animations are now calm personality poses, not map_worry,
-  storyteller or writing. Every V50 portrait keeps its copied face but now wears plain dress
+  storyteller or writing. Every V51 portrait keeps its copied face but now wears plain dress
   (Abbasid/Mena commoner or low-court dress in the east, western commoner dress in the west), a
   full beard (the long `orthodox_beards` for elder scholars), and no noble headgear, veil or cloak.
   Still not likenesses. The better fix, when there is time in game, is the vanilla workflow: set
