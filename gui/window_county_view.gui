@@ -1010,28 +1010,27 @@ window = {
 					}
 				}
 
-				# The same small icon is visible in every county. Without a
-				# community it is disabled; its hover explains any place history.
-				button_tab_icon_only = {
-					name = "kehillah_inspector_toggle"
-					datacontext = "[HoldingView.GetCountyTitle]"
-					layoutpolicy_horizontal = fixed
-					size = { 45 45 }
-					margin_left = 5
-					enabled = "[HoldingView.GetProvince.MakeScope.Var( 'kehillah_inspector_community' ).Title.IsValid]"
-					onclick = "[GetVariableSystem.Toggle( 'kehillah_inspector_open' )]"
-					down = "[GetVariableSystem.Exists( 'kehillah_inspector_open' )]"
-					tooltip = "KEHILLAH_INSPECTOR_TOGGLE_TOOLTIP"
-					tooltip_when_disabled = "KEHILLAH_INSPECTOR_DISABLED_TOOLTIP"
-					using = tooltip_ne
-					icon = {
-						parentanchor = center
-						size = { 30 30 }
-						texture = "gfx/interface/icons/faith/judaism.dds"
-						alpha = "[Select_float( HoldingView.GetProvince.MakeScope.Var( 'kehillah_inspector_community' ).Title.IsValid, '(float)1', '(float)0.35' )]"
-						alwaystransparent = yes
-					}
+			# A round community control sits apart from the square holding tabs.
+			button_round = {
+				name = "kehillah_inspector_toggle"
+				datacontext = "[HoldingView.GetCountyTitle]"
+				layoutpolicy_horizontal = fixed
+				size = { 40 40 }
+				margin_left = 14
+				enabled = "[HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_community' ).Title.IsValid]"
+				onclick = "[GetVariableSystem.Toggle( 'kehillah_inspector_open' )]"
+				down = "[GetVariableSystem.Exists( 'kehillah_inspector_open' )]"
+				tooltip = "KEHILLAH_INSPECTOR_TOGGLE_TOOLTIP"
+				tooltip_when_disabled = "KEHILLAH_INSPECTOR_DISABLED_TOOLTIP"
+				using = tooltip_ne
+				icon = {
+					parentanchor = center
+					size = { 25 25 }
+					texture = "gfx/interface/icons/faith/judaism.dds"
+					alpha = "[Select_float( HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_community' ).Title.IsValid, '(float)1', '(float)0.35' )]"
+					alwaystransparent = yes
 				}
+			}
 
 				expand = {}
 			}
@@ -2229,155 +2228,106 @@ window = {
 			}
 		}
 	}
-	# Kehillah map inspector. The map paint caches a community title on its
-	# occupied province; HoldingView supplies the currently selected province.
+	# Kehillah map inspector. The persistent county link supplies the community
+	# for every selected holding; the barony cache still paints the map marker.
 	# A child of this window can read HoldingView, unlike a top-level scripted
 	# widget (the same context boundary found in the domicile library pass).
 	widget = {
 		name = "kehillah_community_inspector"
 		position = { 613 100 }
-		size = { 290 480 }
+		size = { 320 -1 }
 		allow_outside = yes
 		alwaystransparent = no
 		filter_mouse = all
-		visible = "[Or( IsMapMode( 'kehillah_communities_map' ), And( HoldingView.GetProvince.MakeScope.Var( 'kehillah_inspector_community' ).Title.IsValid, GetVariableSystem.Exists( 'kehillah_inspector_open' ) ) )]"
+		visible = "[And( HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_community' ).Title.IsValid, Or( IsMapMode( 'kehillah_communities_map' ), GetVariableSystem.Exists( 'kehillah_inspector_open' ) ) )]"
 		using = Window_Background
 
 		vbox = {
-			datacontext = "[HoldingView.GetProvince.MakeScope.Var( 'kehillah_inspector_community' ).Title]"
-			visible = "[HoldingView.GetProvince.MakeScope.Var( 'kehillah_inspector_community' ).Title.IsValid]"
+			datacontext = "[HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_community' ).Title]"
+			resizeparent = yes
 			layoutpolicy_horizontal = expanding
-			margin = { 13 12 }
-			spacing = 6
+			margin = { 16 12 }
+			spacing = 5
 
-			hbox = {
-				layoutpolicy_horizontal = expanding
-				spacing = 8
-				icon = {
-					size = { 28 28 }
-					texture = "gfx/interface/icons/faith/judaism.dds"
-					alwaystransparent = yes
-				}
-				vbox = {
-					spacing = 1
-					text_single = {
-						text = "KEHILLAH_INSPECTOR_HEADER"
-						default_format = "#weak;bold"
-						using = Font_Size_Small
-					}
-					text_single = {
-						text = "[Title.GetNameNoTooltip]"
-						default_format = "#high;bold"
-						max_width = 215
-						using = Font_Size_Medium
-					}
-				}
+			text_multi = { text = "KEHILLAH_INSPECTOR_ACTIVE_PLACE" autoresize = yes max_width = 280 default_format = "#weak;bold" }
+			button_standard_list = {
+				size = { 280 30 }
+				text = "[Title.GetNameNoTooltip]"
+				onclick = "[OpenGameViewData( 'title_view_window', Title.Self )]"
 			}
-
-			hbox = {
-				layoutpolicy_horizontal = expanding
-				spacing = 8
-				portrait_head_small = {
-					datacontext = "[Title.GetHolder]"
-					size = { 45 45 }
-				}
-				vbox = {
-					spacing = 2
-					text_single = {
-						text = "KEHILLAH_INSPECTOR_LEADER"
-						default_format = "#weak"
-						using = Font_Size_Small
-					}
-					text_single = {
-						text = "[Title.GetHolder.GetShortUINameNoTooltip]"
-						max_width = 195
-						using = Font_Size_Medium
-					}
-				}
+			button_standard_list = {
+				size = { 280 30 }
+				text = "KEHILLAH_INSPECTOR_LEADER_NAME"
+				onclick = "[DefaultOnCharacterClick(Title.GetHolder.GetID)]"
 			}
+			text_single = { text = "KEHILLAH_INSPECTOR_ACTIVE_SINCE" max_width = 280 using = Font_Size_Small }
 
 			divider_light = { layoutpolicy_horizontal = expanding }
-			vbox = {
+
+			text_single = {
+				text = "KEHILLAH_INSPECTOR_STANDING"
+				max_width = 280
 				tooltip = "KEHILLAH_BD_STANDING_TOOLTIP"
 				using = tooltip_se
-				text_single = {
-					text = "KEHILLAH_DOMAIN_STANDING_LABEL"
-					default_format = "#weak;bold"
-					using = Font_Size_Small
-				}
-				text_single = {
-					text = "KEHILLAH_DOMAIN_STANDING_VALUE"
-					default_format = "#high;bold"
-					max_width = 255
-				}
 			}
-			divider_light = { layoutpolicy_horizontal = expanding }
-
-			vbox = {
-				spacing = 2
+			text_single = {
+				text = "KEHILLAH_INSPECTOR_PROSPERITY"
+				max_width = 280
 				tooltip = "KEHILLAH_BD_PROSPERITY_TOOLTIP"
 				using = tooltip_se
-				text_single = { text = "KEHILLAH_INSPECTOR_PROSPERITY" max_width = 255 }
-				text_single = { text = "KEHILLAH_HUD_PROSPERITY_TREND" using = Font_Size_Small }
 			}
-			vbox = {
-				spacing = 2
+			text_single = {
+				text = "KEHILLAH_INSPECTOR_STABILITY"
+				max_width = 280
 				tooltip = "KEHILLAH_BD_STABILITY_TOOLTIP"
 				using = tooltip_se
-				text_single = { text = "KEHILLAH_INSPECTOR_STABILITY" max_width = 255 }
-				text_single = { text = "KEHILLAH_HUD_STABILITY_TREND" using = Font_Size_Small }
 			}
-			vbox = {
-				spacing = 2
+			text_single = {
+				text = "KEHILLAH_INSPECTOR_GREATNESS"
+				max_width = 280
 				tooltip = "KEHILLAH_BD_GREATNESS_TOOLTIP"
 				using = tooltip_se
-				text_single = { text = "KEHILLAH_INSPECTOR_GREATNESS" max_width = 255 }
-				text_single = { text = "KEHILLAH_HUD_GREATNESS_TREND" using = Font_Size_Small }
 			}
 
 			divider_light = { layoutpolicy_horizontal = expanding }
-			text_single = {
-				visible = "[Title.MakeScope.Var( 'kehillah_ui_host_realm' ).Title.IsValid]"
-				text = "KEHILLAH_INSPECTOR_HOST_REALM"
-				max_width = 255
-				using = Font_Size_Small
-			}
+			text_single = { text = "KEHILLAH_INSPECTOR_HOST_REALM" max_width = 280 using = Font_Size_Small }
 			button_standard = {
-				size = { 240 32 }
+				size = { 280 32 }
 				text = "KEHILLAH_INSPECTOR_VISIT_QUARTER"
 				enabled = "[Title.HasDomicile]"
 				onclick = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
 				onclick = "[ToggleGameViewData( 'domicile', Title.GetHolder.GetDomicile )]"
 			}
 		}
+	}
+	widget = {
+		name = "kehillah_vacant_site_inspector"
+		position = { 613 100 }
+		size = { 320 -1 }
+		allow_outside = yes
+		alwaystransparent = no
+		filter_mouse = all
+		visible = "[And( IsMapMode( 'kehillah_communities_map' ), Not( HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_community' ).Title.IsValid ) )]"
+		using = Window_Background
+
 		vbox = {
 			datacontext = "[HoldingView.GetCountyTitle]"
-			visible = "[Not( HoldingView.GetProvince.MakeScope.Var( 'kehillah_inspector_community' ).Title.IsValid )]"
+			resizeparent = yes
 			layoutpolicy_horizontal = expanding
-			margin = { 13 12 }
-			spacing = 4
+			margin = { 16 12 }
+			spacing = 5
 
-			hbox = {
-				spacing = 8
-				icon = {
-					size = { 28 28 }
-					texture = "gfx/interface/icons/faith/judaism.dds"
-					alwaystransparent = yes
-				}
-				vbox = {
-					text_single = { text = "KEHILLAH_INSPECTOR_SITE_HEADER" default_format = "#weak;bold" using = Font_Size_Small }
-					text_single = { text = "[Title.GetNameNoTooltip]" max_width = 210 using = Font_Size_Medium }
-				}
-			}
-			text_multi = { text = "[Title.Custom('KehillahInspectorSiteStatus')]" size = { 260 42 } }
+			text_multi = { text = "[Title.Custom('KehillahInspectorVacancyHeading')]" autoresize = yes max_width = 280 default_format = "#high;bold" }
+			text_multi = { text = "[Title.Custom('KehillahInspectorPastLoss')]" autoresize = yes max_width = 280 }
 			divider_light = { layoutpolicy_horizontal = expanding }
-			text_multi = { text = "KEHILLAH_INSPECTOR_SITE_POLICY" size = { 260 42 } }
-			text_multi = { text = "KEHILLAH_INSPECTOR_SITE_RISK" size = { 260 64 } visible = "[Title.HasHolder]" }
-			text_multi = { text = "KEHILLAH_INSPECTOR_SITE_OPPORTUNITY" size = { 260 42 } }
-			text_multi = { text = "KEHILLAH_INSPECTOR_SITE_ACCESS" size = { 260 42 } }
-			text_multi = { text = "KEHILLAH_INSPECTOR_SITE_CONDITIONS" size = { 260 42 } }
+			text_multi = { text = "[Title.Custom('KehillahInspectorSiteStatus')]" autoresize = yes max_width = 280 }
+			text_multi = { text = "KEHILLAH_INSPECTOR_BLOCKERS" autoresize = yes max_width = 280 }
 			divider_light = { layoutpolicy_horizontal = expanding }
-			text_multi = { text = "KEHILLAH_INSPECTOR_SITE_HISTORY" size = { 260 74 } }
+			text_multi = { text = "KEHILLAH_INSPECTOR_SITE_HOST" autoresize = yes max_width = 280 }
+			text_multi = { text = "KEHILLAH_INSPECTOR_SITE_POLICY" autoresize = yes max_width = 280 }
+			text_multi = { text = "KEHILLAH_INSPECTOR_SITE_NEARBY" autoresize = yes max_width = 280 }
+			text_multi = { text = "KEHILLAH_INSPECTOR_SITE_MARKET" autoresize = yes max_width = 280 }
+			text_multi = { text = "KEHILLAH_INSPECTOR_SITE_OUTLOOK" autoresize = yes max_width = 280 }
 		}
 	}
 }
