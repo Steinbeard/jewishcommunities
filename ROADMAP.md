@@ -17,6 +17,10 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Community inspector on the Jewish Communities map — 2026-10-25, Daniel's request
+
+The holding/county view now has a Kehillah inspector when a community barony is selected in the Jewish Communities map mode. A persistent host-province link feeds a compact menorah tab alongside the holding tabs in every map mode; the tab is disabled on holdings without a community and its hover shows any recorded place history. The Jewish map mode also opens a vacant-site panel with policy, ruler outlook, economic opportunity, founding conditions, and history. Source and xTiger checks pass. Daniel confirmed active-community data and map-mode visibility live; the compact tab and vacant-site layout still need a fresh-game check. See [the implementation note](docs/implementation/2026-10-25-community-map-inspector.md). This direct user request was taken ahead of the older live-test TODOs below.
+
 ### V51 Bookmark rosters for 867, 1066 and 1178 — 2026-10-21, Daniel's request
 
 **Built 2026-10-22; `ck3-tiger` clean; NOT live-tested.** Three Kehillah bookmarks:
