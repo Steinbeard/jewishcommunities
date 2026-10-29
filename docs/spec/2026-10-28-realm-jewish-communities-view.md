@@ -371,3 +371,19 @@ Daniel: "too tall". Centred vertically, the window's top went off-screen.
   `window_character.gui` does).
 - Labels meant to sit left now have `layoutpolicy_horizontal = expanding`. A bare
   `text_single` in a vbox is centred, which is why "Local Lord" was centred.
+
+## 14. Gaps, padding and portraits (2026-10-29)
+
+Daniel: "more awkward than before": cramped text at the sides, and elements too small or too
+spread out.
+
+- **The gaps.** The window was sized to its content's minimum height, and that count
+  included hidden parts: the two-row gallery and the open news feed, about 400 px between
+  them. The surplus was shared out as large gaps between the visible blocks. The root vbox and
+  the ruler block now have `ignoreinvisible = yes` (a vanilla idiom, e.g. the
+  decision_view_widgets).
+- **Padding:** 16–18 px of side padding inside the ruler and detail blocks, and the section
+  header and news line indented to match.
+- **Sizes:** the larger portrait in both the ruler header and the gallery cards (85×90; the
+  cards are 96×146, still six to a row). The facts' values are back at medium size. The
+  pillar bars are longer and taller, and the action icons are 34 px.
