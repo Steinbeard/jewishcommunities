@@ -28,3 +28,21 @@ Installed `game/gui/shared/windows.gui`, lines 144–161, defines `Window_Backgr
 Validation used an isolated copy of the existing review branch, with the pre-correction GUI and then the corrected GUI; all other source files were held constant. xTiger 1.6.10 outputs were byte-identical: **0 fatal, 15 errors, 111 warnings, 1 untidy, 43 tips**. This run’s baseline differs from the earlier recorded run, so the earlier 8-error figure is retained only as historical evidence. No new finding was introduced. `git diff --check` passed.
 
 The padding correction is also in the main checkout, as Daniel requested. Its branch, index, unrelated realm-view work, and community-history localization were preserved. Only inspector files and the inspector’s ROADMAP paragraph are included in the existing review branch.
+
+## Second follow-up: alignment, descriptions, risk and palette — 2026-10-28
+
+**Status:** Source/exhaustive checks passed; latest UI and console probe **UNRUN** live. Daniel reported the earlier padding was looking better. The current revision removes Standing, lowers the card by 28 pixels, widens side gutters to 28 pixels, right-aligns the holding menorah, matches 40-pixel faith map controls, makes the host a title link, and adds a 40-pixel Quarter action. The annual-risk line uses the existing yearly incident probability and Domain danger breakdown.
+
+The 125 P/S/G description entries cover each tier combination, backed by 20 starter localization phrases. Source evaluation of 1,728 representative/missing states (including -1, 0, 149, 150, 399, 400, 699, 700, 949, 950 and 1000) found exactly one correct match per state. Every case and alias resolves. The console-only read probe is `event kehillah_inspector_debug.1`; it is shipped but was not fired.
+
+Pillar rims are shaded metallic emerald, gold and slate-blue frames using Daniel’s exact base palette; text has 30%-white variants. Daniel clarified that fill colors should follow progress, so the five fill textures run red/orange/amber/yellow-green/green across the existing five tiers. Frame/fill geometry, DDS headers and palette pixels are source-checked; actual metallic appearance remains a live rendering question.
+
+The Luna tester did not establish process ownership before its query was interrupted. It sent no game input, did not reload the GUI, and took no screenshots. No visual result is claimed for the latest changes.
+
+Final validation after the fill/border clarification: main-checkout xTiger output is byte-identical to the pre-polish baseline: **0 fatal, 15 errors, 111 warnings, 1 untidy, 43 tips**. All 15 score-value bindings remain on the correct title variables; the three frame DDS assets have the exact base hue at their centre with lighter top and darker bottom edges, and all five status DDS assets have their documented centre hue. `git diff --check` passes.
+
+### Final matrix and native fill direction
+
+Daniel supplied his definitive 125 descriptions; these replace all 20 starter-phrase aliases recorded above. All 125 cells were checked against the supplied matrix. The two `[De Jure Kingdom]` placeholders resolve from the host barony’s three de-jure-liege steps to its kingdom, with “this land” as a missing-chain fallback. An existing band-index coverage check still covers all 1,728 boundary/missing states.
+
+Daniel then requested CK3’s default progress colors because the custom fills were too garish. Final fills use `progress_red.dds`, `progress_orange.dds`, `progress_standard.dds` (gold), and `progress_green.dds`; the top two tiers share green. All five custom status-fill DDS files were removed before commit. The three pillar-hued metallic frames remain. Main-checkout xTiger output after these changes remains byte-identical to the pre-polish baseline. Latest rendering and runtime kingdom substitution remain **UNRUN** live.
