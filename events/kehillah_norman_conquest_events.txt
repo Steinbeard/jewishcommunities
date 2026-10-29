@@ -47,6 +47,38 @@ kehillah_norman_conquest.0001 = {
 	}
 }
 
+# The decision fires its effect a day later so the law change and its
+# invitation letters are never evaluated by the decision tooltip.
+kehillah_norman_conquest.0003 = {
+	type = character_event
+	hidden = yes
+	immediate = { kehillah_norman_conquest_execute_effect = yes }
+}
+
+# The year belongs to the invitation. Ordinary settlers and adventurers
+# get first chance; this backstop fills only the remaining shortfall.
+kehillah_norman_conquest.0002 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = {
+				title:k_england = { has_variable = kehillah_norman_founding_review_pending holder = root }
+				primary_title = {
+					kehillah_jewish_settlement_policy_encouraged_trigger = yes
+					has_variable = kehillah_invitation_open
+				}
+			}
+			kehillah_norman_conquest_fill_shortfall_effect = yes
+		}
+		else_if = {
+			limit = { title:k_england = { has_variable = kehillah_norman_founding_review_pending holder = root } }
+			title:k_england = { remove_variable = kehillah_norman_founding_review_pending }
+			debug_log = "kehillah_norman_conquest.0002: invitation withdrawn before the founding review"
+		}
+	}
+}
+
 
 # =====================================================================
 # ROADMAP S8 (2026-09-29): the player's road to London. See
@@ -66,6 +98,7 @@ kehillah_norman_conquest.0010 = {
 		exists = global_var:kehillah_norman_london_offer_pending
 		global_var:kehillah_norman_london_offer_pending = root
 		kehillah_norman_london_invitation_eligible_trigger = yes
+		title:c_middlesex = { NOT = { kehillah_inspector_county_occupied_trigger = yes } }
 	}
 
 	immediate = {
@@ -134,15 +167,7 @@ kehillah_norman_conquest.0011 = {
 				exists = location.county
 				location.county = title:c_middlesex
 			}
-			# The king's welcome, BEFORE the charter is made, for the same
-			# reason kehillah_norman_conquest_finish_founding_effect sets it
-			# first: the fresh charter reads the policy at creation.
-			if = {
-				limit = { exists = title:c_middlesex.holder.top_liege.primary_title }
-				title:c_middlesex.holder.top_liege = {
-					kehillah_set_settlement_law_effect = { RUNG = encouraged VALUE = 3 }
-				}
-			}
+			# The invitation decision already passed the settlement law.
 			kehillah_found_community_effect = yes
 			if = {
 				limit = { government_has_flag = government_is_kehillah }
@@ -163,7 +188,10 @@ kehillah_norman_conquest.0011 = {
 			# Died, lost eligibility, or never arrived: London must still
 			# exist, so found it for the AI rather than leave a hole.
 			debug_log = "kehillah_norman_conquest.0011: WARNING invitee not in London or no longer eligible -- founding London for the AI instead"
-			kehillah_norman_found_london_effect = yes
+			if = {
+				limit = { title:c_middlesex = { NOT = { kehillah_inspector_county_occupied_trigger = yes } } }
+				kehillah_norman_found_london_effect = yes
+			}
 		}
 	}
 }
@@ -180,7 +208,10 @@ kehillah_norman_conquest.0012 = {
 			limit = { exists = global_var:kehillah_norman_london_offer_pending }
 			remove_global_variable = kehillah_norman_london_offer_pending
 			debug_log = "kehillah_norman_conquest.0012: London offer lapsed unanswered -- founding it for the AI"
-			kehillah_norman_found_london_effect = yes
+			if = {
+				limit = { title:c_middlesex = { NOT = { kehillah_inspector_county_occupied_trigger = yes } } }
+				kehillah_norman_found_london_effect = yes
+			}
 		}
 	}
 }
