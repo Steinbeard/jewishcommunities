@@ -21,3 +21,22 @@ The existing Community map, its roster, and its regional tint meaning remain unc
 The realm policy shown is the top liege primary title's policy, which is the value consumed by the
 settlement-policy triggers. It describes the realm-wide stance and does not replace a community's
 individual Host Charter.
+
+## Addendum, 2026-10-28: the policy map in play
+
+Daniel opened the policy map from the realm view and found it confusing ("a weird map view").
+Four causes, all fixed:
+
+1. **Its widgets were never created.** The rite and policy banners and the row of buttons
+   between the three Jewish maps were defined in `gui/kehillah_community_map_view.gui` but never
+   listed in `gui/scripted_widgets/kehillah_scripted_widgets.txt`. The banner read "Showing:"
+   with no name, and nothing led back to the other maps. All three are now registered.
+2. **No legend.** A colour key (Encouraged, Allowed, Discouraged, Banned, No policy) now sits
+   above the map-mode buttons.
+3. **No hover.** The map mode has a `barony_description`: county, realm, ruler, and policy.
+4. **Everything was green.** In 1066 nearly every realm is Allowed, so this is mostly correct.
+   But a ruler who can't set a policy (a Jewish or communal ruler) was painted Allowed too. They
+   now get the grey "No policy" colour, and the hover says why.
+
+Since 2026-10-28 the policy is a realm law ([note](2026-10-28-jewish-settlement-law.md)). The
+map reads it through the same band triggers.

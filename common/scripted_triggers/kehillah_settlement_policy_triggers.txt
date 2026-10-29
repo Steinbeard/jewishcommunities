@@ -17,26 +17,130 @@
 # See docs/spec/v16-jewish-settlement-policy-and-charters.md §§3 and 8.
 # =====================================================================
 
+# --- 2026-10-28: THE POLICY IS NOW A REALM LAW ------------------------
+# (common/laws/kehillah_jewish_settlement_laws.txt; docs/spec/
+# 2026-10-28-jewish-settlement-law.md). Scope is still the host realm's
+# primary title; the law is read off its holder. A holder with no law of
+# the group (a Jewish ruler, a vassal, a ruler with no reason to have a
+# policy) reads as Allowed, exactly as an absent variable did.
+#
+# THE READY FLAG (2026-10-29, first live look). Loading a save from
+# before the law, the engine gave every existing ruler the group's FIRST
+# law -- Banned -- not its default (the default is only for new rulers),
+# so every realm read as Banned. Until kehillah_settlement_laws_ready is
+# set, the law is therefore ignored and the old variable (absent =
+# Allowed) is read. kehillah_settlement_laws_normalize_effect sets every
+# eligible ruler's law from the old variable, removes the variables, and
+# then sets the flag (game start, the first yearly pulse after a load,
+# and on opening the realm view or the policy map).
+#
+# While a title still carries the old variable it wins either way: that
+# is a ruler who cannot hold the law, whose variable was never converted.
+#
+# Note "allowed" means "settlement permitted": Allowed OR Encouraged,
+# as it always has (the old var >= 2).
+
 kehillah_jewish_settlement_policy_encouraged_trigger = {
-	has_variable = kehillah_jewish_settlement_policy
-	var:kehillah_jewish_settlement_policy >= 3
+	OR = {
+		AND = {
+			has_variable = kehillah_jewish_settlement_policy
+			var:kehillah_jewish_settlement_policy >= 3
+		}
+		AND = {
+			NOT = { has_variable = kehillah_jewish_settlement_policy }
+			has_global_variable = kehillah_settlement_laws_ready
+			holder ?= { has_realm_law = kehillah_jewish_settlement_encouraged }
+		}
+	}
 }
 
 kehillah_jewish_settlement_policy_allowed_trigger = {
 	OR = {
-		NOT = { has_variable = kehillah_jewish_settlement_policy }
-		var:kehillah_jewish_settlement_policy >= 2
+		AND = {
+			has_variable = kehillah_jewish_settlement_policy
+			var:kehillah_jewish_settlement_policy >= 2
+		}
+		AND = {
+			NOT = { has_variable = kehillah_jewish_settlement_policy }
+			OR = {
+				NOT = { has_global_variable = kehillah_settlement_laws_ready }
+				NOT = {
+					holder ?= {
+						OR = {
+							has_realm_law = kehillah_jewish_settlement_discouraged
+							has_realm_law = kehillah_jewish_settlement_banned
+						}
+					}
+				}
+			}
+		}
 	}
 }
 
 kehillah_jewish_settlement_policy_discouraged_trigger = {
-	has_variable = kehillah_jewish_settlement_policy
-	var:kehillah_jewish_settlement_policy = 1
+	OR = {
+		AND = {
+			has_variable = kehillah_jewish_settlement_policy
+			var:kehillah_jewish_settlement_policy = 1
+		}
+		AND = {
+			NOT = { has_variable = kehillah_jewish_settlement_policy }
+			has_global_variable = kehillah_settlement_laws_ready
+			holder ?= { has_realm_law = kehillah_jewish_settlement_discouraged }
+		}
+	}
 }
 
 kehillah_jewish_settlement_policy_banned_trigger = {
-	has_variable = kehillah_jewish_settlement_policy
-	var:kehillah_jewish_settlement_policy <= 0
+	OR = {
+		AND = {
+			has_variable = kehillah_jewish_settlement_policy
+			var:kehillah_jewish_settlement_policy <= 0
+		}
+		AND = {
+			NOT = { has_variable = kehillah_jewish_settlement_policy }
+			has_global_variable = kehillah_settlement_laws_ready
+			holder ?= { has_realm_law = kehillah_jewish_settlement_banned }
+		}
+	}
+}
+
+# Scope: any character. Can they hold the settlement law? Used by the law
+# group's can_have_group and every law's potential/can_have/can_keep.
+# Daniel, 2026-10-29: only Christian and Muslim rulers -- the faiths whose
+# teachings on the Jews the mod models -- or a ruler of any faith with a
+# Jewish community already in their realm. Never a Jewish ruler ("a
+# Jewish ruler sets no policy toward Jews", 2026-10-19) or a Kehillah.
+kehillah_can_hold_settlement_law_trigger = {
+	is_independent_ruler = yes
+	is_landed = yes
+	NOT = { government_has_flag = government_is_kehillah }
+	NOT = { religion = religion:judaism_religion }
+	OR = {
+		religion = religion:christianity_religion
+		religion = religion:islam_religion
+		any_in_global_list = {
+			variable = kehillah_registered_communities
+			holder.domicile.domicile_location.county.holder.top_liege ?= prev
+		}
+	}
+}
+
+# Scope: a ruler passing one of the settlement laws (the laws' can_pass;
+# the rung-neighbour check is in each law). Carried over from the S9a
+# decisions' is_valid.
+kehillah_settlement_law_can_pass_trigger = {
+	is_imprisoned = no
+	# Not before the laws hold the policy (see the READY FLAG note above):
+	# a law passed then would be overwritten by the normalizing pass.
+	custom_tooltip = {
+		text = kehillah_settlement_laws_not_ready_tt
+		has_global_variable = kehillah_settlement_laws_ready
+	}
+	custom_tooltip = {
+		text = kehillah_policy_review_cooldown_tt
+		NOT = { primary_title = { kehillah_policy_review_on_cooldown_trigger = yes } }
+	}
 }
 
 # Scope: a community leader. This is the eligibility primitive eventual
