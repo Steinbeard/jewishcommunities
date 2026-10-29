@@ -2241,36 +2241,33 @@ window = {
 		filter_mouse = all
 		visible = "[And( HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_community' ).Title.IsValid, Or( IsMapMode( 'kehillah_communities_map' ), GetVariableSystem.Exists( 'kehillah_inspector_open' ) ) )]"
 		using = Window_Background
+		# The vanilla template offsets its painted frame by -23/-17.
+		# Match the frame to this standalone card before adding gutters.
+		blockoverride "bg_margins" { margin = { 0 0 } }
 
+		# Fixed layout policies retain the gutters under layout negotiation.
+		# A positive spacer height keeps each side cell in the layout.
 		vbox = {
-			datacontext = "[HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_community' ).Title]"
 			resizeparent = yes
-			layoutpolicy_horizontal = expanding
-			margin = { 20 16 }
-			spacing = 6
-
-			text_multi = {
-				text = "KEHILLAH_INSPECTOR_ACTIVE_PLACE"
-				autoresize = yes
-				max_width = 280
-				align = left|top
-				default_format = "#high;bold"
-			}
+			layoutpolicy_horizontal = fixed
+			size = { 320 -1 }
+			spacing = 0
+			spacer = { size = { 320 16 } layoutpolicy_vertical = fixed }
 			hbox = {
-				size = { 280 72 }
-				margin_left = 12
-				spacing = 10
-				widget = {
-					size = { 64 72 }
-					datacontext = "[Title.GetHolder]"
-					portrait_head_tiny = { parentanchor = center }
-				}
+				layoutpolicy_horizontal = fixed
+				size = { 320 -1 }
+				spacing = 0
+				spacer = { size = { 20 1 } layoutpolicy_horizontal = fixed }
 				vbox = {
-					size = { 206 72 }
-					spacing = 1
+					datacontext = "[HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_community' ).Title]"
+					layoutpolicy_horizontal = fixed
+					size = { 280 -1 }
+					spacing = 0
+
 					button_normal = {
-						size = { 206 28 }
+						size = { 280 32 }
 						onclick = "[OpenGameViewData( 'title_view_window', Title.Self )]"
+						tooltip = "[Title.GetNameNoTooltip]"
 						text_single = {
 							size = { 100% 100% }
 							autoresize = no
@@ -2281,299 +2278,339 @@ window = {
 							alwaystransparent = yes
 						}
 					}
-					button_normal = {
-						size = { 206 22 }
-						onclick = "[DefaultOnCharacterClick(Title.GetHolder.GetID)]"
-						text_single = {
-							size = { 100% 100% }
-							autoresize = no
-							text = "KEHILLAH_INSPECTOR_LEADER_NAME"
-							align = left|nobaseline
-							default_format = "#clickable"
-							alwaystransparent = yes
+					text_multi = {
+						text = "KEHILLAH_INSPECTOR_ACTIVE_PLACE"
+						autoresize = yes
+						max_width = 280
+						align = left|top
+						default_format = "#weak"
+						margin_bottom = 12
+					}
+					hbox = {
+						size = { 280 72 }
+						spacing = 12
+						widget = {
+							size = { 64 72 }
+							datacontext = "[Title.GetHolder]"
+							portrait_head_tiny = { parentanchor = center }
+						}
+						vbox = {
+							size = { 204 -1 }
+							parentanchor = vcenter
+							spacing = 4
+							button_normal = {
+								size = { 204 24 }
+								onclick = "[DefaultOnCharacterClick(Title.GetHolder.GetID)]"
+								tooltip = "[Title.GetHolder.GetUINameNoTooltip]"
+								text_single = {
+									size = { 100% 100% }
+									autoresize = no
+									text = "KEHILLAH_INSPECTOR_LEADER_NAME"
+									align = left|nobaseline
+									default_format = "#clickable"
+									alwaystransparent = yes
+								}
+							}
+							text_single = {
+								size = { 204 20 }
+								autoresize = no
+								text = "KEHILLAH_INSPECTOR_ACTIVE_SINCE"
+								align = left|nobaseline
+								default_format = "#weak"
+							}
 						}
 					}
-					text_multi = { size = { 206 20 } text = "KEHILLAH_INSPECTOR_ACTIVE_SINCE" align = left|top default_format = "#medium" }
+					divider_light = { size = { 280 2 } margin_top = 12 margin_bottom = 12 }
+					hbox = {
+						size = { 280 22 }
+						margin_bottom = 12
+						tooltip = "KEHILLAH_BD_STANDING_TOOLTIP"
+						using = tooltip_se
+						text_single = { size = { 125 22 } autoresize = no text = "KEHILLAH_INSPECTOR_STANDING" align = left|nobaseline alwaystransparent = yes }
+						expand = {}
+						text_single = { size = { 142 22 } autoresize = no text = "KEHILLAH_INSPECTOR_STANDING_TIER" align = right|nobaseline default_format = "#high;bold" alwaystransparent = yes }
+					}
+					vbox = {
+						size = { 280 -1 }
+						spacing = 4
+						margin_bottom = 12
+						hbox = {
+							size = { 280 22 }
+							tooltip = "KEHILLAH_BD_PROSPERITY_TOOLTIP"
+							using = tooltip_se
+							text_single = { size = { 125 22 } autoresize = no text = "KEHILLAH_INSPECTOR_PROSPERITY" align = left|nobaseline alwaystransparent = yes }
+							expand = {}
+							text_single = { size = { 142 22 } autoresize = no text = "KEHILLAH_INSPECTOR_PROSPERITY_TIER" align = right|nobaseline default_format = "#high" alwaystransparent = yes }
+						}
+						widget = {
+							size = { 280 18 }
+							tooltip = "KEHILLAH_BD_PROSPERITY_TOOLTIP"
+							using = tooltip_se
+							background = {
+								texture = "gfx/interface/colors/white.dds"
+								color = { 0.56 0.34 0.18 1 }
+							}
+							progressbar_standard = {
+								parentanchor = center
+								size = { 276 14 }
+								min = 0
+								max = 1000
+								value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]"
+								visible = "[LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)150' )]"
+								blockoverride "progress_textures" {
+									progresstexture = "gfx/interface/progressbars/progress_red.dds"
+									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+								}
+								alwaystransparent = yes
+							}
+							progressbar_standard = {
+								parentanchor = center
+								size = { 276 14 }
+								min = 0
+								max = 1000
+								value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]"
+								visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)150' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)400' ) )]"
+								blockoverride "progress_textures" {
+									progresstexture = "gfx/interface/progressbars/progress_orange.dds"
+									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+								}
+								alwaystransparent = yes
+							}
+							progressbar_standard = {
+								parentanchor = center
+								size = { 276 14 }
+								min = 0
+								max = 1000
+								value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]"
+								visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)400' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)700' ) )]"
+								blockoverride "progress_textures" {
+									progresstexture = "gfx/interface/progressbars/progress_green.dds"
+									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+								}
+								alwaystransparent = yes
+							}
+							progressbar_standard = {
+								parentanchor = center
+								size = { 276 14 }
+								min = 0
+								max = 1000
+								value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]"
+								visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)700' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)950' ) )]"
+								blockoverride "progress_textures" {
+									progresstexture = "gfx/interface/progressbars/progress_blue.dds"
+									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+								}
+								alwaystransparent = yes
+							}
+							progressbar_standard = {
+								parentanchor = center
+								size = { 276 14 }
+								min = 0
+								max = 1000
+								value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]"
+								visible = "[GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)950' )]"
+								blockoverride "progress_textures" {
+									progresstexture = "gfx/interface/progressbars/progress_standard.dds"
+									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+								}
+								alwaystransparent = yes
+							}
+						}
+					}
+					vbox = {
+						size = { 280 -1 }
+						spacing = 4
+						margin_bottom = 12
+						hbox = {
+							size = { 280 22 }
+							tooltip = "KEHILLAH_BD_STABILITY_TOOLTIP"
+							using = tooltip_se
+							text_single = { size = { 125 22 } autoresize = no text = "KEHILLAH_INSPECTOR_STABILITY" align = left|nobaseline alwaystransparent = yes }
+							expand = {}
+							text_single = { size = { 142 22 } autoresize = no text = "KEHILLAH_INSPECTOR_STABILITY_TIER" align = right|nobaseline default_format = "#high" alwaystransparent = yes }
+						}
+						widget = {
+							size = { 280 18 }
+							tooltip = "KEHILLAH_BD_STABILITY_TOOLTIP"
+							using = tooltip_se
+							background = {
+								texture = "gfx/interface/colors/white.dds"
+								color = { 0.54 0.59 0.66 1 }
+							}
+							progressbar_standard = {
+								parentanchor = center
+								size = { 276 14 }
+								min = 0
+								max = 1000
+								value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]"
+								visible = "[LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)150' )]"
+								blockoverride "progress_textures" {
+									progresstexture = "gfx/interface/progressbars/progress_red.dds"
+									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+								}
+								alwaystransparent = yes
+							}
+							progressbar_standard = {
+								parentanchor = center
+								size = { 276 14 }
+								min = 0
+								max = 1000
+								value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]"
+								visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)150' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)400' ) )]"
+								blockoverride "progress_textures" {
+									progresstexture = "gfx/interface/progressbars/progress_orange.dds"
+									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+								}
+								alwaystransparent = yes
+							}
+							progressbar_standard = {
+								parentanchor = center
+								size = { 276 14 }
+								min = 0
+								max = 1000
+								value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]"
+								visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)400' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)700' ) )]"
+								blockoverride "progress_textures" {
+									progresstexture = "gfx/interface/progressbars/progress_green.dds"
+									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+								}
+								alwaystransparent = yes
+							}
+							progressbar_standard = {
+								parentanchor = center
+								size = { 276 14 }
+								min = 0
+								max = 1000
+								value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]"
+								visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)700' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)950' ) )]"
+								blockoverride "progress_textures" {
+									progresstexture = "gfx/interface/progressbars/progress_blue.dds"
+									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+								}
+								alwaystransparent = yes
+							}
+							progressbar_standard = {
+								parentanchor = center
+								size = { 276 14 }
+								min = 0
+								max = 1000
+								value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]"
+								visible = "[GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)950' )]"
+								blockoverride "progress_textures" {
+									progresstexture = "gfx/interface/progressbars/progress_standard.dds"
+									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+								}
+								alwaystransparent = yes
+							}
+						}
+					}
+					vbox = {
+						size = { 280 -1 }
+						spacing = 4
+						margin_bottom = 0
+						hbox = {
+							size = { 280 22 }
+							tooltip = "KEHILLAH_BD_GREATNESS_TOOLTIP"
+							using = tooltip_se
+							text_single = { size = { 125 22 } autoresize = no text = "KEHILLAH_INSPECTOR_GREATNESS" align = left|nobaseline alwaystransparent = yes }
+							expand = {}
+							text_single = { size = { 142 22 } autoresize = no text = "KEHILLAH_INSPECTOR_GREATNESS_TIER" align = right|nobaseline default_format = "#high" alwaystransparent = yes }
+						}
+						widget = {
+							size = { 280 18 }
+							tooltip = "KEHILLAH_BD_GREATNESS_TOOLTIP"
+							using = tooltip_se
+							background = {
+								texture = "gfx/interface/colors/white.dds"
+								color = { 0.70 0.54 0.24 1 }
+							}
+							progressbar_standard = {
+								parentanchor = center
+								size = { 276 14 }
+								min = 0
+								max = 1000
+								value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]"
+								visible = "[LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)150' )]"
+								blockoverride "progress_textures" {
+									progresstexture = "gfx/interface/progressbars/progress_red.dds"
+									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+								}
+								alwaystransparent = yes
+							}
+							progressbar_standard = {
+								parentanchor = center
+								size = { 276 14 }
+								min = 0
+								max = 1000
+								value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]"
+								visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)150' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)400' ) )]"
+								blockoverride "progress_textures" {
+									progresstexture = "gfx/interface/progressbars/progress_orange.dds"
+									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+								}
+								alwaystransparent = yes
+							}
+							progressbar_standard = {
+								parentanchor = center
+								size = { 276 14 }
+								min = 0
+								max = 1000
+								value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]"
+								visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)400' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)700' ) )]"
+								blockoverride "progress_textures" {
+									progresstexture = "gfx/interface/progressbars/progress_green.dds"
+									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+								}
+								alwaystransparent = yes
+							}
+							progressbar_standard = {
+								parentanchor = center
+								size = { 276 14 }
+								min = 0
+								max = 1000
+								value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]"
+								visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)700' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)950' ) )]"
+								blockoverride "progress_textures" {
+									progresstexture = "gfx/interface/progressbars/progress_blue.dds"
+									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+								}
+								alwaystransparent = yes
+							}
+							progressbar_standard = {
+								parentanchor = center
+								size = { 276 14 }
+								min = 0
+								max = 1000
+								value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]"
+								visible = "[GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)950' )]"
+								blockoverride "progress_textures" {
+									progresstexture = "gfx/interface/progressbars/progress_standard.dds"
+									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+								}
+								alwaystransparent = yes
+							}
+						}
+					}
+					divider_light = { size = { 280 2 } margin_top = 12 margin_bottom = 12 }
+					text_multi = {
+						text = "KEHILLAH_INSPECTOR_HOST_REALM"
+						autoresize = yes
+						max_width = 280
+						align = left|top
+						default_format = "#weak"
+					}
+					button_standard = {
+						size = { 280 34 }
+						margin_top = 12
+						text = "KEHILLAH_INSPECTOR_VISIT_QUARTER"
+						enabled = "[Title.HasDomicile]"
+						onclick = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
+						onclick = "[ToggleGameViewData( 'domicile', Title.GetHolder.GetDomicile )]"
+					}
 				}
+				spacer = { size = { 20 1 } layoutpolicy_horizontal = fixed }
 			}
-
-			divider_light = { size = { 248 2 } margin_left = 16 }
-
-			hbox = {
-				size = { 248 22 }
-				margin_left = 16
-				tooltip = "KEHILLAH_BD_STANDING_TOOLTIP"
-				using = tooltip_se
-				text_single = { size = { 125 22 } autoresize = no text = "KEHILLAH_INSPECTOR_STANDING" align = left|nobaseline alwaystransparent = yes }
-				expand = {}
-				text_single = { size = { 110 22 } autoresize = no text = "KEHILLAH_INSPECTOR_STANDING_TIER" align = right|nobaseline alwaystransparent = yes }
-			}
-
-			hbox = {
-				size = { 248 22 }
-				margin_left = 16
-				tooltip = "KEHILLAH_BD_PROSPERITY_TOOLTIP"
-				using = tooltip_se
-				text_single = { size = { 125 22 } autoresize = no text = "KEHILLAH_INSPECTOR_PROSPERITY" align = left|nobaseline alwaystransparent = yes }
-				expand = {}
-				text_single = { size = { 110 22 } autoresize = no text = "KEHILLAH_INSPECTOR_PROSPERITY_TIER" align = right|nobaseline alwaystransparent = yes }
-			}
-			widget = {
-				size = { 248 18 }
-				margin_left = 16
-				tooltip = "KEHILLAH_BD_PROSPERITY_TOOLTIP"
-				using = tooltip_se
-				background = {
-					texture = "gfx/interface/colors/white.dds"
-					color = { 0.56 0.34 0.18 1 }
-				}
-				progressbar_standard = {
-					parentanchor = center
-					size = { 244 14 }
-					min = 0
-					max = 1000
-					value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]"
-					visible = "[LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)150' )]"
-					blockoverride "progress_textures" {
-						progresstexture = "gfx/interface/progressbars/progress_red.dds"
-						noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-					}
-					alwaystransparent = yes
-				}
-				progressbar_standard = {
-					parentanchor = center
-					size = { 244 14 }
-					min = 0
-					max = 1000
-					value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]"
-					visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)150' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)400' ) )]"
-					blockoverride "progress_textures" {
-						progresstexture = "gfx/interface/progressbars/progress_orange.dds"
-						noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-					}
-					alwaystransparent = yes
-				}
-				progressbar_standard = {
-					parentanchor = center
-					size = { 244 14 }
-					min = 0
-					max = 1000
-					value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]"
-					visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)400' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)700' ) )]"
-					blockoverride "progress_textures" {
-						progresstexture = "gfx/interface/progressbars/progress_green.dds"
-						noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-					}
-					alwaystransparent = yes
-				}
-				progressbar_standard = {
-					parentanchor = center
-					size = { 244 14 }
-					min = 0
-					max = 1000
-					value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]"
-					visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)700' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)950' ) )]"
-					blockoverride "progress_textures" {
-						progresstexture = "gfx/interface/progressbars/progress_blue.dds"
-						noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-					}
-					alwaystransparent = yes
-				}
-				progressbar_standard = {
-					parentanchor = center
-					size = { 244 14 }
-					min = 0
-					max = 1000
-					value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]"
-					visible = "[GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)950' )]"
-					blockoverride "progress_textures" {
-						progresstexture = "gfx/interface/progressbars/progress_standard.dds"
-						noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-					}
-					alwaystransparent = yes
-				}
-			}
-
-			hbox = {
-				size = { 248 22 }
-				margin_left = 16
-				tooltip = "KEHILLAH_BD_STABILITY_TOOLTIP"
-				using = tooltip_se
-				text_single = { size = { 125 22 } autoresize = no text = "KEHILLAH_INSPECTOR_STABILITY" align = left|nobaseline alwaystransparent = yes }
-				expand = {}
-				text_single = { size = { 110 22 } autoresize = no text = "KEHILLAH_INSPECTOR_STABILITY_TIER" align = right|nobaseline alwaystransparent = yes }
-			}
-			widget = {
-				size = { 248 18 }
-				margin_left = 16
-				tooltip = "KEHILLAH_BD_STABILITY_TOOLTIP"
-				using = tooltip_se
-				background = {
-					texture = "gfx/interface/colors/white.dds"
-					color = { 0.54 0.59 0.66 1 }
-				}
-				progressbar_standard = {
-					parentanchor = center
-					size = { 244 14 }
-					min = 0
-					max = 1000
-					value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]"
-					visible = "[LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)150' )]"
-					blockoverride "progress_textures" {
-						progresstexture = "gfx/interface/progressbars/progress_red.dds"
-						noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-					}
-					alwaystransparent = yes
-				}
-				progressbar_standard = {
-					parentanchor = center
-					size = { 244 14 }
-					min = 0
-					max = 1000
-					value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]"
-					visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)150' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)400' ) )]"
-					blockoverride "progress_textures" {
-						progresstexture = "gfx/interface/progressbars/progress_orange.dds"
-						noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-					}
-					alwaystransparent = yes
-				}
-				progressbar_standard = {
-					parentanchor = center
-					size = { 244 14 }
-					min = 0
-					max = 1000
-					value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]"
-					visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)400' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)700' ) )]"
-					blockoverride "progress_textures" {
-						progresstexture = "gfx/interface/progressbars/progress_green.dds"
-						noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-					}
-					alwaystransparent = yes
-				}
-				progressbar_standard = {
-					parentanchor = center
-					size = { 244 14 }
-					min = 0
-					max = 1000
-					value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]"
-					visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)700' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)950' ) )]"
-					blockoverride "progress_textures" {
-						progresstexture = "gfx/interface/progressbars/progress_blue.dds"
-						noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-					}
-					alwaystransparent = yes
-				}
-				progressbar_standard = {
-					parentanchor = center
-					size = { 244 14 }
-					min = 0
-					max = 1000
-					value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]"
-					visible = "[GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)950' )]"
-					blockoverride "progress_textures" {
-						progresstexture = "gfx/interface/progressbars/progress_standard.dds"
-						noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-					}
-					alwaystransparent = yes
-				}
-			}
-
-			hbox = {
-				size = { 248 22 }
-				margin_left = 16
-				tooltip = "KEHILLAH_BD_GREATNESS_TOOLTIP"
-				using = tooltip_se
-				text_single = { size = { 125 22 } autoresize = no text = "KEHILLAH_INSPECTOR_GREATNESS" align = left|nobaseline alwaystransparent = yes }
-				expand = {}
-				text_single = { size = { 110 22 } autoresize = no text = "KEHILLAH_INSPECTOR_GREATNESS_TIER" align = right|nobaseline alwaystransparent = yes }
-			}
-			widget = {
-				size = { 248 18 }
-				margin_left = 16
-				tooltip = "KEHILLAH_BD_GREATNESS_TOOLTIP"
-				using = tooltip_se
-				background = {
-					texture = "gfx/interface/colors/white.dds"
-					color = { 0.70 0.54 0.24 1 }
-				}
-				progressbar_standard = {
-					parentanchor = center
-					size = { 244 14 }
-					min = 0
-					max = 1000
-					value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]"
-					visible = "[LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)150' )]"
-					blockoverride "progress_textures" {
-						progresstexture = "gfx/interface/progressbars/progress_red.dds"
-						noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-					}
-					alwaystransparent = yes
-				}
-				progressbar_standard = {
-					parentanchor = center
-					size = { 244 14 }
-					min = 0
-					max = 1000
-					value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]"
-					visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)150' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)400' ) )]"
-					blockoverride "progress_textures" {
-						progresstexture = "gfx/interface/progressbars/progress_orange.dds"
-						noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-					}
-					alwaystransparent = yes
-				}
-				progressbar_standard = {
-					parentanchor = center
-					size = { 244 14 }
-					min = 0
-					max = 1000
-					value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]"
-					visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)400' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)700' ) )]"
-					blockoverride "progress_textures" {
-						progresstexture = "gfx/interface/progressbars/progress_green.dds"
-						noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-					}
-					alwaystransparent = yes
-				}
-				progressbar_standard = {
-					parentanchor = center
-					size = { 244 14 }
-					min = 0
-					max = 1000
-					value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]"
-					visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)700' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)950' ) )]"
-					blockoverride "progress_textures" {
-						progresstexture = "gfx/interface/progressbars/progress_blue.dds"
-						noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-					}
-					alwaystransparent = yes
-				}
-				progressbar_standard = {
-					parentanchor = center
-					size = { 244 14 }
-					min = 0
-					max = 1000
-					value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]"
-					visible = "[GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)950' )]"
-					blockoverride "progress_textures" {
-						progresstexture = "gfx/interface/progressbars/progress_standard.dds"
-						noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-					}
-					alwaystransparent = yes
-				}
-			}
-
-			divider_light = { size = { 248 2 } margin_left = 16 }
-			text_multi = { text = "KEHILLAH_INSPECTOR_HOST_REALM" autoresize = yes max_width = 280 align = left|top default_format = "#medium" }
-			button_standard = {
-				size = { 248 32 }
-				margin_left = 16
-				text = "KEHILLAH_INSPECTOR_VISIT_QUARTER"
-				enabled = "[Title.HasDomicile]"
-				onclick = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
-				onclick = "[ToggleGameViewData( 'domicile', Title.GetHolder.GetDomicile )]"
-			}
+			spacer = { size = { 320 16 } layoutpolicy_vertical = fixed }
 		}
 	}
 	widget = {
