@@ -17,6 +17,16 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Curated arms for newly founded Kehillot — 2026-10-29, Daniel's request
+
+Runtime communities now roll one coat of arms from a curated eight-charge pool,
+with two high-contrast color layouts. Adventurer, settlers and Norman founding
+paths share the same one-time generation effect. Authored communities retain their
+fixed arms. xTiger reports no new errors against the 15-error baseline. A launch
+check was attempted through xTiger but did not complete while another CK3 process
+was running; a live founding, save/reload and visual check remain pending. See
+[the implementation note](docs/implementation/2026-10-29-community-arms-pool.md).
+
 ### Charter as a letter from the ruler — 2026-10-29, Daniel's request
 
 `kehillah_settlement_conditions.0004` ("A Charter Is Sealed" / "The Charter Renewed") is now a
