@@ -397,3 +397,19 @@ spread out.
 
   An `expand` at the bottom collects any remainder, from the one-line empty-news note and
   the lord's-view link.
+
+## 15. News as a fixed panel; the regent (2026-10-29)
+
+- **News.** With 15 entries the window reserved the whole list's height and left a blank band
+  under it. That happened with the auto-sizing list capped at 140 px, and it was likely also
+  the smaller band under the collapsed, empty feed. The news is now an always-visible panel of
+  fixed height (120 px, about four lines) that scrolls inside itself. A fixed size doesn't
+  depend on its content, so the window can't grow with the feed. The collapse toggle is gone,
+  since it was what made the window resize. The empty-state line sits inside the panel.
+  - A list the game builds itself (a datamodel) would size exactly to its entries. That was
+    considered and set aside: each entry has a year, a type and a place, and the GUI can't
+    look up a variable by a computed name, for which vanilla has no precedent.
+- **Regent** (Daniel): when the ruler has a diarch, the header names them with their outlook,
+  and says that theirs is the outlook shown, since the outlook already reads through the
+  regent (`KehillahRvRegentLine`). It says "power is held by" rather than "regent", because a
+  diarch isn't always a regent.
