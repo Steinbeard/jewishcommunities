@@ -1,0 +1,522 @@
+﻿##########################################################################
+# Jewish Communities -- realm view (2026-10-28).
+#
+# Design doc: docs/spec/2026-10-28-realm-jewish-communities-view.md.
+#
+# One top-level window, registered in gui/scripted_widgets/kehillah_
+# scripted_widgets.txt. It is opened by the menorah chip in the character
+# window (our gui/window_character.gui override), which runs the
+# kehillah_realm_view_open scripted_gui -- building every list and
+# variable read below onto the PLAYER -- and then sets the
+# VariableSystem flag "kehillah_realm_view_open".
+#
+# Two modes, one window. The realm view (a top liege's or a Kehillah
+# leader's chip) and the lord's view (a vassal's chip) share the layout;
+# the lord's view is the same rows filtered to the lord's own lands, plus
+# a line naming who sets the rules and a link up to the realm view. The
+# player variable kehillah_rv_lord_mode tells them apart. In the realm
+# view kehillah_rv_lord IS the top liege, so the outlook and teaching
+# tiles read "the ruler whose lands these are" in both modes.
+#
+# The live lessons of the map ledger (gui/kehillah_community_map_view.gui
+# header) all apply here and are followed rather than re-learned:
+# a layer on the top-level window; header_pattern for the close button;
+# no hbox/vbox as a direct child of a container; max_width on every
+# text_single in a row; the outliner's scrollarea shape.
+##########################################################################
+
+@rv_width = 660
+@rv_tile = 154
+@rv_col_portrait = 52
+@rv_col_name = 176
+@rv_col_lord = 120
+@rv_col_charter = 128
+@rv_col_standing = 64
+@rv_col_danger = 82
+@rv_col_locate = 28
+
+window = {
+	name = "kehillah_realm_view_window"
+	parentanchor = center
+	widgetanchor = center
+	position = { 0 -40 }
+
+	movable = yes
+	resizable = no
+	layer = windows_layer
+	alwaystransparent = no
+	filter_mouse = all
+	allow_outside = yes
+
+	visible = "[And( And( IsInGame, GetPlayer.IsValid ), And( IsDefaultGUIMode, GetVariableSystem.Exists( 'kehillah_realm_view_open' ) ) )]"
+	visible_at_creation = no
+
+	state = {
+		name = _show
+		using = Animation_FadeIn_Quick
+	}
+	state = {
+		name = _hide
+		using = Animation_FadeOut_Standard
+	}
+
+	background = {
+		using = Background_Area_Dark
+		color = { 0.11 0.10 0.09 0.95 }
+		margin = { 6 6 }
+	}
+
+	vbox = {
+		margin = { 14 12 }
+		spacing = 8
+		min_width = @rv_width
+
+		header_pattern = {
+			layoutpolicy_horizontal = expanding
+
+			blockoverride "header_text"
+			{
+				text = "KEHILLAH_RV_HEADER"
+			}
+
+			blockoverride "button_close"
+			{
+				onclick = "[GetVariableSystem.Clear( 'kehillah_realm_view_open' )]"
+			}
+		}
+
+		### Who sets the rules, in the lord's view only. Policy and
+		### charters always come from the top liege (V15/V16).
+		text_multi = {
+			visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_lord_mode' ).IsSet]"
+			autoresize = yes
+			max_width = @rv_width
+			text = "KEHILLAH_RV_LORD_SUBHEADER"
+			default_format = "#weak;italic"
+		}
+
+		### =============================================================
+		### THE FOUR FACTS. Each tile: a small label, the value, one line
+		### of context. The full breakdown is always on hover.
+		### =============================================================
+		hbox = {
+			layoutpolicy_horizontal = expanding
+			spacing = 8
+
+			kehillah_rv_tile = {
+				datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_rv_realm' ).Title]"
+				blockoverride "tile_tooltip" { tooltip = "KEHILLAH_RV_POLICY_TOOLTIP" }
+				blockoverride "tile_label" { text = "KEHILLAH_RV_POLICY_LABEL" }
+				blockoverride "tile_value" { text = "[Title.Custom( 'KehillahJewishSettlementPolicy' )]" }
+				blockoverride "tile_sub" { text = "KEHILLAH_RV_POLICY_SUB" }
+			}
+
+			kehillah_rv_tile = {
+				datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_rv_lord' ).Char]"
+				blockoverride "tile_tooltip" { tooltip = "KEHILLAH_RV_TEACHING_TOOLTIP" }
+				blockoverride "tile_label" { text = "KEHILLAH_RV_TEACHING_LABEL" }
+				blockoverride "tile_value" { text = "[Character.Custom( 'KehillahRvTeaching' )]" }
+				blockoverride "tile_sub" { text = "[Character.Custom( 'KehillahRvTeachingTone' )]" }
+			}
+
+			kehillah_rv_tile = {
+				datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_rv_lord' ).Char]"
+				blockoverride "tile_tooltip" { tooltip = "KEHILLAH_RV_OUTLOOK_TOOLTIP" }
+				blockoverride "tile_label" { text = "KEHILLAH_RV_OUTLOOK_LABEL" }
+				blockoverride "tile_value" { text = "[Character.Custom( 'KehillahOutlookBand' )]" }
+				blockoverride "tile_sub" { text = "[Character.Custom( 'KehillahRvStance' )]" }
+			}
+
+			kehillah_rv_tile = {
+				datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_rv_worst' ).Title]"
+				blockoverride "tile_tooltip" { tooltip = "KEHILLAH_RV_DANGER_TOOLTIP" }
+				blockoverride "tile_label" { text = "KEHILLAH_RV_DANGER_LABEL" }
+				blockoverride "tile_value" { text = "KEHILLAH_RV_DANGER_VALUE" }
+				blockoverride "tile_sub" { text = "KEHILLAH_RV_DANGER_SUB" }
+			}
+		}
+
+		### =============================================================
+		### THE COMMUNITIES, worst danger first (ordered script-side).
+		### =============================================================
+		hbox = {
+			layoutpolicy_horizontal = expanding
+			margin_top = 4
+
+			text_single = {
+				text = "KEHILLAH_RV_COMMUNITIES_HEADER"
+				default_format = "#high;bold"
+			}
+			expand = {}
+		}
+
+		hbox = {
+			layoutpolicy_horizontal = expanding
+			margin_right = 14
+
+			text_single = {
+				text = "KEHILLAH_RV_COL_COMMUNITY"
+				default_format = "#weak"
+				margin_left = @rv_col_portrait
+				max_width = @rv_col_name
+			}
+			expand = {}
+			text_single = { text = "KEHILLAH_RV_COL_LORD" default_format = "#weak" min_width = @rv_col_lord max_width = @rv_col_lord }
+			text_single = { text = "KEHILLAH_RV_COL_CHARTER" default_format = "#weak" min_width = @rv_col_charter max_width = @rv_col_charter }
+			text_label_center = { text = "KEHILLAH_RV_COL_STANDING" default_format = "#weak" min_width = @rv_col_standing }
+			text_label_center = { text = "KEHILLAH_RV_COL_DANGER" default_format = "#weak" min_width = @rv_col_danger }
+			widget = { size = { @rv_col_locate 1 } }
+		}
+
+		scrollarea = {
+			autoresizescrollarea = yes
+			scrollbarpolicy_horizontal = always_off
+			size = { @rv_width 0 }
+			maximumsize = { -1 300 }
+
+			scrollbar_vertical = {
+				using = Scrollbar_Vertical
+			}
+
+			scrollwidget = {
+				vbox = {
+					set_parent_size_to_minimum = yes
+					min_width = @rv_width
+					margin_right = 12
+					spacing = 3
+
+					datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_rv_list' )]"
+					item = {
+						kehillah_rv_row = {}
+					}
+				}
+			}
+		}
+
+		### =============================================================
+		### REALM NEWS: the last ten years, newest first. Fifteen fixed
+		### slots, each hidden unless the build marked it to show
+		### (kehillah_rv_news_slot_effect: in range, and in the lord's
+		### lands in the lord's view).
+		### =============================================================
+		divider_light = {
+			layoutpolicy_horizontal = expanding
+		}
+
+		hbox = {
+			layoutpolicy_horizontal = expanding
+
+			text_single = {
+				text = "KEHILLAH_RV_NEWS_HEADER"
+				default_format = "#high;bold"
+				tooltip = "KEHILLAH_RV_NEWS_TOOLTIP"
+				using = tooltip_ws
+			}
+			expand = {}
+		}
+
+		text_single = {
+			visible = "[LessThanOrEqualTo_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_rv_news_count' ).GetValue, '(CFixedPoint)0' )]"
+			text = "KEHILLAH_RV_NEWS_EMPTY"
+			default_format = "#weak;italic"
+			max_width = @rv_width
+		}
+
+		scrollarea = {
+			visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_rv_news_count' ).GetValue, '(CFixedPoint)0' )]"
+			autoresizescrollarea = yes
+			scrollbarpolicy_horizontal = always_off
+			size = { @rv_width 0 }
+			maximumsize = { -1 180 }
+
+			scrollbar_vertical = {
+				using = Scrollbar_Vertical
+			}
+
+			scrollwidget = {
+				vbox = {
+					datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_rv_realm' ).Title]"
+					set_parent_size_to_minimum = yes
+					min_width = @rv_width
+					margin_right = 12
+					spacing = 2
+
+					kehillah_rv_news_row = {
+						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_1' ).IsSet]" }
+						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_1_year' ).GetValue|0]" }
+						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_1_county' ).Title.GetNameNoTooltip]" }
+						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_1_kind' ).GetFlagName ) )]" }
+					}
+					kehillah_rv_news_row = {
+						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_2' ).IsSet]" }
+						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_2_year' ).GetValue|0]" }
+						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_2_county' ).Title.GetNameNoTooltip]" }
+						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_2_kind' ).GetFlagName ) )]" }
+					}
+					kehillah_rv_news_row = {
+						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_3' ).IsSet]" }
+						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_3_year' ).GetValue|0]" }
+						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_3_county' ).Title.GetNameNoTooltip]" }
+						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_3_kind' ).GetFlagName ) )]" }
+					}
+					kehillah_rv_news_row = {
+						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_4' ).IsSet]" }
+						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_4_year' ).GetValue|0]" }
+						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_4_county' ).Title.GetNameNoTooltip]" }
+						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_4_kind' ).GetFlagName ) )]" }
+					}
+					kehillah_rv_news_row = {
+						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_5' ).IsSet]" }
+						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_5_year' ).GetValue|0]" }
+						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_5_county' ).Title.GetNameNoTooltip]" }
+						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_5_kind' ).GetFlagName ) )]" }
+					}
+					kehillah_rv_news_row = {
+						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_6' ).IsSet]" }
+						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_6_year' ).GetValue|0]" }
+						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_6_county' ).Title.GetNameNoTooltip]" }
+						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_6_kind' ).GetFlagName ) )]" }
+					}
+					kehillah_rv_news_row = {
+						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_7' ).IsSet]" }
+						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_7_year' ).GetValue|0]" }
+						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_7_county' ).Title.GetNameNoTooltip]" }
+						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_7_kind' ).GetFlagName ) )]" }
+					}
+					kehillah_rv_news_row = {
+						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_8' ).IsSet]" }
+						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_8_year' ).GetValue|0]" }
+						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_8_county' ).Title.GetNameNoTooltip]" }
+						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_8_kind' ).GetFlagName ) )]" }
+					}
+					kehillah_rv_news_row = {
+						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_9' ).IsSet]" }
+						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_9_year' ).GetValue|0]" }
+						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_9_county' ).Title.GetNameNoTooltip]" }
+						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_9_kind' ).GetFlagName ) )]" }
+					}
+					kehillah_rv_news_row = {
+						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_10' ).IsSet]" }
+						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_10_year' ).GetValue|0]" }
+						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_10_county' ).Title.GetNameNoTooltip]" }
+						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_10_kind' ).GetFlagName ) )]" }
+					}
+					kehillah_rv_news_row = {
+						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_11' ).IsSet]" }
+						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_11_year' ).GetValue|0]" }
+						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_11_county' ).Title.GetNameNoTooltip]" }
+						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_11_kind' ).GetFlagName ) )]" }
+					}
+					kehillah_rv_news_row = {
+						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_12' ).IsSet]" }
+						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_12_year' ).GetValue|0]" }
+						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_12_county' ).Title.GetNameNoTooltip]" }
+						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_12_kind' ).GetFlagName ) )]" }
+					}
+					kehillah_rv_news_row = {
+						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_13' ).IsSet]" }
+						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_13_year' ).GetValue|0]" }
+						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_13_county' ).Title.GetNameNoTooltip]" }
+						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_13_kind' ).GetFlagName ) )]" }
+					}
+					kehillah_rv_news_row = {
+						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_14' ).IsSet]" }
+						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_14_year' ).GetValue|0]" }
+						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_14_county' ).Title.GetNameNoTooltip]" }
+						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_14_kind' ).GetFlagName ) )]" }
+					}
+					kehillah_rv_news_row = {
+						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_15' ).IsSet]" }
+						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_15_year' ).GetValue|0]" }
+						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_15_county' ).Title.GetNameNoTooltip]" }
+						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_15_kind' ).GetFlagName ) )]" }
+					}
+				}
+			}
+		}
+
+		### Up from the lord's view to the whole realm.
+		button_standard = {
+			visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_lord_mode' ).IsSet]"
+			layoutpolicy_horizontal = expanding
+			size = { 0 30 }
+			text = "KEHILLAH_RV_VIEW_REALM"
+			onclick = "[GetScriptedGui( 'kehillah_realm_view_open' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'target', GetPlayer.MakeScope.Var( 'kehillah_rv_top' ).Char.MakeScope ).End )]"
+			tooltip = "KEHILLAH_RV_VIEW_REALM_TOOLTIP"
+			using = tooltip_ws
+		}
+	}
+}
+
+types KehillahRealmView
+{
+	### One fact in the summary row.
+	type kehillah_rv_tile = vbox {
+		min_width = @rv_tile
+		max_width = @rv_tile
+		spacing = 2
+		margin = { 4 6 }
+		using = tooltip_se
+
+		block "tile_tooltip" {}
+
+		background = {
+			using = Background_Area_Dark
+			color = { 0.19 0.17 0.14 0.72 }
+			margin = { 4 2 }
+		}
+
+		text_label_center = {
+			max_width = @rv_tile
+			default_format = "#weak;bold"
+			using = Font_Size_Small
+			block "tile_label" { text = "" }
+		}
+		text_label_center = {
+			max_width = @rv_tile
+			using = Font_Size_Medium
+			block "tile_value" { text = "" }
+		}
+		text_label_center = {
+			max_width = @rv_tile
+			default_format = "#weak"
+			using = Font_Size_Small
+			block "tile_sub" { text = "" }
+		}
+	}
+
+	### One community. datacontext: the d_kehillah_* title from
+	### kehillah_rv_list. Host county and Standing are cached on it by
+	### kehillah_cache_map_view_facts_effect, run by the build.
+	type kehillah_rv_row = hbox {
+		datacontext = "[Scope.Title]"
+		layoutpolicy_horizontal = expanding
+		min_height = 52
+		spacing = 4
+
+		background = {
+			using = Background_Area_Dark
+			color = { 0.18 0.17 0.15 0.55 }
+			margin = { 4 2 }
+		}
+
+		# The player's own community stands out, as in the map ledger.
+		background = {
+			visible = "[Title.GetHolder.IsLocalPlayer]"
+			using = Background_Area_Dark
+			color = { 0.45 0.38 0.15 0.35 }
+			margin = { 4 2 }
+		}
+
+		### The leader: portrait_head_tiny carries vanilla's click-to-open.
+		widget = {
+			size = { @rv_col_portrait 52 }
+			visible = "[Title.HasHolder]"
+			datacontext = "[Title.GetHolder]"
+
+			portrait_head_tiny = {
+				parentanchor = center
+			}
+		}
+
+		vbox = {
+			layoutpolicy_horizontal = expanding
+			spacing = 1
+
+			text_single = {
+				layoutpolicy_horizontal = expanding
+				align = left
+				max_width = @rv_col_name
+				text = "[Title.GetNameNoTooltip]"
+				default_format = "#high"
+			}
+			text_single = {
+				layoutpolicy_horizontal = expanding
+				align = left
+				max_width = @rv_col_name
+				text = "KEHILLAH_MAP_VIEW_ROW_LOCATION"
+				default_format = "#weak"
+			}
+		}
+
+		text_single = {
+			min_width = @rv_col_lord
+			max_width = @rv_col_lord
+			align = left
+			text = "KEHILLAH_RV_ROW_LORD"
+			tooltip = "KEHILLAH_RV_ROW_LORD_TOOLTIP"
+			using = tooltip_ws
+		}
+
+		text_single = {
+			min_width = @rv_col_charter
+			max_width = @rv_col_charter
+			align = left
+			text = "[Title.GetHolder.Custom( 'KehillahCharterNoticeSecurity' )]"
+			tooltip = "KEHILLAH_RV_ROW_CHARTER_TOOLTIP"
+			using = tooltip_ws
+		}
+
+		text_label_center = {
+			layoutpolicy_vertical = expanding
+			min_width = @rv_col_standing
+			text = "[Title.Custom( 'KehillahStandingScore' )]"
+			tooltip = "KEHILLAH_BD_STANDING_TOOLTIP"
+			using = tooltip_ws
+		}
+
+		text_label_center = {
+			layoutpolicy_vertical = expanding
+			min_width = @rv_col_danger
+			text = "[Title.GetHolder.Custom( 'KehillahDangerBand' )]"
+			tooltip = "KEHILLAH_BD_DANGER_TOOLTIP"
+			using = tooltip_ws
+		}
+
+		button_round = {
+			size = { @rv_col_locate @rv_col_locate }
+			enabled = "[Title.MakeScope.Var( 'kehillah_ui_host_county' ).Title.IsValid]"
+			onclick = "[Title.MakeScope.Var( 'kehillah_ui_host_county' ).Title.GetProvince.ZoomCameraTo]"
+			tooltip = "KEHILLAH_MAP_VIEW_LOCATE_TOOLTIP"
+			using = tooltip_ws
+
+			icon = {
+				parentanchor = center
+				size = { 16 16 }
+				texture = "gfx/interface/icons/flat_icons/go_to_my_location.dds"
+				alwaystransparent = yes
+			}
+		}
+	}
+
+	### One news line: year, place, what happened. datacontext: the realm
+	### title. Each instance names its slot through the blocks.
+	type kehillah_rv_news_row = hbox {
+		layoutpolicy_horizontal = expanding
+		spacing = 8
+		margin = { 4 2 }
+
+		block "news_visible" { visible = no }
+
+		text_single = {
+			min_width = 44
+			max_width = 44
+			align = left
+			default_format = "#weak"
+			block "news_year" { text = "" }
+		}
+		text_single = {
+			min_width = 120
+			max_width = 120
+			align = left
+			default_format = "#high"
+			block "news_place" { text = "" }
+		}
+		text_single = {
+			layoutpolicy_horizontal = expanding
+			max_width = 460
+			align = left
+			block "news_text" { text = "" }
+		}
+	}
+}

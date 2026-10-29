@@ -1,4 +1,6 @@
-**Status:** proposal dated 2026-10-28, from Daniel's request in conversation. Not built. Depends on
+**Status:** agreed with Daniel and built 2026-10-28 (first slice; see section 10 for what was
+built and how it departs from the sections above). Source and xTiger checked; **not live-tested**.
+Depends on
 [V12 community map view](v12-community-map-view.md) (the list-building pattern),
 [V15](v15-host-charter.md)/[V16](v16-jewish-settlement-policy-and-charters.md) (charter and
 settlement policy), [V34](v34-outlook-teachings-and-founding.md)/[V35](v35-player-clarity-outlook-and-invitations.md)
@@ -198,3 +200,66 @@ Answered by Daniel, 2026-10-28:
   lord (a bishop, a count) rather than the sovereign, and the two could conflict. That's good
   gameplay, but it touches V15/V16's single-host assumption everywhere.
 - **Positive and debate news** for the feed (section 6, later slices).
+
+## 10. Build record (2026-10-28)
+
+Built on branch `realm-view`. xTiger shows no reports in any new or changed file; the mod's
+existing 15 errors are unchanged. **Not live-tested**: Daniel's own CK3 was running, so no test
+game was started.
+
+**Files**
+- `common/scripted_triggers/kehillah_realm_view_triggers.txt`: whose lands a community is in,
+  Tense-or-worse, and who gets the chip.
+- `common/script_values/kehillah_realm_view_values.txt`: the danger ordering, the chip's two
+  counts, and the ten-year cutoff.
+- `common/scripted_effects/kehillah_realm_view_effects.txt`: the news ring buffer (add, shift)
+  and the view build.
+- `common/scripted_guis/kehillah_realm_view_gui.txt`: `kehillah_realm_view_chip` (is_shown,
+  root = viewed character) and `kehillah_realm_view_open` (root = player, `scope:target`).
+- `common/customizable_localization/kehillah_realm_view_custom_loc.txt`: the teaching name,
+  teaching tone and outlook stance.
+- `gui/kehillah_realm_view.gui`, registered in `gui/scripted_widgets/kehillah_scripted_widgets.txt`.
+- `gui/window_character.gui`: **new override of vanilla 1.20's file.** Its only change is the
+  chip block, inserted after the Treasury badge. On a game update, re-copy vanilla's file and
+  re-insert that block. The file header says the same.
+- `localization/english/kehillah_realm_view_l_english.yml`
+- `events/kehillah_realm_view_debug_events.txt`: `.1` seeds one entry of each news kind,
+  `.2` builds the view onto the event's character and logs it, `.3` clears the realm's feed.
+- News hooks: `kehillah_realm_news_add_effect = { KIND = … }` sits beside the ten positive
+  `kehillah_faith_pressure_add_effect` calls made in a Kehillah leader's scope:
+
+  | Kind | Where |
+  |---|---|
+  | Talmud trial, badge, Holy Week, bonds, servants' decree | `events/kehillah_incident_events.txt` |
+  | Mob preaching, pogrom | `kehillah_mob_effects.txt` |
+  | Accusation riot | `kehillah_accusation_effects.txt` |
+  | Anusim discovered | `kehillah_anusim_effects.txt` |
+  | Popular rising | `kehillah_popular_rising_effects.txt` |
+
+  Not hooked:
+  - the overlord-scope anusim call, which has no community;
+  - the mission (disputation) calls, which belong to the later "debates" slice;
+  - host arrest and expulsion, which don't touch faith pressure. They're still unchecked
+    (section 6).
+
+**Departures from the sections above**
+- The feed stores the **year** only, not the full date. That's enough for a ten-year window
+  and for "newest first".
+- The header tiles read the **lord**, the ruler whose lands the view covers, in both modes.
+  In the realm view that's the top liege, so nothing changes there. In the lord's view, the
+  teaching and outlook tiles show the vassal's own, which is what moves local danger. Policy
+  still reads the top liege's realm title, with "Set by …" under it.
+- In the realm view, rows don't have a separate "in your lands" group; the lord's view
+  replaced it (section 3). The player's own community is highlighted, as in the map ledger.
+- No Subjects-tab change (section 7). It's still unexamined.
+
+**Live checks still owed**
+1. The chip renders beside Treasury, and also in a Kehillah leader's window, where the realm
+   block may be laid out differently.
+2. The chip's `IsShown` and its two script values don't cause a frame-time hitch in a large
+   realm.
+3. The window opens and closes, and the rows, tiles and tooltips show real text. In
+   particular, `Localize( Concatenate( 'kehillah_news_kind_', …GetFlagName ) )` must resolve
+   for a title variable.
+4. The lord's view lists only the lord's lands, and its link opens the realm view.
+5. `error.log` stays clean while hovering every tooltip.

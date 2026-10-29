@@ -1,0 +1,238 @@
+﻿# =====================================================================
+# Realm view of Jewish communities (2026-10-28).
+# Design: docs/spec/2026-10-28-realm-jewish-communities-view.md.
+#
+# Two parts:
+#   1. THE REALM NEWS FEED -- a fixed-slot ring buffer on the top
+#      liege's primary title, written whenever an incident happens.
+#   2. THE VIEW -- built onto the clicking player when the chip is
+#      pressed, the same way the map ledger is (a .gui datamodel can
+#      neither sort, filter, nor read a global list; see
+#      kehillah_refresh_map_view_effect).
+# =====================================================================
+
+
+# ---------------------------------------------------------------------
+# 1. THE REALM NEWS FEED
+#
+# WHY SLOTS. A CK3 variable list is a set: adding the same year, the
+# same kind, or the same community twice is a no-op, so parallel lists
+# cannot hold records. Each entry is instead a numbered group of plain
+# variables on the realm's primary title:
+#   kehillah_news_<n>_year       the year it happened
+#   kehillah_news_<n>_kind       flag:<kind>; the line's loc key is
+#                                kehillah_news_kind_<kind>
+#   kehillah_news_<n>_community  the community title
+#   kehillah_news_<n>_county     its county (survives the community)
+# Slot 1 is the newest. Writing shifts every slot down one and drops
+# slot 15. Fifteen covers ten years of a busy realm; entries older than
+# kehillah_rv_news_years_value are hidden when the view is built, so
+# no yearly prune is needed.
+#
+# The feed belongs to the realm: a community that later changes realm
+# leaves its past entries behind ("news from the realm").
+# ---------------------------------------------------------------------
+
+# Scope: the realm's primary title. Copies slot $FROM$ into slot $TO$.
+kehillah_realm_news_move_effect = {
+	if = {
+		limit = { has_variable = kehillah_news_$FROM$_year }
+		set_variable = { name = kehillah_news_$TO$_year value = var:kehillah_news_$FROM$_year }
+		set_variable = { name = kehillah_news_$TO$_kind value = var:kehillah_news_$FROM$_kind }
+		if = {
+			limit = { exists = var:kehillah_news_$FROM$_community }
+			set_variable = { name = kehillah_news_$TO$_community value = var:kehillah_news_$FROM$_community }
+		}
+		else = {
+			remove_variable = kehillah_news_$TO$_community
+		}
+		if = {
+			limit = { exists = var:kehillah_news_$FROM$_county }
+			set_variable = { name = kehillah_news_$TO$_county value = var:kehillah_news_$FROM$_county }
+		}
+		else = {
+			remove_variable = kehillah_news_$TO$_county
+		}
+	}
+	else = {
+		remove_variable = kehillah_news_$TO$_year
+		remove_variable = kehillah_news_$TO$_kind
+		remove_variable = kehillah_news_$TO$_community
+		remove_variable = kehillah_news_$TO$_county
+	}
+}
+
+# Scope: the realm's primary title.
+kehillah_realm_news_shift_effect = {
+	kehillah_realm_news_move_effect = { FROM = 14 TO = 15 }
+	kehillah_realm_news_move_effect = { FROM = 13 TO = 14 }
+	kehillah_realm_news_move_effect = { FROM = 12 TO = 13 }
+	kehillah_realm_news_move_effect = { FROM = 11 TO = 12 }
+	kehillah_realm_news_move_effect = { FROM = 10 TO = 11 }
+	kehillah_realm_news_move_effect = { FROM = 9 TO = 10 }
+	kehillah_realm_news_move_effect = { FROM = 8 TO = 9 }
+	kehillah_realm_news_move_effect = { FROM = 7 TO = 8 }
+	kehillah_realm_news_move_effect = { FROM = 6 TO = 7 }
+	kehillah_realm_news_move_effect = { FROM = 5 TO = 6 }
+	kehillah_realm_news_move_effect = { FROM = 4 TO = 5 }
+	kehillah_realm_news_move_effect = { FROM = 3 TO = 4 }
+	kehillah_realm_news_move_effect = { FROM = 2 TO = 3 }
+	kehillah_realm_news_move_effect = { FROM = 1 TO = 2 }
+}
+
+# Scope: a Kehillah leader. Records one piece of realm news about their
+# community. KIND is a bare word with a kehillah_news_kind_<KIND> loc
+# key. Called beside each kehillah_faith_pressure_add_effect that marks
+# an incident, BEFORE anything that could kill the leader or dissolve
+# the community, since it needs the live domicile.
+kehillah_realm_news_add_effect = {
+	if = {
+		limit = {
+			exists = primary_title
+			exists = domicile.domicile_location.county.holder.top_liege.primary_title
+		}
+		primary_title = { save_scope_as = kehillah_news_community }
+		domicile.domicile_location.county = { save_scope_as = kehillah_news_county }
+		domicile.domicile_location.county.holder.top_liege.primary_title = {
+			kehillah_realm_news_shift_effect = yes
+			set_variable = { name = kehillah_news_1_year value = current_year }
+			set_variable = { name = kehillah_news_1_kind value = flag:$KIND$ }
+			set_variable = { name = kehillah_news_1_community value = scope:kehillah_news_community }
+			set_variable = { name = kehillah_news_1_county value = scope:kehillah_news_county }
+		}
+		debug_log = "kehillah_realm_news_add_effect: recorded"
+		debug_log_scopes = yes
+	}
+}
+
+
+# ---------------------------------------------------------------------
+# 2. THE VIEW
+#
+# Scope: the clicking player (the scripted_gui's root);
+# scope:target = the character whose window the chip was on.
+#
+# Writes onto the player:
+#   kehillah_rv_subject   whose chip was pressed
+#   kehillah_rv_lord      whose lands the list covers (a Kehillah
+#                         leader's chip -> their host's top liege)
+#   kehillah_rv_top       the top liege: policy, charters, the feed
+#   kehillah_rv_realm     the top liege's primary title
+#   kehillah_rv_lord_mode set when lord != top: the smaller lord's view
+#   kehillah_rv_list      the communities, worst danger first
+#   kehillah_rv_worst     the first of them
+#   kehillah_rv_count / kehillah_rv_danger_count
+#   kehillah_rv_news_<n>  set for each feed slot to show
+#   kehillah_rv_news_count
+# ---------------------------------------------------------------------
+kehillah_realm_view_build_effect = {
+	clear_variable_list = kehillah_rv_list
+	remove_variable = kehillah_rv_worst
+	remove_variable = kehillah_rv_lord_mode
+	set_variable = { name = kehillah_rv_count value = 0 }
+	set_variable = { name = kehillah_rv_danger_count value = 0 }
+	set_variable = { name = kehillah_rv_news_count value = 0 }
+
+	scope:target = {
+		if = {
+			limit = { kehillah_rv_kehillah_leader_trigger = yes }
+			domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_rv_lord }
+		}
+		else = {
+			save_scope_as = kehillah_rv_lord
+		}
+	}
+	scope:kehillah_rv_lord.top_liege = { save_scope_as = kehillah_rv_top }
+
+	set_variable = { name = kehillah_rv_subject value = scope:target }
+	set_variable = { name = kehillah_rv_lord value = scope:kehillah_rv_lord }
+	set_variable = { name = kehillah_rv_top value = scope:kehillah_rv_top }
+	set_variable = { name = kehillah_rv_realm value = scope:kehillah_rv_top.primary_title }
+	if = {
+		limit = { NOT = { scope:kehillah_rv_lord = scope:kehillah_rv_top } }
+		set_variable = { name = kehillah_rv_lord_mode value = yes }
+	}
+
+	# Refresh the cached facts the rows read (host county, host realm,
+	# Standing), and count -- the count is the ordered pass's max, exact
+	# by construction (the max gotcha in kehillah_refresh_map_view_effect).
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = { kehillah_rv_community_in_lands_of_trigger = { LORD = scope:kehillah_rv_lord } }
+		kehillah_cache_map_view_facts_effect = yes
+		root = { change_variable = { name = kehillah_rv_count add = 1 } }
+		if = {
+			limit = { kehillah_rv_community_in_danger_trigger = yes }
+			root = { change_variable = { name = kehillah_rv_danger_count add = 1 } }
+		}
+	}
+
+	if = {
+		limit = { var:kehillah_rv_count > 0 }
+		ordered_in_global_list = {
+			variable = kehillah_registered_communities
+			order_by = kehillah_rv_title_danger_value
+			limit = { kehillah_rv_community_in_lands_of_trigger = { LORD = scope:kehillah_rv_lord } }
+			max = root.var:kehillah_rv_count
+			save_scope_as = kehillah_rv_entry
+			root = {
+				add_to_variable_list = { name = kehillah_rv_list target = scope:kehillah_rv_entry }
+				if = {
+					limit = { NOT = { has_variable = kehillah_rv_worst } }
+					set_variable = { name = kehillah_rv_worst value = scope:kehillah_rv_entry }
+				}
+			}
+		}
+	}
+
+	kehillah_rv_news_slot_effect = { N = 1 }
+	kehillah_rv_news_slot_effect = { N = 2 }
+	kehillah_rv_news_slot_effect = { N = 3 }
+	kehillah_rv_news_slot_effect = { N = 4 }
+	kehillah_rv_news_slot_effect = { N = 5 }
+	kehillah_rv_news_slot_effect = { N = 6 }
+	kehillah_rv_news_slot_effect = { N = 7 }
+	kehillah_rv_news_slot_effect = { N = 8 }
+	kehillah_rv_news_slot_effect = { N = 9 }
+	kehillah_rv_news_slot_effect = { N = 10 }
+	kehillah_rv_news_slot_effect = { N = 11 }
+	kehillah_rv_news_slot_effect = { N = 12 }
+	kehillah_rv_news_slot_effect = { N = 13 }
+	kehillah_rv_news_slot_effect = { N = 14 }
+	kehillah_rv_news_slot_effect = { N = 15 }
+}
+
+# Scope: the player, inside kehillah_realm_view_build_effect. Shows feed
+# slot $N$ when it is within ten years and, in the lord's view, in the
+# lord's own lands.
+kehillah_rv_news_slot_effect = {
+	remove_variable = kehillah_rv_news_$N$
+	if = {
+		limit = {
+			scope:kehillah_rv_top.primary_title = {
+				has_variable = kehillah_news_$N$_year
+				var:kehillah_news_$N$_year >= kehillah_rv_news_cutoff_value
+			}
+			OR = {
+				NOT = { has_variable = kehillah_rv_lord_mode }
+				scope:kehillah_rv_top.primary_title.var:kehillah_news_$N$_county.holder ?= {
+					OR = {
+						this = scope:kehillah_rv_lord
+						target_is_liege_or_above = scope:kehillah_rv_lord
+					}
+				}
+			}
+		}
+		set_variable = { name = kehillah_rv_news_$N$ value = yes }
+		change_variable = { name = kehillah_rv_news_count add = 1 }
+	}
+}
+
+# Debug only (kehillah_realm_view_debug.3). Scope: the realm's primary
+# title. Empties feed slot $N$.
+kehillah_rv_debug_clear_slot_effect = {
+	remove_variable = kehillah_news_$N$_year
+	remove_variable = kehillah_news_$N$_kind
+	remove_variable = kehillah_news_$N$_community
+	remove_variable = kehillah_news_$N$_county
+}
