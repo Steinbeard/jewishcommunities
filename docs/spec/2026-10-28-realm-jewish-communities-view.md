@@ -21,8 +21,10 @@ players alike. A Christian ruler looking at their own Jews is also groundwork fo
 
 1. **Character window, realm block (primary).** Add a menorah chip, "N Jewish communities",
    next to the domicile/building counter under the title row (vanilla
-   `window_character.gui`, `realm_info` block). Show it when the viewed character is a landed
-   ruler and at least one led community sits in their realm. When any community is Tense or
+   `window_character.gui`, `realm_info` block). Who gets it, and what it's titled, is settled in
+   section 8. A Kehillah leader holds a title but no land. If their window's realm block
+   doesn't render, or is laid out differently, the chip goes in the nearest equivalent spot.
+   Check this live. When any community is Tense or
    worse, add a small "N in danger" badge. Clicking it opens the window for **that
    character's realm**.
 2. **Kehillah Domain tab, host section** (`gui/window_my_realm.gui`, beside
@@ -38,10 +40,11 @@ the row would be crowded. The chip costs no space when it's hidden.
 
 *(Revised 2026-10-28 with Daniel's answer; the first draft scoped a duke's window to the duchy.)*
 
-The window always shows the **whole top realm**: every led community whose
-`domicile.domicile_location.county.holder.top_liege` is the viewed character's top liege. A
-duke, an emperor, and the Kehillah leaders under them all open the same "Jewish communities in
-the Holy Roman Empire".
+The window always covers the **whole top realm**: every led community whose
+`domicile.domicile_location.county.holder.top_liege` is the viewed character's top liege. Only
+the title and the "in your lands" group change with whose window it was opened from (section 8):
+a vassal's window opens as "Jewish communities in Champagne"; an emperor's or a Kehillah leader's
+as "…in the Holy Roman Empire".
 
 When the viewed character is a vassal, their own communities are pulled out into a short
 **"In your lands"** group above the full list (the same rows, filtered to counties the
@@ -168,11 +171,16 @@ Answered by Daniel, 2026-10-28:
 - **News feed, not latest-per-community**: a 10-year scrollable timeline, negative incidents
   first, positive news later (section 6).
 
-Still open: **who sees the chip.** The question is whether a player can open the view on
-*anyone's* character window (inspecting the King of France as a Castilian count, say) or only on
-characters that matter to them (their own liege, their own realm, their community's host). The
-recommended default is anyone's: it's read-only information, and it lets a Kehillah player
-compare realms before moving. Limit it only if playtesting shows it's cluttered.
+- **Who gets the chip** (Daniel, 2026-10-28): it's clickable on any character window, whoever
+  is viewing, for two kinds of character:
+  - **A ruler with at least one led community in their own lands** (their domain or their
+    vassals'). The chip and the window title name that ruler's realm: "Jewish communities in
+    Champagne". That ruler's communities lead the window. When the ruler is a vassal, the rest of
+    the top realm follows below, so policy and the other realm-level facts still make sense.
+  - **A Kehillah leader.** The chip names their host's top realm: "Jewish communities in the Holy
+    Roman Empire". This is the same window the Domain-tab link opens.
+
+  No chip on rulers whose lands hold no community, even if another part of their top realm does.
 
 ## 9. Future ideas, not scoped
 
