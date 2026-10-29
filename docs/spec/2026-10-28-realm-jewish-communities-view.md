@@ -287,3 +287,45 @@ game was started.
   in the inspector work (`kehillah_inspector_descriptions.txt`), which is uncommitted as of
   this pass. The realm view needs it merged first or alongside.
 - **Quarter button** on each row opens the community's domicile, as the map ledger does.
+
+## 11. Audience layout (2026-10-28, third pass)
+
+Daniel found the table "more cluttered and confusing" and suggested "all the kehilla leaders in
+a room petitioning their lord". The window now reads top to bottom as an audience:
+
+1. **The ruler:** portrait, name, a one-line summary ("Hears 6 communities, 1 of them Tense or
+   worse"), and three fact buttons: policy, teaching and outlook. The danger tile is gone; the
+   summary line and the gallery carry danger now.
+2. **The petitioners:** a gallery of portrait cards, six to a row and most endangered first.
+   Each card has only the county name, the description, and the danger band, plus a red strip
+   when Tense or worse. Clicking a card selects it (`kehillah_realm_view_select`, the player
+   variable `kehillah_rv_selected`). The view opens on the player's own community if it's
+   listed, otherwise on the most endangered.
+3. **The detail card** for the selected community: name, leader and place, description,
+   danger; then local lord and outlook, the three pillar tiers, and the full Charter terms;
+   then buttons for Open Leader, Jewish Quarter, Charter and Show on Map.
+4. **Realm news:** collapsed to a header with its count, opened with a click.
+
+**Rejected alternatives:**
+- A free-form room, because a GUI datamodel lays out only in rows or grids, and placing
+  portraits by hand breaks past about 15 communities.
+- Per-card accordions, because each card would need its own open state, and several open at
+  once brings the clutter back.
+
+**Spacing fixes** (the France window):
+- Every scrolling area now has a fixed height chosen by count. A scrollarea capped below its
+  content's height left the window reserving the full height as a gap.
+- The fact buttons are taller (three lines fit).
+- No `text_label_center` for labels, since it draws its own dark band.
+
+**Policy click and laws:**
+- Daniel expected the settlement policy to be a realm law. It isn't: V16 made it a title
+  variable changed by two decisions. A real law in `common/laws/` would appear in vanilla's
+  laws tab with no GUI work.
+- For now, `gui/window_my_realm.gui` shows a "Jewish Settlement Policy" panel at the top of
+  the laws tab. It shows the top liege's policy, plus buttons to the raise and lower
+  decisions for an independent ruler. The policy fact opens that tab for a landed player
+  inside the realm.
+- The old click target, the Jewish Settlement Policy map mode (2026-10-23), painted
+  incorrectly in Daniel's game. It's no longer linked from here, and it's still unfixed.
+- Converting the policy into a real law is recorded as an open design question.
