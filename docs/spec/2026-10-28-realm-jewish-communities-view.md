@@ -38,23 +38,33 @@ the row would be crowded. The chip costs no space when it's hidden.
 
 ## 3. Whose realm
 
-*(Revised 2026-10-28 with Daniel's answer; the first draft scoped a duke's window to the duchy.)*
+*(Revised twice on 2026-10-28 with Daniel's answers. The first draft scoped a duke's window
+to the duchy; the second made every window the whole top realm with an "in your lands" group;
+this final version gives lower lords their own view.)*
 
-The window always covers the **whole top realm**: every led community whose
-`domicile.domicile_location.county.holder.top_liege` is the viewed character's top liege. Only
-the title and the "in your lands" group change with whose window it was opened from (section 8):
-a vassal's window opens as "Jewish communities in Champagne"; an emperor's or a Kehillah leader's
-as "…in the Holy Roman Empire".
+There are **two views**, chosen by whose window the chip is on:
 
-When the viewed character is a vassal, their own communities are pulled out into a short
-**"In your lands"** group above the full list (the same rows, filtered to counties the
-viewed character holds or their vassals hold). The full realm list follows below it. For the top
-liege, that group is the whole list, so it's not shown.
+1. **Realm view**: opened from a top liege's window or from any Kehillah leader's window. It
+   covers every led community whose `domicile.domicile_location.county.holder.top_liege` is that
+   top liege, and is titled "Jewish communities in the Holy Roman Empire". This is the full
+   layout in section 4.
+2. **Lord's view**: opened from a vassal ruler's window. It covers only the communities in that
+   lord's lands: counties they hold, or their own vassals hold, at any depth. (Assumption: a
+   duke's lands include his counts' counties. Narrow this to the personal domain only if Daniel
+   prefers.) It's titled "Jewish communities in Champagne". It's a smaller window:
+   - the same community rows (leader, local lord, charter, pillars, danger);
+   - **this lord's** outlook on the Jews, since their own outlook is what moves danger
+     locally (`kehillah_danger_lord_value`);
+   - one compact line for the rules set from above: "Settlement policy: Allowed · Charter
+     host: Heinrich IV". This stays because the overlord's policy and charters still bind these
+     communities;
+   - the news-feed entries for these communities only, filtered from the realm feed;
+   - a link at the bottom, **"View Jewish communities in the Holy Roman Empire"**, which opens
+     the realm view.
 
-Policy, charter host and outlook always resolve to the **top liege**, the same host V15/V16
-use (`kehillah_host_charter_effects.txt` resolves
-`domicile.domicile_location.county.holder.top_liege`). When the viewed character is a vassal,
-the header says so ("Policy set by Heinrich IV").
+Policy, charter host and outlook-as-host always resolve to the **top liege**, the same host
+V15/V16 use (`kehillah_host_charter_effects.txt` resolves
+`domicile.domicile_location.county.holder.top_liege`).
 
 **Charters stay top-liege only.** Historically some communities held charters from a local lord
 rather than the sovereign. That would give interesting gameplay (a bishop's charter versus the
@@ -165,8 +175,9 @@ copying the whole file, drop this.
 ## 8. Decisions and open questions
 
 Answered by Daniel, 2026-10-28:
-- **A vassal's chip opens the whole top realm**, with their own communities called out
-  (section 3).
+- **A vassal's chip opens a separate lord's view** of the Jews in their own lands, with a link
+  up to the overlord's realm view (section 3). This replaces the earlier same-day answer, where
+  a vassal's chip opened the whole realm with their own communities called out.
 - **Charters: top liege only** for now (section 3).
 - **News feed, not latest-per-community**: a 10-year scrollable timeline, negative incidents
   first, positive news later (section 6).
@@ -174,9 +185,8 @@ Answered by Daniel, 2026-10-28:
 - **Who gets the chip** (Daniel, 2026-10-28): it's clickable on any character window, whoever
   is viewing, for two kinds of character:
   - **A ruler with at least one led community in their own lands** (their domain or their
-    vassals'). The chip and the window title name that ruler's realm: "Jewish communities in
-    Champagne". That ruler's communities lead the window. When the ruler is a vassal, the rest of
-    the top realm follows below, so policy and the other realm-level facts still make sense.
+    vassals'). A top liege's chip opens the realm view. A vassal's chip opens the lord's view
+    ("Jewish communities in Champagne"), which links up to the realm view (section 3).
   - **A Kehillah leader.** The chip names their host's top realm: "Jewish communities in the Holy
     Roman Empire". This is the same window the Domain-tab link opens.
 

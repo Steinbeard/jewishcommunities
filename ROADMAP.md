@@ -28,8 +28,9 @@ communities in [realm]". The header shows settlement policy, the faith's teachin
 outlook and the worst danger. Below it: a row per community (leader, local lord, charter, pillars,
 danger) and a 10-year scrollable realm news feed. Almost everything reads existing values; the one
 new piece of state is a fixed-slot news ring buffer on the top liege's title, fed from the existing
-negative-incident hooks for now. Daniel settled the scope the same day: whole top realm with
-"in your lands" called out, top-liege charters only, and a feed rather than latest-per-community.
+negative-incident hooks for now. Daniel settled the scope the same day: whole top realm,
+top-liege charters only, a feed rather than latest-per-community, and a smaller lord's view for
+vassals that links up to the realm view.
 Queued after the inspector work above. See the
 [design note](docs/spec/2026-10-28-realm-jewish-communities-view.md).
 
