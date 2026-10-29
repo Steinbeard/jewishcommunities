@@ -21,6 +21,16 @@ subject to revision after each phase.
 
 The holding/county view now has a Kehillah inspector when a community barony is selected in the Jewish Communities map mode. A persistent host-province link feeds a compact menorah tab alongside the holding tabs in every map mode; the tab is disabled on holdings without a community and its hover shows any recorded place history. The Jewish map mode also opens a vacant-site panel with policy, ruler outlook, economic opportunity, founding conditions, and history. Source and xTiger checks pass. Daniel confirmed active-community data and map-mode visibility live; the compact tab and vacant-site layout still need a fresh-game check. See [the implementation note](docs/implementation/2026-10-25-community-map-inspector.md). This direct user request was taken ahead of the older live-test TODOs below.
 
+### Realm view: Jewish communities in a realm — 2026-10-28, Daniel's request
+
+**Proposal, not built.** A menorah chip in the character window's realm block opens "Jewish
+communities in [realm]". The header shows settlement policy, the faith's teaching, the ruler's
+outlook and the worst danger. Below it: a row per community (leader, local lord, charter, pillars,
+danger) and a 10-year incident list. Almost everything reads existing values; the one new piece of
+state is a per-community last-incident year and kind. Queued after the inspector work above. See
+the [design note](docs/spec/2026-10-28-realm-jewish-communities-view.md), whose section 8 lists
+Daniel's open questions.
+
 ### Jewish map ledger controls — 2026-10-25, Daniel's request
 
 The Jewish Communities ledger now has a minimize control with a compact
