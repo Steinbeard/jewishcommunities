@@ -17,6 +17,39 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### Community inspector on the Jewish Communities map — 2026-10-25, Daniel's request
+
+The holding/county view now has a Kehillah inspector when a community barony is selected in the Jewish Communities map mode. A persistent host-province link feeds a compact menorah tab alongside the holding tabs in every map mode; the tab is disabled on holdings without a community and its hover shows any recorded place history. The Jewish map mode also opens a vacant-site panel with policy, ruler outlook, economic opportunity, founding conditions, and history. Source and xTiger checks pass. Daniel confirmed active-community data and map-mode visibility live; the compact tab and vacant-site layout still need a fresh-game check. See [the implementation note](docs/implementation/2026-10-25-community-map-inspector.md). This direct user request was taken ahead of the older live-test TODOs below.
+
+### V51 Bookmark rosters for 867, 1066 and 1178 — 2026-10-21, Daniel's request
+
+**Built 2026-10-22; `ck3-tiger` clean; NOT live-tested.** Three Kehillah bookmarks:
+- **1066** (five cards): Worms, Troyes, Granada, the Rif in Fez, and David ben Hezekiah as an adventurer.
+- **867** "Age of the Geonim": Amram Gaon, Moshe ben Asher, Shefatiah of Oria, a Kalonymide of Lucca,
+  Kairouan, and Eldad ha-Dani as an adventurer.
+- **1178** "The Paths of Torah": Maimonides, Samuel ben Eli, the Ri, Judah he-Hasid, the Raavad of
+  Posquières, and Joseph ibn Shoshan of Toledo.
+
+New seats: Fez, Oria, Lucca, Tiberias, Posquières, plus two adventurer companies. Karaite and
+Radhanite cards are recorded for later. The choices made while building, and the first-boot
+checklist, are in [V51](docs/spec/v51-bookmark-rosters.md) section 0. **Next:** boot each bookmark,
+press Play on a community card and an adventurer card, and calibrate portrait positions.
+
+### Community rite and realm Jewish-policy map modes — 2026-10-23, Daniel's request
+
+Two additional views are built beside the existing community map: **Community Rites** colours each
+Kehillah's occupied barony by its leader's current rite, and **Jewish Settlement Policy** colours
+each realm by its top liege's current policy. Source review, `git diff --check` and xTiger completed
+without new errors in the changed files. The live UI check is pending: a separate CK3 process was
+already running, so it was left untouched. See the [map-mode design note](docs/spec/2026-10-23-community-rite-and-realm-policy-maps.md).
+
+### Ben David dynasty presentation — 2026-10-22, Daniel's historical-family request
+
+**Implemented; source and xTiger checked; live UI verification pending.** The
+Baghdad exilarch's dynasty now displays as Ben David, with symbolic lion arms
+and a Genesis 49:10 motto. The arms are an artistic gameplay choice rather
+than attested eleventh-century heraldry. See the [dated implementation note](docs/implementation/2026-10-22-ben-david-dynasty-presentation.md).
+
 ### Historical family roster research spike — 2026-10-22, Daniel's request
 
 **Status: research complete; implementation on a stacked feature branch, live test pending.** The [dated spike](docs/research/2026-10-22-historical-character-roster-spike.md), [CSV tracker](docs/data/historical-character-tracker.csv), and [implementation note](docs/implementation/2026-10-23-historical-families-and-seeding.md) cover 110 tracked people, including 99 new history entries. Rashi has a young widower household with three daughters; Bodo lives in 867 Zaragoza; Sousse remains within Mahdia. Named families occupy appropriate 1066 courts before vacant seats receive random households. The former adult-child fallback is removed, and generated children have age-safe bounds. Source and xTiger checks passed; an isolated live-game check remains necessary. This user-directed work does not mark V50's pending live checks as passed.
@@ -32,6 +65,10 @@ Source and xTiger checks found no new changed-file errors. An [isolated boot](do
 reached the main menu, but the input fallback could not enter a campaign; rite
 behavior and display remain pending.
 This Daniel-directed naming unit does not close the older items below.
+
+### V50 Community founding and place memory — 2026-10-23, Daniel's request
+
+[V50](docs/spec/v50-community-founding-and-place-memory.md) records the source and architecture audit. The [first implementation slice](docs/implementation/2026-10-23-community-history-first-slice.md) now has a county-owned original year, last loss/refounding, optional founder/origin, and portable Domain/map summary. Source and xTiger checks pass against the existing baseline. The 1066 Domain year and 867 Kairouan date gate passed live checks; the age suffix and dynamic founding cycle still await Daniel-approved live tests. An unlimited chronological list, save migration, and historically sourced named-founder authoring remain future units. This user-directed work was taken ahead of the older live-test queue below; it does not close or reorder it.
 
 ### Pogrom warning and neighbouring news — 2026-10-21, Daniel's playthrough review
 
