@@ -333,3 +333,23 @@ a room petitioning their lord". The window now reads top to bottom as an audienc
   group `kehillah_jewish_settlement` ([its note](2026-10-28-jewish-settlement-law.md)), listed
   by vanilla's laws tab. The stopgap panel was removed, and `window_my_realm.gui` is back to
   its earlier state.
+
+## 12. Slimmer layout (2026-10-29)
+
+Daniel's notes on the audience layout, and what changed:
+
+- **"Skinnier":** 762 px became 600. At 762 px, centred, the window ran under the character
+  window (which draws above it), so its left edge looked cut off. It now sits right of
+  centre. The ruler's three facts moved to their own row under the portrait, and the gallery
+  shows five to a row.
+- **Pillar bars like the holding card:** the three band-coloured progress bars, with the
+  tier name and the breakdown on hover, replace the tier text. They reuse the inspector's
+  rim textures (`gfx/interface/progressbars/kehillah_*.dds`), which are in the uncommitted
+  inspector work as of this pass. That's the same dependency as the descriptions.
+- **Quieter actions:** "Open Leader" is gone. Jewish Quarter, Charter and Show on Map became
+  three small round icon buttons beside the danger rating.
+- **Policy fact:** it goes back to the policy map mode. Vanilla shows no other realm's laws;
+  the tooltip points to My Realm for changing your own.
+- **News:** each line is one row of fixed columns that fit the window (year, place, text).
+  Long text is cut off with "…", and the full line shows on hover. The open feed is a fixed
+  160 px that scrolls, so a full feed can't stretch the window.

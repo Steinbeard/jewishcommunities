@@ -73,3 +73,30 @@ replaces both decisions.
 5. In an old save, a title with the variable shows the right rung before and after the yearly
    conversion.
 6. The realm view's policy fact opens this laws tab.
+
+## Fixes after Daniel's first live look (2026-10-29)
+
+- **Every realm read as Banned.** Loading a save from before the law, the engine gave every
+  existing ruler the group's *first* law (Banned, index 0); the group's default is only for
+  new rulers. Fixed with a global flag, `kehillah_settlement_laws_ready`:
+  - Until the flag is set, the band triggers ignore the law and read the old variable
+    (absent means Allowed).
+  - `kehillah_settlement_laws_normalize_effect` then sets every eligible ruler's law from
+    their old variable (or Allowed), removes the variables, and sets the flag.
+  - It runs at game start, on the first yearly pulse after a load (within days), and
+    before anything changes or shows the policy: the raise, lower and set effects, the
+    realm view, and the policy map.
+  - Passing a settlement law in the laws tab is refused until the flag is set, so the pass
+    can't overwrite a law the player has just chosen.
+  - This replaces the yearly per-ruler migration.
+- **Kehillah leaders saw the law.** The group's `can_have_group` alone didn't keep it off
+  their laws tab, so every law now also has `potential`, `can_have` and `can_keep`.
+- **Who holds it, revised by Daniel:** Christian and Muslim rulers, or a ruler of any other
+  faith with a Jewish community already in their realm. It must also be independent, landed,
+  not Jewish, and not a Kehillah (`kehillah_can_hold_settlement_law_trigger`).
+- **Icons:** the laws had none, since law icons are looked up as
+  `gfx/interface/icons/laws/<law>.dds`. Vanilla's four Church Authority icons stand in as
+  placeholders for Banned through Encouraged.
+- **Other realms' laws:** vanilla has no window for them; My Realm's laws tab shows only the
+  player's own. The realm view's policy fact goes back to the policy map mode, which compares
+  every realm at once.

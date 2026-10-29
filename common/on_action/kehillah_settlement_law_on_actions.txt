@@ -1,29 +1,36 @@
 ﻿# =====================================================================
-# Jewish Settlement Policy as a realm law (2026-10-28): converting saves
-# from before the law. docs/spec/2026-10-28-jewish-settlement-law.md.
+# Jewish Settlement Policy as a realm law: making the laws authoritative.
+# docs/spec/2026-10-28-jewish-settlement-law.md, "Old saves".
 #
-# A pre-law save keeps each realm's policy in the title variable
-# kehillah_jewish_settlement_policy. The four band triggers read that
-# variable first while it exists, so nothing reads wrongly in between;
-# once a year each ruler's variable becomes the matching law and is
-# removed. A ruler who passes a settlement law sooner converts at once
-# (kehillah_settlement_policy_changed_effect removes the variable).
-# New games never write the variable.
+# Until the global flag kehillah_settlement_laws_ready is set the band
+# triggers ignore the law and read the old title variable (absent =
+# Allowed): loading a pre-law save, the engine hands every existing ruler
+# the group's FIRST law, Banned. kehillah_settlement_laws_normalize_effect
+# sets each eligible ruler's law from their variable and sets the flag.
 #
-# random_yearly_playable_pulse blocks in several files merge (see the
+# It runs at game start, and on the first yearly pulse after a load --
+# random_yearly_playable_pulse fires for some playable character within
+# days of any date, so this is effectively at once. The realm view and
+# the policy map also run it before reading anything. Once the flag is
+# set every call is a no-op.
+#
+# Several files' blocks for the same vanilla on_action merge (see the
 # note in kehillah_on_actions.txt).
 # =====================================================================
 
-random_yearly_playable_pulse = {
-	on_actions = { kehillah_settlement_law_migration_pulse }
+on_game_start_after_lobby = {
+	on_actions = { kehillah_settlement_laws_normalize_on_action }
 }
 
-kehillah_settlement_law_migration_pulse = {
+random_yearly_playable_pulse = {
+	on_actions = { kehillah_settlement_laws_normalize_on_action }
+}
+
+kehillah_settlement_laws_normalize_on_action = {
 	trigger = {
-		exists = primary_title
-		primary_title = { has_variable = kehillah_jewish_settlement_policy }
+		NOT = { has_global_variable = kehillah_settlement_laws_ready }
 	}
 	effect = {
-		kehillah_migrate_settlement_policy_effect = yes
+		kehillah_settlement_laws_normalize_effect = yes
 	}
 }
