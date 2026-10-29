@@ -263,3 +263,27 @@ game was started.
    for a title variable.
 4. The lord's view lists only the lord's lands, and its link opens the realm view.
 5. `error.log` stays clean while hovering every tooltip.
+
+### Second pass, after Daniel's live look (2026-10-28)
+
+- **Fixed:** the window frame, column alignment, the lord's-view subheader, and realm names
+  without rank. Also restored the 11 breakdown strings that a389fff deleted (the five
+  danger-band words among them).
+- **Tiles are buttons:**
+  - Policy opens the Jewish Settlement Policy map mode. Daniel asked for the laws, but the
+    policy is a title variable changed by decision, not a realm law.
+  - Teaching opens the faith.
+  - Outlook opens that ruler's character window.
+  - Danger moves the map to the most endangered community.
+  - Each tooltip ends with what a click does.
+- **Charter column is a button that opens the Charter itself**, which is a tributary
+  contract:
+  - the host gets `suzerain_modify_tributary_contract_interaction` on the leader;
+  - the leader, on their own row, gets `subject_modify_tributary_contract_interaction` on the
+    host;
+  - anyone else sees the full terms on hover, with the button disabled.
+- **"Known As" replaces the Standing number.** It shows the inspector's 125 pillar-combination
+  descriptions (`KehillahInspectorCommunityDescription`). **Dependency:** that custom loc lives
+  in the inspector work (`kehillah_inspector_descriptions.txt`), which is uncommitted as of
+  this pass. The realm view needs it merged first or alongside.
+- **Quarter button** on each row opens the community's domicile, as the map ledger does.
