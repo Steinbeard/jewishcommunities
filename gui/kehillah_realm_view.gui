@@ -91,26 +91,26 @@ window = {
 	using = Window_Background
 	using = Window_Decoration_Spike
 
-	vbox = {
-		set_parent_size_to_minimum = yes
-		# THE GAPS (2026-10-29, two passes). Hidden children with fixed
-		# heights -- a second gallery variant, a closed news feed, the
-		# lord's-view lines -- were still reserved when the window sized
-		# itself, and the surplus (~500 px) spread as even gaps between the
-		# visible parts. ignoreinvisible alone did not stop it. So nothing
-		# with a height is hidden here any more: one gallery that sizes to
-		# its rows, one subtitle that switches its text, a news list whose
-		# ROWS hide (the list itself stays, at zero height when closed). The
-		# expand at the end catches anything left over at the bottom.
+	# THE ROOT (2026-10-29, final cause of the height problems): a
+	# flowcontainer with resizeparent, as vanilla's outliner does
+	# (gui/hud_outliner.gui). It sizes the window to its children's ACTUAL
+	# sizes. The earlier vbox + set_parent_size_to_minimum used their size
+	# HINTS, and a scrollarea's hint includes its whole content -- so a
+	# capped or scrolled list (the gallery past two rows, the news feed)
+	# still made the window as tall as the full list, leaving gaps or a
+	# blank band. Each hbox/vbox section is wrapped in a plain widget that
+	# it sizes, because a flowcontainer may not hold an hbox/vbox directly.
+	flowcontainer = {
+		direction = vertical
+		resizeparent = yes
 		ignoreinvisible = yes
 		using = Window_Margins
 		margin_bottom = 20
 		spacing = 10
-		min_width = @rv_width
-		max_width = @rv_width
+
 
 		header_pattern = {
-			layoutpolicy_horizontal = expanding
+			blockoverride "size" { size = { @rv_width 56 } }
 
 			blockoverride "header_text"
 			{
@@ -131,84 +131,89 @@ window = {
 		###   teaching -> the faith window
 		###   outlook  -> the ruler's character window
 		### =============================================================
-		vbox = {
-			datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_rv_lord' ).Char]"
-			layoutpolicy_horizontal = expanding
-			ignoreinvisible = yes
-			spacing = 8
-			margin = { 16 12 }
-
-			background = {
-				using = Background_Area_Dark
-				color = { 0.16 0.14 0.12 0.8 }
-				margin = { 2 2 }
-			}
-
-			hbox = {
+		widget = {
+			vbox = {
+				set_parent_size_to_minimum = yes
+				min_width = @rv_width
+				max_width = @rv_width
+				datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_rv_lord' ).Char]"
 				layoutpolicy_horizontal = expanding
-				spacing = 10
+				ignoreinvisible = yes
+				spacing = 8
+				margin = { 16 12 }
 
-				portrait_head_small = {}
+				background = {
+					using = Background_Area_Dark
+					color = { 0.16 0.14 0.12 0.8 }
+					margin = { 2 2 }
+				}
 
-				vbox = {
+				hbox = {
 					layoutpolicy_horizontal = expanding
-					ignoreinvisible = yes
-					spacing = 4
+					spacing = 10
 
-					text_single = {
+					portrait_head_small = {}
+
+					vbox = {
 						layoutpolicy_horizontal = expanding
-						align = left|nobaseline
-						max_width = 440
-						text = "[Character.GetShortUINameNoTooltip]"
-						default_format = "#high"
-						using = Font_Size_Medium
-					}
-					text_multi = {
-						layoutpolicy_horizontal = expanding
-						autoresize = yes
-						min_width = 440
-						max_width = 440
-						text = "[SelectLocalization( GetPlayer.MakeScope.Var( 'kehillah_rv_lord_mode' ).IsSet, 'KEHILLAH_RV_LORD_SUB', 'KEHILLAH_RV_RULER_SUB' )]"
-						default_format = "#weak"
+						ignoreinvisible = yes
+						spacing = 4
+
+						text_single = {
+							layoutpolicy_horizontal = expanding
+							align = left|nobaseline
+							max_width = 440
+							text = "[Character.GetShortUINameNoTooltip]"
+							default_format = "#high"
+							using = Font_Size_Medium
+						}
+						text_multi = {
+							layoutpolicy_horizontal = expanding
+							autoresize = yes
+							min_width = 440
+							max_width = 440
+							text = "[SelectLocalization( GetPlayer.MakeScope.Var( 'kehillah_rv_lord_mode' ).IsSet, 'KEHILLAH_RV_LORD_SUB', 'KEHILLAH_RV_RULER_SUB' )]"
+							default_format = "#weak"
+						}
 					}
 				}
-			}
 
-			hbox = {
-				layoutpolicy_horizontal = expanding
-				spacing = 6
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					spacing = 6
 
-				kehillah_rv_fact = {
-					datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_rv_realm' ).Title]"
-					blockoverride "fact_click" {
-						enabled = "[CanChangeMapMode]"
-						onclick = "[GetScriptedGui( 'kehillah_realm_jewish_policy_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-						onclick = "[SetMapMode( 'kehillah_realm_jewish_policy_map' )]"
+					kehillah_rv_fact = {
+						datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_rv_realm' ).Title]"
+						blockoverride "fact_click" {
+							enabled = "[CanChangeMapMode]"
+							onclick = "[GetScriptedGui( 'kehillah_realm_jewish_policy_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+							onclick = "[SetMapMode( 'kehillah_realm_jewish_policy_map' )]"
+						}
+						blockoverride "fact_tooltip" { tooltip = "KEHILLAH_RV_POLICY_TOOLTIP" }
+						blockoverride "fact_label" { text = "KEHILLAH_RV_POLICY_LABEL" }
+						blockoverride "fact_value" { text = "[Title.Custom( 'KehillahJewishSettlementPolicy' )]" }
+						blockoverride "fact_sub" { text = "KEHILLAH_RV_POLICY_SUB" }
 					}
-					blockoverride "fact_tooltip" { tooltip = "KEHILLAH_RV_POLICY_TOOLTIP" }
-					blockoverride "fact_label" { text = "KEHILLAH_RV_POLICY_LABEL" }
-					blockoverride "fact_value" { text = "[Title.Custom( 'KehillahJewishSettlementPolicy' )]" }
-					blockoverride "fact_sub" { text = "KEHILLAH_RV_POLICY_SUB" }
-				}
 
-				kehillah_rv_fact = {
-					blockoverride "fact_click" {
-						onclick = "[OpenGameViewData( 'faith', Character.GetFaith.Self )]"
+					kehillah_rv_fact = {
+						blockoverride "fact_click" {
+							onclick = "[OpenGameViewData( 'faith', Character.GetFaith.Self )]"
+						}
+						blockoverride "fact_tooltip" { tooltip = "KEHILLAH_RV_TEACHING_TOOLTIP" }
+						blockoverride "fact_label" { text = "KEHILLAH_RV_TEACHING_LABEL" }
+						blockoverride "fact_value" { text = "[Character.Custom( 'KehillahRvTeaching' )]" }
+						blockoverride "fact_sub" { text = "[Character.Custom( 'KehillahRvTeachingTone' )]" }
 					}
-					blockoverride "fact_tooltip" { tooltip = "KEHILLAH_RV_TEACHING_TOOLTIP" }
-					blockoverride "fact_label" { text = "KEHILLAH_RV_TEACHING_LABEL" }
-					blockoverride "fact_value" { text = "[Character.Custom( 'KehillahRvTeaching' )]" }
-					blockoverride "fact_sub" { text = "[Character.Custom( 'KehillahRvTeachingTone' )]" }
-				}
 
-				kehillah_rv_fact = {
-					blockoverride "fact_click" {
-						onclick = "[DefaultOnCharacterClick( Character.GetID )]"
+					kehillah_rv_fact = {
+						blockoverride "fact_click" {
+							onclick = "[DefaultOnCharacterClick( Character.GetID )]"
+						}
+						blockoverride "fact_tooltip" { tooltip = "KEHILLAH_RV_OUTLOOK_TOOLTIP" }
+						blockoverride "fact_label" { text = "KEHILLAH_RV_OUTLOOK_LABEL" }
+						blockoverride "fact_value" { text = "[Character.Custom( 'KehillahOutlookBand' )]" }
+						blockoverride "fact_sub" { text = "[Character.Custom( 'KehillahRvStance' )]" }
 					}
-					blockoverride "fact_tooltip" { tooltip = "KEHILLAH_RV_OUTLOOK_TOOLTIP" }
-					blockoverride "fact_label" { text = "KEHILLAH_RV_OUTLOOK_LABEL" }
-					blockoverride "fact_value" { text = "[Character.Custom( 'KehillahOutlookBand' )]" }
-					blockoverride "fact_sub" { text = "[Character.Custom( 'KehillahRvStance' )]" }
 				}
 			}
 		}
@@ -218,22 +223,27 @@ window = {
 		### side). Fixed heights by count: one row up to six, two rows
 		### (scrolling past twelve) above that.
 		### =============================================================
-		hbox = {
-			layoutpolicy_horizontal = expanding
-			margin = { 8 0 }
+		widget = {
+			hbox = {
+				set_parent_size_to_minimum = yes
+				min_width = @rv_width
+				max_width = @rv_width
+				layoutpolicy_horizontal = expanding
+				margin = { 8 0 }
 
-			text_single = {
-				align = left|nobaseline
-				text = "KEHILLAH_RV_COMMUNITIES_HEADER"
-				default_format = "#high;bold"
-			}
-			expand = {}
-			text_single = {
-				align = right|nobaseline
-				max_width = 360
-				text = "KEHILLAH_RV_GALLERY_HINT"
-				default_format = "#weak;italic"
-				using = Font_Size_Small
+				text_single = {
+					align = left|nobaseline
+					text = "KEHILLAH_RV_COMMUNITIES_HEADER"
+					default_format = "#high;bold"
+				}
+				expand = {}
+				text_single = {
+					align = right|nobaseline
+					max_width = 360
+					text = "KEHILLAH_RV_GALLERY_HINT"
+					default_format = "#weak;italic"
+					using = Font_Size_Small
+				}
 			}
 		}
 
@@ -259,394 +269,399 @@ window = {
 		### =============================================================
 		### 3. THE SELECTED COMMUNITY.
 		### =============================================================
-		vbox = {
-			datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_rv_selected' ).Title]"
-			visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_selected' ).IsSet]"
-			layoutpolicy_horizontal = expanding
-			spacing = 10
-			margin = { 18 14 }
-
-			background = {
-				using = Background_Area_Dark
-				color = { 0.16 0.14 0.12 0.8 }
-				margin = { 2 2 }
-			}
-
-			# Who it is; how endangered; what can be done (three quiet icons).
-			hbox = {
+		widget = {
+			vbox = {
+				set_parent_size_to_minimum = yes
+				min_width = @rv_width
+				max_width = @rv_width
+				datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_rv_selected' ).Title]"
+				visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_selected' ).IsSet]"
 				layoutpolicy_horizontal = expanding
-				spacing = 8
+				spacing = 10
+				margin = { 18 14 }
 
-				vbox = {
-					layoutpolicy_horizontal = expanding
-					spacing = 1
-
-					text_single = {
-						layoutpolicy_horizontal = expanding
-						align = left|nobaseline
-						max_width = 360
-						text = "[Title.GetNameNoTooltip]"
-						default_format = "#high;bold"
-						using = Font_Size_Medium
-					}
-					text_single = {
-						layoutpolicy_horizontal = expanding
-						align = left|nobaseline
-						max_width = 360
-						text = "KEHILLAH_RV_DETAIL_SUB"
-						default_format = "#weak"
-						tooltip = "KEHILLAH_BD_STANDING_TOOLTIP"
-						using = tooltip_ws
-					}
+				background = {
+					using = Background_Area_Dark
+					color = { 0.16 0.14 0.12 0.8 }
+					margin = { 2 2 }
 				}
 
-				vbox = {
-					spacing = 0
-					tooltip = "KEHILLAH_BD_DANGER_TOOLTIP"
-					using = tooltip_ws
-
-					text_single = {
-						layoutpolicy_horizontal = expanding
-						align = right|nobaseline
-						max_width = 100
-						text = "KEHILLAH_RV_DANGER_LABEL"
-						default_format = "#weak"
-						using = Font_Size_Small
-					}
-					text_single = {
-						layoutpolicy_horizontal = expanding
-						align = right|nobaseline
-						max_width = 100
-						text = "[Title.GetHolder.Custom( 'KehillahDangerBand' )]"
-						using = Font_Size_Medium
-					}
-				}
-
-				# The actions, as small round icons (vanilla's own form for
-				# secondary actions, e.g. the Subjects list's contract and
-				# release buttons in shared/lists.gui), not full-width buttons.
+				# Who it is; how endangered; what can be done (three quiet icons).
 				hbox = {
-					spacing = 4
+					layoutpolicy_horizontal = expanding
+					spacing = 8
 
-					button_round = {
-						size = { 34 34 }
-						enabled = "[Title.HasDomicile]"
-						onclick = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
-						onclick = "[ToggleGameViewData( 'domicile', Title.GetHolder.GetDomicile )]"
-						tooltip = "KEHILLAH_MAP_VIEW_QUARTER_TOOLTIP"
-						using = tooltip_ws
+					vbox = {
+						layoutpolicy_horizontal = expanding
+						spacing = 1
 
-						button_icon = {
-							parentanchor = center
-							size = { 20 20 }
-							texture = "gfx/interface/icons/flat_icons/estate.dds"
-							alwaystransparent = yes
+						text_single = {
+							layoutpolicy_horizontal = expanding
+							align = left|nobaseline
+							max_width = 360
+							text = "[Title.GetNameNoTooltip]"
+							default_format = "#high;bold"
+							using = Font_Size_Medium
+						}
+						text_single = {
+							layoutpolicy_horizontal = expanding
+							align = left|nobaseline
+							max_width = 360
+							text = "KEHILLAH_RV_DETAIL_SUB"
+							default_format = "#weak"
+							tooltip = "KEHILLAH_BD_STANDING_TOOLTIP"
+							using = tooltip_ws
 						}
 					}
 
-					# The Charter is a tributary contract (kehillah_host_charter_
-					# groups.txt): the host opens it on the leader with the
-					# suzerain interaction; the leader, on their own community,
-					# with the subject interaction on the host. Anyone else gets
-					# a disabled button whose tooltip still lists the terms.
-					button_round = {
-						visible = "[Not( Title.GetHolder.IsLocalPlayer )]"
-						size = { 34 34 }
-						enabled = "[Title.GetHolder.IsPlayerInteractionValid( 'suzerain_modify_tributary_contract_interaction' )]"
-						onclick = "[Title.GetHolder.OpenPlayerInteraction( 'suzerain_modify_tributary_contract_interaction' )]"
-						tooltip = "KEHILLAH_RV_ROW_CHARTER_TOOLTIP"
+					vbox = {
+						spacing = 0
+						tooltip = "KEHILLAH_BD_DANGER_TOOLTIP"
 						using = tooltip_ws
 
-						button_add_laws = {
-							alwaystransparent = yes
-							parentanchor = center
+						text_single = {
+							layoutpolicy_horizontal = expanding
+							align = right|nobaseline
+							max_width = 100
+							text = "KEHILLAH_RV_DANGER_LABEL"
+							default_format = "#weak"
+							using = Font_Size_Small
 						}
-					}
-					button_round = {
-						visible = "[Title.GetHolder.IsLocalPlayer]"
-						size = { 34 34 }
-						enabled = "[GetPlayer.MakeScope.Var( 'kehillah_rv_top' ).Char.IsPlayerInteractionValid( 'subject_modify_tributary_contract_interaction' )]"
-						onclick = "[GetPlayer.MakeScope.Var( 'kehillah_rv_top' ).Char.OpenPlayerInteraction( 'subject_modify_tributary_contract_interaction' )]"
-						tooltip = "KEHILLAH_RV_ROW_CHARTER_TOOLTIP_OWN"
-						using = tooltip_ws
-
-						button_add_laws = {
-							alwaystransparent = yes
-							parentanchor = center
+						text_single = {
+							layoutpolicy_horizontal = expanding
+							align = right|nobaseline
+							max_width = 100
+							text = "[Title.GetHolder.Custom( 'KehillahDangerBand' )]"
+							using = Font_Size_Medium
 						}
 					}
 
-					button_round = {
-						size = { 34 34 }
-						enabled = "[Title.MakeScope.Var( 'kehillah_ui_host_county' ).Title.IsValid]"
-						onclick = "[Title.MakeScope.Var( 'kehillah_ui_host_county' ).Title.GetProvince.ZoomCameraTo]"
-						tooltip = "KEHILLAH_MAP_VIEW_LOCATE_TOOLTIP"
-						using = tooltip_ws
+					# The actions, as small round icons (vanilla's own form for
+					# secondary actions, e.g. the Subjects list's contract and
+					# release buttons in shared/lists.gui), not full-width buttons.
+					hbox = {
+						spacing = 4
 
-						button_icon = {
-							parentanchor = center
-							size = { 20 20 }
-							texture = "gfx/interface/icons/flat_icons/go_to_my_location.dds"
-							alwaystransparent = yes
+						button_round = {
+							size = { 34 34 }
+							enabled = "[Title.HasDomicile]"
+							onclick = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
+							onclick = "[ToggleGameViewData( 'domicile', Title.GetHolder.GetDomicile )]"
+							tooltip = "KEHILLAH_MAP_VIEW_QUARTER_TOOLTIP"
+							using = tooltip_ws
+
+							button_icon = {
+								parentanchor = center
+								size = { 20 20 }
+								texture = "gfx/interface/icons/flat_icons/estate.dds"
+								alwaystransparent = yes
+							}
+						}
+
+						# The Charter is a tributary contract (kehillah_host_charter_
+						# groups.txt): the host opens it on the leader with the
+						# suzerain interaction; the leader, on their own community,
+						# with the subject interaction on the host. Anyone else gets
+						# a disabled button whose tooltip still lists the terms.
+						button_round = {
+							visible = "[Not( Title.GetHolder.IsLocalPlayer )]"
+							size = { 34 34 }
+							enabled = "[Title.GetHolder.IsPlayerInteractionValid( 'suzerain_modify_tributary_contract_interaction' )]"
+							onclick = "[Title.GetHolder.OpenPlayerInteraction( 'suzerain_modify_tributary_contract_interaction' )]"
+							tooltip = "KEHILLAH_RV_ROW_CHARTER_TOOLTIP"
+							using = tooltip_ws
+
+							button_add_laws = {
+								alwaystransparent = yes
+								parentanchor = center
+							}
+						}
+						button_round = {
+							visible = "[Title.GetHolder.IsLocalPlayer]"
+							size = { 34 34 }
+							enabled = "[GetPlayer.MakeScope.Var( 'kehillah_rv_top' ).Char.IsPlayerInteractionValid( 'subject_modify_tributary_contract_interaction' )]"
+							onclick = "[GetPlayer.MakeScope.Var( 'kehillah_rv_top' ).Char.OpenPlayerInteraction( 'subject_modify_tributary_contract_interaction' )]"
+							tooltip = "KEHILLAH_RV_ROW_CHARTER_TOOLTIP_OWN"
+							using = tooltip_ws
+
+							button_add_laws = {
+								alwaystransparent = yes
+								parentanchor = center
+							}
+						}
+
+						button_round = {
+							size = { 34 34 }
+							enabled = "[Title.MakeScope.Var( 'kehillah_ui_host_county' ).Title.IsValid]"
+							onclick = "[Title.MakeScope.Var( 'kehillah_ui_host_county' ).Title.GetProvince.ZoomCameraTo]"
+							tooltip = "KEHILLAH_MAP_VIEW_LOCATE_TOOLTIP"
+							using = tooltip_ws
+
+							button_icon = {
+								parentanchor = center
+								size = { 20 20 }
+								texture = "gfx/interface/icons/flat_icons/go_to_my_location.dds"
+								alwaystransparent = yes
+							}
 						}
 					}
 				}
-			}
 
-			divider_light = {
-				layoutpolicy_horizontal = expanding
-			}
+				divider_light = {
+					layoutpolicy_horizontal = expanding
+				}
 
-			# Left: the local lord, then the three pillars as one-line bars
-			# in the holding card's colours. Right: the Charter's terms.
-			hbox = {
-				layoutpolicy_horizontal = expanding
-				spacing = 8
+				# Left: the local lord, then the three pillars as one-line bars
+				# in the holding card's colours. Right: the Charter's terms.
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					spacing = 8
 
-				vbox = {
-					min_width = @rv_col_w
-					max_width = @rv_col_w
-					spacing = 5
+					vbox = {
+						min_width = @rv_col_w
+						max_width = @rv_col_w
+						spacing = 5
 
-					hbox = {
-						layoutpolicy_horizontal = expanding
-						spacing = 6
-						tooltip = "KEHILLAH_RV_ROW_LORD_TOOLTIP"
-						using = tooltip_ws
+						hbox = {
+							layoutpolicy_horizontal = expanding
+							spacing = 6
+							tooltip = "KEHILLAH_RV_ROW_LORD_TOOLTIP"
+							using = tooltip_ws
 
-						text_single = { align = left|nobaseline text = "KEHILLAH_RV_COL_LORD" default_format = "#weak" alwaystransparent = yes }
-						text_single = { align = left|nobaseline max_width = 180 text = "KEHILLAH_RV_LORD_LINE" alwaystransparent = yes }
+							text_single = { align = left|nobaseline text = "KEHILLAH_RV_COL_LORD" default_format = "#weak" alwaystransparent = yes }
+							text_single = { align = left|nobaseline max_width = 180 text = "KEHILLAH_RV_LORD_LINE" alwaystransparent = yes }
+							expand = {}
+						}
+
+						# Prosperity on one line: name, the holding card's bar, tier.
+						hbox = {
+							layoutpolicy_horizontal = expanding
+							spacing = 6
+							tooltip = "KEHILLAH_BD_PROSPERITY_TOOLTIP"
+							using = tooltip_ws
+							text_single = { min_width = 76 max_width = 76 align = left|nobaseline text = "KEHILLAH_RV_PILLAR_PROSPERITY" fontcolor = { 0.537255 0.709804 0.584314 1 } alwaystransparent = yes }
+							widget = {
+								size = { 132 16 }
+								alwaystransparent = yes
+								background = {
+									texture = "gfx/interface/progressbars/kehillah_prosperity.dds"
+									spriteType = Corneredstretched
+									spriteborder = { 2 2 }
+								}
+								progressbar_standard = {
+									parentanchor = center
+									size = { 128 12 }
+									min = 0
+									max = 1000
+									value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]"
+									visible = "[LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)150' )]"
+									blockoverride "progress_textures" {
+										progresstexture = "gfx/interface/progressbars/progress_red.dds"
+										noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+									}
+									alwaystransparent = yes
+								}
+								progressbar_standard = {
+									parentanchor = center
+									size = { 128 12 }
+									min = 0
+									max = 1000
+									value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]"
+									visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)150' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)400' ) )]"
+									blockoverride "progress_textures" {
+										progresstexture = "gfx/interface/progressbars/progress_orange.dds"
+										noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+									}
+									alwaystransparent = yes
+								}
+								progressbar_standard = {
+									parentanchor = center
+									size = { 128 12 }
+									min = 0
+									max = 1000
+									value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]"
+									visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)400' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)700' ) )]"
+									blockoverride "progress_textures" {
+										progresstexture = "gfx/interface/progressbars/progress_standard.dds"
+										noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+									}
+									alwaystransparent = yes
+								}
+								progressbar_standard = {
+									parentanchor = center
+									size = { 128 12 }
+									min = 0
+									max = 1000
+									value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]"
+									visible = "[GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)700' )]"
+									blockoverride "progress_textures" {
+										progresstexture = "gfx/interface/progressbars/progress_green.dds"
+										noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+									}
+									alwaystransparent = yes
+								}
+							}
+							text_single = { min_width = 44 max_width = 44 align = right|nobaseline text = "[Title.Custom( 'KehillahProsperityBandName' )]" fontcolor = { 0.537255 0.709804 0.584314 1 } using = Font_Size_Small alwaystransparent = yes }
+						}
+						# Stability on one line: name, the holding card's bar, tier.
+						hbox = {
+							layoutpolicy_horizontal = expanding
+							spacing = 6
+							tooltip = "KEHILLAH_BD_STABILITY_TOOLTIP"
+							using = tooltip_ws
+							text_single = { min_width = 76 max_width = 76 align = left|nobaseline text = "KEHILLAH_RV_PILLAR_STABILITY" fontcolor = { 0.576471 0.666667 0.756863 1 } alwaystransparent = yes }
+							widget = {
+								size = { 132 16 }
+								alwaystransparent = yes
+								background = {
+									texture = "gfx/interface/progressbars/kehillah_stability.dds"
+									spriteType = Corneredstretched
+									spriteborder = { 2 2 }
+								}
+								progressbar_standard = {
+									parentanchor = center
+									size = { 128 12 }
+									min = 0
+									max = 1000
+									value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]"
+									visible = "[LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)150' )]"
+									blockoverride "progress_textures" {
+										progresstexture = "gfx/interface/progressbars/progress_red.dds"
+										noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+									}
+									alwaystransparent = yes
+								}
+								progressbar_standard = {
+									parentanchor = center
+									size = { 128 12 }
+									min = 0
+									max = 1000
+									value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]"
+									visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)150' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)400' ) )]"
+									blockoverride "progress_textures" {
+										progresstexture = "gfx/interface/progressbars/progress_orange.dds"
+										noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+									}
+									alwaystransparent = yes
+								}
+								progressbar_standard = {
+									parentanchor = center
+									size = { 128 12 }
+									min = 0
+									max = 1000
+									value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]"
+									visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)400' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)700' ) )]"
+									blockoverride "progress_textures" {
+										progresstexture = "gfx/interface/progressbars/progress_standard.dds"
+										noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+									}
+									alwaystransparent = yes
+								}
+								progressbar_standard = {
+									parentanchor = center
+									size = { 128 12 }
+									min = 0
+									max = 1000
+									value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]"
+									visible = "[GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)700' )]"
+									blockoverride "progress_textures" {
+										progresstexture = "gfx/interface/progressbars/progress_green.dds"
+										noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+									}
+									alwaystransparent = yes
+								}
+							}
+							text_single = { min_width = 44 max_width = 44 align = right|nobaseline text = "[Title.Custom( 'KehillahStabilityBandName' )]" fontcolor = { 0.576471 0.666667 0.756863 1 } using = Font_Size_Small alwaystransparent = yes }
+						}
+						# Greatness on one line: name, the holding card's bar, tier.
+						hbox = {
+							layoutpolicy_horizontal = expanding
+							spacing = 6
+							tooltip = "KEHILLAH_BD_GREATNESS_TOOLTIP"
+							using = tooltip_ws
+							text_single = { min_width = 76 max_width = 76 align = left|nobaseline text = "KEHILLAH_RV_PILLAR_GREATNESS" fontcolor = { 0.843137 0.741176 0.525490 1 } alwaystransparent = yes }
+							widget = {
+								size = { 132 16 }
+								alwaystransparent = yes
+								background = {
+									texture = "gfx/interface/progressbars/kehillah_greatness.dds"
+									spriteType = Corneredstretched
+									spriteborder = { 2 2 }
+								}
+								progressbar_standard = {
+									parentanchor = center
+									size = { 128 12 }
+									min = 0
+									max = 1000
+									value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]"
+									visible = "[LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)150' )]"
+									blockoverride "progress_textures" {
+										progresstexture = "gfx/interface/progressbars/progress_red.dds"
+										noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+									}
+									alwaystransparent = yes
+								}
+								progressbar_standard = {
+									parentanchor = center
+									size = { 128 12 }
+									min = 0
+									max = 1000
+									value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]"
+									visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)150' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)400' ) )]"
+									blockoverride "progress_textures" {
+										progresstexture = "gfx/interface/progressbars/progress_orange.dds"
+										noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+									}
+									alwaystransparent = yes
+								}
+								progressbar_standard = {
+									parentanchor = center
+									size = { 128 12 }
+									min = 0
+									max = 1000
+									value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]"
+									visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)400' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)700' ) )]"
+									blockoverride "progress_textures" {
+										progresstexture = "gfx/interface/progressbars/progress_standard.dds"
+										noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+									}
+									alwaystransparent = yes
+								}
+								progressbar_standard = {
+									parentanchor = center
+									size = { 128 12 }
+									min = 0
+									max = 1000
+									value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]"
+									visible = "[GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)700' )]"
+									blockoverride "progress_textures" {
+										progresstexture = "gfx/interface/progressbars/progress_green.dds"
+										noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+									}
+									alwaystransparent = yes
+								}
+							}
+							text_single = { min_width = 44 max_width = 44 align = right|nobaseline text = "[Title.Custom( 'KehillahGreatnessBandName' )]" fontcolor = { 0.843137 0.741176 0.525490 1 } using = Font_Size_Small alwaystransparent = yes }
+						}
 						expand = {}
 					}
 
-					# Prosperity on one line: name, the holding card's bar, tier.
-					hbox = {
-						layoutpolicy_horizontal = expanding
-						spacing = 6
-						tooltip = "KEHILLAH_BD_PROSPERITY_TOOLTIP"
-						using = tooltip_ws
-						text_single = { min_width = 76 max_width = 76 align = left|nobaseline text = "KEHILLAH_RV_PILLAR_PROSPERITY" fontcolor = { 0.537255 0.709804 0.584314 1 } alwaystransparent = yes }
-						widget = {
-							size = { 132 16 }
-							alwaystransparent = yes
-							background = {
-								texture = "gfx/interface/progressbars/kehillah_prosperity.dds"
-								spriteType = Corneredstretched
-								spriteborder = { 2 2 }
-							}
-							progressbar_standard = {
-								parentanchor = center
-								size = { 128 12 }
-								min = 0
-								max = 1000
-								value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]"
-								visible = "[LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)150' )]"
-								blockoverride "progress_textures" {
-									progresstexture = "gfx/interface/progressbars/progress_red.dds"
-									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-								}
-								alwaystransparent = yes
-							}
-							progressbar_standard = {
-								parentanchor = center
-								size = { 128 12 }
-								min = 0
-								max = 1000
-								value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]"
-								visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)150' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)400' ) )]"
-								blockoverride "progress_textures" {
-									progresstexture = "gfx/interface/progressbars/progress_orange.dds"
-									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-								}
-								alwaystransparent = yes
-							}
-							progressbar_standard = {
-								parentanchor = center
-								size = { 128 12 }
-								min = 0
-								max = 1000
-								value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]"
-								visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)400' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)700' ) )]"
-								blockoverride "progress_textures" {
-									progresstexture = "gfx/interface/progressbars/progress_standard.dds"
-									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-								}
-								alwaystransparent = yes
-							}
-							progressbar_standard = {
-								parentanchor = center
-								size = { 128 12 }
-								min = 0
-								max = 1000
-								value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]"
-								visible = "[GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)700' )]"
-								blockoverride "progress_textures" {
-									progresstexture = "gfx/interface/progressbars/progress_green.dds"
-									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-								}
-								alwaystransparent = yes
-							}
-						}
-						text_single = { min_width = 44 max_width = 44 align = right|nobaseline text = "[Title.Custom( 'KehillahProsperityBandName' )]" fontcolor = { 0.537255 0.709804 0.584314 1 } using = Font_Size_Small alwaystransparent = yes }
-					}
-					# Stability on one line: name, the holding card's bar, tier.
-					hbox = {
-						layoutpolicy_horizontal = expanding
-						spacing = 6
-						tooltip = "KEHILLAH_BD_STABILITY_TOOLTIP"
-						using = tooltip_ws
-						text_single = { min_width = 76 max_width = 76 align = left|nobaseline text = "KEHILLAH_RV_PILLAR_STABILITY" fontcolor = { 0.576471 0.666667 0.756863 1 } alwaystransparent = yes }
-						widget = {
-							size = { 132 16 }
-							alwaystransparent = yes
-							background = {
-								texture = "gfx/interface/progressbars/kehillah_stability.dds"
-								spriteType = Corneredstretched
-								spriteborder = { 2 2 }
-							}
-							progressbar_standard = {
-								parentanchor = center
-								size = { 128 12 }
-								min = 0
-								max = 1000
-								value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]"
-								visible = "[LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)150' )]"
-								blockoverride "progress_textures" {
-									progresstexture = "gfx/interface/progressbars/progress_red.dds"
-									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-								}
-								alwaystransparent = yes
-							}
-							progressbar_standard = {
-								parentanchor = center
-								size = { 128 12 }
-								min = 0
-								max = 1000
-								value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]"
-								visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)150' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)400' ) )]"
-								blockoverride "progress_textures" {
-									progresstexture = "gfx/interface/progressbars/progress_orange.dds"
-									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-								}
-								alwaystransparent = yes
-							}
-							progressbar_standard = {
-								parentanchor = center
-								size = { 128 12 }
-								min = 0
-								max = 1000
-								value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]"
-								visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)400' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)700' ) )]"
-								blockoverride "progress_textures" {
-									progresstexture = "gfx/interface/progressbars/progress_standard.dds"
-									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-								}
-								alwaystransparent = yes
-							}
-							progressbar_standard = {
-								parentanchor = center
-								size = { 128 12 }
-								min = 0
-								max = 1000
-								value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]"
-								visible = "[GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)700' )]"
-								blockoverride "progress_textures" {
-									progresstexture = "gfx/interface/progressbars/progress_green.dds"
-									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-								}
-								alwaystransparent = yes
-							}
-						}
-						text_single = { min_width = 44 max_width = 44 align = right|nobaseline text = "[Title.Custom( 'KehillahStabilityBandName' )]" fontcolor = { 0.576471 0.666667 0.756863 1 } using = Font_Size_Small alwaystransparent = yes }
-					}
-					# Greatness on one line: name, the holding card's bar, tier.
-					hbox = {
-						layoutpolicy_horizontal = expanding
-						spacing = 6
-						tooltip = "KEHILLAH_BD_GREATNESS_TOOLTIP"
-						using = tooltip_ws
-						text_single = { min_width = 76 max_width = 76 align = left|nobaseline text = "KEHILLAH_RV_PILLAR_GREATNESS" fontcolor = { 0.843137 0.741176 0.525490 1 } alwaystransparent = yes }
-						widget = {
-							size = { 132 16 }
-							alwaystransparent = yes
-							background = {
-								texture = "gfx/interface/progressbars/kehillah_greatness.dds"
-								spriteType = Corneredstretched
-								spriteborder = { 2 2 }
-							}
-							progressbar_standard = {
-								parentanchor = center
-								size = { 128 12 }
-								min = 0
-								max = 1000
-								value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]"
-								visible = "[LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)150' )]"
-								blockoverride "progress_textures" {
-									progresstexture = "gfx/interface/progressbars/progress_red.dds"
-									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-								}
-								alwaystransparent = yes
-							}
-							progressbar_standard = {
-								parentanchor = center
-								size = { 128 12 }
-								min = 0
-								max = 1000
-								value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]"
-								visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)150' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)400' ) )]"
-								blockoverride "progress_textures" {
-									progresstexture = "gfx/interface/progressbars/progress_orange.dds"
-									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-								}
-								alwaystransparent = yes
-							}
-							progressbar_standard = {
-								parentanchor = center
-								size = { 128 12 }
-								min = 0
-								max = 1000
-								value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]"
-								visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)400' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)700' ) )]"
-								blockoverride "progress_textures" {
-									progresstexture = "gfx/interface/progressbars/progress_standard.dds"
-									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-								}
-								alwaystransparent = yes
-							}
-							progressbar_standard = {
-								parentanchor = center
-								size = { 128 12 }
-								min = 0
-								max = 1000
-								value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]"
-								visible = "[GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)700' )]"
-								blockoverride "progress_textures" {
-									progresstexture = "gfx/interface/progressbars/progress_green.dds"
-									noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
-								}
-								alwaystransparent = yes
-							}
-						}
-						text_single = { min_width = 44 max_width = 44 align = right|nobaseline text = "[Title.Custom( 'KehillahGreatnessBandName' )]" fontcolor = { 0.843137 0.741176 0.525490 1 } using = Font_Size_Small alwaystransparent = yes }
-					}
-					expand = {}
-				}
-
-				vbox = {
-					min_width = @rv_col_w
-					max_width = @rv_col_w
-					spacing = 2
-
-					text_single = { layoutpolicy_horizontal = expanding align = left|nobaseline max_width = @rv_col_w text = "KEHILLAH_RV_COL_CHARTER" default_format = "#weak" }
-					text_multi = {
-						layoutpolicy_horizontal = expanding
-						autoresize = yes
+					vbox = {
 						min_width = @rv_col_w
 						max_width = @rv_col_w
-						text = "KEHILLAH_DOMAIN_CHARTER_TERMS"
-						using = Font_Size_Small
+						spacing = 2
+
+						text_single = { layoutpolicy_horizontal = expanding align = left|nobaseline max_width = @rv_col_w text = "KEHILLAH_RV_COL_CHARTER" default_format = "#weak" }
+						text_multi = {
+							layoutpolicy_horizontal = expanding
+							autoresize = yes
+							min_width = @rv_col_w
+							max_width = @rv_col_w
+							text = "KEHILLAH_DOMAIN_CHARTER_TERMS"
+							using = Font_Size_Small
+						}
+						expand = {}
 					}
-					expand = {}
 				}
 			}
 		}
@@ -663,18 +678,23 @@ window = {
 		### in the lord's lands in the lord's view); each line is fixed
 		### columns, eliding long text, with the event on hover.
 		### =============================================================
-		hbox = {
-			layoutpolicy_horizontal = expanding
-			margin = { 8 0 }
-			tooltip = "KEHILLAH_RV_NEWS_TOOLTIP"
-			using = tooltip_ws
+		widget = {
+			hbox = {
+				set_parent_size_to_minimum = yes
+				min_width = @rv_width
+				max_width = @rv_width
+				layoutpolicy_horizontal = expanding
+				margin = { 8 0 }
+				tooltip = "KEHILLAH_RV_NEWS_TOOLTIP"
+				using = tooltip_ws
 
-			text_single = {
-				align = left|nobaseline
-				text = "KEHILLAH_RV_NEWS_HEADER"
-				default_format = "#high;bold"
+				text_single = {
+					align = left|nobaseline
+					text = "KEHILLAH_RV_NEWS_HEADER"
+					default_format = "#high;bold"
+				}
+				expand = {}
 			}
-			expand = {}
 		}
 
 		# size alone did not hold: in a layout the scrollarea grew to its
@@ -828,16 +848,14 @@ window = {
 		### Up from the lord's view to the whole realm.
 		button_standard = {
 			visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_lord_mode' ).IsSet]"
-			layoutpolicy_horizontal = expanding
-			size = { 0 28 }
+			size = { @rv_width 28 }
 			text = "KEHILLAH_RV_VIEW_REALM"
 			onclick = "[GetScriptedGui( 'kehillah_realm_view_open' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'target', GetPlayer.MakeScope.Var( 'kehillah_rv_top' ).Char.MakeScope ).End )]"
 			tooltip = "KEHILLAH_RV_VIEW_REALM_TOOLTIP"
 			using = tooltip_ws
 		}
-
-		expand = {}
 	}
+
 }
 
 types KehillahRealmView

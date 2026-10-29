@@ -413,3 +413,15 @@ spread out.
   and says that theirs is the outlook shown, since the outlook already reads through the
   regent (`KehillahRvRegentLine`). It says "power is held by" rather than "regent", because a
   diarch isn't always a regent.
+
+## 16. The root cause of the height problems (2026-10-29)
+
+Even with the news panel pinned to 120 px and scrolling, the window was still as tall as the
+whole feed. The root was a `vbox` with `set_parent_size_to_minimum`, which sizes the window
+from its children's size *hints*, and a scrollarea's hint includes its entire content. That
+one cause explains every earlier symptom: the France gap, the even gaps, and the blank band.
+
+The root is now a `flowcontainer` with `resizeparent = yes`, the form vanilla's outliner uses
+(`gui/hud_outliner.gui`). It sizes the window to its children's *actual* sizes. Each
+hbox/vbox section is wrapped in a plain widget sized by its box, because a flowcontainer
+can't hold an hbox/vbox directly (map ledger live pass 3, a crash on open).
