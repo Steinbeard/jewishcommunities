@@ -1,84 +1,13 @@
-﻿# =====================================================================
-# The Norman Conquest and the founding of Anglia's Kehillot.
-#
-# ADDED 2026-09-25 (v18 spec, docs/spec/v18-norman-conquest-and-new-
-# communities.md), by direct request. This is the retcon's other half:
-# London, York, Lincoln and Norwich no longer exist as pre-authored
-# titles from 1066 game start (see kehillah_landed_titles.txt and
-# history/titles/kehillah_titles.txt's own removal notes) -- they are
-# founded HERE, dynamically, once a running game's own Norman Conquest
-# actually resolves, using the exact same create_adventurer_title
-# mechanism kehillah_found_community_effect (common/scripted_effects/
-# kehillah_found_community_effects.txt) already uses for player-driven
-# Wave-5 founding, including that effect's own hard-won lessons (the
-# "government = kehillah_government" inline parameter is load-bearing;
-# see that file's own header for the ten-live-experiment account this
-# reuses rather than re-derives).
-#
-# WHY THIS NEEDS ITS OWN DETECTION, NOT A SCRIPTED DATE. Checked directly
-# against the installed 1.19 files before writing anything here (same
-# norm as everywhere else in this mod): vanilla CK3 has NO scripted
-# mechanic tied to the 1066 Norman Conquest at all -- no on_action,
-# decision, or flag fires when title:k_england changes hands. William's
-# real 1066.10.14 title-history entry (game/history/titles/k_england.txt)
-# is background/display data only; it does not execute as a live,
-# guaranteed event during play (this mod is not the first to note CK3's
-# title history beyond the bookmark date does not enforce itself -- it
-# is why "what if Harold actually won" is a normal, real outcome in this
-# engine, not a myth). So whether William, Harald Hardrada, Harold's own
-# line, or someone else entirely ends up holding England is a genuine,
-# emergent fact about a specific playthrough, detected here via
-# on_title_gain rather than assumed from history.
-#
-# DETECTION SHAPE. kehillah_norman_conquest_check_on_title_gain (wired
-# into vanilla's on_title_gain in common/on_action/kehillah_on_actions.txt,
-# the same concatenated on_actions = { ... } list kehillah_on_title_gain
-# and the others already share) fires on ANY title:k_england transfer.
-# It deliberately does NOT consume the "resolved" flag while the title
-# stays inside House Godwinson (dynasty:756, Harold's own real 1066
-# dynasty, confirmed game/history/characters/anglo_saxon.txt) -- an
-# ordinary father-to-son inheritance within that house is not a Norman
-# Conquest and must not close the door on a LATER, real change of house.
-# The first transfer that actually leaves that dynasty is treated as the
-# Conquest resolving, whenever in a given playthrough that turns out to
-# be -- bounded to 24 years past this scenario's own 1066.9.15 start
-# (current_date <= 1090.1.1) so an unrelated later shuffle of the English
-# crown, decades on, is not mistaken for this specific moment. A
-# generous but real bound, a first guess per this mod's own "prototype
-# loosely, tune by playtest" norm, not a historically derived figure.
-#
-# THREE OUTCOMES, WEIGHTED CHANCES TO FIRE AT ALL -- the user's own
-# framing ("high chance... but not 100%--more likely if it's William, a
-# little less likely if the other two win") is about whether the whole
-# invitation happens, not about which claimant wins the war itself (this
-# mod does not and cannot rig who wins that; it only reacts once someone
-# has). Real 1066-bookmark character/dynasty ids, confirmed directly
-# against game/history/characters/*.txt and game/history/titles/*.txt:
-#   - WILLIAM (dynasty:752, Normandy) -- 80% chance to fire.
-#   - HARALD HARDRADA (dynasty:499, Norway, OR culture:norwegian for a
-#     descendant) -- 45% chance. Honestly noted: vanilla schedules
-#     Hardrada's own death for 1066.9.25 (game/history/titles/
-#     k_norway.txt) regardless of what happens at a live Hastings/
-#     Stamford Bridge, so this branch is a real but historically uphill
-#     outcome under ordinary play, not a coin flip against William.
-#   - OTHER (anyone else -- a different Godwinson-line ruler overthrown
-#     by an unrelated dynasty, or any other emergent result) -- 30%.
-# All three, when they fire, do exactly the same thing: found all four
-# communities and set the host realm's Jewish Settlement Policy to
-# Encouraged. The branch only changes the new leaders' own family
-# connections (see kehillah_norman_found_*_effect below) and the
-# announcement event's flavor text.
-# =====================================================================
-
-# NOTE: the on_action WRAPPER (trigger/effect block keyed to vanilla's
-# on_title_gain) lives in common/on_action/kehillah_on_actions.txt, not
-# here -- CK3 only scans common/on_action/ files for on_action bodies;
-# defining one here would silently never fire. That wrapper's trigger is
-# scope:title = title:k_england / NOT has_global_variable
-# kehillah_norman_conquest_resolved / current_date <= 1090.1.1, and its
-# effect is a single call to kehillah_norman_conquest_evaluate_effect
-# below -- see that file for the real hookup.
-
+﻿# English conquest invitation, revised 2026-10-29.
+# The first post-Godwinson holder of England gets a one-time ruler decision.
+# Taking it passes the existing Encouraged Jewish Settlement law, whose
+# on_after_pass sends the ordinary invitation through its normal mechanic.
+# The letter has special English-conquest wording. A hidden review one year
+# later counts actual English communities and founds vacant named sites only
+# until there are three. The S8 London player-adventurer offer still goes
+# out immediately when an eligible player exists.
+# See docs/spec/2026-10-29-conquest-invitation-revision.md. That addendum
+# supersedes V18 sections 1.4, 1.6 and 1.7's immediate-four founding.
 # Scope: the character who just gained title:k_england (root, per vanilla
 # on_title_gain's own documented scopes).
 kehillah_norman_conquest_evaluate_effect = {
@@ -88,97 +17,145 @@ kehillah_norman_conquest_evaluate_effect = {
 	}
 	else = {
 		set_global_variable = { name = kehillah_norman_conquest_resolved value = yes }
-
-		if = {
-			limit = { dynasty = dynasty:752 }
-			debug_log = "kehillah_norman_conquest_evaluate_effect: William branch"
-			set_global_variable = { name = kehillah_norman_new_leader_dynasty_choice value = 1 }
-			# 2026-10-01 (user decision): William bringing the Jews of Rouen
-			# to London is the historical event and the point of the Rouen
-			# Financier start, so an eligible player (a Jewish landless
-			# adventurer, kehillah_norman_london_invitation_eligible_trigger)
-			# is ALWAYS invited -- no silent 20% "nothing happens" for the
-			# player. The 80/20 roll still governs the AI-only case. William
-			# branch only: the Harald/other branches are counterfactual and
-			# keep their rolls.
-			if = {
-				limit = { any_player = { kehillah_norman_london_invitation_eligible_trigger = yes } }
-				debug_log = "kehillah_norman_conquest_evaluate_effect: eligible player, William always invites"
-				kehillah_norman_conquest_execute_effect = yes
-			}
-			else = {
-				random_list = {
-					80 = { kehillah_norman_conquest_execute_effect = yes }
-					20 = { debug_log = "kehillah_norman_conquest_evaluate_effect: declined, William branch" }
-				}
-			}
-		}
-		else_if = {
-			limit = {
-				OR = {
-					dynasty = dynasty:499
-					culture = culture:norwegian
-				}
-			}
-			debug_log = "kehillah_norman_conquest_evaluate_effect: Harald Hardrada branch"
-			set_global_variable = { name = kehillah_norman_new_leader_dynasty_choice value = 2 }
-			random_list = {
-				45 = { kehillah_norman_conquest_execute_effect = yes }
-				55 = { debug_log = "kehillah_norman_conquest_evaluate_effect: declined, Harald branch" }
-			}
-		}
-		else = {
-			debug_log = "kehillah_norman_conquest_evaluate_effect: other branch"
-			set_global_variable = { name = kehillah_norman_new_leader_dynasty_choice value = 3 }
-			random_list = {
-				30 = { kehillah_norman_conquest_execute_effect = yes }
-				70 = { debug_log = "kehillah_norman_conquest_evaluate_effect: declined, other branch" }
-			}
-		}
+		title:k_england = { set_variable = { name = kehillah_norman_invitation_decision_open value = yes years = 5 } }
+		debug_log = "kehillah_norman_conquest_evaluate_effect: invitation decision opened for England's conqueror"
 	}
 }
 
-# Scope: the new holder of title:k_england (unchanged from the effect
-# above -- random_list does not switch scope).
-#
-# S8 (2026-09-29): LONDON MAY BE THE PLAYER'S. If a Jewish player is a
-# landless adventurer when the Conquest resolves (the S7 Financier is the
-# intended case, but any qualifying player gets it), London is held back
-# and offered to that player instead of being founded for the AI:
-# kehillah_norman_conquest.0010 is the invitation, .0011 the founding one
-# day after the crossing, .0012 the king-side fallback that founds the AI
-# London if the offer is never answered (the invitee died, or the event's
-# trigger failed). The offer is a GLOBAL variable holding the invitee, so
-# exactly one of the three resolvers ever acts: each consumes it first.
-# York, Lincoln and Norwich are unaffected and still founded at once.
+# Scope: the ruler taking the decision. S8's player offer is made at once
+# if possible. A newly eligible player may also receive it at the review
+# if London remains vacant. Both routes use .0010-.0012 and their single
+# pending-offer variable.
 kehillah_norman_conquest_execute_effect = {
-	debug_log = "kehillah_norman_conquest_execute_effect: founding Anglia's four Kehillot"
+	debug_log = "kehillah_norman_conquest_execute_effect: English invitation issued; founding review in one year"
 	save_scope_as = kehillah_norman_king
-
+	save_scope_as = kehillah_policy_host
+	kehillah_settlement_laws_normalize_effect = yes
 	if = {
-		limit = { any_player = { kehillah_norman_london_invitation_eligible_trigger = yes } }
+		limit = { dynasty = dynasty:752 }
+		set_global_variable = { name = kehillah_norman_new_leader_dynasty_choice value = 1 }
+	}
+	else_if = {
+		limit = { OR = { dynasty = dynasty:499 culture = culture:norwegian } }
+		set_global_variable = { name = kehillah_norman_new_leader_dynasty_choice value = 2 }
+	}
+	else = { set_global_variable = { name = kehillah_norman_new_leader_dynasty_choice value = 3 } }
+	primary_title = {
+		set_variable = { name = kehillah_norman_special_invitation value = yes years = 2 }
+		set_variable = { name = kehillah_policy_reason value = flag:towns }
+	}
+	if = {
+		limit = { primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } }
+		primary_title = { save_scope_as = kehillah_policy_realm }
+		kehillah_invitation_issue_effect = yes
+	}
+	else = {
+		# A newly independent conqueror can inherit the first law of this
+		# group (Banned). Establish the ordinary Allowed baseline silently,
+		# then pass Encouraged through the law's full on_after_pass path.
+		if = {
+			limit = { NOT = { primary_title = { kehillah_jewish_settlement_policy_allowed_trigger = yes } } }
+			if = {
+				limit = { primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } }
+				kehillah_expulsion_lift_effect = yes
+			}
+			kehillah_set_settlement_law_effect = { RUNG = allowed VALUE = 2 }
+		}
+		add_realm_law = kehillah_jewish_settlement_encouraged
+	}
+	if = {
+		limit = {
+			any_player = { kehillah_norman_london_invitation_eligible_trigger = yes }
+			title:c_middlesex = { NOT = { kehillah_inspector_county_occupied_trigger = yes } }
+		}
 		set_global_variable = { name = kehillah_norman_inviting_king value = scope:kehillah_norman_king }
 		random_player = {
 			limit = { kehillah_norman_london_invitation_eligible_trigger = yes }
 			set_global_variable = { name = kehillah_norman_london_offer_pending value = this }
 			trigger_event = { id = kehillah_norman_conquest.0010 days = 3 }
-			# The fallback is scheduled on BOTH the invitee and the king:
-			# an event does not fire on a dead character, and either might
-			# die inside sixty days. Whichever copy runs first consumes the
-			# offer; the other then finds nothing pending and does nothing.
 			trigger_event = { id = kehillah_norman_conquest.0012 days = 60 }
-			debug_log = "kehillah_norman_conquest_execute_effect: London offered to a player adventurer"
 		}
 		trigger_event = { id = kehillah_norman_conquest.0012 days = 60 }
 	}
-	else = {
-		kehillah_norman_found_london_effect = yes
-	}
-	kehillah_norman_found_york_effect = yes
-	kehillah_norman_found_lincoln_effect = yes
-	kehillah_norman_found_norwich_effect = yes
-
+	title:k_england = { set_variable = { name = kehillah_norman_founding_review_pending value = yes } }
+	trigger_event = { id = kehillah_norman_conquest.0002 years = 1 }
 	trigger_event = { id = kehillah_norman_conquest.0001 days = 2 }
+}
+
+# Runs only from the hidden one-year review, never from a decision tooltip.
+# Count actual communities in England, including player and ordinary settler
+# foundings; fill only vacant named sites until there are three.
+kehillah_norman_conquest_fill_shortfall_effect = {
+	title:k_england = { set_variable = { name = kehillah_norman_english_count value = 0 } }
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			exists = holder.domicile.domicile_location.county
+			holder.domicile.domicile_location.county = { target_is_de_jure_liege_or_above = title:k_england }
+		}
+		title:k_england = { change_variable = { name = kehillah_norman_english_count add = 1 } }
+	}
+	# A pending London offer reserves one of the three places until the
+	# player answers or the existing sixty-day fallback resolves it.
+	if = {
+		limit = {
+			exists = global_var:kehillah_norman_london_offer_pending
+			title:c_middlesex = { NOT = { kehillah_inspector_county_occupied_trigger = yes } }
+		}
+		title:k_england = { change_variable = { name = kehillah_norman_english_count add = 1 } }
+	}
+	if = {
+		limit = {
+			title:k_england = { var:kehillah_norman_english_count < 3 }
+			title:c_middlesex = { NOT = { kehillah_inspector_county_occupied_trigger = yes } }
+			title:c_middlesex.holder.top_liege = root
+			NOT = { exists = global_var:kehillah_norman_london_offer_pending }
+		}
+		if = {
+			limit = { any_player = { kehillah_norman_london_invitation_eligible_trigger = yes } }
+			set_global_variable = { name = kehillah_norman_inviting_king value = this }
+			random_player = {
+				limit = { kehillah_norman_london_invitation_eligible_trigger = yes }
+				set_global_variable = { name = kehillah_norman_london_offer_pending value = this }
+				trigger_event = { id = kehillah_norman_conquest.0010 days = 3 }
+				trigger_event = { id = kehillah_norman_conquest.0012 days = 60 }
+			}
+			trigger_event = { id = kehillah_norman_conquest.0012 days = 60 }
+		}
+		else = { kehillah_norman_found_london_effect = yes }
+		title:k_england = { change_variable = { name = kehillah_norman_english_count add = 1 } }
+	}
+	if = {
+		limit = {
+			title:k_england = { var:kehillah_norman_english_count < 3 }
+			title:c_north_riding = { NOT = { kehillah_inspector_county_occupied_trigger = yes } }
+			title:c_north_riding.holder.top_liege = root
+		}
+		kehillah_norman_found_york_effect = yes
+		title:k_england = { change_variable = { name = kehillah_norman_english_count add = 1 } }
+	}
+	if = {
+		limit = {
+			title:k_england = { var:kehillah_norman_english_count < 3 }
+			title:c_lincolnshire = { NOT = { kehillah_inspector_county_occupied_trigger = yes } }
+			title:c_lincolnshire.holder.top_liege = root
+		}
+		kehillah_norman_found_lincoln_effect = yes
+		title:k_england = { change_variable = { name = kehillah_norman_english_count add = 1 } }
+	}
+	if = {
+		limit = {
+			title:k_england = { var:kehillah_norman_english_count < 3 }
+			title:c_norfolk = { NOT = { kehillah_inspector_county_occupied_trigger = yes } }
+			title:c_norfolk.holder.top_liege = root
+		}
+		kehillah_norman_found_norwich_effect = yes
+		title:k_england = { change_variable = { name = kehillah_norman_english_count add = 1 } }
+	}
+	title:k_england = {
+		remove_variable = kehillah_norman_english_count
+		remove_variable = kehillah_norman_founding_review_pending
+	}
 }
 
 # ---------------------------------------------------------------------
@@ -597,24 +574,11 @@ kehillah_norman_conquest_finish_founding_effect = {
 			}
 			kehillah_refresh_map_view_for_players_effect = yes
 
-			# JEWISH SETTLEMENT POLICY, ADDED 2026-09-25 -- the user's own
-			# "offering favorable host charters" ask. Set on the actual
-			# resolved top_liege's primary title (V16's own resolver,
-			# common/scripted_triggers/kehillah_settlement_policy_
-			# triggers.txt), not hardcoded to title:k_england by name --
-			# the new leader's real top liege may hold a different primary
-			# title (an empire tier, if one forms), and V16's resolver
-			# always reads whatever IS primary, not k_england specifically.
-			# Set BEFORE the charter call below so defaults_to_highest_
-			# valid_level actually sees Encouraged at contract-creation time.
-			if = {
-				limit = { exists = domicile.domicile_location.county.holder.top_liege.primary_title }
-				domicile.domicile_location.county.holder.top_liege = {
-					kehillah_set_settlement_law_effect = { RUNG = encouraged VALUE = 3 }
-				}
-			}
-
+			# The decision already passed Encouraged before sending letters.
+			# Founding never re-adds that law: repeated skip-effects calls
+			# error when the ruler already holds it.
 			kehillah_maintain_host_charter_effect = yes
+			kehillah_invitation_answered_effect = yes
 		}
 	}
 	else = {

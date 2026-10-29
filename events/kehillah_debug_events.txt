@@ -581,43 +581,12 @@ kehillah_debug.82 = {
 }
 
 # =====================================================================
-# V18 Norman Conquest harness. ADDED 2026-09-25, for live-testing docs/
-# spec/v18-norman-conquest-and-new-communities.md -- the real trigger
-# (a change of English royal house) is a genuinely emergent, hard-to-
-# force-honestly fact about a live game's own war/succession outcomes,
-# so these three events call kehillah_norman_conquest_evaluate_effect
-# (common/scripted_effects/kehillah_norman_conquest_effects.txt)
-# DIRECTLY, on a fresh throwaway character created with the right
-# dynasty/culture for each branch, rather than on the real title:
-# k_england holder. This exercises the entire downstream mechanism
-# (branch classification, weighted fire/decline roll, all four
-# founding effects, pillar init, registry, network cache, library
-# seed, map view, Jewish Settlement Policy, Host Charter, and the
-# announcement event) end to end. It does NOT exercise the on_title_
-# gain WRAPPER itself (common/on_action/kehillah_on_actions.txt's
-# kehillah_norman_conquest_check_on_title_gain) -- that trigger is
-# simple enough (three conditions, already ck3-tiger-validated) to
-# read rather than force live, and this mod's own on_title_gain hook
-# already fires correctly for every Kehillah succession elsewhere in
-# this file's own precedent. The one thing genuinely NOT covered by
-# either: a REAL cross-dynasty transfer of title:k_england during live
-# play. See the runbook note at the end of this block for how to at
-# least partially exercise the wrapper's own "still House Godwinson,
-# don't consume the flag" guard without needing a full simulated
-# Conquest.
-#
-# NO DUPLICATE-LOCATION GUARD, ON PURPOSE. Unlike the player-facing
-# Found a Jewish Community decision (kehillah_found_community_
-# requires_empty_location_tt), calling one of these twice in the same
-# session founds a SECOND set of four Anglia communities at the same
-# four counties -- the real production path only ever fires once per
-# game (gated by global_var kehillah_norman_conquest_resolved), and
-# this harness deliberately bypasses that gate for repeatability.
-# Don't run more than one of .90/.91/.92 in the same test session
-# without expecting duplicate titles.
-# =====================================================================
-
-# Force the WILLIAM branch (dynasty:752, 80% chance to fire).
+# Historical V18 detection probes. These create stand-in claimants and call
+# the title-gain evaluator; after the 2026-10-29 revision they test only
+# that England's one-time decision flag opens. They do not issue letters
+# or found communities. Use .130 for the invitation and .140 for the
+# founding shortfall in a disposable game.
+# Force a Norman-dynasty detection probe.
 kehillah_debug.90 = {
 	type = character_event
 	hidden = yes
@@ -635,7 +604,7 @@ kehillah_debug.90 = {
 		scope:kehillah_debug_norman_test_character = {
 			kehillah_norman_conquest_evaluate_effect = yes
 		}
-		debug_log = "kehillah_debug.90: fired Norman Conquest evaluate_effect, William branch (dynasty:752)"
+		debug_log = "kehillah_debug.90: opened the English invitation decision flag with a Norman stand-in"
 	}
 }
 
@@ -667,7 +636,7 @@ kehillah_debug.91 = {
 		scope:kehillah_debug_norman_test_character = {
 			kehillah_norman_conquest_evaluate_effect = yes
 		}
-		debug_log = "kehillah_debug.91: fired Norman Conquest evaluate_effect, Harald branch (dynasty:499)"
+		debug_log = "kehillah_debug.91: opened the English invitation decision flag with a Norwegian stand-in"
 	}
 }
 
@@ -689,13 +658,13 @@ kehillah_debug.92 = {
 		scope:kehillah_debug_norman_test_character = {
 			kehillah_norman_conquest_evaluate_effect = yes
 		}
-		debug_log = "kehillah_debug.92: fired Norman Conquest evaluate_effect, other branch (generated dynasty)"
+		debug_log = "kehillah_debug.92: opened the English invitation decision flag with an unrelated stand-in"
 	}
 }
 
 # Reports every Norman-founded Anglia community currently registered,
 # and each one's cached charter/policy state -- the fast way to confirm
-# a .90/.91/.92 call actually finished cleanly, without hunting for four
+# a .140 call actually finished cleanly, without hunting for three
 # separate titles by hand in the UI. Uses var:kehillah_norman_founded (a
 # persistent title variable set by kehillah_norman_conquest_finish_
 # founding_effect), NOT a saved effect scope -- a scope like
@@ -730,15 +699,15 @@ kehillah_debug.93 = {
 				if = {
 					limit = { exists = domicile.domicile_location.county.holder.top_liege.primary_title }
 					domicile.domicile_location.county.holder.top_liege.primary_title = {
-						if = { limit = { has_variable = kehillah_jewish_settlement_policy } debug_log = "kehillah_debug.93: its host realm has a Jewish Settlement Policy variable set" }
-						else = { debug_log = "kehillah_debug.93: WARNING its host realm has NO Jewish Settlement Policy variable" }
+						if = { limit = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } debug_log = "kehillah_debug.93: its host realm encourages Jewish settlement" }
+						else = { debug_log = "kehillah_debug.93: WARNING its host realm does not encourage Jewish settlement" }
 					}
 				}
 			}
 		}
 		if = {
 			limit = { var:kehillah_debug_norman_found_count = 0 }
-			debug_log = "kehillah_debug.93: WARNING zero Norman-founded titles registered -- run .90/.91/.92 first"
+			debug_log = "kehillah_debug.93: WARNING zero conquest-founded titles registered -- run .130 and .140 first"
 		}
 		else = {
 			debug_log = "kehillah_debug.93: total Norman-founded titles found"
@@ -3017,36 +2986,38 @@ kehillah_debug.129 = {
 # =====================================================================
 # ROADMAP S8 (2026-09-29) -- the player's road to London.
 # .130 (scope: a player, ideally the S7 Financier): runs the Conquest's
-# execute effect on the CURRENT holder of k_england exactly as a real
-# resolution would, William branch. It deliberately does not fake a
-# change of holder -- only the founding half is under test here; the
-# detection half is V18's and already verified. Expect the invitation
-# (.0010) three days later.
-# .131 (scope: the same player, after answering): who holds London, and
-# is there exactly one London.
+# execute effect on the CURRENT holder of k_england, issuing the policy
+# invitation. .140 simulates the year-later shortfall review immediately;
+# if London is needed and the player is eligible, expect .0010 three days
+# after .140. .131 then reports who holds London and whether it has a
+# charter. Use a disposable game and do not fire .130 twice.
 # =====================================================================
 
 kehillah_debug.130 = {
 	type = character_event
 	hidden = yes
 	immediate = {
-		debug_log = "kehillah_debug.130: S8 -- firing the Conquest founding as if William won"
+		debug_log = "kehillah_debug.130: issuing England's invitation; the founding backstop is due in one year"
 		if = {
 			limit = { kehillah_norman_london_invitation_eligible_trigger = yes }
-			debug_log = "kehillah_debug.130: ELIGIBLE this player will be offered London"
+			debug_log = "kehillah_debug.130: ELIGIBLE this player can be offered London at the one-year backstop"
 		}
 		else = {
-			debug_log = "kehillah_debug.130: NOT ELIGIBLE this player will NOT be offered London (must be a Jewish landless adventurer)"
+			debug_log = "kehillah_debug.130: NOT ELIGIBLE for the London backstop (must be a Jewish landless adventurer)"
 		}
 		set_global_variable = { name = kehillah_norman_new_leader_dynasty_choice value = 1 }
 		title:k_england.holder = { kehillah_norman_conquest_execute_effect = yes }
-		if = {
-			limit = { exists = global_var:kehillah_norman_london_offer_pending }
-			debug_log = "kehillah_debug.130: OFFER PENDING London is being held for a player"
-		}
-		else = {
-			debug_log = "kehillah_debug.130: NO OFFER London was founded for the AI at once"
-		}
+		debug_log = "kehillah_debug.130: check England's policy and invitation flag; run .132 to simulate the one-year review"
+	}
+}
+
+# Console-only backstop probe: run after .130 in a disposable game.
+kehillah_debug.140 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		title:k_england.holder = { kehillah_norman_conquest_fill_shortfall_effect = yes }
+		debug_log = "kehillah_debug.140: English founding shortfall filled up to three communities"
 	}
 }
 
@@ -3094,14 +3065,14 @@ kehillah_debug.131 = {
 			debug_log = "kehillah_debug.131: PLAYER DOES NOT LEAD LONDON"
 		}
 		if = {
-			limit = { exists = title:c_middlesex.holder.top_liege.primary_title }
-			title:c_middlesex.holder.top_liege.primary_title = {
+			limit = { exists = title:k_england.holder.primary_title }
+			title:k_england.holder.primary_title = {
 				if = {
 					limit = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
-					debug_log = "kehillah_debug.131: HOST POLICY PASS England's policy is Encouraged"
+					debug_log = "kehillah_debug.131: CROWN POLICY PASS England's crown holds Encouraged"
 				}
 				else = {
-					debug_log = "kehillah_debug.131: HOST POLICY FAIL England's policy is not Encouraged"
+					debug_log = "kehillah_debug.131: CROWN POLICY FAIL England's crown does not hold Encouraged"
 				}
 			}
 		}
