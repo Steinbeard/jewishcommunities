@@ -25,13 +25,19 @@
 # text_single in a row; the outliner's scrollarea shape.
 ##########################################################################
 
-@rv_width = 660
-@rv_tile = 154
+# Column widths. Every row and the column-label row use these fixed
+# widths with the same spacing, and nothing in either stretches, so the
+# labels sit over their columns (first live pass, 2026-10-28: a stretching
+# name column in the rows and an expand in the labels drifted apart).
+# 52 + 196 + 150 + 118 + 60 + 82 + 28 + 6 * @rv_gap = 710.
+@rv_width = 710
+@rv_gap = 4
+@rv_tile = 172
 @rv_col_portrait = 52
-@rv_col_name = 176
-@rv_col_lord = 120
-@rv_col_charter = 128
-@rv_col_standing = 64
+@rv_col_name = 196
+@rv_col_lord = 150
+@rv_col_charter = 118
+@rv_col_standing = 60
 @rv_col_danger = 82
 @rv_col_locate = 28
 
@@ -60,14 +66,18 @@ window = {
 		using = Animation_FadeOut_Standard
 	}
 
-	background = {
-		using = Background_Area_Dark
-		color = { 0.11 0.10 0.09 0.95 }
-		margin = { 6 6 }
-	}
+	# Vanilla's popup frame (gui/window_artifact_reforge.gui:1-27). The
+	# window has no size of its own: the vbox sizes it to the content via
+	# set_parent_size_to_minimum. Without that (first live pass) the
+	# window was 0x0, its background drew nothing, and the map showed
+	# through everything but the header.
+	using = Window_Background
+	using = Window_Decoration_Spike
 
 	vbox = {
-		margin = { 14 12 }
+		set_parent_size_to_minimum = yes
+		using = Window_Margins
+		margin_bottom = 24
 		spacing = 8
 		min_width = @rv_width
 
@@ -89,7 +99,10 @@ window = {
 		### charters always come from the top liege (V15/V16).
 		text_multi = {
 			visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_lord_mode' ).IsSet]"
+			# Fixed width: an autoresizing text_multi with only a max_width
+			# laid its words out in scattered fragments (first live pass).
 			autoresize = yes
+			min_width = @rv_width
 			max_width = @rv_width
 			text = "KEHILLAH_RV_LORD_SUBHEADER"
 			default_format = "#weak;italic"
@@ -150,28 +163,26 @@ window = {
 			expand = {}
 		}
 
+		# Column labels: the same fixed widths and gap as kehillah_rv_row.
 		hbox = {
 			layoutpolicy_horizontal = expanding
-			margin_right = 14
+			spacing = @rv_gap
 
-			text_single = {
-				text = "KEHILLAH_RV_COL_COMMUNITY"
-				default_format = "#weak"
-				margin_left = @rv_col_portrait
-				max_width = @rv_col_name
-			}
-			expand = {}
-			text_single = { text = "KEHILLAH_RV_COL_LORD" default_format = "#weak" min_width = @rv_col_lord max_width = @rv_col_lord }
-			text_single = { text = "KEHILLAH_RV_COL_CHARTER" default_format = "#weak" min_width = @rv_col_charter max_width = @rv_col_charter }
-			text_label_center = { text = "KEHILLAH_RV_COL_STANDING" default_format = "#weak" min_width = @rv_col_standing }
-			text_label_center = { text = "KEHILLAH_RV_COL_DANGER" default_format = "#weak" min_width = @rv_col_danger }
+			widget = { size = { @rv_col_portrait 1 } }
+			text_single = { text = "KEHILLAH_RV_COL_COMMUNITY" default_format = "#weak" align = left min_width = @rv_col_name max_width = @rv_col_name }
+			text_single = { text = "KEHILLAH_RV_COL_LORD" default_format = "#weak" align = left min_width = @rv_col_lord max_width = @rv_col_lord }
+			text_single = { text = "KEHILLAH_RV_COL_CHARTER" default_format = "#weak" align = left min_width = @rv_col_charter max_width = @rv_col_charter }
+			text_label_center = { text = "KEHILLAH_RV_COL_STANDING" default_format = "#weak" min_width = @rv_col_standing max_width = @rv_col_standing }
+			text_label_center = { text = "KEHILLAH_RV_COL_DANGER" default_format = "#weak" min_width = @rv_col_danger max_width = @rv_col_danger }
 			widget = { size = { @rv_col_locate 1 } }
+			expand = {}
 		}
 
+		# 14 wider than the rows: room for the scrollbar beside them.
 		scrollarea = {
 			autoresizescrollarea = yes
 			scrollbarpolicy_horizontal = always_off
-			size = { @rv_width 0 }
+			size = { 724 0 }
 			maximumsize = { -1 300 }
 
 			scrollbar_vertical = {
@@ -226,7 +237,7 @@ window = {
 			visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_rv_news_count' ).GetValue, '(CFixedPoint)0' )]"
 			autoresizescrollarea = yes
 			scrollbarpolicy_horizontal = always_off
-			size = { @rv_width 0 }
+			size = { 724 0 }
 			maximumsize = { -1 180 }
 
 			scrollbar_vertical = {
@@ -392,7 +403,7 @@ types KehillahRealmView
 		datacontext = "[Scope.Title]"
 		layoutpolicy_horizontal = expanding
 		min_height = 52
-		spacing = 4
+		spacing = @rv_gap
 
 		background = {
 			using = Background_Area_Dark
@@ -419,40 +430,61 @@ types KehillahRealmView
 			}
 		}
 
+		### Community, and its leader and county on the line below.
 		vbox = {
-			layoutpolicy_horizontal = expanding
+			min_width = @rv_col_name
+			max_width = @rv_col_name
 			spacing = 1
 
 			text_single = {
-				layoutpolicy_horizontal = expanding
 				align = left
+				min_width = @rv_col_name
 				max_width = @rv_col_name
 				text = "[Title.GetNameNoTooltip]"
 				default_format = "#high"
 			}
 			text_single = {
-				layoutpolicy_horizontal = expanding
 				align = left
+				min_width = @rv_col_name
 				max_width = @rv_col_name
-				text = "KEHILLAH_MAP_VIEW_ROW_LOCATION"
+				text = "KEHILLAH_RV_ROW_SUB"
 				default_format = "#weak"
+				using = Font_Size_Small
 			}
 		}
 
-		text_single = {
+		### The local lord, with their outlook under the name: the outlook
+		### is what moves this community's danger, so it belongs on the row.
+		vbox = {
 			min_width = @rv_col_lord
 			max_width = @rv_col_lord
-			align = left
-			text = "KEHILLAH_RV_ROW_LORD"
+			spacing = 1
 			tooltip = "KEHILLAH_RV_ROW_LORD_TOOLTIP"
 			using = tooltip_ws
+
+			text_single = {
+				align = left
+				min_width = @rv_col_lord
+				max_width = @rv_col_lord
+				text = "KEHILLAH_RV_ROW_LORD"
+			}
+			text_single = {
+				align = left
+				min_width = @rv_col_lord
+				max_width = @rv_col_lord
+				text = "KEHILLAH_RV_ROW_LORD_OUTLOOK"
+				using = Font_Size_Small
+			}
 		}
 
-		text_single = {
+		text_multi = {
 			min_width = @rv_col_charter
 			max_width = @rv_col_charter
-			align = left
+			autoresize = yes
+			align = left|nobaseline
 			text = "[Title.GetHolder.Custom( 'KehillahCharterNoticeSecurity' )]"
+			default_format = "#weak"
+			using = Font_Size_Small
 			tooltip = "KEHILLAH_RV_ROW_CHARTER_TOOLTIP"
 			using = tooltip_ws
 		}
@@ -460,6 +492,7 @@ types KehillahRealmView
 		text_label_center = {
 			layoutpolicy_vertical = expanding
 			min_width = @rv_col_standing
+			max_width = @rv_col_standing
 			text = "[Title.Custom( 'KehillahStandingScore' )]"
 			tooltip = "KEHILLAH_BD_STANDING_TOOLTIP"
 			using = tooltip_ws
@@ -468,6 +501,7 @@ types KehillahRealmView
 		text_label_center = {
 			layoutpolicy_vertical = expanding
 			min_width = @rv_col_danger
+			max_width = @rv_col_danger
 			text = "[Title.GetHolder.Custom( 'KehillahDangerBand' )]"
 			tooltip = "KEHILLAH_BD_DANGER_TOOLTIP"
 			using = tooltip_ws
@@ -487,6 +521,8 @@ types KehillahRealmView
 				alwaystransparent = yes
 			}
 		}
+
+		expand = {}
 	}
 
 	### One news line: year, place, what happened. datacontext: the realm
