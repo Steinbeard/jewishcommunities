@@ -1,0 +1,13 @@
+# Historical character roster — 2026-10-23 live boot check
+
+**Status: partial boot check only; 1066 and 867 character/court probes remain pending.** This check was requested for the historical roster implementation on `codex/historical-character-implementation`.
+
+Launched the worktree through `scripts/kehillah_isolated_ck3_test.ps1 -Visible` using the separate profile `C:\Users\Daniel\.codex\ck3-test\historical-character-roster`. PID 34576 had the matching `-userdir`, the debug log enabled `Jewish Communities (Codex Test)` from this worktree, and the process reached the responsive CK3 frontend. The process was stopped by its recorded PID after the boot-only check.
+
+The xTiger MCP server was unavailable. The fallback procedure could not safely select and enter a bookmark without visual confirmation, and screenshots were not authorized for this check. No campaign state or roster behavior was inspected. In particular, Rashi's daughters/adult-child absence/successor list, Granada's named court, Mahdia/Kairouan family, and 867 Zaragoza/Bodo remain **untested**.
+
+The post-boot `error.log` contained 81 engine `[E]` entries. This was not a clean error log. Several are established mod startup diagnostics (including `gene_age` complaints for the existing Isaac ha-Levi and Rashi DNA entries); the same complaint also names new entries in `common/dna_data/kehillah_historical_roster_dna.txt` at lines 6, 122, 236, and 350. These new DNA complaints are a finding for the implementation owner to compare with the prior baseline. The roster history files were not loaded into a playable campaign, so this boot cannot establish whether the new characters or court assignments produce further errors.
+
+## 2026-10-23 DNA error retest
+
+Repeated the isolated boot using the same dedicated profile, `C:\Users\Daniel\.codex\ck3-test\historical-character-roster`. PID 44364 loaded the worktree mod, reached the responsive frontend, and was stopped by its recorded PID. The seven checked `gene_age` complaints (four historical-roster DNA blocks and three existing bookmark DNA blocks) were absent from the post-boot log. No errors named `kehillah_historical_roster_dna.txt`, `kehillah_bodo_867.txt`, or `kehillah_historical_families_1066.txt`. At the final check before shutdown, the log contained 283 engine `[E]` entries overall, with no `gene_age` or new roster DNA/history file errors. It included the existing activity/localization/decision diagnostics and orphaned debug-event messages; this was not a clean log. This boot-only retest did not load a campaign, so character and court behavior remains pending.
