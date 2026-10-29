@@ -1,160 +1,273 @@
 ﻿# =====================================================================
 # Raise / Lower Jewish Settlement Policy effects. ROADMAP S9a, added
-# 2026-09-29. Called by common/decisions/kehillah_settlement_policy_
-# decisions.txt (read its header for the design limits) and by the S9a
-# debug probes.
+# 2026-09-29; rebuilt on the realm law 2026-10-28 (docs/spec/
+# 2026-10-28-jewish-settlement-law.md).
 #
-# Scope: THE HOST RULER, i.e. the independent ruler whose primary title
-# holds the policy. Neither effect relies on ROOT: the debug probes run
-# them on a Kehillah player's host, where ROOT is the Kehillah player.
-# Everything that needs the host uses scope:kehillah_policy_host.
+# Scope: THE HOST RULER, i.e. the independent ruler who holds the law.
+# Neither effect relies on ROOT: the debug probes run them on a Kehillah
+# player's host, where ROOT is the Kehillah player.
 #
-# STORAGE RULE (V16 §3, kehillah_settlement_policy_triggers.txt header):
-# absence means Allowed, and only deviations are stored. So a move INTO
-# Allowed removes the variable rather than writing 2.
+# HOW A CHANGE HAPPENS NOW. The policy is the realm law group
+# kehillah_jewish_settlement (common/laws/). Two roads lead to it:
+#   - the player passes a law in the laws tab;
+#   - script (the AI's event-led review, invitations, the council task,
+#     expulsion counterplay, debug) calls the raise/lower effects below,
+#     which add the neighbouring law with add_realm_law.
+# Both fire the law's on_pass (record the old rung) and on_after_pass
+# (kehillah_settlement_policy_changed_effect), so every consequence --
+# clergy opinion, piety, cooldown, charters re-applied, notices, the
+# invitation, edicts of expulsion -- happens once, the same way, on
+# either road. The consequences are hidden_effect: the laws' own
+# descriptions say what each rung means.
 # =====================================================================
 
 kehillah_raise_jewish_settlement_policy_effect = {
-	save_scope_as = kehillah_policy_host
-	primary_title = { save_scope_as = kehillah_policy_realm }
-
+	kehillah_settlement_laws_normalize_effect = yes
 	if = {
-		limit = { primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } }
-		custom_tooltip = {
-			text = kehillah_policy_raise_to_discouraged_tt
-			primary_title = {
-				set_variable = { name = kehillah_jewish_settlement_policy value = 1 }
-			}
+		limit = { kehillah_can_hold_settlement_law_trigger = yes }
+		if = {
+			limit = { primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } }
+			add_realm_law = kehillah_jewish_settlement_discouraged
 		}
-		# S9b: leaving Banned withdraws every pending edict of expulsion.
-		custom_tooltip = kehillah_policy_lifts_expulsion_tt
-		hidden_effect = { kehillah_expulsion_lift_effect = yes }
-	}
-	else_if = {
-		limit = { primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } }
-		custom_tooltip = {
-			text = kehillah_policy_raise_to_allowed_tt
-			primary_title = { remove_variable = kehillah_jewish_settlement_policy }
+		else_if = {
+			limit = { primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } }
+			add_realm_law = kehillah_jewish_settlement_allowed
 		}
+		else_if = {
+			limit = { NOT = { primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } } }
+			add_realm_law = kehillah_jewish_settlement_encouraged
+		}
+		debug_log_scopes = yes
+		debug_log = "kehillah_raise_jewish_settlement_policy_effect: host realm policy raised one rung"
 	}
 	else = {
-		custom_tooltip = {
-			text = kehillah_policy_raise_to_encouraged_tt
-			primary_title = {
-				set_variable = { name = kehillah_jewish_settlement_policy value = 3 }
-			}
-		}
-		# V34 section 7: Encouraged is an invitation.
-		custom_tooltip = kehillah_policy_invitation_tt
+		debug_log_scopes = yes
+		debug_log = "kehillah_raise_jewish_settlement_policy_effect: this ruler cannot hold the settlement law; nothing changed"
 	}
-
-	custom_tooltip = {
-		text = kehillah_policy_existing_charters_kept_tt
-	}
-
-	# The clergy's objection. A Jewish chaplain has none. No chaplain, no
-	# objection: vanilla guards cp:councillor_court_chaplain the same way
-	# (00_major_decisions_iberia_north_africa.txt).
-	if = {
-		limit = {
-			exists = cp:councillor_court_chaplain
-			cp:councillor_court_chaplain = { NOT = { is_jewish_character_trigger = yes } }
-		}
-		cp:councillor_court_chaplain = {
-			add_opinion = {
-				target = scope:kehillah_policy_host
-				modifier = kehillah_settlement_policy_raised_clergy_opinion
-			}
-		}
-	}
-
-	kehillah_start_policy_review_cooldown_effect = yes
-
-	kehillah_notify_communities_of_policy_change_effect = {
-		TYPE = msg_kehillah_policy_raised
-		TITLE = kehillah_policy_raised_msg_title
-		DESC = kehillah_policy_raised_msg_desc
-	}
-
-	# V34 section 7 (2026-10-13): Encouraged is an invitation to settlers.
-	if = {
-		limit = { primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } }
-		hidden_effect = { kehillah_invitation_issue_effect = yes }
-	}
-
-	debug_log_scopes = yes
-	debug_log = "kehillah_raise_jewish_settlement_policy_effect: host realm policy raised one rung"
 }
 
 kehillah_lower_jewish_settlement_policy_effect = {
+	kehillah_settlement_laws_normalize_effect = yes
+	if = {
+		limit = { kehillah_can_hold_settlement_law_trigger = yes }
+		if = {
+			limit = { primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } }
+			add_realm_law = kehillah_jewish_settlement_allowed
+		}
+		else_if = {
+			# Allowed (V17 4.2: one rung at a time). The allowed trigger
+			# also matches Encouraged, which the branch above took first.
+			limit = { primary_title = { kehillah_jewish_settlement_policy_allowed_trigger = yes } }
+			add_realm_law = kehillah_jewish_settlement_discouraged
+		}
+		else_if = {
+			limit = { primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } }
+			add_realm_law = kehillah_jewish_settlement_banned
+		}
+		debug_log_scopes = yes
+		debug_log = "kehillah_lower_jewish_settlement_policy_effect: host realm policy lowered one rung"
+	}
+	else = {
+		debug_log_scopes = yes
+		debug_log = "kehillah_lower_jewish_settlement_policy_effect: this ruler cannot hold the settlement law; nothing changed"
+	}
+}
+
+# The laws' on_pass. Scope: the ruler; runs BEFORE the law changes, so
+# the rung read here is the old one.
+kehillah_settlement_policy_record_old_rung_effect = {
+	primary_title = {
+		set_variable = { name = kehillah_policy_old_rung value = kehillah_policy_rung_value }
+	}
+}
+
+# The laws' on_after_pass. Scope: the ruler, now holding the new law.
+kehillah_settlement_policy_changed_effect = {
 	save_scope_as = kehillah_policy_host
 	primary_title = { save_scope_as = kehillah_policy_realm }
 
-	if = {
-		limit = { primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } }
-		custom_tooltip = {
-			text = kehillah_policy_lower_to_allowed_tt
-			primary_title = { remove_variable = kehillah_jewish_settlement_policy }
-		}
-		# V34 section 7: the invitation is withdrawn.
+	hidden_effect = {
+		# A law now holds the policy: an unmigrated old variable must not
+		# go on overriding it (the triggers read the variable first).
+		primary_title = { remove_variable = kehillah_jewish_settlement_policy }
+
 		if = {
-			limit = { primary_title = { has_variable = kehillah_invitation_open } }
-			primary_title = { remove_variable = kehillah_invitation_open }
+			limit = { NOT = { primary_title = { has_variable = kehillah_policy_old_rung } } }
+			primary_title = { set_variable = { name = kehillah_policy_old_rung value = 2 } }
 		}
-	}
-	else_if = {
-		# Allowed (stored or implicit).
-		limit = { primary_title = { kehillah_jewish_settlement_policy_allowed_trigger = yes } }
-		custom_tooltip = {
-			text = kehillah_policy_lower_to_discouraged_tt
-			primary_title = {
-				set_variable = { name = kehillah_jewish_settlement_policy value = 1 }
+
+		# --- RAISED ---------------------------------------------------
+		if = {
+			limit = { primary_title = { kehillah_policy_rung_value > var:kehillah_policy_old_rung } }
+
+			# S9b: leaving Banned withdraws every pending edict of expulsion.
+			if = {
+				limit = { primary_title = { var:kehillah_policy_old_rung <= 0 } }
+				kehillah_expulsion_lift_effect = yes
+			}
+
+			# The clergy's objection. A Jewish chaplain has none; no
+			# chaplain, no objection (vanilla guards cp:councillor_court_
+			# chaplain the same way, 00_major_decisions_iberia_north_africa).
+			if = {
+				limit = {
+					exists = cp:councillor_court_chaplain
+					cp:councillor_court_chaplain = { NOT = { is_jewish_character_trigger = yes } }
+				}
+				cp:councillor_court_chaplain = {
+					add_opinion = {
+						target = scope:kehillah_policy_host
+						modifier = kehillah_settlement_policy_raised_clergy_opinion
+					}
+				}
+			}
+
+			kehillah_notify_communities_of_policy_change_effect = {
+				TYPE = msg_kehillah_policy_raised
+				TITLE = kehillah_policy_raised_msg_title
+				DESC = kehillah_policy_raised_msg_desc
+			}
+
+			# V34 section 7: Encouraged is an invitation to settlers.
+			if = {
+				limit = { primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } }
+				kehillah_invitation_issue_effect = yes
 			}
 		}
-	}
-	else_if = {
-		# S9b, 2026-10-12: Banned. Reachable only from Discouraged, one rung
-		# at a time (V17 4.2). Every community in the realm receives an edict
-		# of expulsion with a year's grace (kehillah_expulsion_effects.txt).
-		limit = { primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } }
-		custom_tooltip = {
-			text = kehillah_policy_lower_to_banned_tt
-			primary_title = {
-				set_variable = { name = kehillah_jewish_settlement_policy value = 0 }
+
+		# --- LOWERED --------------------------------------------------
+		else_if = {
+			limit = { primary_title = { kehillah_policy_rung_value < var:kehillah_policy_old_rung } }
+
+			# V34 section 7: leaving Encouraged withdraws the invitation.
+			if = {
+				limit = {
+					primary_title = {
+						var:kehillah_policy_old_rung >= 3
+						has_variable = kehillah_invitation_open
+					}
+				}
+				primary_title = { remove_variable = kehillah_invitation_open }
+			}
+
+			if = {
+				limit = { NOT = { is_jewish_character_trigger = yes } }
+				add_piety = kehillah_policy_lower_piety_gain
+			}
+
+			# A ban is announced by the edict itself (kehillah_expulsion.0001),
+			# not by the ordinary notice.
+			if = {
+				limit = { primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } }
+				kehillah_expulsion_proclaim_effect = yes
+			}
+			else = {
+				kehillah_notify_communities_of_policy_change_effect = {
+					TYPE = msg_kehillah_policy_lowered
+					TITLE = kehillah_policy_lowered_msg_title
+					DESC = kehillah_policy_lowered_msg_desc
+				}
 			}
 		}
-	}
 
-	custom_tooltip = {
-		text = kehillah_policy_lower_consequence_tt
-	}
-	custom_tooltip = {
-		text = kehillah_policy_existing_charters_kept_tt
-	}
-
-	if = {
-		limit = { NOT = { is_jewish_character_trigger = yes } }
-		add_piety = kehillah_policy_lower_piety_gain
-	}
-
-	kehillah_start_policy_review_cooldown_effect = yes
-
-	# A ban is announced by the edict itself (kehillah_expulsion.0001), not
-	# by the ordinary notice.
-	if = {
-		limit = { primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } }
-		hidden_effect = { kehillah_expulsion_proclaim_effect = yes }
-	}
-	else = {
-		kehillah_notify_communities_of_policy_change_effect = {
-			TYPE = msg_kehillah_policy_lowered
-			TITLE = kehillah_policy_lowered_msg_title
-			DESC = kehillah_policy_lowered_msg_desc
-		}
+		kehillah_start_policy_review_cooldown_effect = yes
+		primary_title = { remove_variable = kehillah_policy_old_rung }
 	}
 
 	debug_log_scopes = yes
-	debug_log = "kehillah_lower_jewish_settlement_policy_effect: host realm policy lowered one rung"
+	debug_log = "kehillah_settlement_policy_changed_effect: settlement law changed"
+}
+
+# Scope: a ruler who can hold the settlement law. Sets their law from
+# the old title variable (no variable = Allowed) without the change
+# effects -- nothing changed in the world, only where it is kept -- and
+# removes the variable once the law holds the same rung.
+kehillah_settlement_law_from_variable_effect = {
+	if = {
+		limit = { exists = primary_title }
+		if = {
+			limit = { NOT = { primary_title = { has_variable = kehillah_jewish_settlement_policy } } }
+			add_realm_law_skip_effects = kehillah_jewish_settlement_allowed
+		}
+		else_if = {
+			limit = { primary_title = { var:kehillah_jewish_settlement_policy <= 0 } }
+			add_realm_law_skip_effects = kehillah_jewish_settlement_banned
+		}
+		else_if = {
+			limit = { primary_title = { var:kehillah_jewish_settlement_policy = 1 } }
+			add_realm_law_skip_effects = kehillah_jewish_settlement_discouraged
+		}
+		else_if = {
+			limit = { primary_title = { var:kehillah_jewish_settlement_policy >= 3 } }
+			add_realm_law_skip_effects = kehillah_jewish_settlement_encouraged
+		}
+		else = {
+			add_realm_law_skip_effects = kehillah_jewish_settlement_allowed
+		}
+		if = {
+			limit = {
+				primary_title = { has_variable = kehillah_jewish_settlement_policy }
+				OR = {
+					AND = {
+						primary_title = { var:kehillah_jewish_settlement_policy <= 0 }
+						has_realm_law = kehillah_jewish_settlement_banned
+					}
+					AND = {
+						primary_title = { var:kehillah_jewish_settlement_policy = 1 }
+						has_realm_law = kehillah_jewish_settlement_discouraged
+					}
+					AND = {
+						primary_title = { var:kehillah_jewish_settlement_policy = 2 }
+						has_realm_law = kehillah_jewish_settlement_allowed
+					}
+					AND = {
+						primary_title = { var:kehillah_jewish_settlement_policy >= 3 }
+						has_realm_law = kehillah_jewish_settlement_encouraged
+					}
+				}
+			}
+			primary_title = { remove_variable = kehillah_jewish_settlement_policy }
+		}
+	}
+}
+
+# Scope: anything. The one-time pass that makes the laws authoritative
+# (see the READY FLAG note in kehillah_settlement_policy_triggers.txt):
+# every eligible ruler's law is set from their old variable, then
+# kehillah_settlement_laws_ready is set and the triggers read the law.
+# Run at game start, by the first yearly pulse after loading a save, and
+# before anything changes or shows the policy (the raise/lower/set
+# effects, the realm view, the policy map). Does nothing once ready.
+kehillah_settlement_laws_normalize_effect = {
+	if = {
+		limit = { NOT = { has_global_variable = kehillah_settlement_laws_ready } }
+		every_ruler = {
+			limit = { kehillah_can_hold_settlement_law_trigger = yes }
+			kehillah_settlement_law_from_variable_effect = yes
+		}
+		set_global_variable = { name = kehillah_settlement_laws_ready value = yes }
+		debug_log = "kehillah_settlement_laws_normalize_effect: every eligible ruler's settlement law set; the laws now hold the policy"
+	}
+}
+
+# Scope: an independent ruler. Sets the policy to an exact rung without
+# the change effects -- for scenario setup (the Norman conquest's
+# welcome) and debug probes, which used to write the title variable
+# directly. RUNG = banned | discouraged | allowed | encouraged, and VALUE
+# its number (0..3): a ruler who cannot hold the law (a vassal, a Jewish
+# ruler) gets the old title variable instead, which the triggers still
+# read, so these setters behave exactly as before for them.
+kehillah_set_settlement_law_effect = {
+	kehillah_settlement_laws_normalize_effect = yes
+	if = {
+		limit = { kehillah_can_hold_settlement_law_trigger = yes }
+		add_realm_law_skip_effects = kehillah_jewish_settlement_$RUNG$
+		primary_title = { remove_variable = kehillah_jewish_settlement_policy }
+	}
+	else_if = {
+		limit = { exists = primary_title }
+		primary_title = { set_variable = { name = kehillah_jewish_settlement_policy value = $VALUE$ } }
+	}
 }
 
 # Scope: the host ruler. The timer variable expires by itself (the same
