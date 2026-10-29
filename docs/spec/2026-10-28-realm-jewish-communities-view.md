@@ -387,3 +387,13 @@ spread out.
 - **Sizes:** the larger portrait in both the ruler header and the gallery cards (85×90; the
   cards are 96×146, still six to a row). The facts' values are back at medium size. The
   pillar bars are longer and taller, and the action icons are 34 px.
+- **Correction, same day:** `ignoreinvisible` didn't remove the gaps. Hidden children with
+  fixed heights were still being reserved when the window sized itself. Nothing with a
+  height is hidden in the main column any more:
+  - one gallery scrollarea sizes to its rows (two at most, then it scrolls);
+  - one subtitle switches its text by mode;
+  - the news list stays in the layout, and only its rows hide, so a closed feed takes no
+    height.
+
+  An `expand` at the bottom collects any remainder, from the one-line empty-news note and
+  the lord's-view link.

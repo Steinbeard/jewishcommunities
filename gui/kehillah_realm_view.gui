@@ -93,10 +93,15 @@ window = {
 
 	vbox = {
 		set_parent_size_to_minimum = yes
-		# Hidden children (the two-row gallery, the open news feed, the
-		# lord's-view lines) must not count toward the height: without this
-		# their fixed heights were reserved and the spare ~400 px spread as
-		# gaps between the visible parts (2026-10-29).
+		# THE GAPS (2026-10-29, two passes). Hidden children with fixed
+		# heights -- a second gallery variant, a closed news feed, the
+		# lord's-view lines -- were still reserved when the window sized
+		# itself, and the surplus (~500 px) spread as even gaps between the
+		# visible parts. ignoreinvisible alone did not stop it. So nothing
+		# with a height is hidden here any more: one gallery that sizes to
+		# its rows, one subtitle that switches its text, a news list whose
+		# ROWS hide (the list itself stays, at zero height when closed). The
+		# expand at the end catches anything left over at the bottom.
 		ignoreinvisible = yes
 		using = Window_Margins
 		margin_bottom = 20
@@ -159,21 +164,11 @@ window = {
 						using = Font_Size_Medium
 					}
 					text_multi = {
-						visible = "[Not( GetPlayer.MakeScope.Var( 'kehillah_rv_lord_mode' ).IsSet )]"
 						layoutpolicy_horizontal = expanding
 						autoresize = yes
 						min_width = 440
 						max_width = 440
-						text = "KEHILLAH_RV_RULER_SUB"
-						default_format = "#weak"
-					}
-					text_multi = {
-						visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_lord_mode' ).IsSet]"
-						layoutpolicy_horizontal = expanding
-						autoresize = yes
-						min_width = 440
-						max_width = 440
-						text = "KEHILLAH_RV_LORD_SUB"
+						text = "[SelectLocalization( GetPlayer.MakeScope.Var( 'kehillah_rv_lord_mode' ).IsSet, 'KEHILLAH_RV_LORD_SUB', 'KEHILLAH_RV_RULER_SUB' )]"
 						default_format = "#weak"
 					}
 				}
@@ -242,21 +237,15 @@ window = {
 			}
 		}
 
+		# The outliner's own scrollarea shape (gui/hud_outliner.gui), as the
+		# map ledger uses it: sizes to its content up to two rows, then
+		# scrolls. (A realm with more than twelve communities overflows the
+		# cap and leaves a little slack below the gallery.)
 		scrollarea = {
-			visible = "[LessThanOrEqualTo_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_rv_count' ).GetValue, '(CFixedPoint)6' )]"
+			autoresizescrollarea = yes
 			scrollbarpolicy_horizontal = always_off
-			scrollbarpolicy_vertical = always_off
-			size = { @rv_scroll_width @rv_cell_h }
-
-			scrollwidget = {
-				kehillah_rv_gallery = {}
-			}
-		}
-
-		scrollarea = {
-			visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_rv_count' ).GetValue, '(CFixedPoint)6' )]"
-			scrollbarpolicy_horizontal = always_off
-			size = { @rv_scroll_width 300 }
+			size = { @rv_scroll_width 0 }
+			maximumsize = { -1 300 }
 
 			scrollbar_vertical = {
 				using = Scrollbar_Vertical
@@ -708,10 +697,13 @@ window = {
 			max_width = @rv_width
 		}
 
+		# Always in the layout; with every row hidden (closed, or nothing to
+		# show) its content is empty and it takes no height.
 		scrollarea = {
-			visible = "[And( GetVariableSystem.Exists( 'kehillah_rv_news_open' ), GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_rv_news_count' ).GetValue, '(CFixedPoint)0' ) )]"
+			autoresizescrollarea = yes
 			scrollbarpolicy_horizontal = always_off
-			size = { @rv_scroll_width 140 }
+			size = { @rv_scroll_width 0 }
+			maximumsize = { -1 140 }
 
 			scrollbar_vertical = {
 				using = Scrollbar_Vertical
@@ -721,110 +713,111 @@ window = {
 				vbox = {
 					datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_rv_realm' ).Title]"
 					set_parent_size_to_minimum = yes
+					ignoreinvisible = yes
 					min_width = @rv_width
 					max_width = @rv_width
 					spacing = 2
 
 					kehillah_rv_news_row = {
-						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_1' ).IsSet]" }
+						blockoverride "news_visible" { visible = "[And( GetVariableSystem.Exists( 'kehillah_rv_news_open' ), GetPlayer.MakeScope.Var( 'kehillah_rv_news_1' ).IsSet )]" }
 						blockoverride "news_tooltip" { tooltip = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_1_kind' ).GetFlagName ) )]" }
 						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_1_year' ).GetValue|0]" }
 						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_1_county' ).Title.GetNameNoTierNoTooltip]" }
 						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_1_kind' ).GetFlagName ) )]" }
 					}
 					kehillah_rv_news_row = {
-						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_2' ).IsSet]" }
+						blockoverride "news_visible" { visible = "[And( GetVariableSystem.Exists( 'kehillah_rv_news_open' ), GetPlayer.MakeScope.Var( 'kehillah_rv_news_2' ).IsSet )]" }
 						blockoverride "news_tooltip" { tooltip = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_2_kind' ).GetFlagName ) )]" }
 						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_2_year' ).GetValue|0]" }
 						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_2_county' ).Title.GetNameNoTierNoTooltip]" }
 						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_2_kind' ).GetFlagName ) )]" }
 					}
 					kehillah_rv_news_row = {
-						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_3' ).IsSet]" }
+						blockoverride "news_visible" { visible = "[And( GetVariableSystem.Exists( 'kehillah_rv_news_open' ), GetPlayer.MakeScope.Var( 'kehillah_rv_news_3' ).IsSet )]" }
 						blockoverride "news_tooltip" { tooltip = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_3_kind' ).GetFlagName ) )]" }
 						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_3_year' ).GetValue|0]" }
 						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_3_county' ).Title.GetNameNoTierNoTooltip]" }
 						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_3_kind' ).GetFlagName ) )]" }
 					}
 					kehillah_rv_news_row = {
-						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_4' ).IsSet]" }
+						blockoverride "news_visible" { visible = "[And( GetVariableSystem.Exists( 'kehillah_rv_news_open' ), GetPlayer.MakeScope.Var( 'kehillah_rv_news_4' ).IsSet )]" }
 						blockoverride "news_tooltip" { tooltip = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_4_kind' ).GetFlagName ) )]" }
 						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_4_year' ).GetValue|0]" }
 						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_4_county' ).Title.GetNameNoTierNoTooltip]" }
 						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_4_kind' ).GetFlagName ) )]" }
 					}
 					kehillah_rv_news_row = {
-						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_5' ).IsSet]" }
+						blockoverride "news_visible" { visible = "[And( GetVariableSystem.Exists( 'kehillah_rv_news_open' ), GetPlayer.MakeScope.Var( 'kehillah_rv_news_5' ).IsSet )]" }
 						blockoverride "news_tooltip" { tooltip = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_5_kind' ).GetFlagName ) )]" }
 						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_5_year' ).GetValue|0]" }
 						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_5_county' ).Title.GetNameNoTierNoTooltip]" }
 						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_5_kind' ).GetFlagName ) )]" }
 					}
 					kehillah_rv_news_row = {
-						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_6' ).IsSet]" }
+						blockoverride "news_visible" { visible = "[And( GetVariableSystem.Exists( 'kehillah_rv_news_open' ), GetPlayer.MakeScope.Var( 'kehillah_rv_news_6' ).IsSet )]" }
 						blockoverride "news_tooltip" { tooltip = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_6_kind' ).GetFlagName ) )]" }
 						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_6_year' ).GetValue|0]" }
 						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_6_county' ).Title.GetNameNoTierNoTooltip]" }
 						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_6_kind' ).GetFlagName ) )]" }
 					}
 					kehillah_rv_news_row = {
-						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_7' ).IsSet]" }
+						blockoverride "news_visible" { visible = "[And( GetVariableSystem.Exists( 'kehillah_rv_news_open' ), GetPlayer.MakeScope.Var( 'kehillah_rv_news_7' ).IsSet )]" }
 						blockoverride "news_tooltip" { tooltip = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_7_kind' ).GetFlagName ) )]" }
 						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_7_year' ).GetValue|0]" }
 						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_7_county' ).Title.GetNameNoTierNoTooltip]" }
 						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_7_kind' ).GetFlagName ) )]" }
 					}
 					kehillah_rv_news_row = {
-						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_8' ).IsSet]" }
+						blockoverride "news_visible" { visible = "[And( GetVariableSystem.Exists( 'kehillah_rv_news_open' ), GetPlayer.MakeScope.Var( 'kehillah_rv_news_8' ).IsSet )]" }
 						blockoverride "news_tooltip" { tooltip = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_8_kind' ).GetFlagName ) )]" }
 						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_8_year' ).GetValue|0]" }
 						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_8_county' ).Title.GetNameNoTierNoTooltip]" }
 						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_8_kind' ).GetFlagName ) )]" }
 					}
 					kehillah_rv_news_row = {
-						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_9' ).IsSet]" }
+						blockoverride "news_visible" { visible = "[And( GetVariableSystem.Exists( 'kehillah_rv_news_open' ), GetPlayer.MakeScope.Var( 'kehillah_rv_news_9' ).IsSet )]" }
 						blockoverride "news_tooltip" { tooltip = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_9_kind' ).GetFlagName ) )]" }
 						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_9_year' ).GetValue|0]" }
 						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_9_county' ).Title.GetNameNoTierNoTooltip]" }
 						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_9_kind' ).GetFlagName ) )]" }
 					}
 					kehillah_rv_news_row = {
-						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_10' ).IsSet]" }
+						blockoverride "news_visible" { visible = "[And( GetVariableSystem.Exists( 'kehillah_rv_news_open' ), GetPlayer.MakeScope.Var( 'kehillah_rv_news_10' ).IsSet )]" }
 						blockoverride "news_tooltip" { tooltip = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_10_kind' ).GetFlagName ) )]" }
 						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_10_year' ).GetValue|0]" }
 						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_10_county' ).Title.GetNameNoTierNoTooltip]" }
 						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_10_kind' ).GetFlagName ) )]" }
 					}
 					kehillah_rv_news_row = {
-						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_11' ).IsSet]" }
+						blockoverride "news_visible" { visible = "[And( GetVariableSystem.Exists( 'kehillah_rv_news_open' ), GetPlayer.MakeScope.Var( 'kehillah_rv_news_11' ).IsSet )]" }
 						blockoverride "news_tooltip" { tooltip = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_11_kind' ).GetFlagName ) )]" }
 						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_11_year' ).GetValue|0]" }
 						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_11_county' ).Title.GetNameNoTierNoTooltip]" }
 						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_11_kind' ).GetFlagName ) )]" }
 					}
 					kehillah_rv_news_row = {
-						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_12' ).IsSet]" }
+						blockoverride "news_visible" { visible = "[And( GetVariableSystem.Exists( 'kehillah_rv_news_open' ), GetPlayer.MakeScope.Var( 'kehillah_rv_news_12' ).IsSet )]" }
 						blockoverride "news_tooltip" { tooltip = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_12_kind' ).GetFlagName ) )]" }
 						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_12_year' ).GetValue|0]" }
 						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_12_county' ).Title.GetNameNoTierNoTooltip]" }
 						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_12_kind' ).GetFlagName ) )]" }
 					}
 					kehillah_rv_news_row = {
-						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_13' ).IsSet]" }
+						blockoverride "news_visible" { visible = "[And( GetVariableSystem.Exists( 'kehillah_rv_news_open' ), GetPlayer.MakeScope.Var( 'kehillah_rv_news_13' ).IsSet )]" }
 						blockoverride "news_tooltip" { tooltip = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_13_kind' ).GetFlagName ) )]" }
 						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_13_year' ).GetValue|0]" }
 						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_13_county' ).Title.GetNameNoTierNoTooltip]" }
 						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_13_kind' ).GetFlagName ) )]" }
 					}
 					kehillah_rv_news_row = {
-						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_14' ).IsSet]" }
+						blockoverride "news_visible" { visible = "[And( GetVariableSystem.Exists( 'kehillah_rv_news_open' ), GetPlayer.MakeScope.Var( 'kehillah_rv_news_14' ).IsSet )]" }
 						blockoverride "news_tooltip" { tooltip = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_14_kind' ).GetFlagName ) )]" }
 						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_14_year' ).GetValue|0]" }
 						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_14_county' ).Title.GetNameNoTierNoTooltip]" }
 						blockoverride "news_text" { text = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_14_kind' ).GetFlagName ) )]" }
 					}
 					kehillah_rv_news_row = {
-						blockoverride "news_visible" { visible = "[GetPlayer.MakeScope.Var( 'kehillah_rv_news_15' ).IsSet]" }
+						blockoverride "news_visible" { visible = "[And( GetVariableSystem.Exists( 'kehillah_rv_news_open' ), GetPlayer.MakeScope.Var( 'kehillah_rv_news_15' ).IsSet )]" }
 						blockoverride "news_tooltip" { tooltip = "[Localize( Concatenate( 'kehillah_news_kind_', Title.MakeScope.Var( 'kehillah_news_15_kind' ).GetFlagName ) )]" }
 						blockoverride "news_year" { text = "[Title.MakeScope.Var( 'kehillah_news_15_year' ).GetValue|0]" }
 						blockoverride "news_place" { text = "[Title.MakeScope.Var( 'kehillah_news_15_county' ).Title.GetNameNoTierNoTooltip]" }
@@ -844,6 +837,8 @@ window = {
 			tooltip = "KEHILLAH_RV_VIEW_REALM_TOOLTIP"
 			using = tooltip_ws
 		}
+
+		expand = {}
 	}
 }
 
