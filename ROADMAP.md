@@ -21,6 +21,18 @@ subject to revision after each phase.
 
 The holding/county view now has a Kehillah inspector when a community barony is selected in the Jewish Communities map mode. A persistent host-province link feeds a compact menorah tab alongside the holding tabs in every map mode; the tab is disabled on holdings without a community and its hover shows any recorded place history. The Jewish map mode also opens a vacant-site panel with policy, ruler outlook, economic opportunity, founding conditions, and history. Source and xTiger checks pass. Daniel confirmed active-community data and map-mode visibility live; the compact tab and vacant-site layout still need a fresh-game check. See [the implementation note](docs/implementation/2026-10-25-community-map-inspector.md). This direct user request was taken ahead of the older live-test TODOs below.
 
+### Jewish map ledger controls — 2026-10-25, Daniel's request
+
+The Jewish Communities ledger now has a minimize control with a compact
+restorable header. Closing the ledger leaves its map mode selected, and the
+selected map button reopens it. A one-time reactive tip points Jewish player
+characters with a populated community roster to that map. This user-directed
+UI pass sits alongside the inspector work above. The source changes pass
+xTiger against the pre-change baseline (0 fatal, 15 existing errors);
+live UI verification is pending. See the dated [Faith map navigation
+addendum](docs/spec/2026-10-13-faith-map-navigation-and-nusach.md#ledger-controls-and-jewish-character-tip--2026-10-25)
+and the [attempt log](docs/testing/2026-10-25-jewish-map-ledger-live-test.md).
+
 ### V51 Bookmark rosters for 867, 1066 and 1178 — 2026-10-21, Daniel's request
 
 **Built 2026-10-22; `ck3-tiger` clean; NOT live-tested.** Three Kehillah bookmarks:

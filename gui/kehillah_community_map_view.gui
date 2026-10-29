@@ -4,7 +4,7 @@
 # Design doc: docs/spec/v12-community-map-view.md. Read that before
 # changing anything here.
 #
-# WHAT THIS IS. Four top-level widgets, registered in gui/scripted_
+# WHAT THIS IS. Five top-level widgets, registered in gui/scripted_
 # widgets/kehillah_scripted_widgets.txt -- CK3's one additive GUI hook,
 # confirmed working live 2026-09-14 (this repo's first use of it):
 #
@@ -12,13 +12,15 @@
 #   kehillah_faith_map_navigation      -- Faith-family buttons in our mode
 #   kehillah_community_map_mode_header -- text for the custom map banner
 #   kehillah_community_map_view_panel  -- the roster window
+#   kehillah_community_map_view_minimized -- its collapsed header
 #
 # The toggle does three things in one click: paints the map (a
 # scripted_gui, common/scripted_guis/kehillah_map_view_gui.txt),
 # switches to the kehillah_communities_map map mode (gfx/map/map_modes/
-# kehillah_map_modes.txt), and opens the roster. Closing the roster
-# switches back to faiths. The toggle and roster are linked by the
-# VariableSystem flag "kehillah_map_view_open".
+# kehillah_map_modes.txt), and opens the roster. The roster can be hidden
+# or minimized without changing map mode. The toggle and roster are linked
+# by the VariableSystem flags "kehillah_map_view_open" and
+# "kehillah_map_view_minimized".
 #
 # The roster is grouped by minhag region -- three super-regions, each
 # with sub-regions, plus an "elsewhere" bucket -- and the map mode
@@ -130,6 +132,7 @@ flowcontainer = {
 				enabled = "[CanChangeMapMode]"
 				onclick = "[GetScriptedGui( 'kehillah_communities_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
 				onclick = "[SetMapMode( 'kehillah_communities_map' )]"
+				onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_minimized' )]"
 				onclick = "[GetVariableSystem.Set( 'kehillah_map_view_open', 'yes' )]"
 				tooltip = "KEHILLAH_MAP_VIEW_BUTTON_TOOLTIP"
 				using = tooltip_ws
@@ -144,13 +147,55 @@ flowcontainer = {
 				}
 			}
 
-			### CLOSE: hide the roster, back to the faiths map.
+			### Hide the roster while keeping the selected map mode.
 			button_round = {
-				name = "kehillah_map_view_close_button"
+				name = "kehillah_map_view_hide_button"
 				size = { 35 35 }
-				visible = "[Or( Or( IsMapMode( 'kehillah_communities_map' ), IsMapMode( 'kehillah_community_rites_map' ) ), IsMapMode( 'kehillah_realm_jewish_policy_map' ) )]"
+				visible = "[And( IsMapMode( 'kehillah_communities_map' ), GetVariableSystem.Exists( 'kehillah_map_view_open' ) )]"
 				down = yes
 				onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_open' )]"
+				onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_minimized' )]"
+				tooltip = "KEHILLAH_MAP_VIEW_BUTTON_HIDE_TOOLTIP"
+				using = tooltip_ws
+
+				button_icon = {
+					parentanchor = center
+					size = { 25 25 }
+					down = yes
+					texture = "gfx/interface/icons/faith/judaism.dds"
+					alwaystransparent = yes
+				}
+			}
+
+			### Restore the roster after its close or minimize button was used.
+			button_round = {
+				name = "kehillah_map_view_show_button"
+				size = { 35 35 }
+				visible = "[And( IsMapMode( 'kehillah_communities_map' ), Not( GetVariableSystem.Exists( 'kehillah_map_view_open' ) ) )]"
+				down = yes
+				onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_minimized' )]"
+				onclick = "[GetVariableSystem.Set( 'kehillah_map_view_open', 'yes' )]"
+				tooltip = "KEHILLAH_MAP_VIEW_BUTTON_SHOW_TOOLTIP"
+				using = tooltip_ws
+
+				button_icon = {
+					parentanchor = center
+					size = { 25 25 }
+					down = yes
+					texture = "gfx/interface/icons/faith/judaism.dds"
+					alwaystransparent = yes
+				}
+			}
+
+			# The adjacent rite and policy maps retain their existing exit to
+			# Faiths; they have no community ledger to hide.
+			button_round = {
+				name = "kehillah_map_view_other_mode_close_button"
+				size = { 35 35 }
+				visible = "[Or( IsMapMode( 'kehillah_community_rites_map' ), IsMapMode( 'kehillah_realm_jewish_policy_map' ) )]"
+				down = yes
+				onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_open' )]"
+				onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_minimized' )]"
 				onclick = "[SetMapMode( 'religions' )]"
 				tooltip = "KEHILLAH_MAP_VIEW_BUTTON_CLOSE_TOOLTIP"
 				using = tooltip_ws
@@ -246,6 +291,7 @@ flowcontainer = {
 		enabled = "[CanChangeMapMode]"
 		onclick = "[GetScriptedGui( 'kehillah_communities_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
 		onclick = "[SetMapMode( 'kehillah_communities_map' )]"
+		onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_minimized' )]"
 		onclick = "[GetVariableSystem.Set( 'kehillah_map_view_open', 'yes' )]"
 		tooltip = "KEHILLAH_MAP_VIEW_BUTTON_TOOLTIP"
 		using = tooltip_ws
@@ -364,8 +410,7 @@ window = {
 		### the close button internally, positioned absolutely inside a
 		### plain widget. A bare button_close dropped into an hbox is
 		### rejected ("Widget cannot have a position in a layout", live
-		### pass 3). Closing here also leaves the map mode, same as the
-		### toggle's close half.
+		### pass 3). Both window controls leave the map mode selected.
 		header_pattern = {
 			layoutpolicy_horizontal = expanding
 
@@ -377,7 +422,14 @@ window = {
 			blockoverride "button_close"
 			{
 				onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_open' )]"
-				onclick = "[SetMapMode( 'religions' )]"
+				onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_minimized' )]"
+			}
+
+			blockoverride "button_minimize"
+			{
+				visible = yes
+				onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_open' )]"
+				onclick = "[GetVariableSystem.Set( 'kehillah_map_view_minimized', 'yes' )]"
 			}
 		}
 
@@ -592,6 +644,45 @@ window = {
 	}
 }
 
+
+
+# The minimized ledger keeps a small, actionable header on the map. It is a
+# separate top-level window because shrinking the roster window in place
+# would leave its layout and mouse area covering the map.
+window = {
+	name = "kehillah_community_map_view_minimized"
+	parentanchor = bottom|right
+	widgetanchor = bottom|right
+	position = { -22 -240 }
+	size = { 360 56 }
+	movable = yes
+	resizable = no
+	layer = windows_layer
+	alwaystransparent = no
+	filter_mouse = all
+	visible = "[And( And( IsInGame, GetPlayer.IsValid ), And( GetVariableSystem.Exists( 'kehillah_map_view_minimized' ), IsMapMode( 'kehillah_communities_map' ) ) )]"
+	visible_at_creation = no
+
+	header_pattern = {
+		blockoverride "size" { size = { 360 56 } }
+		blockoverride "header_text" { text = "KEHILLAH_MAP_VIEW_MINIMIZED_HEADER" }
+
+		blockoverride "button_minimize"
+		{
+			visible = yes
+			mirror = vertical
+			tooltip = "KEHILLAH_MAP_VIEW_RESTORE_TOOLTIP"
+			onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_minimized' )]"
+			onclick = "[GetVariableSystem.Set( 'kehillah_map_view_open', 'yes' )]"
+		}
+
+		blockoverride "button_close"
+		{
+			onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_minimized' )]"
+			onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_open' )]"
+		}
+	}
+}
 
 
 types KehillahMapView
