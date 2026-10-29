@@ -26,10 +26,12 @@ The holding/county view now has a Kehillah inspector when a community barony is 
 **Proposal, not built.** A menorah chip in the character window's realm block opens "Jewish
 communities in [realm]". The header shows settlement policy, the faith's teaching, the ruler's
 outlook and the worst danger. Below it: a row per community (leader, local lord, charter, pillars,
-danger) and a 10-year incident list. Almost everything reads existing values; the one new piece of
-state is a per-community last-incident year and kind. Queued after the inspector work above. See
-the [design note](docs/spec/2026-10-28-realm-jewish-communities-view.md), whose section 8 lists
-Daniel's open questions.
+danger) and a 10-year scrollable realm news feed. Almost everything reads existing values; the one
+new piece of state is a fixed-slot news ring buffer on the top liege's title, fed from the existing
+negative-incident hooks for now. Daniel settled the scope the same day: whole top realm with
+"in your lands" called out, top-liege charters only, and a feed rather than latest-per-community.
+Queued after the inspector work above. See the
+[design note](docs/spec/2026-10-28-realm-jewish-communities-view.md).
 
 ### Jewish map ledger controls — 2026-10-25, Daniel's request
 

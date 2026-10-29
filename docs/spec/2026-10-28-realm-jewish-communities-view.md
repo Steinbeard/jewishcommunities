@@ -36,16 +36,26 @@ the row would be crowded. The chip costs no space when it's hidden.
 
 ## 3. Whose realm
 
-The window is scoped to the **viewed character's realm**: every led community whose
-`domicile.domicile_location.county.holder` is that character or one of their vassals at any
-level. For an emperor, that's the whole empire. For a duke, it's the duchy's sub-realm, titled
-"…in the Duchy of Franconia".
+*(Revised 2026-10-28 with Daniel's answer; the first draft scoped a duke's window to the duchy.)*
+
+The window always shows the **whole top realm**: every led community whose
+`domicile.domicile_location.county.holder.top_liege` is the viewed character's top liege. A
+duke, an emperor, and the Kehillah leaders under them all open the same "Jewish communities in
+the Holy Roman Empire".
+
+When the viewed character is a vassal, their own communities are pulled out into a short
+**"In your lands"** group above the full list (the same rows, filtered to counties the
+viewed character holds or their vassals hold). The full realm list follows below it. For the top
+liege, that group is the whole list, so it's not shown.
 
 Policy, charter host and outlook always resolve to the **top liege**, the same host V15/V16
 use (`kehillah_host_charter_effects.txt` resolves
 `domicile.domicile_location.county.holder.top_liege`). When the viewed character is a vassal,
-the header says so ("Policy set by Heinrich IV"). The vassal's own outlook still appears in the
-rows, as the local lord of that vassal's own communities.
+the header says so ("Policy set by Heinrich IV").
+
+**Charters stay top-liege only.** Historically some communities held charters from a local lord
+rather than the sovereign. That would give interesting gameplay (a bishop's charter versus the
+emperor's) but isn't in scope here. It's recorded as a future idea in section 9.
 
 ## 4. Layout
 
@@ -69,8 +79,10 @@ rows, as the local lord of that vassal's own communities.
 | Pillars | three band words or icons (existing pillar-band custom loc), not raw numbers |
 | Danger | `KehillahDangerBand` (Calm / Uneasy / Tense / Dangerous / Perilous); tooltip = the existing danger breakdown |
 
-**Incidents, last 10 years:** a dated list, newest first (see section 6). Below it, one muted
-line: "Recent anti-Jewish incidents in the [faith] faith: N" (`kehillah_faith_recent_incidents_value`).
+**Realm news:** a scrollable timeline, newest first, of what has happened to the realm's Jews
+in the last 10 years. It covers violence and accusations now, and later debates and major good
+news (see section 6). Below it, one muted line: "Recent anti-Jewish incidents in the [faith]
+faith: N" (`kehillah_faith_recent_incidents_value`).
 
 A mockup was shown in the conversation of 2026-10-28. This table is the authoritative version.
 
@@ -90,21 +102,54 @@ A mockup was shown in the conversation of 2026-10-28. This table is the authorit
 - **Chip count / "in danger" badge:** computed in the same pass, or the chip just reads
   "Jewish communities" without a number if a live count proves too costly. Decide while building.
 
-## 6. The one new piece of state: an incident log
+## 6. The one new piece of state: the realm news feed
+
+*(Revised 2026-10-28 with Daniel's answer. The first draft recommended keeping only the latest
+incident per community. Daniel wants a feed instead: "a scrollable timeline of violence,
+debates, but also anything major that was positive". Positive news is scoped later; the first
+slice uses the existing negative-incident system only.)*
 
 Today there is no dated, realm-readable incident record. `kehillah_faith_pressure` is a decaying
 per-faith counter. `kehillah_incident_outcome` is cleared after the scene. The `kehillah_history_*`
-variables only record losses and refoundings. Options:
+variables only record losses and refoundings. The V30 community news goes to vanilla feed messages,
+which script can't read back.
 
-1. **Latest incident per community** (recommended first slice): when an incident resolves, set
-   `kehillah_last_incident_year` and `kehillah_last_incident_kind` (a flag) on the community
-   title. The window lists the communities whose year is within 10. Two new variables. The
-   limit: only the newest incident per community shows.
-2. **A real log:** a global variable list of per-incident record carriers. More complete, but
-   CK3 variable lists can't hold structs, so it needs a carrier object per entry and pruning.
-   Defer until (1) proves too thin in play.
+**Storage: a fixed-slot ring buffer on the top liege's primary title.** CK3 variable lists are sets
+(adding the same year or kind twice is a no-op), so parallel lists can't hold records. Instead,
+use N numbered slots (start with N = 20), each a small group of variables:
 
-Wording for each incident kind comes from the existing community-news loc (V30), not new prose.
+| Variable | Holds |
+|---|---|
+| `kehillah_feed_<n>_date` | the day the entry happened (`current_date`); also drives the 10-year cutoff |
+| `kehillah_feed_<n>_kind` | a flag: `flag:riot`, `flag:accusation`, `flag:pogrom`, `flag:forced_baptism`, … |
+| `kehillah_feed_<n>_community` | the community title |
+| `kehillah_feed_<n>_actor` | optional character (the accuser, the lord who stood aside) |
+
+`kehillah_realm_feed_push_effect = { KIND = … }`, run from the community leader's scope, resolves
+the top liege's primary title and shifts slots n-1 down to n (dropping the oldest). It then
+writes slot 1. A yearly pulse clears slots older than 10 years. The window shows slots 1..N in a
+scrollarea, each visible only when its variables are set. Each line's text is a custom-loc
+switch on `kind`, reusing V30 community-news wording where it exists. Because the feed belongs to
+the realm, a community that later changes realm leaves its past entries with the old realm. That
+matches "news from the realm".
+
+**Hook points (first slice, negative incidents):** every place that already calls
+`kehillah_faith_pressure_add_effect` with a positive amount is an incident the faith noticed, so
+the feed push goes beside each one. That's about a dozen call sites in
+`events/kehillah_incident_events.txt` (5), `kehillah_mob_effects.txt` (2),
+`kehillah_accusation_effects.txt`, `kehillah_anusim_effects.txt` (2),
+`kehillah_popular_rising_effects.txt` and `events/kehillah_mission_events.txt`. Host arrest and
+expulsion should be checked too, since they may not touch faith pressure.
+
+**To verify before building:** that a GUI line can read a title variable's flag through a
+custom-loc switch with the title as root (`[Title.Custom('KehillahFeedLine1')]`, or an
+equivalent), and that 20 slots × 4 variables per realm is cheap enough. 20 slots is far below
+anything that should matter.
+
+**Later slices:** debates and disputations, and major positive news (a charter granted or
+improved, a protector's intervention, a great yeshiva or scholar, a new community founded).
+Each later kind is just another `KIND` flag and loc line, with no new storage.
+
 Per the no-effects-in-loc rule, any odds or effects appear in tooltips, never in the line text.
 
 ## 7. Small separate fix: Subjects-tab rows
@@ -114,9 +159,24 @@ bands and danger band on Kehillah-government rows. This needs a check of
 `window_character.gui`'s subject item first: if the row isn't per-row overridable without
 copying the whole file, drop this.
 
-## 8. Open questions for Daniel
+## 8. Decisions and open questions
 
-- Should a vassal's chip show their own sub-realm (as proposed) or always the top realm?
-- Is option 1's "latest per community" enough for the incident list?
-- Should non-Jewish AI rulers' windows show the chip by default, or only when the player is
-  Jewish or a host?
+Answered by Daniel, 2026-10-28:
+- **A vassal's chip opens the whole top realm**, with their own communities called out
+  (section 3).
+- **Charters: top liege only** for now (section 3).
+- **News feed, not latest-per-community**: a 10-year scrollable timeline, negative incidents
+  first, positive news later (section 6).
+
+Still open: **who sees the chip.** The question is whether a player can open the view on
+*anyone's* character window (inspecting the King of France as a Castilian count, say) or only on
+characters that matter to them (their own liege, their own realm, their community's host). The
+recommended default is anyone's: it's read-only information, and it lets a Kehillah player
+compare realms before moving. Limit it only if playtesting shows it's cluttered.
+
+## 9. Future ideas, not scoped
+
+- **Local vs. sovereign charters.** Some communities historically held charters from a local
+  lord (a bishop, a count) rather than the sovereign, and the two could conflict. That's good
+  gameplay, but it touches V15/V16's single-host assumption everywhere.
+- **Positive and debate news** for the feed (section 6, later slices).
