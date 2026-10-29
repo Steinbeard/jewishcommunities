@@ -20,6 +20,15 @@ subject to revision after each phase.
 ### English conquest invitation revision — 2026-10-29, Daniel's request
 
 The Norman Conquest now opens a one-time decision for England's new ruler. William's AI is strongly weighted to choose it. The decision passes the Encouraged Jewish Settlement law, which sends the existing 20-year invitation with a special English letter. Ordinary settlers get a year to answer; a hidden review then fills a shortfall to three English communities in vacant named sites, retaining the player-adventurer London offer. Source review and xTiger pass against the unchanged 15-error baseline. An [isolated live check](docs/testing/2026-10-29-english-conquest-invitation-live-test.md) passed the decision, law invitation, ruler event and scripted London/York/Lincoln shortfall without new feature errors. The community-side letter rendering, natural one-year timer, player-adventurer path and AI pick rate remain pending. The wider recently-conquered, low-control realm rule is a separate design unit. See the [dated revision](docs/spec/2026-10-29-conquest-invitation-revision.md).
+### Curated arms for newly founded Kehillot — 2026-10-29, Daniel's request
+
+Runtime communities now roll one coat of arms from a curated eight-charge pool,
+with two high-contrast color layouts. Adventurer, settlers and Norman founding
+paths share the same one-time generation effect. Authored communities retain their
+fixed arms. xTiger reports no new errors against the 15-error baseline. A launch
+check was attempted through xTiger but did not complete while another CK3 process
+was running; a live founding, save/reload and visual check remain pending. See
+[the implementation note](docs/implementation/2026-10-29-community-arms-pool.md).
 
 ### Charter as a letter from the ruler — 2026-10-29, Daniel's request
 
