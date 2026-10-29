@@ -1,0 +1,100 @@
+﻿# =====================================================================
+# Jewish Settlement Policy laws (2026-10-28). Group, scope and design
+# notes: common/law_groups/kehillah_jewish_settlement_law_groups.txt and
+# docs/spec/2026-10-28-jewish-settlement-law.md.
+#
+# Rules carried over unchanged from the S9a decisions (V17):
+#   - ONE RUNG AT A TIME: each law may only be passed from a neighbour.
+#   - FIVE-YEAR REVIEW COOLDOWN on the realm title, shared with the AI's
+#     event-led review (kehillah_policy_review_on_cooldown_trigger).
+#   - Raising costs piety (kehillah_policy_raise_piety_cost); lowering
+#     gives piety (in the change effect).
+#   - NO AI USE here: ai_will_do = 0. AI rulers change the policy only
+#     through the event-led review (kehillah_expulsion_effects.txt),
+#     which calls kehillah_raise/lower_jewish_settlement_policy_effect.
+#
+# Side effects (clergy opinion, notices to communities, charters
+# re-applied, invitation, edicts of expulsion) run in on_after_pass
+# through kehillah_settlement_policy_changed_effect, so they fire the
+# same way whether the player passes the law here or script calls
+# add_realm_law. on_pass, which runs BEFORE the change, records the old
+# rung so that effect can tell a raise from a lowering.
+# =====================================================================
+
+kehillah_jewish_settlement_banned = {
+	law_group_type = kehillah_jewish_settlement
+	index = 0
+
+	can_pass = {
+		kehillah_settlement_law_can_pass_trigger = yes
+		has_realm_law = kehillah_jewish_settlement_discouraged
+	}
+
+	on_pass = { kehillah_settlement_policy_record_old_rung_effect = yes }
+	on_after_pass = { kehillah_settlement_policy_changed_effect = yes }
+
+	ai_will_do = { value = 0 }
+}
+
+kehillah_jewish_settlement_discouraged = {
+	law_group_type = kehillah_jewish_settlement
+	index = 1
+
+	can_pass = {
+		kehillah_settlement_law_can_pass_trigger = yes
+		OR = {
+			has_realm_law = kehillah_jewish_settlement_banned
+			has_realm_law = kehillah_jewish_settlement_allowed
+		}
+	}
+
+	pass_cost = {
+		piety = kehillah_policy_law_cost_to_discouraged
+	}
+
+	on_pass = { kehillah_settlement_policy_record_old_rung_effect = yes }
+	on_after_pass = { kehillah_settlement_policy_changed_effect = yes }
+
+	ai_will_do = { value = 0 }
+}
+
+kehillah_jewish_settlement_allowed = {
+	law_group_type = kehillah_jewish_settlement
+	index = 2
+
+	can_pass = {
+		kehillah_settlement_law_can_pass_trigger = yes
+		OR = {
+			has_realm_law = kehillah_jewish_settlement_discouraged
+			has_realm_law = kehillah_jewish_settlement_encouraged
+		}
+	}
+
+	pass_cost = {
+		piety = kehillah_policy_law_cost_to_allowed
+	}
+
+	on_pass = { kehillah_settlement_policy_record_old_rung_effect = yes }
+	on_after_pass = { kehillah_settlement_policy_changed_effect = yes }
+
+	ai_will_do = { value = 0 }
+}
+
+kehillah_jewish_settlement_encouraged = {
+	law_group_type = kehillah_jewish_settlement
+	index = 3
+
+	can_pass = {
+		kehillah_settlement_law_can_pass_trigger = yes
+		has_realm_law = kehillah_jewish_settlement_allowed
+	}
+
+	pass_cost = {
+		piety = kehillah_policy_law_cost_to_encouraged
+	}
+
+	on_pass = { kehillah_settlement_policy_record_old_rung_effect = yes }
+	on_after_pass = { kehillah_settlement_policy_changed_effect = yes }
+
+	ai_will_do = { value = 0 }
+}

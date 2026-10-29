@@ -19,13 +19,45 @@ kehillah_policy_raise_piety_cost = {
 # Paid only to a non-Jewish ruler (the effect guards it).
 kehillah_policy_lower_piety_gain = minor_piety_value
 
-# Scope: a HOST REALM TITLE. The policy as a number, with the implicit
-# default made explicit (absent = 2, Allowed). Used by the S9a debug
-# probes to assert "exactly one rung"; gameplay reads the band triggers.
+# Scope: a HOST REALM TITLE. The policy as a number, 0 Banned .. 3
+# Encouraged, read through the band triggers (since 2026-10-28 the policy
+# is a realm law on the title's holder; no law reads as 2, Allowed). Used
+# by the debug probes to assert "exactly one rung", and by
+# kehillah_settlement_policy_changed_effect to tell a raise from a
+# lowering.
 kehillah_policy_rung_value = {
 	value = 2
 	if = {
-		limit = { has_variable = kehillah_jewish_settlement_policy }
-		value = var:kehillah_jewish_settlement_policy
+		limit = { kehillah_jewish_settlement_policy_banned_trigger = yes }
+		value = 0
+	}
+	else_if = {
+		limit = { kehillah_jewish_settlement_policy_discouraged_trigger = yes }
+		value = 1
+	}
+	else_if = {
+		limit = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+		value = 3
 	}
 }
+
+# Law pass costs (2026-10-28). Scope: the ruler passing the law, who
+# still holds the OLD law. Raising a rung costs the decision's old piety
+# price; lowering is free (it pays piety instead, in the change effect).
+kehillah_policy_law_cost_to_discouraged = {
+	value = 0
+	if = {
+		limit = { has_realm_law = kehillah_jewish_settlement_banned }
+		value = kehillah_policy_raise_piety_cost
+	}
+}
+
+kehillah_policy_law_cost_to_allowed = {
+	value = 0
+	if = {
+		limit = { has_realm_law = kehillah_jewish_settlement_discouraged }
+		value = kehillah_policy_raise_piety_cost
+	}
+}
+
+kehillah_policy_law_cost_to_encouraged = kehillah_policy_raise_piety_cost

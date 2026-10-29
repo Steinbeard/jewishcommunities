@@ -329,3 +329,7 @@ a room petitioning their lord". The window now reads top to bottom as an audienc
 - The old click target, the Jewish Settlement Policy map mode (2026-10-23), painted
   incorrectly in Daniel's game. It's no longer linked from here, and it's still unfixed.
 - Converting the policy into a real law is recorded as an open design question.
+- **Later the same day:** Daniel chose the law. The settlement policy is now the realm law
+  group `kehillah_jewish_settlement` ([its note](2026-10-28-jewish-settlement-law.md)), listed
+  by vanilla's laws tab. The stopgap panel was removed, and `window_my_realm.gui` is back to
+  its earlier state.
