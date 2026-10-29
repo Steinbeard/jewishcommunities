@@ -353,3 +353,21 @@ Daniel's notes on the audience layout, and what changed:
 - **News:** each line is one row of fixed columns that fit the window (year, place, text).
   Long text is cut off with "…", and the full line shows on hover. The open feed is a fixed
   160 px that scrolls, so a full feed can't stretch the window.
+
+## 13. Shorter (2026-10-29)
+
+Daniel: "too tall". Centred vertically, the window's top went off-screen.
+
+- The window is now anchored just below the top bar and grows downward.
+- **Gallery cards:** a tiny portrait, place and danger, six to a row (96×124). Most realms
+  fit on one row. The description moved to the card's tooltip and to the detail card.
+- **Ruler header:** the portrait is the tiny one, and the fact buttons are 54 px tall.
+- **Detail card:**
+  - Name on one line; the leader and description on the line below.
+  - The local lord on one line.
+  - Each pillar is one line: name, the holding card's bar, then the tier.
+- **News header:** its "▸" didn't exist in the game font and drew as a box. It now uses
+  vanilla's expand arrow (`button_expand`, framed with `BoolTo1And2`, as
+  `window_character.gui` does).
+- Labels meant to sit left now have `layoutpolicy_horizontal = expanding`. A bare
+  `text_single` in a vbox is centred, which is why "Local Lord" was centred.
