@@ -8,6 +8,15 @@ remain unbuilt. Depends on [v15](../spec/v15-host-charter.md) and
 [v31](../spec/v31-host-teachings-stances-and-factions.md); answers ROADMAP's S9a finding that "the
 host draws no tribute from any charter today".
 
+**Correction, 2026-10-30 (live, Granada):** the Domain tab showed "Paid to host 0.00". The rate read
+the term with `vassal_contract_has_flag`, which never matches a tributary charter. Now
+`kehillah_refresh_charter_state_cache_effect` also caches the rung on the title
+(`kehillah_charter_cache_tribute`: 0 None, 1 Customary, 2 Heavy), and `kehillah_tribute_rate_value`
+reads that cache. Before the first refresh it counts as Customary. That effect is the mod's only
+reader of `subject_contract_has_flag`, which stalled loading when it was used in UI code. The rung is
+not part of the terms signature, so it adds no "charter revised" news. The same commit narrows the
+income row, which was 556 px and ran off the tab's right edge.
+
 ## What it does
 
 - **A charter term, Tribute**, with three rungs: None (0%), Customary (20%, the default) and Heavy

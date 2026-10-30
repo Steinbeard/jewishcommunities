@@ -12,7 +12,13 @@
 kehillah_tribute_customary_rate = 0.2
 kehillah_tribute_heavy_rate = 0.3
 
-# The share of income the charter's current rung takes.
+# The share of income the charter's current rung takes. The rung comes
+# from the title cache kehillah_refresh_charter_state_cache_effect writes
+# each quarter (0 None, 1 Customary, 2 Heavy), not from the contract:
+# vassal_contract_has_flag never matches a tributary charter, which left
+# the rate at 0 (live, 2026-10-30), and the subject trigger is kept out of
+# UI code (see that effect). Before the first refresh the rung is the
+# term's default, Customary.
 kehillah_tribute_rate_value = {
 	value = 0
 	if = {
@@ -22,11 +28,23 @@ kehillah_tribute_rate_value = {
 			exists = suzerain
 		}
 		if = {
-			limit = { vassal_contract_has_flag = kehillah_tribute_heavy }
+			limit = {
+				primary_title = {
+					has_variable = kehillah_charter_cache_tribute
+					var:kehillah_charter_cache_tribute = 2
+				}
+			}
 			add = kehillah_tribute_heavy_rate
 		}
 		else_if = {
-			limit = { vassal_contract_has_flag = kehillah_tribute_customary }
+			limit = {
+				NOT = {
+					primary_title = {
+						has_variable = kehillah_charter_cache_tribute
+						var:kehillah_charter_cache_tribute = 0
+					}
+				}
+			}
 			add = kehillah_tribute_customary_rate
 		}
 	}
