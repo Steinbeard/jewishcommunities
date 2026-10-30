@@ -16,6 +16,20 @@ Phases are sequential within a track unless noted. This is the plan,
 subject to revision after each phase.
 
 ## Near-term TODO
+### The Nagid — 2026-10-30, Daniel's request — DANIEL-REVIEW
+
+**Proposal only; nothing built.** [Spec](docs/spec/2026-10-30-the-nagid.md). An independent ruler
+names one qualified Jewish community leader in the realm as Nagid. The Nagid serves as a councillor
+or court physician and acts as the head of all the realm's Jews. The hard gate is the host rite's
+V31 Teaching on the Jews, which already changes in play: Dhimma and Witness allow the office, the
+stricter steps dismiss. The community gate is Standing (Flourishing to be named, Healthy to keep),
+and the Settlement law must be Allowed or Encouraged. Culture only names the office (Nagid, Rab de la
+Corte, Presbyter, Hochmeister) and weights the AI. Envy and a fall carry the risk, with Joseph of
+Granada as the anchor. **Slice 0 is an engine spike and may run unattended:** can a Kehillah leader,
+an independent landless ruler, hold a host's council seat or court position through
+`assign_councillor_type` or `appoint_court_position`? Every later slice waits for Daniel's answers
+to the spec's §12.
+
 
 ### English conquest invitation revision — 2026-10-29, Daniel's request
 
@@ -2662,6 +2676,11 @@ decrees) and Sepharad/Islamicate (Negidim — influence via host-court
 placement) once Phase 2 validates the overlay pattern. Vanilla's `sephardi`
 culture is the matching ready-made asset for the latter (same source as
 the Phase 2 note above).
+
+**2026-10-30 — proposed revision for the Negidim:** the
+[Nagid spec](docs/spec/2026-10-30-the-nagid.md) replaces the Sepharad-only overlay with one
+host-realm office. It is open to any community whose host's teaching permits Jews in office, and it
+is named by region. Awaiting Daniel's review.
 
 ### Phase 4 — Host Dynamics
 The host-realm relationship layer: Christian-sphere loop (usury, charters,
