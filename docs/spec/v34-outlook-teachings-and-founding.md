@@ -350,3 +350,13 @@ independent non-Jewish ruler's personal history drifts with his court chaplain
   (one every ~2.9 years), 7 of which answered invitations. Communities went from 19 to 27 with no
   runaway. A newly founded community now waits 10 years before sending settlers of its own
   (``kehillah_settlers_new_community_years``), so foundings cannot chain.
+
+## Addendum, 2026-10-29: Predator only below Well-disposed
+
+**Supersedes** the Predator line in §2's stances ("greedy and below 30").
+
+A Predator is now greedy with an outlook **below 15**, the bottom of the Well-disposed band, and
+not Convinced. Under the old rule a greedy lord between 15 and 29 read "Well-disposed" beside a
+red "Predator" in the realm view (Badis of Granada, outlook 20, 1066). Those lords are now
+Pragmatists. Nothing but the UI and the debug probe reads the stance yet, so the change moves no
+mechanic. The outlook tooltips now say what each stance means.
