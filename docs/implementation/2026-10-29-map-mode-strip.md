@@ -46,6 +46,16 @@ each host barony with `kehillah_map_community`, as the communities paint does. T
 uses the same layout, with a fallback for a county with no holder. The two `_desc` keys are the
 buttons' tooltips, as for vanilla modes, and now list every colour.
 
+## Addendum: shown to every player (2026-10-29)
+
+The Jewish group was gated on `kehillah_map_view_count > 0`, which a non-Jewish player only gets
+after the first quarterly pulse (and only if communities exist), so the buttons looked missing.
+Daniel asked for them for everyone, since the strip is hard to find anyway. The group is now
+visible for any player in a game (`IsInGame`, `GetPlayer.IsValid`). The Jewish Communities
+button's paint scripted_gui also runs `kehillah_refresh_map_view_effect`, so the ledger is fresh
+on first click. The "hidden when no community is mirrored" line above is superseded. Not yet
+checked live.
+
 ## Cost of the copy
 
 After a game patch, recopy vanilla `mapmodes.gui` and re-apply the fenced blocks. Another mod that
