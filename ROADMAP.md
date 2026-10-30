@@ -41,6 +41,8 @@ impossible.** The engine refuses `assign_councillor_type`, `appoint_court_positi
 [build note](docs/implementation/2026-10-30-nagid-build.md):
 - **Slice 1** (Status of the Jews, Invite Jewish Settlers): built and xTiger-checked, not
   live-tested.
+- **Slice 2** (the culture outlook line, the cost of Favored beyond the teaching): built and
+  xTiger-checked, not live-tested.
 
 ### English conquest invitation revision — 2026-10-29, Daniel's request
 
