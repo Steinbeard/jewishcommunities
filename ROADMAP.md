@@ -16,6 +16,18 @@ Phases are sequential within a track unless noted. This is the plan,
 subject to revision after each phase.
 
 ## Near-term TODO
+### Crisis situations research — 2026-10-30, Daniel's request
+
+[Source spike](docs/research/2026-10-30-crises-as-situations.md): CK3 1.20.1.2 supports
+multiple runtime situation instances with dynamically assigned county sub-regions.
+This makes one native situation per active community crisis plausible, with a
+map pin, Situations-list entry and phases. The current Community Safety build is
+still uncommitted in the main checkout, so no situation code was grafted onto it.
+Its Military dashboard and title-owned epoch remain the proposed action and
+compatibility surface while a two-community identity/save/UI spike is tested.
+No situation runtime or visual result is claimed. This user-directed research
+unit was taken ahead of the older live-test queue below.
+
 ### The Nagid — 2026-10-30, Daniel's request — design agreed, nothing built
 
 [Spec](docs/spec/2026-10-30-the-nagid.md), revised the same day with Daniel's second-round
