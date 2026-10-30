@@ -30,11 +30,15 @@ decisions. The pieces:
   by the seat's leader and confirmed for a fee. It survives cold rulers down to Tolerated.
 - **The Exilarch:** the same office with the caliph as host.
 
-**Build order is the spec's §15.** It starts with Slice 0, an engine spike that may run unattended:
-can a Kehillah leader, an independent landless ruler, hold a host's council seat or court position
-through `assign_councillor_type` or `appoint_court_position`? Slices 1–3 (the rename and decision,
-culture and leniency, the seat) don't depend on the spike. If the spike fails, ask Daniel before
-building the Route B fallback (§15 question 3). Other open questions are tuning.
+**Build order is the spec's §15.** Slice 0, the engine spike, **ran 2026-10-30** in Daniel's open
+game through xTiger ([log](docs/testing/2026-10-30-nagid-engine-spike.md)). **A real seat is
+impossible.** The engine refuses `assign_councillor_type`, `appoint_court_position` and
+`designate_diarch` unless the host is the character's liege. Two routes remain:
+- **Route B:** service in name, a skill-scaled host modifier;
+- **Route C:** a delegate from the community serving as the host's courtier.
+
+**Slice 5 waits for Daniel to choose between them.** Slices 1–3 (the rename and decision, culture
+and leniency, the seat) don't depend on it. Other open questions are tuning.
 
 ### English conquest invitation revision — 2026-10-29, Daniel's request
 
