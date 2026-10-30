@@ -100,3 +100,14 @@ Both were proposed in conversation and are waiting on Daniel's go-ahead.
   reads "Founded in".
 - **Not built list above:** the income ledger is now built (this pass);
   vertical pillars are still waiting.
+
+## Addendum, 2026-10-30 (the rank as a link)
+
+Daniel: take "9th of 33" off the Standing line and put the rank where the
+"World Ledger" button was, as text that still opens the ledger.
+
+- **Standing line:** the band alone again ("Standing: Healthy").
+- **Banner link:** at the right of the Your Kehillah banner, "9th in the
+  world" in clickable text, with the ledger tooltip; a click opens the
+  ledger. Before ranks exist it reads "World Ledger". It says "in the
+  world" rather than "biggest", since the rank is by Standing, not size.
