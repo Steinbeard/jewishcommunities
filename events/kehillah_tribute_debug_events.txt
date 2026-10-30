@@ -1,0 +1,63 @@
+﻿namespace = kehillah_tribute_debug
+# Hidden probes for the host tribute (v31 §8.2), fired on a Kehillah leader.
+# .1 logs the rung, rate, monthly income and what the host takes;
+# .2 pays one quarter now and logs both treasuries before and after;
+# .3 sets the term to Heavy, .4 back to Customary (verify after a tick).
+
+kehillah_tribute_debug.1 = {
+	type = character_event
+	hidden = yes
+	trigger = { government_has_flag = government_is_kehillah }
+	immediate = {
+		debug_log = "TRIBUTE rate=[THIS.Char.MakeScope.ScriptValue('kehillah_tribute_rate_value')] monthly=[THIS.Char.MakeScope.ScriptValue('kehillah_tribute_monthly_value')] quarter_due=[THIS.Char.MakeScope.ScriptValue('kehillah_tribute_quarter_due_value')] quarter_paid=[THIS.Char.MakeScope.ScriptValue('kehillah_tribute_quarter_paid_value')]"
+		if = {
+			limit = { exists = suzerain }
+			suzerain = { save_scope_as = kehillah_tribute_host }
+			debug_log = "TRIBUTE host=[kehillah_tribute_host.GetName] tributary=yes"
+		}
+		else = {
+			debug_log = "TRIBUTE no suzerain: nothing is paid"
+		}
+	}
+}
+
+kehillah_tribute_debug.2 = {
+	type = character_event
+	hidden = yes
+	trigger = {
+		government_has_flag = government_is_kehillah
+		exists = suzerain
+	}
+	immediate = {
+		suzerain = { save_scope_as = kehillah_tribute_host }
+		debug_log = "TRIBUTE before: leader gold=[THIS.Char.GetGold] host gold=[kehillah_tribute_host.GetGold] owed=[THIS.Char.MakeScope.ScriptValue('kehillah_tribute_quarter_paid_value')]"
+		kehillah_pay_host_tribute_effect = yes
+		debug_log = "TRIBUTE after: leader gold=[THIS.Char.GetGold] host gold=[kehillah_tribute_host.GetGold]"
+	}
+}
+
+kehillah_tribute_debug.3 = {
+	type = character_event
+	hidden = yes
+	trigger = { is_tributary = yes }
+	immediate = {
+		tributary_contract_set_obligation_level = {
+			type = kehillah_charter_tribute
+			level = kehillah_tribute_heavy
+		}
+		debug_log = "kehillah_tribute_debug.3: requested Heavy tribute; verify with .1 after a tick"
+	}
+}
+
+kehillah_tribute_debug.4 = {
+	type = character_event
+	hidden = yes
+	trigger = { is_tributary = yes }
+	immediate = {
+		tributary_contract_set_obligation_level = {
+			type = kehillah_charter_tribute
+			level = kehillah_tribute_customary
+		}
+		debug_log = "kehillah_tribute_debug.4: requested Customary tribute; verify with .1 after a tick"
+	}
+}

@@ -757,6 +757,7 @@ is the S11 "friendliness" design review; the Crusades chain stays separate and b
 - **Decided 2026-10-12:** tribute starts at 20% of income; every convert steps down. Still open
   (v31 §14, §16): secret Jews after conversion, non-rabbinic Jewish faiths, reaching a
   player-led community with forced conversion (answered: v31 §10.3).
+- **Tribute, part 1: BUILT 2026-10-30, not live-tested** ([addendum](docs/implementation/2026-10-30-host-tribute.md)). Every charter has a Tribute term: None, Customary (20%, the default) or Heavy (30%). It is paid each quarter by script and shown as "Paid to host" on the Domain tab. This sidesteps the engine-tax spike (§11.2) rather than answering it. The levy, the confirmation fee and the regional names are not built.
 - **Next:** live-test v30. Then v31 §11's spikes (doctrine group on rites, tributary
   tax on a Kehillah, custom faction), then the slices in §12. Open questions for Daniel: §14.
 

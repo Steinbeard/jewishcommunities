@@ -1,0 +1,70 @@
+﻿# =====================================================================
+# The tribute a Kehillah pays its host (v31 §8.2). ADDED 2026-10-30.
+# Scope for every value below: a Kehillah leader. The rung comes from
+# the charter's kehillah_charter_tribute term; see
+# kehillah_host_charter_tribute_contracts.txt for why the gold moves by
+# script and not by the engine's tributary tax.
+# =====================================================================
+
+# Rates, one per rung, so tuning is a one-line change. Daniel,
+# 2026-10-12: start at 20%. Heavy is v31 §8.2's first pass; the S10
+# soak tunes both.
+kehillah_tribute_customary_rate = 0.2
+kehillah_tribute_heavy_rate = 0.3
+
+# The share of income the charter's current rung takes.
+kehillah_tribute_rate_value = {
+	value = 0
+	if = {
+		limit = {
+			government_has_flag = government_is_kehillah
+			is_tributary = yes
+			exists = suzerain
+		}
+		if = {
+			limit = { vassal_contract_has_flag = kehillah_tribute_heavy }
+			add = kehillah_tribute_heavy_rate
+		}
+		else_if = {
+			limit = { vassal_contract_has_flag = kehillah_tribute_customary }
+			add = kehillah_tribute_customary_rate
+		}
+	}
+}
+
+# Percent, for display.
+kehillah_tribute_rate_percent_value = {
+	value = kehillah_tribute_rate_value
+	multiply = 100
+}
+
+# What the host takes in a month: the rate times the leader's monthly
+# income (gross, before expenses). Never negative.
+kehillah_tribute_monthly_value = {
+	value = monthly_character_income
+	multiply = kehillah_tribute_rate_value
+	min = 0
+}
+
+# The same, negated, for the Domain tab's "Paid to host" line.
+kehillah_tribute_monthly_shown_value = {
+	value = kehillah_tribute_monthly_value
+	multiply = -1
+}
+
+# Owed each quarter: three months of tribute.
+kehillah_tribute_quarter_due_value = {
+	value = kehillah_tribute_monthly_value
+	multiply = 3
+}
+
+# Paid each quarter: what is owed, or the whole treasury if that is
+# less. A tribute of a share of income never puts the community in debt.
+kehillah_tribute_quarter_paid_value = {
+	value = kehillah_tribute_quarter_due_value
+	if = {
+		limit = { gold < kehillah_tribute_quarter_due_value }
+		value = gold
+	}
+	min = 0
+}
