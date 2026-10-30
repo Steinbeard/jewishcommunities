@@ -321,3 +321,19 @@ Raised by Daniel while playing a restored Sanhedrin.
   range" of a Nasi in Jerusalem; a head of faith is apparently in range of his whole faith.
   - "Within range" is now a distance: within 1,000 map pixels of the seat county (vanilla's
     `MAXIMUM_DIPLOMATIC_RANGE`), measured with `squared_distance`.
+
+## Addendum, 2026-10-30: the Exilarchate as a case of the Nagid office (proposed, not built)
+
+Daniel asked that the Exilarch be built as a special case of the realm office in the
+[Nagid spec](2026-10-30-the-nagid.md) §12. **Not built.** It keeps this document's decisions:
+- Baghdad *is* the Exilarchate;
+- a Ben David is a strong preference, not a hard filter;
+- there is no separate title;
+- the Gaon of Pumbedita is the Exilarch's Rosh Yeshiva.
+
+It supersedes the *mechanism* of build-order item 3. The Exilarch is the Nagid office with the
+caliph as host:
+- In vanilla 1066 al-Qa'im holds `d_sunni`, while `d_baghdad`'s liege is `k_persia`.
+- The office is seated at the caliph's capital.
+- It reaches realms of his faith that have no Nagid of their own.
+- It is founded but vacant in 1066.

@@ -360,3 +360,15 @@ not Convinced. Under the old rule a greedy lord between 15 and 29 read "Well-dis
 red "Predator" in the realm view (Badis of Granada, outlook 20, 1066). Those lords are now
 Pragmatists. Nothing but the UI and the debug probe reads the stance yet, so the change moves no
 mechanic. The outlook tooltips now say what each stance means.
+
+## Addendum, 2026-10-30: a culture source, and the invitation as a decision (proposed, not built)
+
+Daniel agreed two changes in the [Nagid spec](2026-10-30-the-nagid.md). **Neither is built.**
+- **§2, the outlook sources** gain a "Culture" line (Nagid spec §5): African Tolerance +10, Steppe
+  Tolerance +10, Religion Blending +5, Xenophilic +5. The opinion value subtracts it where vanilla
+  already raises opinion of other faiths.
+- **§7, the invitations:** the top rung, renamed Favored, no longer opens the invitation by itself.
+  It unlocks an **Invite Jewish Settlers** decision (Nagid spec §6). The open-door review raises the
+  law and takes the decision in one step, so its behaviour is unchanged.
+- The Nagid office would be the first mechanic to read the **Protector stance**, which it needs to
+  found the office.

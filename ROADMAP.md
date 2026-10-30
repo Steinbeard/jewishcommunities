@@ -16,20 +16,25 @@ Phases are sequential within a track unless noted. This is the plan,
 subject to revision after each phase.
 
 ## Near-term TODO
-### The Nagid — 2026-10-30, Daniel's request — DANIEL-REVIEW
+### The Nagid — 2026-10-30, Daniel's request — design agreed, nothing built
 
-**Proposal only; nothing built.** [Spec](docs/spec/2026-10-30-the-nagid.md). An independent ruler
-names one qualified Jewish community leader in the realm as Nagid. The Nagid serves as a councillor
-or court physician and acts as the head of all the realm's Jews. The hard gate is the host rite's
-V31 Teaching on the Jews, which already changes in play: Dhimma and Witness allow the office, the
-stricter steps dismiss. The community gate is Standing (Flourishing to be named, Healthy to keep),
-and the Settlement law must be Allowed or Encouraged. Culture only names the office (Nagid, Rab de la
-Corte, Presbyter, Hochmeister) and weights the AI. Envy and a fall carry the risk, with Joseph of
-Granada as the anchor. **Slice 0 is an engine spike and may run unattended:** can a Kehillah leader,
-an independent landless ruler, hold a host's council seat or court position through
-`assign_councillor_type` or `appoint_court_position`? Every later slice waits for Daniel's answers
-to the spec's §12.
+[Spec](docs/spec/2026-10-30-the-nagid.md), revised the same day with Daniel's second-round
+decisions. The pieces:
+- **Status of the Jews:** the Settlement law is renamed; its rungs become Banned / Restricted /
+  Tolerated / Favored.
+- **Favored:** always "beyond the teaching", with a cost scaled by the rite's Teaching on the Jews.
+  It unlocks an Invite Jewish Settlers decision.
+- **Culture:** an outlook line for African Tolerance and the other tolerance traditions.
+- **The seat of the realm's Jews:** the capital's community, with tier-scaled pillars and more danger.
+- **The office:** founded only at Favored, by a Protector, when the seat is Flourishing. It is held
+  by the seat's leader and confirmed for a fee. It survives cold rulers down to Tolerated.
+- **The Exilarch:** the same office with the caliph as host.
 
+**Build order is the spec's §15.** It starts with Slice 0, an engine spike that may run unattended:
+can a Kehillah leader, an independent landless ruler, hold a host's council seat or court position
+through `assign_councillor_type` or `appoint_court_position`? Slices 1–3 (the rename and decision,
+culture and leniency, the seat) don't depend on the spike. If the spike fails, ask Daniel before
+building the Route B fallback (§15 question 3). Other open questions are tuning.
 
 ### English conquest invitation revision — 2026-10-29, Daniel's request
 
@@ -2677,10 +2682,15 @@ placement) once Phase 2 validates the overlay pattern. Vanilla's `sephardi`
 culture is the matching ready-made asset for the latter (same source as
 the Phase 2 note above).
 
-**2026-10-30 — proposed revision for the Negidim:** the
+**2026-10-30 — revision for the Negidim (design agreed, not built):** the
 [Nagid spec](docs/spec/2026-10-30-the-nagid.md) replaces the Sepharad-only overlay with one
-host-realm office. It is open to any community whose host's teaching permits Jews in office, and it
-is named by region. Awaiting Daniel's review.
+host-realm office:
+- it is seated at the capital's community;
+- it is founded only by a realm that favours its Jews beyond its faith's teaching;
+- it is named by region;
+- its rules bias it toward Muslim courts.
+
+The Exilarch is a special case of the same office.
 
 ### Phase 4 — Host Dynamics
 The host-realm relationship layer: Christian-sphere loop (usury, charters,

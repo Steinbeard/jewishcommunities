@@ -100,3 +100,16 @@ replaces both decisions.
 - **Other realms' laws:** vanilla has no window for them; My Realm's laws tab shows only the
   player's own. The realm view's policy fact goes back to the policy map mode, which compares
   every realm at once.
+
+## Addendum, 2026-10-30: proposed rename and invitation decision (not built)
+
+Daniel agreed a revision in the [Nagid spec](2026-10-30-the-nagid.md) §3 and §6. **Nothing below is
+built; this document still describes the game.** When built, it supersedes:
+- **the display names:** the group becomes **Status of the Jews**, and the rungs become Banned /
+  **Restricted** / **Tolerated** / **Favored**. The keys stay, so script and saves are unaffected;
+- **Encouraged opening the invitation by itself:** Favored unlocks an **Invite Jewish Settlers**
+  decision aimed at a county, by default the capital;
+- **the flat piety cost to raise to the top rung:** Favored is always "beyond the teaching", and its
+  cost scales with the realm's teaching. Exclusion and Abolition cannot pass it.
+
+The one-rung rule and the five-year cooldown are unchanged.
