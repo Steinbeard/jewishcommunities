@@ -1,4 +1,6 @@
-**Status:** proposal dated 2026-10-28, from Daniel's request in conversation. Not built. Depends on
+**Status:** agreed with Daniel and built 2026-10-28 (first slice; see section 10 for what was
+built and how it departs from the sections above). Source and xTiger checked; **not live-tested**.
+Depends on
 [V12 community map view](v12-community-map-view.md) (the list-building pattern),
 [V15](v15-host-charter.md)/[V16](v16-jewish-settlement-policy-and-charters.md) (charter and
 settlement policy), [V34](v34-outlook-teachings-and-founding.md)/[V35](v35-player-clarity-outlook-and-invitations.md)
@@ -198,3 +200,228 @@ Answered by Daniel, 2026-10-28:
   lord (a bishop, a count) rather than the sovereign, and the two could conflict. That's good
   gameplay, but it touches V15/V16's single-host assumption everywhere.
 - **Positive and debate news** for the feed (section 6, later slices).
+
+## 10. Build record (2026-10-28)
+
+Built on branch `realm-view`. xTiger shows no reports in any new or changed file; the mod's
+existing 15 errors are unchanged. **Not live-tested**: Daniel's own CK3 was running, so no test
+game was started.
+
+**Files**
+- `common/scripted_triggers/kehillah_realm_view_triggers.txt`: whose lands a community is in,
+  Tense-or-worse, and who gets the chip.
+- `common/script_values/kehillah_realm_view_values.txt`: the danger ordering, the chip's two
+  counts, and the ten-year cutoff.
+- `common/scripted_effects/kehillah_realm_view_effects.txt`: the news ring buffer (add, shift)
+  and the view build.
+- `common/scripted_guis/kehillah_realm_view_gui.txt`: `kehillah_realm_view_chip` (is_shown,
+  root = viewed character) and `kehillah_realm_view_open` (root = player, `scope:target`).
+- `common/customizable_localization/kehillah_realm_view_custom_loc.txt`: the teaching name,
+  teaching tone and outlook stance.
+- `gui/kehillah_realm_view.gui`, registered in `gui/scripted_widgets/kehillah_scripted_widgets.txt`.
+- `gui/window_character.gui`: **new override of vanilla 1.20's file.** Its only change is the
+  chip block, inserted after the Treasury badge. On a game update, re-copy vanilla's file and
+  re-insert that block. The file header says the same.
+- `localization/english/kehillah_realm_view_l_english.yml`
+- `events/kehillah_realm_view_debug_events.txt`: `.1` seeds one entry of each news kind,
+  `.2` builds the view onto the event's character and logs it, `.3` clears the realm's feed.
+- News hooks: `kehillah_realm_news_add_effect = { KIND = … }` sits beside the ten positive
+  `kehillah_faith_pressure_add_effect` calls made in a Kehillah leader's scope:
+
+  | Kind | Where |
+  |---|---|
+  | Talmud trial, badge, Holy Week, bonds, servants' decree | `events/kehillah_incident_events.txt` |
+  | Mob preaching, pogrom | `kehillah_mob_effects.txt` |
+  | Accusation riot | `kehillah_accusation_effects.txt` |
+  | Anusim discovered | `kehillah_anusim_effects.txt` |
+  | Popular rising | `kehillah_popular_rising_effects.txt` |
+
+  Not hooked:
+  - the overlord-scope anusim call, which has no community;
+  - the mission (disputation) calls, which belong to the later "debates" slice;
+  - host arrest and expulsion, which don't touch faith pressure. They're still unchecked
+    (section 6).
+
+**Departures from the sections above**
+- The feed stores the **year** only, not the full date. That's enough for a ten-year window
+  and for "newest first".
+- The header tiles read the **lord**, the ruler whose lands the view covers, in both modes.
+  In the realm view that's the top liege, so nothing changes there. In the lord's view, the
+  teaching and outlook tiles show the vassal's own, which is what moves local danger. Policy
+  still reads the top liege's realm title, with "Set by …" under it.
+- In the realm view, rows don't have a separate "in your lands" group; the lord's view
+  replaced it (section 3). The player's own community is highlighted, as in the map ledger.
+- No Subjects-tab change (section 7). It's still unexamined.
+
+**Live checks still owed**
+1. The chip renders beside Treasury, and also in a Kehillah leader's window, where the realm
+   block may be laid out differently.
+2. The chip's `IsShown` and its two script values don't cause a frame-time hitch in a large
+   realm.
+3. The window opens and closes, and the rows, tiles and tooltips show real text. In
+   particular, `Localize( Concatenate( 'kehillah_news_kind_', …GetFlagName ) )` must resolve
+   for a title variable.
+4. The lord's view lists only the lord's lands, and its link opens the realm view.
+5. `error.log` stays clean while hovering every tooltip.
+
+### Second pass, after Daniel's live look (2026-10-28)
+
+- **Fixed:** the window frame, column alignment, the lord's-view subheader, and realm names
+  without rank. Also restored the 11 breakdown strings that a389fff deleted (the five
+  danger-band words among them).
+- **Tiles are buttons:**
+  - Policy opens the Jewish Settlement Policy map mode. Daniel asked for the laws, but the
+    policy is a title variable changed by decision, not a realm law.
+  - Teaching opens the faith.
+  - Outlook opens that ruler's character window.
+  - Danger moves the map to the most endangered community.
+  - Each tooltip ends with what a click does.
+- **Charter column is a button that opens the Charter itself**, which is a tributary
+  contract:
+  - the host gets `suzerain_modify_tributary_contract_interaction` on the leader;
+  - the leader, on their own row, gets `subject_modify_tributary_contract_interaction` on the
+    host;
+  - anyone else sees the full terms on hover, with the button disabled.
+- **"Known As" replaces the Standing number.** It shows the inspector's 125 pillar-combination
+  descriptions (`KehillahInspectorCommunityDescription`). **Dependency:** that custom loc lives
+  in the inspector work (`kehillah_inspector_descriptions.txt`), which is uncommitted as of
+  this pass. The realm view needs it merged first or alongside.
+- **Quarter button** on each row opens the community's domicile, as the map ledger does.
+
+## 11. Audience layout (2026-10-28, third pass)
+
+Daniel found the table "more cluttered and confusing" and suggested "all the kehilla leaders in
+a room petitioning their lord". The window now reads top to bottom as an audience:
+
+1. **The ruler:** portrait, name, a one-line summary ("Hears 6 communities, 1 of them Tense or
+   worse"), and three fact buttons: policy, teaching and outlook. The danger tile is gone; the
+   summary line and the gallery carry danger now.
+2. **The petitioners:** a gallery of portrait cards, six to a row and most endangered first.
+   Each card has only the county name, the description, and the danger band, plus a red strip
+   when Tense or worse. Clicking a card selects it (`kehillah_realm_view_select`, the player
+   variable `kehillah_rv_selected`). The view opens on the player's own community if it's
+   listed, otherwise on the most endangered.
+3. **The detail card** for the selected community: name, leader and place, description,
+   danger; then local lord and outlook, the three pillar tiers, and the full Charter terms;
+   then buttons for Open Leader, Jewish Quarter, Charter and Show on Map.
+4. **Realm news:** collapsed to a header with its count, opened with a click.
+
+**Rejected alternatives:**
+- A free-form room, because a GUI datamodel lays out only in rows or grids, and placing
+  portraits by hand breaks past about 15 communities.
+- Per-card accordions, because each card would need its own open state, and several open at
+  once brings the clutter back.
+
+**Spacing fixes** (the France window):
+- Every scrolling area now has a fixed height chosen by count. A scrollarea capped below its
+  content's height left the window reserving the full height as a gap.
+- The fact buttons are taller (three lines fit).
+- No `text_label_center` for labels, since it draws its own dark band.
+
+**Policy click and laws:**
+- Daniel expected the settlement policy to be a realm law. It isn't: V16 made it a title
+  variable changed by two decisions. A real law in `common/laws/` would appear in vanilla's
+  laws tab with no GUI work.
+- For now, `gui/window_my_realm.gui` shows a "Jewish Settlement Policy" panel at the top of
+  the laws tab. It shows the top liege's policy, plus buttons to the raise and lower
+  decisions for an independent ruler. The policy fact opens that tab for a landed player
+  inside the realm.
+- The old click target, the Jewish Settlement Policy map mode (2026-10-23), painted
+  incorrectly in Daniel's game. It's no longer linked from here, and it's still unfixed.
+- Converting the policy into a real law is recorded as an open design question.
+- **Later the same day:** Daniel chose the law. The settlement policy is now the realm law
+  group `kehillah_jewish_settlement` ([its note](2026-10-28-jewish-settlement-law.md)), listed
+  by vanilla's laws tab. The stopgap panel was removed, and `window_my_realm.gui` is back to
+  its earlier state.
+
+## 12. Slimmer layout (2026-10-29)
+
+Daniel's notes on the audience layout, and what changed:
+
+- **"Skinnier":** 762 px became 600. At 762 px, centred, the window ran under the character
+  window (which draws above it), so its left edge looked cut off. It now sits right of
+  centre. The ruler's three facts moved to their own row under the portrait, and the gallery
+  shows five to a row.
+- **Pillar bars like the holding card:** the three band-coloured progress bars, with the
+  tier name and the breakdown on hover, replace the tier text. They reuse the inspector's
+  rim textures (`gfx/interface/progressbars/kehillah_*.dds`), which are in the uncommitted
+  inspector work as of this pass. That's the same dependency as the descriptions.
+- **Quieter actions:** "Open Leader" is gone. Jewish Quarter, Charter and Show on Map became
+  three small round icon buttons beside the danger rating.
+- **Policy fact:** it goes back to the policy map mode. Vanilla shows no other realm's laws;
+  the tooltip points to My Realm for changing your own.
+- **News:** each line is one row of fixed columns that fit the window (year, place, text).
+  Long text is cut off with "…", and the full line shows on hover. The open feed is a fixed
+  160 px that scrolls, so a full feed can't stretch the window.
+
+## 13. Shorter (2026-10-29)
+
+Daniel: "too tall". Centred vertically, the window's top went off-screen.
+
+- The window is now anchored just below the top bar and grows downward.
+- **Gallery cards:** a tiny portrait, place and danger, six to a row (96×124). Most realms
+  fit on one row. The description moved to the card's tooltip and to the detail card.
+- **Ruler header:** the portrait is the tiny one, and the fact buttons are 54 px tall.
+- **Detail card:**
+  - Name on one line; the leader and description on the line below.
+  - The local lord on one line.
+  - Each pillar is one line: name, the holding card's bar, then the tier.
+- **News header:** its "▸" didn't exist in the game font and drew as a box. It now uses
+  vanilla's expand arrow (`button_expand`, framed with `BoolTo1And2`, as
+  `window_character.gui` does).
+- Labels meant to sit left now have `layoutpolicy_horizontal = expanding`. A bare
+  `text_single` in a vbox is centred, which is why "Local Lord" was centred.
+
+## 14. Gaps, padding and portraits (2026-10-29)
+
+Daniel: "more awkward than before": cramped text at the sides, and elements too small or too
+spread out.
+
+- **The gaps.** The window was sized to its content's minimum height, and that count
+  included hidden parts: the two-row gallery and the open news feed, about 400 px between
+  them. The surplus was shared out as large gaps between the visible blocks. The root vbox and
+  the ruler block now have `ignoreinvisible = yes` (a vanilla idiom, e.g. the
+  decision_view_widgets).
+- **Padding:** 16–18 px of side padding inside the ruler and detail blocks, and the section
+  header and news line indented to match.
+- **Sizes:** the larger portrait in both the ruler header and the gallery cards (85×90; the
+  cards are 96×146, still six to a row). The facts' values are back at medium size. The
+  pillar bars are longer and taller, and the action icons are 34 px.
+- **Correction, same day:** `ignoreinvisible` didn't remove the gaps. Hidden children with
+  fixed heights were still being reserved when the window sized itself. Nothing with a
+  height is hidden in the main column any more:
+  - one gallery scrollarea sizes to its rows (two at most, then it scrolls);
+  - one subtitle switches its text by mode;
+  - the news list stays in the layout, and only its rows hide, so a closed feed takes no
+    height.
+
+  An `expand` at the bottom collects any remainder, from the one-line empty-news note and
+  the lord's-view link.
+
+## 15. News as a fixed panel; the regent (2026-10-29)
+
+- **News.** With 15 entries the window reserved the whole list's height and left a blank band
+  under it. That happened with the auto-sizing list capped at 140 px, and it was likely also
+  the smaller band under the collapsed, empty feed. The news is now an always-visible panel of
+  fixed height (120 px, about four lines) that scrolls inside itself. A fixed size doesn't
+  depend on its content, so the window can't grow with the feed. The collapse toggle is gone,
+  since it was what made the window resize. The empty-state line sits inside the panel.
+  - A list the game builds itself (a datamodel) would size exactly to its entries. That was
+    considered and set aside: each entry has a year, a type and a place, and the GUI can't
+    look up a variable by a computed name, for which vanilla has no precedent.
+- **Regent** (Daniel): when the ruler has a diarch, the header names them with their outlook,
+  and says that theirs is the outlook shown, since the outlook already reads through the
+  regent (`KehillahRvRegentLine`). It says "power is held by" rather than "regent", because a
+  diarch isn't always a regent.
+
+## 16. The root cause of the height problems (2026-10-29)
+
+Even with the news panel pinned to 120 px and scrolling, the window was still as tall as the
+whole feed. The root was a `vbox` with `set_parent_size_to_minimum`, which sizes the window
+from its children's size *hints*, and a scrollarea's hint includes its entire content. That
+one cause explains every earlier symptom: the France gap, the even gaps, and the blank band.
+
+The root is now a `flowcontainer` with `resizeparent = yes`, the form vanilla's outliner uses
+(`gui/hud_outliner.gui`). It sizes the window to its children's *actual* sizes. Each
+hbox/vbox section is wrapped in a plain widget sized by its box, because a flowcontainer
+can't hold an hbox/vbox directly (map ledger live pass 3, a crash on open).

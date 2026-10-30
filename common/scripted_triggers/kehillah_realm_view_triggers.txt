@@ -1,0 +1,54 @@
+﻿# =====================================================================
+# Realm view of Jewish communities (2026-10-28).
+# Design: docs/spec/2026-10-28-realm-jewish-communities-view.md.
+#
+# These walk holder -> domicile -> county live. Only the .gui cannot
+# walk that chain (see kehillah_cache_map_view_facts_effect), and the
+# chip has to be right before anything has been cached.
+# =====================================================================
+
+# Scope: a community title from kehillah_registered_communities.
+# Is it in the lands of $LORD$: a county $LORD$ holds, or one held by
+# any of $LORD$'s vassals at any depth? For a top liege that is the
+# whole realm.
+kehillah_rv_community_in_lands_of_trigger = {
+	exists = holder
+	holder.domicile.domicile_location.county.holder ?= {
+		OR = {
+			this = $LORD$
+			target_is_liege_or_above = $LORD$
+		}
+	}
+}
+
+# Scope: a community title. Tense or worse: the band words in
+# KehillahDangerBand (Tense starts at an 8% yearly chance).
+kehillah_rv_community_in_danger_trigger = {
+	exists = holder
+	holder = { kehillah_incident_yearly_chance_value >= 8 }
+}
+
+# Scope: any character. A Kehillah leader with a host realm: their chip
+# opens their host's top realm.
+kehillah_rv_kehillah_leader_trigger = {
+	has_government = kehillah_government
+	exists = domicile.domicile_location.county.holder.top_liege
+}
+
+# Scope: any character, which must also be ROOT (the chip's scripted_gui
+# and its script values both root on the viewed character). Does their
+# character window get the chip? ROOT, not prev: $LORD$ is pasted inside
+# a holder ?= { } block, where prev would be the county.
+kehillah_rv_has_chip_trigger = {
+	OR = {
+		kehillah_rv_kehillah_leader_trigger = yes
+		AND = {
+			is_landed = yes
+			NOT = { has_government = kehillah_government }
+			any_in_global_list = {
+				variable = kehillah_registered_communities
+				kehillah_rv_community_in_lands_of_trigger = { LORD = root }
+			}
+		}
+	}
+}

@@ -4,23 +4,24 @@
 # Design doc: docs/spec/v12-community-map-view.md. Read that before
 # changing anything here.
 #
-# WHAT THIS IS. Five top-level widgets, registered in gui/scripted_
+# WHAT THIS IS. Three top-level widgets, registered in gui/scripted_
 # widgets/kehillah_scripted_widgets.txt -- CK3's one additive GUI hook,
 # confirmed working live 2026-09-14 (this repo's first use of it):
 #
-#   kehillah_community_map_view        -- the toggle button
-#   kehillah_faith_map_navigation      -- Faith-family buttons in our mode
-#   kehillah_community_map_mode_header -- text for the custom map banner
+#   kehillah_realm_jewish_policy_map_legend -- the policy map's legend
 #   kehillah_community_map_view_panel  -- the roster window
 #   kehillah_community_map_view_minimized -- its collapsed header
 #
-# The toggle does three things in one click: paints the map (a
-# scripted_gui, common/scripted_guis/kehillah_map_view_gui.txt),
-# switches to the kehillah_communities_map map mode (gfx/map/map_modes/
-# kehillah_map_modes.txt), and opens the roster. The roster can be hidden
-# or minimized without changing map mode. The toggle and roster are linked
-# by the VariableSystem flags "kehillah_map_view_open" and
-# "kehillah_map_view_minimized".
+# The map-mode buttons and the "Showing:" names are NOT here (2026-10-29):
+# they live in the mod's copy of gui/shared/mapmodes.gui, inside vanilla's
+# Faith strip and banner. See docs/implementation/2026-10-29-map-mode-
+# strip.md. The Jewish Communities button there does three things in one
+# click: paints the map (a scripted_gui, common/scripted_guis/
+# kehillah_map_view_gui.txt), switches to the kehillah_communities_map map
+# mode (gfx/map/map_modes/kehillah_map_modes.txt), and opens the roster.
+# The roster can be hidden or minimized without changing map mode. The
+# button and roster are linked by the VariableSystem flags
+# "kehillah_map_view_open" and "kehillah_map_view_minimized".
 #
 # The roster is grouped by minhag region -- three super-regions, each
 # with sub-regions, plus an "elsewhere" bucket -- and the map mode
@@ -43,297 +44,73 @@
 ##########################################################################
 
 
-### =====================================================================
-### THE TOGGLE
-### =====================================================================
-
+# The policy map's legend (2026-10-28): what each colour means, above the
+# Faith strip of map-mode buttons (at -85, 40 px tall) so it is clear of
+# both them and the "Showing:" banner. Swatch colours are the
+# d_kehillah_mapcolor_policy_* title colours (common/landed_titles/
+# kehillah_map_color_titles.txt) / 255. Flowcontainers only: a
+# (flow)container may not hold an hbox/vbox directly (live pass 3 crash,
+# header of this file).
 flowcontainer = {
-	name = "kehillah_community_map_view"
-	# Additive companion to the vanilla Faiths sub-mode buttons. The
-	# vanilla row is instantiated by hud_bottom.gui at the bottom centre;
-	# placing this scripted widget alongside it avoids replacing that file.
+	name = "kehillah_realm_jewish_policy_map_legend"
 	parentanchor = bottom|hcenter
 	widgetanchor = bottom|hcenter
-	position = { 75 -85 }
-
-	# LAYER (live pass 2). Every top-level HUD widget in vanilla declares
-	# one; without it this sat beneath the HUD's full-screen bottom-layer
-	# roots (hud.gui "meta_info"/"bottom_bar") and rendered without ever
-	# receiving a click. The nearest vanilla analog -- persistent,
-	# content-sized, interactive -- is the outliner
-	# (gui/hud_outliner.gui:1-7), whose root is exactly these three
-	# lines. alwaystransparent stays explicitly "no" (live pass 1): it
-	# propagates to the whole subtree, which is why vanilla's map_modes
-	# instantiation overrides its own type's "yes" (gui/hud.gui:2793).
-	layer = windows_layer
-	alwaystransparent = no
-	filter_mouse = all
-
-	direction = vertical
-	ignoreinvisible = yes
-	allow_outside = yes
-
-	flowcontainer = {
-		name = "kehillah_map_view_toggle"
-		direction = vertical
-		ignoreinvisible = yes
-
-		# Hidden entirely when there is nothing to show: no communities
-		# mirrored (a non-Kehillah game, or before the game-start refresh
-		# has run) means no button. The CFixedPoint comparison against a
-		# possibly-absent variable is vanilla's own idiom for exactly
-		# this -- gui/shared/mapmodes.gui:105 reads hide_ui_map_zoom the
-		# same way, and a variable that does not exist reads as 0.
-		#
-		# The IsInGame/GetPlayer.IsValid half is not belt-and-braces: a
-		# scripted widget is created at STARTUP, which includes contexts
-		# with no player (the frontend, the loading screen). Reading
-		# GetPlayer.MakeScope there would log an error every frame. PDX
-		# gui And() is a function call, not a short-circuiting operator,
-		# so the guard has to wrap the read rather than merely precede
-		# it -- vanilla guards its own always-created debug widgets the
-		# same way (gui/debug/debug_menus.gui:784).
-		visible = "[And( And( IsInGame, GetPlayer.IsValid ), And( And( IsDefaultGUIMode, Or( Or( IsMapMode( 'religions' ), IsMapMode( 'holy_orders' ) ), Or( Or( IsMapMode( 'clerical_regions' ), IsMapMode( 'kehillah_communities_map' ) ), Or( IsMapMode( 'kehillah_community_rites_map' ), IsMapMode( 'kehillah_realm_jewish_policy_map' ) ) ) ) ), GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_map_view_count' ).GetValue, '(CFixedPoint)0' ) ) )]"
-
-		# Two buttons in the same spot, one visible at a time -- the
-		# vanilla pause/play pattern (gui/hud.gui, button_pause_hud).
-		# Cleaner than one button with a conditional, because the open
-		# and close actions are genuinely different lists of calls, and
-		# PDX gui onclick has no if.
-		widget = {
-			size = { 35 35 }
-			parentanchor = hcenter
-
-			icon = {
-				visible = "[IsMapMode( 'kehillah_communities_map' )]"
-				size = { 100% 100% }
-				texture = "gfx/interface/component_masks/mask_circle.dds"
-				glow = {
-					color = { 0.93 0.65 0.45 1.0 }
-					glow_radius = 6
-					glow_generation_rules = {
-						glow_alpha_mask = 0
-						glow_blur_passes = 15
-						glow_texture_downscale = 5.5f
-						glow_ignore_inside_pixels = yes
-					}
-				}
-				using = Animation_Glow_Pulse
-			}
-
-			### OPEN: paint the map, switch to the community map mode,
-			### show the roster. Order matters -- paint first, so the
-			### mode is never shown stale. Multiple onclick lines run in
-			### sequence (vanilla: gui/hud.gui find_title_shortcut).
-			button_round = {
-				name = "kehillah_map_view_open_button"
-				size = { 35 35 }
-				visible = "[And( Not( IsMapMode( 'kehillah_communities_map' ) ), And( Not( IsMapMode( 'kehillah_community_rites_map' ) ), Not( IsMapMode( 'kehillah_realm_jewish_policy_map' ) ) ) )]"
-				enabled = "[CanChangeMapMode]"
-				onclick = "[GetScriptedGui( 'kehillah_communities_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-				onclick = "[SetMapMode( 'kehillah_communities_map' )]"
-				onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_minimized' )]"
-				onclick = "[GetVariableSystem.Set( 'kehillah_map_view_open', 'yes' )]"
-				tooltip = "KEHILLAH_MAP_VIEW_BUTTON_TOOLTIP"
-				using = tooltip_ws
-
-				# alwaystransparent on a LEAF is its correct use: let the
-				# click fall through to the button beneath.
-				button_icon = {
-					parentanchor = center
-					size = { 25 25 }
-					texture = "gfx/interface/icons/faith/judaism.dds"
-					alwaystransparent = yes
-				}
-			}
-
-			### Hide the roster while keeping the selected map mode.
-			button_round = {
-				name = "kehillah_map_view_hide_button"
-				size = { 35 35 }
-				visible = "[And( IsMapMode( 'kehillah_communities_map' ), GetVariableSystem.Exists( 'kehillah_map_view_open' ) )]"
-				down = yes
-				onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_open' )]"
-				onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_minimized' )]"
-				tooltip = "KEHILLAH_MAP_VIEW_BUTTON_HIDE_TOOLTIP"
-				using = tooltip_ws
-
-				button_icon = {
-					parentanchor = center
-					size = { 25 25 }
-					down = yes
-					texture = "gfx/interface/icons/faith/judaism.dds"
-					alwaystransparent = yes
-				}
-			}
-
-			### Restore the roster after its close or minimize button was used.
-			button_round = {
-				name = "kehillah_map_view_show_button"
-				size = { 35 35 }
-				visible = "[And( IsMapMode( 'kehillah_communities_map' ), Not( GetVariableSystem.Exists( 'kehillah_map_view_open' ) ) )]"
-				down = yes
-				onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_minimized' )]"
-				onclick = "[GetVariableSystem.Set( 'kehillah_map_view_open', 'yes' )]"
-				tooltip = "KEHILLAH_MAP_VIEW_BUTTON_SHOW_TOOLTIP"
-				using = tooltip_ws
-
-				button_icon = {
-					parentanchor = center
-					size = { 25 25 }
-					down = yes
-					texture = "gfx/interface/icons/faith/judaism.dds"
-					alwaystransparent = yes
-				}
-			}
-
-			# The adjacent rite and policy maps retain their existing exit to
-			# Faiths; they have no community ledger to hide.
-			button_round = {
-				name = "kehillah_map_view_other_mode_close_button"
-				size = { 35 35 }
-				visible = "[Or( IsMapMode( 'kehillah_community_rites_map' ), IsMapMode( 'kehillah_realm_jewish_policy_map' ) )]"
-				down = yes
-				onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_open' )]"
-				onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_minimized' )]"
-				onclick = "[SetMapMode( 'religions' )]"
-				tooltip = "KEHILLAH_MAP_VIEW_BUTTON_CLOSE_TOOLTIP"
-				using = tooltip_ws
-
-				button_icon = {
-					parentanchor = center
-					size = { 25 25 }
-					down = yes
-					texture = "gfx/interface/icons/faith/judaism.dds"
-					alwaystransparent = yes
-				}
-			}
-		}
-	}
-}
-
-
-# Vanilla hides its Faiths map-mode strip as soon as a custom map mode is
-# selected. Reuse that same type, in the same bottom-centre position, only
-# while our map is selected so Faiths/Holy Orders/Clerical Regions remain
-# one-click choices. This creates no duplicate when a vanilla mode is active.
-faith_mini_map_mode = {
-	name = "kehillah_faith_map_navigation"
-	parentanchor = bottom|hcenter
-	widgetanchor = bottom|hcenter
-	position = { 5 -85 }
-	visible = "[And( IsInGame, Or( Or( IsMapMode( 'kehillah_communities_map' ), IsMapMode( 'kehillah_community_rites_map' ) ), IsMapMode( 'kehillah_realm_jewish_policy_map' ) ) )]"
-	layer = windows_layer
-	alwaystransparent = no
-}
-
-
-# The vanilla map banner shows "Showing:" but has no text branch for a
-# modded map mode. Supply its missing second line while our mode is active.
-text_single = {
-	name = "kehillah_community_map_mode_header"
-	parentanchor = bottom|hcenter
-	widgetanchor = bottom|hcenter
-	position = { 0 -26 }
-	visible = "[And( IsInGame, IsMapMode( 'kehillah_communities_map' ) )]"
-	text = "kehillah_communities_map"
-	align = center
-	default_format = "#High"
-	using = Font_Size_Big
-	layer = windows_layer
-	alwaystransparent = yes
-}
-
-text_single = {
-	name = "kehillah_community_rites_map_mode_header"
-	parentanchor = bottom|hcenter
-	widgetanchor = bottom|hcenter
-	position = { 0 -26 }
-	visible = "[And( IsInGame, IsMapMode( 'kehillah_community_rites_map' ) )]"
-	text = "kehillah_community_rites_map"
-	align = center
-	default_format = "#High"
-	using = Font_Size_Big
-	layer = windows_layer
-	alwaystransparent = yes
-}
-
-text_single = {
-	name = "kehillah_realm_jewish_policy_map_mode_header"
-	parentanchor = bottom|hcenter
-	widgetanchor = bottom|hcenter
-	position = { 0 -26 }
-	visible = "[And( IsInGame, IsMapMode( 'kehillah_realm_jewish_policy_map' ) )]"
-	text = "kehillah_realm_jewish_policy_map"
-	align = center
-	default_format = "#High"
-	using = Font_Size_Big
-	layer = windows_layer
-	alwaystransparent = yes
-}
-
-# The custom modes hide vanilla's strip. These adjacent buttons let the
-# player move between the community, rite, and realm-policy views.
-flowcontainer = {
-	name = "kehillah_additional_map_mode_navigation"
-	parentanchor = bottom|hcenter
-	widgetanchor = bottom|hcenter
-	position = { 112 -85 }
+	position = { 0 -132 }
 	direction = horizontal
+	spacing = 14
+	margin = { 10 3 }
 	layer = windows_layer
-	alwaystransparent = no
-	filter_mouse = all
-	visible = "[And( IsInGame, Or( Or( IsMapMode( 'kehillah_communities_map' ), IsMapMode( 'kehillah_community_rites_map' ) ), IsMapMode( 'kehillah_realm_jewish_policy_map' ) ) )]"
-	button_round = {
-		name = "kehillah_communities_map_button"
-		size = { 35 35 }
-		visible = "[Not( IsMapMode( 'kehillah_communities_map' ) )]"
-		enabled = "[CanChangeMapMode]"
-		onclick = "[GetScriptedGui( 'kehillah_communities_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-		onclick = "[SetMapMode( 'kehillah_communities_map' )]"
-		onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_minimized' )]"
-		onclick = "[GetVariableSystem.Set( 'kehillah_map_view_open', 'yes' )]"
-		tooltip = "KEHILLAH_MAP_VIEW_BUTTON_TOOLTIP"
-		using = tooltip_ws
-		button_icon = {
-			parentanchor = center
-			size = { 25 25 }
-			texture = "gfx/interface/icons/faith/judaism.dds"
-			alwaystransparent = yes
-		}
+	alwaystransparent = yes
+	ignoreinvisible = yes
+	visible = "[And( IsInGame, IsMapMode( 'kehillah_realm_jewish_policy_map' ) )]"
+
+	background = {
+		using = Background_Area_Dark
+		color = { 0.10 0.09 0.08 0.85 }
 	}
 
-	button_round = {
-		name = "kehillah_community_rites_map_button"
-		size = { 35 35 }
-		visible = "[Not( IsMapMode( 'kehillah_community_rites_map' ) )]"
-		enabled = "[CanChangeMapMode]"
-		onclick = "[GetScriptedGui( 'kehillah_community_rites_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-		onclick = "[SetMapMode( 'kehillah_community_rites_map' )]"
-		tooltip = "KEHILLAH_COMMUNITY_RITES_MAP_BUTTON_TOOLTIP"
-		using = tooltip_ws
-		button_icon = {
-			parentanchor = center
-			size = { 25 25 }
-			texture = "gfx/interface/icons/faith/judaism.dds"
-			alwaystransparent = yes
-		}
+	kehillah_policy_legend_item = {
+		blockoverride "swatch" { color = { 0.27 0.50 0.80 1 } }
+		blockoverride "label" { text = "kehillah_settlement_policy_legend_encouraged" }
 	}
+	kehillah_policy_legend_item = {
+		blockoverride "swatch" { color = { 0.30 0.57 0.41 1 } }
+		blockoverride "label" { text = "kehillah_settlement_policy_legend_allowed" }
+	}
+	kehillah_policy_legend_item = {
+		blockoverride "swatch" { color = { 0.81 0.46 0.19 1 } }
+		blockoverride "label" { text = "kehillah_settlement_policy_legend_discouraged" }
+	}
+	kehillah_policy_legend_item = {
+		blockoverride "swatch" { color = { 0.60 0.18 0.18 1 } }
+		blockoverride "label" { text = "kehillah_settlement_policy_legend_banned" }
+	}
+	kehillah_policy_legend_item = {
+		blockoverride "swatch" { color = { 0.36 0.34 0.29 1 } }
+		blockoverride "label" { text = "kehillah_settlement_policy_legend_none" }
+	}
+}
 
-	button_round = {
-		name = "kehillah_realm_jewish_policy_map_button"
-		size = { 35 35 }
-		visible = "[Not( IsMapMode( 'kehillah_realm_jewish_policy_map' ) )]"
-		enabled = "[CanChangeMapMode]"
-		onclick = "[GetScriptedGui( 'kehillah_realm_jewish_policy_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-		onclick = "[SetMapMode( 'kehillah_realm_jewish_policy_map' )]"
-		tooltip = "KEHILLAH_REALM_JEWISH_POLICY_MAP_BUTTON_TOOLTIP"
-		using = tooltip_ws
-		button_icon = {
-			parentanchor = center
-			size = { 25 25 }
-			texture = "gfx/interface/icons/government_types/kehillah_government.dds"
+types KehillahPolicyMapLegend
+{
+	type kehillah_policy_legend_item = flowcontainer {
+		direction = horizontal
+		spacing = 4
+		alwaystransparent = yes
+
+		widget = {
+			size = { 12 12 }
 			alwaystransparent = yes
+			background = {
+				using = Background_Area_Solid
+				block "swatch" { color = { 1 1 1 1 } }
+			}
+		}
+		text_single = {
+			alwaystransparent = yes
+			default_format = "#high"
+			using = Font_Size_Small
+			block "label" { text = "" }
 		}
 	}
 }

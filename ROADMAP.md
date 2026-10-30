@@ -17,22 +17,57 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+### English conquest invitation revision — 2026-10-29, Daniel's request
+
+The Norman Conquest now opens a one-time decision for England's new ruler. William's AI is strongly weighted to choose it. The decision passes the Encouraged Jewish Settlement law, which sends the existing 20-year invitation with a special English letter. Ordinary settlers get a year to answer; a hidden review then fills a shortfall to three English communities in vacant named sites, retaining the player-adventurer London offer. Source review and xTiger pass against the unchanged 15-error baseline. An [isolated live check](docs/testing/2026-10-29-english-conquest-invitation-live-test.md) passed the decision, law invitation, ruler event and scripted London/York/Lincoln shortfall without new feature errors. The community-side letter rendering, natural one-year timer, player-adventurer path and AI pick rate remain pending. The wider recently-conquered, low-control realm rule is a separate design unit. See the [dated revision](docs/spec/2026-10-29-conquest-invitation-revision.md).
+### Curated arms for newly founded Kehillot — 2026-10-29, Daniel's request
+
+Runtime communities now roll one coat of arms from a curated eight-charge pool,
+with two high-contrast color layouts. Adventurer, settlers and Norman founding
+paths share the same one-time generation effect. Authored communities retain their
+fixed arms. xTiger reports no new errors against the 15-error baseline. A launch
+check was attempted through xTiger but did not complete while another CK3 process
+was running; a live founding, save/reload and visual check remain pending. See
+[the implementation note](docs/implementation/2026-10-29-community-arms-pool.md).
+
+### Charter as a letter from the ruler — 2026-10-29, Daniel's request
+
+`kehillah_settlement_conditions.0004` ("A Charter Is Sealed" / "The Charter Renewed") is now a
+`letter_event` sent by the host ruler instead of a two-portrait scene. The ruler's outlook band
+(`kehillah_outlook_band_value`, frozen when the event fires) sets the voice: salutation, a
+paragraph in the ruler's voice, a closing sanction and the button text. Each band has Christian and
+Muslim wording. The letter states why it was written (new charter, renewal for a new leader, or a
+new ruler) and keeps the cached charter terms as its clauses. A footer outside the letter names the
+outlook the voice came from, and for a new ruler it keeps the posture reading. The voice is flavour
+only: the terms still come from realm policy. This replaces the three random renewal scenes from
+2026-10-15, which were told from the community's side and don't fit the ruler's voice.
+xTiger-clean (16-error baseline, none in the touched files). **Not yet live-checked** that the
+letter window renders the opening, sender and full text.
+
 ### Community inspector on the Jewish Communities map — 2026-10-25, Daniel's request
 
-The holding/county view now has a Kehillah inspector when a community barony is selected in the Jewish Communities map mode. A persistent host-province link feeds a compact menorah tab alongside the holding tabs in every map mode; the tab is disabled on holdings without a community and its hover shows any recorded place history. The Jewish map mode also opens a vacant-site panel with policy, ruler outlook, economic opportunity, founding conditions, and history. Source and xTiger checks pass. Daniel confirmed active-community data and map-mode visibility live; the compact tab and vacant-site layout still need a fresh-game check. See [the implementation note](docs/implementation/2026-10-25-community-map-inspector.md). This direct user request was taken ahead of the older live-test TODOs below.
+The holding/county view now has a Kehillah inspector when any holding in a community’s county is selected, plus a vacant-site assessment in the Jewish Communities map mode. Daniel’s 2026-10-28 Granada review produced a community-first heading, corrected background bounds, 28-pixel side gutters, a lower card, separated holding/map controls, a unified three-column footer with annual risk, a host-character link and the Quarter action. Standing is removed from the card; its subtitle now selects one of 125 pillar combinations (Daniel’s definitive 125-cell matrix), and it shows the existing annual incident-risk percentage. Pillar text and metallic rims use the approved emerald/gold/slate palette; fills independently progress from red to green by tier using CK3’s native progress textures. Exact scores remain on hover. The vacant card now shares the same frame and gutters, with a place heading, compact settlement status, four aligned site-fact rows, conditional recorded history and a host-character link; detailed founding blockers are on hover. Source/exhaustive description checks and xTiger pass against the unchanged 15-error baseline; Daniel approved the active card’s appearance; the latest interactions and redesigned vacant-site card still need dedicated live checks. See [the implementation note](docs/implementation/2026-10-25-community-map-inspector.md), [palette](docs/spec/2026-10-28-community-ui-palette.md), and [test record](docs/testing/2026-10-28-granada-card-layout-check.md). This direct request was taken ahead of the older live-test TODOs below.
 
 ### Realm view: Jewish communities in a realm — 2026-10-28, Daniel's request
 
-**Proposal, not built.** A menorah chip in the character window's realm block opens "Jewish
-communities in [realm]". The header shows settlement policy, the faith's teaching, the ruler's
-outlook and the worst danger. Below it: a row per community (leader, local lord, charter, pillars,
-danger) and a 10-year scrollable realm news feed. Almost everything reads existing values; the one
-new piece of state is a fixed-slot news ring buffer on the top liege's title, fed from the existing
-negative-incident hooks for now. Daniel settled the scope the same day: whole top realm,
-top-liege charters only, a feed rather than latest-per-community, and a smaller lord's view for
-vassals that links up to the realm view.
-Queued after the inspector work above. See the
-[design note](docs/spec/2026-10-28-realm-jewish-communities-view.md).
+**Built, source and xTiger checked; live UI verification pending.** A menorah chip in the
+character window opens "Jewish Communities in [realm]" for a ruler with communities or a Kehillah
+leader. The view shows settlement policy, the faith's teaching, the ruler's outlook, the greatest
+danger, community rows ordered by danger, and a 10-year news feed. A vassal sees communities in
+their own lands and can open the full realm view. The top liege's primary title holds the 15-slot
+news ring buffer; existing negative-incident hooks feed it. Later layout passes made the header
+tiles and Charter/Quarter actions clickable, fixed the window background and news-panel height,
+and added descriptors and a named regent. The realm view carries a CK3 1.20 character-window
+override. See [the build record and remaining live checks](docs/spec/2026-10-28-realm-jewish-communities-view.md#10-implementation-record).
+
+### Jewish Settlement Policy as a realm law — 2026-10-28, Daniel's request
+
+**Built, source and xTiger checked; live verification pending.** The four policy rungs now live in
+the realm-law group: Encouraged, Allowed, Discouraged and Banned. The old raise/lower decisions
+are removed. A ruler sees the law and its costs and blockers in the ordinary laws tab; existing
+charter and settlement consequences still read the policy. Later corrections fixed the
+Encouraged piety cost and the policy map's display. See [the law specification and test
+plan](docs/spec/2026-10-28-jewish-settlement-law.md).
 
 ### Jewish map ledger controls — 2026-10-25, Daniel's request
 
@@ -67,6 +102,13 @@ Kehillah's occupied barony by its leader's current rite, and **Jewish Settlement
 each realm by its top liege's current policy. Source review, `git diff --check` and xTiger completed
 without new errors in the changed files. The live UI check is pending: a separate CK3 process was
 already running, so it was left untouched. See the [map-mode design note](docs/spec/2026-10-23-community-rite-and-realm-policy-maps.md).
+
+**2026-10-29, Daniel's request:** all three Jewish map modes are now fixed buttons in a Jewish
+group beside the vanilla Faith strip. They no longer appear only after the community button is
+clicked, and they no longer shift around. Their names show under the banner's "Showing:". The mod
+now carries a fenced copy of `gui/shared/mapmodes.gui` for this. The rites map gained a hover, and
+the policy hover and both button tooltips were rewritten. xTiger-checked; live visual check
+pending. See the [map-mode strip note](docs/implementation/2026-10-29-map-mode-strip.md).
 
 ### Ben David dynasty presentation — 2026-10-22, Daniel's historical-family request
 

@@ -2,6 +2,8 @@
 
 **Status:** Faith map navigation built 2026-10-13 and [verified live](../testing/2026-10-14-faith-map-navigation-live-test.md) 2026-10-14 on the separate Codex branch. A [2026-10-14 visibility pass](../testing/2026-10-14-map-visibility-live-test.md) improves regional colour and roster matching; a same-day Discord research note below narrows the pin options. Dynamic map pins and actual community Nusach remain proposals. This addendum changes only the entry point and exit behavior described in [v12](v12-community-map-view.md) §2.5 and §6: the bottom-right community toggle becomes a fourth Faith-family map button, and its close actions return to Faiths. The return-to-Faiths behavior for the community ledger is superseded by the 2026-10-25 addendum below. It does not supersede v12's regional paint or community roster.
 
+**2026-10-29 revision:** The additive widgets below are gone. The Jewish buttons and banner names now live in the mod's copy of `gui/shared/mapmodes.gui`, so the "No vanilla GUI file is copied" line no longer holds. See [the map-mode strip note](../implementation/2026-10-29-map-mode-strip.md).
+
 **2026-10-14 entry-point revision:** The own-community strip described below was retired in favor of a [My Realm > Domain overview](../implementation/kehillah-domain-overview.md). The Faith-family button remains the map and roster entry point. This revision supersedes only the strip's return-to-Faiths behavior below.
 
 ## Faith-family button
