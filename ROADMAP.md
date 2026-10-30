@@ -43,6 +43,9 @@ impossible.** The engine refuses `assign_councillor_type`, `appoint_court_positi
   live-tested.
 - **Slice 2** (the culture outlook line, the cost of Favored beyond the teaching): built and
   xTiger-checked, not live-tested.
+- **Slice 3** (the seat of the realm's Jews: capital pillars, danger, demands): built and
+  xTiger-checked, not live-tested.
+- **Next:** slice 4, the office itself.
 
 ### English conquest invitation revision — 2026-10-29, Daniel's request
 

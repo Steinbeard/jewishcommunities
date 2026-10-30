@@ -90,3 +90,42 @@ opinion: African and Steppe Tolerance give `different_faith_opinion = 10`, Relig
 - the modifier appearing and changing tier;
 - a rite switched to Exclusion dropping a Favored realm at the yearly pulse;
 - no new `error.log` lines from the yearly pulse.
+
+## Slice 3: the seat of the realm's Jews (spec section 4)
+
+**Built 2026-10-30, xTiger-checked: 154 reports and 15 errors, with none new.**
+
+**The seat** (`kehillah_is_realm_seat_trigger`): the community whose county is its county holder's
+top liege's `capital_county`, where that liege is a landed ruler of duke tier or higher and not a
+Kehillah. There is one per realm, under any law. It holds no office: the Nagid office (slice 4) sits
+on top of it.
+
+**Pillar contributors** (`common/script_values/kehillah_seat_values.txt`, added to the baselines
+in `kehillah_script_values.txt`, and shown in the pillar tooltips through
+`common/customizable_localization/kehillah_seat_custom_loc.txt`):
+
+| Term | Duchy | Kingdom | Empire |
+|---|---|---|---|
+| Seat: Prosperity | +5 | +10 | +15 |
+| Seat: Greatness | +5 | +10 | +15 |
+| Danger component "At the ruler's door" | +5 | +10 | +10 |
+
+- **Under the lord's own hand:** +5 Stability for a community in a county the top liege holds
+  directly, other than the capital (`kehillah_in_lords_own_lands_trigger`).
+- **No realm-tier term elsewhere,** as the spec decided.
+- **The danger term** is added to `kehillah_danger_value` and shown in the danger tooltip.
+- **The lord's demands:** the seat's quarterly chance (`kehillah_host_demands_chance_value`) is
+  multiplied by 1.5.
+- **Capital moves:** the seat follows `capital_county` automatically, since nothing is stored.
+
+**A consequence to check:** V20 sets 1066 starting pillars from each community's baseline, so
+capital communities now start higher. These include Granada, Fustat (Cairo), Toledo, Córdoba,
+Mahdia, and probably Paris, Constantinople and Praha. Baghdad is not a seat: its top liege, Alp
+Arslan, rules from elsewhere. The Exilarch rule (spec §12) gives Baghdad its role in a later slice.
+
+**Live checks owed (slice 3):**
+- which 1066 communities are seats (a debug probe listing `kehillah_seat_tier_value` per
+  community);
+- the new tooltip lines;
+- the danger total;
+- the starting pillars of the capital communities against the previous build.
