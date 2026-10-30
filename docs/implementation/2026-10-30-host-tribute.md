@@ -47,9 +47,10 @@ host draws no tribute from any charter today".
   also records the last payment on the community title (`kehillah_tribute_last_paid`).
 - `common/on_action/kehillah_tribute_on_actions.txt`: the quarterly pulse.
 - `localization/english/kehillah_tribute_l_english.yml`: the term and the Domain tab line.
-- `gui/kehillah_realm_view.gui`: `kehillah_income_tile` gets an optional `tile_extra` block, and its
-  lines now sit flush (spacing 2 → 0).
-- `gui/window_my_realm.gui`: the gold tile fills `tile_extra`. To keep the tab's height, the box's
+- `gui/kehillah_realm_view.gui`: `kehillah_income_tile` gets a fourth 150 px line, hidden unless
+  an instance overrides `tile_extra_visible`, and its lines now sit flush (spacing 2 → 0).
+- `gui/window_my_realm.gui`: the gold tile shows that line and fills its text (`tile_extra`); the
+  row stays 540 px wide. To keep the tab's height, the box's
   vertical margin went from 8 to 2 and the section's spacing from 8 to 7. By arithmetic this
   absorbs one small-font line (about 13 px net). It has not been seen live.
 - `events/kehillah_tribute_debug_events.txt`: probes, fired on a Kehillah leader. `.1` logs the
