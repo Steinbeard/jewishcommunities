@@ -73,3 +73,30 @@ unless the title's history sets `kehillah_founded_exact`, which reads as
 - Vertical pillar columns.
 
 Both were proposed in conversation and are waiting on Daniel's go-ahead.
+
+## Addendum, 2026-10-29 (second pass, after Daniel's first look)
+
+- **Ledger did not appear:** the window had `parentanchor = center`
+  without a `widgetanchor`, so its corner sat at mid-screen and it hid
+  behind My Realm. It is now anchored top-centre and offset left of
+  My Realm.
+- **Standing line:** back to the band alone ("Standing: Strained"). The
+  rank plus button crowded the top.
+- **Rank row:** the rank moved to its own row above "To Host", reading
+  "Among the Kehillot: 33rd of 33 by Standing", with a "World Ledger"
+  button.
+- **Monthly Income:** new section, the "list at the bottom" proposed
+  earlier.
+  - One row each for gold, prestige and piety. Each row shows what the
+    Quarter's buildings give (vanilla `Domicile.Get*Resource`) and the
+    leader's whole monthly balance, each with vanilla's breakdown
+    tooltip.
+  - A last line shows how the Prosperity and Greatness bands scale it.
+- **Charter:** moved from the To Host footer into the Laws tab ("Charter
+  with the Host": terms, plus a "Petition to Revise" button for the
+  tributary-contract interaction). The footer is now host and outlook only.
+- **Founding line:** an estimated date now reads "Established in 711
+  (355 years old)", dropping "by" and "at least"; an exact date still
+  reads "Founded in".
+- **Not built list above:** the income ledger is now built (this pass);
+  vertical pillars are still waiting.
