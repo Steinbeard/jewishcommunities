@@ -1,0 +1,212 @@
+﻿##########################################################################
+# World ledger of Jewish communities (2026-10-29).
+# Design: docs/spec/v52-world-ledger-and-standing-rank.md.
+#
+# Every led community in the world, ranked, sortable by Standing or any
+# pillar. Opened from the Domain tab's Standing line (window_my_realm.gui).
+# A .gui datamodel cannot sort, so each column header runs a scripted_gui
+# (common/scripted_guis/kehillah_ledger_gui.txt) that rebuilds
+# kehillah_ledger_list on the player in that order; the rank shown is the
+# community's world rank on that column (kehillah_rank_*).
+#
+# Rows reuse the map view roster's row (kehillah_map_view_row,
+# kehillah_community_map_view.gui), so the two read alike; the column
+# widths below repeat that file's.
+##########################################################################
+
+@col_rank = 34
+@col_portrait = 64
+@col_standing = 74
+@col_pillar = 58
+@col_locate = 30
+@col_quarter = 30
+@ledger_width = 670
+
+window = {
+	name = "kehillah_ledger_window"
+	parentanchor = center
+	size = { 710 740 }
+	movable = yes
+	resizable = no
+	layer = windows_layer
+	alwaystransparent = no
+	filter_mouse = all
+
+	visible = "[And( And( IsInGame, GetPlayer.IsValid ), GetVariableSystem.Exists( 'kehillah_ledger_open' ) )]"
+	visible_at_creation = no
+
+	state = {
+		name = _show
+		using = Animation_FadeIn_Quick
+	}
+	state = {
+		name = _hide
+		using = Animation_FadeOut_Standard
+	}
+
+	background = {
+		using = Background_Area_Dark
+		color = { 0.11 0.10 0.09 0.96 }
+		margin = { 6 6 }
+	}
+
+	vbox = {
+		margin = { 14 12 }
+		spacing = 6
+		min_width = @ledger_width
+
+		header_pattern = {
+			layoutpolicy_horizontal = expanding
+			blockoverride "header_text" { text = "KEHILLAH_LEDGER_HEADER" }
+			blockoverride "button_close" { onclick = "[GetVariableSystem.Clear( 'kehillah_ledger_open' )]" }
+		}
+
+		text_multi = {
+			autoresize = yes
+			max_width = @ledger_width
+			text = "KEHILLAH_LEDGER_SUBHEADER"
+			default_format = "#weak;italic"
+		}
+
+		### Column headers. Each sortable one is a button; the current
+		### sort reads bright, the others weak.
+		hbox = {
+			layoutpolicy_horizontal = expanding
+			margin_right = 18
+			margin_top = 4
+			spacing = 4
+
+			text_label_center = {
+				min_width = @col_rank
+				text = "KEHILLAH_LEDGER_COL_RANK"
+				default_format = "#weak"
+			}
+			text_single = {
+				text = "KEHILLAH_MAP_VIEW_COL_COMMUNITY"
+				default_format = "#weak"
+				margin_left = @col_portrait
+			}
+
+			expand = {}
+
+			kehillah_ledger_sort_button = {
+				blockoverride "sort_width" { size = { @col_standing 26 } }
+				blockoverride "sort_gui" { onclick = "[GetScriptedGui( 'kehillah_ledger_sort_standing' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]" }
+				blockoverride "sort_active" { visible = "[GetScriptedGui( 'kehillah_ledger_sort_standing' ).IsShown( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]" }
+				blockoverride "sort_inactive" { visible = "[Not( GetScriptedGui( 'kehillah_ledger_sort_standing' ).IsShown( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) )]" }
+				blockoverride "sort_text" { text = "KEHILLAH_MAP_VIEW_COL_STANDING" }
+			}
+			kehillah_ledger_sort_button = {
+				blockoverride "sort_gui" { onclick = "[GetScriptedGui( 'kehillah_ledger_sort_prosperity' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]" }
+				blockoverride "sort_active" { visible = "[GetScriptedGui( 'kehillah_ledger_sort_prosperity' ).IsShown( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]" }
+				blockoverride "sort_inactive" { visible = "[Not( GetScriptedGui( 'kehillah_ledger_sort_prosperity' ).IsShown( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) )]" }
+				blockoverride "sort_text" { text = "KEHILLAH_MAP_VIEW_COL_P" }
+			}
+			kehillah_ledger_sort_button = {
+				blockoverride "sort_gui" { onclick = "[GetScriptedGui( 'kehillah_ledger_sort_stability' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]" }
+				blockoverride "sort_active" { visible = "[GetScriptedGui( 'kehillah_ledger_sort_stability' ).IsShown( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]" }
+				blockoverride "sort_inactive" { visible = "[Not( GetScriptedGui( 'kehillah_ledger_sort_stability' ).IsShown( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) )]" }
+				blockoverride "sort_text" { text = "KEHILLAH_MAP_VIEW_COL_S" }
+			}
+			kehillah_ledger_sort_button = {
+				blockoverride "sort_gui" { onclick = "[GetScriptedGui( 'kehillah_ledger_sort_greatness' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]" }
+				blockoverride "sort_active" { visible = "[GetScriptedGui( 'kehillah_ledger_sort_greatness' ).IsShown( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]" }
+				blockoverride "sort_inactive" { visible = "[Not( GetScriptedGui( 'kehillah_ledger_sort_greatness' ).IsShown( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) )]" }
+				blockoverride "sort_text" { text = "KEHILLAH_MAP_VIEW_COL_G" }
+			}
+
+			widget = { size = { @col_locate 1 } }
+			widget = { size = { @col_quarter 1 } }
+		}
+
+		### The ledger. The map view roster's scrollarea shape.
+		scrollarea = {
+			autoresizescrollarea = yes
+			scrollbarpolicy_horizontal = always_off
+			size = { @ledger_width 0 }
+			maximumsize = { -1 580 }
+
+			scrollbar_vertical = {
+				using = Scrollbar_Vertical
+			}
+
+			scrollwidget = {
+				vbox = {
+					set_parent_size_to_minimum = yes
+					min_width = @ledger_width
+					margin_right = 12
+					spacing = 3
+					datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_ledger_list' )]"
+
+					item = {
+						kehillah_ledger_row = {}
+					}
+				}
+			}
+		}
+	}
+}
+
+types KehillahLedger
+{
+	### A sortable column header: the current sort bright, the rest weak.
+	type kehillah_ledger_sort_button = button_normal {
+		block "sort_width" { size = { @col_pillar 26 } }
+		using = tooltip_ws
+		tooltip = "KEHILLAH_LEDGER_SORT_TOOLTIP"
+		block "sort_gui" {}
+
+		text_single = {
+			parentanchor = center
+			alwaystransparent = yes
+			default_format = "#high"
+			block "sort_active" { visible = no }
+			block "sort_text" { text = "" }
+		}
+		text_single = {
+			parentanchor = center
+			alwaystransparent = yes
+			default_format = "#weak"
+			block "sort_inactive" { visible = yes }
+			block "sort_text" { text = "" }
+		}
+	}
+
+	### One community: its world rank on the current sort, then the map
+	### view roster's row. The list item is the community title.
+	type kehillah_ledger_row = hbox {
+		layoutpolicy_horizontal = expanding
+		spacing = 4
+
+		widget = {
+			size = { @col_rank 56 }
+
+			text_single = {
+				parentanchor = center
+				visible = "[GetScriptedGui( 'kehillah_ledger_sort_standing' ).IsShown( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+				text = "[Scope.Title.MakeScope.Var( 'kehillah_rank_standing' ).GetValue|0]"
+				using = Font_Size_Medium
+			}
+			text_single = {
+				parentanchor = center
+				visible = "[GetScriptedGui( 'kehillah_ledger_sort_prosperity' ).IsShown( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+				text = "[Scope.Title.MakeScope.Var( 'kehillah_rank_prosperity' ).GetValue|0]"
+				using = Font_Size_Medium
+			}
+			text_single = {
+				parentanchor = center
+				visible = "[GetScriptedGui( 'kehillah_ledger_sort_stability' ).IsShown( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+				text = "[Scope.Title.MakeScope.Var( 'kehillah_rank_stability' ).GetValue|0]"
+				using = Font_Size_Medium
+			}
+			text_single = {
+				parentanchor = center
+				visible = "[GetScriptedGui( 'kehillah_ledger_sort_greatness' ).IsShown( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+				text = "[Scope.Title.MakeScope.Var( 'kehillah_rank_greatness' ).GetValue|0]"
+				using = Font_Size_Medium
+			}
+		}
+
+		kehillah_map_view_row = {}
+	}
+}

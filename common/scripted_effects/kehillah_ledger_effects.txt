@@ -1,0 +1,101 @@
+﻿# =====================================================================
+# World ledger of Jewish communities (2026-10-29).
+# Design: docs/spec/v52-world-ledger-and-standing-rank.md.
+#
+# 1. RANKS. Every led community in kehillah_registered_communities gets
+#    its place in the world on Standing and on each pillar:
+#      kehillah_rank_standing / _prosperity / _stability / _greatness
+#      kehillah_rank_of   how many communities were ranked
+#    A vacant community loses its ranks. Run from
+#    kehillah_refresh_map_view_effect, so ranks are as fresh as the
+#    roster: quarterly, on every founding, loss or change of leader,
+#    and whenever a ledger or the map view opens. About 25 communities,
+#    four ordered passes: no cost worth measuring.
+#
+# 2. THE LEDGER. Onto the player who opened it:
+#      kehillah_ledger_sort  1 Standing, 2 Prosperity, 3 Stability,
+#                            4 Greatness
+#      kehillah_ledger_list  the communities in that order, best first
+# =====================================================================
+
+kehillah_rank_communities_effect = {
+	set_global_variable = { name = kehillah_rank_count value = 0 }
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		if = {
+			limit = { exists = holder }
+			change_global_variable = { name = kehillah_rank_count add = 1 }
+		}
+		else = {
+			remove_variable = kehillah_rank_standing
+			remove_variable = kehillah_rank_prosperity
+			remove_variable = kehillah_rank_stability
+			remove_variable = kehillah_rank_greatness
+			remove_variable = kehillah_rank_of
+		}
+	}
+	# max must not exceed the filtered list (the gotcha in
+	# kehillah_refresh_map_view_effect), hence the exact count above.
+	if = {
+		limit = { global_var:kehillah_rank_count > 0 }
+		kehillah_rank_by_effect = { KEY = standing VALUE = kehillah_standing_value }
+		kehillah_rank_by_effect = { KEY = prosperity VALUE = kehillah_ledger_prosperity_value }
+		kehillah_rank_by_effect = { KEY = stability VALUE = kehillah_ledger_stability_value }
+		kehillah_rank_by_effect = { KEY = greatness VALUE = kehillah_ledger_greatness_value }
+	}
+}
+
+kehillah_rank_by_effect = {
+	set_global_variable = { name = kehillah_rank_cursor value = 0 }
+	ordered_in_global_list = {
+		variable = kehillah_registered_communities
+		order_by = $VALUE$
+		limit = { exists = holder }
+		max = global_var:kehillah_rank_count
+		change_global_variable = { name = kehillah_rank_cursor add = 1 }
+		set_variable = { name = kehillah_rank_$KEY$ value = global_var:kehillah_rank_cursor }
+		set_variable = { name = kehillah_rank_of value = global_var:kehillah_rank_count }
+	}
+}
+
+# Scope: the player. Reads kehillah_ledger_sort (default Standing).
+kehillah_ledger_build_effect = {
+	kehillah_rank_communities_effect = yes
+	if = {
+		limit = { NOT = { has_variable = kehillah_ledger_sort } }
+		set_variable = { name = kehillah_ledger_sort value = 1 }
+	}
+	clear_variable_list = kehillah_ledger_list
+	if = {
+		limit = { global_var:kehillah_rank_count > 0 }
+		if = {
+			limit = { var:kehillah_ledger_sort = 2 }
+			kehillah_ledger_fill_effect = { VALUE = kehillah_ledger_prosperity_value }
+		}
+		else_if = {
+			limit = { var:kehillah_ledger_sort = 3 }
+			kehillah_ledger_fill_effect = { VALUE = kehillah_ledger_stability_value }
+		}
+		else_if = {
+			limit = { var:kehillah_ledger_sort = 4 }
+			kehillah_ledger_fill_effect = { VALUE = kehillah_ledger_greatness_value }
+		}
+		else = {
+			kehillah_ledger_fill_effect = { VALUE = kehillah_standing_value }
+		}
+	}
+}
+
+kehillah_ledger_fill_effect = {
+	save_scope_as = kehillah_ledger_owner
+	ordered_in_global_list = {
+		variable = kehillah_registered_communities
+		order_by = $VALUE$
+		limit = { exists = holder }
+		max = global_var:kehillah_rank_count
+		save_scope_as = kehillah_ledger_entry
+		scope:kehillah_ledger_owner = {
+			add_to_variable_list = { name = kehillah_ledger_list target = scope:kehillah_ledger_entry }
+		}
+	}
+}
