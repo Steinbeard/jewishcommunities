@@ -129,3 +129,128 @@ Arslan, rules from elsewhere. The Exilarch rule (spec §12) gives Baghdad its ro
 - the new tooltip lines;
 - the danger total;
 - the starting pillars of the capital communities against the previous build.
+
+## Slice 4: the office (spec sections 7, 8, 9 and 13)
+
+**Built 2026-10-30, xTiger-checked: 154 reports and 15 errors, with none new.** xTiger did not
+flag a reference to `culture:english`, which vanilla 1.20 does not define. It was caught by hand
+and replaced: "Presbyter of the Jews" now keys off holding `k_england`. Every other hard-coded
+reference was checked against the game files.
+
+### The data
+
+- **The office** belongs to the realm: `kehillah_nagid_office` and `kehillah_nagid_office_year` on
+  the ruler's primary title. Its holder is `kehillah_nagid_holder` on the same title.
+- **The holder** carries `kehillah_nagid_modifier`, which is also how script recognises a Nagid
+  (`kehillah_is_nagid_trigger`), and `kehillah_nagid_of`, the ruler who confirmed them.
+- **Two timed flags:** `kehillah_nagid_withheld` on the title (1 year) and `kehillah_nagid_asked` on
+  the candidate (120 days).
+- Triggers, values and effects are in `common/{scripted_triggers,script_values,scripted_effects}/
+  kehillah_nagid_*.txt`.
+
+### Founding, keeping and abolishing
+
+- **Establish a Head of the Jews** (ruler, `realm` group) requires, each with its own tooltip line:
+  - no office yet;
+  - the Jews Favored;
+  - a Protector ruler;
+  - a community in the capital;
+  - its Standing at least 700 (Flourishing);
+  - its leader adult, free, Jewish, with Diplomacy, Stewardship or Learning of 12 or more.
+
+  It founds the office and names the seat's leader. The AI weight is `kehillah_nagid_found_ai_value`
+  (section 11): Middle Eastern and North African heritage +30, Iberian +15, head of faith +15, a
+  tolerant culture, stewardship 14+ and greed +10 each, and a Latin court without a revenue motive
+  −25. It is clamped to 5–90.
+- **Ask for a Head of the Jews** (the seat's leader, `kehillah` group) has the same gates, read on
+  the host:
+  - a player host gets `kehillah_nagid.0002` (found or refuse);
+  - an AI host founds the office with the AI weight as its chance;
+  - a refusal bars another petition for 5 years.
+- **Keeping it:** the office lasts while the Jews are Tolerated or Favored and the teaching is not
+  Exclusion or Abolition (`kehillah_nagid_office_may_persist_trigger`). Below that it is abolished,
+  at once on a law change and otherwise at the ruler's yearly check.
+- **Abolish the Head of the Jews** (ruler) is valid only at outlook Cold or worse. It costs
+  `medium_prestige_loss`, grants `medium_piety_gain` under a strict or exclusionary teaching, and
+  takes −30 Stability from every community in the realm. The AI weight is
+  `kehillah_nagid_abolish_ai_value`; greed lowers it, because the office pays.
+- **The ruler's yearly check** (in `kehillah_status_yearly`) carries the office to a new primary
+  title, abolishes it where it may not persist, and clears a holder who has died or no longer leads
+  the seat.
+
+### The holder and confirmation
+
+- **Each quarter** (`common/on_action/kehillah_nagid_on_actions.txt`), a Nagid or a seat's leader
+  runs `kehillah_nagid_quarterly_effect`:
+  - a Nagid who no longer qualifies steps down, with a notice. The test is
+    `kehillah_nagid_can_hold_trigger`: qualified, the seat, the office in the realm, and Standing
+    400 or more;
+  - a Nagid under a new ruler is sent for confirmation;
+  - a qualified seat leader whose office is vacant, or whose predecessor is gone, is sent for
+    confirmation.
+- **The confirmation** (`kehillah_nagid.0001`, to the ruler):
+  - **Confirm:** the community pays `kehillah_nagid_fee_value`. That is `medium_gold_value`,
+    doubled under a Cold-or-worse or Predator ruler, and never more than the treasury holds.
+  - **Withhold:** the office stays vacant for a year, and a sitting Nagid steps down.
+  - The AI favours confirming: greed, stewardship and a warm outlook add to it; coldness, zeal and a
+    strict teaching add to withholding.
+
+### What it does (section 9, the parts in this slice)
+
+- **The Nagid:** +1 monthly prestige and +0.5 monthly influence (the modifier).
+- **The Nagid's community:** +40 Greatness and +20 Stability, shown in the pillar tooltips.
+- **Protection during violence** (`kehillah_host_protection_mult_value`): ×0.8 for the Nagid's own
+  community, ×0.9 for every other community in a realm whose office is filled.
+- **Tribute:** every community in a realm whose office is filled pays ×1.25
+  (`kehillah_tribute_rate_value`).
+- **The host's outlook:** the existing "A Jew in his service" +10 also counts a filled office.
+- **Names** (`KehillahNagidOfficeName`): Nagid; Rab de la Corte, or Arrabi Mor for a Portuguese
+  ruler; Presbyter of the Jews for the crown of England; Hochmeister for Central Germanic heritage;
+  Master of the Jews for other Latin courts.
+
+### Starts (`kehillah_nagid_game_start`, five days in)
+
+- **1066:**
+  - `kehillah_nagid.0090` sets Badis's realm to Favored, founds the office and names Granada's
+    leader, Joseph ibn Naghrilla.
+  - `kehillah_nagid.0091` founds the Fatimid office, vacant, if Fustat is al-Mustansir's seat.
+- **1178:** `.0091` for Fustat.
+- **Saves begun earlier get no seeds.** `kehillah_nagid_debug.2` founds the office in such a save.
+
+### Debug (`events/kehillah_nagid_debug_events.txt`)
+
+- `.1` reports the office, its holder, the seat and every gate for the player's host or realm.
+- `.2` forces the office and names the seat's leader.
+- `.3` re-runs the seat's quarterly check, so the ruler is asked to confirm.
+- `.4` abolishes the office.
+- `.5` lists every office in the world.
+- `.6` lists every seat with its tier (slice 3's live check).
+
+### Not in this slice
+
+The Route B service (slice 5), envy, clergy pressure and the fall (slice 6), the Exilarch
+(slice 7), and the game rule, nickname and dilemmas (slice 8). Also not here: intercession in other
+communities' crises, and the Ashkenaz reception penalty (spec section 9).
+
+### Departures from the spec
+
+- **The office's name appears in this slice,** not slice 8, because the decisions and events need
+  it.
+- **The intercession and rite-reception parts of section 9** are deferred: they need the crisis
+  options and the V45 rite to be wired in.
+- **The decisions show generic text** ("a head of the Jews") where the ruler's office name is not
+  in scope. Only the ruler's own decision and event texts use the name.
+
+### Live checks owed (slice 4)
+
+- a 1066 start: Joseph named, Badis Favored with his "beyond the teaching" modifier, the Fatimid
+  office founded and vacant, then an al-Mustansir confirmation if Fustat qualifies;
+- the confirmation event and fee for a player host and an AI host;
+- the founding decision's tooltip lines;
+- the petition, both ways;
+- abolishing the office at Cold, and dropping the law to Restricted;
+- the Nagid's death and the next leader's confirmation;
+- `error.log` clean after a few quarters;
+- **AI rate:** with these strict gates, a 25-year soak should count how many AI realms found the
+  office. If almost none do, loosen Protector to Well-disposed for Middle Eastern and North African
+  courts.

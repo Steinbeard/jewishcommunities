@@ -1,0 +1,170 @@
+﻿# =====================================================================
+# THE NAGID OFFICE -- the Nagid spec section 7 (docs/spec/
+# 2026-10-30-the-nagid.md), 2026-10-30, slice 4.
+#   kehillah_establish_nagid_office_decision  the ruler founds the office
+#   kehillah_abolish_nagid_office_decision    a cold ruler ends it
+#   kehillah_ask_nagid_office_decision        the seat's leader asks
+# The office's name follows the ruler (KehillahNagidOfficeName).
+# =====================================================================
+
+kehillah_establish_nagid_office_decision = {
+	picture = { reference = "gfx/interface/illustrations/decisions/decision_realm.dds" }
+	decision_group_type = realm
+	desc = kehillah_establish_nagid_office_decision_desc
+	selection_tooltip = kehillah_establish_nagid_office_decision_tooltip
+	ai_check_interval = 36
+
+	is_shown = {
+		kehillah_ruler_favors_jews_trigger = yes
+		NOT = { kehillah_realm_has_nagid_office_trigger = yes }
+		kehillah_ruler_has_seat_trigger = yes
+	}
+
+	is_valid_showing_failures_only = {
+		is_imprisoned = no
+	}
+
+	is_valid = {
+		kehillah_nagid_can_found_trigger = yes
+	}
+
+	effect = {
+		kehillah_nagid_find_seat_effect = yes
+		custom_tooltip = kehillah_establish_nagid_office_effect_tt
+		hidden_effect = {
+			kehillah_nagid_found_office_effect = yes
+			if = {
+				limit = { exists = scope:kehillah_nagid_seat_leader }
+				kehillah_nagid_appoint_effect = yes
+			}
+		}
+	}
+
+	ai_potential = { always = yes }
+	ai_will_do = {
+		base = 0
+		modifier = { add = kehillah_nagid_found_ai_value }
+	}
+}
+
+kehillah_abolish_nagid_office_decision = {
+	picture = { reference = "gfx/interface/illustrations/decisions/decision_realm.dds" }
+	decision_group_type = realm
+	desc = kehillah_abolish_nagid_office_decision_desc
+	selection_tooltip = kehillah_abolish_nagid_office_decision_tooltip
+	ai_check_interval = 60
+
+	is_shown = {
+		kehillah_realm_has_nagid_office_trigger = yes
+	}
+
+	is_valid_showing_failures_only = {
+		is_imprisoned = no
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = kehillah_abolish_nagid_needs_cold_tt
+			kehillah_outlook_band_value <= -1
+		}
+	}
+
+	effect = {
+		custom_tooltip = kehillah_abolish_nagid_office_effect_tt
+		add_prestige = medium_prestige_loss
+		if = {
+			limit = {
+				OR = {
+					kehillah_teaching_strict_trigger = yes
+					kehillah_teaching_exclusionary_trigger = yes
+				}
+			}
+			add_piety = medium_piety_gain
+		}
+		hidden_effect = {
+			save_scope_as = kehillah_nagid_host
+			every_in_global_list = {
+				variable = kehillah_registered_communities
+				limit = {
+					exists = holder
+					holder.domicile.domicile_location.county.holder.top_liege ?= scope:kehillah_nagid_host
+				}
+				holder = { kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = -30 } }
+			}
+			kehillah_nagid_abolish_effect = yes
+		}
+	}
+
+	ai_potential = { always = yes }
+	ai_will_do = {
+		base = 0
+		modifier = { add = kehillah_nagid_abolish_ai_value }
+	}
+}
+
+kehillah_ask_nagid_office_decision = {
+	picture = { reference = "gfx/interface/illustrations/decisions/decision_realm.dds" }
+	decision_group_type = kehillah
+	desc = kehillah_ask_nagid_office_decision_desc
+	selection_tooltip = kehillah_ask_nagid_office_decision_tooltip
+	ai_check_interval = 24
+
+	is_shown = {
+		government_has_flag = government_is_kehillah
+		kehillah_is_realm_seat_trigger = yes
+		domicile.domicile_location.county.holder.top_liege = {
+			NOT = { kehillah_realm_has_nagid_office_trigger = yes }
+			kehillah_can_hold_settlement_law_trigger = yes
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		is_imprisoned = no
+		custom_tooltip = {
+			text = kehillah_ask_nagid_cooldown_tt
+			NOT = { has_variable = kehillah_nagid_petition_cooldown }
+		}
+	}
+
+	is_valid = {
+		domicile.domicile_location.county.holder.top_liege = { kehillah_nagid_can_found_trigger = yes }
+	}
+
+	effect = {
+		save_scope_as = kehillah_nagid_seat_leader
+		custom_tooltip = kehillah_ask_nagid_office_effect_tt
+		hidden_effect = {
+			domicile.domicile_location.county.holder.top_liege = {
+				save_scope_as = kehillah_nagid_host
+				if = {
+					limit = { is_ai = no }
+					trigger_event = kehillah_nagid.0002
+				}
+				else = {
+					random = {
+						chance = kehillah_nagid_found_ai_value
+						kehillah_nagid_found_office_effect = yes
+						kehillah_nagid_appoint_effect = yes
+						save_scope_value_as = { name = kehillah_nagid_petition_granted value = yes }
+					}
+				}
+			}
+			if = {
+				limit = { NOT = { exists = scope:kehillah_nagid_petition_granted } }
+				set_variable = { name = kehillah_nagid_petition_cooldown value = yes years = kehillah_nagid_petition_cooldown_years }
+				if = {
+					limit = { scope:kehillah_nagid_host = { is_ai = yes } }
+					send_interface_message = {
+						type = msg_kehillah_community_news_bad
+						title = kehillah_nagid_petition_refused_msg_t
+						desc = kehillah_nagid_petition_refused_msg_d
+						left_icon = scope:kehillah_nagid_host
+					}
+				}
+			}
+		}
+	}
+
+	ai_potential = { always = yes }
+	ai_will_do = { base = 50 }
+}

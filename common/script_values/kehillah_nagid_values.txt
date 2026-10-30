@@ -1,0 +1,154 @@
+﻿# =====================================================================
+# THE NAGID OFFICE -- the Nagid spec, sections 7-9 and 11, 2026-10-30,
+# slice 4. Starting values, to tune after a live look.
+# =====================================================================
+
+# Gates (sections 7 and 8).
+kehillah_nagid_min_skill = 12
+kehillah_nagid_found_standing = 700	# Flourishing, to found the office
+kehillah_nagid_retain_standing = 400	# Healthy, to hold it
+
+# Re-asking and petitioning.
+kehillah_nagid_withheld_years = 1
+kehillah_nagid_petition_cooldown_years = 5
+
+# Scope: a Kehillah leader (the candidate), host at the top liege of his
+# county. The confirmation fee (section 8; V31 section 8.2 part 3): one
+# medium gold sum, doubled under a lord who is Cold or worse toward the
+# Jews or a Predator. Never more than the treasury holds.
+kehillah_nagid_fee_value = {
+	value = medium_gold_value
+	domicile.domicile_location.county.holder.top_liege ?= {
+		if = {
+			limit = {
+				OR = {
+					kehillah_outlook_band_value <= -1
+					kehillah_outlook_predator_trigger = yes
+				}
+			}
+			multiply = 2
+		}
+	}
+	if = {
+		limit = { gold < kehillah_nagid_fee_value_uncapped }
+		value = gold
+	}
+	min = 0
+}
+
+# The same before the treasury cap, for the comparison above.
+kehillah_nagid_fee_value_uncapped = {
+	value = medium_gold_value
+	domicile.domicile_location.county.holder.top_liege ?= {
+		if = {
+			limit = {
+				OR = {
+					kehillah_outlook_band_value <= -1
+					kehillah_outlook_predator_trigger = yes
+				}
+			}
+			multiply = 2
+		}
+	}
+}
+
+# Scope: a ruler. How willing the AI is to found the office, 5-90: the
+# bias of section 11 toward Muslim and Iberian courts.
+kehillah_nagid_found_ai_value = {
+	value = 20
+	if = {
+		limit = { culture_has_mena_heritage_pillar_trigger = yes }
+		add = 30
+	}
+	else_if = {
+		limit = { culture ?= { has_cultural_pillar = heritage_iberian } }
+		add = 15
+	}
+	if = {
+		limit = { faith.religious_head ?= this }
+		add = 15
+	}
+	if = {
+		limit = { kehillah_favored_tolerant_culture_trigger = yes }
+		add = 10
+	}
+	if = {
+		limit = { stewardship >= 14 }
+		add = 10
+	}
+	if = {
+		limit = { has_trait = greedy }
+		add = 10
+	}
+	# A Latin court founds one only with a revenue motive (the Presbyter
+	# and Hochmeister pattern).
+	if = {
+		limit = {
+			religion = religion:christianity_religion
+			NOT = { culture ?= { has_cultural_pillar = heritage_iberian } }
+			NOR = {
+				has_trait = greedy
+				stewardship >= 14
+			}
+		}
+		add = -25
+	}
+	min = 5
+	max = 90
+}
+
+# Scope: a ruler. How likely the AI is to abolish the office: only a
+# ruler Cold or worse may, and then rarely.
+kehillah_nagid_abolish_ai_value = {
+	value = 0
+	if = {
+		limit = { kehillah_outlook_band_value <= -1 }
+		value = 5
+		if = {
+			limit = { kehillah_outlook_convinced_trigger = yes }
+			add = 15
+		}
+		if = {
+			limit = { has_trait = zealous }
+			add = 10
+		}
+		if = {
+			limit = {
+				OR = {
+					kehillah_teaching_strict_trigger = yes
+					kehillah_teaching_exclusionary_trigger = yes
+				}
+			}
+			add = 10
+		}
+		# The office pays (the tribute bonus): a greedy lord keeps it.
+		if = {
+			limit = { has_trait = greedy }
+			add = -10
+		}
+	}
+	min = 0
+}
+
+# --- What the office does (section 9). Scope: a Kehillah leader. -----
+
+# The Nagid's own community.
+kehillah_bd_nagid_greatness_value = {
+	value = 0
+	if = {
+		limit = { kehillah_is_nagid_trigger = yes }
+		value = 40
+	}
+}
+
+kehillah_bd_nagid_stability_value = {
+	value = 0
+	if = {
+		limit = { kehillah_is_nagid_trigger = yes }
+		value = 20
+	}
+}
+
+# The tribute bonus (section 7, "why a cold ruler keeps it"): every
+# community in a realm whose office is filled pays a quarter more.
+kehillah_nagid_tribute_mult = 1.25

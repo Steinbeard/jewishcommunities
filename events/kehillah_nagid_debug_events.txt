@@ -1,0 +1,126 @@
+﻿namespace = kehillah_nagid_debug
+# Hidden console probes for the Nagid office and the seat (the Nagid spec,
+# sections 4, 7 and 8; slices 3 and 4). Fire on the player: a Kehillah
+# leader (their host's realm is used) or a ruler (their own realm).
+#   .1 report the office, its holder, the seat and every founding gate
+#   .2 found the office now and name the seat's leader, ignoring gates
+#   .3 clear the waits and ask the ruler to confirm the seat's leader
+#   .4 abolish the office
+#   .5 list every realm in the world with the office
+#   .6 list every community that is a realm's seat, with its tier
+
+scripted_effect kehillah_nagid_debug_host_effect = {
+	if = {
+		limit = { government_has_flag = government_is_kehillah }
+		domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_dbg_host }
+	}
+	else = {
+		save_scope_as = kehillah_dbg_host
+	}
+}
+
+kehillah_nagid_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_nagid_debug_host_effect = yes
+		scope:kehillah_dbg_host ?= {
+			debug_log = "NAGID host=[THIS.Char.GetName] office=[THIS.Char.Custom('KehillahNagidOfficeName')] found_ai=[THIS.Char.MakeScope.ScriptValue('kehillah_nagid_found_ai_value')] abolish_ai=[THIS.Char.MakeScope.ScriptValue('kehillah_nagid_abolish_ai_value')]"
+			if = { limit = { kehillah_realm_has_nagid_office_trigger = yes } debug_log = "NAGID office EXISTS since [THIS.Char.GetPrimaryTitle.MakeScope.Var('kehillah_nagid_office_year').GetValue]" } else = { debug_log = "NAGID no office" }
+			if = { limit = { kehillah_realm_nagid_filled_trigger = yes } primary_title.var:kehillah_nagid_holder = { debug_log = "NAGID holder=[THIS.Char.GetName]" } } else = { debug_log = "NAGID office vacant or absent" }
+			if = { limit = { primary_title = { has_variable = kehillah_nagid_withheld } } debug_log = "NAGID confirmation withheld recently" }
+			if = { limit = { kehillah_ruler_favors_jews_trigger = yes } debug_log = "NAGID gate favored=YES" } else = { debug_log = "NAGID gate favored=NO" }
+			if = { limit = { kehillah_outlook_protector_trigger = yes } debug_log = "NAGID gate protector=YES" } else = { debug_log = "NAGID gate protector=NO outlook=[THIS.Char.MakeScope.ScriptValue('kehillah_outlook_on_jews_value')]" }
+			if = { limit = { kehillah_ruler_has_seat_trigger = yes } debug_log = "NAGID gate seat=YES" } else = { debug_log = "NAGID gate seat=NO" }
+			if = { limit = { kehillah_ruler_seat_flourishing_trigger = yes } debug_log = "NAGID gate flourishing=YES" } else = { debug_log = "NAGID gate flourishing=NO" }
+			if = { limit = { kehillah_ruler_seat_leader_qualified_trigger = yes } debug_log = "NAGID gate qualified=YES" } else = { debug_log = "NAGID gate qualified=NO" }
+			if = { limit = { kehillah_nagid_office_may_persist_trigger = yes } debug_log = "NAGID may persist=YES" } else = { debug_log = "NAGID may persist=NO" }
+			kehillah_nagid_find_seat_effect = yes
+			scope:kehillah_nagid_seat_leader ?= {
+				debug_log = "NAGID seat leader=[THIS.Char.GetName] standing=[THIS.Char.GetPrimaryTitle.MakeScope.ScriptValue('kehillah_standing_value')] fee=[THIS.Char.MakeScope.ScriptValue('kehillah_nagid_fee_value')] seat_tier=[THIS.Char.MakeScope.ScriptValue('kehillah_seat_tier_value')]"
+				if = { limit = { kehillah_nagid_can_hold_trigger = yes } debug_log = "NAGID seat leader can hold=YES" } else = { debug_log = "NAGID seat leader can hold=NO" }
+				if = { limit = { kehillah_is_nagid_trigger = yes } debug_log = "NAGID seat leader is Nagid=YES" }
+			}
+		}
+	}
+}
+
+kehillah_nagid_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_nagid_debug_host_effect = yes
+		scope:kehillah_dbg_host ?= {
+			kehillah_nagid_find_seat_effect = yes
+			if = {
+				limit = { NOT = { kehillah_realm_has_nagid_office_trigger = yes } }
+				kehillah_nagid_found_office_effect = yes
+			}
+			if = {
+				limit = { exists = scope:kehillah_nagid_seat_leader }
+				kehillah_nagid_appoint_effect = yes
+			}
+		}
+		trigger_event = kehillah_nagid_debug.1
+	}
+}
+
+kehillah_nagid_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_nagid_debug_host_effect = yes
+		scope:kehillah_dbg_host ?= {
+			primary_title ?= { remove_variable = kehillah_nagid_withheld }
+			kehillah_nagid_find_seat_effect = yes
+			scope:kehillah_nagid_seat_leader ?= {
+				remove_variable = kehillah_nagid_asked
+				kehillah_nagid_quarterly_effect = yes
+			}
+		}
+		debug_log = "kehillah_nagid_debug.3: the seat's quarterly check ran"
+	}
+}
+
+kehillah_nagid_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_nagid_debug_host_effect = yes
+		scope:kehillah_dbg_host ?= { kehillah_nagid_abolish_effect = yes }
+	}
+}
+
+kehillah_nagid_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		every_ruler = {
+			limit = { kehillah_realm_has_nagid_office_trigger = yes }
+			debug_log = "NAGID OFFICE realm=[THIS.Char.GetPrimaryTitle.GetName] ruler=[THIS.Char.GetName] name=[THIS.Char.Custom('KehillahNagidOfficeName')]"
+			if = {
+				limit = { kehillah_realm_nagid_filled_trigger = yes }
+				primary_title.var:kehillah_nagid_holder = { debug_log = "NAGID   holder=[THIS.Char.GetName]" }
+			}
+		}
+		debug_log = "kehillah_nagid_debug.5: end of list"
+	}
+}
+
+kehillah_nagid_debug.6 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder = { kehillah_is_realm_seat_trigger = yes }
+			}
+			holder = {
+				debug_log = "SEAT [THIS.Char.GetPrimaryTitle.GetName] tier=[THIS.Char.MakeScope.ScriptValue('kehillah_seat_tier_value')] danger=[THIS.Char.MakeScope.ScriptValue('kehillah_danger_seat_value')]"
+			}
+		}
+		debug_log = "kehillah_nagid_debug.6: end of list"
+	}
+}

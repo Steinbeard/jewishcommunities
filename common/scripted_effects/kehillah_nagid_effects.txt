@@ -1,0 +1,237 @@
+﻿# =====================================================================
+# THE NAGID OFFICE -- the Nagid spec, sections 7 and 8, 2026-10-30,
+# slice 4. Data model: see common/scripted_triggers/kehillah_nagid_
+# triggers.txt.
+# =====================================================================
+
+# Scope: a ruler. Saves the leader of his realm's seat community as
+# scope:kehillah_nagid_seat_leader, if there is one.
+kehillah_nagid_find_seat_effect = {
+	if = {
+		limit = { exists = capital_county }
+		capital_county = { save_scope_as = kehillah_nagid_capital }
+		random_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = {
+				exists = holder
+				holder.domicile.domicile_location.county ?= scope:kehillah_nagid_capital
+			}
+			holder = { save_scope_as = kehillah_nagid_seat_leader }
+		}
+	}
+}
+
+# Scope: a ruler. Founds the office in his realm, vacant. Section 7.
+kehillah_nagid_found_office_effect = {
+	primary_title = {
+		set_variable = { name = kehillah_nagid_office value = yes }
+		set_variable = { name = kehillah_nagid_office_year value = current_year }
+	}
+	debug_log = "kehillah_nagid_found_office_effect: the office of the Nagid is founded"
+}
+
+# Scope: a ruler; scope:kehillah_nagid_seat_leader saved. Names the seat
+# leader to the office: any previous holder steps down first.
+kehillah_nagid_appoint_effect = {
+	save_scope_as = kehillah_nagid_host
+	kehillah_nagid_vacate_effect = yes
+	primary_title = {
+		set_variable = { name = kehillah_nagid_holder value = scope:kehillah_nagid_seat_leader }
+		remove_variable = kehillah_nagid_withheld
+	}
+	scope:kehillah_nagid_seat_leader = {
+		add_character_modifier = { modifier = kehillah_nagid_modifier }
+		set_variable = { name = kehillah_nagid_of value = scope:kehillah_nagid_host }
+		remove_variable = kehillah_nagid_asked
+		send_interface_message = {
+			type = msg_kehillah_community_news
+			title = kehillah_nagid_named_msg_t
+			desc = kehillah_nagid_named_msg_d
+			left_icon = scope:kehillah_nagid_host
+		}
+	}
+	debug_log = "kehillah_nagid_appoint_effect: a Nagid is named"
+}
+
+# Scope: a Kehillah leader. Leaves the office: the modifier and the link
+# go, and the realm's holder entry is cleared if it names them.
+kehillah_nagid_step_down_effect = {
+	save_scope_as = kehillah_nagid_leaving
+	if = {
+		limit = { has_character_modifier = kehillah_nagid_modifier }
+		remove_character_modifier = kehillah_nagid_modifier
+	}
+	if = {
+		limit = { has_variable = kehillah_nagid_of }
+		var:kehillah_nagid_of.primary_title ?= {
+			if = {
+				limit = { var:kehillah_nagid_holder ?= scope:kehillah_nagid_leaving }
+				remove_variable = kehillah_nagid_holder
+			}
+		}
+		remove_variable = kehillah_nagid_of
+	}
+	debug_log = "kehillah_nagid_step_down_effect: a Nagid leaves the office"
+}
+
+# Scope: a ruler. Clears his realm's office holder, if any.
+kehillah_nagid_vacate_effect = {
+	if = {
+		limit = { primary_title ?= { exists = var:kehillah_nagid_holder } }
+		primary_title.var:kehillah_nagid_holder = {
+			if = {
+				limit = { has_character_modifier = kehillah_nagid_modifier }
+				remove_character_modifier = kehillah_nagid_modifier
+			}
+			remove_variable = kehillah_nagid_of
+		}
+		primary_title = { remove_variable = kehillah_nagid_holder }
+	}
+}
+
+# Scope: a ruler. Abolishes his realm's office and tells its communities.
+# The voluntary decision adds its own costs; this is the common part,
+# also used when the law or the teaching no longer lets it persist.
+kehillah_nagid_abolish_effect = {
+	save_scope_as = kehillah_nagid_host
+	kehillah_nagid_vacate_effect = yes
+	primary_title = {
+		remove_variable = kehillah_nagid_office
+		remove_variable = kehillah_nagid_office_year
+		remove_variable = kehillah_nagid_withheld
+	}
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			exists = holder
+			holder.domicile.domicile_location.county.holder.top_liege ?= scope:kehillah_nagid_host
+		}
+		holder = {
+			send_interface_message = {
+				type = msg_kehillah_community_news_bad
+				title = kehillah_nagid_abolished_msg_t
+				desc = kehillah_nagid_abolished_msg_d
+				left_icon = scope:kehillah_nagid_host
+			}
+		}
+	}
+	debug_log = "kehillah_nagid_abolish_effect: the office of the Nagid is abolished"
+}
+
+# Scope: the seat's Kehillah leader; the host is the top liege of the
+# county. Asks the host to confirm them (kehillah_nagid.0001), once.
+kehillah_nagid_request_confirmation_effect = {
+	save_scope_as = kehillah_nagid_seat_leader
+	set_variable = { name = kehillah_nagid_asked value = yes days = 120 }
+	domicile.domicile_location.county.holder.top_liege = {
+		save_scope_as = kehillah_nagid_host
+		trigger_event = kehillah_nagid.0001
+	}
+}
+
+# Scope: a Kehillah leader (kehillah_nagid_quarterly). Keeps the office
+# in step with the community and its realm: steps down a holder who no
+# longer qualifies, and asks the ruler to confirm a new seat leader or
+# an old Nagid under a new ruler.
+kehillah_nagid_quarterly_effect = {
+	if = {
+		limit = { kehillah_is_nagid_trigger = yes }
+		if = {
+			limit = { NOT = { kehillah_nagid_can_hold_trigger = yes } }
+			kehillah_nagid_step_down_effect = yes
+			send_interface_message = {
+				type = msg_kehillah_community_news_bad
+				title = kehillah_nagid_lost_msg_t
+				desc = kehillah_nagid_lost_msg_d
+			}
+		}
+		# A new ruler: the office stands, but he must confirm the holder.
+		else_if = {
+			limit = {
+				NOT = { var:kehillah_nagid_of ?= domicile.domicile_location.county.holder.top_liege }
+				NOT = { has_variable = kehillah_nagid_asked }
+				domicile.domicile_location.county.holder.top_liege.primary_title = {
+					NOT = { has_variable = kehillah_nagid_withheld }
+				}
+			}
+			kehillah_nagid_request_confirmation_effect = yes
+		}
+	}
+	# The seat's leader, the office vacant or held by someone gone.
+	else_if = {
+		limit = {
+			kehillah_nagid_can_hold_trigger = yes
+			NOT = { has_variable = kehillah_nagid_asked }
+			domicile.domicile_location.county.holder.top_liege.primary_title = {
+				NOT = { has_variable = kehillah_nagid_withheld }
+				OR = {
+					NOT = { exists = var:kehillah_nagid_holder }
+					var:kehillah_nagid_holder = { is_alive = no }
+					var:kehillah_nagid_holder = {
+						NOT = { has_character_modifier = kehillah_nagid_modifier }
+					}
+					# A predecessor who no longer leads the seat (stepped down,
+					# converted, left the realm).
+					var:kehillah_nagid_holder = {
+						NOT = { kehillah_nagid_can_hold_trigger = yes }
+					}
+				}
+			}
+		}
+		kehillah_nagid_request_confirmation_effect = yes
+	}
+}
+
+# Scope: a ruler (kehillah_status_yearly). Keeps the institution in step
+# with the realm: carries it to a new primary title, abolishes it when
+# the law or the teaching no longer allows it, and clears a holder who
+# has died or no longer leads the seat.
+kehillah_nagid_yearly_effect = {
+	# A new primary title (a realm grown or split): the office moves with
+	# the ruler.
+	if = {
+		limit = {
+			NOT = { kehillah_realm_has_nagid_office_trigger = yes }
+			any_held_title = { has_variable = kehillah_nagid_office }
+		}
+		random_held_title = {
+			limit = { has_variable = kehillah_nagid_office }
+			save_scope_as = kehillah_nagid_old_title
+		}
+		primary_title = {
+			set_variable = { name = kehillah_nagid_office value = yes }
+			set_variable = { name = kehillah_nagid_office_year value = scope:kehillah_nagid_old_title.var:kehillah_nagid_office_year }
+			if = {
+				limit = { exists = scope:kehillah_nagid_old_title.var:kehillah_nagid_holder }
+				set_variable = { name = kehillah_nagid_holder value = scope:kehillah_nagid_old_title.var:kehillah_nagid_holder }
+			}
+		}
+		scope:kehillah_nagid_old_title = {
+			remove_variable = kehillah_nagid_office
+			remove_variable = kehillah_nagid_office_year
+			remove_variable = kehillah_nagid_holder
+			remove_variable = kehillah_nagid_withheld
+		}
+	}
+	if = {
+		limit = { kehillah_realm_has_nagid_office_trigger = yes }
+		if = {
+			limit = { NOT = { kehillah_nagid_office_may_persist_trigger = yes } }
+			kehillah_nagid_abolish_effect = yes
+		}
+		else_if = {
+			limit = {
+				primary_title = {
+					exists = var:kehillah_nagid_holder
+					var:kehillah_nagid_holder = {
+						OR = {
+							is_alive = no
+							NOT = { kehillah_nagid_can_hold_trigger = yes }
+						}
+					}
+				}
+			}
+			kehillah_nagid_vacate_effect = yes
+		}
+	}
+}

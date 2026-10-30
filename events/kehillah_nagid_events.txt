@@ -1,0 +1,173 @@
+﻿# =====================================================================
+# THE NAGID OFFICE -- the Nagid spec, sections 7, 8 and 13 (docs/spec/
+# 2026-10-30-the-nagid.md), 2026-10-30, slice 4.
+#   .0001 the ruler is asked to confirm the seat's leader as Nagid
+#         (kehillah_nagid_request_confirmation_effect). Scopes:
+#         kehillah_nagid_seat_leader, kehillah_nagid_host.
+#   .0002 a player ruler hears the seat's petition to found the office
+#         (kehillah_ask_nagid_office_decision). Scope:
+#         kehillah_nagid_seat_leader.
+#   .0090 game start, 1066: Joseph ibn Naghrilla as Nagid of Badis's
+#         realm, which starts Favored. Scope: Granada's leader.
+#   .0091 game start: the office founded, vacant, in the realm of this
+#         seat (Fustat in 1066 and 1178). Scope: the seat's leader.
+# The office's name follows the ruler (KehillahNagidOfficeName).
+# =====================================================================
+namespace = kehillah_nagid
+
+kehillah_nagid.0001 = {
+	type = character_event
+	title = kehillah_nagid.0001.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:kehillah_nagid_seat_leader = { kehillah_is_nagid_trigger = yes } }
+				desc = kehillah_nagid.0001.reconfirm_desc
+			}
+			desc = kehillah_nagid.0001.desc
+		}
+	}
+	theme = realm
+	left_portrait = {
+		character = scope:kehillah_nagid_seat_leader
+		animation = personality_honorable
+	}
+
+	trigger = {
+		exists = scope:kehillah_nagid_seat_leader
+		scope:kehillah_nagid_seat_leader = {
+			is_alive = yes
+			kehillah_nagid_can_hold_trigger = yes
+		}
+		kehillah_realm_has_nagid_office_trigger = yes
+	}
+
+	# Confirm, for the fee.
+	option = {
+		name = kehillah_nagid.0001.a
+		scope:kehillah_nagid_seat_leader = {
+			pay_short_term_gold = {
+				target = root
+				gold = kehillah_nagid_fee_value
+			}
+		}
+		kehillah_nagid_appoint_effect = yes
+		ai_chance = {
+			base = 50
+			modifier = { add = 30 has_trait = greedy }
+			modifier = { add = 20 stewardship >= 12 }
+			modifier = { add = 20 kehillah_outlook_band_value >= 1 }
+		}
+	}
+
+	# Withhold confirmation for now.
+	option = {
+		name = kehillah_nagid.0001.b
+		primary_title = {
+			set_variable = { name = kehillah_nagid_withheld value = yes years = kehillah_nagid_withheld_years }
+		}
+		scope:kehillah_nagid_seat_leader = {
+			remove_variable = kehillah_nagid_asked
+			if = {
+				limit = { kehillah_is_nagid_trigger = yes }
+				kehillah_nagid_step_down_effect = yes
+			}
+			send_interface_message = {
+				type = msg_kehillah_community_news_bad
+				title = kehillah_nagid_withheld_msg_t
+				desc = kehillah_nagid_withheld_msg_d
+				left_icon = root
+			}
+		}
+		ai_chance = {
+			base = 10
+			modifier = { add = 30 kehillah_outlook_band_value <= -1 }
+			modifier = { add = 20 has_trait = zealous }
+			modifier = {
+				add = 20
+				OR = {
+					kehillah_teaching_strict_trigger = yes
+					kehillah_teaching_exclusionary_trigger = yes
+				}
+			}
+		}
+	}
+}
+
+kehillah_nagid.0002 = {
+	type = character_event
+	title = kehillah_nagid.0002.t
+	desc = kehillah_nagid.0002.desc
+	theme = realm
+	left_portrait = {
+		character = scope:kehillah_nagid_seat_leader
+		animation = personality_rational
+	}
+
+	trigger = {
+		exists = scope:kehillah_nagid_seat_leader
+		scope:kehillah_nagid_seat_leader = { is_alive = yes }
+		kehillah_nagid_can_found_trigger = yes
+	}
+
+	option = {
+		name = kehillah_nagid.0002.a
+		kehillah_nagid_found_office_effect = yes
+		kehillah_nagid_appoint_effect = yes
+	}
+
+	option = {
+		name = kehillah_nagid.0002.b
+		scope:kehillah_nagid_seat_leader = {
+			send_interface_message = {
+				type = msg_kehillah_community_news_bad
+				title = kehillah_nagid_petition_refused_msg_t
+				desc = kehillah_nagid_petition_refused_msg_d
+				left_icon = root
+			}
+		}
+	}
+}
+
+kehillah_nagid.0090 = {
+	type = character_event
+	hidden = yes
+	trigger = {
+		government_has_flag = government_is_kehillah
+		kehillah_is_realm_seat_trigger = yes
+	}
+	immediate = {
+		save_scope_as = kehillah_nagid_seat_leader
+		domicile.domicile_location.county.holder.top_liege = {
+			kehillah_set_settlement_law_effect = { RUNG = encouraged VALUE = 3 }
+			kehillah_favored_cost_refresh_effect = yes
+			if = {
+				limit = { NOT = { kehillah_realm_has_nagid_office_trigger = yes } }
+				kehillah_nagid_found_office_effect = yes
+			}
+			kehillah_nagid_appoint_effect = yes
+		}
+		debug_log = "kehillah_nagid.0090: the 1066 Nagid of Granada seated"
+	}
+}
+
+kehillah_nagid.0091 = {
+	type = character_event
+	hidden = yes
+	trigger = {
+		government_has_flag = government_is_kehillah
+		kehillah_is_realm_seat_trigger = yes
+	}
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege = {
+			if = {
+				limit = {
+					NOT = { kehillah_realm_has_nagid_office_trigger = yes }
+					kehillah_nagid_office_may_persist_trigger = yes
+				}
+				kehillah_nagid_found_office_effect = yes
+			}
+		}
+		debug_log = "kehillah_nagid.0091: an office founded at game start, vacant until a confirmation"
+	}
+}

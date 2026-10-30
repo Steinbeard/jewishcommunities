@@ -1,0 +1,131 @@
+﻿# =====================================================================
+# THE NAGID OFFICE -- the Nagid spec, sections 7 and 8 (docs/spec/
+# 2026-10-30-the-nagid.md), 2026-10-30, slice 4.
+#
+# The office is an institution of a realm: kehillah_nagid_office on the
+# ruler's primary title (with kehillah_nagid_office_year). Its holder is
+# always the leader of the realm's seat community (kehillah_is_realm_
+# seat_trigger), named in kehillah_nagid_holder on the same title. The
+# holder carries kehillah_nagid_modifier and kehillah_nagid_of (the ruler
+# who confirmed him). The ruler founds the office and confirms each new
+# holder; the community's own succession chooses the person.
+# =====================================================================
+
+# Scope: a ruler. His realm has the office (filled or vacant).
+kehillah_realm_has_nagid_office_trigger = {
+	primary_title ?= { has_variable = kehillah_nagid_office }
+}
+
+# Scope: a ruler. His realm's office has a living holder.
+kehillah_realm_nagid_filled_trigger = {
+	primary_title ?= {
+		has_variable = kehillah_nagid_office
+		exists = var:kehillah_nagid_holder
+		var:kehillah_nagid_holder = { is_alive = yes }
+	}
+}
+
+# Scope: a Kehillah leader. They hold the office now.
+kehillah_is_nagid_trigger = {
+	has_character_modifier = kehillah_nagid_modifier
+}
+
+# Scope: a Kehillah leader. The person may hold the office (section 8):
+# an adult, free, Jewish leader with a courtly skill of 12 or more.
+kehillah_nagid_personally_qualified_trigger = {
+	government_has_flag = government_is_kehillah
+	is_adult = yes
+	is_imprisoned = no
+	is_jewish_character_trigger = yes
+	OR = {
+		diplomacy >= kehillah_nagid_min_skill
+		stewardship >= kehillah_nagid_min_skill
+		learning >= kehillah_nagid_min_skill
+	}
+}
+
+# Scope: a Kehillah leader. May hold, or go on holding, the office of
+# the realm they live in: personally qualified, the realm's seat, the
+# realm has the office, and the community's Standing is at least Healthy.
+kehillah_nagid_can_hold_trigger = {
+	kehillah_nagid_personally_qualified_trigger = yes
+	kehillah_is_realm_seat_trigger = yes
+	domicile.domicile_location.county.holder.top_liege = { kehillah_realm_has_nagid_office_trigger = yes }
+	primary_title = { kehillah_standing_value >= kehillah_nagid_retain_standing }
+}
+
+# Scope: a ruler. The office would persist in his realm (section 7):
+# the Jews Tolerated or Favored, and a teaching that is not Exclusion
+# or Abolition. Below that the office is abolished.
+kehillah_nagid_office_may_persist_trigger = {
+	primary_title ?= { kehillah_jewish_settlement_policy_allowed_trigger = yes }
+	NOT = { kehillah_teaching_exclusionary_trigger = yes }
+}
+
+# Scope: a ruler. His capital county has a community; the seat leader
+# is saved as scope:kehillah_nagid_seat_leader by kehillah_nagid_find_
+# seat_effect (this trigger only tests).
+kehillah_ruler_has_seat_trigger = {
+	exists = capital_county
+	capital_county = { save_temporary_scope_as = kehillah_nagid_capital_check }
+	any_in_global_list = {
+		variable = kehillah_registered_communities
+		exists = holder
+		holder.domicile.domicile_location.county ?= scope:kehillah_nagid_capital_check
+	}
+}
+
+# Scope: a ruler. The seat community's leader is personally qualified.
+kehillah_ruler_seat_leader_qualified_trigger = {
+	exists = capital_county
+	capital_county = { save_temporary_scope_as = kehillah_nagid_capital_check }
+	any_in_global_list = {
+		variable = kehillah_registered_communities
+		exists = holder
+		holder.domicile.domicile_location.county ?= scope:kehillah_nagid_capital_check
+		holder = { kehillah_nagid_personally_qualified_trigger = yes }
+	}
+}
+
+# Scope: a ruler. The seat community stands high enough to found the
+# office: Flourishing (Daniel: "a community needs to have a high standing
+# to be eligible").
+kehillah_ruler_seat_flourishing_trigger = {
+	exists = capital_county
+	capital_county = { save_temporary_scope_as = kehillah_nagid_capital_check }
+	any_in_global_list = {
+		variable = kehillah_registered_communities
+		exists = holder
+		holder.domicile.domicile_location.county ?= scope:kehillah_nagid_capital_check
+		kehillah_standing_value >= kehillah_nagid_found_standing
+	}
+}
+
+# Scope: a ruler. Everything section 7 asks before the office can be
+# founded, each with its own tooltip line.
+kehillah_nagid_can_found_trigger = {
+	custom_tooltip = {
+		text = kehillah_nagid_no_office_yet_tt
+		NOT = { kehillah_realm_has_nagid_office_trigger = yes }
+	}
+	custom_tooltip = {
+		text = kehillah_nagid_needs_favored_tt
+		kehillah_ruler_favors_jews_trigger = yes
+	}
+	custom_tooltip = {
+		text = kehillah_nagid_needs_protector_tt
+		kehillah_outlook_protector_trigger = yes
+	}
+	custom_tooltip = {
+		text = kehillah_nagid_needs_seat_tt
+		kehillah_ruler_has_seat_trigger = yes
+	}
+	custom_tooltip = {
+		text = kehillah_nagid_needs_flourishing_tt
+		kehillah_ruler_seat_flourishing_trigger = yes
+	}
+	custom_tooltip = {
+		text = kehillah_nagid_needs_qualified_tt
+		kehillah_ruler_seat_leader_qualified_trigger = yes
+	}
+}

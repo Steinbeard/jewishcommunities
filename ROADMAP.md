@@ -45,7 +45,12 @@ impossible.** The engine refuses `assign_councillor_type`, `appoint_court_positi
   xTiger-checked, not live-tested.
 - **Slice 3** (the seat of the realm's Jews: capital pillars, danger, demands): built and
   xTiger-checked, not live-tested.
-- **Next:** slice 4, the office itself.
+- **Slice 4** (the office): founding, petition, confirmation for a fee, abolition, the yearly and
+  quarterly upkeep, the Nagid's benefits, office names, the 1066 and 1178 seeds (Joseph of
+  Granada), and debug probes `kehillah_nagid_debug.1`–`.6`. Built and xTiger-checked, not
+  live-tested.
+- **Daniel plans to live-test slices 1–4 on Sunday 2026-11-01.** The build note lists the checks.
+  **Next:** slice 5, the Route B service.
 
 ### English conquest invitation revision — 2026-10-29, Daniel's request
 
