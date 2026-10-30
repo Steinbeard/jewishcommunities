@@ -37,8 +37,10 @@ impossible.** The engine refuses `assign_councillor_type`, `appoint_court_positi
 - **Route B:** service in name, a skill-scaled host modifier;
 - **Route C:** a delegate from the community serving as the host's courtier.
 
-**Slice 5 waits for Daniel to choose between them.** Slices 1–3 (the rename and decision, culture
-and leniency, the seat) don't depend on it. Other open questions are tuning.
+**Daniel chose Route B on 2026-10-30.** Progress is recorded in the
+[build note](docs/implementation/2026-10-30-nagid-build.md):
+- **Slice 1** (Status of the Jews, Invite Jewish Settlers): built and xTiger-checked, not
+  live-tested.
 
 ### English conquest invitation revision — 2026-10-29, Daniel's request
 
