@@ -21,6 +21,9 @@ kehillah_decree_begin_effect = {
 			situation_sub_region:kehillah_decree_area = { add_dejure_title_to_sub_region = root.domicile.domicile_location.county }
 			kehillah_decree_participants_effect = yes
 			trigger_situation_catalyst = kehillah_decree_opening_catalyst
+			# 2026-11-01: the decree's details, rolled once and read by every text.
+			kehillah_decree_roll_effect = yes
+			kehillah_decree_participants_effect = yes
 			scope:kehillah_decree_new_title = { set_variable = { name = kehillah_decree_situation value = scope:kehillah_decree_new_situation } }
 		}
 		kehillah_decree_news_$KIND$_effect = yes
@@ -66,6 +69,157 @@ kehillah_decree_participants_effect = {
 			add_manual_participant = prev
 		}
 	}
+	# The man who pressed for it, when he is not the lord himself.
+	var:kehillah_decree_instigator_char ?= {
+		save_scope_as = kehillah_decree_inst_now
+		if = {
+			limit = {
+				is_alive = yes
+				NOT = { this = scope:kehillah_decree_sit.var:kehillah_decree_lord }
+				NOT = { scope:kehillah_decree_sit = { any_situation_participant = { this = scope:kehillah_decree_inst_now } } }
+			}
+			scope:kehillah_decree_sit = { add_manual_participant = scope:kehillah_decree_inst_now }
+		}
+	}
+}
+
+# Scope: the situation, as it begins; root: the leader; scope:kehillah_incident_host and
+# scope:kehillah_incident_town saved. The decree's details (docs/spec/2026-11-01-crisis-variety-and-
+# consistency.md), each stored as a flag on the situation:
+#   form, colour  colour only: the shape of the mark (the badge and the ghiyar)
+#   instigator    who pressed for it: cleric (the lord's chaplain, named), preacher (generated,
+#                 named), council, zeal (the lord), merchants. Changes which answers work best.
+#   motive        why now: war, harvest, spouse, canon, example. War and harvest push the clerks.
+#   fines         terms: fines while it is enforced (kehillah_decree_fines_modifier), or none
+#   years         terms: how long an enforced decree stands (20, 30, 40)
+kehillah_decree_roll_effect = {
+	save_scope_as = kehillah_decree_rolling
+	# The form of the mark, by the lord's culture; and its colour.
+	if = {
+		limit = { var:kehillah_decree_kind = flag:badge }
+		if = {
+			limit = { scope:kehillah_incident_host.culture = { has_cultural_pillar = heritage_west_germanic } }
+			set_variable = { name = kehillah_decree_form value = flag:tablets }
+		}
+		else_if = {
+			limit = { scope:kehillah_incident_host.culture = { has_cultural_pillar = heritage_central_germanic } }
+			set_variable = { name = kehillah_decree_form value = flag:hat }
+		}
+		else_if = {
+			limit = { scope:kehillah_incident_host.culture = { has_cultural_pillar = heritage_frankish } }
+			set_variable = { name = kehillah_decree_form value = flag:rouelle }
+		}
+		else = { set_variable = { name = kehillah_decree_form value = flag:patch } }
+		random_list = {
+			2 = { set_variable = { name = kehillah_decree_colour value = flag:yellow } }
+			1 = { set_variable = { name = kehillah_decree_colour value = flag:red } }
+			1 = { set_variable = { name = kehillah_decree_colour value = flag:saffron } }
+		}
+	}
+	else_if = {
+		limit = { var:kehillah_decree_kind = flag:ghiyar }
+		random_list = {
+			1 = { set_variable = { name = kehillah_decree_form value = flag:sash } }
+			1 = { set_variable = { name = kehillah_decree_form value = flag:sign } }
+		}
+	}
+	# Who pressed for it.
+	random_list = {
+		10 = {
+			trigger = { exists = scope:kehillah_incident_host.cp:councillor_court_chaplain }
+			modifier = {
+				add = 10
+				scope:kehillah_incident_host = {
+					OR = {
+						kehillah_teaching_strict_trigger = yes
+						kehillah_teaching_exclusionary_trigger = yes
+					}
+				}
+			}
+			set_variable = { name = kehillah_decree_instigator value = flag:cleric }
+			set_variable = { name = kehillah_decree_instigator_char value = scope:kehillah_incident_host.cp:councillor_court_chaplain }
+		}
+		10 = {
+			set_variable = { name = kehillah_decree_instigator value = flag:preacher }
+			root = {
+				create_character = {
+					age = { 30 60 }
+					gender = male
+					faith = scope:kehillah_incident_host.faith
+					culture = scope:kehillah_incident_host.culture
+					location = scope:kehillah_incident_town
+					dynasty = none
+					trait = zealous
+					learning = { 10 18 }
+					save_scope_as = kehillah_decree_new_preacher
+				}
+			}
+			scope:kehillah_incident_host = { add_courtier = scope:kehillah_decree_new_preacher }
+			set_variable = { name = kehillah_decree_instigator_char value = scope:kehillah_decree_new_preacher }
+		}
+		8 = {
+			trigger = {
+				scope:kehillah_incident_host.faith.religion = religion:christianity_religion
+				current_year >= 1179
+			}
+			set_variable = { name = kehillah_decree_instigator value = flag:council }
+		}
+		6 = {
+			modifier = {
+				add = 20
+				scope:kehillah_incident_host = { has_trait = zealous }
+			}
+			set_variable = { name = kehillah_decree_instigator value = flag:zeal }
+		}
+		6 = {
+			modifier = {
+				add = 6
+				scope:kehillah_incident_host = { has_trait = greedy }
+			}
+			set_variable = { name = kehillah_decree_instigator value = flag:merchants }
+		}
+	}
+	# Why now.
+	random_list = {
+		10 = {
+			trigger = { scope:kehillah_incident_host = { is_at_war = yes } }
+			modifier = { add = 20 always = yes }
+			set_variable = { name = kehillah_decree_motive value = flag:war }
+		}
+		10 = { set_variable = { name = kehillah_decree_motive value = flag:harvest } }
+		10 = {
+			trigger = { scope:kehillah_incident_host = { any_spouse = { has_trait = zealous } } }
+			modifier = { add = 10 always = yes }
+			scope:kehillah_incident_host = {
+				random_spouse = {
+					limit = { has_trait = zealous }
+					save_scope_as = kehillah_decree_rolled_spouse
+				}
+			}
+			set_variable = { name = kehillah_decree_motive value = flag:spouse }
+			set_variable = { name = kehillah_decree_spouse value = scope:kehillah_decree_rolled_spouse }
+		}
+		8 = {
+			trigger = {
+				scope:kehillah_incident_host.faith.religion = religion:christianity_religion
+				NOT = { var:kehillah_decree_instigator ?= flag:council }
+			}
+			set_variable = { name = kehillah_decree_motive value = flag:canon }
+		}
+		8 = { set_variable = { name = kehillah_decree_motive value = flag:example } }
+	}
+	# Terms: fines, and how long it stands.
+	random_list = {
+		1 = { set_variable = { name = kehillah_decree_fines value = flag:yes } }
+		1 = { set_variable = { name = kehillah_decree_fines value = flag:no } }
+	}
+	random_list = {
+		1 = { set_variable = { name = kehillah_decree_years value = 20 } }
+		2 = { set_variable = { name = kehillah_decree_years value = 30 } }
+		1 = { set_variable = { name = kehillah_decree_years value = 40 } }
+	}
+	debug_log = "kehillah_decree_roll_effect: details rolled"
+	debug_log_scopes = yes
 }
 
 # Root: the situation, monthly. While it is Proclaimed, the lord's clerks press it, and a player
@@ -128,13 +282,54 @@ kehillah_decree_verdict_start_effect = {
 
 # Scope: the leader. The verdicts.
 kehillah_decree_verdict_enforced_effect = {
+	save_scope_value_as = { name = kehillah_decree_years_now value = kehillah_decree_years_value }
+	# 2026-11-01: the rolled terms decide what it does (docs/spec/2026-11-01-crisis-variety-and-
+	# consistency.md): its duration, the household's exemption, the fines.
 	if = {
 		limit = { kehillah_decree_kind_trigger = { KIND = servants } }
-		kehillah_servants_decree_effect = yes
+		custom_tooltip = kehillah_incident_servants_tt
+		primary_title = {
+			hidden_effect = { set_variable = { name = kehillah_servants_decree value = yes years = scope:kehillah_decree_years_now } }
+		}
+		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_servants_decree_prosperity }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_servants_decree_stability }
 	}
 	else = {
-		kehillah_badge_decree_effect = yes
-		add_character_modifier = { modifier = kehillah_badge_modifier years = kehillah_badge_years }
+		custom_tooltip = kehillah_incident_badge_tt
+		primary_title = {
+			hidden_effect = { set_variable = { name = kehillah_badge value = yes years = scope:kehillah_decree_years_now } }
+		}
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_badge_stability }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_badge_greatness }
+		if = {
+			limit = { primary_title = { has_variable = kehillah_decree_household_exempt } }
+			custom_tooltip = kehillah_decree_exempt_kept_tt
+		}
+		else = {
+			add_character_modifier = { modifier = kehillah_badge_modifier years = kehillah_decree_years_value }
+		}
+	}
+	if = {
+		limit = { primary_title.var:kehillah_decree_situation.var:kehillah_decree_fines ?= flag:yes }
+		add_character_modifier = { modifier = kehillah_decree_fines_modifier years = kehillah_decree_years_value }
+	}
+	# The realm: under a hostile lord with a hard teaching, the decree may be the first step.
+	domicile.domicile_location.county.holder.top_liege ?= {
+		if = {
+			limit = {
+				is_ai = yes
+				kehillah_outlook_band_value <= -2
+				OR = {
+					kehillah_teaching_strict_trigger = yes
+					kehillah_teaching_exclusionary_trigger = yes
+				}
+			}
+			random = {
+				chance = kehillah_decree_policy_hardens_chance
+				custom_tooltip = kehillah_decree_policy_hardens_tt
+				kehillah_lower_jewish_settlement_policy_effect = yes
+			}
+		}
 	}
 }
 kehillah_decree_verdict_suspended_effect = {
@@ -152,6 +347,10 @@ kehillah_decree_verdict_suspended_effect = {
 kehillah_decree_verdict_withdrawn_effect = {
 	custom_tooltip = kehillah_decree_withdrawn_tt
 	kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_decree_withdrawn_stability }
+	# Persuaded, the lord thinks a little better of the community that persuaded him.
+	domicile.domicile_location.county.holder.top_liege ?= {
+		kehillah_shift_outlook_effect = { AMOUNT = kehillah_decree_withdrawn_outlook }
+	}
 }
 
 # Root: the situation, as its Closed phase begins. Never end_situation here: inside the situation's own
@@ -173,6 +372,8 @@ kehillah_decree_end_effect = {
 		remove_variable = kehillah_decree_did_pay
 		remove_variable = kehillah_decree_did_leave
 		remove_variable = kehillah_decree_did_common
+		remove_variable = kehillah_decree_did_exempt
+		remove_variable = kehillah_decree_household_exempt
 		remove_variable = kehillah_decree_verdict
 	}
 }
