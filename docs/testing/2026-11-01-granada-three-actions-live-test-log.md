@@ -35,3 +35,11 @@ No mod errors in `error.log` from the actions, apart from hot-reload noise.
 - The fixes above live (xTiger clean only).
 - Pillar-size tooltips: no option in this run changed a pillar.
 - The Game Over fix (leader dying mid-crisis).
+
+## Follow-up (same day, Daniel: "Give Granada a longer muster")
+
+- The Granada host now musters 36 days in the barracks (`kehillah_granada_muster_days`) before it moves. No Struck points accrue while it musters, so the Armed-phase actions have about five weeks to work.
+- A new scene, kehillah_granada.0021 "The Sanhaja Arm", opens the Armed phase. "The Palace and the Quarter" (.0005) now comes on day 34, when the host marches, and only if it is still coming. The news to the sovereign (.0014) moved from day 15 to day 51.
+- Find what he hides: the gold and the one attempt are taken only when the Shtadlan or the leader actually asks. "Think better of it" costs nothing.
+
+Not yet seen live.
