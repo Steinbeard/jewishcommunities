@@ -414,20 +414,14 @@ slices 4 and 5. Nothing is stored for its own sake.
   The feed's text is a plain key, so it cannot name the person. The feed's tooltip now mentions the
   office. In 1066 Granada starts with two entries: confirmed, and made vizier.
 
-### The character window (`gui/window_character.gui`)
+### The character window: a badge, built and removed
 
-- **A badge** beside the realm-view chip, on a Nagid and on a ruler whose office is filled
-  (`kehillah_nagid_chip`).
-- **Icon:** the service's vanilla court-position icon:
-  - favored minister for Vizier;
-  - minister-bureaucrat for Treasurer;
-  - court physician for Physician;
-  - foreign emissary for Envoy;
-  - the flat court-position icon with no service.
-- **Word:** the service, or the office's name.
-- **Tooltip:** who confirmed whom, and how well the Nagid serves. Clicking opens the realm view.
-- **The icon is chosen by five visibility checks.** Neither vanilla nor this mod sets a texture
-  through custom loc.
+A badge beside the realm-view chip in `gui/window_character.gui` showed the service's vanilla
+court-position icon and its name, on a Nagid and on a ruler whose office was filled. Daniel saw it
+live and asked for it to go ("looks pretty bad to me, I think we should scrap that"), the same day.
+The rank, the relation and the modifiers already show the office in the character window. The
+override is back to its realm-view chip alone, and the badge's scripted GUIs, trigger and loc are
+gone.
 
 ### Keeping it current
 
@@ -462,6 +456,4 @@ slices 4 and 5. Nothing is stored for its own sake.
 - **The Nagid beside the ruler** in each state: the portrait opening Joseph, the empty frame
   opening the right decision, and the ruler's text wrapping in its narrower column.
 - **The seat** badge and line on Granada.
-- **The 1066 news entries.**
-- **The badge** fits the realm row of the character window, in both windows.
-- **`error.log`** stays clean after opening the realm view and both character windows.
+- **The 1066 news entries.**- **`error.log`** stays clean after opening the realm view and both character windows.
