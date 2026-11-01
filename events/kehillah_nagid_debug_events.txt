@@ -8,6 +8,9 @@
 #   .4 abolish the office
 #   .5 list every realm in the world with the office
 #   .6 list every community that is a realm's seat, with its tier
+#   .7 slice 5: the AI names the Nagid's service now, then .1 reports
+#   .8 slice 5: open the service choice (kehillah_nagid.0003) for the
+#      ruler; on an AI ruler it resolves by its ai_chance
 
 scripted_effect kehillah_nagid_debug_host_effect = {
 	if = {
@@ -35,6 +38,13 @@ kehillah_nagid_debug.1 = {
 			if = { limit = { kehillah_ruler_seat_flourishing_trigger = yes } debug_log = "NAGID gate flourishing=YES" } else = { debug_log = "NAGID gate flourishing=NO" }
 			if = { limit = { kehillah_ruler_seat_leader_qualified_trigger = yes } debug_log = "NAGID gate qualified=YES" } else = { debug_log = "NAGID gate qualified=NO" }
 			if = { limit = { kehillah_nagid_office_may_persist_trigger = yes } debug_log = "NAGID may persist=YES" } else = { debug_log = "NAGID may persist=NO" }
+			if = { limit = { has_variable = kehillah_nagid_served } debug_log = "NAGID service=[THIS.Char.Custom('KehillahNagidServiceName')] tier=[THIS.Char.MakeScope.Var('kehillah_nagid_served').GetValue]" } else = { debug_log = "NAGID service=[THIS.Char.Custom('KehillahNagidServiceName')] tier=none" }
+			if = { limit = { kehillah_ruler_has_own_nagid_trigger = yes } debug_log = "NAGID confirmed by this ruler=YES" } else = { debug_log = "NAGID confirmed by this ruler=NO" }
+			if = { limit = { kehillah_nagid_in_service_trigger = yes } debug_log = "NAGID in service=YES" } else = { debug_log = "NAGID in service=NO" }
+			if = { limit = { kehillah_nagid_vizier_open_trigger = yes } debug_log = "NAGID vizier open=YES" } else = { debug_log = "NAGID vizier open=NO" }
+			primary_title.var:kehillah_nagid_holder ?= {
+				debug_log = "NAGID holder skills vizier=[THIS.Char.MakeScope.ScriptValue('kehillah_nagid_vizier_skill_value')] treasurer=[THIS.Char.MakeScope.ScriptValue('kehillah_nagid_treasurer_skill_value')] physician=[THIS.Char.MakeScope.ScriptValue('kehillah_nagid_physician_skill_value')] envoy=[THIS.Char.MakeScope.ScriptValue('kehillah_nagid_envoy_skill_value')]"
+			}
 			kehillah_nagid_find_seat_effect = yes
 			scope:kehillah_nagid_seat_leader ?= {
 				debug_log = "NAGID seat leader=[THIS.Char.GetName] standing=[THIS.Char.GetPrimaryTitle.MakeScope.ScriptValue('kehillah_standing_value')] fee=[THIS.Char.MakeScope.ScriptValue('kehillah_nagid_fee_value')] seat_tier=[THIS.Char.MakeScope.ScriptValue('kehillah_seat_tier_value')]"
@@ -122,5 +132,33 @@ kehillah_nagid_debug.6 = {
 			}
 		}
 		debug_log = "kehillah_nagid_debug.6: end of list"
+	}
+}
+
+kehillah_nagid_debug.7 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_nagid_debug_host_effect = yes
+		scope:kehillah_dbg_host ?= {
+			if = {
+				limit = { kehillah_ruler_has_own_nagid_trigger = yes }
+				kehillah_nagid_service_ai_pick_effect = yes
+			}
+			else = {
+				debug_log = "kehillah_nagid_debug.7: no Nagid confirmed by this ruler"
+			}
+		}
+		trigger_event = kehillah_nagid_debug.1
+	}
+}
+
+kehillah_nagid_debug.8 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_nagid_debug_host_effect = yes
+		scope:kehillah_dbg_host ?= { trigger_event = kehillah_nagid.0003 }
+		debug_log = "kehillah_nagid_debug.8: the service choice is sent to the ruler"
 	}
 }

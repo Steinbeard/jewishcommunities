@@ -16,7 +16,7 @@ Phases are sequential within a track unless noted. This is the plan,
 subject to revision after each phase.
 
 ## Near-term TODO
-### The Nagid — 2026-10-30, Daniel's request — design agreed, nothing built
+### The Nagid — 2026-10-30, Daniel's request — slices 1–5 built, not live-tested
 
 [Spec](docs/spec/2026-10-30-the-nagid.md), revised the same day with Daniel's second-round
 decisions. The pieces:
@@ -49,8 +49,12 @@ impossible.** The engine refuses `assign_councillor_type`, `appoint_court_positi
   quarterly upkeep, the Nagid's benefits, office names, the 1066 and 1178 seeds (Joseph of
   Granada), and debug probes `kehillah_nagid_debug.1`–`.6`. Built and xTiger-checked, not
   live-tested.
-- **Daniel plans to live-test slices 1–4 on Sunday 2026-11-01.** The build note lists the checks.
-  **Next:** slice 5, the Route B service.
+- **Slice 5** (the Route B service, 2026-10-31): the ruler names the Nagid Vizier (Dhimma only),
+  Treasurer, Physician or Envoy, or no service. He carries a modifier in four tiers by the Nagid's
+  matching skill; the AI picks by rule. Probes `kehillah_nagid_debug.7`–`.8`. Built and
+  xTiger-checked, not live-tested.
+- **Daniel plans to live-test slices 1–5 on Sunday 2026-11-01.** The build note lists the checks.
+  **Next:** slice 6, envy, clergy pressure and the fall.
 
 ### English conquest invitation revision — 2026-10-29, Daniel's request
 

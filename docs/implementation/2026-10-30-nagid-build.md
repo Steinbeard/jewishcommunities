@@ -228,7 +228,7 @@ reference was checked against the game files.
 
 ### Not in this slice
 
-The Route B service (slice 5), envy, clergy pressure and the fall (slice 6), the Exilarch
+The Route B service (slice 5, built 2026-10-31, below), envy, clergy pressure and the fall (slice 6), the Exilarch
 (slice 7), and the game rule, nickname and dilemmas (slice 8). Also not here: intercession in other
 communities' crises, and the Ashkenaz reception penalty (spec section 9).
 
@@ -254,3 +254,91 @@ communities' crises, and the Ashkenaz reception penalty (spec section 9).
 - **AI rate:** with these strict gates, a 25-year soak should count how many AI realms found the
   office. If almost none do, loosen Protector to Well-disposed for Middle Eastern and North African
   courts.
+
+## Slice 5: the service at court, Route B (spec section 9)
+
+**Built 2026-10-31 at Daniel's request ("Build part 5!"), xTiger-checked: 154 reports and 15
+errors, with none new.** Not live-tested.
+
+### The data
+
+- **The service** is `kehillah_nagid_service` on the ruler's primary title: `flag:vizier`,
+  `flag:treasurer`, `flag:physician` or `flag:envoy`. No variable means no service.
+- **The ruler** carries `kehillah_nagid_service_<service>_<tier>_modifier`
+  (`common/modifiers/kehillah_nagid_service_modifiers.txt`) and `kehillah_nagid_served`, the tier.
+- **The Nagid** carries `kehillah_nagid_serving_<service>_modifier`.
+- **Only a ruler's own Nagid serves him** (`kehillah_ruler_has_own_nagid_trigger`): the holder's
+  `kehillah_nagid_of` must name him. Under a new ruler the service stops until the confirmation.
+
+### The services
+
+The tier is set by the Nagid's matching skill: tier 1 below 8, tier 2 from 8, tier 3 from 14,
+tier 4 from 20 (`kehillah_nagid_service_tier_*_skill`).
+
+| Service | Skill | Open under | The ruler gains, tiers 1–4 | The Nagid gains |
+|---|---|---|---|---|
+| Vizier | the better of Diplomacy and Stewardship | Dhimma only | monthly prestige +0.25 / 0.5 / 0.75 / 1; domain tax +2 / 4 / 6 / 8%; vassal opinion +1 / 2 / 3 / 5 | Diplomacy and Stewardship lifestyle experience +5% each |
+| Treasurer | Stewardship | every teaching | domain tax +3 / 5 / 8 / 10%; building cost 0 / −2 / −4 / −6% | Stewardship lifestyle experience +10% |
+| Physician | Learning | every teaching | health +0.05 / 0.1 / 0.15 / 0.2; epidemic resistance +2 / 4 / 6 / 10 | Learning lifestyle experience +10% |
+| Envoy | Diplomacy | every teaching | monthly prestige +0.25 / 0.5 / 0.75 / 1; independent ruler opinion +2 / 4 / 6 / 10 | Diplomacy lifestyle experience +10% |
+
+### Choosing it
+
+- **An AI ruler** picks when he confirms the Nagid (`kehillah_nagid_service_ai_pick_effect`):
+  - a zealous ruler, or one under a strict teaching, picks Physician if the Nagid's Learning is 8
+    or more;
+  - otherwise, under the Dhimma, Vizier if that skill is at least the Nagid's Learning;
+  - otherwise the service of the Nagid's best skill, with ties going to Treasurer, then Envoy.
+- **A player ruler** gets `kehillah_nagid.0003` the day after the confirmation. It offers every
+  service open to him except the current one, "go on as before", and "no service at court". Each
+  option's tooltip shows the modifier it would give, because the tier is read straight from the
+  Nagid's skill, not from the stored service.
+- **Assign the Head of the Jews** (`realm` group, players only, once a year) reopens the choice.
+- **The 1066 seed** names Joseph ibn Naghrilla Badis's Vizier (`kehillah_nagid.0090`).
+
+### Keeping it current
+
+- **Each quarter,** the seat leader's check refreshes the ruler's modifier
+  (`kehillah_nagid_service_refresh_effect`). The tier follows the Nagid's skill. The modifier goes
+  once the Nagid dies, steps down, or waits on a new ruler's confirmation.
+- **Each year,** the ruler's check does the same. A Vizier whose ruler's teaching is no longer the
+  Dhimma loses the post: the AI picks again, and a player is asked again. An AI ruler with a
+  confirmed Nagid and no service picks one. This also covers saves begun before this slice.
+- **The office's other exits** clear the service: stepping down, vacating, abolishing, and the
+  office moving to a new primary title, which carries the service with it.
+
+### Debug
+
+- `kehillah_nagid_debug.1` now also reports the service, its tier, whether the ruler confirmed the
+  Nagid, whether the Nagid is in service, whether Vizier is open, and the Nagid's four skills.
+- `.7` makes the AI pick now, then reports.
+- `.8` opens the choice event for the ruler.
+
+### Departures from the spec
+
+- **Envoy is open under the Dhimma too.** Section 3's table lists no Chancellor there, but Hasdai
+  ibn Shaprut was Córdoba's diplomat.
+- **There is no Marshal or Commander.** Section 3's table offers Marshal under the Dhimma. It folds
+  into the Vizier, since Samuel ha-Nagid commanded as vizier. A separate martial service would be a
+  small addition if wanted.
+- **The modifier does not scale with the ruler's tier,** as vanilla councils do. Scaling by both
+  skill and tier would need twelve modifiers per service.
+- **The Physician does not treat disease.** Vanilla's treatment events need a real court physician,
+  so the health and epidemic-resistance modifier stands in.
+- **Added:** "no service at court", and the Nagid's own lifestyle modifier, so a Kehillah player
+  can see the service on their own character.
+- **For slice 6:** section 10.1's "seat with authority" maps to Vizier, Treasurer and Envoy (the
+  Vizier, Steward and Chancellor of the spec). Physician is the safe seat.
+
+### Live checks owed (slice 5)
+
+- a 1066 start: Badis carrying a Vizier modifier at Joseph's tier, and Joseph carrying "Vizier at
+  Court";
+- a player ruler's confirmation, then `kehillah_nagid.0003` with the right options and tooltips
+  for a Dhimma and a non-Dhimma ruler;
+- the decision's yearly cooldown;
+- the modifier going when the Nagid dies, and coming back on the next leader's confirmation;
+- the tier changing as the Nagid's skill crosses 8, 14 or 20;
+- a rite moved off the Dhimma, at the yearly check;
+- the "service named" notice for a Kehillah player whose AI host picks;
+- `error.log` clean after a few quarters.
