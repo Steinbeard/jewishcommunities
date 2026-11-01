@@ -27,7 +27,7 @@ reconciliation. xTiger remains at the 15-error baseline. A two-community
 identity/save probe and native UI review are still required; see the [test plan](docs/testing/2026-10-31-crisis-situation-live-test.md).
 This direct request was taken ahead of the older queue.
 
-### The Nagid — 2026-10-30, Daniel's request — design agreed, nothing built
+### The Nagid — 2026-10-30, Daniel's request — slices 1–5 built, not live-tested
 
 [Spec](docs/spec/2026-10-30-the-nagid.md), revised the same day with Daniel's second-round
 decisions. The pieces:
@@ -60,8 +60,57 @@ impossible.** The engine refuses `assign_councillor_type`, `appoint_court_positi
   quarterly upkeep, the Nagid's benefits, office names, the 1066 and 1178 seeds (Joseph of
   Granada), and debug probes `kehillah_nagid_debug.1`–`.6`. Built and xTiger-checked, not
   live-tested.
-- **Daniel plans to live-test slices 1–4 on Sunday 2026-11-01.** The build note lists the checks.
-  **Next:** slice 5, the Route B service.
+- **Slice 5** (the Route B service, 2026-10-31): the ruler names the Nagid Vizier (Dhimma only),
+  Treasurer, Physician or Envoy, or no service. He carries a modifier in four tiers by the Nagid's
+  matching skill; the AI picks by rule. Probes `kehillah_nagid_debug.7`–`.8`. Built and
+  xTiger-checked, not live-tested.
+- **Daniel plans to live-test slices 1–5 on Sunday 2026-11-01.** The build note lists the checks.
+  **Next:** slice 6, envy, clergy pressure and the fall.
+
+### Intrigue crisis view layout repair - 2026-10-30, Daniel's request
+
+Applied the reviewed crisis-view layout fixes to the main worktree: Community
+Safety now uses a vertical layout and replaces the scrollbox content placeholder,
+so the tracker is inside the scrolling area. Shorter Safety and Hooks & Secrets
+labels fit the four-tab header; the Safety icon follows its selected state.
+Removed an accidental duplicate content override from the review copy before
+transfer. Existing crisis mechanics and unrelated working edits are preserved.
+Source structure checked against CK3's shared scrollbox; live visual verification
+remains pending.
+
+
+### Fixed adult personality completion - 2026-10-29, Daniel's request
+
+**Built; source and xTiger checked.** Completed the 98 adult history definitions
+that disabled random traits while specifying fewer than three personality traits,
+adding 259 compatible traits. Existing traits, dates, family links and unrelated
+working edits are preserved. Eleven children and the intentional game-generated
+bookmark/world/author profiles remain unchanged. Three is the normal adult target,
+not an engine requirement. Added characterization is editorial, with a full
+[record and table](docs/implementation/2026-10-29-personality-trait-completion.md).
+xTiger has no new reports against the 15-error baseline. History changes need a
+new campaign; no live pass was performed for this static roster change.
+
+### Granada's opening and Abu Ishaq's poem - 2026-10-29, Daniel's request
+
+**Built; source and xTiger checked; live verification UNRUN.** A new first-week
+scene establishes Yoseph's vizierate, Nagid role, Samuel's patronage and the
+Sanhaja ruling establishment. In the revised day-30 scene, a clerk brings a
+circulating copy of Abu Ishaq's invective. Two translated historical couplets
+explicitly call for Yoseph's slaughter and the killing of his people; an ellipsis
+marks the omitted lines. This supersedes the fictional private letter. Abu Ishaq
+remains a staged courtier, but the poem's delivery no longer requires him alive
+or at court. The existing four response choices and balance are preserved. References to
+al-Mariyyah follow its localized title name, and the prose no longer assumes its
+lord is an independent foreign ruler; vanilla makes him Badis's vassal in 1066.
+Court, family, aftermath, Sephardi news and bookmark prose provide context and
+consistent outcomes. The proposed realm Nagid institution remains separate.
+Main-worktree xTiger has no new reports against its 15-error baseline; the earlier
+isolated baseline was 8 errors. A Luna live attempt stopped when process ownership
+inspection was denied; poem rendering and runtime checks remain pending.
+See the [implementation note](docs/implementation/2026-10-29-granada-chain-rewrite.md)
+and [test record](docs/testing/2026-10-29-granada-chain-rewrite-live-test.md).
+This direct request takes priority over the older live-test queue below.
 
 ### English conquest invitation revision — 2026-10-29, Daniel's request
 

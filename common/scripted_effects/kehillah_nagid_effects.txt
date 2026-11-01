@@ -50,23 +50,41 @@ kehillah_nagid_appoint_effect = {
 			left_icon = scope:kehillah_nagid_host
 		}
 	}
+	# Slice 5: the ruler names the Nagid's service at court. The AI picks
+	# at once; a player ruler is asked the next day (kehillah_nagid.0003).
+	scope:kehillah_nagid_host = {
+		if = {
+			limit = { is_ai = yes }
+			hidden_effect = { kehillah_nagid_service_ai_pick_effect = yes }
+		}
+		else = {
+			custom_tooltip = kehillah_nagid_choose_service_tt
+			trigger_event = { id = kehillah_nagid.0003 days = 1 }
+		}
+	}
 	debug_log = "kehillah_nagid_appoint_effect: a Nagid is named"
 }
 
-# Scope: a Kehillah leader. Leaves the office: the modifier and the link
-# go, and the realm's holder entry is cleared if it names them.
+# Scope: a Kehillah leader. Leaves the office: the modifiers and the link
+# go, and the realm's holder entry and service are cleared if they name
+# them.
 kehillah_nagid_step_down_effect = {
 	save_scope_as = kehillah_nagid_leaving
 	if = {
 		limit = { has_character_modifier = kehillah_nagid_modifier }
 		remove_character_modifier = kehillah_nagid_modifier
 	}
+	kehillah_nagid_serving_clear_effect = yes
 	if = {
 		limit = { has_variable = kehillah_nagid_of }
-		var:kehillah_nagid_of.primary_title ?= {
+		var:kehillah_nagid_of ?= {
 			if = {
-				limit = { var:kehillah_nagid_holder ?= scope:kehillah_nagid_leaving }
-				remove_variable = kehillah_nagid_holder
+				limit = { primary_title ?= { var:kehillah_nagid_holder ?= scope:kehillah_nagid_leaving } }
+				primary_title = {
+					remove_variable = kehillah_nagid_holder
+					remove_variable = kehillah_nagid_service
+				}
+				kehillah_nagid_service_clear_modifiers_effect = yes
 			}
 		}
 		remove_variable = kehillah_nagid_of
@@ -74,7 +92,7 @@ kehillah_nagid_step_down_effect = {
 	debug_log = "kehillah_nagid_step_down_effect: a Nagid leaves the office"
 }
 
-# Scope: a ruler. Clears his realm's office holder, if any.
+# Scope: a ruler. Clears his realm's office holder and service, if any.
 kehillah_nagid_vacate_effect = {
 	if = {
 		limit = { primary_title ?= { exists = var:kehillah_nagid_holder } }
@@ -83,10 +101,13 @@ kehillah_nagid_vacate_effect = {
 				limit = { has_character_modifier = kehillah_nagid_modifier }
 				remove_character_modifier = kehillah_nagid_modifier
 			}
+			kehillah_nagid_serving_clear_effect = yes
 			remove_variable = kehillah_nagid_of
 		}
 		primary_title = { remove_variable = kehillah_nagid_holder }
 	}
+	primary_title ?= { remove_variable = kehillah_nagid_service }
+	kehillah_nagid_service_clear_modifiers_effect = yes
 }
 
 # Scope: a ruler. Abolishes his realm's office and tells its communities.
@@ -180,6 +201,19 @@ kehillah_nagid_quarterly_effect = {
 		}
 		kehillah_nagid_request_confirmation_effect = yes
 	}
+	# Slice 5: the ruler's service modifier follows the Nagid's skill, and
+	# goes once the Nagid is gone or awaits a new ruler's confirmation.
+	domicile.domicile_location.county.holder.top_liege ?= {
+		if = {
+			limit = {
+				OR = {
+					has_variable = kehillah_nagid_served
+					kehillah_nagid_in_service_trigger = yes
+				}
+			}
+			kehillah_nagid_service_refresh_effect = yes
+		}
+	}
 }
 
 # Scope: a ruler (kehillah_status_yearly). Keeps the institution in step
@@ -205,12 +239,17 @@ kehillah_nagid_yearly_effect = {
 				limit = { exists = scope:kehillah_nagid_old_title.var:kehillah_nagid_holder }
 				set_variable = { name = kehillah_nagid_holder value = scope:kehillah_nagid_old_title.var:kehillah_nagid_holder }
 			}
+			if = {
+				limit = { exists = scope:kehillah_nagid_old_title.var:kehillah_nagid_service }
+				set_variable = { name = kehillah_nagid_service value = scope:kehillah_nagid_old_title.var:kehillah_nagid_service }
+			}
 		}
 		scope:kehillah_nagid_old_title = {
 			remove_variable = kehillah_nagid_office
 			remove_variable = kehillah_nagid_office_year
 			remove_variable = kehillah_nagid_holder
 			remove_variable = kehillah_nagid_withheld
+			remove_variable = kehillah_nagid_service
 		}
 	}
 	if = {
@@ -234,4 +273,232 @@ kehillah_nagid_yearly_effect = {
 			kehillah_nagid_vacate_effect = yes
 		}
 	}
+	# Slice 5: the service, once the office is settled for the year.
+	kehillah_nagid_service_yearly_effect = yes
+}
+
+# =====================================================================
+# THE SERVICE AT COURT -- section 9, Route B, 2026-10-31, slice 5. Data:
+# see "The service at court" in kehillah_nagid_triggers.txt.
+# =====================================================================
+
+# Scope: a Kehillah leader. Takes off the Nagid's own service modifier.
+kehillah_nagid_serving_clear_effect = {
+	if = {
+		limit = { has_character_modifier = kehillah_nagid_serving_vizier_modifier }
+		remove_character_modifier = kehillah_nagid_serving_vizier_modifier
+	}
+	if = {
+		limit = { has_character_modifier = kehillah_nagid_serving_treasurer_modifier }
+		remove_character_modifier = kehillah_nagid_serving_treasurer_modifier
+	}
+	if = {
+		limit = { has_character_modifier = kehillah_nagid_serving_physician_modifier }
+		remove_character_modifier = kehillah_nagid_serving_physician_modifier
+	}
+	if = {
+		limit = { has_character_modifier = kehillah_nagid_serving_envoy_modifier }
+		remove_character_modifier = kehillah_nagid_serving_envoy_modifier
+	}
+}
+
+# Scope: a ruler. Takes off every tier of one service's modifier.
+kehillah_nagid_service_remove_tiers_effect = {
+	if = {
+		limit = { has_character_modifier = kehillah_nagid_service_$SERVICE$_1_modifier }
+		remove_character_modifier = kehillah_nagid_service_$SERVICE$_1_modifier
+	}
+	if = {
+		limit = { has_character_modifier = kehillah_nagid_service_$SERVICE$_2_modifier }
+		remove_character_modifier = kehillah_nagid_service_$SERVICE$_2_modifier
+	}
+	if = {
+		limit = { has_character_modifier = kehillah_nagid_service_$SERVICE$_3_modifier }
+		remove_character_modifier = kehillah_nagid_service_$SERVICE$_3_modifier
+	}
+	if = {
+		limit = { has_character_modifier = kehillah_nagid_service_$SERVICE$_4_modifier }
+		remove_character_modifier = kehillah_nagid_service_$SERVICE$_4_modifier
+	}
+}
+
+# Scope: a ruler. Takes off every service modifier he carries.
+kehillah_nagid_service_clear_modifiers_effect = {
+	kehillah_nagid_service_remove_tiers_effect = { SERVICE = vizier }
+	kehillah_nagid_service_remove_tiers_effect = { SERVICE = treasurer }
+	kehillah_nagid_service_remove_tiers_effect = { SERVICE = physician }
+	kehillah_nagid_service_remove_tiers_effect = { SERVICE = envoy }
+	remove_variable = kehillah_nagid_served
+}
+
+# Scope: a ruler whose Nagid is in office. Puts on the tier of the
+# $SERVICE$ modifier that the Nagid's matching skill reaches. Reads the
+# skill directly, not the stored service, so an event option's tooltip
+# shows the modifier the choice would give.
+kehillah_nagid_service_add_tier_effect = {
+	if = {
+		limit = {
+			primary_title.var:kehillah_nagid_holder = {
+				kehillah_nagid_$SERVICE$_skill_value >= kehillah_nagid_service_tier_4_skill
+			}
+		}
+		add_character_modifier = kehillah_nagid_service_$SERVICE$_4_modifier
+		hidden_effect = { set_variable = { name = kehillah_nagid_served value = 4 } }
+	}
+	else_if = {
+		limit = {
+			primary_title.var:kehillah_nagid_holder = {
+				kehillah_nagid_$SERVICE$_skill_value >= kehillah_nagid_service_tier_3_skill
+			}
+		}
+		add_character_modifier = kehillah_nagid_service_$SERVICE$_3_modifier
+		hidden_effect = { set_variable = { name = kehillah_nagid_served value = 3 } }
+	}
+	else_if = {
+		limit = {
+			primary_title.var:kehillah_nagid_holder = {
+				kehillah_nagid_$SERVICE$_skill_value >= kehillah_nagid_service_tier_2_skill
+			}
+		}
+		add_character_modifier = kehillah_nagid_service_$SERVICE$_2_modifier
+		hidden_effect = { set_variable = { name = kehillah_nagid_served value = 2 } }
+	}
+	else = {
+		add_character_modifier = kehillah_nagid_service_$SERVICE$_1_modifier
+		hidden_effect = { set_variable = { name = kehillah_nagid_served value = 1 } }
+	}
+}
+
+# Scope: a ruler whose Nagid he confirmed is in office. Names the
+# $SERVICE$: the ruler's and the Nagid's modifiers change, and the Nagid
+# is told. Used by kehillah_nagid.0003's options and the AI's pick.
+kehillah_nagid_set_service_effect = {
+	save_scope_as = kehillah_nagid_host
+	hidden_effect = {
+		primary_title = { set_variable = { name = kehillah_nagid_service value = flag:$SERVICE$ } }
+	}
+	kehillah_nagid_service_clear_modifiers_effect = yes
+	kehillah_nagid_service_add_tier_effect = { SERVICE = $SERVICE$ }
+	primary_title.var:kehillah_nagid_holder = {
+		kehillah_nagid_serving_clear_effect = yes
+		add_character_modifier = kehillah_nagid_serving_$SERVICE$_modifier
+		hidden_effect = {
+			send_interface_message = {
+				type = msg_kehillah_community_news
+				title = kehillah_nagid_service_named_msg_t
+				desc = kehillah_nagid_service_named_msg_d
+				left_icon = scope:kehillah_nagid_host
+			}
+		}
+	}
+	debug_log = "kehillah_nagid_set_service_effect: the Nagid's service is named"
+}
+
+# Scope: a ruler. Ends his Nagid's service at court; the office stands.
+kehillah_nagid_clear_service_effect = {
+	hidden_effect = {
+		primary_title ?= { remove_variable = kehillah_nagid_service }
+	}
+	kehillah_nagid_service_clear_modifiers_effect = yes
+	primary_title.var:kehillah_nagid_holder ?= { kehillah_nagid_serving_clear_effect = yes }
+}
+
+# Scope: a ruler whose Nagid he confirmed is in office. The AI's choice:
+# a zealous ruler or a strict teaching keeps the Jew from authority (the
+# Physician, section 10.1's safe seat); under the Dhimma, the Vizier when
+# that is the Nagid's strength (Samuel and Joseph ibn Naghrilla);
+# otherwise the service of the Nagid's best skill.
+kehillah_nagid_service_ai_pick_effect = {
+	primary_title.var:kehillah_nagid_holder = { save_scope_as = kehillah_nagid_servant }
+	if = {
+		limit = {
+			OR = {
+				has_trait = zealous
+				kehillah_teaching_strict_trigger = yes
+			}
+			scope:kehillah_nagid_servant = { learning >= kehillah_nagid_service_tier_2_skill }
+		}
+		kehillah_nagid_set_service_effect = { SERVICE = physician }
+	}
+	else_if = {
+		limit = {
+			kehillah_nagid_vizier_open_trigger = yes
+			scope:kehillah_nagid_servant = { kehillah_nagid_vizier_skill_value >= learning }
+		}
+		kehillah_nagid_set_service_effect = { SERVICE = vizier }
+	}
+	else_if = {
+		limit = {
+			scope:kehillah_nagid_servant = {
+				stewardship >= diplomacy
+				stewardship >= learning
+			}
+		}
+		kehillah_nagid_set_service_effect = { SERVICE = treasurer }
+	}
+	else_if = {
+		limit = { scope:kehillah_nagid_servant = { diplomacy >= learning } }
+		kehillah_nagid_set_service_effect = { SERVICE = envoy }
+	}
+	else = {
+		kehillah_nagid_set_service_effect = { SERVICE = physician }
+	}
+}
+
+# Scope: a ruler. Puts the right service modifiers on him and his Nagid
+# for the stored service and the Nagid's skill now, or takes them off
+# when the Nagid has gone or awaits his confirmation.
+kehillah_nagid_service_refresh_effect = {
+	kehillah_nagid_service_clear_modifiers_effect = yes
+	if = {
+		limit = { kehillah_nagid_in_service_trigger = yes }
+		if = {
+			limit = { kehillah_nagid_service_is_trigger = { SERVICE = vizier } }
+			kehillah_nagid_service_add_tier_effect = { SERVICE = vizier }
+		}
+		else_if = {
+			limit = { kehillah_nagid_service_is_trigger = { SERVICE = treasurer } }
+			kehillah_nagid_service_add_tier_effect = { SERVICE = treasurer }
+		}
+		else_if = {
+			limit = { kehillah_nagid_service_is_trigger = { SERVICE = physician } }
+			kehillah_nagid_service_add_tier_effect = { SERVICE = physician }
+		}
+		else_if = {
+			limit = { kehillah_nagid_service_is_trigger = { SERVICE = envoy } }
+			kehillah_nagid_service_add_tier_effect = { SERVICE = envoy }
+		}
+	}
+}
+
+# Scope: a ruler (kehillah_nagid_yearly_effect). A Vizier whose ruler's
+# teaching is no longer the Dhimma loses the post: the AI names another
+# service, a player ruler is asked again. Then the modifiers are put
+# right for the Nagid's skill this year.
+kehillah_nagid_service_yearly_effect = {
+	if = {
+		limit = {
+			kehillah_ruler_has_own_nagid_trigger = yes
+			NOT = { kehillah_nagid_service_still_open_trigger = yes }
+		}
+		kehillah_nagid_clear_service_effect = yes
+		if = {
+			limit = { is_ai = yes }
+			kehillah_nagid_service_ai_pick_effect = yes
+		}
+		else = {
+			trigger_event = kehillah_nagid.0003
+		}
+	}
+	# A ruler confirmed his Nagid but has named no service (an AI ruler
+	# whose pick was lost, a save from before slice 5).
+	else_if = {
+		limit = {
+			is_ai = yes
+			kehillah_ruler_has_own_nagid_trigger = yes
+			primary_title = { NOT = { exists = var:kehillah_nagid_service } }
+		}
+		kehillah_nagid_service_ai_pick_effect = yes
+	}
+	kehillah_nagid_service_refresh_effect = yes
 }

@@ -7,6 +7,9 @@
 #   .0002 a player ruler hears the seat's petition to found the office
 #         (kehillah_ask_nagid_office_decision). Scope:
 #         kehillah_nagid_seat_leader.
+#   .0003 slice 5: a player ruler names his Nagid's service at court
+#         (after a confirmation, or kehillah_assign_nagid_service_
+#         decision). No scopes needed: the Nagid is read from the office.
 #   .0090 game start, 1066: Joseph ibn Naghrilla as Nagid of Badis's
 #         realm, which starts Favored. Scope: Granada's leader.
 #   .0091 game start: the office founded, vacant, in the realm of this
@@ -129,6 +132,108 @@ kehillah_nagid.0002 = {
 	}
 }
 
+kehillah_nagid.0003 = {
+	type = character_event
+	title = kehillah_nagid.0003.t
+	desc = {
+		desc = kehillah_nagid.0003.desc
+		triggered_desc = {
+			trigger = { kehillah_nagid_vizier_open_trigger = yes }
+			desc = kehillah_nagid.0003.desc_vizier
+		}
+	}
+	theme = realm
+	left_portrait = {
+		character = scope:kehillah_nagid_seat_leader
+		animation = personality_rational
+	}
+
+	trigger = {
+		kehillah_ruler_has_own_nagid_trigger = yes
+	}
+
+	immediate = {
+		primary_title.var:kehillah_nagid_holder = { save_scope_as = kehillah_nagid_seat_leader }
+	}
+
+	option = {
+		name = kehillah_nagid.0003.vizier
+		trigger = {
+			kehillah_nagid_vizier_open_trigger = yes
+			NOT = { kehillah_nagid_service_is_trigger = { SERVICE = vizier } }
+		}
+		kehillah_nagid_set_service_effect = { SERVICE = vizier }
+		ai_chance = {
+			base = 10
+			modifier = {
+				add = 40
+				scope:kehillah_nagid_seat_leader = { kehillah_nagid_vizier_skill_value >= kehillah_nagid_service_tier_3_skill }
+			}
+		}
+	}
+
+	option = {
+		name = kehillah_nagid.0003.treasurer
+		trigger = {
+			NOT = { kehillah_nagid_service_is_trigger = { SERVICE = treasurer } }
+		}
+		kehillah_nagid_set_service_effect = { SERVICE = treasurer }
+		ai_chance = {
+			base = 10
+			modifier = {
+				add = 30
+				scope:kehillah_nagid_seat_leader = { stewardship >= kehillah_nagid_service_tier_3_skill }
+			}
+			modifier = { add = 20 has_trait = greedy }
+		}
+	}
+
+	option = {
+		name = kehillah_nagid.0003.physician
+		trigger = {
+			NOT = { kehillah_nagid_service_is_trigger = { SERVICE = physician } }
+		}
+		kehillah_nagid_set_service_effect = { SERVICE = physician }
+		ai_chance = {
+			base = 10
+			modifier = {
+				add = 30
+				scope:kehillah_nagid_seat_leader = { learning >= kehillah_nagid_service_tier_3_skill }
+			}
+			modifier = { add = 20 has_trait = zealous }
+		}
+	}
+
+	option = {
+		name = kehillah_nagid.0003.envoy
+		trigger = {
+			NOT = { kehillah_nagid_service_is_trigger = { SERVICE = envoy } }
+		}
+		kehillah_nagid_set_service_effect = { SERVICE = envoy }
+		ai_chance = {
+			base = 10
+			modifier = {
+				add = 30
+				scope:kehillah_nagid_seat_leader = { diplomacy >= kehillah_nagid_service_tier_3_skill }
+			}
+		}
+	}
+
+	# Keep the service already named.
+	option = {
+		name = kehillah_nagid.0003.keep
+		trigger = { kehillah_nagid_in_service_trigger = yes }
+		ai_chance = { base = 20 }
+	}
+
+	# No service at court: the office stands without one.
+	option = {
+		name = kehillah_nagid.0003.none
+		kehillah_nagid_clear_service_effect = yes
+		ai_chance = { base = 0 }
+	}
+}
+
 kehillah_nagid.0090 = {
 	type = character_event
 	hidden = yes
@@ -146,6 +251,15 @@ kehillah_nagid.0090 = {
 				kehillah_nagid_found_office_effect = yes
 			}
 			kehillah_nagid_appoint_effect = yes
+			# Joseph was Badis's vizier, as his father was Habbus's. A
+			# player Badis can change it in kehillah_nagid.0003.
+			if = {
+				limit = {
+					kehillah_nagid_vizier_open_trigger = yes
+					NOT = { kehillah_nagid_service_is_trigger = { SERVICE = vizier } }
+				}
+				kehillah_nagid_set_service_effect = { SERVICE = vizier }
+			}
 		}
 		debug_log = "kehillah_nagid.0090: the 1066 Nagid of Granada seated"
 	}
