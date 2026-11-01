@@ -98,6 +98,10 @@ kehillah_trial_participants_effect = {
 # hearing. An accuser who has died takes his case with him.
 kehillah_trial_monthly_effect = {
 	if = {
+		limit = { situation_current_phase = kehillah_trial_closed }
+		kehillah_trial_close_effect = yes
+	}
+	else_if = {
 		limit = { exists = var:kehillah_trial_title }
 		kehillah_trial_participants_effect = yes
 		if = {
@@ -220,7 +224,7 @@ kehillah_trial_hearing_start_effect = {
 # Root: the situation, as a verdict phase begins. VERDICT: quashed, acquittal, expurgation,
 # condemnation. The verdict falls on the community's leader; a player hears it.
 kehillah_trial_verdict_start_effect = {
-	debug_log = "kehillah_talmud_trial: verdict $VERDICT$"
+	debug_log = "kehillah_talmud_trial: a verdict"
 	var:kehillah_trial_title ?= {
 		set_variable = { name = kehillah_trial_verdict value = flag:$VERDICT$ }
 		holder ?= {
@@ -268,10 +272,21 @@ kehillah_trial_verdict_condemnation_effect = {
 	}
 }
 
-# Root: the situation, as it closes. The title lets go of the trial; the next can begin.
+# Root: the situation, as its Closed phase begins. Live test 2026-11-01: end_situation inside the
+# situation's own phase on_start crashed the game (crash ck3_20261101_161102, the same second). The
+# situation is ended a day later by a hidden event on the leader (kehillah_talmud_trial.0099), the way
+# the attack's situation is ended from events. If no leader can take it, the monthly pass retries.
 kehillah_trial_close_effect = {
+	debug_log = "kehillah_talmud_trial: closing"
+	var:kehillah_trial_title.holder ?= { trigger_event = { id = kehillah_talmud_trial.0099 days = 1 } }
+}
+
+# Scope: the community title (kehillah_talmud_trial.0099). The trial ends; the next crisis can begin.
+kehillah_trial_end_effect = {
 	debug_log = "kehillah_talmud_trial: closed"
-	var:kehillah_trial_title ?= {
+	var:kehillah_trial_situation ?= { end_situation = yes }
+	save_scope_as = kehillah_trial_ending_title
+	scope:kehillah_trial_ending_title = {
 		remove_variable = kehillah_trial_situation
 		remove_variable = kehillah_trial_did_answer
 		remove_variable = kehillah_trial_did_plead
@@ -289,5 +304,4 @@ kehillah_trial_close_effect = {
 		remove_variable = kehillah_trial_session
 		remove_variable = kehillah_trial_verdict
 	}
-	end_situation = yes
 }
