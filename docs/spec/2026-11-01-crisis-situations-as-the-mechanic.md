@@ -266,3 +266,13 @@ The existing Community Safety and crisis-situation live tests should still run b
 - The **expulsion edict** keeps a real deadline, because a historical edict had a fixed date.
 
 **AI communities** use the same race. Their monthly pulse spends on Spared actions by the AI weights.
+
+## Addendum, 2026-11-01 (after spike run 2): the attack goes first
+
+Daniel chose to build the attack first. Spike run 2 proved the race in the live game, which settles the engine risk that had put the Talmud trial ahead. The content he asked for is the attack's, and the attack's existing preacher and mob content is its foundation. This supersedes the "slice order revised" addendum above:
+1. **The attack**, designed in [The attack as a race](2026-11-01-the-attack-as-a-race.md), built in its steps 1a–1e;
+2. **the Talmud trial**;
+3. **the libel**;
+4. **the expulsion edict**.
+
+The Community Safety and crisis-situation live tests become part of step 1a's test, since 1a changes the same code.
