@@ -7,19 +7,72 @@
 # faqih and poet Abu Ishaq of Elvira's qasida against the Jewish vizier;
 # the charge that Joseph plotted with al-Mu'tasim of Almeria; the night
 # the Sanhaja and the city stormed the palace. Historically everything
-# failed: Joseph was killed and the community destroyed. Here good play
+# failed: Joseph was killed and the community suffered a massacre. Here good play
 # can save Joseph or part of the community, rarely both.
-#   .0001 The Poem of Abu Ishaq        (about a month after the start)
-#   .0002 Whispers at Court            (about two months later)
+#   .0008 Your Father's Office        (one week after the start)
+#   .0019 (hidden) warning dispatcher, retained for existing queues
+#   .0018 A Copy of the Verses        (about a month after the start)
+#   .0001 The Verses Reach the Street (elders consider a response)
+#   .0002 The Emir's Confidence       (day 65)
 #   .0003 (hidden) the night: the mob rises in the city, or the year ends
-#   .0004 The Year Ends Quietly        (the poet silenced, and luck)
-#   .0005 The Night of the Sanhaja     (the mob rises)
+#   .0004 For the Moment, Peace       (the poet silenced, and luck)
+#   .0005 The Palace and the Quarter  (the mob rises)
 # Scope: the leader of the Kehillah of Granada.
 # =====================================================================
 
 scripted_effect kehillah_granada_scopes_effect = {
 	domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_granada_emir }
 	title:c_almeria.holder ?= { save_scope_as = kehillah_granada_almeria }
+}
+
+# 2026-10-29: establish the offices, the community and the political actors
+# before the warning. Fictional scenes and correspondence, not transcripts.
+kehillah_granada.0008 = {
+	type = character_event
+	title = kehillah_granada.0008.t
+	desc = kehillah_granada.0008.desc
+	theme = diplomacy
+	left_portrait = { character = root animation = thinking }
+	right_portrait = { character = scope:kehillah_granada_emir animation = idle }
+	trigger = {
+		kehillah_granada_chain_valid_trigger = yes
+		this = character:9000216
+		NOT = { has_character_flag = kehillah_granada_night_done }
+	}
+	immediate = { kehillah_granada_scopes_effect = yes }
+	option = { name = kehillah_granada.0008.a }
+}
+
+# 2026-10-29 revision: a clerk brings a circulating poem. The author need
+# not still be alive or at court for copies of his work to reach Yoseph.
+kehillah_granada.0019 = {
+	type = character_event
+	hidden = yes
+	trigger = {
+		kehillah_granada_chain_valid_trigger = yes
+		NOT = { has_character_flag = kehillah_granada_night_done }
+	}
+	immediate = { trigger_event = kehillah_granada.0018 }
+}
+
+# The indented verse is an original English translation of two separated
+# couplets from Abu Ishaq's surviving invective; the ellipsis is deliberate.
+# The clerk's delivery is fictional. See the implementation note for Arabic.
+kehillah_granada.0018 = {
+	type = character_event
+	title = kehillah_granada.0018.t
+	desc = kehillah_granada.0018.desc
+	theme = intrigue
+	left_portrait = { character = root animation = worry }
+	trigger = {
+		kehillah_granada_chain_valid_trigger = yes
+		NOT = { has_character_flag = kehillah_granada_night_done }
+	}
+	immediate = { kehillah_granada_warning_effect = yes }
+	option = {
+		name = kehillah_granada.0018.a
+		trigger_event = kehillah_granada.0001
+	}
 }
 
 kehillah_granada.0001 = {
@@ -35,7 +88,10 @@ kehillah_granada.0001 = {
 		character = scope:kehillah_granada_emir
 		animation = thinking
 	}
-	trigger = { kehillah_granada_chain_valid_trigger = yes }
+	trigger = {
+		kehillah_granada_chain_valid_trigger = yes
+		NOT = { has_character_flag = kehillah_granada_night_done }
+	}
 	immediate = {
 		kehillah_granada_scopes_effect = yes
 	}
@@ -50,6 +106,7 @@ kehillah_granada.0001 = {
 				desc = kehillah_granada_silenced
 				custom_tooltip = kehillah_granada_silenced_tt
 				add_character_flag = kehillah_granada_silenced
+				primary_title = { change_variable = { name = kehillah_crisis_agitation add = -20 } clamp_variable = { name = kehillah_crisis_agitation min = 5 max = 95 } }
 			}
 			0 = {
 				modifier = { add = kehillah_granada_silence_fail_value }
@@ -72,7 +129,7 @@ kehillah_granada.0001 = {
 				desc = kehillah_granada_guarded
 				custom_tooltip = kehillah_granada_guarded_tt
 				add_character_flag = kehillah_granada_guarded
-				kehillah_granada_adjust_severity_effect = { AMOUNT = -15 }
+				primary_title = { set_variable = { name = kehillah_mob_defended value = yes } }
 			}
 			0 = {
 				modifier = { add = kehillah_granada_guard_fail_value }
@@ -149,6 +206,7 @@ kehillah_granada.0002 = {
 				desc = kehillah_granada_believed
 				custom_tooltip = kehillah_granada_believed_tt
 				kehillah_granada_adjust_severity_effect = { AMOUNT = -10 }
+				primary_title = { change_variable = { name = kehillah_crisis_agitation add = -10 } clamp_variable = { name = kehillah_crisis_agitation min = 5 max = 95 } }
 				scope:kehillah_granada_emir = {
 					add_opinion = { target = root modifier = pleased_opinion opinion = 15 }
 				}
@@ -186,29 +244,22 @@ kehillah_granada.0002 = {
 
 # The night. Hidden.
 kehillah_granada.0003 = {
-	type = character_event
-	hidden = yes
-	trigger = {
-		kehillah_granada_chain_valid_trigger = yes
-		NOT = { has_character_flag = kehillah_granada_night_done }
-	}
-	immediate = {
-		add_character_flag = kehillah_granada_night_done
-		if = {
-			limit = { has_character_flag = kehillah_granada_silenced }
-			random_list = {
-				50 = {
-					trigger_event = kehillah_granada.0004
-				}
-				50 = {
-					kehillah_granada_night_effect = yes
-				}
-			}
-		}
-		else = {
-			kehillah_granada_night_effect = yes
-		}
-	}
+ type = character_event
+ hidden = yes
+ trigger = { kehillah_granada_chain_valid_trigger = yes NOT = { has_character_flag = kehillah_granada_night_done } }
+ immediate = {
+  if = {
+   limit = { primary_title.var:kehillah_mob_threat ?= { has_character_flag = kehillah_crisis_granada_agitator has_character_flag = kehillah_mob_preaching } }
+   add_character_flag = kehillah_granada_night_done
+   primary_title.var:kehillah_mob_threat = { kehillah_mob_preaching_ends_effect = yes }
+  }
+  else_if = {
+   limit = { NOT = { primary_title = { has_variable = kehillah_crisis_outcome } } }
+   # Old saves without a warning get a short grace period, not an instant war.
+   kehillah_granada_warning_effect = yes
+   primary_title.var:kehillah_mob_threat ?= { set_variable = { name = kehillah_mob_preach_days value = 28 } }
+  }
+ }
 }
 
 kehillah_granada.0004 = {

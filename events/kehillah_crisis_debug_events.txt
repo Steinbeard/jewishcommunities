@@ -1,0 +1,46 @@
+﻿namespace = kehillah_crisis_debug
+# Hidden probes for a DISPOSABLE campaign, on the community being tested.
+# .1 opens a warning with 500 gold; .2 completes one preparation by one synthetic
+# fourteen-day tick; .3 logs state; .4 simulates a successful defence ending.
+kehillah_crisis_debug.1 = {
+ type = character_event hidden = yes
+ trigger = { government_has_flag = government_is_kehillah }
+ immediate = {
+  add_gold = 500
+  if = { limit = { primary_title = { NOT = { has_variable = kehillah_mob_threat } } } kehillah_mob_local_warning_effect = yes }
+  primary_title.var:kehillah_mob_threat ?= { set_variable = { name = kehillah_mob_preach_days value = 90 } }
+  debug_log = "kehillah_crisis_debug.1: isolated warning; Military Community Safety should show no war"
+ }
+}
+kehillah_crisis_debug.2 = {
+ type = character_event hidden = yes
+ trigger = { kehillah_crisis_warning_trigger = yes }
+ immediate = { kehillah_crisis_tick_effect = { DAYS = 14 } trigger_event = kehillah_crisis_debug.3 }
+}
+kehillah_crisis_debug.3 = {
+ type = character_event hidden = yes
+ trigger = { government_has_flag = government_is_kehillah }
+ immediate = {
+  debug_log = "CRISIS stage=[THIS.Char.GetPrimaryTitle.MakeScope.Var('kehillah_crisis_stage').GetValue] agitation=[THIS.Char.GetPrimaryTitle.MakeScope.Var('kehillah_crisis_agitation').GetValue]"
+  debug_log = "CRISIS escalation chance=[THIS.Char.MakeScope.ScriptValue('kehillah_crisis_outbreak_chance_value')]"
+  debug_log_scopes = yes
+ }
+}
+kehillah_crisis_debug.4 = {
+ type = character_event hidden = yes
+ trigger = { government_has_flag = government_is_kehillah exists = primary_title.var:kehillah_mob_threat }
+ immediate = { primary_title.var:kehillah_mob_threat = { kehillah_mob_dispersed_effect = yes } }
+}
+kehillah_crisis_debug.5 = {
+ type = character_event hidden = yes
+ trigger = { government_has_flag = government_is_kehillah primary_title = { has_variable = kehillah_crisis_stage } }
+ immediate = {
+  primary_title = {
+   kehillah_crisis_situation_sync_effect = yes
+   var:kehillah_crisis_situation ?= {
+    debug_log = "kehillah_crisis_debug.5: situation instance and scopes"
+    debug_log_scopes = yes
+   }
+  }
+ }
+}

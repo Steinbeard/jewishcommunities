@@ -1,4 +1,4 @@
-**Status:** proposed design, not implemented, 2026-10-31. Extends the [Community Safety specification](2026-10-30-community-safety-and-crisis.md) and the [situation source spike](https://github.com/Steinbeard/jewishcommunities/pull/59). It supersedes only the earlier specification's assumption that a crisis appears solely in Military and events. Its warning, attack, settlement, and recovery mechanics remain in force.
+**Status:** first integration built in the main worktree, 2026-10-31; source/xTiger checked, live verification pending. The generic situation window still needs review against section 4. See the [implementation note](../implementation/2026-10-31-crisis-situation-integration.md). Extends the [Community Safety specification](2026-10-30-community-safety-and-crisis.md) and the [situation source spike](https://github.com/Steinbeard/jewishcommunities/pull/59). It supersedes only the earlier specification's assumption that a crisis appears solely in Military and events. Its warning, attack, settlement, and recovery mechanics remain in force.
 
 # Community crises as situations
 

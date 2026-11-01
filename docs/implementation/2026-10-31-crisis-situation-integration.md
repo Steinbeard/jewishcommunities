@@ -1,0 +1,11 @@
+**Status:** implemented in the main worktree, 2026-10-31; source and xTiger checked, live behavior unverified. Implements the [dated spec](../spec/2026-10-31-community-crises-as-situations.md) on top of the uncommitted [Community Safety build](../spec/2026-10-30-community-safety-and-crisis.md).
+
+# Community crisis situations
+
+The new non-unique `kehillah_community_crisis` situation represents one active community threat at its domicile county. The title stores its situation reference; the situation stores the title and incident epoch. The title's stage remains authoritative. Catalysts advance the visible warning, armed, judgment, and recovery phases when the existing central crisis effects change the title stage. The preacher and mob stories retain their existing clocks and outcomes.
+
+The integration creates or repairs an instance at crisis start and on a bounded quarterly reconciliation, handles a directly armed entry, and ends the matching instance after the recovery choice, an expulsion answer, a struck-community judgment, or title dissolution. A `kehillah_crisis_situation_done` title marker prevents the quarterly pass from recreating a finished incident. Participant refresh uses the current title holder, actual sovereign, and living agitator. `kehillah_crisis_debug.5` logs the instance and scopes for a console probe. The generic native situation window and map pin are in use; its phase text directs the player to Military (F3) → Community Safety for actions.
+
+**Verification:** xTiger 1.6.10 against the main checkout remains at **0 fatal / 15 errors / 95 warnings / 1 untidy / 43 tips**, the pre-change baseline. This establishes script and localization structure only. The live test must still establish that runtime instances, dynamic county regions, catalyst transitions, participants, save/reload identity, concurrent crises, and the native UI actually work. The generic window also needs a player review against the spec's final presentation requirements; no custom window or native button to open Military has been built.
+
+The existing Community Safety live-test matrix remains open. Do not count the situation as proven until the [new probe record](../testing/2026-10-31-crisis-situation-live-test.md) passes its runtime and UI checks.

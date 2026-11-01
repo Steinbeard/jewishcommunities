@@ -50,6 +50,8 @@ kehillah_expulsion_start_effect = {
 # Scope: a Kehillah leader. Removes every trace of an edict.
 kehillah_expulsion_clear_effect = {
 	primary_title = {
+  if = { limit = { has_variable = kehillah_crisis_targeted_expulsion } set_variable = { name = kehillah_crisis_response value = 5 } }
+		remove_variable = kehillah_crisis_targeted_expulsion
 		remove_variable = kehillah_expulsion_quarters
 		remove_variable = kehillah_expulsion_host
 		remove_variable = kehillah_expulsion_defiant
@@ -127,6 +129,7 @@ kehillah_expulsion_lift_effect = {
 			exists = holder
 			holder = {
 				kehillah_expulsion_pending_trigger = yes
+				primary_title = { NOT = { has_variable = kehillah_crisis_targeted_expulsion } }
 				kehillah_is_host_of_community_trigger = { HOST = scope:kehillah_lift_host }
 			}
 		}
@@ -141,12 +144,31 @@ kehillah_expulsion_lift_effect = {
 # Scope: a Kehillah leader. The quarterly pass.
 # ---------------------------------------------------------------------
 kehillah_expulsion_quarterly_effect = {
+ if = {
+  limit = { primary_title ?= { has_variable = kehillah_crisis_targeted_expulsion } NOT = { kehillah_crisis_targeted_edict_valid_trigger = yes } }
+  kehillah_expulsion_clear_effect = yes
+  if = {
+   limit = { kehillah_host_bans_jewish_settlement_trigger = yes }
+   domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_banning_host }
+   kehillah_expulsion_start_effect = { HOST = scope:kehillah_banning_host }
+  }
+  else = { trigger_event = kehillah_expulsion.0005 }
+ }
+ else = {
+
 	if = {
 		limit = { kehillah_expulsion_pending_trigger = yes }
 		if = {
 			# The host no longer bans, or the Quarter now answers to a
 			# realm that does not: the edict lapses.
-			limit = { NOT = { kehillah_host_bans_jewish_settlement_trigger = yes } }
+			limit = {
+    NOT = { kehillah_host_bans_jewish_settlement_trigger = yes }
+    NOT = {
+     primary_title = { has_variable = kehillah_crisis_targeted_expulsion }
+     primary_title.var:kehillah_expulsion_host ?= { is_alive = yes }
+     domicile.domicile_location.county.holder.top_liege = primary_title.var:kehillah_expulsion_host
+    }
+   }
 			kehillah_expulsion_clear_effect = yes
 			trigger_event = kehillah_expulsion.0005
 			debug_log = "kehillah_expulsion_quarterly_effect: host no longer bans -- edict lapsed"
@@ -176,6 +198,8 @@ kehillah_expulsion_quarterly_effect = {
 		domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_banning_host }
 		kehillah_expulsion_start_effect = { HOST = scope:kehillah_banning_host }
 	}
+
+ }
 }
 
 # ---------------------------------------------------------------------

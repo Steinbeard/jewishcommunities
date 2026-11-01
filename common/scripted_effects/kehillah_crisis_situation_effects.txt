@@ -1,0 +1,77 @@
+﻿# Root: community title. The situation is a presentation mirror, never a timer.
+kehillah_crisis_situation_close_effect = {
+ if = {
+  limit = { exists = var:kehillah_crisis_situation }
+  var:kehillah_crisis_situation = {
+   if = {
+    limit = { situation_type = kehillah_community_crisis var:kehillah_crisis_title ?= root var:kehillah_crisis_epoch = root.var:kehillah_crisis_epoch }
+    end_situation = yes
+   }
+  }
+  remove_variable = kehillah_crisis_situation
+ }
+ set_variable = { name = kehillah_crisis_situation_done value = yes }
+}
+
+kehillah_crisis_situation_sync_effect = {
+ save_scope_as = kehillah_crisis_situation_title
+ if = {
+  limit = { NOT = { has_variable = kehillah_crisis_situation_done } }
+ if = {
+  limit = { OR = { NOT = { exists = var:kehillah_crisis_situation } var:kehillah_crisis_situation = { NOT = { situation_type = kehillah_community_crisis var:kehillah_crisis_title ?= root var:kehillah_crisis_epoch = root.var:kehillah_crisis_epoch } } } }
+  remove_variable = kehillah_crisis_situation
+  if = {
+   limit = { exists = holder.domicile.domicile_location.county }
+   if = {
+    limit = { var:kehillah_crisis_stage = 2 }
+    start_situation = { type = kehillah_community_crisis start_phase = kehillah_crisis_armed save_scope_as = kehillah_crisis_new_situation }
+   }
+   else_if = {
+    limit = { var:kehillah_crisis_stage = 3 }
+    start_situation = { type = kehillah_community_crisis start_phase = kehillah_crisis_judgement save_scope_as = kehillah_crisis_new_situation }
+   }
+   else_if = {
+    limit = { var:kehillah_crisis_stage = 4 }
+    start_situation = { type = kehillah_community_crisis start_phase = kehillah_crisis_recovery save_scope_as = kehillah_crisis_new_situation }
+   }
+   else = { start_situation = { type = kehillah_community_crisis start_phase = kehillah_crisis_warning save_scope_as = kehillah_crisis_new_situation } }
+   scope:kehillah_crisis_new_situation ?= {
+    set_variable = { name = kehillah_crisis_title value = scope:kehillah_crisis_situation_title }
+    set_variable = { name = kehillah_crisis_epoch value = scope:kehillah_crisis_situation_title.var:kehillah_crisis_epoch }
+    set_situation_center_province = scope:kehillah_crisis_situation_title.holder.domicile.domicile_location
+    situation_sub_region:kehillah_crisis_area = { add_dejure_title_to_sub_region = scope:kehillah_crisis_situation_title.holder.domicile.domicile_location.county }
+    scope:kehillah_crisis_situation_title = { set_variable = { name = kehillah_crisis_situation value = scope:kehillah_crisis_new_situation } }
+   }
+  }
+ }
+ var:kehillah_crisis_situation ?= {
+  save_scope_as = kehillah_crisis_situation_instance
+  if = { limit = { exists = var:kehillah_crisis_leader } remove_manual_participant = var:kehillah_crisis_leader remove_variable = kehillah_crisis_leader }
+  if = { limit = { exists = var:kehillah_crisis_sovereign } remove_manual_participant = var:kehillah_crisis_sovereign remove_variable = kehillah_crisis_sovereign }
+  if = { limit = { exists = var:kehillah_crisis_agitator } remove_manual_participant = var:kehillah_crisis_agitator remove_variable = kehillah_crisis_agitator }
+  scope:kehillah_crisis_situation_title.holder ?= {
+   scope:kehillah_crisis_situation_instance = {
+    set_variable = { name = kehillah_crisis_leader value = prev }
+    add_manual_participant = prev
+   }
+  }
+  scope:kehillah_crisis_situation_title.holder.domicile.domicile_location.county.holder.top_liege ?= {
+   scope:kehillah_crisis_situation_instance = {
+    set_variable = { name = kehillah_crisis_sovereign value = prev }
+    add_manual_participant = prev
+   }
+  }
+  scope:kehillah_crisis_situation_title.var:kehillah_mob_threat ?= {
+   if = { limit = { is_alive = yes }
+    scope:kehillah_crisis_situation_instance = {
+     set_variable = { name = kehillah_crisis_agitator value = prev }
+     add_manual_participant = prev
+    }
+   }
+  }
+  if = { limit = { situation_current_phase = kehillah_crisis_warning scope:kehillah_crisis_situation_title.var:kehillah_crisis_stage = 2 } trigger_situation_catalyst = kehillah_crisis_armed_catalyst }
+  if = { limit = { OR = { situation_current_phase = kehillah_crisis_warning situation_current_phase = kehillah_crisis_armed } scope:kehillah_crisis_situation_title.var:kehillah_crisis_stage = 3 } trigger_situation_catalyst = kehillah_crisis_judgement_catalyst }
+  if = { limit = { situation_current_phase = kehillah_crisis_judgement scope:kehillah_crisis_situation_title.var:kehillah_crisis_stage = 4 } trigger_situation_catalyst = kehillah_crisis_recovery_catalyst }
+ }
+ }
+}

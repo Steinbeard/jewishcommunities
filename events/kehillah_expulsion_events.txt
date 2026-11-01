@@ -33,7 +33,10 @@ namespace = kehillah_expulsion
 kehillah_expulsion.0001 = {
 	type = character_event
 	title = kehillah_expulsion.0001.t
-	desc = kehillah_expulsion.0001.desc
+ desc = { first_valid = {
+  triggered_desc = { trigger = { primary_title = { has_variable = kehillah_crisis_targeted_expulsion } } desc = kehillah_crisis_targeted_edict_desc }
+  desc = kehillah_expulsion.0001.desc
+ } }
 	theme = realm
 
 	trigger = {
@@ -137,7 +140,10 @@ kehillah_expulsion.0002 = {
 	trigger = {
 		exists = scope:kehillah_exp_title.holder
 		scope:kehillah_exp_title.holder = { kehillah_expulsion_pending_trigger = yes }
-		primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes }
+		OR = {
+   AND = { scope:kehillah_exp_title = { NOT = { has_variable = kehillah_crisis_targeted_expulsion } } primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } }
+   AND = { scope:kehillah_exp_title.var:kehillah_expulsion_host = root scope:kehillah_exp_title.holder = { kehillah_crisis_targeted_edict_valid_trigger = yes } }
+  }
 	}
 
 	immediate = {
@@ -161,7 +167,8 @@ kehillah_expulsion.0002 = {
 	# Repeal the edict.
 	option = {
 		name = kehillah_expulsion.0002.a
-		custom_tooltip = kehillah_expulsion.0002.a.tt
+  if = { limit = { scope:kehillah_exp_title = { has_variable = kehillah_crisis_targeted_expulsion } } custom_tooltip = kehillah_crisis_targeted_repeal_tt }
+  else = { custom_tooltip = kehillah_expulsion.0002.a.tt }
 		if = {
 			limit = {
 				exists = scope:kehillah_exp_ransom
@@ -171,8 +178,18 @@ kehillah_expulsion.0002 = {
 				pay_short_term_gold = { target = root gold = scope:kehillah_exp_ransom }
 			}
 		}
-		primary_title = { set_variable = { name = kehillah_policy_reason value = flag:plea } }
-		kehillah_raise_jewish_settlement_policy_effect = yes
+  if = {
+   limit = { scope:kehillah_exp_title = { has_variable = kehillah_crisis_targeted_expulsion } }
+   scope:kehillah_exp_title.holder = {
+    kehillah_expulsion_clear_effect = yes
+    primary_title = { set_variable = { name = kehillah_crisis_response value = 5 } }
+    trigger_event = kehillah_expulsion.0005
+   }
+  }
+  else = {
+   primary_title = { set_variable = { name = kehillah_policy_reason value = flag:plea } }
+   kehillah_raise_jewish_settlement_policy_effect = yes
+  }
 		ai_chance = {
 			base = 0
 			modifier = {
@@ -317,7 +334,7 @@ kehillah_expulsion.0010 = {
 	trigger = {
 		government_has_flag = government_is_kehillah
 		kehillah_expulsion_pending_trigger = yes
-		kehillah_host_bans_jewish_settlement_trigger = yes
+		OR = { kehillah_host_bans_jewish_settlement_trigger = yes kehillah_crisis_targeted_edict_valid_trigger = yes }
 		NOT = { primary_title = { has_variable = kehillah_expulsion_defiant } }
 	}
 
@@ -384,7 +401,7 @@ kehillah_expulsion.0011 = {
 	trigger = {
 		government_has_flag = government_is_kehillah
 		kehillah_expulsion_pending_trigger = yes
-		kehillah_host_bans_jewish_settlement_trigger = yes
+		OR = { kehillah_host_bans_jewish_settlement_trigger = yes kehillah_crisis_targeted_edict_valid_trigger = yes }
 	}
 
 	left_portrait = {

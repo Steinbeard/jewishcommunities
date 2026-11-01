@@ -322,10 +322,11 @@ kehillah_mob_preaching_mark_target_effect = {
 		set_variable = { name = kehillah_mob_threat value = scope:kehillah_mob_leader }
 	}
 	scope:kehillah_mob_victim = {
+		kehillah_crisis_begin_effect = yes
 		set_variable = { name = kehillah_mob_ref value = scope:kehillah_mob_leader }
 		set_variable = { name = kehillah_mob_location_ref value = scope:kehillah_mob_leader.var:kehillah_mob_location }
 		set_variable = { name = kehillah_mob_size_ref value = scope:kehillah_mob_leader.var:kehillah_mob_following }
-		trigger_event = kehillah_mob.0004
+		if = { limit = { scope:kehillah_mob_leader = { NOT = { has_character_flag = kehillah_crisis_granada_agitator } } } trigger_event = kehillah_mob.0004 }
 		if = {
 			limit = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_local_preaching } }
 			kehillah_notify_region_players_effect = {
@@ -361,6 +362,7 @@ kehillah_mob_preaching_tick_effect = {
 	else = {
 		var:kehillah_mob_target_title.holder = { save_scope_as = kehillah_mob_victim }
 		var:kehillah_mob_target_province = { save_scope_as = kehillah_mob_town }
+		scope:kehillah_mob_victim = { kehillah_crisis_tick_effect = { DAYS = 7 } }
 		# His following grows.
 		change_variable = { name = kehillah_mob_preach_news_days add = 7 }
 		if = {
@@ -391,6 +393,7 @@ kehillah_mob_preaching_tick_effect = {
 				limit = {
 					is_ai = no
 					scope:kehillah_mob_leader = { var:kehillah_mob_preach_news_days >= 28 }
+					primary_title = { NOT = { has_variable = kehillah_crisis_stage } }
 				}
 				if = {
 					limit = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_local_preaching } }
@@ -424,7 +427,7 @@ kehillah_mob_preaching_tick_effect = {
 }
 
 # He sets out: his following becomes the host. Scope: the preacher.
-kehillah_mob_preaching_ends_effect = {
+kehillah_mob_preaching_mobilize_effect = {
 	save_scope_as = kehillah_mob_preset_leader
 	remove_character_flag = kehillah_mob_preaching
 	var:kehillah_mob_location = { save_scope_as = kehillah_mob_spawn }
@@ -437,6 +440,10 @@ kehillah_mob_preaching_ends_effect = {
 	}
 	var:kehillah_mob_target_title.holder ?= {
 		if = {
+			limit = { scope:kehillah_mob_preset_leader = { has_character_flag = kehillah_crisis_granada_agitator } }
+			kehillah_granada_night_effect = yes
+		}
+		else_if = {
 			limit = { scope:kehillah_mob_preset_leader = { has_character_flag = kehillah_mob_local_preaching } }
 			kehillah_mob_raise_effect = {
 				SIZE = scope:kehillah_mob_preached_size
@@ -460,6 +467,7 @@ kehillah_mob_preaching_turn_effect = {
 	var:kehillah_mob_location = { save_scope_as = kehillah_mob_from }
 	var:kehillah_mob_target_title ?= {
 		save_scope_as = kehillah_mob_old_title
+		holder ?= { kehillah_crisis_resolve_effect = { OUTCOME = 3 } }
 		set_variable = { name = kehillah_mob_paid_off value = yes years = 1 }
 		if = {
 			limit = { has_variable = kehillah_mob_threat }
@@ -503,4 +511,22 @@ kehillah_mob_preaching_turn_effect = {
 		remove_character_flag = kehillah_mob_preaching
 		kehillah_mob_end_effect = yes
 	}
+}
+
+# The end of the warning is an escalation check, not a guaranteed declaration.
+kehillah_mob_preaching_ends_effect = {
+ var:kehillah_mob_target_title.holder ?= { save_scope_as = kehillah_crisis_victim }
+ if = {
+  limit = { exists = scope:kehillah_crisis_victim }
+  random_list = {
+   0 = { modifier = { add = scope:kehillah_crisis_victim.kehillah_crisis_outbreak_chance_value } kehillah_mob_preaching_mobilize_effect = yes }
+   0 = {
+    modifier = { add = scope:kehillah_crisis_victim.kehillah_crisis_no_outbreak_value }
+    scope:kehillah_crisis_victim = { kehillah_crisis_resolve_effect = { OUTCOME = 1 } }
+    remove_character_flag = kehillah_mob_preaching
+    kehillah_mob_end_effect = yes
+   }
+  }
+ }
+ else = { remove_character_flag = kehillah_mob_preaching kehillah_mob_end_effect = yes }
 }

@@ -1,0 +1,106 @@
+﻿# 2026-10-29. State on the community title survives a change of leader.
+# Existing preacher/mob stories supply time: no duplicate crisis timer.
+kehillah_crisis_begin_effect = {
+ primary_title = {
+  if = {
+   limit = { OR = { NOT = { has_variable = kehillah_crisis_stage } AND = { NOT = { var:kehillah_crisis_stage = 1 } NOT = { var:kehillah_crisis_stage = 2 } } } }
+   kehillah_crisis_situation_close_effect = yes
+   remove_variable = kehillah_crisis_situation_done
+   if = { limit = { NOT = { has_variable = kehillah_crisis_epoch } } set_variable = { name = kehillah_crisis_epoch value = 0 } }
+   change_variable = { name = kehillah_crisis_epoch add = 1 }
+   set_variable = { name = kehillah_crisis_stage value = 1 }
+   set_variable = { name = kehillah_crisis_agitation value = 45 }
+   set_variable = { name = kehillah_crisis_elapsed value = 0 }
+   set_variable = { name = kehillah_crisis_developments value = 0 }
+   remove_variable = kehillah_crisis_action
+   remove_variable = kehillah_crisis_action_days
+   remove_variable = kehillah_crisis_supplies
+   remove_variable = kehillah_crisis_advocacy
+   remove_variable = kehillah_crisis_response
+   remove_variable = kehillah_crisis_judgement_sent
+   remove_variable = kehillah_crisis_scene_count
+   clear_variable_list = kehillah_crisis_developments_seen
+   clear_variable_list = kehillah_crisis_scenes_seen
+  }
+ }
+ primary_title = { kehillah_crisis_situation_sync_effect = yes }
+}
+# Scope: community leader. $DAYS$ is supplied by the owning story's tick.
+kehillah_crisis_tick_effect = {
+ primary_title = {
+  if = {
+   limit = { var:kehillah_crisis_stage = 1 }
+   change_variable = { name = kehillah_crisis_agitation add = 3 } clamp_variable = { name = kehillah_crisis_agitation min = 5 max = 95 }
+   change_variable = { name = kehillah_crisis_elapsed add = $DAYS$ }
+   if = {
+    limit = { has_variable = kehillah_crisis_action }
+    change_variable = { name = kehillah_crisis_action_days add = -$DAYS$ }
+    if = {
+     limit = { var:kehillah_crisis_action_days <= 0 }
+     if = { limit = { var:kehillah_crisis_action = 1 } set_variable = { name = kehillah_mob_defended value = yes } }
+     else_if = { limit = { var:kehillah_crisis_action = 2 } set_variable = { name = kehillah_crisis_supplies value = yes } }
+     else_if = { limit = { var:kehillah_crisis_action = 3 } set_variable = { name = kehillah_mob_scattered value = yes } }
+     else_if = { limit = { var:kehillah_crisis_action = 4 } set_variable = { name = kehillah_crisis_advocacy value = yes } change_variable = { name = kehillah_crisis_agitation add = -20 } clamp_variable = { name = kehillah_crisis_agitation min = 5 max = 95 } }
+     remove_variable = kehillah_crisis_action
+     remove_variable = kehillah_crisis_action_days
+     holder ?= { if = { limit = { is_ai = no } send_interface_toast = { type = event_toast_effect_good title = kehillah_crisis_prepared_t desc = kehillah_crisis_prepared_d } } }
+    }
+   }
+   if = {
+    limit = { var:kehillah_crisis_elapsed >= 28 var:kehillah_crisis_developments < 3 }
+    set_variable = { name = kehillah_crisis_elapsed value = 0 }
+    change_variable = { name = kehillah_crisis_developments add = 1 }
+    holder ?= { if = { limit = { is_ai = no } kehillah_crisis_development_effect = yes } }
+   }
+  }
+ }
+}
+kehillah_crisis_development_effect = {
+ random_list = {
+  20 = { trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_crisis_developments_seen target = flag:threats } } } } primary_title = { add_to_variable_list = { name = kehillah_crisis_developments_seen target = flag:threats } } trigger_event = kehillah_crisis.0010 }
+  20 = { trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_crisis_developments_seen target = flag:market } } } } primary_title = { add_to_variable_list = { name = kehillah_crisis_developments_seen target = flag:market } } trigger_event = kehillah_crisis.0011 }
+  20 = { trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_crisis_developments_seen target = flag:neighbours } } } } primary_title = { add_to_variable_list = { name = kehillah_crisis_developments_seen target = flag:neighbours } } trigger_event = kehillah_crisis.0012 }
+  20 = { trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_crisis_developments_seen target = flag:watch } } } } primary_title = { add_to_variable_list = { name = kehillah_crisis_developments_seen target = flag:watch } } trigger_event = kehillah_crisis.0013 }
+ }
+}
+# Resolve once, before any old end effect clears preparations or kills the agitator.
+# OUTCOME: 1 dispersed/prevented, 2 defended, 3 bought off, 4 quarter struck.
+kehillah_crisis_resolve_effect = {
+ if = { limit = { primary_title ?= { NOT = { has_variable = kehillah_crisis_stage } } } kehillah_crisis_begin_effect = yes }
+ if = {
+  limit = { primary_title ?= { OR = { var:kehillah_crisis_stage = 1 var:kehillah_crisis_stage = 2 } } }
+  primary_title = {
+   set_variable = { name = kehillah_crisis_stage value = 3 }
+   set_variable = { name = kehillah_crisis_outcome value = $OUTCOME$ }
+   set_variable = { name = kehillah_crisis_had_protection value = holder.kehillah_crisis_protection_value }
+   remove_variable = kehillah_crisis_action
+   remove_variable = kehillah_crisis_action_days
+   set_variable = { name = kehillah_crisis_judgement_grace value = yes days = 30 }
+   save_scope_as = kehillah_crisis_title
+   kehillah_crisis_situation_sync_effect = yes
+  }
+  save_scope_value_as = { name = kehillah_crisis_epoch value = primary_title.var:kehillah_crisis_epoch }
+  # Queue visible followups through a hidden relay: an option tooltip must
+  # never evaluate events that depend on scopes created earlier in that option.
+  domicile.domicile_location.county.holder ?= { trigger_event = { id = kehillah_crisis.0290 days = 1 } }
+  debug_log = "kehillah_crisis_resolve_effect: resolved outcome $OUTCOME$; political judgement pending"
+ }
+}
+# Fallback for death of the ruler who carried the queued judgement.
+kehillah_crisis_request_judgement_effect = {
+ primary_title = { save_scope_as = kehillah_crisis_title set_variable = { name = kehillah_crisis_judgement_grace value = yes days = 30 } }
+ save_scope_value_as = { name = kehillah_crisis_epoch value = primary_title.var:kehillah_crisis_epoch }
+ domicile.domicile_location.county.holder.top_liege ?= { trigger_event = kehillah_crisis.0200 }
+}
+# All responses reach the current title holder, not an obsolete personal leader.
+kehillah_crisis_deliver_judgement_effect = {
+ scope:kehillah_crisis_title.holder ?= { trigger_event = kehillah_crisis.0202 }
+}
+# A targeted edict uses the existing departure/appeal system without a realm ban.
+kehillah_crisis_targeted_expulsion_effect = {
+ if = {
+  limit = { NOT = { kehillah_expulsion_pending_trigger = yes } }
+  primary_title = { set_variable = { name = kehillah_crisis_targeted_expulsion value = yes } }
+  kehillah_expulsion_start_effect = { HOST = scope:kehillah_crisis_ruler }
+ }
+}
