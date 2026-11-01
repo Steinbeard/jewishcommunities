@@ -50,6 +50,14 @@ kehillah_trial_begin_effect = {
 			}
 		}
 		trigger_event = kehillah_talmud_trial.0001
+		# 2026-11-01: a player judge hears the denunciation himself (kehillah_talmud_trial.0100).
+		scope:kehillah_incident_host = {
+			if = {
+				limit = { is_ai = no }
+				set_variable = { name = kehillah_trial_target value = root years = 1 }
+				trigger_event = { id = kehillah_talmud_trial.0100 days = 2 }
+			}
+		}
 		debug_log = "kehillah_trial_begin_effect: the Talmud is denounced"
 	}
 }
@@ -207,6 +215,14 @@ kehillah_trial_hearing_start_effect = {
 			trigger_situation_catalyst = kehillah_trial_seed_found_catalyst
 		}
 		scope:kehillah_trial_hearing_title = { set_variable = { name = kehillah_trial_session value = 0 } }
+		# 2026-11-01: a player judge decides how he will lean (kehillah_talmud_trial.0110).
+		var:kehillah_trial_judge ?= {
+			if = {
+				limit = { is_ai = no }
+				set_variable = { name = kehillah_trial_target value = scope:kehillah_trial_hearing_title.holder years = 1 }
+				trigger_event = { id = kehillah_talmud_trial.0110 days = 1 }
+			}
+		}
 		scope:kehillah_trial_hearing_title.holder ?= {
 			trigger_event = { id = kehillah_talmud_trial.0050 days = 3 }
 			trigger_event = { id = kehillah_talmud_trial.0050 days = 33 }
@@ -219,6 +235,22 @@ kehillah_trial_hearing_start_effect = {
 # condemnation. The verdict falls on the community's leader; a player hears it.
 kehillah_trial_verdict_start_effect = {
 	debug_log = "kehillah_talmud_trial: a verdict"
+	# The judge hears the verdict given in his name.
+	var:kehillah_trial_title ?= { save_scope_as = kehillah_ruler_notice_title }
+	var:kehillah_trial_judge ?= {
+		if = {
+			limit = {
+				is_ai = no
+				NOT = { this = scope:kehillah_ruler_notice_title.holder }
+			}
+			send_interface_message = {
+				type = msg_kehillah_crisis_ruler
+				title = kehillah_trial_ruler_$VERDICT$_t
+				desc = kehillah_trial_ruler_$VERDICT$_d
+				left_icon = scope:kehillah_ruler_notice_title
+			}
+		}
+	}
 	var:kehillah_trial_title ?= {
 		set_variable = { name = kehillah_trial_verdict value = flag:$VERDICT$ }
 		holder ?= {

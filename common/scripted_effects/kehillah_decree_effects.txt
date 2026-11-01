@@ -4,7 +4,24 @@
 
 # Scope: a Kehillah leader (the incident director, or the console). KIND: badge, ghiyar, servants.
 kehillah_decree_begin_effect = {
+	# 2026-11-01: a player lord decides whether the decree drafted in his name is proclaimed at all
+	# (kehillah_decree.0100). Proclaiming it runs this effect again, with the lord's leave.
 	if = {
+		limit = {
+			kehillah_decree_can_begin_trigger = yes
+			domicile.domicile_location.county.holder.top_liege ?= {
+				is_ai = no
+				NOT = { has_character_flag = kehillah_decree_proclaiming }
+				NOT = { this = root }
+			}
+		}
+		domicile.domicile_location.county.holder.top_liege = {
+			set_variable = { name = kehillah_decree_target value = root days = 30 }
+			set_variable = { name = kehillah_decree_pending_kind value = flag:$KIND$ days = 30 }
+			trigger_event = kehillah_decree.0100
+		}
+	}
+	else_if = {
 		limit = { kehillah_decree_can_begin_trigger = yes }
 		kehillah_incident_scopes_effect = yes
 		domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
@@ -43,6 +60,38 @@ kehillah_decree_begin_effect = {
 kehillah_decree_news_badge_effect = { kehillah_realm_news_add_effect = { KIND = badge_decree } }
 kehillah_decree_news_ghiyar_effect = { kehillah_realm_news_add_effect = { KIND = badge_decree } }
 kehillah_decree_news_servants_effect = { kehillah_realm_news_add_effect = { KIND = servants_decree } }
+
+# Scope: the leader; scope:kehillah_incident_host saved. An answer that a player lord decides himself
+# (kehillah_decree.0110) instead of a roll. ASK: petition, pay, leave, common.
+kehillah_decree_ask_lord_effect = {
+	custom_tooltip = kehillah_decree_lord_decides_tt
+	hidden_effect = {
+		scope:kehillah_incident_host = {
+			set_variable = { name = kehillah_decree_asker value = root days = 60 }
+			set_variable = { name = kehillah_decree_ask value = flag:$ASK$ days = 60 }
+			trigger_event = { id = kehillah_decree.0110 days = 1 }
+		}
+	}
+}
+
+# Scope: the situation, as a verdict begins. The lord who issued the decree hears how it ended.
+kehillah_decree_tell_lord_effect = {
+	var:kehillah_decree_title ?= { save_scope_as = kehillah_ruler_notice_title }
+	var:kehillah_decree_lord ?= {
+		if = {
+			limit = {
+				is_ai = no
+				NOT = { this = scope:kehillah_ruler_notice_title.holder }
+			}
+			send_interface_message = {
+				type = msg_kehillah_crisis_ruler
+				title = kehillah_decree_ruler_$VERDICT$_t
+				desc = kehillah_decree_ruler_$VERDICT$_d
+				left_icon = scope:kehillah_ruler_notice_title
+			}
+		}
+	}
+}
 
 # Scope: the situation. The community's leader and the sovereign, as they are now.
 kehillah_decree_participants_effect = {
@@ -267,6 +316,7 @@ kehillah_decree_mark_done_effect = {
 # Root: the situation, as a verdict begins. VERDICT: enforced, suspended, withdrawn.
 kehillah_decree_verdict_start_effect = {
 	debug_log = "kehillah_decree: a verdict"
+	kehillah_decree_tell_lord_effect = { VERDICT = $VERDICT$ }
 	var:kehillah_decree_title ?= {
 		set_variable = { name = kehillah_decree_verdict value = flag:$VERDICT$ }
 		holder ?= {

@@ -155,6 +155,7 @@ kehillah_crisis_race.0200 = {
  # Throw myself on his mercy.
  option = {
   name = kehillah_crisis_race.0200.a
+  trigger = { scope:kehillah_crisis_lord = { is_ai = yes } }
   duel = {
    skill = diplomacy
    value = medium_skill_rating
@@ -173,6 +174,64 @@ kehillah_crisis_race.0200 = {
    }
   }
   ai_chance = { base = 100 }
+ }
+ # The lord is a player: he answers himself (kehillah_crisis_race.0210).
+ option = {
+  name = kehillah_crisis_race.0200.a
+  trigger = { scope:kehillah_crisis_lord = { is_ai = no } }
+  custom_tooltip = kehillah_crisis_plea_lord_decides_tt
+  hidden_effect = {
+   scope:kehillah_crisis_lord = {
+    set_variable = { name = kehillah_crisis_plea_from value = root days = 30 }
+    trigger_event = { id = kehillah_crisis_race.0210 days = 1 }
+   }
+  }
+ }
+}
+
+# 2026-11-01: a player lord answers the plea himself (kehillah_crisis_race.0200's player option).
+kehillah_crisis_race.0210 = {
+ type = character_event
+ title = kehillah_crisis_race.0210.t
+ desc = kehillah_crisis_race.0210.desc
+ theme = martial
+ left_portrait = { character = root animation = thinking }
+ right_portrait = { character = scope:kehillah_crisis_plea_leader animation = beg }
+ trigger = {
+  exists = var:kehillah_crisis_plea_from
+  var:kehillah_crisis_plea_from.primary_title = { kehillah_crisis_title_armed_race_running_trigger = yes }
+ }
+ immediate = {
+  var:kehillah_crisis_plea_from = {
+   save_scope_as = kehillah_crisis_plea_leader
+   primary_title = { save_scope_as = kehillah_crisis_plea_title }
+   domicile.domicile_location.county ?= { save_scope_as = kehillah_crisis_plea_county }
+  }
+ }
+ # Send the men.
+ option = {
+  name = kehillah_crisis_race.0210.a
+  add_prestige = minor_prestige_gain
+  scope:kehillah_crisis_plea_title = { kehillah_crisis_armed_race_add_effect = { CATALYST = kehillah_crisis_held_lord_catalyst } }
+  scope:kehillah_crisis_plea_leader = {
+   if = {
+    limit = { is_ai = no }
+    send_interface_message = { type = msg_kehillah_crisis_ruler title = kehillah_crisis_plea_granted_t desc = kehillah_crisis_plea_granted_d left_icon = root }
+   }
+  }
+  remove_variable = kehillah_crisis_plea_from
+ }
+ # They must look to themselves.
+ option = {
+  name = kehillah_crisis_race.0210.b
+  scope:kehillah_crisis_plea_title = { kehillah_crisis_armed_race_add_effect = { CATALYST = kehillah_crisis_struck_lord_refused_catalyst } }
+  scope:kehillah_crisis_plea_leader = {
+   if = {
+    limit = { is_ai = no }
+    send_interface_message = { type = msg_kehillah_crisis_ruler title = kehillah_crisis_plea_refused_t desc = kehillah_crisis_plea_refused_d left_icon = root }
+   }
+  }
+  remove_variable = kehillah_crisis_plea_from
  }
 }
 

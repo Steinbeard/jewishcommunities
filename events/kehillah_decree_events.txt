@@ -35,30 +35,36 @@ scripted_effect kehillah_decree_exempt_effect = {
 # Petition the lord: the Shtadlan, or the leader without one.
 scripted_effect kehillah_decree_petition_effect = {
 	kehillah_decree_mark_done_effect = { ONCE = petition }
-	random_list = {
-		40 = {
-			desc = kehillah_decree_out_persuaded
-			kehillah_incident_petition_odds_modifier = yes
-			modifier = {
-				add = -10
-				custom_tooltip = {
-					text = kehillah_decree_factor_cleric
-					kehillah_decree_detail_trigger = { VAR = instigator VALUE = cleric }
+	if = {
+		limit = { scope:kehillah_incident_host ?= { is_ai = no } }
+		kehillah_decree_ask_lord_effect = { ASK = petition }
+	}
+	else = {
+		random_list = {
+			40 = {
+				desc = kehillah_decree_out_persuaded
+				kehillah_incident_petition_odds_modifier = yes
+				modifier = {
+					add = -10
+					custom_tooltip = {
+						text = kehillah_decree_factor_cleric
+						kehillah_decree_detail_trigger = { VAR = instigator VALUE = cleric }
+					}
 				}
-			}
-			modifier = {
-				add = -15
-				custom_tooltip = {
-					text = kehillah_decree_factor_zeal
-					kehillah_decree_detail_trigger = { VAR = instigator VALUE = zeal }
+				modifier = {
+					add = -15
+					custom_tooltip = {
+						text = kehillah_decree_factor_zeal
+						kehillah_decree_detail_trigger = { VAR = instigator VALUE = zeal }
+					}
 				}
+				min = 5
+				primary_title = { kehillah_decree_add_effect = { CATALYST = kehillah_decree_petition_catalyst } }
 			}
-			min = 5
-			primary_title = { kehillah_decree_add_effect = { CATALYST = kehillah_decree_petition_catalyst } }
-		}
-		60 = {
-			desc = kehillah_decree_out_refused
-			primary_title = { kehillah_decree_add_effect = { CATALYST = kehillah_decree_petition_failed_catalyst } }
+			60 = {
+				desc = kehillah_decree_out_refused
+				primary_title = { kehillah_decree_add_effect = { CATALYST = kehillah_decree_petition_failed_catalyst } }
+			}
 		}
 	}
 }
@@ -70,42 +76,54 @@ scripted_effect kehillah_decree_pay_effect = {
 		target = scope:kehillah_incident_host
 		gold = kehillah_incident_bribe_cost_value
 	}
-	primary_title = { kehillah_decree_add_effect = { CATALYST = kehillah_decree_paid_catalyst } }
+	if = {
+		limit = { scope:kehillah_incident_host ?= { is_ai = no } }
+		kehillah_decree_ask_lord_effect = { ASK = pay }
+	}
+	else = {
+		primary_title = { kehillah_decree_add_effect = { CATALYST = kehillah_decree_paid_catalyst } }
+	}
 }
 
 # Threaten to leave the realm (Castile, 1219): the lord weighs what he would lose.
 scripted_effect kehillah_decree_leave_effect = {
 	kehillah_decree_mark_done_effect = { ONCE = leave }
-	random_list = {
-		40 = {
-			desc = kehillah_decree_out_believed
-			modifier = {
-				add = 15
-				scope:kehillah_incident_host = { has_trait = greedy }
-			}
-			modifier = {
-				add = 10
-				custom_tooltip = {
-					text = kehillah_decree_factor_prosperous
-					primary_title ?= {
-						has_variable = kehillah_var_prosperity
-						var:kehillah_var_prosperity >= 700
+	if = {
+		limit = { scope:kehillah_incident_host ?= { is_ai = no } }
+		kehillah_decree_ask_lord_effect = { ASK = leave }
+	}
+	else = {
+		random_list = {
+			40 = {
+				desc = kehillah_decree_out_believed
+				modifier = {
+					add = 15
+					scope:kehillah_incident_host = { has_trait = greedy }
+				}
+				modifier = {
+					add = 10
+					custom_tooltip = {
+						text = kehillah_decree_factor_prosperous
+						primary_title ?= {
+							has_variable = kehillah_var_prosperity
+							var:kehillah_var_prosperity >= 700
+						}
 					}
 				}
+				compare_modifier = {
+					value = stewardship
+					multiplier = 1.5
+					offset = inverted_medium_skill_rating
+				}
+				min = 5
+				primary_title = { kehillah_decree_add_effect = { CATALYST = kehillah_decree_leave_catalyst } }
 			}
-			compare_modifier = {
-				value = stewardship
-				multiplier = 1.5
-				offset = inverted_medium_skill_rating
-			}
-			min = 5
-			primary_title = { kehillah_decree_add_effect = { CATALYST = kehillah_decree_leave_catalyst } }
-		}
-		60 = {
-			desc = kehillah_decree_out_bluff_called
-			primary_title = { kehillah_decree_add_effect = { CATALYST = kehillah_decree_leave_failed_catalyst } }
-			scope:kehillah_incident_host ?= {
-				kehillah_shift_outlook_effect = { AMOUNT = kehillah_decree_leave_outlook }
+			60 = {
+				desc = kehillah_decree_out_bluff_called
+				primary_title = { kehillah_decree_add_effect = { CATALYST = kehillah_decree_leave_failed_catalyst } }
+				scope:kehillah_incident_host ?= {
+					kehillah_shift_outlook_effect = { AMOUNT = kehillah_decree_leave_outlook }
+				}
 			}
 		}
 	}
@@ -114,7 +132,13 @@ scripted_effect kehillah_decree_leave_effect = {
 # Join with the realm's other communities in a common petition.
 scripted_effect kehillah_decree_common_effect = {
 	kehillah_decree_mark_done_effect = { ONCE = common }
-	primary_title = { kehillah_decree_add_effect = { CATALYST = kehillah_decree_common_catalyst } }
+	if = {
+		limit = { scope:kehillah_incident_host ?= { is_ai = no } }
+		kehillah_decree_ask_lord_effect = { ASK = common }
+	}
+	else = {
+		primary_title = { kehillah_decree_add_effect = { CATALYST = kehillah_decree_common_catalyst } }
+	}
 }
 
 # ---------------------------------------------------------------------
@@ -397,5 +421,190 @@ kehillah_decree.0099 = {
 				kehillah_decree_end_effect = yes
 			}
 		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0100 A decree in your name (a player lord). Whether it is proclaimed.
+# ---------------------------------------------------------------------
+kehillah_decree.0100 = {
+	type = character_event
+	title = kehillah_decree.0100.t
+	desc = {
+		first_valid = {
+			triggered_desc = { trigger = { var:kehillah_decree_pending_kind ?= flag:servants } desc = kehillah_decree.0100.desc_servants }
+			desc = kehillah_decree.0100.desc_mark
+		}
+	}
+	theme = diplomacy
+	left_portrait = { character = root animation = thinking }
+	right_portrait = {
+		trigger = { exists = scope:kehillah_decree_target_scope }
+		character = scope:kehillah_decree_target_scope
+		animation = worry
+	}
+	trigger = {
+		exists = var:kehillah_decree_target
+		var:kehillah_decree_target = { kehillah_decree_can_begin_trigger = yes }
+	}
+	immediate = {
+		var:kehillah_decree_target = {
+			save_scope_as = kehillah_decree_target_scope
+			primary_title = { save_scope_as = kehillah_decree_target_title }
+		}
+	}
+	# Proclaim it.
+	option = {
+		name = kehillah_decree.0100.a
+		add_character_flag = { flag = kehillah_decree_proclaiming days = 1 }
+		add_piety = minor_piety_gain
+		var:kehillah_decree_target = {
+			if = {
+				limit = { root.var:kehillah_decree_pending_kind ?= flag:servants }
+				kehillah_decree_begin_effect = { KIND = servants }
+			}
+			else_if = {
+				limit = { root.var:kehillah_decree_pending_kind ?= flag:ghiyar }
+				kehillah_decree_begin_effect = { KIND = ghiyar }
+			}
+			else = { kehillah_decree_begin_effect = { KIND = badge } }
+		}
+		remove_variable = kehillah_decree_target
+		remove_variable = kehillah_decree_pending_kind
+	}
+	# Refuse to proclaim it.
+	option = {
+		name = kehillah_decree.0100.b
+		add_piety = minor_piety_loss
+		kehillah_shift_outlook_effect = { AMOUNT = kehillah_decree_withdrawn_outlook }
+		var:kehillah_decree_target = {
+			if = {
+				limit = { is_ai = no }
+				send_interface_message = {
+					type = msg_kehillah_crisis_ruler
+					title = kehillah_decree_refused_t
+					desc = kehillah_decree_refused_d
+					left_icon = root
+				}
+			}
+		}
+		remove_variable = kehillah_decree_target
+		remove_variable = kehillah_decree_pending_kind
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0110 The Jews answer your decree (a player lord): a petition, silver, a threat to leave, a common
+# petition. Granting or refusing moves the decree's race; the community hears the answer.
+# ---------------------------------------------------------------------
+kehillah_decree.0110 = {
+	type = character_event
+	title = kehillah_decree.0110.t
+	desc = {
+		first_valid = {
+			triggered_desc = { trigger = { var:kehillah_decree_ask ?= flag:pay } desc = kehillah_decree.0110.desc_pay }
+			triggered_desc = { trigger = { var:kehillah_decree_ask ?= flag:leave } desc = kehillah_decree.0110.desc_leave }
+			triggered_desc = { trigger = { var:kehillah_decree_ask ?= flag:common } desc = kehillah_decree.0110.desc_common }
+			desc = kehillah_decree.0110.desc_petition
+		}
+	}
+	theme = diplomacy
+	left_portrait = { character = root animation = thinking }
+	right_portrait = { character = scope:kehillah_decree_asker_scope animation = beg }
+	trigger = {
+		exists = var:kehillah_decree_asker
+		var:kehillah_decree_asker = { kehillah_decree_open_trigger = yes }
+	}
+	immediate = {
+		var:kehillah_decree_asker = {
+			save_scope_as = kehillah_decree_asker_scope
+			primary_title = { save_scope_as = kehillah_decree_asker_title }
+		}
+	}
+	# Grant it.
+	option = {
+		name = {
+			trigger = { var:kehillah_decree_ask ?= flag:pay }
+			text = kehillah_decree.0110.a_pay
+		}
+		name = {
+			trigger = { var:kehillah_decree_ask ?= flag:leave }
+			text = kehillah_decree.0110.a_leave
+		}
+		name = {
+			trigger = { NOR = { var:kehillah_decree_ask ?= flag:pay var:kehillah_decree_ask ?= flag:leave } }
+			text = kehillah_decree.0110.a
+		}
+		scope:kehillah_decree_asker_title = {
+			if = {
+				limit = { root.var:kehillah_decree_ask ?= flag:pay }
+				kehillah_decree_add_effect = { CATALYST = kehillah_decree_paid_catalyst }
+			}
+			else_if = {
+				limit = { root.var:kehillah_decree_ask ?= flag:leave }
+				kehillah_decree_add_effect = { CATALYST = kehillah_decree_leave_catalyst }
+			}
+			else_if = {
+				limit = { root.var:kehillah_decree_ask ?= flag:common }
+				kehillah_decree_add_effect = { CATALYST = kehillah_decree_common_catalyst }
+			}
+			else = { kehillah_decree_add_effect = { CATALYST = kehillah_decree_petition_catalyst } }
+		}
+		scope:kehillah_decree_asker_scope = {
+			if = {
+				limit = { is_ai = no }
+				send_interface_message = {
+					type = msg_kehillah_crisis_ruler
+					title = kehillah_decree_answer_granted_t
+					desc = kehillah_decree_answer_granted_d
+					left_icon = root
+				}
+			}
+		}
+		remove_variable = kehillah_decree_asker
+		remove_variable = kehillah_decree_ask
+	}
+	# Refuse it.
+	option = {
+		name = {
+			trigger = { var:kehillah_decree_ask ?= flag:pay }
+			text = kehillah_decree.0110.b_pay
+		}
+		name = {
+			trigger = { var:kehillah_decree_ask ?= flag:leave }
+			text = kehillah_decree.0110.b_leave
+		}
+		name = {
+			trigger = { NOR = { var:kehillah_decree_ask ?= flag:pay var:kehillah_decree_ask ?= flag:leave } }
+			text = kehillah_decree.0110.b
+		}
+		if = {
+			limit = { var:kehillah_decree_ask ?= flag:pay }
+			pay_short_term_gold = {
+				target = scope:kehillah_decree_asker_scope
+				gold = kehillah_incident_bribe_cost_value
+			}
+		}
+		else_if = {
+			limit = { var:kehillah_decree_ask ?= flag:leave }
+			scope:kehillah_decree_asker_title = { kehillah_decree_add_effect = { CATALYST = kehillah_decree_leave_failed_catalyst } }
+			kehillah_shift_outlook_effect = { AMOUNT = kehillah_decree_leave_outlook }
+		}
+		else = {
+			scope:kehillah_decree_asker_title = { kehillah_decree_add_effect = { CATALYST = kehillah_decree_petition_failed_catalyst } }
+		}
+		scope:kehillah_decree_asker_scope = {
+			if = {
+				limit = { is_ai = no }
+				send_interface_message = {
+					type = msg_kehillah_crisis_ruler
+					title = kehillah_decree_answer_refused_t
+					desc = kehillah_decree_answer_refused_d
+					left_icon = root
+				}
+			}
+		}
+		remove_variable = kehillah_decree_asker
+		remove_variable = kehillah_decree_ask
 	}
 }
