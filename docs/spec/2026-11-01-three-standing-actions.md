@@ -59,3 +59,16 @@ Costs, odds and race points are unchanged from the attack-race spec. Each sub-op
 
 - **Balance.** Daniel found the Granada options unbalanced; this pass removes the duplicates first. A balance pass needs a natural, unforced race played through.
 - **Held needs more sources** later in the Armed race (polish item 5 of the UX record).
+
+## Addendum, later on 2026-11-01: Granada's flow, announcements, pillar sizes
+
+Decided with Daniel after his second Granada start. The poem and the road to Lucena read as weak and unconnected to the crisis, and nothing announced that a crisis had begun.
+
+- **Every crisis is announced when it begins.** A toast (always shown, in the situation group) says that the danger has begun, how it began, what happens if the bad outcome comes first, and where to act. It is worded per opening: preacher, accusation, crusade, debts, Holy Week, and Granada's verses.
+- **Abu Ishaq of Elvira leads Granada's host himself** while he lives and is free, instead of a generated wa'iz. Texts call him the poet. He appears in "A Copy of the Verses" and in the year's-end scene. When his host or his preaching ends, he does not vanish like a generated preacher: his host's title is destroyed and he returns to the emir's court. Historically he incited the riot rather than leading it; this is a deliberate dramatisation.
+- **"A Copy of the Verses" is the crisis's opening scene** with three answers, each a first push in the race: the elders warned (Spared), burned unanswered (Armed), or laid before the emir (a roll: the recitations forbidden, or the emir shrugs). Its text closes on the stakes: the Sanhaja are said to mean to move before the year is out.
+- **The road to Lucena is a Prepare the Quarter option in Granada,** not its own event: send the wife and son (the city notices, a small push toward Armed), or only the boy with his tutor. If the quarter is struck, whoever was sent is beyond its reach.
+- **The year's end is a push, not the night outright.** While the race still runs, the Sanhaja gather below the palace ("The Last Days of the Year"): a large push toward Armed (40). A community far enough ahead can still be spared; the night itself comes when Armed fills.
+- **Pillar changes are shown as a size, not a number,** as a general rule for the whole mod: minor (up to 10), moderate (up to 30), major (up to 60), then great bonus or severe penalty, on the pillars' 0-1000 scale. The shared pillar effect and the stored losses in after-attack texts use these words.
+- **Game Over on Granada's night (Daniel's first play-through):** the massacre ran in the same hour as the leader's death, and the on-death continuation could pick (and enrol) a successor who had just been killed. It now picks only a living successor, and the night's killing spares the community's designated heir. Not yet reproduced live.
+

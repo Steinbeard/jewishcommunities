@@ -17,6 +17,23 @@
 scripted_effect kehillah_crisis_act_scopes_effect = {
 	primary_title.var:kehillah_mob_threat ?= { save_scope_as = kehillah_crisis_agitator }
 	domicile.domicile_location.county.holder ?= { save_scope_as = kehillah_crisis_lord }
+	# Granada: Joseph's wife and son, and the community of Lucena that could take them in.
+	if = {
+		limit = { kehillah_crisis_opening_is_trigger = { KEY = vizier } }
+		character:9000234 ?= {
+			if = {
+				limit = { is_alive = yes is_courtier_of = root }
+				save_scope_as = kehillah_granada_son
+			}
+		}
+		character:9000233 ?= {
+			if = {
+				limit = { is_alive = yes is_courtier_of = root }
+				save_scope_as = kehillah_granada_wife
+			}
+		}
+		title:d_kehillah_lucena.holder ?= { save_scope_as = kehillah_granada_lucena }
+	}
 }
 
 # --- Prepare the Quarter ---
@@ -104,6 +121,50 @@ kehillah_crisis_act.0001 = {
 			}
 		}
 		ai_chance = { base = 20 }
+	}
+
+	# Granada: Joseph's wife and son to Lucena (until 2026-11-01 its own event, "The Road to Lucena",
+	# kehillah_granada.0006). The city sees the vizier's household leave; if the quarter is struck,
+	# they are beyond its reach (kehillah_granada_vizier_falls_effect).
+	option = {
+		name = kehillah_crisis_act.0001.lucena_family
+		trigger = {
+			exists = scope:kehillah_granada_son
+			exists = scope:kehillah_granada_wife
+			exists = scope:kehillah_granada_lucena
+			kehillah_crisis_leader_free_trigger = yes
+			NOT = { has_character_flag = kehillah_granada_family_sent }
+		}
+		show_as_unavailable = {
+			exists = scope:kehillah_granada_son
+			exists = scope:kehillah_granada_wife
+			exists = scope:kehillah_granada_lucena
+		}
+		add_character_flag = kehillah_granada_family_sent
+		kehillah_granada_family_to_lucena_effect = yes
+		primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_ev_household_leaves_catalyst } }
+		add_stress = minor_stress_gain
+		ai_chance = { base = 20 }
+	}
+
+	# Granada: only the boy, with his tutor; his mother stays, and the city sees less.
+	option = {
+		name = kehillah_crisis_act.0001.lucena_son
+		trigger = {
+			exists = scope:kehillah_granada_son
+			exists = scope:kehillah_granada_lucena
+			kehillah_crisis_leader_free_trigger = yes
+			NOT = { has_character_flag = kehillah_granada_family_sent }
+		}
+		show_as_unavailable = {
+			exists = scope:kehillah_granada_son
+			exists = scope:kehillah_granada_lucena
+		}
+		add_character_flag = kehillah_granada_family_sent
+		scope:kehillah_granada_lucena = { add_courtier = scope:kehillah_granada_son }
+		custom_tooltip = kehillah_granada_son_sent_tt
+		add_stress = minor_stress_gain
+		ai_chance = { base = 10 }
 	}
 
 	# Proclaim a fast.

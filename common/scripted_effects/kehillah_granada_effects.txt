@@ -20,8 +20,8 @@ kehillah_granada_schedule_effect = {
 		trigger_event = { id = kehillah_granada.0002 days = 65 }
 		# 30 December 1066 from the 15 September bookmark.
 		trigger_event = { id = kehillah_granada.0003 days = 106 }
-		# V43: Azariah, and the rest of Sepharad hears.
-		trigger_event = { id = kehillah_granada.0006 days = 45 }
+		# V43: the rest of Sepharad hears. (Azariah's road to Lucena is a Prepare the Quarter option
+		# since 2026-11-01, events/kehillah_crisis_act_events.txt.)
 		# (through a relay on the emir, to whoever reads them on the day)
 		domicile.domicile_location.county.holder.top_liege ?= {
 			trigger_event = { id = kehillah_granada.0015 days = 20 }
@@ -134,7 +134,22 @@ kehillah_granada_warning_effect = {
   save_scope_as = kehillah_mob_victim
   primary_title = { save_scope_as = kehillah_mob_victim_title }
   domicile.domicile_location = { save_scope_as = kehillah_mob_town save_scope_as = kehillah_mob_preach_place }
-  kehillah_mob_create_preacher_effect = { PLACE = scope:kehillah_mob_preach_place }
+  # 2026-11-01 (Daniel): Abu Ishaq himself leads, while he lives and is free to; otherwise a
+  # generated wa'iz. kehillah_mob_end_effect sends him home instead of vanishing him.
+  if = {
+   limit = {
+    character:9000235 ?= {
+     is_alive = yes
+     is_landed = no
+     NOT = { has_character_flag = kehillah_mob_leader }
+    }
+   }
+   character:9000235 = {
+    save_scope_as = kehillah_mob_leader
+    add_character_flag = kehillah_granada_poet_leader
+   }
+  }
+  else = { kehillah_mob_create_preacher_effect = { PLACE = scope:kehillah_mob_preach_place } }
   scope:kehillah_mob_leader = {
    add_character_flag = kehillah_mob_preaching
    add_character_flag = kehillah_mob_local_preaching
@@ -150,4 +165,45 @@ kehillah_granada_warning_effect = {
   }
   kehillah_mob_preaching_mark_target_effect = yes
  }
+}
+
+# 2026-11-01. Scope: Abu Ishaq, when his host or his preaching ends. He is a historical man, not a
+# generated preacher: he does not vanish. His host's title goes, and he returns to the emir's court.
+kehillah_granada_poet_stands_down_effect = {
+	remove_character_flag = kehillah_granada_poet_leader
+	if = {
+		limit = { has_character_flag = kehillah_mob_leader }
+		remove_character_flag = kehillah_mob_leader
+	}
+	if = {
+		limit = { has_character_flag = kehillah_mob_preaching }
+		remove_character_flag = kehillah_mob_preaching
+	}
+	var:kehillah_mob_title ?= { save_scope_as = kehillah_granada_poet_title }
+	if = {
+		limit = { exists = scope:kehillah_granada_poet_title }
+		destroy_title = scope:kehillah_granada_poet_title
+		remove_variable = kehillah_mob_title
+	}
+	if = {
+		limit = {
+			character:45016 ?= { is_alive = yes is_landed = yes }
+			NOT = { is_courtier_of = character:45016 }
+		}
+		character:45016 = { add_courtier = prev }
+	}
+	debug_log = "kehillah_granada_poet_stands_down_effect: Abu Ishaq goes home"
+}
+
+# 2026-11-01. Scope: Joseph, at the end of the year, while the race still runs: the Sanhaja gather.
+# A large push toward the host instead of the night outright, so a community far enough ahead can
+# still be spared (docs/spec/2026-11-01-three-standing-actions.md, addendum).
+kehillah_granada_sanhaja_gather_effect = {
+	add_character_flag = kehillah_granada_sanhaja_gathered
+	primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_ev_sanhaja_gather_catalyst } }
+	if = {
+		limit = { is_ai = no }
+		trigger_event = kehillah_granada.0020
+	}
+	debug_log = "kehillah_granada_sanhaja_gather_effect: the Sanhaja gather"
 }

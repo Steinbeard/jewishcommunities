@@ -64,17 +64,76 @@ kehillah_granada.0018 = {
 	desc = kehillah_granada.0018.desc
 	theme = intrigue
 	left_portrait = { character = root animation = worry }
+	right_portrait = {
+		trigger = { character:9000235 ?= { is_alive = yes } }
+		character = character:9000235
+		animation = rage
+	}
 	trigger = {
 		kehillah_granada_chain_valid_trigger = yes
 		NOT = { has_character_flag = kehillah_granada_night_done }
 	}
-	immediate = { kehillah_granada_warning_effect = yes }
+	immediate = {
+		kehillah_granada_scopes_effect = yes
+		kehillah_granada_warning_effect = yes
+	}
+	# 2026-11-01: the crisis's opening scene. No longer leads to .0001, whose answers duplicated the
+	# window's actions (docs/spec/2026-11-01-three-standing-actions.md); .0001 stays for queued
+	# saves. Each answer sets a first push in the race.
+
+	# The elders must see it.
 	option = {
 		name = kehillah_granada.0018.a
-		# 2026-11-01: no longer leads to .0001, whose answers duplicated the window's actions
-		# (docs/spec/2026-11-01-three-standing-actions.md). .0001 stays for queued saves.
-		custom_tooltip = kehillah_crisis_find_window_tt
+		primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_ev_elders_warned_catalyst } }
+		ai_chance = { base = 40 }
 	}
+
+	# Burn it.
+	option = {
+		name = kehillah_granada.0018.b
+		add_stress = minor_stress_loss
+		primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_ev_verses_unanswered_catalyst } }
+		ai_chance = { base = 20 }
+	}
+
+	# Lay it before the emir.
+	option = {
+		name = kehillah_granada.0018.c
+		trigger = { exists = scope:kehillah_granada_emir }
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_granada_silence_chance_value }
+				desc = kehillah_granada_silenced
+				custom_tooltip = kehillah_granada_silenced_tt
+				add_character_flag = kehillah_granada_silenced
+				primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_ev_recitations_forbidden_catalyst } }
+			}
+			0 = {
+				modifier = { add = kehillah_granada_silence_fail_value }
+				desc = kehillah_granada_not_silenced
+				custom_tooltip = kehillah_granada_not_silenced_tt
+				primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_ev_emir_shrugs_catalyst } }
+			}
+		}
+		ai_chance = { base = 40 }
+	}
+}
+
+# 2026-11-01. The end of the year: the Sanhaja gather below the palace (kehillah_granada.0003,
+# while the race still runs).
+kehillah_granada.0020 = {
+	type = character_event
+	title = kehillah_granada.0020.t
+	desc = kehillah_granada.0020.desc
+	theme = dread
+	left_portrait = { character = root animation = fear }
+	right_portrait = {
+		trigger = { character:9000235 ?= { is_alive = yes } }
+		character = character:9000235
+		animation = rage
+	}
+	immediate = { kehillah_granada_scopes_effect = yes }
+	option = { name = kehillah_granada.0020.a }
 }
 
 kehillah_granada.0001 = {
@@ -252,6 +311,14 @@ kehillah_granada.0003 = {
  trigger = { kehillah_granada_chain_valid_trigger = yes NOT = { has_character_flag = kehillah_granada_night_done } }
  immediate = {
   if = {
+   limit = {
+    NOT = { has_character_flag = kehillah_granada_sanhaja_gathered }
+    primary_title = { kehillah_crisis_title_race_running_trigger = yes }
+    primary_title.var:kehillah_mob_threat ?= { has_character_flag = kehillah_crisis_granada_agitator has_character_flag = kehillah_mob_preaching }
+   }
+   kehillah_granada_sanhaja_gather_effect = yes
+  }
+  else_if = {
    limit = { primary_title.var:kehillah_mob_threat ?= { has_character_flag = kehillah_crisis_granada_agitator has_character_flag = kehillah_mob_preaching } }
    add_character_flag = kehillah_granada_night_done
    primary_title.var:kehillah_mob_threat = { kehillah_mob_preaching_ends_effect = yes }
@@ -331,6 +398,7 @@ kehillah_granada.0006 = {
 	trigger = {
 		kehillah_granada_chain_valid_trigger = yes
 		NOT = { has_character_flag = kehillah_granada_night_done }
+		NOT = { kehillah_crisis_has_window_trigger = yes }
 		character:9000234 ?= {
 			is_alive = yes
 			is_courtier_of = root
