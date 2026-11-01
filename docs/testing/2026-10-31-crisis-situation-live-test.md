@@ -1,4 +1,4 @@
-**Status:** source/xTiger check passed, 2026-10-31; live probe pending.
+**Status:** user-observed Warning situation; custom window source/xTiger checked, new live probe pending, 2026-10-31.
 
 # Crisis situation integration test
 
@@ -20,12 +20,18 @@ new situation/catalyst/effect files. The files were rewritten with BOMs after
 the boot; that correction has not had a second boot check. No situation object,
 phase, region, or participant was tested.
 
+## Daniel's Warning screenshot, 2026-10-31
+
+After `event kehillah_crisis_debug.1`, Daniel found “Crisis in Kehillah of Worms” showing the Warning phase while no army had been raised. This confirms visible preparation-phase integration in his run. The generic situation window showed “Ends: 1st of January, 2 BC,” irrelevant future phases/takeover points, and raw `kehillah_crisis_armed_catalyst_desc`. A separate warning-state screenshot showed the Military preparation block was crowded. The user-profile log records `.1` firing but has no situation creation trace, and no `.5` firing; it cannot prove instance identity, exact creation time, or save behavior. It repeatedly reported missing `gfx/interface/icons/situation_types/kehillah_community_crisis.dds`.
+
+The subsequent code selects an explicit vanilla icon, adds the catalyst descriptions, and routes the situation to a custom window with the preparations. Military collapses its duplicate action block and links directly to the situation. xTiger remained at the same 0 fatal / 15 error / 95 warning / 1 untidy / 43 tips baseline. The new presentation has **not** been live checked; a fresh game reload is needed before judging the missing icon and GUI changes.
+
 ## Runtime probe
 
 1. In a fresh 1066 Worms game, capture the error-log baseline. Fire `event kehillah_crisis_debug.1`, then `.5`. Confirm one situation instance with the Worms title and matching epoch, a Worms county sub-region/center, and a warning phase. Confirm the Situations list and map pin, and that the Military Community Safety actions still work.
 2. Fire the warning-to-armed path (or set the title stage with a disposable `run` probe and call `.5`), then resolve through `.4`. Confirm the **same** instance advances to Armed and Judgment without the situation changing crisis mechanics or timing.
 3. Advance the ruler response and recovery choice. Confirm Recovery, then deletion of the matching instance and a `done` marker that prevents quarterly recreation.
 4. Repeat in a second community while Worms is active. Verify distinct IDs and centers; ending one must leave the other. Save/reload, succession, host change, and a new incident before an old relay arrives must preserve identity and epoch guards.
-5. Inspect the generic situation window for misleading progress, irrelevant catalyst controls, clipping, missing localization, and tooltip-only log errors. Check an outside observer and the ordinary non-Kehillah Military view.
+5. Open the custom situation window from the Situations list and directly from Military. Confirm the phase text, forecast, preparation buttons, council action, and return link render and work; the fake 2 BC date, takeover points, and raw catalyst key should be absent. Confirm the Military action block is collapsed by default, expands on request, and the warning remains actionable if the situation reference is missing. Check an outside observer and the ordinary non-Kehillah Military view, and compare error logs for icon and GUI expression errors.
 
 Only a Luna tester may run CK3 controls or captures. Check process ownership before launching or attaching; compare feature-tagged errors with the completed boot baseline. A blocked game is an unrun test.
