@@ -43,3 +43,12 @@ No mod errors in `error.log` from the actions, apart from hot-reload noise.
 - Find what he hides: the gold and the one attempt are taken only when the Shtadlan or the leader actually asks. "Think better of it" costs nothing.
 
 Not yet seen live.
+
+## Follow-up 2 (Daniel: "make the phase longer in other ways that integrate nicely with the situation")
+
+The muster is now part of the Armed race instead of a hidden timer. This applies to every community, not only Granada.
+- Each 4-day tick while the host musters adds `kehillah_crisis_struck_muster_catalyst` ("The host gathers", `kehillah_crisis_struck_muster_points` = 3) toward Quarter struck. The rising Struck bar is the countdown. Granada's 36-day muster comes to 27; the usual 10-day muster to 6-9.
+- Silver to the host's leaders, sent while it still musters, keeps it in camp `kehillah_crisis_silver_muster_days` (12) longer. Its tooltip says so.
+- A monthly toast for the Armed race, like Agitation's: "The Host Gathers" ("The Sanhaja Gather" in Granada), "The Host Marches", "The Host at the Gates", each with the month's push toward Quarter struck. Muster, march and siege points go through `kehillah_crisis_struck_tick_effect`, which also counts the month's total.
+
+Not yet seen live.
