@@ -107,3 +107,24 @@ Use a disposable isolated campaign and verify process ownership first.
 Compare feature-tagged error logs with the boot baseline after event tooltips
 and UI interaction. Record an unavailable console or denied ownership query
 as unrun, never as a pass.
+
+## 2026-10-31 single-row navigation check
+
+Daniel's screenshots confirmed the previous Community Safety / Armies row sat
+above the native Your Armies / Mercenaries row. The source now mounts one
+Kehillah-only row: Community Safety, Your Armies, Mercenaries. Verify F3 opens
+Community Safety; each direct army tab opens its native page and controls;
+switching back restores Safety; reopening F3 selects Safety again. Confirm the
+Military title does not change and no second tab row appears. Check tab
+shortcuts and a non-Kehillah ruler's unchanged native navigation. This visual
+check is pending.
+
+Daniel supplied a live screenshot after `event kehillah_crisis_debug.1` on
+2026-10-31. It confirms the constant Military title, one visible row of three
+Kehillah tabs, and the warning dashboard with an agitator and escalation
+forecast. It also reveals that four full preparation buttons and their
+descriptions make the active-warning page crowded. The screenshot does not
+exercise tab clicks, F3 reopening, shortcuts, or a non-Kehillah ruler. A Luna
+tester inspected process ownership but did not launch a second game: the only
+running CK3 process was not a Codex-owned isolated instance, and only one
+display was active. Those remaining checks are UNRUN.

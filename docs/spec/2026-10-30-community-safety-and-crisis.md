@@ -142,3 +142,13 @@ console-only probes for a disposable campaign.
 The implementation is left in the requested main worktree. Publication remains
 blocked by read-only Git metadata and the previously denied GitHub integration
 write route. No commit was made directly on `master`, and no PR is claimed.
+
+## 2026-10-31 addendum: one Military navigation row
+
+**Status:** implemented, source check complete; live visual check pending.
+This addendum supersedes the "Armies" parent-tab arrangement in "Military as the
+entry point" above, following Daniel's review of the two-level layout. A
+Kehillah player sees one row: Community Safety, Your Armies, Mercenaries.
+Community Safety is selected when Military opens. The two army pages keep their
+native content and controls. The window title remains Military on all three
+pages. Non-Kehillah governments keep the original Military navigation.

@@ -27,6 +27,13 @@ reconciliation. xTiger remains at the 15-error baseline. A two-community
 identity/save probe and native UI review are still required; see the [test plan](docs/testing/2026-10-31-crisis-situation-live-test.md).
 This direct request was taken ahead of the older queue.
 
+**Military navigation revision (2026-10-31):** Daniel's live screenshots showed
+two stacked tab rows on the Armies page. The Kehillah view now uses one row for
+Community Safety, Your Armies and Mercenaries, with a constant Military title.
+The original army pages and non-Kehillah navigation are retained. Source and
+xTiger checks passed. Daniel's warning-state screenshot confirms one tab row
+and the constant title; tab clicks and the non-Kehillah view still need a check.
+
 ### The Nagid — 2026-10-30, Daniel's request — slices 1–5 built, not live-tested
 
 [Spec](docs/spec/2026-10-30-the-nagid.md), revised the same day with Daniel's second-round
