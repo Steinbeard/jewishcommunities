@@ -16,6 +16,16 @@ Phases are sequential within a track unless noted. This is the plan,
 subject to revision after each phase.
 
 ## Near-term TODO
+### Community crises as situations — 2026-10-31, Daniel's request
+
+**Spec written; no situation integration built.** The [dated proposal](docs/spec/2026-10-31-community-crises-as-situations.md)
+adds one non-unique, county-centered CK3 situation per active community crisis.
+The community title remains authoritative for stage, epoch, odds and outcome;
+Military Community Safety remains the action surface. A two-community
+identity/save probe, lifecycle mirroring and player UI are separate gated steps.
+The current main-worktree crisis build and its pending live matrix are unchanged
+by this design unit. This direct request was taken ahead of the older queue.
+
 ### The Nagid — 2026-10-30, Daniel's request — design agreed, nothing built
 
 [Spec](docs/spec/2026-10-30-the-nagid.md), revised the same day with Daniel's second-round
