@@ -18,13 +18,13 @@ subject to revision after each phase.
 ## Near-term TODO
 ### Community crises as situations — 2026-10-31, Daniel's request
 
-**First integration and custom warning window built; new UI live verification pending.** The [dated spec](docs/spec/2026-10-31-community-crises-as-situations.md)
+**Situation phase-driven UI built; live verification pending.** The [dated spec](docs/spec/2026-10-31-community-crises-as-situations.md) and [phase-UI revision](docs/spec/2026-10-31-crisis-situation-phase-ui.md)
 now has a non-unique, county-centered CK3 situation per active community crisis.
-The community title remains authoritative for stage, epoch, odds and outcome;
-The custom situation window now presents warning preparations; Military Community Safety is a compact overview with an expandable action fallback. The [implementation note](docs/implementation/2026-10-31-crisis-situation-integration.md)
+The community title remains authoritative for stage, epoch, odds and outcome.
+The situation's native current and future phases now drive the custom window, including warning preparation visibility; the existing stories drive transitions, violence, judgment and postscript events. Military Community Safety is a compact overview with an expandable action fallback. The [implementation note](docs/implementation/2026-10-31-crisis-situation-integration.md)
 records the title/situation bridge, phase catalysts, cleanup and quarterly
 reconciliation. xTiger remains at the 15-error baseline. A two-community
-identity/save probe and custom UI review are still required; see the [test plan](docs/testing/2026-10-31-crisis-situation-live-test.md). Daniel's screenshot confirms the situation is already in Warning before violence and exposed generic-window presentation faults; the replacement has not yet been seen live.
+identity/save probe, transition/event reconciliation, and custom UI review are still required; see the [test plan](docs/testing/2026-10-31-crisis-situation-live-test.md). Daniel's screenshot confirms the situation is already in Warning before violence and exposed generic-window presentation faults; the phase-driven replacement has not yet been seen live.
 This direct request was taken ahead of the older queue.
 
 **Military navigation revision (2026-10-31):** Daniel's live screenshots showed
