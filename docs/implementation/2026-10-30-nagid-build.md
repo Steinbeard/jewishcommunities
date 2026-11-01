@@ -383,12 +383,22 @@ slices 4 and 5. Nothing is stored for its own sake.
 
 ### The realm view (`gui/kehillah_realm_view.gui`)
 
-- **A band under the three tiles,** for the top liege's office in both modes:
-  - the holder's portrait when the office is filled;
-  - one line (`KehillahRvNagidLine`): "Nagid Joseph · Vizier at court (Brilliant)", "no service
-    at court", "awaiting confirmation", "Vacant", "Vacant · confirmation withheld", or "None";
+- **The Nagid at the ruler's side** (`kehillah_rv_nagid_column`), on the right of the ruler's row,
+  for the top liege's office in both modes:
+  - the holder's 64×64 portrait (`kehillah_rv_portrait_tiny`, a copy of vanilla's ledger
+    `portrait_head_tiny`) when the office is filled;
+  - otherwise vanilla's unknown-head silhouette in a grey frame. While the realm has no office,
+    clicking it opens the decision that would fill it: **Establish a Head of the Jews** for the ruler
+    himself, or **Ask for a Head of the Jews** for a Kehillah leader (Daniel's idea). A vacant
+    office has no decision to open, so its frame only explains;
+  - two short lines under the portrait: who holds it, or the court's name for the office
+    (`KehillahRvNagidTop`), then "Vizier · Brilliant", "no service at court", "awaiting
+    confirmation", "vacant", "vacant, withheld" or "none yet" (`KehillahRvNagidSub`);
   - a tooltip for each state (`KehillahRvNagidTooltip`), without numbers. It points to the
     modifiers.
+  - **A full-width band under the three tiles was tried first** and dropped the same day. Daniel
+    found it made the layout uglier: it repeated the ruler's row and doubled the header's height.
+    The ruler's text narrowed from 440 to 330 px to make room for the column.
 - **The seat:**
   - vanilla's capital mark (`icon_capital.dds`, the map's frame) in the corner of the seat's card;
   - a line under the detail card's name: "Seat of the realm's Jews", plus "home of their head" when
@@ -436,7 +446,7 @@ slices 4 and 5. Nothing is stored for its own sake.
 
 ### Fixed while Daniel's game was open
 
-- **The band's portrait** first read its datacontext as `Character…Char`, and the engine refused it
+- **The Nagid's portrait** first read its datacontext as `Character…Char`, and the engine refused it
   ("reading and writing the same context"). It now goes through the primary title.
 - **xTiger does not check this,** so the GUI needs a live look.
 
@@ -449,7 +459,8 @@ slices 4 and 5. Nothing is stored for its own sake.
   - Badis's window lists Joseph as "Vizier";
   - Joseph's lists Badis as "Patron";
   - it changes with the service and goes when the Nagid leaves.
-- **The band** in each state, the portrait opening Joseph, and the window's height.
+- **The Nagid beside the ruler** in each state: the portrait opening Joseph, the empty frame
+  opening the right decision, and the ruler's text wrapping in its narrower column.
 - **The seat** badge and line on Granada.
 - **The 1066 news entries.**
 - **The badge** fits the realm row of the character window, in both windows.

@@ -13,10 +13,12 @@
 # VariableSystem flag "kehillah_realm_view_open".
 #
 # THE LAYOUT: an audience, read top to bottom.
-#   1. the ruler being petitioned, then the three facts about them
-#      (settlement policy, their faith's teaching, their outlook), each a
-#      button to where that fact lives, then the head of the Jews of the
-#      realm (2026-11-01: the Nagid's portrait and office);
+#   1. the ruler being petitioned, with the head of the Jews of the realm
+#      at his side (2026-11-01: a small portrait, or an empty frame), then
+#      the three facts about them (settlement policy, their faith's
+#      teaching, their outlook), each a button to where that fact lives.
+#      A full-width band for the Nagid under the facts was tried first
+#      and dropped the same day: it doubled the header's height;
 #   2. the petitioners: a gallery of portrait cards, six to a row,
 #      most endangered first -- place and danger only (the description
 #      is on hover and in the detail card);
@@ -163,7 +165,7 @@ window = {
 						text_single = {
 							layoutpolicy_horizontal = expanding
 							align = left|nobaseline
-							max_width = 440
+							max_width = 330
 							text = "[Character.GetShortUINameNoTooltip]"
 							default_format = "#high"
 							using = Font_Size_Medium
@@ -171,12 +173,18 @@ window = {
 						text_multi = {
 							layoutpolicy_horizontal = expanding
 							autoresize = yes
-							min_width = 440
-							max_width = 440
+							min_width = 330
+							max_width = 330
 							text = "[SelectLocalization( GetPlayer.MakeScope.Var( 'kehillah_rv_lord_mode' ).IsSet, 'KEHILLAH_RV_LORD_SUB', 'KEHILLAH_RV_RULER_SUB' )]"
 							default_format = "#weak"
 						}
 					}
+
+					# The head of the Jews at the ruler's side (the Nagid spec;
+					# 2026-11-01, Daniel: "small portrait next to the ruler"). The
+					# top liege's office in both modes: the holder's small portrait,
+					# or an empty frame that opens the decision that would fill it.
+					kehillah_rv_nagid_column = {}
 				}
 
 				hbox = {
@@ -214,58 +222,6 @@ window = {
 						blockoverride "fact_label" { text = "KEHILLAH_RV_OUTLOOK_LABEL" }
 						blockoverride "fact_value" { text = "[Character.Custom( 'KehillahOutlookBand' )]" }
 						blockoverride "fact_sub" { text = "[Character.Custom( 'KehillahRvStance' )]" }
-					}
-				}
-
-				# The head of the Jews of the realm (the Nagid spec; 2026-11-01,
-				# Daniel: "we should see ... the Nagid position reflected in the
-				# realm Jews view"). The top liege's office in both modes: the
-				# holder's portrait when it is filled, then one line for the
-				# office as it stands (KehillahRvNagidLine).
-				divider_light = {
-					layoutpolicy_horizontal = expanding
-				}
-				hbox = {
-					layoutpolicy_horizontal = expanding
-					datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_rv_top' ).Char]"
-					ignoreinvisible = yes
-					spacing = 10
-
-					# Through the title: a datacontext may not read and write
-					# Character at once (error.log, 2026-11-01).
-					widget = {
-						size = { 85 90 }
-						visible = "[GetScriptedGui( 'kehillah_nagid_rv_has_holder' ).IsShown( GuiScope.SetRoot( Character.MakeScope ).End )]"
-						datacontext = "[Character.GetPrimaryTitle]"
-
-						portrait_head_small = {
-							datacontext = "[Title.MakeScope.Var( 'kehillah_nagid_holder' ).Char]"
-						}
-					}
-
-					vbox = {
-						layoutpolicy_horizontal = expanding
-						spacing = 2
-						tooltip = "KEHILLAH_RV_NAGID_TOOLTIP"
-						using = tooltip_ws
-
-						text_single = {
-							layoutpolicy_horizontal = expanding
-							align = left|nobaseline
-							max_width = 440
-							text = "KEHILLAH_RV_NAGID_LABEL"
-							default_format = "#weak"
-							using = Font_Size_Small
-							alwaystransparent = yes
-						}
-						text_single = {
-							layoutpolicy_horizontal = expanding
-							align = left|nobaseline
-							max_width = 440
-							text = "[Character.Custom( 'KehillahRvNagidLine' )]"
-							using = Font_Size_Medium
-							alwaystransparent = yes
-						}
 					}
 				}
 			}
@@ -924,6 +880,158 @@ window = {
 
 types KehillahRealmView
 {
+	### The head of the Jews beside the ruler (the Nagid spec; 2026-11-01).
+	### datacontext: the top liege. Filled: the holder's small portrait.
+	### Empty: vanilla's unknown-head silhouette in a grey frame; while the
+	### realm has no office it opens Establish a Head of the Jews for the
+	### ruler himself, or Ask for a Head of the Jews for a Kehillah leader.
+	### Two short lines under it (KehillahRvNagidTop / KehillahRvNagidSub).
+	type kehillah_rv_nagid_column = vbox {
+		datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_rv_top' ).Char]"
+		min_width = 124
+		max_width = 124
+		spacing = 2
+		ignoreinvisible = yes
+		tooltip = "KEHILLAH_RV_NAGID_TOOLTIP"
+		using = tooltip_ws
+
+		# Through the title: a datacontext may not read and write
+		# Character at once (error.log, 2026-11-01).
+		widget = {
+			size = { 64 64 }
+			visible = "[GetScriptedGui( 'kehillah_nagid_rv_has_holder' ).IsShown( GuiScope.SetRoot( Character.MakeScope ).End )]"
+			datacontext = "[Character.GetPrimaryTitle]"
+
+			kehillah_rv_portrait_tiny = {
+				datacontext = "[Title.MakeScope.Var( 'kehillah_nagid_holder' ).Char]"
+			}
+		}
+
+		widget = {
+			size = { 64 64 }
+			visible = "[Not( GetScriptedGui( 'kehillah_nagid_rv_has_holder' ).IsShown( GuiScope.SetRoot( Character.MakeScope ).End ) )]"
+			tooltip = "KEHILLAH_RV_NAGID_TOOLTIP"
+			using = tooltip_ws
+
+			background = {
+				texture = "gfx/portraits/portrait_frame.dds"
+				using = Color_Grey
+				margin = { -4 -4 }
+				alpha = 0.4
+			}
+			icon = {
+				parentanchor = center
+				size = { 51 64 }
+				texture = "gfx/portraits/unknown_portraits/button_unknown_head.dds"
+				framesize = { 384 480 }
+				frame = 1
+				alpha = 0.6
+				alwaystransparent = yes
+			}
+
+			# The ruler himself, with no office yet.
+			button = {
+				size = { 100% 100% }
+				visible = "[And( Character.IsLocalPlayer, GetScriptedGui( 'kehillah_nagid_rv_no_office' ).IsShown( GuiScope.SetRoot( Character.MakeScope ).End ) )]"
+				datacontext = "[GetDecisionWithKey( 'kehillah_establish_nagid_office_decision' )]"
+				onclick = "[OpenGameViewData( 'decision_detail', Decision.Self )]"
+				tooltip = "KEHILLAH_RV_NAGID_EMPTY_RULER_TOOLTIP"
+				using = tooltip_ws
+			}
+			# A Kehillah leader in his realm, with no office yet.
+			button = {
+				size = { 100% 100% }
+				visible = "[And( GetPlayer.GetGovernment.IsType( 'kehillah_government' ), GetScriptedGui( 'kehillah_nagid_rv_no_office' ).IsShown( GuiScope.SetRoot( Character.MakeScope ).End ) )]"
+				datacontext = "[GetDecisionWithKey( 'kehillah_ask_nagid_office_decision' )]"
+				onclick = "[OpenGameViewData( 'decision_detail', Decision.Self )]"
+				tooltip = "KEHILLAH_RV_NAGID_EMPTY_LEADER_TOOLTIP"
+				using = tooltip_ws
+			}
+		}
+
+		text_single = {
+			align = center|nobaseline
+			max_width = 124
+			text = "[Character.Custom( 'KehillahRvNagidTop' )]"
+			alwaystransparent = yes
+		}
+		text_single = {
+			align = center|nobaseline
+			max_width = 124
+			text = "[Character.Custom( 'KehillahRvNagidSub' )]"
+			default_format = "#weak"
+			using = Font_Size_Small
+			alwaystransparent = yes
+		}
+	}
+
+	### A 64x64 head portrait: vanilla's portrait_head_tiny
+	### (gui/window_ledger.gui), copied so this window does not depend on
+	### another window's types. datacontext: the character.
+	type kehillah_rv_portrait_tiny = widget {
+		scissor = yes
+		size = { 64 64 }
+
+		background = {
+			using = Background_Area_Solid
+
+			modify_texture = {
+				texture = "gfx/interface/component_masks/mask_fade_vertical.dds"
+				blend_mode = alphamultiply
+				alpha = 0.2
+				mirror = vertical
+			}
+		}
+
+		widget = {
+			size = { 100% 100% }
+			using = Portrait_Background_Glows
+		}
+
+		widget = {
+			size = { 54 52 }
+			parentanchor = center
+			scissor = yes
+
+			portrait_button = {
+				parentanchor = bottom|hcenter
+				size = { 68 68 }
+				position = { 0 6 }
+				using = portrait_base
+
+				portrait_texture = "[Character.GetPortrait('environment_head', 'camera_head', 'idle', PdxGetWidgetScreenSize(PdxGuiWidget.Self))]"
+
+				mask = "gfx/portraits/portrait_mask_head_small.dds"
+				effectname = "NoHighlight"
+			}
+		}
+
+		widget = {
+			size = { 100% 100% }
+
+			background = {
+				texture = "gfx/portraits/portrait_frame.dds"
+				using = Color_Grey
+				margin = { -4 -4 }
+				alpha = 0.4
+
+				modify_texture = {
+					texture = "gfx/interface/component_masks/mask_fade_vertical.dds"
+					blend_mode = alphamultiply
+					mirror = vertical
+				}
+			}
+
+			background = {
+				visible = "[Character.IsHovered]"
+				texture = "gfx/portraits/portrait_frame.dds"
+				using = Color_Grey
+				alpha = 0.7
+				margin = { -4 -4 }
+			}
+		}
+	}
+
 	### One fact about the ruler: a button, so it shows vanilla's hover
 	### frame (button_standard_hover with a box inside is vanilla's own
 	### clickable-panel form, window_character.gui's titles toggle). Its
