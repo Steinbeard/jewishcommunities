@@ -419,8 +419,14 @@ kehillah_mob_preaching_tick_effect = {
 			set_variable = { name = kehillah_mob_preach_news_days value = 0 }
 		}
 		change_variable = { name = kehillah_mob_preach_days add = -7 }
+		# 2026-11-01: while the community's crisis situation runs the race, the race decides when
+		# the warning ends (kehillah_crisis_armed/spared_start_effect). The countdown is only a
+		# fallback for a community with no situation.
 		if = {
-			limit = { var:kehillah_mob_preach_days <= 0 }
+			limit = {
+				var:kehillah_mob_preach_days <= 0
+				NOT = { var:kehillah_mob_target_title ?= { kehillah_crisis_title_race_running_trigger = yes } }
+			}
 			kehillah_mob_preaching_ends_effect = yes
 		}
 	}
@@ -513,10 +519,15 @@ kehillah_mob_preaching_turn_effect = {
 	}
 }
 
-# The end of the warning is an escalation check, not a guaranteed declaration.
+# The end of the warning. With the race running, only Granada's night calls this, and it raises
+# the host outright; otherwise (no situation) it is the old escalation check.
 kehillah_mob_preaching_ends_effect = {
  var:kehillah_mob_target_title.holder ?= { save_scope_as = kehillah_crisis_victim }
  if = {
+  limit = { var:kehillah_mob_target_title ?= { kehillah_crisis_title_race_running_trigger = yes } }
+  kehillah_mob_preaching_mobilize_effect = yes
+ }
+ else_if = {
   limit = { exists = scope:kehillah_crisis_victim }
   random_list = {
    0 = { modifier = { add = scope:kehillah_crisis_victim.kehillah_crisis_outbreak_chance_value } kehillah_mob_preaching_mobilize_effect = yes }

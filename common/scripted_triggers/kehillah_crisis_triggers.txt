@@ -16,3 +16,43 @@ kehillah_crisis_targeted_edict_valid_trigger = {
  primary_title.var:kehillah_expulsion_host ?= { is_alive = yes }
  domicile.domicile_location.county.holder.top_liege ?= primary_title.var:kehillah_expulsion_host
 }
+
+# --- The Agitation race (2026-11-01) ---
+
+# Scope: a kehillah_community_crisis situation. Its title still points back at it, in this epoch.
+kehillah_crisis_situation_link_valid_trigger = {
+ situation_type = kehillah_community_crisis
+ exists = var:kehillah_crisis_title
+ var:kehillah_crisis_title.var:kehillah_crisis_situation ?= this
+ var:kehillah_crisis_epoch = var:kehillah_crisis_title.var:kehillah_crisis_epoch
+}
+
+# Scope: the situation. The race is on: Agitation, a valid link, and no event has decided it yet.
+kehillah_crisis_race_running_trigger = {
+ situation_current_phase = kehillah_crisis_warning
+ kehillah_crisis_situation_link_valid_trigger = yes
+ var:kehillah_crisis_title = { has_variable = kehillah_crisis_stage var:kehillah_crisis_stage = 1 }
+}
+
+# Scope: a community title. Its own crisis situation is running the race.
+kehillah_crisis_title_race_running_trigger = {
+ exists = var:kehillah_crisis_situation
+ var:kehillah_crisis_situation = { kehillah_crisis_race_running_trigger = yes }
+}
+
+# Scope: community leader. A preparation can start: the warning, the leader free and present, no
+# task running, this one not yet done, and the gold. DONE: the title variable it sets when done.
+kehillah_crisis_can_prepare_trigger = {
+ kehillah_crisis_warning_trigger = yes
+ is_imprisoned = no
+ NOT = { has_variable = kehillah_mob_away }
+ primary_title = { NOT = { has_variable = kehillah_crisis_action } NOT = { has_variable = $DONE$ } }
+ gold >= $COST$
+}
+
+# Scope: community leader. The elders can gather while the agitator lives.
+kehillah_crisis_can_gather_council_trigger = {
+ primary_title.var:kehillah_mob_threat ?= { is_alive = yes }
+ NOT = { has_variable = kehillah_mob_away }
+ is_imprisoned = no
+}

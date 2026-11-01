@@ -1,5 +1,6 @@
 ﻿# 2026-10-29. State on the community title survives a change of leader.
-# Existing preacher/mob stories supply time: no duplicate crisis timer.
+# 2026-11-01: the crisis situation's race (Armed host vs Spared) decides when Agitation ends; the
+# preacher story still supplies the weekly agitation, preparations and developments.
 kehillah_crisis_begin_effect = {
  primary_title = {
   if = {
@@ -37,10 +38,11 @@ kehillah_crisis_tick_effect = {
     change_variable = { name = kehillah_crisis_action_days add = -$DAYS$ }
     if = {
      limit = { var:kehillah_crisis_action_days <= 0 }
-     if = { limit = { var:kehillah_crisis_action = 1 } set_variable = { name = kehillah_mob_defended value = yes } }
-     else_if = { limit = { var:kehillah_crisis_action = 2 } set_variable = { name = kehillah_crisis_supplies value = yes } }
-     else_if = { limit = { var:kehillah_crisis_action = 3 } set_variable = { name = kehillah_mob_scattered value = yes } }
-     else_if = { limit = { var:kehillah_crisis_action = 4 } set_variable = { name = kehillah_crisis_advocacy value = yes } change_variable = { name = kehillah_crisis_agitation add = -20 } clamp_variable = { name = kehillah_crisis_agitation min = 5 max = 95 } }
+     # Each finished preparation also adds its Spared points to the race (2026-11-01).
+     if = { limit = { var:kehillah_crisis_action = 1 } set_variable = { name = kehillah_mob_defended value = yes } kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_watch_catalyst } }
+     else_if = { limit = { var:kehillah_crisis_action = 2 } set_variable = { name = kehillah_crisis_supplies value = yes } kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_supplies_catalyst } }
+     else_if = { limit = { var:kehillah_crisis_action = 3 } set_variable = { name = kehillah_mob_scattered value = yes } kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_routes_catalyst } }
+     else_if = { limit = { var:kehillah_crisis_action = 4 } set_variable = { name = kehillah_crisis_advocacy value = yes } change_variable = { name = kehillah_crisis_agitation add = -20 } clamp_variable = { name = kehillah_crisis_agitation min = 5 max = 95 } kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_advocacy_catalyst } }
      remove_variable = kehillah_crisis_action
      remove_variable = kehillah_crisis_action_days
      holder ?= { if = { limit = { is_ai = no } send_interface_toast = { type = event_toast_effect_good title = kehillah_crisis_prepared_t desc = kehillah_crisis_prepared_d } } }
@@ -103,4 +105,14 @@ kehillah_crisis_targeted_expulsion_effect = {
   primary_title = { set_variable = { name = kehillah_crisis_targeted_expulsion value = yes } }
   kehillah_expulsion_start_effect = { HOST = scope:kehillah_crisis_ruler }
  }
+}
+# Scope: community leader. Starts a preparation task (the weekly tick completes it).
+# ACTION: 1 watch, 2 provisions, 3 escape routes, 4 answer accusations.
+kehillah_crisis_start_preparation_effect = {
+ primary_title = { set_variable = { name = kehillah_crisis_action value = $ACTION$ } set_variable = { name = kehillah_crisis_action_days value = kehillah_crisis_preparation_days } }
+}
+# Scope: community leader. Opens the elders' hub (V42) on the current agitator.
+kehillah_crisis_gather_council_effect = {
+ set_variable = { name = kehillah_mob_ref value = primary_title.var:kehillah_mob_threat }
+ trigger_event = kehillah_mob.0100
 }

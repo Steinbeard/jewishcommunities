@@ -1,4 +1,5 @@
-﻿# Root: community title. The situation is a presentation mirror, never a timer.
+﻿# Root: community title. Since 2026-11-01 the situation owns the Agitation clock (the race);
+# events that decide a transition outright still set the title's stage, and the situation follows.
 kehillah_crisis_situation_close_effect = {
  if = {
   limit = { exists = var:kehillah_crisis_situation }
@@ -10,6 +11,7 @@ kehillah_crisis_situation_close_effect = {
   }
   remove_variable = kehillah_crisis_situation
  }
+ kehillah_crisis_race_clear_mirror_effect = yes
  set_variable = { name = kehillah_crisis_situation_done value = yes }
 }
 
@@ -41,6 +43,11 @@ kehillah_crisis_situation_sync_effect = {
     set_situation_center_province = scope:kehillah_crisis_situation_title.holder.domicile.domicile_location
     situation_sub_region:kehillah_crisis_area = { add_dejure_title_to_sub_region = scope:kehillah_crisis_situation_title.holder.domicile.domicile_location.county }
     scope:kehillah_crisis_situation_title = { set_variable = { name = kehillah_crisis_situation value = scope:kehillah_crisis_new_situation } }
+    # The race opens with the crowd already stirred (an old save's existing agitation counts).
+    if = {
+     limit = { scope:kehillah_crisis_situation_title.var:kehillah_crisis_stage = 1 }
+     add_to_temporary_list = kehillah_crisis_opening_list
+    }
    }
   }
  }
@@ -69,9 +76,139 @@ kehillah_crisis_situation_sync_effect = {
     }
    }
   }
+  if = {
+   limit = { is_in_list = kehillah_crisis_opening_list }
+   trigger_situation_catalyst = kehillah_crisis_opening_catalyst
+  }
+  # Event-decided transitions. In Agitation the judgement catalyst carries Spared to 100: any
+  # prevention, payment or dispersal before the host rose means the danger has passed.
   if = { limit = { situation_current_phase = kehillah_crisis_warning scope:kehillah_crisis_situation_title.var:kehillah_crisis_stage = 2 } trigger_situation_catalyst = kehillah_crisis_armed_catalyst }
   if = { limit = { OR = { situation_current_phase = kehillah_crisis_warning situation_current_phase = kehillah_crisis_armed } scope:kehillah_crisis_situation_title.var:kehillah_crisis_stage = 3 } trigger_situation_catalyst = kehillah_crisis_judgement_catalyst }
-  if = { limit = { situation_current_phase = kehillah_crisis_judgement scope:kehillah_crisis_situation_title.var:kehillah_crisis_stage = 4 } trigger_situation_catalyst = kehillah_crisis_recovery_catalyst }
+  if = { limit = { OR = { situation_current_phase = kehillah_crisis_judgement situation_current_phase = kehillah_crisis_spared } scope:kehillah_crisis_situation_title.var:kehillah_crisis_stage = 4 } trigger_situation_catalyst = kehillah_crisis_recovery_catalyst }
+  kehillah_crisis_race_mirror_effect = yes
  }
+ }
+}
+
+# Root: the situation, monthly. While the race runs, the named drivers add their points.
+kehillah_crisis_race_monthly_effect = {
+ if = {
+  limit = { kehillah_crisis_race_running_trigger = yes }
+  trigger_situation_catalyst = kehillah_crisis_preaching_catalyst
+  if = {
+   limit = { var:kehillah_crisis_sovereign ?= { kehillah_outlook_band_value <= -1 } }
+   trigger_situation_catalyst = kehillah_crisis_cold_lord_catalyst
+  }
+  if = {
+   limit = {
+    var:kehillah_crisis_title.holder.domicile.domicile_location.county ?= {
+     OR = {
+      faith ?= { exists = great_holy_war }
+      holder.top_liege.faith ?= { exists = great_holy_war }
+     }
+    }
+   }
+   trigger_situation_catalyst = kehillah_crisis_holy_war_catalyst
+  }
+  if = {
+   limit = { kehillah_crisis_protection_points_value > 0 }
+   trigger_situation_catalyst = kehillah_crisis_protection_catalyst
+  }
+  if = {
+   limit = { var:kehillah_crisis_sovereign ?= { kehillah_outlook_band_value >= 1 } }
+   trigger_situation_catalyst = kehillah_crisis_goodwill_catalyst
+  }
+  kehillah_crisis_race_mirror_effect = yes
+ }
+}
+
+# Root: community title. Adds a race catalyst, if this title's race is running.
+kehillah_crisis_race_add_effect = {
+ if = {
+  limit = { kehillah_crisis_title_race_running_trigger = yes }
+  var:kehillah_crisis_situation = {
+   trigger_situation_catalyst = $CATALYST$
+   kehillah_crisis_race_mirror_effect = yes
+  }
+ }
+}
+
+# Root: the situation. Copies the engine's own race points onto the title, where Military and
+# localization can read them. Cleared outside the race.
+kehillah_crisis_race_mirror_effect = {
+ if = {
+  limit = { kehillah_crisis_race_running_trigger = yes }
+  situation_sub_region:kehillah_crisis_area = {
+   save_temporary_scope_value_as = { name = kehillah_crisis_armed_now value = phase_takeover_points:kehillah_crisis_armed }
+   save_temporary_scope_value_as = { name = kehillah_crisis_spared_now value = phase_takeover_points:kehillah_crisis_spared }
+  }
+  var:kehillah_crisis_title = {
+   set_variable = { name = kehillah_crisis_armed_points value = scope:kehillah_crisis_armed_now }
+   set_variable = { name = kehillah_crisis_spared_points value = scope:kehillah_crisis_spared_now }
+  }
+ }
+ else = {
+  var:kehillah_crisis_title ?= { kehillah_crisis_race_clear_mirror_effect = yes }
+ }
+}
+
+# Root: community title.
+kehillah_crisis_race_clear_mirror_effect = {
+ if = { limit = { has_variable = kehillah_crisis_armed_points } remove_variable = kehillah_crisis_armed_points }
+ if = { limit = { has_variable = kehillah_crisis_spared_points } remove_variable = kehillah_crisis_spared_points }
+}
+
+# Root: the situation, as the Armed host phase begins. If the race (not an event) brought it,
+# the preacher's following becomes the host, exactly as the old end-of-warning roll did.
+kehillah_crisis_armed_start_effect = {
+ debug_log = "kehillah_community_crisis: Armed host phase entered"
+ var:kehillah_crisis_title ?= { kehillah_crisis_race_clear_mirror_effect = yes }
+ if = {
+  limit = { kehillah_crisis_situation_link_valid_trigger = yes }
+  var:kehillah_crisis_title = { save_scope_as = kehillah_crisis_phase_title }
+  if = {
+   limit = { scope:kehillah_crisis_phase_title.var:kehillah_crisis_stage = 1 }
+   if = {
+    limit = { scope:kehillah_crisis_phase_title.var:kehillah_mob_threat ?= { is_alive = yes has_character_flag = kehillah_mob_preaching } }
+    scope:kehillah_crisis_phase_title.var:kehillah_mob_threat = { kehillah_mob_preaching_mobilize_effect = yes }
+   }
+   else = {
+    # No preacher to lead a host: the danger passes after all, and the phase moves on.
+    debug_log = "kehillah_community_crisis: Armed won the race but no preacher remains; resolving as prevented"
+    scope:kehillah_crisis_phase_title.holder ?= { kehillah_crisis_resolve_effect = { OUTCOME = 1 } }
+   }
+  }
+  else_if = {
+   limit = { scope:kehillah_crisis_phase_title.var:kehillah_crisis_stage >= 3 }
+   debug_log = "kehillah_community_crisis: Armed phase began after the crisis was already resolved; moving on"
+   trigger_situation_catalyst = kehillah_crisis_judgement_catalyst
+  }
+ }
+}
+
+# Root: the situation, as the Spared phase begins. If the race (not an event) brought it, the
+# preacher gives up, exactly as the old roll's no-outbreak branch did.
+kehillah_crisis_spared_start_effect = {
+ debug_log = "kehillah_community_crisis: Spared phase entered"
+ var:kehillah_crisis_title ?= { kehillah_crisis_race_clear_mirror_effect = yes }
+ if = {
+  limit = { kehillah_crisis_situation_link_valid_trigger = yes }
+  var:kehillah_crisis_title = { save_scope_as = kehillah_crisis_phase_title }
+  if = {
+   limit = { scope:kehillah_crisis_phase_title.var:kehillah_crisis_stage = 1 }
+   if = {
+    limit = { scope:kehillah_crisis_phase_title.var:kehillah_mob_threat ?= { is_alive = yes } }
+    scope:kehillah_crisis_phase_title.var:kehillah_mob_threat = {
+     if = { limit = { has_character_flag = kehillah_mob_preaching } remove_character_flag = kehillah_mob_preaching }
+     # Resolves the community as prevented (outcome 1), clears the title's threat, and ends him.
+     kehillah_mob_end_effect = yes
+    }
+   }
+   scope:kehillah_crisis_phase_title.holder ?= { kehillah_crisis_resolve_effect = { OUTCOME = 1 } }
+  }
+  else_if = {
+   limit = { scope:kehillah_crisis_phase_title.var:kehillah_crisis_stage = 2 }
+   debug_log = "kehillah_community_crisis: INCONSISTENT -- Spared won the race in the same days the host rose"
+  }
  }
 }

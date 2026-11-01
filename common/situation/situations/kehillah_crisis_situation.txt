@@ -1,8 +1,11 @@
-﻿# One instance per active community crisis. The community title owns the real state.
+﻿# One instance per active community crisis. The community title owns the epoch, preparations and
+# outcome; since 2026-11-01 (docs/spec/2026-11-01-the-attack-as-a-race.md) the situation owns the
+# clock. Agitation is a race between the Armed host and Spared, each to 100 points. The phase
+# on_starts run the existing outbreak and prevention effects behind the title/epoch guard.
 kehillah_community_crisis = {
  is_unique = no
  window = situation
- gui_window_name = window_situation
+ gui_window_name = kehillah_crisis_situation_window
  situation_group_type = minor
  illustration = "gfx/interface/illustrations/event_scenes/alley_day.dds"
  icon = {
@@ -38,21 +41,67 @@ kehillah_community_crisis = {
    is_character_valid = { scope:situation.var:kehillah_crisis_agitator ?= root }
   }
  }
+ on_monthly = { kehillah_crisis_race_monthly_effect = yes }
+ # The window's Actions list. Each decision checks that the viewer leads this community.
+ situation_decisions = {
+  kehillah_crisis_watch_decision
+  kehillah_crisis_supplies_decision
+  kehillah_crisis_routes_decision
+  kehillah_crisis_advocacy_decision
+  kehillah_crisis_council_decision
+ }
  start_phase = kehillah_crisis_warning
  phases = {
+  # Agitation (the key keeps its old name for saves). The race: whichever track fills first.
   kehillah_crisis_warning = {
    icon = "gfx/interface/icons/icon_event_effect.dds"
-   on_start = { debug_log = "kehillah_community_crisis: Warning phase entered" }
+   on_start = { debug_log = "kehillah_community_crisis: Agitation phase entered" }
+   # A hidden backstop for a stalled race only; the window shows the monthly pressure instead.
+   max_duration = { days = kehillah_crisis_backstop_days }
+   max_duration_next_phase = highest_points
    future_phases = {
-    kehillah_crisis_armed = { takeover_type = points takeover_points = 1 catalysts = { kehillah_crisis_armed_catalyst = 1 } }
-    kehillah_crisis_judgement = { takeover_type = points takeover_points = 1 catalysts = { kehillah_crisis_judgement_catalyst = 1 } }
+    kehillah_crisis_armed = {
+     takeover_type = points
+     takeover_points = 100
+     catalysts = {
+      kehillah_crisis_opening_catalyst = kehillah_crisis_opening_points_value
+      kehillah_crisis_preaching_catalyst = kehillah_crisis_preaching_points_value
+      kehillah_crisis_cold_lord_catalyst = kehillah_crisis_cold_lord_points_value
+      kehillah_crisis_holy_war_catalyst = kehillah_crisis_holy_war_points_value
+      # An event raised the host outright (a host arriving, Granada's night).
+      kehillah_crisis_armed_catalyst = kehillah_crisis_decided_points
+      kehillah_crisis_debug_armed_catalyst = kehillah_crisis_debug_points
+     }
+    }
+    kehillah_crisis_spared = {
+     takeover_type = points
+     takeover_points = 100
+     catalysts = {
+      kehillah_crisis_protection_catalyst = kehillah_crisis_protection_points_value
+      kehillah_crisis_goodwill_catalyst = kehillah_crisis_goodwill_points_value
+      kehillah_crisis_watch_catalyst = kehillah_crisis_watch_points
+      kehillah_crisis_supplies_catalyst = kehillah_crisis_supplies_points
+      kehillah_crisis_routes_catalyst = kehillah_crisis_routes_points
+      kehillah_crisis_advocacy_catalyst = kehillah_crisis_advocacy_points
+      # An event ended the danger outright (the preacher bought off, dispersed or dead).
+      kehillah_crisis_judgement_catalyst = kehillah_crisis_decided_points
+      kehillah_crisis_debug_spared_catalyst = kehillah_crisis_debug_points
+     }
+    }
    }
   }
   kehillah_crisis_armed = {
    icon = "gfx/interface/icons/icon_event_effect.dds"
-   on_start = { debug_log = "kehillah_community_crisis: Armed threat phase entered" }
+   on_start = { kehillah_crisis_armed_start_effect = yes }
    future_phases = {
     kehillah_crisis_judgement = { takeover_type = points takeover_points = 1 catalysts = { kehillah_crisis_judgement_catalyst = 1 } }
+   }
+  }
+  kehillah_crisis_spared = {
+   icon = "gfx/interface/icons/icon_event_effect.dds"
+   on_start = { kehillah_crisis_spared_start_effect = yes }
+   future_phases = {
+    kehillah_crisis_recovery = { takeover_type = points takeover_points = 1 catalysts = { kehillah_crisis_recovery_catalyst = 1 } }
    }
   }
   kehillah_crisis_judgement = {
