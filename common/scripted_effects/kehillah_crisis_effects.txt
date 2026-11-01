@@ -13,6 +13,8 @@ kehillah_crisis_begin_effect = {
    set_variable = { name = kehillah_crisis_agitation value = 45 }
    set_variable = { name = kehillah_crisis_elapsed value = 0 }
    set_variable = { name = kehillah_crisis_developments value = 0 }
+   set_variable = { name = kehillah_crisis_followers value = 0 }
+   remove_variable = kehillah_crisis_neighbours_willing
    remove_variable = kehillah_crisis_action
    remove_variable = kehillah_crisis_action_days
    remove_variable = kehillah_crisis_supplies
@@ -48,22 +50,45 @@ kehillah_crisis_tick_effect = {
      holder ?= { if = { limit = { is_ai = no } send_interface_toast = { type = event_toast_effect_good title = kehillah_crisis_prepared_t desc = kehillah_crisis_prepared_d } } }
     }
    }
+   # Step 1b: one warning event every 21 days or more while the race runs, none repeated.
    if = {
-    limit = { var:kehillah_crisis_elapsed >= 28 var:kehillah_crisis_developments < 3 }
+    limit = { var:kehillah_crisis_elapsed >= kehillah_crisis_event_spacing_days var:kehillah_crisis_developments < 9 kehillah_crisis_title_race_running_trigger = yes }
     set_variable = { name = kehillah_crisis_elapsed value = 0 }
     change_variable = { name = kehillah_crisis_developments add = 1 }
-    holder ?= { if = { limit = { is_ai = no } kehillah_crisis_development_effect = yes } }
+    holder ?= { kehillah_crisis_development_effect = yes }
    }
   }
  }
 }
+# Scope: community leader. Picks one unseen warning event (step 1b). Players get the event; for an
+# AI community, the agitator may gain a follower instead.
 kehillah_crisis_development_effect = {
- random_list = {
-  20 = { trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_crisis_developments_seen target = flag:threats } } } } primary_title = { add_to_variable_list = { name = kehillah_crisis_developments_seen target = flag:threats } } trigger_event = kehillah_crisis.0010 }
-  20 = { trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_crisis_developments_seen target = flag:market } } } } primary_title = { add_to_variable_list = { name = kehillah_crisis_developments_seen target = flag:market } } trigger_event = kehillah_crisis.0011 }
-  20 = { trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_crisis_developments_seen target = flag:neighbours } } } } primary_title = { add_to_variable_list = { name = kehillah_crisis_developments_seen target = flag:neighbours } } trigger_event = kehillah_crisis.0012 }
-  20 = { trigger = { primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_crisis_developments_seen target = flag:watch } } } } primary_title = { add_to_variable_list = { name = kehillah_crisis_developments_seen target = flag:watch } } trigger_event = kehillah_crisis.0013 }
+ primary_title.var:kehillah_mob_threat ?= { save_scope_as = kehillah_crisis_agitator_scope }
+ if = {
+  limit = { is_ai = yes }
+  random = {
+   chance = kehillah_crisis_ai_follower_chance
+   primary_title = { change_variable = { name = kehillah_crisis_followers add = 1 } }
+  }
  }
+ else = {
+  random_list = {
+   10 = { trigger = { kehillah_crisis_development_unseen_trigger = { KEY = threats } } kehillah_crisis_pick_development_effect = { KEY = threats EVENT = kehillah_crisis.0010 } }
+   10 = { trigger = { kehillah_crisis_development_unseen_trigger = { KEY = market } } kehillah_crisis_pick_development_effect = { KEY = market EVENT = kehillah_crisis.0011 } }
+   10 = { trigger = { kehillah_crisis_development_unseen_trigger = { KEY = neighbours } } kehillah_crisis_pick_development_effect = { KEY = neighbours EVENT = kehillah_crisis.0012 } }
+   10 = { trigger = { kehillah_crisis_development_unseen_trigger = { KEY = watch } } kehillah_crisis_pick_development_effect = { KEY = watch EVENT = kehillah_crisis.0013 } }
+   12 = { trigger = { kehillah_crisis_development_unseen_trigger = { KEY = sermon } } kehillah_crisis_pick_development_effect = { KEY = sermon EVENT = kehillah_crisis.0020 } }
+   10 = { trigger = { kehillah_crisis_development_unseen_trigger = { KEY = child } } kehillah_crisis_pick_development_effect = { KEY = child EVENT = kehillah_crisis.0021 } }
+   10 = { trigger = { kehillah_crisis_development_unseen_trigger = { KEY = brawl } } kehillah_crisis_pick_development_effect = { KEY = brawl EVENT = kehillah_crisis.0022 } }
+   14 = { trigger = { kehillah_crisis_development_unseen_trigger = { KEY = follower } } kehillah_crisis_pick_development_effect = { KEY = follower EVENT = kehillah_crisis.0023 } }
+   10 = { trigger = { kehillah_crisis_development_unseen_trigger = { KEY = convert } } kehillah_crisis_pick_development_effect = { KEY = convert EVENT = kehillah_crisis.0024 } }
+  }
+ }
+}
+# Records the event as seen and sends it. Its random_list entry checks kehillah_crisis_development_unseen_trigger.
+kehillah_crisis_pick_development_effect = {
+ primary_title = { add_to_variable_list = { name = kehillah_crisis_developments_seen target = flag:$KEY$ } }
+ trigger_event = $EVENT$
 }
 # Resolve once, before any old end effect clears preparations or kills the agitator.
 # OUTCOME: 1 dispersed/prevented, 2 defended, 3 bought off, 4 quarter struck.

@@ -59,3 +59,28 @@ Each decision is shown only to the leader of a community in Agitation. AI commun
 - Granada's night;
 - AI communities taking the decisions;
 - whether the window's decision list and pressure line render.
+
+## Step 1b — warning events and the agitator's following
+
+**Cadence.** `kehillah_crisis_tick_effect` now sends one warning event every 21 days or more while the title's race runs. The old limit of three, 28 days apart, is gone. The pool has nine events, none repeated in a crisis, chosen in `kehillah_crisis_development_effect`. Each event's `random_list` entry checks `kehillah_crisis_development_unseen_trigger`.
+
+**Answers move the race.** Every option adds a named catalyst through `kehillah_crisis_race_add_effect`, in bands of 6, 12 and 20 (`kehillah_crisis_ev_small/medium/large`). An answer given after the race has ended adds nothing.
+
+**The pool:**
+- **The four existing developments**, re-pointed. Their text is unchanged; their agitation changes are replaced by catalysts.
+  - Words on the Door: witnesses (Spared), or threats unanswered (Armed).
+  - The Empty Market: covered (Spared, 12), closed (Spared, 6), or turned (Armed).
+  - Neighbours Speak Up: they speak for us (Spared). This also sets `kehillah_crisis_neighbours_willing` for a later action.
+  - The Watch Wants Its Pay: paid, which also marks the quarter defended (Spared), or thinned (Armed).
+- **Five new events:**
+  - **A Sermon in the Market:** let it pass, pay the wardens, or the bailiff (a Diplomacy challenge).
+  - **A Child Is Missing:** join the search (an Intrigue challenge against the agitator; large either way), the lord's men for gold, or stay indoors.
+  - **A Brawl at the Well:** the lord's court, the Bet Din (Stability −20), or pay the master.
+  - **A Follower Joins:** see below.
+  - **A Convert Speaks:** a Learning challenge, pay him to leave, or let him talk.
+
+**The following.** `kehillah_crisis_followers` on the title, reset at a new crisis, adds 4 Armed points a month per follower ("His following"). A Follower Joins adds one. Where the agitator's county holder has an adult male courtier of the agitator's faith, he is named and shown. Winning him back (gold and a Diplomacy challenge) removes him. AI communities get no warning events; instead, at each event slot, their agitator gains a follower 40% of the time.
+
+**Departures from the spec:**
+- The spec's follower events (a knight takes the cross, a guild master vouches, a parish priest opens his church) are one event. It names a courtier where one exists and otherwise a guild master. Opening-specific follower texts come with step 1e.
+- "A Convert Speaks" uses the leader's Learning. Answering through the Dayyan, as the Talmud trial does, is an action in step 1c ("Answer him in public").
