@@ -1,11 +1,12 @@
 ﻿# Root: community title. Since 2026-11-01 the situation owns the Agitation clock (the race);
 # events that decide a transition outright still set the title's stage, and the situation follows.
 kehillah_crisis_situation_close_effect = {
+ save_scope_as = kehillah_crisis_close_title
  if = {
   limit = { exists = var:kehillah_crisis_situation }
   var:kehillah_crisis_situation = {
    if = {
-    limit = { situation_type = kehillah_community_crisis var:kehillah_crisis_title ?= root var:kehillah_crisis_epoch = root.var:kehillah_crisis_epoch }
+    limit = { situation_type = kehillah_community_crisis var:kehillah_crisis_title ?= scope:kehillah_crisis_close_title var:kehillah_crisis_epoch = scope:kehillah_crisis_close_title.var:kehillah_crisis_epoch }
     end_situation = yes
    }
   }
@@ -59,7 +60,14 @@ kehillah_crisis_situation_sync_effect = {
   save_scope_as = kehillah_crisis_situation_instance
   if = { limit = { exists = var:kehillah_crisis_leader } remove_manual_participant = var:kehillah_crisis_leader remove_variable = kehillah_crisis_leader }
   if = { limit = { exists = var:kehillah_crisis_sovereign } remove_manual_participant = var:kehillah_crisis_sovereign remove_variable = kehillah_crisis_sovereign }
-  if = { limit = { exists = var:kehillah_crisis_agitator } remove_manual_participant = var:kehillah_crisis_agitator remove_variable = kehillah_crisis_agitator }
+  if = {
+   limit = { exists = var:kehillah_crisis_agitator }
+   if = {
+    limit = { any_situation_participant = { this = scope:kehillah_crisis_situation_instance.var:kehillah_crisis_agitator } }
+    remove_manual_participant = var:kehillah_crisis_agitator
+   }
+   remove_variable = kehillah_crisis_agitator
+  }
   scope:kehillah_crisis_situation_title.holder ?= {
    scope:kehillah_crisis_situation_instance = {
     set_variable = { name = kehillah_crisis_leader value = prev }
@@ -82,6 +90,7 @@ kehillah_crisis_situation_sync_effect = {
   }
   if = {
    limit = { is_in_list = kehillah_crisis_opening_list }
+   kehillah_crisis_store_push_effect = yes
    trigger_situation_catalyst = kehillah_crisis_opening_catalyst
   }
   # Step 1e: a recorded opening counts once, by name.
@@ -109,6 +118,7 @@ kehillah_crisis_situation_sync_effect = {
 kehillah_crisis_race_monthly_effect = {
  if = {
   limit = { kehillah_crisis_race_running_trigger = yes }
+  kehillah_crisis_store_push_effect = yes
   trigger_situation_catalyst = kehillah_crisis_preaching_catalyst
   if = {
    limit = { kehillah_crisis_following_points_value > 0 }
@@ -157,11 +167,24 @@ kehillah_crisis_race_monthly_effect = {
  }
 }
 
+# Root: the situation. Copies half the title's agitation onto the situation, where the preaching
+# and opening catalysts read it.
+kehillah_crisis_store_push_effect = {
+ var:kehillah_crisis_title ?= { save_temporary_scope_as = kehillah_crisis_push_title }
+ if = {
+  limit = { exists = scope:kehillah_crisis_push_title.var:kehillah_crisis_agitation }
+  set_variable = { name = kehillah_crisis_push value = scope:kehillah_crisis_push_title.var:kehillah_crisis_agitation }
+  change_variable = { name = kehillah_crisis_push divide = 2 }
+  round_variable = { name = kehillah_crisis_push nearest = 1 }
+ }
+}
+
 # Root: community title. Adds a race catalyst, if this title's race is running.
 kehillah_crisis_race_add_effect = {
  if = {
   limit = { kehillah_crisis_title_race_running_trigger = yes }
   var:kehillah_crisis_situation = {
+   kehillah_crisis_store_push_effect = yes
    trigger_situation_catalyst = $CATALYST$
    kehillah_crisis_race_mirror_effect = yes
   }
