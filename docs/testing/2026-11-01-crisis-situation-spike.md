@@ -124,3 +124,23 @@ Following the spec's [race addendum](../spec/2026-11-01-crisis-situations-as-the
 - Is the "Pressure next month" line useful?
 - What does the phase track between current and future show now?
 - Does a decision or event option tooltip show catalyst points natively? If not, slice 1 needs a custom tooltip line for each action.
+
+## Run 2 — 2026-11-01, Daniel (01:35–01:55, same game session as run 1)
+
+Daniel fired Post a Watch whenever it was off cooldown, got the market sermon once, and played until Armed took over. Sources: his screenshot of the window in Armed, `debug.log`, `error.log`. There was no restart: `debug.log` runs on from run 1. The situation type, catalysts and script values hot-reloaded, because Spared collected points under the new definition.
+
+**What works:**
+- **The race.** Spared rose 20 per watch (20, 40, 60, 80) with no "not progressed with Points" errors after the rework.
+- **Armed accelerates.** It opened at 20, and the monthly pushes were 23, 26, 29 and 32: 43, 69, 98, 130.
+- **Takeover.** Armed took over at 130. The engine applies a takeover a few in-game days after the bar passes 100, not instantly; the same happened with four Inflames (120).
+- **The guard.** `outcome_calls=1 outcome_applied=1`: the epoch fix holds.
+- **Phase Effects** applied during Agitation (Diplomacy 16) and dropped when it ended (14).
+
+**What breaks down:**
+- **The Armed phase is a dead end.** The spike's Armed is terminal, so the window goes empty: no future phases, no actions, a "-" future. Every real phase must carry its own race until an ending.
+- **Watches alone lose, by design and then some.** +20 a month against an opening 20 plus 23–32 a month. The race needs more and more varied ways to push Spared.
+- **An event can outlive its phase.** The sermon (01:51:16) was answered after Armed took over (01:51:25). Its catalyst failed ("no catalyst … in this situation"). Options must re-check the phase, and a phase change should close or redirect pending crisis events.
+- **The log effect raises errors in a terminal phase** (`phase_takeover_points` with no future phases). This is spike-only noise.
+- **Not seen:** whether the "Pressure next month" line rendered (the screenshot is in Armed), and whether option tooltips show points.
+
+**Found in passing, fixed:** the real crisis's quarterly reconcile (`kehillah_crisis_situation_reconcile`) read `var:kehillah_crisis_stage` without checking it exists. Every Kehillah without a crisis logged "Failed to fetch variable" each quarter. It now checks `has_variable` first, as the settlement retry beside it already did. A real `kehillah_community_crisis` warning (the preacher Diederik, "The Preaching") ran at Worms during this test, alongside the spike.
