@@ -1,0 +1,190 @@
+﻿# A decree against the Jews (docs/spec/2026-11-01-decree-situation.md), 2026-11-01. Replaces the
+# one-event badge and servants' decree (kehillah_incident.0010, .0040) with the kehillah_decree
+# situation.
+
+# Scope: a Kehillah leader (the incident director, or the console). KIND: badge, ghiyar, servants.
+kehillah_decree_begin_effect = {
+	if = {
+		limit = { kehillah_decree_can_begin_trigger = yes }
+		kehillah_incident_scopes_effect = yes
+		domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
+		primary_title = { save_scope_as = kehillah_decree_new_title }
+		start_situation = {
+			type = kehillah_decree
+			start_phase = kehillah_decree_proclaimed
+			save_scope_as = kehillah_decree_new_situation
+		}
+		scope:kehillah_decree_new_situation ?= {
+			set_variable = { name = kehillah_decree_title value = scope:kehillah_decree_new_title }
+			set_variable = { name = kehillah_decree_kind value = flag:$KIND$ }
+			set_situation_center_province = root.domicile.domicile_location
+			situation_sub_region:kehillah_decree_area = { add_dejure_title_to_sub_region = root.domicile.domicile_location.county }
+			kehillah_decree_participants_effect = yes
+			trigger_situation_catalyst = kehillah_decree_opening_catalyst
+			scope:kehillah_decree_new_title = { set_variable = { name = kehillah_decree_situation value = scope:kehillah_decree_new_situation } }
+		}
+		kehillah_decree_news_$KIND$_effect = yes
+		if = {
+			limit = { is_ai = no }
+			send_interface_message = {
+				type = msg_kehillah_crisis_begins
+				title = kehillah_decree_begins_$KIND$_t
+				desc = kehillah_decree_begins_$KIND$_d
+				left_icon = scope:kehillah_decree_new_title
+			}
+		}
+		trigger_event = kehillah_decree.0001
+		debug_log = "kehillah_decree_begin_effect: $KIND$"
+	}
+}
+kehillah_decree_news_badge_effect = { kehillah_realm_news_add_effect = { KIND = badge_decree } }
+kehillah_decree_news_ghiyar_effect = { kehillah_realm_news_add_effect = { KIND = badge_decree } }
+kehillah_decree_news_servants_effect = { kehillah_realm_news_add_effect = { KIND = servants_decree } }
+
+# Scope: the situation. The community's leader and the sovereign, as they are now.
+kehillah_decree_participants_effect = {
+	save_scope_as = kehillah_decree_sit
+	if = {
+		limit = { exists = var:kehillah_decree_leader }
+		remove_manual_participant = var:kehillah_decree_leader
+		remove_variable = kehillah_decree_leader
+	}
+	if = {
+		limit = { exists = var:kehillah_decree_lord }
+		remove_manual_participant = var:kehillah_decree_lord
+		remove_variable = kehillah_decree_lord
+	}
+	var:kehillah_decree_title.holder ?= {
+		scope:kehillah_decree_sit = {
+			set_variable = { name = kehillah_decree_leader value = prev }
+			add_manual_participant = prev
+		}
+	}
+	var:kehillah_decree_title.holder.domicile.domicile_location.county.holder.top_liege ?= {
+		scope:kehillah_decree_sit = {
+			set_variable = { name = kehillah_decree_lord value = prev }
+			add_manual_participant = prev
+		}
+	}
+}
+
+# Root: the situation, monthly. While it is Proclaimed, the lord's clerks press it, and a player
+# hears of it.
+kehillah_decree_monthly_effect = {
+	if = {
+		limit = { situation_current_phase = kehillah_decree_closed }
+		kehillah_decree_close_effect = yes
+	}
+	else_if = {
+		limit = { exists = var:kehillah_decree_title }
+		kehillah_decree_participants_effect = yes
+		if = {
+			limit = { situation_current_phase = kehillah_decree_proclaimed }
+			trigger_situation_catalyst = kehillah_decree_clerks_catalyst
+			var:kehillah_decree_title ?= { save_scope_as = kehillah_decree_toast_title }
+			var:kehillah_decree_lord ?= { save_scope_as = kehillah_decree_toast_lord }
+			save_scope_value_as = { name = kehillah_decree_toast_push value = kehillah_decree_clerks_points_value }
+			scope:kehillah_decree_toast_title.holder ?= {
+				if = {
+					limit = { is_ai = no }
+					set_variable = { name = kehillah_decree_month_push value = scope:kehillah_decree_toast_push }
+					save_scope_as = kehillah_decree_toast_leader
+					if = {
+						limit = { kehillah_decree_kind_trigger = { KIND = servants } }
+						send_interface_message = {
+							type = msg_kehillah_crisis_pressure
+							title = kehillah_decree_pressure_servants_t
+							desc = kehillah_decree_pressure_servants_d
+							left_icon = scope:kehillah_decree_toast_title
+						}
+					}
+					else = {
+						send_interface_message = {
+							type = msg_kehillah_crisis_pressure
+							title = kehillah_decree_pressure_badge_t
+							desc = kehillah_decree_pressure_badge_d
+							left_icon = scope:kehillah_decree_toast_title
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+# Scope: the community title. A catalyst toward the decree's race, while it runs.
+kehillah_decree_add_effect = {
+	var:kehillah_decree_situation ?= { trigger_situation_catalyst = $CATALYST$ }
+}
+
+# Scope: a Kehillah leader. An answer is spent for this decree.
+kehillah_decree_mark_done_effect = {
+	primary_title = { set_variable = { name = kehillah_decree_did_$ONCE$ value = yes } }
+}
+
+# Root: the situation, as a verdict begins. VERDICT: enforced, suspended, withdrawn.
+kehillah_decree_verdict_start_effect = {
+	debug_log = "kehillah_decree: a verdict"
+	var:kehillah_decree_title ?= {
+		set_variable = { name = kehillah_decree_verdict value = flag:$VERDICT$ }
+		holder ?= {
+			kehillah_decree_verdict_$VERDICT$_effect = yes
+			if = {
+				limit = { is_ai = no }
+				# A day on, so the phase is current when the event checks it.
+				trigger_event = { id = kehillah_decree.0060 days = 1 }
+			}
+		}
+	}
+}
+
+# Scope: the leader. The verdicts.
+kehillah_decree_verdict_enforced_effect = {
+	if = {
+		limit = { kehillah_decree_kind_trigger = { KIND = servants } }
+		kehillah_servants_decree_effect = yes
+	}
+	else = {
+		kehillah_badge_decree_effect = yes
+		add_character_modifier = { modifier = kehillah_badge_modifier years = kehillah_badge_years }
+	}
+}
+kehillah_decree_verdict_suspended_effect = {
+	custom_tooltip = kehillah_decree_suspended_tt
+	primary_title = {
+		if = {
+			limit = { var:kehillah_decree_situation.var:kehillah_decree_kind ?= flag:servants }
+			set_variable = { name = kehillah_decree_suspended_servants value = yes years = kehillah_decree_suspension_years }
+		}
+		else = {
+			set_variable = { name = kehillah_decree_suspended_badge value = yes years = kehillah_decree_suspension_years }
+		}
+	}
+}
+kehillah_decree_verdict_withdrawn_effect = {
+	custom_tooltip = kehillah_decree_withdrawn_tt
+	kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_decree_withdrawn_stability }
+}
+
+# Root: the situation, as its Closed phase begins. Never end_situation here: inside the situation's own
+# phase on_start it crashed the game (the Talmud trial, live test 2026-11-01). A hidden event on the
+# leader ends it a day later (kehillah_decree.0099); the monthly pass retries if no leader took it.
+kehillah_decree_close_effect = {
+	debug_log = "kehillah_decree: closing"
+	var:kehillah_decree_title.holder ?= { trigger_event = { id = kehillah_decree.0099 days = 1 } }
+}
+
+# Scope: the community title (kehillah_decree.0099). The decree ends; the next crisis can begin.
+kehillah_decree_end_effect = {
+	debug_log = "kehillah_decree: closed"
+	var:kehillah_decree_situation ?= { end_situation = yes }
+	save_scope_as = kehillah_decree_ending_title
+	scope:kehillah_decree_ending_title = {
+		remove_variable = kehillah_decree_situation
+		remove_variable = kehillah_decree_did_petition
+		remove_variable = kehillah_decree_did_pay
+		remove_variable = kehillah_decree_did_leave
+		remove_variable = kehillah_decree_did_common
+		remove_variable = kehillah_decree_verdict
+	}
+}
