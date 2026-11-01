@@ -32,6 +32,7 @@ kehillah_crisis_begin_effect = {
    remove_variable = kehillah_crisis_pleaded
    remove_variable = kehillah_granada_letter_found
    remove_variable = kehillah_crisis_struck_month
+   remove_variable = kehillah_crisis_announced
    # The pressure toasts' first-time notices (kehillah_crisis_race_monthly_effect).
    remove_variable = kehillah_crisis_told_cold_lord
    remove_variable = kehillah_crisis_told_holy_war
@@ -234,6 +235,17 @@ kehillah_crisis_credit_opening_effect = {
   else_if = { limit = { var:kehillah_crisis_opening = flag:holy_week } kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_opening_holy_week_catalyst } }
   else_if = { limit = { var:kehillah_crisis_opening = flag:vizier } kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_opening_vizier_catalyst } }
   else = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_opening_preacher_catalyst } }
+  kehillah_crisis_announce_once_effect = yes
+ }
+}
+
+# Scope: community title. The opening announcement, once per crisis: from the opening's catalyst in
+# Agitation, or as a host raised with no warning begins the crisis already armed (2026-11-01: those
+# had no announcement at all).
+kehillah_crisis_announce_once_effect = {
+ if = {
+  limit = { NOT = { has_variable = kehillah_crisis_announced } }
+  set_variable = { name = kehillah_crisis_announced value = yes }
   kehillah_crisis_announce_effect = yes
  }
 }
@@ -247,7 +259,29 @@ kehillah_crisis_announce_effect = {
  holder ?= {
   if = {
    limit = { is_ai = no exists = scope:kehillah_crisis_announce_county }
+   # A host raised with no warning: the crisis begins already armed.
    if = {
+    limit = {
+     scope:kehillah_crisis_announce_title.var:kehillah_crisis_stage ?= 2
+     scope:kehillah_crisis_announce_title.var:kehillah_crisis_opening ?= flag:rising
+    }
+    kehillah_crisis_send_announcement_effect = { KEY = rising }
+   }
+   else_if = {
+    limit = {
+     scope:kehillah_crisis_announce_title.var:kehillah_crisis_stage ?= 2
+     scope:kehillah_crisis_announce_title.var:kehillah_crisis_opening ?= flag:crusade
+    }
+    kehillah_crisis_send_announcement_effect = { KEY = crusade_host }
+   }
+   else_if = {
+    limit = {
+     scope:kehillah_crisis_announce_title.var:kehillah_crisis_stage ?= 2
+     NOT = { scope:kehillah_crisis_announce_title.var:kehillah_crisis_opening ?= flag:vizier }
+    }
+    kehillah_crisis_send_announcement_effect = { KEY = host }
+   }
+   else_if = {
     limit = { scope:kehillah_crisis_announce_title.var:kehillah_crisis_opening ?= flag:vizier exists = scope:kehillah_crisis_announce_agitator }
     kehillah_crisis_send_announcement_effect = { KEY = vizier }
    }
