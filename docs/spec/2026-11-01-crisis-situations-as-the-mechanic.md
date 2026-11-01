@@ -276,3 +276,17 @@ Daniel chose to build the attack first. Spike run 2 proved the race in the live 
 4. **the expulsion edict**.
 
 The Community Safety and crisis-situation live tests become part of step 1a's test, since 1a changes the same code.
+
+## Addendum, 2026-11-01 (evening): the accusation opens the attack
+
+**Status:** built, not live-tested. Daniel: "folding the accusations into the crisis as the opening event of the crisis makes sense". This supersedes §3.3 as a family of its own, for now. The libel's prisoners and inquest are not built; they may return later as a branch of the attack.
+
+- An accusation (V37's quarterly chance, or the incident director) starts the community's crisis with the opening **accusation**. Its local agitator keeps the charge alive, and V37's `kehillah_accusation.0001` is the crisis's first scene (`kehillah_accusation_begin_effect`). The Preaching (`kehillah_mob.0004`) does not also fire.
+- The four answers keep their costs and odds, but they now push the race instead of rolling the violence on the spot:
+  - pleading or paying, if the lord answers: **The lord cleared the street** (Spared 25); if not: **No help came** (Armed 20);
+  - breaking the lie: **The lie exposed** (Spared 40), or **Buying witnesses** (Armed 30);
+  - barring the gates: the riot outside happens that night, as before, then **Rage spent on the gates** (Spared 12).
+- What V37 called "the mob comes" is now the crisis's Armed host, decided by the race. `.0002` and `.0003` are no longer fired, and are kept for saves that already scheduled them.
+- The three standing actions have accusation descriptions.
+- The charge (blood libel, mockery, desecration, blasphemy) is kept for a year, so later scenes can name it.
+- Console: `event kehillah_crisis_debug.10`.
