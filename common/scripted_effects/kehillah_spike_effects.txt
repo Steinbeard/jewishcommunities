@@ -1,7 +1,8 @@
 ﻿# SPIKE (2026-11-01, disposable): slice 0 of the crisis-situations spec. Every line logs with the
 # prefix "KEHILLAH SPIKE" so debug.log can be filtered.
 
-# Root: a Kehillah leader. Ends this title's spike, if any. DAYS: the Agitation deadline.
+# Root: a Kehillah leader. Ends this title's spike, if any. AGITATION: the starting agitation,
+# which is also Armed's opening points.
 kehillah_spike_start_effect = {
  primary_title = { save_scope_as = kehillah_spike_start_title }
  kehillah_spike_end_effect = yes
@@ -16,17 +17,14 @@ kehillah_spike_start_effect = {
   set_variable = { name = kehillah_spike_outcome_applied value = 0 }
   remove_variable = kehillah_spike_outcome
  }
- set_global_variable = { name = kehillah_spike_pending_deadline_days value = $DAYS$ }
  start_situation = {
   type = kehillah_spike_crisis
   save_scope_as = kehillah_spike_new
  }
- remove_global_variable = kehillah_spike_pending_deadline_days
  scope:kehillah_spike_new ?= {
   set_variable = { name = kehillah_spike_title value = scope:kehillah_spike_start_title }
   set_variable = { name = kehillah_spike_epoch value = scope:kehillah_spike_start_title.var:kehillah_spike_epoch }
-  set_variable = { name = kehillah_spike_deadline_days value = $DAYS$ }
-  set_variable = { name = kehillah_spike_agitation value = 20 }
+  set_variable = { name = kehillah_spike_agitation value = $AGITATION$ }
   set_situation_center_province = root.domicile.domicile_location
   situation_sub_region:kehillah_spike_area = { add_dejure_title_to_sub_region = root.domicile.domicile_location.county }
   add_manual_participant = root
@@ -37,7 +35,7 @@ kehillah_spike_start_effect = {
    }
   }
   scope:kehillah_spike_start_title = { set_variable = { name = kehillah_spike_situation value = scope:kehillah_spike_new } }
-  # Opening points, so a deadline with no monthly pulse yet never draws from 0 against 0.
+  # Opening points: the race starts with the crowd already stirred.
   trigger_situation_catalyst = kehillah_spike_agitation_catalyst
   kehillah_spike_log_effect = { WHEN = start }
  }
@@ -61,14 +59,32 @@ kehillah_spike_end_effect = {
  }
 }
 
-# Root: the situation, monthly. Agitation rises and adds that many Armed points.
+# Root: the situation, monthly. Agitation rises and adds that many Armed points; sometimes a
+# preacher speaks in the market and the leader must answer (kehillah_crisis_spike.10).
 kehillah_spike_monthly_effect = {
  if = {
   limit = { situation_current_phase = kehillah_spike_agitation exists = var:kehillah_spike_title }
   change_variable = { name = kehillah_spike_agitation add = kehillah_spike_agitation_monthly_rise }
   trigger_situation_catalyst = kehillah_spike_agitation_catalyst
+  random = {
+   chance = kehillah_spike_sermon_chance
+   var:kehillah_spike_title.holder ?= { trigger_event = kehillah_crisis_spike.10 }
+  }
  }
  kehillah_spike_log_effect = { WHEN = monthly }
+}
+
+# Root: the leader, from the sermon event. Adds a catalyst to the leader's live spike.
+kehillah_spike_catalyst_effect = {
+ primary_title.var:kehillah_spike_situation ?= {
+  if = {
+   limit = { situation_current_phase = kehillah_spike_agitation }
+   trigger_situation_catalyst = {
+    catalyst = $CATALYST$
+    character = root
+   }
+  }
+ }
 }
 
 # Root: the situation, from an outcome phase's on_start. Counts every call; applies once per epoch.

@@ -1,20 +1,20 @@
 ﻿namespace = kehillah_crisis_spike
 
-# SPIKE (2026-11-01, disposable, console-only). Run as the Kehillah leader, in a test save.
-# .1 short warning (45 days): tests the deadline and the weighted pick.
-# .2 long warning (240 days): tests Armed's early takeover from monthly points.
-# .3 log the current numbers. .4 end the spike. .5 move the deadline var to 20 days.
+# SPIKE (2026-11-01, disposable). Console events, run as the Kehillah leader in a test save:
+# .1 start the race at agitation 20. .2 start it at agitation 40 (a fast takeover).
+# .3 log the current numbers. .4 end the spike. .6 bring the market sermon now.
+# .10 is the sermon itself, which the situation's monthly pulse also sends.
 
 kehillah_crisis_spike.1 = {
  type = character_event hidden = yes
  trigger = { government_has_flag = government_is_kehillah exists = domicile.domicile_location.county }
- immediate = { kehillah_spike_start_effect = { DAYS = 45 } }
+ immediate = { kehillah_spike_start_effect = { AGITATION = 20 } }
 }
 
 kehillah_crisis_spike.2 = {
  type = character_event hidden = yes
  trigger = { government_has_flag = government_is_kehillah exists = domicile.domicile_location.county }
- immediate = { kehillah_spike_start_effect = { DAYS = 240 } }
+ immediate = { kehillah_spike_start_effect = { AGITATION = 40 } }
 }
 
 kehillah_crisis_spike.3 = {
@@ -29,13 +29,72 @@ kehillah_crisis_spike.4 = {
  immediate = { kehillah_spike_end_effect = yes }
 }
 
-# Is max_duration read once at phase start, or again later? The end date in the window answers it.
-kehillah_crisis_spike.5 = {
+kehillah_crisis_spike.6 = {
  type = character_event hidden = yes
+ trigger = { exists = primary_title.var:kehillah_spike_situation }
+ immediate = { trigger_event = kehillah_crisis_spike.10 }
+}
+
+# A Sermon in the Market: an event that pushes the race. Letting it pass feeds the Armed host;
+# paying, or persuading the lord's bailiff, feeds Spared. The points show in the options' tooltips.
+kehillah_crisis_spike.10 = {
+ type = character_event
+ title = kehillah_crisis_spike.10.t
+ desc = kehillah_crisis_spike.10.desc
+ theme = faith
+ left_portrait = {
+  character = root
+  animation = worry
+ }
+ trigger = {
+  primary_title.var:kehillah_spike_situation ?= { situation_current_phase = kehillah_spike_agitation }
+ }
+
  immediate = {
-  primary_title.var:kehillah_spike_situation ?= {
-   set_variable = { name = kehillah_spike_deadline_days value = 20 }
-   kehillah_spike_log_effect = { WHEN = deadline_set_20 }
+  primary_title.var:kehillah_spike_situation ?= { kehillah_spike_log_effect = { WHEN = sermon } }
+ }
+
+ # Let him talk himself hoarse.
+ option = {
+  name = kehillah_crisis_spike.10.a
+  kehillah_spike_catalyst_effect = { CATALYST = kehillah_spike_sermon_catalyst }
+  ai_chance = { base = 30 }
+ }
+
+ # Pay the market wardens to move him on.
+ option = {
+  name = kehillah_crisis_spike.10.b
+  trigger = { gold >= kehillah_spike_calm_gold_cost }
+  remove_short_term_gold = kehillah_spike_calm_gold_cost
+  kehillah_spike_catalyst_effect = { CATALYST = kehillah_spike_calm_catalyst }
+  ai_chance = { base = 40 }
+ }
+
+ # Ask the lord's bailiff to keep the peace.
+ option = {
+  name = kehillah_crisis_spike.10.c
+  duel = {
+   skill = diplomacy
+   value = medium_skill_rating
+   50 = {
+    desc = kehillah_crisis_spike.10.c.success
+    compare_modifier = {
+     value = scope:duel_value
+     multiplier = 3.5
+    }
+    min = 5
+    kehillah_spike_catalyst_effect = { CATALYST = kehillah_spike_calm_catalyst }
+   }
+   50 = {
+    desc = kehillah_crisis_spike.10.c.failure
+    compare_modifier = {
+     value = scope:duel_value
+     multiplier = -3.5
+    }
+    min = 5
+    kehillah_spike_catalyst_effect = { CATALYST = kehillah_spike_sermon_catalyst }
+   }
   }
+  ai_chance = { base = 30 }
  }
 }

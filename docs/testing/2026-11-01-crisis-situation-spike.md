@@ -1,4 +1,4 @@
-**Status:** built 2026-11-01 on `codex/crisis-situation-spec-20261031`; xTiger clean (15-error baseline, no reports on spike files). **Run 1 done by Daniel the same night (results below); run 2 pending, after a full restart.** Slice 0 of [Crisis situations as the mechanic](../spec/2026-11-01-crisis-situations-as-the-mechanic.md).
+**Status:** built 2026-11-01 on `codex/crisis-situation-spec-20261031`; xTiger clean (15-error baseline, no reports on spike files). **Run 1 done by Daniel the same night (results below). The spike was then reworked into the race design (see "Run 2" at the end, which supersedes "How the spike works" and "Steps"); run 2 is pending, after a full restart.** Slice 0 of [Crisis situations as the mechanic](../spec/2026-11-01-crisis-situations-as-the-mechanic.md).
 
 # Crisis situation engine spike
 
@@ -92,12 +92,35 @@ Two `.1` starts, a Post a Watch and an Inflame, one deadline reached, `.3` and `
 - **Catalysts show only for the selected phase.** Spared's sources appear only after clicking View.
 - Placeholders to replace: one icon for every phase, and the "Spike:" labels.
 
-## Run 2 — steps
+## Run 2 — the race (reworked 2026-11-01 after run 1)
 
-Restart CK3 fully (the situation type changed), then:
-1. Note the in-game date. `event kehillah_crisis_spike.1`: is the end date 45 days on? A year on means the deadline was not read.
-2. Click Post a Watch twice and Inflame once. Spared should now show a bar. Check `error.log` for no new `phase_takeover_points` lines.
-3. Save, reload, `.3`.
-4. Let the deadline pass. The log should show `outcome_calls=1 outcome_applied=1`.
-5. `.2`, run unpaused, and note the in-game date of each `monthly` log line and the takeover.
-6. In a fresh `.2`, `.5`: does the end date move?
+Following the spec's [race addendum](../spec/2026-11-01-crisis-situations-as-the-mechanic.md#addendum-2026-11-01-latest-the-crisis-is-a-race-not-a-deadline), the spike no longer has a visible deadline:
+- **Both Armed host and Spared take over at 100.** Whichever fills first wins.
+- **Armed:** opening points equal the starting agitation (20 for `.1`, 40 for `.2`). Each month it gains the current agitation, which rises by 3 a month: about 23, 26, 29, so roughly four months to Armed if nothing pushes back. Inflame (a free test lever) adds 25.
+- **Spared:** Post a Watch now costs 10 gold, has a 30-day cooldown, and adds 20.
+- **A Sermon in the Market** (`kehillah_crisis_spike.10`) comes in 40% of monthly pulses, or on demand with `.6`. Its options:
+  - Let it pass: Armed +15.
+  - Pay the wardens 15 gold: Spared +12.
+  - Ask the bailiff: a Diplomacy challenge. Spared +12 on success, Armed +15 on failure.
+- **A hidden one-year backstop** (`max_duration`, `highest_points`) ends a stalled race. Its date is not shown.
+- **The window's "Ends:" line** now reads "Pressure next month: +N toward the Armed host".
+- The epoch fix and Phase Effects from run 1 stay.
+
+**Steps**, after a full CK3 restart (the situation type and window changed):
+1. `event kehillah_crisis_spike.1`. Check:
+   - The phase line shows "Pressure next month: +23" instead of a date.
+   - Armed shows 20 / 100.
+   - Spared shows a bar at 0 / 100.
+2. Post a Watch once; it should then be on cooldown. Hover the decision first: does its tooltip show "+20 toward Spared"? Then `.6` for the sermon, and try each option across several sermons. Do the options' tooltips show the points?
+3. Save, reload, `.3`. The bars, the pressure line and the link should survive.
+4. Let it run unpaused. Note the in-game dates of the `monthly` log lines and of the takeover.
+   - The log's outcome line should read `outcome_calls=1 outcome_applied=1`.
+   - Try to win: can you reach Spared before Armed with gold and good sermon answers?
+5. `.2` (agitation 40) for a fast race to Armed.
+6. Check `error.log`: there should be no new `phase_takeover_points` lines and no tooltip flood.
+
+**Questions run 2 should answer:**
+- Is the race readable and tense from the window alone?
+- Is the "Pressure next month" line useful?
+- What does the phase track between current and future show now?
+- Does a decision or event option tooltip show catalyst points natively? If not, slice 1 needs a custom tooltip line for each action.

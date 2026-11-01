@@ -244,3 +244,25 @@ Daniel approved the lower-risk order after reviewing the tradeoffs. This superse
 4. **The expulsion edict.**
 
 The existing Community Safety and crisis-situation live tests should still run before slice 2.
+
+## Addendum, 2026-11-01 (latest): the crisis is a race, not a deadline
+
+**Status:** approved by Daniel after spike run 1; the spike is being reworked to match. This supersedes §3.1's "Agitation contest", §4's "the odds at the deadline are the share of points", and §9 decision 1's premise that Spared wins only at a deadline. Ownership, families, Phase Effects (§5), the window (§6), save rules (§7) and the revised slice order above are unchanged.
+
+**Why.** [Spike run 1](../testing/2026-11-01-crisis-situation-spike.md) showed that a future phase without `takeover_type` collects no points at all, so Spared could not be "deadline only". A deadline also invites a draw from empty bars, and it needs a date the engine can't phrase honestly.
+
+**The race:**
+- **Armed host and Spared both have a takeover threshold of 100.** Whichever fills first takes over. The two bars are the whole state of the crisis: no hidden roll and no deadline draw.
+- **Pressure comes from time and events, not a timer.** Armed gains the current agitation in points every month, and agitation keeps rising, so standing still loses. Warning events (the preacher story's developments: a sermon in the market, a rumor, a brawl, a boycott) add sudden jumps to Armed, or give a choice between a cheap answer that feeds Armed and a costly one that feeds Spared.
+- **The player pushes Spared.** Preparations, petitions, protection, condemnation and answering accusations each add Spared points. They still cost gold and time, and only one communal task runs at a time.
+- **No guarantees, by pressure rather than dice.** A community can win cleanly, but only by out-spending a pressure that accelerates. This replaces Community Safety's "no combination guarantees safety", which needed a clamped roll.
+- **A hidden backstop.** The Agitation phase keeps a long `max_duration` (about a year) with `highest_points`, so a stalled race still ends. It should never be reached in normal play. Its date is not shown.
+- **What the window shows.** The window copy replaces vanilla's "Ends:" line, which would show the backstop date, or 2 BC with none, with the monthly pressure toward the Armed host. Each bar keeps "N / 100".
+
+**Granada.** Its poem events push Armed hard enough to fill near 30 December 1066 unless the player does something exceptional. It keeps its history without a special timer.
+
+**Families:**
+- The **Talmud trial** and the **libel** use the race: hearing sessions or inquest events push each side, and the libel's Riot is a third track that can win early.
+- The **expulsion edict** keeps a real deadline, because a historical edict had a fixed date.
+
+**AI communities** use the same race. Their monthly pulse spends on Spared actions by the AI weights.
