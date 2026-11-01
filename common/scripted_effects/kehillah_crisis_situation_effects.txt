@@ -83,8 +83,17 @@ kehillah_crisis_situation_sync_effect = {
   # Event-decided transitions. In Agitation the judgement catalyst carries Spared to 100: any
   # prevention, payment or dispersal before the host rose means the danger has passed.
   if = { limit = { situation_current_phase = kehillah_crisis_warning scope:kehillah_crisis_situation_title.var:kehillah_crisis_stage = 2 } trigger_situation_catalyst = kehillah_crisis_armed_catalyst }
-  if = { limit = { OR = { situation_current_phase = kehillah_crisis_warning situation_current_phase = kehillah_crisis_armed } scope:kehillah_crisis_situation_title.var:kehillah_crisis_stage = 3 } trigger_situation_catalyst = kehillah_crisis_judgement_catalyst }
-  if = { limit = { OR = { situation_current_phase = kehillah_crisis_judgement situation_current_phase = kehillah_crisis_spared } scope:kehillah_crisis_situation_title.var:kehillah_crisis_stage = 4 } trigger_situation_catalyst = kehillah_crisis_recovery_catalyst }
+  if = { limit = { situation_current_phase = kehillah_crisis_warning scope:kehillah_crisis_situation_title.var:kehillah_crisis_stage = 3 } trigger_situation_catalyst = kehillah_crisis_judgement_catalyst }
+  # Step 1d: an event resolved the Armed race. A struck quarter is Struck; anything else is Held.
+  if = {
+   limit = { situation_current_phase = kehillah_crisis_armed scope:kehillah_crisis_situation_title.var:kehillah_crisis_stage = 3 }
+   if = {
+    limit = { scope:kehillah_crisis_situation_title.var:kehillah_crisis_outcome ?= 4 }
+    trigger_situation_catalyst = kehillah_crisis_struck_catalyst
+   }
+   else = { trigger_situation_catalyst = kehillah_crisis_judgement_catalyst }
+  }
+  if = { limit = { OR = { situation_current_phase = kehillah_crisis_judgement situation_current_phase = kehillah_crisis_spared situation_current_phase = kehillah_crisis_held situation_current_phase = kehillah_crisis_struck } scope:kehillah_crisis_situation_title.var:kehillah_crisis_stage = 4 } trigger_situation_catalyst = kehillah_crisis_recovery_catalyst }
   kehillah_crisis_race_mirror_effect = yes
  }
  }
@@ -181,6 +190,11 @@ kehillah_crisis_armed_start_effect = {
    if = {
     limit = { scope:kehillah_crisis_phase_title.var:kehillah_mob_threat ?= { is_alive = yes has_character_flag = kehillah_mob_preaching } }
     scope:kehillah_crisis_phase_title.var:kehillah_mob_threat = { kehillah_mob_preaching_mobilize_effect = yes }
+    # Step 1d: the second race starts from what was prepared.
+    if = {
+     limit = { scope:kehillah_crisis_phase_title.var:kehillah_crisis_stage = 2 }
+     kehillah_crisis_armed_seed_effect = yes
+    }
    }
    else = {
     # No preacher to lead a host: the danger passes after all, and the phase moves on.
@@ -189,9 +203,17 @@ kehillah_crisis_armed_start_effect = {
    }
   }
   else_if = {
+   limit = { scope:kehillah_crisis_phase_title.var:kehillah_crisis_stage = 2 }
+   kehillah_crisis_armed_seed_effect = yes
+  }
+  else_if = {
    limit = { scope:kehillah_crisis_phase_title.var:kehillah_crisis_stage >= 3 }
    debug_log = "kehillah_community_crisis: Armed phase began after the crisis was already resolved; moving on"
-   trigger_situation_catalyst = kehillah_crisis_judgement_catalyst
+   if = {
+    limit = { scope:kehillah_crisis_phase_title.var:kehillah_crisis_outcome ?= 4 }
+    trigger_situation_catalyst = kehillah_crisis_struck_catalyst
+   }
+   else = { trigger_situation_catalyst = kehillah_crisis_judgement_catalyst }
   }
  }
 }
@@ -234,5 +256,88 @@ kehillah_crisis_credit_protection_effect = {
   }
   var:kehillah_crisis_title = { add_to_variable_list = { name = kehillah_crisis_protection_credited target = flag:$FLAG$ } }
   trigger_situation_catalyst = kehillah_crisis_protection_won_catalyst
+ }
+}
+
+# --- Step 1d: the Armed race ---
+
+# Root: community title. Adds an Armed-race catalyst, if this title's Armed race is running.
+kehillah_crisis_armed_race_add_effect = {
+ if = {
+  limit = { kehillah_crisis_title_armed_race_running_trigger = yes }
+  var:kehillah_crisis_situation = { trigger_situation_catalyst = $CATALYST$ }
+ }
+}
+
+# Root: the situation, as the Armed host phase begins with the host risen (stage 2). What the
+# Agitation phase prepared counts once toward Quarter held.
+kehillah_crisis_armed_seed_effect = {
+ var:kehillah_crisis_title = { save_scope_as = kehillah_crisis_seed_title }
+ if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_mob_defended } } trigger_situation_catalyst = kehillah_crisis_held_watch_catalyst }
+ if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_crisis_supplies } } trigger_situation_catalyst = kehillah_crisis_held_supplies_catalyst }
+ if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_mob_scattered } } trigger_situation_catalyst = kehillah_crisis_held_routes_catalyst }
+ if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_mob_men_by } } trigger_situation_catalyst = kehillah_crisis_held_men_catalyst }
+ if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_mob_refuge } } trigger_situation_catalyst = kehillah_crisis_held_refuge_catalyst }
+ if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_mob_armed } } trigger_situation_catalyst = kehillah_crisis_held_arms_catalyst }
+ if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_mob_condemned } } trigger_situation_catalyst = kehillah_crisis_held_condemned_catalyst }
+}
+
+# Root: the situation, as Quarter held begins. If the race (not an event) brought it, the host
+# breaks up before the quarter; a crusading host that has more targets moves on instead.
+kehillah_crisis_held_start_effect = {
+ debug_log = "kehillah_community_crisis: Quarter held phase entered"
+ if = {
+  limit = { kehillah_crisis_situation_link_valid_trigger = yes }
+  var:kehillah_crisis_title = { save_scope_as = kehillah_crisis_phase_title }
+  if = {
+   limit = { scope:kehillah_crisis_phase_title.var:kehillah_crisis_stage = 2 }
+   scope:kehillah_crisis_phase_title.holder.var:kehillah_mob_ref ?= { save_scope_as = kehillah_crisis_host_leader }
+   if = {
+    limit = {
+     scope:kehillah_crisis_host_leader ?= {
+      is_alive = yes
+      has_character_flag = kehillah_mob_crusade
+      has_variable = kehillah_mob_targets_left
+      var:kehillah_mob_targets_left >= 1
+     }
+    }
+    scope:kehillah_crisis_phase_title.holder ?= { kehillah_crisis_resolve_effect = { OUTCOME = 2 } }
+    scope:kehillah_crisis_host_leader = {
+     save_scope_as = kehillah_mob_leader
+     random_character_war = {
+      limit = { is_attacker = scope:kehillah_mob_leader }
+      end_war = white_peace
+     }
+     kehillah_mob_retarget_effect = yes
+    }
+   }
+   else_if = {
+    limit = { scope:kehillah_crisis_host_leader ?= { is_alive = yes } }
+    scope:kehillah_crisis_host_leader = { kehillah_mob_dispersed_effect = yes }
+   }
+   else = {
+    scope:kehillah_crisis_phase_title.holder ?= { kehillah_crisis_resolve_effect = { OUTCOME = 2 } }
+   }
+  }
+ }
+}
+
+# Root: the situation, as Quarter struck begins. If the race (not an event) brought it, the siege
+# ends now: the mob's own countdown, at zero, delivers the attack on its next tick unchanged.
+kehillah_crisis_struck_start_effect = {
+ debug_log = "kehillah_community_crisis: Quarter struck phase entered"
+ if = {
+  limit = { kehillah_crisis_situation_link_valid_trigger = yes }
+  var:kehillah_crisis_title = { save_scope_as = kehillah_crisis_phase_title }
+  if = {
+   limit = { scope:kehillah_crisis_phase_title.var:kehillah_crisis_stage = 2 }
+   scope:kehillah_crisis_phase_title.holder.var:kehillah_mob_ref ?= {
+    if = {
+     limit = { is_alive = yes }
+     if = { limit = { NOT = { has_character_flag = kehillah_mob_at_gates } } add_character_flag = kehillah_mob_at_gates }
+     set_variable = { name = kehillah_mob_siege_days value = 0 }
+    }
+   }
+  }
  }
 }

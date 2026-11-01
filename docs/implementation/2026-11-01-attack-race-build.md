@@ -113,3 +113,36 @@ A new crisis clears every once-per-crisis marker.
 - "Win the town" is a gift only; the guild loan that may be called later is not built.
 - "Forgive the debts" belongs to the debts opening (step 1e).
 - The "Our own defence" page (`kehillah_mob.0150`) gets no action of its own, since the preparations are already actions.
+
+## Step 1d — the Armed race: Quarter held vs Quarter struck
+
+The Armed host phase is now a race of its own. Its futures are **Quarter held** and **Quarter struck**, each at 100, with a hidden 240-day backstop. Both outcome phases move to Recovery when the sovereign answers. Judgment remains only for a situation created at stage 3.
+
+**Quarter held:**
+- **Seeded once** as the host forms (`kehillah_crisis_armed_seed_effect`), from what Agitation prepared:
+  - watch 8, provisions 6, way out 4;
+  - the lord's promised men 20, refuge 10;
+  - arms 6, the Church's condemnation 8.
+- **Actions while the host comes**, each once:
+  - Send Silver to the Host: 50 gold, +20.
+  - Shelter in the Stone Houses: Prosperity −10, +8.
+  - Bar the Quarter: +10.
+  - Beg the Lord to Send His Men (`kehillah_crisis_race.0200`): a Diplomacy challenge weighted by the local lord's outlook. +20, or Struck +8.
+
+**Quarter struck** gains on the mob story's 4-day tick:
+- +2 a tick on the march.
+- At the gates: +25 a tick at an open town (about 16 days, against the old 14-day siege), or +6 behind a lord's walls (about 67 days, against the old 60 + 20 × fort level).
+- Nothing while defenders hold the town.
+- +30 when a sheltering lord gives the Jews up.
+
+**Who decides.** While the race runs, the siege no longer counts down. The race replaces the siege-length roll, as the spec recommended.
+- **Struck:** `kehillah_crisis_struck_start_effect` sets the host's countdown to zero (and marks it at the gates). The mob's own tick then delivers the attack, unchanged, within four days.
+- **Held:** `kehillah_crisis_held_start_effect` disperses the host (`kehillah_mob_dispersed_effect`, outcome 2). A Popular Crusade host with more targets ends its war here and moves on instead (`kehillah_mob_retarget_effect`).
+
+Every event that already resolved an attack still does, and the situation follows by outcome: 4 means Struck, anything else Held. This covers the gate scene's answers, a battle won by the lord's men, and silver accepted at the gate.
+
+**Departures from the spec:**
+- The Armed phase still lasts as long as the mob's march. It was not lengthened to 14–30 days, because the march's distance logic is unchanged.
+- Military's Community Safety shows the Agitation race only. During the Armed race the window is the only place with the bars.
+
+**Not yet verified:** that a Held-dispersed crusade host retargets cleanly mid-war. This is the riskiest new path in step 1d.
