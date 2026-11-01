@@ -146,3 +146,37 @@ Every event that already resolved an attack still does, and the situation follow
 - Military's Community Safety shows the Agitation race only. During the Armed race the window is the only place with the bars.
 
 **Not yet verified:** that a Held-dispersed crusade host retargets cleanly mid-war. This is the riskiest new path in step 1d.
+
+## Step 1e — openings
+
+**Recording the opening.** Every crisis records how it began in `kehillah_crisis_opening`, set by `kehillah_crisis_set_opening_effect` where crises start (`kehillah_mob_preaching_mark_target_effect`, and the host-with-no-warning path in `kehillah_mob_raise_effect`). The order of checks:
+1. A pending opening from the quarterly pulse (debts, Holy Week).
+2. Granada's agitator: the vizier's enemies.
+3. A Popular Crusade host: crusaders.
+4. A local agitator: the accusation.
+5. A great holy war of the county's or sovereign's faith: crusaders.
+6. Otherwise: the wandering preacher.
+
+**The opening is the first line of the catalyst list.** It replaces the generic "The crowd is stirred", which remains only for old saves without a recorded opening. The six are named: "A preacher arrives", "An accusation", "Crusaders on the road", "Debts and a dear year", "Holy Week", "The vizier's enemies".
+
+**New starts.** A quarterly pulse (`kehillah_crisis_opening_pulse`, players only) can raise a local agitator with no preacher in sight. It runs only for a community with no crisis, no agitator, and no opening in the last 15 years.
+- **Holy Week:** 4% a quarter in March and April, under a Christian sovereign who is Indifferent or colder.
+- **Debts:** 2% a quarter while the sovereign is at war, 0.5% otherwise.
+
+Each new opening reuses the accusation's local agitator (`kehillah_mob_local_warning_effect`) and opens with its own scene (`kehillah_crisis_race.0300`, `.0310`) instead of "The Preaching".
+
+**Drivers and content:**
+- **Holy Week** is also a monthly Armed driver (+10) in March and April for every crisis under a Christian sovereign or county.
+- **One warning event per opening**, weighted ahead of the shared pool:
+  - The Vow-Takers (crusaders);
+  - The Witness Wavers (accusation);
+  - The Debtors Meet (debts; "lodge the bonds with the lord's officers", after York 1190);
+  - Stones on Good Friday (Holy Week; the Béziers custom);
+  - Verses in the Souk (the vizier's enemies).
+- **Forgive the Debts** (the debts opening only): Prosperity −60, Spared +25.
+- **Debug:** `kehillah_crisis_debug.8` and `.9` start the debts and Holy Week openings at once.
+
+**Departures from the spec:**
+- The debts opening keys on a sovereign at war, not famine. This mod has no famine state to read.
+- AI communities get no debts or Holy Week openings, so the quarterly pulse adds no AI noise.
+- The vizier's enemies outside Granada are recorded when Granada's agitator is used. No new start creates them elsewhere yet.

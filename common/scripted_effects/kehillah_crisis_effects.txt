@@ -22,6 +22,9 @@ kehillah_crisis_begin_effect = {
    remove_variable = kehillah_crisis_appeal_sent
    remove_variable = kehillah_crisis_fasted
    remove_variable = kehillah_crisis_silver_sent
+   remove_variable = kehillah_crisis_opening
+   remove_variable = kehillah_crisis_opening_credited
+   remove_variable = kehillah_crisis_forgiven
    remove_variable = kehillah_crisis_sheltered
    remove_variable = kehillah_crisis_barred
    remove_variable = kehillah_crisis_pleaded
@@ -65,7 +68,7 @@ kehillah_crisis_tick_effect = {
    }
    # Step 1b: one warning event every 21 days or more while the race runs, none repeated.
    if = {
-    limit = { var:kehillah_crisis_elapsed >= kehillah_crisis_event_spacing_days var:kehillah_crisis_developments < 9 kehillah_crisis_title_race_running_trigger = yes }
+    limit = { var:kehillah_crisis_elapsed >= kehillah_crisis_event_spacing_days var:kehillah_crisis_developments < 10 kehillah_crisis_title_race_running_trigger = yes }
     set_variable = { name = kehillah_crisis_elapsed value = 0 }
     change_variable = { name = kehillah_crisis_developments add = 1 }
     holder ?= { kehillah_crisis_development_effect = yes }
@@ -95,6 +98,11 @@ kehillah_crisis_development_effect = {
    10 = { trigger = { kehillah_crisis_development_unseen_trigger = { KEY = brawl } } kehillah_crisis_pick_development_effect = { KEY = brawl EVENT = kehillah_crisis.0022 } }
    14 = { trigger = { kehillah_crisis_development_unseen_trigger = { KEY = follower } } kehillah_crisis_pick_development_effect = { KEY = follower EVENT = kehillah_crisis.0023 } }
    10 = { trigger = { kehillah_crisis_development_unseen_trigger = { KEY = convert } } kehillah_crisis_pick_development_effect = { KEY = convert EVENT = kehillah_crisis.0024 } }
+   25 = { trigger = { kehillah_crisis_opening_is_trigger = { KEY = crusade } kehillah_crisis_development_unseen_trigger = { KEY = crusade_event } } kehillah_crisis_pick_development_effect = { KEY = crusade_event EVENT = kehillah_crisis.0030 } }
+   25 = { trigger = { kehillah_crisis_opening_is_trigger = { KEY = accusation } kehillah_crisis_development_unseen_trigger = { KEY = accusation_event } } kehillah_crisis_pick_development_effect = { KEY = accusation_event EVENT = kehillah_crisis.0031 } }
+   25 = { trigger = { kehillah_crisis_opening_is_trigger = { KEY = debts } kehillah_crisis_development_unseen_trigger = { KEY = debts_event } } kehillah_crisis_pick_development_effect = { KEY = debts_event EVENT = kehillah_crisis.0032 } }
+   25 = { trigger = { kehillah_crisis_opening_is_trigger = { KEY = holy_week } kehillah_crisis_development_unseen_trigger = { KEY = holy_week_event } } kehillah_crisis_pick_development_effect = { KEY = holy_week_event EVENT = kehillah_crisis.0033 } }
+   25 = { trigger = { kehillah_crisis_opening_is_trigger = { KEY = vizier } kehillah_crisis_development_unseen_trigger = { KEY = vizier_event } } kehillah_crisis_pick_development_effect = { KEY = vizier_event EVENT = kehillah_crisis.0034 } }
   }
  }
 }
@@ -157,4 +165,99 @@ kehillah_crisis_start_task_effect = {
 kehillah_crisis_gather_council_effect = {
  set_variable = { name = kehillah_mob_ref value = primary_title.var:kehillah_mob_threat }
  trigger_event = kehillah_mob.0100
+}
+
+# --- Step 1e: openings ---
+
+# Scope: any; scope:kehillah_mob_leader, scope:kehillah_mob_victim_title. Records how this crisis
+# began, then counts its opening points once. A pending opening (debts, Holy Week) set by the
+# quarterly pulse wins; otherwise the agitator decides.
+kehillah_crisis_set_opening_effect = {
+ scope:kehillah_mob_victim_title = {
+  if = {
+   limit = { NOT = { has_variable = kehillah_crisis_opening } }
+   if = {
+    limit = { has_variable = kehillah_crisis_pending_opening }
+    set_variable = { name = kehillah_crisis_opening value = var:kehillah_crisis_pending_opening }
+   }
+   else_if = {
+    limit = { scope:kehillah_mob_leader ?= { has_character_flag = kehillah_crisis_granada_agitator } }
+    set_variable = { name = kehillah_crisis_opening value = flag:vizier }
+   }
+   else_if = {
+    limit = { scope:kehillah_mob_leader ?= { has_character_flag = kehillah_mob_crusade } }
+    set_variable = { name = kehillah_crisis_opening value = flag:crusade }
+   }
+   else_if = {
+    limit = { scope:kehillah_mob_leader ?= { has_character_flag = kehillah_mob_local_preaching } }
+    set_variable = { name = kehillah_crisis_opening value = flag:accusation }
+   }
+   else_if = {
+    limit = {
+     holder.domicile.domicile_location.county ?= {
+      OR = {
+       faith ?= { exists = great_holy_war }
+       holder.top_liege.faith ?= { exists = great_holy_war }
+      }
+     }
+    }
+    set_variable = { name = kehillah_crisis_opening value = flag:crusade }
+   }
+   else = { set_variable = { name = kehillah_crisis_opening value = flag:preacher } }
+  }
+  if = { limit = { has_variable = kehillah_crisis_pending_opening } remove_variable = kehillah_crisis_pending_opening }
+  kehillah_crisis_credit_opening_effect = yes
+ }
+}
+
+# Scope: community title. The opening's named catalyst, once, while the race runs.
+kehillah_crisis_credit_opening_effect = {
+ if = {
+  limit = {
+   has_variable = kehillah_crisis_opening
+   NOT = { has_variable = kehillah_crisis_opening_credited }
+   kehillah_crisis_title_race_running_trigger = yes
+  }
+  set_variable = { name = kehillah_crisis_opening_credited value = yes }
+  if = { limit = { var:kehillah_crisis_opening = flag:accusation } kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_opening_accusation_catalyst } }
+  else_if = { limit = { var:kehillah_crisis_opening = flag:crusade } kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_opening_crusade_catalyst } }
+  else_if = { limit = { var:kehillah_crisis_opening = flag:debts } kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_opening_debts_catalyst } }
+  else_if = { limit = { var:kehillah_crisis_opening = flag:holy_week } kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_opening_holy_week_catalyst } }
+  else_if = { limit = { var:kehillah_crisis_opening = flag:vizier } kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_opening_vizier_catalyst } }
+  else = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_opening_preacher_catalyst } }
+ }
+}
+
+# Scope: community leader, quarterly (players). Debts after a dear year, or Holy Week, may raise a
+# local agitator with no preacher in sight. Uses the accusation's local agitator, flavored.
+kehillah_crisis_opening_pulse_effect = {
+ if = {
+  limit = { kehillah_crisis_quiet_trigger = yes }
+  random_list = {
+   100 = { }
+   0 = {
+    modifier = {
+     add = kehillah_crisis_holy_week_chance
+     kehillah_crisis_holy_week_season_trigger = yes
+     domicile.domicile_location.county.holder.top_liege.faith.religion ?= religion:christianity_religion
+     domicile.domicile_location.county.holder.top_liege ?= { kehillah_outlook_band_value <= 0 }
+    }
+    kehillah_crisis_start_local_opening_effect = { OPENING = holy_week }
+   }
+   0 = {
+    modifier = { add = kehillah_crisis_debts_chance_value }
+    kehillah_crisis_start_local_opening_effect = { OPENING = debts }
+   }
+  }
+ }
+}
+
+# Scope: community leader.
+kehillah_crisis_start_local_opening_effect = {
+ primary_title = {
+  set_variable = { name = kehillah_crisis_pending_opening value = flag:$OPENING$ }
+  set_variable = { name = kehillah_crisis_opening_cooldown value = yes years = kehillah_crisis_opening_cooldown_years }
+ }
+ kehillah_mob_local_warning_effect = yes
+ debug_log = "kehillah_crisis_start_local_opening_effect: opening $OPENING$"
 }
