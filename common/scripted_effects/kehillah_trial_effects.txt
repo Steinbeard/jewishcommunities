@@ -38,6 +38,9 @@ kehillah_trial_begin_effect = {
 			situation_sub_region:kehillah_trial_area = { add_dejure_title_to_sub_region = root.domicile.domicile_location.county }
 			kehillah_trial_participants_effect = yes
 			trigger_situation_catalyst = kehillah_trial_opening_catalyst
+			# 2026-11-01: the accuser's story and his patron, rolled once.
+			kehillah_trial_roll_effect = yes
+			kehillah_trial_participants_effect = yes
 			scope:kehillah_trial_new_title = { set_variable = { name = kehillah_trial_situation value = scope:kehillah_trial_new_situation } }
 		}
 		if = {
@@ -100,6 +103,46 @@ kehillah_trial_participants_effect = {
 			scope:kehillah_trial_sit = { add_manual_participant = prev }
 		}
 	}
+	# The accuser's patron, when he is not the judge.
+	var:kehillah_trial_patron_char ?= {
+		save_scope_as = kehillah_trial_patron_now
+		if = {
+			limit = {
+				is_alive = yes
+				NOT = { this = scope:kehillah_trial_sit.var:kehillah_trial_judge }
+				NOT = { scope:kehillah_trial_sit = { any_situation_participant = { this = scope:kehillah_trial_patron_now } } }
+			}
+			scope:kehillah_trial_sit = { add_manual_participant = scope:kehillah_trial_patron_now }
+		}
+	}
+}
+
+# Scope: the situation, as it begins; scope:kehillah_incident_host saved. Rolled once:
+#   story   colour: student (a former student), son_in_law (a broken betrothal), rival (a scholar
+#           who lost a ruling to the rabbi)
+#   patron  terms: friar (the accuser presses harder; outside the hall in the hearing), bishop (the
+#           lord's chaplain, named: a monthly push toward Condemnation in the hearing), official (the
+#           lord's chancellor, named: silver goes further)
+kehillah_trial_roll_effect = {
+	random_list = {
+		2 = { set_variable = { name = kehillah_trial_story value = flag:student } }
+		1 = { set_variable = { name = kehillah_trial_story value = flag:son_in_law } }
+		1 = { set_variable = { name = kehillah_trial_story value = flag:rival } }
+	}
+	random_list = {
+		10 = { set_variable = { name = kehillah_trial_patron value = flag:friar } }
+		10 = {
+			trigger = { exists = scope:kehillah_incident_host.cp:councillor_court_chaplain }
+			set_variable = { name = kehillah_trial_patron value = flag:bishop }
+			set_variable = { name = kehillah_trial_patron_char value = scope:kehillah_incident_host.cp:councillor_court_chaplain }
+		}
+		8 = {
+			trigger = { exists = scope:kehillah_incident_host.cp:councillor_chancellor }
+			set_variable = { name = kehillah_trial_patron value = flag:official }
+			set_variable = { name = kehillah_trial_patron_char value = scope:kehillah_incident_host.cp:councillor_chancellor }
+		}
+	}
+	debug_log = "kehillah_trial_roll_effect: story and patron rolled"
 }
 
 # Root: the situation, monthly. The accuser's pressure in Denunciation; the judges' lean in the
@@ -139,6 +182,10 @@ kehillah_trial_monthly_effect = {
 			if = {
 				limit = { kehillah_trial_judges_expurgation_value > 0 }
 				trigger_situation_catalyst = kehillah_trial_judges_expurgation_catalyst
+			}
+			if = {
+				limit = { kehillah_trial_patron_presses_value > 0 }
+				trigger_situation_catalyst = kehillah_trial_patron_presses_catalyst
 			}
 			if = {
 				limit = { kehillah_trial_judges_condemnation_value > 0 }

@@ -62,3 +62,40 @@ Each new kind needs its own scenes and verdict texts, and is a slice of its own.
 4. The accusation's place and witness.
 5. The attack's agitator kinds.
 6. New decree kinds (synagogue, Easter seclusion, the oath), one slice each.
+
+## Addendum, 2026-11-01 (later): what is built
+
+**Status:** Daniel: "Please implement! Also make sure to implement the outcome of these crises with our other systems ... and that players playing as rulers or other involved characters on the protector side feel involved in the crisis and that results are communicated to them." Built and xTiger-clean; not yet live-tested.
+
+**Order of work, steps 1–3: built.**
+- **The decree** (`e193d61`).
+  - Colour: its form by the lord's culture (the rouelle for Frankish lords, the tablets for West Germanic, the pointed hat for Central Germanic, a patch elsewhere), its colour, and why now.
+  - Terms:
+    - who pressed for it: the chaplain or the lord's own zeal makes petitions harder; a preacher keeps the clerks busier; merchants make silver go further;
+    - fines, through `kehillah_decree_fines_modifier`;
+    - duration, 20, 30 or 40 years, which sets every enforced effect's length;
+    - a bought exemption for the leader's household.
+  - The opening text is composed from the stored details.
+- **The trial** (this commit).
+  - The accuser's story is colour: a former student, a broken betrothal, or a rival scholar.
+  - His patron is terms:
+    - a friar: the accuser presses harder, and preaches outside the hall in the hearing;
+    - the lord's chaplain, named: a monthly push toward Condemnation in the hearing;
+    - the lord's chancellor, named: silver goes further.
+  - The patron is a participant.
+
+**Outcomes reach other systems.**
+- A decree withdrawn warms the lord's outlook.
+- A decree enforced under a hostile AI lord with a strict or exclusionary teaching has a chance to lower the realm's settlement law a rung. This goes through `kehillah_lower_jewish_settlement_policy_effect`, so charters, notices and expulsion follow as for any law change.
+- The attack's judgment of reaffirmed protection improves the community's charter one term.
+- The trial's verdicts already reach the charter's text term, through censorship.
+
+**Rulers and the protector side** (`2227f71`).
+- **A player lord:**
+  - seals or refuses a decree drafted in his name;
+  - answers the community's petition, silver, threat to leave and common petition himself;
+  - answers the attack's "send your men".
+- **A player judge** hears the denunciation, and chooses how to lean as the hearing opens.
+- **The sovereign** gets a new notice, "A Crisis Among Your Jews", when an attack begins, when it ends held or struck, and for every decree and trial verdict given in his name.
+
+**Still to build:** step 4 (the accusation's place and witness), step 5 (the attack's agitator kinds), step 6 (the new decree kinds), the trial's articles that must match the verdict, and the debug roller (`kehillah_decree_debug.9`).
