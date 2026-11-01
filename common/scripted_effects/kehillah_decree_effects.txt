@@ -4,6 +4,9 @@
 
 # Scope: a Kehillah leader (the incident director, or the console). KIND: badge, ghiyar, servants.
 kehillah_decree_begin_effect = {
+	# The leader this decree falls on. Never root: a player lord's seal (kehillah_decree.0100) runs this
+	# effect with the lord as root (live test 2026-11-01: the situation started with no town).
+	save_scope_as = kehillah_decree_new_leader
 	# 2026-11-01: a player lord decides whether the decree drafted in his name is proclaimed at all
 	# (kehillah_decree.0100). Proclaiming it runs this effect again, with the lord's leave.
 	if = {
@@ -12,11 +15,11 @@ kehillah_decree_begin_effect = {
 			domicile.domicile_location.county.holder.top_liege ?= {
 				is_ai = no
 				NOT = { has_character_flag = kehillah_decree_proclaiming }
-				NOT = { this = root }
+				NOT = { this = scope:kehillah_decree_new_leader }
 			}
 		}
 		domicile.domicile_location.county.holder.top_liege = {
-			set_variable = { name = kehillah_decree_target value = root days = 30 }
+			set_variable = { name = kehillah_decree_target value = scope:kehillah_decree_new_leader days = 30 }
 			set_variable = { name = kehillah_decree_pending_kind value = flag:$KIND$ days = 30 }
 			trigger_event = kehillah_decree.0100
 		}
@@ -34,8 +37,8 @@ kehillah_decree_begin_effect = {
 		scope:kehillah_decree_new_situation ?= {
 			set_variable = { name = kehillah_decree_title value = scope:kehillah_decree_new_title }
 			set_variable = { name = kehillah_decree_kind value = flag:$KIND$ }
-			set_situation_center_province = root.domicile.domicile_location
-			situation_sub_region:kehillah_decree_area = { add_dejure_title_to_sub_region = root.domicile.domicile_location.county }
+			set_situation_center_province = scope:kehillah_decree_new_leader.domicile.domicile_location
+			situation_sub_region:kehillah_decree_area = { add_dejure_title_to_sub_region = scope:kehillah_decree_new_leader.domicile.domicile_location.county }
 			kehillah_decree_participants_effect = yes
 			trigger_situation_catalyst = kehillah_decree_opening_catalyst
 			# 2026-11-01: the decree's details, rolled once and read by every text.
@@ -54,7 +57,7 @@ kehillah_decree_begin_effect = {
 			}
 		}
 		trigger_event = kehillah_decree.0001
-		debug_log = "kehillah_decree_begin_effect: $KIND$"
+		debug_log = "kehillah_decree_begin_effect: a decree begins"
 	}
 }
 kehillah_decree_news_badge_effect = { kehillah_realm_news_add_effect = { KIND = badge_decree } }
@@ -190,7 +193,7 @@ kehillah_decree_roll_effect = {
 		}
 		10 = {
 			set_variable = { name = kehillah_decree_instigator value = flag:preacher }
-			root = {
+			scope:kehillah_decree_new_leader = {
 				create_character = {
 					age = { 30 60 }
 					gender = male
@@ -332,14 +335,13 @@ kehillah_decree_verdict_start_effect = {
 
 # Scope: the leader. The verdicts.
 kehillah_decree_verdict_enforced_effect = {
-	save_scope_value_as = { name = kehillah_decree_years_now value = kehillah_decree_years_value }
 	# 2026-11-01: the rolled terms decide what it does (docs/spec/2026-11-01-crisis-variety-and-
 	# consistency.md): its duration, the household's exemption, the fines.
 	if = {
 		limit = { kehillah_decree_kind_trigger = { KIND = servants } }
 		custom_tooltip = kehillah_incident_servants_tt
 		primary_title = {
-			hidden_effect = { set_variable = { name = kehillah_servants_decree value = yes years = scope:kehillah_decree_years_now } }
+			hidden_effect = { set_variable = { name = kehillah_servants_decree value = yes years = kehillah_decree_years_title_value } }
 		}
 		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_servants_decree_prosperity }
 		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_servants_decree_stability }
@@ -347,7 +349,7 @@ kehillah_decree_verdict_enforced_effect = {
 	else = {
 		custom_tooltip = kehillah_incident_badge_tt
 		primary_title = {
-			hidden_effect = { set_variable = { name = kehillah_badge value = yes years = scope:kehillah_decree_years_now } }
+			hidden_effect = { set_variable = { name = kehillah_badge value = yes years = kehillah_decree_years_title_value } }
 		}
 		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_badge_stability }
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_badge_greatness }

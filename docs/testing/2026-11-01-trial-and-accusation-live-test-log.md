@@ -68,3 +68,25 @@ An earlier attempt could not launch, because the crash reporter from the 14:30 c
 - Real icons for the three situations and every phase, in place of the flat placeholders. They are vanilla art: torch and pitchfork, burning book, wax seal, dove, shackles and so on.
 - The monthly toasts are flavor only, with no "+N toward X" line ("I don't like the toast text that spells out +8 points").
 - The first-time driver notices no longer say "the Armed host gains ground".
+
+## Run 3: decree variety, the trial's story, the rulers (PIDs 16300, 20184)
+
+Played as the Worms community, then as Emperor Heinrich (e_hre). No crash.
+
+| Check | Result |
+| --- | --- |
+| Decree composed text | Pass. It reads: merchants pressed for it, a neighbour's example, the pointed hat, "for a generation". The stored details match the text. |
+| Household exemption | Pass. Gold is paid; enforced without the badge modifier, and the exemption line shows. |
+| Policy hardens | Seen. "Status of the Jews Lowered" followed an enforced decree. |
+| Trial composed opening | Pass: the rival scholar, with a wandering monk as patron. |
+| Emperor: A Decree in Your Name | Pass. Sealing it starts the decree. **Bug:** the situation had no town, because the effect read it from root, which was the lord. Fixed: it now reads the leader's scope. |
+| Emperor: The Jews Answer Your Decree | Pass. The threat to leave, with "A bluff called" in the tooltip. |
+| Emperor: Your Decree Is Withdrawn | Pass: the notice arrived. |
+| Emperor: Articles Against the Talmud | Pass. "Summon the Jews" adds 40 toward the seizure. |
+
+**Also fixed:**
+- The decree's duration value was not found in the title's block; it now has a title-scope value.
+- A stray `$` in a debug log.
+- The trial's opening notice is now worded by the accuser's story.
+
+Not re-run after the fixes.
