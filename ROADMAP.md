@@ -18,13 +18,13 @@ subject to revision after each phase.
 ## Near-term TODO
 ### Community crises as situations — 2026-10-31, Daniel's request
 
-**Situation phase-driven UI built; live verification pending.** The [dated spec](docs/spec/2026-10-31-community-crises-as-situations.md) and [phase-UI revision](docs/spec/2026-10-31-crisis-situation-phase-ui.md)
-now has a non-unique, county-centered CK3 situation per active community crisis.
+**Native situation UI restored 2026-11-01; live reload pending.** The [dated spec](docs/spec/2026-10-31-community-crises-as-situations.md) and [native-UI revision](docs/spec/2026-11-01-native-crisis-situation-ui.md)
+describe a non-unique, county-centered CK3 situation per active community crisis.
 The community title remains authoritative for stage, epoch, odds and outcome.
-The situation's native current and future phases now drive the custom window, including warning preparation visibility; the existing stories drive transitions, violence, judgment and postscript events. Military Community Safety is a compact overview with an expandable action fallback. The [implementation note](docs/implementation/2026-10-31-crisis-situation-integration.md)
+The native window again shows participant groups, current/future phase tracks and catalysts. The existing stories drive transitions, violence, judgment and postscript events. Warning preparations remain accessible through an expandable block in Military Community Safety while a situation-specific native-window extension is designed. The [implementation note](docs/implementation/2026-10-31-crisis-situation-integration.md)
 records the title/situation bridge, phase catalysts, cleanup and quarterly
 reconciliation. xTiger remains at the 15-error baseline. A two-community
-identity/save probe, transition/event reconciliation, and custom UI review are still required; see the [test plan](docs/testing/2026-10-31-crisis-situation-live-test.md). Daniel's screenshot confirms the situation is already in Warning before violence and exposed generic-window presentation faults; the phase-driven replacement has not yet been seen live.
+identity/save probe, transition/event reconciliation, and native UI review are still required; see the [test plan](docs/testing/2026-10-31-crisis-situation-live-test.md). Daniel's screenshots confirm a Warning situation before violence and show that the compact custom window omitted useful native affordances. The restored native view has not yet been seen after a reload; its false phase date and 0/1 transition tracks remain presentation issues to resolve with the action extension.
 This direct request was taken ahead of the older queue.
 
 **Military navigation revision (2026-10-31):** Daniel's live screenshots showed

@@ -1,4 +1,4 @@
-**Status:** phase-driven situation UI implemented in the main worktree, 2026-10-31; source/xTiger checked, live verification pending. This presentation revision supersedes sections 1, 4, and 7 of [Community crises as situations](2026-10-31-community-crises-as-situations.md) where they describe a static crisis summary. It depends on the [Community Safety mechanics](2026-10-30-community-safety-and-crisis.md); those clocks, probabilities, and consequences remain in force.
+**Status:** event-to-phase contract retained, but this document's compact custom-window presentation was superseded on 2026-11-01 by the [native situation UI revision](2026-11-01-native-crisis-situation-ui.md). The compact window was removed at Daniel's request. It depends on the [Community Safety mechanics](2026-10-30-community-safety-and-crisis.md); those clocks, probabilities, and consequences remain in force.
 
 # Crisis situation as the player-facing phase driver
 
