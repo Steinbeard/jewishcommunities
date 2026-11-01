@@ -342,3 +342,115 @@ tier 4 from 20 (`kehillah_nagid_service_tier_*_skill`).
 - a rite moved off the Dhimma, at the yearly check;
 - the "service named" notice for a Kehillah player whose AI host picks;
 - `error.log` clean after a few quarters.
+
+## Making the office visible (2026-11-01)
+
+**Built 2026-11-01, xTiger-checked: 154 reports and 15 errors, with none new.** Not live-tested.
+Daniel saw slice 5's notices in his own game and asked: "Is there anywhere in the UI that Yosef would
+really see that he's Nagid and Vizier though? I don't want this to just be a practically invisible
+modifier." He chose all four of these ("Yes, all four"). Each follows the office's data from
+slices 4 and 5. Nothing is stored for its own sake.
+
+### The rank
+
+- **"Nagid Joseph."** Twelve entries in `common/flavorization/kehillah_title_holders.txt` (six names,
+  two genders) at priority 305, each keyed on its own flag, `kehillah_nagid_rank_<name>_flag`.
+- **The name follows the court.** `kehillah_nagid_rank_set_effect` picks the flag with the
+  `kehillah_nagid_name_*` triggers, which `KehillahNagidOfficeName` now uses as well, so the two
+  cannot drift apart.
+- **Short forms,** since a rank goes before the name: Nagid, Arrabi Mor, Rab (for Rab de la Corte),
+  Presbyter, Hochmeister, Master.
+- **The Exilarch rose from 305 to 306,** so it still outranks the Nagid. Gaon, Rabbenu and Rav sit
+  below; the Nasi (310) above.
+- **Joseph's "ha-Nagid" nickname is removed** from `history/characters/granada_1066.txt`: with the
+  rank he read "Nagid Joseph ha-Nagid". Samuel keeps his. Slice 8's nickname can bring it back as an
+  honour.
+
+### The court relation
+
+- **`common/scripted_relations/kehillah_nagid_relations.txt`,** built like the yeshiva's
+  talmid/rebbe pair:
+  - the ruler holds `kehillah_court_<service>` toward the Nagid, which reads Vizier, Treasurer,
+    Physician or Envoy, or "Head of the Jews" with no service;
+  - the Nagid holds the corresponding `kehillah_court_<service>_patron`, which reads "Patron".
+- **Both show** in each character window's relations and on their portraits. This is the nearest
+  the engine allows to a council seat.
+- **One pair per service,** because a corresponding relation must be one to one. Removing either
+  side removes the other.
+- **Opinion +10 each way.** This is a new number, not in the spec.
+- **Hidden.** The relations are set and removed in `hidden_effect`, as the yeshiva's are, so they need
+  no tooltip keys.
+
+### The realm view (`gui/kehillah_realm_view.gui`)
+
+- **A band under the three tiles,** for the top liege's office in both modes:
+  - the holder's portrait when the office is filled;
+  - one line (`KehillahRvNagidLine`): "Nagid Joseph · Vizier at court (Brilliant)", "no service
+    at court", "awaiting confirmation", "Vacant", "Vacant · confirmation withheld", or "None";
+  - a tooltip for each state (`KehillahRvNagidTooltip`), without numbers. It points to the
+    modifiers.
+- **The seat:**
+  - vanilla's capital mark (`icon_capital.dds`, the map's frame) in the corner of the seat's card;
+  - a line under the detail card's name: "Seat of the realm's Jews", plus "home of their head" when
+    its leader is the Nagid;
+  - a tooltip, in words only. The pillar and danger tooltips already show the numbers.
+- **Realm News** records the office:
+  - confirmed;
+  - named Vizier, Treasurer, Physician or Envoy (only a new service, not "go on as before");
+  - confirmation withheld;
+  - left the office;
+  - abolished.
+  
+  The feed's text is a plain key, so it cannot name the person. The feed's tooltip now mentions the
+  office. In 1066 Granada starts with two entries: confirmed, and made vizier.
+
+### The character window (`gui/window_character.gui`)
+
+- **A badge** beside the realm-view chip, on a Nagid and on a ruler whose office is filled
+  (`kehillah_nagid_chip`).
+- **Icon:** the service's vanilla court-position icon:
+  - favored minister for Vizier;
+  - minister-bureaucrat for Treasurer;
+  - court physician for Physician;
+  - foreign emissary for Envoy;
+  - the flat court-position icon with no service.
+- **Word:** the service, or the office's name.
+- **Tooltip:** who confirmed whom, and how well the Nagid serves. Clicking opens the realm view.
+- **The icon is chosen by five visibility checks.** Neither vanilla nor this mod sets a texture
+  through custom loc.
+
+### Keeping it current
+
+- **`kehillah_nagid_presence_refresh_effect`** (on the ruler) sets the rank and syncs the relation
+  (`kehillah_nagid_court_sync_effect`). It runs:
+  - at appointment;
+  - at every change of service;
+  - at the seat leader's quarterly check;
+  - at the ruler's yearly check.
+- **`kehillah_nagid_court_leave_effect`** takes the rank off and ends the relations. It runs:
+  - at a step-down;
+  - at a vacancy;
+  - on a new appointee, which ends any tie to a ruler they served before.
+- **Saves begun earlier** pick all of this up at the next quarterly check.
+- **Debug:** `kehillah_nagid_debug.1` also reports the rank and the court relation.
+
+### Fixed while Daniel's game was open
+
+- **The band's portrait** first read its datacontext as `Character…Char`, and the engine refused it
+  ("reading and writing the same context"). It now goes through the primary title.
+- **xTiger does not check this,** so the GUI needs a live look.
+
+### Live checks owed
+
+- **A restart first.** New relation types and rank entries may not hot-reload.
+- **The rank** reads "Nagid Joseph" in his character window, in tooltips and in event text. His wife
+  keeps her own title.
+- **The relation:**
+  - Badis's window lists Joseph as "Vizier";
+  - Joseph's lists Badis as "Patron";
+  - it changes with the service and goes when the Nagid leaves.
+- **The band** in each state, the portrait opening Joseph, and the window's height.
+- **The seat** badge and line on Granada.
+- **The 1066 news entries.**
+- **The badge** fits the realm row of the character window, in both windows.
+- **`error.log`** stays clean after opening the realm view and both character windows.

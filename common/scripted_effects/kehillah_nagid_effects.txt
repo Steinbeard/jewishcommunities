@@ -40,9 +40,12 @@ kehillah_nagid_appoint_effect = {
 		remove_variable = kehillah_nagid_withheld
 	}
 	scope:kehillah_nagid_seat_leader = {
+		# Any court ties to a ruler they served before end here.
+		kehillah_nagid_court_leave_effect = yes
 		add_character_modifier = { modifier = kehillah_nagid_modifier }
 		set_variable = { name = kehillah_nagid_of value = scope:kehillah_nagid_host }
 		remove_variable = kehillah_nagid_asked
+		hidden_effect = { kehillah_realm_news_add_effect = { KIND = nagid_confirmed } }
 		send_interface_message = {
 			type = msg_kehillah_community_news
 			title = kehillah_nagid_named_msg_t
@@ -61,6 +64,7 @@ kehillah_nagid_appoint_effect = {
 			custom_tooltip = kehillah_nagid_choose_service_tt
 			trigger_event = { id = kehillah_nagid.0003 days = 1 }
 		}
+		hidden_effect = { kehillah_nagid_presence_refresh_effect = yes }
 	}
 	debug_log = "kehillah_nagid_appoint_effect: a Nagid is named"
 }
@@ -75,6 +79,8 @@ kehillah_nagid_step_down_effect = {
 		remove_character_modifier = kehillah_nagid_modifier
 	}
 	kehillah_nagid_serving_clear_effect = yes
+	kehillah_nagid_court_leave_effect = yes
+	hidden_effect = { kehillah_realm_news_add_effect = { KIND = nagid_left } }
 	if = {
 		limit = { has_variable = kehillah_nagid_of }
 		var:kehillah_nagid_of ?= {
@@ -102,6 +108,7 @@ kehillah_nagid_vacate_effect = {
 				remove_character_modifier = kehillah_nagid_modifier
 			}
 			kehillah_nagid_serving_clear_effect = yes
+			kehillah_nagid_court_leave_effect = yes
 			remove_variable = kehillah_nagid_of
 		}
 		primary_title = { remove_variable = kehillah_nagid_holder }
@@ -115,6 +122,10 @@ kehillah_nagid_vacate_effect = {
 # also used when the law or the teaching no longer lets it persist.
 kehillah_nagid_abolish_effect = {
 	save_scope_as = kehillah_nagid_host
+	hidden_effect = {
+		kehillah_nagid_find_seat_effect = yes
+		scope:kehillah_nagid_seat_leader ?= { kehillah_realm_news_add_effect = { KIND = nagid_abolished } }
+	}
 	kehillah_nagid_vacate_effect = yes
 	primary_title = {
 		remove_variable = kehillah_nagid_office
@@ -213,6 +224,11 @@ kehillah_nagid_quarterly_effect = {
 			}
 			kehillah_nagid_service_refresh_effect = yes
 		}
+		# The Nagid's rank and the court relation follow (2026-11-01).
+		if = {
+			limit = { kehillah_realm_has_nagid_office_trigger = yes }
+			kehillah_nagid_presence_refresh_effect = yes
+		}
 	}
 }
 
@@ -275,6 +291,11 @@ kehillah_nagid_yearly_effect = {
 	}
 	# Slice 5: the service, once the office is settled for the year.
 	kehillah_nagid_service_yearly_effect = yes
+	# The Nagid's rank and the court relation (2026-11-01).
+	if = {
+		limit = { kehillah_realm_has_nagid_office_trigger = yes }
+		kehillah_nagid_presence_refresh_effect = yes
+	}
 }
 
 # =====================================================================
@@ -375,6 +396,11 @@ kehillah_nagid_service_add_tier_effect = {
 kehillah_nagid_set_service_effect = {
 	save_scope_as = kehillah_nagid_host
 	hidden_effect = {
+		# Realm news, only for a new service (not "go on as before").
+		if = {
+			limit = { NOT = { kehillah_nagid_service_is_trigger = { SERVICE = $SERVICE$ } } }
+			primary_title.var:kehillah_nagid_holder = { kehillah_realm_news_add_effect = { KIND = nagid_$SERVICE$ } }
+		}
 		primary_title = { set_variable = { name = kehillah_nagid_service value = flag:$SERVICE$ } }
 	}
 	kehillah_nagid_service_clear_modifiers_effect = yes
@@ -391,6 +417,7 @@ kehillah_nagid_set_service_effect = {
 			}
 		}
 	}
+	hidden_effect = { kehillah_nagid_presence_refresh_effect = yes }
 	debug_log = "kehillah_nagid_set_service_effect: the Nagid's service is named"
 }
 
@@ -401,6 +428,7 @@ kehillah_nagid_clear_service_effect = {
 	}
 	kehillah_nagid_service_clear_modifiers_effect = yes
 	primary_title.var:kehillah_nagid_holder ?= { kehillah_nagid_serving_clear_effect = yes }
+	hidden_effect = { kehillah_nagid_presence_refresh_effect = yes }
 }
 
 # Scope: a ruler whose Nagid he confirmed is in office. The AI's choice:
@@ -501,4 +529,201 @@ kehillah_nagid_service_yearly_effect = {
 		kehillah_nagid_service_ai_pick_effect = yes
 	}
 	kehillah_nagid_service_refresh_effect = yes
+}
+
+# =====================================================================
+# HOW THE OFFICE SHOWS -- 2026-11-01 (Daniel: "I want it to feel 'real'
+# in the world of the game"). The Nagid's rank (common/flavorization/
+# kehillah_title_holders.txt) and the court relation between ruler and
+# Nagid (common/scripted_relations/kehillah_nagid_relations.txt) follow
+# the office's data above; nothing here is stored for its own sake.
+# =====================================================================
+
+# Scope: a character. Takes off every Nagid rank.
+kehillah_nagid_rank_clear_effect = {
+	remove_character_flag = kehillah_nagid_rank_nagid_flag
+	remove_character_flag = kehillah_nagid_rank_arrabi_mor_flag
+	remove_character_flag = kehillah_nagid_rank_rab_de_la_corte_flag
+	remove_character_flag = kehillah_nagid_rank_presbyter_flag
+	remove_character_flag = kehillah_nagid_rank_hochmeister_flag
+	remove_character_flag = kehillah_nagid_rank_master_flag
+}
+
+# Scope: the Nagid; scope:kehillah_nagid_court_ruler is the ruler of the
+# realm whose office they hold. Gives them the rank his court's name for
+# the office calls for (the kehillah_nagid_name_* triggers).
+kehillah_nagid_rank_set_effect = {
+	kehillah_nagid_rank_clear_effect = yes
+	if = {
+		limit = { scope:kehillah_nagid_court_ruler = { kehillah_nagid_name_arrabi_mor_trigger = yes } }
+		add_character_flag = kehillah_nagid_rank_arrabi_mor_flag
+	}
+	else_if = {
+		limit = { scope:kehillah_nagid_court_ruler = { kehillah_nagid_name_rab_de_la_corte_trigger = yes } }
+		add_character_flag = kehillah_nagid_rank_rab_de_la_corte_flag
+	}
+	else_if = {
+		limit = { scope:kehillah_nagid_court_ruler = { kehillah_nagid_name_presbyter_trigger = yes } }
+		add_character_flag = kehillah_nagid_rank_presbyter_flag
+	}
+	else_if = {
+		limit = { scope:kehillah_nagid_court_ruler = { kehillah_nagid_name_hochmeister_trigger = yes } }
+		add_character_flag = kehillah_nagid_rank_hochmeister_flag
+	}
+	else_if = {
+		limit = { scope:kehillah_nagid_court_ruler = { kehillah_nagid_name_master_trigger = yes } }
+		add_character_flag = kehillah_nagid_rank_master_flag
+	}
+	else = {
+		add_character_flag = kehillah_nagid_rank_nagid_flag
+	}
+}
+
+# Scope: a ruler; scope:kehillah_nagid_court_ruler (him),
+# scope:kehillah_nagid_court_keep (his own Nagid, if any) and
+# scope:kehillah_nagid_court_want (the relation his office names, or
+# flag:none) saved by kehillah_nagid_court_sync_effect. Removes his
+# $TYPE$ relations except the one his office names; each Nagid's
+# corresponding relation goes with it.
+kehillah_nagid_court_drop_effect = {
+	every_relation = {
+		type = kehillah_court_$TYPE$
+		limit = {
+			NOT = {
+				AND = {
+					scope:kehillah_nagid_court_want = flag:$TYPE$
+					scope:kehillah_nagid_court_keep ?= this
+				}
+			}
+		}
+		save_temporary_scope_as = kehillah_nagid_court_drop
+		scope:kehillah_nagid_court_ruler = {
+			hidden_effect = { remove_relation_kehillah_court_$TYPE$ = scope:kehillah_nagid_court_drop }
+		}
+	}
+}
+
+# Scope: a ruler; scope:kehillah_nagid_court_keep saved. Gives him the
+# $TYPE$ relation toward his Nagid, unless he has it already.
+kehillah_nagid_court_set_effect = {
+	if = {
+		limit = { NOT = { has_relation_kehillah_court_$TYPE$ = scope:kehillah_nagid_court_keep } }
+		hidden_effect = {
+			set_relation_kehillah_court_$TYPE$ = {
+				target = scope:kehillah_nagid_court_keep
+				reason = kehillah_relation_reason_nagid
+			}
+		}
+	}
+}
+
+# Scope: a ruler. Makes his court relations match his office: toward the
+# Nagid he confirmed, the relation for the service named, or "Head of the
+# Jews" with none; no other.
+kehillah_nagid_court_sync_effect = {
+	save_scope_as = kehillah_nagid_court_ruler
+	clear_saved_scope = kehillah_nagid_court_keep
+	save_scope_value_as = { name = kehillah_nagid_court_want value = flag:none }
+	if = {
+		limit = { kehillah_ruler_has_own_nagid_trigger = yes }
+		primary_title.var:kehillah_nagid_holder = { save_scope_as = kehillah_nagid_court_keep }
+		if = {
+			limit = {
+				kehillah_nagid_in_service_trigger = yes
+				kehillah_nagid_service_is_trigger = { SERVICE = vizier }
+			}
+			save_scope_value_as = { name = kehillah_nagid_court_want value = flag:vizier }
+		}
+		else_if = {
+			limit = {
+				kehillah_nagid_in_service_trigger = yes
+				kehillah_nagid_service_is_trigger = { SERVICE = treasurer }
+			}
+			save_scope_value_as = { name = kehillah_nagid_court_want value = flag:treasurer }
+		}
+		else_if = {
+			limit = {
+				kehillah_nagid_in_service_trigger = yes
+				kehillah_nagid_service_is_trigger = { SERVICE = physician }
+			}
+			save_scope_value_as = { name = kehillah_nagid_court_want value = flag:physician }
+		}
+		else_if = {
+			limit = {
+				kehillah_nagid_in_service_trigger = yes
+				kehillah_nagid_service_is_trigger = { SERVICE = envoy }
+			}
+			save_scope_value_as = { name = kehillah_nagid_court_want value = flag:envoy }
+		}
+		else = {
+			save_scope_value_as = { name = kehillah_nagid_court_want value = flag:nagid }
+		}
+	}
+	kehillah_nagid_court_drop_effect = { TYPE = vizier }
+	kehillah_nagid_court_drop_effect = { TYPE = treasurer }
+	kehillah_nagid_court_drop_effect = { TYPE = physician }
+	kehillah_nagid_court_drop_effect = { TYPE = envoy }
+	kehillah_nagid_court_drop_effect = { TYPE = nagid }
+	if = {
+		limit = { scope:kehillah_nagid_court_want = flag:vizier }
+		kehillah_nagid_court_set_effect = { TYPE = vizier }
+	}
+	else_if = {
+		limit = { scope:kehillah_nagid_court_want = flag:treasurer }
+		kehillah_nagid_court_set_effect = { TYPE = treasurer }
+	}
+	else_if = {
+		limit = { scope:kehillah_nagid_court_want = flag:physician }
+		kehillah_nagid_court_set_effect = { TYPE = physician }
+	}
+	else_if = {
+		limit = { scope:kehillah_nagid_court_want = flag:envoy }
+		kehillah_nagid_court_set_effect = { TYPE = envoy }
+	}
+	else_if = {
+		limit = { scope:kehillah_nagid_court_want = flag:nagid }
+		kehillah_nagid_court_set_effect = { TYPE = nagid }
+	}
+}
+
+# Scope: a Kehillah leader. Ends their $TYPE$ patron relations; each
+# ruler's corresponding relation goes with it.
+kehillah_nagid_court_leave_type_effect = {
+	every_relation = {
+		type = kehillah_court_$TYPE$_patron
+		save_temporary_scope_as = kehillah_nagid_court_drop
+		scope:kehillah_nagid_court_leaver = {
+			hidden_effect = { remove_relation_kehillah_court_$TYPE$_patron = scope:kehillah_nagid_court_drop }
+		}
+	}
+}
+
+# Scope: a Kehillah leader leaving the office, or newly named to it.
+# Takes off the rank and ends every court relation they hold.
+kehillah_nagid_court_leave_effect = {
+	save_scope_as = kehillah_nagid_court_leaver
+	hidden_effect = {
+		kehillah_nagid_rank_clear_effect = yes
+		kehillah_nagid_court_leave_type_effect = { TYPE = vizier }
+		kehillah_nagid_court_leave_type_effect = { TYPE = treasurer }
+		kehillah_nagid_court_leave_type_effect = { TYPE = physician }
+		kehillah_nagid_court_leave_type_effect = { TYPE = envoy }
+		kehillah_nagid_court_leave_type_effect = { TYPE = nagid }
+	}
+}
+
+# Scope: a ruler. Puts the office's rank on his realm's Nagid and his
+# court relations right. Called wherever the office or its service
+# changes, and by the quarterly and yearly checks.
+kehillah_nagid_presence_refresh_effect = {
+	save_scope_as = kehillah_nagid_court_ruler
+	primary_title ?= {
+		var:kehillah_nagid_holder ?= {
+			if = {
+				limit = { kehillah_is_nagid_trigger = yes }
+				kehillah_nagid_rank_set_effect = yes
+			}
+		}
+	}
+	kehillah_nagid_court_sync_effect = yes
 }

@@ -53,6 +53,11 @@ impossible.** The engine refuses `assign_councillor_type`, `appoint_court_positi
   Treasurer, Physician or Envoy, or no service. He carries a modifier in four tiers by the Nagid's
   matching skill; the AI picks by rule. Probes `kehillah_nagid_debug.7`–`.8`. Built and
   xTiger-checked, not live-tested.
+- **Making the office visible** (2026-11-01, after Daniel saw slice 5's notices live: "I don't want
+  this to just be a practically invisible modifier"): the Nagid's rank ("Nagid Joseph"), a court
+  relation (the ruler sees the Nagid as his "Vizier", the Nagid sees a "Patron"), a band for the
+  office and a seat badge in the realm view, office news in its feed, and a badge in the character
+  window. Built and xTiger-checked, not live-tested.
 - **Daniel plans to live-test slices 1–5 on Sunday 2026-11-01.** The build note lists the checks.
   **Next:** slice 6, envy, clergy pressure and the fall.
 
