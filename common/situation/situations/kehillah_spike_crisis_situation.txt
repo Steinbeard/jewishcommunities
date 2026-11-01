@@ -1,0 +1,93 @@
+﻿# SPIKE (2026-11-01, disposable, console-only): slice 0 of
+# docs/spec/2026-11-01-crisis-situations-as-the-mechanic.md. Tests whether a situation can own a
+# crisis clock: a scripted deadline, script-valued catalyst points, a weighted pick at the deadline,
+# Phase Effects on manual participants, situation decisions in a copied window, and an on_start
+# that runs a guarded effect exactly once. Started only by kehillah_crisis_spike.1/.2.
+kehillah_spike_crisis = {
+ is_unique = no
+ window = situation
+ gui_window_name = kehillah_spike_situation_window
+ situation_group_type = minor
+ illustration = "gfx/interface/illustrations/event_scenes/alley_day.dds"
+ icon = {
+  trigger = { always = yes }
+  reference = "gfx/interface/icons/flat_icons/three_people.dds"
+ }
+ sub_regions = {
+  kehillah_spike_area = {
+   icon = "gfx/interface/icons/flat_icons/three_people.dds"
+   map_color = { 0.75 0.15 0.13 }
+  }
+ }
+ participant_groups = {
+  kehillah_spike_community = {
+   icon = "gfx/interface/icons/flat_icons/three_people.dds"
+   auto_add_rulers = no
+   auto_add_landless_rulers = no
+   require_realm_in_sub_region = no
+   is_character_valid = { scope:situation.var:kehillah_spike_title.holder ?= root }
+  }
+  kehillah_spike_protectors = {
+   icon = "gfx/interface/icons/flat_icons/county_crown.dds"
+   auto_add_rulers = no
+   auto_add_landless_rulers = no
+   require_realm_in_sub_region = no
+   is_character_valid = { scope:situation.var:kehillah_spike_sovereign ?= root }
+  }
+ }
+ on_monthly = { kehillah_spike_monthly_effect = yes }
+ situation_decisions = {
+  kehillah_spike_post_watch_decision
+  kehillah_spike_inflame_decision
+ }
+ start_phase = kehillah_spike_agitation
+ phases = {
+  kehillah_spike_agitation = {
+   icon = "gfx/interface/icons/icon_event_effect.dds"
+   on_start = { debug_log = "KEHILLAH SPIKE: Agitation phase entered" }
+   # Root = situation. Read from the situation, or, at creation, from the pending global.
+   max_duration = { days = kehillah_spike_deadline_days_value }
+   max_duration_next_phase = weighted_random_points
+   future_phases = {
+    kehillah_spike_armed = {
+     takeover_type = points
+     takeover_points = 100
+     catalysts = {
+      kehillah_spike_agitation_catalyst = kehillah_spike_agitation_points_value
+      kehillah_spike_inflame_catalyst = kehillah_spike_inflame_points_value
+     }
+    }
+    # No takeover: Spared can only win at the deadline, weighted against Armed.
+    kehillah_spike_spared = {
+     catalysts = {
+      kehillah_spike_watch_catalyst = kehillah_spike_watch_points_value
+     }
+    }
+   }
+   modifier_sets = {
+    kehillah_spike_agitation_effects = {
+     icon = "gfx/interface/icons/flat_icons/three_people.dds"
+     kehillah_spike_community = {
+      character_modifier = {
+       diplomacy = 2
+       stress_gain_mult = 0.1
+      }
+     }
+     kehillah_spike_protectors = {
+      character_modifier = {
+       monthly_prestige = 0.5
+      }
+     }
+    }
+   }
+  }
+  kehillah_spike_armed = {
+   icon = "gfx/interface/icons/icon_event_effect.dds"
+   on_start = { kehillah_spike_outcome_effect = { OUTCOME = armed } }
+  }
+  kehillah_spike_spared = {
+   icon = "gfx/interface/icons/icon_event_effect.dds"
+   on_start = { kehillah_spike_outcome_effect = { OUTCOME = spared } }
+  }
+ }
+}

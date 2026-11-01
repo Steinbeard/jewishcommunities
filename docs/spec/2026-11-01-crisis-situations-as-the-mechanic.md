@@ -232,3 +232,15 @@ Recommendations first. Until Daniel answers, a slice builds on the recommendatio
 2. **The first family after the attack:** recommended, the Talmud trial. Its pieces exist (the duel, the burning effect, the charter term), and its long, rigged contest suits phases best.
 3. **One live crisis per community?** Recommended: yes, with explicit hand-offs. Simultaneous trial and libel windows on one community are hard to read and to test.
 4. **Should the Talmud trial gate stay at 1110?** The Paris trial is 1240, and Donin's articles reach Rome around 1238. Recommended: keep 1110 for the incident director's lighter forms, but gate a full **trial of the books** at 1236.
+
+## Addendum, 2026-11-01 (later): slice order revised
+
+Daniel approved the lower-risk order after reviewing the tradeoffs. This supersedes the order in §8; the content of each slice is unchanged.
+
+0. **Engine spike**, built on the working branch for Daniel to live-test: [test record](../testing/2026-11-01-crisis-situation-spike.md).
+1. **The Talmud trial**, as the first family where the situation owns the clock. It has no march, siege or delayed relays to collide with.
+2. **The attack.** Its authority flip waits until the trial has proven the pattern live. Until then the attack keeps the 2026-10-31 mirror and may adopt the window copy, hiding its false date and 0/1 bars.
+3. **The libel**, with the hand-off to the attack.
+4. **The expulsion edict.**
+
+The existing Community Safety and crisis-situation live tests should still run before slice 2.

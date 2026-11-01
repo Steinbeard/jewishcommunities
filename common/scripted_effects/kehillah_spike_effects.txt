@@ -1,0 +1,115 @@
+﻿# SPIKE (2026-11-01, disposable): slice 0 of the crisis-situations spec. Every line logs with the
+# prefix "KEHILLAH SPIKE" so debug.log can be filtered.
+
+# Root: a Kehillah leader. Ends this title's spike, if any. DAYS: the Agitation deadline.
+kehillah_spike_start_effect = {
+ primary_title = { save_scope_as = kehillah_spike_start_title }
+ kehillah_spike_end_effect = yes
+ scope:kehillah_spike_start_title = {
+  change_variable = { name = kehillah_spike_epoch add = 1 }
+  set_variable = { name = kehillah_spike_outcome_calls value = 0 }
+  set_variable = { name = kehillah_spike_outcome_applied value = 0 }
+  remove_variable = kehillah_spike_outcome
+ }
+ set_global_variable = { name = kehillah_spike_pending_deadline_days value = $DAYS$ }
+ start_situation = {
+  type = kehillah_spike_crisis
+  save_scope_as = kehillah_spike_new
+ }
+ remove_global_variable = kehillah_spike_pending_deadline_days
+ scope:kehillah_spike_new ?= {
+  set_variable = { name = kehillah_spike_title value = scope:kehillah_spike_start_title }
+  set_variable = { name = kehillah_spike_epoch value = scope:kehillah_spike_start_title.var:kehillah_spike_epoch }
+  set_variable = { name = kehillah_spike_deadline_days value = $DAYS$ }
+  set_variable = { name = kehillah_spike_agitation value = 20 }
+  set_situation_center_province = root.domicile.domicile_location
+  situation_sub_region:kehillah_spike_area = { add_dejure_title_to_sub_region = root.domicile.domicile_location.county }
+  add_manual_participant = root
+  root.domicile.domicile_location.county.holder.top_liege ?= {
+   scope:kehillah_spike_new = {
+    set_variable = { name = kehillah_spike_sovereign value = prev }
+    add_manual_participant = prev
+   }
+  }
+  scope:kehillah_spike_start_title = { set_variable = { name = kehillah_spike_situation value = scope:kehillah_spike_new } }
+  kehillah_spike_log_effect = { WHEN = start }
+ }
+}
+
+# Root: a Kehillah leader. Ends only the spike stored on this leader's own title.
+kehillah_spike_end_effect = {
+ primary_title = {
+  save_scope_as = kehillah_spike_end_title
+  if = {
+   limit = { exists = var:kehillah_spike_situation }
+   var:kehillah_spike_situation = {
+    if = {
+     limit = { situation_type = kehillah_spike_crisis var:kehillah_spike_title ?= scope:kehillah_spike_end_title }
+     debug_log = "KEHILLAH SPIKE: ending the title's spike situation"
+     end_situation = yes
+    }
+   }
+   remove_variable = kehillah_spike_situation
+  }
+ }
+}
+
+# Root: the situation, monthly. Agitation rises and adds that many Armed points.
+kehillah_spike_monthly_effect = {
+ if = {
+  limit = { situation_current_phase = kehillah_spike_agitation exists = var:kehillah_spike_title }
+  change_variable = { name = kehillah_spike_agitation add = kehillah_spike_agitation_monthly_rise }
+  trigger_situation_catalyst = kehillah_spike_agitation_catalyst
+ }
+ kehillah_spike_log_effect = { WHEN = monthly }
+}
+
+# Root: the situation, from an outcome phase's on_start. Counts every call; applies once per epoch.
+kehillah_spike_outcome_effect = {
+ var:kehillah_spike_title ?= { change_variable = { name = kehillah_spike_outcome_calls add = 1 } }
+ if = {
+  limit = {
+   exists = var:kehillah_spike_title
+   var:kehillah_spike_epoch = var:kehillah_spike_title.var:kehillah_spike_epoch
+   var:kehillah_spike_title = { NOT = { has_variable = kehillah_spike_outcome } }
+  }
+  var:kehillah_spike_title = {
+   set_variable = { name = kehillah_spike_outcome value = flag:$OUTCOME$ }
+   change_variable = { name = kehillah_spike_outcome_applied add = 1 }
+  }
+ }
+ debug_log = "KEHILLAH SPIKE: outcome phase $OUTCOME$ on_start"
+ kehillah_spike_log_effect = { WHEN = outcome_$OUTCOME$ }
+}
+
+# Root: the situation. Copies the engine's own numbers onto the title, then logs from the leader.
+kehillah_spike_log_effect = {
+ save_temporary_scope_as = kehillah_spike_log_situation
+ random_situation_sub_region = {
+  save_temporary_scope_value_as = { name = kehillah_spike_armed_points value = phase_takeover_points:kehillah_spike_armed }
+  save_temporary_scope_value_as = { name = kehillah_spike_spared_points value = phase_takeover_points:kehillah_spike_spared }
+  save_temporary_scope_value_as = { name = kehillah_spike_days_left value = sub_region_current_phase_days_until_end_date }
+ }
+ var:kehillah_spike_title ?= {
+  set_variable = { name = kehillah_spike_log_armed value = scope:kehillah_spike_armed_points }
+  set_variable = { name = kehillah_spike_log_spared value = scope:kehillah_spike_spared_points }
+  set_variable = { name = kehillah_spike_log_days_left value = scope:kehillah_spike_days_left }
+  set_variable = { name = kehillah_spike_log_agitation value = scope:kehillah_spike_log_situation.var:kehillah_spike_agitation }
+  set_variable = { name = kehillah_spike_log_when value = flag:$WHEN$ }
+  holder ?= {
+   debug_log = "KEHILLAH SPIKE $WHEN$: armed=[THIS.Char.GetPrimaryTitle.MakeScope.Var('kehillah_spike_log_armed').GetValue] spared=[THIS.Char.GetPrimaryTitle.MakeScope.Var('kehillah_spike_log_spared').GetValue] days_left=[THIS.Char.GetPrimaryTitle.MakeScope.Var('kehillah_spike_log_days_left').GetValue] agitation=[THIS.Char.GetPrimaryTitle.MakeScope.Var('kehillah_spike_log_agitation').GetValue] leader_diplomacy=[THIS.Char.MakeScope.ScriptValue('kehillah_spike_diplomacy_value')] outcome_calls=[THIS.Char.GetPrimaryTitle.MakeScope.Var('kehillah_spike_outcome_calls').GetValue] outcome_applied=[THIS.Char.GetPrimaryTitle.MakeScope.Var('kehillah_spike_outcome_applied').GetValue]"
+  }
+ }
+ if = {
+  limit = { situation_current_phase = kehillah_spike_agitation }
+  debug_log = "KEHILLAH SPIKE $WHEN$: phase=Agitation"
+ }
+ else_if = {
+  limit = { situation_current_phase = kehillah_spike_armed }
+  debug_log = "KEHILLAH SPIKE $WHEN$: phase=Armed"
+ }
+ else_if = {
+  limit = { situation_current_phase = kehillah_spike_spared }
+  debug_log = "KEHILLAH SPIKE $WHEN$: phase=Spared"
+ }
+}
