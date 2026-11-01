@@ -48,3 +48,23 @@ An earlier attempt could not launch, because the crash reporter from the 14:30 c
 - Re-running the trial's close after the fix.
 - The Armed-race monthly toasts after the fix.
 - A full accusation race to its end.
+
+## Run 2: the decree, and the trial's close re-run (game PID 2252)
+
+| Check | Result |
+| --- | --- |
+| Badge decree opening | Pass. "The Badge" offers five answers; "The Badge Decreed" is announced. |
+| Threat to leave, called a bluff | Pass. +20 Enforced, named. |
+| Decree window | Pass. "A Decree Against the Kehillah of Worms", Proclaimed, the clerks' line, three futures, one action. |
+| Answer the Decree | Pass. The spent answer is hidden. |
+| Laid aside | Pass. Its verdict event, then "closing" and "closed" a second apart, and no crash. |
+| Servants' decree, accepted | Pass. "The Decree Is Enforced" with the servants text; it closes without a crash. |
+| Trial quashed and closed | **Pass.** "The Matter Is Dropped", then "closing" and "closed", and the game stays up. The crash fix holds. |
+
+**Still failing in run 2:** the Armed race's tick error, at the same line. Its cause was not the saved value. `change_variable` fails on a variable that does not exist yet, and the month's count starts empty. It now sets the count to 0 first. Not re-run.
+
+## Same day, after run 2 (Daniel)
+
+- Real icons for the three situations and every phase, in place of the flat placeholders. They are vanilla art: torch and pitchfork, burning book, wax seal, dove, shackles and so on.
+- The monthly toasts are flavor only, with no "+N toward X" line ("I don't like the toast text that spells out +8 points").
+- The first-time driver notices no longer say "the Armed host gains ground".
