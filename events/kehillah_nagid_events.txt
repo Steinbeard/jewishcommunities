@@ -1,15 +1,17 @@
 ﻿# =====================================================================
 # THE NAGID OFFICE -- the Nagid spec, sections 7, 8 and 13 (docs/spec/
 # 2026-10-30-the-nagid.md), 2026-10-30, slice 4.
-#   .0001 the ruler is asked to confirm the seat's leader as Nagid
-#         (kehillah_nagid_request_confirmation_effect). Scopes:
-#         kehillah_nagid_seat_leader, kehillah_nagid_host.
+#   .0001 the audience: the ruler confirms the seat's leader as Nagid and,
+#         since 2026-11-01, names his place at court in the same choice
+#         (kehillah_nagid_request_confirmation_effect, or founding the
+#         office). Scopes: kehillah_nagid_seat_leader, kehillah_nagid_host.
 #   .0002 a player ruler hears the seat's petition to found the office
-#         (kehillah_ask_nagid_office_decision). Scope:
-#         kehillah_nagid_seat_leader.
-#   .0003 slice 5: a player ruler names his Nagid's service at court
-#         (after a confirmation, or kehillah_assign_nagid_service_
-#         decision). No scopes needed: the Nagid is read from the office.
+#         (kehillah_ask_nagid_office_decision); founding it leads into
+#         the audience. Scope: kehillah_nagid_seat_leader.
+#   .0003 slice 5: a player ruler changes his Nagid's place at court (the
+#         Change His Post interaction, a Vizier off the Dhimma, or a
+#         founding with no audience). No scopes needed: the Nagid is read
+#         from the office.
 #   .0090 game start, 1066: Joseph ibn Naghrilla as Nagid of Badis's
 #         realm, which starts Favored. Scope: Granada's leader.
 #   .0091 game start: the office founded, vacant, in the realm of this
@@ -29,9 +31,18 @@ kehillah_nagid.0001 = {
 			}
 			desc = kehillah_nagid.0001.desc
 		}
+		triggered_desc = {
+			trigger = { kehillah_nagid_vizier_open_trigger = yes }
+			desc = kehillah_nagid.0003.desc_vizier
+		}
 	}
 	theme = realm
+	override_background = { reference = throne_room }
 	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	right_portrait = {
 		character = scope:kehillah_nagid_seat_leader
 		animation = personality_honorable
 	}
@@ -45,16 +56,41 @@ kehillah_nagid.0001 = {
 		kehillah_realm_has_nagid_office_trigger = yes
 	}
 
-	# Confirm, for the fee.
+	# The audience (2026-11-01): a player confirms the leader and names his
+	# place at court in one choice. Each option pays the fee.
+	option = {
+		name = kehillah_nagid.0001.vizier
+		trigger = { is_ai = no kehillah_nagid_vizier_open_trigger = yes }
+		kehillah_nagid_confirm_as_effect = { SERVICE = vizier }
+	}
+	option = {
+		name = kehillah_nagid.0001.treasurer
+		trigger = { is_ai = no }
+		kehillah_nagid_confirm_as_effect = { SERVICE = treasurer }
+	}
+	option = {
+		name = kehillah_nagid.0001.physician
+		trigger = { is_ai = no }
+		kehillah_nagid_confirm_as_effect = { SERVICE = physician }
+	}
+	option = {
+		name = kehillah_nagid.0001.envoy
+		trigger = { is_ai = no }
+		kehillah_nagid_confirm_as_effect = { SERVICE = envoy }
+	}
 	option = {
 		name = kehillah_nagid.0001.a
-		scope:kehillah_nagid_seat_leader = {
-			pay_short_term_gold = {
-				target = root
-				gold = kehillah_nagid_fee_value
-			}
-		}
-		kehillah_nagid_appoint_effect = yes
+		trigger = { is_ai = no }
+		kehillah_nagid_confirm_effect = yes
+	}
+
+	# An AI ruler confirms and names the service by rule
+	# (kehillah_nagid_service_ai_pick_effect), as before the audience.
+	option = {
+		name = kehillah_nagid.0001.a
+		trigger = { is_ai = yes }
+		kehillah_nagid_confirm_effect = yes
+		hidden_effect = { kehillah_nagid_service_ai_pick_effect = yes }
 		ai_chance = {
 			base = 50
 			modifier = { add = 30 has_trait = greedy }
@@ -114,10 +150,12 @@ kehillah_nagid.0002 = {
 		kehillah_nagid_can_found_trigger = yes
 	}
 
+	# Found the office, then receive its leader in audience (.0001).
 	option = {
 		name = kehillah_nagid.0002.a
 		kehillah_nagid_found_office_effect = yes
-		kehillah_nagid_appoint_effect = yes
+		custom_tooltip = kehillah_nagid_audience_follows_tt
+		trigger_event = kehillah_nagid.0001
 	}
 
 	option = {
@@ -253,7 +291,8 @@ kehillah_nagid.0090 = {
 			}
 			kehillah_nagid_appoint_effect = yes
 			# Joseph was Badis's vizier, as his father was Habbus's. A
-			# player Badis can change it in kehillah_nagid.0003.
+			# player Badis can change it with the Change His Post
+			# interaction.
 			if = {
 				limit = {
 					kehillah_nagid_vizier_open_trigger = yes

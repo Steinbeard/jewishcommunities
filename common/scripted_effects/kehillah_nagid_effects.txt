@@ -53,20 +53,73 @@ kehillah_nagid_appoint_effect = {
 			left_icon = scope:kehillah_nagid_host
 		}
 	}
-	# Slice 5: the ruler names the Nagid's service at court. The AI picks
-	# at once; a player ruler is asked the next day (kehillah_nagid.0003).
+	# The service is named by the caller (2026-11-01): in the audience
+	# (kehillah_nagid_confirm_as_effect), or by kehillah_nagid_appoint_
+	# and_pick_effect where there is no audience.
 	scope:kehillah_nagid_host = {
-		if = {
-			limit = { is_ai = yes }
-			hidden_effect = { kehillah_nagid_service_ai_pick_effect = yes }
-		}
-		else = {
-			custom_tooltip = kehillah_nagid_choose_service_tt
-			trigger_event = { id = kehillah_nagid.0003 days = 1 }
-		}
 		hidden_effect = { kehillah_nagid_presence_refresh_effect = yes }
 	}
 	debug_log = "kehillah_nagid_appoint_effect: a Nagid is named"
+}
+
+# Scope: a ruler; scope:kehillah_nagid_seat_leader saved. Names the seat
+# leader where no audience is held: an AI ruler's founding or answer to a
+# petition, and kehillah_nagid_debug.2. The AI picks the service at once;
+# a player ruler chooses it the next day (kehillah_nagid.0003).
+kehillah_nagid_appoint_and_pick_effect = {
+	kehillah_nagid_appoint_effect = yes
+	if = {
+		limit = { is_ai = yes }
+		hidden_effect = { kehillah_nagid_service_ai_pick_effect = yes }
+	}
+	else = {
+		custom_tooltip = kehillah_nagid_choose_service_tt
+		trigger_event = { id = kehillah_nagid.0003 days = 1 }
+	}
+}
+
+# Scope: a ruler in the audience (kehillah_nagid.0001, 2026-11-01);
+# scope:kehillah_nagid_seat_leader saved. The community pays the fee and
+# its leader is confirmed, with no place at court.
+kehillah_nagid_confirm_effect = {
+	save_scope_as = kehillah_nagid_host
+	scope:kehillah_nagid_seat_leader = {
+		pay_short_term_gold = {
+			target = scope:kehillah_nagid_host
+			gold = kehillah_nagid_fee_value
+		}
+	}
+	kehillah_nagid_appoint_effect = yes
+}
+
+# Scope: as kehillah_nagid_confirm_effect. Confirmed, and named to the
+# $SERVICE$ in the same breath.
+kehillah_nagid_confirm_as_effect = {
+	kehillah_nagid_confirm_effect = yes
+	kehillah_nagid_set_service_effect = { SERVICE = $SERVICE$ }
+}
+
+# Scope: a ruler; scope:kehillah_nagid_seat_leader (his Nagid) saved.
+# Dismisses the man, not the office (2026-11-01): he steps down, the
+# community loses Stability, and no one can be confirmed until
+# kehillah_nagid_dismissal_wait_years have passed.
+kehillah_nagid_dismiss_effect = {
+	save_scope_as = kehillah_nagid_host
+	primary_title = {
+		set_variable = { name = kehillah_nagid_withheld value = yes years = kehillah_nagid_dismissal_wait_years }
+	}
+	scope:kehillah_nagid_seat_leader = {
+		add_opinion = { target = scope:kehillah_nagid_host modifier = disappointed_opinion opinion = -30 }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_nagid_dismissal_stability_value }
+		kehillah_nagid_step_down_effect = yes
+		send_interface_message = {
+			type = msg_kehillah_community_news_bad
+			title = kehillah_nagid_dismissed_msg_t
+			desc = kehillah_nagid_dismissed_msg_d
+			left_icon = scope:kehillah_nagid_host
+		}
+	}
+	debug_log = "kehillah_nagid_dismiss_effect: the Nagid is dismissed"
 }
 
 # Scope: a Kehillah leader. Leaves the office: the modifiers and the link

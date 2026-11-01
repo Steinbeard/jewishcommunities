@@ -461,3 +461,79 @@ gone.
   frame opening the right decision.
 - **The seat** badge and line on Granada.
 - **The 1066 news entries.**- **`error.log`** stays clean after opening the realm view and both character windows.
+
+## The audience, and the ruler's interactions (2026-11-01)
+
+**Built 2026-11-01 at Daniel's request** (from the [court-flow addendum](../spec/2026-11-01-nagid-court-flow-and-tax-office.md),
+§3.1 and §3.2: "let's go through with 2 and 3"). xTiger-checked: no new reports except six
+strict-scope warnings from vanilla's `throne_room` background (below). Not live-tested.
+
+**This supersedes slice 5's "Choosing it"** for player rulers. The yearly decision Assign the Head
+of the Jews is gone.
+
+### The audience (`kehillah_nagid.0001`)
+
+- **One event to confirm and place the Nagid.** The confirmation is now an audience on vanilla's
+  throne-room background, with the ruler on the left and the candidate on the right.
+- **A player chooses in one step:**
+  - confirm as Vizier (under the Dhimma only), Treasurer, Physician or Envoy;
+  - confirm without a place at court;
+  - not yet.
+- **Each confirming option** pays the fee (`kehillah_nagid_confirm_effect`) and names the service
+  (`kehillah_nagid_confirm_as_effect`). Its tooltip shows the fee and the modifier.
+- **An AI ruler** has one hidden "confirm" option that picks the service by the old rule, with the
+  old weights. AI behaviour is unchanged.
+- **Founding leads into it:**
+  - a player's Establish a Head of the Jews founds the office and opens the audience;
+  - so does accepting a petition (`kehillah_nagid.0002`).
+- **Where there is no audience,** the service is named as before, through
+  `kehillah_nagid_appoint_and_pick_effect` (AI pick, or `kehillah_nagid.0003` the next day for a
+  player). That covers:
+  - an AI ruler's founding;
+  - an AI ruler's answer to a petition;
+  - `kehillah_nagid_debug.2`.
+- **`kehillah_nagid_appoint_effect` no longer names a service.**
+- **The 1066 seed** appoints Joseph and makes him Vizier directly, so a player Badis no longer gets
+  a service event on day 6.
+- **The background's warnings:** vanilla's `throne_room` checks for Christian clergy first, then
+  reads `scope:activity`. xTiger reports six strict-scope warnings for this. The mod's baseline
+  already has the same warnings from other events, and vanilla uses the background in 183 places.
+
+### The ruler's interactions (`common/character_interactions/kehillah_nagid_interactions.txt`)
+
+Both are player-only, on the ruler's own confirmed Nagid. The AI keeps naming the service by rule,
+and ends the office only through Abolish.
+
+- **Change His Post at Court** (`council` icon, once a year) opens `kehillah_nagid.0003`. It
+  replaces the decision.
+- **Dismiss the Head of the Jews** (`revoke_title` icon) runs `kehillah_nagid_dismiss_effect`:
+  - the Nagid steps down, with the Realm News entry "left the office";
+  - his community loses Stability (`kehillah_nagid_dismissal_stability_value`, −20);
+  - he takes −30 opinion of the ruler (vanilla `disappointed_opinion`);
+  - he gets a "Dismissed" notice.
+- **The office stays, vacant** for `kehillah_nagid_dismissal_wait_years` (3), through the existing
+  `kehillah_nagid_withheld` timer.
+- **Reappointment comes by itself.** When the wait ends, the seat leader's quarterly check brings
+  the capital's leader to the ruler in audience. That is the same man if he still leads, or his
+  successor. No other character can hold the office, so dismissal withdraws the ruler's favour; it
+  does not open the post to a rival.
+
+### Not built from the addendum
+
+- **§3.3:** Abolish's confirmation event.
+- **§3.4:** the Kehillah-side events.
+- **§4:** retiring vanilla's duplicate ibn Naghrela family. Deferred, and in ROADMAP's backlog.
+- **§5:** the tax office. Set aside.
+
+### Live checks owed
+
+- **A player's founding** opens the audience on the throne-room background, with both portraits.
+  The Vizier option appears only under the Dhimma, and each option's tooltip shows the fee and the
+  modifier.
+- **A petition accepted by a player ruler** leads into the same audience.
+- **Change His Post** shows on Joseph's portrait for a player Badis, and greys for a year after use.
+- **Dismiss:**
+  - the costs land: Stability, opinion, the notice, the news entry;
+  - the realm view reads "Vacant (confirmation withheld)";
+  - after three years the audience comes back.
+- **An AI ruler still confirms and picks a service** (`kehillah_nagid_debug.3`).

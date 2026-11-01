@@ -5,6 +5,26 @@ slices 4 and 5 ([build note](../implementation/2026-10-30-nagid-build.md)). It *
 duplicate-family cleanup and a tax-office service. Decisions marked *Daniel* are his. The rest is
 Claude's proposal, open to revision (§7).
 
+**Decisions, 2026-11-01 (later the same day).** Daniel: "Make a note of the duplicate characters to
+come back to later, but let's go through with 2 and 3. We can ignore 4 I think for now." Here "2
+and 3" are the audience (§3.1) and the ruler's interactions (§3.2):
+- **§3.1, the audience: built.**
+- **§3.2, changing the post and dismissing: built.** These are player-only interactions on the
+  ruler's own Nagid. The Kehillah leader's "Ask" interaction was not built: the decision is now
+  shown to every community leader instead (*Daniel*).
+- **§3.3 and §3.4 (abolishing's confirmation event, the Kehillah-side events): not built.**
+- **§4, one Joseph: deferred,** and noted in ROADMAP's backlog.
+- **§5, the tax office: set aside for now** (*Daniel*).
+
+**On dismissal** (*Daniel*: "Why do we want to be able to dismiss him? No one else could be
+assigned right? ... They probably should need to wait."):
+- Only the capital's leader can ever hold the office, so dismissing him does not open it to someone
+  else at once. It is the ruler withdrawing his favour.
+- The office then stays vacant for `kehillah_nagid_dismissal_wait_years` (3).
+- After that, the capital's leader is brought before the ruler in audience again. That is the same
+  man if he still leads, or his successor.
+- The [build note](../implementation/2026-10-30-nagid-build.md) records what the code does.
+
 # The Nagid at court: a smoother office, one Joseph, and the tax office
 
 ## 1. What Daniel asked for

@@ -58,11 +58,15 @@ impossible.** The engine refuses `assign_councillor_type`, `appoint_court_positi
   relation (the ruler sees the Nagid as his "Vizier", the Nagid sees a "Patron"), a line for the
   Nagid under the ruler in the realm view (an empty frame opens the founding or asking decision),
   and a seat badge and office news there. Built and xTiger-checked, not live-tested.
-- **Proposed 2026-11-01, not approved:** [the court flow and the tax office](docs/spec/2026-11-01-nagid-court-flow-and-tax-office.md).
-  One audience event for confirming the Nagid and choosing his service; character interactions to
-  change his place or dismiss him; Kehillah-side events. It also retires vanilla's duplicate ibn
-  Naghrela family, and lets the Nagid send a man to the ruler's tax office. Four open questions
-  for Daniel.
+- **The audience and the ruler's interactions** (2026-11-01, from [the court-flow addendum](docs/spec/2026-11-01-nagid-court-flow-and-tax-office.md)
+  §3.1–3.2, Daniel: "let's go through with 2 and 3"):
+  - confirming the Nagid and naming his post are one audience event;
+  - a player ruler changes his post (yearly) or dismisses him through interactions on his
+    portrait, which replace the Assign decision;
+  - a dismissal leaves the office vacant for three years before the next audience.
+  
+  Built and xTiger-checked, not live-tested. The addendum's tax office (§5) is set aside, and its
+  duplicate-family cleanup (§4) is in the backlog.
 - **Daniel plans to live-test slices 1–5 on Sunday 2026-11-01.** The build note lists the checks.
   **Next:** slice 6, envy, clergy pressure and the fall.
 
@@ -2873,6 +2877,16 @@ not yet assigned to a phase. Pull one into a phase's scope explicitly
 before building it; nothing here is approved by default.
 
 **Cheap, reinforces an existing v1 pillar (candidates to pull into Phase 1):**
+- **Two Josephs in 1066: vanilla's ibn Naghrela family duplicates the mod's.** Noted 2026-11-01 at
+  Daniel's request ("Make a note of the duplicate characters to come back to later").
+  - Vanilla has Yosef 3221 (Badis's courtier and tax collector, dying 1066.12.30), Rahel
+    (sephardi_0004), Azariah (sephardi_0005), Shmuel 3220, Nissim, Yaakov and the poet Qasmuna
+    (sephardi_0001).
+  - The mod has its own Joseph 9000216 and family in `history/characters/granada_1066.txt`.
+  - The proposed fix ([court-flow addendum](docs/spec/2026-11-01-nagid-court-flow-and-tax-office.md)
+    §4): silently retire vanilla's living copies at game start, and keep the mod's.
+  - Open: what to do with Qasmuna, who exists only in vanilla.
+  - First found in [V51](docs/spec/v51-bookmark-rosters.md).
 - **The Granada massacre, December 1066.** Flagged 2026-09-25 (V18 spec) when
   Granada was added as a new community with Joseph ibn Naghrilla, the real
   historical vizier assassinated in the real massacre that followed barely
