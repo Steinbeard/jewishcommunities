@@ -1,0 +1,48 @@
+﻿# Notification pools (2026-11-01, Daniel: event writing "specific, but fresh by drawing from a pool of
+# different possibilities and incorporating dynamic details like specific characters, places").
+#
+# Scope: a player leader. Sends one of four variants of a pool, never the one sent last time:
+# 1 and 2 are scenes; 3 names someone of the local lord's household (scope:kehillah_toast_townsman);
+# 4 someone of our own household (scope:kehillah_toast_elder). 3 and 4 only when such a person exists.
+# The variant is chosen here, in script, so the text is fixed once sent.
+# KEY: the pool (loc KEY_t1..t4 and KEY_d1..d4). TYPE: the message type. ICON: the left icon.
+kehillah_flavor_toast_effect = {
+ random_courtier = {
+  limit = { is_adult = yes is_jewish_character_trigger = yes }
+  save_scope_as = kehillah_toast_elder
+ }
+ domicile.domicile_location.county.holder ?= {
+  random_courtier = {
+   limit = { is_adult = yes NOT = { is_jewish_character_trigger = yes } }
+   save_scope_as = kehillah_toast_townsman
+  }
+ }
+ random_list = {
+  10 = {
+   trigger = { NOT = { var:kehillah_toast_last_$KEY$ ?= 1 } }
+   kehillah_flavor_toast_send_effect = { KEY = $KEY$ N = 1 TYPE = $TYPE$ ICON = $ICON$ }
+  }
+  10 = {
+   trigger = { NOT = { var:kehillah_toast_last_$KEY$ ?= 2 } }
+   kehillah_flavor_toast_send_effect = { KEY = $KEY$ N = 2 TYPE = $TYPE$ ICON = $ICON$ }
+  }
+  10 = {
+   trigger = { exists = scope:kehillah_toast_townsman NOT = { var:kehillah_toast_last_$KEY$ ?= 3 } }
+   kehillah_flavor_toast_send_effect = { KEY = $KEY$ N = 3 TYPE = $TYPE$ ICON = $ICON$ }
+  }
+  10 = {
+   trigger = { exists = scope:kehillah_toast_elder NOT = { var:kehillah_toast_last_$KEY$ ?= 4 } }
+   kehillah_flavor_toast_send_effect = { KEY = $KEY$ N = 4 TYPE = $TYPE$ ICON = $ICON$ }
+  }
+ }
+}
+
+kehillah_flavor_toast_send_effect = {
+ set_variable = { name = kehillah_toast_last_$KEY$ value = $N$ }
+ send_interface_message = {
+  type = $TYPE$
+  title = $KEY$_t$N$
+  desc = $KEY$_d$N$
+  left_icon = $ICON$
+ }
+}
