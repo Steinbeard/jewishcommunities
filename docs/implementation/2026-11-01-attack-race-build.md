@@ -84,3 +84,32 @@ Each decision is shown only to the leader of a community in Agitation. AI commun
 **Departures from the spec:**
 - The spec's follower events (a knight takes the cross, a guild master vouches, a parish priest opens his church) are one event. It names a courtier where one exists and otherwise a guild master. Opening-specific follower texts come with step 1e.
 - "A Convert Speaks" uses the leader's Learning. Answering through the Dayyan, as the Talmud trial does, is an action in step 1c ("Answer him in public").
+
+## Step 1c — the protection scenes and new actions
+
+The window's Actions list now holds 13 situation decisions.
+
+**The existing V42 scenes, entered directly (players only):**
+- **Seek Protection** opens the protection page (`kehillah_mob.0101`: the lord, the overlord, the Church).
+- **Go to the Agitator's Camp** opens the camp (`kehillah_mob.0140`), once per crisis, exactly as the hub's option did.
+- **Gather the Elders** still opens the whole hub.
+
+The scenes are unchanged. What they win already feeds Spared monthly ("Protection secured"). Each kind of protection also gives a one-time +15 on the next monthly pulse ("Protection won"). The title's `kehillah_crisis_protection_credited` list records which have been credited.
+
+**New actions** (each once per crisis, through `kehillah_crisis_can_act_trigger`):
+- **Answer Him in Public** (`kehillah_crisis_race.0100`): a Learning challenge against the agitator, by the Dayyan when he is more learned than the leader, or by the leader. ±12.
+- **Win the Town:** 40 gold, Spared +12.
+- **Discredit Him** (`kehillah_crisis_race.0110`): 15 gold. An Intrigue challenge against the agitator, by the Shtadlan or the leader. Spared +20, or Armed +20 if caught.
+- **Appeal to the Emperor or the Head of the Faith:** 50 gold. It uses the community's one task for 75 days. On arrival: Spared +25, and the condemnation (`kehillah_mob_condemned`), which then protects every month.
+- **Proclaim a Fast:** free. Spared +6, stress relief, a little piety.
+- **Ask the Neighbours to Speak:** shown only after "Neighbours Speak Up" was accepted. Spared +12.
+
+A new crisis clears every once-per-crisis marker.
+
+**AI.** AI communities take the new actions by AI weight (20–60, checked monthly). They do not use the scene-entry actions; the existing `kehillah_mob_ai_answers_effect` still covers them.
+
+**Departures from the spec:**
+- "Discredit him" resolves at once, not after 30 days.
+- "Win the town" is a gift only; the guild loan that may be called later is not built.
+- "Forgive the debts" belongs to the debts opening (step 1e).
+- The "Our own defence" page (`kehillah_mob.0150`) gets no action of its own, since the preparations are already actions.
