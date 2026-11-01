@@ -55,8 +55,8 @@ impossible.** The engine refuses `assign_councillor_type`, `appoint_court_positi
   xTiger-checked, not live-tested.
 - **Making the office visible** (2026-11-01, after Daniel saw slice 5's notices live: "I don't want
   this to just be a practically invisible modifier"): the Nagid's rank ("Nagid Joseph"), a court
-  relation (the ruler sees the Nagid as his "Vizier", the Nagid sees a "Patron"), the Nagid's small
-  portrait beside the ruler in the realm view (an empty frame opens the founding or asking decision),
+  relation (the ruler sees the Nagid as his "Vizier", the Nagid sees a "Patron"), a line for the
+  Nagid under the ruler in the realm view (an empty frame opens the founding or asking decision),
   and a seat badge and office news there. Built and xTiger-checked, not live-tested.
 - **Daniel plans to live-test slices 1–5 on Sunday 2026-11-01.** The build note lists the checks.
   **Next:** slice 6, envy, clergy pressure and the fall.

@@ -13,12 +13,13 @@
 # VariableSystem flag "kehillah_realm_view_open".
 #
 # THE LAYOUT: an audience, read top to bottom.
-#   1. the ruler being petitioned, with the head of the Jews of the realm
-#      at his side (2026-11-01: a small portrait, or an empty frame), then
-#      the three facts about them (settlement policy, their faith's
-#      teaching, their outlook), each a button to where that fact lives.
-#      A full-width band for the Nagid under the facts was tried first
-#      and dropped the same day: it doubled the header's height;
+#   1. the ruler being petitioned, with a line for the head of the Jews
+#      of the realm under his name (2026-11-01: a small portrait, or an
+#      empty frame), then the three facts about them (settlement policy,
+#      their faith's teaching, their outlook), each a button to where that
+#      fact lives. Tried first and dropped the same day: a full-width band
+#      under the facts (it doubled the header) and a portrait column at
+#      the row's edge (it read as a second ruler);
 #   2. the petitioners: a gallery of portrait cards, six to a row,
 #      most endangered first -- place and danger only (the description
 #      is on hover and in the detail card);
@@ -165,7 +166,7 @@ window = {
 						text_single = {
 							layoutpolicy_horizontal = expanding
 							align = left|nobaseline
-							max_width = 330
+							max_width = 440
 							text = "[Character.GetShortUINameNoTooltip]"
 							default_format = "#high"
 							using = Font_Size_Medium
@@ -173,18 +174,18 @@ window = {
 						text_multi = {
 							layoutpolicy_horizontal = expanding
 							autoresize = yes
-							min_width = 330
-							max_width = 330
+							min_width = 440
+							max_width = 440
 							text = "[SelectLocalization( GetPlayer.MakeScope.Var( 'kehillah_rv_lord_mode' ).IsSet, 'KEHILLAH_RV_LORD_SUB', 'KEHILLAH_RV_RULER_SUB' )]"
 							default_format = "#weak"
 						}
-					}
 
-					# The head of the Jews at the ruler's side (the Nagid spec;
-					# 2026-11-01, Daniel: "small portrait next to the ruler"). The
-					# top liege's office in both modes: the holder's small portrait,
-					# or an empty frame that opens the decision that would fill it.
-					kehillah_rv_nagid_column = {}
+						# The head of the Jews, as a line of the ruler's own court
+						# (the Nagid spec; 2026-11-01, Daniel chose this over a
+						# portrait column at the row's edge, which read as a second
+						# ruler). The top liege's office in both modes.
+						kehillah_rv_nagid_line = {}
+					}
 				}
 
 				hbox = {
@@ -880,25 +881,23 @@ window = {
 
 types KehillahRealmView
 {
-	### The head of the Jews beside the ruler (the Nagid spec; 2026-11-01).
-	### datacontext: the top liege. Filled: the holder's small portrait.
-	### Empty: vanilla's unknown-head silhouette in a grey frame; while the
-	### realm has no office it opens Establish a Head of the Jews for the
-	### ruler himself, or Ask for a Head of the Jews for a Kehillah leader.
-	### Two short lines under it (KehillahRvNagidTop / KehillahRvNagidSub).
-	type kehillah_rv_nagid_column = vbox {
+	### The head of the Jews, a line under the ruler's name and summary
+	### (the Nagid spec; 2026-11-01). datacontext: the top liege. A 48 px
+	### portrait of the holder, or vanilla's unknown-head silhouette in a
+	### grey frame; while the realm has no office the frame opens Establish
+	### a Head of the Jews for the ruler himself, or Ask for a Head of the
+	### Jews for a Kehillah leader. Beside it a label and one line:
+	### "Nagid Joseph, his Vizier" (KehillahRvNagidLine).
+	type kehillah_rv_nagid_line = hbox {
 		datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_rv_top' ).Char]"
-		min_width = 124
-		max_width = 124
-		spacing = 2
+		layoutpolicy_horizontal = expanding
+		spacing = 8
 		ignoreinvisible = yes
-		tooltip = "KEHILLAH_RV_NAGID_TOOLTIP"
-		using = tooltip_ws
 
 		# Through the title: a datacontext may not read and write
 		# Character at once (error.log, 2026-11-01).
 		widget = {
-			size = { 64 64 }
+			size = { 48 48 }
 			visible = "[GetScriptedGui( 'kehillah_nagid_rv_has_holder' ).IsShown( GuiScope.SetRoot( Character.MakeScope ).End )]"
 			datacontext = "[Character.GetPrimaryTitle]"
 
@@ -908,7 +907,7 @@ types KehillahRealmView
 		}
 
 		widget = {
-			size = { 64 64 }
+			size = { 48 48 }
 			visible = "[Not( GetScriptedGui( 'kehillah_nagid_rv_has_holder' ).IsShown( GuiScope.SetRoot( Character.MakeScope ).End ) )]"
 			tooltip = "KEHILLAH_RV_NAGID_TOOLTIP"
 			using = tooltip_ws
@@ -916,12 +915,12 @@ types KehillahRealmView
 			background = {
 				texture = "gfx/portraits/portrait_frame.dds"
 				using = Color_Grey
-				margin = { -4 -4 }
+				margin = { -3 -3 }
 				alpha = 0.4
 			}
 			icon = {
 				parentanchor = center
-				size = { 51 64 }
+				size = { 38 48 }
 				texture = "gfx/portraits/unknown_portraits/button_unknown_head.dds"
 				framesize = { 384 480 }
 				frame = 1
@@ -949,28 +948,38 @@ types KehillahRealmView
 			}
 		}
 
-		text_single = {
-			align = center|nobaseline
-			max_width = 124
-			text = "[Character.Custom( 'KehillahRvNagidTop' )]"
-			alwaystransparent = yes
-		}
-		text_single = {
-			align = center|nobaseline
-			max_width = 124
-			text = "[Character.Custom( 'KehillahRvNagidSub' )]"
-			default_format = "#weak"
-			using = Font_Size_Small
-			alwaystransparent = yes
+		vbox = {
+			layoutpolicy_horizontal = expanding
+			spacing = 0
+			tooltip = "KEHILLAH_RV_NAGID_TOOLTIP"
+			using = tooltip_ws
+
+			text_single = {
+				layoutpolicy_horizontal = expanding
+				align = left|nobaseline
+				max_width = 380
+				text = "KEHILLAH_RV_NAGID_LABEL"
+				default_format = "#weak"
+				using = Font_Size_Small
+				alwaystransparent = yes
+			}
+			text_single = {
+				layoutpolicy_horizontal = expanding
+				align = left|nobaseline
+				max_width = 380
+				text = "[Character.Custom( 'KehillahRvNagidLine' )]"
+				alwaystransparent = yes
+			}
 		}
 	}
 
-	### A 64x64 head portrait: vanilla's portrait_head_tiny
-	### (gui/window_ledger.gui), copied so this window does not depend on
-	### another window's types. datacontext: the character.
+	### A 48x48 head portrait: vanilla's 64 px portrait_head_tiny
+	### (gui/window_ledger.gui) at three quarters, copied so this window
+	### does not depend on another window's types. datacontext: the
+	### character.
 	type kehillah_rv_portrait_tiny = widget {
 		scissor = yes
-		size = { 64 64 }
+		size = { 48 48 }
 
 		background = {
 			using = Background_Area_Solid
@@ -989,14 +998,14 @@ types KehillahRealmView
 		}
 
 		widget = {
-			size = { 54 52 }
+			size = { 40 39 }
 			parentanchor = center
 			scissor = yes
 
 			portrait_button = {
 				parentanchor = bottom|hcenter
-				size = { 68 68 }
-				position = { 0 6 }
+				size = { 51 51 }
+				position = { 0 4 }
 				using = portrait_base
 
 				portrait_texture = "[Character.GetPortrait('environment_head', 'camera_head', 'idle', PdxGetWidgetScreenSize(PdxGuiWidget.Self))]"
@@ -1012,7 +1021,7 @@ types KehillahRealmView
 			background = {
 				texture = "gfx/portraits/portrait_frame.dds"
 				using = Color_Grey
-				margin = { -4 -4 }
+				margin = { -3 -3 }
 				alpha = 0.4
 
 				modify_texture = {
@@ -1027,7 +1036,7 @@ types KehillahRealmView
 				texture = "gfx/portraits/portrait_frame.dds"
 				using = Color_Grey
 				alpha = 0.7
-				margin = { -4 -4 }
+				margin = { -3 -3 }
 			}
 		}
 	}

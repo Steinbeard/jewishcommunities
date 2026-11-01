@@ -383,22 +383,26 @@ slices 4 and 5. Nothing is stored for its own sake.
 
 ### The realm view (`gui/kehillah_realm_view.gui`)
 
-- **The Nagid at the ruler's side** (`kehillah_rv_nagid_column`), on the right of the ruler's row,
-  for the top liege's office in both modes:
-  - the holder's 64×64 portrait (`kehillah_rv_portrait_tiny`, a copy of vanilla's ledger
-    `portrait_head_tiny`) when the office is filled;
+- **The Nagid as a line of the ruler's court** (`kehillah_rv_nagid_line`), under the ruler's name
+  and summary, for the top liege's office in both modes:
+  - the holder's 48 px portrait (`kehillah_rv_portrait_tiny`, vanilla's ledger
+    `portrait_head_tiny` at three quarters) when the office is filled;
   - otherwise vanilla's unknown-head silhouette in a grey frame. While the realm has no office,
     clicking it opens the decision that would fill it: **Establish a Head of the Jews** for the ruler
     himself, or **Ask for a Head of the Jews** for a Kehillah leader (Daniel's idea). A vacant
     office has no decision to open, so its frame only explains;
-  - two short lines under the portrait: who holds it, or the court's name for the office
-    (`KehillahRvNagidTop`), then "Vizier · Brilliant", "no service at court", "awaiting
-    confirmation", "vacant", "vacant, withheld" or "none yet" (`KehillahRvNagidSub`);
+  - beside it, the label "Head of the Jews" and one line (`KehillahRvNagidLine`): "Nagid Joseph,
+    his Vizier", "(no service at court)", "(awaiting confirmation)", "Vacant", "Vacant: confirmation
+    withheld" or "None yet";
   - a tooltip for each state (`KehillahRvNagidTooltip`), without numbers. It points to the
     modifiers.
-  - **A full-width band under the three tiles was tried first** and dropped the same day. Daniel
-    found it made the layout uglier: it repeated the ruler's row and doubled the header's height.
-    The ruler's text narrowed from 440 to 330 px to make room for the column.
+- **Two layouts were tried first,** both on 2026-11-01, and dropped:
+  - a full-width band under the three tiles, which repeated the ruler's row and doubled the
+    header's height (Daniel: "uglier");
+  - a 64 px portrait column at the right edge of the ruler's row. Unlabelled, it read as a second
+    ruler ("unclear what the second small portrait means").
+- **The strength word** ("Skilled") is shown nowhere in the view. Daniel found it confusing, and the
+  modifier on the ruler already carries it with its numbers.
 - **The seat:**
   - vanilla's capital mark (`icon_capital.dds`, the map's frame) in the corner of the seat's card;
   - a line under the detail card's name: "Seat of the realm's Jews", plus "home of their head" when
@@ -453,7 +457,7 @@ gone.
   - Badis's window lists Joseph as "Vizier";
   - Joseph's lists Badis as "Patron";
   - it changes with the service and goes when the Nagid leaves.
-- **The Nagid beside the ruler** in each state: the portrait opening Joseph, the empty frame
-  opening the right decision, and the ruler's text wrapping in its narrower column.
+- **The Nagid's line under the ruler** in each state: the portrait opening Joseph, and the empty
+  frame opening the right decision.
 - **The seat** badge and line on Granada.
 - **The 1066 news entries.**- **`error.log`** stays clean after opening the realm view and both character windows.
