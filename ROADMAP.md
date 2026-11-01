@@ -58,6 +58,11 @@ impossible.** The engine refuses `assign_councillor_type`, `appoint_court_positi
   relation (the ruler sees the Nagid as his "Vizier", the Nagid sees a "Patron"), a line for the
   Nagid under the ruler in the realm view (an empty frame opens the founding or asking decision),
   and a seat badge and office news there. Built and xTiger-checked, not live-tested.
+- **Proposed 2026-11-01, not approved:** [the court flow and the tax office](docs/spec/2026-11-01-nagid-court-flow-and-tax-office.md).
+  One audience event for confirming the Nagid and choosing his service; character interactions to
+  change his place or dismiss him; Kehillah-side events. It also retires vanilla's duplicate ibn
+  Naghrela family, and lets the Nagid send a man to the ruler's tax office. Four open questions
+  for Daniel.
 - **Daniel plans to live-test slices 1–5 on Sunday 2026-11-01.** The build note lists the checks.
   **Next:** slice 6, envy, clergy pressure and the fall.
 
