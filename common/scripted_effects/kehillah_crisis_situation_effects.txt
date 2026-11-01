@@ -124,9 +124,12 @@ kehillah_crisis_race_monthly_effect = {
  if = {
   limit = { kehillah_crisis_race_running_trigger = yes }
   kehillah_crisis_store_push_effect = yes
+  # The month's push toward the host, told to the leader (kehillah_crisis_pressure_toast_effect).
+  set_variable = { name = kehillah_crisis_month_push value = kehillah_crisis_preaching_points_value }
   trigger_situation_catalyst = kehillah_crisis_preaching_catalyst
   if = {
    limit = { kehillah_crisis_following_points_value > 0 }
+   change_variable = { name = kehillah_crisis_month_push add = kehillah_crisis_following_points_value }
    trigger_situation_catalyst = kehillah_crisis_following_catalyst
   }
   if = {
@@ -137,10 +140,14 @@ kehillah_crisis_race_monthly_effect = {
      var:kehillah_crisis_title.holder.domicile.domicile_location.county.faith.religion ?= religion:christianity_religion
     }
    }
+   change_variable = { name = kehillah_crisis_month_push add = kehillah_crisis_holy_week_points }
+   kehillah_crisis_driver_notice_effect = { KEY = holy_week }
    trigger_situation_catalyst = kehillah_crisis_holy_week_catalyst
   }
   if = {
    limit = { var:kehillah_crisis_sovereign ?= { kehillah_outlook_band_value <= -1 } }
+   change_variable = { name = kehillah_crisis_month_push add = kehillah_crisis_cold_lord_points_value }
+   kehillah_crisis_driver_notice_effect = { KEY = cold_lord }
    trigger_situation_catalyst = kehillah_crisis_cold_lord_catalyst
   }
   if = {
@@ -152,6 +159,8 @@ kehillah_crisis_race_monthly_effect = {
      }
     }
    }
+   change_variable = { name = kehillah_crisis_month_push add = kehillah_crisis_holy_war_points_value }
+   kehillah_crisis_driver_notice_effect = { KEY = holy_war }
    trigger_situation_catalyst = kehillah_crisis_holy_war_catalyst
   }
   if = {
@@ -169,6 +178,81 @@ kehillah_crisis_race_monthly_effect = {
    trigger_situation_catalyst = kehillah_crisis_goodwill_catalyst
   }
   kehillah_crisis_race_mirror_effect = yes
+  kehillah_crisis_pressure_toast_effect = yes
+ }
+}
+
+# --- What drives the host, told (2026-11-01, Daniel: "make sure the drivers toward the Armed host
+# are clearly communicated") ---
+
+# Root: the situation, after the month's catalysts. One toast to a player leader: the agitator's
+# month, worded by how the crisis began, and the month's push toward the host.
+kehillah_crisis_pressure_toast_effect = {
+ var:kehillah_crisis_title ?= { save_scope_as = kehillah_crisis_announce_title }
+ scope:kehillah_crisis_announce_title.holder.domicile.domicile_location.county ?= { save_scope_as = kehillah_crisis_announce_county }
+ scope:kehillah_crisis_announce_title.var:kehillah_mob_threat ?= { save_scope_as = kehillah_crisis_announce_agitator }
+ scope:kehillah_crisis_announce_title.holder ?= {
+  if = {
+   limit = { is_ai = no exists = scope:kehillah_crisis_announce_county }
+   set_variable = { name = kehillah_crisis_month_push value = root.var:kehillah_crisis_month_push }
+   if = {
+    limit = { scope:kehillah_crisis_announce_title.var:kehillah_crisis_opening ?= flag:vizier exists = scope:kehillah_crisis_announce_agitator }
+    kehillah_crisis_send_pressure_effect = { KEY = vizier }
+   }
+   else_if = {
+    limit = { scope:kehillah_crisis_announce_title.var:kehillah_crisis_opening ?= flag:accusation }
+    kehillah_crisis_send_pressure_effect = { KEY = accusation }
+   }
+   else_if = {
+    limit = { scope:kehillah_crisis_announce_title.var:kehillah_crisis_opening ?= flag:crusade }
+    kehillah_crisis_send_pressure_effect = { KEY = crusade }
+   }
+   else_if = {
+    limit = { scope:kehillah_crisis_announce_title.var:kehillah_crisis_opening ?= flag:debts }
+    kehillah_crisis_send_pressure_effect = { KEY = debts }
+   }
+   else_if = {
+    limit = { scope:kehillah_crisis_announce_title.var:kehillah_crisis_opening ?= flag:holy_week }
+    kehillah_crisis_send_pressure_effect = { KEY = holy_week }
+   }
+   else = { kehillah_crisis_send_pressure_effect = { KEY = preacher } }
+  }
+ }
+}
+# Scope: the leader. KEY: the opening.
+kehillah_crisis_send_pressure_effect = {
+ save_scope_as = kehillah_crisis_announce_leader
+ send_interface_message = {
+  type = msg_kehillah_crisis_pressure
+  title = kehillah_crisis_pressure_$KEY$_t
+  desc = kehillah_crisis_pressure_$KEY$_d
+  left_icon = scope:kehillah_crisis_announce_title
+ }
+}
+
+# Root: the situation. The first month a special driver pushes the host, a toast of its own.
+# KEY: cold_lord, holy_war or holy_week.
+kehillah_crisis_driver_notice_effect = {
+ var:kehillah_crisis_title ?= {
+  if = {
+   limit = { NOT = { has_variable = kehillah_crisis_told_$KEY$ } }
+   set_variable = { name = kehillah_crisis_told_$KEY$ value = yes }
+   save_scope_as = kehillah_crisis_announce_title
+   holder.domicile.domicile_location.county ?= { save_scope_as = kehillah_crisis_announce_county }
+   # The cold lord is the sovereign whose outlook the catalyst reads.
+   root.var:kehillah_crisis_sovereign ?= { save_scope_as = kehillah_crisis_announce_lord }
+   holder ?= {
+    if = {
+     limit = { is_ai = no exists = scope:kehillah_crisis_announce_county }
+     send_interface_message = {
+      type = msg_kehillah_crisis_pressure
+      title = kehillah_crisis_driver_$KEY$_t
+      desc = kehillah_crisis_driver_$KEY$_d
+      left_icon = scope:kehillah_crisis_announce_title
+     }
+    }
+   }
+  }
  }
 }
 
