@@ -18,6 +18,15 @@ subject to revision after each phase.
 ## Near-term TODO
 ### Community crises as situations — 2026-10-31, Daniel's request
 
+**2026-11-01 proposal — the situation becomes the crisis mechanic.** At Daniel's request,
+[Crisis situations as the mechanic](docs/spec/2026-11-01-crisis-situations-as-the-mechanic.md) proposes:
+- the situation owns the clock, superseding the 2026-10-31 "mirror, never a timer" rule;
+- real catalyst points, so the bars are the odds;
+- Phase Effects, and actions as situation decisions;
+- new families for the Talmud trial, the libel and the expulsion edict.
+
+Not built. Slice 0, an engine spike, comes first. §9 lists four decisions for Daniel; until he answers, a slice builds on the recommendations.
+
 **Native situation UI restored 2026-11-01; live reload pending.** The [dated spec](docs/spec/2026-10-31-community-crises-as-situations.md) and [native-UI revision](docs/spec/2026-11-01-native-crisis-situation-ui.md)
 describe a non-unique, county-centered CK3 situation per active community crisis.
 The community title remains authoritative for stage, epoch, odds and outcome.

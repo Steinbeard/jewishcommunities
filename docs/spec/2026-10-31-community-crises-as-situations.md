@@ -1,5 +1,7 @@
 **Status:** first integration built in the main worktree, 2026-10-31; Daniel's Warning screenshot confirms a situation exists before violence. The [2026-11-01 native-UI revision](2026-11-01-native-crisis-situation-ui.md) supersedes this document's presentation decisions in sections 1, 4, and 7. See the [implementation note](../implementation/2026-10-31-crisis-situation-integration.md). Extends the [Community Safety specification](2026-10-30-community-safety-and-crisis.md) and the [situation source spike](https://github.com/Steinbeard/jewishcommunities/pull/59). Its warning, attack, settlement, and recovery mechanics remain in force.
 
+**2026-11-01:** §2's "mirror, never a timer" rule is proposed to be superseded by [Crisis situations as the mechanic](2026-11-01-crisis-situations-as-the-mechanic.md), not yet built.
+
 # Community crises as situations
 
 ## 1. Purpose and boundary

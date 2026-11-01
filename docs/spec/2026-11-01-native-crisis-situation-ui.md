@@ -1,5 +1,7 @@
 **Status:** native situation window restored in the main worktree, 2026-11-01; source/xTiger checked, live reload pending. The preparation-action extension below is a proposal, not implemented. This supersedes the presentation decisions in [the 2026-10-31 phase UI revision](2026-10-31-crisis-situation-phase-ui.md) and sections 1, 4, and 7 of [Community crises as situations](2026-10-31-community-crises-as-situations.md). Their event-to-phase contract and title/epoch safety rules remain in force.
 
+**2026-11-01 (later):** the false phase date, the 0/1 catalyst bars and the action surface are taken up by [Crisis situations as the mechanic](2026-11-01-crisis-situations-as-the-mechanic.md), a proposal.
+
 # Native crisis situation window and preparation actions
 
 Daniel's live comparison favors CK3's native situation window: participant-group controls, current and future phase tracks, catalysts, and phase inspection make the crisis feel like a situation. The compact custom card window removed those affordances. The crisis type therefore selects `window_situation` again. Its existing non-unique instance, county region, participant groups, phase branches, catalysts, and phase-entry logging are retained. The change is presentation-only; it does not restart or duplicate the preacher, mob, sovereign-response, or recovery events.
