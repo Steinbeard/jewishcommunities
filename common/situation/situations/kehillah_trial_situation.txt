@@ -1,0 +1,176 @@
+﻿# The Talmud on trial (docs/spec/2026-11-01-talmud-trial-situation.md), 2026-11-01. One instance per
+# community trial, started by kehillah_trial_begin_effect. The situation owns the clock: a race in
+# Denunciation (the seizure against Quashed), sixty days with the books seized, a three-way race in
+# the hearing, then the verdict and the close. The community title holds var:kehillah_trial_situation;
+# the situation holds var:kehillah_trial_title, the accuser and the judge.
+kehillah_talmud_trial = {
+	is_unique = no
+	window = situation
+	gui_window_name = kehillah_crisis_situation_window
+	situation_group_type = minor
+	illustration = "gfx/interface/illustrations/event_scenes/ep3_medi_study.dds"
+	icon = {
+		trigger = { always = yes }
+		reference = "gfx/interface/icons/flat_icons/faith.dds"
+	}
+	sub_regions = {
+		kehillah_trial_area = {
+			icon = "gfx/interface/icons/flat_icons/faith.dds"
+			map_color = { 0.62 0.45 0.16 }
+		}
+	}
+	participant_groups = {
+		kehillah_trial_defence = {
+			icon = "gfx/interface/icons/flat_icons/three_people.dds"
+			auto_add_rulers = no
+			auto_add_landless_rulers = no
+			require_realm_in_sub_region = no
+			is_character_valid = { scope:situation.var:kehillah_trial_title.holder ?= root }
+		}
+		kehillah_trial_accusers = {
+			icon = "gfx/interface/icons/flat_icons/faith.dds"
+			auto_add_rulers = no
+			auto_add_landless_rulers = no
+			require_realm_in_sub_region = no
+			is_character_valid = { scope:situation.var:kehillah_trial_accuser ?= root }
+		}
+		kehillah_trial_judges = {
+			icon = "gfx/interface/icons/flat_icons/county_crown.dds"
+			auto_add_rulers = no
+			auto_add_landless_rulers = no
+			require_realm_in_sub_region = no
+			is_character_valid = { scope:situation.var:kehillah_trial_judge ?= root }
+		}
+	}
+	on_monthly = { kehillah_trial_monthly_effect = yes }
+	situation_decisions = {
+		kehillah_trial_defence_decision
+		kehillah_trial_protect_decision
+		kehillah_trial_books_decision
+	}
+	start_phase = kehillah_trial_denunciation
+	phases = {
+		kehillah_trial_denunciation = {
+			icon = "gfx/interface/icons/icon_event_effect.dds"
+			on_start = { debug_log = "kehillah_talmud_trial: Denunciation phase entered" }
+			max_duration = { days = kehillah_trial_backstop_days }
+			max_duration_next_phase = highest_points
+			future_phases = {
+				kehillah_trial_seizure = {
+					takeover_type = points
+					takeover_points = 100
+					catalysts = {
+						kehillah_trial_opening_catalyst = kehillah_trial_opening_points
+						kehillah_trial_accuser_catalyst = kehillah_trial_accuser_points_value
+						kehillah_trial_seize_answer_failed_catalyst = kehillah_trial_seize_answer_failed_points
+						kehillah_trial_seize_plead_failed_catalyst = kehillah_trial_seize_plead_failed_points
+					}
+				}
+				kehillah_trial_quashed = {
+					takeover_type = points
+					takeover_points = 100
+					catalysts = {
+						kehillah_trial_quash_answer_catalyst = kehillah_trial_quash_answer_points
+						kehillah_trial_quash_plead_catalyst = kehillah_trial_quash_plead_points
+						kehillah_trial_quash_silver_catalyst = kehillah_trial_quash_silver_points
+						kehillah_trial_quash_letter_catalyst = kehillah_trial_quash_letter_points
+						kehillah_trial_accuser_gone_catalyst = kehillah_trial_accuser_gone_points
+					}
+				}
+			}
+		}
+		kehillah_trial_seizure = {
+			icon = "gfx/interface/icons/icon_event_effect.dds"
+			on_start = { kehillah_trial_seizure_start_effect = yes }
+			future_phases = {
+				kehillah_trial_hearing = {
+					takeover_type = duration
+					takeover_duration = { days = kehillah_trial_seizure_days }
+				}
+			}
+		}
+		kehillah_trial_hearing = {
+			icon = "gfx/interface/icons/icon_event_effect.dds"
+			on_start = { kehillah_trial_hearing_start_effect = yes }
+			max_duration = { days = kehillah_trial_hearing_backstop_days }
+			max_duration_next_phase = highest_points
+			future_phases = {
+				kehillah_trial_acquittal = {
+					takeover_type = points
+					takeover_points = 100
+					catalysts = {
+						kehillah_trial_seed_prepared_catalyst = kehillah_trial_seed_prepared_points
+						kehillah_trial_seed_letter_catalyst = kehillah_trial_seed_letter_points
+						kehillah_trial_bold_win_catalyst = kehillah_trial_bold_win_points
+						kehillah_trial_cautious_win_catalyst = kehillah_trial_cautious_win_points
+						kehillah_trial_judges_acquittal_catalyst = kehillah_trial_judges_acquittal_value
+						kehillah_trial_accuser_gone_catalyst = kehillah_trial_accuser_gone_points
+					}
+				}
+				kehillah_trial_expurgation = {
+					takeover_type = points
+					takeover_points = 100
+					catalysts = {
+						kehillah_trial_cautious_win_expurgation_catalyst = kehillah_trial_cautious_win_expurgation_points
+						kehillah_trial_cautious_loss_expurgation_catalyst = kehillah_trial_cautious_loss_expurgation_points
+						kehillah_trial_judges_expurgation_catalyst = kehillah_trial_judges_expurgation_value
+					}
+				}
+				kehillah_trial_condemnation = {
+					takeover_type = points
+					takeover_points = 100
+					catalysts = {
+						kehillah_trial_seed_found_catalyst = kehillah_trial_seed_found_points
+						kehillah_trial_bold_loss_catalyst = kehillah_trial_bold_loss_points
+						kehillah_trial_cautious_loss_catalyst = kehillah_trial_cautious_loss_points
+						kehillah_trial_judges_condemnation_catalyst = kehillah_trial_judges_condemnation_value
+					}
+				}
+			}
+		}
+		kehillah_trial_quashed = {
+			icon = "gfx/interface/icons/icon_event_effect.dds"
+			on_start = { kehillah_trial_verdict_start_effect = { VERDICT = quashed } }
+			future_phases = {
+				kehillah_trial_closed = {
+					takeover_type = duration
+					takeover_duration = { days = kehillah_trial_verdict_days }
+				}
+			}
+		}
+		kehillah_trial_acquittal = {
+			icon = "gfx/interface/icons/icon_event_effect.dds"
+			on_start = { kehillah_trial_verdict_start_effect = { VERDICT = acquittal } }
+			future_phases = {
+				kehillah_trial_closed = {
+					takeover_type = duration
+					takeover_duration = { days = kehillah_trial_verdict_days }
+				}
+			}
+		}
+		kehillah_trial_expurgation = {
+			icon = "gfx/interface/icons/icon_event_effect.dds"
+			on_start = { kehillah_trial_verdict_start_effect = { VERDICT = expurgation } }
+			future_phases = {
+				kehillah_trial_closed = {
+					takeover_type = duration
+					takeover_duration = { days = kehillah_trial_verdict_days }
+				}
+			}
+		}
+		kehillah_trial_condemnation = {
+			icon = "gfx/interface/icons/icon_event_effect.dds"
+			on_start = { kehillah_trial_verdict_start_effect = { VERDICT = condemnation } }
+			future_phases = {
+				kehillah_trial_closed = {
+					takeover_type = duration
+					takeover_duration = { days = kehillah_trial_verdict_days }
+				}
+			}
+		}
+		kehillah_trial_closed = {
+			icon = "gfx/interface/icons/icon_event_effect.dds"
+			on_start = { kehillah_trial_close_effect = yes }
+		}
+	}
+}

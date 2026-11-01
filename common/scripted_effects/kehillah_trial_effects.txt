@@ -1,0 +1,261 @@
+﻿# The Talmud on trial (docs/spec/2026-11-01-talmud-trial-situation.md), 2026-11-01.
+# Replaces the one-event trial (kehillah_incident.0001) with the kehillah_talmud_trial situation.
+
+# Scope: a Kehillah leader (the incident director's Talmud pick, or the console). The baptized former
+# student (Donin) denounces the books; the trial begins and its first scene opens.
+kehillah_trial_begin_effect = {
+	if = {
+		limit = { kehillah_trial_can_begin_trigger = yes }
+		kehillah_incident_scopes_effect = yes
+		domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
+		kehillah_realm_news_add_effect = { KIND = talmud_trial }
+		primary_title = {
+			save_scope_as = kehillah_trial_new_title
+			set_variable = { name = kehillah_talmud_cooldown value = yes years = kehillah_talmud_cooldown_years }
+		}
+		create_character = {
+			age = { 28 50 }
+			gender = male
+			faith = scope:kehillah_incident_host.faith
+			culture = root.culture
+			location = scope:kehillah_incident_town
+			dynasty = none
+			trait = zealous
+			learning = { 12 20 }
+			intrigue = { 6 14 }
+			save_scope_as = kehillah_trial_new_accuser
+		}
+		scope:kehillah_incident_host = { add_courtier = scope:kehillah_trial_new_accuser }
+		start_situation = {
+			type = kehillah_talmud_trial
+			start_phase = kehillah_trial_denunciation
+			save_scope_as = kehillah_trial_new_situation
+		}
+		scope:kehillah_trial_new_situation ?= {
+			set_variable = { name = kehillah_trial_title value = scope:kehillah_trial_new_title }
+			set_variable = { name = kehillah_trial_accuser value = scope:kehillah_trial_new_accuser }
+			set_situation_center_province = root.domicile.domicile_location
+			situation_sub_region:kehillah_trial_area = { add_dejure_title_to_sub_region = root.domicile.domicile_location.county }
+			kehillah_trial_participants_effect = yes
+			trigger_situation_catalyst = kehillah_trial_opening_catalyst
+			scope:kehillah_trial_new_title = { set_variable = { name = kehillah_trial_situation value = scope:kehillah_trial_new_situation } }
+		}
+		if = {
+			limit = { is_ai = no }
+			send_interface_message = {
+				type = msg_kehillah_crisis_begins
+				title = kehillah_trial_begins_t
+				desc = kehillah_trial_begins_d
+				left_icon = scope:kehillah_trial_new_title
+			}
+		}
+		trigger_event = kehillah_talmud_trial.0001
+		debug_log = "kehillah_trial_begin_effect: the Talmud is denounced"
+	}
+}
+
+# Scope: the situation. The community's leader, its sovereign and the accuser, as they are now.
+kehillah_trial_participants_effect = {
+	save_scope_as = kehillah_trial_sit
+	if = {
+		limit = { exists = var:kehillah_trial_leader }
+		remove_manual_participant = var:kehillah_trial_leader
+		remove_variable = kehillah_trial_leader
+	}
+	if = {
+		limit = { exists = var:kehillah_trial_judge }
+		remove_manual_participant = var:kehillah_trial_judge
+		remove_variable = kehillah_trial_judge
+	}
+	if = {
+		limit = {
+			exists = var:kehillah_trial_accuser
+			any_situation_participant = { this = scope:kehillah_trial_sit.var:kehillah_trial_accuser }
+		}
+		remove_manual_participant = var:kehillah_trial_accuser
+	}
+	var:kehillah_trial_title.holder ?= {
+		scope:kehillah_trial_sit = {
+			set_variable = { name = kehillah_trial_leader value = prev }
+			add_manual_participant = prev
+		}
+	}
+	var:kehillah_trial_title.holder.domicile.domicile_location.county.holder.top_liege ?= {
+		scope:kehillah_trial_sit = {
+			set_variable = { name = kehillah_trial_judge value = prev }
+			add_manual_participant = prev
+		}
+	}
+	var:kehillah_trial_accuser ?= {
+		if = {
+			limit = { is_alive = yes }
+			scope:kehillah_trial_sit = { add_manual_participant = prev }
+		}
+	}
+}
+
+# Root: the situation, monthly. The accuser's pressure in Denunciation; the judges' lean in the
+# hearing. An accuser who has died takes his case with him.
+kehillah_trial_monthly_effect = {
+	if = {
+		limit = { exists = var:kehillah_trial_title }
+		kehillah_trial_participants_effect = yes
+		if = {
+			limit = {
+				OR = {
+					situation_current_phase = kehillah_trial_denunciation
+					situation_current_phase = kehillah_trial_hearing
+				}
+				OR = {
+					NOT = { exists = var:kehillah_trial_accuser }
+					var:kehillah_trial_accuser = { is_alive = no }
+				}
+			}
+			trigger_situation_catalyst = kehillah_trial_accuser_gone_catalyst
+		}
+		else_if = {
+			limit = { situation_current_phase = kehillah_trial_denunciation }
+			trigger_situation_catalyst = kehillah_trial_accuser_catalyst
+		}
+		else_if = {
+			limit = { situation_current_phase = kehillah_trial_hearing }
+			if = {
+				limit = { kehillah_trial_judges_acquittal_value > 0 }
+				trigger_situation_catalyst = kehillah_trial_judges_acquittal_catalyst
+			}
+			if = {
+				limit = { kehillah_trial_judges_expurgation_value > 0 }
+				trigger_situation_catalyst = kehillah_trial_judges_expurgation_catalyst
+			}
+			if = {
+				limit = { kehillah_trial_judges_condemnation_value > 0 }
+				trigger_situation_catalyst = kehillah_trial_judges_condemnation_catalyst
+			}
+		}
+	}
+}
+
+# Scope: the community title. A catalyst toward the trial's race, while the trial runs.
+kehillah_trial_add_effect = {
+	var:kehillah_trial_situation ?= { trigger_situation_catalyst = $CATALYST$ }
+}
+
+# Scope: a Kehillah leader. A sub-action is spent for this trial.
+kehillah_trial_mark_done_effect = {
+	primary_title = { set_variable = { name = kehillah_trial_did_$ONCE$ value = yes } }
+}
+
+# Root: the situation, as the seizure begins. The lord's men take the books.
+kehillah_trial_seizure_start_effect = {
+	debug_log = "kehillah_talmud_trial: the books are seized"
+	var:kehillah_trial_title.holder ?= {
+		if = {
+			limit = { is_ai = no }
+			# A day on, so the phase is current when the event checks it.
+			trigger_event = { id = kehillah_talmud_trial.0040 days = 1 }
+		}
+	}
+}
+
+# Root: the situation, as the hearing begins. What the seizure prepared counts once; three sessions
+# are set, about thirty days apart.
+kehillah_trial_hearing_start_effect = {
+	debug_log = "kehillah_talmud_trial: the hearing begins"
+	var:kehillah_trial_title ?= { save_scope_as = kehillah_trial_hearing_title }
+	if = {
+		limit = { exists = scope:kehillah_trial_hearing_title }
+		if = {
+			limit = { scope:kehillah_trial_hearing_title = { has_variable = kehillah_trial_prepared } }
+			trigger_situation_catalyst = kehillah_trial_seed_prepared_catalyst
+		}
+		if = {
+			limit = { scope:kehillah_trial_hearing_title = { has_variable = kehillah_trial_letter } }
+			trigger_situation_catalyst = kehillah_trial_seed_letter_catalyst
+		}
+		if = {
+			limit = { scope:kehillah_trial_hearing_title = { has_variable = kehillah_trial_books_found } }
+			trigger_situation_catalyst = kehillah_trial_seed_found_catalyst
+		}
+		scope:kehillah_trial_hearing_title = { set_variable = { name = kehillah_trial_session value = 0 } }
+		scope:kehillah_trial_hearing_title.holder ?= {
+			trigger_event = { id = kehillah_talmud_trial.0050 days = 3 }
+			trigger_event = { id = kehillah_talmud_trial.0050 days = 33 }
+			trigger_event = { id = kehillah_talmud_trial.0050 days = 63 }
+		}
+	}
+}
+
+# Root: the situation, as a verdict phase begins. VERDICT: quashed, acquittal, expurgation,
+# condemnation. The verdict falls on the community's leader; a player hears it.
+kehillah_trial_verdict_start_effect = {
+	debug_log = "kehillah_talmud_trial: verdict $VERDICT$"
+	var:kehillah_trial_title ?= {
+		set_variable = { name = kehillah_trial_verdict value = flag:$VERDICT$ }
+		holder ?= {
+			kehillah_trial_verdict_$VERDICT$_effect = yes
+			if = {
+				limit = { is_ai = no }
+				trigger_event = kehillah_talmud_trial.0060
+			}
+		}
+	}
+}
+
+# Scope: the leader. The verdicts.
+kehillah_trial_verdict_quashed_effect = {
+	custom_tooltip = kehillah_incident_talmud_safe_tt
+	kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_trial_quashed_stability }
+}
+kehillah_trial_verdict_acquittal_effect = {
+	custom_tooltip = kehillah_incident_talmud_safe_tt
+	kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_talmud_acquitted_greatness }
+}
+kehillah_trial_verdict_expurgation_effect = {
+	custom_tooltip = kehillah_trial_expurgated_tt
+	kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_talmud_expurgated_greatness }
+	kehillah_charter_censor_text_effect = yes
+}
+kehillah_trial_verdict_condemnation_effect = {
+	# Hidden or copied volumes: the burning is real, but the library keeps its Talmud.
+	if = {
+		limit = {
+			primary_title = {
+				OR = {
+					has_variable = kehillah_trial_books_hidden
+					has_variable = kehillah_trial_books_copied
+				}
+			}
+		}
+		custom_tooltip = kehillah_trial_burned_saved_tt
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_talmud_expurgated_greatness }
+		add_stress = minor_stress_gain
+		kehillah_charter_censor_text_effect = yes
+	}
+	else = {
+		kehillah_talmud_burned_effect = yes
+	}
+}
+
+# Root: the situation, as it closes. The title lets go of the trial; the next can begin.
+kehillah_trial_close_effect = {
+	debug_log = "kehillah_talmud_trial: closed"
+	var:kehillah_trial_title ?= {
+		remove_variable = kehillah_trial_situation
+		remove_variable = kehillah_trial_did_answer
+		remove_variable = kehillah_trial_did_plead
+		remove_variable = kehillah_trial_did_silver
+		remove_variable = kehillah_trial_did_letter
+		remove_variable = kehillah_trial_did_prepare
+		remove_variable = kehillah_trial_did_hide
+		remove_variable = kehillah_trial_did_copy
+		remove_variable = kehillah_trial_prepared
+		remove_variable = kehillah_trial_letter
+		remove_variable = kehillah_trial_books_hidden
+		remove_variable = kehillah_trial_books_found
+		remove_variable = kehillah_trial_books_copied
+		remove_variable = kehillah_trial_disputant
+		remove_variable = kehillah_trial_session
+		remove_variable = kehillah_trial_verdict
+	}
+	end_situation = yes
+}
