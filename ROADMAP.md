@@ -16,7 +16,29 @@ Phases are sequential within a track unless noted. This is the plan,
 subject to revision after each phase.
 
 ## Near-term TODO
+
+**Consolidated review snapshot - 2026-11-01, Daniel's request:** all current Codex/Claude work
+is being collected into one feature PR against the latest remote master. The current executable
+build has real attack races, Talmud-trial and decree situations, the native-derived crisis
+window with situation actions, opening acknowledgment, aftermaths and catalyst feedback. The
+earlier same-day proposal/native-window paragraphs below record intermediate stages; their
+"not built", mirror-only, false-date and 0/1-track claims are superseded by the dated build and
+live-test notes linked in [the consolidated verification record](docs/testing/2026-11-01-consolidated-review.md).
+Latest master already contains the Nagid court audience and ruler interactions; this snapshot
+preserves those changes, plus the remaining UI/editorial work. The multi-community crisis spec
+remains a proposal. Earlier partial live passes do not verify the newest lifecycle, paging,
+feedback and presentation changes; the combined PR remains a draft pending those checks.
 ### Community crises as situations — 2026-10-31, Daniel's request
+
+**Catalyst feedback and Granada prose - 2026-11-01, Daniel's request:** attack-crisis point
+changes now send Struggle-style catalyst notices with the catalyst name, actual points, and
+future track. Monthly agitation and approximately weekly host reports combine their existing
+narrative with that feedback; they do not send a second numerical toast for the same recurring
+award. The study-hall threat and Sanhaja mobilization scene are rewritten to make the danger
+and remaining choices clear. [Implementation and limits](docs/implementation/2026-11-01-crisis-catalyst-notices.md);
+[checks and pending live probe](docs/testing/2026-11-01-crisis-catalyst-notices.md).
+This user-directed follow-up stays on the current worktree/branch. Points and thresholds are
+unchanged; explicit phase-transition signals retain their existing notification behavior.
 
 **Opening-event acknowledgment - 2026-11-01, Daniel's request:** implemented on the current
 worktree/branch. Each crisis entry offers its narrative trigger event first; acknowledgment
@@ -40,6 +62,13 @@ crisis mechanics or the earlier situation test requirements.
 - new families for the Talmud trial, the libel and the expulsion edict.
 
 Not built. Slice 0, an engine spike, comes first. §9 lists four decisions for Daniel; until he answers, a slice builds on the recommendations.
+
+**2026-11-01 proposal — crises that strike several communities.** At Daniel's request,
+[Multi-community crises](docs/spec/2026-11-01-multi-community-crises.md) splits them into two shapes:
+- **shared verdicts** (a realm decree, edict, trial of the books): one situation, one race, every community of the realm as members;
+- **waves** (1096, 1298, 1348): linked single-community crises that push each other's races, with a light global coordinator.
+
+One situation with a race per sub-region is rejected for now. Not built. §6 orders the slices, starting with a spike; §7 lists five decisions for Daniel.
 
 **Native situation UI restored 2026-11-01; live reload pending.** The [dated spec](docs/spec/2026-10-31-community-crises-as-situations.md) and [native-UI revision](docs/spec/2026-11-01-native-crisis-situation-ui.md)
 describe a non-unique, county-centered CK3 situation per active community crisis.
@@ -94,6 +123,20 @@ impossible.** The engine refuses `assign_councillor_type`, `appoint_court_positi
   Treasurer, Physician or Envoy, or no service. He carries a modifier in four tiers by the Nagid's
   matching skill; the AI picks by rule. Probes `kehillah_nagid_debug.7`–`.8`. Built and
   xTiger-checked, not live-tested.
+- **Making the office visible** (2026-11-01, after Daniel saw slice 5's notices live: "I don't want
+  this to just be a practically invisible modifier"): the Nagid's rank ("Nagid Joseph"), a court
+  relation (the ruler sees the Nagid as his "Vizier", the Nagid sees a "Patron"), a line for the
+  Nagid under the ruler in the realm view (an empty frame opens the founding or asking decision),
+  and a seat badge and office news there. Built and xTiger-checked, not live-tested.
+- **The audience and the ruler's interactions** (2026-11-01, from [the court-flow addendum](docs/spec/2026-11-01-nagid-court-flow-and-tax-office.md)
+  §3.1–3.2, Daniel: "let's go through with 2 and 3"):
+  - confirming the Nagid and naming his post are one audience event;
+  - a player ruler changes his post (yearly) or dismisses him through interactions on his
+    portrait, which replace the Assign decision;
+  - a dismissal leaves the office vacant for three years before the next audience.
+  
+  Built and xTiger-checked, not live-tested. The addendum's tax office (§5) is set aside, and its
+  duplicate-family cleanup (§4) is in the backlog.
 - **Daniel plans to live-test slices 1–5 on Sunday 2026-11-01.** The build note lists the checks.
   **Next:** slice 6, envy, clergy pressure and the fall.
 
@@ -2949,6 +2992,16 @@ not yet assigned to a phase. Pull one into a phase's scope explicitly
 before building it; nothing here is approved by default.
 
 **Cheap, reinforces an existing v1 pillar (candidates to pull into Phase 1):**
+- **Two Josephs in 1066: vanilla's ibn Naghrela family duplicates the mod's.** Noted 2026-11-01 at
+  Daniel's request ("Make a note of the duplicate characters to come back to later").
+  - Vanilla has Yosef 3221 (Badis's courtier and tax collector, dying 1066.12.30), Rahel
+    (sephardi_0004), Azariah (sephardi_0005), Shmuel 3220, Nissim, Yaakov and the poet Qasmuna
+    (sephardi_0001).
+  - The mod has its own Joseph 9000216 and family in `history/characters/granada_1066.txt`.
+  - The proposed fix ([court-flow addendum](docs/spec/2026-11-01-nagid-court-flow-and-tax-office.md)
+    §4): silently retire vanilla's living copies at game start, and keep the mod's.
+  - Open: what to do with Qasmuna, who exists only in vanilla.
+  - First found in [V51](docs/spec/v51-bookmark-rosters.md).
 - **The Granada massacre, December 1066.** Flagged 2026-09-25 (V18 spec) when
   Granada was added as a new community with Joseph ibn Naghrilla, the real
   historical vizier assassinated in the real massacre that followed barely

@@ -342,3 +342,198 @@ tier 4 from 20 (`kehillah_nagid_service_tier_*_skill`).
 - a rite moved off the Dhimma, at the yearly check;
 - the "service named" notice for a Kehillah player whose AI host picks;
 - `error.log` clean after a few quarters.
+
+## Making the office visible (2026-11-01)
+
+**Built 2026-11-01, xTiger-checked: 154 reports and 15 errors, with none new.** Not live-tested.
+Daniel saw slice 5's notices in his own game and asked: "Is there anywhere in the UI that Yosef would
+really see that he's Nagid and Vizier though? I don't want this to just be a practically invisible
+modifier." He chose all four of these ("Yes, all four"). Each follows the office's data from
+slices 4 and 5. Nothing is stored for its own sake.
+
+### The rank
+
+- **"Nagid Joseph."** Twelve entries in `common/flavorization/kehillah_title_holders.txt` (six names,
+  two genders) at priority 305, each keyed on its own flag, `kehillah_nagid_rank_<name>_flag`.
+- **The name follows the court.** `kehillah_nagid_rank_set_effect` picks the flag with the
+  `kehillah_nagid_name_*` triggers, which `KehillahNagidOfficeName` now uses as well, so the two
+  cannot drift apart.
+- **Short forms,** since a rank goes before the name: Nagid, Arrabi Mor, Rab (for Rab de la Corte),
+  Presbyter, Hochmeister, Master.
+- **The Exilarch rose from 305 to 306,** so it still outranks the Nagid. Gaon, Rabbenu and Rav sit
+  below; the Nasi (310) above.
+- **Joseph's "ha-Nagid" nickname is removed** from `history/characters/granada_1066.txt`: with the
+  rank he read "Nagid Joseph ha-Nagid". Samuel keeps his. Slice 8's nickname can bring it back as an
+  honour.
+
+### The court relation
+
+- **`common/scripted_relations/kehillah_nagid_relations.txt`,** built like the yeshiva's
+  talmid/rebbe pair:
+  - the ruler holds `kehillah_court_<service>` toward the Nagid, which reads Vizier, Treasurer,
+    Physician or Envoy, or "Head of the Jews" with no service;
+  - the Nagid holds the corresponding `kehillah_court_<service>_patron`, which reads "Patron".
+- **Both show** in each character window's relations and on their portraits. This is the nearest
+  the engine allows to a council seat.
+- **One pair per service,** because a corresponding relation must be one to one. Removing either
+  side removes the other.
+- **Opinion +10 each way.** This is a new number, not in the spec.
+- **Hidden.** The relations are set and removed in `hidden_effect`, as the yeshiva's are, so they need
+  no tooltip keys.
+
+### The realm view (`gui/kehillah_realm_view.gui`)
+
+- **The Nagid as a line of the ruler's court** (`kehillah_rv_nagid_line`), under the ruler's name
+  and summary, for the top liege's office in both modes:
+  - the holder's 48 px portrait (`kehillah_rv_portrait_tiny`, vanilla's ledger
+    `portrait_head_tiny` at three quarters) when the office is filled;
+  - otherwise vanilla's unknown-head silhouette in a grey frame. While the realm has no office,
+    clicking it opens the decision that would fill it: **Establish a Head of the Jews** for the ruler
+    himself, or **Ask for a Head of the Jews** for a Kehillah leader (Daniel's idea). A vacant
+    office has no decision to open, so its frame only explains;
+  - beside it, the label "Head of the Jews" and one line (`KehillahRvNagidLine`): "Nagid Joseph,
+    his Vizier", "(no service at court)", "(awaiting confirmation)", "Vacant", "Vacant: confirmation
+    withheld" or "None yet";
+  - a tooltip for each state (`KehillahRvNagidTooltip`), without numbers. It points to the
+    modifiers.
+- **Two layouts were tried first,** both on 2026-11-01, and dropped:
+  - a full-width band under the three tiles, which repeated the ruler's row and doubled the
+    header's height (Daniel: "uglier");
+  - a 64 px portrait column at the right edge of the ruler's row. Unlabelled, it read as a second
+    ruler ("unclear what the second small portrait means").
+- **The strength word** ("Skilled") is shown nowhere in the view. Daniel found it confusing, and the
+  modifier on the ruler already carries it with its numbers.
+- **The seat:**
+  - vanilla's capital mark (`icon_capital.dds`, the map's frame) in the corner of the seat's card;
+  - a line under the detail card's name: "Seat of the realm's Jews", plus "home of their head" when
+    its leader is the Nagid;
+  - a tooltip, in words only. The pillar and danger tooltips already show the numbers.
+- **Realm News** records the office:
+  - confirmed;
+  - named Vizier, Treasurer, Physician or Envoy (only a new service, not "go on as before");
+  - confirmation withheld;
+  - left the office;
+  - abolished.
+  
+  The feed's text is a plain key, so it cannot name the person. The feed's tooltip now mentions the
+  office. In 1066 Granada starts with two entries: confirmed, and made vizier.
+
+### The character window: a badge, built and removed
+
+A badge beside the realm-view chip in `gui/window_character.gui` showed the service's vanilla
+court-position icon and its name, on a Nagid and on a ruler whose office was filled. Daniel saw it
+live and asked for it to go ("looks pretty bad to me, I think we should scrap that"), the same day.
+The rank, the relation and the modifiers already show the office in the character window. The
+override is back to its realm-view chip alone, and the badge's scripted GUIs, trigger and loc are
+gone.
+
+### Keeping it current
+
+- **`kehillah_nagid_presence_refresh_effect`** (on the ruler) sets the rank and syncs the relation
+  (`kehillah_nagid_court_sync_effect`). It runs:
+  - at appointment;
+  - at every change of service;
+  - at the seat leader's quarterly check;
+  - at the ruler's yearly check.
+- **`kehillah_nagid_court_leave_effect`** takes the rank off and ends the relations. It runs:
+  - at a step-down;
+  - at a vacancy;
+  - on a new appointee, which ends any tie to a ruler they served before.
+- **Saves begun earlier** pick all of this up at the next quarterly check.
+- **Debug:** `kehillah_nagid_debug.1` also reports the rank and the court relation.
+
+### Fixed while Daniel's game was open
+
+- **The Nagid's portrait** first read its datacontext as `Character…Char`, and the engine refused it
+  ("reading and writing the same context"). It now goes through the primary title.
+- **xTiger does not check this,** so the GUI needs a live look.
+
+### Live checks owed
+
+- **A restart first.** New relation types and rank entries may not hot-reload.
+- **The rank** reads "Nagid Joseph" in his character window, in tooltips and in event text. His wife
+  keeps her own title.
+- **The relation:**
+  - Badis's window lists Joseph as "Vizier";
+  - Joseph's lists Badis as "Patron";
+  - it changes with the service and goes when the Nagid leaves.
+- **The Nagid's line under the ruler** in each state: the portrait opening Joseph, and the empty
+  frame opening the right decision.
+- **The seat** badge and line on Granada.
+- **The 1066 news entries.**- **`error.log`** stays clean after opening the realm view and both character windows.
+
+## The audience, and the ruler's interactions (2026-11-01)
+
+**Built 2026-11-01 at Daniel's request** (from the [court-flow addendum](../spec/2026-11-01-nagid-court-flow-and-tax-office.md),
+§3.1 and §3.2: "let's go through with 2 and 3"). xTiger-checked: no new reports except six
+strict-scope warnings from vanilla's `throne_room` background (below). Not live-tested.
+
+**This supersedes slice 5's "Choosing it"** for player rulers. The yearly decision Assign the Head
+of the Jews is gone.
+
+### The audience (`kehillah_nagid.0001`)
+
+- **One event to confirm and place the Nagid.** The confirmation is now an audience on vanilla's
+  throne-room background, with the ruler on the left and the candidate on the right.
+- **A player chooses in one step:**
+  - confirm as Vizier (under the Dhimma only), Treasurer, Physician or Envoy;
+  - confirm without a place at court;
+  - not yet.
+- **Each confirming option** pays the fee (`kehillah_nagid_confirm_effect`) and names the service
+  (`kehillah_nagid_confirm_as_effect`). Its tooltip shows the fee and the modifier.
+- **An AI ruler** has one hidden "confirm" option that picks the service by the old rule, with the
+  old weights. AI behaviour is unchanged.
+- **Founding leads into it:**
+  - a player's Establish a Head of the Jews founds the office and opens the audience;
+  - so does accepting a petition (`kehillah_nagid.0002`).
+- **Where there is no audience,** the service is named as before, through
+  `kehillah_nagid_appoint_and_pick_effect` (AI pick, or `kehillah_nagid.0003` the next day for a
+  player). That covers:
+  - an AI ruler's founding;
+  - an AI ruler's answer to a petition;
+  - `kehillah_nagid_debug.2`.
+- **`kehillah_nagid_appoint_effect` no longer names a service.**
+- **The 1066 seed** appoints Joseph and makes him Vizier directly, so a player Badis no longer gets
+  a service event on day 6.
+- **The background's warnings:** vanilla's `throne_room` checks for Christian clergy first, then
+  reads `scope:activity`. xTiger reports six strict-scope warnings for this. The mod's baseline
+  already has the same warnings from other events, and vanilla uses the background in 183 places.
+
+### The ruler's interactions (`common/character_interactions/kehillah_nagid_interactions.txt`)
+
+Both are player-only, on the ruler's own confirmed Nagid. The AI keeps naming the service by rule,
+and ends the office only through Abolish.
+
+- **Change His Post at Court** (`council` icon, once a year) opens `kehillah_nagid.0003`. It
+  replaces the decision.
+- **Dismiss the Head of the Jews** (`revoke_title` icon) runs `kehillah_nagid_dismiss_effect`:
+  - the Nagid steps down, with the Realm News entry "left the office";
+  - his community loses Stability (`kehillah_nagid_dismissal_stability_value`, −20);
+  - he takes −30 opinion of the ruler (vanilla `disappointed_opinion`);
+  - he gets a "Dismissed" notice.
+- **The office stays, vacant** for `kehillah_nagid_dismissal_wait_years` (3), through the existing
+  `kehillah_nagid_withheld` timer.
+- **Reappointment comes by itself.** When the wait ends, the seat leader's quarterly check brings
+  the capital's leader to the ruler in audience. That is the same man if he still leads, or his
+  successor. No other character can hold the office, so dismissal withdraws the ruler's favour; it
+  does not open the post to a rival.
+
+### Not built from the addendum
+
+- **§3.3:** Abolish's confirmation event.
+- **§3.4:** the Kehillah-side events.
+- **§4:** retiring vanilla's duplicate ibn Naghrela family. Deferred, and in ROADMAP's backlog.
+- **§5:** the tax office. Set aside.
+
+### Live checks owed
+
+- **A player's founding** opens the audience on the throne-room background, with both portraits.
+  The Vizier option appears only under the Dhimma, and each option's tooltip shows the fee and the
+  modifier.
+- **A petition accepted by a player ruler** leads into the same audience.
+- **Change His Post** shows on Joseph's portrait for a player Badis, and greys for a year after use.
+- **Dismiss:**
+  - the costs land: Stability, opinion, the notice, the news entry;
+  - the realm view reads "Vacant (confirmation withheld)";
+  - after three years the audience comes back.
+- **An AI ruler still confirms and picks a service** (`kehillah_nagid_debug.3`).

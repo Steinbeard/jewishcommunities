@@ -1,4 +1,20 @@
-﻿## Crisis trigger acknowledgment - 2026-11-01, interactive session
+## Catalyst feedback and Granada prose - 2026-11-01, interactive session
+
+- Implemented on the current primary checkout/branch at Daniel's request: actual catalyst
+  names, point values and destinations in attack-crisis toasts; recurring flavor reports share
+  the same notice. Rewrote the study-hall threat and the Sanhaja muster event. See
+  [build note](docs/implementation/2026-11-01-crisis-catalyst-notices.md) and
+  [verification record](docs/testing/2026-11-01-crisis-catalyst-notices.md).
+- Five new source tests and ten existing lifecycle tests pass. xTiger remains at the unchanged
+  15-error / 101-warning baseline, with no new diagnostic signatures.
+- Runtime/UI probe UNRUN: Luna still cannot inspect CK3 process ownership (CIM access denied),
+  and no xTiger tools are exposed. No game was launched or controlled.
+- Git staging failed: `.git/index.lock` cannot be created (`Permission denied`). This session
+  has read-only Git metadata access, so no commit/push/PR was possible. Changes remain in the
+  requested checkout. Preserve the pre-existing Nagid edits, localization revisions and
+  multi-community proposal when staging this focused unit and its new ROADMAP hunk later.
+
+## Crisis trigger acknowledgment - 2026-11-01, interactive session
 
 **RESOLVED 2026-11-01:** committed and pushed by the Claude crisis session, crisis unit and its ROADMAP hunk only; the Nagid edits were left unstaged.
 
