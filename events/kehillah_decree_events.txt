@@ -664,3 +664,76 @@ kehillah_decree.0110 = {
 		remove_variable = kehillah_decree_ask
 	}
 }
+
+# ---------------------------------------------------------------------
+# .0070 After the verdict (2026-11-01). Each once per decree.
+# ---------------------------------------------------------------------
+kehillah_decree.0070 = {
+	type = character_event
+	title = kehillah_decree.0070.t
+	desc = {
+		first_valid = {
+			triggered_desc = { trigger = { primary_title.var:kehillah_decree_verdict ?= flag:enforced kehillah_decree_kind_trigger = { KIND = servants } } desc = kehillah_decree.0070.desc_servants }
+			triggered_desc = { trigger = { primary_title.var:kehillah_decree_verdict ?= flag:enforced } desc = kehillah_decree.0070.desc_mark }
+			desc = kehillah_decree.0070.desc_lifted
+		}
+	}
+	theme = diplomacy
+	left_portrait = { character = root animation = thinking }
+	trigger = { kehillah_decree_aftermath_open_trigger = yes }
+	immediate = { kehillah_decree_scene_scopes_effect = yes }
+
+	# The mark enforced: the rabbi preaches on wearing it with dignity.
+	option = {
+		name = kehillah_decree.0070.sermon
+		trigger = {
+			primary_title.var:kehillah_decree_verdict ?= flag:enforced
+			NOT = { kehillah_decree_kind_trigger = { KIND = servants } }
+			primary_title = { NOT = { has_variable = kehillah_decree_did_sermon } }
+		}
+		add_piety = minor_piety_gain
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = 10 }
+		primary_title = { set_variable = { name = kehillah_decree_did_sermon value = yes } }
+		ai_chance = { base = 40 }
+	}
+	# The servants' decree enforced: pay our own young people to do the work.
+	option = {
+		name = kehillah_decree.0070.own
+		trigger = {
+			primary_title.var:kehillah_decree_verdict ?= flag:enforced
+			kehillah_decree_kind_trigger = { KIND = servants }
+			gold >= 25
+			primary_title = { NOT = { has_variable = kehillah_decree_did_own } }
+		}
+		show_as_unavailable = {
+			primary_title.var:kehillah_decree_verdict ?= flag:enforced
+			kehillah_decree_kind_trigger = { KIND = servants }
+		}
+		remove_short_term_gold = 25
+		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = 10 }
+		primary_title = { set_variable = { name = kehillah_decree_did_own value = yes } }
+		ai_chance = { base = 40 }
+	}
+	# Laid aside or withdrawn: thank the lord's household, quietly.
+	option = {
+		name = kehillah_decree.0070.thanks
+		trigger = {
+			NOT = { primary_title.var:kehillah_decree_verdict ?= flag:enforced }
+			exists = scope:kehillah_incident_host
+			gold >= 20
+			primary_title = { NOT = { has_variable = kehillah_decree_did_thanks } }
+		}
+		show_as_unavailable = { NOT = { primary_title.var:kehillah_decree_verdict ?= flag:enforced } }
+		pay_short_term_gold = {
+			target = scope:kehillah_incident_host
+			gold = 20
+		}
+		scope:kehillah_incident_host = { kehillah_shift_outlook_effect = { AMOUNT = 3 } }
+		primary_title = { set_variable = { name = kehillah_decree_did_thanks value = yes } }
+		ai_chance = { base = 30 }
+	}
+	option = {
+		name = kehillah_crisis_act.not_now
+		ai_chance = { base = 1 }
+	}
+}

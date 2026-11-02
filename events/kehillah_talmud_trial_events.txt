@@ -800,3 +800,98 @@ kehillah_talmud_trial.0110 = {
 		remove_variable = kehillah_trial_target
 	}
 }
+
+# ---------------------------------------------------------------------
+# .0070 After the verdict (2026-11-01). Each once per trial.
+# ---------------------------------------------------------------------
+kehillah_talmud_trial.0070 = {
+	type = character_event
+	title = kehillah_talmud_trial.0070.t
+	desc = {
+		first_valid = {
+			triggered_desc = { trigger = { primary_title.var:kehillah_trial_verdict ?= flag:condemnation } desc = kehillah_talmud_trial.0070.desc_burned }
+			triggered_desc = { trigger = { primary_title.var:kehillah_trial_verdict ?= flag:expurgation } desc = kehillah_talmud_trial.0070.desc_struck }
+			desc = kehillah_talmud_trial.0070.desc_home
+		}
+	}
+	theme = learning
+	left_portrait = { character = root animation = thinking }
+	trigger = { kehillah_trial_aftermath_open_trigger = yes }
+
+	# The books come home: a siyum, a feast for finishing a tractate, in the house of study.
+	option = {
+		name = kehillah_talmud_trial.0070.siyum
+		trigger = {
+			OR = {
+				primary_title.var:kehillah_trial_verdict ?= flag:acquittal
+				primary_title.var:kehillah_trial_verdict ?= flag:quashed
+			}
+			gold >= 25
+			primary_title = { NOT = { has_variable = kehillah_trial_did_siyum } }
+		}
+		show_as_unavailable = {
+			OR = {
+				primary_title.var:kehillah_trial_verdict ?= flag:acquittal
+				primary_title.var:kehillah_trial_verdict ?= flag:quashed
+			}
+		}
+		remove_short_term_gold = 25
+		add_prestige = minor_prestige_gain
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = 10 }
+		primary_title = { set_variable = { name = kehillah_trial_did_siyum value = yes } }
+		ai_chance = { base = 40 }
+	}
+	# Burned or cut: a fast, as the Jews of France kept one for the books burned at Paris.
+	option = {
+		name = kehillah_talmud_trial.0070.fast
+		trigger = {
+			OR = {
+				primary_title.var:kehillah_trial_verdict ?= flag:condemnation
+				primary_title.var:kehillah_trial_verdict ?= flag:expurgation
+			}
+			primary_title = { NOT = { has_variable = kehillah_trial_did_fast } }
+		}
+		show_as_unavailable = {
+			OR = {
+				primary_title.var:kehillah_trial_verdict ?= flag:condemnation
+				primary_title.var:kehillah_trial_verdict ?= flag:expurgation
+			}
+		}
+		add_piety = medium_piety_gain
+		add_stress = minor_stress_loss
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = 10 }
+		primary_title = { set_variable = { name = kehillah_trial_did_fast value = yes } }
+		ai_chance = { base = 40 }
+	}
+	# Burned: copies of the two most-studied orders from a sister community's scribes.
+	option = {
+		name = kehillah_talmud_trial.0070.copy
+		trigger = {
+			primary_title.var:kehillah_trial_verdict ?= flag:condemnation
+			primary_title = { has_variable = kehillah_talmud_burned }
+			gold >= 60
+			primary_title = { NOT = { has_variable = kehillah_trial_did_recopy } }
+		}
+		show_as_unavailable = { primary_title.var:kehillah_trial_verdict ?= flag:condemnation }
+		remove_short_term_gold = 60
+		custom_tooltip = kehillah_trial_recopy_tt
+		primary_title = {
+			set_variable = { name = kehillah_trial_did_recopy value = yes }
+			hidden_effect = {
+				if = {
+					limit = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed } } }
+					add_to_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed }
+				}
+				if = {
+					limit = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nezikin } } }
+					add_to_variable_list = { name = kehillah_library_works target = flag:work_bavli_nezikin }
+				}
+			}
+		}
+		ai_chance = { base = 30 }
+	}
+	option = {
+		name = kehillah_crisis_act.not_now
+		ai_chance = { base = 1 }
+	}
+}

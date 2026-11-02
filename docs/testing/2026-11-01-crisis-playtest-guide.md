@@ -127,6 +127,20 @@ Each section says what to do, what you should see, and what counts as a problem.
 
   Each can be used once.
 - **The crisis closes:** by "Returning to Ordinary Life", about 45 days after the ruler's answer, or when the countdown ends. Either way, no crash.
+- **By how it began:**
+  - "When the Streets Grow Quiet" mentions the witness (accusation), the debtors, Easter passing (Holy Week), or the vow-takers marching east (crusade).
+  - After the Danger offers one matching option:
+    - accusation: ask the lord to punish the false witness. If he agrees, the witness is imprisoned (check the witness's character);
+    - debts: ease the poorest debtors;
+    - crusade: alms for the departing army.
+- **The Purim comes back:** proclaim one, then let a year pass. "The Purim of [town]" fires once, in or after the month of the deliverance, naming the one it was against.
+- **After a trial's verdict:**
+  - the window shows effects for the verdict: "The Books Come Home", "The Burning" and so on;
+  - "After the Verdict" offers a siyum (acquittal or quashed), a fast for the books (burned or expurgated), and copies of two orders (burned);
+  - after the copies, check that the library has Moed and Nezikin again.
+- **After a decree's verdict:**
+  - effects such as "Under the Decree" or "A Reprieve";
+  - "After the Decree" offers: a sermon on wearing the mark with dignity (enforced badge); paying our own young people to do the work (enforced servants' decree); a quiet gift to the lord (laid aside or withdrawn).
 
 ## 6. Granada
 

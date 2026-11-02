@@ -585,6 +585,73 @@ kehillah_crisis_act.0010 = {
 	immediate = {
 		domicile.domicile_location ?= { save_scope_as = kehillah_crisis_aftermath_town }
 		domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_crisis_aftermath_lord }
+		domicile.domicile_location.county.holder ?= { save_scope_as = kehillah_crisis_aftermath_local_lord }
+		primary_title.var:kehillah_acc_witness ?= {
+			if = {
+				limit = {
+					is_alive = yes
+					is_imprisoned = no
+				}
+				save_scope_as = kehillah_crisis_aftermath_witness
+			}
+		}
+	}
+
+	# By how it began (2026-11-01). The accusation: ask the lord to punish the false witness.
+	option = {
+		name = kehillah_crisis_act.0010.witness
+		trigger = {
+			kehillah_crisis_opening_is_trigger = { KEY = accusation }
+			exists = scope:kehillah_crisis_aftermath_witness
+			exists = scope:kehillah_crisis_aftermath_local_lord
+			primary_title = { NOT = { has_variable = kehillah_crisis_did_witness } }
+		}
+		primary_title = { set_variable = { name = kehillah_crisis_did_witness value = yes } }
+		random_list = {
+			35 = {
+				desc = kehillah_crisis_act.0010.witness_punished
+				kehillah_lord_outlook_odds_modifier = { HOST = scope:kehillah_crisis_aftermath_local_lord }
+				min = 5
+				scope:kehillah_crisis_aftermath_local_lord = {
+					imprison = {
+						target = scope:kehillah_crisis_aftermath_witness
+						type = dungeon
+					}
+				}
+				kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = 10 }
+			}
+			65 = {
+				desc = kehillah_crisis_act.0010.witness_spared
+				kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = -10 }
+			}
+		}
+		ai_chance = { base = 30 }
+	}
+	# Debts: ease the poorest debtors, so the next dear year finds them less angry.
+	option = {
+		name = kehillah_crisis_act.0010.debtors
+		trigger = {
+			kehillah_crisis_opening_is_trigger = { KEY = debts }
+			primary_title = { NOT = { has_variable = kehillah_crisis_did_debtors } }
+		}
+		primary_title = { set_variable = { name = kehillah_crisis_did_debtors value = yes } }
+		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = -10 }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = 25 }
+		ai_chance = { base = 30 }
+	}
+	# The crusade: alms for the departing army, so it leaves content.
+	option = {
+		name = kehillah_crisis_act.0010.alms
+		trigger = {
+			kehillah_crisis_opening_is_trigger = { KEY = crusade }
+			exists = scope:kehillah_crisis_aftermath_lord
+			gold >= 20
+			primary_title = { NOT = { has_variable = kehillah_crisis_did_alms } }
+		}
+		primary_title = { set_variable = { name = kehillah_crisis_did_alms value = yes } }
+		remove_short_term_gold = 20
+		scope:kehillah_crisis_aftermath_lord = { kehillah_shift_outlook_effect = { AMOUNT = 3 } }
+		ai_chance = { base = 30 }
 	}
 
 	# A Purim of our own: a day each year to remember how we were spared (Narbonne, Saragossa).
@@ -598,6 +665,12 @@ kehillah_crisis_act.0010 = {
 		primary_title = {
 			set_variable = { name = kehillah_crisis_did_purim value = yes }
 			set_variable = { name = kehillah_local_purim value = yes }
+			set_variable = { name = kehillah_local_purim_month value = kehillah_current_month_value }
+			set_variable = { name = kehillah_local_purim_year value = current_year }
+			if = {
+				limit = { exists = var:kehillah_crisis_last_agitator }
+				set_variable = { name = kehillah_local_purim_against value = var:kehillah_crisis_last_agitator }
+			}
 		}
 		ai_chance = { base = 40 }
 	}
