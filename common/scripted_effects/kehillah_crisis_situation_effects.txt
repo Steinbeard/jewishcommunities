@@ -119,6 +119,7 @@ kehillah_crisis_situation_sync_inner_effect = {
   if = {
    limit = { is_in_list = kehillah_crisis_opening_list }
    kehillah_crisis_store_push_effect = yes
+   set_variable = { name = kehillah_crisis_opening_catalyst_pts value = kehillah_crisis_opening_points_value }
    trigger_situation_catalyst = kehillah_crisis_opening_catalyst
   }
   # Step 1e: a recorded opening counts once, by name.
@@ -142,19 +143,22 @@ kehillah_crisis_situation_sync_inner_effect = {
  }
 }
 
-# Root: the situation, monthly. While the race runs, the named drivers add their points.
+# Root: the situation, monthly. While the race runs, the named drivers add their points. Since
+# 2026-11-01 (docs/spec/2026-11-01-crisis-catalyst-groups.md) each group fires once, with the sum
+# of its drivers: the agitator's work, ill times, those who shield us.
 kehillah_crisis_race_monthly_effect = {
  if = {
   limit = { kehillah_crisis_race_running_trigger = yes }
   kehillah_crisis_store_push_effect = yes
   # The month's push toward the host, told to the leader (kehillah_crisis_pressure_toast_effect).
   set_variable = { name = kehillah_crisis_month_push value = kehillah_crisis_preaching_points_value }
-  trigger_situation_catalyst = kehillah_crisis_preaching_catalyst
   if = {
    limit = { kehillah_crisis_following_points_value > 0 }
    change_variable = { name = kehillah_crisis_month_push add = kehillah_crisis_following_points_value }
-   trigger_situation_catalyst = kehillah_crisis_following_catalyst
   }
+  set_variable = { name = kehillah_crisis_agitator_catalyst_pts value = var:kehillah_crisis_month_push }
+  trigger_situation_catalyst = kehillah_crisis_agitator_catalyst
+  set_variable = { name = kehillah_crisis_ill_times_catalyst_pts value = 0 }
   if = {
    limit = {
     kehillah_crisis_holy_week_season_trigger = yes
@@ -164,14 +168,14 @@ kehillah_crisis_race_monthly_effect = {
     }
    }
    change_variable = { name = kehillah_crisis_month_push add = kehillah_crisis_holy_week_points }
+   change_variable = { name = kehillah_crisis_ill_times_catalyst_pts add = kehillah_crisis_holy_week_points }
    kehillah_crisis_driver_notice_effect = { KEY = holy_week }
-   trigger_situation_catalyst = kehillah_crisis_holy_week_catalyst
   }
   if = {
    limit = { var:kehillah_crisis_sovereign ?= { kehillah_outlook_band_value <= -1 } }
    change_variable = { name = kehillah_crisis_month_push add = kehillah_crisis_cold_lord_points_value }
+   change_variable = { name = kehillah_crisis_ill_times_catalyst_pts add = kehillah_crisis_cold_lord_points_value }
    kehillah_crisis_driver_notice_effect = { KEY = cold_lord }
-   trigger_situation_catalyst = kehillah_crisis_cold_lord_catalyst
   }
   if = {
    limit = {
@@ -183,12 +187,26 @@ kehillah_crisis_race_monthly_effect = {
     }
    }
    change_variable = { name = kehillah_crisis_month_push add = kehillah_crisis_holy_war_points_value }
+   change_variable = { name = kehillah_crisis_ill_times_catalyst_pts add = kehillah_crisis_holy_war_points_value }
    kehillah_crisis_driver_notice_effect = { KEY = holy_war }
-   trigger_situation_catalyst = kehillah_crisis_holy_war_catalyst
   }
   if = {
+   limit = { var:kehillah_crisis_ill_times_catalyst_pts > 0 }
+   trigger_situation_catalyst = kehillah_crisis_ill_times_catalyst
+  }
+  # Those who shield us: the month's protection and the lord's goodwill.
+  set_variable = { name = kehillah_crisis_shield_catalyst_pts value = 0 }
+  if = {
    limit = { kehillah_crisis_protection_points_value > 0 }
-   trigger_situation_catalyst = kehillah_crisis_protection_catalyst
+   change_variable = { name = kehillah_crisis_shield_catalyst_pts add = kehillah_crisis_protection_points_value }
+  }
+  if = {
+   limit = { var:kehillah_crisis_sovereign ?= { kehillah_outlook_band_value >= 1 } }
+   change_variable = { name = kehillah_crisis_shield_catalyst_pts add = kehillah_crisis_goodwill_points_value }
+  }
+  if = {
+   limit = { var:kehillah_crisis_shield_catalyst_pts > 0 }
+   trigger_situation_catalyst = kehillah_crisis_shield_catalyst
   }
   # Step 1c: once for each kind of protection, as it is first won.
   kehillah_crisis_credit_protection_effect = { FLAG = kehillah_crisis_royal_protection }
@@ -196,10 +214,6 @@ kehillah_crisis_race_monthly_effect = {
   kehillah_crisis_credit_protection_effect = { FLAG = kehillah_mob_men_by }
   kehillah_crisis_credit_protection_effect = { FLAG = kehillah_mob_armed }
   kehillah_crisis_credit_protection_effect = { FLAG = kehillah_mob_refuge }
-  if = {
-   limit = { var:kehillah_crisis_sovereign ?= { kehillah_outlook_band_value >= 1 } }
-   trigger_situation_catalyst = kehillah_crisis_goodwill_catalyst
-  }
   kehillah_crisis_race_mirror_effect = yes
   kehillah_crisis_pressure_toast_effect = yes
  }
@@ -285,12 +299,14 @@ kehillah_crisis_store_push_effect = {
  }
 }
 
-# Root: community title. Adds a race catalyst, if this title's race is running.
+# Root: community title. Adds a race catalyst, if this title's race is running. POINTS: this push,
+# read in the situation's scope; the group catalyst's value reads it back (2026-11-01).
 kehillah_crisis_race_add_effect = {
  if = {
   limit = { kehillah_crisis_title_race_running_trigger = yes }
   var:kehillah_crisis_situation = {
    kehillah_crisis_store_push_effect = yes
+   set_variable = { name = $CATALYST$_pts value = $POINTS$ }
    trigger_situation_catalyst = $CATALYST$
    kehillah_crisis_race_mirror_effect = yes
   }
@@ -402,17 +418,22 @@ kehillah_crisis_credit_protection_effect = {
    }
   }
   var:kehillah_crisis_title = { add_to_variable_list = { name = kehillah_crisis_protection_credited target = flag:$FLAG$ } }
-  trigger_situation_catalyst = kehillah_crisis_protection_won_catalyst
+  set_variable = { name = kehillah_crisis_shield_catalyst_pts value = kehillah_crisis_protection_won_points }
+  trigger_situation_catalyst = kehillah_crisis_shield_catalyst
  }
 }
 
 # --- Step 1d: the Armed race ---
 
-# Root: community title. Adds an Armed-race catalyst, if this title's Armed race is running.
+# Root: community title. Adds an Armed-race catalyst, if this title's Armed race is running. POINTS:
+# this push, read in the situation's scope (2026-11-01, as kehillah_crisis_race_add_effect).
 kehillah_crisis_armed_race_add_effect = {
  if = {
   limit = { kehillah_crisis_title_armed_race_running_trigger = yes }
-  var:kehillah_crisis_situation = { trigger_situation_catalyst = $CATALYST$ }
+  var:kehillah_crisis_situation = {
+   set_variable = { name = $CATALYST$_pts value = $POINTS$ }
+   trigger_situation_catalyst = $CATALYST$
+  }
  }
 }
 
@@ -426,6 +447,7 @@ kehillah_crisis_struck_tick_effect = {
   # month's count is kept on the situation and handed to the title from there.
   var:kehillah_crisis_situation = {
    set_variable = { name = kehillah_crisis_tick_points value = $POINTS$ }
+   set_variable = { name = $CATALYST$_pts value = var:kehillah_crisis_tick_points }
    trigger_situation_catalyst = $CATALYST$
    var:kehillah_crisis_title ?= {
     # Live test 2 (2026-11-01): change_variable fails on a variable that does not exist yet.
@@ -488,16 +510,22 @@ kehillah_crisis_armed_toast_effect = {
 }
 
 # Root: the situation, as the Armed host phase begins with the host risen (stage 2). What the
-# Agitation phase prepared counts once toward Quarter held.
+# Agitation phase prepared counts once toward Quarter held: one catalyst, What We Prepared, with the
+# sum (2026-11-01, docs/spec/2026-11-01-crisis-catalyst-groups.md).
 kehillah_crisis_armed_seed_effect = {
  var:kehillah_crisis_title = { save_scope_as = kehillah_crisis_seed_title }
- if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_mob_defended } } trigger_situation_catalyst = kehillah_crisis_held_watch_catalyst }
- if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_crisis_supplies } } trigger_situation_catalyst = kehillah_crisis_held_supplies_catalyst }
- if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_mob_scattered } } trigger_situation_catalyst = kehillah_crisis_held_routes_catalyst }
- if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_mob_men_by } } trigger_situation_catalyst = kehillah_crisis_held_men_catalyst }
- if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_mob_refuge } } trigger_situation_catalyst = kehillah_crisis_held_refuge_catalyst }
- if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_mob_armed } } trigger_situation_catalyst = kehillah_crisis_held_arms_catalyst }
- if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_mob_condemned } } trigger_situation_catalyst = kehillah_crisis_held_condemned_catalyst }
+ set_variable = { name = kehillah_crisis_prepared_catalyst_pts value = 0 }
+ if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_mob_defended } } change_variable = { name = kehillah_crisis_prepared_catalyst_pts add = kehillah_crisis_held_watch_points } }
+ if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_crisis_supplies } } change_variable = { name = kehillah_crisis_prepared_catalyst_pts add = kehillah_crisis_held_supplies_points } }
+ if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_mob_scattered } } change_variable = { name = kehillah_crisis_prepared_catalyst_pts add = kehillah_crisis_held_routes_points } }
+ if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_mob_men_by } } change_variable = { name = kehillah_crisis_prepared_catalyst_pts add = kehillah_crisis_held_men_points } }
+ if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_mob_refuge } } change_variable = { name = kehillah_crisis_prepared_catalyst_pts add = kehillah_crisis_held_refuge_points } }
+ if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_mob_armed } } change_variable = { name = kehillah_crisis_prepared_catalyst_pts add = kehillah_crisis_held_arms_points } }
+ if = { limit = { scope:kehillah_crisis_seed_title = { has_variable = kehillah_mob_condemned } } change_variable = { name = kehillah_crisis_prepared_catalyst_pts add = kehillah_crisis_held_condemned_points } }
+ if = {
+  limit = { var:kehillah_crisis_prepared_catalyst_pts > 0 }
+  trigger_situation_catalyst = kehillah_crisis_prepared_catalyst
+ }
 }
 
 # Root: the situation, as Quarter held begins. If the race (not an event) brought it, the host
