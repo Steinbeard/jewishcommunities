@@ -4,15 +4,10 @@
 # Scope: a Kehillah leader (the incident director's Talmud pick, or the console). The baptized former
 # student (Donin) denounces the books; the trial begins and its first scene opens.
 kehillah_trial_begin_effect = {
-	if = {
-		limit = { kehillah_trial_can_begin_trigger = yes }
-		kehillah_incident_scopes_effect = yes
-		domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
-		kehillah_realm_news_add_effect = { KIND = talmud_trial }
-		primary_title = {
-			save_scope_as = kehillah_trial_new_title
-			set_variable = { name = kehillah_talmud_cooldown value = yes years = kehillah_talmud_cooldown_years }
-		}
+ if = {
+  limit = { kehillah_trial_can_begin_trigger = yes }
+  kehillah_incident_scopes_effect = yes
+  primary_title = { save_scope_as = kehillah_trial_new_title }
 		create_character = {
 			age = { 28 50 }
 			gender = male
@@ -26,49 +21,46 @@ kehillah_trial_begin_effect = {
 			save_scope_as = kehillah_trial_new_accuser
 		}
 		scope:kehillah_incident_host = { add_courtier = scope:kehillah_trial_new_accuser }
-		start_situation = {
-			type = kehillah_talmud_trial
-			start_phase = kehillah_trial_denunciation
-			save_scope_as = kehillah_trial_new_situation
-		}
-		scope:kehillah_trial_new_situation ?= {
-			set_variable = { name = kehillah_trial_title value = scope:kehillah_trial_new_title }
-			set_variable = { name = kehillah_trial_accuser value = scope:kehillah_trial_new_accuser }
-			set_situation_center_province = root.domicile.domicile_location
-			situation_sub_region:kehillah_trial_area = { add_dejure_title_to_sub_region = root.domicile.domicile_location.county }
-			kehillah_trial_participants_effect = yes
-			trigger_situation_catalyst = kehillah_trial_opening_catalyst
-			# 2026-11-01: the accuser's story and his patron, rolled once.
-			kehillah_trial_roll_effect = yes
-			kehillah_trial_participants_effect = yes
-			scope:kehillah_trial_new_title = { set_variable = { name = kehillah_trial_situation value = scope:kehillah_trial_new_situation } }
-		}
-		if = {
-			limit = { is_ai = no }
-			# Worded by the accuser's rolled story (live test 2026-11-01: it was always the student's).
-			if = {
-				limit = { scope:kehillah_trial_new_situation.var:kehillah_trial_story ?= flag:son_in_law }
-				send_interface_message = { type = msg_kehillah_crisis_begins title = kehillah_trial_begins_t desc = kehillah_trial_begins_son_in_law_d left_icon = scope:kehillah_trial_new_title }
-			}
-			else_if = {
-				limit = { scope:kehillah_trial_new_situation.var:kehillah_trial_story ?= flag:rival }
-				send_interface_message = { type = msg_kehillah_crisis_begins title = kehillah_trial_begins_t desc = kehillah_trial_begins_rival_d left_icon = scope:kehillah_trial_new_title }
-			}
-			else = {
-				send_interface_message = { type = msg_kehillah_crisis_begins title = kehillah_trial_begins_t desc = kehillah_trial_begins_d left_icon = scope:kehillah_trial_new_title }
-			}
-		}
-		trigger_event = kehillah_talmud_trial.0001
-		# 2026-11-01: a player judge hears the denunciation himself (kehillah_talmud_trial.0100).
-		scope:kehillah_incident_host = {
-			if = {
-				limit = { is_ai = no }
-				set_variable = { name = kehillah_trial_target value = root years = 1 }
-				trigger_event = { id = kehillah_talmud_trial.0100 days = 2 }
-			}
-		}
-		debug_log = "kehillah_trial_begin_effect: the Talmud is denounced"
-	}
+
+  kehillah_crisis_reserve_intro_effect = { FAMILY = trial }
+  primary_title = {
+   set_variable = { name = kehillah_trial_accuser value = scope:kehillah_trial_new_accuser }
+   remove_variable = kehillah_trial_patron_char
+   kehillah_trial_roll_effect = yes
+  }
+  trigger_event = kehillah_talmud_trial.0001
+  debug_log = "kehillah_trial_begin_effect: denunciation awaiting acknowledgment"
+ }
+}
+
+# Scope: leader, only after the denunciation is acknowledged. Copy the already-read details.
+kehillah_trial_activate_effect = {
+ kehillah_incident_scopes_effect = yes
+ primary_title = { save_scope_as = kehillah_trial_new_title }
+ start_situation = { type = kehillah_talmud_trial start_phase = kehillah_trial_denunciation save_scope_as = kehillah_trial_new_situation }
+ scope:kehillah_trial_new_situation ?= {
+  set_variable = { name = kehillah_trial_title value = scope:kehillah_trial_new_title }
+  scope:kehillah_trial_new_title = { if = { limit = { has_variable = kehillah_trial_accuser } scope:kehillah_trial_new_situation = { set_variable = { name = kehillah_trial_accuser value = scope:kehillah_trial_new_title.var:kehillah_trial_accuser } } } }
+  scope:kehillah_trial_new_title = { if = { limit = { has_variable = kehillah_trial_story } scope:kehillah_trial_new_situation = { set_variable = { name = kehillah_trial_story value = scope:kehillah_trial_new_title.var:kehillah_trial_story } } } }
+  scope:kehillah_trial_new_title = { if = { limit = { has_variable = kehillah_trial_patron } scope:kehillah_trial_new_situation = { set_variable = { name = kehillah_trial_patron value = scope:kehillah_trial_new_title.var:kehillah_trial_patron } } } }
+  scope:kehillah_trial_new_title = { if = { limit = { has_variable = kehillah_trial_patron_char } scope:kehillah_trial_new_situation = { set_variable = { name = kehillah_trial_patron_char value = scope:kehillah_trial_new_title.var:kehillah_trial_patron_char } } } }
+  set_situation_center_province = scope:kehillah_trial_new_title.holder.domicile.domicile_location
+  situation_sub_region:kehillah_trial_area = { add_dejure_title_to_sub_region = scope:kehillah_trial_new_title.holder.domicile.domicile_location.county }
+  scope:kehillah_trial_new_title = { set_variable = { name = kehillah_trial_situation value = scope:kehillah_trial_new_situation } }
+  kehillah_trial_participants_effect = yes
+  trigger_situation_catalyst = kehillah_trial_opening_catalyst
+ }
+ if = {
+  limit = { exists = primary_title.var:kehillah_trial_situation }
+  kehillah_crisis_clear_intro_effect = yes
+  primary_title = { set_variable = { name = kehillah_talmud_cooldown value = yes years = kehillah_talmud_cooldown_years } }
+  domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
+  kehillah_realm_news_add_effect = { KIND = talmud_trial }
+  scope:kehillah_incident_host = {
+   if = { limit = { is_ai = no } set_variable = { name = kehillah_trial_target value = prev years = 1 } trigger_event = { id = kehillah_talmud_trial.0100 days = 2 } }
+  }
+  debug_log = "kehillah_trial_activate_effect: acknowledged; trial clock starts"
+ }
 }
 
 # Scope: the situation. The community's leader, its sovereign and the accuser, as they are now.

@@ -1,4 +1,21 @@
-﻿namespace = kehillah_talmud_trial
+﻿# Opening choices run after acknowledgment; previews contain no crisis initialization.
+scripted_effect kehillah_intro_trial_1_response_effect = {
+	kehillah_trial_answer_effect = yes
+}
+
+scripted_effect kehillah_intro_trial_2_response_effect = {
+	kehillah_trial_plead_effect = yes
+}
+
+scripted_effect kehillah_intro_trial_3_response_effect = {
+	kehillah_trial_hide_effect = yes
+}
+
+scripted_effect kehillah_intro_trial_4_response_effect = {
+	custom_tooltip = kehillah_trial_find_window_tt
+}
+
+namespace = kehillah_talmud_trial
 
 # =====================================================================
 # The Talmud on trial as a situation (docs/spec/2026-11-01-talmud-trial-
@@ -18,8 +35,10 @@
 
 scripted_effect kehillah_trial_scene_scopes_effect = {
 	kehillah_incident_scopes_effect = yes
-	primary_title.var:kehillah_trial_situation.var:kehillah_trial_accuser ?= { save_scope_as = kehillah_trial_accuser_scope }
-	primary_title.var:kehillah_trial_situation.var:kehillah_trial_patron_char ?= { save_scope_as = kehillah_trial_patron_scope }
+ primary_title = { save_scope_as = kehillah_trial_scene_data }
+ primary_title.var:kehillah_trial_situation ?= { save_scope_as = kehillah_trial_scene_data }
+	scope:kehillah_trial_scene_data.var:kehillah_trial_accuser ?= { save_scope_as = kehillah_trial_accuser_scope }
+	scope:kehillah_trial_scene_data.var:kehillah_trial_patron_char ?= { save_scope_as = kehillah_trial_patron_scope }
 	scope:kehillah_incident_host.faith.religious_head ?= {
 		if = {
 			limit = { NOT = { this = scope:kehillah_incident_host } }
@@ -183,22 +202,22 @@ kehillah_talmud_trial.0001 = {
 	title = kehillah_talmud_trial.0001.t
 	desc = {
 		first_valid = {
-			triggered_desc = { trigger = { primary_title.var:kehillah_trial_situation.var:kehillah_trial_story ?= flag:son_in_law } desc = kehillah_talmud_trial.0001.story_son_in_law }
-			triggered_desc = { trigger = { primary_title.var:kehillah_trial_situation.var:kehillah_trial_story ?= flag:rival } desc = kehillah_talmud_trial.0001.story_rival }
+			triggered_desc = { trigger = { scope:kehillah_trial_scene_data.var:kehillah_trial_story ?= flag:son_in_law } desc = kehillah_talmud_trial.0001.story_son_in_law }
+			triggered_desc = { trigger = { scope:kehillah_trial_scene_data.var:kehillah_trial_story ?= flag:rival } desc = kehillah_talmud_trial.0001.story_rival }
 			desc = kehillah_talmud_trial.0001.story_student
 		}
 		desc = kehillah_talmud_trial.0001.articles
 		first_valid = {
 			triggered_desc = {
 				trigger = {
-					primary_title.var:kehillah_trial_situation.var:kehillah_trial_patron ?= flag:friar
+					scope:kehillah_trial_scene_data.var:kehillah_trial_patron ?= flag:friar
 					current_year >= 1216
 				}
 				desc = kehillah_talmud_trial.0001.patron_friar
 			}
-			triggered_desc = { trigger = { primary_title.var:kehillah_trial_situation.var:kehillah_trial_patron ?= flag:friar } desc = kehillah_talmud_trial.0001.patron_monk }
-			triggered_desc = { trigger = { primary_title.var:kehillah_trial_situation.var:kehillah_trial_patron ?= flag:bishop exists = scope:kehillah_trial_patron_scope } desc = kehillah_talmud_trial.0001.patron_bishop }
-			triggered_desc = { trigger = { primary_title.var:kehillah_trial_situation.var:kehillah_trial_patron ?= flag:official exists = scope:kehillah_trial_patron_scope } desc = kehillah_talmud_trial.0001.patron_official }
+			triggered_desc = { trigger = { scope:kehillah_trial_scene_data.var:kehillah_trial_patron ?= flag:friar } desc = kehillah_talmud_trial.0001.patron_monk }
+			triggered_desc = { trigger = { scope:kehillah_trial_scene_data.var:kehillah_trial_patron ?= flag:bishop exists = scope:kehillah_trial_patron_scope } desc = kehillah_talmud_trial.0001.patron_bishop }
+			triggered_desc = { trigger = { scope:kehillah_trial_scene_data.var:kehillah_trial_patron ?= flag:official exists = scope:kehillah_trial_patron_scope } desc = kehillah_talmud_trial.0001.patron_official }
 		}
 		desc = kehillah_talmud_trial.0001.close
 	}
@@ -209,13 +228,13 @@ kehillah_talmud_trial.0001 = {
 		character = scope:kehillah_trial_accuser_scope
 		animation = scheme
 	}
-	trigger = { kehillah_trial_phase_trigger = { PHASE = denunciation } }
-	immediate = { kehillah_trial_scene_scopes_effect = yes }
+	trigger = { OR = { primary_title ?= { var:kehillah_crisis_intro_pending ?= flag:trial } kehillah_trial_phase_trigger = { PHASE = denunciation } } }
+	immediate = {
+  primary_title = { save_scope_as = kehillah_crisis_intro_title } kehillah_trial_scene_scopes_effect = yes }
 
 	option = {
 		name = kehillah_talmud_trial.0001.a
 		trigger = { exists = scope:kehillah_trial_accuser_scope }
-		kehillah_trial_answer_effect = yes
 		ai_chance = {
 			base = 25
 			modifier = {
@@ -223,6 +242,9 @@ kehillah_talmud_trial.0001 = {
 				learning >= 14
 			}
 		}
+		show_as_tooltip = { kehillah_intro_trial_1_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:trial_1 } }
 	}
 	option = {
 		name = {
@@ -233,13 +255,14 @@ kehillah_talmud_trial.0001 = {
 			trigger = { scope:kehillah_incident_petitioner = root }
 			text = kehillah_talmud_trial.0001.b_self
 		}
-		kehillah_trial_plead_effect = yes
 		ai_chance = { base = 35 }
+		show_as_tooltip = { kehillah_intro_trial_2_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:trial_2 } }
 	}
 	option = {
 		name = kehillah_talmud_trial.0001.c
 		trigger = { exists = scope:kehillah_trial_accuser_scope }
-		kehillah_trial_hide_effect = yes
 		ai_chance = {
 			base = 15
 			modifier = {
@@ -250,11 +273,30 @@ kehillah_talmud_trial.0001 = {
 				}
 			}
 		}
+		show_as_tooltip = { kehillah_intro_trial_3_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:trial_3 } }
 	}
 	option = {
 		name = kehillah_talmud_trial.0001.d
-		custom_tooltip = kehillah_trial_find_window_tt
 		ai_chance = { base = 10 }
+		show_as_tooltip = { kehillah_intro_trial_4_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:trial_4 } }
+	}
+
+	after = {
+		kehillah_crisis_acknowledge_effect = { FAMILY = trial }
+		if = {
+			limit = { has_variable = kehillah_crisis_intro_accepted }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:trial_1 } kehillah_intro_trial_1_response_effect = yes }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:trial_2 } kehillah_intro_trial_2_response_effect = yes }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:trial_3 } kehillah_intro_trial_3_response_effect = yes }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:trial_4 } kehillah_intro_trial_4_response_effect = yes }
+
+		}
+		remove_variable = kehillah_crisis_intro_accepted
+		remove_variable = kehillah_crisis_intro_choice
 	}
 }
 

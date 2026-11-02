@@ -18,6 +18,20 @@ subject to revision after each phase.
 ## Near-term TODO
 ### Community crises as situations — 2026-10-31, Daniel's request
 
+**Opening-event acknowledgment - 2026-11-01, Daniel's request:** implemented on the current
+worktree/branch. Each crisis entry offers its narrative trigger event first; acknowledgment
+starts the active situation (or the existing expulsion grace counter), then applies the chosen
+response. This covers Granada, accusations, preaching/crusades, debts, Holy Week, sudden hosts,
+a host's next community, Talmud trials, and badge/ghiyar/servants decrees. Pending introductions
+reserve the community and pause preaching/marching. Persistent clickable alerts replace the
+duplicate opening banners. Trial/decree details are copied unchanged from the opening.
+See the [implementation and save rules](docs/implementation/2026-11-01-crisis-acknowledgment.md)
+and [validation/runtime record](docs/testing/2026-11-01-crisis-acknowledgment.md).
+Source contracts pass; runtime acknowledgment, first-response catalysts, saves and alert
+navigation remain pending because the required Luna live check was unavailable. This direct
+request stays on the current branch and supersedes the opening-banner behavior, not the active
+crisis mechanics or the earlier situation test requirements.
+
 **2026-11-01 proposal — the situation becomes the crisis mechanic.** At Daniel's request,
 [Crisis situations as the mechanic](docs/spec/2026-11-01-crisis-situations-as-the-mechanic.md) proposes:
 - the situation owns the clock, superseding the 2026-10-31 "mirror, never a timer" rule;

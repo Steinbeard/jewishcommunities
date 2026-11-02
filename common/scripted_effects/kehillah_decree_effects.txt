@@ -25,40 +25,54 @@ kehillah_decree_begin_effect = {
 		}
 	}
 	else_if = {
-		limit = { kehillah_decree_can_begin_trigger = yes }
-		kehillah_incident_scopes_effect = yes
-		domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
-		primary_title = { save_scope_as = kehillah_decree_new_title }
-		start_situation = {
-			type = kehillah_decree
-			start_phase = kehillah_decree_proclaimed
-			save_scope_as = kehillah_decree_new_situation
-		}
-		scope:kehillah_decree_new_situation ?= {
-			set_variable = { name = kehillah_decree_title value = scope:kehillah_decree_new_title }
-			set_variable = { name = kehillah_decree_kind value = flag:$KIND$ }
-			set_situation_center_province = scope:kehillah_decree_new_leader.domicile.domicile_location
-			situation_sub_region:kehillah_decree_area = { add_dejure_title_to_sub_region = scope:kehillah_decree_new_leader.domicile.domicile_location.county }
-			kehillah_decree_participants_effect = yes
-			trigger_situation_catalyst = kehillah_decree_opening_catalyst
-			# 2026-11-01: the decree's details, rolled once and read by every text.
-			kehillah_decree_roll_effect = yes
-			kehillah_decree_participants_effect = yes
-			scope:kehillah_decree_new_title = { set_variable = { name = kehillah_decree_situation value = scope:kehillah_decree_new_situation } }
-		}
-		kehillah_decree_news_$KIND$_effect = yes
-		if = {
-			limit = { is_ai = no }
-			send_interface_message = {
-				type = msg_kehillah_crisis_begins
-				title = kehillah_decree_begins_$KIND$_t
-				desc = kehillah_decree_begins_$KIND$_d
-				left_icon = scope:kehillah_decree_new_title
-			}
-		}
-		trigger_event = kehillah_decree.0001
-		debug_log = "kehillah_decree_begin_effect: a decree begins"
-	}
+  limit = { kehillah_decree_can_begin_trigger = yes }
+  kehillah_incident_scopes_effect = yes
+  kehillah_crisis_reserve_intro_effect = { FAMILY = decree }
+  primary_title = {
+   set_variable = { name = kehillah_decree_kind value = flag:$KIND$ }
+   remove_variable = kehillah_decree_colour
+   remove_variable = kehillah_decree_form
+   remove_variable = kehillah_decree_instigator_char
+   remove_variable = kehillah_decree_spouse
+   kehillah_decree_roll_effect = yes
+  }
+  trigger_event = kehillah_decree.0001
+  debug_log = "kehillah_decree_begin_effect: proclamation awaiting acknowledgment"
+ }
+}
+
+# Scope: community leader, after the proclamation event closes. No reroll of the stated terms.
+kehillah_decree_activate_effect = {
+ kehillah_incident_scopes_effect = yes
+ save_scope_as = kehillah_decree_new_leader
+ primary_title = { save_scope_as = kehillah_decree_new_title }
+ start_situation = { type = kehillah_decree start_phase = kehillah_decree_proclaimed save_scope_as = kehillah_decree_new_situation }
+ scope:kehillah_decree_new_situation ?= {
+  set_variable = { name = kehillah_decree_title value = scope:kehillah_decree_new_title }
+  scope:kehillah_decree_new_title = { if = { limit = { has_variable = kehillah_decree_kind } scope:kehillah_decree_new_situation = { set_variable = { name = kehillah_decree_kind value = scope:kehillah_decree_new_title.var:kehillah_decree_kind } } } }
+  scope:kehillah_decree_new_title = { if = { limit = { has_variable = kehillah_decree_form } scope:kehillah_decree_new_situation = { set_variable = { name = kehillah_decree_form value = scope:kehillah_decree_new_title.var:kehillah_decree_form } } } }
+  scope:kehillah_decree_new_title = { if = { limit = { has_variable = kehillah_decree_colour } scope:kehillah_decree_new_situation = { set_variable = { name = kehillah_decree_colour value = scope:kehillah_decree_new_title.var:kehillah_decree_colour } } } }
+  scope:kehillah_decree_new_title = { if = { limit = { has_variable = kehillah_decree_instigator } scope:kehillah_decree_new_situation = { set_variable = { name = kehillah_decree_instigator value = scope:kehillah_decree_new_title.var:kehillah_decree_instigator } } } }
+  scope:kehillah_decree_new_title = { if = { limit = { has_variable = kehillah_decree_instigator_char } scope:kehillah_decree_new_situation = { set_variable = { name = kehillah_decree_instigator_char value = scope:kehillah_decree_new_title.var:kehillah_decree_instigator_char } } } }
+  scope:kehillah_decree_new_title = { if = { limit = { has_variable = kehillah_decree_motive } scope:kehillah_decree_new_situation = { set_variable = { name = kehillah_decree_motive value = scope:kehillah_decree_new_title.var:kehillah_decree_motive } } } }
+  scope:kehillah_decree_new_title = { if = { limit = { has_variable = kehillah_decree_spouse } scope:kehillah_decree_new_situation = { set_variable = { name = kehillah_decree_spouse value = scope:kehillah_decree_new_title.var:kehillah_decree_spouse } } } }
+  scope:kehillah_decree_new_title = { if = { limit = { has_variable = kehillah_decree_fines } scope:kehillah_decree_new_situation = { set_variable = { name = kehillah_decree_fines value = scope:kehillah_decree_new_title.var:kehillah_decree_fines } } } }
+  scope:kehillah_decree_new_title = { if = { limit = { has_variable = kehillah_decree_years } scope:kehillah_decree_new_situation = { set_variable = { name = kehillah_decree_years value = scope:kehillah_decree_new_title.var:kehillah_decree_years } } } }
+  set_situation_center_province = scope:kehillah_decree_new_leader.domicile.domicile_location
+  situation_sub_region:kehillah_decree_area = { add_dejure_title_to_sub_region = scope:kehillah_decree_new_leader.domicile.domicile_location.county }
+  scope:kehillah_decree_new_title = { set_variable = { name = kehillah_decree_situation value = scope:kehillah_decree_new_situation } }
+  kehillah_decree_participants_effect = yes
+  trigger_situation_catalyst = kehillah_decree_opening_catalyst
+ }
+ if = {
+  limit = { exists = primary_title.var:kehillah_decree_situation }
+  kehillah_crisis_clear_intro_effect = yes
+  domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
+  if = { limit = { primary_title.var:kehillah_decree_kind = flag:servants } kehillah_decree_news_servants_effect = yes }
+  else_if = { limit = { primary_title.var:kehillah_decree_kind = flag:ghiyar } kehillah_decree_news_ghiyar_effect = yes }
+  else = { kehillah_decree_news_badge_effect = yes }
+  debug_log = "kehillah_decree_activate_effect: acknowledged; decree clock starts"
+ }
 }
 kehillah_decree_news_badge_effect = { kehillah_realm_news_add_effect = { KIND = badge_decree } }
 kehillah_decree_news_ghiyar_effect = { kehillah_realm_news_add_effect = { KIND = badge_decree } }

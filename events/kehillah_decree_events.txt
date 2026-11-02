@@ -1,4 +1,29 @@
-﻿namespace = kehillah_decree
+﻿# Opening choices run after acknowledgment; previews contain no crisis initialization.
+scripted_effect kehillah_intro_decree_1_response_effect = {
+	kehillah_decree_petition_effect = yes
+}
+
+scripted_effect kehillah_intro_decree_2_response_effect = {
+	kehillah_decree_exempt_effect = yes
+}
+
+scripted_effect kehillah_intro_decree_3_response_effect = {
+	kehillah_decree_pay_effect = yes
+}
+
+scripted_effect kehillah_intro_decree_4_response_effect = {
+	kehillah_decree_leave_effect = yes
+}
+
+scripted_effect kehillah_intro_decree_5_response_effect = {
+	kehillah_decree_common_effect = yes
+}
+
+scripted_effect kehillah_intro_decree_6_response_effect = {
+	primary_title = { kehillah_decree_add_effect = { CATALYST = kehillah_decree_accepted_catalyst } }
+}
+
+namespace = kehillah_decree
 
 # =====================================================================
 # A decree against the Jews as a situation (docs/spec/2026-11-01-decree-
@@ -15,8 +40,10 @@
 # Scopes for every decree text: the lord's people, and the rolled instigator and spouse.
 scripted_effect kehillah_decree_scene_scopes_effect = {
 	kehillah_incident_scopes_effect = yes
-	primary_title.var:kehillah_decree_situation.var:kehillah_decree_instigator_char ?= { save_scope_as = kehillah_decree_instigator }
-	primary_title.var:kehillah_decree_situation.var:kehillah_decree_spouse ?= { save_scope_as = kehillah_decree_spouse }
+ primary_title = { save_scope_as = kehillah_decree_scene_data }
+ primary_title.var:kehillah_decree_situation ?= { save_scope_as = kehillah_decree_scene_data }
+	scope:kehillah_decree_scene_data.var:kehillah_decree_instigator_char ?= { save_scope_as = kehillah_decree_instigator }
+	scope:kehillah_decree_scene_data.var:kehillah_decree_spouse ?= { save_scope_as = kehillah_decree_spouse }
 }
 
 # --- Shared answers ---
@@ -187,8 +214,8 @@ kehillah_decree.0001 = {
 				triggered_desc = { trigger = { kehillah_decree_detail_trigger = { VAR = fines VALUE = yes } } desc = kehillah_decree.fines_mark }
 		}
 		first_valid = {
-				triggered_desc = { trigger = { primary_title.var:kehillah_decree_situation.var:kehillah_decree_years ?= 20 } desc = kehillah_decree.years_20 }
-				triggered_desc = { trigger = { primary_title.var:kehillah_decree_situation.var:kehillah_decree_years ?= 40 } desc = kehillah_decree.years_40 }
+				triggered_desc = { trigger = { scope:kehillah_decree_scene_data.var:kehillah_decree_years ?= 20 } desc = kehillah_decree.years_20 }
+				triggered_desc = { trigger = { scope:kehillah_decree_scene_data.var:kehillah_decree_years ?= 40 } desc = kehillah_decree.years_40 }
 				desc = kehillah_decree.years_30
 		}
 		desc = kehillah_decree.0001.coda
@@ -200,8 +227,9 @@ kehillah_decree.0001 = {
 		character = scope:kehillah_incident_host
 		animation = dismissal
 	}
-	trigger = { kehillah_decree_open_trigger = yes }
-	immediate = { kehillah_decree_scene_scopes_effect = yes }
+	trigger = { OR = { primary_title ?= { var:kehillah_crisis_intro_pending ?= flag:decree } kehillah_decree_open_trigger = yes } }
+	immediate = {
+  primary_title = { save_scope_as = kehillah_crisis_intro_title } kehillah_decree_scene_scopes_effect = yes }
 
 	option = {
 		name = {
@@ -212,8 +240,10 @@ kehillah_decree.0001 = {
 			trigger = { scope:kehillah_incident_petitioner = root }
 			text = kehillah_decree.petition_self
 		}
-		kehillah_decree_petition_effect = yes
 		ai_chance = { base = 40 }
+		show_as_tooltip = { kehillah_intro_decree_1_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:decree_1 } }
 	}
 	option = {
 		name = kehillah_decree.exempt
@@ -221,14 +251,15 @@ kehillah_decree.0001 = {
 			NOT = { kehillah_decree_kind_trigger = { KIND = servants } }
 			gold >= kehillah_incident_small_bribe_cost_value
 		}
-		kehillah_decree_exempt_effect = yes
 		ai_chance = { base = 10 }
+		show_as_tooltip = { kehillah_intro_decree_2_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:decree_2 } }
 	}
 	option = {
 		name = kehillah_decree.pay
 		trigger = { gold >= kehillah_incident_bribe_cost_value }
 		show_as_unavailable = { always = yes }
-		kehillah_decree_pay_effect = yes
 		ai_chance = {
 			base = 20
 			modifier = {
@@ -236,17 +267,24 @@ kehillah_decree.0001 = {
 				scope:kehillah_incident_host = { has_trait = greedy }
 			}
 		}
+		show_as_tooltip = { kehillah_intro_decree_3_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:decree_3 } }
 	}
 	option = {
 		name = kehillah_decree.leave
-		kehillah_decree_leave_effect = yes
 		ai_chance = { base = 15 }
+		show_as_tooltip = { kehillah_intro_decree_4_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:decree_4 } }
 	}
 	option = {
 		name = kehillah_decree.common
 		trigger = { kehillah_decree_has_sister_trigger = yes }
-		kehillah_decree_common_effect = yes
 		ai_chance = { base = 30 }
+		show_as_tooltip = { kehillah_intro_decree_5_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:decree_5 } }
 	}
 	# Accept it now, and spend no anger on it.
 	option = {
@@ -258,8 +296,26 @@ kehillah_decree.0001 = {
 			trigger = { NOT = { kehillah_decree_kind_trigger = { KIND = servants } } }
 			text = kehillah_incident.0010.c
 		}
-		primary_title = { kehillah_decree_add_effect = { CATALYST = kehillah_decree_accepted_catalyst } }
 		ai_chance = { base = 5 }
+		show_as_tooltip = { kehillah_intro_decree_6_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:decree_6 } }
+	}
+
+	after = {
+		kehillah_crisis_acknowledge_effect = { FAMILY = decree }
+		if = {
+			limit = { has_variable = kehillah_crisis_intro_accepted }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:decree_1 } kehillah_intro_decree_1_response_effect = yes }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:decree_2 } kehillah_intro_decree_2_response_effect = yes }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:decree_3 } kehillah_intro_decree_3_response_effect = yes }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:decree_4 } kehillah_intro_decree_4_response_effect = yes }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:decree_5 } kehillah_intro_decree_5_response_effect = yes }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:decree_6 } kehillah_intro_decree_6_response_effect = yes }
+
+		}
+		remove_variable = kehillah_crisis_intro_accepted
+		remove_variable = kehillah_crisis_intro_choice
 	}
 }
 

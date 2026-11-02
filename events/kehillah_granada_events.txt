@@ -1,4 +1,32 @@
-﻿namespace = kehillah_granada
+﻿# Opening choices run after acknowledgment; previews contain no crisis initialization.
+scripted_effect kehillah_intro_granada_1_response_effect = {
+	primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_ev_elders_warned_catalyst } }
+}
+
+scripted_effect kehillah_intro_granada_2_response_effect = {
+	add_stress = minor_stress_loss
+	primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_ev_verses_unanswered_catalyst } }
+}
+
+scripted_effect kehillah_intro_granada_3_response_effect = {
+	random_list = {
+			0 = {
+				modifier = { add = kehillah_granada_silence_chance_value }
+				desc = kehillah_granada_silenced
+				custom_tooltip = kehillah_granada_silenced_tt
+				add_character_flag = kehillah_granada_silenced
+				primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_ev_recitations_forbidden_catalyst } }
+			}
+			0 = {
+				modifier = { add = kehillah_granada_silence_fail_value }
+				desc = kehillah_granada_not_silenced
+				custom_tooltip = kehillah_granada_not_silenced_tt
+				primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_ev_emir_shrugs_catalyst } }
+			}
+		}
+}
+
+namespace = kehillah_granada
 
 # =====================================================================
 # V39 slice 4 -- Granada, 30 December 1066 (docs/spec/v39-pogroms-and-
@@ -71,11 +99,13 @@ kehillah_granada.0018 = {
 	}
 	trigger = {
 		kehillah_granada_chain_valid_trigger = yes
+		OR = { kehillah_crisis_can_offer_intro_trigger = yes kehillah_crisis_existing_granada_trigger = yes }
 		NOT = { has_character_flag = kehillah_granada_night_done }
 	}
 	immediate = {
+  primary_title = { save_scope_as = kehillah_crisis_intro_title }
 		kehillah_granada_scopes_effect = yes
-		kehillah_granada_warning_effect = yes
+		if = { limit = { kehillah_crisis_can_offer_intro_trigger = yes } kehillah_crisis_reserve_intro_effect = { FAMILY = granada } }
 	}
 	# 2026-11-01: the crisis's opening scene. No longer leads to .0001, whose answers duplicated the
 	# window's actions (docs/spec/2026-11-01-three-standing-actions.md); .0001 stays for queued
@@ -84,38 +114,42 @@ kehillah_granada.0018 = {
 	# The elders must see it.
 	option = {
 		name = kehillah_granada.0018.a
-		primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_ev_elders_warned_catalyst } }
 		ai_chance = { base = 40 }
+		show_as_tooltip = { kehillah_intro_granada_1_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:granada_1 } }
 	}
 
 	# Burn it.
 	option = {
 		name = kehillah_granada.0018.b
-		add_stress = minor_stress_loss
-		primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_ev_verses_unanswered_catalyst } }
 		ai_chance = { base = 20 }
+		show_as_tooltip = { kehillah_intro_granada_2_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:granada_2 } }
 	}
 
 	# Lay it before the emir.
 	option = {
 		name = kehillah_granada.0018.c
 		trigger = { exists = scope:kehillah_granada_emir }
-		random_list = {
-			0 = {
-				modifier = { add = kehillah_granada_silence_chance_value }
-				desc = kehillah_granada_silenced
-				custom_tooltip = kehillah_granada_silenced_tt
-				add_character_flag = kehillah_granada_silenced
-				primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_ev_recitations_forbidden_catalyst } }
-			}
-			0 = {
-				modifier = { add = kehillah_granada_silence_fail_value }
-				desc = kehillah_granada_not_silenced
-				custom_tooltip = kehillah_granada_not_silenced_tt
-				primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_ev_emir_shrugs_catalyst } }
-			}
-		}
 		ai_chance = { base = 40 }
+		show_as_tooltip = { kehillah_intro_granada_3_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:granada_3 } }
+	}
+
+	after = {
+		kehillah_crisis_acknowledge_effect = { FAMILY = granada }
+		if = {
+			limit = { has_variable = kehillah_crisis_intro_accepted }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:granada_1 } kehillah_intro_granada_1_response_effect = yes }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:granada_2 } kehillah_intro_granada_2_response_effect = yes }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:granada_3 } kehillah_intro_granada_3_response_effect = yes }
+
+		}
+		remove_variable = kehillah_crisis_intro_accepted
+		remove_variable = kehillah_crisis_intro_choice
 	}
 }
 
@@ -254,6 +288,7 @@ kehillah_granada.0002 = {
 		animation = disapproval
 	}
 	trigger = {
+  primary_title ?= { has_variable = kehillah_crisis_stage NOT = { has_variable = kehillah_crisis_intro_pending } }
 		kehillah_granada_chain_valid_trigger = yes
 		NOT = { has_character_flag = kehillah_granada_night_done }
 	}
@@ -312,7 +347,8 @@ kehillah_granada.0002 = {
 kehillah_granada.0003 = {
  type = character_event
  hidden = yes
- trigger = { kehillah_granada_chain_valid_trigger = yes NOT = { has_character_flag = kehillah_granada_night_done } }
+ trigger = {
+  primary_title ?= { has_variable = kehillah_crisis_stage NOT = { has_variable = kehillah_crisis_intro_pending } } kehillah_granada_chain_valid_trigger = yes NOT = { has_character_flag = kehillah_granada_night_done } }
  immediate = {
   if = {
    limit = {

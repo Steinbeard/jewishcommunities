@@ -166,6 +166,25 @@ kehillah_name_new_hostile_christian_rite_effect = {
 # harm (kehillah_mob_local_severity, kehillah_mob_crusade_severity).
 # ---------------------------------------------------------------------
 kehillah_mob_raise_effect = {
+ if = {
+  limit = { primary_title ?= { has_variable = kehillah_crisis_stage OR = { var:kehillah_crisis_stage = 1 var:kehillah_crisis_stage = 2 } } }
+  kehillah_mob_raise_acknowledged_effect = { SIZE = $SIZE$ SEVERITY = $SEVERITY$ }
+ }
+ else_if = {
+  limit = { kehillah_crisis_can_offer_intro_trigger = yes }
+  kehillah_crisis_reserve_intro_effect = { FAMILY = host }
+  primary_title = {
+   set_variable = { name = kehillah_crisis_intro_size value = $SIZE$ }
+   set_variable = { name = kehillah_crisis_intro_severity value = $SEVERITY$ }
+   if = { limit = { exists = scope:kehillah_rising_leader } set_variable = { name = kehillah_crisis_intro_sent_by value = scope:kehillah_rising_leader } }
+   if = { limit = { exists = scope:kehillah_mob_spawn } set_variable = { name = kehillah_crisis_intro_spawn value = scope:kehillah_mob_spawn } }
+   if = { limit = { exists = scope:kehillah_mob_preset_leader } set_variable = { name = kehillah_crisis_intro_preset value = scope:kehillah_mob_preset_leader } }
+  }
+  trigger_event = kehillah_crisis_intro.0001
+ }
+}
+
+kehillah_mob_raise_acknowledged_effect = {
 	save_scope_as = kehillah_mob_victim
 	primary_title = { save_scope_as = kehillah_mob_victim_title }
 	domicile.domicile_location = { save_scope_as = kehillah_mob_town }
@@ -218,6 +237,7 @@ kehillah_mob_raise_effect = {
 		}
 		scope:kehillah_mob_leader = {
 			add_character_flag = kehillah_mob_leader
+   if = { limit = { exists = scope:kehillah_rising_leader } set_variable = { name = kehillah_mob_sent_by value = scope:kehillah_rising_leader } }
 			kehillah_mob_make_ruler_effect = { COUNTY = scope:kehillah_mob_spawn.county }
 			kehillah_mob_join_hostile_rite_effect = yes
 			set_variable = { name = kehillah_mob_target_title value = scope:kehillah_mob_victim_title }
@@ -320,8 +340,8 @@ kehillah_mob_raise_effect = {
 					}
 					kehillah_crisis_begin_effect = yes
 					# Attack race step 1e: a host with no warning still records how it began.
-					kehillah_crisis_set_opening_effect = yes
 					primary_title = { set_variable = { name = kehillah_crisis_stage value = 2 } }
+					kehillah_crisis_set_opening_effect = yes
 					primary_title = { kehillah_crisis_situation_sync_effect = yes }
 					# 2026-11-01: a crisis that begins armed is announced too (once per crisis).
 					primary_title = { kehillah_crisis_announce_once_effect = yes }
@@ -330,7 +350,7 @@ kehillah_mob_raise_effect = {
 					set_variable = { name = kehillah_mob_band value = scope:kehillah_mob_leader.var:kehillah_mob_band_now }
 					# A mob that rises in the town itself gives no warning.
 					if = {
-						limit = { NOT = { scope:kehillah_mob_spawn = scope:kehillah_mob_town } }
+						limit = { NOT = { scope:kehillah_mob_victim_title = { has_variable = kehillah_crisis_host_intro_ack } } NOT = { scope:kehillah_mob_spawn = scope:kehillah_mob_town } }
 						trigger_event = { id = kehillah_mob.0001 days = 1 }
 					}
 					# But an AI community still answers it (soak 3, 2026-10-14:
@@ -444,6 +464,7 @@ kehillah_mob_step_toward_effect = {
 # THE TICK, every 4 days (story_kehillah_mob). Scope: the mob leader.
 # ---------------------------------------------------------------------
 kehillah_mob_tick_effect = {
+ if = { limit = { NOT = { var:kehillah_mob_target_title ?= { var:kehillah_crisis_intro_pending ?= flag:retarget } } }
 	save_scope_as = kehillah_mob_leader
 	# A host condemned by the Church is condemned at every town (V42).
 	if = {
@@ -612,6 +633,8 @@ kehillah_mob_tick_effect = {
 			}
 		}
 	}
+
+ }
 }
 
 # Scope: the mob leader. Records where the host is for the target's loc,
@@ -1199,6 +1222,15 @@ kehillah_mob_end_effect = {
 
 # Scope: a community title.
 kehillah_mob_clear_title_effect = {
+ if = {
+  limit = { var:kehillah_crisis_intro_pending ?= flag:attack }
+  remove_variable = kehillah_crisis_intro_pending
+  remove_variable = kehillah_crisis_intro_recipient
+  remove_variable = kehillah_crisis_intro_county
+  remove_variable = kehillah_crisis_intro_host
+  remove_variable = kehillah_crisis_opening
+  remove_variable = kehillah_crisis_pending_opening
+ }
 	if = {
 		limit = { has_variable = kehillah_mob_threat }
 		remove_variable = kehillah_mob_threat

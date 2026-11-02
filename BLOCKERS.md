@@ -1,4 +1,23 @@
-﻿## Overnight V42 slice 3, Dayyan trial -- 2026-10-15 05:17 America/New_York
+﻿## Crisis trigger acknowledgment - 2026-11-01, interactive session
+
+**RESOLVED 2026-11-01:** committed and pushed by the Claude crisis session, crisis unit and its ROADMAP hunk only; the Nagid edits were left unstaged.
+
+- Daniel requested this work in the current primary worktree and on its existing branch,
+  `codex/crisis-situation-spec-20261031`. Implementation and ROADMAP update are complete;
+  see [the build note](docs/implementation/2026-11-01-crisis-acknowledgment.md) and
+  [validation/probe record](docs/testing/2026-11-01-crisis-acknowledgment.md).
+- Ten source-contract checks pass. xTiger matches the pre-edit 15-error / 101-warning baseline,
+  with no new diagnostic signatures. Original opening-response effects were token-compared.
+- Live check UNRUN: Luna could not inspect CK3 process ownership (CIM access denied), and no
+  xTiger game tools were exposed. No game was launched or controlled. Runtime and UI checks,
+  including initial response points and the new native alert, remain pending.
+- Commit/push/PR BLOCKED: `git add` failed to create `.git/index.lock` with `Permission denied`;
+  this session's filesystem policy grants read-only access to `.git`. No index entries or commit
+  were written. Changes are present but uncommitted in the requested checkout. Existing unrelated
+  Nagid edits remain unchanged. A later session with Git metadata write access should stage only
+  this crisis unit and its new top-of-ROADMAP hunk, commit/push, and create/update its PR.
+
+## Overnight V42 slice 3, Dayyan trial -- 2026-10-15 05:17 America/New_York
 
 - Completed one option from the current highest-priority TODO: the Dayyan's
   Talmud-trial defence now uses a vanilla Learning challenge against the accuser.

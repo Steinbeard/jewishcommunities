@@ -1,4 +1,9 @@
-﻿namespace = kehillah_mob
+﻿# Opening choices run after acknowledgment; previews contain no crisis initialization.
+scripted_effect kehillah_intro_preacher_1_response_effect = {
+	custom_tooltip = kehillah_mob_how_to_act_tt
+}
+
+namespace = kehillah_mob
 
 # =====================================================================
 # V39 slice 1 -- the Mob's events (docs/spec/v39-pogroms-and-the-popular-
@@ -117,17 +122,27 @@ kehillah_mob.0004 = {
 		character = scope:kehillah_mob_leader
 		animation = rage
 	}
-	trigger = { exists = var:kehillah_mob_ref }
+	trigger = { exists = var:kehillah_mob_ref kehillah_crisis_attack_intro_trigger = yes }
 	immediate = {
+  primary_title = { save_scope_as = kehillah_crisis_intro_title }
 		kehillah_mob_event_scopes_effect = yes
-		if = {
-			limit = { is_ai = yes }
-			kehillah_mob_ai_answers_effect = yes
-		}
 	}
 	option = {
 		name = kehillah_mob.0004.a
-		custom_tooltip = kehillah_mob_how_to_act_tt
+		show_as_tooltip = { kehillah_intro_preacher_1_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:preacher_1 } }
+	}
+
+	after = {
+		kehillah_crisis_acknowledge_effect = { FAMILY = attack }
+		if = {
+			limit = { has_variable = kehillah_crisis_intro_accepted }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:preacher_1 } kehillah_intro_preacher_1_response_effect = yes }
+		if = { limit = { is_ai = yes } kehillah_mob_ai_answers_effect = yes }
+		}
+		remove_variable = kehillah_crisis_intro_accepted
+		remove_variable = kehillah_crisis_intro_choice
 	}
 }
 
