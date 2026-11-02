@@ -187,7 +187,7 @@ This fix was never reproduced live.
 
 ## 9. Small things to notice along the way
 
-- **The crisis window's catalysts are grouped** (added late on 1 November). Toward the Armed host there should be six rows: How it began, The agitator's work, Ill times, The mood turns, Our efforts miscarry, A host rises. Toward Spared there should be four. A row's count goes up as scenes add to it. Check that the race still moves as before: the agitator's work every month, a warning event's answer adding to The mood turns or The mood eases.
+- **The crisis window's catalysts are grouped** (added late on 1 November). Toward the Armed host there should be six rows: An angry town, The agitator, Hard times, The town turns, Our missteps, A host gathers. Toward Spared there should be four. A row's count goes up as scenes add to it. Check that the race still moves as before: the agitator's work every month, a warning event's answer adding to The town turns or The town softens.
 
 - **Pillar changes show as sizes**, such as "Stability: Minor penalty", never as numbers. Look at option tooltips: forgiving debts, a decree withdrawn.
 - **Icons:** the crisis, trial and decree windows use the new art (torch and pitchfork, burning book, wax seal).

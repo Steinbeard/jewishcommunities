@@ -16,25 +16,25 @@ Each group is one catalyst. Its points vary by what triggered it; the scene's ow
 
 | Catalyst | Kind | Folded in |
 | --- | --- | --- |
-| How It Began | once | the opening, each named opening, an accusation in Holy Week |
-| The Agitator's Work | monthly | the preaching, the agitator's following |
-| Ill Times | monthly | a cold or hostile lord, a great holy war, Holy Week |
-| The Mood Turns | scenes | every warning-event answer that helps the agitator, Granada's court scenes, the lord's refusal in the accusation |
-| Our Efforts Miscarry | actions | a failed answer, an exposed effort, questions about the witness that were caught |
-| A host rises | decided | unchanged |
+| An angry town | once | the opening, each named opening, an accusation in Holy Week |
+| The agitator | monthly | the preaching, the agitator's following |
+| Hard times | monthly | a cold or hostile lord, a great holy war, Holy Week |
+| The town turns | scenes | every warning-event answer that helps the agitator, Granada's court scenes, the lord's refusal in the accusation |
+| Our missteps | actions | a failed answer, an exposed effort, questions about the witness that were caught |
+| A host gathers | decided | unchanged |
 
 **Agitation → Spared**
 
 | Catalyst | Kind | Folded in |
 | --- | --- | --- |
-| Those Who Shield Us | monthly, and as won | the lord's protection, his goodwill, each protection first won, the lord's protection in the accusation |
-| The Mood Eases | scenes | every warning-event answer that calms the town, Granada's court scenes |
-| Our Own Efforts | actions | the watch, the stores, the ways out, advocacy; the standing actions' successes; the lie exposed; the gates barred |
-| The danger is ended | decided | unchanged |
+| Our protectors | monthly, and as won | the lord's protection, his goodwill, each protection first won, the lord's protection in the accusation |
+| The town softens | scenes | every warning-event answer that calms the town, Granada's court scenes |
+| Our own efforts | actions | the watch, the stores, the ways out, advocacy; the standing actions' successes; the lie exposed; the gates barred |
+| The danger passes | decided | unchanged |
 
-**Armed host → Quarter held:** What We Prepared (once, as the host forms: the sum of everything prepared before), Our Own Efforts (silver, shelter, bars, the gate scene, the plea, prayer), Those Who Shield Us (the lord's men), and the decided catalyst.
+**Armed host → Quarter held:** What we prepared (once, as the host forms: the sum of everything prepared before), Our own efforts (silver, shelter, bars, the gate scene, the plea, prayer), Our protectors (the lord's men), and the decided catalyst.
 
-**Armed host → Quarter struck:** The Host Draws On (muster, march and siege ticks), Left Unprotected (the hand-over, the lord's refusal), Our Efforts Miscarry (the gate scene and the plea going wrong), and the decided catalyst.
+**Armed host → Quarter struck:** The host closes in (muster, march and siege ticks), Abandoned (the hand-over, the lord's refusal), Our missteps (the gate scene and the plea going wrong), and the decided catalyst.
 
 ## How
 
