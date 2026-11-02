@@ -110,6 +110,24 @@ Each section says what to do, what you should see, and what counts as a problem.
 
 **This has never been seen working:** the weekly notifications depended on a fix made today.
 
+## 5b. After the danger (added later on 1 November)
+
+**Do:** end a crisis in your favour: `event kehillah_crisis_debug.7`, or win it in play.
+
+**Check:**
+- **"When the Streets Grow Quiet"** names the agitator and says he has stopped. In Granada, Abu Ishaq has gone back to the emir's court.
+- **Phase effects:**
+  - Spared and Quarter held show "Deliverance" (less stress);
+  - Recovery shows "Picking Up the Pieces";
+  - Recovery's next phase is "Ordinary life returns", with a countdown.
+- **The crisis window offers "After the Danger":**
+  - a Purim of your town (a moderate Greatness bonus);
+  - gifts to the lord (his outlook warms);
+  - bread and wine for the neighbours (a minor Stability bonus).
+
+  Each can be used once.
+- **The crisis closes:** by "Returning to Ordinary Life", about 45 days after the ruler's answer, or when the countdown ends. Either way, no crash.
+
 ## 6. Granada
 
 **Do:** start **1066 → Kehillah of Granada (Joseph ibn Naghrela)**. Wait for the poem, or run `event kehillah_crisis_intro_debug.16`.

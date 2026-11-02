@@ -567,3 +567,72 @@ kehillah_crisis_act.0003 = {
 		ai_chance = { base = 1 }
 	}
 }
+
+# --- After the Danger (2026-11-01) ---
+# The aftermath's scene: how the deliverance is remembered, and who is thanked. Each once per crisis.
+kehillah_crisis_act.0010 = {
+	type = character_event
+	title = kehillah_crisis_act.0010.t
+	desc = kehillah_crisis_act.0010.desc
+	theme = faith
+	left_portrait = { character = root animation = happiness }
+	right_portrait = {
+		trigger = { exists = scope:kehillah_crisis_aftermath_lord }
+		character = scope:kehillah_crisis_aftermath_lord
+		animation = personality_rational
+	}
+	trigger = { kehillah_crisis_aftermath_open_trigger = yes }
+	immediate = {
+		domicile.domicile_location ?= { save_scope_as = kehillah_crisis_aftermath_town }
+		domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_crisis_aftermath_lord }
+	}
+
+	# A Purim of our own: a day each year to remember how we were spared (Narbonne, Saragossa).
+	option = {
+		name = kehillah_crisis_act.0010.purim
+		trigger = { primary_title = { NOT = { has_variable = kehillah_crisis_did_purim } } }
+		show_as_unavailable = { always = yes }
+		add_piety = minor_piety_gain
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = 30 }
+		custom_tooltip = kehillah_crisis_purim_tt
+		primary_title = {
+			set_variable = { name = kehillah_crisis_did_purim value = yes }
+			set_variable = { name = kehillah_local_purim value = yes }
+		}
+		ai_chance = { base = 40 }
+	}
+	# Gifts for the lord who stood by us.
+	option = {
+		name = kehillah_crisis_act.0010.lord
+		trigger = {
+			exists = scope:kehillah_crisis_aftermath_lord
+			gold >= medium_gold_value
+			primary_title = { NOT = { has_variable = kehillah_crisis_did_thank_lord } }
+		}
+		show_as_unavailable = { exists = scope:kehillah_crisis_aftermath_lord }
+		pay_short_term_gold = {
+			target = scope:kehillah_crisis_aftermath_lord
+			gold = medium_gold_value
+		}
+		scope:kehillah_crisis_aftermath_lord = { kehillah_shift_outlook_effect = { AMOUNT = 5 } }
+		primary_title = { set_variable = { name = kehillah_crisis_did_thank_lord value = yes } }
+		ai_chance = { base = 30 }
+	}
+	# Thanks for the neighbours who stood with us.
+	option = {
+		name = kehillah_crisis_act.0010.neighbours
+		trigger = {
+			gold >= 20
+			primary_title = { NOT = { has_variable = kehillah_crisis_did_thank_town } }
+		}
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = 20
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = 10 }
+		primary_title = { set_variable = { name = kehillah_crisis_did_thank_town value = yes } }
+		ai_chance = { base = 30 }
+	}
+	option = {
+		name = kehillah_crisis_act.not_now
+		ai_chance = { base = 1 }
+	}
+}
