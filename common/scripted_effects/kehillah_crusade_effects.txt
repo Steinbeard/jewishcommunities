@@ -169,61 +169,15 @@ kehillah_mob_retarget_effect = {
 			limit = { has_variable = kehillah_mob_wait }
 			remove_variable = kehillah_mob_wait
 		}
-		start_war = {
-			cb = kehillah_mob_community_cb
-			target = scope:kehillah_mob_victim
-		}
-		if = {
-			limit = { is_at_war_with = scope:kehillah_mob_victim }
-			# Loot draws men: a tenth more.
-			random_character_war = { save_scope_as = kehillah_mob_war }
-			# No ally answers a call to arms on its own (live 2026-10-14: AI
-			# communities called their allies, who held the town until the
-			# host wore away). Help comes only by persuasion
-			# (kehillah_mob_lord_raises_men_effect) or a player's choice.
-			scope:kehillah_mob_victim = {
-				every_ally = {
-					save_scope_as = kehillah_mob_ally
-					scope:kehillah_mob_war = { set_called_to = scope:kehillah_mob_ally }
-				}
-			}
-			spawn_army = {
-				name = kehillah_mob_army_name
-				levies = {
-					value = var:kehillah_mob_size
-					multiply = 0.1
-					round = yes
-					min = 50
-				}
-				location = scope:kehillah_mob_from
-				war = scope:kehillah_mob_war
-				war_keep_on_attacker_victory = yes
-				inheritable = no
-				uses_supply = yes
-			}
-			set_variable = { name = kehillah_mob_size value = kehillah_mob_total_men_value }
-			kehillah_mob_set_band_effect = yes
-			scope:kehillah_mob_victim_title = {
-				set_variable = { name = kehillah_mob_threat value = scope:kehillah_mob_leader }
-			}
-			scope:kehillah_mob_victim = {
-				set_variable = { name = kehillah_mob_ref value = scope:kehillah_mob_leader }
-				set_variable = { name = kehillah_mob_location_ref value = scope:kehillah_mob_from }
-				set_variable = { name = kehillah_mob_last_town_ref value = scope:kehillah_mob_last_town }
-				set_variable = { name = kehillah_mob_band value = scope:kehillah_mob_leader.var:kehillah_mob_band_now }
-				trigger_event = { id = kehillah_mob.0001 days = 1 }
-				kehillah_notify_region_players_effect = {
-					TYPE = msg_kehillah_community_news_bad
-					TITLE = kehillah_mob_news_turns_t
-					DESC = kehillah_mob_news_turns_d
-				}
-			}
-			debug_log = "kehillah_mob_retarget_effect: the host turns to its next community"
-		}
-		else = {
-			debug_log = "kehillah_mob_retarget_effect: the new war FAILED; the host breaks up"
-			kehillah_mob_end_effect = yes
-		}
+  scope:kehillah_mob_victim = {
+   kehillah_crisis_reserve_intro_effect = { FAMILY = retarget }
+   primary_title = {
+    set_variable = { name = kehillah_crisis_intro_preset value = scope:kehillah_mob_leader }
+    set_variable = { name = kehillah_crisis_intro_spawn value = scope:kehillah_mob_from }
+    set_variable = { name = kehillah_crisis_intro_last_town value = scope:kehillah_mob_last_town }
+   }
+   trigger_event = kehillah_crisis_intro.0001
+  }
 	}
 	else = {
 		kehillah_mob_marches_east_effect = yes
@@ -267,6 +221,7 @@ kehillah_mob_preaching_start_effect = {
 	}
 	random_province = {
 		limit = {
+   scope:kehillah_mob_victim = { kehillah_crisis_can_offer_intro_trigger = yes }
 			has_holding = yes
 			exists = county.holder
 			county.faith = scope:kehillah_mob_town.county.faith
@@ -322,25 +277,31 @@ kehillah_mob_preaching_mark_target_effect = {
 		set_variable = { name = kehillah_mob_threat value = scope:kehillah_mob_leader }
 	}
 	scope:kehillah_mob_victim = {
+  if = {
+   limit = { primary_title.var:kehillah_crisis_intro_pending ?= flag:granada }
+   primary_title = { set_variable = { name = kehillah_crisis_intro_pending value = flag:attack } }
+  }
+  else = { kehillah_crisis_reserve_intro_effect = { FAMILY = attack } }
+		primary_title = { remove_variable = kehillah_crisis_opening }
+		# Identify the opening now; credit it only after acknowledgment creates the situation.
+		kehillah_crisis_set_opening_effect = yes
 		set_variable = { name = kehillah_mob_ref value = scope:kehillah_mob_leader }
 		set_variable = { name = kehillah_mob_location_ref value = scope:kehillah_mob_leader.var:kehillah_mob_location }
 		set_variable = { name = kehillah_mob_size_ref value = scope:kehillah_mob_leader.var:kehillah_mob_following }
-		trigger_event = kehillah_mob.0004
 		if = {
-			limit = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_local_preaching } }
-			kehillah_notify_region_players_effect = {
-				TYPE = msg_kehillah_community_news_bad
-				TITLE = kehillah_mob_news_local_preaching_t
-				DESC = kehillah_mob_news_local_preaching_d
-			}
+			limit = { kehillah_crisis_opening_is_trigger = { KEY = debts } }
+			trigger_event = kehillah_crisis_race.0300
 		}
-		else = {
-			kehillah_notify_region_players_effect = {
-				TYPE = msg_kehillah_community_news_bad
-				TITLE = kehillah_mob_news_preaching_t
-				DESC = kehillah_mob_news_preaching_d
-			}
+		else_if = {
+			limit = { kehillah_crisis_opening_is_trigger = { KEY = holy_week } }
+			trigger_event = kehillah_crisis_race.0310
 		}
+		# 2026-11-01: an accusation's first scene is kehillah_accusation.0001 (kehillah_accusation_begin_effect).
+		else_if = {
+			limit = { kehillah_crisis_opening_is_trigger = { KEY = accusation } }
+			trigger_event = kehillah_accusation.0001
+		}
+		else_if = { limit = { scope:kehillah_mob_leader = { NOT = { has_character_flag = kehillah_crisis_granada_agitator } } } trigger_event = kehillah_mob.0004 }
 	}
 }
 
@@ -358,9 +319,14 @@ kehillah_mob_preaching_tick_effect = {
 		remove_character_flag = kehillah_mob_preaching
 		kehillah_mob_end_effect = yes
 	}
+	else_if = {
+		limit = { var:kehillah_mob_target_title ?= { var:kehillah_crisis_intro_pending ?= flag:attack } }
+		# No following growth, movement, warning clock, or news before the opening is answered.
+	}
 	else = {
 		var:kehillah_mob_target_title.holder = { save_scope_as = kehillah_mob_victim }
 		var:kehillah_mob_target_province = { save_scope_as = kehillah_mob_town }
+		scope:kehillah_mob_victim = { kehillah_crisis_tick_effect = { DAYS = 7 } }
 		# His following grows.
 		change_variable = { name = kehillah_mob_preach_news_days add = 7 }
 		if = {
@@ -391,6 +357,7 @@ kehillah_mob_preaching_tick_effect = {
 				limit = {
 					is_ai = no
 					scope:kehillah_mob_leader = { var:kehillah_mob_preach_news_days >= 28 }
+					primary_title = { NOT = { has_variable = kehillah_crisis_stage } }
 				}
 				if = {
 					limit = { scope:kehillah_mob_leader = { has_character_flag = kehillah_mob_local_preaching } }
@@ -416,15 +383,21 @@ kehillah_mob_preaching_tick_effect = {
 			set_variable = { name = kehillah_mob_preach_news_days value = 0 }
 		}
 		change_variable = { name = kehillah_mob_preach_days add = -7 }
+		# 2026-11-01: while the community's crisis situation runs the race, the race decides when
+		# the warning ends (kehillah_crisis_armed/spared_start_effect). The countdown is only a
+		# fallback for a community with no situation.
 		if = {
-			limit = { var:kehillah_mob_preach_days <= 0 }
+			limit = {
+				var:kehillah_mob_preach_days <= 0
+				NOT = { var:kehillah_mob_target_title ?= { kehillah_crisis_title_race_running_trigger = yes } }
+			}
 			kehillah_mob_preaching_ends_effect = yes
 		}
 	}
 }
 
 # He sets out: his following becomes the host. Scope: the preacher.
-kehillah_mob_preaching_ends_effect = {
+kehillah_mob_preaching_mobilize_effect = {
 	save_scope_as = kehillah_mob_preset_leader
 	remove_character_flag = kehillah_mob_preaching
 	var:kehillah_mob_location = { save_scope_as = kehillah_mob_spawn }
@@ -437,6 +410,10 @@ kehillah_mob_preaching_ends_effect = {
 	}
 	var:kehillah_mob_target_title.holder ?= {
 		if = {
+			limit = { scope:kehillah_mob_preset_leader = { has_character_flag = kehillah_crisis_granada_agitator } }
+			kehillah_granada_night_effect = yes
+		}
+		else_if = {
 			limit = { scope:kehillah_mob_preset_leader = { has_character_flag = kehillah_mob_local_preaching } }
 			kehillah_mob_raise_effect = {
 				SIZE = scope:kehillah_mob_preached_size
@@ -460,6 +437,7 @@ kehillah_mob_preaching_turn_effect = {
 	var:kehillah_mob_location = { save_scope_as = kehillah_mob_from }
 	var:kehillah_mob_target_title ?= {
 		save_scope_as = kehillah_mob_old_title
+		holder ?= { kehillah_crisis_resolve_effect = { OUTCOME = 3 } }
 		set_variable = { name = kehillah_mob_paid_off value = yes years = 1 }
 		if = {
 			limit = { has_variable = kehillah_mob_threat }
@@ -503,4 +481,96 @@ kehillah_mob_preaching_turn_effect = {
 		remove_character_flag = kehillah_mob_preaching
 		kehillah_mob_end_effect = yes
 	}
+}
+
+# The end of the warning. With the race running, only Granada's night calls this, and it raises
+# the host outright; otherwise (no situation) it is the old escalation check.
+kehillah_mob_preaching_ends_effect = {
+ var:kehillah_mob_target_title.holder ?= { save_scope_as = kehillah_crisis_victim }
+ if = {
+  limit = { var:kehillah_mob_target_title ?= { kehillah_crisis_title_race_running_trigger = yes } }
+  kehillah_mob_preaching_mobilize_effect = yes
+ }
+ else_if = {
+  limit = { exists = scope:kehillah_crisis_victim }
+  random_list = {
+   0 = { modifier = { add = scope:kehillah_crisis_victim.kehillah_crisis_outbreak_chance_value } kehillah_mob_preaching_mobilize_effect = yes }
+   0 = {
+    modifier = { add = scope:kehillah_crisis_victim.kehillah_crisis_no_outbreak_value }
+    scope:kehillah_crisis_victim = { kehillah_crisis_resolve_effect = { OUTCOME = 1 } }
+    remove_character_flag = kehillah_mob_preaching
+    kehillah_mob_end_effect = yes
+   }
+  }
+ }
+ else = { remove_character_flag = kehillah_mob_preaching kehillah_mob_end_effect = yes }
+}
+
+# Scope: an existing host's leader, after its new target acknowledges the trigger event.
+kehillah_mob_retarget_acknowledged_effect = {
+ save_scope_as = kehillah_mob_leader
+ var:kehillah_mob_target_title = {
+  save_scope_as = kehillah_mob_victim_title
+  holder = { save_scope_as = kehillah_mob_victim domicile.domicile_location = { save_scope_as = kehillah_mob_town } }
+ }
+ var:kehillah_mob_location = { save_scope_as = kehillah_mob_from }
+		start_war = {
+			cb = kehillah_mob_community_cb
+			target = scope:kehillah_mob_victim
+		}
+		if = {
+			limit = { is_at_war_with = scope:kehillah_mob_victim }
+			# Loot draws men: a tenth more.
+			random_character_war = { save_scope_as = kehillah_mob_war }
+			# No ally answers a call to arms on its own (live 2026-10-14: AI
+			# communities called their allies, who held the town until the
+			# host wore away). Help comes only by persuasion
+			# (kehillah_mob_lord_raises_men_effect) or a player's choice.
+			scope:kehillah_mob_victim = {
+				every_ally = {
+					save_scope_as = kehillah_mob_ally
+					scope:kehillah_mob_war = { set_called_to = scope:kehillah_mob_ally }
+				}
+			}
+			spawn_army = {
+				name = kehillah_mob_army_name
+				levies = {
+					value = var:kehillah_mob_size
+					multiply = 0.1
+					round = yes
+					min = 50
+				}
+				location = scope:kehillah_mob_from
+				war = scope:kehillah_mob_war
+				war_keep_on_attacker_victory = yes
+				inheritable = no
+				uses_supply = yes
+			}
+			set_variable = { name = kehillah_mob_size value = kehillah_mob_total_men_value }
+			kehillah_mob_set_band_effect = yes
+			scope:kehillah_mob_victim_title = {
+				set_variable = { name = kehillah_mob_threat value = scope:kehillah_mob_leader }
+			}
+			scope:kehillah_mob_victim = {
+    kehillah_crisis_begin_effect = yes
+    primary_title = { set_variable = { name = kehillah_crisis_stage value = 2 } set_variable = { name = kehillah_crisis_pending_opening value = flag:crusade } }
+    kehillah_crisis_set_opening_effect = yes
+    primary_title = { kehillah_crisis_situation_sync_effect = yes kehillah_crisis_announce_once_effect = yes }
+    if = { limit = { is_ai = yes } kehillah_mob_ai_answers_effect = yes }
+				set_variable = { name = kehillah_mob_ref value = scope:kehillah_mob_leader }
+				set_variable = { name = kehillah_mob_location_ref value = scope:kehillah_mob_from }
+				set_variable = { name = kehillah_mob_last_town_ref value = scope:kehillah_mob_last_town }
+				set_variable = { name = kehillah_mob_band value = scope:kehillah_mob_leader.var:kehillah_mob_band_now }
+				kehillah_notify_region_players_effect = {
+					TYPE = msg_kehillah_community_news_bad
+					TITLE = kehillah_mob_news_turns_t
+					DESC = kehillah_mob_news_turns_d
+				}
+			}
+			debug_log = "kehillah_mob_retarget_effect: the host turns to its next community"
+		}
+		else = {
+			debug_log = "kehillah_mob_retarget_effect: the new war FAILED; the host breaks up"
+			kehillah_mob_end_effect = yes
+		}
 }

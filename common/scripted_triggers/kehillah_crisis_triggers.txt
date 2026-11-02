@@ -1,0 +1,221 @@
+﻿# Title-based crisis state; player/successor share the same record.
+kehillah_crisis_warning_trigger = {
+ government_has_flag = government_is_kehillah
+ primary_title ?= { has_variable = kehillah_crisis_stage var:kehillah_crisis_stage = 1 }
+ primary_title.var:kehillah_mob_threat ?= { is_alive = yes has_character_flag = kehillah_mob_preaching }
+}
+kehillah_crisis_relay_valid_trigger = {
+ exists = scope:kehillah_crisis_title.holder
+ scope:kehillah_crisis_title = { var:kehillah_crisis_epoch = scope:kehillah_crisis_epoch }
+ scope:kehillah_crisis_title.holder = { government_has_flag = government_is_kehillah }
+}
+
+# A local residence edict is effective only under its living issuing sovereign.
+kehillah_crisis_targeted_edict_valid_trigger = {
+ primary_title ?= { has_variable = kehillah_crisis_targeted_expulsion }
+ primary_title.var:kehillah_expulsion_host ?= { is_alive = yes }
+ domicile.domicile_location.county.holder.top_liege ?= primary_title.var:kehillah_expulsion_host
+}
+
+# --- The Agitation race (2026-11-01) ---
+
+# Scope: a kehillah_community_crisis situation. Its title still points back at it, in this epoch.
+kehillah_crisis_situation_link_valid_trigger = {
+ situation_type = kehillah_community_crisis
+ exists = var:kehillah_crisis_title
+ var:kehillah_crisis_title.var:kehillah_crisis_situation ?= this
+ var:kehillah_crisis_epoch = var:kehillah_crisis_title.var:kehillah_crisis_epoch
+}
+
+# Scope: the situation. The race is on: Agitation, a valid link, and no event has decided it yet.
+kehillah_crisis_race_running_trigger = {
+ situation_current_phase = kehillah_crisis_warning
+ kehillah_crisis_situation_link_valid_trigger = yes
+ var:kehillah_crisis_title = { has_variable = kehillah_crisis_stage var:kehillah_crisis_stage = 1 }
+}
+
+# Scope: a community title. Its own crisis situation is running the race.
+kehillah_crisis_title_race_running_trigger = {
+ exists = var:kehillah_crisis_situation
+ var:kehillah_crisis_situation = { kehillah_crisis_race_running_trigger = yes }
+}
+
+# Scope: community leader. A preparation can start: the warning, the leader free and present, no
+# task running, this one not yet done, and the gold. DONE: the title variable it sets when done.
+kehillah_crisis_can_prepare_trigger = {
+ kehillah_crisis_warning_trigger = yes
+ is_imprisoned = no
+ NOT = { has_variable = kehillah_mob_away }
+ primary_title = { NOT = { has_variable = kehillah_crisis_action } NOT = { has_variable = $DONE$ } }
+ gold >= $COST$
+}
+
+# Scope: community leader. The elders can gather while the agitator lives.
+kehillah_crisis_can_gather_council_trigger = {
+ primary_title.var:kehillah_mob_threat ?= { is_alive = yes }
+ NOT = { has_variable = kehillah_mob_away }
+ is_imprisoned = no
+}
+
+# Scope: community leader. This crisis has not yet had the warning event KEY.
+kehillah_crisis_development_unseen_trigger = {
+ primary_title = { NOT = { is_target_in_variable_list = { name = kehillah_crisis_developments_seen target = flag:$KEY$ } } }
+}
+
+# Scope: community leader. A once-per-crisis action: the warning, the leader free and present, and
+# ONCE (a title variable) not yet set.
+kehillah_crisis_can_act_trigger = {
+ kehillah_crisis_warning_trigger = yes
+ is_imprisoned = no
+ NOT = { has_variable = kehillah_mob_away }
+ custom_tooltip = {
+  text = kehillah_crisis_once_per_crisis_tt
+  primary_title = { NOT = { has_variable = $ONCE$ } }
+ }
+}
+
+# --- Step 1d: the Armed race ---
+
+# Scope: the situation. The host's race is on: Armed host, a valid link, and the stage still 2.
+kehillah_crisis_armed_race_running_trigger = {
+ situation_current_phase = kehillah_crisis_armed
+ kehillah_crisis_situation_link_valid_trigger = yes
+ var:kehillah_crisis_title = { has_variable = kehillah_crisis_stage var:kehillah_crisis_stage = 2 }
+}
+
+# Scope: a community title. Its own crisis situation is running the Armed race.
+kehillah_crisis_title_armed_race_running_trigger = {
+ exists = var:kehillah_crisis_situation
+ var:kehillah_crisis_situation = { kehillah_crisis_armed_race_running_trigger = yes }
+}
+
+# Scope: community leader. An action while the host comes: once per crisis (ONCE), free, present.
+kehillah_crisis_can_act_armed_trigger = {
+ government_has_flag = government_is_kehillah
+ primary_title = { kehillah_crisis_title_armed_race_running_trigger = yes }
+ is_imprisoned = no
+ NOT = { has_variable = kehillah_mob_away }
+ custom_tooltip = {
+  text = kehillah_crisis_once_per_crisis_tt
+  primary_title = { NOT = { has_variable = $ONCE$ } }
+ }
+}
+
+# --- Step 1e: openings ---
+
+# Scope: community leader. This crisis began with opening KEY.
+kehillah_crisis_opening_is_trigger = {
+ primary_title ?= { var:kehillah_crisis_opening ?= flag:$KEY$ }
+}
+
+# Scope: any. It is Holy Week season (the quarterly pulse and monthly race see March and April).
+kehillah_crisis_holy_week_season_trigger = {
+ OR = { current_month = 3 current_month = 4 }
+}
+
+# Scope: community leader. No crisis, no agitator, no recent opening: a new opening may begin.
+kehillah_crisis_quiet_trigger = {
+ kehillah_crisis_can_offer_intro_trigger = yes
+ government_has_flag = government_is_kehillah
+ is_ai = no
+ exists = domicile.domicile_location.county.holder.top_liege
+ primary_title = {
+  NOT = { has_variable = kehillah_mob_threat }
+  NOT = { has_variable = kehillah_crisis_opening_cooldown }
+  OR = {
+   NOT = { has_variable = kehillah_crisis_stage }
+   var:kehillah_crisis_stage = 4
+  }
+ }
+}
+
+# --- The three standing actions (2026-11-01, docs/spec/2026-11-01-three-standing-actions.md) ---
+
+# Scope: community leader. A race is running for his community: Agitation, or the host armed.
+kehillah_crisis_actions_open_trigger = {
+ government_has_flag = government_is_kehillah
+ OR = {
+  kehillah_crisis_warning_trigger = yes
+  primary_title = { kehillah_crisis_title_armed_race_running_trigger = yes }
+ }
+}
+
+# Scope: community leader. The host's race (the Armed phase) is running for his community.
+kehillah_crisis_armed_open_trigger = {
+ government_has_flag = government_is_kehillah
+ primary_title = { kehillah_crisis_title_armed_race_running_trigger = yes }
+}
+
+# Scope: community leader. He is free and at home to act.
+kehillah_crisis_leader_free_trigger = {
+ is_imprisoned = no
+ NOT = { has_variable = kehillah_mob_away }
+}
+
+# Scope: community leader. His community has a crisis window: the elders' hub (kehillah_mob.0100)
+# stays shut, so the window is the one place to act.
+kehillah_crisis_has_window_trigger = {
+ primary_title ?= {
+  exists = var:kehillah_crisis_situation
+  var:kehillah_crisis_situation = { kehillah_crisis_situation_link_valid_trigger = yes }
+ }
+}
+
+# Scope: community leader. The danger has passed and the quarter was not struck: the aftermath's
+# actions are open (2026-11-01).
+kehillah_crisis_aftermath_open_trigger = {
+ government_has_flag = government_is_kehillah
+ primary_title ?= {
+  has_variable = kehillah_crisis_outcome
+  var:kehillah_crisis_outcome < 4
+  var:kehillah_crisis_situation ?= {
+   OR = {
+    situation_current_phase = kehillah_crisis_spared
+    situation_current_phase = kehillah_crisis_held
+    situation_current_phase = kehillah_crisis_judgement
+    situation_current_phase = kehillah_crisis_recovery
+   }
+  }
+ }
+}
+
+# --- Scene pages (2026-11-01, kehillah_crisis_act_page_start_effect) ---
+
+# Scope: community leader. Action KEY is listed in this scene and falls on the page shown; the AI
+# sees every page. Written as trigger_ifs so it never appears in an option's tooltip, and chained so
+# an unset variable is never read. (A NOT around several triggers is a NOR in CK3: the first version
+# wrapped them all in one NOT, and every listed action showed on every page.)
+kehillah_crisis_act_on_page_trigger = {
+ trigger_if = {
+  limit = { NOT = { exists = var:kehillah_act_listing_$KEY$ } }
+  always = no
+ }
+ trigger_else_if = {
+  limit = { NOT = { var:kehillah_act_listing_$KEY$ = var:kehillah_act_listing } }
+  always = no
+ }
+ trigger_else_if = {
+  limit = {
+   is_ai = no
+   OR = {
+    var:kehillah_act_slot_$KEY$ <= var:kehillah_act_page_lo
+    var:kehillah_act_slot_$KEY$ > var:kehillah_act_page_hi
+   }
+  }
+  always = no
+ }
+}
+
+# Scope: community leader. More actions are listed than this page shows.
+kehillah_crisis_act_more_trigger = {
+ is_ai = no
+ var:kehillah_act_count > var:kehillah_act_page_hi
+}
+
+# Scope: community leader. This is the scene's last page (the AI's only one).
+kehillah_crisis_act_last_page_trigger = {
+ OR = {
+  is_ai = yes
+  var:kehillah_act_count <= var:kehillah_act_page_hi
+ }
+}

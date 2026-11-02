@@ -30,60 +30,15 @@ kehillah_pogrom_scenes_start_effect = {
 	scope:kehillah_pogrom_neighbor ?= {
 		root = { set_variable = { name = kehillah_pogrom_neighbor_ref value = scope:kehillah_pogrom_neighbor } }
 	}
-	if = {
-		limit = { primary_title = { has_variable = kehillah_mob_castle_fell } }
-		trigger_event = kehillah_pogrom.0010
-	}
-	else = {
-		random_list = {
-			50 = { trigger_event = kehillah_pogrom.0001 }
-			50 = { trigger_event = kehillah_pogrom.0002 }
-		}
-	}
+ primary_title = { set_variable = { name = kehillah_crisis_scene_count value = 0 } clear_variable_list = kehillah_crisis_scenes_seen }
+ kehillah_crisis_next_attack_scene_effect = yes
 	debug_log = "kehillah_pogrom_scenes_start_effect: the pogrom begins (scenes)"
 }
 
-# Scene 2, a day later: the scrolls, or the archive where there are books.
-kehillah_pogrom_to_fire_effect = {
-	if = {
-		limit = {
-			domicile ?= {
-				OR = {
-					has_domicile_building_or_higher = kehillah_beit_midrash_01
-					has_domicile_building_or_higher = kehillah_sofer_workshop_01
-				}
-			}
-		}
-		hidden_effect = {
-			random_list = {
-				50 = { trigger_event = { id = kehillah_pogrom.0020 days = 1 } }
-				50 = { trigger_event = { id = kehillah_pogrom.0021 days = 1 } }
-			}
-		}
-	}
-	else = {
-		trigger_event = { id = kehillah_pogrom.0020 days = 1 }
-	}
-}
-
-# Scene 3, a day later: the font, or the river in a riverside town.
-kehillah_pogrom_to_baptism_effect = {
-	if = {
-		limit = {
-			domicile.domicile_location ?= { is_riverside_province = yes }
-			NOT = { kehillah_mob_is_muslim_trigger = yes }
-		}
-		hidden_effect = {
-			random_list = {
-				50 = { trigger_event = { id = kehillah_pogrom.0030 days = 1 } }
-				50 = { trigger_event = { id = kehillah_pogrom.0031 days = 1 } }
-			}
-		}
-	}
-	else = {
-		trigger_event = { id = kehillah_pogrom.0030 days = 1 }
-	}
-}
+# 2026-10-29: conditional encounters replace the former compulsory fire/font sequence.
+# Both old transitions use one conditional pool. No mandatory fire/conversion ladder.
+kehillah_pogrom_to_fire_effect = { kehillah_crisis_next_attack_scene_effect = yes }
+kehillah_pogrom_to_baptism_effect = { kehillah_crisis_next_attack_scene_effect = yes }
 
 # The answers at the font. Each sets the community's choice and ends the
 # scenes; the pogrom itself runs in a hidden event (kehillah_pogrom.0090),
@@ -237,4 +192,51 @@ kehillah_anus_crypto_effect = {
 			make_character_crypto_religionist_effect = { CRYPTO_RELIGION = scope:kehillah_anus_old_faith }
 		}
 	}
+}
+
+# At most two attack encounters; distinct families within an attack, with the
+# previous attack's opening excluded from the next opening when possible.
+kehillah_crisis_next_attack_scene_effect = {
+ if = {
+  limit = { primary_title = { has_variable = kehillah_crisis_scene_count var:kehillah_crisis_scene_count >= 2 } }
+  trigger_event = kehillah_pogrom.0090
+ }
+ else = {
+  primary_title = {
+   if = { limit = { NOT = { has_variable = kehillah_crisis_scene_count } } set_variable = { name = kehillah_crisis_scene_count value = 1 } }
+   change_variable = { name = kehillah_crisis_scene_count add = 1 }
+  }
+  random_list = {
+   15 = {
+    trigger = { primary_title = { NOT = { has_variable = kehillah_mob_castle_fell } NOT = { is_target_in_variable_list = { name = kehillah_crisis_scenes_seen target = flag:crisis_scene_1 } } OR = { var:kehillah_crisis_scene_count > 1 NOT = { has_variable = kehillah_crisis_last_opening } NOT = { var:kehillah_crisis_last_opening = 1 } } } }
+    primary_title = { add_to_variable_list = { name = kehillah_crisis_scenes_seen target = flag:crisis_scene_1 } if = { limit = { var:kehillah_crisis_scene_count = 1 } set_variable = { name = kehillah_crisis_last_opening value = 1 } } }
+    trigger_event = { id = kehillah_pogrom.0001 days = 1 }
+   }
+   15 = {
+    trigger = { primary_title = {  NOT = { is_target_in_variable_list = { name = kehillah_crisis_scenes_seen target = flag:crisis_scene_2 } } OR = { var:kehillah_crisis_scene_count > 1 NOT = { has_variable = kehillah_crisis_last_opening } NOT = { var:kehillah_crisis_last_opening = 2 } } } }
+    primary_title = { add_to_variable_list = { name = kehillah_crisis_scenes_seen target = flag:crisis_scene_2 } if = { limit = { var:kehillah_crisis_scene_count = 1 } set_variable = { name = kehillah_crisis_last_opening value = 2 } } }
+    trigger_event = { id = kehillah_pogrom.0020 days = 1 }
+   }
+   8 = {
+    trigger = { primary_title = {  NOT = { is_target_in_variable_list = { name = kehillah_crisis_scenes_seen target = flag:crisis_scene_3 } } OR = { var:kehillah_crisis_scene_count > 1 NOT = { has_variable = kehillah_crisis_last_opening } NOT = { var:kehillah_crisis_last_opening = 3 } } } }
+    primary_title = { add_to_variable_list = { name = kehillah_crisis_scenes_seen target = flag:crisis_scene_3 } if = { limit = { var:kehillah_crisis_scene_count = 1 } set_variable = { name = kehillah_crisis_last_opening value = 3 } } }
+    trigger_event = { id = kehillah_pogrom.0030 days = 1 }
+   }
+   22 = {
+    trigger = { primary_title = { NOT = { has_variable = kehillah_scene_children_betrayed } NOT = { is_target_in_variable_list = { name = kehillah_crisis_scenes_seen target = flag:crisis_scene_4 } } OR = { var:kehillah_crisis_scene_count > 1 NOT = { has_variable = kehillah_crisis_last_opening } NOT = { var:kehillah_crisis_last_opening = 4 } } } }
+    primary_title = { add_to_variable_list = { name = kehillah_crisis_scenes_seen target = flag:crisis_scene_4 } if = { limit = { var:kehillah_crisis_scene_count = 1 } set_variable = { name = kehillah_crisis_last_opening value = 4 } } }
+    trigger_event = { id = kehillah_crisis.0300 days = 1 }
+   }
+   22 = {
+    trigger = { primary_title = {  NOT = { is_target_in_variable_list = { name = kehillah_crisis_scenes_seen target = flag:crisis_scene_5 } } OR = { var:kehillah_crisis_scene_count > 1 NOT = { has_variable = kehillah_crisis_last_opening } NOT = { var:kehillah_crisis_last_opening = 5 } } } }
+    primary_title = { add_to_variable_list = { name = kehillah_crisis_scenes_seen target = flag:crisis_scene_5 } if = { limit = { var:kehillah_crisis_scene_count = 1 } set_variable = { name = kehillah_crisis_last_opening value = 5 } } }
+    trigger_event = { id = kehillah_crisis.0301 days = 1 }
+   }
+   30 = {
+    trigger = { primary_title = { has_variable = kehillah_mob_castle_fell NOT = { is_target_in_variable_list = { name = kehillah_crisis_scenes_seen target = flag:crisis_scene_6 } } OR = { var:kehillah_crisis_scene_count > 1 NOT = { has_variable = kehillah_crisis_last_opening } NOT = { var:kehillah_crisis_last_opening = 6 } } } }
+    primary_title = { add_to_variable_list = { name = kehillah_crisis_scenes_seen target = flag:crisis_scene_6 } if = { limit = { var:kehillah_crisis_scene_count = 1 } set_variable = { name = kehillah_crisis_last_opening value = 6 } } }
+    trigger_event = { id = kehillah_pogrom.0010 days = 1 }
+   }
+  }
+ }
 }

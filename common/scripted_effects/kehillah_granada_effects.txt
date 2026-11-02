@@ -8,14 +8,18 @@ kehillah_granada_schedule_effect = {
 	if = {
 		limit = {
 			kehillah_granada_chain_valid_trigger = yes
+			this = character:9000216
+			current_date >= 1066.9.15
 			current_date < 1066.12.1
+			NOT = { has_character_flag = kehillah_granada_scheduled }
 		}
-		trigger_event = { id = kehillah_granada.0001 days = 30 }
-		trigger_event = { id = kehillah_granada.0002 days = 65 }
-		# 30 December 1066 from the 15 September bookmark.
-		trigger_event = { id = kehillah_granada.0003 days = 106 }
-		# V43: Azariah, and the rest of Sepharad hears.
-		trigger_event = { id = kehillah_granada.0006 days = 45 }
+		add_character_flag = kehillah_granada_scheduled
+		kehillah_granada_place_poet_effect = yes
+		trigger_event = { id = kehillah_granada.0008 days = 7 }
+		trigger_event = { id = kehillah_granada.0019 days = 30 }
+		# Subsequent crisis scenes are scheduled when the poem is acknowledged.
+		# V43: the rest of Sepharad hears. (Azariah's road to Lucena is a Prepare the Quarter option
+		# since 2026-11-01, events/kehillah_crisis_act_events.txt.)
 		# (through a relay on the emir, to whoever reads them on the day)
 		domicile.domicile_location.county.holder.top_liege ?= {
 			trigger_event = { id = kehillah_granada.0015 days = 20 }
@@ -23,6 +27,23 @@ kehillah_granada_schedule_effect = {
 			trigger_event = { id = kehillah_granada.0017 days = 85 }
 		}
 		debug_log = "kehillah_granada_schedule_effect: the Granada chain is scheduled"
+	}
+}
+
+# Authored staging: Abu Ishaq lives at Badis's court in this scenario.
+# Only the historical ruler receives him; a new ruler does not inherit a
+# forced courtier. Safe to repeat for the console probe, without moving him
+# back if he has already left the court during play.
+kehillah_granada_place_poet_effect = {
+	if = {
+		limit = {
+			domicile.domicile_location.county.holder.top_liege ?= { this = character:45016 }
+			character:9000235 ?= { is_alive = yes NOT = { has_character_flag = kehillah_granada_poet_placed } }
+		}
+		character:9000235 = {
+			set_employer = character:45016
+			add_character_flag = kehillah_granada_poet_placed
+		}
 	}
 }
 
@@ -39,20 +60,27 @@ kehillah_granada_adjust_severity_effect = {
 
 # The mob rises in the city itself. Scope: the leader.
 kehillah_granada_night_effect = {
+	add_character_flag = kehillah_granada_night_done
 	add_character_flag = kehillah_granada_marked
-	# V43: the gate scene and the news, a fortnight on.
+	# V43: the gate scene and the news, a fortnight after the night (kehillah_granada_muster_days + 15).
 	set_global_variable = { name = kehillah_granada_night_came value = yes }
 	domicile.domicile_location.county.holder.top_liege ?= {
-		trigger_event = { id = kehillah_granada.0014 days = 15 }
+		trigger_event = { id = kehillah_granada.0014 days = 51 }
 	}
 	domicile.domicile_location ?= { save_scope_as = kehillah_mob_spawn }
 	kehillah_mob_raise_effect = {
 		SIZE = kehillah_granada_mob_size
 		SEVERITY = kehillah_granada_mob_severity
 	}
+	# 2026-11-01: the Sanhaja muster in the barracks first (kehillah_granada_muster_days); the night,
+	# kehillah_granada.0005, comes when they march.
+	scope:kehillah_mob_leader ?= {
+		set_variable = { name = kehillah_mob_march_delay value = kehillah_granada_muster_days }
+	}
 	if = {
 		limit = { is_ai = no }
-		trigger_event = kehillah_granada.0005
+		trigger_event = kehillah_granada.0021
+		trigger_event = { id = kehillah_granada.0005 days = 34 }
 	}
 	debug_log = "kehillah_granada_night_effect: the mob rises in Granada"
 }
@@ -101,4 +129,89 @@ kehillah_granada_vizier_falls_effect = {
 		hidden_effect = { kehillah_granada_family_to_lucena_effect = yes }
 	}
 	debug_log = "kehillah_granada_vizier_falls_effect: Joseph ha-Nagid is killed"
+}
+
+# The poem starts a local crisis; the generated organizer is distinct from its author.
+kehillah_granada_warning_effect = {
+ if = {
+  limit = { NOT = { primary_title = { has_variable = kehillah_mob_threat } } }
+  save_scope_as = kehillah_mob_victim
+  primary_title = { save_scope_as = kehillah_mob_victim_title }
+  domicile.domicile_location = { save_scope_as = kehillah_mob_town save_scope_as = kehillah_mob_preach_place }
+  # 2026-11-01 (Daniel): Abu Ishaq himself leads, while he lives and is free to; otherwise a
+  # generated wa'iz. kehillah_mob_end_effect sends him home instead of vanishing him.
+  if = {
+   limit = {
+    character:9000235 ?= {
+     is_alive = yes
+     is_landed = no
+     NOT = { has_character_flag = kehillah_mob_leader }
+    }
+   }
+   character:9000235 = {
+    save_scope_as = kehillah_mob_leader
+    add_character_flag = kehillah_granada_poet_leader
+   }
+  }
+  else = { kehillah_mob_create_preacher_effect = { PLACE = scope:kehillah_mob_preach_place } }
+  scope:kehillah_mob_leader = {
+   add_character_flag = kehillah_mob_preaching
+   add_character_flag = kehillah_mob_local_preaching
+   add_character_flag = kehillah_crisis_granada_agitator
+   set_variable = { name = kehillah_mob_following value = scope:kehillah_mob_victim.kehillah_granada_mob_size }
+   set_variable = { name = kehillah_mob_base_severity value = scope:kehillah_mob_victim.kehillah_granada_mob_severity }
+   set_variable = { name = kehillah_mob_preach_news_days value = 0 }
+   set_variable = { name = kehillah_mob_preach_days value = 76 }
+   set_variable = { name = kehillah_mob_target_title value = scope:kehillah_mob_victim_title }
+   set_variable = { name = kehillah_mob_target_province value = scope:kehillah_mob_town }
+   set_variable = { name = kehillah_mob_location value = scope:kehillah_mob_town }
+   create_story = { type = story_kehillah_preacher }
+  }
+  kehillah_mob_preaching_mark_target_effect = yes
+ }
+}
+
+# 2026-11-01. Scope: Abu Ishaq, when his host or his preaching ends. He is a historical man, not a
+# generated preacher: he does not vanish. His host's title goes, and he returns to the emir's court.
+kehillah_granada_poet_stands_down_effect = {
+	remove_character_flag = kehillah_granada_poet_leader
+	if = {
+		limit = { has_character_flag = kehillah_mob_leader }
+		remove_character_flag = kehillah_mob_leader
+	}
+	if = {
+		limit = { has_character_flag = kehillah_mob_preaching }
+		remove_character_flag = kehillah_mob_preaching
+	}
+	var:kehillah_mob_title ?= { save_scope_as = kehillah_granada_poet_title }
+	if = {
+		limit = { exists = scope:kehillah_granada_poet_title }
+		destroy_title = scope:kehillah_granada_poet_title
+		remove_variable = kehillah_mob_title
+	}
+	if = {
+		limit = {
+			character:45016 ?= { is_alive = yes is_landed = yes }
+			NOT = { is_courtier_of = character:45016 }
+		}
+		character:45016 = { add_courtier = prev }
+	}
+	debug_log = "kehillah_granada_poet_stands_down_effect: Abu Ishaq goes home"
+}
+
+# 2026-11-01. Scope: Joseph, while the race still runs (kehillah_granada.0003, about fifteen weeks
+# in). Al-Mu'tasim's horsemen are seen on the eastern road, and the Sanhaja say the vizier sent for
+# them: the plot the poem charges. A large push toward the host, larger if Joseph's own letter to
+# Almeria was found (kehillah_crisis_almeria_riders_points_value); not the night outright, so a
+# community far enough ahead can still be spared.
+kehillah_granada_almeria_riders_effect = {
+	add_character_flag = kehillah_granada_riders_came
+	if = {
+		limit = { is_ai = no }
+		trigger_event = kehillah_granada.0020
+	}
+	else = {
+		primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_almeria_riders_points_value } }
+	}
+	debug_log = "kehillah_granada_almeria_riders_effect: riders from Almeria"
 }

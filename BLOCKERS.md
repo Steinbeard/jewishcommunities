@@ -1,4 +1,39 @@
-﻿## Overnight V42 slice 3, Dayyan trial -- 2026-10-15 05:17 America/New_York
+## Catalyst feedback and Granada prose - 2026-11-01, interactive session
+
+- Implemented on the current primary checkout/branch at Daniel's request: actual catalyst
+  names, point values and destinations in attack-crisis toasts; recurring flavor reports share
+  the same notice. Rewrote the study-hall threat and the Sanhaja muster event. See
+  [build note](docs/implementation/2026-11-01-crisis-catalyst-notices.md) and
+  [verification record](docs/testing/2026-11-01-crisis-catalyst-notices.md).
+- Five new source tests and ten existing lifecycle tests pass. xTiger remains at the unchanged
+  15-error / 101-warning baseline, with no new diagnostic signatures.
+- Runtime/UI probe UNRUN: Luna still cannot inspect CK3 process ownership (CIM access denied),
+  and no xTiger tools are exposed. No game was launched or controlled.
+- Git staging failed: `.git/index.lock` cannot be created (`Permission denied`). This session
+  has read-only Git metadata access, so no commit/push/PR was possible. Changes remain in the
+  requested checkout. Preserve the pre-existing Nagid edits, localization revisions and
+  multi-community proposal when staging this focused unit and its new ROADMAP hunk later.
+
+## Crisis trigger acknowledgment - 2026-11-01, interactive session
+
+**RESOLVED 2026-11-01:** committed and pushed by the Claude crisis session, crisis unit and its ROADMAP hunk only; the Nagid edits were left unstaged.
+
+- Daniel requested this work in the current primary worktree and on its existing branch,
+  `codex/crisis-situation-spec-20261031`. Implementation and ROADMAP update are complete;
+  see [the build note](docs/implementation/2026-11-01-crisis-acknowledgment.md) and
+  [validation/probe record](docs/testing/2026-11-01-crisis-acknowledgment.md).
+- Ten source-contract checks pass. xTiger matches the pre-edit 15-error / 101-warning baseline,
+  with no new diagnostic signatures. Original opening-response effects were token-compared.
+- Live check UNRUN: Luna could not inspect CK3 process ownership (CIM access denied), and no
+  xTiger game tools were exposed. No game was launched or controlled. Runtime and UI checks,
+  including initial response points and the new native alert, remain pending.
+- Commit/push/PR BLOCKED: `git add` failed to create `.git/index.lock` with `Permission denied`;
+  this session's filesystem policy grants read-only access to `.git`. No index entries or commit
+  were written. Changes are present but uncommitted in the requested checkout. Existing unrelated
+  Nagid edits remain unchanged. A later session with Git metadata write access should stage only
+  this crisis unit and its new top-of-ROADMAP hunk, commit/push, and create/update its PR.
+
+## Overnight V42 slice 3, Dayyan trial -- 2026-10-15 05:17 America/New_York
 
 - Completed one option from the current highest-priority TODO: the Dayyan's
   Talmud-trial defence now uses a vanilla Learning challenge against the accuser.

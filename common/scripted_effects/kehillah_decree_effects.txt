@@ -1,0 +1,448 @@
+﻿# A decree against the Jews (docs/spec/2026-11-01-decree-situation.md), 2026-11-01. Replaces the
+# one-event badge and servants' decree (kehillah_incident.0010, .0040) with the kehillah_decree
+# situation.
+
+# Scope: a Kehillah leader (the incident director, or the console). KIND: badge, ghiyar, servants.
+kehillah_decree_begin_effect = {
+	# The leader this decree falls on. Never root: a player lord's seal (kehillah_decree.0100) runs this
+	# effect with the lord as root (live test 2026-11-01: the situation started with no town).
+	save_scope_as = kehillah_decree_new_leader
+	# 2026-11-01: a player lord decides whether the decree drafted in his name is proclaimed at all
+	# (kehillah_decree.0100). Proclaiming it runs this effect again, with the lord's leave.
+	if = {
+		limit = {
+			kehillah_decree_can_begin_trigger = yes
+			domicile.domicile_location.county.holder.top_liege ?= {
+				is_ai = no
+				NOT = { has_character_flag = kehillah_decree_proclaiming }
+				NOT = { this = scope:kehillah_decree_new_leader }
+			}
+		}
+		domicile.domicile_location.county.holder.top_liege = {
+			set_variable = { name = kehillah_decree_target value = scope:kehillah_decree_new_leader days = 30 }
+			set_variable = { name = kehillah_decree_pending_kind value = flag:$KIND$ days = 30 }
+			trigger_event = kehillah_decree.0100
+		}
+	}
+	else_if = {
+  limit = { kehillah_decree_can_begin_trigger = yes }
+  kehillah_incident_scopes_effect = yes
+  kehillah_crisis_reserve_intro_effect = { FAMILY = decree }
+  primary_title = {
+   set_variable = { name = kehillah_decree_kind value = flag:$KIND$ }
+   remove_variable = kehillah_decree_colour
+   remove_variable = kehillah_decree_form
+   remove_variable = kehillah_decree_instigator_char
+   remove_variable = kehillah_decree_spouse
+   kehillah_decree_roll_effect = yes
+  }
+  trigger_event = kehillah_decree.0001
+  debug_log = "kehillah_decree_begin_effect: proclamation awaiting acknowledgment"
+ }
+}
+
+# Scope: community leader, after the proclamation event closes. No reroll of the stated terms.
+kehillah_decree_activate_effect = {
+ kehillah_incident_scopes_effect = yes
+ save_scope_as = kehillah_decree_new_leader
+ primary_title = { save_scope_as = kehillah_decree_new_title }
+ start_situation = { type = kehillah_decree start_phase = kehillah_decree_proclaimed save_scope_as = kehillah_decree_new_situation }
+ scope:kehillah_decree_new_situation ?= {
+  set_variable = { name = kehillah_decree_title value = scope:kehillah_decree_new_title }
+  scope:kehillah_decree_new_title = { if = { limit = { has_variable = kehillah_decree_kind } scope:kehillah_decree_new_situation = { set_variable = { name = kehillah_decree_kind value = scope:kehillah_decree_new_title.var:kehillah_decree_kind } } } }
+  scope:kehillah_decree_new_title = { if = { limit = { has_variable = kehillah_decree_form } scope:kehillah_decree_new_situation = { set_variable = { name = kehillah_decree_form value = scope:kehillah_decree_new_title.var:kehillah_decree_form } } } }
+  scope:kehillah_decree_new_title = { if = { limit = { has_variable = kehillah_decree_colour } scope:kehillah_decree_new_situation = { set_variable = { name = kehillah_decree_colour value = scope:kehillah_decree_new_title.var:kehillah_decree_colour } } } }
+  scope:kehillah_decree_new_title = { if = { limit = { has_variable = kehillah_decree_instigator } scope:kehillah_decree_new_situation = { set_variable = { name = kehillah_decree_instigator value = scope:kehillah_decree_new_title.var:kehillah_decree_instigator } } } }
+  scope:kehillah_decree_new_title = { if = { limit = { has_variable = kehillah_decree_instigator_char } scope:kehillah_decree_new_situation = { set_variable = { name = kehillah_decree_instigator_char value = scope:kehillah_decree_new_title.var:kehillah_decree_instigator_char } } } }
+  scope:kehillah_decree_new_title = { if = { limit = { has_variable = kehillah_decree_motive } scope:kehillah_decree_new_situation = { set_variable = { name = kehillah_decree_motive value = scope:kehillah_decree_new_title.var:kehillah_decree_motive } } } }
+  scope:kehillah_decree_new_title = { if = { limit = { has_variable = kehillah_decree_spouse } scope:kehillah_decree_new_situation = { set_variable = { name = kehillah_decree_spouse value = scope:kehillah_decree_new_title.var:kehillah_decree_spouse } } } }
+  scope:kehillah_decree_new_title = { if = { limit = { has_variable = kehillah_decree_fines } scope:kehillah_decree_new_situation = { set_variable = { name = kehillah_decree_fines value = scope:kehillah_decree_new_title.var:kehillah_decree_fines } } } }
+  scope:kehillah_decree_new_title = { if = { limit = { has_variable = kehillah_decree_years } scope:kehillah_decree_new_situation = { set_variable = { name = kehillah_decree_years value = scope:kehillah_decree_new_title.var:kehillah_decree_years } } } }
+  set_situation_center_province = scope:kehillah_decree_new_leader.domicile.domicile_location
+  situation_sub_region:kehillah_decree_area = { add_dejure_title_to_sub_region = scope:kehillah_decree_new_leader.domicile.domicile_location.county }
+  scope:kehillah_decree_new_title = { set_variable = { name = kehillah_decree_situation value = scope:kehillah_decree_new_situation } }
+  kehillah_decree_participants_effect = yes
+  trigger_situation_catalyst = kehillah_decree_opening_catalyst
+ }
+ if = {
+  limit = { exists = primary_title.var:kehillah_decree_situation }
+  kehillah_crisis_clear_intro_effect = yes
+  domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
+  if = { limit = { primary_title.var:kehillah_decree_kind = flag:servants } kehillah_decree_news_servants_effect = yes }
+  else_if = { limit = { primary_title.var:kehillah_decree_kind = flag:ghiyar } kehillah_decree_news_ghiyar_effect = yes }
+  else = { kehillah_decree_news_badge_effect = yes }
+  debug_log = "kehillah_decree_activate_effect: acknowledged; decree clock starts"
+ }
+}
+kehillah_decree_news_badge_effect = { kehillah_realm_news_add_effect = { KIND = badge_decree } }
+kehillah_decree_news_ghiyar_effect = { kehillah_realm_news_add_effect = { KIND = badge_decree } }
+kehillah_decree_news_servants_effect = { kehillah_realm_news_add_effect = { KIND = servants_decree } }
+
+# Scope: the leader; scope:kehillah_incident_host saved. An answer that a player lord decides himself
+# (kehillah_decree.0110) instead of a roll. ASK: petition, pay, leave, common.
+kehillah_decree_ask_lord_effect = {
+	custom_tooltip = kehillah_decree_lord_decides_tt
+	hidden_effect = {
+		scope:kehillah_incident_host = {
+			set_variable = { name = kehillah_decree_asker value = root days = 60 }
+			set_variable = { name = kehillah_decree_ask value = flag:$ASK$ days = 60 }
+			trigger_event = { id = kehillah_decree.0110 days = 1 }
+		}
+	}
+}
+
+# Scope: the situation, as a verdict begins. The lord who issued the decree hears how it ended.
+kehillah_decree_tell_lord_effect = {
+	var:kehillah_decree_title ?= { save_scope_as = kehillah_ruler_notice_title }
+	var:kehillah_decree_lord ?= {
+		if = {
+			limit = {
+				is_ai = no
+				NOT = { this = scope:kehillah_ruler_notice_title.holder }
+			}
+			send_interface_message = {
+				type = msg_kehillah_crisis_ruler
+				title = kehillah_decree_ruler_$VERDICT$_t
+				desc = kehillah_decree_ruler_$VERDICT$_d
+				left_icon = scope:kehillah_ruler_notice_title
+			}
+		}
+	}
+}
+
+# Scope: the situation. The community's leader and the sovereign, as they are now.
+kehillah_decree_participants_effect = {
+	save_scope_as = kehillah_decree_sit
+	if = {
+		limit = { exists = var:kehillah_decree_leader }
+		remove_manual_participant = var:kehillah_decree_leader
+		remove_variable = kehillah_decree_leader
+	}
+	if = {
+		limit = { exists = var:kehillah_decree_lord }
+		remove_manual_participant = var:kehillah_decree_lord
+		remove_variable = kehillah_decree_lord
+	}
+	var:kehillah_decree_title.holder ?= {
+		scope:kehillah_decree_sit = {
+			set_variable = { name = kehillah_decree_leader value = prev }
+			add_manual_participant = prev
+		}
+	}
+	var:kehillah_decree_title.holder.domicile.domicile_location.county.holder.top_liege ?= {
+		scope:kehillah_decree_sit = {
+			set_variable = { name = kehillah_decree_lord value = prev }
+			add_manual_participant = prev
+		}
+	}
+	# The man who pressed for it, when he is not the lord himself.
+	var:kehillah_decree_instigator_char ?= {
+		save_scope_as = kehillah_decree_inst_now
+		if = {
+			limit = {
+				is_alive = yes
+				NOT = { this = scope:kehillah_decree_sit.var:kehillah_decree_lord }
+				NOT = { scope:kehillah_decree_sit = { any_situation_participant = { this = scope:kehillah_decree_inst_now } } }
+			}
+			scope:kehillah_decree_sit = { add_manual_participant = scope:kehillah_decree_inst_now }
+		}
+	}
+}
+
+# Scope: the situation, as it begins; root: the leader; scope:kehillah_incident_host and
+# scope:kehillah_incident_town saved. The decree's details (docs/spec/2026-11-01-crisis-variety-and-
+# consistency.md), each stored as a flag on the situation:
+#   form, colour  colour only: the shape of the mark (the badge and the ghiyar)
+#   instigator    who pressed for it: cleric (the lord's chaplain, named), preacher (generated,
+#                 named), council, zeal (the lord), merchants. Changes which answers work best.
+#   motive        why now: war, harvest, spouse, canon, example. War and harvest push the clerks.
+#   fines         terms: fines while it is enforced (kehillah_decree_fines_modifier), or none
+#   years         terms: how long an enforced decree stands (20, 30, 40)
+kehillah_decree_roll_effect = {
+	save_scope_as = kehillah_decree_rolling
+	# The form of the mark, by the lord's culture; and its colour.
+	if = {
+		limit = { var:kehillah_decree_kind = flag:badge }
+		if = {
+			limit = { scope:kehillah_incident_host.culture = { has_cultural_pillar = heritage_west_germanic } }
+			set_variable = { name = kehillah_decree_form value = flag:tablets }
+		}
+		else_if = {
+			limit = { scope:kehillah_incident_host.culture = { has_cultural_pillar = heritage_central_germanic } }
+			set_variable = { name = kehillah_decree_form value = flag:hat }
+		}
+		else_if = {
+			limit = { scope:kehillah_incident_host.culture = { has_cultural_pillar = heritage_frankish } }
+			set_variable = { name = kehillah_decree_form value = flag:rouelle }
+		}
+		else = { set_variable = { name = kehillah_decree_form value = flag:patch } }
+		random_list = {
+			2 = { set_variable = { name = kehillah_decree_colour value = flag:yellow } }
+			1 = { set_variable = { name = kehillah_decree_colour value = flag:red } }
+			1 = { set_variable = { name = kehillah_decree_colour value = flag:saffron } }
+		}
+	}
+	else_if = {
+		limit = { var:kehillah_decree_kind = flag:ghiyar }
+		random_list = {
+			1 = { set_variable = { name = kehillah_decree_form value = flag:sash } }
+			1 = { set_variable = { name = kehillah_decree_form value = flag:sign } }
+		}
+	}
+	# Who pressed for it.
+	random_list = {
+		10 = {
+			trigger = { exists = scope:kehillah_incident_host.cp:councillor_court_chaplain }
+			modifier = {
+				add = 10
+				scope:kehillah_incident_host = {
+					OR = {
+						kehillah_teaching_strict_trigger = yes
+						kehillah_teaching_exclusionary_trigger = yes
+					}
+				}
+			}
+			set_variable = { name = kehillah_decree_instigator value = flag:cleric }
+			set_variable = { name = kehillah_decree_instigator_char value = scope:kehillah_incident_host.cp:councillor_court_chaplain }
+		}
+		10 = {
+			set_variable = { name = kehillah_decree_instigator value = flag:preacher }
+			scope:kehillah_decree_new_leader = {
+				create_character = {
+					age = { 30 60 }
+					gender = male
+					faith = scope:kehillah_incident_host.faith
+					culture = scope:kehillah_incident_host.culture
+					location = scope:kehillah_incident_town
+					dynasty = none
+					trait = zealous
+					learning = { 10 18 }
+					save_scope_as = kehillah_decree_new_preacher
+				}
+			}
+			scope:kehillah_incident_host = { add_courtier = scope:kehillah_decree_new_preacher }
+			set_variable = { name = kehillah_decree_instigator_char value = scope:kehillah_decree_new_preacher }
+		}
+		8 = {
+			trigger = {
+				scope:kehillah_incident_host.faith.religion = religion:christianity_religion
+				current_year >= 1179
+			}
+			set_variable = { name = kehillah_decree_instigator value = flag:council }
+		}
+		6 = {
+			modifier = {
+				add = 20
+				scope:kehillah_incident_host = { has_trait = zealous }
+			}
+			set_variable = { name = kehillah_decree_instigator value = flag:zeal }
+		}
+		6 = {
+			modifier = {
+				add = 6
+				scope:kehillah_incident_host = { has_trait = greedy }
+			}
+			set_variable = { name = kehillah_decree_instigator value = flag:merchants }
+		}
+	}
+	# Why now.
+	random_list = {
+		10 = {
+			trigger = { scope:kehillah_incident_host = { is_at_war = yes } }
+			modifier = { add = 20 always = yes }
+			set_variable = { name = kehillah_decree_motive value = flag:war }
+		}
+		10 = { set_variable = { name = kehillah_decree_motive value = flag:harvest } }
+		10 = {
+			trigger = { scope:kehillah_incident_host = { any_spouse = { has_trait = zealous } } }
+			modifier = { add = 10 always = yes }
+			scope:kehillah_incident_host = {
+				random_spouse = {
+					limit = { has_trait = zealous }
+					save_scope_as = kehillah_decree_rolled_spouse
+				}
+			}
+			set_variable = { name = kehillah_decree_motive value = flag:spouse }
+			set_variable = { name = kehillah_decree_spouse value = scope:kehillah_decree_rolled_spouse }
+		}
+		8 = {
+			trigger = {
+				scope:kehillah_incident_host.faith.religion = religion:christianity_religion
+				NOT = { var:kehillah_decree_instigator ?= flag:council }
+			}
+			set_variable = { name = kehillah_decree_motive value = flag:canon }
+		}
+		8 = { set_variable = { name = kehillah_decree_motive value = flag:example } }
+	}
+	# Terms: fines, and how long it stands.
+	random_list = {
+		1 = { set_variable = { name = kehillah_decree_fines value = flag:yes } }
+		1 = { set_variable = { name = kehillah_decree_fines value = flag:no } }
+	}
+	random_list = {
+		1 = { set_variable = { name = kehillah_decree_years value = 20 } }
+		2 = { set_variable = { name = kehillah_decree_years value = 30 } }
+		1 = { set_variable = { name = kehillah_decree_years value = 40 } }
+	}
+	debug_log = "kehillah_decree_roll_effect: details rolled"
+	debug_log_scopes = yes
+}
+
+# Root: the situation, monthly. While it is Proclaimed, the lord's clerks press it, and a player
+# hears of it.
+kehillah_decree_monthly_effect = {
+	if = {
+		limit = { situation_current_phase = kehillah_decree_closed }
+		kehillah_decree_close_effect = yes
+	}
+	else_if = {
+		limit = { exists = var:kehillah_decree_title }
+		kehillah_decree_participants_effect = yes
+		if = {
+			limit = { situation_current_phase = kehillah_decree_proclaimed }
+			trigger_situation_catalyst = kehillah_decree_clerks_catalyst
+			var:kehillah_decree_title ?= { save_scope_as = kehillah_decree_toast_title }
+			var:kehillah_decree_lord ?= { save_scope_as = kehillah_decree_toast_lord }
+			scope:kehillah_decree_toast_title.holder ?= {
+				if = {
+					limit = { is_ai = no }
+					save_scope_as = kehillah_decree_toast_leader
+					if = {
+						limit = { kehillah_decree_kind_trigger = { KIND = servants } }
+						kehillah_flavor_toast_effect = { KEY = kehillah_decree_pressure_servants TYPE = msg_kehillah_crisis_pressure ICON = scope:kehillah_decree_toast_title }
+					}
+					else = {
+						kehillah_flavor_toast_effect = { KEY = kehillah_decree_pressure_badge TYPE = msg_kehillah_crisis_pressure ICON = scope:kehillah_decree_toast_title }
+					}
+				}
+			}
+		}
+	}
+}
+
+# Scope: the community title. A catalyst toward the decree's race, while it runs.
+kehillah_decree_add_effect = {
+	var:kehillah_decree_situation ?= { trigger_situation_catalyst = $CATALYST$ }
+}
+
+# Scope: a Kehillah leader. An answer is spent for this decree.
+kehillah_decree_mark_done_effect = {
+	primary_title = { set_variable = { name = kehillah_decree_did_$ONCE$ value = yes } }
+}
+
+# Root: the situation, as a verdict begins. VERDICT: enforced, suspended, withdrawn.
+kehillah_decree_verdict_start_effect = {
+	debug_log = "kehillah_decree: a verdict"
+	kehillah_decree_tell_lord_effect = { VERDICT = $VERDICT$ }
+	var:kehillah_decree_title ?= {
+		set_variable = { name = kehillah_decree_verdict value = flag:$VERDICT$ }
+		holder ?= {
+			kehillah_decree_verdict_$VERDICT$_effect = yes
+			if = {
+				limit = { is_ai = no }
+				# A day on, so the phase is current when the event checks it.
+				trigger_event = { id = kehillah_decree.0060 days = 1 }
+			}
+		}
+	}
+}
+
+# Scope: the leader. The verdicts.
+kehillah_decree_verdict_enforced_effect = {
+	# 2026-11-01: the rolled terms decide what it does (docs/spec/2026-11-01-crisis-variety-and-
+	# consistency.md): its duration, the household's exemption, the fines.
+	if = {
+		limit = { kehillah_decree_kind_trigger = { KIND = servants } }
+		custom_tooltip = kehillah_incident_servants_tt
+		primary_title = {
+			hidden_effect = { set_variable = { name = kehillah_servants_decree value = yes years = kehillah_decree_years_title_value } }
+		}
+		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_servants_decree_prosperity }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_servants_decree_stability }
+	}
+	else = {
+		custom_tooltip = kehillah_incident_badge_tt
+		primary_title = {
+			hidden_effect = { set_variable = { name = kehillah_badge value = yes years = kehillah_decree_years_title_value } }
+		}
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_badge_stability }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_badge_greatness }
+		if = {
+			limit = { primary_title = { has_variable = kehillah_decree_household_exempt } }
+			custom_tooltip = kehillah_decree_exempt_kept_tt
+		}
+		else = {
+			add_character_modifier = { modifier = kehillah_badge_modifier years = kehillah_decree_years_value }
+		}
+	}
+	if = {
+		limit = { primary_title.var:kehillah_decree_situation.var:kehillah_decree_fines ?= flag:yes }
+		add_character_modifier = { modifier = kehillah_decree_fines_modifier years = kehillah_decree_years_value }
+	}
+	# The realm: under a hostile lord with a hard teaching, the decree may be the first step.
+	domicile.domicile_location.county.holder.top_liege ?= {
+		if = {
+			limit = {
+				is_ai = yes
+				kehillah_outlook_band_value <= -2
+				OR = {
+					kehillah_teaching_strict_trigger = yes
+					kehillah_teaching_exclusionary_trigger = yes
+				}
+			}
+			random = {
+				chance = kehillah_decree_policy_hardens_chance
+				custom_tooltip = kehillah_decree_policy_hardens_tt
+				kehillah_lower_jewish_settlement_policy_effect = yes
+			}
+		}
+	}
+}
+kehillah_decree_verdict_suspended_effect = {
+	custom_tooltip = kehillah_decree_suspended_tt
+	primary_title = {
+		if = {
+			limit = { var:kehillah_decree_situation.var:kehillah_decree_kind ?= flag:servants }
+			set_variable = { name = kehillah_decree_suspended_servants value = yes years = kehillah_decree_suspension_years }
+		}
+		else = {
+			set_variable = { name = kehillah_decree_suspended_badge value = yes years = kehillah_decree_suspension_years }
+		}
+	}
+}
+kehillah_decree_verdict_withdrawn_effect = {
+	custom_tooltip = kehillah_decree_withdrawn_tt
+	kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_decree_withdrawn_stability }
+	# Persuaded, the lord thinks a little better of the community that persuaded him.
+	domicile.domicile_location.county.holder.top_liege ?= {
+		kehillah_shift_outlook_effect = { AMOUNT = kehillah_decree_withdrawn_outlook }
+	}
+}
+
+# Root: the situation, as its Closed phase begins. Never end_situation here: inside the situation's own
+# phase on_start it crashed the game (the Talmud trial, live test 2026-11-01). A hidden event on the
+# leader ends it a day later (kehillah_decree.0099); the monthly pass retries if no leader took it.
+kehillah_decree_close_effect = {
+	debug_log = "kehillah_decree: closing"
+	var:kehillah_decree_title.holder ?= { trigger_event = { id = kehillah_decree.0099 days = 1 } }
+}
+
+# Scope: the community title (kehillah_decree.0099). The decree ends; the next crisis can begin.
+kehillah_decree_end_effect = {
+	debug_log = "kehillah_decree: closed"
+	var:kehillah_decree_situation ?= { end_situation = yes }
+	save_scope_as = kehillah_decree_ending_title
+	scope:kehillah_decree_ending_title = {
+		remove_variable = kehillah_decree_situation
+		remove_variable = kehillah_decree_did_petition
+		remove_variable = kehillah_decree_did_pay
+		remove_variable = kehillah_decree_did_leave
+		remove_variable = kehillah_decree_did_common
+		remove_variable = kehillah_decree_did_exempt
+		remove_variable = kehillah_decree_household_exempt
+		remove_variable = kehillah_decree_did_sermon
+		remove_variable = kehillah_decree_did_own
+		remove_variable = kehillah_decree_did_thanks
+		remove_variable = kehillah_decree_verdict
+	}
+}

@@ -166,6 +166,25 @@ kehillah_name_new_hostile_christian_rite_effect = {
 # harm (kehillah_mob_local_severity, kehillah_mob_crusade_severity).
 # ---------------------------------------------------------------------
 kehillah_mob_raise_effect = {
+ if = {
+  limit = { primary_title ?= { has_variable = kehillah_crisis_stage OR = { var:kehillah_crisis_stage = 1 var:kehillah_crisis_stage = 2 } } }
+  kehillah_mob_raise_acknowledged_effect = { SIZE = $SIZE$ SEVERITY = $SEVERITY$ }
+ }
+ else_if = {
+  limit = { kehillah_crisis_can_offer_intro_trigger = yes }
+  kehillah_crisis_reserve_intro_effect = { FAMILY = host }
+  primary_title = {
+   set_variable = { name = kehillah_crisis_intro_size value = $SIZE$ }
+   set_variable = { name = kehillah_crisis_intro_severity value = $SEVERITY$ }
+   if = { limit = { exists = scope:kehillah_rising_leader } set_variable = { name = kehillah_crisis_intro_sent_by value = scope:kehillah_rising_leader } }
+   if = { limit = { exists = scope:kehillah_mob_spawn } set_variable = { name = kehillah_crisis_intro_spawn value = scope:kehillah_mob_spawn } }
+   if = { limit = { exists = scope:kehillah_mob_preset_leader } set_variable = { name = kehillah_crisis_intro_preset value = scope:kehillah_mob_preset_leader } }
+  }
+  trigger_event = kehillah_crisis_intro.0001
+ }
+}
+
+kehillah_mob_raise_acknowledged_effect = {
 	save_scope_as = kehillah_mob_victim
 	primary_title = { save_scope_as = kehillah_mob_victim_title }
 	domicile.domicile_location = { save_scope_as = kehillah_mob_town }
@@ -218,6 +237,7 @@ kehillah_mob_raise_effect = {
 		}
 		scope:kehillah_mob_leader = {
 			add_character_flag = kehillah_mob_leader
+   if = { limit = { exists = scope:kehillah_rising_leader } set_variable = { name = kehillah_mob_sent_by value = scope:kehillah_rising_leader } }
 			kehillah_mob_make_ruler_effect = { COUNTY = scope:kehillah_mob_spawn.county }
 			kehillah_mob_join_hostile_rite_effect = yes
 			set_variable = { name = kehillah_mob_target_title value = scope:kehillah_mob_victim_title }
@@ -318,12 +338,19 @@ kehillah_mob_raise_effect = {
 						limit = { has_variable = kehillah_mob_last_town_ref }
 						remove_variable = kehillah_mob_last_town_ref
 					}
+					kehillah_crisis_begin_effect = yes
+					# Attack race step 1e: a host with no warning still records how it began.
+					primary_title = { set_variable = { name = kehillah_crisis_stage value = 2 } }
+					kehillah_crisis_set_opening_effect = yes
+					primary_title = { kehillah_crisis_situation_sync_effect = yes }
+					# 2026-11-01: a crisis that begins armed is announced too (once per crisis).
+					primary_title = { kehillah_crisis_announce_once_effect = yes }
 					set_variable = { name = kehillah_mob_ref value = scope:kehillah_mob_leader }
 					set_variable = { name = kehillah_mob_location_ref value = scope:kehillah_mob_spawn }
 					set_variable = { name = kehillah_mob_band value = scope:kehillah_mob_leader.var:kehillah_mob_band_now }
 					# A mob that rises in the town itself gives no warning.
 					if = {
-						limit = { NOT = { scope:kehillah_mob_spawn = scope:kehillah_mob_town } }
+						limit = { NOT = { scope:kehillah_mob_victim_title = { has_variable = kehillah_crisis_host_intro_ack } } NOT = { scope:kehillah_mob_spawn = scope:kehillah_mob_town } }
 						trigger_event = { id = kehillah_mob.0001 days = 1 }
 					}
 					# But an AI community still answers it (soak 3, 2026-10-14:
@@ -437,6 +464,7 @@ kehillah_mob_step_toward_effect = {
 # THE TICK, every 4 days (story_kehillah_mob). Scope: the mob leader.
 # ---------------------------------------------------------------------
 kehillah_mob_tick_effect = {
+ if = { limit = { NOT = { var:kehillah_mob_target_title ?= { var:kehillah_crisis_intro_pending ?= flag:retarget } } }
 	save_scope_as = kehillah_mob_leader
 	# A host condemned by the Church is condemned at every town (V42).
 	if = {
@@ -515,6 +543,8 @@ kehillah_mob_tick_effect = {
 			if = {
 				limit = { var:kehillah_mob_march_delay > 0 }
 				change_variable = { name = kehillah_mob_march_delay add = -4 }
+				# 2026-11-01: the muster is part of the Armed race.
+				scope:kehillah_mob_victim_title = { kehillah_crisis_struck_tick_effect = { CATALYST = kehillah_crisis_host_draws_on_catalyst POINTS = kehillah_crisis_struck_muster_points } }
 				debug_log = "kehillah_mob_tick_effect: the host is mustering before its march"
 			}
 			else = {
@@ -524,6 +554,8 @@ kehillah_mob_tick_effect = {
 				}
 				set_variable = { name = kehillah_mob_location value = scope:kehillah_mob_here_now }
 				kehillah_mob_report_position_effect = yes
+				# Attack race step 1d: the host draws nearer.
+				scope:kehillah_mob_victim_title = { kehillah_crisis_struck_tick_effect = { CATALYST = kehillah_crisis_host_draws_on_catalyst POINTS = kehillah_crisis_struck_march_points } }
 				if = {
 					limit = { var:kehillah_mob_location = var:kehillah_mob_target_province }
 					kehillah_mob_arrive_effect = yes
@@ -544,7 +576,15 @@ kehillah_mob_tick_effect = {
 						}
 					}
 				}
-				change_variable = { name = kehillah_mob_siege_days add = -4 }
+				# Attack race step 1d: while the community's Armed race runs, the siege adds to
+				# Quarter struck instead of counting down; Struck's phase start ends the siege.
+				if = {
+					limit = { scope:kehillah_mob_victim_title = { kehillah_crisis_title_armed_race_running_trigger = yes } }
+					scope:kehillah_mob_victim_title = { kehillah_crisis_struck_tick_effect = { CATALYST = kehillah_crisis_host_draws_on_catalyst POINTS = kehillah_crisis_struck_siege_points_value } }
+				}
+				else = {
+					change_variable = { name = kehillah_mob_siege_days add = -4 }
+				}
 			}
 			else = {
 				debug_log = "kehillah_mob_tick_effect: defenders hold the town; the siege waits"
@@ -556,6 +596,7 @@ kehillah_mob_tick_effect = {
 					chance = scope:kehillah_mob_victim.kehillah_mob_handover_tick_chance_value
 					scope:kehillah_mob_victim_title = { remove_variable = kehillah_mob_refuge }
 					set_variable = { name = kehillah_mob_siege_days value = 4 }
+					scope:kehillah_mob_victim_title = { kehillah_crisis_armed_race_add_effect = { CATALYST = kehillah_crisis_abandoned_catalyst POINTS = kehillah_crisis_struck_handover_points } }
 					debug_log = "kehillah_mob_tick_effect: the lord gave the Jews up"
 					scope:kehillah_mob_victim = {
 						if = {
@@ -592,6 +633,8 @@ kehillah_mob_tick_effect = {
 			}
 		}
 	}
+
+ }
 }
 
 # Scope: the mob leader. Records where the host is for the target's loc,
@@ -602,6 +645,7 @@ kehillah_mob_report_position_effect = {
 	scope:kehillah_mob_victim = {
 		# (Set every step: the community may have a new leader.)
 		set_variable = { name = kehillah_mob_ref value = scope:kehillah_mob_leader }
+		primary_title = { kehillah_crisis_situation_sync_effect = yes }
 		set_variable = { name = kehillah_mob_location_ref value = scope:kehillah_mob_leader.var:kehillah_mob_location }
 		if = {
 			limit = {
@@ -708,6 +752,9 @@ kehillah_pogrom_effect = {
 			is_alive = yes
 			is_jewish_character_trigger = yes
 			NOT = { this = scope:kehillah_pogrom_victim }
+			# 2026-11-01: the community's designated heir lives to lead it (a struck night that
+			# also kills the leader must not end the game; see kehillah_on_death_player_continuation).
+			NOT = { scope:kehillah_pogrom_victim.primary_heir ?= this }
 			# V41: the children the neighbour hid are spared.
 			trigger_if = {
 				limit = { scope:kehillah_pogrom_title = { has_variable = kehillah_scene_children_hidden } }
@@ -948,6 +995,7 @@ kehillah_pogrom_effect = {
 		}
 	}
 
+	kehillah_crisis_resolve_effect = { OUTCOME = 4 }
 	# The aftermath: trauma, the tenets of martyrdom, the Year of the Decrees.
 	kehillah_pogrom_aftermath_effect = yes
 	# Refugees take the road to the nearest safe community.
@@ -1089,12 +1137,13 @@ kehillah_pogrom_lower_three_effect = {
 # community is spared.
 kehillah_mob_dispersed_effect = {
 	save_scope_as = kehillah_mob_leader
+	var:kehillah_mob_target_title.holder ?= { kehillah_crisis_resolve_effect = { OUTCOME = 2 } }
 	debug_log = "kehillah_mob_dispersed_effect: the host is broken"
 	var:kehillah_mob_target_title.holder ?= {
 		if = {
 			limit = {
 				is_ai = no
-				primary_title ?= { NOT = { has_variable = kehillah_mob_struck } }
+				primary_title ?= { NOT = { has_variable = kehillah_mob_struck } NOT = { has_variable = kehillah_crisis_stage } }
 			}
 			trigger_event = kehillah_mob.0020
 		}
@@ -1102,9 +1151,33 @@ kehillah_mob_dispersed_effect = {
 	kehillah_mob_end_effect = yes
 }
 
+# Scope: a community title; scope:kehillah_mob_leader the agitator or the host's leader. Silver or a
+# plea at his camp has worked. 2026-11-01 (Daniel: "the actions that can automatically cause the
+# host to disband are too OP", the plea against Abu Ishaq): during a crisis race it no longer ends
+# the crisis. He wavers and some of his men go home (a quarter of his host or following), and the
+# community's efforts gain a large push; the race decides. Outside any race the host still turns aside.
+kehillah_mob_turned_aside_effect = {
+	if = {
+		limit = { kehillah_crisis_title_armed_race_running_trigger = yes }
+		scope:kehillah_mob_leader = { kehillah_mob_thin_host_effect = { FRACTION = 0.25 } }
+		kehillah_crisis_armed_race_add_effect = { CATALYST = kehillah_crisis_efforts_catalyst POINTS = kehillah_mob_camp_swayed_points }
+		debug_log = "kehillah_mob_turned_aside_effect: he wavers; toward Quarter held"
+	}
+	else_if = {
+		limit = { kehillah_crisis_title_race_running_trigger = yes }
+		scope:kehillah_mob_leader = { kehillah_mob_thin_host_effect = { FRACTION = 0.25 } }
+		kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_efforts_catalyst POINTS = kehillah_mob_camp_swayed_points }
+		debug_log = "kehillah_mob_turned_aside_effect: he wavers; toward Spared"
+	}
+	else = {
+		scope:kehillah_mob_leader = { kehillah_mob_bought_off_effect = yes }
+	}
+}
+
 # Turned away by silver: the host leaves for other prey.
 kehillah_mob_bought_off_effect = {
 	save_scope_as = kehillah_mob_leader
+	var:kehillah_mob_target_title.holder ?= { kehillah_crisis_resolve_effect = { OUTCOME = 3 } }
 	debug_log = "kehillah_mob_bought_off_effect: the host takes the silver and goes"
 	var:kehillah_mob_target_title ?= {
 		set_variable = { name = kehillah_mob_paid_off value = yes years = 1 }
@@ -1140,6 +1213,7 @@ kehillah_mob_bought_off_effect = {
 # hostages (decided before), end the war, and the preacher goes. Scope:
 # the mob leader.
 kehillah_mob_end_effect = {
+	var:kehillah_mob_target_title.holder ?= { kehillah_crisis_resolve_effect = { OUTCOME = 1 } }
 	var:kehillah_mob_target_title ?= {
 		kehillah_mob_clear_title_effect = yes
 		holder ?= {
@@ -1160,11 +1234,26 @@ kehillah_mob_end_effect = {
 	every_character_war = {
 		end_war = white_peace
 	}
-	death = { death_reason = death_vanished }
+	if = {
+		limit = { has_character_flag = kehillah_granada_poet_leader }
+		kehillah_granada_poet_stands_down_effect = yes
+	}
+	else = {
+		death = { death_reason = death_vanished }
+	}
 }
 
 # Scope: a community title.
 kehillah_mob_clear_title_effect = {
+ if = {
+  limit = { var:kehillah_crisis_intro_pending ?= flag:attack }
+  remove_variable = kehillah_crisis_intro_pending
+  remove_variable = kehillah_crisis_intro_recipient
+  remove_variable = kehillah_crisis_intro_county
+  remove_variable = kehillah_crisis_intro_host
+  remove_variable = kehillah_crisis_opening
+  remove_variable = kehillah_crisis_pending_opening
+ }
 	if = {
 		limit = { has_variable = kehillah_mob_threat }
 		remove_variable = kehillah_mob_threat
@@ -1533,7 +1622,7 @@ kehillah_mob_ai_answers_effect = {
 		remove_short_term_gold = kehillah_mob_treat_cost_value
 		random = {
 			chance = kehillah_mob_treat_chance_value
-			scope:kehillah_mob_leader = { kehillah_mob_bought_off_effect = yes }
+			primary_title = { kehillah_mob_turned_aside_effect = yes }
 		}
 	}
 }

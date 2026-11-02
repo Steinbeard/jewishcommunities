@@ -1,4 +1,32 @@
-﻿namespace = kehillah_granada
+﻿# Opening choices run after acknowledgment; previews contain no crisis initialization.
+scripted_effect kehillah_intro_granada_1_response_effect = {
+	primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_eases_catalyst POINTS = kehillah_crisis_ev_small } }
+}
+
+scripted_effect kehillah_intro_granada_2_response_effect = {
+	add_stress = minor_stress_loss
+	primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_ev_medium } }
+}
+
+scripted_effect kehillah_intro_granada_3_response_effect = {
+	random_list = {
+			0 = {
+				modifier = { add = kehillah_granada_silence_chance_value }
+				desc = kehillah_granada_silenced
+				custom_tooltip = kehillah_granada_silenced_tt
+				add_character_flag = kehillah_granada_silenced
+				primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_eases_catalyst POINTS = kehillah_crisis_ev_medium } }
+			}
+			0 = {
+				modifier = { add = kehillah_granada_silence_fail_value }
+				desc = kehillah_granada_not_silenced
+				custom_tooltip = kehillah_granada_not_silenced_tt
+				primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_ev_small } }
+			}
+		}
+}
+
+namespace = kehillah_granada
 
 # =====================================================================
 # V39 slice 4 -- Granada, 30 December 1066 (docs/spec/v39-pogroms-and-
@@ -7,19 +35,143 @@
 # faqih and poet Abu Ishaq of Elvira's qasida against the Jewish vizier;
 # the charge that Joseph plotted with al-Mu'tasim of Almeria; the night
 # the Sanhaja and the city stormed the palace. Historically everything
-# failed: Joseph was killed and the community destroyed. Here good play
+# failed: Joseph was killed and the community suffered a massacre. Here good play
 # can save Joseph or part of the community, rarely both.
-#   .0001 The Poem of Abu Ishaq        (about a month after the start)
-#   .0002 Whispers at Court            (about two months later)
+#   .0008 Your Father's Office        (one week after the start)
+#   .0019 (hidden) warning dispatcher, retained for existing queues
+#   .0018 A Copy of the Verses        (about a month after the start)
+#   .0001 The Verses Reach the Street (elders consider a response)
+#   .0002 The Emir's Confidence       (day 65)
 #   .0003 (hidden) the night: the mob rises in the city, or the year ends
-#   .0004 The Year Ends Quietly        (the poet silenced, and luck)
-#   .0005 The Night of the Sanhaja     (the mob rises)
+#   .0004 For the Moment, Peace       (the poet silenced, and luck)
+#   .0005 The Palace and the Quarter  (the mob rises)
 # Scope: the leader of the Kehillah of Granada.
 # =====================================================================
 
 scripted_effect kehillah_granada_scopes_effect = {
 	domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_granada_emir }
 	title:c_almeria.holder ?= { save_scope_as = kehillah_granada_almeria }
+}
+
+# 2026-10-29: establish the offices, the community and the political actors
+# before the warning. Fictional scenes and correspondence, not transcripts.
+kehillah_granada.0008 = {
+	type = character_event
+	title = kehillah_granada.0008.t
+	desc = kehillah_granada.0008.desc
+	theme = diplomacy
+	left_portrait = { character = root animation = thinking }
+	right_portrait = { character = scope:kehillah_granada_emir animation = idle }
+	trigger = {
+		kehillah_granada_chain_valid_trigger = yes
+		this = character:9000216
+		NOT = { has_character_flag = kehillah_granada_night_done }
+	}
+	immediate = { kehillah_granada_scopes_effect = yes }
+	option = { name = kehillah_granada.0008.a }
+}
+
+# 2026-10-29 revision: a clerk brings a circulating poem. The author need
+# not still be alive or at court for copies of his work to reach Yoseph.
+kehillah_granada.0019 = {
+	type = character_event
+	hidden = yes
+	trigger = {
+		kehillah_granada_chain_valid_trigger = yes
+		NOT = { has_character_flag = kehillah_granada_night_done }
+	}
+	immediate = { trigger_event = kehillah_granada.0018 }
+}
+
+# The indented verse is an original English translation of two separated
+# couplets from Abu Ishaq's surviving invective; the ellipsis is deliberate.
+# The clerk's delivery is fictional. See the implementation note for Arabic.
+kehillah_granada.0018 = {
+	type = character_event
+	title = kehillah_granada.0018.t
+	desc = kehillah_granada.0018.desc
+	theme = intrigue
+	left_portrait = { character = root animation = worry }
+	right_portrait = {
+		trigger = { character:9000235 ?= { is_alive = yes } }
+		character = character:9000235
+		animation = rage
+	}
+	trigger = {
+		kehillah_granada_chain_valid_trigger = yes
+		OR = { kehillah_crisis_can_offer_intro_trigger = yes kehillah_crisis_existing_granada_trigger = yes }
+		NOT = { has_character_flag = kehillah_granada_night_done }
+	}
+	immediate = {
+  primary_title = { save_scope_as = kehillah_crisis_intro_title }
+		kehillah_granada_scopes_effect = yes
+		if = { limit = { kehillah_crisis_can_offer_intro_trigger = yes } kehillah_crisis_reserve_intro_effect = { FAMILY = granada } }
+	}
+	# 2026-11-01: the crisis's opening scene. No longer leads to .0001, whose answers duplicated the
+	# window's actions (docs/spec/2026-11-01-three-standing-actions.md); .0001 stays for queued
+	# saves. Each answer sets a first push in the race.
+
+	# The elders must see it.
+	option = {
+		name = kehillah_granada.0018.a
+		ai_chance = { base = 40 }
+		show_as_tooltip = { kehillah_intro_granada_1_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:granada_1 } }
+	}
+
+	# Burn it.
+	option = {
+		name = kehillah_granada.0018.b
+		ai_chance = { base = 20 }
+		show_as_tooltip = { kehillah_intro_granada_2_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:granada_2 } }
+	}
+
+	# Lay it before the emir.
+	option = {
+		name = kehillah_granada.0018.c
+		trigger = { exists = scope:kehillah_granada_emir }
+		ai_chance = { base = 40 }
+		show_as_tooltip = { kehillah_intro_granada_3_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:granada_3 } }
+	}
+
+	after = {
+		kehillah_crisis_acknowledge_effect = { FAMILY = granada }
+		if = {
+			limit = { has_variable = kehillah_crisis_intro_accepted }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:granada_1 } kehillah_intro_granada_1_response_effect = yes }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:granada_2 } kehillah_intro_granada_2_response_effect = yes }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:granada_3 } kehillah_intro_granada_3_response_effect = yes }
+
+		}
+		remove_variable = kehillah_crisis_intro_accepted
+		remove_variable = kehillah_crisis_intro_choice
+	}
+}
+
+# 2026-11-01. Riders from Almeria (kehillah_granada.0003, while the race still runs). History: the
+# charge that Joseph had invited al-Mu'tasim of Almeria to take Granada was what the crowd believed
+# on the night it rose.
+kehillah_granada.0020 = {
+	type = character_event
+	title = kehillah_granada.0020.t
+	desc = kehillah_granada.0020.desc
+	theme = dread
+	left_portrait = { character = root animation = fear }
+	right_portrait = {
+		trigger = { character:9000235 ?= { is_alive = yes } }
+		character = character:9000235
+		animation = rage
+	}
+	immediate = { kehillah_granada_scopes_effect = yes }
+	option = {
+		name = kehillah_granada.0020.a
+		primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_almeria_riders_points_value } }
+	}
 }
 
 kehillah_granada.0001 = {
@@ -35,7 +187,10 @@ kehillah_granada.0001 = {
 		character = scope:kehillah_granada_emir
 		animation = thinking
 	}
-	trigger = { kehillah_granada_chain_valid_trigger = yes }
+	trigger = {
+		kehillah_granada_chain_valid_trigger = yes
+		NOT = { has_character_flag = kehillah_granada_night_done }
+	}
 	immediate = {
 		kehillah_granada_scopes_effect = yes
 	}
@@ -50,6 +205,7 @@ kehillah_granada.0001 = {
 				desc = kehillah_granada_silenced
 				custom_tooltip = kehillah_granada_silenced_tt
 				add_character_flag = kehillah_granada_silenced
+				primary_title = { change_variable = { name = kehillah_crisis_agitation add = -20 } clamp_variable = { name = kehillah_crisis_agitation min = 5 max = 95 } }
 			}
 			0 = {
 				modifier = { add = kehillah_granada_silence_fail_value }
@@ -72,7 +228,7 @@ kehillah_granada.0001 = {
 				desc = kehillah_granada_guarded
 				custom_tooltip = kehillah_granada_guarded_tt
 				add_character_flag = kehillah_granada_guarded
-				kehillah_granada_adjust_severity_effect = { AMOUNT = -15 }
+				primary_title = { set_variable = { name = kehillah_mob_defended value = yes } }
 			}
 			0 = {
 				modifier = { add = kehillah_granada_guard_fail_value }
@@ -131,7 +287,10 @@ kehillah_granada.0002 = {
 		character = scope:kehillah_granada_emir
 		animation = disapproval
 	}
+	# 2026-11-01 (Daniel's screenshot: it fired in Recovery): only while the Agitation race still runs.
+	# It is scheduled 35 days after the poem, and a crisis can be over by then.
 	trigger = {
+		primary_title ?= { kehillah_crisis_title_race_running_trigger = yes NOT = { has_variable = kehillah_crisis_intro_pending } }
 		kehillah_granada_chain_valid_trigger = yes
 		NOT = { has_character_flag = kehillah_granada_night_done }
 	}
@@ -148,7 +307,9 @@ kehillah_granada.0002 = {
 				modifier = { add = kehillah_granada_loyalty_chance_value }
 				desc = kehillah_granada_believed
 				custom_tooltip = kehillah_granada_believed_tt
+				primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_eases_catalyst POINTS = kehillah_crisis_ev_large } }
 				kehillah_granada_adjust_severity_effect = { AMOUNT = -10 }
+				primary_title = { change_variable = { name = kehillah_crisis_agitation add = -10 } clamp_variable = { name = kehillah_crisis_agitation min = 5 max = 95 } }
 				scope:kehillah_granada_emir = {
 					add_opinion = { target = root modifier = pleased_opinion opinion = 15 }
 				}
@@ -157,19 +318,18 @@ kehillah_granada.0002 = {
 				modifier = { add = kehillah_granada_loyalty_fail_value }
 				desc = kehillah_granada_disbelieved
 				custom_tooltip = kehillah_granada_disbelieved_tt
+				primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_ev_medium } }
 			}
 		}
 		ai_chance = { base = 40 }
 	}
 
-	# Make ready a flight to Lucena.
+	# Remind him what your father did for his house. (Was: horses for Lucena, which duplicated the
+	# way out under Prepare the Quarter; 2026-11-01.)
 	option = {
-		name = kehillah_granada.0002.b
-		trigger = { gold >= minor_gold_value }
-		show_as_unavailable = { always = yes }
-		remove_short_term_gold = minor_gold_value
-		add_character_flag = kehillah_granada_flight_ready
-		custom_tooltip = kehillah_granada_flight_ready_tt
+		name = kehillah_granada.0002.d
+		add_prestige = minor_prestige_loss
+		primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_eases_catalyst POINTS = kehillah_crisis_ev_medium } }
 		ai_chance = { base = 30 }
 	}
 
@@ -177,6 +337,7 @@ kehillah_granada.0002 = {
 	option = {
 		name = kehillah_granada.0002.c
 		add_prestige = minor_prestige_gain
+		primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_ev_small } }
 		ai_chance = {
 			base = 10
 			modifier = { add = 30 has_trait = arrogant }
@@ -186,29 +347,31 @@ kehillah_granada.0002 = {
 
 # The night. Hidden.
 kehillah_granada.0003 = {
-	type = character_event
-	hidden = yes
-	trigger = {
-		kehillah_granada_chain_valid_trigger = yes
-		NOT = { has_character_flag = kehillah_granada_night_done }
-	}
-	immediate = {
-		add_character_flag = kehillah_granada_night_done
-		if = {
-			limit = { has_character_flag = kehillah_granada_silenced }
-			random_list = {
-				50 = {
-					trigger_event = kehillah_granada.0004
-				}
-				50 = {
-					kehillah_granada_night_effect = yes
-				}
-			}
-		}
-		else = {
-			kehillah_granada_night_effect = yes
-		}
-	}
+ type = character_event
+ hidden = yes
+ trigger = {
+  primary_title ?= { has_variable = kehillah_crisis_stage NOT = { has_variable = kehillah_crisis_intro_pending } } kehillah_granada_chain_valid_trigger = yes NOT = { has_character_flag = kehillah_granada_night_done } }
+ immediate = {
+  if = {
+   limit = {
+    NOT = { has_character_flag = kehillah_granada_riders_came }
+    primary_title = { kehillah_crisis_title_race_running_trigger = yes }
+    primary_title.var:kehillah_mob_threat ?= { has_character_flag = kehillah_crisis_granada_agitator has_character_flag = kehillah_mob_preaching }
+   }
+   kehillah_granada_almeria_riders_effect = yes
+  }
+  else_if = {
+   limit = { primary_title.var:kehillah_mob_threat ?= { has_character_flag = kehillah_crisis_granada_agitator has_character_flag = kehillah_mob_preaching } }
+   add_character_flag = kehillah_granada_night_done
+   primary_title.var:kehillah_mob_threat = { kehillah_mob_preaching_ends_effect = yes }
+  }
+  else_if = {
+   limit = { NOT = { primary_title = { has_variable = kehillah_crisis_outcome } } }
+   # Old saves without a warning get a short grace period, not an instant war.
+   kehillah_granada_warning_effect = yes
+   primary_title.var:kehillah_mob_threat ?= { set_variable = { name = kehillah_mob_preach_days value = 28 } }
+  }
+ }
 }
 
 kehillah_granada.0004 = {
@@ -235,8 +398,29 @@ kehillah_granada.0005 = {
 		character = root
 		animation = fear
 	}
+	trigger = { primary_title = { has_variable = kehillah_mob_threat } }
 	option = {
 		name = kehillah_granada.0005.a
+	}
+}
+
+# 2026-11-01. The Armed host begins in Granada: the Sanhaja arm in the barracks and send for men
+# (kehillah_granada_muster_days). Scope: Joseph, a player.
+kehillah_granada.0021 = {
+	type = character_event
+	title = kehillah_granada.0021.t
+	desc = kehillah_granada.0021.desc
+	theme = dread
+	left_portrait = { character = root animation = worry }
+	right_portrait = {
+		trigger = { exists = primary_title.var:kehillah_mob_threat }
+		character = primary_title.var:kehillah_mob_threat
+		animation = rage
+	}
+	immediate = { kehillah_granada_scopes_effect = yes }
+	option = {
+		name = kehillah_granada.0021.a
+		custom_tooltip = kehillah_crisis_find_window_tt
 	}
 }
 
@@ -277,6 +461,7 @@ kehillah_granada.0006 = {
 	trigger = {
 		kehillah_granada_chain_valid_trigger = yes
 		NOT = { has_character_flag = kehillah_granada_night_done }
+		NOT = { kehillah_crisis_has_window_trigger = yes }
 		character:9000234 ?= {
 			is_alive = yes
 			is_courtier_of = root

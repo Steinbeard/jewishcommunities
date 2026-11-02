@@ -1,0 +1,188 @@
+﻿# 2026-11-01, Daniel: each crisis starts only after its trigger event is acknowledged.
+# Pending data is title-owned and saved; it reserves a community without creating an active clock.
+kehillah_crisis_reserve_intro_effect = {
+ primary_title = {
+  save_scope_as = kehillah_crisis_intro_title
+  if = { limit = { NOT = { has_variable = kehillah_crisis_intro_epoch } } set_variable = { name = kehillah_crisis_intro_epoch value = 0 } }
+  change_variable = { name = kehillah_crisis_intro_epoch add = 1 }
+  save_scope_value_as = { name = kehillah_crisis_intro_epoch value = var:kehillah_crisis_intro_epoch }
+  set_variable = { name = kehillah_crisis_intro_pending value = flag:$FAMILY$ }
+  set_variable = { name = kehillah_crisis_intro_recipient value = prev }
+  set_variable = { name = kehillah_crisis_intro_county value = holder.domicile.domicile_location.county }
+  set_variable = { name = kehillah_crisis_intro_host value = holder.domicile.domicile_location.county.holder.top_liege }
+ }
+}
+# Scope: leader. Called only after the matching event closes, or when cancelling its reservation.
+kehillah_crisis_clear_intro_effect = {
+ primary_title = {
+  remove_variable = kehillah_crisis_intro_pending
+  remove_variable = kehillah_crisis_intro_recipient
+  remove_variable = kehillah_crisis_intro_county
+  remove_variable = kehillah_crisis_intro_host
+  remove_variable = kehillah_crisis_intro_size
+  remove_variable = kehillah_crisis_intro_severity
+  remove_variable = kehillah_crisis_intro_last_town
+  remove_variable = kehillah_crisis_intro_spawn
+  remove_variable = kehillah_crisis_intro_sent_by
+  remove_variable = kehillah_crisis_intro_preset
+ }
+}
+# Scope: community leader. The event's saved title must still be this leader's community, in the
+# same county under the same host. A stale event must not initialize a crisis for another title.
+kehillah_crisis_acknowledge_effect = {
+ remove_variable = kehillah_crisis_intro_accepted
+ if = {
+  limit = {
+   primary_title ?= scope:kehillah_crisis_intro_title
+   government_has_flag = government_is_kehillah
+   primary_title = { var:kehillah_crisis_intro_pending ?= flag:$FAMILY$ var:kehillah_crisis_intro_epoch = scope:kehillah_crisis_intro_epoch }
+   domicile.domicile_location.county ?= primary_title.var:kehillah_crisis_intro_county
+   domicile.domicile_location.county.holder.top_liege ?= primary_title.var:kehillah_crisis_intro_host
+  }
+  if = {
+   limit = { primary_title.var:kehillah_crisis_intro_pending = flag:granada }
+   kehillah_granada_warning_effect = yes
+   trigger_event = { id = kehillah_granada.0002 days = 35 }
+   trigger_event = { id = kehillah_granada.0003 days = 76 }
+  }
+  if = { limit = { primary_title.var:kehillah_crisis_intro_pending ?= flag:attack } kehillah_crisis_activate_attack_effect = yes }
+  else_if = { limit = { primary_title.var:kehillah_crisis_intro_pending ?= flag:host } kehillah_crisis_activate_host_effect = yes }
+  else_if = { limit = { primary_title.var:kehillah_crisis_intro_pending ?= flag:retarget } kehillah_crisis_activate_retarget_effect = yes }
+  else_if = { limit = { primary_title.var:kehillah_crisis_intro_pending ?= flag:trial } kehillah_trial_activate_effect = yes }
+  else_if = { limit = { primary_title.var:kehillah_crisis_intro_pending ?= flag:decree } kehillah_decree_activate_effect = yes }
+  else_if = {
+   limit = { primary_title.var:kehillah_crisis_intro_pending ?= flag:expulsion }
+   primary_title = { set_variable = { name = kehillah_expulsion_quarters value = 0 } }
+   kehillah_crisis_clear_intro_effect = yes
+  }
+  if = {
+   limit = {
+    primary_title = { NOT = { has_variable = kehillah_crisis_intro_pending } }
+    kehillah_crisis_existing_$FAMILY$_trigger = yes
+   }
+   set_variable = { name = kehillah_crisis_intro_accepted value = yes }
+   debug_log = "kehillah_crisis_intro: acknowledged; crisis active"
+  }
+ }
+ else_if = {
+  # Compatibility: an event queued by an older save already has an active crisis.
+  limit = {
+   primary_title = { NOT = { has_variable = kehillah_crisis_intro_pending } }
+   kehillah_crisis_existing_$FAMILY$_trigger = yes
+   OR = { NOT = { exists = scope:kehillah_crisis_intro_epoch } scope:kehillah_crisis_intro_epoch = -1 primary_title = { var:kehillah_crisis_intro_epoch = scope:kehillah_crisis_intro_epoch } }
+  }
+  set_variable = { name = kehillah_crisis_intro_accepted value = yes }
+ }
+ else = {
+  # Release a cancelled reservation only on its original title, never on a successor's new one.
+  scope:kehillah_crisis_intro_title ?= {
+   if = {
+    limit = { var:kehillah_crisis_intro_recipient ?= root var:kehillah_crisis_intro_epoch = scope:kehillah_crisis_intro_epoch var:kehillah_crisis_intro_pending ?= flag:$FAMILY$ exists = holder }
+    holder = { kehillah_crisis_cancel_intro_effect = yes }
+   }
+  }
+  debug_log = "kehillah_crisis_intro: stale event ignored"
+ }
+}
+kehillah_crisis_activate_attack_effect = {
+ primary_title = {
+  set_variable = { name = kehillah_crisis_pending_opening value = var:kehillah_crisis_opening }
+  var:kehillah_mob_threat ?= { save_scope_as = kehillah_mob_leader }
+  save_scope_as = kehillah_mob_victim_title
+ }
+ save_scope_as = kehillah_mob_victim
+ kehillah_crisis_clear_intro_effect = yes
+ kehillah_crisis_begin_effect = yes
+ kehillah_crisis_set_opening_effect = yes
+ if = {
+  limit = { scope:kehillah_mob_leader ?= { has_character_flag = kehillah_mob_local_preaching } }
+  kehillah_notify_region_players_effect = { TYPE = msg_kehillah_community_news_bad TITLE = kehillah_mob_news_local_preaching_t DESC = kehillah_mob_news_local_preaching_d }
+ }
+ else = { kehillah_notify_region_players_effect = { TYPE = msg_kehillah_community_news_bad TITLE = kehillah_mob_news_preaching_t DESC = kehillah_mob_news_preaching_d } }
+}
+# Scope: community leader. Restore a staged sudden attack's arguments, then create its war.
+kehillah_crisis_activate_host_effect = {
+ primary_title.var:kehillah_crisis_intro_spawn ?= { save_scope_as = kehillah_mob_spawn }
+ primary_title.var:kehillah_crisis_intro_preset ?= { save_scope_as = kehillah_mob_preset_leader }
+ save_scope_value_as = { name = kehillah_intro_host_size value = primary_title.var:kehillah_crisis_intro_size }
+ save_scope_value_as = { name = kehillah_intro_host_severity value = primary_title.var:kehillah_crisis_intro_severity }
+ primary_title.var:kehillah_crisis_intro_sent_by ?= { save_scope_as = kehillah_rising_leader }
+ kehillah_crisis_clear_intro_effect = yes
+ primary_title = { set_variable = { name = kehillah_crisis_host_intro_ack value = yes } }
+ kehillah_mob_raise_acknowledged_effect = { SIZE = scope:kehillah_intro_host_size SEVERITY = scope:kehillah_intro_host_severity }
+ primary_title = { remove_variable = kehillah_crisis_host_intro_ack }
+
+}
+# Cancel only pending context. No prevention reward, judgment or unseen active situation.
+kehillah_crisis_cancel_intro_effect = {
+ if = {
+  limit = { primary_title.var:kehillah_crisis_intro_pending ?= flag:retarget }
+  primary_title.var:kehillah_crisis_intro_preset ?= { if = { limit = { is_alive = yes } kehillah_mob_end_effect = yes } }
+ }
+ primary_title.var:kehillah_mob_threat ?= {
+  remove_character_flag = kehillah_mob_preaching
+  if = { limit = { has_character_flag = kehillah_granada_poet_leader } kehillah_granada_poet_stands_down_effect = yes }
+ }
+ primary_title = {
+  remove_variable = kehillah_mob_threat
+  remove_variable = kehillah_crisis_pending_opening
+  remove_variable = kehillah_crisis_opening
+  remove_variable = kehillah_trial_accuser
+  remove_variable = kehillah_trial_patron_char
+  remove_variable = kehillah_decree_instigator_char
+  remove_variable = kehillah_decree_spouse
+  if = { limit = { var:kehillah_crisis_intro_pending ?= flag:expulsion } remove_variable = kehillah_expulsion_host }
+ }
+ kehillah_crisis_clear_intro_effect = yes
+}
+# Quarterly recovery: a pending introduction follows community leadership, including AI successors.
+# An unchanged recipient already has the saved event and must not receive another copy.
+kehillah_crisis_intro_reconcile_effect = {
+ if = {
+  limit = {
+   primary_title ?= { has_variable = kehillah_crisis_intro_pending }
+   OR = {
+    AND = { primary_title.var:kehillah_crisis_intro_pending ?= flag:retarget NOT = { primary_title.var:kehillah_crisis_intro_preset ?= { is_alive = yes } } }
+    NOT = { domicile.domicile_location.county ?= primary_title.var:kehillah_crisis_intro_county }
+    NOT = { domicile.domicile_location.county.holder.top_liege ?= primary_title.var:kehillah_crisis_intro_host }
+   }
+  }
+  kehillah_crisis_cancel_intro_effect = yes
+ }
+ else_if = {
+  limit = {
+   primary_title ?= { has_variable = kehillah_crisis_intro_pending }
+   NOT = { primary_title.var:kehillah_crisis_intro_recipient ?= this }
+  }
+  primary_title = {
+   save_scope_as = kehillah_crisis_intro_title
+   save_scope_value_as = { name = kehillah_crisis_intro_epoch value = var:kehillah_crisis_intro_epoch }
+   set_variable = { name = kehillah_crisis_intro_recipient value = prev }
+  }
+  if = { limit = { primary_title.var:kehillah_crisis_intro_pending = flag:trial } trigger_event = kehillah_talmud_trial.0001 }
+  else_if = { limit = { primary_title.var:kehillah_crisis_intro_pending = flag:decree } trigger_event = kehillah_decree.0001 }
+  else_if = { limit = { primary_title = { OR = { var:kehillah_crisis_intro_pending = flag:host var:kehillah_crisis_intro_pending = flag:retarget } } } trigger_event = kehillah_crisis_intro.0001 }
+  else_if = { limit = { primary_title.var:kehillah_crisis_intro_pending = flag:expulsion } trigger_event = kehillah_expulsion.0001 }
+  else_if = { limit = { primary_title.var:kehillah_crisis_intro_pending = flag:granada } kehillah_crisis_clear_intro_effect = yes trigger_event = kehillah_granada.0018 }
+  else_if = { limit = { kehillah_crisis_opening_is_trigger = { KEY = accusation } } trigger_event = kehillah_accusation.0001 }
+  else_if = { limit = { kehillah_crisis_opening_is_trigger = { KEY = debts } } trigger_event = kehillah_crisis_race.0300 }
+  else_if = { limit = { kehillah_crisis_opening_is_trigger = { KEY = holy_week } } trigger_event = kehillah_crisis_race.0310 }
+  else = {
+   primary_title.var:kehillah_mob_threat ?= {
+    save_scope_as = kehillah_intro_preacher
+   }
+   set_variable = { name = kehillah_mob_ref value = scope:kehillah_intro_preacher }
+   trigger_event = kehillah_mob.0004
+  }
+ }
+}
+
+# Scope: new victim. Retain the same living host, war parameters and last-town context.
+kehillah_crisis_activate_retarget_effect = {
+ primary_title.var:kehillah_crisis_intro_preset ?= { save_scope_as = kehillah_intro_existing_host }
+ primary_title.var:kehillah_crisis_intro_last_town ?= { save_scope_as = kehillah_mob_last_town }
+ kehillah_crisis_clear_intro_effect = yes
+ scope:kehillah_intro_existing_host ?= {
+  if = { limit = { is_alive = yes } kehillah_mob_retarget_acknowledged_effect = yes }
+ }
+}

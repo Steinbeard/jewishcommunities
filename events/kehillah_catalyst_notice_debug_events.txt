@@ -1,0 +1,62 @@
+# Console-only, disposable saves: a REAL catalyst award and the resulting toast. No fake notice.
+# See docs/testing/2026-11-01-crisis-catalyst-notices.md.
+namespace = kehillah_catalyst_notice_debug
+
+kehillah_catalyst_notice_debug.1 = {
+ type = character_event
+ hidden = yes
+ orphan = yes
+ trigger = {
+  government_has_flag = government_is_kehillah
+  OR = { kehillah_crisis_warning_trigger = yes primary_title = { kehillah_crisis_title_armed_race_running_trigger = yes } }
+ }
+ immediate = {
+  primary_title = { save_scope_as = kehillah_notice_probe_title }
+  primary_title.var:kehillah_crisis_situation = {
+   save_scope_as = kehillah_notice_probe_situation
+   if = {
+    limit = { situation_current_phase = kehillah_crisis_warning }
+    situation_sub_region:kehillah_crisis_area = {
+     save_scope_value_as = { name = kehillah_notice_probe_before value = phase_takeover_points:kehillah_crisis_armed }
+    }
+    save_scope_value_as = { name = kehillah_notice_probe_expected value = { value = scope:kehillah_notice_probe_before add = 5 } }
+    scope:kehillah_notice_probe_title = {
+     kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = 5 }
+    }
+    if = {
+     limit = { situation_current_phase = kehillah_crisis_warning }
+     situation_sub_region:kehillah_crisis_area = {
+      if = {
+       limit = { phase_takeover_points:kehillah_crisis_armed = scope:kehillah_notice_probe_expected }
+       debug_log = "CATALYST NOTICE PROBE: PASS one +5 award toward Armed host"
+      }
+      else = { debug_log = "CATALYST NOTICE PROBE: FAIL point delta was not +5" }
+     }
+    }
+    else = { debug_log = "CATALYST NOTICE PROBE: threshold crossed; inspect Armed host and the +5 toast separately" }
+   }
+   else_if = {
+    limit = { situation_current_phase = kehillah_crisis_armed }
+    situation_sub_region:kehillah_crisis_area = {
+     save_scope_value_as = { name = kehillah_notice_probe_before value = phase_takeover_points:kehillah_crisis_held }
+    }
+    save_scope_value_as = { name = kehillah_notice_probe_expected value = { value = scope:kehillah_notice_probe_before add = 5 } }
+    scope:kehillah_notice_probe_title = {
+     kehillah_crisis_armed_race_add_effect = { CATALYST = kehillah_crisis_efforts_catalyst POINTS = 5 }
+    }
+    if = {
+     limit = { situation_current_phase = kehillah_crisis_armed }
+     situation_sub_region:kehillah_crisis_area = {
+      if = {
+       limit = { phase_takeover_points:kehillah_crisis_held = scope:kehillah_notice_probe_expected }
+       debug_log = "CATALYST NOTICE PROBE: PASS one +5 award toward Quarter held"
+      }
+      else = { debug_log = "CATALYST NOTICE PROBE: FAIL point delta was not +5" }
+     }
+    }
+    else = { debug_log = "CATALYST NOTICE PROBE: threshold crossed; inspect Quarter held and the +5 toast separately" }
+   }
+   debug_log_scopes = yes
+  }
+ }
+}

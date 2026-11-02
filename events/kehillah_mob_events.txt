@@ -1,4 +1,9 @@
-﻿namespace = kehillah_mob
+﻿# Opening choices run after acknowledgment; previews contain no crisis initialization.
+scripted_effect kehillah_intro_preacher_1_response_effect = {
+	custom_tooltip = kehillah_mob_how_to_act_tt
+}
+
+namespace = kehillah_mob
 
 # =====================================================================
 # V39 slice 1 -- the Mob's events (docs/spec/v39-pogroms-and-the-popular-
@@ -117,18 +122,27 @@ kehillah_mob.0004 = {
 		character = scope:kehillah_mob_leader
 		animation = rage
 	}
-	trigger = { exists = var:kehillah_mob_ref }
+	trigger = { exists = var:kehillah_mob_ref kehillah_crisis_attack_intro_trigger = yes }
 	immediate = {
+  primary_title = { save_scope_as = kehillah_crisis_intro_title }
 		kehillah_mob_event_scopes_effect = yes
-		if = {
-			limit = { is_ai = yes }
-			kehillah_mob_ai_answers_effect = yes
-		}
 	}
 	option = {
 		name = kehillah_mob.0004.a
-		custom_tooltip = kehillah_mob_how_to_act_tt
-		trigger_event = kehillah_mob.0100
+		show_as_tooltip = { kehillah_intro_preacher_1_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:preacher_1 } }
+	}
+
+	after = {
+		kehillah_crisis_acknowledge_effect = { FAMILY = attack }
+		if = {
+			limit = { has_variable = kehillah_crisis_intro_accepted }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:preacher_1 } kehillah_intro_preacher_1_response_effect = yes }
+		if = { limit = { is_ai = yes } kehillah_mob_ai_answers_effect = yes }
+		}
+		remove_variable = kehillah_crisis_intro_accepted
+		remove_variable = kehillah_crisis_intro_choice
 	}
 }
 
@@ -208,6 +222,7 @@ kehillah_mob.0003 = {
 				}
 				desc = kehillah_mob_gate_held
 				primary_title = { set_variable = { name = kehillah_mob_stood_at_gate value = yes } }
+				primary_title = { kehillah_crisis_armed_race_add_effect = { CATALYST = kehillah_crisis_efforts_catalyst POINTS = kehillah_crisis_held_gate_points } }
 				custom_tooltip = kehillah_mob_gate_held_tt
 				hidden_effect = {
 					random = {
@@ -226,6 +241,7 @@ kehillah_mob.0003 = {
 					multiplier = -3.5
 				}
 				desc = kehillah_mob_gate_lost
+				primary_title = { kehillah_crisis_armed_race_add_effect = { CATALYST = kehillah_crisis_misstep_catalyst POINTS = kehillah_crisis_struck_gate_points } }
 				increase_wounds_effect = { REASON = fight }
 			}
 		}
@@ -238,8 +254,12 @@ kehillah_mob.0003 = {
 	# Send the elders out with silver.
 	option = {
 		name = kehillah_mob.0003.b
-		trigger = { gold >= kehillah_mob_last_bribe_cost_value }
-		show_as_unavailable = { always = yes }
+		# 2026-11-01: hidden while the host's race runs; Send Silver (Make Our Case) is the action.
+		trigger = {
+			NOT = { kehillah_crisis_armed_open_trigger = yes }
+			gold >= kehillah_mob_last_bribe_cost_value
+		}
+		show_as_unavailable = { NOT = { kehillah_crisis_armed_open_trigger = yes } }
 		remove_short_term_gold = kehillah_mob_last_bribe_cost_value
 		random_list = {
 			0 = {
@@ -270,12 +290,14 @@ kehillah_mob.0003 = {
 				modifier = { add = kehillah_mob_plead_chance_value }
 				desc = kehillah_mob_plead_heard
 				primary_title = { set_variable = { name = kehillah_mob_pleaded value = yes } }
+				primary_title = { kehillah_crisis_armed_race_add_effect = { CATALYST = kehillah_crisis_efforts_catalyst POINTS = kehillah_crisis_held_plead_points } }
 				custom_tooltip = kehillah_mob_plead_heard_tt
 			}
 			0 = {
 				modifier = { add = kehillah_mob_plead_fail_value }
 				desc = kehillah_mob_plead_scorned
 				custom_tooltip = kehillah_mob_plead_scorned_tt
+				primary_title = { kehillah_crisis_armed_race_add_effect = { CATALYST = kehillah_crisis_misstep_catalyst POINTS = kehillah_crisis_struck_plead_points } }
 			}
 		}
 		ai_chance = { base = 15 }
@@ -348,6 +370,7 @@ kehillah_mob.0003 = {
 	option = {
 		name = kehillah_mob.0003.d
 		add_piety = minor_piety_gain
+		primary_title = { kehillah_crisis_armed_race_add_effect = { CATALYST = kehillah_crisis_efforts_catalyst POINTS = kehillah_crisis_held_prayer_points } }
 		ai_chance = { base = 10 }
 	}
 }
@@ -1040,7 +1063,11 @@ kehillah_mob.0100 = {
 		character = scope:kehillah_mob_leader
 		animation = rage
 	}
-	trigger = { kehillah_mob_hub_open_trigger = yes }
+	trigger = {
+		# 2026-11-01: the crisis window's three actions replace the hub.
+		NOT = { kehillah_crisis_has_window_trigger = yes }
+		kehillah_mob_hub_open_trigger = yes
+	}
 	immediate = {
 		# Only answers sent off from here carry these.
 		clear_saved_scope = kehillah_mob_via_messenger
@@ -2091,7 +2118,7 @@ kehillah_mob.0140 = {
 			0 = {
 				modifier = { add = kehillah_mob_treat_chance_value }
 				desc = kehillah_mob_bribe_taken
-				custom_tooltip = kehillah_mob_bribe_taken_tt
+				custom_tooltip = kehillah_mob_camp_swayed_tt
 				set_variable = { name = kehillah_mob_answer value = flag:bribe_yes }
 			}
 			0 = {
@@ -2113,7 +2140,7 @@ kehillah_mob.0140 = {
 			0 = {
 				modifier = { add = kehillah_mob_treat_more_chance_value }
 				desc = kehillah_mob_bribe_taken
-				custom_tooltip = kehillah_mob_bribe_taken_tt
+				custom_tooltip = kehillah_mob_camp_swayed_tt
 				set_variable = { name = kehillah_mob_answer value = flag:bribe_yes }
 			}
 			0 = {
@@ -2241,7 +2268,9 @@ kehillah_mob.0142 = {
 		trigger_event = kehillah_mob.0141
 	}
 
-	# Reason with him: your diplomacy against his, a long chance.
+	# Reason with him: your diplomacy against his, a long chance. 2026-11-01
+	# (Daniel: too strong against Abu Ishaq): a gentler skill curve, and a
+	# zealot or a stubborn man hears less.
 	option = {
 		name = kehillah_mob.0140.reason
 		duel = {
@@ -2251,21 +2280,25 @@ kehillah_mob.0142 = {
 				desc = kehillah_mob_reason_heard
 				compare_modifier = {
 					value = scope:duel_value
-					multiplier = 2
+					multiplier = 1.5
+				}
+				modifier = {
+					add = -20
+					scope:kehillah_mob_leader = { has_trait = zealous }
 				}
 				modifier = {
 					add = -10
-					scope:kehillah_mob_leader = { has_trait = zealous }
+					scope:kehillah_mob_leader = { has_trait = stubborn }
 				}
 				min = 3
-				custom_tooltip = kehillah_mob_bribe_taken_tt
+				custom_tooltip = kehillah_mob_camp_swayed_tt
 				set_variable = { name = kehillah_mob_answer value = flag:reason_yes }
 			}
 			80 = {
 				desc = kehillah_mob_reason_scorned
 				compare_modifier = {
 					value = scope:duel_value
-					multiplier = -2
+					multiplier = -1.5
 				}
 				min = 5
 				random = {
@@ -2379,13 +2412,14 @@ kehillah_mob.0141 = {
 		name = kehillah_mob.0141.a
 		if = {
 			limit = { exists = scope:kehillah_mob_turned_aside }
-			# The host turns aside (in a hidden event: ending the host is
-			# heavy, and its own report follows).
+			# He wavers (2026-11-01: no longer the end of a crisis; see
+			# kehillah_mob_turned_aside_effect). Outside any crisis race the
+			# host still turns aside, in a hidden effect with its own report.
 			if = {
 				limit = { has_variable = kehillah_mob_away }
 				remove_variable = kehillah_mob_away
 			}
-			hidden_effect = { scope:kehillah_mob_leader = { kehillah_mob_bought_off_effect = yes } }
+			hidden_effect = { primary_title = { kehillah_mob_turned_aside_effect = yes } }
 		}
 		else = {
 			kehillah_mob_back_to_hub_effect = yes

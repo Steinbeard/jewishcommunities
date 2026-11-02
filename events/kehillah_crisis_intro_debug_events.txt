@@ -1,0 +1,146 @@
+﻿# Console-only, disposable saves. See docs/testing/2026-11-01-crisis-acknowledgment.md.
+namespace = kehillah_crisis_intro_debug
+
+# Inspect the actual pending state while the opening event is still unanswered.
+kehillah_crisis_intro_debug.1 = {
+ type = character_event
+ hidden = yes
+ orphan = yes
+ immediate = {
+  if = {
+   limit = {
+    primary_title ?= {
+     has_variable = kehillah_crisis_intro_pending
+     NOT = { exists = var:kehillah_trial_situation }
+     NOT = { exists = var:kehillah_decree_situation }
+     OR = { NOT = { has_variable = kehillah_crisis_stage } var:kehillah_crisis_stage = 4 }
+     NOT = { has_variable = kehillah_expulsion_quarters }
+    }
+   }
+   debug_log = "INTRO PROBE: PASS opening pending, no active crisis clock"
+  }
+  else = { debug_log = "INTRO PROBE: FAIL or no pending introduction; inspect scopes" }
+  primary_title ?= { debug_log_scopes = yes }
+ }
+}
+# After responding, capture the active instance. No state is fabricated by the probe.
+kehillah_crisis_intro_debug.2 = {
+ type = character_event
+ hidden = yes
+ orphan = yes
+ immediate = {
+  primary_title = {
+   remove_variable = kehillah_intro_probe_situation
+   if = { limit = { exists = var:kehillah_trial_situation } set_variable = { name = kehillah_intro_probe_situation value = var:kehillah_trial_situation } }
+   else_if = { limit = { exists = var:kehillah_decree_situation } set_variable = { name = kehillah_intro_probe_situation value = var:kehillah_decree_situation } }
+   else_if = { limit = { exists = var:kehillah_crisis_situation } set_variable = { name = kehillah_intro_probe_situation value = var:kehillah_crisis_situation } }
+   if = {
+    limit = { NOT = { has_variable = kehillah_crisis_intro_pending } OR = { exists = var:kehillah_intro_probe_situation has_variable = kehillah_expulsion_quarters } }
+    debug_log = "INTRO PROBE: PASS acknowledgment activated a crisis"
+   }
+   else = { debug_log = "INTRO PROBE: FAIL acknowledgment did not activate a crisis" }
+   var:kehillah_intro_probe_situation ?= { debug_log_scopes = yes }
+   debug_log_scopes = yes
+  }
+ }
+}
+# Repeat acknowledgment without a choice: its same situation reference and epoch must survive.
+kehillah_crisis_intro_debug.3 = {
+ type = character_event
+ hidden = yes
+ orphan = yes
+ trigger = { primary_title ?= { NOT = { has_variable = kehillah_crisis_intro_pending } has_variable = kehillah_crisis_intro_epoch } }
+ immediate = {
+  primary_title = {
+   save_scope_as = kehillah_crisis_intro_title
+   save_scope_value_as = { name = kehillah_crisis_intro_epoch value = var:kehillah_crisis_intro_epoch }
+  }
+  kehillah_crisis_acknowledge_effect = { FAMILY = attack }
+  kehillah_crisis_acknowledge_effect = { FAMILY = trial }
+  kehillah_crisis_acknowledge_effect = { FAMILY = decree }
+  kehillah_crisis_acknowledge_effect = { FAMILY = expulsion }
+  remove_variable = kehillah_crisis_intro_accepted
+  if = {
+   limit = {
+    primary_title = {
+     var:kehillah_crisis_intro_epoch = scope:kehillah_crisis_intro_epoch
+     OR = { var:kehillah_crisis_situation ?= var:kehillah_intro_probe_situation var:kehillah_trial_situation ?= var:kehillah_intro_probe_situation var:kehillah_decree_situation ?= var:kehillah_intro_probe_situation has_variable = kehillah_expulsion_quarters }
+    }
+   }
+   debug_log = "INTRO PROBE: PASS repeated acknowledgment kept instance and epoch"
+  }
+  else = { debug_log = "INTRO PROBE: FAIL repeated acknowledgment changed instance or epoch" }
+ }
+}
+
+kehillah_crisis_intro_debug.10 = {
+ type = character_event
+ hidden = yes
+ orphan = yes
+ trigger = { kehillah_crisis_can_offer_intro_trigger = yes }
+ immediate = { kehillah_crisis_start_local_opening_effect = { OPENING = debts } }
+}
+
+kehillah_crisis_intro_debug.11 = {
+ type = character_event
+ hidden = yes
+ orphan = yes
+ trigger = { kehillah_crisis_can_offer_intro_trigger = yes }
+ immediate = { kehillah_crisis_start_local_opening_effect = { OPENING = holy_week } }
+}
+
+kehillah_crisis_intro_debug.12 = {
+ type = character_event
+ hidden = yes
+ orphan = yes
+ trigger = { kehillah_crisis_can_offer_intro_trigger = yes }
+ immediate = { kehillah_accusation_begin_effect = yes }
+}
+
+kehillah_crisis_intro_debug.13 = {
+ type = character_event
+ hidden = yes
+ orphan = yes
+ trigger = { kehillah_crisis_can_offer_intro_trigger = yes }
+ immediate = { kehillah_trial_begin_effect = yes }
+}
+
+kehillah_crisis_intro_debug.14 = {
+ type = character_event
+ hidden = yes
+ orphan = yes
+ trigger = { kehillah_crisis_can_offer_intro_trigger = yes }
+ immediate = { if = { limit = { domicile.domicile_location.county.holder.top_liege.faith.religion = religion:islam_religion } kehillah_decree_begin_effect = { KIND = ghiyar } } else = { kehillah_decree_begin_effect = { KIND = badge } } }
+}
+
+kehillah_crisis_intro_debug.15 = {
+ type = character_event
+ hidden = yes
+ orphan = yes
+ trigger = { kehillah_crisis_can_offer_intro_trigger = yes }
+ immediate = { kehillah_mob_raise_effect = { SIZE = 1000 SEVERITY = 45 } }
+}
+
+kehillah_crisis_intro_debug.16 = {
+ type = character_event
+ hidden = yes
+ orphan = yes
+ trigger = { kehillah_crisis_can_offer_intro_trigger = yes }
+ immediate = { trigger_event = kehillah_granada.0018 }
+}
+
+kehillah_crisis_intro_debug.17 = {
+ type = character_event
+ hidden = yes
+ orphan = yes
+ trigger = { kehillah_crisis_can_offer_intro_trigger = yes }
+ immediate = { domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_intro_probe_host } kehillah_expulsion_start_effect = { HOST = scope:kehillah_intro_probe_host } }
+}
+
+kehillah_crisis_intro_debug.18 = {
+ type = character_event
+ hidden = yes
+ orphan = yes
+ trigger = { kehillah_crisis_can_offer_intro_trigger = yes }
+ immediate = { kehillah_decree_begin_effect = { KIND = servants } }
+}

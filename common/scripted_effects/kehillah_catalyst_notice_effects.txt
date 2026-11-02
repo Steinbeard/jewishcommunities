@@ -1,0 +1,196 @@
+# 2026-11-01. Struggle-style feedback for actual community-situation catalysts.
+# We cannot reuse msg_catalyst_triggered: its text requires code-provided Struggle fields.
+# Each group dispatch below reads the very same script value as its native future-phase binding.
+# NOTICE=no is reserved for recurring drivers whose existing narrative report carries the notice.
+
+# Scope: situation. Snapshot BEFORE firing: a threshold-crossing catalyst may change the phase,
+# seed another catalyst and clear the live race counters before this effect returns.
+kehillah_crisis_apply_catalyst_effect = {
+ save_scope_value_as = { name = kehillah_notice_$CATALYST$_points value = $POINTS$ }
+ trigger_situation_catalyst = $CATALYST$
+ if = {
+  limit = { always = $NOTICE$ scope:kehillah_notice_$CATALYST$_points > 0 }
+  kehillah_crisis_catalyst_notice_effect = { CATALYST = $CATALYST$ POINTS = scope:kehillah_notice_$CATALYST$_points TRACK = $TRACK$ }
+ }
+}
+
+# Scope: situation. A player-only notification; it never awards points itself.
+kehillah_crisis_catalyst_notice_effect = {
+ save_scope_as = kehillah_notice_situation
+ var:kehillah_crisis_title ?= { save_scope_as = kehillah_notice_title }
+ scope:kehillah_notice_title.holder.domicile.domicile_location.county ?= { save_scope_as = kehillah_notice_county }
+ save_scope_value_as = { name = kehillah_notice_points value = $POINTS$ }
+ scope:kehillah_notice_title.holder ?= {
+  if = {
+   limit = { is_ai = no exists = scope:kehillah_notice_county scope:kehillah_notice_points > 0 scope:kehillah_notice_title = { NOT = { has_variable = kehillah_crisis_intro_pending } } }
+   send_interface_message = {
+    type = msg_kehillah_crisis_catalyst
+    title = kehillah_crisis_catalyst_notice_t
+    desc = { desc = $CATALYST$ desc = kehillah_crisis_catalyst_progress_$TRACK$ }
+    left_icon = scope:kehillah_notice_title
+   }
+  }
+ }
+}
+
+# Scope: player leader. Merge the existing short narrative pool with a mechanical footer. Random
+# choices and the existing per-pool last-variant variables remain the same as the flavor helper.
+kehillah_crisis_flavor_catalyst_effect = {
+ save_scope_value_as = { name = kehillah_notice_points value = $POINTS$ }
+ domicile.domicile_location.county ?= { save_scope_as = kehillah_notice_county }
+ random_courtier = { limit = { is_adult = yes is_jewish_character_trigger = yes } save_scope_as = kehillah_toast_elder }
+ domicile.domicile_location.county.holder ?= {
+  random_courtier = { limit = { is_adult = yes NOT = { is_jewish_character_trigger = yes } } save_scope_as = kehillah_toast_townsman }
+ }
+ random_list = {
+  10 = {
+   trigger = { NOT = { var:kehillah_toast_last_$KEY$ ?= 1 } }
+   kehillah_crisis_flavor_catalyst_send_effect = { KEY = $KEY$ N = 1 CATALYST = $CATALYST$ TRACK = $TRACK$ PERIOD = $PERIOD$ }
+  }
+  10 = {
+   trigger = { NOT = { var:kehillah_toast_last_$KEY$ ?= 2 } }
+   kehillah_crisis_flavor_catalyst_send_effect = { KEY = $KEY$ N = 2 CATALYST = $CATALYST$ TRACK = $TRACK$ PERIOD = $PERIOD$ }
+  }
+  10 = {
+   trigger = { exists = scope:kehillah_toast_townsman NOT = { var:kehillah_toast_last_$KEY$ ?= 3 } }
+   kehillah_crisis_flavor_catalyst_send_effect = { KEY = $KEY$ N = 3 CATALYST = $CATALYST$ TRACK = $TRACK$ PERIOD = $PERIOD$ }
+  }
+  10 = {
+   trigger = { exists = scope:kehillah_toast_elder NOT = { var:kehillah_toast_last_$KEY$ ?= 4 } }
+   kehillah_crisis_flavor_catalyst_send_effect = { KEY = $KEY$ N = 4 CATALYST = $CATALYST$ TRACK = $TRACK$ PERIOD = $PERIOD$ }
+  }
+ }
+}
+kehillah_crisis_flavor_catalyst_send_effect = {
+ set_variable = { name = kehillah_toast_last_$KEY$ value = $N$ }
+ send_interface_message = {
+  type = msg_kehillah_crisis_catalyst
+  title = kehillah_crisis_catalyst_notice_t
+  desc = {
+   desc = $KEY$_d$N$
+   desc = kehillah_crisis_catalyst_report_$PERIOD$
+   desc = $CATALYST$
+   desc = kehillah_crisis_catalyst_progress_$TRACK$
+  }
+  left_icon = scope:kehillah_crisis_announce_title
+ }
+}
+
+# Native binding: kehillah_crisis_opening_catalyst.
+kehillah_crisis_opening_catalyst_trigger_effect = {
+ if = {
+  limit = { situation_current_phase = kehillah_crisis_warning }
+  kehillah_crisis_apply_catalyst_effect = { CATALYST = kehillah_crisis_opening_catalyst POINTS = kehillah_crisis_opening_catalyst_points_value TRACK = armed NOTICE = $NOTICE$ }
+ }
+}
+
+# Native binding: kehillah_crisis_agitator_catalyst.
+kehillah_crisis_agitator_catalyst_trigger_effect = {
+ if = {
+  limit = { situation_current_phase = kehillah_crisis_warning }
+  kehillah_crisis_apply_catalyst_effect = { CATALYST = kehillah_crisis_agitator_catalyst POINTS = kehillah_crisis_agitator_catalyst_points_value TRACK = armed NOTICE = $NOTICE$ }
+ }
+}
+
+# Native binding: kehillah_crisis_ill_times_catalyst.
+kehillah_crisis_ill_times_catalyst_trigger_effect = {
+ if = {
+  limit = { situation_current_phase = kehillah_crisis_warning }
+  kehillah_crisis_apply_catalyst_effect = { CATALYST = kehillah_crisis_ill_times_catalyst POINTS = kehillah_crisis_ill_times_catalyst_points_value TRACK = armed NOTICE = $NOTICE$ }
+ }
+}
+
+# Native binding: kehillah_crisis_mood_turns_catalyst.
+kehillah_crisis_mood_turns_catalyst_trigger_effect = {
+ if = {
+  limit = { situation_current_phase = kehillah_crisis_warning }
+  kehillah_crisis_apply_catalyst_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_mood_turns_catalyst_points_value TRACK = armed NOTICE = $NOTICE$ }
+ }
+}
+
+# Native binding: kehillah_crisis_misstep_catalyst.
+kehillah_crisis_misstep_catalyst_trigger_effect = {
+ if = {
+  limit = { situation_current_phase = kehillah_crisis_warning }
+  kehillah_crisis_apply_catalyst_effect = { CATALYST = kehillah_crisis_misstep_catalyst POINTS = kehillah_crisis_misstep_catalyst_points_value TRACK = armed NOTICE = $NOTICE$ }
+ }
+ else_if = {
+  limit = { situation_current_phase = kehillah_crisis_armed }
+  kehillah_crisis_apply_catalyst_effect = { CATALYST = kehillah_crisis_misstep_catalyst POINTS = kehillah_crisis_misstep_catalyst_points_value TRACK = struck NOTICE = $NOTICE$ }
+ }
+}
+
+# Native binding: kehillah_crisis_shield_catalyst.
+kehillah_crisis_shield_catalyst_trigger_effect = {
+ if = {
+  limit = { situation_current_phase = kehillah_crisis_warning }
+  kehillah_crisis_apply_catalyst_effect = { CATALYST = kehillah_crisis_shield_catalyst POINTS = kehillah_crisis_shield_catalyst_points_value TRACK = spared NOTICE = $NOTICE$ }
+ }
+ else_if = {
+  limit = { situation_current_phase = kehillah_crisis_armed }
+  kehillah_crisis_apply_catalyst_effect = { CATALYST = kehillah_crisis_shield_catalyst POINTS = kehillah_crisis_shield_catalyst_points_value TRACK = held NOTICE = $NOTICE$ }
+ }
+}
+
+# Native binding: kehillah_crisis_mood_eases_catalyst.
+kehillah_crisis_mood_eases_catalyst_trigger_effect = {
+ if = {
+  limit = { situation_current_phase = kehillah_crisis_warning }
+  kehillah_crisis_apply_catalyst_effect = { CATALYST = kehillah_crisis_mood_eases_catalyst POINTS = kehillah_crisis_mood_eases_catalyst_points_value TRACK = spared NOTICE = $NOTICE$ }
+ }
+}
+
+# Native binding: kehillah_crisis_efforts_catalyst.
+kehillah_crisis_efforts_catalyst_trigger_effect = {
+ if = {
+  limit = { situation_current_phase = kehillah_crisis_warning }
+  kehillah_crisis_apply_catalyst_effect = { CATALYST = kehillah_crisis_efforts_catalyst POINTS = kehillah_crisis_efforts_catalyst_points_value TRACK = spared NOTICE = $NOTICE$ }
+ }
+ else_if = {
+  limit = { situation_current_phase = kehillah_crisis_armed }
+  kehillah_crisis_apply_catalyst_effect = { CATALYST = kehillah_crisis_efforts_catalyst POINTS = kehillah_crisis_efforts_catalyst_points_value TRACK = held NOTICE = $NOTICE$ }
+ }
+}
+
+# Native binding: kehillah_crisis_prepared_catalyst.
+kehillah_crisis_prepared_catalyst_trigger_effect = {
+ if = {
+  limit = { situation_current_phase = kehillah_crisis_armed }
+  kehillah_crisis_apply_catalyst_effect = { CATALYST = kehillah_crisis_prepared_catalyst POINTS = kehillah_crisis_prepared_catalyst_points_value TRACK = held NOTICE = $NOTICE$ }
+ }
+}
+
+# Native binding: kehillah_crisis_host_draws_on_catalyst.
+kehillah_crisis_host_draws_on_catalyst_trigger_effect = {
+ if = {
+  limit = { situation_current_phase = kehillah_crisis_armed }
+  kehillah_crisis_apply_catalyst_effect = { CATALYST = kehillah_crisis_host_draws_on_catalyst POINTS = kehillah_crisis_host_draws_on_catalyst_points_value TRACK = struck NOTICE = $NOTICE$ }
+ }
+}
+
+# Native binding: kehillah_crisis_abandoned_catalyst.
+kehillah_crisis_abandoned_catalyst_trigger_effect = {
+ if = {
+  limit = { situation_current_phase = kehillah_crisis_armed }
+  kehillah_crisis_apply_catalyst_effect = { CATALYST = kehillah_crisis_abandoned_catalyst POINTS = kehillah_crisis_abandoned_catalyst_points_value TRACK = struck NOTICE = $NOTICE$ }
+ }
+}
+
+# Compatibility for explicit phase-transition signals passed through the shared race helpers.
+# They are not recurring point awards and do not produce a numerical catalyst report.
+kehillah_crisis_armed_catalyst_trigger_effect = {
+ if = { limit = { always = $NOTICE$ } debug_log = "kehillah_crisis: phase signal kehillah_crisis_armed_catalyst; phase reporting handles this transition" }
+ trigger_situation_catalyst = kehillah_crisis_armed_catalyst
+}
+kehillah_crisis_judgement_catalyst_trigger_effect = {
+ if = { limit = { always = $NOTICE$ } debug_log = "kehillah_crisis: phase signal kehillah_crisis_judgement_catalyst; phase reporting handles this transition" }
+ trigger_situation_catalyst = kehillah_crisis_judgement_catalyst
+}
+kehillah_crisis_struck_catalyst_trigger_effect = {
+ if = { limit = { always = $NOTICE$ } debug_log = "kehillah_crisis: phase signal kehillah_crisis_struck_catalyst; phase reporting handles this transition" }
+ trigger_situation_catalyst = kehillah_crisis_struck_catalyst
+}
+kehillah_crisis_recovery_catalyst_trigger_effect = {
+ if = { limit = { always = $NOTICE$ } debug_log = "kehillah_crisis: phase signal kehillah_crisis_recovery_catalyst; phase reporting handles this transition" }
+ trigger_situation_catalyst = kehillah_crisis_recovery_catalyst
+}

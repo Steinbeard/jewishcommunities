@@ -16,6 +16,76 @@ Phases are sequential within a track unless noted. This is the plan,
 subject to revision after each phase.
 
 ## Near-term TODO
+
+**Consolidated review snapshot - 2026-11-01, Daniel's request:** all current Codex/Claude work
+is being collected into one feature PR against the latest remote master. The current executable
+build has real attack races, Talmud-trial and decree situations, the native-derived crisis
+window with situation actions, opening acknowledgment, aftermaths and catalyst feedback. The
+earlier same-day proposal/native-window paragraphs below record intermediate stages; their
+"not built", mirror-only, false-date and 0/1-track claims are superseded by the dated build and
+live-test notes linked in [the consolidated verification record](docs/testing/2026-11-01-consolidated-review.md).
+Latest master already contains the Nagid court audience and ruler interactions; this snapshot
+preserves those changes, plus the remaining UI/editorial work. The multi-community crisis spec
+remains a proposal. Earlier partial live passes do not verify the newest lifecycle, paging,
+feedback and presentation changes; the combined PR remains a draft pending those checks.
+### Community crises as situations — 2026-10-31, Daniel's request
+
+**Catalyst feedback and Granada prose - 2026-11-01, Daniel's request:** attack-crisis point
+changes now send Struggle-style catalyst notices with the catalyst name, actual points, and
+future track. Monthly agitation and approximately weekly host reports combine their existing
+narrative with that feedback; they do not send a second numerical toast for the same recurring
+award. The study-hall threat and Sanhaja mobilization scene are rewritten to make the danger
+and remaining choices clear. [Implementation and limits](docs/implementation/2026-11-01-crisis-catalyst-notices.md);
+[checks and pending live probe](docs/testing/2026-11-01-crisis-catalyst-notices.md).
+This user-directed follow-up stays on the current worktree/branch. Points and thresholds are
+unchanged; explicit phase-transition signals retain their existing notification behavior.
+
+**Opening-event acknowledgment - 2026-11-01, Daniel's request:** implemented on the current
+worktree/branch. Each crisis entry offers its narrative trigger event first; acknowledgment
+starts the active situation (or the existing expulsion grace counter), then applies the chosen
+response. This covers Granada, accusations, preaching/crusades, debts, Holy Week, sudden hosts,
+a host's next community, Talmud trials, and badge/ghiyar/servants decrees. Pending introductions
+reserve the community and pause preaching/marching. Persistent clickable alerts replace the
+duplicate opening banners. Trial/decree details are copied unchanged from the opening.
+See the [implementation and save rules](docs/implementation/2026-11-01-crisis-acknowledgment.md)
+and [validation/runtime record](docs/testing/2026-11-01-crisis-acknowledgment.md).
+Source contracts pass; runtime acknowledgment, first-response catalysts, saves and alert
+navigation remain pending because the required Luna live check was unavailable. This direct
+request stays on the current branch and supersedes the opening-banner behavior, not the active
+crisis mechanics or the earlier situation test requirements.
+
+**2026-11-01 proposal — the situation becomes the crisis mechanic.** At Daniel's request,
+[Crisis situations as the mechanic](docs/spec/2026-11-01-crisis-situations-as-the-mechanic.md) proposes:
+- the situation owns the clock, superseding the 2026-10-31 "mirror, never a timer" rule;
+- real catalyst points, so the bars are the odds;
+- Phase Effects, and actions as situation decisions;
+- new families for the Talmud trial, the libel and the expulsion edict.
+
+Not built. Slice 0, an engine spike, comes first. §9 lists four decisions for Daniel; until he answers, a slice builds on the recommendations.
+
+**2026-11-01 proposal — crises that strike several communities.** At Daniel's request,
+[Multi-community crises](docs/spec/2026-11-01-multi-community-crises.md) splits them into two shapes:
+- **shared verdicts** (a realm decree, edict, trial of the books): one situation, one race, every community of the realm as members;
+- **waves** (1096, 1298, 1348): linked single-community crises that push each other's races, with a light global coordinator.
+
+One situation with a race per sub-region is rejected for now. Not built. §6 orders the slices, starting with a spike; §7 lists five decisions for Daniel.
+
+**Native situation UI restored 2026-11-01; live reload pending.** The [dated spec](docs/spec/2026-10-31-community-crises-as-situations.md) and [native-UI revision](docs/spec/2026-11-01-native-crisis-situation-ui.md)
+describe a non-unique, county-centered CK3 situation per active community crisis.
+The community title remains authoritative for stage, epoch, odds and outcome.
+The native window again shows participant groups, current/future phase tracks and catalysts. The existing stories drive transitions, violence, judgment and postscript events. Warning preparations remain accessible through an expandable block in Military Community Safety while a situation-specific native-window extension is designed. The [implementation note](docs/implementation/2026-10-31-crisis-situation-integration.md)
+records the title/situation bridge, phase catalysts, cleanup and quarterly
+reconciliation. xTiger remains at the 15-error baseline. A two-community
+identity/save probe, transition/event reconciliation, and native UI review are still required; see the [test plan](docs/testing/2026-10-31-crisis-situation-live-test.md). Daniel's screenshots confirm a Warning situation before violence and show that the compact custom window omitted useful native affordances. The restored native view has not yet been seen after a reload; its false phase date and 0/1 transition tracks remain presentation issues to resolve with the action extension.
+This direct request was taken ahead of the older queue.
+
+**Military navigation revision (2026-10-31):** Daniel's live screenshots showed
+two stacked tab rows on the Armies page. The Kehillah view now uses one row for
+Community Safety, Your Armies and Mercenaries, with a constant Military title.
+The original army pages and non-Kehillah navigation are retained. Source and
+xTiger checks passed. Daniel's warning-state screenshot confirms one tab row
+and the constant title; tab clicks and the non-Kehillah view still need a check.
+
 ### The Nagid — 2026-10-30, Daniel's request — slices 1–5 built, not live-tested
 
 [Spec](docs/spec/2026-10-30-the-nagid.md), revised the same day with Daniel's second-round
@@ -69,6 +139,51 @@ impossible.** The engine refuses `assign_councillor_type`, `appoint_court_positi
   duplicate-family cleanup (§4) is in the backlog.
 - **Daniel plans to live-test slices 1–5 on Sunday 2026-11-01.** The build note lists the checks.
   **Next:** slice 6, envy, clergy pressure and the fall.
+
+### Intrigue crisis view layout repair - 2026-10-30, Daniel's request
+
+Applied the reviewed crisis-view layout fixes to the main worktree: Community
+Safety now uses a vertical layout and replaces the scrollbox content placeholder,
+so the tracker is inside the scrolling area. Shorter Safety and Hooks & Secrets
+labels fit the four-tab header; the Safety icon follows its selected state.
+Removed an accidental duplicate content override from the review copy before
+transfer. Existing crisis mechanics and unrelated working edits are preserved.
+Source structure checked against CK3's shared scrollbox; live visual verification
+remains pending.
+
+
+### Fixed adult personality completion - 2026-10-29, Daniel's request
+
+**Built; source and xTiger checked.** Completed the 98 adult history definitions
+that disabled random traits while specifying fewer than three personality traits,
+adding 259 compatible traits. Existing traits, dates, family links and unrelated
+working edits are preserved. Eleven children and the intentional game-generated
+bookmark/world/author profiles remain unchanged. Three is the normal adult target,
+not an engine requirement. Added characterization is editorial, with a full
+[record and table](docs/implementation/2026-10-29-personality-trait-completion.md).
+xTiger has no new reports against the 15-error baseline. History changes need a
+new campaign; no live pass was performed for this static roster change.
+
+### Granada's opening and Abu Ishaq's poem - 2026-10-29, Daniel's request
+
+**Built; source and xTiger checked; live verification UNRUN.** A new first-week
+scene establishes Yoseph's vizierate, Nagid role, Samuel's patronage and the
+Sanhaja ruling establishment. In the revised day-30 scene, a clerk brings a
+circulating copy of Abu Ishaq's invective. Two translated historical couplets
+explicitly call for Yoseph's slaughter and the killing of his people; an ellipsis
+marks the omitted lines. This supersedes the fictional private letter. Abu Ishaq
+remains a staged courtier, but the poem's delivery no longer requires him alive
+or at court. The existing four response choices and balance are preserved. References to
+al-Mariyyah follow its localized title name, and the prose no longer assumes its
+lord is an independent foreign ruler; vanilla makes him Badis's vassal in 1066.
+Court, family, aftermath, Sephardi news and bookmark prose provide context and
+consistent outcomes. The proposed realm Nagid institution remains separate.
+Main-worktree xTiger has no new reports against its 15-error baseline; the earlier
+isolated baseline was 8 errors. A Luna live attempt stopped when process ownership
+inspection was denied; poem rendering and runtime checks remain pending.
+See the [implementation note](docs/implementation/2026-10-29-granada-chain-rewrite.md)
+and [test record](docs/testing/2026-10-29-granada-chain-rewrite-live-test.md).
+This direct request takes priority over the older live-test queue below.
 
 ### English conquest invitation revision — 2026-10-29, Daniel's request
 

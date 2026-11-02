@@ -151,6 +151,34 @@ bands.
 - **The Norman Conquest** brings an invitation to settle in England, followed by royal loans to
   the new king.
 
+### Danger: the crisis as a race
+
+*New in development, November 2026; not yet live-tested.* When a community is threatened, a
+**crisis situation** opens on the map and in the Situations list.
+
+- **Agitation is a race** between two bars: the **Armed host** and **Spared**. Whichever fills
+  first decides the warning. There is no hidden roll and no countdown; the window shows each
+  month's pressure and every named source of points.
+- **What drives the Armed host:**
+  - the agitator's sermons, which grow with his following as named men join him;
+  - a cold sovereign, a holy war, Holy Week;
+  - a run of warning events: a sermon in the market, a missing child, a brawl at the well, a
+    convert who speaks against the community, and more.
+- **How a community pushes back**, through the crisis window's actions:
+  - post a watch, lay in provisions;
+  - seek the protection of the lord or the Church;
+  - go out to the agitator's camp, or have the Dayyan answer him in public;
+  - win over the town council, discredit the agitator;
+  - appeal to the emperor or the head of the faith;
+  - proclaim a fast.
+- **If the host rises, a second race** decides whether the quarter is **held** or **struck**:
+  - what was prepared gives the defence a head start;
+  - the siege presses harder every few days;
+  - silver, the stone houses, barred streets and the lord's soldiers can still turn it.
+- **Six openings** give each crisis its own shape: a wandering preacher, an accusation that
+  will not die, crusaders on the road, debts after a dear year, Holy Week, and the vizier's
+  enemies (Granada, 1066).
+
 ### Community life
 
 - **Community decisions:** Distribute Tzedakah, Secure Construction Permission, and **Set the

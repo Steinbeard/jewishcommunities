@@ -1,0 +1,834 @@
+﻿namespace = kehillah_crisis_act
+
+# =====================================================================
+# The three standing actions' scenes, 2026-11-01
+# (docs/spec/2026-11-01-three-standing-actions.md). Opened by
+# kehillah_crisis_prepare_decision, _protect_decision and _case_decision.
+# Each option is one sub-action. An option that does not belong to this
+# phase or opening is hidden; one that belongs but is blocked shows
+# greyed out with the reason. The checks and effects are the ones the
+# old one-row-per-action decisions used.
+# Pages (2026-11-01): a scene shows three actions, then More options; Not
+# now only on the last page. Each scene's immediate lists its actions in
+# order (kehillah_crisis_act_page_start_effect and _list_effect), and each
+# option shows only on its page (kehillah_crisis_act_on_page_trigger).
+#   .0001 Prepare the Quarter
+#   .0002 Seek Protection
+#   .0003 Make Our Case
+# Scope: the community leader.
+# =====================================================================
+
+scripted_effect kehillah_crisis_act_scopes_effect = {
+	primary_title.var:kehillah_mob_threat ?= { save_scope_as = kehillah_crisis_agitator }
+	# An accusation's witness, while they live (2026-11-01).
+	primary_title.var:kehillah_acc_witness ?= {
+		if = {
+			limit = { is_alive = yes }
+			save_scope_as = kehillah_crisis_act_witness
+		}
+	}
+	domicile.domicile_location.county.holder ?= { save_scope_as = kehillah_crisis_lord }
+	# Granada: Joseph's wife and son, and the community of Lucena that could take them in.
+	if = {
+		limit = { kehillah_crisis_opening_is_trigger = { KEY = vizier } }
+		character:9000234 ?= {
+			if = {
+				limit = { is_alive = yes is_courtier_of = root }
+				save_scope_as = kehillah_granada_son
+			}
+		}
+		character:9000233 ?= {
+			if = {
+				limit = { is_alive = yes is_courtier_of = root }
+				save_scope_as = kehillah_granada_wife
+			}
+		}
+		title:d_kehillah_lucena.holder ?= { save_scope_as = kehillah_granada_lucena }
+	}
+}
+
+# --- Prepare the Quarter ---
+kehillah_crisis_act.0001 = {
+	type = character_event
+	title = kehillah_crisis_act.0001.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { kehillah_crisis_armed_open_trigger = yes }
+				desc = kehillah_crisis_act.0001.desc_armed
+			}
+			triggered_desc = {
+				trigger = { kehillah_crisis_opening_is_trigger = { KEY = vizier } }
+				desc = kehillah_crisis_act.0001.desc_vizier
+			}
+			triggered_desc = {
+				trigger = { kehillah_crisis_opening_is_trigger = { KEY = accusation } }
+				desc = kehillah_crisis_act.0001.desc_accusation
+			}
+			triggered_desc = {
+				trigger = { kehillah_crisis_opening_is_trigger = { KEY = debts } }
+				desc = kehillah_crisis_act.0001.desc_debts
+			}
+			triggered_desc = {
+				trigger = { kehillah_crisis_opening_is_trigger = { KEY = holy_week } }
+				desc = kehillah_crisis_act.0001.desc_holy_week
+			}
+			triggered_desc = {
+				trigger = { kehillah_crisis_opening_is_trigger = { KEY = crusade } }
+				desc = kehillah_crisis_act.0001.desc_crusade
+			}
+			desc = kehillah_crisis_act.0001.desc
+		}
+	}
+	theme = stewardship
+	left_portrait = { character = root animation = worry }
+	trigger = { kehillah_crisis_actions_open_trigger = yes }
+	immediate = {
+		kehillah_crisis_act_scopes_effect = yes
+		# The actions this phase and opening offer, in order; three to a page (2026-11-01).
+		kehillah_crisis_act_page_start_effect = yes
+		if = {
+			limit = { kehillah_crisis_warning_trigger = yes }
+			kehillah_crisis_act_list_effect = { KEY = watch }
+			kehillah_crisis_act_list_effect = { KEY = supplies }
+			kehillah_crisis_act_list_effect = { KEY = fast }
+		}
+		if = {
+			limit = { kehillah_crisis_armed_open_trigger = yes }
+			kehillah_crisis_act_list_effect = { KEY = shelter }
+			kehillah_crisis_act_list_effect = { KEY = bar }
+		}
+		if = {
+			limit = { kehillah_crisis_warning_trigger = yes }
+			if = {
+				limit = { kehillah_crisis_opening_is_trigger = { KEY = vizier } }
+				kehillah_crisis_act_list_effect = { KEY = almeria }
+			}
+			else = { kehillah_crisis_act_list_effect = { KEY = routes } }
+		}
+		if = {
+			limit = {
+				exists = scope:kehillah_granada_son
+				exists = scope:kehillah_granada_lucena
+			}
+			if = {
+				limit = { exists = scope:kehillah_granada_wife }
+				kehillah_crisis_act_list_effect = { KEY = lucena_family }
+			}
+			kehillah_crisis_act_list_effect = { KEY = lucena_son }
+		}
+	}
+
+	# Post a watch.
+	option = {
+		name = kehillah_crisis_act.0001.watch
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = watch }
+			kehillah_crisis_can_prepare_trigger = { DONE = kehillah_mob_defended COST = kehillah_crisis_watch_cost }
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = watch } }
+		remove_short_term_gold = kehillah_crisis_watch_cost
+		custom_tooltip = kehillah_crisis_watch_decision_effect_tt
+		kehillah_crisis_start_preparation_effect = { ACTION = 1 }
+		ai_chance = { base = 60 }
+	}
+
+	# Lay in provisions.
+	option = {
+		name = kehillah_crisis_act.0001.supplies
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = supplies }
+			kehillah_crisis_can_prepare_trigger = { DONE = kehillah_crisis_supplies COST = kehillah_crisis_supplies_cost }
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = supplies } }
+		remove_short_term_gold = kehillah_crisis_supplies_cost
+		custom_tooltip = kehillah_crisis_supplies_decision_effect_tt
+		kehillah_crisis_start_preparation_effect = { ACTION = 2 }
+		ai_chance = { base = 40 }
+	}
+
+	# Proclaim a fast.
+	option = {
+		name = kehillah_crisis_act.0001.fast
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = fast }
+			kehillah_crisis_can_act_trigger = { ONCE = kehillah_crisis_fasted }
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = fast } }
+		primary_title = {
+			set_variable = { name = kehillah_crisis_fasted value = yes }
+			kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_efforts_catalyst POINTS = kehillah_crisis_ev_small }
+		}
+		add_stress = medium_stress_loss
+		add_piety = minor_piety_gain
+		ai_chance = { base = 50 }
+	}
+
+	# The host armed: into the stone houses.
+	option = {
+		name = kehillah_crisis_act.0001.shelter
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = shelter }
+			kehillah_crisis_can_act_armed_trigger = { ONCE = kehillah_crisis_sheltered }
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = shelter } }
+		primary_title = {
+			set_variable = { name = kehillah_crisis_sheltered value = yes }
+			kehillah_crisis_armed_race_add_effect = { CATALYST = kehillah_crisis_efforts_catalyst POINTS = kehillah_crisis_held_shelter_points }
+		}
+		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = -10 }
+		ai_chance = { base = 60 }
+	}
+
+	# The host armed: chains across the streets.
+	option = {
+		name = kehillah_crisis_act.0001.bar
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = bar }
+			kehillah_crisis_can_act_armed_trigger = { ONCE = kehillah_crisis_barred }
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = bar } }
+		primary_title = {
+			set_variable = { name = kehillah_crisis_barred value = yes }
+			kehillah_crisis_armed_race_add_effect = { CATALYST = kehillah_crisis_efforts_catalyst POINTS = kehillah_crisis_held_bar_points }
+		}
+		add_stress = minor_stress_gain
+		ai_chance = { base = 50 }
+	}
+
+	# Prepare a way out. Not in Granada, where the way out is the Almeria letter
+	# (2026-11-01: until the pages it showed there too, its trigger never excluded the vizier).
+	option = {
+		name = kehillah_crisis_act.0001.routes
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = routes }
+			kehillah_crisis_can_prepare_trigger = { DONE = kehillah_mob_scattered COST = kehillah_crisis_routes_cost }
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = routes } }
+		remove_short_term_gold = kehillah_crisis_routes_cost
+		custom_tooltip = kehillah_crisis_routes_decision_effect_tt
+		kehillah_crisis_start_preparation_effect = { ACTION = 3 }
+		ai_chance = { base = 30 }
+	}
+
+	# Granada: the way out runs to Almeria, and a letter to al-Mu'tasim is the very plot they charge.
+	option = {
+		name = kehillah_crisis_act.0001.almeria
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = almeria }
+			kehillah_crisis_can_prepare_trigger = { DONE = kehillah_mob_scattered COST = kehillah_crisis_routes_cost }
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = almeria } }
+		remove_short_term_gold = kehillah_crisis_routes_cost
+		custom_tooltip = kehillah_crisis_routes_decision_effect_tt
+		kehillah_crisis_start_preparation_effect = { ACTION = 3 }
+		random_list = {
+			0 = {
+				modifier = { add = kehillah_crisis_almeria_safe }
+				desc = kehillah_crisis_act.almeria_secret
+				custom_tooltip = kehillah_crisis_act.almeria_secret_tt
+			}
+			0 = {
+				modifier = { add = kehillah_crisis_almeria_risk }
+				desc = kehillah_crisis_act.almeria_found
+				primary_title = {
+					set_variable = { name = kehillah_granada_letter_found value = yes }
+					kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_ev_medium }
+				}
+			}
+		}
+		ai_chance = { base = 20 }
+	}
+
+	# Granada: Joseph's wife and son to Lucena (until 2026-11-01 its own event, "The Road to Lucena",
+	# kehillah_granada.0006). The city sees the vizier's household leave; if the quarter is struck,
+	# they are beyond its reach (kehillah_granada_vizier_falls_effect).
+	option = {
+		name = kehillah_crisis_act.0001.lucena_family
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = lucena_family }
+			kehillah_crisis_leader_free_trigger = yes
+			NOT = { has_character_flag = kehillah_granada_family_sent }
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = lucena_family } }
+		add_character_flag = kehillah_granada_family_sent
+		kehillah_granada_family_to_lucena_effect = yes
+		primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_ev_small } }
+		add_stress = minor_stress_gain
+		ai_chance = { base = 20 }
+	}
+
+	# Granada: only the boy, with his tutor; his mother stays, and the city sees less.
+	option = {
+		name = kehillah_crisis_act.0001.lucena_son
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = lucena_son }
+			kehillah_crisis_leader_free_trigger = yes
+			NOT = { has_character_flag = kehillah_granada_family_sent }
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = lucena_son } }
+		add_character_flag = kehillah_granada_family_sent
+		scope:kehillah_granada_lucena = { add_courtier = scope:kehillah_granada_son }
+		custom_tooltip = kehillah_granada_son_sent_tt
+		add_stress = minor_stress_gain
+		ai_chance = { base = 10 }
+	}
+
+	option = {
+		name = kehillah_crisis_act.more
+		trigger = { kehillah_crisis_act_more_trigger = yes }
+		kehillah_crisis_act_next_page_effect = { EVENT = kehillah_crisis_act.0001 }
+	}
+	option = {
+		name = kehillah_crisis_act.not_now
+		trigger = { kehillah_crisis_act_last_page_trigger = yes }
+		ai_chance = { base = 1 }
+	}
+}
+
+# --- Seek Protection ---
+kehillah_crisis_act.0002 = {
+	type = character_event
+	title = kehillah_crisis_act.0002.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { kehillah_crisis_armed_open_trigger = yes }
+				desc = kehillah_crisis_act.0002.desc_armed
+			}
+			triggered_desc = {
+				trigger = { kehillah_crisis_opening_is_trigger = { KEY = vizier } }
+				desc = kehillah_crisis_act.0002.desc_vizier
+			}
+			triggered_desc = {
+				trigger = { kehillah_crisis_opening_is_trigger = { KEY = accusation } }
+				desc = kehillah_crisis_act.0002.desc_accusation
+			}
+			triggered_desc = {
+				trigger = { kehillah_crisis_opening_is_trigger = { KEY = debts } }
+				desc = kehillah_crisis_act.0002.desc_debts
+			}
+			triggered_desc = {
+				trigger = { kehillah_crisis_opening_is_trigger = { KEY = holy_week } }
+				desc = kehillah_crisis_act.0002.desc_holy_week
+			}
+			triggered_desc = {
+				trigger = { kehillah_crisis_opening_is_trigger = { KEY = crusade } }
+				desc = kehillah_crisis_act.0002.desc_crusade
+			}
+			desc = kehillah_crisis_act.0002.desc
+		}
+	}
+	theme = diplomacy
+	left_portrait = { character = root animation = worry }
+	right_portrait = {
+		trigger = { exists = scope:kehillah_crisis_lord }
+		character = scope:kehillah_crisis_lord
+		animation = thinking
+	}
+	trigger = { kehillah_crisis_actions_open_trigger = yes }
+	immediate = { kehillah_crisis_act_scopes_effect = yes }
+
+	# The lord, his overlord, the Church (V42's protection page). Players only.
+	option = {
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = { kehillah_crisis_opening_is_trigger = { KEY = vizier } }
+						desc = kehillah_crisis_act.0002.powerful_vizier
+					}
+					desc = kehillah_crisis_act.0002.powerful
+				}
+			}
+		}
+		trigger = {
+			is_ai = no
+			kehillah_crisis_warning_trigger = yes
+			kehillah_crisis_can_gather_council_trigger = yes
+		}
+		show_as_unavailable = { is_ai = no kehillah_crisis_warning_trigger = yes }
+		custom_tooltip = kehillah_crisis_protection_decision_effect_tt
+		hidden_effect = {
+			set_variable = { name = kehillah_mob_ref value = primary_title.var:kehillah_mob_threat }
+			trigger_event = kehillah_mob.0101
+		}
+	}
+
+	# Gifts to the town council and the guild masters.
+	option = {
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = { kehillah_crisis_opening_is_trigger = { KEY = vizier } }
+						desc = kehillah_crisis_act.0002.town_vizier
+					}
+					desc = kehillah_crisis_act.0002.town
+				}
+			}
+		}
+		trigger = {
+			kehillah_crisis_can_act_trigger = { ONCE = kehillah_crisis_town_won }
+			gold >= kehillah_crisis_town_cost
+		}
+		show_as_unavailable = { kehillah_crisis_warning_trigger = yes }
+		remove_short_term_gold = kehillah_crisis_town_cost
+		primary_title = {
+			set_variable = { name = kehillah_crisis_town_won value = yes }
+			kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_efforts_catalyst POINTS = kehillah_crisis_ev_medium }
+		}
+		ai_chance = { base = 25 }
+	}
+
+	# A letter to the emperor or the head of the faith: slow, and it uses the community's one task.
+	option = {
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = { kehillah_crisis_opening_is_trigger = { KEY = vizier } }
+						desc = kehillah_crisis_act.0002.appeal_vizier
+					}
+					desc = kehillah_crisis_act.0002.appeal
+				}
+			}
+		}
+		trigger = { kehillah_crisis_can_prepare_trigger = { DONE = kehillah_crisis_appeal_sent COST = kehillah_crisis_appeal_cost } }
+		show_as_unavailable = { kehillah_crisis_warning_trigger = yes }
+		remove_short_term_gold = kehillah_crisis_appeal_cost
+		custom_tooltip = kehillah_crisis_appeal_decision_effect_tt
+		primary_title = { set_variable = { name = kehillah_crisis_appeal_sent value = yes } }
+		kehillah_crisis_start_task_effect = { ACTION = 5 DAYS = kehillah_crisis_appeal_days }
+		ai_chance = { base = 30 }
+	}
+
+	# The host armed: beg the lord to send his men now (kehillah_crisis_race.0200).
+	option = {
+		name = kehillah_crisis_act.0002.plead
+		trigger = {
+			kehillah_crisis_can_act_armed_trigger = { ONCE = kehillah_crisis_pleaded }
+			domicile.domicile_location.county = { is_title_created = yes }
+		}
+		show_as_unavailable = { kehillah_crisis_armed_open_trigger = yes }
+		primary_title = { set_variable = { name = kehillah_crisis_pleaded value = yes } }
+		trigger_event = kehillah_crisis_race.0200
+		ai_chance = { base = 70 }
+	}
+
+	option = {
+		name = kehillah_crisis_act.not_now
+		ai_chance = { base = 1 }
+	}
+}
+
+# --- Make Our Case ---
+kehillah_crisis_act.0003 = {
+	type = character_event
+	title = kehillah_crisis_act.0003.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { kehillah_crisis_armed_open_trigger = yes }
+				desc = kehillah_crisis_act.0003.desc_armed
+			}
+			triggered_desc = {
+				trigger = { kehillah_crisis_opening_is_trigger = { KEY = vizier } }
+				desc = kehillah_crisis_act.0003.desc_vizier
+			}
+			triggered_desc = {
+				trigger = {
+					kehillah_crisis_opening_is_trigger = { KEY = accusation }
+					exists = scope:kehillah_crisis_act_witness
+				}
+				desc = kehillah_crisis_act.0003.desc_accusation_witness
+			}
+			triggered_desc = {
+				trigger = { kehillah_crisis_opening_is_trigger = { KEY = accusation } }
+				desc = kehillah_crisis_act.0003.desc_accusation
+			}
+			triggered_desc = {
+				trigger = { kehillah_crisis_opening_is_trigger = { KEY = debts } }
+				desc = kehillah_crisis_act.0003.desc_debts
+			}
+			triggered_desc = {
+				trigger = { kehillah_crisis_opening_is_trigger = { KEY = holy_week } }
+				desc = kehillah_crisis_act.0003.desc_holy_week
+			}
+			triggered_desc = {
+				trigger = { kehillah_crisis_opening_is_trigger = { KEY = crusade } }
+				desc = kehillah_crisis_act.0003.desc_crusade
+			}
+			desc = kehillah_crisis_act.0003.desc
+		}
+	}
+	theme = learning
+	left_portrait = { character = root animation = thinking }
+	right_portrait = {
+		trigger = { exists = scope:kehillah_crisis_agitator }
+		character = scope:kehillah_crisis_agitator
+		animation = rage
+	}
+	trigger = { kehillah_crisis_actions_open_trigger = yes }
+	immediate = {
+		kehillah_crisis_act_scopes_effect = yes
+		# The actions this phase and opening offer, in order; three to a page (2026-11-01).
+		kehillah_crisis_act_page_start_effect = yes
+		if = {
+			limit = { kehillah_crisis_warning_trigger = yes }
+			kehillah_crisis_act_list_effect = { KEY = answer }
+			kehillah_crisis_act_list_effect = { KEY = advocacy }
+			kehillah_crisis_act_list_effect = { KEY = discredit }
+			if = {
+				limit = { is_ai = no }
+				kehillah_crisis_act_list_effect = { KEY = camp }
+			}
+			if = {
+				limit = { primary_title = { has_variable = kehillah_crisis_neighbours_willing } }
+				kehillah_crisis_act_list_effect = { KEY = neighbours }
+			}
+			if = {
+				limit = { kehillah_crisis_opening_is_trigger = { KEY = debts } }
+				kehillah_crisis_act_list_effect = { KEY = forgive }
+			}
+		}
+		if = {
+			limit = { kehillah_crisis_armed_open_trigger = yes }
+			kehillah_crisis_act_list_effect = { KEY = silver }
+		}
+	}
+
+	# Answer him before the town (kehillah_crisis_race.0100).
+	option = {
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = { kehillah_crisis_opening_is_trigger = { KEY = vizier } }
+						desc = kehillah_crisis_act.0003.answer_vizier
+					}
+					desc = kehillah_crisis_act.0003.answer
+				}
+			}
+		}
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = answer }
+			kehillah_crisis_can_act_trigger = { ONCE = kehillah_crisis_answered }
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = answer } }
+		primary_title = { set_variable = { name = kehillah_crisis_answered value = yes } }
+		trigger_event = kehillah_crisis_race.0100
+		ai_chance = { base = 30 }
+	}
+
+	# A campaign of answers, in the market and at the lord's hall: a task.
+	option = {
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = { kehillah_crisis_opening_is_trigger = { KEY = vizier } }
+						desc = kehillah_crisis_act.0003.advocacy_vizier
+					}
+					desc = kehillah_crisis_act.0003.advocacy
+				}
+			}
+		}
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = advocacy }
+			kehillah_crisis_can_prepare_trigger = { DONE = kehillah_crisis_advocacy COST = kehillah_crisis_advocacy_cost }
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = advocacy } }
+		remove_short_term_gold = kehillah_crisis_advocacy_cost
+		custom_tooltip = kehillah_crisis_advocacy_decision_effect_tt
+		kehillah_crisis_start_preparation_effect = { ACTION = 4 }
+		ai_chance = { base = 70 }
+	}
+
+	# Find what he hides (kehillah_crisis_race.0110).
+	option = {
+		name = kehillah_crisis_act.0003.discredit
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = discredit }
+			kehillah_crisis_can_act_trigger = { ONCE = kehillah_crisis_discredit_tried }
+			gold >= kehillah_crisis_discredit_cost
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = discredit } }
+		# The cost and the one attempt are taken in kehillah_crisis_race.0110, when someone asks.
+		trigger_event = kehillah_crisis_race.0110
+		ai_chance = { base = 20 }
+	}
+
+	# Go out to his camp (V42, kehillah_mob.0140). Once per crisis. Players only.
+	option = {
+		name = kehillah_crisis_act.0003.camp
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = camp }
+			kehillah_crisis_can_gather_council_trigger = yes
+			custom_tooltip = {
+				text = kehillah_crisis_once_per_crisis_tt
+				primary_title = { NOT = { has_variable = kehillah_mob_tried_treat } }
+			}
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = camp } }
+		custom_tooltip = kehillah_crisis_camp_decision_effect_tt
+		hidden_effect = {
+			set_variable = { name = kehillah_mob_ref value = primary_title.var:kehillah_mob_threat }
+			primary_title = { set_variable = { name = kehillah_mob_tried_treat value = yes } }
+			set_variable = { name = kehillah_mob_away value = yes }
+			trigger_event = { id = kehillah_mob.0140 days = { 1 3 } }
+		}
+	}
+
+	# The neighbours who offered ("Neighbours Speak Up") speak before the council.
+	option = {
+		name = kehillah_crisis_act.0003.neighbours
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = neighbours }
+			kehillah_crisis_can_act_trigger = { ONCE = kehillah_crisis_neighbours_spoke }
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = neighbours } }
+		primary_title = {
+			set_variable = { name = kehillah_crisis_neighbours_spoke value = yes }
+			kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_efforts_catalyst POINTS = kehillah_crisis_ev_medium }
+		}
+		ai_chance = { base = 60 }
+	}
+
+	# The debts opening: forgive what the townsmen owe.
+	option = {
+		name = kehillah_crisis_act.0003.forgive
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = forgive }
+			kehillah_crisis_can_act_trigger = { ONCE = kehillah_crisis_forgiven }
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = forgive } }
+		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_crisis_forgive_prosperity }
+		primary_title = {
+			set_variable = { name = kehillah_crisis_forgiven value = yes }
+			kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_efforts_catalyst POINTS = kehillah_crisis_forgive_points }
+		}
+		ai_chance = { base = 30 }
+	}
+
+	# The host armed: silver to its leaders, so the march slows and the anger cools.
+	option = {
+		name = kehillah_crisis_act.0003.silver
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = silver }
+			kehillah_crisis_can_act_armed_trigger = { ONCE = kehillah_crisis_silver_sent }
+			gold >= kehillah_crisis_silver_cost
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = silver } }
+		remove_short_term_gold = kehillah_crisis_silver_cost
+		primary_title = {
+			set_variable = { name = kehillah_crisis_silver_sent value = yes }
+			kehillah_crisis_armed_race_add_effect = { CATALYST = kehillah_crisis_efforts_catalyst POINTS = kehillah_crisis_held_silver_points }
+			# 2026-11-01: while the host still musters, the silver keeps it in camp longer.
+			var:kehillah_mob_threat ?= {
+				if = {
+					limit = { has_variable = kehillah_mob_march_delay var:kehillah_mob_march_delay > 0 }
+					custom_tooltip = kehillah_crisis_silver_muster_tt
+					change_variable = { name = kehillah_mob_march_delay add = kehillah_crisis_silver_muster_days }
+				}
+			}
+		}
+		ai_chance = { base = 60 }
+	}
+
+	option = {
+		name = kehillah_crisis_act.more
+		trigger = { kehillah_crisis_act_more_trigger = yes }
+		kehillah_crisis_act_next_page_effect = { EVENT = kehillah_crisis_act.0003 }
+	}
+	option = {
+		name = kehillah_crisis_act.not_now
+		trigger = { kehillah_crisis_act_last_page_trigger = yes }
+		ai_chance = { base = 1 }
+	}
+}
+
+# --- After the Danger (2026-11-01) ---
+# The aftermath's scene: how the deliverance is remembered, and who is thanked. Each once per crisis.
+kehillah_crisis_act.0010 = {
+	type = character_event
+	title = kehillah_crisis_act.0010.t
+	desc = kehillah_crisis_act.0010.desc
+	theme = faith
+	left_portrait = { character = root animation = happiness }
+	right_portrait = {
+		trigger = { exists = scope:kehillah_crisis_aftermath_lord }
+		character = scope:kehillah_crisis_aftermath_lord
+		animation = personality_rational
+	}
+	trigger = { kehillah_crisis_aftermath_open_trigger = yes }
+	immediate = {
+		domicile.domicile_location ?= { save_scope_as = kehillah_crisis_aftermath_town }
+		domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_crisis_aftermath_lord }
+		domicile.domicile_location.county.holder ?= { save_scope_as = kehillah_crisis_aftermath_local_lord }
+		primary_title.var:kehillah_acc_witness ?= {
+			if = {
+				limit = {
+					is_alive = yes
+					is_imprisoned = no
+				}
+				save_scope_as = kehillah_crisis_aftermath_witness
+			}
+		}
+		# Three to a page (2026-11-01). The opening's own thanks are listed only while still to do.
+		kehillah_crisis_act_page_start_effect = yes
+		if = {
+			limit = {
+				kehillah_crisis_opening_is_trigger = { KEY = accusation }
+				exists = scope:kehillah_crisis_aftermath_witness
+				exists = scope:kehillah_crisis_aftermath_local_lord
+				primary_title = { NOT = { has_variable = kehillah_crisis_did_witness } }
+			}
+			kehillah_crisis_act_list_effect = { KEY = witness }
+		}
+		if = {
+			limit = {
+				kehillah_crisis_opening_is_trigger = { KEY = debts }
+				primary_title = { NOT = { has_variable = kehillah_crisis_did_debtors } }
+			}
+			kehillah_crisis_act_list_effect = { KEY = debtors }
+		}
+		if = {
+			limit = {
+				kehillah_crisis_opening_is_trigger = { KEY = crusade }
+				exists = scope:kehillah_crisis_aftermath_lord
+				primary_title = { NOT = { has_variable = kehillah_crisis_did_alms } }
+			}
+			kehillah_crisis_act_list_effect = { KEY = alms }
+		}
+		kehillah_crisis_act_list_effect = { KEY = purim }
+		if = {
+			limit = { exists = scope:kehillah_crisis_aftermath_lord }
+			kehillah_crisis_act_list_effect = { KEY = lord }
+		}
+		kehillah_crisis_act_list_effect = { KEY = neighbours }
+	}
+
+	# By how it began (2026-11-01). The accusation: ask the lord to punish the false witness.
+	option = {
+		name = kehillah_crisis_act.0010.witness
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = witness }
+			kehillah_crisis_opening_is_trigger = { KEY = accusation }
+			exists = scope:kehillah_crisis_aftermath_witness
+			exists = scope:kehillah_crisis_aftermath_local_lord
+			primary_title = { NOT = { has_variable = kehillah_crisis_did_witness } }
+		}
+		primary_title = { set_variable = { name = kehillah_crisis_did_witness value = yes } }
+		random_list = {
+			35 = {
+				desc = kehillah_crisis_act.0010.witness_punished
+				kehillah_lord_outlook_odds_modifier = { HOST = scope:kehillah_crisis_aftermath_local_lord }
+				min = 5
+				scope:kehillah_crisis_aftermath_local_lord = {
+					imprison = {
+						target = scope:kehillah_crisis_aftermath_witness
+						type = dungeon
+					}
+				}
+				kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = 10 }
+			}
+			65 = {
+				desc = kehillah_crisis_act.0010.witness_spared
+				kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = -10 }
+			}
+		}
+		ai_chance = { base = 30 }
+	}
+	# Debts: ease the poorest debtors, so the next dear year finds them less angry.
+	option = {
+		name = kehillah_crisis_act.0010.debtors
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = debtors }
+			primary_title = { NOT = { has_variable = kehillah_crisis_did_debtors } }
+		}
+		primary_title = { set_variable = { name = kehillah_crisis_did_debtors value = yes } }
+		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = -10 }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = 25 }
+		ai_chance = { base = 30 }
+	}
+	# The crusade: alms for the departing army, so it leaves content.
+	option = {
+		name = kehillah_crisis_act.0010.alms
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = alms }
+			gold >= 20
+			primary_title = { NOT = { has_variable = kehillah_crisis_did_alms } }
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = alms } }
+		primary_title = { set_variable = { name = kehillah_crisis_did_alms value = yes } }
+		remove_short_term_gold = 20
+		scope:kehillah_crisis_aftermath_lord = { kehillah_shift_outlook_effect = { AMOUNT = 3 } }
+		ai_chance = { base = 30 }
+	}
+
+	# A Purim of our own: a day each year to remember how we were spared (Narbonne, Saragossa).
+	option = {
+		name = kehillah_crisis_act.0010.purim
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = purim }
+			primary_title = { NOT = { has_variable = kehillah_crisis_did_purim } }
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = purim } }
+		add_piety = minor_piety_gain
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = 30 }
+		custom_tooltip = kehillah_crisis_purim_tt
+		primary_title = {
+			set_variable = { name = kehillah_crisis_did_purim value = yes }
+			set_variable = { name = kehillah_local_purim value = yes }
+			set_variable = { name = kehillah_local_purim_month value = kehillah_current_month_value }
+			set_variable = { name = kehillah_local_purim_year value = current_year }
+			if = {
+				limit = { exists = var:kehillah_crisis_last_agitator }
+				set_variable = { name = kehillah_local_purim_against value = var:kehillah_crisis_last_agitator }
+			}
+		}
+		ai_chance = { base = 40 }
+	}
+	# Gifts for the lord who stood by us.
+	option = {
+		name = kehillah_crisis_act.0010.lord
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = lord }
+			gold >= medium_gold_value
+			primary_title = { NOT = { has_variable = kehillah_crisis_did_thank_lord } }
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = lord } }
+		pay_short_term_gold = {
+			target = scope:kehillah_crisis_aftermath_lord
+			gold = medium_gold_value
+		}
+		scope:kehillah_crisis_aftermath_lord = { kehillah_shift_outlook_effect = { AMOUNT = 5 } }
+		primary_title = { set_variable = { name = kehillah_crisis_did_thank_lord value = yes } }
+		ai_chance = { base = 30 }
+	}
+	# Thanks for the neighbours who stood with us.
+	option = {
+		name = kehillah_crisis_act.0010.neighbours
+		trigger = {
+			kehillah_crisis_act_on_page_trigger = { KEY = neighbours }
+			gold >= 20
+			primary_title = { NOT = { has_variable = kehillah_crisis_did_thank_town } }
+		}
+		show_as_unavailable = { kehillah_crisis_act_on_page_trigger = { KEY = neighbours } }
+		remove_short_term_gold = 20
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = 10 }
+		primary_title = { set_variable = { name = kehillah_crisis_did_thank_town value = yes } }
+		ai_chance = { base = 30 }
+	}
+	option = {
+		name = kehillah_crisis_act.more
+		trigger = { kehillah_crisis_act_more_trigger = yes }
+		kehillah_crisis_act_next_page_effect = { EVENT = kehillah_crisis_act.0010 }
+	}
+	option = {
+		name = kehillah_crisis_act.not_now
+		trigger = { kehillah_crisis_act_last_page_trigger = yes }
+		ai_chance = { base = 1 }
+	}
+}

@@ -1,0 +1,897 @@
+﻿# Opening choices run after acknowledgment; previews contain no crisis initialization.
+scripted_effect kehillah_intro_trial_1_response_effect = {
+	kehillah_trial_answer_effect = yes
+}
+
+scripted_effect kehillah_intro_trial_2_response_effect = {
+	kehillah_trial_plead_effect = yes
+}
+
+scripted_effect kehillah_intro_trial_3_response_effect = {
+	kehillah_trial_hide_effect = yes
+}
+
+scripted_effect kehillah_intro_trial_4_response_effect = {
+	custom_tooltip = kehillah_trial_find_window_tt
+}
+
+namespace = kehillah_talmud_trial
+
+# =====================================================================
+# The Talmud on trial as a situation (docs/spec/2026-11-01-talmud-trial-
+# situation.md), 2026-11-01. Paris, 1240: Nicholas Donin's articles,
+# Yehiel of Paris in the hall, the cartloads burned in 1242.
+#   .0001 The Denunciation   (the trial's first scene)
+#   .0010 Prepare the Defence (kehillah_trial_defence_decision)
+#   .0020 Seek Protection     (kehillah_trial_protect_decision)
+#   .0030 Save the Books      (kehillah_trial_books_decision)
+#   .0040 The Books Are Taken (the seizure begins; players)
+#   .0050 A Session of the Hearing (three, about thirty days apart)
+#   .0060 The Verdict         (players)
+# Scope: the community's leader. Each sub-action counts once per trial
+# (kehillah_trial_not_done_trigger); its race points show in the native
+# catalyst tooltip.
+# =====================================================================
+
+scripted_effect kehillah_trial_scene_scopes_effect = {
+	kehillah_incident_scopes_effect = yes
+ primary_title = { save_scope_as = kehillah_trial_scene_data }
+ primary_title.var:kehillah_trial_situation ?= { save_scope_as = kehillah_trial_scene_data }
+	scope:kehillah_trial_scene_data.var:kehillah_trial_accuser ?= { save_scope_as = kehillah_trial_accuser_scope }
+	scope:kehillah_trial_scene_data.var:kehillah_trial_patron_char ?= { save_scope_as = kehillah_trial_patron_scope }
+	scope:kehillah_incident_host.faith.religious_head ?= {
+		if = {
+			limit = { NOT = { this = scope:kehillah_incident_host } }
+			save_scope_as = kehillah_trial_hof
+		}
+	}
+}
+
+# --- Shared sub-actions ---
+
+# Answer the articles in writing (Denunciation): your learning against his.
+scripted_effect kehillah_trial_answer_effect = {
+	kehillah_trial_mark_done_effect = { ONCE = answer }
+	duel = {
+		skill = learning
+		target = scope:kehillah_trial_accuser_scope
+		50 = {
+			desc = kehillah_trial_out_answered
+			compare_modifier = { value = scope:duel_value multiplier = 3.5 }
+			min = 5
+			primary_title = { kehillah_trial_add_effect = { CATALYST = kehillah_trial_quash_answer_catalyst } }
+		}
+		50 = {
+			desc = kehillah_trial_out_answer_failed
+			compare_modifier = { value = scope:duel_value multiplier = -3.5 }
+			min = 5
+			primary_title = { kehillah_trial_add_effect = { CATALYST = kehillah_trial_seize_answer_failed_catalyst } }
+		}
+	}
+}
+
+# Plead with the lord (Denunciation): the Shtadlan, or the leader without one.
+scripted_effect kehillah_trial_plead_effect = {
+	kehillah_trial_mark_done_effect = { ONCE = plead }
+	random_list = {
+		40 = {
+			desc = kehillah_trial_out_lord_listens
+			modifier = {
+				add = 15
+				scope:kehillah_incident_petitioner = { diplomacy >= 12 }
+			}
+			modifier = {
+				add = 15
+				scope:kehillah_incident_petitioner = { diplomacy >= 18 }
+			}
+			opinion_modifier = {
+				who = scope:kehillah_incident_host
+				opinion_target = scope:kehillah_incident_petitioner
+				multiplier = 0.25
+			}
+			kehillah_lord_outlook_odds_modifier = { HOST = scope:kehillah_incident_host }
+			min = 5
+			primary_title = { kehillah_trial_add_effect = { CATALYST = kehillah_trial_quash_plead_catalyst } }
+		}
+		60 = {
+			desc = kehillah_trial_out_lord_unmoved
+			primary_title = { kehillah_trial_add_effect = { CATALYST = kehillah_trial_seize_plead_failed_catalyst } }
+		}
+	}
+}
+
+# Silver for the lord (Denunciation): no gamble, only the price.
+scripted_effect kehillah_trial_silver_effect = {
+	kehillah_trial_mark_done_effect = { ONCE = silver }
+	pay_short_term_gold = {
+		target = scope:kehillah_incident_host
+		gold = kehillah_incident_bribe_cost_value
+	}
+	primary_title = { kehillah_trial_add_effect = { CATALYST = kehillah_trial_quash_silver_catalyst } }
+}
+
+# A letter from the head of the faith (Denunciation or the seizure). In Denunciation it helps the
+# matter drop; during the seizure it is kept to be read at the hearing.
+scripted_effect kehillah_trial_letter_effect = {
+	kehillah_trial_mark_done_effect = { ONCE = letter }
+	remove_short_term_gold = kehillah_trial_letter_cost
+	random_list = {
+		40 = {
+			desc = kehillah_trial_out_letter_comes
+			modifier = {
+				add = 30
+				custom_tooltip = {
+					text = kehillah_factor_hof_forbids
+					scope:kehillah_trial_hof ?= { kehillah_outlook_on_jews_value >= 15 }
+				}
+			}
+			min = 5
+			if = {
+				limit = { kehillah_trial_phase_trigger = { PHASE = denunciation } }
+				primary_title = { kehillah_trial_add_effect = { CATALYST = kehillah_trial_quash_letter_catalyst } }
+			}
+			else = {
+				custom_tooltip = kehillah_trial_letter_kept_tt
+				primary_title = { set_variable = { name = kehillah_trial_letter value = yes } }
+			}
+		}
+		60 = {
+			desc = kehillah_trial_out_letter_silent
+			custom_tooltip = kehillah_trial_letter_silent_tt
+		}
+	}
+}
+
+# Hide the books (Denunciation or the seizure): your intrigue against his. He knows which houses.
+scripted_effect kehillah_trial_hide_effect = {
+	kehillah_trial_mark_done_effect = { ONCE = hide }
+	duel = {
+		skill = intrigue
+		target = scope:kehillah_trial_accuser_scope
+		40 = {
+			desc = kehillah_trial_out_hidden
+			compare_modifier = { value = scope:duel_value multiplier = 3.5 }
+			modifier = {
+				add = 10
+				has_trait = deceitful
+			}
+			modifier = {
+				add = 10
+				has_trait = schemer
+			}
+			min = 5
+			custom_tooltip = kehillah_trial_hidden_tt
+			primary_title = { set_variable = { name = kehillah_trial_books_hidden value = yes } }
+		}
+		60 = {
+			desc = kehillah_trial_out_found
+			compare_modifier = { value = scope:duel_value multiplier = -3.5 }
+			min = 5
+			custom_tooltip = kehillah_trial_found_tt
+			primary_title = { set_variable = { name = kehillah_trial_books_found value = yes } }
+			scope:kehillah_incident_host ?= {
+				hidden_effect = { kehillah_shift_outlook_effect = { AMOUNT = -5 } }
+			}
+		}
+	}
+}
+
+# Copy the rarest volumes: scribes' wages, and whatever burns, a copy remains.
+scripted_effect kehillah_trial_copy_effect = {
+	kehillah_trial_mark_done_effect = { ONCE = copy }
+	remove_short_term_gold = kehillah_trial_copy_cost
+	custom_tooltip = kehillah_trial_copied_tt
+	primary_title = { set_variable = { name = kehillah_trial_books_copied value = yes } }
+}
+
+# Study the articles through the seizure. $WHO$ is the disputant at the hearing.
+scripted_effect kehillah_trial_prepare_effect = {
+	kehillah_trial_mark_done_effect = { ONCE = prepare }
+	custom_tooltip = kehillah_trial_prepared_tt
+	primary_title = {
+		set_variable = { name = kehillah_trial_prepared value = yes }
+		set_variable = { name = kehillah_trial_disputant value = $WHO$ }
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0001 The Denunciation: the trial's first scene.
+# ---------------------------------------------------------------------
+kehillah_talmud_trial.0001 = {
+	type = character_event
+	title = kehillah_talmud_trial.0001.t
+	desc = {
+		first_valid = {
+			triggered_desc = { trigger = { scope:kehillah_trial_scene_data.var:kehillah_trial_story ?= flag:son_in_law } desc = kehillah_talmud_trial.0001.story_son_in_law }
+			triggered_desc = { trigger = { scope:kehillah_trial_scene_data.var:kehillah_trial_story ?= flag:rival } desc = kehillah_talmud_trial.0001.story_rival }
+			desc = kehillah_talmud_trial.0001.story_student
+		}
+		desc = kehillah_talmud_trial.0001.articles
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:kehillah_trial_scene_data.var:kehillah_trial_patron ?= flag:friar
+					current_year >= 1216
+				}
+				desc = kehillah_talmud_trial.0001.patron_friar
+			}
+			triggered_desc = { trigger = { scope:kehillah_trial_scene_data.var:kehillah_trial_patron ?= flag:friar } desc = kehillah_talmud_trial.0001.patron_monk }
+			triggered_desc = { trigger = { scope:kehillah_trial_scene_data.var:kehillah_trial_patron ?= flag:bishop exists = scope:kehillah_trial_patron_scope } desc = kehillah_talmud_trial.0001.patron_bishop }
+			triggered_desc = { trigger = { scope:kehillah_trial_scene_data.var:kehillah_trial_patron ?= flag:official exists = scope:kehillah_trial_patron_scope } desc = kehillah_talmud_trial.0001.patron_official }
+		}
+		desc = kehillah_talmud_trial.0001.close
+	}
+	theme = faith
+	left_portrait = { character = root animation = worry }
+	right_portrait = {
+		trigger = { exists = scope:kehillah_trial_accuser_scope }
+		character = scope:kehillah_trial_accuser_scope
+		animation = scheme
+	}
+	trigger = { OR = { primary_title ?= { var:kehillah_crisis_intro_pending ?= flag:trial } kehillah_trial_phase_trigger = { PHASE = denunciation } } }
+	immediate = {
+  primary_title = { save_scope_as = kehillah_crisis_intro_title } kehillah_trial_scene_scopes_effect = yes }
+
+	option = {
+		name = kehillah_talmud_trial.0001.a
+		trigger = { exists = scope:kehillah_trial_accuser_scope }
+		ai_chance = {
+			base = 25
+			modifier = {
+				add = 30
+				learning >= 14
+			}
+		}
+		show_as_tooltip = { kehillah_intro_trial_1_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:trial_1 } }
+	}
+	option = {
+		name = {
+			trigger = { NOT = { scope:kehillah_incident_petitioner = root } }
+			text = kehillah_talmud_trial.0001.b
+		}
+		name = {
+			trigger = { scope:kehillah_incident_petitioner = root }
+			text = kehillah_talmud_trial.0001.b_self
+		}
+		ai_chance = { base = 35 }
+		show_as_tooltip = { kehillah_intro_trial_2_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:trial_2 } }
+	}
+	option = {
+		name = kehillah_talmud_trial.0001.c
+		trigger = { exists = scope:kehillah_trial_accuser_scope }
+		ai_chance = {
+			base = 15
+			modifier = {
+				add = 20
+				OR = {
+					has_trait = deceitful
+					has_trait = schemer
+				}
+			}
+		}
+		show_as_tooltip = { kehillah_intro_trial_3_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:trial_3 } }
+	}
+	option = {
+		name = kehillah_talmud_trial.0001.d
+		ai_chance = { base = 10 }
+		show_as_tooltip = { kehillah_intro_trial_4_response_effect = yes }
+		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
+		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:trial_4 } }
+	}
+
+	after = {
+		kehillah_crisis_acknowledge_effect = { FAMILY = trial }
+		if = {
+			limit = { has_variable = kehillah_crisis_intro_accepted }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:trial_1 } kehillah_intro_trial_1_response_effect = yes }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:trial_2 } kehillah_intro_trial_2_response_effect = yes }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:trial_3 } kehillah_intro_trial_3_response_effect = yes }
+			if = { limit = { var:kehillah_crisis_intro_choice ?= flag:trial_4 } kehillah_intro_trial_4_response_effect = yes }
+
+		}
+		remove_variable = kehillah_crisis_intro_accepted
+		remove_variable = kehillah_crisis_intro_choice
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0010 Prepare the Defence.
+# ---------------------------------------------------------------------
+kehillah_talmud_trial.0010 = {
+	type = character_event
+	title = kehillah_talmud_trial.0010.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { kehillah_trial_phase_trigger = { PHASE = denunciation } }
+				desc = kehillah_talmud_trial.0010.desc_denunciation
+			}
+			triggered_desc = {
+				trigger = { kehillah_trial_phase_trigger = { PHASE = seizure } }
+				desc = kehillah_talmud_trial.0010.desc_seizure
+			}
+			desc = kehillah_talmud_trial.0010.desc_hearing
+		}
+	}
+	theme = learning
+	left_portrait = { character = root animation = thinking }
+	right_portrait = {
+		trigger = { exists = scope:kehillah_incident_dayyan }
+		character = scope:kehillah_incident_dayyan
+		animation = personality_rational
+	}
+	trigger = { kehillah_trial_actions_open_trigger = yes }
+	immediate = { kehillah_trial_scene_scopes_effect = yes }
+
+	# Answer the articles in writing (Denunciation).
+	option = {
+		name = kehillah_talmud_trial.0010.answer
+		trigger = {
+			kehillah_trial_phase_trigger = { PHASE = denunciation }
+			kehillah_trial_not_done_trigger = { ONCE = answer }
+			exists = scope:kehillah_trial_accuser_scope
+		}
+		show_as_unavailable = { kehillah_trial_phase_trigger = { PHASE = denunciation } }
+		kehillah_trial_answer_effect = yes
+		ai_chance = { base = 40 }
+	}
+	# The Dayyan prepares the defence (the seizure).
+	option = {
+		name = kehillah_talmud_trial.0010.dayyan
+		trigger = {
+			kehillah_trial_phase_trigger = { PHASE = seizure }
+			kehillah_trial_not_done_trigger = { ONCE = prepare }
+			exists = scope:kehillah_incident_dayyan
+		}
+		show_as_unavailable = { kehillah_trial_phase_trigger = { PHASE = seizure } exists = scope:kehillah_incident_dayyan }
+		kehillah_trial_prepare_effect = { WHO = scope:kehillah_incident_dayyan }
+		ai_chance = {
+			base = 40
+			modifier = {
+				add = 30
+				scope:kehillah_incident_dayyan.learning > learning
+			}
+		}
+	}
+	# I will answer him myself (the seizure).
+	option = {
+		name = kehillah_talmud_trial.0010.self
+		trigger = {
+			kehillah_trial_phase_trigger = { PHASE = seizure }
+			kehillah_trial_not_done_trigger = { ONCE = prepare }
+		}
+		show_as_unavailable = { kehillah_trial_phase_trigger = { PHASE = seizure } }
+		add_stress = minor_stress_gain
+		kehillah_trial_prepare_effect = { WHO = root }
+		ai_chance = { base = 30 }
+	}
+	option = {
+		name = kehillah_crisis_act.not_now
+		ai_chance = { base = 1 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0020 Seek Protection.
+# ---------------------------------------------------------------------
+kehillah_talmud_trial.0020 = {
+	type = character_event
+	title = kehillah_talmud_trial.0020.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { kehillah_trial_phase_trigger = { PHASE = denunciation } }
+				desc = kehillah_talmud_trial.0020.desc_denunciation
+			}
+			desc = kehillah_talmud_trial.0020.desc_later
+		}
+	}
+	theme = diplomacy
+	left_portrait = { character = root animation = worry }
+	right_portrait = {
+		trigger = { exists = scope:kehillah_incident_host }
+		character = scope:kehillah_incident_host
+		animation = thinking
+	}
+	trigger = { kehillah_trial_actions_open_trigger = yes }
+	immediate = { kehillah_trial_scene_scopes_effect = yes }
+
+	option = {
+		name = {
+			trigger = { NOT = { scope:kehillah_incident_petitioner = root } }
+			text = kehillah_talmud_trial.0020.plead
+		}
+		name = {
+			trigger = { scope:kehillah_incident_petitioner = root }
+			text = kehillah_talmud_trial.0020.plead_self
+		}
+		trigger = {
+			kehillah_trial_phase_trigger = { PHASE = denunciation }
+			kehillah_trial_not_done_trigger = { ONCE = plead }
+		}
+		show_as_unavailable = { kehillah_trial_phase_trigger = { PHASE = denunciation } }
+		kehillah_trial_plead_effect = yes
+		ai_chance = { base = 40 }
+	}
+	option = {
+		name = kehillah_talmud_trial.0020.silver
+		trigger = {
+			kehillah_trial_phase_trigger = { PHASE = denunciation }
+			kehillah_trial_not_done_trigger = { ONCE = silver }
+			gold >= kehillah_incident_bribe_cost_value
+		}
+		show_as_unavailable = { kehillah_trial_phase_trigger = { PHASE = denunciation } }
+		kehillah_trial_silver_effect = yes
+		ai_chance = {
+			base = 20
+			modifier = {
+				add = 20
+				scope:kehillah_incident_host = { has_trait = greedy }
+			}
+		}
+	}
+	option = {
+		name = kehillah_talmud_trial.0020.letter
+		trigger = {
+			OR = {
+				kehillah_trial_phase_trigger = { PHASE = denunciation }
+				kehillah_trial_phase_trigger = { PHASE = seizure }
+			}
+			kehillah_trial_not_done_trigger = { ONCE = letter }
+			exists = scope:kehillah_trial_hof
+			gold >= kehillah_trial_letter_cost
+		}
+		show_as_unavailable = {
+			OR = {
+				kehillah_trial_phase_trigger = { PHASE = denunciation }
+				kehillah_trial_phase_trigger = { PHASE = seizure }
+			}
+		}
+		kehillah_trial_letter_effect = yes
+		ai_chance = { base = 30 }
+	}
+	option = {
+		name = kehillah_crisis_act.not_now
+		ai_chance = { base = 1 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0030 Save the Books.
+# ---------------------------------------------------------------------
+kehillah_talmud_trial.0030 = {
+	type = character_event
+	title = kehillah_talmud_trial.0030.t
+	desc = kehillah_talmud_trial.0030.desc
+	theme = intrigue
+	left_portrait = { character = root animation = scheme }
+	trigger = { kehillah_trial_actions_open_trigger = yes }
+	immediate = { kehillah_trial_scene_scopes_effect = yes }
+
+	option = {
+		name = kehillah_talmud_trial.0030.hide
+		trigger = {
+			OR = {
+				kehillah_trial_phase_trigger = { PHASE = denunciation }
+				kehillah_trial_phase_trigger = { PHASE = seizure }
+			}
+			kehillah_trial_not_done_trigger = { ONCE = hide }
+			exists = scope:kehillah_trial_accuser_scope
+		}
+		show_as_unavailable = {
+			OR = {
+				kehillah_trial_phase_trigger = { PHASE = denunciation }
+				kehillah_trial_phase_trigger = { PHASE = seizure }
+			}
+		}
+		kehillah_trial_hide_effect = yes
+		ai_chance = { base = 20 }
+	}
+	option = {
+		name = kehillah_talmud_trial.0030.copy
+		trigger = {
+			kehillah_trial_not_done_trigger = { ONCE = copy }
+			gold >= kehillah_trial_copy_cost
+		}
+		show_as_unavailable = { always = yes }
+		kehillah_trial_copy_effect = yes
+		ai_chance = { base = 30 }
+	}
+	option = {
+		name = kehillah_crisis_act.not_now
+		ai_chance = { base = 1 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0040 The Books Are Taken (the seizure begins; players).
+# ---------------------------------------------------------------------
+kehillah_talmud_trial.0040 = {
+	type = character_event
+	title = kehillah_talmud_trial.0040.t
+	desc = {
+		desc = kehillah_talmud_trial.0040.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = { primary_title = { has_variable = kehillah_trial_books_hidden } }
+				desc = kehillah_talmud_trial.0040.hidden
+			}
+			triggered_desc = {
+				trigger = { primary_title = { has_variable = kehillah_trial_books_found } }
+				desc = kehillah_talmud_trial.0040.found
+			}
+			desc = kehillah_talmud_trial.0040.all
+		}
+	}
+	theme = faith
+	left_portrait = { character = root animation = grief }
+	trigger = { kehillah_trial_phase_trigger = { PHASE = seizure } }
+	immediate = { kehillah_trial_scene_scopes_effect = yes }
+	option = {
+		name = kehillah_talmud_trial.0040.a
+		custom_tooltip = kehillah_trial_find_window_tt
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0050 A Session of the Hearing. The disputant against the accuser.
+# ---------------------------------------------------------------------
+kehillah_talmud_trial.0050 = {
+	type = character_event
+	title = kehillah_talmud_trial.0050.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { primary_title.var:kehillah_trial_session ?= 1 }
+				desc = kehillah_talmud_trial.0050.desc_first
+			}
+			triggered_desc = {
+				trigger = { primary_title.var:kehillah_trial_session ?= 2 }
+				desc = kehillah_talmud_trial.0050.desc_second
+			}
+			desc = kehillah_talmud_trial.0050.desc_third
+		}
+	}
+	theme = learning
+	left_portrait = { character = scope:kehillah_trial_disputant_scope animation = personality_bold }
+	right_portrait = {
+		trigger = { exists = scope:kehillah_trial_accuser_scope }
+		character = scope:kehillah_trial_accuser_scope
+		animation = scheme
+	}
+	trigger = {
+		kehillah_trial_phase_trigger = { PHASE = hearing }
+		primary_title.var:kehillah_trial_situation.var:kehillah_trial_accuser ?= { is_alive = yes }
+	}
+	immediate = {
+		kehillah_trial_scene_scopes_effect = yes
+		primary_title = { change_variable = { name = kehillah_trial_session add = 1 } }
+		# The prepared disputant, while he lives and is still of this community; else the leader.
+		primary_title.var:kehillah_trial_disputant ?= {
+			if = {
+				limit = {
+					is_alive = yes
+					OR = {
+						this = root
+						is_courtier_of = root
+					}
+				}
+				save_scope_as = kehillah_trial_disputant_scope
+			}
+		}
+		if = {
+			limit = { NOT = { exists = scope:kehillah_trial_disputant_scope } }
+			save_scope_as = kehillah_trial_disputant_scope
+		}
+	}
+
+	# Answer boldly: win much, or lose much and offend the judge (Nahmanides' price).
+	option = {
+		name = kehillah_talmud_trial.0050.bold
+		scope:kehillah_trial_disputant_scope = {
+			duel = {
+				skill = learning
+				target = scope:kehillah_trial_accuser_scope
+				50 = {
+					desc = kehillah_trial_out_session_won
+					compare_modifier = { value = scope:duel_value multiplier = 3.5 }
+					min = 5
+					root.primary_title = { kehillah_trial_add_effect = { CATALYST = kehillah_trial_bold_win_catalyst } }
+				}
+				50 = {
+					desc = kehillah_trial_out_session_lost
+					compare_modifier = { value = scope:duel_value multiplier = -3.5 }
+					min = 5
+					root.primary_title = { kehillah_trial_add_effect = { CATALYST = kehillah_trial_bold_loss_catalyst } }
+					scope:kehillah_incident_host ?= {
+						kehillah_shift_outlook_effect = { AMOUNT = kehillah_trial_bold_outlook }
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 30
+			modifier = {
+				add = 30
+				scope:kehillah_trial_disputant_scope.learning > scope:kehillah_trial_accuser_scope.learning
+			}
+		}
+	}
+	# Answer cautiously: win a little, lose a little, and give ground on the passages.
+	option = {
+		name = kehillah_talmud_trial.0050.cautious
+		scope:kehillah_trial_disputant_scope = {
+			duel = {
+				skill = learning
+				target = scope:kehillah_trial_accuser_scope
+				50 = {
+					desc = kehillah_trial_out_session_won
+					compare_modifier = { value = scope:duel_value multiplier = 3.5 }
+					min = 5
+					root.primary_title = {
+						kehillah_trial_add_effect = { CATALYST = kehillah_trial_cautious_win_catalyst }
+						kehillah_trial_add_effect = { CATALYST = kehillah_trial_cautious_win_expurgation_catalyst }
+					}
+				}
+				50 = {
+					desc = kehillah_trial_out_session_lost
+					compare_modifier = { value = scope:duel_value multiplier = -3.5 }
+					min = 5
+					root.primary_title = {
+						kehillah_trial_add_effect = { CATALYST = kehillah_trial_cautious_loss_catalyst }
+						kehillah_trial_add_effect = { CATALYST = kehillah_trial_cautious_loss_expurgation_catalyst }
+					}
+				}
+			}
+		}
+		ai_chance = { base = 50 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0060 The Verdict (players).
+# ---------------------------------------------------------------------
+kehillah_talmud_trial.0060 = {
+	type = character_event
+	title = {
+		first_valid = {
+			triggered_desc = { trigger = { primary_title.var:kehillah_trial_verdict ?= flag:quashed } desc = kehillah_talmud_trial.0060.t_quashed }
+			triggered_desc = { trigger = { primary_title.var:kehillah_trial_verdict ?= flag:acquittal } desc = kehillah_talmud_trial.0060.t_acquittal }
+			triggered_desc = { trigger = { primary_title.var:kehillah_trial_verdict ?= flag:expurgation } desc = kehillah_talmud_trial.0060.t_expurgation }
+			desc = kehillah_talmud_trial.0060.t_condemnation
+		}
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = { trigger = { primary_title.var:kehillah_trial_verdict ?= flag:quashed } desc = kehillah_talmud_trial.0060.desc_quashed }
+			triggered_desc = { trigger = { primary_title.var:kehillah_trial_verdict ?= flag:acquittal } desc = kehillah_talmud_trial.0060.desc_acquittal }
+			triggered_desc = { trigger = { primary_title.var:kehillah_trial_verdict ?= flag:expurgation } desc = kehillah_talmud_trial.0060.desc_expurgation }
+			triggered_desc = {
+				trigger = {
+					primary_title = {
+						OR = {
+							has_variable = kehillah_trial_books_hidden
+							has_variable = kehillah_trial_books_copied
+						}
+					}
+				}
+				desc = kehillah_talmud_trial.0060.desc_condemnation_saved
+			}
+			desc = kehillah_talmud_trial.0060.desc_condemnation
+		}
+	}
+	theme = faith
+	left_portrait = { character = root animation = personality_rational }
+	immediate = { kehillah_trial_scene_scopes_effect = yes }
+	option = { name = kehillah_talmud_trial.0060.a }
+}
+
+# ---------------------------------------------------------------------
+# .0099 Hidden: the trial's situation ends (kehillah_trial_close_effect, a
+# day after its Closed phase begins).
+# ---------------------------------------------------------------------
+kehillah_talmud_trial.0099 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title ?= {
+			if = {
+				limit = { exists = var:kehillah_trial_situation }
+				kehillah_trial_end_effect = yes
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0100 The articles before you (a player judge): summon the Jews, dismiss
+# the matter, or let it take its course.
+# ---------------------------------------------------------------------
+kehillah_talmud_trial.0100 = {
+	type = character_event
+	title = kehillah_talmud_trial.0100.t
+	desc = kehillah_talmud_trial.0100.desc
+	theme = faith
+	left_portrait = { character = root animation = thinking }
+	right_portrait = {
+		trigger = { exists = scope:kehillah_trial_judge_accuser }
+		character = scope:kehillah_trial_judge_accuser
+		animation = scheme
+	}
+	trigger = {
+		exists = var:kehillah_trial_target
+		var:kehillah_trial_target = { kehillah_trial_phase_trigger = { PHASE = denunciation } }
+	}
+	immediate = {
+		var:kehillah_trial_target = {
+			save_scope_as = kehillah_trial_judge_leader
+			primary_title = { save_scope_as = kehillah_trial_judge_title }
+			primary_title.var:kehillah_trial_situation.var:kehillah_trial_accuser ?= { save_scope_as = kehillah_trial_judge_accuser }
+		}
+	}
+	option = {
+		name = kehillah_talmud_trial.0100.a
+		add_piety = minor_piety_gain
+		scope:kehillah_trial_judge_title = { kehillah_trial_add_effect = { CATALYST = kehillah_trial_judge_summons_catalyst } }
+		remove_variable = kehillah_trial_target
+	}
+	option = {
+		name = kehillah_talmud_trial.0100.b
+		add_piety = minor_piety_loss
+		scope:kehillah_trial_judge_accuser ?= { add_opinion = { target = root modifier = disappointed_opinion opinion = -20 } }
+		scope:kehillah_trial_judge_title = { kehillah_trial_add_effect = { CATALYST = kehillah_trial_judge_dismisses_catalyst } }
+		remove_variable = kehillah_trial_target
+	}
+	option = {
+		name = kehillah_talmud_trial.0100.c
+		remove_variable = kehillah_trial_target
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0110 You will sit in judgment (a player judge, as the hearing opens).
+# ---------------------------------------------------------------------
+kehillah_talmud_trial.0110 = {
+	type = character_event
+	title = kehillah_talmud_trial.0110.t
+	desc = kehillah_talmud_trial.0110.desc
+	theme = learning
+	left_portrait = { character = root animation = thinking }
+	right_portrait = {
+		trigger = { exists = scope:kehillah_trial_judge_leader }
+		character = scope:kehillah_trial_judge_leader
+		animation = worry
+	}
+	trigger = {
+		exists = var:kehillah_trial_target
+		var:kehillah_trial_target = { kehillah_trial_phase_trigger = { PHASE = hearing } }
+	}
+	immediate = {
+		var:kehillah_trial_target = {
+			save_scope_as = kehillah_trial_judge_leader
+			primary_title = { save_scope_as = kehillah_trial_judge_title }
+		}
+	}
+	option = {
+		name = kehillah_talmud_trial.0110.a
+		add_piety = minor_piety_loss
+		scope:kehillah_trial_judge_title = { kehillah_trial_add_effect = { CATALYST = kehillah_trial_judge_lean_acquittal_catalyst } }
+		remove_variable = kehillah_trial_target
+	}
+	option = {
+		name = kehillah_talmud_trial.0110.b
+		scope:kehillah_trial_judge_title = { kehillah_trial_add_effect = { CATALYST = kehillah_trial_judge_lean_expurgation_catalyst } }
+		remove_variable = kehillah_trial_target
+	}
+	option = {
+		name = kehillah_talmud_trial.0110.c
+		add_piety = minor_piety_gain
+		scope:kehillah_trial_judge_title = { kehillah_trial_add_effect = { CATALYST = kehillah_trial_judge_lean_condemnation_catalyst } }
+		remove_variable = kehillah_trial_target
+	}
+	option = {
+		name = kehillah_talmud_trial.0110.d
+		remove_variable = kehillah_trial_target
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0070 After the verdict (2026-11-01). Each once per trial.
+# ---------------------------------------------------------------------
+kehillah_talmud_trial.0070 = {
+	type = character_event
+	title = kehillah_talmud_trial.0070.t
+	desc = {
+		first_valid = {
+			triggered_desc = { trigger = { primary_title.var:kehillah_trial_verdict ?= flag:condemnation } desc = kehillah_talmud_trial.0070.desc_burned }
+			triggered_desc = { trigger = { primary_title.var:kehillah_trial_verdict ?= flag:expurgation } desc = kehillah_talmud_trial.0070.desc_struck }
+			desc = kehillah_talmud_trial.0070.desc_home
+		}
+	}
+	theme = learning
+	left_portrait = { character = root animation = thinking }
+	trigger = { kehillah_trial_aftermath_open_trigger = yes }
+
+	# The books come home: a siyum, a feast for finishing a tractate, in the house of study.
+	option = {
+		name = kehillah_talmud_trial.0070.siyum
+		trigger = {
+			OR = {
+				primary_title.var:kehillah_trial_verdict ?= flag:acquittal
+				primary_title.var:kehillah_trial_verdict ?= flag:quashed
+			}
+			gold >= 25
+			primary_title = { NOT = { has_variable = kehillah_trial_did_siyum } }
+		}
+		show_as_unavailable = {
+			OR = {
+				primary_title.var:kehillah_trial_verdict ?= flag:acquittal
+				primary_title.var:kehillah_trial_verdict ?= flag:quashed
+			}
+		}
+		remove_short_term_gold = 25
+		add_prestige = minor_prestige_gain
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = 10 }
+		primary_title = { set_variable = { name = kehillah_trial_did_siyum value = yes } }
+		ai_chance = { base = 40 }
+	}
+	# Burned or cut: a fast, as the Jews of France kept one for the books burned at Paris.
+	option = {
+		name = kehillah_talmud_trial.0070.fast
+		trigger = {
+			OR = {
+				primary_title.var:kehillah_trial_verdict ?= flag:condemnation
+				primary_title.var:kehillah_trial_verdict ?= flag:expurgation
+			}
+			primary_title = { NOT = { has_variable = kehillah_trial_did_fast } }
+		}
+		show_as_unavailable = {
+			OR = {
+				primary_title.var:kehillah_trial_verdict ?= flag:condemnation
+				primary_title.var:kehillah_trial_verdict ?= flag:expurgation
+			}
+		}
+		add_piety = medium_piety_gain
+		add_stress = minor_stress_loss
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = 10 }
+		primary_title = { set_variable = { name = kehillah_trial_did_fast value = yes } }
+		ai_chance = { base = 40 }
+	}
+	# Burned: copies of the two most-studied orders from a sister community's scribes.
+	option = {
+		name = kehillah_talmud_trial.0070.copy
+		trigger = {
+			primary_title.var:kehillah_trial_verdict ?= flag:condemnation
+			primary_title = { has_variable = kehillah_talmud_burned }
+			gold >= 60
+			primary_title = { NOT = { has_variable = kehillah_trial_did_recopy } }
+		}
+		show_as_unavailable = { primary_title.var:kehillah_trial_verdict ?= flag:condemnation }
+		remove_short_term_gold = 60
+		custom_tooltip = kehillah_trial_recopy_tt
+		primary_title = {
+			set_variable = { name = kehillah_trial_did_recopy value = yes }
+			hidden_effect = {
+				if = {
+					limit = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed } } }
+					add_to_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed }
+				}
+				if = {
+					limit = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nezikin } } }
+					add_to_variable_list = { name = kehillah_library_works target = flag:work_bavli_nezikin }
+				}
+			}
+		}
+		ai_chance = { base = 30 }
+	}
+	option = {
+		name = kehillah_crisis_act.not_now
+		ai_chance = { base = 1 }
+	}
+}

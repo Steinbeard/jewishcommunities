@@ -1,0 +1,202 @@
+﻿# One instance per active community crisis. The community title owns the epoch, preparations and
+# outcome; since 2026-11-01 (docs/spec/2026-11-01-the-attack-as-a-race.md) the situation owns the
+# clock. Agitation is a race between the Armed host and Spared, each to 100 points. The phase
+# on_starts run the existing outbreak and prevention effects behind the title/epoch guard.
+kehillah_community_crisis = {
+ is_unique = no
+ window = situation
+ gui_window_name = kehillah_crisis_situation_window
+ situation_group_type = minor
+ illustration = "gfx/interface/illustrations/event_scenes/alley_day.dds"
+ icon = {
+  trigger = { always = yes }
+  reference = "gfx/interface/icons/casus_bellis/peasant_war.dds"
+ }
+ sub_regions = {
+  kehillah_crisis_area = {
+   icon = "gfx/interface/icons/flat_icons/three_people.dds"
+   map_color = { 0.75 0.15 0.13 }
+  }
+ }
+ participant_groups = {
+  kehillah_crisis_community = {
+   icon = "gfx/interface/icons/flat_icons/three_people.dds"
+   auto_add_rulers = no
+   auto_add_landless_rulers = no
+   require_realm_in_sub_region = no
+   is_character_valid = { scope:situation.var:kehillah_crisis_title.holder ?= root }
+  }
+  kehillah_crisis_sovereign = {
+   icon = "gfx/interface/icons/flat_icons/county_crown.dds"
+   auto_add_rulers = no
+   auto_add_landless_rulers = no
+   require_realm_in_sub_region = no
+   is_character_valid = { scope:situation.var:kehillah_crisis_sovereign ?= root }
+  }
+  kehillah_crisis_agitator = {
+   icon = "gfx/interface/icons/flat_icons/army.dds"
+   auto_add_rulers = no
+   auto_add_landless_rulers = no
+   require_realm_in_sub_region = no
+   is_character_valid = {
+    OR = {
+     scope:situation.var:kehillah_crisis_agitator ?= root
+     scope:situation.var:kehillah_crisis_witness ?= root
+    }
+   }
+  }
+ }
+ on_monthly = { kehillah_crisis_race_monthly_effect = yes }
+ # The window's Actions list. Each decision checks that the viewer leads this community.
+ situation_decisions = {
+  kehillah_crisis_prepare_decision
+  kehillah_crisis_protect_decision
+  kehillah_crisis_case_decision
+  # 2026-11-01: once the danger has passed.
+  kehillah_crisis_aftermath_decision
+ }
+ start_phase = kehillah_crisis_warning
+ phases = {
+  # Agitation (the key keeps its old name for saves). The race: whichever track fills first.
+  kehillah_crisis_warning = {
+   icon = "gfx/interface/icons/scheme_types/icon_scheme_slander.dds"
+   on_start = { debug_log = "kehillah_community_crisis: Agitation phase entered" }
+   # A hidden backstop for a stalled race only; the window shows the monthly pressure instead.
+   max_duration = { days = kehillah_crisis_backstop_days }
+   max_duration_next_phase = highest_points
+   future_phases = {
+    kehillah_crisis_armed = {
+     takeover_type = points
+     takeover_points = 100
+     catalysts = {
+      # Grouped 2026-11-01 (docs/spec/2026-11-01-crisis-catalyst-groups.md): each group's points
+      # are its last push, set just before it fires.
+      kehillah_crisis_opening_catalyst = kehillah_crisis_opening_catalyst_points_value
+      kehillah_crisis_agitator_catalyst = kehillah_crisis_agitator_catalyst_points_value
+      kehillah_crisis_ill_times_catalyst = kehillah_crisis_ill_times_catalyst_points_value
+      kehillah_crisis_mood_turns_catalyst = kehillah_crisis_mood_turns_catalyst_points_value
+      kehillah_crisis_misstep_catalyst = kehillah_crisis_misstep_catalyst_points_value
+      kehillah_crisis_armed_catalyst = kehillah_crisis_decided_points
+     }
+    }
+    kehillah_crisis_spared = {
+     takeover_type = points
+     takeover_points = 100
+     catalysts = {
+      # Grouped 2026-11-01 (docs/spec/2026-11-01-crisis-catalyst-groups.md): each group's points
+      # are its last push, set just before it fires.
+      kehillah_crisis_shield_catalyst = kehillah_crisis_shield_catalyst_points_value
+      kehillah_crisis_mood_eases_catalyst = kehillah_crisis_mood_eases_catalyst_points_value
+      kehillah_crisis_efforts_catalyst = kehillah_crisis_efforts_catalyst_points_value
+      kehillah_crisis_judgement_catalyst = kehillah_crisis_decided_points
+     }
+    }
+   }
+  }
+  # Step 1d: the second race. While the host marches and besieges, the quarter is held or struck.
+  kehillah_crisis_armed = {
+   icon = "gfx/interface/icons/struggle_types/struggle_persia_phase_unrest.dds"
+   on_start = { kehillah_crisis_armed_start_effect = yes }
+   # A hidden backstop only (a siege held forever by defenders); never shown.
+   max_duration = { days = kehillah_crisis_armed_backstop_days }
+   max_duration_next_phase = highest_points
+   future_phases = {
+    kehillah_crisis_held = {
+     takeover_type = points
+     takeover_points = 100
+     catalysts = {
+      # Grouped 2026-11-01 (docs/spec/2026-11-01-crisis-catalyst-groups.md): each group's points
+      # are its last push, set just before it fires.
+      kehillah_crisis_prepared_catalyst = kehillah_crisis_prepared_catalyst_points_value
+      kehillah_crisis_efforts_catalyst = kehillah_crisis_efforts_catalyst_points_value
+      kehillah_crisis_shield_catalyst = kehillah_crisis_shield_catalyst_points_value
+      kehillah_crisis_judgement_catalyst = kehillah_crisis_decided_points
+     }
+    }
+    kehillah_crisis_struck = {
+     takeover_type = points
+     takeover_points = 100
+     catalysts = {
+      # Grouped 2026-11-01 (docs/spec/2026-11-01-crisis-catalyst-groups.md): each group's points
+      # are its last push, set just before it fires.
+      kehillah_crisis_host_draws_on_catalyst = kehillah_crisis_host_draws_on_catalyst_points_value
+      kehillah_crisis_abandoned_catalyst = kehillah_crisis_abandoned_catalyst_points_value
+      kehillah_crisis_misstep_catalyst = kehillah_crisis_misstep_catalyst_points_value
+      kehillah_crisis_struck_catalyst = kehillah_crisis_decided_points
+     }
+    }
+   }
+  }
+  kehillah_crisis_held = {
+   icon = "gfx/interface/icons/struggle_types/struggle_iberia_phase_conciliation.dds"
+   on_start = { kehillah_crisis_held_start_effect = yes }
+   modifier_sets = {
+    kehillah_crisis_deliverance_set = {
+     icon = "gfx/interface/icons/situations/situation_modifier_character.dds"
+     kehillah_crisis_community = { character_modifier = { stress_gain_mult = -0.25 } }
+    }
+   }
+   future_phases = {
+    kehillah_crisis_recovery = { takeover_type = points takeover_points = 1 catalysts = { kehillah_crisis_recovery_catalyst = 1 } }
+   }
+  }
+  kehillah_crisis_struck = {
+   icon = "gfx/interface/icons/casus_bellis/raze_capital_structure.dds"
+   on_start = { kehillah_crisis_struck_start_effect = yes }
+   modifier_sets = {
+    kehillah_crisis_mourning_set = {
+     icon = "gfx/interface/icons/situations/situation_modifier_character.dds"
+     kehillah_crisis_community = { character_modifier = { stress_gain_mult = 0.2 } }
+    }
+   }
+   future_phases = {
+    kehillah_crisis_recovery = { takeover_type = points takeover_points = 1 catalysts = { kehillah_crisis_recovery_catalyst = 1 } }
+   }
+  }
+  kehillah_crisis_spared = {
+   icon = "gfx/interface/icons/scheme_types/icon_scheme_elope.dds"
+   on_start = { kehillah_crisis_spared_start_effect = yes }
+   modifier_sets = {
+    kehillah_crisis_deliverance_set = {
+     icon = "gfx/interface/icons/situations/situation_modifier_character.dds"
+     kehillah_crisis_community = { character_modifier = { stress_gain_mult = -0.25 } }
+    }
+   }
+   future_phases = {
+    kehillah_crisis_recovery = { takeover_type = points takeover_points = 1 catalysts = { kehillah_crisis_recovery_catalyst = 1 } }
+   }
+  }
+  kehillah_crisis_judgement = {
+   icon = "gfx/interface/icons/scheme_types/icon_scheme_claim_throne.dds"
+   on_start = { debug_log = "kehillah_community_crisis: Judgment phase entered" }
+   future_phases = {
+    kehillah_crisis_recovery = { takeover_type = points takeover_points = 1 catalysts = { kehillah_crisis_recovery_catalyst = 1 } }
+   }
+  }
+  kehillah_crisis_recovery = {
+   icon = "gfx/interface/icons/scheme_types/icon_scheme_culture.dds"
+   on_start = { debug_log = "kehillah_community_crisis: Recovery phase entered" }
+   modifier_sets = {
+    kehillah_crisis_rebuilding_set = {
+     icon = "gfx/interface/icons/situations/situation_modifier_character.dds"
+     kehillah_crisis_community = { character_modifier = { stress_gain_mult = -0.1 } }
+    }
+   }
+   # 2026-11-01 (Daniel: "The spared phase seems half baked"): a visible end. "Returning to Ordinary
+   # Life" (kehillah_crisis.0221, 45 days after the ruler's answer) normally closes the crisis first;
+   # if not, this phase closes it.
+   future_phases = {
+    kehillah_crisis_ordinary = {
+     takeover_type = duration
+     takeover_duration = { days = 50 }
+    }
+   }
+  }
+  kehillah_crisis_ordinary = {
+   icon = "gfx/interface/icons/scheme_types/icon_scheme_study_faith.dds"
+   # Never end_situation inside the situation's own phase on_start (crash, 2026-11-01): a hidden
+   # event on the leader closes it a day later.
+   on_start = { var:kehillah_crisis_title.holder ?= { trigger_event = { id = kehillah_crisis.0230 days = 1 } } }
+  }
+ }
+}
