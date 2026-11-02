@@ -197,6 +197,6 @@ This fix was never reproduced live.
 
 - Attack agitator kinds: a knight, a friar, a debtor-lord.
 - New decree kinds: no new synagogue, Easter seclusion, the court oath.
-- Talmud articles that match the verdict; recopying burned books.
+- Talmud articles that match the verdict.
 - More scenes during the violence itself (so far only the notifications are more frequent).
 - The expulsion edict as a crisis window; the crusades.
