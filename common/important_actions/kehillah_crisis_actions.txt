@@ -1,4 +1,4 @@
-﻿# Persistent, clickable alert after acknowledgment. Pending introductions never create an alert.
+# Persistent, clickable alert after acknowledgment. Pending introductions never create an alert.
 action_kehillah_active_crisis = {
  type = alert
  icon = action_dangerous_faction_targeting_me
@@ -6,25 +6,37 @@ action_kehillah_active_crisis = {
  priority = 100
  check_create_action = {
   if = {
-   limit = { government_has_flag = government_is_kehillah primary_title ?= { NOT = { has_variable = kehillah_crisis_intro_pending } } }
-   if = {
-    limit = { exists = primary_title.var:kehillah_trial_situation }
-    primary_title.var:kehillah_trial_situation = { save_temporary_scope_as = kehillah_alert_situation }
-    try_create_important_action = { important_action_type = action_kehillah_active_crisis }
+   limit = {
+    government_has_flag = government_is_kehillah
+    primary_title ?= { NOT = { has_variable = kehillah_crisis_intro_pending } }
+    OR = {
+     exists = primary_title.var:kehillah_trial_situation
+     exists = primary_title.var:kehillah_decree_situation
+     primary_title ?= {
+      exists = var:kehillah_crisis_situation
+      has_variable = kehillah_crisis_stage
+      var:kehillah_crisis_stage < 4
+     }
+    }
    }
-   else_if = {
-    limit = { exists = primary_title.var:kehillah_decree_situation }
-    primary_title.var:kehillah_decree_situation = { save_temporary_scope_as = kehillah_alert_situation }
-    try_create_important_action = { important_action_type = action_kehillah_active_crisis }
-   }
-   else_if = {
-    limit = { exists = primary_title.var:kehillah_crisis_situation primary_title ?= { has_variable = kehillah_crisis_stage var:kehillah_crisis_stage < 4 } }
-    primary_title.var:kehillah_crisis_situation = { save_temporary_scope_as = kehillah_alert_situation }
-    try_create_important_action = { important_action_type = action_kehillah_active_crisis }
-   }
+   try_create_important_action = { important_action_type = action_kehillah_active_crisis }
   }
  }
- effect = { scope:kehillah_alert_situation ?= { open_view_data = situation } }
+ effect = {
+  # The alert check and the click have separate script contexts.
+  if = {
+   limit = { exists = primary_title.var:kehillah_trial_situation }
+   primary_title.var:kehillah_trial_situation = { open_view_data = situation }
+  }
+  else_if = {
+   limit = { exists = primary_title.var:kehillah_decree_situation }
+   primary_title.var:kehillah_decree_situation = { open_view_data = situation }
+  }
+  else_if = {
+   limit = { primary_title ?= { has_variable = kehillah_crisis_stage var:kehillah_crisis_stage < 4 } }
+   primary_title.var:kehillah_crisis_situation ?= { open_view_data = situation }
+  }
+ }
 }
 # Expulsion still uses its original edict rather than a situation window.
 action_kehillah_active_expulsion = {

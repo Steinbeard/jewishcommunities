@@ -17,6 +17,35 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+**Rabbi and Religious Scholar - 2026-11-03:** Jewish rabbis absorb prior Religious
+Scholar experience into their Rabbi tracks. Half goes to Machshavah, with one quarter
+each to Parshanut and Talmudics (rounding remainder goes to Machshavah). Ordination
+converts the trait on gain; the yearly character pulse reconciles existing saves
+and other sources of overlap. The annual Scholar of the Faith event offers rabbis
+a peer study scene and 10 Machshavah XP. Lay scholars retain vanilla progression.
+Live verification is pending.
+### The Nagid — 2026-10-30, Daniel's request — slices 1–5 built, not live-tested The Luna probe was blocked by unavailable CK3 process ownership.
+
+**Rabbinic sermons - 2026-11-02, Daniel's request:** a Rabbi-trait Kehillah leader can
+deliver a sermon every three years, choosing Greatness through scriptural teaching or
+Stability through an appeal to neighbors' obligations. Parshanut mastery scales the
+pillar reward; Piety and modest Parshanut XP accompany either choice. See the
+[first-slice design and verification plan](docs/spec/2026-11-02-rabbinic-sermons.md).
+Source and xTiger checks passed against the unchanged 15-error/101-warning baseline;
+[live choice, tooltip, AI, and cooldown verification](docs/testing/2026-11-02-sermon-validation.md)
+remains pending because the required Luna tester could not access CK3 process ownership.
+This focused sermon loop precedes any crisis-specific
+preaching or Machshavah tenet-influence mechanic.
+
+**Rabbinics terminology - 2026-11-02, Daniel's request:** the English display name of the
+Hashkafa track is now **Machshavah** throughout trait, library, study, yeshiva, and Sanhedrin
+localization. Talmudics remains the other track name. The `hashkafa` script identifiers,
+localization keys, and saved values deliberately remain stable for existing games; this is a
+terminology change, not a change to the track's mechanics.
+**2026-11-02 prose follow-up:** the three Rabbi track tooltips now name their subjects
+directly and give concise gameplay uses. The former rhetorical claims about turning text
+into life, decisions people must live with, and learning a rabbi does not dismiss are removed.
+
 **Consolidated review snapshot - 2026-11-01, Daniel's request:** all current Codex/Claude work
 is being collected into one feature PR against the latest remote master. The current executable
 build has real attack races, Talmud-trial and decree situations, the native-derived crisis
@@ -29,6 +58,21 @@ preserves those changes, plus the remaining UI/editorial work. The multi-communi
 remains a proposal. Earlier partial live passes do not verify the newest lifecycle, paging,
 feedback and presentation changes; the combined PR remains a draft pending those checks.
 ### Community crises as situations — 2026-10-31, Daniel's request
+
+**Crisis notification and option clarity - 2026-11-03:** A short banner confirms the opening
+only after acknowledgment. Catalyst and other crisis reports use the side feed, matching
+vanilla Struggle catalyst placement. Completed preparations use their existing catalyst notice.
+Disabled preparations identify the occupied task slot, prior use, or leader absence in plain text.
+The opening toast now supplies a short description through the text-only message template,
+replacing the raw DESCRIPTION_AND_EFFECT placeholder seen in play. Feed headlines now identify
+what happened, with a single progress line and, for recurring reports, a short vignette. The
+headline omits the county link because it opens the title. The flaming-fist alert resolves the
+active Situation from the community title when clicked. Discrediting the agitator now reports
+what happened on either outcome, supplying the description the feed expects.
+The missing-child event now uses a setting-neutral search by default and a palace scene in the
+vizier crisis, where the rumor draws on the hostility already shown in the poem arc.
+Short toasts mark the transition from Agitation to Armed Host or Spared. Crises that begin
+with an armed host use their opening toast. Live recheck pending.
 
 **Catalyst feedback and Granada prose - 2026-11-01, Daniel's request:** attack-crisis point
 changes now send Struggle-style catalyst notices with the catalyst name, actual points, and
@@ -163,6 +207,17 @@ not an engine requirement. Added characterization is editorial, with a full
 [record and table](docs/implementation/2026-10-29-personality-trait-completion.md).
 xTiger has no new reports against the 15-error baseline. History changes need a
 new campaign; no live pass was performed for this static roster change.
+
+**Granada opening rewrite - 2026-11-02:** The court scene shows a Sanhaja chief challenging Yosef’s
+authority. The shorter poem scene introduces Abu Ishaq as a scholar of Islamic law, and the Almería
+report shows the guards connecting a separate rumor to his verses. The first two scenes define Sanhaja
+with a glossary tooltip. Dialogue and circulation details are dramatized. Live layout check pending.
+
+**Granada bookmark - 2026-11-03:** The 1066 character blurb introduces Joseph through his duties at court and in the Jewish community, then presents the choices available in the crisis.
+
+**Abu Ishaq's lineage - 2026-11-03:** New campaigns assign him to vanilla's Tujibid dynasty
+on the strength of his documented Banu Tujib affiliation. His precise branch is unknown.
+See the [biographical entry](https://islamansiklopedisi.org.tr/ebu-ishak-el-ilbiri).
 
 ### Granada's opening and Abu Ishaq's poem - 2026-10-29, Daniel's request
 

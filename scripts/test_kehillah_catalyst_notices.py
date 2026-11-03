@@ -71,8 +71,8 @@ class CatalystNotices(unittest.TestCase):
         self.assertIn("kehillah_crisis_agitator_catalyst_trigger_effect = { NOTICE = no }", monthly)
         self.assertEqual(monthly.count("kehillah_crisis_pressure_toast_effect = yes"), 1)
         report = block(effects, "kehillah_crisis_send_pressure_effect")
-        self.assertIn("PERIOD = month", report)
-        self.assertIn("PERIOD = interval", report)
+        self.assertIn("PROGRESS = month", report)
+        self.assertIn("PROGRESS = interval", report)
         self.assertNotIn("kehillah_flavor_toast_effect =", report)
 
     def test_flavor_preview_is_a_report_not_another_award(self):
@@ -80,8 +80,8 @@ class CatalystNotices(unittest.TestCase):
         report = block(effects, "kehillah_crisis_flavor_catalyst_send_effect")
         self.assertNotIn("trigger_situation_catalyst", report)
         self.assertIn("desc = $KEY$_d$N$", report)
-        self.assertIn("desc = $CATALYST$", report)
-        self.assertIn("desc = kehillah_crisis_catalyst_progress_$TRACK$", report)
+        self.assertIn("title = $KEY$_t$N$", report)
+        self.assertIn("desc = kehillah_crisis_catalyst_report_$PROGRESS$", report)
         self.assertIn("msg_kehillah_crisis_catalyst", report)
 
     def test_revised_prose_identifies_threat_and_active_mobilization(self):

@@ -261,11 +261,11 @@ kehillah_crisis_send_pressure_effect = {
  save_scope_as = kehillah_crisis_announce_leader
  if = {
   limit = { scope:kehillah_crisis_announce_title = { has_variable = kehillah_crisis_struck_month var:kehillah_crisis_struck_month > 0 } }
-  kehillah_crisis_flavor_catalyst_effect = { KEY = kehillah_crisis_pressure_$KEY$ CATALYST = kehillah_crisis_host_draws_on_catalyst TRACK = struck POINTS = scope:kehillah_crisis_announce_title.var:kehillah_crisis_struck_month PERIOD = interval }
+  kehillah_crisis_flavor_catalyst_effect = { KEY = kehillah_crisis_pressure_$KEY$ POINTS = scope:kehillah_crisis_announce_title.var:kehillah_crisis_struck_month PROGRESS = interval }
  }
  else_if = {
   limit = { scope:kehillah_notice_situation = { has_variable = kehillah_crisis_agitator_catalyst_pts var:kehillah_crisis_agitator_catalyst_pts > 0 } }
-  kehillah_crisis_flavor_catalyst_effect = { KEY = kehillah_crisis_pressure_$KEY$ CATALYST = kehillah_crisis_agitator_catalyst TRACK = armed POINTS = scope:kehillah_notice_situation.var:kehillah_crisis_agitator_catalyst_pts PERIOD = month }
+  kehillah_crisis_flavor_catalyst_effect = { KEY = kehillah_crisis_pressure_$KEY$ POINTS = scope:kehillah_notice_situation.var:kehillah_crisis_agitator_catalyst_pts PROGRESS = month }
  }
 }
 
@@ -346,6 +346,21 @@ kehillah_crisis_race_clear_mirror_effect = {
  if = { limit = { has_variable = kehillah_crisis_spared_points } remove_variable = kehillah_crisis_spared_points }
 }
 
+# Scope: the situation. Toast once on phase entry; point awards use the side feed.
+kehillah_crisis_phase_toast_effect = {
+ var:kehillah_crisis_title.holder ?= {
+  if = {
+   limit = { is_ai = no }
+   send_interface_message = {
+    type = $TYPE$
+    title = kehillah_crisis_phase_$PHASE$_t
+    desc = kehillah_crisis_phase_$PHASE$_d
+    left_icon = primary_title
+   }
+  }
+ }
+}
+
 # Root: the situation, as the Armed host phase begins. If the race (not an event) brought it,
 # the preacher's following becomes the host, exactly as the old end-of-warning roll did.
 kehillah_crisis_armed_start_effect = {
@@ -384,6 +399,16 @@ kehillah_crisis_armed_start_effect = {
    }
    else = { trigger_situation_catalyst = kehillah_crisis_judgement_catalyst }
   }
+  if = {
+   limit = {
+    situation_current_phase = kehillah_crisis_armed
+    scope:kehillah_crisis_phase_title = {
+     var:kehillah_crisis_stage = 2
+     NOT = { has_variable = kehillah_crisis_host_intro_ack }
+    }
+   }
+   kehillah_crisis_phase_toast_effect = { TYPE = msg_kehillah_crisis_begins PHASE = armed }
+  }
  }
 }
 
@@ -395,6 +420,10 @@ kehillah_crisis_spared_start_effect = {
  if = {
   limit = { kehillah_crisis_situation_link_valid_trigger = yes }
   var:kehillah_crisis_title = { save_scope_as = kehillah_crisis_phase_title }
+  if = {
+   limit = { scope:kehillah_crisis_phase_title = { OR = { var:kehillah_crisis_stage = 1 var:kehillah_crisis_stage = 3 } } }
+   kehillah_crisis_phase_toast_effect = { TYPE = msg_kehillah_crisis_spared PHASE = spared }
+  }
   if = {
    limit = { scope:kehillah_crisis_phase_title.var:kehillah_crisis_stage = 1 }
    if = {
