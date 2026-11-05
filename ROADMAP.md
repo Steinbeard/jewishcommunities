@@ -17,6 +17,44 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+**Debts crisis writing - 2026-11-05, Daniel's request:** "Debts and a Dear Year" no
+longer cites York 1190, which most start dates predate (York has no community at all
+before the 1178 start). Its text also no longer assumes a Countinghouse, which is an
+optional building.
+**Blocked until the trade DLC ships:** gate the debts opening to communities that are
+actually lending. Today it can fire for any community, though all of its text assumes
+open loans in the town. The only natural start is the debts branch of
+`kehillah_crisis_opening_pulse_effect` (`kehillah_crisis_effects.txt`), with its odds
+in `kehillah_crisis_debts_chance_value`; the debug events bypass it deliberately. Read
+the DLC's lending data there rather than building a homegrown loan record first.
+
+**Community Safety risk display - 2026-11-05:** The Military panel now puts the
+incident band and yearly chance up front, with exact drivers in one tooltip;
+active warning bars have direct labels and protections move into compact
+tooltips. Prosperity raises danger more than Greatness, while Stability lowers
+it. See the [implementation record](docs/implementation/2026-11-05-community-safety-risk.md).
+Source and xTiger checks passed; live visual and tooltip verification remain
+pending.
+
+**Suggested crisis responses - 2026-11-05:** Agitation and Armed Host now offer
+shortlists of up to three eligible courses. The elders' counsel now opens the
+selected action's first meaningful scene directly, including the emir's approach
+with the patron already selected. The elders' counsel confirms seven simple
+actions before calling shared effects; the three standing menus and Military
+buttons apply those same effects directly, with costs and results in their
+tooltips. Free
+appeals and public answers join the pool. Paid suggestions require a treasury at
+least five times the cost, so a technically affordable but steep payment is not
+favored. The button blocks repeated clicks while the counsel opens.
+The screenshot follow-up moves the shortcut into a compact button beside Actions,
+retaining exactly three full-width standing action rows. The raw decision key in
+that screenshot likely reflects localization written during game startup; the
+new button still needs a fresh-launch check.
+See the [implementation record](docs/implementation/2026-11-05-crisis-suggested-responses.md).
+Source and xTiger checks pass against the unchanged baseline; live UI, button
+guard, tooltip, AI confirmation and direct-scene routing checks remain pending. The chance-based
+courses use the canonical scene's odds; AI scoring remains follow-up work.
+
 **Rabbi and Religious Scholar - 2026-11-03:** Jewish rabbis absorb prior Religious
 Scholar experience into their Rabbi tracks. Half goes to Machshavah, with one quarter
 each to Parshanut and Talmudics (rounding remainder goes to Machshavah). Ordination
@@ -73,6 +111,49 @@ The missing-child event now uses a setting-neutral search by default and a palac
 vizier crisis, where the rumor draws on the hostility already shown in the poem arc.
 Short toasts mark the transition from Agitation to Armed Host or Spared. Crises that begin
 with an armed host use their opening toast. Live recheck pending.
+**2026-11-04 toast wording:** Opening banners now name the cause of unrest or the
+specific legal threat in one sentence. The Armed Host and Spared banners describe
+the immediate danger or the pending ruling on the quarter's protection.
+**2026-11-04 catalyst feed:** Attack-crisis point notices now use red for danger
+tracks and green for safety tracks. Each names a cause or a brief sign of the
+changing mood before the points line; broader mood catalysts draw from twelve
+short scenes each. Recurring reports retain their existing scenes and use red.
+The scenes illustrate the shift in public mood without claiming to be a second
+mechanical event. Live color and layout verification pending.
+
+**2026-11-04 Words on the Door follow-up:** The one-time random Agitation
+development is now titled Threats on the Shutter. Its two options explain
+the witnesses and the cost of a public complaint. The option tooltips show
+the actual six-point Spared or Armed Host change; their situation catalyst
+effects are hidden from the tooltip to suppress unrelated probability lines.
+The underlying prestige/stress costs and point awards are unchanged. Live
+tooltip and event rendering verification pending.
+
+**2026-11-05 crisis notification titles:** Catalyst feed notifications now use
+the Struggle-style headline “Kehillah Crisis: Catalyst Triggered.” Their body
+begins with the specific catalyst name, followed by its narrative and point
+change; recurring reports retain their event-specific narrative beneath the
+same headline. They use the base-game hostility feed icon to distinguish them
+from Struggle notices. Vanilla natural-disaster reports are side-feed messages
+with a dedicated natural-disaster icon, rather than banners. Live rendering
+verification pending. Catalyst messages now separate the catalyst label,
+narrative, and progress line; outcome names appear in blue and added points in
+green. Their tooltip repeats the notification body, following the vanilla
+Struggle catalyst pattern; natural-disaster messages rely on their body alone.
+**2026-11-05 event-caused catalyst feedback:** When a player chooses an event
+option, its outcome tooltip is the sole feedback for the resulting catalyst;
+the race helper no longer sends a second catalyst message. Monthly and
+interval-based pressure reports retain their random narrative variants because
+they summarize changes without one specific player action. This supersedes the
+per-choice mood-scene behavior described in the 2026-11-04 catalyst-feed note.
+
+**2026-11-05 crisis recovery:** Completed attack, decree, and Talmud-trial
+situations now start a one-year cooldown before the shared crisis-intro gate
+allows another crisis. Cancelled opening events do not start the timer. The
+duration is centralized in `kehillah_crisis_post_end_cooldown_years`, and the
+Community Safety incident-risk tooltip now explains the pause; see the
+[implementation record](docs/implementation/2026-11-05-crisis-recovery-cooldown.md).
+xTiger counts match the pre-change baseline; live playtest not run.
 
 **Catalyst feedback and Granada prose - 2026-11-01, Daniel's request:** attack-crisis point
 changes now send Struggle-style catalyst notices with the catalyst name, actual points, and

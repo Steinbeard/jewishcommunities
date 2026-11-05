@@ -3,6 +3,13 @@ Follows Daniel's request for vanilla-style catalyst feedback and clearer Granada
 Extends [grouped catalysts](../spec/2026-11-01-crisis-catalyst-groups.md) and
 [opening acknowledgment](2026-11-01-crisis-acknowledgment.md).
 
+**2026-11-05 follow-up:** Event and action outcomes use their own result tooltip as the single
+feedback for a catalyst; `kehillah_crisis_race_add_effect` still applies and mirrors progress but
+does not send a second catalyst message. This suppresses random scene text that could misattribute
+the cause and avoids duplicating the event outcome. Monthly and interval-based pressure reports
+retain their narrative pools. This follow-up supersedes the individual action/outcome notices
+described below; recurring notices and their progress totals remain.
+
 # Catalyst notices for the attack crisis
 
 ## Behavior
@@ -13,11 +20,12 @@ The installed situation schema documents no corresponding catalyst-notification 
 mod therefore uses a separate message with the same vanilla `struggle` icon and neutral style,
 its own mutable Message Settings filter, and situation-specific scopes.
 
-The header reads **[county]: Catalyst Triggered**. A compact action/event notice names the
+When emitted, the header reads **[county]: Catalyst Triggered**. A compact notice names the
 catalyst and gives **+N progress toward [future track]**. The track is selected before firing,
 not inferred from the phase afterward. Points are read from the same script value as the native
 binding and snapshotted before firing; a threshold crossing can immediately change phase and
-clear/reseed counters. The notification itself never awards points.
+clear/reseed counters. The notification itself never awards points. Since the 2026-11-05
+follow-up, player event/action outcomes use their own tooltip instead of a second notice.
 
 The eleven grouped attack catalysts have fourteen phase/destination bindings. Each route is
 explicit and source-tested against `kehillah_crisis_situation.txt`. The shared race helpers use
@@ -32,12 +40,22 @@ Recurring messages combine story and mechanics:
 - The armed host retains its every-second-four-day-tick report (approximately weekly). Its
   footer explicitly reports accumulated progress **since the last report**, not a fictitious
   single-tick award. Each underlying tick still fires its catalyst once.
-- Other grouped actions, scene outcomes, preparations and protection receive compact individual
-  notices. The independent special-driver notices keep their existing behavior.
+- Other grouped actions, scene outcomes, preparations and protection received compact individual
+  notices in the original implementation. The 2026-11-05 follow-up suppresses those when they
+  result from a player event/action; independent special-driver notices retain their behavior.
 
-No scoring values, thresholds, race timing, narrative pool weights, or no-repeat state changed.
+No scoring values, thresholds, race timing, or no-repeat state changed in the original notice pass.
 The new presentation is for the attack situation; trial and decree scoring wrappers are untouched.
 A pending introduction produces no new catalyst notice. AI characters receive no player message.
+
+## 2026-11-05 follow-up: one result surface for event choices
+
+Event and action outcomes now use their own option tooltip as the sole feedback for the resulting
+catalyst. `kehillah_crisis_race_add_effect` still applies and mirrors progress, but suppresses the
+additional catalyst message. This avoids a second notification after a choice and keeps its
+consequence attached to the choice that caused it. Monthly and interval-based pressure reports
+retain their narrative variants, since they summarize changes without one specific player action.
+Scoring, point values and timing are unchanged.
 
 ## Granada writing
 
