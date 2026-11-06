@@ -63,11 +63,34 @@ class CrisisIntroductionContracts(unittest.TestCase):
                 self.assertIn("has_variable = kehillah_crisis_intro_accepted", after)
                 self.assertEqual(len(re.findall(r"(?m)^\s*option\s*=", event)), choices)
                 options = event[:event.index("\n\tafter")]
+                immediate = block(event, "immediate")
+                self.assertIn("kehillah_crisis_start_with_popup_effect", immediate)
+                options = options.replace(immediate, "")
                 for forbidden in ("start_situation =", "start_war =", "kehillah_crisis_acknowledge_effect ="):
                     self.assertNotIn(forbidden, options)
                 previews = re.findall(r"show_as_tooltip = \{ (kehillah_intro_\w+_response_effect) = yes", options)
                 for effect in previews:
                     self.assertEqual(after.count(effect + " = yes"), 1)
+
+    def test_granada_poem_reserves_before_it_starts(self):
+        event = block(source("events/kehillah_granada_events.txt"), "kehillah_granada.0018")
+        immediate = block(event, "immediate")
+        self.assertLess(immediate.index("kehillah_crisis_reserve_intro_effect"), immediate.index("kehillah_crisis_start_with_popup_effect"))
+
+    def test_host_popup_starts_and_keeps_its_rising_text_after_activation(self):
+        event = block(source("events/kehillah_crisis_intro_events.txt"), "kehillah_crisis_intro.0001")
+        immediate = block(event, "immediate")
+        self.assertIn("kehillah_crisis_start_with_popup_effect = { FAMILY = retarget }", immediate)
+        self.assertIn("kehillah_crisis_start_with_popup_effect = { FAMILY = host }", immediate)
+        self.assertIn("var:kehillah_crisis_opening ?= flag:rising", event)
+
+    def test_accusation_cannot_fire_twice_once_its_crisis_starts(self):
+        begin = block(source("common/scripted_effects/kehillah_accusation_effects.txt"), "kehillah_accusation_begin_effect")
+        self.assertIn("else_if = {", begin[:begin.index("trigger_event = kehillah_accusation.0001")])
+
+    def test_no_event_still_promises_that_answering_starts_a_crisis(self):
+        for path in (ROOT / "events").glob("*.txt"):
+            self.assertNotIn("kehillah_crisis_acknowledge_tt", path.read_text(encoding="utf-8-sig"), path.name)
 
     def test_staging_does_not_create_active_situations_or_start_wars(self):
         for filename, key in [

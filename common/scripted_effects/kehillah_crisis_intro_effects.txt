@@ -1,11 +1,21 @@
 ﻿# 2026-11-01, Daniel: each crisis starts only after its trigger event is acknowledged.
+# 2026-11-06, Daniel: superseded. Each crisis now starts as its trigger event opens, so its banner
+# does not read as a result of the answer. The reservation below only lasts until that popup.
 # Pending data is title-owned and saved; it reserves a community without creating an active clock.
 kehillah_crisis_reserve_intro_effect = {
  primary_title = {
   save_scope_as = kehillah_crisis_intro_title
-  if = { limit = { NOT = { has_variable = kehillah_crisis_intro_epoch } } set_variable = { name = kehillah_crisis_intro_epoch value = 0 } }
-  change_variable = { name = kehillah_crisis_intro_epoch add = 1 }
-  save_scope_value_as = { name = kehillah_crisis_intro_epoch value = var:kehillah_crisis_intro_epoch }
+  # Read the old value only when it exists. Event tooltip construction can evaluate this
+  # effect before seeing a preceding set_variable, yielding an unset scope on the first crisis.
+  if = {
+   limit = { has_variable = kehillah_crisis_intro_epoch }
+   change_variable = { name = kehillah_crisis_intro_epoch add = 1 }
+   save_scope_value_as = { name = kehillah_crisis_intro_epoch value = var:kehillah_crisis_intro_epoch }
+  }
+  else = {
+   set_variable = { name = kehillah_crisis_intro_epoch value = 1 }
+   save_scope_value_as = { name = kehillah_crisis_intro_epoch value = 1 }
+  }
   set_variable = { name = kehillah_crisis_intro_pending value = flag:$FAMILY$ }
   set_variable = { name = kehillah_crisis_intro_recipient value = prev }
   set_variable = { name = kehillah_crisis_intro_county value = holder.domicile.domicile_location.county }
@@ -86,6 +96,14 @@ kehillah_crisis_acknowledge_effect = {
    }
   }
   debug_log = "kehillah_crisis_intro: stale event ignored"
+ }
+}
+# Scope: community leader. Last in an opening event's immediate, once its scopes are saved. The
+# answer still applies in after, through the existing-crisis branch of the acknowledge effect.
+kehillah_crisis_start_with_popup_effect = {
+ if = {
+  limit = { primary_title ?= { var:kehillah_crisis_intro_pending ?= flag:$FAMILY$ } }
+  kehillah_crisis_acknowledge_effect = { FAMILY = $FAMILY$ }
  }
 }
 kehillah_crisis_activate_attack_effect = {

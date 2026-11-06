@@ -148,6 +148,39 @@ Source checks compare the response and resolution blocks with the pre-revision
 snapshot; the debug report now describes court placement as optional for the
 poem scene. Live rendering of line breaks and italics remains pending.
 
+**2026-11-06 addendum:** at Daniel's request `.0018` is now **Crisis: Sinister
+Verses**. It opens on the growing resentment and closes on the risk of violence.
+While Abu Ishaq lives, the clerk heard him recite it himself in the town square.
+This supersedes the unnamed-text delivery above, which survives as a fallback if
+he is dead: the clerk heard it recited and names him as its author. The translated
+couplet is unchanged. The scene is authored; the historical qualification above
+still applies.
+
+**2026-11-06 addendum:** at Daniel's request `.0008`, Your Father's Office, now
+opens with a short paragraph as the chain's first scene: ten years since Samuel's
+death (1056), what each office means, and a light hint of resentment that leaves
+the sharper statement to `.0018`. One clause carries the second petition from
+Yoseph's desk to the palace. Text only; live rendering is unchecked.
+
+**2026-11-06 addendum, `.0002`:** at Daniel's request The Emir's Confidence now offers three bets. The defense is a Diplomacy `duel`, 35 against 65, moved by Diplomacy x 2 and his opinion x 0.25; this replaces `kehillah_granada_loyalty_chance_value`. Naming Samuel's debt stays a sure +12 Spared for Prestige and now also costs 10 of his opinion. Staying at work adds +5 Stability to its Prestige gain and +6 Armed.
+
+**2026-11-06 addendum, later:** this supersedes the Burn and Emir odds in the table below. Both now use a `duel` against `medium_skill_rating`, so the game shows the skill and factors. Burn is 50 +/- 3.5 per skill point, at least 15. The emir is 35 against 65, moved by Diplomacy x 2, his opinion x 0.25 and `kehillah_lord_outlook_odds_modifier`. `kehillah_granada_burn_chance_value` is removed. Each gamble now sends a toast, because the result was otherwise invisible.
+
+**2026-11-06 addendum:** at Daniel's request the three `.0018` answers are now
+different bets, so none is simply best. This supersedes their earlier effects:
+the elders gave +6 Spared, burning gave +12 Armed, and the emir gave +12 Spared
+or +6 Armed. The old hover showed the catalyst's default 12 for every push, so the
+elders looked twice as strong as they were.
+
+| Answer | Effect |
+|---|---|
+| Elders | Certain +6 Spared, -5 Stability, -5 attack severity |
+| Burn | Stress relief. Intrigue roll (30 + 2 x Intrigue, 15 to 75): +12 Spared, or +6 Armed |
+| Emir | Existing Diplomacy and opinion roll: +12 Spared and `kehillah_mob_condemned`, or +12 Armed |
+
+Race pushes now sit in `hidden_effect`, and the tooltips name their sizes. Balance
+is by calculation only; it has not been played.
+
 ## 2026-10-29 correction: al-Mariyyah's political position
 
 Daniel observed that al-Mariyyah is Badis's vassal in the game. The installed

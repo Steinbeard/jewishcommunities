@@ -75,3 +75,33 @@ response effects.
 
 `python scripts/test_kehillah_crisis_intro.py` checks source contracts, not CK3 runtime behavior.
 Console probes and remaining checks are in [the test record](../testing/2026-11-01-crisis-acknowledgment.md).
+
+## 2026-11-06 addendum: every crisis starts with its popup
+
+Daniel found the banner awkward when it arrived after the answer, because it read as if the
+choice had caused the crisis. This supersedes the title of this document, steps 1 and 2 above,
+and the table's "after acknowledgment" timing, for every opening in the table. Sudden hosts now
+start their war and army as the popup opens.
+
+Each opening's `immediate` block ends with `kehillah_crisis_start_with_popup_effect`, which
+acknowledges a matching reservation. Reservations stay because they supply acknowledgment's
+guards, but they now last only until the popup fires. Reoffers to a new leader remain for saves
+that already hold one. Answers still apply in `after`, through the existing-crisis branch of
+`kehillah_crisis_acknowledge_effect`, and the "A crisis begins" tooltip is gone.
+
+Every opening's title now begins "Crisis:". The decree event has its own title keys
+(`kehillah_decree.0001.t`, `_ghiyar`, `_servants`) because the old incident events share the
+previous ones.
+
+Three things had relied on the old order:
+
+- Trial and decree scene scopes now run after the start, so they read the live situation.
+- `kehillah_crisis_intro.0001` reads the recorded opening as well as the pending one, because
+  activation spends the pending value that chose its rising text.
+- `kehillah_accusation_begin_effect` used the pending flag to avoid firing its event twice. Its
+  second branch is now an `else_if`.
+
+Accepted tradeoffs: an unanswered popup spends crisis time if the game runs on. If a trial or
+decree leaves its opening phase, or an Agitation ends, before the popup is answered, that answer
+no longer applies. Option previews now run against a live crisis, so check `error.log` for
+tooltip errors on the first live pass. `kehillah_crisis_intro_debug.1` now reports the live state.

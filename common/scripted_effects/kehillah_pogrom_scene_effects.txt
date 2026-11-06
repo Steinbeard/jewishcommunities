@@ -6,6 +6,17 @@
 
 # When the siege ends (kehillah_mob_tick_effect). The host waits while
 # the scenes play (kehillah_mob_striking), at most 60 days.
+# Report the choice's immediate result before the next distinct scene arrives.
+# Final losses are determined later by the attack report.
+kehillah_pogrom_scene_result_toast_effect = {
+	send_interface_toast = {
+		type = $TYPE$
+		title = kehillah_pogrom_result_$KEY$_t
+		desc = kehillah_pogrom_result_$KEY$_d
+		left_icon = root
+	}
+}
+
 kehillah_pogrom_scenes_start_effect = {
 	scope:kehillah_mob_leader = {
 		add_character_flag = kehillah_mob_striking
@@ -40,19 +51,20 @@ kehillah_pogrom_scenes_start_effect = {
 kehillah_pogrom_to_fire_effect = { kehillah_crisis_next_attack_scene_effect = yes }
 kehillah_pogrom_to_baptism_effect = { kehillah_crisis_next_attack_scene_effect = yes }
 
-# The answers at the font. Each sets the community's choice and ends the
-# scenes; the pogrom itself runs in a hidden event (kehillah_pogrom.0090),
-# never inside the option (the tooltip builder would run it).
+# The answers at the font record the choice and continue to the grade's next
+# distinct scene. The hidden outcome event runs after the last scene.
 kehillah_pogrom_refuse_effect = {
 	primary_title = { set_variable = { name = kehillah_scene_font_refused value = yes } }
 	custom_tooltip = kehillah_pogrom_refuse_tt
-	trigger_event = kehillah_pogrom.0090
+	hidden_effect = { kehillah_pogrom_scene_result_toast_effect = { TYPE = event_toast_effect_bad KEY = refused } }
+	kehillah_crisis_next_attack_scene_effect = yes
 }
 
 kehillah_pogrom_accept_effect = {
 	primary_title = { set_variable = { name = kehillah_scene_font_accepted value = yes } }
 	custom_tooltip = kehillah_pogrom_accept_tt
-	trigger_event = kehillah_pogrom.0090
+	hidden_effect = { kehillah_pogrom_scene_result_toast_effect = { TYPE = event_toast_effect_bad KEY = accepted } }
+	kehillah_crisis_next_attack_scene_effect = yes
 }
 
 kehillah_pogrom_offer_all_effect = {
@@ -63,14 +75,16 @@ kehillah_pogrom_offer_all_effect = {
 			desc = kehillah_pogrom_offer_taken
 			custom_tooltip = kehillah_pogrom_offer_taken_tt
 			primary_title = { set_variable = { name = kehillah_scene_ransom_paid value = yes } }
+			kehillah_pogrom_scene_result_toast_effect = { TYPE = event_toast_effect_good KEY = offer_taken }
 		}
 		0 = {
 			modifier = { add = kehillah_pogrom_offer_fail_value }
 			desc = kehillah_pogrom_offer_pocketed
 			custom_tooltip = kehillah_pogrom_offer_pocketed_tt
+			kehillah_pogrom_scene_result_toast_effect = { TYPE = event_toast_effect_bad KEY = offer_pocketed }
 		}
 	}
-	trigger_event = kehillah_pogrom.0090
+	kehillah_crisis_next_attack_scene_effect = yes
 }
 
 # The leader baptized by force (after the report, kehillah_mob.0010).
@@ -194,11 +208,11 @@ kehillah_anus_crypto_effect = {
 	}
 }
 
-# At most two attack encounters; distinct families within an attack, with the
+# One to four attack encounters by intrinsic threat grade; distinct families within an attack, with the
 # previous attack's opening excluded from the next opening when possible.
 kehillah_crisis_next_attack_scene_effect = {
  if = {
-  limit = { primary_title = { has_variable = kehillah_crisis_scene_count var:kehillah_crisis_scene_count >= 2 } }
+  limit = { primary_title = { has_variable = kehillah_crisis_scene_count var:kehillah_crisis_scene_count >= kehillah_crisis_harm_scene_cap_value } }
   trigger_event = kehillah_pogrom.0090
  }
  else = {

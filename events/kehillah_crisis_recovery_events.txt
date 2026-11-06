@@ -1,0 +1,191 @@
+﻿namespace = kehillah_crisis_recovery
+
+# The report can leave captives alive in the host's prison. Recovery offers a real ransom.
+kehillah_crisis_recovery.0003 = {
+ type = character_event
+ title = kehillah_crisis_recovery.0003.t
+ desc = kehillah_crisis_recovery.0003.desc
+ theme = diplomacy
+ left_portrait = { character = root animation = worry }
+ right_portrait = { character = scope:kehillah_captive_holder animation = thinking }
+ trigger = { kehillah_crisis_recovery_open_trigger = yes primary_title = { has_variable = kehillah_crisis_captives_unresolved } }
+ immediate = { primary_title.var:kehillah_crisis_captive_holder ?= { save_scope_as = kehillah_captive_holder } }
+ option = {
+  name = kehillah_crisis_recovery.0003.a
+  trigger = { exists = scope:kehillah_captive_holder gold >= kehillah_pogrom_ransom_cost_value }
+  pay_short_term_gold = { target = scope:kehillah_captive_holder gold = kehillah_pogrom_ransom_cost_value }
+  scope:kehillah_captive_holder = { every_prisoner = { limit = { var:kehillah_crisis_captive_of = root.primary_title } remove_variable = kehillah_crisis_captive_of release_from_prison = yes } }
+  primary_title = { remove_variable = kehillah_crisis_captives_unresolved hidden_effect = { kehillah_crisis_recovery_progress_effect = { POINTS = 20 } } custom_tooltip = kehillah_crisis_tt_endure_large set_variable = { name = kehillah_crisis_captives_redeemed value = yes } }
+  ai_chance = { base = 80 }
+ }
+ option = { name = kehillah_crisis_recovery.0003.b ai_chance = { base = 0 } }
+}
+
+kehillah_crisis_recovery.0001 = {
+ type = character_event
+ title = kehillah_crisis_recovery.0001.t
+ desc = kehillah_crisis_recovery.0001.desc
+ theme = stewardship
+ left_portrait = { character = root animation = worry }
+ trigger = { kehillah_crisis_recovery_open_trigger = yes }
+ option = {
+  name = kehillah_crisis_recovery.0001.a
+  trigger = { gold >= medium_gold_value }
+  primary_title = { set_variable = { name = kehillah_crisis_relief_used value = yes } hidden_effect = { kehillah_crisis_recovery_progress_effect = { POINTS = 22 } } custom_tooltip = kehillah_crisis_tt_endure_large }
+  remove_short_term_gold = medium_gold_value
+  kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = 10 }
+  ai_chance = { base = 60 }
+ }
+ option = {
+  name = kehillah_crisis_recovery.0001.b
+  custom_tooltip = kehillah_crisis_recovery.0001.b.tt
+  trigger = { exists = domicile.domicile_location.county.holder.top_liege }
+  primary_title = { set_variable = { name = kehillah_crisis_relief_used value = yes } }
+  primary_title = { save_scope_as = kehillah_recovery_request_title }
+  domicile.domicile_location.county.holder.top_liege = {
+   set_variable = { name = kehillah_recovery_request_title value = scope:kehillah_recovery_request_title }
+   set_variable = { name = kehillah_recovery_request_epoch value = scope:kehillah_recovery_request_title.var:kehillah_crisis_epoch }
+   trigger_event = kehillah_crisis_recovery.0100
+  }
+  ai_chance = { base = 30 }
+ }
+ option = { name = kehillah_crisis_phase_actions.later ai_chance = { base = 0 } }
+}
+
+# The ruler actually chooses whether the community receives reconstruction money.
+kehillah_crisis_recovery.0100 = {
+ type = character_event
+ title = kehillah_crisis_recovery.0100.t
+ desc = kehillah_crisis_recovery.0100.desc
+ theme = diplomacy
+ left_portrait = { character = root animation = thinking }
+ trigger = {
+  var:kehillah_recovery_request_title ?= {
+   var:kehillah_crisis_epoch = root.var:kehillah_recovery_request_epoch
+   var:kehillah_crisis_situation ?= { situation_current_phase = kehillah_crisis_recovery }
+  }
+ }
+ immediate = {
+  var:kehillah_recovery_request_title ?= { save_scope_as = kehillah_recovery_request_title }
+  scope:kehillah_recovery_request_title.holder ?= { save_scope_as = kehillah_recovery_requester }
+ }
+ option = {
+  name = kehillah_crisis_recovery.0100.a
+  trigger = { gold >= medium_gold_value }
+  # The request's target is the currently hosted community; no treasury is minted.
+  pay_short_term_gold = { target = scope:kehillah_recovery_requester gold = medium_gold_value }
+  scope:kehillah_recovery_request_title = { kehillah_crisis_recovery_progress_effect = { POINTS = 20 } }
+  ai_chance = {
+   base = 45
+   modifier = { add = 35 has_trait = just }
+   modifier = { add = 25 has_trait = compassionate }
+   modifier = { add = 25 opinion = { target = scope:kehillah_recovery_requester value >= 35 } }
+   modifier = { add = -25 opinion = { target = scope:kehillah_recovery_requester value <= -35 } }
+   modifier = { add = 20 kehillah_outlook_band_value >= 2 }
+   modifier = { add = -25 kehillah_outlook_band_value <= -2 }
+   modifier = { add = -15 has_trait = greedy }
+  }
+ }
+ option = { name = kehillah_crisis_recovery.0100.b ai_chance = { base = 50 } }
+ after = { remove_variable = kehillah_recovery_request_title remove_variable = kehillah_recovery_request_epoch }
+}
+
+kehillah_crisis_recovery.0002 = {
+ type = character_event
+ title = kehillah_crisis_recovery.0002.t
+ desc = kehillah_crisis_recovery.0002.desc
+ theme = diplomacy
+ left_portrait = { character = root animation = worry }
+ right_portrait = { trigger = { exists = scope:kehillah_reckoning_dayyan } character = scope:kehillah_reckoning_dayyan animation = thinking }
+ trigger = { kehillah_crisis_recovery_open_trigger = yes }
+ immediate = { cp:councillor_court_chaplain ?= { save_scope_as = kehillah_reckoning_dayyan } }
+ option = {
+  name = kehillah_crisis_recovery.0002.a
+  flavor = kehillah_crisis_recovery.0002.a.tt
+  custom_tooltip = kehillah_crisis_reckoning_used_tt
+  primary_title = { set_variable = { name = kehillah_crisis_reckoning_used value = yes } }
+  random_list = {
+   55 = {
+    desc = kehillah_crisis_recovery.0002.a.success
+    modifier = { add = kehillah_crisis_reckoning_bonus_value }
+    send_interface_toast = {
+     type = event_toast_effect_good
+     title = kehillah_crisis_recovery.0002.a.success
+     left_icon = root
+     custom_tooltip = kehillah_crisis_tt_endure_large
+     hidden_effect = { primary_title = { kehillah_crisis_recovery_progress_effect = { POINTS = 16 } } }
+     add_stress = minor_stress_loss
+    }
+   }
+   45 = {
+    desc = kehillah_crisis_recovery.0002.a.failure
+    send_interface_toast = {
+     type = event_toast_effect_bad
+     title = kehillah_crisis_recovery.0002.a.failure
+     left_icon = root
+     custom_tooltip = kehillah_crisis_tt_collapse_small
+     hidden_effect = { primary_title = { kehillah_crisis_recovery_setback_effect = { POINTS = 8 } } }
+     kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = -5 }
+     add_stress = minor_stress_gain
+    }
+   }
+  }
+  ai_chance = { base = 50 }
+ }
+ option = {
+  name = kehillah_crisis_recovery.0002.b
+  trigger = { gold >= minor_gold_value }
+  remove_short_term_gold = minor_gold_value
+  custom_tooltip = kehillah_crisis_reckoning_used_tt
+  custom_tooltip = kehillah_crisis_tt_endure_large
+  hidden_effect = { primary_title = { set_variable = { name = kehillah_crisis_reckoning_used value = yes } kehillah_crisis_recovery_progress_effect = { POINTS = 18 } } }
+  kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = 5 }
+  ai_chance = { base = 50 }
+ }
+ option = { name = kehillah_crisis_phase_actions.later ai_chance = { base = 0 } }
+}
+
+kehillah_crisis_recovery.0200 = {
+ type = character_event
+ title = kehillah_crisis_recovery.0200.t
+ desc = kehillah_crisis_recovery.0200.desc
+ theme = stewardship
+ left_portrait = { character = root animation = worry }
+ option = { name = kehillah_crisis_recovery.0200.a primary_title = { set_variable = { name = kehillah_crisis_collapsed_in_recovery value = yes } } trigger_event = kehillah_crisis_chronicle.0090 }
+}
+
+kehillah_crisis_recovery.0110 = {
+ type = character_event
+ title = kehillah_crisis_recovery.0110.t
+ desc = { first_valid = {
+  triggered_desc = { trigger = { var:kehillah_recovery_request_kind ?= flag:books } desc = kehillah_crisis_recovery.0110.books }
+  desc = kehillah_crisis_recovery.0110.tzedakah
+ } }
+ theme = faith
+ left_portrait = { character = root animation = thinking }
+ trigger = {
+  var:kehillah_recovery_request_title ?= {
+   var:kehillah_crisis_epoch = root.var:kehillah_recovery_request_epoch
+   var:kehillah_crisis_situation ?= { situation_current_phase = kehillah_crisis_recovery }
+  }
+ }
+ immediate = { var:kehillah_recovery_request_title ?= { save_scope_as = kehillah_asking_title } }
+ option = {
+  name = kehillah_crisis_recovery.0110.a
+  trigger = { OR = { AND = { var:kehillah_recovery_request_kind ?= flag:books gold >= minor_gold_value } AND = { var:kehillah_recovery_request_kind ?= flag:tzedakah gold >= medium_gold_value } } }
+  if = {
+   limit = { var:kehillah_recovery_request_kind ?= flag:books }
+   remove_short_term_gold = minor_gold_value
+   scope:kehillah_asking_title = { kehillah_crisis_recovery_progress_effect = { POINTS = 20 } }
+   scope:kehillah_asking_title.holder ?= { kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = 10 } }
+  }
+  else = {
+   pay_short_term_gold = { target = scope:kehillah_asking_title.holder gold = medium_gold_value }
+   scope:kehillah_asking_title = { kehillah_crisis_recovery_progress_effect = { POINTS = 20 } }
+  }
+  add_piety = minor_piety_gain
+  ai_chance = { base = 60 modifier = { add = 30 has_trait = compassionate } }
+ }
+ option = { name = kehillah_crisis_recovery.0110.b ai_chance = { base = 30 } }
+ after = { remove_variable = kehillah_recovery_request_title remove_variable = kehillah_recovery_request_epoch remove_variable = kehillah_recovery_request_kind }
+}
