@@ -1,0 +1,90 @@
+﻿# Scope: community leader. Price and eligibility are checked again at execution time.
+kehillah_crisis_contribute_effect = {
+	if = {
+		limit = {
+			kehillah_crisis_armed_open_trigger = yes
+			primary_title = { var:kehillah_crisis_paid_points < 25 }
+			gold >= kehillah_crisis_next_contribution_cost_value
+		}
+		remove_short_term_gold = kehillah_crisis_next_contribution_cost_value
+		primary_title = {
+			change_variable = { name = kehillah_crisis_paid_points add = 1 }
+			kehillah_crisis_armed_race_add_effect = { CATALYST = kehillah_crisis_efforts_catalyst POINTS = 1 }
+		}
+	}
+}
+
+# Situation scope: Recovery is entered only after the struck-quarter accounting.
+kehillah_crisis_recovery_start_effect = {
+ debug_log = "kehillah_community_crisis: struck quarter entered Recovery"
+ kehillah_crisis_phase_toast_effect = { TYPE = msg_kehillah_crisis_begins PHASE = recovery }
+ var:kehillah_crisis_title.holder ?= { trigger_event = { id = kehillah_crisis_chronicle.0001 days = 1 } }
+ if = {
+  limit = { kehillah_crisis_situation_link_valid_trigger = yes }
+  var:kehillah_crisis_title = {
+   set_variable = { name = kehillah_crisis_recovery_active value = yes }
+   remove_variable = kehillah_crisis_relief_used
+   remove_variable = kehillah_crisis_reckoning_used
+  }
+  set_variable = { name = kehillah_crisis_endure_push value = 12 }
+  set_variable = { name = kehillah_crisis_collapse_push value = 10 }
+  if = { limit = { var:kehillah_crisis_title ?= { var:kehillah_var_stability < 250 } } change_variable = { name = kehillah_crisis_collapse_push add = 8 } }
+  if = { limit = { var:kehillah_crisis_sovereign ?= { kehillah_outlook_band_value <= -1 } } change_variable = { name = kehillah_crisis_collapse_push add = 6 } }
+  if = { limit = { var:kehillah_crisis_title ?= { has_variable = kehillah_mob_refuge } } change_variable = { name = kehillah_crisis_endure_push add = 5 } }
+  if = { limit = { var:kehillah_crisis_title ?= { var:kehillah_crisis_loss_dead > 0 } } change_variable = { name = kehillah_crisis_collapse_push add = 4 } }
+  if = { limit = { var:kehillah_crisis_title ?= { var:kehillah_crisis_loss_buildings > 0 } } change_variable = { name = kehillah_crisis_collapse_push add = 3 } }
+  if = { limit = { var:kehillah_crisis_title ?= { has_variable = kehillah_crisis_captives_unresolved } } change_variable = { name = kehillah_crisis_collapse_push add = 3 } }
+  if = { limit = { var:kehillah_crisis_title ?= { has_variable = kehillah_crisis_royal_protection } } change_variable = { name = kehillah_crisis_endure_push add = 4 } }
+ }
+}
+kehillah_crisis_recovery_monthly_effect = {
+ if = {
+  limit = { situation_current_phase = kehillah_crisis_recovery kehillah_crisis_situation_link_valid_trigger = yes }
+  trigger_situation_catalyst = kehillah_crisis_endure_catalyst
+  trigger_situation_catalyst = kehillah_crisis_collapse_catalyst
+ }
+}
+
+# Scope: title; action awards remain tied to the active recovery of this exact title.
+kehillah_crisis_recovery_progress_effect = {
+ if = {
+  limit = { var:kehillah_crisis_situation ?= { situation_current_phase = kehillah_crisis_recovery var:kehillah_crisis_title ?= root var:kehillah_crisis_epoch = root.var:kehillah_crisis_epoch } }
+  var:kehillah_crisis_situation = {
+   set_variable = { name = kehillah_crisis_endure_push_restore value = var:kehillah_crisis_endure_push }
+   set_variable = { name = kehillah_crisis_endure_push value = $POINTS$ }
+   trigger_situation_catalyst = kehillah_crisis_endure_catalyst
+   set_variable = { name = kehillah_crisis_endure_push value = var:kehillah_crisis_endure_push_restore }
+   remove_variable = kehillah_crisis_endure_push_restore
+  }
+ }
+}
+
+# Scope: title. A failed attempt at communal reconciliation can worsen Collapse
+# only while this title still owns its original Recovery situation.
+kehillah_crisis_recovery_setback_effect = {
+ if = {
+  limit = { var:kehillah_crisis_situation ?= { situation_current_phase = kehillah_crisis_recovery var:kehillah_crisis_title ?= root var:kehillah_crisis_epoch = root.var:kehillah_crisis_epoch } }
+  var:kehillah_crisis_situation = {
+   set_variable = { name = kehillah_crisis_collapse_push_restore value = var:kehillah_crisis_collapse_push }
+   set_variable = { name = kehillah_crisis_collapse_push value = $POINTS$ }
+   trigger_situation_catalyst = kehillah_crisis_collapse_catalyst
+   set_variable = { name = kehillah_crisis_collapse_push value = var:kehillah_crisis_collapse_push_restore }
+   remove_variable = kehillah_crisis_collapse_push_restore
+  }
+ }
+}
+
+# Each request names a real other community and opens an event for its leader.
+kehillah_crisis_recovery_request_effect = {
+ primary_title = { set_variable = { name = kehillah_crisis_$KIND$_sent value = yes } save_scope_as = kehillah_recovery_asking_title }
+ random_in_global_list = {
+  variable = kehillah_registered_communities
+  limit = { exists = holder NOT = { this = scope:kehillah_recovery_asking_title } }
+  holder = {
+   set_variable = { name = kehillah_recovery_request_title value = scope:kehillah_recovery_asking_title }
+   set_variable = { name = kehillah_recovery_request_epoch value = scope:kehillah_recovery_asking_title.var:kehillah_crisis_epoch }
+   set_variable = { name = kehillah_recovery_request_kind value = flag:$KIND$ }
+   trigger_event = kehillah_crisis_recovery.0110
+  }
+ }
+}

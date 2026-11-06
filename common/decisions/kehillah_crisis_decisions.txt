@@ -1,10 +1,6 @@
-﻿# The crisis window's actions (situation_decisions of kehillah_community_crisis). Since 2026-11-01
-# there are three, the same in every phase and every kind of crisis
-# (docs/spec/2026-11-01-three-standing-actions.md). Each opens a scene whose options are the
-# sub-actions (events/kehillah_crisis_act_events.txt). The sub-actions share their checks and
-# effects with Military's Community Safety buttons (common/scripted_guis/kehillah_crisis_gui.txt).
-# Each is shown only to the leader of a community whose race is running, so another community's
-# leader or an observer sees none of them.
+﻿# Phase-specific situation actions (docs/spec/2026-11-06-crisis-response-and-recovery.md).
+# Each category opens three proposals, one of which may be selected per category per phase.
+# Recovery instead presents conditional cases justified by actual losses.
 
 # What the community does for itself: the watch, stores, a way out, prayer; shelter and barricades.
 kehillah_crisis_prepare_decision = {
@@ -13,12 +9,12 @@ kehillah_crisis_prepare_decision = {
 	sort_order = 100
 	ai_check_interval = 20
 
-	is_shown = { kehillah_crisis_actions_open_trigger = yes }
-	is_valid_showing_failures_only = { kehillah_crisis_leader_free_trigger = yes }
+	is_shown = { kehillah_crisis_warning_trigger = yes }
+	is_valid_showing_failures_only = { kehillah_crisis_leader_free_trigger = yes kehillah_crisis_category_free_trigger = { USED = kehillah_crisis_used_steady } }
 
 	effect = {
 		custom_tooltip = kehillah_crisis_prepare_decision_effect_tt
-		trigger_event = kehillah_crisis_act.0001
+		set_variable = { name = kehillah_crisis_category_open value = yes days = 1 } trigger_event = kehillah_crisis_phase_actions.0001
 	}
 
 	ai_will_do = { base = 50 }
@@ -31,12 +27,12 @@ kehillah_crisis_protect_decision = {
 	sort_order = 99
 	ai_check_interval = 20
 
-	is_shown = { kehillah_crisis_actions_open_trigger = yes }
-	is_valid_showing_failures_only = { kehillah_crisis_leader_free_trigger = yes }
+	is_shown = { kehillah_crisis_warning_trigger = yes }
+	is_valid_showing_failures_only = { kehillah_crisis_leader_free_trigger = yes kehillah_crisis_category_free_trigger = { USED = kehillah_crisis_used_restraint } }
 
 	effect = {
 		custom_tooltip = kehillah_crisis_protect_decision_effect_tt
-		trigger_event = kehillah_crisis_act.0002
+		set_variable = { name = kehillah_crisis_category_open value = yes days = 1 } trigger_event = kehillah_crisis_phase_actions.0002
 	}
 
 	ai_will_do = { base = 50 }
@@ -49,15 +45,155 @@ kehillah_crisis_case_decision = {
 	sort_order = 98
 	ai_check_interval = 20
 
-	is_shown = { kehillah_crisis_actions_open_trigger = yes }
-	is_valid_showing_failures_only = { kehillah_crisis_leader_free_trigger = yes }
+	is_shown = { kehillah_crisis_warning_trigger = yes }
+	is_valid_showing_failures_only = { kehillah_crisis_leader_free_trigger = yes kehillah_crisis_category_free_trigger = { USED = kehillah_crisis_used_case } }
 
 	effect = {
 		custom_tooltip = kehillah_crisis_case_decision_effect_tt
-		trigger_event = kehillah_crisis_act.0003
+		set_variable = { name = kehillah_crisis_category_open value = yes days = 1 } trigger_event = kehillah_crisis_phase_actions.0003
 	}
 
 	ai_will_do = { base = 50 }
+}
+
+# Each Armed Host category is fresh, independent of the three Agitation commitments.
+kehillah_crisis_armed_protect_decision = {
+	picture = { reference = "gfx/interface/illustrations/decisions/decision_knight_kneeling.dds" }
+	decision_group_type = kehillah
+	sort_order = 97
+	ai_check_interval = 20
+	is_shown = { kehillah_crisis_armed_open_trigger = yes }
+	is_valid_showing_failures_only = { kehillah_crisis_leader_free_trigger = yes kehillah_crisis_category_free_trigger = { USED = kehillah_crisis_used_armed_protect } }
+	effect = { set_variable = { name = kehillah_crisis_category_open value = yes days = 1 } trigger_event = kehillah_crisis_phase_actions.0004 }
+	ai_will_do = { base = 50 }
+}
+kehillah_crisis_armed_defend_decision = {
+	picture = { reference = "gfx/interface/illustrations/decisions/decision_castle_view.dds" }
+	decision_group_type = kehillah
+	sort_order = 96
+	ai_check_interval = 20
+	is_shown = { kehillah_crisis_armed_open_trigger = yes }
+	is_valid_showing_failures_only = { kehillah_crisis_leader_free_trigger = yes kehillah_crisis_category_free_trigger = { USED = kehillah_crisis_used_armed_defend } }
+	effect = { set_variable = { name = kehillah_crisis_category_open value = yes days = 1 } trigger_event = kehillah_crisis_phase_actions.0005 }
+	ai_will_do = { base = 50 }
+}
+kehillah_crisis_armed_parley_decision = {
+	picture = { reference = "gfx/interface/illustrations/decisions/decision_realm.dds" }
+	decision_group_type = kehillah
+	sort_order = 95
+	ai_check_interval = 20
+	is_shown = { kehillah_crisis_armed_open_trigger = yes }
+	is_valid_showing_failures_only = { kehillah_crisis_leader_free_trigger = yes kehillah_crisis_category_free_trigger = { USED = kehillah_crisis_used_armed_parley } }
+	effect = { set_variable = { name = kehillah_crisis_category_open value = yes days = 1 } trigger_event = kehillah_crisis_phase_actions.0006 }
+	ai_will_do = { base = 50 }
+}
+
+# The marginal price is computed on the community title and rechecked by the effect.
+kehillah_crisis_contribute_decision = {
+ picture = { reference = "gfx/interface/illustrations/decisions/decision_golden_age.dds" }
+	decision_group_type = kehillah
+	sort_order = 94
+	ai_check_interval = 30
+	is_shown = { kehillah_crisis_armed_open_trigger = yes }
+	is_valid_showing_failures_only = {
+		kehillah_crisis_leader_free_trigger = yes
+		custom_tooltip = { text = kehillah_crisis_contribution_room_tt primary_title = { var:kehillah_crisis_paid_points < 25 } }
+		gold >= kehillah_crisis_next_contribution_cost_value
+	}
+	effect = { kehillah_crisis_contribute_effect = yes }
+	ai_will_do = { base = 5 modifier = { add = 30 gold >= major_gold_value } }
+}
+
+# Recovery cases are tied to recorded damage and the unresolved ruler response.
+kehillah_crisis_recovery_relief_decision = {
+ picture = { reference = "gfx/interface/illustrations/decisions/decision_golden_age.dds" }
+ decision_group_type = kehillah
+ sort_order = 93
+ ai_check_interval = 30
+ is_shown = { kehillah_crisis_recovery_open_trigger = yes primary_title = { OR = { var:kehillah_crisis_loss_dead > 0 var:kehillah_crisis_loss_buildings > 0 } } }
+ is_valid_showing_failures_only = { kehillah_crisis_leader_free_trigger = yes kehillah_crisis_not_spent_trigger = { ONCE = kehillah_crisis_relief_used } }
+ effect = { trigger_event = kehillah_crisis_recovery.0001 }
+ ai_will_do = { base = 60 }
+}
+kehillah_crisis_recovery_reckoning_decision = {
+ picture = { reference = "gfx/interface/illustrations/decisions/decision_realm.dds" }
+ decision_group_type = kehillah
+ sort_order = 92
+ ai_check_interval = 30
+ is_shown = { kehillah_crisis_recovery_open_trigger = yes }
+ is_valid_showing_failures_only = { kehillah_crisis_leader_free_trigger = yes kehillah_crisis_not_spent_trigger = { ONCE = kehillah_crisis_reckoning_used } }
+ effect = { trigger_event = kehillah_crisis_recovery.0002 }
+ ai_will_do = { base = 40 }
+}
+kehillah_crisis_recovery_tzedakah_decision = {
+ picture = { reference = "gfx/interface/illustrations/decisions/decision_golden_age.dds" }
+ decision_group_type = kehillah
+ sort_order = 91
+ ai_check_interval = 30
+ is_shown = { kehillah_crisis_recovery_open_trigger = yes primary_title = { var:kehillah_crisis_loss_dead > 0 } }
+ is_valid_showing_failures_only = {
+  kehillah_crisis_leader_free_trigger = yes
+  kehillah_crisis_not_spent_trigger = { ONCE = kehillah_crisis_tzedakah_sent }
+  custom_tooltip = { text = kehillah_crisis_other_community_tt any_in_global_list = { variable = kehillah_registered_communities exists = holder NOT = { this = root.primary_title } holder = { is_alive = yes } } }
+ }
+ effect = { kehillah_crisis_recovery_request_effect = { KIND = tzedakah } }
+ ai_will_do = { base = 50 }
+}
+kehillah_crisis_recovery_books_decision = {
+ picture = { reference = "gfx/interface/illustrations/decisions/decision_realm.dds" }
+ decision_group_type = kehillah
+ sort_order = 90
+ ai_check_interval = 30
+ is_shown = { kehillah_crisis_recovery_open_trigger = yes primary_title = { has_variable = kehillah_crisis_books_lost } }
+ is_valid_showing_failures_only = {
+  kehillah_crisis_leader_free_trigger = yes
+  kehillah_crisis_not_spent_trigger = { ONCE = kehillah_crisis_books_sent }
+  custom_tooltip = { text = kehillah_crisis_other_community_tt any_in_global_list = { variable = kehillah_registered_communities exists = holder NOT = { this = root.primary_title } } }
+ }
+ effect = { kehillah_crisis_recovery_request_effect = { KIND = books } }
+ ai_will_do = { base = 40 }
+}
+kehillah_crisis_recovery_justice_decision = {
+ picture = { reference = "gfx/interface/illustrations/decisions/decision_realm.dds" }
+ decision_group_type = kehillah
+ sort_order = 89
+ ai_check_interval = 30
+ is_shown = {
+  kehillah_crisis_recovery_open_trigger = yes
+  primary_title = { var:kehillah_crisis_justice_fate ?= flag:unpunished NOT = { has_variable = kehillah_crisis_justice_petitioned } }
+ }
+ is_valid_showing_failures_only = { kehillah_crisis_leader_free_trigger = yes custom_tooltip = { text = kehillah_crisis_ruler_to_petition_tt exists = domicile.domicile_location.county.holder.top_liege } }
+ effect = { trigger_event = kehillah_crisis_justice.0200 }
+ ai_will_do = { base = 35 }
+}
+kehillah_crisis_recovery_captives_decision = {
+ picture = { reference = "gfx/interface/illustrations/decisions/decision_realm.dds" }
+ decision_group_type = kehillah
+ sort_order = 88
+ ai_check_interval = 30
+ is_shown = { kehillah_crisis_recovery_open_trigger = yes primary_title = { has_variable = kehillah_crisis_captives_unresolved } }
+ is_valid_showing_failures_only = {
+  kehillah_crisis_leader_free_trigger = yes
+  custom_tooltip = { text = kehillah_crisis_captives_held_tt primary_title.var:kehillah_crisis_captive_holder ?= { is_alive = yes any_prisoner = { always = yes } } }
+ }
+ effect = { trigger_event = kehillah_crisis_recovery.0003 }
+ ai_will_do = { base = 65 }
+}
+kehillah_crisis_recovery_returnees_decision = {
+ picture = { reference = "gfx/interface/illustrations/decisions/decision_realm.dds" }
+ decision_group_type = kehillah
+ sort_order = 87
+ ai_check_interval = 30
+ is_shown = {
+  kehillah_crisis_recovery_open_trigger = yes
+  primary_title = { any_in_list = { variable = kehillah_anusim is_alive = yes NOT = { is_jewish_character_trigger = yes } } }
+ }
+ is_valid_showing_failures_only = { kehillah_crisis_leader_free_trigger = yes custom_tooltip = { text = kehillah_crisis_anusim_not_asked_tt primary_title = { NOT = { has_variable = kehillah_anusim_asked } } } }
+ effect = {
+  primary_title = { set_variable = { name = kehillah_anusim_asked value = yes years = 1 } }
+  trigger_event = kehillah_anusim.0001
+ }
+ ai_will_do = { base = 0 }
 }
 
 # 2026-11-01: once the danger has passed without the quarter being struck. How the deliverance is

@@ -187,6 +187,8 @@ bands.
 - Yearly **family disputes** for the leader to rule on, and **protection events** when the
   community is threatened.
 - A **community map view** with a roster of every Kehillah and a breakdown of its pillars.
+- **Advice lessons** introduce new Kehillah leaders to the community, and show Jewish adventurers
+  how to found one.
 
 ### Faith, family and culture
 
