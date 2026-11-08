@@ -1,0 +1,171 @@
+﻿# 2026-11-08, Daniel. Scope: the community title, as the Armed host phase begins (called from
+# kehillah_crisis_armed_start_effect, once the host is raised). The Agitation-phase counterpart of
+# kehillah_crisis_struck_reckoning_effect.
+#
+# 1. Progress toward Conciliation lowers the threat grade: one step at each of
+#    kehillah_crisis_armed_step_one/two/three, never below Contained. A lower grade makes the
+#    host easier to bargain with, cheaper to pay off, and caps the attack encounters if it breaks
+#    in. The struck reckoning can lower it again from there.
+# 2. A ledger (kehillah_crisis_al_*) records what each Agitation-phase effort came to, for the Armed
+#    opener (kehillah_crisis_chronicle.0002). It is a snapshot, so Armed-phase measures that share a
+#    flag (the watch, the escort) do not change what the opener says about the Agitation.
+kehillah_crisis_armed_reckoning_effect = {
+ if = {
+  limit = { NOT = { has_variable = kehillah_crisis_armed_grade_before } }
+  if = { limit = { NOT = { has_variable = kehillah_crisis_threat_grade } } set_variable = { name = kehillah_crisis_threat_grade value = 2 } }
+  set_variable = { name = kehillah_crisis_armed_grade_before value = var:kehillah_crisis_threat_grade }
+  set_variable = { name = kehillah_crisis_armed_steps value = 0 }
+  if = {
+   limit = { has_variable = kehillah_crisis_prior_spared_progress }
+   set_variable = { name = kehillah_crisis_al_warned value = yes }
+   if = { limit = { var:kehillah_crisis_prior_spared_progress >= kehillah_crisis_armed_step_three } set_variable = { name = kehillah_crisis_armed_steps value = 3 } }
+   else_if = { limit = { var:kehillah_crisis_prior_spared_progress >= kehillah_crisis_armed_step_two } set_variable = { name = kehillah_crisis_armed_steps value = 2 } }
+   else_if = { limit = { var:kehillah_crisis_prior_spared_progress >= kehillah_crisis_armed_step_one } set_variable = { name = kehillah_crisis_armed_steps value = 1 } }
+  }
+  change_variable = { name = kehillah_crisis_threat_grade subtract = var:kehillah_crisis_armed_steps }
+  clamp_variable = { name = kehillah_crisis_threat_grade min = 1 max = 4 }
+
+  # The people the opener names.
+  var:kehillah_mob_threat ?= { save_temporary_scope_as = kehillah_armed_host }
+  if = { limit = { NOT = { exists = scope:kehillah_armed_host } } holder.var:kehillah_mob_ref ?= { save_temporary_scope_as = kehillah_armed_host } }
+  if = {
+   limit = { exists = scope:kehillah_armed_host }
+   set_variable = { name = kehillah_crisis_al_name_host value = scope:kehillah_armed_host }
+   if = { limit = { scope:kehillah_armed_host = { has_character_flag = kehillah_crisis_granada_agitator } } set_variable = { name = kehillah_crisis_al_granada value = yes } }
+  }
+  holder.domicile.domicile_location.county.holder ?= {
+   save_temporary_scope_as = kehillah_armed_lord
+   top_liege ?= { save_temporary_scope_as = kehillah_armed_ruler }
+  }
+  if = { limit = { exists = scope:kehillah_armed_lord } set_variable = { name = kehillah_crisis_al_name_lord value = scope:kehillah_armed_lord } }
+  if = { limit = { exists = scope:kehillah_armed_ruler } set_variable = { name = kehillah_crisis_al_name_ruler value = scope:kehillah_armed_ruler } }
+  if = { limit = { has_variable = kehillah_crisis_opening } set_variable = { name = kehillah_crisis_al_opening value = var:kehillah_crisis_opening } }
+
+  # The ledger: flag:won or flag:lost per effort, absent when it was never tried.
+  set_variable = { name = kehillah_crisis_al_count value = 0 }
+  set_variable = { name = kehillah_crisis_al_won value = 0 }
+  # Who might shield us.
+  kehillah_crisis_armed_ledger_entry_effect = { KEY = lord WON = kehillah_crisis_lord_condemned LOST = kehillah_crisis_failed_lord }
+  kehillah_crisis_armed_ledger_entry_effect = { KEY = overlord WON = kehillah_crisis_overlord_order LOST = kehillah_crisis_failed_overlord }
+  kehillah_crisis_armed_ledger_entry_effect = { KEY = scholars WON = kehillah_crisis_scholars_condemned LOST = kehillah_crisis_failed_scholars }
+  kehillah_crisis_armed_ledger_entry_effect = { KEY = town WON = kehillah_crisis_town_won LOST = kehillah_crisis_town_attempted }
+  # Granada: the emir asked to forbid the recitations (kehillah_granada.0018). His ban also sets
+  # kehillah_mob_condemned, so the general condemnation entry stays silent when it is his.
+  if = {
+   limit = { holder ?= { has_character_flag = kehillah_granada_silenced } }
+   set_variable = { name = kehillah_crisis_al_silence value = flag:won }
+   change_variable = { name = kehillah_crisis_al_count add = 1 }
+   change_variable = { name = kehillah_crisis_al_won add = 1 }
+  }
+  else_if = {
+   limit = { has_variable = kehillah_crisis_failed_silence }
+   set_variable = { name = kehillah_crisis_al_silence value = flag:lost }
+   change_variable = { name = kehillah_crisis_al_count add = 1 }
+  }
+  if = {
+   limit = { NOT = { var:kehillah_crisis_al_silence ?= flag:won } }
+   if = {
+    limit = { has_variable = kehillah_mob_condemned }
+    set_variable = { name = kehillah_crisis_al_condemned value = flag:won }
+    change_variable = { name = kehillah_crisis_al_count add = 1 }
+    change_variable = { name = kehillah_crisis_al_won add = 1 }
+   }
+   else_if = {
+    limit = { has_variable = kehillah_mob_condemn_refused_by }
+    set_variable = { name = kehillah_crisis_al_condemned value = flag:lost }
+    set_variable = { name = kehillah_crisis_al_name_refuser value = var:kehillah_mob_condemn_refused_by }
+    change_variable = { name = kehillah_crisis_al_count add = 1 }
+   }
+  }
+  # What the community does for itself. The fast flag is set on a failed fast too.
+  if = {
+   limit = { has_variable = kehillah_crisis_failed_fast }
+   set_variable = { name = kehillah_crisis_al_fast value = flag:lost }
+   change_variable = { name = kehillah_crisis_al_count add = 1 }
+  }
+  else_if = {
+   limit = { has_variable = kehillah_crisis_fasted }
+   set_variable = { name = kehillah_crisis_al_fast value = flag:won }
+   change_variable = { name = kehillah_crisis_al_count add = 1 }
+   change_variable = { name = kehillah_crisis_al_won add = 1 }
+  }
+  kehillah_crisis_armed_ledger_entry_effect = { KEY = watch WON = kehillah_mob_defended LOST = kehillah_crisis_failed_watch }
+  kehillah_crisis_armed_ledger_entry_effect = { KEY = aid WON = kehillah_crisis_aid_given LOST = kehillah_crisis_failed_aid }
+  kehillah_crisis_armed_ledger_entry_effect = { KEY = mediate WON = kehillah_crisis_mediated LOST = kehillah_crisis_failed_mediate }
+  kehillah_crisis_armed_ledger_entry_effect = { KEY = supplies WON = kehillah_crisis_supplies LOST = kehillah_crisis_supplies }
+  kehillah_crisis_armed_ledger_entry_effect = { KEY = routes WON = kehillah_mob_scattered LOST = kehillah_mob_scattered }
+  # How we made our case.
+  kehillah_crisis_armed_ledger_entry_effect = { KEY = answer WON = kehillah_crisis_answer_won LOST = kehillah_crisis_failed_answer }
+  kehillah_crisis_armed_ledger_entry_effect = { KEY = advocacy WON = kehillah_crisis_advocacy LOST = kehillah_crisis_failed_advocacy }
+  kehillah_crisis_armed_ledger_entry_effect = { KEY = evidence WON = kehillah_crisis_charge_refuted LOST = kehillah_crisis_failed_evidence }
+  kehillah_crisis_armed_ledger_entry_effect = { KEY = neighbors WON = kehillah_crisis_neighbors_spoke LOST = kehillah_crisis_failed_neighbors }
+  kehillah_crisis_armed_ledger_entry_effect = { KEY = burned WON = kehillah_crisis_verses_burned LOST = kehillah_crisis_failed_burn }
+
+  debug_log = "kehillah_crisis_armed_reckoning: conciliation progress [THIS.Title.MakeScope.Var('kehillah_crisis_prior_spared_progress').GetValue] steps [THIS.Title.MakeScope.Var('kehillah_crisis_armed_steps').GetValue] grade [THIS.Title.MakeScope.Var('kehillah_crisis_armed_grade_before').GetValue] -> [THIS.Title.MakeScope.Var('kehillah_crisis_threat_grade').GetValue] ledger [THIS.Title.MakeScope.Var('kehillah_crisis_al_count').GetValue] won [THIS.Title.MakeScope.Var('kehillah_crisis_al_won').GetValue]"
+ }
+}
+
+# Scope: the community title. Won is checked first, so an effort retried after a failure and then
+# won reads as won. A won-only entry passes its WON flag as LOST too.
+kehillah_crisis_armed_ledger_entry_effect = {
+ remove_variable = kehillah_crisis_al_$KEY$
+ if = {
+  limit = { has_variable = $WON$ }
+  set_variable = { name = kehillah_crisis_al_$KEY$ value = flag:won }
+  change_variable = { name = kehillah_crisis_al_count add = 1 }
+  change_variable = { name = kehillah_crisis_al_won add = 1 }
+ }
+ else_if = {
+  limit = { has_variable = $LOST$ }
+  set_variable = { name = kehillah_crisis_al_$KEY$ value = flag:lost }
+  change_variable = { name = kehillah_crisis_al_count add = 1 }
+ }
+}
+
+# Scope: the community title. Part of the crisis reset (through kehillah_crisis_struck_clear_effect).
+kehillah_crisis_armed_clear_effect = {
+ remove_variable = kehillah_crisis_armed_grade_before
+ remove_variable = kehillah_crisis_armed_steps
+ remove_variable = kehillah_crisis_al_warned
+ remove_variable = kehillah_crisis_al_name_host
+ remove_variable = kehillah_crisis_al_granada
+ remove_variable = kehillah_crisis_al_name_ruler
+ remove_variable = kehillah_crisis_al_name_refuser
+ remove_variable = kehillah_crisis_al_opening
+ remove_variable = kehillah_crisis_al_count
+ remove_variable = kehillah_crisis_al_won
+ remove_variable = kehillah_crisis_al_name_lord
+ remove_variable = kehillah_crisis_al_lord
+ remove_variable = kehillah_crisis_al_overlord
+ remove_variable = kehillah_crisis_al_scholars
+ remove_variable = kehillah_crisis_al_town
+ remove_variable = kehillah_crisis_al_silence
+ remove_variable = kehillah_crisis_al_condemned
+ remove_variable = kehillah_crisis_al_fast
+ remove_variable = kehillah_crisis_al_watch
+ remove_variable = kehillah_crisis_al_aid
+ remove_variable = kehillah_crisis_al_mediate
+ remove_variable = kehillah_crisis_al_supplies
+ remove_variable = kehillah_crisis_al_routes
+ remove_variable = kehillah_crisis_al_answer
+ remove_variable = kehillah_crisis_al_advocacy
+ remove_variable = kehillah_crisis_al_evidence
+ remove_variable = kehillah_crisis_al_neighbors
+ remove_variable = kehillah_crisis_al_burned
+ # The Agitation-phase outcomes this ledger reads that nothing cleared before.
+ remove_variable = kehillah_crisis_failed_lord
+ remove_variable = kehillah_crisis_failed_overlord
+ remove_variable = kehillah_crisis_failed_scholars
+ remove_variable = kehillah_crisis_failed_silence
+ remove_variable = kehillah_crisis_failed_fast
+ remove_variable = kehillah_crisis_failed_watch
+ remove_variable = kehillah_crisis_failed_aid
+ remove_variable = kehillah_crisis_failed_mediate
+ remove_variable = kehillah_crisis_answer_won
+ remove_variable = kehillah_crisis_failed_answer
+ remove_variable = kehillah_crisis_failed_advocacy
+ remove_variable = kehillah_crisis_failed_evidence
+ remove_variable = kehillah_crisis_failed_neighbors
+ remove_variable = kehillah_crisis_verses_burned
+ remove_variable = kehillah_crisis_failed_burn
+}
