@@ -128,7 +128,26 @@ The race is **Quarter Held versus Quarter Struck**. The actual host has a force 
 | Divide the captains | Safe conduct for one captain: `minor_gold_value`, 65% base, Ne'eman's Intrigue. | Expose their rival orders: free, 45% base, schemer helps; adds a further small Held push on success and a small Struck push on failure. |
 | Invoke obligations | Read him the law and his oath: free, 55% base, the Dayyan's Learning; a just host leader +15, arbitrary −15; success gives minor piety. | Write to his lord: minor prestige up front, 70% base, the local lord's opinion and outlook. |
 
-The host leader's opinion, zealous/patient traits, and threat grade apply to every choice except the two Ne'eman choices in Divide (`kehillah_crisis_parley_*_bonus_value` in `kehillah_crisis_phase_values.txt`). The success and failure results of each measure are unchanged. The other follow-up scenes (`.0101`–`.0105`) still share the generic pay-or-go-without pair and may need the same treatment.
+The host leader's opinion, zealous/patient traits, and threat grade apply to every choice except the two Ne'eman choices in Divide (`kehillah_crisis_parley_*_bonus_value` in `kehillah_crisis_phase_values.txt`). The success and failure results of each measure are unchanged.
+
+A won bargain now halves every later Contribute Gold price (`kehillah_crisis_bargain_price_factor`, 0.5, was 0.7). The Contribute decision says so, and both bargain choices show it on success: the bargain's value is in that separate, uncapped-by-category control, which the follow-up scene previously did not mention.
+
+**Other follow-up scenes, same date.** `.0101`–`.0105` received the same treatment. In each pair, one choice is usually the adviser's measure for a price; the other uses the leader in person (`kehillah_crisis_own_*_bonus_value`: 2 per skill point above 10, within ±20), another officer, the other party's traits, or a pillar cost instead of gold:
+
+| Measure | First choice | Second choice |
+|---|---|---|
+| Aid | Open the communal stores: minor Prosperity, 75%, Dayyan | Households take in neighbours: free, 50%, own Diplomacy, compassionate; Stability +/− on the result |
+| Mediate | Formal hearing: minor gold, 70%, Dayyan | Settle it yourself: free, 50%, own Diplomacy, just/arbitrary; prestige on success, stress on failure |
+| Lord | Gift with the petition: medium gold, 70%, greedy lord | His own charter: free, 50%, just/arbitrary lord; prestige loss on refusal |
+| Scholars | Dispute the law: free, 50%, Dayyan's Learning, theologian; piety on success | Sympathetic scholar privately: minor gold, 70%, Shtadlan |
+| Overlord | Messenger with gifts: medium gold, 65% | Ride to court: free, stress, 55%, own Diplomacy as well; prestige on success |
+| Evidence | Quiet inquiry: minor gold, 70%, Ne'eman | In the market today: free, 45%, own Learning, brave/craven; an extra small push either way |
+| Neighbours | Ask them to speak: free, 50%, own Diplomacy, gregarious/shy | Repay old kindnesses: minor gold, 70%, Ne'eman |
+| Refuge | Provisions: medium gold, 75% | Lord bears the burden: free, 45%, compassionate/callous lord |
+| Patrol | Provision the patrol: medium gold, 65% | Hold him to his promise: free, 45%, just/craven lord |
+| Escort | Pay the riders: minor gold, 65% | Our own guides: free, 55%, Rosh ha-Shmirah; Stability loss on failure |
+| Guards | Hire guards: medium gold, 75%, Rosh ha-Shmirah | Arm the households: minor Prosperity, 55%, own Martial, brave |
+| Retreat | Paid guides: minor gold, 70% | Drill by night: minor Stability, 70%, patient |
 
 The **emergency gate event** means a reactive confrontation when the host reaches the quarter. The player can hold the gate, plead, evacuate, or make an immediate limited offer using *recorded* defenses, promises, gold, and host terms. It is neither a fourth category nor a repeat of a completed negotiation. It resolves once, with an epoch guard, before the race outcome is applied.
 
