@@ -34,6 +34,25 @@ their tooltip rows said "none". `kehillah_refresh_charter_state_cache_effect` no
 **To test:** a community under a non-Christian, non-Muslim host with pawnbroking or a walled
 quarter shows the Prosperity/Stability lines after one quarterly pulse.
 
+**Charter terms now say what they do - 2026-11-08, Daniel's request, source-checked, not
+live-tested:** every Host Charter level's `_desc` now lists its effects the way vanilla's
+special contracts do: a bold "Community Privileges / Restrictions / Obligations" header, one
+bulleted effect per line, then the flavour paragraph. Pillar changes are sizes; the security
+term's harm reduction and the tribute rates come from script values
+(`kehillah_charter_*_harm_reduction_percent`, `kehillah_tribute_*_percent`), so retuning them
+updates the text. Levels with no effect keep their flavour line alone, as vanilla's defaults do.
+Daniel found the contract window "very tall": the four policy terms (and V15 lending) are now
+`display_mode = radiobutton` rows; only Tribute keeps a tree, as vanilla keeps one for taxes and
+levies. The Laws tab shows one row per term, each with the level's description as its tooltip,
+and adds Tribute. `KEHILLAH_DOMAIN_CHARTER_TERMS` (Laws, map view, letters) picks a block per
+package, so a V15 charter no longer shows the Muslim terms' names.
+**To test:** (1) open the Host Charter window under a Christian and a Muslim host: the window
+is shorter, radio labels are not cut off ("Host Protection" is the longest), and each level's
+tooltip shows the header, bullets and flavour, with 10%/20% and 20%/30% filled in; (2) check
+whether a radio row lets a term jump two levels in one negotiation (the tree allowed one step;
+`parent` is still set); (3) Laws tab rows and tooltips, for both packages and a V15 charter;
+(4) `error.log` stays clean after hovering them.
+
 **Advice lessons - 2026-11-06, built, awaiting Daniel's live test:** A seven-step
 "Leading a Kehillah" lesson and a one-step tip for Jewish adventurers now use vanilla's
 Reactive Advice system. xTiger is clean on them, but they have not run in-game. See the
