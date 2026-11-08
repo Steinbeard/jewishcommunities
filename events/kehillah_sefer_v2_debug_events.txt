@@ -8,7 +8,11 @@
 #   event kehillah_sefer_v2_debug.5   write Rashi on the Torah, and a book
 #   event kehillah_sefer_v2_debug.6   found a temple library in your realm
 #   event kehillah_sefer_v2_debug.7   paint the Libraries map
-# .2 to .6 change the save: use a disposable one.
+#   event kehillah_sefer_v2_debug.8   rule Hokhmah core in your rite
+#   event kehillah_sefer_v2_debug.9   qualify for the Rashi-on-the-Torah ambition
+#   event kehillah_sefer_v2_debug.10  take Bavli Moed off your shelf
+# .2 to .6 and .8 to .10 change the save: use a disposable one.
+# Testing guide: docs/testing/2026-11-08-sefer-redesign-test-guide.md
 # =====================================================================
 namespace = kehillah_sefer_v2_debug
 
@@ -74,6 +78,17 @@ kehillah_sefer_v2_debug.1 = {
 		else = { debug_log = "kehillah_sefer_v2_debug.1 KUZARI not yet written" }
 		if = { limit = { has_global_variable_list = kehillah_ransom_pool } debug_log = "kehillah_sefer_v2_debug.1 RANSOM POOL has books" }
 		if = { limit = { has_variable = kehillah_round_tanakh } debug_log = "kehillah_sefer_v2_debug.1 ROUNDS tanakh recorded" }
+		# The tenet-reform loop: a Machloket with a clear result leaves a question
+		# on the rite (tenet number as in kehillah_library_catalog.py's TENET_INDEX).
+		rite ?= {
+			if = {
+				limit = { has_variable = kehillah_reform_pending_tenet }
+				if = { limit = { var:kehillah_reform_pending_action ?= flag:core } debug_log = "kehillah_sefer_v2_debug.1 REFORM pending on your rite: raise to core" }
+				else = { debug_log = "kehillah_sefer_v2_debug.1 REFORM pending on your rite: ban" }
+				if = { limit = { var:kehillah_reform_pending_tenet = 5 } debug_log = "kehillah_sefer_v2_debug.1 REFORM tenet is Pesak (5)" }
+			}
+			else = { debug_log = "kehillah_sefer_v2_debug.1 REFORM nothing pending on your rite" }
+		}
 		debug_log = "kehillah_sefer_v2_debug.1 END"
 	}
 }
@@ -189,5 +204,67 @@ kehillah_sefer_v2_debug.8 = {
 		debug_log = "kehillah_sefer_v2_debug WORK work_emunot_vedeot (ceiling should now allow Venerated)"
 		kehillah_sefer_debug_log_tier_effect = { KEY = work_emunot_vedeot }
 		kehillah_reform_clear_choice_effect = yes
+	}
+}
+
+# event kehillah_sefer_v2_debug.9 -- make the player meet the general
+# (non-Rashi) path of kehillah_sefer_ambition_rashi_torah_trigger, so the
+# gold option shows in Write a Sefer (kehillah_book.0001): the Rabbi trait,
+# Learning 14, Parshanut 60, and the Torah, Targum Onkelos and Genesis Rabbah
+# mastered. Run before .5, which writes Rashi on the Torah. Changes the save.
+kehillah_sefer_v2_debug.9 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { NOT = { has_trait = kehillah_rabbi_trait } }
+			add_trait = kehillah_rabbi_trait
+		}
+		add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = 60 }
+		while = {
+			limit = { learning < 14 }
+			add_learning_skill = 1
+		}
+		if = {
+			limit = { NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_tanakh_torah } } }
+			add_to_variable_list = { name = kehillah_mastered_works target = flag:work_tanakh_torah }
+		}
+		if = {
+			limit = { NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_targum_onkelos } } }
+			add_to_variable_list = { name = kehillah_mastered_works target = flag:work_targum_onkelos }
+		}
+		if = {
+			limit = { NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_genesis_rabbah } } }
+			add_to_variable_list = { name = kehillah_mastered_works target = flag:work_genesis_rabbah }
+		}
+		if = { limit = { kehillah_sefer_can_write_trigger = yes } debug_log = "kehillah_sefer_v2_debug.9 CAN WRITE yes" }
+		else = { debug_log = "kehillah_sefer_v2_debug.9 CAN WRITE no" }
+		if = { limit = { kehillah_sefer_ambition_rashi_torah_trigger = yes } debug_log = "kehillah_sefer_v2_debug.9 AMBITION rashi_torah met" }
+		else = { debug_log = "kehillah_sefer_v2_debug.9 AMBITION rashi_torah NOT met (already written? rite not Rabbinic?)" }
+	}
+}
+
+# event kehillah_sefer_v2_debug.10 -- take Talmud Bavli: Moed off the
+# player's library and refresh its cache, so the Greatness tooltip shows
+# the "Bavli orders missing from the library" row (-15 per order) instead
+# of "A Complete Shas". Changes the save.
+kehillah_sefer_v2_debug.10 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_lib_refresh_own_library_effect = yes
+		if = {
+			limit = { exists = var:kehillah_own_library }
+			var:kehillah_own_library = {
+				if = {
+					limit = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed } }
+					remove_list_variable = { name = kehillah_library_works target = flag:work_bavli_moed }
+				}
+				kehillah_lib_refresh_cache_effect = yes
+				if = { limit = { var:kehillah_lib_foundation_missing ?= 1 } debug_log = "kehillah_sefer_v2_debug.10 MOED removed: one order missing" }
+				else = { debug_log = "kehillah_sefer_v2_debug.10 cache does not show exactly one missing order" }
+			}
+		}
+		else = { debug_log = "kehillah_sefer_v2_debug.10 NO own library" }
 	}
 }

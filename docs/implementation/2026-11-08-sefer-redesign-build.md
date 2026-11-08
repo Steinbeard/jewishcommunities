@@ -184,6 +184,17 @@ catalog script) re-clamps every book in each rite of the faith after a ruling. D
 Probe: `event kehillah_sefer_v2_debug.8` rules, without a synod, that Hokhmah be core in the
 player's rite in place of Legalism (or Halakha), then logs Emunot ve-Deot's standing.
 
+**Synod gate (fixed the same day, while writing the test guide).** `kehillah_synod_has_open_
+takkanah_trigger` counted only marriage motions. Once Gershom's herem was renewed, no regional
+Synod could sit, so a question of belief was unreachable. It now also counts a possible tenet
+motion: always for a player host, and for an AI host only when a Machloket has left a question
+pending on its rite. That keeps AI synods from reshuffling tenets every fifteen years. The
+requirement's tooltip now reads "…, or a question of belief to settle".
+
+**Human test guide:** `docs/testing/2026-11-08-sefer-redesign-test-guide.md`, with new probes
+`.9` (qualify for the Rashi-on-the-Torah ambition) and `.10` (remove Bavli Moed, for the
+missing-orders Greatness row). The `.1` report now also logs a pending question of belief.
+
 **To test live:** host a Bet Din sitting with the Synod intent (V45) and choose *A Question of
 Belief*: the tenet list shows only tenets with a possible action; the core path asks which core
 tenet to replace; the delegates' vote; the ruling's tooltip; the message to other players; and,
