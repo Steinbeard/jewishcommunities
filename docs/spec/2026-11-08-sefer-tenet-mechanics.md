@@ -1,6 +1,7 @@
 # Sefer tenets: mechanics outside the books, and the Karaite clergy
 
-**Status:** BUILT 2026-11-08 (later the same day), from Daniel's first look at the Sefer redesign.
+**Status:** BUILT 2026-11-08 (later the same day), from Daniel's first look at the Sefer redesign;
+the Karaite section was replaced the same evening (Karaites have no clergy).
 xTiger reports nothing new; **not live-tested.** This supersedes the modifiers and virtues/sins of
 the seven new tenets in [the Sefer redesign spec](2026-11-08-sefer-system-redesign.md) §4.2, and
 adds a Karaite path into the community's clergy. Build record: [section 9](../implementation/2026-11-08-sefer-redesign-build.md).
@@ -66,36 +67,63 @@ player got about ten vanilla "Rite Changed" messages. They now live in
 ha-Miqra. `kehillah_sefer_tenet_status_init_effect` stays only for saves started before; it skips
 a faith that already has its statuses, and runs quietly.
 
-## Karaites into the clergy
+## Karaites: no clergy, every rabbinic action open
 
-Karaites have no semicha and never take the Rabbi trait. So a Karaite community had no Dayyan, no
-community scholar, no academy head, and no way to write a book except as a poet. The rabbi search
-also produced Karaite "rabbis" with the Rabbi trait. A **Karaite hakham** is now a Karaite with
-Religious Scholar (`kehillah_is_karaite_hakham_trigger`):
+*Decided 2026-11-08 (Daniel), replacing the first build's "hakham" design.* That build made a
+Karaite with Religious Scholar a *hakham*, the Karaite clergy: only he passed the gates the mod
+reserves for rabbis. Daniel asked instead whether Karaites should have clergy at all, and decided
+they should not, with every action that would be a rabbi's open to every Karaite.
 
-- **The clergy gate.** `kehillah_is_ordained_rabbi_trigger` admits him. That opens the Dayyan's
-  seat, the community-rabbi checks (Bet Din, disputes) and the Rav-leader style. Effects that add
-  Rabbi track XP check for the Rabbi trait themselves.
-- **Academy head.** `kehillah_qualified_rosh_yeshiva_trigger` takes Religious Scholar experience in
-  place of a Rabbi track, so a Karaite academy can now be founded.
-- **Writing.** *Write a Sefer* offers a hakham with 30+ experience a commentary on Scripture
-  (`kehillah_book.0001.e`). A hakham may give approbations and judge books like a rabbi.
-- **Getting the trait.** The rabbi search, a seeded community scholar and the Dayyan's seating
-  give a Karaite Religious Scholar, never the Rabbi trait. Beyond that, vanilla's Learning
-  lifestyle grants it.
+**Why.** Karaism rejected a learned class whose rulings bind everyone else. It had no semicha;
+each believer was to search Scripture for himself. Its leaders, teachers and judges held offices,
+not a clerical status. So:
+
+- **No clergy, in the game's sense or the mod's.** Karaites never take the Rabbi trait
+  (`is_rabbinic_authority_jewish_trigger`), and nothing makes them the game's clergy (`is_clergy`).
+  A Karaite who sits as Dayyan reads as clergy while he holds that council seat, as the seat makes
+  anyone; that is the office, not a status. A Karaite leader is never styled Rav.
+- **Every rabbinic action, open to every Karaite.** Two triggers stand in for the Rabbi trait
+  (`common/scripted_triggers/kehillah_tenet_triggers.txt`):
+  `kehillah_rabbi_or_karaite_trigger` (the trait, or a Karaite) and
+  `kehillah_ordained_or_karaite_trigger` (an ordained rabbi, or a Karaite).
+  `kehillah_is_ordained_rabbi_trigger` itself is rabbis only again.
+- **Depth is still depth.** Where a rabbi needs experience in a Rabbi track, a Karaite needs as
+  much Religious Scholar experience (`kehillah_karaite_scholar_xp_trigger`), a mark of learning
+  rather than a status. A Karaite without it can do whatever a rabbi with no track experience can.
+
+| Opened to every Karaite | Where |
+|---|---|
+| The Dayyan's seat and the Rosh Yeshiva's position | council override, `kehillah_officers.txt` |
+| The community's rabbi: a Karaite Dayyan, or failing one a Karaite leader (after his Dayyan, as a lay leader) | `kehillah_has_community_rabbi_trigger`, `kehillah_save_community_rabbi_effect`, the community-rabbi and responsa Learning values |
+| Heading his own academy when none is appointed; qualifying as a Rosh Yeshiva (with Religious Scholar depth) | `kehillah_has_rosh_yeshiva_trigger`, `kehillah_save_rosh_yeshiva_effect`, `kehillah_qualified_rosh_yeshiva_trigger` |
+| Deliver a Sermon (its depth from Religious Scholar; it adds Religious Scholar experience) | sermon decision and effect |
+| Plan a Yeshiva Visit and the visit itself | decision, activity, `kehillah_journey_can_plan_trigger` |
+| Library study at any Learning, and the study scheme's rabbi bonus | `kehillah_torah_reader_eligible_trigger`, study scheme |
+| Bet Din co-judge and invitation at any Learning | judge trigger, invite rule |
+| Write a Sefer: a commentary on Scripture from 30 Religious Scholar experience | `kehillah_book.0001.e` |
+| Giving approbations and judging books; weight in a Machloket; a renowned reader's reception | sefer triggers and values |
+| The translation contract's rabbi terms | task contract |
+| Founding a community, as a rabbi would | `kehillah_leader_is_rabbinic_trigger` |
+| Settlers' rabbi when a community forms on its own | natural founding |
+| The library's readers list | readers GUI (generated by `scripts/kehillah_library_catalog.py`) |
+
+**Kept Rabbanite**, being rabbinic institutions rather than a rabbi's actions: semicha, ordination
+and yeshiva enrolment; the Sanhedrin; the Gaonate; the named works' ambitions; and everything that
+reads mastery of the Talmud (correspondents, ransom sources, the translation contract's Talmud
+option). Seating a Karaite as Dayyan no longer gives him Religious Scholar. Characters the mod
+creates as scholars (the rabbi search's candidates, a seeded community scholar) are still created
+with it.
 
 ## Not built, and open
 
 - **Tuning.** Every number is a first guess, especially Pesak's +2 judicial Learning, which
   every Bet Din case reads.
 - **AI for the alms decision:** base 25, doubled for a personal adherent.
-- **A hakham is clergy only in the mod's own checks.** The game's clergy status (`is_clergy`,
-  membership of the faith's organization) comes from a trait with `clergy = yes`: the Rabbi
-  trait, Devoted, Cleric. Religious Scholar has none, so a Karaite hakham reads as clergy to the
-  game only while he sits as Dayyan (`is_clergy_position`). A rabbi is clergy everywhere. Closing
-  the gap needs a Karaite counterpart of the Rabbi trait with `clergy = yes`; scripted enrolment
-  would be undone by `kehillah_laicize_character_effect`. Open, for Daniel (2026-11-08).
-- **Karaite flavour.** The rabbi search's events still say "rabbi". A Karaite academy has no
-  ordination of its own; its students are not enrolled, since enrolment is Rabbinic only.
+- **Karaite flavour.** The rabbi search's events and several tooltips still say "rabbi". A
+  Karaite academy has no ordination of its own; its students are not enrolled, since enrolment is
+  Rabbinic only.
+- **Karaite experience from the mod's actions.** Only sermons add Religious Scholar experience.
+  The Bet Din, study and siyum add Rabbi track experience to rabbis and nothing to Karaites, so a
+  Karaite's depth comes mostly from vanilla's Learning lifestyle and Examine Scripture.
 - **Pilgrimage.** Avelei Tziyon's pilgrimage link is still only its Pilgrim virtue. Vanilla's
   pilgrimage activity has no completion hook the mod could add to without overriding it.

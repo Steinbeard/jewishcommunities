@@ -12,6 +12,7 @@
 #   event kehillah_sefer_v2_debug.9   qualify for the Rashi-on-the-Torah ambition
 #   event kehillah_sefer_v2_debug.10  take Bavli Moed off your shelf
 #   event kehillah_sefer_v2_debug.11  personal Pesak and Avelei Tziyon: hooks
+#   event kehillah_sefer_v2_debug.12  Karaites have no clergy: gates (read-only)
 # .2 to .6 and .8 to .11 change the save: use a disposable one.
 # Testing guide: docs/testing/2026-11-08-sefer-redesign-test-guide.md
 # =====================================================================
@@ -303,5 +304,58 @@ kehillah_sefer_v2_debug.11 = {
 			debug_log = "kehillah_sefer_v2_debug.11 ZION alms decision open"
 		}
 		else = { debug_log = "kehillah_sefer_v2_debug.11 ZION alms decision closed" }
+	}
+}
+
+# event kehillah_sefer_v2_debug.12 -- Karaites have no clergy (read-only).
+# For the first Karaite community leader (else the player): is he Karaite,
+# does he pass the rabbi-or-Karaite gates, is he still never a rabbi, never
+# clergy, and who is his community's rabbi. A Karaite should log KARAITE yes,
+# GATES yes yes, RABBI no no, CLERGY no (unless he sits as a Dayyan).
+kehillah_sefer_v2_debug.12 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		random_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = { holder ?= { kehillah_is_karaite_character_trigger = yes } }
+			holder = { save_scope_as = kehillah_dbg_karaite }
+		}
+		if = {
+			limit = { NOT = { exists = scope:kehillah_dbg_karaite } }
+			save_scope_as = kehillah_dbg_karaite
+			debug_log = "kehillah_sefer_v2_debug.12 no Karaite community: probing the player"
+		}
+		scope:kehillah_dbg_karaite = {
+			debug_log = "kehillah_sefer_v2_debug.12 START"
+			debug_log_scopes = yes
+			if = { limit = { kehillah_is_karaite_character_trigger = yes } debug_log = "kehillah_sefer_v2_debug.12 KARAITE yes" }
+			else = { debug_log = "kehillah_sefer_v2_debug.12 KARAITE no" }
+			if = { limit = { kehillah_rabbi_or_karaite_trigger = yes } debug_log = "kehillah_sefer_v2_debug.12 GATE rabbi_or_karaite yes" }
+			else = { debug_log = "kehillah_sefer_v2_debug.12 GATE rabbi_or_karaite no" }
+			if = { limit = { kehillah_ordained_or_karaite_trigger = yes } debug_log = "kehillah_sefer_v2_debug.12 GATE ordained_or_karaite yes" }
+			else = { debug_log = "kehillah_sefer_v2_debug.12 GATE ordained_or_karaite no" }
+			if = { limit = { has_trait = kehillah_rabbi_trait } debug_log = "kehillah_sefer_v2_debug.12 RABBI trait yes" }
+			else = { debug_log = "kehillah_sefer_v2_debug.12 RABBI trait no" }
+			if = { limit = { kehillah_is_ordained_rabbi_trigger = yes } debug_log = "kehillah_sefer_v2_debug.12 RABBI ordained yes" }
+			else = { debug_log = "kehillah_sefer_v2_debug.12 RABBI ordained no" }
+			if = { limit = { is_clergy = yes } debug_log = "kehillah_sefer_v2_debug.12 CLERGY yes" }
+			else = { debug_log = "kehillah_sefer_v2_debug.12 CLERGY no" }
+			if = { limit = { kehillah_leader_is_rav_trigger = yes } debug_log = "kehillah_sefer_v2_debug.12 STYLED Rav (wrong for a Karaite)" }
+			else = { debug_log = "kehillah_sefer_v2_debug.12 STYLED not Rav" }
+			if = { limit = { kehillah_torah_reader_eligible_trigger = yes } debug_log = "kehillah_sefer_v2_debug.12 STUDY open" }
+			else = { debug_log = "kehillah_sefer_v2_debug.12 STUDY closed" }
+			if = { limit = { kehillah_journey_can_plan_trigger = yes } debug_log = "kehillah_sefer_v2_debug.12 YESHIVA VISIT open" }
+			else = { debug_log = "kehillah_sefer_v2_debug.12 YESHIVA VISIT closed (cooldown, prison or not a leader?)" }
+			if = { limit = { kehillah_has_community_rabbi_trigger = yes } debug_log = "kehillah_sefer_v2_debug.12 COMMUNITY RABBI yes" }
+			else = { debug_log = "kehillah_sefer_v2_debug.12 COMMUNITY RABBI no" }
+			kehillah_save_community_rabbi_effect = yes
+			if = {
+				limit = { exists = scope:kehillah_community_rabbi }
+				if = { limit = { scope:kehillah_community_rabbi = this } debug_log = "kehillah_sefer_v2_debug.12 COMMUNITY RABBI is the leader" }
+				else = { debug_log = "kehillah_sefer_v2_debug.12 COMMUNITY RABBI is the Dayyan" }
+			}
+			else = { debug_log = "kehillah_sefer_v2_debug.12 COMMUNITY RABBI unset" }
+		}
 	}
 }

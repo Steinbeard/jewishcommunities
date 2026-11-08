@@ -1208,6 +1208,8 @@ def write_readers_gui(order):
             "\t\t\t\tOR = {",
             "\t\t\t\t\thas_trait = kehillah_rabbi_trait",
             "\t\t\t\t\thas_trait = lifestyle_scholar",
+            # 2026-11-08: Karaites have no clergy; every Karaite reader counts.
+            "\t\t\t\t\tkehillah_is_karaite_character_trigger = yes",
             "\t\t\t\t}",
             f"\t\t\t\t{held(f, '', 'kehillah_mastered_works')}",
             "\t\t\t}",

@@ -19,7 +19,8 @@ end). Build: [the build record](../implementation/2026-11-08-sefer-redesign-buil
 - Logs are in `Documents\Paradox Interactive\Crusader Kings III\logs\`. Probes write to
   `debug.log`. Search it for `kehillah_sefer_v2_debug`. Note how many lines of `error.log`
   mention `kehillah` or `sefer` right after the start. That is your baseline.
-- **Save now, as `sefer_base`.** Probes `.2`–`.6` and `.8`–`.11` change the save. Each section
+- **Save now, as `sefer_base`.** Probes `.2`–`.6` and `.8`–`.11` change the save (`.1` and `.12`
+  only read it). Each section
   below says which save to load.
 - Every probe is a console command: `event kehillah_sefer_v2_debug.<n>`.
 - After any section that opens tooltips, check `error.log` for new lines. Tooltip-only error floods
@@ -38,6 +39,7 @@ end). Build: [the build record](../implementation/2026-11-08-sefer-redesign-buil
 | `.9` | **NEW:** qualify for the Rashi-on-the-Torah ambition |
 | `.10` | **NEW:** take *Talmud Bavli: Moed* off your shelf |
 | `.11` | **NEW:** give you Pesak and Avelei Tziyon as personal tenets and check their hooks |
+| `.12` | **NEW:** read-only: a Karaite leader's gates (Karaites have no clergy) |
 
 Standing ladder, low to high: Rejected (0), Banned, Suspect, Contested, Obscure, Circulating,
 Respected, Esteemed, Classic, Authoritative, Venerated (10). Above those come Oral Torah,
@@ -212,13 +214,17 @@ a Jewish Community**. Check:
 - the library is Karaite: the Tanakh plus the founding Karaite works;
 - the Greatness row counts **founding Karaite works missing**, not Bavli orders;
 - Rabbinic works sit at low standing or Rejected.
-- **NEW, the Karaite clergy:**
-  - a Karaite with Religious Scholar can be seated as Dayyan. The requirement line reads
-    "…or a Karaite Religious Scholar";
-  - the rabbi search offers Religious Scholars, never the Rabbi trait;
-  - **Write a Sefer** offers *A commentary on Scripture, from the plain text alone* once his
-    Religious Scholar experience reaches 30;
-  - a Karaite academy can be founded under a hakham.
+- **NEW, Karaites have no clergy** ([the spec's Karaite section](../spec/2026-11-08-sefer-tenet-mechanics.md)):
+  - `event kehillah_sefer_v2_debug.12`. `debug.log` should read `KARAITE yes`, both `GATE … yes`,
+    both `RABBI … no`, `CLERGY no`, `STYLED not Rav`, `STUDY open`, `COMMUNITY RABBI yes`;
+  - your name is never styled Rav;
+  - **Deliver a Sermon** and **Plan a Yeshiva Visit** are in your decisions;
+  - any adult Karaite can be seated as Dayyan, with or without Religious Scholar. The
+    requirement line reads "…or a Karaite". Seating him gives him no trait;
+  - the rabbi search offers Karaites, never the Rabbi trait;
+  - **Write a Sefer** offers *A commentary on Scripture, from the plain text alone* once your
+    Religious Scholar experience reaches 30. A sermon adds 3 to it;
+  - with no Rosh Yeshiva appointed, you head your own academy.
 
 ## 11. Soak (observation, 20–30 years at speed 5, Worms)
 

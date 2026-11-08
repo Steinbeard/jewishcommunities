@@ -217,9 +217,15 @@ Standing row.
    weights and two small modifiers, and their `parameters` hooks were unread. Each now has a hook
    in an existing system, and the virtues and sins were redone:
    [the tenet mechanics spec](../spec/2026-11-08-sefer-tenet-mechanics.md). Not live-tested.
-3. **Karaites had no way into the clergy: built.** A Karaite with Religious Scholar is a hakham.
-   He can sit as Dayyan, head an academy, write a commentary, approve and judge books. The rabbi
-   search no longer gives Karaites the Rabbi trait. Same spec. Not live-tested.
+3. **Karaites had no way into the clergy: built, then redesigned the same evening.** The first
+   build made a Karaite with Religious Scholar a *hakham*, the Karaite clergy. Daniel then decided
+   that **Karaites have no clergy** and that every rabbinic action is open to every Karaite. Two
+   triggers stand in for the Rabbi trait in those gates (`kehillah_rabbi_or_karaite_trigger`,
+   `kehillah_ordained_or_karaite_trigger`). `kehillah_is_ordained_rabbi_trigger` is rabbis only
+   again, so a Karaite is never styled Rav. Religious Scholar experience still stands in for a Rabbi
+   track's depth. Rabbanite institutions stay Rabbanite. The rabbi search no longer gives Karaites
+   the Rabbi trait. Same spec, its Karaite section. Probe `kehillah_sefer_v2_debug.12`. Not
+   live-tested.
 4. **The Library window was unreachable for a Kehillah leader.** Its *Beit Midrash* chip showed only
    for landed Jewish rulers, so a Kehillah player saw the library only in the domicile's Books tab
    (the same body). The chip now shows for any Kehillah leader whose community has a library, on
