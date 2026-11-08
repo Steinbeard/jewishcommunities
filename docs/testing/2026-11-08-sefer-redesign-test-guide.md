@@ -241,7 +241,7 @@ Design: [the tenet mechanics spec](../spec/2026-11-08-sefer-tenet-mechanics.md).
 
 1. **Faith window → Rabbinism → each new tenet.** Hover each one. Below the book line, there
    should be one more effect line. The virtues and sins should read:
-   - Hokhmah: Physician and Religious Scholar / Zealous;
+   - Hokhmah: Physician and Erudite / Zealous;
    - Emunah Temimah: Humble and Zealous / Cynical and Arrogant;
    - Pesak: Just and Diligent / Arbitrary;
    - Pilpul: Rabbi and Stubborn / Lazy;

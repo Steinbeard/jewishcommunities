@@ -35,14 +35,21 @@ The book-system parameters (`kehillah_sefer_*`, standing ceilings and reading fi
 
 ## Virtues and sins
 
-The new weights avoid vanilla's **Religious Scholar** (`lifestyle_scholar`) wherever only Rabbanites
-would hold the tenet. For them, the Rabbi trait eclipses Religious Scholar, and the mod already
-folds one into the other (`kehillah_absorb_religious_scholar_effect`). The rival tenets pull
-opposite ways, so a character's traits make one side of an axis feel right and the other wrong.
+The new weights never use vanilla's **Religious Scholar** (`lifestyle_scholar`). A Jewish rabbi
+cannot hold it: the mod folds it into the Rabbi trait (`kehillah_absorb_religious_scholar_effect`),
+so a Rabbanite rabbi could never earn that virtue. Learning virtues use **Erudite** instead, which
+rabbis and Karaites can both hold, or the Rabbi trait where only Rabbanites hold the tenet. The
+rival tenets pull opposite ways, so a character's traits make one side of an axis feel right and
+the other wrong.
+
+*Correction, same day:* the first build kept Religious Scholar on Hokhmah, for Karaites. Daniel
+pointed out that this shut Rabbanite rabbis out of the virtue. It is now Erudite. Karaites lose
+nothing: vanilla's Karaite doctrine (`temple_authority_toric_doctrine`) already makes Erudite a
+virtue, and their own Ba'alei ha-Miqra tenet keeps Religious Scholar, which no Karaite loses.
 
 | Tenet | Virtues | Sins | Reasoning |
 |---|---|---|---|
-| Hokhmah | Physician 15, Religious Scholar 10 | Zealous 15 | Jewish philosophers were often court physicians (Maimonides, Halevi). Religious Scholar is kept for Karaite kalam: Karaism permits Hokhmah |
+| Hokhmah | Physician 15, Erudite 10 | Zealous 15 | Jewish philosophers were often court physicians (Maimonides, Halevi). Erudite is vanilla's trait for worldly learning, the "wisdom" beside Torah, and a rabbi can hold it |
 | Emunah Temimah | Humble 15, Zealous 10 | Cynical 20, Arrogant 10 | the simple believer against the proud speculator; the axis rivals Hokhmah on Zealous |
 | Pesak | Just 20, Diligent 10 | Arbitrary 20 | the decisor's virtues; was Diligent/Honest |
 | Pilpul | **Rabbi** 10, Stubborn 10 | Lazy 15 | the dialectic is the rabbi's own craft (Karaism prohibits Pilpul); was Religious Scholar |
