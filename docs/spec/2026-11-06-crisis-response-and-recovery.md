@@ -119,6 +119,17 @@ The race is **Quarter Held versus Quarter Struck**. The actual host has a force 
 | **Buy time or safe passage.** “He will halt until dawn if your envoy returns with terms.” | Exact `medium_gold_value` bargain or limited promise. | Delay Struck ticks, +6–12 Held, open evacuation window; leader may fail to control followers. Stage and reinforcements matter. |
 | **Offer face-saving withdrawal.** “He cannot leave empty-handed before those he has roused.” | Mediate a real grievance, bounded payment, or public hearing. | +12–22 Held/direct dispersal in fitting circumstances; an admission of collective guilt may worsen future standing. Proud/Zealous, evidence, lord power matter. |
 
+**Parley follow-up choices, 2026-11-07 addendum.** In play, all four parley measures opened the same follow-up scene (`kehillah_crisis_phase_actions.0106`) with the same two choices: pay a minor sum for better odds, or go without, both on the Ne'eman's Intrigue. They felt identical. Each measure now has its own pair of choices, with a different cost, skill, and host trait:
+
+| Measure | First choice | Second choice |
+|---|---|---|
+| Bargain down the price | Counter with a sum: `medium_gold_value`, 75% base, the leader's own Stewardship, a greedy host leader helps; a greedy leader takes stress. | Plead poverty: free, 45% base, the Ne'eman's Intrigue; deceitful helps, an honest leader takes stress. |
+| Buy time | Pay for the night: `medium_gold_value`, certain. | Promise a hearing before the lord: free, 55% base, the Shtadlan's Diplomacy; failure also costs minor prestige. |
+| Divide the captains | Safe conduct for one captain: `minor_gold_value`, 65% base, Ne'eman's Intrigue. | Expose their rival orders: free, 45% base, schemer helps; adds a further small Held push on success and a small Struck push on failure. |
+| Invoke obligations | Read him the law and his oath: free, 55% base, the Dayyan's Learning; a just host leader +15, arbitrary −15; success gives minor piety. | Write to his lord: minor prestige up front, 70% base, the local lord's opinion and outlook. |
+
+The host leader's opinion, zealous/patient traits, and threat grade apply to every choice except the two Ne'eman choices in Divide (`kehillah_crisis_parley_*_bonus_value` in `kehillah_crisis_phase_values.txt`). The success and failure results of each measure are unchanged. The other follow-up scenes (`.0101`–`.0105`) still share the generic pay-or-go-without pair and may need the same treatment.
+
 The **emergency gate event** means a reactive confrontation when the host reaches the quarter. The player can hold the gate, plead, evacuate, or make an immediate limited offer using *recorded* defenses, promises, gold, and host terms. It is neither a fourth category nor a repeat of a completed negotiation. It resolves once, with an epoch guard, before the race outcome is applied.
 
 ## Dynamic hostile events and Quarter Struck

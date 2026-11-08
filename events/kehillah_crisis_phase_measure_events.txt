@@ -201,22 +201,101 @@ kehillah_crisis_phase_actions.0106 = {
  right_portrait = { trigger = { exists = scope:kehillah_phase_host } character = scope:kehillah_phase_host animation = thinking }
  trigger = { kehillah_crisis_armed_open_trigger = yes }
  immediate = { primary_title.var:kehillah_mob_threat ?= { save_scope_as = kehillah_phase_host } }
+ # 2026-11-07: each parley measure has its own pair of choices, with different costs, skills,
+ # and host traits, instead of one shared "pay a little / go without" pair.
+
+ # Bargain: a real counter-offer (Stewardship, greedy host) or a plea of poverty (Ne'eman).
  option = {
-  name = kehillah_crisis_phase_actions.0106.careful
-  flavor = kehillah_crisis_phase_actions.0106.careful.tt
-  trigger = { gold >= minor_gold_value }
+  name = kehillah_crisis_phase_actions.0106.terms_counter
+  trigger = { primary_title.var:kehillah_crisis_measure ?= flag:terms gold >= medium_gold_value }
+  show_as_unavailable = { primary_title.var:kehillah_crisis_measure ?= flag:terms }
+  flavor = kehillah_crisis_phase_actions.0106.terms_counter.tt
   hidden_effect = { kehillah_crisis_commit_action_effect = yes }
-  remove_short_term_gold = minor_gold_value
+  remove_short_term_gold = medium_gold_value
   if = { limit = { has_trait = greedy } add_stress = minor_stress_gain }
-  random_list = { 70 = { modifier = { add = kehillah_crisis_measure_bonus_value } kehillah_crisis_phase_success_effect = yes } 30 = { kehillah_crisis_phase_failure_effect = yes } }
+  random_list = { 75 = { modifier = { add = kehillah_crisis_parley_counter_bonus_value } kehillah_crisis_phase_success_effect = yes } 25 = { kehillah_crisis_phase_failure_effect = yes } }
   ai_chance = { base = 50 }
  }
  option = {
-  name = kehillah_crisis_phase_actions.0106.bold
-  flavor = kehillah_crisis_phase_actions.0106.bold.tt
+  name = kehillah_crisis_phase_actions.0106.terms_poverty
+  trigger = { primary_title.var:kehillah_crisis_measure ?= flag:terms }
+  flavor = kehillah_crisis_phase_actions.0106.terms_poverty.tt
   hidden_effect = { kehillah_crisis_commit_action_effect = yes }
-  if = { limit = { has_trait = craven } add_stress = minor_stress_gain }
-  random_list = { 55 = { modifier = { add = kehillah_crisis_measure_bonus_value } modifier = { add = 20 has_trait = brave } kehillah_crisis_phase_success_effect = yes } 45 = { modifier = { add = 20 has_trait = craven } kehillah_crisis_phase_failure_effect = yes } }
+  if = { limit = { has_trait = honest } add_stress = minor_stress_gain }
+  random_list = { 45 = { modifier = { add = kehillah_crisis_measure_bonus_value } modifier = { add = 10 has_trait = deceitful } kehillah_crisis_phase_success_effect = yes } 55 = { kehillah_crisis_phase_failure_effect = yes } }
+  ai_chance = { base = 40 }
+ }
+
+ # Buy time: a sure halt for a real price, or a promised hearing (Shtadlan) that can sour.
+ option = {
+  name = kehillah_crisis_phase_actions.0106.delay_pay
+  trigger = { primary_title.var:kehillah_crisis_measure ?= flag:delay gold >= medium_gold_value }
+  show_as_unavailable = { primary_title.var:kehillah_crisis_measure ?= flag:delay }
+  flavor = kehillah_crisis_phase_actions.0106.delay_pay.tt
+  hidden_effect = { kehillah_crisis_commit_action_effect = yes }
+  remove_short_term_gold = medium_gold_value
+  kehillah_crisis_phase_success_effect = yes
+  ai_chance = { base = 40 }
+ }
+ option = {
+  name = kehillah_crisis_phase_actions.0106.delay_hearing
+  trigger = { primary_title.var:kehillah_crisis_measure ?= flag:delay }
+  flavor = kehillah_crisis_phase_actions.0106.delay_hearing.tt
+  hidden_effect = { kehillah_crisis_commit_action_effect = yes }
+  random_list = {
+   55 = { modifier = { add = kehillah_crisis_parley_hearing_bonus_value } kehillah_crisis_phase_success_effect = yes }
+   45 = { kehillah_crisis_phase_failure_effect = yes add_prestige = minor_prestige_loss }
+  }
+  ai_chance = { base = 50 }
+ }
+
+ # Divide: buy off one captain (safer), or expose their rival orders (larger either way).
+ option = {
+  name = kehillah_crisis_phase_actions.0106.divide_conduct
+  trigger = { primary_title.var:kehillah_crisis_measure ?= flag:divide gold >= minor_gold_value }
+  show_as_unavailable = { primary_title.var:kehillah_crisis_measure ?= flag:divide }
+  flavor = kehillah_crisis_phase_actions.0106.divide_conduct.tt
+  hidden_effect = { kehillah_crisis_commit_action_effect = yes }
+  remove_short_term_gold = minor_gold_value
+  random_list = { 65 = { modifier = { add = kehillah_crisis_measure_bonus_value } kehillah_crisis_phase_success_effect = yes } 35 = { kehillah_crisis_phase_failure_effect = yes } }
+  ai_chance = { base = 50 }
+ }
+ option = {
+  name = kehillah_crisis_phase_actions.0106.divide_expose
+  trigger = { primary_title.var:kehillah_crisis_measure ?= flag:divide }
+  flavor = kehillah_crisis_phase_actions.0106.divide_expose.tt
+  hidden_effect = { kehillah_crisis_commit_action_effect = yes }
+  random_list = {
+   45 = {
+    modifier = { add = kehillah_crisis_measure_bonus_value }
+    modifier = { add = 10 has_trait = schemer }
+    kehillah_crisis_phase_success_effect = yes
+    primary_title = { hidden_effect = { kehillah_crisis_armed_race_add_effect = { CATALYST = kehillah_crisis_efforts_catalyst POINTS = kehillah_crisis_parley_expose_points } } custom_tooltip = kehillah_crisis_tt_held_small }
+   }
+   55 = {
+    kehillah_crisis_phase_failure_effect = yes
+    primary_title = { hidden_effect = { kehillah_crisis_armed_race_add_effect = { CATALYST = kehillah_crisis_misstep_catalyst POINTS = kehillah_crisis_parley_expose_points } } custom_tooltip = kehillah_crisis_tt_struck_small }
+   }
+  }
+  ai_chance = { base = 25 }
+ }
+
+ # Obligations: cite the law (Dayyan; just or arbitrary host), or write to his lord (prestige).
+ option = {
+  name = kehillah_crisis_phase_actions.0106.obligations_law
+  trigger = { primary_title.var:kehillah_crisis_measure ?= flag:obligations }
+  flavor = kehillah_crisis_phase_actions.0106.obligations_law.tt
+  hidden_effect = { kehillah_crisis_commit_action_effect = yes }
+  random_list = { 55 = { modifier = { add = kehillah_crisis_parley_law_bonus_value } kehillah_crisis_phase_success_effect = yes add_piety = minor_piety_gain } 45 = { kehillah_crisis_phase_failure_effect = yes } }
+  ai_chance = { base = 50 }
+ }
+ option = {
+  name = kehillah_crisis_phase_actions.0106.obligations_lord
+  trigger = { primary_title.var:kehillah_crisis_measure ?= flag:obligations domicile.domicile_location.county.holder ?= { is_alive = yes } }
+  flavor = kehillah_crisis_phase_actions.0106.obligations_lord.tt
+  hidden_effect = { kehillah_crisis_commit_action_effect = yes }
+  add_prestige = minor_prestige_loss
+  random_list = { 70 = { modifier = { add = kehillah_crisis_parley_lord_bonus_value } kehillah_crisis_phase_success_effect = yes } 30 = { kehillah_crisis_phase_failure_effect = yes } }
   ai_chance = { base = 40 }
  }
  option = { name = kehillah_crisis_phase_actions.back hidden_effect = { kehillah_crisis_return_to_options_effect = yes } ai_chance = { base = 0 } }
