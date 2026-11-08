@@ -17,6 +17,23 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+**Community goals removed - 2026-11-07, Daniel's decision:** the S6 "Set the Community's
+Goal" system (one of four goals, a ten-year deadline, a pillar reward or a Stability loss)
+is gone. Daniel: it "works against the grain of how other ck3 systems work". Removed: the
+decision, its events, effects, triggers, custom loc and loc; the quarterly check; the
+daughter-community credit in both founding effects; the two message types; its script values;
+the Standing tooltip row; debug events .123-.125. No other system read its counter. Old saves
+keep a few unused title variables (`kehillah_var_goal*`), which is harmless. This also retires
+a bug found the same day: "Secure Our Rights" counted building rights getting worse as success.
+
+**Fallback charter pillar points fixed - 2026-11-07, source-checked, not live-tested:** the V15
+charter (hosts neither Christian nor Muslim) read its moneylending and walled-quarter rights
+with `vassal_contract_has_flag`, which never matches a tributary charter, so both added 0 and
+their tooltip rows said "none". `kehillah_refresh_charter_state_cache_effect` now caches them
+(`kehillah_charter_cache_lending`, `_walled`) and the values and rows read the cache.
+**To test:** a community under a non-Christian, non-Muslim host with pawnbroking or a walled
+quarter shows the Prosperity/Stability lines after one quarterly pulse.
+
 **Advice lessons - 2026-11-06, built, awaiting Daniel's live test:** A seven-step
 "Leading a Kehillah" lesson and a one-step tip for Jewish adventurers now use vanilla's
 Reactive Advice system. xTiger is clean on them, but they have not run in-game. See the
@@ -2341,6 +2358,8 @@ short research bullets for when Daniel is back.
     so every firing landed GREAT -- needs a low-Learning answerer, and it is the cheapest thing left
     on S5); and the yearly `on_action` pulse firing **on its own**, together with S4b's 40%
     against-the-AI bias. Every firing in this run was armed and fired by probe.
+- **2026-11-07: S6 REMOVED at Daniel's request; see the Near-term TODO note. The entry below
+  is kept as history.**
 - **S6. BUILD — Community goals.** Build exactly: a decision "Set the Community's Goal" (one active
   goal at a time, 10-year deadline, stored as title variables) offering 4 goals checked on the
   quarterly tick: **Build the Yeshiva** (the building exists at tier N), **A Name Among the
