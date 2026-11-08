@@ -1,0 +1,157 @@
+﻿# =====================================================================
+# Console-only probes for the 2026-11-08 Sefer redesign. Run as the
+# player (a Kehillah leader or a landed Jewish ruler):
+#   event kehillah_sefer_v2_debug.1   report (read-only) to debug.log
+#   event kehillah_sefer_v2_debug.2   master the Tanakh: expect a siyum
+#   event kehillah_sefer_v2_debug.3   run the yearly Sefer pass now
+#   event kehillah_sefer_v2_debug.4   start a Machloket over Halakhot Gedolot
+#   event kehillah_sefer_v2_debug.5   write Rashi on the Torah, and a book
+#   event kehillah_sefer_v2_debug.6   found a temple library in your realm
+#   event kehillah_sefer_v2_debug.7   paint the Libraries map
+# .2 to .6 change the save: use a disposable one.
+# =====================================================================
+namespace = kehillah_sefer_v2_debug
+
+kehillah_sefer_v2_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_sefer_v2_debug.1 START"
+		if = { limit = { has_global_variable = kehillah_sefer_v2_ready } debug_log = "kehillah_sefer_v2_debug.1 MIGRATED yes" }
+		else = { debug_log = "kehillah_sefer_v2_debug.1 MIGRATED no" }
+		if = {
+			limit = { has_global_variable_list = kehillah_libraries }
+			every_in_global_list = {
+				variable = kehillah_libraries
+				debug_log = "kehillah_sefer_v2_debug.1 LIBRARY"
+				debug_log_scopes = yes
+			}
+		}
+		kehillah_lib_refresh_own_library_effect = yes
+		if = {
+			limit = { exists = var:kehillah_own_library }
+			debug_log = "kehillah_sefer_v2_debug.1 OWN LIBRARY found"
+			var:kehillah_own_library = {
+				if = { limit = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_tanakh_torah } } debug_log = "kehillah_sefer_v2_debug.1 TANAKH held" }
+				else = { debug_log = "kehillah_sefer_v2_debug.1 TANAKH MISSING" }
+				if = { limit = { kehillah_lib_complete_shas_trigger = yes } debug_log = "kehillah_sefer_v2_debug.1 SHAS complete" }
+				else = { debug_log = "kehillah_sefer_v2_debug.1 SHAS incomplete" }
+				if = { limit = { has_variable = kehillah_lib_foundation_missing } debug_log = "kehillah_sefer_v2_debug.1 CACHE present" }
+				if = { limit = { kehillah_lib_is_karaite_library_trigger = yes } debug_log = "kehillah_sefer_v2_debug.1 TRADITION karaite" }
+				else = { debug_log = "kehillah_sefer_v2_debug.1 TRADITION rabbanite" }
+				if = { limit = { has_variable = kehillah_library_sealed } debug_log = "kehillah_sefer_v2_debug.1 SEALED" }
+			}
+		}
+		else = { debug_log = "kehillah_sefer_v2_debug.1 OWN LIBRARY none" }
+		kehillah_sefer_debug_log_tier_effect = { KEY = work_tanakh_torah }
+		kehillah_sefer_debug_log_tier_effect = { KEY = work_bavli_moed }
+		kehillah_sefer_debug_log_tier_effect = { KEY = work_mishnah }
+		kehillah_sefer_debug_log_tier_effect = { KEY = work_targum_onkelos }
+		kehillah_sefer_debug_log_tier_effect = { KEY = work_halakhot_gedolot }
+		kehillah_sefer_debug_log_tier_effect = { KEY = work_emunot_vedeot }
+		kehillah_sefer_debug_log_tier_effect = { KEY = work_sefer_yetzirah }
+		kehillah_sefer_debug_log_tier_effect = { KEY = work_shiur_qomah }
+		kehillah_sefer_debug_log_tier_effect = { KEY = work_anan_sefer_hamitzvot }
+		kehillah_sefer_debug_log_tier_effect = { KEY = work_rashi_torah }
+		faith:rabbinic_faith ?= {
+			if = { limit = { main_rite = { has_tenet_status = { tenet = tenet_kehillah_hokhmah status = permitted } } } debug_log = "kehillah_sefer_v2_debug.1 RABBINIC hokhmah permitted" }
+			if = { limit = { main_rite = { has_tenet_status = { tenet = tenet_baalei_hamiqra status = prohibited } } } debug_log = "kehillah_sefer_v2_debug.1 RABBINIC baalei prohibited" }
+		}
+		faith:karaism ?= {
+			if = { limit = { main_rite = { has_tenet_status = { tenet = tenet_talmud_torah status = prohibited } } } debug_log = "kehillah_sefer_v2_debug.1 KARAISM talmud_torah prohibited" }
+		}
+		if = { limit = { has_global_variable = kehillah_wk_work_kuzari_written } debug_log = "kehillah_sefer_v2_debug.1 KUZARI written" }
+		else = { debug_log = "kehillah_sefer_v2_debug.1 KUZARI not yet written" }
+		if = { limit = { has_global_variable_list = kehillah_ransom_pool } debug_log = "kehillah_sefer_v2_debug.1 RANSOM POOL has books" }
+		if = { limit = { has_variable = kehillah_round_tanakh } debug_log = "kehillah_sefer_v2_debug.1 ROUNDS tanakh recorded" }
+		debug_log = "kehillah_sefer_v2_debug.1 END"
+	}
+}
+
+kehillah_sefer_v2_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_sefer_v2_debug.2 START: mastering the three Tanakh divisions"
+		set_variable = { name = kehillah_study_torah_mastery_bonus value = 1 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_tanakh_torah TRACK = parshanut KEY = work_tanakh_torah }
+		set_variable = { name = kehillah_study_torah_mastery_bonus value = 1 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_tanakh_neviim TRACK = parshanut KEY = work_tanakh_neviim }
+		set_variable = { name = kehillah_study_torah_mastery_bonus value = 1 }
+		kehillah_study_specific_work_effect = { WORK = flag:work_tanakh_ketuvim TRACK = parshanut KEY = work_tanakh_ketuvim }
+		if = { limit = { has_variable = kehillah_round_tanakh } debug_log = "kehillah_sefer_v2_debug.2 SIYUM fired: round recorded" }
+		else = { debug_log = "kehillah_sefer_v2_debug.2 NO SIYUM (already mastered? run again for the next round)" }
+	}
+}
+
+kehillah_sefer_v2_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_sefer_v2_debug.3 START: yearly pass"
+		kehillah_sefer_yearly_effect = yes
+		debug_log = "kehillah_sefer_v2_debug.3 END"
+	}
+}
+
+kehillah_sefer_v2_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		rite ?= {
+			if = {
+				limit = {
+					has_variable = kehillah_standing_work_halakhot_gedolot
+					NOT = { has_variable = kehillah_mk_active }
+				}
+				kehillah_machloket_start_effect = { KEY = work_halakhot_gedolot }
+				debug_log = "kehillah_sefer_v2_debug.4 MACHLOKET started (run .3 to advance a year)"
+			}
+			else = { debug_log = "kehillah_sefer_v2_debug.4 NOT started (unseeded rite or one already active)" }
+		}
+	}
+}
+
+kehillah_sefer_v2_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		set_variable = { name = kehillah_book_tier value = flag:famed }
+		set_variable = { name = kehillah_book_named_work value = flag:work_rashi_torah }
+		set_variable = { name = kehillah_book_genre value = flag:parshanut }
+		kehillah_sefer_finish_written_work_effect = yes
+		if = { limit = { has_global_variable = kehillah_wk_work_rashi_torah_written } debug_log = "kehillah_sefer_v2_debug.5 NAMED rashi_torah written" }
+		set_variable = { name = kehillah_book_genre value = flag:talmudics }
+		set_variable = { name = kehillah_book_tenet_a value = 5 }
+		kehillah_sefer_finish_written_work_effect = yes
+		if = { limit = { has_global_variable = kehillah_wk_work_authored_01_written } debug_log = "kehillah_sefer_v2_debug.5 AUTHORED slot 01 written" }
+		remove_variable = kehillah_book_tier
+		remove_variable = kehillah_book_genre
+	}
+}
+
+kehillah_sefer_v2_debug.6 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { any_realm_province = { kehillah_lib_can_endow_temple_trigger = yes } }
+			random_realm_province = {
+				limit = { kehillah_lib_can_endow_temple_trigger = yes }
+				kehillah_lib_found_temple_library_effect = yes
+			}
+			kehillah_lib_refresh_own_library_effect = yes
+			debug_log = "kehillah_sefer_v2_debug.6 TEMPLE LIBRARY founded"
+		}
+		else = { debug_log = "kehillah_sefer_v2_debug.6 NO eligible temple holding in the realm" }
+	}
+}
+
+kehillah_sefer_v2_debug.7 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_paint_libraries_map_effect = yes
+		debug_log = "kehillah_sefer_v2_debug.7 painted"
+	}
+}

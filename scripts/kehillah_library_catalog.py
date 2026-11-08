@@ -224,9 +224,21 @@ def write_values(order, works):
     out += ["", "# shelf band: 1 foundational, 2 essential, 3 celebrated, 4 popular, 5 obscure"]
     for f in order:
         out.append(f"kehillah_lib_rank_{f} = {RANKS[works[f]['rank_name']][0]}")
-    out += ["", "# frame in gfx/interface/icons/kehillah_library/kehillah_sefer_rank_frames.dds"]
+    out += [
+        "",
+        "# frame in gfx/interface/icons/kehillah_library/kehillah_sefer_rank_frames.dds,",
+        "# by the work's standing in the viewer's rite (scope: the player): canon 1,",
+        "# Classic or higher 2, Respected or Esteemed 3, lower 4.",
+    ]
     for f in order:
-        out.append(f"kehillah_lib_frame_{f} = {RANKS[works[f]['rank_name']][1]}")
+        out += [
+            f"kehillah_lib_frame_{f} = {{",
+            "\tvalue = 4",
+            f"\tif = {{ limit = {{ kehillah_lib_standing_{f} >= 11 }} value = 1 }}",
+            f"\telse_if = {{ limit = {{ kehillah_lib_standing_{f} >= 8 }} value = 2 }}",
+            f"\telse_if = {{ limit = {{ kehillah_lib_standing_{f} >= 6 }} value = 3 }}",
+            "}",
+        ]
     out += ["", "# composition year (the game date; Jan 1 is a dating convention)"]
     for f in order:
         w = works[f]
@@ -956,7 +968,7 @@ def write_study_effects(order, works):
     out += ["\t\t}", "\t}", "}"]
     out += [
         "",
-        "# Scope: a scholar arriving at scope:kehillah_tick_title (section 7.1).",
+        "# Scope: a scholar arriving at scope:kehillah_chest_library (section 7.1).",
         "# He brings a copy of one work he mastered that the library lacks, a",
         "# Bavli order more often; nothing if he has none to give.",
         "kehillah_sefer_scholar_chest_pick_effect = {",
@@ -966,17 +978,39 @@ def write_study_effects(order, works):
     ]
     chest = [f for f in order if works[f]["corpus"] != "tanakh"]
     for f in chest:
-        out.append(f"\t\t\t\tAND = {{ {held(f, '', 'kehillah_mastered_works')} scope:kehillah_tick_title = {{ NOT = {{ {held(f)} }} }} }}")
+        out.append(f"\t\t\t\tAND = {{ {held(f, '', 'kehillah_mastered_works')} scope:kehillah_chest_library = {{ NOT = {{ {held(f)} }} }} }}")
     out += ["\t\t\t}", "\t\t}", "\t\trandom_list = {"]
     for f in chest:
         weight = 4 if works[f]["corpus"] == "bavli" else 1
         out += [
             f"\t\t\t{weight} = {{",
-            f"\t\t\t\ttrigger = {{ {held(f, '', 'kehillah_mastered_works')} scope:kehillah_tick_title = {{ NOT = {{ {held(f)} }} }} }}",
-            f"\t\t\t\tscope:kehillah_tick_title = {{ add_to_variable_list = {{ name = kehillah_library_works target = flag:{f} }} kehillah_lib_refresh_cache_effect = yes }}",
+            f"\t\t\t\ttrigger = {{ {held(f, '', 'kehillah_mastered_works')} scope:kehillah_chest_library = {{ NOT = {{ {held(f)} }} }} }}",
+            f"\t\t\t\tscope:kehillah_chest_library = {{ add_to_variable_list = {{ name = kehillah_library_works target = flag:{f} }} kehillah_lib_refresh_cache_effect = yes }}",
             "\t\t\t}",
         ]
     out += ["\t\t}", "\t}", "}"]
+    out += [
+        "",
+        "# Title scope: a sack seizes one volume (never the Tanakh) into the",
+        "# ransom pool (section 7.2).",
+        "kehillah_lib_seize_one_effect = {",
+        "\tif = {",
+        "\t\tlimit = {",
+        "\t\t\tOR = {",
+    ]
+    out += [f"\t\t\t\t{held(f)}" for f in chest]
+    out += ["\t\t\t}", "\t\t}", "\t\trandom_list = {"]
+    for f in chest:
+        out += [
+            "\t\t\t1 = {",
+            f"\t\t\t\ttrigger = {{ {held(f)} }}",
+            f"\t\t\t\tremove_list_variable = {{ name = kehillah_library_works target = flag:{f} }}",
+            f"\t\t\t\tif = {{ limit = {{ NOT = {{ is_target_in_global_variable_list = {{ name = kehillah_ransom_pool target = flag:{f} }} }} }}",
+            f"\t\t\t\t\tadd_to_global_variable_list = {{ name = kehillah_ransom_pool target = flag:{f} }}",
+            "\t\t\t\t}",
+            "\t\t\t}",
+        ]
+    out += ["\t\t}", "\t\tkehillah_lib_refresh_cache_effect = yes", "\t}", "}"]
     out += [
         "",
         "# Scope: a champion with var:kehillah_sefer_named_work set (event option).",
@@ -1172,6 +1206,7 @@ def write_actions_gui(order, works):
         ] + valid + [
             "\t}",
             "\teffect = {",
+            "\t\tkehillah_lib_refresh_own_library_effect = yes",
             f"\t\tsave_scope_value_as = {{ name = kehillah_donate_work value = flag:{f} }}",
             "\t\ttrigger_event = kehillah_library.0001",
             "\t}",

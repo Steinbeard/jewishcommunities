@@ -17,8 +17,17 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
-**Sefer system redesign - 2026-11-08, Daniel's request, PROPOSAL, DANIEL-REVIEW (do not build
-unattended):** [the redesign](docs/spec/2026-11-08-sefer-system-redesign.md) moves libraries off
+**Sefer system redesign BUILT - 2026-11-08, Daniel's decisions and request, xTiger-clean, live
+test pending:** every layer of [the redesign](docs/spec/2026-11-08-sefer-system-redesign.md) is
+built: standing per rite, the full tenet roster, the Tanakh and Shas-first libraries with a
+Greatness row for missing orders, rounds and the siyum, named works as gold ambitions in the
+writing chain, authored works, approbations, judging and citations, the Machloket, temple-holding
+libraries for landed rulers with a Library window, chip and map mode, ransom and seizures,
+landed yeshivot, and Karaite Kehillot. See [the build record and test checklist](docs/implementation/2026-11-08-sefer-redesign-build.md),
+which also lists the eight departures from the spec and the vanilla rite-divergence systems used.
+
+*Earlier the same day:* **Sefer system redesign - 2026-11-08, Daniel's request, PROPOSAL (approved
+the same day; superseded by the BUILT entry above):** [the redesign](docs/spec/2026-11-08-sefer-system-redesign.md) moves libraries off
 the domicile onto titles Jewish rulers hold with a seat on the map (a Kehillah's title, or a
 landed ruler's barony with a Beit Midrash building), opened from one Library window and a
 Libraries map mode. Each Jewish rite gets its own ten-tier standing ladder for every work, Banned

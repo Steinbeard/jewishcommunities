@@ -1,0 +1,91 @@
+##########################################################################
+# THE LIBRARY WINDOW (2026-11-08, Sefer redesign; docs/spec/2026-11-08-
+# sefer-system-redesign.md section 2.5). The same kehillah_library_body
+# the domicile hosts, in a window of its own, so that a landed Jewish
+# ruler -- who has no domicile -- can open the library of the temple
+# holding he holds or that serves him. Registered in gui/scripted_widgets/
+# kehillah_scripted_widgets.txt (a new top-level window only exists if it
+# is listed there).
+#
+# Opened from the "Beit Midrash" chip in the character window (gui/
+# window_character.gui), which first runs scripted gui kehillah_lib_
+# window_open: that refreshes the character's library and stores it on
+# the player as var:kehillah_lib_view_title, and the character as
+# var:kehillah_lib_view_owner. Datacontexts follow the body's contract:
+# Character = the library's reader, Title = the library title.
+##########################################################################
+
+window = {
+	name = "kehillah_library_window"
+	parentanchor = top|left
+	widgetanchor = top|left
+	position = { 80 90 }
+	size = { 600 720 }
+
+	movable = yes
+	resizable = no
+	layer = windows_layer
+	alwaystransparent = no
+	filter_mouse = all
+	allow_outside = yes
+
+	visible = "[And( And( IsInGame, GetPlayer.IsValid ), And( IsDefaultGUIMode, GetVariableSystem.Exists( 'kehillah_lib_window_open' ) ) )]"
+	visible_at_creation = no
+
+	using = Window_Background
+	using = Window_Decoration_Spike
+
+	state = {
+		name = _show
+		using = Animation_FadeIn_Quick
+		using = Sound_WindowShow_Standard
+		on_start = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
+		on_start = "[GetVariableSystem.Clear( 'kehillah_lib_parent_corpus' )]"
+		on_start = "[GetVariableSystem.Clear( 'kehillah_lib_acquire_mode' )]"
+		on_start = "[GetVariableSystem.Clear( 'kehillah_lib_show_yeshiva' )]"
+	}
+	state = {
+		name = _hide
+		using = Animation_FadeOut_Quick
+		using = Sound_WindowHide_Standard
+	}
+
+	vbox = {
+		layoutpolicy_horizontal = expanding
+		layoutpolicy_vertical = expanding
+		spacing = 4
+		datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_lib_view_owner' ).Char]"
+		datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_lib_view_title' ).Title]"
+
+		using = Window_Margins
+
+		header_pattern = {
+			layoutpolicy_horizontal = expanding
+			blockoverride "header_text" { text = "KEHILLAH_LIB_WINDOW_HEADER" max_width = 452 }
+			blockoverride "button_close" { onclick = "[GetVariableSystem.Clear( 'kehillah_lib_window_open' )]" }
+		}
+
+		### Where the library is, and its yeshiva if it has one.
+		text_single = {
+			layoutpolicy_horizontal = expanding
+			text = "KEHILLAH_LIB_WINDOW_SEAT"
+			default_format = "#weak"
+			max_width = 560
+		}
+		text_single = {
+			visible = "[Title.MakeScope.Var( 'kehillah_landed_yeshiva' ).IsSet]"
+			layoutpolicy_horizontal = expanding
+			text = "KEHILLAH_LIB_WINDOW_YESHIVA"
+			max_width = 560
+		}
+		text_single = {
+			visible = "[Title.MakeScope.Var( 'kehillah_library_sealed' ).IsSet]"
+			layoutpolicy_horizontal = expanding
+			text = "KEHILLAH_LIB_WINDOW_SEALED"
+			default_format = "#N"
+			max_width = 560
+		}
+
+		kehillah_library_body = {}
+	}
+}
