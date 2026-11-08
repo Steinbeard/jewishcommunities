@@ -19,7 +19,7 @@ end). Build: [the build record](../implementation/2026-11-08-sefer-redesign-buil
 - Logs are in `Documents\Paradox Interactive\Crusader Kings III\logs\`. Probes write to
   `debug.log`. Search it for `kehillah_sefer_v2_debug`. Note how many lines of `error.log`
   mention `kehillah` or `sefer` right after the start. That is your baseline.
-- **Save now, as `sefer_base`.** Probes `.2`–`.6` and `.8`–`.10` change the save. Each section
+- **Save now, as `sefer_base`.** Probes `.2`–`.6` and `.8`–`.11` change the save. Each section
   below says which save to load.
 - Every probe is a console command: `event kehillah_sefer_v2_debug.<n>`.
 - After any section that opens tooltips, check `error.log` for new lines. Tooltip-only error floods
@@ -37,6 +37,7 @@ end). Build: [the build record](../implementation/2026-11-08-sefer-redesign-buil
 | `.8` | Rule Hokhmah a core tenet of your rite, without a Synod |
 | `.9` | **NEW:** qualify for the Rashi-on-the-Torah ambition |
 | `.10` | **NEW:** take *Talmud Bavli: Moed* off your shelf |
+| `.11` | **NEW:** give you Pesak and Avelei Tziyon as personal tenets and check their hooks |
 
 Standing ladder, low to high: Rejected (0), Banned, Suspect, Contested, Obscure, Circulating,
 Respected, Esteemed, Classic, Authoritative, Venerated (10). Above those come Oral Torah,
@@ -44,17 +45,21 @@ Prophets and Writings, and Torah (11–13).
 
 ## 1. First look, no console (save `sefer_base`)
 
-0. **No "Rite Changed" messages at game start.** The setup of Judaism's tenet statuses used to
-   send about ten of them, one per status (fixed 2026-11-08, after your first look). The faith
-   window should still show Hokhmah and the other new tenets as Permitted.
+0. **No "Rite Changed" messages at game start.** Judaism's tenet statuses now come from the faith
+   history files rather than a script, so none should appear. The faith window should still show
+   the seven new tenets as Permitted for Rabbinism, and for Karaism Talmud Torah, Halakha, Pilpul
+   and Ge'onut as Prohibited.
 1. **Jewish Quarter → Books.** The Tanakh card sits at the top of Parshanut. Every row shows a
    standing word. Select *Halakhot Gedolot*. The detail has a **Standing** row reading *Classic*,
    with the highest standing it can reach in your rite. Hover it for the ladder tooltip.
 2. The **rounds line** reads Tanakh 0, Bavli 0, Yerushalmi 0. Hover it.
 3. **Greatness** (pillar HUD, hover): a **A Complete Shas** row (+20), because Worms holds all six
    orders.
-4. **Map modes → Jewish Libraries.** Library seats are painted, yeshiva seats gold. Hover a seat.
-5. `event kehillah_sefer_v2_debug.1`, then check `debug.log`:
+4. **NEW: the Library window.** Open Isaac's character window: a **Beit Midrash** chip opens the
+   library in its own window, the same shelf as the Books tab. Open another community leader's
+   character window (Mainz, say): the chip shows *his* library.
+5. **Map modes → Jewish Libraries.** Library seats are painted, yeshiva seats gold. Hover a seat.
+6. `event kehillah_sefer_v2_debug.1`, then check `debug.log`:
    - `MIGRATED yes`, `OWN LIBRARY found`, `TANAKH held`, `SHAS complete`, `TRADITION rabbanite`.
    - Each `WORK` line is followed by a `STANDING_IS_<n>`. The Torah is 13, Bavli Moed 11,
      Halakhot Gedolot 8, Sefer Yetzirah 5 and Shi'ur Qomah 3.
@@ -207,6 +212,13 @@ a Jewish Community**. Check:
 - the library is Karaite: the Tanakh plus the founding Karaite works;
 - the Greatness row counts **founding Karaite works missing**, not Bavli orders;
 - Rabbinic works sit at low standing or Rejected.
+- **NEW, the Karaite clergy:**
+  - a Karaite with Religious Scholar can be seated as Dayyan. The requirement line reads
+    "…or a Karaite Religious Scholar";
+  - the rabbi search offers Religious Scholars, never the Rabbi trait;
+  - **Write a Sefer** offers *A commentary on Scripture, from the plain text alone* once his
+    Religious Scholar experience reaches 30;
+  - a Karaite academy can be founded under a hakham.
 
 ## 11. Soak (observation, 20–30 years at speed 5, Worms)
 
@@ -223,7 +235,33 @@ Watch and note, with no console:
   book with no copy, no reader and no ransom copy left is recycled quietly.
 - `error.log`: new `kehillah` or `sefer` lines over the run.
 
-## 12. Known limits (not bugs)
+## 12. Tenet mechanics outside the books (NEW; save `sefer_base`)
+
+Design: [the tenet mechanics spec](../spec/2026-11-08-sefer-tenet-mechanics.md).
+
+1. **Faith window → Rabbinism → each new tenet.** Hover each one. Below the book line, there
+   should be one more effect line. The virtues and sins should read:
+   - Hokhmah: Physician and Religious Scholar / Zealous;
+   - Emunah Temimah: Humble and Zealous / Cynical and Arrogant;
+   - Pesak: Just and Diligent / Arbitrary;
+   - Pilpul: Rabbi and Stubborn / Lazy;
+   - Ge'onut: Humble and Trusting / Arrogant and Stubborn;
+   - Minhag Avoteinu: Content and Patient / Fickle;
+   - Avelei Tziyon: Pilgrim and Temperate / Gluttonous and Content.
+2. `event kehillah_sefer_v2_debug.11`. `debug.log` should read `PESAK personal flag yes`, `PESAK
+   judicial Learning +2` and `ZION alms decision open`. Isaac's personal tenets now include them.
+3. **Send Alms to Jerusalem** appears in the decisions. Hover it: it costs gold and gives
+   Piety and Greatness, and the alms go to Jerusalem's community. Take it, then check that it
+   goes on a five-year cooldown.
+4. **Pesak in play:** hold a Bet Din sitting. The judges' checks should pass a little more often.
+   This is hard to see in one sitting; note anything odd.
+5. **Ge'onut (soak):** once a head of rite is acclaimed in a rite holding Ge'onut, he carries
+   **The Academies' Authority**. Raise Ge'onut to core first, through a Synod's *A Question of Belief*.
+6. **Emunah Temimah, Pilpul, Minhag Avoteinu:** raise one to core through a Synod's *A Question of
+   Belief*. Then preach a sermon (expect a second, Stability line), watch the yeshiva's fame over
+   a season, or host a festival feast (expect a Stability line).
+
+## 13. Known limits (not bugs)
 
 - Tenet status (permit/ban) is per faith, not per rite. Only core tenets differ by rite.
 - Gate counters such as masters, approbations and citations are global per book. Reception and

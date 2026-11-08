@@ -11,7 +11,8 @@
 #   event kehillah_sefer_v2_debug.8   rule Hokhmah core in your rite
 #   event kehillah_sefer_v2_debug.9   qualify for the Rashi-on-the-Torah ambition
 #   event kehillah_sefer_v2_debug.10  take Bavli Moed off your shelf
-# .2 to .6 and .8 to .10 change the save: use a disposable one.
+#   event kehillah_sefer_v2_debug.11  personal Pesak and Avelei Tziyon: hooks
+# .2 to .6 and .8 to .11 change the save: use a disposable one.
 # Testing guide: docs/testing/2026-11-08-sefer-redesign-test-guide.md
 # =====================================================================
 namespace = kehillah_sefer_v2_debug
@@ -266,5 +267,41 @@ kehillah_sefer_v2_debug.10 = {
 			}
 		}
 		else = { debug_log = "kehillah_sefer_v2_debug.10 NO own library" }
+	}
+}
+
+# event kehillah_sefer_v2_debug.11 -- the tenet mechanics outside the books
+# (docs/spec/2026-11-08-sefer-tenet-mechanics.md): give the player Pesak and
+# Avelei Tziyon as personal tenets (force_set_personal_tenet drops the worst
+# one if the slots are full), then check that Pesak raised his judicial
+# Learning by 2 and that Send Alms to Jerusalem is open to him. Changes the save.
+kehillah_sefer_v2_debug.11 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		save_temporary_scope_value_as = { name = kehillah_judicial_before value = kehillah_judicial_learning_value }
+		if = {
+			limit = { NOT = { has_personal_tenet = tenet_kehillah_pesak } }
+			force_set_personal_tenet = tenet:tenet_kehillah_pesak
+		}
+		if = {
+			limit = { has_personal_tenet_flag = kehillah_tenet_pesak_bench_personal }
+			debug_log = "kehillah_sefer_v2_debug.11 PESAK personal flag yes"
+		}
+		else = { debug_log = "kehillah_sefer_v2_debug.11 PESAK personal flag NO (no personal tenet slot?)" }
+		if = {
+			limit = { kehillah_judicial_learning_value >= { value = scope:kehillah_judicial_before add = 2 } }
+			debug_log = "kehillah_sefer_v2_debug.11 PESAK judicial Learning +2 (or already counted)"
+		}
+		else = { debug_log = "kehillah_sefer_v2_debug.11 PESAK judicial Learning unchanged" }
+		if = {
+			limit = { NOT = { has_personal_tenet = tenet_kehillah_avelei_tziyon } }
+			force_set_personal_tenet = tenet:tenet_kehillah_avelei_tziyon
+		}
+		if = {
+			limit = { kehillah_tenet_mourns_zion_trigger = yes }
+			debug_log = "kehillah_sefer_v2_debug.11 ZION alms decision open"
+		}
+		else = { debug_log = "kehillah_sefer_v2_debug.11 ZION alms decision closed" }
 	}
 }

@@ -203,15 +203,24 @@ Standing row.
 
 ## 9. Found in Daniel's first look (later the same day)
 
-1. **"Rite Changed" messages at game start: fixed.** CK3 has no database field for a faith's
-   starting tenet statuses, so `kehillah_sefer_tenet_status_init_effect` sets them by script. Each
-   `set_tenet_status` fires vanilla's `on_rite_updated`, which messages every player of the faith
-   (about ten for a Rabbinic player). The setup now sets `ecumenical_council_ongoing` on each
-   faith for two days first, which is vanilla's own switch for silencing that message (otherwise
-   read only by the Christian Ecumenical Council and Papal bulls). Not live-tested.
-2. **The seven new tenets are thin: open, a design gap rather than a departure recorded
-   earlier.** Outside the Sefer system (standing ceilings, reading fit, teaching, reform), each
-   has only virtue/sin weights, one small faith-wide modifier and one personal-tenet modifier;
-   Ge'onut's whole faith-wide effect is +0.1 monthly Piety. Each declares a `parameters` hook
-   (`kehillah_sefer_geonut` and so on) that nothing reads. The spec's own links were not built:
-   Ge'onut to V47's Gaon, Hokhmah to the Machshavah track, Avelei Tziyon to pilgrimage.
+1. **"Rite Changed" messages at game start: fixed, twice.** `kehillah_sefer_tenet_status_init_effect`
+   set the new tenets' faith statuses by script, and each `set_tenet_status` fires vanilla's
+   `on_rite_updated`, which messages every player of the faith (about ten for a Rabbinic player).
+   The first fix (db32ea9) silenced it with vanilla's `ecumenical_council_ongoing` switch, on the
+   wrong belief that game files cannot set starting statuses. **They can:** `history/faiths/`
+   takes dated `known`, `permitted` and `prohibited` lists, and this mod already used them for
+   Ba'alei ha-Miqra. The statuses now live in `history/faiths/kehillah_baalei_hamiqra_faith_
+   history.txt`; the script runs only for older saves (skipping a faith that has them), still
+   quietly. Later rulings (a Synod, the reform loop, vanilla rite edits) message players as
+   before: the switch is set only during that setup, for two days. Not live-tested.
+2. **The seven new tenets were thin: built.** Outside the Sefer system each had only virtue/sin
+   weights and two small modifiers, and their `parameters` hooks were unread. Each now has a hook
+   in an existing system, and the virtues and sins were redone:
+   [the tenet mechanics spec](../spec/2026-11-08-sefer-tenet-mechanics.md). Not live-tested.
+3. **Karaites had no way into the clergy: built.** A Karaite with Religious Scholar is a hakham.
+   He can sit as Dayyan, head an academy, write a commentary, approve and judge books. The rabbi
+   search no longer gives Karaites the Rabbi trait. Same spec. Not live-tested.
+4. **The Library window was unreachable for a Kehillah leader.** Its *Beit Midrash* chip showed only
+   for landed Jewish rulers, so a Kehillah player saw the library only in the domicile's Books tab
+   (the same body). The chip now shows for any Kehillah leader whose community has a library, on
+   his own character window or another community's. Not live-tested.
