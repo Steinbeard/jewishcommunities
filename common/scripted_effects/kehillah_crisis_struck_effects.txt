@@ -1,0 +1,122 @@
+﻿# 2026-11-07, Daniel. Scope: the community title, as Quarter struck begins (called from
+# kehillah_crisis_struck_start_effect, after kehillah_crisis_prior_held_progress is recorded).
+#
+# 1. Progress toward Quarter held lowers the threat grade: one step at each of
+#    kehillah_crisis_struck_step_one/two/three, never below Contained. The grade caps the attack
+#    encounters, so a lowered grade means fewer of them. Each step earned (even one the floor
+#    absorbs) takes kehillah_crisis_struck_relief_per_step off the attack's severity, through the
+#    existing kehillah_crisis_residual_severity_relief read by kehillah_mob_severity_value.
+# 2. A ledger (kehillah_crisis_sl_*) records which protections held and which failed, for the
+#    struck opener (kehillah_crisis_chronicle.0001). It is copied here because the attack's own
+#    cleanup (kehillah_mob_clear_title_effect) removes the mob's flags before the event shows.
+kehillah_crisis_struck_reckoning_effect = {
+ if = { limit = { NOT = { has_variable = kehillah_crisis_threat_grade } } set_variable = { name = kehillah_crisis_threat_grade value = 2 } }
+ set_variable = { name = kehillah_crisis_struck_grade_before value = var:kehillah_crisis_threat_grade }
+ set_variable = { name = kehillah_crisis_struck_steps value = 0 }
+ if = { limit = { var:kehillah_crisis_prior_held_progress >= kehillah_crisis_struck_step_three } set_variable = { name = kehillah_crisis_struck_steps value = 3 } }
+ else_if = { limit = { var:kehillah_crisis_prior_held_progress >= kehillah_crisis_struck_step_two } set_variable = { name = kehillah_crisis_struck_steps value = 2 } }
+ else_if = { limit = { var:kehillah_crisis_prior_held_progress >= kehillah_crisis_struck_step_one } set_variable = { name = kehillah_crisis_struck_steps value = 1 } }
+ set_variable = { name = kehillah_crisis_residual_severity_relief value = var:kehillah_crisis_struck_steps }
+ change_variable = { name = kehillah_crisis_residual_severity_relief multiply = kehillah_crisis_struck_relief_per_step }
+ change_variable = { name = kehillah_crisis_threat_grade subtract = var:kehillah_crisis_struck_steps }
+ clamp_variable = { name = kehillah_crisis_threat_grade min = 1 max = 4 }
+
+ # The people the opener names.
+ var:kehillah_mob_threat ?= { save_temporary_scope_as = kehillah_struck_host }
+ if = { limit = { NOT = { exists = scope:kehillah_struck_host } } holder.var:kehillah_mob_ref ?= { save_temporary_scope_as = kehillah_struck_host } }
+ remove_variable = kehillah_crisis_sl_host
+ if = { limit = { exists = scope:kehillah_struck_host } set_variable = { name = kehillah_crisis_sl_host value = scope:kehillah_struck_host } }
+ holder.domicile.domicile_location.county.holder ?= { save_temporary_scope_as = kehillah_struck_local_lord }
+ remove_variable = kehillah_crisis_sl_men_lord
+ if = { limit = { has_variable = kehillah_mob_men_by } set_variable = { name = kehillah_crisis_sl_men_lord value = var:kehillah_mob_men_by } }
+ else_if = { limit = { has_variable = kehillah_mob_men_refused_by } set_variable = { name = kehillah_crisis_sl_men_lord value = var:kehillah_mob_men_refused_by } }
+ else_if = { limit = { exists = scope:kehillah_struck_local_lord } set_variable = { name = kehillah_crisis_sl_men_lord value = scope:kehillah_struck_local_lord } }
+ remove_variable = kehillah_crisis_sl_refuge_lord
+ if = { limit = { has_variable = kehillah_mob_refuge } set_variable = { name = kehillah_crisis_sl_refuge_lord value = var:kehillah_mob_refuge } }
+ else_if = { limit = { has_variable = kehillah_mob_refuge_refused_by } set_variable = { name = kehillah_crisis_sl_refuge_lord value = var:kehillah_mob_refuge_refused_by } }
+ else_if = { limit = { exists = scope:kehillah_struck_local_lord } set_variable = { name = kehillah_crisis_sl_refuge_lord value = scope:kehillah_struck_local_lord } }
+ remove_variable = kehillah_crisis_sl_opening
+ if = { limit = { has_variable = kehillah_crisis_opening } set_variable = { name = kehillah_crisis_sl_opening value = var:kehillah_crisis_opening } }
+
+ # The ledger: flag:won or flag:lost per protection, absent when it was never tried.
+ set_variable = { name = kehillah_crisis_sl_count value = 0 }
+ set_variable = { name = kehillah_crisis_sl_won value = 0 }
+ kehillah_crisis_struck_ledger_entry_effect = { KEY = men WON = kehillah_mob_men_by LOST_A = kehillah_crisis_failed_patrol LOST_B = kehillah_mob_men_refused_by }
+ kehillah_crisis_struck_ledger_entry_effect = { KEY = refuge WON = kehillah_mob_refuge LOST_A = kehillah_crisis_failed_refuge LOST_B = kehillah_mob_refuge_refused_by }
+ kehillah_crisis_struck_ledger_entry_effect = { KEY = escort WON = kehillah_mob_scattered LOST_A = kehillah_crisis_failed_escort LOST_B = kehillah_crisis_failed_escort }
+ kehillah_crisis_struck_ledger_entry_effect = { KEY = condemned WON = kehillah_mob_condemned LOST_A = kehillah_mob_condemn_refused_by LOST_B = kehillah_mob_condemn_refused_by }
+ kehillah_crisis_struck_ledger_entry_effect = { KEY = terms WON = kehillah_crisis_bargain_won LOST_A = kehillah_crisis_failed_terms LOST_B = kehillah_crisis_failed_terms }
+ remove_variable = kehillah_crisis_sl_silver
+ if = { limit = { has_variable = kehillah_crisis_silver_failed } set_variable = { name = kehillah_crisis_sl_silver value = flag:lost } change_variable = { name = kehillah_crisis_sl_count add = 1 } }
+ else_if = { limit = { has_variable = kehillah_crisis_silver_sent } set_variable = { name = kehillah_crisis_sl_silver value = flag:won } change_variable = { name = kehillah_crisis_sl_count add = 1 } change_variable = { name = kehillah_crisis_sl_won add = 1 } }
+ kehillah_crisis_struck_ledger_entry_effect = { KEY = delay WON = kehillah_crisis_host_delayed LOST_A = kehillah_crisis_failed_delay LOST_B = kehillah_crisis_failed_delay }
+ kehillah_crisis_struck_ledger_entry_effect = { KEY = divide WON = kehillah_crisis_host_divided LOST_A = kehillah_crisis_failed_divide LOST_B = kehillah_crisis_failed_divide }
+ kehillah_crisis_struck_ledger_entry_effect = { KEY = oath WON = kehillah_crisis_host_restrained LOST_A = kehillah_crisis_failed_obligations LOST_B = kehillah_crisis_failed_obligations }
+ kehillah_crisis_struck_ledger_entry_effect = { KEY = watch WON = kehillah_mob_defended LOST_A = kehillah_crisis_failed_guards LOST_B = kehillah_crisis_watch_attempted }
+ kehillah_crisis_struck_ledger_entry_effect = { KEY = arms WON = kehillah_mob_armed LOST_A = kehillah_mob_armed_failed LOST_B = kehillah_mob_armed_failed }
+ kehillah_crisis_struck_ledger_entry_effect = { KEY = bar WON = kehillah_crisis_barred LOST_A = kehillah_crisis_bar_attempted LOST_B = kehillah_crisis_bar_attempted }
+ kehillah_crisis_struck_ledger_entry_effect = { KEY = shelter WON = kehillah_crisis_sheltered LOST_A = kehillah_crisis_shelter_attempted LOST_B = kehillah_crisis_shelter_attempted }
+ kehillah_crisis_struck_ledger_entry_effect = { KEY = retreat WON = kehillah_crisis_retreat_ready LOST_A = kehillah_crisis_failed_retreat LOST_B = kehillah_crisis_failed_retreat }
+ kehillah_crisis_struck_ledger_entry_effect = { KEY = supplies WON = kehillah_crisis_supplies LOST_A = kehillah_crisis_supplies LOST_B = kehillah_crisis_supplies }
+
+ debug_log = "kehillah_crisis_struck_reckoning: held progress [THIS.Title.MakeScope.Var('kehillah_crisis_prior_held_progress').GetValue] steps [THIS.Title.MakeScope.Var('kehillah_crisis_struck_steps').GetValue] grade [THIS.Title.MakeScope.Var('kehillah_crisis_struck_grade_before').GetValue] -> [THIS.Title.MakeScope.Var('kehillah_crisis_threat_grade').GetValue] relief [THIS.Title.MakeScope.Var('kehillah_crisis_residual_severity_relief').GetValue] ledger [THIS.Title.MakeScope.Var('kehillah_crisis_sl_count').GetValue]"
+}
+
+# Scope: the community title. Won is checked first, so a measure retried after a failure and then
+# won reads as won. LOST_A/LOST_B may repeat a name; a won-only entry passes WON as both.
+kehillah_crisis_struck_ledger_entry_effect = {
+ remove_variable = kehillah_crisis_sl_$KEY$
+ if = {
+  limit = { has_variable = $WON$ }
+  set_variable = { name = kehillah_crisis_sl_$KEY$ value = flag:won }
+  change_variable = { name = kehillah_crisis_sl_count add = 1 }
+  change_variable = { name = kehillah_crisis_sl_won add = 1 }
+ }
+ else_if = {
+  limit = { OR = { has_variable = $LOST_A$ has_variable = $LOST_B$ } }
+  set_variable = { name = kehillah_crisis_sl_$KEY$ value = flag:lost }
+  change_variable = { name = kehillah_crisis_sl_count add = 1 }
+ }
+}
+
+# Scope: the community title. Part of kehillah_crisis_begin_effect's reset.
+kehillah_crisis_struck_clear_effect = {
+ remove_variable = kehillah_crisis_struck_grade_before
+ remove_variable = kehillah_crisis_struck_steps
+ remove_variable = kehillah_crisis_sl_host
+ remove_variable = kehillah_crisis_sl_men_lord
+ remove_variable = kehillah_crisis_sl_refuge_lord
+ remove_variable = kehillah_crisis_sl_opening
+ remove_variable = kehillah_crisis_sl_count
+ remove_variable = kehillah_crisis_sl_won
+ remove_variable = kehillah_crisis_sl_men
+ remove_variable = kehillah_crisis_sl_refuge
+ remove_variable = kehillah_crisis_sl_escort
+ remove_variable = kehillah_crisis_sl_condemned
+ remove_variable = kehillah_crisis_sl_terms
+ remove_variable = kehillah_crisis_sl_silver
+ remove_variable = kehillah_crisis_sl_delay
+ remove_variable = kehillah_crisis_sl_divide
+ remove_variable = kehillah_crisis_sl_oath
+ remove_variable = kehillah_crisis_sl_watch
+ remove_variable = kehillah_crisis_sl_arms
+ remove_variable = kehillah_crisis_sl_bar
+ remove_variable = kehillah_crisis_sl_shelter
+ remove_variable = kehillah_crisis_sl_retreat
+ remove_variable = kehillah_crisis_sl_supplies
+ remove_variable = kehillah_crisis_failed_patrol
+ remove_variable = kehillah_crisis_failed_refuge
+ remove_variable = kehillah_crisis_failed_escort
+ remove_variable = kehillah_crisis_failed_guards
+ remove_variable = kehillah_crisis_failed_retreat
+ remove_variable = kehillah_crisis_failed_terms
+ remove_variable = kehillah_crisis_failed_delay
+ remove_variable = kehillah_crisis_failed_divide
+ remove_variable = kehillah_crisis_failed_obligations
+ remove_variable = kehillah_crisis_silver_failed
+ # Armed-phase successes the reset never cleared before (they leaked into the next crisis).
+ remove_variable = kehillah_crisis_host_delayed
+ remove_variable = kehillah_crisis_host_divided
+ remove_variable = kehillah_crisis_host_restrained
+ remove_variable = kehillah_crisis_retreat_ready
+}
