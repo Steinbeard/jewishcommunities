@@ -1,0 +1,292 @@
+﻿# =====================================================================
+# Sefer redesign triggers (2026-11-08). Design:
+# docs/spec/2026-11-08-sefer-system-redesign.md; build record:
+# docs/implementation/2026-11-08-sefer-redesign-build.md.
+# Per-work triggers are generated (kehillah_library_generated_triggers.txt).
+# =====================================================================
+
+# Scope: a character. A Jewish ruler who holds land (not a Kehillah leader).
+kehillah_is_jewish_landed_ruler_trigger = {
+	is_landed = yes
+	NOT = { government_has_flag = government_is_kehillah }
+	faith.religion = religion:judaism_religion
+}
+
+# Scope: a landed title. A library title: in the registry, with a holder.
+kehillah_lib_is_library_title_trigger = {
+	is_target_in_global_variable_list = { name = kehillah_libraries target = this }
+	exists = holder
+}
+
+# Scope: a character. The library this character reads from at home holds
+# $WORK$ (a flag:work_* literal). A Kehillah leader's is his Kehillah's; a
+# landed ruler's is var:kehillah_own_library (a temple barony library he
+# holds, or one in his realm).
+kehillah_lib_own_library_has_trigger = {
+	OR = {
+		AND = {
+			government_has_flag = government_is_kehillah
+			primary_title = { is_target_in_variable_list = { name = kehillah_library_works target = $WORK$ } }
+		}
+		var:kehillah_own_library ?= { is_target_in_variable_list = { name = kehillah_library_works target = $WORK$ } }
+	}
+}
+
+# Scope: a character. May start a selected-book study from the Library.
+# Mirrors the Learn Torah decision: an ordained rabbi, or a lay reader of a
+# rite with Talmud Torah, with no course already running.
+kehillah_lib_can_start_selected_study_trigger = {
+	OR = {
+		government_has_flag = government_is_kehillah
+		kehillah_is_jewish_landed_ruler_trigger = yes
+	}
+	OR = {
+		has_trait = kehillah_rabbi_trait
+		kehillah_talmud_torah_follower_trigger = yes
+	}
+	is_adult = yes
+	is_imprisoned = no
+	is_jewish_character_trigger = yes
+	piety >= 10
+	NOT = { any_scheme = { type = kehillah_study_torah } }
+	can_start_scheme = { type = kehillah_study_torah target_character = root }
+}
+
+# Scope: a character. May order copies for the library he holds.
+kehillah_lib_can_commission_trigger = {
+	OR = {
+		government_has_flag = government_is_kehillah
+		AND = {
+			kehillah_is_jewish_landed_ruler_trigger = yes
+			var:kehillah_own_library ?= {
+				exists = holder
+				OR = {
+					holder = root
+					holder = { any_liege_or_above = { this = root } }
+				}
+			}
+		}
+	}
+}
+
+# Scope: a landed title (a library). All six Bavli orders on the shelf.
+kehillah_lib_complete_shas_trigger = {
+	is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_zeraim }
+	is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed }
+	is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nashim }
+	is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nezikin }
+	is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_kodashim }
+	is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_tahorot }
+}
+
+# Scope: a landed title. The library serves a Karaite community.
+kehillah_lib_is_karaite_library_trigger = {
+	var:kehillah_library_tradition ?= 2
+}
+
+# Scope: a character. Mastered all six Bavli orders (a Rosh Yeshiva's Shas).
+kehillah_has_mastered_shas_trigger = {
+	is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_zeraim }
+	is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_moed }
+	is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim }
+	is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nezikin }
+	is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_kodashim }
+	is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_tahorot }
+}
+
+# Scope: a character. A Karaite hakham's equivalent: the Tanakh and the
+# three founding Karaite works mastered.
+kehillah_has_mastered_karaite_curriculum_trigger = {
+	is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_tanakh_torah }
+	is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_tanakh_neviim }
+	is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_anan_sefer_hamitzvot }
+	is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_kitab_alanwar }
+}
+
+# Scope: a character. Is of a Karaite (Toric) rite.
+kehillah_is_karaite_character_trigger = {
+	faith.religion = religion:judaism_religion
+	rite ?= { rite_has_doctrine = temple_authority_toric_doctrine }
+}
+
+# ---------------------------------------------------------------------
+# Corpus rounds (spec section 5.3). Scope: the reader. Every division of
+# $CORPUS$ read again in the current round.
+# ---------------------------------------------------------------------
+kehillah_sefer_round_complete_bavli_trigger = {
+	is_target_in_variable_list = { name = kehillah_round_bavli_read target = flag:work_bavli_zeraim }
+	is_target_in_variable_list = { name = kehillah_round_bavli_read target = flag:work_bavli_moed }
+	is_target_in_variable_list = { name = kehillah_round_bavli_read target = flag:work_bavli_nashim }
+	is_target_in_variable_list = { name = kehillah_round_bavli_read target = flag:work_bavli_nezikin }
+	is_target_in_variable_list = { name = kehillah_round_bavli_read target = flag:work_bavli_kodashim }
+	is_target_in_variable_list = { name = kehillah_round_bavli_read target = flag:work_bavli_tahorot }
+}
+
+kehillah_sefer_round_complete_yerushalmi_trigger = {
+	is_target_in_variable_list = { name = kehillah_round_yerushalmi_read target = flag:work_yerushalmi_zeraim }
+	is_target_in_variable_list = { name = kehillah_round_yerushalmi_read target = flag:work_yerushalmi_moed }
+	is_target_in_variable_list = { name = kehillah_round_yerushalmi_read target = flag:work_yerushalmi_nashim }
+	is_target_in_variable_list = { name = kehillah_round_yerushalmi_read target = flag:work_yerushalmi_nezikin }
+}
+
+kehillah_sefer_round_complete_tanakh_trigger = {
+	is_target_in_variable_list = { name = kehillah_round_tanakh_read target = flag:work_tanakh_torah }
+	is_target_in_variable_list = { name = kehillah_round_tanakh_read target = flag:work_tanakh_neviim }
+	is_target_in_variable_list = { name = kehillah_round_tanakh_read target = flag:work_tanakh_ketuvim }
+}
+
+# ---------------------------------------------------------------------
+# Standing gates (spec section 3.4). Scope: a rite; $KEY$ the work id
+# (no flag: prefix). True when the work may rise from its current tier to
+# the next. Counters are global per work (kehillah_wk_<key>_*), seeded by
+# kehillah_standing_seed_work_effect; copies count every library.
+# ---------------------------------------------------------------------
+kehillah_standing_next_gate_met_trigger = {
+	OR = {
+		var:kehillah_standing_$KEY$ <= 3
+		AND = {
+			var:kehillah_standing_$KEY$ = 4
+			kehillah_lib_copies_$KEY$ >= 2
+		}
+		AND = {
+			var:kehillah_standing_$KEY$ = 5
+			OR = {
+				global_var:kehillah_wk_$KEY$_masters >= 3
+				global_var:kehillah_wk_$KEY$_approbations >= 1
+			}
+		}
+		AND = {
+			var:kehillah_standing_$KEY$ = 6
+			OR = {
+				global_var:kehillah_wk_$KEY$_approbations >= 1
+				global_var:kehillah_wk_$KEY$_taught >= 1
+			}
+		}
+		AND = {
+			var:kehillah_standing_$KEY$ = 7
+			global_var:kehillah_wk_$KEY$_taught >= 2
+			kehillah_lib_copies_$KEY$ >= kehillah_lib_third_of_libraries_value
+			current_year >= { value = kehillah_lib_year_$KEY$ add = 10 }
+		}
+		AND = {
+			var:kehillah_standing_$KEY$ = 8
+			global_var:kehillah_wk_$KEY$_citations >= 3
+			has_global_variable = kehillah_wk_$KEY$_endorsed
+			current_year >= { value = kehillah_lib_year_$KEY$ add = 20 }
+		}
+		AND = {
+			var:kehillah_standing_$KEY$ = 9
+			kehillah_lib_copies_$KEY$ >= kehillah_lib_half_of_libraries_value
+			global_var:kehillah_wk_$KEY$_commentaries >= 1
+			current_year >= { value = kehillah_lib_year_$KEY$ add = 30 }
+			OR = {
+				NOT = { exists = global_var:kehillah_wk_$KEY$_author }
+				global_var:kehillah_wk_$KEY$_author = { is_alive = no }
+			}
+		}
+	}
+}
+
+# Scope: an author. He may argue for $TENET$: he holds it personally, has
+# learned it from a book, or his rite holds it as core (or, playable, he
+# knows it).
+kehillah_sefer_author_knows_tenet_trigger = {
+	OR = {
+		has_personal_tenet = $TENET$
+		is_target_in_variable_list = { name = kehillah_book_tenets target = flag:$TENET$ }
+		rite ?= { rite_has_tenet = $TENET$ }
+		AND = {
+			is_playable_character = yes
+			knows_tenet = $TENET$
+		}
+	}
+}
+
+# Scope: a character. May write a sefer: a Kehillah leader or a landed
+# Jewish ruler (2026-11-08: landed rulers take part in the Sefer system).
+kehillah_sefer_can_write_trigger = {
+	OR = {
+		government_has_flag = government_is_kehillah
+		kehillah_is_jewish_landed_ruler_trigger = yes
+	}
+}
+
+# Scope: a character. A head of rite, or the Gaon or Nasi of the mod's
+# academies, may judge a book for the rite (spec section 6.3).
+kehillah_sefer_can_judge_books_trigger = {
+	faith.religion = religion:judaism_religion
+	OR = {
+		rite ?= { head_of_rite ?= root }
+		AND = {
+			has_trait = kehillah_rabbi_trait
+			learning >= 22
+			var:kehillah_own_library ?= { has_variable = kehillah_yeshiva_fame }
+		}
+	}
+}
+
+# Scope: a library title. Its foundations are complete: a Rabbanite
+# library's six Bavli orders, a Karaite library's founding works.
+kehillah_lib_foundations_complete_trigger = {
+	OR = {
+		AND = {
+			kehillah_lib_is_karaite_library_trigger = yes
+			kehillah_lib_karaite_missing_count_value <= 0
+		}
+		AND = {
+			NOT = { kehillah_lib_is_karaite_library_trigger = yes }
+			kehillah_lib_complete_shas_trigger = yes
+		}
+	}
+}
+
+# Scope: a character. May found a yeshiva as its head (spec section 8): a
+# qualified Rosh Yeshiva who has learned the whole Shas, or, for a Karaite
+# academy, the Karaite curriculum.
+kehillah_founding_rosh_yeshiva_trigger = {
+	kehillah_qualified_rosh_yeshiva_trigger = yes
+	OR = {
+		kehillah_has_mastered_shas_trigger = yes
+		AND = {
+			kehillah_is_karaite_character_trigger = yes
+			kehillah_has_mastered_karaite_curriculum_trigger = yes
+		}
+	}
+}
+
+# Scope: a landed library title. Its yeshiva is active: a living Rosh
+# Yeshiva and complete foundations (spec section 8, dormancy).
+kehillah_landed_yeshiva_active_trigger = {
+	has_variable = kehillah_landed_yeshiva
+	NOT = { has_variable = kehillah_yeshiva_dormant }
+}
+
+# Scope: a rabbi in the global reader index; root the asker. A scholar of
+# standing who could give an approbation.
+kehillah_sefer_possible_approver_trigger = {
+	is_alive = yes
+	NOT = { this = root }
+	has_trait = kehillah_rabbi_trait
+	learning >= 16
+	faith = root.faith
+	is_imprisoned = no
+}
+
+# Scope: a scholar in the global reader index; root the patron. A great
+# teacher who could be invited to head a new yeshiva.
+kehillah_sefer_invitable_teacher_trigger = {
+	is_alive = yes
+	NOT = { this = root }
+	is_ruler = no
+	is_imprisoned = no
+	faith = root.faith
+	kehillah_founding_rosh_yeshiva_trigger = yes
+	NOT = { is_courtier_of = root }
+}
+
+# Scope: a province. A temple holding in Jewish hands with no Beit Midrash.
+kehillah_lib_can_endow_temple_trigger = {
+	has_holding_type = church_holding
+	NOT = { has_building_or_higher = kehillah_temple_beit_midrash_01 }
+	barony.holder ?= { faith.religion = religion:judaism_religion }
+}

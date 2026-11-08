@@ -27,6 +27,40 @@ status.
 Engine facts marked *verified* were checked on 2026-11-08 against the installed CK3 1.20.1.2 files
 or the game's script docs, through xTiger. Items marked *to verify* reappear as spikes in §11.
 
+## Daniel's decisions, 2026-11-08 (same day) — these supersede the sections they name
+
+**Status: APPROVED for building; Daniel asked for all of it to be implemented.** The build record,
+including where the code departs from this text, is
+[the implementation note](../implementation/2026-11-08-sefer-redesign-build.md).
+
+1. **Landed anchor (§2.1): a building on a TEMPLE holding**, not a castle or city barony. It
+   gives temple holdings something to do for Jewish rulers. The library title is the temple
+   barony; its holder may be the ruler himself or a Jewish theocratic vassal, and the realm's
+   Jewish lieges read there too.
+2. **Named works (§6.1): created only by a fulfilled ambition**, never on a schedule. The
+   ambition appears inside the Sefer-writing chain, where the author chooses what kind of book to
+   write: an eligible historical work is one of the options, highlighted in gold with an
+   information marker.
+3. **Standing is per rite** (§3.5), as recommended.
+4. **Banned books stay on the shelf** (§13 q.4). There is no genizah state for now. Each Banned
+   work in a library costs its holder Piety and harms the library's yeshiva.
+5. **Karaite Kehillot and landed Karaite rulers** are opened now (§13 q.5), with Karaite canon
+   and libraries.
+6. **All tenets in the first pass** (§4.2). **Talmud Torah is the Rabbanite Oral Torah tenet**,
+   the counter to Ba'alei ha-Miqra; it makes the Rabbi trait a virtue. Read every "Halakha (Oral
+   Torah)" in §4 as **Talmud Torah**: Karaism prohibits it, and Rabbanite works that §4.4 says
+   argue for Halakha argue for Talmud Torah. Vanilla Religious Legal Pronouncements keeps its
+   vanilla name.
+7. **A Machloket can drive a schism (§6.4), but usually ends in a creative synthesis or one
+   side's clear victory**, preferably through the base game's own rite-divergence systems. The
+   implementation note records which vanilla systems those are.
+8. **English tier names, but not "Pillar"** (it collides with the mod's three pillars). The top
+   tier is **Venerated**.
+9. **Encouragement (Daniel's follow-up): a pillar penalty for missing foundational works.** A
+   Rabbanite Kehillah missing Bavli orders loses Greatness, one breakdown row that shrinks as
+   orders arrive; a Karaite Kehillah missing its foundational Karaite works likewise. Landed
+   rulers have no pillars and take no penalty.
+
 ---
 
 ## 0. The proposal on one page

@@ -1,0 +1,226 @@
+﻿# =====================================================================
+# Writing new sefarim (2026-11-08). Spec section 6 with Daniel's decision
+# 2: a named historical work is written only when a scholar fulfils its
+# ambition, chosen as a gold-highlighted option in the Write a Book chain
+# (events/kehillah_book_events.txt, kehillah_book.0001). Every other
+# finished book takes an authored slot (work_authored_01..24) and becomes
+# a real work in its author's library, starting low on its rite's ladder.
+# =====================================================================
+
+# Scope: the author, at kehillah_book.0005 (after kehillah_book_complete_
+# effect has set var:kehillah_book_tier). Turns the manuscript into a work.
+kehillah_sefer_finish_written_work_effect = {
+	kehillah_lib_refresh_own_library_effect = yes
+	if = {
+		limit = { has_variable = kehillah_book_named_work }
+		kehillah_sefer_write_named_work_dispatch_effect = yes
+	}
+	else = {
+		kehillah_sefer_claim_authored_slot_effect = yes
+	}
+	remove_variable = kehillah_book_named_work
+	remove_variable = kehillah_book_tenet_a
+	remove_variable = kehillah_book_tenet_b
+	remove_variable = kehillah_book_comment_on
+}
+
+# Scope: the author. $KEY$ is a named work.
+kehillah_sefer_write_named_work_effect = {
+	set_global_variable = { name = kehillah_wk_$KEY$_written value = yes }
+	set_global_variable = { name = kehillah_wk_$KEY$_author value = this }
+	set_global_variable = { name = kehillah_wk_$KEY$_year value = current_year }
+	kehillah_sefer_place_written_work_effect = { KEY = $KEY$ }
+	kehillah_sefer_count_commentary_target_$KEY$_effect = yes
+}
+
+# Scope: the author. $SLOT$ is a free authored slot.
+kehillah_sefer_write_authored_work_effect = {
+	set_global_variable = { name = kehillah_wk_$SLOT$_written value = yes }
+	set_global_variable = { name = kehillah_wk_$SLOT$_author value = this }
+	set_global_variable = { name = kehillah_wk_$SLOT$_year value = current_year }
+	random_list = {
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 1 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 2 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 3 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 4 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 5 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 6 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 7 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 8 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 9 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 10 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 11 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 12 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 13 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 14 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 15 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 16 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 17 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 18 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 19 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 20 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 21 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 22 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 23 } }
+		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 24 } }
+	}
+	# Genre (shelf and study track) and kind (its subtitle).
+	if = {
+		limit = { var:kehillah_book_genre ?= flag:talmudics }
+		set_global_variable = { name = kehillah_wk_$SLOT$_genre value = 2 }
+		if = {
+			limit = { has_variable = kehillah_book_comment_on }
+			set_global_variable = { name = kehillah_wk_$SLOT$_kind value = 7 }
+		}
+		else_if = {
+			limit = { has_variable = kehillah_book_bet_din_inspiration }
+			set_global_variable = { name = kehillah_wk_$SLOT$_kind value = 3 }
+		}
+		else = {
+			set_global_variable = { name = kehillah_wk_$SLOT$_kind value = 2 }
+		}
+	}
+	else_if = {
+		limit = { var:kehillah_book_genre ?= flag:hashkafa }
+		set_global_variable = { name = kehillah_wk_$SLOT$_genre value = 3 }
+		if = {
+			limit = { has_variable = kehillah_book_comment_on }
+			set_global_variable = { name = kehillah_wk_$SLOT$_kind value = 8 }
+		}
+		else = {
+			set_global_variable = { name = kehillah_wk_$SLOT$_kind value = 5 }
+		}
+	}
+	else_if = {
+		limit = { var:kehillah_book_genre ?= flag:poetry }
+		set_global_variable = { name = kehillah_wk_$SLOT$_genre value = 1 }
+		set_global_variable = { name = kehillah_wk_$SLOT$_kind value = 6 }
+	}
+	else = {
+		set_global_variable = { name = kehillah_wk_$SLOT$_genre value = 1 }
+		set_global_variable = { name = kehillah_wk_$SLOT$_kind value = 1 }
+	}
+	if = {
+		limit = { has_variable = kehillah_book_tenet_a }
+		set_global_variable = { name = kehillah_wk_$SLOT$_tenet_a value = var:kehillah_book_tenet_a }
+	}
+	if = {
+		limit = { has_variable = kehillah_book_tenet_b }
+		set_global_variable = { name = kehillah_wk_$SLOT$_tenet_b value = var:kehillah_book_tenet_b }
+	}
+	kehillah_sefer_place_written_work_effect = { KEY = $SLOT$ }
+	if = {
+		limit = { has_variable = kehillah_book_comment_on }
+		kehillah_sefer_count_commentary_dispatch_effect = yes
+	}
+}
+
+# Scope: the author. A newly written work enters his library and his own
+# mastery, and is seeded on his rite's ladder at a start set by the book's
+# quality (masterwork Obscure, famed Circulating, illustrious Respected).
+kehillah_sefer_place_written_work_effect = {
+	kehillah_sefer_ensure_counters_effect = { KEY = $KEY$ }
+	var:kehillah_own_library ?= {
+		if = {
+			limit = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:$KEY$ } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:$KEY$ }
+		}
+	}
+	if = {
+		limit = { NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:$KEY$ } } }
+		add_to_variable_list = { name = kehillah_mastered_works target = flag:$KEY$ }
+		kehillah_sefer_bump_counter_effect = { KEY = $KEY$ COUNTER = masters }
+	}
+	if = {
+		limit = { NOT = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:$KEY$ } } }
+		add_to_variable_list = { name = kehillah_studied_works target = flag:$KEY$ }
+	}
+	set_variable = { name = kehillah_sefer_my_latest_work value = flag:$KEY$ }
+	set_variable = { name = kehillah_sefer_named_work value = flag:$KEY$ }
+	rite ?= {
+		kehillah_standing_seed_written_works_effect = yes
+		if = {
+			limit = { has_variable = kehillah_standing_$KEY$ }
+			if = {
+				limit = { prev.var:kehillah_book_tier ?= flag:illustrious }
+				set_variable = { name = kehillah_standing_$KEY$ value = 6 }
+			}
+			else_if = {
+				limit = { prev.var:kehillah_book_tier ?= flag:famed }
+				set_variable = { name = kehillah_standing_$KEY$ value = 5 }
+			}
+			else = {
+				set_variable = { name = kehillah_standing_$KEY$ value = 4 }
+			}
+			clamp_variable = { name = kehillah_standing_$KEY$ min = kehillah_lib_floor_$KEY$ max = kehillah_lib_ceiling_$KEY$ }
+			set_variable = {
+				name = kehillah_reception_$KEY$
+				value = {
+					value = var:kehillah_standing_$KEY$
+					multiply = 10
+					subtract = 5
+				}
+			}
+			set_variable = { name = kehillah_touched_$KEY$ value = yes days = 3650 }
+		}
+	}
+	debug_log = "kehillah_sefer_place_written_work_effect: a new work entered the world"
+}
+
+# Scope: the judge. Count a citation once per court (spec section 3.4).
+kehillah_sefer_record_citation_effect = {
+	if = {
+		limit = { exists = involved_activity.activity_host.primary_title }
+		involved_activity.activity_host.primary_title = { save_scope_as = kehillah_cite_court }
+	}
+	if = {
+		limit = {
+			exists = scope:kehillah_cite_court
+			NOT = { scope:kehillah_cite_court = { is_target_in_variable_list = { name = kehillah_cited_works target = flag:$KEY$ } } }
+		}
+		scope:kehillah_cite_court = { add_to_variable_list = { name = kehillah_cited_works target = flag:$KEY$ } }
+		kehillah_sefer_bump_counter_effect = { KEY = $KEY$ COUNTER = citations }
+		kehillah_standing_add_reception_effect = { KEY = $KEY$ AMOUNT = kehillah_reception_citation_value }
+	}
+}
+
+# Scope: an approver (the rabbi asked). Endorse the asker's latest work.
+# $KEY$ comes from the dispatcher reading scope:kehillah_appr_asker's
+# var:kehillah_sefer_my_latest_work.
+kehillah_sefer_approbation_effect = {
+	kehillah_sefer_bump_counter_effect = { KEY = $KEY$ COUNTER = approbations }
+	kehillah_standing_add_reception_effect = { KEY = $KEY$ AMOUNT = kehillah_reception_approbation_value }
+}
+
+# Scope: a head of rite (or the Sanhedrin's head), from kehillah_sefer.0401.
+kehillah_sefer_endorse_effect = {
+	set_global_variable = { name = kehillah_wk_$KEY$_endorsed value = yes }
+	kehillah_standing_add_reception_effect = { KEY = $KEY$ AMOUNT = kehillah_reception_endorsement_value }
+}
+
+kehillah_sefer_condemn_effect = {
+	kehillah_standing_add_reception_effect = { KEY = $KEY$ AMOUNT = kehillah_reception_herem_value }
+	rite ?= {
+		if = {
+			limit = {
+				has_variable = kehillah_standing_$KEY$
+				NOT = { has_variable = kehillah_mk_active }
+				global_var:kehillah_wk_$KEY$_approbations >= 1
+				var:kehillah_standing_$KEY$ >= 6
+			}
+			# An approved work condemned by authority: a Machloket begins.
+			kehillah_machloket_start_effect = { KEY = $KEY$ }
+		}
+	}
+}
+
+# Scope: a yeshiva's library title (scope:kehillah_tick_title). The first
+# time a yeshiva teaches a work counts toward its standing (section 3.4).
+kehillah_sefer_record_teaching_effect = {
+	if = {
+		limit = { NOT = { is_target_in_variable_list = { name = kehillah_yeshiva_taught_works target = flag:$KEY$ } } }
+		add_to_variable_list = { name = kehillah_yeshiva_taught_works target = flag:$KEY$ }
+		kehillah_sefer_bump_counter_effect = { KEY = $KEY$ COUNTER = taught }
+		holder ?= { kehillah_standing_add_reception_effect = { KEY = $KEY$ AMOUNT = kehillah_reception_teaching_value } }
+	}
+}
