@@ -95,13 +95,7 @@ AUTHORED_KINDS = {
     7: ("Novellae on the Talmud", 2),
     8: ("Polemic", 3),
 }
-AUTHORED_TITLES = [
-    "Sefer ha-Terumah", "Even ha-Ezer", "Or Zarua", "Sha'arei Orah", "Sefer ha-Ittur",
-    "Sefer ha-Eshkol", "Sefer ha-Ma'or", "Sefer ha-Yashar", "Sefer ha-Pardes", "Sefer ha-Orah",
-    "Mahazeh Avraham", "Sha'arei Tzedek", "Sefer ha-Hokhmah", "Sefer ha-Emunah", "Ma'yan Ganim",
-    "Sefer ha-Mikhtam", "Sefer ha-Menuhah", "Sefer ha-Nir", "Kaftor va-Ferah", "Sefer ha-Kabod",
-    "Toledot Adam", "Sefer ha-Zikkaron", "Magen Avot", "Sefer ha-Teshuvah",
-]
+# (2026-11-08: authored works are named by author and kind; no title list.)
 
 # Tenets a book written in play can argue for, by index (global_var:
 # kehillah_wk_<slot>_tenet_a / _b). Must match kehillah_sefer_teach_dynamic_
@@ -356,22 +350,13 @@ def write_standing_values(order, works):
             continue
         out += [f"kehillah_lib_ceiling_{f} = {{", "\tvalue = 10"]
         if authored(w):
+            # Compact form (one line per status): 100 slots x 2 tenets x 12.
             out += dynamic_tenet_branches(f, lambda cond, t: [
-                "\tif = {",
-                f"\t\tlimit = {{ {cond} has_tenet_status = {{ tenet = {t} status = prohibited }} }}",
-                "\t\tmax = 3",
-                "\t}",
-                "\telse_if = {",
-                f"\t\tlimit = {{ {cond} NOT = {{ has_at_least_tenet_status = {{ tenet = {t} status = known }} }} }}",
-                "\t\tmax = 5",
-                "\t}",
-                "\telse_if = {",
-                f"\t\tlimit = {{ {cond} NOT = {{ has_at_least_tenet_status = {{ tenet = {t} status = permitted }} }} }}",
-                "\t\tmax = 7",
-                "\t}",
-                "\telse_if = {",
-                f"\t\tlimit = {{ {cond} NOT = {{ has_at_least_tenet_status = {{ tenet = {t} status = core }} }} }}",
-                "\t\tmax = 9",
+                f"\tif = {{ limit = {{ {cond} }}",
+                f"\t\tif = {{ limit = {{ has_tenet_status = {{ tenet = {t} status = prohibited }} }} max = 3 }}",
+                f"\t\telse_if = {{ limit = {{ NOT = {{ has_at_least_tenet_status = {{ tenet = {t} status = known }} }} }} max = 5 }}",
+                f"\t\telse_if = {{ limit = {{ NOT = {{ has_at_least_tenet_status = {{ tenet = {t} status = permitted }} }} }} max = 7 }}",
+                f"\t\telse_if = {{ limit = {{ NOT = {{ has_at_least_tenet_status = {{ tenet = {t} status = core }} }} }} max = 9 }}",
                 "\t}",
             ])
         for t in w.get("argues_for", []):
@@ -1013,6 +998,32 @@ def write_study_effects(order, works):
     out += ["\t\t}", "\t\tkehillah_lib_refresh_cache_effect = yes", "\t}", "}"]
     out += [
         "",
+        "# Scope: none (yearly). An authored work is forgotten -- no copy in any",
+        "# library, none in the ransom pool, no living reader in the index -- and",
+        "# its slot is freed for a new book (Daniel, 2026-11-08: 100 slots, recycled).",
+        "kehillah_sefer_recycle_slots_effect = {",
+    ]
+    for f in slots:
+        out += [
+            "\tif = {",
+            "\t\tlimit = {",
+            f"\t\t\thas_global_variable = kehillah_wk_{f}_written",
+            f"\t\t\tkehillah_lib_copies_{f} < 1",
+            f"\t\t\tNOT = {{ is_target_in_global_variable_list = {{ name = kehillah_ransom_pool target = flag:{f} }} }}",
+            "\t\t\tNOT = {",
+            "\t\t\t\tany_in_global_list = {",
+            "\t\t\t\t\tvariable = kehillah_sefer_masters",
+            "\t\t\t\t\tis_alive = yes",
+            f"\t\t\t\t\t{held(f, '', 'kehillah_mastered_works')}",
+            "\t\t\t\t}",
+            "\t\t\t}",
+            "\t\t}",
+            f"\t\tkehillah_sefer_forget_slot_effect = {{ SLOT = {f} }}",
+            "\t}",
+        ]
+    out += ["}"]
+    out += [
+        "",
         "# Scope: a champion with var:kehillah_sefer_named_work set (event option).",
         "kehillah_sefer_schism_dispatch_effect = {",
     ]
@@ -1230,6 +1241,10 @@ def author_link(slug):
     return f"[GetPlayer.MakeScope.Var('kehillah_lib_author_{slug}').Char.GetShortUIName]"
 
 
+def written_author_possessive(f):
+    return f"[GetGlobalVariable('kehillah_wk_{f}_author').GetCharacter.GetFirstNamePossessiveNoTooltip]"
+
+
 def written_author_link(f):
     return f"[GetGlobalVariable('kehillah_wk_{f}_author').GetCharacter.GetShortUIName]"
 
@@ -1293,8 +1308,8 @@ def write_prose_loc(order, works):
     for f in order:
         w = works[f]
         if authored(w):
-            n = int(f[-2:])
-            name = f"[GetPlayer.Custom('KehillahAuthoredTitle{n:02d}')]"
+            n = int(f.split("_")[-1])
+            name = f"{written_author_possessive(f)} [GetPlayer.Custom('KehillahAuthoredKind{n:02d}')]"
             lines += [
                 f' kehillah_lib_name_{f}:0 "{name}"',
                 f' kehillah_lib_subject_{f}:0 "[GetPlayer.Custom(\'KehillahAuthoredKind{n:02d}\')]"',
@@ -1323,23 +1338,15 @@ def write_prose_loc(order, works):
 
 def write_authored_custom_loc(order, works):
     out = HEADER + [
-        "# Titles and kinds of the books written during play, one pair per slot.",
+        "# The kind of each book written during play, one per slot; its name is",
+        "# the author's name and this kind, as medieval works were cited.",
         "# Set by kehillah_sefer_write_authored_work_effect. Type character: any",
         "# character root works, since the triggers read global variables.",
     ]
     for f in order:
         if not authored(works[f]):
             continue
-        n = int(f[-2:])
-        out += [f"KehillahAuthoredTitle{n:02d} = {{", "\ttype = character"]
-        for i, title in enumerate(AUTHORED_TITLES, start=1):
-            out += [
-                "\ttext = {",
-                f"\t\ttrigger = {{ global_var:kehillah_wk_{f}_title ?= {i} }}",
-                f"\t\tlocalization_key = KEHILLAH_AUTHORED_TITLE_{i}",
-                "\t}",
-            ]
-        out += ["\ttext = {", "\t\tfallback = yes", "\t\tlocalization_key = KEHILLAH_AUTHORED_TITLE_NONE", "\t}", "}"]
+        n = int(f.split("_")[-1])
         out += [f"KehillahAuthoredKind{n:02d} = {{", "\ttype = character"]
         for k in AUTHORED_KINDS:
             out += [

@@ -29,14 +29,15 @@ Per-work data reach hand-written effects through `$KEY$` (a work id without `fla
 `kehillah_lib_standing_$KEY$`, `kehillah_sefer_work_tenets_$KEY$_effect`. The shared study effect
 `kehillah_study_specific_work_effect` therefore takes a third parameter, `KEY`.
 
-## 2. The catalog: 67 works
+## 2. The catalog: 143 works
 
 The original 23 keep their IDs. Added: the Tanakh corpus (`work_tanakh_torah`, `_neviim`,
 `_ketuvim`); Tosefta, Seder Rav Amram, Iggeret Rav Sherira Gaon, Rabbenu Hananel, Mekor Hayyim;
 three Karaite works (Anan's Sefer ha-Mitzvot, Qirqisani's Kitab al-Anwar, Yefet ben Eli's
 commentary); nine named works written in play (Rashi on the Torah and on the Talmud, the Rif, the
 Tosafot, the Mishneh Torah, the Moreh Nevukhim, the Bahir, Sefer Hasidim, the Zohar) — the Kuzari,
-already in the catalog, became a named work too; and 24 authored slots. Each row now carries
+already in the catalog, became a named work too; and 100 authored slots (24 at first; raised the
+same day, see section 7). Each row now carries
 `canon`, `tradition`, `argues_for`, `argues_against`, `baseline` (Rabbinic and Karaite tiers),
 `floor`, and for new works `prose`. Named works whose historical year is at or before the start
 date are marked written at game start (the Kuzari, Rif, Rashi and Tosafot in 1178).
@@ -108,8 +109,10 @@ Checked against CK3 1.20.1.2's script docs and files on 2026-11-08:
 1. **Gate counters are global per work, not per rite**; reception points and tiers are per rite.
    Copies count every library, not only the rite's own.
 2. **A book argues for one chosen tenet** (the event has one pick), not two.
-3. **Authored titles are drawn at random** from 24, not chosen from three.
-4. **Authored slots are not recycled** yet: with all 24 used, a book stays news only.
+3. **Authored works are named by author and kind** ("Yosef's Book of Responsa"), the way medieval
+   works were cited, not by a chosen title. A first list of 24 Hebrew titles turned out to be mostly
+   real books by real authors, so it was dropped rather than misattribute them.
+4. **Slots are recycled** (section 7); with all 100 in use at once, a new book stays news only.
 5. **No per-rite tenet statuses** — the engine keeps statuses per faith; rites differ by core tenets.
 6. **The Talmud trial already burns the Talmud orders**; its loss now refreshes the Greatness cache,
    but the trial is not otherwise changed. A Machloket's denunciation raises the host faith's
@@ -138,3 +141,30 @@ pass, `.4` Machloket, `.5` write books, `.6` temple library, `.7` paint the map)
 8. Write a Book as a qualified rabbi: the gold option appears only when an ambition is met.
 9. Jewish Libraries map mode: seats painted, hover text.
 10. A landed Jewish ruler (867 Khazaria, or console `.6`): the Beit Midrash chip opens the window.
+
+## 7. Addendum, same day: 100 slots, recycling, live-test fixes
+
+**Live test (Sonnet subagent, own game PID 8712, 1066 Worms):** the game booted with the mod and
+no crash; no new error.log line named the Sefer files; probes `.1`–`.7` behaved as expected (36
+libraries registered, the standings above, a siyum, Rashi and a first authored book written, a
+Machloket that ended in synthesis, the map painted); the library UI (Tanakh card, standing words,
+the Standing row and ladder tooltip, rounds line), the *complete Shas* Greatness row and the
+Jewish Libraries map mode all rendered. Not checked live: the missing-orders Greatness row, the
+Karaite and landed paths. Three findings, fixed here:
+
+1. `kehillah_complete_shas_modifier` was defined but never given: the yearly library pass now
+   gives it to the holder of a library with complete foundations.
+2. A rite set up after game start (Minhag Ashkenaz) was unseeded until the first yearly pass: a
+   reader's first reception now seeds his rite.
+3. The probe's standing label lost its `$KEY$` inside a quoted string: it now logs the work on its
+   own line, then `STANDING_IS_<n>`.
+
+(An unwritten named work reports its baseline standing to the probe; it is never shown, because it
+is on no shelf.)
+
+**100 slots and recycling (Daniel).** The catalog now has `work_authored_01`..`_100`. Each year
+`kehillah_sefer_recycle_slots_effect` frees a written slot whose book has no copy in any library,
+none in the ransom pool and no living reader in the global index (authors are now added to that
+index), clearing its globals and every Jewish rite's standing for it. Performance: the yearly pass
+touches only written books; the per-slot ceiling code was compacted so the standing values file is
+about 21,000 lines rather than 45,000.

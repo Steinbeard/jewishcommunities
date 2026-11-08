@@ -38,32 +38,6 @@ kehillah_sefer_write_authored_work_effect = {
 	set_global_variable = { name = kehillah_wk_$SLOT$_written value = yes }
 	set_global_variable = { name = kehillah_wk_$SLOT$_author value = this }
 	set_global_variable = { name = kehillah_wk_$SLOT$_year value = current_year }
-	random_list = {
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 1 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 2 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 3 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 4 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 5 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 6 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 7 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 8 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 9 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 10 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 11 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 12 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 13 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 14 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 15 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 16 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 17 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 18 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 19 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 20 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 21 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 22 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 23 } }
-		1 = { set_global_variable = { name = kehillah_wk_$SLOT$_title value = 24 } }
-	}
 	# Genre (shelf and study track) and kind (its subtitle).
 	if = {
 		limit = { var:kehillah_book_genre ?= flag:talmudics }
@@ -130,6 +104,10 @@ kehillah_sefer_place_written_work_effect = {
 		limit = { NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:$KEY$ } } }
 		add_to_variable_list = { name = kehillah_mastered_works target = flag:$KEY$ }
 		kehillah_sefer_bump_counter_effect = { KEY = $KEY$ COUNTER = masters }
+		if = {
+			limit = { NOT = { is_target_in_global_variable_list = { name = kehillah_sefer_masters target = this } } }
+			add_to_global_variable_list = { name = kehillah_sefer_masters target = this }
+		}
 	}
 	if = {
 		limit = { NOT = { is_target_in_variable_list = { name = kehillah_studied_works target = flag:$KEY$ } } }
@@ -223,4 +201,37 @@ kehillah_sefer_record_teaching_effect = {
 		kehillah_sefer_bump_counter_effect = { KEY = $KEY$ COUNTER = taught }
 		holder ?= { kehillah_standing_add_reception_effect = { KEY = $KEY$ AMOUNT = kehillah_reception_teaching_value } }
 	}
+}
+
+# Scope: none. Free a forgotten authored slot ($SLOT$) for a new book:
+# clear its globals and every Jewish rite's standing for it (yearly, from
+# kehillah_sefer_recycle_slots_effect; Daniel, 2026-11-08).
+kehillah_sefer_forget_slot_effect = {
+	remove_global_variable = kehillah_wk_$SLOT$_written
+	remove_global_variable = kehillah_wk_$SLOT$_author
+	remove_global_variable = kehillah_wk_$SLOT$_year
+	remove_global_variable = kehillah_wk_$SLOT$_kind
+	remove_global_variable = kehillah_wk_$SLOT$_genre
+	remove_global_variable = kehillah_wk_$SLOT$_tenet_a
+	remove_global_variable = kehillah_wk_$SLOT$_tenet_b
+	remove_global_variable = kehillah_wk_$SLOT$_masters
+	remove_global_variable = kehillah_wk_$SLOT$_approbations
+	remove_global_variable = kehillah_wk_$SLOT$_taught
+	remove_global_variable = kehillah_wk_$SLOT$_citations
+	remove_global_variable = kehillah_wk_$SLOT$_commentaries
+	remove_global_variable = kehillah_wk_$SLOT$_endorsed
+	remove_global_variable = kehillah_wk_$SLOT$_mk_cooldown
+	remove_global_variable = kehillah_wk_$SLOT$_burned
+	religion:judaism_religion = {
+		every_faith = {
+			every_faith_rite = {
+				remove_variable = kehillah_standing_$SLOT$
+				remove_variable = kehillah_reception_$SLOT$
+				remove_variable = kehillah_ceiling_$SLOT$
+				remove_variable = kehillah_low_years_$SLOT$
+				remove_variable = kehillah_touched_$SLOT$
+			}
+		}
+	}
+	debug_log = "kehillah_sefer_forget_slot_effect: a forgotten book's slot was freed"
 }
