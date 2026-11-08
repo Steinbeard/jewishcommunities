@@ -6,6 +6,10 @@
 
 A crisis belongs to the **community title**, so it survives a leader's death or forced conversion. Its intrinsic **threat grade**—Contained, Serious, Grave, or Catastrophic—is distinct from its changing race tracks. Grade governs how difficult a particular threat is to defuse, the price of buying off an armed host, and how many harm scenes can unfold if the quarter is struck. A great crusading host may be Catastrophic; a localized riot may be Contained. Display grade, its reasons, and its mechanical implications in the situation tooltip.
 
+**Leader peril, 2026-11-07 refinement.** A player leader's fatal injury or conversion must arise from a visible attack or captivity scene with a corresponding consequence. The final casualty calculation can kill other community members and resolve building losses, but cannot secretly mark the player leader for death and announce an unseen injury in the attack report. AI leaders may continue to use an abstract severity roll. If Granada needs a stronger chance of Joseph's historical death, stage a specific confrontation during the attack rather than restoring a hidden post-scene roll.
+
+**Attack report, 2026-11-08 refinement.** Report only recorded deaths, forced conversions, damaged buildings, martyrs, and captives that occurred. A zero-loss report still explains the interruption to trade and communal confidence behind separate pillar losses; avoid raw pillar penalty labels in its prose. Host titles and war names shared by Christian and Muslim crises should be religiously neutral.
+
 ```mermaid
 flowchart TD
     A[Agitation: defuse unrest] --> S[Spared: settle consequences]

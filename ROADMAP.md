@@ -78,6 +78,26 @@ action breadth, individualized hostile-development ledger, all nuanced promise
 outcomes, and damage-specific memory prose remain iteration work after the live
 flow is seen. The old Suggested crisis responses item below is superseded.
 
+**Leader death in struck quarters - 2026-11-07, source change awaiting live check:**
+The final attack accounting no longer rolls an unseen fatal injury for a player leader;
+visible attack/captivity scenes determine their peril. AI leaders keep the abstract
+severity roll. Granada's captive death paths now set the same family aftermath as
+the old report death. A future Granada-specific confrontation can restore historical
+lethality with player agency. See the human crisis test plan.
+**Attack report wording - 2026-11-08, source change awaiting live check:** The report
+now lists only recorded losses, explains wider disruption when no one died or
+converted and no buildings fell, and uses neutral names for a host and its war
+across Christian and Muslim crises. An already open report needs a fresh game
+launch and an earlier save to show the revised text.
+
+**Recovery opening gate and Nagid notice - 2026-11-07, source change awaiting live
+check:** Stage 4 is active Recovery until the final chronicle marks the situation
+done. The crisis admission and danger status now distinguish this from a closed
+crisis, so a quarterly incident cannot open another crisis during Recovery; the
+one-year cooldown still begins at final closure. Nagid loss notices now identify
+the failed Standing, personal, seat, or office requirement; the Standing notice
+shows the current value and Healthy threshold.
+
 **Crisis openings - 2026-11-06, Daniel's request:** Every crisis, banner and alert now
 starts when its opening popup appears, not when it is answered, so the banner no longer
 reads as a result of the choice. Sudden hosts start their war at that moment too. Every
