@@ -17,6 +17,19 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+**Sefer system redesign - 2026-11-08, Daniel's request, PROPOSAL, DANIEL-REVIEW (do not build
+unattended):** [the redesign](docs/spec/2026-11-08-sefer-system-redesign.md) moves libraries off
+the domicile onto titles Jewish rulers hold with a seat on the map (a Kehillah's title, or a
+landed ruler's barony with a Beit Midrash building), opened from one Library window and a
+Libraries map mode. Each Jewish rite gets its own ten-tier standing ladder for every work, Banned
+to Pillar, under fixed canon tiers (Oral Torah, Prophets and Writings, Torah) no book can reach;
+vanilla tenet status sets how high a book may climb. It adds controversy-based tenets (Hokhmah
+against Emunah Temimah first), the Tanakh in every library, a complete Shas as the Rabbanite
+priority and yeshiva requirement, repeatable study rounds with a siyum, authored works that climb
+through copies, approbations, teaching and citations, a Machloket situation, wider acquisition
+with losses and ransom, and a patronage road to a yeshiva for landed rulers. Section 13 lists
+eight questions for Daniel; section 11 lists the spikes; section 12 the build order.
+
 **Community goals removed - 2026-11-07, Daniel's decision:** the S6 "Set the Community's
 Goal" system (one of four goals, a ten-year deadline, a pillar reward or a Stability loss)
 is gone. Daniel: it "works against the grain of how other ck3 systems work". Removed: the
