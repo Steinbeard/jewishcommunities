@@ -484,6 +484,17 @@ def write_standing_values(order, works):
             "\t}",
             "}",
         ]
+    out += ["", "# ---- the index (in TENET_INDEX, 1-based) of the first tenet a work argues",
+            "# for; 0 when it argues for none. A Machloket's outcome queues a reform",
+            "# question on that tenet (any scope)."]
+    for f in order:
+        w = works[f]
+        ts = w.get("argues_for", [])
+        if authored(w):
+            out += dyn_value(f"kehillah_sefer_first_tenet_{f}", 0, f"kehillah_wk_{f}_tenet_a")
+        else:
+            idx = TENET_INDEX.index(ts[0]) + 1 if ts and ts[0] in TENET_INDEX else 0
+            out.append(f"kehillah_sefer_first_tenet_{f} = {{ value = {idx} }}")
     out += ["", "# ---- the viewer rite's ceiling for the work (character scope), for the Standing row."]
     for f in order:
         w = works[f]
@@ -1086,6 +1097,25 @@ def write_study_effects(order, works):
             "\tif = {",
             f"\t\tlimit = {{ has_variable = kehillah_standing_{f} }}",
             f"\t\tkehillah_standing_recalc_work_effect = {{ KEY = {f} }}",
+            "\t}",
+        ]
+    out += [
+        "}",
+        "",
+        "# Rite scope. After a reform changes a tenet's status or a rite's core",
+        "# tenets, every seeded work's ceiling is refreshed at once and its tier",
+        "# clamped to the new ceiling and floor (the tenet-reform loop, 2026-11-08).",
+        "kehillah_standing_refresh_ceilings_rite_effect = {",
+    ]
+    for f in order:
+        w = works[f]
+        if w.get("canon"):
+            continue
+        out += [
+            "\tif = {",
+            f"\t\tlimit = {{ has_variable = kehillah_standing_{f} }}",
+            f"\t\tset_variable = {{ name = kehillah_ceiling_{f} value = kehillah_lib_ceiling_{f} }}",
+            f"\t\tclamp_variable = {{ name = kehillah_standing_{f} min = kehillah_lib_floor_{f} max = kehillah_lib_ceiling_{f} }}",
             "\t}",
         ]
     out += [

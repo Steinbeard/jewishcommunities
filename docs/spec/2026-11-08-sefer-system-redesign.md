@@ -61,6 +61,34 @@ including where the code departs from this text, is
    orders arrive; a Karaite Kehillah missing its foundational Karaite works likewise. Landed
    rulers have no pillars and take no penalty.
 
+
+## Addendum, 2026-11-08 (later the same day): the tenet-reform loop
+
+**Status: BUILT, xTiger-clean, not live-tested.** Daniel chose this as the next gap to close: a
+book's ceiling follows its rite's tenets, but nothing let a player change them, and vanilla AI
+rarely reforms Jewish rites. This addendum supersedes §3.3's "through vanilla rite reform, a synod
+(V45) or the Sanhedrin (V46)" with the concrete mechanism.
+
+- **A question of belief** is a new motion for the V45/V46 gathering (the Bet Din's third matter,
+  Synod or Sanhedrin intent). The host picks a tenet (the twelve that books argue for), then an
+  action: **raise it to a core tenet of his rite** in place of another core tenet he names (never
+  the rite's identity tenet, Talmud Torah or Ba'alei ha-Miqra, and not while its exclusive rival is
+  core), **permit** it in the faith, **ban** it (not while any rite holds it as core), or **lift**
+  a ban. Delegates vote by their own tenets: they favour raising what they hold or have read, and
+  oppose it if they hold its rival.
+- **What it changes.** A core change is rite-level (`add_rite_tenet`/`remove_rite_tenet`), so
+  Ashkenaz and another rite can diverge. Statuses are faith-level (`set_tenet_status`): the engine
+  keeps one status per faith, so a regional Synod's permit or ban reaches every rite of the faith.
+  That is a simplification of history, where bans were local; it is recorded rather than hidden.
+  Every book's ceiling in the faith is refreshed at once.
+- **From controversy to reform.** A Machloket with a clear result queues the disputed book's first
+  tenet on its rite for twenty years: to raise it after the defenders' victory, to ban it after
+  the critics'. The next gathering's host is told the rite expects a ruling, and an AI host takes
+  it up.
+- So the Maimonidean fight is now: defend the *Moreh* in a controversy, carry Hokhmah to a core
+  tenet of your rite at the next Synod, and the *Moreh* can climb to Venerated there — while a rite
+  that bans Hokhmah holds it at Contested.
+
 ---
 
 ## 0. The proposal on one page
