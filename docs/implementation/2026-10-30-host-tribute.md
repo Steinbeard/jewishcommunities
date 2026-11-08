@@ -1,6 +1,28 @@
 # The host tribute (v31 §8.2, part 1)
 
-**Status:** BUILT 2026-10-30, xTiger-clean, **not live-tested** (CK3 was in use by another session).
+**Status:** BUILT 2026-10-30; **payment mechanism replaced 2026-11-08** (see the next paragraph),
+xTiger-clean, **not live-tested**.
+
+**Change, 2026-11-08 (Daniel): the engine collects the tribute.** The quarterly scripted transfer
+did not appear in either treasury's monthly income tooltip, which read as a missing tribute. Each
+Tribute rung now carries `tax =` (None 0, Customary `kehillah_tribute_customary_rate`, Heavy
+`kehillah_tribute_heavy_rate`), the way vanilla's `default_tributary_taxes` and celestial tributary
+contracts do. This reverses departure 1 below. Removed: `kehillah_tribute_on_actions.txt`,
+`kehillah_tribute_effects.txt` (`kehillah_pay_host_tribute_effect`), the monthly and quarterly amount
+values, and the `kehillah_tribute_last_paid` variable. The engine pays monthly, has no treasury cap
+(the old transfer never put the community in debt), and charges on whatever income it counts.
+- **The Nagid bonus** (+25%) can no longer multiply a script rate. It is now
+  `kehillah_nagid_tribute_modifier` (`kehillah_government_tax_contribution_mult = 0.25`) on the
+  host, renewed for four months by `kehillah_refresh_charter_state_cache_effect` each quarter. It
+  lapses on its own rather than being removed, because another community of the same host may
+  still qualify. The display rate reads that modifier.
+- **The Domain tab line** now reads "Tribute to host N%", with no gold figure: the amount is in the
+  gold tile's own tooltip.
+- **Open risk, the reason for the 2026-10-30 fallback:** whether the engine's tributary tax sees a
+  Kehillah's domicile income. Checklist:
+  [2026-11-08-engine-tribute-test-checklist.md](../testing/2026-11-08-engine-tribute-test-checklist.md).
+  If it reads zero, restore the transfer from git (commit before this change) and put the `tax =`
+  shares back to none. Never run both: the host would be paid twice.
 Implements the first of v31 §8.2's three tribute parts, "the ordinary term", on Daniel's decision of
 2026-10-12 ("tribute starts at 20% of income"). The extraordinary levy and the confirmation fee
 (§8.2 parts 2 and 3), the regional names (Jizya, Tallage) and the review's `flag:revenue` reading
