@@ -17,6 +17,8 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+**Sefer ha-Qabbalah roster tranche BUILT - 2026-11-08, Daniel's request, xTiger-clean, live test pending:** 86 new historical characters (Geonim of Sura and Pumbedita, exilarchs, Gershom, the grammarians), 51 invented wives for every father with attested children (38 of them retrofitted into the 1066 roster), and holder history on Sura, Baghdad, Cordoba, Granada, Mainz and a new history-only Pumbedita academy. See [the build record](docs/implementation/2026-11-08-sefer-haqabbalah-roster.md). **Next:** Tannaim and Amoraim, the Palestinian Gaonate, earlier exilarchs, and Kairouan/Worms terms.
+
 **Sefer system redesign BUILT - 2026-11-08, Daniel's decisions and request, xTiger-clean, live
 test pending:** every layer of [the redesign](docs/spec/2026-11-08-sefer-system-redesign.md) is
 built: standing per rite, the full tenet roster, the Tanakh and Shas-first libraries with a
