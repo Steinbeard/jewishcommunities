@@ -89,6 +89,12 @@ Religious Scholar (`kehillah_is_karaite_hakham_trigger`):
 - **Tuning.** Every number is a first guess, especially Pesak's +2 judicial Learning, which
   every Bet Din case reads.
 - **AI for the alms decision:** base 25, doubled for a personal adherent.
+- **A hakham is clergy only in the mod's own checks.** The game's clergy status (`is_clergy`,
+  membership of the faith's organization) comes from a trait with `clergy = yes`: the Rabbi
+  trait, Devoted, Cleric. Religious Scholar has none, so a Karaite hakham reads as clergy to the
+  game only while he sits as Dayyan (`is_clergy_position`). A rabbi is clergy everywhere. Closing
+  the gap needs a Karaite counterpart of the Rabbi trait with `clergy = yes`; scripted enrolment
+  would be undone by `kehillah_laicize_character_effect`. Open, for Daniel (2026-11-08).
 - **Karaite flavour.** The rabbi search's events still say "rabbi". A Karaite academy has no
   ordination of its own; its students are not enrolled, since enrolment is Rabbinic only.
 - **Pilgrimage.** Avelei Tziyon's pilgrimage link is still only its Pilgrim virtue. Vanilla's
