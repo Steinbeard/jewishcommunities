@@ -216,7 +216,9 @@ a Jewish Community**. Check:
 - Rabbinic works sit at low standing or Rejected.
 - **NEW, Karaites have no clergy** ([the spec's Karaite section](../spec/2026-11-08-sefer-tenet-mechanics.md)):
   - `event kehillah_sefer_v2_debug.12`. `debug.log` should read `KARAITE yes`, both `GATE … yes`,
-    both `RABBI … no`, `CLERGY no`, `STYLED not Rav`, `STUDY open`, `COMMUNITY RABBI yes`;
+    both `RABBI … no`, `CLERGY no`, `STYLED not Rav`, `STUDY open`, `COMMUNITY RABBI yes`, and
+    `SCHOLAR XP yes` if you hold Religious Scholar (`SCHOLAR XP no` if not; the console's
+    `add_trait lifestyle_scholar` gives it);
   - your name is never styled Rav;
   - **Deliver a Sermon** and **Plan a Yeshiva Visit** are in your decisions;
   - any adult Karaite can be seated as Dayyan, with or without Religious Scholar. The
@@ -225,6 +227,15 @@ a Jewish Community**. Check:
   - **Write a Sefer** offers *A commentary on Scripture, from the plain text alone* once your
     Religious Scholar experience reaches 30. A sermon adds 3 to it;
   - with no Rosh Yeshiva appointed, you head your own academy.
+- **NEW, Religious Scholar experience** (you need Religious Scholar first). Hover the trait to read
+  its experience before and after each of these; it should rise by the same amount a rabbi's
+  track would:
+  - a library study: +15 on a first mastery, +5 on a failed reading, +5 or +2 on a work read again;
+  - a Bet Din ruling with you on the bench: +1 for a good one, +3 for a great one;
+  - a siyum: +20;
+  - a sermon: +3.
+  A Karaite without Religious Scholar gains none of it, and `error.log` shows no `add_trait_xp`
+  errors.
 
 ## 11. Soak (observation, 20–30 years at speed 5, Worms)
 

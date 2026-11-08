@@ -1,7 +1,9 @@
 # Sefer tenets: mechanics outside the books, and the Karaite clergy
 
 **Status:** BUILT 2026-11-08 (later the same day), from Daniel's first look at the Sefer redesign;
-the Karaite section was replaced the same evening (Karaites have no clergy).
+the Karaite section was replaced the same evening (Karaites have no clergy), and Karaite
+Religious Scholar experience from the Bet Din, study and siyum was added after it, keyed to the
+Toraic doctrine.
 xTiger reports nothing new; **not live-tested.** This supersedes the modifiers and virtues/sins of
 the seven new tenets in [the Sefer redesign spec](2026-11-08-sefer-system-redesign.md) §4.2, and
 adds a Karaite path into the community's clergy. Build record: [section 9](../implementation/2026-11-08-sefer-redesign-build.md).
@@ -78,6 +80,11 @@ they should not, with every action that would be a rabbi's open to every Karaite
 each believer was to search Scripture for himself. Its leaders, teachers and judges held offices,
 not a clerical status. So:
 
+- **"Karaite" means the Toraic doctrine.** Every check reads the believer's rite for vanilla's
+  Toraic Temple Authority doctrine (`temple_authority_toric_doctrine`: Scripture alone, no Oral
+  Torah), through `kehillah_is_karaite_character_trigger`, never the faith's name. In vanilla two
+  faiths hold it, Karaism and Malabarism, and any Jewish faith reformed to it joins them. The
+  doctrine's group is Judaism-only, so the trigger no longer also checks the religion.
 - **No clergy, in the game's sense or the mod's.** Karaites never take the Rabbi trait
   (`is_rabbinic_authority_jewish_trigger`), and nothing makes them the game's clergy (`is_clergy`).
   A Karaite who sits as Dayyan reads as clergy while he holds that council seat, as the seat makes
@@ -90,6 +97,14 @@ not a clerical status. So:
 - **Depth is still depth.** Where a rabbi needs experience in a Rabbi track, a Karaite needs as
   much Religious Scholar experience (`kehillah_karaite_scholar_xp_trigger`), a mark of learning
   rather than a status. A Karaite without it can do whatever a rabbi with no track experience can.
+- **He earns it where a rabbi earns track experience**, the same amount
+  (`kehillah_karaite_scholar_xp_effect`, in `kehillah_tenet_effects.txt`): a sermon (3), a good (1) or
+  great (3) Bet Din ruling as one of the three judges, library study (15 for a first
+  mastery, 5 for a failed reading, 5 and 2 when reading a work again, plus the Talmud Torah bonus if
+  his rite holds that tenet), and a siyum (20). A Karaite without Religious Scholar gains nothing
+  from these, as a Rabbanite without the Rabbi trait gains no track experience; Examine Scripture
+  (the Ba'alei ha-Miqra decision) is how he earns the trait, and vanilla's Learning lifestyle can
+  give it too. *Added 2026-11-08 evening (Daniel: yes, keyed to the Toraic doctrine).*
 
 | Opened to every Karaite | Where |
 |---|---|
@@ -98,8 +113,8 @@ not a clerical status. So:
 | Heading his own academy when none is appointed; qualifying as a Rosh Yeshiva (with Religious Scholar depth) | `kehillah_has_rosh_yeshiva_trigger`, `kehillah_save_rosh_yeshiva_effect`, `kehillah_qualified_rosh_yeshiva_trigger` |
 | Deliver a Sermon (its depth from Religious Scholar; it adds Religious Scholar experience) | sermon decision and effect |
 | Plan a Yeshiva Visit and the visit itself | decision, activity, `kehillah_journey_can_plan_trigger` |
-| Library study at any Learning, and the study scheme's rabbi bonus | `kehillah_torah_reader_eligible_trigger`, study scheme |
-| Bet Din co-judge and invitation at any Learning | judge trigger, invite rule |
+| Library study at any Learning, and the study scheme's rabbi bonus; study and a siyum add Religious Scholar experience | `kehillah_torah_reader_eligible_trigger`, study scheme, `kehillah_study_specific_work_effect`, `kehillah_sefer_siyum_rewards_effect` |
+| Bet Din co-judge and invitation at any Learning; a good ruling adds Religious Scholar experience | judge trigger, invite rule, `kehillah_bet_din_reward_judges_for_ruling_effect` |
 | Write a Sefer: a commentary on Scripture from 30 Religious Scholar experience | `kehillah_book.0001.e` |
 | Giving approbations and judging books; weight in a Machloket; a renowned reader's reception | sefer triggers and values |
 | The translation contract's rabbi terms | task contract |
@@ -122,8 +137,12 @@ with it.
 - **Karaite flavour.** The rabbi search's events and several tooltips still say "rabbi". A
   Karaite academy has no ordination of its own; its students are not enrolled, since enrolment is
   Rabbinic only.
-- **Karaite experience from the mod's actions.** Only sermons add Religious Scholar experience.
-  The Bet Din, study and siyum add Rabbi track experience to rabbis and nothing to Karaites, so a
-  Karaite's depth comes mostly from vanilla's Learning lifestyle and Examine Scripture.
+- ~~**Karaite experience from the mod's actions.**~~ *Built 2026-11-08 evening:* the Bet Din,
+  study and siyum now add Religious Scholar experience too (above). Still Rabbanite only: the
+  quarterly experience of yeshiva students, book news and adopted responsa, all rabbinic institutions.
+- **Malabarism is Toraic.** Vanilla gives the Malabar Jews the Toraic doctrine, so they count as
+  Karaites everywhere the mod checks, the Karaite curriculum included (this was already so before
+  the clergy change). Historically the Cochin Jews were Rabbanite; the mod follows the game's
+  doctrine, as Daniel asked. Changing it would mean giving Malabarism the Rabbinic doctrine.
 - **Pilgrimage.** Avelei Tziyon's pilgrimage link is still only its Pilgrim virtue. Vanilla's
   pilgrimage activity has no completion hook the mod could add to without overriding it.

@@ -226,6 +226,12 @@ Standing row.
    track's depth. Rabbanite institutions stay Rabbanite. The rabbi search no longer gives Karaites
    the Rabbi trait. Same spec, its Karaite section. Probe `kehillah_sefer_v2_debug.12`. Not
    live-tested.
+   *Follow-up, same evening (Daniel: yes, keyed to the Toraic doctrine):* a Karaite now gains
+   Religious Scholar experience wherever a rabbi gains track experience, the same amount: sermons,
+   good Bet Din rulings, library study and a siyum (`kehillah_karaite_scholar_xp_effect`). Only one
+   who already holds Religious Scholar gains it. "Karaite" is the rite's Toraic doctrine and
+   nothing else: the trigger dropped its redundant religion check (the doctrine is Judaism-only),
+   and it already took in vanilla's Malabarism, which is Toraic too. Not live-tested.
 4. **The Library window was unreachable for a Kehillah leader.** Its *Beit Midrash* chip showed only
    for landed Jewish rulers, so a Kehillah player saw the library only in the domicile's Books tab
    (the same body). The chip now shows for any Kehillah leader whose community has a library, on
