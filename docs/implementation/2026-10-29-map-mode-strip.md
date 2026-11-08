@@ -1,6 +1,9 @@
 # Jewish map modes in the Faith strip — 2026-10-29
 
 **Status:** Implemented 2026-10-29 at Daniel's request; xTiger-checked; live visual check pending.
+**2026-11-08:** the Jewish buttons moved out of the Faith family into a category of their own, and
+the ledger was retired; see [the 2026-11-08 note](2026-11-08-jewish-map-category.md). The "Faith strip"
+and "Banner" sections below describe the earlier layout.
 Supersedes the "No vanilla GUI file is copied into the mod" line of
 [the faith map navigation note](../spec/2026-10-13-faith-map-navigation-and-nusach.md) and
 [v12](../spec/v12-community-map-view.md)'s "do not fork `gui/shared/mapmodes.gui`" advice, for

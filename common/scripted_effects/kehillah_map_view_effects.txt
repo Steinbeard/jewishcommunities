@@ -768,3 +768,70 @@ kehillah_paint_realm_jewish_policy_map_effect = {
 		}
 	}
 }
+
+# ---------------------------------------------------------------------
+# Map mode: Community Crises (2026-11-08,
+# docs/implementation/2026-11-08-jewish-map-category.md).
+#
+# Scope: a d_kehillah_* community title. Saves scope:kehillah_crises_map_color.
+# The order is the hover card's (KehillahCrisisMapStatus, common/
+# customizable_localization/kehillah_map_card_custom_loc.txt); keep them
+# together. The worst state wins: an armed host or a mob, then agitation,
+# then a decree, an expulsion or a trial, then the aftermath of an attack.
+# A quiet community is painted by its yearly chance of trouble, using the
+# "Tense" threshold of KehillahDangerBand (8%).
+# ---------------------------------------------------------------------
+kehillah_pick_community_crises_map_color_effect = {
+	title:d_kehillah_mapcolor_crisis_calm = { save_scope_as = kehillah_crises_map_color }
+	if = {
+		limit = { kehillah_map_crisis_armed_trigger = yes }
+		title:d_kehillah_mapcolor_crisis_armed = { save_scope_as = kehillah_crises_map_color }
+	}
+	else_if = {
+		limit = { kehillah_map_crisis_agitation_trigger = yes }
+		title:d_kehillah_mapcolor_crisis_agitation = { save_scope_as = kehillah_crises_map_color }
+	}
+	else_if = {
+		limit = { kehillah_map_crisis_decree_trigger = yes }
+		title:d_kehillah_mapcolor_crisis_decree = { save_scope_as = kehillah_crises_map_color }
+	}
+	else_if = {
+		limit = { kehillah_map_crisis_aftermath_trigger = yes }
+		title:d_kehillah_mapcolor_crisis_aftermath = { save_scope_as = kehillah_crises_map_color }
+	}
+	else_if = {
+		limit = { holder ?= { kehillah_incident_yearly_chance_value >= 8 } }
+		title:d_kehillah_mapcolor_crisis_tense = { save_scope_as = kehillah_crises_map_color }
+	}
+}
+
+kehillah_paint_community_crises_map_effect = {
+	every_county = {
+		every_county_province = {
+			remove_variable = kehillah_map_community
+			barony ?= {
+				set_color_from_title = title:d_kehillah_mapcolor_base
+			}
+		}
+	}
+
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = { exists = holder }
+		kehillah_cache_map_view_facts_effect = yes
+		if = {
+			limit = { exists = var:kehillah_ui_host_barony }
+			kehillah_pick_community_crises_map_color_effect = yes
+			save_scope_as = kehillah_paint_community
+			var:kehillah_ui_host_barony = {
+				set_variable = {
+					name = kehillah_map_community
+					value = scope:kehillah_paint_community
+				}
+				barony ?= {
+					set_color_from_title = scope:kehillah_crises_map_color
+				}
+			}
+		}
+	}
+}

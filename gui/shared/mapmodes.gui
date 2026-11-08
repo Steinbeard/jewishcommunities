@@ -1,10 +1,13 @@
 ﻿# JEWISH COMMUNITIES MOD: a full copy of vanilla gui/shared/mapmodes.gui
 # (CK3 1.20.1.2). Every change is fenced by "JEWISH COMMUNITIES MOD" /
-# "END JEWISH COMMUNITIES MOD" comments: the faith_mini_map_mode strip
-# (visibility plus the mod's three map-mode buttons), the glow type those
-# buttons use, and three names in flowcontainer_map_mode_header. After a
-# game patch, recopy the vanilla file and re-apply the fenced blocks.
-# Why the copy: docs/implementation/2026-10-29-map-mode-strip.md.
+# "END JEWISH COMMUNITIES MOD" comments: a Jewish category button in the
+# map_modes row beside Faiths, Cultures and Houses; the faith_mini_map_mode
+# strip, which shows the Faith buttons in the Faith modes and the mod's
+# five Jewish buttons in the Jewish modes; the glow type those buttons use;
+# and the mod's names in flowcontainer_map_mode_header. After a game patch,
+# recopy the vanilla file and re-apply the fenced blocks. Why the copy:
+# docs/implementation/2026-10-29-map-mode-strip.md; why a separate
+# category: docs/implementation/2026-11-08-jewish-map-category.md.
 types MapModes
 {
 	type map_modes_debug = flowcontainer {
@@ -350,7 +353,10 @@ types MapModes
 			flowcontainer = {
 				parentanchor = hcenter
 				direction = horizontal
-				ignoreinvisible = no
+				### JEWISH COMMUNITIES MOD: was "no". The Jewish button below is
+				### hidden in the multiplayer lobby, and must not leave a gap there.
+				ignoreinvisible = yes
+				### END JEWISH COMMUNITIES MOD
 				spacing = -2
 
 				visible = "[And(CanChangeMapMode, Not( GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var('hide_ui_timeline').GetValue, '(CFixedPoint)0' ) ))]"
@@ -404,6 +410,40 @@ types MapModes
 						shortcut = "map_mode_4"
 					}
 				}
+
+				### JEWISH COMMUNITIES MOD: the Jewish map modes as a category of
+				### their own, beside Faiths (2026-11-08). Opens the Jewish
+				### Communities map; the strip above the map then switches between
+				### the five Jewish modes, as the Faith strip does for its three.
+				widget = {
+					name = "map_mode_jewish_button"
+					size = { 32 32 }
+					parentanchor = vcenter
+					visible = "[And( IsInGame, GetPlayer.IsValid )]"
+
+					kehillah_map_mode_glow = {
+						visible = "[Or( Or3( IsMapMode('kehillah_communities_map'), IsMapMode('kehillah_community_rites_map'), IsMapMode('kehillah_realm_jewish_policy_map') ), Or( IsMapMode('kehillah_community_crises_map'), IsMapMode('kehillah_libraries_map') ) )]"
+					}
+
+					button_round = {
+						size = { 100% 100% }
+						enabled = "[CanChangeMapMode]"
+						down = "[Or( Or3( IsMapMode('kehillah_communities_map'), IsMapMode('kehillah_community_rites_map'), IsMapMode('kehillah_realm_jewish_policy_map') ), Or( IsMapMode('kehillah_community_crises_map'), IsMapMode('kehillah_libraries_map') ) )]"
+						onclick = "[GetScriptedGui( 'kehillah_communities_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+						onclick = "[SetMapMode( 'kehillah_communities_map' )]"
+						tooltip = "KEHILLAH_JEWISH_MAP_MODES_TOOLTIP"
+						using = tooltip_nw
+
+						button_icon = {
+							parentanchor = center
+							size = { 22 22 }
+							alwaystransparent = yes
+							down = "[Or( Or3( IsMapMode('kehillah_communities_map'), IsMapMode('kehillah_community_rites_map'), IsMapMode('kehillah_realm_jewish_policy_map') ), Or( IsMapMode('kehillah_community_crises_map'), IsMapMode('kehillah_libraries_map') ) )]"
+							texture = "gfx/interface/icons/faith/judaism.dds"
+						}
+					}
+				}
+				### END JEWISH COMMUNITIES MOD
 
 				widget = {
 					parentanchor = vcenter
@@ -1191,13 +1231,19 @@ types MapModes
 	}
 
 	type faith_mini_map_mode = mini_map_mode {
-		### JEWISH COMMUNITIES MOD: the strip also stays up in the mod's
-		### three map modes, so all six Faith-family buttons are always there.
-		visible = "[Or( Or3( IsMapMode('religions'), IsMapMode('clerical_regions'), IsMapMode('holy_orders') ), Or( Or3( IsMapMode('kehillah_communities_map'), IsMapMode('kehillah_community_rites_map'), IsMapMode('kehillah_realm_jewish_policy_map') ), IsMapMode('kehillah_libraries_map') ) )]"
+		### JEWISH COMMUNITIES MOD: the strip is also the Jewish category's
+		### strip (2026-11-08). hud_bottom.gui places only this one strip, so
+		### rather than fork that file too, the strip shows the three Faith
+		### buttons in the Faith modes and the five Jewish buttons in the
+		### Jewish modes, never both. ignoreinvisible keeps it centred.
+		visible = "[Or( Or3( IsMapMode('religions'), IsMapMode('clerical_regions'), IsMapMode('holy_orders') ), Or( Or3( IsMapMode('kehillah_communities_map'), IsMapMode('kehillah_community_rites_map'), IsMapMode('kehillah_realm_jewish_policy_map') ), Or( IsMapMode('kehillah_community_crises_map'), IsMapMode('kehillah_libraries_map') ) ) )]"
+		### END JEWISH COMMUNITIES MOD
 
 		blockoverride "map_mode_buttons"
 		{
 			icon_button_mapmode = {
+				### JEWISH COMMUNITIES MOD: hidden in the Jewish modes.
+				visible = "[Not( Or( Or3( IsMapMode('kehillah_communities_map'), IsMapMode('kehillah_community_rites_map'), IsMapMode('kehillah_realm_jewish_policy_map') ), Or( IsMapMode('kehillah_community_crises_map'), IsMapMode('kehillah_libraries_map') ) ) )]"
 				blockoverride = "mm_datacontext"
 				{
 					datacontext = "[GetMapMode( 'religions' )]"
@@ -1210,6 +1256,8 @@ types MapModes
 			}
 
 			icon_button_mapmode = {
+				### JEWISH COMMUNITIES MOD: hidden in the Jewish modes.
+				visible = "[Not( Or( Or3( IsMapMode('kehillah_communities_map'), IsMapMode('kehillah_community_rites_map'), IsMapMode('kehillah_realm_jewish_policy_map') ), Or( IsMapMode('kehillah_community_crises_map'), IsMapMode('kehillah_libraries_map') ) ) )]"
 				blockoverride = "mm_datacontext"
 				{
 					datacontext = "[GetMapMode( 'holy_orders' )]"
@@ -1222,6 +1270,8 @@ types MapModes
 			}
 
 			icon_button_mapmode = {
+				### JEWISH COMMUNITIES MOD: hidden in the Jewish modes.
+				visible = "[Not( Or( Or3( IsMapMode('kehillah_communities_map'), IsMapMode('kehillah_community_rites_map'), IsMapMode('kehillah_realm_jewish_policy_map') ), Or( IsMapMode('kehillah_community_crises_map'), IsMapMode('kehillah_libraries_map') ) ) )]"
 				name = "map_mode_clerical_regions_button"
 
 				blockoverride = "mm_datacontext"
@@ -1235,199 +1285,156 @@ types MapModes
 				}
 			}
 
-			### JEWISH COMMUNITIES MOD: the mod's three map modes, as a fixed
-			### group to the right of the Faith buttons. Same look as
+			### JEWISH COMMUNITIES MOD: the five Jewish map modes (2026-11-08;
+			### before, three extra buttons beside the Faith ones). Same look as
 			### icon_button_mapmode (gui/shared/buttons.gui), but hand-written
 			### because each must repaint the map (a scripted_gui) before it
-			### switches to it. The group hangs off a zero-width widget, so
-			### the vanilla buttons stay centred where hud_bottom.gui expects
-			### them (it places the holy-site selector above the Faiths button).
-			### Shown to every player, Jewish or not (2026-10-29): it is a view
-			### of the world, and these buttons are otherwise hard to find.
-			### Hidden only outside a game (the multiplayer lobby).
-			widget = {
+			### switches to it. Shown only in the Jewish modes, where the Faith
+			### buttons above are hidden, so this is the whole strip. Shown to
+			### every player, Jewish or not; hidden outside a game.
+			flowcontainer = {
 				name = "kehillah_jewish_map_modes"
-				size = { 0 40 }
 				allow_outside = yes
-				visible = "[And( IsInGame, GetPlayer.IsValid )]"
+				filter_mouse = all
+				ignoreinvisible = yes
+				visible = "[And3( IsInGame, GetPlayer.IsValid, Or( Or3( IsMapMode('kehillah_communities_map'), IsMapMode('kehillah_community_rites_map'), IsMapMode('kehillah_realm_jewish_policy_map') ), Or( IsMapMode('kehillah_community_crises_map'), IsMapMode('kehillah_libraries_map') ) ) )]"
 
-				flowcontainer = {
-					position = { 30 0 }
-					allow_outside = yes
-					filter_mouse = all
-					ignoreinvisible = yes
+				# Jewish Communities: each community by its standing. Its ledger window was retired 2026-11-08; the hover card carries the same facts.
+				widget = {
+					size = { 40 40 }
 
-					# The strip's own background (type mini_map_mode, above).
-					background = {
-						margin_left = 30
-						margin_right = 30
-						margin_top = -7
-						margin_bottom = -7
-
-						texture = "gfx/interface/component_tiles/tile_title_bg_01.dds"
-						spriteType = Corneredtiled
-						spriteborder = { 40 8 }
-						texture_density = 2
-
-						modify_texture = {
-							name = "mask"
-							texture = "gfx/interface/component_masks/mask_fade_horizontal_middle_thick.dds"
-							spriteType = Corneredstretched
-							spriteborder = { 0 0 }
-							blend_mode = alphamultiply
-						}
+					kehillah_map_mode_glow = {
+						visible = "[IsMapMode( 'kehillah_communities_map' )]"
 					}
 
-					# Jewish Communities. One spot, three buttons, one visible at
-					# a time: open the map (paint, switch, show the ledger), or,
-					# once on it, hide or reopen the ledger.
-					widget = {
-						size = { 40 40 }
+					button_round = {
+						name = "kehillah_communities_map_button"
+						size = { 100% 100% }
+						enabled = "[CanChangeMapMode]"
+						down = "[IsMapMode( 'kehillah_communities_map' )]"
+						onclick = "[GetScriptedGui( 'kehillah_communities_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+						onclick = "[SetMapMode( 'kehillah_communities_map' )]"
+						tooltip = "kehillah_communities_map_desc"
+						using = tooltip_nw
 
-						kehillah_map_mode_glow = {
-							visible = "[IsMapMode( 'kehillah_communities_map' )]"
-						}
-
-						button_round = {
-							name = "kehillah_map_view_open_button"
-							size = { 100% 100% }
-							visible = "[Not( IsMapMode( 'kehillah_communities_map' ) )]"
-							enabled = "[CanChangeMapMode]"
-							onclick = "[GetScriptedGui( 'kehillah_communities_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-							onclick = "[SetMapMode( 'kehillah_communities_map' )]"
-							onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_minimized' )]"
-							onclick = "[GetVariableSystem.Set( 'kehillah_map_view_open', 'yes' )]"
-							tooltip = "KEHILLAH_MAP_VIEW_BUTTON_TOOLTIP"
-							using = tooltip_nw
-
-							button_icon = {
-								parentanchor = center
-								size = { 25 25 }
-								alwaystransparent = yes
-								texture = "gfx/interface/icons/faith/judaism.dds"
-							}
-						}
-
-						button_round = {
-							name = "kehillah_map_view_hide_button"
-							size = { 100% 100% }
-							visible = "[And( IsMapMode( 'kehillah_communities_map' ), GetVariableSystem.Exists( 'kehillah_map_view_open' ) )]"
-							down = yes
-							onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_open' )]"
-							onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_minimized' )]"
-							tooltip = "KEHILLAH_MAP_VIEW_BUTTON_HIDE_TOOLTIP"
-							using = tooltip_nw
-
-							button_icon = {
-								parentanchor = center
-								size = { 25 25 }
-								alwaystransparent = yes
-								down = yes
-								texture = "gfx/interface/icons/faith/judaism.dds"
-							}
-						}
-
-						button_round = {
-							name = "kehillah_map_view_show_button"
-							size = { 100% 100% }
-							visible = "[And( IsMapMode( 'kehillah_communities_map' ), Not( GetVariableSystem.Exists( 'kehillah_map_view_open' ) ) )]"
-							down = yes
-							onclick = "[GetVariableSystem.Clear( 'kehillah_map_view_minimized' )]"
-							onclick = "[GetVariableSystem.Set( 'kehillah_map_view_open', 'yes' )]"
-							tooltip = "KEHILLAH_MAP_VIEW_BUTTON_SHOW_TOOLTIP"
-							using = tooltip_nw
-
-							button_icon = {
-								parentanchor = center
-								size = { 25 25 }
-								alwaystransparent = yes
-								down = yes
-								texture = "gfx/interface/icons/faith/judaism.dds"
-							}
+						button_icon = {
+							parentanchor = center
+							size = { 25 25 }
+							alwaystransparent = yes
+							down = "[IsMapMode( 'kehillah_communities_map' )]"
+							texture = "gfx/interface/icons/faith/judaism.dds"
 						}
 					}
+				}
 
-					# Community Rites: a prayer book and candle.
-					widget = {
-						size = { 40 40 }
+				# Community Rites: a prayer book and candle.
+				widget = {
+					size = { 40 40 }
 
-						kehillah_map_mode_glow = {
-							visible = "[IsMapMode( 'kehillah_community_rites_map' )]"
-						}
+					kehillah_map_mode_glow = {
+						visible = "[IsMapMode( 'kehillah_community_rites_map' )]"
+					}
 
-						button_round = {
-							name = "kehillah_community_rites_map_button"
-							size = { 100% 100% }
-							enabled = "[CanChangeMapMode]"
+					button_round = {
+						name = "kehillah_community_rites_map_button"
+						size = { 100% 100% }
+						enabled = "[CanChangeMapMode]"
+						down = "[IsMapMode( 'kehillah_community_rites_map' )]"
+						onclick = "[GetScriptedGui( 'kehillah_community_rites_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+						onclick = "[SetMapMode( 'kehillah_community_rites_map' )]"
+						tooltip = "kehillah_community_rites_map_desc"
+						using = tooltip_nw
+
+						button_icon = {
+							parentanchor = center
+							size = { 25 25 }
+							alwaystransparent = yes
 							down = "[IsMapMode( 'kehillah_community_rites_map' )]"
-							onclick = "[GetScriptedGui( 'kehillah_community_rites_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-							onclick = "[SetMapMode( 'kehillah_community_rites_map' )]"
-							tooltip = "kehillah_community_rites_map_desc"
-							using = tooltip_nw
-
-							button_icon = {
-								parentanchor = center
-								size = { 25 25 }
-								alwaystransparent = yes
-								down = "[IsMapMode( 'kehillah_community_rites_map' )]"
-								texture = "gfx/interface/icons/flat_icons/known_faiths.dds"
-							}
+							texture = "gfx/interface/icons/flat_icons/known_faiths.dds"
 						}
 					}
+				}
 
-					# Jewish Settlement Policy: a charter, quill and seal.
-					widget = {
-						size = { 40 40 }
+				# Community Crises (2026-11-08): a torch and pitchfork.
+				widget = {
+					size = { 40 40 }
 
-						kehillah_map_mode_glow = {
-							visible = "[IsMapMode( 'kehillah_realm_jewish_policy_map' )]"
+					kehillah_map_mode_glow = {
+						visible = "[IsMapMode( 'kehillah_community_crises_map' )]"
+					}
+
+					button_round = {
+						name = "kehillah_community_crises_map_button"
+						size = { 100% 100% }
+						enabled = "[CanChangeMapMode]"
+						down = "[IsMapMode( 'kehillah_community_crises_map' )]"
+						onclick = "[GetScriptedGui( 'kehillah_community_crises_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+						onclick = "[SetMapMode( 'kehillah_community_crises_map' )]"
+						tooltip = "kehillah_community_crises_map_desc"
+						using = tooltip_nw
+
+						button_icon = {
+							parentanchor = center
+							size = { 25 25 }
+							alwaystransparent = yes
+							down = "[IsMapMode( 'kehillah_community_crises_map' )]"
+							texture = "gfx/interface/icons/flat_icons/faction_against_liege.dds"
 						}
+					}
+				}
 
-						button_round = {
-							name = "kehillah_realm_jewish_policy_map_button"
-							size = { 100% 100% }
-							enabled = "[CanChangeMapMode]"
+				# Status of the Jews: a charter, quill and seal.
+				widget = {
+					size = { 40 40 }
+
+					kehillah_map_mode_glow = {
+						visible = "[IsMapMode( 'kehillah_realm_jewish_policy_map' )]"
+					}
+
+					button_round = {
+						name = "kehillah_realm_jewish_policy_map_button"
+						size = { 100% 100% }
+						enabled = "[CanChangeMapMode]"
+						down = "[IsMapMode( 'kehillah_realm_jewish_policy_map' )]"
+						onclick = "[GetScriptedGui( 'kehillah_realm_jewish_policy_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+						onclick = "[SetMapMode( 'kehillah_realm_jewish_policy_map' )]"
+						tooltip = "kehillah_realm_jewish_policy_map_desc"
+						using = tooltip_nw
+
+						button_icon = {
+							parentanchor = center
+							size = { 25 25 }
+							alwaystransparent = yes
 							down = "[IsMapMode( 'kehillah_realm_jewish_policy_map' )]"
-							onclick = "[GetScriptedGui( 'kehillah_realm_jewish_policy_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-							onclick = "[SetMapMode( 'kehillah_realm_jewish_policy_map' )]"
-							tooltip = "kehillah_realm_jewish_policy_map_desc"
-							using = tooltip_nw
-
-							button_icon = {
-								parentanchor = center
-								size = { 25 25 }
-								alwaystransparent = yes
-								down = "[IsMapMode( 'kehillah_realm_jewish_policy_map' )]"
-								texture = "gfx/interface/icons/flat_icons/feudal_contract.dds"
-							}
+							texture = "gfx/interface/icons/flat_icons/feudal_contract.dds"
 						}
 					}
+				}
 
-					# Libraries (2026-11-08, Sefer redesign): every Jewish library.
-					widget = {
-						size = { 40 40 }
+				# Libraries (2026-11-08, Sefer redesign): every Jewish library.
+				widget = {
+					size = { 40 40 }
 
-						kehillah_map_mode_glow = {
-							visible = "[IsMapMode( 'kehillah_libraries_map' )]"
-						}
+					kehillah_map_mode_glow = {
+						visible = "[IsMapMode( 'kehillah_libraries_map' )]"
+					}
 
-						button_round = {
-							name = "kehillah_libraries_map_button"
-							size = { 100% 100% }
-							enabled = "[CanChangeMapMode]"
+					button_round = {
+						name = "kehillah_libraries_map_button"
+						size = { 100% 100% }
+						enabled = "[CanChangeMapMode]"
+						down = "[IsMapMode( 'kehillah_libraries_map' )]"
+						onclick = "[GetScriptedGui( 'kehillah_libraries_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+						onclick = "[SetMapMode( 'kehillah_libraries_map' )]"
+						tooltip = "kehillah_libraries_map_desc"
+						using = tooltip_nw
+
+						button_icon = {
+							parentanchor = center
+							size = { 25 25 }
+							alwaystransparent = yes
 							down = "[IsMapMode( 'kehillah_libraries_map' )]"
-							onclick = "[GetScriptedGui( 'kehillah_libraries_map_paint' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-							onclick = "[SetMapMode( 'kehillah_libraries_map' )]"
-							tooltip = "kehillah_libraries_map_desc"
-							using = tooltip_nw
-
-							button_icon = {
-								parentanchor = center
-								size = { 25 25 }
-								alwaystransparent = yes
-								down = "[IsMapMode( 'kehillah_libraries_map' )]"
-								texture = "gfx/interface/icons/artifact/artifact_chronicle.dds"
-							}
+							texture = "gfx/interface/icons/artifact/artifact_chronicle.dds"
 						}
 					}
 				}
@@ -1623,7 +1630,7 @@ types MapModes
 				text = "SITUATION_HEADER"
 			}
 
-			### JEWISH COMMUNITIES MOD: names of the mod's three map modes,
+			### JEWISH COMMUNITIES MOD: names of the mod's five map modes,
 			### under "Showing:" like every vanilla mode.
 			text_map_mode_header = {
 				visible = "[IsMapMode('kehillah_communities_map')]"
@@ -1638,6 +1645,11 @@ types MapModes
 			text_map_mode_header = {
 				visible = "[IsMapMode('kehillah_realm_jewish_policy_map')]"
 				text = "kehillah_realm_jewish_policy_map"
+			}
+
+			text_map_mode_header = {
+				visible = "[IsMapMode('kehillah_community_crises_map')]"
+				text = "kehillah_community_crises_map"
 			}
 
 			text_map_mode_header = {
