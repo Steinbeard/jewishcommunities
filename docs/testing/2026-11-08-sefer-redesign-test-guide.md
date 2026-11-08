@@ -44,6 +44,9 @@ Prophets and Writings, and Torah (11–13).
 
 ## 1. First look, no console (save `sefer_base`)
 
+0. **No "Rite Changed" messages at game start.** The setup of Judaism's tenet statuses used to
+   send about ten of them, one per status (fixed 2026-11-08, after your first look). The faith
+   window should still show Hokhmah and the other new tenets as Permitted.
 1. **Jewish Quarter → Books.** The Tanakh card sits at the top of Parshanut. Every row shows a
    standing word. Select *Halakhot Gedolot*. The detail has a **Standing** row reading *Classic*,
    with the highest standing it can reach in your rite. Hover it for the ladder tooltip.

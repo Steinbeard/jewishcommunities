@@ -200,3 +200,18 @@ Belief*: the tenet list shows only tenets with a possible action; the core path 
 tenet to replace; the delegates' vote; the ruling's tooltip; the message to other players; and,
 after `.8` or a carried motion, a book arguing for the tenet shows the higher ceiling in its
 Standing row.
+
+## 9. Found in Daniel's first look (later the same day)
+
+1. **"Rite Changed" messages at game start: fixed.** CK3 has no database field for a faith's
+   starting tenet statuses, so `kehillah_sefer_tenet_status_init_effect` sets them by script. Each
+   `set_tenet_status` fires vanilla's `on_rite_updated`, which messages every player of the faith
+   (about ten for a Rabbinic player). The setup now sets `ecumenical_council_ongoing` on each
+   faith for two days first, which is vanilla's own switch for silencing that message (otherwise
+   read only by the Christian Ecumenical Council and Papal bulls). Not live-tested.
+2. **The seven new tenets are thin: open, a design gap rather than a departure recorded
+   earlier.** Outside the Sefer system (standing ceilings, reading fit, teaching, reform), each
+   has only virtue/sin weights, one small faith-wide modifier and one personal-tenet modifier;
+   Ge'onut's whole faith-wide effect is +0.1 monthly Piety. Each declares a `parameters` hook
+   (`kehillah_sefer_geonut` and so on) that nothing reads. The spec's own links were not built:
+   Ge'onut to V47's Gaon, Hokhmah to the Machshavah track, Avelei Tziyon to pilgrimage.
