@@ -68,6 +68,11 @@ ACQUIRE_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_library_a
 JOURNEY_GUI = ROOT / "common/scripted_guis/kehillah_library_journey_gui.txt"
 JOURNEY_EFFECTS = ROOT / "common/scripted_effects/kehillah_library_journey_generated_effects.txt"
 JOURNEY_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_library_journey_custom_loc.txt"
+STUDY_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_study_torah_custom_loc.txt"
+# The first works of the catalog have their own hand-written opening text in
+# kehillah_study_torah.0002 (kehillah_l_english.yml); every later work opens with
+# its per-work study line instead.
+OPENING_DESC_WORKS = 23
 
 GENRES = {"parshanut": 1, "talmudics": 2, "hashkafa": 3}
 GENRE_BY_N = {v: k for k, v in GENRES.items()}
@@ -622,6 +627,12 @@ def write_triggers(order, works):
         else:
             out.append("\talways = no")
         out.append("}")
+    out += ["", "# Scope: the studying character. The work named by kehillah_study_current_work_id",
+            "# (the scheme's numeric bridge) is a Hashkafa work. Read by kehillah_study_torah.0003."]
+    out += ["kehillah_study_current_work_is_hashkafa_trigger = {", "	OR = {"]
+    out += [f"		var:kehillah_study_current_work_id = {i}"
+            for i, f in enumerate(order, start=1) if works[f]["genre"] == "hashkafa"]
+    out += ["	}", "}"]
     write(TRIGGERS, out)
 
 
@@ -1610,6 +1621,23 @@ def write_journey_custom_loc(order):
     write(JOURNEY_CUSTOM_LOC, out)
 
 
+def write_study_custom_loc(order, works):
+    """2026-11-08: the opening text of kehillah_study_torah.0002 for every work.
+    The event once listed the first 22 works by ID and fell back to the Kuzari,
+    so every work added to the catalog later opened with the Kuzari's text."""
+    out = HEADER + ["# kehillah_study_torah.0002: the work the scheme has just opened, by",
+                    "# kehillah_study_current_work_id (1..N in catalog order).",
+                    "KehillahStudyOpeningDesc = {", "	type = character"]
+    for i, f in enumerate(order, start=1):
+        key = (f"kehillah_study_torah.0002.{short(f)}_desc" if i <= OPENING_DESC_WORKS
+               else study_tt_key(f, works[f]))
+        out += ["	text = {", "		trigger = {", "			has_variable = kehillah_study_current_work_id",
+                f"			var:kehillah_study_current_work_id = {i}", "		}",
+                f"		localization_key = {key}", "	}"]
+    out += ["	text = {", "		fallback = yes", "		localization_key = kehillah_study_torah.0002.unknown_desc", "	}", "}"]
+    write(STUDY_CUSTOM_LOC, out)
+
+
 if __name__ == "__main__":
     order, works = load()
     write_values(order, works)
@@ -1628,4 +1656,5 @@ if __name__ == "__main__":
     write_journey_gui(order)
     write_journey_effects(order, works)
     write_journey_custom_loc(order)
+    write_study_custom_loc(order, works)
     print(f"{len(order)} works -> catalog, standing, study, triggers, GUI and loc")
