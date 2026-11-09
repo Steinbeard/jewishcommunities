@@ -38,6 +38,18 @@ are not built either; the weigh event stands in for them.
 - [The validation checklist](docs/testing/2026-11-08-stand-for-the-seat-validation.md): **V1 (the
   game loads) and V3 (a declared outsider is in the line) decide whether the design stands.**
 
+**Beit Midrash shelf and Ledger of Sefarim BUILT - 2026-11-08, Daniel's request, xTiger-clean,
+live test pending (Daniel runs it by hand; needs a restart):** the Books page is now three genre
+tabs. Each opens on its foundational centrepiece: the Torah in the ark with the Prophets and the
+Writings; the Shas case with a gap for each missing order; or, for Machshavah and Karaite
+Talmudics, a reading stand with the library's most esteemed work. Below it are shelves of books
+of one height, whose width and binding follow their standing in the viewer's rite and are
+rebound when it changes. A missing Tanakh part, or a missing Bavli order where the Bavli is
+canon, is flagged. The Acquire and All works pages became one **Ledger of Sefarim** window of
+the works the community knows of (obscure and forbidden books only once met), with date, place,
+language, a linked author (three new Karaite author characters), standing, tenets and Seek a
+copy. See [the record and test checklist](docs/implementation/2026-11-08-library-shelf-and-ledger.md).
+
 **Sefer ha-Qabbalah roster tranche BUILT - 2026-11-08, Daniel's request, xTiger-clean, live test pending:** 86 new historical characters (Geonim of Sura and Pumbedita, exilarchs, Gershom, the grammarians), 51 invented wives for every father with attested children (38 of them retrofitted into the 1066 roster), and holder history on Sura, Baghdad, Cordoba, Granada, Mainz and a new history-only Pumbedita academy. See [the build record](docs/implementation/2026-11-08-sefer-haqabbalah-roster.md). **Next:** Tannaim and Amoraim, the Palestinian Gaonate, earlier exilarchs, and Kairouan/Worms terms.
 
 **Sefer system redesign BUILT - 2026-11-08, Daniel's decisions and request, xTiger-clean, live

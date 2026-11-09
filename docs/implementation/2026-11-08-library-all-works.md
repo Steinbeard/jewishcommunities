@@ -1,5 +1,9 @@
 # The Library's "All known sefarim" page — 2026-11-08
 
+> **Superseded later on 2026-11-08** by the Ledger of Sefarim window, which lists only the works
+> the community knows of. See [the shelf and ledger record](2026-11-08-library-shelf-and-ledger.md).
+> The page described below no longer exists in the GUI.
+
 **Status:** Implemented 2026-11-08 at Daniel's request; xTiger reports nothing new; **not
 live-tested** (checklist at the end). Adds a page to the library body of
 [the Sefer redesign](../spec/2026-11-08-sefer-system-redesign.md) §2.5.

@@ -70,6 +70,10 @@ JOURNEY_GUI = ROOT / "common/scripted_guis/kehillah_library_journey_gui.txt"
 JOURNEY_EFFECTS = ROOT / "common/scripted_effects/kehillah_library_journey_generated_effects.txt"
 JOURNEY_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_library_journey_custom_loc.txt"
 STUDY_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_study_torah_custom_loc.txt"
+# 2026-11-08: the Beit Midrash shelf and the Sefarim ledger.
+SHELF_VALUES = ROOT / "common/script_values/kehillah_library_shelf_values.txt"
+SHELF_EFFECTS = ROOT / "common/scripted_effects/kehillah_library_shelf_effects.txt"
+LEDGER_LOC = ROOT / "localization/english/kehillah_library_ledger_catalog_l_english.yml"
 # The first works of the catalog have their own hand-written opening text in
 # kehillah_study_torah.0002 (kehillah_l_english.yml); every later work opens with
 # its per-work study line instead.
@@ -1446,33 +1450,305 @@ def write_acquisition_effects(order, works):
     write(ACQUIRE_EFFECTS, out)
 
 
+def ledger_order(order, works):
+    """The Sefarim ledger lists works by date: historical works by year (catalog
+    order breaks ties), then the books written in play, by slot."""
+    fixed = [f for f in order if not authored(works[f])]
+    fixed.sort(key=lambda f: (works[f]["year"], order.index(f)))
+    return fixed + [f for f in order if authored(works[f])]
+
+
+def known_lines(f, w, ind):
+    """Trigger lines (scope: the player): the community has heard of the work.
+    Shelf-and-ledger design, docs/implementation/2026-11-08-library-shelf-and-ledger.md:
+    the canon and the great works (Foundational, Essential) are known to all once
+    they circulate; anything else only once it is met -- held in the player's own
+    library, mastered by the player or a courtier, or respected in the player's
+    rite with a copy somewhere. Obscure and forbidden books stay off the ledger
+    until then."""
+    if w.get("canon") or w["rank_name"] in ("Foundational", "Essential"):
+        return []
+    return [
+        f"{ind}OR = {{",
+        f"{ind}\tvar:kehillah_own_library ?= {{ {held(f)} }}",
+        f"{ind}\t{held(f, '', 'kehillah_mastered_works')}",
+        f"{ind}\tany_courtier = {{ {held(f, '', 'kehillah_mastered_works')} }}",
+        f"{ind}\tAND = {{",
+        f"{ind}\t\tkehillah_lib_standing_{f} >= 6",
+        f"{ind}\t\tkehillah_lib_copies_{f} >= 1",
+        f"{ind}\t}}",
+        f"{ind}}}",
+    ]
+
+
 def write_catalog_list_effects(order, works):
-    """The Library's All works page (2026-11-08): every work in circulation."""
+    """The Sefarim ledger (2026-11-08): every work the community knows of."""
     out = HEADER + [
-        "# The Library's All works page (2026-11-08): rebuilds the player's",
-        "# kehillah_lib_catalog_works with every work in circulation in this",
-        "# campaign -- the canon, works whose year has come, and books written in",
-        "# play -- in catalog order, and counts them (var:kehillah_lib_catalog_",
-        "# count). A GUI cannot read a global list, so the page reads this",
-        "# character list. Scope: the player (scripted gui kehillah_lib_catalog_",
-        "# refresh, common/scripted_guis/kehillah_library_catalog_page_gui.txt).",
+        "# The Sefarim ledger (2026-11-08; it replaced the Library's All works page",
+        "# the same day): rebuilds the player's kehillah_lib_catalog_works with every",
+        "# work in circulation that the community knows of (known_lines in the",
+        "# generator), by date, and counts them (var:kehillah_lib_catalog_count). A",
+        "# GUI cannot read a global list, so the ledger reads this character list.",
+        "# Scope: the player (scripted guis kehillah_lib_catalog_refresh and",
+        "# kehillah_lib_ledger_open, common/scripted_guis/kehillah_library_catalog_page_gui.txt).",
         "",
         "kehillah_lib_refresh_catalog_list_effect = {",
+        "\tkehillah_lib_refresh_own_library_effect = yes",
         "\tclear_variable_list = kehillah_lib_catalog_works",
         "\tset_variable = { name = kehillah_lib_catalog_count value = 0 }",
     ]
-    for f in order:
+    for f in ledger_order(order, works):
         add = [
             f"add_to_variable_list = {{ name = kehillah_lib_catalog_works target = flag:{f} }}",
             "change_variable = { name = kehillah_lib_catalog_count add = 1 }",
         ]
-        av = avail_lines(f, works[f], "\t\t\t")
-        if av:
-            out += ["\tif = {", "\t\tlimit = {"] + av + ["\t\t}"] + [f"\t\t{a}" for a in add] + ["\t}"]
+        cond = avail_lines(f, works[f], "\t\t\t") + known_lines(f, works[f], "\t\t\t")
+        if cond:
+            out += ["\tif = {", "\t\tlimit = {"] + cond + ["\t\t}"] + [f"\t\t{a}" for a in add] + ["\t}"]
         else:
             out += [f"\t{a}" for a in add]
     out += ["}"]
     write(CATALOG_LIST_EFFECTS, out)
+
+
+# ---------------------------------------------------------------------------
+# The shelf and the ledger (2026-11-08)
+# ---------------------------------------------------------------------------
+
+# Binding tier by the viewer's standing: (lowest standing, tier). Tier 1 is a
+# work outside the rite's canon, kept to answer it; 7 the canon binding.
+SPINE_TIERS = [(1, 2), (3, 3), (5, 4), (7, 5), (9, 6), (11, 7)]
+# Spine width in pixels by tier, as drawn by scripts/kehillah_generate_library_ui_assets.py.
+SPINE_WIDTH = {1: 14, 2: 10, 3: 14, 4: 18, 5: 22, 6: 26, 7: 30}
+SPINE_GAP = 2
+SHELF_ROW_WIDTH = 452
+SPINE_VARIANTS = 4
+# Works shown in a centrepiece instead of on the shelf: the Tanakh (the ark),
+# the Bavli (the Shas case) and the Yerushalmi (its own set on the Talmud shelf).
+CENTREPIECE_CORPORA = ("tanakh", "bavli", "yerushalmi")
+
+
+def spine_variants(order, works):
+    """A colour variant per work, cycling within its genre in catalog order, so
+    neighbouring books on a shelf differ. Books written in play cycle by slot."""
+    seen = {g: 0 for g in GENRES}
+    out = {}
+    for f in order:
+        w = works[f]
+        if authored(w):
+            out[f] = int(f.split("_")[-1]) % SPINE_VARIANTS + 1
+            continue
+        out[f] = seen[w["genre"]] % SPINE_VARIANTS + 1
+        seen[w["genre"]] += 1
+    return out
+
+
+def write_shelf_values(order, works):
+    variants = spine_variants(order, works)
+    out = HEADER + [
+        "# The Beit Midrash shelf (2026-11-08). Every book has the same height; its",
+        "# width and the quality of its binding follow its standing in the viewer's",
+        "# rite, so a book that rises or falls is rebound on the next draw. Design:",
+        "# docs/implementation/2026-11-08-library-shelf-and-ledger.md.",
+        "",
+        "# ---- binding tier (scope: the viewer) from kehillah_lib_standing_<flag>:",
+        "# 1 outside the canon (Rejected), 2 a loose quire (Banned, Suspect), 3 limp",
+        "# vellum (Contested, Obscure), 4 half-leather (Circulating, Respected),",
+        "# 5 tooled leather (Esteemed, Classic), 6 gilt leather (Authoritative,",
+        "# Venerated), 7 the canon binding.",
+    ]
+    for f in order:
+        out += [f"kehillah_lib_spine_tier_{f} = {{", "\tvalue = 1"]
+        # highest first so each branch is a plain lower bound
+        branches = list(reversed(SPINE_TIERS))
+        for i, (lo, tier) in enumerate(branches):
+            kw = "if" if i == 0 else "else_if"
+            out.append(f"\t{kw} = {{ limit = {{ kehillah_lib_standing_{f} >= {lo} }} value = {tier} }}")
+        out.append("}")
+    out += ["", "# ---- shelf width in pixels, gap included (scope: the viewer)."]
+    for f in order:
+        out += [f"kehillah_lib_spine_width_{f} = {{", f"\tvalue = {SPINE_WIDTH[1] + SPINE_GAP}"]
+        for i, tier in enumerate(sorted(SPINE_WIDTH, reverse=True)[:-1]):
+            kw = "if" if i == 0 else "else_if"
+            out.append(f"\t{kw} = {{ limit = {{ kehillah_lib_spine_tier_{f} = {tier} }} value = {SPINE_WIDTH[tier] + SPINE_GAP} }}")
+        out.append("}")
+    out += ["", "# ---- frame in each kehillah_spine_t<tier>.dds strip (any scope): four",
+            "# colours per genre, (genre - 1) * 4 + variant."]
+    for f in order:
+        w = works[f]
+        if authored(w):
+            out += [
+                f"kehillah_lib_spine_frame_{f} = {{",
+                f"\tvalue = kehillah_lib_genre_{f}",
+                "\tsubtract = 1",
+                f"\tmultiply = {SPINE_VARIANTS}",
+                f"\tadd = {variants[f]}",
+                "}",
+            ]
+        else:
+            out.append(f"kehillah_lib_spine_frame_{f} = {(GENRES[w['genre']] - 1) * SPINE_VARIANTS + variants[f]}")
+    out += ["", "# ---- 1 when the scoped library title holds the work (scope: a library title)."]
+    for f in order:
+        out += [f"kehillah_lib_held_{f} = {{", "\tvalue = 0", f"\tif = {{ limit = {{ {held(f)} }} value = 1 }}", "}"]
+    out += [
+        "",
+        "# ---- shelf entries the scoped library holds, every genre (scope: a library",
+        "# title). A corpus counts once, as in the genre counts.",
+        "kehillah_lib_shelf_count_value = {",
+        "\tvalue = kehillah_lib_genre_1_held_count_value",
+        "\tadd = kehillah_lib_genre_2_held_count_value",
+        "\tadd = kehillah_lib_genre_3_held_count_value",
+        "}",
+    ]
+    out += ["", "# ---- 1 when the scoped library has commissioned a copy of the work (scope:",
+            "# a library title)."]
+    for f in order:
+        out += [
+            f"kehillah_lib_sought_{f} = {{",
+            "\tvalue = 0",
+            f"\tif = {{ limit = {{ {held(f, '', 'kehillah_library_commission_work')} }} value = 1 }}",
+            "}",
+        ]
+    write(SHELF_VALUES, out)
+
+
+def write_shelf_effects(order, works):
+    out = HEADER + [
+        "# Lays out the Beit Midrash shelf (2026-11-08). The GUI cannot measure the",
+        "# books it lists, so this fills each genre's shelves here: books in band order",
+        "# (Foundational first), a new shelf when the next binding would overflow",
+        f"# {SHELF_ROW_WIDTH} px. It also picks each genre's reading-stand book: the held work",
+        "# of the highest standing in the viewer's rite. The stand is shown for",
+        "# Machshavah, which has no foundational work, and for Talmudics when the viewer's",
+        "# rite does not hold the Bavli canonical (a Karaite library).",
+        "# Scope: the viewer; scope:library is the library shown. Results are variables",
+        "# on the viewer: kehillah_lib_row_<flag> (shelf number, 0 when the book is",
+        "# not on a shelf), kehillah_lib_rows_<genre> (shelves used) and",
+        "# kehillah_lib_stand_<genre> (the stand's work, when there is one).",
+        "# Run by the scripted gui kehillah_lib_shelf_layout.",
+        "",
+        "kehillah_lib_shelf_layout_effect = {",
+    ]
+    for g in GENRES.values():
+        out += [
+            f"\tset_variable = {{ name = kehillah_lib_acc_{g} value = 0 }}",
+            f"\tset_variable = {{ name = kehillah_lib_rowc_{g} value = 1 }}",
+            f"\tset_variable = {{ name = kehillah_lib_best_{g} value = -1 }}",
+            f"\tset_variable = {{ name = kehillah_lib_stand_{g} value = flag:none }}",
+        ]
+    shelf = [f for f in order if works[f]["corpus"] not in CENTREPIECE_CORPORA]
+    # Every work's row is kept set (0 = not on a shelf), the centrepieces'
+    # included, and an empty stand holds flag:none, so the GUI never reads an
+    # unset variable.
+    for f in order:
+        out.append(f"\tset_variable = {{ name = kehillah_lib_row_{f} value = 0 }}")
+
+    def per_genre(f, effect, genres=tuple(GENRES.values())):
+        w = works[f]
+        if authored(w):
+            return [f"\tif = {{ limit = {{ kehillah_lib_genre_{f} = {g} }} {effect} = {{ G = {g} F = {f} }} }}"
+                    for g in genres]
+        if GENRES[w["genre"]] not in genres:
+            return []
+        return [f"\t{effect} = {{ G = {GENRES[w['genre']]} F = {f} }}"]
+
+    # Machshavah always has a stand; Talmudics only where the viewer's rite does
+    # not hold the Bavli canonical. Parshanut has the ark instead.
+    out += ["", "\t# The reading stands."]
+    for f in shelf:
+        out += per_genre(f, "kehillah_lib_shelf_stand_try_effect", (3,))
+    out += ["\tif = {", "\t\tlimit = { kehillah_lib_standing_work_bavli_moed < 11 }"]
+    for f in shelf:
+        out += ["\t" + ln for ln in per_genre(f, "kehillah_lib_shelf_stand_try_effect", (2,))]
+    out += ["\t}"]
+    out += ["", "\t# The shelves, band by band."]
+    for band in range(1, 6):
+        for f in shelf:
+            w = works[f]
+            if RANKS[w["rank_name"]][0] != band:
+                continue
+            out += per_genre(f, "kehillah_lib_shelf_place_effect")
+    out += [""]
+    # Remove-then-set: only the GUI reads these, and reading them in a limit keeps
+    # the engine's set-but-never-used lint quiet (as in kehillah_library_authors_effects).
+    for g in GENRES.values():
+        out += [
+            f"\tif = {{ limit = {{ exists = var:kehillah_lib_rows_{g} }} remove_variable = kehillah_lib_rows_{g} }}",
+            f"\tset_variable = {{ name = kehillah_lib_rows_{g} value = var:kehillah_lib_rowc_{g} }}",
+            f"\tif = {{ limit = {{ var:kehillah_lib_acc_{g} = 0 }} set_variable = {{ name = kehillah_lib_rows_{g} value = 0 }} }}",
+        ]
+    out += ["}", ""]
+    out += [
+        "# Parameters G (genre) and F (work flag): the held work of the highest",
+        "# standing so far takes the genre's reading stand.",
+        "kehillah_lib_shelf_stand_try_effect = {",
+        "\tif = {",
+        "\t\tlimit = {",
+        "\t\t\tscope:library ?= { is_target_in_variable_list = { name = kehillah_library_works target = flag:$F$ } }",
+        "\t\t\tkehillah_lib_standing_$F$ > var:kehillah_lib_best_$G$",
+        "\t\t}",
+        "\t\tset_variable = { name = kehillah_lib_best_$G$ value = kehillah_lib_standing_$F$ }",
+        "\t\tset_variable = { name = kehillah_lib_stand_$G$ value = flag:$F$ }",
+        "\t}",
+        "}",
+        "",
+        f"# Parameters G and F: put a held book on the next shelf with room ({SHELF_ROW_WIDTH} px).",
+        "kehillah_lib_shelf_place_effect = {",
+        "\tif = {",
+        "\t\tlimit = {",
+        "\t\t\tscope:library ?= { is_target_in_variable_list = { name = kehillah_library_works target = flag:$F$ } }",
+        "\t\t\tNOT = { var:kehillah_lib_stand_$G$ ?= flag:$F$ }",
+        "\t\t}",
+        "\t\tchange_variable = { name = kehillah_lib_acc_$G$ add = kehillah_lib_spine_width_$F$ }",
+        "\t\tif = {",
+        f"\t\t\tlimit = {{ var:kehillah_lib_acc_$G$ > {SHELF_ROW_WIDTH} }}",
+        "\t\t\tchange_variable = { name = kehillah_lib_rowc_$G$ add = 1 }",
+        "\t\t\tset_variable = { name = kehillah_lib_acc_$G$ value = kehillah_lib_spine_width_$F$ }",
+        "\t\t}",
+        "\t\tset_variable = { name = kehillah_lib_row_$F$ value = var:kehillah_lib_rowc_$G$ }",
+        "\t}",
+        "}",
+    ]
+    write(SHELF_EFFECTS, out)
+
+
+def write_ledger_loc(order, works):
+    """Per-work lines of the Sefarim ledger: place, language, author, tenets."""
+    lines = ["l_english:"]
+    for f in order:
+        w = works[f]
+        if authored(w):
+            lines += [
+                f' kehillah_lib_place_{f}:0 "$KEHILLAH_SEFARIM_PLACE_WRITTEN_IN_PLAY$"',
+                f' kehillah_lib_language_{f}:0 "Hebrew"',
+                f' kehillah_lib_byline_{f}:0 "{written_author_link(f)}"',
+                f' kehillah_lib_byline_plain_{f}:0 "$KEHILLAH_SEFARIM_AUTHOR_UNKNOWN$"',
+                f' kehillah_lib_tenets_{f}:0 "$KEHILLAH_SEFARIM_TENETS_AUTHORED$"',
+                f' kehillah_lib_class_{f}:0 "{w["rank_name"]}"',
+            ]
+            continue
+        if needs_writing(w):
+            byline = written_author_link(f)
+            plain = w.get("composer_name") or AUTHOR_NAMES.get(w.get("composer_char") or "", "") or w["composer"]
+        elif w.get("composer_char"):
+            byline = author_link(w["composer_char"])
+            plain = AUTHOR_NAMES[w["composer_char"]]
+        else:
+            byline = plain = w["composer"]
+        tenets = [f"$" + t + "_name$" for t in (w.get("argues_for") or [])]
+        against = [f"#N $" + t + "_name$#!" for t in (w.get("argues_against") or [])]
+        text = ", ".join(tenets)
+        if against:
+            text = (text + "; " if text else "") + "$KEHILLAH_SEFARIM_AGAINST$ " + ", ".join(against)
+        lines += [
+            f' kehillah_lib_place_{f}:0 "{w.get("place", "")}"',
+            f' kehillah_lib_language_{f}:0 "{w.get("language", "")}"',
+            f' kehillah_lib_byline_{f}:0 "{byline}"',
+            f' kehillah_lib_byline_plain_{f}:0 "{plain}"',
+            f' kehillah_lib_tenets_{f}:0 "{text or "$KEHILLAH_SEFARIM_TENETS_NONE$"}"',
+            f' kehillah_lib_class_{f}:0 "{w["rank_name"]}"',
+        ]
+    write(LEDGER_LOC, lines)
 
 
 def write_acquisition_gui(order):
@@ -1696,4 +1972,7 @@ if __name__ == "__main__":
     write_journey_effects(order, works)
     write_journey_custom_loc(order)
     write_study_custom_loc(order, works)
+    write_shelf_values(order, works)
+    write_shelf_effects(order, works)
+    write_ledger_loc(order, works)
     print(f"{len(order)} works -> catalog, standing, study, triggers, GUI and loc")
