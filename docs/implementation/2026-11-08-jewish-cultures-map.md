@@ -84,6 +84,19 @@ The dated rules are why a 1066 start and a 1178 start differ. A save from before
 is seeded the first time any Jewish map is painted (`kehillah_ensure_native_jewish_cultures_effect`,
 gated by the global variable `kehillah_native_jewish_cultures_seeded`).
 
+## Teimani and Ma'aravi (addendum, later 2026-11-08)
+
+Daniel asked for Teimani and asked whether Musta'arabi was too general. It was: Maghrebi Jewry
+(Kairouan, Fez, Tlemcen) is a distinct tradition of its own. Two cultures are added:
+
+- **`teimani`** for Yemen, seeded on d_sanaa, d_taizz and d_hadramawt.
+- **`maaravi`** for the Maghreb. It takes the "Ma'aravim" ("westerners") of the Cairo Geniza as
+  its name, so it is not confused with vanilla's Arab `maghrebi` culture. It is seeded on
+  world_africa_north_west, the minhag Maghreb list, and d_tripolitania and d_syrte.
+
+Musta'arabi now covers Egypt, Syria, the rest of the Levant and Arabia. Both new cultures reuse
+the Bavli name list for now.
+
 ## Ashkenaz emerges; Canaani is absorbed (addendum, later 2026-11-08)
 
 Daniel: "Ashkenazi shouldn't exist in 867." Ashkenazi Jewry forms in the Rhineland in the tenth
