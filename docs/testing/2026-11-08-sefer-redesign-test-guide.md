@@ -40,6 +40,7 @@ end). Build: [the build record](../implementation/2026-11-08-sefer-redesign-buil
 | `.10` | **NEW:** take *Talmud Bavli: Moed* off your shelf |
 | `.11` | **NEW:** give you Pesak and Avelei Tziyon as personal tenets and check their hooks |
 | `.12` | **NEW:** read-only: a Karaite leader's gates (Karaites have no clergy) |
+| `.13` | **NEW:** rebuilds and checks the All known sefarim list ([its record](../implementation/2026-11-08-library-all-works.md)) |
 
 Standing ladder, low to high: Rejected (0), Banned, Suspect, Contested, Obscure, Circulating,
 Respected, Esteemed, Classic, Authoritative, Venerated (10). Above those come Oral Torah,

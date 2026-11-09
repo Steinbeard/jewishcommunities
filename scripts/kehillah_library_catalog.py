@@ -65,6 +65,7 @@ AUTHORED_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_library_
 ACQUIRE_EFFECTS = ROOT / "common/scripted_effects/kehillah_library_acquisition_effects.txt"
 ACQUIRE_GUI = ROOT / "common/scripted_guis/kehillah_library_acquire_work_gui.txt"
 ACQUIRE_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_library_acquisition_custom_loc.txt"
+CATALOG_LIST_EFFECTS = ROOT / "common/scripted_effects/kehillah_library_catalog_list_effects.txt"
 JOURNEY_GUI = ROOT / "common/scripted_guis/kehillah_library_journey_gui.txt"
 JOURNEY_EFFECTS = ROOT / "common/scripted_effects/kehillah_library_journey_generated_effects.txt"
 JOURNEY_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_library_journey_custom_loc.txt"
@@ -1445,6 +1446,35 @@ def write_acquisition_effects(order, works):
     write(ACQUIRE_EFFECTS, out)
 
 
+def write_catalog_list_effects(order, works):
+    """The Library's All works page (2026-11-08): every work in circulation."""
+    out = HEADER + [
+        "# The Library's All works page (2026-11-08): rebuilds the player's",
+        "# kehillah_lib_catalog_works with every work in circulation in this",
+        "# campaign -- the canon, works whose year has come, and books written in",
+        "# play -- in catalog order, and counts them (var:kehillah_lib_catalog_",
+        "# count). A GUI cannot read a global list, so the page reads this",
+        "# character list. Scope: the player (scripted gui kehillah_lib_catalog_",
+        "# refresh, common/scripted_guis/kehillah_library_catalog_page_gui.txt).",
+        "",
+        "kehillah_lib_refresh_catalog_list_effect = {",
+        "\tclear_variable_list = kehillah_lib_catalog_works",
+        "\tset_variable = { name = kehillah_lib_catalog_count value = 0 }",
+    ]
+    for f in order:
+        add = [
+            f"add_to_variable_list = {{ name = kehillah_lib_catalog_works target = flag:{f} }}",
+            "change_variable = { name = kehillah_lib_catalog_count add = 1 }",
+        ]
+        av = avail_lines(f, works[f], "\t\t\t")
+        if av:
+            out += ["\tif = {", "\t\tlimit = {"] + av + ["\t\t}"] + [f"\t\t{a}" for a in add] + ["\t}"]
+        else:
+            out += [f"\t{a}" for a in add]
+    out += ["}"]
+    write(CATALOG_LIST_EFFECTS, out)
+
+
 def write_acquisition_gui(order):
     out = HEADER + ["# Each action revalidates the named missing work before opening confirmation."]
     for f in order:
@@ -1659,6 +1689,7 @@ if __name__ == "__main__":
     write_prose_loc(order, works)
     write_authored_custom_loc(order, works)
     write_acquisition_effects(order, works)
+    write_catalog_list_effects(order, works)
     write_acquisition_gui(order)
     write_acquisition_custom_loc(order)
     write_journey_gui(order)

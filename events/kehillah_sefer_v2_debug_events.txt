@@ -13,6 +13,7 @@
 #   event kehillah_sefer_v2_debug.10  take Bavli Moed off your shelf
 #   event kehillah_sefer_v2_debug.11  personal Pesak and Avelei Tziyon: hooks
 #   event kehillah_sefer_v2_debug.12  Karaites have no clergy: gates (read-only)
+#   event kehillah_sefer_v2_debug.13  the All works page's list: rebuild and check it
 # .2 to .6 and .8 to .11 change the save: use a disposable one.
 # Testing guide: docs/testing/2026-11-08-sefer-redesign-test-guide.md
 # =====================================================================
@@ -367,5 +368,37 @@ kehillah_sefer_v2_debug.12 = {
 			}
 			else = { debug_log = "kehillah_sefer_v2_debug.12 COMMUNITY RABBI unset" }
 		}
+	}
+}
+
+# event kehillah_sefer_v2_debug.13 -- the All works page's list. Rebuilds the
+# player's kehillah_lib_catalog_works, as opening the page does (a display
+# cache; nothing else reads it), and logs what it holds. In Worms 1066: the
+# Torah and Bavli Moed in, Rashi on the Torah out (written c. 1100), and an
+# authored slot in only if a book has been written into it.
+kehillah_sefer_v2_debug.13 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_lib_refresh_catalog_list_effect = yes
+		debug_log = "kehillah_sefer_v2_debug.13 START"
+		if = { limit = { var:kehillah_lib_catalog_count >= 100 } debug_log = "kehillah_sefer_v2_debug.13 COUNT 100 or more" }
+		else_if = { limit = { var:kehillah_lib_catalog_count >= 30 } debug_log = "kehillah_sefer_v2_debug.13 COUNT 30-99" }
+		else_if = { limit = { var:kehillah_lib_catalog_count >= 1 } debug_log = "kehillah_sefer_v2_debug.13 COUNT 1-29" }
+		else = { debug_log = "kehillah_sefer_v2_debug.13 COUNT 0 (wrong)" }
+		if = { limit = { is_target_in_variable_list = { name = kehillah_lib_catalog_works target = flag:work_tanakh_torah } } debug_log = "kehillah_sefer_v2_debug.13 TORAH in" }
+		else = { debug_log = "kehillah_sefer_v2_debug.13 TORAH out (wrong)" }
+		if = { limit = { is_target_in_variable_list = { name = kehillah_lib_catalog_works target = flag:work_bavli_moed } } debug_log = "kehillah_sefer_v2_debug.13 BAVLI MOED in" }
+		else = { debug_log = "kehillah_sefer_v2_debug.13 BAVLI MOED out (wrong after 600)" }
+		if = { limit = { is_target_in_variable_list = { name = kehillah_lib_catalog_works target = flag:work_rashi_torah } } debug_log = "kehillah_sefer_v2_debug.13 RASHI in (right once written)" }
+		else = { debug_log = "kehillah_sefer_v2_debug.13 RASHI out (right until written)" }
+		if = {
+			limit = {
+				is_target_in_variable_list = { name = kehillah_lib_catalog_works target = flag:work_authored_01 }
+				NOT = { has_global_variable = kehillah_wk_work_authored_01_written }
+			}
+			debug_log = "kehillah_sefer_v2_debug.13 AUTHORED 01 listed but unwritten (wrong)"
+		}
+		else = { debug_log = "kehillah_sefer_v2_debug.13 AUTHORED 01 consistent" }
 	}
 }
