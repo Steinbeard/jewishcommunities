@@ -1020,7 +1020,7 @@ window = {
 				size = { 40 40 }
 				margin_left = 24
 				margin_right = 12
-				enabled = "[HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_community' ).Title.IsValid]"
+				enabled = "[Or( HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_community' ).Title.IsValid, HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_library' ).Title.IsValid )]"
 				onclick = "[GetVariableSystem.Toggle( 'kehillah_inspector_open' )]"
 				down = "[GetVariableSystem.Exists( 'kehillah_inspector_open' )]"
 				tooltip = "KEHILLAH_INSPECTOR_TOGGLE_TOOLTIP"
@@ -1030,7 +1030,7 @@ window = {
 					parentanchor = center
 					size = { 25 25 }
 					texture = "gfx/interface/icons/faith/judaism.dds"
-					alpha = "[Select_float( HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_community' ).Title.IsValid, '(float)1', '(float)0.35' )]"
+					alpha = "[Select_float( Or( HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_community' ).Title.IsValid, HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_library' ).Title.IsValid ), '(float)1', '(float)0.35' )]"
 					alwaystransparent = yes
 				}
 			}
@@ -2230,18 +2230,30 @@ window = {
 			}
 		}
 	}
+	# 2026-11-08 (Daniel): the county's Jewish cards, stacked -- the community
+	# card (or, on the communities map, the vacant-site card), then the Beit
+	# Midrash card for a temple-barony library in the county. Each card keeps
+	# its old indentation inside this container. Record:
+	# docs/implementation/2026-11-08-library-cards.md.
+	flowcontainer = {
+		name = "kehillah_county_cards"
+		position = { 613 128 }
+		direction = vertical
+		spacing = 8
+		ignoreinvisible = yes
+
 	# Kehillah map inspector. The persistent county link supplies the community
 	# for every selected holding; the barony cache still paints the map marker.
 	# A child of this window can read HoldingView, unlike a top-level scripted
 	# widget (the same context boundary found in the domicile library pass).
+	# 2026-11-08: shown in every Jewish map mode, not only the communities map.
 	widget = {
 		name = "kehillah_community_inspector"
-		position = { 613 128 }
 		size = { 320 -1 }
 		allow_outside = yes
 		alwaystransparent = no
 		filter_mouse = all
-		visible = "[And( HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_community' ).Title.IsValid, Or( IsMapMode( 'kehillah_communities_map' ), GetVariableSystem.Exists( 'kehillah_inspector_open' ) ) )]"
+		visible = "[And( HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_community' ).Title.IsValid, Or( Or( Or3( IsMapMode('kehillah_communities_map'), IsMapMode('kehillah_community_rites_map'), IsMapMode('kehillah_realm_jewish_policy_map') ), Or( IsMapMode('kehillah_community_crises_map'), IsMapMode('kehillah_libraries_map') ) ), GetVariableSystem.Exists( 'kehillah_inspector_open' ) ) )]"
 		using = Window_Background
 		# The vanilla template offsets its painted frame by -23/-17.
 		# Match the frame to this standalone card before adding gutters.
@@ -2326,6 +2338,22 @@ window = {
 						}
 					}
 					divider_light = { size = { 264 2 } margin_top = 12 margin_bottom = 12 }
+					# 2026-11-08 (Daniel): a yeshiva studies here.
+					vbox = {
+						size = { 264 -1 }
+						margin_bottom = 12
+						visible = "[GetScriptedGui( 'kehillah_card_has_yeshiva' ).IsShown( GuiScope.SetRoot( Title.MakeScope ).End )]"
+						widget = {
+							name = "kehillah_card_yeshiva"
+							size = { 264 32 }
+							tooltip = "KEHILLAH_CARD_YESHIVA_TOOLTIP"
+							using = tooltip_se
+							background = { texture = "gfx/interface/colors/white.dds" color = { 0.08 0.075 0.065 0.40 } }
+							icon = { position = { 8 4 } size = { 24 24 } texture = "gfx/interface/icons/court_position_types/rosh_yeshiva_kehillah_position.dds" alwaystransparent = yes }
+							text_single = { position = { 40 4 } size = { 110 24 } autoresize = no text = "KEHILLAH_CARD_YESHIVA_LABEL" align = left|nobaseline default_format = "#P" alwaystransparent = yes }
+							text_single = { position = { 150 4 } size = { 106 24 } autoresize = no text = "[Title.Custom('KehillahCardYeshiva')]" align = right|nobaseline default_format = "#high" alwaystransparent = yes }
+						}
+					}
 					vbox = {
 						size = { 264 -1 }
 						spacing = 4
@@ -2591,7 +2619,8 @@ window = {
 						}
 					}
 					divider_light = { size = { 264 2 } margin_top = 12 margin_bottom = 12 }
-					# Three equal 88px sections share one quiet 264px footer band.
+					# Four equal 66px sections share one quiet 264px footer band (2026-11-08:
+					# the fourth, the Library, was added; they were three of 88px).
 					widget = {
 						name = "kehillah_inspector_footer"
 						size = { 264 56 }
@@ -2603,7 +2632,7 @@ window = {
 							spacing = 0
 							widget = {
 								name = "kehillah_inspector_footer_risk"
-								size = { 88 56 }
+								size = { 66 56 }
 								layoutpolicy_horizontal = fixed
 								tooltip = "KEHILLAH_BD_DANGER_TOOLTIP"
 								using = tooltip_se
@@ -2619,7 +2648,7 @@ window = {
 									parentanchor = bottom|hcenter
 									widgetanchor = bottom|hcenter
 									position = { 0 -5 }
-									size = { 80 18 }
+									size = { 62 18 }
 									autoresize = no
 									# 2026-11-07: "In crisis" / "After crisis" in place of the chance.
 									text = "[Title.GetHolder.Custom( 'KehillahDangerCompact' )]"
@@ -2631,7 +2660,7 @@ window = {
 							}
 							button_normal = {
 								name = "kehillah_inspector_footer_host"
-								size = { 88 56 }
+								size = { 66 56 }
 								layoutpolicy_horizontal = fixed
 								enabled = "[Title.MakeScope.Var( 'kehillah_ui_host_realm' ).Title.GetHolder.IsAlive]"
 								onclick = "[DefaultOnCharacterClick(Title.MakeScope.Var( 'kehillah_ui_host_realm' ).Title.GetHolder.GetID)]"
@@ -2649,7 +2678,7 @@ window = {
 									parentanchor = bottom|hcenter
 									widgetanchor = bottom|hcenter
 									position = { 0 -5 }
-									size = { 80 18 }
+									size = { 62 18 }
 									autoresize = no
 									text = "KEHILLAH_INSPECTOR_HOST_SHORT"
 									align = center|nobaseline
@@ -2660,7 +2689,7 @@ window = {
 							}
 							button_normal = {
 								name = "kehillah_inspector_footer_quarter"
-								size = { 88 56 }
+								size = { 66 56 }
 								layoutpolicy_horizontal = fixed
 								tooltip = "KEHILLAH_INSPECTOR_QUARTER_TOOLTIP"
 								using = tooltip_se
@@ -2679,7 +2708,7 @@ window = {
 									parentanchor = bottom|hcenter
 									widgetanchor = bottom|hcenter
 									position = { 0 -5 }
-									size = { 80 18 }
+									size = { 62 18 }
 									autoresize = no
 									text = "KEHILLAH_INSPECTOR_QUARTER_SHORT"
 									align = center|nobaseline
@@ -2688,10 +2717,44 @@ window = {
 									alwaystransparent = yes
 								}
 							}
+							button_normal = {
+								name = "kehillah_inspector_footer_library"
+								size = { 66 56 }
+								layoutpolicy_horizontal = fixed
+								tooltip = "KEHILLAH_CARD_LIBRARY_TOOLTIP"
+								tooltip_when_disabled = "KEHILLAH_CARD_LIBRARY_NONE_TOOLTIP"
+								using = tooltip_se
+								enabled = "[GetScriptedGui( 'kehillah_lib_window_open_title' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End )]"
+								onclick = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
+								onclick = "[GetVariableSystem.Clear( 'kehillah_lib_parent_corpus' )]"
+								onclick = "[GetScriptedGui( 'kehillah_lib_window_open_title' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End )]"
+								onclick = "[GetVariableSystem.Set( 'kehillah_lib_window_open', 'yes' )]"
+								icon = {
+									parentanchor = top|hcenter
+									widgetanchor = top|hcenter
+									position = { 0 8 }
+									size = { 22 22 }
+									texture = "gfx/interface/icons/artifact/artifact_chronicle.dds"
+									alwaystransparent = yes
+								}
+								text_single = {
+									parentanchor = bottom|hcenter
+									widgetanchor = bottom|hcenter
+									position = { 0 -5 }
+									size = { 62 18 }
+									autoresize = no
+									text = "KEHILLAH_CARD_LIBRARY_SHORT"
+									align = center|nobaseline
+									default_format = "#clickable"
+									using = Font_Size_Small
+									alwaystransparent = yes
+								}
+							}
 						}
-						# Non-interactive hairlines separate the three equal hit areas.
-						widget = { position = { 88 12 } size = { 1 32 } alwaystransparent = yes background = { texture = "gfx/interface/colors/white.dds" color = { 0.62 0.54 0.38 0.22 } } }
-						widget = { position = { 176 12 } size = { 1 32 } alwaystransparent = yes background = { texture = "gfx/interface/colors/white.dds" color = { 0.62 0.54 0.38 0.22 } } }
+						# Non-interactive hairlines separate the four equal hit areas.
+						widget = { position = { 66 12 } size = { 1 32 } alwaystransparent = yes background = { texture = "gfx/interface/colors/white.dds" color = { 0.62 0.54 0.38 0.22 } } }
+						widget = { position = { 132 12 } size = { 1 32 } alwaystransparent = yes background = { texture = "gfx/interface/colors/white.dds" color = { 0.62 0.54 0.38 0.22 } } }
+						widget = { position = { 198 12 } size = { 1 32 } alwaystransparent = yes background = { texture = "gfx/interface/colors/white.dds" color = { 0.62 0.54 0.38 0.22 } } }
 					}
 				}
 				spacer = { size = { 28 1 } layoutpolicy_horizontal = fixed }
@@ -2701,7 +2764,6 @@ window = {
 	}
 	widget = {
 		name = "kehillah_vacant_site_inspector"
-		position = { 613 128 }
 		size = { 320 -1 }
 		allow_outside = yes
 		alwaystransparent = no
@@ -2820,6 +2882,167 @@ window = {
 			}
 			spacer = { size = { 320 20 } layoutpolicy_vertical = fixed }
 		}
+	}
+
+	# 2026-11-08 (Daniel): the Beit Midrash card -- a library on a temple
+	# barony in this county (var:kehillah_inspector_library, rebuilt by
+	# kehillah_refresh_library_card_links_effect on every Jewish map paint).
+	# Shown in every Jewish map mode, or with the round toggle, like the
+	# community card above it.
+	widget = {
+		name = "kehillah_beit_midrash_inspector"
+		size = { 320 -1 }
+		allow_outside = yes
+		alwaystransparent = no
+		filter_mouse = all
+		visible = "[And( HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_library' ).Title.IsValid, Or( Or( Or3( IsMapMode('kehillah_communities_map'), IsMapMode('kehillah_community_rites_map'), IsMapMode('kehillah_realm_jewish_policy_map') ), Or( IsMapMode('kehillah_community_crises_map'), IsMapMode('kehillah_libraries_map') ) ), GetVariableSystem.Exists( 'kehillah_inspector_open' ) ) )]"
+		using = Window_Background
+		blockoverride "bg_margins" { margin = { 0 0 } }
+		vbox = {
+			resizeparent = yes
+			layoutpolicy_horizontal = fixed
+			size = { 320 -1 }
+			spacing = 0
+			spacer = { size = { 320 20 } layoutpolicy_vertical = fixed }
+			hbox = {
+				layoutpolicy_horizontal = fixed
+				size = { 320 -1 }
+				spacing = 0
+				spacer = { size = { 28 1 } layoutpolicy_horizontal = fixed }
+				vbox = {
+					datacontext = "[HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_library' ).Title]"
+					layoutpolicy_horizontal = fixed
+					size = { 264 -1 }
+					spacing = 0
+
+					button_normal = {
+						size = { 264 32 }
+						onclick = "[OpenGameViewData( 'title_view_window', Title.Self )]"
+						tooltip = "[Title.GetNameNoTooltip]"
+						text_single = {
+							size = { 100% 100% }
+							autoresize = no
+							text = "KEHILLAH_CARD_BM_HEADER"
+							align = left|nobaseline
+							default_format = "#clickable;bold"
+							using = Font_Size_Medium
+							alwaystransparent = yes
+						}
+					}
+					text_multi = {
+						layoutpolicy_horizontal = expanding
+						size = { 264 -1 }
+						text = "[Title.Custom('KehillahCardBmKind')]"
+						autoresize = yes
+						max_width = 264
+						align = left|top
+						default_format = "#medium"
+						margin_bottom = 12
+					}
+					hbox = {
+						size = { 264 72 }
+						spacing = 12
+						widget = {
+							size = { 64 72 }
+							datacontext = "[Title.GetHolder]"
+							portrait_head_tiny = { parentanchor = center }
+						}
+						vbox = {
+							size = { 188 -1 }
+							parentanchor = vcenter
+							spacing = 4
+							button_normal = {
+								size = { 188 24 }
+								onclick = "[DefaultOnCharacterClick(Title.GetHolder.GetID)]"
+								tooltip = "[Title.GetHolder.GetUINameNoTooltip]"
+								text_single = {
+									size = { 100% 100% }
+									autoresize = no
+									text = "KEHILLAH_CARD_BM_HOLDER"
+									align = left|nobaseline
+									default_format = "#clickable"
+									alwaystransparent = yes
+								}
+							}
+							text_single = {
+								size = { 188 20 }
+								autoresize = no
+								text = "KEHILLAH_CARD_BM_REALM"
+								align = left|nobaseline
+								default_format = "#weak"
+							}
+						}
+					}
+					divider_light = { size = { 264 2 } margin_top = 12 margin_bottom = 12 }
+					# 2026-11-08 (Daniel): a yeshiva studies here.
+					vbox = {
+						size = { 264 -1 }
+						margin_bottom = 12
+						visible = "[GetScriptedGui( 'kehillah_card_has_yeshiva' ).IsShown( GuiScope.SetRoot( Title.MakeScope ).End )]"
+						widget = {
+							name = "kehillah_card_yeshiva"
+							size = { 264 32 }
+							tooltip = "KEHILLAH_CARD_YESHIVA_TOOLTIP"
+							using = tooltip_se
+							background = { texture = "gfx/interface/colors/white.dds" color = { 0.08 0.075 0.065 0.40 } }
+							icon = { position = { 8 4 } size = { 24 24 } texture = "gfx/interface/icons/court_position_types/rosh_yeshiva_kehillah_position.dds" alwaystransparent = yes }
+							text_single = { position = { 40 4 } size = { 110 24 } autoresize = no text = "KEHILLAH_CARD_YESHIVA_LABEL" align = left|nobaseline default_format = "#P" alwaystransparent = yes }
+							text_single = { position = { 150 4 } size = { 106 24 } autoresize = no text = "[Title.Custom('KehillahCardYeshiva')]" align = right|nobaseline default_format = "#high" alwaystransparent = yes }
+						}
+					}
+					vbox = {
+						size = { 264 -1 }
+						spacing = 6
+						hbox = {
+							size = { 264 24 }
+							layoutpolicy_horizontal = fixed
+							text_single = { size = { 120 24 } autoresize = no text = "KEHILLAH_CARD_BM_WORKS_LABEL" align = left|nobaseline default_format = "#low" using = Font_Size_Small alwaystransparent = yes }
+							spacer = { size = { 8 1 } layoutpolicy_horizontal = fixed }
+							text_single = { size = { 136 24 } autoresize = no text = "KEHILLAH_CARD_BM_WORKS" align = right|nobaseline default_format = "#high" alwaystransparent = yes }
+						}
+						hbox = {
+							size = { 264 24 }
+							layoutpolicy_horizontal = fixed
+							text_single = { size = { 120 24 } autoresize = no text = "KEHILLAH_CARD_BM_TANAKH_LABEL" align = left|nobaseline default_format = "#low" using = Font_Size_Small alwaystransparent = yes }
+							spacer = { size = { 8 1 } layoutpolicy_horizontal = fixed }
+							text_single = { size = { 136 24 } autoresize = no text = "KEHILLAH_CARD_BM_TANAKH" align = right|nobaseline default_format = "#high" alwaystransparent = yes }
+						}
+						hbox = {
+							size = { 264 24 }
+							layoutpolicy_horizontal = fixed
+							text_single = { size = { 120 24 } autoresize = no text = "KEHILLAH_CARD_BM_BAVLI_LABEL" align = left|nobaseline default_format = "#low" using = Font_Size_Small alwaystransparent = yes }
+							spacer = { size = { 8 1 } layoutpolicy_horizontal = fixed }
+							text_single = { size = { 136 24 } autoresize = no text = "[Title.Custom('KehillahCardShas')]" align = right|nobaseline default_format = "#high" alwaystransparent = yes }
+						}
+						hbox = {
+							size = { 264 24 }
+							layoutpolicy_horizontal = fixed
+							text_single = { size = { 120 24 } autoresize = no text = "KEHILLAH_CARD_BM_YERUSHALMI_LABEL" align = left|nobaseline default_format = "#low" using = Font_Size_Small alwaystransparent = yes }
+							spacer = { size = { 8 1 } layoutpolicy_horizontal = fixed }
+							text_single = { size = { 136 24 } autoresize = no text = "KEHILLAH_CARD_BM_YERUSHALMI" align = right|nobaseline default_format = "#high" alwaystransparent = yes }
+						}
+					}
+					divider_light = { size = { 264 2 } margin_top = 12 margin_bottom = 12 }
+					button_normal = {
+						name = "kehillah_beit_midrash_open_library"
+						size = { 264 48 }
+						tooltip = "KEHILLAH_CARD_BM_LIBRARY_TOOLTIP"
+						using = tooltip_se
+						enabled = "[GetScriptedGui( 'kehillah_lib_window_open_title' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End )]"
+						onclick = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
+						onclick = "[GetVariableSystem.Clear( 'kehillah_lib_parent_corpus' )]"
+						onclick = "[GetScriptedGui( 'kehillah_lib_window_open_title' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End )]"
+						onclick = "[GetVariableSystem.Set( 'kehillah_lib_window_open', 'yes' )]"
+						background = { texture = "gfx/interface/colors/white.dds" color = { 0.08 0.075 0.065 0.40 } }
+						icon = { position = { 12 9 } size = { 30 30 } texture = "gfx/interface/icons/artifact/artifact_chronicle.dds" alwaystransparent = yes }
+						text_single = { position = { 52 12 } size = { 200 24 } autoresize = no text = "KEHILLAH_CARD_BM_OPEN_LIBRARY" align = left|nobaseline default_format = "#clickable" alwaystransparent = yes }
+					}
+				}
+				spacer = { size = { 28 1 } layoutpolicy_horizontal = fixed }
+			}
+			spacer = { size = { 320 20 } layoutpolicy_vertical = fixed }
+		}
+	}
 	}
 }
 

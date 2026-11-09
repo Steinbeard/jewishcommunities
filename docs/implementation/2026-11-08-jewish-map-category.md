@@ -5,6 +5,10 @@ checked live (checklist at the end). Supersedes the "Faith strip" and "Banner" p
 [the 2026-10-29 map-mode strip note](2026-10-29-map-mode-strip.md) and retires the roster window
 of [v12](../spec/v12-community-map-view.md).
 
+*Addendum, later 2026-11-08:* the community card now shows in every Jewish map mode, has a Library
+button and a yeshiva line, and a Beit Midrash card joins it; Beit Midrash baronies show on the
+Communities map. See [the library cards note](2026-11-08-library-cards.md).
+
 ## What Daniel asked for
 
 1. Map modes for community crises, with a hover card about the crisis.
