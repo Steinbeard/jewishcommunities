@@ -244,8 +244,8 @@ Standing row.
      (`kehillah_sefer_triggers.txt`). The library must be held and unsealed, and be one of: the
      reader's own Kehillah title, his `kehillah_own_library`, or a library he holds; a library
      seated in the county he stands in or his domicile's county; for a landed ruler, a library
-     seated in a county he holds directly. "Domain" is read as held directly, so a vassal's county
-     doesn't count. That is the more conservative reading; widen it to the realm if wanted.
+     seated in a county he holds directly. "Domain" means held directly, so a vassal's county
+     doesn't count (Daniel's decision, same day).
      `kehillah_study_torah_has_accessible_library_trigger` now walks the registry with it, which
      replaces its old capital-province and adventurer-location branches. §2.3's "at the seat" rule
      widens from the seat's province to its county.
