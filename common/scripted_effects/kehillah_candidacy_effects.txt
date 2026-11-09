@@ -1,0 +1,395 @@
+﻿# =====================================================================
+# STAND FOR THE SEAT -- effects.
+# docs/spec/2026-11-08-stand-for-the-seat.md. Built 2026-11-08,
+# NOT live-tested: see docs/testing/2026-11-08-stand-for-the-seat-
+# validation.md.
+#
+# THE ROUTE (spec 7.0). A declaration invests in the candidate's own
+# candidacy on the seat's title (change_appointment_investment), which
+# puts him in the seat's own appointment pool, as vanilla's
+# request_governorship_interaction does for a noble of another house.
+# kehillah_leadership scores him there. If he is first when the leader
+# dies, the engine gives him the seat itself. All this file does after
+# that is hand his old community on and rebuild his Quarter
+# (kehillah_cand_take_seat_effect, fired a day later by
+# kehillah_candidacy.0010).
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# Declaring and ending a candidacy.
+# ---------------------------------------------------------------------
+
+# Root: the candidate. Requires scope:cand_seat.
+kehillah_cand_declare_effect = {
+	set_variable = {
+		name = kehillah_candidacy_target
+		value = scope:cand_seat
+	}
+	scope:cand_seat = {
+		add_to_variable_list = {
+			name = kehillah_declared_candidates
+			target = root
+		}
+		change_appointment_investment = {
+			target = root
+			investor = root
+			value = kehillah_cand_investment_value
+		}
+	}
+	debug_log = "KEHILLAH_CAND: declared for [cand_seat.GetName]"
+	debug_log_scopes = yes
+}
+
+# Root: the candidate. Ends his candidacy, takes back the investment while
+# it is still on the title, and starts a cooldown of $YEARS$ years.
+kehillah_cand_end_candidacy_effect = {
+	if = {
+		limit = { exists = var:kehillah_candidacy_target }
+		var:kehillah_candidacy_target = { save_scope_as = cand_end_seat }
+		scope:cand_end_seat = {
+			if = {
+				limit = {
+					is_target_in_variable_list = {
+						name = kehillah_declared_candidates
+						target = root
+					}
+				}
+				remove_list_variable = {
+					name = kehillah_declared_candidates
+					target = root
+				}
+			}
+		}
+		if = {
+			limit = {
+				succession_appointment_score_invested = {
+					title = scope:cand_end_seat
+					candidate = root
+					value > 0
+				}
+			}
+			scope:cand_end_seat = {
+				change_appointment_investment = {
+					target = root
+					investor = root
+					value = {
+						value = kehillah_cand_investment_value
+						multiply = -1
+					}
+				}
+			}
+		}
+		remove_variable = kehillah_candidacy_target
+	}
+	set_variable = {
+		name = kehillah_candidacy_cooldown
+		years = $YEARS$
+	}
+}
+
+# ---------------------------------------------------------------------
+# The Quarter mirror backup.
+#
+# Why: when the winner takes the seat, on_title_gain rebuilds the seat's
+# Quarter on his domicile ON TOP of his old community's buildings
+# (kehillah_restore_track_*_effect only adds). If add_domicile_building
+# also fires on_domicile_building_completed, kehillah_record_quarter_
+# effect would then write that mixed domicile into whichever title is
+# his primary at that moment, corrupting one community's record. So the
+# record of both communities is copied when the seat falls vacant
+# (kehillah_cand_on_death) and copied back before the rebuild. Whether
+# the corruption really happens is validation V6; the backup costs
+# nothing if it does not.
+# ---------------------------------------------------------------------
+
+# Scope: a community title.
+kehillah_cand_backup_var_effect = {
+	if = {
+		limit = { exists = var:$VAR$ }
+		set_variable = {
+			name = kehillah_cand_bk_$VAR$
+			value = var:$VAR$
+		}
+	}
+	else_if = {
+		limit = { exists = var:kehillah_cand_bk_$VAR$ }
+		remove_variable = kehillah_cand_bk_$VAR$
+	}
+}
+
+kehillah_cand_restore_var_effect = {
+	if = {
+		limit = { exists = var:kehillah_cand_bk_$VAR$ }
+		set_variable = {
+			name = $VAR$
+			value = var:kehillah_cand_bk_$VAR$
+		}
+		remove_variable = kehillah_cand_bk_$VAR$
+	}
+	else_if = {
+		limit = { exists = var:$VAR$ }
+		remove_variable = $VAR$
+	}
+}
+
+kehillah_cand_drop_var_effect = {
+	if = {
+		limit = { exists = var:kehillah_cand_bk_$VAR$ }
+		remove_variable = kehillah_cand_bk_$VAR$
+	}
+}
+
+# Scope: a community title. The nine tracks kehillah_record_quarter_effect
+# writes.
+kehillah_cand_backup_mirror_effect = {
+	kehillah_cand_backup_var_effect = { VAR = kq_synagogue }
+	kehillah_cand_backup_var_effect = { VAR = kq_beit_midrash }
+	kehillah_cand_backup_var_effect = { VAR = kq_countinghouse }
+	kehillah_cand_backup_var_effect = { VAR = kq_mikvah }
+	kehillah_cand_backup_var_effect = { VAR = kq_hekdesh }
+	kehillah_cand_backup_var_effect = { VAR = kq_sofer_workshop }
+	kehillah_cand_backup_var_effect = { VAR = kq_slaughterhouse }
+	kehillah_cand_backup_var_effect = { VAR = kq_market_stalls }
+	kehillah_cand_backup_var_effect = { VAR = kq_workshops }
+	set_variable = {
+		name = kehillah_cand_bk_taken
+		value = yes
+	}
+}
+
+# Scope: a community title. Only acts if a backup was taken, so a missing
+# backup never wipes a record.
+kehillah_cand_restore_mirror_effect = {
+	if = {
+		limit = { has_variable = kehillah_cand_bk_taken }
+		kehillah_cand_restore_var_effect = { VAR = kq_synagogue }
+		kehillah_cand_restore_var_effect = { VAR = kq_beit_midrash }
+		kehillah_cand_restore_var_effect = { VAR = kq_countinghouse }
+		kehillah_cand_restore_var_effect = { VAR = kq_mikvah }
+		kehillah_cand_restore_var_effect = { VAR = kq_hekdesh }
+		kehillah_cand_restore_var_effect = { VAR = kq_sofer_workshop }
+		kehillah_cand_restore_var_effect = { VAR = kq_slaughterhouse }
+		kehillah_cand_restore_var_effect = { VAR = kq_market_stalls }
+		kehillah_cand_restore_var_effect = { VAR = kq_workshops }
+		remove_variable = kehillah_cand_bk_taken
+	}
+}
+
+# Scope: a community title. Throws a backup away unused.
+kehillah_cand_discard_backup_effect = {
+	if = {
+		limit = { has_variable = kehillah_cand_bk_taken }
+		kehillah_cand_drop_var_effect = { VAR = kq_synagogue }
+		kehillah_cand_drop_var_effect = { VAR = kq_beit_midrash }
+		kehillah_cand_drop_var_effect = { VAR = kq_countinghouse }
+		kehillah_cand_drop_var_effect = { VAR = kq_mikvah }
+		kehillah_cand_drop_var_effect = { VAR = kq_hekdesh }
+		kehillah_cand_drop_var_effect = { VAR = kq_sofer_workshop }
+		kehillah_cand_drop_var_effect = { VAR = kq_slaughterhouse }
+		kehillah_cand_drop_var_effect = { VAR = kq_market_stalls }
+		kehillah_cand_drop_var_effect = { VAR = kq_workshops }
+		remove_variable = kehillah_cand_bk_taken
+	}
+}
+
+# ---------------------------------------------------------------------
+# Clearing a Quarter. Scope: a domicile. Removes every Kehillah building,
+# highest tier first, without refund. The list is common/domiciles/
+# buildings/kehillah_domicile_buildings.txt; keep it in step.
+# ---------------------------------------------------------------------
+
+kehillah_cand_remove_building_effect = {
+	if = {
+		limit = { has_domicile_building = $B$ }
+		remove_domicile_building_no_refund = $B$
+	}
+}
+
+kehillah_cand_clear_quarter_effect = {
+	kehillah_cand_remove_building_effect = { B = kehillah_synagogue_05 }
+	kehillah_cand_remove_building_effect = { B = kehillah_synagogue_04 }
+	kehillah_cand_remove_building_effect = { B = kehillah_synagogue_03 }
+	kehillah_cand_remove_building_effect = { B = kehillah_synagogue_02 }
+	kehillah_cand_remove_building_effect = { B = kehillah_synagogue_01 }
+	kehillah_cand_remove_building_effect = { B = kehillah_beit_midrash_03 }
+	kehillah_cand_remove_building_effect = { B = kehillah_beit_midrash_02 }
+	kehillah_cand_remove_building_effect = { B = kehillah_beit_midrash_01 }
+	kehillah_cand_remove_building_effect = { B = kehillah_countinghouse_03 }
+	kehillah_cand_remove_building_effect = { B = kehillah_countinghouse_02 }
+	kehillah_cand_remove_building_effect = { B = kehillah_countinghouse_01 }
+	kehillah_cand_remove_building_effect = { B = kehillah_mikvah_02 }
+	kehillah_cand_remove_building_effect = { B = kehillah_mikvah_01 }
+	kehillah_cand_remove_building_effect = { B = kehillah_hekdesh_02 }
+	kehillah_cand_remove_building_effect = { B = kehillah_hekdesh_01 }
+	kehillah_cand_remove_building_effect = { B = kehillah_sofer_workshop_02 }
+	kehillah_cand_remove_building_effect = { B = kehillah_sofer_workshop_01 }
+	kehillah_cand_remove_building_effect = { B = kehillah_slaughterhouse_02 }
+	kehillah_cand_remove_building_effect = { B = kehillah_slaughterhouse_01 }
+	kehillah_cand_remove_building_effect = { B = kehillah_market_stalls_03 }
+	kehillah_cand_remove_building_effect = { B = kehillah_market_stalls_02 }
+	kehillah_cand_remove_building_effect = { B = kehillah_market_stalls_01 }
+	kehillah_cand_remove_building_effect = { B = kehillah_workshops_03 }
+	kehillah_cand_remove_building_effect = { B = kehillah_workshops_02 }
+	kehillah_cand_remove_building_effect = { B = kehillah_workshops_01 }
+}
+
+# ---------------------------------------------------------------------
+# Taking the seat. Root: the winner, who now holds the new seat and still
+# holds his old one. Requires scope:cand_new_seat; scope:cand_old_seat
+# when he led a community before.
+#
+# Order (spec 7.3, revised for the investment route):
+#   1. Copy back both communities' Quarter records (backup above).
+#   2. Hand the old seat to its own heir, then send the old community's
+#      people at his court with it.
+#   3. Make the new seat primary, clear the domicile, rebuild it from the
+#      new seat's record.
+#   4. Bring any of the new community's people who did not follow the
+#      seat to his court.
+#   5. End every candidacy on the seat.
+# ---------------------------------------------------------------------
+
+kehillah_cand_take_seat_effect = {
+	debug_log = "KEHILLAH_CAND: take seat begin"
+	debug_log_scopes = yes
+
+	# 1.
+	scope:cand_new_seat = { kehillah_cand_restore_mirror_effect = yes }
+	if = {
+		limit = { exists = scope:cand_old_seat }
+		scope:cand_old_seat = { kehillah_cand_restore_mirror_effect = yes }
+	}
+
+	# 2.
+	if = {
+		limit = { exists = scope:cand_old_seat }
+		scope:cand_old_seat = {
+			current_heir ?= { save_scope_as = cand_old_successor }
+		}
+		if = {
+			limit = {
+				exists = scope:cand_old_successor
+				NOT = { scope:cand_old_successor = root }
+				scope:cand_old_successor = { is_alive = yes }
+			}
+			# The old community's people: his courtiers other than his own
+			# household and the new community's arrivals. Listed before the
+			# title moves, so the list is his court as it stands now.
+			every_courtier = {
+				limit = {
+					NOT = { this = scope:cand_old_successor }
+					NOT = { is_spouse_of = root }
+					NOT = { is_child_of = root }
+					NOT = {
+						scope:cand_new_seat = {
+							is_target_in_variable_list = {
+								name = kehillah_cand_court_roster
+								target = prev
+							}
+						}
+					}
+				}
+				add_to_temporary_list = cand_old_people
+			}
+			scope:cand_old_successor = { get_title = scope:cand_old_seat }
+			every_in_list = {
+				list = cand_old_people
+				limit = {
+					is_alive = yes
+					is_ruler = no
+				}
+				save_temporary_scope_as = cand_mover
+				scope:cand_old_successor = { add_courtier = scope:cand_mover }
+			}
+			debug_log = "KEHILLAH_CAND: old seat [cand_old_seat.GetName] passed to [cand_old_successor.GetName]"
+		}
+		else = {
+			# No one to take it. He keeps it for now; validation V9 covers
+			# what to do about an empty pool.
+			debug_log = "KEHILLAH_CAND: old seat [cand_old_seat.GetName] has no heir; the winner keeps it"
+		}
+	}
+
+	# 3.
+	set_primary_title_to = scope:cand_new_seat
+	if = {
+		limit = { exists = domicile }
+		domicile = { kehillah_cand_clear_quarter_effect = yes }
+		scope:cand_new_seat = { save_scope_as = kq_title }
+		kehillah_restore_quarter_effect = yes
+	}
+	else = {
+		debug_log = "KEHILLAH_CAND: winner has no domicile; the Quarter was not rebuilt"
+	}
+
+	# 4.
+	scope:cand_new_seat = {
+		if = {
+			limit = { has_variable_list = kehillah_cand_court_roster }
+			every_in_list = {
+				variable = kehillah_cand_court_roster
+				limit = {
+					is_alive = yes
+					is_ruler = no
+					NOT = { this = root }
+					NOT = { court_owner ?= root }
+				}
+				save_temporary_scope_as = cand_arrival
+				root = { add_courtier = scope:cand_arrival }
+			}
+			clear_variable_list = kehillah_cand_court_roster
+		}
+	}
+
+	# 5.
+	scope:cand_new_seat = {
+		if = {
+			limit = { has_variable_list = kehillah_declared_candidates }
+			every_in_list = {
+				variable = kehillah_declared_candidates
+				add_to_temporary_list = cand_rivals
+			}
+			clear_variable_list = kehillah_declared_candidates
+		}
+	}
+	every_in_list = {
+		list = cand_rivals
+		limit = {
+			is_alive = yes
+			NOT = { this = root }
+		}
+		kehillah_cand_end_candidacy_effect = { YEARS = kehillah_cand_lost_cooldown_years_value }
+		primary_title ?= { kehillah_cand_discard_backup_effect = yes }
+	}
+	kehillah_cand_end_candidacy_effect = { YEARS = kehillah_cand_won_cooldown_years_value }
+
+	debug_log = "KEHILLAH_CAND: take seat end"
+	debug_log_scopes = yes
+}
+
+# ---------------------------------------------------------------------
+# The seat went to someone else. Scope: the seat. Requires
+# scope:cand_lost_winner (its new holder). Every declared candidate is
+# told and cooled down.
+# ---------------------------------------------------------------------
+
+kehillah_cand_seat_lost_effect = {
+	save_scope_as = cand_lost_seat
+	every_in_list = {
+		variable = kehillah_declared_candidates
+		add_to_temporary_list = cand_losers
+	}
+	clear_variable_list = kehillah_declared_candidates
+	kehillah_cand_discard_backup_effect = yes
+	if = {
+		limit = { has_variable_list = kehillah_cand_court_roster }
+		clear_variable_list = kehillah_cand_court_roster
+	}
+	every_in_list = {
+		list = cand_losers
+		limit = { is_alive = yes }
+		kehillah_cand_end_candidacy_effect = { YEARS = kehillah_cand_lost_cooldown_years_value }
+		primary_title ?= { kehillah_cand_discard_backup_effect = yes }
+		trigger_event = kehillah_candidacy.0030
+	}
+}

@@ -17,6 +17,27 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+**Stand for the Seat BUILT (first pass) - 2026-11-08, Daniel's request, xTiger-clean, live test
+pending (Daniel runs it by hand):** a player who leads a community can **Weigh Their Seat** on
+another same-faith, AI-led community's leader. The event shows:
+- his score and his place in the line;
+- the front-runner;
+- whether he is a stranger (only a great rabbi, or a man married into a local family, escapes the
+  stranger term);
+- what the seat offers.
+
+He can put his name forward there, which invests in his own candidacy so he enters that seat's own
+`kehillah_leadership` line, the way vanilla's request_governorship works. He can also ask the
+sitting leader to name him successor. If he is first when the leader dies, the engine gives him the
+seat. A day later, his old community passes to its own heir and his Quarter is rebuilt for the new
+one. AI candidacies are not built (player action only). The community-card block and ledger column
+are not built either; the weigh event stands in for them.
+
+- [The spec](docs/spec/2026-11-08-stand-for-the-seat.md): section 7.0 is the route, section 13 the
+  build.
+- [The validation checklist](docs/testing/2026-11-08-stand-for-the-seat-validation.md): **V1 (the
+  game loads) and V3 (a declared outsider is in the line) decide whether the design stands.**
+
 **Sefer ha-Qabbalah roster tranche BUILT - 2026-11-08, Daniel's request, xTiger-clean, live test pending:** 86 new historical characters (Geonim of Sura and Pumbedita, exilarchs, Gershom, the grammarians), 51 invented wives for every father with attested children (38 of them retrofitted into the 1066 roster), and holder history on Sura, Baghdad, Cordoba, Granada, Mainz and a new history-only Pumbedita academy. See [the build record](docs/implementation/2026-11-08-sefer-haqabbalah-roster.md). **Next:** Tannaim and Amoraim, the Palestinian Gaonate, earlier exilarchs, and Kairouan/Worms terms.
 
 **Sefer system redesign BUILT - 2026-11-08, Daniel's decisions and request, xTiger-clean, live

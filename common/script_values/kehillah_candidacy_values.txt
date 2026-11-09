@@ -1,0 +1,322 @@
+﻿# =====================================================================
+# STAND FOR THE SEAT -- values.
+# docs/spec/2026-11-08-stand-for-the-seat.md. Built 2026-11-08,
+# NOT live-tested: see docs/testing/2026-11-08-stand-for-the-seat-
+# validation.md.
+#
+# Scopes, unless a value says otherwise: root = the candidate,
+# scope:title = the community title. That is what kehillah_leadership's
+# candidate_score provides, and the weigh event saves scope:title the
+# same way before reading any of these.
+# =====================================================================
+
+# --- Tunables -------------------------------------------------------
+
+kehillah_cand_great_rabbi_learning_value = 16
+kehillah_cand_rabbi_value = 15
+kehillah_cand_gaon_value = 40
+kehillah_cand_nagid_value = 25
+kehillah_cand_sanhedrin_value = 15
+kehillah_cand_board_opinion_weight_value = 0.2
+kehillah_cand_outsider_penalty_value = 20
+kehillah_cand_foreign_minhag_penalty_value = 20
+kehillah_cand_stranger_penalty_value = 60
+kehillah_cand_child_married_in_value = 15
+
+# What a declaration invests in the candidate's own candidacy. It is what
+# puts him in the seat's pool (the request_governorship mechanism), and it
+# shows as the engine's own "invested" line in the breakdown. Kept small:
+# the declaration is an entry ticket, not a purchase.
+kehillah_cand_investment_value = 10
+
+# Cooldowns, in years (spec section 4).
+kehillah_cand_withdraw_cooldown_years_value = 3
+kehillah_cand_lost_cooldown_years_value = 5
+kehillah_cand_won_cooldown_years_value = 10
+
+# Prestige to declare. Scope: scope:cand_seat is the seat. 100, plus 10 for
+# each community ranked below it in Standing, so the great seats cost most.
+kehillah_cand_declare_cost_value = {
+	value = 100
+	if = {
+		limit = {
+			exists = scope:cand_seat
+			scope:cand_seat = {
+				exists = var:kehillah_rank_standing
+				exists = var:kehillah_rank_of
+			}
+		}
+		add = {
+			value = scope:cand_seat.var:kehillah_rank_of
+			subtract = scope:cand_seat.var:kehillah_rank_standing
+			multiply = 10
+		}
+	}
+}
+
+# --- Terms shared with kehillah_leadership --------------------------
+
+# Leads a community: 15, rising to about 40 for the world's first-ranked
+# community. Rewards doing the current job well.
+kehillah_cand_leads_community_value = {
+	value = 0
+	if = {
+		limit = {
+			exists = primary_title
+			primary_title = { is_kehillah_title_trigger = yes }
+		}
+		add = 15
+		if = {
+			limit = {
+				primary_title = {
+					exists = var:kehillah_rank_standing
+					exists = var:kehillah_rank_of
+				}
+			}
+			add = {
+				value = primary_title.var:kehillah_rank_of
+				subtract = primary_title.var:kehillah_rank_standing
+				add = 1
+				divide = {
+					value = primary_title.var:kehillah_rank_of
+					min = 1
+				}
+				multiply = 25
+			}
+		}
+	}
+}
+
+# How the seat's board regards the candidate: the average opinion of the
+# sitting leader's councillors, other than the candidate himself, times
+# the weight. Negative when they dislike him.
+kehillah_cand_board_size_value = {
+	value = 0
+	if = {
+		limit = { exists = scope:title.holder }
+		scope:title.holder = {
+			every_councillor = {
+				limit = { NOT = { this = root } }
+				add = 1
+			}
+		}
+	}
+}
+
+kehillah_cand_board_opinion_value = {
+	value = 0
+	if = {
+		limit = {
+			exists = scope:title.holder
+			scope:title.holder = {
+				any_councillor = { NOT = { this = root } }
+			}
+		}
+		scope:title.holder = {
+			every_councillor = {
+				limit = { NOT = { this = root } }
+				add = "opinion(root)"
+			}
+		}
+		divide = {
+			value = kehillah_cand_board_size_value
+			min = 1
+		}
+		multiply = kehillah_cand_board_opinion_weight_value
+	}
+}
+
+# --- The preview ----------------------------------------------------
+#
+# KEEP IN STEP WITH kehillah_leadership's candidate_score
+# (common/succession_appointment/kehillah_leadership.txt). The engine
+# scores only characters already in a seat's pool, so a player weighing a
+# seat he has not declared for needs this copy. Same terms, same order,
+# except:
+#   - the two -500 "other community" / "outside the community" terms are
+#     left out: a declared candidate is exempt from both;
+#   - the outsider terms apply to anyone outside the seat's court, as if
+#     he had declared, and the declaration's investment is included.
+# Probe kehillah_candidacy_debug.2 logs this value beside the engine's
+# own score (appointment_candidate_score) for a declared candidate, so a
+# drift between the two shows up.
+#
+# EVALUATE ONLY WITH ROOT = THE CANDIDATE, as candidate_score does. Several
+# terms (the board's opinion, the office and friend checks) read root. The
+# weigh event uses it for the player himself only, and takes everyone
+# else's score from the engine.
+
+kehillah_cand_preview_score_value = {
+	value = 0
+	add = {
+		value = learning
+		multiply = 3
+	}
+	add = {
+		value = stewardship
+		multiply = 2
+	}
+	add = {
+		value = diplomacy
+		multiply = 0.5
+	}
+	if = {
+		limit = {
+			scope:title.holder ?= {
+				any_court_position_holder ?= { this = root }
+			}
+		}
+		add = 25
+	}
+	if = {
+		limit = {
+			exists = scope:title.var:kehillah_var_endorsed_successor
+			scope:title.var:kehillah_var_endorsed_successor ?= { this = root }
+		}
+		add = kehillah_endorsement_score_value
+	}
+	if = {
+		limit = { piety_level >= 2 }
+		add = {
+			value = piety_level
+			multiply = 4
+		}
+	}
+	if = {
+		limit = { exists = dynasty }
+		add = {
+			value = dynasty.dynasty_prestige_level
+			multiply = 3
+		}
+	}
+	if = {
+		limit = { has_trait = ben_david }
+		add = 15
+	}
+	if = {
+		limit = { age >= 35 }
+		add = 10
+	}
+	if = {
+		limit = { age >= 50 }
+		add = 10
+	}
+	if = {
+		limit = { age >= 70 }
+		subtract = 15
+	}
+	if = {
+		limit = { has_trait = theologian }
+		add = 15
+	}
+	if = {
+		limit = { has_trait = erudite }
+		add = 10
+	}
+	if = {
+		limit = { has_trait = just }
+		add = 8
+	}
+	if = {
+		limit = { has_trait = patient }
+		add = 6
+	}
+	if = {
+		limit = { has_trait = compassionate }
+		add = 6
+	}
+	if = {
+		limit = { has_trait = arbitrary }
+		subtract = 12
+	}
+	if = {
+		limit = { has_trait = greedy }
+		subtract = 10
+	}
+	# --- Added 2026-11-08 (Stand for the Seat), for everyone ---
+	if = {
+		limit = { has_trait = kehillah_rabbi_trait }
+		add = kehillah_cand_rabbi_value
+	}
+	if = {
+		limit = { kehillah_is_gaonate_holder_trigger = yes }
+		add = kehillah_cand_gaon_value
+	}
+	else_if = {
+		limit = { kehillah_is_nagid_trigger = yes }
+		add = kehillah_cand_nagid_value
+	}
+	else_if = {
+		limit = { kehillah_holds_sanhedrin_seat_trigger = yes }
+		add = kehillah_cand_sanhedrin_value
+	}
+	add = kehillah_cand_board_opinion_value
+	# --- Added 2026-11-08, outsiders only ---
+	if = {
+		limit = { kehillah_cand_is_outsider_trigger = { SEAT = scope:title } }
+		add = kehillah_cand_investment_value
+		add = kehillah_cand_leads_community_value
+		subtract = kehillah_cand_outsider_penalty_value
+		if = {
+			limit = {
+				NOT = { kehillah_cand_shares_minhag_trigger = { SEAT = scope:title } }
+			}
+			subtract = kehillah_cand_foreign_minhag_penalty_value
+		}
+		if = {
+			limit = { kehillah_cand_stranger_trigger = { SEAT = scope:title } }
+			subtract = kehillah_cand_stranger_penalty_value
+		}
+		if = {
+			limit = { kehillah_cand_child_married_in_trigger = { SEAT = scope:title } }
+			add = kehillah_cand_child_married_in_value
+		}
+	}
+	# --- Unchanged tail ---
+	if = {
+		limit = {
+			OR = {
+				has_trait = incapable
+				has_trait = infirm
+			}
+		}
+		subtract = 100
+	}
+	if = {
+		limit = {
+			OR = {
+				scope:title.holder ?= {
+					is_jewish_character_trigger = yes
+					NOT = { faith = root.faith }
+				}
+				AND = {
+					scope:title.holder ?= { is_jewish_character_trigger = no }
+					is_jewish_character_trigger = no
+				}
+			}
+		}
+		subtract = 500
+	}
+	if = {
+		limit = { culture ?= scope:title.holder.culture }
+		add = 10
+	}
+	if = {
+		limit = {
+			scope:title.holder ?= { has_relation_friend = root }
+		}
+		add = 5
+	}
+	if = {
+		limit = {
+			NOT = { kehillah_leadership_gender_eligible_trigger = yes }
+		}
+		subtract = 100000
+	}
+}
+
+# Probe only (kehillah_candidacy_debug.5). Root: a ruler.
+kehillah_cand_probe_courtier_count_value = {
+	value = 0
+	every_courtier = { add = 1 }
+}

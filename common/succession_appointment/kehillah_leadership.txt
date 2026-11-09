@@ -88,6 +88,33 @@ kehillah_leadership = {
 	# it.
 	allow_children = no
 
+	# STAND FOR THE SEAT, 2026-11-08 (docs/spec/2026-11-08-stand-for-the-
+	# seat.md section 7.0). A leader of another community enters this
+	# pool by investing in his own candidacy (change_appointment_investment
+	# in kehillah_cand_declare_effect), the way vanilla's
+	# request_governorship_interaction puts a noble of another house into a
+	# governorship's line. The four keys below make that possible. All four
+	# are documented in vanilla's _succession_appointment.info and used by
+	# shipped vanilla types (celestial_*, meritocratic_*, clerical_
+	# christian).
+	#   - allowed_candidate_tier: a candidate who already leads a duchy-tier
+	#     community is the same tier as this seat. The default, lower,
+	#     would refuse him.
+	#   - use_investment_cap = no: the cap is vanilla's admin value; the
+	#     declaration's investment must not be clipped by it.
+	#   - allow_out_of_realm_investment = landless: this title is landless,
+	#     so the same-liege rule on investment is waived. A community whose
+	#     leader holds land as someone's vassal would otherwise fail it.
+	#   - cooldown = yes: vanilla's guard against same-tier sidegrade loops.
+	# A MISTAKE HERE CRASHES ON LOAD ("unhandled succession order
+	# [invalid]"): a rejected key drops this whole type. Validation V1
+	# (docs/testing/2026-11-08-stand-for-the-seat-validation.md) is a plain
+	# boot and one ordinary succession, before anything else.
+	allowed_candidate_tier = lower_or_equal
+	use_investment_cap = no
+	allow_out_of_realm_investment = landless
+	cooldown = yes
+
 	candidate_score = {
 		value = {
 			# -----------------------------------------------------
@@ -335,6 +362,98 @@ kehillah_leadership = {
 				}
 			}
 
+			# -----------------------------------------------------
+			# STAND FOR THE SEAT, 2026-11-08. KEEP IN STEP WITH
+			# kehillah_cand_preview_score_value (common/script_values/
+			# kehillah_candidacy_values.txt), which copies this whole
+			# formula so a player can weigh a seat before declaring.
+			# -----------------------------------------------------
+			# For everyone: the Rabbi trait, a high office, and how the
+			# sitting leader's board regards the candidate.
+			if = {
+				limit = { has_trait = kehillah_rabbi_trait }
+				add = {
+					value = kehillah_cand_rabbi_value
+					desc = kehillah_score_rabbi_desc
+				}
+			}
+			if = {
+				limit = { kehillah_is_gaonate_holder_trigger = yes }
+				add = {
+					value = kehillah_cand_gaon_value
+					desc = kehillah_score_gaon_desc
+				}
+			}
+			else_if = {
+				limit = { kehillah_is_nagid_trigger = yes }
+				add = {
+					value = kehillah_cand_nagid_value
+					desc = kehillah_score_nagid_desc
+				}
+			}
+			else_if = {
+				limit = { kehillah_holds_sanhedrin_seat_trigger = yes }
+				add = {
+					value = kehillah_cand_sanhedrin_value
+					desc = kehillah_score_sanhedrin_desc
+				}
+			}
+			if = {
+				limit = {
+					scope:title.holder ?= {
+						any_councillor = { NOT = { this = root } }
+					}
+				}
+				add = {
+					value = kehillah_cand_board_opinion_value
+					desc = kehillah_score_board_opinion_desc
+				}
+			}
+			# Declared outsiders only (spec 5.2, 5.3).
+			if = {
+				limit = {
+					kehillah_cand_declared_for_trigger = { SEAT = scope:title }
+					kehillah_cand_is_outsider_trigger = { SEAT = scope:title }
+				}
+				if = {
+					limit = {
+						exists = primary_title
+						primary_title = { is_kehillah_title_trigger = yes }
+					}
+					add = {
+						value = kehillah_cand_leads_community_value
+						desc = kehillah_score_leads_community_desc
+					}
+				}
+				subtract = {
+					value = kehillah_cand_outsider_penalty_value
+					desc = kehillah_score_outsider_desc
+				}
+				if = {
+					limit = {
+						NOT = { kehillah_cand_shares_minhag_trigger = { SEAT = scope:title } }
+					}
+					subtract = {
+						value = kehillah_cand_foreign_minhag_penalty_value
+						desc = kehillah_score_foreign_minhag_desc
+					}
+				}
+				if = {
+					limit = { kehillah_cand_stranger_trigger = { SEAT = scope:title } }
+					subtract = {
+						value = kehillah_cand_stranger_penalty_value
+						desc = kehillah_score_stranger_desc
+					}
+				}
+				if = {
+					limit = { kehillah_cand_child_married_in_trigger = { SEAT = scope:title } }
+					add = {
+						value = kehillah_cand_child_married_in_value
+						desc = kehillah_score_child_married_in_desc
+					}
+				}
+			}
+
 			# ONE COMMUNITY PER LEADER, AND THE LEADER'S OWN COMMUNITY.
 			# Live 2026-10-20: Isaac of Worms died and Worms passed by
 			# appointment to his grandson Amram, who already led Spoleto
@@ -343,12 +462,20 @@ kehillah_leadership = {
 			# community was lost; and Isaac, in the family pool, was also
 			# Amram's heir in Spoleto. Soft penalties, like the faith one
 			# below, so an empty pool still has an answer.
+			#
+			# 2026-11-08: both are waived for a candidate who has DECLARED
+			# for this seat (Stand for the Seat). His old community is handed
+			# on and his domicile cleared and rebuilt for this one by
+			# kehillah_cand_take_seat_effect, which is the fix for exactly
+			# the Amram case. An undeclared leader of another community is
+			# still kept out, as before.
 			if = {
 				limit = {
 					any_held_title = {
 						is_kehillah_title_trigger = yes
 						NOT = { this = scope:title }
 					}
+					NOT = { kehillah_cand_declared_for_trigger = { SEAT = scope:title } }
 				}
 				subtract = {
 					value = 500
@@ -363,6 +490,7 @@ kehillah_leadership = {
 						NOT = { this = root }
 					}
 					NOT = { court_owner ?= scope:title.holder }
+					NOT = { kehillah_cand_declared_for_trigger = { SEAT = scope:title } }
 				}
 				subtract = {
 					value = 500

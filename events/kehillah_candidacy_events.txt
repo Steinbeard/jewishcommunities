@@ -1,0 +1,319 @@
+﻿# =====================================================================
+# STAND FOR THE SEAT -- events.
+# docs/spec/2026-11-08-stand-for-the-seat.md. Built 2026-11-08,
+# NOT live-tested: see docs/testing/2026-11-08-stand-for-the-seat-
+# validation.md.
+#
+#   .0001  Weighing a seat: the player's score, his place in the line,
+#          what the seat offers; declare, withdraw or close.
+#   .0010  Hidden. A declared candidate won: take the seat.
+#   .0020  The winner is told.
+#   .0030  A candidate is told the seat went to someone else.
+# =====================================================================
+
+namespace = kehillah_candidacy
+
+# ---------------------------------------------------------------------
+# .0001 -- Weighing a seat. Fired by kehillah_weigh_seat_interaction.
+# root = the player, scope:cand_seat = the community title.
+#
+# The player's own score is kehillah_cand_preview_score_value (he may
+# not be in the seat's pool yet). Everyone else's is the engine's own
+# appointment_candidate_score, which is exact for anyone in the pool.
+# ---------------------------------------------------------------------
+kehillah_candidacy.0001 = {
+	type = character_event
+	title = kehillah_candidacy.0001.t
+	desc = {
+		desc = kehillah_candidacy.0001.desc_intro
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:cand_front_runner ?= root }
+				desc = kehillah_candidacy.0001.desc_first
+			}
+			triggered_desc = {
+				trigger = { exists = scope:cand_front_runner }
+				desc = kehillah_candidacy.0001.desc_behind
+			}
+			desc = kehillah_candidacy.0001.desc_no_line
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { kehillah_cand_great_rabbi_trigger = yes }
+				desc = kehillah_candidacy.0001.desc_great_rabbi
+			}
+			triggered_desc = {
+				trigger = { kehillah_cand_married_in_trigger = { SEAT = scope:cand_seat } }
+				desc = kehillah_candidacy.0001.desc_married_in
+			}
+			desc = kehillah_candidacy.0001.desc_stranger
+		}
+		desc = kehillah_candidacy.0001.desc_offers
+		triggered_desc = {
+			trigger = { scope:cand_seat = { kehillah_cand_seat_in_capital_trigger = yes } }
+			desc = kehillah_candidacy.0001.offer_capital
+		}
+		triggered_desc = {
+			trigger = { scope:cand_seat_holder = { kehillah_has_yeshiva_trigger = yes } }
+			desc = kehillah_candidacy.0001.offer_yeshiva
+		}
+		triggered_desc = {
+			trigger = {
+				scope:cand_seat = {
+					exists = var:kehillah_rank_prosperity
+					var:kehillah_rank_prosperity <= 3
+				}
+			}
+			desc = kehillah_candidacy.0001.offer_economy
+		}
+		triggered_desc = {
+			trigger = {
+				scope:cand_seat = { exists = var:kehillah_rank_standing }
+			}
+			desc = kehillah_candidacy.0001.offer_standing
+		}
+		triggered_desc = {
+			trigger = { scope:cand_seat_holder = { kehillah_is_nagid_trigger = yes } }
+			desc = kehillah_candidacy.0001.offer_nagid
+		}
+		triggered_desc = {
+			trigger = {
+				OR = {
+					scope:cand_seat = title:d_kehillah_worms
+					scope:cand_seat = title:d_kehillah_speyer
+					scope:cand_seat = title:d_kehillah_mainz
+				}
+			}
+			desc = kehillah_candidacy.0001.offer_shum
+		}
+		triggered_desc = {
+			trigger = { scope:cand_seat = { kehillah_trouble_crisis_active_trigger = yes } }
+			desc = kehillah_candidacy.0001.offer_trouble_crisis
+		}
+		triggered_desc = {
+			trigger = { kehillah_cand_declared_for_trigger = { SEAT = scope:cand_seat } }
+			desc = kehillah_candidacy.0001.desc_declared
+		}
+	}
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:cand_seat_holder
+		animation = personality_rational
+	}
+	lower_right_portrait = scope:cand_front_runner
+
+	immediate = {
+		scope:cand_seat = { save_scope_as = title }
+		scope:cand_seat.holder = { save_scope_as = cand_seat_holder }
+		scope:cand_seat = {
+			current_heir ?= { save_scope_as = cand_front_runner }
+		}
+		set_variable = {
+			name = kehillah_cand_preview_score
+			value = kehillah_cand_preview_score_value
+		}
+		# Place in the line: 1 + everyone in the seat's pool the engine
+		# scores above him. Field: everyone in the pool, plus him.
+		set_variable = {
+			name = kehillah_cand_preview_rank
+			value = 1
+		}
+		set_variable = {
+			name = kehillah_cand_preview_field
+			value = 1
+		}
+		scope:cand_seat = {
+			every_title_heir = {
+				limit = { NOT = { this = root } }
+				set_local_variable = {
+					name = kehillah_cand_heir_score
+					value = "appointment_candidate_score(scope:cand_seat)"
+				}
+				root = {
+					change_variable = {
+						name = kehillah_cand_preview_field
+						add = 1
+					}
+				}
+				if = {
+					limit = {
+						local_var:kehillah_cand_heir_score > root.var:kehillah_cand_preview_score
+					}
+					root = {
+						change_variable = {
+							name = kehillah_cand_preview_rank
+							add = 1
+						}
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:cand_front_runner
+				NOT = { scope:cand_front_runner = root }
+			}
+			scope:cand_front_runner = {
+				set_local_variable = {
+					name = kehillah_cand_front_local
+					value = "appointment_candidate_score(scope:cand_seat)"
+				}
+				root = {
+					set_variable = {
+						name = kehillah_cand_front_score
+						value = local_var:kehillah_cand_front_local
+					}
+				}
+			}
+		}
+		save_scope_value_as = {
+			name = cand_cost
+			value = kehillah_cand_declare_cost_value
+		}
+	}
+
+	# Stand for the seat.
+	option = {
+		name = kehillah_candidacy.0001.a
+		# Shown greyed with its reasons when only the conditions below fail.
+		show_as_unavailable = {
+			NOT = { kehillah_cand_declared_for_trigger = { SEAT = scope:cand_seat } }
+		}
+		trigger = {
+			NOT = { kehillah_cand_declared_for_trigger = { SEAT = scope:cand_seat } }
+			kehillah_cand_can_weigh_seat_trigger = {
+				CAND = root
+				SEAT = scope:cand_seat
+			}
+			custom_description = {
+				text = kehillah_cand_free_to_declare_tt
+				kehillah_cand_free_to_declare_trigger = yes
+			}
+			prestige >= scope:cand_cost
+		}
+		add_prestige = {
+			value = scope:cand_cost
+			multiply = -1
+		}
+		kehillah_cand_declare_effect = yes
+		custom_tooltip = kehillah_candidacy.0001.a.tt
+	}
+
+	# Withdraw.
+	option = {
+		name = kehillah_candidacy.0001.b
+		trigger = {
+			kehillah_cand_declared_for_trigger = { SEAT = scope:cand_seat }
+		}
+		kehillah_cand_end_candidacy_effect = { YEARS = kehillah_cand_withdraw_cooldown_years_value }
+		custom_tooltip = kehillah_candidacy.0001.b.tt
+	}
+
+	# Close.
+	option = {
+		name = kehillah_candidacy.0001.c
+	}
+
+	after = {
+		remove_variable = kehillah_cand_preview_score
+		remove_variable = kehillah_cand_preview_rank
+		remove_variable = kehillah_cand_preview_field
+		if = {
+			limit = { has_variable = kehillah_cand_front_score }
+			remove_variable = kehillah_cand_front_score
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0010 -- Hidden. A declared candidate won his seat by the engine's own
+# succession. root = the winner, scope:cand_new_seat = the seat. Fired a
+# day after kehillah_cand_on_title_gain.
+# ---------------------------------------------------------------------
+kehillah_candidacy.0010 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		if = {
+			limit = { has_title = scope:cand_new_seat }
+			random_held_title = {
+				limit = {
+					is_kehillah_title_trigger = yes
+					NOT = { this = scope:cand_new_seat }
+				}
+				save_scope_as = cand_old_seat
+			}
+			kehillah_cand_take_seat_effect = yes
+			trigger_event = kehillah_candidacy.0020
+		}
+		else = {
+			debug_log = "KEHILLAH_CAND: .0010 fired but the winner no longer holds the seat"
+			debug_log_scopes = yes
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0020 -- The winner is told. root = the winner, scope:cand_new_seat,
+# scope:cand_old_seat and scope:cand_old_successor when they exist.
+# ---------------------------------------------------------------------
+kehillah_candidacy.0020 = {
+	type = character_event
+	title = kehillah_candidacy.0020.t
+	desc = {
+		desc = kehillah_candidacy.0020.desc
+		triggered_desc = {
+			trigger = {
+				exists = scope:cand_old_successor
+				exists = scope:cand_old_seat
+				scope:cand_old_seat.holder ?= scope:cand_old_successor
+			}
+			desc = kehillah_candidacy.0020.desc_old
+		}
+	}
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+	right_portrait = {
+		character = scope:cand_old_successor
+		animation = personality_rational
+	}
+
+	trigger = { is_ai = no }
+
+	option = {
+		name = kehillah_candidacy.0020.a
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0030 -- The seat went to someone else. root = the candidate,
+# scope:cand_lost_seat, scope:cand_lost_winner.
+# ---------------------------------------------------------------------
+kehillah_candidacy.0030 = {
+	type = character_event
+	title = kehillah_candidacy.0030.t
+	desc = kehillah_candidacy.0030.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:cand_lost_winner
+		animation = personality_rational
+	}
+
+	trigger = { is_ai = no }
+
+	option = {
+		name = kehillah_candidacy.0030.a
+	}
+}

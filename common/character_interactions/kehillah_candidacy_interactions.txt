@@ -1,0 +1,137 @@
+﻿# =====================================================================
+# STAND FOR THE SEAT -- interactions.
+# docs/spec/2026-11-08-stand-for-the-seat.md. Built 2026-11-08,
+# NOT live-tested: see docs/testing/2026-11-08-stand-for-the-seat-
+# validation.md.
+#
+# Both are the player's only (v1 has no AI candidacies, Daniel
+# 2026-11-08): no ai_frequency, so the AI never sends them.
+# =====================================================================
+
+# Weigh a seat. Sent to the leader of another community; free. Opens
+# kehillah_candidacy.0001, which shows the player's score, his place in
+# the line and what the seat offers, and where he declares or withdraws.
+kehillah_weigh_seat_interaction = {
+	icon = heir
+	category = interaction_category_diplomacy
+	common_interaction = no
+	use_diplomatic_range = no
+	desc = kehillah_weigh_seat_interaction_desc
+	auto_accept = yes
+
+	is_shown = {
+		exists = scope:recipient.primary_title
+		kehillah_cand_can_weigh_seat_trigger = {
+			CAND = scope:actor
+			SEAT = scope:recipient.primary_title
+		}
+	}
+
+	on_auto_accept = {
+		scope:recipient.primary_title = { save_scope_as = cand_seat }
+		scope:actor = { trigger_event = kehillah_candidacy.0001 }
+	}
+}
+
+# Ask the sitting leader to name you his successor. Sent by a declared
+# candidate to the leader of the seat he stands for. On acceptance it
+# sets the seat's existing kehillah_var_endorsed_successor, which
+# kehillah_leadership already scores (kehillah_endorsement_score_value).
+kehillah_seek_endorsement_interaction = {
+	icon = heir
+	category = interaction_category_diplomacy
+	common_interaction = no
+	use_diplomatic_range = no
+	desc = kehillah_seek_endorsement_interaction_desc
+	notification_text = kehillah_seek_endorsement_interaction_notification
+	cooldown_against_recipient = { years = 5 }
+	ai_min_reply_days = 3
+	ai_max_reply_days = 7
+
+	cost = {
+		prestige = {
+			value = 50
+			desc = kehillah_seek_endorsement_cost_desc
+		}
+	}
+
+	is_shown = {
+		scope:actor = {
+			is_ai = no
+			exists = var:kehillah_candidacy_target
+		}
+		exists = scope:recipient.primary_title
+		scope:actor.var:kehillah_candidacy_target = scope:recipient.primary_title
+	}
+
+	is_valid = {
+		scope:recipient = {
+			is_ai = yes
+			is_imprisoned = no
+		}
+		custom_description = {
+			text = kehillah_seek_endorsement_not_already_tt
+			NOT = {
+				scope:recipient.primary_title.var:kehillah_var_endorsed_successor ?= scope:actor
+			}
+		}
+	}
+
+	ai_accept = {
+		base = -25
+		opinion_modifier = {
+			who = scope:recipient
+			opinion_target = scope:actor
+			multiplier = 1
+			desc = AI_OPINION_REASON
+		}
+		modifier = {
+			add = 30
+			desc = kehillah_seek_endorsement_great_rabbi_reason
+			scope:actor = { kehillah_cand_great_rabbi_trigger = yes }
+		}
+		modifier = {
+			add = 30
+			desc = kehillah_seek_endorsement_married_in_reason
+			scope:actor = {
+				kehillah_cand_married_in_trigger = { SEAT = scope:recipient.primary_title }
+			}
+		}
+		modifier = {
+			add = 15
+			desc = kehillah_seek_endorsement_same_minhag_reason
+			scope:actor = {
+				kehillah_cand_shares_minhag_trigger = { SEAT = scope:recipient.primary_title }
+			}
+		}
+		modifier = {
+			add = -30
+			desc = kehillah_seek_endorsement_has_family_reason
+			scope:recipient = {
+				any_close_family_member = {
+					is_adult = yes
+					court_owner ?= scope:recipient
+				}
+			}
+		}
+	}
+
+	on_accept = {
+		scope:recipient.primary_title = {
+			set_variable = {
+				name = kehillah_var_endorsed_successor
+				value = scope:actor
+			}
+		}
+		scope:actor = {
+			add_opinion = {
+				target = scope:recipient
+				modifier = kehillah_endorsed_opinion
+			}
+		}
+		custom_tooltip = kehillah_seek_endorsement_accept_tt
+	}
+	on_decline = {
+		custom_tooltip = kehillah_seek_endorsement_decline_tt
+	}
+}

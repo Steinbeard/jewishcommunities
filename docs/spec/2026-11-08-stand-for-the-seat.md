@@ -1,7 +1,12 @@
 **Status:** PROPOSAL, 2026-11-08. Written at Daniel's request after a design conversation the same day,
 and **revised the same day with his answers** (section 12): a stranger must be a great rabbi or married
 into a local family to be taken seriously; any seat can be previewed before declaring; the card says
-what the seat offers; v1 is a player action only, with no AI declarations. Nothing is built. Section 10 lists the spikes that must run before any build slice. This touches
+what the seat offers; v1 is a player action only, with no AI declarations.
+
+**First implementation pass BUILT 2026-11-08, xTiger-clean, NOT live-tested.** It uses the
+**investment route** (section 7.0), which replaces the interim-leader design of 7.1–7.4. What was
+built, and every place it departs from the rest of this spec, is in section 13. What must be checked
+in the game is in [the validation checklist](../testing/2026-11-08-stand-for-the-seat-validation.md). Section 10 lists the spikes that must run before any build slice. This touches
 succession, the most crash-prone subsystem in the mod
 ([implementation doc](../implementation/v1-kehillah-implementation.md) sections 6, 8, 13 and 15).
 
@@ -271,6 +276,37 @@ straight upgrade.
 
 ## 7. Resolution and the handover
 
+### 7.0 The investment route (adopted 2026-11-08, replaces 7.1–7.4)
+
+Daniel asked why an interim leader was needed if the outsider is scored by the community's own
+succession. The answer was that nothing put him in the pool. Then vanilla turned out to have the
+mechanism: `request_governorship_interaction` (`06_ep3_interactions.txt`) makes a noble of another
+house "next in line" for a governorship whose pool is only the governor's family, by calling
+`change_appointment_investment` on the title for him. **Investing in a character puts him in the
+appointment pool.**
+
+So a declaration invests in the candidate's own candidacy on the seat's title. He is then in the
+seat's own pool, scored by `kehillah_leadership` itself, and **the engine gives him the seat on the
+leader's death**. There is no acting leader, no snapshot and no board-meeting delay. The courtiers of a
+dead ruler pass to his heir, so the seat's people should follow the winner without script.
+
+`kehillah_leadership` needs four keys for this. They are explained in its header and checked by
+validation V1:
+- `allowed_candidate_tier = lower_or_equal`;
+- `use_investment_cap = no`;
+- `allow_out_of_realm_investment = landless`;
+- `cooldown = yes`.
+
+What remains scripted, a day after the engine's own succession (`kehillah_candidacy.0010`):
+1. Hand the winner's **old** seat to its own heir, and send the old community's people at his court
+   with it.
+2. Clear the winner's domicile and rebuild it from the new seat's record.
+
+That transfer, between living characters, is the only title the feature moves itself.
+
+Sections 7.1–7.4 below are kept as the **fallback** if V1 or V3 shows the engine will not take an
+invested outsider into the pool.
+
 ### 7.1 Snapshot at the death
 
 In `on_death` of a community leader whose title has a non-empty `kehillah_declared_candidates`:
@@ -466,3 +502,49 @@ a pulse, a target choice and a cap.
    are noted as unscheduled in section 11.
 4. **Closed player communities. Open.** Section 4 closes player-led seats to outsiders in v1. With
    no AI declarations this only matters in multiplayer, where one player could take another's seat.
+
+Question 2 is moot under the investment route (7.0): there is no acting leader.
+
+## 13. First implementation pass, 2026-11-08
+
+**Files:**
+
+| File | What it holds |
+|---|---|
+| `common/succession_appointment/kehillah_leadership.txt` | The four keys (7.0); the new terms; the two −500 terms waived for a declared candidate |
+| `common/scripted_triggers/kehillah_candidacy_triggers.txt` | Declared, outsider, minhag, great rabbi, married in, stranger, may-weigh, capital |
+| `common/script_values/kehillah_candidacy_values.txt` | Tunables, the leads-a-community and board-opinion terms, the declaration cost, the preview score |
+| `common/scripted_effects/kehillah_candidacy_effects.txt` | Declare and end; the Quarter-record backup; clearing a Quarter; taking the seat; losing it |
+| `common/on_action/kehillah_candidacy_on_actions.txt` | `on_death`: back up records and note the court. `on_title_gain`: win or loss. |
+| `common/character_interactions/kehillah_candidacy_interactions.txt` | **Weigh Their Seat**; **Ask to Be Named Successor** |
+| `events/kehillah_candidacy_events.txt` | .0001 weigh, .0010 take the seat (hidden), .0020 won, .0030 lost |
+| `events/kehillah_candidacy_debug_events.txt` | Probes .1–.6 |
+| `localization/english/kehillah_candidacy_l_english.yml` | All of the above |
+
+**Departures from sections 4–8, and why:**
+- **The preview is an event, not a card block.** Right-click another community's leader, choose
+  **Weigh Their Seat**, and `kehillah_candidacy.0001` shows:
+  - your score and your place in the line;
+  - the front-runner and his score;
+  - whether you are a stranger, and the two ways out;
+  - what the seat offers.
+
+  You declare or withdraw there. The community-card block and the ledger column (6.1, 6.3) are not
+  built. They are GUI work, and the event already gives sight before declaring.
+- **One formula, kept in two places (5.1).** `kehillah_cand_preview_score_value` copies
+  `candidate_score`. The engine scores only characters already in the pool, so an undeclared
+  player needs a copy. Both carry a KEEP IN STEP header. Probe .1 prints both numbers for a declared
+  player so drift shows. Everyone else's score in the weigh event comes from the engine's own
+  `appointment_candidate_score`.
+- **Terms not built:** works authored and yeshiva alumnus (5.2). Authorship is held per work
+  (`kehillah_wk_work_authored_*`), and there is no per-character count to read. They wait for one.
+- **The "new leader" news hold (7.1) is not needed**, since there is no acting leader.
+- **Quarter-record backup.** The new seat's Quarter is rebuilt on the winner's domicile on top of
+  his old one. If `add_domicile_building` fires the building-completed on_action, the record of
+  whichever title is primary would take in the other community's buildings. So both records are
+  copied when the seat falls vacant and copied back before the rebuild (V6).
+- **Stability on a change of leader.** The earlier worry about a double +50 was wrong. Each
+  community has exactly one change of leader, so each gets the normal one.
+- **No board re-seating (7.4).** Moved courtiers likely lose their council seats and offices. The
+  AI refills its own; the player re-appoints. V7 checks it; re-seating waits on the result.
+
