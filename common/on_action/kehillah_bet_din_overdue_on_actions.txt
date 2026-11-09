@@ -1,0 +1,51 @@
+﻿# The Bet Din overdue (2026-11-08). Each quarter: start the clock for a
+# community that has none (a new game, an old save, a new community), and
+# tell the player once when the long gap starts to cost Stability.
+# See common/script_values/kehillah_bet_din_overdue_values.txt.
+
+quarterly_playable_pulse = {
+	on_actions = { kehillah_bet_din_overdue_pulse }
+}
+
+kehillah_bet_din_overdue_pulse = {
+	trigger = {
+		government_has_flag = government_is_kehillah
+		exists = primary_title
+	}
+	effect = {
+		# Weekly check that calls off a hosted activity not yet begun when
+		# the community is in crisis (events/kehillah_crisis_hosting_events.txt).
+		# Started here, and restarted for a new leader.
+		if = {
+			limit = { NOT = { has_character_flag = kehillah_crisis_hosting_watch } }
+			trigger_event = kehillah_crisis_hosting.0001
+		}
+		if = {
+			limit = { primary_title = { NOT = { has_variable = kehillah_bet_din_last_year } } }
+			primary_title = { set_variable = { name = kehillah_bet_din_last_year value = current_year } }
+		}
+		if = {
+			limit = {
+				kehillah_bet_din_overdue_trigger = yes
+				primary_title = { NOT = { has_variable = kehillah_bet_din_overdue_warned } }
+			}
+			primary_title = { set_variable = kehillah_bet_din_overdue_warned }
+			if = {
+				limit = { is_ai = no }
+				send_interface_message = {
+					type = msg_kehillah_bet_din_overdue
+					title = kehillah_bet_din_overdue_msg_t
+					desc = kehillah_bet_din_overdue_msg_d
+					left_icon = primary_title
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				NOT = { kehillah_bet_din_overdue_trigger = yes }
+				primary_title = { has_variable = kehillah_bet_din_overdue_warned }
+			}
+			primary_title = { remove_variable = kehillah_bet_din_overdue_warned }
+		}
+	}
+}
