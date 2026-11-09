@@ -132,6 +132,8 @@ kehillah_learn_torah_decision = {
 			type = kehillah_study_torah
 			target_character = root
 		}
+		# 2026-11-08: the library chosen in the widget below.
+		exists = scope:selected_item
 	}
 
 	cost = {
@@ -162,9 +164,59 @@ kehillah_learn_torah_decision = {
 		# match exists by the time this runs. CHARACTER = root, same
 		# reasoning as is_valid above -- a decision's own effect root
 		# never shifts either.
+		# 2026-11-08: the library chosen in the widget below. Choosing a book
+		# on its shelf (in the same widget) starts the course directly through
+		# kehillah_lib_study_<work>; confirming here lets the shelf choose.
+		set_variable = { name = kehillah_study_library value = scope:selected_item }
 		kehillah_study_torah_resolve_library_effect = { CHARACTER = root }
 		kehillah_study_torah_pick_next_work_effect = { LIBRARY = scope:kehillah_study_torah_library }
 		trigger_event = kehillah_study_torah.0002
+	}
+
+	# 2026-11-08 (Daniel: "actually get to choose a specific book from the
+	# county you're based in OR that's in your domain"). Lists every library
+	# kehillah_study_can_read_library_trigger lets this reader study from;
+	# picking one shows its shelf beneath the list, and each book there starts
+	# the course on that book (gui/decision_view_widgets/kehillah_decision_
+	# widget_study_library.gui). Same controller as vanilla's holy-site picker.
+	widget = {
+		gui = "kehillah_decision_widget_study_library"
+		controller = select_scope_object
+		show_from_start = yes
+		decision_to_second_step_button = "KEHILLAH_STUDY_LIBRARY_NEXT"
+
+		setup_items = {
+			scope:actor = {
+				every_in_global_list = {
+					variable = kehillah_libraries
+					limit = {
+						kehillah_study_can_read_library_trigger = { CHARACTER = scope:actor LIBRARY = this }
+						kehillah_owns_any_torah_work_trigger = { LIBRARY = this }
+					}
+					add_to_list = item_list
+				}
+				if = {
+					limit = {
+						government_has_flag = government_is_kehillah
+						primary_title = {
+							NOT = { is_in_list = item_list }
+							kehillah_owns_any_torah_work_trigger = { LIBRARY = this }
+						}
+					}
+					primary_title = { add_to_list = item_list }
+				}
+			}
+		}
+
+		default_item = {
+			kehillah_study_torah_find_library_effect = { CHARACTER = scope:actor }
+			scope:kehillah_study_torah_library ?= { save_scope_as = selected_item }
+		}
+
+		ai_select_item = {
+			kehillah_study_torah_find_library_effect = { CHARACTER = scope:actor }
+			scope:kehillah_study_torah_library ?= { save_scope_as = selected_item }
+		}
 	}
 
 	# UNCHANGED, DELIBERATELY: ai_potential still reads government_has_flag

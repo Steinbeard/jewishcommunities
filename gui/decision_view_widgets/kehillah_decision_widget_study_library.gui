@@ -1,0 +1,157 @@
+﻿# Required controller: select_scope_object
+# 2026-11-08. The Learn Torah decision's book picker (common/decisions/
+# kehillah_learn_torah_decisions.txt). The list items are the library titles
+# the reader may study from (kehillah_study_can_read_library_trigger).
+# Picking one selects it for the decision's own confirm button AND stores it
+# on the player as var:kehillah_study_pick_library (scripted gui
+# kehillah_study_pick_library), which the shelf below reads. Each book on
+# that shelf runs kehillah_lib_study_<work> with scope:library, which starts
+# the course on that exact book.
+
+vbox = {
+	name = "kehillah_decision_widget_study_library"
+	layoutpolicy_horizontal = expanding
+	layoutpolicy_vertical = expanding
+	ignoreinvisible = yes
+	spacing = 4
+
+	text_single = {
+		layoutpolicy_horizontal = expanding
+		margin_left = 10
+		text = "KEHILLAH_STUDY_PICK_LIBRARIES_HEADING"
+		default_format = "#high"
+	}
+
+	scrollbox = {
+		layoutpolicy_horizontal = expanding
+		size = { 545 150 }
+
+		blockoverride "scrollbox_content" {
+			vbox = {
+				margin_top = 6
+				datamodel = "[DecisionViewWidgetSelectScopeObject.GetEntries]"
+				spacing = 4
+
+				item = {
+					button_standard = {
+						size = { 450 46 }
+
+						onclick = "[DecisionViewWidgetSelectScopeObject.OnSelect(SelectScopeObjectEntry.Self)]"
+						onclick = "[GetScriptedGui( 'kehillah_study_pick_library' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', SelectScopeObjectEntry.GetScopeObject.Title.MakeScope ).End )]"
+						enabled = "[SelectScopeObjectEntry.IsEnabled]"
+						down = "[SelectScopeObjectEntry.IsSelected]"
+						tooltip = "[SelectScopeObjectEntry.GetTooltip]"
+
+						hbox = {
+							layoutpolicy_horizontal = expanding
+							layoutpolicy_vertical = expanding
+							spacing = 10
+							margin_left = 10
+
+							datacontext = "[SelectScopeObjectEntry.GetScopeObject.Title]"
+
+							widget = {
+								alwaystransparent = yes
+								size = { 40 40 }
+
+								coa_title_tiny = {
+									blockoverride "position" {
+										position = { 0 0 }
+									}
+								}
+							}
+
+							vbox = {
+								layoutpolicy_vertical = expanding
+
+								text_single = {
+									text = "[Title.GetNameNoTierNoTooltip]"
+									max_width = 360
+									align = left
+								}
+								text_single = {
+									text = "KEHILLAH_LIB_WINDOW_SEAT"
+									default_format = "#weak"
+									max_width = 360
+									align = left
+								}
+							}
+
+							expand = {}
+						}
+					}
+				}
+			}
+		}
+
+		blockoverride "scrollbox_background_fade" {}
+	}
+
+	### The chosen library's shelf. Each book starts the course on that book.
+	vbox = {
+		layoutpolicy_horizontal = expanding
+		datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_study_pick_library' ).Title]"
+		spacing = 4
+
+		text_single = {
+			visible = "[Not( GetPlayer.MakeScope.Var( 'kehillah_study_pick_library' ).IsSet )]"
+			layoutpolicy_horizontal = expanding
+			margin_left = 10
+			text = "KEHILLAH_STUDY_PICK_LIBRARY_HINT"
+			default_format = "#weak"
+		}
+
+		vbox = {
+			visible = "[GetPlayer.MakeScope.Var( 'kehillah_study_pick_library' ).IsSet]"
+			layoutpolicy_horizontal = expanding
+			spacing = 4
+
+			text_single = {
+				layoutpolicy_horizontal = expanding
+				margin_left = 10
+				text = "KEHILLAH_STUDY_PICK_SHELF_HEADING"
+				default_format = "#high"
+			}
+
+			scrollbox = {
+				layoutpolicy_horizontal = expanding
+				size = { 545 220 }
+
+				blockoverride "scrollbox_content" {
+					vbox = {
+						margin_top = 4
+						datamodel = "[Title.MakeScope.GetList( 'kehillah_library_works' )]"
+						spacing = 2
+
+						item = {
+							button_standard_list = {
+								size = { 450 34 }
+								enabled = "[GetScriptedGui( Concatenate( 'kehillah_lib_study_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End )]"
+								onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_study_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End )]"
+								tooltip = "KEHILLAH_STUDY_PICK_BOOK_TT"
+
+								text_single = {
+									parentanchor = left|vcenter
+									position = { 12 0 }
+									text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
+									max_width = 330
+								}
+								icon = {
+									parentanchor = right|vcenter
+									position = { -10 0 }
+									size = { 22 22 }
+									texture = "gfx/interface/icons/kehillah_library/kehillah_mastery_ring_1.dds"
+									framesize = { 32 32 }
+									frame = "[Select_int32( GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), '(int32)2', '(int32)1' )]"
+									tooltip = "[Select_CString( GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_LIB_TT_STUDIED' ), Localize( 'KEHILLAH_LIB_TT_UNSTUDIED' ) )]"
+								}
+							}
+						}
+					}
+				}
+
+				blockoverride "scrollbox_background_fade" {}
+			}
+		}
+	}
+}

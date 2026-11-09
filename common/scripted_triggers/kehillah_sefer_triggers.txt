@@ -32,6 +32,44 @@ kehillah_lib_own_library_has_trigger = {
 	}
 }
 
+# Any scope. May $CHARACTER$ start a course of study from library title
+# $LIBRARY$? 2026-11-08 (Daniel): "adventurers ... study from the library of
+# the county they're based in ... landed Jewish rulers ... any library in
+# their domain". The library must be held and unsealed, and be one of:
+#   - his own Kehillah's title, his own library (var:kehillah_own_library),
+#     or a library title he holds;
+#   - seated in the county he stands in, or the county of his domicile (an
+#     adventurer's camp, a Kehillah's quarter);
+#   - for a landed ruler, seated in a county of his domain (held directly).
+kehillah_study_can_read_library_trigger = {
+	$LIBRARY$ = {
+		exists = holder
+		NOT = { has_variable = kehillah_library_sealed }
+		OR = {
+			AND = {
+				$CHARACTER$ = { government_has_flag = government_is_kehillah }
+				this = $CHARACTER$.primary_title
+			}
+			$CHARACTER$.var:kehillah_own_library ?= this
+			holder = $CHARACTER$
+			AND = {
+				exists = var:kehillah_library_seat
+				OR = {
+					var:kehillah_library_seat.county = $CHARACTER$.location.county
+					AND = {
+						exists = $CHARACTER$.domicile
+						var:kehillah_library_seat.county = $CHARACTER$.domicile.domicile_location.county
+					}
+					AND = {
+						$CHARACTER$ = { is_landed = yes }
+						var:kehillah_library_seat.county.holder ?= $CHARACTER$
+					}
+				}
+			}
+		}
+	}
+}
+
 # Scope: a character. May start a selected-book study from the Library.
 # Mirrors the Learn Torah decision: an ordained rabbi, or a lay reader of a
 # rite with Talmud Torah, with no course already running.
@@ -39,6 +77,8 @@ kehillah_lib_can_start_selected_study_trigger = {
 	OR = {
 		government_has_flag = government_is_kehillah
 		kehillah_is_jewish_landed_ruler_trigger = yes
+		# 2026-11-08: adventurers read the libraries of the county they are in.
+		has_government = landless_adventurer_government
 	}
 	kehillah_torah_reader_eligible_trigger = yes
 	is_adult = yes

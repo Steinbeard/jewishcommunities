@@ -1117,50 +1117,22 @@ kehillah_leadership_gender_eligible_trigger = {
 # =====================================================================
 
 kehillah_study_torah_has_accessible_library_trigger = {
+	# 2026-11-08 (Daniel: "adventurers ... study from the library of the
+	# county they're based in ... landed Jewish rulers ... any library in their
+	# domain"). One rule now, kehillah_study_can_read_library_trigger
+	# (common/scripted_triggers/kehillah_sefer_triggers.txt), over every
+	# library in the registry -- it subsumes the old capital-province and
+	# adventurer-location branches. A Kehillah's own title is checked
+	# directly as well, in case it was never registered.
 	OR = {
-		# 2026-11-08 Sefer redesign: the library a landed ruler holds or that
-		# serves him, and any unsealed library seated where the reader stands.
-		$CHARACTER$.var:kehillah_own_library ?= {
-			NOT = { has_variable = kehillah_library_sealed }
-			kehillah_owns_any_torah_work_trigger = { LIBRARY = this }
-		}
-		any_in_global_list = {
-			variable = kehillah_libraries
-			exists = holder
-			NOT = { has_variable = kehillah_library_sealed }
-			var:kehillah_library_seat ?= $CHARACTER$.location
-			kehillah_owns_any_torah_work_trigger = { LIBRARY = this }
-		}
 		AND = {
 			$CHARACTER$ = { government_has_flag = government_is_kehillah }
 			kehillah_owns_any_torah_work_trigger = { LIBRARY = $CHARACTER$.primary_title }
 		}
-		AND = {
-			NOT = { $CHARACTER$ = { government_has_flag = government_is_kehillah } }
-			$CHARACTER$ = { is_ruler = yes }
-			# FOUND 2026-09-23, ~990 errors/load (BLOCKERS.md): is_ruler = yes
-			# alone does not guarantee capital_province exists -- every OTHER
-			# Kehillah leader in the game is exactly this case, a landless
-			# independent ruler with no capital province at all, and this
-			# branch runs against every character the scheme's own `valid`
-			# block checks. Same missing-guard idiom this mod fixes
-			# everywhere else a chained scope reference can be unset.
-			exists = $CHARACTER$.capital_province
-			any_in_global_list = {
-				variable = kehillah_registered_communities
-				exists = holder
-				holder = { domicile.domicile_location = $CHARACTER$.capital_province }
-				kehillah_owns_any_torah_work_trigger = { LIBRARY = this }
-			}
-		}
-		AND = {
-			$CHARACTER$ = { has_government = landless_adventurer_government }
-			any_in_global_list = {
-				variable = kehillah_registered_communities
-				exists = holder
-				holder = { domicile.domicile_location = $CHARACTER$.location }
-				kehillah_owns_any_torah_work_trigger = { LIBRARY = this }
-			}
+		any_in_global_list = {
+			variable = kehillah_libraries
+			kehillah_study_can_read_library_trigger = { CHARACTER = $CHARACTER$ LIBRARY = this }
+			kehillah_owns_any_torah_work_trigger = { LIBRARY = this }
 		}
 	}
 }

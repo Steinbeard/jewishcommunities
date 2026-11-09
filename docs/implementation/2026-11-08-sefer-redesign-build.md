@@ -236,3 +236,35 @@ Standing row.
    for landed Jewish rulers, so a Kehillah player saw the library only in the domicile's Books tab
    (the same body). The chip now shows for any Kehillah leader whose community has a library, on
    his own character window or another community's. Not live-tested.
+5. **Learn Torah let no one choose the book, and adventurers and landed rulers had few libraries.**
+   Daniel: "actually get to choose a specific book from the county you're based in OR that's in
+   your domain ... adventurers ... the library of the county they're based in ... landed Jewish
+   rulers ... any library in their domain." Built:
+   - **Who may study where** is one trigger now, `kehillah_study_can_read_library_trigger`
+     (`kehillah_sefer_triggers.txt`). The library must be held and unsealed, and be one of: the
+     reader's own Kehillah title, his `kehillah_own_library`, or a library he holds; a library
+     seated in the county he stands in or his domicile's county; for a landed ruler, a library
+     seated in a county he holds directly. "Domain" is read as held directly, so a vassal's county
+     doesn't count. That is the more conservative reading; widen it to the realm if wanted.
+     `kehillah_study_torah_has_accessible_library_trigger` now walks the registry with it, which
+     replaces its old capital-province and adventurer-location branches. §2.3's "at the seat" rule
+     widens from the seat's province to its county.
+   - **The decision has a picker.** `kehillah_learn_torah_decision` carries a `select_scope_object`
+     widget (`gui/decision_view_widgets/kehillah_decision_widget_study_library.gui`), the same
+     controller as vanilla's holy-site picker. It lists the libraries he may read. Clicking one
+     stores it on the player (`kehillah_study_pick_library`, scripted GUI in
+     `kehillah_study_pick_gui.txt`) and shows its shelf. Each book runs
+     `kehillah_lib_study_<work>`, which starts the course on that book. The decision's own confirm
+     button, *Let the shelf choose*, keeps the old random pick, from the selected library.
+   - **The per-book study actions take `scope:library`** (generated, `write_study_gui`). The
+     Library window's *Study this book* button passes the shelf's own title. So it now works on any
+     library the reader may study from, not only his own, and shows only there.
+   - **A course remembers its library** (`var:kehillah_study_library`). This reverses the
+     2026-09-19 "live query, not snapshot" choice in `kehillah_library_effects.txt`, which assumed
+     only one library could ever apply. `kehillah_study_torah_find_library_effect` keeps it while
+     it is still readable and holds a Torah work. Otherwise it falls back to his Kehillah, his own
+     library, then any readable library.
+     The resolve effect then stores whatever it found.
+   - Adventurers may now also use the Library window's per-book Study
+     (`kehillah_lib_can_start_selected_study_trigger`).
+   xTiger: nothing new. Not live-tested: test guide section 12a.

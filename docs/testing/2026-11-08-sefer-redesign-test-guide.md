@@ -278,6 +278,35 @@ Design: [the tenet mechanics spec](../spec/2026-11-08-sefer-tenet-mechanics.md).
    Belief*. Then preach a sermon (expect a second, Stability line), watch the yeshiva's fame over
    a season, or host a festival feast (expect a Stability line).
 
+## 12a. Choosing the book: Learn Torah (NEW; added late 2026-11-08)
+
+Build record: [section 9, item 5](../implementation/2026-11-08-sefer-redesign-build.md). No
+probe; this is a GUI check. Watch `error.log` after each step, since GUI errors don't show in xTiger.
+
+1. **Kehillah of Worms, no course running.** Open *Learn Torah* in the decisions. A list,
+   *Libraries you may study in*, should show Worms's library at least, with its holder and seat.
+   It should be pre-selected, but its shelf shows only once you click it.
+2. Click the library. *Choose the book to open* lists its books, with mastery rings. Click
+   **the Torah**. Expect: 10 Piety spent, the course starts, and the opening event shows the
+   Torah's own line, not the Kuzari's. The scheme should then read from Worms.
+3. Cancel the course (or use a fresh save). Open the decision again and press **Let the shelf
+   choose**, then confirm. Expect the old behaviour: a random book from the selected library.
+4. **Library window.** Open another community's library from its leader's *Beit Midrash* chip.
+   A community in another county should show **no** *Study this book* button. Then open one whose
+   seat is in the county where your domicile is, if there is one: the button should show and work.
+5. **Landed Jewish ruler (separate game, section 9's setup).** The decision should list every
+   library seated in a county the ruler holds directly, plus his own. A library in a vassal's
+   county should not be listed.
+6. **Adventurer (if you can set one up):** a Jewish landless adventurer camped in a county with a
+   Kehillah or Beit Midrash should see that library in the list, and none elsewhere.
+7. A course started in a chosen library keeps reading there each phase. Move away (adventurer)
+   or lose the county (ruler), and the next month should switch to another library you may read,
+   with the *book lost* toast if the current book isn't there.
+
+Unverified, so look for it: whether the decision panel stays open after a book click, and
+whether the shelf list scrolls. The widget copies vanilla's holy-site picker, but the shelf below
+it is the mod's own.
+
 ## 13. Known limits (not bugs)
 
 - Tenet status (permit/ban) is per faith, not per rite. Only core tenets differ by rite.
