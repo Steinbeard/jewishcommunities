@@ -84,6 +84,46 @@ The dated rules are why a 1066 start and a 1178 start differ. A save from before
 is seeded the first time any Jewish map is painted (`kehillah_ensure_native_jewish_cultures_effect`,
 gated by the global variable `kehillah_native_jewish_cultures_seeded`).
 
+## Ashkenaz emerges; Canaani is absorbed (addendum, later 2026-11-08)
+
+Daniel: "Ashkenazi shouldn't exist in 867." Ashkenazi Jewry forms in the Rhineland in the tenth
+century. The Kalonymides came north from Lucca to Mainz, and Rabbeinu Gershom was teaching there
+by about 1000. The dates below are working assumptions and are easy to move.
+
+**Before emergence**, wherever seeding would put Ashkenazi, it puts a forerunner instead and
+records it in `var:kehillah_ashkenaz_forerunner`:
+
+| Region | Forerunner |
+|---|---|
+| German lands | Italki |
+| Francia and the rest of the west | Provenci |
+| Eastern Europe | Canaani (not marked as a forerunner; it waits for Canaani's absorption instead) |
+
+Any character who is Ashkenazi at a start before emergence takes the Jewish culture of the county
+they are in, or Italki if there is none.
+
+**Emergence** is marked by the global variable `kehillah_ashkenaz_emerged`. A start on or after
+1000 begins with it set. Otherwise the yearly global pulse has a 10% chance to set it each year
+from 950, and sets it for certain in 1000. When it fires:
+
+- every county still on its recorded forerunner becomes Ashkenazi. A county an event has moved in
+  the meantime keeps its culture;
+- every living Italki or Provenci character in those counties becomes Ashkenazi.
+
+**Canaani absorption** is marked by the global variable `kehillah_canaani_absorbed`. A start on
+or after 1300 begins with it set. Otherwise it has a 5% chance each year from 1250, and fires for
+certain in 1300. It turns every Canaani county and every living Canaani character Ashkenazi.
+
+Code: `kehillah_jewish_culture_homeland_effects.txt` (the "ASHKENAZ EMERGES" section) and
+`common/on_action/kehillah_jewish_culture_on_actions.txt`. There is no message or event yet; one
+announcing each change would be a natural follow-up.
+
+**Live test, 867 start:**
+
+- Germany is Italki and France is Provenci, and no living character is Ashkenazi.
+- Run `kehillah_ashkenaz_emerges_effect` from the console. Germany and northern France should turn
+  Ashkenazi, while Provence and Italy stay as they were.
+
 ## Character generation
 
 `pool_repopulate_local_flavor` (`common/scripted_character_templates/kehillah_pool_repopulation_patch.txt`):

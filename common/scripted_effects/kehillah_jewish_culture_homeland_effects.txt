@@ -90,7 +90,7 @@ kehillah_seed_native_jewish_culture_by_geography_effect = {
 	}
 	else_if = {
 		limit = { title_province = { geographical_region = world_europe } }
-		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:ashkenazi }
+		kehillah_seed_ashkenaz_or_forerunner_effect = yes
 	}
 	else_if = {
 		limit = {
@@ -159,7 +159,7 @@ kehillah_seed_native_jewish_culture_by_minhag_effect = {
 					scope:kehillah_njc_duchy.var:kehillah_minhag = flag:eastern_ashkenaz
 				}
 			}
-			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:ashkenazi }
+			kehillah_seed_ashkenaz_or_forerunner_effect = yes
 		}
 		else_if = {
 			limit = { scope:kehillah_njc_duchy.var:kehillah_minhag = flag:provence }
@@ -215,8 +215,19 @@ kehillah_seed_native_jewish_culture_by_minhag_effect = {
 # Scope: none. Run once at game start, after kehillah_tag_minhag_regions_
 # effect (common/on_action/kehillah_on_actions.txt).
 kehillah_seed_native_jewish_cultures_effect = {
+	# Which forerunners have already given way at this start date (see
+	# "Ashkenaz emerges" below).
+	if = {
+		limit = { current_date >= 1000.1.1 }
+		set_global_variable = { name = kehillah_ashkenaz_emerged value = yes }
+	}
+	if = {
+		limit = { current_date >= 1300.1.1 }
+		set_global_variable = { name = kehillah_canaani_absorbed value = yes }
+	}
 	every_county = {
 		remove_variable = kehillah_native_jewish_culture
+		remove_variable = kehillah_ashkenaz_forerunner
 		kehillah_seed_native_jewish_culture_by_geography_effect = yes
 		kehillah_seed_native_jewish_culture_by_minhag_effect = yes
 	}
@@ -240,7 +251,7 @@ kehillah_seed_native_jewish_cultures_effect = {
 
 	# Knaanim, before Ashkenazi settlement eastward absorbed them.
 	if = {
-		limit = { current_date < 1300.1.1 }
+		limit = { NOT = { has_global_variable = kehillah_canaani_absorbed } }
 		title:d_bohemia ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:canaani } }
 		title:d_moravia ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:canaani } }
 		title:d_lesser_poland ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:canaani } }
@@ -254,6 +265,7 @@ kehillah_seed_native_jewish_cultures_effect = {
 	every_county = {
 		kehillah_resolve_local_jewish_culture_effect = yes
 	}
+	kehillah_remove_premature_ashkenazim_effect = yes
 	set_global_variable = { name = kehillah_native_jewish_cultures_seeded value = yes }
 }
 
@@ -311,6 +323,165 @@ kehillah_paint_jewish_cultures_map_effect = {
 		every_county_province = {
 			remove_variable = kehillah_map_community
 			barony ?= { set_color_from_title = scope:kehillah_jculture_color }
+		}
+	}
+}
+
+# =====================================================================
+# ASHKENAZ EMERGES (2026-11-08, Daniel: "Ashkenazi shouldn't exist in
+# 867"). Ashkenazi Jewry forms in the Rhineland in the tenth century:
+# the Kalonymides come north from Lucca to Mainz, and by about 1000
+# Rabbeinu Gershom teaches there. Before that, the Jews north of the Alps
+# are of Italian descent in the German lands and Gallic (Provencal) in
+# Francia, and Slavic-speaking Knaanim further east.
+#
+#   global kehillah_ashkenaz_emerged  -- set at seeding for a start on or
+#     after 1000; otherwise by the yearly pulse, by chance from 950, at the
+#     latest in 1000.
+#   global kehillah_canaani_absorbed  -- set at seeding for a start on or
+#     after 1300; otherwise by chance from 1250, at the latest in 1300.
+#
+# Before emergence, a county that would be Ashkenazi gets its forerunner
+# instead and remembers it (var:kehillah_ashkenaz_forerunner). At
+# emergence, those counties still on their forerunner -- not moved by an
+# event in the meantime -- become Ashkenazi, and so do the Jews living
+# there who still have the forerunner culture. Canaani's absorption does
+# the same for every Canaani county and Canaani Jew.
+# =====================================================================
+
+# Scope: a county title. Used by seeding wherever Ashkenazi belongs.
+kehillah_seed_ashkenaz_or_forerunner_effect = {
+	remove_variable = kehillah_ashkenaz_forerunner
+	if = {
+		limit = { has_global_variable = kehillah_ashkenaz_emerged }
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:ashkenazi }
+	}
+	else_if = {
+		limit = { title_province = { geographical_region = world_europe_east } }
+		# Eastern Europe waits for Canaani's absorption, not Ashkenaz's
+		# emergence, so it is not marked as a forerunner.
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:canaani }
+	}
+	else_if = {
+		limit = { title_province = { geographical_region = world_europe_west_germania } }
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:italki }
+		set_variable = { name = kehillah_ashkenaz_forerunner value = culture:italki }
+	}
+	else = {
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:provenci }
+		set_variable = { name = kehillah_ashkenaz_forerunner value = culture:provenci }
+	}
+}
+
+# Scope: none. Run at the end of seeding: at a start before emergence, no
+# living character is Ashkenazi. Each takes the Jewish culture of the
+# county they are in, or Italki if it has none (or it is Ashkenazi).
+kehillah_remove_premature_ashkenazim_effect = {
+	if = {
+		limit = { NOT = { has_global_variable = kehillah_ashkenaz_emerged } }
+		every_living_character = {
+			limit = { culture = culture:ashkenazi }
+			if = {
+				limit = {
+					exists = location.county.var:kehillah_local_jewish_culture
+					NOT = { location.county.var:kehillah_local_jewish_culture = culture:ashkenazi }
+				}
+				set_culture = location.county.var:kehillah_local_jewish_culture
+			}
+			else = {
+				set_culture = culture:italki
+			}
+		}
+	}
+}
+
+# Scope: none.
+kehillah_ashkenaz_emerges_effect = {
+	set_global_variable = { name = kehillah_ashkenaz_emerged value = yes }
+	every_county = {
+		limit = { has_variable = kehillah_ashkenaz_forerunner }
+		if = {
+			limit = {
+				exists = var:kehillah_native_jewish_culture
+				var:kehillah_native_jewish_culture = var:kehillah_ashkenaz_forerunner
+			}
+			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:ashkenazi }
+			set_variable = { name = kehillah_ashkenaz_turning value = yes }
+		}
+		remove_variable = kehillah_ashkenaz_forerunner
+	}
+	every_living_character = {
+		limit = {
+			OR = {
+				culture = culture:italki
+				culture = culture:provenci
+			}
+			location.county ?= { has_variable = kehillah_ashkenaz_turning }
+		}
+		set_culture = culture:ashkenazi
+	}
+	every_county = {
+		limit = { has_variable = kehillah_ashkenaz_turning }
+		remove_variable = kehillah_ashkenaz_turning
+		kehillah_resolve_local_jewish_culture_effect = yes
+	}
+}
+
+# Scope: none.
+kehillah_canaani_absorbed_effect = {
+	set_global_variable = { name = kehillah_canaani_absorbed value = yes }
+	every_county = {
+		limit = {
+			exists = var:kehillah_native_jewish_culture
+			var:kehillah_native_jewish_culture = culture:canaani
+		}
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:ashkenazi }
+		kehillah_resolve_local_jewish_culture_effect = yes
+	}
+	every_living_character = {
+		limit = { culture = culture:canaani }
+		set_culture = culture:ashkenazi
+	}
+}
+
+# Scope: none. Yearly (common/on_action/kehillah_jewish_culture_on_actions.txt).
+# Only acts on saves that have been seeded.
+kehillah_jewish_culture_transitions_pulse_effect = {
+	if = {
+		limit = {
+			has_global_variable = kehillah_native_jewish_cultures_seeded
+			NOT = { has_global_variable = kehillah_ashkenaz_emerged }
+			current_date >= 950.1.1
+		}
+		if = {
+			limit = { current_date >= 1000.1.1 }
+			kehillah_ashkenaz_emerges_effect = yes
+		}
+		else = {
+			# About one in ten each year from 950.
+			random = {
+				chance = 10
+				kehillah_ashkenaz_emerges_effect = yes
+			}
+		}
+	}
+	if = {
+		limit = {
+			has_global_variable = kehillah_native_jewish_cultures_seeded
+			has_global_variable = kehillah_ashkenaz_emerged
+			NOT = { has_global_variable = kehillah_canaani_absorbed }
+			current_date >= 1250.1.1
+		}
+		if = {
+			limit = { current_date >= 1300.1.1 }
+			kehillah_canaani_absorbed_effect = yes
+		}
+		else = {
+			# About one in twenty each year from 1250.
+			random = {
+				chance = 5
+				kehillah_canaani_absorbed_effect = yes
+			}
 		}
 	}
 }
