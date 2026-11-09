@@ -1,6 +1,6 @@
-﻿# Military community-safety dashboard. The content block belongs inside the native scrollbox.
-# 2026-11-01: crisis cards that open each situation's window, a danger gauge by band, the danger's
-# drivers as bars, and the community's shields (docs/implementation/2026-11-01-community-safety-view.md).
+# Military community-safety dashboard. The content block belongs inside the native scrollbox.
+# Peacetime planning: background incident risk, its pressures and protection,
+# then links to existing levers. An active crisis lives in its own situation.
 types KehillahCrisis {
  # A crisis card: the situation's icon, name and phase; click to open its window.
  type kehillah_safety_situation_card = button_standard {
@@ -54,23 +54,10 @@ types KehillahCrisis {
 
 
 
-     ### THE RACE AND ITS ACTIONS (only while a warning runs).
-     vbox = { layoutpolicy_horizontal = expanding spacing = 8 margin = { 14 14 } visible = "[GetScriptedGui('kehillah_crisis_warning_display').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
-      background = { using = Background_Area_Dark }
-      text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "kehillah_safety_race_header" default_format = "#high;bold" tooltip = "kehillah_crisis_warning_tt" using = tooltip_ws }
-      text_single = { text = "kehillah_safety_armed_progress" tooltip = "kehillah_crisis_warning_tt" using = tooltip_ws }
-      progressbar_red = { layoutpolicy_horizontal = expanding size = { 0 16 } min = 0 max = 100 value = "[GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_crisis_armed_points').GetValue]" tooltip = "kehillah_crisis_warning_tt" using = tooltip_ws }
-      text_single = { text = "kehillah_safety_spared_progress" tooltip = "kehillah_crisis_warning_tt" using = tooltip_ws }
-      progressbar_green = { layoutpolicy_horizontal = expanding size = { 0 16 } min = 0 max = 100 value = "[GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_crisis_spared_points').GetValue]" tooltip = "kehillah_crisis_warning_tt" using = tooltip_ws }
-      button_standard = { layoutpolicy_horizontal = expanding size = { 0 40 } text = "kehillah_crisis_show_military_actions"
-       visible = "[And(GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_crisis_situation').IsSet, Not(GetVariableSystem.Exists('kehillah_crisis_show_military_actions')))]"
-       onclick = "[GetVariableSystem.Set('kehillah_crisis_show_military_actions', 'yes')]" }
-     }
-
      ### AMBIENT INCIDENT RISK: one status; exact factors live in its tooltip.
      vbox = { layoutpolicy_horizontal = expanding spacing = 8 margin = { 14 14 }
       background = { using = Background_Area_Dark }
-      tooltip = "kehillah_safety_danger_tt"
+      tooltip = "kehillah_safety_danger_planning_tt"
       using = tooltip_ws
       text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "kehillah_safety_danger_header" default_format = "#high;bold" }
       hbox = { layoutpolicy_horizontal = expanding spacing = 12
@@ -79,6 +66,7 @@ types KehillahCrisis {
        expand = {}
       }
       hbox = { layoutpolicy_horizontal = expanding spacing = 4
+       visible = "[Not(GetScriptedGui('kehillah_safety_any_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End))]"
        vbox = { spacing = 3
         progressbar_green = { size = { 92 14 } min = 0 max = 1 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_fill_calm_value')]" }
         text_single = { size = { 92 20 } autoresize = no align = center|nobaseline text = "kehillah_safety_band_calm" visible = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_band_index_value'), '(CFixedPoint)0')]" }
@@ -106,67 +94,47 @@ types KehillahCrisis {
        }
        expand = {}
       }
+     }
+
+     ### THE CAUSES: two pressures and separate visibility. Each row holds its breakdown on hover.
+     vbox = { layoutpolicy_horizontal = expanding spacing = 9 margin = { 14 14 }
+      background = { using = Background_Area_Dark }
+      text_single = { text = "kehillah_safety_pressures_header" default_format = "#high;bold" }
+      hbox = { layoutpolicy_horizontal = expanding spacing = 8 tooltip = "kehillah_safety_court_tt" using = tooltip_ws
+       text_single = { text = "kehillah_safety_court_label" }
+       expand = {}
+       text_single = { text = "[GetPlayer.Custom('KehillahCourtPressureBand')]" }
+      }
+      hbox = { layoutpolicy_horizontal = expanding spacing = 8 tooltip = "kehillah_safety_popular_tt" using = tooltip_ws
+       text_single = { text = "kehillah_safety_popular_label" }
+       expand = {}
+       text_single = { text = "[GetPlayer.Custom('KehillahPopularPressureBand')]" }
+      }
+      text_single = { text = "kehillah_safety_visibility_summary" tooltip = "kehillah_safety_visibility_tt" using = tooltip_ws }
+     }
+
+     ### PROTECTION AND LEVERS. These navigate to actual existing systems.
+     vbox = { layoutpolicy_horizontal = expanding spacing = 9 margin = { 14 14 }
+      background = { using = Background_Area_Dark }
+      text_single = { text = "kehillah_safety_protection_header" default_format = "#high;bold" }
+      text_single = { text = "kehillah_safety_stability_summary" tooltip = "kehillah_safety_stability_tt" using = tooltip_ws }
+      text_single = { text = "kehillah_safety_ruler_summary" tooltip = "kehillah_safety_ruler_tt" using = tooltip_ws }
       text_single = { text = "kehillah_safety_shields_summary" tooltip = "kehillah_safety_shields_tt" using = tooltip_ws }
+      text_single = { text = "kehillah_safety_shield_protection_on" visible = "[GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_crisis_royal_protection').IsSet]" tooltip = "kehillah_safety_shields_tt" using = tooltip_ws }
+      text_single = { text = "kehillah_safety_shield_protection_off" visible = "[Not(GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_crisis_royal_protection').IsSet)]" tooltip = "kehillah_safety_shields_tt" using = tooltip_ws }
+      hbox = { layoutpolicy_horizontal = expanding spacing = 8
+       visible = "[Not(GetScriptedGui('kehillah_safety_any_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End))]"
+       button_standard = { layoutpolicy_horizontal = expanding size = { 0 38 } text = "kehillah_safety_bet_din_action"
+        onclick = "[ToggleGameView('activity_list_window')]" tooltip = "kehillah_safety_bet_din_action_tt" using = tooltip_ws }
+       button_standard = { layoutpolicy_horizontal = expanding size = { 0 38 } text = "kehillah_safety_petition_action"
+        onclick = "[ToggleGameViewData('council_window', GetPlayer.GetID)]" tooltip = "kehillah_safety_petition_action_tt" using = tooltip_ws }
+      }
+      text_single = { text = "kehillah_safety_religious_support_on" visible = "[GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_safety_religious_support').IsSet]" tooltip = "kehillah_safety_religious_support_tt" using = tooltip_ws }
+      button_standard = { layoutpolicy_horizontal = expanding size = { 0 36 } text = "kehillah_safety_religious_support_action"
+       visible = "[And(GetScriptedGui('kehillah_safety_religious_route').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End), Not(GetScriptedGui('kehillah_safety_any_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End)))]"
+       onclick = "[ToggleGameViewData('council_window', GetPlayer.GetID)]" tooltip = "kehillah_safety_religious_support_tt" using = tooltip_ws }
+      text_single = { text = "kehillah_safety_crisis_hint" visible = "[GetScriptedGui('kehillah_safety_any_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End)]" }
      }
-
-     vbox = { layoutpolicy_horizontal = expanding spacing = 8 margin = { 14 14 } visible = "[And(GetScriptedGui('kehillah_crisis_warning_display').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End), Or(Not(GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_crisis_situation').IsSet), GetVariableSystem.Exists('kehillah_crisis_show_military_actions')))]"
-      background = { using = Background_Area_Dark }
-      text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "kehillah_crisis_actions_header" default_format = "#high;bold" }
-      button_standard = { layoutpolicy_horizontal = expanding size = { 0 34 } text = "kehillah_crisis_hide_military_actions"
-       visible = "[GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_crisis_situation').IsSet]"
-       onclick = "[GetVariableSystem.Clear('kehillah_crisis_show_military_actions')]" }
-      text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "[GetPlayer.Custom('KehillahCrisisPending')]" }
-      button_standard = { layoutpolicy_horizontal = expanding size = { 0 40 } text = "kehillah_crisis_action_watch"
-       enabled = "[GetScriptedGui('kehillah_crisis_watch').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
-       onclick = "[GetScriptedGui('kehillah_crisis_watch').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
-       tooltip = "kehillah_crisis_action_watch_tt" using = tooltip_ws }
-      text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "kehillah_crisis_effect_watch" default_format = "#small;F" }
-      button_standard = { layoutpolicy_horizontal = expanding size = { 0 40 } text = "kehillah_crisis_action_supplies"
-       enabled = "[GetScriptedGui('kehillah_crisis_supplies').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
-       onclick = "[GetScriptedGui('kehillah_crisis_supplies').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
-       tooltip = "kehillah_crisis_action_supplies_tt" using = tooltip_ws }
-      text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "kehillah_crisis_effect_supplies" default_format = "#small;F" }
-      button_standard = { layoutpolicy_horizontal = expanding size = { 0 40 } text = "kehillah_crisis_action_routes"
-       enabled = "[GetScriptedGui('kehillah_crisis_routes').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
-       onclick = "[GetScriptedGui('kehillah_crisis_routes').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
-       tooltip = "kehillah_crisis_action_routes_tt" using = tooltip_ws }
-      text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "kehillah_crisis_effect_routes" default_format = "#small;F" }
-      button_standard = { layoutpolicy_horizontal = expanding size = { 0 40 } text = "kehillah_crisis_action_advocacy"
-       enabled = "[GetScriptedGui('kehillah_crisis_advocacy').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
-       onclick = "[GetScriptedGui('kehillah_crisis_advocacy').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
-       tooltip = "kehillah_crisis_action_advocacy_tt" using = tooltip_ws }
-      text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "kehillah_crisis_effect_advocacy" default_format = "#small;F" }
-      text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "kehillah_crisis_actions_hint" default_format = "#small;F" }
-     }
-
-     vbox = { layoutpolicy_horizontal = expanding spacing = 8 margin = { 14 14 } visible = "[GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_mob_threat').IsSet]"
-      background = { using = Background_Area_Dark }
-      text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "kehillah_crisis_readiness_header" default_format = "#high;bold" }
-      text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "kehillah_safety_readiness_summary" tooltip = "kehillah_safety_readiness_tt" using = tooltip_ws }
-     }
-
-     vbox = { layoutpolicy_horizontal = expanding spacing = 8 margin = { 14 14 } visible = "[GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_mob_threat').IsSet]"
-      background = { using = Background_Area_Dark }
-      text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "kehillah_crisis_diplomacy_header" default_format = "#high;bold" }
-      text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "kehillah_crisis_diplomacy_pending" visible = "[GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_mob_messenger').IsSet]" }
-      text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "kehillah_crisis_leader_away" visible = "[GetPlayer.MakeScope.Var('kehillah_mob_away').IsSet]" }
-      button_standard = { layoutpolicy_horizontal = expanding size = { 0 40 } text = "kehillah_crisis_action_council"
-       enabled = "[GetScriptedGui('kehillah_crisis_council').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
-       onclick = "[GetScriptedGui('kehillah_crisis_council').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
-       tooltip = "kehillah_crisis_action_council_tt" using = tooltip_ws }
-     }
-
-     vbox = { layoutpolicy_horizontal = expanding spacing = 8 margin = { 14 14 } visible = "[GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_crisis_outcome').IsSet]"
-      background = { using = Background_Area_Dark }
-      text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "kehillah_crisis_outcome_header" default_format = "#high;bold" }
-      text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "[GetPlayer.Custom('KehillahCrisisOutcome')]" }
-      text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "[GetPlayer.Custom('KehillahCrisisResponse')]" }
-     }
-
-
-
-
-
 
     }
    }

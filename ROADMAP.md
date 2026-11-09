@@ -38,6 +38,26 @@ are not built either; the weigh event stands in for them.
 - [The validation checklist](docs/testing/2026-11-08-stand-for-the-seat-validation.md): **V1 (the
   game loads) and V3 (a declared outsider is in the line) decide whether the design stands.**
 
+**Crisis funding control - 2026-11-08, source checked, live check pending:**
+Armed Host shows a compact funding ledger with gold spent in this crisis, points
+bought toward Quarter held, and a button showing the next marginal price. The
+button applies the existing guarded contribution effect directly; the decision
+remains for AI but no longer occupies a full-width situation action. Existing
+saves begin recording the exact gold total with their next contribution.
+
+**Community Safety planning page - 2026-11-08, source checked, live check pending:**
+Military's duplicate crisis races and actions are replaced by a situation link,
+two pressure rows, a protection summary, and links to Bet Din and Shtadlan tasks.
+Court rivalry, a vizierate, and local agitation make Granada Tense in 1066
+despite Badis's favorable outlook. Eligible incidents have a 1% annual floor;
+active crises and cooldowns still suspend the roll. A new Shtadlan task seeks
+  a temporary public assurance from the host's religious adviser. Important
+  Actions recommend the Bet Din planner and eligible Shtadlan council routes,
+  while the crisis alert takes priority during an active crisis. See
+[the design](docs/spec/2026-11-08-community-safety-planning.md) and
+[the human test plan](docs/testing/2026-11-08-community-safety-human-test.md).
+The GUI and council task have not yet been verified live.
+
 **Beit Midrash shelf and Ledger of Sefarim BUILT - 2026-11-08, Daniel's request, xTiger-clean,
 live test pending (Daniel runs it by hand; needs a restart):** the Books page is now three genre
 tabs. Each opens on its foundational centrepiece: the Torah in the ark with the Prophets and the
