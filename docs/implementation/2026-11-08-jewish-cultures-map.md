@@ -78,7 +78,7 @@ right after `kehillah_tag_minhag_regions_effect`). Later steps override earlier 
    | Georgia, Abkhazia, Greater Armenia, Vaspurakan | Bavli |
    | Chera Nadu (Kochi) | Kochini |
    | Gondar (Semien, Dembiya) | Beta Israel |
-   | Bohemia, Moravia, Lesser Poland, Wielkopolska, Mazovia, Kiev, Volhynia, Chernigov | Canaani, before 1300 (Ashkenazi after) |
+   | Bohemia, Moravia, Lesser Poland, Wielkopolska, Mazovia, Kiev, Volhynia, Chernigov | Canaani, until absorbed (by 1187; see below) |
 
 The dated rules are why a 1066 start and a 1178 start differ. A save from before this change
 is seeded the first time any Jewish map is painted (`kehillah_ensure_native_jewish_cultures_effect`,
@@ -111,8 +111,8 @@ from 950, and sets it for certain in 1000. When it fires:
 - every living Italki or Provenci character in those counties becomes Ashkenazi.
 
 **Canaani absorption** is marked by the global variable `kehillah_canaani_absorbed`. A start on
-or after 1300 begins with it set. Otherwise it has a 5% chance each year from 1250, and fires for
-certain in 1300. It turns every Canaani county and every living Canaani character Ashkenazi.
+or after 1187 begins with it set. Otherwise it has a 5% chance each year from 1137, and fires for
+certain in 1187 (Daniel, 2026-11-08: "drop them by 1187"; first proposed as 1250-1300). It turns every Canaani county and every living Canaani character Ashkenazi.
 
 Code: `kehillah_jewish_culture_homeland_effects.txt` (the "ASHKENAZ EMERGES" section) and
 `common/on_action/kehillah_jewish_culture_on_actions.txt`. There is no message or event yet; one
@@ -209,7 +209,7 @@ instead is open, and listed below.
      Kiev pale blue, Malabar green, Gondar red, Derbent olive, Jerusalem gold.
    - Hovering shows the culture name, not a raw key.
 3. **Start-date differences.** In a 1178 or later start, Central Asia is Bavli. In a start after
-   1300, Bohemia is Ashkenazi.
+   1187, Bohemia is Ashkenazi.
 4. **Community Rites map.**
    - The underlay is dim and the quarters are bright.
    - Hovering a non-quarter barony shows its Jewish culture.
