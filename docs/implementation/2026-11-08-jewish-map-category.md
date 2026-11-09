@@ -22,8 +22,10 @@ Communities map already shows over a community's quarter.
 
 ## What changed
 
-**A Jewish category.** The bottom-right map-mode row (Faiths, Cultures, Houses, +) has a fourth
-button, the menorah (`map_mode_jewish_button`). It paints and opens Jewish Communities. In any
+**A Jewish category.** A small menorah button (`map_mode_jewish_button`, 26 wide against the
+row's 32) sits under the large Realms button, left of the bottom-right row (Faiths, Cultures,
+Houses, +). Placed in that row, it made five buttons, too wide for vanilla's fixed 170-wide box;
+widening the box also looked awkward (both tried 2026-11-08). It paints and opens Jewish Communities. In any
 Jewish mode, the strip above the map shows only the five Jewish buttons: Communities, Rites,
 Crises, Status of the Jews, Libraries. The three Faith buttons are hidden there, and the Jewish
 buttons are hidden in the Faith modes, so neither family's strip carries the other's buttons.
