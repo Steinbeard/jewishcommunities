@@ -84,6 +84,54 @@ The dated rules are why a 1066 start and a 1178 start differ. A save from before
 is seeded the first time any Jewish map is painted (`kehillah_ensure_native_jewish_cultures_effect`,
 gated by the global variable `kehillah_native_jewish_cultures_seeded`).
 
+## Borders, lands without Jews, Bene Israel (addendum, later 2026-11-08)
+
+This addendum follows Daniel's first look at the map, which showed Ashkenazi reaching Iceland and
+Norway.
+
+Seeding gains a **step 4**, run after the named duchies.
+
+**Provenci** is narrowed to the Jewish Midi: Provence, Languedoc, Toulouse, Dauphiné and Savoy.
+Gascony, Armagnac, Auvergne, Poitou and Bourbon go with northern France: Ashkenazi, or its
+forerunner before emergence.
+
+**Canaani** is one contiguous block: Bohemia, Moravia, Lesser and Greater Poland, Kuyavia,
+Mazovia, both Silesias, Kiev, Chernigov, Pereyaslavl, Turov, Volhynia, Halych and the Cherven
+towns.
+
+**No Jewish culture** at any start (`kehillah_clear_duchy_native_jewish_culture_effect`):
+
+| Area | Duchies |
+|---|---|
+| Scandinavia, Denmark and Finland | all of world_europe_north |
+| Scotland, Ireland and Wales | |
+| Wendish lands | Holstein, Pomerania, Pomerelia, Nordmark, Ostmark |
+| Baltic | Prussia, Masuria, Livonia, Courland, Latgale, Samogitia, Lithuania, Estonia |
+| West Rus' | Grodno, Pinsk, Minsk, Polotsk, Smolensk |
+| Northern and north-eastern Rus' | |
+| Moldavia | |
+| Inner Arabia | the Hijaz (Mecca, Medina), Najd, Yamama, Jawf, Shammar, Asir, Mahra, Socotra |
+
+**England** has no Jewish culture in starts before 1070. In play,
+`kehillah_norman_conquest_execute_effect` (the Norman invitation) sets the kingdom Ashkenazi.
+
+`kehillah_native_jewish_culture_seeded_here_trigger` now asks the global seeded flag rather than
+the county. A county can now be seeded to no culture at all, and must not fall back to the
+template's old geography.
+
+**Bene Israel** (`bene_israel`) is added: Marathi-speaking, on d_konkana (Sopara). It borrows the
+Kochini name list.
+
+Mesopotamia and the Jazira are now checked before Arabia, because world_middle_east_arabia
+contains them.
+
+**Colours.** Radhanite changes from sand, which looked like bare parchment, to purple. Canaani
+changes from pale blue, which looked like Ashkenazi, to lime.
+
+**An existing save keeps its old seeding.** To reseed it, run
+`effect = { kehillah_seed_native_jewish_cultures_effect = yes }` from the console and repaint.
+A reseed also replays the start-date rules against the current date.
+
 ## Teimani and Ma'aravi (addendum, later 2026-11-08)
 
 Daniel asked for Teimani and asked whether Musta'arabi was too general. It was: Maghrebi Jewry
