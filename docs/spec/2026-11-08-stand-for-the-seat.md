@@ -1,5 +1,7 @@
-**Status:** PROPOSAL, 2026-11-08. Written at Daniel's request after a design conversation the same day.
-Nothing is built. Section 10 lists the spikes that must run before any build slice. This touches
+**Status:** PROPOSAL, 2026-11-08. Written at Daniel's request after a design conversation the same day,
+and **revised the same day with his answers** (section 12): a stranger must be a great rabbi or married
+into a local family to be taken seriously; any seat can be previewed before declaring; the card says
+what the seat offers; v1 is a player action only, with no AI declarations. Nothing is built. Section 10 lists the spikes that must run before any build slice. This touches
 succession, the most crash-prone subsystem in the mod
 ([implementation doc](../implementation/v1-kehillah-implementation.md) sections 6, 8, 13 and 15).
 
@@ -33,6 +35,16 @@ and §2c (resignation) are unaffected.
 - **The target's current leader must share the candidate's faith.**
 - **Later:** communal focuses (scholarly, courtly, mercantile), roughly replacing the retired
   community goals. A community's focus changes which candidates it wants (section 9).
+
+Added in the same-day revision:
+- **A stranger needs a reason to be taken seriously:** he must be a **great rabbi**, or **married
+  into a local family** (section 5.3).
+- **Anyone can seek any seat, but sees his score first.** Previewing is free; only declaring costs
+  (section 6).
+- **Say what the seat is worth:** the host's capital, a yeshiva, an unusually strong economy, and so
+  on (section 6.2).
+- **Player action only for now.** AI leaders don't declare. AI careers in the mould of Saadia Gaon
+  (brought from Egypt to head Sura) are a later question (section 11).
 
 ## 2. What vanilla does, and what we take from it
 
@@ -74,7 +86,7 @@ category reaches another community's leader. So:
    - build ties with the community;
    - raise your own community's Standing.
 4. **The seat falls vacant.** Normal succession runs untouched, and its winner takes office as
-   **acting leader**. Seven days later, **the board meets**: an event compares scores taken at the
+   **acting leader**. A day later (7.1), **the board meets**: an event compares scores taken at the
    moment of the death.
 5. **Outcome.** If an outsider wins:
    - the seat moves to him;
@@ -87,6 +99,8 @@ category reaches another community's leader. So:
 ## 4. Candidacy rules
 
 **Who may declare:**
+- **v1: player characters only.** AI leaders never declare (Daniel, 2026-11-08). The rules below
+  are written so an AI pulse could be added later without changing them.
 - An adult, capable, free character who leads a community: government `kehillah_government` or
   `kehillah_landed_government`, with a primary title that passes `is_kehillah_title_trigger`.
 - Courtiers and landless rabbis can't declare. They are already candidates in their own community's
@@ -102,8 +116,8 @@ category reaches another community's leader. So:
 
 **Limits:**
 - One candidacy per character at a time.
-- At most **3 outsiders per seat**, the best three by score. A fourth who outscores the lowest
-  displaces him, and he is notified.
+- With no AI declarations, a seat has at most one outsider per player. No cap is needed in v1.
+  Multiplayer simply means the best-scoring outsider is compared at the vacancy.
 
 **Cost:**
 - Prestige, scaled by the target's Standing rank. The script values go in
@@ -168,6 +182,7 @@ Every number below is a tunable script value. Weights are starting guesses for a
 | **Board opinion** | both | average opinion of the seat's V26 board members, ×0.3 | The main campaign lever. Vanilla gifts, sway and befriend all move it. |
 | **Ties to the place** | outsider | +15 each: spouse or child married into a board or householder family of the seat; a dynasty member heads a householder family there | |
 | **Outsider** | outsider | −20; a further −20 if `kehillah_shares_minhag_region_trigger` fails against the seat | Rite and region matter to a congregation |
+| **A stranger to the congregation** | outsider | −60, **waived** for a great rabbi or a man married into a local family (5.3) | The gate that decides whether an outsider is a serious candidate |
 | Age (too young / too old) | both | existing vanilla-style tie-breakers, if any | Not new |
 
 **This changes native succession too.** Every term marked "both" also applies to the community's
@@ -175,7 +190,67 @@ own candidates in every community, player-led ones included. It is a scoring cha
 to the succession law, so there is no new crash surface. But it changes who wins. Slice 1 lands it
 alone, with a live check of three or four ordinary successions before anything else builds on it.
 
+### 5.3 Great rabbi, or married in
+
+Daniel, 2026-11-08: an outsider should have to be **a great rabbi** or **married into a local
+family** to be considered seriously. Anyone may still declare. Without either, the **stranger**
+term (−60) normally leaves him far behind the community's own heir, and the breakdown says why.
+
+**A great rabbi** (`kehillah_candidacy_great_rabbi_trigger`) has the Rabbi trait **and** at least
+one of the following (thresholds tunable):
+- Learning 16 or more;
+- at least one work authored;
+- a Sanhedrin seat, or Nasi or Gaon;
+- piety level 3 or more.
+
+**Married into a local family** (`kehillah_candidacy_married_in_trigger`): the candidate's current
+spouse is, or is close family of, someone at the seat's court who is:
+- the sitting leader;
+- a board member;
+- an officer;
+- the head of a householder family.
+
+The tie is the candidate's **own** marriage. A child's marriage into the place stays the smaller
+"ties to the place" term in 5.2, which is a bonus but does not waive the stranger term.
+
+The two routes match how communities actually took in leaders from outside: they called a scholar
+whose name preceded him, or a man who had married into the town's leading families. The rule fits
+a rabbinic candidate best. A **lay** leader from elsewhere will usually need the marriage route,
+which matches the history (section 12, question 1).
+
 ## 6. Showing the score
+
+### 6.1 Your score, before you declare
+
+**Previewing is free and works for every seat.** Only declaring costs prestige.
+- **In the ledger (V52):** the column *Your standing for this seat* is filled for **every**
+  community the player could stand for, not just a declared target. The ledger is where the player
+  shops.
+- **On every community card:** a line *If you stood: 212, 2nd of 4*, with the full breakdown in its
+  tooltip. It also shows whether the stranger term applies, and which of the two routes would lift
+  it. It appears whether or not the player has declared.
+
+### 6.2 What the seat offers
+
+Daniel, 2026-11-08: the card should also make it plain **why the seat is worth having**. A
+*What the seat offers* block lists only the facts that apply, each a short line with detail in its
+tooltip. All of them come from data the mod already keeps:
+
+| Advantage | Shown when | Source |
+|---|---|---|
+| **In the host's capital** | The community's county is the capital county of its host's top liege, tier kingdom or higher. The line names the realm: "the capital of the Holy Roman Empire". | Host and county scopes, as in the community card |
+| **A yeshiva** | The community has a yeshiva, with its level and current students | V29 yeshiva state |
+| **A great library** | The library holds unusually many works, for example top quarter of the world | Library / V42 counts |
+| **A strong economy** | Prosperity ranks in the world's top 3, or the community's income is unusual | V52 ranks, Prosperity |
+| **Standing** | Always: "3rd of 22 · Healthy" | V52 |
+| **The Nagid's seat** | Its leader would be Nagid | The Nagid spec |
+| **A seat of the bet din** | It is one of Sh'um's three, or a regional bet din sits there | V4 |
+| **Its troubles** | Its current crisis, danger level or host policy, if any is notable | Safety view, crisis situation, charter |
+
+**Its troubles** stays on purpose. A seat in a capital under a hostile king is a real choice, not a
+straight upgrade.
+
+### 6.3 The candidates
 
 - **On the community card.** In the map inspector and the Quarter, a **Candidates** block for any
   community that has declared outsiders or that the player is eyeing. It shows:
@@ -186,9 +261,8 @@ alone, with a live check of three or four ordinary successions before anything e
 
   Each row has a portrait, name, home community and score, with a breakdown tooltip. The player's
   row is highlighted. Any rule text goes in tooltips (memory: no odds or effects in loc prose).
-- **In the ledger (V52):** a column **Your standing for this seat**: your score against the
-  front-runner's, as "2nd of 5" with the gap. Built like the existing sort columns. This is how the
-  player shops for a target.
+- **In the ledger (V52):** the column from 6.1, *Your standing for this seat*: your score against
+  the front-runner's, as "2nd of 5" with the gap. Built like the existing sort columns.
 - **The declaration decision's tooltip** shows your score for the chosen target and the
   front-runner's.
 - **Datamodel:** the candidate list is rebuilt by scripted GUI when the card opens, in the
@@ -207,8 +281,28 @@ In `on_death` of a community leader whose title has a non-empty `kehillah_declar
 Taking the snapshot here means the heir's office bonus is still counted, before succession moves
 everyone around.
 
-It also schedules `kehillah_candidacy.0010` (hidden, **7 days**) on the title. The death and the
-normal succession are not otherwise touched. **No title moves inside `on_death`.**
+It also schedules `kehillah_candidacy.0010` (hidden) on the title. The death and the normal
+succession are not otherwise touched. **No title moves inside `on_death`.**
+
+**The delay: 1 day recommended, replacing the first draft's 7.** Pending Daniel's confirmation
+(section 12, question 2).
+- **Why there has to be a delay at all.** The engine hands a title to its heir the instant the
+  holder dies, and the mod has no safe way to stop that. Moving titles inside `on_death` is the
+  area that has crashed the game before. So the community's own heir always takes the seat first,
+  and an outsider can only take it from him afterwards, as an ordinary transfer between living
+  characters. "Acting leader" is just the name for whoever holds the seat in that gap.
+- **Why 1 day.** The draft's week bought nothing, because the spec gives no one anything to do in
+  it: the scores are frozen at the death, so lobbying in the gap can't change the result. A longer
+  gap only makes the heir *look* like the new leader: he gets the "new leader" news, his
+  title-gain effects run, and he could make decisions, all to be undone days later. One day is the
+  shortest delay that is certainly safe; the mod already defers its own government fix by one day
+  for the same reason (`kehillah_succession.0010`).
+- **What the player sees.** No acting period. The event the player sees is the outcome: "The board
+  of Mainz has chosen you", or the reasons it did not. The heir's own "new leader" news is held
+  back while a contest is pending, so the world hears of only one new leader.
+- **When a longer gap would earn its keep:** if the vacancy itself became a short campaign, with
+  the scores live and the player lobbying the board against the clock. That is a bigger feature
+  and not part of v1.
 
 ### 7.2 The board meets
 
@@ -327,7 +421,7 @@ empty after winning. No separate yeshiva headship is needed.
 | 2 | Does a named script value keep its per-line `desc` breakdown when called from `candidate_score`? | Open. A one-line change to `kehillah_leadership` behind a debug toggle, then read the succession screen. |
 | 3 | The handover order. Does M keep his domicile while holding two community titles? Is `on_title_gain` clean for a living-to-living transfer (no "illegal government" line)? Does the Nagid follow? | Open. Run as a debug event on the Worms 1066 bookmark: move Worms's leader to Speyer and Speyer's acting heir to a courtier, then read `error.log` and both quarters. |
 | 4 | Does `add_courtier` keep a council seat or court position? | Open, same probe. |
-| 5 | Does the AI declaration pulse cost anything measurable with about 25 communities? | Open, slice 6. |
+| 5 | Can the acting leader's "new leader" news be held back while a contest is pending (7.1)? | Open, same probe as 3. |
 
 ## 11. Build order
 
@@ -337,36 +431,38 @@ Each slice ends xTiger-clean, with its own debug probes in
 1. **Score refactor and the new terms.** Natives only; no outsiders yet. Probe: print the breakdown
    for every native candidate of a chosen community to `debug.log`. Live: three or four ordinary
    successions behave sensibly.
-2. **Declaration and display.** The decision, candidacy state, lapses, cooldowns, the card block and
-   the ledger column. Nothing resolves yet.
+2. **Preview and display.** The free preview line on every card, the ledger column, *What the seat
+   offers*, then the decision, candidacy state, lapses and cooldowns. Nothing resolves yet. Preview
+   and *What the seat offers* are useful on their own, so they can ship first.
 3. **The handover effect**, written after Spikes 3 and 4, fired only from a debug event at first.
 4. **The board meets:** the snapshot in `on_death`, `kehillah_candidacy.0010`, notices.
 5. **Campaign:** ask for endorsement, then the optional endowment.
-6. **AI declarations:**
-   - a yearly pulse on community leaders;
-   - a small chance to declare for a better-ranked seat in the same minhag region whose native
-     front-runner they outscore;
-   - capped by section 4's three-per-seat rule.
-7. **Communal focus:** its own spec, which turns on section 9's weights.
+6. **Communal focus:** its own spec, which turns on section 9's weights.
+
+**Not scheduled: AI careers.** Dropped from v1 (Daniel, 2026-11-08). If added later, it should
+model a few famous moves, not churn. Saadia Gaon, brought from Egypt to head the academy at Sura,
+is the pattern: a rare, scripted or heavily weighted move by an exceptional scholar, not a yearly
+roll for every leader. The section 4 rules already apply to any declarer, so the AI would need only
+a pulse, a target choice and a cap.
 
 **Done when**, live, on Worms 1066:
 - a player who leads a small community declares for Mainz;
 - the player sees his rank and breakdown;
 - he raises it through board opinion and an endorsement;
 - Mainz's leader dies (`kill` from the console);
-- seven days later the player leads Mainz: Mainz's quarter is on his domicile and nothing else is;
+- a day later the player leads Mainz: Mainz's quarter is on his domicile and nothing else is;
   Mainz's board and officers are seated at his court;
 - his old community is led by its own top candidate with its quarter intact;
 - `error.log` has no new `kehillah` lines.
 
 ## 12. Questions for Daniel
 
-1. **Lay leaders.** Historically a congregation brought in its rabbi from outside more often than
-   its parnas. Should a lay leader (no Rabbi trait) take a larger outsider penalty, or need a tie to
-   the place (marriage, household) before he can declare at all?
-2. **Seven days.** Is a week of acting leadership the right length, or should the board's meeting be
-   immediate, with the acting leader only a notice?
-3. **AI pace.** How often should AI leaders move? The proposal is rare: a few moves per century
-   across the world, so famous rabbis' careers are visible without churn.
-4. **Closed player communities.** Section 4 closes player-led seats to outsiders in v1. Acceptable as
-   a first-cut limit?
+1. **Lay leaders. ANSWERED 2026-11-08:** anyone may declare, but a stranger must be a great rabbi
+   or married into a local family to be taken seriously. Built as the stranger term in 5.2, waived
+   by either route in 5.3.
+2. **The acting leader's delay. Open.** Recommendation: 1 day, with no visible acting period
+   (7.1). Daniel asked for the explanation; it is in 7.1.
+3. **AI pace. ANSWERED 2026-11-08:** no AI declarations in v1; a player action only. AI careers
+   are noted as unscheduled in section 11.
+4. **Closed player communities. Open.** Section 4 closes player-led seats to outsiders in v1. With
+   no AI declarations this only matters in multiplayer, where one player could take another's seat.
