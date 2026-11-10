@@ -84,6 +84,29 @@ The dated rules are why a 1066 start and a 1178 start differ. A save from before
 is seeded the first time any Jewish map is painted (`kehillah_ensure_native_jewish_cultures_effect`,
 gated by the global variable `kehillah_native_jewish_cultures_seeded`).
 
+## Jawf, Agaw Meder, Moldavia; what differs by start date (addendum, 2026-11-10)
+
+- **d_jawf-al-yamani** is now Teimani. The Arabia region had made it Mizrahi.
+- **c_agaw_meder** (west of Lake Tana) joins Beta Israel. It is the Agaw country the Beta Israel
+  are most often traced to. Their recorded heartland only appears in sources with Amda Seyon's
+  wars in the 1330s (Semien, Wegera, Tselemt), so anything wider is guesswork for CK3's dates.
+- **Canaani** now also covers d_bukovina, d_moldova and d_bugeac (Daniel), so the block runs
+  unbroken to the Black Sea. Evidence for Jews there this early is thin, so this is a
+  map-coherence call. They turn Ashkenazi with the rest when Canaani is absorbed.
+- **Bohemia stays Canaani.** It is the strongest Canaani case. Medieval Hebrew writers called
+  Bohemia "Canaan", and the Old Czech glosses are Bohemian.
+
+**What differs by start date** (all from the rules above):
+
+| | 867 | 1066 | 1178 |
+|---|---|---|---|
+| Ashkenaz | not yet: Italki in the German lands, Provenci in Francia | formed | formed |
+| Khazaria | Radhanite | none | none |
+| England | none | none until the Norman invitation | Ashkenazi |
+| Canaani | Bohemia to the Black Sea | same | same; absorbed by 1187 |
+
+Everything else is the same at all three starts.
+
 ## Mizrahi; Radhanite as Persian Jewry; Juhuri retired (addendum, 2026-11-09)
 
 Daniel's calls, following the culture-list proposal:
