@@ -23,6 +23,7 @@
 
 kehillah_raise_jewish_settlement_policy_effect = {
 	kehillah_settlement_laws_normalize_effect = yes
+	kehillah_settlement_law_repair_effect = yes
 	if = {
 		limit = { kehillah_can_hold_settlement_law_trigger = yes }
 		if = {
@@ -53,6 +54,7 @@ kehillah_raise_jewish_settlement_policy_effect = {
 
 kehillah_lower_jewish_settlement_policy_effect = {
 	kehillah_settlement_laws_normalize_effect = yes
+	kehillah_settlement_law_repair_effect = yes
 	if = {
 		limit = { kehillah_can_hold_settlement_law_trigger = yes }
 		if = {
@@ -95,6 +97,9 @@ kehillah_settlement_policy_changed_effect = {
 		# A law now holds the policy: an unmigrated old variable must not
 		# go on overriding it (the triggers read the variable first).
 		primary_title = { remove_variable = kehillah_jewish_settlement_policy }
+		# 2026-11-10: a ban passed here is a decreed ban; any other rung
+		# clears the mark.
+		kehillah_settlement_ban_marker_sync_effect = yes
 
 		if = {
 			limit = { NOT = { primary_title = { has_variable = kehillah_policy_old_rung } } }
@@ -255,6 +260,56 @@ kehillah_settlement_law_from_variable_effect = {
 			}
 			primary_title = { remove_variable = kehillah_jewish_settlement_policy }
 		}
+		kehillah_settlement_ban_marker_sync_effect = yes
+	}
+}
+
+# ---------------------------------------------------------------------
+# 2026-11-10: decreed bans (see kehillah_holds_decreed_ban_trigger).
+# ---------------------------------------------------------------------
+
+# Scope: a ruler whose settlement law was just set on purpose. A Banned
+# law is marked as decreed, on the ruler and his realm title; any other
+# law clears both marks.
+kehillah_settlement_ban_marker_sync_effect = {
+	if = {
+		limit = { has_realm_law = kehillah_jewish_settlement_banned }
+		set_variable = { name = kehillah_settlement_ban_decreed value = yes }
+		primary_title ?= { set_variable = { name = kehillah_settlement_ban_decreed value = yes } }
+	}
+	else = {
+		remove_variable = kehillah_settlement_ban_decreed
+		primary_title ?= { remove_variable = kehillah_settlement_ban_decreed }
+	}
+}
+
+# Scope: any ruler. An undecreed Banned -- the engine's first law, given
+# when the ruler gained the law group -- becomes Allowed, the group's
+# default, without the change effects: nothing changed in the world.
+# Edicts the phantom ban started lapse on their community's next
+# quarterly pass ("host no longer bans").
+kehillah_settlement_law_repair_effect = {
+	if = {
+		limit = {
+			has_global_variable = kehillah_settlement_laws_ready
+			kehillah_can_hold_settlement_law_trigger = yes
+			has_realm_law = kehillah_jewish_settlement_banned
+			NOT = { kehillah_holds_decreed_ban_trigger = yes }
+		}
+		add_realm_law_skip_effects = kehillah_jewish_settlement_allowed
+		debug_log_scopes = yes
+		debug_log = "kehillah_settlement_law_repair_effect: undecreed Banned (the engine's first law) set to Allowed"
+	}
+}
+
+# Scope: anything. Repairs every independent ruler.
+kehillah_settlement_law_repair_all_effect = {
+	if = {
+		limit = { has_global_variable = kehillah_settlement_laws_ready }
+		every_independent_ruler = {
+			limit = { has_realm_law = kehillah_jewish_settlement_banned }
+			kehillah_settlement_law_repair_effect = yes
+		}
 	}
 }
 
@@ -290,6 +345,7 @@ kehillah_set_settlement_law_effect = {
 		limit = { kehillah_can_hold_settlement_law_trigger = yes }
 		add_realm_law_skip_effects = kehillah_jewish_settlement_$RUNG$
 		primary_title = { remove_variable = kehillah_jewish_settlement_policy }
+		kehillah_settlement_ban_marker_sync_effect = yes
 	}
 	else_if = {
 		limit = { exists = primary_title }
