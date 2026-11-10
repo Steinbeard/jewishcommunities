@@ -84,6 +84,49 @@ The dated rules are why a 1066 start and a 1178 start differ. A save from before
 is seeded the first time any Jewish map is painted (`kehillah_ensure_native_jewish_cultures_effect`,
 gated by the global variable `kehillah_native_jewish_cultures_seeded`).
 
+## Mizrahi; Radhanite as Persian Jewry; Juhuri retired (addendum, 2026-11-09)
+
+Daniel's calls, following the culture-list proposal:
+
+**Mizrahi.** Musta'arabi, Yerushalmi and Bavli become one culture, **Mizrahi**. It uses vanilla's
+`bavlim` key, renamed in `localization/english/replace/kehillah_mizrahi_l_english.yml`, so
+vanilla's own Babylonian Jewish characters carry over unchanged. Its language changes from
+Aramaic to Arabic. Babylonian versus Palestinian is a matter of rite, and turning those into
+rites is a separate piece of work.
+
+Mizrahi covers:
+
+- the Levant and the Land of Israel;
+- Iraq, the Jazira and Kurdistan;
+- Egypt and Cyrenaica;
+- the Gulf coast;
+- Georgia and Armenia.
+
+**Radhanite** now means the Persian-speaking Jewry of the East, at every start date (the 1100
+cut-off is gone):
+
+- Persia, Khorasan, Daylam, Transoxiana and Central Asia;
+- the Tarim basin, along the Silk Road;
+- the eastern Caucasus (Shirvan and Derbent);
+- the ports of Sindh and Gujarat (d_sauvira, d_multan, d_lata, d_saurashtra).
+
+Its vanilla definition is overridden, copied unchanged except that the language becomes Iranian.
+
+**Khazaria** (d_khazaria, d_itil, d_azov) is Radhanite only in starts before 969, when the
+Khaganate fell. **Crimea** is Romaniote.
+
+**No Jewish culture** in the open steppe, Siberia or inland India.
+
+**Juhuri** is retired. No distinct Mountain Jewish identity is attested in these centuries; the
+Jews of Shirvan and Derbent were Persian-speaking.
+
+**Retired cultures.** `yerushalmi`, `mustarab` and `juhuri` keep their definitions so older test
+saves still load, but nothing seeds or generates them. On seeding,
+`kehillah_convert_retired_jewish_cultures_effect` moves anyone of those cultures to Mizrahi, or to
+Radhanite for Juhuri.
+
+**Kaifeng** is not on the map, so the Silk Road stops at the Tarim.
+
 ## Borders, lands without Jews, Bene Israel (addendum, later 2026-11-08)
 
 This addendum follows Daniel's first look at the map, which showed Ashkenazi reaching Iceland and

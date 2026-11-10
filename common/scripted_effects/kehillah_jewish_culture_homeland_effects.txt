@@ -45,6 +45,25 @@ kehillah_set_duchy_native_jewish_culture_effect = {
 	}
 }
 
+# Scope: none. Musta'arabi, Yerushalmi and Juhuri were retired 2026-11-09
+# (their definitions stay so older test saves load). Anyone still of
+# those cultures is moved to Mizrahi (bavlim) or, for Juhuri, Radhanite.
+kehillah_convert_retired_jewish_cultures_effect = {
+	every_living_character = {
+		limit = {
+			OR = {
+				culture = culture:mustarab
+				culture = culture:yerushalmi
+			}
+		}
+		set_culture = culture:bavlim
+	}
+	every_living_character = {
+		limit = { culture = culture:juhuri }
+		set_culture = culture:radhanite
+	}
+}
+
 # Scope: a duchy (or any de jure title). No Jewish culture is native here.
 kehillah_clear_duchy_native_jewish_culture_effect = {
 	every_de_jure_county = {
@@ -115,6 +134,10 @@ kehillah_seed_native_jewish_culture_by_geography_effect = {
 		limit = { title_province = { geographical_region = world_africa_north_west } }
 		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:maaravi }
 	}
+	# 2026-11-09 (Daniel): Musta'arabi, Yerushalmi and Bavli are one
+	# Mizrahi culture -- vanilla's bavlim key, renamed (localization/
+	# english/replace/kehillah_mizrahi_l_english.yml). Babylonian and
+	# Palestinian are a matter of rite, not culture.
 	else_if = {
 		limit = {
 			title_province = {
@@ -125,48 +148,26 @@ kehillah_seed_native_jewish_culture_by_geography_effect = {
 				}
 			}
 		}
-		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:mustarab }
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:bavlim }
 	}
+	# 2026-11-09 (Daniel): Radhanite is the Persian-speaking Jewry of Persia,
+	# Khorasan, Central Asia and the Silk Road, at every start date. The
+	# open steppe, Siberia and inland India have no Jewish culture.
 	else_if = {
 		limit = {
 			title_province = {
 				OR = {
-					geographical_region = world_mesopotamia
-					geographical_region = world_jazira
 					geographical_region = world_middle_east_persia
 					geographical_region = world_persia
 					geographical_region = world_khorasan
 					geographical_region = world_daylam
-				}
-			}
-		}
-		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:bavlim }
-	}
-	else_if = {
-		limit = {
-			title_province = {
-				OR = {
 					geographical_region = world_transoxiana
 					geographical_region = world_central_asia
-					geographical_region = world_steppe
-					geographical_region = world_india
+					geographical_region = world_steppe_tarim
 				}
 			}
 		}
-		# The Radhanite trade network had faded by the twelfth century;
-		# after that, Central Asia's Jews are Persian-speaking Bavlim.
-		if = {
-			limit = {
-				OR = {
-					current_date < 1100.1.1
-					title_province = { geographical_region = world_india }
-				}
-			}
-			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:radhanite }
-		}
-		else = {
-			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:bavlim }
-		}
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:radhanite }
 	}
 }
 
@@ -207,13 +208,13 @@ kehillah_seed_native_jewish_culture_by_minhag_effect = {
 		}
 		else_if = {
 			limit = { scope:kehillah_njc_duchy.var:kehillah_minhag = flag:eretz_yisrael }
-			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:yerushalmi }
+			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:bavlim }
 		}
 		else_if = {
 			limit = {
 				scope:kehillah_njc_duchy.var:kehillah_minhag = flag:misraim
 			}
-			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:mustarab }
+			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:bavlim }
 		}
 		else_if = {
 			limit = { scope:kehillah_njc_duchy.var:kehillah_minhag = flag:maghreb }
@@ -221,18 +222,23 @@ kehillah_seed_native_jewish_culture_by_minhag_effect = {
 		}
 		else_if = {
 			limit = {
-				OR = {
-					scope:kehillah_njc_duchy.var:kehillah_minhag = flag:bavel
-					scope:kehillah_njc_duchy.var:kehillah_minhag = flag:paras
-				}
+				scope:kehillah_njc_duchy.var:kehillah_minhag = flag:bavel
 			}
 			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:bavlim }
 		}
+		# Persia, Transoxiana and the eastern Caucasus (Shirvan, Derbent):
+		# Persian-speaking Jewry. No distinct Juhuri yet in these centuries
+		# (2026-11-09).
 		else_if = {
-			limit = { scope:kehillah_njc_duchy.var:kehillah_minhag = flag:caucasus }
-			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:juhuri }
+			limit = {
+				OR = {
+					scope:kehillah_njc_duchy.var:kehillah_minhag = flag:paras
+					scope:kehillah_njc_duchy.var:kehillah_minhag = flag:radhanite
+					scope:kehillah_njc_duchy.var:kehillah_minhag = flag:caucasus
+				}
+			}
+			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:radhanite }
 		}
-		# flag:radhanite (Transoxiana) is left to step 1's dated rule.
 	}
 }
 
@@ -257,11 +263,27 @@ kehillah_seed_native_jewish_cultures_effect = {
 	}
 
 	# Step 3, named duchies.
-	# The caucasus minhag region reaches into the steppe and Armenia; the
-	# Mountain Jews are the eastern Caucasus only.
-	title:d_khazaria ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:radhanite } }
-	title:d_azov ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:radhanite } }
-	title:d_alania ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:radhanite } }
+	# Khazaria: Jewish under the Khaganate, which Sviatoslav broke in
+	# 965-969; after that its steppe has no Jewish culture. The caucasus
+	# minhag region reaches into it, so it is cleared here either way.
+	title:d_khazaria ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_itil ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_azov ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_alania ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	if = {
+		limit = { current_date < 969.1.1 }
+		title:d_khazaria ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:radhanite } }
+		title:d_itil ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:radhanite } }
+		title:d_azov ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:radhanite } }
+	}
+	# Crimea: Byzantine Jewry at Chersonesos and Kerch.
+	title:d_crimea ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:romaniote } }
+	# The Indian Ocean ports of Sindh and Gujarat: Persian-speaking traders.
+	title:d_sauvira ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:radhanite } }
+	title:d_multan ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:radhanite } }
+	title:d_lata ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:radhanite } }
+	title:d_saurashtra ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:radhanite } }
+	# Georgia and Armenia: Aramaic-speaking Jewry tied to Mesopotamia.
 	title:d_georgia ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:bavlim } }
 	title:d_abkhazia ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:bavlim } }
 	title:d_greater_armenia ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:bavlim } }
@@ -401,6 +423,7 @@ kehillah_seed_native_jewish_cultures_effect = {
 	every_county = {
 		kehillah_resolve_local_jewish_culture_effect = yes
 	}
+	kehillah_convert_retired_jewish_cultures_effect = yes
 	kehillah_remove_premature_ashkenazim_effect = yes
 	set_global_variable = { name = kehillah_native_jewish_cultures_seeded value = yes }
 }
