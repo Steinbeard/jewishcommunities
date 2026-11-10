@@ -1,0 +1,55 @@
+﻿namespace = kehillah_crisis_hosting
+
+# =====================================================================
+# Plans called off in a crisis (2026-11-08, at Daniel's request: "like how
+# a coronation gets cancelled by war or plague").
+#
+# The mod's own activities are blocked from being planned in a crisis
+# (kehillah_no_crisis_blocks_hosting_trigger). Vanilla activities (Hunt,
+# Pilgrimage, University Visit...) cannot be blocked without overriding
+# their files: CK3 has no shared "may host" hook and no "activity started"
+# on_action. So this weekly hidden check cancels, while the community is
+# in crisis, any activity its leader hosts that has not yet begun --
+# guests still gathering, the host still travelling. A gathering already
+# in its active phase is left to finish. invalidate_activity runs the
+# activity's own on_invalidated, as vanilla's is_valid cancellations do.
+# Costs already paid are not refunded, as in vanilla.
+#
+# The chain is started (and restarted, e.g. for a new leader) by
+# kehillah_bet_din_overdue_pulse's quarterly on_action
+# (common/on_action/kehillah_bet_din_overdue_on_actions.txt).
+# =====================================================================
+
+kehillah_crisis_hosting.0001 = {
+	type = character_event
+	hidden = yes
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+	}
+
+	immediate = {
+		add_character_flag = { flag = kehillah_crisis_hosting_watch days = 10 }
+		if = {
+			limit = {
+				kehillah_no_crisis_blocks_hosting_trigger = no
+				involved_activity ?= {
+					activity_host = root
+					is_current_phase_active = no
+				}
+			}
+			involved_activity = { save_scope_as = kehillah_called_off_activity }
+			if = {
+				limit = { is_ai = no }
+				send_interface_message = {
+					type = msg_kehillah_activity_called_off
+					title = kehillah_activity_called_off_msg_t
+					desc = kehillah_activity_called_off_msg_d
+					left_icon = primary_title
+				}
+			}
+			invalidate_activity = scope:kehillah_called_off_activity
+		}
+		trigger_event = { id = kehillah_crisis_hosting.0001 days = 7 }
+	}
+}

@@ -1,0 +1,68 @@
+﻿# =====================================================================
+# The county view's Beit Midrash card and the communities map's Beit
+# Midrash baronies (2026-11-08, Daniel). Record:
+# docs/implementation/2026-11-08-library-cards.md.
+# =====================================================================
+
+# Scope: a library title. A Beit Midrash links its county to itself
+# (var:kehillah_inspector_library), the way a community's county links to
+# the community (kehillah_inspector_community), so every holding in the
+# county finds its card. Called when a library registers and on every
+# Jewish map paint (kehillah_refresh_library_card_links_effect).
+kehillah_lib_link_card_county_effect = {
+	if = {
+		limit = { kehillah_card_is_beit_midrash_trigger = yes }
+		save_temporary_scope_as = kehillah_card_library
+		title_province.county ?= {
+			set_variable = { name = kehillah_inspector_library value = scope:kehillah_card_library }
+			if = {
+				limit = { NOT = { is_target_in_global_variable_list = { name = kehillah_lib_card_counties target = this } } }
+				add_to_global_variable_list = { name = kehillah_lib_card_counties target = this }
+			}
+		}
+	}
+}
+
+# Rebuild every county's Beit Midrash link from scratch, so a library that
+# is gone leaves no card behind. Any scope.
+kehillah_refresh_library_card_links_effect = {
+	every_in_global_list = {
+		variable = kehillah_lib_card_counties
+		remove_variable = kehillah_inspector_library
+	}
+	clear_global_variable_list = kehillah_lib_card_counties
+	every_in_global_list = {
+		variable = kehillah_libraries
+		limit = { exists = holder }
+		kehillah_lib_link_card_county_effect = yes
+	}
+}
+
+# The communities map (kehillah_paint_communities_map_effect has run
+# first): each Beit Midrash barony that is not a community's quarter is
+# painted parchment and tagged (province var:kehillah_map_beit_midrash)
+# for its hover text. Any scope.
+kehillah_paint_beit_midrash_on_communities_map_effect = {
+	every_in_global_list = {
+		variable = kehillah_bm_map_provinces
+		remove_variable = kehillah_map_beit_midrash
+	}
+	clear_global_variable_list = kehillah_bm_map_provinces
+	every_in_global_list = {
+		variable = kehillah_libraries
+		limit = {
+			exists = holder
+			kehillah_card_is_beit_midrash_trigger = yes
+			exists = var:kehillah_library_seat
+		}
+		save_temporary_scope_as = kehillah_card_library
+		var:kehillah_library_seat = {
+			if = {
+				limit = { NOT = { has_variable = kehillah_map_community } }
+				set_variable = { name = kehillah_map_beit_midrash value = scope:kehillah_card_library }
+				add_to_global_variable_list = { name = kehillah_bm_map_provinces target = this }
+				barony ?= { set_color_from_title = title:d_kehillah_mapcolor_beit_midrash }
+			}
+		}
+	}
+}

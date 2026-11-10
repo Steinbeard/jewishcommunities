@@ -1,0 +1,147 @@
+﻿# =====================================================================
+# Yeshiva seats on landed libraries (2026-11-08, spec section 8). A
+# Kehillah's yeshiva keeps V29's domicile machinery; a landed Jewish
+# ruler's yeshiva lives on his temple-barony library title:
+#   var:kehillah_landed_yeshiva      set while it exists
+#   var:kehillah_yeshiva_fame        V29's fame, on the same title
+#   var:kehillah_landed_rosh         the Rosh Yeshiva
+#   var:kehillah_yeshiva_dormant     no head 3 years, or no Shas 5 years
+# Its students are the patron's Jewish courtiers; once a year up to two
+# master a work through V29's own kehillah_yeshiva_master_a_work_effect.
+# =====================================================================
+
+# Scope: the patron; scope:kehillah_new_rosh the head.
+kehillah_yeshiva_establish_landed_effect = {
+	var:kehillah_own_library ?= {
+		set_variable = { name = kehillah_landed_yeshiva value = yes }
+		set_variable = { name = kehillah_yeshiva_fame value = 10 }
+		set_variable = { name = kehillah_landed_rosh value = scope:kehillah_new_rosh }
+		remove_variable = kehillah_yeshiva_dormant
+		set_variable = { name = kehillah_yeshiva_headless_years value = 0 }
+		set_variable = { name = kehillah_yeshiva_shasless_years value = 0 }
+	}
+	add_character_modifier = { modifier = kehillah_landed_yeshiva_patron_modifier }
+	add_prestige = medium_prestige_gain
+	debug_log = "kehillah_yeshiva_establish_landed_effect: a landed yeshiva was founded"
+}
+
+# Scope: the invited teacher; scope:kehillah_patron. He joins the patron's
+# court with a student or two and heads the new yeshiva.
+kehillah_yeshiva_found_landed_by_patronage_effect = {
+	save_scope_as = kehillah_new_rosh
+	scope:kehillah_patron = {
+		add_courtier = scope:kehillah_new_rosh
+		kehillah_lib_refresh_own_library_effect = yes
+		if = {
+			limit = { exists = var:kehillah_own_library }
+			kehillah_yeshiva_establish_landed_effect = yes
+			# He brings a copy of a work he mastered that the library lacks.
+			var:kehillah_own_library = { save_scope_as = kehillah_chest_library }
+			scope:kehillah_new_rosh = { kehillah_sefer_scholar_chest_effect = yes }
+		}
+	}
+	scope:kehillah_patron = {
+		if = {
+			limit = { is_ai = no }
+			send_interface_toast = {
+				title = kehillah_sefer_teacher_arrives_t
+				left_icon = scope:kehillah_new_rosh
+			}
+		}
+	}
+}
+
+# Scope: a library title (yearly). Run a landed yeshiva's year.
+kehillah_landed_yeshiva_yearly_effect = {
+	if = {
+		limit = { has_variable = kehillah_landed_yeshiva }
+		save_scope_as = kehillah_tick_title
+		holder = { save_scope_as = kehillah_tick_leader }
+		if = {
+			limit = { NOT = { has_variable = kehillah_yeshiva_headless_years } }
+			set_variable = { name = kehillah_yeshiva_headless_years value = 0 }
+		}
+		if = {
+			limit = { NOT = { has_variable = kehillah_yeshiva_shasless_years } }
+			set_variable = { name = kehillah_yeshiva_shasless_years value = 0 }
+		}
+		# Dormancy: a head is needed, and the foundations on the shelf.
+		if = {
+			limit = {
+				OR = {
+					NOT = { exists = var:kehillah_landed_rosh }
+					var:kehillah_landed_rosh = { is_alive = no }
+				}
+			}
+			change_variable = { name = kehillah_yeshiva_headless_years add = 1 }
+			# A qualified courtier of the holder steps in.
+			holder = {
+				if = {
+					limit = { any_courtier = { kehillah_qualified_rosh_yeshiva_trigger = yes } }
+					ordered_courtier = {
+						limit = { kehillah_qualified_rosh_yeshiva_trigger = yes }
+						order_by = learning
+						scope:kehillah_tick_title = { set_variable = { name = kehillah_landed_rosh value = prev } }
+					}
+					scope:kehillah_tick_title = { set_variable = { name = kehillah_yeshiva_headless_years value = 0 } }
+				}
+			}
+		}
+		else = {
+			set_variable = { name = kehillah_yeshiva_headless_years value = 0 }
+		}
+		if = {
+			limit = { kehillah_lib_foundations_complete_trigger = yes }
+			set_variable = { name = kehillah_yeshiva_shasless_years value = 0 }
+		}
+		else = {
+			change_variable = { name = kehillah_yeshiva_shasless_years add = 1 }
+		}
+		if = {
+			limit = {
+				OR = {
+					var:kehillah_yeshiva_headless_years >= 3
+					var:kehillah_yeshiva_shasless_years >= 5
+				}
+			}
+			set_variable = { name = kehillah_yeshiva_dormant value = yes }
+		}
+		else_if = {
+			limit = {
+				has_variable = kehillah_yeshiva_dormant
+				var:kehillah_yeshiva_headless_years = 0
+				var:kehillah_yeshiva_shasless_years = 0
+			}
+			remove_variable = kehillah_yeshiva_dormant
+		}
+		# The year's work.
+		if = {
+			limit = { NOT = { has_variable = kehillah_yeshiva_dormant } }
+			change_variable = { name = kehillah_yeshiva_fame add = 3 }
+			holder = {
+				ordered_courtier = {
+					limit = {
+						is_adult = yes
+						faith.religion = religion:judaism_religion
+						learning >= 8
+					}
+					order_by = learning
+					max = 2
+					check_range_bounds = no
+					kehillah_yeshiva_master_a_work_effect = yes
+				}
+			}
+		}
+		else = {
+			change_variable = { name = kehillah_yeshiva_fame add = -6 }
+		}
+		clamp_variable = { name = kehillah_yeshiva_fame min = 0 max = kehillah_yeshiva_fame_max }
+	}
+}
+
+# Scope: a scholar joining a court, with scope:kehillah_chest_library the
+# library he comes to (section 7.1, "a scholar's chest"): he brings a copy
+# of one work he mastered that the library lacks, a Bavli order first.
+kehillah_sefer_scholar_chest_effect = {
+	kehillah_sefer_scholar_chest_pick_effect = yes
+}

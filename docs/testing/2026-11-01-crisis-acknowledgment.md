@@ -1,6 +1,10 @@
 **Status:** source checks pass, 2026-11-01; live test UNRUN because process ownership could not
 be inspected and xTiger MCP tools were unavailable to the required Luna tester.
 
+**2026-11-06 correction:** crises now start as their opening popup appears, so the "unanswered,
+nothing advances" expectations below no longer apply. `.1` now passes when the crisis is live with
+no pending reservation. Use the updated [playtest guide](2026-11-01-crisis-playtest-guide.md) section 1.
+
 # Crisis acknowledgment and persistent alerts
 
 Implements [the opening-event lifecycle](../implementation/2026-11-01-crisis-acknowledgment.md).

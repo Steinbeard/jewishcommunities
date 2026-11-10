@@ -100,6 +100,54 @@ task_kehillah_petition_host = {
 	ai_will_do = { value = 1 }
 }
 
+# The Shtadlan can work with the host's own religious adviser. Their public
+# assurance is a temporary local protection, not a permanent change to the
+# faith's teaching or an order from its head. This task competes with the
+# petition for the same council slot.
+task_kehillah_seek_religious_support = {
+	position = councillor_chancellor
+	is_shown = {
+		scope:councillor_liege ?= {
+			government_has_flag = government_is_kehillah
+			domicile.domicile_location.county.holder.top_liege ?= { exists = cp:councillor_court_chaplain }
+		}
+	}
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	asset = {
+		icon = "gfx/interface/icons/council_task_types/task_domestic_affairs.dds"
+		background = "gfx/interface/buttons/button_round_bg.dds"
+		frame = "gfx/interface/buttons/button_round_frame.dds"
+		glow = "gfx/particles/halo.dds"
+	}
+	effect_desc = task_kehillah_seek_religious_support_effect_desc
+	on_monthly = {
+		scope:councillor_liege.domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_safety_host }
+		if = {
+			limit = {
+				exists = scope:kehillah_safety_host
+				scope:kehillah_safety_host = { exists = cp:councillor_court_chaplain }
+				scope:councillor_liege = { primary_title ?= { NOT = { has_variable = kehillah_safety_religious_support } } }
+			}
+			scope:kehillah_safety_host = { cp:councillor_court_chaplain = { save_scope_as = kehillah_safety_cleric } }
+			random = {
+				chance = kehillah_safety_religious_support_monthly_chance_value
+				scope:councillor_liege = {
+					primary_title = { set_variable = { name = kehillah_safety_religious_support value = yes years = 2 } }
+					send_interface_message = {
+						type = msg_kehillah_community_news
+						title = kehillah_safety_cleric_agrees_t
+						desc = kehillah_safety_cleric_agrees_d
+						left_icon = scope:kehillah_safety_cleric
+						right_icon = scope:kehillah_safety_host
+					}
+				}
+			}
+		}
+	}
+	ai_will_do = { value = 0 }
+}
+
 # V34 section 7b (2026-10-13): the Shtadlan's embassy abroad. Instead of
 # the host, he courts the warmest lord within reach whose realm does not
 # yet encourage Jewish settlement, and argues for an invitation

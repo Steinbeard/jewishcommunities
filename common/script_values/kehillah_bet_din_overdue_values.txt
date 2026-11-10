@@ -1,0 +1,56 @@
+﻿# =====================================================================
+# THE BET DIN OVERDUE (2026-11-08, at user request).
+#
+# A community whose own court has not sat for years loses Stability:
+# disputes go unheard and settle themselves badly. The clock is the year
+# the community's own Bet Din last finished a session, kept on the title
+# as var:kehillah_bet_din_last_year (set by the conference's on_complete,
+# started at the current year by kehillah_bet_din_overdue_pulse for a
+# community that has none yet). Attending another community's court does
+# not reset it.
+#
+# The penalty is a Stability baseline term, shown in the Stability
+# tooltip like Debts or the badge. See docs/spec/2026-11-08-bet-din-
+# overdue-and-crisis-hosting.md.
+# =====================================================================
+
+# Years the community may go without its own sitting before Stability
+# falls. The court's cooldown is 2 years (1 with a Dayyan preparing it),
+# so this leaves at least 3 years to plan a sitting once it is allowed.
+kehillah_bet_din_overdue_grace_years = 5
+
+# At the grace year the baseline loses 20, then 10 more each further year,
+# to at most 60 -- about the size of the Hekdesh, more than Debts (-30).
+kehillah_bet_din_overdue_base_penalty = -20
+kehillah_bet_din_overdue_penalty_per_year = -10
+kehillah_bet_din_overdue_max_penalty = -60
+
+# Piety the convening leader pays to plan a sitting: vanilla's
+# medium_piety_value. A strong session pays back major_piety_gain (250),
+# an adequate one minor_piety_gain (50), a failed one nothing.
+kehillah_bet_din_host_piety_cost = 100
+
+# Whole years since the community's own Bet Din last sat. Scope: leader.
+kehillah_bet_din_years_since_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_bet_din_last_year } }
+		value = current_year
+		subtract = primary_title.var:kehillah_bet_din_last_year
+	}
+}
+
+# The Stability baseline term. Scope: leader.
+kehillah_bd_bet_din_overdue_value = {
+	value = 0
+	if = {
+		limit = { kehillah_bet_din_overdue_trigger = yes }
+		add = kehillah_bet_din_overdue_base_penalty
+		add = {
+			value = kehillah_bet_din_years_since_value
+			subtract = kehillah_bet_din_overdue_grace_years
+			multiply = kehillah_bet_din_overdue_penalty_per_year
+		}
+		min = kehillah_bet_din_overdue_max_penalty
+	}
+}

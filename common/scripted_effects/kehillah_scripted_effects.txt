@@ -1381,6 +1381,14 @@ kehillah_setup_granada_start_effect = {
 		add_gold = 90
 
 		kehillah_seed_community_effect = yes
+		# The vizier's rivals and local agitation predate the poem. Badis's
+		# personal outlook remains favorable; these pressures expire if the
+		# crisis does not renew them. A saved game already past setup keeps its
+		# existing state rather than being silently reseeded.
+		primary_title ?= {
+			set_variable = { name = kehillah_safety_court_rivals value = 25 years = 2 }
+			set_variable = { name = kehillah_safety_local_hostility value = 8 years = 2 }
+		}
 		kehillah_record_quarter_effect = yes
 		kehillah_update_leader_flavor_effect = yes
 	}
@@ -1588,6 +1596,12 @@ kehillah_seed_community_effect = {
 		if = {
 			limit = { is_rabbinic_authority_jewish_trigger = yes }
 			add_trait = kehillah_rabbi_trait
+		}
+		# 2026-11-08: a Karaite scholar has no Rabbi trait; he is created
+		# learned, with Religious Scholar.
+		else_if = {
+			limit = { kehillah_is_karaite_character_trigger = yes }
+			add_trait = lifestyle_scholar
 		}
 		# V26 ba'alei batim: registered as a household on the first pulse.
 		add_character_flag = kehillah_household_founder
@@ -2797,14 +2811,21 @@ kehillah_dispute_pick_parties_effect = {
 # Leaves the scope UNSET when there is no rabbi at all, which is why
 # every reader guards with ?=.
 # ---------------------------------------------------------------------
+# 2026-11-08 (Karaites have no clergy): a Karaite Dayyan, or failing one a
+# Karaite leader, is the community's rabbi. A Karaite leader comes after his
+# Dayyan, as a lay Rabbanite leader does, so a learned Dayyan still presides.
 kehillah_save_community_rabbi_effect = {
 	if = {
 		limit = { kehillah_is_ordained_rabbi_trigger = yes }
 		save_scope_as = kehillah_community_rabbi
 	}
 	else_if = {
-		limit = { cp:councillor_court_chaplain ?= { kehillah_is_ordained_rabbi_trigger = yes } }
+		limit = { cp:councillor_court_chaplain ?= { kehillah_ordained_or_karaite_trigger = yes } }
 		cp:councillor_court_chaplain = { save_scope_as = kehillah_community_rabbi }
+	}
+	else_if = {
+		limit = { kehillah_is_karaite_character_trigger = yes }
+		save_scope_as = kehillah_community_rabbi
 	}
 }
 
@@ -2919,9 +2940,20 @@ kehillah_generate_rabbi_candidate_effect = {
 		random_traits = yes
 		gender_female_chance = 0
 		trait = $EDUCATION$
-		trait = kehillah_rabbi_trait
 		learning = { $LEARNING_MIN$ $LEARNING_MAX$ }
 		save_scope_as = $SLOT$
+	}
+	# 2026-11-08: the trait follows the faith. It was always the Rabbi
+	# trait, so a Karaite community's search found Karaite "rabbis"; a
+	# Karaite candidate is now created learned, with Religious Scholar.
+	scope:$SLOT$ = {
+		if = {
+			limit = { kehillah_is_karaite_character_trigger = yes }
+			add_trait = lifestyle_scholar
+		}
+		else = {
+			add_trait = kehillah_rabbi_trait
+		}
 	}
 }
 
@@ -2986,6 +3018,8 @@ kehillah_install_rabbi_effect = {
 			}
 			add_trait = kehillah_rabbi_trait
 		}
+		# 2026-11-08: a Karaite is seated as he is. Karaites have no clergy,
+		# so the seat confers no trait.
 	}
 
 	# Seat him as Dayyan. The decision and the search event both require

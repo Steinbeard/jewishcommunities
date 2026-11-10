@@ -92,3 +92,166 @@ kehillah_crisis_debug.10 = {
  trigger = { government_has_flag = government_is_kehillah primary_title = { NOT = { has_variable = kehillah_mob_threat } } }
  immediate = { kehillah_accusation_begin_effect = yes trigger_event = kehillah_crisis_debug.3 }
 }
+
+# 2026-11-05, console-only: inspect the proposed options, choose one, then reopen to
+# verify its cost, result and per-crisis exclusion. Start a warning with .1 if needed.
+kehillah_crisis_debug.11 = {
+ type = character_event hidden = yes
+ trigger = { kehillah_crisis_warning_trigger = yes }
+ immediate = { trigger_event = kehillah_crisis_recommend.0001 }
+}
+kehillah_crisis_debug.12 = {
+ type = character_event hidden = yes
+ trigger = { kehillah_crisis_armed_open_trigger = yes }
+ immediate = { trigger_event = kehillah_crisis_recommend.0002 }
+}
+
+# Console-only first-pass probes: inspect grade, paid points, phase use, and
+# Recovery result without changing the live scenario. Set grade before breach.
+kehillah_crisis_debug.13 = {
+ type = character_event hidden = yes
+ trigger = { government_has_flag = government_is_kehillah primary_title = { has_variable = kehillah_crisis_situation } }
+ immediate = {
+  debug_log = "CRISIS first-pass grade=[THIS.Char.GetPrimaryTitle.MakeScope.Var('kehillah_crisis_threat_grade').GetValue] paid=[THIS.Char.GetPrimaryTitle.MakeScope.Var('kehillah_crisis_paid_points').GetValue] stage=[THIS.Char.GetPrimaryTitle.MakeScope.Var('kehillah_crisis_stage').GetValue]"
+  primary_title.var:kehillah_crisis_situation ?= { debug_log_scopes = yes }
+ }
+}
+kehillah_crisis_debug.14 = {
+ type = character_event hidden = yes
+ trigger = { kehillah_crisis_armed_open_trigger = yes }
+ immediate = { primary_title = { set_variable = { name = kehillah_crisis_threat_grade value = 4 } } trigger_event = kehillah_crisis_debug.13 }
+}
+kehillah_crisis_debug.15 = {
+ type = character_event hidden = yes
+ trigger = { kehillah_crisis_armed_open_trigger = yes }
+ immediate = { primary_title = { set_variable = { name = kehillah_crisis_threat_grade value = 1 } } trigger_event = kehillah_crisis_debug.13 }
+}
+
+# 2026-11-07, console-only: preview the Quarter struck opener without an attack. .20 seeds a
+# sample ledger (Catastrophic lowered two steps to Serious; bargain, refuge and silver failed;
+# the lord's men, divided captains, watch, barricades and shelter held) and shows it in .21.
+# .22 restores the threat grade and clears the sample. Disposable campaign only.
+kehillah_crisis_debug.20 = {
+ type = character_event hidden = yes
+ trigger = { government_has_flag = government_is_kehillah }
+ immediate = {
+  primary_title = {
+   if = { limit = { has_variable = kehillah_crisis_threat_grade } set_variable = { name = kehillah_crisis_debug_saved_grade value = var:kehillah_crisis_threat_grade } }
+   kehillah_crisis_struck_clear_effect = yes
+   var:kehillah_mob_threat ?= { save_temporary_scope_as = kehillah_debug_struck_host }
+   if = { limit = { NOT = { exists = scope:kehillah_debug_struck_host } } holder = { save_temporary_scope_as = kehillah_debug_struck_host } }
+   set_variable = { name = kehillah_crisis_sl_host value = scope:kehillah_debug_struck_host }
+   holder.domicile.domicile_location.county.holder ?= { save_temporary_scope_as = kehillah_debug_struck_lord }
+   if = {
+    limit = { exists = scope:kehillah_debug_struck_lord }
+    set_variable = { name = kehillah_crisis_sl_men_lord value = scope:kehillah_debug_struck_lord }
+    set_variable = { name = kehillah_crisis_sl_refuge_lord value = scope:kehillah_debug_struck_lord }
+   }
+   set_variable = { name = kehillah_crisis_struck_grade_before value = 4 }
+   set_variable = { name = kehillah_crisis_threat_grade value = 2 }
+   set_variable = { name = kehillah_crisis_struck_steps value = 2 }
+   set_variable = { name = kehillah_crisis_sl_count value = 8 }
+   set_variable = { name = kehillah_crisis_sl_won value = 5 }
+   set_variable = { name = kehillah_crisis_sl_terms value = flag:lost }
+   set_variable = { name = kehillah_crisis_sl_refuge value = flag:lost }
+   set_variable = { name = kehillah_crisis_sl_silver value = flag:lost }
+   set_variable = { name = kehillah_crisis_sl_men value = flag:won }
+   set_variable = { name = kehillah_crisis_sl_divide value = flag:won }
+   set_variable = { name = kehillah_crisis_sl_watch value = flag:won }
+   set_variable = { name = kehillah_crisis_sl_bar value = flag:won }
+   set_variable = { name = kehillah_crisis_sl_shelter value = flag:won }
+  }
+  trigger_event = kehillah_crisis_debug.21
+ }
+}
+kehillah_crisis_debug.21 = {
+ type = character_event
+ title = kehillah_crisis_chronicle.0001.t
+ desc = kehillah_crisis_chronicle.0001.struck_ledger
+ theme = intrigue
+ left_portrait = { character = root animation = worry }
+ option = { name = kehillah_crisis_chronicle.0001.a }
+}
+kehillah_crisis_debug.22 = {
+ type = character_event hidden = yes
+ trigger = { government_has_flag = government_is_kehillah }
+ immediate = {
+  primary_title = {
+   kehillah_crisis_struck_clear_effect = yes
+   if = { limit = { has_variable = kehillah_crisis_debug_saved_grade } set_variable = { name = kehillah_crisis_threat_grade value = var:kehillah_crisis_debug_saved_grade } remove_variable = kehillah_crisis_debug_saved_grade }
+  }
+ }
+}
+
+# 2026-11-08, console-only: preview the Armed host opener without a crisis. .23 seeds a sample
+# ledger (Grave lowered one step to Serious; the lord, the court and the fast failed; the scholars,
+# the watch and the evidence held) and shows it in .24. In Granada the sample adds the emir's ban on
+# the recitations and uses the Sanhaja lines. .25 restores the threat grade and clears the sample.
+# Disposable campaign only.
+kehillah_crisis_debug.23 = {
+ type = character_event hidden = yes
+ trigger = { government_has_flag = government_is_kehillah }
+ immediate = {
+  primary_title = {
+   if = { limit = { has_variable = kehillah_crisis_threat_grade } set_variable = { name = kehillah_crisis_debug_saved_grade value = var:kehillah_crisis_threat_grade } }
+   kehillah_crisis_armed_clear_effect = yes
+   var:kehillah_mob_threat ?= { save_temporary_scope_as = kehillah_debug_armed_host }
+   if = { limit = { NOT = { exists = scope:kehillah_debug_armed_host } } holder = { save_temporary_scope_as = kehillah_debug_armed_host } }
+   set_variable = { name = kehillah_crisis_al_name_host value = scope:kehillah_debug_armed_host }
+   holder.domicile.domicile_location.county.holder ?= {
+    save_temporary_scope_as = kehillah_debug_armed_lord
+    top_liege ?= { save_temporary_scope_as = kehillah_debug_armed_ruler }
+   }
+   if = { limit = { exists = scope:kehillah_debug_armed_lord } set_variable = { name = kehillah_crisis_al_name_lord value = scope:kehillah_debug_armed_lord } }
+   if = { limit = { exists = scope:kehillah_debug_armed_ruler } set_variable = { name = kehillah_crisis_al_name_ruler value = scope:kehillah_debug_armed_ruler } }
+   set_variable = { name = kehillah_crisis_al_warned value = yes }
+   set_variable = { name = kehillah_crisis_al_opening value = flag:accusation }
+   set_variable = { name = kehillah_crisis_armed_grade_before value = 3 }
+   set_variable = { name = kehillah_crisis_threat_grade value = 2 }
+   set_variable = { name = kehillah_crisis_armed_steps value = 1 }
+   set_variable = { name = kehillah_crisis_al_count value = 6 }
+   set_variable = { name = kehillah_crisis_al_won value = 3 }
+   set_variable = { name = kehillah_crisis_al_lord value = flag:lost }
+   set_variable = { name = kehillah_crisis_al_overlord value = flag:lost }
+   set_variable = { name = kehillah_crisis_al_fast value = flag:lost }
+   set_variable = { name = kehillah_crisis_al_scholars value = flag:won }
+   set_variable = { name = kehillah_crisis_al_watch value = flag:won }
+   set_variable = { name = kehillah_crisis_al_evidence value = flag:won }
+   if = {
+    limit = { holder.domicile.domicile_location.county ?= title:c_granada }
+    set_variable = { name = kehillah_crisis_al_granada value = yes }
+    set_variable = { name = kehillah_crisis_al_opening value = flag:vizier }
+    set_variable = { name = kehillah_crisis_al_silence value = flag:won }
+    set_variable = { name = kehillah_crisis_al_count value = 7 }
+    set_variable = { name = kehillah_crisis_al_won value = 4 }
+   }
+  }
+  trigger_event = kehillah_crisis_debug.24
+ }
+}
+kehillah_crisis_debug.24 = {
+ type = character_event
+ title = { first_valid = {
+  triggered_desc = { trigger = { primary_title ?= { has_variable = kehillah_crisis_al_granada } } desc = kehillah_granada.0021.t }
+  desc = kehillah_crisis_chronicle.0002.t
+ } }
+ desc = kehillah_crisis_chronicle.0002.ledger
+ theme = dread
+ left_portrait = { character = root animation = worry }
+ right_portrait = {
+  trigger = { exists = primary_title.var:kehillah_crisis_al_name_host }
+  character = primary_title.var:kehillah_crisis_al_name_host
+  animation = rage
+ }
+ option = { name = kehillah_crisis_chronicle.0002.a }
+}
+kehillah_crisis_debug.25 = {
+ type = character_event hidden = yes
+ trigger = { government_has_flag = government_is_kehillah }
+ immediate = {
+  primary_title = {
+   kehillah_crisis_armed_clear_effect = yes
+   if = { limit = { has_variable = kehillah_crisis_debug_saved_grade } set_variable = { name = kehillah_crisis_threat_grade value = var:kehillah_crisis_debug_saved_grade } remove_variable = kehillah_crisis_debug_saved_grade }
+  }
+ }
+}

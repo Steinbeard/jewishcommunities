@@ -150,9 +150,9 @@ kehillah_library.0001 = {
 	}
 
 	trigger = {
-		government_has_flag = government_is_kehillah
+		kehillah_lib_can_commission_trigger = yes
 		exists = scope:kehillah_donate_work
-		primary_title = {
+		var:kehillah_own_library = {
 			is_target_in_variable_list = { name = kehillah_library_works target = scope:kehillah_donate_work }
 		}
 	}
@@ -160,9 +160,9 @@ kehillah_library.0001 = {
 	immediate = {
 		# A community that lacks the work, if any -- not our own.
 		random_in_global_list = {
-			variable = kehillah_registered_communities
+			variable = kehillah_libraries
 			limit = {
-				NOT = { this = root.primary_title }
+				NOT = { root.var:kehillah_own_library ?= this }
 				exists = holder
 				NOT = { is_target_in_variable_list = { name = kehillah_library_works target = scope:kehillah_donate_work } }
 			}
@@ -177,7 +177,7 @@ kehillah_library.0001 = {
 
 		custom_tooltip = {
 			text = kehillah_library.0001.a.tt
-			primary_title = {
+			var:kehillah_own_library = {
 				remove_list_variable = { name = kehillah_library_works target = scope:kehillah_donate_work }
 			}
 			scope:kehillah_donate_recipient = {
@@ -203,7 +203,7 @@ kehillah_library.0001 = {
 
 		custom_tooltip = {
 			text = kehillah_library.0001.b.tt
-			primary_title = {
+			var:kehillah_own_library = {
 				remove_list_variable = { name = kehillah_library_works target = scope:kehillah_donate_work }
 			}
 		}
@@ -249,9 +249,9 @@ kehillah_library.0002 = {
 	}
 
 	trigger = {
-		government_has_flag = government_is_kehillah
+		kehillah_lib_can_commission_trigger = yes
 		exists = scope:kehillah_commission_work
-		primary_title = {
+		var:kehillah_own_library = {
 			NOT = { has_variable_list = kehillah_library_commission_work }
 			is_target_in_variable_list = {
 				name = kehillah_library_acquisition_candidates
@@ -268,9 +268,9 @@ kehillah_library.0002 = {
 
 	immediate = {
 		random_in_global_list = {
-			variable = kehillah_registered_communities
+			variable = kehillah_libraries
 			limit = {
-				NOT = { this = root.primary_title }
+				NOT = { root.var:kehillah_own_library ?= this }
 				exists = holder
 				is_target_in_variable_list = {
 					name = kehillah_library_works
@@ -282,9 +282,9 @@ kehillah_library.0002 = {
 		if = {
 			limit = { exists = scope:kehillah_commission_source_1 }
 			random_in_global_list = {
-				variable = kehillah_registered_communities
+				variable = kehillah_libraries
 				limit = {
-					NOT = { this = root.primary_title }
+					NOT = { root.var:kehillah_own_library ?= this }
 					NOT = { this = scope:kehillah_commission_source_1 }
 					exists = holder
 					is_target_in_variable_list = {
@@ -322,7 +322,7 @@ kehillah_library.0002 = {
 			gold >= major_gold_value
 		}
 		remove_short_term_gold = major_gold_value
-		primary_title = {
+		var:kehillah_own_library = {
 			clear_variable_list = kehillah_library_commission_work
 			add_to_variable_list = { name = kehillah_library_commission_work target = scope:kehillah_commission_work }
 			remove_variable = kehillah_library_commission_source
@@ -359,7 +359,7 @@ kehillah_library.0005 = {
 	trigger = {
 		exists = var:kehillah_commission_source_choice
 		exists = var:kehillah_commission_work_choice
-		primary_title = {
+		var:kehillah_own_library = {
 			NOT = { has_variable_list = kehillah_library_commission_work }
 			is_target_in_variable_list = { name = kehillah_library_acquisition_candidates target = root.var:kehillah_commission_work_choice }
 			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = root.var:kehillah_commission_work_choice } }
@@ -379,7 +379,7 @@ kehillah_library.0005 = {
 		name = kehillah_library.0005.a
 		trigger = { gold >= major_gold_value }
 		remove_short_term_gold = major_gold_value
-		primary_title = {
+		var:kehillah_own_library = {
 			clear_variable_list = kehillah_library_commission_work
 			add_to_variable_list = { name = kehillah_library_commission_work target = scope:kehillah_commission_work }
 			set_variable = { name = kehillah_library_commission_source value = scope:kehillah_commission_source }
@@ -404,12 +404,16 @@ kehillah_library.0005 = {
 		name = kehillah_library.0005.b
 		trigger = {
 			gold >= medium_gold_value
-			scope:kehillah_commission_source.holder = {
-				domicile ?= { has_domicile_parameter = kehillah_has_scriptorium }
+			OR = {
+				scope:kehillah_commission_source.holder = {
+					domicile ?= { has_domicile_parameter = kehillah_has_scriptorium }
+				}
+				# 2026-11-08: a landed library's Great House of Study copies too.
+				scope:kehillah_commission_source.title_province ?= { has_building_or_higher = kehillah_temple_beit_midrash_03 }
 			}
 		}
 		remove_short_term_gold = medium_gold_value
-		primary_title = {
+		var:kehillah_own_library = {
 			clear_variable_list = kehillah_library_commission_work
 			add_to_variable_list = { name = kehillah_library_commission_work target = scope:kehillah_commission_work }
 			set_variable = { name = kehillah_library_commission_source value = scope:kehillah_commission_source }
@@ -434,10 +438,14 @@ kehillah_library.0005 = {
 		name = kehillah_library.0005.c
 		trigger = {
 			gold >= minor_gold_value
-			domicile ?= { has_domicile_parameter = kehillah_unlocks_sofer }
+			OR = {
+				domicile ?= { has_domicile_parameter = kehillah_unlocks_sofer }
+				# 2026-11-08: a landed library's Beit Midrash keeps its own copyists.
+				var:kehillah_own_library.title_province ?= { has_building_or_higher = kehillah_temple_beit_midrash_01 }
+			}
 		}
 		remove_short_term_gold = minor_gold_value
-		primary_title = {
+		var:kehillah_own_library = {
 			clear_variable_list = kehillah_library_commission_work
 			add_to_variable_list = { name = kehillah_library_commission_work target = scope:kehillah_commission_work }
 			set_variable = { name = kehillah_library_commission_source value = scope:kehillah_commission_source }
@@ -446,7 +454,12 @@ kehillah_library.0005 = {
 			remove_variable = kehillah_library_commission_distant
 			remove_variable = kehillah_library_commission_carried
 			if = {
-				limit = { root = { domicile ?= { has_domicile_parameter = kehillah_has_scriptorium } } }
+				limit = {
+					OR = {
+						root = { domicile ?= { has_domicile_parameter = kehillah_has_scriptorium } }
+						title_province ?= { has_building_or_higher = kehillah_temple_beit_midrash_03 }
+					}
+				}
 				trigger_event = { id = kehillah_library.0003 days = kehillah_library_scriptorium_copy_days }
 			}
 			else = { trigger_event = { id = kehillah_library.0003 days = kehillah_library_local_copy_days } }

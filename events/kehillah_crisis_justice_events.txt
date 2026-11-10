@@ -1,0 +1,74 @@
+﻿namespace = kehillah_crisis_justice
+
+# A separate mandatory political answer: the ruler decides what to do with the agitator.
+kehillah_crisis_justice.0100 = {
+ type = character_event
+ title = kehillah_crisis_justice.0100.t
+ desc = { first_valid = {
+  triggered_desc = { trigger = { var:kehillah_crisis_justice_title.var:kehillah_crisis_last_agitator ?= { is_alive = yes } } desc = kehillah_crisis_justice.0100.named }
+  desc = kehillah_crisis_justice.0100.absent
+ } }
+ theme = diplomacy
+ left_portrait = { character = root animation = thinking }
+ right_portrait = { trigger = { exists = scope:kehillah_justice_agitator } character = scope:kehillah_justice_agitator animation = dismissal }
+ trigger = { var:kehillah_crisis_justice_title ?= { var:kehillah_crisis_epoch = root.var:kehillah_crisis_justice_epoch } }
+ immediate = {
+  var:kehillah_crisis_justice_title ?= { save_scope_as = kehillah_justice_title }
+  scope:kehillah_justice_title.var:kehillah_crisis_last_agitator ?= { if = { limit = { is_alive = yes } save_scope_as = kehillah_justice_agitator } }
+ }
+ option = {
+  name = kehillah_crisis_justice.0100.arrest
+  trigger = { exists = scope:kehillah_justice_agitator scope:kehillah_justice_agitator = { is_imprisoned = no } }
+  imprison = { target = scope:kehillah_justice_agitator type = dungeon }
+  scope:kehillah_justice_title = { set_variable = { name = kehillah_crisis_justice_fate value = flag:arrested } }
+  ai_chance = {
+   base = 35
+   modifier = { add = 40 has_trait = just }
+   modifier = { add = 20 has_trait = vengeful }
+   modifier = { add = 20 opinion = { target = scope:kehillah_justice_title.holder value >= 35 } }
+   modifier = { add = -20 opinion = { target = scope:kehillah_justice_title.holder value <= -35 } }
+   modifier = { add = 15 kehillah_outlook_band_value >= 2 }
+   modifier = { add = -25 kehillah_outlook_band_value <= -2 }
+  }
+ }
+ option = {
+  name = kehillah_crisis_justice.0100.censure
+  trigger = { exists = scope:kehillah_justice_agitator }
+  scope:kehillah_justice_title = { set_variable = { name = kehillah_crisis_justice_fate value = flag:censured } }
+  ai_chance = { base = 35 modifier = { add = 25 has_trait = compassionate } }
+ }
+ option = {
+  name = kehillah_crisis_justice.0100.unreachable
+  trigger = { NOT = { exists = scope:kehillah_justice_agitator } }
+  scope:kehillah_justice_title = { set_variable = { name = kehillah_crisis_justice_fate value = flag:beyond_reach } }
+  ai_chance = { base = 100 }
+ }
+ option = {
+  name = kehillah_crisis_justice.0100.ignore
+  trigger = { exists = scope:kehillah_justice_agitator }
+  scope:kehillah_justice_title = { set_variable = { name = kehillah_crisis_justice_fate value = flag:unpunished } }
+  ai_chance = { base = 25 modifier = { add = 35 has_trait = arbitrary } modifier = { add = 25 kehillah_outlook_band_value <= -2 } modifier = { add = 20 opinion = { target = scope:kehillah_justice_title.holder value <= -35 } } }
+ }
+ after = { remove_variable = kehillah_crisis_justice_title remove_variable = kehillah_crisis_justice_epoch }
+}
+
+# Recovery alone can reopen the question if the ruler initially refused justice.
+kehillah_crisis_justice.0200 = {
+ type = character_event
+ title = kehillah_crisis_justice.0200.t
+ desc = kehillah_crisis_justice.0200.desc
+ theme = diplomacy
+ left_portrait = { character = root animation = worry }
+ trigger = { kehillah_crisis_recovery_open_trigger = yes }
+ option = {
+  name = kehillah_crisis_justice.0200.petition
+  custom_tooltip = kehillah_crisis_justice.0200.petition.tt
+  primary_title = { set_variable = { name = kehillah_crisis_justice_petitioned value = yes } save_scope_as = kehillah_justice_petition_title }
+  domicile.domicile_location.county.holder.top_liege ?= {
+   set_variable = { name = kehillah_crisis_justice_title value = scope:kehillah_justice_petition_title }
+   set_variable = { name = kehillah_crisis_justice_epoch value = scope:kehillah_justice_petition_title.var:kehillah_crisis_epoch }
+   trigger_event = kehillah_crisis_justice.0100
+  }
+ }
+ option = { name = kehillah_crisis_justice.0200.defer }
+}

@@ -1,0 +1,649 @@
+﻿# =====================================================================
+# Native Jewish cultures (2026-11-08,
+# docs/implementation/2026-11-08-jewish-cultures-map.md).
+#
+# One data source, on every COUNTY title:
+#   var:kehillah_native_jewish_culture -- the Jewish culture native to
+#     this county: the culture a Jew born or settled here is generated
+#     as. Seeded once at game start by
+#     kehillah_seed_native_jewish_cultures_effect (start-date aware), and
+#     meant to be changed by events: kehillah_set_native_jewish_culture_
+#     effect on a county, kehillah_set_duchy_native_jewish_culture_effect
+#     on a de jure duchy. Any culture may be stored, including one created
+#     in play (a hybrid or divergence).
+#   var:kehillah_local_jewish_culture -- the RESOLVED culture, written by
+#     kehillah_resolve_local_jewish_culture_effect: the county's own
+#     culture if that is a Jewish (heritage_israelite) culture, otherwise
+#     the native one. So a Jewish culture that comes to dominate a county
+#     becomes its native culture without any event saying so. Read this
+#     one, not the stored one, wherever a culture is needed.
+#
+# Readers: the pool template (common/scripted_character_templates/
+# kehillah_pool_repopulation_patch.txt), the Jewish Cultures map and the
+# rites map's underlay (kehillah_map_view_effects.txt).
+#
+# Seeding: broad geography first, then the duchy lists the minhag regions
+# already carry (var:kehillah_minhag on de jure duchies, tagged just
+# before this runs; kehillah_minhag_geography_effects.txt), then a few
+# named duchies the minhag regions do not cover. Later steps override
+# earlier ones.
+# =====================================================================
+
+# Scope: a county title. CULTURE = a culture target, e.g. culture:mustarab
+# or scope:new_culture.
+kehillah_set_native_jewish_culture_effect = {
+	set_variable = {
+		name = kehillah_native_jewish_culture
+		value = $CULTURE$
+	}
+}
+
+# Scope: a duchy (or any de jure title). Every de jure county in it.
+kehillah_set_duchy_native_jewish_culture_effect = {
+	every_de_jure_county = {
+		kehillah_set_native_jewish_culture_effect = { CULTURE = $CULTURE$ }
+	}
+}
+
+# Scope: none. Musta'arabi, Yerushalmi and Juhuri were retired 2026-11-09
+# (their definitions stay so older test saves load). Anyone still of
+# those cultures is moved to Mizrahi (bavlim) or, for Juhuri, Radhanite.
+kehillah_convert_retired_jewish_cultures_effect = {
+	every_living_character = {
+		limit = {
+			OR = {
+				culture = culture:mustarab
+				culture = culture:yerushalmi
+			}
+		}
+		set_culture = culture:bavlim
+	}
+	every_living_character = {
+		limit = { culture = culture:juhuri }
+		set_culture = culture:radhanite
+	}
+}
+
+# Scope: a duchy (or any de jure title). No Jewish culture is native here.
+kehillah_clear_duchy_native_jewish_culture_effect = {
+	every_de_jure_county = {
+		remove_variable = kehillah_native_jewish_culture
+		remove_variable = kehillah_ashkenaz_forerunner
+	}
+}
+
+# Scope: a county title. Writes var:kehillah_local_jewish_culture, or
+# removes it where no Jewish culture is native.
+kehillah_resolve_local_jewish_culture_effect = {
+	remove_variable = kehillah_local_jewish_culture
+	if = {
+		limit = {
+			culture ?= { has_cultural_pillar = heritage_israelite }
+		}
+		set_variable = {
+			name = kehillah_local_jewish_culture
+			value = culture
+		}
+	}
+	else_if = {
+		limit = { exists = var:kehillah_native_jewish_culture }
+		set_variable = {
+			name = kehillah_local_jewish_culture
+			value = var:kehillah_native_jewish_culture
+		}
+	}
+}
+
+# Scope: a county title. Step 1, broad geography.
+kehillah_seed_native_jewish_culture_by_geography_effect = {
+	if = {
+		limit = { title_province = { geographical_region = world_europe_west_iberia } }
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:sephardi }
+	}
+	else_if = {
+		limit = { title_province = { geographical_region = world_europe_south_italy } }
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:italki }
+	}
+	else_if = {
+		limit = {
+			title_province = {
+				OR = {
+					geographical_region = world_europe_south_east
+					geographical_region = world_asia_minor
+				}
+			}
+		}
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:romaniote }
+	}
+	else_if = {
+		limit = { title_province = { geographical_region = world_europe } }
+		kehillah_seed_ashkenaz_or_forerunner_effect = yes
+	}
+	else_if = {
+		limit = {
+			title_province = {
+				OR = {
+					geographical_region = world_mesopotamia
+					geographical_region = world_jazira
+				}
+			}
+		}
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:bavlim }
+	}
+	else_if = {
+		limit = { title_province = { geographical_region = world_africa_north_west } }
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:maaravi }
+	}
+	# 2026-11-09 (Daniel): Musta'arabi, Yerushalmi and Bavli are one
+	# Mizrahi culture -- vanilla's bavlim key, renamed (localization/
+	# english/replace/kehillah_mizrahi_l_english.yml). Babylonian and
+	# Palestinian are a matter of rite, not culture.
+	else_if = {
+		limit = {
+			title_province = {
+				OR = {
+					geographical_region = world_middle_east_jerusalem
+					geographical_region = world_middle_east_arabia
+					geographical_region = world_africa_north
+				}
+			}
+		}
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:bavlim }
+	}
+	# 2026-11-09 (Daniel): Radhanite is the Persian-speaking Jewry of Persia,
+	# Khorasan, Central Asia and the Silk Road, at every start date. The
+	# open steppe, Siberia and inland India have no Jewish culture.
+	else_if = {
+		limit = {
+			title_province = {
+				OR = {
+					geographical_region = world_middle_east_persia
+					geographical_region = world_persia
+					geographical_region = world_khorasan
+					geographical_region = world_daylam
+					geographical_region = world_transoxiana
+					geographical_region = world_central_asia
+					geographical_region = world_steppe_tarim
+				}
+			}
+		}
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:radhanite }
+	}
+}
+
+# Scope: a county title. Step 2, the minhag regions' duchy lists.
+kehillah_seed_native_jewish_culture_by_minhag_effect = {
+	if = {
+		limit = { exists = de_jure_liege.var:kehillah_minhag }
+		de_jure_liege = { save_scope_as = kehillah_njc_duchy }
+		if = {
+			limit = {
+				OR = {
+					scope:kehillah_njc_duchy.var:kehillah_minhag = flag:western_ashkenaz
+					scope:kehillah_njc_duchy.var:kehillah_minhag = flag:eastern_ashkenaz
+				}
+			}
+			kehillah_seed_ashkenaz_or_forerunner_effect = yes
+		}
+		else_if = {
+			limit = { scope:kehillah_njc_duchy.var:kehillah_minhag = flag:provence }
+			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:provenci }
+		}
+		else_if = {
+			limit = { scope:kehillah_njc_duchy.var:kehillah_minhag = flag:italki }
+			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:italki }
+		}
+		else_if = {
+			limit = { scope:kehillah_njc_duchy.var:kehillah_minhag = flag:romaniote }
+			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:romaniote }
+		}
+		else_if = {
+			limit = {
+				OR = {
+					scope:kehillah_njc_duchy.var:kehillah_minhag = flag:northern_sepharad
+					scope:kehillah_njc_duchy.var:kehillah_minhag = flag:southern_sepharad
+				}
+			}
+			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:sephardi }
+		}
+		else_if = {
+			limit = { scope:kehillah_njc_duchy.var:kehillah_minhag = flag:eretz_yisrael }
+			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:bavlim }
+		}
+		else_if = {
+			limit = {
+				scope:kehillah_njc_duchy.var:kehillah_minhag = flag:misraim
+			}
+			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:bavlim }
+		}
+		else_if = {
+			limit = { scope:kehillah_njc_duchy.var:kehillah_minhag = flag:maghreb }
+			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:maaravi }
+		}
+		else_if = {
+			limit = {
+				scope:kehillah_njc_duchy.var:kehillah_minhag = flag:bavel
+			}
+			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:bavlim }
+		}
+		# Persia, Transoxiana and the eastern Caucasus (Shirvan, Derbent):
+		# Persian-speaking Jewry. No distinct Juhuri yet in these centuries
+		# (2026-11-09).
+		else_if = {
+			limit = {
+				OR = {
+					scope:kehillah_njc_duchy.var:kehillah_minhag = flag:paras
+					scope:kehillah_njc_duchy.var:kehillah_minhag = flag:radhanite
+					scope:kehillah_njc_duchy.var:kehillah_minhag = flag:caucasus
+				}
+			}
+			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:radhanite }
+		}
+	}
+}
+
+# Scope: none. Run once at game start, after kehillah_tag_minhag_regions_
+# effect (common/on_action/kehillah_on_actions.txt).
+kehillah_seed_native_jewish_cultures_effect = {
+	# Which forerunners have already given way at this start date (see
+	# "Ashkenaz emerges" below).
+	if = {
+		limit = { current_date >= 1000.1.1 }
+		set_global_variable = { name = kehillah_ashkenaz_emerged value = yes }
+	}
+	if = {
+		limit = { current_date >= 1187.1.1 }
+		set_global_variable = { name = kehillah_canaani_absorbed value = yes }
+	}
+	every_county = {
+		remove_variable = kehillah_native_jewish_culture
+		remove_variable = kehillah_ashkenaz_forerunner
+		kehillah_seed_native_jewish_culture_by_geography_effect = yes
+		kehillah_seed_native_jewish_culture_by_minhag_effect = yes
+	}
+
+	# Step 3, named duchies.
+	# Khazaria: Jewish under the Khaganate, which Sviatoslav broke in
+	# 965-969; after that its steppe has no Jewish culture. The caucasus
+	# minhag region reaches into it, so it is cleared here either way.
+	title:d_khazaria ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_itil ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_azov ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_alania ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	if = {
+		limit = { current_date < 969.1.1 }
+		title:d_khazaria ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:radhanite } }
+		title:d_itil ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:radhanite } }
+		title:d_azov ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:radhanite } }
+	}
+	# Crimea: Byzantine Jewry at Chersonesos and Kerch.
+	title:d_crimea ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:romaniote } }
+	# The Indian Ocean ports of Sindh and Gujarat: Persian-speaking traders.
+	title:d_sauvira ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:radhanite } }
+	title:d_multan ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:radhanite } }
+	title:d_lata ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:radhanite } }
+	title:d_saurashtra ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:radhanite } }
+	# Georgia and Armenia: Aramaic-speaking Jewry tied to Mesopotamia.
+	title:d_georgia ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:bavlim } }
+	title:d_abkhazia ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:bavlim } }
+	title:d_greater_armenia ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:bavlim } }
+	title:d_vaspurakan ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:bavlim } }
+
+	# Sopara and the Konkan coast: Bene Israel.
+	title:d_konkana ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:bene_israel } }
+
+	# Kochi and Kodungallur, on the Malabar coast.
+	title:d_chera_nadu ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:kochinim } }
+
+	# Semien and Dembiya, north of Lake Tana.
+	title:d_gondar ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:beta_israel } }
+
+	# Yemen: Sana'a, Ta'izz and the Hadramawt.
+	title:d_sanaa ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:teimani } }
+	title:d_taizz ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:teimani } }
+	title:d_hadramawt ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:teimani } }
+
+	# Tripoli and the Syrte: Ma'aravi, though the minhag map counts them
+	# with Egypt.
+	title:d_tripolitania ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:maaravi } }
+	title:d_syrte ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:maaravi } }
+
+	# Knaanim, before Ashkenazi settlement eastward absorbed them
+	# (2026-11-08: one contiguous block -- Bohemia, Poland, Silesia and
+	# Kievan Rus' -- for a clean border).
+	if = {
+		limit = { NOT = { has_global_variable = kehillah_canaani_absorbed } }
+		title:d_bohemia ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:canaani } }
+		title:d_moravia ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:canaani } }
+		title:d_lesser_poland ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:canaani } }
+		title:d_wielkopolska ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:canaani } }
+		title:d_mazovia ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:canaani } }
+		title:d_kuyavia ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:canaani } }
+		title:d_upper_silesia ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:canaani } }
+		title:d_lower_silesia ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:canaani } }
+		title:d_kiev ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:canaani } }
+		title:d_chernigov ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:canaani } }
+		title:d_pereyaslavl ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:canaani } }
+		title:d_turov ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:canaani } }
+		title:d_volhynia ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:canaani } }
+		title:d_halych ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:canaani } }
+		title:d_cherven_cities ?= { kehillah_set_duchy_native_jewish_culture_effect = { CULTURE = culture:canaani } }
+	}
+
+	# Step 4, borders and lands without Jews (2026-11-08, Daniel).
+	# Provenci is the Jewish Midi -- Provence, Languedoc, Toulouse, the
+	# Rhone; the rest of the minhag region's Occitan duchies go with
+	# northern France.
+	title:d_gascogne ?= { every_de_jure_county = { kehillah_seed_ashkenaz_or_forerunner_effect = yes } }
+	title:d_armagnac ?= { every_de_jure_county = { kehillah_seed_ashkenaz_or_forerunner_effect = yes } }
+	title:d_auvergne ?= { every_de_jure_county = { kehillah_seed_ashkenaz_or_forerunner_effect = yes } }
+	title:d_poitou ?= { every_de_jure_county = { kehillah_seed_ashkenaz_or_forerunner_effect = yes } }
+	title:d_bourbon ?= { every_de_jure_county = { kehillah_seed_ashkenaz_or_forerunner_effect = yes } }
+	# No Jewish community in this period: Scandinavia and Finland, Scotland,
+	# Ireland and Wales, the Wendish and Baltic lands, northern Rus' and
+	# Moldavia; inner Arabia (the Hijaz, Najd) and Socotra.
+	every_county = {
+		limit = { title_province = { geographical_region = world_europe_north } }
+		remove_variable = kehillah_native_jewish_culture
+		remove_variable = kehillah_ashkenaz_forerunner
+	}
+	title:d_albany ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_the_isles ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_galloway ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_western_isles ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_lothian ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_moray ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_meath ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_ulster ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_connacht ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_leinster ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_munster ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_gwynedd ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_powys ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_deheubarth ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_holstein ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_pommerania ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_pomerelia ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_nordmark ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_ostmark ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_prussia ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_masuria ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_livonia ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_courland ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_latgalians ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_samogitia ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_lithuanians ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_esthonia ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_grodno ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_pinsk ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_minsk ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_polotsk ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_smolensk ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_novgorod ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_vepsia ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_luki ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_biarmia ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_vologda ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_chudia ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_ustyug ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_karachev ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_novosil ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_opolye ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_nizhny_novgorod ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_ryazan ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_moldova ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_bugeac ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_bukovina ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_medina ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_mecca ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_najd ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_yamama ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_jawf ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_shammar ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_asir ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_mahra ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	title:d_socotra ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	# England: none until William brings the Jews of Rouen, about 1070. In
+	# play, the Norman conquest invitation sets England Ashkenazi
+	# (kehillah_norman_conquest_execute_effect).
+	if = {
+		limit = { current_date < 1070.1.1 }
+		title:d_bedford ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+		title:d_northumberland ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+		title:d_lancaster ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+		title:d_york ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+		title:d_norfolk ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+		title:d_hereford ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+		title:d_gloucester ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+		title:d_canterbury ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+		title:d_somerset ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+		title:d_cornwall ?= { kehillah_clear_duchy_native_jewish_culture_effect = yes }
+	}
+
+	every_county = {
+		kehillah_resolve_local_jewish_culture_effect = yes
+	}
+	kehillah_convert_retired_jewish_cultures_effect = yes
+	kehillah_remove_premature_ashkenazim_effect = yes
+	set_global_variable = { name = kehillah_native_jewish_cultures_seeded value = yes }
+}
+
+# Scope: none. Seed if this save has never been seeded (a save from
+# before 2026-11-08). Called by the map paints.
+kehillah_ensure_native_jewish_cultures_effect = {
+	if = {
+		limit = { NOT = { has_global_variable = kehillah_native_jewish_cultures_seeded } }
+		kehillah_seed_native_jewish_cultures_effect = yes
+	}
+}
+
+# ---------------------------------------------------------------------
+# Map colours. Scope: a county title, after kehillah_resolve_local_
+# jewish_culture_effect. SET = jculture (the Jewish Cultures map) or
+# jculture_pale (the rites map's underlay). Saves scope:kehillah_jculture_
+# color. A Jewish culture with no colour of its own (one created in play)
+# gets _other.
+# ---------------------------------------------------------------------
+kehillah_pick_jewish_culture_map_color_effect = {
+	title:d_kehillah_mapcolor_$SET$_none = { save_scope_as = kehillah_jculture_color }
+	if = {
+		limit = { exists = var:kehillah_local_jewish_culture }
+		title:d_kehillah_mapcolor_$SET$_other = { save_scope_as = kehillah_jculture_color }
+		kehillah_pick_jewish_culture_map_color_one_effect = { SET = $SET$ CULTURE = ashkenazi }
+		kehillah_pick_jewish_culture_map_color_one_effect = { SET = $SET$ CULTURE = canaani }
+		kehillah_pick_jewish_culture_map_color_one_effect = { SET = $SET$ CULTURE = provenci }
+		kehillah_pick_jewish_culture_map_color_one_effect = { SET = $SET$ CULTURE = italki }
+		kehillah_pick_jewish_culture_map_color_one_effect = { SET = $SET$ CULTURE = romaniote }
+		kehillah_pick_jewish_culture_map_color_one_effect = { SET = $SET$ CULTURE = sephardi }
+		kehillah_pick_jewish_culture_map_color_one_effect = { SET = $SET$ CULTURE = mustarab }
+		kehillah_pick_jewish_culture_map_color_one_effect = { SET = $SET$ CULTURE = yerushalmi }
+		kehillah_pick_jewish_culture_map_color_one_effect = { SET = $SET$ CULTURE = bavlim }
+		kehillah_pick_jewish_culture_map_color_one_effect = { SET = $SET$ CULTURE = juhuri }
+		kehillah_pick_jewish_culture_map_color_one_effect = { SET = $SET$ CULTURE = radhanite }
+		kehillah_pick_jewish_culture_map_color_one_effect = { SET = $SET$ CULTURE = kochinim }
+		kehillah_pick_jewish_culture_map_color_one_effect = { SET = $SET$ CULTURE = beta_israel }
+		kehillah_pick_jewish_culture_map_color_one_effect = { SET = $SET$ CULTURE = teimani }
+		kehillah_pick_jewish_culture_map_color_one_effect = { SET = $SET$ CULTURE = maaravi }
+		kehillah_pick_jewish_culture_map_color_one_effect = { SET = $SET$ CULTURE = bene_israel }
+	}
+}
+
+kehillah_pick_jewish_culture_map_color_one_effect = {
+	if = {
+		limit = { var:kehillah_local_jewish_culture = culture:$CULTURE$ }
+		title:d_kehillah_mapcolor_$SET$_$CULTURE$ = { save_scope_as = kehillah_jculture_color }
+	}
+}
+
+# Scope: none. The Jewish Cultures map: every barony in its county's
+# Jewish culture; the hover card reads the county variable.
+kehillah_paint_jewish_cultures_map_effect = {
+	kehillah_ensure_native_jewish_cultures_effect = yes
+	every_county = {
+		kehillah_resolve_local_jewish_culture_effect = yes
+		kehillah_pick_jewish_culture_map_color_effect = { SET = jculture }
+		every_county_province = {
+			remove_variable = kehillah_map_community
+			barony ?= { set_color_from_title = scope:kehillah_jculture_color }
+		}
+	}
+}
+
+# =====================================================================
+# ASHKENAZ EMERGES (2026-11-08, Daniel: "Ashkenazi shouldn't exist in
+# 867"). Ashkenazi Jewry forms in the Rhineland in the tenth century:
+# the Kalonymides come north from Lucca to Mainz, and by about 1000
+# Rabbeinu Gershom teaches there. Before that, the Jews north of the Alps
+# are of Italian descent in the German lands and Gallic (Provencal) in
+# Francia, and Slavic-speaking Knaanim further east.
+#
+#   global kehillah_ashkenaz_emerged  -- set at seeding for a start on or
+#     after 1000; otherwise by the yearly pulse, by chance from 950, at the
+#     latest in 1000.
+#   global kehillah_canaani_absorbed  -- set at seeding for a start on or
+#     after 1187; otherwise by chance from 1137, at the latest in 1187 (Daniel, 2026-11-08).
+#
+# Before emergence, a county that would be Ashkenazi gets its forerunner
+# instead and remembers it (var:kehillah_ashkenaz_forerunner). At
+# emergence, those counties still on their forerunner -- not moved by an
+# event in the meantime -- become Ashkenazi, and so do the Jews living
+# there who still have the forerunner culture. Canaani's absorption does
+# the same for every Canaani county and Canaani Jew.
+# =====================================================================
+
+# Scope: a county title. Used by seeding wherever Ashkenazi belongs.
+kehillah_seed_ashkenaz_or_forerunner_effect = {
+	remove_variable = kehillah_ashkenaz_forerunner
+	if = {
+		limit = { has_global_variable = kehillah_ashkenaz_emerged }
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:ashkenazi }
+	}
+	else_if = {
+		limit = { title_province = { geographical_region = world_europe_east } }
+		# Eastern Europe waits for Canaani's absorption, not Ashkenaz's
+		# emergence, so it is not marked as a forerunner.
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:canaani }
+	}
+	else_if = {
+		limit = { title_province = { geographical_region = world_europe_west_germania } }
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:italki }
+		set_variable = { name = kehillah_ashkenaz_forerunner value = culture:italki }
+	}
+	else = {
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:provenci }
+		set_variable = { name = kehillah_ashkenaz_forerunner value = culture:provenci }
+	}
+}
+
+# Scope: none. Run at the end of seeding: at a start before emergence, no
+# living character is Ashkenazi. Each takes the Jewish culture of the
+# county they are in, or Italki if it has none (or it is Ashkenazi).
+kehillah_remove_premature_ashkenazim_effect = {
+	if = {
+		limit = { NOT = { has_global_variable = kehillah_ashkenaz_emerged } }
+		every_living_character = {
+			limit = { culture = culture:ashkenazi }
+			if = {
+				limit = {
+					exists = location.county.var:kehillah_local_jewish_culture
+					NOT = { location.county.var:kehillah_local_jewish_culture = culture:ashkenazi }
+				}
+				set_culture = location.county.var:kehillah_local_jewish_culture
+			}
+			else = {
+				set_culture = culture:italki
+			}
+		}
+	}
+}
+
+# Scope: none.
+kehillah_ashkenaz_emerges_effect = {
+	set_global_variable = { name = kehillah_ashkenaz_emerged value = yes }
+	every_county = {
+		limit = { has_variable = kehillah_ashkenaz_forerunner }
+		if = {
+			limit = {
+				exists = var:kehillah_native_jewish_culture
+				var:kehillah_native_jewish_culture = var:kehillah_ashkenaz_forerunner
+			}
+			kehillah_set_native_jewish_culture_effect = { CULTURE = culture:ashkenazi }
+			set_variable = { name = kehillah_ashkenaz_turning value = yes }
+		}
+		remove_variable = kehillah_ashkenaz_forerunner
+	}
+	every_living_character = {
+		limit = {
+			OR = {
+				culture = culture:italki
+				culture = culture:provenci
+			}
+			location.county ?= { has_variable = kehillah_ashkenaz_turning }
+		}
+		set_culture = culture:ashkenazi
+	}
+	every_county = {
+		limit = { has_variable = kehillah_ashkenaz_turning }
+		remove_variable = kehillah_ashkenaz_turning
+		kehillah_resolve_local_jewish_culture_effect = yes
+	}
+}
+
+# Scope: none.
+kehillah_canaani_absorbed_effect = {
+	set_global_variable = { name = kehillah_canaani_absorbed value = yes }
+	every_county = {
+		limit = {
+			exists = var:kehillah_native_jewish_culture
+			var:kehillah_native_jewish_culture = culture:canaani
+		}
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:ashkenazi }
+		kehillah_resolve_local_jewish_culture_effect = yes
+	}
+	every_living_character = {
+		limit = { culture = culture:canaani }
+		set_culture = culture:ashkenazi
+	}
+}
+
+# Scope: none. Yearly (common/on_action/kehillah_jewish_culture_on_actions.txt).
+# Only acts on saves that have been seeded.
+kehillah_jewish_culture_transitions_pulse_effect = {
+	if = {
+		limit = {
+			has_global_variable = kehillah_native_jewish_cultures_seeded
+			NOT = { has_global_variable = kehillah_ashkenaz_emerged }
+			current_date >= 950.1.1
+		}
+		if = {
+			limit = { current_date >= 1000.1.1 }
+			kehillah_ashkenaz_emerges_effect = yes
+		}
+		else = {
+			# About one in ten each year from 950.
+			random = {
+				chance = 10
+				kehillah_ashkenaz_emerges_effect = yes
+			}
+		}
+	}
+	if = {
+		limit = {
+			has_global_variable = kehillah_native_jewish_cultures_seeded
+			has_global_variable = kehillah_ashkenaz_emerged
+			NOT = { has_global_variable = kehillah_canaani_absorbed }
+			current_date >= 1137.1.1
+		}
+		if = {
+			limit = { current_date >= 1187.1.1 }
+			kehillah_canaani_absorbed_effect = yes
+		}
+		else = {
+			# About one in twenty each year from 1137.
+			random = {
+				chance = 5
+				kehillah_canaani_absorbed_effect = yes
+			}
+		}
+	}
+}

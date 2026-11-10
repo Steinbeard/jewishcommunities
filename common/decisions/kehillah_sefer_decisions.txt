@@ -1,0 +1,308 @@
+﻿# =====================================================================
+# Sefer redesign decisions (2026-11-08). docs/spec/2026-11-08-sefer-
+# system-redesign.md: approbations and judgement (section 6.3), ransom
+# (section 7.1), landed libraries on temple holdings (Daniel's decision 1)
+# and landed yeshivot (section 8).
+# =====================================================================
+
+# --- Seek an Approbation for one's latest book (section 6.3) -----------
+kehillah_seek_approbation_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_tale.dds"
+	}
+	decision_group_type = kehillah
+	sort_order = 95
+	ai_check_interval = 60
+
+	is_shown = {
+		faith.religion = religion:judaism_religion
+		exists = var:kehillah_sefer_my_latest_work
+	}
+	is_valid = {
+		is_adult = yes
+		is_imprisoned = no
+		custom_description = {
+			text = kehillah_seek_approbation_approver_tt
+			any_in_global_list = {
+				variable = kehillah_sefer_masters
+				kehillah_sefer_possible_approver_trigger = yes
+			}
+		}
+	}
+	cooldown = { years = 3 }
+	cost = { prestige = minor_prestige_value }
+
+	effect = {
+		custom_tooltip = kehillah_seek_approbation_decision_tt
+		hidden_effect = {
+			save_scope_as = kehillah_appr_asker
+			ordered_in_global_list = {
+				variable = kehillah_sefer_masters
+				limit = { kehillah_sefer_possible_approver_trigger = yes }
+				order_by = learning
+				save_scope_as = kehillah_approver
+			}
+			scope:kehillah_approver ?= {
+				if = {
+					limit = { is_ai = no }
+					trigger_event = kehillah_sefer.0301
+				}
+				else = {
+					random = {
+						chance = 60
+						modifier = { add = 25 opinion = { target = scope:kehillah_appr_asker value >= 30 } }
+						modifier = { add = -40 opinion = { target = scope:kehillah_appr_asker value < 0 } }
+						trigger_event = kehillah_sefer.0302
+					}
+				}
+			}
+		}
+	}
+
+	ai_potential = { exists = var:kehillah_sefer_my_latest_work }
+	ai_will_do = { base = 40 }
+}
+
+# --- Judge a Book: a head of rite endorses or condemns (section 6.3) ---
+kehillah_judge_a_book_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_misc.dds"
+	}
+	decision_group_type = kehillah
+	sort_order = 94
+	ai_check_interval = 120
+
+	is_shown = {
+		kehillah_sefer_can_judge_books_trigger = yes
+	}
+	is_valid = {
+		is_adult = yes
+		is_imprisoned = no
+	}
+	cooldown = { years = 5 }
+	cost = { piety = 100 }
+
+	effect = {
+		custom_tooltip = kehillah_judge_a_book_decision_tt
+		hidden_effect = {
+			kehillah_lib_refresh_own_library_effect = yes
+			trigger_event = kehillah_sefer.0400
+		}
+	}
+
+	ai_potential = { kehillah_sefer_can_judge_books_trigger = yes }
+	ai_will_do = { base = 25 }
+}
+
+# --- Redeem Seized Books (section 7.1) ---------------------------------
+kehillah_redeem_seized_books_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_misc.dds"
+	}
+	decision_group_type = kehillah
+	sort_order = 93
+	ai_check_interval = 60
+
+	is_shown = {
+		faith.religion = religion:judaism_religion
+		has_global_variable_list = kehillah_ransom_pool
+		OR = {
+			government_has_flag = government_is_kehillah
+			kehillah_is_jewish_landed_ruler_trigger = yes
+		}
+	}
+	is_valid = {
+		is_adult = yes
+		is_imprisoned = no
+		custom_description = {
+			text = kehillah_redeem_seized_books_pool_tt
+			kehillah_lib_can_redeem_trigger = yes
+		}
+	}
+	cooldown = { years = 1 }
+	cost = { gold = medium_gold_value }
+
+	effect = {
+		add_piety = medium_piety_gain
+		custom_tooltip = kehillah_redeem_seized_books_decision_tt
+		hidden_effect = {
+			trigger_event = kehillah_sefer.0500
+		}
+	}
+
+	ai_potential = { has_global_variable_list = kehillah_ransom_pool }
+	ai_will_do = {
+		base = 30
+		modifier = { factor = 0 short_term_gold < medium_gold_value }
+	}
+}
+
+# --- Endow a Beit Midrash on a temple holding (Daniel's decision 1) -----
+kehillah_endow_beit_midrash_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_misc.dds"
+	}
+	decision_group_type = kehillah
+	sort_order = 92
+	ai_check_interval = 120
+
+	is_shown = {
+		kehillah_is_jewish_landed_ruler_trigger = yes
+		highest_held_title_tier >= tier_county
+	}
+	is_valid = {
+		is_adult = yes
+		custom_description = {
+			text = kehillah_endow_beit_midrash_temple_tt
+			any_realm_province = {
+				kehillah_lib_can_endow_temple_trigger = yes
+			}
+		}
+	}
+	cooldown = { years = 10 }
+	cost = { gold = major_gold_value }
+
+	effect = {
+		custom_tooltip = kehillah_endow_beit_midrash_decision_tt
+		hidden_effect = {
+			save_scope_as = kehillah_landed_founder
+			ordered_realm_province = {
+				limit = { kehillah_lib_can_endow_temple_trigger = yes }
+				order_by = {
+					value = 0
+					if = { limit = { this = scope:kehillah_landed_founder.capital_province } add = 100 }
+					if = { limit = { county = scope:kehillah_landed_founder.capital_county } add = 50 }
+				}
+				kehillah_lib_found_temple_library_effect = yes
+			}
+			kehillah_lib_refresh_own_library_effect = yes
+		}
+	}
+
+	ai_potential = { kehillah_is_jewish_landed_ruler_trigger = yes }
+	ai_will_do = {
+		base = 20
+		modifier = { factor = 0 short_term_gold < major_gold_value }
+		modifier = { factor = 0 exists = var:kehillah_own_library }
+	}
+}
+
+# --- Found a Yeshiva at a landed library (section 8) --------------------
+kehillah_found_landed_yeshiva_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_misc.dds"
+	}
+	decision_group_type = kehillah
+	sort_order = 91
+	ai_check_interval = 120
+
+	is_shown = {
+		kehillah_is_jewish_landed_ruler_trigger = yes
+		exists = var:kehillah_own_library
+		NOT = { var:kehillah_own_library = { has_variable = kehillah_landed_yeshiva } }
+	}
+	is_valid = {
+		is_adult = yes
+		custom_description = {
+			text = kehillah_found_landed_yeshiva_hall_tt
+			var:kehillah_own_library.title_province ?= { has_building_or_higher = kehillah_temple_beit_midrash_02 }
+		}
+		custom_description = {
+			text = kehillah_found_yeshiva_shas_tt
+			var:kehillah_own_library = { kehillah_lib_foundations_complete_trigger = yes }
+		}
+		custom_description = {
+			text = kehillah_found_yeshiva_head_shas_tt
+			any_courtier = { kehillah_founding_rosh_yeshiva_trigger = yes }
+		}
+		custom_description = {
+			text = kehillah_found_landed_yeshiva_control_tt
+			var:kehillah_own_library.title_province.county ?= { county_control >= 80 }
+		}
+	}
+	cost = { gold = kehillah_found_yeshiva_gold_cost }
+
+	effect = {
+		custom_tooltip = kehillah_found_landed_yeshiva_decision_tt
+		hidden_effect = {
+			ordered_courtier = {
+				limit = { kehillah_founding_rosh_yeshiva_trigger = yes }
+				order_by = learning
+				save_scope_as = kehillah_new_rosh
+			}
+			save_scope_as = kehillah_patron
+			kehillah_yeshiva_establish_landed_effect = yes
+		}
+	}
+
+	ai_potential = { kehillah_is_jewish_landed_ruler_trigger = yes }
+	ai_will_do = {
+		base = 30
+		modifier = { factor = 0 short_term_gold < kehillah_found_yeshiva_gold_cost }
+	}
+}
+
+# --- Invite a Great Teacher: the patronage road (section 8) -------------
+kehillah_invite_great_teacher_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_tale.dds"
+	}
+	decision_group_type = kehillah
+	sort_order = 90
+	ai_check_interval = 120
+
+	is_shown = {
+		kehillah_is_jewish_landed_ruler_trigger = yes
+		exists = var:kehillah_own_library
+		NOT = { var:kehillah_own_library = { has_variable = kehillah_landed_yeshiva } }
+	}
+	is_valid = {
+		is_adult = yes
+		custom_description = {
+			text = kehillah_found_yeshiva_shas_tt
+			var:kehillah_own_library = { kehillah_lib_foundations_complete_trigger = yes }
+		}
+		custom_description = {
+			text = kehillah_invite_great_teacher_candidate_tt
+			any_in_global_list = {
+				variable = kehillah_sefer_masters
+				kehillah_sefer_invitable_teacher_trigger = yes
+			}
+		}
+	}
+	cooldown = { years = 5 }
+	cost = { gold = major_gold_value }
+
+	effect = {
+		custom_tooltip = kehillah_invite_great_teacher_decision_tt
+		hidden_effect = {
+			save_scope_as = kehillah_patron
+			ordered_in_global_list = {
+				variable = kehillah_sefer_masters
+				limit = { kehillah_sefer_invitable_teacher_trigger = yes }
+				order_by = learning
+				save_scope_as = kehillah_invited_teacher
+			}
+			scope:kehillah_invited_teacher ?= {
+				if = {
+					limit = { is_ai = no }
+					trigger_event = kehillah_sefer.0600
+				}
+				else = {
+					random = {
+						chance = 50
+						modifier = { add = 30 opinion = { target = scope:kehillah_patron value >= 20 } }
+						modifier = { add = 20 is_ruler = no }
+						trigger_event = kehillah_sefer.0602
+					}
+				}
+			}
+		}
+	}
+
+	ai_potential = { kehillah_is_jewish_landed_ruler_trigger = yes }
+	ai_will_do = {
+		base = 20
+		modifier = { factor = 0 short_term_gold < major_gold_value }
+	}
+}

@@ -181,12 +181,12 @@ bands.
 
 ### Community life
 
-- **Community decisions:** Distribute Tzedakah, Secure Construction Permission, and **Set the
-  Community's Goal**, which gives the community ten years to reach
-  one of four goals.
+- **Community decisions:** Distribute Tzedakah and Secure Construction Permission.
 - Yearly **family disputes** for the leader to rule on, and **protection events** when the
   community is threatened.
 - A **community map view** with a roster of every Kehillah and a breakdown of its pillars.
+- **Advice lessons** introduce new Kehillah leaders to the community, and show Jewish adventurers
+  how to found one.
 
 ### Faith, family and culture
 

@@ -6,7 +6,7 @@ Each section says what to do, what you should see, and what counts as a problem.
 
 ## 0. Setup
 
-1. **Restart CK3.** A running game does not load new localization files. Without a restart you will see raw keys such as `kehillah_crisis_acknowledge_tt`.
+1. **Restart CK3.** A running game does not load new localization files. Without a restart you will see raw keys.
 2. Launch in debug mode (the Debug+Develop button, or `-debug_mode`) so the console works. Open it with the console key (`` ` ``).
 3. Start **1066 → Kehillah of Worms**, unless a section says otherwise. Use a throwaway save: the console commands below change the game for real.
 4. Before you start, note how long `Documents\Paradox Interactive\Crusader Kings III\logs\error.log` is. Anything new afterwards with `kehillah` in it is worth sending me.
@@ -22,7 +22,7 @@ Each section says what to do, what you should see, and what counts as a problem.
 
 ## 1. Opening a crisis (the new acknowledgment flow) — highest priority
 
-**What changed:** a crisis now opens with **one event**. The crisis starts only when you answer it, and a persistent alert then takes you to the crisis window. The long opening banner is gone from the top of the screen.
+**What changed:** a crisis now opens with **one event**. Since 2026-11-06 the crisis starts as that event appears, not when you answer it, and a persistent alert takes you to the crisis window. The long opening banner is gone from the top of the screen.
 
 **Do:** for each command below, run it as the Worms leader with no crisis running, answer the event, and judge it. When a crisis is running, end it first (section 5) or start a new game.
 
@@ -38,8 +38,9 @@ Each section says what to do, what you should see, and what counts as a problem.
 | `event kehillah_crisis_intro_debug.17` | An expulsion edict |
 
 **Check:**
-- **Before you answer:** only the event is on screen, with no banner competing with it. Let a week or two pass with it unanswered: nothing should advance (no preaching notices, no crisis in the Situations list).
-- **After you answer:** a crisis appears, and the alert opens its window. Phase changes later show as short banners.
+- **As the event appears:** the crisis banner and alert arrive with it, and the crisis is already in the Situations list. A sudden host's war and army exist too. Exactly one copy of the event opens, including for an accusation.
+- **After you answer:** your answer applies once, nothing starts a second time, and the alert opens the crisis window. Phase changes later show as short banners.
+- **Option tooltips:** hover every option, then check error.log for new `kehillah` lines. They now preview against a running crisis.
 - **Your call, the main point:** is it clear what is happening and where to look? Is any opening still too much to read at once? Note which ones.
 
 **Debug probes**, if something seems off: `event kehillah_crisis_intro_debug.1` while the event is still unanswered, and `.2` after answering. Both write to `debug.log`.

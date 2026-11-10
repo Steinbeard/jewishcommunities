@@ -18,16 +18,33 @@ kehillah_crisis_apply_catalyst_effect = {
 kehillah_crisis_catalyst_notice_effect = {
  var:kehillah_crisis_title ?= { save_scope_as = kehillah_notice_title }
  save_scope_value_as = { name = kehillah_notice_points value = $POINTS$ }
+ save_temporary_scope_value_as = { name = kehillah_notice_track value = flag:$TRACK$ }
  scope:kehillah_notice_title.holder ?= {
   if = {
    limit = { is_ai = no scope:kehillah_notice_points > 0 scope:kehillah_notice_title = { NOT = { has_variable = kehillah_crisis_intro_pending } } }
-   send_interface_message = {
-    type = msg_kehillah_crisis_catalyst
-    title = $CATALYST$
-    desc = kehillah_crisis_catalyst_progress_$TRACK$
-    left_icon = scope:kehillah_notice_title
+   if = {
+    limit = { OR = { scope:kehillah_notice_track = flag:spared scope:kehillah_notice_track = flag:held } }
+    kehillah_crisis_catalyst_flavor_notice_effect = { TYPE = msg_kehillah_crisis_catalyst_good CATALYST = $CATALYST$ TRACK = $TRACK$ }
    }
+   else = { kehillah_crisis_catalyst_flavor_notice_effect = { TYPE = msg_kehillah_crisis_catalyst_bad CATALYST = $CATALYST$ TRACK = $TRACK$ } }
   }
+ }
+}
+
+# This notice is for catalyst changes that do not already appear in a player-selected event's
+# outcome tooltip, such as periodic protection or ill-times changes. Event/action race effects
+# suppress a second message. Recurring monthly and interval reports use their own narrative pools,
+# since no single player choice explains their accumulated progress.
+kehillah_crisis_catalyst_flavor_notice_effect = {
+ kehillah_crisis_catalyst_send_notice_effect = { TYPE = $TYPE$ CATALYST = $CATALYST$ TRACK = $TRACK$ FLAVOR = $CATALYST$_notice }
+}
+
+kehillah_crisis_catalyst_send_notice_effect = {
+ send_interface_message = {
+  type = $TYPE$
+  title = kehillah_crisis_catalyst_notice_title
+  desc = { desc = $CATALYST$ desc = kehillah_crisis_catalyst_detail_break desc = $FLAVOR$ desc = kehillah_crisis_catalyst_progress_$TRACK$ }
+  left_icon = scope:kehillah_notice_title
  }
 }
 
@@ -61,9 +78,9 @@ kehillah_crisis_flavor_catalyst_effect = {
 kehillah_crisis_flavor_catalyst_send_effect = {
  set_variable = { name = kehillah_toast_last_$KEY$ value = $N$ }
  send_interface_message = {
-  type = msg_kehillah_crisis_catalyst
-  title = $KEY$_t$N$
-  desc = { desc = $KEY$_d$N$ desc = kehillah_crisis_catalyst_report_$PROGRESS$ }
+  type = msg_kehillah_crisis_catalyst_bad
+  title = kehillah_crisis_catalyst_notice_title
+  desc = { desc = $KEY$_t$N$ desc = kehillah_crisis_catalyst_detail_break desc = $KEY$_d$N$ desc = kehillah_crisis_catalyst_report_$PROGRESS$ }
   left_icon = scope:kehillah_crisis_announce_title
  }
 }

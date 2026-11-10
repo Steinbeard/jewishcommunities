@@ -218,17 +218,63 @@ kehillah_nagid_request_confirmation_effect = {
 # in step with the community and its realm: steps down a holder who no
 # longer qualifies, and asks the ruler to confirm a new seat leader or
 # an old Nagid under a new ruler.
+kehillah_nagid_lost_notice_effect = {
+	send_interface_message = {
+		type = msg_kehillah_community_news_bad
+		title = kehillah_nagid_lost_msg_t
+		desc = kehillah_nagid_lost_$REASON$_msg_d
+	}
+}
+
 kehillah_nagid_quarterly_effect = {
 	if = {
 		limit = { kehillah_is_nagid_trigger = yes }
 		if = {
 			limit = { NOT = { kehillah_nagid_can_hold_trigger = yes } }
-			kehillah_nagid_step_down_effect = yes
-			send_interface_message = {
-				type = msg_kehillah_community_news_bad
-				title = kehillah_nagid_lost_msg_t
-				desc = kehillah_nagid_lost_msg_d
+			if = {
+				limit = { primary_title = { kehillah_standing_value < kehillah_nagid_retain_standing } }
+				kehillah_nagid_lost_notice_effect = { REASON = standing }
 			}
+			else_if = {
+				limit = { is_imprisoned = yes }
+				kehillah_nagid_lost_notice_effect = { REASON = imprisoned }
+			}
+			else_if = {
+				limit = { NOT = { is_jewish_character_trigger = yes } }
+				kehillah_nagid_lost_notice_effect = { REASON = faith }
+			}
+			else_if = {
+				limit = { is_adult = no }
+				kehillah_nagid_lost_notice_effect = { REASON = age }
+			}
+			else_if = {
+				limit = {
+					NOT = {
+						OR = {
+							diplomacy >= kehillah_nagid_min_skill
+							stewardship >= kehillah_nagid_min_skill
+							learning >= kehillah_nagid_min_skill
+						}
+					}
+				}
+				kehillah_nagid_lost_notice_effect = { REASON = skill }
+			}
+			else_if = {
+				limit = { NOT = { government_has_flag = government_is_kehillah } }
+				kehillah_nagid_lost_notice_effect = { REASON = leadership }
+			}
+			else_if = {
+				limit = { NOT = { kehillah_is_realm_seat_trigger = yes } }
+				kehillah_nagid_lost_notice_effect = { REASON = seat }
+			}
+			else_if = {
+				limit = { NOT = { domicile.domicile_location.county.holder.top_liege = { kehillah_realm_has_nagid_office_trigger = yes } } }
+				kehillah_nagid_lost_notice_effect = { REASON = office }
+			}
+			else = {
+				kehillah_nagid_lost_notice_effect = { REASON = unknown }
+			}
+			kehillah_nagid_step_down_effect = yes
 		}
 		# A new ruler: the office stands, but he must confirm the holder.
 		else_if = {

@@ -1,0 +1,135 @@
+﻿# =====================================================================
+# STAND FOR THE SEAT -- triggers.
+# docs/spec/2026-11-08-stand-for-the-seat.md. Built 2026-11-08,
+# NOT live-tested: see docs/testing/2026-11-08-stand-for-the-seat-
+# validation.md.
+#
+# $SEAT$ is always a community title scope, such as scope:title inside
+# kehillah_leadership's candidate_score.
+# =====================================================================
+
+# Scope: a character. He has declared for this seat.
+kehillah_cand_declared_for_trigger = {
+	exists = var:kehillah_candidacy_target
+	var:kehillah_candidacy_target = $SEAT$
+}
+
+# Scope: a character. He does not live at the seat's court: a leader of
+# another community, as every declared candidate is.
+kehillah_cand_is_outsider_trigger = {
+	exists = $SEAT$.holder
+	NOT = { this = $SEAT$.holder }
+	NOT = { court_owner ?= $SEAT$.holder }
+}
+
+# Scope: a character. His community and the seat's share a customary
+# region. A candidate or seat with no known region counts as not sharing,
+# as kehillah_shares_minhag_region_trigger does.
+kehillah_cand_shares_minhag_trigger = {
+	exists = $SEAT$.holder
+	kehillah_shares_minhag_region_trigger = { OTHER = $SEAT$.holder }
+}
+
+# Scope: a character. A great rabbi (spec 5.3): the Rabbi trait and one
+# mark of real standing.
+kehillah_cand_great_rabbi_trigger = {
+	has_trait = kehillah_rabbi_trait
+	OR = {
+		learning >= kehillah_cand_great_rabbi_learning_value
+		piety_level >= 3
+		kehillah_holds_sanhedrin_seat_trigger = yes
+		kehillah_is_gaonate_holder_trigger = yes
+	}
+}
+
+# Scope: a character. One of the seat's own notables: its leader, or one
+# of his courtiers who sits on the board, holds an office or heads a
+# householder family.
+kehillah_cand_local_notable_trigger = {
+	exists = $SEAT$.holder
+	OR = {
+		this = $SEAT$.holder
+		AND = {
+			court_owner ?= $SEAT$.holder
+			OR = {
+				is_councillor_of = $SEAT$.holder
+				has_any_court_position = yes
+				kehillah_is_baal_bayit_trigger = yes
+			}
+		}
+	}
+}
+
+# Scope: a character. He is married into a local family (spec 5.3): his
+# own spouse is one of the seat's notables, or close family of one.
+kehillah_cand_married_in_trigger = {
+	any_spouse = {
+		OR = {
+			kehillah_cand_local_notable_trigger = { SEAT = $SEAT$ }
+			any_close_family_member = {
+				kehillah_cand_local_notable_trigger = { SEAT = $SEAT$ }
+			}
+		}
+	}
+}
+
+# Scope: a character. One of his children is married into a local
+# family. A smaller tie; it does not lift the stranger term.
+kehillah_cand_child_married_in_trigger = {
+	any_child = {
+		any_spouse = {
+			OR = {
+				kehillah_cand_local_notable_trigger = { SEAT = $SEAT$ }
+				any_close_family_member = {
+					kehillah_cand_local_notable_trigger = { SEAT = $SEAT$ }
+				}
+			}
+		}
+	}
+}
+
+# Scope: a character. A stranger to the congregation: neither a great
+# rabbi nor married in.
+kehillah_cand_stranger_trigger = {
+	NOT = { kehillah_cand_great_rabbi_trigger = yes }
+	NOT = { kehillah_cand_married_in_trigger = { SEAT = $SEAT$ } }
+}
+
+# Scope: any. $CAND$ may weigh and stand for $SEAT$. v1 is a player action
+# (Daniel, 2026-11-08), and a player-led seat is closed (spec 4). The
+# candidate is passed explicitly rather than read from root, because a
+# scripted trigger does not reset root.
+kehillah_cand_can_weigh_seat_trigger = {
+	$CAND$ = {
+		is_ai = no
+		is_adult = yes
+		is_imprisoned = no
+		government_has_flag = government_is_kehillah
+		exists = primary_title
+		primary_title = { is_kehillah_title_trigger = yes }
+	}
+	$SEAT$ = { is_kehillah_title_trigger = yes }
+	NOT = { $SEAT$ = $CAND$.primary_title }
+	exists = $SEAT$.holder
+	$SEAT$.holder = {
+		is_ai = yes
+		faith = $CAND$.faith
+	}
+}
+
+# Scope: a character. Free to declare now: no other candidacy and no
+# cooldown.
+kehillah_cand_free_to_declare_trigger = {
+	NOT = { exists = var:kehillah_candidacy_target }
+	NOT = { has_variable = kehillah_candidacy_cooldown }
+}
+
+# Scope: a community title. The host's capital: the community's county is
+# the capital of its host's top liege, a king or emperor.
+kehillah_cand_seat_in_capital_trigger = {
+	exists = holder.capital_county.holder.top_liege
+	holder.capital_county = {
+		holder.top_liege = { highest_held_title_tier >= tier_kingdom }
+		this = holder.top_liege.capital_county
+	}
+}

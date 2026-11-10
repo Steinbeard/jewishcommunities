@@ -17,6 +17,240 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+**Stand for the Seat BUILT (first pass) - 2026-11-08, Daniel's request, xTiger-clean, live test
+pending (Daniel runs it by hand):** a player who leads a community can **Weigh Their Seat** on
+another same-faith, AI-led community's leader. The event shows:
+- his score and his place in the line;
+- the front-runner;
+- whether he is a stranger (only a great rabbi, or a man married into a local family, escapes the
+  stranger term);
+- what the seat offers.
+
+He can put his name forward there, which invests in his own candidacy so he enters that seat's own
+`kehillah_leadership` line, the way vanilla's request_governorship works. He can also ask the
+sitting leader to name him successor. If he is first when the leader dies, the engine gives him the
+seat. A day later, his old community passes to its own heir and his Quarter is rebuilt for the new
+one. AI candidacies are not built (player action only). The community-card block and ledger column
+are not built either; the weigh event stands in for them.
+
+- [The spec](docs/spec/2026-11-08-stand-for-the-seat.md): section 7.0 is the route, section 13 the
+  build.
+- [The validation checklist](docs/testing/2026-11-08-stand-for-the-seat-validation.md): **V1 (the
+  game loads) and V3 (a declared outsider is in the line) decide whether the design stands.**
+
+**Crisis funding control - 2026-11-08, source checked, live check pending:**
+Armed Host shows a compact funding ledger with gold spent in this crisis, points
+bought toward Quarter held, and a button showing the next marginal price. The
+button applies the existing guarded contribution effect directly; the decision
+remains for AI but no longer occupies a full-width situation action. Existing
+saves begin recording the exact gold total with their next contribution.
+
+**Community Safety planning page - 2026-11-08, source checked, live check pending:**
+Military's duplicate crisis races and actions are replaced by a situation link,
+two pressure rows, a protection summary, and links to Bet Din and Shtadlan tasks.
+Court rivalry, a vizierate, and local agitation make Granada Tense in 1066
+despite Badis's favorable outlook. Eligible incidents have a 1% annual floor;
+active crises and cooldowns still suspend the roll. A new Shtadlan task seeks
+  a temporary public assurance from the host's religious adviser. Important
+  Actions recommend the Bet Din planner and eligible Shtadlan council routes,
+  while the crisis alert takes priority during an active crisis. See
+[the design](docs/spec/2026-11-08-community-safety-planning.md) and
+[the human test plan](docs/testing/2026-11-08-community-safety-human-test.md).
+The GUI and council task have not yet been verified live.
+
+**Beit Midrash shelf and Ledger of Sefarim BUILT - 2026-11-08, Daniel's request, xTiger-clean,
+live test pending (Daniel runs it by hand; needs a restart):** the Books page is now three genre
+tabs. Each opens on its foundational centrepiece: the Torah in the ark with the Prophets and the
+Writings; the Shas case with a gap for each missing order; or, for Machshavah and Karaite
+Talmudics, a reading stand with the library's most esteemed work. Below it are shelves of books
+of one height, whose width and binding follow their standing in the viewer's rite and are
+rebound when it changes. A missing Tanakh part, or a missing Bavli order where the Bavli is
+canon, is flagged. The Acquire and All works pages became one **Ledger of Sefarim** window of
+the works the community knows of (obscure and forbidden books only once met), with date, place,
+language, a linked author (three new Karaite author characters), standing, tenets and Seek a
+copy. See [the record and test checklist](docs/implementation/2026-11-08-library-shelf-and-ledger.md).
+
+**Sefer ha-Qabbalah roster tranche BUILT - 2026-11-08, Daniel's request, xTiger-clean, live test pending:** 86 new historical characters (Geonim of Sura and Pumbedita, exilarchs, Gershom, the grammarians), 51 invented wives for every father with attested children (38 of them retrofitted into the 1066 roster), and holder history on Sura, Baghdad, Cordoba, Granada, Mainz and a new history-only Pumbedita academy. See [the build record](docs/implementation/2026-11-08-sefer-haqabbalah-roster.md). **Next:** Tannaim and Amoraim, the Palestinian Gaonate, earlier exilarchs, and Kairouan/Worms terms.
+
+**Sefer system redesign BUILT - 2026-11-08, Daniel's decisions and request, xTiger-clean, live
+test pending:** every layer of [the redesign](docs/spec/2026-11-08-sefer-system-redesign.md) is
+built: standing per rite, the full tenet roster, the Tanakh and Shas-first libraries with a
+Greatness row for missing orders, rounds and the siyum, named works as gold ambitions in the
+writing chain, authored works, approbations, judging and citations, the Machloket, temple-holding
+libraries for landed rulers with a Library window, chip and map mode, ransom and seizures,
+landed yeshivot, and Karaite Kehillot. See [the build record and test checklist](docs/implementation/2026-11-08-sefer-redesign-build.md),
+which also lists the eight departures from the spec and the vanilla rite-divergence systems used.
+
+*Earlier the same day:* **Sefer system redesign - 2026-11-08, Daniel's request, PROPOSAL (approved
+the same day; superseded by the BUILT entry above):** [the redesign](docs/spec/2026-11-08-sefer-system-redesign.md) moves libraries off
+the domicile onto titles Jewish rulers hold with a seat on the map (a Kehillah's title, or a
+landed ruler's barony with a Beit Midrash building), opened from one Library window and a
+Libraries map mode. Each Jewish rite gets its own ten-tier standing ladder for every work, Banned
+to Pillar, under fixed canon tiers (Oral Torah, Prophets and Writings, Torah) no book can reach;
+vanilla tenet status sets how high a book may climb. It adds controversy-based tenets (Hokhmah
+against Emunah Temimah first), the Tanakh in every library, a complete Shas as the Rabbanite
+priority and yeshiva requirement, repeatable study rounds with a siyum, authored works that climb
+through copies, approbations, teaching and citations, a Machloket situation, wider acquisition
+with losses and ransom, and a patronage road to a yeshiva for landed rulers. Section 13 lists
+eight questions for Daniel; section 11 lists the spikes; section 12 the build order.
+
+**Community goals removed - 2026-11-07, Daniel's decision:** the S6 "Set the Community's
+Goal" system (one of four goals, a ten-year deadline, a pillar reward or a Stability loss)
+is gone. Daniel: it "works against the grain of how other ck3 systems work". Removed: the
+decision, its events, effects, triggers, custom loc and loc; the quarterly check; the
+daughter-community credit in both founding effects; the two message types; its script values;
+the Standing tooltip row; debug events .123-.125. No other system read its counter. Old saves
+keep a few unused title variables (`kehillah_var_goal*`), which is harmless. This also retires
+a bug found the same day: "Secure Our Rights" counted building rights getting worse as success.
+
+**Fallback charter pillar points fixed - 2026-11-07, source-checked, not live-tested:** the V15
+charter (hosts neither Christian nor Muslim) read its moneylending and walled-quarter rights
+with `vassal_contract_has_flag`, which never matches a tributary charter, so both added 0 and
+their tooltip rows said "none". `kehillah_refresh_charter_state_cache_effect` now caches them
+(`kehillah_charter_cache_lending`, `_walled`) and the values and rows read the cache.
+**To test:** a community under a non-Christian, non-Muslim host with pawnbroking or a walled
+quarter shows the Prosperity/Stability lines after one quarterly pulse.
+
+**Charter terms now say what they do - 2026-11-08, Daniel's request, source-checked, not
+live-tested:** every Host Charter level's `_desc` now lists its effects the way vanilla's
+special contracts do: a bold "Community Privileges / Restrictions / Obligations" header, one
+bulleted effect per line, then the flavour paragraph. Pillar changes are sizes; the security
+term's harm reduction and the tribute rates come from script values
+(`kehillah_charter_*_harm_reduction_percent`, `kehillah_tribute_*_percent`), so retuning them
+updates the text. Levels with no effect keep their flavour line alone, as vanilla's defaults do.
+Daniel found the contract window "very tall": the four policy terms (and V15 lending) are now
+`display_mode = radiobutton` rows; only Tribute keeps a tree, as vanilla keeps one for taxes and
+levies. The Laws tab shows one row per term, each with the level's description as its tooltip,
+and adds Tribute. `KEHILLAH_DOMAIN_CHARTER_TERMS` (Laws, map view, letters) picks a block per
+package, so a V15 charter no longer shows the Muslim terms' names.
+**To test:** (1) open the Host Charter window under a Christian and a Muslim host: the window
+is shorter, radio labels are not cut off ("Host Protection" is the longest), and each level's
+tooltip shows the header, bullets and flavour, with 10%/20% and 20%/30% filled in; (2) check
+whether a radio row lets a term jump two levels in one negotiation (the tree allowed one step;
+`parent` is still set); (3) Laws tab rows and tooltips, for both packages and a V15 charter;
+(4) `error.log` stays clean after hovering them.
+
+**Advice lessons - 2026-11-06, built, awaiting Daniel's live test:** A seven-step
+"Leading a Kehillah" lesson and a one-step tip for Jewish adventurers now use vanilla's
+Reactive Advice system. xTiger is clean on them, but they have not run in-game. See the
+[notes and test checklist](docs/implementation/2026-11-06-kehillah-advice-lessons.md),
+which also list the follow-ups: game concepts, situational tips, and a crisis tip.
+
+**Crisis response redesign - 2026-11-06, first full pass awaiting human playtest:**
+The [approved crisis response and recovery spec](docs/spec/2026-11-06-crisis-response-and-recovery.md)
+supersedes the old three standing actions. The main checkout now has three one-use
+category entry points in each of Agitation and Armed Host, saved proposal draws,
+interactive measure scenes with adviser/trait/grade modifiers, an income-based
+Armed Host contribution, residual phase carryover, a transition chronicle, and
+grade-capped distinct attack scenes. Spared and Quarter Held settle and close;
+only a struck quarter enters Endure/Collapse Recovery. Its conditional needs
+include local care, the ruler's actual aid choice, intercommunity tzedakah and
+books, ransom for deferred captives, the existing forced-convert return chain,
+and a petition to revisit the agitator's fate. A hostile ruler's expulsion edict
+starts the existing departure flow before the closing chronicle. xTiger ran on
+2026-11-06: 15 errors, all existing baseline findings; no new crisis errors.
+Daniel will run the [human test plan](docs/testing/2026-11-06-crisis-human-test-plan.md).
+The first pass deliberately reuses the older event pools, so the full proposed
+action breadth, individualized hostile-development ledger, all nuanced promise
+outcomes, and damage-specific memory prose remain iteration work after the live
+flow is seen. The old Suggested crisis responses item below is superseded.
+
+**Leader death in struck quarters - 2026-11-07, source change awaiting live check:**
+The final attack accounting no longer rolls an unseen fatal injury for a player leader;
+visible attack/captivity scenes determine their peril. AI leaders keep the abstract
+severity roll. Granada's captive death paths now set the same family aftermath as
+the old report death. A future Granada-specific confrontation can restore historical
+lethality with player agency. See the human crisis test plan.
+**Attack report wording - 2026-11-08, source change awaiting live check:** The report
+now lists only recorded losses, explains wider disruption when no one died or
+converted and no buildings fell, and uses neutral names for a host and its war
+across Christian and Muslim crises. An already open report needs a fresh game
+launch and an earlier save to show the revised text.
+
+**Recovery opening gate and Nagid notice - 2026-11-07, source change awaiting live
+check:** Stage 4 is active Recovery until the final chronicle marks the situation
+done. The crisis admission and danger status now distinguish this from a closed
+crisis, so a quarterly incident cannot open another crisis during Recovery; the
+one-year cooldown still begins at final closure. Nagid loss notices now identify
+the failed Standing, personal, seat, or office requirement; the Standing notice
+shows the current value and Healthy threshold.
+
+**Crisis openings - 2026-11-06, Daniel's request:** Every crisis, banner and alert now
+starts when its opening popup appears, not when it is answered, so the banner no longer
+reads as a result of the choice. Sudden hosts start their war at that moment too. Every
+opening's title now begins "Crisis:", and the Granada poem event sets out the stakes in
+its text. See the [addendum](docs/implementation/2026-11-01-crisis-acknowledgment.md). Source
+checks and xTiger are the only verification so far; a live pass of each opening is pending.
+
+**Sinister Verses choices - 2026-11-06, Daniel's request:** The three answers are now
+different bets: a sure small gain from the elders at a Stability cost, an Intrigue gamble on
+burning, and a high-stakes appeal to the emir. See the
+[addendum](docs/implementation/2026-10-29-granada-chain-rewrite.md). Not yet played.
+
+**Crisis action tooltips - 2026-11-06, Daniel's request:** An unidentified edit around 11:09
+replaced the short tooltips and added officer-led alternatives. Daniel chose the short format,
+then asked that it read like vanilla. Options now use the `flavor` field and one effect per
+line, rewritten from the current script. Pushes run in `hidden_effect` with a size line, so a
+hover no longer shows the default 12. Every rolled measure, riskier approach and Sinister
+Verses gamble now sends a result toast; the rolls used to resolve silently. Not yet played.
+
+**Crisis result toasts - 2026-11-06, Daniel's request:** Toasts now name what happened, such as "The Hungry Are Fed", and cover rolled outcomes in the answer, lord, gate, accusation and letter scenes. The Emir's Confidence has three different bets. The warning events in `events/kehillah_crisis_events.txt` now do the same for all 40 rolled outcomes. Not yet played.
+
+**Going back from a crisis action - 2026-11-06, Daniel's request:** Clicking a crisis
+action now only considers it. The final choice in the next scene spends the category,
+and "Consider another course" returns to the same options for free. See the
+[spec addendum](docs/spec/2026-11-06-crisis-response-and-recovery.md). Source tests and
+xTiger pass; a live pass is pending.
+
+**Crisis action tooltips - 2026-11-06, Daniel's request:** Every crisis action now has a
+short tooltip: one vivid line, then labelled Result, Success, Failure and Lasting lines,
+then what decides it. Pushes show as small (up to 8 points), moderate (up to 14) or large.
+Tooltips stop narrating the next scene, which shows its own cost and odds. Sizes are
+hand-written because outcomes sit in a later scene;
+`scripts/test_kehillah_crisis_action_tooltips.py` checks measure sizes against the script.
+Corrections: Answer the Accusation rolls Learning, not Diplomacy, and the promises that
+barricades, shelter and retreat help after a breach are gone, because those only feed the
+chronicle. If those three should matter in a breach, that is new design work. Rendering is
+not yet checked live.
+
+**Debts crisis writing - 2026-11-05, Daniel's request:** "Debts and a Dear Year" no
+longer cites York 1190, which most start dates predate (York has no community at all
+before the 1178 start). Its text also no longer assumes a Countinghouse, which is an
+optional building.
+**Blocked until the trade DLC ships:** gate the debts opening to communities that are
+actually lending. Today it can fire for any community, though all of its text assumes
+open loans in the town. The only natural start is the debts branch of
+`kehillah_crisis_opening_pulse_effect` (`kehillah_crisis_effects.txt`), with its odds
+in `kehillah_crisis_debts_chance_value`; the debug events bypass it deliberately. Read
+the DLC's lending data there rather than building a homegrown loan record first.
+
+**Community Safety risk display - 2026-11-05:** The Military panel now puts the
+incident band and yearly chance up front, with exact drivers in one tooltip;
+active warning bars have direct labels and protections move into compact
+tooltips. Prosperity raises danger more than Greatness, while Stability lowers
+it. See the [implementation record](docs/implementation/2026-11-05-community-safety-risk.md).
+Source and xTiger checks passed; live visual and tooltip verification remain
+pending.
+
+**Suggested crisis responses - 2026-11-05:** Agitation and Armed Host now offer
+shortlists of up to three eligible courses. The elders' counsel now opens the
+selected action's first meaningful scene directly, including the emir's approach
+with the patron already selected. The elders' counsel confirms seven simple
+actions before calling shared effects; the three standing menus and Military
+buttons apply those same effects directly, with costs and results in their
+tooltips. Free
+appeals and public answers join the pool. Paid suggestions require a treasury at
+least five times the cost, so a technically affordable but steep payment is not
+favored. The button blocks repeated clicks while the counsel opens.
+The screenshot follow-up moves the shortcut into a compact button beside Actions,
+retaining exactly three full-width standing action rows. The raw decision key in
+that screenshot likely reflects localization written during game startup; the
+new button still needs a fresh-launch check.
+See the [implementation record](docs/implementation/2026-11-05-crisis-suggested-responses.md).
+Source and xTiger checks pass against the unchanged baseline; live UI, button
+guard, tooltip, AI confirmation and direct-scene routing checks remain pending. The chance-based
+courses use the canonical scene's odds; AI scoring remains follow-up work.
+
 **Rabbi and Religious Scholar - 2026-11-03:** Jewish rabbis absorb prior Religious
 Scholar experience into their Rabbi tracks. Half goes to Machshavah, with one quarter
 each to Parshanut and Talmudics (rounding remainder goes to Machshavah). Ordination
@@ -73,6 +307,49 @@ The missing-child event now uses a setting-neutral search by default and a palac
 vizier crisis, where the rumor draws on the hostility already shown in the poem arc.
 Short toasts mark the transition from Agitation to Armed Host or Spared. Crises that begin
 with an armed host use their opening toast. Live recheck pending.
+**2026-11-04 toast wording:** Opening banners now name the cause of unrest or the
+specific legal threat in one sentence. The Armed Host and Spared banners describe
+the immediate danger or the pending ruling on the quarter's protection.
+**2026-11-04 catalyst feed:** Attack-crisis point notices now use red for danger
+tracks and green for safety tracks. Each names a cause or a brief sign of the
+changing mood before the points line; broader mood catalysts draw from twelve
+short scenes each. Recurring reports retain their existing scenes and use red.
+The scenes illustrate the shift in public mood without claiming to be a second
+mechanical event. Live color and layout verification pending.
+
+**2026-11-04 Words on the Door follow-up:** The one-time random Agitation
+development is now titled Threats on the Shutter. Its two options explain
+the witnesses and the cost of a public complaint. The option tooltips show
+the actual six-point Spared or Armed Host change; their situation catalyst
+effects are hidden from the tooltip to suppress unrelated probability lines.
+The underlying prestige/stress costs and point awards are unchanged. Live
+tooltip and event rendering verification pending.
+
+**2026-11-05 crisis notification titles:** Catalyst feed notifications now use
+the Struggle-style headline “Kehillah Crisis: Catalyst Triggered.” Their body
+begins with the specific catalyst name, followed by its narrative and point
+change; recurring reports retain their event-specific narrative beneath the
+same headline. They use the base-game hostility feed icon to distinguish them
+from Struggle notices. Vanilla natural-disaster reports are side-feed messages
+with a dedicated natural-disaster icon, rather than banners. Live rendering
+verification pending. Catalyst messages now separate the catalyst label,
+narrative, and progress line; outcome names appear in blue and added points in
+green. Their tooltip repeats the notification body, following the vanilla
+Struggle catalyst pattern; natural-disaster messages rely on their body alone.
+**2026-11-05 event-caused catalyst feedback:** When a player chooses an event
+option, its outcome tooltip is the sole feedback for the resulting catalyst;
+the race helper no longer sends a second catalyst message. Monthly and
+interval-based pressure reports retain their random narrative variants because
+they summarize changes without one specific player action. This supersedes the
+per-choice mood-scene behavior described in the 2026-11-04 catalyst-feed note.
+
+**2026-11-05 crisis recovery:** Completed attack, decree, and Talmud-trial
+situations now start a one-year cooldown before the shared crisis-intro gate
+allows another crisis. Cancelled opening events do not start the timer. The
+duration is centralized in `kehillah_crisis_post_end_cooldown_years`, and the
+Community Safety incident-risk tooltip now explains the pause; see the
+[implementation record](docs/implementation/2026-11-05-crisis-recovery-cooldown.md).
+xTiger counts match the pre-change baseline; live playtest not run.
 
 **Catalyst feedback and Granada prose - 2026-11-01, Daniel's request:** attack-crisis point
 changes now send Struggle-style catalyst notices with the catalyst name, actual points, and
@@ -980,7 +1257,7 @@ is the S11 "friendliness" design review; the Crusades chain stays separate and b
 - **Decided 2026-10-12:** tribute starts at 20% of income; every convert steps down. Still open
   (v31 §14, §16): secret Jews after conversion, non-rabbinic Jewish faiths, reaching a
   player-led community with forced conversion (answered: v31 §10.3).
-- **Tribute, part 1: BUILT 2026-10-30, not live-tested** ([addendum](docs/implementation/2026-10-30-host-tribute.md)). Every charter has a Tribute term: None, Customary (20%, the default) or Heavy (30%). It is paid each quarter by script and shown as "Paid to host" on the Domain tab. This sidesteps the engine-tax spike (§11.2) rather than answering it. The levy, the confirmation fee and the regional names are not built.
+- **Tribute, part 1: BUILT 2026-10-30, not live-tested** ([addendum](docs/implementation/2026-10-30-host-tribute.md)). Every charter has a Tribute term: None, Customary (20%, the default) or Heavy (30%). **Changed 2026-11-08:** the rungs now carry an engine `tax =` share, so the tribute is a monthly line in both gold tooltips; the quarterly scripted transfer is gone and the Domain tab shows "Tribute to host N%". Whether the engine sees domicile income (§11.2) is untested: [checklist](docs/testing/2026-11-08-engine-tribute-test-checklist.md). The levy, the confirmation fee and the regional names are not built.
 - **Next:** live-test v30. Then v31 §11's spikes (doctrine group on rites, tributary
   tax on a Kehillah, custom faction), then the slices in §12. Open questions for Daniel: §14.
 
@@ -2197,6 +2474,8 @@ short research bullets for when Daniel is back.
     so every firing landed GREAT -- needs a low-Learning answerer, and it is the cheapest thing left
     on S5); and the yearly `on_action` pulse firing **on its own**, together with S4b's 40%
     against-the-AI bias. Every firing in this run was armed and fired by probe.
+- **2026-11-07: S6 REMOVED at Daniel's request; see the Near-term TODO note. The entry below
+  is kept as history.**
 - **S6. BUILD — Community goals.** Build exactly: a decision "Set the Community's Goal" (one active
   goal at a time, 10-year deadline, stored as title variables) offering 4 goals checked on the
   quarterly tick: **Build the Yeshiva** (the building exists at tier N), **A Name Among the

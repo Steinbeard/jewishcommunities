@@ -1,29 +1,41 @@
 ﻿# =====================================================================
 # V41 step 4a -- the danger of violence (docs/spec/v41-danger-incidents-
 # and-the-pogrom-unfolding.md section 6), 2026-10-14. Daniel: the
-# factors that make a community prominent feed Greatness, and Greatness
-# feeds the danger; recent incidents and hard times raise it. Scope: a
+# Prosperity draws attention, Greatness adds visibility, and Stability
+# reduces exposure; recent incidents and hard times also matter. Scope: a
 # Kehillah leader. Each term is its own line in the breakdown.
 # =====================================================================
 
-# Prominence: Greatness / 20 (400 -> 20, 900 -> 45).
+# Renown: Greatness / 50 (400 -> 8, 900 -> 18).
 kehillah_danger_greatness_value = {
 	value = 0
 	if = {
 		limit = { primary_title ?= { has_variable = kehillah_var_greatness } }
 		value = primary_title.var:kehillah_var_greatness
-		divide = 20
+		divide = 50
 	}
 	round = yes
 }
 
-# Wealth: Prosperity / 40 (400 -> 10, 800 -> 20).
+# Wealth and visibility: Prosperity / 25 (400 -> 16, 800 -> 32).
 kehillah_danger_wealth_value = {
 	value = 0
 	if = {
 		limit = { primary_title ?= { has_variable = kehillah_var_prosperity } }
 		value = primary_title.var:kehillah_var_prosperity
-		divide = 40
+		divide = 25
+	}
+	round = yes
+}
+
+# Communal cohesion and defenses: Stability / 20 (400 -> -20, 800 -> -40).
+# Keep the signed term separate so the risk tooltip can show the same value.
+kehillah_danger_stability_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_var_stability } }
+		value = primary_title.var:kehillah_var_stability
+		divide = -20
 	}
 	round = yes
 }
@@ -42,16 +54,33 @@ kehillah_danger_incidents_value = {
 # Hard times: an epidemic in the county +15, the county's lord at war +10,
 # the county's faith on crusade +15.
 kehillah_danger_hard_times_value = {
+	value = kehillah_danger_plague_value
+	add = kehillah_danger_war_value
+	add = kehillah_danger_crusade_value
+}
+# 2026-11-09: each kind of hard times is its own term, so the danger
+# breakdown can say which one is pressing.
+kehillah_danger_plague_value = {
 	value = 0
 	domicile.domicile_location.county ?= {
 		if = {
 			limit = { any_county_province_epidemic = { always = yes } }
 			add = 15
 		}
+	}
+}
+kehillah_danger_war_value = {
+	value = 0
+	domicile.domicile_location.county ?= {
 		if = {
 			limit = { holder ?= { is_at_war = yes } }
 			add = 10
 		}
+	}
+}
+kehillah_danger_crusade_value = {
+	value = 0
+	domicile.domicile_location.county ?= {
 		if = {
 			limit = { faith ?= { exists = great_holy_war } }
 			add = 15
@@ -102,20 +131,142 @@ kehillah_danger_protection_value = {
 	}
 }
 
-kehillah_danger_value = {
+# A seat at court exposes the community to powerful rivals. A vizierate is
+# substantially different from the Nagid's ordinary communal headship. The
+# second term is a temporary, local grievance, initially seeded in Granada.
+kehillah_danger_court_office_value = {
 	value = 0
-	add = kehillah_danger_greatness_value
-	add = kehillah_danger_wealth_value
-	add = kehillah_danger_incidents_value
+	if = {
+		limit = { has_character_modifier = kehillah_nagid_serving_vizier_modifier }
+		value = 10
+	}
+}
+kehillah_danger_court_rivals_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_safety_court_rivals } }
+		value = primary_title.var:kehillah_safety_court_rivals
+	}
+}
+
+# Local agitation is distinct from the host faith's wider memory of incidents.
+# It can expire or be changed by a particular community's story.
+kehillah_danger_local_hostility_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_safety_local_hostility } }
+		value = primary_title.var:kehillah_safety_local_hostility
+	}
+}
+
+# A local cleric's public assurance, secured by the Shtadlan for two years.
+kehillah_danger_religious_support_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_safety_religious_support } }
+		value = -8
+	}
+}
+
+# The two pressure rows are views of the exact terms in the director's roll.
+# Wealth and renown remain separate exposure, not a measure of public opinion.
+kehillah_danger_court_pressure_value = {
+	value = kehillah_danger_seat_value
+	add = kehillah_danger_court_office_value
+	add = kehillah_danger_court_rivals_value
+}
+kehillah_danger_popular_pressure_value = {
+	value = kehillah_danger_incidents_value
 	add = kehillah_danger_hard_times_value
 	add = kehillah_danger_teaching_value
-	add = kehillah_danger_lord_value
-	add = kehillah_danger_lull_value
-	# The Nagid spec section 4 (2026-10-30): the realm's seat, at the ruler's door.
-	add = kehillah_danger_seat_value
-	add = kehillah_danger_protection_value
-	# V41 step 4b: the badge (kehillah_incident_scene_values.txt).
 	add = kehillah_danger_badge_value
+	add = kehillah_danger_local_hostility_value
+	add = kehillah_danger_religious_support_value
+}
+kehillah_danger_visibility_value = {
+	value = kehillah_danger_wealth_value
+	add = kehillah_danger_greatness_value
+}
+
+# 2026-11-09 (Daniel: the hand-written tooltip listed every term, zeros
+# included, in no order): the danger tooltip is now vanilla's script-value
+# breakdown of this value (gui/kehillah_danger_breakdown.gui). Each term has
+# a desc, and enters only when it is not zero, so the tooltip lists only
+# what is moving the danger. Terms that raise it come first, the outlook
+# (either way) next, and the shields last. KEHILLAH_DANGER_TERM_FORMAT
+# colours a positive number as bad.
+# The Nagid spec section 4 (2026-10-30): kehillah_danger_seat_value, the
+# realm's seat. V41 step 4b: kehillah_danger_badge_value.
+kehillah_danger_value = {
+	value = 0
+	if = {
+		limit = { kehillah_danger_court_rivals_value != 0 }
+		add = { value = kehillah_danger_court_rivals_value desc = kehillah_danger_term_court_rivals format = "KEHILLAH_DANGER_TERM_FORMAT" }
+	}
+	if = {
+		limit = { kehillah_danger_wealth_value != 0 }
+		add = { value = kehillah_danger_wealth_value desc = kehillah_safety_factor_wealth format = "KEHILLAH_DANGER_TERM_FORMAT" }
+	}
+	if = {
+		limit = { kehillah_danger_greatness_value != 0 }
+		add = { value = kehillah_danger_greatness_value desc = kehillah_safety_factor_greatness format = "KEHILLAH_DANGER_TERM_FORMAT" }
+	}
+	if = {
+		limit = { kehillah_danger_incidents_value != 0 }
+		add = { value = kehillah_danger_incidents_value desc = kehillah_safety_factor_incidents format = "KEHILLAH_DANGER_TERM_FORMAT" }
+	}
+	if = {
+		limit = { kehillah_danger_local_hostility_value != 0 }
+		add = { value = kehillah_danger_local_hostility_value desc = kehillah_danger_term_local_hostility format = "KEHILLAH_DANGER_TERM_FORMAT" }
+	}
+	if = {
+		limit = { kehillah_danger_plague_value != 0 }
+		add = { value = kehillah_danger_plague_value desc = kehillah_danger_term_plague format = "KEHILLAH_DANGER_TERM_FORMAT" }
+	}
+	if = {
+		limit = { kehillah_danger_war_value != 0 }
+		add = { value = kehillah_danger_war_value desc = kehillah_danger_term_war format = "KEHILLAH_DANGER_TERM_FORMAT" }
+	}
+	if = {
+		limit = { kehillah_danger_crusade_value != 0 }
+		add = { value = kehillah_danger_crusade_value desc = kehillah_danger_term_crusade format = "KEHILLAH_DANGER_TERM_FORMAT" }
+	}
+	if = {
+		limit = { kehillah_danger_teaching_value != 0 }
+		add = { value = kehillah_danger_teaching_value desc = kehillah_safety_factor_teaching format = "KEHILLAH_DANGER_TERM_FORMAT" }
+	}
+	if = {
+		limit = { kehillah_danger_badge_value != 0 }
+		add = { value = kehillah_danger_badge_value desc = kehillah_safety_factor_badge format = "KEHILLAH_DANGER_TERM_FORMAT" }
+	}
+	if = {
+		limit = { kehillah_danger_court_office_value != 0 }
+		add = { value = kehillah_danger_court_office_value desc = kehillah_danger_term_court_office format = "KEHILLAH_DANGER_TERM_FORMAT" }
+	}
+	if = {
+		limit = { kehillah_danger_seat_value != 0 }
+		add = { value = kehillah_danger_seat_value desc = kehillah_safety_factor_seat format = "KEHILLAH_DANGER_TERM_FORMAT" }
+	}
+	if = {
+		limit = { kehillah_danger_lord_value != 0 }
+		add = { value = kehillah_danger_lord_value desc = kehillah_safety_factor_lord format = "KEHILLAH_DANGER_TERM_FORMAT" }
+	}
+	if = {
+		limit = { kehillah_danger_stability_value != 0 }
+		add = { value = kehillah_danger_stability_value desc = kehillah_safety_factor_stability format = "KEHILLAH_DANGER_TERM_FORMAT" }
+	}
+	if = {
+		limit = { kehillah_danger_protection_value != 0 }
+		add = { value = kehillah_danger_protection_value desc = kehillah_safety_factor_protection format = "KEHILLAH_DANGER_TERM_FORMAT" }
+	}
+	if = {
+		limit = { kehillah_danger_religious_support_value != 0 }
+		add = { value = kehillah_danger_religious_support_value desc = kehillah_danger_term_religious_support format = "KEHILLAH_DANGER_TERM_FORMAT" }
+	}
+	if = {
+		limit = { kehillah_danger_lull_value != 0 }
+		add = { value = kehillah_danger_lull_value desc = kehillah_safety_factor_lull format = "KEHILLAH_DANGER_TERM_FORMAT" }
+	}
 	min = 0
 }
 
@@ -124,6 +275,9 @@ kehillah_danger_value = {
 kehillah_incident_chance_value = {
 	value = kehillah_danger_value
 	divide = 10
+	# Roughly a one-percent annual floor across four eligible quarterly rolls.
+	# It does not override the director's crisis and cooldown eligibility gates.
+	min = 0.251
 	max = 12
 	# (kehillah_mob_debug.13 forces a roll)
 	if = {
@@ -152,6 +306,30 @@ kehillah_incident_yearly_chance_value = {
 	value = 1
 	subtract = kehillah_incident_quiet_year_value
 	multiply = 100
+}
+
+# 2026-11-07 (Daniel: show when a crisis or its cool-down is holding trouble
+# off). The danger score is the town's mood and stays as it is; this says
+# whether the quarterly roll can fire at all. Scope: a Kehillah leader.
+# 3 = a crisis under way (kehillah_crisis_can_offer_intro_trigger's blocks),
+# 2 = the year after a crisis (kehillah_crisis_post_end_cooldown),
+# 1 = the year after an incident (kehillah_incident_cooldown), 0 = none.
+kehillah_trouble_status_value = {
+	value = 0
+	primary_title ?= {
+		if = {
+			limit = { kehillah_trouble_crisis_active_trigger = yes }
+			value = 3
+		}
+		else_if = {
+			limit = { has_variable = kehillah_crisis_post_end_cooldown }
+			value = 2
+		}
+		else_if = {
+			limit = { has_variable = kehillah_incident_cooldown }
+			value = 1
+		}
+	}
 }
 
 # --- Prominence in Greatness (Daniel: these factors "contribute a lot

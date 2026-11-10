@@ -2,49 +2,49 @@
 
 Run from the repository root:  python scripts/kehillah_library_catalog.py
 
-ADDED 2026-10-15.  The library panel used to know each work's genre, rank
-and corpus through 207 hand-listed always-yes/always-no scripted GUIs, and
-its metadata text (rank, composer, year) was a pre-baked English paragraph
-per work.  Now each work is ONE row in kehillah_library_catalog.json, and
-this script writes everything derived from it:
+ADDED 2026-10-15; WIDENED 2026-11-08 for the Sefer redesign
+(docs/spec/2026-11-08-sefer-system-redesign.md, build record in
+docs/implementation/2026-11-08-sefer-redesign-build.md).
+
+Each work is ONE row in kehillah_library_catalog.json.  Since 2026-11-08 this
+script also writes every per-work list the mod used to keep by hand -- study
+dispatch, ownership triggers, the selected-book GUI actions, donation, the
+reader roster, the yeshiva's mastery draw -- so a new work is added in one
+place.  Its outputs:
 
   common/script_values/kehillah_library_catalog_values.txt
       per-work numbers the GUI reads dynamically, keyed by the work's flag:
-        kehillah_lib_genre_<flag>   1 parshanut, 2 talmudics, 3 hashkafa
-        kehillah_lib_rank_<flag>    1 foundational .. 5 obscure
-        kehillah_lib_frame_<flag>   frame in kehillah_sefer_rank_frames.dds
-        kehillah_lib_year_<flag>    composition year (the game date)
-        kehillah_lib_corpus_<flag>  0 none, 1 Bavli seder, 2 Yerushalmi seder
-        kehillah_lib_slot_<flag>    genre * 10 + rank (shelf order), 0 for sedarim
-      plus kehillah_lib_genre_<n>_held_count_value (title scope), which the
-      panel uses to hide a genre group the community holds nothing in.
+        kehillah_lib_genre_<flag>      1 parshanut, 2 talmudics, 3 hashkafa
+        kehillah_lib_rank_<flag>       shelf band 1 foundational .. 5 obscure
+        kehillah_lib_frame_<flag>      frame in kehillah_sefer_rank_frames.dds
+        kehillah_lib_year_<flag>       composition year (the game date)
+        kehillah_lib_corpus_<flag>     0 none, 1 Bavli, 2 Yerushalmi, 3 Tanakh
+        kehillah_lib_canon_<flag>      0 none, 11 Oral Torah, 12 Prophets and
+                                       Writings, 13 Torah
+        kehillah_lib_tradition_<flag>  1 Rabbanite, 2 Karaite, 3 shared
+        kehillah_lib_slot_<flag>       genre * 10 + band (shelf order), 0 in a corpus
+      Authored-slot works read genre, year and slot from global variables.
+  common/script_values/kehillah_library_standing_values.txt
+      standing: per-work ceiling, floor and baseline (rite scope) and the
+      viewer's standing (character scope), section 3 of the spec.
+  common/scripted_effects/kehillah_library_study_generated_effects.txt
+      study dispatch by numeric ID, the yeshiva's mastery draw, the per-work
+      after-study hooks (tenets taught) and the standing dispatchers.
+  common/scripted_triggers/kehillah_library_generated_triggers.txt
+      track ownership, the current-work checks and per-work availability.
+  common/scripted_guis/kehillah_library_study_gui.txt
+  common/scripted_guis/kehillah_library_readers_gui.txt
+  common/scripted_guis/kehillah_library_work_actions_gui.txt  (donate, studied)
   localization/english/kehillah_library_catalog_l_english.yml
-      the per-work text built from the same row: rank label and note,
-      composer, year, the one-line shelf summary and the hover-card sentence.
-  common/scripted_effects/kehillah_library_acquisition_effects.txt
-      the acquisition-catalog refresh, derived from each work's circulation
-      year. Works that have not circulated are absent rather than locked.
-  common/scripted_guis/kehillah_library_acquire_work_gui.txt
-      one safe named-work commission action per catalog row.
-  common/customizable_localization/kehillah_library_acquisition_custom_loc.txt
-      the selected work's name for confirmation and delivery events.
-  common/scripted_guis/kehillah_library_journey_gui.txt
-  common/scripted_effects/kehillah_library_journey_generated_effects.txt
-  common/customizable_localization/kehillah_library_journey_custom_loc.txt
-      V49 (2026-10-20): the Library's per-work "who holds it" roster, the
-      action that plans a Yeshiva Visit to one holder, the planned-work study
-      dispatcher, the journey suggestion list and the journey work names.
+  localization/english/kehillah_library_catalog_prose_l_english.yml
+      prose for works added after 2026-11-08 (older works keep hand-written
+      prose in kehillah_library_panel_l_english.yml).
+  common/customizable_localization/kehillah_library_authored_custom_loc.txt
+      the titles and kinds of books written during play.
+  plus, as before, the acquisition and V49 journey files listed below.
 
 The authors the hover card links to are NOT generated: they are real
-characters written by hand in history/characters/kehillah_library_authors.txt
-(plus Saadia in kehillah_saadia_gaon.txt), and
-common/scripted_effects/kehillah_library_authors_effects.txt stores them on
-the player as var kehillah_lib_author_<slug>.  This table only says which slug
-(composer_char) each work credits and with what verb (credit).
-
-Names, subjects, descriptions and long details stay hand-written in
-kehillah_library_panel_l_english.yml: prose, not data.  Adding a work is:
-add its row here, add its flag/prose as before, re-run this script.
+characters written by hand in history/characters/kehillah_library_authors.txt.
 """
 
 import json
@@ -53,22 +53,78 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "scripts/kehillah_library_catalog.json"
 VALUES = ROOT / "common/script_values/kehillah_library_catalog_values.txt"
+STANDING_VALUES = ROOT / "common/script_values/kehillah_library_standing_values.txt"
+STUDY_EFFECTS = ROOT / "common/scripted_effects/kehillah_library_study_generated_effects.txt"
+TRIGGERS = ROOT / "common/scripted_triggers/kehillah_library_generated_triggers.txt"
+STUDY_GUI = ROOT / "common/scripted_guis/kehillah_library_study_gui.txt"
+READERS_GUI = ROOT / "common/scripted_guis/kehillah_library_readers_gui.txt"
+ACTIONS_GUI = ROOT / "common/scripted_guis/kehillah_library_work_actions_gui.txt"
 LOC = ROOT / "localization/english/kehillah_library_catalog_l_english.yml"
+PROSE_LOC = ROOT / "localization/english/kehillah_library_catalog_prose_l_english.yml"
+AUTHORED_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_library_authored_custom_loc.txt"
 ACQUIRE_EFFECTS = ROOT / "common/scripted_effects/kehillah_library_acquisition_effects.txt"
 ACQUIRE_GUI = ROOT / "common/scripted_guis/kehillah_library_acquire_work_gui.txt"
 ACQUIRE_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_library_acquisition_custom_loc.txt"
+CATALOG_LIST_EFFECTS = ROOT / "common/scripted_effects/kehillah_library_catalog_list_effects.txt"
 JOURNEY_GUI = ROOT / "common/scripted_guis/kehillah_library_journey_gui.txt"
 JOURNEY_EFFECTS = ROOT / "common/scripted_effects/kehillah_library_journey_generated_effects.txt"
 JOURNEY_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_library_journey_custom_loc.txt"
+STUDY_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_study_torah_custom_loc.txt"
+# 2026-11-08: the Beit Midrash shelf and the Sefarim ledger.
+SHELF_VALUES = ROOT / "common/script_values/kehillah_library_shelf_values.txt"
+SHELF_EFFECTS = ROOT / "common/scripted_effects/kehillah_library_shelf_effects.txt"
+LEDGER_LOC = ROOT / "localization/english/kehillah_library_ledger_catalog_l_english.yml"
+# The first works of the catalog have their own hand-written opening text in
+# kehillah_study_torah.0002 (kehillah_l_english.yml); every later work opens with
+# its per-work study line instead.
+OPENING_DESC_WORKS = 23
 
 GENRES = {"parshanut": 1, "talmudics": 2, "hashkafa": 3}
-# rank name -> (enum value, frame in the rank-frame strip)
+GENRE_BY_N = {v: k for k, v in GENRES.items()}
+# rank name -> (shelf band, frame in the rank-frame strip). The band only orders
+# the shelf; a work's standing is per rite (kehillah_lib_standing_<flag>).
 RANKS = {"Foundational": (1, 1), "Essential": (2, 1), "Celebrated": (3, 2), "Popular": (4, 3), "Obscure": (5, 4)}
-# Rank and genre are rules, not flavor (rank protects Bavli volumes, genre picks the
-# mastery track), so they are set apart in bold purple -- vanilla color_porple.
+CORPORA = {"": 0, "bavli": 1, "yerushalmi": 2, "tanakh": 3}
+CANON = {"": 0, "oral_torah": 11, "neviim_ketuvim": 12, "torah": 13}
+TRADITIONS = {"rabbanite": 1, "karaite": 2, "shared": 3}
 GAMEPLAY = "#bold;color_porple "
-CORPORA = {"": 0, "bavli": 1, "yerushalmi": 2}
 BOM = "﻿"
+HEADER = [
+    "# GENERATED by scripts/kehillah_library_catalog.py from",
+    "# scripts/kehillah_library_catalog.json -- edit the catalog, not this file.",
+]
+
+# Authored-slot book kinds (the composing chain's first choice) and titles.
+AUTHORED_KINDS = {
+    1: ("Commentary on the Torah", 1),
+    2: ("Commentary on the Talmud", 2),
+    3: ("Responsa", 2),
+    4: ("Code of Law", 2),
+    5: ("Treatise of Philosophy", 3),
+    6: ("Book of Piyyutim", 1),
+    7: ("Novellae on the Talmud", 2),
+    8: ("Polemic", 3),
+}
+# (2026-11-08: authored works are named by author and kind; no title list.)
+
+# Tenets a book written in play can argue for, by index (global_var:
+# kehillah_wk_<slot>_tenet_a / _b). Must match kehillah_sefer_teach_dynamic_
+# tenet_effect in common/scripted_effects/kehillah_sefer_effects.txt.
+TENET_INDEX = [
+    "tenet_talmud_torah", "tenet_baalei_hamiqra", "tenet_kehillah_hokhmah",
+    "tenet_kehillah_emunah_temimah", "tenet_kehillah_pesak", "tenet_kehillah_pilpul",
+    "tenet_kehillah_geonut", "tenet_kehillah_minhag_avoteinu", "tenet_kehillah_avelei_tziyon",
+    "tenet_esotericism", "tenet_asceticism", "tenet_kehillah_kiddush_hashem",
+]
+
+
+def dynamic_tenet_branches(f, body):
+    """For an authored slot: one branch per (which, tenet index) pair."""
+    out = []
+    for which in ("a", "b"):
+        for i, t in enumerate(TENET_INDEX, start=1):
+            out += body(f"global_var:kehillah_wk_{f}_tenet_{which} ?= {i}", t)
+    return out
 
 
 AUTHOR_NAMES = {}
@@ -85,47 +141,159 @@ def write(path, lines):
     path.write_text(BOM + "\r\n".join(lines) + "\r\n", encoding="utf-8", newline="")
 
 
+def authored(w):
+    return bool(w.get("authored"))
+
+
+def needs_writing(w):
+    """Named and authored works exist in the world only once written."""
+    return bool(w.get("named") or w.get("authored"))
+
+
+def short(f):
+    return f.removeprefix("work_")
+
+
+def circulation_year(w):
+    return w.get("circulation_year", w["year"])
+
+
+def avail_lines(f, w, ind):
+    """Trigger lines: the work is in circulation in this campaign."""
+    out = []
+    if needs_writing(w):
+        out.append(f"{ind}has_global_variable = kehillah_wk_{f}_written")
+    elif circulation_year(w) > 1:
+        out.append(f"{ind}current_date >= {circulation_year(w)}.1.1")
+    return out
+
+
+def held(f, ind="", lst="kehillah_library_works"):
+    return f"{ind}is_target_in_variable_list = {{ name = {lst} target = flag:{f} }}"
+
+
+def study_call(f, w, ind):
+    """Call the shared study effect for f with its literal track."""
+    if authored(w):
+        out = []
+        for n, g in ((2, "talmudics"), (3, "hashkafa")):
+            out += [
+                f"{ind}{'if' if n == 2 else 'else_if'} = {{",
+                f"{ind}\tlimit = {{ kehillah_lib_genre_{f} = {n} }}",
+                f"{ind}\tkehillah_study_specific_work_effect = {{ WORK = flag:{f} TRACK = {g} KEY = {f} }}",
+                f"{ind}}}",
+            ]
+        out += [
+            f"{ind}else = {{",
+            f"{ind}\tkehillah_study_specific_work_effect = {{ WORK = flag:{f} TRACK = parshanut KEY = {f} }}",
+            f"{ind}}}",
+        ]
+        return out
+    return [f"{ind}kehillah_study_specific_work_effect = {{ WORK = flag:{f} TRACK = {w['genre']} KEY = {f} }}"]
+
+
+def study_tt_key(f, w):
+    """The per-work study flavor line, e.g. kehillah_study_torah.talmudics.mishnah_tt."""
+    if authored(w):
+        return f"kehillah_study_torah.authored.{short(f)}_tt"
+    return f"kehillah_study_torah.{w['genre']}.{short(f)}_tt"
+
+
+# ---------------------------------------------------------------------------
+# Catalog values
+# ---------------------------------------------------------------------------
+
+def dyn_value(name, default, gvar):
+    return [
+        f"{name} = {{",
+        f"\tvalue = {default}",
+        f"\tif = {{ limit = {{ has_global_variable = {gvar} }} value = global_var:{gvar} }}",
+        "}",
+    ]
+
+
 def write_values(order, works):
-    out = [
-        "# GENERATED by scripts/kehillah_library_catalog.py from",
-        "# scripts/kehillah_library_catalog.json -- edit the catalog, not this file.",
+    out = HEADER + [
         "# The library panel reads these dynamically per work flag, e.g.",
         "# ScriptValue( Concatenate( 'kehillah_lib_genre_', Scope.GetFlagName ) ).",
         "",
         "# 1 parshanut, 2 talmudics, 3 hashkafa",
     ]
     for f in order:
-        out.append(f"kehillah_lib_genre_{f} = {GENRES[works[f]['genre']]}")
-    out += ["", "# 1 foundational, 2 essential, 3 celebrated, 4 popular, 5 obscure"]
+        w = works[f]
+        if authored(w):
+            out += dyn_value(f"kehillah_lib_genre_{f}", 1, f"kehillah_wk_{f}_genre")
+        else:
+            out.append(f"kehillah_lib_genre_{f} = {GENRES[w['genre']]}")
+    out += ["", "# shelf band: 1 foundational, 2 essential, 3 celebrated, 4 popular, 5 obscure"]
     for f in order:
         out.append(f"kehillah_lib_rank_{f} = {RANKS[works[f]['rank_name']][0]}")
-    out += ["", "# frame in gfx/interface/icons/kehillah_library/kehillah_sefer_rank_frames.dds"]
-    for f in order:
-        out.append(f"kehillah_lib_frame_{f} = {RANKS[works[f]['rank_name']][1]}")
-    out += ["", "# composition year (the game date; Jan 1 is a dating convention)"]
-    for f in order:
-        out.append(f"kehillah_lib_year_{f} = {works[f]['year']}")
-    out += ["", "# 0 stands alone, 1 a Bavli seder, 2 a Yerushalmi seder"]
-    for f in order:
-        out.append(f"kehillah_lib_corpus_{f} = {CORPORA[works[f]['corpus']]}")
     out += [
         "",
-        "# Shelf slot = genre * 10 + rank (so a genre box lists Foundational first,",
-        "# Obscure last); 0 for a seder, which shows inside its corpus card instead.",
+        "# frame in gfx/interface/icons/kehillah_library/kehillah_sefer_rank_frames.dds,",
+        "# by the work's standing in the viewer's rite (scope: the player): canon 1,",
+        "# Classic or higher 2, Respected or Esteemed 3, lower 4.",
+    ]
+    for f in order:
+        out += [
+            f"kehillah_lib_frame_{f} = {{",
+            "\tvalue = 4",
+            f"\tif = {{ limit = {{ kehillah_lib_standing_{f} >= 11 }} value = 1 }}",
+            f"\telse_if = {{ limit = {{ kehillah_lib_standing_{f} >= 8 }} value = 2 }}",
+            f"\telse_if = {{ limit = {{ kehillah_lib_standing_{f} >= 6 }} value = 3 }}",
+            "}",
+        ]
+    out += ["", "# composition year (the game date; Jan 1 is a dating convention)"]
+    for f in order:
+        w = works[f]
+        if authored(w) or w.get("named"):
+            out += dyn_value(f"kehillah_lib_year_{f}", w["year"], f"kehillah_wk_{f}_year")
+        else:
+            out.append(f"kehillah_lib_year_{f} = {w['year']}")
+    out += ["", "# 0 stands alone, 1 a Bavli seder, 2 a Yerushalmi seder, 3 a division of the Tanakh"]
+    for f in order:
+        out.append(f"kehillah_lib_corpus_{f} = {CORPORA[works[f]['corpus']]}")
+    out += ["", "# canon tier, fixed by doctrine: 0 none, 11 Oral Torah, 12 Prophets and Writings, 13 Torah"]
+    for f in order:
+        out.append(f"kehillah_lib_canon_{f} = {CANON[works[f].get('canon', '')]}")
+    out += ["", "# 1 Rabbanite, 2 Karaite, 3 shared scripture"]
+    for f in order:
+        out.append(f"kehillah_lib_tradition_{f} = {TRADITIONS[works[f].get('tradition', 'rabbanite')]}")
+    out += [
+        "",
+        "# Shelf slot = genre * 10 + band (so a genre box lists Foundational first,",
+        "# Obscure last); 0 for a work shown inside its corpus card instead.",
     ]
     for f in order:
         w = works[f]
+        if authored(w):
+            out += [
+                f"kehillah_lib_slot_{f} = {{",
+                f"\tvalue = kehillah_lib_genre_{f}",
+                "\tmultiply = 10",
+                "\tadd = 5",
+                "}",
+            ]
+            continue
         slot = 0 if CORPORA[w["corpus"]] else GENRES[w["genre"]] * 10 + RANKS[w["rank_name"]][0]
         out.append(f"kehillah_lib_slot_{f} = {slot}")
     out += [
         "",
-        "# 1 when the work's author is stored on the player (the history character exists in",
-        "# this save), else 0; scope: the player. Saves started before the author characters",
-        "# were added have none, so the hover card falls back to the plain name.",
+        "# 1 when the hover card can link the work's author: for a historical work,",
+        "# the author character is stored on the player; for a work written in this",
+        "# campaign, its author is recorded in a global variable. Scope: the player.",
     ]
     for f in order:
-        slug = works[f].get("composer_char")
-        if slug:
+        w = works[f]
+        slug = w.get("composer_char")
+        if needs_writing(w):
+            out += [
+                f"kehillah_lib_author_ready_{f} = {{",
+                "\tvalue = 0",
+                f"\tif = {{ limit = {{ exists = global_var:kehillah_wk_{f}_author }} add = 1 }}",
+                "}",
+            ]
+        elif slug:
             out += [
                 f"kehillah_lib_author_ready_{f} = {{",
                 "\tvalue = 0",
@@ -138,43 +306,1013 @@ def write_values(order, works):
         out += [
             "",
             f"# Shelf entries of this genre the title's library holds ({genre}); scope: title.",
-            "# A seder does not count on its own: each corpus held counts once (its card).",
+            "# A corpus volume does not count on its own: each corpus held counts once (its card).",
             f"kehillah_lib_genre_{n}_held_count_value = {{",
             "\tvalue = 0",
         ]
         for f in order:
-            if works[f]["genre"] == genre and not CORPORA[works[f]["corpus"]]:
+            w = works[f]
+            if CORPORA[w["corpus"]]:
+                continue
+            if authored(w):
                 out += [
                     "\tif = {",
-                    f"\t\tlimit = {{ is_target_in_variable_list = {{ name = kehillah_library_works target = flag:{f} }} }}",
+                    f"\t\tlimit = {{ {held(f)} kehillah_lib_genre_{f} = {n} }}",
                     "\t\tadd = { value = 1 }",
                     "\t}",
                 ]
-        if genre == "talmudics":
-            for corpus in ("bavli", "yerushalmi"):
+            elif w["genre"] == genre:
                 out += [
                     "\tif = {",
-                    f"\t\tlimit = {{ kehillah_lib_{corpus}_held_count_value > 0 }}",
+                    f"\t\tlimit = {{ {held(f)} }}",
                     "\t\tadd = { value = 1 }",
                     "\t}",
                 ]
+        corpora = {"talmudics": ("bavli", "yerushalmi"), "parshanut": ("tanakh",)}.get(genre, ())
+        for corpus in corpora:
+            out += [
+                "\tif = {",
+                f"\t\tlimit = {{ kehillah_lib_{corpus}_held_count_value > 0 }}",
+                "\t\tadd = { value = 1 }",
+                "\t}",
+            ]
         out.append("}")
     write(VALUES, out)
 
 
+# ---------------------------------------------------------------------------
+# Standing values (spec section 3)
+# ---------------------------------------------------------------------------
+
+def write_standing_values(order, works):
+    out = HEADER + [
+        "# Standing, docs/spec/2026-11-08-sefer-system-redesign.md section 3.",
+        "# Ladder: 1 Banned .. 10 Venerated. Canon (11-13) is fixed by doctrine and",
+        "# never stored; 0 means outside this rite's canon (e.g. the Talmud for a Karaite).",
+        "",
+        "# ---- ceilings (rite scope): the least favourable status among the tenets a",
+        "# work argues for sets how high it may climb in this rite; a core tenet it",
+        "# argues against takes two tiers off.",
+    ]
+    for f in order:
+        w = works[f]
+        if w.get("canon"):
+            continue
+        out += [f"kehillah_lib_ceiling_{f} = {{", "\tvalue = 10"]
+        if authored(w):
+            # Compact form (one line per status): 100 slots x 2 tenets x 12.
+            out += dynamic_tenet_branches(f, lambda cond, t: [
+                f"\tif = {{ limit = {{ {cond} }}",
+                f"\t\tif = {{ limit = {{ has_tenet_status = {{ tenet = {t} status = prohibited }} }} max = 3 }}",
+                f"\t\telse_if = {{ limit = {{ NOT = {{ has_at_least_tenet_status = {{ tenet = {t} status = known }} }} }} max = 5 }}",
+                f"\t\telse_if = {{ limit = {{ NOT = {{ has_at_least_tenet_status = {{ tenet = {t} status = permitted }} }} }} max = 7 }}",
+                f"\t\telse_if = {{ limit = {{ NOT = {{ has_at_least_tenet_status = {{ tenet = {t} status = core }} }} }} max = 9 }}",
+                "\t}",
+            ])
+        for t in w.get("argues_for", []):
+            out += [
+                "\tif = {",
+                f"\t\tlimit = {{ has_tenet_status = {{ tenet = {t} status = prohibited }} }}",
+                "\t\tmax = 3",
+                "\t}",
+                "\telse_if = {",
+                f"\t\tlimit = {{ NOT = {{ has_at_least_tenet_status = {{ tenet = {t} status = known }} }} }}",
+                "\t\tmax = 5",
+                "\t}",
+                "\telse_if = {",
+                f"\t\tlimit = {{ NOT = {{ has_at_least_tenet_status = {{ tenet = {t} status = permitted }} }} }}",
+                "\t\tmax = 7",
+                "\t}",
+                "\telse_if = {",
+                f"\t\tlimit = {{ NOT = {{ has_at_least_tenet_status = {{ tenet = {t} status = core }} }} }}",
+                "\t\tmax = 9",
+                "\t}",
+            ]
+        for t in w.get("argues_against", []):
+            out += [
+                "\tif = {",
+                f"\t\tlimit = {{ rite_has_tenet = {t} }}",
+                "\t\tsubtract = 2",
+                "\t}",
+            ]
+        out += ["\tmin = 1", "}"]
+    out += ["", "# ---- floors (rite scope): antiquity, and a core tenet the work argues for."]
+    for f in order:
+        w = works[f]
+        if w.get("canon"):
+            continue
+        out += [f"kehillah_lib_floor_{f} = {{", "\tvalue = 1"]
+        if w.get("floor"):
+            out += [
+                "\tif = {",
+                "\t\tlimit = { rite_has_doctrine = temple_authority_rabbinic_doctrine }",
+                f"\t\tmin = {w['floor']}",
+                "\t}",
+            ]
+        for t in w.get("argues_for", []):
+            out += [
+                "\tif = {",
+                f"\t\tlimit = {{ rite_has_tenet = {t} }}",
+                "\t\tmin = 5",
+                "\t}",
+            ]
+        out += [f"\tmax = kehillah_lib_ceiling_{f}", "}"]
+    out += ["", "# ---- baselines (rite scope): the tier a work starts at, by faith family."]
+    for f in order:
+        w = works[f]
+        if w.get("canon"):
+            continue
+        b = w.get("baseline", {"rabbinic": 4, "karaite": 4})
+        other = max(1, min(b["rabbinic"], b["karaite"]) - 1)
+        out += [
+            f"kehillah_lib_baseline_{f} = {{",
+            f"\tvalue = {other}",
+            "\tif = {",
+            "\t\tlimit = { rite_has_doctrine = temple_authority_rabbinic_doctrine }",
+            f"\t\tvalue = {b['rabbinic']}",
+            "\t}",
+            "\telse_if = {",
+            "\t\tlimit = { rite_has_doctrine = temple_authority_toric_doctrine }",
+            f"\t\tvalue = {b['karaite']}",
+            "\t}",
+            "}",
+        ]
+    out += [
+        "",
+        "# ---- the viewer's standing (character scope): canon by doctrine, otherwise",
+        "# the stored tier of the viewer's rite, or the baseline before it is seeded.",
+    ]
+    for f in order:
+        w = works[f]
+        canon = w.get("canon")
+        out.append(f"kehillah_lib_standing_{f} = {{")
+        if canon == "torah":
+            out += ["\tvalue = 13"]
+        elif canon == "neviim_ketuvim":
+            out += [
+                "\tvalue = 12",
+                "\tif = {",
+                "\t\tlimit = { rite ?= { rite_has_doctrine = temple_authority_samaritan_torah_doctrine } }",
+                "\t\tvalue = 0",
+                "\t}",
+            ]
+        elif canon == "oral_torah":
+            out += [
+                "\tvalue = 0",
+                "\tif = {",
+                "\t\tlimit = { rite ?= { rite_has_doctrine = temple_authority_rabbinic_doctrine } }",
+                "\t\tvalue = 11",
+                "\t}",
+                "\telse_if = {",
+                "\t\tlimit = { NOT = { faith.religion = religion:judaism_religion } }",
+                "\t\tvalue = 11",
+                "\t}",
+            ]
+        else:
+            b = w.get("baseline", {"rabbinic": 4, "karaite": 4})
+            out += [
+                f"\tvalue = {b['rabbinic']}",
+                "\tif = {",
+                f"\t\tlimit = {{ rite ?= {{ has_variable = kehillah_standing_{f} }} }}",
+                f"\t\tvalue = rite.var:kehillah_standing_{f}",
+                "\t}",
+                "\telse_if = {",
+                "\t\tlimit = { rite ?= { rite_has_doctrine = temple_authority_toric_doctrine } }",
+                f"\t\tvalue = {b['karaite']}",
+                "\t}",
+            ]
+        out.append("}")
+    out += ["", "# ---- copies (any scope): how many registered libraries hold the work."]
+    for f in order:
+        out += [
+            f"kehillah_lib_copies_{f} = {{",
+            "\tvalue = 0",
+            "\tevery_in_global_list = {",
+            "\t\tvariable = kehillah_libraries",
+            f"\t\tlimit = {{ exists = holder {held(f)} }}",
+            "\t\tadd = 1",
+            "\t}",
+            "}",
+        ]
+    out += ["", "# ---- the index (in TENET_INDEX, 1-based) of the first tenet a work argues",
+            "# for; 0 when it argues for none. A Machloket's outcome queues a reform",
+            "# question on that tenet (any scope)."]
+    for f in order:
+        w = works[f]
+        ts = w.get("argues_for", [])
+        if authored(w):
+            out += dyn_value(f"kehillah_sefer_first_tenet_{f}", 0, f"kehillah_wk_{f}_tenet_a")
+        else:
+            idx = TENET_INDEX.index(ts[0]) + 1 if ts and ts[0] in TENET_INDEX else 0
+            out.append(f"kehillah_sefer_first_tenet_{f} = {{ value = {idx} }}")
+    out += ["", "# ---- the viewer rite's ceiling for the work (character scope), for the Standing row."]
+    for f in order:
+        w = works[f]
+        if w.get("canon"):
+            out.append(f"kehillah_lib_view_ceiling_{f} = {{ value = {CANON[w['canon']]} }}")
+            continue
+        out += [
+            f"kehillah_lib_view_ceiling_{f} = {{",
+            "\tvalue = 10",
+            "\tif = {",
+            f"\t\tlimit = {{ rite ?= {{ has_variable = kehillah_ceiling_{f} }} }}",
+            f"\t\tvalue = rite.var:kehillah_ceiling_{f}",
+            "\t}",
+            "}",
+        ]
+    write(STANDING_VALUES, out)
+
+
+# ---------------------------------------------------------------------------
+# Generated triggers
+# ---------------------------------------------------------------------------
+
+def write_triggers(order, works):
+    out = HEADER + [
+        "# Moved here from kehillah_scripted_triggers.txt on 2026-11-08 so new works",
+        "# need no hand-kept lists. Same names, same parameters, same meaning.",
+        "",
+    ]
+    for genre in GENRES:
+        members = [f for f in order if works[f]["genre"] == genre and not authored(works[f])]
+        out += [f"kehillah_owns_{genre}_work_trigger = {{", "\t$LIBRARY$ = {", "\t\tOR = {"]
+        out += [held(f, "\t\t\t") for f in members]
+        for f in order:
+            if authored(works[f]):
+                out.append(f"\t\t\tAND = {{ {held(f)} kehillah_lib_genre_{f} = {GENRES[genre]} }}")
+        out += ["\t\t}", "\t}", "}", ""]
+        out += [f"kehillah_missing_{genre}_work_trigger = {{", "\t$LIBRARY$ = {", "\t\tOR = {"]
+        for f in members:
+            if works[f].get("tradition") == "karaite":
+                continue
+            av = avail_lines(f, works[f], "\t\t\t\t")
+            if av:
+                out += ["\t\t\tAND = {"] + av + [f"\t\t\t\tNOT = {{ {held(f)} }}", "\t\t\t}"]
+            else:
+                out.append(f"\t\t\tNOT = {{ {held(f)} }}")
+        out += ["\t\t}", "\t}", "}", ""]
+    out += [
+        "kehillah_owns_any_torah_work_trigger = {",
+        "\tOR = {",
+        "\t\tkehillah_owns_parshanut_work_trigger = { LIBRARY = $LIBRARY$ }",
+        "\t\tkehillah_owns_talmudics_work_trigger = { LIBRARY = $LIBRARY$ }",
+        "\t\tkehillah_owns_hashkafa_work_trigger = { LIBRARY = $LIBRARY$ }",
+        "\t}",
+        "}",
+        "",
+        "# Scope: the studying character. Does $LIBRARY$ still hold the work named by",
+        "# kehillah_study_current_work_id (the scheme's numeric bridge, 1..N in catalog order)?",
+        "kehillah_study_torah_current_work_still_owned_trigger = {",
+        "\tOR = {",
+    ]
+    for i, f in enumerate(order, start=1):
+        out += [
+            "\t\tAND = {",
+            f"\t\t\tvar:kehillah_study_current_work_id = {i}",
+            f"\t\t\t$LIBRARY$ = {{ {held(f)} }}",
+            "\t\t}",
+        ]
+    out += ["\t}", "}", "", "# The current work has another already-studied work of the same field.",
+            "kehillah_study_torah_has_same_track_reference_trigger = {", "\tOR = {"]
+    for i, f in enumerate(order, start=1):
+        w = works[f]
+        if authored(w):
+            continue
+        others = [g for g in order if g != f and not authored(works[g]) and works[g]["genre"] == w["genre"]]
+        out += [
+            "\t\tAND = {",
+            f"\t\t\tvar:kehillah_study_current_work_id = {i}",
+            "\t\t\tOR = {",
+        ]
+        out += [held(g, "\t\t\t\t", "kehillah_studied_works") for g in others]
+        out += ["\t\t\t}", "\t\t}"]
+    out += ["\t}", "}", ""]
+    out += ["# Per-work: in circulation in this campaign (any scope)."]
+    for f in order:
+        av = avail_lines(f, works[f], "\t")
+        out += [f"kehillah_lib_available_{f}_trigger = {{"] + (av or ["\talways = yes"]) + ["}"]
+    redeemable = [f for f in order if not works[f].get("canon") or works[f].get("canon") == "oral_torah"]
+    redeemable = [f for f in redeemable if works[f]["corpus"] != "tanakh"]
+    out += [
+        "",
+        "# Scope: a character with var:kehillah_own_library. The ransom pool holds a",
+        "# work his library lacks.",
+        "kehillah_lib_can_redeem_trigger = {",
+        "\tvar:kehillah_own_library ?= {",
+        "\t\tOR = {",
+    ]
+    for f in redeemable:
+        out += [
+            "\t\t\tAND = {",
+            f"\t\t\t\tis_target_in_global_variable_list = {{ name = kehillah_ransom_pool target = flag:{f} }}",
+            f"\t\t\t\tNOT = {{ {held(f)} }}",
+            "\t\t\t}",
+        ]
+    out += ["\t\t}", "\t}", "}"]
+    out += ["", "# Per-work: the work argues for a tenet, so a Machloket over it can split a rite."]
+    for f in order:
+        ts = works[f].get("argues_for", [])
+        out.append(f"kehillah_sefer_work_can_split_{f}_trigger = {{ {'always = yes' if ts else 'always = no'} }}")
+    out += ["", "# Per-work, scope a reader: the work argues for a tenet his rite prohibits."]
+    for f in order:
+        ts = works[f].get("argues_for", [])
+        out.append(f"kehillah_sefer_work_heterodox_{f}_trigger = {{")
+        if authored(works[f]):
+            out += ["\trite ?= {", "\t\tOR = {"]
+            out += dynamic_tenet_branches(f, lambda cond, t: [
+                f"\t\t\tAND = {{ {cond} has_tenet_status = {{ tenet = {t} status = prohibited }} }}"
+            ])
+            out += ["\t\t}", "\t}"]
+        elif len(ts) == 1:
+            out += ["\trite ?= {", f"\t\thas_tenet_status = {{ tenet = {ts[0]} status = prohibited }}", "\t}"]
+        elif ts:
+            out += ["\trite ?= {", "\t\tOR = {"]
+            out += [f"\t\t\thas_tenet_status = {{ tenet = {t} status = prohibited }}" for t in ts]
+            out += ["\t\t}", "\t}"]
+        else:
+            out.append("\talways = no")
+        out.append("}")
+    out += ["", "# Scope: the studying character. The work named by kehillah_study_current_work_id",
+            "# (the scheme's numeric bridge) is a Hashkafa work. Read by kehillah_study_torah.0003."]
+    out += ["kehillah_study_current_work_is_hashkafa_trigger = {", "	OR = {"]
+    out += [f"		var:kehillah_study_current_work_id = {i}"
+            for i, f in enumerate(order, start=1) if works[f]["genre"] == "hashkafa"]
+    out += ["	}", "}"]
+    write(TRIGGERS, out)
+
+
+# ---------------------------------------------------------------------------
+# Generated effects: study dispatch, yeshiva draw, per-work hooks, standing
+# ---------------------------------------------------------------------------
+
+def write_study_effects(order, works):
+    out = HEADER + [
+        "# Moved here from kehillah_library_effects.txt / kehillah_yeshiva_effects.txt",
+        "# on 2026-11-08. THE NUMERIC-ID BRIDGE: kehillah_study_current_work_id is the",
+        "# work's 1-based position in the catalog's order list. Never reorder that list;",
+        "# new works are appended.",
+        "",
+        "# Scope: the studying character. Draw a work $LIBRARY$ holds. Tanakh, Talmud",
+        "# and the reader's own tradition are drawn more often.",
+        "kehillah_study_torah_pick_next_work_effect = {",
+        "\trandom_list = {",
+    ]
+    for i, f in enumerate(order, start=1):
+        w = works[f]
+        weight = 2 if w.get("canon") else 1
+        out += [
+            f"\t\t{weight} = {{",
+            f"\t\t\ttrigger = {{ $LIBRARY$ = {{ {held(f)} }} }}",
+        ]
+        out += [
+            f"\t\t\tset_variable = {{ name = kehillah_study_current_work_id value = {i} }}",
+            f"\t\t\tcustom_tooltip = {study_tt_key(f, w)}",
+            "\t\t}",
+        ]
+    out += ["\t}", "}", "", "# Scope: the studying character. Resolve the work the numeric ID names.",
+            "kehillah_study_torah_resolve_current_work_effect = {"]
+    for i, f in enumerate(order, start=1):
+        out += [
+            f"\t{'if' if i == 1 else 'else_if'} = {{",
+            f"\t\tlimit = {{ var:kehillah_study_current_work_id = {i} }}",
+        ]
+        out += study_call(f, works[f], "\t\t")
+        out.append("\t}")
+    out += [
+        "}",
+        "",
+        "# Scope: a present student, in the yeshiva tick (scope:kehillah_tick_title,",
+        "# scope:kehillah_tick_leader). He masters one work the library holds and he has",
+        "# not mastered -- a work of the yeshiva's focus three times as likely, a work",
+        "# its standing in his rite makes Classic or better twice as likely.",
+        "kehillah_yeshiva_master_a_work_effect = {",
+        "\trandom_list = {",
+    ]
+    for f in order:
+        w = works[f]
+        if authored(w):
+            continue
+        g = w["genre"]
+        out += [
+            "\t\t1 = {",
+            "\t\t\ttrigger = {",
+            f"\t\t\t\tscope:kehillah_tick_title = {{ {held(f)} }}",
+            f"\t\t\t\tNOT = {{ {held(f, '', 'kehillah_mastered_works')} }}",
+            "\t\t\t}",
+            "\t\t\tmodifier = {",
+            "\t\t\t\tadd = 2",
+            f"\t\t\t\tscope:kehillah_tick_title = {{ var:kehillah_yeshiva_specialization ?= flag:{g} }}",
+            "\t\t\t}",
+            "\t\t\tmodifier = {",
+            "\t\t\t\tadd = 1",
+            f"\t\t\t\tkehillah_lib_standing_{f} >= 8",
+            "\t\t\t}",
+            f"\t\t\tkehillah_yeshiva_record_work_effect = {{ WORK = {f} TRACK = {g} }}",
+            "\t\t}",
+        ]
+    out += ["\t}", "}", ""]
+
+    # Per-work hooks after a first mastery: teach tenets and record reception.
+    out += [
+        "# ---- per-work hooks. kehillah_sefer_work_tenets_<flag>_effect: scope the reader,",
+        "# after a FIRST mastery. Teaches the tenets the work argues for (vanilla",
+        "# knowledge for a playable reader; kehillah_book_tenets for anyone) and nudges",
+        "# their popularity in the reader's faith. See section 4.1 of the spec.",
+    ]
+    for f in order:
+        w = works[f]
+        out.append(f"kehillah_sefer_work_tenets_{f}_effect = {{")
+        tenets = w.get("argues_for", [])
+        if not tenets:
+            out.append("\t# argues for no tenet")
+        for t in tenets:
+            out.append(f"\tkehillah_sefer_teach_tenet_effect = {{ TENET = {t} }}")
+        if authored(w):
+            out += [
+                f"\tif = {{ limit = {{ exists = global_var:kehillah_wk_{f}_tenet_a }}",
+                f"\t\tkehillah_sefer_teach_dynamic_tenet_effect = {{ SLOT = {f} WHICH = a }}",
+                "\t}",
+                f"\tif = {{ limit = {{ exists = global_var:kehillah_wk_{f}_tenet_b }}",
+                f"\t\tkehillah_sefer_teach_dynamic_tenet_effect = {{ SLOT = {f} WHICH = b }}",
+                "\t}",
+            ]
+        out.append("}")
+    out += [
+        "",
+        "# kehillah_sefer_work_fit_<flag>_effect: scope the reader. Sets",
+        "# var:kehillah_sefer_fit to 1 when one of his personal tenets is one the work",
+        "# argues for, -1 when it is one the work argues against (spec section 4.1).",
+    ]
+    for f in order:
+        w = works[f]
+        out += [f"kehillah_sefer_work_fit_{f}_effect = {{", "\tset_variable = { name = kehillah_sefer_fit value = 0 }"]
+        if authored(w):
+            out += dynamic_tenet_branches(f, lambda cond, t: [
+                f"\tif = {{ limit = {{ {cond} has_personal_tenet = {t} }} set_variable = {{ name = kehillah_sefer_fit value = 1 }} }}"
+            ])
+        for t in w.get("argues_for", []):
+            out += [f"\tif = {{ limit = {{ has_personal_tenet = {t} }} set_variable = {{ name = kehillah_sefer_fit value = 1 }} }}"]
+        for t in w.get("argues_against", []):
+            out += [f"\tif = {{ limit = {{ has_personal_tenet = {t} }} set_variable = {{ name = kehillah_sefer_fit value = -1 }} }}"]
+        out.append("}")
+    out += [
+        "",
+        "# kehillah_sefer_work_corpus_<flag>_effect: scope the reader, after a",
+        "# successful reading. Counts the volume toward the current round of its",
+        "# corpus (spec section 5.3); a work in no corpus does nothing.",
+    ]
+    for f in order:
+        c = works[f]["corpus"]
+        body = f"\tkehillah_sefer_round_progress_effect = {{ CORPUS = {c} KEY = {f} }}" if c else "\t# in no corpus"
+        out += [f"kehillah_sefer_work_corpus_{f}_effect = {{", body, "}"]
+    out += [
+        "",
+        "# Scope: none. Named works whose historical date has passed by the start",
+        "# of this game (or the first year this save runs the redesign) count as",
+        "# written; later ones wait for a scholar's ambition (Daniel, 2026-11-08).",
+        "kehillah_sefer_mark_historical_works_effect = {",
+    ]
+    for f in order:
+        w = works[f]
+        if not w.get("named"):
+            continue
+        out += [
+            "\tif = {",
+            "\t\tlimit = {",
+            f"\t\t\tcurrent_year >= {w['year']}",
+            f"\t\t\tNOT = {{ has_global_variable = kehillah_wk_{f}_written }}",
+            "\t\t}",
+            f"\t\tset_global_variable = {{ name = kehillah_wk_{f}_written value = yes }}",
+            f"\t\tset_global_variable = {{ name = kehillah_wk_{f}_year value = {w['year']} }}",
+            f"\t\tkehillah_sefer_ensure_counters_effect = {{ KEY = {f} }}",
+            "\t}",
+        ]
+    out += ["}", ""]
+    out += [
+        "# Scope: a faith. Nudge the popularity of the tenets a work argues for",
+        "# ($AMOUNT$ may be negative) -- a Machloket's resolution (section 6.4).",
+    ]
+    for f in order:
+        w = works[f]
+        out.append(f"kehillah_sefer_work_popularity_{f}_effect = {{")
+        ts = w.get("argues_for", [])
+        for t in ts:
+            out.append(f"\tchange_tenet_popularity = {{ target = tenet:{t} change = $AMOUNT$ }}")
+        if authored(w):
+            out += dynamic_tenet_branches(f, lambda cond, t: [
+                f"\tif = {{ limit = {{ {cond} }} change_tenet_popularity = {{ target = tenet:{t} change = $AMOUNT$ }} }}"
+            ])
+        if not ts and not authored(w):
+            out.append("\t# argues for no tenet; the argument is still read so every call has one shape")
+            out.append("\tsave_temporary_scope_value_as = { name = kehillah_unused_amount value = $AMOUNT$ }")
+        out.append("}")
+    out += [
+        "",
+        "# Scope: a champion of the work. Found a rite with its first tenet as core:",
+        "# a Machloket's schism, through vanilla's own dynamic rite (section 6.4).",
+        "# A work arguing for no tenet cannot split a rite.",
+    ]
+    for f in order:
+        w = works[f]
+        ts = w.get("argues_for", [])
+        out.append(f"kehillah_sefer_work_schism_{f}_effect = {{")
+        if ts:
+            out += [
+                "\tcreate_dynamic_rite = {",
+                "\t\tsave_scope_as = kehillah_schism_rite",
+                "\t\tconvert = yes",
+                f"\t\tcore_tenet_override_entry = tenet:{ts[0]}",
+                "\t}",
+            ]
+        else:
+            out.append("\t# argues for no tenet")
+        out.append("}")
+    out += [
+        "",
+        "# Scope: the Av Beit Din of a good ruling (kehillah_bet_din_reward_judges_",
+        "# for_ruling_effect). He cites one non-canon work he has mastered -- one",
+        "# that stands high in his rite more often -- and the court's citation counts",
+        "# toward the work's standing once per community (spec section 3.4).",
+        "kehillah_sefer_cite_in_ruling_effect = {",
+        "\tif = {",
+        "\t\tlimit = {",
+        "\t\t\tOR = {",
+    ]
+    citable = [f for f in order if not works[f].get("canon") and works[f]["corpus"] != "tanakh"]
+    out += [f"\t\t\t\t{held(f, '', 'kehillah_mastered_works')}" for f in citable]
+    out += ["\t\t\t}", "\t\t}", "\t\trandom_list = {"]
+    for f in citable:
+        out += [
+            "\t\t\t1 = {",
+            f"\t\t\t\ttrigger = {{ {held(f, '', 'kehillah_mastered_works')} }}",
+            f"\t\t\t\tmodifier = {{ add = 2 kehillah_lib_standing_{f} >= 7 }}",
+            f"\t\t\t\tmodifier = {{ add = 1 kehillah_lib_genre_{f} = 2 }}",
+            f"\t\t\t\tkehillah_sefer_record_citation_effect = {{ KEY = {f} }}",
+            "\t\t\t}",
+        ]
+    out += ["\t\t}", "\t}", "}"]
+    def dispatch(name, test, call, keys, comment):
+        lines = ["", f"# {comment}", f"{name} = {{"]
+        for i, k in enumerate(keys):
+            lines += [
+                f"\t{'if' if i == 0 else 'else_if'} = {{",
+                f"\t\tlimit = {{ {test} ?= flag:{k} }}",
+                f"\t\t{call.format(k=k)}",
+                "\t}",
+            ]
+        if not keys:
+            lines.append("\t# none")
+        lines.append("}")
+        return lines
+
+    named_keys = [f for f in order if works[f].get("named")]
+    noncanon = [f for f in order if not works[f].get("canon") and works[f]["corpus"] != "tanakh"]
+    out += dispatch("kehillah_sefer_write_named_work_dispatch_effect", "var:kehillah_book_named_work",
+                    "kehillah_sefer_write_named_work_effect = {{ KEY = {k} }}", named_keys,
+                    "Scope: the author. Write the named work his ambition chose.")
+    out += dispatch("kehillah_sefer_count_commentary_dispatch_effect", "var:kehillah_book_comment_on",
+                    "kehillah_sefer_bump_counter_effect = {{ KEY = {k} COUNTER = commentaries }} "
+                    "kehillah_standing_add_reception_effect = {{ KEY = {k} AMOUNT = kehillah_reception_commentary_value }}",
+                    noncanon, "Scope: the author of a gloss. The work he glossed gains a commentary.")
+    out += dispatch("kehillah_sefer_approbation_dispatch_effect", "scope:kehillah_appr_asker.var:kehillah_sefer_my_latest_work",
+                    "kehillah_sefer_approbation_effect = {{ KEY = {k} }}", noncanon,
+                    "Scope: the approver. Endorse the asker's latest work.")
+    out += dispatch("kehillah_sefer_endorse_dispatch_effect", "var:kehillah_sefer_named_work",
+                    "kehillah_sefer_endorse_effect = {{ KEY = {k} }}", noncanon,
+                    "Scope: a head of rite. Endorse the work he chose.")
+    out += dispatch("kehillah_sefer_condemn_dispatch_effect", "var:kehillah_sefer_named_work",
+                    "kehillah_sefer_condemn_effect = {{ KEY = {k} }}", noncanon,
+                    "Scope: a head of rite. Condemn the work he chose.")
+    out += [
+        "",
+        "# Scope: the author. Take the first free authored slot; with none free the",
+        "# book stays news only (slot recycling is a recorded follow-up).",
+        "kehillah_sefer_claim_authored_slot_effect = {",
+    ]
+    slots = [f for f in order if authored(works[f])]
+    for i, f in enumerate(slots):
+        out += [
+            f"\t{'if' if i == 0 else 'else_if'} = {{",
+            f"\t\tlimit = {{ NOT = {{ has_global_variable = kehillah_wk_{f}_written }} }}",
+            f"\t\tkehillah_sefer_write_authored_work_effect = {{ SLOT = {f} }}",
+            "\t}",
+        ]
+    out += ["}", "", "# Per named work, scope the author: a commentary counts toward the work it glosses."]
+    for f in order:
+        w = works[f]
+        if not w.get("named"):
+            continue
+        target = w.get("commentary_on")
+        out.append(f"kehillah_sefer_count_commentary_target_{f}_effect = {{")
+        if target and target in noncanon:
+            out.append(f"\tkehillah_sefer_bump_counter_effect = {{ KEY = {target} COUNTER = commentaries }}")
+        else:
+            out.append("\t# glosses a canonical text or nothing")
+        out.append("}")
+    out += [
+        "",
+        "# Scope: a head of rite. Load the works he may endorse or condemn: written,",
+        "# non-canon, held somewhere, Respected or better (to endorse) in his rite.",
+        "kehillah_sefer_build_judgeable_works_effect = {",
+        "\tclear_variable_list = kehillah_sefer_judgeable",
+    ]
+    for f in noncanon:
+        out += [
+            "\tif = {",
+            "\t\tlimit = {",
+            f"\t\t\tkehillah_lib_available_{f}_trigger = yes",
+            f"\t\t\tkehillah_lib_copies_{f} >= 1",
+            f"\t\t\tkehillah_lib_standing_{f} >= 5",
+            "\t\t}",
+            f"\t\tadd_to_variable_list = {{ name = kehillah_sefer_judgeable target = flag:{f} }}",
+            "\t}",
+        ]
+    out += ["}"]
+    out += [
+        "",
+        "# ---- seized books and the ransom pool (section 7.1). Title scope: a",
+        "# library whose books are sold off -- every work but the Tanakh enters",
+        "# the global pool any Jewish library may redeem from.",
+        "kehillah_lib_move_all_to_ransom_effect = {",
+    ]
+    for f in noncanon + [g for g in order if works[g].get("canon") == "oral_torah"]:
+        out += [
+            "\tif = {",
+            f"\t\tlimit = {{ {held(f)} }}",
+            f"\t\tremove_list_variable = {{ name = kehillah_library_works target = flag:{f} }}",
+            f"\t\tif = {{ limit = {{ NOT = {{ is_target_in_global_variable_list = {{ name = kehillah_ransom_pool target = flag:{f} }} }} }}",
+            f"\t\t\tadd_to_global_variable_list = {{ name = kehillah_ransom_pool target = flag:{f} }}",
+            "\t\t}",
+            "\t}",
+        ]
+    out += [
+        "\tkehillah_lib_refresh_cache_effect = yes",
+        "}",
+        "",
+        "# Title scope: a library emptied (burned, or given away), Tanakh aside.",
+        "kehillah_lib_clear_all_but_tanakh_effect = {",
+        "\tclear_variable_list = kehillah_library_works",
+        "\tkehillah_lib_seed_tanakh_effect = yes",
+        "\tkehillah_lib_refresh_cache_effect = yes",
+        "}",
+        "",
+        "# Scope: a library holder. Redeem one seized work his library lacks, a",
+        "# missing Bavli order first.",
+        "kehillah_lib_redeem_one_effect = {",
+        "\tvar:kehillah_own_library ?= { save_scope_as = kehillah_redeem_library }",
+        "\tif = {",
+        "\t\tlimit = { exists = scope:kehillah_redeem_library }",
+        "\t\trandom_list = {",
+    ]
+    for f in noncanon + [g for g in order if works[g].get("canon") == "oral_torah"]:
+        weight = 5 if works[f]["corpus"] == "bavli" else 1
+        out += [
+            f"\t\t\t{weight} = {{",
+            "\t\t\t\ttrigger = {",
+            f"\t\t\t\t\tis_target_in_global_variable_list = {{ name = kehillah_ransom_pool target = flag:{f} }}",
+            f"\t\t\t\t\tscope:kehillah_redeem_library = {{ NOT = {{ {held(f)} }} }}",
+            "\t\t\t\t}",
+            f"\t\t\t\tremove_list_global_variable = {{ name = kehillah_ransom_pool target = flag:{f} }}",
+            f"\t\t\t\tscope:kehillah_redeem_library = {{ add_to_variable_list = {{ name = kehillah_library_works target = flag:{f} }} kehillah_lib_refresh_cache_effect = yes }}",
+            f"\t\t\t\tset_variable = {{ name = kehillah_sefer_named_work value = flag:{f} }}",
+            "\t\t\t}",
+        ]
+    out += ["\t\t}", "\t}", "}"]
+    out += [
+        "",
+        "# Scope: a scholar arriving at scope:kehillah_chest_library (section 7.1).",
+        "# He brings a copy of one work he mastered that the library lacks, a",
+        "# Bavli order more often; nothing if he has none to give.",
+        "kehillah_sefer_scholar_chest_pick_effect = {",
+        "\tif = {",
+        "\t\tlimit = {",
+        "\t\t\tOR = {",
+    ]
+    chest = [f for f in order if works[f]["corpus"] != "tanakh"]
+    for f in chest:
+        out.append(f"\t\t\t\tAND = {{ {held(f, '', 'kehillah_mastered_works')} scope:kehillah_chest_library = {{ NOT = {{ {held(f)} }} }} }}")
+    out += ["\t\t\t}", "\t\t}", "\t\trandom_list = {"]
+    for f in chest:
+        weight = 4 if works[f]["corpus"] == "bavli" else 1
+        out += [
+            f"\t\t\t{weight} = {{",
+            f"\t\t\t\ttrigger = {{ {held(f, '', 'kehillah_mastered_works')} scope:kehillah_chest_library = {{ NOT = {{ {held(f)} }} }} }}",
+            f"\t\t\t\tscope:kehillah_chest_library = {{ add_to_variable_list = {{ name = kehillah_library_works target = flag:{f} }} kehillah_lib_refresh_cache_effect = yes }}",
+            "\t\t\t}",
+        ]
+    out += ["\t\t}", "\t}", "}"]
+    out += [
+        "",
+        "# Title scope: a sack seizes one volume (never the Tanakh) into the",
+        "# ransom pool (section 7.2).",
+        "kehillah_lib_seize_one_effect = {",
+        "\tif = {",
+        "\t\tlimit = {",
+        "\t\t\tOR = {",
+    ]
+    out += [f"\t\t\t\t{held(f)}" for f in chest]
+    out += ["\t\t\t}", "\t\t}", "\t\trandom_list = {"]
+    for f in chest:
+        out += [
+            "\t\t\t1 = {",
+            f"\t\t\t\ttrigger = {{ {held(f)} }}",
+            f"\t\t\t\tremove_list_variable = {{ name = kehillah_library_works target = flag:{f} }}",
+            f"\t\t\t\tif = {{ limit = {{ NOT = {{ is_target_in_global_variable_list = {{ name = kehillah_ransom_pool target = flag:{f} }} }} }}",
+            f"\t\t\t\t\tadd_to_global_variable_list = {{ name = kehillah_ransom_pool target = flag:{f} }}",
+            "\t\t\t\t}",
+            "\t\t\t}",
+        ]
+    out += ["\t\t}", "\t\tkehillah_lib_refresh_cache_effect = yes", "\t}", "}"]
+    out += [
+        "",
+        "# Scope: none (yearly). An authored work is forgotten -- no copy in any",
+        "# library, none in the ransom pool, no living reader in the index -- and",
+        "# its slot is freed for a new book (Daniel, 2026-11-08: 100 slots, recycled).",
+        "kehillah_sefer_recycle_slots_effect = {",
+    ]
+    for f in slots:
+        out += [
+            "\tif = {",
+            "\t\tlimit = {",
+            f"\t\t\thas_global_variable = kehillah_wk_{f}_written",
+            f"\t\t\tkehillah_lib_copies_{f} < 1",
+            f"\t\t\tNOT = {{ is_target_in_global_variable_list = {{ name = kehillah_ransom_pool target = flag:{f} }} }}",
+            "\t\t\tNOT = {",
+            "\t\t\t\tany_in_global_list = {",
+            "\t\t\t\t\tvariable = kehillah_sefer_masters",
+            "\t\t\t\t\tis_alive = yes",
+            f"\t\t\t\t\t{held(f, '', 'kehillah_mastered_works')}",
+            "\t\t\t\t}",
+            "\t\t\t}",
+            "\t\t}",
+            f"\t\tkehillah_sefer_forget_slot_effect = {{ SLOT = {f} }}",
+            "\t}",
+        ]
+    out += ["}"]
+    out += [
+        "",
+        "# Scope: a champion with var:kehillah_sefer_named_work set (event option).",
+        "kehillah_sefer_schism_dispatch_effect = {",
+    ]
+    first = True
+    for f in order:
+        if not works[f].get("argues_for"):
+            continue
+        out += [
+            f"\t{'if' if first else 'else_if'} = {{",
+            f"\t\tlimit = {{ var:kehillah_sefer_named_work ?= flag:{f} }}",
+            f"\t\tkehillah_sefer_work_schism_{f}_effect = yes",
+            "\t}",
+        ]
+        first = False
+    out += ["}", ""]
+
+    # Standing: seeding and yearly recalculation, rite scope.
+    out += [
+        "# ---- standing (rite scope). Seed every non-canon work's tier and reception from",
+        "# its baseline, inheriting from the faith's main rite when that is already seeded.",
+        "kehillah_standing_seed_rite_effect = {",
+    ]
+    for f in order:
+        w = works[f]
+        if w.get("canon") or needs_writing(w):
+            continue
+        out.append(f"\tkehillah_standing_seed_work_effect = {{ KEY = {f} }}")
+    out += [
+        "\tset_variable = { name = kehillah_standing_ready value = yes }",
+        "}",
+        "",
+        "# Rite scope. Seed one written work (named or authored) when it is written.",
+        "kehillah_standing_seed_written_works_effect = {",
+    ]
+    for f in order:
+        w = works[f]
+        if not needs_writing(w):
+            continue
+        out += [
+            "\tif = {",
+            "\t\tlimit = {",
+            f"\t\t\thas_global_variable = kehillah_wk_{f}_written",
+            f"\t\t\tNOT = {{ has_variable = kehillah_standing_{f} }}",
+            "\t\t}",
+            f"\t\tkehillah_standing_seed_work_effect = {{ KEY = {f} }}",
+            "\t}",
+        ]
+    out += [
+        "}",
+        "",
+        "# Rite scope. Yearly: recalculate every seeded work.",
+        "kehillah_standing_yearly_rite_effect = {",
+        "\tkehillah_standing_seed_written_works_effect = yes",
+    ]
+    for f in order:
+        w = works[f]
+        if w.get("canon"):
+            continue
+        out += [
+            "\tif = {",
+            f"\t\tlimit = {{ has_variable = kehillah_standing_{f} }}",
+            f"\t\tkehillah_standing_recalc_work_effect = {{ KEY = {f} }}",
+            "\t}",
+        ]
+    out += [
+        "}",
+        "",
+        "# Rite scope. After a reform changes a tenet's status or a rite's core",
+        "# tenets, every seeded work's ceiling is refreshed at once and its tier",
+        "# clamped to the new ceiling and floor (the tenet-reform loop, 2026-11-08).",
+        "kehillah_standing_refresh_ceilings_rite_effect = {",
+    ]
+    for f in order:
+        w = works[f]
+        if w.get("canon"):
+            continue
+        out += [
+            "\tif = {",
+            f"\t\tlimit = {{ has_variable = kehillah_standing_{f} }}",
+            f"\t\tset_variable = {{ name = kehillah_ceiling_{f} value = kehillah_lib_ceiling_{f} }}",
+            f"\t\tclamp_variable = {{ name = kehillah_standing_{f} min = kehillah_lib_floor_{f} max = kehillah_lib_ceiling_{f} }}",
+            "\t}",
+        ]
+    out += [
+        "}",
+        "",
+        "# Title scope (a library). Count its Banned works in its holder's rite into",
+        "# var:kehillah_lib_banned_count. Section 4 of Daniel's 2026-11-08 decisions.",
+        "kehillah_lib_count_banned_effect = {",
+        "\tset_variable = { name = kehillah_lib_banned_count value = 0 }",
+        "\tif = {",
+        "\t\tlimit = { exists = holder }",
+        "\t\tholder = { save_scope_as = kehillah_banned_viewer }",
+    ]
+    for f in order:
+        w = works[f]
+        if w.get("canon"):
+            continue
+        out += [
+            "\t\tif = {",
+            f"\t\t\tlimit = {{ {held(f)} scope:kehillah_banned_viewer = {{ kehillah_lib_standing_{f} <= 1 }} }}",
+            "\t\t\tchange_variable = { name = kehillah_lib_banned_count add = 1 }",
+            "\t\t}",
+        ]
+    out += ["\t}", "}", ""]
+
+    write(STUDY_EFFECTS, out)
+
+
+# ---------------------------------------------------------------------------
+# GUI: selected-book study, readers, donate/studied
+# ---------------------------------------------------------------------------
+
+def write_study_gui(order, works):
+    out = HEADER + [
+        "# Selected-book starters for the Learn Torah personal scheme. 2026-11-08:",
+        "# each takes scope:library, the library whose shelf the button sits on (the",
+        "# Library body's Title, or the library picked in the Learn Torah decision),",
+        "# and is valid wherever kehillah_study_can_read_library_trigger lets the",
+        "# reader study. The course remembers that library (var:kehillah_study_library).",
+        "# 10 Piety, as the decision costs.",
+    ]
+    for i, f in enumerate(order, start=1):
+        out += [
+            "",
+            f"kehillah_lib_study_{f} = {{",
+            "	scope = character",
+            "	saved_scopes = { library }",
+            "	is_shown = { always = yes }",
+            "	is_valid = {",
+            "		kehillah_lib_can_start_selected_study_trigger = yes",
+            f"		scope:library = {{ is_target_in_variable_list = {{ name = kehillah_library_works target = flag:{f} }} }}",
+            "		custom_tooltip = {",
+            "			text = kehillah_study_library_not_readable_tt",
+            "			kehillah_study_can_read_library_trigger = { CHARACTER = root LIBRARY = scope:library }",
+            "		}",
+            "	}",
+            "	effect = {",
+            "		add_piety = -10",
+            "		set_variable = { name = kehillah_study_library value = scope:library }",
+            "		start_scheme = { type = kehillah_study_torah target_character = root }",
+            "		kehillah_study_torah_resolve_library_effect = { CHARACTER = root }",
+            f"		set_variable = {{ name = kehillah_study_current_work_id value = {i} }}",
+            "		trigger_event = kehillah_study_torah.0002",
+            "	}",
+            "}",
+        ]
+    write(STUDY_GUI, out)
+
+
+def write_readers_gui(order):
+    out = HEADER + [
+        "# Reader roster for selected books. The global index is populated on mastery.",
+        "# A player's older-save mastery is indexed when that player opens a roster.",
+    ]
+    for i, f in enumerate(order, start=1):
+        out += [
+            "",
+            f"kehillah_lib_readers_{f} = {{",
+            "\tscope = character",
+            "\tis_shown = { always = yes }",
+            "\tis_valid = { always = yes }",
+            "\teffect = {",
+            "\t\tclear_variable_list = kehillah_lib_readers",
+            "\t\tkehillah_lib_index_yeshiva_readers_effect = yes",
+            f"\t\tset_variable = {{ name = kehillah_lib_readers_work_id value = {i} }}",
+            "\t\tif = {",
+            "\t\t\tlimit = {",
+            f"\t\t\t\t{held(f, '', 'kehillah_mastered_works')}",
+            "\t\t\t\tNOT = { is_target_in_global_variable_list = { name = kehillah_sefer_masters target = this } }",
+            "\t\t\t}",
+            "\t\t\tadd_to_global_variable_list = { name = kehillah_sefer_masters target = this }",
+            "\t\t}",
+            "\t\tsave_scope_as = kehillah_lib_reader_viewer",
+            "\t\tevery_in_global_list = {",
+            "\t\t\tvariable = kehillah_sefer_masters",
+            "\t\t\tlimit = {",
+            "\t\t\t\tis_alive = yes",
+            "\t\t\t\tOR = {",
+            "\t\t\t\t\thas_trait = kehillah_rabbi_trait",
+            "\t\t\t\t\thas_trait = lifestyle_scholar",
+            # 2026-11-08: Karaites have no clergy; every Karaite reader counts.
+            "\t\t\t\t\tkehillah_is_karaite_character_trigger = yes",
+            "\t\t\t\t}",
+            f"\t\t\t\t{held(f, '', 'kehillah_mastered_works')}",
+            "\t\t\t}",
+            "\t\t\tsave_scope_as = kehillah_lib_reader_candidate",
+            "\t\t\tscope:kehillah_lib_reader_viewer = {",
+            "\t\t\t\tadd_to_variable_list = { name = kehillah_lib_readers target = scope:kehillah_lib_reader_candidate }",
+            "\t\t\t}",
+            "\t\t}",
+            "\t}",
+            "}",
+            "",
+            f"kehillah_lib_readers_loaded_{f} = {{",
+            "\tscope = character",
+            "\tis_shown = { always = yes }",
+            f"\tis_valid = {{ has_variable = kehillah_lib_readers_work_id var:kehillah_lib_readers_work_id = {i} }}",
+            "}",
+        ]
+    write(READERS_GUI, out)
+
+
+def write_actions_gui(order, works):
+    out = HEADER + [
+        "# Moved from kehillah_map_view_gui.txt 2026-11-08. Donate a copy (Tanakh never",
+        "# leaves: every library keeps it), and the mastered check mark.",
+    ]
+    for f in order:
+        w = works[f]
+        valid = [f"\t\tkehillah_lib_own_library_has_trigger = {{ WORK = flag:{f} }}"]
+        if w["corpus"] == "tanakh":
+            valid = ["\t\talways = no"]
+        out += [
+            "",
+            f"kehillah_lib_donate_{f} = {{",
+            "\tscope = character",
+            "\tis_shown = { always = yes }",
+            "\tis_valid = {",
+        ] + valid + [
+            "\t}",
+            "\teffect = {",
+            "\t\tkehillah_lib_refresh_own_library_effect = yes",
+            f"\t\tsave_scope_value_as = {{ name = kehillah_donate_work value = flag:{f} }}",
+            "\t\ttrigger_event = kehillah_library.0001",
+            "\t}",
+            "}",
+            "",
+            f"kehillah_lib_studied_{f} = {{",
+            "\tscope = character",
+            "\tis_shown = { always = yes }",
+            f"\tis_valid = {{ {held(f, '', 'kehillah_mastered_works')} }}",
+            "\teffect = { }",
+            "}",
+        ]
+    write(ACTIONS_GUI, out)
+
+
+# ---------------------------------------------------------------------------
+# Localization
+# ---------------------------------------------------------------------------
+
 def author_link(slug):
     return f"[GetPlayer.MakeScope.Var('kehillah_lib_author_{slug}').Char.GetShortUIName]"
+
+
+def written_author_possessive(f):
+    return f"[GetGlobalVariable('kehillah_wk_{f}_author').GetCharacter.GetFirstNamePossessiveNoTooltip]"
+
+
+def written_author_link(f):
+    return f"[GetGlobalVariable('kehillah_wk_{f}_author').GetCharacter.GetShortUIName]"
 
 
 def write_loc(order, works):
     lines = ["l_english:"]
     lines += [
         ' KEHILLAH_LIB_ROW_GENRE:0 "Genre"',
-        ' KEHILLAH_LIB_ROW_RANK:0 "Library rank"',
+        ' KEHILLAH_LIB_ROW_RANK:0 "Standing"',
         ' KEHILLAH_LIB_ROW_COMPOSER:0 "Composer"',
         ' KEHILLAH_LIB_ROW_COMPOSED:0 "Composed"',
     ]
-    # Collapsible genre boxes on the Books page: name plus how many are held.
     for genre, n in GENRES.items():
         lines.append(
             f" KEHILLAH_LIB_GROUP_{genre.upper()}:0 "
@@ -182,63 +1320,439 @@ def write_loc(order, works):
         )
     for f in order:
         w = works[f]
-        lines.append(f' kehillah_lib_tier_short_{f}:0 "{w["rank_name"]}"')
-        lines.append(f' kehillah_lib_rankdesc_{f}:0 "{GAMEPLAY}{w["rank_name"]}#!. {w["rank_desc"]}."')
-        lines.append(f' kehillah_lib_composer_{f}:0 "{w["composer"]}"')
+        subject = f"$kehillah_lib_subject_{f}$"
+        plain_name = w.get("composer_name") or AUTHOR_NAMES.get(w.get("composer_char") or "", "")
+        if needs_writing(w):
+            lines.append(f' kehillah_lib_composer_{f}:0 "{written_author_link(f)}"')
+            lines.append(f' kehillah_lib_composer_plain_{f}:0 "{w["composer"] or plain_name}"')
+        else:
+            lines.append(f' kehillah_lib_composer_{f}:0 "{w["composer"]}"')
+            lines.append(f' kehillah_lib_composer_plain_{f}:0 "{w["composer"]}"')
         if w.get("composer_linked"):
             lines.append(f' kehillah_lib_composer_linked_{f}:0 "{w["composer_linked"]}"')
-        lines.append(f' kehillah_lib_year_text_{f}:0 "c. {w["year"]}"')
-        # One-line shelf row: "Celebrated work of Parshanut".
-        lines.append(f' kehillah_lib_summary_{f}:0 "{GAMEPLAY}{w["rank_name"]}#! work of $kehillah_lib_subject_{f}$"')
-        # The hover card's sentence; the author is a hoverable character link when
-        # the catalog names one, plain text when the author is anonymous.
-        who = author_link(w["composer_char"]) if w.get("composer_char") else w["composer_name"]
-        def blurb(name):
-            return (f"A work of {GAMEPLAY}$kehillah_lib_subject_{f}$#! considered "
-                    f"{GAMEPLAY}{w['rank_name']}#! by the Rabbinic Faith. {w['credit']} {name} around {w['year']}.")
-
+        if needs_writing(w):
+            lines.append(f' kehillah_lib_year_text_{f}:0 "[GetPlayer.MakeScope.ScriptValue(\'kehillah_lib_year_{f}\')|0]"')
+        elif w.get("year_text"):
+            lines.append(f' kehillah_lib_year_text_{f}:0 "{w["year_text"]}"')
+        else:
+            lines.append(f' kehillah_lib_year_text_{f}:0 "c. {w["year"]}"')
+        lines.append(f' kehillah_lib_summary_{f}:0 "Work of {subject}"')
+        if w.get("canon"):
+            who_line = f"{w['credit']} {{who}}."
+        elif needs_writing(w):
+            who_line = f"{w['credit']} {{who}}."
+        else:
+            who_line = f"{w['credit']} {{who}} around {w['year']}."
+        if needs_writing(w):
+            who = written_author_link(f)
+            plain = plain_name
+        elif w.get("composer_char"):
+            who = author_link(w["composer_char"])
+            plain = AUTHOR_NAMES[w["composer_char"]]
+        else:
+            who = w["composer_name"]
+            plain = who
+        blurb = lambda name: f"A work of {GAMEPLAY}{subject}#!. " + who_line.format(who=name)
         lines.append(f' kehillah_lib_blurb_{f}:0 "{blurb(who)}"')
-        plain = AUTHOR_NAMES[w["composer_char"]] if w.get("composer_char") else who
         lines.append(f' kehillah_lib_blurb_plain_{f}:0 "{blurb(plain)}"')
     write(LOC, lines)
 
 
-def circulation_year(work):
-    """The catalog's one acquisition gate; explicit overrides can diverge later."""
-    return work.get("circulation_year", work["year"])
+def write_prose_loc(order, works):
+    lines = ["l_english:"]
+    track = {"parshanut": "PARSHANUT", "talmudics": "TALMUDICS", "hashkafa": "HASHKAFA"}
+    for f in order:
+        w = works[f]
+        if authored(w):
+            n = int(f.split("_")[-1])
+            name = f"{written_author_possessive(f)} [GetPlayer.Custom('KehillahAuthoredKind{n:02d}')]"
+            lines += [
+                f' kehillah_lib_name_{f}:0 "{name}"',
+                f' kehillah_lib_subject_{f}:0 "[GetPlayer.Custom(\'KehillahAuthoredKind{n:02d}\')]"',
+                f' kehillah_lib_desc_{f}:0 "A [GetPlayer.Custom(\'KehillahAuthoredKind{n:02d}\')|l] written in this campaign by {written_author_link(f)}."',
+                f' kehillah_lib_detail_{f}:0 "$kehillah_lib_desc_{f}$ Its standing in each rite is earned: copies, readers, approbations, teaching and citations raise it, controversy can sink it."',
+                f' kehillah_lib_tt_{f}:0 "#T $kehillah_lib_name_{f}$#!\\n#weak $kehillah_lib_subject_{f}$#!\\n\\n$kehillah_lib_detail_{f}$"',
+                f' {study_tt_key(f, w)}:0 "You take up $kehillah_lib_name_{f}$ and read it closely."',
+                f' kehillah_yeshiva_msg_work_{f}:0 "[kehillah_msg_talmid.GetTitledFirstName] has mastered $kehillah_lib_name_{f}$ at the yeshiva."',
+            ]
+            continue
+        p = w.get("prose")
+        if not p:
+            continue
+        t = track[w["genre"]]
+        lines += [
+            f' kehillah_lib_name_{f}:0 "{p["name"]}"',
+            f' kehillah_lib_subject_{f}:0 "$KEHILLAH_LIB_TRACK_{t}$"',
+            f' kehillah_lib_desc_{f}:0 "{p["desc"]}"',
+            f' kehillah_lib_detail_{f}:0 "{p["detail"]}"',
+            f' kehillah_lib_tt_{f}:0 "#T $kehillah_lib_name_{f}$#!\\n#weak $KEHILLAH_LIB_TRACK_{t}$#!\\n\\n$kehillah_lib_detail_{f}$"',
+            f' {study_tt_key(f, w)}:0 "{p["study"]}"',
+            f' kehillah_yeshiva_msg_work_{f}:0 "[kehillah_msg_talmid.GetTitledFirstName] has mastered $kehillah_lib_name_{f}$ at the yeshiva."',
+        ]
+    write(PROSE_LOC, lines)
 
 
-def write_acquisition_effects(order, works):
-    out = [
-        "# GENERATED by scripts/kehillah_library_catalog.py from",
-        "# scripts/kehillah_library_catalog.json -- edit the catalog, not this file.",
-        "# Rebuilds the title-owned list shown by the Library's acquisition page.",
-        "# A work is added only after its circulation year and only while unowned.",
-        "",
-        "kehillah_library_refresh_acquisition_candidates_effect = {",
-        "\tprimary_title = {",
-        "\t\tclear_variable_list = kehillah_library_acquisition_candidates",
+def write_authored_custom_loc(order, works):
+    out = HEADER + [
+        "# The kind of each book written during play, one per slot; its name is",
+        "# the author's name and this kind, as medieval works were cited.",
+        "# Set by kehillah_sefer_write_authored_work_effect. Type character: any",
+        "# character root works, since the triggers read global variables.",
     ]
     for f in order:
-        out += [
-            "\t\tif = {",
-            "\t\t\tlimit = {",
-            f"\t\t\t\tcurrent_date >= {circulation_year(works[f])}.1.1",
-            f"\t\t\t\tNOT = {{ is_target_in_variable_list = {{ name = kehillah_library_works target = flag:{f} }} }}",
+        if not authored(works[f]):
+            continue
+        n = int(f.split("_")[-1])
+        out += [f"KehillahAuthoredKind{n:02d} = {{", "\ttype = character"]
+        for k in AUTHORED_KINDS:
+            out += [
+                "\ttext = {",
+                f"\t\ttrigger = {{ global_var:kehillah_wk_{f}_kind ?= {k} }}",
+                f"\t\tlocalization_key = KEHILLAH_AUTHORED_KIND_{k}",
+                "\t}",
+            ]
+        out += ["\ttext = {", "\t\tfallback = yes", "\t\tlocalization_key = KEHILLAH_AUTHORED_KIND_NONE", "\t}", "}"]
+    write(AUTHORED_CUSTOM_LOC, out)
+
+
+# ---------------------------------------------------------------------------
+# Acquisition (V48) and journey (V49), as before, now with availability
+# ---------------------------------------------------------------------------
+
+def write_acquisition_effects(order, works):
+    out = HEADER + [
+        "# Rebuilds the title-owned list shown by the Library's acquisition page.",
+        "# A work is added only once it circulates in this campaign and only while",
+        "# unowned. Missing Bavli orders are kept on a second, priority list so the",
+        "# page and the AI put completing the Shas first (spec section 5.2).",
+        "# Scope: the acquiring character; LIBRARY is the title to acquire for.",
+        "",
+        "kehillah_library_refresh_acquisition_candidates_effect = {",
+        "\tkehillah_lib_resolve_own_library_effect = yes",
+        "\tscope:kehillah_own_library_scope ?= {",
+        "\t\tclear_variable_list = kehillah_library_acquisition_candidates",
+        "\t\tclear_variable_list = kehillah_library_acquisition_priority",
+    ]
+    for f in order:
+        w = works[f]
+        if w["corpus"] == "tanakh":
+            continue
+        av = avail_lines(f, w, "\t\t\t\t")
+        out += ["\t\tif = {", "\t\t\tlimit = {"] + av + [
+            f"\t\t\t\tNOT = {{ {held(f)} }}",
             "\t\t\t}",
             f"\t\t\tadd_to_variable_list = {{ name = kehillah_library_acquisition_candidates target = flag:{f} }}",
-            "\t\t}",
         ]
+        if w["corpus"] == "bavli":
+            out += [f"\t\t\tadd_to_variable_list = {{ name = kehillah_library_acquisition_priority target = flag:{f} }}"]
+        out.append("\t\t}")
     out += ["\t}", "}"]
     write(ACQUIRE_EFFECTS, out)
 
 
-def write_acquisition_gui(order):
-    out = [
-        "# GENERATED by scripts/kehillah_library_catalog.py from",
-        "# scripts/kehillah_library_catalog.json -- edit the catalog, not this file.",
-        "# Each action revalidates the named missing work before opening confirmation.",
+def ledger_order(order, works):
+    """The Sefarim ledger lists works by date: historical works by year (catalog
+    order breaks ties), then the books written in play, by slot."""
+    fixed = [f for f in order if not authored(works[f])]
+    fixed.sort(key=lambda f: (works[f]["year"], order.index(f)))
+    return fixed + [f for f in order if authored(works[f])]
+
+
+def known_lines(f, w, ind):
+    """Trigger lines (scope: the player): the community has heard of the work.
+    Shelf-and-ledger design, docs/implementation/2026-11-08-library-shelf-and-ledger.md:
+    the canon and the great works (Foundational, Essential) are known to all once
+    they circulate; anything else only once it is met -- held in the player's own
+    library, mastered by the player or a courtier, or respected in the player's
+    rite with a copy somewhere. Obscure and forbidden books stay off the ledger
+    until then."""
+    if w.get("canon") or w["rank_name"] in ("Foundational", "Essential"):
+        return []
+    return [
+        f"{ind}OR = {{",
+        f"{ind}\tvar:kehillah_own_library ?= {{ {held(f)} }}",
+        f"{ind}\t{held(f, '', 'kehillah_mastered_works')}",
+        f"{ind}\tany_courtier = {{ {held(f, '', 'kehillah_mastered_works')} }}",
+        f"{ind}\tAND = {{",
+        f"{ind}\t\tkehillah_lib_standing_{f} >= 6",
+        f"{ind}\t\tkehillah_lib_copies_{f} >= 1",
+        f"{ind}\t}}",
+        f"{ind}}}",
     ]
+
+
+def write_catalog_list_effects(order, works):
+    """The Sefarim ledger (2026-11-08): every work the community knows of."""
+    out = HEADER + [
+        "# The Sefarim ledger (2026-11-08; it replaced the Library's All works page",
+        "# the same day): rebuilds the player's kehillah_lib_catalog_works with every",
+        "# work in circulation that the community knows of (known_lines in the",
+        "# generator), by date, and counts them (var:kehillah_lib_catalog_count). A",
+        "# GUI cannot read a global list, so the ledger reads this character list.",
+        "# Scope: the player (scripted guis kehillah_lib_catalog_refresh and",
+        "# kehillah_lib_ledger_open, common/scripted_guis/kehillah_library_catalog_page_gui.txt).",
+        "",
+        "kehillah_lib_refresh_catalog_list_effect = {",
+        "\tkehillah_lib_refresh_own_library_effect = yes",
+        "\tclear_variable_list = kehillah_lib_catalog_works",
+        "\tset_variable = { name = kehillah_lib_catalog_count value = 0 }",
+    ]
+    for f in ledger_order(order, works):
+        add = [
+            f"add_to_variable_list = {{ name = kehillah_lib_catalog_works target = flag:{f} }}",
+            "change_variable = { name = kehillah_lib_catalog_count add = 1 }",
+        ]
+        cond = avail_lines(f, works[f], "\t\t\t") + known_lines(f, works[f], "\t\t\t")
+        if cond:
+            out += ["\tif = {", "\t\tlimit = {"] + cond + ["\t\t}"] + [f"\t\t{a}" for a in add] + ["\t}"]
+        else:
+            out += [f"\t{a}" for a in add]
+    out += ["}"]
+    write(CATALOG_LIST_EFFECTS, out)
+
+
+# ---------------------------------------------------------------------------
+# The shelf and the ledger (2026-11-08)
+# ---------------------------------------------------------------------------
+
+# Binding tier by the viewer's standing: (lowest standing, tier). Tier 1 is a
+# work outside the rite's canon, kept to answer it; 7 the canon binding.
+SPINE_TIERS = [(1, 2), (3, 3), (5, 4), (7, 5), (9, 6), (11, 7)]
+# Spine width in pixels by tier, as drawn by scripts/kehillah_generate_library_ui_assets.py.
+SPINE_WIDTH = {1: 14, 2: 10, 3: 14, 4: 18, 5: 22, 6: 26, 7: 30}
+SPINE_GAP = 2
+SHELF_ROW_WIDTH = 452
+SPINE_VARIANTS = 4
+# Works shown in a centrepiece instead of on the shelf: the Tanakh (the ark),
+# the Bavli (the Shas case) and the Yerushalmi (its own set on the Talmud shelf).
+CENTREPIECE_CORPORA = ("tanakh", "bavli", "yerushalmi")
+
+
+def spine_variants(order, works):
+    """A colour variant per work, cycling within its genre in catalog order, so
+    neighbouring books on a shelf differ. Books written in play cycle by slot."""
+    seen = {g: 0 for g in GENRES}
+    out = {}
+    for f in order:
+        w = works[f]
+        if authored(w):
+            out[f] = int(f.split("_")[-1]) % SPINE_VARIANTS + 1
+            continue
+        out[f] = seen[w["genre"]] % SPINE_VARIANTS + 1
+        seen[w["genre"]] += 1
+    return out
+
+
+def write_shelf_values(order, works):
+    variants = spine_variants(order, works)
+    out = HEADER + [
+        "# The Beit Midrash shelf (2026-11-08). Every book has the same height; its",
+        "# width and the quality of its binding follow its standing in the viewer's",
+        "# rite, so a book that rises or falls is rebound on the next draw. Design:",
+        "# docs/implementation/2026-11-08-library-shelf-and-ledger.md.",
+        "",
+        "# ---- binding tier (scope: the viewer) from kehillah_lib_standing_<flag>:",
+        "# 1 outside the canon (Rejected), 2 a loose quire (Banned, Suspect), 3 limp",
+        "# vellum (Contested, Obscure), 4 half-leather (Circulating, Respected),",
+        "# 5 tooled leather (Esteemed, Classic), 6 gilt leather (Authoritative,",
+        "# Venerated), 7 the canon binding.",
+    ]
+    for f in order:
+        out += [f"kehillah_lib_spine_tier_{f} = {{", "\tvalue = 1"]
+        # highest first so each branch is a plain lower bound
+        branches = list(reversed(SPINE_TIERS))
+        for i, (lo, tier) in enumerate(branches):
+            kw = "if" if i == 0 else "else_if"
+            out.append(f"\t{kw} = {{ limit = {{ kehillah_lib_standing_{f} >= {lo} }} value = {tier} }}")
+        out.append("}")
+    out += ["", "# ---- shelf width in pixels, gap included (scope: the viewer)."]
+    for f in order:
+        out += [f"kehillah_lib_spine_width_{f} = {{", f"\tvalue = {SPINE_WIDTH[1] + SPINE_GAP}"]
+        for i, tier in enumerate(sorted(SPINE_WIDTH, reverse=True)[:-1]):
+            kw = "if" if i == 0 else "else_if"
+            out.append(f"\t{kw} = {{ limit = {{ kehillah_lib_spine_tier_{f} = {tier} }} value = {SPINE_WIDTH[tier] + SPINE_GAP} }}")
+        out.append("}")
+    out += ["", "# ---- frame in each kehillah_spine_t<tier>.dds strip (any scope): four",
+            "# colours per genre, (genre - 1) * 4 + variant."]
+    for f in order:
+        w = works[f]
+        if authored(w):
+            out += [
+                f"kehillah_lib_spine_frame_{f} = {{",
+                f"\tvalue = kehillah_lib_genre_{f}",
+                "\tsubtract = 1",
+                f"\tmultiply = {SPINE_VARIANTS}",
+                f"\tadd = {variants[f]}",
+                "}",
+            ]
+        else:
+            out.append(f"kehillah_lib_spine_frame_{f} = {(GENRES[w['genre']] - 1) * SPINE_VARIANTS + variants[f]}")
+    out += ["", "# ---- 1 when the scoped library title holds the work (scope: a library title)."]
+    for f in order:
+        out += [f"kehillah_lib_held_{f} = {{", "\tvalue = 0", f"\tif = {{ limit = {{ {held(f)} }} value = 1 }}", "}"]
+    out += [
+        "",
+        "# ---- shelf entries the scoped library holds, every genre (scope: a library",
+        "# title). A corpus counts once, as in the genre counts.",
+        "kehillah_lib_shelf_count_value = {",
+        "\tvalue = kehillah_lib_genre_1_held_count_value",
+        "\tadd = kehillah_lib_genre_2_held_count_value",
+        "\tadd = kehillah_lib_genre_3_held_count_value",
+        "}",
+    ]
+    out += ["", "# ---- 1 when the scoped library has commissioned a copy of the work (scope:",
+            "# a library title)."]
+    for f in order:
+        out += [
+            f"kehillah_lib_sought_{f} = {{",
+            "\tvalue = 0",
+            f"\tif = {{ limit = {{ {held(f, '', 'kehillah_library_commission_work')} }} value = 1 }}",
+            "}",
+        ]
+    write(SHELF_VALUES, out)
+
+
+def write_shelf_effects(order, works):
+    out = HEADER + [
+        "# Lays out the Beit Midrash shelf (2026-11-08). The GUI cannot measure the",
+        "# books it lists, so this fills each genre's shelves here: books in band order",
+        "# (Foundational first), a new shelf when the next binding would overflow",
+        f"# {SHELF_ROW_WIDTH} px. It also picks each genre's reading-stand book: the held work",
+        "# of the highest standing in the viewer's rite. The stand is shown for",
+        "# Machshavah, which has no foundational work, and for Talmudics when the viewer's",
+        "# rite does not hold the Bavli canonical (a Karaite library).",
+        "# Scope: the viewer; scope:library is the library shown. Results are variables",
+        "# on the viewer: kehillah_lib_row_<flag> (shelf number, 0 when the book is",
+        "# not on a shelf), kehillah_lib_rows_<genre> (shelves used) and",
+        "# kehillah_lib_stand_<genre> (the stand's work, when there is one).",
+        "# Run by the scripted gui kehillah_lib_shelf_layout.",
+        "",
+        "kehillah_lib_shelf_layout_effect = {",
+    ]
+    for g in GENRES.values():
+        out += [
+            f"\tset_variable = {{ name = kehillah_lib_acc_{g} value = 0 }}",
+            f"\tset_variable = {{ name = kehillah_lib_rowc_{g} value = 1 }}",
+            f"\tset_variable = {{ name = kehillah_lib_best_{g} value = -1 }}",
+            f"\tset_variable = {{ name = kehillah_lib_stand_{g} value = flag:none }}",
+        ]
+    shelf = [f for f in order if works[f]["corpus"] not in CENTREPIECE_CORPORA]
+    # Every work's row is kept set (0 = not on a shelf), the centrepieces'
+    # included, and an empty stand holds flag:none, so the GUI never reads an
+    # unset variable.
+    for f in order:
+        out.append(f"\tset_variable = {{ name = kehillah_lib_row_{f} value = 0 }}")
+
+    def per_genre(f, effect, genres=tuple(GENRES.values())):
+        w = works[f]
+        if authored(w):
+            return [f"\tif = {{ limit = {{ kehillah_lib_genre_{f} = {g} }} {effect} = {{ G = {g} F = {f} }} }}"
+                    for g in genres]
+        if GENRES[w["genre"]] not in genres:
+            return []
+        return [f"\t{effect} = {{ G = {GENRES[w['genre']]} F = {f} }}"]
+
+    # Machshavah always has a stand; Talmudics only where the viewer's rite does
+    # not hold the Bavli canonical. Parshanut has the ark instead.
+    out += ["", "\t# The reading stands."]
+    for f in shelf:
+        out += per_genre(f, "kehillah_lib_shelf_stand_try_effect", (3,))
+    out += ["\tif = {", "\t\tlimit = { kehillah_lib_standing_work_bavli_moed < 11 }"]
+    for f in shelf:
+        out += ["\t" + ln for ln in per_genre(f, "kehillah_lib_shelf_stand_try_effect", (2,))]
+    out += ["\t}"]
+    out += ["", "\t# The shelves, band by band."]
+    for band in range(1, 6):
+        for f in shelf:
+            w = works[f]
+            if RANKS[w["rank_name"]][0] != band:
+                continue
+            out += per_genre(f, "kehillah_lib_shelf_place_effect")
+    out += [""]
+    # Remove-then-set: only the GUI reads these, and reading them in a limit keeps
+    # the engine's set-but-never-used lint quiet (as in kehillah_library_authors_effects).
+    for g in GENRES.values():
+        out += [
+            f"\tif = {{ limit = {{ exists = var:kehillah_lib_rows_{g} }} remove_variable = kehillah_lib_rows_{g} }}",
+            f"\tset_variable = {{ name = kehillah_lib_rows_{g} value = var:kehillah_lib_rowc_{g} }}",
+            f"\tif = {{ limit = {{ var:kehillah_lib_acc_{g} = 0 }} set_variable = {{ name = kehillah_lib_rows_{g} value = 0 }} }}",
+        ]
+    out += ["}", ""]
+    out += [
+        "# Parameters G (genre) and F (work flag): the held work of the highest",
+        "# standing so far takes the genre's reading stand.",
+        "kehillah_lib_shelf_stand_try_effect = {",
+        "\tif = {",
+        "\t\tlimit = {",
+        "\t\t\tscope:library ?= { is_target_in_variable_list = { name = kehillah_library_works target = flag:$F$ } }",
+        "\t\t\tkehillah_lib_standing_$F$ > var:kehillah_lib_best_$G$",
+        "\t\t}",
+        "\t\tset_variable = { name = kehillah_lib_best_$G$ value = kehillah_lib_standing_$F$ }",
+        "\t\tset_variable = { name = kehillah_lib_stand_$G$ value = flag:$F$ }",
+        "\t}",
+        "}",
+        "",
+        f"# Parameters G and F: put a held book on the next shelf with room ({SHELF_ROW_WIDTH} px).",
+        "kehillah_lib_shelf_place_effect = {",
+        "\tif = {",
+        "\t\tlimit = {",
+        "\t\t\tscope:library ?= { is_target_in_variable_list = { name = kehillah_library_works target = flag:$F$ } }",
+        "\t\t\tNOT = { var:kehillah_lib_stand_$G$ ?= flag:$F$ }",
+        "\t\t}",
+        "\t\tchange_variable = { name = kehillah_lib_acc_$G$ add = kehillah_lib_spine_width_$F$ }",
+        "\t\tif = {",
+        f"\t\t\tlimit = {{ var:kehillah_lib_acc_$G$ > {SHELF_ROW_WIDTH} }}",
+        "\t\t\tchange_variable = { name = kehillah_lib_rowc_$G$ add = 1 }",
+        "\t\t\tset_variable = { name = kehillah_lib_acc_$G$ value = kehillah_lib_spine_width_$F$ }",
+        "\t\t}",
+        "\t\tset_variable = { name = kehillah_lib_row_$F$ value = var:kehillah_lib_rowc_$G$ }",
+        "\t}",
+        "}",
+    ]
+    write(SHELF_EFFECTS, out)
+
+
+def write_ledger_loc(order, works):
+    """Per-work lines of the Sefarim ledger: place, language, author, tenets."""
+    lines = ["l_english:"]
+    for f in order:
+        w = works[f]
+        if authored(w):
+            lines += [
+                f' kehillah_lib_place_{f}:0 "$KEHILLAH_SEFARIM_PLACE_WRITTEN_IN_PLAY$"',
+                f' kehillah_lib_language_{f}:0 "Hebrew"',
+                f' kehillah_lib_byline_{f}:0 "{written_author_link(f)}"',
+                f' kehillah_lib_byline_plain_{f}:0 "$KEHILLAH_SEFARIM_AUTHOR_UNKNOWN$"',
+                f' kehillah_lib_tenets_{f}:0 "$KEHILLAH_SEFARIM_TENETS_AUTHORED$"',
+                f' kehillah_lib_class_{f}:0 "{w["rank_name"]}"',
+            ]
+            continue
+        if needs_writing(w):
+            byline = written_author_link(f)
+            plain = w.get("composer_name") or AUTHOR_NAMES.get(w.get("composer_char") or "", "") or w["composer"]
+        elif w.get("composer_char"):
+            byline = author_link(w["composer_char"])
+            plain = AUTHOR_NAMES[w["composer_char"]]
+        else:
+            byline = plain = w["composer"]
+        tenets = [f"$" + t + "_name$" for t in (w.get("argues_for") or [])]
+        against = [f"#N $" + t + "_name$#!" for t in (w.get("argues_against") or [])]
+        text = ", ".join(tenets)
+        if against:
+            text = (text + "; " if text else "") + "$KEHILLAH_SEFARIM_AGAINST$ " + ", ".join(against)
+        lines += [
+            f' kehillah_lib_place_{f}:0 "{w.get("place", "")}"',
+            f' kehillah_lib_language_{f}:0 "{w.get("language", "")}"',
+            f' kehillah_lib_byline_{f}:0 "{byline}"',
+            f' kehillah_lib_byline_plain_{f}:0 "{plain}"',
+            f' kehillah_lib_tenets_{f}:0 "{text or "$KEHILLAH_SEFARIM_TENETS_NONE$"}"',
+            f' kehillah_lib_class_{f}:0 "{w["rank_name"]}"',
+        ]
+    write(LEDGER_LOC, lines)
+
+
+def write_acquisition_gui(order):
+    out = HEADER + ["# Each action revalidates the named missing work before opening confirmation."]
     for f in order:
         out += [
             "",
@@ -246,13 +1760,13 @@ def write_acquisition_gui(order):
             "\tscope = character",
             "\tis_shown = { always = yes }",
             "\tis_valid = {",
-            "\t\tgovernment_has_flag = government_is_kehillah",
             "\t\tis_adult = yes",
             "\t\tis_imprisoned = no",
-            "\t\tprimary_title = {",
+            "\t\tkehillah_lib_can_commission_trigger = yes",
+            "\t\tvar:kehillah_own_library ?= {",
             "\t\t\tNOT = { has_variable_list = kehillah_library_commission_work }",
             f"\t\t\tis_target_in_variable_list = {{ name = kehillah_library_acquisition_candidates target = flag:{f} }}",
-            f"\t\t\tNOT = {{ is_target_in_variable_list = {{ name = kehillah_library_works target = flag:{f} }} }}",
+            f"\t\t\tNOT = {{ {held(f)} }}",
             "\t\t}",
             "\t}",
             "\teffect = {",
@@ -266,7 +1780,6 @@ def write_acquisition_gui(order):
 
 
 def work_name_custom_loc(order, key, var):
-    """A character-scoped custom loc naming the work stored in var."""
     out = [f"{key} = {{", "\ttype = character"]
     for f in order:
         out += [
@@ -278,44 +1791,24 @@ def work_name_custom_loc(order, key, var):
             f"\t\tlocalization_key = kehillah_lib_name_{f}",
             "\t}",
         ]
-    out += [
-        "\ttext = {",
-        "\t\tfallback = yes",
-        "\t\tlocalization_key = KEHILLAH_LIB_COMMISSION_UNKNOWN_WORK",
-        "\t}",
-        "}",
-    ]
+    out += ["\ttext = {", "\t\tfallback = yes", "\t\tlocalization_key = KEHILLAH_LIB_COMMISSION_UNKNOWN_WORK", "\t}", "}"]
     return out
 
 
 def write_acquisition_custom_loc(order):
-    out = [
-        "# GENERATED by scripts/kehillah_library_catalog.py from",
-        "# scripts/kehillah_library_catalog.json -- edit the catalog, not this file.",
-    ]
-    out += work_name_custom_loc(order, "KehillahCommissionWorkName", "kehillah_commission_work_loc")
+    out = HEADER + work_name_custom_loc(order, "KehillahCommissionWorkName", "kehillah_commission_work_loc")
+    out += work_name_custom_loc(order, "KehillahSeferWorkName", "kehillah_sefer_named_work")
+    for n in (1, 2, 3):
+        out += work_name_custom_loc(order, f"KehillahSeferCand{n}Name", f"kehillah_sefer_cand_{n}")
+    out += work_name_custom_loc(order, "KehillahSeferLatestWorkName", "kehillah_sefer_my_latest_work")
     write(ACQUIRE_CUSTOM_LOC, out)
 
 
-def study_tt_key(f, w):
-    """The per-work study flavor line, e.g. kehillah_study_torah.talmudics.mishnah_tt."""
-    return f"kehillah_study_torah.{w['genre']}.{f.removeprefix('work_')}_tt"
-
-
 def write_journey_gui(order):
-    """V49: the Library's 'who holds it' roster and its travel action.
-
-    kehillah_lib_holders_<flag> loads the other registered communities that
-    hold the work into the player's kehillah_lib_holders list (the readers
-    roster's load-then-check shape); kehillah_lib_journey_<flag> takes one of
-    those titles as scope:target, stores it as the planned destination and
-    opens the Yeshiva Visit planner, whose location check then offers only it.
-    """
-    out = [
-        "# GENERATED by scripts/kehillah_library_catalog.py from",
-        "# scripts/kehillah_library_catalog.json -- edit the catalog, not this file.",
-        "# V49: which other communities hold a selected work, and planning a",
-        "# Yeshiva Visit to one of them. See docs/spec/v49-yeshiva-visit-from-the-library.md.",
+    out = HEADER + [
+        "# V49: which other libraries hold a selected work, and planning a Yeshiva",
+        "# Visit to one of them. Since 2026-11-08 every library in kehillah_libraries",
+        "# counts, landed ones included.",
     ]
     for i, f in enumerate(order, start=1):
         out += [
@@ -329,11 +1822,11 @@ def write_journey_gui(order):
             f"\t\tset_variable = {{ name = kehillah_lib_holders_work_id value = {i} }}",
             "\t\tsave_scope_as = kehillah_lib_holder_viewer",
             "\t\tevery_in_global_list = {",
-            "\t\t\tvariable = kehillah_registered_communities",
+            "\t\t\tvariable = kehillah_libraries",
             "\t\t\tlimit = {",
-            "\t\t\t\tNOT = { this = scope:kehillah_lib_holder_viewer.primary_title }",
+            "\t\t\t\tNOT = { scope:kehillah_lib_holder_viewer.var:kehillah_own_library ?= this }",
             "\t\t\t\texists = holder",
-            f"\t\t\t\tis_target_in_variable_list = {{ name = kehillah_library_works target = flag:{f} }}",
+            f"\t\t\t\t{held(f)}",
             "\t\t\t}",
             "\t\t\tsave_scope_as = kehillah_lib_holder_candidate",
             "\t\t\tscope:kehillah_lib_holder_viewer = {",
@@ -358,7 +1851,7 @@ def write_journey_gui(order):
             "\t\tscope:target = {",
             "\t\t\tNOT = { this = root.primary_title }",
             "\t\t\texists = holder",
-            f"\t\t\tis_target_in_variable_list = {{ name = kehillah_library_works target = flag:{f} }}",
+            f"\t\t\t{held(f)}",
             "\t\t}",
             "\t}",
             "\teffect = {",
@@ -370,9 +1863,7 @@ def write_journey_gui(order):
 
 
 def write_journey_effects(order, works):
-    out = [
-        "# GENERATED by scripts/kehillah_library_catalog.py from",
-        "# scripts/kehillah_library_catalog.json -- edit the catalog, not this file.",
+    out = HEADER + [
         "# V49 Yeshiva Visit helpers that need one branch per catalog work.",
         "",
         "# Study the work chosen before the journey. Scope: the traveller, in the",
@@ -393,26 +1884,22 @@ def write_journey_effects(order, works):
         "",
         "# Run the study a journey option recorded in kehillah_journey_studied_work.",
         "# Called only from the hidden event kehillah_learn_torah_journey.0007, never",
-        "# from an option: the study effect sets and re-reads its own variables, which",
-        "# floods error.log when the game builds an option tooltip (live test",
-        "# 2026-10-21; hidden_effect did not prevent it). Scope: the traveller.",
+        "# from an option (see the 2026-10-21 live test). Scope: the traveller.",
         "kehillah_journey_resolve_study_effect = {",
     ]
     for i, f in enumerate(order):
-        w = works[f]
         out += [
             f"\t{'if' if i == 0 else 'else_if'} = {{",
             f"\t\tlimit = {{ var:kehillah_journey_studied_work ?= flag:{f} }}",
-            f"\t\tkehillah_study_specific_work_effect = {{ WORK = flag:{f} TRACK = {w['genre']} }}",
-            "\t}",
         ]
+        out += study_call(f, works[f], "\t\t")
+        out.append("\t}")
     out += [
         "}",
         "",
         "# Rebuild the traveller's list of works worth a journey: held by another",
-        "# registered community and not yet mastered. Works missing from the",
-        "# traveller's own library also go on the priority list, so suggestions",
-        "# favour books a copy could bring home. Scope: the traveller.",
+        "# library and not yet mastered; works his own library lacks go on the",
+        "# priority list. Scope: the traveller.",
         "kehillah_journey_build_offers_effect = {",
         "\tclear_variable_list = kehillah_journey_offer_works",
         "\tclear_variable_list = kehillah_journey_offer_priority",
@@ -421,17 +1908,17 @@ def write_journey_effects(order, works):
         out += [
             "\tif = {",
             "\t\tlimit = {",
-            f"\t\t\tNOT = {{ is_target_in_variable_list = {{ name = kehillah_mastered_works target = flag:{f} }} }}",
+            f"\t\t\tNOT = {{ {held(f, '', 'kehillah_mastered_works')} }}",
             "\t\t\tany_in_global_list = {",
-            "\t\t\t\tvariable = kehillah_registered_communities",
-            "\t\t\t\tNOT = { this = root.primary_title }",
+            "\t\t\t\tvariable = kehillah_libraries",
+            "\t\t\t\tNOT = { root.var:kehillah_own_library ?= this }",
             "\t\t\t\texists = holder",
-            f"\t\t\t\tis_target_in_variable_list = {{ name = kehillah_library_works target = flag:{f} }}",
+            f"\t\t\t\t{held(f)}",
             "\t\t\t}",
             "\t\t}",
             f"\t\tadd_to_variable_list = {{ name = kehillah_journey_offer_works target = flag:{f} }}",
             "\t\tif = {",
-            f"\t\t\tlimit = {{ primary_title = {{ NOT = {{ is_target_in_variable_list = {{ name = kehillah_library_works target = flag:{f} }} }} }} }}",
+            f"\t\t\tlimit = {{ NOT = {{ var:kehillah_own_library ?= {{ {held(f)} }} }} }}",
             f"\t\t\tadd_to_variable_list = {{ name = kehillah_journey_offer_priority target = flag:{f} }}",
             "\t\t}",
             "\t}",
@@ -441,25 +1928,51 @@ def write_journey_effects(order, works):
 
 
 def write_journey_custom_loc(order):
-    out = [
-        "# GENERATED by scripts/kehillah_library_catalog.py from",
-        "# scripts/kehillah_library_catalog.json -- edit the catalog, not this file.",
-        "# V49: names of the planned and suggested Yeshiva Visit works.",
-    ]
+    out = HEADER + ["# V49: names of the planned and suggested Yeshiva Visit works."]
     out += work_name_custom_loc(order, "KehillahJourneyWorkName", "kehillah_journey_work_loc")
     for n in (1, 2):
         out += work_name_custom_loc(order, f"KehillahJourneyOffer{n}Name", f"kehillah_journey_offer_{n}_loc")
     write(JOURNEY_CUSTOM_LOC, out)
 
 
+def write_study_custom_loc(order, works):
+    """2026-11-08: the opening text of kehillah_study_torah.0002 for every work.
+    The event once listed the first 22 works by ID and fell back to the Kuzari,
+    so every work added to the catalog later opened with the Kuzari's text."""
+    out = HEADER + ["# kehillah_study_torah.0002: the work the scheme has just opened, by",
+                    "# kehillah_study_current_work_id (1..N in catalog order).",
+                    "KehillahStudyOpeningDesc = {", "	type = character"]
+    for i, f in enumerate(order, start=1):
+        key = (f"kehillah_study_torah.0002.{short(f)}_desc" if i <= OPENING_DESC_WORKS
+               else study_tt_key(f, works[f]))
+        out += ["	text = {", "		trigger = {", "			has_variable = kehillah_study_current_work_id",
+                f"			var:kehillah_study_current_work_id = {i}", "		}",
+                f"		localization_key = {key}", "	}"]
+    out += ["	text = {", "		fallback = yes", "		localization_key = kehillah_study_torah.0002.unknown_desc", "	}", "}"]
+    write(STUDY_CUSTOM_LOC, out)
+
+
 if __name__ == "__main__":
     order, works = load()
     write_values(order, works)
+    write_standing_values(order, works)
+    write_triggers(order, works)
+    write_study_effects(order, works)
+    write_study_gui(order, works)
+    write_readers_gui(order)
+    write_actions_gui(order, works)
     write_loc(order, works)
+    write_prose_loc(order, works)
+    write_authored_custom_loc(order, works)
     write_acquisition_effects(order, works)
+    write_catalog_list_effects(order, works)
     write_acquisition_gui(order)
     write_acquisition_custom_loc(order)
     write_journey_gui(order)
     write_journey_effects(order, works)
     write_journey_custom_loc(order)
-    print(f"{len(order)} works -> catalog values/loc and acquisition assets")
+    write_study_custom_loc(order, works)
+    write_shelf_values(order, works)
+    write_shelf_effects(order, works)
+    write_ledger_loc(order, works)
+    print(f"{len(order)} works -> catalog, standing, study, triggers, GUI and loc")

@@ -1,6 +1,19 @@
 ﻿# Military reads live title state. Each mutation rechecks eligibility. The same checks and effects
 # back the crisis window's actions (common/decisions/kehillah_crisis_decisions.txt).
 kehillah_crisis_visible = { scope = character is_shown = { government_has_flag = government_is_kehillah } }
+
+# The compact funding control on the Armed Host situation. The decision remains
+# available to AI; both routes use the same guarded effect and marginal price.
+kehillah_crisis_contribute_button = {
+ scope = character
+ is_shown = { kehillah_crisis_armed_open_trigger = yes }
+ is_valid = {
+  kehillah_crisis_leader_free_trigger = yes
+  primary_title = { var:kehillah_crisis_paid_points < 25 }
+  gold >= kehillah_crisis_next_contribution_cost_value
+ }
+ effect = { kehillah_crisis_contribute_effect = yes }
+}
 kehillah_crisis_council = {
  scope = character
  is_shown = { government_has_flag = government_is_kehillah }
@@ -18,32 +31,50 @@ kehillah_crisis_council = {
 kehillah_crisis_watch = {
  scope = character
  is_shown = { government_has_flag = government_is_kehillah }
- is_valid = { kehillah_crisis_can_prepare_trigger = { DONE = kehillah_mob_defended COST = kehillah_crisis_watch_cost } }
- effect = { remove_short_term_gold = kehillah_crisis_watch_cost kehillah_crisis_start_preparation_effect = { ACTION = 1 } }
+ is_valid = { NOT = { kehillah_crisis_has_window_trigger = yes } kehillah_crisis_can_prepare_trigger = { DONE = kehillah_mob_defended COST = kehillah_crisis_watch_cost } }
+ effect = { kehillah_crisis_recommended_watch_effect = yes }
 }
 
 kehillah_crisis_supplies = {
  scope = character
  is_shown = { government_has_flag = government_is_kehillah }
- is_valid = { kehillah_crisis_can_prepare_trigger = { DONE = kehillah_crisis_supplies COST = kehillah_crisis_supplies_cost } }
+ is_valid = { NOT = { kehillah_crisis_has_window_trigger = yes } kehillah_crisis_can_prepare_trigger = { DONE = kehillah_crisis_supplies COST = kehillah_crisis_supplies_cost } }
  effect = { remove_short_term_gold = kehillah_crisis_supplies_cost kehillah_crisis_start_preparation_effect = { ACTION = 2 } }
 }
 
 kehillah_crisis_routes = {
  scope = character
  is_shown = { government_has_flag = government_is_kehillah }
- is_valid = { kehillah_crisis_can_prepare_trigger = { DONE = kehillah_mob_scattered COST = kehillah_crisis_routes_cost } }
+ is_valid = { NOT = { kehillah_crisis_has_window_trigger = yes } kehillah_crisis_can_prepare_trigger = { DONE = kehillah_mob_scattered COST = kehillah_crisis_routes_cost } }
  effect = { remove_short_term_gold = kehillah_crisis_routes_cost kehillah_crisis_start_preparation_effect = { ACTION = 3 } }
 }
 
 kehillah_crisis_advocacy = {
  scope = character
  is_shown = { government_has_flag = government_is_kehillah }
- is_valid = { kehillah_crisis_can_prepare_trigger = { DONE = kehillah_crisis_advocacy COST = kehillah_crisis_advocacy_cost } }
- effect = { remove_short_term_gold = kehillah_crisis_advocacy_cost kehillah_crisis_start_preparation_effect = { ACTION = 4 } }
+ is_valid = { NOT = { kehillah_crisis_has_window_trigger = yes } kehillah_crisis_can_prepare_trigger = { DONE = kehillah_crisis_advocacy COST = kehillah_crisis_advocacy_cost } }
+ effect = { kehillah_crisis_recommended_advocacy_effect = yes }
 }
 
 kehillah_crisis_warning_display = { scope = character is_shown = { kehillah_crisis_warning_trigger = yes } }
+
+# Compact shortcut beside the situation's Actions heading; the three standing decisions
+# remain the full action menus. The player must lead the active community crisis.
+kehillah_crisis_recommend = {
+ scope = character
+ is_shown = { always = no }
+ is_valid = {
+  kehillah_crisis_leader_free_trigger = yes
+  NOT = { has_variable = kehillah_recommend_open }
+ }
+ effect = {
+  # Synchronous click guard. A short expiry is a backstop if an event is dismissed
+  # without running its after block; that block normally clears it immediately.
+  set_variable = { name = kehillah_recommend_open value = yes days = 1 }
+  if = { limit = { kehillah_crisis_warning_trigger = yes } trigger_event = kehillah_crisis_recommend.0001 }
+  else = { trigger_event = kehillah_crisis_recommend.0002 }
+ }
+}
 
 # Community Safety's crisis cards (2026-11-01): one per situation the community has open.
 kehillah_safety_attack_card = { scope = character is_shown = { kehillah_crisis_has_window_trigger = yes } }
@@ -57,5 +88,13 @@ kehillah_safety_any_card = {
    exists = primary_title.var:kehillah_trial_situation
    exists = primary_title.var:kehillah_decree_situation
   }
+ }
+}
+
+# An actual host court chaplain is required for the peacetime Shtadlan task.
+kehillah_safety_religious_route = {
+ scope = character
+ is_shown = {
+  domicile.domicile_location.county.holder.top_liege ?= { exists = cp:councillor_court_chaplain }
  }
 }

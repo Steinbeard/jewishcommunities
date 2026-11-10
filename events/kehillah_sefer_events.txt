@@ -1,0 +1,659 @@
+﻿# =====================================================================
+# Sefer redesign events (2026-11-08). docs/spec/2026-11-08-sefer-system-
+# redesign.md. Options that run variable-heavy effects only record the
+# choice and fire a hidden follow-up, the lesson of the 2026-10-21 journey
+# test (option tooltips that set and read variables flood error.log).
+#   .0010        a siyum                  (section 5.3)
+#   .0020        a sealed library         (section 2.4)
+#   .0101-.0106  a Machloket              (section 6.4)
+#   .0200-.0203  what a new book argues   (section 6.2)
+#   .0300-.0302  an approbation           (section 6.3)
+#   .0400-.0403  a head of rite judges a book
+#   .0500-.0501  ransoming seized books   (section 7.1)
+#   .0600-.0602  inviting a great teacher (section 8)
+# =====================================================================
+
+namespace = kehillah_sefer
+
+# ---------------------------------------------------------------------
+# .0010 A SIYUM. Root: the reader, var:kehillah_siyum_corpus and
+# var:kehillah_siyum_layer set by kehillah_sefer_siyum_effect.
+# ---------------------------------------------------------------------
+kehillah_sefer.0010 = {
+	type = character_event
+	title = kehillah_sefer.0010.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:kehillah_siyum_corpus ?= flag:tanakh var:kehillah_siyum_layer >= 4 }
+				desc = kehillah_sefer.0010.desc.tanakh_4
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_siyum_corpus ?= flag:tanakh var:kehillah_siyum_layer = 3 }
+				desc = kehillah_sefer.0010.desc.tanakh_3
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_siyum_corpus ?= flag:tanakh var:kehillah_siyum_layer = 2 }
+				desc = kehillah_sefer.0010.desc.tanakh_2
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_siyum_corpus ?= flag:tanakh }
+				desc = kehillah_sefer.0010.desc.tanakh_1
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_siyum_layer >= 4 }
+				desc = kehillah_sefer.0010.desc.talmud_4
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_siyum_layer = 3 }
+				desc = kehillah_sefer.0010.desc.talmud_3
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_siyum_layer = 2 }
+				desc = kehillah_sefer.0010.desc.talmud_2
+			}
+			desc = kehillah_sefer.0010.desc.talmud_1
+		}
+	}
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+	immediate = {
+		kehillah_sefer_siyum_rewards_effect = yes
+	}
+	option = {
+		name = kehillah_sefer.0010.a
+	}
+	after = {
+		remove_variable = kehillah_siyum_corpus
+		remove_variable = kehillah_siyum_layer
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0020 A SEALED LIBRARY. Root: the new, non-Jewish holder of a library
+# barony; scope:kehillah_sealed_library.
+# ---------------------------------------------------------------------
+kehillah_sefer.0020 = {
+	type = character_event
+	title = kehillah_sefer.0020.t
+	desc = kehillah_sefer.0020.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	trigger = { exists = scope:kehillah_sealed_library }
+
+	option = {
+		name = kehillah_sefer.0020.a # keep it shut
+		ai_chance = {
+			base = 40
+			modifier = { add = 20 has_trait = just }
+		}
+	}
+	option = {
+		name = kehillah_sefer.0020.b # sell to Jewish buyers
+		add_gold = medium_gold_value
+		custom_tooltip = kehillah_sefer.0020.b.tt
+		hidden_effect = {
+			scope:kehillah_sealed_library = { kehillah_lib_move_all_to_ransom_effect = yes }
+		}
+		ai_chance = {
+			base = 30
+			modifier = { add = 30 has_trait = greedy }
+		}
+	}
+	option = {
+		name = kehillah_sefer.0020.c # give them to a learned cleric
+		add_learning_lifestyle_xp = 50
+		custom_tooltip = kehillah_sefer.0020.c.tt
+		hidden_effect = {
+			scope:kehillah_sealed_library = { kehillah_lib_clear_all_but_tanakh_effect = yes }
+		}
+		ai_chance = {
+			base = 15
+			modifier = { add = 20 learning >= 15 }
+		}
+	}
+	option = {
+		name = kehillah_sefer.0020.d # burn them
+		add_piety = minor_piety_gain
+		custom_tooltip = kehillah_sefer.0020.d.tt
+		hidden_effect = {
+			scope:kehillah_sealed_library = { kehillah_lib_clear_all_but_tanakh_effect = yes }
+			faith = { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
+		}
+		ai_chance = {
+			base = 5
+			modifier = { add = 40 has_trait = zealous }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# MACHLOKET. Root: a library holder of the rite; var:kehillah_sefer_named_
+# work names the disputed work.
+# ---------------------------------------------------------------------
+kehillah_sefer.0101 = {
+	type = character_event
+	title = kehillah_sefer.0101.t
+	desc = kehillah_sefer.0101.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	option = {
+		name = kehillah_sefer.0101.a
+	}
+}
+
+kehillah_sefer.0102 = {
+	type = character_event
+	title = kehillah_sefer.0102.t
+	desc = kehillah_sefer.0102.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	trigger = { exists = scope:kehillah_mk_rite }
+
+	option = {
+		name = kehillah_sefer.0102.a # defend it
+		custom_tooltip = kehillah_sefer.0102.a.tt
+		set_variable = { name = kehillah_mk_choice value = flag:defend }
+		trigger_event = kehillah_sefer.0105
+	}
+	option = {
+		name = kehillah_sefer.0102.b # condemn it
+		custom_tooltip = kehillah_sefer.0102.b.tt
+		set_variable = { name = kehillah_mk_choice value = flag:condemn }
+		trigger_event = kehillah_sefer.0105
+	}
+	option = {
+		name = kehillah_sefer.0102.c # stay silent
+		custom_tooltip = kehillah_sefer.0102.c.tt
+	}
+}
+
+# Hidden: record the side chosen in .0102.
+kehillah_sefer.0105 = {
+	type = character_event
+	hidden = yes
+	trigger = { exists = scope:kehillah_mk_rite }
+	immediate = {
+		if = {
+			limit = { var:kehillah_mk_choice ?= flag:defend }
+			kehillah_machloket_take_side_effect = { SIDE = defend }
+		}
+		else_if = {
+			limit = { var:kehillah_mk_choice ?= flag:condemn }
+			kehillah_machloket_take_side_effect = { SIDE = condemn }
+		}
+		remove_variable = kehillah_mk_choice
+	}
+}
+
+kehillah_sefer.0103 = {
+	type = character_event
+	title = kehillah_sefer.0103.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:kehillah_mk_seen_outcome ?= 1 }
+				desc = kehillah_sefer.0103.desc.defended
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_mk_seen_outcome ?= 2 }
+				desc = kehillah_sefer.0103.desc.condemned
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_mk_seen_outcome ?= 3 }
+				desc = kehillah_sefer.0103.desc.banned
+			}
+			desc = kehillah_sefer.0103.desc.synthesis
+		}
+	}
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	option = {
+		name = kehillah_sefer.0103.a
+	}
+	after = {
+		remove_variable = kehillah_mk_seen_outcome
+	}
+}
+
+# The champion of a defeated work may split the rite.
+kehillah_sefer.0104 = {
+	type = character_event
+	title = kehillah_sefer.0104.t
+	desc = kehillah_sefer.0104.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = anger
+	}
+	option = {
+		name = kehillah_sefer.0104.a # found a new rite
+		custom_tooltip = kehillah_sefer.0104.a.tt
+		trigger_event = kehillah_sefer.0106
+	}
+	option = {
+		name = kehillah_sefer.0104.b # submit
+		add_piety = minor_piety_gain
+	}
+}
+
+# Hidden: the schism itself, through vanilla's own dynamic rite.
+kehillah_sefer.0106 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_sefer_schism_dispatch_effect = yes
+	}
+}
+
+# ---------------------------------------------------------------------
+# WRITING (section 6.2). Root: the author, between kehillah_book.0001
+# (kind) and kehillah_book.0002 (inspiration).
+# ---------------------------------------------------------------------
+
+# What does the book argue? One tenet the author holds or has learned.
+kehillah_sefer.0200 = {
+	type = character_event
+	title = kehillah_sefer.0200.t
+	desc = kehillah_sefer.0200.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	option = {
+		name = kehillah_sefer.0200.tt_1
+		trigger = { kehillah_sefer_author_knows_tenet_trigger = { TENET = tenet_talmud_torah } }
+		set_variable = { name = kehillah_book_tenet_a value = 1 }
+	}
+	option = {
+		name = kehillah_sefer.0200.tt_2
+		trigger = { kehillah_sefer_author_knows_tenet_trigger = { TENET = tenet_baalei_hamiqra } }
+		set_variable = { name = kehillah_book_tenet_a value = 2 }
+	}
+	option = {
+		name = kehillah_sefer.0200.tt_3
+		trigger = { kehillah_sefer_author_knows_tenet_trigger = { TENET = tenet_kehillah_hokhmah } }
+		set_variable = { name = kehillah_book_tenet_a value = 3 }
+	}
+	option = {
+		name = kehillah_sefer.0200.tt_4
+		trigger = { kehillah_sefer_author_knows_tenet_trigger = { TENET = tenet_kehillah_emunah_temimah } }
+		set_variable = { name = kehillah_book_tenet_a value = 4 }
+	}
+	option = {
+		name = kehillah_sefer.0200.tt_5
+		trigger = { kehillah_sefer_author_knows_tenet_trigger = { TENET = tenet_kehillah_pesak } }
+		set_variable = { name = kehillah_book_tenet_a value = 5 }
+	}
+	option = {
+		name = kehillah_sefer.0200.tt_6
+		trigger = { kehillah_sefer_author_knows_tenet_trigger = { TENET = tenet_kehillah_pilpul } }
+		set_variable = { name = kehillah_book_tenet_a value = 6 }
+	}
+	option = {
+		name = kehillah_sefer.0200.tt_7
+		trigger = { kehillah_sefer_author_knows_tenet_trigger = { TENET = tenet_kehillah_geonut } }
+		set_variable = { name = kehillah_book_tenet_a value = 7 }
+	}
+	option = {
+		name = kehillah_sefer.0200.tt_8
+		trigger = { kehillah_sefer_author_knows_tenet_trigger = { TENET = tenet_kehillah_minhag_avoteinu } }
+		set_variable = { name = kehillah_book_tenet_a value = 8 }
+	}
+	option = {
+		name = kehillah_sefer.0200.tt_9
+		trigger = { kehillah_sefer_author_knows_tenet_trigger = { TENET = tenet_kehillah_avelei_tziyon } }
+		set_variable = { name = kehillah_book_tenet_a value = 9 }
+	}
+	option = {
+		name = kehillah_sefer.0200.tt_10
+		trigger = { kehillah_sefer_author_knows_tenet_trigger = { TENET = tenet_esotericism } }
+		set_variable = { name = kehillah_book_tenet_a value = 10 }
+	}
+	option = {
+		name = kehillah_sefer.0200.tt_11
+		trigger = { kehillah_sefer_author_knows_tenet_trigger = { TENET = tenet_asceticism } }
+		set_variable = { name = kehillah_book_tenet_a value = 11 }
+	}
+	option = {
+		name = kehillah_sefer.0200.tt_12
+		trigger = { kehillah_sefer_author_knows_tenet_trigger = { TENET = tenet_kehillah_kiddush_hashem } }
+		set_variable = { name = kehillah_book_tenet_a value = 12 }
+	}
+	option = {
+		name = kehillah_sefer.0200.none
+		custom_tooltip = kehillah_sefer.0200.none.tt
+	}
+
+	after = {
+		if = {
+			limit = {
+				OR = {
+					var:kehillah_book_genre ?= flag:talmudics
+					var:kehillah_book_genre ?= flag:hashkafa
+				}
+			}
+			trigger_event = kehillah_sefer.0202
+		}
+		else = {
+			trigger_event = { id = kehillah_book.0002 days = 5 }
+		}
+	}
+}
+
+# A gloss on a work, or a work of one's own? A gloss counts toward the
+# glossed work's standing (the gate to Venerated needs one).
+kehillah_sefer.0202 = {
+	type = character_event
+	title = kehillah_sefer.0202.t
+	desc = kehillah_sefer.0202.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	option = {
+		name = kehillah_sefer.0202.own
+	}
+	option = {
+		name = kehillah_sefer.0202.gloss_halakhot_gedolot
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_halakhot_gedolot } }
+		set_variable = { name = kehillah_book_comment_on value = flag:work_halakhot_gedolot }
+	}
+	option = {
+		name = kehillah_sefer.0202.gloss_emunot_vedeot
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_emunot_vedeot } }
+		set_variable = { name = kehillah_book_comment_on value = flag:work_emunot_vedeot }
+	}
+	option = {
+		name = kehillah_sefer.0202.gloss_kuzari
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_kuzari } }
+		set_variable = { name = kehillah_book_comment_on value = flag:work_kuzari }
+	}
+	option = {
+		name = kehillah_sefer.0202.gloss_sefer_yetzirah
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_sefer_yetzirah } }
+		set_variable = { name = kehillah_book_comment_on value = flag:work_sefer_yetzirah }
+	}
+	option = {
+		name = kehillah_sefer.0202.gloss_rashi_talmud
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_rashi_talmud } }
+		set_variable = { name = kehillah_book_comment_on value = flag:work_rashi_talmud }
+	}
+	option = {
+		name = kehillah_sefer.0202.gloss_hilkhot_harif
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_hilkhot_harif } }
+		set_variable = { name = kehillah_book_comment_on value = flag:work_hilkhot_harif }
+	}
+	option = {
+		name = kehillah_sefer.0202.gloss_mishneh_torah
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mishneh_torah } }
+		set_variable = { name = kehillah_book_comment_on value = flag:work_mishneh_torah }
+	}
+	option = {
+		name = kehillah_sefer.0202.gloss_moreh_nevukhim
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_moreh_nevukhim } }
+		set_variable = { name = kehillah_book_comment_on value = flag:work_moreh_nevukhim }
+	}
+	option = {
+		name = kehillah_sefer.0202.gloss_sefer_habahir
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_sefer_habahir } }
+		set_variable = { name = kehillah_book_comment_on value = flag:work_sefer_habahir }
+	}
+	option = {
+		name = kehillah_sefer.0202.gloss_tosafot
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_tosafot } }
+		set_variable = { name = kehillah_book_comment_on value = flag:work_tosafot }
+	}
+	option = {
+		name = kehillah_sefer.0202.gloss_zohar
+		trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_zohar } }
+		set_variable = { name = kehillah_book_comment_on value = flag:work_zohar }
+	}
+	option = {
+		name = kehillah_sefer.0202.gloss_latest
+		trigger = {
+			exists = var:kehillah_sefer_last_read_authored
+			NOT = { var:kehillah_sefer_last_read_authored = var:kehillah_sefer_my_latest_work }
+		}
+		set_variable = { name = kehillah_book_comment_on value = var:kehillah_sefer_last_read_authored }
+	}
+
+	after = {
+		trigger_event = { id = kehillah_book.0002 days = 5 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# APPROBATION (section 6.3). .0300 asks; the recipient (if a player)
+# answers in .0301; .0302 is the hidden effect.
+# ---------------------------------------------------------------------
+kehillah_sefer.0301 = {
+	type = character_event
+	title = kehillah_sefer.0301.t
+	desc = kehillah_sefer.0301.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_appr_asker
+		animation = personality_honorable
+	}
+	trigger = { exists = scope:kehillah_appr_asker }
+
+	option = {
+		name = kehillah_sefer.0301.a # grant it
+		custom_tooltip = kehillah_sefer.0301.a.tt
+		add_piety = minor_piety_gain
+		scope:kehillah_appr_asker = { add_opinion = { target = root modifier = grateful_opinion opinion = 15 } }
+		trigger_event = kehillah_sefer.0302
+	}
+	option = {
+		name = kehillah_sefer.0301.b # refuse
+		scope:kehillah_appr_asker = { add_opinion = { target = root modifier = disappointed_opinion opinion = -10 } }
+	}
+}
+
+kehillah_sefer.0302 = {
+	type = character_event
+	hidden = yes
+	trigger = { exists = scope:kehillah_appr_asker }
+	immediate = {
+		kehillah_sefer_approbation_dispatch_effect = yes
+		scope:kehillah_appr_asker = {
+			if = {
+				limit = { is_ai = no }
+				send_interface_toast = {
+					title = kehillah_sefer_approbation_granted_t
+					left_icon = root
+				}
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# A HEAD OF RITE JUDGES A BOOK. Root: the judge (decision). Up to three
+# candidates are offered; endorsing helps a work toward Authoritative,
+# condemning drives it down and may start a Machloket.
+# ---------------------------------------------------------------------
+kehillah_sefer.0400 = {
+	type = character_event
+	title = kehillah_sefer.0400.t
+	desc = kehillah_sefer.0400.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	immediate = {
+		kehillah_sefer_build_judgeable_works_effect = yes
+		kehillah_sefer_pick_candidate_effect = { N = 1 }
+		kehillah_sefer_pick_candidate_effect = { N = 2 }
+		kehillah_sefer_pick_candidate_effect = { N = 3 }
+	}
+	option = {
+		name = kehillah_sefer.0400.a
+		trigger = { exists = var:kehillah_sefer_cand_1 }
+		set_variable = { name = kehillah_sefer_named_work value = var:kehillah_sefer_cand_1 }
+		trigger_event = kehillah_sefer.0401
+	}
+	option = {
+		name = kehillah_sefer.0400.b
+		trigger = { exists = var:kehillah_sefer_cand_2 }
+		set_variable = { name = kehillah_sefer_named_work value = var:kehillah_sefer_cand_2 }
+		trigger_event = kehillah_sefer.0401
+	}
+	option = {
+		name = kehillah_sefer.0400.c
+		trigger = { exists = var:kehillah_sefer_cand_3 }
+		set_variable = { name = kehillah_sefer_named_work value = var:kehillah_sefer_cand_3 }
+		trigger_event = kehillah_sefer.0401
+	}
+	option = {
+		name = kehillah_sefer.0400.none
+	}
+	after = {
+		remove_variable = kehillah_sefer_cand_1
+		remove_variable = kehillah_sefer_cand_2
+		remove_variable = kehillah_sefer_cand_3
+	}
+}
+
+kehillah_sefer.0401 = {
+	type = character_event
+	title = kehillah_sefer.0401.t
+	desc = kehillah_sefer.0401.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	option = {
+		name = kehillah_sefer.0401.a # endorse
+		custom_tooltip = kehillah_sefer.0401.a.tt
+		set_variable = { name = kehillah_sefer_judgement value = flag:endorse }
+		trigger_event = kehillah_sefer.0403
+	}
+	option = {
+		name = kehillah_sefer.0401.b # condemn
+		custom_tooltip = kehillah_sefer.0401.b.tt
+		set_variable = { name = kehillah_sefer_judgement value = flag:condemn }
+		trigger_event = kehillah_sefer.0403
+	}
+	option = {
+		name = kehillah_sefer.0401.c # leave it to the scholars
+	}
+}
+
+kehillah_sefer.0403 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { var:kehillah_sefer_judgement ?= flag:endorse }
+			kehillah_sefer_endorse_dispatch_effect = yes
+		}
+		else_if = {
+			limit = { var:kehillah_sefer_judgement ?= flag:condemn }
+			kehillah_sefer_condemn_dispatch_effect = yes
+		}
+		remove_variable = kehillah_sefer_judgement
+	}
+}
+
+# ---------------------------------------------------------------------
+# RANSOM (section 7.1). Root: a library holder (decision). A seized work
+# his library lacks is redeemed; the decision paid the price.
+# ---------------------------------------------------------------------
+kehillah_sefer.0500 = {
+	type = character_event
+	title = kehillah_sefer.0500.t
+	desc = kehillah_sefer.0500.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+	immediate = {
+		kehillah_lib_refresh_own_library_effect = yes
+		kehillah_lib_redeem_one_effect = yes
+	}
+	option = {
+		name = kehillah_sefer.0500.a
+	}
+}
+
+# ---------------------------------------------------------------------
+# INVITE A GREAT TEACHER (section 8). Root: the invited rabbi;
+# scope:kehillah_patron is the ruler who invited him.
+# ---------------------------------------------------------------------
+kehillah_sefer.0600 = {
+	type = character_event
+	title = kehillah_sefer.0600.t
+	desc = kehillah_sefer.0600.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_patron
+		animation = personality_honorable
+	}
+	trigger = { exists = scope:kehillah_patron }
+	option = {
+		name = kehillah_sefer.0600.a # accept
+		custom_tooltip = kehillah_sefer.0600.a.tt
+		trigger_event = kehillah_sefer.0602
+	}
+	option = {
+		name = kehillah_sefer.0600.b # decline
+		scope:kehillah_patron = {
+			trigger_event = kehillah_sefer.0601
+		}
+	}
+}
+
+kehillah_sefer.0601 = {
+	type = character_event
+	title = kehillah_sefer.0601.t
+	desc = kehillah_sefer.0601.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = disappointed
+	}
+	option = {
+		name = kehillah_sefer.0601.a
+	}
+}
+
+kehillah_sefer.0602 = {
+	type = character_event
+	hidden = yes
+	trigger = { exists = scope:kehillah_patron }
+	immediate = {
+		kehillah_yeshiva_found_landed_by_patronage_effect = yes
+	}
+}

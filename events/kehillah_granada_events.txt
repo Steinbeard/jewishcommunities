@@ -1,29 +1,104 @@
 ﻿# Opening choices run after acknowledgment; previews contain no crisis initialization.
+# 2026-11-06 (Daniel): three different bets, so that none is simply best. Laid out as vanilla lays
+# out an option: flavor on the option, one effect per line, and a duel that shows its own odds and
+# factors. Race pushes stay in hidden_effect: their points are passed in a variable that a preview
+# never sets, so a visible push would show the catalyst's default size.
 scripted_effect kehillah_intro_granada_1_response_effect = {
-	primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_eases_catalyst POINTS = kehillah_crisis_ev_small } }
+	send_interface_toast = {
+		type = event_toast_effect_good
+		title = kehillah_granada_elders_warned
+		left_icon = root
+		custom_tooltip = kehillah_crisis_tt_spared_small
+		custom_tooltip = kehillah_granada.0018.a.tt
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = -5 }
+		hidden_effect = {
+			kehillah_granada_adjust_severity_effect = { AMOUNT = -5 }
+			primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_eases_catalyst POINTS = kehillah_crisis_ev_small } }
+		}
+	}
 }
 
 scripted_effect kehillah_intro_granada_2_response_effect = {
 	add_stress = minor_stress_loss
-	primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_ev_medium } }
+	duel = {
+		skill = intrigue
+		value = medium_skill_rating
+		50 = {
+			desc = kehillah_granada_burned
+			compare_modifier = { value = scope:duel_value multiplier = 3.5 }
+			min = 15
+			send_interface_toast = {
+				type = event_toast_text_and_effect_good
+				title = kehillah_toast_success
+				desc = kehillah_granada_burned_desc
+				left_icon = root
+				custom_tooltip = kehillah_crisis_tt_spared_moderate
+				hidden_effect = {
+					primary_title = { set_variable = { name = kehillah_crisis_verses_burned value = yes } kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_eases_catalyst POINTS = kehillah_crisis_ev_medium } }
+				}
+			}
+		}
+		50 = {
+			desc = kehillah_granada_not_burned
+			compare_modifier = { value = scope:duel_value multiplier = -3.5 }
+			min = 15
+			send_interface_toast = {
+				type = event_toast_text_and_effect_bad
+				title = kehillah_toast_failure
+				desc = kehillah_granada_not_burned_desc
+				left_icon = root
+				custom_tooltip = kehillah_crisis_tt_armed_small
+				hidden_effect = {
+					primary_title = { set_variable = { name = kehillah_crisis_failed_burn value = yes } kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_ev_small } }
+				}
+			}
+		}
+	}
 }
 
 scripted_effect kehillah_intro_granada_3_response_effect = {
-	random_list = {
-			0 = {
-				modifier = { add = kehillah_granada_silence_chance_value }
-				desc = kehillah_granada_silenced
-				custom_tooltip = kehillah_granada_silenced_tt
-				add_character_flag = kehillah_granada_silenced
-				primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_eases_catalyst POINTS = kehillah_crisis_ev_medium } }
-			}
-			0 = {
-				modifier = { add = kehillah_granada_silence_fail_value }
-				desc = kehillah_granada_not_silenced
-				custom_tooltip = kehillah_granada_not_silenced_tt
-				primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_ev_small } }
+	duel = {
+		skill = diplomacy
+		value = medium_skill_rating
+		35 = {
+			desc = kehillah_granada_silenced
+			kehillah_lord_outlook_odds_modifier = { HOST = scope:kehillah_granada_emir }
+			compare_modifier = { value = scope:duel_value multiplier = 2 }
+			opinion_modifier = { who = scope:kehillah_granada_emir opinion_target = root multiplier = 0.25 }
+			min = 5
+			send_interface_toast = {
+				type = event_toast_text_and_effect_good
+				title = kehillah_toast_success
+				desc = kehillah_granada_silenced_desc
+				left_icon = scope:kehillah_granada_emir
+				custom_tooltip = kehillah_crisis_tt_spared_moderate
+				custom_tooltip = kehillah_granada.0018.c.tt
+				hidden_effect = {
+					add_character_flag = kehillah_granada_silenced
+					primary_title = {
+						set_variable = { name = kehillah_mob_condemned value = yes }
+						kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_eases_catalyst POINTS = kehillah_crisis_ev_medium }
+					}
+				}
 			}
 		}
+		65 = {
+			desc = kehillah_granada_not_silenced
+			compare_modifier = { value = scope:duel_value multiplier = -2 }
+			opinion_modifier = { who = scope:kehillah_granada_emir opinion_target = root multiplier = -0.25 }
+			min = 5
+			send_interface_toast = {
+				type = event_toast_text_and_effect_bad
+				title = kehillah_toast_failure
+				desc = kehillah_granada_not_silenced_desc
+				left_icon = scope:kehillah_granada_emir
+				custom_tooltip = kehillah_crisis_tt_armed_moderate
+				hidden_effect = {
+					primary_title = { set_variable = { name = kehillah_crisis_failed_silence value = yes } kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_ev_medium } }
+				}
+			}
+		}
+	}
 }
 
 namespace = kehillah_granada
@@ -66,8 +141,13 @@ kehillah_granada.0008 = {
 		kehillah_granada_chain_valid_trigger = yes
 		this = character:9000216
 		NOT = { has_character_flag = kehillah_granada_night_done }
+		NOT = { has_character_flag = kehillah_granada_office_seen }
 	}
-	immediate = { kehillah_granada_scopes_effect = yes }
+	immediate = {
+		add_character_flag = kehillah_granada_office_seen
+		kehillah_granada_scopes_effect = yes
+		debug_log = "kehillah_granada.0008: Your Father's Office delivered"
+	}
 	option = { name = kehillah_granada.0008.a }
 }
 
@@ -80,7 +160,17 @@ kehillah_granada.0019 = {
 		kehillah_granada_chain_valid_trigger = yes
 		NOT = { has_character_flag = kehillah_granada_night_done }
 	}
-	immediate = { trigger_event = kehillah_granada.0018 }
+	immediate = {
+		# If the start-of-game event was discarded while the lobby settled, restore the
+		# intended first beat before presenting the poem. The normal path stays on day 30.
+		if = {
+			limit = { this = character:9000216 NOT = { has_character_flag = kehillah_granada_office_seen } }
+			trigger_event = kehillah_granada.0008
+			trigger_event = { id = kehillah_granada.0018 days = 1 }
+			debug_log = "kehillah_granada.0019: restoring missing office scene"
+		}
+		else = { trigger_event = kehillah_granada.0018 }
+	}
 }
 
 # The indented verse is an original English translation of two separated
@@ -89,7 +179,17 @@ kehillah_granada.0019 = {
 kehillah_granada.0018 = {
 	type = character_event
 	title = kehillah_granada.0018.t
-	desc = kehillah_granada.0018.desc
+	desc = {
+		desc = kehillah_granada.0018.desc_opening
+		first_valid = {
+			triggered_desc = {
+				trigger = { character:9000235 ?= { is_alive = yes } }
+				desc = kehillah_granada.0018.desc_poet
+			}
+			desc = kehillah_granada.0018.desc_copy
+		}
+		desc = kehillah_granada.0018.desc_close
+	}
 	theme = intrigue
 	left_portrait = { character = root animation = worry }
 	right_portrait = {
@@ -105,7 +205,14 @@ kehillah_granada.0018 = {
 	immediate = {
   primary_title = { save_scope_as = kehillah_crisis_intro_title }
 		kehillah_granada_scopes_effect = yes
-		if = { limit = { kehillah_crisis_can_offer_intro_trigger = yes } kehillah_crisis_reserve_intro_effect = { FAMILY = granada } }
+		# 2026-11-06 (Daniel): the crisis starts with this popup, not with its answer, so the banner
+		# does not read as the result of the choice. The reservation only supplies the guards that
+		# acknowledgment checks; the answer's push still applies in `after`, on the running race.
+		if = {
+			limit = { kehillah_crisis_can_offer_intro_trigger = yes }
+			kehillah_crisis_reserve_intro_effect = { FAMILY = granada }
+			kehillah_crisis_start_with_popup_effect = { FAMILY = granada }
+		}
 	}
 	# 2026-11-01: the crisis's opening scene. No longer leads to .0001, whose answers duplicated the
 	# window's actions (docs/spec/2026-11-01-three-standing-actions.md); .0001 stays for queued
@@ -114,28 +221,28 @@ kehillah_granada.0018 = {
 	# The elders must see it.
 	option = {
 		name = kehillah_granada.0018.a
+		flavor = kehillah_granada.0018.a.flavor
 		ai_chance = { base = 40 }
 		show_as_tooltip = { kehillah_intro_granada_1_response_effect = yes }
-		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
 		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:granada_1 } }
 	}
 
 	# Burn it.
 	option = {
 		name = kehillah_granada.0018.b
+		flavor = kehillah_granada.0018.b.flavor
 		ai_chance = { base = 20 }
 		show_as_tooltip = { kehillah_intro_granada_2_response_effect = yes }
-		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
 		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:granada_2 } }
 	}
 
 	# Lay it before the emir.
 	option = {
 		name = kehillah_granada.0018.c
+		flavor = kehillah_granada.0018.c.flavor
 		trigger = { exists = scope:kehillah_granada_emir }
 		ai_chance = { base = 40 }
 		show_as_tooltip = { kehillah_intro_granada_3_response_effect = yes }
-		if = { limit = { primary_title ?= { has_variable = kehillah_crisis_intro_pending } } custom_tooltip = kehillah_crisis_acknowledge_tt }
 		hidden_effect = { set_variable = { name = kehillah_crisis_intro_choice value = flag:granada_3 } }
 	}
 
@@ -170,7 +277,7 @@ kehillah_granada.0020 = {
 	immediate = { kehillah_granada_scopes_effect = yes }
 	option = {
 		name = kehillah_granada.0020.a
-		primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_almeria_riders_points_value } }
+		primary_title = { hidden_effect = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_almeria_riders_points_value } } custom_tooltip = kehillah_crisis_tt_armed_large }
 	}
 }
 
@@ -298,27 +405,56 @@ kehillah_granada.0002 = {
 		kehillah_granada_scopes_effect = yes
 	}
 
+	# 2026-11-06 (Daniel): three different bets. The defense can win his trust or lose ground; the
+	# debt is sure but costs his goodwill; staying at work calms the quarter and lets the talk run.
 	# Go before Badis and swear your loyalty.
 	option = {
 		name = kehillah_granada.0002.a
+		flavor = kehillah_granada.0002.a.flavor
 		trigger = { exists = scope:kehillah_granada_emir }
-		random_list = {
-			0 = {
-				modifier = { add = kehillah_granada_loyalty_chance_value }
+		duel = {
+			skill = diplomacy
+			value = medium_skill_rating
+			35 = {
 				desc = kehillah_granada_believed
-				custom_tooltip = kehillah_granada_believed_tt
-				primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_eases_catalyst POINTS = kehillah_crisis_ev_large } }
-				kehillah_granada_adjust_severity_effect = { AMOUNT = -10 }
-				primary_title = { change_variable = { name = kehillah_crisis_agitation add = -10 } clamp_variable = { name = kehillah_crisis_agitation min = 5 max = 95 } }
-				scope:kehillah_granada_emir = {
-					add_opinion = { target = root modifier = pleased_opinion opinion = 15 }
+				compare_modifier = { value = scope:duel_value multiplier = 2 }
+				opinion_modifier = { who = scope:kehillah_granada_emir opinion_target = root multiplier = 0.25 }
+				min = 5
+				send_interface_toast = {
+					type = event_toast_text_and_effect_good
+					title = kehillah_toast_success
+					desc = kehillah_granada_believed_desc
+					left_icon = scope:kehillah_granada_emir
+					custom_tooltip = kehillah_crisis_tt_spared_large
+					custom_tooltip = kehillah_granada_believed_tt
+					scope:kehillah_granada_emir = {
+						add_opinion = { target = root modifier = pleased_opinion opinion = 15 }
+					}
+					hidden_effect = {
+						kehillah_granada_adjust_severity_effect = { AMOUNT = -10 }
+						primary_title = {
+							kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_eases_catalyst POINTS = kehillah_crisis_ev_large }
+							change_variable = { name = kehillah_crisis_agitation add = -10 }
+							clamp_variable = { name = kehillah_crisis_agitation min = 5 max = 95 }
+						}
+					}
 				}
 			}
-			0 = {
-				modifier = { add = kehillah_granada_loyalty_fail_value }
+			65 = {
 				desc = kehillah_granada_disbelieved
-				custom_tooltip = kehillah_granada_disbelieved_tt
-				primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_ev_medium } }
+				compare_modifier = { value = scope:duel_value multiplier = -2 }
+				opinion_modifier = { who = scope:kehillah_granada_emir opinion_target = root multiplier = -0.25 }
+				min = 5
+				send_interface_toast = {
+					type = event_toast_text_and_effect_bad
+					title = kehillah_toast_failure
+					desc = kehillah_granada_disbelieved_desc
+					left_icon = scope:kehillah_granada_emir
+					custom_tooltip = kehillah_crisis_tt_armed_moderate
+					hidden_effect = {
+						primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_ev_medium } }
+					}
+				}
 			}
 		}
 		ai_chance = { base = 40 }
@@ -328,16 +464,29 @@ kehillah_granada.0002 = {
 	# way out under Prepare the Quarter; 2026-11-01.)
 	option = {
 		name = kehillah_granada.0002.d
+		flavor = kehillah_granada.0002.d.flavor
+		trigger = { exists = scope:kehillah_granada_emir }
 		add_prestige = minor_prestige_loss
-		primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_eases_catalyst POINTS = kehillah_crisis_ev_medium } }
+		custom_tooltip = kehillah_crisis_tt_spared_moderate
+		scope:kehillah_granada_emir = {
+			add_opinion = { target = root modifier = annoyed_opinion opinion = -10 }
+		}
+		hidden_effect = {
+			primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_eases_catalyst POINTS = kehillah_crisis_ev_medium } }
+		}
 		ai_chance = { base = 30 }
 	}
 
 	# I am the vizier of Granada.
 	option = {
 		name = kehillah_granada.0002.c
+		flavor = kehillah_granada.0002.c.flavor
 		add_prestige = minor_prestige_gain
-		primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_ev_small } }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = 5 }
+		custom_tooltip = kehillah_crisis_tt_armed_small
+		hidden_effect = {
+			primary_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_mood_turns_catalyst POINTS = kehillah_crisis_ev_small } }
+		}
 		ai_chance = {
 			base = 10
 			modifier = { add = 30 has_trait = arrogant }

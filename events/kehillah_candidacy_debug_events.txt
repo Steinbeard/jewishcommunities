@@ -1,0 +1,228 @@
+﻿# =====================================================================
+# STAND FOR THE SEAT -- console probes. Hidden, never fired by the game.
+# docs/testing/2026-11-08-stand-for-the-seat-validation.md says which to
+# run when. Every line they write starts with KEHILLAH_CAND_PROBE, so
+#   findstr KEHILLAH_CAND debug.log
+# shows them together with the feature's own KEHILLAH_CAND lines.
+#
+# Run as the player, from the console:
+#   event kehillah_candidacy_debug.1    status: score, pool, gates
+#   event kehillah_candidacy_debug.2    declare for the test seat, free
+#   event kehillah_candidacy_debug.3    make the player a great rabbi
+#   event kehillah_candidacy_debug.4    the test seat's leader dies
+#   event kehillah_candidacy_debug.5    after a win: titles, Quarter, court
+#   event kehillah_candidacy_debug.6    clear all candidacy state
+#
+# The test seat is the player's declared target if he has one, otherwise
+# Mainz, or Worms when the player leads Mainz.
+# =====================================================================
+
+namespace = kehillah_candidacy_debug
+
+scripted_effect kehillah_cand_probe_pick_seat_effect = {
+	if = {
+		limit = { exists = var:kehillah_candidacy_target }
+		var:kehillah_candidacy_target = { save_scope_as = cand_seat }
+	}
+	else_if = {
+		limit = { NOT = { primary_title ?= title:d_kehillah_mainz } }
+		title:d_kehillah_mainz = { save_scope_as = cand_seat }
+	}
+	else = {
+		title:d_kehillah_worms = { save_scope_as = cand_seat }
+	}
+	scope:cand_seat = { save_scope_as = title }
+}
+
+# .1 -- Status.
+kehillah_candidacy_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_cand_probe_pick_seat_effect = yes
+		set_variable = {
+			name = kehillah_cand_probe_preview
+			value = kehillah_cand_preview_score_value
+		}
+		debug_log = "KEHILLAH_CAND_PROBE .1 seat=[cand_seat.GetName] holder=[cand_seat.GetHolder.GetName] heir=[cand_seat.GetHeir.GetName]"
+		debug_log = "KEHILLAH_CAND_PROBE .1 preview_score=[ROOT.Char.MakeScope.Var('kehillah_cand_probe_preview').GetValue]"
+		if = {
+			limit = { kehillah_cand_declared_for_trigger = { SEAT = scope:cand_seat } }
+			debug_log = "KEHILLAH_CAND_PROBE .1 declared=yes"
+		}
+		else = { debug_log = "KEHILLAH_CAND_PROBE .1 declared=no" }
+		if = {
+			limit = { scope:cand_seat = { any_title_heir = { this = root } } }
+			set_local_variable = {
+				name = kehillah_cand_probe_engine
+				value = "appointment_candidate_score(scope:cand_seat)"
+			}
+			set_variable = {
+				name = kehillah_cand_probe_engine
+				value = local_var:kehillah_cand_probe_engine
+			}
+			debug_log = "KEHILLAH_CAND_PROBE .1 in_pool=yes engine_score=[ROOT.Char.MakeScope.Var('kehillah_cand_probe_engine').GetValue] (should equal preview_score)"
+			remove_variable = kehillah_cand_probe_engine
+		}
+		else = { debug_log = "KEHILLAH_CAND_PROBE .1 in_pool=NO" }
+		if = {
+			limit = {
+				succession_appointment_score_invested = {
+					title = scope:cand_seat
+					candidate = root
+					value > 0
+				}
+			}
+			debug_log = "KEHILLAH_CAND_PROBE .1 invested=yes"
+		}
+		else = { debug_log = "KEHILLAH_CAND_PROBE .1 invested=no" }
+		if = {
+			limit = { kehillah_cand_great_rabbi_trigger = yes }
+			debug_log = "KEHILLAH_CAND_PROBE .1 great_rabbi=yes"
+		}
+		else = { debug_log = "KEHILLAH_CAND_PROBE .1 great_rabbi=no" }
+		if = {
+			limit = { kehillah_cand_married_in_trigger = { SEAT = scope:cand_seat } }
+			debug_log = "KEHILLAH_CAND_PROBE .1 married_in=yes"
+		}
+		else = { debug_log = "KEHILLAH_CAND_PROBE .1 married_in=no" }
+		if = {
+			limit = { kehillah_cand_stranger_trigger = { SEAT = scope:cand_seat } }
+			debug_log = "KEHILLAH_CAND_PROBE .1 stranger=yes (-60)"
+		}
+		else = { debug_log = "KEHILLAH_CAND_PROBE .1 stranger=no" }
+		if = {
+			limit = { kehillah_cand_shares_minhag_trigger = { SEAT = scope:cand_seat } }
+			debug_log = "KEHILLAH_CAND_PROBE .1 shares_minhag=yes"
+		}
+		else = { debug_log = "KEHILLAH_CAND_PROBE .1 shares_minhag=no (-20)" }
+		if = {
+			limit = { has_variable = kehillah_candidacy_cooldown }
+			debug_log = "KEHILLAH_CAND_PROBE .1 cooldown=yes"
+		}
+		if = {
+			limit = { scope:cand_seat = { kehillah_cand_seat_in_capital_trigger = yes } }
+			debug_log = "KEHILLAH_CAND_PROBE .1 offer capital=yes"
+		}
+		if = {
+			limit = { scope:cand_seat.holder ?= { kehillah_has_yeshiva_trigger = yes } }
+			debug_log = "KEHILLAH_CAND_PROBE .1 offer yeshiva=yes"
+		}
+		remove_variable = kehillah_cand_probe_preview
+	}
+}
+
+# .2 -- Declare for the test seat, free and ignoring the cooldown.
+kehillah_candidacy_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { has_variable = kehillah_candidacy_cooldown }
+			remove_variable = kehillah_candidacy_cooldown
+		}
+		kehillah_cand_probe_pick_seat_effect = yes
+		if = {
+			limit = {
+				kehillah_cand_can_weigh_seat_trigger = {
+					CAND = root
+					SEAT = scope:cand_seat
+				}
+				NOT = { kehillah_cand_declared_for_trigger = { SEAT = scope:cand_seat } }
+			}
+			if = {
+				limit = { exists = var:kehillah_candidacy_target }
+				kehillah_cand_end_candidacy_effect = { YEARS = 1 }
+				remove_variable = kehillah_candidacy_cooldown
+			}
+			kehillah_cand_declare_effect = yes
+			debug_log = "KEHILLAH_CAND_PROBE .2 declared for [cand_seat.GetName]. Wait a day, then run .1: in_pool should read yes"
+		}
+		else = {
+			debug_log = "KEHILLAH_CAND_PROBE .2 REFUSED: the player may not weigh [cand_seat.GetName] (player-led, other faith, or the player leads no community)"
+		}
+	}
+}
+
+# .3 -- Make the player a great rabbi: the Rabbi trait and piety level 3.
+kehillah_candidacy_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { NOT = { has_trait = kehillah_rabbi_trait } }
+			add_trait = kehillah_rabbi_trait
+		}
+		add_piety = 3000
+		if = {
+			limit = { kehillah_cand_great_rabbi_trigger = yes }
+			debug_log = "KEHILLAH_CAND_PROBE .3 great_rabbi=yes"
+		}
+		else = { debug_log = "KEHILLAH_CAND_PROBE .3 great_rabbi=STILL NO" }
+	}
+}
+
+# .4 -- The test seat's leader dies. Same as the console kill command on
+# him, but finds him for you.
+kehillah_candidacy_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_cand_probe_pick_seat_effect = yes
+		scope:cand_seat.holder ?= {
+			save_scope_as = cand_probe_victim
+			debug_log = "KEHILLAH_CAND_PROBE .4 killing [cand_probe_victim.GetName], leader of [cand_seat.GetName]; the engine's heir is [cand_seat.GetHeir.GetName]"
+			death = { death_reason = death_natural_causes }
+		}
+	}
+}
+
+# .5 -- After a win (run 2+ days after .4): what the player holds, the
+# Quarter on his domicile and both communities' records.
+kehillah_candidacy_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "KEHILLAH_CAND_PROBE .5 primary=[ROOT.Char.GetPrimaryTitle.GetName]"
+		every_held_title = {
+			limit = { is_kehillah_title_trigger = yes }
+			save_temporary_scope_as = cand_probe_held
+			debug_log = "KEHILLAH_CAND_PROBE .5 holds community [cand_probe_held.GetName] (more than one line here is a FAILURE)"
+		}
+		if = {
+			limit = { exists = domicile }
+			if = {
+				limit = { domicile = { has_domicile_building_or_higher = kehillah_synagogue_01 } }
+				debug_log = "KEHILLAH_CAND_PROBE .5 domicile synagogue: present"
+			}
+			debug_log = "KEHILLAH_CAND_PROBE .5 record of primary: synagogue=[ROOT.Char.GetPrimaryTitle.MakeScope.Var('kq_synagogue').GetValue] beit_midrash=[ROOT.Char.GetPrimaryTitle.MakeScope.Var('kq_beit_midrash').GetValue] countinghouse=[ROOT.Char.GetPrimaryTitle.MakeScope.Var('kq_countinghouse').GetValue] market=[ROOT.Char.GetPrimaryTitle.MakeScope.Var('kq_market_stalls').GetValue] (compare with the domicile panel)"
+		}
+		else = { debug_log = "KEHILLAH_CAND_PROBE .5 NO DOMICILE (failure)" }
+		if = {
+			limit = { exists = var:kehillah_candidacy_target }
+			debug_log = "KEHILLAH_CAND_PROBE .5 candidacy still set (failure after a win)"
+		}
+		if = {
+			limit = { has_variable = kehillah_candidacy_cooldown }
+			debug_log = "KEHILLAH_CAND_PROBE .5 cooldown set (expected after a win or loss)"
+		}
+		debug_log = "KEHILLAH_CAND_PROBE .5 courtiers=[ROOT.Char.MakeScope.ScriptValue('kehillah_cand_probe_courtier_count_value')]"
+	}
+}
+
+# .6 -- Clear all candidacy state on the player and his target.
+kehillah_candidacy_debug.6 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { exists = var:kehillah_candidacy_target }
+			kehillah_cand_end_candidacy_effect = { YEARS = 1 }
+		}
+		if = {
+			limit = { has_variable = kehillah_candidacy_cooldown }
+			remove_variable = kehillah_candidacy_cooldown
+		}
+		debug_log = "KEHILLAH_CAND_PROBE .6 candidacy state cleared"
+	}
+}

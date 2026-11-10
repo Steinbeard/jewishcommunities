@@ -400,6 +400,8 @@ kehillah_refresh_charter_state_cache_effect = {
 		remove_variable = kehillah_charter_cache_text_study
 		remove_variable = kehillah_charter_cache_market_access
 		remove_variable = kehillah_charter_cache_tribute
+		remove_variable = kehillah_charter_cache_lending
+		remove_variable = kehillah_charter_cache_walled
 		# The real contract, or its absence, supersedes any start-up guess.
 		if = {
 			limit = { has_variable = kehillah_charter_predicted }
@@ -507,6 +509,35 @@ kehillah_refresh_charter_state_cache_effect = {
 			primary_title = { set_variable = { name = kehillah_charter_cache_market_access value = 0 } }
 		}
 	}
+	# The V15 fallback charter (any host neither Christian nor Muslim).
+	# 2026-11-07: its pillar values used to read vassal_contract_has_flag,
+	# which never matches a tributary charter, so its moneylending and
+	# walled-quarter rights added nothing. They are cached here like the
+	# regional rows: lending 0 Forbidden, 1 Pawnbroking, 2 Full; walled 0/1.
+	# These are separate variables from the regional ones on purpose:
+	# kehillah_charter_cache_construction marks a REGIONAL cache elsewhere.
+	else_if = {
+		limit = { has_subject_contract_group = kehillah_host_charter }
+		if = {
+			limit = { subject_contract_has_flag = kehillah_moneylending_full_granted }
+			primary_title = { set_variable = { name = kehillah_charter_cache_lending value = 2 } }
+		}
+		else_if = {
+			limit = { subject_contract_has_flag = kehillah_moneylending_pawnbroking_granted }
+			primary_title = { set_variable = { name = kehillah_charter_cache_lending value = 1 } }
+		}
+		else = {
+			primary_title = { set_variable = { name = kehillah_charter_cache_lending value = 0 } }
+		}
+
+		if = {
+			limit = { subject_contract_has_flag = kehillah_quarter_walled_granted }
+			primary_title = { set_variable = { name = kehillah_charter_cache_walled value = 1 } }
+		}
+		else = {
+			primary_title = { set_variable = { name = kehillah_charter_cache_walled value = 0 } }
+		}
+	}
 
 	# The Tribute term (2026-10-30, v31 Section 8.2) is in every charter
 	# group, so it is read outside the group branches: 0 None, 1 Customary,
@@ -524,6 +555,29 @@ kehillah_refresh_charter_state_cache_effect = {
 		}
 		else = {
 			primary_title = { set_variable = { name = kehillah_charter_cache_tribute value = 1 } }
+		}
+	}
+
+	# The Nagid's tribute bonus (2026-11-08). The engine collects the
+	# tribute, so the bonus is a tax-contribution modifier on the host,
+	# renewed here each quarter for four months (see
+	# kehillah_tribute_modifiers.txt). Never removed here: another
+	# community of the same host may still qualify, so it lapses instead.
+	if = {
+		limit = {
+			is_tributary = yes
+			exists = suzerain
+			domicile.domicile_location.county.holder.top_liege ?= { kehillah_realm_nagid_filled_trigger = yes }
+		}
+		suzerain = {
+			if = {
+				limit = { has_character_modifier = kehillah_nagid_tribute_modifier }
+				remove_character_modifier = kehillah_nagid_tribute_modifier
+			}
+			add_character_modifier = {
+				modifier = kehillah_nagid_tribute_modifier
+				months = 4
+			}
 		}
 	}
 

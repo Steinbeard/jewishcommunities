@@ -1,0 +1,311 @@
+﻿# =====================================================================
+# Machloket: a controversy over a book (2026-11-08). Spec section 6.4 with
+# Daniel's decision 7: a controversy can split a rite, but it usually ends
+# in a creative synthesis or one side's clear victory, and it works
+# through the base game's own rite-divergence systems -- tenet popularity
+# (change_tenet_popularity, which vanilla rite reform and head-of-rite
+# drift read) and, for a schism, create_dynamic_rite with the work's tenet
+# as a core override. The implementation note lists the vanilla systems.
+#
+# One controversy at a time per rite. State lives on the rite:
+#   kehillah_mk_active    flag:<work>
+#   kehillah_mk_years     years since it began
+#   kehillah_mk_defend / kehillah_mk_condemn   weight of each side
+#   kehillah_mk_champion / kehillah_mk_critic  the weightiest of each side
+# A work cannot be disputed again for thirty years (global cooldown).
+# Rite scope unless stated; $KEY$ is the work id.
+# =====================================================================
+
+# From kehillah_standing_recalc_work_effect, yearly.
+kehillah_machloket_yearly_effect = {
+	if = {
+		limit = { var:kehillah_mk_active ?= flag:$KEY$ }
+		kehillah_machloket_advance_effect = { KEY = $KEY$ }
+	}
+	else_if = {
+		limit = {
+			NOT = { has_variable = kehillah_mk_active }
+			NOT = { has_global_variable = kehillah_wk_$KEY$_mk_cooldown }
+			var:kehillah_standing_$KEY$ >= 7
+			var:kehillah_standing_$KEY$ >= kehillah_lib_ceiling_$KEY$
+			kehillah_lib_ceiling_$KEY$ < 10
+		}
+		random = {
+			chance = 15
+			kehillah_machloket_start_effect = { KEY = $KEY$ }
+		}
+	}
+}
+
+kehillah_machloket_start_effect = {
+	set_variable = { name = kehillah_mk_active value = flag:$KEY$ }
+	set_variable = { name = kehillah_mk_years value = 0 }
+	set_variable = { name = kehillah_mk_defend value = 0 }
+	set_variable = { name = kehillah_mk_condemn value = 0 }
+	set_global_variable = { name = kehillah_wk_$KEY$_mk_cooldown value = yes days = 10950 }
+	save_scope_as = kehillah_mk_rite
+	every_in_global_list = {
+		variable = kehillah_libraries
+		limit = {
+			exists = holder
+			holder = {
+				is_ai = no
+				rite = { this = scope:kehillah_mk_rite }
+			}
+		}
+		holder = {
+			set_variable = { name = kehillah_sefer_named_work value = flag:$KEY$ }
+			trigger_event = kehillah_sefer.0101
+		}
+	}
+	debug_log = "kehillah_machloket_start_effect: a controversy began"
+}
+
+kehillah_machloket_advance_effect = {
+	change_variable = { name = kehillah_mk_years add = 1 }
+	save_scope_as = kehillah_mk_rite
+	if = {
+		limit = { var:kehillah_mk_years = 1 }
+		# The letters: every library holder of the rite takes a side.
+		every_in_global_list = {
+			variable = kehillah_libraries
+			limit = {
+				exists = holder
+				holder = { rite = { this = scope:kehillah_mk_rite } }
+			}
+			holder = {
+				set_variable = { name = kehillah_sefer_named_work value = flag:$KEY$ }
+				if = {
+					limit = { is_ai = no }
+					trigger_event = kehillah_sefer.0102
+				}
+				else = {
+					kehillah_machloket_ai_side_effect = { KEY = $KEY$ }
+				}
+			}
+		}
+	}
+	else_if = {
+		limit = { var:kehillah_mk_years >= 3 }
+		kehillah_machloket_resolve_effect = { KEY = $KEY$ }
+	}
+}
+
+# Scope: an AI library holder, with scope:kehillah_mk_rite.
+kehillah_machloket_ai_side_effect = {
+	kehillah_sefer_work_fit_$KEY$_effect = yes
+	if = {
+		limit = { var:kehillah_sefer_fit = 1 }
+		kehillah_machloket_take_side_effect = { SIDE = defend }
+	}
+	else_if = {
+		limit = { var:kehillah_sefer_fit = -1 }
+		kehillah_machloket_take_side_effect = { SIDE = condemn }
+	}
+	else = {
+		random_list = {
+			40 = {
+				modifier = {
+					add = 30
+					is_target_in_variable_list = { name = kehillah_mastered_works target = flag:$KEY$ }
+				}
+				kehillah_machloket_take_side_effect = { SIDE = defend }
+			}
+			35 = {
+				modifier = {
+					add = 25
+					has_trait = zealous
+				}
+				kehillah_machloket_take_side_effect = { SIDE = condemn }
+			}
+			25 = {}
+		}
+	}
+	remove_variable = kehillah_sefer_fit
+}
+
+# Scope: a character joining a side ($SIDE$: defend or condemn), with
+# scope:kehillah_mk_rite. The weightiest defender is the champion who may
+# found a rite; the weightiest critic leads the bans.
+kehillah_machloket_take_side_effect = {
+	set_variable = { name = kehillah_mk_my_weight value = kehillah_mk_weight_value }
+	save_temporary_scope_as = kehillah_mk_actor
+	scope:kehillah_mk_rite = {
+		change_variable = { name = kehillah_mk_$SIDE$ add = scope:kehillah_mk_actor.var:kehillah_mk_my_weight }
+	}
+	kehillah_machloket_record_lead_$SIDE$_effect = yes
+	remove_variable = kehillah_mk_my_weight
+}
+
+kehillah_machloket_record_lead_defend_effect = {
+	if = {
+		limit = {
+			OR = {
+				NOT = { exists = scope:kehillah_mk_rite.var:kehillah_mk_champion }
+				scope:kehillah_mk_rite.var:kehillah_mk_champion = { is_alive = no }
+				scope:kehillah_mk_rite.var:kehillah_mk_champion = { learning < scope:kehillah_mk_actor.learning }
+			}
+		}
+		scope:kehillah_mk_rite = { set_variable = { name = kehillah_mk_champion value = scope:kehillah_mk_actor } }
+	}
+}
+
+kehillah_machloket_record_lead_condemn_effect = {
+	if = {
+		limit = {
+			OR = {
+				NOT = { exists = scope:kehillah_mk_rite.var:kehillah_mk_critic }
+				scope:kehillah_mk_rite.var:kehillah_mk_critic = { is_alive = no }
+				scope:kehillah_mk_rite.var:kehillah_mk_critic = { learning < scope:kehillah_mk_actor.learning }
+			}
+		}
+		scope:kehillah_mk_rite = { set_variable = { name = kehillah_mk_critic value = scope:kehillah_mk_actor } }
+	}
+}
+
+kehillah_machloket_resolve_effect = {
+	save_scope_as = kehillah_mk_rite
+	if = {
+		limit = {
+			var:kehillah_mk_defend > 0
+			var:kehillah_mk_defend >= { value = var:kehillah_mk_condemn multiply = 2 }
+		}
+		# The defenders carry it: the work is endorsed and its ideas spread.
+		set_variable = { name = kehillah_mk_outcome value = 1 }
+		change_variable = { name = kehillah_reception_$KEY$ add = 25 }
+		set_global_variable = { name = kehillah_wk_$KEY$_endorsed value = yes }
+		if = {
+			limit = { var:kehillah_standing_$KEY$ < kehillah_lib_ceiling_$KEY$ }
+			change_variable = { name = kehillah_standing_$KEY$ add = 1 }
+		}
+		faith = { kehillah_sefer_work_popularity_$KEY$_effect = { AMOUNT = 5 } }
+	}
+	else_if = {
+		limit = {
+			var:kehillah_mk_condemn > 0
+			var:kehillah_mk_condemn >= { value = var:kehillah_mk_defend multiply = 2 }
+		}
+		# The critics carry it: the work falls; overwhelmed, it is banned.
+		set_variable = { name = kehillah_mk_outcome value = 2 }
+		change_variable = { name = kehillah_reception_$KEY$ add = -30 }
+		change_variable = { name = kehillah_standing_$KEY$ add = -2 }
+		if = {
+			limit = { var:kehillah_mk_condemn >= { value = var:kehillah_mk_defend multiply = 3 } }
+			set_variable = { name = kehillah_standing_$KEY$ value = 1 }
+			set_variable = { name = kehillah_mk_outcome value = 3 }
+		}
+		faith = { kehillah_sefer_work_popularity_$KEY$_effect = { AMOUNT = -5 } }
+		random = {
+			chance = 20
+			kehillah_machloket_denunciation_effect = { KEY = $KEY$ }
+		}
+	}
+	else = {
+		# Neither side carries it: a creative synthesis. Someone writes the
+		# reconciling commentary, and both sides' ideas gain a little.
+		set_variable = { name = kehillah_mk_outcome value = 4 }
+		kehillah_sefer_bump_counter_effect = { KEY = $KEY$ COUNTER = commentaries }
+		set_variable = {
+			name = kehillah_reception_$KEY$
+			value = {
+				value = var:kehillah_standing_$KEY$
+				multiply = 10
+				subtract = 2
+			}
+		}
+		faith = { kehillah_sefer_work_popularity_$KEY$_effect = { AMOUNT = 2 } }
+	}
+	clamp_variable = { name = kehillah_reception_$KEY$ min = 0 max = 100 }
+	clamp_variable = { name = kehillah_standing_$KEY$ min = kehillah_lib_floor_$KEY$ max = kehillah_lib_ceiling_$KEY$ }
+
+	# The tenet-reform loop: a clear result puts the book's tenet before the
+	# rite's next Synod -- to raise it after a victory, to ban it after a defeat.
+	if = {
+		limit = { var:kehillah_mk_outcome <= 3 }
+		kehillah_reform_queue_from_machloket_effect = { KEY = $KEY$ }
+	}
+
+	# A defeated but strong party may split the rite rather than submit.
+	if = {
+		limit = {
+			var:kehillah_mk_outcome >= 2
+			var:kehillah_mk_outcome <= 3
+			var:kehillah_mk_defend >= 3
+			kehillah_sefer_work_can_split_$KEY$_trigger = yes
+			exists = var:kehillah_mk_champion
+			var:kehillah_mk_champion = {
+				is_alive = yes
+				piety_level >= 2
+			}
+		}
+		var:kehillah_mk_champion = {
+			set_variable = { name = kehillah_sefer_named_work value = flag:$KEY$ }
+			if = {
+				limit = { is_ai = no }
+				trigger_event = kehillah_sefer.0104
+			}
+			else = {
+				random = {
+					chance = 30
+					kehillah_sefer_work_schism_$KEY$_effect = yes
+				}
+			}
+		}
+	}
+
+	# Tell the players of the rite how it ended.
+	every_in_global_list = {
+		variable = kehillah_libraries
+		limit = {
+			exists = holder
+			holder = {
+				is_ai = no
+				rite = { this = scope:kehillah_mk_rite }
+			}
+		}
+		holder = {
+			set_variable = { name = kehillah_sefer_named_work value = flag:$KEY$ }
+			set_variable = { name = kehillah_mk_seen_outcome value = scope:kehillah_mk_rite.var:kehillah_mk_outcome }
+			trigger_event = kehillah_sefer.0103
+		}
+	}
+	remove_variable = kehillah_mk_active
+	remove_variable = kehillah_mk_years
+	remove_variable = kehillah_mk_defend
+	remove_variable = kehillah_mk_condemn
+	remove_variable = kehillah_mk_champion
+	remove_variable = kehillah_mk_critic
+	remove_variable = kehillah_mk_outcome
+	debug_log = "kehillah_machloket_resolve_effect: a controversy ended"
+}
+
+# The worst end: an opponent denounces the work to Christian authorities.
+# Copies in libraries under Christian lords are burned, and the lords'
+# faith grows more suspicious of Jewish books (the pressure that feeds the
+# Talmud trial). Montpellier, c. 1233, is the precedent.
+kehillah_machloket_denunciation_effect = {
+	every_in_global_list = {
+		variable = kehillah_libraries
+		limit = {
+			exists = holder
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:$KEY$ }
+			holder = { rite = { this = scope:kehillah_mk_rite } }
+			var:kehillah_library_seat ?= { county.holder.faith.religion = religion:christianity_religion }
+		}
+		remove_list_variable = { name = kehillah_library_works target = flag:$KEY$ }
+		var:kehillah_library_seat.county.holder.faith = { kehillah_faith_pressure_add_effect = { AMOUNT = 1 } }
+		holder = {
+			if = {
+				limit = { is_ai = no }
+				set_variable = { name = kehillah_sefer_named_work value = flag:$KEY$ }
+				send_interface_message = {
+					type = msg_kehillah_sefer
+					title = kehillah_sefer_msg_burned_t
+					desc = kehillah_sefer_msg_burned_d
+					left_icon = this
+				}
+			}
+		}
+	}
+	set_global_variable = { name = kehillah_wk_$KEY$_burned value = yes }
+}

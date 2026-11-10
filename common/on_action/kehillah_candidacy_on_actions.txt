@@ -1,0 +1,94 @@
+﻿# =====================================================================
+# STAND FOR THE SEAT -- on_actions.
+# docs/spec/2026-11-08-stand-for-the-seat.md. Built 2026-11-08,
+# NOT live-tested: see docs/testing/2026-11-08-stand-for-the-seat-
+# validation.md.
+#
+# Nothing here moves a title. on_death only takes notes while the dying
+# leader is still alive; the one title transfer (the winner's OLD seat)
+# happens a day after the engine's own succession, in
+# kehillah_candidacy.0010.
+# =====================================================================
+
+on_death = {
+	on_actions = { kehillah_cand_on_death }
+}
+
+on_title_gain = {
+	on_actions = { kehillah_cand_on_title_gain }
+}
+
+# root = the dying character, still alive.
+# A community with declared candidates is falling vacant. Back up the
+# Quarter record of the seat and of every declared candidate's own
+# community, and note who belongs to this community's court, so the
+# winner can bring them over if the engine does not.
+kehillah_cand_on_death = {
+	trigger = {
+		exists = primary_title
+		primary_title = {
+			is_kehillah_title_trigger = yes
+			has_variable_list = kehillah_declared_candidates
+		}
+	}
+	effect = {
+		primary_title = {
+			save_scope_as = cand_dying_seat
+			kehillah_cand_backup_mirror_effect = yes
+			if = {
+				limit = { has_variable_list = kehillah_cand_court_roster }
+				clear_variable_list = kehillah_cand_court_roster
+			}
+			every_in_list = {
+				variable = kehillah_declared_candidates
+				limit = { is_alive = yes }
+				primary_title ?= {
+					if = {
+						limit = { is_kehillah_title_trigger = yes }
+						kehillah_cand_backup_mirror_effect = yes
+					}
+				}
+			}
+		}
+		every_courtier = {
+			save_temporary_scope_as = cand_roster_member
+			scope:cand_dying_seat = {
+				add_to_variable_list = {
+					name = kehillah_cand_court_roster
+					target = scope:cand_roster_member
+				}
+			}
+		}
+		debug_log = "KEHILLAH_CAND: [cand_dying_seat.GetName] falls vacant with declared candidates; records backed up"
+	}
+}
+
+# root = the character who gained the title, scope:title = the title.
+kehillah_cand_on_title_gain = {
+	trigger = {
+		scope:title = { is_kehillah_title_trigger = yes }
+	}
+	effect = {
+		if = {
+			# A declared candidate won: hand his old seat on and rebuild,
+			# a day later, after the engine and kehillah_on_title_gain have
+			# finished with this change.
+			limit = { kehillah_cand_declared_for_trigger = { SEAT = scope:title } }
+			scope:title = { save_scope_as = cand_new_seat }
+			trigger_event = {
+				id = kehillah_candidacy.0010
+				days = 1
+			}
+			debug_log = "KEHILLAH_CAND: declared candidate won [cand_new_seat.GetName]"
+		}
+		else_if = {
+			# Anyone else took a seat that had declared candidates.
+			limit = {
+				scope:title = { has_variable_list = kehillah_declared_candidates }
+			}
+			save_scope_as = cand_lost_winner
+			scope:title = { kehillah_cand_seat_lost_effect = yes }
+			debug_log = "KEHILLAH_CAND: [cand_lost_seat.GetName] went to [cand_lost_winner.GetName]; candidacies ended"
+		}
+	}
+}

@@ -1,0 +1,145 @@
+﻿# =====================================================================
+# Sefer redesign values (2026-11-08). docs/spec/2026-11-08-sefer-system-
+# redesign.md. Per-work values are generated (kehillah_library_standing_
+# values.txt, kehillah_library_catalog_values.txt). Placeholders to tune
+# in an observation run, as the spec says.
+# =====================================================================
+
+# ---- library counts (any scope) --------------------------------------
+kehillah_lib_library_count_value = {
+	value = 0
+	every_in_global_list = {
+		variable = kehillah_libraries
+		limit = { exists = holder }
+		add = 1
+	}
+}
+
+kehillah_lib_third_of_libraries_value = {
+	value = kehillah_lib_library_count_value
+	divide = 3
+	ceiling = yes
+	min = 2
+}
+
+kehillah_lib_half_of_libraries_value = {
+	value = kehillah_lib_library_count_value
+	divide = 2
+	ceiling = yes
+	min = 3
+}
+
+# ---- reception weights (spec section 3.4) ----------------------------
+kehillah_reception_mastery_value = 2
+kehillah_reception_renowned_mastery_value = 4
+kehillah_reception_approbation_value = 8
+kehillah_reception_teaching_value = 5
+kehillah_reception_citation_value = 3
+kehillah_reception_commentary_value = 12
+kehillah_reception_endorsement_value = 15
+kehillah_reception_condemnation_value = -10
+kehillah_reception_herem_value = -20
+
+# ---- Bavli orders on a library's shelf (title scope) -----------------
+kehillah_lib_bavli_missing_count_value = {
+	value = 6
+	subtract = kehillah_lib_bavli_held_count_value
+}
+
+# Karaite foundations missing (title scope): Anan, Qirqisani, Yefet, each
+# counted only once it circulates.
+kehillah_lib_karaite_missing_count_value = {
+	value = 0
+	if = {
+		limit = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_anan_sefer_hamitzvot } } }
+		add = 1
+	}
+	if = {
+		limit = {
+			current_date >= 937.1.1
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_kitab_alanwar } }
+		}
+		add = 1
+	}
+	if = {
+		limit = {
+			current_date >= 990.1.1
+			NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yefet_commentary } }
+		}
+		add = 1
+	}
+}
+
+# ---- Greatness: foundational works (Daniel, 2026-11-08) --------------
+# Scope: a Kehillah leader (the Greatness baseline's scope). A Rabbanite
+# community loses Greatness for each Bavli order its library lacks; a
+# complete Shas earns a small bonus. A Karaite community the same for its
+# three founding works. Shown as one row of the Greatness breakdown.
+kehillah_lib_shas_order_penalty = 15
+kehillah_lib_complete_shas_bonus = 20
+
+# The title caches var:kehillah_lib_foundation_missing (kehillah_lib_
+# refresh_cache_effect, run whenever the shelf changes and yearly), so this
+# character-scope value reads it without changing scope.
+kehillah_bd_foundational_works_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_lib_shas_complete } }
+		add = kehillah_lib_complete_shas_bonus
+	}
+	else_if = {
+		limit = {
+			primary_title ?= {
+				has_variable = kehillah_lib_foundation_missing
+				var:kehillah_lib_foundation_missing > 0
+			}
+		}
+		subtract = {
+			value = primary_title.var:kehillah_lib_foundation_missing
+			multiply = kehillah_lib_shas_order_penalty
+		}
+	}
+}
+
+# ---- banned works (Daniel's decision 4) ------------------------------
+# Yeshiva fame lost each year per Banned work in the library.
+kehillah_lib_banned_fame_loss = 4
+
+# ---- siyum (spec section 5.3) -----------------------------------------
+kehillah_siyum_piety_value = 60
+kehillah_siyum_track_xp_value = 20
+kehillah_siyum_learning_xp_value = 75
+kehillah_siyum_stability_value = 25
+
+# ---- first mastery, by standing in the reader's rite -----------------
+kehillah_sefer_piety_venerated_value = 25
+kehillah_sefer_piety_classic_value = 10
+kehillah_sefer_piety_suspect_value = -15
+kehillah_sefer_piety_banned_value = -50
+
+# ---- Machloket weight (spec section 6.4). Scope: a library holder. ----
+kehillah_mk_weight_value = {
+	value = 1
+	add = {
+		value = learning
+		divide = 10
+	}
+	if = {
+		# 2026-11-08: or any Karaite (Karaites have no clergy).
+		limit = { kehillah_rabbi_or_karaite_trigger = yes }
+		add = 2
+	}
+	if = {
+		limit = { var:kehillah_own_library ?= { has_variable = kehillah_yeshiva_fame } }
+		add = 2
+	}
+}
+
+# Works on a library's shelves (title scope), for the Libraries map hover.
+kehillah_lib_work_count_value = {
+	value = 0
+	every_in_list = {
+		variable = kehillah_library_works
+		add = 1
+	}
+}
