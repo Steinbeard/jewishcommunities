@@ -95,6 +95,47 @@ template).
 | Prague's leader | Ashkenazi | Canaani |
 | Labrat ibn Sighmar of Mahdia | Sephardi | Ma'aravi |
 
+## Character culture audit (addendum, 2026-11-11)
+
+Daniel spotted two missed characters: Yehuda of Sana'a was still Mizrahi, and Ras Dawit was
+Ethiopian. A scripted audit then checked every character in `history/characters/` against its
+seat, roster place or husband, using `docs/data/historical-character-tracker.csv` for places. It
+found **77 corrections**, and three bookmark portraits changed to match.
+
+| Who | Now |
+|---|---|
+| Rome, Palermo and Bari leaders (867, 1066, 1178) | Italki |
+| Constantinople leaders | Romaniote |
+| Alexandria leaders | Mizrahi |
+| Isfahan and Balkh leaders | Radhanite |
+| Sana'a leaders, and the Sana'a and Aden households (Saadia, the Bundar family) | Teimani |
+| Prague 1178 | Canaani |
+| Narbonne, Béziers and Lunel 1178; the Raavad of Posquières; the ha-Darshan family of Narbonne | Provenci |
+| Kairouan 867; Isaac Alfasi (Fez) and the Fez seat; Nissim Gaon and Hannah bat Nissim; the ibn Shahin and ibn Sighmar families; Hananel and his daughter; the Geniza traders Nahray ben Nissim and Arus ben Yosef | Ma'aravi |
+| Hushiel, Shemariah and Elhanan | Italki |
+| Ali ben Amram (Fustat), al-Hariri (Ramla), the ben Faraj correspondents | Mizrahi |
+| The Kyiv household of Hanukkah | Canaani |
+| Wives | follow their husbands |
+
+Hushiel, Shemariah and Elhanan were the captives from Bari in ibn Daud's story, so they keep the
+culture of their birth.
+
+**Vanilla's own Jews** are handled by `kehillah_correct_vanilla_jewish_cultures_effect`, run at
+seeding:
+
+- Haymanot characters of a non-Jewish culture become Beta Israel. This covers vanilla's Semien
+  and Dembiya rulers, such as Ras Dawit.
+- Rabbanite Jews of the Persian culture become Radhanite.
+
+**Left as they are:**
+
+- Khazar Kabarites, because the Khazars were a Turkic people who converted.
+- The Samaritan priesthood. It is Mizrahi through vanilla's bavlim culture; Samaritans are a
+  distinct people, which is a possible follow-up.
+- The exilarch's sons in Granada, who stay Sephardi.
+- Nathan ha-Bavli in Narbonne, who stays Mizrahi.
+- Eldad ha-Dani, who stays Mizrahi because his origin is unknown.
+
 ## Still to do
 
 **1. The rest of the historical characters.** They are in four big files:
