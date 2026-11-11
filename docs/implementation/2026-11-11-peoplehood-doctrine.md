@@ -5,6 +5,60 @@
 [the native-culture layer](2026-11-08-jewish-cultures-map.md) and
 [its dynamics](2026-11-10-jewish-culture-dynamics.md).
 
+## Renamed; a path to found a new Jewish people (addendum, later 2026-11-11)
+
+**Renamed.** Daniel found "A People Dwelling Apart" (Numbers 23:9) a little xenophobic. The
+doctrine is now **Covenantal Peoplehood** (`kehillah_peoplehood_covenantal`): the covenant binds a
+people as well as a faith.
+
+**Join the Jewish People** now finds a people in four steps:
+
+1. one matching the character's language;
+2. the local Jewish culture of their capital, then of where they are;
+3. **new:** a Jewish culture native anywhere in their realm;
+4. **new:** otherwise they found a new Jewish people.
+
+That last step is Daniel's "a pathway for a theoretical king of Hungary"
+(`kehillah_found_hebrew_people_effect`):
+
+- Their culture is hybridized (`create_hybrid_culture`) with their region's Jewish culture. For
+  example, Canaani in eastern Europe before it is absorbed, then Ashkenazi; Mizrahi in the Middle
+  East; Radhanite in Persia and Asia.
+- The hybrid is given the Israelite heritage (`set_culture_pillar = heritage_israelite`).
+- It takes a name from the list below.
+- The character and their children under 16 of the same faith join it.
+
+The existing hooks then make it native in their lands. It shows pink on the Jewish Cultures map.
+Its language is the hybrid's random pick of the two parents', as for any CK3 hybrid.
+
+| Founding culture's language | New people (noun / collective) | Source of the name |
+|---|---|---|
+| Magyar | Hagari / Hagarim | Hagar, Hungary in medieval Hebrew |
+| Turkic, Oghur | Togarmi / Togarmim | Togarmah, the Turks |
+| Norse, Finnic, Sami, Volga Finnic, Ugro-Permian | Tzefoni / Tzefonim | tzafon, the north |
+| Baltic | Litvak / Litvakim | the later name of Lithuanian Jewry |
+| Goidelic, Brythonic | Iyyi / Iyyim | iyyim, the isles |
+| Armenian | Ararati / Araratim | Ararat |
+| Georgian | Gruzini / Gruzinim | the modern name of Georgian Jewry |
+| Mongolic | Mongoli / Mongolim | |
+| Chinese | Sini / Sinim | Sinim, Isaiah 49:12 |
+| anything else | "<Culture> Jewish" / "<Culture> Jews" | |
+
+**Cost and AI.** Founding costs 200 piety, against 50 for joining. The AI weight for founding is
+×0.1, so the AI joins readily and founds rarely.
+
+xTiger reports `scope:new_culture` as unset in `kehillah_found_hebrew_people_effect`. That is a
+false positive: `create_hybrid_culture` saves `scope:new_culture` (game documentation).
+
+**Live test.** In the console, give a Hungarian Catholic ruler Rabbinic Judaism, with nothing
+Jewish in his realm, then take the decision. Check:
+
+- a new culture named "Hagari" appears;
+- it has the Israelite heritage;
+- the ruler and his young children take it;
+- his counties show it on the Jewish Cultures map;
+- `error.log` stays clean.
+
 ## What Daniel asked for
 
 A Jewish faith doctrine or tenet that:
@@ -45,7 +99,7 @@ This doctrine copies that pattern for faith.
 
 **The doctrine group** is `kehillah_peoplehood` (category: marriage). It has two doctrines:
 
-- **A People Dwelling Apart** (`kehillah_peoplehood_dwelling_apart`) is the default for every
+- **Covenantal Peoplehood** (`kehillah_peoplehood_covenantal`) is the default for every
   Jewish faith. Its tooltip lists the mechanics, through two doctrine parameters.
 - **Open Peoplehood** (`kehillah_peoplehood_open`) is for Kabarism only.
 
@@ -102,8 +156,8 @@ After a game update, re-copy each and keep the fenced blocks.
 
 ## Live-test checklist
 
-1. **The doctrine.** Open the faith view for Rabbinism and for Karaism: Peoplehood shows **A
-   People Dwelling Apart**, with both parameter lines. Kabarism shows **Open Peoplehood**.
+1. **The doctrine.** Open the faith view for Rabbinism and for Karaism: Peoplehood shows **Covenantal
+   Peoplehood**, with both parameter lines. Kabarism shows **Open Peoplehood**.
 2. **Join the Jewish People.**
    - Play a Haymanot ruler made Ethiopian. Reseed first if needed.
    - The decision shows and costs 50 piety.

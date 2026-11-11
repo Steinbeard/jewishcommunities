@@ -2,11 +2,15 @@
 # Join the Jewish people (2026-11-11,
 # docs/implementation/2026-11-11-peoplehood-doctrine.md).
 #
-# For a Jew of a faith holding A People Dwelling Apart whose culture is
-# not a Hebrew one -- a convert, a Beta Israel noble raised Ethiopian, a
+# For a Jew of a faith holding Covenantal Peoplehood whose culture is not
+# a Hebrew one -- a convert, a Beta Israel noble raised Ethiopian, a
 # ruler who married in. They take up the Jewish people closest to their
-# own culture (German -> Ashkenazi, Castilian -> Sephardi, ...), or else
-# the one native where they live. The AI takes it readily.
+# own culture (German -> Ashkenazi, Castilian -> Sephardi, ...), else the
+# one native where they live or anywhere in their realm. With none of
+# those -- a Jewish king of Hungary, say -- they found a new Jewish people:
+# a hybrid of their culture with their region's Jewish culture, with the
+# Israelite heritage and a name of its own. The AI joins readily and
+# founds only rarely.
 # =====================================================================
 
 kehillah_join_hebrew_people_decision = {
@@ -26,22 +30,34 @@ kehillah_join_hebrew_people_decision = {
 	is_valid_showing_failures_only = {
 		is_physically_able_adult = yes
 		is_imprisoned = no
-		custom_description = {
-			text = kehillah_join_hebrew_people_none_tt
-			kehillah_has_hebrew_people_to_join_trigger = yes
-		}
 	}
 
 	cost = {
-		piety = 50
+		piety = {
+			value = 50
+			# Founding a new people costs more than joining one.
+			if = {
+				limit = { NOT = { kehillah_has_hebrew_people_to_join_trigger = yes } }
+				add = 150
+			}
+		}
 	}
 
 	effect = {
-		kehillah_pick_hebrew_people_to_join_effect = yes
 		if = {
-			limit = { exists = scope:kehillah_people_to_join }
+			limit = { kehillah_has_hebrew_people_to_join_trigger = yes }
 			custom_tooltip = kehillah_join_hebrew_people_decision_effect_tt
-			hidden_effect = { kehillah_join_hebrew_people_effect = yes }
+			hidden_effect = {
+				kehillah_pick_hebrew_people_to_join_effect = yes
+				if = {
+					limit = { exists = scope:kehillah_people_to_join }
+					kehillah_join_hebrew_people_effect = yes
+				}
+			}
+		}
+		else = {
+			custom_tooltip = kehillah_found_hebrew_people_decision_effect_tt
+			hidden_effect = { kehillah_found_hebrew_people_effect = yes }
 		}
 	}
 
@@ -51,5 +67,10 @@ kehillah_join_hebrew_people_decision = {
 
 	ai_will_do = {
 		base = 100
+		modifier = {
+			# Founding a whole new culture is a big step; the AI rarely does it.
+			factor = 0.1
+			NOT = { kehillah_has_hebrew_people_to_join_trigger = yes }
+		}
 	}
 }
