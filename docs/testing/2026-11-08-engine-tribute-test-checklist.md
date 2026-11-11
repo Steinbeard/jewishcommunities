@@ -1,6 +1,10 @@
 # Engine tribute: test checklist
 
-**Status:** checklist, 2026-11-08, **not yet run**. Covers the change in
+**Status:** **superseded 2026-11-11.** Item 1 failed live (Worms 1066: Expenses "No values"), so the
+engine tax was dropped and the scripted transfer restored. See
+[2026-10-30-host-tribute.md](../implementation/2026-10-30-host-tribute.md)'s 2026-11-11 paragraph.
+To test the transfer, use that doc's probe steps (`kehillah_tribute_debug.1`/`.2`), not this list.
+Original status: checklist, 2026-11-08, not yet run. Covers the change in
 [2026-10-30-host-tribute.md](../implementation/2026-10-30-host-tribute.md) (its 2026-11-08
 paragraph): the charter's Tribute rungs now carry an engine `tax =` share in place of the quarterly
 scripted transfer.
