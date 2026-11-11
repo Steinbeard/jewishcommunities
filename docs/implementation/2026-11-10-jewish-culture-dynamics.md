@@ -95,6 +95,43 @@ template).
 | Prague's leader | Ashkenazi | Canaani |
 | Labrat ibn Sighmar of Mahdia | Sephardi | Ma'aravi |
 
+## Historical cultures forming in play (addendum, 2026-11-11)
+
+Daniel asked for historical Jewish cultures to keep forming in play. His examples: Italkim in
+German lands becoming Ashkenazi, Ma'aravim in al-Andalus becoming Sephardi, Radhanites becoming
+Juhuri.
+
+Nothing built so far blocked any of this. The Peoplehood doctrine only discourages leaving for a
+*non*-Jewish culture. But most of these routes did not exist yet.
+
+**Hybrids.** Two fixes in `kehillah_on_jewish_culture_created_effect`:
+
+- **Arabic-speaking hybrids.** These now take the Jewish culture native where the founder is, if
+  it is one of the Arabic-speaking world's: Sephardi, Ma'aravi, Teimani or Radhanite. Otherwise
+  they become Mizrahi. Before, Ma'aravi + Andalusian became Mizrahi, because vanilla's Andalusian
+  culture speaks Arabic.
+- **A hybrid of two Jewish cultures**, formed where one of them is native, is absorbed into that
+  one. Ma'aravim hybridizing in Toledo become Sephardi rather than a new people. Elsewhere it
+  stays new.
+
+**Living among another Jewish people.** This is new.
+
+- **Births** (`on_birth_child` → `kehillah_birth_among_jewish_people_effect`). A Jewish child born
+  where another Jewish people is native takes that people's culture half the time. A family that
+  settles abroad blends in over a few generations.
+- **Decision: Join the Local Jewish People** (`kehillah_peoplehood_decisions.txt`). Any playable
+  Jew of one Jewish culture living where another is native can take it up, along with their young
+  children. It costs 100 prestige. AI weight is 10, ×3 for a Kehillah leader.
+
+**Juhuri emerges** (`kehillah_juhuri_emerges_effect`, on the yearly pulse). Juhuri was retired for
+the start dates and is now un-retired for play:
+
+- It happens by chance from 1350 (2% a year), and in 1450 at the latest.
+- Radhanite counties in Shirvan, Azerbaijan and Ciscaucasia (Derbent) become Juhuri, and so do the
+  Radhanite Jews living there.
+- A reseed no longer turns Juhuri back into Radhanite once it has emerged.
+- Its map legend line is restored.
+
 ## Character culture audit (addendum, 2026-11-11)
 
 Daniel spotted two missed characters: Yehuda of Sana'a was still Mizrahi, and Ras Dawit was

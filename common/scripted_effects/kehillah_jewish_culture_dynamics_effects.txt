@@ -47,6 +47,23 @@ kehillah_on_jewish_culture_created_effect = {
 			kehillah_claim_founder_lands_effect = yes
 		}
 	}
+	# 2026-11-11: a hybrid of two Jewish cultures, formed where one of them
+	# is native, is absorbed into that one -- Ma'aravim settling in Toledo
+	# become Sephardim rather than a new people.
+	else_if = {
+		limit = {
+			NOT = { any_parent_culture = { NOT = { has_cultural_pillar = heritage_israelite } } }
+			scope:founder.location.county ?= {
+				exists = var:kehillah_local_jewish_culture
+				save_temporary_scope_as = kehillah_hybrid_site
+			}
+			any_parent_culture = { this = scope:kehillah_hybrid_site.var:kehillah_local_jewish_culture }
+		}
+		scope:kehillah_hybrid_site.var:kehillah_local_jewish_culture = {
+			save_scope_as = kehillah_historical_jewish_culture
+		}
+		kehillah_adopt_historical_jewish_culture_effect = yes
+	}
 	else_if = {
 		limit = { has_cultural_pillar = heritage_israelite }
 		kehillah_claim_founder_lands_effect = yes
@@ -134,8 +151,10 @@ kehillah_pick_historical_jewish_culture_effect = {
 					has_cultural_pillar = language_egyptian
 				}
 			}
-			# Arabic-speaking: Ma'aravi in the Maghreb, Teimani in Yemen,
-			# otherwise Mizrahi -- read from where the founder is.
+			# Arabic-speaking: the Jewish culture of the Arabic-speaking world
+			# native where the founder is -- Sephardi in al-Andalus (2026-11-11:
+			# Andalusian speaks Arabic), Ma'aravi in the Maghreb, Teimani in
+			# Yemen -- otherwise Mizrahi.
 			culture:bavlim = { save_scope_as = kehillah_historical_jewish_culture }
 			if = {
 				limit = {
@@ -144,6 +163,8 @@ kehillah_pick_historical_jewish_culture_effect = {
 						OR = {
 							var:kehillah_native_jewish_culture = culture:maaravi
 							var:kehillah_native_jewish_culture = culture:teimani
+							var:kehillah_native_jewish_culture = culture:sephardi
+							var:kehillah_native_jewish_culture = culture:radhanite
 						}
 					}
 				}
@@ -363,5 +384,85 @@ kehillah_correct_vanilla_jewish_cultures_effect = {
 			faith = { religion = religion:judaism_religion }
 		}
 		set_culture = culture:radhanite
+	}
+}
+
+# =====================================================================
+# Jews among another Jewish people (2026-11-11, Daniel: "Italkim living in
+# German-speaking lands should be able to become Ashkenazi").
+# =====================================================================
+
+# Scope: a character. A Jew of one Jewish culture living where another
+# Jewish culture is native: saves scope:kehillah_local_people, or nothing.
+kehillah_pick_local_jewish_people_effect = {
+	save_scope_as = kehillah_local_jew
+	if = {
+		limit = {
+			kehillah_is_hebrew_culture_trigger = yes
+			location.county ?= {
+				exists = var:kehillah_local_jewish_culture
+				var:kehillah_local_jewish_culture = { has_cultural_pillar = heritage_israelite }
+				NOT = { var:kehillah_local_jewish_culture = scope:kehillah_local_jew.culture }
+			}
+		}
+		location.county.var:kehillah_local_jewish_culture = { save_scope_as = kehillah_local_people }
+	}
+}
+
+# Scope: a newborn (on_birth_child's scope:child). A Jewish child born among
+# another Jewish people takes that people's culture half the time, so a
+# family settled abroad blends in over a few generations.
+kehillah_birth_among_jewish_people_effect = {
+	if = {
+		limit = { has_global_variable = kehillah_native_jewish_cultures_seeded }
+		kehillah_pick_local_jewish_people_effect = yes
+		if = {
+			limit = { exists = scope:kehillah_local_people }
+			random = {
+				chance = 50
+				set_culture = scope:kehillah_local_people
+			}
+		}
+	}
+}
+
+# =====================================================================
+# Juhuri emerges (2026-11-11, Daniel: "Radhanites should be able to become
+# Juhuri"). Retired 2026-11-09 for the start dates; now the Persian-
+# speaking Jews of the eastern Caucasus become the Mountain Jews in play:
+# by chance from 1350, at the latest in 1450. Their Radhanite counties in
+# Shirvan, Azerbaijan and Ciscaucasia (Derbent) and the Radhanite Jews
+# living there become Juhuri.
+# =====================================================================
+
+# Scope: none.
+kehillah_juhuri_emerges_effect = {
+	set_global_variable = { name = kehillah_juhuri_emerged value = yes }
+	title:d_shirvan ?= { kehillah_juhuri_emerges_in_duchy_effect = yes }
+	title:d_azerbaijan ?= { kehillah_juhuri_emerges_in_duchy_effect = yes }
+	title:d_ciscaucasia ?= { kehillah_juhuri_emerges_in_duchy_effect = yes }
+	every_living_character = {
+		limit = {
+			culture = culture:radhanite
+			location.county ?= { has_variable = kehillah_juhuri_turning }
+		}
+		set_culture = culture:juhuri
+	}
+	every_county = {
+		limit = { has_variable = kehillah_juhuri_turning }
+		remove_variable = kehillah_juhuri_turning
+	}
+}
+
+# Scope: a duchy.
+kehillah_juhuri_emerges_in_duchy_effect = {
+	every_de_jure_county = {
+		limit = {
+			exists = var:kehillah_native_jewish_culture
+			var:kehillah_native_jewish_culture = culture:radhanite
+		}
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:juhuri }
+		kehillah_resolve_local_jewish_culture_effect = yes
+		set_variable = { name = kehillah_juhuri_turning value = yes }
 	}
 }
