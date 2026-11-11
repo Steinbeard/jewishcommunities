@@ -131,72 +131,141 @@ kehillah_start_fresh_host_charter_effect = {
 	}
 }
 
+# ---------------------------------------------------------------------
+# kehillah_charter_rungs_effect
+# Scope: a Kehillah leader. $HOST$: the host ruler. $MUSLIM$: yes for the
+# Muslim package (its fourth row is market access), no for the Christian
+# one (text censorship).
+#
+# 2026-11-11 (Daniel: "cold rulers should probably give a worse
+# covenant"). The realm's settlement policy sets each row's starting rung;
+# the sealing ruler's outlook band (kehillah_outlook_band_value, -2..+2,
+# capped to -1..+1 here) then moves EVERY row by one rung, clamped to the
+# row's range. So a cold or hostile ruler seals each term one rung worse
+# than the law's default, a well-disposed or protective one one better.
+# Before this the outlook only set the letter's voice.
+#
+# Rungs are written as "goodness", 0 (worst for the community) .. 2
+# (best), into four local variables, so the writer and the start-up
+# prediction share one table:
+#   kehillah_g_construction  (obligation level = 2 - g; cache = 2 - g)
+#   kehillah_g_security      (level = g; cache = g)
+#   kehillah_g_jurisdiction  (level = g; cache = g)
+#   kehillah_g_fourth        Christian text censorship: level = 2 - g,
+#                            cache text_study = g. Muslim market access:
+#                            level = g, cache = g.
+# Policy defaults, unchanged from before (construction/security/
+# jurisdiction/fourth): Encouraged 2/2/2/2; Discouraged 1/0/0/(Christian 1,
+# Muslim 0); Banned 0/0/0/0; Tolerated 2/0/1/(Christian 2, Muslim 1).
+# ---------------------------------------------------------------------
+kehillah_charter_rungs_effect = {
+	if = {
+		limit = { $HOST$.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } }
+		set_local_variable = { name = kehillah_g_construction value = 2 }
+		set_local_variable = { name = kehillah_g_security value = 2 }
+		set_local_variable = { name = kehillah_g_jurisdiction value = 2 }
+		set_local_variable = { name = kehillah_g_fourth value = 2 }
+	}
+	else_if = {
+		limit = { $HOST$.primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } }
+		set_local_variable = { name = kehillah_g_construction value = 1 }
+		set_local_variable = { name = kehillah_g_security value = 0 }
+		set_local_variable = { name = kehillah_g_jurisdiction value = 0 }
+		if = {
+			limit = { always = $MUSLIM$ }
+			set_local_variable = { name = kehillah_g_fourth value = 0 }
+		}
+		else = {
+			set_local_variable = { name = kehillah_g_fourth value = 1 }
+		}
+	}
+	else_if = {
+		limit = { $HOST$.primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } }
+		set_local_variable = { name = kehillah_g_construction value = 0 }
+		set_local_variable = { name = kehillah_g_security value = 0 }
+		set_local_variable = { name = kehillah_g_jurisdiction value = 0 }
+		set_local_variable = { name = kehillah_g_fourth value = 0 }
+	}
+	else = {
+		set_local_variable = { name = kehillah_g_construction value = 2 }
+		set_local_variable = { name = kehillah_g_security value = 0 }
+		set_local_variable = { name = kehillah_g_jurisdiction value = 1 }
+		if = {
+			limit = { always = $MUSLIM$ }
+			set_local_variable = { name = kehillah_g_fourth value = 1 }
+		}
+		else = {
+			set_local_variable = { name = kehillah_g_fourth value = 2 }
+		}
+	}
+	# The sealing ruler's disposition bends every term -- by one rung at
+	# most (Daniel, 2026-11-11: the law keeps its weight; a hostile ruler
+	# under Encouraged does not seal a Banned-grade charter).
+	$HOST$ = {
+		save_temporary_scope_value_as = {
+			name = kehillah_charter_disposition
+			value = {
+				value = kehillah_outlook_band_value
+				min = -1
+				max = 1
+			}
+		}
+	}
+	change_local_variable = { name = kehillah_g_construction add = scope:kehillah_charter_disposition }
+	change_local_variable = { name = kehillah_g_security add = scope:kehillah_charter_disposition }
+	change_local_variable = { name = kehillah_g_jurisdiction add = scope:kehillah_charter_disposition }
+	change_local_variable = { name = kehillah_g_fourth add = scope:kehillah_charter_disposition }
+	# Both bounds always (a min-only clamp zeroes the variable).
+	clamp_local_variable = { name = kehillah_g_construction min = 0 max = 2 }
+	clamp_local_variable = { name = kehillah_g_security min = 0 max = 2 }
+	clamp_local_variable = { name = kehillah_g_jurisdiction min = 0 max = 2 }
+	clamp_local_variable = { name = kehillah_g_fourth min = 0 max = 2 }
+}
+
+# Scope: a Kehillah tributary. Writes one obligation row at the level for
+# local variable $VAR$; $INVERT$ = yes where level 0 is best for the
+# community (construction, text censorship).
+kehillah_charter_write_row_effect = {
+	if = {
+		limit = {
+			OR = {
+				AND = { always = $INVERT$ local_var:$VAR$ >= 2 }
+				AND = { NOT = { always = $INVERT$ } local_var:$VAR$ <= 0 }
+			}
+		}
+		tributary_contract_set_obligation_level = { type = $TYPE$ level = 0 }
+	}
+	else_if = {
+		limit = { local_var:$VAR$ = 1 }
+		tributary_contract_set_obligation_level = { type = $TYPE$ level = 1 }
+	}
+	else = {
+		tributary_contract_set_obligation_level = { type = $TYPE$ level = 2 }
+	}
+}
+
 # Runs only after start_tributary has committed. Contract is_valid cannot
 # resolve the host realm while CK3 creates a tributary, so policy defaults
-# are written here from the stable, concrete contract API instead.
+# are written here from the stable, concrete contract API instead. Terms:
+# the realm's settlement policy, bent by the ruler's outlook
+# (kehillah_charter_rungs_effect above).
 kehillah_apply_fresh_charter_policy_effect = {
 	domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_policy_host }
 	if = {
 		limit = { has_subject_contract_group = kehillah_christian_host_charter_prototype }
-		if = {
-			limit = { scope:kehillah_policy_host.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } }
-			tributary_contract_set_obligation_level = { type = kehillah_christian_quarter_building_rights level = 0 }
-			tributary_contract_set_obligation_level = { type = kehillah_christian_community_security level = 2 }
-			tributary_contract_set_obligation_level = { type = kehillah_christian_jurisdiction level = 2 }
-			tributary_contract_set_obligation_level = { type = kehillah_christian_text_censorship level = 0 }
-		}
-		else_if = {
-			limit = { scope:kehillah_policy_host.primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } }
-			tributary_contract_set_obligation_level = { type = kehillah_christian_quarter_building_rights level = 1 }
-			tributary_contract_set_obligation_level = { type = kehillah_christian_community_security level = 0 }
-			tributary_contract_set_obligation_level = { type = kehillah_christian_jurisdiction level = 0 }
-			tributary_contract_set_obligation_level = { type = kehillah_christian_text_censorship level = 1 }
-		}
-		else_if = {
-			limit = { scope:kehillah_policy_host.primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } }
-			# Restrictive defaults already match Banned; write them explicitly
-			# to make a later policy flip deterministic.
-			tributary_contract_set_obligation_level = { type = kehillah_christian_quarter_building_rights level = 2 }
-			tributary_contract_set_obligation_level = { type = kehillah_christian_community_security level = 0 }
-			tributary_contract_set_obligation_level = { type = kehillah_christian_jurisdiction level = 0 }
-			tributary_contract_set_obligation_level = { type = kehillah_christian_text_censorship level = 2 }
-		}
-		else = {
-			tributary_contract_set_obligation_level = { type = kehillah_christian_quarter_building_rights level = 0 }
-			tributary_contract_set_obligation_level = { type = kehillah_christian_community_security level = 0 }
-			tributary_contract_set_obligation_level = { type = kehillah_christian_jurisdiction level = 1 }
-			tributary_contract_set_obligation_level = { type = kehillah_christian_text_censorship level = 0 }
-		}
+		kehillah_charter_rungs_effect = { HOST = scope:kehillah_policy_host MUSLIM = no }
+		kehillah_charter_write_row_effect = { TYPE = kehillah_christian_quarter_building_rights VAR = kehillah_g_construction INVERT = yes }
+		kehillah_charter_write_row_effect = { TYPE = kehillah_christian_community_security VAR = kehillah_g_security INVERT = no }
+		kehillah_charter_write_row_effect = { TYPE = kehillah_christian_jurisdiction VAR = kehillah_g_jurisdiction INVERT = no }
+		kehillah_charter_write_row_effect = { TYPE = kehillah_christian_text_censorship VAR = kehillah_g_fourth INVERT = yes }
 	}
 	else_if = {
 		limit = { has_subject_contract_group = kehillah_muslim_host_charter_prototype }
-		if = {
-			limit = { scope:kehillah_policy_host.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } }
-			tributary_contract_set_obligation_level = { type = kehillah_muslim_quarter_building_rights level = 0 }
-			tributary_contract_set_obligation_level = { type = kehillah_muslim_community_security level = 2 }
-			tributary_contract_set_obligation_level = { type = kehillah_muslim_jurisdiction level = 2 }
-			tributary_contract_set_obligation_level = { type = kehillah_muslim_market_access level = 2 }
-		}
-		else_if = {
-			limit = { scope:kehillah_policy_host.primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } }
-			tributary_contract_set_obligation_level = { type = kehillah_muslim_quarter_building_rights level = 1 }
-			tributary_contract_set_obligation_level = { type = kehillah_muslim_community_security level = 0 }
-			tributary_contract_set_obligation_level = { type = kehillah_muslim_jurisdiction level = 0 }
-			tributary_contract_set_obligation_level = { type = kehillah_muslim_market_access level = 0 }
-		}
-		else_if = {
-			limit = { scope:kehillah_policy_host.primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } }
-			tributary_contract_set_obligation_level = { type = kehillah_muslim_quarter_building_rights level = 2 }
-			tributary_contract_set_obligation_level = { type = kehillah_muslim_community_security level = 0 }
-			tributary_contract_set_obligation_level = { type = kehillah_muslim_jurisdiction level = 0 }
-			tributary_contract_set_obligation_level = { type = kehillah_muslim_market_access level = 0 }
-		}
-		else = {
-			tributary_contract_set_obligation_level = { type = kehillah_muslim_quarter_building_rights level = 0 }
-			tributary_contract_set_obligation_level = { type = kehillah_muslim_community_security level = 0 }
-			tributary_contract_set_obligation_level = { type = kehillah_muslim_jurisdiction level = 1 }
-			tributary_contract_set_obligation_level = { type = kehillah_muslim_market_access level = 1 }
-		}
+		kehillah_charter_rungs_effect = { HOST = scope:kehillah_policy_host MUSLIM = yes }
+		kehillah_charter_write_row_effect = { TYPE = kehillah_muslim_quarter_building_rights VAR = kehillah_g_construction INVERT = yes }
+		kehillah_charter_write_row_effect = { TYPE = kehillah_muslim_community_security VAR = kehillah_g_security INVERT = no }
+		kehillah_charter_write_row_effect = { TYPE = kehillah_muslim_jurisdiction VAR = kehillah_g_jurisdiction INVERT = no }
+		kehillah_charter_write_row_effect = { TYPE = kehillah_muslim_market_access VAR = kehillah_g_fourth INVERT = no }
 	}
 }
 
@@ -217,11 +286,12 @@ kehillah_apply_fresh_charter_policy_effect = {
 # day three's reconcile (kehillah_reconcile_provisional_start_pillars_effect)
 # corrects any difference.
 #
-# KEEP IN STEP with kehillah_apply_fresh_charter_policy_effect above. Cache
-# value = obligation level for every row except text censorship, where level 0
-# (unrestricted) is cache 2 and level 2 (proscribed) is cache 0. Only
-# Christian and Muslim hosts get a regional charter; any other host falls back
-# to the legacy group, which has no cache, so nothing is written for it.
+# KEEP IN STEP with kehillah_apply_fresh_charter_policy_effect above: both
+# read the same rungs from kehillah_charter_rungs_effect (policy bent by the
+# ruler's outlook). Cache value = goodness for every row except construction,
+# where the cache holds the obligation level (2 - goodness). Only Christian
+# and Muslim hosts get a regional charter; any other host falls back to the
+# legacy group, which has no cache, so nothing is written for it.
 # ---------------------------------------------------------------------
 kehillah_predict_start_charter_effect = {
 	if = {
@@ -230,80 +300,26 @@ kehillah_predict_start_charter_effect = {
 
 		if = {
 			limit = { scope:kehillah_predict_host = { religion = religion:christianity_religion } }
-			primary_title = { set_variable = { name = kehillah_charter_predicted value = 1 } }
-			if = {
-				limit = { scope:kehillah_predict_host.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } }
-				primary_title = {
-					set_variable = { name = kehillah_charter_cache_construction value = 0 }
-					set_variable = { name = kehillah_charter_cache_security value = 2 }
-					set_variable = { name = kehillah_charter_cache_jurisdiction value = 2 }
-					set_variable = { name = kehillah_charter_cache_text_study value = 2 }
-				}
-			}
-			else_if = {
-				limit = { scope:kehillah_predict_host.primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } }
-				primary_title = {
-					set_variable = { name = kehillah_charter_cache_construction value = 1 }
-					set_variable = { name = kehillah_charter_cache_security value = 0 }
-					set_variable = { name = kehillah_charter_cache_jurisdiction value = 0 }
-					set_variable = { name = kehillah_charter_cache_text_study value = 1 }
-				}
-			}
-			else_if = {
-				limit = { scope:kehillah_predict_host.primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } }
-				primary_title = {
-					set_variable = { name = kehillah_charter_cache_construction value = 2 }
-					set_variable = { name = kehillah_charter_cache_security value = 0 }
-					set_variable = { name = kehillah_charter_cache_jurisdiction value = 0 }
-					set_variable = { name = kehillah_charter_cache_text_study value = 0 }
-				}
-			}
-			else = {
-				primary_title = {
-					set_variable = { name = kehillah_charter_cache_construction value = 0 }
-					set_variable = { name = kehillah_charter_cache_security value = 0 }
-					set_variable = { name = kehillah_charter_cache_jurisdiction value = 1 }
-					set_variable = { name = kehillah_charter_cache_text_study value = 2 }
-				}
+			kehillah_charter_rungs_effect = { HOST = scope:kehillah_predict_host MUSLIM = no }
+			primary_title = {
+				set_variable = { name = kehillah_charter_predicted value = 1 }
+				set_variable = { name = kehillah_charter_cache_construction value = 2 }
+				change_variable = { name = kehillah_charter_cache_construction subtract = local_var:kehillah_g_construction }
+				set_variable = { name = kehillah_charter_cache_security value = local_var:kehillah_g_security }
+				set_variable = { name = kehillah_charter_cache_jurisdiction value = local_var:kehillah_g_jurisdiction }
+				set_variable = { name = kehillah_charter_cache_text_study value = local_var:kehillah_g_fourth }
 			}
 		}
 		else_if = {
 			limit = { scope:kehillah_predict_host = { religion = religion:islam_religion } }
-			primary_title = { set_variable = { name = kehillah_charter_predicted value = 2 } }
-			if = {
-				limit = { scope:kehillah_predict_host.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes } }
-				primary_title = {
-					set_variable = { name = kehillah_charter_cache_construction value = 0 }
-					set_variable = { name = kehillah_charter_cache_security value = 2 }
-					set_variable = { name = kehillah_charter_cache_jurisdiction value = 2 }
-					set_variable = { name = kehillah_charter_cache_market_access value = 2 }
-				}
-			}
-			else_if = {
-				limit = { scope:kehillah_predict_host.primary_title = { kehillah_jewish_settlement_policy_discouraged_trigger = yes } }
-				primary_title = {
-					set_variable = { name = kehillah_charter_cache_construction value = 1 }
-					set_variable = { name = kehillah_charter_cache_security value = 0 }
-					set_variable = { name = kehillah_charter_cache_jurisdiction value = 0 }
-					set_variable = { name = kehillah_charter_cache_market_access value = 0 }
-				}
-			}
-			else_if = {
-				limit = { scope:kehillah_predict_host.primary_title = { kehillah_jewish_settlement_policy_banned_trigger = yes } }
-				primary_title = {
-					set_variable = { name = kehillah_charter_cache_construction value = 2 }
-					set_variable = { name = kehillah_charter_cache_security value = 0 }
-					set_variable = { name = kehillah_charter_cache_jurisdiction value = 0 }
-					set_variable = { name = kehillah_charter_cache_market_access value = 0 }
-				}
-			}
-			else = {
-				primary_title = {
-					set_variable = { name = kehillah_charter_cache_construction value = 0 }
-					set_variable = { name = kehillah_charter_cache_security value = 0 }
-					set_variable = { name = kehillah_charter_cache_jurisdiction value = 1 }
-					set_variable = { name = kehillah_charter_cache_market_access value = 1 }
-				}
+			kehillah_charter_rungs_effect = { HOST = scope:kehillah_predict_host MUSLIM = yes }
+			primary_title = {
+				set_variable = { name = kehillah_charter_predicted value = 2 }
+				set_variable = { name = kehillah_charter_cache_construction value = 2 }
+				change_variable = { name = kehillah_charter_cache_construction subtract = local_var:kehillah_g_construction }
+				set_variable = { name = kehillah_charter_cache_security value = local_var:kehillah_g_security }
+				set_variable = { name = kehillah_charter_cache_jurisdiction value = local_var:kehillah_g_jurisdiction }
+				set_variable = { name = kehillah_charter_cache_market_access value = local_var:kehillah_g_fourth }
 			}
 		}
 	}

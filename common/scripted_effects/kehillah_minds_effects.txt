@@ -1,0 +1,81 @@
+﻿# =====================================================================
+# Machshavah changes minds (2026-11-11, Daniel). docs/spec/2026-11-11-
+# rulings-sermons-and-gates.md section 4. A reader who masters a Machshavah
+# book pushes its tenets' popularity twice, and may adopt one he does not
+# yet hold: a player chooses (kehillah_minds.0001), the AI rolls
+# (kehillah_minds_adopt_chance_value). Each adoption counts toward the
+# book's Authoritative gate (kehillah_wk_<work>_minds).
+# =====================================================================
+
+# Scope: a reader who has just mastered $KEY$ for the first time (Learn
+# Torah, kehillah_sefer_after_study_effect; a yeshiva student,
+# kehillah_sefer_after_yeshiva_mastery_effect).
+kehillah_minds_after_mastery_effect = {
+	if = {
+		limit = { kehillah_lib_genre_$KEY$ = 3 }
+		# Twice as hard: the caller has already taught its tenets once.
+		kehillah_sefer_work_tenets_$KEY$_effect = yes
+		kehillah_minds_pick_$KEY$_effect = yes
+		if = {
+			limit = { has_variable = kehillah_minds_tenet }
+			if = {
+				limit = { is_ai = no }
+				set_variable = { name = kehillah_minds_work value = flag:$KEY$ }
+				trigger_event = kehillah_minds.0001
+			}
+			else = {
+				random = {
+					chance = kehillah_minds_adopt_chance_value
+					kehillah_minds_adopt_effect = yes
+					kehillah_minds_count_effect = { KEY = $KEY$ }
+				}
+				remove_variable = kehillah_minds_tenet
+			}
+		}
+	}
+}
+
+# Scope: a reader with var:kehillah_minds_tenet. He adopts that tenet.
+kehillah_minds_adopt_effect = {
+	if = { limit = { var:kehillah_minds_tenet = 1 } kehillah_minds_adopt_tenet_effect = { TENET = tenet_talmud_torah } }
+	else_if = { limit = { var:kehillah_minds_tenet = 2 } kehillah_minds_adopt_tenet_effect = { TENET = tenet_baalei_hamiqra } }
+	else_if = { limit = { var:kehillah_minds_tenet = 3 } kehillah_minds_adopt_tenet_effect = { TENET = tenet_kehillah_hokhmah } }
+	else_if = { limit = { var:kehillah_minds_tenet = 4 } kehillah_minds_adopt_tenet_effect = { TENET = tenet_kehillah_emunah_temimah } }
+	else_if = { limit = { var:kehillah_minds_tenet = 5 } kehillah_minds_adopt_tenet_effect = { TENET = tenet_kehillah_pesak } }
+	else_if = { limit = { var:kehillah_minds_tenet = 6 } kehillah_minds_adopt_tenet_effect = { TENET = tenet_kehillah_pilpul } }
+	else_if = { limit = { var:kehillah_minds_tenet = 7 } kehillah_minds_adopt_tenet_effect = { TENET = tenet_kehillah_geonut } }
+	else_if = { limit = { var:kehillah_minds_tenet = 8 } kehillah_minds_adopt_tenet_effect = { TENET = tenet_kehillah_minhag_avoteinu } }
+	else_if = { limit = { var:kehillah_minds_tenet = 9 } kehillah_minds_adopt_tenet_effect = { TENET = tenet_kehillah_avelei_tziyon } }
+	else_if = { limit = { var:kehillah_minds_tenet = 10 } kehillah_minds_adopt_tenet_effect = { TENET = tenet_esotericism } }
+	else_if = { limit = { var:kehillah_minds_tenet = 11 } kehillah_minds_adopt_tenet_effect = { TENET = tenet_asceticism } }
+	else_if = { limit = { var:kehillah_minds_tenet = 12 } kehillah_minds_adopt_tenet_effect = { TENET = tenet_kehillah_kiddush_hashem } }
+}
+
+# Scope: a reader. A playable character takes $TENET$ as a personal tenet
+# (in place of his least fulfilling one when he has no free slot); anyone
+# else leans to it, which the AI's judgement of books will read.
+kehillah_minds_adopt_tenet_effect = {
+	if = {
+		limit = { is_playable_character = yes }
+		if = {
+			limit = { free_personal_tenet_slots > 0 }
+			set_personal_tenet = tenet:$TENET$
+		}
+		else = {
+			force_set_personal_tenet = tenet:$TENET$
+		}
+	}
+	else = {
+		set_variable = { name = kehillah_leaning_$TENET$ value = yes }
+	}
+}
+
+# Scope: the reader whose mind $KEY$ changed. Counts toward its gate.
+kehillah_minds_count_effect = {
+	if = {
+		limit = { NOT = { has_global_variable = kehillah_wk_$KEY$_minds } }
+		set_global_variable = { name = kehillah_wk_$KEY$_minds value = 0 }
+	}
+	change_global_variable = { name = kehillah_wk_$KEY$_minds add = 1 }
+	kehillah_standing_add_reception_effect = { KEY = $KEY$ AMOUNT = kehillah_reception_minds_value }
+}

@@ -1,56 +1,269 @@
-﻿# Character scope: the rabbinic leader, or any Karaite leader (2026-11-08:
-# Karaites have no clergy; Religious Scholar depth stands in for Parshanut).
-# PILLAR is greatness or stability.
-# Assess Parshanut before hopping to the community title for the reward.
-kehillah_deliver_sermon_effect = {
+﻿# =====================================================================
+# Sermons. 2026-11-02 first version; 2026-11-11 rebuilt (Daniel):
+# docs/spec/2026-11-11-rulings-sermons-and-gates.md section 3.
+#
+# The sermon belongs to its HOLDER: a Kehillah leader (who preaches himself
+# or has his Dayyan preach) or a maggid. The holder keeps the sermon's state:
+#   var:kehillah_sermon_preacher  who speaks
+#   var:kehillah_sermon_title     the community that hears him
+#   var:kehillah_sermon_topic     flag:portion / neighbours / tzedakah /
+#                                 peace / trouble (a community), guest /
+#                                 appeal (a maggid)
+#   var:kehillah_sermon_step      1 or 2: which text he is choosing
+#   var:kehillah_sermon_cited_1/2 the texts he cited
+#   var:kehillah_sermon_bonus     what his texts add to the sermon
+# Flow: a decision -> kehillah_sermon.0001 (or .0010 for a maggid), the
+# topic -> kehillah_sermon.0002 twice, a text each time (from
+# kehillah_sermon_pick_<topic>_effect, generated) -> delivery.
+# =====================================================================
+
+# Scope: the holder. Forget any earlier sermon.
+kehillah_sermon_clear_effect = {
+	remove_variable = kehillah_sermon_preacher
+	remove_variable = kehillah_sermon_title
+	remove_variable = kehillah_sermon_topic
+	remove_variable = kehillah_sermon_step
+	remove_variable = kehillah_sermon_cited_1
+	remove_variable = kehillah_sermon_cited_2
+	remove_variable = kehillah_sermon_bonus
+	remove_variable = kehillah_sermon_amount
+	remove_variable = kehillah_sermon_cand_grounded
+	remove_variable = kehillah_sermon_cand_newer
+	remove_variable = kehillah_sermon_base
+}
+
+# Scope: a Kehillah leader (Deliver a Sermon). He preaches if he may;
+# otherwise his Dayyan does.
+kehillah_sermon_begin_effect = {
+	kehillah_sermon_clear_effect = yes
 	if = {
-		limit = {
-			OR = {
-				has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 100 }
-				kehillah_karaite_scholar_xp_trigger = { VALUE = 100 }
-			}
-		}
-		kehillah_change_pillar_effect = { PILLAR = $PILLAR$ AMOUNT = kehillah_sermon_pillar_gain_master }
-	}
-	else_if = {
-		limit = {
-			OR = {
-				has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 65 }
-				kehillah_karaite_scholar_xp_trigger = { VALUE = 65 }
-			}
-		}
-		kehillah_change_pillar_effect = { PILLAR = $PILLAR$ AMOUNT = kehillah_sermon_pillar_gain_adept }
-	}
-	else_if = {
-		limit = {
-			OR = {
-				has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 30 }
-				kehillah_karaite_scholar_xp_trigger = { VALUE = 30 }
-			}
-		}
-		kehillah_change_pillar_effect = { PILLAR = $PILLAR$ AMOUNT = kehillah_sermon_pillar_gain_studied }
+		limit = { kehillah_sermon_preacher_trigger = yes }
+		set_variable = { name = kehillah_sermon_preacher value = this }
 	}
 	else = {
-		kehillah_change_pillar_effect = { PILLAR = $PILLAR$ AMOUNT = kehillah_sermon_pillar_gain_novice }
+		set_variable = { name = kehillah_sermon_preacher value = cp:councillor_court_chaplain }
 	}
-	add_piety = kehillah_sermon_piety_gain
-	# 2026-11-08: a Karaite preacher (Karaites have no clergy) grows in
-	# Religious Scholar instead, if he holds it.
+	set_variable = { name = kehillah_sermon_title value = primary_title }
+	trigger_event = kehillah_sermon.0001
+}
+
+# Scope: a maggid (Preach as a Maggid). The community of the county he is in.
+kehillah_sermon_begin_maggid_effect = {
+	kehillah_sermon_clear_effect = yes
+	set_variable = { name = kehillah_sermon_preacher value = this }
+	save_scope_as = kehillah_sermon_maggid
+	random_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			exists = holder.domicile.domicile_location.county
+			holder.domicile.domicile_location.county = scope:kehillah_sermon_maggid.location.county
+			NOT = { holder = scope:kehillah_sermon_maggid }
+		}
+		scope:kehillah_sermon_maggid = { set_variable = { name = kehillah_sermon_title value = prev } }
+	}
+	trigger_event = kehillah_sermon.0010
+}
+
+# Scope: the holder. He chose $TOPIC$: look for his first text.
+kehillah_sermon_choose_topic_effect = {
+	set_variable = { name = kehillah_sermon_topic value = flag:$TOPIC$ }
+	set_variable = { name = kehillah_sermon_bonus value = 0 }
+	set_variable = { name = kehillah_sermon_step value = 1 }
+	kehillah_sermon_next_text_effect = { TOPIC = $TOPIC$ }
+}
+
+# Scope: the holder. Find the texts the preacher could cite on $TOPIC$ and
+# offer them, or deliver the sermon when there are none.
+kehillah_sermon_next_text_effect = {
+	save_scope_as = kehillah_sermon_holder
+	var:kehillah_sermon_preacher ?= { kehillah_sermon_pick_$TOPIC$_effect = yes }
 	if = {
-		limit = { has_trait = kehillah_rabbi_trait }
-		add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_sermon_parshanut_xp }
+		limit = { exists = var:kehillah_sermon_cand_grounded }
+		trigger_event = kehillah_sermon.0002
 	}
 	else = {
-		kehillah_karaite_scholar_xp_effect = { XP = kehillah_sermon_parshanut_xp }
+		kehillah_sermon_deliver_effect = yes
 	}
-	# 2026-11-08 tenet mechanics: Emunah Temimah -- the plain faith preached
-	# steadies the community, and the preacher who lives it gains more.
+}
+
+# Scope: the holder. The same, for the topic he chose.
+kehillah_sermon_next_text_by_topic_effect = {
+	if = { limit = { var:kehillah_sermon_topic ?= flag:portion } kehillah_sermon_next_text_effect = { TOPIC = portion } }
+	else_if = { limit = { var:kehillah_sermon_topic ?= flag:neighbours } kehillah_sermon_next_text_effect = { TOPIC = neighbours } }
+	else_if = { limit = { var:kehillah_sermon_topic ?= flag:tzedakah } kehillah_sermon_next_text_effect = { TOPIC = tzedakah } }
+	else_if = { limit = { var:kehillah_sermon_topic ?= flag:peace } kehillah_sermon_next_text_effect = { TOPIC = peace } }
+	else_if = { limit = { var:kehillah_sermon_topic ?= flag:trouble } kehillah_sermon_next_text_effect = { TOPIC = trouble } }
+	else_if = { limit = { var:kehillah_sermon_topic ?= flag:guest } kehillah_sermon_next_text_effect = { TOPIC = guest } }
+	else_if = { limit = { var:kehillah_sermon_topic ?= flag:appeal } kehillah_sermon_next_text_effect = { TOPIC = appeal } }
+	else = { kehillah_sermon_deliver_effect = yes }
+}
+
+# Scope: the holder. Cite the $WHICH$ text (grounded or newer).
+kehillah_sermon_cite_effect = {
 	if = {
-		limit = { rite ?= { rite_has_parameter = kehillah_tenet_emunah_sermon } }
+		limit = { var:kehillah_sermon_step ?= 1 }
+		set_variable = { name = kehillah_sermon_cited_1 value = var:kehillah_sermon_cand_$WHICH$ }
+	}
+	else = {
+		set_variable = { name = kehillah_sermon_cited_2 value = var:kehillah_sermon_cand_$WHICH$ }
+	}
+	change_variable = { name = kehillah_sermon_bonus add = kehillah_sermon_cite_$WHICH$_gain }
+	kehillah_sermon_after_text_effect = yes
+}
+
+# Scope: the holder. After the first text, the second; after the second, the sermon.
+kehillah_sermon_after_text_effect = {
+	if = {
+		limit = { var:kehillah_sermon_step ?= 1 }
+		set_variable = { name = kehillah_sermon_step value = 2 }
+		kehillah_sermon_next_text_by_topic_effect = yes
+	}
+	else = {
+		kehillah_sermon_deliver_effect = yes
+	}
+}
+
+# Scope: the preacher; scope:kehillah_sermon_title the community. $KEY$ was
+# preached from: once per community it counts toward its standing.
+kehillah_sermon_record_preached_effect = {
+	if = {
+		limit = {
+			exists = scope:kehillah_sermon_title
+			NOT = { scope:kehillah_sermon_title = { is_target_in_variable_list = { name = kehillah_preached_works target = flag:$KEY$ } } }
+		}
+		scope:kehillah_sermon_title = { add_to_variable_list = { name = kehillah_preached_works target = flag:$KEY$ } }
+		if = {
+			limit = { NOT = { has_global_variable = kehillah_wk_$KEY$_preached } }
+			set_global_variable = { name = kehillah_wk_$KEY$_preached value = 0 }
+		}
+		change_global_variable = { name = kehillah_wk_$KEY$_preached add = 1 }
+		kehillah_standing_add_reception_effect = { KEY = $KEY$ AMOUNT = kehillah_reception_sermon_value }
+	}
+}
+
+# Scope: the holder. The sermon is given.
+kehillah_sermon_deliver_effect = {
+	save_scope_as = kehillah_sermon_holder
+	var:kehillah_sermon_preacher ?= { save_scope_as = kehillah_sermon_preacher }
+	var:kehillah_sermon_title ?= { save_scope_as = kehillah_sermon_title }
+	scope:kehillah_sermon_preacher ?= {
+		save_temporary_scope_value_as = { name = kehillah_sermon_power value = kehillah_sermon_parshanut_gain_value }
+	}
+	if = {
+		limit = { exists = scope:kehillah_sermon_power }
+		set_variable = { name = kehillah_sermon_amount value = scope:kehillah_sermon_power }
+	}
+	else = {
+		set_variable = { name = kehillah_sermon_amount value = kehillah_sermon_pillar_gain_novice }
+	}
+	change_variable = { name = kehillah_sermon_amount add = var:kehillah_sermon_bonus }
+
+	if = {
+		limit = { is_ai = no }
+		send_interface_toast = {
+			type = event_toast_text_and_effect_good
+			title = kehillah_sermon_delivered_toast
+			left_icon = scope:kehillah_sermon_preacher
+			kehillah_sermon_outcome_effect = yes
+		}
+	}
+	else = {
+		kehillah_sermon_outcome_effect = yes
+	}
+	kehillah_sermon_clear_effect = yes
+}
+
+# Scope: the holder, within kehillah_sermon_deliver_effect (its saved scopes
+# and var:kehillah_sermon_amount). What the sermon does, shown in a toast to
+# a player.
+kehillah_sermon_outcome_effect = {
+	# The topic.
+	if = {
+		limit = { var:kehillah_sermon_topic ?= flag:portion }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = scope:kehillah_sermon_holder.var:kehillah_sermon_amount }
+	}
+	else_if = {
+		limit = { var:kehillah_sermon_topic ?= flag:neighbours }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = scope:kehillah_sermon_holder.var:kehillah_sermon_amount }
+	}
+	else_if = {
+		limit = { var:kehillah_sermon_topic ?= flag:tzedakah }
+		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = scope:kehillah_sermon_holder.var:kehillah_sermon_amount }
+	}
+	else_if = {
+		limit = { var:kehillah_sermon_topic ?= flag:peace }
+		liege ?= {
+			kehillah_shift_outlook_effect = { AMOUNT = kehillah_sermon_peace_outlook }
+			add_opinion = {
+				target = scope:kehillah_sermon_holder
+				modifier = respect_opinion
+				opinion = scope:kehillah_sermon_holder.var:kehillah_sermon_amount
+			}
+		}
+	}
+	else_if = {
+		limit = { var:kehillah_sermon_topic ?= flag:trouble }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = scope:kehillah_sermon_holder.var:kehillah_sermon_amount }
+		add_stress = kehillah_sermon_trouble_stress
+		every_courtier = {
+			limit = { is_jewish_character_trigger = yes }
+			add_stress = kehillah_sermon_trouble_stress
+		}
+	}
+	else_if = {
+		limit = { var:kehillah_sermon_topic ?= flag:guest }
+		add_prestige = {
+			value = scope:kehillah_sermon_holder.var:kehillah_sermon_amount
+			multiply = kehillah_sermon_guest_prestige_mult
+		}
+		scope:kehillah_sermon_title.holder ?= {
+			add_opinion = {
+				target = scope:kehillah_sermon_holder
+				modifier = respect_opinion
+				opinion = scope:kehillah_sermon_holder.var:kehillah_sermon_amount
+			}
+		}
+	}
+	else_if = {
+		limit = { var:kehillah_sermon_topic ?= flag:appeal }
+		add_gold = {
+			value = scope:kehillah_sermon_holder.var:kehillah_sermon_amount
+			divide = kehillah_sermon_appeal_gold_divisor
+		}
+	}
+
+
+	# The preacher: Piety and experience; his texts count toward their standing.
+	scope:kehillah_sermon_preacher ?= {
+		add_piety = kehillah_sermon_piety_gain
+		if = {
+			limit = { has_trait = kehillah_rabbi_trait }
+			add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_sermon_parshanut_xp }
+		}
+		else = {
+			kehillah_karaite_scholar_xp_effect = { XP = kehillah_sermon_parshanut_xp }
+		}
+		if = {
+			limit = { exists = scope:kehillah_sermon_holder.var:kehillah_sermon_cited_1 }
+			kehillah_sermon_record_preached_dispatch_effect = { SOURCE = scope:kehillah_sermon_holder.var:kehillah_sermon_cited_1 }
+		}
+		if = {
+			limit = { exists = scope:kehillah_sermon_holder.var:kehillah_sermon_cited_2 }
+			kehillah_sermon_record_preached_dispatch_effect = { SOURCE = scope:kehillah_sermon_holder.var:kehillah_sermon_cited_2 }
+		}
+		# 2026-11-08 tenet mechanics: Emunah Temimah -- the preacher who lives
+		# the plain faith gains more.
+		if = {
+			limit = { has_personal_tenet_flag = kehillah_tenet_emunah_sermon_personal }
+			add_piety = kehillah_tenet_emunah_sermon_piety
+		}
+	}
+	# Emunah Temimah: the plain faith preached steadies the community.
+	if = {
+		limit = {
+			government_has_flag = government_is_kehillah
+			rite ?= { rite_has_parameter = kehillah_tenet_emunah_sermon }
+		}
 		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_tenet_emunah_sermon_stability }
-	}
-	if = {
-		limit = { has_personal_tenet_flag = kehillah_tenet_emunah_sermon_personal }
-		add_piety = kehillah_tenet_emunah_sermon_piety
 	}
 }

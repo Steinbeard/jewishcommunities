@@ -2242,13 +2242,48 @@ window = {
 	# other barony still opens the county as usual. Fires on _show, i.e.
 	# each time the county view opens on a tagged quarter in that mode.
 	# docs/implementation/2026-11-08-jewish-cultures-map.md.
+	# 2026-11-09 (Daniel, "inconsistent"): two fixes to the map click-throughs.
+	# 1. Each one now closes the county view after opening its window. _show
+	#    only fires when the county view appears; when the view stayed open, a
+	#    second click on another county only swapped its data and nothing
+	#    fired. Closing it makes every click a fresh _show.
+	# 2. The Rites map reads the COUNTY's community link
+	#    (var:kehillah_inspector_community, set by every Jewish map paint)
+	#    instead of the quarter barony's own tag, so a click anywhere in the
+	#    community's county opens its rite. A county with no community but a
+	#    Jewish culture opens that culture, which is what the map tints there.
+	# Counties with neither still open the county view.
 	widget = {
 		name = "kehillah_rites_map_click_to_faith"
 		size = { 0 0 }
-		visible = "[And( IsMapMode('kehillah_community_rites_map'), HoldingView.GetProvince.MakeScope.Var( 'kehillah_map_community' ).Title.GetHolder.IsValid )]"
+		visible = "[And( IsMapMode('kehillah_community_rites_map'), HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_community' ).Title.GetHolder.IsValid )]"
 		state = {
 			name = _show
-			on_start = "[OpenGameViewData( 'faith', HoldingView.GetProvince.MakeScope.Var( 'kehillah_map_community' ).Title.GetHolder.GetRite.Self )]"
+			on_start = "[OpenGameViewData( 'faith', HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_community' ).Title.GetHolder.GetRite.Self )]"
+			on_start = "[HoldingView.Close]"
+		}
+	}
+	widget = {
+		name = "kehillah_rites_map_click_to_culture"
+		size = { 0 0 }
+		visible = "[And3( IsMapMode('kehillah_community_rites_map'), Not( HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_inspector_community' ).Title.GetHolder.IsValid ), HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_local_jewish_culture' ).Culture.IsValid )]"
+		state = {
+			name = _show
+			on_start = "[OpenGameViewData( 'culture_window', HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_local_jewish_culture' ).Culture.GetID )]"
+			on_start = "[HoldingView.Close]"
+		}
+	}
+	# 2026-11-09 (Daniel): on the Jewish Cultures map, clicking a county opens
+	# the culture window on its local Jewish culture (the county variable the
+	# map paints from), with vanilla's own culture_window call.
+	widget = {
+		name = "kehillah_cultures_map_click_to_culture"
+		size = { 0 0 }
+		visible = "[And( IsMapMode('kehillah_jewish_cultures_map'), HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_local_jewish_culture' ).Culture.IsValid )]"
+		state = {
+			name = _show
+			on_start = "[OpenGameViewData( 'culture_window', HoldingView.GetCountyTitle.MakeScope.Var( 'kehillah_local_jewish_culture' ).Culture.GetID )]"
+			on_start = "[HoldingView.Close]"
 		}
 	}
 
@@ -2715,6 +2750,7 @@ window = {
 								using = tooltip_se
 								enabled = "[Title.HasDomicile]"
 								onclick = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
+								onclick = "[GetVariableSystem.Clear( 'kehillah_lib_picked_work' )]"
 								onclick = "[ToggleGameViewData( 'domicile', Title.GetHolder.GetDomicile )]"
 								icon = {
 									parentanchor = top|hcenter
@@ -2746,6 +2782,7 @@ window = {
 								using = tooltip_se
 								enabled = "[GetScriptedGui( 'kehillah_lib_window_open_title' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End )]"
 								onclick = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
+								onclick = "[GetVariableSystem.Clear( 'kehillah_lib_picked_work' )]"
 								onclick = "[GetVariableSystem.Clear( 'kehillah_lib_parent_corpus' )]"
 								onclick = "[GetScriptedGui( 'kehillah_lib_window_open_title' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End )]"
 								onclick = "[GetVariableSystem.Set( 'kehillah_lib_window_open', 'yes' )]"
@@ -3023,13 +3060,14 @@ window = {
 						hbox = {
 							size = { 264 24 }
 							layoutpolicy_horizontal = fixed
-							text_single = { size = { 120 24 } autoresize = no text = "KEHILLAH_CARD_BM_TANAKH_LABEL" align = left|nobaseline default_format = "#low" using = Font_Size_Small alwaystransparent = yes }
+							text_single = { size = { 120 24 } autoresize = no text = "[Title.Custom('KehillahCardScriptureLabel')]" align = left|nobaseline default_format = "#low" using = Font_Size_Small alwaystransparent = yes }
 							spacer = { size = { 8 1 } layoutpolicy_horizontal = fixed }
-							text_single = { size = { 136 24 } autoresize = no text = "KEHILLAH_CARD_BM_TANAKH" align = right|nobaseline default_format = "#high" alwaystransparent = yes }
+							text_single = { size = { 136 24 } autoresize = no text = "[Title.Custom('KehillahCardScriptureCount')]" align = right|nobaseline default_format = "#high" alwaystransparent = yes }
 						}
 						hbox = {
 							size = { 264 24 }
 							layoutpolicy_horizontal = fixed
+							visible = "[GetScriptedGui( 'kehillah_card_uses_talmud' ).IsShown( GuiScope.SetRoot( Title.MakeScope ).End )]"
 							text_single = { size = { 120 24 } autoresize = no text = "KEHILLAH_CARD_BM_BAVLI_LABEL" align = left|nobaseline default_format = "#low" using = Font_Size_Small alwaystransparent = yes }
 							spacer = { size = { 8 1 } layoutpolicy_horizontal = fixed }
 							text_single = { size = { 136 24 } autoresize = no text = "[Title.Custom('KehillahCardShas')]" align = right|nobaseline default_format = "#high" alwaystransparent = yes }
@@ -3037,6 +3075,7 @@ window = {
 						hbox = {
 							size = { 264 24 }
 							layoutpolicy_horizontal = fixed
+							visible = "[GetScriptedGui( 'kehillah_card_uses_talmud' ).IsShown( GuiScope.SetRoot( Title.MakeScope ).End )]"
 							text_single = { size = { 120 24 } autoresize = no text = "KEHILLAH_CARD_BM_YERUSHALMI_LABEL" align = left|nobaseline default_format = "#low" using = Font_Size_Small alwaystransparent = yes }
 							spacer = { size = { 8 1 } layoutpolicy_horizontal = fixed }
 							text_single = { size = { 136 24 } autoresize = no text = "KEHILLAH_CARD_BM_YERUSHALMI" align = right|nobaseline default_format = "#high" alwaystransparent = yes }
@@ -3050,6 +3089,7 @@ window = {
 						using = tooltip_se
 						enabled = "[GetScriptedGui( 'kehillah_lib_window_open_title' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End )]"
 						onclick = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
+						onclick = "[GetVariableSystem.Clear( 'kehillah_lib_picked_work' )]"
 						onclick = "[GetVariableSystem.Clear( 'kehillah_lib_parent_corpus' )]"
 						onclick = "[GetScriptedGui( 'kehillah_lib_window_open_title' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End )]"
 						onclick = "[GetVariableSystem.Set( 'kehillah_lib_window_open', 'yes' )]"

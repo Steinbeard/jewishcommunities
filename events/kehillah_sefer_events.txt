@@ -353,7 +353,8 @@ kehillah_sefer.0200 = {
 			trigger_event = kehillah_sefer.0202
 		}
 		else = {
-			trigger_event = { id = kehillah_book.0002 days = 5 }
+			# 2026-11-10: the book's language first (Sefer languages).
+			trigger_event = kehillah_sefer.0203
 		}
 	}
 }
@@ -435,6 +436,80 @@ kehillah_sefer.0202 = {
 			NOT = { var:kehillah_sefer_last_read_authored = var:kehillah_sefer_my_latest_work }
 		}
 		set_variable = { name = kehillah_book_comment_on value = var:kehillah_sefer_last_read_authored }
+	}
+
+	after = {
+		# 2026-11-10: the book's language first (Sefer languages).
+		trigger_event = kehillah_sefer.0203
+	}
+}
+
+# In what tongue? (2026-11-10, docs/spec/2026-11-10-sefer-languages.md,
+# Daniel: "Writing in your own culture's native language is easier, but is
+# less prestigious and less easy to share than writing in Hebrew or
+# Aramaic.") Stored by kehillah_language_write_effect when the book is done.
+kehillah_sefer.0203 = {
+	type = character_event
+	title = kehillah_sefer.0203.t
+	desc = kehillah_sefer.0203.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = writing
+	}
+
+	# The author's tongue, for kehillah_language_prestige_value (vanilla court languages).
+	immediate = {
+		culture = { save_scope_as = kehillah_tongue_culture }
+	}
+
+	option = {
+		name = kehillah_sefer.0203.hebrew
+		set_variable = { name = kehillah_book_lang value = flag:hebrew }
+		custom_tooltip = kehillah_sefer.0203.hebrew.tt
+		ai_chance = { base = 70 }
+	}
+	option = {
+		name = kehillah_sefer.0203.aramaic
+		trigger = { knows_language = language_aramaic }
+		set_variable = { name = kehillah_book_lang value = flag:aramaic }
+		custom_tooltip = kehillah_sefer.0203.aramaic.tt
+		ai_chance = {
+			base = 5
+			modifier = { add = 15 var:kehillah_book_genre ?= flag:talmudics }
+			modifier = { add = 10 var:kehillah_book_genre ?= flag:hashkafa }
+		}
+	}
+	option = {
+		name = kehillah_sefer.0203.vernacular
+		trigger = {
+			culture = {
+				NOR = {
+					has_cultural_pillar = language_israelite
+					has_cultural_pillar = language_aramaic
+				}
+			}
+		}
+		set_variable = { name = kehillah_book_lang value = flag:vernacular }
+		change_variable = { name = kehillah_book_tally add = kehillah_book_vernacular_ease }
+		custom_tooltip = kehillah_sefer.0203.vernacular.ease.tt
+		custom_tooltip = kehillah_sefer.0203.vernacular.readers.tt
+		# Its standing follows the prestige of the tongue among the royal courts.
+		if = {
+			limit = { kehillah_language_prestige_value >= 2 }
+			custom_tooltip = kehillah_sefer.0203.vernacular.great.tt
+		}
+		else_if = {
+			limit = { kehillah_language_prestige_value >= 1 }
+			custom_tooltip = kehillah_sefer.0203.vernacular.court.tt
+		}
+		else = {
+			custom_tooltip = kehillah_sefer.0203.vernacular.standing.tt
+		}
+		ai_chance = {
+			base = 15
+			modifier = { add = 15 learning < 12 }
+		}
 	}
 
 	after = {

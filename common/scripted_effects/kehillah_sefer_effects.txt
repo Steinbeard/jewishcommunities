@@ -22,6 +22,10 @@ kehillah_lib_register_library_effect = {
 	if = {
 		limit = { NOT = { has_variable = kehillah_library_tradition } }
 		if = {
+			limit = { holder ?= { faith = faith:haymanot } }
+			set_variable = { name = kehillah_library_tradition value = 3 }
+		}
+		else_if = {
 			limit = { holder ?= { kehillah_is_karaite_character_trigger = yes } }
 			set_variable = { name = kehillah_library_tradition value = 2 }
 		}
@@ -100,18 +104,25 @@ kehillah_lib_seed_tanakh_effect = {
 		add_to_variable_list = { name = kehillah_library_works target = flag:work_tanakh_torah }
 	}
 	if = {
-		limit = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_tanakh_neviim } } }
-		add_to_variable_list = { name = kehillah_library_works target = flag:work_tanakh_neviim }
-	}
-	if = {
-		limit = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_tanakh_ketuvim } } }
-		add_to_variable_list = { name = kehillah_library_works target = flag:work_tanakh_ketuvim }
+		limit = { NOT = { kehillah_lib_is_haymanot_library_trigger = yes } }
+		if = {
+			limit = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_tanakh_neviim } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_tanakh_neviim }
+		}
+		if = {
+			limit = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_tanakh_ketuvim } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_tanakh_ketuvim }
+		}
 	}
 }
 
 # Scope: a library title. Caches what the Greatness row and the map read.
 kehillah_lib_refresh_cache_effect = {
 	if = {
+		limit = { kehillah_lib_is_haymanot_library_trigger = yes }
+		set_variable = { name = kehillah_lib_foundation_missing value = 0 }
+	}
+	else_if = {
 		limit = { kehillah_lib_is_karaite_library_trigger = yes }
 		set_variable = { name = kehillah_lib_foundation_missing value = kehillah_lib_karaite_missing_count_value }
 	}
@@ -119,7 +130,7 @@ kehillah_lib_refresh_cache_effect = {
 		set_variable = { name = kehillah_lib_foundation_missing value = kehillah_lib_bavli_missing_count_value }
 	}
 	if = {
-		limit = { var:kehillah_lib_foundation_missing <= 0 }
+		limit = { var:kehillah_lib_foundation_missing <= 0 NOT = { kehillah_lib_is_haymanot_library_trigger = yes } }
 		set_variable = { name = kehillah_lib_shas_complete value = yes }
 	}
 	else_if = {
@@ -198,6 +209,28 @@ kehillah_lib_seal_effect = {
 
 # Scope: a library title. Once a year.
 kehillah_lib_yearly_library_effect = {
+	# Correct the default six-work Rabbanite seed in older Haymanot saves.
+	# A changed shelf is left intact so acquired works are never deleted.
+	if = {
+		limit = { holder ?= { faith = faith:haymanot } NOT = { kehillah_lib_is_haymanot_library_trigger = yes } }
+		if = {
+			limit = {
+				kehillah_lib_work_count_value = 6
+				is_target_in_variable_list = { name = kehillah_library_works target = flag:work_tanakh_torah }
+				is_target_in_variable_list = { name = kehillah_library_works target = flag:work_tanakh_neviim }
+				is_target_in_variable_list = { name = kehillah_library_works target = flag:work_tanakh_ketuvim }
+				is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mishnah }
+				is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed }
+				is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nashim }
+			}
+			remove_list_variable = { name = kehillah_library_works target = flag:work_tanakh_neviim }
+			remove_list_variable = { name = kehillah_library_works target = flag:work_tanakh_ketuvim }
+			remove_list_variable = { name = kehillah_library_works target = flag:work_mishnah }
+			remove_list_variable = { name = kehillah_library_works target = flag:work_bavli_moed }
+			remove_list_variable = { name = kehillah_library_works target = flag:work_bavli_nashim }
+		}
+		set_variable = { name = kehillah_library_tradition value = 3 }
+	}
 	kehillah_lib_refresh_seat_effect = yes
 	kehillah_lib_seed_tanakh_effect = yes
 	kehillah_lib_refresh_cache_effect = yes
@@ -277,6 +310,16 @@ kehillah_sefer_ensure_counters_effect = {
 		set_global_variable = { name = kehillah_wk_$KEY$_citations value = 0 }
 		set_global_variable = { name = kehillah_wk_$KEY$_commentaries value = 0 }
 	}
+	# 2026-11-11: the sermon and changed-minds counters of the Authoritative
+	# gates; set here, for every work, so older saves have them too.
+	if = {
+		limit = { NOT = { has_global_variable = kehillah_wk_$KEY$_preached } }
+		set_global_variable = { name = kehillah_wk_$KEY$_preached value = 0 }
+	}
+	if = {
+		limit = { NOT = { has_global_variable = kehillah_wk_$KEY$_minds } }
+		set_global_variable = { name = kehillah_wk_$KEY$_minds value = 0 }
+	}
 }
 
 # Scope: any. Add 1 to a work's global counter ($COUNTER$: masters,
@@ -350,8 +393,13 @@ kehillah_standing_recalc_work_effect = {
 		limit = { var:kehillah_standing_$KEY$ > kehillah_lib_ceiling_$KEY$ }
 		set_variable = { name = kehillah_standing_$KEY$ value = kehillah_lib_ceiling_$KEY$ }
 	}
+	# 2026-11-11 (one scale): an Anathema (0) is held below any floor until its
+	# term runs out (kehillah_standing_next_gate_met_trigger).
 	if = {
-		limit = { var:kehillah_standing_$KEY$ < kehillah_lib_floor_$KEY$ }
+		limit = {
+			var:kehillah_standing_$KEY$ > 0
+			var:kehillah_standing_$KEY$ < kehillah_lib_floor_$KEY$
+		}
 		set_variable = { name = kehillah_standing_$KEY$ value = kehillah_lib_floor_$KEY$ }
 	}
 
@@ -451,6 +499,8 @@ kehillah_sefer_after_study_effect = {
 	if = {
 		limit = { var:kehillah_study_torah_last_result = 1 }
 		kehillah_sefer_work_tenets_$KEY$_effect = yes
+		# 2026-11-11: a Machshavah book may change the reader's mind.
+		kehillah_minds_after_mastery_effect = { KEY = $KEY$ }
 		kehillah_sefer_bump_counter_effect = { KEY = $KEY$ COUNTER = masters }
 		if = {
 			limit = { kehillah_lib_canon_$KEY$ = 0 }
@@ -466,9 +516,10 @@ kehillah_sefer_after_study_effect = {
 				kehillah_standing_add_reception_effect = { KEY = $KEY$ AMOUNT = kehillah_reception_mastery_value }
 			}
 		}
-		# Piety follows the work's standing in the reader's own rite.
+		# Piety follows the work's standing in the reader's own rite
+		# (2026-11-11 one scale: Authoritative and canon; Esteemed; Rejected, Contested).
 		if = {
-			limit = { kehillah_lib_standing_$KEY$ >= 9 }
+			limit = { kehillah_lib_standing_$KEY$ >= 8 }
 			add_piety = kehillah_sefer_piety_venerated_value
 		}
 		else_if = {
@@ -508,10 +559,10 @@ kehillah_sefer_after_study_effect = {
 			add_character_modifier = { modifier = kehillah_heterodox_reader_modifier years = 10 }
 		}
 	}
-	# A Banned work: any reading is an offence.
+	# A Banned or Anathema work: any reading is an offence.
 	if = {
 		limit = {
-			kehillah_lib_standing_$KEY$ = 1
+			kehillah_lib_standing_$KEY$ <= 1
 			NOT = { var:kehillah_study_torah_last_result = 3 }
 		}
 		add_piety = kehillah_sefer_piety_banned_value
@@ -531,7 +582,7 @@ kehillah_sefer_after_study_effect = {
 	if = {
 		limit = {
 			var:kehillah_study_torah_last_result = 2
-			kehillah_lib_canon_$KEY$ >= 11
+			kehillah_lib_canon_$KEY$ >= 9
 			kehillah_talmud_torah_follower_trigger = yes
 		}
 		add_piety = {
@@ -795,7 +846,8 @@ kehillah_seed_landed_library_effect = {
 		limit = { kehillah_lib_is_karaite_library_trigger = yes }
 		add_to_variable_list = { name = kehillah_library_works target = flag:work_anan_sefer_hamitzvot }
 	}
-	else = {
+	else_if = {
+		limit = { NOT = { kehillah_lib_is_haymanot_library_trigger = yes } }
 		add_to_variable_list = { name = kehillah_library_works target = flag:work_mishnah }
 		add_to_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed }
 		add_to_variable_list = { name = kehillah_library_works target = flag:work_bavli_nashim }
@@ -861,6 +913,48 @@ kehillah_sefer_migrate_save_effect = {
 			set_variable = { name = kehillah_yeshiva_grandfathered value = yes }
 		}
 	}
+	# 2026-11-10: Jewish adults' reading languages (Hebrew, Aramaic), once, with
+	# its own flag so saves already past the block above get it too.
+	kehillah_language_seed_effect = yes
+	# 2026-11-11: standing on one scale (docs/spec/2026-11-11-standing-one-scale.md).
+	# An older save's Classic, Authoritative and Venerated become Authoritative.
+	if = {
+		limit = { NOT = { has_global_variable = kehillah_standing_one_scale } }
+		set_global_variable = { name = kehillah_standing_one_scale value = yes }
+		religion:judaism_religion = {
+			every_faith = {
+				every_faith_rite = {
+					limit = { has_variable = kehillah_standing_ready }
+					kehillah_standing_one_scale_rite_effect = yes
+				}
+			}
+		}
+	}
+	# 2026-11-11: Talmudics books written before the docket had orders cover
+	# Nezikin (docs/spec/2026-11-11-rulings-sermons-and-gates.md section 2).
+	if = {
+		limit = { NOT = { has_global_variable = kehillah_din_sedarim_ready } }
+		set_global_variable = { name = kehillah_din_sedarim_ready value = yes }
+		kehillah_din_seder_migrate_effect = yes
+	}
+	# 2026-11-11 (Daniel): to the Beta Israel and the Samaritans, the other
+	# traditions' works are Obscure, not Banned or Rejected.
+	if = {
+		limit = { NOT = { has_global_variable = kehillah_standing_other_obscure } }
+		set_global_variable = { name = kehillah_standing_other_obscure value = yes }
+		religion:judaism_religion = {
+			every_faith = {
+				every_faith_rite = {
+					limit = {
+						has_variable = kehillah_standing_ready
+						kehillah_rite_rabbanite_trigger = no
+						kehillah_rite_toric_trigger = no
+					}
+					kehillah_standing_other_faiths_obscure_rite_effect = yes
+				}
+			}
+		}
+	}
 }
 
 kehillah_sefer_seed_all_rites_effect = {
@@ -879,6 +973,9 @@ kehillah_sefer_seed_all_rites_effect = {
 # Scope: none. Once a year, from yearly_global_pulse.
 kehillah_sefer_yearly_effect = {
 	kehillah_sefer_migrate_save_effect = yes
+	# 2026-11-10: books in an author's own tongue rise and fall with the royal
+	# courts that speak it (Sefer languages), before ceilings are refreshed.
+	kehillah_language_refresh_all_prestige_effect = yes
 	religion:judaism_religion = {
 		every_faith = {
 			kehillah_standing_yearly_faith_effect = yes
@@ -916,6 +1013,8 @@ kehillah_sefer_pick_candidate_effect = {
 # record_work_effect, whose WORK has no flag: prefix).
 kehillah_sefer_after_yeshiva_mastery_effect = {
 	kehillah_sefer_work_tenets_$KEY$_effect = yes
+	# 2026-11-11: a Machshavah book may change the student's mind.
+	kehillah_minds_after_mastery_effect = { KEY = $KEY$ }
 	kehillah_sefer_bump_counter_effect = { KEY = $KEY$ COUNTER = masters }
 	if = {
 		limit = { kehillah_lib_canon_$KEY$ = 0 }
@@ -988,6 +1087,4 @@ kehillah_sefer_debug_log_tier_effect = {
 	else_if = { limit = { kehillah_lib_standing_$KEY$ = 9 } debug_log = "kehillah_sefer_v2_debug STANDING_IS_9" }
 	else_if = { limit = { kehillah_lib_standing_$KEY$ = 10 } debug_log = "kehillah_sefer_v2_debug STANDING_IS_10" }
 	else_if = { limit = { kehillah_lib_standing_$KEY$ = 11 } debug_log = "kehillah_sefer_v2_debug STANDING_IS_11" }
-	else_if = { limit = { kehillah_lib_standing_$KEY$ = 12 } debug_log = "kehillah_sefer_v2_debug STANDING_IS_12" }
-	else_if = { limit = { kehillah_lib_standing_$KEY$ = 13 } debug_log = "kehillah_sefer_v2_debug STANDING_IS_13" }
 }

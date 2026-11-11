@@ -298,6 +298,20 @@ file's header.
   (`kehillah_rites_map_click_to_faith`) is shown only on the Rites map and only when the clicked
   barony is a tagged quarter. On `_show` it runs `OpenGameViewData( 'faith', <leader>.GetRite )`,
   the same call vanilla's rite buttons use. Other baronies still open the county view.
+- **Culture click-through (2026-11-09).** On the Jewish Cultures map, clicking a county opens the
+  culture window on its `kehillah_local_jewish_culture`, through
+  `kehillah_cultures_map_click_to_culture` in the same file. It uses vanilla's
+  `OpenGameViewData( 'culture_window', Culture.GetID )` and the same `_show` mechanism as the
+  rites click-through. A county with no Jewish culture opens the county view.
+- **Consistency fix (2026-11-09, Daniel: "it feels inconsistent").** Both click-throughs fired only
+  on the county view's `_show`. When the view stayed open, a click on a second county only
+  swapped its data, so nothing fired. Each click-through now also runs `HoldingView.Close` after
+  opening its window, so every click is a fresh `_show`. The Rites map now reads the county's
+  community link (`var:kehillah_inspector_community`) instead of the quarter barony's tag, so a
+  click anywhere in a community's county opens its rite. A county without a community but with a
+  Jewish culture opens the culture window (`kehillah_rites_map_click_to_culture`). The cost is
+  that, in those two modes, the county view and its community card can't stay open for a Jewish
+  county. They are still there on the other Jewish maps.
 - **Jewish Communities.** The minhag tints are gone, and every county takes the neutral base. The
   "Customary region" line is removed from both of its hover cards.
 

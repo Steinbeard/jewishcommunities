@@ -5,8 +5,11 @@ The source stays here so the borders can be revised without repainting a DDS.
 """
 
 from pathlib import Path
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont, features
 import math
+import json
+import hashlib
+import random
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -89,6 +92,36 @@ for total in (1, 4, 6):
 
 SPINE_H = 80
 SPINE_WIDTH = {1: 14, 2: 10, 3: 14, 4: 18, 5: 22, 6: 26, 7: 30}
+# Paint source retained alongside the generated DDS strips. Crops are detected
+# by the transparent gutters, so the CK3 sprite dimensions stay exact.
+SPINE_ATLAS = OUT / "kehillah_spine_art_atlas.png"
+painted = Image.open(SPINE_ATLAS).convert("RGBA") if SPINE_ATLAS.exists() else None
+painted_books = []
+if painted:
+    alpha = painted.getchannel("A")
+    occupied = [sum(alpha.getpixel((x, y)) > 100 for y in range(painted.height)) > painted.height // 6 for x in range(painted.width)]
+    start = None
+    for x, on in enumerate(occupied + [False]):
+        if on and start is None:
+            start = x
+        elif not on and start is not None:
+            crop = painted.crop((start, 0, x, painted.height))
+            painted_books.append(crop.crop(crop.getbbox()))
+            start = None
+    if len(painted_books) != 12:
+        raise ValueError(f"Expected 12 isolated book spines in {SPINE_ATLAS}, found {len(painted_books)}")
+
+# Material and degree of tooling follow standing. Colour remains a gentler
+# genre cue; the permanent title cartouche is generated separately below.
+PAINTED_BY_TIER = {
+    1: (0, 11, 3, 0),       # wrappers
+    2: (7, 7, 7, 7),        # bound quires
+    3: (3, 11, 0, 3),       # limp vellum
+    4: (1, 6, 8, 1),        # plain leather
+    5: (8, 5, 2, 4),        # tooling
+    6: (2, 5, 4, 10),       # gilt
+    7: (9, 10, 2, 5),       # canon
+}
 GENRE_PALETTES = [
     [(150, 102, 38), (112, 70, 36), (118, 104, 44), (156, 78, 40)],   # Parshanut: honey, saddle, olive, burnt orange
     [(108, 28, 30), (150, 66, 34), (94, 32, 60), (90, 52, 32)],       # Talmudics: oxblood, rust, plum, umber
@@ -190,23 +223,120 @@ def spine(tier, base):
         d.polygon([(cx, cy - r * 2), (cx + r, cy), (cx, cy + r * 2), (cx - r, cy)], fill=GOLD, outline=GOLD_LIGHT)
         d.ellipse((cx - S * 2, cy - S * 2, cx + S * 2, cy + S * 2), fill=scale(base, 0.9) + (255,))
         shade_columns(im, 0, w, 0, h, 0.32)
+    # Restrained, repeatable variation in the surface breaks up the flat colour
+    # without changing the silhouette that communicates the rite's standing.
+    rng = random.Random((tier, *base).__repr__())
+    texture = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    td = ImageDraw.Draw(texture)
+    for _ in range(round(w * h / 700)):
+        x, y = rng.randrange(w), rng.randrange(h)
+        td.line((x, y, min(w - 1, x + rng.randrange(2, 13)), y), fill=(240, 212, 155, rng.randrange(6, 24)), width=1)
+    im = Image.alpha_composite(im, texture)
     return im.resize((SPINE_WIDTH[tier], SPINE_H), Image.Resampling.LANCZOS)
+
+
+def painted_spine(tier, base, index):
+    source = painted_books[index].resize((SPINE_WIDTH[tier] * SCALE, SPINE_H * SCALE), Image.Resampling.LANCZOS)
+    wash = Image.new("RGB", source.size, base)
+    colour = Image.blend(source.convert("RGB"), wash, 0.14 if tier <= 3 else 0.21)
+    colour.putalpha(source.getchannel("A"))
+    return colour.resize((SPINE_WIDTH[tier], SPINE_H), Image.Resampling.LANCZOS)
 
 
 for tier, width in SPINE_WIDTH.items():
     strip = Image.new("RGBA", (width * 12, SPINE_H), (0, 0, 0, 0))
     i = 0
     for palette in GENRE_PALETTES:
-        for base in palette:
-            strip.paste(spine(tier, base), (i * width, 0))
+        for variant, base in enumerate(palette):
+            art = painted_spine(tier, base, PAINTED_BY_TIER[tier][variant]) if painted_books else spine(tier, base)
+            strip.paste(art, (i * width, 0))
             i += 1
     strip.save(OUT / f"kehillah_spine_t{tier}.dds")
 
 
-def dashed_outline(w, h, color=(170, 160, 140, 200), dash=4, inset=2):
-    """A missing book: a dashed outline where it should stand (pixels at 1x)."""
+# A work retains this small painted spine cartouche when the rite changes its
+# binding. The abbreviated title is selected from its stable catalog key; the
+# generated slots use their number. The full name remains on hover.
+order = json.loads((ROOT / "scripts/kehillah_library_catalog.json").read_text(encoding="utf-8"))["order"]
+font_path = "C:/Windows/Fonts/frank.ttf"
+try:
+    mark_font = ImageFont.truetype(font_path, 8 * SCALE)
+except OSError:
+    # The repository is normally regenerated on Windows; DejaVu is a portable
+    # fallback that also contains Hebrew glyphs.
+    mark_font = ImageFont.truetype("DejaVuSans.ttf", 8 * SCALE)
+
+HEBREW_MARKS = {
+    "work_targum_onkelos": "תא", "work_mekhilta": "מכ",
+    "work_genesis_rabbah": "בר", "work_pirkei_derabbi_eliezer": "פא",
+    "work_mishnah": "מש", "work_bavli_zeraim": "בז",
+    "work_bavli_moed": "במ", "work_bavli_nashim": "בנ",
+    "work_bavli_nezikin": "בזנ", "work_bavli_kodashim": "בק",
+    "work_bavli_tahorot": "בט", "work_yerushalmi_zeraim": "יז",
+    "work_yerushalmi_moed": "ימ", "work_yerushalmi_nashim": "ינ",
+    "work_yerushalmi_nezikin": "ינז", "work_halakhot_gedolot": "הג",
+    "work_sefer_yetzirah": "סי", "work_hekhalot_rabbati": "הר",
+    "work_shiur_qomah": "שק", "work_sefer_harazim": "סר",
+    "work_emunot_vedeot": "אד", "work_chovot_halevavot": "חל",
+    "work_kuzari": "כוז", "work_tanakh_torah": "ת",
+    "work_tanakh_neviim": "נ", "work_tanakh_ketuvim": "כ",
+    "work_tosefta": "תו", "work_seder_rav_amram": "סע",
+    "work_iggeret_rav_sherira": "אש", "work_rabbenu_hananel": "רח",
+    "work_mekor_hayyim": "מח", "work_anan_sefer_hamitzvot": "מצ",
+    "work_kitab_alanwar": "אנ", "work_yefet_commentary": "יפ",
+    "work_rashi_torah": "רת", "work_rashi_talmud": "רש",
+    "work_hilkhot_harif": "רי", "work_mishneh_torah": "מת",
+    "work_moreh_nevukhim": "מנ", "work_sefer_habahir": "בה",
+    "work_sefer_hasidim": "חס", "work_tosafot": "תס",
+    "work_zohar": "זה",
+}
+
+
+def hebrew_number(n):
+    """A compact Hebrew numeral for the catalog's numbered authored slots."""
+    if n == 15:
+        return "טו"
+    if n == 16:
+        return "טז"
+    tens = ("", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ")
+    ones = ("", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט")
+    return "ק" * (n // 100) + tens[(n % 100) // 10] + ones[n % 10]
+
+
+def paint_hebrew(draw, xy, label, **kwargs):
+    if features.check("raqm"):
+        draw.text(xy, label, font=mark_font, anchor="mm", direction="rtl", **kwargs)
+    else:
+        # Hebrew letters do not join; reverse the visual order if Pillow has
+        # no bidi renderer, as on this machine.
+        draw.text(xy, label[::-1], font=mark_font, anchor="mm", **kwargs)
+mark_w, mark_h = 16, 20
+marks = Image.new("RGBA", (mark_w * len(order), mark_h), (0, 0, 0, 0))
+for index, work in enumerate(order):
+    if work.startswith("work_authored_"):
+        letters = hebrew_number(int(work.rsplit("_", 1)[1]))
+    else:
+        letters = HEBREW_MARKS[work]
+    seed = hashlib.sha256(work.encode()).digest()
+    patch = Image.new("RGBA", (mark_w * SCALE, mark_h * SCALE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(patch)
+    ink = (231, 194, 116, 245) if not work.startswith("work_authored_") else (213, 188, 143, 235)
+    d.rounded_rectangle((SCALE, 2*SCALE, 15*SCALE, 18*SCALE), radius=2*SCALE, fill=(35, 25, 23, 210), outline=ink, width=SCALE)
+    paint_hebrew(d, (8*SCALE, 9*SCALE), letters, fill=ink, stroke_width=0)
+    for x in (4, 12):
+        if seed[x] % 2:
+            d.ellipse((x*SCALE-SCALE//2, 16*SCALE, x*SCALE+SCALE//2, 17*SCALE), fill=ink)
+    marks.paste(patch.resize((mark_w, mark_h), Image.Resampling.LANCZOS), (index * mark_w, 0))
+marks.save(OUT / "kehillah_spine_marks.dds")
+
+
+def dashed_outline(w, h, color=(58, 36, 20, 235), dash=4, inset=2, fill=(40, 24, 12, 78)):
+    """A missing book: a dashed outline where it should stand (pixels at 1x).
+    2026-11-11 (Daniel: "the missing book indicators darker"): dark walnut on
+    the light oak back panel, over a faint shadow where the volume would stand."""
     im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
+    d.rectangle((1, 1, w - 2, h - 1), fill=fill)
     for y in range(inset, h, dash * 2):
         d.line([(0, y), (0, min(h - 1, y + dash - 1))], fill=color)
         d.line([(w - 1, y), (w - 1, min(h - 1, y + dash - 1))], fill=color)
@@ -230,7 +360,35 @@ def ribbon():
 ribbon().save(OUT / "kehillah_spine_ribbon.dds")
 
 
-def big_volume(w, h, leather, bands, label=True):
+# 2026-11-11 (Daniel: "does the glow look a little off?"): the mastered halo.
+# Vanilla's Glow_Standard on the book art lit the label plates from behind
+# (they are part-transparent) and was too faint at the edges. This is a soft
+# green ring drawn over the art, its inner edge on the book's own edge (the GUI
+# places it 10 px out on every side), its middle transparent. Drawn as
+# Corneredstretched with spriteborder 12, so the ring keeps its width on any book.
+def mastered_halo(size=48, out=10, inner=2, color=(120, 232, 110), peak=0.95):
+    im = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    px = im.load()
+    lo, hi = out, size - 1 - out
+    for y in range(size):
+        for x in range(size):
+            dx = max(lo - x, 0, x - hi)
+            dy = max(lo - y, 0, y - hi)
+            d = math.hypot(dx, dy)
+            if d > 0:
+                a = peak * max(0.0, 1 - d / out) ** 1.4
+            else:
+                edge = min(x - lo, hi - x, y - lo, hi - y)
+                a = peak * max(0.0, 1 - edge / inner) if edge < inner else 0.0
+            if a > 0:
+                px[x, y] = color + (round(255 * a),)
+    return im
+
+
+mastered_halo().save(OUT / "kehillah_lib_mastered_halo.dds")
+
+
+def big_volume(w, h, leather, bands, label=True, sigil=None):
     W, H, S = w * SCALE, h * SCALE, SCALE
     im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
@@ -243,25 +401,43 @@ def big_volume(w, h, leather, bands, label=True):
     if label:
         top, bot = round(h * 0.36), round(h * 0.56)
         d.rectangle((5 * S, top * S, W - 1 - 5 * S, bot * S), fill=(40, 16, 14, 255), outline=GOLD, width=S)
-        for y in range(top + 4, bot - 2, 4):
-            d.line([(9 * S, y * S), (W - 1 - 9 * S, y * S)], fill=GOLD_LIGHT, width=S)
+        if sigil:
+            paint_hebrew(d, (W//2, (top+bot)*S//2), sigil, fill=GOLD_LIGHT)
+        else:
+            for y in range(top + 4, bot - 2, 4):
+                d.line([(9 * S, y * S), (W - 1 - 9 * S, y * S)], fill=GOLD_LIGHT, width=S)
     shade_columns(im, 0, W, 0, H, 0.34)
     return im.resize((w, h), Image.Resampling.LANCZOS)
 
 
-# The Shas case: six great folios, two leathers alternating, and the gap.
+def painted_volume(w, h, source_index, sigil):
+    if not painted_books:
+        return big_volume(w, h, (58, 31, 25), (10, 18, h - 18, h - 10), sigil=sigil)
+    im = painted_books[source_index].resize((w * SCALE, h * SCALE), Image.Resampling.LANCZOS)
+    d = ImageDraw.Draw(im)
+    cx, cy = w * SCALE // 2, h * SCALE // 2
+    d.rounded_rectangle((cx - 13*SCALE, cy - 11*SCALE, cx + 13*SCALE, cy + 11*SCALE),
+                        radius=2*SCALE, fill=(48, 28, 24, 215), outline=(205, 164, 86, 255), width=SCALE)
+    paint_hebrew(d, (cx, cy), sigil, fill=GOLD_LIGHT)
+    return im.resize((w, h), Image.Resampling.LANCZOS)
+
+
+# The Shas case: a distinct cartouche on each order, plus the empty slot.
 SHAS_W, SHAS_H = 40, 118
-shas = Image.new("RGBA", (SHAS_W * 3, SHAS_H), (0, 0, 0, 0))
-shas.paste(big_volume(SHAS_W, SHAS_H, (64, 18, 18), (10, 18, 26, 92, 100, 108)), (0, 0))
-shas.paste(big_volume(SHAS_W, SHAS_H, (60, 30, 18), (10, 18, 26, 92, 100, 108)), (SHAS_W, 0))
-shas.paste(dashed_outline(SHAS_W, SHAS_H), (SHAS_W * 2, 0))
+shas = Image.new("RGBA", (SHAS_W * 7, SHAS_H), (0, 0, 0, 0))
+for i, name in enumerate(("זר", "מו", "נש", "נז", "קד", "טה")):
+    leather = ((64, 18, 18), (60, 30, 18), (69, 27, 37), (65, 39, 25), (67, 24, 27), (70, 31, 23))[i]
+    # 2026-11-11 (Daniel: "make all the volumes of the Talmud match"): one
+    # binding for the whole set, the order's cartouche the only difference.
+    shas.paste(painted_volume(SHAS_W, SHAS_H, 2, name), (SHAS_W * i, 0))
+shas.paste(dashed_outline(SHAS_W, SHAS_H), (SHAS_W * 6, 0))
 shas.save(OUT / "kehillah_lib_shas_volume.dds")
 
 # The Prophets and the Writings: tall codices beside the ark, and the gap.
 CODEX_W, CODEX_H = 34, 112
 codex = Image.new("RGBA", (CODEX_W * 3, CODEX_H), (0, 0, 0, 0))
-codex.paste(big_volume(CODEX_W, CODEX_H, (24, 36, 72), (10, 16, 96, 102)), (0, 0))
-codex.paste(big_volume(CODEX_W, CODEX_H, (22, 58, 40), (10, 16, 96, 102)), (CODEX_W, 0))
+codex.paste(painted_volume(CODEX_W, CODEX_H, 9, "נ"), (0, 0))
+codex.paste(painted_volume(CODEX_W, CODEX_H, 5, "כ"), (CODEX_W, 0))
 codex.paste(dashed_outline(CODEX_W, CODEX_H), (CODEX_W * 2, 0))
 codex.save(OUT / "kehillah_lib_codex.dds")
 
@@ -301,9 +477,34 @@ def ark(with_torah):
     return im.resize((w, h), Image.Resampling.LANCZOS)
 
 
+def centrepiece_crops(filename):
+    source = OUT / filename
+    if not source.exists():
+        return None
+    im = Image.open(source).convert("RGBA")
+    alpha = im.getchannel("A")
+    occupied = [sum(alpha.getpixel((x, y)) > 100 for y in range(im.height)) > im.height // 8 for x in range(im.width)]
+    ranges, start = [], None
+    for x, on in enumerate(occupied + [False]):
+        if on and start is None:
+            start = x
+        elif not on and start is not None:
+            ranges.append((start, x))
+            start = None
+    if len(ranges) != 2:
+        raise ValueError(f"Expected an ark and a lectern in {source}, found {ranges}")
+    result = []
+    for left, right in ranges:
+        cut = im.crop((left, 0, right, im.height))
+        result.append(cut.crop(cut.getbbox()))
+    return result
+
+
+furnished = centrepiece_crops("kehillah_centrepiece_art_atlas.png")
+empty = centrepiece_crops("kehillah_centrepiece_empty_atlas.png")
 arks = Image.new("RGBA", (240, 150), (0, 0, 0, 0))
-arks.paste(ark(True), (0, 0))
-arks.paste(ark(False), (120, 0))
+arks.paste(furnished[0].resize((120, 150), Image.Resampling.LANCZOS) if furnished else ark(True), (0, 0))
+arks.paste(empty[0].resize((120, 150), Image.Resampling.LANCZOS) if empty else ark(False), (120, 0))
 arks.save(OUT / "kehillah_lib_ark.dds")
 
 
@@ -329,22 +530,126 @@ def stand(with_book):
 
 
 stands = Image.new("RGBA", (220, 120), (0, 0, 0, 0))
-stands.paste(stand(True), (0, 0))
-stands.paste(stand(False), (110, 0))
+stands.paste(furnished[1].resize((110, 120), Image.Resampling.LANCZOS) if furnished else stand(True), (0, 0))
+stands.paste(empty[1].resize((110, 120), Image.Resampling.LANCZOS) if empty else stand(False), (110, 0))
 stands.save(OUT / "kehillah_lib_stand.dds")
 
 
+# ---------------------------------------------------------------------------
+# 2026-11-11 (Daniel: "revise the bookshelf design to make it feel more
+# aesthetically pleasing ... like it's a real bookshelf maybe, with light wood
+# background panels"): a bookcase. Light oak boards behind the books (tiled as
+# the shelf viewport's own background), a darker oak frame around it, oak
+# shelves with a lip, a soft shadow under each shelf, and walnut caption plates
+# so the captions stay legible on light wood. All deterministic.
+# ---------------------------------------------------------------------------
+OAK_BACK = (186, 140, 90)
+OAK_FRAME = (124, 80, 42)
+OAK_SHELF = (158, 110, 62)
+
+
+def _clamp(v):
+    return max(0, min(255, int(round(v))))
+
+
+def case_back(size=256, boards=4):
+    """Vertical oak boards, tileable both ways: grain runs down each board and
+    is periodic in y; seams fall on the tile edges."""
+    rng = random.Random(1066)
+    im = Image.new("RGBA", (size, size))
+    px = im.load()
+    bw = size // boards
+    params = []
+    for b in range(boards):
+        tint = rng.uniform(-10, 10)
+        params.append((tint, [(rng.uniform(0.18, 0.42), rng.uniform(0, 6.28), rng.uniform(0.5, 1.6), rng.uniform(0, 6.28))
+                              for _ in range(5)]))
+    for x in range(size):
+        b, bx = divmod(x, bw)
+        tint, waves = params[b]
+        for y in range(size):
+            t = 2 * math.pi * y / size
+            g = 0.0
+            for f, ph, amp, ph2 in waves:
+                g += math.sin(bx * f + ph + amp * math.sin(t * 2 + ph2))
+            g /= len(waves)
+            k = 0.80 + 0.06 * g + tint / 255
+            col = [OAK_BACK[i] * k for i in range(3)]
+            # board edges: a dark seam, a lit edge beside it
+            if bx == 0:
+                col = [c * 0.62 for c in col]
+            elif bx == 1:
+                col = [c * 1.08 for c in col]
+            elif bx == bw - 1:
+                col = [c * 0.84 for c in col]
+            px[x, y] = (_clamp(col[0]), _clamp(col[1]), _clamp(col[2]), 255)
+    return im
+
+
+def case_frame(size=64, border=10):
+    """The case's frame as a nine-slice: oak, lit on its outer top-left edge,
+    shadowed on its inner edge where it meets the back panel; clear middle."""
+    rng = random.Random(1492)
+    im = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    px = im.load()
+    for y in range(size):
+        for x in range(size):
+            d_out = min(x, y, size - 1 - x, size - 1 - y)
+            if d_out >= border:
+                continue
+            horiz = min(y, size - 1 - y) < min(x, size - 1 - x)
+            grain = math.sin((x if horiz else y) * 0.9 + (y if horiz else x) * 0.05 + rng.uniform(-0.25, 0.25))
+            k = 0.95 + 0.05 * grain
+            if d_out < 2:
+                k *= 1.22 if (x < size // 2 or y < size // 2) and d_out == 0 else 0.8
+            if d_out >= border - 2:
+                k *= 0.7
+            col = [OAK_FRAME[i] * k for i in range(3)]
+            px[x, y] = (_clamp(col[0]), _clamp(col[1]), _clamp(col[2]), 255)
+    return im
+
+
 def plank(w, h):
+    """An oak shelf seen from the front: a lit top edge, the face, a dark lip."""
     W, H, S = w * SCALE, h * SCALE, SCALE
     im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
-    d.rectangle((0, 0, W - 1, H - 1), fill=(96, 58, 26, 255))
-    d.rectangle((0, 0, W - 1, 2 * S), fill=(150, 98, 50, 255))
-    d.rectangle((0, H - 1 - 2 * S, W - 1, H - 1), fill=(52, 30, 12, 255))
-    for i, x in enumerate(range(0, W, 37 * S)):
-        d.line([(x, (3 + i % 3) * S), (x + 22 * S, (4 + i % 3) * S)], fill=(78, 46, 20, 255), width=S)
+    d.rectangle((0, 0, W - 1, H - 1), fill=OAK_SHELF + (255,))
+    d.rectangle((0, 0, W - 1, 2 * S), fill=(206, 160, 104, 255))
+    d.rectangle((0, H - 1 - 2 * S, W - 1, H - 1), fill=(84, 52, 24, 255))
+    rng = random.Random(w * 31 + h)
+    for _ in range(w // 9):
+        x = rng.randrange(0, W)
+        y = rng.randrange(3 * S, max(3 * S + 1, H - 3 * S))
+        d.line([(x, y), (x + rng.randrange(18, 60) * S, y + rng.choice((-1, 0, 1)) * S // 2)],
+               fill=(136, 92, 50, 255), width=max(1, S // 2))
     return im.resize((w, h), Image.Resampling.LANCZOS)
 
 
-plank(470, 8).save(OUT / "kehillah_lib_shelf_plank.dds")
-plank(470, 12).save(OUT / "kehillah_lib_case_plank.dds")
+def shelf_shadow(w=32, h=16):
+    """The shadow a shelf casts on the back panel below it: dark at the top."""
+    im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    px = im.load()
+    for y in range(h):
+        a = 0.58 * (1 - y / (h - 1)) ** 1.6
+        for x in range(w):
+            px[x, y] = (24, 14, 6, _clamp(255 * a))
+    return im
+
+
+def caption_plate(w=64, h=24, border=6):
+    """A walnut plate with a thin gilt edge for captions on the light wood."""
+    W, H, S = w * SCALE, h * SCALE, SCALE
+    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle((0, 0, W - 1, H - 1), radius=4 * S, fill=(48, 30, 18, 236), outline=(176, 136, 70, 255), width=S)
+    d.rounded_rectangle((2 * S, 2 * S, W - 1 - 2 * S, H - 1 - 2 * S), radius=3 * S, outline=(92, 62, 34, 255), width=S)
+    return im.resize((w, h), Image.Resampling.LANCZOS)
+
+
+case_back().save(OUT / "kehillah_lib_case_back.dds")
+case_frame().save(OUT / "kehillah_lib_case_frame.dds")
+plank(486, 12).save(OUT / "kehillah_lib_shelf_plank.dds")
+plank(486, 14).save(OUT / "kehillah_lib_case_plank.dds")
+shelf_shadow().save(OUT / "kehillah_lib_shelf_shadow.dds")
+caption_plate().save(OUT / "kehillah_lib_caption_plate.dds")

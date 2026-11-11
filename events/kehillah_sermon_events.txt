@@ -1,37 +1,181 @@
 ﻿namespace = kehillah_sermon
 
-# One short scene and one subject choice. The decision enforces the
-# eligibility and cadence; both options use the same Parshanut scaling.
+# =====================================================================
+# Sermons. 2026-11-02 first version; 2026-11-11 rebuilt (Daniel):
+# docs/spec/2026-11-11-rulings-sermons-and-gates.md section 3. The
+# decisions check who may preach and the cadence; the state lives on the
+# holder (common/scripted_effects/kehillah_sermon_effects.txt).
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# kehillah_sermon.0001 -- a community's sermon: the topic.
+# Root: the Kehillah leader; var:kehillah_sermon_preacher speaks.
+# ---------------------------------------------------------------------
 kehillah_sermon.0001 = {
 	type = character_event
 	title = kehillah_sermon.0001.t
-	desc = kehillah_sermon.0001.desc
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { NOT = { var:kehillah_sermon_preacher ?= root } }
+				desc = kehillah_sermon.0001.desc_dayyan
+			}
+			desc = kehillah_sermon.0001.desc
+		}
+	}
 	theme = learning
 	left_portrait = {
-		character = root
+		character = var:kehillah_sermon_preacher
 		animation = thinking
+	}
+	trigger = { exists = var:kehillah_sermon_preacher }
+
+	# The preview: what the sermon gives before any text is cited.
+	immediate = {
+		var:kehillah_sermon_preacher = {
+			save_temporary_scope_value_as = { name = kehillah_sermon_base value = kehillah_sermon_parshanut_gain_value }
+		}
+		set_variable = { name = kehillah_sermon_base value = scope:kehillah_sermon_base }
 	}
 
 	option = {
-		name = kehillah_sermon.0001.a
-		kehillah_deliver_sermon_effect = { PILLAR = greatness }
+		name = kehillah_sermon.0001.portion
+		show_as_tooltip = { kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = root.var:kehillah_sermon_base } }
+		hidden_effect = { kehillah_sermon_choose_topic_effect = { TOPIC = portion } }
 		ai_chance = {
-			base = 50
-			modifier = {
-				add = 30
-				NOT = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_healthy_threshold } }
-			}
+			base = 30
+			modifier = { add = 30 NOT = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_healthy_threshold } } }
 		}
 	}
 	option = {
-		name = kehillah_sermon.0001.b
-		kehillah_deliver_sermon_effect = { PILLAR = stability }
+		name = kehillah_sermon.0001.neighbours
+		show_as_tooltip = { kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = root.var:kehillah_sermon_base } }
+		hidden_effect = { kehillah_sermon_choose_topic_effect = { TOPIC = neighbours } }
 		ai_chance = {
-			base = 50
-			modifier = {
-				add = 30
-				NOT = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_stability THRESHOLD = kehillah_band_healthy_threshold } }
+			base = 30
+			modifier = { add = 30 NOT = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_stability THRESHOLD = kehillah_band_healthy_threshold } } }
+		}
+	}
+	option = {
+		name = kehillah_sermon.0001.tzedakah
+		show_as_tooltip = { kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = root.var:kehillah_sermon_base } }
+		hidden_effect = { kehillah_sermon_choose_topic_effect = { TOPIC = tzedakah } }
+		ai_chance = {
+			base = 30
+			modifier = { add = 30 NOT = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_healthy_threshold } } }
+		}
+	}
+	option = {
+		name = kehillah_sermon.0001.peace
+		trigger = { exists = liege }
+		show_as_tooltip = {
+			liege = { add_opinion = { target = root modifier = respect_opinion opinion = root.var:kehillah_sermon_base } }
+		}
+		hidden_effect = { kehillah_sermon_choose_topic_effect = { TOPIC = peace } }
+		ai_chance = {
+			base = 15
+			modifier = { add = 25 liege ?= { opinion = { target = root value < 0 } } }
+		}
+	}
+	option = {
+		name = kehillah_sermon.0001.trouble
+		trigger = { kehillah_sermon_time_of_trouble_trigger = yes }
+		show_as_tooltip = {
+			kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = root.var:kehillah_sermon_base }
+			add_stress = kehillah_sermon_trouble_stress
+		}
+		hidden_effect = { kehillah_sermon_choose_topic_effect = { TOPIC = trouble } }
+		ai_chance = { base = 80 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_sermon.0002 -- a text for the sermon (twice: the first, then
+# the second). Root: the holder, who keeps the candidates.
+# ---------------------------------------------------------------------
+kehillah_sermon.0002 = {
+	type = character_event
+	title = kehillah_sermon.0002.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:kehillah_sermon_step ?= 2 }
+				desc = kehillah_sermon.0002.desc_second
 			}
+			desc = kehillah_sermon.0002.desc_first
+		}
+	}
+	theme = learning
+	left_portrait = {
+		character = var:kehillah_sermon_preacher
+		animation = thinking
+	}
+	trigger = { exists = var:kehillah_sermon_cand_grounded }
+
+	# The most established text he has mastered on the topic.
+	option = {
+		name = kehillah_sermon.0002.grounded
+		hidden_effect = { kehillah_sermon_cite_effect = { WHICH = grounded } }
+		ai_chance = { base = 60 }
+	}
+	# A newer one, which the sermon helps toward its own standing.
+	option = {
+		name = kehillah_sermon.0002.newer
+		trigger = {
+			exists = var:kehillah_sermon_cand_newer
+			NOT = { var:kehillah_sermon_cand_newer = var:kehillah_sermon_cand_grounded }
+		}
+		hidden_effect = { kehillah_sermon_cite_effect = { WHICH = newer } }
+		ai_chance = { base = 30 }
+	}
+	option = {
+		name = kehillah_sermon.0002.none
+		hidden_effect = { kehillah_sermon_after_text_effect = yes }
+		ai_chance = { base = 5 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_sermon.0010 -- a maggid's sermon: the topic. Root: the maggid.
+# ---------------------------------------------------------------------
+kehillah_sermon.0010 = {
+	type = character_event
+	title = kehillah_sermon.0010.t
+	desc = kehillah_sermon.0010.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = personality_honorable
+	}
+	right_portrait = {
+		character = var:kehillah_sermon_title.holder
+		animation = thinking
+	}
+	trigger = { exists = var:kehillah_sermon_title }
+
+	# The preview: what the sermon gives before any text is cited.
+	immediate = {
+		save_temporary_scope_value_as = { name = kehillah_sermon_base value = kehillah_sermon_parshanut_gain_value }
+		set_variable = { name = kehillah_sermon_base value = scope:kehillah_sermon_base }
+	}
+
+	option = {
+		name = kehillah_sermon.0010.guest
+		show_as_tooltip = {
+			add_prestige = { value = root.var:kehillah_sermon_base multiply = kehillah_sermon_guest_prestige_mult }
+		}
+		hidden_effect = { kehillah_sermon_choose_topic_effect = { TOPIC = guest } }
+		ai_chance = { base = 50 }
+	}
+	option = {
+		name = kehillah_sermon.0010.appeal
+		show_as_tooltip = {
+			add_gold = { value = root.var:kehillah_sermon_base divide = kehillah_sermon_appeal_gold_divisor }
+		}
+		hidden_effect = { kehillah_sermon_choose_topic_effect = { TOPIC = appeal } }
+		ai_chance = {
+			base = 30
+			modifier = { add = 40 gold < 25 }
 		}
 	}
 }

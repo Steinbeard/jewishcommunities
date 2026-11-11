@@ -1,5 +1,7 @@
 # Rabbinic sermons, first implementation
 
+**Superseded 2026-11-11** by [2026-11-11-rulings-sermons-and-gates.md](2026-11-11-rulings-sermons-and-gates.md) §3 (built): one sermon a year, five topics, two cited texts, the Dayyan and the maggid. The Parshanut reward tiers below still apply.
+
 **Status: Implemented and source/xTiger checked 2026-11-02; live gameplay pending.** This first slice follows Daniel's request to give Parshanut a direct communal use. It depends on the Rabbi trait and pillar system described in [V24](v24-rabbi-gameplay-loop.md) and [V2](v2-pillar-economy-and-lifecycle.md). It adds a new loop; it does not supersede their existing mechanics. See the [validation record](../testing/2026-11-02-sermon-validation.md).
 
 ## Decision

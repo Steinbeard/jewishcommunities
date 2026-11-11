@@ -22,6 +22,54 @@ kehillah_sefer_finish_written_work_effect = {
 	remove_variable = kehillah_book_tenet_a
 	remove_variable = kehillah_book_tenet_b
 	remove_variable = kehillah_book_comment_on
+	remove_variable = kehillah_book_lang
+}
+
+# Scope: the author of a Talmudics book in $SLOT$ (2026-11-11, the Bet Din
+# docket by order of the Mishnah). A gloss covers the order of the work it
+# glosses; any other book, an order he has mastered in the Bavli (Nezikin
+# when he has mastered none). Chosen for him for now; a choice in the
+# writing chain is a later step (docs/spec/2026-11-11-rulings-sermons-and-
+# gates.md section 2).
+kehillah_sefer_author_seder_effect = {
+	remove_global_variable = kehillah_wk_$SLOT$_seder
+	if = {
+		limit = { has_variable = kehillah_book_comment_on }
+		kehillah_sefer_gloss_seder_dispatch_effect = { SLOT = $SLOT$ }
+	}
+	if = {
+		limit = { NOT = { has_global_variable = kehillah_wk_$SLOT$_seder } }
+		random_list = {
+			10 = {
+				trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nezikin } }
+				set_global_variable = { name = kehillah_wk_$SLOT$_seder value = flag:nezikin }
+			}
+			10 = {
+				trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } }
+				set_global_variable = { name = kehillah_wk_$SLOT$_seder value = flag:nashim }
+			}
+			10 = {
+				trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_moed } }
+				set_global_variable = { name = kehillah_wk_$SLOT$_seder value = flag:moed }
+			}
+			10 = {
+				trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_kodashim } }
+				set_global_variable = { name = kehillah_wk_$SLOT$_seder value = flag:kodashim }
+			}
+			10 = {
+				trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_zeraim } }
+				set_global_variable = { name = kehillah_wk_$SLOT$_seder value = flag:zeraim }
+			}
+			10 = {
+				trigger = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_tahorot } }
+				set_global_variable = { name = kehillah_wk_$SLOT$_seder value = flag:tahorot }
+			}
+		}
+	}
+	if = {
+		limit = { NOT = { has_global_variable = kehillah_wk_$SLOT$_seder } }
+		set_global_variable = { name = kehillah_wk_$SLOT$_seder value = flag:nezikin }
+	}
 }
 
 # Scope: the author. $KEY$ is a named work.
@@ -42,6 +90,8 @@ kehillah_sefer_write_authored_work_effect = {
 	if = {
 		limit = { var:kehillah_book_genre ?= flag:talmudics }
 		set_global_variable = { name = kehillah_wk_$SLOT$_genre value = 2 }
+		# 2026-11-11: the order of the Mishnah it covers, so judges can cite it.
+		kehillah_sefer_author_seder_effect = { SLOT = $SLOT$ }
 		if = {
 			limit = { has_variable = kehillah_book_comment_on }
 			set_global_variable = { name = kehillah_wk_$SLOT$_kind value = 7 }
@@ -82,6 +132,8 @@ kehillah_sefer_write_authored_work_effect = {
 		limit = { has_variable = kehillah_book_tenet_b }
 		set_global_variable = { name = kehillah_wk_$SLOT$_tenet_b value = var:kehillah_book_tenet_b }
 	}
+	# 2026-11-10: the language chosen at kehillah_sefer.0203 (Sefer languages).
+	kehillah_language_write_effect = { SLOT = $SLOT$ }
 	kehillah_sefer_place_written_work_effect = { KEY = $SLOT$ }
 	if = {
 		limit = { has_variable = kehillah_book_comment_on }
@@ -129,6 +181,17 @@ kehillah_sefer_place_written_work_effect = {
 			}
 			else = {
 				set_variable = { name = kehillah_standing_$KEY$ value = 4 }
+			}
+			# 2026-11-10 (Sefer languages): a book in the author's own tongue,
+			# when no royal court speaks it, starts a tier lower; its ceiling is
+			# capped by the tongue's prestige in kehillah_lib_ceiling_.
+			if = {
+				limit = {
+					global_var:kehillah_wk_$KEY$_lang ?= flag:vernacular
+					NOT = { global_var:kehillah_wk_$KEY$_lang_prestige ?= 1 }
+					NOT = { global_var:kehillah_wk_$KEY$_lang_prestige ?= 2 }
+				}
+				change_variable = { name = kehillah_standing_$KEY$ subtract = 1 }
 			}
 			clamp_variable = { name = kehillah_standing_$KEY$ min = kehillah_lib_floor_$KEY$ max = kehillah_lib_ceiling_$KEY$ }
 			set_variable = {
@@ -207,6 +270,7 @@ kehillah_sefer_record_teaching_effect = {
 # clear its globals and every Jewish rite's standing for it (yearly, from
 # kehillah_sefer_recycle_slots_effect; Daniel, 2026-11-08).
 kehillah_sefer_forget_slot_effect = {
+	remove_global_variable = kehillah_wk_$SLOT$_seder
 	remove_global_variable = kehillah_wk_$SLOT$_written
 	remove_global_variable = kehillah_wk_$SLOT$_author
 	remove_global_variable = kehillah_wk_$SLOT$_year
@@ -214,6 +278,9 @@ kehillah_sefer_forget_slot_effect = {
 	remove_global_variable = kehillah_wk_$SLOT$_genre
 	remove_global_variable = kehillah_wk_$SLOT$_tenet_a
 	remove_global_variable = kehillah_wk_$SLOT$_tenet_b
+	remove_global_variable = kehillah_wk_$SLOT$_lang
+	remove_global_variable = kehillah_wk_$SLOT$_lang_culture
+	remove_global_variable = kehillah_wk_$SLOT$_lang_prestige
 	remove_global_variable = kehillah_wk_$SLOT$_masters
 	remove_global_variable = kehillah_wk_$SLOT$_approbations
 	remove_global_variable = kehillah_wk_$SLOT$_taught

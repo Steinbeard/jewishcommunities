@@ -93,7 +93,19 @@ kehillah_crisis_situation_sync_inner_effect = {
    }
    remove_variable = kehillah_crisis_witness
   }
-  # 2026-11-01: an accusation's witness, while the charge stands.
+  # 2026-11-11: nearby communities, cleared here and re-added below.
+  if = {
+   limit = { has_variable_list = kehillah_crisis_neighbours }
+   every_in_list = {
+    variable = kehillah_crisis_neighbours
+    save_scope_as = kehillah_crisis_old_neighbour
+    if = {
+     limit = { scope:kehillah_crisis_situation_instance = { any_situation_participant = { this = scope:kehillah_crisis_old_neighbour } } }
+     scope:kehillah_crisis_situation_instance = { remove_manual_participant = scope:kehillah_crisis_old_neighbour }
+    }
+   }
+   clear_variable_list = kehillah_crisis_neighbours
+  }
   scope:kehillah_crisis_situation_title ?= {
    if = {
     limit = {
@@ -118,6 +130,29 @@ kehillah_crisis_situation_sync_inner_effect = {
    scope:kehillah_crisis_situation_instance = {
     set_variable = { name = kehillah_crisis_sovereign value = prev }
     add_manual_participant = prev
+   }
+  }
+  # 2026-11-11 (Daniel): every other registered Kehillah whose quarter lies within
+  # squared_distance_medium of this one (the founding decisions' "nearby" distance) joins as a
+  # neighbour. docs/implementation/2026-11-11-crisis-neighbours.md.
+  scope:kehillah_crisis_situation_title.holder.domicile.domicile_location ?= {
+   save_scope_as = kehillah_crisis_neighbour_origin
+   every_in_global_list = {
+    variable = kehillah_registered_communities
+    limit = {
+     NOT = { this = scope:kehillah_crisis_situation_title }
+     exists = holder.domicile.domicile_location
+     holder = { is_alive = yes NOT = { this = scope:kehillah_crisis_situation_title.holder } }
+     holder.domicile.domicile_location = {
+      squared_distance = { target = scope:kehillah_crisis_neighbour_origin value <= squared_distance_medium }
+     }
+    }
+    holder = {
+     scope:kehillah_crisis_situation_instance = {
+      add_to_variable_list = { name = kehillah_crisis_neighbours target = prev }
+      add_manual_participant = prev
+     }
+    }
    }
   }
   scope:kehillah_crisis_situation_title.var:kehillah_mob_threat ?= {
@@ -236,7 +271,9 @@ kehillah_crisis_race_monthly_effect = {
   kehillah_crisis_credit_protection_effect = { FLAG = kehillah_mob_armed }
   kehillah_crisis_credit_protection_effect = { FLAG = kehillah_mob_refuge }
   kehillah_crisis_race_mirror_effect = yes
-  kehillah_crisis_pressure_toast_effect = yes
+  # A shield catalyst may settle the race this month. Do not announce fresh
+  # progress toward Armed Host after the community has already reached Spared.
+  if = { limit = { kehillah_crisis_race_running_trigger = yes } kehillah_crisis_pressure_toast_effect = yes }
  }
 }
 

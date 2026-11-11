@@ -17,6 +17,71 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+**Standing on one scale BUILT - 2026-11-11, Daniel's request, xTiger-clean, live test pending
+(Daniel runs it by hand):** a book's standing in a rite is one scale of twelve tiers, Anathema,
+Banned, Rejected, Contested, Obscure, Popular, Celebrated, Esteemed, Authoritative, then
+Foundational, Prophetic and Divine fixed by doctrine. The bands and the Class line are gone;
+neighbouring tiers share a colour. Gates now mean their tier (Popular read, Celebrated praised,
+Esteemed taught, Authoritative relied on); a Machloket the critics overwhelm pronounces Anathema
+for 30 years. Old saves remap 8-10 to Authoritative once. Spec:
+[2026-11-11-standing-one-scale.md](docs/spec/2026-11-11-standing-one-scale.md). **Next,
+proposed:** the next gate as a ✓/✗ checklist on the work page, with points toward the target, the
+ceiling's cause and a falling warning; then canon per rite and a door into Foundational.
+
+**Reviews and Cherem PROPOSED - 2026-11-11, awaiting Daniel's review:** any rabbi (any adult, for
+Karaites) may give a book a haskamah or a cherem, weighted by Learning, Piety and scholarship;
+AI reviewers judge by tenets (a small opposition table plus vanilla rite hostility) and
+personality; a cherem track for people (Nezifah, Niddui, Cherem) with teshuvah; a community leader
+banned only by a synod, the head of rite or the Sanhedrin, then steps down or carries on at a
+large Stability cost. Revised the same day: a cherem needs no mastery (mid-reading or
+arbitrary); a haskamah at mastery ties the giver's Piety to the book's later rises and falls.
+Spec: [2026-11-11-reviews-and-cherem.md](docs/spec/2026-11-11-reviews-and-cherem.md).
+
+**Rulings, sermons and gates - 2026-11-11, Daniel's decisions. Gates and docket BUILT,
+xTiger-clean, live test pending (Daniel runs it by hand; steps in the spec's build record):**
+- BUILT: Popular and Celebrated by points alone; Esteemed by 5 masters; Authoritative by genre
+  (Talmudics cited in rulings, Parshanut preached from, Machshavah changed readers' minds, 3 each,
+  30 years, author dead).
+- BUILT: the Bet Din docket by the six orders of the Mishnah. Any mastered work covering a case's
+  order opens its source option, and *On Whose Authority?* names the work (grounded, innovative,
+  by conviction). The named work counts the citation. **Responsa are cut for now.**
+- BUILT: sermons, once a year. A rabbi who knows the Torah preaches, or outside Rabbinism a
+  scholar of Learning 12 who has mastered it; the Dayyan preaches when the leader cannot. Five
+  topics (the portion, neighbours, tzedakah, the peace of the city, a time of trouble), two fitting
+  Parshanut texts, each counting toward its Authoritative gate once per community. A Jewish
+  adventurer may *Preach as a Maggid* for renown or alms.
+- BUILT: Machshavah changing minds. On mastering a Machshavah book its tenets gain twice the
+  popularity, and the reader may adopt one he does not hold: a player chooses, the AI rolls by
+  traits and his rite. A playable character takes a personal tenet; anyone else a leaning. Each
+  counts toward the book's Authoritative gate. To check live: whether Jewish characters have
+  personal-tenet slots.
+- NEXT, approved: reviews (haskamah at mastery, cherem mid-reading or arbitrary), then the AI
+  stance and opposition table, then the cherem track.
+- Later: Zeraim and Tahorot cases; an order chosen by the author in the writing chain.
+
+Spec: [2026-11-11-rulings-sermons-and-gates.md](docs/spec/2026-11-11-rulings-sermons-and-gates.md).
+
+**Sefer languages BUILT - 2026-11-10, Daniel's request and same-day review, xTiger-clean, live
+test pending (Daniel runs it by hand):** every catalog work has one language (Hebrew, Aramaic, or
+Arabic for Judeo-Arabic; Greek and Latin ready for translations). Hebrew is vanilla's
+`language_israelite`, spoken by vanilla's extinct Hebrew culture (no Judean/Israelite cultures
+added). Mastery is now a roll, not a Learning threshold: 50% base, ±4% per point of Learning from
+10, −50% for a language he doesn't know (vanilla's yes/no), only −30% when it is a liturgical
+tongue of his faith (by 1.20 rite: Hebrew/Aramaic for Jews, Karaites Hebrew only; Latin, Greek,
+Syriac Aramaic, Arabic for the others), shrinking by 10 with each book he masters in it and offset
+(never past zero) by +15% for a yeshiva and +15% for a Dayyan who knows the language, plus terms for depth in the field, Talmud Torah, personal tenets, Diligent/Lazy/Scholar/
+Theologian and rereading, clamped 5–95%; every book can be tried, and the Learn Torah picker and the
+library show each book's chance with the full breakdown. Mastering three books
+in a liturgical tongue teaches it; Arabic and the rest are not learned by a Jew by reading. An author
+chooses Hebrew, Aramaic or his own tongue (*In What Tongue?*): his own is easier and readable only
+by speakers, and its prestige follows vanilla's court languages, rechecked yearly: a great royal
+court's language caps at Authoritative, any court's at Classic, a tongue no court speaks at
+Esteemed and starts a tier lower (Hebrew and Aramaic uncapped). The library detail and the Sefarim
+ledger show the language, your fluency and the mastery chance as a breakdown. **Watch:** German is
+the Emperor's court language, so Judeo-German books rank high too. **Next: translation** as
+editions of a work, proposed in [the spec](docs/spec/2026-11-10-sefer-languages.md) §6, which also
+has the test checklist (§8).
+
 **Stand for the Seat BUILT (first pass) - 2026-11-08, Daniel's request, xTiger-clean, live test
 pending (Daniel runs it by hand):** a player who leads a community can **Weigh Their Seat** on
 another same-faith, AI-led community's leader. The event shows:
@@ -69,6 +134,19 @@ canon, is flagged. The Acquire and All works pages became one **Ledger of Sefari
 the works the community knows of (obscure and forbidden books only once met), with date, place,
 language, a linked author (three new Karaite author characters), standing, tenets and Seek a
 copy. See [the record and test checklist](docs/implementation/2026-11-08-library-shelf-and-ledger.md).
+
+**Library visual pass - 2026-11-08, source checked, live rendering pending:** stable Hebrew book
+cartouches, painted bindings, ark and lectern, Hebrew-labelled Bavli and Tanakh codices, a wider and scrollable work page, and a compact
+ledger with a selected-work card, copy filters and date/name sorting. See
+[the implementation record and human check](docs/implementation/2026-11-08-library-visual-pass.md).
+
+**Haymanot library first pass - 2026-11-10, source checked, live rendering pending:** Beta Israel
+libraries are a distinct tradition. New libraries begin with the Torah alone, without the
+Rabbanite Mishnah or Talmud seed; their card and map label identify Haymanot, and the card omits
+Talmud counts. An older, unchanged six-work seed is corrected on the yearly pass, while acquired
+books are preserved. The Orit is broader than this one represented work; Ge'ez editions await
+per-copy language support rather than changing the Hebrew Torah work globally. Probe with
+`event kehillah_sefer_v2_debug.3` followed by `.16` on a disposable save.
 
 **Sefer ha-Qabbalah roster tranche BUILT - 2026-11-08, Daniel's request, xTiger-clean, live test pending:** 86 new historical characters (Geonim of Sura and Pumbedita, exilarchs, Gershom, the grammarians), 51 invented wives for every father with attested children (38 of them retrofitted into the 1066 roster), and holder history on Sura, Baghdad, Cordoba, Granada, Mainz and a new history-only Pumbedita academy. See [the build record](docs/implementation/2026-11-08-sefer-haqabbalah-roster.md). **Next:** Tannaim and Amoraim, the Palestinian Gaonate, earlier exilarchs, and Kairouan/Worms terms.
 
@@ -3325,9 +3403,25 @@ Ideas raised during design discussion, sorted by how cheaply they'd fit —
 not yet assigned to a phase. Pull one into a phase's scope explicitly
 before building it; nothing here is approved by default.
 
+- **Refine the mod's Jewish tenets (Daniel, 2026-11-11):** they "feel very janky right now and
+  stick out from vanilla". Revisit the twelve-tenet roster, its effects and its rivalries (the
+  opposition table in
+  [2026-11-11-reviews-and-cherem.md](docs/spec/2026-11-11-reviews-and-cherem.md) §2 is written
+  against today's roster) before more systems lean on it.
+- **Responsa, redesigned (Daniel, 2026-11-11):** cut from the Bet Din docket during its rework
+  ([2026-11-11-rulings-sermons-and-gates.md](docs/spec/2026-11-11-rulings-sermons-and-gates.md)
+  §2); come back with a design that works mechanically, possibly counting a responsum as a citation.
+
 **Cheap, reinforces an existing v1 pillar (candidates to pull into Phase 1):**
 - **Two Josephs in 1066: vanilla's ibn Naghrela family duplicates the mod's.** Noted 2026-11-01 at
   Daniel's request ("Make a note of the duplicate characters to come back to later").
+  - **Roster cleanup built 2026-11-10; live check pending:** the 1066 game-start hook retires
+    vanilla's living Yosef, wife and son when the mod's Yosef leads Granada. The mod's character
+    is now named Yosef. Vanilla has no fixed DNA for him; Daniel's exported campaign DNA now
+    supplies both the mod's character portrait and bookmark card. The generated vanilla Rashi's
+    face also informs the mod's Rashi and card, retaining the mod's fuller beard; the 1066 start
+    now registers the mod's Rashi to stop vanilla's annual duplicate spawn.
+    See [the implementation note](docs/implementation/2026-11-10-granada-duplicate-roster.md).
   - Vanilla has Yosef 3221 (Badis's courtier and tax collector, dying 1066.12.30), Rahel
     (sephardi_0004), Azariah (sephardi_0005), Shmuel 3220, Nissim, Yaakov and the poet Qasmuna
     (sephardi_0001).
