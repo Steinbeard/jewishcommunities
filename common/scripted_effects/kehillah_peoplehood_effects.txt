@@ -1,0 +1,40 @@
+﻿# =====================================================================
+# Peoplehood (2026-11-11, docs/implementation/2026-11-11-peoplehood-doctrine.md).
+# =====================================================================
+
+# Scope: a character. Saves scope:kehillah_people_to_join: the Jewish
+# people matching their culture's language (the hybrid table,
+# kehillah_pick_historical_jewish_culture_effect), else the local Jewish
+# culture of their capital, else of where they are.
+kehillah_pick_hebrew_people_to_join_effect = {
+	culture = { save_scope_as = kehillah_hybrid_other_parent }
+	save_scope_as = founder
+	kehillah_pick_historical_jewish_culture_effect = yes
+	if = {
+		limit = { exists = scope:kehillah_historical_jewish_culture }
+		scope:kehillah_historical_jewish_culture = { save_scope_as = kehillah_people_to_join }
+	}
+	else_if = {
+		limit = { exists = capital_county.var:kehillah_local_jewish_culture }
+		capital_county.var:kehillah_local_jewish_culture = { save_scope_as = kehillah_people_to_join }
+	}
+	else_if = {
+		limit = { exists = location.county.var:kehillah_local_jewish_culture }
+		location.county.var:kehillah_local_jewish_culture = { save_scope_as = kehillah_people_to_join }
+	}
+}
+
+# Scope: a character, after kehillah_pick_hebrew_people_to_join_effect.
+# They and their children under sixteen of the same faith take the culture.
+kehillah_join_hebrew_people_effect = {
+	save_scope_as = kehillah_joining_jew
+	every_child = {
+		limit = {
+			age < 16
+			faith = scope:kehillah_joining_jew.faith
+			NOT = { culture = scope:kehillah_people_to_join }
+		}
+		set_culture = scope:kehillah_people_to_join
+	}
+	set_culture = scope:kehillah_people_to_join
+}
