@@ -437,3 +437,262 @@ Daniel, after the live look: "the shelves need to be wider, the missing book ind
 - In both the standalone window and the domicile panel, every plank should run wall to wall.
 - The Shas case's empty slots should read as dark outlines.
 - Tabs with few books should show empty shelves down the case, without a scrollbar appearing for them alone.
+
+### Fix, 2026-11-11: no scrollbar from bare shelves; no Details buttons
+
+Daniel: "The Parshanut and Machshavah views both have scrollbars. I think we can remove the 'Show details' buttons underneath the top rows, I feel like it's kind of antiquated."
+
+- **Three shelves.** The case now holds three shelves in all, not four: `kehillah_lib_filler_shelf_4` is gone, and filler j shows while the genre has fewer than 4 − j shelves of books. The fourth filler pushed a centrepiece tab past the viewport, about 600 px tall in the standalone window. A tab with more shelves of books than that still scrolls, as before.
+- **No Details buttons.** The buttons under the Tanakh and Shas captions are gone; the captions stay on their plates. Those buttons were the only way into the corpus pages (`corpus_tanakh`, `corpus_bavli`, `corpus_yerushalmi`). The pages' GUI is still in the file but cannot be reached.
+
+**Check:** Parshanut with one shelf of books and Machshavah with none should show no scrollbar in the standalone window, and the caption plates should hold only their text. The domicile panel is shorter, so it may still scroll there.
+
+**Rows 7 and 8, 2026-11-11** (Daniel: "is three shelves enough to hold all books?"). Three is only the count the bare shelves top up to; books get as many real shelves as they need. But the GUI drew only six rows, and `kehillah_lib_shelf_place_effect` sets no upper row, so any book placed on a seventh would not be shown. Six rows hold about 84 books at the widest bindings (32 px each with the gap) and about 160 at the narrowest. Up to 100 books written in play can share one genre, so I added rows 7 and 8, copies of row 6. Eight rows hold about 110 books at the widest. A ninth row remains possible only in an extreme library.
+
+## Review pass 11 — 2026-11-11: a case that fits its books, a footer, the foundation warning
+
+**Status:** Implemented. xTiger reports nothing new (206 reports). Not checked in the game yet.
+
+Daniel, after the Granada screenshots: "make the number of shelves dynamic to your number of books so having a few books doesn't feel so tiny", "an awkward repeating pattern under the top shelves with those messages … move those messages somewhere else if they're necessary", "instead of a no Shas hard-coded message, a little indicator that missing foundational + books is giving you a greatness malus", and "a small 'acquire new books' button somewhere, without messing up our beautiful layout".
+
+- **The case fits its shelves.**
+    - The viewport scrollbox now uses vanilla's `autoresizescrollarea = yes`, as the event windows do, with `minimumsize = { 0 140 }` and `maximumsize = { -1 540 }`. Its `scrollbox_expand` spacer is overridden away.
+    - The frame vbox no longer expands vertically, so the case is as tall as its centrepiece, its shelves of books and one spare shelf (`kehillah_lib_filler_shelf_1`, now always shown; fillers 2 and 3 are gone). Past the maximum it scrolls.
+    - An `expand` after the picked-book panel keeps the spare height at the bottom of the page.
+- **No messages on the wood.** The caption rows went from inside the case: the Tanakh count, the Shas count, the two reading-stand lines, and "No works of this kind on the shelves yet". They had made a band between the top shelf and the next. The Yerushalmi's shelf label stays.
+- **The footer** is one line under the case.
+    - **Incomplete foundation** (red, with a warning icon) shows while the Greatness row `kehillah_bd_foundational_works_value` is negative, meaning Bavli orders or founding Karaite works are missing. Its tooltip says how many are missing and gives the penalty as a size, per the pillar-size rule: Minor up to 10, Moderate up to 30, Major up to 60, then Severe. At 15 per missing work, one or two missing is Moderate, three or four Major, five or six Severe. A complete Shas, a Moderate bonus, shows nothing.
+    - **Seek new books** (the local player's own library only) opens the Sefarim ledger with its Copies filter set to Missing; each row there has its Seek a copy button.
+
+### Check
+
+1. Granada's Parshanut tab should show a compact case: the ark, one shelf of books, one empty shelf. No scrollbar, and the footer just below the case.
+2. The Talmudics tab (1 of 6 orders) should show **Incomplete foundation**. Hover it: five works missing and a Severe penalty.
+3. Seek new books should open the ledger on Missing.
+4. Pick a book. The panel should sit just under the footer.
+5. In the domicile panel (shorter), the case should shrink and scroll rather than push the panel off the window.
+
+## Review pass 12 — 2026-11-11: bigger books, deeper shelves, painted compartments, subtle alerts
+
+**Status:** Implemented. xTiger reports nothing new (206 reports). Not checked in the game yet. **Supersedes pass 11.**
+
+Daniel on pass 11: "This was a step backward." His points:
+- the footer's Seek new books duplicated the ledger icon;
+- a generic "Incomplete foundation" on every page was too loud;
+- the wood showed a seam;
+- the shelves' placement and thickness felt off;
+- books should be bigger, with a scroll for more rows;
+- the detail card was broken.
+
+- **The fitted case is undone.** The case fills the page again, so the picked-book card has its room. The fitted case had stayed tall and pushed the footer and the card out of the window.
+- **The footer is gone**, with its Seek new books button and its loc keys. The tab row's ledger icon is the one way to the Sefarim ledger.
+- **Bigger books.** The asset generator paints the spines at 1.25×: 100 px tall, tier widths 18/12/18/22/28/32/38. They are painted larger, not stretched.
+    - The GUI slots (106), art boxes (100), halos, the ledger's icon frames and the Yerushalmi's volumes follow.
+    - The catalog's `SPINE_WIDTH` matches, and a shelf now packs to 470 px. `write_shelf_values` and `write_shelf_effects` were run alone.
+- **Deeper shelves.** `plank()` now draws an 18 px oak shelf: a lit top surface, a bright edge, the front face, a dark lip. It is uniform along its length. Shelf rows are 120 px; the books' last 4 px stand behind the shelf's top surface. Rows sit edge to edge (their 6 px gaps are gone).
+- **Empty shelves are painted, not placed.**
+    - Vanilla's growing spacer at the foot of the scrollbox (`scrollbox_expand`) now has `kehillah_lib_case_compartment.dds` as its background, tiled: 256×120 of back boards, the shadow of the shelf above, and the shelf. It continues the shelves below the last row of books, whatever their number, and shrinks to nothing once the books fill the case. So the empty shelves never cause a scrollbar.
+    - The filler-shelf widgets are gone.
+- **The seam and the gutter.** The dark bands at the top and bottom of the case were vanilla's `scrollbox_background_fade`; it is overridden away. The viewport's 12 px scrollbar gutter is gone too, so shelves run to both sides of the case. A scrollbar, when there is one, lies over their right ends.
+- **Subtle alerts.** A 22 px circled ! sits at the top right of the Shas case while any Bavli order is missing, and on a Karaite library's Talmudics reading stand while a founding work is missing.
+    - Its tooltip lists the missing works by name, from `kehillah_lib_held_<work>` and the new `common/script_values/kehillah_library_foundation_values.txt`, which follows `kehillah_lib_karaite_missing_count_value`'s rules.
+    - It ends with "Greatness: Moderate / Major / Severe penalty", the size of `kehillah_bd_foundational_works_value`.
+    - Nothing shows on other tabs.
+
+### Check
+
+1. Parshanut with three books: the ark on its shelf, one shelf of books, and painted empty shelves to the bottom of the case. No scrollbar, and no dark bands at the top or bottom.
+2. The books should be larger and stand on the shelf's lit top surface.
+3. Talmudics with one of six orders: the circled ! at the Shas case's top right. Its tooltip should list the five missing orders and a Severe penalty.
+4. Pick a book: the card should appear under the case, inside the window, laid out properly.
+5. A genre with many books: real shelves should continue, then scroll, with the painted shelves gone.
+
+## Review pass 13 — 2026-11-11: alert wording, two-column work page, library map click, overview size
+
+**Status:** Implemented. xTiger reports nothing new in these files (its 21 new reports are another session's cherem files). Not checked in the game yet.
+
+Daniel on pass 12: "It looks great!!!", with four requests and one bug.
+
+- **Alert wording.** The circled !'s heading is now "Missing foundational works in Talmudics" on both the Shas case and the Karaite stand, since the Shas wording was Rabbinic-only. The intro now ends "Not yet on these shelves:".
+- **Two-column work page.** The full work page's facts use the picked card's layout: Canonicity | Language, Author | Written, Place | Your study, then "Argues for" on its own full-width line (it can name several tenets). That is four rows instead of seven. The ban line follows them.
+- **Study button.** See `docs/implementation/2026-11-11-study-next-book-choice.md`, "Switching books": the button now shows greyed with the reason when you can't study, and partway through a book it reads "Study this instead" and asks first.
+- **Library map click.** On the Libraries map, clicking a county with a Beit Midrash opens the library window on it and closes the county view (`kehillah_libraries_map_click_to_library` in `gui/window_county_view.gui`), like the Rites and Cultures maps. The community card isn't left open. Counties without a library still open the county view. The window may already be open on another library, so its selection is cleared and the shelf laid out from the click itself.
+- **Overview size (bug).** Vanilla's domicile "overview" bookmark panel in `gui/window_domicile.gui` had been committed at 700×790 instead of vanilla's 600×690, so it overlapped the domicile map. It's back to 600×690. The library panel has its own 600×690 widget and never needed the change.
+
+### Check
+
+1. Talmudics with a missing order: the ! tooltip reads "Missing foundational works in Talmudics".
+2. All details on a book: four fact rows in two columns, with nothing cut off except long tenet lists (full text on hover).
+3. The Jewish Quarter overview tab: the panel is vanilla width again, not covering the map.
+4. Libraries map: click a county with a Beit Midrash. The library window should open on it, and the county view should close. Click another library's county: the window should switch to it, with its own shelf.
+
+## Review pass 14 — 2026-11-11: the shelf in the owner's rite, the tooltips in yours
+
+**Status:** Implemented. xTiger reports nothing in these files. Not checked in the game yet. **A design decision**, Daniel's: "display it as from the owner's faith, but tooltips should show your own perspective."
+
+Before this, every canonicity read in the library was the player's rite. Only the library's tradition (the Karaite stand and its alert) followed the library.
+
+**Whose rite is "the owner's".** `kehillah_lib_shelf_layout` (`common/scripted_guis/kehillah_library_shelf_gui.txt`) runs whenever a library or a genre tab opens. It stores `var:kehillah_lib_view_reader` on the player:
+- the library's holder, when he is Jewish (the same holder `kehillah_library_tradition` comes from);
+- otherwise the player, for a temple library under a gentile lord.
+
+The layout effect now runs as that reader, so the shelf rows and reading stands are his, stored on him.
+
+**Shown as the owner sees it.** In `gui/kehillah_domicile_library.gui`, these read from the reader (`GetPlayer.MakeScope.Var( 'kehillah_lib_view_reader' ).Char.MakeScope`):
+- spine colours, widths, tiers and marks;
+- the banned-book bindings;
+- the Shas case and the Yerushalmi;
+- the reading stands and the layout rows;
+- the Canonicity value on the picked card and on the work page;
+- the ban line under them, now worded "in this library's rite" (`KEHILLAH_LIB_BANNED_LINE_OWNER`, `_REJECTED_LINE_OWNER`).
+
+**Kept to your view:**
+- **The hover cards** (`kehillah_library_work_tooltip` and `_hovered`). When the owner ranks a book differently, your rank reads "Contested · to you" and a line follows: "In Kehillah of Fez: Foundational". The ledger's copy of the card has no owner and overrides both blocks (`rank_value`, `owner_line`).
+- **The Canonicity value's tooltip** on the picked card and the work page. When the ranks differ it opens "To you: Contested", then your tier's note and your rite's ceiling as before.
+- **Everything about you:** your study, language, mastery chance, the Study button, and the ledger, which picks its rite with its dropdown. The ledger's spine icons are yours too.
+
+**Untouched:** `kehillah_library_work_row` and `kehillah_library_acquire_row` are unused types; they still read the player.
+
+### Check
+
+1. Your own library: nothing should change.
+2. Another rite's library (a Karaite or Romaniote community, or a rite that bans something you hold canon), opened from the Libraries map:
+    - its spines and Shas case follow its canon;
+    - a hover card on a book you rank differently shows "· to you" and the "In <library>:" line;
+    - the picked card's Canonicity is theirs, and its tooltip starts "To you:".
+3. A temple library under a gentile lord: everything as from your own rite.
+4. The ledger's hover cards: no "In …" line.
+
+## Review pass 15 — 2026-11-11: a character's Learning list; no glow on empty slots
+
+**Status:** Implemented. xTiger reports nothing new. Not checked in the game yet.
+
+Daniel, on Rashi starting with Bavli Nashim mastered and the green glow on Troyes's empty Nashim slot: no "shelf" for a person, since he doesn't own the books ("a list, like a memory list"). The count goes in a tooltip on the character view, opening the list the way Memories opens. On places: "include place if the book wasn't studied in his own community or kingdom, e.g. at a Yeshiva he was visiting or another community, but otherwise just the title studied in an ordered list."
+
+- **No glow on empty slots.** The halo and ribbon on the centrepiece volumes (the ark, the Shas case, the Yerushalmi) now also need the library to hold the book. Shelf books are always held. A mastered book the library lacks stays a plain dashed outline; its hover card still says "Mastered".
+- **The Learning button.** A round button sits beside Memories in `gui/window_character.gui`. It shows for a Jew with at least one mastered work (`kehillah_learning_shown`). Its tooltip gives the count (`kehillah_mastered_works_count_value`, in `common/script_values/kehillah_learning_values.txt`). It opens `gui/kehillah_learning_window.gui`, registered in `gui/scripted_widgets/kehillah_scripted_widgets.txt`.
+- **The list.** `kehillah_mastered_works` is shown in its own order, which is the order mastered; there are no numbers. Each line is the title. A work learned away from home adds "· at <place>". Each line has the standard hover card in your view; its owner line is overridden away.
+- **Recording the place.** `kehillah_lib_record_mastery_place_effect` (in `kehillah_library_effects.txt`) runs at a first mastery. It stores `var:kehillah_mastered_at_<work>` only when the place is away from home. Home means any of:
+    - the character's own library;
+    - his community's library, through his court owner;
+    - a library seated in the realm he lives in: his home's top liege, or for an unlanded home, the top liege of its domicile's county.
+
+  It is called from:
+    - Learn Torah courses and journeys (`kehillah_study_specific_work_effect`): the journey's destination when abroad, else the course's library;
+    - the yeshiva (`kehillah_yeshiva_record_work_effect`): the yeshiva's community, so a visiting student records it.
+
+  Authored works, reviewed manuscripts and the 1066 seeds have no place. Masteries from before this change have none either.
+
+### Check
+
+1. Rashi in 1066: the Learning button beside Memories, its tooltip reading "Works mastered: 1", and the list showing "Talmud Bavli: Nashim".
+2. Troyes's Talmudics tab: the empty Nashim slot is a plain dashed outline.
+3. Master a book at home: it joins the end of the list with no place. Master one on a journey abroad, or as a visiting yeshiva student: "· at <place>".
+4. A non-Jewish character's window: no Learning button.
+
+## Review pass 16 — 2026-11-11: Learning, after vanilla's Memories
+
+**Status:** Implemented. xTiger reports nothing new. Not checked in the game yet.
+
+Daniel's review of pass 15, with screenshots:
+
+- **Stale name (bug).** Opening Rashi, then his wife, then Rashi left her name in the header and intro while the list showed his works. The texts interpolated `Character` inside loc keys, and those kept the first character's name. Every name and count is now an inline GUI expression on the player's `var:kehillah_learning_view`, and the window sets no datacontext of its own (only the portrait has one).
+    - **The library window may have the same problem:** `KEHILLAH_LIB_WINDOW_HEADER` and similar keys, when the Libraries map switches an open window to another library. Check that.
+- **Button.** It is built like vanilla's Memories button: `icon_round_button_base` and a `button_icon` with vanilla's flat `merit.dds` (two scrolls, a black silhouette), plus a one-line tooltip in vanilla's style: "See the Learning of this character: N works mastered". The button shows for Jewish characters only.
+- **Window, after `gui/window_memories.gui`.**
+    - **Banner:** the study scene `ep3_medi_study.dds`, his portrait, an intro, and a count.
+    - **List:** on parchment (`Background_Letter_Default`).
+    - **Each row:**
+        - the book's binding in a small box (your rite's colour, as in the ledger);
+        - the title, then "genre · author · canonicity";
+        - on the right, faded, "at <place>" when learned away from home.
+
+      The canonicity is in his rite: the list is his, as a shelf is its owner's.
+    - **Hover and click:** hovering shows your hover card, and clicking opens the work in the Ledger of Sefarim with its card selected.
+- **From the library.** A scrolls icon beside the ledger icon in the Beit Midrash tab row opens your own Learning.
+- **Engine warning fixed.** `kehillah_mastered_at_<work>` was logged as "set but never used" (only the GUI read it). The recording effect now reads it before setting.
+- **Ledger card fixes.** "Copies" had no leading space ("AnathemaCopies"). A canon work showed a ceiling of Anathema; it now shows "—", like its score.
+
+**On the score (Daniel: "the score calculation is weird").** It works as designed, but the card doesn't explain it:
+- Reception is seeded at tier × 10 − 5 and drifts with copies, masters, approbations, teaching and citations.
+- Each 10 points is a tier's worth: 60–69 points toward Esteemed.
+- From Celebrated upward, a book also has to pass a gate: masters for Esteemed; age plus citations, sermons or debates for Authoritative.
+- So Halakhot Gedolot sits at Celebrated with 65 points and no recorded masters. Built the same day; see pass 17.
+
+### Check
+
+1. Open Rashi's Learning, then his wife's, then Rashi's: the header and intro follow each time.
+2. The button beside Memories: the scrolls silhouette; its hover shows the one-line tooltip.
+3. The window: study banner and portrait, parchment rows with binding, title and details. Click a row: the ledger opens on that work.
+4. The scrolls icon in the Beit Midrash tab row opens your own Learning.
+5. The ledger card on a Bavli order: "Ceiling —", and a space before "Copies".
+6. `error.log`: no "kehillah_mastered_at_… is set but is never used".
+
+## Review pass 17 — 2026-11-11: the ledger card's next tier; numbered Learning
+
+**Status:** Implemented. xTiger reports nothing new in these files. Not checked in the game yet.
+
+- **Next tier** (`gui/kehillah_sefarim_ledger.gui`, under the record line). It applies to the chosen rite and follows `kehillah_standing_recalc_work_effect` and `kehillah_standing_next_gate_met_trigger`. Each requirement is green (`#P`) when met and grey when not.
+    - **Below Authoritative and under its ceiling:** the next tier's name, then:
+        - Score N / (tier × 10), for every climb except out of Anathema;
+        - out of Anathema: "Its herem runs out";
+        - to Esteemed: Masters N / `kehillah_gate_esteemed_masters`;
+        - to Authoritative: Years since written N / `kehillah_gate_authoritative_years` (through the new `kehillah_current_year_value`), "Its author has died" when the work has an author, and its genre's count: Cited (Talmudics), Preached (Parshanut) or Minds changed (Machshavah) N / `kehillah_gate_authoritative_count`.
+    - **At its ceiling:** "Its tenets hold it at X".
+    - **At Authoritative:** "None: Authoritative is the highest a book can earn".
+    - **Hidden** for canon works (Foundational and above).
+    - **Slipping line:** when the score is below its tier's band and the tier is above its floor, "Slipping: score below N for X of 5 years" (`kehillah_low_years_<work>`).
+    - **"Next tier" label tooltip:** the rules in prose (`KEHILLAH_SEFARIM_NEXT_TT`).
+- **Numbered Learning.** Each row starts with its place in the order mastered ("1. Talmud Bavli: Nashim"), from `PdxGuiWidget.GetIndexInDataModel`. It is assumed to count from 0; check the first row reads "1.".
+
+### Check
+
+1. Halakhot Gedolot in Minhag Ashkenaz: "Next tier: Esteemed", then Score 65 / 60 in green and Masters 0 / 5 in grey.
+2. A Bavli order: no next-tier line.
+3. Sefer ha-Mitzvot of Anan in a Rabbanite rite (Banned): the next tier and its score, or "Its tenets hold it at …" if its ceiling binds.
+4. Hover "Next tier": the rules tooltip.
+5. Rashi's Learning: the first row reads "1. Talmud Bavli: Nashim".
+
+## Review pass 18 — 2026-11-11: the acquisition note as a corner plate
+
+Daniel: the "Acquisition Underway" section "could be sleeker ... Maybe it could be in a small cutaway instead of a full row?"
+
+- **The full row is gone.** It was a heading, the work's icon and title, and a paragraph of explanation, below the bookcase.
+- **A walnut plate in the bookcase's bottom-right corner** takes its place: the chronicle icon, a short status, and the title, e.g. "Copying: Tosefta". The plate uses the shelf captions' art (`kehillah_lib_caption_plate.dds`). Several pending works stack their titles in the plate.
+- **Statuses** follow the route, as the paragraph did: Arriving (purchase), Commissioned (another community's Scriptorium), Copying (our own scribe), Seeking (distant networks), On its way (a Yeshiva Visit copy). Keys `KEHILLAH_LIB_COMMISSION_SHORT_*`.
+- **Tooltip:** the "Acquisition Underway" heading and the old explanation paragraph.
+- **Where it lives:** the case scrollbox's `scrollbox_background_fade` override. Vanilla's scrollarea draws that layer over its contents and does not scroll it. The plate sits 18 px in from the right edge so a scrollbar does not cover it. Its visibility is the old row's: the local player's own library, outside the acquire, catalog and full-work pages.
+
+### Check
+
+1. Troyes with Tosefta being copied: the plate reads "Copying: Tosefta" in the case's bottom-right corner, and nothing sits between the case and the picked card.
+2. Hover the plate: the heading and the explanation.
+3. A genre with enough books to scroll: the plate stays put and clears the scrollbar.
+
+## Review pass 19 — 2026-11-11: the plate shows the source and the progress
+
+Daniel: "Are there ways we could see the progress of how far along the copying is, where it's being copied from, etc?"
+
+- **Recording the start (new script).** The delivery is a delayed `kehillah_library.0003`, so nothing recorded when a copy began. `kehillah_library_commission_stamp_effect = { DAYS = … }` now runs beside each of the five delayed deliveries. It sets two variables on the library title: `kehillah_library_commission_started` and `kehillah_library_commission_length`. The deliveries are:
+    - distant search (0002.c);
+    - purchase, external Scriptorium, and local or Scriptorium copying (0005.a/b/c);
+    - a Yeshiva Visit carried copy (`kehillah_journey_carry_copy_effect`).
+  0003 clears both on delivery.
+- **Day count.** Script has no plain day counter. `kehillah_day_count_value` builds one from current_year, current_month and current_day as a 360-day year of 30-day months. That is a few days off over a two-year copy.
+- **Script values** (`kehillah_library_values.txt`):
+    - `kehillah_library_commission_progress_value`: 0–1.
+    - `kehillah_library_commission_months_left_value`: whole months, rounded up and at least 1, or 0 when there is no stamp.
+- **The plate:**
+    - A thin bar under the title, vanilla's `progressbar_standard` on a black track. It is hidden for copies begun before this pass, which have no stamp.
+    - Tooltip: "From: <source>" (`var:kehillah_library_commission_source`; none for a distant search), "Expected in about N months", the existing explanation, and "Click to visit its Beit Midrash".
+    - Clicking opens the source's Beit Midrash the way the Libraries map mode does (`kehillah_lib_window_open_title` plus `kehillah_lib_shelf_layout`). It is disabled when there is no source library.
+
+### Check
+
+1. Start a local copy: the plate shows an empty bar. The tooltip reads "From: <source>" and "Expected in about 18 months" (9 with a Scriptorium).
+2. A few months on: the bar has filled in proportion, and the months-left figure has dropped.
+3. A purchase: about one month, and the bar fills within the month.
+4. A distant search: no "From" line, and clicking does nothing.
+5. Clicking a sourced plate: the window switches to the source's Beit Midrash, where the plate is gone because it isn't your library.
+6. A copy already underway in an existing save: the plate shows, without a bar or months line.
+7. After delivery, error.log has no "set but never used" for the two new variables.

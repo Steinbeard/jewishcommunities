@@ -1,0 +1,146 @@
+﻿# The cherem track for people (2026-11-11). docs/spec/2026-11-11-reviews-
+# and-cherem.md section 3. The score is the XP of kehillah_cherem_trait.
+
+# Scope: a character. He leads a Kehillah: only a synod, the head of his rite
+# or faith, or the Sanhedrin can put the full ban on him (section 3.3).
+kehillah_cherem_protected_leader_trigger = {
+	government_has_flag = government_is_kehillah
+	exists = primary_title
+	primary_title = { is_kehillah_title_trigger = yes }
+}
+
+# Scope: a character under the full ban: the trait at 100, or (a non-Jew, or
+# a save not yet migrated) vanilla's excommunicated.
+kehillah_cherem_in_full_trigger = {
+	OR = {
+		has_trait = excommunicated
+		AND = {
+			has_trait = kehillah_cherem_trait
+			has_trait_xp = { trait = kehillah_cherem_trait value >= kehillah_cherem_full }
+		}
+	}
+}
+
+# Scope: a Jewish character at Nezifah or worse: teshuvah may lower it a level.
+kehillah_cherem_may_repent_trigger = {
+	is_jewish_character_trigger = yes
+	has_trait = kehillah_cherem_trait
+	has_trait_xp = { trait = kehillah_cherem_trait value >= kehillah_cherem_nezifah }
+}
+
+# Scope: the penitent. Shared by the decision and The Ban Is Read, so the
+# event cannot bypass the penance already in progress or its retry cooldown.
+kehillah_teshuvah_can_begin_trigger = {
+	kehillah_cherem_may_repent_trigger = yes
+	is_adult = yes
+	is_imprisoned = no
+	custom_description = {
+		text = kehillah_teshuvah_not_already_tt
+		NOT = { has_variable = kehillah_teshuvah_pending }
+		NOT = { has_character_modifier = kehillah_doing_teshuvah_modifier }
+	}
+	custom_description = {
+		text = kehillah_teshuvah_cooldown_tt
+		NOT = { has_variable = kehillah_teshuvah_cooldown }
+		NOT = { is_decision_on_cooldown = kehillah_teshuvah_decision }
+	}
+}
+
+# ---------------------------------------------------------------------
+# The court that judges a teshuvah (2026-11-11, Daniel: a refusal "needs a
+# good reason"). Acceptance is the default; a judge refuses only on grounds
+# the player is shown. scope:kehillah_teshuvah_penitent is the penitent.
+# ---------------------------------------------------------------------
+
+# Scope: a character who could sit on the court.
+kehillah_teshuvah_can_judge_trigger = {
+	is_alive = yes
+	is_adult = yes
+	NOT = { this = scope:kehillah_teshuvah_penitent }
+	NOT = { kehillah_cherem_in_full_trigger = yes }
+	kehillah_ordained_or_karaite_trigger = yes
+}
+
+# Scope: a judge. Enmity: the penitent is his rival, or he loathes him.
+kehillah_teshuvah_enmity_trigger = {
+	OR = {
+		has_relation_rival = scope:kehillah_teshuvah_penitent
+		opinion = { target = scope:kehillah_teshuvah_penitent value <= kehillah_teshuvah_enmity_opinion }
+	}
+}
+
+# Scope: a judge. Zeal: he is Zealous, and the book that brought the ban
+# argues for what he opposes (kehillah_cherem_judge_opposes_cause_trigger,
+# generated from the reviews' stance).
+kehillah_teshuvah_zeal_trigger = {
+	has_trait = zealous
+	exists = scope:kehillah_teshuvah_penitent.var:kehillah_cherem_cause_work
+	kehillah_cherem_judge_opposes_cause_trigger = yes
+}
+
+# Scope: a judge. He would refuse.
+kehillah_teshuvah_judge_refuses_trigger = {
+	OR = {
+		kehillah_teshuvah_enmity_trigger = yes
+		kehillah_teshuvah_zeal_trigger = yes
+	}
+}
+
+# Scope: the penitent. Relapse: a teshuvah of his was accepted within
+# kehillah_teshuvah_relapse_years ("one who sins and repents, and sins again").
+kehillah_teshuvah_relapse_trigger = {
+	has_variable = kehillah_teshuvah_recent
+}
+
+# Scope: the penitent. He gave new cause for the ban during his penance.
+kehillah_teshuvah_sinned_trigger = {
+	has_variable = kehillah_teshuvah_start_xp
+	has_trait = kehillah_cherem_trait
+	has_trait_xp = { trait = kehillah_cherem_trait value > var:kehillah_teshuvah_start_xp }
+}
+
+# Scope: a character. He may pronounce the full ban on others of his faith:
+# the head of his rite, the head of his faith, or the Nasi of the Sanhedrin.
+kehillah_cherem_authority_trigger = {
+	is_jewish_character_trigger = yes
+	OR = {
+		rite ?= { head_of_rite ?= prev }
+		faith.religious_head ?= this
+		kehillah_is_sanhedrin_head_trigger = yes
+	}
+}
+
+# Scope: a character. Grounds for a ban: Nezifah or worse, not yet banned.
+kehillah_cherem_has_grounds_trigger = {
+	is_jewish_character_trigger = yes
+	NOT = { kehillah_cherem_in_full_trigger = yes }
+	has_trait = kehillah_cherem_trait
+	has_trait_xp = { trait = kehillah_cherem_trait value >= kehillah_cherem_nezifah }
+}
+
+# Scope: a community leader. HOST: a synod's would-be host (root in an event,
+# prev inside an iterator; this trigger opens no scope of its own before it
+# reads HOST, so prev stays the host). A synod may vote a herem on him:
+# Niddui, within the host's reach, not the host himself.
+kehillah_synod_herem_target_trigger = {
+	NOT = { this = $HOST$ }
+	kehillah_cherem_protected_leader_trigger = yes
+	NOT = { kehillah_cherem_in_full_trigger = yes }
+	has_trait = kehillah_cherem_trait
+	has_trait_xp = { trait = kehillah_cherem_trait value >= kehillah_cherem_niddui }
+	faith = $HOST$.faith
+	OR = {
+		$HOST$ = { kehillah_is_sanhedrin_head_trigger = yes }
+		kehillah_shares_minhag_region_trigger = { OTHER = $HOST$ }
+	}
+}
+
+# Scope: a would-be synod host. Some leader in reach is in Niddui. Everyone
+# with the trait is on kehillah_cherem_tracked; prev is the host.
+kehillah_synod_can_propose_herem_person_trigger = {
+	exists = primary_title
+	any_in_global_list = {
+		variable = kehillah_cherem_tracked
+		kehillah_synod_herem_target_trigger = { HOST = prev }
+	}
+}

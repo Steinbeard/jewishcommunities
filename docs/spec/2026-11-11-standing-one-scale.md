@@ -88,3 +88,26 @@ Each gate is the meaning of its tier: Popular is *read*, Celebrated is *praised*
 
 **Proposed, not built:** the work card shows the next gate as a checklist (✓/✗ per condition),
 with a bar for points toward the target and the ceiling's cause. See ROADMAP.
+
+## Addendum, later 2026-11-11 (Daniel)
+
+- **Other traditions are Obscure, not banned, to a Jewish faith of neither tradition.** The Beta
+  Israel and the Samaritans now start every Rabbanite or Karaite work at 4 Obscure (was its lower
+  baseline less one, often Banned), and the Oral Torah reads Obscure to them (Rejected stays for
+  Karaites). Older saves are repaired once (`kehillah_standing_other_faiths_obscure_rite_effect`).
+- **The library's Greatness follows its books' standing** (`kehillah_bd_library_works_value`, a
+  Greatness breakdown row):
+
+  | Standing | Greatness per book |
+  |---|---|
+  | canon | +2 |
+  | Authoritative | +5 |
+  | Esteemed | +4 |
+  | Celebrated | +3 |
+  | Popular | +2 |
+  | Obscure | +1 |
+  | Rejected, Contested | 0 |
+  | Banned | −4 |
+  | Anathema | −8 |
+
+  The total is held between −40 and +80. To make room, the Greatness floor drops from 60 to 30.

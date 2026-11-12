@@ -257,12 +257,48 @@ kehillah_crisis_resolve_effect = {
    save_scope_as = kehillah_crisis_title
    kehillah_crisis_situation_sync_effect = yes
   }
+	# A Quarter Struck result is a political victory for the hostile faction,
+	# not merely damage to the community. Its immediate costs persist after the
+	# situation itself closes; the sovereign may still make a further judgement.
+	if = {
+		limit = { primary_title = { var:kehillah_crisis_outcome = 4 } }
+		kehillah_crisis_faction_victory_effect = yes
+	}
   save_scope_value_as = { name = kehillah_crisis_epoch value = primary_title.var:kehillah_crisis_epoch }
   # Queue visible followups through a hidden relay: an option tooltip must
   # never evaluate events that depend on scopes created earlier in that option.
   domicile.domicile_location.county.holder ?= { trigger_event = { id = kehillah_crisis.0290 days = 1 } }
   debug_log = "kehillah_crisis_resolve_effect: resolved outcome $OUTCOME$; political judgement pending"
  }
+}
+
+# Scope: a Kehillah leader whose quarter was struck. The anti-Jewish faction
+# has made a political gain: the host's personal outlook cools, its realm-wide
+# settlement policy becomes less welcoming (but a local crisis does not itself
+# decree a realm-wide ban), and the community yields one charter term. A later
+# sovereign judgement can still grant protection or order a targeted expulsion.
+kehillah_crisis_faction_victory_effect = {
+	if = {
+		limit = { exists = domicile.domicile_location.county.holder.top_liege }
+		domicile.domicile_location.county.holder.top_liege = {
+			kehillah_shift_outlook_effect = { AMOUNT = -15 }
+			# Lower Favored to Tolerated or Tolerated to Discouraged. Do not
+			# turn one community's defeat into an automatic realm-wide ban.
+			if = {
+				limit = {
+					primary_title = {
+						NOT = { kehillah_jewish_settlement_policy_discouraged_trigger = yes }
+						NOT = { kehillah_jewish_settlement_policy_banned_trigger = yes }
+					}
+				}
+				kehillah_lower_jewish_settlement_policy_effect = yes
+			}
+		}
+	}
+	kehillah_charter_worsen_one_term_effect = yes
+	primary_title = { set_variable = { name = kehillah_charter_forced_revision value = yes years = 1 } }
+	debug_log_scopes = yes
+	debug_log = "kehillah_crisis_faction_victory_effect: hostile faction victory cooled the host, lowered policy where possible, and worsened one charter term"
 }
 # Fallback for death of the ruler who carried the queued judgement.
 kehillah_crisis_request_judgement_effect = {

@@ -1,0 +1,232 @@
+﻿# =====================================================================
+# Reviews: haskamah and cherem on books (2026-11-11, Daniel).
+# docs/spec/2026-11-11-reviews-and-cherem.md section 1.
+#
+# A reviewer gives a book a haskamah (on mastering it, or from its page) or
+# pronounces a cherem on it (while reading it, in protest, or from its page,
+# read or not). Either moves the book's reception in HIS rite by his weight
+# (kehillah_review_weight_value / 8), once per reviewer per book.
+# =====================================================================
+
+# Scope: the reviewer. A haskamah on $KEY$.
+kehillah_review_haskamah_effect = {
+	add_to_variable_list = { name = kehillah_reviewed_works target = flag:$KEY$ }
+	save_scope_as = kehillah_reviewer
+	save_temporary_scope_value_as = { name = kehillah_review_points value = kehillah_review_points_value }
+	kehillah_sefer_bump_counter_effect = { KEY = $KEY$ COUNTER = approbations }
+	kehillah_standing_add_reception_effect = { KEY = $KEY$ AMOUNT = scope:kehillah_review_points }
+	add_to_global_variable_list = { name = kehillah_wk_$KEY$_haskamot target = this }
+	if = {
+		limit = { global_var:kehillah_wk_$KEY$_author ?= { is_alive = yes NOT = { this = scope:kehillah_reviewer } } }
+		global_var:kehillah_wk_$KEY$_author = {
+			add_opinion = { target = scope:kehillah_reviewer modifier = grateful_opinion opinion = 15 }
+		}
+		add_hook = { type = favor_hook target = global_var:kehillah_wk_$KEY$_author }
+	}
+}
+
+# Scope: the reviewer. A cherem on $KEY$; $READ$ is read or unread.
+kehillah_review_cherem_effect = {
+	add_to_variable_list = { name = kehillah_reviewed_works target = flag:$KEY$ }
+	save_scope_as = kehillah_reviewer
+	save_temporary_scope_value_as = { name = kehillah_review_points value = kehillah_review_cherem_points_$READ$_value }
+	kehillah_standing_add_reception_effect = { KEY = $KEY$ AMOUNT = scope:kehillah_review_points }
+	add_to_global_variable_list = { name = kehillah_wk_$KEY$_cherems target = this }
+	# 2026-11-11 cherem track: its living author, of this rite, is rebuked.
+	kehillah_cherem_book_review_effect = { KEY = $KEY$ }
+	if = {
+		limit = { global_var:kehillah_wk_$KEY$_author ?= { is_alive = yes NOT = { this = scope:kehillah_reviewer } } }
+		global_var:kehillah_wk_$KEY$_author = {
+			add_opinion = { target = scope:kehillah_reviewer modifier = insulted_opinion }
+		}
+	}
+}
+
+# Scope: a reader who has just mastered $KEY$ (Learn Torah,
+# kehillah_sefer_after_study_effect; a yeshiva student,
+# kehillah_sefer_after_yeshiva_mastery_effect). A player is asked whether to set
+# his name to it; the AI decides by its stance.
+kehillah_review_offer_haskamah_effect = {
+	if = {
+		limit = { kehillah_review_can_haskamah_$KEY$_trigger = yes }
+		if = {
+			limit = { is_ai = no }
+			set_variable = { name = kehillah_review_work value = flag:$KEY$ }
+			trigger_event = { id = kehillah_review.0001 days = 1 }
+		}
+		else = {
+			save_temporary_scope_value_as = { name = kehillah_review_stance value = kehillah_review_stance_$KEY$_value }
+			random = {
+				chance = kehillah_review_ai_haskamah_chance_value
+				kehillah_review_haskamah_effect = { KEY = $KEY$ }
+			}
+		}
+	}
+}
+
+# Scope: a rite (scope:kehillah_standing_rite), when $KEY$ has just risen or
+# fallen a tier there (kehillah_standing_announce_effect). Those who gave it
+# a haskamah in this rite gain or lose Piety; when it has just reached
+# Esteemed, those who banned it lose Prestige.
+kehillah_review_stakes_rise_effect = {
+	every_in_global_list = {
+		variable = kehillah_wk_$KEY$_haskamot
+		limit = { is_alive = yes rite ?= scope:kehillah_standing_rite }
+		add_piety = kehillah_review_haskamah_stake_piety
+	}
+	if = {
+		limit = { var:kehillah_standing_$KEY$ ?= 7 }
+		every_in_global_list = {
+			variable = kehillah_wk_$KEY$_cherems
+			limit = { is_alive = yes rite ?= scope:kehillah_standing_rite }
+			add_prestige = kehillah_review_cherem_wrong_prestige
+		}
+	}
+}
+kehillah_review_stakes_fall_effect = {
+	every_in_global_list = {
+		variable = kehillah_wk_$KEY$_haskamot
+		limit = { is_alive = yes rite ?= scope:kehillah_standing_rite }
+		add_piety = kehillah_review_haskamah_stake_loss
+	}
+	# 2026-11-11 cherem track: a book fallen to Banned rebukes its author.
+	if = {
+		limit = { var:kehillah_standing_$KEY$ ?= 1 }
+		save_scope_as = kehillah_cherem_rite
+		kehillah_cherem_author_effect = { KEY = $KEY$ AMOUNT = kehillah_cherem_book_banned_points }
+	}
+}
+
+# Scope: a reader in the Learn Torah scheme (its monthly pulse). Once a course,
+# a book that argues against what he holds asks a player what he will do; the
+# AI decides by its stance, and if it bans the book it stops reading.
+kehillah_review_reading_objection_effect = {
+	if = {
+		limit = { NOT = { has_variable = kehillah_review_objection_seen } }
+		kehillah_review_current_objection_effect = yes
+		if = {
+			limit = { has_variable = kehillah_review_work }
+			set_variable = { name = kehillah_review_objection_seen value = yes }
+			if = {
+				limit = { is_ai = no }
+				trigger_event = kehillah_review.0010
+			}
+			else = {
+				kehillah_review_ai_reading_dispatch_effect = { SOURCE = var:kehillah_review_work }
+				remove_variable = kehillah_review_work
+			}
+		}
+	}
+}
+
+# Scope: an AI reader of $KEY$ who objects to it.
+kehillah_review_ai_reading_effect = {
+	save_temporary_scope_value_as = { name = kehillah_review_stance value = kehillah_review_stance_$KEY$_value }
+	random = {
+		chance = kehillah_review_ai_cherem_chance_value
+		kehillah_review_cherem_effect = { KEY = $KEY$ READ = read }
+		every_scheme = {
+			type = kehillah_study_torah
+			end_scheme = yes
+		}
+	}
+}
+
+# Scope: none (kehillah_review_yearly_unread_effect). One scholar who has not
+# read $KEY$ but stands hard against it may ban it, unread (half weight).
+kehillah_review_unread_effect = {
+	random = {
+		chance = kehillah_review_unread_chance
+		random_in_global_list = {
+			variable = kehillah_sefer_masters
+			limit = {
+				is_alive = yes
+				is_ai = yes
+				kehillah_review_can_cherem_$KEY$_trigger = yes
+				NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:$KEY$ } }
+				kehillah_review_stance_$KEY$_value <= kehillah_review_unread_threshold
+			}
+			kehillah_review_cherem_effect = { KEY = $KEY$ READ = unread }
+			change_global_variable = { name = kehillah_review_unread_this_year add = 1 }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# Seek an Approbation (2026-11-11 rework). The author sends the manuscript
+# to the most learned scholar who may review it, preferring one who has
+# already mastered it; he reads it, and answers by the author's renown and
+# devotion and his own view of the book.
+# ---------------------------------------------------------------------
+
+# Scope: the author (scope:kehillah_appr_asker). Saves scope:kehillah_approver.
+kehillah_review_pick_approver_effect = {
+	ordered_in_global_list = {
+		variable = kehillah_sefer_masters
+		limit = {
+			kehillah_sefer_possible_approver_trigger = yes
+			kehillah_review_reviewer_trigger = yes
+			NOT = { is_target_in_variable_list = { name = kehillah_reviewed_works target = flag:$KEY$ } }
+		}
+		order_by = {
+			value = learning
+			if = {
+				limit = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:$KEY$ } }
+				add = 20
+			}
+		}
+		save_scope_as = kehillah_approver
+	}
+}
+
+# Scope: the approver. He reads the manuscript: it counts as mastered.
+kehillah_review_approver_reads_effect = {
+	if = {
+		limit = { NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:$KEY$ } } }
+		add_to_variable_list = { name = kehillah_mastered_works target = flag:$KEY$ }
+		kehillah_sefer_bump_counter_effect = { KEY = $KEY$ COUNTER = masters }
+		if = {
+			limit = { NOT = { is_target_in_global_variable_list = { name = kehillah_sefer_masters target = this } } }
+			add_to_global_variable_list = { name = kehillah_sefer_masters target = this }
+		}
+	}
+}
+
+# Scope: an AI approver. Grants a haskamah, refuses, or (standing hard against
+# it) pronounces a cherem; the author hears which.
+kehillah_review_approver_decides_effect = {
+	save_temporary_scope_value_as = { name = kehillah_review_stance value = kehillah_review_stance_$KEY$_value }
+	random_list = {
+		1 = {
+			modifier = { add = { value = kehillah_review_approbation_chance_value subtract = 1 } }
+			kehillah_review_haskamah_effect = { KEY = $KEY$ }
+			scope:kehillah_appr_asker = {
+				if = {
+					limit = { is_ai = no }
+					send_interface_toast = { title = kehillah_sefer_approbation_granted_t left_icon = scope:kehillah_approver }
+				}
+			}
+		}
+		1 = {
+			modifier = { add = { value = 100 subtract = kehillah_review_approbation_chance_value subtract = 1 } }
+			if = {
+				limit = { scope:kehillah_review_stance <= kehillah_review_approbation_cherem_threshold }
+				kehillah_review_cherem_effect = { KEY = $KEY$ READ = read }
+				scope:kehillah_appr_asker = {
+					if = {
+						limit = { is_ai = no }
+						send_interface_toast = { type = event_toast_text_bad title = kehillah_review_approbation_cherem_t left_icon = scope:kehillah_approver }
+					}
+				}
+			}
+			else = {
+				scope:kehillah_appr_asker = {
+					if = {
+						limit = { is_ai = no }
+						send_interface_toast = { type = event_toast_text_neutral title = kehillah_review_approbation_refused_t left_icon = scope:kehillah_approver }
+					}
+				}
+			}
+		}
+	}
+}

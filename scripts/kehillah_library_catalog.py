@@ -98,6 +98,11 @@ REVIEW_TRIGGERS = ROOT / "common/scripted_triggers/kehillah_review_generated_tri
 REVIEW_EFFECTS = ROOT / "common/scripted_effects/kehillah_review_generated_effects.txt"
 REVIEW_GUI = ROOT / "common/scripted_guis/kehillah_review_gui.txt"
 REVIEW_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_review_custom_loc.txt"
+STANCE_VALUES = ROOT / "common/script_values/kehillah_review_stance_values.txt"
+REVIEW_AI_EFFECTS = ROOT / "common/scripted_effects/kehillah_review_ai_generated_effects.txt"
+# 2026-11-11: the cherem trait's teshuvah surrenders forbidden books.
+CHEREM_TRIGGERS = ROOT / "common/scripted_triggers/kehillah_cherem_generated_triggers.txt"
+CHEREM_EFFECTS = ROOT / "common/scripted_effects/kehillah_cherem_generated_effects.txt"
 # A work's `lang` key and its CK3 language. All vanilla; vanilla's Hebrew is
 # language_israelite (spoken by the extinct `hebrew` culture). Judeo-Arabic is Arabic.
 READING_LANGUAGES = {
@@ -106,6 +111,10 @@ READING_LANGUAGES = {
     "arabic": "language_arabic",
     "greek": "language_greek",
     "latin": "language_latin",
+    # Ge'ez is CK3's Ethiopic language; vanilla's Middle Tamil includes
+    # Malayalam, the closest useful language for the Cochin charter.
+    "ethiopic": "language_ethiopic",
+    "tamil": "language_tamil",
 }
 # 2026-11-10, revision 4 (Daniel): no in-between fluency. Knowing a language is
 # vanilla's yes or no; the liturgical tongue of the reader's faith
@@ -124,14 +133,17 @@ RANKS = {"Foundational": (1, 1), "Essential": (2, 1), "Celebrated": (3, 2), "Pop
 CORPORA = {"": 0, "bavli": 1, "yerushalmi": 2, "tanakh": 3}
 # 2026-11-11 (one scale): 0 Anathema .. 8 Authoritative earned; canon 9
 # Foundational, 10 Prophetic, 11 Divine. 2 Rejected is also where a rite puts
-# canon it does not receive (the Talmud for a Karaite).
+# canon it does not receive (the Talmud for a Karaite). The Samaritan Torah
+# and Beta Israel Orit are scripture only in their respective traditions.
 TOP_EARNED = 8
 OUTSIDE_CANON = 2
 # 2026-11-11 (Daniel): a Jewish faith with neither tradition (the Beta Israel,
 # the Samaritans) has simply not met the other works: Obscure.
 UNKNOWN_TO_FAITH = 4
-CANON = {"": 0, "oral_torah": 9, "neviim_ketuvim": 10, "torah": 11}
-TRADITIONS = {"rabbanite": 1, "karaite": 2, "shared": 3}
+CANON = {"": 0, "oral_torah": 9, "neviim_ketuvim": 10, "torah": 11,
+         "samaritan_torah": 11, "haymanot_orit": 11}
+TRADITIONS = {"rabbanite": 1, "karaite": 2, "shared": 3,
+              "samaritan": 4, "haymanot": 5}
 GAMEPLAY = "#bold;color_porple "
 BOM = "﻿"
 HEADER = [
@@ -482,6 +494,14 @@ def write_standing_values(order, works):
             "\t\tlimit = { kehillah_rite_toric_trigger = yes }",
             f"\t\tvalue = {b['karaite']}",
             "\t}",
+            "\telse_if = {",
+            "\t\tlimit = { kehillah_rite_samaritan_trigger = yes }",
+            f"\t\tvalue = {b.get('samaritan', UNKNOWN_TO_FAITH)}",
+            "\t}",
+            "\telse_if = {",
+            "\t\tlimit = { kehillah_rite_haymanot_trigger = yes }",
+            f"\t\tvalue = {b.get('haymanot', UNKNOWN_TO_FAITH)}",
+            "\t}",
             "}",
         ]
     out += [
@@ -519,17 +539,45 @@ def write_standing_values(order, works):
                 f"\t\tvalue = {CANON['oral_torah']}",
                 "\t}",
             ]
+        elif canon == "samaritan_torah":
+            out += [
+                f"\tvalue = {UNKNOWN_TO_FAITH}",
+                "\tif = {",
+                "\t\tlimit = { rite ?= { kehillah_rite_samaritan_trigger = yes } }",
+                f"\t\tvalue = {CANON['samaritan_torah']}",
+                "\t}",
+            ]
+        elif canon == "haymanot_orit":
+            out += [
+                f"\tvalue = {UNKNOWN_TO_FAITH}",
+                "\tif = {",
+                "\t\tlimit = { rite ?= { kehillah_rite_haymanot_trigger = yes } }",
+                f"\t\tvalue = {CANON['haymanot_orit']}",
+                "\t}",
+            ]
         else:
             b = w.get("baseline", {"rabbinic": 4, "karaite": 4})
             out += [
-                f"\tvalue = {b['rabbinic']}",
+                f"\tvalue = {UNKNOWN_TO_FAITH}",
                 "\tif = {",
                 f"\t\tlimit = {{ rite ?= {{ has_variable = kehillah_standing_{f} }} }}",
                 f"\t\tvalue = rite.var:kehillah_standing_{f}",
                 "\t}",
                 "\telse_if = {",
+                "\t\tlimit = { rite ?= { kehillah_rite_rabbanite_trigger = yes } }",
+                f"\t\tvalue = {b['rabbinic']}",
+                "\t}",
+                "\telse_if = {",
                 "\t\tlimit = { rite ?= { kehillah_rite_toric_trigger = yes } }",
                 f"\t\tvalue = {b['karaite']}",
+                "\t}",
+                "\telse_if = {",
+                "\t\tlimit = { rite ?= { kehillah_rite_samaritan_trigger = yes } }",
+                f"\t\tvalue = {b.get('samaritan', UNKNOWN_TO_FAITH)}",
+                "\t}",
+                "\telse_if = {",
+                "\t\tlimit = { rite ?= { kehillah_rite_haymanot_trigger = yes } }",
+                f"\t\tvalue = {b.get('haymanot', UNKNOWN_TO_FAITH)}",
                 "\t}",
             ]
         out.append("}")
@@ -567,17 +615,45 @@ def write_standing_values(order, works):
                 f"\t\tvalue = {OUTSIDE_CANON}",
                 "\t}",
             ]
+        elif canon == "samaritan_torah":
+            out += [
+                f"\tvalue = {UNKNOWN_TO_FAITH}",
+                "\tif = {",
+                "\t\tlimit = { kehillah_rite_samaritan_trigger = yes }",
+                f"\t\tvalue = {CANON['samaritan_torah']}",
+                "\t}",
+            ]
+        elif canon == "haymanot_orit":
+            out += [
+                f"\tvalue = {UNKNOWN_TO_FAITH}",
+                "\tif = {",
+                "\t\tlimit = { kehillah_rite_haymanot_trigger = yes }",
+                f"\t\tvalue = {CANON['haymanot_orit']}",
+                "\t}",
+            ]
         else:
             b = w.get("baseline", {"rabbinic": 4, "karaite": 4})
             out += [
-                f"\tvalue = {b['rabbinic']}",
+                f"\tvalue = {UNKNOWN_TO_FAITH}",
                 "\tif = {",
                 f"\t\tlimit = {{ has_variable = kehillah_standing_{f} }}",
                 f"\t\tvalue = var:kehillah_standing_{f}",
                 "\t}",
                 "\telse_if = {",
+                "\t\tlimit = { kehillah_rite_rabbanite_trigger = yes }",
+                f"\t\tvalue = {b['rabbinic']}",
+                "\t}",
+                "\telse_if = {",
                 "\t\tlimit = { kehillah_rite_toric_trigger = yes }",
                 f"\t\tvalue = {b['karaite']}",
+                "\t}",
+                "\telse_if = {",
+                "\t\tlimit = { kehillah_rite_samaritan_trigger = yes }",
+                f"\t\tvalue = {b.get('samaritan', UNKNOWN_TO_FAITH)}",
+                "\t}",
+                "\telse_if = {",
+                "\t\tlimit = { kehillah_rite_haymanot_trigger = yes }",
+                f"\t\tvalue = {b.get('haymanot', UNKNOWN_TO_FAITH)}",
                 "\t}",
             ]
         out.append("}")
@@ -1376,6 +1452,9 @@ def write_study_gui(order, works):
         "# 10 Piety, as the decision costs.",
         "# 2026-11-11: or, for a course waiting for its next book (\"choose later\" in",
         "# kehillah_study_torah.0001), the next book, free: the course goes on.",
+        "# 2026-11-11 (Daniel: \"make the learn button able to replace the current",
+        "# scheme with a confirmation\"): partway through a book, the button stores",
+        "# the new book and asks first (kehillah_study_torah.0008).",
     ]
     for i, f in enumerate(order, start=1):
         out += [
@@ -1385,7 +1464,14 @@ def write_study_gui(order, works):
             "	saved_scopes = { library }",
             "	is_shown = { always = yes }",
             "	is_valid = {",
-            "		kehillah_lib_can_choose_study_trigger = yes",
+            "		custom_tooltip = {",
+            "			text = kehillah_lib_study_cannot_tt",
+            "			kehillah_lib_can_choose_study_trigger = yes",
+            "		}",
+            "		custom_tooltip = {",
+            "			text = kehillah_lib_study_reading_now_tt",
+            f"			NOT = {{ var:kehillah_study_current_work_id ?= {i} }}",
+            "		}",
             f"		scope:library = {{ is_target_in_variable_list = {{ name = kehillah_library_works target = flag:{f} }} }}",
             "		custom_tooltip = {",
             "			text = kehillah_study_library_not_readable_tt",
@@ -1393,19 +1479,17 @@ def write_study_gui(order, works):
             "		}",
             "	}",
             "	effect = {",
-            "		set_variable = { name = kehillah_study_library value = scope:library }",
             "		if = {",
-            "			limit = { kehillah_study_waiting_for_choice_trigger = yes }",
-            "			remove_variable = kehillah_study_choose_later",
+            "			limit = { kehillah_study_can_switch_book_trigger = yes }",
+            f"			set_variable = {{ name = kehillah_study_pending_work_id value = {i} }}",
+            "			set_variable = { name = kehillah_study_pending_library value = scope:library }",
+            "			trigger_event = kehillah_study_torah.0008",
             "		}",
             "		else = {",
-            "			remove_variable = kehillah_study_choose_later",
-            "			add_piety = -10",
-            "			start_scheme = { type = kehillah_study_torah target_character = root }",
+            "			kehillah_lib_study_start_course_effect = {",
+            f"				WORK_ID = {i}",
+            "			}",
             "		}",
-            "		kehillah_study_torah_resolve_library_effect = { CHARACTER = root }",
-            f"		set_variable = {{ name = kehillah_study_current_work_id value = {i} }}",
-            "		trigger_event = kehillah_study_torah.0002",
             "	}",
             "}",
         ]
@@ -1797,9 +1881,11 @@ def write_catalog_list_effects(order, works):
 # Anathema, kept only to answer it; 7 the canon binding (2026-11-11, one scale).
 SPINE_TIERS = [(1, 2), (3, 3), (5, 4), (7, 5), (8, 6), (9, 7)]
 # Spine width in pixels by tier, as drawn by scripts/kehillah_generate_library_ui_assets.py.
-SPINE_WIDTH = {1: 14, 2: 10, 3: 14, 4: 18, 5: 22, 6: 26, 7: 30}
+# 2026-11-11: the spines are painted 1.25x larger; the shelf viewport has no
+# scrollbar margin now (about 500 px inside the smaller, domicile host).
+SPINE_WIDTH = {1: 18, 2: 12, 3: 18, 4: 22, 5: 28, 6: 32, 7: 38}
 SPINE_GAP = 2
-SHELF_ROW_WIDTH = 452
+SHELF_ROW_WIDTH = 470
 SPINE_VARIANTS = 4
 # Works shown in a centrepiece instead of on the shelf: the Tanakh (the ark),
 # the Bavli (the Shas case) and the Yerushalmi (its own set on the Talmud shelf).
@@ -2504,6 +2590,25 @@ def write_study_custom_loc(order, works):
                 f"			var:kehillah_study_current_work_id = {i}", "		}",
                 f"		localization_key = {key}", "	}"]
     out += ["	text = {", "		fallback = yes", "		localization_key = kehillah_study_torah.0002.unknown_desc", "	}", "}"]
+    # 2026-11-11: kehillah_study_torah.0008 names the book being read and the
+    # one the Study button offers instead, by their catalog numbers.
+    for key, var in (("KehillahStudyCurrentWorkName", "kehillah_study_current_work_id"),
+                     ("KehillahStudyPendingWorkName", "kehillah_study_pending_work_id")):
+        out += ["", f"{key} = {{", "	type = character"]
+        for i, f in enumerate(order, start=1):
+            out += ["	text = {", "		trigger = {", f"			has_variable = {var}",
+                    f"			var:{var} = {i}", "		}",
+                    f"		localization_key = kehillah_lib_name_{f}", "	}"]
+        out += ["	text = {", "		fallback = yes", "		localization_key = KEHILLAH_LIB_COMMISSION_UNKNOWN_WORK", "	}", "}"]
+    # The scheme card itself uses this version. Unlike the switch-event names,
+    # its fallback is a player-facing instruction rather than an unknown-work
+    # placeholder.
+    out += ["", "KehillahStudySchemeWorkName = {", "\ttype = character"]
+    for i, f in enumerate(order, start=1):
+        out += ["\ttext = {", "\t\ttrigger = {", "\t\t\thas_variable = kehillah_study_current_work_id",
+                f"\t\t\tvar:kehillah_study_current_work_id = {i}", "\t\t}",
+                f"\t\tlocalization_key = kehillah_lib_name_{f}", "\t}"]
+    out += ["\ttext = {", "\t\tfallback = yes", "\t\tlocalization_key = kehillah_study_torah.no_target", "\t}", "}"]
     write(STUDY_CUSTOM_LOC, out)
 
 
@@ -2763,7 +2868,9 @@ def write_sermon_files(order, works):
     write(SERMON_EFFECTS, eff)
 
     loc = list(HEADER)
-    for kind, var in (("Grounded", "kehillah_sermon_cand_grounded"), ("Newer", "kehillah_sermon_cand_newer")):
+    # 2026-11-11: Cited1/Cited2 name the texts chosen, for the delivery (kehillah_sermon.0004).
+    for kind, var in (("Grounded", "kehillah_sermon_cand_grounded"), ("Newer", "kehillah_sermon_cand_newer"),
+                      ("Cited1", "kehillah_sermon_cited_1"), ("Cited2", "kehillah_sermon_cited_2")):
         loc += [f"KehillahSermonCand{kind} = {{", "\ttype = character"]
         for f in order:
             loc += ["\ttext = {", "\t\ttrigger = {", f"\t\t\tvar:{var} ?= flag:{f}",
@@ -2839,7 +2946,7 @@ def write_review_files(order, works):
     for f in order:
         w = works[f]
         if not reviewable(w):
-            for t in ("can_cherem", "can_haskamah", "objects"):
+            for t in ("can_cherem", "can_haskamah", "objects", "haskamah_window"):
                 trig.append(f"kehillah_review_{t}_{f}_trigger = {{ always = no }}")
             continue
         base = ["\tkehillah_review_reviewer_trigger = yes"]
@@ -2850,7 +2957,12 @@ def write_review_files(order, works):
         trig += [f"kehillah_review_can_cherem_{f}_trigger = {{"] + base + ["}"]
         trig += [f"kehillah_review_can_haskamah_{f}_trigger = {{",
                  f"\tkehillah_review_can_cherem_{f}_trigger = yes",
-                 f"\t{held(f, '', 'kehillah_mastered_works')}", "}"]
+                 f"\t{held(f, '', 'kehillah_mastered_works')}",
+                 f"\tkehillah_review_haskamah_window_{f}_trigger = yes", "}"]
+        trig += [f"kehillah_review_haskamah_window_{f}_trigger = {{",
+                 f"\tkehillah_lib_standing_{f} >= 4",
+                 f"\tkehillah_lib_standing_{f} <= 7",
+                 f"\tcurrent_year <= {{ value = kehillah_lib_year_{f} add = kehillah_review_haskamah_years }}", "}"]
         trig += [f"kehillah_review_objects_{f}_trigger = {{", "\tOR = {",
                  f"\t\tkehillah_lib_tenet_fit_{f} = -1",
                  f"\t\tkehillah_sefer_work_heterodox_{f}_trigger = yes", "\t}", "}"]
@@ -2903,6 +3015,7 @@ def write_review_files(order, works):
             "\tis_valid = {",
             f"\t\tcustom_description = {{ text = KEHILLAH_REVIEW_REQ_NOT_REVIEWED NOT = {{ {held(f, '', 'kehillah_reviewed_works')} }} }}",
             f"\t\tcustom_description = {{ text = KEHILLAH_REVIEW_REQ_MASTERED {held(f, '', 'kehillah_mastered_works')} }}",
+            f"\t\tcustom_description = {{ text = KEHILLAH_REVIEW_REQ_WINDOW kehillah_review_haskamah_window_{f}_trigger = yes }}",
             f"\t\tkehillah_review_can_haskamah_{f}_trigger = yes",
             "\t}",
             "\teffect = {",
@@ -2924,6 +3037,146 @@ def write_review_files(order, works):
         ]
     write(REVIEW_GUI, gui)
     write(REVIEW_CUSTOM_LOC, list(HEADER) + work_name_custom_loc(order, "KehillahReviewWork", "kehillah_review_work"))
+
+
+# ---------------------------------------------------------------------------
+# A reviewer's stance on a book (2026-11-11, Daniel: "consider using vanilla
+# systems for tenet opposition"). Built from vanilla's own measures: his rite's
+# status of each tenet the book argues for, his personal tenets, and the 1.20
+# spiritual-fulfillment fit of the tenet with his virtues and sins
+# (expected_tenet_fulfillment_change), which is how rival tenets clash; then
+# faith hostility for a book of the other tradition, and the author.
+# ---------------------------------------------------------------------------
+
+def stance_for_lines(t, ind, cond=""):
+    c = (cond + " ") if cond else ""
+    fit = f'"expected_tenet_fulfillment_change(tenet:{t})"'
+    return [
+        f"{ind}if = {{ limit = {{ {c}rite ?= {{ has_tenet_status = {{ tenet = {t} status = core }} }} }} add = kehillah_review_stance_core }}",
+        f"{ind}else_if = {{ limit = {{ {c}rite ?= {{ has_tenet_status = {{ tenet = {t} status = permitted }} }} }} add = kehillah_review_stance_permitted }}",
+        f"{ind}else_if = {{ limit = {{ {c}rite ?= {{ has_tenet_status = {{ tenet = {t} status = prohibited }} }} }} add = kehillah_review_stance_prohibited }}",
+        f"{ind}if = {{ limit = {{ {c}has_personal_tenet = {t} }} add = kehillah_review_stance_personal }}",
+        f"{ind}else_if = {{ limit = {{ {c}has_variable = kehillah_leaning_{t} }} add = kehillah_review_stance_leaning }}",
+        f"{ind}if = {{ limit = {{ {c}{fit} > 10 }} add = kehillah_review_stance_fits_well }}",
+        f"{ind}else_if = {{ limit = {{ {c}{fit} > 0 }} add = kehillah_review_stance_fits }}",
+        f"{ind}else_if = {{ limit = {{ {c}{fit} < -10 }} add = kehillah_review_stance_clashes_badly }}",
+        f"{ind}else_if = {{ limit = {{ {c}{fit} < 0 }} add = kehillah_review_stance_clashes }}",
+    ]
+
+
+
+def write_cherem_files(order, works):
+    """Teshuvah (2026-11-11): the penitent gives up every book in his library
+    that his rite has Banned or put under Anathema."""
+    keys = [f for f in order if reviewable(works[f])]
+
+    def forbidden(f):
+        return (f"{held(f)} scope:kehillah_cherem_penitent = {{ kehillah_lib_standing_{f} <= 1 }}")
+
+    trig = list(HEADER) + [
+        "# Title scope: a library; scope:kehillah_cherem_penitent its holder. It",
+        "# holds a book his rite has Banned (1) or put under Anathema (0).",
+        "kehillah_cherem_library_holds_forbidden_trigger = {",
+        "\tOR = {",
+    ]
+    trig += [f"\t\tAND = {{ {forbidden(f)} }}" for f in keys]
+    trig += ["\t}", "}"]
+    write(CHEREM_TRIGGERS, trig)
+
+    eff = list(HEADER) + [
+        "# Title scope: a library; scope:kehillah_cherem_penitent its holder, who",
+        "# does teshuvah. Every book his rite has Banned or put under Anathema leaves",
+        "# the library for good (not to the ransom pool).",
+        "kehillah_cherem_surrender_forbidden_effect = {",
+    ]
+    for f in keys:
+        eff += ["\tif = {",
+                f"\t\tlimit = {{ {forbidden(f)} }}",
+                f"\t\tremove_list_variable = {{ name = kehillah_library_works target = flag:{f} }}",
+                "\t}"]
+    eff.append("}")
+    write(CHEREM_EFFECTS, eff)
+
+    # 2026-11-11: a judge of a teshuvah opposes the book that brought the ban
+    # (the reviews' stance, at kehillah_teshuvah_zeal_stance or below).
+    trig += ["", "# Scope: a judge; scope:kehillah_teshuvah_penitent.var:kehillah_cherem_cause_work",
+             "# names the book that brought the ban.",
+             "kehillah_cherem_judge_opposes_cause_trigger = {", "	OR = {"]
+    for f in keys:
+        trig.append(f"		AND = {{ scope:kehillah_teshuvah_penitent.var:kehillah_cherem_cause_work ?= flag:{f} "
+                    f"kehillah_review_stance_{f}_value <= kehillah_teshuvah_zeal_stance }}")
+    trig += ["	}", "}"]
+    write(CHEREM_TRIGGERS, trig)
+
+def write_stance_values(order, works):
+    out = HEADER + [
+        "# A reviewer's stance on each work (2026-11-11), -100 to 100. Scope: the",
+        "# reviewer. Terms in common/script_values/kehillah_review_values.txt.",
+    ]
+    tradition_faith = {"rabbanite": "faith:rabbinic_faith", "karaite": "faith:karaism"}
+    for f in order:
+        w = works[f]
+        out.append(f"kehillah_review_stance_{f}_value = {{")
+        out.append("\tvalue = 0")
+        if reviewable(w):
+            if authored(w):
+                for which in ("a", "b"):
+                    for i, t in enumerate(TENET_INDEX, start=1):
+                        out += stance_for_lines(t, "\t", f"global_var:kehillah_wk_{f}_tenet_{which} ?= {i}")
+            for t in w.get("argues_for", []):
+                out += stance_for_lines(t, "\t")
+            for t in w.get("argues_against", []):
+                out += [f"\tif = {{ limit = {{ rite ?= {{ has_tenet_status = {{ tenet = {t} status = core }} }} }} add = kehillah_review_stance_against_core }}",
+                        f"\tif = {{ limit = {{ has_personal_tenet = {t} }} add = kehillah_review_stance_against_personal }}"]
+            tf = tradition_faith.get(w.get("tradition", ""))
+            if tf and not authored(w):
+                out += [f"\tif = {{ limit = {{ faith = {{ faith_hostility_level = {{ target = {tf} value >= 1 }} }} }} add = kehillah_review_stance_hostile_faith }}",
+                        f"\tif = {{ limit = {{ faith = {{ faith_hostility_level = {{ target = {tf} value >= 2 }} }} }} add = kehillah_review_stance_hostile_faith }}",
+                        f"\tif = {{ limit = {{ faith = {{ faith_hostility_level = {{ target = {tf} value >= 3 }} }} }} add = kehillah_review_stance_hostile_faith }}"]
+            if needs_writing(w):
+                a = f"global_var:kehillah_wk_{f}_author"
+                out += [f"\tif = {{ limit = {{ exists = {a} {a} = {{ is_alive = yes }} NOT = {{ {a} = this }} }}",
+                        f"\t\tif = {{ limit = {{ has_relation_rival = {a} }} add = kehillah_review_stance_rival }}",
+                        f"\t\telse_if = {{ limit = {{ has_relation_friend = {a} }} add = kehillah_review_stance_friend }}",
+                        f"\t\tif = {{ limit = {{ opinion = {{ target = {a} value >= 40 }} }} add = kehillah_review_stance_likes_author }}",
+                        f"\t\telse_if = {{ limit = {{ opinion = {{ target = {a} value <= -40 }} }} add = kehillah_review_stance_dislikes_author }}",
+                        "\t}"]
+            out += ["\tif = { limit = { has_trait = zealous } multiply = kehillah_review_stance_zealous_mult }",
+                    "\tmin = -100", "\tmax = 100"]
+        out.append("}")
+    write(STANCE_VALUES, out)
+
+    # Dispatchers and the yearly pass, appended to the review effects.
+    keys = [f for f in order if reviewable(works[f])]
+    eff = list(HEADER) + [
+        "# AI reviews (2026-11-11). Dispatchers from a work flag ($SOURCE$).",
+    ]
+    for name, call in (
+            ("kehillah_review_pick_approver_dispatch_effect", "kehillah_review_pick_approver_effect = {{ KEY = {k} }}"),
+            ("kehillah_review_approver_reads_dispatch_effect", "kehillah_review_approver_reads_effect = {{ KEY = {k} }}"),
+            ("kehillah_review_approver_decides_dispatch_effect", "kehillah_review_approver_decides_effect = {{ KEY = {k} }}"),
+            ("kehillah_review_ai_reading_dispatch_effect", "kehillah_review_ai_reading_effect = {{ KEY = {k} }}"),
+            # 2026-11-11 cherem track: teshuvah renounces the book that caused it.
+            ("kehillah_cherem_renounce_dispatch_effect", "kehillah_cherem_renounce_effect = {{ KEY = {k} }}")):
+        eff += ["", f"{name} = {{"]
+        for i, f in enumerate(keys):
+            eff += [f"\t{'if' if i == 0 else 'else_if'} = {{", f"\t\tlimit = {{ $SOURCE$ ?= flag:{f} }}",
+                    f"\t\t{call.format(k=f)}", "\t}"]
+        eff.append("}")
+    eff += ["", "# Scope: none. Yearly: a book written in the last 50 years may draw a cherem",
+            "# from a scholar who has not read it but opposes what it argues for",
+            "# (kehillah_review_unread_effect), at most kehillah_review_unread_cap a year.",
+            "kehillah_review_yearly_unread_effect = {",
+            "\tset_global_variable = { name = kehillah_review_unread_this_year value = 0 }"]
+    for f in keys:
+        if not needs_writing(works[f]):
+            continue
+        eff += ["\tif = {",
+                f"\t\tlimit = {{ has_global_variable = kehillah_wk_{f}_written current_year <= {{ value = kehillah_lib_year_{f} add = kehillah_review_haskamah_years }} "
+                "global_var:kehillah_review_unread_this_year < kehillah_review_unread_cap }",
+                f"\t\tkehillah_review_unread_effect = {{ KEY = {f} }}", "\t}"]
+    eff.append("}")
+    write(REVIEW_AI_EFFECTS, eff)
 
 
 if __name__ == "__main__":
@@ -2954,4 +3207,6 @@ if __name__ == "__main__":
     write_sermon_files(order, works)
     write_minds_files(order, works)
     write_review_files(order, works)
+    write_stance_values(order, works)
+    write_cherem_files(order, works)
     print(f"{len(order)} works -> catalog, standing, study, triggers, GUI and loc")

@@ -1,6 +1,6 @@
 # Learn Torah: choosing the next book
 
-**Status:** Implemented 2026-11-11. xTiger reports nothing new (205 reports, same as the baseline). Not checked in the game yet.
+**Status:** Implemented 2026-11-11; revised 2026-11-12 after live review. xTiger check pending. Not checked again in the game yet.
 
 **Supersedes:** the "no choice" rule in the header of `events/kehillah_study_torah_events.txt` (2026-09-19): "the completion event deliberately does not present the next work as a choice".
 
@@ -18,10 +18,8 @@ When a Learn Torah course finished a book, the completion event (`kehillah_study
     - The option reads "Talmudics: The Mishnah". Its tooltip is the work's own "You take up …" line.
     - A genre with nothing unmastered on the shelf has no option. For that check, `kehillah_study_torah_unread_in_genre_<g>_trigger` (generated) holds the work's genre; works written in play read their genre from global variables.
 - **Reread.** If every book on the shelf is mastered, the only book option is "Return to a book you have already mastered". It draws with the old random picker.
-- **Choose later.** "Choose the next book later, at the Beit Midrash" removes the current work and sets `var:kehillah_study_choose_later`.
-    - The course goes on with no book. The monthly effect does nothing without a current work.
-    - At the end of each stretch the event returns, with a "no book open" description and fresh offers.
-    - Meanwhile the Beit Midrash's **Study this book** button (`kehillah_lib_study_<work>`, generated) accepts a course waiting for a choice (`kehillah_study_waiting_for_choice_trigger`). It gives that course its book for free: no new course and no 10 Piety. A course that is not waiting is started as before.
+- **Choose later.** "Choose the next book later, at the Beit Midrash" ends the course. It no longer leaves a targetless entry in Personal Schemes or starts another three-month stretch without a book. Choose **Study this book** on the desired shelf entry when ready; that begins an ordinary new course and costs the normal 10 Piety.
+- **Visible target.** The Personal Schemes title now reads **Studying Torah: [book]**. It falls back to **Choose a Book** only for an old targetless course, which the next monthly pulse ends automatically.
 - **AI.** The AI picks among the book options with equal weight and never chooses later.
 
 ## Judgment calls
@@ -32,7 +30,7 @@ When a Learn Torah course finished a book, the completion event (`kehillah_study
 
 ## Files
 
-- `scripts/kehillah_library_catalog.py`: generates the offer effect, the take-offer effect, the three genre triggers and the waiting-course branch of the Study scripted GUIs.
+- `scripts/kehillah_library_catalog.py`: generates the offer effect, the take-offer effect, the three genre triggers, the Study scripted GUIs, and the current-book custom localization used by the scheme title.
 - `common/scripted_triggers/kehillah_sefer_triggers.txt`: `kehillah_study_waiting_for_choice_trigger` and `kehillah_lib_can_choose_study_trigger`.
 - `common/scripted_effects/kehillah_library_effects.txt`: `kehillah_study_torah_clear_offers_effect`.
 - `events/kehillah_study_torah_events.txt`: event 0001's immediate block, options and waiting description.
@@ -44,8 +42,30 @@ When a Learn Torah course finished a book, the completion event (`kehillah_study
     - The event should show up to three book options, each starting with its genre in grey and then the book's name, plus Choose later.
     - No option should show a raw `[Localize(...)]` or a blank name.
 2. Pick one. The course should go on with that book; the scheme panel and the next completion should name it.
-3. Choose later, then open the Beit Midrash and press **Study this book** on any book.
-    - It should cost no Piety.
-    - It should open "The Text Before You" for that book, and the course should not restart.
+3. Choose later. The Personal Scheme should disappear. Then open the Beit Midrash and press **Study this book** on any book.
+    - It should cost 10 Piety and open **The Text Before You** for that book.
+    - The new Personal Scheme should read **Studying Torah: [that book]**.
 4. Master every book in one genre. That genre's option should disappear.
 5. Check `error.log` for `kehillah_study_offer` or `kehillah_study_torah.0001` lines.
+
+## Switching books — 2026-11-11
+
+**Status:** Implemented. xTiger reports nothing new. Not checked in the game yet.
+
+Daniel: "make the learn button able to replace the current scheme with a confirmation too."
+
+- **The button stays visible** to anyone who could study (`kehillah_lib_study_possible`). On a library you may not read, or for the book you are already reading, it shows greyed, and its tooltip begins with the reason (`KEHILLAH_LIB_STUDY_BLOCKED` plus the scripted GUI's own failed conditions).
+- **Partway through a book** (`kehillah_study_can_switch_book_trigger`: a running course, a current book, not waiting for a choice), the button reads **Study this instead**. It stores the new book and its library (`var:kehillah_study_pending_work_id` / `_library`) and fires `kehillah_study_torah.0008`, "Another Book Calls":
+    - **Set it aside**: `kehillah_study_torah_switch_book_effect`. The course goes on with the new book. The scheme's progress is reset (`reset_scheme_progress`), and the old book's intervention flag and mastery bonus are cleared, as at the end of a book. No Piety: the course was already paid for. Then "The Text Before You" opens.
+    - **Keep reading**: forgets the stored book.
+- **Starting or resuming** a course is unchanged. The generated body moved to `kehillah_lib_study_start_course_effect = { WORK_ID = n }` in `kehillah_library_effects.txt`.
+- **The event names both books** through the new generated custom locs `KehillahStudyCurrentWorkName` and `KehillahStudyPendingWorkName`, in `kehillah_study_torah_custom_loc.txt`.
+- **Regeneration:** only `write_study_gui` and `write_study_custom_loc` were run, because the catalog JSON is being edited elsewhere. Before the change they reproduced the existing files byte for byte.
+
+### Check
+
+1. Mid-course, open a different book: the button reads "Study this instead". Click it: "Another Book Calls" names both books.
+2. Keep reading: nothing changes.
+3. Set it aside: "The Text Before You" opens for the new book, and the scheme's progress bar restarts. No Piety is spent.
+4. Open the book you are reading: the button is greyed, with "You are not already reading this book" under the reason.
+5. Check `error.log` for `KehillahStudyCurrentWorkName`, `kehillah_study_torah.0008` or `kehillah_lib_study_` lines.

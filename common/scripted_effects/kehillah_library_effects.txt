@@ -345,6 +345,11 @@ kehillah_study_specific_work_effect = {
 				has_variable = kehillah_study_mastery_roll
 			}
 			set_variable = { name = kehillah_study_torah_last_result value = 1 }
+			# 2026-11-11: where a first mastery was learned, when away from home.
+			if = {
+				limit = { var:kehillah_learn_torah_repeat ?= 0 }
+				kehillah_lib_record_study_place_effect = { KEY = $KEY$ }
+			}
 			add_to_variable_list = { name = kehillah_mastered_works target = $WORK$ }
 			# Index successful readers once. This lets the shelf show living
 			# rabbis who mastered a selected work without scanning the world.
@@ -652,6 +657,127 @@ kehillah_study_torah_clear_offers_effect = {
 	remove_variable = kehillah_study_offer_3_work
 }
 
+# 2026-11-11 (Daniel: "include place if the book wasn't studied in his own
+# community or kingdom, e.g. at a Yeshiva he was visiting or another community,
+# but otherwise just the title studied in an ordered list"). Scope: the reader,
+# at a first mastery; scope:kehillah_mastery_place = the library or yeshiva
+# title where he learned it. Stores var:kehillah_mastered_at_<KEY> = that title
+# only when it is away from home: not his own library or his community's (his
+# court owner's), and not seated in the realm he lives in (his home's top
+# liege: a landed home's own, an unlanded one's domicile county's). The
+# Learning window (gui/kehillah_learning_window.gui) shows it after the title.
+kehillah_lib_record_mastery_place_effect = {
+	if = {
+		limit = { exists = scope:kehillah_mastery_place }
+		if = {
+			limit = {
+				exists = court_owner
+				NOT = { court_owner = this }
+			}
+			court_owner = { save_temporary_scope_as = kehillah_mastery_home }
+		}
+		else = {
+			save_temporary_scope_as = kehillah_mastery_home
+		}
+		scope:kehillah_mastery_home = {
+			if = {
+				limit = { is_landed = yes }
+				top_liege = { save_temporary_scope_as = kehillah_mastery_realm }
+			}
+			else_if = {
+				limit = { exists = domicile.domicile_location.county.holder }
+				domicile.domicile_location.county.holder.top_liege = { save_temporary_scope_as = kehillah_mastery_realm }
+			}
+		}
+		# The var: read below is also what keeps the engine from logging every
+		# kehillah_mastered_at_<work> as "set but never used" (only the GUI reads it).
+		if = {
+			limit = {
+				NOT = { var:kehillah_mastered_at_$KEY$ ?= scope:kehillah_mastery_place }
+				NOR = {
+					scope:kehillah_mastery_home.primary_title ?= scope:kehillah_mastery_place
+					var:kehillah_own_library ?= scope:kehillah_mastery_place
+					scope:kehillah_mastery_home.var:kehillah_own_library ?= scope:kehillah_mastery_place
+					AND = {
+						exists = scope:kehillah_mastery_realm
+						scope:kehillah_mastery_place.var:kehillah_library_seat.county.holder.top_liege ?= scope:kehillah_mastery_realm
+					}
+				}
+			}
+			set_variable = { name = kehillah_mastered_at_$KEY$ value = scope:kehillah_mastery_place }
+		}
+	}
+}
+
+# Scope: the reader of a Learn Torah course or journey, at a first mastery.
+# The journey's destination when he is abroad (its saved scope carries through
+# kehillah_learn_torah_journey.0007), else the course's library.
+kehillah_lib_record_study_place_effect = {
+	if = {
+		limit = { exists = scope:kehillah_journey_destination_title }
+		scope:kehillah_journey_destination_title = { save_temporary_scope_as = kehillah_mastery_place }
+	}
+	else_if = {
+		limit = { exists = var:kehillah_study_library }
+		var:kehillah_study_library = { save_temporary_scope_as = kehillah_mastery_place }
+	}
+	kehillah_lib_record_mastery_place_effect = { KEY = $KEY$ }
+}
+
+# Scope: the reader; scope:library, the library whose shelf holds the book.
+# The Beit Midrash Study button (kehillah_lib_study_<work>, generated) when no
+# book is open: give a waiting course its next book, free, or start a course
+# for 10 Piety, as the Learn Torah decision costs. Moved here from the
+# generated body 2026-11-11, unchanged.
+kehillah_lib_study_start_course_effect = {
+	set_variable = { name = kehillah_study_library value = scope:library }
+	if = {
+		limit = { kehillah_study_waiting_for_choice_trigger = yes }
+		remove_variable = kehillah_study_choose_later
+	}
+	else = {
+		remove_variable = kehillah_study_choose_later
+		add_piety = -10
+		start_scheme = { type = kehillah_study_torah target_character = root }
+	}
+	kehillah_study_torah_resolve_library_effect = { CHARACTER = root }
+	set_variable = { name = kehillah_study_current_work_id value = $WORK_ID$ }
+	trigger_event = kehillah_study_torah.0002
+}
+
+# 2026-11-11 (Daniel: "make the learn button able to replace the current scheme
+# with a confirmation"). Scope: the reader, from kehillah_study_torah.0008's
+# switch option. The course goes on with the book the Study button named
+# (var:kehillah_study_pending_work_id, from that library); the reading of the old
+# book is lost, as at the end of a book: progress, the one intervention, and
+# any mastery bonus it gave. No Piety: the course was already paid for.
+kehillah_study_torah_switch_book_effect = {
+	if = {
+		limit = {
+			has_variable = kehillah_study_pending_work_id
+			any_scheme = { type = kehillah_study_torah }
+		}
+		if = {
+			limit = { has_variable = kehillah_study_pending_library }
+			set_variable = { name = kehillah_study_library value = var:kehillah_study_pending_library }
+		}
+		kehillah_study_torah_resolve_library_effect = { CHARACTER = root }
+		set_variable = { name = kehillah_study_current_work_id value = var:kehillah_study_pending_work_id }
+		every_scheme = {
+			limit = { scheme_type = kehillah_study_torah }
+			reset_scheme_progress = yes
+		}
+		remove_variable = kehillah_study_torah_pulse_seen
+		remove_variable = kehillah_review_objection_seen
+		remove_variable = kehillah_study_torah_mastery_bonus
+		remove_variable = kehillah_study_choose_later
+		kehillah_study_torah_clear_offers_effect = yes
+		trigger_event = kehillah_study_torah.0002
+	}
+	remove_variable = kehillah_study_pending_work_id
+	remove_variable = kehillah_study_pending_library
+}
+
 kehillah_study_torah_resolve_library_effect = {
 	kehillah_study_torah_find_library_effect = { CHARACTER = $CHARACTER$ }
 	if = {
@@ -705,6 +831,9 @@ kehillah_study_torah_monthly_effect = {
 				kehillah_study_torah_pick_next_work_effect = { LIBRARY = scope:kehillah_study_torah_library }
 			}
 			else = {
+				# 2026-11-11: a book that argues against what a player holds
+				# asks, once a course, whether he will ban it (reviews).
+				kehillah_review_reading_objection_effect = yes
 				# At most one interaction pulse per course, and only a small
 				# chance each month. This replaces the old 12% monthly flavor
 				# event, which made the same book-specific pulse appear too often.
@@ -743,4 +872,15 @@ kehillah_lib_index_yeshiva_readers_effect = {
 			add_to_global_variable_list = { name = kehillah_sefer_masters target = this }
 		}
 	}
+}
+
+# 2026-11-11 (Daniel: "Are there ways we could see the progress of how far
+# along the copying is, where it's being copied from"): when a pending copy
+# began and how many days it takes, for the bookcase plate's progress bar
+# (kehillah_library_commission_progress_value). Run beside every delayed
+# kehillah_library.0003, which clears both on delivery. $DAYS$ is the same
+# value the delivery waits. Scope: the library title.
+kehillah_library_commission_stamp_effect = {
+	set_variable = { name = kehillah_library_commission_started value = kehillah_day_count_value }
+	set_variable = { name = kehillah_library_commission_length value = $DAYS$ }
 }

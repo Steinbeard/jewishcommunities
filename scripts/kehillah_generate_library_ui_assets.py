@@ -90,8 +90,9 @@ for total in (1, 4, 6):
 # Widths must match SPINE_WIDTH in scripts/kehillah_library_catalog.py.
 # ---------------------------------------------------------------------------
 
-SPINE_H = 80
-SPINE_WIDTH = {1: 14, 2: 10, 3: 14, 4: 18, 5: 22, 6: 26, 7: 30}
+# 2026-11-11 (Daniel: "books should be bigger"): painted at 1.25x the old 80 px.
+SPINE_H = 100
+SPINE_WIDTH = {1: 18, 2: 12, 3: 18, 4: 22, 5: 28, 6: 32, 7: 38}
 # Paint source retained alongside the generated DDS strips. Crops are detected
 # by the transparent gutters, so the CK3 sprite dimensions stay exact.
 SPINE_ATLAS = OUT / "kehillah_spine_art_atlas.png"
@@ -345,7 +346,7 @@ def dashed_outline(w, h, color=(58, 36, 20, 235), dash=4, inset=2, fill=(40, 24,
     return im
 
 
-dashed_outline(30, SPINE_H).save(OUT / "kehillah_spine_gap.dds")
+dashed_outline(SPINE_WIDTH[7], SPINE_H).save(OUT / "kehillah_spine_gap.dds")
 
 
 def ribbon():
@@ -609,21 +610,26 @@ def case_frame(size=64, border=10):
     return im
 
 
-def plank(w, h):
-    """An oak shelf seen from the front: a lit top edge, the face, a dark lip."""
-    W, H, S = w * SCALE, h * SCALE, SCALE
-    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    d = ImageDraw.Draw(im)
-    d.rectangle((0, 0, W - 1, H - 1), fill=OAK_SHELF + (255,))
-    d.rectangle((0, 0, W - 1, 2 * S), fill=(206, 160, 104, 255))
-    d.rectangle((0, H - 1 - 2 * S, W - 1, H - 1), fill=(84, 52, 24, 255))
-    rng = random.Random(w * 31 + h)
-    for _ in range(w // 9):
-        x = rng.randrange(0, W)
-        y = rng.randrange(3 * S, max(3 * S + 1, H - 3 * S))
-        d.line([(x, y), (x + rng.randrange(18, 60) * S, y + rng.choice((-1, 0, 1)) * S // 2)],
-               fill=(136, 92, 50, 255), width=max(1, S // 2))
-    return im.resize((w, h), Image.Resampling.LANCZOS)
+def plank(w, h=18):
+    """An oak shelf from the front and a little above: its lit top surface,
+    which the books stand on, a bright arris, the front face, a dark lip.
+    Uniform along its length, so it tiles (see case_compartment)."""
+    im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    px = im.load()
+    top = round(h * 0.33)
+    for y in range(h):
+        for x in range(w):
+            g = 0.04 * math.sin(2 * math.pi * x / 256 * 3 + y * 0.7) + 0.03 * math.sin(2 * math.pi * x / 256 * 7)
+            if y < top:            # the top surface, lighter toward the front edge
+                k = 1.18 + 0.10 * y / max(1, top - 1) + g
+            elif y == top:         # the arris catches the light
+                k = 1.42
+            elif y >= h - 2:       # the lip in shadow
+                k = 0.52
+            else:                  # the front face
+                k = 0.96 - 0.10 * (y - top) / (h - top) + g
+            px[x, y] = (_clamp(OAK_SHELF[0] * k), _clamp(OAK_SHELF[1] * k), _clamp(OAK_SHELF[2] * k), 255)
+    return im
 
 
 def shelf_shadow(w=32, h=16):
@@ -649,7 +655,25 @@ def caption_plate(w=64, h=24, border=6):
 
 case_back().save(OUT / "kehillah_lib_case_back.dds")
 case_frame().save(OUT / "kehillah_lib_case_frame.dds")
-plank(486, 12).save(OUT / "kehillah_lib_shelf_plank.dds")
-plank(486, 14).save(OUT / "kehillah_lib_case_plank.dds")
+plank(486).save(OUT / "kehillah_lib_shelf_plank.dds")
+plank(486).save(OUT / "kehillah_lib_case_plank.dds")
+
+# One empty compartment, 256 x COMPARTMENT_H: the back boards, the shadow of the
+# shelf above, and the shelf at its foot. Tiled down the shelf viewport's growing
+# spacer, it continues the shelves below the last row of books. Its height must
+# match the shelf rows' (the GUI's 486 x 120 shelf widgets).
+COMPARTMENT_H = 120
+
+
+def case_compartment(w=256, h=COMPARTMENT_H):
+    back = case_back()
+    im = back.crop((0, 0, w, h)).copy()
+    shadow = shelf_shadow(w, 18)
+    im.alpha_composite(shadow, (0, 0))
+    im.alpha_composite(plank(w), (0, h - 18))
+    return im
+
+
+case_compartment().save(OUT / "kehillah_lib_case_compartment.dds")
 shelf_shadow().save(OUT / "kehillah_lib_shelf_shadow.dds")
 caption_plate().save(OUT / "kehillah_lib_caption_plate.dds")

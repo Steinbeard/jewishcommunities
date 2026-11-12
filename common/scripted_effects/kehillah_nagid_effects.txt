@@ -135,7 +135,12 @@ kehillah_nagid_step_down_effect = {
 	}
 	kehillah_nagid_serving_clear_effect = yes
 	kehillah_nagid_court_leave_effect = yes
-	hidden_effect = { kehillah_realm_news_add_effect = { KIND = nagid_left } }
+	# An old save may still link an adventurer or courtier to the office.
+	# Record news only while a real community title can be named.
+	if = {
+		limit = { primary_title ?= { is_kehillah_title_trigger = yes } }
+		hidden_effect = { kehillah_realm_news_add_effect = { KIND = nagid_left } }
+	}
 	if = {
 		limit = { has_variable = kehillah_nagid_of }
 		var:kehillah_nagid_of ?= {
@@ -230,11 +235,27 @@ kehillah_nagid_lost_notice_effect = {
 
 kehillah_nagid_quarterly_effect = {
 	if = {
-		limit = { kehillah_is_nagid_trigger = yes }
+		limit = {
+			OR = {
+				kehillah_is_nagid_trigger = yes
+				has_variable = kehillah_nagid_of
+			}
+		}
 		if = {
 			limit = { NOT = { kehillah_nagid_can_hold_trigger = yes } }
 			if = {
-				limit = { primary_title = { kehillah_standing_value < kehillah_nagid_retain_standing } }
+				limit = {
+					NOT = {
+						AND = {
+							government_has_flag = government_is_kehillah
+							primary_title ?= { is_kehillah_title_trigger = yes }
+						}
+					}
+				}
+				kehillah_nagid_lost_notice_effect = { REASON = leadership }
+			}
+			else_if = {
+				limit = { primary_title ?= { kehillah_standing_value < kehillah_nagid_retain_standing } }
 				kehillah_nagid_lost_notice_effect = { REASON = standing }
 			}
 			else_if = {
@@ -260,10 +281,6 @@ kehillah_nagid_quarterly_effect = {
 					}
 				}
 				kehillah_nagid_lost_notice_effect = { REASON = skill }
-			}
-			else_if = {
-				limit = { NOT = { government_has_flag = government_is_kehillah } }
-				kehillah_nagid_lost_notice_effect = { REASON = leadership }
 			}
 			else_if = {
 				limit = { NOT = { kehillah_is_realm_seat_trigger = yes } }

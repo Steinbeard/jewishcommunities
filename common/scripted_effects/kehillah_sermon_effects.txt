@@ -12,9 +12,12 @@
 #   var:kehillah_sermon_step      1 or 2: which text he is choosing
 #   var:kehillah_sermon_cited_1/2 the texts he cited
 #   var:kehillah_sermon_bonus     what his texts add to the sermon
-# Flow: a decision -> kehillah_sermon.0001 (or .0010 for a maggid), the
-# topic -> kehillah_sermon.0002 twice, a text each time (from
-# kehillah_sermon_pick_<topic>_effect, generated) -> delivery.
+# Flow: a decision -> (kehillah_sermon.0003, who preaches, when both the
+# leader and his Dayyan may) -> kehillah_sermon.0001 (or .0010 for a maggid),
+# the topic -> kehillah_sermon.0002 twice, a text each time (from
+# kehillah_sermon_pick_<topic>_effect, generated; a Dayyan who preaches picks
+# his own) -> kehillah_sermon.0004, the delivery: a Diplomacy duel whose odds
+# the option shows (2026-11-11, Daniel).
 # =====================================================================
 
 # Scope: the holder. Forget any earlier sermon.
@@ -32,19 +35,64 @@ kehillah_sermon_clear_effect = {
 	remove_variable = kehillah_sermon_base
 }
 
-# Scope: a Kehillah leader (Deliver a Sermon). He preaches if he may;
-# otherwise his Dayyan does.
+# Scope: a Kehillah leader (Deliver a Sermon). When he and his Dayyan both
+# may preach, he chooses (kehillah_sermon.0003, 2026-11-11, Daniel); otherwise
+# whichever of them may.
 kehillah_sermon_begin_effect = {
 	kehillah_sermon_clear_effect = yes
+	set_variable = { name = kehillah_sermon_title value = primary_title }
 	if = {
+		limit = {
+			kehillah_sermon_preacher_trigger = yes
+			cp:councillor_court_chaplain ?= {
+				NOT = { this = root }
+				kehillah_sermon_preacher_trigger = yes
+			}
+		}
+		trigger_event = kehillah_sermon.0003
+	}
+	else_if = {
 		limit = { kehillah_sermon_preacher_trigger = yes }
 		set_variable = { name = kehillah_sermon_preacher value = this }
+		trigger_event = kehillah_sermon.0001
 	}
 	else = {
 		set_variable = { name = kehillah_sermon_preacher value = cp:councillor_court_chaplain }
+		trigger_event = kehillah_sermon.0001
 	}
-	set_variable = { name = kehillah_sermon_title value = primary_title }
-	trigger_event = kehillah_sermon.0001
+}
+
+# Scope: the holder. The lord who hosts his community, if it is not he:
+# scope:kehillah_sermon_host (2026-11-11: `liege` of a community under no
+# lord is the leader himself, so "Seek the peace of the city" made him
+# respect himself).
+kehillah_sermon_save_host_effect = {
+	save_scope_as = kehillah_sermon_holder_for_host
+	domicile.domicile_location.county.holder.top_liege ?= {
+		if = {
+			limit = { NOT = { this = scope:kehillah_sermon_holder_for_host } }
+			save_scope_as = kehillah_sermon_host
+		}
+	}
+}
+
+# Scope: the holder. A Dayyan who preaches chooses his own texts, as the AI
+# would: the most established, unless ambition draws him to a newer one.
+kehillah_sermon_dayyan_cites_effect = {
+	random_list = {
+		60 = {
+			modifier = { add = 30 var:kehillah_sermon_preacher ?= { has_trait = zealous } }
+			kehillah_sermon_cite_effect = { WHICH = grounded }
+		}
+		30 = {
+			trigger = {
+				exists = var:kehillah_sermon_cand_newer
+				NOT = { var:kehillah_sermon_cand_newer = var:kehillah_sermon_cand_grounded }
+			}
+			modifier = { add = 30 var:kehillah_sermon_preacher ?= { has_trait = ambitious } }
+			kehillah_sermon_cite_effect = { WHICH = newer }
+		}
+	}
 }
 
 # Scope: a maggid (Preach as a Maggid). The community of the county he is in.
@@ -78,6 +126,13 @@ kehillah_sermon_next_text_effect = {
 	save_scope_as = kehillah_sermon_holder
 	var:kehillah_sermon_preacher ?= { kehillah_sermon_pick_$TOPIC$_effect = yes }
 	if = {
+		limit = {
+			exists = var:kehillah_sermon_cand_grounded
+			NOT = { var:kehillah_sermon_preacher ?= this }
+		}
+		kehillah_sermon_dayyan_cites_effect = yes
+	}
+	else_if = {
 		limit = { exists = var:kehillah_sermon_cand_grounded }
 		trigger_event = kehillah_sermon.0002
 	}
@@ -157,20 +212,83 @@ kehillah_sermon_deliver_effect = {
 		set_variable = { name = kehillah_sermon_amount value = kehillah_sermon_pillar_gain_novice }
 	}
 	change_variable = { name = kehillah_sermon_amount add = var:kehillah_sermon_bonus }
+	# 2026-11-11 (Daniel): the delivery is a roll the player sees.
+	trigger_event = kehillah_sermon.0004
+}
 
-	if = {
-		limit = { is_ai = no }
-		send_interface_toast = {
-			type = event_toast_text_and_effect_good
-			title = kehillah_sermon_delivered_toast
-			left_icon = scope:kehillah_sermon_preacher
-			kehillah_sermon_outcome_effect = yes
+# Scope: the holder, in kehillah_sermon.0004's option. The roll: the
+# preacher's Diplomacy against a decent speaker's, his texts, his manner and
+# any ban on him. Its odds and their reasons show in the option's tooltip.
+kehillah_sermon_roll_effect = {
+	scope:kehillah_sermon_preacher = {
+		duel = {
+			skill = diplomacy
+			value = decent_skill_rating
+			50 = {
+				desc = kehillah_sermon_roll_success
+				compare_modifier = { value = scope:duel_value multiplier = 3 }
+				modifier = {
+					add = scope:kehillah_sermon_holder.var:kehillah_sermon_bonus
+					desc = kehillah_sermon_roll_texts
+					scope:kehillah_sermon_holder.var:kehillah_sermon_bonus > 0
+				}
+				modifier = { add = kehillah_sermon_roll_trait_good desc = kehillah_sermon_roll_gregarious has_trait = gregarious }
+				modifier = { add = kehillah_sermon_roll_trait_good desc = kehillah_sermon_roll_zealous has_trait = zealous }
+				modifier = { add = kehillah_sermon_roll_trait_good desc = kehillah_sermon_roll_theologian has_trait = theologian }
+				modifier = { add = kehillah_sermon_roll_trait_small desc = kehillah_sermon_roll_compassionate has_trait = compassionate }
+				modifier = { add = kehillah_sermon_roll_trait_small desc = kehillah_sermon_roll_humble has_trait = humble }
+				modifier = { add = kehillah_sermon_roll_trait_bad desc = kehillah_sermon_roll_shy has_trait = shy }
+				modifier = { add = kehillah_sermon_roll_trait_bad desc = kehillah_sermon_roll_stuttering has_trait = stuttering }
+				modifier = { add = kehillah_sermon_roll_trait_bad desc = kehillah_sermon_roll_lisping has_trait = lisping }
+				modifier = { add = kehillah_sermon_roll_trait_small_bad desc = kehillah_sermon_roll_arrogant has_trait = arrogant }
+				modifier = {
+					add = kehillah_sermon_roll_niddui
+					desc = kehillah_sermon_roll_niddui_desc
+					kehillah_sermon_preacher_banned_trigger = yes
+					NOT = { kehillah_cherem_in_full_trigger = yes }
+				}
+				modifier = {
+					add = kehillah_sermon_roll_herem
+					desc = kehillah_sermon_roll_herem_desc
+					kehillah_cherem_in_full_trigger = yes
+				}
+				min = 5
+				scope:kehillah_sermon_holder = {
+					if = {
+						limit = { is_ai = no }
+						send_interface_toast = {
+							type = event_toast_text_and_effect_good
+							title = kehillah_sermon_delivered_toast
+							left_icon = scope:kehillah_sermon_preacher
+							kehillah_sermon_outcome_effect = yes
+						}
+					}
+					else = {
+						kehillah_sermon_outcome_effect = yes
+					}
+				}
+			}
+			50 = {
+				desc = kehillah_sermon_roll_failure
+				compare_modifier = { value = scope:duel_value multiplier = -3 }
+				min = 5
+				scope:kehillah_sermon_holder = {
+					if = {
+						limit = { is_ai = no }
+						send_interface_toast = {
+							type = event_toast_text_and_effect_bad
+							title = kehillah_sermon_flat_toast
+							left_icon = scope:kehillah_sermon_preacher
+							scope:kehillah_sermon_preacher = { add_stress = kehillah_sermon_flat_stress }
+						}
+					}
+					else = {
+						scope:kehillah_sermon_preacher = { add_stress = kehillah_sermon_flat_stress }
+					}
+				}
+			}
 		}
 	}
-	else = {
-		kehillah_sermon_outcome_effect = yes
-	}
-	kehillah_sermon_clear_effect = yes
 }
 
 # Scope: the holder, within kehillah_sermon_deliver_effect (its saved scopes
@@ -192,7 +310,7 @@ kehillah_sermon_outcome_effect = {
 	}
 	else_if = {
 		limit = { var:kehillah_sermon_topic ?= flag:peace }
-		liege ?= {
+		scope:kehillah_sermon_host ?= {
 			kehillah_shift_outlook_effect = { AMOUNT = kehillah_sermon_peace_outlook }
 			add_opinion = {
 				target = scope:kehillah_sermon_holder

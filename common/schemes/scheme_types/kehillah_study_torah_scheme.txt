@@ -53,20 +53,20 @@ kehillah_study_torah = {
 	# classics's own identical choice.
 	freeze_scheme_when_traveling = yes
 
-	# Parameters -- copied verbatim from study_confucian_classics (see
-	# this file's own header for why): a generic, non-adversarial personal
-	# pursuit, the closest confirmed vanilla shape to what this needs.
-	# Learning is the rabbi's study speed: each point removes 2.5 days
-	# from the effective progress time, so stronger scholars finish sooner.
-	speed_per_skill_point = -2.5
+	# A reading takes roughly four to eight months across ordinary Learning
+	# scores. Learning shortens the course as well as improving the separate
+	# per-book mastery roll when the reading ends.
+	speed_per_skill_point = -5
 	spymaster_speed_per_skill_point = 0
 	uses_resistance = no
 
-	# 730 days (2 years) for an otherwise average scholar. Learning further
-	# reduces the effective duration through speed_per_skill_point above.
-	base_progress_goal = 730
-	base_maximum_success = 95
-	minimum_success = 5
+	base_progress_goal = 240
+	# Every completed course reaches its reading event. The scheme's native
+	# success roll has no effect on mastery; the chosen book's script value
+	# supplies that roll in kehillah_study_specific_work_effect. Keep the
+	# scheme panel's generic Success Chance from advertising a false 30%.
+	base_maximum_success = 100
+	minimum_success = 100
 
 	# Core Triggers -- BROADENED 2026-09-19, same-day follow-up ("make this
 	# available to non-Kehilla ruler Jews too... Jewish unlanded
@@ -111,8 +111,8 @@ kehillah_study_torah = {
 		kehillah_study_torah_has_accessible_library_trigger = { CHARACTER = scope:owner }
 	}
 
-	# Prediction only -- see this file's own header on why nothing actually
-	# branches on the roll this feeds. base_odds_prediction_target_is_char_
+	# Prediction only -- see above on why nothing actually branches on
+	# this roll. base_odds_prediction_target_is_char_
 	# value is the same vanilla value learn_language_scheme.txt itself uses
 	# for its own (also target_type = character) odds_prediction.
 	odds_prediction = {
@@ -120,17 +120,15 @@ kehillah_study_torah = {
 		min = 0
 	}
 
+	# The native scheme tooltip is a completion indicator, not the mastery
+	# roll. Use a named modifier instead of an opaque "Base +100" so that the
+	# panel itself explains both its meaning and where the player can inspect
+	# the real, book-specific calculation.
 	base_success_chance = {
-		base = 10
+		base = 0
 		modifier = {
-			add = scope:owner.learning
-			desc = kehillah_study_torah_scheme_learning_modifier
-		}
-		modifier = {
-			add = 20
-			desc = kehillah_study_torah_scheme_rabbi_modifier
-			# 2026-11-08: or any Karaite (Karaites have no clergy).
-			scope:owner = { kehillah_rabbi_or_karaite_trigger = yes }
+			add = 100
+			desc = KEHILLAH_STUDY_TORAH_COMPLETION_FACTOR
 		}
 	}
 
@@ -146,6 +144,8 @@ kehillah_study_torah = {
 				kehillah_study_torah_resolve_current_work_effect = yes
 			}
 			remove_variable = kehillah_study_torah_pulse_seen
+			# 2026-11-11: a new course may raise a new objection (reviews).
+			remove_variable = kehillah_review_objection_seen
 			trigger_event = kehillah_study_torah.0001
 		}
 		reset_scheme_progress = yes
@@ -155,7 +155,15 @@ kehillah_study_torah = {
 		save_scope_as = scheme
 		scheme_owner = {
 			save_scope_as = owner
-			kehillah_study_torah_monthly_effect = yes
+			# Saves made before 2026-11-12 can retain the former "choose later"
+			# targetless continuation. Retire it on the next monthly tick; new
+			# choices end the scheme directly in event .0001.
+			if = {
+				limit = { has_variable = kehillah_study_choose_later }
+				remove_variable = kehillah_study_choose_later
+				scope:scheme = { end_scheme = yes }
+			}
+			else = { kehillah_study_torah_monthly_effect = yes }
 		}
 	}
 

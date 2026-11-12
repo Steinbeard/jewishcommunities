@@ -104,23 +104,21 @@ it's the one deliberately kept current.
    settle, write it down (a new doc or an addition to ROADMAP's backlog) rather than deciding
    silently — future sessions (including yourself) rely on the docs being the memory.
 
-## Parallel Codex checkout and CK3 test instance — 2026-10-14, Daniel's direction
+## Shared worktree and CK3 test instance - 2026-11-11, Daniel's direction
 
-Codex and Claude may develop and live-test at the same time. Keep **both the files and the game
-instance separate**. The tested setup and its limits are recorded in
+Codex and Claude may develop and live-test at the same time. The shared checkout is the normal
+place for implementation, particularly when Daniel has an open human-testing CK3 instance using
+it. Keep game instances separate. The tested setup and its limits are recorded in
 [the isolated CK3 setup](docs/testing/2026-10-13-isolated-ck3-setup.md) and
 [the Domain live check](docs/testing/2026-10-14-domain-main-merge-check.md).
 
-- **Code checkout:** The Codex working copy is
-  `C:\Users\Daniel\.codex\worktrees\jewish-festival-observance\jewishcommunities`. This is a
-  separate Git **worktree** of the same repo. Its branch changes per unit under the feature-branch
-  workflow above; do not assume a long-lived branch name. Run `git rev-parse --show-toplevel`,
-  `git status -sb`, and `git rev-parse --abbrev-ref HEAD` before editing; pass this directory as
-  the working directory to shell tools. The primary
-  `C:\Users\Daniel\Documents\Paradox Interactive\Crusader Kings III\mod\jewishcommunities`
-  checkout is Claude's working copy and may contain uncommitted changes. Do not edit, reset,
-  switch branches, or clean it. If the Codex worktree is missing, create or attach a separate
-  worktree and update its test-mod registration; never silently fall back to the primary checkout.
+- **Code checkout:** Use the shared main worktree,
+  `C:\Users\Daniel\Documents\Paradox Interactive\Crusader Kings III\mod\jewishcommunities`,
+  by default. Prefer it when an open human-testing CK3 instance is mounted from it, so changes can
+  be validated without remounting the mod. Before editing, run `git rev-parse --show-toplevel`,
+  `git status -sb`, and `git rev-parse --abbrev-ref HEAD`. Preserve unrelated uncommitted work;
+  never reset, clean, switch branches, or overwrite another agent's changes. Use a separate
+  worktree only when Daniel asks for isolation or concurrent work would conflict materially.
 - **Game/profile:** Prefer the worktree's `scripts/kehillah_isolated_ck3_test.ps1 -Visible`, which
   registers that checkout in `C:\Users\Daniel\.codex\ck3-test\festival-observance` and launches
   CK3 with a separate `-userdir` for saves, settings, mod selection, and logs. Its hidden boot was

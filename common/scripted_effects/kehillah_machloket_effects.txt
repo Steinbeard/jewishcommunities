@@ -46,6 +46,46 @@ kehillah_machloket_start_effect = {
 	set_variable = { name = kehillah_mk_condemn value = 0 }
 	set_global_variable = { name = kehillah_wk_$KEY$_mk_cooldown value = yes days = 10950 }
 	save_scope_as = kehillah_mk_rite
+	# Put actual people on both sides before the player receives the letters.
+	# The later vote still decides the weights; these are the named scholars
+	# who brought the argument into public view.
+	random_in_global_list = {
+		variable = kehillah_libraries
+		limit = {
+			exists = holder
+			holder = {
+				is_alive = yes
+				is_ai = yes
+				learning >= 8
+				rite = { this = scope:kehillah_mk_rite }
+				is_target_in_variable_list = { name = kehillah_mastered_works target = flag:$KEY$ }
+			}
+		}
+		holder = {
+			save_temporary_scope_as = kehillah_mk_opening_champion
+			scope:kehillah_mk_rite = {
+				set_variable = { name = kehillah_mk_champion value = scope:kehillah_mk_opening_champion }
+			}
+		}
+	}
+	random_in_global_list = {
+		variable = kehillah_libraries
+		limit = {
+			exists = holder
+			holder = {
+				is_alive = yes
+				is_ai = yes
+				learning >= 8
+				rite = { this = scope:kehillah_mk_rite }
+			}
+		}
+		holder = {
+			save_temporary_scope_as = kehillah_mk_opening_critic
+			scope:kehillah_mk_rite = {
+				set_variable = { name = kehillah_mk_critic value = scope:kehillah_mk_opening_critic }
+			}
+		}
+	}
 	every_in_global_list = {
 		variable = kehillah_libraries
 		limit = {
@@ -197,6 +237,16 @@ kehillah_machloket_resolve_effect = {
 			set_variable = { name = kehillah_standing_$KEY$ value = 0 }
 			set_variable = { name = kehillah_anathema_$KEY$ value = yes years = kehillah_anathema_years }
 			set_variable = { name = kehillah_mk_outcome value = 3 }
+		}
+		# 2026-11-11 cherem track: its living author pays for it.
+		save_scope_as = kehillah_cherem_rite
+		if = {
+			limit = { var:kehillah_mk_outcome = 3 }
+			kehillah_cherem_author_effect = { KEY = $KEY$ AMOUNT = kehillah_cherem_book_anathema_points }
+		}
+		else_if = {
+			limit = { var:kehillah_standing_$KEY$ <= 1 }
+			kehillah_cherem_author_effect = { KEY = $KEY$ AMOUNT = kehillah_cherem_book_banned_points }
 		}
 		faith = { kehillah_sefer_work_popularity_$KEY$_effect = { AMOUNT = -5 } }
 		random = {

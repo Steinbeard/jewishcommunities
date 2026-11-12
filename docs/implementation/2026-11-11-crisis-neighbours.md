@@ -98,6 +98,77 @@ the player. A copies the earthquake's shape; B is A in group `minor`; C is A wit
 window, icon and illustration. A restart is needed first. Delete the test types once the answer
 is in.
 
+**Result:** A (Troyes), B (Langres) and C (Sens) all started cleanly, and **none showed a pin**,
+not even the earthquake-shaped A. So neither the group type nor the window and icon settings is
+the cause. A still differs from the earthquake in two ways:
+
+- **Participants.** A has none; the earthquake auto-adds the landed rulers of the area.
+- **Icons.** Every vanilla situation type has an icon file named after its key in
+  `gfx/interface/icons/situation_types/`. No type in this mod has one, the crisis included.
+
+Two more tests check these. **D** auto-adds rulers and starts in Paris. **E** gets a copy of the
+earthquake's icon as its type icon file, plus sub-region and phase icons, and starts in Reims. The
+probe is `run\kehillah_pin_test2.txt`. If E shows a pin, the fix for the crisis is just a
+`kehillah_community_crisis.dds` in that folder.
+
+**Correction (Daniel, later 2026-11-11):** the first probe's pins *were* there; Daniel had been
+looking in the wrong place. **A (Troyes) and C (Sens) showed a pin; B (Langres) did not.** C's pin
+carried the crisis's torch-and-pitchfork icon; A's was blank, having no icon. So the window,
+custom GUI, icon and illustration are fine, participants are not needed, and no type icon file is
+needed. **The only thing that hides the pin is `situation_group_type = minor`.** Vanilla's
+`00_situation_group_types.txt` marks `minor` as "referred to in code", and its only vanilla user,
+the Silk Road, has no pin either. `natural_disasters` is not referred to in code and has only a
+`sort_order`. Tests D and E are therefore unnecessary.
+
+**Fix (applied later 2026-11-11, at Daniel's request with CK3 open; xTiger reports nothing new):** a mod group type, `kehillah_communal` (`sort_order = 50`, between `minor` and
+`struggles`), in `common/situation/situation_group_types/kehillah_situation_group_types.txt`,
+with `situation_group_type_kehillah_communal` loc, and the crisis moved to it. A mod group rather
+than `natural_disasters`, so a pogrom isn't filed under natural disasters in the Situations list.
+The decree and trial situations are also `minor`; whether they get pins is a separate choice. To
+be confirmed after a restart: a group type change is unlikely to take effect on hot reload.
+
+**Result after a restart:** Granada's crisis, now in `kehillah_communal`, still showed no pin,
+including after its centre was moved to the county capital (probe `run\kehillah_pin_capital.txt`).
+Daniel leads Granada, so he takes part in the crisis, and test C had no participants. The next
+probe, `run\kehillah_pin_leave.txt`, removes the player, to test whether the engine hides the pin
+of a situation the player is in. **Result: still no pin.** One difference remains: test C was
+started fresh, while Granada's crisis was started before the group change, and the engine may
+decide on a pin only when a situation starts. `run\kehillah_pin_fresh.txt` starts a new crisis in
+an AI community beyond medium distance from the player, so the player is not a participant.
+**Result: no pin on the fresh crisis either.**
+
+**Conclusion (supersedes the `minor` reading above):** the engine draws situation pins only for
+the vanilla group `natural_disasters`. Every situation that showed one was in that group (the
+earthquake, tests A and C). Every one that didn't was in another: B in `minor`, and the crisis in
+`minor` and then in `kehillah_communal`. Vanilla's zoom setting for the pins is even named
+`NATURAL_DISASTERS_VISIBLE_ZOOM_STEPS` (`{ 0 19 }` in `00_graphics.txt`). So the crisis is now in
+`natural_disasters`, and the `kehillah_communal` group and its loc are removed. The cost is that
+the crisis is listed under vanilla's "Natural Disaster" heading in the Situations panel. Overriding
+the loc `situation_group_type_natural_disasters` to a broader label would fix that, but it would
+also rename vanilla's heading; that's left as Daniel's call. Vanilla's natural-disaster tutorial
+checks situation *types*, so it isn't triggered by the crisis.
+
+**Verified live (Daniel, later 2026-11-11):** after a restart, a fresh crisis in Rouen showed its
+torch-and-pitchfork pin over Rouen, with the sub-region outlined in red. Daniel was not a
+participant. The probes `kehillah_pin_capital` and `kehillah_pin_leave` are deleted;
+`kehillah_pin_fresh` (start a new crisis far away) and `kehillah_crisis_join` are kept.
+
+**Decree and trial (later 2026-11-11, at Daniel's request):** `kehillah_decree_situation` and
+`kehillah_trial_situation` moved from `minor` to `natural_disasters` too. Both already set an icon
+and a centre province (the new leader's quarter), so their pins should appear for any decree or
+trial started after a restart. Not yet checked live.
+
+**Pin lost on hot reload (later 2026-11-11):** that edit (23:07) hot-reloaded the crisis file in
+Daniel's open game, and Rouen's pin disappeared. The group change itself hot-reloaded at 23:03,
+before the Rouen crisis started. Open question, which matters for real play: does a pin come back
+after a save is loaded? Tests: `run\kehillah_pin_recenter.txt` re-sets every crisis centre; then
+save, reload and look again. If loading drops pins and re-setting the centre restores them, the fix
+is to re-set the centre in the crisis's load-time or quarterly sync.
+
+**Cleanup (later 2026-11-11):** the test types A–E, their loc, the copied icon and the probes
+`kehillah_pin_capital`, `kehillah_pin_control_earthquake`, `kehillah_pin_test` and
+`kehillah_pin_test2` are deleted. The probe `run\kehillah_crisis_join.txt` is kept.
+
 ## Change 1 (explained, not built)
 
 `map_mode = sub_regions` would colour the crisis county red in vanilla's *situation* map mode.

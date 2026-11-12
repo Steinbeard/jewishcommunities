@@ -288,3 +288,36 @@ Each citation adds quality by the work's standing and counts toward its gate onc
 3. Hokhmah's popularity in your faith rises by 2, not 1.
 4. A yeshiva student mastering a Machshavah book: over several ticks, some gain a leaning
    (`kehillah_leaning_<tenet>`). `error.log` stays clean.
+
+## Addendum: who preaches, the delivery roll, and the host (2026-11-11, later)
+
+Daniel: "we should make sermons include rolls in the tooltip, with success based on diplomacy,
+books cited, personality traits"; "Is this a bug that it raises your own opinion of yourself?";
+"Maybe that can be a choice too if you're a rabbi yourself but your dayyan is more competent. If
+your dayyan gives the sermon I guess you don't choose the citations, but the Dayyan does."
+
+- **Who preaches** (`kehillah_sermon.0003`): when the leader and his Dayyan may both preach, the
+  leader chooses. Otherwise whichever may, as before. The AI leans to the better speaker and away
+  from one under a ban.
+- **A Dayyan who preaches chooses his own texts** (`kehillah_sermon_dayyan_cites_effect`): the most
+  established, more so if Zealous; a newer one at a lower weight, more so if Ambitious. The leader
+  still chooses the topic.
+- **The delivery is a roll the player sees** (`kehillah_sermon.0004`, `kehillah_sermon_roll_effect`):
+  vanilla's Diplomacy `duel` against a decent speaker (12), 50/50 moved 3 per point of difference,
+  so the option's tooltip shows the odds and their reasons:
+  - the texts cited: their gain (grounded 8, newer 4 each);
+  - Gregarious, Zealous, Theologian +10; Compassionate, Humble +5; Arrogant −5; Shy, Stuttering,
+    Lisping −15;
+  - Niddui −20, In Herem −40 (this replaces the hidden "empty benches" chance of the reviews
+    spec's revision);
+  - at least 5 each way.
+  Success: the sermon's effects as before, in a toast. Failure: it falls flat, no effect, the
+  preacher gains 15 stress. The delivery event names the texts.
+- **Bug fixed: "Seek the peace of the city"** used `liege`, which for a community under no lord is
+  the leader himself, so he gained Respect for himself. It now reads the lord who hosts the
+  community (the top liege of its quarter's county holder, `kehillah_sermon_save_host_effect`), and
+  is offered only when that lord is someone else.
+
+Live test (Daniel): as a rabbi leader with a rabbi Dayyan, Deliver a Sermon asks who preaches;
+choosing the Dayyan skips the text events; the final option's tooltip shows the chance with its
+reasons; a toast reports the result. A community under no lord offers no "peace" topic.
