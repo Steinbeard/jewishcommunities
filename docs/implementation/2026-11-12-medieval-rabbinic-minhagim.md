@@ -1,6 +1,7 @@
 # Medieval Rabbinic Minhagim: first implementation slice
 
-**Status: built 2026-11-12; source and xTiger checked, live scripted test pending.** Implements
+**Status: built 2026-11-12; expanded 2026-11-12 to Italian/Byzantine 867 communities; source and
+xTiger checked, live scripted test pending.** Implements
 the first slice of [the rite design](../spec/2026-11-11-medieval-rabbinic-minhagim-and-karaite-kehillot.md).
 This stays on the current Sefarim feature branch because rite-specific canon is implemented in the
 existing catalog and library system.
@@ -12,9 +13,11 @@ existing catalog and library system.
 - Adds `minhag_yerushalmi` and `minhag_sepharad` rite types. The rite types share the Rabbinic
   faith and its faith-level doctrines; their localized descriptions identify their regional
   custom.
-- At start, Jerusalem's community and county follow Minhag Yerushalmi in all three bookmarks;
-  Tiberias follows it in 867. Sephardi characters and counties follow Minhag Sepharad from 1066.
-  Rite seeding runs before community libraries are initialized.
+- At start, Jerusalem's community and county follow Minhag Yerushalmi in all three bookmarks.
+  In 867, Tiberias, Rome, Lucca, Bari, Oria, Palermo and Constantinople join it, representing
+  Palestinian-influenced local custom across the represented Italian/Byzantine communities.
+  Sephardi characters and counties follow Minhag Sepharad from 1066. Rite seeding runs before
+  community libraries are initialized.
 - The catalog supports rite-specific canon. Mishnah and the four extant Yerushalmi divisions are
   foundational in Minhag Yerushalmi; the six Bavli divisions are outside its canon. Other
   Rabbinic rites follow the Bavli. A Yerushalmi community library starts with Mishnah and its four
@@ -59,7 +62,8 @@ Sources consulted:
 
 In disposable 867, 1066, and 1178 saves, log `rite:rabbinism.head_of_rite`,
 `rite:minhag_yerushalmi`, `rite:minhag_sepharad`, the relevant title holders, the Jerusalem/Tiberias
-county rites, and each library's `kehillah_library_tradition` and work list. Confirm the 867 Gaon
+and Italian/Byzantine community holders, their county rites, and each library's
+`kehillah_library_tradition` and work list. Confirm the 867 Gaon
 is Amram; 1066 has no head; 1178's head is Samuel; Yerushalmi has four divisions plus Mishnah and
 no Bavli orders; Sepharad is created in 1066 and 1178, not 867. Check `error.log` against a clean
 kehillah-tagged baseline. The in-game rename can be checked on the faith and rite panels after

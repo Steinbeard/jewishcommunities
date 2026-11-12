@@ -1,7 +1,8 @@
 # Medieval Rabbinic Minhagim and Karaite Kehillot
 
-**Status: first rite-and-library slice built 2026-11-12; source checked, live test pending.**
-Requested by Daniel; the historical framing and mainline choice below are settled. The build uses the existing
+**Status: first rite-and-library slice built 2026-11-12; expanded to the Italian/Byzantine 867
+seats 2026-11-12; source checked, live test pending.** Requested by Daniel; the historical framing
+and mainline choice below are settled. The build uses the existing
 rite, Sefer and Kehillah systems. This extends [V45, Rabbinic synods and Minhag Ashkenaz](v45-rabbinic-synods-and-minhag-ashkenaz.md),
 [V47, the Gaon and the seat of the Sanhedrin](v47-gaon-and-the-seat-of-the-sanhedrin.md),
 [V51, bookmark rosters](v51-bookmark-rosters.md), and the standing/catalog rules in
@@ -19,10 +20,15 @@ head it again. The existence of regional minhagim does not by itself imply centr
 
 ## What the bookmarks represent
 
-- **867 — Babylonian scholarly primacy, with Palestinian custom.** Rabbinism is the mainline
-  Babylonian rite; Sura is its institutional center and Amram is Gaon. A small Land of Israel
-  community follows Minhag Yerushalmi. There is no Sepharad rite yet: it is too early to turn later
-  regional liturgical identities into a dated engine split. Karaism is an existing minority
+- **867 — Babylonian scholarly primacy, with a wider Palestinian-custom zone.** Rabbinism is the
+  mainline Babylonian rite; Sura is its institutional center and Amram is Gaon. Jerusalem and
+  Tiberias follow Minhag Yerushalmi, as do the represented Italian communities (Rome, Lucca,
+  Bari, Oria and Palermo) and Constantinople. This is an abstraction for Palestinian influence
+  on local liturgy and custom in the Byzantine sphere; it does not imply independent local
+  academies or displace Geonic authority over Talmudic interpretation. The place-specific evidence
+  is uneven, so the wider Italian/Byzantine assignment is a gameplay regionalization rather than
+  proof of a uniform rite in each town. There is no Sepharad rite yet: it is too early to turn
+  later regional liturgical identities into a dated engine split. Karaism is an existing minority
   tradition; represent only a specifically attested community, without calling the whole host
   county Karaite.
 - **1066 — regional traditions are clearer, authority is dispersed.** Minhag Ashkenaz is already
@@ -77,11 +83,24 @@ less authoritative in the later rabbinic mainstream, while remaining a living so
 The game's standing/canon distinction should express this difference without making it alien or
 forbidden to Bavli communities. See [the overview of the two Talmudim](https://daat.ac.il/daat/vl/guide/guide01.pdf).
 
+For the 867 geographic abstraction, Palestinian prayer traditions persisted especially in the
+Byzantine sphere; the Greek-speaking Jewish Romaniote rite is described as Palestinian-influenced.
+In Apulia, ninth-century Jewish poets used Palestinian *piyyut* models, while a study of southern
+Italy describes a mid-ninth-century transition from Palestinian to Babylonian rabbinic influence.
+This supports modeling a Palestinian-custom zone across the extant Italian/Byzantine seats in the
+867 roster, but not a claim that every named community used the Yerushalmi as its exclusive legal
+text or that every local practice was identical. The choice intentionally follows Daniel's modeling
+judgment that local customs could persist while Geonic scholars retained authority over
+Talmudic interpretation. Sources: [Lacerenza, “Hebrew in Italy: Middle Ages”](https://unora.unior.it/retrieve/handle/11574/30960/1029/Lacerenza%202013%20Hebrew%20in%20Italy%20-%20Roman%20Period.pdf),
+[“Palestinian and Babylonian Traditions in Italy”](https://www.hemdat.ac.il/wp-content/uploads/2019/12/%D7%94%D7%A8%D7%99%D7%93-%D7%91%D7%90%D7%A0%D7%92%D7%9C%D7%99%D7%AA.pdf),
+and [*Blessings and Thanksgivings*, chapter 11](https://research.vu.nl/ws/portalfiles/portal/139355381/Blessings_and_Thanksgivings.pdf).
+
 ## Build record
 
 Built: Minhag Bavli is the display name for internal `rite:rabbinism`; faith remains Rabbinic
 Judaism. Minhag Yerushalmi and Minhag Sepharad are seeded regionally at game start. Jerusalem is
-Yerushalmi at 867, 1066 and 1178; Tiberias joins it in 867. Sephardi characters/counties receive
+Yerushalmi at 867, 1066 and 1178; in 867 Tiberias, Rome, Lucca, Bari, Oria, Palermo and
+Constantinople join it. Sephardi characters/counties receive
 Minhag Sepharad from 1066. The four catalogued Yerushalmi divisions and Mishnah seed Yerushalmi
 libraries; rite-specific canon marks these foundational and marks Bavli outside that rite's canon.
 The Rosh Yeshiva's complete-corpus check accepts the four extant Yerushalmi divisions. Amram ben
