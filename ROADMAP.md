@@ -17,6 +17,16 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+**Medieval Rabbinic Minhagim — first implementation slice BUILT 2026-11-12; xTiger source
+check clean for changed files, live probe pending:** the faith remains Rabbinic Judaism and the
+mainline `rabbinism` rite displays as Minhag Bavli. Minhag Yerushalmi has a distinct foundational
+Talmud Yerushalmi canon and is seeded in Jerusalem (and Tiberias in 867); Minhag Sepharad is
+seeded in Sephardi communities from 1066. The 867/1066/1178 Gaonate holders are set historically.
+No existing community is labeled Karaite: the evidence found Karaite presence at Toledo/Talavera
+and important minority congregations in Fustat and Constantinople, but no proven majority locality
+that fits one community per place. Live initialization checks for rite creation, canon, and title
+holders remain pending. See [the implementation record](docs/implementation/2026-11-12-medieval-rabbinic-minhagim.md).
+
 **Cherem leadership and realm-office forfeiture BUILT - 2026-11-11, source checked,
 live test pending:** leaving communal leadership now clears the realm Jewish
 headship and its associated court service through the shared departure path;

@@ -86,6 +86,100 @@ kehillah_apply_ashkenaz_rite_effect = {
 	}
 }
 
+# ---------------------------------------------------------------------
+# Seed the other regional Rabbinic minhagim for the selected bookmark.
+# Jerusalem/Tiberias are represented by their own dominant local rite;
+# Sepharad is assigned to Sephardi characters and counties from 1066 on.
+# The community title remains singular, so this does not create parallel
+# Rabbanite/Karaite communities in one county.
+# ---------------------------------------------------------------------
+kehillah_seed_minhag_yerushalmi_effect = {
+	if = {
+		limit = {
+			NOT = { exists = global_var:kehillah_minhag_yerushalmi_founded }
+			exists = title:d_kehillah_jerusalem.holder
+		}
+		title:d_kehillah_jerusalem.holder = {
+			create_rite_from_type = {
+				type = minhag_yerushalmi
+				convert = yes
+			}
+		}
+		set_global_variable = { name = kehillah_minhag_yerushalmi_founded value = yes }
+	}
+	if = {
+		limit = { exists = rite:minhag_yerushalmi }
+		# Jerusalem's community is present at all three bookmarks.
+		title:d_kehillah_jerusalem.holder ?= {
+			if = { limit = { faith = faith:rabbinic_faith } set_character_rite = rite:minhag_yerushalmi }
+			every_courtier = {
+				limit = { faith = faith:rabbinic_faith }
+				set_character_rite = rite:minhag_yerushalmi
+			}
+		}
+		title:d_kehillah_jerusalem.title_capital_county ?= {
+			if = { limit = { faith = faith:rabbinic_faith } set_county_rite = rite:minhag_yerushalmi }
+		}
+		# Tiberias is an 867-only bookmark community in the current roster.
+		if = {
+			limit = { game_start_date < 900.1.1 exists = title:d_kehillah_tiberias.holder }
+			title:d_kehillah_tiberias.holder = {
+				if = { limit = { faith = faith:rabbinic_faith } set_character_rite = rite:minhag_yerushalmi }
+				every_courtier = {
+					limit = { faith = faith:rabbinic_faith }
+					set_character_rite = rite:minhag_yerushalmi
+				}
+			}
+			title:d_kehillah_tiberias.title_capital_county ?= {
+				if = { limit = { faith = faith:rabbinic_faith } set_county_rite = rite:minhag_yerushalmi }
+			}
+		}
+	}
+}
+
+kehillah_seed_minhag_sepharad_effect = {
+	if = {
+		limit = {
+			game_start_date >= 1000.1.1
+			NOT = { exists = global_var:kehillah_minhag_sepharad_founded }
+			OR = {
+				exists = title:d_kehillah_granada.holder
+				exists = title:d_kehillah_toledo.holder
+			}
+		}
+		if = {
+			limit = { exists = title:d_kehillah_granada.holder }
+			title:d_kehillah_granada.holder = {
+				create_rite_from_type = { type = minhag_sepharad convert = yes }
+			}
+		}
+		else = {
+			title:d_kehillah_toledo.holder = {
+				create_rite_from_type = { type = minhag_sepharad convert = yes }
+			}
+		}
+		set_global_variable = { name = kehillah_minhag_sepharad_founded value = yes }
+	}
+	if = {
+		limit = { exists = rite:minhag_sepharad }
+		every_living_character = {
+			limit = {
+				faith = faith:rabbinic_faith
+				culture = culture:sephardi
+				NOT = { rite = rite:minhag_ashkenaz }
+			}
+			set_character_rite = rite:minhag_sepharad
+		}
+		every_county = {
+			limit = {
+				faith = faith:rabbinic_faith
+				culture = culture:sephardi
+			}
+			set_county_rite = rite:minhag_sepharad
+		}
+	}
+}
+
 
 # ---------------------------------------------------------------------
 # Open a synod inside a Sitting of the Bet Din. Scope: the host, from

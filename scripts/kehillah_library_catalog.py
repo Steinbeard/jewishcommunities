@@ -310,9 +310,31 @@ def write_values(order, works):
     out += ["", "# 0 stands alone, 1 a Bavli seder, 2 a Yerushalmi seder, 3 a division of the Tanakh"]
     for f in order:
         out.append(f"kehillah_lib_corpus_{f} = {CORPORA[works[f]['corpus']]}")
-    out += ["", "# canon tier, fixed by doctrine: 0 none, 9 Foundational, 10 Prophetic, 11 Divine"]
+    out += ["", "# canon tier, fixed by doctrine and the reader's Rabbinic rite: 0 none, 9 Foundational, 10 Prophetic, 11 Divine"]
     for f in order:
-        out.append(f"kehillah_lib_canon_{f} = {CANON[works[f].get('canon', '')]}")
+        w = works[f]
+        canon = CANON[w.get("canon", "")]
+        canon_rite = w.get("canon_rite", "")
+        if canon_rite == "bavli_rabbanite":
+            out += [
+                f"kehillah_lib_canon_{f} = {{",
+                "\tvalue = 0",
+                "\tif = { limit = { rite ?= { kehillah_rite_bavli_trigger = yes } }",
+                f"\t\tvalue = {canon}",
+                "\t}",
+                "}",
+            ]
+        elif canon_rite == "yerushalmi":
+            out += [
+                f"kehillah_lib_canon_{f} = {{",
+                "\tvalue = 0",
+                "\tif = { limit = { rite ?= { kehillah_rite_minhag_yerushalmi_trigger = yes } }",
+                f"\t\tvalue = {canon}",
+                "\t}",
+                "}",
+            ]
+        else:
+            out.append(f"kehillah_lib_canon_{f} = {canon}")
     out += ["", "# 1 Rabbanite, 2 Karaite, 3 shared scripture"]
     for f in order:
         out.append(f"kehillah_lib_tradition_{f} = {TRADITIONS[works[f].get('tradition', 'rabbanite')]}")
@@ -523,6 +545,46 @@ def write_standing_values(order, works):
                 f"\t\tvalue = {OUTSIDE_CANON}",
                 "\t}",
             ]
+        elif canon == "oral_torah" and w.get("canon_rite") == "bavli_rabbanite":
+            out += [
+                f"\tvalue = {UNKNOWN_TO_FAITH}",
+                "\tif = {",
+                "\t\tlimit = { rite ?= { kehillah_rite_bavli_trigger = yes } }",
+                f"\t\tvalue = {CANON['oral_torah']}",
+                "\t}",
+                "\telse_if = {",
+                "\t\tlimit = { rite ?= { kehillah_rite_rabbanite_trigger = yes } }",
+                f"\t\tvalue = {OUTSIDE_CANON}",
+                "\t}",
+                "\telse_if = {",
+                "\t\tlimit = { rite ?= { kehillah_rite_toric_trigger = yes } }",
+                f"\t\tvalue = {OUTSIDE_CANON}",
+                "\t}",
+                "\telse_if = {",
+                "\t\tlimit = { NOT = { faith.religion = religion:judaism_religion } }",
+                f"\t\tvalue = {CANON['oral_torah']}",
+                "\t}",
+            ]
+        elif canon == "oral_torah" and w.get("canon_rite") == "yerushalmi":
+            out += [
+                f"\tvalue = {UNKNOWN_TO_FAITH}",
+                "\tif = {",
+                "\t\tlimit = { rite ?= { kehillah_rite_minhag_yerushalmi_trigger = yes } }",
+                f"\t\tvalue = {CANON['oral_torah']}",
+                "\t}",
+                "\telse_if = {",
+                "\t\tlimit = { rite ?= { kehillah_rite_rabbanite_trigger = yes } }",
+                f"\t\tvalue = {OUTSIDE_CANON}",
+                "\t}",
+                "\telse_if = {",
+                "\t\tlimit = { rite ?= { kehillah_rite_toric_trigger = yes } }",
+                f"\t\tvalue = {OUTSIDE_CANON}",
+                "\t}",
+                "\telse_if = {",
+                "\t\tlimit = { NOT = { faith.religion = religion:judaism_religion } }",
+                f"\t\tvalue = {CANON['oral_torah']}",
+                "\t}",
+            ]
         elif canon == "oral_torah":
             out += [
                 f"\tvalue = {UNKNOWN_TO_FAITH}",
@@ -600,6 +662,38 @@ def write_standing_values(order, works):
                 f"\tvalue = {CANON['neviim_ketuvim']}",
                 "\tif = {",
                 "\t\tlimit = { kehillah_rite_samaritan_trigger = yes }",
+                f"\t\tvalue = {OUTSIDE_CANON}",
+                "\t}",
+            ]
+        elif canon == "oral_torah" and w.get("canon_rite") == "bavli_rabbanite":
+            out += [
+                f"\tvalue = {UNKNOWN_TO_FAITH}",
+                "\tif = {",
+                "\t\tlimit = { kehillah_rite_bavli_trigger = yes }",
+                f"\t\tvalue = {CANON['oral_torah']}",
+                "\t}",
+                "\telse_if = {",
+                "\t\tlimit = { kehillah_rite_rabbanite_trigger = yes }",
+                f"\t\tvalue = {OUTSIDE_CANON}",
+                "\t}",
+                "\telse_if = {",
+                "\t\tlimit = { kehillah_rite_toric_trigger = yes }",
+                f"\t\tvalue = {OUTSIDE_CANON}",
+                "\t}",
+            ]
+        elif canon == "oral_torah" and w.get("canon_rite") == "yerushalmi":
+            out += [
+                f"\tvalue = {UNKNOWN_TO_FAITH}",
+                "\tif = {",
+                "\t\tlimit = { kehillah_rite_minhag_yerushalmi_trigger = yes }",
+                f"\t\tvalue = {CANON['oral_torah']}",
+                "\t}",
+                "\telse_if = {",
+                "\t\tlimit = { kehillah_rite_rabbanite_trigger = yes }",
+                f"\t\tvalue = {OUTSIDE_CANON}",
+                "\t}",
+                "\telse_if = {",
+                "\t\tlimit = { kehillah_rite_toric_trigger = yes }",
                 f"\t\tvalue = {OUTSIDE_CANON}",
                 "\t}",
             ]
@@ -705,6 +799,26 @@ def write_standing_values(order, works):
     out += ["", "# ---- the viewer rite's ceiling for the work (character scope), for the Standing row."]
     for f in order:
         w = works[f]
+        if w.get("canon") and w.get("canon_rite") == "bavli_rabbanite":
+            out += [
+                f"kehillah_lib_view_ceiling_{f} = {{",
+                f"\tvalue = {OUTSIDE_CANON}",
+                "\tif = { limit = { rite ?= { kehillah_rite_bavli_trigger = yes } }",
+                f"\t\tvalue = {CANON[w['canon']]}",
+                "\t}",
+                "}",
+            ]
+            continue
+        if w.get("canon") and w.get("canon_rite") == "yerushalmi":
+            out += [
+                f"kehillah_lib_view_ceiling_{f} = {{",
+                f"\tvalue = {OUTSIDE_CANON}",
+                "\tif = { limit = { rite ?= { kehillah_rite_minhag_yerushalmi_trigger = yes } }",
+                f"\t\tvalue = {CANON[w['canon']]}",
+                "\t}",
+                "}",
+            ]
+            continue
         if w.get("canon"):
             out.append(f"kehillah_lib_view_ceiling_{f} = {{ value = {CANON[w['canon']]} }}")
             continue
