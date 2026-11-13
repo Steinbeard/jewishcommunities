@@ -129,3 +129,16 @@ hand-painted vanilla-style materials. The hamsa, Tree of Life and Rabbinic faith
 as selected. The preview includes the actual smaller list-size samples.
 
 ![Sixth-pass rite icons at large and game-list sizes](assets/kehillah-jewish-rite-icon-variants-v6.png)
+
+## Rabbinic faith icon and custom faith picker (2026-11-12)
+
+Daniel found the ornate star too prominent as the umbrella Rabbinic faith emblem. The
+`rabbinic_faith` icon is restored to vanilla `judaism_01`. A copy of the ornate star now has the
+neutral asset key `kehillah_jewish_ornate_star`, listed in
+`judaism_religion.custom_faith_icons` so players can select it for a custom Jewish faith.
+The mainline Bavel rite still uses its shtender, and Sepharad still uses the hamsa. Older
+previews above document the previous faith-row experiment.
+
+The installed CK3 1.20.1 `00_judaism.txt` uses this `custom_faith_icons` list for the custom
+faith selector. The corresponding DDS is in `gfx/interface/icons/faith/`. Source/xTiger checks
+verify the reference and format; the picker appearance awaits a live UI check.
