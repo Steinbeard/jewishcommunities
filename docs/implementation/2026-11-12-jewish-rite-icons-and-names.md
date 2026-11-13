@@ -118,3 +118,14 @@ and soft shading bring them closer to vanilla's hand-painted religious emblems. 
 single-material Merkavah Tree of Life remains selected without changes.
 
 ![Fifth-pass rite icons at large and game-list sizes](assets/kehillah-jewish-rite-icon-variants-v5.png)
+
+## Sixth icon pass (2026-11-12)
+
+Daniel's character-list screenshot showed that the Bavel shtender and Ashkenaz scroll looked
+small beside the Sepharad hamsa. The active Bavel art now has a broader desk, larger book,
+thicker supports and less empty space. The Ashkenaz scroll has thicker wooden rollers and a
+broader, more opaque blank parchment. Both retain their front-facing silhouettes and the
+hand-painted vanilla-style materials. The hamsa, Tree of Life and Rabbinic faith star remain
+as selected. The preview includes the actual smaller list-size samples.
+
+![Sixth-pass rite icons at large and game-list sizes](assets/kehillah-jewish-rite-icon-variants-v6.png)

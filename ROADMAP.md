@@ -31,6 +31,7 @@ raw keys is corrected. See [the implementation record](docs/implementation/2026-
 blank-parchment Torah scroll with plain wooden rollers, Bavel a front-facing book-topped shtender,
 Sepharad a Jewish hamsa, and Yordei Merkavah a muted, single-material Tree of Life motif.
 The Torah and shtender have a subtle carved and parchment finish to match vanilla CK3 icons.
+Their silhouettes were enlarged after the character-list screenshot showed them too small.
 The former ornate Sepharad star is now
 the Rabbinic faith emblem. Earlier DDS icons remain for comparison. The user-supplied UI screenshot still
 showed `Merkabah` and vanilla stars on faith rows; a unique localization key now addresses
