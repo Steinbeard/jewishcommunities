@@ -23,6 +23,8 @@ The built-in image generator used vanilla CK3 Jewish faith icons as a style refe
 centered silhouettes with a restrained metal or wood palette, small bevels, no border or words.
 The icons were downsampled and centered within 82×82 pixels for readability in rite lists.
 
+![The twelve requested emblems at in-game size](assets/kehillah-jewish-faith-icons-preview.png)
+
 | Rite or faith | Icon | Assignment |
 | --- | --- | --- |
 | Minhag Bavel | Lectern / shtender | Mainline rite |
