@@ -17,9 +17,18 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+**Jewish rite names and icon diversity BUILT 2026-11-12, source/xTiger checked, live UI check
+pending:** the mainline rite displays as Minhag Bavel, while the faith stays Rabbinic Judaism;
+Merkabah displays as Yordei Merkavah. The Bavel, Yerushalmi and Sepharad rites have their own
+descriptions. Eleven new 100×100 faith/rite icons cover the requested lectern, scroll, star,
+wheel, book, ark, tablets, horse, ship, Italki menorah and Romaniote oil lamp; Yerushalmi uses
+vanilla's menorah. Italki and Romaniote art is ready for future rites but their current
+communities keep their existing rite assignments. The broken localization encoding that showed
+raw keys is corrected. See [the implementation record](docs/implementation/2026-11-12-jewish-rite-icons-and-names.md).
+
 **Medieval Rabbinic Minhagim — first implementation slice BUILT 2026-11-12, expanded 2026-11-12;
 xTiger source check clean for changed files, live probe pending:** the faith remains Rabbinic
-Judaism and the mainline `rabbinism` rite displays as Minhag Bavli. Minhag Yerushalmi has a
+Judaism and the mainline `rabbinism` rite displays as Minhag Bavel. Minhag Yerushalmi has a
 distinct foundational Talmud Yerushalmi canon; in 867 it represents Jerusalem, Tiberias, the
 Italian Kehillot (Rome, Lucca, Bari, Oria and Palermo) and Constantinople, as Palestinian-influenced
 local practice under continuing Geonic scholarly authority. Outside the Levant, this regional

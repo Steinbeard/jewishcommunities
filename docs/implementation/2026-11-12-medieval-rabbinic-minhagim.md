@@ -9,7 +9,7 @@ existing catalog and library system.
 ## Result
 
 - The faith remains **Rabbinic Judaism**. Its mainline rite keeps the internal key `rabbinism` and
-  is displayed as **Minhag Bavli**. Script compatibility is preserved.
+  is displayed as **Minhag Bavel**. Script compatibility is preserved.
 - Adds `minhag_yerushalmi` and `minhag_sepharad` rite types. The rite types share the Rabbinic
   faith and its faith-level doctrines; their localized descriptions identify their regional
   custom.

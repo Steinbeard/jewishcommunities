@@ -9,10 +9,10 @@ rite, Sefer and Kehillah systems. This extends [V45, Rabbinic synods and Minhag 
 [the Sefer system redesign](2026-11-08-sefer-system-redesign.md). It does not make a new faith or
 culture.
 
-## Decision: Rabbinism remains the faith; Minhag Bavli is its mainline rite
+## Decision: Rabbinism remains the faith; Minhag Bavel is its mainline rite
 
 Keep the faith named **Rabbinic Judaism** (or **Rabbinism**) and keep the internal rite key
-`rabbinism`, but localize that mainline rite as **Minhag Bavli**. This mirrors vanilla's Roman
+`rabbinism`, but localize that mainline rite as **Minhag Bavel**. This mirrors vanilla's Roman
 rite presentation while preserving compatibility with existing `rite:rabbinism` references.
 Keep it as `rabbinic_faith`'s `main_rite`. In 867 Amram Gaon of Sura holds the Gaonate and heads
 that rite. In 1066 its headship is vacant, consistent with V47; in 1178 the Baghdad Gaonate may
@@ -43,7 +43,7 @@ head it again. The existence of regional minhagim does not by itself imply centr
 
 ## Mechanical distinctions
 
-- **Minhag Bavli / Rabbinism:** Bavli remains the default canonical Talmudic corpus.
+- **Minhag Bavel / Rabbinism:** Bavli remains the default canonical Talmudic corpus.
 - **Minhag Yerushalmi:** the four extant Yerushalmi seder works already in the mod's catalog are
   its canonical/foundational Talmudics. Do not give this rite the six Bavli-order completeness
   requirement. The catalog's Yerushalmi coverage is partial; later work can expand the corpus.
@@ -97,7 +97,7 @@ and [*Blessings and Thanksgivings*, chapter 11](https://research.vu.nl/ws/portal
 
 ## Build record
 
-Built: Minhag Bavli is the display name for internal `rite:rabbinism`; faith remains Rabbinic
+Built: Minhag Bavel is the display name for internal `rite:rabbinism`; faith remains Rabbinic
 Judaism. Minhag Yerushalmi and Minhag Sepharad are seeded regionally at game start. Jerusalem is
 Yerushalmi at 867, 1066 and 1178; in 867 Tiberias, Rome, Lucca, Bari, Oria, Palermo and
 Constantinople join it. Sephardi characters/counties receive
