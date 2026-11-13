@@ -97,3 +97,24 @@ The earlier DDS icons remain as comparison assets; only the selected versions ar
 
 The second-pass preview remains above to preserve the visual review record; its Ashkenaz and
 wheel designs were rejected and were not added as game assets.
+
+## Fourth icon pass (2026-11-12)
+
+Daniel asked for a front-facing shtender with flatter shading, a Torah scroll without ink or
+decorative star bands, and a less bright Tree of Life. The active Bavel icon now faces the viewer
+with a small open book, Ashkenaz uses a blank parchment between plain wooden rollers, and the
+Merkavah Tree uses a single muted pewter-lavender material with thicker bars for readability on
+the dark UI. The previous DDS versions remain available for comparison. Sepharad's hamsa and
+the Rabbinic faith's ornate star stay as selected in the third pass.
+
+![Fourth-pass rite icons at large and game-list sizes](assets/kehillah-jewish-rite-icon-variants-v4.png)
+
+## Fifth icon pass (2026-11-12)
+
+The fourth-pass Bavel and Ashkenaz forms were close, but their flat rendering differed from
+the installed vanilla icon set. Their new versions preserve the front-facing shtender with its
+open book and the blank, undecorated Torah scroll. Subtle carved wood, parchment texture, bevels
+and soft shading bring them closer to vanilla's hand-painted religious emblems. The muted
+single-material Merkavah Tree of Life remains selected without changes.
+
+![Fifth-pass rite icons at large and game-list sizes](assets/kehillah-jewish-rite-icon-variants-v5.png)
