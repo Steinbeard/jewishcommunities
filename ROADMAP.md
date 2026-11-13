@@ -19,12 +19,22 @@ subject to revision after each phase.
 
 **Jewish rite names and icon diversity BUILT 2026-11-12, source/xTiger checked, live UI check
 pending:** the mainline rite displays as Minhag Bavel, while the faith stays Rabbinic Judaism;
-Merkabah displays as Yordei Merkavah. The Bavel, Yerushalmi and Sepharad rites have their own
+Yordei Merkavah is localized, though the latest screenshot still showed the vanilla name.
+The Bavel, Yerushalmi and Sepharad rites have their own
 descriptions. Eleven new 100×100 faith/rite icons cover the requested lectern, scroll, star,
 wheel, book, ark, tablets, horse, ship, Italki menorah and Romaniote oil lamp; Yerushalmi uses
 vanilla's menorah. Italki and Romaniote art is ready for future rites but their current
 communities keep their existing rite assignments. The broken localization encoding that showed
 raw keys is corrected. See [the implementation record](docs/implementation/2026-11-12-jewish-rite-icons-and-names.md).
+
+**Jewish icon revision BUILT 2026-11-12, live UI check pending:** Ashkenaz now uses an open
+Torah scroll with symbolic Hebrew letters, Bavel a schematic book-topped shtender, Sepharad a
+Jewish hamsa, and Yordei Merkavah a Tree of Life motif. The former ornate Sepharad star is now
+the Rabbinic faith emblem. Earlier DDS icons remain for comparison. The user-supplied UI screenshot still
+showed `Merkabah` and vanilla stars on faith rows; a unique localization key now addresses
+the name, while faith-row icon behavior needs a fresh-game check. Faith-level and rite-level
+icons are distinct fields in installed CK3 1.20.1 source. See the third-pass section of the
+implementation record linked above.
 
 **Medieval Rabbinic Minhagim — first implementation slice BUILT 2026-11-12, expanded 2026-11-12;
 xTiger source check clean for changed files, live probe pending:** the faith remains Rabbinic

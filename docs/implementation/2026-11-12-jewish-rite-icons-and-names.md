@@ -60,3 +60,40 @@ until those communities gain separate rites.
 - Live UI check pending under the repository's Luna-only game-control rule. Verify names,
   descriptions and silhouettes on the Rites screen after a fresh CK3 restart; inspect
   `error.log` against the boot baseline.
+
+## Second icon pass and faith-row follow-up (2026-11-12)
+
+Daniel's in-game screenshot showed that the first Ashkenaz scroll read mostly as two metal
+rollers, the Sepharad geometric star could be more regionally distinctive, and the Merkavah
+wheel lacked the fire of the chariot vision. The second-pass proposals were:
+an open parchment scroll with dark ink strokes, a brass hamsa with a small blue Magen David,
+and a violet eight-spoke wheel with amber flames. The preview below includes large and
+rite-list-size samples; only the Sepharad hamsa was selected from this pass.
+
+![Second-pass Jewish rite icons](assets/kehillah-jewish-rite-icon-variants-v2.png)
+
+The same screenshot still displayed `Merkabah` and vanilla-style stars in the faith rows.
+The Merkavah rite now points to a mod-unique localization key in a BOM-encoded file, avoiding
+reliance on replacement of the vanilla key. Whether this and the existing faith-level icon
+overrides display in a fresh game remains an open live UI check. The faith and rite icon fields
+are separate in the installed CK3 1.20.1 definitions: `rabbinic_faith` has
+`faith_details.icon = judaism_01`, while its `rabbinism` main rite has its own icon field.
+Catholic and Orthodox faiths also define a main rite separately. A distinct umbrella emblem
+for each faith is therefore a supported visual design choice, not a requirement to reuse its
+mainline rite emblem. The third-pass mod override changes the Rabbinic faith's icon to the
+ornate star without changing the Bavel lectern.
+
+## Third icon pass (2026-11-12)
+
+Daniel selected the second-pass hamsa for Sepharad, and the previous ornate Sepharad star now
+serves as the Rabbinic faith icon. A new schematic shtender with an open book replaces the more
+realistic Bavel lectern. Ashkenaz has a new Torah scroll drawn from scratch with warm parchment,
+wooden rollers, and symbolic square Hebrew letters. The Merkavah rite uses a mystical Tree of
+Life motif in place of either wheel proposal. The Tree is artistic shorthand rather than a claim
+that the later standard Kabbalistic sefirot diagram was the emblem of early Merkavah mystics.
+The earlier DDS icons remain as comparison assets; only the selected versions are referenced.
+
+![Selected third-pass icons at large and game-list sizes](assets/kehillah-jewish-rite-icon-variants-v3.png)
+
+The second-pass preview remains above to preserve the visual review record; its Ashkenaz and
+wheel designs were rejected and were not added as game assets.
