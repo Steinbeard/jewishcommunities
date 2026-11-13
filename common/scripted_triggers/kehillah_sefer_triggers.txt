@@ -89,6 +89,35 @@ kehillah_lib_can_start_selected_study_trigger = {
 	can_start_scheme = { type = kehillah_study_torah target_character = root }
 }
 
+# 2026-11-11 (Daniel: "a come back later to choose option" for the next book).
+# Scope: a character whose Learn Torah course finished a book and who chose to
+# pick the next one later (kehillah_study_torah.0001): the course runs on with
+# no book until the Beit Midrash's Study button names one.
+kehillah_study_waiting_for_choice_trigger = {
+	has_variable = kehillah_study_choose_later
+	any_scheme = { type = kehillah_study_torah }
+}
+
+# 2026-11-11 (Daniel: "make the learn button able to replace the current scheme
+# with a confirmation"). Scope: a character partway through a book of his Learn
+# Torah course. The Study button may put it down for another book, once
+# kehillah_study_torah.0008 has asked.
+kehillah_study_can_switch_book_trigger = {
+	any_scheme = { type = kehillah_study_torah }
+	has_variable = kehillah_study_current_work_id
+	NOT = { has_variable = kehillah_study_choose_later }
+}
+
+# Scope: a character. The library's Study button: start a course, give a
+# waiting course its next book, or (after asking) switch the course's book.
+kehillah_lib_can_choose_study_trigger = {
+	OR = {
+		kehillah_study_waiting_for_choice_trigger = yes
+		kehillah_study_can_switch_book_trigger = yes
+		kehillah_lib_can_start_selected_study_trigger = yes
+	}
+}
+
 # Scope: a character. May order copies for the library he holds.
 kehillah_lib_can_commission_trigger = {
 	OR = {
@@ -108,12 +137,24 @@ kehillah_lib_can_commission_trigger = {
 
 # Scope: a landed title (a library). All six Bavli orders on the shelf.
 kehillah_lib_complete_shas_trigger = {
-	is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_zeraim }
-	is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed }
-	is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nashim }
-	is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nezikin }
-	is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_kodashim }
-	is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_tahorot }
+	OR = {
+		AND = {
+			NOT = { kehillah_lib_is_yerushalmi_library_trigger = yes }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_zeraim }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_moed }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nashim }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_nezikin }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_kodashim }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_bavli_tahorot }
+		}
+		AND = {
+			kehillah_lib_is_yerushalmi_library_trigger = yes
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_zeraim }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_moed }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_nashim }
+			is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_nezikin }
+		}
+	}
 }
 
 # Scope: a landed title. The library serves a Karaite community.
@@ -121,14 +162,36 @@ kehillah_lib_is_karaite_library_trigger = {
 	var:kehillah_library_tradition ?= 2
 }
 
+# Scope: a library title representing a Minhag Yerushalmi community.
+kehillah_lib_is_yerushalmi_library_trigger = {
+	var:kehillah_library_tradition ?= 4
+}
+
+# Scope: a library title. Beta Israel's Orit tradition is not Rabbanite.
+kehillah_lib_is_haymanot_library_trigger = {
+	var:kehillah_library_tradition ?= 3
+}
+
 # Scope: a character. Mastered all six Bavli orders (a Rosh Yeshiva's Shas).
 kehillah_has_mastered_shas_trigger = {
-	is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_zeraim }
-	is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_moed }
-	is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim }
-	is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nezikin }
-	is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_kodashim }
-	is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_tahorot }
+	OR = {
+		AND = {
+			rite = rite:minhag_yerushalmi
+			is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_yerushalmi_zeraim }
+			is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_yerushalmi_moed }
+			is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_yerushalmi_nashim }
+			is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_yerushalmi_nezikin }
+		}
+		AND = {
+			NOT = { rite = rite:minhag_yerushalmi }
+			is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_zeraim }
+			is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_moed }
+			is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim }
+			is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nezikin }
+			is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_kodashim }
+			is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_tahorot }
+		}
+	}
 }
 
 # Scope: a character. A Karaite's equivalent of the Shas: the Tanakh and the
@@ -147,7 +210,7 @@ kehillah_has_mastered_karaite_curriculum_trigger = {
 # (Only Jewish faiths can hold the doctrine; its group is Judaism-only.)
 # "Karaite" in the mod's trigger names means exactly this.
 kehillah_is_karaite_character_trigger = {
-	rite ?= { rite_has_doctrine = temple_authority_toric_doctrine }
+	rite ?= { kehillah_rite_toric_trigger = yes }
 }
 
 # ---------------------------------------------------------------------
@@ -181,48 +244,61 @@ kehillah_sefer_round_complete_tanakh_trigger = {
 # (no flag: prefix). True when the work may rise from its current tier to
 # the next. Counters are global per work (kehillah_wk_<key>_*), seeded by
 # kehillah_standing_seed_work_effect; copies count every library.
+#
+# 2026-11-11, one scale (docs/spec/2026-11-11-standing-one-scale.md). Each
+# gate is what its tier means: Popular is read, Celebrated praised, Esteemed
+# taught, Authoritative relied on. An Anathema (0) lifts only when its term
+# (var:kehillah_anathema_<key>, kehillah_anathema_years) runs out.
+#
+# 2026-11-11, gates by genre (docs/spec/2026-11-11-rulings-sermons-and-
+# gates.md section 1): Popular and Celebrated come from points alone;
+# Esteemed needs kehillah_gate_esteemed_masters scholars who mastered it;
+# Authoritative, 30 years and its author dead, and by genre: Talmudics cited
+# in rulings, Parshanut preached from, Machshavah changing readers' minds,
+# kehillah_gate_authoritative_count times each. The `preached` and `minds`
+# counters are filled by sermons and by Machshavah (later steps); until
+# then no Parshanut or Machshavah book can rise to Authoritative.
 # ---------------------------------------------------------------------
 kehillah_standing_next_gate_met_trigger = {
 	OR = {
-		var:kehillah_standing_$KEY$ <= 3
 		AND = {
-			var:kehillah_standing_$KEY$ = 4
-			kehillah_lib_copies_$KEY$ >= 2
+			# to Banned
+			var:kehillah_standing_$KEY$ = 0
+			NOT = { has_variable = kehillah_anathema_$KEY$ }
 		}
 		AND = {
-			var:kehillah_standing_$KEY$ = 5
-			OR = {
-				global_var:kehillah_wk_$KEY$_masters >= 3
-				global_var:kehillah_wk_$KEY$_approbations >= 1
-			}
+			# to Rejected, Contested, Obscure, Popular, Celebrated: points alone
+			var:kehillah_standing_$KEY$ >= 1
+			var:kehillah_standing_$KEY$ <= 5
 		}
 		AND = {
+			# to Esteemed: mastered by enough scholars
 			var:kehillah_standing_$KEY$ = 6
-			OR = {
-				global_var:kehillah_wk_$KEY$_approbations >= 1
-				global_var:kehillah_wk_$KEY$_taught >= 1
-			}
+			global_var:kehillah_wk_$KEY$_masters >= kehillah_gate_esteemed_masters
 		}
 		AND = {
+			# to Authoritative: relied on, by genre
 			var:kehillah_standing_$KEY$ = 7
-			global_var:kehillah_wk_$KEY$_taught >= 2
-			kehillah_lib_copies_$KEY$ >= kehillah_lib_third_of_libraries_value
-			current_year >= { value = kehillah_lib_year_$KEY$ add = 10 }
-		}
-		AND = {
-			var:kehillah_standing_$KEY$ = 8
-			global_var:kehillah_wk_$KEY$_citations >= 3
-			has_global_variable = kehillah_wk_$KEY$_endorsed
-			current_year >= { value = kehillah_lib_year_$KEY$ add = 20 }
-		}
-		AND = {
-			var:kehillah_standing_$KEY$ = 9
-			kehillah_lib_copies_$KEY$ >= kehillah_lib_half_of_libraries_value
-			global_var:kehillah_wk_$KEY$_commentaries >= 1
-			current_year >= { value = kehillah_lib_year_$KEY$ add = 30 }
+			current_year >= { value = kehillah_lib_year_$KEY$ add = kehillah_gate_authoritative_years }
 			OR = {
 				NOT = { exists = global_var:kehillah_wk_$KEY$_author }
 				global_var:kehillah_wk_$KEY$_author = { is_alive = no }
+			}
+			OR = {
+				AND = {
+					kehillah_lib_genre_$KEY$ = 2
+					global_var:kehillah_wk_$KEY$_citations >= kehillah_gate_authoritative_count
+				}
+				AND = {
+					kehillah_lib_genre_$KEY$ = 1
+					has_global_variable = kehillah_wk_$KEY$_preached
+					global_var:kehillah_wk_$KEY$_preached >= kehillah_gate_authoritative_count
+				}
+				AND = {
+					kehillah_lib_genre_$KEY$ = 3
+					has_global_variable = kehillah_wk_$KEY$_minds
+					global_var:kehillah_wk_$KEY$_minds >= kehillah_gate_authoritative_count
+				}
 			}
 		}
 	}
@@ -277,6 +353,7 @@ kehillah_lib_foundations_complete_trigger = {
 		}
 		AND = {
 			NOT = { kehillah_lib_is_karaite_library_trigger = yes }
+			NOT = { kehillah_lib_is_haymanot_library_trigger = yes }
 			kehillah_lib_complete_shas_trigger = yes
 		}
 	}

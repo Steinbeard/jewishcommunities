@@ -86,6 +86,127 @@ kehillah_apply_ashkenaz_rite_effect = {
 	}
 }
 
+# ---------------------------------------------------------------------
+# Seed the other regional Rabbinic minhagim for the selected bookmark.
+# In 867, the Palestinian-influenced zone includes the represented Italian
+# and Byzantine communities as well as Jerusalem/Tiberias. This records
+# local custom without implying that every community had a separate Talmudic
+# academy; Geonic authority over interpretation remains centralized. Sepharad
+# is assigned to Sephardi characters and counties from 1066 on. Each place
+# still has only one community title.
+# ---------------------------------------------------------------------
+kehillah_set_community_minhag_yerushalmi_effect = {
+	holder ?= {
+		if = { limit = { faith = faith:rabbinic_faith } set_character_rite = rite:minhag_yerushalmi }
+		every_courtier = {
+			limit = { faith = faith:rabbinic_faith }
+			set_character_rite = rite:minhag_yerushalmi
+		}
+	}
+	title_capital_county ?= {
+		if = { limit = { faith = faith:rabbinic_faith } set_county_rite = rite:minhag_yerushalmi }
+	}
+}
+
+kehillah_seed_minhag_yerushalmi_effect = {
+	if = {
+		limit = {
+			NOT = { exists = global_var:kehillah_minhag_yerushalmi_founded }
+			exists = title:d_kehillah_jerusalem.holder
+		}
+		title:d_kehillah_jerusalem.holder = {
+			create_rite_from_type = {
+				type = minhag_yerushalmi
+				convert = yes
+			}
+		}
+		set_global_variable = { name = kehillah_minhag_yerushalmi_founded value = yes }
+	}
+	if = {
+		limit = { exists = rite:minhag_yerushalmi }
+		# Jerusalem's community is present at all three bookmarks.
+		title:d_kehillah_jerusalem = { kehillah_set_community_minhag_yerushalmi_effect = yes }
+		# Tiberias and the represented Italian/Byzantine communities follow
+		# Palestinian-influenced custom in the 867 bookmark only.
+		if = {
+			limit = { game_start_date < 900.1.1 }
+			if = {
+				limit = { exists = title:d_kehillah_tiberias.holder }
+				title:d_kehillah_tiberias = { kehillah_set_community_minhag_yerushalmi_effect = yes }
+			}
+			# Italy: Rome, Lucca, Bari, Oria and Palermo. Byzantine
+			# Constantinople. These are the extant 867 seats in the roster.
+			if = {
+				limit = { exists = title:d_kehillah_rome.holder }
+				title:d_kehillah_rome = { kehillah_set_community_minhag_yerushalmi_effect = yes }
+			}
+			if = {
+				limit = { exists = title:d_kehillah_lucca.holder }
+				title:d_kehillah_lucca = { kehillah_set_community_minhag_yerushalmi_effect = yes }
+			}
+			if = {
+				limit = { exists = title:d_kehillah_bari.holder }
+				title:d_kehillah_bari = { kehillah_set_community_minhag_yerushalmi_effect = yes }
+			}
+			if = {
+				limit = { exists = title:d_kehillah_oria.holder }
+				title:d_kehillah_oria = { kehillah_set_community_minhag_yerushalmi_effect = yes }
+			}
+			if = {
+				limit = { exists = title:d_kehillah_palermo.holder }
+				title:d_kehillah_palermo = { kehillah_set_community_minhag_yerushalmi_effect = yes }
+			}
+			if = {
+				limit = { exists = title:d_kehillah_constantinople.holder }
+				title:d_kehillah_constantinople = { kehillah_set_community_minhag_yerushalmi_effect = yes }
+			}
+		}
+	}
+}
+
+kehillah_seed_minhag_sepharad_effect = {
+	if = {
+		limit = {
+			game_start_date >= 1000.1.1
+			NOT = { exists = global_var:kehillah_minhag_sepharad_founded }
+			OR = {
+				exists = title:d_kehillah_granada.holder
+				exists = title:d_kehillah_toledo.holder
+			}
+		}
+		if = {
+			limit = { exists = title:d_kehillah_granada.holder }
+			title:d_kehillah_granada.holder = {
+				create_rite_from_type = { type = minhag_sepharad convert = yes }
+			}
+		}
+		else = {
+			title:d_kehillah_toledo.holder = {
+				create_rite_from_type = { type = minhag_sepharad convert = yes }
+			}
+		}
+		set_global_variable = { name = kehillah_minhag_sepharad_founded value = yes }
+	}
+	if = {
+		limit = { exists = rite:minhag_sepharad }
+		every_living_character = {
+			limit = {
+				faith = faith:rabbinic_faith
+				culture = culture:sephardi
+				NOT = { rite = rite:minhag_ashkenaz }
+			}
+			set_character_rite = rite:minhag_sepharad
+		}
+		every_county = {
+			limit = {
+				faith = faith:rabbinic_faith
+				culture = culture:sephardi
+			}
+			set_county_rite = rite:minhag_sepharad
+		}
+	}
+}
+
 
 # ---------------------------------------------------------------------
 # Open a synod inside a Sitting of the Bet Din. Scope: the host, from
@@ -189,6 +310,18 @@ kehillah_synod_enact_takkanah_effect = {
 		limit = { scope:kehillah_synod_takkanah = flag:herem_all_israel }
 		custom_tooltip = kehillah_sanhedrin_herem_all_israel_tt
 		rite:rabbinism ?= { change_rite_doctrine = scope:kehillah_synod_proposed_doctrine }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
+	}
+	# 2026-11-11 cherem track: the synod places the full ban on a leader.
+	else_if = {
+		limit = { scope:kehillah_synod_takkanah = flag:herem_person }
+		scope:kehillah_synod_herem_target ?= {
+			custom_tooltip = kehillah_synod_herem_person_tt
+			hidden_effect = {
+				save_scope_value_as = { name = kehillah_cherem_pronounced_by value = flag:synod }
+				kehillah_cherem_pronounce_effect = yes
+			}
+		}
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
 	}
 	else_if = {

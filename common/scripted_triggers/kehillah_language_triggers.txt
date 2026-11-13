@@ -1,0 +1,100 @@
+﻿# =====================================================================
+# Liturgical languages (2026-11-10, docs/spec/2026-11-10-sefer-languages.md,
+# revision 4). Daniel: no in-between fluency; associate liturgical languages
+# with faiths instead.
+#
+# kehillah_liturgical_language_trigger = { LANG = language_aramaic }
+# Scope: a character. True when $LANG$ is a liturgical tongue of his faith:
+# he has heard and recited it all his life without necessarily speaking it.
+# A reader who does not know a book's language masters it more easily when
+# it is one of these (kehillah_study_chance_liturgical), and learns it by
+# reading (kehillah_language_exposure_effect).
+#
+# Only the languages sefarim are written in are mapped. A language with no
+# trigger below is never liturgical for anyone. Christian liturgies follow
+# vanilla's 1.20 rites, which are themselves liturgical traditions.
+# =====================================================================
+
+kehillah_liturgical_language_trigger = {
+	kehillah_liturgy_in_$LANG$_trigger = yes
+}
+
+# Hebrew: every Jewish faith but the Beta Israel, who pray in Ge'ez.
+kehillah_liturgy_in_language_israelite_trigger = {
+	is_jewish_character_trigger = yes
+	NOT = { faith = faith:haymanot }
+}
+
+# Ge'ez is the language of the Beta Israel's Orit and their inherited
+# liturgical corpus. CK3 calls the language pillar Ethiopic.
+kehillah_liturgy_in_language_ethiopic_trigger = {
+	faith = faith:haymanot
+}
+
+# Tamil is a reading language for the Cochin charter, not a Jewish liturgical
+# language. Keep an explicit branch because the generated language values
+# dispatch through every registered language.
+kehillah_liturgy_in_language_tamil_trigger = {
+	always = no
+}
+
+# Aramaic: Rabbanite Jews (Kaddish, the Targum, the Gemara itself) and
+# Samaritans (the Samaritan Targum and hymns), but not Karaites, who reject
+# the Aramaic oral law, nor the Beta Israel; and the Syriac churches, the
+# Church of the East and the Antiochian rite.
+kehillah_liturgy_in_language_aramaic_trigger = {
+	OR = {
+		AND = {
+			is_jewish_character_trigger = yes
+			NOT = { faith = faith:haymanot }
+			kehillah_is_karaite_character_trigger = no
+		}
+		rite ?= rite:nestorian
+		rite ?= rite:antiochian_rite
+	}
+}
+
+# Arabic: Islam, every branch.
+kehillah_liturgy_in_language_arabic_trigger = {
+	faith.religion = religion:islam_religion
+}
+
+# Greek: the Byzantine rite and its iconoclast heresy.
+kehillah_liturgy_in_language_greek_trigger = {
+	OR = {
+		rite ?= rite:byzantine_rite
+		rite ?= rite:iconoclast_rite
+	}
+}
+
+# Latin: every Western Christian rite (Roman, Mozarabic, Ambrosian, Insular...).
+kehillah_liturgy_in_language_latin_trigger = {
+	rite ?= { rite_has_doctrine = special_doctrine_is_western_christian_faith }
+}
+
+# ---------------------------------------------------------------------
+# Help with a liturgical tongue (revision 6, Daniel 2026-11-10). Scope: the
+# reader. Each offsets the liturgical penalty of the mastery chance, never
+# past zero (kehillah_study_chance_yeshiva_<language>, _dayyan_<language>,
+# generated).
+# ---------------------------------------------------------------------
+
+# He studies at a yeshiva: he is a student there now, or his own community
+# (he leads it, or serves its leader) has one.
+kehillah_language_yeshiva_help_trigger = {
+	OR = {
+		kehillah_yeshiva_student_present_trigger = yes
+		kehillah_has_yeshiva_trigger = yes
+		liege ?= { kehillah_has_yeshiva_trigger = yes }
+	}
+}
+
+# The Dayyan of his community (his own councillor_court_chaplain if he
+# leads it, else his liege's) knows $LANG$ and studies with him. A reader
+# who is himself the Dayyan and knows it has no penalty to offset.
+kehillah_language_dayyan_help_trigger = {
+	OR = {
+		cp:councillor_court_chaplain ?= { knows_language = $LANG$ }
+		liege ?= { cp:councillor_court_chaplain ?= { knows_language = $LANG$ } }
+	}
+}

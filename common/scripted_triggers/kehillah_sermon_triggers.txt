@@ -1,0 +1,77 @@
+﻿# =====================================================================
+# Sermons (2026-11-11, Daniel). docs/spec/2026-11-11-rulings-sermons-and-
+# gates.md section 3.
+# =====================================================================
+
+# Scope: a character. Knows the Torah: has mastered it, or holds the Rabbi
+# trait (ordination presumes it; no rabbi starts with the Torah on his
+# mastered list, so requiring the list alone would silence every pulpit).
+kehillah_sermon_knows_torah_trigger = {
+	OR = {
+		is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_tanakh_torah }
+		has_trait = kehillah_rabbi_trait
+	}
+}
+
+# Scope: a character. May preach: a Jew who knows the Torah and is a rabbi
+# or, outside Rabbinism (Karaites, the Beta Israel, Samaritans, who have no
+# ordination), has Learning kehillah_sermon_learning_threshold or more.
+kehillah_sermon_preacher_trigger = {
+	is_adult = yes
+	is_imprisoned = no
+	is_jewish_character_trigger = yes
+	kehillah_sermon_knows_torah_trigger = yes
+	OR = {
+		has_trait = kehillah_rabbi_trait
+		AND = {
+			NOT = { rite ?= { kehillah_rite_rabbanite_trigger = yes } }
+			learning >= kehillah_sermon_learning_threshold
+		}
+	}
+}
+
+# Scope: a character in Niddui or the full Cherem (2026-11-11, Daniel: "include
+# sermons for banned characters but make success more challenging"). Who
+# preaches under a ban finds the delivery harder (kehillah_sermon_roll_effect).
+kehillah_sermon_preacher_banned_trigger = {
+	has_trait = kehillah_cherem_trait
+	has_trait_xp = { trait = kehillah_cherem_trait value >= kehillah_cherem_niddui }
+}
+
+# Scope: a Kehillah leader. A lord hosts his community and is not himself
+# (kehillah_sermon_save_host_effect reads the same).
+kehillah_sermon_has_host_trigger = {
+	exists = domicile.domicile_location.county.holder.top_liege
+	NOT = { domicile.domicile_location.county.holder.top_liege = this }
+}
+
+# Scope: a Kehillah leader. He may preach, or his Dayyan may.
+kehillah_sermon_leader_can_preach_trigger = {
+	OR = {
+		kehillah_sermon_preacher_trigger = yes
+		cp:councillor_court_chaplain ?= { kehillah_sermon_preacher_trigger = yes }
+	}
+}
+
+# Scope: a Kehillah leader. A crisis is under way, or the community is
+# still recovering from one.
+kehillah_sermon_time_of_trouble_trigger = {
+	primary_title ?= {
+		OR = {
+			has_variable = kehillah_crisis_stage
+			has_variable = kehillah_crisis_recovery_active
+		}
+	}
+}
+
+# Scope: a character. A Jewish community lives in the county he is in.
+kehillah_sermon_maggid_place_trigger = {
+	exists = location.county
+	save_temporary_scope_as = kehillah_sermon_maggid
+	any_in_global_list = {
+		variable = kehillah_registered_communities
+		exists = holder.domicile.domicile_location.county
+		holder.domicile.domicile_location.county = scope:kehillah_sermon_maggid.location.county
+		NOT = { holder = scope:kehillah_sermon_maggid }
+	}
+}

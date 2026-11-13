@@ -1,0 +1,468 @@
+﻿# =====================================================================
+# Native Jewish cultures in play (2026-11-10,
+# docs/implementation/2026-11-10-jewish-culture-dynamics.md).
+#
+# The native-culture layer (kehillah_jewish_culture_homeland_effects.txt)
+# changes in play in four ways, plus one language change:
+#
+#   1. A HYBRID of a Jewish culture and a non-Jewish one becomes the
+#      historical culture its new language implies (Jewish + German ->
+#      Ashkenazi, + Castilian -> Sephardi, ...). The founder, every county
+#      and every character of the hybrid move to that culture, and those
+#      counties take it as their native Jewish culture. A hybrid with no
+#      historical match, a hybrid of two Jewish cultures, or a Jewish
+#      divergence stays as made, and the founder's lands take it.
+#   2. A COUNTY whose own culture becomes a Jewish one takes it as native.
+#   3. A RULER whose culture becomes a Jewish one makes it native in every
+#      county he holds directly.
+#   4. A COMMUNITY whose county has no native Jewish culture makes its
+#      leader's culture native there (yearly, and when the map is painted).
+#   5. SEPHARDI speaks Arabic until it turns to Romance: by chance from
+#      1212 (Las Navas de Tolosa), at the latest in 1250.
+#
+# Hooks: common/on_action/kehillah_jewish_culture_on_actions.txt.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# 1. Hybridization. Scope: the new culture (on_culture_created's root);
+# scope:founder.
+# ---------------------------------------------------------------------
+kehillah_on_jewish_culture_created_effect = {
+	if = {
+		limit = {
+			any_parent_culture = { has_cultural_pillar = heritage_israelite }
+			any_parent_culture = { NOT = { has_cultural_pillar = heritage_israelite } }
+		}
+		random_parent_culture = {
+			limit = { NOT = { has_cultural_pillar = heritage_israelite } }
+			save_scope_as = kehillah_hybrid_other_parent
+		}
+		kehillah_pick_historical_jewish_culture_effect = yes
+		if = {
+			limit = { exists = scope:kehillah_historical_jewish_culture }
+			debug_log = "kehillah_on_jewish_culture_created_effect: hybrid becomes a historical Jewish culture"
+			kehillah_adopt_historical_jewish_culture_effect = yes
+		}
+		else = {
+			kehillah_claim_founder_lands_effect = yes
+		}
+	}
+	# 2026-11-11: a hybrid of two Jewish cultures, formed where one of them
+	# is native, is absorbed into that one -- Ma'aravim settling in Toledo
+	# become Sephardim rather than a new people.
+	else_if = {
+		limit = {
+			NOT = { any_parent_culture = { NOT = { has_cultural_pillar = heritage_israelite } } }
+			scope:founder.location.county ?= {
+				exists = var:kehillah_local_jewish_culture
+				save_temporary_scope_as = kehillah_hybrid_site
+			}
+			any_parent_culture = { this = scope:kehillah_hybrid_site.var:kehillah_local_jewish_culture }
+		}
+		scope:kehillah_hybrid_site.var:kehillah_local_jewish_culture = {
+			save_scope_as = kehillah_historical_jewish_culture
+		}
+		kehillah_adopt_historical_jewish_culture_effect = yes
+	}
+	else_if = {
+		limit = { has_cultural_pillar = heritage_israelite }
+		kehillah_claim_founder_lands_effect = yes
+	}
+}
+
+# Reads scope:kehillah_hybrid_other_parent and scope:founder. Saves
+# scope:kehillah_historical_jewish_culture, or nothing if no match.
+kehillah_pick_historical_jewish_culture_effect = {
+	scope:kehillah_hybrid_other_parent = {
+		if = {
+			limit = {
+				OR = {
+					has_cultural_pillar = language_high_german
+					has_cultural_pillar = language_central_germanic
+					has_cultural_pillar = language_saxon
+					has_cultural_pillar = language_dutch
+					has_cultural_pillar = language_frankish
+					has_cultural_pillar = language_french
+				}
+			}
+			culture:ashkenazi = { save_scope_as = kehillah_historical_jewish_culture }
+		}
+		else_if = {
+			limit = { has_cultural_pillar = language_occitano_romance }
+			culture:provenci = { save_scope_as = kehillah_historical_jewish_culture }
+		}
+		else_if = {
+			limit = {
+				OR = {
+					has_cultural_pillar = language_iberian
+					has_cultural_pillar = language_basque
+				}
+			}
+			culture:sephardi = { save_scope_as = kehillah_historical_jewish_culture }
+		}
+		else_if = {
+			limit = {
+				OR = {
+					has_cultural_pillar = language_italian
+					has_cultural_pillar = language_sardinian
+					has_cultural_pillar = language_latin
+				}
+			}
+			culture:italki = { save_scope_as = kehillah_historical_jewish_culture }
+		}
+		else_if = {
+			limit = {
+				OR = {
+					has_cultural_pillar = language_greek
+					has_cultural_pillar = language_ancient_greek
+					has_cultural_pillar = language_albanian
+					has_cultural_pillar = language_south_slavic
+				}
+			}
+			culture:romaniote = { save_scope_as = kehillah_historical_jewish_culture }
+		}
+		else_if = {
+			limit = {
+				OR = {
+					has_cultural_pillar = language_czech_slovak
+					has_cultural_pillar = language_lechitic
+					has_cultural_pillar = language_east_slavic
+					has_cultural_pillar = language_slavonic
+					has_cultural_pillar = language_wallachian
+				}
+			}
+			if = {
+				limit = { has_global_variable = kehillah_canaani_absorbed }
+				culture:ashkenazi = { save_scope_as = kehillah_historical_jewish_culture }
+			}
+			else = {
+				culture:canaani = { save_scope_as = kehillah_historical_jewish_culture }
+			}
+		}
+		else_if = {
+			limit = { has_cultural_pillar = language_berber }
+			culture:maaravi = { save_scope_as = kehillah_historical_jewish_culture }
+		}
+		else_if = {
+			limit = {
+				OR = {
+					has_cultural_pillar = language_arabic
+					has_cultural_pillar = language_aramaic
+					has_cultural_pillar = language_egyptian
+				}
+			}
+			# Arabic-speaking: the Jewish culture of the Arabic-speaking world
+			# native where the founder is -- Sephardi in al-Andalus (2026-11-11:
+			# Andalusian speaks Arabic), Ma'aravi in the Maghreb, Teimani in
+			# Yemen -- otherwise Mizrahi.
+			culture:bavlim = { save_scope_as = kehillah_historical_jewish_culture }
+			if = {
+				limit = {
+					scope:founder.location.county ?= {
+						exists = var:kehillah_native_jewish_culture
+						OR = {
+							var:kehillah_native_jewish_culture = culture:maaravi
+							var:kehillah_native_jewish_culture = culture:teimani
+							var:kehillah_native_jewish_culture = culture:sephardi
+							var:kehillah_native_jewish_culture = culture:radhanite
+						}
+					}
+				}
+				scope:founder.location.county.var:kehillah_native_jewish_culture = {
+					save_scope_as = kehillah_historical_jewish_culture
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				OR = {
+					has_cultural_pillar = language_iranian
+					has_cultural_pillar = language_tocharian
+				}
+			}
+			culture:radhanite = { save_scope_as = kehillah_historical_jewish_culture }
+		}
+		else_if = {
+			limit = { has_cultural_pillar = language_marathi }
+			culture:bene_israel = { save_scope_as = kehillah_historical_jewish_culture }
+		}
+		else_if = {
+			limit = {
+				OR = {
+					has_cultural_pillar = language_tamil
+					has_cultural_pillar = language_telugu
+					has_cultural_pillar = language_kannada
+				}
+			}
+			culture:kochinim = { save_scope_as = kehillah_historical_jewish_culture }
+		}
+		else_if = {
+			limit = {
+				OR = {
+					has_cultural_pillar = language_ethiopic
+					has_cultural_pillar = language_cushitic
+					has_cultural_pillar = language_omotic
+				}
+			}
+			culture:beta_israel = { save_scope_as = kehillah_historical_jewish_culture }
+		}
+	}
+}
+
+# Scope: the hybrid. Everyone and everywhere of it moves to scope:kehillah_
+# historical_jewish_culture, which becomes native in those counties.
+kehillah_adopt_historical_jewish_culture_effect = {
+	save_scope_as = kehillah_hybrid_culture
+	every_culture_county = {
+		set_county_culture = scope:kehillah_historical_jewish_culture
+		kehillah_set_native_jewish_culture_effect = { CULTURE = scope:kehillah_historical_jewish_culture }
+		kehillah_resolve_local_jewish_culture_effect = yes
+	}
+	every_living_character = {
+		limit = { culture = scope:kehillah_hybrid_culture }
+		set_culture = scope:kehillah_historical_jewish_culture
+	}
+	scope:founder ?= {
+		if = {
+			limit = { NOT = { culture = scope:kehillah_historical_jewish_culture } }
+			set_culture = scope:kehillah_historical_jewish_culture
+		}
+		kehillah_claim_ruler_lands_effect = yes
+		if = {
+			limit = { is_ai = no }
+			send_interface_toast = {
+				type = event_toast_effect_neutral
+				title = kehillah_historical_jewish_culture_toast
+				left_icon = this
+				custom_tooltip = kehillah_historical_jewish_culture_toast_desc
+			}
+		}
+	}
+}
+
+# Scope: the new culture. Its founder's lands take it.
+kehillah_claim_founder_lands_effect = {
+	scope:founder ?= { kehillah_claim_ruler_lands_effect = yes }
+}
+
+# ---------------------------------------------------------------------
+# 3. Scope: a character of a Jewish culture. Every county they hold
+# directly, and the county of their domicile (a Kehillah leader holds no
+# county), take their culture as native.
+# ---------------------------------------------------------------------
+kehillah_claim_ruler_lands_effect = {
+	if = {
+		limit = { culture = { has_cultural_pillar = heritage_israelite } }
+		save_scope_as = kehillah_claiming_ruler
+		every_held_title = {
+			limit = { tier = tier_county }
+			kehillah_set_native_jewish_culture_effect = { CULTURE = scope:kehillah_claiming_ruler.culture }
+			kehillah_resolve_local_jewish_culture_effect = yes
+		}
+		domicile.domicile_location.county ?= {
+			kehillah_set_native_jewish_culture_effect = { CULTURE = scope:kehillah_claiming_ruler.culture }
+			kehillah_resolve_local_jewish_culture_effect = yes
+		}
+	}
+}
+
+# Scope: a character (on_character_culture_change's root). Rulers only;
+# a courtier changing culture moves no borders.
+kehillah_on_jewish_character_culture_change_effect = {
+	if = {
+		limit = {
+			is_ruler = yes
+			has_global_variable = kehillah_native_jewish_cultures_seeded
+		}
+		kehillah_claim_ruler_lands_effect = yes
+	}
+}
+
+# ---------------------------------------------------------------------
+# 2. Scope: a county (on_county_culture_change's root).
+# ---------------------------------------------------------------------
+kehillah_on_jewish_county_culture_change_effect = {
+	if = {
+		limit = {
+			has_global_variable = kehillah_native_jewish_cultures_seeded
+			culture ?= { has_cultural_pillar = heritage_israelite }
+		}
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture }
+	}
+	if = {
+		limit = { has_global_variable = kehillah_native_jewish_cultures_seeded }
+		kehillah_resolve_local_jewish_culture_effect = yes
+	}
+}
+
+# ---------------------------------------------------------------------
+# 4. Scope: none. A community in a county with no native Jewish culture
+# makes its leader's culture native there.
+# ---------------------------------------------------------------------
+kehillah_claim_community_regions_effect = {
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			exists = holder
+			holder.culture = { has_cultural_pillar = heritage_israelite }
+			exists = holder.domicile.domicile_location.county
+			NOT = { exists = holder.domicile.domicile_location.county.var:kehillah_native_jewish_culture }
+		}
+		holder = { save_scope_as = kehillah_claiming_ruler }
+		holder.domicile.domicile_location.county = {
+			kehillah_set_native_jewish_culture_effect = { CULTURE = scope:kehillah_claiming_ruler.culture }
+			kehillah_resolve_local_jewish_culture_effect = yes
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# 5. Sephardi's language. The definition says Arabic; Romance from the
+# turn (global kehillah_sephardi_romance).
+# ---------------------------------------------------------------------
+# Scope: none. At seeding.
+kehillah_seed_sephardi_language_effect = {
+	if = {
+		limit = { current_date >= 1250.1.1 }
+		set_global_variable = { name = kehillah_sephardi_romance value = yes }
+	}
+	if = {
+		limit = { has_global_variable = kehillah_sephardi_romance }
+		culture:sephardi = { set_culture_pillar = language_iberian }
+	}
+}
+
+# Scope: none.
+kehillah_sephardi_turns_to_romance_effect = {
+	set_global_variable = { name = kehillah_sephardi_romance value = yes }
+	culture:sephardi = { set_culture_pillar = language_iberian }
+}
+
+# ---------------------------------------------------------------------
+# Courtiers. Scope: any. LEADER = the community's leader. Saves scope:
+# kehillah_courtier_culture: the local Jewish culture of the leader's
+# domicile (or capital) county, or the leader's own culture if it has none.
+# Used before every create_character that makes a community member.
+# ---------------------------------------------------------------------
+kehillah_save_courtier_culture_effect = {
+	$LEADER$ = {
+		culture = { save_scope_as = kehillah_courtier_culture }
+		if = {
+			limit = { exists = domicile.domicile_location.county.var:kehillah_local_jewish_culture }
+			domicile.domicile_location.county.var:kehillah_local_jewish_culture = {
+				save_scope_as = kehillah_courtier_culture
+			}
+		}
+		else_if = {
+			limit = { exists = capital_county.var:kehillah_local_jewish_culture }
+			capital_county.var:kehillah_local_jewish_culture = {
+				save_scope_as = kehillah_courtier_culture
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# Vanilla's own Jewish characters (2026-11-10 audit). Their history files
+# cannot be patched per character, so this runs at seeding: Haymanot Jews
+# of a non-Jewish culture (vanilla gives the Beta Israel rulers of Semien
+# and Dembiya, such as Ras Dawit, Ethiopian culture) become Beta Israel,
+# and Rabbanite Jews of the Persian culture become Radhanite. Khazar
+# Kabarites and the Samaritan priesthood are left as vanilla has them.
+# ---------------------------------------------------------------------
+kehillah_correct_vanilla_jewish_cultures_effect = {
+	every_living_character = {
+		limit = {
+			rite ?= rite:haymanot
+			NOT = { culture = { has_cultural_pillar = heritage_israelite } }
+		}
+		set_culture = culture:beta_israel
+	}
+	every_living_character = {
+		limit = {
+			culture = culture:persian
+			faith = { religion = religion:judaism_religion }
+		}
+		set_culture = culture:radhanite
+	}
+}
+
+# =====================================================================
+# Jews among another Jewish people (2026-11-11, Daniel: "Italkim living in
+# German-speaking lands should be able to become Ashkenazi").
+# =====================================================================
+
+# Scope: a character. A Jew of one Jewish culture living where another
+# Jewish culture is native: saves scope:kehillah_local_people, or nothing.
+kehillah_pick_local_jewish_people_effect = {
+	save_scope_as = kehillah_local_jew
+	if = {
+		limit = {
+			kehillah_is_hebrew_culture_trigger = yes
+			location.county ?= {
+				exists = var:kehillah_local_jewish_culture
+				var:kehillah_local_jewish_culture = { has_cultural_pillar = heritage_israelite }
+				NOT = { var:kehillah_local_jewish_culture = scope:kehillah_local_jew.culture }
+			}
+		}
+		location.county.var:kehillah_local_jewish_culture = { save_scope_as = kehillah_local_people }
+	}
+}
+
+# Scope: a newborn (on_birth_child's scope:child). A Jewish child born among
+# another Jewish people takes that people's culture half the time, so a
+# family settled abroad blends in over a few generations.
+kehillah_birth_among_jewish_people_effect = {
+	if = {
+		limit = { has_global_variable = kehillah_native_jewish_cultures_seeded }
+		kehillah_pick_local_jewish_people_effect = yes
+		if = {
+			limit = { exists = scope:kehillah_local_people }
+			random = {
+				chance = 50
+				set_culture = scope:kehillah_local_people
+			}
+		}
+	}
+}
+
+# =====================================================================
+# Juhuri emerges (2026-11-11, Daniel: "Radhanites should be able to become
+# Juhuri"). Retired 2026-11-09 for the start dates; now the Persian-
+# speaking Jews of the eastern Caucasus become the Mountain Jews in play:
+# by chance from 1350, at the latest in 1450. Their Radhanite counties in
+# Shirvan, Azerbaijan and Ciscaucasia (Derbent) and the Radhanite Jews
+# living there become Juhuri.
+# =====================================================================
+
+# Scope: none.
+kehillah_juhuri_emerges_effect = {
+	set_global_variable = { name = kehillah_juhuri_emerged value = yes }
+	title:d_shirvan ?= { kehillah_juhuri_emerges_in_duchy_effect = yes }
+	title:d_azerbaijan ?= { kehillah_juhuri_emerges_in_duchy_effect = yes }
+	title:d_ciscaucasia ?= { kehillah_juhuri_emerges_in_duchy_effect = yes }
+	every_living_character = {
+		limit = {
+			culture = culture:radhanite
+			location.county ?= { has_variable = kehillah_juhuri_turning }
+		}
+		set_culture = culture:juhuri
+	}
+	every_county = {
+		limit = { has_variable = kehillah_juhuri_turning }
+		remove_variable = kehillah_juhuri_turning
+	}
+}
+
+# Scope: a duchy.
+kehillah_juhuri_emerges_in_duchy_effect = {
+	every_de_jure_county = {
+		limit = {
+			exists = var:kehillah_native_jewish_culture
+			var:kehillah_native_jewish_culture = culture:radhanite
+		}
+		kehillah_set_native_jewish_culture_effect = { CULTURE = culture:juhuri }
+		kehillah_resolve_local_jewish_culture_effect = yes
+		set_variable = { name = kehillah_juhuri_turning value = yes }
+	}
+}

@@ -17,6 +17,160 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+**Jewish rite names and icon diversity BUILT 2026-11-12, source/xTiger checked, live UI check
+pending:** the mainline rite displays as Minhag Bavel, while the faith stays Rabbinic Judaism;
+Yordei Merkavah is localized, though the latest screenshot still showed the vanilla name.
+The Bavel, Yerushalmi and Sepharad rites have their own
+descriptions. Eleven new 100×100 faith/rite icons cover the requested lectern, scroll, star,
+wheel, book, ark, tablets, horse, ship, Italki menorah and Romaniote oil lamp; Yerushalmi uses
+vanilla's menorah. Italki and Romaniote art is ready for future rites but their current
+communities keep their existing rite assignments. The broken localization encoding that showed
+raw keys is corrected. See [the implementation record](docs/implementation/2026-11-12-jewish-rite-icons-and-names.md).
+
+**Jewish icon revision BUILT 2026-11-12, live UI check pending:** Ashkenaz now uses an open
+blank-parchment Torah scroll with plain wooden rollers, Bavel a front-facing book-topped shtender,
+Sepharad a Jewish hamsa, and Yordei Merkavah a muted, single-material Tree of Life motif.
+The Torah and shtender have a subtle carved and parchment finish to match vanilla CK3 icons.
+Their silhouettes were enlarged after the character-list screenshot showed them too small.
+The Rabbinic faith uses vanilla `judaism_01`; the ornate star is available in the custom Jewish
+faith icon picker. Earlier DDS icons remain for comparison. The user-supplied UI screenshot still
+showed `Merkabah` and vanilla stars on faith rows; a unique localization key now addresses
+the name, while faith-row icon behavior needs a fresh-game check. Faith-level and rite-level
+icons are distinct fields in installed CK3 1.20.1 source. See the third-pass section of the
+implementation record linked above.
+
+**Medieval Rabbinic Minhagim — first implementation slice BUILT 2026-11-12, expanded 2026-11-12;
+xTiger source check clean for changed files, live probe pending:** the faith remains Rabbinic
+Judaism and the mainline `rabbinism` rite displays as Minhag Bavel. Minhag Yerushalmi has a
+distinct foundational Talmud Yerushalmi canon; in 867 it represents Jerusalem, Tiberias, the
+Italian Kehillot (Rome, Lucca, Bari, Oria and Palermo) and Constantinople, as Palestinian-influenced
+local practice under continuing Geonic scholarly authority. Outside the Levant, this regional
+assignment applies only in 867. Minhag Sepharad is seeded in Sephardi communities from 1066. The 867/1066/1178
+Gaonate holders are set historically.
+No existing community is labeled Karaite: the evidence found Karaite presence at Toledo/Talavera
+and important minority congregations in Fustat and Constantinople, but no proven majority locality
+that fits one community per place. Live initialization checks for rite creation, canon, and title
+holders remain pending. See [the implementation record](docs/implementation/2026-11-12-medieval-rabbinic-minhagim.md).
+
+**Cherem leadership and realm-office forfeiture BUILT - 2026-11-11, source checked,
+live test pending:** leaving communal leadership now clears the realm Jewish
+headship and its associated court service through the shared departure path;
+engine title losses get a deferred check, and quarterly cleanup includes former
+leaders to repair affected saves. *The Ban Is Read* offers teshuvah before
+resignation: the existing 200-Piety, one-year penance with a shared five-year retry
+gate, retaining leadership at -1 Stability per quarter while judgment is pending.
+Refusal returns to the leadership choice. See the
+[implementation and live-test checklist](docs/implementation/2026-11-11-leadership-cherem-and-office-forfeiture.md),
+which supersedes the two-option response described in the earlier cherem entry.
+
+**Standing on one scale BUILT - 2026-11-11, Daniel's request, xTiger-clean, live test pending
+(Daniel runs it by hand):** a book's standing in a rite is one scale of twelve tiers, Anathema,
+Banned, Rejected, Contested, Obscure, Popular, Celebrated, Esteemed, Authoritative, then
+Foundational, Prophetic and Divine fixed by doctrine. The bands and the Class line are gone;
+neighbouring tiers share a colour. Gates now mean their tier (Popular read, Celebrated praised,
+Esteemed taught, Authoritative relied on); a Machloket the critics overwhelm pronounces Anathema
+for 30 years. Old saves remap 8-10 to Authoritative once. Spec:
+[2026-11-11-standing-one-scale.md](docs/spec/2026-11-11-standing-one-scale.md). **Next,
+proposed:** the next gate as a ✓/✗ checklist on the work page, with points toward the target, the
+ceiling's cause and a falling warning; then canon per rite and a door into Foundational.
+
+**Reviews and Cherem - 2026-11-11, BUILT (players' reviews, AI reviewers, the cherem track), not live-tested:** any rabbi (any adult, for
+Karaites) may give a book a haskamah or a cherem, weighted by Learning, Piety and scholarship;
+AI reviewers judge by tenets (a small opposition table plus vanilla rite hostility) and
+personality; a cherem track for people (Nezifah, Niddui, Cherem) with teshuvah; a community leader
+banned only by a synod, the head of rite or the Sanhedrin, then steps down or carries on at a
+large Stability cost. Revised the same day: a cherem needs no mastery (mid-reading or
+arbitrary); a haskamah at mastery ties the giver's Piety to the book's later rises and falls.
+Spec: [2026-11-11-reviews-and-cherem.md](docs/spec/2026-11-11-reviews-and-cherem.md).
+
+**Rulings, sermons and gates - 2026-11-11, Daniel's decisions. Gates and docket BUILT,
+xTiger-clean, live test pending (Daniel runs it by hand; steps in the spec's build record):**
+- BUILT: Popular and Celebrated by points alone; Esteemed by 5 masters; Authoritative by genre
+  (Talmudics cited in rulings, Parshanut preached from, Machshavah changed readers' minds, 3 each,
+  30 years, author dead).
+- BUILT: the Bet Din docket by the six orders of the Mishnah. Any mastered work covering a case's
+  order opens its source option, and *On Whose Authority?* names the work (grounded, innovative,
+  by conviction). The named work counts the citation. **Responsa are cut for now.**
+- BUILT: sermons, once a year. A rabbi who knows the Torah preaches, or outside Rabbinism a
+  scholar of Learning 12 who has mastered it; the Dayyan preaches when the leader cannot. Five
+  topics (the portion, neighbours, tzedakah, the peace of the city, a time of trouble), two fitting
+  Parshanut texts, each counting toward its Authoritative gate once per community. A Jewish
+  adventurer may *Preach as a Maggid* for renown or alms.
+- BUILT: Machshavah changing minds. On mastering a Machshavah book its tenets gain twice the
+  popularity, and the reader may adopt one he does not hold: a player chooses, the AI rolls by
+  traits and his rite. A playable character takes a personal tenet; anyone else a leaning. Each
+  counts toward the book's Authoritative gate. To check live: whether Jewish characters have
+  personal-tenet slots.
+- BUILT: reviews by players. A haskamah on mastering a book or from its page; a cherem from its
+  page (half weight unread) or while reading a book against one's faith. Weighted by Learning,
+  Piety, scholarship and office, in the reviewer's own rite; a haskamah ties the giver's Piety to
+  the book's later rises and falls; a cherem on a book that reaches Esteemed costs Prestige.
+- BUILT (Daniel, 2026-11-11): the library adds Greatness by its books' standing (canon 2 each, up
+  to Authoritative 5; Banned −4, Anathema −8; between −40 and +80), and the Greatness floor drops
+  from 60 to 30. Works of other traditions are Obscure to the Beta Israel and the Samaritans, not
+  Banned or Rejected (older saves repaired once).
+- BUILT: AI reviews on vanilla's measures (no modded opposition table): a reviewer's stance on a
+  book comes from his rite's tenet statuses, his personal tenets and leanings, the tenet's
+  spiritual-fulfillment fit with his virtues and sins, faith hostility and the author. AI give
+  haskamot on mastery and bans while reading; a few scholars ban new books unread. A haskamah is
+  for a book written in the last 50 years and Obscure to Esteemed. Seek an Approbation reworked:
+  the approver reads the book, and answers by the author's renown and devotion and his stance.
+- BUILT: the cherem track for people. A score of 0-100: Nezifah at 25, Niddui at 50, the full
+  Cherem (vanilla's In Herem) at 100. Bans on your books, your books falling to Banned or Anathema
+  and reading forbidden books fill it; below Niddui it fades. A community leader stops at 99: only
+  a synod (a new herem motion), the head of his rite or faith, or the Nasi can ban him; he then
+  steps down (the existing step-down path) or carries on at a heavy Stability cost. Teshuvah: a
+  year of penance, judged by the head of the rite or a court of three. Departures and the live
+  test (the step-down needs its own) are in the spec's build record.
+  REVISED the same day: the track is one lifestyle trait (Reproved, Nezifah, Niddui, In Herem)
+  whose XP is the score; a Bet Din's cherem uses it too; teshuvah lowers it one level and gives up
+  the forbidden books in your library. See the spec's addendum. Later: no leader cap (anyone at 100 is in
+  herem and hears The Ban Is Read), the Heresiarch icon, and founding a new rite clears the trait.
+- Later: Zeraim and Tahorot cases; an order chosen by the author in the writing chain.
+
+Spec: [2026-11-11-rulings-sermons-and-gates.md](docs/spec/2026-11-11-rulings-sermons-and-gates.md).
+
+**Sefer languages BUILT - 2026-11-10, Daniel's request and same-day review, xTiger-clean, live
+test pending (Daniel runs it by hand):** every catalog work has one language (Hebrew, Aramaic, or
+Arabic for Judeo-Arabic; Greek and Latin ready for translations). Hebrew is vanilla's
+`language_israelite`, spoken by vanilla's extinct Hebrew culture (no Judean/Israelite cultures
+added). Mastery is now a roll, not a Learning threshold: 50% base, ±4% per point of Learning from
+10, −50% for a language he doesn't know (vanilla's yes/no), only −30% when it is a liturgical
+tongue of his faith (by 1.20 rite: Hebrew/Aramaic for Jews, Karaites Hebrew only; Latin, Greek,
+Syriac Aramaic, Arabic for the others), shrinking by 10 with each book he masters in it and offset
+(never past zero) by +15% for a yeshiva and +15% for a Dayyan who knows the language, plus terms for depth in the field, Talmud Torah, personal tenets, Diligent/Lazy/Scholar/
+Theologian and rereading, clamped 5–95%; every book can be tried, and the Learn Torah picker and the
+library show each book's chance with the full breakdown. Mastering three books
+in a liturgical tongue teaches it; Arabic and the rest are not learned by a Jew by reading. An author
+chooses Hebrew, Aramaic or his own tongue (*In What Tongue?*): his own is easier and readable only
+by speakers, and its prestige follows vanilla's court languages, rechecked yearly: a great royal
+court's language caps at Authoritative, any court's at Classic, a tongue no court speaks at
+Esteemed and starts a tier lower (Hebrew and Aramaic uncapped). The library detail and the Sefarim
+ledger show the language, your fluency and the mastery chance as a breakdown. **Watch:** German is
+the Emperor's court language, so Judeo-German books rank high too. **Next: translation** as
+editions of a work, proposed in [the spec](docs/spec/2026-11-10-sefer-languages.md) §6, which also
+has the test checklist (§8).
+
+**Study timing and mastery tooltip BUILT - 2026-11-11, xTiger baseline unchanged,
+live UI check pending:** Learn Torah now aims at a four-to-eight-month reading
+with Learning shortening the duration. Its native scheme chance describes
+finishing a reading; the separate per-book mastery roll still determines
+understanding. The Beit Midrash's Study tooltip displays that roll's direct
+script value above its breakdown instead of the zero headline shown in
+Daniel's screenshot. See [the implementation note](docs/implementation/2026-11-11-study-sefer-timing-and-tooltips.md).
+
+**Expanded historical Sefer catalogue BUILT - 2026-11-12, source check pending:**
+the 143-work catalogue now has 168 entries. It adds tannaitic legal midrash,
+classical homiletic and targumic works; further Karaite texts; Samaritan
+Pentateuch, Targum, *Memar Marqah* and *Defter*; Beta Israel's Ge'ez *Orit*
+and *Te'ezaza Sanbat*; and carefully marked historical/polemical material
+including *Yosippon*, Philo, Josephus and *Toldot Yeshu*. The latter is a
+Contested Machshavah text, not ordinary doctrine. The system now supports
+Samaritan and Haymanot baselines, their tradition-specific Divine scripture,
+and vanilla Ethiopic and Tamil reading languages. The Cochin Copper Plates
+represent Indian Jewish community memory without inventing a medieval Indian
+rabbinic corpus. See [the build record](docs/implementation/2026-11-12-expanded-historical-catalog.md).
+
 **Stand for the Seat BUILT (first pass) - 2026-11-08, Daniel's request, xTiger-clean, live test
 pending (Daniel runs it by hand):** a player who leads a community can **Weigh Their Seat** on
 another same-faith, AI-led community's leader. The event shows:
@@ -69,6 +223,28 @@ canon, is flagged. The Acquire and All works pages became one **Ledger of Sefari
 the works the community knows of (obscure and forbidden books only once met), with date, place,
 language, a linked author (three new Karaite author characters), standing, tenets and Seek a
 copy. See [the record and test checklist](docs/implementation/2026-11-08-library-shelf-and-ledger.md).
+
+**Library visual pass - 2026-11-08, source checked, live rendering pending:** stable Hebrew book
+cartouches, painted bindings, ark and lectern, Hebrew-labelled Bavli and Tanakh codices, a wider and scrollable work page, and a compact
+ledger with a selected-work card, copy filters and date/name sorting. See
+[the implementation record and human check](docs/implementation/2026-11-08-library-visual-pass.md).
+
+**Manuscript acquisition access BUILT - 2026-11-11, Daniel's request, source checked:** the
+local-copy option now explains that a Beit Midrash is the library while a Sofer's Workshop is the
+copyist. A basic workshop is a short, inexpensive extension of a community that already has a
+Beit Midrash (25 gold and 25 piety, no charter petition). Workshops are seeded in the established
+scriptorial hubs—Mainz, Troyes, Narbonne, Lunel, the principal Andalusi communities, Baghdad,
+Sura, Jerusalem, Rome, Constantinople, Kairouan, Alexandria and Fustat—while smaller communities
+still obtain one through normal construction. Live check pending: begin in Granada and confirm the
+workshop is present and the local-copy requirement is intelligible.
+
+**Haymanot library first pass - 2026-11-10, source checked, live rendering pending:** Beta Israel
+libraries are a distinct tradition. New libraries begin with the Torah alone, without the
+Rabbanite Mishnah or Talmud seed; their card and map label identify Haymanot, and the card omits
+Talmud counts. An older, unchanged six-work seed is corrected on the yearly pass, while acquired
+books are preserved. The Orit is broader than this one represented work; Ge'ez editions await
+per-copy language support rather than changing the Hebrew Torah work globally. Probe with
+`event kehillah_sefer_v2_debug.3` followed by `.16` on a disposable save.
 
 **Sefer ha-Qabbalah roster tranche BUILT - 2026-11-08, Daniel's request, xTiger-clean, live test pending:** 86 new historical characters (Geonim of Sura and Pumbedita, exilarchs, Gershom, the grammarians), 51 invented wives for every father with attested children (38 of them retrofitted into the 1066 roster), and holder history on Sura, Baghdad, Cordoba, Granada, Mainz and a new history-only Pumbedita academy. See [the build record](docs/implementation/2026-11-08-sefer-haqabbalah-roster.md). **Next:** Tannaim and Amoraim, the Palestinian Gaonate, earlier exilarchs, and Kairouan/Worms terms.
 
@@ -292,6 +468,13 @@ preserves those changes, plus the remaining UI/editorial work. The multi-communi
 remains a proposal. Earlier partial live passes do not verify the newest lifecycle, paging,
 feedback and presentation changes; the combined PR remains a draft pending those checks.
 ### Community crises as situations — 2026-10-31, Daniel's request
+
+**2026-11-11 map pins (verified live):** the crisis, decree and trial situations moved to vanilla's
+`natural_disasters` group, the only group the engine draws map pins for. The crisis pin was seen in
+Rouen; the decree and trial pins are not yet seen. **Backlog (Daniel's wish):** move them to a group
+of their own, since a "Natural Disaster" heading is awkward for them, once a game update or a found
+technique lets a mod group show pins. A fallback is to rename the heading in loc, but that renames
+it for real earthquakes too. Details: `docs/implementation/2026-11-11-crisis-neighbours.md`.
 
 **Crisis notification and option clarity - 2026-11-03:** A short banner confirms the opening
 only after acknowledgment. Catalyst and other crisis reports use the side feed, matching
@@ -1257,7 +1440,7 @@ is the S11 "friendliness" design review; the Crusades chain stays separate and b
 - **Decided 2026-10-12:** tribute starts at 20% of income; every convert steps down. Still open
   (v31 §14, §16): secret Jews after conversion, non-rabbinic Jewish faiths, reaching a
   player-led community with forced conversion (answered: v31 §10.3).
-- **Tribute, part 1: BUILT 2026-10-30, not live-tested** ([addendum](docs/implementation/2026-10-30-host-tribute.md)). Every charter has a Tribute term: None, Customary (20%, the default) or Heavy (30%). **Changed 2026-11-08:** the rungs now carry an engine `tax =` share, so the tribute is a monthly line in both gold tooltips; the quarterly scripted transfer is gone and the Domain tab shows "Tribute to host N%". Whether the engine sees domicile income (§11.2) is untested: [checklist](docs/testing/2026-11-08-engine-tribute-test-checklist.md). The levy, the confirmation fee and the regional names are not built.
+- **Tribute, part 1: BUILT 2026-10-30, not live-tested** ([addendum](docs/implementation/2026-10-30-host-tribute.md)). Every charter has a Tribute term: None, Customary (20%, the default) or Heavy (30%). **Changed 2026-11-08:** the rungs now carry an engine `tax =` share, so the tribute is a monthly line in both gold tooltips; the quarterly scripted transfer is gone and the Domain tab shows "Tribute to host N%". Whether the engine sees domicile income (§11.2) is untested: [checklist](docs/testing/2026-11-08-engine-tribute-test-checklist.md). **Reverted 2026-11-11 (live):** it doesn't. A Kehillah has no holding taxes to share, so the engine charged nothing. The quarterly scripted transfer is back, and the Domain tab shows "Tribute 20% −X" with a tooltip saying the payment is quarterly and not in the monthly totals ([addendum](docs/implementation/2026-10-30-host-tribute.md)). Not live-tested since the revert. The levy, the confirmation fee and the regional names are not built.
 - **Next:** live-test v30. Then v31 §11's spikes (doctrine group on rites, tributary
   tax on a Kehillah, custom faction), then the slices in §12. Open questions for Daniel: §14.
 
@@ -1421,6 +1604,12 @@ the shim guide. Current state is in the
     - Lucena, Jerusalem, Mahdia (with the ruined Kairouan hall) and Sura.
     - Baghdad is now the Exilarch's seat with the Yeshiva of Pumbedita.
     - Narbonne is seeded.
+  - **Historical Kairouan office (2026-11-11):** Nissim ben Jacob (d. 1062)
+    now retains the historical Yeshiva seat of Kairouan from an approximate
+    1056 accession to his 1062 death. After the 1057 dispersal it is only a
+    displaced, titular academy. This preserves his title and Gaon style in
+    character history without creating a 1066 Kehillah; Mahdia remains the
+    refugee community.
   - **Decided 2026-10-11:** players see the yeshiva's **renown** as tiers only (Modest, Respected,
     Renowned, Illustrious, with "growing toward" or "nearly" the next). The number stays behind the
     scenes.
@@ -3325,9 +3514,25 @@ Ideas raised during design discussion, sorted by how cheaply they'd fit —
 not yet assigned to a phase. Pull one into a phase's scope explicitly
 before building it; nothing here is approved by default.
 
+- **Refine the mod's Jewish tenets (Daniel, 2026-11-11):** they "feel very janky right now and
+  stick out from vanilla". Revisit the twelve-tenet roster, its effects and its rivalries (the
+  opposition table in
+  [2026-11-11-reviews-and-cherem.md](docs/spec/2026-11-11-reviews-and-cherem.md) §2 is written
+  against today's roster) before more systems lean on it.
+- **Responsa, redesigned (Daniel, 2026-11-11):** cut from the Bet Din docket during its rework
+  ([2026-11-11-rulings-sermons-and-gates.md](docs/spec/2026-11-11-rulings-sermons-and-gates.md)
+  §2); come back with a design that works mechanically, possibly counting a responsum as a citation.
+
 **Cheap, reinforces an existing v1 pillar (candidates to pull into Phase 1):**
 - **Two Josephs in 1066: vanilla's ibn Naghrela family duplicates the mod's.** Noted 2026-11-01 at
   Daniel's request ("Make a note of the duplicate characters to come back to later").
+  - **Roster cleanup built 2026-11-10; live check pending:** the 1066 game-start hook retires
+    vanilla's living Yosef, wife and son when the mod's Yosef leads Granada. The mod's character
+    is now named Yosef. Vanilla has no fixed DNA for him; Daniel's exported campaign DNA now
+    supplies both the mod's character portrait and bookmark card. The generated vanilla Rashi's
+    face also informs the mod's Rashi and card, retaining the mod's fuller beard; the 1066 start
+    now registers the mod's Rashi to stop vanilla's annual duplicate spawn.
+    See [the implementation note](docs/implementation/2026-11-10-granada-duplicate-roster.md).
   - Vanilla has Yosef 3221 (Badis's courtier and tax collector, dying 1066.12.30), Rahel
     (sephardi_0004), Azariah (sephardi_0005), Shmuel 3220, Nissim, Yaakov and the poet Qasmuna
     (sephardi_0001).

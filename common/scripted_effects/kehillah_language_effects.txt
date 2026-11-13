@@ -1,0 +1,153 @@
+﻿# =====================================================================
+# Sefer languages (2026-11-10, docs/spec/2026-11-10-sefer-languages.md).
+#
+# Every work in the catalog is written in one language (`lang` in
+# scripts/kehillah_library_catalog.json; a book written in play, in the
+# language its author chose at kehillah_sefer.0203). A reader who does not
+# know it has a lower chance to master the work, less so when it is a
+# liturgical tongue of his faith (kehillah_lib_mastery_chance_<work>,
+# generated; kehillah_language_triggers.txt). Reading is how he learns a
+# liturgical tongue; other languages are not learned so.
+#
+# Languages are vanilla's own (knows_language / learn_language). Hebrew is
+# vanilla's language_israelite, spoken by its extinct `hebrew` culture
+# (Daniel, 2026-11-10).
+# =====================================================================
+
+
+# ---------------------------------------------------------------------
+# kehillah_language_scholar_ensure_effect. Scope: a character.
+# The languages a Jewish reader's schooling has already given him:
+#  - Hebrew, for any Jew with Learning 5 or more, or a rabbi;
+#  - Aramaic, for a rabbi (semikhah presumes the Talmud), or a Karaite with
+#    Learning 10 or more (Karaites have no clergy; Anan wrote in Aramaic).
+# Run at game start for every Jewish adult, at 16, and before every reading,
+# so characters created later (generated rabbis, courtiers) are covered too.
+# ---------------------------------------------------------------------
+kehillah_language_scholar_ensure_effect = {
+	if = {
+		limit = { is_jewish_character_trigger = yes }
+		if = {
+			limit = {
+				NOT = { knows_language = language_israelite }
+				OR = {
+					learning >= kehillah_language_hebrew_schooling_learning
+					has_trait = kehillah_rabbi_trait
+				}
+			}
+			learn_language = language_israelite
+		}
+		if = {
+			limit = {
+				NOT = { knows_language = language_aramaic }
+				OR = {
+					has_trait = kehillah_rabbi_trait
+					AND = {
+						kehillah_is_karaite_character_trigger = yes
+						learning >= kehillah_language_karaite_aramaic_learning
+					}
+				}
+			}
+			learn_language = language_aramaic
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_language_exposure_effect = { LANG = language_aramaic }. Scope:
+# the reader, after he masters a work in $LANG$ (revision 5: only a mastered
+# reading; the caller checks). A reader who does not know it counts the book
+# when it is a liturgical tongue of his faith
+# (kehillah_liturgical_language_trigger); each one shrinks his penalty in it
+# (kehillah_study_chance_liturgical_<language>), and after
+# kehillah_language_readings_to_learn of them he knows it, and a player is
+# told. Any other language is not learned by reading.
+# ---------------------------------------------------------------------
+kehillah_language_exposure_effect = {
+	if = {
+		limit = {
+			NOT = { knows_language = $LANG$ }
+			kehillah_liturgical_language_trigger = { LANG = $LANG$ }
+		}
+		if = {
+			limit = { NOT = { has_variable = kehillah_lang_exposure_$LANG$ } }
+			set_variable = { name = kehillah_lang_exposure_$LANG$ value = 0 }
+		}
+		change_variable = { name = kehillah_lang_exposure_$LANG$ add = 1 }
+		if = {
+			limit = { var:kehillah_lang_exposure_$LANG$ >= kehillah_language_readings_to_learn }
+			remove_variable = kehillah_lang_exposure_$LANG$
+			if = {
+				limit = { is_ai = no }
+				send_interface_toast = {
+					type = event_toast_text_and_effect_good
+					title = kehillah_language_learned_toast
+					left_icon = root
+					learn_language = $LANG$
+				}
+			}
+			else = {
+				learn_language = $LANG$
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_language_write_effect. Scope: the author, at kehillah_book.0005
+# via kehillah_sefer_write_authored_work_effect. $SLOT$ is the authored
+# slot. Records the language chosen at kehillah_sefer.0203 (Hebrew when
+# none was chosen, as for books begun before languages existed).
+# ---------------------------------------------------------------------
+kehillah_language_write_effect = {
+	if = {
+		limit = { var:kehillah_book_lang ?= flag:aramaic }
+		set_global_variable = { name = kehillah_wk_$SLOT$_lang value = flag:aramaic }
+	}
+	else_if = {
+		limit = { var:kehillah_book_lang ?= flag:vernacular }
+		set_global_variable = { name = kehillah_wk_$SLOT$_lang value = flag:vernacular }
+		set_global_variable = { name = kehillah_wk_$SLOT$_lang_culture value = culture }
+		kehillah_language_refresh_prestige_effect = { SLOT = $SLOT$ }
+	}
+	else = {
+		set_global_variable = { name = kehillah_wk_$SLOT$_lang value = flag:hebrew }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_language_refresh_prestige_effect = { SLOT = work_authored_01 }.
+# Scope: any. A book in its author's own tongue takes that tongue's prestige
+# (kehillah_language_prestige_value: 2 a great court's language, 1 a court's,
+# 0 none) into global_var:kehillah_wk_$SLOT$_lang_prestige, which caps its
+# standing (kehillah_lib_ceiling_<slot>). Run when it is written, and yearly
+# for every slot (kehillah_language_refresh_all_prestige_effect, generated),
+# so a book rises and falls with the courts that speak its language.
+# ---------------------------------------------------------------------
+kehillah_language_refresh_prestige_effect = {
+	if = {
+		limit = {
+			global_var:kehillah_wk_$SLOT$_lang ?= flag:vernacular
+			exists = global_var:kehillah_wk_$SLOT$_lang_culture
+		}
+		global_var:kehillah_wk_$SLOT$_lang_culture = { save_scope_as = kehillah_tongue_culture }
+		set_global_variable = { name = kehillah_wk_$SLOT$_lang_prestige value = kehillah_language_prestige_value }
+	}
+}
+
+# ---------------------------------------------------------------------
+# Game start, and the first year of an older save. Scope: none.
+# ---------------------------------------------------------------------
+kehillah_language_seed_effect = {
+	if = {
+		limit = { NOT = { has_global_variable = kehillah_languages_ready } }
+		set_global_variable = { name = kehillah_languages_ready value = yes }
+		every_living_character = {
+			limit = {
+				is_jewish_character_trigger = yes
+				is_adult = yes
+			}
+			kehillah_language_scholar_ensure_effect = yes
+		}
+	}
+}

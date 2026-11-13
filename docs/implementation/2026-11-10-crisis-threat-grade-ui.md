@@ -38,7 +38,9 @@ are: what is happening, in the present tense, with no numbers. The older
 `SituationPhaseType.GetName` instead of `SituationPhase.GetName`, so the phase name is a link with
 the phase tooltip, as a struggle's is. This applies to every situation in the list.
 
-Not done: the decree and Talmud-trial phases still have no `_situation_phase_desc` keys.
+The decree's five phases and the Talmud trial's eight got the same `_situation_phase_desc` keys
+later the same day; their older `kehillah_decree_<phase>_desc` and `kehillah_trial_<phase>_desc`
+keys are likewise unread and were left in place.
 
 ## Live checklist
 
@@ -46,7 +48,8 @@ Not done: the decree and Talmud-trial phases still have no `_situation_phase_des
    Hover the grade: title "Grave Threat", the explanation, and "If a host gathers, progress toward
    Spared can lower it."
 2. Hover "Agitation" in the window and under "All possible next Situation Phases": each tooltip
-   shows its description.
+   shows its description. Do the same for a decree (`Proclaimed`) and a Talmud trial
+   (`Denunciation`).
 3. Situation list: "Current Situation Phase: Agitation · Grave threat"; the phase name is a link
    with the tooltip. Another situation (a struggle, the Great Steppe, a decree) shows no tag.
 4. Military > Community Safety: "Now: Agitation · Grave threat". The crisis map card shows the

@@ -1,0 +1,129 @@
+﻿# =====================================================================
+# Kehillah news moves the Iberian Struggle -- 2026-11-09 (Daniel: a crisis
+# or a community collapsing pushes toward Hostility; a founding, a community
+# reaching a high level, a more favorable charter push toward
+# Conciliation). docs/spec/v53-sepharad-and-the-iberian-struggle.md
+# section 6.
+#
+# Two levers, no other vanilla change:
+#   1. The mod's own catalysts, listed in the phases by the override of
+#      iberian_struggle_script.txt: "ruin" catalysts toward the worse
+#      neighbouring phase, "flourish" catalysts toward the better one.
+#   2. Where a phase has no list in that direction (Hostility for ruin;
+#      Compromise and Conciliation for flourish), the news lengthens the
+#      phase: change_struggle_phase_duration, +5 points (the size of a
+#      medium catalyst; a phase is 1000 points).
+#
+# Without The Fate of Iberia, with the struggle switched off or ended, or
+# outside Iberia, kehillah_under_iberian_struggle_trigger is false and
+# nothing happens.
+# =====================================================================
+
+# Scope: a Kehillah leader whose Quarter still exists.
+# CATALYST: crisis, lost or charter_worsened (KIND = ruin);
+#           founded, flourishing or charter_improved (KIND = flourish).
+kehillah_iberia_struggle_push_effect = {
+	if = {
+		limit = { kehillah_under_iberian_struggle_trigger = yes }
+		save_scope_as = kehillah_iberia_leader
+		domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_iberia_host }
+		struggle:iberian_struggle = {
+			if = {
+				limit = { phase_has_catalyst = catalyst_kehillah_$CATALYST$ }
+				# The notice first: the catalyst can end the phase at once.
+				scope:kehillah_iberia_leader = { kehillah_iberia_struggle_notice_effect = { CATALYST = $CATALYST$ KIND = $KIND$ } }
+				# Credited to the host when he is a party to the struggle, so
+				# vanilla's own notice names him; otherwise to no one.
+				if = {
+					limit = {
+						exists = scope:kehillah_iberia_host
+						scope:kehillah_iberia_host = { any_character_struggle = { is_struggle_type = iberian_struggle } }
+					}
+					activate_struggle_catalyst = {
+						catalyst = catalyst_kehillah_$CATALYST$
+						character = scope:kehillah_iberia_host
+					}
+				}
+				else = {
+					activate_struggle_catalyst = catalyst_kehillah_$CATALYST$
+				}
+				debug_log = "kehillah_iberia_struggle: catalyst_kehillah_$CATALYST$ activated"
+			}
+			else_if = {
+				limit = { kehillah_iberia_struggle_prolongs_$KIND$_trigger = yes }
+				scope:kehillah_iberia_leader = { kehillah_iberia_struggle_notice_effect = { CATALYST = $CATALYST$ KIND = $KIND$ } }
+				change_struggle_phase_duration = { duration = { points = 5 } }
+				debug_log = "kehillah_iberia_struggle: $CATALYST$ lengthened the current phase"
+			}
+		}
+	}
+}
+
+# Scope: the Kehillah leader. Players only. The outcome line is chosen by
+# the phase BEFORE the catalyst fires (KehillahIberiaRuinOutcome /
+# KehillahIberiaFlourishOutcome).
+kehillah_iberia_struggle_notice_effect = {
+	if = {
+		limit = { is_ai = no }
+		send_interface_message = {
+			type = msg_kehillah_iberia_$KIND$
+			title = kehillah_iberia_push_$CATALYST$_t
+			desc = kehillah_iberia_push_$CATALYST$_d
+			left_icon = root
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# A more or less favorable charter. Scope: a Kehillah leader, at the end
+# of kehillah_refresh_charter_state_cache_effect, when the title's cache
+# holds a real (not predicted) charter. The charter's worth is the sum of
+# its pillar terms (kehillah_iberia_charter_worth_value); the first
+# reading only records it.
+# ---------------------------------------------------------------------
+kehillah_iberia_charter_change_effect = {
+	if = {
+		limit = {
+			primary_title ?= {
+				has_variable = kehillah_charter_cache_construction
+				NOT = { has_variable = kehillah_charter_predicted }
+			}
+		}
+		save_scope_value_as = { name = kehillah_iberia_charter_worth value = kehillah_iberia_charter_worth_value }
+		if = {
+			limit = { primary_title = { has_variable = kehillah_iberia_charter_worth } }
+			if = {
+				limit = { scope:kehillah_iberia_charter_worth > primary_title.var:kehillah_iberia_charter_worth }
+				kehillah_iberia_struggle_push_effect = { CATALYST = charter_improved KIND = flourish }
+			}
+			else_if = {
+				limit = { scope:kehillah_iberia_charter_worth < primary_title.var:kehillah_iberia_charter_worth }
+				kehillah_iberia_struggle_push_effect = { CATALYST = charter_worsened KIND = ruin }
+			}
+		}
+		primary_title = {
+			set_variable = { name = kehillah_iberia_charter_worth value = scope:kehillah_iberia_charter_worth }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# A pillar rose into Flourishing or Legendary. Scope: a Kehillah leader,
+# from kehillah_update_pillar_band_effect's "band improved" branch. Once
+# per community per ten years, so a pillar hovering at a band edge cannot
+# farm it. SHORT: the band variables' pillar suffix.
+# ---------------------------------------------------------------------
+kehillah_iberia_flourishing_effect = {
+	if = {
+		limit = {
+			primary_title = {
+				var:kehillah_band_now_$SHORT$ >= 3
+				NOT = { has_variable = kehillah_iberia_flourishing_credited }
+			}
+		}
+		primary_title = {
+			set_variable = { name = kehillah_iberia_flourishing_credited value = yes years = 10 }
+		}
+		kehillah_iberia_struggle_push_effect = { CATALYST = flourishing KIND = flourish }
+	}
+}

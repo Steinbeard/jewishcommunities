@@ -1,0 +1,225 @@
+##########################################################################
+# LEARNING (2026-11-11, Daniel: "a list, like a memory list ... a way to open
+# up their list of read books, kind of like how the memories view can be
+# opened"; "include place if the book wasn't studied in his own community or
+# kingdom ... but otherwise just the title studied in an ordered list").
+#
+# The works a character has mastered, in the order he mastered them (var list
+# kehillah_mastered_works keeps its order). Laid out after vanilla's Memories
+# window (gui/window_memories.gui): a study scene with his portrait and a
+# short intro, then the list on parchment. Each line: the book's binding, its
+# title, then genre, author and its canonicity in HIS rite (the list is his,
+# as a library's shelf is its owner's); on the right, where he learned it if
+# that was away from home (var:kehillah_mastered_at_<work>,
+# kehillah_lib_record_mastery_place_effect). The hover card is in your own
+# view. Clicking a line opens the work in the Ledger of Sefarim.
+#
+# Review fix (2026-11-11, Daniel: opening Rashi, then his wife, then Rashi
+# kept her name in the header): texts that interpolated Character inside a
+# loc key kept the first character's name while the list moved on. Every
+# name and count here is now an inline expression on the player's
+# var:kehillah_learning_view, as the library's texts are.
+#
+# Opened from the round button beside Memories in gui/window_character.gui
+# and from the Beit Midrash's tab row, both through scripted gui
+# kehillah_learning_open. Registered in gui/scripted_widgets/
+# kehillah_scripted_widgets.txt.
+##########################################################################
+
+window = {
+	name = "kehillah_learning_window"
+	parentanchor = top|left
+	widgetanchor = top|left
+	position = { 640 80 }
+	size = { 620 860 }
+
+	movable = yes
+	resizable = no
+	layer = windows_layer
+	alwaystransparent = no
+	filter_mouse = all
+	allow_outside = yes
+
+	visible = "[And( And( IsInGame, GetPlayer.IsValid ), And( IsDefaultGUIMode, GetVariableSystem.Exists( 'kehillah_learning_open' ) ) )]"
+	visible_at_creation = no
+
+	using = Window_Background
+	using = Window_Decoration_Spike
+
+	state = {
+		name = _show
+		using = Animation_FadeIn_Quick
+		using = Sound_WindowShow_Standard
+	}
+	state = {
+		name = _hide
+		using = Animation_FadeOut_Quick
+		using = Sound_WindowHide_Standard
+	}
+
+	vbox = {
+		using = Window_Margins
+		layoutpolicy_horizontal = expanding
+		layoutpolicy_vertical = expanding
+
+		header_pattern = {
+			layoutpolicy_horizontal = expanding
+			blockoverride "header_text" {
+				text = "[Concatenate( GetPlayer.MakeScope.Var( 'kehillah_learning_view' ).Char.GetShortUINamePossessive, Localize( 'KEHILLAH_LEARNING_HEADER_END' ) )]"
+				max_width = 440
+			}
+			blockoverride "button_close" { onclick = "[GetVariableSystem.Clear( 'kehillah_learning_open' )]" }
+		}
+
+		### The study, his portrait, and the intro -- vanilla's Memories band.
+		widget = {
+			layoutpolicy_horizontal = expanding
+			scissor = yes
+			size = { 0 230 }
+			background = {
+				texture = "gfx/interface/illustrations/event_scenes/ep3_medi_study.dds"
+				fittype = centercrop
+				alpha = 1
+				using = Mask_Rough_Edges
+				modify_texture = {
+					texture = "gfx/interface/component_masks/mask_fade_vertical.dds"
+					blend_mode = alphamultiply
+					mirror = vertical
+				}
+			}
+			widget = {
+				datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_learning_view' ).Char]"
+				allow_outside = no
+				size = { 200 230 }
+				portrait_button = {
+					parentanchor = center
+					position = { 0 -5 }
+					portrait_texture = "[Character.GetAnimatedPortrait( 'environment_council', 'camera_torso', 'chancellor', PdxGetWidgetScreenSize( PdxGuiWidget.Self ) )]"
+					mask = "gfx/portraits/portrait_mask_council.dds"
+					effectname = "NoHighlight"
+					using = portrait_base
+					block "portrait_size" { size = { 360 256 } }
+					block "mask" { mask = "gfx/portraits/portrait_mask_council.dds" }
+				}
+			}
+			vbox = {
+				parentanchor = right
+				size = { 340 230 }
+				margin_right = 20
+				margin_top = 20
+				spacing = 10
+				text_multi = {
+					layoutpolicy_horizontal = expanding
+					autoresize = yes
+					max_width = 320
+					text = "[Concatenate( Localize( 'KEHILLAH_LEARNING_INTRO_A' ), Concatenate( GetPlayer.MakeScope.Var( 'kehillah_learning_view' ).Char.GetShortUIName, Localize( 'KEHILLAH_LEARNING_INTRO_B' ) ) )]"
+				}
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					text_single = {
+						text = "[Concatenate( Localize( 'KEHILLAH_LEARNING_COUNT' ), IntToString( FixedPointToInt( GetPlayer.MakeScope.Var( 'kehillah_learning_view' ).Char.MakeScope.ScriptValue( 'kehillah_mastered_works_count_value' ) ) ) )]"
+					}
+					expand = {}
+				}
+				expand = {}
+			}
+		}
+
+		### The list, on parchment.
+		vbox = {
+			layoutpolicy_horizontal = expanding
+			layoutpolicy_vertical = expanding
+			using = Background_Letter_Default
+			vbox = {
+				layoutpolicy_horizontal = expanding
+				layoutpolicy_vertical = expanding
+				margin_bottom = 15
+				scrollbox = {
+					layoutpolicy_horizontal = expanding
+					layoutpolicy_vertical = expanding
+					blockoverride "scrollbox_background" {}
+					blockoverride "scrollbox_background_fade" {}
+					blockoverride "scrollbox_content" {
+						vbox = {
+							layoutpolicy_horizontal = expanding
+							spacing = 3
+							datamodel = "[GetPlayer.MakeScope.Var( 'kehillah_learning_view' ).Char.MakeScope.GetList( 'kehillah_mastered_works' )]"
+							item = {
+								button = {
+									layoutpolicy_horizontal = expanding
+									size = { 500 60 }
+									onclick = "[GetVariableSystem.Clear( 'kehillah_ledger_sort_name' )]"
+									onclick = "[GetVariableSystem.Clear( 'kehillah_ledger_rite_menu' )]"
+									onclick = "[GetScriptedGui( 'kehillah_lib_ledger_open' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+									onclick = "[GetVariableSystem.Set( 'kehillah_ledger_selected_work', Scope.GetFlagName )]"
+									onclick = "[GetVariableSystem.Set( 'kehillah_sefarim_ledger_open', 'yes' )]"
+									tooltipwidget = {
+										kehillah_library_work_tooltip = {
+											blockoverride "rank_value" {
+												text = "[Localize( Concatenate( 'KEHILLAH_STANDING_FMT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_standing_', Scope.GetFlagName ) ) ) ) ) )]"
+											}
+											blockoverride "owner_line" {}
+										}
+									}
+									using = tooltip_ws
+									hbox = {
+										size = { 100% 100% }
+										margin = { 10 5 }
+										spacing = 10
+										background = {
+											using = Background_Area
+											alpha = 0.4
+										}
+										### The binding, in a small box like a memory's icon.
+										vbox = {
+											layoutpolicy_vertical = expanding
+											background = {
+												using = Background_Area
+												margin = { 5 3 }
+											}
+											expand = {}
+											kehillah_lib_spine_icon = {}
+											expand = {}
+										}
+										vbox = {
+											spacing = 1
+											text_single = {
+												layoutpolicy_horizontal = expanding
+												align = left|nobaseline
+												text = "[Concatenate( IntToString( Add_int32( PdxGuiWidget.GetIndexInDataModel, '(int32)1' ) ), Concatenate( Localize( 'KEHILLAH_LEARNING_NUM_END' ), Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) ) ) )]"
+												default_format = "#light_background;bold"
+												using = Text_Light_Background_Overrides
+												max_width = 300
+											}
+											text_single = {
+												layoutpolicy_horizontal = expanding
+												align = left|nobaseline
+												text = "[Concatenate( Localize( Concatenate( 'kehillah_lib_subject_', Scope.GetFlagName ) ), Concatenate( Localize( 'KEHILLAH_LEARNING_SEP' ), Concatenate( Localize( Concatenate( 'kehillah_lib_byline_plain_', Scope.GetFlagName ) ), Concatenate( Localize( 'KEHILLAH_LEARNING_SEP' ), Localize( Concatenate( 'KEHILLAH_STANDING_FMT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.Var( 'kehillah_learning_view' ).Char.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_standing_', Scope.GetFlagName ) ) ) ) ) ) ) ) ) )]"
+												default_format = "#light_background"
+												using = Text_Light_Background_Overrides
+												max_width = 300
+											}
+										}
+										expand = {}
+										text_single = {
+											visible = "[GetPlayer.MakeScope.Var( 'kehillah_learning_view' ).Char.MakeScope.Var( Concatenate( 'kehillah_mastered_at_', Scope.GetFlagName ) ).IsSet]"
+											alpha = 0.6
+											align = right|nobaseline
+											text = "[Concatenate( Localize( 'KEHILLAH_LEARNING_AT' ), GetPlayer.MakeScope.Var( 'kehillah_learning_view' ).Char.MakeScope.Var( Concatenate( 'kehillah_mastered_at_', Scope.GetFlagName ) ).Title.GetNameNoTooltip )]"
+											default_format = "#light_background"
+											max_width = 150
+										}
+									}
+								}
+							}
+						}
+					}
+					blockoverride "scrollbox_empty" {
+						visible = "[IsDataModelEmpty( GetPlayer.MakeScope.Var( 'kehillah_learning_view' ).Char.MakeScope.GetList( 'kehillah_mastered_works' ) )]"
+						text = "KEHILLAH_LEARNING_EMPTY"
+					}
+				}
+			}
+		}
+	}
+}

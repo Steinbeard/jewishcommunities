@@ -272,6 +272,28 @@ kehillah_synod.0100 = {
 		kehillah_synod_put_motion_effect = { MOTION = flag:herem_all_israel }
 		ai_chance = { base = 5 }
 	}
+	# 2026-11-11 cherem track (docs/spec/2026-11-11-reviews-and-cherem.md
+	# section 3.3): a herem on a community leader in Niddui. The synod takes
+	# up the one deepest in it.
+	option = {
+		name = kehillah_synod_option_herem_person
+		trigger = { kehillah_synod_can_propose_herem_person_trigger = yes }
+		custom_tooltip = kehillah_synod_option_herem_person_desc
+		hidden_effect = {
+			ordered_in_global_list = {
+				variable = kehillah_cherem_tracked
+				limit = { kehillah_synod_herem_target_trigger = { HOST = root } }
+				order_by = "has_trait_xp(kehillah_cherem_trait)"
+				save_scope_as = kehillah_synod_herem_target
+			}
+			involved_activity ?= { set_variable = { name = kehillah_synod_herem_target value = scope:kehillah_synod_herem_target } }
+		}
+		kehillah_synod_put_motion_effect = { MOTION = flag:herem_person }
+		ai_chance = {
+			base = 30
+			modifier = { add = 30 has_trait = zealous }
+		}
+	}
 }
 
 kehillah_synod.0105 = {
@@ -335,6 +357,7 @@ kehillah_synod.0101 = {
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:gentile_courts } desc = kehillah_synod_motion_gentile_courts }
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:informers } desc = kehillah_synod_motion_informers }
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:hayishuv } desc = kehillah_synod_motion_hayishuv }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:herem_person } desc = kehillah_synod_motion_herem_person }
 			desc = kehillah_synod_motion_letters
 		}
 	}
@@ -348,6 +371,10 @@ kehillah_synod.0101 = {
 	trigger = {
 		exists = involved_activity
 		involved_activity = { has_variable = kehillah_synod_takkanah }
+	}
+
+	immediate = {
+		involved_activity.var:kehillah_synod_herem_target ?= { save_scope_as = kehillah_synod_herem_target }
 	}
 
 	# From the sources: the sages before us.
@@ -453,6 +480,7 @@ kehillah_synod.0102 = {
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:gentile_courts } desc = kehillah_synod_motion_gentile_courts }
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:informers } desc = kehillah_synod_motion_informers }
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:hayishuv } desc = kehillah_synod_motion_hayishuv }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:herem_person } desc = kehillah_synod_motion_herem_person }
 			desc = kehillah_synod_motion_letters
 		}
 	}
@@ -474,6 +502,7 @@ kehillah_synod.0102 = {
 
 	immediate = {
 		involved_activity.activity_host = { save_scope_as = kehillah_synod_host }
+		involved_activity.var:kehillah_synod_herem_target ?= { save_scope_as = kehillah_synod_herem_target }
 	}
 
 	# FOR.
@@ -516,6 +545,17 @@ kehillah_synod.0102 = {
 				involved_activity.var:kehillah_synod_takkanah ?= flag:hayishuv
 				has_trait = greedy
 			}
+			# 2026-11-11: a herem on a leader.
+			modifier = {
+				add = 20
+				involved_activity.var:kehillah_synod_takkanah ?= flag:herem_person
+				has_trait = zealous
+			}
+			modifier = {
+				add = 40
+				involved_activity.var:kehillah_synod_takkanah ?= flag:herem_person
+				scope:kehillah_synod_herem_target ?= { has_relation_rival = root }
+			}
 			min = 1
 		}
 	}
@@ -543,6 +583,22 @@ kehillah_synod.0102 = {
 			modifier = {
 				add = 40
 				kehillah_reform_delegate_opposes_trigger = yes
+			}
+			# 2026-11-11: a herem on a leader. He votes against it himself.
+			modifier = {
+				add = 500
+				involved_activity.var:kehillah_synod_takkanah ?= flag:herem_person
+				scope:kehillah_synod_herem_target ?= root
+			}
+			modifier = {
+				add = 40
+				involved_activity.var:kehillah_synod_takkanah ?= flag:herem_person
+				scope:kehillah_synod_herem_target ?= { has_relation_friend = root }
+			}
+			modifier = {
+				add = 20
+				involved_activity.var:kehillah_synod_takkanah ?= flag:herem_person
+				has_trait = forgiving
 			}
 			min = 1
 		}
@@ -593,6 +649,7 @@ kehillah_synod.0103 = {
 		involved_activity.var:kehillah_synod_proposed_doctrine ?= {
 			save_scope_as = kehillah_synod_proposed_doctrine
 		}
+		involved_activity.var:kehillah_synod_herem_target ?= { save_scope_as = kehillah_synod_herem_target }
 		save_scope_value_as = {
 			name = kehillah_synod_level
 			value = involved_activity.var:kehillah_synod_level

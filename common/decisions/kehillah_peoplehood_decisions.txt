@@ -1,0 +1,127 @@
+﻿# =====================================================================
+# Join the Jewish people (2026-11-11,
+# docs/implementation/2026-11-11-peoplehood-doctrine.md).
+#
+# For a Jew of a faith holding Covenantal Peoplehood whose culture is not
+# a Hebrew one -- a convert, a Beta Israel noble raised Ethiopian, a
+# ruler who married in. They take up the Jewish people closest to their
+# own culture (German -> Ashkenazi, Castilian -> Sephardi, ...), else the
+# one native where they live or anywhere in their realm. With none of
+# those -- a Jewish king of Hungary, say -- they found a new Jewish people:
+# a hybrid of their culture with their region's Jewish culture, with the
+# Israelite heritage and a name of its own. The AI joins readily and
+# founds only rarely.
+# =====================================================================
+
+kehillah_join_hebrew_people_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_realm.dds"
+	}
+	desc = kehillah_join_hebrew_people_decision_desc
+	selection_tooltip = kehillah_join_hebrew_people_decision_tooltip
+	ai_check_interval = 24
+
+	is_shown = {
+		is_playable_character = yes
+		kehillah_keeps_hebrew_peoplehood_trigger = yes
+		NOT = { kehillah_is_hebrew_culture_trigger = yes }
+	}
+
+	is_valid_showing_failures_only = {
+		is_physically_able_adult = yes
+		is_imprisoned = no
+	}
+
+	cost = {
+		piety = {
+			value = 50
+			# Founding a new people costs more than joining one.
+			if = {
+				limit = { NOT = { kehillah_has_hebrew_people_to_join_trigger = yes } }
+				add = 150
+			}
+		}
+	}
+
+	effect = {
+		if = {
+			limit = { kehillah_has_hebrew_people_to_join_trigger = yes }
+			custom_tooltip = kehillah_join_hebrew_people_decision_effect_tt
+			hidden_effect = {
+				kehillah_pick_hebrew_people_to_join_effect = yes
+				if = {
+					limit = { exists = scope:kehillah_people_to_join }
+					kehillah_join_hebrew_people_effect = yes
+				}
+			}
+		}
+		else = {
+			custom_tooltip = kehillah_found_hebrew_people_decision_effect_tt
+			hidden_effect = { kehillah_found_hebrew_people_effect = yes }
+		}
+	}
+
+	ai_potential = {
+		kehillah_keeps_hebrew_peoplehood_trigger = yes
+	}
+
+	ai_will_do = {
+		base = 100
+		modifier = {
+			# Founding a whole new culture is a big step; the AI rarely does it.
+			factor = 0.1
+			NOT = { kehillah_has_hebrew_people_to_join_trigger = yes }
+		}
+	}
+}
+
+# 2026-11-11 (Daniel: "Italkim living in German-speaking lands should be able
+# to become Ashkenazi"). A Jew of one Jewish people living where another is
+# native takes up its culture: an Italki in Mainz becomes Ashkenazi, a
+# Ma'aravi in Toledo Sephardi. Their children under 16 of the same faith
+# come too. Their own children are also likelier to be born into it
+# (kehillah_birth_among_jewish_people_effect).
+kehillah_join_local_jewish_people_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_realm.dds"
+	}
+	desc = kehillah_join_local_jewish_people_decision_desc
+	selection_tooltip = kehillah_join_local_jewish_people_decision_tooltip
+	ai_check_interval = 60
+
+	is_shown = {
+		is_playable_character = yes
+		kehillah_is_hebrew_culture_trigger = yes
+		kehillah_lives_among_another_jewish_people_trigger = yes
+	}
+
+	is_valid_showing_failures_only = {
+		is_physically_able_adult = yes
+		is_imprisoned = no
+	}
+
+	cost = {
+		prestige = 100
+	}
+
+	effect = {
+		custom_tooltip = kehillah_join_local_jewish_people_decision_effect_tt
+		hidden_effect = {
+			kehillah_pick_local_jewish_people_effect = yes
+			if = {
+				limit = { exists = scope:kehillah_local_people }
+				scope:kehillah_local_people = { save_scope_as = kehillah_people_to_join }
+				kehillah_join_hebrew_people_effect = yes
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 10
+		modifier = {
+			# A Kehillah leader settled among another people blends in sooner.
+			factor = 3
+			government_has_flag = government_is_kehillah
+		}
+	}
+}

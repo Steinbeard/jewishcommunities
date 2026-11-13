@@ -1,7 +1,36 @@
-﻿# Root is a Jewish character with both traits (see the on-actions).
+﻿# Religious Scholar and the Rabbi trait (2026-11-11, Daniel: rabbis losing
+# Religious Scholar on a yearly pulse read as a random punishment).
+#
+# The Rabbi trait lists lifestyle_scholar as an opposite, so vanilla's many
+# add_trait = lifestyle_scholar sources silently skip a rabbi. A character
+# who already holds Religious Scholar converts it at the moment he becomes a
+# rabbi, inside the same effect that grants the trait.
+
+# Root holds Religious Scholar. Moves its XP into the Rabbi tracks, removes
+# it and grants the Rabbi trait if he lacks it. The XP is stashed first:
+# the Rabbi trait cannot be added while the opposite is still held, and
+# has_trait_xp reads 0 once Scholar is gone.
 kehillah_absorb_religious_scholar_effect = {
+	set_variable = { name = kehillah_absorbed_scholar_xp value = kehillah_scholar_xp_value }
+	remove_trait = lifestyle_scholar
+	if = {
+		limit = { NOT = { has_trait = kehillah_rabbi_trait } }
+		add_trait = kehillah_rabbi_trait
+	}
 	add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_scholar_secondary_xp }
 	add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = kehillah_scholar_secondary_xp }
 	add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = kehillah_scholar_machshavah_xp }
-	remove_trait = lifestyle_scholar
+	remove_variable = kehillah_absorbed_scholar_xp
+}
+
+# Every script grant of the Rabbi trait goes through this.
+kehillah_grant_rabbi_trait_effect = {
+	if = {
+		limit = { has_trait = lifestyle_scholar }
+		kehillah_absorb_religious_scholar_effect = yes
+	}
+	else_if = {
+		limit = { NOT = { has_trait = kehillah_rabbi_trait } }
+		add_trait = kehillah_rabbi_trait
+	}
 }

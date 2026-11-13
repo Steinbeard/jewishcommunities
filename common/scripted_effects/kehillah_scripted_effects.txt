@@ -1576,12 +1576,13 @@ kehillah_seed_community_effect = {
 	# communities with an empty seat and no eligible candidate.
 	if = {
 		limit = { NOT = { exists = cp:councillor_court_chaplain } }
+	kehillah_save_courtier_culture_effect = { LEADER = scope:kehillah_leader } # 2026-11-10: local Jewish culture
 	create_character = {
 		dynasty = generate
 		age = { 30 55 }
 		faith = scope:kehillah_leader.faith
 		rite = scope:kehillah_leader.rite
-		culture = scope:kehillah_leader.culture
+		culture = scope:kehillah_courtier_culture
 		location = scope:kehillah_leader.domicile.domicile_location
 		random_traits = yes
 		gender_female_chance = 0
@@ -1595,7 +1596,7 @@ kehillah_seed_community_effect = {
 		set_employer = scope:kehillah_leader
 		if = {
 			limit = { is_rabbinic_authority_jewish_trigger = yes }
-			add_trait = kehillah_rabbi_trait
+			kehillah_grant_rabbi_trait_effect = yes
 		}
 		# 2026-11-08: a Karaite scholar has no Rabbi trait; he is created
 		# learned, with Religious Scholar.
@@ -1614,12 +1615,13 @@ kehillah_seed_community_effect = {
 	# community has a Countinghouse to keep its books in.
 	if = {
 		limit = { NOT = { exists = cp:councillor_steward } }
+	kehillah_save_courtier_culture_effect = { LEADER = scope:kehillah_leader } # 2026-11-10: local Jewish culture
 	create_character = {
 		dynasty = generate
 		age = { 30 55 }
 		faith = scope:kehillah_leader.faith
 		rite = scope:kehillah_leader.rite
-		culture = scope:kehillah_leader.culture
+		culture = scope:kehillah_courtier_culture
 		location = scope:kehillah_leader.domicile.domicile_location
 		random_traits = yes
 		gender_female_chance = 0
@@ -1643,12 +1645,13 @@ kehillah_seed_community_effect = {
 	# a function rather than a building (spec section 3c).
 	if = {
 		limit = { NOT = { exists = cp:councillor_chancellor } }
+	kehillah_save_courtier_culture_effect = { LEADER = scope:kehillah_leader } # 2026-11-10: local Jewish culture
 	create_character = {
 		dynasty = generate
 		age = { 30 55 }
 		faith = scope:kehillah_leader.faith
 		rite = scope:kehillah_leader.rite
-		culture = scope:kehillah_leader.culture
+		culture = scope:kehillah_courtier_culture
 		location = scope:kehillah_leader.domicile.domicile_location
 		random_traits = yes
 		gender_female_chance = 0
@@ -2469,8 +2472,10 @@ kehillah_update_leader_flavor_effect = {
 		remove_character_flag = kehillah_rabbenu_leader_flag
 	}
 	# V29 (2026-10-11): the Babylonian offices. Whoever leads Baghdad is the
-	# Exilarch; a rabbi leading Sura is its Gaon. Follows the title, so a
-	# successor inherits the style and a leader who moves on loses it.
+	# Exilarch; a rabbi leading Sura is its Gaon. The historic Yeshiva of
+	# Kairouan uses the same scholarly style. It is defunct by 1066, but this
+	# also preserves the correct title in earlier starts. The style follows the
+	# title, so a successor inherits it and a leader who moves on loses it.
 	if = {
 		limit = { primary_title ?= { this = title:d_kehillah_baghdad } }
 		add_character_flag = kehillah_exilarch_flag
@@ -2485,6 +2490,10 @@ kehillah_update_leader_flavor_effect = {
 				AND = {
 					has_trait = kehillah_rabbi_trait
 					primary_title ?= { this = title:d_kehillah_sura }
+				}
+				AND = {
+					has_trait = kehillah_rabbi_trait
+					primary_title ?= { this = title:d_kehillah_kairouan }
 				}
 				AND = {
 					kehillah_is_gaonate_holder_trigger = yes
@@ -2814,17 +2823,29 @@ kehillah_dispute_pick_parties_effect = {
 # 2026-11-08 (Karaites have no clergy): a Karaite Dayyan, or failing one a
 # Karaite leader, is the community's rabbi. A Karaite leader comes after his
 # Dayyan, as a lay Rabbanite leader does, so a learned Dayyan still presides.
+# 2026-11-11 (Daniel): a rabbi in herem may not sit on a Bet Din or preach.
 kehillah_save_community_rabbi_effect = {
 	if = {
-		limit = { kehillah_is_ordained_rabbi_trigger = yes }
+		limit = {
+			kehillah_is_ordained_rabbi_trigger = yes
+			NOT = { kehillah_cherem_in_full_trigger = yes }
+		}
 		save_scope_as = kehillah_community_rabbi
 	}
 	else_if = {
-		limit = { cp:councillor_court_chaplain ?= { kehillah_ordained_or_karaite_trigger = yes } }
+		limit = {
+			cp:councillor_court_chaplain ?= {
+				kehillah_ordained_or_karaite_trigger = yes
+				NOT = { kehillah_cherem_in_full_trigger = yes }
+			}
+		}
 		cp:councillor_court_chaplain = { save_scope_as = kehillah_community_rabbi }
 	}
 	else_if = {
-		limit = { kehillah_is_karaite_character_trigger = yes }
+		limit = {
+			kehillah_is_karaite_character_trigger = yes
+			NOT = { kehillah_cherem_in_full_trigger = yes }
+		}
 		save_scope_as = kehillah_community_rabbi
 	}
 }
@@ -2930,12 +2951,13 @@ kehillah_rabbi_search_price_effect = {
 # ---------------------------------------------------------------------
 
 kehillah_generate_rabbi_candidate_effect = {
+	kehillah_save_courtier_culture_effect = { LEADER = root } # 2026-11-10: local Jewish culture
 	create_character = {
 		dynasty = generate
 		age = { $AGE_MIN$ $AGE_MAX$ }
 		faith = root.faith
 		rite = root.rite
-		culture = root.culture
+		culture = scope:kehillah_courtier_culture
 		location = root.domicile.domicile_location
 		random_traits = yes
 		gender_female_chance = 0
@@ -2952,7 +2974,7 @@ kehillah_generate_rabbi_candidate_effect = {
 			add_trait = lifestyle_scholar
 		}
 		else = {
-			add_trait = kehillah_rabbi_trait
+			kehillah_grant_rabbi_trait_effect = yes
 		}
 	}
 }
@@ -3016,7 +3038,7 @@ kehillah_install_rabbi_effect = {
 				NOT = { has_trait = kehillah_rabbi_trait }
 				is_rabbinic_authority_jewish_trigger = yes
 			}
-			add_trait = kehillah_rabbi_trait
+			kehillah_grant_rabbi_trait_effect = yes
 		}
 		# 2026-11-08: a Karaite is seated as he is. Karaites have no clergy,
 		# so the seat confers no trait.

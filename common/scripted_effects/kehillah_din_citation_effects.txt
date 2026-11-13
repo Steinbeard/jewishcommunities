@@ -1,0 +1,89 @@
+﻿# =====================================================================
+# The Bet Din docket by order of the Mishnah (2026-11-11, Daniel).
+# docs/spec/2026-11-11-rulings-sermons-and-gates.md section 2.
+#
+# A source option calls kehillah_din_cite_source_effect: the ruling gains a
+# strong tally, the citing judge's possible authorities are found among the
+# works he has mastered on the case's order, and kehillah_din_cite.0001
+# asks which one the court names: the most established (grounded), a newer
+# one (innovative), or one whose tenets he holds (by conviction). The named
+# work counts a citation toward its standing when the ruling is good
+# (kehillah_bet_din_reward_judges_for_ruling_effect).
+# =====================================================================
+
+# Scope: the event's root, in the Bet Din. $JUDGE$ is the citing judge
+# (scope:kehillah_av_beit_din or root).
+kehillah_din_cite_source_effect = {
+	involved_activity = {
+		save_scope_as = kehillah_din_cite_activity
+		change_variable = { name = kehillah_bet_din_tally add = kehillah_din_cite_tally }
+		set_variable = { name = kehillah_din_citing_judge value = $JUDGE$ }
+	}
+	$JUDGE$ = { kehillah_din_case_$CASE$_pick_effect = yes }
+	trigger_event = kehillah_din_cite.0001
+}
+
+# Scope: the citing judge. Each case's order.
+kehillah_din_case_1_pick_effect = { kehillah_din_pick_citations_nashim_effect = yes }
+kehillah_din_case_2_pick_effect = { kehillah_din_pick_citations_nashim_effect = yes }
+kehillah_din_case_3_pick_effect = { kehillah_din_pick_citations_nashim_effect = yes }
+kehillah_din_case_4_pick_effect = { kehillah_din_pick_citations_nashim_effect = yes }
+kehillah_din_case_5_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_6_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_7_pick_effect = { kehillah_din_pick_citations_nashim_effect = yes }
+kehillah_din_case_8_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_9_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_10_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_11_pick_effect = { kehillah_din_pick_citations_kodashim_effect = yes }
+kehillah_din_case_12_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_13_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_14_pick_effect = { kehillah_din_pick_citations_kodashim_effect = yes }
+
+# Scope: root of kehillah_din_cite.0001; scope:kehillah_din_cite_activity.
+# Each names its work as the ruling's authority, then adds its own effect.
+kehillah_din_cite_grounded_effect = {
+	scope:kehillah_din_cite_activity = {
+		set_variable = { name = kehillah_din_cited_work value = var:kehillah_din_cite_grounded }
+	}
+	scope:kehillah_din_cite_activity.var:kehillah_bet_din_convening_title.holder ?= {
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_din_cite_grounded_stability }
+	}
+}
+
+kehillah_din_cite_innovative_effect = {
+	scope:kehillah_din_cite_activity = {
+		set_variable = { name = kehillah_din_cited_work value = var:kehillah_din_cite_innovative }
+	}
+	scope:kehillah_din_cite_activity.var:kehillah_din_citing_judge ?= {
+		add_prestige = kehillah_din_cite_innovative_prestige
+	}
+	scope:kehillah_din_cite_activity.var:kehillah_bet_din_convening_title.holder ?= {
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_din_cite_innovative_greatness }
+		random = {
+			chance = kehillah_din_cite_innovative_unease_chance
+			kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_din_cite_innovative_unease }
+		}
+	}
+}
+
+kehillah_din_cite_conviction_effect = {
+	scope:kehillah_din_cite_activity = {
+		set_variable = { name = kehillah_din_cited_work value = var:kehillah_din_cite_conviction }
+	}
+	scope:kehillah_din_cite_activity.var:kehillah_din_citing_judge ?= {
+		add_piety = kehillah_din_cite_conviction_piety
+		faith = {
+			kehillah_din_conviction_popularity_dispatch_effect = { SOURCE = scope:kehillah_din_cite_activity.var:kehillah_din_cited_work }
+		}
+	}
+}
+
+# Scope: the Bet Din activity. A case's citation is forgotten when the next
+# case opens (kehillah_bet_din_advance_docket_effect).
+kehillah_din_clear_citation_effect = {
+	remove_variable = kehillah_din_cited_work
+	remove_variable = kehillah_din_citing_judge
+	remove_variable = kehillah_din_cite_grounded
+	remove_variable = kehillah_din_cite_innovative
+	remove_variable = kehillah_din_cite_conviction
+}

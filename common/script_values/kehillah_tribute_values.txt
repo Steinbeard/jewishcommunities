@@ -1,10 +1,9 @@
 ﻿# =====================================================================
 # The tribute a Kehillah pays its host (v31 §8.2). ADDED 2026-10-30.
 # Scope for every value below: a Kehillah leader. The rung comes from
-# the charter's kehillah_charter_tribute term. Since 2026-11-08 the
-# engine collects the tribute: the two rates below are the levels'
-# `tax =` shares (kehillah_host_charter_tribute_contracts.txt). The
-# rest of this file is for display only; no gold moves by script.
+# the charter's kehillah_charter_tribute term. The gold moves by script
+# each quarter (kehillah_pay_host_tribute_effect); the engine's `tax =`
+# was tried 2026-11-08 and charged nothing (see the contract file).
 # =====================================================================
 
 # Rates, one per rung, so tuning is a one-line change. Daniel,
@@ -60,10 +59,10 @@ kehillah_tribute_rate_value = {
 		}
 		# The Nagid spec section 7 (2026-10-30): with a Nagid at court the
 		# realm's Jews pay more -- the office as the crown's fiscal agent,
-		# and the reason a cold ruler keeps it. Since 2026-11-08 the engine
-		# applies it through kehillah_nagid_tribute_modifier on the host
-		# (kehillah_refresh_charter_state_cache_effect), so the display
-		# reads that modifier and shows what is actually charged.
+		# and the reason a cold ruler keeps it. The cache refresh puts
+		# kehillah_nagid_tribute_modifier on the host while a Nagid sits;
+		# since 2026-11-11 it is only the marker this reads (its engine
+		# tax multiplier has nothing to scale).
 		if = {
 			limit = {
 				suzerain = { has_character_modifier = kehillah_nagid_tribute_modifier }
@@ -79,7 +78,52 @@ kehillah_tribute_rate_percent_value = {
 	multiply = 100
 }
 
-# REMOVED 2026-11-08: kehillah_tribute_monthly_value, _monthly_shown_,
-# _quarter_due_ and _quarter_paid_value, the amounts of the old
-# quarterly scripted transfer. The engine now works out the amount; the
-# gold tooltip shows it.
+# RESTORED 2026-11-11, with the quarterly scripted transfer: the engine
+# tax never saw domicile income (see the contract file).
+
+# What the tribute is a share of: the leader's monthly gold balance,
+# the figure in the top bar. CHANGED 2026-11-11 (live, Rome): this was
+# monthly_character_income, which leaves out the Quarter's building
+# income -- it read about 0.23 against a top bar of +2.9, so a quarter's
+# tribute came to 0.14 gold. The balance is net of expenses, so a
+# community running at a loss pays nothing that month.
+kehillah_tribute_income_base_value = {
+	value = monthly_character_balance
+	min = 0
+}
+
+# For the probe only: the engine income trigger the tribute used to read.
+kehillah_tribute_engine_income_value = {
+	value = monthly_character_income
+}
+
+# What the host takes in a month: the rate times that base. Never
+# negative.
+kehillah_tribute_monthly_value = {
+	value = kehillah_tribute_income_base_value
+	multiply = kehillah_tribute_rate_value
+	min = 0
+}
+
+# The same, negated, for the Domain tab's "Paid to host" line.
+kehillah_tribute_monthly_shown_value = {
+	value = kehillah_tribute_monthly_value
+	multiply = -1
+}
+
+# Owed each quarter: three months of tribute.
+kehillah_tribute_quarter_due_value = {
+	value = kehillah_tribute_monthly_value
+	multiply = 3
+}
+
+# Paid each quarter: what is owed, or the whole treasury if that is
+# less. A tribute of a share of income never puts the community in debt.
+kehillah_tribute_quarter_paid_value = {
+	value = kehillah_tribute_quarter_due_value
+	if = {
+		limit = { gold < kehillah_tribute_quarter_due_value }
+		value = gold
+	}
+	min = 0
+}

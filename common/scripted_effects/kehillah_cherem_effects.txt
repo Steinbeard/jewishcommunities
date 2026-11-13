@@ -1,0 +1,557 @@
+﻿# =====================================================================
+# The cherem track for people (2026-11-11, Daniel: "Build cherem track",
+# then "Let's do it as a single lifestyle trait!").
+# docs/spec/2026-11-11-reviews-and-cherem.md section 3 and its build record.
+#
+# The score is the XP of one lifestyle trait, kehillah_cherem_trait
+# (common/traits/kehillah_cherem_trait.txt), 0-100: Reproved below 25,
+# Nezifah at 25, Niddui at 50, the full Cherem at 100. Everyone who holds it
+# is on the global list kehillah_cherem_tracked, so the yearly pass touches
+# only them.
+#
+# Anyone who reaches 100 is in herem and hears The Ban Is Read
+# (kehillah_cherem.0010). A synod, the head of the rite or faith, or the Nasi
+# of the Sanhedrin can also pronounce it at once (kehillah_cherem_pronounce_effect).
+# 2026-11-11 (Daniel): a community leader's XP is no longer capped at 99.
+#
+# Teshuvah lowers it one level (kehillah_cherem_lower_level_effect).
+# =====================================================================
+
+# Scope: a character. Add $AMOUNT$ (may be negative). Not for non-Jews;
+# whoever reaches 100 is banned.
+kehillah_cherem_add_effect = {
+	if = {
+		limit = {
+			is_alive = yes
+			is_jewish_character_trigger = yes
+			NOT = { kehillah_cherem_in_full_trigger = yes }
+		}
+		if = {
+			limit = { NOT = { has_trait = kehillah_cherem_trait } }
+			add_trait = kehillah_cherem_trait
+		}
+		save_temporary_scope_value_as = { name = kehillah_cherem_before value = "has_trait_xp(kehillah_cherem_trait)" }
+		add_trait_xp = { trait = kehillah_cherem_trait value = $AMOUNT$ }
+		if = {
+			limit = { NOT = { is_target_in_global_variable_list = { name = kehillah_cherem_tracked target = this } } }
+			add_to_global_variable_list = { name = kehillah_cherem_tracked target = this }
+		}
+		if = {
+			limit = { has_trait_xp = { trait = kehillah_cherem_trait value <= 0 } }
+			kehillah_cherem_clear_effect = yes
+		}
+		else_if = {
+			limit = { has_trait_xp = { trait = kehillah_cherem_trait value >= kehillah_cherem_full } }
+			save_scope_value_as = { name = kehillah_cherem_pronounced_by value = flag:track }
+			kehillah_cherem_pronounce_effect = yes
+		}
+		# A player hears when he crosses into a new level.
+		else_if = {
+			limit = {
+				is_ai = no
+				scope:kehillah_cherem_before < kehillah_cherem_niddui
+				has_trait_xp = { trait = kehillah_cherem_trait value >= kehillah_cherem_niddui }
+			}
+			send_interface_toast = { type = event_toast_text_bad title = kehillah_cherem_niddui_toast_t desc = kehillah_cherem_niddui_toast_d left_icon = this }
+		}
+		else_if = {
+			limit = {
+				is_ai = no
+				scope:kehillah_cherem_before < kehillah_cherem_nezifah
+				has_trait_xp = { trait = kehillah_cherem_trait value >= kehillah_cherem_nezifah }
+			}
+			send_interface_toast = { type = event_toast_text_bad title = kehillah_cherem_nezifah_toast_t desc = kehillah_cherem_nezifah_toast_d left_icon = this }
+		}
+	}
+}
+
+# Scope: a Jewish character. Set the trait's XP to $XP$ (the trait must be held).
+kehillah_cherem_set_xp_effect = {
+	add_trait_xp = {
+		trait = kehillah_cherem_trait
+		value = {
+			value = $XP$
+			subtract = "has_trait_xp(kehillah_cherem_trait)"
+		}
+	}
+}
+
+# Scope: a Jewish character. The full Cherem. scope:kehillah_cherem_pronounced_by:
+# flag:track (his score reached it), flag:head (the head of his rite or faith,
+# or the Nasi), flag:synod, flag:court (a Bet Din). Everyone then hears The
+# Ban Is Read; a community leader also chooses whether to keep his seat.
+kehillah_cherem_pronounce_effect = {
+	if = {
+		limit = { NOT = { has_trait = kehillah_cherem_trait } }
+		add_trait = kehillah_cherem_trait
+	}
+	kehillah_cherem_set_xp_effect = { XP = kehillah_cherem_full }
+	if = {
+		limit = { exists = scope:kehillah_cherem_pronounced_by }
+		set_variable = { name = kehillah_cherem_by value = scope:kehillah_cherem_pronounced_by }
+	}
+	if = {
+		limit = { NOT = { is_target_in_global_variable_list = { name = kehillah_cherem_tracked target = this } } }
+		add_to_global_variable_list = { name = kehillah_cherem_tracked target = this }
+	}
+	trigger_event = { id = kehillah_cherem.0010 days = 1 }
+	debug_log = "kehillah_cherem_pronounce_effect: the full cherem"
+	debug_log_scopes = yes
+}
+
+# Scope: a Bet Din's convict (kehillah_bet_din_scripted_effects.txt). The
+# court's cherem, through the same trait. One line in the tooltip.
+kehillah_cherem_by_court_effect = {
+	custom_tooltip = kehillah_cherem_by_court_tt
+	hidden_effect = {
+		if = {
+			limit = { is_jewish_character_trigger = yes }
+			save_scope_value_as = { name = kehillah_cherem_pronounced_by value = flag:court }
+			kehillah_cherem_pronounce_effect = yes
+		}
+		else = {
+			add_trait = excommunicated
+		}
+	}
+}
+
+# Scope: a Jewish character. Teshuvah accepted: one level lower. The full
+# Cherem falls to Niddui, Niddui to Nezifah, Nezifah and Reproved to nothing.
+kehillah_cherem_lower_level_effect = {
+	kehillah_teshuvah_finish_effect = yes
+	set_variable = { name = kehillah_teshuvah_recent value = yes years = kehillah_teshuvah_relapse_years }
+	if = {
+		limit = { has_trait_xp = { trait = kehillah_cherem_trait value >= kehillah_cherem_full } }
+		kehillah_cherem_set_xp_effect = { XP = kehillah_cherem_niddui }
+		remove_variable = kehillah_cherem_by
+		primary_title ?= {
+			if = {
+				limit = { has_variable = kehillah_cherem_defiant }
+				remove_variable = kehillah_cherem_defiant
+			}
+		}
+	}
+	else_if = {
+		limit = { has_trait_xp = { trait = kehillah_cherem_trait value >= kehillah_cherem_niddui } }
+		kehillah_cherem_set_xp_effect = { XP = kehillah_cherem_nezifah }
+	}
+	else = {
+		kehillah_cherem_clear_effect = yes
+	}
+}
+
+# Scope: a character. No ban at all: the trait and its records go.
+kehillah_cherem_clear_effect = {
+	kehillah_teshuvah_finish_effect = yes
+	if = {
+		limit = { has_trait = kehillah_cherem_trait }
+		remove_trait = kehillah_cherem_trait
+	}
+	remove_variable = kehillah_cherem_by
+	remove_variable = kehillah_cherem_cause_work
+	primary_title ?= {
+		if = {
+			limit = { has_variable = kehillah_cherem_defiant }
+			remove_variable = kehillah_cherem_defiant
+		}
+	}
+	if = {
+		limit = { is_target_in_global_variable_list = { name = kehillah_cherem_tracked target = this } }
+		remove_list_global_variable = { name = kehillah_cherem_tracked target = this }
+	}
+}
+
+# ---------------------------------------------------------------------
+# What fills it (section 3.2).
+# ---------------------------------------------------------------------
+
+# Scope: any. The living author of $KEY$, if he belongs to scope:kehillah_cherem_rite
+# (where the book was judged: standing is per rite), gains $AMOUNT$, and the
+# book is remembered as the cause his teshuvah would renounce.
+kehillah_cherem_author_effect = {
+	global_var:kehillah_wk_$KEY$_author ?= {
+		if = {
+			limit = {
+				is_alive = yes
+				rite ?= scope:kehillah_cherem_rite
+			}
+			set_variable = { name = kehillah_cherem_cause_work value = flag:$KEY$ }
+			kehillah_cherem_add_effect = { AMOUNT = $AMOUNT$ }
+		}
+	}
+}
+
+# Scope: the reviewer (scope:kehillah_reviewer), who has just put a cherem on
+# $KEY$. Its living author, of the same rite, gains the reviewer's weight / 5
+# (a rival's ban, a quarter of that).
+kehillah_cherem_book_review_effect = {
+	rite ?= { save_scope_as = kehillah_cherem_rite }
+	global_var:kehillah_wk_$KEY$_author ?= {
+		if = {
+			limit = {
+				is_alive = yes
+				NOT = { this = scope:kehillah_reviewer }
+				rite ?= scope:kehillah_cherem_rite
+			}
+			set_variable = { name = kehillah_cherem_cause_work value = flag:$KEY$ }
+			kehillah_cherem_add_effect = { AMOUNT = kehillah_cherem_book_review_points_value }
+		}
+	}
+}
+
+# Scope: a reader who has just read $KEY$, which stands Banned (1) or Anathema
+# (0) in his rite (kehillah_sefer_after_study_effect).
+kehillah_cherem_read_forbidden_effect = {
+	set_variable = { name = kehillah_cherem_cause_work value = flag:$KEY$ }
+	if = {
+		limit = { kehillah_lib_standing_$KEY$ = 0 }
+		kehillah_cherem_add_effect = { AMOUNT = kehillah_cherem_read_anathema_points }
+	}
+	else = {
+		kehillah_cherem_add_effect = { AMOUNT = kehillah_cherem_read_banned_points }
+	}
+}
+
+# ---------------------------------------------------------------------
+# The yearly pass (yearly_global_pulse, kehillah_cherem_on_actions.txt).
+# ---------------------------------------------------------------------
+kehillah_cherem_yearly_effect = {
+	kehillah_cherem_migrate_effect = yes
+	every_in_global_list = {
+		variable = kehillah_cherem_tracked
+		limit = {
+			is_alive = yes
+			is_jewish_character_trigger = yes
+			has_trait = kehillah_cherem_trait
+			NOT = { kehillah_cherem_in_full_trigger = yes }
+		}
+		# Below Niddui it fades; at nothing, the trait goes.
+		if = {
+			limit = { has_trait_xp = { trait = kehillah_cherem_trait value < kehillah_cherem_niddui } }
+			add_trait_xp = {
+				trait = kehillah_cherem_trait
+				value = { value = kehillah_cherem_fade multiply = -1 }
+			}
+			if = {
+				limit = { has_trait_xp = { trait = kehillah_cherem_trait value <= 0 } }
+				kehillah_cherem_clear_effect = yes
+			}
+		}
+		# Niddui.
+		else = {
+			# A community leader in Niddui loses Stability.
+			if = {
+				limit = { kehillah_cherem_protected_leader_trigger = yes }
+				kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_cherem_niddui_leader_stability }
+			}
+			# The AI head of his rite may pronounce the ban on one deep in Niddui.
+			if = {
+				limit = {
+					has_trait_xp = { trait = kehillah_cherem_trait value >= kehillah_cherem_ai_head_threshold }
+					rite.head_of_rite ?= { is_ai = yes }
+					NOT = { rite.head_of_rite ?= this }
+				}
+				random = {
+					chance = kehillah_cherem_ai_head_chance
+					save_scope_value_as = { name = kehillah_cherem_pronounced_by value = flag:head }
+					kehillah_cherem_pronounce_effect = yes
+				}
+			}
+		}
+	}
+	# Off the list: the dead, the converted, and those whose ban is gone.
+	every_in_global_list = {
+		variable = kehillah_cherem_tracked
+		limit = {
+			OR = {
+				is_alive = no
+				NOT = { is_jewish_character_trigger = yes }
+				NOT = { has_trait = kehillah_cherem_trait }
+			}
+		}
+		add_to_temporary_list = kehillah_cherem_drop
+	}
+	every_in_list = {
+		list = kehillah_cherem_drop
+		save_scope_as = kehillah_cherem_gone
+		remove_list_global_variable = { name = kehillah_cherem_tracked target = scope:kehillah_cherem_gone }
+	}
+}
+
+# Scope: none. Once per save: the first build (a variable score with stage
+# modifiers) and vanilla's excommunicated trait on Jews become the trait.
+kehillah_cherem_migrate_effect = {
+	if = {
+		limit = { NOT = { has_global_variable = kehillah_cherem_trait_migrated } }
+		set_global_variable = { name = kehillah_cherem_trait_migrated value = yes }
+		# The first build's stage modifiers become the trait at that level. Its
+		# score variable is left in place, unread (reading it here alone would
+		# flag it in error.log as used but never set).
+		every_in_global_list = {
+			variable = kehillah_cherem_tracked
+			limit = {
+				is_alive = yes
+				OR = {
+					has_character_modifier = kehillah_nezifah_modifier
+					has_character_modifier = kehillah_niddui_modifier
+				}
+			}
+			add_to_temporary_list = kehillah_cherem_old_score
+		}
+		every_in_list = {
+			list = kehillah_cherem_old_score
+			if = {
+				limit = { NOT = { has_trait = kehillah_cherem_trait } }
+				add_trait = kehillah_cherem_trait
+			}
+			if = {
+				limit = { has_character_modifier = kehillah_niddui_modifier }
+				kehillah_cherem_set_xp_effect = { XP = kehillah_cherem_niddui }
+			}
+			else = {
+				kehillah_cherem_set_xp_effect = { XP = kehillah_cherem_nezifah }
+			}
+			remove_character_modifier = kehillah_nezifah_modifier
+			remove_character_modifier = kehillah_niddui_modifier
+		}
+		every_living_character = {
+			limit = {
+				has_trait = excommunicated
+				is_jewish_character_trigger = yes
+			}
+			remove_trait = excommunicated
+			if = {
+				limit = { NOT = { has_trait = kehillah_cherem_trait } }
+				add_trait = kehillah_cherem_trait
+			}
+			kehillah_cherem_set_xp_effect = { XP = kehillah_cherem_full }
+			if = {
+				limit = { NOT = { is_target_in_global_variable_list = { name = kehillah_cherem_tracked target = this } } }
+				add_to_global_variable_list = { name = kehillah_cherem_tracked target = this }
+			}
+		}
+	}
+}
+
+# Scope: a Kehillah leader (quarterly_playable_pulse). One who carries on under
+# the full cherem loses Stability each quarter while it lasts.
+kehillah_cherem_quarterly_effect = {
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_cherem_defiant } }
+		if = {
+			limit = {
+				OR = {
+					has_variable = kehillah_teshuvah_pending
+					# Penance already begun before this update has no marker.
+					has_character_modifier = kehillah_doing_teshuvah_modifier
+				}
+			}
+			kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_cherem_penitence_quarterly_stability }
+		}
+		else = {
+			kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_cherem_defiance_quarterly_stability }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# Teshuvah (section 3.5).
+# ---------------------------------------------------------------------
+
+# Scope: the penitent. Renounce the book that caused it: its reception falls
+# in his rite (kehillah_cherem_renounce_dispatch_effect, generated).
+kehillah_cherem_renounce_effect = {
+	kehillah_standing_add_reception_effect = { KEY = $KEY$ AMOUNT = kehillah_teshuvah_renounce_reception }
+}
+
+# Scope: the penitent. The caller pays the Piety (decision cost / event
+# effect); both doors share the year, the cooldown and the renunciation.
+# 2026-11-11 (trait rework): he also gives up every book in his library that
+# his rite has Banned or put under Anathema (Daniel: "Maybe you need to get
+# rid of your apikorsus books too").
+kehillah_teshuvah_begin_effect = {
+	save_scope_as = kehillah_cherem_penitent
+	# 2026-11-11: who will judge it, and on what grounds they could refuse.
+	kehillah_teshuvah_seat_court_effect = yes
+	kehillah_teshuvah_preview_effect = yes
+	if = {
+		limit = { has_variable = kehillah_cherem_cause_work }
+		custom_tooltip = kehillah_teshuvah_renounce_tt
+	}
+	if = {
+		limit = { var:kehillah_own_library ?= { kehillah_cherem_library_holds_forbidden_trigger = yes } }
+		custom_tooltip = kehillah_teshuvah_surrender_tt
+	}
+	add_character_modifier = { modifier = kehillah_doing_teshuvah_modifier days = kehillah_teshuvah_days }
+	add_stress = medium_stress_gain
+	custom_tooltip = kehillah_teshuvah_decision_tt
+	hidden_effect = {
+		set_variable = { name = kehillah_teshuvah_pending value = yes }
+		set_variable = { name = kehillah_teshuvah_cooldown value = yes years = kehillah_teshuvah_cooldown_years }
+		set_variable = { name = kehillah_teshuvah_start_xp value = "has_trait_xp(kehillah_cherem_trait)" }
+		if = {
+			limit = { kehillah_cherem_protected_leader_trigger = yes kehillah_cherem_in_full_trigger = yes }
+			primary_title = { set_variable = { name = kehillah_cherem_defiant value = yes } }
+		}
+		if = {
+			limit = { has_variable = kehillah_cherem_cause_work }
+			kehillah_cherem_renounce_dispatch_effect = { SOURCE = var:kehillah_cherem_cause_work }
+		}
+		kehillah_lib_refresh_own_library_effect = yes
+		var:kehillah_own_library ?= {
+			if = {
+				limit = { kehillah_cherem_library_holds_forbidden_trigger = yes }
+				kehillah_cherem_surrender_forbidden_effect = yes
+				kehillah_lib_refresh_cache_effect = yes
+			}
+		}
+		trigger_event = { id = kehillah_cherem.0020 days = kehillah_teshuvah_days }
+	}
+}
+
+# Remove the pending marker only once judgment is delivered, including a
+# player judge who answers after the year's modifier has expired.
+kehillah_teshuvah_finish_effect = {
+	remove_variable = kehillah_teshuvah_pending
+	# kehillah_teshuvah_start_xp stays for the verdict's reasons; the next
+	# teshuvah overwrites it.
+	remove_character_modifier = kehillah_doing_teshuvah_modifier
+}
+
+# A refusal ends the grace period. The leader chooses what to do next;
+# neither refusal nor a failed roll silently abdicates for him.
+kehillah_teshuvah_refused_effect = {
+	kehillah_teshuvah_finish_effect = yes
+	if = {
+		limit = { kehillah_cherem_protected_leader_trigger = yes kehillah_cherem_in_full_trigger = yes }
+		trigger_event = { id = kehillah_cherem.0010 days = 1 }
+	}
+}
+
+# Scope: the penitent. Seat the court that judges his teshuvah (2026-11-11):
+# the head of his rite alone when there is one (scope:kehillah_teshuvah_judge);
+# otherwise a court of three (scope:kehillah_teshuvah_judge_1/2/3): his Dayyan
+# (a leader's own, anyone else's lord's) and the two most learned rabbis of
+# his rite who have mastered a work. Fewer when fewer can be found.
+kehillah_teshuvah_seat_court_effect = {
+	clear_saved_scope = kehillah_teshuvah_judge
+	clear_saved_scope = kehillah_teshuvah_judge_1
+	clear_saved_scope = kehillah_teshuvah_judge_2
+	clear_saved_scope = kehillah_teshuvah_judge_3
+	clear_saved_scope = kehillah_teshuvah_accepted
+	save_scope_as = kehillah_teshuvah_penitent
+	rite ?= {
+		head_of_rite ?= {
+			if = {
+				limit = { kehillah_teshuvah_can_judge_trigger = yes }
+				save_scope_as = kehillah_teshuvah_judge
+			}
+		}
+	}
+	if = {
+		limit = { NOT = { exists = scope:kehillah_teshuvah_judge } }
+		if = {
+			limit = { kehillah_cherem_protected_leader_trigger = yes }
+			cp:councillor_court_chaplain ?= {
+				if = {
+					limit = { kehillah_teshuvah_can_judge_trigger = yes }
+					save_scope_as = kehillah_teshuvah_judge_1
+				}
+			}
+		}
+		else = {
+			liege ?= {
+				cp:councillor_court_chaplain ?= {
+					if = {
+						limit = { kehillah_teshuvah_can_judge_trigger = yes }
+						save_scope_as = kehillah_teshuvah_judge_1
+					}
+				}
+			}
+		}
+		ordered_in_global_list = {
+			variable = kehillah_sefer_masters
+			limit = {
+				kehillah_teshuvah_can_judge_trigger = yes
+				rite ?= scope:kehillah_teshuvah_penitent.rite
+				NOT = { scope:kehillah_teshuvah_judge_1 ?= this }
+			}
+			order_by = learning
+			save_scope_as = kehillah_teshuvah_judge_2
+		}
+		ordered_in_global_list = {
+			variable = kehillah_sefer_masters
+			limit = {
+				kehillah_teshuvah_can_judge_trigger = yes
+				rite ?= scope:kehillah_teshuvah_penitent.rite
+				NOT = { scope:kehillah_teshuvah_judge_1 ?= this }
+				NOT = { scope:kehillah_teshuvah_judge_2 ?= this }
+			}
+			order_by = learning
+			save_scope_as = kehillah_teshuvah_judge_3
+		}
+	}
+}
+
+# Scope: the penitent, court seated. Shows who will judge and what grounds
+# any of them has to refuse (the decision and The Ban Is Read).
+kehillah_teshuvah_preview_effect = {
+	if = {
+		limit = { exists = scope:kehillah_teshuvah_judge }
+		custom_tooltip = kehillah_teshuvah_tt_head
+		scope:kehillah_teshuvah_judge = { kehillah_teshuvah_preview_grounds_effect = { N = head } }
+	}
+	else_if = {
+		limit = { kehillah_teshuvah_court_seated_value > 0 }
+		custom_tooltip = kehillah_teshuvah_tt_court
+		scope:kehillah_teshuvah_judge_1 ?= { kehillah_teshuvah_preview_grounds_effect = { N = 1 } }
+		scope:kehillah_teshuvah_judge_2 ?= { kehillah_teshuvah_preview_grounds_effect = { N = 2 } }
+		scope:kehillah_teshuvah_judge_3 ?= { kehillah_teshuvah_preview_grounds_effect = { N = 3 } }
+	}
+	else = {
+		custom_tooltip = kehillah_teshuvah_tt_no_court
+	}
+	if = {
+		limit = { kehillah_teshuvah_relapse_trigger = yes }
+		custom_tooltip = kehillah_teshuvah_tt_relapse
+	}
+	custom_tooltip = kehillah_teshuvah_tt_rule
+}
+
+# Scope: a judge. One line: his name, and his grounds if he has any.
+kehillah_teshuvah_preview_grounds_effect = {
+	if = {
+		limit = { kehillah_teshuvah_enmity_trigger = yes }
+		custom_tooltip = kehillah_teshuvah_tt_judge_$N$_enmity
+	}
+	else_if = {
+		limit = { kehillah_teshuvah_zeal_trigger = yes }
+		custom_tooltip = kehillah_teshuvah_tt_judge_$N$_zeal
+	}
+	else = {
+		custom_tooltip = kehillah_teshuvah_tt_judge_$N$_fair
+	}
+}
+
+# Scope: the penitent, a year on, court seated. The verdict: refused for a
+# relapse or a new offence, or when the head (alone) or a majority of the
+# court has grounds; otherwise accepted. Saves scope:kehillah_teshuvah_accepted.
+kehillah_teshuvah_verdict_effect = {
+	if = {
+		limit = {
+			NOT = { kehillah_teshuvah_relapse_trigger = yes }
+			NOT = { kehillah_teshuvah_sinned_trigger = yes }
+			OR = {
+				AND = {
+					exists = scope:kehillah_teshuvah_judge
+					scope:kehillah_teshuvah_judge = { NOT = { kehillah_teshuvah_judge_refuses_trigger = yes } }
+				}
+				AND = {
+					NOT = { exists = scope:kehillah_teshuvah_judge }
+					kehillah_teshuvah_court_refusals_value <= { value = kehillah_teshuvah_court_seated_value divide = 2 }
+				}
+			}
+		}
+		save_scope_value_as = { name = kehillah_teshuvah_accepted value = yes }
+	}
+}

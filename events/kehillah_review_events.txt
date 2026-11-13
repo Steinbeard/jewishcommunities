@@ -1,0 +1,107 @@
+﻿# =====================================================================
+# Reviews: haskamah and cherem on books (2026-11-11, Daniel).
+# docs/spec/2026-11-11-reviews-and-cherem.md section 1;
+# common/scripted_effects/kehillah_review_effects.txt.
+# =====================================================================
+namespace = kehillah_review
+
+# ---------------------------------------------------------------------
+# kehillah_review.0001 -- a haskamah. Root: the player (var:kehillah_review_work),
+# on mastering the book or from its page.
+# ---------------------------------------------------------------------
+kehillah_review.0001 = {
+	type = character_event
+	title = kehillah_review.0001.t
+	desc = kehillah_review.0001.desc
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = personality_honorable
+	}
+	trigger = { has_variable = kehillah_review_work }
+
+	option = {
+		name = kehillah_review.0001.a
+		custom_tooltip = kehillah_review.0001.a.tt
+		kehillah_review_haskamah_dispatch_effect = { SOURCE = var:kehillah_review_work }
+	}
+	option = {
+		name = kehillah_review.0001.b
+	}
+	after = { remove_variable = kehillah_review_work }
+}
+
+# ---------------------------------------------------------------------
+# kehillah_review.0002 -- a cherem, from the book's page. Root: the player.
+# A reader who has mastered it bans it at full weight; anyone else at half.
+# ---------------------------------------------------------------------
+kehillah_review.0002 = {
+	type = character_event
+	title = kehillah_review.0002.t
+	desc = kehillah_review.0002.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = anger
+	}
+	trigger = { has_variable = kehillah_review_work }
+
+	option = {
+		name = kehillah_review.0002.a
+		custom_tooltip = kehillah_review.0002.a.tt
+		if = {
+			limit = { is_target_in_variable_list = { name = kehillah_mastered_works target = var:kehillah_review_work } }
+			kehillah_review_cherem_dispatch_effect = { SOURCE = var:kehillah_review_work READ = read }
+		}
+		else = {
+			kehillah_review_cherem_dispatch_effect = { SOURCE = var:kehillah_review_work READ = unread }
+		}
+	}
+	option = {
+		name = kehillah_review.0002.b
+	}
+	after = { remove_variable = kehillah_review_work }
+}
+
+# ---------------------------------------------------------------------
+# kehillah_review.0010 -- words against our faith. Root: a player reading a
+# book that argues against what he holds (var:kehillah_review_work).
+# ---------------------------------------------------------------------
+kehillah_review.0010 = {
+	type = character_event
+	title = kehillah_review.0010.t
+	desc = kehillah_review.0010.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = disapproval
+	}
+	trigger = { has_variable = kehillah_review_work }
+
+	# Ban it, and close it.
+	option = {
+		name = kehillah_review.0010.a
+		custom_tooltip = kehillah_review.0002.a.tt
+		kehillah_review_cherem_dispatch_effect = { SOURCE = var:kehillah_review_work READ = read }
+		add_piety = kehillah_review_protest_piety
+		add_learning_lifestyle_xp = kehillah_review_protest_learning_xp
+		custom_tooltip = kehillah_review.0010.a.stop_tt
+		hidden_effect = {
+			every_scheme = {
+				type = kehillah_study_torah
+				end_scheme = yes
+			}
+		}
+	}
+	# Read on, to answer it.
+	option = {
+		name = kehillah_review.0010.b
+		add_piety = kehillah_review_refute_piety
+	}
+	# Read on with an open mind.
+	option = {
+		name = kehillah_review.0010.c
+		add_learning_lifestyle_xp = kehillah_review_open_mind_learning_xp
+	}
+	after = { remove_variable = kehillah_review_work }
+}
