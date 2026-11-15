@@ -255,6 +255,17 @@ kehillah_crisis_resolve_effect = {
    save_scope_as = kehillah_crisis_title
    kehillah_crisis_situation_sync_effect = yes
   }
+	# A breached quarter leaves a serious but finite mark on the ruler who
+	# failed to prevent violence in his lands. Reapply it to renew, rather
+	# than stack, the ten-year memory after another breach.
+	if = {
+		limit = { primary_title.var:kehillah_crisis_outcome = 4 }
+		domicile.domicile_location.county.holder.top_liege ?= {
+			if = { limit = { has_character_modifier = kehillah_anti_jewish_violence_modifier } remove_character_modifier = kehillah_anti_jewish_violence_modifier }
+			add_character_modifier = { modifier = kehillah_anti_jewish_violence_modifier years = 10 }
+		}
+		debug_log = "kehillah_crisis_resolve_effect: quarter struck; host receives anti-Jewish violence outlook memory for ten years"
+	}
   save_scope_value_as = { name = kehillah_crisis_epoch value = primary_title.var:kehillah_crisis_epoch }
   # Queue visible followups through a hidden relay: an option tooltip must
   # never evaluate events that depend on scopes created earlier in that option.
@@ -262,6 +273,25 @@ kehillah_crisis_resolve_effect = {
   debug_log = "kehillah_crisis_resolve_effect: resolved outcome $OUTCOME$; political judgement pending"
  }
 }
+
+# Scope: a community title after its ruler's settlement is final. A refusal
+# after Spared or Quarter Held is not violence, but it leaves a public,
+# limited memory that the ruler would not renew the community's protection.
+kehillah_crisis_settlement_outlook_effect = {
+	if = {
+		limit = {
+			var:kehillah_crisis_outcome < 4
+			var:kehillah_crisis_response = 3
+			exists = var:kehillah_crisis_ruler
+		}
+		var:kehillah_crisis_ruler = {
+			if = { limit = { has_character_modifier = kehillah_unanswered_incitement_modifier } remove_character_modifier = kehillah_unanswered_incitement_modifier }
+			add_character_modifier = { modifier = kehillah_unanswered_incitement_modifier years = 10 }
+		}
+		debug_log = "kehillah_crisis_settlement_outlook_effect: ruler left incitement unanswered; outlook -5 for ten years"
+	}
+}
+
 # Fallback for death of the ruler who carried the queued judgement.
 kehillah_crisis_request_judgement_effect = {
  primary_title = { save_scope_as = kehillah_crisis_title set_variable = { name = kehillah_crisis_judgement_grace value = yes days = 30 } }

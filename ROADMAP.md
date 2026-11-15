@@ -17,6 +17,16 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+**Crisis settlement outlook BUILT 2026-11-15; xTiger checked, live check
+pending:** a
+ruler who lets a Spared or Held crisis end without renewed protection now
+carries ten years of visible **Unanswered Incitement** (−5 Outlook on the
+Jews). A Quarter Struck result gives the host ten years of visible
+**Anti-Jewish Violence** (−15), a visible, time-limited consequence. The
+ruler's settlement choice now weights every outlook band, so an Indifferent
+ruler is no longer treated exactly like a Cold one until a single +15 cutoff.
+See the [implementation record](docs/implementation/2026-11-15-crisis-settlement-outlook.md).
+
 **Stand for the Seat BUILT (first pass) - 2026-11-08, Daniel's request, xTiger-clean, live test
 pending (Daniel runs it by hand):** a player who leads a community can **Weigh Their Seat** on
 another same-faith, AI-led community's leader. The event shows:
