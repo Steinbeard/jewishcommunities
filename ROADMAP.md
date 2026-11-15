@@ -2,6 +2,8 @@
 
 **Rabbinic Machshavah seeding BUILT 2026-11-15; source/xTiger checked, live check pending:** new Rabbinic libraries begin with *Sefer Yetzirah* and, after 933, Saadia's *Emunot ve-Deot*. The books are ordinary copies, not foundations or Yeshiva prerequisites; their ownership makes Machshavah visible in the Sefarim Ledger. Obscure, esoteric, and polemical works retain the existing ownership/mastery/reputation discovery gates. See [the build record](docs/implementation/2026-11-15-rabbinic-machshava-library-seeding.md).
 
+**Sefer discovery PROPOSED 2026-11-15:** a lead-based system would let a community deliberately learn of obscure circulating works without an omniscient ledger or free copies. Discovery grants persistent library knowledge; the existing commission/ransom/travel routes still obtain the manuscript. The proposal includes one yearly genre-weighted inquiry and contextual leads from scholars, citations, controversies, ransom, and displacement. See [the specification](docs/spec/2026-11-15-sefer-discovery.md).
+
 Working title: **Kehillah** (working name for the mod overall is still TBD — "Jewish Communities" is the folder/descriptor name for now).
 
 Two playable tracks, per the project vision:
