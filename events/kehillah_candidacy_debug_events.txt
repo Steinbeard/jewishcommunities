@@ -12,6 +12,9 @@
 #   event kehillah_candidacy_debug.4    the test seat's leader dies
 #   event kehillah_candidacy_debug.5    after a win: titles, Quarter, court
 #   event kehillah_candidacy_debug.6    clear all candidacy state
+#   event kehillah_candidacy_debug.7    the test seat sends the player a letter
+#   event kehillah_candidacy_debug.8    adventurer status: can he stand, is a
+#                                       community in this county
 #
 # The test seat is the player's declared target if he has one, otherwise
 # Mainz, or Worms when the player leads Mainz.
@@ -88,14 +91,19 @@ kehillah_candidacy_debug.1 = {
 		else = { debug_log = "KEHILLAH_CAND_PROBE .1 married_in=no" }
 		if = {
 			limit = { kehillah_cand_stranger_trigger = { SEAT = scope:cand_seat } }
-			debug_log = "KEHILLAH_CAND_PROBE .1 stranger=yes (-60)"
+			debug_log = "KEHILLAH_CAND_PROBE .1 stranger=yes (-20)"
 		}
 		else = { debug_log = "KEHILLAH_CAND_PROBE .1 stranger=no" }
 		if = {
-			limit = { kehillah_cand_shares_minhag_trigger = { SEAT = scope:cand_seat } }
-			debug_log = "KEHILLAH_CAND_PROBE .1 shares_minhag=yes"
+			limit = { kehillah_cand_shares_culture_trigger = { SEAT = scope:cand_seat } }
+			debug_log = "KEHILLAH_CAND_PROBE .1 shares_culture=yes"
 		}
-		else = { debug_log = "KEHILLAH_CAND_PROBE .1 shares_minhag=no (-20)" }
+		else = { debug_log = "KEHILLAH_CAND_PROBE .1 shares_culture=no (-20)" }
+		if = {
+			limit = { kehillah_cand_invited_trigger = { SEAT = scope:cand_seat } }
+			debug_log = "KEHILLAH_CAND_PROBE .1 invited=yes (+15)"
+		}
+		debug_log = "KEHILLAH_CAND_PROBE .1 tracks parshanut=[ROOT.Char.MakeScope.ScriptValue('kehillah_cand_track_parshanut_value')|0] talmudics=[ROOT.Char.MakeScope.ScriptValue('kehillah_cand_track_talmudics_value')|0] hashkafa=[ROOT.Char.MakeScope.ScriptValue('kehillah_cand_track_hashkafa_value')|0]"
 		if = {
 			limit = { has_variable = kehillah_candidacy_cooldown }
 			debug_log = "KEHILLAH_CAND_PROBE .1 cooldown=yes"
@@ -154,6 +162,13 @@ kehillah_candidacy_debug.3 = {
 			add_trait = kehillah_rabbi_trait
 		}
 		add_piety = 3000
+		# 2026-11-14: a great rabbi no longer escapes the stranger term; his
+		# record pays instead. Give him a Talmudics record so the track line shows.
+		add_trait_xp = {
+			trait = kehillah_rabbi_trait
+			track = talmudics
+			value = 70
+		}
 		if = {
 			limit = { kehillah_cand_great_rabbi_trigger = yes }
 			debug_log = "KEHILLAH_CAND_PROBE .3 great_rabbi=yes"
@@ -207,6 +222,97 @@ kehillah_candidacy_debug.5 = {
 			debug_log = "KEHILLAH_CAND_PROBE .5 cooldown set (expected after a win or loss)"
 		}
 		debug_log = "KEHILLAH_CAND_PROBE .5 courtiers=[ROOT.Char.MakeScope.ScriptValue('kehillah_cand_probe_courtier_count_value')]"
+	}
+}
+
+# .7 -- The test seat's leader writes to the player now (2026-11-14), without
+# the yearly roll, the age test or the seat's cooldown. The letter is
+# kehillah_candidacy.0040. Logs why no letter went, if none did.
+kehillah_candidacy_debug.7 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_cand_probe_pick_seat_effect = yes
+		scope:cand_seat = {
+			if = {
+				limit = { has_variable = kehillah_invitation_sent_cooldown }
+				remove_variable = kehillah_invitation_sent_cooldown
+			}
+		}
+		if = {
+			limit = { has_variable = kehillah_invited_to_seat }
+			remove_variable = kehillah_invited_to_seat
+		}
+		scope:cand_seat.holder = { kehillah_cand_send_invitation_effect = yes }
+		if = {
+			limit = { has_variable = kehillah_invited_to_seat }
+			debug_log = "KEHILLAH_CAND_PROBE .7 invited=yes"
+		}
+		else = {
+			debug_log = "KEHILLAH_CAND_PROBE .7 NO LETTER SENT. Reasons follow."
+			if = {
+				limit = {
+					NOT = {
+						kehillah_cand_can_weigh_seat_trigger = {
+							CAND = root
+							SEAT = scope:cand_seat
+						}
+					}
+				}
+				debug_log = "KEHILLAH_CAND_PROBE .7 reason: cannot weigh this seat (faith, AI-led, government)"
+			}
+			if = {
+				limit = { NOT = { kehillah_cand_free_to_declare_trigger = yes } }
+				debug_log = "KEHILLAH_CAND_PROBE .7 reason: already a candidate or on cooldown"
+			}
+			if = {
+				limit = {
+					NOT = { has_trait = kehillah_rabbi_trait }
+					learning < kehillah_cand_invitation_learning_floor_value
+				}
+				debug_log = "KEHILLAH_CAND_PROBE .7 reason: not a rabbi and learning too low"
+			}
+		}
+	}
+}
+
+# .8 -- The player as an adventurer (2026-11-14): can he stand, and could he
+# visit a community here? Run it standing in a county, after Step Down.
+kehillah_candidacy_debug.8 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_cand_probe_pick_seat_effect = yes
+		if = {
+			limit = { kehillah_cand_is_adventurer_candidate_trigger = yes }
+			debug_log = "KEHILLAH_CAND_PROBE .8 adventurer_candidate=yes"
+		}
+		else = { debug_log = "KEHILLAH_CAND_PROBE .8 adventurer_candidate=no" }
+		if = {
+			limit = {
+				kehillah_cand_can_weigh_seat_trigger = {
+					CAND = root
+					SEAT = scope:cand_seat
+				}
+			}
+			debug_log = "KEHILLAH_CAND_PROBE .8 can_weigh [cand_seat.GetName]=yes"
+		}
+		else = { debug_log = "KEHILLAH_CAND_PROBE .8 can_weigh [cand_seat.GetName]=no" }
+		if = {
+			limit = {
+				any_in_global_list = {
+					variable = kehillah_registered_communities
+					kehillah_visit_title_here_trigger = { VISITOR = root }
+				}
+			}
+			debug_log = "KEHILLAH_CAND_PROBE .8 a community lives in this county=yes"
+		}
+		else = { debug_log = "KEHILLAH_CAND_PROBE .8 a community lives in this county=no" }
+		if = {
+			limit = { exists = domicile }
+			debug_log = "KEHILLAH_CAND_PROBE .8 domicile=yes"
+		}
+		else = { debug_log = "KEHILLAH_CAND_PROBE .8 domicile=NO" }
 	}
 }
 

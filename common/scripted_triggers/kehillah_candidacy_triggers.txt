@@ -22,12 +22,18 @@ kehillah_cand_is_outsider_trigger = {
 	NOT = { court_owner ?= $SEAT$.holder }
 }
 
-# Scope: a character. His community and the seat's share a customary
-# region. A candidate or seat with no known region counts as not sharing,
-# as kehillah_shares_minhag_region_trigger does.
-kehillah_cand_shares_minhag_trigger = {
+# Scope: a character. He is of the seat leader's culture (2026-11-14: this
+# replaced the customary-region test, which an adventurer could never pass).
+kehillah_cand_shares_culture_trigger = {
 	exists = $SEAT$.holder
-	kehillah_shares_minhag_region_trigger = { OTHER = $SEAT$.holder }
+	culture = $SEAT$.holder.culture
+}
+
+# Scope: a character. A community has sent for him (kehillah_candidacy.0040).
+# The invitation is a variable on him that expires on its own.
+kehillah_cand_invited_trigger = {
+	exists = var:kehillah_invited_to_seat
+	var:kehillah_invited_to_seat = $SEAT$
 }
 
 # Scope: a character. A great rabbi (spec 5.3): the Rabbi trait and one
@@ -88,28 +94,42 @@ kehillah_cand_child_married_in_trigger = {
 	}
 }
 
-# Scope: a character. A stranger to the congregation: neither a great
-# rabbi nor married in.
+# Scope: a character. A stranger to the congregation: not married into a
+# local family. (2026-11-14, Daniel: a great rabbi no longer escapes this; his
+# name is a bonus instead, in the track terms.)
 kehillah_cand_stranger_trigger = {
-	NOT = { kehillah_cand_great_rabbi_trigger = yes }
 	NOT = { kehillah_cand_married_in_trigger = { SEAT = $SEAT$ } }
+}
+
+# Scope: a character. A Jewish landless adventurer who could one day hold a
+# community: the other kind of candidate (2026-11-14, Daniel). He has no
+# community to hand on; winning a seat is how a wandering rabbi settles.
+kehillah_cand_is_adventurer_candidate_trigger = {
+	has_government = landless_adventurer_government
+	kehillah_can_found_kehillah_faith_trigger = yes
 }
 
 # Scope: any. $CAND$ may weigh and stand for $SEAT$. v1 is a player action
 # (Daniel, 2026-11-08), and a player-led seat is closed (spec 4). The
 # candidate is passed explicitly rather than read from root, because a
 # scripted trigger does not reset root.
+# 2026-11-14: a Jewish landless adventurer may weigh a seat too.
 kehillah_cand_can_weigh_seat_trigger = {
 	$CAND$ = {
 		is_ai = no
 		is_adult = yes
 		is_imprisoned = no
-		government_has_flag = government_is_kehillah
-		exists = primary_title
-		primary_title = { is_kehillah_title_trigger = yes }
+		OR = {
+			AND = {
+				government_has_flag = government_is_kehillah
+				exists = primary_title
+				primary_title = { is_kehillah_title_trigger = yes }
+			}
+			kehillah_cand_is_adventurer_candidate_trigger = yes
+		}
 	}
 	$SEAT$ = { is_kehillah_title_trigger = yes }
-	NOT = { $SEAT$ = $CAND$.primary_title }
+	NOT = { $CAND$.primary_title ?= $SEAT$ }
 	exists = $SEAT$.holder
 	$SEAT$.holder = {
 		is_ai = yes

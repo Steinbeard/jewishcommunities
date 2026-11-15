@@ -40,6 +40,56 @@ kehillah_cand_declare_effect = {
 	debug_log_scopes = yes
 }
 
+# Root: an AI community leader who is old or ill. His community writes to
+# one Jewish player who could stand for the seat: a community leader or a
+# landless adventurer, of his faith, near enough to hear of the seat, and a
+# rabbi or a man of learning. The invitee is told in kehillah_candidacy.0040;
+# the invitation is a variable on him that expires by itself, and the seat
+# does not write again for a while.
+kehillah_cand_send_invitation_effect = {
+	primary_title = { save_scope_as = kehillah_invite_seat }
+	random_player = {
+		limit = {
+			NOT = { has_variable = kehillah_invited_to_seat }
+			kehillah_cand_free_to_declare_trigger = yes
+			kehillah_cand_can_weigh_seat_trigger = {
+				CAND = this
+				SEAT = scope:kehillah_invite_seat
+			}
+			OR = {
+				has_trait = kehillah_rabbi_trait
+				learning >= kehillah_cand_invitation_learning_floor_value
+			}
+			location = {
+				squared_distance = {
+					target = scope:kehillah_invite_seat.holder.location
+					value <= squared_distance_large
+				}
+			}
+		}
+		save_scope_as = kehillah_invite_candidate
+	}
+	if = {
+		limit = { exists = scope:kehillah_invite_candidate }
+		scope:kehillah_invite_candidate = {
+			set_variable = {
+				name = kehillah_invited_to_seat
+				value = scope:kehillah_invite_seat
+				years = kehillah_cand_invitation_years_value
+			}
+			trigger_event = kehillah_candidacy.0040
+		}
+		scope:kehillah_invite_seat = {
+			set_variable = {
+				name = kehillah_invitation_sent_cooldown
+				value = yes
+				years = kehillah_cand_invitation_seat_cooldown_years_value
+			}
+		}
+		debug_log = "KEHILLAH_CAND: [kehillah_invite_seat.GetName] sends for [kehillah_invite_candidate.GetName]"
+	}
+}
+
 # Root: the candidate. Ends his candidacy, takes back the investment while
 # it is still on the title, and starts a cooldown of $YEARS$ years.
 kehillah_cand_end_candidacy_effect = {

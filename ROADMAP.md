@@ -198,6 +198,23 @@ bought toward Quarter held, and a button showing the next marginal price. The
 button applies the existing guarded contribution effect directly; the decision
 remains for AI but no longer occupies a full-width situation action. Existing
 saves begin recording the exact gold total with their next contribution.
+**Adventurers, seats and invitations BUILT - 2026-11-14, Daniel's request, xTiger-clean, NOT
+live-tested:** an amendment to Stand for the Seat, below.
+- **Scoring:** culture (-20) replaces the minhag-region term; the stranger term is -20 and only a
+  marriage waives it; a rabbi's record (Parshanut, Talmudics, Hashkafa, +5/+12/+20 per track) is a
+  bonus, so a great rabbi no longer escapes anything.
+- **Adventurers can weigh and stand for a seat.** Winning one is the risky path: an adventurer's camp
+  would have met `change_government`, which ends in Game Over. He now takes `kehillah_succession.0010`'s
+  scaffold route instead, and his camp title is destroyed. **Test V13 first.**
+- **Invitations:** an old or ill AI leader's community writes to a Jewish player: +15 and half cost.
+- **Visit the Jewish Community:** a Jewish adventurer in a county with a community may pray there,
+  take a family into his company, or speak about the seat. This replaces the proposed "Seek Out
+  Jewish Families".
+- **Found a Jewish Community is open to every Jewish faith.** A Samaritan founder's library may start as
+  the Rabbanite default; V16 checks.
+- [The spec](docs/spec/2026-11-14-adventurers-seats-and-invitations.md); validation V13 to V17 in
+  [the checklist](docs/testing/2026-11-08-stand-for-the-seat-validation.md).
+
 
 **Community Safety planning page - 2026-11-08, source checked, live check pending:**
 Military's duplicate crisis races and actions are replaced by a situation link,

@@ -52,8 +52,24 @@ kehillah_succession.0010 = {
 		# The pre-fix diagnosis, retained as a breadcrumb. A plain title
 		# transfer does not carry a character-owned domicile, so there is
 		# normally still none to find a day later.
+		# 2026-11-14: a landless adventurer who won a seat (Stand for the Seat)
+		# also HAS a domicile, but it is his camp, not a Quarter. He is
+		# treated as having none: the scaffold below gives him a Quarter the
+		# way founding does, and his camp title is destroyed after it. The
+		# government changes in the scaffold step, so note now that he came
+		# from the road.
 		if = {
-			limit = { exists = domicile }
+			limit = { has_government = landless_adventurer_government }
+			save_scope_value_as = {
+				name = kehillah_came_from_the_road
+				value = flag:yes
+			}
+		}
+		if = {
+			limit = {
+				exists = domicile
+				NOT = { has_government = landless_adventurer_government }
+			}
 			debug_log = "kehillah_succession.0010: the new leader HAS a domicile one day after title gain -- the quarter travelled with the title"
 		}
 		else = {
@@ -92,6 +108,23 @@ kehillah_succession.0010 = {
 					}
 					destroy_title = scope:kehillah_successor_scaffold_title
 					debug_log = "kehillah_succession.0010: restored the real community as primary and destroyed the scaffold"
+					# An adventurer's camp title goes the way it does in
+					# kehillah_found_community_effect: destroyed, not kept
+					# beside the community (a second landless title made
+					# the 2026-09-20 Game Over).
+					if = {
+						limit = { exists = scope:kehillah_came_from_the_road }
+						every_held_title = {
+							limit = {
+								is_landless_type_title = yes
+								NOT = { this = scope:kq_title }
+								NOT = { is_kehillah_title_trigger = yes }
+							}
+							save_scope_as = kehillah_old_camp_title
+							root = { destroy_title = scope:kehillah_old_camp_title }
+							debug_log = "kehillah_succession.0010: destroyed the adventurer's camp title"
+						}
+					}
 				}
 				else = {
 					debug_log = "kehillah_succession.0010: FAIL create_adventurer_title returned no scaffold title"
