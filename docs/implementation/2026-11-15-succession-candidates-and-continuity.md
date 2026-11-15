@@ -22,11 +22,11 @@ designation: vanilla's designation chooses a child and sets a designated heir,
 whereas Kehillah succession remains a communal merit choice.
 
 The existing **Endorse as Successor** character interaction remains the action
-itself. The new tooltip directs the player to Appointment to compare candidates
-and their scores, then to an eligible candidate's Diplomacy interactions to
-endorse them. A direct candidate-row endorsement button is possible later, but
-would require another copied vanilla GUI file; this pass avoids that maintenance
-cost while using the engine's own appointment UI.
+itself. Appointment candidates use vanilla's `portrait_head_small` widget, whose
+default right-click opens the normal character-interaction menu. The new tooltip
+therefore directs the player to right-click an eligible candidate's portrait and
+select **Endorse as Successor**. This reaches the existing action directly from
+the candidate list without copying or replacing the vanilla Appointment GUI.
 
 ## Family continuity
 
