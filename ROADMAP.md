@@ -17,6 +17,8 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+**Succession candidates and family continuity BUILT 2026-11-15; source validation/live UI and succession checks pending:** Realm → Succession now offers Kehillah leaders **Review Community Candidates** beside vanilla's Designate Heir control. It opens CK3's native Appointment panel, where candidates, ranks and every score term are already shown. Endorsement remains a recommendation, not hard designation. A son of the sitting leader receives +15 and another close relative +5, both visible in that score breakdown; office (+25), endorsement (+30), and Learning remain stronger signals. See [the implementation record](docs/implementation/2026-11-15-succession-candidates-and-continuity.md).
+
 **Stand for the Seat BUILT (first pass) - 2026-11-08, Daniel's request, xTiger-clean, live test
 pending (Daniel runs it by hand):** a player who leads a community can **Weigh Their Seat** on
 another same-faith, AI-led community's leader. The event shows:
