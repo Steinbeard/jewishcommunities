@@ -154,7 +154,19 @@ activity_kehillah_bet_din_conference = {
 	# and error.log filled with "Missing on demand texture" lines.
 	header_background = "gfx/interface/illustrations/activity_header_backgrounds/activity_kehillah_bet_din_conference.dds"
 
+	# 2026-11-15, AI-hosted Sittings (docs/spec/2026-11-15-ai-hosted-
+	# sittings-via-stand-in.md): a landed AI carrying var:kehillah_bet_din_
+	# stand_in_for may plan this on that community's behalf, then hands it to
+	# the leader in on_start. The engine never plans activities for landless
+	# hosts. Everything in trigger_else is the unchanged Kehillah-host gate.
 	is_shown = {
+		trigger_if = {
+			limit = { has_variable = kehillah_bet_din_stand_in_for }
+			is_ai = yes
+			is_landed = yes
+			is_adult = yes
+		}
+		trigger_else = {
 		government_has_flag = government_is_kehillah
 		# REWRITTEN 2026-09-10 (v7 spec, supersedes v6's de jure check).
 		# Every Kehillah community title is FLAT as of this pass (common/
@@ -166,11 +178,24 @@ activity_kehillah_bet_din_conference = {
 		# triggers.txt) reads the SAME "does this community's real host
 		# geography fall inside a minhag region this mod tags" question
 		# off the new geographic-tagging mechanism instead.
-		kehillah_has_known_minhag_region_trigger = yes
+		# REMOVED 2026-11-15 (Daniel: retire minhag regions): any community
+		# may convene. Whether it can seat a panel is
+		# kehillah_region_can_field_bet_din_panel_trigger's job.
 		is_adult = yes
+		}
 	}
 
 	can_start_showing_failures_only = {
+		# Stand-in planner (AI only, never shown): the community he plans for
+		# must still be able to convene.
+		trigger_if = {
+			limit = { has_variable = kehillah_bet_din_stand_in_for }
+			custom_tooltip = {
+				text = kehillah_bet_din_stand_in_community_cannot_convene_tt
+				var:kehillah_bet_din_stand_in_for = { kehillah_bet_din_ai_can_convene_trigger = yes }
+			}
+		}
+		trigger_else = {
 		NOT = { is_activity_type_on_cooldown = activity_kehillah_bet_din_conference }
 		is_imprisoned = no
 		# 2026-11-08, at user request: no sitting is convened while the
@@ -200,24 +225,50 @@ activity_kehillah_bet_din_conference = {
 			text = kehillah_requires_rabbi_to_preside_tt
 			kehillah_has_community_rabbi_trigger = yes
 		}
+		}
 	}
 
+	# The stand-in branch keeps the activity valid from creation until
+	# on_start hands it to the leader.
 	is_valid = {
 		scope:host = {
 			is_alive = yes
 			is_imprisoned = no
-			government_has_flag = government_is_kehillah
+			OR = {
+				government_has_flag = government_is_kehillah
+				has_variable = kehillah_bet_din_stand_in_for
+			}
 		}
 	}
 
 	# A Kehillah is landless: its quarter's domicile is the venue. Use the
-	# same landless venue filter as vanilla camp_party and festival for both
-	# player and AI plans. AI Watch listed a county for the old capital
-	# filter, but a forced host attempt never created an activity.
+	# same landless venue filter as vanilla camp_party and festival for
+	# player plans. AI Watch listed a county for the old capital filter, but
+	# a forced host attempt never created an activity.
+	# 2026-11-15: the AI filter is domicile_realm, so a stand-in (no
+	# domicile) sees his realm, which holds the community's Quarter, and a
+	# landed Kehillah AI sees his Quarter. is_location_valid then narrows any
+	# AI planner to exactly that Quarter. Players are not restricted here.
 	province_filter = domicile_domain
-	ai_province_filter = domicile_domain
+	ai_province_filter = domicile_realm
 	is_single_location = yes
 	max_province_icons = 1
+
+	is_location_valid = {
+		trigger_if = {
+			limit = { scope:host = { has_variable = kehillah_bet_din_stand_in_for } }
+			this = scope:host.var:kehillah_bet_din_stand_in_for.domicile.domicile_location
+		}
+		trigger_else_if = {
+			limit = {
+				scope:host = {
+					is_ai = yes
+					exists = domicile
+				}
+			}
+			this = scope:host.domicile.domicile_location
+		}
+	}
 
 	# v26: in months so the Dayyan's Prepare the Bet Din task can shorten it
 	# (common/script_values/kehillah_council_script_values.txt).
@@ -227,9 +278,24 @@ activity_kehillah_bet_din_conference = {
 	# (kehillah_bet_din_host_piety_cost, kehillah_bet_din_overdue_values.txt).
 	# The session reward in kehillah_bet_din.0099 pays it back for a good
 	# session.
+	# 2026-11-15: a stand-in planner pays nothing; the leader pays this at
+	# the handoff (kehillah_bet_din_stand_in_handoff_effect).
 	cost = {
 		piety = {
-			value = kehillah_bet_din_host_piety_cost
+			value = 0
+			if = {
+				limit = { government_has_flag = government_is_kehillah }
+				add = kehillah_bet_din_host_piety_cost
+			}
+		}
+	}
+
+	# 2026-11-15: hand a stand-in's Sitting to the community leader. Runs
+	# at creation (docs/spec/2026-11-15-ai-hosted-sittings-via-stand-in.md).
+	on_start = {
+		if = {
+			limit = { scope:host = { has_variable = kehillah_bet_din_stand_in_for } }
+			kehillah_bet_din_stand_in_handoff_effect = yes
 		}
 	}
 
@@ -468,7 +534,20 @@ activity_kehillah_bet_din_conference = {
 			location_source = pickable
 
 			on_phase_active = {
+				# 2026-11-15: a stand-in Sitting's court was added after
+				# planning, so the engine did not wait for it. Hold the docket
+				# until kehillah_bet_din_ai.0002 opens it.
 				if = {
+					limit = {
+						this = scope:host
+						scope:activity = { has_variable = kehillah_bet_din_await_gathering }
+					}
+					scope:activity = {
+						set_variable = { name = kehillah_bet_din_docket_waiting value = yes }
+						progress_activity_phase_after = { days = kehillah_bet_din_stand_in_wait_ceiling_days }
+					}
+				}
+				else_if = {
 					limit = { this = scope:host }
 
 					# Ceiling first, draw second: the draw may shorten this
@@ -677,6 +756,9 @@ activity_kehillah_bet_din_conference = {
 		# here (feast.txt, 10000), set together with
 		# ai_attempt_to_host_activity by yearly_on_actions.txt. The flag is
 		# added by kehillah_bet_din_ai_yearly (kehillah_bet_din_ai_on_actions.txt).
+		# 2026-11-15: that pulse now sets the flag on a landed stand-in (or a
+		# landed Kehillah leader), since a landless leader is never planned
+		# for; see kehillah_bet_din_ai_convene_effect.
 		if = {
 			limit = {
 				is_ai = yes

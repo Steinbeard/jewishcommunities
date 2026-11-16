@@ -1,4 +1,4 @@
-**Status:** probe built and ck3-tiger-checked 2026-10-19; not yet run live. Disposable: remove the probe files once the result is recorded here and in [bet_din_ai_experiments.md](../bet_din_ai_experiments.md).
+**Status:** **FULL PASS, live, 2026-11-15** (see Result). Probe built and ck3-tiger-checked 2026-10-19. The probe files are disposable, but they are kept until the stand-in Bet Din replaces them as the working reference.
 
 # Activity host handoff probe
 
@@ -58,4 +58,26 @@ The next step is a stand-in copy of the Bet Din, with invitations sent after the
 
 ## Result
 
-Not yet run.
+**FULL PASS — 2026-11-15, Daniel's live run** (1066 start, debug mode, `.1` fired from the console, about a month of play; read from that profile's `debug.log` / `error.log`).
+
+| Step | Log line | Result |
+|---|---|---|
+| Setup | leader Menachem Speyer of `d_kehillah_cologne` (33123); stand-in Anno von Steutzlingen of `d_et_cologne` (28773) | — |
+| GATE | `GATE PASS stand-in can_host_activity`, then `ATTEMPT sent to stand-in` | PASS |
+| ON_START | the activity was created a few in-game days after the attempt | PASS |
+| STEP1 | `leader is a participant` | PASS |
+| STEP2 | `activity_host is the leader` | PASS |
+| STEP3 | `stand-in removed` (see note) | PASS |
+| PHASE_ACTIVE | `host-gated phase ran for the Kehillah leader` | PASS |
+| EVENT_FROM_PHASE | `later event: Kehillah leader is still the host` | PASS |
+| on_complete | `activity completed with the Kehillah leader as host` (about 1066.10.29) | PASS |
+
+The engine accepts a landless Kehillah host after creation, did not invalidate the activity, and runs host-gated phase code, events and `on_complete` for him. The 2026-10-18 finding still stands: the planner never *creates* an activity for a landless host. Once a landed planner has created one, though, it can be handed over.
+
+**Notes:**
+- The stand-in was **never a participant**. `remove_from_activity` logged one error, "is not attending activity", at `kehillah_handoff_probe_effects.txt:119`. The planner had not travelled yet, so it was only the planner, not an attendee. A production version should skip the removal, or guard it with `is_participant_in_activity`. Keep mode (`.2`) was not needed.
+- The phase went active on creation because the new host was already at the venue (his own Quarter), so there was no travel wait.
+- The only other probe errors are the expected cosmetic ones: missing activity description and loc keys, the missing phase icon, and the "orphaned" console-only events.
+- **Not covered by this run:** guests and invitations (`invite_to_activity` after the handoff), a player as guest of an AI-hosted sitting, a real Bet Din docket, more than one pair, and how often a landed planner accepts the forced attempt across many pairs.
+
+The next step is the stand-in copy of the Bet Din described above. It needs its own design note.
