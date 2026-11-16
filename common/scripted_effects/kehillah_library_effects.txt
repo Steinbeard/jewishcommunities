@@ -35,7 +35,9 @@
 # library is registered and gets the Tanakh. A Rabbanite yeshiva seat
 # (tier 3) starts with a complete Shas, a tier-2 hall with three to five
 # orders, a small community one or two -- Moed, Nashim and Nezikin before
-# Zeraim, Kodashim and Tahorot -- plus one to three other works. A Karaite
+# Zeraim, Kodashim and Tahorot -- plus one to three other works. Those extra
+# works favour the rite's study tenets: Peshuto shel Miqra, Iyyun ha-Talmud,
+# Pesak, and a deliberately capped Hokhmah or mystical supplement. A Karaite
 # community starts with its founding works in circulation.
 kehillah_seed_starting_library_effect = {
 	kehillah_lib_register_library_effect = yes
@@ -142,14 +144,11 @@ kehillah_seed_starting_library_effect = {
 		remove_variable = kehillah_starting_book_count
 		remove_variable = kehillah_starting_other_count
 	}
-	# 2026-11-15 (Daniel): Machshavah must be materially present in a
-	# Rabbinic community's opening library and ledger, not merely a catalogue
-	# category hidden behind an already-held obscure work. Sefer Yetzirah is the
-	# shared speculative starting point; Emunot ve-Deot is the established
-	# rational work once it has been written. They are ordinary copies, not
-	# foundations or Yeshiva prerequisites. Later/esoteric works still use the
-	# normal discovery rule (a local copy or mastery, or sufficient standing and
-	# a copy somewhere).
+	# 2026-11-15 (Daniel): Machshavah must be materially present in a Rabbinic
+	# community's opening library, but be rarer than Parshanut or Talmudics.
+	# Sefer Yetzirah is one shared speculative text. Emunot ve-Deot is the
+	# additional rational text only where the rite receives Hokhmah. Neither is
+	# foundational or a Yeshiva prerequisite.
 	if = {
 		limit = {
 			current_date >= 400.1.1
@@ -160,15 +159,21 @@ kehillah_seed_starting_library_effect = {
 	if = {
 		limit = {
 			current_date >= 933.1.1
-			holder ?= { is_rabbinic_authority_jewish_trigger = yes }
+			holder ?= {
+				is_rabbinic_authority_jewish_trigger = yes
+				rite ?= { rite_has_tenet = tenet_kehillah_hokhmah }
+			}
 		}
 		add_to_variable_list = { name = kehillah_library_works target = flag:work_emunot_vedeot }
 	}
+	remove_variable = kehillah_starting_optional_machshavah_seeded
 	kehillah_lib_refresh_cache_effect = yes
 }
 
 # Scope: a library title. One distinct non-Bavli Rabbanite work in
-# circulation, for the starting seed.
+# circulation, for the starting seed. The ordinary entries keep their former
+# weights. Tenet-specific buckets below make a rite's emphasis visible without
+# turning a small opening library into a comprehensive curriculum.
 kehillah_seed_one_other_work_effect = {
 	random_list = {
 		3 = {
@@ -212,6 +217,103 @@ kehillah_seed_one_other_work_effect = {
 				NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_iggeret_rav_sherira } }
 			}
 			add_to_variable_list = { name = kehillah_library_works target = flag:work_iggeret_rav_sherira }
+		}
+		# Peshuto shel Miqra / Literalism: a visibly stronger scriptural shelf.
+		4 = {
+			trigger = { holder ?= { rite ?= { rite_has_tenet = tenet_literalism } } }
+			kehillah_seed_one_parshanut_work_effect = yes
+		}
+		# Iyyun ha-Talmud / Scholarly Study: the broadest extra bucket, since it
+		# is about comparison and argument across the traditional sources.
+		4 = {
+			trigger = { holder ?= { rite ?= { rite_has_tenet = tenet_kehillah_scholarly_study } } }
+			kehillah_seed_one_talmudics_work_effect = yes
+		}
+		# Pesak adds legal tools specifically, rather than another general Shas
+		# volume. It can combine with Iyyun without replacing it.
+		2 = {
+			trigger = { holder ?= { rite ?= { rite_has_tenet = tenet_religious_legal_pronouncements } } }
+			kehillah_seed_one_pesak_work_effect = yes
+		}
+		# Machshavah is intentionally the smallest optional bucket and a library
+		# can receive only one such extra text at creation. Hokhmah selects a
+		# rational work; Esotericism selects a visionary one.
+		1 = {
+			trigger = {
+				NOT = { has_variable = kehillah_starting_optional_machshavah_seeded }
+				holder ?= { rite ?= { rite_has_tenet = tenet_kehillah_hokhmah } }
+			}
+			kehillah_seed_one_hokhmah_work_effect = yes
+		}
+		1 = {
+			trigger = {
+				NOT = { has_variable = kehillah_starting_optional_machshavah_seeded }
+				holder ?= { rite ?= { rite_has_tenet = tenet_esotericism } }
+			}
+			kehillah_seed_one_mystical_work_effect = yes
+		}
+	}
+}
+
+# Scope: a library title. A text for the literal/scriptural emphasis.
+kehillah_seed_one_parshanut_work_effect = {
+	random_list = {
+		1 = { trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos } } } add_to_variable_list = { name = kehillah_library_works target = flag:work_targum_onkelos } }
+		1 = { trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mekhilta } } } add_to_variable_list = { name = kehillah_library_works target = flag:work_mekhilta } }
+		1 = { trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_genesis_rabbah } } } add_to_variable_list = { name = kehillah_library_works target = flag:work_genesis_rabbah } }
+	}
+}
+
+# Scope: a library title. A text for Iyyun ha-Talmud.
+kehillah_seed_one_talmudics_work_effect = {
+	random_list = {
+		2 = { trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mishnah } } } add_to_variable_list = { name = kehillah_library_works target = flag:work_mishnah } }
+		1 = { trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_tosefta } } } add_to_variable_list = { name = kehillah_library_works target = flag:work_tosefta } }
+		1 = { trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_moed } } } add_to_variable_list = { name = kehillah_library_works target = flag:work_yerushalmi_moed } }
+		1 = { trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot } } } add_to_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot } }
+		1 = { trigger = { current_date >= 875.1.1 NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_seder_rav_amram } } } add_to_variable_list = { name = kehillah_library_works target = flag:work_seder_rav_amram } }
+		1 = { trigger = { current_date >= 987.1.1 NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_iggeret_rav_sherira } } } add_to_variable_list = { name = kehillah_library_works target = flag:work_iggeret_rav_sherira } }
+	}
+}
+
+# Scope: a library title. A compact Pesak shelf.
+kehillah_seed_one_pesak_work_effect = {
+	random_list = {
+		2 = { trigger = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot } } } add_to_variable_list = { name = kehillah_library_works target = flag:work_halakhot_gedolot } }
+		1 = { trigger = { current_date >= 875.1.1 NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_seder_rav_amram } } } add_to_variable_list = { name = kehillah_library_works target = flag:work_seder_rav_amram } }
+		1 = { trigger = { current_date >= 987.1.1 NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_iggeret_rav_sherira } } } add_to_variable_list = { name = kehillah_library_works target = flag:work_iggeret_rav_sherira } }
+	}
+}
+
+# Scope: a library title. One rational supplement; this is capped by the
+# caller's marker, so it can never become the dominant start genre.
+kehillah_seed_one_hokhmah_work_effect = {
+	random_list = {
+		1 = {
+			trigger = { current_date >= 1050.1.1 NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_mekor_hayyim } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_mekor_hayyim }
+			set_variable = { name = kehillah_starting_optional_machshavah_seeded value = yes }
+		}
+	}
+}
+
+# Scope: a library title. One mystical supplement; the same marker caps it.
+kehillah_seed_one_mystical_work_effect = {
+	random_list = {
+		1 = {
+			trigger = { current_date >= 500.1.1 NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_sefer_harazim } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_sefer_harazim }
+			set_variable = { name = kehillah_starting_optional_machshavah_seeded value = yes }
+		}
+		1 = {
+			trigger = { current_date >= 700.1.1 NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_hekhalot_rabbati } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_hekhalot_rabbati }
+			set_variable = { name = kehillah_starting_optional_machshavah_seeded value = yes }
+		}
+		1 = {
+			trigger = { current_date >= 700.1.1 NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:work_shiur_qomah } } }
+			add_to_variable_list = { name = kehillah_library_works target = flag:work_shiur_qomah }
+			set_variable = { name = kehillah_starting_optional_machshavah_seeded value = yes }
 		}
 	}
 }
