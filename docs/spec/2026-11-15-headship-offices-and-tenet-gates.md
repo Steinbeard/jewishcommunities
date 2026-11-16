@@ -82,8 +82,10 @@ Mashiach heads the faith for accepting rites (section 2, point 5).
 
 ## Open questions for Daniel
 
-1. With a Mashiach reigning, does an existing Sanhedrin or Kohen Gadol lose its head-of-faith title
-   or keep it as a subordinate office?
+1. **DECIDED (Daniel, 2026-11-15): subordinate.** When a Mashiach is recognized, an existing
+   Sanhedrin or Kohen Gadol loses the head-of-faith title and continues as an office under him
+   (the Sanhedrin as his court, the Kohen Gadol over Temple service). The offices survive; only
+   headship moves.
 2. Should the Mashiach need Davidic descent, and if so how is it represented?
 3. Backlash size: opinion only, or a real schism risk?
 
