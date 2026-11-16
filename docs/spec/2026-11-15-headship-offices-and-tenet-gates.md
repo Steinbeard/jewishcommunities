@@ -74,11 +74,48 @@ The second step after Restore Temple Service (which already grants Temple Servic
 Jerusalem with the restored service, a Kohen, and the Kohen Gadol gate. It sets the Kohanim
 doctrine; if the faith has no head, the high priest's title becomes the head (section 2).
 
-## 4. Declare the Mashiach (proposal)
+## 4. Declare the Mashiach (proposal; revised by Daniel, 2026-11-15)
 
-A rare success branch of the existing Messianic Mission reckoning, not a separate decision. It
-needs Jerusalem and the kingship of Israel; false messiahs stay the usual outcome. On success the
-Mashiach heads the faith for accepting rites (section 2, point 5).
+Supersedes this section's first draft (a rare success branch that required existing Davidic
+descent). A Messianic Mission can **proclaim** someone Mashiach ben David. Proclaiming is easy;
+convincing every rite is very hard. History supports this shape: Rabbi Akiva hailed Bar Kokhba,
+and Nathan of Gaza proclaimed Sabbatai Zevi. In both cases the lineage was asserted, not
+documented, and much of the people believed for a time.
+
+### Proclamation
+
+- During an active mission, the mission's leader proclaims a candidate: himself, or a male adult
+  of the promised faith (a prophet hailing a king is the classic pairing).
+- The candidate gets a **claim** of Davidic descent (a modifier and flag), not the `ben_david`
+  trait yet. The trait is inherited forever, so giving it to every failed claimant would leave a
+  Davidic house behind each one. Real `ben_david` descent becomes a strong recognition factor
+  instead of a requirement.
+
+### Convincing the rites
+
+Each Jewish rite of the promised faith gives its own verdict before the mission's three-year
+reckoning. The rite's head decides (V47 heads of rite); a rite with no head is judged by its
+highest-tier ruler. A player in that seat chooses; the AI weighs factors. The weights are shown
+through vanilla tooltip modifiers, not prose. The base chance is very low.
+
+| Raises it | Lowers it |
+|---|---|
+| Candidate holds `c_jerusalem`, and more so `k_israel` | Rite holds Pesak or Iyyun ha-Talmud (Rambam's test: proof by deeds) |
+| Candidate truly has `ben_david` | A failed messiah in this faith within living memory |
+| Endorsed by a prophet with Prophetic Revelation | Candidate is Deceitful, Arrogant or Craven, or lost the holy-city war |
+| A sitting Sanhedrin endorses him | Rite's head is Cynical |
+| Rite holds Messianic Hope; many pledges | |
+
+### The reckoning
+
+- **Every rite accepts:** he is Mashiach. He gains `ben_david` and the head-of-faith title. Any
+  Sanhedrin or Kohen Gadol continues under him (decision 1 below).
+- **Some rites accept:** a messianic movement, the Sabbatean pattern. He is Mashiach to his
+  followers only: no trait, no headship. Accepting and rejecting rites become hostile, and the
+  backlash question below decides how far that goes. A movement can still win the holdouts by
+  deeds. Following Rambam, restoring Temple Service while holding Jerusalem and `k_israel`
+  re-runs the verdicts with a large bonus.
+- **No rite accepts:** the existing failure (disillusion, stress, disappointed patrons).
 
 ## Open questions for Daniel
 
@@ -86,7 +123,10 @@ Mashiach heads the faith for accepting rites (section 2, point 5).
    Sanhedrin or Kohen Gadol loses the head-of-faith title and continues as an office under him
    (the Sanhedrin as his court, the Kohen Gadol over Temple service). The offices survive; only
    headship moves.
-2. **DECIDED (Daniel, 2026-11-15): Davidic descent is required.** It uses the existing
+2. **REVISED (Daniel, 2026-11-15, later the same day): proclaimed, not pre-existing.** A mission
+   can proclaim a candidate ben David, and full recognition grants the trait (section 4).
+   Existing descent is a strong factor, not a requirement. The superseded decision follows.
+   **Superseded: Davidic descent is required.** It uses the existing
    `ben_david` trait (`common/traits/kehillah_traits.txt`): inherited from the acknowledged
    father by sons and daughters, never randomly created, and available in the ruler designer.
    The claimant must be a male `ben_david`. At the 1066 start the trait sits on four historical
