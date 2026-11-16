@@ -1876,53 +1876,25 @@ def ledger_order(order, works):
 
 
 def known_lines(f, w, ind):
-    """Trigger lines (scope: the player): the community has heard of the work.
-    Shelf-and-ledger design, docs/implementation/2026-11-08-library-shelf-and-ledger.md:
-    the canon and the great works (Foundational, Essential) are known to all once
-    they circulate; anything else only once it is met -- held in the player's own
-    library, mastered by the player or a courtier, or respected in the player's
-    rite with a copy somewhere. Obscure and forbidden books stay off the ledger
-    until then."""
-    if w.get("canon") or w["rank_name"] in ("Foundational", "Essential"):
-        return []
-    return [
-        f"{ind}OR = {{",
-        f"{ind}\tvar:kehillah_own_library ?= {{ {held(f)} }}",
-        f"{ind}\t{held(f, '', 'kehillah_mastered_works')}",
-        f"{ind}\tany_courtier = {{ {held(f, '', 'kehillah_mastered_works')} }}",
-        f"{ind}\tAND = {{",
-        f"{ind}\t\tkehillah_lib_standing_{f} >= 6",
-        f"{ind}\t\tkehillah_lib_copies_{f} >= 1",
-        f"{ind}\t}}",
-        f"{ind}}}",
-    ]
+    """Extra ledger gate (scope: the player), currently none.
 
-
+    Daniel's 2026-11-15 accessibility direction: every historical catalog
+    work is visible and can use V48's distant-network acquisition route once
+    it has entered circulation, even if no registered library holds it. The
+    availability gate emitted by ``avail_lines`` still hides unwritten named
+    works and unused authored slots. A future network/perk discovery system
+    may replace this deliberately permissive interim rule.
+    """
+    return []
 def rite_known_lines(f, w, ind):
-    """Trigger lines (scope: the player; scope:kehillah_ledger_view_rite = a rite
-    other than the player's): the rite's followers know of the work. 2026-11-10
-    (Daniel: "a way to view other rites' and religions' book tiers and known
-    books"). The canon and the great works are known everywhere once they
-    circulate, as in known_lines; anything else once a library of that rite holds
-    it, or once the rite respects it and a copy exists somewhere."""
-    if w.get("canon") or w["rank_name"] in ("Foundational", "Essential"):
-        return []
-    return [
-        f"{ind}OR = {{",
-        f"{ind}\tany_in_global_list = {{",
-        f"{ind}\t\tvariable = kehillah_libraries",
-        f"{ind}\t\texists = holder",
-        f"{ind}\t\tholder = {{ rite ?= scope:kehillah_ledger_view_rite }}",
-        f"{ind}\t\t{held(f)}",
-        f"{ind}\t}}",
-        f"{ind}\tAND = {{",
-        f"{ind}\t\tscope:kehillah_ledger_view_rite = {{ kehillah_lib_rite_standing_{f} >= 6 }}",
-        f"{ind}\t\tkehillah_lib_copies_{f} >= 1",
-        f"{ind}\t}}",
-        f"{ind}}}",
-    ]
+    """Extra ledger gate for another rite's view, currently none.
 
-
+    Keep the rites' Ledger views consistent with the player's permissive
+    interim catalog rule in ``known_lines``. Reception is still displayed as
+    that rite's own standing; this changes knowledge and acquisition access,
+    not endorsement.
+    """
+    return []
 def write_catalog_list_effects(order, works):
     """The Sefarim ledger (2026-11-08): every work the community knows of."""
     out = HEADER + [

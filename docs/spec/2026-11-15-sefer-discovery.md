@@ -1,6 +1,23 @@
 # Discovering Sefarim
 
-**Status: PROPOSAL for Daniel's review — 2026-11-15. Nothing in this document is built.** This adds a deliberate discovery layer to the built Sefarim ledger and manuscript-acquisition system. It depends on the source of truth in [ROADMAP.md](../../ROADMAP.md), the implemented [ledger](../implementation/2026-11-08-library-shelf-and-ledger.md), and [V48 acquisition](v48-sefarim-acquisition.md). It does not replace copying, commissioning, travel to study, ransom, or any existing way a known work enters a library.
+**Status: SUPERSEDED IN PART by the 2026-11-15 addendum. The contextual discovery system below is not built.** This originally proposed a deliberate discovery layer for the built Sefarim ledger and manuscript-acquisition system. It depends on the source of truth in [ROADMAP.md](../../ROADMAP.md), the implemented [ledger](../implementation/2026-11-08-library-shelf-and-ledger.md), and [V48 acquisition](v48-sefarim-acquisition.md). It does not replace copying, commissioning, travel to study, ransom, or any existing way a known work enters a library.
+
+## Addendum — accessible catalog now; contextual discovery later
+
+**Status: APPROVED INTERIM DIRECTION — 2026-11-15.** This addendum supersedes the proposed hidden-ledger and repeatable **Pursue leads** loop in sections 1–9 until a richer discovery system is designed and approved.
+
+For now, every historical catalog work appears in the Ledger and is findable after its normal circulation date, even when no library of the player's faith—or no registered library at all—holds it. The existing V48 distant scholarly-network route remains the fallback source in that case. A named historical work stays absent until it has actually been written; an unused generic authored slot also stays absent. Per-rite standing still communicates reception, not universal endorsement.
+
+This is deliberately an accessibility rule, not a claim that a zero-library count proves a surviving manuscript exists. The registry tracks the libraries the mod represents, not every private chest, archive, scholar, or foreign collection in the world.
+
+The future design direction is instead:
+
+- discovery should be a consequence of people and events—students, visiting scholars, correspondence, citations, controversies, refugees, seizures, ransom, sealed archives and caches—rather than a routine yearly button;
+- a Learning perk, scholarly-network investment, or both may unlock stronger and more directed ways to follow those leads;
+- a future manuscript state must distinguish **extant but unencountered**, **attested but untraced**, and **lost**, rather than inferring any of them from zero registered libraries; and
+- rare forged or falsely attributed texts can enter as uncertain reports. They may be copied, cited, challenged or exposed, but cannot become foundational canon merely through popularity.
+
+No implementation of those future mechanics is authorized by this addendum. The remainder of this document is retained as design history and a source of candidates, not a build order.
 
 ## 1. The distinction this adds
 
