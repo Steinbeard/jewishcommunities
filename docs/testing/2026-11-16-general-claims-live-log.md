@@ -1,4 +1,4 @@
-**Status: General seat interaction and Dayyan handover live-verified 2026-11-16; Exilarch grant effect passed but its UI confirmation remains unrun.**
+**Status: General seat interaction, Dayyan handover, Exilarch decision UI, and claim inheritance live-verified 2026-11-16; revised-route save/reload unrun.**
 
 # General community claims and Exilarch recognition
 
@@ -117,12 +117,45 @@ and post-state remain proven by the earlier direct probe, while this UI
 activation is unrun. Luna stopped only PID 31268 and confirmed no CK3
 process remained.
 
+## Fifth session: Exilarch decision at full resolution
+
+With no other CK3 process running, Luna backed up its isolated profile
+settings and launched a fresh game at the primary display's 2560×1440
+resolution with GUI scale 1.0, owning PID 33852. It verified David's
+history claim, used the console-only seat effect to place him in Baghdad,
+and opened **Seek Recognition as Exilarch**. All five requirements were
+checked. At this resolution the **Present the genealogy** confirmation
+control was visible. Luna clicked it in the real Decisions UI; CK3 showed
+an appointment banner and logged `KEHILLAH_EXILARCH` at 18:02:20.
+
+Gold fell from 256 to 156 and prestige from 900 to 750. A post-click
+probe confirmed David held the separate Exilarchate, Baghdad remained
+primary, his government remained Kehillah, and he was not Nagid. No
+Exilarch-specific error appeared around the click. A malformed manual
+setup probe generated an `Unknown effect` unrelated to the successful
+decision; the tester also noted a run-file encoding warning. The
+isolated profile settings were restored after the test and the tester
+stopped only PID 33852.
+
+## Sixth session: community claim inheritance
+
+Luna ran a script-only probe in a fresh isolated 1066 game under PID
+32800. Matilda (history ID 7757) had a living primary heir, Adelaide
+Ardoinici (history ID 1115). In this disposable campaign the tester
+added `d_kehillah_sura` to Matilda's `kehillah_community_claims` and
+logged membership. After a scripted natural death, Adelaide remained
+alive and the same membership check on her returned true. The on-death
+hook therefore passed a claim for a different person and community title,
+with no claim-inheritance error. Luna stopped only its owned PID and
+confirmed no CK3 process remained. Three temporary probe files were
+removed by exact path after the tester's cleanup command was rejected.
+
 ## Remaining live checks
 
-Activate the separate Exilarch decision through its UI confirmation and
-verify the office holder, unchanged community primary title, and cost.
-The confirm control was clipped in the isolated test window, so this is
-a UI access check rather than an untested grant effect. Save/reload of
-the revised two-step route and the claim-inheritance on-death hook remain
-unrun. A second target or claimant would confirm generality beyond the
-ID-free source audit.
+Save/reload of the revised two-step route was not repeated. The original
+combined transfer in
+`docs/testing/2026-11-16-exilarch-claim-live-log.md` persisted after
+save/reload; the revised seat transfer and office grant each passed live
+as separate UI actions. A non-David adventurer pressing a different
+community seat remains a useful later scenario check, while the
+interaction itself has no character or community ID gate.

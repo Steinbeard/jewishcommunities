@@ -1,4 +1,4 @@
-**Status: Historical setup built 2026-11-16; original David-only decision superseded by general rules whose seat interaction passed live, with Exilarch UI confirmation still unrun.**
+**Status: Historical setup built 2026-11-16; original David-only decision superseded by general seat-claim and Exilarch-recognition rules whose UI paths passed live.**
 
 # David ben Hezekiah and the Baghdad claim
 

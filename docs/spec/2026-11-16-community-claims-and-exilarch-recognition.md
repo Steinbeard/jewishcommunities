@@ -1,4 +1,4 @@
-**Status: Built 2026-11-16; xTiger baseline unchanged; live seat interaction and both effects passed; Exilarch UI confirmation and claim inheritance unverified.**
+**Status: Built and live-verified 2026-11-16; xTiger baseline unchanged; both UI actions and claim inheritance passed. The revised two-step route was not separately save/reloaded.**
 
 # Community claims and Exilarch recognition
 
