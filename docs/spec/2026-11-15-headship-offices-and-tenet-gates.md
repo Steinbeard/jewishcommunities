@@ -86,7 +86,16 @@ Mashiach heads the faith for accepting rites (section 2, point 5).
    Sanhedrin or Kohen Gadol loses the head-of-faith title and continues as an office under him
    (the Sanhedrin as his court, the Kohen Gadol over Temple service). The offices survive; only
    headship moves.
-2. Should the Mashiach need Davidic descent, and if so how is it represented?
+2. **DECIDED (Daniel, 2026-11-15): Davidic descent is required.** It uses the existing
+   `ben_david` trait (`common/traits/kehillah_traits.txt`): inherited from the acknowledged
+   father by sons and daughters, never randomly created, and available in the ruler designer.
+   The claimant must be a male `ben_david`. At the 1066 start the trait sits on four historical
+   characters, one in `baghdad_1066.txt` (the Exilarch's line) and three in
+   `kehillah_historical_families_1066.txt`, so a Mashiach comes from a small set of houses, a
+   designed ruler, or a line that marries in through a Davidic father. This is deliberately
+   rare. The existing Messianic Mission stays open to anyone with Messianic Hope; only the
+   declaration branch needs the lineage. A non-Davidic leader's mission can still succeed as a
+   holy-city recovery without making him Mashiach.
 3. Backlash size: opinion only, or a real schism risk?
 
 ## Risk
