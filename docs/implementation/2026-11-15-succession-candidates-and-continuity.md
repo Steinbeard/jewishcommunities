@@ -28,6 +28,16 @@ therefore directs the player to right-click an eligible candidate's portrait and
 select **Endorse as Successor**. This reaches the existing action directly from
 the candidate list without copying or replacing the vanilla Appointment GUI.
 
+### Councillor candidates
+
+The appointment engine distinguishes a ruler's court positions from council
+positions. The initial endorsement interaction mirrored only the former, even
+though `kehillah_leadership` admits both `holder_court_position` and
+`holder_councilor`. This excluded a seated Dayyan, who uses the Court Chaplain
+council position. The pool check now also uses vanilla's
+`is_councillor_of = scope:actor`, admitting only the current community's
+councillors rather than all councillors in the world.
+
 ## Family continuity
 
 `kehillah_leadership` now adds **+15** for a son of the sitting leader and
