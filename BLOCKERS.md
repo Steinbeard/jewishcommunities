@@ -1,3 +1,27 @@
+## 2026-11-15 — Tenet UI fixes and Sacred Homeland: runtime/Git delivery blocked
+
+## 2026-11-15 — Revival tenets implemented; live and Git delivery blocked
+
+See docs/implementation/2026-11-15-revival-tenets-and-integration-audit.md. All 38 focused checks pass; the three new xTiger glossary-field gaps and two unchanged native audio references are documented against baseline. The Luna tester found no xTiger live tools and CIM process ownership access was denied: actual pilgrimage intent completion, delayed scopes, AI/reform/mission behavior and save serialization are unrun. No human game was controlled. Git metadata remains read-only, preventing staging/commit/push/PR. Source and manual verification steps are complete and reviewable; preserve concurrent edits when Git access is restored.
+
+
+Built and source-checked in the shared checkout; see docs/implementation/2026-11-15-tenet-fixes-and-sacred-homeland.md. All 28 focused checks pass and xTiger adds no errors/warnings. Luna could not access xTiger live tools or inspect CK3 process ownership (CIM denied), so live rendering, pilgrimage/war resolution, and save checks remain unrun. Staging scripts/test_kehillah_tenet_fixes.py failed creating .git/index.lock (Permission denied); no commit/push/PR. Preserve concurrent work when staging later. Needs manual playtest and writable Git metadata.
+
+## Faith, rite, tenet, and holiday revision — 2026-11-14, interactive session
+
+- Implemented in the shared checkout on the existing related branch,
+  `sefarim-reviews-cherem-and-crisis-politics`, preserving concurrent work.
+  See [the build record](docs/implementation/2026-11-14-faith-rite-tenet-holiday-revision.md)
+  and [verification/checklist](docs/testing/2026-11-14-faith-rite-tenet-holiday-revision.md).
+- Twelve focused source checks pass; generator output is idempotent.
+  Live/save/UI probes are UNRUN: Luna had no xTiger game tools and CIM
+  denied the required process-ownership check. No game was controlled.
+- Git staging failed on a single new tenet file: `.git/index.lock` could
+  not be created (`Permission denied`). No commit, push, or PR was made.
+  A session with Git metadata write access must review/stage this unit
+  carefully alongside the pre-existing overlapping tenet/book changes.
+  Do not stage unrelated crisis or UI edits as part of this revision.
+
 ## Catalyst feedback and Granada prose - 2026-11-01, interactive session
 
 - Implemented on the current primary checkout/branch at Daniel's request: actual catalyst

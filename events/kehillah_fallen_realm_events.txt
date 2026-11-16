@@ -1,0 +1,81 @@
+﻿# =====================================================================
+# FALLEN REALMS AND JEWISH MAJORITIES (2026-11-15). Design and spike:
+# docs/spec/2026-11-15-fallen-realms-revolts-and-jewish-majorities.md.
+#   kehillah_fallen_realm.0001  a Jewish ruler who has lost the last of his
+#                               land may lead a community under his
+#                               conqueror; the Jews of his other lost
+#                               counties may gather into communities too.
+#   kehillah_majority.0001      a very large community becomes the
+#                               majority of its county (hidden).
+# =====================================================================
+namespace = kehillah_fallen_realm
+
+kehillah_fallen_realm.0001 = {
+	type = character_event
+	title = kehillah_fallen_realm.0001.t
+	desc = kehillah_fallen_realm.0001.desc
+	theme = realm
+	left_portrait = {
+		character = root
+		animation = sadness
+	}
+	right_portrait = {
+		character = scope:kehillah_fallen_conqueror
+		animation = personality_dishonorable
+	}
+
+	trigger = {
+		kehillah_fallen_ruler_trigger = yes
+		has_variable_list = kehillah_fallen_lost_counties
+	}
+
+	on_trigger_fail = {
+		clear_variable_list = kehillah_fallen_lost_counties
+	}
+
+	immediate = {
+		var:kehillah_fallen_conqueror ?= { save_scope_as = kehillah_fallen_conqueror }
+		kehillah_fallen_realm_pick_seat_effect = yes
+		# The other counties' Jews gather whatever he decides.
+		hidden_effect = {
+			kehillah_fallen_realm_seed_communities_effect = yes
+		}
+	}
+
+	# Lead the Jews of the seat, under the conqueror.
+	option = {
+		name = kehillah_fallen_realm.0001.lead
+		trigger = { exists = scope:kehillah_fallen_seat }
+		kehillah_fallen_realm_found_effect = yes
+		ai_chance = { base = 80 }
+	}
+	# Go his own way.
+	option = {
+		name = kehillah_fallen_realm.0001.refuse
+		ai_chance = {
+			base = 20
+			modifier = { add = 30 has_trait = arrogant }
+			modifier = { add = 30 has_trait = ambitious }
+		}
+	}
+
+	after = {
+		if = {
+			limit = { has_variable = kehillah_fallen_conqueror }
+			remove_variable = kehillah_fallen_conqueror
+		}
+	}
+}
+
+namespace = kehillah_majority
+
+# Scope: a Kehillah leader meeting kehillah_majority_community_trigger,
+# from the yearly roll (kehillah_majority_yearly).
+kehillah_majority.0001 = {
+	type = character_event
+	hidden = yes
+	trigger = { kehillah_majority_community_trigger = yes }
+	immediate = {
+		kehillah_majority_convert_county_effect = yes
+	}
+}

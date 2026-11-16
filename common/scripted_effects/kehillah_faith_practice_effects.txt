@@ -1,0 +1,60 @@
+﻿kehillah_reasoned_debate_effect = {
+    # Both outcomes teach. Success supports an already known teaching in the
+    # actor's faith, once per year; no adoption or canon change occurs here.
+    add_learning_lifestyle_xp = 50
+    random_list = {
+        0 = {
+            modifier = { add = kehillah_reasoned_debate_chance_value }
+            send_interface_toast = {
+                title = kehillah_reasoned_debate_won_toast
+                left_icon = scope:kehillah_debate_partner
+                faith = { change_tenet_popularity = { target = tenet:$TENET$ change = 1 } }
+                add_prestige = minor_prestige_gain
+                scope:kehillah_debate_partner = { add_opinion = { target = root modifier = kehillah_reasoned_exchange_opinion years = 3 } }
+                if = {
+                    limit = { has_personal_tenet = tenet_kehillah_hokhmah }
+                    add_piety = minor_piety_gain
+                    scope:kehillah_debate_partner = { add_learning_lifestyle_xp = 50 }
+                }
+            }
+        }
+        0 = {
+            modifier = { add = { value = 100 subtract = kehillah_reasoned_debate_chance_value } }
+            send_interface_toast = {
+                title = kehillah_reasoned_debate_lost_toast
+                left_icon = scope:kehillah_debate_partner
+                scope:kehillah_debate_partner = { add_prestige = minor_prestige_gain }
+            }
+        }
+    }
+}
+
+# Scope: struck leader, with the ORIGINAL faith saved before any coerced change.
+kehillah_witness_after_persecution_effect = {
+    if = {
+        limit = {
+            var:kehillah_witness_attack_grade >= 3
+            OR = { var:kehillah_pogrom_dead > 0 var:kehillah_pogrom_baptized > 0 }
+            exists = scope:kehillah_pogrom_original_faith
+        }
+        scope:kehillah_pogrom_original_faith = {
+            if = {
+                limit = { main_rite = { NOT = { has_at_least_tenet_status = { tenet = tenet_kehillah_kiddush_hashem status = known } } } }
+                set_tenet_status = { tenet = tenet:tenet_kehillah_kiddush_hashem status = known }
+            }
+        }
+        if = {
+            limit = { is_ai = no faith = scope:kehillah_pogrom_original_faith }
+            trigger_event = kehillah_faith_practice.0006
+        }
+        if = {
+            limit = {
+                kehillah_has_witness_sacrifice_trigger = yes
+                primary_title ?= { NOT = { has_variable = kehillah_witness_remembrance_rewarded } }
+            }
+            custom_tooltip = kehillah_witness_remembrance_tt
+            kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = 5 }
+            primary_title = { set_variable = { name = kehillah_witness_remembrance_rewarded value = yes years = 3 } }
+        }
+    }
+}

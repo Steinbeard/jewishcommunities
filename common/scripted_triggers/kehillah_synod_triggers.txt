@@ -56,6 +56,21 @@ kehillah_synod_delegate_trigger = {
 	NOT = { this = $HOST$ }
 	is_alive = yes
 	government_has_flag = government_is_kehillah
+	# 2026-11-15: a Synod speaks for its rite, so only leaders of the host's
+	# rite vote. A Sanhedrin binds all Israel; anyone attending votes.
+	trigger_if = {
+		limit = { $HOST$ = { NOT = { kehillah_synod_is_sanhedrin_trigger = yes } } }
+		kehillah_shares_rite_trigger = { OTHER = $HOST$ }
+	}
+}
+
+# 2026-11-15: the scoped character keeps the same rite as OTHER. Synod
+# rulings bind by rite, replacing the minhag region (Daniel's direction;
+# docs/spec/2026-11-15-ai-hosted-sittings-via-stand-in.md).
+kehillah_shares_rite_trigger = {
+	exists = rite
+	exists = $OTHER$.rite
+	rite = { this = $OTHER$.rite }
 }
 
 # Scope: the host, inside a synod event (root = the host).
@@ -88,6 +103,8 @@ kehillah_synod_motion_carried_trigger = {
 
 # Scope: a would-be host. Enough other community leaders to make a quorum
 # if they come. Every Kehillah leader is invited to both tiers.
+# 2026-11-15: enough OTHER communities of the host's rite to make a quorum
+# (was: any registered community). The name is kept for its callers.
 kehillah_synod_region_has_quorum_trigger = {
 	any_in_global_list = {
 		variable = kehillah_registered_communities
@@ -95,6 +112,7 @@ kehillah_synod_region_has_quorum_trigger = {
 		holder ?= {
 			NOT = { this = root }
 			government_has_flag = government_is_kehillah
+			kehillah_shares_rite_trigger = { OTHER = root }
 		}
 	}
 }
@@ -112,8 +130,11 @@ kehillah_sanhedrin_has_quorum_trigger = {
 # Scope: a would-be host. Each takkanah's own availability, shared by the
 # motion events and the intents' "anything left to enact" gate.
 kehillah_synod_can_propose_herem_polygamy_trigger = {
-	kehillah_in_ashkenazi_region_trigger = yes
+	# 2026-11-15: keeping Minhag Ashkenaz replaces sitting in the Ashkenazi
+	# region (minhag regions retired).
 	exists = rite:minhag_ashkenaz
+	exists = rite
+	rite = { this = rite:minhag_ashkenaz }
 	NOT = { exists = global_var:kehillah_gershom_herem_renewed }
 }
 # The Sanhedrin alone may bind the general rite to Gershom's herem.
@@ -160,6 +181,8 @@ kehillah_synod_has_open_takkanah_trigger = {
 	exists = primary_title
 	OR = {
 		kehillah_synod_has_marriage_motion_trigger = yes
+		# 2026-11-11 cherem track: a leader in reach is in Niddui.
+		kehillah_synod_can_propose_herem_person_trigger = yes
 		# 2026-11-08 Sefer redesign: a question of belief also opens a sitting,
 		# or no Synod could sit once Gershom's herem was renewed. An AI host
 		# convenes for one only when a Machloket has put a tenet on its rite's

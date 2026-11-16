@@ -1,0 +1,171 @@
+﻿# =====================================================================
+# THE JEWISH REVOLT (2026-11-15). Design and spike:
+# docs/spec/2026-11-15-fallen-realms-revolts-and-jewish-majorities.md.
+#   .0001  Raise the Banner: choose the county or the duchy, and whether
+#          the rising is messianic.
+#   .0010  A coalition call: another community leader of the same realm
+#          is asked to join.
+# =====================================================================
+namespace = kehillah_revolt
+
+kehillah_revolt.0001 = {
+	type = character_event
+	title = kehillah_revolt.0001.t
+	desc = kehillah_revolt.0001.desc
+	theme = war
+	left_portrait = {
+		character = root
+		animation = war_over_win
+	}
+	right_portrait = {
+		character = scope:kehillah_revolt_suzerain
+		animation = anger
+	}
+
+	immediate = {
+		domicile.domicile_location.county = { save_scope_as = kehillah_revolt_county }
+		domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_revolt_suzerain }
+		scope:kehillah_revolt_county.duchy ?= { save_scope_as = kehillah_revolt_duchy }
+	}
+
+	# The county.
+	option = {
+		name = kehillah_revolt.0001.county
+		trigger = { kehillah_revolt_can_rise_trigger = yes }
+		set_variable = { name = kehillah_revolt_target value = scope:kehillah_revolt_county }
+		kehillah_revolt_rise_effect = yes
+		ai_chance = { base = 60 }
+	}
+	# The duchy.
+	option = {
+		name = kehillah_revolt.0001.duchy
+		trigger = {
+			kehillah_revolt_can_rise_trigger = yes
+			exists = scope:kehillah_revolt_duchy
+		}
+		set_variable = { name = kehillah_revolt_target value = scope:kehillah_revolt_duchy }
+		kehillah_revolt_rise_effect = yes
+		ai_chance = {
+			base = 20
+			modifier = { add = 20 kehillah_revolt_preparation_level_value >= 2 }
+			modifier = { add = 20 has_trait = ambitious }
+		}
+	}
+	# The county, proclaimed messianic.
+	option = {
+		name = kehillah_revolt.0001.county_messianic
+		trigger = {
+			kehillah_revolt_can_rise_trigger = yes
+			kehillah_revolt_can_be_messianic_trigger = yes
+		}
+		set_variable = { name = kehillah_revolt_target value = scope:kehillah_revolt_county }
+		set_variable = { name = kehillah_revolt_messianic value = yes }
+		kehillah_revolt_rise_effect = yes
+		ai_chance = {
+			base = 30
+			modifier = { add = 40 has_character_flag = kehillah_messianic_mission_active }
+			modifier = { add = 20 has_trait = zealous }
+		}
+	}
+	# The duchy, proclaimed messianic.
+	option = {
+		name = kehillah_revolt.0001.duchy_messianic
+		trigger = {
+			kehillah_revolt_can_rise_trigger = yes
+			kehillah_revolt_can_be_messianic_trigger = yes
+			exists = scope:kehillah_revolt_duchy
+		}
+		set_variable = { name = kehillah_revolt_target value = scope:kehillah_revolt_duchy }
+		set_variable = { name = kehillah_revolt_messianic value = yes }
+		kehillah_revolt_rise_effect = yes
+		ai_chance = {
+			base = 10
+			modifier = { add = 30 has_character_flag = kehillah_messianic_mission_active }
+			modifier = { add = 20 kehillah_revolt_preparation_level_value >= 2 }
+		}
+	}
+	# Not yet.
+	option = {
+		name = kehillah_revolt.0001.wait
+		ai_chance = { base = 0 }
+	}
+}
+
+# Scope: a community leader of the same realm. scope:kehillah_revolt_leader,
+# scope:kehillah_revolt_suzerain and scope:kehillah_revolt_war are carried
+# from kehillah_revolt_call_coalition_effect; scope:kehillah_messianic_claimant
+# too when the rising is messianic.
+kehillah_revolt.0010 = {
+	type = character_event
+	title = kehillah_revolt.0010.t
+	desc = {
+		desc = kehillah_revolt.0010.desc
+		triggered_desc = {
+			trigger = { scope:kehillah_revolt_leader ?= { has_variable = kehillah_revolt_messianic } }
+			desc = kehillah_revolt.0010.desc_messianic
+		}
+	}
+	theme = war
+	left_portrait = {
+		character = scope:kehillah_revolt_leader
+		animation = war_over_win
+	}
+	right_portrait = {
+		character = scope:kehillah_revolt_suzerain
+		animation = anger
+	}
+
+	trigger = {
+		exists = scope:kehillah_revolt_leader
+		exists = scope:kehillah_revolt_suzerain
+		exists = scope:kehillah_revolt_war
+		scope:kehillah_revolt_leader = {
+			is_alive = yes
+			has_variable = kehillah_revolt_target
+			is_at_war_with = scope:kehillah_revolt_suzerain
+		}
+		is_at_war = no
+		is_imprisoned = no
+	}
+
+	# Join the rising.
+	option = {
+		name = kehillah_revolt.0010.join
+		kehillah_revolt_join_effect = yes
+		ai_chance = {
+			base = 0
+			modifier = { add = kehillah_revolt_join_ai_value }
+		}
+	}
+	# Join, and hail him as the Anointed.
+	option = {
+		name = kehillah_revolt.0010.join_messianic
+		trigger = {
+			scope:kehillah_revolt_leader = {
+				has_variable = kehillah_revolt_messianic
+				has_character_flag = kehillah_messianic_mission_active
+			}
+			faith = scope:kehillah_revolt_leader.faith
+			NOT = { has_variable = kehillah_messianic_patron }
+		}
+		scope:kehillah_revolt_leader = { save_scope_as = kehillah_messianic_claimant }
+		kehillah_revolt_join_effect = yes
+		kehillah_join_messianic_mission_effect = yes
+		ai_chance = {
+			base = 0
+			modifier = { add = kehillah_revolt_join_ai_value kehillah_has_messianic_hope_trigger = yes }
+		}
+	}
+	# Stay out of it.
+	option = {
+		name = kehillah_revolt.0010.refuse
+		scope:kehillah_revolt_leader = {
+			add_opinion = { target = root modifier = kehillah_revolt_refused_opinion }
+		}
+		ai_chance = {
+			base = 50
+			modifier = { add = 30 has_trait = craven }
+			modifier = { add = 20 has_trait = content }
+		}
+	}
+}

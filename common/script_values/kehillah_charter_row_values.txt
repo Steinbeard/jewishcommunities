@@ -1,0 +1,233 @@
+﻿# Charter rows in the realm view's detail card (2026-11-14, Daniel: show
+# whether each policy is good, middling or bad, and whether it sits above
+# or below what the realm's policy would give).
+#
+# Scope: a Kehillah leader. The GUI reads these off Title.GetHolder and
+# reads only the title cache that kehillah_refresh_charter_state_cache_effect
+# writes, as the Charter terms custom loc does (see kehillah_charter_terms_
+# custom_loc.txt), never live contract flags.
+#
+# GOODNESS g, 0 worst .. 2 best for the community: the same scale
+# kehillah_charter_rungs_effect writes (kehillah_host_charter_effects.txt).
+# Construction's cache holds the obligation level (0 = free), so it is
+# inverted here; every other cache already holds goodness.
+#
+# BASE b: the rung the realm's settlement policy alone gives that row (the
+# rungs effect's table, before the sealing ruler's outlook bends it by one).
+# DELTA d = g - b: above (> 0) or below (< 0) what the policy implies.
+# Only the four policy-driven rows have a base; lending, the walled quarter
+# and tribute are not set by the policy, so they carry no delta.
+# KEEP IN STEP with kehillah_charter_rungs_effect's table.
+
+# 1 Christian or Muslim regional charter, else 0.
+kehillah_rv_charter_regional_value = {
+	value = 0
+	if = {
+		limit = {
+			OR = {
+				kehillah_cached_christian_charter_trigger = yes
+				kehillah_cached_muslim_charter_trigger = yes
+			}
+		}
+		add = 1
+	}
+}
+
+# 1 when the regional charter is the Christian package (its fourth row is
+# Talmudic Study), 0 for the Muslim one (Market Access) or none.
+kehillah_rv_charter_christian_value = {
+	value = 0
+	if = {
+		limit = { kehillah_cached_christian_charter_trigger = yes }
+		add = 1
+	}
+}
+
+# 1 for the V15 fallback charter (lending, walled quarter, tribute), else 0.
+kehillah_rv_charter_fallback_value = {
+	value = 0
+	if = {
+		limit = {
+			kehillah_cached_christian_charter_trigger = no
+			kehillah_cached_muslim_charter_trigger = no
+			primary_title ?= { has_variable = kehillah_charter_cache_lending }
+		}
+		add = 1
+	}
+}
+
+# The host realm's settlement policy: 0 Banned, 1 Discouraged, 2 Allowed
+# (Tolerated), 3 Encouraged. Same order and host as the rungs effect.
+kehillah_rv_host_policy_rank_value = {
+	value = 0
+	if = {
+		limit = {
+			domicile.domicile_location.county.holder.top_liege.primary_title ?= { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
+		}
+		add = 3
+	}
+	else_if = {
+		limit = {
+			domicile.domicile_location.county.holder.top_liege.primary_title ?= { kehillah_jewish_settlement_policy_discouraged_trigger = yes }
+		}
+		add = 1
+	}
+	else_if = {
+		limit = {
+			domicile.domicile_location.county.holder.top_liege.primary_title ?= { kehillah_jewish_settlement_policy_banned_trigger = yes }
+		}
+		add = 0
+	}
+	else = {
+		add = 2
+	}
+}
+
+# --- goodness -------------------------------------------------------------
+kehillah_rv_charter_g_construction_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_charter_cache_construction } }
+		add = 2
+		subtract = primary_title.var:kehillah_charter_cache_construction
+	}
+}
+
+kehillah_rv_charter_g_security_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_charter_cache_security } }
+		add = primary_title.var:kehillah_charter_cache_security
+	}
+}
+
+kehillah_rv_charter_g_jurisdiction_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_charter_cache_jurisdiction } }
+		add = primary_title.var:kehillah_charter_cache_jurisdiction
+	}
+}
+
+# The fourth row: Talmudic Study (Christian host) or Market Access (Muslim).
+kehillah_rv_charter_g_fourth_value = {
+	value = 0
+	if = {
+		limit = {
+			kehillah_cached_christian_charter_trigger = yes
+			primary_title ?= { has_variable = kehillah_charter_cache_text_study }
+		}
+		add = primary_title.var:kehillah_charter_cache_text_study
+	}
+	else_if = {
+		limit = { primary_title ?= { has_variable = kehillah_charter_cache_market_access } }
+		add = primary_title.var:kehillah_charter_cache_market_access
+	}
+}
+
+kehillah_rv_charter_g_lending_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_charter_cache_lending } }
+		add = primary_title.var:kehillah_charter_cache_lending
+	}
+}
+
+# An open quarter is neither a gain nor a loss: middling. Walled is the gain.
+kehillah_rv_charter_g_walled_value = {
+	value = 1
+	if = {
+		limit = { kehillah_cached_charter_quarter_walled_trigger = yes }
+		add = 1
+	}
+}
+
+# The tribute cache holds the rung (0 None .. 2 Heavy); an absent cache
+# reads Customary, as KehillahCharterNoticeTribute does.
+kehillah_rv_charter_g_tribute_value = {
+	value = 1
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_charter_cache_tribute } }
+		add = 1
+		subtract = primary_title.var:kehillah_charter_cache_tribute
+	}
+}
+
+# --- what the realm's policy alone would give ------------------------------
+kehillah_rv_charter_base_construction_value = {
+	value = 0
+	if = {
+		limit = { kehillah_rv_host_policy_rank_value >= 2 }
+		add = 2
+	}
+	else_if = {
+		limit = { kehillah_rv_host_policy_rank_value = 1 }
+		add = 1
+	}
+}
+
+kehillah_rv_charter_base_security_value = {
+	value = 0
+	if = {
+		limit = { kehillah_rv_host_policy_rank_value >= 3 }
+		add = 2
+	}
+}
+
+kehillah_rv_charter_base_jurisdiction_value = {
+	value = 0
+	if = {
+		limit = { kehillah_rv_host_policy_rank_value >= 3 }
+		add = 2
+	}
+	else_if = {
+		limit = { kehillah_rv_host_policy_rank_value = 2 }
+		add = 1
+	}
+}
+
+# Christian text censorship follows construction's table; Muslim market
+# access follows jurisdiction's.
+kehillah_rv_charter_base_fourth_value = {
+	value = 0
+	if = {
+		limit = { kehillah_cached_muslim_charter_trigger = yes }
+		if = {
+			limit = { kehillah_rv_host_policy_rank_value >= 3 }
+			add = 2
+		}
+		else_if = {
+			limit = { kehillah_rv_host_policy_rank_value = 2 }
+			add = 1
+		}
+	}
+	else_if = {
+		limit = { kehillah_rv_host_policy_rank_value >= 2 }
+		add = 2
+	}
+	else_if = {
+		limit = { kehillah_rv_host_policy_rank_value = 1 }
+		add = 1
+	}
+}
+
+# --- delta: above (> 0) or below (< 0) the realm policy ---------------------
+kehillah_rv_charter_d_construction_value = {
+	value = kehillah_rv_charter_g_construction_value
+	subtract = kehillah_rv_charter_base_construction_value
+}
+
+kehillah_rv_charter_d_security_value = {
+	value = kehillah_rv_charter_g_security_value
+	subtract = kehillah_rv_charter_base_security_value
+}
+
+kehillah_rv_charter_d_jurisdiction_value = {
+	value = kehillah_rv_charter_g_jurisdiction_value
+	subtract = kehillah_rv_charter_base_jurisdiction_value
+}
+
+kehillah_rv_charter_d_fourth_value = {
+	value = kehillah_rv_charter_g_fourth_value
+	subtract = kehillah_rv_charter_base_fourth_value
+}

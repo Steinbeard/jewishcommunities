@@ -19,9 +19,83 @@ kehillah_cand_nagid_value = 25
 kehillah_cand_sanhedrin_value = 15
 kehillah_cand_board_opinion_weight_value = 0.2
 kehillah_cand_outsider_penalty_value = 20
-kehillah_cand_foreign_minhag_penalty_value = 20
-kehillah_cand_stranger_penalty_value = 60
+# 2026-11-14 (Daniel): culture, not minhag region. A region needs a community
+# to read it from, so an adventurer never shared one; a culture belongs to the
+# character. Applies to a declared outsider whose culture is not the seat
+# leader's.
+kehillah_cand_foreign_culture_penalty_value = 20
+# 2026-11-14 (Daniel): was 60, waived by a great rabbi or a marriage. Now 20,
+# waived by marriage only; a rabbi's name is a bonus instead (the track terms).
+kehillah_cand_stranger_penalty_value = 20
 kehillah_cand_child_married_in_value = 15
+# A community that sent for him has already half decided (2026-11-14).
+kehillah_cand_invited_value = 15
+
+# Invitations (2026-11-14). The yearly chance, in percent, that an old or ill
+# AI leader's community writes to someone; how long a seat waits before it
+# writes again; how long a letter stands, in years (the variable on the
+# invitee expires on its own).
+kehillah_cand_invitation_chance_value = 20
+kehillah_cand_invitation_seat_cooldown_years_value = 5
+kehillah_cand_invitation_years_value = 5
+# Learning below which a lay candidate is not sent for, unless he is a rabbi.
+kehillah_cand_invitation_learning_floor_value = 12
+
+# Rabbi track experience (2026-11-14). The trait's three tracks fill at 30,
+# 65 and 100, the same bands the Chief Rabbi office already reads
+# (court_positions/types/kehillah_officers.txt). Each track pays its own
+# band, so a rabbi proven in all three is worth the sum.
+kehillah_cand_track_minor_value = 5
+kehillah_cand_track_moderate_value = 12
+kehillah_cand_track_major_value = 20
+
+kehillah_cand_track_parshanut_value = {
+	value = 0
+	if = {
+		limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 100 } }
+		add = kehillah_cand_track_major_value
+	}
+	else_if = {
+		limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 65 } }
+		add = kehillah_cand_track_moderate_value
+	}
+	else_if = {
+		limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 30 } }
+		add = kehillah_cand_track_minor_value
+	}
+}
+
+kehillah_cand_track_talmudics_value = {
+	value = 0
+	if = {
+		limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 100 } }
+		add = kehillah_cand_track_major_value
+	}
+	else_if = {
+		limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 65 } }
+		add = kehillah_cand_track_moderate_value
+	}
+	else_if = {
+		limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } }
+		add = kehillah_cand_track_minor_value
+	}
+}
+
+kehillah_cand_track_hashkafa_value = {
+	value = 0
+	if = {
+		limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value >= 100 } }
+		add = kehillah_cand_track_major_value
+	}
+	else_if = {
+		limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value >= 65 } }
+		add = kehillah_cand_track_moderate_value
+	}
+	else_if = {
+		limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value >= 30 } }
+		add = kehillah_cand_track_minor_value
+	}
+}
 
 # What a declaration invests in the candidate's own candidacy. It is what
 # puts him in the seat's pool (the request_governorship mechanism), and it
@@ -51,6 +125,14 @@ kehillah_cand_declare_cost_value = {
 			subtract = scope:cand_seat.var:kehillah_rank_standing
 			multiply = 10
 		}
+	}
+	# A community that sent for him charges half (2026-11-14).
+	if = {
+		limit = {
+			exists = scope:cand_seat
+			kehillah_cand_invited_trigger = { SEAT = scope:cand_seat }
+		}
+		multiply = 0.5
 	}
 }
 
@@ -251,6 +333,10 @@ kehillah_cand_preview_score_value = {
 		add = kehillah_cand_sanhedrin_value
 	}
 	add = kehillah_cand_board_opinion_value
+	# Added 2026-11-14: a rabbi's record, one term per track (for everyone).
+	add = kehillah_cand_track_parshanut_value
+	add = kehillah_cand_track_talmudics_value
+	add = kehillah_cand_track_hashkafa_value
 	# --- Added 2026-11-08, outsiders only ---
 	if = {
 		limit = { kehillah_cand_is_outsider_trigger = { SEAT = scope:title } }
@@ -259,13 +345,17 @@ kehillah_cand_preview_score_value = {
 		subtract = kehillah_cand_outsider_penalty_value
 		if = {
 			limit = {
-				NOT = { kehillah_cand_shares_minhag_trigger = { SEAT = scope:title } }
+				NOT = { kehillah_cand_shares_culture_trigger = { SEAT = scope:title } }
 			}
-			subtract = kehillah_cand_foreign_minhag_penalty_value
+			subtract = kehillah_cand_foreign_culture_penalty_value
 		}
 		if = {
 			limit = { kehillah_cand_stranger_trigger = { SEAT = scope:title } }
 			subtract = kehillah_cand_stranger_penalty_value
+		}
+		if = {
+			limit = { kehillah_cand_invited_trigger = { SEAT = scope:title } }
+			add = kehillah_cand_invited_value
 		}
 		if = {
 			limit = { kehillah_cand_child_married_in_trigger = { SEAT = scope:title } }

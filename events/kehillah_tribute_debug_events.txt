@@ -1,7 +1,7 @@
 ﻿namespace = kehillah_tribute_debug
 # Hidden probes for the host tribute (v31 §8.2), fired on a Kehillah leader.
 # .1 logs the rung, rate, monthly income and what the host takes;
-# .2 logs both treasuries (fire before and after a month tick);
+# .2 pays one quarter now and logs both treasuries before and after;
 # .3 sets the term to Heavy, .4 back to Customary (verify after a tick).
 
 kehillah_tribute_debug.1 = {
@@ -9,11 +9,11 @@ kehillah_tribute_debug.1 = {
 	hidden = yes
 	trigger = { government_has_flag = government_is_kehillah }
 	immediate = {
-		debug_log = "TRIBUTE rate=[THIS.Char.MakeScope.ScriptValue('kehillah_tribute_rate_value')] (engine-collected since 2026-11-08; the amount is in the gold tooltip)"
+		debug_log = "TRIBUTE rate=[THIS.Char.MakeScope.ScriptValue('kehillah_tribute_rate_value')] monthly=[THIS.Char.MakeScope.ScriptValue('kehillah_tribute_monthly_value')] quarter_due=[THIS.Char.MakeScope.ScriptValue('kehillah_tribute_quarter_due_value')] quarter_paid=[THIS.Char.MakeScope.ScriptValue('kehillah_tribute_quarter_paid_value')]"
+		debug_log = "TRIBUTE base: balance=[THIS.Char.MakeScope.ScriptValue('kehillah_tribute_income_base_value')] top-bar=[THIS.Char.GetBalance] old-income-trigger=[THIS.Char.MakeScope.ScriptValue('kehillah_tribute_engine_income_value')]"
 		if = {
 			limit = { exists = suzerain }
-			suzerain = { save_scope_as = kehillah_tribute_host }
-			debug_log = "TRIBUTE host=[kehillah_tribute_host.GetName] tributary=yes"
+			suzerain = { debug_log = "TRIBUTE host=[THIS.Char.GetName] tributary=yes" }
 			if = {
 				limit = { suzerain = { has_character_modifier = kehillah_nagid_tribute_modifier } }
 				debug_log = "TRIBUTE host has kehillah_nagid_tribute_modifier (+25%)"
@@ -25,10 +25,8 @@ kehillah_tribute_debug.1 = {
 	}
 }
 
-# Logs both treasuries. Fire once, let one month pass (unpaused), fire
-# again: the leader's drop and the host's gain should both include the
-# tribute line of their gold tooltips. (Until 2026-11-08 this paid a
-# quarter by script; the engine collects the tribute now.)
+# Pays one quarter now and logs both treasuries before and after.
+# (2026-11-08..11 it only logged, while the engine tax was tried.)
 kehillah_tribute_debug.2 = {
 	type = character_event
 	hidden = yes
@@ -37,8 +35,13 @@ kehillah_tribute_debug.2 = {
 		exists = suzerain
 	}
 	immediate = {
-		suzerain = { save_scope_as = kehillah_tribute_host }
-		debug_log = "TRIBUTE treasuries: leader gold=[THIS.Char.GetGold] host gold=[kehillah_tribute_host.GetGold]"
+		# Host gold is logged from inside the host's scope: a saved scope
+		# printed ERROR in debug_log (live, 2026-11-11).
+		debug_log = "TRIBUTE before: leader gold=[THIS.Char.GetGold] owed=[THIS.Char.MakeScope.ScriptValue('kehillah_tribute_quarter_paid_value')]"
+		suzerain = { debug_log = "TRIBUTE before: host [THIS.Char.GetName] gold=[THIS.Char.GetGold]" }
+		kehillah_pay_host_tribute_effect = yes
+		debug_log = "TRIBUTE after: leader gold=[THIS.Char.GetGold]"
+		suzerain = { debug_log = "TRIBUTE after: host [THIS.Char.GetName] gold=[THIS.Char.GetGold]" }
 	}
 }
 

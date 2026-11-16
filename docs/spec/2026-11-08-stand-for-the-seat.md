@@ -548,3 +548,11 @@ Question 2 is moot under the investment route (7.0): there is no acting leader.
 - **No board re-seating (7.4).** Moved courtiers likely lose their council seats and offices. The
   AI refills its own; the player re-appoints. V7 checks it; re-seating waits on the result.
 
+## 14. Addendum, 2026-11-14
+
+[Adventurers, seats and invitations](2026-11-14-adventurers-seats-and-invitations.md) amends this spec
+and supersedes it where they differ: the foreign-region term is now foreign culture (5.2); the stranger
+term is -20 and waived only by marriage, with a great rabbi's standing paid as track bonuses (5.2, 5.3);
+a Jewish landless adventurer may stand (4); communities send invitations; and the campaign gets a
+visit-the-community decision (8).
+

@@ -84,6 +84,29 @@ The dated rules are why a 1066 start and a 1178 start differ. A save from before
 is seeded the first time any Jewish map is painted (`kehillah_ensure_native_jewish_cultures_effect`,
 gated by the global variable `kehillah_native_jewish_cultures_seeded`).
 
+## Jawf, Agaw Meder, Moldavia; what differs by start date (addendum, 2026-11-10)
+
+- **d_jawf-al-yamani** is now Teimani. The Arabia region had made it Mizrahi.
+- **c_agaw_meder** (west of Lake Tana) joins Beta Israel. It is the Agaw country the Beta Israel
+  are most often traced to. Their recorded heartland only appears in sources with Amda Seyon's
+  wars in the 1330s (Semien, Wegera, Tselemt), so anything wider is guesswork for CK3's dates.
+- **Canaani** now also covers d_bukovina, d_moldova and d_bugeac (Daniel), so the block runs
+  unbroken to the Black Sea. Evidence for Jews there this early is thin, so this is a
+  map-coherence call. They turn Ashkenazi with the rest when Canaani is absorbed.
+- **Bohemia stays Canaani.** It is the strongest Canaani case. Medieval Hebrew writers called
+  Bohemia "Canaan", and the Old Czech glosses are Bohemian.
+
+**What differs by start date** (all from the rules above):
+
+| | 867 | 1066 | 1178 |
+|---|---|---|---|
+| Ashkenaz | not yet: Italki in the German lands, Provenci in Francia | formed | formed |
+| Khazaria | Radhanite | none | none |
+| England | none | none until the Norman invitation | Ashkenazi |
+| Canaani | Bohemia to the Black Sea | same | same; absorbed by 1187 |
+
+Everything else is the same at all three starts.
+
 ## Mizrahi; Radhanite as Persian Jewry; Juhuri retired (addendum, 2026-11-09)
 
 Daniel's calls, following the culture-list proposal:
@@ -275,6 +298,20 @@ file's header.
   (`kehillah_rites_map_click_to_faith`) is shown only on the Rites map and only when the clicked
   barony is a tagged quarter. On `_show` it runs `OpenGameViewData( 'faith', <leader>.GetRite )`,
   the same call vanilla's rite buttons use. Other baronies still open the county view.
+- **Culture click-through (2026-11-09).** On the Jewish Cultures map, clicking a county opens the
+  culture window on its `kehillah_local_jewish_culture`, through
+  `kehillah_cultures_map_click_to_culture` in the same file. It uses vanilla's
+  `OpenGameViewData( 'culture_window', Culture.GetID )` and the same `_show` mechanism as the
+  rites click-through. A county with no Jewish culture opens the county view.
+- **Consistency fix (2026-11-09, Daniel: "it feels inconsistent").** Both click-throughs fired only
+  on the county view's `_show`. When the view stayed open, a click on a second county only
+  swapped its data, so nothing fired. Each click-through now also runs `HoldingView.Close` after
+  opening its window, so every click is a fresh `_show`. The Rites map now reads the county's
+  community link (`var:kehillah_inspector_community`) instead of the quarter barony's tag, so a
+  click anywhere in a community's county opens its rite. A county without a community but with a
+  Jewish culture opens the culture window (`kehillah_rites_map_click_to_culture`). The cost is
+  that, in those two modes, the county view and its community card can't stay open for a Jewish
+  county. They are still there on the other Jewish maps.
 - **Jewish Communities.** The minhag tints are gone, and every county takes the neutral base. The
   "Customary region" line is removed from both of its hover cards.
 

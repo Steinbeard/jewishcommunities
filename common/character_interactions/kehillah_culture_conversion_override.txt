@@ -1,0 +1,127 @@
+﻿# =====================================================================
+# Overrides vanilla's request_culture_conversion_interaction (common/
+# character_interactions/00_culture_interactions.txt): the request a new
+# hybrid or divergent culture's founder sends to vassals of the parent
+# culture. Peoplehood doctrine (docs/implementation/2026-11-11-peoplehood-
+# doctrine.md): Jews of a Hebrew culture refuse to leave it for a
+# non-Hebrew one; non-Hebrew Jews lean towards a Hebrew one. Vanilla 1.20.1
+# otherwise, unchanged; re-copy after a game update.
+# =====================================================================
+
+request_culture_conversion_interaction = {
+	category = interaction_category_religion
+	special_interaction = request_culture_conversion_interaction
+	popup_on_receive = yes
+
+	desc = ask_for_conversion_interaction_desc
+
+	hidden = yes
+	
+	is_shown = {
+		scope:actor.culture != scope:recipient.culture
+		scope:recipient.liege ?= scope:actor
+	}
+
+	is_valid_showing_failures_only = {
+	}
+	
+	ai_accept = {
+		base = -10
+		opinion_modifier = {
+			opinion_target = scope:actor
+			who = scope:recipient
+			multiplier = 1
+		}
+		
+		modifier = {
+			desc = ASK_FOR_CONVERSION_SAME_CULTURE_PRESTIGE_LEVEL
+			add = {
+				value = 10
+				multiply = scope:actor.prestige_level
+			}
+			scope:actor.prestige_level > 0
+			scope:recipient.culture = scope:actor.culture
+		}
+
+		modifier = {
+			desc = ASK_FOR_CONVERSION_RECIPIENT_DIPLOMACY
+			add = {
+				value = scope:actor.diplomacy
+				subtract = scope:recipient.diplomacy
+				multiply = 5
+			}
+		}
+		
+		modifier = {
+			desc = ASK_FOR_CONVERSION_RECIPIENT_IS_CYNICAL
+			add = 30
+			scope:recipient = {
+				has_trait = cynical
+			}
+		}
+		
+		modifier = {
+			desc = ASK_FOR_CONVERSION_RECIPIENT_IS_STUBBORN
+			add = -30
+			scope:recipient = {
+				has_trait = stubborn
+			}
+		}
+			
+		modifier = {
+			add = intimidated_external_reason_value
+			scope:recipient = {
+				has_dread_level_towards = {
+					target = scope:actor
+					level = 1
+				}
+			}
+			desc = INTIMIDATED_REASON
+		}
+		modifier = {
+			add = cowed_external_reason_value
+			scope:recipient = {
+				has_dread_level_towards = {
+					target = scope:actor
+					level = 2
+				}
+			}
+			desc = COWED_REASON
+		}
+		### JEWISH COMMUNITIES MOD (2026-11-11): Covenantal Peoplehood.
+		modifier = {
+			desc = KEHILLAH_PEOPLEHOOD_KEEPS_HEBREW_CULTURE
+			add = -200
+			scope:recipient = {
+				kehillah_keeps_hebrew_peoplehood_trigger = yes
+				kehillah_is_hebrew_culture_trigger = yes
+			}
+			scope:actor.culture = { NOT = { has_cultural_pillar = heritage_israelite } }
+		}
+		modifier = {
+			desc = KEHILLAH_PEOPLEHOOD_JOINS_HEBREW_CULTURE
+			add = 50
+			scope:recipient = {
+				kehillah_keeps_hebrew_peoplehood_trigger = yes
+				NOT = { kehillah_is_hebrew_culture_trigger = yes }
+			}
+			scope:actor.culture = { has_cultural_pillar = heritage_israelite }
+		}
+		### END JEWISH COMMUNITIES MOD
+		# Unity modifiers
+		evaluate_action_increasing_house_unity = {
+			VALUE = 100
+		}
+	}
+	
+	ai_min_reply_days = 1
+	ai_max_reply_days = 5
+	
+	on_accept = {
+		new_culture_created_vassal_conversion_effect = {
+			CONVERTEE = scope:recipient
+			CONVERTER = scope:actor
+			CULTURE = scope:actor.culture
+		}
+	}
+}

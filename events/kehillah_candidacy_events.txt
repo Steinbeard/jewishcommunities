@@ -39,14 +39,18 @@ kehillah_candidacy.0001 = {
 		}
 		first_valid = {
 			triggered_desc = {
-				trigger = { kehillah_cand_great_rabbi_trigger = yes }
-				desc = kehillah_candidacy.0001.desc_great_rabbi
-			}
-			triggered_desc = {
 				trigger = { kehillah_cand_married_in_trigger = { SEAT = scope:cand_seat } }
 				desc = kehillah_candidacy.0001.desc_married_in
 			}
 			desc = kehillah_candidacy.0001.desc_stranger
+		}
+		triggered_desc = {
+			trigger = { kehillah_cand_great_rabbi_trigger = yes }
+			desc = kehillah_candidacy.0001.desc_great_rabbi
+		}
+		triggered_desc = {
+			trigger = { kehillah_cand_invited_trigger = { SEAT = scope:cand_seat } }
+			desc = kehillah_candidacy.0001.desc_invited
 		}
 		desc = kehillah_candidacy.0001.desc_offers
 		triggered_desc = {
@@ -201,6 +205,13 @@ kehillah_candidacy.0001 = {
 		}
 		kehillah_cand_declare_effect = yes
 		custom_tooltip = kehillah_candidacy.0001.a.tt
+		if = {
+			limit = { kehillah_cand_is_adventurer_candidate_trigger = yes }
+			custom_tooltip = kehillah_candidacy.0001.a.tt_camp
+		}
+		else = {
+			custom_tooltip = kehillah_candidacy.0001.a.tt_old
+		}
 	}
 
 	# Withdraw.
@@ -226,6 +237,109 @@ kehillah_candidacy.0001 = {
 			limit = { has_variable = kehillah_cand_front_score }
 			remove_variable = kehillah_cand_front_score
 		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# .0040 -- A community sends for him (2026-11-14, Daniel). Fired by
+# kehillah_cand_send_invitation_effect. root = the invited player,
+# scope:kehillah_invite_seat = the community. The invitation is also the
+# variable kehillah_invited_to_seat on him: a score bonus and half the
+# declaration cost while it stands.
+# ---------------------------------------------------------------------
+kehillah_candidacy.0040 = {
+	type = character_event
+	title = kehillah_candidacy.0040.t
+	desc = {
+		desc = kehillah_candidacy.0040.desc
+		desc = kehillah_candidacy.0040.desc_offers
+		triggered_desc = {
+			trigger = { scope:kehillah_invite_seat = { kehillah_cand_seat_in_capital_trigger = yes } }
+			desc = kehillah_candidacy.0001.offer_capital
+		}
+		triggered_desc = {
+			trigger = { scope:kehillah_invite_leader = { kehillah_has_yeshiva_trigger = yes } }
+			desc = kehillah_candidacy.0001.offer_yeshiva
+		}
+		triggered_desc = {
+			trigger = {
+				scope:kehillah_invite_seat = {
+					exists = var:kehillah_rank_prosperity
+					var:kehillah_rank_prosperity <= 3
+				}
+			}
+			desc = kehillah_candidacy.0001.offer_economy
+		}
+		triggered_desc = {
+			trigger = { scope:kehillah_invite_seat = { exists = var:kehillah_rank_standing } }
+			desc = kehillah_candidacy.0001.offer_standing
+		}
+		triggered_desc = {
+			trigger = { scope:kehillah_invite_leader = { kehillah_is_nagid_trigger = yes } }
+			desc = kehillah_candidacy.0001.offer_nagid
+		}
+		triggered_desc = {
+			trigger = {
+				OR = {
+					scope:kehillah_invite_seat = title:d_kehillah_worms
+					scope:kehillah_invite_seat = title:d_kehillah_speyer
+					scope:kehillah_invite_seat = title:d_kehillah_mainz
+				}
+			}
+			desc = kehillah_candidacy.0001.offer_shum
+		}
+		triggered_desc = {
+			trigger = { scope:kehillah_invite_seat = { kehillah_trouble_crisis_active_trigger = yes } }
+			desc = kehillah_candidacy.0001.offer_trouble_crisis
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { kehillah_cand_is_adventurer_candidate_trigger = yes }
+				desc = kehillah_candidacy.0040.desc_road
+			}
+			desc = kehillah_candidacy.0040.desc_leader
+		}
+	}
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_invite_leader
+		animation = personality_rational
+	}
+
+	trigger = { is_ai = no }
+
+	immediate = {
+		scope:kehillah_invite_seat.holder = { save_scope_as = kehillah_invite_leader }
+		scope:kehillah_invite_seat = { save_scope_as = cand_seat }
+	}
+
+	# Weigh the seat.
+	option = {
+		name = kehillah_candidacy.0040.a
+		trigger_event = kehillah_candidacy.0001
+	}
+
+	# Decline, with thanks.
+	option = {
+		name = kehillah_candidacy.0040.b
+		remove_variable = kehillah_invited_to_seat
+		scope:kehillah_invite_leader = {
+			add_opinion = {
+				target = root
+				modifier = respect_opinion
+				opinion = kehillah_invitation_thanks_opinion
+			}
+		}
+		add_prestige = minor_prestige_gain
+	}
+
+	# Not now.
+	option = {
+		name = kehillah_candidacy.0040.c
 	}
 }
 

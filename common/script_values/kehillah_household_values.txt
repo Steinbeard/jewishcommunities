@@ -15,11 +15,14 @@ kehillah_household_contribution_value = 25
 kehillah_household_pillar_cap = 100
 
 # Scope: a community title. Room for householder families besides the
-# ruling house: 3, plus one at Healthy Prosperity and one at
-# Flourishing. Room only limits ARRIVALS; a community over its room never
+# ruling house. Room only limits ARRIVALS; a community over its room never
 # sheds a family for that reason.
+# 2026-11-15 (Daniel, "reduce court size a bit"): 2 below Healthy
+# Prosperity (was 3), 3 at Healthy, 4 at Flourishing, 5 at Legendary
+# (was 5 from Flourishing). The founding seed still makes three families,
+# so a poor community simply does not grow until it prospers.
 kehillah_household_cap_value = {
-	value = 3
+	value = 2
 	if = {
 		limit = { has_variable = kehillah_var_prosperity var:kehillah_var_prosperity >= kehillah_band_healthy_threshold }
 		add = 1
@@ -28,6 +31,44 @@ kehillah_household_cap_value = {
 		limit = { has_variable = kehillah_var_prosperity var:kehillah_var_prosperity >= kehillah_band_flourishing_threshold }
 		add = 1
 	}
+	if = {
+		limit = { has_variable = kehillah_var_prosperity var:kehillah_var_prosperity >= kehillah_band_legendary_threshold }
+		add = 1
+	}
+}
+
+# Scope: a Kehillah leader. How large a new householder family is, 1-4
+# (kehillah_household_add_family_effect). At the bookmark the community's
+# historical eminence decides (kehillah_family_scale_override, set by
+# kehillah_seed_community_effect); afterwards its Prosperity:
+#   1 below Strained   wife and at most one child
+#   2 Strained         one or two children
+#   3 Healthy          one to three, and perhaps a grown son
+#   4 Flourishing+     one to four, and perhaps a grown son (as before)
+kehillah_household_family_size_value = {
+	value = 2
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_family_scale_override } }
+		value = primary_title.var:kehillah_family_scale_override
+	}
+	else_if = {
+		limit = { primary_title ?= { has_variable = kehillah_var_prosperity } }
+		value = 1
+		if = {
+			limit = { primary_title.var:kehillah_var_prosperity >= kehillah_band_strained_threshold }
+			value = 2
+		}
+		if = {
+			limit = { primary_title.var:kehillah_var_prosperity >= kehillah_band_healthy_threshold }
+			value = 3
+		}
+		if = {
+			limit = { primary_title.var:kehillah_var_prosperity >= kehillah_band_flourishing_threshold }
+			value = 4
+		}
+	}
+	min = 1
+	max = 4
 }
 
 # Scope: a community title. Householder families other than the ruling

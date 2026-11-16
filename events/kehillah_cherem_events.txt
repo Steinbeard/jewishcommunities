@@ -1,0 +1,357 @@
+﻿# =====================================================================
+# The cherem track for people (2026-11-11). docs/spec/2026-11-11-reviews-
+# and-cherem.md sections 3.4 and 3.5.
+#
+# .0010 The Ban Is Read: anyone who reaches the full ban. A community leader
+#       seeks teshuvah, steps down, or carries on in defiance; anyone else seeks
+#       teshuvah or bears it.
+# .0011 (hidden) the step-down itself, through kehillah_step_down_effect as
+#       it is. Never inside an option: the tooltip dry-run hazard recorded for
+#       the conversion and arrest step-downs.
+# .0020 (hidden) a year of teshuvah ends: the head of the rite judges it, or
+#       a court of three.
+# .0021 a player head of rite judges a teshuvah.
+# .0022 the penitent hears the verdict (players).
+# =====================================================================
+
+namespace = kehillah_cherem
+
+kehillah_cherem.0010 = {
+	type = character_event
+	title = kehillah_cherem.0010.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { kehillah_cherem_protected_leader_trigger = yes }
+				desc = kehillah_cherem.0010.desc
+			}
+			desc = kehillah_cherem.0010.desc.other
+		}
+	}
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = shock
+	}
+
+	trigger = {
+		kehillah_cherem_in_full_trigger = yes
+		NOT = { has_variable = kehillah_teshuvah_pending }
+		NOT = { has_character_modifier = kehillah_doing_teshuvah_modifier }
+	}
+
+	# Seek reconciliation before surrendering the seat. The same year and
+	# five-year retry gate apply through the separate decision.
+	option = {
+		name = kehillah_cherem.0010.c
+		trigger = {
+			kehillah_teshuvah_can_begin_trigger = yes
+			piety >= kehillah_teshuvah_piety_cost
+		}
+		show_as_unavailable = { always = yes }
+		add_piety = { value = kehillah_teshuvah_piety_cost multiply = -1 }
+		kehillah_teshuvah_begin_effect = yes
+		if = {
+			limit = { kehillah_cherem_protected_leader_trigger = yes }
+			custom_tooltip = kehillah_cherem.0010.c.tt
+		}
+		ai_chance = {
+			base = 80
+			modifier = { add = 30 has_trait = humble }
+			modifier = { add = 20 has_trait = zealous }
+			modifier = { add = -40 has_trait = arrogant }
+			min = 1
+		}
+	}
+
+	# Step down: the community passes to its heir and keeps its Stability.
+	option = {
+		name = kehillah_cherem.0010.a
+		trigger = {
+			kehillah_cherem_protected_leader_trigger = yes
+			kehillah_conversion_heir_is_jewish_trigger = yes
+		}
+		custom_tooltip = kehillah_cherem.0010.a.tt
+		hidden_effect = {
+			trigger_event = { id = kehillah_cherem.0011 days = 1 }
+		}
+		ai_chance = {
+			base = 40
+			modifier = { add = 30 has_trait = humble }
+			modifier = { add = 30 has_trait = content }
+			modifier = { add = 20 has_trait = zealous }
+			modifier = { add = -30 has_trait = stubborn }
+			modifier = { add = -30 has_trait = arrogant }
+			modifier = { add = -20 has_trait = ambitious }
+			min = 1
+		}
+	}
+
+	# Carry on under the ban.
+	option = {
+		name = kehillah_cherem.0010.b
+		trigger = { kehillah_cherem_protected_leader_trigger = yes }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_cherem_defiance_stability }
+		custom_tooltip = kehillah_cherem.0010.b.tt
+		primary_title ?= { set_variable = { name = kehillah_cherem_defiant value = yes } }
+		ai_chance = {
+			base = 60
+			modifier = { add = 30 has_trait = stubborn }
+			modifier = { add = 30 has_trait = arrogant }
+			modifier = { add = 20 has_trait = ambitious }
+			min = 1
+		}
+	}
+
+	# Anyone else: bear the ban.
+	option = {
+		name = kehillah_cherem.0010.d
+		trigger = { NOT = { kehillah_cherem_protected_leader_trigger = yes } }
+		ai_chance = {
+			base = 50
+			modifier = { add = 30 has_trait = stubborn }
+			modifier = { add = 30 has_trait = arrogant }
+			min = 1
+		}
+	}
+}
+
+kehillah_cherem.0011 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		debug_log = "kehillah_cherem.0011: a banned leader steps down"
+		debug_log_scopes = yes
+		if = {
+			limit = {
+				kehillah_cherem_protected_leader_trigger = yes
+				kehillah_conversion_heir_is_jewish_trigger = yes
+				kehillah_cherem_in_full_trigger = yes
+			}
+			kehillah_step_down_effect = yes
+			debug_log = "kehillah_cherem.0011: STEPPED DOWN to the appointment heir"
+		}
+		else_if = {
+			limit = { kehillah_cherem_protected_leader_trigger = yes kehillah_cherem_in_full_trigger = yes }
+			debug_log = "kehillah_cherem.0011: no Jewish heir any more; he stays in office under the ban"
+			primary_title ?= { set_variable = { name = kehillah_cherem_defiant value = yes } }
+		}
+	}
+}
+
+kehillah_cherem.0020 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		debug_log = "kehillah_cherem.0020: a year of teshuvah ends"
+		if = {
+			limit = { kehillah_cherem_may_repent_trigger = yes }
+			# 2026-11-11: refused only on grounds (kehillah_teshuvah_verdict_effect).
+			kehillah_teshuvah_seat_court_effect = yes
+			if = {
+				limit = { scope:kehillah_teshuvah_judge ?= { is_ai = no } }
+				scope:kehillah_teshuvah_judge = { trigger_event = kehillah_cherem.0021 }
+			}
+			else = {
+				kehillah_teshuvah_verdict_effect = yes
+				if = {
+					limit = { exists = scope:kehillah_teshuvah_accepted }
+					# 2026-11-11 (trait rework): teshuvah lowers the ban one level.
+					kehillah_cherem_lower_level_effect = yes
+					debug_log = "kehillah_cherem.0020: ACCEPTED, one level lighter"
+				}
+				else = {
+					kehillah_teshuvah_refused_effect = yes
+					debug_log = "kehillah_cherem.0020: REFUSED"
+				}
+				if = {
+					limit = { is_ai = no }
+					trigger_event = kehillah_cherem.0022
+				}
+			}
+		}
+		else = { kehillah_teshuvah_finish_effect = yes }
+	}
+}
+
+# Root: the head of the rite (a player). scope:kehillah_teshuvah_penitent.
+kehillah_cherem.0021 = {
+	type = character_event
+	title = kehillah_cherem.0021.t
+	desc = kehillah_cherem.0021.desc
+	theme = faith
+	left_portrait = {
+		character = scope:kehillah_teshuvah_penitent
+		animation = worry
+	}
+	right_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = { exists = scope:kehillah_teshuvah_penitent }
+
+	# Accept it.
+	option = {
+		name = kehillah_cherem.0021.a
+		scope:kehillah_teshuvah_penitent = {
+			custom_tooltip = kehillah_cherem.0021.a.tt
+			hidden_effect = { kehillah_cherem_lower_level_effect = yes }
+			add_opinion = { target = root modifier = grateful_opinion opinion = 30 }
+		}
+		add_piety = minor_piety_gain
+		save_scope_value_as = { name = kehillah_teshuvah_accepted value = yes }
+	}
+
+	# Refuse it.
+	option = {
+		name = kehillah_cherem.0021.b
+		scope:kehillah_teshuvah_penitent = {
+			kehillah_teshuvah_refused_effect = yes
+			add_opinion = { target = root modifier = insulted_opinion opinion = -20 }
+		}
+	}
+
+	after = {
+		scope:kehillah_teshuvah_penitent = {
+			if = {
+				limit = { is_ai = no }
+				trigger_event = kehillah_cherem.0022
+			}
+		}
+	}
+}
+
+# Root: the penitent (a player). scope:kehillah_teshuvah_accepted when it was.
+kehillah_cherem.0022 = {
+	type = character_event
+	title = kehillah_cherem.0022.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = scope:kehillah_teshuvah_accepted
+					exists = scope:kehillah_teshuvah_judge
+				}
+				desc = kehillah_cherem.0022.desc.accepted_head
+			}
+			triggered_desc = {
+				trigger = { exists = scope:kehillah_teshuvah_accepted }
+				desc = kehillah_cherem.0022.desc.accepted_court
+			}
+			triggered_desc = {
+				trigger = { exists = scope:kehillah_teshuvah_judge }
+				desc = kehillah_cherem.0022.desc.refused_head
+			}
+			desc = kehillah_cherem.0022.desc.refused_court
+		}
+		# 2026-11-11: why (Daniel: a refusal "needs a good reason").
+		triggered_desc = {
+			trigger = { kehillah_teshuvah_relapse_trigger = yes NOT = { exists = scope:kehillah_teshuvah_accepted } }
+			desc = kehillah_cherem.0022.why_relapse
+		}
+		triggered_desc = {
+			trigger = { kehillah_teshuvah_sinned_trigger = yes NOT = { exists = scope:kehillah_teshuvah_accepted } }
+			desc = kehillah_cherem.0022.why_sinned
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					NOT = { exists = scope:kehillah_teshuvah_accepted }
+					scope:kehillah_teshuvah_judge ?= { kehillah_teshuvah_enmity_trigger = yes }
+				}
+				desc = kehillah_cherem.0022.why_head_enmity
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { exists = scope:kehillah_teshuvah_accepted }
+					scope:kehillah_teshuvah_judge ?= { kehillah_teshuvah_zeal_trigger = yes }
+				}
+				desc = kehillah_cherem.0022.why_head_zeal
+			}
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:kehillah_teshuvah_judge_1 ?= { kehillah_teshuvah_enmity_trigger = yes } }
+				desc = kehillah_cherem.0022.why_1_enmity
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_teshuvah_judge_1 ?= { kehillah_teshuvah_zeal_trigger = yes } }
+				desc = kehillah_cherem.0022.why_1_zeal
+			}
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:kehillah_teshuvah_judge_2 ?= { kehillah_teshuvah_enmity_trigger = yes } }
+				desc = kehillah_cherem.0022.why_2_enmity
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_teshuvah_judge_2 ?= { kehillah_teshuvah_zeal_trigger = yes } }
+				desc = kehillah_cherem.0022.why_2_zeal
+			}
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:kehillah_teshuvah_judge_3 ?= { kehillah_teshuvah_enmity_trigger = yes } }
+				desc = kehillah_cherem.0022.why_3_enmity
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_teshuvah_judge_3 ?= { kehillah_teshuvah_zeal_trigger = yes } }
+				desc = kehillah_cherem.0022.why_3_zeal
+			}
+		}
+	}
+	theme = faith
+	# 2026-11-11 (Daniel): the judges' faces. The head of the rite, or the
+	# court of three below; whoever had grounds against the penitent frowns.
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { exists = scope:kehillah_teshuvah_accepted }
+			animation = happiness
+		}
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:kehillah_teshuvah_judge
+		trigger = { exists = scope:kehillah_teshuvah_judge }
+		triggered_animation = {
+			trigger = { scope:kehillah_teshuvah_judge = { kehillah_teshuvah_judge_refuses_trigger = yes } }
+			animation = disapproval
+		}
+		animation = personality_honorable
+	}
+	lower_left_portrait = {
+		character = scope:kehillah_teshuvah_judge_1
+		trigger = { exists = scope:kehillah_teshuvah_judge_1 }
+		triggered_animation = {
+			trigger = { scope:kehillah_teshuvah_judge_1 = { kehillah_teshuvah_judge_refuses_trigger = yes } }
+			animation = disapproval
+		}
+		animation = personality_honorable
+	}
+	lower_center_portrait = {
+		character = scope:kehillah_teshuvah_judge_2
+		trigger = { exists = scope:kehillah_teshuvah_judge_2 }
+		triggered_animation = {
+			trigger = { scope:kehillah_teshuvah_judge_2 = { kehillah_teshuvah_judge_refuses_trigger = yes } }
+			animation = disapproval
+		}
+		animation = personality_honorable
+	}
+	lower_right_portrait = {
+		character = scope:kehillah_teshuvah_judge_3
+		trigger = { exists = scope:kehillah_teshuvah_judge_3 }
+		triggered_animation = {
+			trigger = { scope:kehillah_teshuvah_judge_3 = { kehillah_teshuvah_judge_refuses_trigger = yes } }
+			animation = disapproval
+		}
+		animation = personality_honorable
+	}
+
+	option = {
+		name = kehillah_cherem.0022.a
+	}
+}

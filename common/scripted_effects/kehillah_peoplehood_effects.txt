@@ -1,0 +1,222 @@
+﻿# =====================================================================
+# Peoplehood (2026-11-11, docs/implementation/2026-11-11-peoplehood-doctrine.md).
+# =====================================================================
+
+# Scope: a character. Saves scope:kehillah_people_to_join, the existing
+# Jewish people they join, in this order:
+#   1. the one matching their culture's language (the hybrid table,
+#      kehillah_pick_historical_jewish_culture_effect);
+#   2. the local Jewish culture of their capital, then of where they are;
+#   3. a Jewish culture native anywhere in their realm.
+# Saves nothing if none exists; they then found a new people
+# (kehillah_found_hebrew_people_effect).
+kehillah_pick_hebrew_people_to_join_effect = {
+	culture = { save_scope_as = kehillah_hybrid_other_parent }
+	save_scope_as = founder
+	kehillah_pick_historical_jewish_culture_effect = yes
+	if = {
+		limit = { exists = scope:kehillah_historical_jewish_culture }
+		scope:kehillah_historical_jewish_culture = { save_scope_as = kehillah_people_to_join }
+	}
+	else_if = {
+		limit = { exists = capital_county.var:kehillah_local_jewish_culture }
+		capital_county.var:kehillah_local_jewish_culture = { save_scope_as = kehillah_people_to_join }
+	}
+	else_if = {
+		limit = { exists = location.county.var:kehillah_local_jewish_culture }
+		location.county.var:kehillah_local_jewish_culture = { save_scope_as = kehillah_people_to_join }
+	}
+	else_if = {
+		limit = {
+			any_realm_county = { exists = var:kehillah_local_jewish_culture }
+		}
+		random_realm_county = {
+			limit = { exists = var:kehillah_local_jewish_culture }
+			var:kehillah_local_jewish_culture = { save_scope_as = kehillah_people_to_join }
+		}
+	}
+}
+
+# Scope: a character, after kehillah_pick_hebrew_people_to_join_effect.
+# They and their children under sixteen of the same faith take the culture.
+kehillah_join_hebrew_people_effect = {
+	save_scope_as = kehillah_joining_jew
+	every_child = {
+		limit = {
+			age < 16
+			faith = scope:kehillah_joining_jew.faith
+			NOT = { culture = scope:kehillah_people_to_join }
+		}
+		set_culture = scope:kehillah_people_to_join
+	}
+	set_culture = scope:kehillah_people_to_join
+}
+
+# ---------------------------------------------------------------------
+# Founding a new Jewish people (2026-11-11, Daniel: "a pathway for a
+# theoretical king of Hungary"). Scope: a character with no Jewish people
+# to join. Their culture is hybridized with the Jewish culture of their
+# part of the world; the hybrid takes the Israelite heritage and a name
+# from the list below, and they and their young children join it. Its
+# lands take it as native through on_culture_created and the ruler hook
+# (kehillah_jewish_culture_dynamics_effects.txt). Its language is the
+# hybrid's random pick of the two parents', as for any CK3 hybrid.
+# ---------------------------------------------------------------------
+kehillah_found_hebrew_people_effect = {
+	culture = { save_scope_as = kehillah_founding_culture }
+	kehillah_pick_regional_jewish_parent_effect = yes
+	create_hybrid_culture = scope:kehillah_regional_jewish_parent
+	scope:new_culture = {
+		set_culture_pillar = heritage_israelite
+		kehillah_name_new_hebrew_people_effect = yes
+		save_scope_as = kehillah_people_to_join
+	}
+	kehillah_join_hebrew_people_effect = yes
+}
+
+# Scope: a character. Saves scope:kehillah_regional_jewish_parent: the
+# Jewish culture of the part of the world their capital is in.
+kehillah_pick_regional_jewish_parent_effect = {
+	culture:bavlim = { save_scope_as = kehillah_regional_jewish_parent }
+	capital_province ?= { save_scope_as = kehillah_regional_province }
+	location ?= { save_scope_as = kehillah_regional_province }
+	if = {
+		limit = { exists = scope:kehillah_regional_province }
+		scope:kehillah_regional_province = {
+			if = {
+				limit = { geographical_region = world_europe_east }
+				if = {
+					limit = { has_global_variable = kehillah_canaani_absorbed }
+					culture:ashkenazi = { save_scope_as = kehillah_regional_jewish_parent }
+				}
+				else = {
+					culture:canaani = { save_scope_as = kehillah_regional_jewish_parent }
+				}
+			}
+			else_if = {
+				limit = {
+					OR = {
+						geographical_region = world_europe_south_east
+						geographical_region = world_asia_minor
+					}
+				}
+				culture:romaniote = { save_scope_as = kehillah_regional_jewish_parent }
+			}
+			else_if = {
+				limit = { geographical_region = world_europe_west_iberia }
+				culture:sephardi = { save_scope_as = kehillah_regional_jewish_parent }
+			}
+			else_if = {
+				limit = { geographical_region = world_europe_south_italy }
+				culture:italki = { save_scope_as = kehillah_regional_jewish_parent }
+			}
+			else_if = {
+				limit = { geographical_region = world_europe }
+				culture:ashkenazi = { save_scope_as = kehillah_regional_jewish_parent }
+			}
+			else_if = {
+				limit = { geographical_region = world_africa_north_west }
+				culture:maaravi = { save_scope_as = kehillah_regional_jewish_parent }
+			}
+			else_if = {
+				limit = { geographical_region = world_africa_east }
+				culture:beta_israel = { save_scope_as = kehillah_regional_jewish_parent }
+			}
+			else_if = {
+				limit = { geographical_region = world_india }
+				culture:kochinim = { save_scope_as = kehillah_regional_jewish_parent }
+			}
+			else_if = {
+				limit = {
+					OR = {
+						geographical_region = world_middle_east_persia
+						geographical_region = world_persia
+						geographical_region = world_khorasan
+						geographical_region = world_transoxiana
+						geographical_region = world_central_asia
+						geographical_region = world_steppe
+						geographical_region = world_asia
+					}
+				}
+				culture:radhanite = { save_scope_as = kehillah_regional_jewish_parent }
+			}
+		}
+	}
+}
+
+# Scope: the new culture; reads scope:kehillah_founding_culture. A name for
+# the new people from the founding culture's language, in the Hebrew style
+# of the historical ones; any other language gets "<Culture> Jewish".
+kehillah_name_new_hebrew_people_effect = {
+	if = {
+		limit = { scope:kehillah_founding_culture = { has_cultural_pillar = language_magyar } }
+		kehillah_set_new_hebrew_people_name_effect = { NAME = hagari }
+	}
+	else_if = {
+		limit = {
+			scope:kehillah_founding_culture = {
+				OR = {
+					has_cultural_pillar = language_turkic
+					has_cultural_pillar = language_oghur
+				}
+			}
+		}
+		kehillah_set_new_hebrew_people_name_effect = { NAME = togarmi }
+	}
+	else_if = {
+		limit = {
+			scope:kehillah_founding_culture = {
+				OR = {
+					has_cultural_pillar = language_norse
+					has_cultural_pillar = language_finnic
+					has_cultural_pillar = language_sami
+					has_cultural_pillar = language_volga_finnic
+					has_cultural_pillar = language_ugro_permian
+				}
+			}
+		}
+		kehillah_set_new_hebrew_people_name_effect = { NAME = tzefoni }
+	}
+	else_if = {
+		limit = { scope:kehillah_founding_culture = { has_cultural_pillar = language_baltic } }
+		kehillah_set_new_hebrew_people_name_effect = { NAME = litvak }
+	}
+	else_if = {
+		limit = {
+			scope:kehillah_founding_culture = {
+				OR = {
+					has_cultural_pillar = language_goidelic
+					has_cultural_pillar = language_brythonic
+				}
+			}
+		}
+		kehillah_set_new_hebrew_people_name_effect = { NAME = iyyi }
+	}
+	else_if = {
+		limit = { scope:kehillah_founding_culture = { has_cultural_pillar = language_armenian } }
+		kehillah_set_new_hebrew_people_name_effect = { NAME = ararati }
+	}
+	else_if = {
+		limit = { scope:kehillah_founding_culture = { has_cultural_pillar = language_georgian } }
+		kehillah_set_new_hebrew_people_name_effect = { NAME = gruzini }
+	}
+	else_if = {
+		limit = { scope:kehillah_founding_culture = { has_cultural_pillar = language_mongolic } }
+		kehillah_set_new_hebrew_people_name_effect = { NAME = mongoli }
+	}
+	else_if = {
+		limit = { scope:kehillah_founding_culture = { has_cultural_pillar = language_chinese } }
+		kehillah_set_new_hebrew_people_name_effect = { NAME = sini }
+	}
+	else = {
+		kehillah_set_new_hebrew_people_name_effect = { NAME = generic }
+	}
+}
+
+kehillah_set_new_hebrew_people_name_effect = {
+	set_culture_name = {
+		noun = kehillah_new_people_$NAME$
+		collective_noun = kehillah_new_people_$NAME$_collective
+		prefix = kehillah_new_people_$NAME$_prefix
+	}
+}

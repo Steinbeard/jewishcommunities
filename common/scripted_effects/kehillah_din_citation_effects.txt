@@ -1,0 +1,293 @@
+﻿# =====================================================================
+# The Bet Din docket by order of the Mishnah (2026-11-11, Daniel).
+# docs/spec/2026-11-11-rulings-sermons-and-gates.md section 2.
+#
+# A source option calls kehillah_din_cite_source_effect: the ruling gains a
+# strong tally, the citing judge's possible authorities are found among the
+# works he has mastered on the case's order, and kehillah_din_cite.0001
+# asks which one the court names: the most established (grounded), a newer
+# one (innovative), or one whose tenets he holds (by conviction). The named
+# work counts a citation toward its standing when the ruling is good
+# (kehillah_bet_din_reward_judges_for_ruling_effect).
+# =====================================================================
+
+# Scope: the event's root, in the Bet Din. $JUDGE$ is the citing judge
+# (scope:kehillah_av_beit_din or root).
+kehillah_din_cite_source_effect = {
+	involved_activity = {
+		save_scope_as = kehillah_din_cite_activity
+		change_variable = { name = kehillah_bet_din_tally add = kehillah_din_cite_tally }
+		set_variable = { name = kehillah_din_citing_judge value = $JUDGE$ }
+	}
+	$JUDGE$ = { kehillah_din_case_$CASE$_pick_effect = yes }
+	trigger_event = kehillah_din_cite.0001
+}
+
+# Scope: the citing judge. Each case's order.
+kehillah_din_case_1_pick_effect = { kehillah_din_pick_citations_nashim_effect = yes }
+kehillah_din_case_2_pick_effect = { kehillah_din_pick_citations_nashim_effect = yes }
+kehillah_din_case_3_pick_effect = { kehillah_din_pick_citations_nashim_effect = yes }
+kehillah_din_case_4_pick_effect = { kehillah_din_pick_citations_nashim_effect = yes }
+kehillah_din_case_5_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_6_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_7_pick_effect = { kehillah_din_pick_citations_nashim_effect = yes }
+kehillah_din_case_8_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_9_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_10_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_11_pick_effect = { kehillah_din_pick_citations_kodashim_effect = yes }
+kehillah_din_case_12_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_13_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_14_pick_effect = { kehillah_din_pick_citations_kodashim_effect = yes }
+
+# Scope: root of kehillah_din_cite.0001; scope:kehillah_din_cite_activity.
+# Each names its work as the ruling's authority, then adds its own effect.
+kehillah_din_cite_grounded_effect = {
+	scope:kehillah_din_cite_activity = {
+		set_variable = { name = kehillah_din_cited_work value = var:kehillah_din_cite_grounded }
+	}
+	scope:kehillah_din_cite_activity.var:kehillah_bet_din_convening_title.holder ?= {
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_din_cite_grounded_stability }
+	}
+}
+
+kehillah_din_cite_innovative_effect = {
+	scope:kehillah_din_cite_activity = {
+		set_variable = { name = kehillah_din_cited_work value = var:kehillah_din_cite_innovative }
+	}
+	scope:kehillah_din_cite_activity.var:kehillah_din_citing_judge ?= {
+		add_prestige = kehillah_din_cite_innovative_prestige
+	}
+	scope:kehillah_din_cite_activity.var:kehillah_bet_din_convening_title.holder ?= {
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_din_cite_innovative_greatness }
+		random = {
+			chance = kehillah_din_cite_innovative_unease_chance
+			kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_din_cite_innovative_unease }
+		}
+	}
+}
+
+kehillah_din_cite_conviction_effect = {
+	scope:kehillah_din_cite_activity = {
+		set_variable = { name = kehillah_din_cited_work value = var:kehillah_din_cite_conviction }
+	}
+	scope:kehillah_din_cite_activity.var:kehillah_din_citing_judge ?= {
+		add_piety = kehillah_din_cite_conviction_piety
+		faith = {
+			kehillah_din_conviction_popularity_dispatch_effect = { SOURCE = scope:kehillah_din_cite_activity.var:kehillah_din_cited_work }
+		}
+	}
+}
+
+# Scope: the Bet Din activity. A case's citation is forgotten when the next
+# case opens (kehillah_bet_din_advance_docket_effect).
+kehillah_din_clear_citation_effect = {
+	remove_variable = kehillah_din_cited_work
+	remove_variable = kehillah_din_citing_judge
+	remove_variable = kehillah_din_cite_grounded
+	remove_variable = kehillah_din_cite_innovative
+	remove_variable = kehillah_din_cite_conviction
+}
+
+# =====================================================================
+# The bench's sources (2026-11-13, Daniel). Each case's opening event lists
+# the works on its order that the faith knows (Popular or higher in the
+# convening leader's rite), which judges have mastered each, and the bonus
+# the bench's learning gives the ruling. Listed when the case is called
+# (kehillah_din_sources.<n>1); added to the tally when the presiding
+# judge's ruling event resets it (kehillah_din_bench_open_tally_effect).
+# docs/implementation/2026-11-13-bet-din-bench-sources.md.
+# =====================================================================
+
+# Scope: the convening leader, in the Bet Din (the case's opening event).
+kehillah_din_bench_case_effect = {
+	involved_activity = {
+		save_scope_as = kds_activity
+		kehillah_din_bench_clear_effect = yes
+		set_variable = { name = kehillah_din_bench_case value = $CASE$ }
+		set_variable = { name = kehillah_din_bench_count value = 0 }
+		set_variable = { name = kehillah_din_bench_judges value = 0 }
+		var:kehillah_bet_din_av_beit_din ?= { save_scope_as = kds_bench_av }
+		var:kehillah_bet_din_judge2 ?= {
+			if = {
+				limit = { NAND = { exists = scope:kds_bench_av this = scope:kds_bench_av } }
+				save_scope_as = kds_bench_j2
+			}
+		}
+		var:kehillah_bet_din_judge3 ?= {
+			if = {
+				limit = {
+					NAND = { exists = scope:kds_bench_av this = scope:kds_bench_av }
+					NAND = { exists = scope:kds_bench_j2 this = scope:kds_bench_j2 }
+				}
+				save_scope_as = kds_bench_j3
+			}
+		}
+	}
+	# The judges' names, for the case text (GetPlayer.MakeScope.Var).
+	remove_variable = kehillah_din_bench_av
+	remove_variable = kehillah_din_bench_j2
+	remove_variable = kehillah_din_bench_j3
+	if = { limit = { exists = scope:kds_bench_av } set_variable = { name = kehillah_din_bench_av value = scope:kds_bench_av days = 60 } }
+	if = { limit = { exists = scope:kds_bench_j2 } set_variable = { name = kehillah_din_bench_j2 value = scope:kds_bench_j2 days = 60 } }
+	if = { limit = { exists = scope:kds_bench_j3 } set_variable = { name = kehillah_din_bench_j3 value = scope:kds_bench_j3 days = 60 } }
+	kehillah_din_case_$CASE$_bench_effect = yes
+	scope:kds_activity = {
+		if = { limit = { has_variable = kehillah_din_bench_av_knows } change_variable = { name = kehillah_din_bench_judges add = 1 } }
+		if = { limit = { has_variable = kehillah_din_bench_j2_knows } change_variable = { name = kehillah_din_bench_judges add = 1 } }
+		if = { limit = { has_variable = kehillah_din_bench_j3_knows } change_variable = { name = kehillah_din_bench_judges add = 1 } }
+		set_variable = { name = kehillah_din_bench_tally value = var:kehillah_din_bench_judges }
+		change_variable = { name = kehillah_din_bench_tally multiply = kehillah_din_bench_judge_tally }
+		if = {
+			limit = { var:kehillah_din_bench_judges >= 3 }
+			change_variable = { name = kehillah_din_bench_tally add = kehillah_din_bench_full_tally }
+		}
+	}
+	# Works past the five shown, for "and N more".
+	set_variable = { name = kehillah_din_bench_more value = scope:kds_activity.var:kehillah_din_bench_count days = 60 }
+	change_variable = { name = kehillah_din_bench_more subtract = 5 }
+}
+
+# Scope: the convening leader. Each case's order (as kehillah_din_case_<n>_covered_trigger).
+kehillah_din_case_1_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nashim } }
+kehillah_din_case_2_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nashim } }
+kehillah_din_case_3_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nashim } }
+kehillah_din_case_4_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nashim } }
+kehillah_din_case_5_bench_effect = { kehillah_din_bench_order_effect = { SEDER = moed } }
+kehillah_din_case_6_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_7_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nashim } }
+kehillah_din_case_8_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_9_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_10_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_11_bench_effect = { kehillah_din_bench_order_effect = { SEDER = kodashim } }
+kehillah_din_case_12_bench_effect = { kehillah_din_bench_order_effect = { SEDER = moed } }
+kehillah_din_case_13_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_14_bench_effect = { kehillah_din_bench_order_effect = { SEDER = kodashim } }
+
+kehillah_din_bench_order_effect = {
+	scope:kds_activity = { set_variable = { name = kehillah_din_bench_seder value = flag:$SEDER$ } }
+	kehillah_din_bench_$SEDER$_effect = yes
+}
+
+# Scope: the convening leader. One work on the order the faith knows (called
+# from the generated kehillah_din_bench_<seder>_effect). The first five are
+# shown, each with a mask of the judges who have mastered it: 1 the Av Beit
+# Din, 2 the second judge, 4 the third.
+kehillah_din_bench_add_effect = {
+	scope:kds_activity = {
+		change_variable = { name = kehillah_din_bench_count add = 1 }
+		set_variable = { name = kehillah_din_bench_mask value = 0 }
+	}
+	if = {
+		limit = { scope:kds_bench_av ?= { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:$WORK$ } } }
+		scope:kds_activity = {
+			change_variable = { name = kehillah_din_bench_mask add = 1 }
+			set_variable = kehillah_din_bench_av_knows
+		}
+	}
+	if = {
+		limit = { scope:kds_bench_j2 ?= { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:$WORK$ } } }
+		scope:kds_activity = {
+			change_variable = { name = kehillah_din_bench_mask add = 2 }
+			set_variable = kehillah_din_bench_j2_knows
+		}
+	}
+	if = {
+		limit = { scope:kds_bench_j3 ?= { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:$WORK$ } } }
+		scope:kds_activity = {
+			change_variable = { name = kehillah_din_bench_mask add = 4 }
+			set_variable = kehillah_din_bench_j3_knows
+		}
+	}
+	scope:kds_activity = {
+		if = {
+			limit = { var:kehillah_din_bench_count = 1 }
+			set_variable = { name = kehillah_din_bench_work_1 value = flag:$WORK$ }
+			set_variable = { name = kehillah_din_bench_1_knowers value = var:kehillah_din_bench_mask }
+		}
+		else_if = {
+			limit = { var:kehillah_din_bench_count = 2 }
+			set_variable = { name = kehillah_din_bench_work_2 value = flag:$WORK$ }
+			set_variable = { name = kehillah_din_bench_2_knowers value = var:kehillah_din_bench_mask }
+		}
+		else_if = {
+			limit = { var:kehillah_din_bench_count = 3 }
+			set_variable = { name = kehillah_din_bench_work_3 value = flag:$WORK$ }
+			set_variable = { name = kehillah_din_bench_3_knowers value = var:kehillah_din_bench_mask }
+		}
+		else_if = {
+			limit = { var:kehillah_din_bench_count = 4 }
+			set_variable = { name = kehillah_din_bench_work_4 value = flag:$WORK$ }
+			set_variable = { name = kehillah_din_bench_4_knowers value = var:kehillah_din_bench_mask }
+		}
+		else_if = {
+			limit = { var:kehillah_din_bench_count = 5 }
+			set_variable = { name = kehillah_din_bench_work_5 value = flag:$WORK$ }
+			set_variable = { name = kehillah_din_bench_5_knowers value = var:kehillah_din_bench_mask }
+		}
+	}
+}
+
+# Scope: a case's opening ruling event, where the tally is reset for the
+# case. Starts it at the bench's bonus when the bench was listed for this
+# case.
+kehillah_din_bench_open_tally_effect = {
+	involved_activity = {
+		set_variable = { name = kehillah_bet_din_tally value = 0 }
+		if = {
+			limit = {
+				has_variable = kehillah_din_bench_tally
+				var:kehillah_din_bench_case ?= $CASE$
+			}
+			set_variable = { name = kehillah_bet_din_tally value = var:kehillah_din_bench_tally }
+		}
+		remove_variable = kehillah_din_bench_tally
+	}
+}
+
+# Scope: whoever calls the case to the bench (kehillah_din_start_case_effect).
+# The bonus, as a size, in the option's tooltip.
+kehillah_din_bench_tooltip_effect = {
+	if = {
+		limit = { involved_activity.var:kehillah_din_bench_judges ?= 3 }
+		custom_tooltip = kehillah_din_bench_bonus_3_tt
+	}
+	else_if = {
+		limit = { involved_activity.var:kehillah_din_bench_judges ?= 2 }
+		custom_tooltip = kehillah_din_bench_bonus_2_tt
+	}
+	else_if = {
+		limit = { involved_activity.var:kehillah_din_bench_judges ?= 1 }
+		custom_tooltip = kehillah_din_bench_bonus_1_tt
+	}
+	else_if = {
+		limit = { involved_activity.var:kehillah_din_bench_count ?= 0 }
+		custom_tooltip = kehillah_din_bench_bonus_none_known_tt
+	}
+	else_if = {
+		limit = { exists = involved_activity.var:kehillah_din_bench_count }
+		custom_tooltip = kehillah_din_bench_bonus_0_tt
+	}
+}
+
+# Scope: the Bet Din activity.
+kehillah_din_bench_clear_effect = {
+	remove_variable = kehillah_din_bench_case
+	remove_variable = kehillah_din_bench_count
+	remove_variable = kehillah_din_bench_judges
+	remove_variable = kehillah_din_bench_tally
+	remove_variable = kehillah_din_bench_mask
+	remove_variable = kehillah_din_bench_seder
+	remove_variable = kehillah_din_bench_av_knows
+	remove_variable = kehillah_din_bench_j2_knows
+	remove_variable = kehillah_din_bench_j3_knows
+	remove_variable = kehillah_din_bench_work_1
+	remove_variable = kehillah_din_bench_work_2
+	remove_variable = kehillah_din_bench_work_3
+	remove_variable = kehillah_din_bench_work_4
+	remove_variable = kehillah_din_bench_work_5
+	remove_variable = kehillah_din_bench_1_knowers
+	remove_variable = kehillah_din_bench_2_knowers
+	remove_variable = kehillah_din_bench_3_knowers
+	remove_variable = kehillah_din_bench_4_knowers
+	remove_variable = kehillah_din_bench_5_knowers
+}

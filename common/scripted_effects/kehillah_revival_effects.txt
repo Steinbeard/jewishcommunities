@@ -1,0 +1,60 @@
+﻿kehillah_begin_messianic_mission_effect = {
+    set_variable = { name = kehillah_messianic_promised_faith value = faith }
+    add_character_modifier = { modifier = kehillah_messianic_claimant_modifier years = 3 }
+    add_character_flag = { flag = kehillah_messianic_mission_active years = 4 }
+    trigger_event = { id = kehillah_revival.0005 years = 3 }
+}
+kehillah_join_messianic_mission_effect = {
+    add_character_modifier = { modifier = kehillah_messianic_supporter_modifier years = 4 }
+    save_temporary_scope_as = kehillah_messianic_supporter
+    set_variable = { name = kehillah_messianic_patron value = scope:kehillah_messianic_claimant years = 4 }
+    add_opinion = { target = scope:kehillah_messianic_claimant modifier = respect_opinion opinion = 15 years = 3 }
+    scope:kehillah_messianic_claimant = {
+        add_prestige = 50
+        if = { limit = { has_personal_tenet = tenet_kehillah_messianic_hope } add_piety = 50 }
+        if = {
+            limit = { is_ai = no }
+            send_interface_toast = {
+                type = event_toast_text_and_effect_good
+                title = kehillah_messianic_pledge_received
+                desc = kehillah_messianic_pledge_received_desc
+                left_icon = scope:kehillah_messianic_supporter
+            }
+        }
+    }
+}
+# Native pilgrimage on_complete: character host, scope:activity still alive.
+kehillah_complete_sacrifice_intent_effect = {
+    if = {
+        limit = { has_activity_intent = kehillah_offer_sacrifice_intent }
+        if = {
+            limit = {
+                kehillah_sacrifice_destination_trigger = yes
+                gold >= minor_gold_value
+                NOT = { var:kehillah_sacrifice_reward_year ?= current_year }
+                OR = { NOT = { kehillah_uses_gerizim_service_trigger = yes } current_month = 4 }
+            }
+            add_gold = { value = minor_gold_value multiply = -1 }
+            add_piety = 200
+            add_stress = -20
+            if = { limit = { has_personal_tenet = tenet_kehillah_temple_service } add_piety = 100 }
+            add_character_modifier = { modifier = kehillah_sacrifice_completed_modifier years = 3 }
+            set_variable = { name = kehillah_sacrifice_reward_year value = current_year }
+            complete_activity_intent = yes
+            trigger_event = kehillah_revival.0040
+        }
+        else = { trigger_event = kehillah_revival.0041 }
+    }
+}
+# Called only after a successful communal sermon. No additional study action.
+kehillah_revival_sermon_effect = {
+    if = {
+        limit = { kehillah_has_messianic_hope_trigger = yes has_character_flag = kehillah_messianic_mission_active }
+        add_prestige = 25
+        if = { limit = { has_personal_tenet = tenet_kehillah_messianic_hope } add_piety = 25 }
+    }
+    if = {
+        limit = { has_personal_tenet = tenet_kehillah_prophetic_revelation }
+        add_piety = 25
+    }
+}

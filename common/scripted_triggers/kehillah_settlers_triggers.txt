@@ -7,12 +7,12 @@
 # Scope: a county; scope:kehillah_mother_leader saved. Would its lord
 # take Jewish settlers, and is it free of a community, settled enough,
 # at peace and within reach of the mother community?
-# Scope: a county. Could a Jewish community be founded here at all? One
-# rule for every founding (Daniel 2026-10-13): settlers sent out, an
-# adventurer founding where he stands, exiles resettling. A realm that
-# allows Jewish settlement, near the existing diaspora or invited
-# (Encouraged); settled enough; at peace; not crowding a community.
-kehillah_founding_site_trigger = {
+# Scope: a county. The non-distance requirements shared by every founding
+# route: a settled, peaceful county in a realm that permits Jewish settlement,
+# with no existing Kehillah in that county. A player-controlled Jewish
+# adventurer may use these requirements worldwide; settlers, exiles and AI
+# adventurers also use the diaspora/reach wrapper below.
+kehillah_founding_site_base_trigger = {
 	# Name the candidate county: inside a community's domicile_location
 	# scope, `prev` is the community title, not this county (live 2026-10-13:
 	# the rule was false for every county on the map).
@@ -21,39 +21,43 @@ kehillah_founding_site_trigger = {
 	exists = holder.top_liege.primary_title
 	holder = { is_at_war = no }
 	development_level >= kehillah_natural_founding_min_development
-	OR = {
-		faith.religion = religion:christianity_religion
-		faith.religion = religion:islam_religion
-	}
 	holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_allowed_trigger = yes }
+	NOT = {
+		any_in_global_list = {
+			variable = kehillah_registered_communities
+			exists = holder.domicile.domicile_location.county
+			holder.domicile.domicile_location.county = scope:kehillah_site_county
+		}
+	}
+}
+
+# Scope: a county. The ordinary founding rule for settlers, exiles and AI
+# adventurers: the shared site requirements plus a local diaspora connection
+# or an Encouraged host realm. Adjacent counties are intentionally valid even
+# where their map centres are closer than the former spacing radius.
+kehillah_founding_site_trigger = {
+	kehillah_founding_site_base_trigger = yes
 	OR = {
 		holder.top_liege.primary_title = { kehillah_jewish_settlement_policy_encouraged_trigger = yes }
 		any_in_global_list = {
 			variable = kehillah_registered_communities
 			exists = holder.domicile.domicile_location
-			holder.domicile.domicile_location = {
-				squared_distance = {
-					target = scope:kehillah_site_county.title_province
-					# A Wales away (live 2026-10-13: an Ireland around 19
-					# communities covered most of the map, Krakow and Gyor
-					# included). Settlers still reach an Ireland from their
-					# own mother community (kehillah_settlers_destination_
-					# trigger); farther needs an invitation.
-					value <= squared_distance_small
-				}
-			}
-		}
-	}
-	NOT = {
-		any_in_global_list = {
-			variable = kehillah_registered_communities
-			exists = holder.domicile.domicile_location
 			OR = {
-				holder.domicile.domicile_location.county = scope:kehillah_site_county
+				# County adjacency is a real local connection, unlike the
+				# former arbitrary 60-pixel exclusion. It also covers large
+				# counties whose centres fall outside the small distance band.
+				holder.domicile.domicile_location.county = {
+					any_neighboring_county = { this = scope:kehillah_site_county }
+				}
 				holder.domicile.domicile_location = {
 					squared_distance = {
 						target = scope:kehillah_site_county.title_province
-						value < kehillah_settlers_min_spacing_squared
+						# A Wales away (live 2026-10-13: an Ireland around 19
+						# communities covered most of the map, Krakow and Gyor
+						# included). Settlers still reach an Ireland from their
+						# own mother community (kehillah_settlers_destination_
+						# trigger); farther needs an invitation.
+						value <= squared_distance_small
 					}
 				}
 			}

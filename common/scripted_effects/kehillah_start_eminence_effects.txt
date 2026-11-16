@@ -1,0 +1,288 @@
+# =====================================================================
+# HISTORICAL EMINENCE AT THE START. ADDED 2026-11-14 at Daniel's request:
+# "based on the known greatness of each community in 1066 and 1178, add
+# more or less sefarim to each library and more or less starting
+# buildings to its domicile."
+#
+# Each authored community gets kehillah_start_eminence on its title, 1-4,
+# for the 1066 and 1178 bookmarks (867 is untouched):
+#   1 modest       a small congregation
+#   2 established  a settled community with its basic institutions
+#   3 major        a regional center of learning and trade
+#   4 great        one of the great centers of the Jewish world
+# The table is editorial; its reasons are in
+# docs/implementation/2026-11-14-lost-communities-and-start-eminence.md.
+#
+# The tier decides three things, all once, at game start:
+#   - the Quarter's starting buildings (below);
+#   - the library seed (kehillah_seed_starting_library_effect reads the
+#     tier: more Talmud orders and other works for a greater community);
+#   - the county's remembered peak (kehillah_history_peak), so a place
+#     that is later destroyed remembers what it had been.
+# Pillars are not set here. Day three's V20 snapshot computes them from
+# the buildings, so a greater Quarter opens with higher pillars through
+# the same visible baseline contributors as every other Kehillah.
+#
+# Runtime-founded communities have no tier and keep the old seeding.
+# =====================================================================
+
+# Scope: a community title in kehillah_registered_communities, at game
+# start, before kehillah_seed_starting_library_effect.
+kehillah_apply_start_eminence_effect = {
+	if = {
+		limit = {
+			exists = holder
+			holder = { exists = domicile }
+			NOT = { has_variable = kehillah_start_eminence_applied }
+		}
+		set_variable = { name = kehillah_start_eminence_applied value = yes }
+		# 2026-11-15: usually already set by kehillah_seed_community_effect,
+		# which sizes the founding families by it.
+		if = {
+			limit = { NOT = { has_variable = kehillah_start_eminence } }
+			kehillah_set_start_eminence_effect = yes
+		}
+		remove_variable = kehillah_family_scale_override
+		if = {
+			limit = { has_variable = kehillah_start_eminence }
+			# The remembered height starts one step above the tier: a
+			# great center (4) has been a great light of the diaspora (5).
+			if = {
+				limit = { has_variable = kehillah_history_county }
+				var:kehillah_history_county = {
+					kehillah_history_raise_peak_effect = { PEAK = 2 }
+				}
+				if = {
+					limit = { var:kehillah_start_eminence >= 2 }
+					var:kehillah_history_county = { kehillah_history_raise_peak_effect = { PEAK = 3 } }
+				}
+				if = {
+					limit = { var:kehillah_start_eminence >= 3 }
+					var:kehillah_history_county = { kehillah_history_raise_peak_effect = { PEAK = 4 } }
+				}
+				if = {
+					limit = { var:kehillah_start_eminence >= 4 }
+					var:kehillah_history_county = { kehillah_history_raise_peak_effect = { PEAK = 5 } }
+				}
+			}
+			save_scope_as = kehillah_eminence_title
+			holder = { kehillah_grant_start_buildings_effect = yes }
+		}
+	}
+}
+
+# Scope: a community title. The table. Two bookmarks; anything else keeps
+# no tier.
+kehillah_set_start_eminence_effect = {
+	if = {
+		limit = {
+			current_date >= 1066.1.1
+			current_date < 1100.1.1
+		}
+		if = {
+			limit = {
+				OR = {
+					this = title:d_kehillah_baghdad
+					this = title:d_kehillah_fustat
+					this = title:d_kehillah_granada
+					this = title:d_kehillah_lucena
+					this = title:d_kehillah_mainz
+					this = title:d_kehillah_worms
+				}
+			}
+			set_variable = { name = kehillah_start_eminence value = 4 }
+		}
+		else_if = {
+			limit = {
+				OR = {
+					this = title:d_kehillah_toledo
+					this = title:d_kehillah_cordoba
+					this = title:d_kehillah_narbonne
+					this = title:d_kehillah_troyes
+					this = title:d_kehillah_rome
+					this = title:d_kehillah_jerusalem
+					this = title:d_kehillah_constantinople
+					this = title:d_kehillah_sura
+					this = title:d_kehillah_fez
+					this = title:d_kehillah_alexandria
+					this = title:d_kehillah_damascus
+					this = title:d_kehillah_palermo
+					this = title:d_kehillah_bari
+					this = title:d_kehillah_isfahan
+					# 2026-11-15 additions
+					this = title:d_kehillah_saragossa
+					this = title:d_kehillah_seville
+					this = title:d_kehillah_otranto
+					this = title:d_kehillah_thebes
+				}
+			}
+			set_variable = { name = kehillah_start_eminence value = 3 }
+		}
+		else_if = {
+			limit = {
+				OR = {
+					this = title:d_kehillah_speyer
+					this = title:d_kehillah_vienna
+					this = title:d_kehillah_auxerre
+					this = title:d_kehillah_gerona
+					this = title:d_kehillah_huesca
+					this = title:d_kehillah_burgos
+				}
+			}
+			set_variable = { name = kehillah_start_eminence value = 1 }
+		}
+		else = {
+			# Cologne, Rouen, Paris, Orleans, Prague, Beziers, Lunel,
+			# Mahdia, Balkh, Sana'a and any other authored 1066 seat.
+			set_variable = { name = kehillah_start_eminence value = 2 }
+		}
+	}
+	else_if = {
+		limit = {
+			current_date >= 1150.1.1
+			current_date < 1250.1.1
+		}
+		if = {
+			limit = {
+				OR = {
+					this = title:d_kehillah_baghdad
+					this = title:d_kehillah_fustat
+					this = title:d_kehillah_constantinople
+					this = title:d_kehillah_toledo
+					this = title:d_kehillah_narbonne
+					this = title:d_kehillah_lunel
+					this = title:d_kehillah_troyes
+					this = title:d_kehillah_mosul
+				}
+			}
+			set_variable = { name = kehillah_start_eminence value = 4 }
+		}
+		else_if = {
+			limit = {
+				OR = {
+					this = title:d_kehillah_worms
+					this = title:d_kehillah_mainz
+					this = title:d_kehillah_speyer
+					this = title:d_kehillah_cologne
+					this = title:d_kehillah_paris
+					this = title:d_kehillah_posquieres
+					this = title:d_kehillah_rome
+					this = title:d_kehillah_palermo
+					this = title:d_kehillah_damascus
+					this = title:d_kehillah_alexandria
+					this = title:d_kehillah_isfahan
+					this = title:d_kehillah_beziers
+					# 2026-11-15 additions
+					this = title:d_kehillah_thebes
+					this = title:d_kehillah_aleppo
+					this = title:d_kehillah_saragossa
+					this = title:d_kehillah_salerno
+					this = title:d_kehillah_marseille
+					this = title:d_kehillah_barcelona
+					this = title:d_kehillah_regensburg
+					this = title:d_kehillah_hamadan
+				}
+			}
+			set_variable = { name = kehillah_start_eminence value = 3 }
+		}
+		else_if = {
+			limit = {
+				OR = {
+					this = title:d_kehillah_vienna
+					this = title:d_kehillah_york_1178
+					this = title:d_kehillah_tarragona
+				}
+			}
+			set_variable = { name = kehillah_start_eminence value = 1 }
+		}
+		else = {
+			# Rouen, Orleans, Prague, Jerusalem (diminished after 1099),
+			# Bari (razed 1156), Balkh, Sana'a (persecuted c. 1172), London.
+			set_variable = { name = kehillah_start_eminence value = 2 }
+		}
+	}
+}
+
+# Scope: the leader; scope:kehillah_eminence_title is the community.
+#
+# add_domicile_building honours can_construct (see
+# kehillah_worms_developed_start_effect's header for the live error-log
+# evidence), and the upper tiers are gated on pillar bands that are
+# themselves computed from the buildings. So, as Worms does, each pillar
+# is lifted to the Legendary threshold for the grant and then put back
+# exactly as it was; day three's V20 snapshot sets the real opening value.
+# Every add is guarded, so a richer named start (Worms) is never touched.
+kehillah_grant_start_buildings_effect = {
+	scope:kehillah_eminence_title = {
+		kehillah_eminence_lift_pillar_effect = { PILLAR = kehillah_var_greatness }
+		kehillah_eminence_lift_pillar_effect = { PILLAR = kehillah_var_prosperity }
+		kehillah_eminence_lift_pillar_effect = { PILLAR = kehillah_var_stability }
+	}
+	domicile = {
+		# 1 modest: a synagogue and a house of study.
+		kehillah_eminence_add_building_effect = { BUILDING = kehillah_synagogue_01 }
+		kehillah_eminence_add_building_effect = { BUILDING = kehillah_beit_midrash_01 }
+		# 2 established: a mikvah, a hekdesh and market stalls.
+		if = {
+			limit = { scope:kehillah_eminence_title.var:kehillah_start_eminence >= 2 }
+			kehillah_eminence_add_building_effect = { BUILDING = kehillah_mikvah_01 }
+			kehillah_eminence_add_building_effect = { BUILDING = kehillah_hekdesh_01 }
+			kehillah_eminence_add_building_effect = { BUILDING = kehillah_market_stalls_01 }
+		}
+		# 3 major: a larger synagogue, a countinghouse, a scribe's
+		# workshop, a slaughterhouse and craft workshops.
+		if = {
+			limit = { scope:kehillah_eminence_title.var:kehillah_start_eminence >= 3 }
+			kehillah_eminence_add_building_effect = { BUILDING = kehillah_synagogue_02 }
+			kehillah_eminence_add_building_effect = { BUILDING = kehillah_synagogue_03 }
+			kehillah_eminence_add_building_effect = { BUILDING = kehillah_countinghouse_01 }
+			kehillah_eminence_add_building_effect = { BUILDING = kehillah_sofer_workshop_01 }
+			kehillah_eminence_add_building_effect = { BUILDING = kehillah_slaughterhouse_01 }
+			kehillah_eminence_add_building_effect = { BUILDING = kehillah_workshops_01 }
+		}
+		# 4 great: a great synagogue, a house of debate, a second
+		# countinghouse tier and a full market.
+		if = {
+			limit = { scope:kehillah_eminence_title.var:kehillah_start_eminence >= 4 }
+			kehillah_eminence_add_building_effect = { BUILDING = kehillah_synagogue_04 }
+			kehillah_eminence_add_building_effect = { BUILDING = kehillah_beit_midrash_02 }
+			kehillah_eminence_add_building_effect = { BUILDING = kehillah_countinghouse_02 }
+			kehillah_eminence_add_building_effect = { BUILDING = kehillah_market_stalls_02 }
+		}
+	}
+	scope:kehillah_eminence_title = {
+		kehillah_eminence_restore_pillar_effect = { PILLAR = kehillah_var_greatness }
+		kehillah_eminence_restore_pillar_effect = { PILLAR = kehillah_var_prosperity }
+		kehillah_eminence_restore_pillar_effect = { PILLAR = kehillah_var_stability }
+	}
+	# The Quarter record feeds succession restoring and the map.
+	kehillah_record_quarter_effect = yes
+}
+
+# Scope: a domicile.
+kehillah_eminence_add_building_effect = {
+	if = {
+		limit = { NOT = { has_domicile_building_or_higher = $BUILDING$ } }
+		add_domicile_building = $BUILDING$
+	}
+}
+
+# Scope: a community title.
+kehillah_eminence_lift_pillar_effect = {
+	if = {
+		limit = { has_variable = $PILLAR$ }
+		set_variable = { name = kehillah_eminence_saved_$PILLAR$ value = var:$PILLAR$ }
+	}
+	set_variable = { name = $PILLAR$ value = kehillah_band_legendary_threshold }
+}
+
+kehillah_eminence_restore_pillar_effect = {
+	if = {
+		limit = { has_variable = kehillah_eminence_saved_$PILLAR$ }
+		set_variable = { name = $PILLAR$ value = var:kehillah_eminence_saved_$PILLAR$ }
+		remove_variable = kehillah_eminence_saved_$PILLAR$
+	}
+	else = {
+		remove_variable = $PILLAR$
+	}
+}

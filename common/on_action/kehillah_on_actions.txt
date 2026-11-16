@@ -43,6 +43,13 @@ kehillah_on_game_start = {
 		# tags, which it reads (kehillah_jewish_culture_homeland_effects.txt).
 		kehillah_seed_native_jewish_cultures_effect = yes
 		kehillah_history_seed_authored_roster_effect = yes
+		# Seed regional Rabbinic rites before starting community libraries
+		# inspect their holders' rite and choose their founding corpus.
+		kehillah_seed_minhag_yerushalmi_effect = yes
+		kehillah_seed_minhag_sepharad_effect = yes
+		# Static title history sets the historical head; replay the normal
+		# styling/refresh hook because title history does not run on_title_gain.
+		title:d_kehillah_gaonate.holder ?= { kehillah_gaonate_on_gain_effect = yes }
 
 		title:d_kehillah_worms ?= {
 			holder ?= {
@@ -279,6 +286,10 @@ kehillah_on_game_start = {
 		title:d_kehillah_lucca ?= { kehillah_register_start_community_effect = yes }
 		title:d_kehillah_tiberias ?= { kehillah_register_start_community_effect = yes }
 		title:d_kehillah_posquieres ?= { kehillah_register_start_community_effect = yes }
+		# 2026-11-15: the Ibn Daud / Benjamin roster additions
+		# (generated; kehillah_spike_roster_effects.txt).
+		kehillah_register_spike_communities_effect = yes
+		kehillah_register_karaite_communities_effect = yes
 
 		# V16 settlement-network cache. This comes only AFTER the full
 		# registry is complete, so every starting community sees all of its
@@ -311,6 +322,14 @@ kehillah_on_game_start = {
 		# it will need the map-view refresh -- both are "runs once per
 		# already-registered community" and neither fires retroactively on
 		# its own for a community registered later.
+		# 2026-11-14 (Daniel): each authored community's historical
+		# eminence sets its starting buildings and remembered peak, BEFORE
+		# the library seed, which reads the same tier
+		# (kehillah_start_eminence_effects.txt).
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			kehillah_apply_start_eminence_effect = yes
+		}
 		every_in_global_list = {
 			variable = kehillah_registered_communities
 			kehillah_seed_starting_library_effect = yes
@@ -534,9 +553,16 @@ kehillah_on_title_gain = {
 		# a day later -- which logs its own verdict either way, so this
 		# change measures itself rather than asking to be believed.
 		# ---------------------------------------------------------
+		# 2026-11-14: NOT a landless adventurer. An adventurer who wins a
+		# seat (Stand for the Seat) HAS a domicile, his camp, so the guard
+		# above would pass, and change_government would destroy the camp
+		# without making a Quarter: the 2026-09-20 Game Over fuse. He takes
+		# the else_if branch instead, and kehillah_succession.0010 builds
+		# his Quarter with create_adventurer_title, as founding does.
 		if = {
 			limit = {
 				NOT = { government_has_flag = government_is_kehillah }
+				NOT = { has_government = landless_adventurer_government }
 				any_held_title = { is_landless_type_title = yes }
 				exists = domicile
 			}
@@ -584,7 +610,13 @@ kehillah_on_title_gain = {
 		# safety net for the appointed-successor case where no charter
 		# existed yet (kehillah_maintain_host_charter_effect no-ops
 		# instantly if one already does).
-		kehillah_maintain_host_charter_effect = yes
+		# 2026-11-14: not for a landless adventurer still in his camp; his
+		# Quarter does not exist yet, and kehillah_succession.0010 runs
+		# this once it does.
+		if = {
+			limit = { NOT = { has_government = landless_adventurer_government } }
+			kehillah_maintain_host_charter_effect = yes
+		}
 
 		# A new leader takes office with the community's confidence.
 		# Small and deliberate, and separate from the institution's own
@@ -853,7 +885,7 @@ kehillah_quarterly_pulse = {
 		# V36 (2026-10-13): a Cold or Hostile host may make demands; a
 		# Protective or Well-disposed one may grant a favour.
 		kehillah_host_demands_check_effect = yes
-		kehillah_host_favour_check_effect = yes
+		# The favour is now earned by a won Shtadlan audience (2026-11-09).
 		# V37 (2026-10-13): an accusation may be raised against the community.
 		# V41 step 4a: one incident director replaces the separate
 		# accusation and mission checks.

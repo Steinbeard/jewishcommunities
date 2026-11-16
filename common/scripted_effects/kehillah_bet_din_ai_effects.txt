@@ -1,0 +1,310 @@
+﻿# =====================================================================
+# AI-hosted Sittings of the Bet Din through a landed stand-in.
+# Design: docs/spec/2026-11-15-ai-hosted-sittings-via-stand-in.md
+#
+# CK3's planner never creates an activity for a landless host, but a
+# landed AI can create one and hand it over with set_activity_host (live
+# probe, docs/testing/2026-10-19-activity-host-handoff-probe-plan.md).
+# Every debug line starts KEHILLAH_BD_AI.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# Convene a Sitting for this AI leader. Scope: a leader who passes
+# kehillah_bet_din_ai_can_convene_trigger. Called by the yearly pulse
+# (common/on_action/kehillah_bet_din_ai_on_actions.txt) and the debug
+# events.
+# ---------------------------------------------------------------------
+kehillah_bet_din_ai_convene_effect = {
+	save_scope_as = kehillah_bd_ai_leader
+	if = {
+		# A landed Kehillah leader (a landed Nasi) is in the landed planner
+		# pool and plans the Sitting himself.
+		limit = { is_landed = yes }
+		add_character_flag = { flag = kehillah_bet_din_ai_override days = 60 }
+		debug_log = "KEHILLAH_BD_AI ATTEMPT direct (landed Kehillah leader); leader follows"
+		debug_log_scopes = no
+		ai_attempt_to_host_activity = activity_kehillah_bet_din_conference
+	}
+	else = {
+		kehillah_bet_din_ai_pick_stand_in_effect = yes
+		if = {
+			limit = { exists = scope:kehillah_bd_ai_stand_in }
+			scope:kehillah_bd_ai_stand_in = {
+				set_variable = {
+					name = kehillah_bet_din_stand_in_for
+					value = scope:kehillah_bd_ai_leader
+					days = 60
+				}
+				add_character_flag = { flag = kehillah_bet_din_ai_override days = 60 }
+				debug_log = "KEHILLAH_BD_AI ATTEMPT via stand-in; leader then stand-in follow"
+				scope:kehillah_bd_ai_leader = { debug_log_scopes = no }
+				debug_log_scopes = no
+				ai_attempt_to_host_activity = activity_kehillah_bet_din_conference
+			}
+		}
+		else = {
+			debug_log = "KEHILLAH_BD_AI NO_STAND_IN no free landed AI holds or lies above the Quarter's county; leader follows"
+			debug_log_scopes = no
+		}
+	}
+}
+
+# Saves scope:kehillah_bd_ai_stand_in: the Quarter county's holder, then
+# his liege, then the top liege. A candidate at peace is preferred.
+# Scope: the leader.
+kehillah_bet_din_ai_pick_stand_in_effect = {
+	domicile.domicile_location.county.holder ?= {
+		if = {
+			limit = { kehillah_bet_din_stand_in_trigger = yes is_at_war = no }
+			save_scope_as = kehillah_bd_ai_stand_in
+		}
+		else_if = {
+			limit = { liege ?= { kehillah_bet_din_stand_in_trigger = yes is_at_war = no } }
+			liege = { save_scope_as = kehillah_bd_ai_stand_in }
+		}
+		else_if = {
+			limit = { top_liege ?= { kehillah_bet_din_stand_in_trigger = yes is_at_war = no } }
+			top_liege = { save_scope_as = kehillah_bd_ai_stand_in }
+		}
+		else_if = {
+			limit = { kehillah_bet_din_stand_in_trigger = yes }
+			save_scope_as = kehillah_bd_ai_stand_in
+		}
+		else_if = {
+			limit = { liege ?= { kehillah_bet_din_stand_in_trigger = yes } }
+			liege = { save_scope_as = kehillah_bd_ai_stand_in }
+		}
+		else_if = {
+			limit = { top_liege ?= { kehillah_bet_din_stand_in_trigger = yes } }
+			top_liege = { save_scope_as = kehillah_bd_ai_stand_in }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# The handoff. root = the activity, from the Sitting's on_start, when
+# scope:host (the planner) carries var:kehillah_bet_din_stand_in_for.
+# on_start runs at creation, before the stand-in travels; in the probe he
+# was never a participant.
+# ---------------------------------------------------------------------
+kehillah_bet_din_stand_in_handoff_effect = {
+	scope:host = { save_scope_as = kehillah_bd_ai_stand_in }
+	scope:kehillah_bd_ai_stand_in.var:kehillah_bet_din_stand_in_for = {
+		save_scope_as = kehillah_bd_ai_leader
+	}
+	if = {
+		limit = {
+			scope:kehillah_bd_ai_leader = {
+				is_alive = yes
+				is_imprisoned = no
+				government_has_flag = government_is_kehillah
+				NOT = { exists = involved_activity }
+				exists = domicile
+				domicile.domicile_location = root.activity_location
+			}
+		}
+		scope:kehillah_bd_ai_leader = { add_to_activity_without_travel = root }
+		set_activity_host = scope:kehillah_bd_ai_leader
+		if = {
+			limit = { scope:kehillah_bd_ai_stand_in = { is_participant_in_activity = root } }
+			scope:kehillah_bd_ai_stand_in = { remove_from_activity = root }
+		}
+		set_variable = { name = kehillah_bet_din_via_stand_in value = scope:kehillah_bd_ai_stand_in }
+		set_variable = { name = kehillah_bet_din_await_gathering value = yes }
+		scope:kehillah_bd_ai_stand_in = {
+			remove_variable = kehillah_bet_din_stand_in_for
+			remove_character_flag = kehillah_bet_din_ai_override
+		}
+		scope:kehillah_bd_ai_leader = {
+			add_piety = {
+				value = kehillah_bet_din_host_piety_cost
+				multiply = -1
+			}
+			add_character_flag = {
+				flag = kehillah_bet_din_ai_recently_convened
+				days = kehillah_bet_din_ai_cooldown_days
+			}
+			trigger_event = kehillah_bet_din_ai.0001
+			trigger_event = {
+				id = kehillah_bet_din_ai.0002
+				days = kehillah_bet_din_stand_in_gathering_days
+			}
+		}
+		if = {
+			limit = { activity_host = scope:kehillah_bd_ai_leader }
+			debug_log = "KEHILLAH_BD_AI HANDOFF PASS; leader then stand-in follow"
+		}
+		else = {
+			debug_log = "KEHILLAH_BD_AI HANDOFF FAIL host did not change; leader then stand-in follow"
+		}
+		scope:kehillah_bd_ai_leader = { debug_log_scopes = no }
+		scope:kehillah_bd_ai_stand_in = { debug_log_scopes = no }
+	}
+	else = {
+		debug_log = "KEHILLAH_BD_AI HANDOFF ABORT leader is unavailable or away from the venue; leader follows"
+		scope:kehillah_bd_ai_leader = { debug_log_scopes = no }
+		scope:kehillah_bd_ai_stand_in = {
+			remove_variable = kehillah_bet_din_stand_in_for
+			remove_character_flag = kehillah_bet_din_ai_override
+		}
+		invalidate_activity = root
+	}
+}
+
+# ---------------------------------------------------------------------
+# Choose the leader's intent. The stand-in could only take Justice: the
+# Synod and Sanhedrin intents need the Kehillah government. Scope: the
+# leader, now host (kehillah_bet_din_ai.0001).
+# ---------------------------------------------------------------------
+kehillah_bet_din_ai_choose_intent_effect = {
+	if = {
+		limit = { kehillah_bet_din_sanhedrin_intent_valid_trigger = yes }
+		set_activity_intent = kehillah_bet_din_sanhedrin_intent
+	}
+	else_if = {
+		limit = { kehillah_bet_din_synod_intent_valid_trigger = yes }
+		random = {
+			chance = kehillah_bet_din_ai_synod_chance
+			set_activity_intent = kehillah_bet_din_synod_intent
+		}
+	}
+	if = {
+		limit = {
+			NOT = { has_activity_intent = kehillah_bet_din_sanhedrin_intent }
+			NOT = { has_activity_intent = kehillah_bet_din_synod_intent }
+		}
+		set_activity_intent = kehillah_bet_din_justice_intent
+		debug_log = "KEHILLAH_BD_AI INTENT justice"
+	}
+	else_if = {
+		limit = { has_activity_intent = kehillah_bet_din_sanhedrin_intent }
+		debug_log = "KEHILLAH_BD_AI INTENT sanhedrin"
+	}
+	else = {
+		debug_log = "KEHILLAH_BD_AI INTENT synod"
+	}
+}
+
+# ---------------------------------------------------------------------
+# Bring in the court the leader would have invited himself. Scope: the
+# leader; scope:host = the leader and scope:activity are saved by
+# kehillah_bet_din_ai.0001, so kehillah_bet_din_eligible_judge_trigger and
+# kehillah_bet_din_judge_score_value resolve against him. AI judges and
+# delegates are added outright, so turnout cannot fall below quorum by
+# chance; players are only invited.
+# ---------------------------------------------------------------------
+kehillah_bet_din_ai_gather_court_effect = {
+	kehillah_save_community_rabbi_effect = yes
+
+	every_courtier = {
+		limit = {
+			kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host }
+			kehillah_bet_din_ai_guest_candidate_trigger = yes
+		}
+		add_to_temporary_list = kehillah_bd_ai_judges
+	}
+	every_independent_ruler = {
+		limit = {
+			kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host }
+			kehillah_bet_din_ai_guest_candidate_trigger = yes
+		}
+		add_to_temporary_list = kehillah_bd_ai_judges
+	}
+
+	ordered_in_list = {
+		list = kehillah_bd_ai_judges
+		limit = {
+			is_ai = yes
+			NAND = {
+				exists = scope:kehillah_community_rabbi
+				this = scope:kehillah_community_rabbi
+			}
+		}
+		order_by = kehillah_bet_din_judge_score_value
+		max = kehillah_bet_din_stand_in_forced_judges
+		check_range_bounds = no
+		kehillah_bet_din_ai_add_guest_effect = yes
+	}
+
+	every_in_list = {
+		list = kehillah_bd_ai_judges
+		limit = { is_ai = no }
+		kehillah_bet_din_ai_invite_player_effect = yes
+	}
+
+	if = {
+		limit = {
+			OR = {
+				has_activity_intent = kehillah_bet_din_synod_intent
+				has_activity_intent = kehillah_bet_din_sanhedrin_intent
+			}
+		}
+		every_independent_ruler = {
+			limit = {
+				NOT = { this = scope:host }
+				NOT = { is_in_list = kehillah_bd_ai_judges }
+				government_has_flag = government_is_kehillah
+				kehillah_bet_din_ai_guest_candidate_trigger = yes
+				OR = {
+					scope:host = { has_activity_intent = kehillah_bet_din_sanhedrin_intent }
+					kehillah_shares_rite_trigger = { OTHER = scope:host }
+				}
+			}
+			add_to_temporary_list = kehillah_bd_ai_delegates
+		}
+		ordered_in_list = {
+			list = kehillah_bd_ai_delegates
+			limit = { is_ai = yes }
+			order_by = kehillah_bet_din_judge_score_value
+			max = kehillah_bet_din_stand_in_forced_delegates
+			check_range_bounds = no
+			kehillah_bet_din_ai_add_guest_effect = yes
+		}
+		every_in_list = {
+			list = kehillah_bd_ai_delegates
+			limit = { is_ai = no }
+			kehillah_bet_din_ai_invite_player_effect = yes
+		}
+	}
+}
+
+# Scope: an AI guest; needs scope:activity.
+kehillah_bet_din_ai_add_guest_effect = {
+	if = {
+		limit = { location = scope:activity.activity_location }
+		add_to_activity_without_travel = scope:activity
+	}
+	else = {
+		add_to_activity = scope:activity
+	}
+	debug_log = "KEHILLAH_BD_AI GUEST added; guest follows"
+	debug_log_scopes = no
+}
+
+# Scope: a player character; needs scope:activity.
+kehillah_bet_din_ai_invite_player_effect = {
+	invite_to_activity = scope:activity
+	debug_log = "KEHILLAH_BD_AI INVITE player invited; player follows"
+	debug_log_scopes = no
+}
+
+# ---------------------------------------------------------------------
+# Open a stand-in Sitting's docket once the court has had time to gather.
+# Scope: the host (kehillah_bet_din_ai.0002), with scope:host and
+# scope:activity saved. Same calls as phase_bet_din_case_1.
+# ---------------------------------------------------------------------
+kehillah_bet_din_ai_open_waiting_docket_effect = {
+	scope:activity = {
+		remove_variable = kehillah_bet_din_docket_waiting
+		progress_activity_phase_after = { days = kehillah_bet_din_case_phase_days }
+	}
+	kehillah_bet_din_open_docket_effect = yes
+	if = {
+		limit = { exists = scope:activity.var:kehillah_bet_din_judge3 }
+		kehillah_bet_din_draw_case_effect = yes
+		debug_log = "KEHILLAH_BD_AI DOCKET opened with a full bench"
+	}
+	else = {
+		debug_log = "KEHILLAH_BD_AI DOCKET no quorum; the sitting is dissolved"
+	}
+}

@@ -1,0 +1,62 @@
+﻿# =====================================================================
+# AI-hosted Sittings of the Bet Din -- hidden follow-ups to the stand-in
+# handoff (kehillah_bet_din_stand_in_handoff_effect).
+# Design: docs/spec/2026-11-15-ai-hosted-sittings-via-stand-in.md
+# =====================================================================
+
+namespace = kehillah_bet_din_ai
+
+# Fired on the leader the moment the Sitting is handed to him: choose his
+# intent, then bring in his court and invite players.
+kehillah_bet_din_ai.0001 = {
+	type = character_event
+	hidden = yes
+
+	trigger = {
+		exists = involved_activity
+		involved_activity = {
+			has_activity_type = activity_kehillah_bet_din_conference
+			activity_host = root
+		}
+	}
+
+	immediate = {
+		involved_activity = { save_scope_as = activity }
+		save_scope_as = host
+		kehillah_bet_din_ai_choose_intent_effect = yes
+		kehillah_bet_din_ai_gather_court_effect = yes
+	}
+}
+
+# Fired on the leader kehillah_bet_din_stand_in_gathering_days after the
+# handoff. If phase 1 is already holding the docket, open it now. If phase 1
+# has not started yet (the engine delayed the start for the stand-in's own
+# guests), clear the wait so phase 1 opens it normally.
+kehillah_bet_din_ai.0002 = {
+	type = character_event
+	hidden = yes
+
+	trigger = {
+		exists = involved_activity
+		involved_activity = {
+			has_activity_type = activity_kehillah_bet_din_conference
+			activity_host = root
+			has_variable = kehillah_bet_din_await_gathering
+		}
+	}
+
+	immediate = {
+		involved_activity = {
+			save_scope_as = activity
+			remove_variable = kehillah_bet_din_await_gathering
+		}
+		save_scope_as = host
+		if = {
+			limit = { scope:activity = { has_variable = kehillah_bet_din_docket_waiting } }
+			kehillah_bet_din_ai_open_waiting_docket_effect = yes
+		}
+		else = {
+			debug_log = "KEHILLAH_BD_AI GATHERED phase 1 not active yet; it will open the docket itself"
+		}
+	}
+}
