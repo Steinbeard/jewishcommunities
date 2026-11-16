@@ -1,4 +1,4 @@
-**Status: Built 2026-11-16; xTiger baseline unchanged; live claim storage, gates and both effects passed; UI activations and claim inheritance unverified.**
+**Status: Built 2026-11-16; xTiger baseline unchanged; live seat interaction and both effects passed; Exilarch UI confirmation and claim inheritance unverified.**
 
 # Community claims and Exilarch recognition
 

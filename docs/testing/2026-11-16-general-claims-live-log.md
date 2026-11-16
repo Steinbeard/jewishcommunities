@@ -1,4 +1,4 @@
-**Status: Partial isolated live verification 2026-11-16; history claim, interaction predicates, seat transfer and office effect passed; normal interaction and recognition UI activations remain unrun.**
+**Status: General seat interaction and Dayyan handover live-verified 2026-11-16; Exilarch grant effect passed but its UI confirmation remains unrun.**
 
 # General community claims and Exilarch recognition
 
@@ -77,13 +77,52 @@ Exilarch, or Dynasty_house errors. It did contain 7,074 repeated
 game-start actions, plus test-run-file encoding and console-debug warnings;
 these were not caused by the claim and office effects.
 
+## Third session: actual seat interaction
+
+Luna booted a fresh isolated game as PID 8552, confirmed David's history
+claim again, moved him to Baghdad, and checked the interaction gates.
+Using the character finder, it opened Parnas Ezra's right-click menu,
+then Diplomacy and **more...**, where **Press Claim to Community Seat**
+appeared. The tester confirmed it in the UI. Gold fell from 756 to 656
+and prestige from 1400 to 1250. CK3 logged the generic transfer effect.
+David held Baghdad as primary with Kehillah government and a Quarter;
+his camp was gone, his used claim was consumed, the caretaker gained the
+custom return claim, and David did not become Nagid.
+
+The UI route exposed a difference from the direct event probe: Isaac was
+not appointed Baghdad Dayyan. The interaction's debug scopes showed
+`kehillah_claim_camp_dayyan` correctly captured Isaac, but `root` was
+empty. The effect had checked `is_courtier_of = root`, so that condition
+failed under a character interaction. Source now checks
+`is_courtier_of = scope:kehillah_claimant`; this fix requires a fresh
+boot and UI rerun. No other transfer scope error appeared.
+
+## Fourth session: corrected Dayyan handover
+
+Luna booted a fresh isolated 1066 game as PID 31268. David's history
+claim was present and the Baghdad interaction gates passed. Before the
+transfer the character finder showed Yitzhak ibn Sakri as **Your Dayyan**.
+Luna took the seat through Ezra's actual character interaction; the
+100-gold/150-prestige cost was charged. A post-transfer probe confirmed
+Baghdad primary, Kehillah government, Quarter present, old camp gone,
+David not Nagid, and Isaac `9003160` both David's courtier and his
+community council Dayyan. The new effect checks the saved claimant scope
+and moves the former camp Dayyan into that court before appointing him.
+No unset-root or null-courtier error appeared in the fresh error log.
+
+The shortened Exilarch decision detail opened with its requirements
+checked. Its confirmation control remained below the isolated window's
+visible panel; scrolling and Enter did not activate it. The grant effect
+and post-state remain proven by the earlier direct probe, while this UI
+activation is unrun. Luna stopped only PID 31268 and confirmed no CK3
+process remained.
+
 ## Remaining live checks
 
-From a fresh 1066 start, inspect and activate the generic character
-interaction on the caretaker; this must verify its UI visibility, actual
-cost deduction, and that `on_auto_accept` reaches the tested transfer
-effect. Then activate the separate Exilarch decision through the UI and
-verify office holder and unchanged community primary title. Save/reload
-of this revised two-step route remains unrun. The claim-inheritance
-on-death hook is source-checked but not live-tested. A second target or
-claimant would confirm generality beyond the ID-free source audit.
+Activate the separate Exilarch decision through its UI confirmation and
+verify the office holder, unchanged community primary title, and cost.
+The confirm control was clipped in the isolated test window, so this is
+a UI access check rather than an untested grant effect. Save/reload of
+the revised two-step route and the claim-inheritance on-death hook remain
+unrun. A second target or claimant would confirm generality beyond the
+ID-free source audit.
