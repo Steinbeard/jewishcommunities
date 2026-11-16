@@ -1,0 +1,169 @@
+﻿# =====================================================================
+# Jewish revolt, fallen realms and Jewish majorities (2026-11-15). See
+# docs/spec/2026-11-15-fallen-realms-revolts-and-jewish-majorities.md.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# The rising's men. Scope: a Kehillah leader raising his community.
+# Mostly townsmen with whatever they can carry: levies plus light foot.
+# Heavier companies only from Preparations for the Rising
+# (var:kehillah_revolt_preparation on the community title, 0-3).
+# ---------------------------------------------------------------------
+kehillah_revolt_levies_value = {
+	value = 300
+	# The county's own people.
+	if = {
+		limit = { exists = domicile.domicile_location.county }
+		add = {
+			value = domicile.domicile_location.county.development_level
+			multiply = 15
+		}
+	}
+	# The householder families and the community's wealth.
+	if = {
+		limit = { exists = primary_title }
+		add = {
+			value = primary_title.kehillah_household_count_value
+			multiply = 80
+		}
+		if = {
+			limit = { primary_title = { has_variable = kehillah_var_prosperity } }
+			add = {
+				value = primary_title.var:kehillah_var_prosperity
+				divide = 4
+			}
+		}
+	}
+	# A messianic rising draws the whole town out.
+	if = {
+		limit = { has_variable = kehillah_revolt_messianic }
+		multiply = 1.5
+	}
+	# A coalition member brings his own town, not the whole duchy.
+	if = {
+		limit = { has_variable = kehillah_revolt_ally_of }
+		multiply = 0.7
+	}
+	round = yes
+	min = 200
+	max = 3000
+}
+
+kehillah_revolt_light_footmen_stacks_value = {
+	value = kehillah_revolt_levies_value
+	divide = 400
+	round = yes
+	min = 1
+	max = 6
+}
+
+# Archers come from any town. One stack, a second for a messianic rising.
+kehillah_revolt_bowmen_stacks_value = {
+	value = 1
+	if = {
+		limit = { has_variable = kehillah_revolt_messianic }
+		add = 1
+	}
+}
+
+# Scope: a Kehillah leader. The level of Preparations for the Rising.
+kehillah_revolt_preparation_level_value = {
+	value = 0
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_revolt_preparation } }
+		value = primary_title.var:kehillah_revolt_preparation
+	}
+}
+
+kehillah_revolt_armored_stacks_value = {
+	value = kehillah_revolt_preparation_level_value
+}
+
+kehillah_revolt_crossbow_stacks_value = {
+	value = kehillah_revolt_preparation_level_value
+	subtract = 1
+	min = 0
+}
+
+kehillah_revolt_horse_stacks_value = {
+	value = 0
+	if = {
+		limit = { kehillah_revolt_preparation_level_value >= 3 }
+		value = 2
+	}
+}
+
+kehillah_revolt_preparation_max = 3
+kehillah_revolt_preparation_gold = 100
+# Percent chance that each preparation is discovered by the host.
+kehillah_revolt_preparation_discovery_chance = 20
+# Preparations decay unused (arms rust, men drift away).
+kehillah_revolt_preparation_years = 15
+kehillah_revolt_cooldown_years = 25
+
+# Pillar changes, on the 0-1000 scale (shown as sizes).
+kehillah_revolt_declare_stability = -60
+kehillah_revolt_victory_greatness = 250
+kehillah_revolt_victory_stability = 120
+kehillah_revolt_defeat_stability = -250
+kehillah_revolt_defeat_prosperity = -150
+kehillah_revolt_white_peace_stability = -80
+kehillah_revolt_discovered_stability = -40
+kehillah_revolt_ally_victory_greatness = 120
+
+# ---------------------------------------------------------------------
+# AI. Scope: a Kehillah leader asked to join a rising.
+# ---------------------------------------------------------------------
+kehillah_revolt_join_ai_value = {
+	value = 20
+	if = { limit = { has_trait = zealous } add = 30 }
+	if = { limit = { has_trait = brave } add = 15 }
+	if = { limit = { has_trait = wrathful } add = 10 }
+	if = { limit = { has_trait = craven } add = -30 }
+	if = { limit = { has_trait = content } add = -15 }
+	if = { limit = { kehillah_revolt_county_is_jewish_trigger = yes } add = 30 }
+	if = {
+		limit = {
+			exists = scope:kehillah_revolt_leader
+			scope:kehillah_revolt_leader = { has_variable = kehillah_revolt_messianic }
+			kehillah_has_messianic_hope_trigger = yes
+		}
+		add = 40
+	}
+	if = {
+		limit = { exists = scope:kehillah_revolt_leader }
+		add = {
+			value = "opinion(scope:kehillah_revolt_leader)"
+			divide = 3
+		}
+	}
+	min = 0
+}
+
+# ---------------------------------------------------------------------
+# JEWISH MAJORITY. Scope: a Kehillah leader. Yearly percent chance that
+# his county turns to the community's faith and culture. Only a very,
+# very large community qualifies (kehillah_majority_community_trigger);
+# it rises with the county's smallness (a small town is more easily
+# outnumbered) and the community's Prosperity beyond Legendary.
+# ---------------------------------------------------------------------
+kehillah_majority_yearly_chance_value = {
+	value = 1
+	if = {
+		limit = { exists = domicile.domicile_location.county }
+		if = {
+			limit = { domicile.domicile_location.county.development_level < 10 }
+			add = 1
+		}
+		if = {
+			limit = { domicile.domicile_location.county.development_level >= 30 }
+			add = -0.5
+		}
+	}
+	if = {
+		limit = { primary_title ?= { kehillah_household_count_value >= 6 } }
+		add = 1
+	}
+	min = 0.5
+}
+kehillah_majority_min_households = 5

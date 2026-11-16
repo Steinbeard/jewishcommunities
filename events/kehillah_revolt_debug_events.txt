@@ -1,0 +1,104 @@
+﻿# =====================================================================
+# Console-only probes for the Jewish revolt, fallen realms and Jewish
+# majorities (2026-11-15). Run on the character named, then read
+# debug.log. See the checklist in
+# docs/spec/2026-11-15-fallen-realms-revolts-and-jewish-majorities.md.
+#   .1  (Kehillah leader) report revolt eligibility and the men it raises
+#   .2  (Kehillah leader) make his county Jewish (revolt becomes available)
+#   .3  (Kehillah leader) set Preparations for the Rising to 3
+#   .4  (Kehillah leader) force the Jewish-majority conversion now
+#   .5  (landless Jew, not a Kehillah leader) act as a fallen ruler whose
+#       last county was where he stands; opens kehillah_fallen_realm.0001
+# =====================================================================
+namespace = kehillah_revolt_debug
+
+kehillah_revolt_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { kehillah_revolt_shown_trigger = yes }
+			debug_log = "REVOLT: shown"
+		}
+		else = { debug_log = "REVOLT: not shown (not a landless Jewish Kehillah leader)" }
+		if = {
+			limit = { kehillah_revolt_county_is_jewish_trigger = yes }
+			debug_log = "REVOLT: county is Jewish"
+		}
+		else = { debug_log = "REVOLT: county is NOT Jewish" }
+		if = {
+			limit = { kehillah_revolt_has_foreign_suzerain_trigger = yes }
+			debug_log = "REVOLT: has a non-Jewish suzerain"
+		}
+		else = { debug_log = "REVOLT: no non-Jewish suzerain" }
+		if = {
+			limit = { kehillah_revolt_can_rise_trigger = yes }
+			debug_log = "REVOLT: can rise"
+		}
+		else = { debug_log = "REVOLT: cannot rise" }
+		if = {
+			limit = { kehillah_revolt_can_be_messianic_trigger = yes }
+			debug_log = "REVOLT: may be messianic"
+		}
+		if = {
+			limit = { kehillah_majority_community_trigger = yes }
+			debug_log = "REVOLT: community qualifies as a county majority"
+		}
+		else = { debug_log = "REVOLT: community does not qualify as a county majority" }
+		debug_log = "REVOLT: levies [ROOT.Char.MakeScope.ScriptValue('kehillah_revolt_levies_value')], light foot stacks [ROOT.Char.MakeScope.ScriptValue('kehillah_revolt_light_footmen_stacks_value')], preparation [ROOT.Char.MakeScope.ScriptValue('kehillah_revolt_preparation_level_value')], majority chance [ROOT.Char.MakeScope.ScriptValue('kehillah_majority_yearly_chance_value')]"
+		debug_log_scopes = yes
+	}
+}
+
+kehillah_revolt_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county ?= {
+			set_county_faith = root.faith
+		}
+		debug_log = "REVOLT DEBUG: county set to the leader's faith"
+	}
+}
+
+kehillah_revolt_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		primary_title ?= {
+			set_variable = { name = kehillah_revolt_preparation value = 3 years = 15 }
+		}
+		debug_log = "REVOLT DEBUG: preparation set to 3"
+	}
+}
+
+kehillah_revolt_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { exists = domicile.domicile_location.county }
+			kehillah_majority_convert_county_effect = yes
+		}
+	}
+}
+
+kehillah_revolt_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { exists = location.county }
+			add_to_variable_list = { name = kehillah_fallen_lost_counties target = location.county }
+			location.county.holder.top_liege ?= {
+				save_scope_as = kehillah_debug_conqueror
+			}
+			if = {
+				limit = { exists = scope:kehillah_debug_conqueror }
+				set_variable = { name = kehillah_fallen_conqueror value = scope:kehillah_debug_conqueror days = 60 }
+			}
+			trigger_event = kehillah_fallen_realm.0001
+			debug_log = "REVOLT DEBUG: fallen-ruler event opened"
+		}
+	}
+}

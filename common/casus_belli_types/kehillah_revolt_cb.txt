@@ -1,0 +1,82 @@
+﻿# =====================================================================
+# THE JEWISH REVOLT (2026-11-15, Daniel's request; design and spike:
+# docs/spec/2026-11-15-fallen-realms-revolts-and-jewish-majorities.md).
+#
+# A landless Kehillah leader whose county is Jewish-majority rises against
+# the realm that hosts him, for that county or its whole de jure duchy.
+# Built on the Mob's live-proven landless-attacker shape (kehillah_mob_cb):
+# group = event and ai = no, so only script declares it
+# (kehillah_revolt_rise_effect, from the Raise the Banner decision).
+#
+# target_titles = none on purpose: the prize is stored on the leader
+# (var:kehillah_revolt_target, a county or duchy), so the engine never
+# re-validates title targeting against a landless attacker. on_victory
+# hands over every county of that title that lies in the defender's realm
+# (kehillah_revolt_victory_effect), the live-verified grant order of
+# kehillah_grant_community_county_effect.
+# =====================================================================
+kehillah_jewish_revolt_cb = {
+	icon = peasant_war
+	group = event
+	ai = no
+	allow_hostages = no
+	cost = {}
+
+	allowed_for_character = {
+		government_has_flag = government_is_kehillah
+		has_variable = kehillah_revolt_target
+	}
+	allowed_against_character = {
+		always = yes
+	}
+
+	target_titles = none
+	target_top_liege_if_outside_realm = no
+
+	should_invalidate = {
+		OR = {
+			NOT = { exists = scope:attacker }
+			scope:attacker = { NOT = { has_variable = kehillah_revolt_target } }
+		}
+	}
+
+	max_attacker_score_from_battles = 60
+	max_defender_score_from_battles = 100
+	max_attacker_score_from_occupation = 100
+	max_defender_score_from_occupation = 0
+	full_occupation_by_defender_gives_victory = no
+	landless_attacker_needs_armies = yes
+	attacker_capital_gives_war_score = no
+	attacker_wargoal_percentage = 0.8
+
+	war_name = "KEHILLAH_REVOLT_WAR_NAME"
+	on_invalidated_desc = msg_invalidate_war_title
+
+	on_declaration = {
+		scope:defender = {
+			add_opinion = {
+				modifier = kehillah_revolt_rebel_opinion
+				target = scope:attacker
+			}
+		}
+		debug_log = "kehillah_jewish_revolt_cb: declared"
+	}
+
+	on_victory_desc = { desc = kehillah_jewish_revolt_cb_victory_desc }
+	on_victory = {
+		scope:attacker = { kehillah_revolt_victory_effect = yes }
+		debug_log = "kehillah_jewish_revolt_cb: attacker victory"
+	}
+
+	on_white_peace_desc = { desc = kehillah_jewish_revolt_cb_white_peace_desc }
+	on_white_peace = {
+		scope:attacker = { kehillah_revolt_white_peace_effect = yes }
+		debug_log = "kehillah_jewish_revolt_cb: white peace"
+	}
+
+	on_defeat_desc = { desc = kehillah_jewish_revolt_cb_defeat_desc }
+	on_defeat = {
+		scope:attacker = { kehillah_revolt_defeat_effect = yes }
+		debug_log = "kehillah_jewish_revolt_cb: defeat"
+	}
+}
