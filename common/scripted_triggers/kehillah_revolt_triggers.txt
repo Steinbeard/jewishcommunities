@@ -1,0 +1,159 @@
+﻿# =====================================================================
+# Jewish revolt, fallen realms and Jewish majorities (2026-11-15). See
+# docs/spec/2026-11-15-fallen-realms-revolts-and-jewish-majorities.md.
+# =====================================================================
+
+# Scope: a Kehillah leader. His community's county keeps the Jewish faith
+# (the community is the majority there).
+kehillah_revolt_county_is_jewish_trigger = {
+	exists = domicile.domicile_location.county
+	domicile.domicile_location.county.faith.religion = religion:judaism_religion
+}
+
+# Scope: a Kehillah leader. The realm that hosts his county is not ruled
+# from a Jewish throne: there is someone to rise against.
+kehillah_revolt_has_foreign_suzerain_trigger = {
+	exists = domicile.domicile_location.county.holder.top_liege
+	domicile.domicile_location.county.holder.top_liege = {
+		NOT = { this = root }
+		NOT = { faith.religion = religion:judaism_religion }
+	}
+}
+
+# Scope: a Kehillah leader. Shown: a landless community leader.
+kehillah_revolt_shown_trigger = {
+	is_kehillah_leader_trigger = yes
+	is_landed = no
+	faith.religion = religion:judaism_religion
+}
+
+# Scope: a character. Holds a tenet that sanctions taking up arms for the
+# community (Daniel, 2026-11-16): Messianic Hope or Unrelenting Faith,
+# through his faith's rite or as a personal tenet.
+kehillah_revolt_tenet_trigger = {
+	OR = {
+		kehillah_has_messianic_hope_trigger = yes
+		rite ?= { rite_has_tenet = tenet_unrelenting_faith }
+		has_personal_tenet = tenet_unrelenting_faith
+	}
+}
+
+# Scope: a Kehillah leader. May raise the banner now.
+kehillah_revolt_can_rise_trigger = {
+	is_adult = yes
+	custom_tooltip = {
+		text = kehillah_revolt_tenet_tt
+		kehillah_revolt_tenet_trigger = yes
+	}
+	is_imprisoned = no
+	is_incapable = no
+	is_at_war = no
+	custom_tooltip = {
+		text = kehillah_revolt_county_jewish_tt
+		kehillah_revolt_county_is_jewish_trigger = yes
+	}
+	custom_tooltip = {
+		text = kehillah_revolt_foreign_suzerain_tt
+		kehillah_revolt_has_foreign_suzerain_trigger = yes
+	}
+	custom_tooltip = {
+		text = kehillah_revolt_cooldown_tt
+		NOT = { primary_title ?= { has_variable = kehillah_revolt_cooldown } }
+	}
+}
+
+# Scope: a Kehillah leader. May proclaim this rising messianic: he holds
+# Messianic Hope and either already leads a mission or may begin one
+# (the same rule as kehillah_messianic_mission_decision, minus its piety
+# level: the rising itself is the proclamation).
+kehillah_revolt_can_be_messianic_trigger = {
+	kehillah_has_messianic_hope_trigger = yes
+	OR = {
+		has_character_flag = kehillah_messianic_mission_active
+		NOR = {
+			has_character_modifier = kehillah_messianic_claimant_modifier
+			has_character_modifier = kehillah_messianic_disillusion_modifier
+		}
+	}
+}
+
+# Scope: a Kehillah leader, scope:kehillah_revolt_leader and
+# scope:kehillah_revolt_suzerain saved. Can be called to join the rising:
+# a landless Jewish community leader at peace in a county of the same
+# realm.
+kehillah_revolt_coalition_candidate_trigger = {
+	is_kehillah_leader_trigger = yes
+	is_landed = no
+	is_ai = yes
+	NOT = { this = scope:kehillah_revolt_leader }
+	is_adult = yes
+	is_imprisoned = no
+	is_at_war = no
+	faith.religion = religion:judaism_religion
+	exists = domicile.domicile_location.county.holder.top_liege
+	domicile.domicile_location.county.holder.top_liege = scope:kehillah_revolt_suzerain
+}
+
+# Same, for a player: asked by event rather than weighed.
+kehillah_revolt_coalition_player_candidate_trigger = {
+	is_kehillah_leader_trigger = yes
+	is_landed = no
+	is_ai = no
+	NOT = { this = scope:kehillah_revolt_leader }
+	is_adult = yes
+	is_imprisoned = no
+	is_at_war = no
+	faith.religion = religion:judaism_religion
+	exists = domicile.domicile_location.county.holder.top_liege
+	domicile.domicile_location.county.holder.top_liege = scope:kehillah_revolt_suzerain
+}
+
+# ---------------------------------------------------------------------
+# JEWISH MAJORITY. Scope: a Kehillah leader. A very, very large
+# community: Legendary Prosperity, at least five householder families
+# besides the ruling house, and a Synagogue of the fourth level. Its
+# county does not yet keep the community's faith.
+# ---------------------------------------------------------------------
+kehillah_majority_community_trigger = {
+	is_kehillah_leader_trigger = yes
+	is_landed = no
+	faith.religion = religion:judaism_religion
+	exists = domicile.domicile_location.county
+	exists = primary_title
+	primary_title = {
+		has_variable = kehillah_var_prosperity
+		var:kehillah_var_prosperity >= kehillah_band_legendary_threshold
+		kehillah_household_count_value >= kehillah_majority_min_households
+	}
+	domicile = { has_domicile_building_or_higher = kehillah_synagogue_04 }
+	NOT = { domicile.domicile_location.county.faith = root.faith }
+}
+
+# ---------------------------------------------------------------------
+# FALLEN REALMS. Scope: a character who has just lost the last of his
+# land in a war. A Jew who can lead a community.
+# ---------------------------------------------------------------------
+kehillah_fallen_ruler_trigger = {
+	is_alive = yes
+	is_adult = yes
+	is_landed = no
+	is_imprisoned = no
+	faith.religion = religion:judaism_religion
+	NOT = { government_has_flag = government_is_kehillah }
+}
+
+# Scope: a county. Held, and no community has its Quarter there (the
+# same registry test as kehillah_founding_site_base_trigger, without the
+# peace, development and settlement-policy requirements: the Jews of a
+# fallen realm are already there).
+kehillah_fallen_realm_open_county_trigger = {
+	save_temporary_scope_as = kehillah_site_county
+	exists = holder
+	NOT = {
+		any_in_global_list = {
+			variable = kehillah_registered_communities
+			exists = holder.domicile.domicile_location.county
+			holder.domicile.domicile_location.county = scope:kehillah_site_county
+		}
+	}
+}

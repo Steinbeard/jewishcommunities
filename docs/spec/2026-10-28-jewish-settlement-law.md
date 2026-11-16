@@ -113,3 +113,35 @@ built; this document still describes the game.** When built, it supersedes:
   cost scales with the realm's teaching. Exclusion and Abolition cannot pass it.
 
 The one-rung rule and the five-year cooldown are unchanged.
+
+## Addendum, 2026-11-10: a Banned law counts only when it was decreed (built)
+
+**Built, xTiger-clean, not live-tested.** Found in Daniel's 1068 game: William of Normandy took
+England, and the Status of the Jews map at once showed England as Banned. His Outlook was
+Well-disposed. An edict of expulsion started against Rouen with him as the banning host, and no
+law change appeared in `debug.log`.
+
+**Cause.** This is the engine behaviour the "ready flag" note already records: a ruler who **newly
+gains** the law group gets its first law, Banned, not the group's default. The one-time normalizing
+pass covered only rulers who were eligible at game start. William was a French vassal in 1066, so
+he had no law; becoming independent king in 1068 gave him Banned. Anyone who becomes eligible
+mid-game gets the same: a vassal made independent, a convert to Christianity or Islam, a ruler who
+gains a Jewish community.
+
+**Fix.** A held Banned law counts only when it was decreed. When it is set on purpose (the law's
+`on_after_pass`, `kehillah_set_settlement_law_effect`, or the normalizing pass), the ruler and their
+realm title get the mark `kehillah_settlement_ban_decreed`. The title's mark carries a decreed ban
+through succession. Every other rung clears the mark. The band triggers (through
+`kehillah_holds_decreed_ban_trigger`) read an unmarked Banned as Allowed. Then
+`kehillah_settlement_law_repair_effect` sets the law itself back to Allowed, with no change effects. It
+runs on title gain, in a yearly sweep, on the host before each community's quarterly expulsion pass,
+before raise/lower, in the Norman conquest decision, and when the realm view or policy map opens. An
+edict the phantom ban started lapses on its community's next quarterly pass ("host no longer bans").
+
+**Old saves.** A ban decreed before this change has no mark, so it now reads as Allowed and is
+repaired. Phantom bans could not be told apart from real ones (the review cooldown is also set by
+invitations), so none were grandfathered. The AI review can lower a realm again in the usual way.
+
+**Live check:** load the 1068 save. On the policy map England should show green (Tolerated). Within a
+quarter, Rouen's edict should lapse with the lifted notice (`kehillah_expulsion.0005`). `debug.log`
+should show `kehillah_settlement_law_repair_effect: undecreed Banned`.

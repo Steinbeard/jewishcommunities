@@ -1,0 +1,93 @@
+# Tenet gates for the offices that can head a Jewish faith
+# (docs/spec/2026-11-15-headship-offices-and-tenet-gates.md).
+# Character scope. Each tenet counts whether the character's rite holds it or
+# the character holds it as a personal tenet, the same rule as
+# kehillah_has_messianic_hope_trigger. Any one listed tenet is enough.
+
+kehillah_has_pesak_trigger = {
+	OR = {
+		rite ?= { rite_has_tenet = tenet_kehillah_pesak }
+		has_personal_tenet = tenet_kehillah_pesak
+	}
+}
+
+kehillah_has_sacred_homeland_trigger = {
+	OR = {
+		rite ?= { rite_has_tenet = tenet_kehillah_avelei_tziyon }
+		has_personal_tenet = tenet_kehillah_avelei_tziyon
+	}
+}
+
+# Restore the Sanhedrin: Iyyun ha-Talmud or Pesak.
+kehillah_sanhedrin_tenet_gate_trigger = {
+	OR = {
+		kehillah_has_scholarly_study_trigger = yes
+		kehillah_has_pesak_trigger = yes
+	}
+}
+
+# Restore the Kohen Gadol: Messianic Hope, Temple Service or Sacred Homeland.
+kehillah_kohen_gadol_tenet_gate_trigger = {
+	OR = {
+		kehillah_has_messianic_hope_trigger = yes
+		kehillah_has_temple_service_trigger = yes
+		kehillah_has_sacred_homeland_trigger = yes
+	}
+}
+
+# Character scope: the restorer holds Jerusalem, and its people share his faith.
+kehillah_kohen_gadol_holds_jerusalem_trigger = {
+	title:c_jerusalem = {
+		holder ?= root
+		faith = root.faith
+	}
+}
+
+# Character scope: the restorer himself, as priest-king.
+kehillah_kohen_gadol_priest_king_trigger = {
+	is_male = yes
+	has_trait = kohen
+}
+
+# Character scope: a temple holding in the county of Jerusalem that the
+# restorer holds directly and that is not his capital, to seat a courtier.
+kehillah_kohen_gadol_temple_barony_trigger = {
+	any_held_title = {
+		tier = tier_barony
+		de_jure_liege = title:c_jerusalem
+		title_province = { has_holding_type = church_holding }
+		NOT = { this = prev.capital_barony }
+	}
+}
+
+# Courtier scope; PREV = the restorer.
+kehillah_kohen_gadol_courtier_candidate_trigger = {
+	is_adult = yes
+	is_male = yes
+	is_imprisoned = no
+	is_incapable = no
+	is_ruler = no
+	has_trait = kohen
+	faith = prev.faith
+}
+
+# Character scope: he can seat a High Priest. A priest-king takes the office
+# himself. A courtier Kohen needs a temple holding to sit in, and a king to
+# appoint him: a landless duchy under a lesser liege would outrank it.
+kehillah_kohen_gadol_can_seat_trigger = {
+	OR = {
+		kehillah_kohen_gadol_priest_king_trigger = yes
+		AND = {
+			highest_held_title_tier >= tier_kingdom
+			kehillah_kohen_gadol_temple_barony_trigger = yes
+			any_courtier = { kehillah_kohen_gadol_courtier_candidate_trigger = yes }
+		}
+	}
+}
+
+# Character scope: a valid holder of the High Priesthood.
+kehillah_kohen_gadol_valid_holder_trigger = {
+	is_male = yes
+	has_trait = kohen
+	faith = global_var:kehillah_kohen_gadol_faith
+}

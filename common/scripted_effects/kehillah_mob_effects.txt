@@ -699,6 +699,12 @@ kehillah_mob_arrive_effect = {
 # THE POGROM. Scope: the target Kehillah leader; scope:kehillah_mob_leader.
 # ---------------------------------------------------------------------
 kehillah_pogrom_effect = {
+    faith = { save_scope_as = kehillah_pogrom_original_faith }
+    set_variable = { name = kehillah_witness_attack_grade value = 0 }
+    if = {
+        limit = { primary_title ?= { has_variable = kehillah_crisis_threat_grade } }
+        set_variable = { name = kehillah_witness_attack_grade value = primary_title.var:kehillah_crisis_threat_grade }
+    }
 	# V40: count the violence once when the pogrom actually occurs,
 	# before deaths or dissolution can remove its county/domicile scope.
 	domicile.domicile_location.county.faith ?= { kehillah_faith_pressure_add_effect = { AMOUNT = 4 } }
@@ -791,14 +797,7 @@ kehillah_pogrom_effect = {
 									kehillah_coin_flip_trigger = yes
 								}
 							}
-							AND = {
-								rite ?= { rite_has_parameter = kehillah_kiddush_hashem_rite }
-								scope:kehillah_pogrom_victim = { kehillah_coin_flip_trigger = yes }
-								OR = {
-									scope:kehillah_pogrom_victim = { NOT = { kehillah_mob_is_muslim_trigger = yes } }
-									scope:kehillah_pogrom_victim = { kehillah_coin_flip_trigger = yes }
-								}
-							}
+
 						}
 					}
 					scope:kehillah_pogrom_victim = {
@@ -962,13 +961,6 @@ kehillah_pogrom_effect = {
 		change_variable = { name = kehillah_var_prosperity add = scope:kehillah_pogrom_victim.kehillah_pogrom_prosperity_loss_value }
 		change_variable = { name = kehillah_var_stability add = scope:kehillah_pogrom_victim.kehillah_pogrom_stability_loss_value }
 		change_variable = { name = kehillah_var_greatness add = scope:kehillah_pogrom_victim.kehillah_pogrom_greatness_loss_value }
-		change_variable = {
-			name = kehillah_var_greatness
-			add = {
-				value = scope:kehillah_pogrom_victim.var:kehillah_pogrom_martyrs
-				multiply = kehillah_pogrom_martyr_greatness
-			}
-		}
 		clamp_variable = { name = kehillah_var_prosperity min = 0 max = 100000 }
 		clamp_variable = { name = kehillah_var_stability min = 0 max = 100000 }
 		clamp_variable = { name = kehillah_var_greatness min = 0 max = 100000 }
@@ -1684,7 +1676,7 @@ kehillah_pogrom_aftermath_effect = {
 		}
 		add_stress = medium_stress_gain
 	}
-	add_known_tenet = tenet_kehillah_kiddush_hashem
+	kehillah_witness_after_persecution_effect = yes
 	add_known_tenet = tenet_asceticism
 	random = {
 		chance = 60
@@ -1710,7 +1702,7 @@ kehillah_pogrom_aftermath_effect = {
 					years = kehillah_mob_memory_years
 				}
 			}
-			add_known_tenet = tenet_kehillah_kiddush_hashem
+			# Witness is unlocked only in the faith actually struck.
 			add_known_tenet = tenet_asceticism
 			add_stress = minor_stress_gain
 			random = {
@@ -1737,8 +1729,12 @@ kehillah_pogrom_aftermath_effect = {
 
 # Scope: a Kehillah leader. Martyrdom or the ascetic's withdrawal.
 kehillah_pogrom_take_tenet_effect = {
+    # Existing random calls are retained for AI, never force a player conviction.
+
 	if = {
 		limit = {
+            is_ai = yes
+            rite = { has_tenet_status = { tenet = tenet_kehillah_kiddush_hashem status = known } }
 			NOR = {
 				has_personal_tenet = tenet_kehillah_kiddush_hashem
 				has_personal_tenet = tenet_asceticism

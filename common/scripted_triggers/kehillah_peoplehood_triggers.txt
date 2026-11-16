@@ -1,0 +1,98 @@
+﻿# =====================================================================
+# Peoplehood (2026-11-11, docs/implementation/2026-11-11-peoplehood-doctrine.md).
+# =====================================================================
+
+# Scope: a character. Their rite holds Covenantal Peoplehood.
+kehillah_keeps_hebrew_peoplehood_trigger = {
+	rite ?= { rite_has_doctrine = kehillah_peoplehood_covenantal }
+}
+
+# Scope: a character. Of a Hebrew-heritage culture.
+kehillah_is_hebrew_culture_trigger = {
+	culture = { has_cultural_pillar = heritage_israelite }
+}
+
+# Scope: a character. Converting to their capital's culture would take
+# them out of a Hebrew culture into another.
+kehillah_leaving_hebrew_culture_for_local_trigger = {
+	kehillah_keeps_hebrew_peoplehood_trigger = yes
+	kehillah_is_hebrew_culture_trigger = yes
+	capital_province ?= {
+		culture = { NOT = { has_cultural_pillar = heritage_israelite } }
+	}
+}
+
+# Scope: a character. Converting to their capital's culture would bring a
+# non-Hebrew Jew into a Hebrew culture.
+kehillah_joining_hebrew_culture_locally_trigger = {
+	kehillah_keeps_hebrew_peoplehood_trigger = yes
+	NOT = { kehillah_is_hebrew_culture_trigger = yes }
+	capital_province ?= {
+		culture = { has_cultural_pillar = heritage_israelite }
+	}
+}
+
+# Scope: a culture. Its language has a historical Jewish counterpart, the
+# same table kehillah_pick_historical_jewish_culture_effect uses
+# (kehillah_jewish_culture_dynamics_effects.txt). Keep the two in step.
+kehillah_culture_has_hebrew_counterpart_trigger = {
+	OR = {
+		has_cultural_pillar = language_high_german
+		has_cultural_pillar = language_central_germanic
+		has_cultural_pillar = language_saxon
+		has_cultural_pillar = language_dutch
+		has_cultural_pillar = language_frankish
+		has_cultural_pillar = language_french
+		has_cultural_pillar = language_occitano_romance
+		has_cultural_pillar = language_iberian
+		has_cultural_pillar = language_basque
+		has_cultural_pillar = language_italian
+		has_cultural_pillar = language_sardinian
+		has_cultural_pillar = language_latin
+		has_cultural_pillar = language_greek
+		has_cultural_pillar = language_ancient_greek
+		has_cultural_pillar = language_albanian
+		has_cultural_pillar = language_south_slavic
+		has_cultural_pillar = language_czech_slovak
+		has_cultural_pillar = language_lechitic
+		has_cultural_pillar = language_east_slavic
+		has_cultural_pillar = language_slavonic
+		has_cultural_pillar = language_wallachian
+		has_cultural_pillar = language_berber
+		has_cultural_pillar = language_arabic
+		has_cultural_pillar = language_aramaic
+		has_cultural_pillar = language_egyptian
+		has_cultural_pillar = language_iranian
+		has_cultural_pillar = language_tocharian
+		has_cultural_pillar = language_marathi
+		has_cultural_pillar = language_tamil
+		has_cultural_pillar = language_telugu
+		has_cultural_pillar = language_kannada
+		has_cultural_pillar = language_ethiopic
+		has_cultural_pillar = language_cushitic
+		has_cultural_pillar = language_omotic
+	}
+}
+
+# Scope: a character. There is a Jewish people for them to join: one
+# matching their own culture's language, or one native where they live or
+# anywhere in their realm. Without one, they found a new people instead.
+kehillah_has_hebrew_people_to_join_trigger = {
+	OR = {
+		culture = { kehillah_culture_has_hebrew_counterpart_trigger = yes }
+		exists = capital_county.var:kehillah_local_jewish_culture
+		exists = location.county.var:kehillah_local_jewish_culture
+		any_realm_county = { exists = var:kehillah_local_jewish_culture }
+	}
+}
+
+# Scope: a character of a Hebrew culture. Another Jewish people is native
+# where they are (2026-11-11).
+kehillah_lives_among_another_jewish_people_trigger = {
+	save_temporary_scope_as = kehillah_among_jew
+	location.county ?= {
+		exists = var:kehillah_local_jewish_culture
+		var:kehillah_local_jewish_culture = { has_cultural_pillar = heritage_israelite }
+		NOT = { var:kehillah_local_jewish_culture = scope:kehillah_among_jew.culture }
+	}
+}

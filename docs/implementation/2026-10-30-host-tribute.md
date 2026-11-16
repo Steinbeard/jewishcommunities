@@ -3,7 +3,19 @@
 **Status:** BUILT 2026-10-30; **payment mechanism replaced 2026-11-08** (see the next paragraph),
 xTiger-clean, **not live-tested**.
 
-**Change, 2026-11-08 (Daniel): the engine collects the tribute.** The quarterly scripted transfer
+**Reverted, 2026-11-11 (live, Worms 1066, Daniel): the engine tax charged nothing.** In the top-bar
+gold tooltip, Monthly Income listed only "Domicile Buildings +2.9" and Monthly Expenses said "No
+values", while the Domain tab read "Tribute to host 20%". That is item 1 of the checklist failing. A
+contract's `tax =` is a share of the subject's holding taxes, and a Kehillah has no holdings; all its
+income comes from domicile buildings. The quarterly scripted transfer is back, with the code as it
+was before 2026-11-08: `kehillah_tribute_on_actions.txt`, `kehillah_pay_host_tribute_effect` and the
+amount values. Every rung is `tax = 0`. The Domain tab line now reads "Tribute 20% −0.58": the rate
+and the monthly share. Its tooltip says the payment is made quarterly and is not in the monthly
+totals. `kehillah_nagid_tribute_modifier` stays on the host as the marker the rate reads. Its
+tax multiplier now has nothing to scale. **The cost, as before:** neither treasury's monthly tooltip
+shows the tribute as a line. The engine has no hook that puts a scripted payment there.
+
+**Change, 2026-11-08 (Daniel): the engine collects the tribute.** *(Reverted 2026-11-11, above.)* The quarterly scripted transfer
 did not appear in either treasury's monthly income tooltip, which read as a missing tribute. Each
 Tribute rung now carries `tax =` (None 0, Customary `kehillah_tribute_customary_rate`, Heavy
 `kehillah_tribute_heavy_rate`), the way vanilla's `default_tributary_taxes` and celestial tributary

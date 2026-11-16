@@ -1,0 +1,670 @@
+﻿# =====================================================================
+# Jewish revolt, fallen realms and Jewish majorities (2026-11-15,
+# Daniel's request). Design, spike findings and manual checklist:
+# docs/spec/2026-11-15-fallen-realms-revolts-and-jewish-majorities.md.
+#
+# Variables on the rising's LEADER (cleared when the war ends):
+#   kehillah_revolt_target     the county or duchy he fights for
+#   kehillah_revolt_suzerain   the ruler he rose against
+#   kehillah_revolt_messianic  yes when proclaimed messianic
+#   kehillah_revolt_allies     variable list: coalition members
+# On each coalition member: kehillah_revolt_ally_of = the leader.
+# On the COMMUNITY TITLE (survive the leader):
+#   kehillah_revolt_preparation  0-3, Preparations for the Rising
+#   kehillah_revolt_cooldown     no new rising while set
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# Scope: the leader; var:kehillah_revolt_target set, and
+# var:kehillah_revolt_messianic if messianic (the start event's option).
+# ---------------------------------------------------------------------
+kehillah_revolt_rise_effect = {
+	save_scope_as = kehillah_revolt_leader
+	domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_revolt_suzerain }
+	set_variable = { name = kehillah_revolt_suzerain value = scope:kehillah_revolt_suzerain }
+	clear_variable_list = kehillah_revolt_allies
+
+	if = {
+		limit = { has_variable = kehillah_revolt_messianic }
+		save_scope_as = kehillah_messianic_claimant
+		if = {
+			limit = { NOT = { has_character_flag = kehillah_messianic_mission_active } }
+			kehillah_begin_messianic_mission_effect = yes
+		}
+		else = {
+			custom_tooltip = kehillah_revolt_joins_mission_tt
+		}
+	}
+
+	kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_revolt_declare_stability }
+
+	start_war = {
+		cb = kehillah_jewish_revolt_cb
+		target = scope:kehillah_revolt_suzerain
+	}
+
+	hidden_effect = {
+		clear_saved_scope = kehillah_revolt_war
+		random_character_war = {
+			limit = { using_cb = kehillah_jewish_revolt_cb }
+			save_scope_as = kehillah_revolt_war
+		}
+		if = {
+			limit = { exists = scope:kehillah_revolt_war }
+			kehillah_revolt_raise_men_effect = yes
+			kehillah_revolt_call_coalition_effect = yes
+			kehillah_revolt_notify_effect = {
+				TITLE = kehillah_revolt_news_rising_t
+				DESC = kehillah_revolt_news_rising_d
+			}
+			debug_log = "kehillah_revolt_rise_effect: the rising began"
+			debug_log_scopes = yes
+		}
+		else = {
+			kehillah_revolt_clear_effect = yes
+			debug_log = "kehillah_revolt_rise_effect: WARNING start_war did not produce a revolt war"
+			debug_log_scopes = yes
+		}
+	}
+	custom_tooltip = kehillah_revolt_raise_men_tt
+	custom_tooltip = kehillah_revolt_coalition_tt
+}
+
+# ---------------------------------------------------------------------
+# Scope: a participant (leader or coalition member);
+# scope:kehillah_revolt_war saved. His town turns out: levies and light
+# foot always; armoured foot, crossbows and horse only as far as the
+# community prepared. Preparations are spent.
+# ---------------------------------------------------------------------
+kehillah_revolt_raise_men_effect = {
+	domicile.domicile_location = { save_scope_as = kehillah_revolt_muster }
+	spawn_army = {
+		name = kehillah_revolt_army_name
+		levies = kehillah_revolt_levies_value
+		men_at_arms = {
+			type = light_footmen
+			stacks = kehillah_revolt_light_footmen_stacks_value
+		}
+		men_at_arms = {
+			type = bowmen
+			stacks = kehillah_revolt_bowmen_stacks_value
+		}
+		location = scope:kehillah_revolt_muster
+		war = scope:kehillah_revolt_war
+		inheritable = no
+		uses_supply = yes
+	}
+	if = {
+		limit = { kehillah_revolt_preparation_level_value >= 3 }
+		spawn_army = {
+			name = kehillah_revolt_prepared_army_name
+			men_at_arms = { type = armored_footmen stacks = 3 }
+			men_at_arms = { type = crossbowmen stacks = 2 }
+			men_at_arms = { type = light_horsemen stacks = 2 }
+			location = scope:kehillah_revolt_muster
+			war = scope:kehillah_revolt_war
+			inheritable = no
+			uses_supply = yes
+		}
+	}
+	else_if = {
+		limit = { kehillah_revolt_preparation_level_value = 2 }
+		spawn_army = {
+			name = kehillah_revolt_prepared_army_name
+			men_at_arms = { type = armored_footmen stacks = 2 }
+			men_at_arms = { type = crossbowmen stacks = 1 }
+			location = scope:kehillah_revolt_muster
+			war = scope:kehillah_revolt_war
+			inheritable = no
+			uses_supply = yes
+		}
+	}
+	else_if = {
+		limit = { kehillah_revolt_preparation_level_value = 1 }
+		spawn_army = {
+			name = kehillah_revolt_prepared_army_name
+			men_at_arms = { type = armored_footmen stacks = 1 }
+			location = scope:kehillah_revolt_muster
+			war = scope:kehillah_revolt_war
+			inheritable = no
+			uses_supply = yes
+		}
+	}
+	primary_title ?= {
+		if = {
+			limit = { has_variable = kehillah_revolt_preparation }
+			remove_variable = kehillah_revolt_preparation
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# Scope: the leader; scope:kehillah_revolt_leader, _suzerain, _war saved.
+# Every other landless Jewish community leader in the same realm is asked
+# to join (kehillah_revolt.0010).
+# ---------------------------------------------------------------------
+kehillah_revolt_call_coalition_effect = {
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			exists = holder
+			holder = {
+				OR = {
+					kehillah_revolt_coalition_candidate_trigger = yes
+					kehillah_revolt_coalition_player_candidate_trigger = yes
+				}
+			}
+		}
+		holder = {
+			trigger_event = { id = kehillah_revolt.0010 days = { 1 5 } }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# Scope: a coalition member joining; scope:kehillah_revolt_leader and
+# scope:kehillah_revolt_war saved.
+# ---------------------------------------------------------------------
+kehillah_revolt_join_effect = {
+	save_scope_as = kehillah_revolt_joiner
+	custom_tooltip = kehillah_revolt_join_tt
+	custom_tooltip = kehillah_revolt_raise_men_tt
+	hidden_effect = {
+		set_variable = { name = kehillah_revolt_ally_of value = scope:kehillah_revolt_leader }
+		scope:kehillah_revolt_war = { add_attacker = scope:kehillah_revolt_joiner }
+		if = {
+			limit = { is_at_war_with = scope:kehillah_revolt_leader.var:kehillah_revolt_suzerain }
+			kehillah_revolt_raise_men_effect = yes
+			scope:kehillah_revolt_leader = {
+				add_to_variable_list = { name = kehillah_revolt_allies target = scope:kehillah_revolt_joiner }
+			}
+			debug_log = "kehillah_revolt_join_effect: a community joined the rising"
+		}
+		else = {
+			remove_variable = kehillah_revolt_ally_of
+			debug_log = "kehillah_revolt_join_effect: WARNING add_attacker did not take"
+		}
+		debug_log_scopes = yes
+	}
+	add_opinion = { target = scope:kehillah_revolt_leader modifier = kehillah_revolt_comrade_opinion }
+	scope:kehillah_revolt_leader = {
+		add_opinion = { target = scope:kehillah_revolt_joiner modifier = kehillah_revolt_comrade_opinion }
+	}
+}
+
+# ---------------------------------------------------------------------
+# Scope: the leader, in the CB's on_victory. The prize changes hands:
+# each of its counties that lies in the suzerain's realm (for a duchy, the
+# duchy title too, if the suzerain's realm holds it or nobody does), and
+# each coalition member's own county if it is Jewish and in that realm.
+# Grant order is kehillah_grant_community_county_effect's, live-verified
+# 2026-10-19: titles move while the leader is still on kehillah_government,
+# THEN kehillah_reconcile_landed_government_effect moves him onto
+# kehillah_landed_government, keeping his Quarter. No vassalage follows:
+# the rising wins independence.
+# ---------------------------------------------------------------------
+kehillah_revolt_victory_effect = {
+	save_scope_as = kehillah_revolt_leader
+	var:kehillah_revolt_suzerain ?= { save_scope_as = kehillah_revolt_suzerain }
+	var:kehillah_revolt_target ?= { save_scope_as = kehillah_revolt_prize }
+	primary_title ?= { save_scope_as = kehillah_revolt_community }
+
+	if = {
+		limit = {
+			exists = scope:kehillah_revolt_prize
+			exists = scope:kehillah_revolt_suzerain
+		}
+		create_title_and_vassal_change = {
+			type = conquest
+			save_scope_as = change
+			add_claim_on_loss = yes
+		}
+		scope:kehillah_revolt_prize = {
+			if = {
+				limit = { tier = tier_county }
+				if = {
+					limit = { holder.top_liege ?= scope:kehillah_revolt_suzerain }
+					change_title_holder = {
+						holder = scope:kehillah_revolt_leader
+						change = scope:change
+					}
+				}
+			}
+			else = {
+				every_in_de_jure_hierarchy = {
+					limit = {
+						tier = tier_county
+						holder.top_liege ?= scope:kehillah_revolt_suzerain
+					}
+					change_title_holder = {
+						holder = scope:kehillah_revolt_leader
+						change = scope:change
+					}
+				}
+				if = {
+					limit = {
+						OR = {
+							NOT = { exists = holder }
+							holder.top_liege ?= scope:kehillah_revolt_suzerain
+						}
+					}
+					change_title_holder = {
+						holder = scope:kehillah_revolt_leader
+						change = scope:change
+					}
+				}
+			}
+		}
+		# The coalition: each member's own town.
+		every_in_list = {
+			variable = kehillah_revolt_allies
+			limit = {
+				is_alive = yes
+				is_kehillah_leader_trigger = yes
+				kehillah_revolt_county_is_jewish_trigger = yes
+				domicile.domicile_location.county.holder.top_liege ?= scope:kehillah_revolt_suzerain
+			}
+			save_scope_as = kehillah_revolt_ally
+			domicile.domicile_location.county = {
+				change_title_holder = {
+					holder = scope:kehillah_revolt_ally
+					change = scope:change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:change
+	}
+
+	# Government follows the land, community stays primary.
+	if = {
+		limit = { exists = scope:kehillah_revolt_community }
+		set_primary_title_to = scope:kehillah_revolt_community
+	}
+	kehillah_reconcile_landed_government_effect = yes
+	if = {
+		limit = { is_landed = yes }
+		debug_log = "kehillah_revolt_victory_effect: the leader holds land"
+	}
+	else = { debug_log = "kehillah_revolt_victory_effect: WARNING the leader holds no land after victory" }
+	if = {
+		limit = { exists = domicile }
+		debug_log = "kehillah_revolt_victory_effect: Quarter kept"
+	}
+	else = { debug_log = "kehillah_revolt_victory_effect: WARNING Quarter LOST" }
+	debug_log_scopes = yes
+
+	every_in_list = {
+		variable = kehillah_revolt_allies
+		limit = { is_alive = yes }
+		primary_title ?= {
+			if = {
+				limit = { is_kehillah_title_trigger = yes }
+				save_scope_as = kehillah_revolt_ally_community
+			}
+		}
+		if = {
+			limit = { exists = scope:kehillah_revolt_ally_community }
+			set_primary_title_to = scope:kehillah_revolt_ally_community
+		}
+		kehillah_reconcile_landed_government_effect = yes
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_revolt_ally_victory_greatness }
+		clear_saved_scope = kehillah_revolt_ally_community
+	}
+
+	kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_revolt_victory_greatness }
+	kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_revolt_victory_stability }
+	add_prestige = major_prestige_gain
+	if = {
+		limit = { has_variable = kehillah_revolt_messianic }
+		add_piety = major_piety_gain
+	}
+	hidden_effect = {
+		kehillah_revolt_notify_effect = {
+			TITLE = kehillah_revolt_news_victory_t
+			DESC = kehillah_revolt_news_victory_d
+		}
+		kehillah_refresh_map_view_for_players_effect = yes
+	}
+	kehillah_revolt_clear_effect = yes
+}
+
+# Scope: the leader, in the CB's on_white_peace.
+kehillah_revolt_white_peace_effect = {
+	kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_revolt_white_peace_stability }
+	primary_title ?= {
+		set_variable = { name = kehillah_revolt_cooldown value = yes years = kehillah_revolt_cooldown_years }
+	}
+	kehillah_revolt_clear_effect = yes
+}
+
+# ---------------------------------------------------------------------
+# Scope: the leader, in the CB's on_defeat. The community pays; a
+# messianic rising meets its reckoning now (kehillah_revival.0005: Jerusalem
+# was not won, so it offers only the reckoning).
+# ---------------------------------------------------------------------
+kehillah_revolt_defeat_effect = {
+	save_scope_as = kehillah_revolt_leader
+	kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_revolt_defeat_stability }
+	kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_revolt_defeat_prosperity }
+	primary_title ?= {
+		set_variable = { name = kehillah_revolt_cooldown value = yes years = kehillah_revolt_cooldown_years }
+	}
+	add_prestige = major_prestige_loss
+	every_in_list = {
+		variable = kehillah_revolt_allies
+		limit = { is_alive = yes is_kehillah_leader_trigger = yes }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_revolt_white_peace_stability }
+		primary_title ?= {
+			set_variable = { name = kehillah_revolt_cooldown value = yes years = kehillah_revolt_cooldown_years }
+		}
+	}
+	if = {
+		limit = {
+			has_variable = kehillah_revolt_messianic
+			has_character_flag = kehillah_messianic_mission_active
+		}
+		custom_tooltip = kehillah_revolt_messianic_reckoning_tt
+		trigger_event = { id = kehillah_revival.0005 days = 3 }
+	}
+	hidden_effect = {
+		kehillah_revolt_notify_effect = {
+			TITLE = kehillah_revolt_news_defeat_t
+			DESC = kehillah_revolt_news_defeat_d
+		}
+	}
+	kehillah_revolt_clear_effect = yes
+}
+
+# Scope: the leader. Clear the rising's state from him and his coalition.
+kehillah_revolt_clear_effect = {
+	hidden_effect = {
+		every_in_list = {
+			variable = kehillah_revolt_allies
+			if = {
+				limit = { has_variable = kehillah_revolt_ally_of }
+				remove_variable = kehillah_revolt_ally_of
+			}
+		}
+		clear_variable_list = kehillah_revolt_allies
+		if = { limit = { has_variable = kehillah_revolt_target } remove_variable = kehillah_revolt_target }
+		if = { limit = { has_variable = kehillah_revolt_suzerain } remove_variable = kehillah_revolt_suzerain }
+		if = { limit = { has_variable = kehillah_revolt_messianic } remove_variable = kehillah_revolt_messianic }
+	}
+}
+
+# Scope: the leader. Tell the players who care: himself, his suzerain,
+# Kehillah players in diplomatic range (kehillah_notify_region_players_effect).
+kehillah_revolt_notify_effect = {
+	save_scope_as = kehillah_revolt_news_leader
+	var:kehillah_revolt_target ?= { save_scope_as = kehillah_revolt_news_prize }
+	var:kehillah_revolt_suzerain ?= { save_scope_as = kehillah_revolt_news_suzerain }
+	if = {
+		limit = { exists = scope:kehillah_revolt_news_prize }
+		kehillah_notify_region_players_effect = {
+			TYPE = msg_kehillah_community_news
+			TITLE = $TITLE$
+			DESC = $DESC$
+		}
+		scope:kehillah_revolt_news_suzerain ?= {
+			if = {
+				limit = { is_ai = no }
+				send_interface_message = {
+					type = msg_kehillah_community_news
+					title = $TITLE$
+					desc = $DESC$
+					left_icon = scope:kehillah_revolt_news_leader
+				}
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# Preparations for the Rising. Scope: the leader. Arms gathered, men
+# drilled in secret; each level adds heavier companies when the banner is
+# raised (kehillah_revolt_raise_men_effect). Each may be discovered.
+# ---------------------------------------------------------------------
+kehillah_revolt_prepare_effect = {
+	save_scope_as = kehillah_revolt_leader
+	custom_tooltip = kehillah_revolt_prepare_tt
+	primary_title ?= {
+		save_temporary_scope_value_as = {
+			name = kehillah_revolt_new_preparation
+			value = {
+				value = 1
+				if = {
+					limit = { has_variable = kehillah_revolt_preparation }
+					add = var:kehillah_revolt_preparation
+				}
+				max = kehillah_revolt_preparation_max
+			}
+		}
+		set_variable = {
+			name = kehillah_revolt_preparation
+			value = scope:kehillah_revolt_new_preparation
+			years = kehillah_revolt_preparation_years
+		}
+	}
+	domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_revolt_suzerain }
+	if = {
+		limit = { exists = scope:kehillah_revolt_suzerain }
+		random = {
+			chance = kehillah_revolt_preparation_discovery_chance
+			scope:kehillah_revolt_suzerain = {
+				add_opinion = {
+					target = scope:kehillah_revolt_leader
+					modifier = kehillah_revolt_plot_discovered_opinion
+				}
+			}
+			kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_revolt_discovered_stability }
+			hidden_effect = {
+				scope:kehillah_revolt_suzerain = {
+					if = {
+						limit = { is_ai = no }
+						send_interface_message = {
+							type = msg_kehillah_community_news_bad
+							title = kehillah_revolt_news_plot_t
+							desc = kehillah_revolt_news_plot_d
+							left_icon = scope:kehillah_revolt_leader
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# JEWISH MAJORITY. Scope: a Kehillah leader meeting
+# kehillah_majority_community_trigger. His county takes the community's
+# faith and culture: the Jews of the town now outnumber the rest.
+# ---------------------------------------------------------------------
+kehillah_majority_convert_county_effect = {
+	save_scope_as = kehillah_majority_leader
+	domicile.domicile_location.county = {
+		save_scope_as = kehillah_majority_county
+		set_county_faith = scope:kehillah_majority_leader.faith
+		set_county_culture = scope:kehillah_majority_leader.culture
+	}
+	primary_title ?= {
+		set_variable = { name = kehillah_majority_since value = current_year }
+	}
+	hidden_effect = {
+		kehillah_notify_region_players_effect = {
+			TYPE = msg_kehillah_community_news
+			TITLE = kehillah_majority_news_t
+			DESC = kehillah_majority_news_d
+		}
+		if = {
+			limit = { is_ai = no }
+			send_interface_message = {
+				type = msg_kehillah_community_news
+				title = kehillah_majority_news_t
+				desc = kehillah_majority_news_own_d
+				left_icon = scope:kehillah_majority_leader
+			}
+		}
+		scope:kehillah_majority_county.holder ?= {
+			if = {
+				limit = { is_ai = no NOT = { this = scope:kehillah_majority_leader } }
+				send_interface_message = {
+					type = msg_kehillah_community_news
+					title = kehillah_majority_news_t
+					desc = kehillah_majority_news_d
+					left_icon = scope:kehillah_majority_leader
+				}
+			}
+		}
+	}
+	debug_log = "kehillah_majority_convert_county_effect: the county now keeps the community's faith and culture"
+	debug_log_scopes = yes
+}
+
+# ---------------------------------------------------------------------
+# FALLEN REALMS. Scope: the defeated ruler, in on_war_won_attacker
+# (kehillah_fallen_realm_war_won); scope:war, scope:attacker saved. If he
+# is a Jew who has just lost the last of his land, remember where and to
+# whom, and ask him in a few days (kehillah_fallen_realm.0001), after
+# vanilla's own Become Adventurer handling has settled.
+# ---------------------------------------------------------------------
+kehillah_fallen_realm_record_effect = {
+	save_scope_as = kehillah_fallen_ruler
+	clear_saved_scope = kehillah_fallen_seat
+	scope:war.casus_belli ?= {
+		every_in_list = {
+			list = target_titles
+			every_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					recent_history = { days <= 1 }
+					previous_holder ?= scope:kehillah_fallen_ruler
+				}
+				scope:kehillah_fallen_ruler = {
+					add_to_variable_list = { name = kehillah_fallen_lost_counties target = prev }
+				}
+			}
+		}
+	}
+	# Fallback when the war named no titles that moved (or the casus belli
+	# scope did not reach this on_action): the conqueror's own capital.
+	if = {
+		limit = {
+			NOT = { has_variable_list = kehillah_fallen_lost_counties }
+			exists = scope:attacker.capital_county
+		}
+		add_to_variable_list = { name = kehillah_fallen_lost_counties target = scope:attacker.capital_county }
+	}
+	set_variable = { name = kehillah_fallen_conqueror value = scope:attacker days = 60 }
+	trigger_event = { id = kehillah_fallen_realm.0001 days = 3 }
+	debug_log = "kehillah_fallen_realm_record_effect: a Jewish ruler lost the last of his land"
+	debug_log_scopes = yes
+}
+
+# Scope: the fallen ruler, var:kehillah_fallen_lost_counties set. Saves
+# scope:kehillah_fallen_seat: a lost county without a community, the most
+# developed first; else none.
+kehillah_fallen_realm_pick_seat_effect = {
+	clear_saved_scope = kehillah_fallen_seat
+	ordered_in_list = {
+		variable = kehillah_fallen_lost_counties
+		limit = {
+			exists = holder
+			kehillah_fallen_realm_open_county_trigger = yes
+		}
+		order_by = development_level
+		save_scope_as = kehillah_fallen_seat
+	}
+}
+
+# ---------------------------------------------------------------------
+# Scope: the fallen ruler; scope:kehillah_fallen_seat saved. He leads a
+# new community there, under whoever now rules it. A courtier or pool
+# character is moved there first. A landless adventurer cannot be moved
+# instantly: he founds where his camp stands if that place is open,
+# otherwise leads "the Exiles of" his seat, who settle by the existing
+# exiles route (kehillah_exiles_seek_home_effect, AI) or the Found a
+# Jewish Community decision (player).
+# ---------------------------------------------------------------------
+kehillah_fallen_realm_found_effect = {
+	save_scope_as = kehillah_fallen_ruler
+	if = {
+		limit = { is_ruler = no }
+		move_to_pool_at = scope:kehillah_fallen_seat.title_province
+	}
+	if = {
+		limit = {
+			exists = location.county
+			location.county = { kehillah_fallen_realm_open_county_trigger = yes }
+		}
+		kehillah_found_community_effect = yes
+		hidden_effect = {
+			primary_title ?= {
+				if = {
+					limit = { is_kehillah_title_trigger = yes }
+					set_variable = { name = kehillah_founded_by_fallen_ruler value = scope:kehillah_fallen_ruler }
+					change_variable = { name = kehillah_var_greatness add = 100 }
+				}
+			}
+			kehillah_notify_region_players_effect = {
+				TYPE = msg_kehillah_community_news
+				TITLE = kehillah_fallen_realm_news_t
+				DESC = kehillah_fallen_realm_news_d
+			}
+		}
+		debug_log = "kehillah_fallen_realm_found_effect: the fallen ruler leads a new community"
+	}
+	else = {
+		custom_tooltip = kehillah_fallen_realm_exiles_tt
+		set_variable = { name = kehillah_exiles_from value = scope:kehillah_fallen_seat }
+		debug_log = "kehillah_fallen_realm_found_effect: no open place where he stands; he leads exiles"
+	}
+	debug_log_scopes = yes
+}
+
+# ---------------------------------------------------------------------
+# Scope: the fallen ruler. The Jews of his other lost counties gather too:
+# each lost county whose people keep the Jewish faith and that has no
+# community may found one under a generated leader (at most two, half the
+# time each). This is how a fallen realm seeds several Kehillot.
+# ---------------------------------------------------------------------
+kehillah_fallen_realm_seed_communities_effect = {
+	save_scope_as = kehillah_fallen_ruler
+	set_variable = { name = kehillah_fallen_seeded value = 0 }
+	every_in_list = {
+		variable = kehillah_fallen_lost_counties
+		limit = {
+			exists = holder
+			faith.religion = religion:judaism_religion
+			kehillah_fallen_realm_open_county_trigger = yes
+			# The ruler's own seat stays open for him.
+			NOT = { scope:kehillah_fallen_seat ?= this }
+		}
+		save_scope_as = kehillah_fallen_seed_county
+		if = {
+			limit = { scope:kehillah_fallen_ruler.var:kehillah_fallen_seeded < 2 }
+			random = {
+				chance = 50
+				create_character = {
+					faith = scope:kehillah_fallen_seed_county.faith
+					culture = scope:kehillah_fallen_ruler.culture
+					age = { 30 55 }
+					location = scope:kehillah_fallen_seed_county.title_province
+					random_traits = yes
+					gender_female_chance = 0
+					dynasty = generate
+					save_scope_as = kehillah_fallen_seed_founder
+				}
+				scope:kehillah_fallen_seed_founder = {
+					move_to_pool_at = scope:kehillah_fallen_seed_county.title_province
+					kehillah_found_community_effect = yes
+				}
+				scope:kehillah_fallen_ruler = {
+					change_variable = { name = kehillah_fallen_seeded add = 1 }
+				}
+				debug_log = "kehillah_fallen_realm_seed_communities_effect: a community formed in a fallen county"
+			}
+		}
+	}
+	clear_variable_list = kehillah_fallen_lost_counties
+	remove_variable = kehillah_fallen_seeded
+}

@@ -1,0 +1,798 @@
+##########################################################################
+# THE SCHEME PANEL'S ENTRY FOR "STUDYING TORAH" (2026-11-15, Daniel: "include
+# more info about the book being studied ... hoverable as if it were a
+# portrait ... clicking could open your library"; second pass: keep the
+# owner's portrait and show the book beside it like a character target).
+# GENERATED from the vanilla 1.20 widget by scripts/kehillah_make_scheme_widget.py:
+# a copy of vanilla's widget_own_scheme_item with two changes tagged "Jewish
+# Communities 2026-11-15": the header names the book, and a book portrait sits
+# beside the owner's. Both are gated on Scheme.MakeScope.Var(
+# 'kehillah_is_study_scheme' ) (set by the scheme) and var:kehillah_study_
+# current_work (a flag kept in step with the numeric kehillah_study_current_
+# work_id by kehillah_study_sync_current_work_effect), so every other scheme
+# draws exactly as in vanilla. The pop-out reuses vanilla's
+# object_tooltip_pop_out, as SchemeTooltip in gui/shared/cooltip.gui does.
+##########################################################################
+types KehillahStudyBook
+{
+	type kehillah_study_book_tooltip = container {
+		alwaystransparent = no
+		object_tooltip_pop_out = {
+			blockoverride "title_text" {
+				margin = { 0 8 }
+				text = "[Localize( Concatenate( 'kehillah_lib_name_', GetPlayer.MakeScope.Var( 'kehillah_study_current_work' ).GetFlagName ) )]"
+			}
+			blockoverride "concept_link" {
+				text = "[Localize( Concatenate( 'kehillah_lib_subject_', GetPlayer.MakeScope.Var( 'kehillah_study_current_work' ).GetFlagName ) )]"
+			}
+			blockoverride "description_text" {
+				text = "KEHILLAH_STUDY_SCHEME_BOOK_TT"
+			}
+		}
+	}
+}
+
+types IntrigueWindow
+{
+	type widget_own_scheme_item = widget {
+		name = "my_own_scheme"
+		datacontext = "[SchemeItem.GetScheme]"
+
+		widget = {
+			visible = "[Scheme.IsExposed]"
+			parentanchor = bottom|hcenter
+			size = { 99% 92% }
+
+			icon = {
+				position = { 0 -5 }
+				size = { 100% 101% }
+				texture = "gfx/interface/colors/white.dds"
+				alpha = 0.3
+				using = Color_Red
+				using = Mask_Rough_Edges
+
+				shaderfile = "gfx/FX/pdxgui_repeat_texture.shader"
+
+				modify_texture = {
+					texture = "gfx/interface/component_masks/mask_vignette.dds"
+					blend_mode = alphamultiply
+				}
+
+				state = {
+					trigger_on_create = yes
+					name = a
+					next = b
+					alpha = 0.4
+					duration = 2
+					using = Animation_Curve_Default
+				}
+
+				state = {
+					name = b
+					next = a
+					alpha = 0.2
+					duration = 2.5
+					using = Animation_Curve_Default
+				}
+
+				modify_texture = {
+					name = "clouds"
+					texture = "gfx/interface/component_masks/mask_clouds.dds"
+					blend_mode = alphamultiply
+					spriteType = corneredtiled
+					texture_density = 1
+				}
+
+				state = {
+					name = mask_a
+					next = mask_b
+					trigger_on_create = yes
+
+					modify_texture = {
+						name = "clouds"
+						translate_uv = { 0 -1 }
+					}
+				}
+
+				state = {
+					name = mask_b
+					next = mask_a
+					duration = 40
+
+					modify_texture = {
+						name = "clouds"
+						translate_uv = { 0 1 }
+					}
+				}
+			}
+		}
+
+		vbox = {
+			set_parent_size_to_minimum = yes
+
+			background = {
+				using = Background_Area
+			}
+
+			background = {
+				using = Background_Frame
+
+				modify_texture = {
+					texture = "gfx/interface/component_masks/mask_fade_corner.dds"
+					blend_mode = alphamultiply
+					mirror = horizontal
+				}
+			}
+
+			hbox = {
+				name = "my_own_scheme_header"
+				layoutpolicy_horizontal = expanding
+
+				margin = { 0 5 }
+				margin_left = 20
+				margin_right = 5
+
+				background = {
+					texture = "gfx/interface/window_scheme/scheme_panel_header_banner.dds"
+					margin_top = -2
+					margin_bottom = -3
+				}
+
+				hbox = {
+					layoutpolicy_horizontal = expanding
+
+					icon = {
+						texture = "[Scheme.GetSchemeType.GetIcon]"
+						size = { 30 30 }
+						alwaystransparent = yes
+
+						tooltip = "SCHEME_WINDOW_TT_ITEM"
+
+						background = {
+							texture = "gfx/interface/window_scheme/scheme_panel_header_icon_bg.dds"
+							margin = { 13 13 }
+						}
+					}
+
+					text_single = {
+						visible = "[Not( And( Scheme.MakeScope.Var( 'kehillah_is_study_scheme' ).IsSet, GetPlayer.MakeScope.Var( 'kehillah_study_current_work' ).IsSet ) )]"
+						text = "SCHEME_WINDOW_ITEM_NAME"
+						using = Font_Size_Medium
+						align = nobaseline
+						max_width = 430
+						margin_left = 15
+					}
+
+					# Jewish Communities 2026-11-15: the study scheme names its book.
+					text_single = {
+						visible = "[And( Scheme.MakeScope.Var( 'kehillah_is_study_scheme' ).IsSet, GetPlayer.MakeScope.Var( 'kehillah_study_current_work' ).IsSet )]"
+						text = "[Concatenate( Concatenate( Localize( 'kehillah_study_torah' ), ': ' ), Localize( Concatenate( 'kehillah_lib_name_', GetPlayer.MakeScope.Var( 'kehillah_study_current_work' ).GetFlagName ) ) )]"
+						using = Font_Size_Medium
+						align = nobaseline
+						max_width = 430
+						margin_left = 15
+					}
+
+					icon = {
+						visible = "[Scheme.IsExposed]"
+						size = { 30 30 }
+						texture = "gfx/interface/icons/schemes/icon_discovered_scheme.dds"
+
+						tooltip = "SCHEME_WINDOW_EXPOSED_TOOLTIP"
+
+						glow = {
+							using = Color_Red
+							using = Glow_Standard
+							glow_radius = 3
+						}
+
+						state = {
+							trigger_on_create = yes
+
+							name = max_glow
+							next = min_glow
+							duration = 1
+							using = Animation_Curve_Default
+
+							glow_alpha = 0.8
+						}
+
+						state = {
+							name = min_glow
+							next = max_glow
+							duration = 1.6
+							using = Animation_Curve_Default
+
+							glow_alpha = 0.2
+						}
+					}
+
+					expand = {}
+				}
+
+				button_cancel = {
+					name = "cancel_button"
+					size = { 30 30 }
+
+					onclick = "[SchemeItem.OnCancelClick]"
+					enabled = "[SchemeItem.CanCancelScheme]"
+					tooltip = "[SchemeItem.GetCancelSchemeDescription]"
+				}
+			}
+
+			hbox = {
+				layoutpolicy_horizontal = expanding
+				margin = { 10 0 }
+				margin_top = 5
+				spacing = 5
+
+				widget = {
+					name = "scheme_target_portrait_and_countermeasure"
+					size = { 110 120 }
+
+					# Target
+					container = {
+						parentanchor = center
+
+						# Character Target
+						container = {
+							datacontext = "[Scheme.GetTargetCharacter]"
+							visible = "[Character.IsValid]"
+
+							portrait_head = {
+								datacontext = "[Scheme.GetTargetCharacter]"
+								using = tooltip_es
+
+								blockoverride "portrait_button"
+								{
+									tooltip = "SCHEME_WINDOW_SCHEME_TARGET"
+								}
+							}
+						}
+
+						# Title Target
+						container = {
+							datacontext = "[Scheme.GetTargetTitle]"
+							visible = "[Title.IsValid]"
+							parentanchor = center
+
+							coa_title_big = {
+								tooltip_visible = no
+								alwaystransparent = yes
+							}
+						}
+
+						# Faith Target
+						container = {
+							datacontext = "[Scheme.GetTargetFaith]"
+							visible = "[Faith.IsValid]"
+
+							icon = {
+								name = "faith_icon"
+								size = { 100 100 }
+								texture = "[Faith.GetIcon]"
+							}
+						}
+
+						# Culture Target
+						container = {
+							datacontext = "[Scheme.GetTargetCulture]"
+							visible = "[Culture.IsValid]"
+
+							text_single = {
+								text = "INTRIGUE_WINDOW_GETCULTURE"
+							}
+						}
+					}
+
+					widget = {
+						visible = "[Scheme.GetSchemeCountermeasureProtectingTarget.IsValid]"
+						datacontext = "[Scheme.GetSchemeCountermeasureProtectingTarget]"
+						parentanchor = top|left
+						size = { 30 30 }
+
+						tooltip = "SCHEME_COUNTERMEASURE_PROTECTING_TARGET"
+
+						background = {
+							using = Background_Area_ExtraDark
+							margin = { 2 2 }
+
+							modify_texture = {
+								texture = "gfx/interface/component_masks/mask_circle.dds"
+								blend_mode = alphamultiply
+							}
+						}
+
+						# The frame
+						icon = {
+							parentanchor = center
+							size = { 30 30 }
+							alwaystransparent = yes
+
+							texture = "gfx/interface/icons/scheme_countermeasure_types/frame_purple.dds"
+						}
+
+						# The countermeasure icon
+						icon = {
+							visible = "[SchemeCountermeasureType.IsValid]"
+							parentanchor = center
+							size = { 30 30 }
+							alwaystransparent = yes
+
+							texture = "[SchemeCountermeasureType.GetIcon]"
+						}
+					}
+				}
+
+				# Jewish Communities 2026-11-15: the book being studied, shown like a
+				# character target. Hover for its details; click to open the library
+				# (the same two steps as the Beit Midrash chip in gui/window_character.gui).
+				widget = {
+					visible = "[And( Scheme.MakeScope.Var( 'kehillah_is_study_scheme' ).IsSet, GetPlayer.MakeScope.Var( 'kehillah_study_current_work' ).IsSet )]"
+					name = "kehillah_study_book_slot"
+					size = { 110 120 }
+
+					button = {
+						name = "kehillah_study_book_button"
+						parentanchor = center
+						size = { 96 112 }
+						onclick = "[GetScriptedGui( 'kehillah_lib_window_open' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'target', GetPlayer.MakeScope ).End )]"
+						onclick = "[GetVariableSystem.Set( 'kehillah_lib_window_open', 'yes' )]"
+						using = tooltip_es
+						tooltipwidget = { kehillah_study_book_tooltip = {} }
+
+						background = { using = Background_Area }
+						background = { using = Background_Frame }
+
+						icon = {
+							parentanchor = center
+							size = { 80 80 }
+							texture = "gfx/interface/icons/artifact/artifact_chronicle.dds"
+							alwaystransparent = yes
+						}
+					}
+				}
+
+				vbox  = {
+					layoutpolicy_horizontal = expanding
+					layoutpolicy_vertical = expanding
+
+					widget = {
+						visible = "[Not(SchemeItem.GetScheme.GetSchemeType.IsBasic)]"
+						size = { 390 30 }
+						allow_outside = yes
+						layoutpolicy_horizontal = expanding
+
+						tooltip = "SCHEME_WINDOW_SUCCESS_TOOLTIP"
+
+						widget = {
+							name = "scheme_success_progressbar"
+							datacontext = "[SchemeItem.GetProgressLevels]"
+							parentanchor = right|vcenter
+							position = { -8 0 }
+							size = { 350 16 }
+							allow_outside = yes
+
+							icon = {
+								parentanchor = center
+								size = { 372 26 }
+								texture = "gfx/interface/window_scheme/scheme_success_progressbar_bg.dds"
+							}
+
+							hbox_complex_bar_progress_next = {
+								blockoverride "texture_decrease" {
+									texture = "gfx/interface/progressbars/progress_standard.dds"
+								}
+
+								blockoverride "texture_filled" {
+									texture = "gfx/interface/progressbars/progress_grandeur_increase.dds"
+								}
+							}
+
+							icon = {
+								name = "success_icon"
+								size = { 30 30 }
+								texture = "gfx/interface/icons/schemes/icon_scheme_success.dds"
+								position = { -32 -8}
+							}
+
+							hbox_complex_bar_levels = {
+								layoutpolicy_horizontal = expanding
+
+								blockoverride "marker" {
+									widget_level_marker = {
+										allow_outside = yes
+										scale = 0.80
+
+										blockoverride "visible_active" {
+											visible = "[EqualTo_CFixedPoint( Scheme.GetSuccessChance, ComplexBarItem.GetValue )]"
+										}
+
+										text_single = {
+											parentanchor = center
+
+											text = "[ComplexBarItem.GetValue|0%/]"
+											tooltip = "[SchemeItem.GetProgressLevelTooltips( PdxGuiWidget.GetIndexInDataModel )]"
+											align = nobaseline
+
+											using = Font_Size_Medium
+										}
+									}
+								}
+							}
+						}
+					}
+
+					hbox = {
+						layoutpolicy_horizontal = expanding
+
+						vbox = {
+							layoutpolicy_horizontal = expanding
+
+							hbox = {
+								datacontext = "[SchemeItem.GetScheme]"
+								visible = "[Scheme.GetSchemeType.IsBasic]"
+								layoutpolicy_horizontal = expanding
+								spacing = 5
+
+								tooltip = "SCHEME_WINDOW_SUCCESS_BASIC_TOOLTIP"
+
+								icon = {
+									name = "success_icon"
+									size = { 30 30 }
+
+									texture = "gfx/interface/icons/schemes/icon_scheme_success.dds"
+								}
+
+								text_single = {
+									name = "success_chance"
+									text = "SCHEME_WINDOW_SUCCESS_CHANCE"
+									align = nobaseline
+									max_width = 310
+								}
+
+								expand = {}
+							}
+
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								spacing = 5
+
+								tooltip = "SCHEME_WINDOW_PROGRESS_INFO_BREAKDOWN"
+
+								icon = {
+									name = "speed_icon"
+									size = { 30 30 }
+
+									texture = "gfx/interface/icons/schemes/icon_scheme_speed.dds"
+								}
+
+								text_single = {
+									name = "speed"
+									visible = "[Scheme.IsUnfrozen]"
+									text = "[SelectLocalization(Scheme.GetSchemeType.IsBasic, 'SCHEME_WINDOW_PROGRESS_INFO_BASIC', 'SCHEME_WINDOW_PROGRESS_INFO')]"
+									align = nobaseline
+									max_width = 310
+								}
+
+								text_single = {
+									name = "scheme_frozen"
+									visible = "[Scheme.IsFrozen]"
+									text = "SCHEME_WINDOW_PROGRESS_FROZEN"
+									align = nobaseline
+									max_width = 310
+								}
+
+								expand = {}
+							}
+
+							hbox = {
+								visible = "[Scheme.IsSecret]"
+								layoutpolicy_horizontal = expanding
+								spacing = 5
+
+								tooltip = "SCHEME_WINDOW_SECRECY_TOOLTIP"
+
+								icon = {
+									name = "secrecy_icon"
+									size = { 30 30 }
+									texture = "gfx/interface/icons/schemes/icon_secrecy.dds"
+								}
+
+								text_single = {
+									name = "secrecy"
+									text = "SCHEME_WINDOW_SECRECY"
+									align = nobaseline
+									max_width = 310
+								}
+
+								expand = {}
+							}
+
+							hbox = {
+								visible = "[Scheme.IsSecret]"
+								layoutpolicy_horizontal = expanding
+								spacing = 5
+
+								icon = {
+									name = "breach_not_in_grace_period"
+									visible = "[LessThanOrEqualTo_CFixedPoint( Scheme.MakeScope.Var('secrecy_grace_period').GetValue, '(CFixedPoint)0' )]"
+									size = { 30 30 }
+									texture = "gfx/interface/icons/schemes/icon_scheme_breach.dds"
+								}
+
+								icon = {
+									name = "breach_in_grace_period"
+									visible = "[Not( LessThanOrEqualTo_CFixedPoint( Scheme.MakeScope.Var('secrecy_grace_period').GetValue, '(CFixedPoint)0' ))]"
+									size = { 30 30 }
+									texture = "gfx/interface/icons/schemes/icon_scheme_breach_grace_period.dds"
+								}
+
+								text_single = {
+									name = "breaches"
+									text = "SCHEME_WINDOW_BREACHES"
+									align = nobaseline
+									max_width = 310
+								}
+
+								expand = {}
+							}
+
+							text_multi = {
+								visible = "[And( Scheme.HasTaskContract, InDebugMode )]"
+								layoutpolicy_horizontal = expanding
+								raw_text= "#D Contract: [Scheme.GetTaskContract.GetNameNoTooltip]#!"
+							}
+
+							expand = {}
+
+							hbox = {
+								widget = {
+									visible = "[SchemeItem.GetScheme.GetSchemeType.IsBasic]"
+									size = { 384 0 }
+								}
+							}
+						}
+					}
+
+					expand = {}
+				}
+			}
+
+			spacer = {
+				visible = "[IsDataModelEmpty(Scheme.GetModifiers)]"
+				size = { 0 10 }
+			}
+
+			hbox = {
+				visible = "[Not( IsDataModelEmpty(Scheme.GetModifiers))]"
+				layoutpolicy_horizontal = expanding
+				margin_bottom = 5
+				margin_left = 10
+
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					margin = { 5 5 }
+					spacing = 5
+
+					background = {
+						using = Background_Area
+
+						modify_texture = {
+							texture = "gfx/interface/component_masks/mask_fade_horizontal_thick.dds"
+							blend_mode = alphamultiply
+							mirror = horizontal
+						}
+					}
+
+					text_single = {
+						text = "SCHEME_WINDOW_MODIFIERS"
+						align = nobaseline
+						margin_left = 10
+					}
+
+					fixedgridbox = {
+						addcolumn = 30
+						addrow = 25
+						flipdirection = yes
+						datamodel_wrap = 10
+						maxhorizontalslots = 10
+						maxverticalslots = 1
+
+						datamodel = "[Scheme.GetModifiers]"
+						item = {
+							widget = {
+								parentanchor = vcenter
+								size = { 25 25 }
+
+								datacontext = "[SchemeModifier.GetStaticModifier]"
+
+								icon = {
+									name = "scheme_modifier_icon"
+									size = { 100% 100% }
+									texture = "[SchemeModifier.GetIcon]"
+								}
+
+								tooltipwidget = {
+									static_modifier_tooltip = {
+
+										blockoverride "description_text_data"
+										{
+											text = "[SchemeModifier.GetDesc]"
+										}
+									}
+								}
+							}
+						}
+					}
+
+					expand = {}
+				}
+			}
+
+			button_standard = {
+				name = "open_scheme_prep"
+				visible = "[Not(SchemeItem.GetScheme.GetSchemeType.IsBasic)]"
+				size = { 490 44 }
+
+				onclick = "[PostCommand( SchemeItem.TriggerSchemeHudClick )]"
+				onrightclick = "[PostCommand( SchemeItem.TriggerSchemeHudClick )]"
+
+				tooltip = "SCHEME_WINDOW_OPEN_PREP_EXPLANATION_TT"
+
+				icon = {
+					parentanchor = vcenter
+					position = { 2 0 }
+					size = { 98 56 }
+					texture = "gfx/interface/window_scheme/scheme_opportunity_illustration.dds"
+					alpha = 0.6
+					scale = 0.7
+
+					modify_texture = {
+						texture = "gfx/interface/component_masks/mask_fade_horizontal_extended.dds"
+						blend_mode = alphamultiply
+					}
+				}
+
+				icon = {
+					parentanchor = center
+					size = { 99.3% 40 }
+
+					texture = "gfx/interface/component_tiles/tile_vignette_3px.dds"
+					spriteType = Corneredtiled
+					spriteborder = { 5 5 }
+				}
+
+				hbox = {
+					datacontext = "[SchemeItem.GetScheme]"
+					layoutpolicy_horizontal = expanding
+
+					text_single = {
+						alwaystransparent = yes
+						text = "SCHEME_WINDOW_OPEN_PREP_TT"
+						align = left|nobaseline
+						max_width = 480
+					}
+				}
+
+				widget = {
+					parentanchor = right|vcenter
+					position = { -10 0 }
+
+					hbox = {
+						widgetanchor = right|vcenter
+						parentanchor = center
+						layoutpolicy_horizontal = preferred
+
+						icon = {
+							size = { 30 30 }
+							texture = "gfx/interface/icons/schemes/icon_scheme_opportunity.dds"
+							visible = "[Not( SchemeHasExecutableAdvantages( Scheme ) )]"
+						}
+
+						icon = {
+							size = { 30 30 }
+							texture = "gfx/interface/icons/schemes/icon_scheme_opportunity.dds"
+							visible = "[SchemeHasExecutableAdvantages( Scheme )]"
+
+							glow = {
+								glow_radius = 3
+								using = Glow_Standard
+								using = Color_Green
+								alpha = 0
+							}
+
+							state = {
+								name = start_glow
+								next = a
+								duration = 3
+								glow_alpha = 0.3
+								trigger_on_create = yes
+							}
+
+							state = {
+								name = a
+								next = b
+								duration = 3
+								glow_alpha = 0.5
+							}
+
+							state = {
+								name = b
+								next = a
+								duration = 3
+								glow_alpha = 0.1
+							}
+						}
+
+						text_single = {
+							text = "[Scheme.GetAgentCharges]"
+							align = nobaseline|right
+						}
+					}
+				}
+			}
+
+			vbox = {
+				visible = "[Not(SchemeItem.GetScheme.GetSchemeType.IsBasic)]"
+				layoutpolicy_horizontal = expanding
+
+				margin = { 0 10 }
+
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					margin = { 15 0 }
+					margin_bottom = 5
+					spacing = 10
+
+					### MEMBERS BUTTONS
+					button_expandable_toggle_field = {
+						name = "my_own_scheme_buttons"
+						visible = "[Not(SchemeItem.GetScheme.GetSchemeType.IsBasic)]"
+						layoutpolicy_horizontal = expanding
+
+						enabled = "[SchemeItem.HasAgents]"
+
+						blockoverride "button_expand"
+						{
+							frame = "[SelectFrame( 'own_scheme_expand' )]"
+						}
+
+						blockoverride "onclick"
+						{
+							onclick = "[GetVariableSystem.Toggle( 'own_scheme_expand')]"
+						}
+
+						blockoverride "text"
+						{
+							text = "SCHEME_WINDOW_SHOW_MEMBERS"
+						}
+
+
+					}
+				}
+
+				### MEMBERS
+				vbox = {
+					name = "my_own_scheme_members"
+					visible = "[And(GetVariableSystem.Exists( 'own_scheme_expand' ), Not(SchemeItem.GetScheme.GetSchemeType.IsBasic))]"
+					layoutpolicy_horizontal = expanding
+					margin = { 10 0 }
+
+					fixedgridbox = {
+						name = "owner_member_grid"
+						addcolumn = 100
+						addrow = 152
+						flipdirection = yes
+						datamodel_wrap = 5
+
+						datamodel = "[SchemeItem.GetAgentSlots]"
+						item = {
+							widget_scheme_agent_slot_item = {}
+						}
+					}
+				}
+			}
+		}
+	}
+}

@@ -396,10 +396,14 @@ kehillah_region_can_field_bet_din_panel_trigger = {
 kehillah_bet_din_eligible_judge_trigger = {
 	NOT = { this = $HOST$ }
 	is_jewish_character_trigger = yes
+	# 2026-11-11 (Daniel): a rabbi in herem may not sit on a Bet Din or preach.
+	NOT = { kehillah_cherem_in_full_trigger = yes }
 	OR = {
+		# 2026-11-15: same rite and within diplomatic range, replacing the
+		# minhag region (kehillah_bet_din_shares_court_trigger).
 		AND = {
 			is_ruler = yes
-			kehillah_shares_minhag_region_trigger = { OTHER = $HOST$ }
+			kehillah_bet_din_shares_court_trigger = { OTHER = $HOST$ }
 		}
 		# A potential Synod or Sanhedrin host may invite every community
 		# leader. Invitations are fixed before the intent is selected.
@@ -409,7 +413,7 @@ kehillah_bet_din_eligible_judge_trigger = {
 				OR = {
 					kehillah_is_sanhedrin_head_trigger = yes
 					AND = {
-						kehillah_is_regional_greatness_leader_trigger = yes
+						piety_level >= kehillah_synod_min_devotion_level
 						kehillah_synod_region_has_quorum_trigger = yes
 						kehillah_synod_has_open_takkanah_trigger = yes
 						NOT = { has_variable = kehillah_synod_cooldown }
@@ -560,6 +564,12 @@ kehillah_leader_is_rabbinic_trigger = {
 	OR = {
 		# 2026-11-08: or any Karaite (Karaites have no clergy).
 		kehillah_rabbi_or_karaite_trigger = yes
+		# 2026-11-14: or any Jew outside the rabbinate (Samaritan, Beta Israel):
+		# founding is open to every Jewish faith, and these have no rabbi trait.
+		AND = {
+			is_jewish_character_trigger = yes
+			NOT = { is_rabbinic_authority_jewish_trigger = yes }
+		}
 		has_trait = theologian
 		has_trait = education_learning_4
 		has_trait = education_learning_5
@@ -1172,10 +1182,17 @@ kehillah_study_torah_has_accessible_library_trigger = {
 
 # Scope: the Kehillah leader.
 # 2026-11-08: a Karaite leader or Dayyan counts (Karaites have no clergy).
+# 2026-11-11 (Daniel): a rabbi in herem may not sit on a Bet Din or preach.
 kehillah_has_community_rabbi_trigger = {
 	OR = {
-		kehillah_ordained_or_karaite_trigger = yes
-		cp:councillor_court_chaplain ?= { kehillah_ordained_or_karaite_trigger = yes }
+		AND = {
+			kehillah_ordained_or_karaite_trigger = yes
+			NOT = { kehillah_cherem_in_full_trigger = yes }
+		}
+		cp:councillor_court_chaplain ?= {
+			kehillah_ordained_or_karaite_trigger = yes
+			NOT = { kehillah_cherem_in_full_trigger = yes }
+		}
 	}
 }
 

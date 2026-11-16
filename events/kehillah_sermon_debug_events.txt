@@ -1,6 +1,9 @@
-﻿# Console-only probes, intended for a disposable save on a Kehillah leader.
-# event kehillah_sermon_debug.1 reports eligibility and track tier.
-# event kehillah_sermon_debug.2 raises Parshanut to 65 and opens the choice.
+﻿# Console-only probes, intended for a disposable save on a Kehillah leader
+# (2026-11-02; rebuilt 2026-11-11 with the sermons,
+# docs/spec/2026-11-11-rulings-sermons-and-gates.md section 3).
+# event kehillah_sermon_debug.1 reports who may preach, the reward tier, and
+#   which texts fit the weekly portion (read-only).
+# event kehillah_sermon_debug.2 raises Parshanut to 65 and begins a sermon.
 namespace = kehillah_sermon_debug
 
 kehillah_sermon_debug.1 = {
@@ -8,12 +11,24 @@ kehillah_sermon_debug.1 = {
 	hidden = yes
 	immediate = {
 		debug_log = "kehillah_sermon_debug.1: START"
-		if = { limit = { government_has_flag = government_is_kehillah has_trait = kehillah_rabbi_trait exists = primary_title } debug_log = "kehillah_sermon_debug.1: eligible rabbinic leader" }
-		else = { debug_log = "kehillah_sermon_debug.1: eligibility fails" }
-		if = { limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 100 } } debug_log = "kehillah_sermon_debug.1: master reward" }
-		else_if = { limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 65 } } debug_log = "kehillah_sermon_debug.1: adept reward" }
-		else_if = { limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 30 } } debug_log = "kehillah_sermon_debug.1: studied reward" }
+		if = { limit = { kehillah_sermon_preacher_trigger = yes } debug_log = "kehillah_sermon_debug.1: you may preach" }
+		else = { debug_log = "kehillah_sermon_debug.1: you may not preach" }
+		if = { limit = { cp:councillor_court_chaplain ?= { kehillah_sermon_preacher_trigger = yes } } debug_log = "kehillah_sermon_debug.1: your Dayyan may preach" }
+		else = { debug_log = "kehillah_sermon_debug.1: no Dayyan who may preach" }
+		if = { limit = { kehillah_sermon_knows_torah_trigger = yes } debug_log = "kehillah_sermon_debug.1: knows the Torah" }
+		if = { limit = { kehillah_sermon_time_of_trouble_trigger = yes } debug_log = "kehillah_sermon_debug.1: a time of trouble" }
+		if = { limit = { kehillah_sermon_parshanut_gain_value >= kehillah_sermon_pillar_gain_master } debug_log = "kehillah_sermon_debug.1: master reward" }
+		else_if = { limit = { kehillah_sermon_parshanut_gain_value >= kehillah_sermon_pillar_gain_adept } debug_log = "kehillah_sermon_debug.1: adept reward" }
+		else_if = { limit = { kehillah_sermon_parshanut_gain_value >= kehillah_sermon_pillar_gain_studied } debug_log = "kehillah_sermon_debug.1: studied reward" }
 		else = { debug_log = "kehillah_sermon_debug.1: novice reward" }
+		save_scope_as = kehillah_sermon_holder
+		kehillah_sermon_pick_portion_effect = yes
+		if = { limit = { var:kehillah_sermon_cand_grounded ?= flag:work_tanakh_torah } debug_log = "kehillah_sermon_debug.1: PORTION GROUNDED the Torah" }
+		else_if = { limit = { exists = var:kehillah_sermon_cand_grounded } debug_log = "kehillah_sermon_debug.1: PORTION GROUNDED another work" }
+		else = { debug_log = "kehillah_sermon_debug.1: PORTION GROUNDED none" }
+		if = { limit = { exists = var:kehillah_sermon_cand_newer } debug_log = "kehillah_sermon_debug.1: PORTION NEWER yes" }
+		else = { debug_log = "kehillah_sermon_debug.1: PORTION NEWER none" }
+		kehillah_sermon_clear_effect = yes
 	}
 }
 
@@ -22,11 +37,14 @@ kehillah_sermon_debug.2 = {
 	hidden = yes
 	immediate = {
 		if = {
-			limit = { government_has_flag = government_is_kehillah has_trait = kehillah_rabbi_trait exists = primary_title }
-			add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = 65 }
-			trigger_event = { id = kehillah_sermon.0001 days = 0 }
-			debug_log = "kehillah_sermon_debug.2: sermon opened; inspect title pillar before and after choice"
+			limit = { government_has_flag = government_is_kehillah kehillah_sermon_leader_can_preach_trigger = yes }
+			if = {
+				limit = { has_trait = kehillah_rabbi_trait }
+				add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = 65 }
+			}
+			kehillah_sermon_begin_effect = yes
+			debug_log = "kehillah_sermon_debug.2: sermon begun; inspect the title's pillars before and after"
 		}
-		else = { debug_log = "kehillah_sermon_debug.2: not a rabbinic Kehillah leader" }
+		else = { debug_log = "kehillah_sermon_debug.2: no one here may preach" }
 	}
 }

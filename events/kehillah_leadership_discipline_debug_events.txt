@@ -1,0 +1,87 @@
+﻿# Console-only checks for realm-office forfeiture and teshuvah grace.
+# See docs/implementation/2026-11-11-leadership-cherem-and-office-forfeiture.md.
+# .1 report this character's leadership, Nagid links and penance (read-only)
+# .2 refuse an active teshuvah now
+# .3 accept an active teshuvah now
+# .4 run the invalid-office repair now (also works on an adventurer)
+# .5 apply one cherem quarterly penalty and log Stability before/after
+namespace = kehillah_leadership_discipline_debug
+
+kehillah_leadership_discipline_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "LEADERSHIP DISCIPLINE character=[THIS.Char.GetName]"
+		if = { limit = { kehillah_cherem_protected_leader_trigger = yes } debug_log = "DISCIPLINE communal leader=YES" }
+		else = { debug_log = "DISCIPLINE communal leader=NO" }
+		if = { limit = { kehillah_cherem_in_full_trigger = yes } debug_log = "DISCIPLINE cherem=YES" }
+		else = { debug_log = "DISCIPLINE cherem=NO" }
+		if = { limit = { has_variable = kehillah_teshuvah_pending } debug_log = "DISCIPLINE teshuvah pending=YES" }
+		else = { debug_log = "DISCIPLINE teshuvah pending=NO" }
+		if = { limit = { has_variable = kehillah_teshuvah_cooldown } debug_log = "DISCIPLINE teshuvah retry cooldown=YES" }
+		if = { limit = { kehillah_teshuvah_can_begin_trigger = yes piety >= kehillah_teshuvah_piety_cost } debug_log = "DISCIPLINE can begin paid teshuvah=YES" }
+		else = { debug_log = "DISCIPLINE can begin paid teshuvah=NO" }
+		if = { limit = { kehillah_is_nagid_trigger = yes } debug_log = "DISCIPLINE Nagid modifier=YES" }
+		else = { debug_log = "DISCIPLINE Nagid modifier=NO" }
+		if = { limit = { kehillah_nagid_can_hold_trigger = yes } debug_log = "DISCIPLINE eligible for headship=YES" }
+		else = { debug_log = "DISCIPLINE eligible for headship=NO" }
+		var:kehillah_nagid_of ?= {
+			debug_log = "DISCIPLINE former/current patron=[THIS.Char.GetName]"
+			primary_title ?= {
+				var:kehillah_nagid_holder ?= { debug_log = "DISCIPLINE realm office holder=[THIS.Char.GetName]" }
+				if = { limit = { has_variable = kehillah_nagid_service } debug_log = "DISCIPLINE realm service=SET" }
+			}
+		}
+		if = { limit = { any_relation = { type = kehillah_court_vizier_patron always = yes } } debug_log = "DISCIPLINE vizier relation=YES" }
+		if = { limit = { any_relation = { type = kehillah_court_treasurer_patron always = yes } } debug_log = "DISCIPLINE treasurer relation=YES" }
+		if = { limit = { any_relation = { type = kehillah_court_physician_patron always = yes } } debug_log = "DISCIPLINE physician relation=YES" }
+		if = { limit = { any_relation = { type = kehillah_court_envoy_patron always = yes } } debug_log = "DISCIPLINE envoy relation=YES" }
+		if = { limit = { any_relation = { type = kehillah_court_nagid_patron always = yes } } debug_log = "DISCIPLINE headship relation=YES" }
+		primary_title ?= {
+			if = { limit = { has_variable = kehillah_cherem_defiant } debug_log = "DISCIPLINE title has unresolved cherem leadership=YES" }
+		}
+	}
+}
+
+kehillah_leadership_discipline_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { has_variable = kehillah_teshuvah_pending }
+			kehillah_teshuvah_refused_effect = yes
+			debug_log = "DISCIPLINE forced teshuvah verdict=REFUSED"
+		}
+	}
+}
+
+kehillah_leadership_discipline_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { has_variable = kehillah_teshuvah_pending }
+			kehillah_cherem_clear_effect = yes
+			debug_log = "DISCIPLINE forced teshuvah verdict=ACCEPTED"
+		}
+	}
+}
+
+kehillah_leadership_discipline_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = { trigger_event = kehillah_nagid.0080 }
+}
+
+kehillah_leadership_discipline_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { kehillah_cherem_protected_leader_trigger = yes }
+			debug_log = "DISCIPLINE before quarter: Stability=[THIS.Char.GetPrimaryTitle.MakeScope.Var('kehillah_var_stability').GetValue]"
+			kehillah_cherem_quarterly_effect = yes
+			debug_log = "DISCIPLINE after quarter: Stability=[THIS.Char.GetPrimaryTitle.MakeScope.Var('kehillah_var_stability').GetValue]"
+		}
+	}
+}

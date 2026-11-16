@@ -1,0 +1,77 @@
+﻿# Console-only probes for the cherem track (2026-11-11).
+# docs/spec/2026-11-11-reviews-and-cherem.md section 3.
+#   event kehillah_cherem_debug.1  log your cherem trait level, cap, cause and forbidden books (read-only)
+#   event kehillah_cherem_debug.2  add 30 cherem XP (as the book sources do)
+#   event kehillah_cherem_debug.3  the head of your rite pronounces the full ban on you
+#   event kehillah_cherem_debug.4  run the yearly pass now (also migrates an old save once)
+#   event kehillah_cherem_debug.5  end your teshuvah now (skips the year)
+
+namespace = kehillah_cherem_debug
+
+kehillah_cherem_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_cherem_debug.1 START"
+		if = {
+			limit = { has_trait = kehillah_cherem_trait }
+			if = { limit = { has_trait_xp = { trait = kehillah_cherem_trait value >= 100 } } debug_log = "kehillah_cherem_debug.1 XP 100 (In Herem)" }
+			else_if = { limit = { has_trait_xp = { trait = kehillah_cherem_trait value >= 75 } } debug_log = "kehillah_cherem_debug.1 XP 75-99 (Niddui, an AI head may ban)" }
+			else_if = { limit = { has_trait_xp = { trait = kehillah_cherem_trait value >= 50 } } debug_log = "kehillah_cherem_debug.1 XP 50-74 (Niddui)" }
+			else_if = { limit = { has_trait_xp = { trait = kehillah_cherem_trait value >= 25 } } debug_log = "kehillah_cherem_debug.1 XP 25-49 (Nezifah)" }
+			else = { debug_log = "kehillah_cherem_debug.1 XP 1-24 (Reproved)" }
+		}
+		else = { debug_log = "kehillah_cherem_debug.1 no cherem trait" }
+		if = { limit = { has_trait = excommunicated } debug_log = "kehillah_cherem_debug.1 vanilla excommunicated (should be gone after migration)" }
+		if = { limit = { has_variable = kehillah_teshuvah_pending } debug_log = "kehillah_cherem_debug.1 teshuvah pending" }
+		save_scope_as = kehillah_cherem_penitent
+		if = { limit = { var:kehillah_own_library ?= { kehillah_cherem_library_holds_forbidden_trigger = yes } } debug_log = "kehillah_cherem_debug.1 your library holds forbidden books (teshuvah gives them up)" }
+		if = { limit = { kehillah_cherem_protected_leader_trigger = yes } debug_log = "kehillah_cherem_debug.1 a community leader" }
+		if = { limit = { has_variable = kehillah_cherem_cause_work } debug_log = "kehillah_cherem_debug.1 a book caused it (teshuvah would renounce it)" }
+		if = { limit = { is_target_in_global_variable_list = { name = kehillah_cherem_tracked target = this } } debug_log = "kehillah_cherem_debug.1 on the tracked list" }
+		if = { limit = { primary_title ?= { has_variable = kehillah_cherem_defiant } } debug_log = "kehillah_cherem_debug.1 carrying on under the ban" }
+		if = { limit = { kehillah_cherem_may_repent_trigger = yes } debug_log = "kehillah_cherem_debug.1 may do teshuvah" }
+		if = { limit = { kehillah_cherem_authority_trigger = yes } debug_log = "kehillah_cherem_debug.1 you may pronounce a cherem" }
+		if = { limit = { kehillah_synod_can_propose_herem_person_trigger = yes } debug_log = "kehillah_cherem_debug.1 a synod you host could vote a herem on a leader" }
+		debug_log = "kehillah_cherem_debug.1 END"
+	}
+}
+
+kehillah_cherem_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_cherem_add_effect = { AMOUNT = 30 }
+		debug_log = "kehillah_cherem_debug.2 added 30"
+		trigger_event = kehillah_cherem_debug.1
+	}
+}
+
+kehillah_cherem_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		save_scope_value_as = { name = kehillah_cherem_pronounced_by value = flag:head }
+		kehillah_cherem_pronounce_effect = yes
+		debug_log = "kehillah_cherem_debug.3 pronounced"
+	}
+}
+
+kehillah_cherem_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_cherem_yearly_effect = yes
+		debug_log = "kehillah_cherem_debug.4 yearly pass ran"
+		trigger_event = kehillah_cherem_debug.1
+	}
+}
+
+kehillah_cherem_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		trigger_event = kehillah_cherem.0020
+		debug_log = "kehillah_cherem_debug.5 teshuvah ends now"
+	}
+}

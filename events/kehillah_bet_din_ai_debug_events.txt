@@ -1,0 +1,118 @@
+﻿# =====================================================================
+# CONSOLE-ONLY debug events for AI-hosted Sittings of the Bet Din.
+# Design: docs/spec/2026-11-15-ai-hosted-sittings-via-stand-in.md
+# Checklist: docs/testing/2026-11-15-ai-hosted-sittings-test-checklist.md
+# Every line starts KEHILLAH_BD_AI.
+#
+#   event kehillah_bet_din_ai_debug.1  convene now for a random eligible AI leader
+#   event kehillah_bet_din_ai_debug.2  report every live Sitting and pending stand-in
+#   event kehillah_bet_din_ai_debug.3  convene now for an AI leader of the player's rite, in range
+# =====================================================================
+
+namespace = kehillah_bet_din_ai_debug
+
+kehillah_bet_din_ai_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		random_living_character = {
+			limit = { kehillah_bet_din_ai_can_convene_trigger = yes }
+			save_scope_as = kehillah_bd_ai_debug_leader
+		}
+		if = {
+			limit = { exists = scope:kehillah_bd_ai_debug_leader }
+			scope:kehillah_bd_ai_debug_leader = { kehillah_bet_din_ai_convene_effect = yes }
+		}
+		else = {
+			debug_log = "KEHILLAH_BD_AI DEBUG no AI leader can convene now"
+		}
+	}
+}
+
+kehillah_bet_din_ai_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "KEHILLAH_BD_AI REPORT begin"
+		every_activity = {
+			limit = { has_activity_type = activity_kehillah_bet_din_conference }
+			debug_log = "KEHILLAH_BD_AI REPORT sitting; host follows"
+			activity_host = {
+				debug_log_scopes = no
+				if = {
+					limit = { government_has_flag = government_is_kehillah }
+					debug_log = "KEHILLAH_BD_AI REPORT host has the Kehillah government"
+				}
+				else = {
+					debug_log = "KEHILLAH_BD_AI REPORT host does NOT have the Kehillah government"
+				}
+				if = {
+					limit = { is_ai = yes }
+					debug_log = "KEHILLAH_BD_AI REPORT host is AI"
+				}
+				if = {
+					limit = { has_activity_intent = kehillah_bet_din_sanhedrin_intent }
+					debug_log = "KEHILLAH_BD_AI REPORT intent sanhedrin"
+				}
+				else_if = {
+					limit = { has_activity_intent = kehillah_bet_din_synod_intent }
+					debug_log = "KEHILLAH_BD_AI REPORT intent synod"
+				}
+				else_if = {
+					limit = { has_activity_intent = kehillah_bet_din_justice_intent }
+					debug_log = "KEHILLAH_BD_AI REPORT intent justice"
+				}
+			}
+			if = {
+				limit = { has_variable = kehillah_bet_din_via_stand_in }
+				debug_log = "KEHILLAH_BD_AI REPORT via stand-in"
+			}
+			if = {
+				limit = { has_variable = kehillah_bet_din_await_gathering }
+				debug_log = "KEHILLAH_BD_AI REPORT still gathering"
+			}
+			if = {
+				limit = { has_variable = kehillah_bet_din_docket_waiting }
+				debug_log = "KEHILLAH_BD_AI REPORT docket waiting in phase 1"
+			}
+			if = {
+				limit = { exists = var:kehillah_bet_din_judge3 }
+				debug_log = "KEHILLAH_BD_AI REPORT docket open, full bench"
+			}
+			every_attending_character = {
+				debug_log = "KEHILLAH_BD_AI REPORT attendee follows"
+				debug_log_scopes = no
+			}
+		}
+		every_living_character = {
+			limit = { has_variable = kehillah_bet_din_stand_in_for }
+			debug_log = "KEHILLAH_BD_AI REPORT pending stand-in; stand-in then leader follow"
+			debug_log_scopes = no
+			var:kehillah_bet_din_stand_in_for = { debug_log_scopes = no }
+		}
+		debug_log = "KEHILLAH_BD_AI REPORT end"
+	}
+}
+
+# root = the player.
+kehillah_bet_din_ai_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		save_scope_as = kehillah_bd_ai_debug_player
+		random_living_character = {
+			limit = {
+				kehillah_bet_din_ai_can_convene_trigger = yes
+				kehillah_bet_din_shares_court_trigger = { OTHER = scope:kehillah_bd_ai_debug_player }
+			}
+			save_scope_as = kehillah_bd_ai_debug_leader
+		}
+		if = {
+			limit = { exists = scope:kehillah_bd_ai_debug_leader }
+			scope:kehillah_bd_ai_debug_leader = { kehillah_bet_din_ai_convene_effect = yes }
+		}
+		else = {
+			debug_log = "KEHILLAH_BD_AI DEBUG no AI leader of the player's rite in range can convene now"
+		}
+	}
+}

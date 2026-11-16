@@ -18,6 +18,38 @@ on_title_gain = {
 	on_actions = { kehillah_cand_on_title_gain }
 }
 
+# 2026-11-14 (Daniel): a community looking ahead sends for someone. Yearly,
+# an AI community leader who is old or ill may write to one Jewish player
+# (a community leader or a landless adventurer) who could stand for the
+# seat. The letter is kehillah_candidacy.0040.
+yearly_playable_pulse = {
+	on_actions = { kehillah_cand_invitation_yearly }
+}
+
+kehillah_cand_invitation_yearly = {
+	trigger = {
+		is_ai = yes
+		is_alive = yes
+		government_has_flag = government_is_kehillah
+		exists = primary_title
+		primary_title = {
+			is_kehillah_title_trigger = yes
+			NOT = { has_variable = kehillah_invitation_sent_cooldown }
+		}
+		OR = {
+			age >= 55
+			has_trait = ill
+			has_trait = infirm
+		}
+	}
+	effect = {
+		random = {
+			chance = kehillah_cand_invitation_chance_value
+			kehillah_cand_send_invitation_effect = yes
+		}
+	}
+}
+
 # root = the dying character, still alive.
 # A community with declared candidates is falling vacant. Back up the
 # Quarter record of the seat and of every declared candidate's own
@@ -75,9 +107,21 @@ kehillah_cand_on_title_gain = {
 			# finished with this change.
 			limit = { kehillah_cand_declared_for_trigger = { SEAT = scope:title } }
 			scope:title = { save_scope_as = cand_new_seat }
-			trigger_event = {
-				id = kehillah_candidacy.0010
-				days = 1
+			# An adventurer's Quarter is built a day after the title
+			# arrives (kehillah_succession.0010), so the seat is taken a
+			# day after that. Everyone else's one day is unchanged.
+			if = {
+				limit = { has_government = landless_adventurer_government }
+				trigger_event = {
+					id = kehillah_candidacy.0010
+					days = 2
+				}
+			}
+			else = {
+				trigger_event = {
+					id = kehillah_candidacy.0010
+					days = 1
+				}
 			}
 			debug_log = "KEHILLAH_CAND: declared candidate won [cand_new_seat.GetName]"
 		}

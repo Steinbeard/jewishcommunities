@@ -1,0 +1,65 @@
+﻿# =====================================================================
+# AI-hosted Sittings of the Bet Din through a landed stand-in.
+# Design: docs/spec/2026-11-15-ai-hosted-sittings-via-stand-in.md
+# =====================================================================
+
+# An AI Kehillah leader who may convene a Sitting now. Scope: the leader.
+# The leader-side cooldown flag stands in for the engine cooldown, which
+# lands on the stand-in. He must be at his Quarter: the handoff adds him
+# to the activity there without travel.
+kehillah_bet_din_ai_can_convene_trigger = {
+	is_ai = yes
+	kehillah_can_convene_bet_din_trigger = yes
+	NOT = { has_character_flag = kehillah_bet_din_ai_recently_convened }
+	is_travelling = no
+	exists = domicile
+	location = domicile.domicile_location
+}
+
+# A landed AI who can plan a Sitting on a community's behalf. Scope: the
+# candidate stand-in.
+kehillah_bet_din_stand_in_trigger = {
+	is_ai = yes
+	is_landed = yes
+	is_adult = yes
+	is_imprisoned = no
+	is_travelling = no
+	NOT = { exists = involved_activity }
+	NOT = { government_has_flag = government_is_kehillah }
+	NOT = { has_variable = kehillah_bet_din_stand_in_for }
+}
+
+# Mirrors kehillah_bet_din_synod_intent's is_valid
+# (common/activities/intents/kehillah_synod_intents.txt) at the start of a
+# sitting, because set_activity_intent errors on an invalid intent.
+# KEEP IN STEP WITH THAT INTENT. Scope: the host.
+kehillah_bet_din_synod_intent_valid_trigger = {
+	government_has_flag = government_is_kehillah
+	NOT = { kehillah_is_sanhedrin_head_trigger = yes }
+	piety_level >= kehillah_synod_min_devotion_level
+	kehillah_synod_region_has_quorum_trigger = yes
+	kehillah_synod_has_open_takkanah_trigger = yes
+	NOT = { has_variable = kehillah_synod_cooldown }
+	prestige >= kehillah_synod_prestige_cost
+}
+
+# Mirrors kehillah_bet_din_sanhedrin_intent's is_valid. KEEP IN STEP.
+# Scope: the host.
+kehillah_bet_din_sanhedrin_intent_valid_trigger = {
+	government_has_flag = government_is_kehillah
+	kehillah_is_sanhedrin_head_trigger = yes
+	kehillah_sanhedrin_has_quorum_trigger = yes
+	kehillah_synod_has_open_takkanah_trigger = yes
+	NOT = { has_variable = kehillah_synod_cooldown }
+	prestige >= kehillah_synod_prestige_cost
+}
+
+# Someone who could be added to or invited to an AI leader's Sitting.
+# Scope: the candidate; needs scope:host (the leader) and scope:activity.
+kehillah_bet_din_ai_guest_candidate_trigger = {
+	is_alive = yes
+	is_adult = yes
+	is_imprisoned = no
+	NOT = { exists = involved_activity }
+	NOT = { any_invited_activity = { this = scope:activity } }
+}

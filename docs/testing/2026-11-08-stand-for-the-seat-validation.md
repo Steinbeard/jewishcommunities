@@ -91,9 +91,16 @@ Result:
 
 ## V4. The gates
 
-1. Probe .3, which gives the Rabbi trait and piety level 3. It logs `great_rabbi=yes`.
-2. Weigh Mainz again. The stranger paragraph is gone; the great-rabbi one shows instead. The score
-   rises by the stranger term plus *A rabbi*.
+**Corrected 2026-11-14** ([spec](../spec/2026-11-14-adventurers-seats-and-invitations.md)): the stranger
+term is now -20 and **only a marriage waives it**. A great rabbi keeps the great-rabbi paragraph but the
+stranger paragraph stays; his record pays through the track lines instead. Step 2 below is rewritten for
+that. The foreign-region term is now a foreign-**culture** term.
+
+1. Probe .3, which gives the Rabbi trait, piety level 3 and a Talmudics record of 70. It logs
+   `great_rabbi=yes`.
+2. Weigh Mainz again. **The stranger paragraph stays, and the great-rabbi paragraph is added.** The
+   score rises by *A rabbi* and *A record in the Talmud* (+12), not by the stranger term. Probe .1 shows
+   the track values and `stranger=yes (-20)`.
 3. **Married in:** marry the player, or one of his children, to an adult child of a Mainz board
    member, using whatever console route you prefer. Weigh again:
    - **the player married in:** the married-in paragraph shows, and the stranger term is gone;
@@ -197,5 +204,85 @@ After all of the above, list every new `kehillah` line in `error.log`. Look espe
 - `succession_appointment_score_invested`;
 - `kehillah_cand_`;
 - tooltip floods from the weigh event.
+
+Result:
+
+---
+
+# Added 2026-11-14: adventurers, invitations, visits, founding
+
+Built the same day, not run. See [the spec](../spec/2026-11-14-adventurers-seats-and-invitations.md).
+**V13 is the one that can end a game**, so it comes first. Do it on a test save.
+
+## V13. An adventurer wins a seat (the dangerous one)
+
+**Risk:** an adventurer holds a camp and then a community title. The old code would have called
+`change_government`, which destroys the camp without making a Quarter and ends in Game Over 15 to 25
+days later. The new route is `kehillah_succession.0010`'s scaffold.
+
+1. Boot Worms 1066. Take the **Step Down** decision. You are now a landless adventurer.
+2. Probe .8. Expect `adventurer_candidate=yes`, `can_weigh Mainz=yes`, `domicile=yes`.
+3. Right-click Mainz's leader: **Weigh Their Seat**. Check the new lines: the stranger term is -20, the
+   culture line shows if your culture differs, and there is **no** "leads a community" line. Put your name
+   forward. The prestige cost is shown. The tooltip says your camp would give way to the Quarter.
+4. Probe .3, so your score can win. Probe .1: `in_pool=yes`.
+5. Probe .4 kills Mainz's leader. **Same day:** you hold the Mainz title and are still an adventurer.
+   `error.log` has **no** `change_government` or `illegal government` line. This is the line that matters.
+6. **Next day**, `debug.log` shows `kehillah_succession.0010` provisioning the Quarter: "created the
+   temporary Kehillah scaffold", "destroyed the adventurer's camp title", "PASS successor has Kehillah
+   government".
+7. **Two days after the death:** the event *Called to Mainz* appears. Probe .5: `primary=` Mainz, one
+   `holds community` line, a domicile, no candidacy left.
+8. Your domicile panel shows Mainz's buildings. Let a month pass: no Game Over, no error flood.
+9. `error.log`: look for `change_government`, `create_adventurer_title`, `destroy_title`, `domicile`.
+
+Result:
+
+## V14. A community sends for you
+
+1. As a player rabbi with the stand-for-seat conditions met, probe .7. Expect the event *A Letter from
+   Mainz* and `invited=yes` in `debug.log`.
+2. **I will weigh the seat** opens the weigh event. It says they sent for you, and shows *The community
+   sent for them* (+15) in the breakdown. The declaration costs half.
+3. Run probe .7 again at once: it clears the seat's cooldown and your invitation, so it sends again.
+   **Decline, with thanks** removes the invitation and adds a little regard.
+4. **Optional:** set a seat's leader old, then advance years. A letter should come now and then, at most
+   one per seat per five years.
+
+Result:
+
+## V15. Visit the Jewish Community
+
+1. As an adventurer, travel to a county with a community: Worms, Speyer or Mainz. **Visit the Jewish
+   Community** is in the decisions list. It is **absent** in a county with no community, and for a
+   non-Jewish or landed character.
+2. Choose it. The event shows the quarter's name and the leader, and the leader's culture.
+3. **Take a family into my company** costs gold, and a family joins your court: a head, his wife, children.
+   Check their culture (the county's local Jewish culture) and rite. The option is greyed with a reason
+   when you cannot pay.
+4. Run the decision again after six months. The family option is greyed ("no family to spare") for three
+   years. **Pray with the congregation** still works.
+5. With ten Jewish followers, **Found a Jewish Community** becomes available at your camp.
+6. **Speak with the leader about the seat** opens the weigh event, when you may stand.
+7. `error.log`: no tooltip floods from the event.
+
+Result:
+
+## V16. Founding for every Jewish faith
+
+1. Make the adventurer Karaite, then Samaritan, then Beta Israel (`faith` console route). **Found a Jewish
+   Community** is shown for each. Before this change a Samaritan or Beta Israel adventurer never saw it.
+2. Found one for each faith, with ten followers. The community has a Quarter and a library.
+3. **Check:** the Samaritan community's library. If it holds the Rabbanite default works, a Samaritan
+   tradition value and seed is the fix (spec section 6).
+4. `error.log`: no new `kehillah` lines.
+
+Result:
+
+## V17. Ordinary succession with the new terms
+
+A rabbi with a Talmudics record now scores higher in everyone's succession, native or not. Kill an AI
+leader with a rabbi in his court and check the breakdown shows the *record in the Talmud* line without any
+blank or error. The ordinary-succession checks of V1 still hold.
 
 Result:

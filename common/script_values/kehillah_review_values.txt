@@ -1,0 +1,165 @@
+﻿# Reviews: haskamah and cherem on books (2026-11-11, Daniel).
+# docs/spec/2026-11-11-reviews-and-cherem.md section 1.
+
+# Scope: a reviewer. How much his word weighs, 0-100: his Learning, his Piety,
+# his scholarship (the Rabbi trait's tracks, or a Karaite's Religious Scholar),
+# and his office.
+kehillah_review_weight_value = {
+	value = 0
+	add = { value = learning multiply = 2 }
+	if = { limit = { piety_level >= 1 } add = 6 }
+	if = { limit = { piety_level >= 2 } add = 6 }
+	if = { limit = { piety_level >= 3 } add = 6 }
+	if = { limit = { piety_level >= 4 } add = 6 }
+	if = { limit = { piety_level >= 5 } add = 6 }
+	if = {
+		limit = { has_trait = kehillah_rabbi_trait }
+		if = { limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 100 } } add = 10 }
+		else_if = { limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 65 } } add = 6 }
+		else_if = { limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 30 } } add = 3 }
+		if = { limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 100 } } add = 10 }
+		else_if = { limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 65 } } add = 6 }
+		else_if = { limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 } } add = 3 }
+		if = { limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value >= 100 } } add = 10 }
+		else_if = { limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value >= 65 } } add = 6 }
+		else_if = { limit = { has_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value >= 30 } } add = 3 }
+	}
+	else_if = { limit = { kehillah_karaite_scholar_xp_trigger = { VALUE = 100 } } add = 30 }
+	else_if = { limit = { kehillah_karaite_scholar_xp_trigger = { VALUE = 65 } } add = 20 }
+	else_if = { limit = { kehillah_karaite_scholar_xp_trigger = { VALUE = 30 } } add = 10 }
+	# A head of rite, or a scholar great enough to judge books for it.
+	if = { limit = { kehillah_sefer_can_judge_books_trigger = yes } add = 30 }
+	else_if = { limit = { has_council_position = councillor_court_chaplain } add = 10 }
+	# 2026-11-11 (Daniel): a banned reviewer's word carries less. By the level
+	# of his cherem trait: Nezifah 3/4, Niddui 1/2, In Herem 1/4.
+	if = {
+		limit = { kehillah_cherem_in_full_trigger = yes }
+		multiply = kehillah_review_banned_herem_mult
+	}
+	else_if = {
+		limit = {
+			has_trait = kehillah_cherem_trait
+			has_trait_xp = { trait = kehillah_cherem_trait value >= kehillah_cherem_niddui }
+		}
+		multiply = kehillah_review_banned_niddui_mult
+	}
+	else_if = {
+		limit = {
+			has_trait = kehillah_cherem_trait
+			has_trait_xp = { trait = kehillah_cherem_trait value >= kehillah_cherem_nezifah }
+		}
+		multiply = kehillah_review_banned_nezifah_mult
+	}
+	min = 0
+	max = 100
+}
+kehillah_review_banned_nezifah_mult = 0.75
+kehillah_review_banned_niddui_mult = 0.5
+kehillah_review_banned_herem_mult = 0.25
+
+# The reception points a review moves (out of 100 a book can hold).
+kehillah_review_points_value = {
+	value = kehillah_review_weight_value
+	divide = 8
+	min = 1
+}
+# A cherem from someone who has read the book (mastered it, or stopped reading
+# it in protest), and one from someone who has not: half as heavy.
+kehillah_review_cherem_points_read_value = {
+	value = kehillah_review_points_value
+	multiply = -1
+}
+kehillah_review_cherem_points_unread_value = {
+	value = kehillah_review_points_value
+	divide = 2
+	multiply = -1
+}
+
+# Stakes. A haskamah ties the giver's Piety to the book's later standing in his
+# rite; a cherem on a book that rises to Esteemed anyway costs Prestige.
+kehillah_review_haskamah_stake_piety = 15
+kehillah_review_haskamah_stake_loss = -15
+kehillah_review_cherem_wrong_prestige = -50
+# Reading against one's faith: stop in protest, read on to refute it, or read
+# on with an open mind.
+kehillah_review_protest_piety = 30
+kehillah_review_protest_learning_xp = 10
+kehillah_review_refute_piety = 10
+kehillah_review_open_mind_learning_xp = 15
+
+# =====================================================================
+# AI reviews (2026-11-11, Daniel). A reviewer's stance on a book,
+# kehillah_review_stance_<work>_value (generated), from vanilla's own
+# measures. Per tenet the book argues for:
+kehillah_review_stance_core = 20
+kehillah_review_stance_permitted = 10
+kehillah_review_stance_prohibited = -40
+kehillah_review_stance_personal = 25
+kehillah_review_stance_leaning = 15
+# ... and how it sits with his virtues and sins (vanilla's
+# expected_tenet_fulfillment_change: rival tenets clash through these).
+kehillah_review_stance_fits_well = 15
+kehillah_review_stance_fits = 5
+kehillah_review_stance_clashes = -10
+kehillah_review_stance_clashes_badly = -25
+# Per tenet the book argues against, that his rite holds core / he holds.
+kehillah_review_stance_against_core = -30
+kehillah_review_stance_against_personal = -30
+# Per level of his faith's hostility to the book's tradition's faith.
+kehillah_review_stance_hostile_faith = -10
+# The living author.
+kehillah_review_stance_rival = -30
+kehillah_review_stance_friend = 20
+kehillah_review_stance_likes_author = 10
+kehillah_review_stance_dislikes_author = -15
+# A Zealous reviewer feels it all more strongly, either way.
+kehillah_review_stance_zealous_mult = 1.5
+
+# A haskamah is for a living book: written in the last this-many years, and
+# Obscure to Esteemed in the reviewer's rite.
+kehillah_review_haskamah_years = 50
+
+# Scope: an AI reviewer with scope:kehillah_review_stance. On mastering a book.
+kehillah_review_ai_haskamah_chance_value = {
+	value = scope:kehillah_review_stance
+	subtract = 10
+	min = 0
+	max = 60
+}
+# While reading a book that argues against what he holds.
+kehillah_review_ai_cherem_chance_value = {
+	value = scope:kehillah_review_stance
+	multiply = -1
+	subtract = 10
+	min = 0
+	max = 80
+}
+# Unread: only a scholar this hostile, at this chance a year, at most this many
+# a year in the world.
+kehillah_review_unread_threshold = -50
+kehillah_review_unread_chance = 25
+kehillah_review_unread_cap = 5
+
+# Seek an Approbation. Scope: the approver; scope:kehillah_appr_asker the
+# author; scope:kehillah_review_stance his stance on the book. The author's
+# renown and devotion, the approver's view of the book, and their bond.
+kehillah_review_approbation_base = 5
+kehillah_review_approbation_chance_value = {
+	value = kehillah_review_approbation_base
+	if = { limit = { scope:kehillah_appr_asker = { prestige_level >= 1 } } add = 5 }
+	if = { limit = { scope:kehillah_appr_asker = { prestige_level >= 2 } } add = 5 }
+	if = { limit = { scope:kehillah_appr_asker = { prestige_level >= 3 } } add = 5 }
+	if = { limit = { scope:kehillah_appr_asker = { prestige_level >= 4 } } add = 5 }
+	if = { limit = { scope:kehillah_appr_asker = { piety_level >= 1 } } add = 5 }
+	if = { limit = { scope:kehillah_appr_asker = { piety_level >= 2 } } add = 5 }
+	if = { limit = { scope:kehillah_appr_asker = { piety_level >= 3 } } add = 5 }
+	if = { limit = { scope:kehillah_appr_asker = { piety_level >= 4 } } add = 5 }
+	add = { value = scope:kehillah_review_stance divide = 2 }
+	if = { limit = { opinion = { target = scope:kehillah_appr_asker value >= 30 } } add = 10 }
+	else_if = { limit = { opinion = { target = scope:kehillah_appr_asker value < 0 } } add = -15 }
+	min = 0
+	max = 90
+}
+# Below this stance he answers the request with a cherem.
+kehillah_review_approbation_cherem_threshold = -40
+
