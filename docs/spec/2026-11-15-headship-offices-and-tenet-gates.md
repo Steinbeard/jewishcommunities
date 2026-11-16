@@ -1,7 +1,7 @@
 # Headship offices and tenet gates
 
 **Status:** 2026-11-15. Part 1 (tenet gates) BUILT for the Sanhedrin, source- and xTiger-checked,
-live test pending. Parts 2–4 are a PROPOSAL, not implemented, with open questions for Daniel.
+live test pending. Parts 2–4 are a PROPOSAL, not implemented; all three open questions are decided.
 Depends on [V47, Gaon and the Seat of the Sanhedrin](v47-gaon-and-the-seat-of-the-sanhedrin.md),
 [the messianic, prophetic and Temple tenets](2026-11-15-messianic-prophetic-and-temple-tenets.md)
 and [their build record](../implementation/2026-11-15-revival-tenets-and-integration-audit.md).
@@ -136,7 +136,19 @@ through vanilla tooltip modifiers, not prose. The base chance is very low.
    rare. The existing Messianic Mission stays open to anyone with Messianic Hope; only the
    declaration branch needs the lineage. A non-Davidic leader's mission can still succeed as a
    holy-city recovery without making him Mashiach.
-3. Backlash size: opinion only, or a real schism risk?
+3. **DECIDED (Daniel, 2026-11-15): opinion and schism risk.** Applies to a contested head
+   (section 2, point 4) and to a partially recognized Mashiach (section 4).
+   - **Opinion:** rulers of a rite that rejects the head (or the Mashiach) take an opinion
+     penalty toward him and toward rulers of rites that accept him, and the reverse. Sized like
+     vanilla's faith-hostility opinions, not stacking per verdict.
+   - **Schism risk:** in a rejecting rite with enough believers (pledged patrons and rulers who
+     hold Messianic Hope or the winning office's gate tenets), a yearly chance splits them into a
+     new rite. Reuse the Machloket mechanism (`kehillah_machloket_effects.txt`): vanilla
+     `create_dynamic_rite`, with Messianic Hope (or the office's gate tenet) as a core override.
+     The chance rises with the believers' share and the years the dispute lasts.
+   - **The split ends** when the dispute does: full recognition, or the Mashiach's death,
+     conversion or disgrace (the Sabbatai Zevi ending). Existing split rites remain; opinion
+     penalties expire.
 
 ## Risk
 
