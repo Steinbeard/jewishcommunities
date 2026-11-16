@@ -46,6 +46,7 @@ The three requests connect. A majority (3) makes a county eligible for a rising 
 - the county is Jewish;
 - the realm's top liege is not Jewish;
 - no rising has happened from this community in 25 years.
+- **(added 2026-11-16, Daniel's request)** he holds **Messianic Hope** or **Unrelenting Faith**, either through his faith's rite or as a personal tenet (`kehillah_revolt_tenet_trigger`). The same gate applies to Prepare the Rising, and both decisions' `ai_potential`. Coalition members are not gated: anyone may join a rising another leader started.
 
 It costs 150 Prestige. It opens `kehillah_revolt.0001`, which has four options:
 - the county;
@@ -100,7 +101,7 @@ Before the build, the baseline was 328 reports. After it, the total is 330. The 
 
 Debug probes are in `events/kehillah_revolt_debug_events.txt`. They are console-only and report to `debug.log` with the prefix `REVOLT`.
 
-1. **Rising available.** Play Worms 1066. `event kehillah_revolt_debug.1`: Worms's county is not Jewish, so "cannot rise". Run `event kehillah_revolt_debug.2`, then .1 again: the result should read "can rise". The decision should appear in the Kehillah group.
+1. **Rising available.** Play Worms 1066. `event kehillah_revolt_debug.1`: Worms's county is not Jewish, so "cannot rise". Run `event kehillah_revolt_debug.2`, then .1 again. If the tenet line reads "holds neither", the decision's tooltip should name the two tenets; run `event kehillah_revolt_debug.6` (personal Unrelenting Faith) and .1 again. The result should now read "can rise". The decision should appear in the Kehillah group.
 2. **Preparations.** Take Prepare the Rising and read its tooltip: the 20% discovery chance shows as a vanilla chance line. Or use `kehillah_revolt_debug.3` for level 3.
 3. **Declare (county).** Take Raise the Banner and choose the county. Expect:
    - the war "The Jewish Rising" against the Holy Roman Emperor;
