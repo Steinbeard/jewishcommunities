@@ -1,4 +1,4 @@
-**Status: Built 2026-11-16; source and xTiger checked; isolated boot passed database initialization, live claim transfer pending.**
+**Status: Built and live-verified 2026-11-16; xTiger baseline unchanged; decision UI, transfer and save/reload passed.**
 
 # David ben Hezekiah and the Baghdad claim
 
@@ -29,7 +29,8 @@ rulers in vanilla's title histories.
 - [Research on Seljuk Baghdad](https://jscholarship.library.jhu.edu/server/api/core/bitstreams/5ef45d46-ddf3-449e-b6af-02967aa8d8c7/content)
   reports the Jewish banker Ibn Fadlan's role in a disputed exilarch
   selection in 1068. He replaces the invented Baghdad steward. His
-  given name and dates are unknown, and placing him in 1066 is an inference.
+  given name and dates are unknown; "Natan" is a placeholder, and placing
+  him in 1066 is an inference.
   Baghdad's Parnas Ezra and the Sura and Pumbedita scholars remain explicitly
   invented representatives; nobody is presented as an attested 1066 holder.
 - [The account of Isaac b. Moses b. Sakri](https://www.encyclopedia.com/religion/encyclopedias-almanacs-transcripts-and-maps/gaon)
@@ -71,8 +72,8 @@ him the existing Baghdad community, destroys his old camp title, grants the
 separate Exilarchate, and seats Isaac as the community Dayyan if he still
 serves David. The separate title is lifetime recognition and lapses at
 succession; a new claimant requires recognition rather than automatically
-becoming Exilarch solely by taking Baghdad. This transfer is the risky
-engine step that needs a Luna live probe.
+becoming Exilarch solely by taking Baghdad. Luna verified the title and
+government transfer through the same scripted effect the decision invokes.
 
 ## Verification
 
@@ -81,7 +82,9 @@ engine step that needs a Luna live probe.
 - Source audit: unique live IDs for David and Isaac; family links resolve;
   title histories, community registry, and start effects reference all three
   separate Mesopotamian seats.
-- Luna's [isolated boot log](../testing/2026-11-16-exilarch-claim-live-log.md)
-  confirms content and bookmark database initialization. Council position,
-  title transfer, quarter continuity, player continuation, and save/reload
-  remain unrun because the CK3 probe tools were unavailable.
+- Luna's [isolated live log](../testing/2026-11-16-exilarch-claim-live-log.md)
+  confirms Isaac as David's camp Dayyan, the actual decision's visible
+  requirements and cost deduction, David's two titles, Kehillah government,
+  old camp removal, Isaac as Baghdad Dayyan, separate Sura/Pumbedita,
+  a valid Quarter, and state persistence after save/reload of the same
+  scripted transfer effect.
