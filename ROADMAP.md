@@ -17,6 +17,14 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+**Quarter Held polish BUILT 2026-11-15; xTiger checked, live check pending:**
+the armed-host outcome now shows a named **Quarter Held** phase effect instead
+of the generic Deliverance label, with a clearer phase hover. **Take Stock at
+the Gate** is a one-time pre-judgment action: repair actual outer-street damage
+if the losing Struck track came close, rotate the watch, or record the
+defenders for court. It does not enter Recovery or alter the ruler's existing
+judgment timer. See the [implementation record](docs/implementation/2026-11-15-quarter-held-polish.md).
+
 **Stand for the Seat BUILT (first pass) - 2026-11-08, Daniel's request, xTiger-clean, live test
 pending (Daniel runs it by hand):** a player who leads a community can **Weigh Their Seat** on
 another same-faith, AI-led community's leader. The event shows:
