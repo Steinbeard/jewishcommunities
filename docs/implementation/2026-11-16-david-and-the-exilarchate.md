@@ -1,6 +1,16 @@
-**Status: Built and live-verified 2026-11-16; xTiger baseline unchanged; decision UI, transfer and save/reload passed.**
+**Status: Historical setup built 2026-11-16; original David-only decision live-verified, then superseded by general claim and recognition rules whose scripted live path passed while UI activations remain unrun.**
 
 # David ben Hezekiah and the Baghdad claim
+
+**2026-11-16 addendum:** The original decision below combined taking
+Baghdad with Exilarchal recognition and gated both to David's character
+ID. Daniel rejected that special case. The current rules are in
+`docs/spec/2026-11-16-community-claims-and-exilarch-recognition.md`:
+David has a recorded community claim on Baghdad, any Jewish adventurer
+with a claim may press any community seat, and any Ben David community
+leader may separately seek the vacant Exilarchate. The older flow and
+its test record below are retained as the design history, not as a
+description of the current decision.
 
 This user-directed slice revises the 1066 Seljuk Mesopotamian Jewish political
 map. It supersedes the 1066 Baghdad/Pumbedita relationship in

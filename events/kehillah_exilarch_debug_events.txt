@@ -1,6 +1,7 @@
-﻿# Console only: run as David ben Hezekiah in the 1066 bookmark.
-# Event 1 reports the state; event 2 executes the petition transfer to
-# probe the title/government transition without waiting for opinion.
+﻿# Console only: run as the claimant in a disposable campaign.
+# Event 1 reports state. For event 2, set the character variable
+# kehillah_claim_debug_target to any claimed community title; event 3
+# grants the vacant Exilarchate to a qualifying Ben David leader.
 namespace = kehillah_exilarch_debug
 
 kehillah_exilarch_debug.1 = {
@@ -11,7 +12,7 @@ kehillah_exilarch_debug.1 = {
 		debug_log_scopes = yes
 		title:d_kehillah_baghdad = { debug_log_scopes = yes }
 		title:d_kehillah_exilarchate = { debug_log_scopes = yes }
-		character:9003160 ?= { debug_log_scopes = yes }
+		primary_title ?= { debug_log_scopes = yes }
 	}
 }
 
@@ -19,13 +20,36 @@ kehillah_exilarch_debug.2 = {
 	type = character_event
 	hidden = yes
 	trigger = {
-		this = character:9001102
+		is_jewish_character_trigger = yes
 		has_government = landless_adventurer_government
-		title:d_kehillah_baghdad = { exists = holder }
+		exists = var:kehillah_claim_debug_target
+		var:kehillah_claim_debug_target = { is_kehillah_title_trigger = yes exists = holder }
+		is_target_in_variable_list = {
+			name = kehillah_community_claims
+			target = var:kehillah_claim_debug_target
+		}
 	}
 	immediate = {
-		kehillah_press_exilarch_claim_effect = yes
-		debug_log = "KEHILLAH_EXILARCH_PROBE: after"
+		var:kehillah_claim_debug_target = { save_scope_as = kehillah_claim_seat }
+		kehillah_press_community_claim_effect = yes
+		debug_log = "KEHILLAH_SEAT_CLAIM_PROBE: after"
+		debug_log_scopes = yes
+	}
+}
+
+kehillah_exilarch_debug.3 = {
+	type = character_event
+	hidden = yes
+	trigger = {
+		is_jewish_character_trigger = yes
+		has_trait = ben_david
+		government_has_flag = government_is_kehillah
+		primary_title = { is_kehillah_title_trigger = yes }
+		NOT = { exists = title:d_kehillah_exilarchate.holder }
+	}
+	immediate = {
+		kehillah_grant_exilarchate_effect = yes
+		debug_log = "KEHILLAH_EXILARCH_PROBE: recognized"
 		debug_log_scopes = yes
 	}
 }
