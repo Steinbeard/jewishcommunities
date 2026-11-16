@@ -1,5 +1,7 @@
 # Roadmap
 
+**David ben Hezekiah and the Exilarchate BUILT 2026-11-16; xTiger baseline unchanged, isolated boot reached bookmark database, live transfer pending:** the bookmark David is the single son of Hezekiah, friend of Joseph ha-Nagid; Isaac ibn Sakri serves as his camp Dayyan. Baghdad has an obscure caretaker, Ibn Fadlan appears as its politically active banker, and Sura and Pumbedita remain distinct communities. The Exilarchate is a separate lifetime titular office with dated holder history; David can press his claim in Baghdad with communal and host assent. Earlier genealogical gaps remain explicit. See [the build and research record](docs/implementation/2026-11-16-david-and-the-exilarchate.md). The transfer must pass a Luna live probe before it is considered verified.
+
 Working title: **Kehillah** (working name for the mod overall is still TBD — "Jewish Communities" is the folder/descriptor name for now).
 
 Two playable tracks, per the project vision:
