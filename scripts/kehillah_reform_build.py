@@ -17,7 +17,7 @@ Writes:
   common/customizable_localization/kehillah_reform_custom_loc.txt
   events/kehillah_reform_events.txt
 The motion targets must match TENET_INDEX in kehillah_library_catalog.py
-(the same 1..12 indices books use).
+(the historical 1..12 indices plus appended Piyyut at 13).
 """
 
 from pathlib import Path
@@ -29,23 +29,28 @@ HEADER = [
     "# The tenet-reform loop of the Sefer redesign (2026-11-08).",
 ]
 
-# (key, loc name) -- indices 1..12 are motion targets (TENET_INDEX order).
+# (key, loc name) -- indices 1..13 are motion targets (TENET_INDEX order).
 TARGETS = [
-    ("tenet_talmud_torah", "Talmud Torah"),
-    ("tenet_baalei_hamiqra", "Ba'alei ha-Miqra"),
-    ("tenet_kehillah_hokhmah", "Hokhmah"),
-    ("tenet_kehillah_emunah_temimah", "Emunah Temimah"),
-    ("tenet_kehillah_pesak", "Pesak"),
-    ("tenet_kehillah_pilpul", "Pilpul"),
-    ("tenet_kehillah_geonut", "Ge'onut"),
-    ("tenet_kehillah_minhag_avoteinu", "Minhag Avoteinu"),
-    ("tenet_kehillah_avelei_tziyon", "Avelei Tziyon"),
-    ("tenet_esotericism", "Kabbalah"),
-    ("tenet_asceticism", "Hasidut"),
-    ("tenet_kehillah_kiddush_hashem", "Kiddush ha-Shem"),
+    ("tenet_kehillah_scholarly_study", "Scholarly Study"),
+    ("tenet_literalism", "Literalism"),
+    ("tenet_kehillah_hokhmah", "Reasoned Theology"),
+    ("tenet_unrelenting_faith", "Unrelenting Faith"),
+    ("tenet_religious_legal_pronouncements", "Religious Legal Pronouncements"),
+    ("tenet_kehillah_scholarly_study", "Scholarly Study"),
+    ("tenet_religious_legal_pronouncements", "Religious Legal Pronouncements"),
+    ("tenet_communal_identity", "Communal Identity"),
+    ("tenet_kehillah_avelei_tziyon", "Sacred Homeland"),
+    ("tenet_esotericism", "Esotericism"),
+    ("tenet_asceticism", "Asceticism"),
+    ("tenet_kehillah_kiddush_hashem", "Sanctification of the Name"),
+    ("tenet_kehillah_sacred_liturgy", "Sacred Liturgy"),
+    ("tenet_kehillah_covenant_community", "Covenant Community"),
+    ("tenet_kehillah_messianic_hope", "Messianic Hope"),
+    ("tenet_kehillah_prophetic_revelation", "Prophetic Revelation"),
+    ("tenet_kehillah_temple_service", "Temple Service"),
 ]
 # Core tenets a reform may replace: the targets plus vanilla Jewish cores.
-REPLACEABLE = TARGETS + [
+REPLACEABLE = TARGETS[:12] + [
     ("tenet_legalism", "Legalism"),
     ("tenet_religious_legal_pronouncements", "Halakha"),
     ("tenet_communal_identity", "Communal Identity"),
@@ -53,18 +58,11 @@ REPLACEABLE = TARGETS + [
     ("tenet_ritual_celebrations", "Moadim le-Simcha"),
     ("tenet_pursuit_of_knowledge", "Pursuit of Knowledge"),
     ("tenet_literalism", "Literalism"),
-]
+] + [TARGETS[12], TARGETS[13], TARGETS[14], TARGETS[15], TARGETS[16]] # Append the new replacement choice; retain old ordinals 13-19.
 # A rite's identity tenet is never offered for replacement.
-PROTECTED = {"tenet_talmud_torah", "tenet_baalei_hamiqra"}
+PROTECTED = set() # Canon and binding authority are doctrines, not protected cores.
 # Mutually exclusive pairs (as core tenets).
-RIVALS = {
-    "tenet_kehillah_hokhmah": "tenet_kehillah_emunah_temimah",
-    "tenet_kehillah_emunah_temimah": "tenet_kehillah_hokhmah",
-    "tenet_kehillah_geonut": "tenet_kehillah_minhag_avoteinu",
-    "tenet_kehillah_minhag_avoteinu": "tenet_kehillah_geonut",
-    "tenet_talmud_torah": "tenet_baalei_hamiqra",
-    "tenet_baalei_hamiqra": "tenet_talmud_torah",
-}
+RIVALS = {} # The retired reason/authority binaries no longer restrict cores.
 ACTIONS = ["core", "permit", "ban", "lift"]
 
 
@@ -79,6 +77,7 @@ def triggers():
         "# Scope: a host whose rite is asked about $TENET$. Each is what one",
         "# action needs.",
         "kehillah_reform_can_core_trigger = {",
+        "\tkehillah_revival_adoption_allowed_trigger = { TENET = $TENET$ }",
         "\trite ?= {",
         "\t\thas_at_least_tenet_status = { tenet = $TENET$ status = permitted }",
         "\t\tNOT = { rite_has_tenet = $TENET$ }",
@@ -102,10 +101,10 @@ def triggers():
         "kehillah_reform_any_motion_trigger = {",
         "\tOR = {",
     ]
-    for key, _ in TARGETS:
+    for key, _ in dict.fromkeys(TARGETS):
         out += [f"\t\tkehillah_reform_any_action_{key}_trigger = yes"]
     out += ["\t}", "}", ""]
-    for key, _ in TARGETS:
+    for key, _ in dict.fromkeys(TARGETS):
         rival = RIVALS.get(key)
         rival_line = f"\t\t\trite ?= {{ NOT = {{ rite_has_tenet = {rival} }} }}" if rival else ""
         out += [f"kehillah_reform_any_action_{key}_trigger = {{", "\tOR = {"]
@@ -171,6 +170,13 @@ def effects():
         "# Changes the rite's core tenets or the faith's status, refreshes every",
         "# book's ceiling in the faith, and tells the faith's players.",
         "kehillah_reform_enact_effect = {",
+        "\tif = {",
+        "\t\tlimit = { OR = { NOT = { var:kehillah_reform_action ?= flag:core } kehillah_reform_chosen_can_core_trigger = yes } }",
+        "\t\tkehillah_reform_enact_unchecked_effect = yes",
+        "\t}",
+        "\telse = { send_interface_toast = { type = event_toast_text_and_effect_bad title = kehillah_revival_reform_lapsed left_icon = root } }",
+        "}",
+        "kehillah_reform_enact_unchecked_effect = {",
         "\tsave_scope_as = kehillah_reform_host",
         "\tfaith = { save_scope_as = kehillah_reform_faith }",
         "\tcustom_tooltip = kehillah_reform_enacted_tt",
@@ -313,6 +319,8 @@ def events():
         "\ttrigger = { exists = involved_activity }",
     ]
     for i, (key, _) in enumerate(TARGETS, start=1):
+        if key in [t for t, _ in TARGETS[:i-1]]:
+            continue # An old alias slot remains dispatchable, not a duplicate choice.
         out += [
             "\toption = {",
             f"\t\tname = kehillah_reform.0001.t{i}",
@@ -398,7 +406,7 @@ def events():
         "\ttrigger = { exists = involved_activity exists = var:kehillah_reform_tenet }",
     ]
     for i, (key, _) in enumerate(REPLACEABLE, start=1):
-        if key in PROTECTED:
+        if key in PROTECTED or key in [t for t, _ in REPLACEABLE[:i-1]]:
             continue
         out += [
             "\toption = {",

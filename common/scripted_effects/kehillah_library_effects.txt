@@ -71,6 +71,50 @@ kehillah_seed_starting_library_effect = {
 				1 = { set_variable = { name = kehillah_starting_other_count value = 3 } }
 			}
 		}
+		# 2026-11-14 (Daniel): an authored community's historical eminence
+		# (kehillah_start_eminence_effects.txt) sets its starting library.
+		# A great center holds the whole Shas; a modest one a single order.
+		else_if = {
+			limit = {
+				has_variable = kehillah_start_eminence
+				var:kehillah_start_eminence >= 4
+			}
+			set_variable = { name = kehillah_starting_book_count value = 6 }
+			set_variable = { name = kehillah_starting_other_count value = 3 }
+		}
+		else_if = {
+			limit = {
+				has_variable = kehillah_start_eminence
+				var:kehillah_start_eminence = 3
+			}
+			random_list = {
+				1 = { set_variable = { name = kehillah_starting_book_count value = 4 } }
+				1 = { set_variable = { name = kehillah_starting_book_count value = 5 } }
+			}
+			set_variable = { name = kehillah_starting_other_count value = 2 }
+		}
+		else_if = {
+			limit = {
+				has_variable = kehillah_start_eminence
+				var:kehillah_start_eminence = 2
+			}
+			random_list = {
+				1 = { set_variable = { name = kehillah_starting_book_count value = 2 } }
+				1 = { set_variable = { name = kehillah_starting_book_count value = 3 } }
+			}
+			random_list = {
+				1 = { set_variable = { name = kehillah_starting_other_count value = 1 } }
+				1 = { set_variable = { name = kehillah_starting_other_count value = 2 } }
+			}
+		}
+		else_if = {
+			limit = {
+				has_variable = kehillah_start_eminence
+				var:kehillah_start_eminence <= 1
+			}
+			set_variable = { name = kehillah_starting_book_count value = 1 }
+			set_variable = { name = kehillah_starting_other_count value = 1 }
+		}
 		else_if = {
 			limit = { holder = { domicile ?= { has_domicile_building_or_higher = kehillah_beit_midrash_02 } } }
 			random_list = {
@@ -460,9 +504,23 @@ kehillah_seed_one_mystical_work_effect = {
 kehillah_study_specific_work_effect = {
 	kehillah_language_scholar_ensure_effect = yes
 	remove_variable = kehillah_study_mastery_roll
-	random = {
-		chance = kehillah_lib_mastery_chance_$KEY$
-		set_variable = { name = kehillah_study_mastery_roll value = yes }
+	# 2026-11-13: the Studying Torah scheme rolls its own success chance (which
+	# is this book's mastery chance) at completion and leaves the verdict in
+	# kehillah_study_scheme_result (1 mastered, 0 not). The travel journey has no
+	# scheme, so it still rolls here.
+	if = {
+		limit = { has_variable = kehillah_study_scheme_result }
+		if = {
+			limit = { var:kehillah_study_scheme_result = 1 }
+			set_variable = { name = kehillah_study_mastery_roll value = yes }
+		}
+		remove_variable = kehillah_study_scheme_result
+	}
+	else = {
+		random = {
+			chance = kehillah_lib_mastery_chance_$KEY$
+			set_variable = { name = kehillah_study_mastery_roll value = yes }
+		}
 	}
 	if = {
 		limit = { is_target_in_variable_list = { name = kehillah_mastered_works target = $WORK$ } }
@@ -916,6 +974,7 @@ kehillah_lib_study_start_course_effect = {
 	}
 	kehillah_study_torah_resolve_library_effect = { CHARACTER = root }
 	set_variable = { name = kehillah_study_current_work_id value = $WORK_ID$ }
+	kehillah_study_sync_current_work_effect = yes
 	trigger_event = kehillah_study_torah.0002
 }
 
@@ -937,6 +996,7 @@ kehillah_study_torah_switch_book_effect = {
 		}
 		kehillah_study_torah_resolve_library_effect = { CHARACTER = root }
 		set_variable = { name = kehillah_study_current_work_id value = var:kehillah_study_pending_work_id }
+		kehillah_study_sync_current_work_effect = yes
 		every_scheme = {
 			limit = { scheme_type = kehillah_study_torah }
 			reset_scheme_progress = yes
@@ -985,6 +1045,8 @@ kehillah_study_torah_resolve_library_effect = {
 # occur per course, and it can grant progress or a one-course mastery
 # bonus.
 kehillah_study_torah_monthly_effect = {
+	# 2026-11-15: keeps the scheme panel's book flag right for older saves.
+	kehillah_study_sync_current_work_effect = yes
 	if = {
 		limit = { has_variable = kehillah_study_current_work_id }
 		# CHARACTER = scope:owner, NOT root or this -- see kehillah_study_

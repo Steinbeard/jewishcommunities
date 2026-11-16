@@ -3062,3 +3062,60 @@ kehillah_debug.139 = {
 		debug_log = "kehillah_debug.139: Kairouan empty-site assessment -- END"
 	}
 }
+
+# Neighbouring-crisis aid probe (2026-11-12). Starts a crisis on the current
+# community and reports which registered Kehillot lie in its bounded local
+# network. Run .141, then inspect the queued news events and debug.log.
+kehillah_debug.141 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.141: neighbouring crisis aid -- START"
+		primary_title = { save_scope_as = kehillah_debug_crisis_title }
+		kehillah_crisis_begin_effect = yes
+		if = {
+			limit = { exists = scope:kehillah_debug_crisis_title.holder.domicile.domicile_location }
+			scope:kehillah_debug_crisis_title.holder.domicile.domicile_location = { save_scope_as = kehillah_debug_crisis_location }
+			every_in_global_list = {
+				variable = kehillah_registered_communities
+				limit = {
+					NOT = { this = scope:kehillah_debug_crisis_title }
+					exists = holder.domicile.domicile_location
+					holder.domicile.domicile_location = { squared_distance = { target = scope:kehillah_debug_crisis_location value <= squared_distance_medium } }
+				}
+				debug_log = "kehillah_debug.141: nearby community queued for crisis-aid news"
+				debug_log_scopes = yes
+			}
+		}
+		debug_log = "kehillah_debug.141: neighbouring crisis aid -- END"
+	}
+}
+
+# Settlement-visit bridge probe (2026-11-15). Run as the adventurer while
+# standing in a holding. It does not open the visit or change state; it shows
+# whether the base-game Visit Local Settlement action should offer the Kehillah
+# preface and lists the qualifying community title(s).
+kehillah_debug.142 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_debug.142: settlement-visit bridge -- START"
+		if = {
+			limit = { kehillah_adventurer_community_visit_available_trigger = yes }
+			debug_log = "kehillah_debug.142: community bridge AVAILABLE"
+	}
+		else = { debug_log = "kehillah_debug.142: community bridge unavailable" }
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = { kehillah_visit_title_here_trigger = { VISITOR = root } }
+			debug_log = "kehillah_debug.142: matching local community"
+			debug_log_scopes = yes
+		}
+		if = {
+			limit = { has_variable = kehillah_visit_community_cooldown }
+			debug_log = "kehillah_debug.142: six-month community cooldown ACTIVE"
+	}
+		else = { debug_log = "kehillah_debug.142: six-month community cooldown clear" }
+		debug_log = "kehillah_debug.142: settlement-visit bridge -- END"
+	}
+}

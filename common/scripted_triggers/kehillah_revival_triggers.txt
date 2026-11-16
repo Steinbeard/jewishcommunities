@@ -1,0 +1,48 @@
+﻿kehillah_uses_gerizim_service_trigger = { rite ?= { kehillah_rite_samaritan_trigger = yes } }
+kehillah_has_messianic_hope_trigger = {
+    OR = { rite ?= { rite_has_tenet = tenet_kehillah_messianic_hope } has_personal_tenet = tenet_kehillah_messianic_hope }
+}
+kehillah_has_prophetic_revelation_trigger = {
+    OR = { rite ?= { rite_has_tenet = tenet_kehillah_prophetic_revelation } has_personal_tenet = tenet_kehillah_prophetic_revelation }
+}
+kehillah_has_temple_service_trigger = {
+    OR = { rite ?= { rite_has_tenet = tenet_kehillah_temple_service } has_personal_tenet = tenet_kehillah_temple_service }
+}
+# Character scope. Books and synods cannot bypass institutional prerequisites.
+kehillah_revival_adoption_allowed_trigger = {
+    OR = {
+        tenet:$TENET$ = { NOT = { this = tenet:tenet_kehillah_temple_service } }
+        kehillah_temple_service_available_trigger = yes
+    }
+    OR = {
+        tenet:$TENET$ = { NOT = { this = tenet:tenet_kehillah_prophetic_revelation } }
+        has_character_flag = kehillah_prophetic_calling
+        has_character_flag = kehillah_prophetic_revival_recognized
+        rite ?= { rite_has_tenet = tenet_kehillah_prophetic_revelation }
+    }
+}
+# Character scope. Conquest/conversion alone does not restore Jerusalem service.
+kehillah_temple_service_available_trigger = {
+    OR = {
+        AND = { kehillah_uses_gerizim_service_trigger = yes exists = faith.religious_head faith.religious_head = { is_alive = yes is_adult = yes is_male = yes is_imprisoned = no is_incapable = no has_trait = kohen } }
+        AND = {
+            is_jewish_character_trigger = yes
+            title:c_jerusalem = {
+                has_variable = kehillah_temple_service_restored
+                holder.faith = prev.faith
+                any_county_province = { has_building = dome_of_the_rock_01 }
+                holder = { OR = { AND = { is_adult = yes is_male = yes is_imprisoned = no is_incapable = no has_trait = kohen } any_courtier = { is_adult = yes is_alive = yes is_male = yes is_imprisoned = no is_incapable = no has_trait = kohen faith = prev.faith } } }
+            }
+        }
+    }
+}
+# Character scope, with the native pilgrimage's activity scope. Exact barony,
+# not county: vanilla puts Gerizim and Jerusalem in c_jerusalem.
+kehillah_sacrifice_destination_trigger = {
+    kehillah_has_temple_service_trigger = yes
+    kehillah_temple_service_available_trigger = yes
+    OR = {
+        AND = { kehillah_uses_gerizim_service_trigger = yes scope:activity.activity_location.barony = title:b_nablus }
+        AND = { NOT = { kehillah_uses_gerizim_service_trigger = yes } scope:activity.activity_location.barony = title:b_jerusalem }
+    }
+}

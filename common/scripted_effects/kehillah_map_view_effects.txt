@@ -636,9 +636,31 @@ kehillah_paint_communities_map_effect = {
 		kehillah_resolve_local_jewish_culture_effect = yes
 		every_county_province = {
 			remove_variable = kehillah_map_community
+			remove_variable = kehillah_map_former_site
 			barony ?= {
 				set_color_from_title = title:d_kehillah_mapcolor_base
 			}
+		}
+	}
+
+	# 2026-11-14 (Daniel): former communities, in ash, under the living
+	# ones (painted next, so a living community always wins its barony).
+	# The barony is the one the community last held when that is
+	# recorded, otherwise the county's capital.
+	every_in_global_list = {
+		variable = kehillah_former_sites
+		limit = {
+			has_variable = kehillah_history_status
+			var:kehillah_history_status >= 2
+		}
+		save_scope_as = kehillah_paint_former_county
+		if = {
+			limit = { exists = var:kehillah_history_last_barony.title_province }
+			var:kehillah_history_last_barony.title_province = { kehillah_paint_former_site_effect = yes }
+		}
+		else_if = {
+			limit = { exists = title_province }
+			title_province = { kehillah_paint_former_site_effect = yes }
 		}
 	}
 
@@ -665,6 +687,12 @@ kehillah_paint_communities_map_effect = {
 			}
 		}
 	}
+}
+
+# Scope: a province; scope:kehillah_paint_former_county is its county.
+kehillah_paint_former_site_effect = {
+	set_variable = { name = kehillah_map_former_site value = scope:kehillah_paint_former_county }
+	barony ?= { set_color_from_title = title:d_kehillah_mapcolor_former }
 }
 
 # Map mode: current rite of each registered Kehillah. Scope is the

@@ -25,6 +25,8 @@ kehillah_rank_communities_effect = {
 		if = {
 			limit = { exists = holder }
 			change_global_variable = { name = kehillah_rank_count add = 1 }
+			# 2026-11-14: the place remembers its highest Standing band.
+			kehillah_history_update_peak_effect = yes
 		}
 		else = {
 			remove_variable = kehillah_rank_standing
@@ -83,6 +85,41 @@ kehillah_ledger_build_effect = {
 		else = {
 			kehillah_ledger_fill_effect = { VALUE = kehillah_standing_value }
 		}
+	}
+	# 2026-11-14: the lost communities, highest remembered height first.
+	clear_variable_list = kehillah_ledger_lost_list
+	save_scope_as = kehillah_ledger_owner
+	kehillah_ledger_add_lost_band_effect = { PEAK = 5 }
+	kehillah_ledger_add_lost_band_effect = { PEAK = 4 }
+	kehillah_ledger_add_lost_band_effect = { PEAK = 3 }
+	kehillah_ledger_add_lost_band_effect = { PEAK = 2 }
+	every_in_global_list = {
+		variable = kehillah_former_sites
+		limit = {
+			has_variable = kehillah_history_status
+			var:kehillah_history_status >= 2
+			OR = {
+				NOT = { has_variable = kehillah_history_peak }
+				var:kehillah_history_peak <= 1
+			}
+		}
+		save_scope_as = kehillah_ledger_lost_entry
+		scope:kehillah_ledger_owner = { add_to_variable_list = { name = kehillah_ledger_lost_list target = scope:kehillah_ledger_lost_entry } }
+	}
+}
+
+# Scope: the player, saved as scope:kehillah_ledger_owner.
+kehillah_ledger_add_lost_band_effect = {
+	every_in_global_list = {
+		variable = kehillah_former_sites
+		limit = {
+			has_variable = kehillah_history_status
+			var:kehillah_history_status >= 2
+			has_variable = kehillah_history_peak
+			var:kehillah_history_peak = $PEAK$
+		}
+		save_scope_as = kehillah_ledger_lost_entry
+		scope:kehillah_ledger_owner = { add_to_variable_list = { name = kehillah_ledger_lost_list target = scope:kehillah_ledger_lost_entry } }
 	}
 }
 

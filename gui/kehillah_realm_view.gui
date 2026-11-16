@@ -65,6 +65,7 @@
 @rv_cell_w = 100
 @rv_cell_h = 150
 @rv_col_w = 268
+@rv_col_r_w = 284
 
 window = {
 	name = "kehillah_realm_view_window"
@@ -318,32 +319,56 @@ window = {
 						ignoreinvisible = yes
 						spacing = 1
 
-						text_single = {
+						# Keep every community header to two lines. A capital community's
+						# realm-seat badge shares the title row rather than adding a third.
+						hbox = {
 							layoutpolicy_horizontal = expanding
-							align = left|nobaseline
-							max_width = 360
-							text = "[Title.GetNameNoTooltip]"
-							default_format = "#high;bold"
-							using = Font_Size_Medium
+							spacing = 8
+							ignoreinvisible = yes
+
+							text_single = {
+								layoutpolicy_horizontal = expanding
+								align = left|nobaseline
+								max_width = 360
+								text = "[Title.GetNameNoTooltip]"
+								default_format = "#high;bold"
+								using = Font_Size_Medium
+							}
+							text_single = {
+								visible = "[And( Title.HasHolder, GetScriptedGui( 'kehillah_nagid_rv_seat' ).IsShown( GuiScope.SetRoot( Title.GetHolder.MakeScope ).End ) )]"
+								align = right|nobaseline
+								max_width = 180
+								text = "[Title.GetHolder.Custom( 'KehillahRvSeatLine' )]"
+								tooltip = "KEHILLAH_RV_SEAT_TOOLTIP"
+								using = tooltip_ws
+							}
 						}
-						text_single = {
+						# Holder and description, then the founding year on the same
+						# line (2026-11-14, Daniel). The year is the title's
+						# kehillah_founded_year; hidden while it is unset.
+						hbox = {
 							layoutpolicy_horizontal = expanding
-							align = left|nobaseline
-							max_width = 360
-							text = "KEHILLAH_RV_DETAIL_SUB"
-							default_format = "#weak"
-							tooltip = "KEHILLAH_BD_STANDING_TOOLTIP"
-							using = tooltip_ws
-						}
-						# The realm's seat (the Nagid spec, section 4; 2026-11-01).
-						text_single = {
-							visible = "[And( Title.HasHolder, GetScriptedGui( 'kehillah_nagid_rv_seat' ).IsShown( GuiScope.SetRoot( Title.GetHolder.MakeScope ).End ) )]"
-							layoutpolicy_horizontal = expanding
-							align = left|nobaseline
-							max_width = 360
-							text = "[Title.GetHolder.Custom( 'KehillahRvSeatLine' )]"
-							tooltip = "KEHILLAH_RV_SEAT_TOOLTIP"
-							using = tooltip_ws
+							spacing = 4
+							ignoreinvisible = yes
+
+							text_single = {
+								align = left|nobaseline
+								max_width = 300
+								text = "KEHILLAH_RV_DETAIL_SUB"
+								default_format = "#weak"
+								tooltip = "KEHILLAH_BD_STANDING_TOOLTIP"
+								using = tooltip_ws
+							}
+							text_single = {
+								visible = "[Title.MakeScope.Var( 'kehillah_founded_year' ).IsSet]"
+								align = left|nobaseline
+								max_width = 90
+								text = "KEHILLAH_RV_DETAIL_FOUNDED"
+								default_format = "#weak"
+								tooltip = "KEHILLAH_RV_DETAIL_FOUNDED_TOOLTIP"
+								using = tooltip_ws
+							}
+							expand = {}
 						}
 					}
 
@@ -685,18 +710,91 @@ window = {
 					}
 
 					vbox = {
-						min_width = @rv_col_w
-						max_width = @rv_col_w
+						min_width = @rv_col_r_w
+						max_width = @rv_col_r_w
 						spacing = 2
 
-						text_single = { layoutpolicy_horizontal = expanding align = left|nobaseline max_width = @rv_col_w text = "KEHILLAH_RV_COL_CHARTER" default_format = "#weak" }
-						text_multi = {
+						text_single = { layoutpolicy_horizontal = expanding align = left|nobaseline max_width = @rv_col_r_w text = "KEHILLAH_RV_COL_CHARTER" default_format = "#weak" }
+						# The terms as one-line rows (2026-11-14): tier mark, the term's
+						# full name, arrow when above/below the realm policy.
+						vbox = {
 							layoutpolicy_horizontal = expanding
-							autoresize = yes
-							min_width = @rv_col_w
-							max_width = @rv_col_w
-							text = "KEHILLAH_DOMAIN_CHARTER_TERMS"
-							using = Font_Size_Small
+							spacing = 2
+							ignoreinvisible = yes
+
+							kehillah_rv_charter_row = {
+								blockoverride "row_visible" { visible = "[GreaterThan_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_regional_value' ), '(CFixedPoint)0' )]" }
+								blockoverride "row_tooltip" { tooltip = "KEHILLAH_CHARTER_TERM_CONSTRUCTION_TT" }
+								blockoverride "row_value" { text = "[Title.GetHolder.Custom( 'KehillahCharterNoticeConstruction' )]" }
+								blockoverride "tier_good_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_construction_value' ), '(CFixedPoint)2' )]" }
+								blockoverride "tier_mid_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_construction_value' ), '(CFixedPoint)1' )]" }
+								blockoverride "tier_bad_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_construction_value' ), '(CFixedPoint)0' )]" }
+								blockoverride "delta_up_visible" { visible = "[GreaterThan_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_d_construction_value' ), '(CFixedPoint)0' )]" }
+								blockoverride "delta_down_visible" { visible = "[LessThan_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_d_construction_value' ), '(CFixedPoint)0' )]" }
+							}
+							kehillah_rv_charter_row = {
+								blockoverride "row_visible" { visible = "[GreaterThan_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_regional_value' ), '(CFixedPoint)0' )]" }
+								blockoverride "row_tooltip" { tooltip = "KEHILLAH_CHARTER_TERM_SECURITY_TT" }
+								blockoverride "row_value" { text = "[Title.GetHolder.Custom( 'KehillahCharterNoticeSecurity' )]" }
+								blockoverride "tier_good_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_security_value' ), '(CFixedPoint)2' )]" }
+								blockoverride "tier_mid_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_security_value' ), '(CFixedPoint)1' )]" }
+								blockoverride "tier_bad_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_security_value' ), '(CFixedPoint)0' )]" }
+								blockoverride "delta_up_visible" { visible = "[GreaterThan_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_d_security_value' ), '(CFixedPoint)0' )]" }
+								blockoverride "delta_down_visible" { visible = "[LessThan_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_d_security_value' ), '(CFixedPoint)0' )]" }
+							}
+							kehillah_rv_charter_row = {
+								blockoverride "row_visible" { visible = "[GreaterThan_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_regional_value' ), '(CFixedPoint)0' )]" }
+								blockoverride "row_tooltip" { tooltip = "KEHILLAH_CHARTER_TERM_JURISDICTION_TT" }
+								blockoverride "row_value" { text = "[Title.GetHolder.Custom( 'KehillahCharterNoticeJurisdiction' )]" }
+								blockoverride "tier_good_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_jurisdiction_value' ), '(CFixedPoint)2' )]" }
+								blockoverride "tier_mid_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_jurisdiction_value' ), '(CFixedPoint)1' )]" }
+								blockoverride "tier_bad_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_jurisdiction_value' ), '(CFixedPoint)0' )]" }
+								blockoverride "delta_up_visible" { visible = "[GreaterThan_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_d_jurisdiction_value' ), '(CFixedPoint)0' )]" }
+								blockoverride "delta_down_visible" { visible = "[LessThan_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_d_jurisdiction_value' ), '(CFixedPoint)0' )]" }
+							}
+							kehillah_rv_charter_row = {
+								blockoverride "row_visible" { visible = "[GreaterThan_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_regional_value' ), '(CFixedPoint)0' )]" }
+								blockoverride "row_tooltip" { tooltip = "[SelectLocalization( GreaterThan_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_christian_value' ), '(CFixedPoint)0' ), 'KEHILLAH_CHARTER_TERM_TEXTS_TT', 'KEHILLAH_CHARTER_TERM_MARKET_TT' )]" }
+								blockoverride "row_value" { text = "[Title.GetHolder.Custom( 'KehillahCharterNoticeKnowledgeOrTrade' )]" }
+								blockoverride "tier_good_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_fourth_value' ), '(CFixedPoint)2' )]" }
+								blockoverride "tier_mid_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_fourth_value' ), '(CFixedPoint)1' )]" }
+								blockoverride "tier_bad_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_fourth_value' ), '(CFixedPoint)0' )]" }
+								blockoverride "delta_up_visible" { visible = "[GreaterThan_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_d_fourth_value' ), '(CFixedPoint)0' )]" }
+								blockoverride "delta_down_visible" { visible = "[LessThan_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_d_fourth_value' ), '(CFixedPoint)0' )]" }
+							}
+							kehillah_rv_charter_row = {
+								blockoverride "row_visible" { visible = "[GreaterThan_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_fallback_value' ), '(CFixedPoint)0' )]" }
+								blockoverride "row_tooltip" { tooltip = "KEHILLAH_CHARTER_TERM_LENDING_TT" }
+								blockoverride "row_value" { text = "[Title.GetHolder.Custom( 'KehillahCharterNoticeLending' )]" }
+								blockoverride "tier_good_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_lending_value' ), '(CFixedPoint)2' )]" }
+								blockoverride "tier_mid_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_lending_value' ), '(CFixedPoint)1' )]" }
+								blockoverride "tier_bad_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_lending_value' ), '(CFixedPoint)0' )]" }
+							}
+							kehillah_rv_charter_row = {
+								blockoverride "row_visible" { visible = "[GreaterThan_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_fallback_value' ), '(CFixedPoint)0' )]" }
+								blockoverride "row_tooltip" { tooltip = "KEHILLAH_CHARTER_TERM_WALLED_TT" }
+								blockoverride "row_value" { text = "[Title.GetHolder.Custom( 'KehillahCharterNoticeWalled' )]" }
+								blockoverride "tier_good_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_walled_value' ), '(CFixedPoint)2' )]" }
+								blockoverride "tier_mid_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_walled_value' ), '(CFixedPoint)1' )]" }
+								blockoverride "tier_bad_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_walled_value' ), '(CFixedPoint)0' )]" }
+							}
+							kehillah_rv_charter_row = {
+								blockoverride "row_visible" { visible = "[Or( GreaterThan_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_regional_value' ), '(CFixedPoint)0' ), GreaterThan_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_fallback_value' ), '(CFixedPoint)0' ) )]" }
+								blockoverride "row_tooltip" { tooltip = "KEHILLAH_CHARTER_TERM_TRIBUTE_TT" }
+								blockoverride "row_value" { text = "[Title.GetHolder.Custom( 'KehillahCharterNoticeTribute' )]" }
+								blockoverride "tier_good_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_tribute_value' ), '(CFixedPoint)2' )]" }
+								blockoverride "tier_mid_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_tribute_value' ), '(CFixedPoint)1' )]" }
+								blockoverride "tier_bad_visible" { visible = "[EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_g_tribute_value' ), '(CFixedPoint)0' )]" }
+							}
+
+							text_single = {
+								layoutpolicy_horizontal = expanding
+								max_width = @rv_col_r_w
+								align = left|nobaseline
+								default_format = "#weak"
+								visible = "[And( EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_regional_value' ), '(CFixedPoint)0' ), EqualTo_CFixedPoint( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_rv_charter_fallback_value' ), '(CFixedPoint)0' ) )]"
+								text = "kehillah_charter_notice_unresolved"
+							}
 						}
 						expand = {}
 					}
@@ -1392,6 +1490,85 @@ types KehillahRealmView
 			max_width = 404
 			align = left|nobaseline
 			block "news_text" { text = "" }
+		}
+	}
+
+	### One Charter row in the detail card. datacontext: the community title.
+	### One line (2026-11-14, Daniel: keep it condensed). Left, a tier mark
+	### (check / dash / cross: favourable, middling, unfavourable); middle,
+	### the term's full name, which names itself (the category is in the row's
+	### tooltip); right, an arrow when the term sits above or below what the
+	### realm's policy alone would give.
+	### Values: common/script_values/kehillah_charter_row_values.txt.
+	type kehillah_rv_charter_row = hbox {
+		layoutpolicy_horizontal = expanding
+		spacing = 4
+		ignoreinvisible = yes
+		using = tooltip_ws
+
+		block "row_visible" { visible = no }
+		block "row_tooltip" {}
+
+		widget = {
+			size = { 16 18 }
+
+			icon = {
+				parentanchor = center
+				size = { 14 14 }
+				texture = "gfx/interface/icons/symbols/icon_check.dds"
+				color = { 0.55 0.85 0.55 1 }
+				alwaystransparent = yes
+				block "tier_good_visible" { visible = no }
+			}
+			icon = {
+				parentanchor = center
+				size = { 14 14 }
+				texture = "gfx/interface/icons/symbols/icon_minus_small.dds"
+				color = { 0.92 0.78 0.42 1 }
+				alwaystransparent = yes
+				block "tier_mid_visible" { visible = no }
+			}
+			icon = {
+				parentanchor = center
+				size = { 14 14 }
+				texture = "gfx/interface/icons/symbols/icon_cross.dds"
+				color = { 0.90 0.42 0.42 1 }
+				alwaystransparent = yes
+				block "tier_bad_visible" { visible = no }
+			}
+		}
+
+		text_single = {
+			layoutpolicy_horizontal = expanding
+			max_width = 244
+			align = left|nobaseline
+			using = Font_Size_Small
+			alwaystransparent = yes
+			block "row_value" { text = "" }
+		}
+
+		widget = {
+			size = { 16 18 }
+
+			icon = {
+				parentanchor = center
+				size = { 14 14 }
+				texture = "gfx/interface/icons/symbols/icon_arrow_up.dds"
+				color = { 0.55 0.85 0.55 1 }
+				tooltip = "KEHILLAH_RV_CH_ABOVE_TT"
+				using = tooltip_ws
+				block "delta_up_visible" { visible = no }
+			}
+			icon = {
+				parentanchor = center
+				size = { 14 14 }
+				texture = "gfx/interface/icons/symbols/icon_arrow_up.dds"
+				mirror = vertical
+				color = { 0.90 0.42 0.42 1 }
+				tooltip = "KEHILLAH_RV_CH_BELOW_TT"
+				using = tooltip_ws
+				block "delta_down_visible" { visible = no }
+			}
 		}
 	}
 }

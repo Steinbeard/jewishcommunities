@@ -83,10 +83,9 @@ kehillah_lib_karaite_missing_count_value = {
 }
 
 # ---- Greatness: foundational works (Daniel, 2026-11-08) --------------
-# Scope: a Kehillah leader (the Greatness baseline's scope). A Rabbanite
-# community loses Greatness for each Bavli order its library lacks; a
-# complete Shas earns a small bonus. A Karaite community the same for its
-# three founding works. Shown as one row of the Greatness breakdown.
+# Scope: a Kehillah leader. Missing works cost Greatness only at Foundational
+# or higher in the current rite. Completing these foundations earns the
+# existing bonus (Haymanot retains its exemption from the completion bonus).
 # 2026-11-11 (Daniel): every book the library holds adds Greatness by its
 # standing in the leader's rite, and a banned one takes it away
 # (kehillah_bd_library_works_value, generated). The Greatness floor was cut
@@ -104,25 +103,22 @@ kehillah_lib_greatness_max = 80
 kehillah_lib_shas_order_penalty = 15
 kehillah_lib_complete_shas_bonus = 20
 
-# The title caches var:kehillah_lib_foundation_missing (kehillah_lib_
-# refresh_cache_effect, run whenever the shelf changes and yearly), so this
-# character-scope value reads it without changing scope.
+# Read current rite and holdings directly: old saves and rite changes must not
+# retain the cached missing-Bavli penalty. The title cache remains for map/UI.
 kehillah_bd_foundational_works_value = {
 	value = 0
 	if = {
-		limit = { primary_title ?= { has_variable = kehillah_lib_shas_complete } }
-		add = kehillah_lib_complete_shas_bonus
-	}
-	else_if = {
-		limit = {
-			primary_title ?= {
-				has_variable = kehillah_lib_foundation_missing
-				var:kehillah_lib_foundation_missing > 0
+		limit = { primary_title ?= { exists = holder } }
+		if = {
+			limit = { primary_title = { kehillah_lib_foundational_missing_count_value > 0 } }
+			subtract = {
+				value = primary_title.kehillah_lib_foundational_missing_count_value
+				multiply = kehillah_lib_shas_order_penalty
 			}
 		}
-		subtract = {
-			value = primary_title.var:kehillah_lib_foundation_missing
-			multiply = kehillah_lib_shas_order_penalty
+		else_if = {
+			limit = { primary_title = { kehillah_lib_is_haymanot_library_trigger = no } }
+			add = kehillah_lib_complete_shas_bonus
 		}
 	}
 }

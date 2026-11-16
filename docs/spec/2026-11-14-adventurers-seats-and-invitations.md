@@ -1,4 +1,5 @@
-**Status:** BUILT 2026-11-14, Daniel's request, xTiger-clean, **NOT live-tested**. It amends
+**Status:** BUILT 2026-11-14 and amended 2026-11-15, Daniel's request; source-checked,
+**NOT live-tested**. It amends
 [Stand for the Seat](2026-11-08-stand-for-the-seat.md) (sections 4, 5.2, 5.3 and 8) and adds three
 things beside it: adventurers as candidates, invitations from communities, and a visit-the-community
 decision for Jewish adventurers. Founding is also opened to every Jewish faith. What must be checked in the
@@ -16,7 +17,9 @@ game is in [the validation checklist](../testing/2026-11-08-stand-for-the-seat-v
 - **Adventurers can weigh and stand for a seat.**
 - **Found a Jewish Community** is open to every Jewish faith.
 - Instead of "Seek Out Jewish Families": a **Visit the Jewish Community** option for a Jewish adventurer
-  standing in a county where one lives, with a choice to recruit Jewish characters there.
+  standing in a county where one lives, with a choice to recruit Jewish characters there. As of
+  2026-11-15 it is reached from the base game's **Visit Local Settlement** map action, not a separate
+  decision-group entry.
 
 ## 2. The scoring changes (supersede Stand for the Seat 5.2 and 5.3)
 
@@ -74,8 +77,11 @@ game is in [the validation checklist](../testing/2026-11-08-stand-for-the-seat-v
 
 ## 4. Visit the Jewish Community
 
-`kehillah_visit_community_decision`, for a Jewish landless adventurer standing in a county where a
-registered community's Quarter stands and whose leader is Jewish. It opens `kehillah_visit.0001`:
+For a Jewish landless adventurer standing in a county where a registered community's Quarter stands and
+whose leader is Jewish, the base game's **Visit Local Settlement** map action first opens
+`kehillah_visit.0002`. It offers either **Call on the Jewish community** or **Visit the settlement**.
+The latter opens the untouched vanilla selection menu (tavern, local clergy/castle/craftsmen as appropriate,
+then its normal second page); the former opens `kehillah_visit.0001`:
 
 - **Pray with the congregation:** a little piety, and the leader's regard.
 - **Take a family into my company:** costs gold. A family of the community's local Jewish culture and the
@@ -86,8 +92,17 @@ registered community's Quarter stands and whose leader is Jewish. It opens `kehi
 - **Speak with the leader about the seat:** opens the weigh event, when he may stand for it.
 - **Take my leave.**
 
-The decision has a six-month cooldown and no AI use. A visit is also how an adventurer meets a community
-that might send for him.
+The community route has a six-month per-adventurer cooldown and no AI use. It does not lock or alter a
+normal settlement visit. A visit is also how an adventurer meets a community that might send for him.
+
+### Implementation boundary
+
+The vanilla main-square event has no scripted extension point for another option, and its native window has
+only four visible option slots. A literal fifth community row hides its Leave action; a live UI check on
+2026-11-15 caught exactly that failure. The bridge therefore makes one narrow override of
+`visit_local_settlement_decision`: in a qualifying county it offers the two-way preface above; everywhere
+else it triggers the vanilla event exactly as before. A mod that independently overrides that same vanilla
+decision can supersede this integration.
 
 ## 5. Invitations
 
@@ -115,7 +130,7 @@ Rabbanite shelf, a Samaritan tradition value and seed is the fix.
 
 ## 7. Not built
 
-- A visit offered automatically on arrival; for now it is a decision in the list.
+- A visit offered automatically on arrival.
 - AI adventurers using the visit, and AI leaders declaring.
 - Hybrid-culture leniency (same heritage, different culture, half the penalty). One line, if play wants it.
 - Visiting the **host's** capital or other holdings' Jews outside registered communities.

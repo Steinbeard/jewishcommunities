@@ -653,6 +653,44 @@ def caption_plate(w=64, h=24, border=6):
     return im.resize((w, h), Image.Resampling.LANCZOS)
 
 
+def bookend(w=14, h=72):
+    """A carved walnut bookend seen from the front, an arched top and a brass
+    rim and boss (2026-11-15, Daniel: "add some bookends"). A pair marks the
+    ends of a multi-volume set on the shelf; lit from the left like the
+    spines, and symmetric, so one texture serves both ends."""
+    W, H, S = w * SCALE, h * SCALE, SCALE
+    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    walnut, dark, brass = (92, 56, 30), (52, 30, 16), (186, 146, 74)
+    arch = W // 2
+    # The body: a rectangle under a half-round arch.
+    d.rectangle((0, arch, W - 1, H - 1), fill=walnut)
+    d.pieslice((0, 0, W - 1, 2 * arch), 180, 360, fill=walnut)
+    # The light falls from the left: a lit left edge, a shaded right one.
+    px = im.load()
+    for y in range(H):
+        for x in range(W):
+            r, g, b, a = px[x, y]
+            if not a:
+                continue
+            k = 1.18 - 0.42 * x / (W - 1)
+            k *= 0.97 + 0.03 * math.sin(y * 0.11 + x * 0.02)
+            px[x, y] = (_clamp(r * k), _clamp(g * k), _clamp(b * k), a)
+    # The brass rim, inset, and a darker groove inside it.
+    d.arc((S, S, W - 1 - S, 2 * arch - S), 180, 360, fill=brass, width=S)
+    d.line((S, arch, S, H - 1 - S), fill=brass, width=S)
+    d.line((W - 1 - S, arch, W - 1 - S, H - 1 - S), fill=brass, width=S)
+    d.line((S, H - 1 - S, W - 1 - S, H - 1 - S), fill=brass, width=S)
+    d.arc((3 * S, 3 * S, W - 1 - 3 * S, 2 * arch - 3 * S), 180, 360, fill=dark, width=S)
+    # A brass boss near the top, with a highlight.
+    cx, cy, rad = W // 2, arch + 3 * S, 2 * S
+    d.ellipse((cx - rad, cy - rad, cx + rad, cy + rad), fill=brass, outline=dark, width=max(1, S // 2))
+    d.ellipse((cx - rad // 2 - S // 2, cy - rad // 2 - S // 2, cx - S // 2, cy - S // 2), fill=(236, 214, 150))
+    # A dark foot where it meets the shelf.
+    d.rectangle((0, H - 2 * S, W - 1, H - 1), fill=dark)
+    return im.resize((w, h), Image.Resampling.LANCZOS)
+
+
 case_back().save(OUT / "kehillah_lib_case_back.dds")
 case_frame().save(OUT / "kehillah_lib_case_frame.dds")
 plank(486).save(OUT / "kehillah_lib_shelf_plank.dds")
@@ -677,3 +715,4 @@ def case_compartment(w=256, h=COMPARTMENT_H):
 case_compartment().save(OUT / "kehillah_lib_case_compartment.dds")
 shelf_shadow().save(OUT / "kehillah_lib_shelf_shadow.dds")
 caption_plate().save(OUT / "kehillah_lib_caption_plate.dds")
+bookend().save(OUT / "kehillah_lib_bookend.dds")

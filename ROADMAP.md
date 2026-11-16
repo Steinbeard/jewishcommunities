@@ -1,5 +1,22 @@
 # Roadmap
 
+**Karaite community names and rite icon UPDATED 2026-11-15; source/xTiger checked, visual check pending:** historical Karaite titles now use the same "Kehillah of [place]" naming as other communities. The holding card header shows the current holder's rite icon in its existing 32-pixel row, with a rite tooltip; it follows conversion without shifting the card's alignment. See the [implementation note](docs/implementation/2026-11-15-karaite-community-seats.md).
+
+**Contribution refresh follow-up BUILT 2026-11-15; live verification pending:** after Daniel reported the total remaining zero, both numeric labels now bind directly to GUI expressions. Payment snapshots its marginal price once in payer scope for both the deduction and title ledger, removing the ledger's event-ROOT dependency. Existing missing historical payments are not estimated. See the follow-up in the [build record](docs/implementation/2026-11-15-compact-crisis-contribution.md).
+
+**Crisis contribution control BUILT 2026-11-15; source/xTiger checked, visual check pending:** the Armed Host funding row shows the numeric Gold total immediately beside a `+[cost]` Gold button. The total's hover contains funded points; the button's hover explains the one-point purchase, rising prices, bargain discount, and 25-point cap. GUI localization explicitly reads GetPlayer, matching the payment action. xTiger totals unchanged (0 fatal, 34 errors, 117 warnings); Git staging blocked by read-only metadata. See [build record](docs/implementation/2026-11-15-compact-crisis-contribution.md).
+
+**Karaite seats ADDED 2026-11-15; source/xTiger checked, live check pending:** 10 distinct titles provide 2 Karaite starts in 867, 5 in 1066, and 6 in 1178, following Daniel's dated placement specification. Ramla, Talavera, Attaleia and Ascalon use nearby counties as disclosed map proxies. Jerusalem, Fustat, Toledo and Constantinople retain their Rabbanite communities. See [the implementation note](docs/implementation/2026-11-15-karaite-community-seats.md).
+
+**Adventurer community visit integrated with Visit Local Settlement BUILT 2026-11-15; direct-menu UI bug
+found live and reverted, source/xTiger checked:** a fifth row in vanilla's four-slot main-square menu
+hid its Leave button. The retained safe integration opens a small choice only for a Jewish adventurer in a
+county with a registered community: call on the community, or continue into the untouched vanilla settlement
+choices (tavern, holding district, and so on). The existing visit supplies prayer, family recruitment, and
+seat discussion; its six-month traveller cooldown and the community's three-year family cooldown remain.
+See the [implementation record](docs/implementation/2026-11-15-adventurer-settlement-visit-bridge.md) and
+the 2026-11-15 addendum in [the adventurers, seats and invitations specification](docs/spec/2026-11-14-adventurers-seats-and-invitations.md).
+
 **Rabbinic Machshavah seeding BUILT 2026-11-15; source/xTiger checked, live check pending:** new Rabbinic libraries begin with *Sefer Yetzirah* and, after 933, Saadia's *Emunot ve-Deot*. The books are ordinary copies, not foundations or Yeshiva prerequisites; their ownership makes Machshavah visible in the Sefarim Ledger. Obscure, esoteric, and polemical works retain the existing ownership/mastery/reputation discovery gates. See [the build record](docs/implementation/2026-11-15-rabbinic-machshava-library-seeding.md).
 
 **Rite-weighted library seeding BUILT 2026-11-15; fresh-start check pending:** Peshuto shel Miqra favors Parshanut, Iyyun ha-Talmud favors Talmudics, and Pesak favors legal tools. Reasoned Theology and Esotericism may add one capped Machshavah supplement; *Emunot ve-Deot* is a Reasoned-Theology seed, while the explicit Arabic Hokhmah corpus now includes the *Theology of Aristotle*, Galen, and *Mekor Hayyim*. Sacred Liturgy adds one date-gated Andalusi Hebrew poetry collection. See [the build record](docs/implementation/2026-11-15-rite-weighted-library-seeding.md) and [catalog research](docs/research/2026-11-15-hokhmah-andalusi-diwan-catalog.md).
@@ -7,6 +24,12 @@
 **Accessible Sefarim catalog BUILT 2026-11-15; manual Ledger check pending:** every historical work appears and can use the distant scholarly-network acquisition route after its circulation date, even if no registered library owns it. Unwritten named works and unused authored slots remain hidden. The future discovery direction is contextual and potentially Learning-perk-driven; it will distinguish extant, attested and lost works, and may support uncertain forgeries rather than treating an absent registered copy as a loss. See [the build record](docs/implementation/2026-11-15-accessible-sefarim-catalog.md) and [future design notes](docs/spec/2026-11-15-sefer-discovery.md).
 
 **Contextual Sefer discovery deferred 2026-11-15:** the proposed generic yearly **Pursue leads** action is not planned for implementation. The retained future direction is discovery through scholars, travel, citations, controversies, refugees, ransom, sealed collections and caches, with a possible Learning-perk/network gate and uncertain forged texts. See [the revised design notes](docs/spec/2026-11-15-sefer-discovery.md).
+
+**Rite-specific library penalties FIXED 2026-11-15; source checks pass, live check pending:** missing books lower Greatness only if the current community rite ranks them Foundational or higher. Missing Bavli orders no longer penalize Yerushalmi or non-Rabbinic communities. Existing harmful-book penalties remain. Direct calculation bypasses stale save caches; tooltip labels now describe foundational texts. xTiger totals unchanged. See [build record](docs/implementation/2026-11-15-rite-foundational-library-penalties.md).
+
+**Realm-seat wording shortened 2026-11-15:** The realm view now labels the capital kehilla "Capital community", adding "Nagid's seat" when its leader holds the realm office. Hover explains the distinction and retains the existing court benefits and risks. Source checked; visual verification pending.
+
+**Yeshiva card footer BUILT 2026-11-15; live visual check pending:** Yeshiva seats replace the existing Library footer label and icon with green Yeshiva and the Rosh Yeshiva icon. Hover shows standing, head, enrolled student count, and teaching focus; clicking opens the same library. The icon uses static textures with mutually exclusive visibility after the first in-game screenshot showed a blank icon. The inline heading badge is removed, keeping card dimensions unchanged. See [build record](docs/implementation/2026-11-15-yeshiva-card-footer.md).
 
 Working title: **Kehillah** (working name for the mod overall is still TBD — "Jewish Communities" is the folder/descriptor name for now).
 
@@ -23,7 +46,62 @@ Two playable tracks, per the project vision:
 Phases are sequential within a track unless noted. This is the plan,
 subject to revision after each phase.
 
+**Quarter building cost rebalance BUILT 2026-11-15; source/xTiger checked, live test pending:** completing every available Quarter line now costs 3,885 Gold rather than 6,280 (about 38% less; 3,835 rather than 6,205 from the standard Worms start, whose first Synagogue is built). Synagogue, Beit Midrash/Yeshiva, Mikvah, and Hekdesh also ask for modest Piety; Countinghouse upgrades and the Scriptorium ask for Prestige. Commercial buildings and the Slaughterhouse remain Gold-only, preserving an accessible route to rebuild the treasury. The values remain centralized in `kehillah_script_values.txt` for playtest tuning.
+
 ## Near-term TODO
+
+**Headship tenet gates BUILT 2026-11-15 (Sanhedrin), xTiger clean on touched files, live test pending; Kohen Gadol and Mashiach chains PROPOSED:** Restore the Sanhedrin now also needs Iyyun ha-Talmud or Pesak, held by the rite or as a personal tenet; the AI's Sanhedrin and land-petition ambitions use the same gate. A Kohen Gadol gate trigger (Messianic Hope, Temple Service or Sacred Homeland, any one) is ready for a decision not yet built. The headship model (first restored office heads the faith, later offices sit under it or need a reform, rival-minded rites resent it, a recognized Mashiach stands above both) and three open questions for Daniel are in [the headship spec](docs/spec/2026-11-15-headship-offices-and-tenet-gates.md). Live check: a Rabbinic ruler meeting V47's other conditions without either tenet sees the new requirement fail; adopting Pesak as a personal tenet clears it.
+
+**Active messianism, prophecy, and Temple Service BUILT 2026-11-15, 38 focused checks pass; live checks unrun:** three new tenets have personal/follower effects and custom DDS art. Messianic missions solicit real pledges, unlock a temporary landed holy-city recovery war, and face a three-year reckoning. Prophetic claimants can admonish rulers, whose acceptance or rejection has political consequences. Samaritans start with Temple Service; the actual pilgrimage Offer Sacrifice intent distinguishes Gerizim's b_nablus from Jerusalem's b_jerusalem, and Jerusalem requires an endowed institution and Kohen. Doctrine gates preserve derived Samaritan rites; seasonal/cost/calendar-year checks prevent invalid or repeated payments. Sefarim/review/Minds/reform indices append at 15-17, replacement indices at 22-24; existing books keep their ordinals. Native and synod adoption enforce revival conditions. All nine active custom tenets have personal effects. [Build record, integration audit, and manual tests](docs/implementation/2026-11-15-revival-tenets-and-integration-audit.md). xTiger's three added glossary reports and two copied-native audio warnings are documented; live tools/process access and Git metadata remain blocked.
+
+**Ancestral tombs BUILT 2026-11-15; source checked, live checks pending:** Rachel Imenu and Avraham Avinu join Rabbinic Judaism's native venerated-ancestor registry. Kever Rachel (Jerusalem province, representing the Bethlehem road) and Ma'arat HaMachpelah (Hebron) are named travel sites within the existing Jerusalem holy-site county. Both ancestors have no extractable relic charges. Fresh campaign recommended. See [build record and manual checks](docs/implementation/2026-11-15-ancestral-tombs.md). Git delivery blocked by read-only metadata.
+
+**Ashkenaz study and retired-tenet cleanup BUILT 2026-11-15, 30 focused checks pass; xTiger unchanged:** Ashkenaz replaces Legalism with Scholarly Study, gaining the Rabbi virtue. Effect details name Talmudics, Parshanut, and Machshavah mastery bonuses. Geonut, Pilpul, and Minhag Avoteinu are inert migration IDs only. Kiddush ha-Shem now displays Sanctification of the Name, with Brave/Zealous virtues and Craven as the vice. The versioned repair changes only the previous exact Ashkenaz default and removes remaining retired choices. See the dated addendum in [the implementation record](docs/implementation/2026-11-15-tenet-fixes-and-sacred-homeland.md). Live checks and Git delivery remain blocked as recorded there.
+
+**Messianic, prophetic, and Temple tenets proposal SUPERSEDED 2026-11-15:** the [original draft](docs/spec/2026-11-15-messianic-prophetic-and-temple-tenets.md) is retained as design history; see the active implementation above.
+
+**Rashi portrait hair BUILT 2026-11-15; live visual check pending:** his character and bookmark use a longer side part. Western straight-haired Jewish men's ordinary portrait pool excludes the blunt bowl cut while preserving other styles and higher-priority religious hair. xTiger baseline unchanged. See [build record](docs/implementation/2026-11-15-rashi-hairstyle.md).
+
+**Tenet fixes and Sacred Homeland BUILT 2026-11-15, 28 focused checks pass, xTiger baseline unchanged; live checks pending:** fixes native glossary links and retired-tenet visibility; removes the redundant sacred-study decision. Covenant Community uses vanilla conversion/development/artifact/personal hooks without rite penalties or the added aid action; original Communal Identity is Unknown, Gnosticism Prohibited. Scholarly Study values Rabbi/Religious Scholar instead of Erudite; Religious Law also values Rabbi. Sacred Homeland adds Ecclesiarchy holy-site/circuit perks and a half-Piety county holy-site recovery CB with normal holy-war restrictions. Six custom DDS icons are installed. [Build record and manual playtest](docs/implementation/2026-11-15-tenet-fixes-and-sacred-homeland.md). Supersedes the November 14 presentation, aid-action, and status assumptions below. Live tools/process ownership and read-only Git metadata remain blockers.
+
+**Court size by communal means BUILT 2026-11-15, Daniel's request, xTiger-clean, live check pending:** householder families are sized by the community's means: its historical eminence at the bookmark, then its Prosperity band. Room for arrivals drops to two families below Healthy Prosperity and rises to five only at Legendary. The 1066 founding population shrinks by roughly 15%. See [the record](docs/implementation/2026-11-15-court-size-by-prosperity.md).
+
+**Twenty-four new communities BUILT 2026-11-15, Daniel's request, xTiger: only `_article` tips, live test pending (Daniel runs it):**
+- **1066 gains 14:** Saragossa (Bahya ibn Paquda), Seville (Judah ibn Bal'am), Málaga, Denia, Barcelona, Gerona, Tudela, Huesca, León, Burgos, Otranto, Thebes, Djerba, and the Qal'a of the Banu Hammad.
+- **1178 gains 20:** among them Mosul (Zakkai the Nasi), Thebes (Kuti), Aleppo, Salonica, Tyre, Salerno, Marseille (Isaac ben Abba Mari), Barcelona (Sheshet Benveniste), Regensburg, Hamadan, and the northern Spanish cities.
+- **New Almohad losses for 1178:** Seville, Málaga and the Qal'a.
+- Generated by `scripts/kehillah_generate_spike_communities.py`.
+- **Not built:** the spike's second-tier bench, the Bari/Taranto question, and the traveller cards.
+- See [the build record](docs/implementation/2026-11-15-spike-roster-communities.md).
+
+**Tenet polish and Covenant Community BUILT 2026-11-14, source-tested; live/save/UI checks pending:** Reasoned Theology keeps Physician and gives Greek science/revelation a contextual native glossary. Active custom tenets now use English headings, shorter mechanical parameters, and fuller virtue/vice choices; generic book-standing claims and the unrelated Hokhmah Shtadlan bonus are removed. Covenant Community (Am Kadosh) replaces default Jewish Communal Identity, with same-faith affinity across rites and actual shared-heritage mutual aid, leaving vanilla's non-Jewish users intact. Historical rites are initialized before faith statuses; the 867 date and separate character familiarity are corrected. Old-save repair preserves explicit council statuses and book/reform numeric IDs. Twenty-three focused checks pass; xTiger's seven new reports are documented native-glossary validator gaps. See [the build record](docs/implementation/2026-11-14-tenet-polish-and-covenant-community.md) and [manual playtest](docs/testing/2026-11-14-tenet-polish-and-covenant-community.md). This supersedes the earlier Jewish Communal Identity roster, Hebrew-heading policy, and startup assumptions below.
+
+**Lost communities and starting eminence BUILT 2026-11-14, Daniel's request, xTiger-clean (no new reports), live test pending (Daniel runs it):**
+- Destroyed and abandoned communities are tracked in [a CSV](docs/data/kehillah-lost-communities.csv).
+- They are seeded into place memory at the bookmark: the Almohad end of Córdoba, Lucena, Granada, Fez and Mahdia; the 1096 Rhineland and 1099 Jerusalem losses with re-establishment; Kairouan.
+- Each county remembers its peak Standing in words.
+- Former sites show in ash on the Jewish Communities map with a history hover, and in a new "Lost communities" section of the world ledger.
+- Each authored 1066/1178 community has a historical eminence tier (1–4). The tier sets its starting buildings and its starting Talmud orders and other works.
+- See [the build record and checklist](docs/implementation/2026-11-14-lost-communities-and-start-eminence.md) and [the research spike](docs/research/2026-11-14-sefer-haqabbalah-and-benjamin-community-spike.md).
+- **Backlog (Daniel, 2026-11-14):** Benjamin of Tudela and Petahiah of Regensburg as 1178 traveller (adventurer) bookmark cards; not built.
+- **Open:** whether to move Bari's 1178 seat to Taranto (Bari was razed in 1156).
+
+**Faith, rite, tenet, and holiday revision BUILT 2026-11-14, source-tested; live/save/UI checks pending:** implements Daniel's November 14 specification and implementation decisions. Three-core rosters no longer spend a slot on Rabbinic/Karaite identity; authority/canon stay doctrinal. Independent non-DLC Iyyun ha-Talmud and Piyyut (Poet virtue) add portable practices; Hokhmah has a separate reasoned discussion; Sacred Homeland alms follow the giver's own holy sites. Institutional Headship replaces Malachi's generic-creation block. Holiday selection filters occasions and household requirements before drawing, includes courtiers, preserves cadence, and has non-Rabbinic variants and conversion-safe queues. Kiddush ha-Shem no longer rewards or increases deaths; only a qualifying affected faith learns it. Stable book integers, old-save mapping, and historical arguments are audited. Twelve focused checks pass; broader crisis-suite failures and unavailable live tooling are recorded in [the verification checklist](docs/testing/2026-11-14-faith-rite-tenet-holiday-revision.md). See [the build record](docs/implementation/2026-11-14-faith-rite-tenet-holiday-revision.md). This supersedes earlier tenet-roster/status assumptions below.
+
+**Rationalist study and pietist crisis hooks BUILT 2026-11-13, source/xTiger checked, live test pending:** Hokhmah or vanilla Alexandrian Catechism improves mastery of works of thought; vanilla Asceticism improves the risky communal fast. The tenets keep cross-government character modifiers, and the book/crisis hooks read the tenet only when those actions are available. No new tenet or rationalist rite was introduced. See [the implementation note](docs/implementation/2026-11-13-rationalist-study-and-pietist-crisis-hooks.md).
+
+**Tenet startup and portable names BUILT 2026-11-13, source/xTiger checked, live test pending:** Bavel's displaced Halakha is Known in faith history; fresh starts no longer run the Sefer status migration after the lobby. Rabbinic, Karaite, Kabarist, Haymanot and Samaritan starting statuses are recorded at faith level. Custom tenets retain Jewish names for Jewish rites and use general names elsewhere, with small general effects where absent. The Gaon's cherem jurisdiction now reads the recipient's actual head of rite. See [the build record](docs/implementation/2026-11-13-tenet-startup-and-portability.md).
+
+**The bench's sources BUILT 2026-11-13, Daniel's request, xTiger-clean (no new reports), live
+test pending (Daniel runs it by hand):** each Bet Din case lists the works on its Mishnaic order
+that the faith knows (Popular or higher in the convener's rite, in circulation), up to five, the
+judges' works first, with the judges who have mastered each. Each judge who has mastered a listed
+work adds to the ruling's starting tally (6 each, 22 for a full bench). The tooltip shows this as
+minor, moderate or major. See [the implementation record and checklist](docs/implementation/2026-11-13-bet-din-bench-sources.md).
+
+**Rabbinic rite differentiation BUILT 2026-11-12, source/xTiger checked, live test pending:** Bavel now emphasizes Geonic authority, Ashkenaz Hasidut, Yerushalmi ritual celebrations, and Yordei Merkavah Rabbinic study. Sepharad retains legal pronouncements pending the broader tenet audit. Yordei Merkavah inherits Jewish pluralism and participates in Recognition of the Sages. A rite-head's cherem jurisdiction follows the recipient's actual head of rite; a faith head's is faith-wide. See [the implementation record](docs/implementation/2026-11-12-rabbinic-rite-tenet-pass.md).
+
+**Neighbouring community crisis aid BUILT 2026-11-12, source/xTiger checked (baseline unchanged), live test pending:** nearby Kehillot—defined by the existing medium-distance mutual-aid network—now hear of a crisis at its outbreak and after its political settlement. They can send tzedakah, fast, advocate, restore confidence after deliverance, fund relief after an attack, or open temporary shelter to displaced households. Gifts reward Piety and the giver's Greatness and create grateful opinion, not a coercive hook; struck-quarter relief advances the existing Recovery track. See [the design record](docs/spec/2026-11-12-neighbouring-community-crisis-aid.md).
 
 **Jewish rite names and icon diversity BUILT 2026-11-12, source/xTiger checked, live UI check
 pending:** the mainline rite displays as Minhag Bavel, while the faith stays Rabbinic Judaism;
@@ -179,6 +257,23 @@ and vanilla Ethiopic and Tamil reading languages. The Cochin Copper Plates
 represent Indian Jewish community memory without inventing a medieval Indian
 rabbinic corpus. See [the build record](docs/implementation/2026-11-12-expanded-historical-catalog.md).
 
+**Adventurers, seats and invitations BUILT - 2026-11-14, Daniel's request, xTiger-clean, NOT
+live-tested:** an amendment to Stand for the Seat, below.
+- **Scoring:** culture (-20) replaces the minhag-region term; the stranger term is -20 and only a
+  marriage waives it; a rabbi's record (Parshanut, Talmudics, Hashkafa, +5/+12/+20 per track) is a
+  bonus, so a great rabbi no longer escapes anything.
+- **Adventurers can weigh and stand for a seat.** Winning one is the risky path: an adventurer's camp
+  would have met `change_government`, which ends in Game Over. He now takes `kehillah_succession.0010`'s
+  scaffold route instead, and his camp title is destroyed. **Test V13 first.**
+- **Invitations:** an old or ill AI leader's community writes to a Jewish player: +15 and half cost.
+- **Visit the Jewish Community:** a Jewish adventurer in a county with a community may pray there,
+  take a family into his company, or speak about the seat. This replaces the proposed "Seek Out
+  Jewish Families".
+- **Found a Jewish Community is open to every Jewish faith.** A Samaritan founder's library may start as
+  the Rabbanite default; V16 checks.
+- [The spec](docs/spec/2026-11-14-adventurers-seats-and-invitations.md); validation V13 to V17 in
+  [the checklist](docs/testing/2026-11-08-stand-for-the-seat-validation.md).
+
 **Stand for the Seat BUILT (first pass) - 2026-11-08, Daniel's request, xTiger-clean, live test
 pending (Daniel runs it by hand):** a player who leads a community can **Weigh Their Seat** on
 another same-faith, AI-led community's leader. The event shows:
@@ -206,23 +301,6 @@ bought toward Quarter held, and a button showing the next marginal price. The
 button applies the existing guarded contribution effect directly; the decision
 remains for AI but no longer occupies a full-width situation action. Existing
 saves begin recording the exact gold total with their next contribution.
-**Adventurers, seats and invitations BUILT - 2026-11-14, Daniel's request, xTiger-clean, NOT
-live-tested:** an amendment to Stand for the Seat, below.
-- **Scoring:** culture (-20) replaces the minhag-region term; the stranger term is -20 and only a
-  marriage waives it; a rabbi's record (Parshanut, Talmudics, Hashkafa, +5/+12/+20 per track) is a
-  bonus, so a great rabbi no longer escapes anything.
-- **Adventurers can weigh and stand for a seat.** Winning one is the risky path: an adventurer's camp
-  would have met `change_government`, which ends in Game Over. He now takes `kehillah_succession.0010`'s
-  scaffold route instead, and his camp title is destroyed. **Test V13 first.**
-- **Invitations:** an old or ill AI leader's community writes to a Jewish player: +15 and half cost.
-- **Visit the Jewish Community:** a Jewish adventurer in a county with a community may pray there,
-  take a family into his company, or speak about the seat. This replaces the proposed "Seek Out
-  Jewish Families".
-- **Found a Jewish Community is open to every Jewish faith.** A Samaritan founder's library may start as
-  the Rabbanite default; V16 checks.
-- [The spec](docs/spec/2026-11-14-adventurers-seats-and-invitations.md); validation V13 to V17 in
-  [the checklist](docs/testing/2026-11-08-stand-for-the-seat-validation.md).
-
 
 **Community Safety planning page - 2026-11-08, source checked, live check pending:**
 Military's duplicate crisis races and actions are replaced by a situation link,
@@ -2080,6 +2158,22 @@ interactive pass.
   filter have all been checked or tried; the attempted activity never reaches
   creation. The venue filter remains as a correct landless venue definition,
   while AI hosting remains open. See the [soak report](docs/testing/2026-10-16-20-year-soak-report.md).
+  **2026-11-15: a way through is proven live.** A landed AI stand-in creates the activity and hands
+  it to the AI Kehillah leader with `set_activity_host`; host-gated phase code, events and completion
+  then run for the leader ([handoff probe result](docs/testing/2026-10-19-activity-host-handoff-probe-plan.md#result)).
+  **BUILT 2026-11-15, xTiger-clean, NOT live-tested:** AI-hosted Sittings through a stand-in
+  ([design and build record](docs/spec/2026-11-15-ai-hosted-sittings-via-stand-in.md),
+  [live checklist](docs/testing/2026-11-15-ai-hosted-sittings-test-checklist.md)). A yearly pulse has a
+  landed AI plan the real Sitting at an AI community's Quarter. `on_start` hands it to the leader,
+  who takes Justice, Synod or Sanhedrin, adds AI judges and delegates, and **invites players**.
+  The docket opens after a 60-day gathering. This is the visit path for player guests. Player-hosted
+  Sittings are unchanged.
+  **Synod host rule changed 2026-11-15 (Daniel):** Devotion level 3 (Devoted Servant) replaces
+  leading the minhag region in Greatness, superseding v45's host rule. Synods now also bind, count
+  quorum, invite and vote **by rite**, not region. The Bet Din followed: judges are same-rite leaders in
+  diplomatic range, any community may convene, the Ashkenaz herem needs Minhag Ashkenaz, and Synod
+  news reaches the whole rite. Cherem, Sanhedrin election scoring and Minhag Ashkenaz seeding still
+  use regions ([addendum](docs/spec/2026-11-15-ai-hosted-sittings-via-stand-in.md#addendum-2026-11-15-a-synod-host-needs-devotion-not-regional-leadership)).
   Book mastery remains the main Rabbi XP source. A dedicated console probe is in
   `events/kehillah_rabbi_loop_debug_events.txt`. Do not mark the whole
   participant experience done until an AI-hosted player guest is checked. The first

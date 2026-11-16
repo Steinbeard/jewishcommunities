@@ -1,4 +1,4 @@
-"""Generate the Beit Midrash library catalog from one table.
+﻿"""Generate the Beit Midrash library catalog from one table.
 
 Run from the repository root:  python scripts/kehillah_library_catalog.py
 
@@ -168,10 +168,15 @@ AUTHORED_KINDS = {
 # kehillah_wk_<slot>_tenet_a / _b). Must match kehillah_sefer_teach_dynamic_
 # tenet_effect in common/scripted_effects/kehillah_sefer_effects.txt.
 TENET_INDEX = [
-    "tenet_talmud_torah", "tenet_baalei_hamiqra", "tenet_kehillah_hokhmah",
-    "tenet_kehillah_emunah_temimah", "tenet_kehillah_pesak", "tenet_kehillah_pilpul",
-    "tenet_kehillah_geonut", "tenet_kehillah_minhag_avoteinu", "tenet_kehillah_avelei_tziyon",
+    "tenet_kehillah_scholarly_study", "tenet_literalism", "tenet_kehillah_hokhmah",
+    "tenet_unrelenting_faith", "tenet_religious_legal_pronouncements", "tenet_kehillah_scholarly_study",
+    "tenet_religious_legal_pronouncements", "tenet_communal_identity", "tenet_kehillah_avelei_tziyon",
     "tenet_esotericism", "tenet_asceticism", "tenet_kehillah_kiddush_hashem",
+    "tenet_kehillah_sacred_liturgy",
+    "tenet_kehillah_covenant_community",
+    "tenet_kehillah_messianic_hope",
+    "tenet_kehillah_prophetic_revelation",
+    "tenet_kehillah_temple_service",
 ]
 
 
@@ -180,7 +185,11 @@ def dynamic_tenet_branches(f, body):
     out = []
     for which in ("a", "b"):
         for i, t in enumerate(TENET_INDEX, start=1):
-            out += body(f"global_var:kehillah_wk_{f}_tenet_{which} ?= {i}", t)
+            cond = f"global_var:kehillah_wk_{f}_tenet_{which} ?= {i}"
+            if which == "b":
+                aliases = [j for j, other in enumerate(TENET_INDEX, 1) if other == t]
+                cond += " NOR = { " + " ".join(f"global_var:kehillah_wk_{f}_tenet_a ?= {j}" for j in aliases) + " }"
+            out += body(cond, t)
     return out
 
 
@@ -573,8 +582,10 @@ def write_standing_values(order, works):
                 f"\t\tvalue = {CANON['oral_torah']}",
                 "\t}",
                 "\telse_if = {",
+                "\t\t# 2026-11-15 (Daniel): Authoritative to every other Rabbanite rite; the Bavli",
+                "\t\t# prevails where they differ, but the Yerushalmi is no Karaite book.",
                 "\t\tlimit = { rite ?= { kehillah_rite_rabbanite_trigger = yes } }",
-                f"\t\tvalue = {OUTSIDE_CANON}",
+                f"\t\tvalue = {TOP_EARNED}",
                 "\t}",
                 "\telse_if = {",
                 "\t\tlimit = { rite ?= { kehillah_rite_toric_trigger = yes } }",
@@ -689,8 +700,10 @@ def write_standing_values(order, works):
                 f"\t\tvalue = {CANON['oral_torah']}",
                 "\t}",
                 "\telse_if = {",
+                "\t\t# 2026-11-15 (Daniel): Authoritative to every other Rabbanite rite; the Bavli",
+                "\t\t# prevails where they differ, but the Yerushalmi is no Karaite book.",
                 "\t\tlimit = { kehillah_rite_rabbanite_trigger = yes }",
-                f"\t\tvalue = {OUTSIDE_CANON}",
+                f"\t\tvalue = {TOP_EARNED}",
                 "\t}",
                 "\telse_if = {",
                 "\t\tlimit = { kehillah_rite_toric_trigger = yes }",
@@ -751,6 +764,18 @@ def write_standing_values(order, works):
                 "\t}",
             ]
         out.append("}")
+    # 2026-11-15 (Daniel): missing books matter only if this rite receives them
+    # as Foundational or higher. Read the current leader's rite, not a stale
+    # title cache or a broad Rabbanite/Karaite classification.
+    out += ["", "# ---- missing foundations (scope: a library title).",
+            "kehillah_lib_foundational_missing_count_value = {", "\tvalue = 0"]
+    for f in order:
+        out += ["\tif = {", "\t\tlimit = {",
+                f"\t\t\tkehillah_lib_available_{f}_trigger = yes",
+                f"\t\t\tholder ?= {{ kehillah_lib_standing_{f} >= 9 }}",
+                f"\t\t\tNOT = {{ {held(f)} }}",
+                "\t\t}", "\t\tadd = 1", "\t}"]
+    out.append("}")
     # 2026-11-11 (Daniel): owned books add Greatness by their standing in the
     # leader's rite; banned books take it away (kehillah_greatness_baseline_value).
     out += ["", "# ---- the library's Greatness (scope: a Kehillah leader): every work his",
@@ -815,6 +840,9 @@ def write_standing_values(order, works):
                 f"\tvalue = {OUTSIDE_CANON}",
                 "\tif = { limit = { rite ?= { kehillah_rite_minhag_yerushalmi_trigger = yes } }",
                 f"\t\tvalue = {CANON[w['canon']]}",
+                "\t}",
+                "\telse_if = { limit = { rite ?= { kehillah_rite_rabbanite_trigger = yes } }",
+                f"\t\tvalue = {TOP_EARNED}",
                 "\t}",
                 "}",
             ]
@@ -999,7 +1027,28 @@ def write_study_effects(order, works):
             f"\t\t\tcustom_tooltip = {study_tt_key(f, w)}",
             "\t\t}",
         ]
-    out += ["\t}", "}", ""]
+    out += ["\t}", "\tkehillah_study_sync_current_work_effect = yes", "}", ""]
+
+    # 2026-11-15: the scheme panel (gui/kehillah_scheme_widget.gui) needs the
+    # current work as a flag to name it, show its icon and open its library.
+    # Scope: the studying character. Mirror the numeric ID into a flag variable.
+    out += [
+        "# Scope: the studying character. Mirror kehillah_study_current_work_id into",
+        "# var:kehillah_study_current_work (a flag), which the scheme panel reads.",
+        "kehillah_study_sync_current_work_effect = {",
+        "\tif = {",
+        "\t\tlimit = { NOT = { has_variable = kehillah_study_current_work_id } }",
+        "\t\tremove_variable = kehillah_study_current_work",
+        "\t}",
+    ]
+    for i, f in enumerate(order, start=1):
+        out += [
+            f"\telse_if = {{",
+            f"\t\tlimit = {{ var:kehillah_study_current_work_id ?= {i} }}",
+            f"\t\tset_variable = {{ name = kehillah_study_current_work value = flag:{f} }}",
+            "\t}",
+        ]
+    out += ["}", ""]
 
     # 2026-11-11 (Daniel: "change it to offer one option of each genre that you
     # haven't read, if you have one available, and also a come back later to
@@ -1051,7 +1100,7 @@ def write_study_effects(order, works):
             f"\t\tcustom_tooltip = {study_tt_key(f, works[f])}",
             "\t}",
         ]
-    out += ["}", "", "# Scope: the studying character. Resolve the work the numeric ID names.",
+    out += ["\tkehillah_study_sync_current_work_effect = yes", "}", "", "# Scope: the studying character. Resolve the work the numeric ID names.",
             "kehillah_study_torah_resolve_current_work_effect = {"]
     for i, f in enumerate(order, start=1):
         out += [
@@ -1886,6 +1935,8 @@ def known_lines(f, w, ind):
     may replace this deliberately permissive interim rule.
     """
     return []
+
+
 def rite_known_lines(f, w, ind):
     """Extra ledger gate for another rite's view, currently none.
 
@@ -1895,6 +1946,8 @@ def rite_known_lines(f, w, ind):
     not endorsement.
     """
     return []
+
+
 def write_catalog_list_effects(order, works):
     """The Sefarim ledger (2026-11-08): every work the community knows of."""
     out = HEADER + [
@@ -2362,9 +2415,37 @@ def mastery_chance_lines(f, w):
         f"\t\tadd = {{ value = kehillah_study_chance_depth_some desc = KEHILLAH_LIB_CHANCE_DEPTH_KARAITE format = {T} }}",
         "\t}",
         "\tif = {",
-        "\t\tlimit = { kehillah_talmud_torah_follower_trigger = yes }",
+        f"\t\tlimit = {{ kehillah_talmud_torah_follower_trigger = yes OR = {{ NOT = {{ kehillah_lib_genre_{f} = 2 }} is_rabbinic_authority_jewish_trigger = yes }} }}",
         f"\t\tadd = {{ value = kehillah_study_chance_talmud_torah desc = KEHILLAH_LIB_CHANCE_TALMUD_TORAH format = {T} }}",
         "\t}",
+    ]
+    # Authority defines the subject: Rabbinic law versus Scripture elsewhere.
+    genre_law = f"kehillah_lib_genre_{f} = 2 " if authored(w) else "" if w["genre"] == "talmudics" else "always = no "
+    genre_scripture = f"kehillah_lib_genre_{f} = 1 " if authored(w) else "" if w["genre"] == "parshanut" else "always = no "
+    out += [
+        "\tif = {",
+        f"\t\tlimit = {{ OR = {{ AND = {{ {genre_law}is_rabbinic_authority_jewish_trigger = yes }} AND = {{ {genre_scripture}NOT = {{ is_rabbinic_authority_jewish_trigger = yes }} }} }} }}",
+        f"\t\tadd = {{ value = kehillah_scholarly_reading_bonus_value desc = KEHILLAH_LIB_CHANCE_SCHOLARLY_STUDY format = {T} }}",
+        "\t}",
+        "\tif = {",
+        f"\t\tlimit = {{ {genre_scripture} }}",
+        f"\t\tadd = {{ value = kehillah_literal_reading_bonus_value desc = KEHILLAH_LIB_CHANCE_LITERAL_STUDY format = {T} }}",
+        "\t}",
+    ]
+
+    # A vanilla rationalist tenet and our Jewish-flavored equivalent both
+    # encourage reading speculative theology. The authored slots use their
+    # chosen genre at runtime. This belongs in the book's actual chance so
+    # the study scheme, ledger and mastery roll continue to agree.
+    if authored(w) or w["genre"] == "hashkafa":
+        genre = "global_var:kehillah_wk_%s_genre ?= 3 " % f if authored(w) else ""
+        out += [
+            "\tif = {",
+            f"\t\tlimit = {{ {genre}OR = {{ rite ?= {{ rite_has_tenet = tenet_kehillah_hokhmah }} rite ?= {{ rite_has_tenet = tenet_alexandrian_catechism }} has_personal_tenet = tenet_kehillah_hokhmah has_personal_tenet = tenet_alexandrian_catechism }} }}",
+            f"\t\tadd = {{ value = kehillah_reasoned_reading_bonus_value desc = KEHILLAH_LIB_CHANCE_RATIONAL_THEOLOGY format = {T} }}",
+            "\t}",
+        ]
+    out += [
         "\tif = {",
         f"\t\tlimit = {{ kehillah_lib_tenet_fit_{f} = 1 }}",
         f"\t\tadd = {{ value = kehillah_study_chance_tenet_fit desc = KEHILLAH_LIB_CHANCE_TENET_FOR format = {T} }}",
@@ -2450,6 +2531,14 @@ def write_language_files(order, works):
         vals += ["}"]
         vals += mastery_chance_lines(f, w)
         effs += ["}"]
+    # 2026-11-13: the Studying Torah scheme's panel shows this as its success
+    # chance, so it is the same number as the book's "Chance to master".
+    vals += ["", "# Character scope: the reader. The mastery chance of the book the numeric",
+             "# kehillah_study_current_work_id names (0 when none is chosen)."]
+    vals += ["kehillah_lib_study_scheme_chance = {", "\tvalue = 0"]
+    for i, f in enumerate(order, start=1):
+        vals += [f"\tif = {{ limit = {{ var:kehillah_study_current_work_id ?= {i} }} add = kehillah_lib_mastery_chance_{f} }}"]
+    vals += ["}"]
     effs += ["", "# Yearly, from kehillah_sefer_yearly_effect: every written book in its author's",
              "# own tongue takes that tongue's current prestige (vanilla court languages).",
              "kehillah_language_refresh_all_prestige_effect = {"]
@@ -2738,6 +2827,48 @@ def conviction_cond(f, w):
     return f"OR = {{ kehillah_lib_tenet_fit_{f} = 1 rite ?= {{ {rites} }} }}"
 
 
+BENCH_SLOTS = 5
+
+
+def bench_effect_lines(order, works):
+    """The bench's sources (2026-11-13, Daniel: "for each bet din case, show
+    which sefarim known to your faith are relevant to the case and which if
+    any of the participating judges know the text, and how that would give a
+    bonus to a ruling"). docs/implementation/2026-11-13-bet-din-bench-sources.md.
+
+    Scope: the convening leader (his rite decides what the faith knows);
+    scope:kds_activity the Bet Din; scope:kds_bench_av/_j2/_j3 the judges.
+    Lists every circulating work on the order that stands at Popular or higher
+    in his rite: first those a judge has mastered, then the rest, in catalog
+    order. kehillah_din_bench_add_effect fills the shown slots and marks
+    which judges know each."""
+    out = ["", "# The bench's sources (2026-11-13). Scope: the convening leader;",
+           "# scope:kds_activity, scope:kds_bench_av/_j2/_j3. A judge's works first.",
+           "# kehillah_din_bench_add_effect (kehillah_din_citation_effects.txt) fills the slots."]
+    for seder in SEDARIM:
+        known = []
+        for f in order:
+            w = works[f]
+            if authored(w):
+                cond = [f"global_var:kehillah_wk_{f}_seder ?= flag:{seder}"]
+            elif seder in work_sedarim(f, w):
+                cond = []
+            else:
+                continue
+            cond = [l.strip() for l in avail_lines(f, w, "")] + cond
+            cond.append(f"kehillah_lib_standing_{f} >= kehillah_din_bench_known_standing")
+            known.append((f, " ".join(cond)))
+        out.append(f"kehillah_din_bench_{seder}_effect = {{")
+        for knows in ("", "NOT = { "):
+            close = " }" if knows else ""
+            for f, cond in known:
+                out += ["\tif = {",
+                        f"\t\tlimit = {{ {cond} {knows}kehillah_din_bench_any_knows_trigger = {{ WORK = {f} }}{close} }}",
+                        f"\t\tkehillah_din_bench_add_effect = {{ WORK = {f} }}", "\t}"]
+        out.append("}")
+    return out
+
+
 def write_citation_files(order, works):
     trig = HEADER + [
         "# The Bet Din docket by order of the Mishnah (2026-11-11). Scope: a judge.",
@@ -2844,12 +2975,16 @@ def write_citation_files(order, works):
                     f"NOT = {{ has_global_variable = kehillah_wk_{f}_seder }} }}",
                     f"\t\tset_global_variable = {{ name = kehillah_wk_{f}_seder value = flag:nezikin }}", "\t}"]
     eff.append("}")
+    eff += bench_effect_lines(order, works)
     write(CITE_EFFECTS, eff)
 
     loc = list(HEADER)
-    for kind in ("Grounded", "Innovative", "Conviction"):
-        var = f"kehillah_din_cite_{kind.lower()}"
-        loc += [f"KehillahDinCite{kind} = {{", "\ttype = character"]
+    kinds = [("Grounded", "kehillah_din_cite_grounded"), ("Innovative", "kehillah_din_cite_innovative"),
+             ("Conviction", "kehillah_din_cite_conviction")]
+    kinds += [(f"BenchWork{n}", f"kehillah_din_bench_work_{n}") for n in range(1, BENCH_SLOTS + 1)]
+    for kind, var in kinds:
+        loc += [f"KehillahDin{kind} = {{" if kind.startswith("Bench") else f"KehillahDinCite{kind} = {{",
+                "\ttype = character"]
         for f in order:
             loc += ["\ttext = {", "\t\ttrigger = {",
                     f"\t\t\tinvolved_activity ?= {{ var:{var} ?= flag:{f} }}",

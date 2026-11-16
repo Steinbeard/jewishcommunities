@@ -33,6 +33,35 @@ kehillah_sermon_clear_effect = {
 	remove_variable = kehillah_sermon_cand_grounded
 	remove_variable = kehillah_sermon_cand_newer
 	remove_variable = kehillah_sermon_base
+	remove_variable = kehillah_sermon_variant
+}
+
+# Scope: the holder, in the delivery's success branch (the sermon's vars are
+# still set). A player's community sermon on a subject that has one is
+# followed, a few days later, by a scene (kehillah_sermon.0020-.0023).
+kehillah_sermon_aftermath_effect = {
+	if = {
+		limit = {
+			is_ai = no
+			government_has_flag = government_is_kehillah
+		}
+		if = {
+			limit = { var:kehillah_sermon_topic ?= flag:neighbours }
+			random = { chance = kehillah_sermon_aftermath_chance trigger_event = { id = kehillah_sermon.0020 days = { 2 6 } } }
+		}
+		else_if = {
+			limit = { var:kehillah_sermon_topic ?= flag:tzedakah }
+			random = { chance = kehillah_sermon_aftermath_chance trigger_event = { id = kehillah_sermon.0021 days = { 2 6 } } }
+		}
+		else_if = {
+			limit = { var:kehillah_sermon_topic ?= flag:peace }
+			random = { chance = kehillah_sermon_aftermath_chance trigger_event = { id = kehillah_sermon.0022 days = { 2 6 } } }
+		}
+		else_if = {
+			limit = { var:kehillah_sermon_topic ?= flag:trouble }
+			random = { chance = kehillah_sermon_aftermath_chance trigger_event = { id = kehillah_sermon.0023 days = { 2 6 } } }
+		}
+	}
 }
 
 # Scope: a Kehillah leader (Deliver a Sermon). When he and his Dayyan both
@@ -115,6 +144,8 @@ kehillah_sermon_begin_maggid_effect = {
 # Scope: the holder. He chose $TOPIC$: look for his first text.
 kehillah_sermon_choose_topic_effect = {
 	set_variable = { name = kehillah_sermon_topic value = flag:$TOPIC$ }
+	# 2026-11-13: which turn of thought the sermon takes (KehillahSermonThrust).
+	set_variable = { name = kehillah_sermon_variant value = { integer_range = { min = 1 max = 3 } } }
 	set_variable = { name = kehillah_sermon_bonus value = 0 }
 	set_variable = { name = kehillah_sermon_step value = 1 }
 	kehillah_sermon_next_text_effect = { TOPIC = $TOPIC$ }
@@ -259,6 +290,7 @@ kehillah_sermon_roll_effect = {
 						send_interface_toast = {
 							type = event_toast_text_and_effect_good
 							title = kehillah_sermon_delivered_toast
+							desc = kehillah_sermon_delivered_desc
 							left_icon = scope:kehillah_sermon_preacher
 							kehillah_sermon_outcome_effect = yes
 						}
@@ -266,6 +298,8 @@ kehillah_sermon_roll_effect = {
 					else = {
 						kehillah_sermon_outcome_effect = yes
 					}
+					# 2026-11-13 (Daniel): a sermon that lands has a sequel.
+					kehillah_sermon_aftermath_effect = yes
 				}
 			}
 			50 = {
@@ -278,6 +312,7 @@ kehillah_sermon_roll_effect = {
 						send_interface_toast = {
 							type = event_toast_text_and_effect_bad
 							title = kehillah_sermon_flat_toast
+							desc = kehillah_sermon_flat_desc
 							left_icon = scope:kehillah_sermon_preacher
 							scope:kehillah_sermon_preacher = { add_stress = kehillah_sermon_flat_stress }
 						}
@@ -354,6 +389,7 @@ kehillah_sermon_outcome_effect = {
 	# The preacher: Piety and experience; his texts count toward their standing.
 	scope:kehillah_sermon_preacher ?= {
 		add_piety = kehillah_sermon_piety_gain
+        kehillah_revival_sermon_effect = yes
 		if = {
 			limit = { has_trait = kehillah_rabbi_trait }
 			add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_sermon_parshanut_xp }
@@ -372,7 +408,7 @@ kehillah_sermon_outcome_effect = {
 		# 2026-11-08 tenet mechanics: Emunah Temimah -- the preacher who lives
 		# the plain faith gains more.
 		if = {
-			limit = { has_personal_tenet_flag = kehillah_tenet_emunah_sermon_personal }
+			limit = { has_personal_tenet = tenet_kehillah_sacred_liturgy }
 			add_piety = kehillah_tenet_emunah_sermon_piety
 		}
 	}
@@ -380,7 +416,7 @@ kehillah_sermon_outcome_effect = {
 	if = {
 		limit = {
 			government_has_flag = government_is_kehillah
-			rite ?= { rite_has_parameter = kehillah_tenet_emunah_sermon }
+			OR = { rite ?= { rite_has_tenet = tenet_communal_identity } rite ?= { rite_has_tenet = tenet_kehillah_covenant_community } }
 		}
 		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_tenet_emunah_sermon_stability }
 	}

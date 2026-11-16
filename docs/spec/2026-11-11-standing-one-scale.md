@@ -111,3 +111,26 @@ with a bar for points toward the target and the ceiling's cause. See ROADMAP.
   | Anathema | −8 |
 
   The total is held between −40 and +80. To make room, the Greatness floor drops from 60 to 30.
+
+## Addendum: the Yerushalmi in Bavli rites; bookends for sets (2026-11-15)
+
+Daniel: "Maybe Talmud Yerushalmi is too low of a status in Bavli and Sepharadi minhag too? But I
+think we shouldn't have text here. Maybe a visual way of indicating a group of books is a set?",
+then "Let's change the standing and add some bookends".
+
+- **Standing.** The four Yerushalmi orders were Rejected (2, the outside-canon value Karaite works
+  get) in every Rabbanite rite but Minhag Yerushalmi. They are now **Authoritative (8)** there,
+  with that ceiling; still Foundational in Minhag Yerushalmi and Rejected among Karaites. The
+  Bavli prevails where the two differ, but the Yerushalmi was studied and cited everywhere
+  (Rabbenu Hananel, the Rif, the Rambam). The standing is computed, not stored, so saves need no
+  migration. `scripts/kehillah_library_catalog.py`; the works' rank text says so.
+- **The shelf** (`gui/kehillah_domicile_library.gui`, hand-written): the "Talmud Yerushalmi"
+  caption plate is gone (and its loc key). A carved walnut **bookend** with a brass rim stands at
+  each end of the set, gaps included (`kehillah_lib_bookend.dds`, 14 x 72, from `bookend()` in
+  `scripts/kehillah_generate_library_ui_assets.py`; one symmetric texture for both ends). A held
+  order at Authoritative or above is a full volume, matching the gaps, not the thin scroll.
+- Not changed: the set stays on its own shelf, left-aligned; the Bavli's six volumes have no
+  bookends.
+
+Live test (Daniel): in an Ashkenazi or Sephardi community, the Talmudics tab shows the Yerushalmi
+between two bookends, its held orders as full volumes; the hover card says Authoritative.
