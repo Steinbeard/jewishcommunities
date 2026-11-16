@@ -1,0 +1,189 @@
+# Restore the Kohen Gadol (docs/spec/2026-11-15-headship-offices-and-tenet-gates.md,
+# section 3; decision in common/decisions/kehillah_kohen_gadol_decisions.txt).
+#
+# State:
+#   global_var:kehillah_kohen_gadol_title   the landless High Priesthood
+#   global_var:kehillah_kohen_gadol_faith   the faith it serves
+#   global_var:kehillah_kohen_gadol_is_head set while it heads that faith
+#   title var kehillah_kohen_gadol_title    marks the title; the clerical
+#       election reads it (kehillah_high_priesthood_faith_trigger), so a
+#       High Priesthood that heads the faith passes only to a Kohen.
+#
+# The head-of-faith steps mirror V47's kehillah_sanhedrin_restore_effect
+# (rite head doctrine, set_religious_head_title, rite head doctrine again),
+# the order proven live for the Sanhedrin.
+
+# Scope: the restorer, from the decision.
+kehillah_kohen_gadol_restore_effect = {
+	save_scope_as = kehillah_kg_restorer
+	faith = { save_scope_as = kehillah_kg_faith }
+
+	# Who takes the office.
+	if = {
+		limit = { kehillah_kohen_gadol_priest_king_trigger = yes }
+		save_scope_as = kehillah_kg_kohen
+	}
+	else = {
+		ordered_courtier = {
+			limit = { kehillah_kohen_gadol_courtier_candidate_trigger = yes }
+			order_by = learning
+			save_scope_as = kehillah_kg_kohen
+		}
+		ordered_held_title = {
+			limit = {
+				tier = tier_barony
+				de_jure_liege = title:c_jerusalem
+				title_province = { has_holding_type = church_holding }
+				NOT = { this = root.capital_barony }
+			}
+			order_by = { value = 1 }
+			save_scope_as = kehillah_kg_temple
+		}
+	}
+
+	if = {
+		limit = { exists = scope:kehillah_kg_kohen }
+
+		# A courtier is seated in the Temple's holding first, so he is a
+		# landed vassal before he receives the landless office.
+		if = {
+			limit = {
+				exists = scope:kehillah_kg_temple
+				NOT = { scope:kehillah_kg_kohen = root }
+			}
+			create_title_and_vassal_change = {
+				type = granted
+				save_scope_as = kehillah_kg_grant
+				add_claim_on_loss = no
+			}
+			scope:kehillah_kg_temple = {
+				change_title_holder = {
+					holder = scope:kehillah_kg_kohen
+					change = scope:kehillah_kg_grant
+				}
+			}
+			resolve_title_and_vassal_change = scope:kehillah_kg_grant
+			scope:kehillah_kg_kohen = {
+				if = {
+					limit = { NOT = { has_government = theocracy_government } }
+					change_government = theocracy_government
+				}
+			}
+		}
+
+		# The High Priesthood: a landless duchy seated at Jerusalem.
+		create_title_and_vassal_change = {
+			type = created
+			save_scope_as = kehillah_kg_create
+			add_claim_on_loss = no
+		}
+		create_dynamic_title = {
+			tier = duchy
+			name = kehillah_kohen_gadol_title_name
+		}
+		scope:new_title ?= {
+			save_scope_as = kehillah_kg_title
+			set_variable = kehillah_kohen_gadol_title
+			set_capital_county = title:c_jerusalem
+			set_landless_title = yes
+			set_destroy_on_succession = no
+			set_no_automatic_claims = yes
+			set_definitive_form = yes
+			set_can_be_named_after_dynasty = no
+			set_can_use_nomadic_naming = no
+			change_title_holder = {
+				holder = scope:kehillah_kg_kohen
+				change = scope:kehillah_kg_create
+			}
+		}
+		resolve_title_and_vassal_change = scope:kehillah_kg_create
+	}
+
+	if = {
+		limit = { exists = scope:kehillah_kg_title }
+		set_global_variable = { name = kehillah_kohen_gadol_title value = scope:kehillah_kg_title }
+		set_global_variable = { name = kehillah_kohen_gadol_faith value = scope:kehillah_kg_faith }
+
+		# The restorer's rite now holds that the Kohen interprets the law.
+		# Vanilla's temple-authority hostility makes rites that keep the
+		# sages' authority regard it as astray: the rival-office backlash.
+		rite ?= {
+			if = {
+				limit = { NOT = { rite_has_doctrine = temple_authority_kohanim_doctrine } }
+				change_rite_doctrine = temple_authority_kohanim_doctrine
+			}
+		}
+
+		# Head of faith only for a Rabbinic faith with no head (V47's seat
+		# setup is Rabbinic-only; other Jewish faiths keep their heads).
+		if = {
+			limit = {
+				scope:kehillah_kg_faith = faith:rabbinic_faith
+				NOT = { exists = faith:rabbinic_faith.religious_head }
+			}
+			if = {
+				limit = { scope:kehillah_kg_kohen = root }
+				# Priest-king: a ruler heads the faith.
+				kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_temporal }
+				faith:rabbinic_faith = { set_religious_head_title = scope:kehillah_kg_title }
+				kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_temporal_head CLERGY = doctrine_theocracy_temporal }
+			}
+			else = {
+				kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_spiritual_head CLERGY = doctrine_theocracy_temporal }
+				faith:rabbinic_faith = { set_religious_head_title = scope:kehillah_kg_title }
+				kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_spiritual_head CLERGY = doctrine_theocracy_temporal }
+			}
+			set_global_variable = { name = kehillah_kohen_gadol_is_head value = yes }
+		}
+
+		scope:kehillah_kg_kohen = { add_piety = 500 }
+		debug_log = "KEHILLAH_KOHEN_GADOL: restored"
+		debug_log_scopes = yes
+		every_player = {
+			limit = { NOT = { this = scope:kehillah_kg_restorer } }
+			send_interface_message = {
+				type = msg_kehillah_community_news
+				title = kehillah_news_kohen_gadol_restored_t
+				desc = kehillah_news_kohen_gadol_restored_d
+				left_icon = scope:kehillah_kg_kohen
+			}
+		}
+	}
+	else = { debug_log = "KEHILLAH_KOHEN_GADOL: no Kohen or title, not restored" }
+}
+
+# Yearly (kehillah_kohen_gadol_on_actions.txt). The office lapses when its
+# holder is no longer a Kohen of its faith: a non-Kohen heir, a conversion,
+# or a title that no longer exists. If it headed the faith, the faith
+# returns to no head, as when the Sanhedrin lapses. The rite keeps the
+# Kohanim doctrine; only the office ends, and it may be restored again.
+kehillah_kohen_gadol_lapse_check_effect = {
+	if = {
+		limit = {
+			exists = global_var:kehillah_kohen_gadol_title
+			NOT = {
+				global_var:kehillah_kohen_gadol_title.holder ?= {
+					kehillah_kohen_gadol_valid_holder_trigger = yes
+				}
+			}
+		}
+		debug_log = "KEHILLAH_KOHEN_GADOL: lapsed"
+		if = {
+			limit = {
+				exists = global_var:kehillah_kohen_gadol_is_head
+				faith:rabbinic_faith.religious_head_title ?= global_var:kehillah_kohen_gadol_title
+			}
+			faith:rabbinic_faith = { remove_religious_head_title = yes }
+			kehillah_sanhedrin_set_rite_doctrines_effect = { HEAD = doctrine_no_head CLERGY = doctrine_theocracy_temporal }
+		}
+		global_var:kehillah_kohen_gadol_title = {
+			holder ?= { destroy_title = prev }
+		}
+		remove_global_variable = kehillah_kohen_gadol_title
+		remove_global_variable = kehillah_kohen_gadol_faith
+		if = {
+			limit = { exists = global_var:kehillah_kohen_gadol_is_head }
+			remove_global_variable = kehillah_kohen_gadol_is_head
+		}
+	}
+}

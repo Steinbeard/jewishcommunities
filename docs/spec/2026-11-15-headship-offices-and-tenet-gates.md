@@ -1,7 +1,8 @@
 # Headship offices and tenet gates
 
 **Status:** 2026-11-15. Part 1 (tenet gates) BUILT for the Sanhedrin, source- and xTiger-checked,
-live test pending. Parts 2–4 are a PROPOSAL, not implemented; all three open questions are decided.
+live test pending. Part 3 (Restore the Kohen Gadol) BUILT the same day, xTiger clean, live test
+pending. Parts 2 and 4 are a PROPOSAL, not implemented; all three open questions are decided.
 Depends on [V47, Gaon and the Seat of the Sanhedrin](v47-gaon-and-the-seat-of-the-sanhedrin.md),
 [the messianic, prophetic and Temple tenets](2026-11-15-messianic-prophetic-and-temple-tenets.md)
 and [their build record](../implementation/2026-11-15-revival-tenets-and-integration-audit.md).
@@ -68,11 +69,65 @@ So Daniel's model is CK3's own model with one addition (the backlash), not a con
    his followers as a heretical movement (the Sabbatean pattern). The existing three-year
    reckoning decides most claims against him.
 
-## 3. Restore the Kohen Gadol (proposal)
+## 3. Restore the Kohen Gadol (BUILT 2026-11-15; xTiger clean, live test pending)
 
-The second step after Restore Temple Service (which already grants Temple Service): a ruler of
-Jerusalem with the restored service, a Kohen, and the Kohen Gadol gate. It sets the Kohanim
-doctrine; if the faith has no head, the high priest's title becomes the head (section 2).
+The second step after Restore Jerusalem's Temple Service. Files:
+`common/decisions/kehillah_kohen_gadol_decisions.txt`,
+`common/scripted_effects/kehillah_kohen_gadol_effects.txt`,
+`common/on_action/kehillah_kohen_gadol_on_actions.txt`, triggers in
+`kehillah_headship_gate_triggers.txt`, loc `kehillah_kohen_gadol_l_english.yml`, debug events
+`events/kehillah_kohen_gadol_debug_events.txt`.
+
+**Requirements.** Shown to a landed Jewish ruler (not Gerizim-tradition) once Jerusalem's
+service is restored and no High Priesthood exists. Valid with the gate tenet, Jerusalem held with
+a same-faith population, no war, piety level 4, and a way to seat a Kohen (below). Cost 1,000
+Piety and 500 Prestige.
+
+**Who takes the office.**
+- A ruler who is a male Kohen takes it himself, as priest-king (the Hasmonean pattern).
+- Otherwise a king (kingdom tier or higher) seats his most learned adult Kohen courtier. The
+  courtier first receives a temple holding in Jerusalem county that the king holds directly and
+  that is not the king's capital. That makes him a theocratic vassal, the way vanilla does it,
+  and avoids making a courtier a landless ruler, which can trip the Game Over fuse. The king
+  requirement exists because a landless duchy held by a count's vassal would outrank its liege.
+
+**What it does.**
+- Creates a landless dynamic duchy, the **High Priesthood**, seated at Jerusalem and marked
+  `kehillah_kohen_gadol_title`. This follows vanilla's `d_samaritan` and V47's dynamic Sanhedrin
+  title.
+- Switches the restorer's rite to vanilla `temple_authority_kohanim_doctrine`. Vanilla's
+  temple-authority hostility makes sage-authority rites regard it as astray. This is the first
+  piece of the backlash (decision 3); the added opinion penalty and schism risk are not built yet.
+- **Head of faith** only for Rabbinic Judaism with no head. It uses V47's proven order (rite head
+  doctrine, `set_religious_head_title`, rite head doctrine again): temporal head for a
+  priest-king, spiritual head for a theocrat. `kehillah_high_priesthood_faith_trigger` now also
+  reads the title mark, so the clerical election picks only Kohanim.
+- Otherwise the office sits under the existing head (Karaite, Kabarist and other faiths with
+  heads, or a sitting Sanhedrin).
+
+**Lapse (yearly).** If the holder is not a male Kohen of the office's faith (a non-Kohen heir, a
+conversion, a lost title), the title is destroyed. If it headed the faith, the faith returns to no
+head, the way V47's Sanhedrin lapses. The rite keeps the Kohanim doctrine, and the office can be
+restored again.
+
+**Known limits.**
+- While the High Priesthood heads the faith, Restore the Sanhedrin stays hidden. It still
+  requires no head, so "the Sanhedrin as his court" (section 2, point 2) is not built.
+- A subordinate High Priesthood's succession is not forced to a Kohen; the lapse check is the
+  backstop.
+
+**Live-test checklist** (disposable save; `kehillah_kohen_gadol_debug.0001` reports state,
+`.0002` restores without conditions, `.0003` runs the lapse check):
+1. Priest-king: a Kohen ruler holding Jerusalem with the service restored takes the decision.
+   Check the High Priesthood exists and he holds it, Rabbinic Judaism's head is him, his rite
+   shows the Kohanim doctrine, and `error.log` is clean.
+2. Courtier: a Jewish king with a temple holding in Jerusalem county and a Kohen courtier. Check
+   the courtier holds the temple holding and the High Priesthood as a theocratic vassal and is
+   head of faith.
+3. Succession: kill the High Priest (`kill` in the console). Check the successor is a Kohen, or
+   that `.0003` makes the office lapse and the faith has no head, with no crash.
+4. With a Sanhedrin seated, restore the Kohen Gadol. Check the Nasi stays head and the High
+   Priesthood exists under him.
 
 ## 4. Declare the Mashiach (proposal; revised by Daniel, 2026-11-15)
 
