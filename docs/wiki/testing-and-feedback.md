@@ -1,6 +1,11 @@
+---
+layout: default
+title: Testing and feedback
+description: Install the pre-alpha, plan your first hour, and send useful reports about confusing moments and bugs.
+---
 # Playing the pre-alpha and sending feedback
 
-**Status:** pre-alpha player guide, 2026-11-16. Update with each test build; see [ROADMAP](../../ROADMAP.md) for detailed implementation and verification status.
+**Status:** pre-alpha player guide, 2026-11-16. Update with each test build; see [ROADMAP](https://github.com/Steinbeard/jewishcommunities/blob/master/ROADMAP.md) for detailed implementation and verification status.
 
 ## Before you begin
 

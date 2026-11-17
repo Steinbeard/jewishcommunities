@@ -1,6 +1,11 @@
+---
+layout: default
+title: Feature guide
+description: Tour the Domain, Jewish Quarter, library, council, map, host politics and crises.
+---
 # Feature guide
 
-**Status:** pre-alpha player guide, 2026-11-16. Based on the current implementation and [ROADMAP](../../ROADMAP.md); newer features described below have uneven live coverage.
+**Status:** pre-alpha player guide, 2026-11-16. Based on the current implementation and [ROADMAP](https://github.com/Steinbeard/jewishcommunities/blob/master/ROADMAP.md); newer features described below have uneven live coverage.
 
 Start with the [three 1066 stories](three-starts.md), or use this page as a tour of the custom screens.
 

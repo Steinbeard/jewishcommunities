@@ -1,3 +1,8 @@
+---
+layout: default
+title: In-game gallery
+description: Real captures of the 1066, 867 and 1178 starts, the Jewish Quarter, Domain and community inspector.
+---
 # In-game gallery
 
 **Status:** pre-alpha screenshot gallery, captured in isolated CK3 sessions on 2026-11-16. Images show real game screens; exact values and portraits may vary in a later build. The 867 and 1178 bookmark art has had less campaign testing than 1066.
@@ -44,4 +49,4 @@ The same Domain view shows where Troyes stands in Prosperity, Stability and Grea
 
 ![The Rambam selected in the 1178 bookmark](../images/rambam-1178-start.jpg)
 
-The [feature guide](features.md) explains the screens. The [pre-alpha test log](../testing/2026-11-16-prealpha-screenshot-and-ui-log.md) records how the images were captured and which newer UI still needs a clean reshoot.
+The [feature guide](features.md) explains the screens. The [pre-alpha test log](https://github.com/Steinbeard/jewishcommunities/blob/master/docs/testing/2026-11-16-prealpha-screenshot-and-ui-log.md) records how the images were captured and which newer UI still needs a clean reshoot.

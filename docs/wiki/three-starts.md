@@ -1,6 +1,11 @@
+---
+layout: default
+title: Three 1066 starts
+description: Quick starts for Rashi in Troyes, Joseph ibn Naghrilla in Granada, and David ben Hezekiah's road to Baghdad.
+---
 # Three ways into the Kehillah
 
-**Status:** pre-alpha player guide, 2026-11-16. Describes the intended current 1066 build; balance and some newer UI still need wider playtesting. See [ROADMAP](../../ROADMAP.md) for verification.
+**Status:** pre-alpha player guide, 2026-11-16. Describes the intended current 1066 build; balance and some newer UI still need wider playtesting. See [ROADMAP](https://github.com/Steinbeard/jewishcommunities/blob/master/ROADMAP.md) for verification.
 
 All three characters appear on **1066 · Age of the Rishonim**. **Roads to Power** is required. On your first day, open **Domain** and hover Prosperity, Stability and Greatness to see what helps or hurts your community. Then inspect the Jewish Quarter and council.
 

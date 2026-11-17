@@ -24,6 +24,8 @@ The **1066 Age of the Rishonim** bookmark offers five characters. These three sh
 
 For an easier introduction, **Isaac ha-Levi of Worms** begins with an established yeshiva. **The Rif in Fez** offers another scholar's journey. There are also **867 Age of the Geonim** and **1178 The Paths of Torah** start screens; those dates have received less campaign testing. See [Amram Gaon and the Rambam in the gallery](docs/wiki/gallery.md#other-centuries).
 
+**Browse the [player wiki](https://steinbeard.github.io/jewishcommunities/)** for the illustrated start guides, feature tour and playtest advice.
+
 [Choose a start and plan your first moves →](docs/wiki/three-starts.md)
 
 ## See the community
