@@ -134,6 +134,11 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
   <figcaption><strong>The Empire's communities.</strong> Kaiser Heinrich IV hears six communities, from Worms to Praha, all calm in 1066.</figcaption>
 </figure>
 
+<figure class="shot shot--narrow-wide">
+  <img src="../images/realm-view-france.jpg" alt="Jewish Communities in France: King Philippe's seven communities, his Cold outlook on the Jews and its breakdown" loading="lazy">
+  <figcaption><strong>A colder host.</strong> By 1069 King Philippe restricts his Jews and his outlook has turned Cold. Hover it to see why: his faith's teaching, his character and his history with Jewish communities.</figcaption>
+</figure>
+
 <figure class="shot shot--todo">
   <div class="shot__frame"><span class="shot__tag">Screenshot needed</span><code>world-ledger.jpg</code><span>Domain → Standing · World Ledger</span></div>
   <figcaption><strong>The World Ledger.</strong> Every led community ranked by Standing or by any pillar. <span class="shot__how">Capture: click the Standing line on the Domain tab; sort by one pillar so the column header is visibly active.</span></figcaption>
@@ -257,6 +262,11 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
 <figure class="shot shot--narrow-wide">
   <img src="../images/toast-new-work.jpg" alt="Notification: A New Work Is Discussed, Rav Isaac has completed The Bond and Its Witnesses" loading="lazy">
   <figcaption><strong>A New Work Is Discussed.</strong> When a rabbi finishes a sefer, the community's scholars read it and learn from it.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/event-siyum.jpg" alt="A Siyum event: finishing the whole Tanakh, with its rewards in a tooltip" loading="lazy">
+  <figcaption><strong>A Siyum.</strong> Finishing the whole of Scripture, the community gathers to celebrate the end and to begin again.</figcaption>
 </figure>
 
 <figure class="shot shot--narrow-wide">
@@ -779,6 +789,11 @@ Beyond the Rabbinic rites, other Jewish faiths each have their own tenets and th
   <figcaption><strong>Kuzarism.</strong> The Khazars' Judaism.</figcaption>
 </figure>
 </div>
+
+<figure class="shot">
+  <img src="../images/community-karaite-ramla.jpg" alt="The Kehillah of Ramla, a Karaite community in the Fatimid Sultanate, with the Karaism rite tooltip" loading="lazy">
+  <figcaption><strong>A Karaite community.</strong> The Kehillah of Ramla, under the Fatimids, follows Karaism: the Tanakh alone is the highest authority.</figcaption>
+</figure>
 
 ### Lineages and doctrines
 
