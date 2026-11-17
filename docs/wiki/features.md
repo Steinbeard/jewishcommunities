@@ -16,6 +16,8 @@ A Kehillah is a community title inside a host realm. Open **My Realm → Domain*
 
 Hover a pillar for its sources. Each has five bands, from **Crisis** to **Legendary**. Choose **Scholarly**, **Political** or **Commercial** leadership to tilt your baseline and the skills valued in succession. The mandate lasts ten years; this newest panel still needs wider UI and campaign testing.
 
+![The Troyes Domain panel showing Prosperity, Stability and Greatness](../images/rashi-domain-pillars.jpg)
+
 ## Jewish Quarter: a home you can improve
 
 The Quarter has **nine building lines and 25 tiers**. The synagogue and Beit Midrash can grow into major communal institutions, while the countinghouse, market stalls and workshops support the economy. The mikvah, Hekdesh, Sofer's Workshop and slaughterhouse serve daily life. Higher tiers ask for stronger pillars, so read both the cost and the band gate before committing to a build.

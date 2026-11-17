@@ -30,6 +30,8 @@ For an easier introduction, **Isaac ha-Levi of Worms** begins with an establishe
 
 The custom **Domain** screen brings together the Jewish Quarter, the host charter and three pillars of communal life: **Prosperity** for people and trade, **Stability** for cohesion and protection, and **Greatness** for learning and renown. Each pillar has a readable breakdown and rises from Crisis to Legendary. Choose a Scholarly, Political or Commercial leadership style to shape the community's direction.
 
+![Rashi's Domain screen in Troyes, showing the Quarter and three leadership choices](docs/images/rashi-domain-leadership.jpg)
+
 Grow the **Quarter** through nine building lines, from synagogue and Beit Midrash to countinghouse, mikvah, Hekdesh and workshops. The **library** and **Sefarim Ledger** let you browse historical works, see how your rite values them, acquire copies, study and eventually write your own. Jewish map modes and community cards reveal other Kehillot across the world.
 
 ![The community library and its historical works](docs/images/library.jpg)

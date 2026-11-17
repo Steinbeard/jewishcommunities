@@ -1,6 +1,6 @@
 # Pre-alpha screenshots and UI check — 2026-11-16
 
-**Status:** three bookmark captures and a Granada Quarter art capture passed. The leadership-style error flood found on the first run was removed by an unset-variable guard and rechecked live. Other game-start script errors remain and need a separate fix before release.
+**Status:** three bookmark captures, Granada Quarter art, and Rashi Domain leadership/pillar views captured. The leadership-style error flood found on the first run was removed by an unset-variable guard and rechecked live. Other game-start script errors remain and need a separate fix before release.
 
 ## Method and images
 
@@ -13,6 +13,11 @@ Three full-window 1936×1119 JPGs and one 1715×802 Quarter crop were visually r
 - [`david-start.jpg`](../images/david-start.jpg): David ben Hezekiah selected as an adventurer in Granada.
 - [`granada-jewish-quarter.jpg`](../images/granada-jewish-quarter.jpg): the 1066 Granada Quarter art with named buildings and levels; used as the README's lead image.
 
+A third isolated game session added two full-window **1936×1119** Rashi/Troyes Domain captures:
+
+- [`rashi-domain-leadership.jpg`](../images/rashi-domain-leadership.jpg): Quarter card and the three illustrated leadership-style choices.
+- [`rashi-domain-pillars.jpg`](../images/rashi-domain-pillars.jpg): leadership summary and all three pillar bars with numbers and standing.
+
 PNG masters and an **internal-only** Granada character-panel image remain in the tester's temp capture folder. The latter contains debug-mode campaign UI and is not used as a public screenshot. The existing library and Bet Din images in the README are from earlier live play; their current UI has not yet been reshot. The new Quarter JPG is a deterministic crop from the full-resolution PNG master, removing the debug map-mode controls at the right and lower edge. It shows the current art and buildings but is not a release-build capture.
 
 ## Error found while capturing
@@ -24,3 +29,5 @@ The two checks now require `has_variable = kehillah_leadership_style` before the
 The Luna tester then launched a fresh isolated CK3 process, PID 39392, and loaded Granada on **15 September 1066**. The post-boot baseline was 58 lines. After opening the character panel and Quarter view, the previous leadership-style signatures stayed at **zero**: no invalid `var` comparison, unset `var` scope, trigger line 22 or value line 28 error. The tester captured the Quarter image above, then stopped only PID 39392; no CK3 process remained.
 
 The overall log still grew to **57,743 lines** after entering the campaign. Its repeated errors are different: `title_province trigger [ Failed context switch ]` arose 7,074 times from `common/scripted_effects/kehillah_jewish_culture_homeland_effects.txt:104` through game-start seeding. A separate `trigger_else_if with no trigger_else` at `common/activities/activity_types/kehillah_bet_din_conference.txt:262` appeared during boot. The screenshot pass did not diagnose or fix either issue, and it does not establish that the release copy is ready to upload. The staged pre-alpha still needs its own smoke-test boot.
+
+In the third session, Luna loaded Rashi at Troyes and opened **My Realm → Domain**, then scrolled from the Quarter/style cards to the pillar bars. The campaign log stayed exactly **57,743 lines / 36,268 kehillah-tagged** before and after those UI actions. All four leadership-style error signatures stayed at zero. The tester stopped only the verified isolated PID 16932; no CK3 process remained. Domain panel rendering and the displayed pillar values passed visual inspection. Style selection, mandate expiry and succession effects were not exercised.

@@ -16,7 +16,7 @@ Shlomo Yitzhaki is twenty-six. He has studied in the Rhineland and returned to l
 4. **Plan for Rashi's writing.** Learn Torah, develop the Beit Midrash, train students and use Write a Sefer when its conditions and resources make sense. His commentaries are a campaign goal, not starting books.
 5. **Review succession.** Candidate scores and endorsements are visible. Rashi's family matters, but the community appoints its next leader.
 
-**Screens to visit:** Rashi's portrait, Troyes Domain, Jewish Quarter, library shelf and Sefarim Ledger.
+**Screens to visit:** Rashi's portrait, [Troyes Domain and its leadership choices](../images/rashi-domain-leadership.jpg), Jewish Quarter, library shelf and Sefarim Ledger.
 
 ## Joseph ibn Naghrilla of Granada — hold the Quarter
 
