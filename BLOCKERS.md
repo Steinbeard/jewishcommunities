@@ -1,3 +1,11 @@
+## 2026-11-15 - County library relocation: live verification and Git delivery blocked
+
+Built in the shared checkout; see docs/implementation/2026-11-15-county-library-preservation.md. Five focused checks pass; xTiger has no diagnostics on the changed files. Luna found no CK3 tools and could not inspect process ownership (CIM denied); grant/save/tooltip checks remain unrun. Staging the focused files failed creating .git/index.lock (Permission denied); no commit/push/PR. Preserve concurrent work when delivering this unit.
+
+## 2026-11-15 - Community leadership styles: live checks and Git delivery blocked
+
+Prototype built in the shared checkout; see docs/implementation/2026-11-15-community-leadership-styles.md. Seven focused source tests pass after the leadership UI/reminder follow-up; xTiger baseline unchanged (0 fatal, 25 errors, 96 warnings). Luna found no xTiger game tools and CIM denied process ownership inspection; no game was controlled. UI rendering, exact cooldown expiry and succession behavior remain unrun. Staging the new leadership trigger file failed creating `.git/index.lock` (Permission denied); no commit/push/PR. Preserve concurrent candidacy and ledger work when staging later.
+
 ## 2026-11-15 — Tenet UI fixes and Sacred Homeland: runtime/Git delivery blocked
 
 ## 2026-11-15 — Revival tenets implemented; live and Git delivery blocked
