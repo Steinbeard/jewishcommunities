@@ -1,6 +1,6 @@
 # Pre-alpha screenshots and UI check — 2026-11-16
 
-**Status:** three bookmark captures, Granada Quarter art, and Rashi Domain leadership/pillar views captured. The leadership-style error flood found on the first run was removed by an unset-variable guard and rechecked live. Other game-start script errors remain and need a separate fix before release.
+**Status:** five bookmark captures, Granada Quarter art, Rashi Domain leadership/pillar views, and Córdoba inspector captured. The two large error floods found during the pass have separate guarded fixes and passed isolated 1066/867 checks. Other bounded game-start errors remain and the staged release copy still needs its own smoke test.
 
 ## Method and images
 
@@ -37,3 +37,11 @@ In the third session, Luna loaded Rashi at Troyes and opened **My Realm → Doma
 In a fourth isolated session, Luna played Joseph ibn Naghrilla in Granada on **15 September 1066** and opened the Jewish Communities map mode. The live [Córdoba inspector](../images/cordoba-community-inspector.jpg) showed Parnas Hasdai, a founding date of 756, healthy Prosperity and Stability, strained Greatness, host and Quarter links, and an annual danger value. Its public JPG is a 1240×780 crop of the full-window PNG master, with debug map buttons omitted. Opening the inspector added no new error lines beyond the 57,743-line game-start baseline. Only the owned PID 18460 was stopped.
 
 The Córdoba library reported **13 works** across Parshanut, Talmudics and Machshavah, but its shelf appeared as empty wood. No library image from this pass was selected for public docs. Whether this is a book-card rendering bug or a navigation/state issue remains unverified. The xTiger console tool was unavailable and the console did not open, so the requested title-scope probe was not run.
+
+## 867 and 1178 bookmark art
+
+A later isolated session captured full-window **1936×1119** bookmark JPGs and PNG masters for [Amram Gaon in 867](../images/amram-867-start.jpg) and [the Rambam in 1178](../images/rambam-1178-start.jpg). Both show the dated start art, roster and selected character's narrative. The JPGs are collected in the [player gallery](../wiki/gallery.md).
+
+The tester entered the 867 campaign as Amram Gaon. Its log stayed at **1,998 lines / 1,554 kehillah-tagged**, with zero `title_province` context-switch and leadership invalid-var signatures and no lines from the Jewish-culture seeding file. The Jewish Communities map painted colored areas, but debug ID/title-key hovers prevented a clean public map image. The tester stopped only the owned PID 10984 and confirmed no CK3 process remained.
+
+The culture-seeding flood was addressed in [PR #72](https://github.com/Steinbeard/jewishcommunities/pull/72). A combined 1066 run with that guard and the leadership guard brought the log down from 57,743 to **1,937 lines** while preserving Sephardi color/hover results in Iberia. Other game-start errors, including full Quarter building slots and invalid ancestral-site holdings, remain independent issues; the staged pre-alpha copy has still not received its required smoke-test boot.

@@ -22,7 +22,7 @@ The **1066 Age of the Rishonim** bookmark offers five characters. These three sh
   <a href="docs/images/david-start.jpg"><img src="docs/images/david-start.jpg" alt="David ben Hezekiah selected on the Exilarch adventurer start screen" width="300"></a>
 </p>
 
-For an easier introduction, **Isaac ha-Levi of Worms** begins with an established yeshiva. **The Rif in Fez** offers another scholar's journey. There are also **867 Age of the Geonim** and **1178 The Paths of Torah** start screens; those dates have received less campaign testing.
+For an easier introduction, **Isaac ha-Levi of Worms** begins with an established yeshiva. **The Rif in Fez** offers another scholar's journey. There are also **867 Age of the Geonim** and **1178 The Paths of Torah** start screens; those dates have received less campaign testing. See [Amram Gaon and the Rambam in the gallery](docs/wiki/gallery.md#other-centuries).
 
 [Choose a start and plan your first moves →](docs/wiki/three-starts.md)
 
@@ -65,6 +65,7 @@ Please report what happened, your start and in-game date, a screenshot if useful
 ## Guides and project notes
 
 - [Player guide home](docs/wiki/Home.md)
+- [In-game gallery](docs/wiki/gallery.md)
 - [Quick start: Rashi, Granada and David](docs/wiki/three-starts.md)
 - [Feature guide: screens and systems](docs/wiki/features.md)
 - [Testing and feedback](docs/wiki/testing-and-feedback.md)
