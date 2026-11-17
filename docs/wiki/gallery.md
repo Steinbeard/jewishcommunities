@@ -485,6 +485,27 @@ Holidays follow the Hebrew calendar and arrive as household events, with differe
   <figcaption><strong>Holding the Quarter.</strong> When the armed host gathers, war is declared and a second race begins: Quarter held against Quarter struck, with three ways to respond.</figcaption>
 </figure>
 
+### How a crisis unfolds
+
+Every community crisis moves through the same phases. If unrest is defused in Agitation, the community is spared. If not, an armed host gathers, and the Quarter either holds or is struck.
+
+<figure class="shot crisis-flow">
+<svg viewBox="0 0 880 610" role="img" aria-labelledby="crisis-flow-title" xmlns="http://www.w3.org/2000/svg">
+<title id="crisis-flow-title">Crisis phases: Agitation leads to Spared or Armed Host; Armed Host leads to Quarter Held or Quarter Struck; Quarter Struck leads to Recovery; Spared, Quarter Held and Recovery all end in the Final chronicle and cooldown.</title>
+<defs><marker id="cf-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9" fill="none" stroke="#8a7a72" stroke-width="1.6"/></marker></defs>
+<g fill="none" stroke="#8a7a72" stroke-width="1.6" marker-end="url(#cf-arrow)">
+<path d="M190,94 V396"/><path d="M282,94 V118 H411 V140"/><path d="M366,221 V268"/><path d="M457,221 V246 H678 V268"/><path d="M678,349 V396"/><path d="M191,469 V494 H290 V516"/><path d="M366,349 V516"/><path d="M678,469 V494 H441 V516"/>
+</g>
+<g fill="#f5f0ed" stroke="#d9c3b5" stroke-width="1.5">
+<rect x="100" y="22" width="272" height="72" rx="16"/><rect x="275" y="142" width="273" height="79" rx="16"/><rect x="248" y="270" width="236" height="79" rx="16"/><rect x="533" y="270" width="290" height="79" rx="16"/><rect x="41" y="398" width="301" height="71" rx="16"/><rect x="525" y="398" width="306" height="71" rx="16"/><rect x="211" y="518" width="310" height="71" rx="16"/>
+</g>
+<g fill="#603626" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="16" font-weight="600" text-anchor="middle">
+<text x="236" y="63">Agitation: defuse unrest</text><text x="411" y="177">Armed Host: protect the</text><text x="411" y="197">quarter</text><text x="366" y="305">Quarter Held: settle</text><text x="366" y="325">consequences</text><text x="678" y="305">Quarter Struck: resolve the</text><text x="678" y="325">attack</text><text x="191" y="439">Spared: settle consequences</text><text x="678" y="439">Recovery: endure or collapse</text><text x="366" y="559">Final chronicle and cooldown</text>
+</g>
+</svg>
+<figcaption><strong>Crisis phases.</strong> Every path ends in a final chronicle of what happened, followed by a cooldown before the next crisis.</figcaption>
+</figure>
+
 ### Granada, 1066: one crisis start to finish
 
 <figure class="shot">
