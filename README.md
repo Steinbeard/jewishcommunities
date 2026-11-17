@@ -38,8 +38,6 @@ Grow the **Quarter** through nine building lines, from synagogue and Beit Midras
 
 ![The Córdoba community inspector shows its leader, pillar standings, host and library link](docs/images/cordoba-community-inspector.jpg)
 
-![The community library and its historical works](docs/images/library.jpg)
-
 ## Lead people and face danger
 
 Seat a five-member council, appoint officers, support householder families and convene a **Bet Din** to judge disputes. A yeshiva can train students under a Rosh Yeshiva and ordain the next generation of rabbis. Succession is by **appointment**: candidates have visible scores, and you can endorse one, while the community makes its choice.
