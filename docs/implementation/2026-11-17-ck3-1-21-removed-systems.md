@@ -92,6 +92,10 @@ replacement for `pay_short_term_income = { years = 2 }`, with a gold fallback wh
 
 ## Live-test checklist (Daniel)
 
+> **2026-11-17 boot test:** items 1, 4 and 5 passed. See [the boot test log](../testing/2026-11-17-ck3-1-21-port-boot-test-log.md).
+> That test also found and fixed the Hebron saint, which 1.21 made holding-less until 1178. Items 2, 3, 6 and 7 are
+> still open.
+
 1. Boot the Worms 1066 bookmark. Check that the community breakdown shows the local economy at +96.
 2. In the county inspector, a known county reads "county prosperity …" with the right band.
 3. As a Jewish temple holder, the Beit Midrash appears in the temple holding's building list.
