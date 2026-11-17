@@ -1,9 +1,10 @@
 # Uploading the pre-alpha privately to the Steam Workshop
 
-**Status:** written 2026-11-16 for the first Discord pre-alpha. The release-staging script is
-built and tested. The launcher steps are from Paradox's current upload flow and **have not been
-done on this machine yet**. Check each screen against these notes and correct them after the
-first upload.
+**Status:** written 2026-11-16 for the first Discord pre-alpha. **First upload done
+2026-11-17**: Workshop item **3841299043**
+(`https://steamcommunity.com/sharedfiles/filedetails/?id=3841299043`), built from
+`sefarim-reviews-cherem-and-crisis-politics@b29688c`. Step 3 below is corrected to match the
+launcher (2026.14) screens as they actually appeared.
 
 ## Why not upload the dev folder
 
@@ -47,14 +48,16 @@ the known baseline). That does not prove it boots. Before uploading:
 
 1. **Close and reopen the launcher**, so it rereads the new `.mod` file. An open launcher can
    cache an old copy of the descriptor and write it back.
-2. Go to **Mods**, then **Upload mod** (under the mod tools).
-3. Choose **Jewish Communities (Pre-Alpha)**, and choose **Steam Workshop** as the destination.
-   Leave Paradox Mods out for now. It has no private option to rely on.
-4. Fill in the fields:
-   - Description: paste `docs/release/steam-workshop-description.bbcode.txt`.
-   - Thumbnail: already set by `picture="thumbnail.png"`, a 640×640 PNG under 1 MB.
-   - Tags: the descriptor's Religion, Gameplay, Events and Historical.
-5. Upload. When it finishes, the launcher writes `remote_file_id="…"` into the `.mod` file. The
+2. Go to **Mod library** (left sidebar), then the **Upload mod** button at the top right.
+3. In the **Mods** dropdown choose **Jewish Communities (Pre-Alpha)** (near the bottom of the
+   list). Check that **Directory** ends in `mod\jewishcommunities_prealpha`.
+4. Under **Upload to**, switch from the preselected **Paradox Mods** to **Steam Workshop**.
+   Paradox Mods has no private option to rely on.
+5. The form has only Suggested game version (filled from the descriptor), Mod ID (leave empty
+   for a new item) and **Description**: paste
+   `docs/release/steam-workshop-description.bbcode.txt`. There are no thumbnail or tag fields;
+   both come from the descriptor (`picture="thumbnail.png"`, a 640×640 PNG under 1 MB).
+6. Click **Upload mod**. 216 MB took under a minute (five progress steps). When it finishes, the launcher writes `remote_file_id="…"` into the `.mod` file. The
    staging script keeps that ID, so every later upload **updates** the same Workshop item.
 
 ## 4. Make it private: set the visibility at once
