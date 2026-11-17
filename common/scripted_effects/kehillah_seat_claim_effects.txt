@@ -1,0 +1,71 @@
+﻿# Root is a Jewish adventurer with a recorded community claim; scope:kehillah_claim_seat is
+# any community held by the interaction recipient. This transfer follows
+# the same proven government-base path used for David in the 1066 probe.
+kehillah_press_community_claim_effect = {
+	save_scope_as = kehillah_claimant
+	primary_title = { save_scope_as = kehillah_claim_old_camp }
+	court_position:kehillah_adventurer_dayyan_position ?= {
+		save_scope_as = kehillah_claim_camp_dayyan
+	}
+	scope:kehillah_claim_seat.holder = { save_scope_as = kehillah_claim_caretaker }
+	scope:kehillah_claim_seat.title_capital_county.holder.top_liege = {
+		save_scope_as = kehillah_claim_host
+	}
+	create_title_and_vassal_change = {
+		type = granted
+		save_scope_as = kehillah_claim_title_change
+		add_claim_on_loss = no
+	}
+	scope:kehillah_claim_seat = {
+		change_title_holder = {
+			holder = scope:kehillah_claimant
+			change = scope:kehillah_claim_title_change
+			government_base = scope:kehillah_claim_caretaker
+		}
+	}
+	resolve_title_and_vassal_change = scope:kehillah_claim_title_change
+	remove_list_variable = {
+		name = kehillah_community_claims
+		target = scope:kehillah_claim_seat
+	}
+	scope:kehillah_claim_caretaker = {
+		add_to_variable_list = {
+			name = kehillah_community_claims
+			target = scope:kehillah_claim_seat
+		}
+	}
+	set_primary_title_to = scope:kehillah_claim_seat
+	if = {
+		limit = { has_title = scope:kehillah_claim_old_camp }
+		destroy_title = scope:kehillah_claim_old_camp
+	}
+	kehillah_update_leader_flavor_effect = yes
+	if = {
+		limit = {
+			exists = scope:kehillah_claim_camp_dayyan
+			scope:kehillah_claim_camp_dayyan = { is_alive = yes }
+		}
+		if = {
+			limit = {
+				NOT = {
+					scope:kehillah_claim_camp_dayyan = { is_courtier_of = scope:kehillah_claimant }
+				}
+			}
+			add_courtier = scope:kehillah_claim_camp_dayyan
+		}
+		assign_councillor_type = {
+			type = councillor_court_chaplain
+			target = scope:kehillah_claim_camp_dayyan
+			remove_existing_councillor = yes
+		}
+	}
+	# Nagid is the host's separate appointment. A displaced Nagid vacates;
+	# the claimant is not made Nagid by gaining the community seat.
+	if = {
+		limit = { scope:kehillah_claim_caretaker = { kehillah_is_nagid_trigger = yes } }
+		scope:kehillah_claim_host = { kehillah_nagid_vacate_effect = yes }
+	}
+	kehillah_refresh_map_view_for_players_effect = yes
+	debug_log = "KEHILLAH_SEAT_CLAIM: claimant gained community; old camp removed"
+	debug_log_scopes = yes
+}

@@ -1,5 +1,9 @@
 # Roadmap
 
+**Exilarchate and community claims BUILT 2026-11-16; live interaction checks passed, combined branch not live-tested:** David ben Hezekiah has authored parents, a brother, Joseph ha-Nagid as a friend, Isaac ibn Sakri as his camp Dayyan, and a recorded claim to the Baghdad Kehillah. The claim interaction is general to eligible adventurers and community seats; Exilarch recognition is a separate lifetime titular office for Jewish community leaders with the Ben David trait. The two-step transfer and recognition worked in an isolated CK3 check; a new campaign using this version is needed to see the authored history. See [design](docs/spec/2026-11-16-community-claims-and-exilarch-recognition.md), [implementation](docs/implementation/2026-11-16-david-and-the-exilarchate.md), and [live log](docs/testing/2026-11-16-general-claims-live-log.md).
+
+**Crisis settlement outlook and Quarter Held aftermath BUILT 2026-11-15; source/xTiger checked, combined live check pending:** a breach leaves a visible ten-year -15 outlook memory, while unanswered incitement leaves -5; a breach also worsens settlement policy and a charter term. The integration keeps the timed -15 memory without applying a second permanent -15 shift. Quarter Held gains its own accounting scene and outer-street damage. See [outlook](docs/implementation/2026-11-15-crisis-settlement-outlook.md) and [Quarter Held](docs/implementation/2026-11-15-quarter-held-polish.md).
+
 **County-endowment library preservation BUILT 2026-11-15; source checked, live test pending:** county grants retain the original collection and study references while moving its physical seat to a Jewish-held temple in the community county. No suitable temple means Quarter fallback and annual retry. Existing saves use the same seat refresh; tooltips identify the temple. See [build record and manual checks](docs/implementation/2026-11-15-county-library-preservation.md). This does not yet add the Jewish-conqueror choice event.
 
 **Community leadership styles PROTOTYPE BUILT 2026-11-15; source/xTiger checked, live UI/succession checks pending:** Domain has gold Scholarly, slate-blue Political and green Commercial choices; the selected button carries the current-state styling, with always-visible effects and a ten-year-mandate status. An unchosen community has an inline and native suggested-action reminder; the first Scholarly choice can be made explicitly. Styles reweight candidate skills and give +60 to the corresponding Greatness/Stability/Prosperity baseline through existing convergence. The mandate and cooldown stay on the community title; AI selects its weakest pillar. Appointment eligibility/laws are unchanged. See [design, build record and manual checks](docs/implementation/2026-11-15-community-leadership-styles.md). Live tools/process ownership and Git metadata remain blocked.
@@ -600,6 +604,8 @@ preserves those changes, plus the remaining UI/editorial work. The multi-communi
 remains a proposal. Earlier partial live passes do not verify the newest lifecycle, paging,
 feedback and presentation changes; the combined PR remains a draft pending those checks.
 ### Community crises as situations — 2026-10-31, Daniel's request
+
+The earlier [CK3 situation API research](docs/research/2026-10-30-crises-as-situations.md) records the engine evidence and proposed two-community identity, save/reload, participation, and UI probes. Later dated build and test entries below supersede its 2026-10-30 implementation status.
 
 **2026-11-11 map pins (verified live):** the crisis, decree and trial situations moved to vanilla's
 `natural_disasters` group, the only group the engine draws map pins for. The crisis pin was seen in
