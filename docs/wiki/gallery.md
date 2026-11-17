@@ -50,6 +50,11 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
   <figcaption><strong>David ben Hezekiah.</strong> An adventurer with a claim to Baghdad and a separate path to Exilarch recognition. <a href="three-starts.html#david-ben-hezekiah--reclaim-a-seat">Quick start</a></figcaption>
 </figure>
 
+<figure class="shot">
+  <img src="../images/bookmark-unlanded-leaders.jpg" alt="Character selection in 1069 with the Unlanded Rulers map showing community leaders across France and the Empire" loading="lazy">
+  <figcaption><strong>Community leaders in character selection.</strong> The Unlanded Rulers view marks community leaders on the map with menorah banners, across France and the Empire.</figcaption>
+</figure>
+
 <div class="shot-grid">
 <figure class="shot shot--todo">
   <div class="shot__frame"><span class="shot__tag">Screenshot needed</span><code>isaac-worms-start.jpg</code><span>1066 bookmark · Kehillah of Worms selected</span></div>
@@ -202,9 +207,9 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
 </div>
 
 <div class="shot-grid">
-<figure class="shot shot--todo">
-  <div class="shot__frame shot__frame--tall"><span class="shot__tag">Screenshot needed</span><code>learning-window.jpg</code><span>Character · list of books read</span></div>
-  <figcaption><strong>A scholar's learning.</strong> Every book a character has studied, like a list of memories. <span class="shot__how">Capture: a well-read rabbi (Rashi or the Rambam); open the learning list from the character window.</span></figcaption>
+<figure class="shot">
+  <img src="../images/learning-window.jpg" alt="Rashi's learning window listing three mastered orders of the Talmud Bavli" loading="lazy">
+  <figcaption><strong>A scholar's learning.</strong> Every work a character has mastered, in the order learned. Rashi has three orders of the Talmud.</figcaption>
 </figure>
 
 <figure class="shot shot--todo">
@@ -230,10 +235,27 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
   <figcaption><strong>A New Work Is Discussed.</strong> When a rabbi finishes a sefer, the community's scholars read it and learn from it.</figcaption>
 </figure>
 
+<figure class="shot shot--narrow-wide">
+  <img src="../images/tooltip-rashi-ambition.jpg" alt="Tooltip: An ambition, this book can enter history as Rashi on the Talmud" loading="lazy">
+  <figcaption><strong>A historical ambition.</strong> Some choices let a book become the famous work it was in history.</figcaption>
+</figure>
+
 <div class="shot-grid">
-<figure class="shot shot--todo">
-  <div class="shot__frame"><span class="shot__tag">Screenshot needed</span><code>event-writing-a-sefer.jpg</code><span>Event · “What to Write”</span></div>
-  <figcaption><strong>Writing a sefer.</strong> A scholar decides what his book will argue. <span class="shot__how">Capture: start writing a book, or console <code>event kehillah_book.0001</code>.</span></figcaption>
+<figure class="shot">
+  <img src="../images/decision-redeem-books.jpg" alt="Redeem Seized Books decision" loading="lazy">
+  <figcaption><strong>Redeem Seized Books.</strong> Books taken from Jewish shelves come up for sale; ransoming one is a mitzvah.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/event-books-redeemed.jpg" alt="Books Redeemed event: the Mishnah comes home" loading="lazy">
+  <figcaption><strong>Books Redeemed.</strong> The Mishnah comes home to a Jewish shelf.</figcaption>
+</figure>
+</div>
+
+<div class="shot-grid">
+<figure class="shot">
+  <img src="../images/event-writing-a-sefer.jpg" alt="What to Write event: Rashi chooses between a running commentary on the Talmud and a Talmudic argument" loading="lazy">
+  <figcaption><strong>Writing a sefer.</strong> Rashi chooses what to write. A running commentary on the whole Talmud can enter history as <em>Rashi on the Talmud</em>.</figcaption>
 </figure>
 
 <figure class="shot shot--todo">
@@ -318,11 +340,16 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
   <figcaption><span class="shot__badge">Earlier build</span> <strong>Convening a Bet Din.</strong> The planning window for a regional rabbinical court.</figcaption>
 </figure>
 
-<figure class="shot shot--todo">
-  <div class="shot__frame shot__frame--tall"><span class="shot__tag">Screenshot needed</span><code>bet-din-case.jpg</code><span>Bet Din · a case or responsum event mid-sitting</span></div>
-  <figcaption><strong>A case before the court.</strong> Three judges weigh learned sources, or write to another rabbi for a responsum. <span class="shot__how">Capture: any case event during a Bet Din sitting.</span></figcaption>
+<figure class="shot">
+  <img src="../images/bet-din-case.jpg" alt="The Goose on the Driftwood: a case at Parnas Kalonymus's Bet Din" loading="lazy">
+  <figcaption><strong>A case before the court.</strong> Is a goose that grew on driftwood a fowl? Review the evidence, or cite <em>Simanei ha-of</em> and require shechita.</figcaption>
 </figure>
 </div>
+
+<figure class="shot">
+  <img src="../images/event-on-whose-authority.jpg" alt="On Whose Authority? event: naming Talmud Bavli: Kodashim as the ruling's source" loading="lazy">
+  <figcaption><strong>On Whose Authority?</strong> A ruling names its source, and the work it names is remembered with it.</figcaption>
+</figure>
 
 <figure class="shot">
   <img src="../images/bet-din-intent.jpg" alt="Choosing the Bet Din's intent: Justice, Convene a Synod or Convene the Sanhedrin" loading="lazy">
@@ -448,6 +475,11 @@ Holidays follow the Hebrew calendar and arrive as household events, with differe
 <figure class="shot">
   <img src="../images/host-charter-contract.jpg" alt="The Muslim Host Charter Contract between Emir Badis and Nagid Yosef, with tribute, construction, security, jurisdiction and market terms" loading="lazy">
   <figcaption><strong>Negotiating the charter.</strong> Tribute, building rights, security, jurisdiction and market access are terms you can ask the host to change.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/host-charter-christian.jpg" alt="The Christian Host Charter Contract between King Philippe and Rav Shlomo of Troyes, including Talmudic Study terms" loading="lazy">
+  <figcaption><strong>A Christian host's charter.</strong> Under King Philippe, Troyes negotiates different terms, including whether Talmudic study is unrestricted, licensed or proscribed.</figcaption>
 </figure>
 
 <figure class="shot shot--todo">
