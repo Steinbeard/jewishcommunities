@@ -94,14 +94,34 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
   <figcaption><strong>Córdoba on the map.</strong> A community card names its leader, age, pillar standings and danger, and links to its host, Quarter and library.</figcaption>
 </figure>
 
-<figure class="shot shot--todo">
-  <div class="shot__frame"><span class="shot__tag">Screenshot needed</span><code>jewish-map-mode.jpg</code><span>Map · Jewish map-mode category, zoomed out</span></div>
-  <figcaption><strong>The Jewish world map.</strong> The map mode colours where communities live, from Iberia to the Rhineland and the Near East. <span class="shot__how">Capture: Jewish category in the map-mode bar, zoomed out over Europe and the Mediterranean, with no debug ID hovers.</span></figcaption>
+<figure class="shot">
+  <img src="../images/jewish-map-mode.jpg" alt="The Community Rites map mode over Europe and the Mediterranean, with its colour key" loading="lazy">
+  <figcaption><strong>The Jewish world map.</strong> The Jewish map modes show communities, rites, crises, each realm's law on its Jews, libraries and native Jewish cultures. Here, Community Rites colours each quarter by the rite its leader follows.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/map-communities-toledo.jpg" alt="The Jewish Communities map mode with the Kehillah of Toledo card beside its county" loading="lazy">
+  <figcaption><strong>Communities on the map.</strong> Selecting a county with a community shows its card: Toledo's leader, founding date, pillars, yearly danger, and links to its host, Quarter and library.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/map-community-crises.jpg" alt="The Community Crises map mode with a tooltip for the Kehillah of Granada in the aftermath of an attack" loading="lazy">
+  <figcaption><strong>Community Crises.</strong> Hover a community to see its crisis, its cause and its danger of violence.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/map-status-of-the-jews.jpg" alt="The Status of the Jews map mode with its colour key: favored, tolerated, restricted, banned, no policy" loading="lazy">
+  <figcaption><strong>Status of the Jews.</strong> Each realm's law on its Jews, set by its top liege, from favored to banned.</figcaption>
 </figure>
 
 <figure class="shot">
   <img src="../images/realm-view-communities.jpg" alt="The Jewish Communities in Garnatah window, listing Granada and Malaga under Emir Badis" loading="lazy">
   <figcaption><strong>A realm's communities together.</strong> Garnatah's view shows Emir Badis, his policy and outlook, both of his communities (most endangered first), Granada's charter terms and ten years of realm news.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/realm-view-hre.jpg" alt="The Jewish Communities in the Holy Roman Empire window: Worms, Speyer, Mainz, Wien, Praha and Cologne under Kaiser Heinrich IV" loading="lazy">
+  <figcaption><strong>The Empire's communities.</strong> Kaiser Heinrich IV hears six communities, from Worms to Praha, all calm in 1066.</figcaption>
 </figure>
 
 <figure class="shot shot--todo">
@@ -341,9 +361,53 @@ Holidays follow the Hebrew calendar and arrive as household events, with differe
   <figcaption><strong>Community Safety.</strong> The Military window lists crises under way, the yearly danger, its sources and what protects the community.</figcaption>
 </figure>
 
-<figure class="shot shot--todo">
-  <div class="shot__frame"><span class="shot__tag">Screenshot needed</span><code>crisis-defence.jpg</code><span>Military view · defending the Quarter</span></div>
-  <figcaption><strong>Holding the Quarter.</strong> If violence begins, a second race decides whether the Quarter is held. <span class="shot__how">Capture: the crisis military panel during the violence phase.</span></figcaption>
+<figure class="shot">
+  <img src="../images/crisis-defence.jpg" alt="An Armed Host Gathers: war is declared on Nagid Yosef while the situation window races Quarter held against Quarter struck" loading="lazy">
+  <figcaption><strong>Holding the Quarter.</strong> When the armed host gathers, war is declared and a second race begins: Quarter held against Quarter struck, with three ways to respond.</figcaption>
+</figure>
+
+### Granada, 1066: one crisis start to finish
+
+<figure class="shot">
+  <img src="../images/event-seek-protection.jpg" alt="Seek Protection event: Joseph ibn Ezra, the Shtadlan, reports back from Emir Badis's court" loading="lazy">
+  <figcaption><strong>Seek Protection.</strong> Your Shtadlan returns from the emir's court. Ask for men, refuge or a patrol at the gate.</figcaption>
+</figure>
+
+<div class="shot-grid">
+<figure class="shot">
+  <img src="../images/event-sanhaja-mobilize.jpg" alt="The Sanhaja Mobilize event, with a soldier in gilded armour" loading="lazy">
+  <figcaption><strong>The Sanhaja Mobilize.</strong> The verses reach the barracks, and the emir's soldiers prepare to act without his leave.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/event-at-the-gates.jpg" alt="At the Gates event: Abu Ishaq of Elvira's host stands before Garnatah" loading="lazy">
+  <figcaption><strong>At the Gates.</strong> The host stands before the town. Stand at the gate, plead, flee or bar the synagogue doors.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/event-quarter-breached.jpg" alt="The Quarter Is Breached event" loading="lazy">
+  <figcaption><strong>The Quarter Is Breached.</strong> With no preparations made, the attackers walk in, but the attack is contained.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/event-after-the-attack.jpg" alt="After the Attack on the Quarter event, counting the dead" loading="lazy">
+  <figcaption><strong>After the Attack.</strong> The elders go house to house, counting those who returned.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/event-burial.jpg" alt="The Burial event, asking who will say Kaddish" loading="lazy">
+  <figcaption><strong>The Burial.</strong> Who will say Kaddish for those with no one left to say it?</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/event-seal-from-court.jpg" alt="A Seal from the Court event, with Emir Badis's answer to the elders" loading="lazy">
+  <figcaption><strong>A Seal from the Court.</strong> The emir orders an end to disorder, but offers no new protection.</figcaption>
+</figure>
+</div>
+
+<figure class="shot shot--narrow-wide">
+  <img src="../images/toast-status-lowered.jpg" alt="Notification: Status of the Jews Lowered, Emir Badis restricts Jewish settlement to Tolerated" loading="lazy">
+  <figcaption><strong>Status of the Jews Lowered.</strong> Afterwards, Emir Badis restricts Jewish settlement in Garnatah. The charter stands, but anything beyond the new law survives only on sufferance.</figcaption>
 </figure>
 
 <div class="shot-grid">
@@ -422,6 +486,42 @@ Each rite of the Rabbinic faith has its own icon, tenets, sins and virtues.
 <figure class="shot">
   <img src="../images/rite-merkavah.jpg" alt="Yordei Merkavah with Esotericism, Inner Journey and Sacred Liturgy" loading="lazy">
   <figcaption><strong>Yordei Merkavah.</strong> The mystics.</figcaption>
+</figure>
+</div>
+
+### Other Jewish faiths
+
+Beyond the Rabbinic rites, other Jewish faiths each have their own tenets and their own view of the others.
+
+<div class="shot-grid shot-grid--3">
+<figure class="shot">
+  <img src="../images/rite-karaism.jpg" alt="Karaism with Legalism, Literalism and Covenant Community" loading="lazy">
+  <figcaption><strong>Karaism.</strong> Scripture alone.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/rite-samaritanism.jpg" alt="Samaritanism with Literalism, Covenant Community and Temple Service, led by a Kohen Gadol" loading="lazy">
+  <figcaption><strong>Samaritanism.</strong> Led by its High Priest.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/kohen-gadol.jpg" alt="Kohen Gadol Simeon of the Samaritan High Priesthood, with the Kohen trait tooltip" loading="lazy">
+  <figcaption><strong>The Kohen trait.</strong> Kohen Gadol Simeon, of the priestly line of Aaron.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/rite-malabarism.jpg" alt="Malabarism with Adaptability, Dharmic Syncretism and Covenant Community" loading="lazy">
+  <figcaption><strong>Malabarism.</strong> The Jews of the Malabar coast.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/rite-haymanot.jpg" alt="Haymanot with Asceticism, Ritual Celebrations and Covenant Community" loading="lazy">
+  <figcaption><strong>Haymanot.</strong> The faith of the Beta Israel.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/rite-kuzarism.jpg" alt="Kuzarism with Adaptability, Legalism and Religious Law" loading="lazy">
+  <figcaption><strong>Kuzarism.</strong> The Khazars' Judaism.</figcaption>
 </figure>
 </div>
 
