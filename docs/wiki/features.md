@@ -40,6 +40,8 @@ The five council seats are **Shtadlan** (advocate), **Gabbai** (treasurer), **Ro
 
 Use the **Jewish** category in the map-mode bar to locate communities and open their cards, libraries, rites and condition. A realm view shows its communities together. Your host grants a charter and sets a realm-wide **Jewish Settlement Policy** from Banned to Encouraged. Construction, protection, jurisdiction and trade can depend on those terms. A ruler may review policy; expulsion can force a community to negotiate, leave or face removal. The **Nagid** is a separate realm office for a community leader in a Muslim realm, especially relevant in Granada.
 
+![The Córdoba community inspector beside its host county, showing leader and pillars](../images/cordoba-community-inspector.jpg)
+
 ## Crisis: read the race, then act
 
 A community threat opens a window on the map and in the **Situations** list, with two visible totals: **Armed Host** and **Spared**. The window names the sources and suggests possible responses. You can prepare a watch, lay in provisions, seek protection, answer an agitator, appeal beyond the local lord, mobilize neighbouring communities or spend gold. If violence begins, a second race decides whether the Quarter is held or struck. Its aftermath can affect buildings, pillars, charter terms and the host's outlook. This is one of the most important systems for pre-alpha feedback.

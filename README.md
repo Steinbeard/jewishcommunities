@@ -34,6 +34,8 @@ The custom **Domain** screen brings together the Jewish Quarter, the host charte
 
 Grow the **Quarter** through nine building lines, from synagogue and Beit Midrash to countinghouse, mikvah, Hekdesh and workshops. The **library** and **Sefarim Ledger** let you browse historical works, see how your rite values them, acquire copies, study and eventually write your own. Jewish map modes and community cards reveal other Kehillot across the world.
 
+![The Córdoba community inspector shows its leader, pillar standings, host and library link](docs/images/cordoba-community-inspector.jpg)
+
 ![The community library and its historical works](docs/images/library.jpg)
 
 ## Lead people and face danger
