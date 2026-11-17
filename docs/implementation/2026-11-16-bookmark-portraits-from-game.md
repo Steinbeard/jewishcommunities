@@ -23,7 +23,7 @@ The start-screen cards did not show the characters as the game draws them.
   `kehillah_dna_bookmark_<card>`. Each is the face from the card's old portrait, without
   clothing and props. The faces stay the same; they are now fixed in the game too.
 - **History:** the 12 DNA-less mod characters get `dna =`. The Rif (9001101) uses the roster's
-  existing `kehillah_dna_isaac_alfasi`, so he has the same face as 9002023 (see below).
+  existing `kehillah_dna_isaac_alfasi` (see "Duplicate Rif removed" below).
 - **Vanilla characters:** two template characters, 9001190 and 9001191 (born 700, died 760,
   in `kehillah_v51_bookmark_characters.txt`), carry the Maimonides and Khagan DNA.
   `kehillah_on_game_start` copies it with `copy_inheritable_appearance_from`. This avoids
@@ -49,8 +49,13 @@ A second 867 game produced identical faces, hair, beards and clothes. Only body 
 and the expression and wrinkle genes differed: the game sets those from per-game state, and the
 bookmark's own `animation` sets the pose on the card anyway.
 
-## Found, not fixed
+## Duplicate Rif removed (same day)
 
-The Rif exists twice in a 1066 game: the bookmark's 9001101 (Fez) and 9002023 in
-`kehillah_historical_families_1066.txt` (born 1013, at court 155015). They now share a face,
-which makes the duplicate easy to spot. Choosing which one stays needs a decision.
+The Rif existed twice in a 1066 game: the bookmark's 9001101, who leads `d_kehillah_fez`, and
+9002023 in `kehillah_historical_families_1066.txt`, born 1013 and at court 155015. Daniel chose
+to keep the bookmark's character. 9002023 is deleted. The Rif now carries the roster's
+personality (Diligent, Just, Stubborn), set as `disallow_random_traits = yes`. This overrides
+V51's "no personality traits" rule for him only.
+
+These now point to 9001101: the history-file trigger list, the Hilkhot ha-Rif ambition trigger,
+the five-Isaacs comment, and tracker row HC060.
