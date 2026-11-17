@@ -170,6 +170,30 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
 </figure>
 </div>
 
+### Building a library
+
+<figure class="shot">
+  <img src="../images/library-missing-foundational.jpg" alt="Troyes's Talmudics shelf with an empty slot and a tooltip: Missing foundational works, Talmud Bavli: Tahorot" loading="lazy">
+  <figcaption><strong>A gap on the shelf.</strong> Every library is built on its rite's foundational works. Troyes lacks Talmud Bavli: Tahorot, and its Greatness suffers until it is found.</figcaption>
+</figure>
+
+<div class="shot-grid">
+<figure class="shot">
+  <img src="../images/event-acquire-book.jpg" alt="How Shall We Acquire It? event: buy, commission a copy, or borrow the exemplar from Worms" loading="lazy">
+  <figcaption><strong>How Shall We Acquire It?</strong> Worms holds the missing order. Buy a surplus copy, commission their scriptorium, or borrow the exemplar for your own scribe.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/library-copying.jpg" alt="Troyes's shelf while Talmud Bavli: Tahorot is being copied" loading="lazy">
+  <figcaption><strong>Copying under way.</strong> The shelf shows the copy in progress.</figcaption>
+</figure>
+</div>
+
+<figure class="shot shot--narrow-wide">
+  <img src="../images/work-rashi-on-talmud.jpg" alt="Work details for Rashi on the Talmud, written at Troyes in 1070" loading="lazy">
+  <figcaption><strong>A new work on the shelf.</strong> Rashi on the Talmud, written at Troyes in 1070. From here a scholar can give it a haskamah or pronounce a cherem, and see who has mastered it and which libraries hold it.</figcaption>
+</figure>
+
 <div class="shot-grid">
 <figure class="shot">
   <img src="../images/sefarim-ledger.jpg" alt="The Ledger of Sefarim ranked for Minhag Sepharad, with Anan's Sefer ha-Mitzvot shown as Banned" loading="lazy">
@@ -264,6 +288,11 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
 </figure>
 </div>
 
+<figure class="shot">
+  <img src="../images/event-the-letters.jpg" alt="The Letters event: a quarrel over Targum Pseudo-Jonathan reaches Troyes, with Rav Isaac of Mainz" loading="lazy">
+  <figcaption><strong>The Letters.</strong> A quarrel over a disputed book reaches your door. Stand with it, condemn it, or sign nothing.</figcaption>
+</figure>
+
 ## Council, succession and decisions
 
 <div class="shot-grid">
@@ -347,6 +376,16 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
 </div>
 
 <figure class="shot">
+  <img src="../images/bet-din-sources.jpg" alt="A Shared Courtyard case, listing works on Nezikin known to the faith and which judges have mastered them" loading="lazy">
+  <figcaption><strong>Knowing the sources.</strong> Each case lists the works that bear on it and which judges on the bench have mastered them. Hear it yourselves, or ask a scholar outside the panel.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/bet-din-courtyard-options.jpg" alt="A Shared Courtyard: rulings on a fallen partition between two households" loading="lazy">
+  <figcaption><strong>The ruling.</strong> Divide the cost, agree a cheaper screen, require nothing, or cite <em>Hezek reiyah</em> for the privacy claim.</figcaption>
+</figure>
+
+<figure class="shot">
   <img src="../images/event-on-whose-authority.jpg" alt="On Whose Authority? event: naming Talmud Bavli: Kodashim as the ruling's source" loading="lazy">
   <figcaption><strong>On Whose Authority?</strong> A ruling names its source, and the work it names is remembered with it.</figcaption>
 </figure>
@@ -370,6 +409,18 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
 <figure class="shot">
   <img src="../images/bet-din-conclusion.jpg" alt="Rav Yaakov's Sitting of the Bet Din concludes, with A Citation Offered" loading="lazy">
   <figcaption><strong>A citation offered.</strong> Rav Yaakov's sitting ends with a Justice intent fulfilled and a citation for one of his scholars.</figcaption>
+</figure>
+</div>
+
+<div class="shot-grid">
+<figure class="shot">
+  <img src="../images/event-docket-closed.jpg" alt="The Docket Is Closed event" loading="lazy">
+  <figcaption><strong>The Docket Is Closed.</strong> Rulings are recorded and copied for the other communities, and the court will not sit again for some years.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/bet-din-conclusion-troyes.jpg" alt="Rashi's own Sitting of the Bet Din concludes, with Rav Isaac and Parnas Menachem as guests" loading="lazy">
+  <figcaption><strong>Your own sitting.</strong> Rashi hosts Rav Isaac and Parnas Menachem at Troyes.</figcaption>
 </figure>
 </div>
 
