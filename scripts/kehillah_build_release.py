@@ -62,6 +62,14 @@ def git_commit() -> str:
         return "unknown"
 
 
+def supported_version() -> str:
+    # Follow the dev descriptor, so a game-version bump there reaches the release.
+    m = re.search(r'supported_version\s*=\s*"([^"]+)"', (REPO / "descriptor.mod").read_text(encoding="utf-8-sig"))
+    if not m:
+        raise SystemExit("descriptor.mod has no supported_version")
+    return m.group(1)
+
+
 def descriptor(name: str, version: str, remote_id: str | None, path: Path | None) -> str:
     lines = [
         f'version="{version}"',
@@ -73,7 +81,7 @@ def descriptor(name: str, version: str, remote_id: str | None, path: Path | None
         "}",
         f'name="{name}"',
         'picture="thumbnail.png"',
-        'supported_version="1.20.*"',
+        f'supported_version="{supported_version()}"',
     ]
     if path is not None:
         lines.append(f'path="{path.as_posix()}"')

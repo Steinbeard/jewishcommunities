@@ -6,6 +6,9 @@
 `sefarim-reviews-cherem-and-crisis-politics@b29688c`. Step 3 below is corrected to match the
 launcher (2026.14) screens as they actually appeared.
 
+**2026-11-17: 0.1.1-prealpha** (CK3 1.21, no Roads to Power needed) is staged from branch `ck3-1.21-port`.
+The staging script now takes `supported_version` from the dev `descriptor.mod`.
+
 ## Why not upload the dev folder
 
 The launcher uploads **the whole mod folder**. `mod/jewishcommunities` is about 270 MB, and half

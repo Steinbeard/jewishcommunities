@@ -96,3 +96,33 @@ were taken but not committed.
 - **`descriptor.mod` → `supported_version="1.21.*"`.**
 - **Still not seen in game:** the Beit Midrash offered in a Jewish-held temple holding's district.
 
+## Without Roads to Power (2026-11-17 evening)
+
+The port was booted with `dlc_load.json` `disabled_dlcs = ["dlc/dlc014_ep3/dlc014.dlc"]` (PID 28624, closed
+afterwards). `dlc_load.json` was then restored from a backup.
+
+- An in-game probe confirmed the setup:
+  - `roads_to_power` was **OFF**.
+  - `landless_adventurer` and `landless_playable` were **ON**.
+  - The player is the Worms Kehillah: `is_playable_character = yes`, with a domicile and an economy value of 96.
+- **Result: playable.** The game reached Worms, ran to 2 Jan 1067 without a crash, and fired Kehillah events (the
+  Emperor's charter, a new Dayyan, a book event). The realm and Quarter windows render.
+- **Our own Roads to Power gates now use `has_playable_adventurer_dlc_trigger`:** founding a community as an
+  adventurer, stepping down, and the task contracts with their pulse and event. The debug-only AI probe activity
+  stays on Roads to Power.
+- **Errors fixed from this run** (it was the first run to let time pass):
+  - **From the 1.21 merge:** three council tasks had two `is_shown` blocks, which CK3 logged as "Trigger section
+    already read earlier". The clean merge had kept both 1.21's new block and ours. Our line now sits inside
+    1.21's block.
+  - **Present before the port:**
+    - banked study XP: `change_variable` on an unset variable, about 110 times a quarter;
+    - `possessed` → `possessed_1` in a revival tenet's virtues;
+    - an unguarded `var:kehillah_crisis_outcome` read in a crisis decision.
+  - **Left as is (also present before the port):**
+    - "add_opinion with monthly_change cannot have a specified duration" (×2) and one "trigger_else_if with no
+      trigger_else";
+    - "learn_language: Already knows language";
+    - six missing activity-phase icons;
+    - three `nick_kehillah_*` nicknames;
+    - the known set-but-unused variable noise.
+
