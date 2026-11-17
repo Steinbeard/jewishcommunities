@@ -142,6 +142,13 @@ the Quarter window. Then check `error.log` for tooltip floods after UI interacti
 
 ## 5. Decisions made here (obvious; recorded so nobody re-litigates them)
 
+> **2026-11-17 correction (Phase 2 built).** See [the Phase 2 record](2026-11-17-ck3-1-21-removed-systems.md).
+> - The economy value needed no re-fit. Prosperity is development renamed, on the same curve, with the same
+>   1066 numbers.
+> - No `county_opinion_add` / `tax_mult` remained in our script.
+> - Only `temple_holding_district` is overridden; the citadel cannot offer our building.
+> - The Yeshiva's great and special buildings had to move to districts. That was not foreseen here.
+
 - **Economy input.** `kehillah_bd_local_economy_value` reads `prosperity_level` instead of `development_level`. It
   keeps the same shape: per-level points up to a knee, a smaller slope beyond, and −50 under 50 control. The scale
   is re-fit so the Worms 1066 start and a top-prosperity city land where Worms 12 (+96) and a level-40 city

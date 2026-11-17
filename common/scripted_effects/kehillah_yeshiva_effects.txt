@@ -112,9 +112,15 @@ kehillah_establish_yeshiva_effect = {
 # Alhambra, and it falls back to reduced modifiers when disabled. If the
 # engine will not place one (unproven outside All Under Heaven -- V29
 # spike 1), a SPECIAL building, but only into an EMPTY special slot:
-# add_special_building replaces whatever is there, and this must never
+# placing one replaces whatever is there, and this must never
 # demolish a province's own landmark. If neither can be placed, the
 # yeshiva still works; it simply has no map building.
+#
+# 2026-11-17 (CK3 1.21): both are districts now
+# (common/districts/kehillah_yeshiva_districts.txt). A province may
+# have no great-district slot, so one is made first, as vanilla's
+# Mandala capital does; the special fallback is then needed only where
+# a great district (a Wonder) already stands.
 # ---------------------------------------------------------------------
 kehillah_place_yeshiva_map_building_effect = {
 	if = {
@@ -128,17 +134,24 @@ kehillah_place_yeshiva_map_building_effect = {
 						has_building = kehillah_yeshiva_hall_special
 					}
 				}
-				add_great_building = kehillah_yeshiva_hall
+				kehillah_place_yeshiva_great_district_effect = { DISTRICT = kehillah_yeshiva_hall_district }
 			}
 			if = {
 				limit = {
 					NOR = {
 						has_building = kehillah_yeshiva_hall
+						has_building = kehillah_great_yeshiva_hall
 						has_building = kehillah_yeshiva_hall_special
-						has_special_building = yes
+						has_special_district = yes
 					}
 				}
-				add_special_building = kehillah_yeshiva_hall_special
+				hidden_effect = {
+					if = {
+						limit = { has_special_district_slot = no }
+						add_special_district_slot = kehillah_yeshiva_hall_special_district
+					}
+				}
+				add_special_district = kehillah_yeshiva_hall_special_district
 			}
 			if = {
 				limit = { has_building = kehillah_yeshiva_hall }
@@ -152,6 +165,22 @@ kehillah_place_yeshiva_map_building_effect = {
 				debug_log = "kehillah_place_yeshiva_map_building_effect: NO map building (great refused, special slot occupied)"
 			}
 		}
+	}
+}
+
+# Scope: a province. Sets a Yeshiva great district if the province has
+# none, making a great-district slot first where it lacks one (the
+# pattern of vanilla's Mandala capital, 00_great_project_types.txt).
+kehillah_place_yeshiva_great_district_effect = {
+	hidden_effect = {
+		if = {
+			limit = { has_great_district_slot = no }
+			set_great_district_slot = $DISTRICT$
+		}
+	}
+	if = {
+		limit = { has_great_district = no }
+		set_great_district = $DISTRICT$
 	}
 }
 
@@ -370,10 +399,11 @@ kehillah_raise_great_yeshiva_effect = {
 		domicile.domicile_location = {
 			# One great building per province (live 2026-10-11: "Province
 			# already has a great building"), so the hall is removed first.
+			# 1.21: one great district per province; remove the hall's.
 			if = {
 				limit = { has_building = kehillah_yeshiva_hall }
-				remove_building = kehillah_yeshiva_hall
-				add_great_building = kehillah_great_yeshiva_hall
+				remove_district_type = kehillah_yeshiva_hall_district
+				kehillah_place_yeshiva_great_district_effect = { DISTRICT = kehillah_great_yeshiva_hall_district }
 			}
 			if = {
 				limit = { has_building = kehillah_great_yeshiva_hall }
