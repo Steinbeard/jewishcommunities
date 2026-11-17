@@ -62,3 +62,37 @@ There are 3,722 lines; the log rotated at launch, so this is the whole boot.
     appear this boot.
 - **Not run in this test:** the GUI overrides and the temple-district Beit Midrash. No panel was opened and no
   tooltip hovered. Phase 3 and checklist items 2–3, 6–7 in the Phase 2 record are still open.
+
+## Follow-up runs, 2026-11-17 afternoon (Phase 3 visual check)
+
+There were two more xTiger boots of the port: PIDs 42748 and 25576. Each was closed after its check. Screenshots
+were taken but not committed.
+
+- **Start-up fixes confirmed.** There are no "no free building slots" and no "Cannot add saint" lines.
+  - The Mahdia start logged "the ruined Kairouan yeshiva hall is placed".
+  - 8 Yeshiva great districts were placed at start.
+- **County view (Worms, reached from the Jewish Communities map mode).** 1.21's holding and district view renders
+  normally, with no raw keys.
+  - The menorah toggle is the third round tab at the right end of the tab row, and its tooltip renders.
+  - The Kehillah card opens to the right of the county panel, over the map only, so it covers nothing in the county
+    view. Its Prosperity tooltip breakdown renders in full.
+  - In a Jewish map mode the card is always shown, by design, so the toggle only matters in other map modes.
+- **Jewish Quarter window.** 1.21 replaced the tab row with vertical bookmarks on the window's left edge.
+  - Two bookmarks show for a Kehillah: Overview ("Current Buildings", which lists the Mikvah and Sofer's Workshop
+    under the Great House) and our Beit Midrash Library. The Library opens the shelf panel and toggles closed.
+  - The Debtors and Artifacts bookmarks are merchant-only, so they are correctly hidden.
+- **My Realm and Council windows.** Both render correctly. The Kehillah standing, pillars, Quarter row and host
+  outlook are all present.
+- **error.log during all UI steps:** 0 new lines. 4 `domicile_type.cpp:378 ... 'camp'` lines came only from
+  clicking the debug-mode domicile type dropdown.
+- **New 1.21 errors found at load, fixed:**
+  - `ai_tier_1_building_modifier` / `ai_tier_1_pious_building_preference_modifier` no longer exist. The temple Beit
+    Midrash now uses 1.21's `ai_general_building_modifier`, `ai_pious_building_preference_modifier` and
+    `ai_holding_district_building_modifier`.
+  - The roaming probe's `paddy_fields_01` background check now uses `has_rice_fields_district`.
+  - Both had been hidden from the removed-token scan by vanilla's `_old_buildings.info`. With `.info` files
+    excluded, the scan now shows only comments.
+- **Missing UTF-8 BOMs** were added to the seven files CK3 flagged.
+- **`descriptor.mod` → `supported_version="1.21.*"`.**
+- **Still not seen in game:** the Beit Midrash offered in a Jewish-held temple holding's district.
+
