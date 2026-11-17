@@ -9,6 +9,7 @@ description: Install the pre-alpha, plan your first hour, and send useful report
 
 ## Before you begin
 
+- **[Subscribe to Jewish Communities (Pre-Alpha) on the Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3841299043).** Steam downloads it, and the Paradox launcher lists it under Mod library.
 - Use **CK3 1.20.x** and **Roads to Power**. Royal Court and other DLC add some content but are optional.
 - Enable only **Jewish Communities (Pre-Alpha)** in your playset for this test. If you also have a source copy, leave it disabled.
 - Start a **new campaign after an update**. Save compatibility between pre-alpha builds is not guaranteed.
