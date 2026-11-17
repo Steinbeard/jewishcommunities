@@ -1,6 +1,6 @@
 # Pre-alpha screenshots and UI check — 2026-11-16
 
-**Status:** five bookmark captures, Granada Quarter art, Rashi Domain leadership/pillar views, and Córdoba inspector captured. The two large error floods found during the pass have separate guarded fixes and passed isolated 1066/867 checks. Other bounded game-start errors remain and the staged release copy still needs its own smoke test.
+**Status:** five bookmark captures, Granada Quarter art, Rashi Domain leadership/pillar views, and Córdoba inspector captured. A later Troyes library check found visible book art after category selection, narrowing the empty-shelf concern. The two large error floods found during the pass have separate guarded fixes and passed isolated 1066/867 checks. Other bounded game-start errors remain and the staged release copy still needs its own smoke test.
 
 ## Method and images
 
@@ -45,3 +45,9 @@ A later isolated session captured full-window **1936×1119** bookmark JPGs and P
 The tester entered the 867 campaign as Amram Gaon. Its log stayed at **1,998 lines / 1,554 kehillah-tagged**, with zero `title_province` context-switch and leadership invalid-var signatures and no lines from the Jewish-culture seeding file. The Jewish Communities map painted colored areas, but debug ID/title-key hovers prevented a clean public map image. The tester stopped only the owned PID 10984 and confirmed no CK3 process remained.
 
 The culture-seeding flood was addressed in [PR #72](https://github.com/Steinbeard/jewishcommunities/pull/72). A combined 1066 run with that guard and the leadership guard brought the log down from 57,743 to **1,937 lines** while preserving Sephardi color/hover results in Iberia. Other game-start errors, including full Quarter building slots and invalid ancestral-site holdings, remain independent issues; the staged pre-alpha copy has still not received its required smoke-test boot.
+
+## Troyes library follow-up
+
+Luna alone launched an isolated 1066 Troyes campaign and checked Rashi's Quarter → Beit Midrash → library book icon. The library reported **11 works**: Parshanut (3), Talmudics (7), Machshavah (1). On selecting Parshanut, a Torah ark and two book images appeared; selecting Talmudics showed seven book thumbnails across two shelves. The shelf looked empty briefly on first open, before category selection. A dashed slot with a red exclamation marker appeared alongside the Talmudic books, and its meaning was not established. This check shows that counts and book art can render, so the Córdoba empty shelf is not a universal library failure. It does not explain Córdoba's state or establish whether the initial empty render is a persistent bug.
+
+The tester saved full-window PNG and JPG evidence as `troyes-library-parshanut-1066` in the internal temp capture folder; development controls remain visible, so it was not added to the public gallery. The post-boot log grew from 5 lines to 2,166 through world generation and library navigation; no distinct library-interaction error signature was identified. The `title_province` context-switch signature remained at zero. The tester closed only their verified PID 39276; no CK3 process remained.
