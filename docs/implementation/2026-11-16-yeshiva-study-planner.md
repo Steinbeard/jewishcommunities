@@ -20,9 +20,9 @@ Asked for by Daniel on 2026-11-16, after the Where to Study menu left out Lucena
 | Choosing a yeshiva | `kehillah_yeshiva.0300`, a menu of the top yeshivot by fame | Retired. The decision opens `activity_kehillah_yeshiva_study`, a map planner that pins every yeshiva of your faith. Its score is fame minus a distance penalty (`kehillah_yeshiva_study_province_score_value`). Vanilla's planner shows travel time and danger. |
 | Decision group | Major (pinned at the top for every eligible man) | Ordinary list. Return to the Yeshiva stays major. |
 | Enrolment | When you picked from the menu, before travelling | When you arrive (the activity's phase becomes active) |
-| Rabbi trait | Granted on enrolment | Granted after the first season present (`kehillah_yeshiva_study_quarter_effect`). Applies to AI students too. |
+| Rabbi trait | Granted on enrolment | Granted only at semicha. Study XP is banked in `var:kehillah_banked_xp_<track>` until then and paid into the trait's tracks when it is granted (`kehillah_add_rabbi_xp_effect`, `kehillah_grant_rabbi_trait_effect`). Applies to AI students too. (First version, same day: after the first season.) |
 | Arrival `.0301` | "On the Benches", one option | "Before the Rosh Yeshiva": he receives you and you pick a focus (Talmud, Scripture, faith and reason). The focus earns `kehillah_yeshiva_focus_bonus_xp` (3) a season. A returning student sees a shorter text and may change focus. |
-| Fixed points | none | `.0304` first season (trait arrives), `.0305` halfway examination before the Rosh Yeshiva (a Learning duel against 12, toast for each result), `.0306` last season (warns when Learning is below the ordination floor) |
+| Fixed points | none | `.0304` first season, `.0305` halfway examination before the Rosh Yeshiva (a Learning duel against 12, toast for each result), `.0306` last season (warns when Learning is below the ordination floor) |
 | Random study events | `.0311` to `.0313`, 50% a season | Also `.0314` a dispute between two students, `.0315` the newcomer, `.0316` a hard passage in your focus. 75% a season when no fixed event fires. |
 | Progress | none | Every study event ends with "Seasons on the benches before semicha: N" (`kehillah_yeshiva_seasons_left_value`). |
 | Semicha `.0302` | One line, one option | The Rosh Yeshiva ordains you by name. "Take the road home" sends you to your domicile, or to your capital if you have no domicile (`kehillah_yeshiva_head_home_effect`). Or stay. |
@@ -60,17 +60,18 @@ Now:
 Daniel: "three years is way too long ... make it shorter, or dependent on how much xp you get?"
 
 - A player student's `var:kehillah_yeshiva_mastery` counts the XP he earns in his chosen focus at
-  the yeshiva. Each season present adds the focus bonus (now 5), plus what the head teaches when
+  the yeshiva. Each season present adds the focus bonus (now 6), plus what the head teaches when
   the focus is the yeshiva's specialization, else the small share other subjects get
   (`kehillah_yeshiva_season_mastery_value`). Event XP into the focus counts too
   (`kehillah_yeshiva_focus_xp_effect`).
-- At `kehillah_yeshiva_semicha_mastery` (40), after at least 2 seasons and with the ordination
+- At `kehillah_yeshiva_semicha_mastery` (30), after at least 2 seasons and with the ordination
   Learning floor (8), he is ordained at that season's tick, in any month
   (`kehillah_yeshiva_player_ready_trigger`, step 3b of the tick). A matching focus under a master
-  takes about a year; a mismatched focus longer.
-- The examination (`.0305`) fires at mastery 20, "Nearly Ready" (`.0306`) at 30. Every study
-  event shows "Mastery toward semicha: N of 40".
-- The stay's cap drops to 730 days. A student not ready by then goes home enrolled.
+  takes three seasons; even a mismatched focus finishes within four (one year).
+- The examination (`.0305`) fires at mastery 15, "Nearly Ready" (`.0306`) at 22. Every study
+  event shows "Mastery toward semicha: N of 30".
+- The stay is capped at one year (365 days; Daniel, 2026-11-16, at first 730). Only a student held
+  back by too little Learning is still unordained by then; he goes home enrolled.
 - AI students are unchanged: 8 seasons, ordained in the winter class.
 
 ## The activity window (revised the same day)
@@ -97,13 +98,14 @@ adventurer in al-Andalus, is a good fit).
    specialization, and "Seasons ... 8". Pick a focus.
 5. **The key check:** weeks after arrival David is still in Lucena, and the Activities panel shows
    "On the Benches" running.
-6. After the first quarterly tick: "One of the Talmidim", and the Rabbi trait appears. The
+6. After the first quarterly tick: "One of the Talmidim", and still no Rabbi trait. The
    activity window shows a study hall with David, the Rosh Yeshiva and his chavruta, the intent
    "Study for Semicha", and log entries.
-7. Over the next seasons: "Mastery toward semicha: N of 40" rises, and the examination appears at
-   mastery 20 with a toast for the result.
-8. At mastery 30: "Nearly Ready". At 40 (and Learning 8 or more): semicha from the Rosh Yeshiva at
-   that season's tick, about a year in. "Take the road home" ends the activity and David travels
+7. Over the next seasons: "Mastery toward semicha: N of 30" rises, and the examination appears at
+   mastery 15 with a toast for the result.
+8. At mastery 22: "Nearly Ready". At 30 (and Learning 8 or more): semicha from the Rosh Yeshiva at
+   that season's tick, within a year. Only now does the Rabbi trait appear, with the
+   study XP from the whole stay in its tracks. "Take the road home" ends the activity and David travels
    back to his camp.
 8a. Leave the Yeshiva mid-stay: the activity ends and David heads home. Return to the Yeshiva then
    opens the planner with only Lucena valid, and on arrival he gets the returning-student text.
