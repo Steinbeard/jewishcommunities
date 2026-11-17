@@ -48,6 +48,10 @@ There are 3,722 lines; the log rotated at launch, so this is the whole boot.
     slots: kehillah_mikvah_01" ×15. `kehillah_synagogue_01` has `internal_slots = 1`, but eminence 2 adds the
     mikvah and the hekdesh, both internal, before the synagogue upgrade that opens more slots. **This is a real
     bug, worth its own fix.**
+    **Fixed 2026-11-17, not yet re-booted:** the 16 seeded centres of learning fill that slot with a sofer's
+    workshop first. At eminence 2 the mikvah is now skipped when the slot is taken. At eminence 3+ it is added after
+    the synagogue upgrade opens a second internal slot. Recheck: a fresh 1.21-port boot should log no
+    "no free building slots" lines.
   - "learn_language: Already knows language" ×13 (`kehillah_tenet_polish_on_actions.txt`).
   - The Yeshiva decisions' `ai_check_interval` and `activity_kehillah_yeshiva_study` guest intent/max_guests.
     These already appear in the 2026-10-14 1.20 logs.
