@@ -190,6 +190,18 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
 </div>
 
 <div class="shot-grid">
+<figure class="shot">
+  <img src="../images/library-lucena-mastered.jpg" alt="The Beit Midrash of Lucena, with mastered books highlighted and Talmud Bavli: Kodashim shown as Mastered" loading="lazy">
+  <figcaption><strong>What you have mastered.</strong> In Lucena's Beit Midrash, the books you have mastered glow on the shelf.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/known-languages.jpg" alt="Known Languages tooltip: Arabic, Hebrew and Aramaic" loading="lazy">
+  <figcaption><strong>Languages of learning.</strong> Hebrew and Aramaic open the books written in them.</figcaption>
+</figure>
+</div>
+
+<div class="shot-grid">
 <figure class="shot shot--todo">
   <div class="shot__frame shot__frame--tall"><span class="shot__tag">Screenshot needed</span><code>learning-window.jpg</code><span>Character · list of books read</span></div>
   <figcaption><strong>A scholar's learning.</strong> Every book a character has studied, like a list of memories. <span class="shot__how">Capture: a well-read rabbi (Rashi or the Rambam); open the learning list from the character window.</span></figcaption>
@@ -244,6 +256,23 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
 </figure>
 </div>
 
+<div class="shot-grid shot-grid--3">
+<figure class="shot">
+  <img src="../images/decision-found-community.jpg" alt="Found a Jewish Community decision: an adventurer's camp becomes a Kehillah" loading="lazy">
+  <figcaption><strong>Found a Jewish Community.</strong> An adventurer with ten Jewish followers can settle, and the camp becomes a Kehillah.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/decision-maggid.jpg" alt="Preach as a Maggid decision" loading="lazy">
+  <figcaption><strong>Preach as a Maggid.</strong> A wandering preacher may speak in any synagogue, for a name or for alms.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/decision-restore-sanhedrin.jpg" alt="Restore the Sanhedrin decision with its requirements" loading="lazy">
+  <figcaption><strong>Restore the Sanhedrin.</strong> A sage who holds land in the Land of Israel and has mastered all three fields may seat the court again.</figcaption>
+</figure>
+</div>
+
 <figure class="shot shot--narrow-wide">
   <img src="../images/realm-laws-leadership-charter.jpg" alt="My Realm Laws tab: communal leadership choices, the charter with the host, and succession laws" loading="lazy">
   <figcaption><strong>Laws of the community.</strong> Choose whom the community follows (scholars, parnasim or merchants), read the charter's terms and petition the host to revise them.</figcaption>
@@ -276,9 +305,9 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
   <figcaption><strong>Not every sermon lands.</strong> A poor sermon costs the preacher stress.</figcaption>
 </figure>
 
-<figure class="shot shot--todo">
-  <div class="shot__frame"><span class="shot__tag">Screenshot needed</span><code>community-scheme.jpg</code><span>Scheme window · community scheme widget</span></div>
-  <figcaption><strong>Community schemes.</strong> <span class="shot__how">Capture: start a community scheme and open its window so the custom widget is visible.</span></figcaption>
+<figure class="shot shot--narrow-wide">
+  <img src="../images/community-scheme.jpg" alt="Personal scheme: Studying Torah, Talmud Bavli: Nashim, 94% success chance" loading="lazy">
+  <figcaption><strong>Studying as a scheme.</strong> Studying a book runs as a personal scheme, with its own book art, success chance and time to completion.</figcaption>
 </figure>
 
 ## Activities
@@ -338,6 +367,18 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
   <img src="../images/yeshiva-benches.jpg" alt="Your Study at a Yeshiva: the student and his chavruta, On the Benches phase, studying for semicha" loading="lazy">
   <figcaption><strong>On the benches.</strong> A student and his chavruta study toward semicha.</figcaption>
 </figure>
+
+<div class="shot-grid">
+<figure class="shot">
+  <img src="../images/event-examination.jpg" alt="The Examination: Rav Isaac tests the student before the whole yeshiva" loading="lazy">
+  <figcaption><strong>The Examination.</strong> Halfway to mastery, the Rosh Yeshiva opens the book before everyone and waits for an answer.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/event-semicha.jpg" alt="Semicha: Rav Isaac ordains Yosef, who gains the Rabbi trait" loading="lazy">
+  <figcaption><strong>Semicha.</strong> "Yoreh yoreh. Yadin yadin." The student is ordained and gains the Rabbi trait.</figcaption>
+</figure>
+</div>
 
 <figure class="shot shot--todo">
   <div class="shot__frame"><span class="shot__tag">Screenshot needed</span><code>learn-torah-journey-plan.jpg</code><span>Activity planner · Journey to Learn Torah</span></div>
@@ -510,6 +551,16 @@ Holidays follow the Hebrew calendar and arrive as household events, with differe
   <figcaption><strong>A decree against a community.</strong> A lord's decree against Córdoba can be enforced, laid aside or withdrawn. Here the realm's communities petitioned together.</figcaption>
 </figure>
 
+<figure class="shot">
+  <img src="../images/crisis-burgos.jpg" alt="Danger to the Kehillah of Burgos: a Mockery of the Cross accusation, with Burgos's pillar standings in a tooltip" loading="lazy">
+  <figcaption><strong>Another community's crisis.</strong> Crises strike AI communities too. In Burgos, an accusation of mocking the cross pushes toward an armed host.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/map-destroyed-community.jpg" alt="Map tooltip over Garnatah: a great Jewish community was destroyed here in 1067" loading="lazy">
+  <figcaption><strong>The map remembers.</strong> Where a community was destroyed, the county says so.</figcaption>
+</figure>
+
 <div class="shot-grid">
 <figure class="shot shot--todo">
   <div class="shot__frame"><span class="shot__tag">Screenshot needed</span><code>event-gate-held.jpg</code><span>Event · “The Gate Held”</span></div>
@@ -622,6 +673,30 @@ Beyond the Rabbinic rites, other Jewish faiths each have their own tenets and th
 <figure class="shot">
   <img src="../images/rite-kuzarism.jpg" alt="Kuzarism with Adaptability, Legalism and Religious Law" loading="lazy">
   <figcaption><strong>Kuzarism.</strong> The Khazars' Judaism.</figcaption>
+</figure>
+</div>
+
+### Lineages and doctrines
+
+<div class="shot-grid">
+<figure class="shot">
+  <img src="../images/trait-ben-david.jpg" alt="David ben Hezekiah with the Ben David fame trait tooltip" loading="lazy">
+  <figcaption><strong>Ben David.</strong> A lineage claiming descent from King David, which raises a ruler's initial legitimacy.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/trait-levite.jpg" alt="Levite fame trait tooltip" loading="lazy">
+  <figcaption><strong>Levite.</strong> An inherited trait for descendants of the tribe of Levi.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/doctrine-recognition-sages.jpg" alt="Recognition of the Sages doctrine tooltip" loading="lazy">
+  <figcaption><strong>Recognition of the Sages.</strong> A rite with no appointed head may acclaim a great sage as its highest voice in law.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/doctrines-descent-marriage.jpg" alt="Doctrines: Marriage Outside Judaism Forbidden, Matrilineal Descent, Proselytism Discouraged, Covenantal Peoplehood" loading="lazy">
+  <figcaption><strong>Doctrines of the people.</strong> Marriage, descent, proselytism and peoplehood each have a Jewish doctrine.</figcaption>
 </figure>
 </div>
 
