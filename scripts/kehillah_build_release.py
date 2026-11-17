@@ -55,7 +55,8 @@ def git_commit() -> str:
     try:
         sha = subprocess.check_output(["git", "-C", str(REPO), "rev-parse", "--short", "HEAD"], text=True).strip()
         branch = subprocess.check_output(["git", "-C", str(REPO), "rev-parse", "--abbrev-ref", "HEAD"], text=True).strip()
-        dirty = subprocess.check_output(["git", "-C", str(REPO), "status", "--porcelain", "--untracked-files=no"], text=True).strip()
+        # Untracked game files count too: they would ship without being in any commit.
+        dirty = subprocess.check_output(["git", "-C", str(REPO), "status", "--porcelain", "--", *GAME_DIRS], text=True).strip()
         return f"{branch}@{sha}" + (" (uncommitted changes!)" if dirty else "")
     except Exception:
         return "unknown"
