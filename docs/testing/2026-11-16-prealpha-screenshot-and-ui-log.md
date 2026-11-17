@@ -1,0 +1,26 @@
+# Pre-alpha screenshots and UI check — 2026-11-16
+
+**Status:** three bookmark captures and a Granada Quarter art capture passed. The leadership-style error flood found on the first run was removed by an unset-variable guard and rechecked live. Other game-start script errors remain and need a separate fix before release.
+
+## Method and images
+
+A Luna tester alone controlled CK3, following the repository's live-test rule. They checked process ownership, launched the shared checkout in the isolated `festival-observance` profile, and stopped only their verified PID 32040 after the session. No CK3 process remained in the final check. The game reached the **1066 Age of the Rishonim** bookmark and entered a Granada campaign.
+
+Four full-window, 1936×1119 JPGs were visually reviewed and added for public docs:
+
+- [`rashi-start.jpg`](../images/rashi-start.jpg): Shlomo Yitzhaki selected at Troyes.
+- [`granada-start.jpg`](../images/granada-start.jpg): Joseph ibn Naghrilla selected as Granada's Nagid.
+- [`david-start.jpg`](../images/david-start.jpg): David ben Hezekiah selected as an adventurer in Granada.
+- [`granada-jewish-quarter.jpg`](../images/granada-jewish-quarter.jpg): the 1066 Granada Quarter art with named buildings and levels; used as the README's lead image.
+
+PNG masters and an **internal-only** Granada character-panel image remain in the tester's temp capture folder. The latter contains debug-mode campaign UI and is not used as a public screenshot. The existing library and Bet Din images in the README are from earlier live play; their current UI has not yet been reshot. The new Quarter image was captured in debug mode and includes the game's development controls along its lower edge; it is a truthful view of the current art and buildings, not a release-build capture.
+
+## Error found while capturing
+
+The first boot's `error.log` had 1,560 lines, 55 with `kehillah` tags. Opening Granada's character panel raised it to 165,365 lines, 87,602 tagged `kehillah`. The repeated new errors start at `common/scripted_triggers/kehillah_leadership_style_triggers.txt` lines 17 and 22, via `common/script_values/kehillah_leadership_style_values.txt` lines 17–28: `Failed to fetch variable for 'kehillah_leadership_style' due to not being set`, followed by `Invalid left side during comparison 'var'`. Unconfigured seats intentionally have no style variable, but the Political and Commercial checks compared it without a guard.
+
+The two checks now require `has_variable = kehillah_leadership_style` before their numeric comparison. xTiger after this edit reported **0 fatal, 32 errors, 126 warnings, 37 untidy, 135 tips**, with no new diagnostic on the changed lines. The existing seven-check leadership source suite passed six checks; its GUI styling assertion fails because the source expects the older color tiles while the current panel uses the later Camp Purpose art. That mismatch does not test the new guard.
+
+The Luna tester then launched a fresh isolated CK3 process, PID 39392, and loaded Granada on **15 September 1066**. The post-boot baseline was 58 lines. After opening the character panel and Quarter view, the previous leadership-style signatures stayed at **zero**: no invalid `var` comparison, unset `var` scope, trigger line 22 or value line 28 error. The tester captured the Quarter image above, then stopped only PID 39392; no CK3 process remained.
+
+The overall log still grew to **57,743 lines** after entering the campaign. Its repeated errors are different: `title_province trigger [ Failed context switch ]` arose 7,074 times from `common/scripted_effects/kehillah_jewish_culture_homeland_effects.txt:104` through game-start seeding. A separate `trigger_else_if with no trigger_else` at `common/activities/activity_types/kehillah_bet_din_conference.txt:262` appeared during boot. The screenshot pass did not diagnose or fix either issue, and it does not establish that the release copy is ready to upload. The staged pre-alpha still needs its own smoke-test boot.

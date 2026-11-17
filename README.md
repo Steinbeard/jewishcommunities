@@ -1,238 +1,70 @@
-# Jewish Communities
+# Jewish Communities — Kehillah
 
-A Crusader Kings III mod about the Jewish communities of medieval Europe and the Near East. You
-play as the leader of a **Kehillah**, a self-governing Jewish community living inside a Christian
-or Muslim host realm. You hold no land. You build up the community's Jewish Quarter, seat its
-council and its rabbinic court, train and ordain rabbis, and keep the community alive through its
-host's favour and through changes of leadership.
+**Pre-alpha for Crusader Kings III 1.20.x · Roads to Power required**
 
-![The Jewish Quarter of Troyes, with its Beit Midrash, Synagogue and community library](docs/images/jewish-quarter.jpg)
+Lead a Jewish community inside a medieval Christian or Muslim realm. Your home is a Jewish Quarter; your strength comes from its families, scholars, officers and host ruler. Build a place worth preserving, then guide it through political favour, difficult judgments and danger at its gates. When your leader dies, continue as the successor the community appoints.
 
-## Screenshots
+![The Kehillah of Granada's Jewish Quarter in 1066, with named buildings and their levels](docs/images/granada-jewish-quarter.jpg)
 
-Captured in a 20-year playthrough of the Worms 1066 start (see the [soak report](docs/testing/2026-10-16-20-year-soak-report.md)).
+## Choose your story
 
-<p align="center">
-  <img src="docs/images/realm-pillars.jpg" alt="The Kehillah of Worms: its Jewish Quarter, host charter and the Prosperity, Stability and Greatness pillars" width="360">
-  <img src="docs/images/decisions.jpg" alt="Community decisions: Write a Sefer, Send Out Settlers, Learn Torah, Distribute Tzedakah, Convene the Bet Din" width="360">
-</p>
-<p align="center">
-  <img src="docs/images/quarter-map.jpg" alt="The Jewish Quarter of Worms, with its Yeshiva, Great House of the Community, Countinghouse, Hekdesh and workshops" width="740">
-</p>
-<p align="center">
-  <img src="docs/images/library.jpg" alt="The community library, with works sorted by genre" width="740">
-</p>
-<p align="center">
-  <img src="docs/images/event-accusation.jpg" alt="An Accusation: a blood libel at the gates of the quarter" width="360">
-  <img src="docs/images/holiday-rosh-hashanah.jpg" alt="An Omen in the Honey, a Rosh Hashanah event" width="360">
-</p>
-<p align="center">
-  <img src="docs/images/bet-din-sitting.jpg" alt="A sitting of the Bet Din, with the host and two guest judges" width="360">
-  <img src="docs/images/charter-renewed.jpg" alt="The Charter Renewed, after a change of leader" width="360">
-</p>
-<p align="center">
-  <img src="docs/images/succession.jpg" alt="The leader has died; the player continues as the community's chosen successor" width="360">
-</p>
+The **1066 Age of the Rishonim** bookmark offers five characters. These three show different sides of the mod:
 
-## Current Version
-
-- Mod version: `0.1`
-- CK3 version: `1.20.0.4` (`Crozier`)
-- Start date: 1066, with 19 historical communities from Paris and Toledo to Baghdad
-
-## Playable characters
-
-The 1066 bookmark offers three ways to play:
-
-- **Isaac ben Eliezer ha-Levi, Rav of Worms**: leads a well-established Rhineland community with
-  its own yeshiva.
-- **Shlomo Yitzhaki (Rashi), the Scholar of Troyes**: young, learned, and rabbi of a small, poor
-  community in Champagne.
-- **Yosef ben Menahem, the Financier of Rouen**: a landless trader with no community of his own.
-  After the Norman Conquest he can found a community in England and lend money to the new king.
-
-## Features
-
-### The Kehillah government
-
-- A **landless government** for Jewish communities. The community is a title with no land, and
-  its seat is a **Jewish Quarter** in the host's city.
-- Leaders are styled **Parnas**, or **Rav** if they are an ordained rabbi. A rabbi earns the title
-  **Rabbenu** at high piety.
-- **Leadership passes by appointment, not inheritance.** Candidates are scored on merit and on
-  their family's standing, and a leader can endorse a successor. When the player's leader dies,
-  the game offers "Continue as" the new leader.
-- A leader can **step down and take to the road** as a landless adventurer. A landless Jewish
-  adventurer can **found a new community** where they stand.
-
-### Prosperity, Stability and Greatness
-
-- Three pillars measure the community's health: **Prosperity** (economy, buildings, income),
-  **Stability** (cohesion, justice, protection) and **Greatness** (learning, piety, renown).
-- Each pillar sits in one of five bands, from **Crisis** to **Legendary**. Each band gives its own
-  modifier, and tooltips break each pillar down by source.
-- If Stability falls too low, the community is warned. If it stays that low for a year, the
-  community collapses.
-
-### The Jewish Quarter
-
-Nine building lines, 25 tiers in all. Higher tiers need the community's pillars to reach higher
-bands.
-
-- **Synagogue**, from a single room up to the Great House of the Community
-- **Beit Midrash**, which becomes the House of Debate and then a Yeshiva
-- **Countinghouse**, **Market Stalls** and **Workshops**, for income
-- **Mikvah**, **Hekdesh** (the communal hospice), **Sofer's Workshop** and **Slaughterhouse**
-
-### Council, officers and householders
+| Start | The story | First ambition |
+| --- | --- | --- |
+| **Rashi · Troyes** | A young scholar leads a small, poor Kehillah. His great commentaries have yet to be written. | Build a school and library, then write. |
+| **Joseph ibn Naghrilla · Granada** | The emir's vizier is also Nagid of his realm's Jews. His influence brings opportunity and enemies. | Strengthen the Quarter before the gathering threat breaks over it. |
+| **David ben Hezekiah · Granada to Baghdad** | An exiled son of the Exilarch starts as a landless adventurer with a claim to Baghdad's community. | Reach Baghdad, press the claim, then seek separate recognition as Exilarch. |
 
 <p align="center">
-  <img src="docs/images/council.jpg" alt="The Kehillah council, with its Dayyan, Shtadlan, Gabbai, Rosh ha-Shmirah and Ne'emanah" width="360">
+  <a href="docs/images/rashi-start.jpg"><img src="docs/images/rashi-start.jpg" alt="Rashi selected on the 1066 Age of the Rishonim start screen" width="300"></a>
+  <a href="docs/images/granada-start.jpg"><img src="docs/images/granada-start.jpg" alt="Joseph ibn Naghrilla selected on the Granada start screen" width="300"></a>
+  <a href="docs/images/david-start.jpg"><img src="docs/images/david-start.jpg" alt="David ben Hezekiah selected on the Exilarch adventurer start screen" width="300"></a>
 </p>
 
-- A **communal council** with five seats: Shtadlan (the community's advocate), Gabbai (treasurer),
-  Rosh ha-Shmirah (head of the watch), Ne'eman (trustee) and Dayyan (judge, who must be a rabbi).
-  The seats have their own tasks: Raise Communal Revenue, Oversee Construction, Petition the
-  Host, Keep the Night Watch, Prepare the Bet Din, and others.
-- **Court positions:** Rosh Yeshiva, Sofer, Shochet, Gabbai Tzedakah and Mikvah Attendant.
-- **Householder families (ba'alei batim).** Every Jewish family settled at the leader's court
-  counts. The head of each family is marked **Ba'al Bayit** and earns a modest income. Each
-  family's trade adds to a pillar: merchants to Prosperity, scholars to Greatness, and advocates
-  to Stability. When the community has room, it grows from within first: a councillor, or an
-  established, capable or wealthy courtier, sets up a household of his own. After that, families
-  come from other communities. Families leave when Stability falls or the host turns hostile.
-  All of this happens in the background, with a notification when a family comes or goes.
+For an easier introduction, **Isaac ha-Levi of Worms** begins with an established yeshiva. **The Rif in Fez** offers another scholar's journey. There are also **867 Age of the Geonim** and **1178 The Paths of Torah** start screens; those dates have received less campaign testing.
 
-### Rabbis, study and the yeshiva
+[Choose a start and plan your first moves →](docs/wiki/three-starts.md)
 
-- A **Rabbi** trait, separate from vanilla's learning traits, with study tracks in Talmud,
-  Torah commentary and Jewish thought. The rabbinic faith organization is the **Hakhamim**.
-- A **community library**. Commission copies of real works for the Beit Midrash, study them
-  with **Learn Torah** or the **Study Torah** scheme, donate them, or **write a sefer** of your
-  own.
-- **Ordination** comes mainly through a yeshiva (below). A child raised as a rabbi's ward can earn
-  his endorsement for yeshiva study, and a Bet Din can invite a scholar to be ordained.
-- **Yeshivot.** A rare decision founds a yeshiva, which appears as a building on the map and is
-  led by a Rosh Yeshiva. Young scholars enrol and travel there over time. They study under a
-  rebbe and with a study partner (chavruta), and are ordained after two years. A yeshiva's
-  renown adds to its community's Greatness. Worms, Narbonne and Baghdad start with one.
-- **Seek a Rabbi** to fill an empty Dayyan seat.
+## See the community
 
-### The Bet Din and responsa
+The custom **Domain** screen brings together the Jewish Quarter, the host charter and three pillars of communal life: **Prosperity** for people and trade, **Stability** for cohesion and protection, and **Greatness** for learning and renown. Each pillar has a readable breakdown and rises from Crisis to Legendary. Choose a Scholarly, Political or Commercial leadership style to shape the community's direction.
 
-<p align="center">
-  <img src="docs/images/bet-din.jpg" alt="Planning a Bet Din" width="360">
-</p>
+Grow the **Quarter** through nine building lines, from synagogue and Beit Midrash to countinghouse, mikvah, Hekdesh and workshops. The **library** and **Sefarim Ledger** let you browse historical works, see how your rite values them, acquire copies, study and eventually write your own. Jewish map modes and community cards reveal other Kehillot across the world.
 
-- **Convene a Bet Din**, an activity where three judges hear a docket of cases: a captive's
-  ransom, a silversmith's dispute, a contested dowry, and more. Judges who have mastered the
-  relevant texts can make better arguments.
-- When none of the judges knows the source, they can **write to a rabbi in another community**
-  and wait for his responsum.
-- **Gather the Responsa**: collect a rabbi's rulings into a single volume.
+![The community library and its historical works](docs/images/library.jpg)
 
-### The host realm
+## Lead people and face danger
 
-- Each community holds a **charter** from its host, with different terms under Christian and
-  Muslim rulers: the right to build, security, jurisdiction, market access, the right to lend
-  at interest, a walled quarter, and the freedom to study the Talmud.
-- Every realm has a **Jewish Settlement Policy** (Banned, Discouraged, Allowed or Encouraged). It
-  decides whether new communities may be founded there and what charter terms they get.
-  Non-Jewish rulers can raise or lower it by decision. AI rulers review it now and then. They
-  weigh their zeal, their debts to Jewish lenders and their grievances against their sense of
-  justice, their patrons and the community's value. The notice gives the reason for any change.
-- **Expulsion.** When a realm bans Jewish settlement, every community in it is given a year to
-  leave. A community can plead through its Shtadlan, offer a ransom, leave in good order, or
-  wait. When the year is up it must go, or live in hiding until it is driven out. The crown
-  seizes much of its wealth and voids its debts. The community ends and its leader takes to
-  the road, free to found a new community elsewhere.
-- **Contracts:** lend to a neighbouring ruler, commission a translation, or tutor a noble in
-  Hebrew. Each is a chain of challenges that can succeed or fail.
-- **The Norman Conquest** brings an invitation to settle in England, followed by royal loans to
-  the new king.
+Seat a five-member council, appoint officers, support householder families and convene a **Bet Din** to judge disputes. A yeshiva can train students under a Rosh Yeshiva and ordain the next generation of rabbis. Succession is by **appointment**: candidates have visible scores, and you can endorse one, while the community makes its choice.
 
-### Danger: the crisis as a race
+Your host's settlement policy and charter affect what the community may do. Loans, contracts and the Nagid's court office can create influence. When hostility grows, a **crisis** becomes a visible race between the Armed Host and the effort to spare the Quarter. Prepare the watch, seek protection, answer accusations and live with the aftermath.
 
-*New in development, November 2026; not yet live-tested.* When a community is threatened, a
-**crisis situation** opens on the map and in the Situations list.
+![A sitting of the Bet Din](docs/images/bet-din-sitting.jpg)
 
-- **Agitation is a race** between two bars: the **Armed host** and **Spared**. Whichever fills
-  first decides the warning. There is no hidden roll and no countdown; the window shows each
-  month's pressure and every named source of points.
-- **What drives the Armed host:**
-  - the agitator's sermons, which grow with his following as named men join him;
-  - a cold sovereign, a holy war, Holy Week;
-  - a run of warning events: a sermon in the market, a missing child, a brawl at the well, a
-    convert who speaks against the community, and more.
-- **How a community pushes back**, through the crisis window's actions:
-  - post a watch, lay in provisions;
-  - seek the protection of the lord or the Church;
-  - go out to the agitator's camp, or have the Dayyan answer him in public;
-  - win over the town council, discredit the agitator;
-  - appeal to the emperor or the head of the faith;
-  - proclaim a fast.
-- **If the host rises, a second race** decides whether the quarter is **held** or **struck**:
-  - what was prepared gives the defence a head start;
-  - the siege presses harder every few days;
-  - silver, the stone houses, barred streets and the lord's soldiers can still turn it.
-- **Six openings** give each crisis its own shape: a wandering preacher, an accusation that
-  will not die, crusaders on the road, debts after a dear year, Holy Week, and the vizier's
-  enemies (Granada, 1066).
+Jewish rites and tenets, Karaite communities, holidays, ancestral sites, patronyms, and Kohen, Levite and Ben David lineages give each campaign more texture. The [feature guide](docs/wiki/features.md) shows where to find the systems and what their screens tell you.
 
-### Community life
+## Install and play
 
-- **Community decisions:** Distribute Tzedakah and Secure Construction Permission.
-- Yearly **family disputes** for the leader to rule on, and **protection events** when the
-  community is threatened.
-- A **community map view** with a roster of every Kehillah and a breakdown of its pillars.
-- **Advice lessons** introduce new Kehillah leaders to the community, and show Jewish adventurers
-  how to found one.
+1. Use **Crusader Kings III 1.20.x** with **Roads to Power** enabled. Other DLC adds some content but is optional.
+2. For the private pre-alpha, subscribe using the Workshop link shared with your test group. Add **Jewish Communities (Pre-Alpha)** to a launcher playset by itself.
+3. Under **Play**, select a Kehillah bookmark. Start with Worms for a tour, or choose Rashi, Granada or David for one of the stories above.
 
-### Faith, family and culture
+For a source install, place this checkout under `Documents/Paradox Interactive/Crusader Kings III/mod/jewishcommunities`, register `descriptor.mod` in the launcher and enable **Jewish Communities**. Do not enable the source and pre-alpha copies together.
 
-- **Holiday events** for Rosh Hashanah, Pesach, Hanukkah and Purim.
-- New **Interfaith Marriage** and **Jewish Descent** doctrines. Jewish faiths start with
-  marriage outside Judaism forbidden and matrilineal descent.
-- **Patronyms** ("ben" and "bat") for Israelite cultures.
-- **Kohen** and **Levite** traits, passed from father to son, each with a small monthly
-  prestige bonus.
-- An **Apostate** trait for characters who leave Judaism.
-- Historical and generated Jewish dynasty names.
+## This is a pre-alpha
 
-## Installation
+The core community, Quarter, council and Bet Din have been played live. Many newer systems and the 867 and 1178 starts have had only focused checks or source validation. Expect rough balance, occasional missing text and bugs. **Saves may not survive updates**; begin a new campaign after each build. Play without other mods while testing.
 
-1. Copy or clone this repository into the CK3 mod directory:
+Please report what happened, your start and in-game date, a screenshot if useful, and `Documents/Paradox Interactive/Crusader Kings III/logs/error.log` for crashes or broken interactions. Copy the log before relaunching; CK3 rewrites it. Confusing moments and memorable stories are useful feedback too.
 
-   `Documents/Paradox Interactive/Crusader Kings III/mod/jewishcommunities`
+## Guides and project notes
 
-2. Create or enable a launcher entry for the mod using `descriptor.mod`.
-3. Enable **Jewish Communities** in the CK3 launcher.
-4. Start a game from the **1066 Kehillah** bookmark.
+- [Player guide home](docs/wiki/Home.md)
+- [Quick start: Rashi, Granada and David](docs/wiki/three-starts.md)
+- [Feature guide: screens and systems](docs/wiki/features.md)
+- [Testing and feedback](docs/wiki/testing-and-feedback.md)
+- [Development status and verification](ROADMAP.md)
+- [Design and implementation notes](docs/spec/v1-kehillah-community.md)
 
-The mod targets CK3 `1.20.0.4`. Other game versions may need script or GUI updates.
-
-## Status
-
-The mod is in active development, and not every system has been playtested to the same depth.
-The government, succession, Jewish Quarter, council, Bet Din, ordination and yeshiva systems
-have all been tested in the live game. The newest additions are less well covered. They
-include the patronyms and priestly lines, parts of the yeshiva's student life, and the
-responsa letter exchange. Expulsion, the AI rulers' policy reviews and the reworked
-householders have not been tested in the live game yet. [ROADMAP.md](ROADMAP.md) has the detailed state of each feature.
-
-## Design
-
-The design specs are in [docs/spec/](docs/spec/), starting with
-[v1-kehillah-community.md](docs/spec/v1-kehillah-community.md). Where the build differs from the
-specs, [the implementation notes](docs/implementation/v1-kehillah-implementation.md) explain
-why. Live playtest logs are in [docs/testing/](docs/testing/).
-
-## Editing localization
-
-Run `python scripts/kehillah_loc_editor.py` for a searchable, local editor of
-English text. It saves changes back to the existing `.yml` files. See
-[scripts/README.md](scripts/README.md) for usage and safeguards.
-
-## Repository
-
-[github.com/Steinbeard/jewishcommunities](https://github.com/Steinbeard/jewishcommunities)
+Mod version: **0.1 pre-alpha**. [Repository](https://github.com/Steinbeard/jewishcommunities).
