@@ -58,6 +58,7 @@ kehillah_crisis_begin_effect = {
    remove_variable = kehillah_crisis_prior_struck_progress
    remove_variable = kehillah_crisis_residual_severity_relief
    remove_variable = kehillah_crisis_outer_damage
+   remove_variable = kehillah_crisis_held_accounted
    remove_variable = kehillah_crisis_shaken
    remove_variable = kehillah_crisis_recovery_active
    remove_variable = kehillah_crisis_story_restraint
@@ -270,6 +271,17 @@ kehillah_crisis_resolve_effect = {
 		limit = { primary_title = { var:kehillah_crisis_outcome = 4 } }
 		kehillah_crisis_faction_victory_effect = yes
 	}
+	# A breached quarter leaves a serious but finite mark on the ruler who
+	# failed to prevent violence in his lands. Reapply it to renew, rather
+	# than stack, the ten-year memory after another breach.
+	if = {
+		limit = { primary_title.var:kehillah_crisis_outcome = 4 }
+		domicile.domicile_location.county.holder.top_liege ?= {
+			if = { limit = { has_character_modifier = kehillah_anti_jewish_violence_modifier } remove_character_modifier = kehillah_anti_jewish_violence_modifier }
+			add_character_modifier = { modifier = kehillah_anti_jewish_violence_modifier years = 10 }
+		}
+		debug_log = "kehillah_crisis_resolve_effect: quarter struck; host receives anti-Jewish violence outlook memory for ten years"
+	}
   save_scope_value_as = { name = kehillah_crisis_epoch value = primary_title.var:kehillah_crisis_epoch }
   # Queue visible followups through a hidden relay: an option tooltip must
   # never evaluate events that depend on scopes created earlier in that option.
@@ -279,15 +291,16 @@ kehillah_crisis_resolve_effect = {
 }
 
 # Scope: a Kehillah leader whose quarter was struck. The anti-Jewish faction
-# has made a political gain: the host's personal outlook cools, its realm-wide
-# settlement policy becomes less welcoming (but a local crisis does not itself
+# has made a political gain: the host's outlook carries a ten-year memory,
+# and its realm-wide settlement policy becomes less welcoming (but a local crisis does not itself
 # decree a realm-wide ban), and the community yields one charter term. A later
 # sovereign judgement can still grant protection or order a targeted expulsion.
 kehillah_crisis_faction_victory_effect = {
 	if = {
 		limit = { exists = domicile.domicile_location.county.holder.top_liege }
 		domicile.domicile_location.county.holder.top_liege = {
-			kehillah_shift_outlook_effect = { AMOUNT = -15 }
+			# The timed Anti-Jewish Violence modifier already contributes -15.
+			# Do not also write a permanent -15 personal shift for this breach.
 			# Lower Favored to Tolerated or Tolerated to Discouraged. Do not
 			# turn one community's defeat into an automatic realm-wide ban.
 			if = {
@@ -304,8 +317,27 @@ kehillah_crisis_faction_victory_effect = {
 	kehillah_charter_worsen_one_term_effect = yes
 	primary_title = { set_variable = { name = kehillah_charter_forced_revision value = yes years = 1 } }
 	debug_log_scopes = yes
-	debug_log = "kehillah_crisis_faction_victory_effect: hostile faction victory cooled the host, lowered policy where possible, and worsened one charter term"
+	debug_log = "kehillah_crisis_faction_victory_effect: hostile faction victory lowered policy where possible and worsened one charter term"
 }
+
+# Scope: a community title after its ruler's settlement is final. A refusal
+# after Spared or Quarter Held is not violence, but it leaves a public,
+# limited memory that the ruler would not renew the community's protection.
+kehillah_crisis_settlement_outlook_effect = {
+	if = {
+		limit = {
+			var:kehillah_crisis_outcome < 4
+			var:kehillah_crisis_response = 3
+			exists = var:kehillah_crisis_ruler
+		}
+		var:kehillah_crisis_ruler = {
+			if = { limit = { has_character_modifier = kehillah_unanswered_incitement_modifier } remove_character_modifier = kehillah_unanswered_incitement_modifier }
+			add_character_modifier = { modifier = kehillah_unanswered_incitement_modifier years = 10 }
+		}
+		debug_log = "kehillah_crisis_settlement_outlook_effect: ruler left incitement unanswered; outlook -5 for ten years"
+	}
+}
+
 # Fallback for death of the ruler who carried the queued judgement.
 kehillah_crisis_request_judgement_effect = {
  primary_title = { save_scope_as = kehillah_crisis_title set_variable = { name = kehillah_crisis_judgement_grace value = yes days = 30 } }

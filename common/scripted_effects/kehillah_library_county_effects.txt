@@ -1,0 +1,56 @@
+﻿# County endowments retain the collection's identity on its community title.
+# Only its physical seat moves: books, language copies, loans, pending
+# commissions, yeshiva state and study targets must not be reseeded/copied.
+# Scope: a community title. Called by seat refresh, including yearly repair.
+kehillah_lib_reconcile_county_temple_effect = {
+	save_scope_as = kehillah_temple_library
+	if = {
+		limit = {
+			is_kehillah_title_trigger = yes
+			holder ?= {
+				is_landed = yes
+				faith.religion = religion:judaism_religion
+			}
+			title_capital_county.holder ?= holder
+		}
+		# Keep the same temple on repeated calls. A lost county, destroyed
+		# holding or non-Jewish temple custodian invalidates the old seat.
+		if = {
+			limit = {
+				has_variable = kehillah_library_temple_seat
+				NOT = {
+					var:kehillah_library_temple_seat = {
+						has_holding_type = church_holding
+						county = scope:kehillah_temple_library.title_capital_county
+						barony.holder ?= { faith.religion = religion:judaism_religion }
+					}
+				}
+			}
+			remove_variable = kehillah_library_temple_seat
+		}
+		if = {
+			limit = { NOT = { has_variable = kehillah_library_temple_seat } }
+			title_capital_county = {
+				random_county_province = {
+					limit = {
+						has_holding_type = church_holding
+						barony.holder ?= { faith.religion = religion:judaism_religion }
+					}
+					scope:kehillah_temple_library = {
+						set_variable = { name = kehillah_library_temple_seat value = prev }
+					}
+				}
+			}
+		}
+		var:kehillah_library_temple_seat ?= {
+			if = {
+				limit = { NOT = { has_building_or_higher = kehillah_temple_beit_midrash_01 } }
+				add_building = kehillah_temple_beit_midrash_01
+			}
+		}
+	}
+	else_if = {
+		limit = { has_variable = kehillah_library_temple_seat }
+		remove_variable = kehillah_library_temple_seat
+	}
+}
