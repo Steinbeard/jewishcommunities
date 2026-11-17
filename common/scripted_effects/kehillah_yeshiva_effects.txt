@@ -447,7 +447,9 @@ kehillah_place_alumnus_effect = {
 # he is not ORDAINED until he graduates (kehillah_is_ordained_rabbi_
 # trigger).
 kehillah_yeshiva_enroll_effect = {
-	kehillah_grant_rabbi_trait_effect = yes
+	# 2026-11-16 (Daniel): the Rabbi trait is no longer granted here. A
+	# student earns it after his first season present on the benches
+	# (kehillah_yeshiva_study_quarter_effect), not when he signs up.
 	set_variable = { name = kehillah_yeshiva_enrolled value = scope:kehillah_enroll_title }
 	# A returning student keeps his quarters; a new one starts at 0.
 	if = {
@@ -528,6 +530,9 @@ kehillah_yeshiva_leave_effect = {
 # the specialization (kehillah_yeshiva_head_teaching_xp_value). One
 # quarter of study: the specialization gains most, under a master head.
 kehillah_yeshiva_study_quarter_effect = {
+	# 2026-11-16: the first season present makes him a talmid of the
+	# rabbis -- the Rabbi trait arrives here, not at enrolment.
+	kehillah_grant_rabbi_trait_effect = yes
 	change_variable = { name = kehillah_yeshiva_quarters add = 1 }
 	# Which subjects he has not yet mastered, to notice the quarter he does.
 	if = {
@@ -567,12 +572,86 @@ kehillah_yeshiva_study_quarter_effect = {
 	kehillah_yeshiva_track_mastery_news_effect = { TRACK = talmudics }
 	kehillah_yeshiva_track_mastery_news_effect = { TRACK = parshanut }
 	kehillah_yeshiva_track_mastery_news_effect = { TRACK = hashkafa }
-	# A player student meets his studies in a light event now and then.
+	# 2026-11-16: the focus a student chose before the Rosh Yeshiva
+	# (kehillah_yeshiva.0301) gains a little more each season.
+	if = {
+		limit = { var:kehillah_yeshiva_focus ?= flag:talmudics }
+		add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = kehillah_yeshiva_focus_bonus_xp }
+	}
+	else_if = {
+		limit = { var:kehillah_yeshiva_focus ?= flag:parshanut }
+		add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = kehillah_yeshiva_focus_bonus_xp }
+	}
+	else_if = {
+		limit = { var:kehillah_yeshiva_focus ?= flag:hashkafa }
+		add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = kehillah_yeshiva_focus_bonus_xp }
+	}
+	# A player student meets his studies in a light event now and then --
+	# and at fixed points: his first season, halfway, and the last season
+	# before ordination (2026-11-16).
 	if = {
 		limit = { is_ai = no }
-		random = {
-			chance = kehillah_yeshiva_player_event_chance
-			trigger_event = kehillah_yeshiva.0310
+		if = {
+			limit = { var:kehillah_yeshiva_quarters = 1 }
+			trigger_event = { id = kehillah_yeshiva.0304 days = 3 }
+		}
+		else_if = {
+			limit = { var:kehillah_yeshiva_quarters = kehillah_yeshiva_quarters_halfway }
+			trigger_event = { id = kehillah_yeshiva.0305 days = 3 }
+		}
+		else_if = {
+			limit = { var:kehillah_yeshiva_quarters = kehillah_yeshiva_quarters_to_graduate }
+			trigger_event = { id = kehillah_yeshiva.0306 days = 3 }
+		}
+		else = {
+			random = {
+				chance = kehillah_yeshiva_player_event_chance
+				trigger_event = { id = kehillah_yeshiva.0310 days = { 5 40 } }
+			}
+		}
+	}
+}
+
+# Scope: a student. $XP$ Rabbi-trait XP in the focus he chose before the
+# Rosh Yeshiva (kehillah_yeshiva.0301); Talmud if he has none.
+kehillah_yeshiva_focus_xp_effect = {
+	if = {
+		limit = { var:kehillah_yeshiva_focus ?= flag:parshanut }
+		add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = $XP$ }
+	}
+	else_if = {
+		limit = { var:kehillah_yeshiva_focus ?= flag:hashkafa }
+		add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = $XP$ }
+	}
+	else = {
+		add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = $XP$ }
+	}
+}
+
+# Scope: a student who has just received semicha (kehillah_yeshiva.0302).
+# Sends him home: to his domicile, or else his capital, if he is away.
+kehillah_yeshiva_head_home_effect = {
+	if = {
+		limit = {
+			exists = domicile
+			NOT = { location = domicile.domicile_location }
+		}
+		start_travel_plan = {
+			destination = domicile.domicile_location
+			return_trip = no
+			players_use_planner = yes
+		}
+	}
+	else_if = {
+		limit = {
+			NOT = { exists = domicile }
+			exists = capital_province
+			NOT = { location = capital_province }
+		}
+		start_travel_plan = {
+			destination = capital_province
+			return_trip = no
+			players_use_planner = yes
 		}
 	}
 }

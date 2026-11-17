@@ -1,0 +1,130 @@
+﻿# =====================================================================
+# Study at a Yeshiva -- the planner. ADDED 2026-11-16 at Daniel's request
+# ("it should consider travel distance ... work like a hunt planner
+# instead of this menu, so that we see on the map valid spots").
+#
+# Replaces kehillah_yeshiva.0300, the "Where to Study" menu, which listed
+# only the most famous yeshivot and ignored distance. The decision
+# kehillah_study_at_yeshiva_decision now opens this planner. Every
+# yeshiva of the student's faith is pinned on the map; vanilla's planner
+# shows travel time, cost and danger, and province_score ranks by fame
+# less a distance penalty (kehillah_yeshiva_study_province_score_value).
+#
+# Shape copied from activity_kehillah_learn_torah_journey (solo host,
+# province_filter = all narrowed by is_location_valid, no guests, never
+# AI). The student ENROLS ON ARRIVAL (phase active), not when he sets
+# out. The activity then ends at once.
+#
+# THE ONE OPEN QUESTION, needs a live test: when an activity ends the
+# game sends its host home. on_complete therefore fires the hidden
+# kehillah_yeshiva.0303 a day later, which cancels that return trip and,
+# if he has already left the yeshiva's province, sends him back. See
+# docs/implementation/2026-11-16-yeshiva-study-planner.md.
+# =====================================================================
+
+activity_kehillah_yeshiva_study = {
+	header_background = "gfx/interface/illustrations/activity_header_backgrounds/activity_kehillah_yeshiva_study.dds"
+
+	is_shown = {
+		is_ai = no
+		kehillah_yeshiva_enrollable_trigger = yes
+	}
+
+	can_start_showing_failures_only = {
+		is_imprisoned = no
+		is_at_war = no
+		custom_tooltip = {
+			text = kehillah_yeshiva_study_no_yeshiva_tt
+			kehillah_any_yeshiva_for_me_trigger = yes
+		}
+	}
+
+	is_valid = {
+		scope:host = {
+			is_alive = yes
+			is_imprisoned = no
+		}
+	}
+
+	province_filter = all
+	ai_province_filter = capital
+
+	# root = the province. A registered community with a yeshiva of the
+	# student's faith has its quarter here.
+	is_location_valid = {
+		custom_tooltip = {
+			text = kehillah_yeshiva_study_location_invalid_tt
+			any_in_global_list = {
+				variable = kehillah_registered_communities
+				exists = holder
+				holder = {
+					kehillah_has_yeshiva_trigger = yes
+					faith = scope:host.faith
+					domicile.domicile_location = root
+				}
+			}
+		}
+	}
+
+	province_score = kehillah_yeshiva_study_province_score_value
+
+	max_province_icons = 10
+
+	is_single_location = yes
+
+	open_invite = no
+	allow_zero_guest_invites = yes
+
+	on_complete = {
+		scope:host = {
+			trigger_event = { id = kehillah_yeshiva.0303 days = 1 }
+		}
+	}
+
+	phases = {
+		phase_kehillah_yeshiva_study = {
+			is_predefined = yes
+			order = 1
+			location_source = pickable
+
+			# He has arrived. Enrol at the yeshiva here, meet its head, end.
+			on_phase_active = {
+				scope:host = {
+					random_in_global_list = {
+						variable = kehillah_registered_communities
+						limit = {
+							exists = holder
+							holder = {
+								kehillah_has_yeshiva_trigger = yes
+								domicile ?= { domicile_location = scope:activity.activity_location }
+							}
+						}
+						save_scope_as = kehillah_enroll_title
+					}
+					if = {
+						limit = {
+							exists = scope:kehillah_enroll_title
+							kehillah_yeshiva_enrollable_trigger = yes
+						}
+						kehillah_yeshiva_enroll_effect = yes
+						trigger_event = kehillah_yeshiva.0301
+					}
+				}
+				scope:activity = {
+					progress_activity_phase_after = { days = 1 }
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		value = 0
+	}
+
+	ai_check_interval = 0
+
+	host_intents = {
+		default = journey_knowledge_hoarding_intent
+		intents = { journey_knowledge_hoarding_intent }
+	}
+}
