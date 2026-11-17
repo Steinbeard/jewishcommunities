@@ -17,8 +17,8 @@
 # activity is always placed back at home. A one-way trip to the yeshiva
 # (the old Return to the Yeshiva) ended with him snapped back to his camp
 # the moment he arrived. So the activity's one phase lasts the whole
-# course of study -- kehillah_yeshiva_study_hold_days, long enough for
-# eight seasons and the wait for the winter ordination -- and is ended
+# course of study -- up to kehillah_yeshiva_study_hold_days; a player is
+# ordained once his mastery is complete, usually about a year -- and is ended
 # early (skip_activity_phase) by semicha's "Take the road home"
 # (kehillah_yeshiva.0302) or by Leave the Yeshiva. When it ends the game
 # sends him home on its own, which is the road home.
@@ -164,8 +164,84 @@ activity_kehillah_yeshiva_study = {
 
 	ai_check_interval = 0
 
+	# 2026-11-16: the activity window (Daniel: "can we fix up this event a
+	# bit?" -- it showed an empty scene and the journey intent). The road
+	# while travelling, a study hall at the yeshiva; the student, his Rosh
+	# Yeshiva and his chavruta as portraits; a study intent of our own.
+	background = {
+		trigger = { scope:host.location != scope:activity.activity_location }
+		texture = "gfx/interface/illustrations/event_scenes/farms.dds"
+		environment = "environment_event_farms"
+		ambience = "event:/SFX/Events/Backgrounds/fields_farms_day"
+	}
+	background = {
+		texture = "gfx/interface/illustrations/event_scenes/study.dds"
+		environment = "environment_event_study"
+		ambience = "event:/SFX/Events/Backgrounds/office_workplace"
+	}
+
+	window_characters = {
+		kehillah_yeshiva_talmid = {
+			camera = camera_body_left
+			effect = {
+				scope:host = { add_to_list = characters }
+			}
+			scripted_animation = {
+				triggered_animation = {
+					trigger = { scope:host.location = scope:activity.activity_location }
+					animation = { thinking }
+				}
+				triggered_animation = {
+					trigger = { always = yes }
+					animation = { happiness }
+				}
+			}
+		}
+		kehillah_yeshiva_rosh = {
+			camera = camera_event_center
+			effect = {
+				if = {
+					limit = { scope:host.location = scope:activity.activity_location }
+					scope:host.var:kehillah_yeshiva_enrolled.holder ?= {
+						random_court_position_holder = {
+							type = rosh_yeshiva_kehillah_position
+							limit = { NOT = { this = scope:host } }
+							add_to_list = characters
+						}
+					}
+				}
+			}
+			scripted_animation = {
+				triggered_animation = {
+					trigger = { always = yes }
+					animation = { personality_rational }
+				}
+			}
+		}
+		kehillah_yeshiva_chavruta = {
+			camera = camera_body_right
+			effect = {
+				if = {
+					limit = { scope:host.location = scope:activity.activity_location }
+					scope:host = {
+						random_relation = {
+							type = kehillah_chavruta
+							add_to_list = characters
+						}
+					}
+				}
+			}
+			scripted_animation = {
+				triggered_animation = {
+					trigger = { always = yes }
+					animation = { thinking }
+				}
+			}
+		}
+	}
+
 	host_intents = {
-		default = journey_knowledge_hoarding_intent
-		intents = { journey_knowledge_hoarding_intent }
+		default = kehillah_yeshiva_study_intent
+		intents = { kehillah_yeshiva_study_intent }
 	}
 }

@@ -458,6 +458,7 @@ kehillah_yeshiva_enroll_effect = {
 	}
 	else = {
 		set_variable = { name = kehillah_yeshiva_quarters value = 0 }
+		set_variable = { name = kehillah_yeshiva_mastery value = 0 }
 	}
 	if = {
 		limit = { NOT = { has_character_modifier = kehillah_yeshiva_student_modifier } }
@@ -586,21 +587,37 @@ kehillah_yeshiva_study_quarter_effect = {
 		limit = { var:kehillah_yeshiva_focus ?= flag:hashkafa }
 		add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = kehillah_yeshiva_focus_bonus_xp }
 	}
-	# A player student meets his studies in a light event now and then --
-	# and at fixed points: his first season, halfway, and the last season
-	# before ordination (2026-11-16).
+	# A player student: his mastery of the focus grows; once he is ready
+	# he is ordained at the end of this tick (kehillah_yeshiva_tick_effect
+	# reads list kehillah_player_ready). Otherwise he meets his studies in
+	# an event: fixed ones for his first season, the examination at half
+	# the mastery target, and nearly ready at three quarters; else a light
+	# one now and then (2026-11-16).
 	if = {
 		limit = { is_ai = no }
+		change_variable = { name = kehillah_yeshiva_mastery add = kehillah_yeshiva_season_mastery_value }
 		if = {
+			limit = { kehillah_yeshiva_player_ready_trigger = yes }
+			add_to_list = kehillah_player_ready
+		}
+		else_if = {
 			limit = { var:kehillah_yeshiva_quarters = 1 }
 			trigger_event = { id = kehillah_yeshiva.0304 days = 3 }
 		}
 		else_if = {
-			limit = { var:kehillah_yeshiva_quarters = kehillah_yeshiva_quarters_halfway }
+			limit = {
+				var:kehillah_yeshiva_mastery >= kehillah_yeshiva_mastery_exam
+				NOT = { has_variable = kehillah_yeshiva_exam_done }
+			}
+			set_variable = kehillah_yeshiva_exam_done
 			trigger_event = { id = kehillah_yeshiva.0305 days = 3 }
 		}
 		else_if = {
-			limit = { var:kehillah_yeshiva_quarters = kehillah_yeshiva_quarters_to_graduate }
+			limit = {
+				var:kehillah_yeshiva_mastery >= kehillah_yeshiva_mastery_nearly
+				NOT = { has_variable = kehillah_yeshiva_nearly_done }
+			}
+			set_variable = kehillah_yeshiva_nearly_done
 			trigger_event = { id = kehillah_yeshiva.0306 days = 3 }
 		}
 		else = {
@@ -612,9 +629,39 @@ kehillah_yeshiva_study_quarter_effect = {
 	}
 }
 
+# Scope: a player student. Writes $KEY$ in the Activity Log of the stay
+# that holds him at his yeshiva, if he is in it.
+kehillah_yeshiva_log_effect = {
+	if = {
+		limit = {
+			involved_activity ?= { has_activity_type = activity_kehillah_yeshiva_study }
+		}
+		involved_activity = {
+			add_activity_log_entry = {
+				key = $KEY$
+				score = 25
+				character = root
+			}
+		}
+	}
+}
+
+# Scope: a player student. Clears his semicha progress (on ordination).
+kehillah_yeshiva_clear_progress_effect = {
+	remove_variable = kehillah_yeshiva_mastery
+	remove_variable = kehillah_yeshiva_exam_done
+	remove_variable = kehillah_yeshiva_nearly_done
+	remove_variable = kehillah_yeshiva_focus
+}
+
 # Scope: a student. $XP$ Rabbi-trait XP in the focus he chose before the
 # Rosh Yeshiva (kehillah_yeshiva.0301); Talmud if he has none.
 kehillah_yeshiva_focus_xp_effect = {
+	# Counts toward semicha (2026-11-16).
+	if = {
+		limit = { has_variable = kehillah_yeshiva_enrolled }
+		change_variable = { name = kehillah_yeshiva_mastery add = $XP$ }
+	}
 	if = {
 		limit = { var:kehillah_yeshiva_focus ?= flag:parshanut }
 		add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = $XP$ }
@@ -754,6 +801,15 @@ kehillah_yeshiva_tick_effect = {
 		scope:kehillah_tick_title = {
 			remove_list_variable = { name = kehillah_yeshiva_students target = scope:kehillah_stale_talmid }
 		}
+	}
+
+	# 3b. A player student whose mastery is complete is ordained now, at
+	# any season (2026-11-16). After the roll walk, since ordination takes
+	# him off the roll.
+	every_in_list = {
+		list = kehillah_player_ready
+		debug_log = "kehillah_yeshiva_tick_effect: a player student is ready and is ordained"
+		kehillah_yeshiva_graduate_effect = yes
 	}
 
 	# 4. Once a year, at the end of the winter term (the tick that falls in

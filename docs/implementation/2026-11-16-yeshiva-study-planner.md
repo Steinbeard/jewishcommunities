@@ -55,6 +55,35 @@ Now:
   Return to the Yeshiva appears.
 - While studying away, the player cannot host other activities. That is the cost of being away.
 
+## Semicha by mastery, not by the calendar (revised the same day)
+
+Daniel: "three years is way too long ... make it shorter, or dependent on how much xp you get?"
+
+- A player student's `var:kehillah_yeshiva_mastery` counts the XP he earns in his chosen focus at
+  the yeshiva. Each season present adds the focus bonus (now 5), plus what the head teaches when
+  the focus is the yeshiva's specialization, else the small share other subjects get
+  (`kehillah_yeshiva_season_mastery_value`). Event XP into the focus counts too
+  (`kehillah_yeshiva_focus_xp_effect`).
+- At `kehillah_yeshiva_semicha_mastery` (40), after at least 2 seasons and with the ordination
+  Learning floor (8), he is ordained at that season's tick, in any month
+  (`kehillah_yeshiva_player_ready_trigger`, step 3b of the tick). A matching focus under a master
+  takes about a year; a mismatched focus longer.
+- The examination (`.0305`) fires at mastery 20, "Nearly Ready" (`.0306`) at 30. Every study
+  event shows "Mastery toward semicha: N of 40".
+- The stay's cap drops to 730 days. A student not ready by then goes home enrolled.
+- AI students are unchanged: 8 seasons, ordained in the winter class.
+
+## The activity window (revised the same day)
+
+- The scene shows farmland while travelling and a study hall at the yeshiva. The portraits are the
+  student, his Rosh Yeshiva and his chavruta.
+- Its intent is now "Study for Semicha" (`kehillah_yeshiva_study_intent`), not vanilla's Knowledge
+  Hoarding, whose text promised a skill point the activity never gives.
+- The Activity Log records arrival, the first season, the examination's result, nearly ready, and
+  semicha.
+- "Waiting on guests, -1 remaining" is vanilla's window line for a solo activity before it
+  starts; the Yeshiva Visit shows the same. Not fixed.
+
 ## Live test checklist
 
 Bookmark 1066, a rabbinic Jewish male character who is not yet a rabbi (David ben Hezekiah, the
@@ -68,11 +97,14 @@ adventurer in al-Andalus, is a good fit).
    specialization, and "Seasons ... 8". Pick a focus.
 5. **The key check:** weeks after arrival David is still in Lucena, and the Activities panel shows
    "On the Benches" running.
-6. After the first quarterly tick: "One of the Talmidim", and the Rabbi trait appears.
-7. Over the next seasons: the progress line counts down, and the halfway examination appears at 4
-   seasons with a toast for the result.
-8. At 8 seasons: "The Last Season". At the next January to March tick: semicha from the Rosh
-   Yeshiva. "Take the road home" ends the activity and David travels back to his camp.
+6. After the first quarterly tick: "One of the Talmidim", and the Rabbi trait appears. The
+   activity window shows a study hall with David, the Rosh Yeshiva and his chavruta, the intent
+   "Study for Semicha", and log entries.
+7. Over the next seasons: "Mastery toward semicha: N of 40" rises, and the examination appears at
+   mastery 20 with a toast for the result.
+8. At mastery 30: "Nearly Ready". At 40 (and Learning 8 or more): semicha from the Rosh Yeshiva at
+   that season's tick, about a year in. "Take the road home" ends the activity and David travels
+   back to his camp.
 8a. Leave the Yeshiva mid-stay: the activity ends and David heads home. Return to the Yeshiva then
    opens the planner with only Lucena valid, and on arrival he gets the returning-student text.
 9. After every event screen, `error.log` has no new lines for `kehillah_yeshiva`, especially for
