@@ -6,14 +6,14 @@
 
 A Luna tester alone controlled CK3, following the repository's live-test rule. They checked process ownership, launched the shared checkout in the isolated `festival-observance` profile, and stopped only their verified PID 32040 after the session. No CK3 process remained in the final check. The game reached the **1066 Age of the Rishonim** bookmark and entered a Granada campaign.
 
-Four full-window, 1936×1119 JPGs were visually reviewed and added for public docs:
+Three full-window 1936×1119 JPGs and one 1715×802 Quarter crop were visually reviewed and added for public docs:
 
 - [`rashi-start.jpg`](../images/rashi-start.jpg): Shlomo Yitzhaki selected at Troyes.
 - [`granada-start.jpg`](../images/granada-start.jpg): Joseph ibn Naghrilla selected as Granada's Nagid.
 - [`david-start.jpg`](../images/david-start.jpg): David ben Hezekiah selected as an adventurer in Granada.
 - [`granada-jewish-quarter.jpg`](../images/granada-jewish-quarter.jpg): the 1066 Granada Quarter art with named buildings and levels; used as the README's lead image.
 
-PNG masters and an **internal-only** Granada character-panel image remain in the tester's temp capture folder. The latter contains debug-mode campaign UI and is not used as a public screenshot. The existing library and Bet Din images in the README are from earlier live play; their current UI has not yet been reshot. The new Quarter image was captured in debug mode and includes the game's development controls along its lower edge; it is a truthful view of the current art and buildings, not a release-build capture.
+PNG masters and an **internal-only** Granada character-panel image remain in the tester's temp capture folder. The latter contains debug-mode campaign UI and is not used as a public screenshot. The existing library and Bet Din images in the README are from earlier live play; their current UI has not yet been reshot. The new Quarter JPG is a deterministic crop from the full-resolution PNG master, removing the debug map-mode controls at the right and lower edge. It shows the current art and buildings but is not a release-build capture.
 
 ## Error found while capturing
 
