@@ -115,6 +115,11 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
 </figure>
 
 <figure class="shot">
+  <img src="../images/map-jewish-cultures.jpg" alt="The Jewish Cultures map mode, colouring each land by its native Jewish culture" loading="lazy">
+  <figcaption><strong>Jewish Cultures.</strong> Each land is coloured by its native Jewish culture, from Iberia and the Rhineland to Central Asia.</figcaption>
+</figure>
+
+<figure class="shot">
   <img src="../images/realm-view-communities.jpg" alt="The Jewish Communities in Garnatah window, listing Granada and Malaga under Emir Badis" loading="lazy">
   <figcaption><strong>A realm's communities together.</strong> Garnatah's view shows Emir Badis, his policy and outlook, both of his communities (most endangered first), Granada's charter terms and ten years of realm news.</figcaption>
 </figure>
@@ -197,6 +202,23 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
 </div>
 
 <div class="shot-grid">
+<figure class="shot">
+  <img src="../images/event-study-continues.jpg" alt="A Course of Study Continues event, offering the next book in Parshanut, Talmudics or Machshavah" loading="lazy">
+  <figcaption><strong>The next book.</strong> Finishing a book offers the next one in each field, or a return to the Beit Midrash to choose.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/event-book-persuades.jpg" alt="The Book Persuades event: the Theology of Aristotle makes the case for Reasoned Theology" loading="lazy">
+  <figcaption><strong>The Book Persuades.</strong> A book can change your mind: the Theology of Aristotle argues for Reasoned Theology as a personal tenet.</figcaption>
+</figure>
+</div>
+
+<figure class="shot shot--narrow-wide">
+  <img src="../images/toast-new-work.jpg" alt="Notification: A New Work Is Discussed, Rav Isaac has completed The Bond and Its Witnesses" loading="lazy">
+  <figcaption><strong>A New Work Is Discussed.</strong> When a rabbi finishes a sefer, the community's scholars read it and learn from it.</figcaption>
+</figure>
+
+<div class="shot-grid">
 <figure class="shot shot--todo">
   <div class="shot__frame"><span class="shot__tag">Screenshot needed</span><code>event-writing-a-sefer.jpg</code><span>Event · “What to Write”</span></div>
   <figcaption><strong>Writing a sefer.</strong> A scholar decides what his book will argue. <span class="shot__how">Capture: start writing a book, or console <code>event kehillah_book.0001</code>.</span></figcaption>
@@ -222,14 +244,36 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
 </figure>
 </div>
 
-<figure class="shot shot--todo">
-  <div class="shot__frame"><span class="shot__tag">Screenshot needed</span><code>succession-candidates.jpg</code><span>My Realm → Succession · candidate scores</span></div>
-  <figcaption><strong>Choosing the next leader.</strong> Candidates, their scores and any endorsement. <span class="shot__how">Capture: My Realm → Succession with at least three candidates listed.</span></figcaption>
+<figure class="shot shot--narrow-wide">
+  <img src="../images/realm-laws-leadership-charter.jpg" alt="My Realm Laws tab: communal leadership choices, the charter with the host, and succession laws" loading="lazy">
+  <figcaption><strong>Laws of the community.</strong> Choose whom the community follows (scholars, parnasim or merchants), read the charter's terms and petition the host to revise them.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/succession-candidates.jpg" alt="The line of succession with four candidates and a Candidate Score tooltip of 70" loading="lazy">
+  <figcaption><strong>Choosing the next leader.</strong> Candidates are ranked by score. Hover one to see how learning, stewardship, kinship, the board's regard and being one of the community's own add up.</figcaption>
 </figure>
 
 <figure class="shot shot--old">
   <img src="../images/succession.jpg" alt="The death screen as Rav Isaac of Worms dies and Parnas Netaniel takes office" loading="lazy">
   <figcaption><span class="shot__badge">Earlier build</span> <strong>Leadership passes.</strong> Rav Isaac dies and the council's appointee, Parnas Netaniel, takes office.</figcaption>
+</figure>
+
+<div class="shot-grid">
+<figure class="shot">
+  <img src="../images/event-before-the-congregation.jpg" alt="Before the Congregation: choosing what the Dayyan will preach about" loading="lazy">
+  <figcaption><strong>Before the Congregation.</strong> Ask your Dayyan to preach: the week's portion, neighbourly duty, tzedakah, peace with the city, or comfort in hard times.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/event-from-the-bimah.jpg" alt="From the Bimah: Rav Isaac preaches on Nachum of Gamzo" loading="lazy">
+  <figcaption><strong>From the Bimah.</strong> Rav Isaac preaches on Nachum of Gamzo's "this too is for the good".</figcaption>
+</figure>
+</div>
+
+<figure class="shot shot--narrow-wide">
+  <img src="../images/toast-sermon-falls-flat.jpg" alt="Notification: The Sermon Falls Flat" loading="lazy">
+  <figcaption><strong>Not every sermon lands.</strong> A poor sermon costs the preacher stress.</figcaption>
 </figure>
 
 <figure class="shot shot--todo">
@@ -252,13 +296,47 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
 </div>
 
 <figure class="shot">
+  <img src="../images/bet-din-intent.jpg" alt="Choosing the Bet Din's intent: Justice, Convene a Synod or Convene the Sanhedrin" loading="lazy">
+  <figcaption><strong>Why the court sits.</strong> A sitting can hear the community's disputes, convene a synod to vote on a takkanah, or, for a rabbi at the height of learning and devotion, restore the Sanhedrin.</figcaption>
+</figure>
+
+<figure class="shot shot--narrow-wide">
+  <img src="../images/tooltip-sanhedrin.jpg" alt="Tooltip: Convene the Sanhedrin" loading="lazy">
+  <figcaption><strong>The Sanhedrin.</strong> No Sanhedrin has sat since antiquity.</figcaption>
+</figure>
+
+<div class="shot-grid">
+<figure class="shot">
   <img src="../images/bet-din-sitting.jpg" alt="A Bet Din sitting concludes with three judges" loading="lazy">
   <figcaption><strong>A Bet Din sitting.</strong> The conclusion of a sitting, with the host and two guest judges.</figcaption>
 </figure>
 
 <figure class="shot">
+  <img src="../images/bet-din-conclusion.jpg" alt="Rav Yaakov's Sitting of the Bet Din concludes, with A Citation Offered" loading="lazy">
+  <figcaption><strong>A citation offered.</strong> Rav Yaakov's sitting ends with a Justice intent fulfilled and a citation for one of his scholars.</figcaption>
+</figure>
+</div>
+
+<figure class="shot">
   <img src="../images/bet-din-invitation.jpg" alt="An invitation from Parnas Isaac of Burgos to join his Sitting of the Bet Din" loading="lazy">
   <figcaption><strong>An invitation to sit.</strong> Other communities invite you to their Bet Din. Parnas Isaac of Burgos writes to Nagid Yosef of Granada.</figcaption>
+</figure>
+
+### Study at a Yeshiva
+
+<figure class="shot">
+  <img src="../images/yeshiva-destination.jpg" alt="Choosing a yeshiva: Worms, Carcassonne, Qabra, Jerusalem and Cairo marked on the map" loading="lazy">
+  <figcaption><strong>Choosing a yeshiva.</strong> Yeshivot of your faith are marked on the map. You enrol when you arrive.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/event-rosh-yeshiva.jpg" alt="Before the Rosh Yeshiva: Rav Isaac asks what you have come to learn" loading="lazy">
+  <figcaption><strong>Before the Rosh Yeshiva.</strong> The head of the yeshiva asks where you studied and what you came to learn, then hands you your first book.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/yeshiva-benches.jpg" alt="Your Study at a Yeshiva: the student and his chavruta, On the Benches phase, studying for semicha" loading="lazy">
+  <figcaption><strong>On the benches.</strong> A student and his chavruta study toward semicha.</figcaption>
 </figure>
 
 <figure class="shot shot--todo">
@@ -408,6 +486,28 @@ Holidays follow the Hebrew calendar and arrive as household events, with differe
 <figure class="shot shot--narrow-wide">
   <img src="../images/toast-status-lowered.jpg" alt="Notification: Status of the Jews Lowered, Emir Badis restricts Jewish settlement to Tolerated" loading="lazy">
   <figcaption><strong>Status of the Jews Lowered.</strong> Afterwards, Emir Badis restricts Jewish settlement in Garnatah. The charter stands, but anything beyond the new law survives only on sufferance.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/host-outlook-violence.jpg" alt="Emir Badis's character window with the Anti-Jewish Violence modifier, and The Lord Grows Colder notification" loading="lazy">
+  <figcaption><strong>The lord grows colder.</strong> Violence leaves a mark on the host too: Emir Badis's outlook on the Jews falls for ten years, and the notification breaks down why.</figcaption>
+</figure>
+
+<div class="shot-grid">
+<figure class="shot">
+  <img src="../images/event-end-of-kehillah.jpg" alt="The End of the Kehillah event, telling how Granada's community scattered" loading="lazy">
+  <figcaption><strong>The End of the Kehillah.</strong> In this playthrough, no help came, and the community scattered.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/after-the-kehillah.jpg" alt="Parnas Yosef as an adventurer leading Yosef's Wayfarers, with the tributary contract invalidated" loading="lazy">
+  <figcaption><strong>After the end.</strong> Yosef leads his followers on as adventurers, and the fall of Granada pushes the Iberian Struggle toward Hostility.</figcaption>
+</figure>
+</div>
+
+<figure class="shot">
+  <img src="../images/decree-situation.jpg" alt="A Decree Against the Kehillah of Córdoba situation, with Enforced, Laid aside and Withdrawn phases" loading="lazy">
+  <figcaption><strong>A decree against a community.</strong> A lord's decree against Córdoba can be enforced, laid aside or withdrawn. Here the realm's communities petitioned together.</figcaption>
 </figure>
 
 <div class="shot-grid">
