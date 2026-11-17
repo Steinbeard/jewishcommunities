@@ -114,3 +114,33 @@ adventurer in al-Andalus, is a good fit).
 
 `ck3_script` can shorten steps 6 to 8: set `kehillah_yeshiva_quarters` on the player, then fire
 `kehillah_yeshiva.0305` or `.0306` directly.
+
+## Sefarim at the yeshiva (revised the same day)
+
+Daniel: "Can we incorporate mastery of specific sefarim in the yeshiva training too?"
+
+Built on the existing sefarim system rather than a second one. A player student reads chosen books
+through his Learn Torah course (the `kehillah_study_torah` scheme):
+
+- **Arrival** (`.0301`): when no course is running, the Rosh Yeshiva offers one unmastered book per
+  subject from the yeshiva's own library (`kehillah_study_torah_offer_effect`). Choosing one sets the
+  focus and begins that book (`kehillah_yeshiva_begin_sefer_effect`): a free course if none is
+  running. A subject with no book on offer is a focus-only choice, as before. A student already
+  reading keeps his book.
+- **On the benches** (`kehillah_yeshiva_benches_modifier`, added on arrival, removed when the stay
+  ends, at semicha or on leaving): the course reads the yeshiva's library (`var:kehillah_study_library`),
+  each book takes 60 days less, and its mastery chance gains `kehillah_yeshiva_sefer_success_bonus`
+  (15) as a named line in the scheme's chance. The course's own completion event offers the next book
+  from the same shelves.
+- **A book first mastered there** adds `kehillah_yeshiva_sefer_mastery_points` (10) toward semicha,
+  counts in "Sefarim mastered here" on the progress line, and goes in the Activity Log
+  (`kehillah_yeshiva_sefer_mastered_effect`, called from `kehillah_study_specific_work_effect`).
+  The existing "mastered at" record already names the yeshiva.
+- **XP from books** banks for the Rabbi trait while the reader is a yeshiva student
+  (`kehillah_study_non_rabbi_xp_effect`), instead of becoming Religious Scholar XP. Karaites and lay
+  readers are unchanged.
+- The random 10% "mastered a work this season" in the yeshiva tick is now AI-only.
+
+To check in game: the scheme freezes while travelling (`freeze_scheme_when_traveling`); confirm the
+Learn Torah course advances while the activity holds David at the yeshiva, and that the course
+panel shows the "On the yeshiva's benches" line in its success chance.

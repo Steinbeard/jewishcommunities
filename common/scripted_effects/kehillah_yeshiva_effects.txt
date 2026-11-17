@@ -512,6 +512,8 @@ kehillah_yeshiva_enroll_effect = {
 # Scope: the student. Leaves the roll (graduated or withdrawn). The
 # relations stay: a talmid keeps his rebbe and his chavruta.
 kehillah_yeshiva_leave_effect = {
+	# 2026-11-16: off the benches first, while his yeshiva is still known.
+	kehillah_yeshiva_leave_benches_effect = yes
 	if = {
 		limit = { has_variable = kehillah_yeshiva_enrolled }
 		save_scope_as = kehillah_leaving_talmid
@@ -564,10 +566,15 @@ kehillah_yeshiva_study_quarter_effect = {
 		kehillah_add_rabbi_xp_effect = { TRACK = parshanut VALUE = kehillah_yeshiva_xp_other }
 		kehillah_add_rabbi_xp_effect = { TRACK = hashkafa VALUE = kehillah_yeshiva_xp_other }
 	}
-	# Sometimes a work from the community's library is mastered.
-	random = {
-		chance = kehillah_yeshiva_work_mastery_chance
-		kehillah_yeshiva_master_a_work_effect = yes
+	# Sometimes a work from the community's library is mastered. AI only
+	# since 2026-11-16: a player student reads chosen sefarim through his
+	# Learn Torah course instead (kehillah_yeshiva_begin_sefer_effect).
+	if = {
+		limit = { is_ai = yes }
+		random = {
+			chance = kehillah_yeshiva_work_mastery_chance
+			kehillah_yeshiva_master_a_work_effect = yes
+		}
 	}
 	kehillah_yeshiva_track_mastery_news_effect = { TRACK = talmudics }
 	kehillah_yeshiva_track_mastery_news_effect = { TRACK = parshanut }
@@ -628,6 +635,111 @@ kehillah_yeshiva_study_quarter_effect = {
 	}
 }
 
+# =====================================================================
+# SEFARIM AT THE YESHIVA (2026-11-16, Daniel: "incorporate mastery of
+# specific sefarim in the yeshiva training"). A player student reads
+# chosen books through the existing Learn Torah course
+# (kehillah_study_torah scheme), pointed at the yeshiva's library while
+# he is on its benches. The Rosh Yeshiva offers the first book on
+# arrival (kehillah_yeshiva.0301); the course's own completion event
+# offers the next. Faster there (kehillah_yeshiva_benches_modifier), more
+# likely to master (a line in the scheme's success chance), and each book
+# first mastered there counts toward semicha
+# (kehillah_yeshiva_sefer_mastered_effect, called from
+# kehillah_study_specific_work_effect).
+# =====================================================================
+
+# Scope: a player student, arriving at his yeshiva (the study activity's
+# phase). Seats him on the benches: the modifier, and his Learn Torah
+# course reads this yeshiva's library.
+kehillah_yeshiva_take_benches_effect = {
+	if = {
+		limit = { NOT = { has_character_modifier = kehillah_yeshiva_benches_modifier } }
+		add_character_modifier = kehillah_yeshiva_benches_modifier
+	}
+	if = {
+		limit = { exists = var:kehillah_yeshiva_enrolled }
+		set_variable = { name = kehillah_study_library value = var:kehillah_yeshiva_enrolled }
+	}
+}
+
+# Scope: a student leaving the benches (stay ends, semicha, withdrawal).
+# His course goes back to his own library.
+kehillah_yeshiva_leave_benches_effect = {
+	if = {
+		limit = { has_character_modifier = kehillah_yeshiva_benches_modifier }
+		remove_character_modifier = kehillah_yeshiva_benches_modifier
+	}
+	if = {
+		limit = {
+			exists = var:kehillah_study_library
+			exists = var:kehillah_yeshiva_enrolled
+			var:kehillah_study_library = var:kehillah_yeshiva_enrolled
+		}
+		remove_variable = kehillah_study_library
+	}
+	else_if = {
+		limit = {
+			exists = var:kehillah_study_library
+			exists = var:kehillah_alma_mater
+			var:kehillah_study_library = var:kehillah_alma_mater
+		}
+		remove_variable = kehillah_study_library
+	}
+}
+
+# Scope: a player student on the benches, choosing in kehillah_yeshiva.0301.
+# Takes the yeshiva library's offered book of genre $GENRE$ (1 Scripture,
+# 2 Talmud, 3 faith and reason; kehillah_study_torah_offer_effect) as his
+# reading, starting a Learn Torah course free if none is running.
+kehillah_yeshiva_begin_sefer_effect = {
+	kehillah_yeshiva_take_benches_effect = yes
+	kehillah_study_torah_take_offer_effect = { GENRE = $GENRE$ }
+	if = {
+		limit = { NOT = { any_scheme = { type = kehillah_study_torah } } }
+		start_scheme = { type = kehillah_study_torah target_character = root }
+	}
+	else = {
+		every_scheme = {
+			limit = { scheme_type = kehillah_study_torah }
+			reset_scheme_progress = yes
+		}
+	}
+	kehillah_study_sync_current_work_effect = yes
+	kehillah_study_torah_clear_offers_effect = yes
+	trigger_event = { id = kehillah_study_torah.0002 days = 1 }
+}
+
+# Scope: a reader, at a FIRST mastery of a work (kehillah_study_specific_
+# work_effect). If he is a student on his yeshiva's benches, the book
+# counts toward semicha and goes in the stay's Activity Log.
+kehillah_yeshiva_sefer_mastered_effect = {
+	if = {
+		limit = {
+			has_variable = kehillah_yeshiva_enrolled
+			kehillah_yeshiva_student_present_trigger = yes
+		}
+		change_variable = { name = kehillah_yeshiva_mastery add = kehillah_yeshiva_sefer_mastery_points }
+		change_variable = { name = kehillah_yeshiva_sefarim add = 1 }
+		kehillah_yeshiva_log_effect = { KEY = kehillah_yeshiva_log_sefer }
+		debug_log = "kehillah_yeshiva_sefer_mastered_effect: a student mastered a sefer at his yeshiva"
+	}
+}
+
+# Scope: a reader who is not a rabbi, gaining $XP$ in $TRACK$ from a book.
+# A yeshiva student banks it for his Rabbi trait (kehillah_add_rabbi_xp_
+# effect); anyone else (a Karaite, a lay Talmud Torah reader) gains
+# Religious Scholar, as before.
+kehillah_study_non_rabbi_xp_effect = {
+	if = {
+		limit = { has_variable = kehillah_yeshiva_enrolled }
+		kehillah_add_rabbi_xp_effect = { TRACK = $TRACK$ VALUE = $XP$ }
+	}
+	else = {
+		kehillah_karaite_scholar_xp_effect = { XP = $XP$ }
+	}
+}
+
 # Scope: a player student. Writes $KEY$ in the Activity Log of the stay
 # that holds him at his yeshiva, if he is in it.
 kehillah_yeshiva_log_effect = {
@@ -678,6 +790,7 @@ kehillah_yeshiva_focus_xp_effect = {
 # (activity_kehillah_yeshiva_study); the game then sends him home on its
 # own. Used by semicha's road home and by Leave the Yeshiva.
 kehillah_yeshiva_end_stay_effect = {
+	kehillah_yeshiva_leave_benches_effect = yes
 	if = {
 		limit = {
 			involved_activity ?= {
