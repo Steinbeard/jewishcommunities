@@ -126,3 +126,27 @@ afterwards). `dlc_load.json` was then restored from a backup.
     - three `nick_kehillah_*` nicknames;
     - the known set-but-unused variable noise.
 
+## Staged 0.1.1-prealpha smoke test (2026-11-17 night)
+
+The staged copy (`mod/jewishcommunities_prealpha`, built from `ck3-1.21-port@42cdac0`) was loaded alone for three
+boots (PIDs 41080, 39844 and 30628, all closed afterwards). xTiger gives it the same 1,217 reports as the dev port.
+
+| Start | Result |
+|---|---|
+| Worms 1066 | Playable; the economy reads 96; ran to 18 Jan 1068 (about 16 months). |
+| Sura 867 | Playable; ran to 24 Oct 867. |
+| Fustat 1178 (Maimonides) | Playable; the economy reads 304. It stopped on 4 Oct 1178: the harness could not click the Sultan's charter option. The option has no trigger, and the same event closed normally in the other two runs, so this is most likely the click harness. **Check by hand.** |
+
+No crash, boot failure or GUI error. Fixed afterwards, in `ck3-1.21-port`, then restaged:
+- **`kehillah_sefer.0102.a/.b.tt`** used `ROOT.Char.Custom` inside an option tooltip, which logged about 700 lines
+  each while the event was open. They now use `GetPlayer.Custom`.
+- **A controversy over Saadia's Emunot ve-Deot (933) fired in 867.** A controversy now needs
+  `current_year >= kehillah_lib_year_<work>`; all 173 catalog works have a year.
+- **The Bet Din panel stability change** hit a co-judge title with no Stability pillar. It is now guarded.
+
+Left as is, pre-existing:
+- `add_to_activity` failures when the AI fills a Bet Din session (28 lines; the guest is invalid);
+- vanilla's `has_tenet_status_third` text needing a Faith context in a rite scope (75 lines);
+- `synod` global-variable reads;
+- the known variable noise.
+
