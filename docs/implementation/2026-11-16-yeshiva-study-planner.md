@@ -30,13 +30,30 @@ Asked for by Daniel on 2026-11-16, after the Where to Study menu left out Lucena
 Ordination still happens once a year, at the winter term, for students with 8 seasons and enough
 Learning. That is unchanged.
 
-## The open question: the return trip
+## The activity is the stay (revised the same day)
 
-When an activity ends, the game sends its host home. The planner's activity ends a day after
-arrival, so the new student could turn round and leave. `on_complete` fires the hidden
-`kehillah_yeshiva.0303` a day later. It cancels the travel plan if it can, and if the student has
-already left the yeshiva's province it sends him back without a second arrival event. Whether the
-cancel lands in time is a live-test question.
+Daniel's live test: after Return to the Yeshiva he "snapped back to my domicile location as soon
+as I got to my destination". A player is always a ruler, and a ruler with no travel plan and no
+activity is always placed back at home (his camp, quarter or capital). A one-way trip
+(`start_travel_plan`, `return_trip = no`) therefore cannot leave a player at a yeshiva. The first
+version of this planner had the same flaw: it ended a day after arrival, and the hidden
+`kehillah_yeshiva.0303` tried to cancel the trip home.
+
+Now:
+
+- The planner's one phase lasts `kehillah_yeshiva_study_hold_days` (1200): eight seasons plus up
+  to a year waiting for the winter ordination. The student stays at the yeshiva for as long as it
+  runs.
+- Semicha's "Take the road home" and Leave the Yeshiva end the stay (`skip_activity_phase`,
+  `kehillah_yeshiva_end_stay_effect`); the game's own trip home is the road home. "Stay a while"
+  ends it after `kehillah_yeshiva_linger_days` (60).
+- Return to the Yeshiva opens the same planner, which offers only the student's own yeshiva.
+  `kehillah_yeshiva_travel_to_effect` and `.0303` are retired.
+- A Kehillah leader whose own community has the yeshiva is already present at home. The activity
+  ends at once and he stays enrolled.
+- If the stay runs out before ordination (not enough Learning), he goes home still enrolled, and
+  Return to the Yeshiva appears.
+- While studying away, the player cannot host other activities. That is the cost of being away.
 
 ## Live test checklist
 
@@ -49,13 +66,15 @@ adventurer in al-Andalus, is a good fit).
 3. Start the trip to Lucena. While travelling: no Rabbi trait, not yet enrolled.
 4. On arrival: "Before the Rosh Yeshiva" shows the head's portrait and name, the yeshiva's
    specialization, and "Seasons ... 8". Pick a focus.
-5. **The key check:** a few days after arrival David is still in Lucena and has no travel plan
-   home. `debug.log` contains `kehillah_yeshiva.0303 ... sent back` only if he had left.
+5. **The key check:** weeks after arrival David is still in Lucena, and the Activities panel shows
+   "On the Benches" running.
 6. After the first quarterly tick: "One of the Talmidim", and the Rabbi trait appears.
 7. Over the next seasons: the progress line counts down, and the halfway examination appears at 4
    seasons with a toast for the result.
 8. At 8 seasons: "The Last Season". At the next January to March tick: semicha from the Rosh
-   Yeshiva. "Take the road home" starts travel to David's camp.
+   Yeshiva. "Take the road home" ends the activity and David travels back to his camp.
+8a. Leave the Yeshiva mid-stay: the activity ends and David heads home. Return to the Yeshiva then
+   opens the planner with only Lucena valid, and on arrival he gets the returning-student text.
 9. After every event screen, `error.log` has no new lines for `kehillah_yeshiva`, especially for
    the progress line (`MakeScope.ScriptValue`) and the duel toasts.
 

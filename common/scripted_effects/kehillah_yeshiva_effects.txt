@@ -628,31 +628,32 @@ kehillah_yeshiva_focus_xp_effect = {
 	}
 }
 
-# Scope: a student who has just received semicha (kehillah_yeshiva.0302).
-# Sends him home: to his domicile, or else his capital, if he is away.
-kehillah_yeshiva_head_home_effect = {
+# Scope: a player student. Ends the stay that holds him at his yeshiva
+# (activity_kehillah_yeshiva_study); the game then sends him home on its
+# own. Used by semicha's road home and by Leave the Yeshiva.
+kehillah_yeshiva_end_stay_effect = {
 	if = {
 		limit = {
-			exists = domicile
-			NOT = { location = domicile.domicile_location }
+			involved_activity ?= {
+				has_activity_type = activity_kehillah_yeshiva_study
+				activity_host = root
+			}
 		}
-		start_travel_plan = {
-			destination = domicile.domicile_location
-			return_trip = no
-			players_use_planner = yes
-		}
+		involved_activity = { skip_activity_phase = yes }
 	}
-	else_if = {
+}
+
+# Scope: a student who has just received semicha. Lingers a while at the
+# yeshiva before the stay ends on its own.
+kehillah_yeshiva_linger_effect = {
+	if = {
 		limit = {
-			NOT = { exists = domicile }
-			exists = capital_province
-			NOT = { location = capital_province }
+			involved_activity ?= {
+				has_activity_type = activity_kehillah_yeshiva_study
+				activity_host = root
+			}
 		}
-		start_travel_plan = {
-			destination = capital_province
-			return_trip = no
-			players_use_planner = yes
-		}
+		involved_activity = { progress_activity_phase_after = { days = kehillah_yeshiva_linger_days } }
 	}
 }
 
@@ -968,21 +969,9 @@ kehillah_yeshiva_withdraw_effect = {
 	set_variable = kehillah_yeshiva_unfinished
 }
 
-# Scope: a student. Sends him (back) to his yeshiva with vanilla travel.
-kehillah_yeshiva_travel_to_effect = {
-	if = {
-		limit = {
-			exists = var:kehillah_yeshiva_enrolled.holder.domicile
-			kehillah_yeshiva_student_present_trigger = no
-		}
-		start_travel_plan = {
-			destination = var:kehillah_yeshiva_enrolled.holder.domicile.domicile_location
-			return_trip = no
-			players_use_planner = yes
-			on_arrival_event = kehillah_yeshiva.0301
-		}
-	}
-}
+# kehillah_yeshiva_travel_to_effect RETIRED 2026-11-16: a one-way trip
+# left a player ruler snapped back home on arrival. Return to the Yeshiva
+# now opens the study planner (activity_kehillah_yeshiva_study).
 
 # =====================================================================
 # V29 section 12 (2026-10-12): THE YESHIVA'S NEWS. Quiet feed messages

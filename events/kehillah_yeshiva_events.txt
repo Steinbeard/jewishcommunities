@@ -254,7 +254,8 @@ kehillah_yeshiva.0210 = {
 #          opens activity_kehillah_yeshiva_study, a map planner)
 #   .0301  before the Rosh Yeshiva: arrival, choose a focus
 #   .0302  semicha from the Rosh Yeshiva; head home or stay
-#   .0303  hidden: after the planner ends, keep the student at his yeshiva
+#   .0303  RETIRED 2026-11-16 the same day (a stay-put patch; the
+#          planner's activity now lasts the whole stay instead)
 #   .0304  the first season (the Rabbi trait arrives)
 #   .0305  halfway: the Rosh Yeshiva's examination
 #   .0306  the last season before ordination
@@ -359,55 +360,23 @@ kehillah_yeshiva.0302 = {
 			scope:kehillah_rosh_yeshiva = { save_scope_as = kehillah_semicha_rosh }
 		}
 	}
-	# Home, now that he is a rabbi.
+	# Home, now that he is a rabbi: the stay at the yeshiva ends and the
+	# game sends him home.
 	option = {
 		name = kehillah_yeshiva.0302.a
 		trigger = {
-			OR = {
-				AND = {
-					exists = domicile
-					NOT = { location = domicile.domicile_location }
-				}
-				AND = {
-					NOT = { exists = domicile }
-					exists = capital_province
-					NOT = { location = capital_province }
-				}
+			involved_activity ?= {
+				has_activity_type = activity_kehillah_yeshiva_study
+				activity_host = root
 			}
 		}
 		custom_tooltip = kehillah_yeshiva_head_home_tt
-		kehillah_yeshiva_head_home_effect = yes
+		kehillah_yeshiva_end_stay_effect = yes
 	}
+	# Stay a while longer (or, studying at home, simply give thanks).
 	option = {
 		name = kehillah_yeshiva.0302.b
-	}
-}
-
-# Hidden. The planner (activity_kehillah_yeshiva_study) has ended and the
-# game may be sending its host home. A student stays at his yeshiva.
-kehillah_yeshiva.0303 = {
-	type = character_event
-	hidden = yes
-	trigger = { has_variable = kehillah_yeshiva_enrolled }
-	immediate = {
-		current_travel_plan ?= {
-			if = {
-				limit = { can_cancel = yes }
-				cancel_travel_plan = yes
-			}
-		}
-		if = {
-			limit = {
-				kehillah_yeshiva_student_present_trigger = no
-				exists = var:kehillah_yeshiva_enrolled.holder.domicile
-			}
-			debug_log = "kehillah_yeshiva.0303: the student had left his yeshiva after the planner; sent back"
-			start_travel_plan = {
-				destination = var:kehillah_yeshiva_enrolled.holder.domicile.domicile_location
-				return_trip = no
-				players_use_planner = no
-			}
-		}
+		kehillah_yeshiva_linger_effect = yes
 	}
 }
 
