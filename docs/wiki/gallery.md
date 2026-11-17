@@ -75,6 +75,11 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
 </figure>
 
 <figure class="shot">
+  <img src="../images/granada-domain.jpg" alt="Granada's My Realm panel showing its Jewish Quarter, standing, danger, pillars and monthly income" loading="lazy">
+  <figcaption><strong>Granada under pressure.</strong> Nagid Yosef's community is prosperous and learned, but its Domain view flags it as Dangerous and in crisis. Income shows what the Quarter, Prosperity and tribute to the host each add or take.</figcaption>
+</figure>
+
+<figure class="shot">
   <img src="../images/granada-jewish-quarter.jpg" alt="The illustrated Granada Jewish Quarter" loading="lazy">
   <figcaption><strong>Granada's Jewish Quarter.</strong> Synagogue, house of debate, ledger room, market and other buildings each have an illustrated place. Cropped to remove debug map controls.</figcaption>
 </figure>
@@ -94,9 +99,9 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
   <figcaption><strong>The Jewish world map.</strong> The map mode colours where communities live, from Iberia to the Rhineland and the Near East. <span class="shot__how">Capture: Jewish category in the map-mode bar, zoomed out over Europe and the Mediterranean, with no debug ID hovers.</span></figcaption>
 </figure>
 
-<figure class="shot shot--todo">
-  <div class="shot__frame"><span class="shot__tag">Screenshot needed</span><code>realm-view-communities.jpg</code><span>Realm view · all communities in one host realm</span></div>
-  <figcaption><strong>A realm's communities together.</strong> The realm view lists every Kehillah under one host. <span class="shot__how">Capture: open the realm view for a host with several communities (e.g. Castile or the Holy Roman Empire).</span></figcaption>
+<figure class="shot">
+  <img src="../images/realm-view-communities.jpg" alt="The Jewish Communities in Garnatah window, listing Granada and Malaga under Emir Badis" loading="lazy">
+  <figcaption><strong>A realm's communities together.</strong> Garnatah's view shows Emir Badis, his policy and outlook, both of his communities (most endangered first), Granada's charter terms and ten years of realm news.</figcaption>
 </figure>
 
 <figure class="shot shot--todo">
@@ -118,15 +123,46 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
 
 ## Books and learning
 
-<figure class="shot shot--todo">
-  <div class="shot__frame"><span class="shot__tag">Screenshot needed</span><code>library-troyes-shelf.jpg</code><span>Quarter → Beit Midrash → library, Talmudics selected</span></div>
-  <figcaption><strong>The library shelf.</strong> Troyes's physical copies, sorted by subject. <span class="shot__how">Capture: Rashi at Troyes, open the library and select Talmudics so the book art fills the shelves. A clean (non-debug) reshoot of the 2026-11-16 internal capture.</span></figcaption>
+<figure class="shot">
+  <img src="../images/library-granada-shelf.jpg" alt="Granada's Beit Midrash library with the Talmudics shelf selected and Talmud Bavli: Nezikin open below" loading="lazy">
+  <figcaption><strong>The library shelf.</strong> Granada's Beit Midrash holds its physical copies, sorted by subject. Each book shows its canonicity, author, language and whether you have mastered it.</figcaption>
 </figure>
 
-<figure class="shot shot--todo">
-  <div class="shot__frame"><span class="shot__tag">Screenshot needed</span><code>sefarim-ledger.jpg</code><span>Library · Sefarim Ledger</span></div>
-  <figcaption><strong>The Sefarim Ledger.</strong> About 170 historical works, ranked for the selected rite. <span class="shot__how">Capture: open the Sefarim Ledger and show a comparison with another tradition if possible.</span></figcaption>
+<div class="shot-grid">
+<figure class="shot">
+  <img src="../images/library-parshanut.jpg" alt="The Parshanut shelf with the Torah in its ark" loading="lazy">
+  <figcaption><strong>Parshanut.</strong> The Torah sits in its ark among the commentaries.</figcaption>
 </figure>
+
+<figure class="shot">
+  <img src="../images/library-machshavah.jpg" alt="The Machshavah shelf with the Theology of Aristotle open on a lectern" loading="lazy">
+  <figcaption><strong>Machshavah.</strong> Philosophy, including the contested Theology of Aristotle.</figcaption>
+</figure>
+</div>
+
+<div class="shot-grid">
+<figure class="shot">
+  <img src="../images/sefarim-ledger.jpg" alt="The Ledger of Sefarim ranked for Minhag Sepharad, with Anan's Sefer ha-Mitzvot shown as Banned" loading="lazy">
+  <figcaption><strong>The Sefarim Ledger.</strong> Every work your community knows, ranked for your rite. Under Minhag Sepharad, Anan's Karaite code is Banned.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/sefarim-ledger-karaism.jpg" alt="The same Ledger of Sefarim ranked for Karaism, with Anan's Sefer ha-Mitzvot shown as Authoritative" loading="lazy">
+  <figcaption><strong>Another tradition's view.</strong> Switch the ledger to Karaism and the same book is Authoritative.</figcaption>
+</figure>
+</div>
+
+<div class="shot-grid">
+<figure class="shot">
+  <img src="../images/rabbi-trait-path.jpg" alt="The Rabbi trait tooltip for Rashi, showing the Parshanut, Talmudics and Machshavah tracks" loading="lazy">
+  <figcaption><strong>The Rabbi trait.</strong> Three tracks of study, Parshanut, Talmudics and Machshavah, each with its own levels and rewards.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/hakhamim.jpg" alt="The Hakhamim clergy list, ranking rabbis from Mainz, Seville, Worms, Jerusalem, Sura, Fez, Mahdia and Otranto" loading="lazy">
+  <figcaption><strong>The Hakhamim.</strong> The Rabbinic faith's clergy: rabbis from Mainz to Sura, ranked side by side.</figcaption>
+</figure>
+</div>
 
 <div class="shot-grid">
 <figure class="shot shot--todo">
@@ -155,9 +191,9 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
 ## Council, succession and decisions
 
 <div class="shot-grid">
-<figure class="shot shot--old">
-  <img src="../images/council.jpg" alt="The five-seat community council with portraits of each officer" loading="lazy">
-  <figcaption><span class="shot__badge">Earlier build</span> <strong>The council.</strong> Shtadlan, Gabbai, Rosh ha-Shmirah, Ne'eman and Dayyan, each with a task.</figcaption>
+<figure class="shot">
+  <img src="../images/council.jpg" alt="Granada's council: Parnasit, Dayyan, Shtadlan, Gabbai, Rosh ha-Shmirah and Ne'eman, each with a portrait" loading="lazy">
+  <figcaption><strong>The council.</strong> The Parnasit beside the Dayyan, Shtadlan, Gabbai, Rosh ha-Shmirah and Ne'eman, each with a task.</figcaption>
 </figure>
 
 <figure class="shot shot--old">
@@ -198,6 +234,11 @@ Each 1066 seat begins a different story. See the [quick starts](three-starts.md)
 <figure class="shot">
   <img src="../images/bet-din-sitting.jpg" alt="A Bet Din sitting concludes with three judges" loading="lazy">
   <figcaption><strong>A Bet Din sitting.</strong> The conclusion of a sitting, with the host and two guest judges.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/bet-din-invitation.jpg" alt="An invitation from Parnas Isaac of Burgos to join his Sitting of the Bet Din" loading="lazy">
+  <figcaption><strong>An invitation to sit.</strong> Other communities invite you to their Bet Din. Parnas Isaac of Burgos writes to Nagid Yosef of Granada.</figcaption>
 </figure>
 
 <figure class="shot shot--todo">
@@ -265,6 +306,11 @@ Holidays follow the Hebrew calendar and arrive as household events, with differe
   <figcaption><span class="shot__badge">Earlier build</span> <strong>The Charter Renewed.</strong> The host confirms the community's terms for building, protection, jurisdiction and study.</figcaption>
 </figure>
 
+<figure class="shot">
+  <img src="../images/host-charter-contract.jpg" alt="The Muslim Host Charter Contract between Emir Badis and Nagid Yosef, with tribute, construction, security, jurisdiction and market terms" loading="lazy">
+  <figcaption><strong>Negotiating the charter.</strong> Tribute, building rights, security, jurisdiction and market access are terms you can ask the host to change.</figcaption>
+</figure>
+
 <figure class="shot shot--todo">
   <div class="shot__frame"><span class="shot__tag">Screenshot needed</span><code>settlement-policy.jpg</code><span>Realm laws · Jewish Settlement Policy</span></div>
   <figcaption><strong>Jewish Settlement Policy.</strong> A realm-wide law from Banned to Encouraged. <span class="shot__how">Capture: the host ruler's realm laws with the policy row and its tooltip visible.</span></figcaption>
@@ -280,9 +326,19 @@ Holidays follow the Hebrew calendar and arrive as household events, with differe
   <figcaption><span class="shot__badge">Earlier build</span> <strong>An Accusation.</strong> A false charge spreads, and the community must choose how to answer it.</figcaption>
 </figure>
 
-<figure class="shot shot--todo">
-  <div class="shot__frame"><span class="shot__tag">Screenshot needed</span><code>crisis-situation.jpg</code><span>Situation window · Armed Host vs Spared</span></div>
-  <figcaption><strong>A community threat.</strong> Two totals race each other while the window suggests responses. <span class="shot__how">Capture: an active threat from the Situations list, with both bars and the suggested actions showing.</span></figcaption>
+<figure class="shot">
+  <img src="../images/event-sinister-verses.jpg" alt="Crisis event Sinister Verses: a clerk brings Nagid Yosef a hostile poem by Abu Ishaq of Elvira" loading="lazy">
+  <figcaption><strong>Sinister Verses.</strong> In Granada, a hostile poem by Abu Ishaq of Elvira reaches the Nagid, and how he answers it shapes the crisis.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/crisis-situation.jpg" alt="The Danger to the Kehillah of Granada situation, with Armed host and Spared takeover points and three actions" loading="lazy">
+  <figcaption><strong>A community threat.</strong> Armed host and Spared race toward 100 while catalysts push the totals and the window offers responses.</figcaption>
+</figure>
+
+<figure class="shot shot--narrow">
+  <img src="../images/community-safety.jpg" alt="The Military window's Community Safety tab, with the crisis under way, danger, sources of pressure and protection" loading="lazy">
+  <figcaption><strong>Community Safety.</strong> The Military window lists crises under way, the yearly danger, its sources and what protects the community.</figcaption>
 </figure>
 
 <figure class="shot shot--todo">
@@ -333,13 +389,39 @@ Custom art made for the mod. Composite sheets work well here: crop several icons
 </figure>
 
 <figure class="shot shot--todo">
-  <div class="shot__frame"><span class="shot__tag">Screenshot needed</span><code>art-faith-tenets.jpg</code><span>Faith view · rites and tenets</span></div>
-  <figcaption><strong>Rites and tenets.</strong> <span class="shot__how">Capture: the faith window for a medieval rite with the custom tenet icons visible.</span></figcaption>
-</figure>
-
-<figure class="shot shot--todo">
   <div class="shot__frame"><span class="shot__tag">Screenshot needed</span><code>art-community-arms.jpg</code><span>Coats of arms · community emblems</span></div>
   <figcaption><strong>Community emblems.</strong> <span class="shot__how">Composite of three or four Kehillah coats of arms.</span></figcaption>
+</figure>
+</div>
+
+### Rites and tenets
+
+Each rite of the Rabbinic faith has its own icon, tenets, sins and virtues.
+
+<div class="shot-grid shot-grid--3">
+<figure class="shot">
+  <img src="../images/rite-bavli.jpg" alt="Minhag Bavli, the mainline rite, with Religious Law, Covenant Community and Scholarly Study" loading="lazy">
+  <figcaption><strong>Minhag Bavli.</strong> The mainline rite.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/rite-ashkenaz.jpg" alt="Minhag Ashkenaz with Asceticism, Covenant Community and Scholarly Study" loading="lazy">
+  <figcaption><strong>Minhag Ashkenaz.</strong></figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/rite-sepharad.jpg" alt="Minhag Sepharad with Religious Law, Reasoned Theology and Sacred Liturgy" loading="lazy">
+  <figcaption><strong>Minhag Sepharad.</strong></figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/rite-yerushalmi.jpg" alt="Minhag Yerushalmi with Ritual Celebrations, Covenant Community and Sacred Homeland" loading="lazy">
+  <figcaption><strong>Minhag Yerushalmi.</strong></figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="../images/rite-merkavah.jpg" alt="Yordei Merkavah with Esotericism, Inner Journey and Sacred Liturgy" loading="lazy">
+  <figcaption><strong>Yordei Merkavah.</strong> The mystics.</figcaption>
 </figure>
 </div>
 
