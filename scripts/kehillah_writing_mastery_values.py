@@ -35,7 +35,7 @@ def main() -> None:
                 continue
             lines.append(f"\tif = {{ limit = {{ {condition} }} add = 1 }}")
         lines.append("}")
-    OUTPUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    OUTPUT.write_text("\n".join(lines) + "\n", encoding="utf-8-sig")
 
 
 if __name__ == "__main__":

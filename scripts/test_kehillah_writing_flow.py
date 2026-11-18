@@ -37,8 +37,8 @@ class WritingFlowTest(unittest.TestCase):
         future = {key for key, work in catalog.items()
                   if not key.startswith("work_authored_") and work.get("year", 0) > 867}
         self.assertEqual(named, future)
-        self.assertEqual(len(named), 28)
-        for year, expected in ((867, 28), (1066, 12), (1178, 5)):
+        self.assertEqual(len(named), 36)
+        for year, expected in ((867, 36), (1066, 20), (1178, 12)):
             self.assertEqual(sum(catalog[key]["year"] > year for key in named), expected)
         self.assertNotIn("kehillah_book_named_work value", events)
         self.assertIn("kehillah_writing_select_landmark_effect = yes", effects)
@@ -54,13 +54,15 @@ class WritingFlowTest(unittest.TestCase):
     def test_ordinary_artifact_and_news_use_the_chosen_form(self) -> None:
         effects = read("common/scripted_effects/kehillah_writing_effects.txt")
         titles = read("common/customizable_localization/kehillah_writing_ordinary_titles_custom_loc.txt")
+        artifact_identity = read("common/scripted_effects/kehillah_writing_ordinary_titles_generated_effects.txt")
         news = read("localization/english/kehillah_community_news_l_english.yml")
         events = read("events/kehillah_writing_events.txt")
         forms = set(re.findall(r"kehillah_writing_choose_project_effect = \{ FORM = (\w+) GENRE = \w+ \}", events))
         for form in forms:
             self.assertIn(f"var:kehillah_writing_ordinary_form ?= flag:{form}", titles)
-            self.assertIn(f"var:kehillah_artifact_form ?= flag:{form}", titles)
-        self.assertIn("set_artifact_name = kehillah_writing_ordinary_manuscript_name", effects)
+            self.assertIn(f"set_artifact_name = kehillah_writing_ordinary_title_{form}", artifact_identity)
+            self.assertIn(f"set_artifact_description = kehillah_writing_ordinary_desc_{form}", artifact_identity)
+        self.assertIn("kehillah_writing_set_ordinary_artifact_identity_effect = yes", effects)
         self.assertIn("KehillahWritingOrdinaryTitle", news)
 
     def test_authored_future_work_is_visible_before_historical_date(self) -> None:
@@ -74,7 +76,7 @@ class WritingFlowTest(unittest.TestCase):
         artifact = read("common/customizable_localization/kehillah_writing_artifact_custom_loc.txt")
         ledger = read("localization/english/kehillah_library_ledger_catalog_l_english.yml")
         catalog_loc = read("localization/english/kehillah_library_catalog_l_english.yml")
-        self.assertEqual(len(future_fixed), 18)
+        self.assertEqual(len(future_fixed), 26)
         for key in future_fixed:
             self.assertIn(f"has_global_variable = kehillah_wk_{key}_written", available)
             self.assertIn(f"kehillah_sefer_write_named_work_effect = {{ KEY = {key} }}", dispatch)
@@ -83,6 +85,37 @@ class WritingFlowTest(unittest.TestCase):
             self.assertIn(f"KehillahFutureComposer_{key}", catalog_loc)
             self.assertIn(f"flag:{key}", artifact)
             self.assertTrue(catalog[key].get("writing_title"))
+
+    def test_landmark_belief_and_commentary_links(self) -> None:
+        catalog = json.loads(read("scripts/kehillah_library_catalog.json"))["works"]
+        selector = read("common/scripted_effects/kehillah_writing_landmark_generated_effects.txt")
+        writing_triggers = read("common/scripted_triggers/kehillah_writing_triggers.txt")
+        study = read("common/scripted_effects/kehillah_library_study_generated_effects.txt")
+        authorship = read("common/scripted_effects/kehillah_sefer_authorship_effects.txt")
+        commentary_index = read("common/customizable_localization/kehillah_library_commentary_custom_loc.txt")
+        future = {key: work for key, work in catalog.items()
+                  if not key.startswith("work_authored_") and work.get("year", 0) > 867}
+        for key, work in future.items():
+            thesis = work.get("writing_thesis_tenet")
+            self.assertEqual(bool(thesis), bool(work.get("argues_for")), key)
+            if thesis:
+                self.assertIn(thesis, work["argues_for"])
+                self.assertIn(f"kehillah_writing_believes_thesis_trigger = {{ TENET = {thesis} }}", selector)
+            if work.get("commentary_on"):
+                self.assertIn(f"kehillah_sefer_commentary_authority_{key}_effect", study)
+                self.assertIn(f"KehillahCommentaryItem_{key}", commentary_index)
+        self.assertIn("kehillah_sefer_commentary_authority_$KEY$_effect = yes", authorship)
+        belief = writing_triggers.split("kehillah_writing_believes_thesis_trigger = {", 1)[1].split("}", 2)[0]
+        self.assertIn("has_personal_tenet = $TENET$", belief)
+        self.assertIn("rite_has_tenet = $TENET$", belief)
+        self.assertNotIn("knows_tenet", belief)
+        self.assertIn("AMOUNT = kehillah_reception_commentary_value", study)
+        self.assertEqual(catalog["work_maggid_mishneh"]["commentary_on"], "work_mishneh_torah")
+        self.assertIn("KEY = work_mishneh_torah AMOUNT = kehillah_reception_commentary_value", study)
+
+    def test_writing_localization_has_ck3_encoding(self) -> None:
+        for path in (ROOT / "localization/english").glob("kehillah_writing*.yml"):
+            self.assertTrue(path.read_bytes().startswith(b"\xef\xbb\xbf"), path.name)
 
     def test_early_thought_has_sources_before_later_forms_open(self) -> None:
         catalog = json.loads(read("scripts/kehillah_library_catalog.json"))["works"]
