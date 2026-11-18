@@ -51,6 +51,20 @@ class WritingFlowTest(unittest.TestCase):
         self.assertLess(effects.index("remove_variable = kehillah_sefer_my_latest_work"),
                         effects.index("kehillah_book_complete_effect = yes"))
 
+    def test_landmark_artifacts_use_direct_work_titles(self) -> None:
+        effects = read("common/scripted_effects/kehillah_writing_effects.txt")
+        identity = read("common/scripted_effects/kehillah_writing_landmark_artifact_generated_effects.txt")
+        identity_loc = read("localization/english/kehillah_writing_landmark_artifact_l_english.yml")
+        catalog = json.loads(read("scripts/kehillah_library_catalog.json"))["works"]
+        future = {key for key, work in catalog.items()
+                  if not key.startswith("work_authored_") and work.get("year", 0) > 867}
+        self.assertIn("kehillah_writing_set_landmark_artifact_identity_effect = yes", effects)
+        self.assertNotIn("set_artifact_name = kehillah_writing_manuscript_name", effects)
+        for key in future:
+            self.assertIn(f"var:kehillah_sefer_my_latest_work ?= flag:{key}", identity)
+            self.assertIn(f"set_artifact_description = kehillah_writing_landmark_artifact_desc_{key}", identity)
+            self.assertIn(f" kehillah_writing_landmark_artifact_desc_{key}:0", identity_loc)
+
     def test_ordinary_artifact_and_news_use_the_chosen_form(self) -> None:
         effects = read("common/scripted_effects/kehillah_writing_effects.txt")
         titles = read("common/customizable_localization/kehillah_writing_ordinary_titles_custom_loc.txt")

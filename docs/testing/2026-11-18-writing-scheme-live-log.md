@@ -25,4 +25,6 @@ In a third fresh isolated boot, the decision requirements displayed readable coo
 
 ## Remaining checks
 
-Verify the corrected decision requirement, ordinary manuscript title/description after creation and reload, compact local-news tooltip, actual absence of a new ledger entry, and one landmark route's tenet gate, author, mastery, manuscript and commentary reception. Compare `error.log` with each fresh boot baseline.
+The tester attempted a fresh landmark probe, but xTiger MCP was unavailable and the debug console did not open, so no landmark state could be forced. Source inspection found that landmark artifact names still used the same artifact-scope custom lookup that had rendered empty for ordinary manuscripts. Landmark artifacts now receive a direct per-work title and description generated from the catalog. This change passed source tests and xTiger with no change in diagnostic counts; it has not been verified in CK3.
+
+Verify the ordinary manuscript title/description after reload, actual absence of a new ledger entry, and one landmark route's tenet gate, author, mastery, manuscript and commentary reception. Retest the generic controversy wording and compare `error.log` with each fresh boot baseline.
