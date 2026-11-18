@@ -1,0 +1,191 @@
+# New writing project lifecycle. A project is chosen in events and started
+# one day later, so no previewable decision/effect reads variables it has
+# only just written (the old responsa tooltip flood showed that failure).
+
+kehillah_writing_clear_draft_effect = {
+	remove_variable = kehillah_writing_form
+	remove_variable = kehillah_writing_phase
+	remove_variable = kehillah_writing_partner
+	remove_variable = kehillah_writing_extra_time
+	remove_variable = kehillah_writing_success
+	remove_variable = kehillah_writing_landmark
+	remove_variable = kehillah_book_genre
+	remove_variable = kehillah_book_tally
+	remove_variable = kehillah_book_named_work
+	remove_variable = kehillah_book_comment_on
+	remove_variable = kehillah_book_tenet_a
+	remove_variable = kehillah_book_tenet_b
+	remove_variable = kehillah_book_lang
+}
+
+kehillah_writing_choose_project_effect = {
+	set_variable = { name = kehillah_writing_form value = flag:$FORM$ }
+	set_variable = { name = kehillah_book_genre value = flag:$GENRE$ }
+}
+
+kehillah_writing_start_effect = {
+	if = {
+		limit = {
+			has_variable = kehillah_writing_form
+			piety >= kehillah_rabbi_book_piety_cost
+			can_start_scheme = { type = kehillah_writing target_character = root }
+		}
+		add_piety = { value = kehillah_rabbi_book_piety_cost multiply = -1 }
+		set_variable = { name = kehillah_writing_recent value = yes days = 365 }
+		set_variable = { name = kehillah_writing_phase value = 0 }
+		set_variable = { name = kehillah_book_tally value = kehillah_writing_start_quality_value }
+		if = {
+			limit = { var:kehillah_book_genre ?= flag:talmudics knows_language = language_aramaic }
+			set_variable = { name = kehillah_book_lang value = flag:aramaic }
+		}
+		else = { set_variable = { name = kehillah_book_lang value = flag:hebrew } }
+		if = {
+			limit = { var:kehillah_writing_form ?= flag:torah }
+			set_variable = { name = kehillah_book_comment_on value = flag:work_tanakh_torah }
+		}
+		else_if = {
+			limit = { var:kehillah_writing_form ?= flag:midrash }
+			set_variable = { name = kehillah_book_comment_on value = flag:work_genesis_rabbah }
+		}
+		else_if = {
+			limit = { var:kehillah_writing_form ?= flag:talmud }
+			if = { limit = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nezikin } } set_variable = { name = kehillah_book_comment_on value = flag:work_bavli_nezikin } }
+			else_if = { limit = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim } } set_variable = { name = kehillah_book_comment_on value = flag:work_bavli_nashim } }
+			else = { set_variable = { name = kehillah_book_comment_on value = flag:work_bavli_moed } }
+		}
+		else_if = {
+			limit = { var:kehillah_writing_form ?= flag:yerushalmi }
+			if = { limit = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_yerushalmi_nezikin } } set_variable = { name = kehillah_book_comment_on value = flag:work_yerushalmi_nezikin } }
+			else_if = { limit = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_yerushalmi_zeraim } } set_variable = { name = kehillah_book_comment_on value = flag:work_yerushalmi_zeraim } }
+			else_if = { limit = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_yerushalmi_nashim } } set_variable = { name = kehillah_book_comment_on value = flag:work_yerushalmi_nashim } }
+			else = { set_variable = { name = kehillah_book_comment_on value = flag:work_yerushalmi_moed } }
+		}
+		start_scheme = { type = kehillah_writing target_character = root }
+		trigger_event = { id = kehillah_writing.0011 days = 1 }
+	}
+	else = {
+		kehillah_writing_clear_draft_effect = yes
+	}
+}
+
+# A historical niche is an outcome, never a title selected at the start.
+# The existing ambition trigger supplies the source and identity gates;
+# composition quality and a separate roll supply the demanding finish.
+kehillah_writing_select_landmark_effect = {
+	if = {
+		limit = {
+			var:kehillah_writing_form ?= flag:torah
+			kehillah_writing_rashi_torah_ready_trigger = yes
+		}
+		set_variable = { name = kehillah_book_named_work value = flag:work_rashi_torah }
+	}
+	else_if = {
+		limit = { var:kehillah_writing_form ?= flag:talmud kehillah_writing_rashi_talmud_ready_trigger = yes }
+		set_variable = { name = kehillah_book_named_work value = flag:work_rashi_talmud }
+	}
+	else_if = {
+		limit = { var:kehillah_writing_form ?= flag:talmud kehillah_sefer_ambition_tosafot_trigger = yes }
+		set_variable = { name = kehillah_book_named_work value = flag:work_tosafot }
+	}
+	else_if = {
+		limit = { var:kehillah_writing_form ?= flag:law kehillah_sefer_ambition_rif_trigger = yes }
+		set_variable = { name = kehillah_book_named_work value = flag:work_hilkhot_harif }
+	}
+	else_if = {
+		limit = { var:kehillah_writing_form ?= flag:law kehillah_sefer_ambition_mishneh_torah_trigger = yes }
+		set_variable = { name = kehillah_book_named_work value = flag:work_mishneh_torah }
+	}
+	else_if = {
+		limit = { var:kehillah_writing_form ?= flag:dialogue kehillah_sefer_ambition_kuzari_trigger = yes }
+		set_variable = { name = kehillah_book_named_work value = flag:work_kuzari }
+	}
+	else_if = {
+		limit = { var:kehillah_writing_form ?= flag:dialogue kehillah_sefer_ambition_moreh_trigger = yes }
+		set_variable = { name = kehillah_book_named_work value = flag:work_moreh_nevukhim }
+	}
+	else_if = {
+		limit = { var:kehillah_writing_form ?= flag:mystical kehillah_sefer_ambition_bahir_trigger = yes }
+		set_variable = { name = kehillah_book_named_work value = flag:work_sefer_habahir }
+	}
+	else_if = {
+		limit = { var:kehillah_writing_form ?= flag:mystical kehillah_sefer_ambition_zohar_trigger = yes }
+		set_variable = { name = kehillah_book_named_work value = flag:work_zohar }
+	}
+	else_if = {
+		limit = { var:kehillah_writing_form ?= flag:devotion kehillah_sefer_ambition_hasidim_trigger = yes }
+		set_variable = { name = kehillah_book_named_work value = flag:work_sefer_hasidim }
+	}
+	if = {
+		limit = { has_variable = kehillah_book_named_work }
+		set_variable = { name = kehillah_writing_landmark value = yes }
+	}
+}
+
+kehillah_writing_finish_effect = {
+	if = {
+		limit = { has_variable = kehillah_writing_success }
+		set_variable = { name = kehillah_writing_recent value = yes days = 3650 }
+		if = {
+			limit = { var:kehillah_book_tally >= 75 }
+			random = {
+				chance = kehillah_writing_landmark_chance_value
+				kehillah_writing_select_landmark_effect = yes
+			}
+		}
+		if = { limit = { var:kehillah_book_tally >= 55 } set_variable = { name = kehillah_writing_artifact_tier value = flag:illustrious } }
+		else_if = { limit = { var:kehillah_book_tally >= 30 } set_variable = { name = kehillah_writing_artifact_tier value = flag:famed } }
+		else = { set_variable = { name = kehillah_writing_artifact_tier value = flag:masterwork } }
+		remove_variable = kehillah_sefer_my_latest_work
+		kehillah_sefer_finish_composition_effect = yes
+		if = {
+			limit = { has_variable = kehillah_sefer_my_latest_work }
+			kehillah_writing_create_manuscript_effect = yes
+			trigger_event = { id = kehillah_book.0006 days = 10 }
+		}
+	}
+	else = {
+		set_variable = { name = kehillah_writing_recent value = yes days = 730 }
+		add_learning_lifestyle_xp = 150
+		remove_variable = kehillah_book_tally
+	}
+	remove_variable = kehillah_writing_form
+	remove_variable = kehillah_writing_phase
+	remove_variable = kehillah_writing_partner
+	remove_variable = kehillah_writing_extra_time
+	remove_variable = kehillah_book_comment_on
+	remove_variable = kehillah_book_lang
+}
+
+kehillah_writing_create_manuscript_effect = {
+	if = {
+		limit = { has_ep1_dlc_trigger = yes }
+		save_scope_as = inspiration_sponsor
+		create_artifact_book_effect = { OWNER = root CREATOR = root SET_SUBJECT = flag:no SET_TOPIC = flag:no }
+		scope:newly_created_artifact ?= {
+			set_owner = root
+			set_variable = { name = kehillah_artifact_work value = root.var:kehillah_sefer_my_latest_work }
+			kehillah_writing_register_manuscript_effect = yes
+			set_artifact_name = kehillah_writing_manuscript_name
+			if = {
+				limit = { root = { has_variable = kehillah_writing_landmark } }
+				set_artifact_description = kehillah_writing_landmark_manuscript_desc
+				set_artifact_rarity = illustrious
+				add_artifact_modifier = kehillah_writing_landmark_manuscript_modifier
+			}
+			else_if = {
+				limit = { root = { var:kehillah_writing_artifact_tier ?= flag:illustrious } }
+				set_artifact_description = kehillah_writing_manuscript_desc
+				set_artifact_rarity = illustrious
+			}
+			else_if = {
+				limit = { root = { var:kehillah_writing_artifact_tier ?= flag:famed } }
+				set_artifact_description = kehillah_writing_manuscript_desc
+				set_artifact_rarity = famed
+			}
+			else = {
+				set_artifact_description = kehillah_writing_manuscript_desc
+				set_artifact_rarity = masterwork
+			}
+		}
+	}
+}

@@ -1454,6 +1454,7 @@ def write_study_effects(order, works):
             "\tif = {",
             "\t\tlimit = {",
             f"\t\t\thas_global_variable = kehillah_wk_{f}_written",
+            f"\t\t\tNOT = {{ exists = global_var:kehillah_wk_{f}_manuscript }}",
             f"\t\t\tkehillah_lib_copies_{f} < 1",
             f"\t\t\tNOT = {{ is_target_in_global_variable_list = {{ name = kehillah_ransom_pool target = flag:{f} }} }}",
             "\t\t\tNOT = {",
