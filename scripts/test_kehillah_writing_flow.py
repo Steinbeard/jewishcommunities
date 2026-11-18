@@ -19,8 +19,8 @@ class WritingFlowTest(unittest.TestCase):
         triggers = read("common/scripted_triggers/kehillah_writing_triggers.txt")
         loc = read("localization/english/kehillah_writing_l_english.yml")
         forms = re.findall(r"kehillah_writing_choose_project_effect = \{ FORM = (\w+) GENRE = (\w+) \}", events)
-        self.assertEqual(len(forms), 14)
-        self.assertEqual(len({form for form, _ in forms}), 14)
+        self.assertEqual(len(forms), 16)
+        self.assertEqual(len({form for form, _ in forms}), 16)
         for form, _ in forms:
             self.assertIn(f"kehillah_writing_{form}_trigger = {{", triggers)
             self.assertIn(f"kehillah_writing_{form}_near_trigger = {{", triggers)
@@ -39,6 +39,21 @@ class WritingFlowTest(unittest.TestCase):
         self.assertIn("kehillah_writing_select_landmark_effect = yes", effects)
         self.assertIn("kehillah_sefer_finish_composition_effect = yes", effects)
         self.assertNotIn("kehillah_book_complete_effect = yes", effects)
+        self.assertIn("flag:systematic_dialogue kehillah_sefer_ambition_kuzari_trigger", effects)
+        self.assertIn("flag:systematic_dialogue kehillah_sefer_ambition_moreh_trigger", effects)
+
+    def test_early_thought_has_sources_before_later_forms_open(self) -> None:
+        catalog = json.loads(read("scripts/kehillah_library_catalog.json"))["works"]
+        triggers = read("common/scripted_triggers/kehillah_writing_triggers.txt")
+        self.assertEqual(catalog["work_emunot_vedeot"]["year"], 933)
+        self.assertEqual(catalog["work_chovot_halevavot"]["year"], 1080)
+        for key in ("work_mishnah", "work_philo_allegorical", "work_memar_marqah"):
+            self.assertLessEqual(catalog[key]["year"], 867)
+        early_dialogue = triggers.split("kehillah_writing_dialogue_trigger = {", 1)[1].split("kehillah_writing_systematic_dialogue_trigger = {", 1)[0]
+        self.assertNotIn("work_emunot_vedeot", early_dialogue)
+        self.assertNotIn("work_chovot_halevavot", early_dialogue)
+        self.assertIn("current_date >= 933.1.1", triggers)
+        self.assertIn("current_date >= 1080.1.1", triggers)
 
     def test_artifact_dispatch_and_recycling_cover_every_authored_slot(self) -> None:
         catalog = json.loads(read("scripts/kehillah_library_catalog.json"))["works"]

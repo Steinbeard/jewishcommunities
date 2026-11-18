@@ -13,6 +13,12 @@
 
 The ten existing named work IDs are stable internal niches for save compatibility. A historically named commentary can display its actual author in a dynamic title. The historical author's identity can contribute to aptitude but never reserves a work; unborn or absent figures do not block their niches. A filled niche removes the landmark outcome, not the underlying project or its chance to become a fine authored work. Requirements and rolls should be tuned against the 1066 and 1178 libraries, with the Rashi path as the first full end-to-end test.
 
+## Period-sensitive Machshavah — 2026-11-17 addendum
+
+**Status: BUILT; live check pending.** This addendum supersedes the initial Machshavah project gates above where they depended on later source books. An 867 scholar can write a dialogue on Scripture and law after mastering the Torah plus the Mishnah, Philo or *Memar Marqah*; a disputation can draw on those sources; an ethical exhortation can draw on Tanakh and an early ethical source. Mystical writing still draws on *Sefer Yetzirah*, and translation on the earlier Greek or Arabic sources already in the catalog. These generic forms remain open in later periods too.
+
+Systematic philosophical dialogue becomes an additional form from 933, when the catalog dates *Emunot ve-Deot*, and requires mastery of it or *Chovot ha-Levavot*. The latter enables a distinct inward-devotion form from its catalog date of 1080. *Kuzari* and *Moreh Nevukhim* are outcomes of systematic dialogue; *Sefer Hasidim* is an outcome of inward devotion. The Machshavah choice scene and objection scene vary with the era and form. Explicit dates guard the later forms, while source mastery still determines whether a character may select them. Historical landmark qualifications remain separate.
+
 ## Study partner
 
 A named chavrusa may assist Study Torah and composition. Their learning and language should influence the visible chance, and events should establish a relationship. Assigning one must not confer mastery or let a character bypass a project's hard language requirement. A partner is optional, so writing and study remain possible without a suitable courtier.

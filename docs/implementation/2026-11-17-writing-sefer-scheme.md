@@ -17,3 +17,7 @@ All ten preexisting named ambitions are reachable only as exceptional outcomes o
 The live checks are pending because this repository requires a Luna tester for all CK3 control and Luna is unavailable in this session. xTiger uses the 1.20 fork on CK3 1.21, so unchanged baseline findings do not establish runtime UI behavior.
 
 On the isolated review branch, xTiger stayed at its pre-change baseline: 0 fatal, 64 errors, 260 warnings, 37 untidy and 135 tips. The source integration checks in `scripts/test_kehillah_writing_flow.py` pass; `git diff --check` has no whitespace findings.
+
+## Period correction — 2026-11-17
+
+The first build accidentally required post-867 books for every dialogue, disputation and devotional path. Machshavah now has early Scripture dialogue, disputation and ethical-exhortation routes based on the Torah or Tanakh plus the Mishnah, Philo or *Memar Marqah*. Systematic dialogue is an additional path dated from *Emunot ve-Deot* (933); inward devotion is an additional path dated from *Chovot ha-Levavot* (1080). Both still require actual mastery of their source. The older forms stay available later, and the two later forms carry the *Kuzari*/*Moreh* and *Sefer Hasidim* landmark chances respectively. Period-specific choice text and form-specific objection text make the distinction visible.
