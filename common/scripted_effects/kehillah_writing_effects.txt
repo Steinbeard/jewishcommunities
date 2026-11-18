@@ -16,6 +16,8 @@ kehillah_writing_clear_draft_effect = {
 	remove_variable = kehillah_book_tenet_a
 	remove_variable = kehillah_book_tenet_b
 	remove_variable = kehillah_book_lang
+	remove_variable = kehillah_book_work
+	remove_variable = kehillah_writing_ordinary_form
 }
 
 kehillah_writing_choose_project_effect = {
@@ -39,6 +41,10 @@ kehillah_writing_start_effect = {
 			set_variable = { name = kehillah_book_lang value = flag:aramaic }
 		}
 		else = { set_variable = { name = kehillah_book_lang value = flag:hebrew } }
+		if = {
+			limit = { var:kehillah_writing_form ?= flag:responsa kehillah_has_good_bet_din_memory_trigger = yes }
+			set_variable = { name = kehillah_book_bet_din_inspiration value = yes }
+		}
 		if = {
 			limit = { var:kehillah_writing_form ?= flag:torah }
 			set_variable = { name = kehillah_book_comment_on value = flag:work_tanakh_torah }
@@ -71,55 +77,7 @@ kehillah_writing_start_effect = {
 # A historical niche is an outcome, never a title selected at the start.
 # The existing ambition trigger supplies the source and identity gates;
 # composition quality and a separate roll supply the demanding finish.
-kehillah_writing_select_landmark_effect = {
-	if = {
-		limit = {
-			var:kehillah_writing_form ?= flag:torah
-			kehillah_writing_rashi_torah_ready_trigger = yes
-		}
-		set_variable = { name = kehillah_book_named_work value = flag:work_rashi_torah }
-	}
-	else_if = {
-		limit = { var:kehillah_writing_form ?= flag:talmud kehillah_writing_rashi_talmud_ready_trigger = yes }
-		set_variable = { name = kehillah_book_named_work value = flag:work_rashi_talmud }
-	}
-	else_if = {
-		limit = { var:kehillah_writing_form ?= flag:talmud kehillah_sefer_ambition_tosafot_trigger = yes }
-		set_variable = { name = kehillah_book_named_work value = flag:work_tosafot }
-	}
-	else_if = {
-		limit = { var:kehillah_writing_form ?= flag:law kehillah_sefer_ambition_rif_trigger = yes }
-		set_variable = { name = kehillah_book_named_work value = flag:work_hilkhot_harif }
-	}
-	else_if = {
-		limit = { var:kehillah_writing_form ?= flag:law kehillah_sefer_ambition_mishneh_torah_trigger = yes }
-		set_variable = { name = kehillah_book_named_work value = flag:work_mishneh_torah }
-	}
-	else_if = {
-		limit = { var:kehillah_writing_form ?= flag:systematic_dialogue kehillah_sefer_ambition_kuzari_trigger = yes }
-		set_variable = { name = kehillah_book_named_work value = flag:work_kuzari }
-	}
-	else_if = {
-		limit = { var:kehillah_writing_form ?= flag:systematic_dialogue kehillah_sefer_ambition_moreh_trigger = yes }
-		set_variable = { name = kehillah_book_named_work value = flag:work_moreh_nevukhim }
-	}
-	else_if = {
-		limit = { var:kehillah_writing_form ?= flag:mystical kehillah_sefer_ambition_bahir_trigger = yes }
-		set_variable = { name = kehillah_book_named_work value = flag:work_sefer_habahir }
-	}
-	else_if = {
-		limit = { var:kehillah_writing_form ?= flag:mystical kehillah_sefer_ambition_zohar_trigger = yes }
-		set_variable = { name = kehillah_book_named_work value = flag:work_zohar }
-	}
-	else_if = {
-		limit = { var:kehillah_writing_form ?= flag:devotion kehillah_sefer_ambition_hasidim_trigger = yes }
-		set_variable = { name = kehillah_book_named_work value = flag:work_sefer_hasidim }
-	}
-	if = {
-		limit = { has_variable = kehillah_book_named_work }
-		set_variable = { name = kehillah_writing_landmark value = yes }
-	}
-}
+# Landmark selection is generated from the dated catalog and project map.
 
 kehillah_writing_finish_effect = {
 	if = {
@@ -132,16 +90,25 @@ kehillah_writing_finish_effect = {
 				kehillah_writing_select_landmark_effect = yes
 			}
 		}
-		if = { limit = { var:kehillah_book_tally >= 55 } set_variable = { name = kehillah_writing_artifact_tier value = flag:illustrious } }
-		else_if = { limit = { var:kehillah_book_tally >= 30 } set_variable = { name = kehillah_writing_artifact_tier value = flag:famed } }
-		else = { set_variable = { name = kehillah_writing_artifact_tier value = flag:masterwork } }
 		remove_variable = kehillah_sefer_my_latest_work
-		kehillah_sefer_finish_composition_effect = yes
 		if = {
-			limit = { has_variable = kehillah_sefer_my_latest_work }
+			limit = { has_variable = kehillah_book_named_work }
+			if = { limit = { var:kehillah_book_tally >= 55 } set_variable = { name = kehillah_writing_artifact_tier value = flag:illustrious } }
+			else_if = { limit = { var:kehillah_book_tally >= 30 } set_variable = { name = kehillah_writing_artifact_tier value = flag:famed } }
+			else = { set_variable = { name = kehillah_writing_artifact_tier value = flag:masterwork } }
+			kehillah_sefer_finish_composition_effect = yes
 			kehillah_writing_create_manuscript_effect = yes
-			trigger_event = { id = kehillah_book.0006 days = 10 }
 		}
+		else = {
+			set_variable = { name = kehillah_writing_ordinary_form value = var:kehillah_writing_form }
+			kehillah_book_complete_effect = yes
+			scope:newly_created_artifact ?= {
+				set_variable = { name = kehillah_artifact_form value = root.var:kehillah_writing_ordinary_form }
+				set_artifact_name = kehillah_writing_ordinary_manuscript_name
+				set_artifact_description = kehillah_writing_ordinary_manuscript_desc
+			}
+		}
+		trigger_event = { id = kehillah_book.0006 days = 10 }
 	}
 	else = {
 		set_variable = { name = kehillah_writing_recent value = yes days = 730 }

@@ -216,6 +216,11 @@ def needs_writing(w):
     return bool(w.get("named") or w.get("authored"))
 
 
+def writable_future(w):
+    """A dated, fixed work whose niche is open in at least one bookmark."""
+    return not authored(w) and w.get("year", 0) > 867
+
+
 def short(f):
     return f.removeprefix("work_")
 
@@ -230,7 +235,15 @@ def avail_lines(f, w, ind):
     if needs_writing(w):
         out.append(f"{ind}has_global_variable = kehillah_wk_{f}_written")
     elif circulation_year(w) > 1:
-        out.append(f"{ind}current_date >= {circulation_year(w)}.1.1")
+        if writable_future(w):
+            out.extend([
+                f"{ind}OR = {{",
+                f"{ind}\tcurrent_date >= {circulation_year(w)}.1.1",
+                f"{ind}\thas_global_variable = kehillah_wk_{f}_written",
+                f"{ind}}}",
+            ])
+        else:
+            out.append(f"{ind}current_date >= {circulation_year(w)}.1.1")
     return out
 
 
@@ -312,7 +325,7 @@ def write_values(order, works):
     out += ["", "# composition year (the game date; Jan 1 is a dating convention)"]
     for f in order:
         w = works[f]
-        if authored(w) or w.get("named"):
+        if authored(w) or w.get("named") or writable_future(w):
             out += dyn_value(f"kehillah_lib_year_{f}", w["year"], f"kehillah_wk_{f}_year")
         else:
             out.append(f"kehillah_lib_year_{f} = {w['year']}")
@@ -381,6 +394,17 @@ def write_values(order, works):
                 f"\tif = {{ limit = {{ exists = global_var:kehillah_wk_{f}_author }} add = 1 }}",
                 "}",
             ]
+        elif writable_future(w):
+            out += [
+                f"kehillah_lib_author_ready_{f} = {{",
+                "\tvalue = 0",
+                f"\tif = {{ limit = {{ exists = global_var:kehillah_wk_{f}_author }} add = 1 }}",
+            ]
+            if slug:
+                out.append(f"\telse_if = {{ limit = {{ exists = var:kehillah_lib_author_{slug} }} add = 1 }}")
+            else:
+                out.append("\telse = { add = 1 }")
+            out.append("}")
         elif slug:
             out += [
                 f"kehillah_lib_author_ready_{f} = {{",
@@ -1284,7 +1308,7 @@ def write_study_effects(order, works):
         lines.append("}")
         return lines
 
-    named_keys = [f for f in order if works[f].get("named")]
+    named_keys = [f for f in order if writable_future(works[f])]
     noncanon = [f for f in order if not works[f].get("canon") and works[f]["corpus"] != "tanakh"]
     out += dispatch("kehillah_sefer_write_named_work_dispatch_effect", "var:kehillah_book_named_work",
                     "kehillah_sefer_write_named_work_effect = {{ KEY = {k} }}", named_keys,
@@ -1316,10 +1340,10 @@ def write_study_effects(order, works):
             f"\t\tkehillah_sefer_write_authored_work_effect = {{ SLOT = {f} }}",
             "\t}",
         ]
-    out += ["}", "", "# Per named work, scope the author: a commentary counts toward the work it glosses."]
+    out += ["}", "", "# Per future work, scope the author: a commentary counts toward the work it glosses."]
     for f in order:
         w = works[f]
-        if not w.get("named"):
+        if not writable_future(w):
             continue
         target = w.get("commentary_on")
         out.append(f"kehillah_sefer_count_commentary_target_{f}_effect = {{")
@@ -1790,12 +1814,15 @@ def write_loc(order, works):
         if needs_writing(w):
             lines.append(f' kehillah_lib_composer_{f}:0 "{written_author_link(f)}"')
             lines.append(f' kehillah_lib_composer_plain_{f}:0 "{w["composer"] or plain_name}"')
+        elif writable_future(w):
+            lines.append(f' kehillah_lib_composer_{f}:0 "[GetPlayer.Custom(\'KehillahFutureComposer_{f}\')]"')
+            lines.append(f' kehillah_lib_composer_plain_{f}:0 "[GetPlayer.Custom(\'KehillahFutureComposer_{f}\')]"')
         else:
             lines.append(f' kehillah_lib_composer_{f}:0 "{w["composer"]}"')
             lines.append(f' kehillah_lib_composer_plain_{f}:0 "{w["composer"]}"')
         if w.get("composer_linked"):
             lines.append(f' kehillah_lib_composer_linked_{f}:0 "{w["composer_linked"]}"')
-        if needs_writing(w):
+        if needs_writing(w) or writable_future(w):
             lines.append(f' kehillah_lib_year_text_{f}:0 "[GetPlayer.MakeScope.ScriptValue(\'kehillah_lib_year_{f}\')|0]"')
         elif w.get("year_text"):
             lines.append(f' kehillah_lib_year_text_{f}:0 "{w["year_text"]}"')
@@ -1804,13 +1831,16 @@ def write_loc(order, works):
         lines.append(f' kehillah_lib_summary_{f}:0 "Work of {subject}"')
         if w.get("canon"):
             who_line = f"{w['credit']} {{who}}."
-        elif needs_writing(w):
+        elif needs_writing(w) or writable_future(w):
             who_line = f"{w['credit']} {{who}}."
         else:
             who_line = f"{w['credit']} {{who}} around {w['year']}."
         if needs_writing(w):
             who = written_author_link(f)
             plain = plain_name
+        elif writable_future(w):
+            who = f"$kehillah_lib_composer_{f}$"
+            plain = plain_name or w["composer"]
         elif w.get("composer_char"):
             who = author_link(w["composer_char"])
             plain = AUTHOR_NAMES[w["composer_char"]]
@@ -1845,11 +1875,18 @@ def write_prose_loc(order, works):
         if not p:
             continue
         t = track[w["genre"]]
+        name = p["name"]
+        description = p["desc"]
+        detail = p["detail"]
+        if writable_future(w) and w.get("writing_title"):
+            name = f"[GetPlayer.Custom('KehillahFutureTitle_{f}')]"
+            description = f"[GetPlayer.Custom('KehillahFutureDesc_{f}')]"
+            detail = f"[GetPlayer.Custom('KehillahFutureDetail_{f}')]"
         lines += [
-            f' kehillah_lib_name_{f}:0 "{p["name"]}"',
+            f' kehillah_lib_name_{f}:0 "{name}"',
             f' kehillah_lib_subject_{f}:0 "$KEHILLAH_LIB_TRACK_{t}$"',
-            f' kehillah_lib_desc_{f}:0 "{p["desc"]}"',
-            f' kehillah_lib_detail_{f}:0 "{p["detail"]}"',
+            f' kehillah_lib_desc_{f}:0 "{description}"',
+            f' kehillah_lib_detail_{f}:0 "{detail}"',
             f' kehillah_lib_tt_{f}:0 "#T $kehillah_lib_name_{f}$#!\\n#weak $KEHILLAH_LIB_TRACK_{t}$#!\\n\\n$kehillah_lib_detail_{f}$"',
             f' {study_tt_key(f, w)}:0 "{p["study"]}"',
             f' kehillah_yeshiva_msg_work_{f}:0 "[kehillah_msg_talmid.GetTitledFirstName] has mastered $kehillah_lib_name_{f}$ at the yeshiva."',
@@ -2258,6 +2295,9 @@ def write_ledger_loc(order, works):
             byline = written_author_link(f)
             # 2026-11-11: the short, capitalised name (short_byline) for the Author column.
             plain = short_byline(w) if w.get("composer_name") else (AUTHOR_NAMES.get(w.get("composer_char") or "", "") or w["composer"])
+        elif writable_future(w):
+            byline = f"[GetPlayer.Custom('KehillahFutureComposer_{f}')]"
+            plain = byline
         elif w.get("composer_char"):
             byline = author_link(w["composer_char"])
             plain = AUTHOR_NAMES[w["composer_char"]]
