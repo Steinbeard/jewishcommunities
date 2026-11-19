@@ -1,0 +1,191 @@
+**Status:** RESEARCH SPIKE, 2026-11-19, requested by Daniel. One prototype is built: the Lend Gold
+interaction (section 1). Everything else here is findings and recommendations, not decisions. Read
+against CK3 1.21.0.3 (`E:\Program Files (x86)\Steam\steamapps\common\Crusader Kings III\game`). It feeds
+[the pillars spec](2026-11-19-pillars-as-opportunities-and-expectations.md), addenda R10 and R11.
+ROADMAP stays authoritative for what is built.
+
+# The 1.21 trade/merchant DLC: lending, goods and districts
+
+## 1. Lending
+
+### What vanilla has
+- **The loan record.** A loan is a `story_cycle_loan` owned by the debtor, holding these variables:
+  `lender`, `amount_owed`, `instrument` (`flag:open`, `flag:disguised` or `flag:free`), `years_since`,
+  `reminders` and `original_*`.
+  - The lender keeps the variable list `owes_me_money`.
+  - The scripted relations are `creditor` and `debtor`.
+  - The story file has **no government or merchant checks**, so the loan mechanics work for any
+    lender.
+- **Effects** (`common/scripted_effects/00_scripted_effects.txt`):
+  - creating and growing loans: `set_up_new_loan_effect`, `increase_existing_loan_effect`;
+  - interest: `loan_open_interest_effect`, `loan_disguised_interest_effect`, `loan_free_interest_effect`;
+  - ending loans: `repay_and_end_loan_story_effect`, `forgive_loan_effect`, `loan_repayment_refusal_effect`;
+  - moving loans: `transfer_loan_effect`;
+  - in the merchant files: `gdp_usury_repudiate_loan_effect`.
+- **Inheritance.**
+  - A dead debtor's loan passes to his primary heir (in the story's `on_owner_death`).
+  - A dead lender's loans pass to his primary heir (`common/on_action/death.txt`, around line 330).
+  - With no heir, the loans are wiped.
+- **The amount.** `gdp_loan_principal_value`, read in the borrower's scope, pays off the borrower's
+  negative gold, capped by title tier. Loans go only to rulers with gold at or below
+  `gdp_loan_money_debt_threshold_value` (−25).
+- **Repayment.**
+  - The debtor can repay through `repay_loan_decision` (`80_major_decisions.txt`).
+  - The lender can demand repayment through `demand_repayment_interaction`, which is **merchant-only**.
+- **Usury** is a doctrine group, `doctrine_usury`, in `common/religion/doctrine_types/20_doctrines.txt`.
+  - Judaism (`religion_types/00_judaism.txt`) uses `doctrine_usury_outsiders_only`. Its parameters:
+    - `usury_outsiders_only`;
+    - `usury_outsider_creditor_standing`;
+    - `usury_outsider_debts_voidable`;
+    - `usury_charitable_lending`.
+  - The triggers are in `scripted_triggers/gdp_merchant_triggers.txt`:
+    - `gdp_usury_condemns_loan_trigger`, `gdp_usury_forbids_loan_trigger`;
+    - `gdp_usury_loan_is_void_trigger`;
+    - `gdp_usury_has_approving_cleric_trigger`: a cleric of the borrower's faith may void his debts
+      where his rite has `usury_debts_voidable`.
+- **Range.** `gdp_merchant_diplo_range_trigger` measures from the lender's `domicile.domicile_location`.
+  Kehillah leaders have a domicile, so it works for them unchanged.
+- **The gate.** Vanilla's `loan_money_interaction` is limited to `government_is_merchant`.
+
+### What was built: Lend Gold (`kehillah_loan_money_interaction`)
+`common/character_interactions/kehillah_lending_interactions.txt`, with loc in
+`kehillah_lending_l_english.yml`.
+- **Who:** a Kehillah leader, lending to an indebted landed ruler in range. Each other piece is
+  vanilla's.
+- **The usury law:**
+  - open interest is offered only where the lender's rite does not condemn it, which for Judaism means
+    non-Jewish borrowers;
+  - a Jewish borrower is offered only the interest-free loan (*gemilut chasadim*);
+  - there is no disguised-interest option.
+- **Why not vanilla's interaction.** Adding `government_is_merchant` to the Kehillah government would
+  switch on the merchant-republic code path in the mod's highest-risk file, so a thin interaction that
+  reuses vanilla's triggers, values, effects and loc keys was written instead.
+- **AI lending is deliberately rare:** an AI leader needs more than 500 gold, and its `ai_will_do` is
+  low.
+- **Validation:** xTiger-clean (only the repo-wide missing-BOM warning). A scripted live test is
+  recorded in section 5.
+
+### Next for lending
+1. **A Kehillah "Demand Repayment"** to match vanilla's merchant-only one. Without it, a loan comes back
+   only if the debtor chooses to repay.
+2. **Route existing lending through vanilla loans.** The S8 royal-loan request and `kehillah_loan_contract`
+   should create real loans with `set_up_new_loan_effect`, rather than keeping their own records.
+3. **The predatory host (pillars spec, E1)** is mostly vanilla already:
+   - a cleric voiding debts to Jews (`gdp_usury_has_approving_cleric_trigger`);
+   - repudiation (`gdp_usury_repudiate_loan_effect`).
+   
+   The work is to make those happen *to* Kehillah lenders, react to them (Stability, outlook), and
+   weigh the lord's debts to the community in his outlook.
+4. **The debts crisis gate** (ROADMAP's debts entry): the community is "actually lending" when
+   `any_in_list = { variable = owes_me_money }` on its leader.
+5. **Who inherits.** A lender's loans pass to `primary_heir`. Check in play that the appointed Kehillah
+   successor is the leader's `primary_heir`, so the community's loans stay with the seat. If not, move
+   them to the new leader on succession with `transfer_loan_effect`. **This touches succession, so it
+   needs a live test.**
+
+## 2. Goods: what kehillot could produce and consume
+
+### How 1.21 goods work
+- **Goods** (`common/trade/trade_good_types`) have a base price. "Basic" goods (grain, fish, meat,
+  cattle, horses...) are carried automatically on distribution routes.
+- **Categories** (`trade_good_categories`) group goods. A *need* category feeds building needs, and
+  categories also have expertise tracks with levels.
+- **Each county has a market.** Buildings produce goods into it through
+  `province_modifier = { trade_good_<x>_production_add = N }` (or `_mult`).
+- **Buildings consume goods** through `trade_good_need = { trade_good = x }` (or
+  `trade_good_category = ...`, with an `amount`). The need's `modifiers` apply only while it is
+  supplied. Needs can be limited by culture, rite, government flag, terrain and so on (see
+  `common/buildings/_buildings.info`, around line 500).
+- **Market modifiers** (`market_modifier`) change buy and sell prices for goods or categories.
+- **Domicile buildings** (estates, merchant companies) **can produce** through `province_modifier`, as
+  the merchant company's spice expertise does. **They do not support `trade_good_need`**: a domicile
+  cannot consume goods.
+
+### Recommendation
+- **Production, through the Quarter's domicile buildings** (`province_modifier` on the quarter's
+  province). Small amounts tied to historical Jewish trades:
+  - Sofer's workshop → books and paper;
+  - a dye works or textile trade → textiles and dyes;
+  - kosher wine, where it suits the region (Rashi's Troyes);
+  - goldsmiths → jewelry;
+  - long-distance trade for Radhanite-era eastern and Mediterranean communities → spices and silk.
+  
+  The county's market then benefits, which is the host's protective reason to value his Jews (E1).
+- **Consumption needs a district** (section 3), since domiciles cannot consume. Candidates: kosher
+  wine, meat and oil; books and paper for the yeshiva; textiles. An unmet need would weaken the
+  district's modifiers. Without a district, read the county market from script and feed
+  `kehillah_bd_local_economy_value` (v33's reserved hook). **(verify)** which script triggers and values
+  read a market's prices or supply. The 48-day-old script docs predate 1.21, so regenerate them with
+  `script_docs` in a 1.21 game first.
+- **Commercial style:** a `trade_good_<x>_production_mult`, or better sell prices on the quarter's own
+  goods, fits naturally.
+
+## 3. A Jewish quarter as a district on the host's holding
+
+### How 1.21 districts work
+- Districts (`common/districts/`) occupy slots in a province's holding: regular, special,
+  duchy_capital, holding, great_district, trade_post or entrepot. Each has a primary building and a
+  list of buildings that can be built in it (`common/buildings/*_district_buildings/`).
+- Their buildings use the ordinary building blocks: county, province and character modifiers,
+  `market_modifier`, `trade_good_need` and production.
+- Gating: `can_construct_potential` / `can_construct_showing_failures_only` / `can_construct`, with
+  `is_enabled`.
+- **Script can place one:** `add_special_district_slot = <type>` then `add_special_district = <type>`
+  (used by vanilla's holy sites and greenhouse decision). `remove_district_type = <type>` removes it.
+  The triggers are `province_has_district`, `has_special_district_slot` and `has_special_district`.
+- Vanilla already has a `religious_community_district` (regular, faith-themed backgrounds, monastic
+  buildings), which is a model for ours.
+
+### Recommendation: yes, as a script-placed special district
+- **Name:** `kehillah_jewish_quarter_district` (*Judengasse*, *juderia*, *mellah*, ... by region).
+- **Placed** on the quarter's province when a community is founded or starts, and **removed** when it
+  dissolves or is expelled.
+- **Owned by the host.** District buildings belong to the province's holder, which matches history:
+  the quarter enriched the lord. That makes the district the concrete map-side form of R10's
+  "protective" reading.
+- **Its primary building carries:**
+  - market and goods modifiers;
+  - consumption needs (kosher wine and meat, books and paper);
+  - a county modifier such as a small artisan tax.
+- **The Kehillah side** reads the district's state for Prosperity. Upgrades could follow the
+  community's own buildings, keeping one source of truth.
+- **It is also where expulsion lands:** the host can tear the quarter down (`remove_district_type`),
+  and v30's expulsion becomes visible in the holding view.
+- **Risks to verify:**
+  1. whether a province can hold more than one special slot (holy sites use them);
+  2. whether a special district needs art or assets to render without errors;
+  3. performance with ~25+ communities (small);
+  4. **districts are placed on provinces, not titles, so this does not touch government or
+     succession.**
+
+## 4. Order
+
+The order, recommended for later work:
+1. Lending follow-ups (1-4).
+2. The quarter district, as a visual-only first pass with no needs.
+3. Goods production from Quarter buildings.
+4. Goods needs on the district.
+5. The market feeding Prosperity.
+
+## 5. Live test record
+
+**2026-11-19, scripted xTiger run, Worms 1066 (`bm_1066_kehillah_worms`, play `d_kehillah_worms`),
+CK3 1.21.0.3, run by a subagent.** The game booted clean in about 137 s and was closed by its PID.
+
+- **Lend Gold: PASS.**
+  - Setup: the host was put into debt (`remove_short_term_gold = 400`) and the player was given gold.
+  - `run_interaction` with `execute_threshold = decline` created a `story_cycle_loan` on the host with a
+    principal of 175, lent by the Worms leader (Isaac HaLevi).
+  - The host now owns a loan story, and the leader's `owes_me_money` list is filled.
+  - No error.log lines mention the loan, `set_up_new_loan` or `story_cycle_loan`.
+  - Not checked: the host's gold before and after, and the right-click UI.
+- **Tenure mark: PASS on behaviour.**
+  - The record was taken on the first pass.
+  - Pretending the leader started one band lower in every pillar applied
+    `kehillah_tenure_raised_modifier`.
+  - Pretending one band higher replaced it with `kehillah_tenure_brought_low_modifier`, and the raised
+    modifier was removed.
+  - Two problems were found and fixed afterwards. The debug report lines used data-function loc that
+    printed blank; they now branch on the values instead. The new files lacked a BOM (the lexer
+    complained but loaded them); they now have one.
+  - The rewritten report has not yet been run live.

@@ -1,0 +1,136 @@
+﻿# =====================================================================
+# THE TENURE MARK AND THE HIGH-WATER MARK (2026-11-19).
+# docs/spec/2026-11-19-pillars-as-opportunities-and-expectations.md,
+# addenda R3, R4 and R10. First slice of that spec.
+#
+# TENURE MARK. The community remembers each pillar's band at the moment the
+# current leader took office, and judges the leader by the change since then:
+# raising the community earns goodwill, lowering it costs goodwill. The
+# judgement is ONE character modifier on the leader carrying
+# courtier_and_guest_opinion (R4: as cheap as a trait, and shown by vanilla's
+# own modifier and opinion tooltips -- no new UI, no add_opinion loops).
+#
+# MANDATE WEIGHTING (R10). A change in the pillar of the seat's chosen
+# leadership style counts double. It weighs CHANGE, not level, so an AI that
+# chose its weakest pillar is judged only on whether it improved it.
+# An unchosen style (no kehillah_leadership_style on the title) weights
+# nothing: the legacy Scholarly fallback is a default, not a mandate.
+#
+# NO SUCCESSION CODE IS TOUCHED. The record is taken lazily: on the first
+# band pass in which the leader differs from the recorded one. That pass is
+# silent (no modifier), like the band seeding in kehillah_pillar_band_
+# effects.txt.
+#
+# HIGH-WATER MARK. The best band each pillar has ever reached, kept on the
+# title for the community description layer and for remembering a fallen
+# community. Nothing reads it yet.
+#
+# Variables, all on the community TITLE:
+#   kehillah_tenure_leader            the leader the record belongs to
+#   kehillah_tenure_band_<pillar>     band index (0-4) when they took office
+#   kehillah_tenure_tier              last tier applied (-2..2), to skip churn
+#   kehillah_band_best_<pillar>       highest band index ever reached
+#
+# Called from the end of kehillah_update_all_pillar_bands_effect, inside its
+# pillars-are-live guard, so the band_now variables are always fresh.
+# =====================================================================
+
+# Scope: the Kehillah leader.
+kehillah_tenure_mark_update_effect = {
+	if = {
+		limit = {
+			exists = primary_title
+			primary_title = {
+				has_variable = kehillah_band_now_prosperity
+				has_variable = kehillah_band_now_stability
+				has_variable = kehillah_band_now_greatness
+			}
+		}
+		save_scope_as = kehillah_tenure_holder
+
+		# 1. High-water marks.
+		kehillah_tenure_raise_best_effect = { SHORT = prosperity }
+		kehillah_tenure_raise_best_effect = { SHORT = stability }
+		kehillah_tenure_raise_best_effect = { SHORT = greatness }
+
+		# 2. A new leader (or no record yet): take the record, quietly.
+		if = {
+			limit = {
+				primary_title = {
+					OR = {
+						NOT = { has_variable = kehillah_tenure_leader }
+						NOT = { var:kehillah_tenure_leader = scope:kehillah_tenure_holder }
+					}
+				}
+			}
+			# The previous holder, if alive (resigned, deposed), leaves the
+			# judgement behind with the seat.
+			primary_title.var:kehillah_tenure_leader ?= {
+				kehillah_tenure_clear_modifiers_effect = yes
+			}
+			kehillah_tenure_clear_modifiers_effect = yes
+			primary_title = {
+				set_variable = { name = kehillah_tenure_leader value = scope:kehillah_tenure_holder }
+				set_variable = { name = kehillah_tenure_band_prosperity value = var:kehillah_band_now_prosperity }
+				set_variable = { name = kehillah_tenure_band_stability value = var:kehillah_band_now_stability }
+				set_variable = { name = kehillah_tenure_band_greatness value = var:kehillah_band_now_greatness }
+				set_variable = { name = kehillah_tenure_tier value = 0 }
+			}
+			debug_log = "kehillah_tenure_mark_update_effect: recorded the bands at the start of a tenure"
+		}
+		# 3. Judge the tenure so far; re-apply only when the tier moves.
+		else = {
+			save_temporary_scope_value_as = { name = kehillah_tenure_tier_now value = kehillah_tenure_tier_value }
+			if = {
+				limit = {
+					NOT = { primary_title.var:kehillah_tenure_tier = scope:kehillah_tenure_tier_now }
+				}
+				kehillah_tenure_clear_modifiers_effect = yes
+				if = {
+					limit = { scope:kehillah_tenure_tier_now = 2 }
+					add_character_modifier = kehillah_tenure_raised_modifier
+				}
+				else_if = {
+					limit = { scope:kehillah_tenure_tier_now = 1 }
+					add_character_modifier = kehillah_tenure_improved_modifier
+				}
+				else_if = {
+					limit = { scope:kehillah_tenure_tier_now = -1 }
+					add_character_modifier = kehillah_tenure_declined_modifier
+				}
+				else_if = {
+					limit = { scope:kehillah_tenure_tier_now = -2 }
+					add_character_modifier = kehillah_tenure_brought_low_modifier
+				}
+				primary_title = {
+					set_variable = { name = kehillah_tenure_tier value = scope:kehillah_tenure_tier_now }
+				}
+				debug_log = "kehillah_tenure_mark_update_effect: the tenure judgement changed tier"
+			}
+		}
+	}
+}
+
+# Scope: the Kehillah leader. $SHORT$ = prosperity, stability or greatness.
+kehillah_tenure_raise_best_effect = {
+	primary_title = {
+		if = {
+			limit = {
+				OR = {
+					NOT = { has_variable = kehillah_band_best_$SHORT$ }
+					var:kehillah_band_now_$SHORT$ > var:kehillah_band_best_$SHORT$
+				}
+			}
+			set_variable = { name = kehillah_band_best_$SHORT$ value = var:kehillah_band_now_$SHORT$ }
+		}
+	}
+}
+
+# Scope: any character. Guarded removals (see kehillah_apply_pillar_band_
+# modifier_effect for why every removal is guarded).
+kehillah_tenure_clear_modifiers_effect = {
+	if = { limit = { has_character_modifier = kehillah_tenure_raised_modifier } remove_character_modifier = kehillah_tenure_raised_modifier }
+	if = { limit = { has_character_modifier = kehillah_tenure_improved_modifier } remove_character_modifier = kehillah_tenure_improved_modifier }
+	if = { limit = { has_character_modifier = kehillah_tenure_declined_modifier } remove_character_modifier = kehillah_tenure_declined_modifier }
+	if = { limit = { has_character_modifier = kehillah_tenure_brought_low_modifier } remove_character_modifier = kehillah_tenure_brought_low_modifier }
+}

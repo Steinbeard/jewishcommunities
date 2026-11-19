@@ -635,6 +635,8 @@ failure after payment, delivery to the successor if the leader changes. It widen
 Distance is the squared distance between seats, in bands (near, regional, far), as vanilla measures
 distance for rites in `on_action/religion_on_actions.txt`. **No market or trade-route system**: per
 the standing decision to wait for the trade DLC, book purchase can hook into it later.
+*(2026-11-19: the DLC is out, game 1.21.0.3, so this hook is unblocked. Its markets live in
+`common/trade/`.)*
 
 ### 7.2 Losses, never silent
 

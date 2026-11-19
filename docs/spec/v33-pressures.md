@@ -123,3 +123,6 @@ upcoming trade DLC.
 - **The trade DLC:** this value is the single hook for the county's economy. When the DLC lands,
   its market and trade-route data belongs here, beside or instead of development. Nothing
   trade-like is built ahead of it.
+- **2026-11-19:** the DLC is out (game 1.21.0.3). Its markets, toll levels and trade goods
+  (`common/trade/`) are the data to read here. That work is now unblocked. ROADMAP's debts
+  entry records the research step.

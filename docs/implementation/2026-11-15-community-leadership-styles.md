@@ -72,4 +72,8 @@ Live checks: tiles render and caption in Domain; choosing one glows it and
 starts the mandate; locked tiles show disabled with the tooltip; no
 `error.log` lines on hover.
 
+**Addendum 2026-11-19:** Daniel checked the Laws-tab picker live and it looks correct. Later work may build on
+it without another UI pass. The flat +60 baseline is proposed to be replaced by bonuses to the leader's own
+actions; see [the pillars spec, R2](../spec/2026-11-19-pillars-as-opportunities-and-expectations.md).
+
 **Addendum 2026-11-17:** the tile picker made the Domain tab misaligned (Daniel, live). It now sits at the top of the Laws tab, above the charter (`vbox_my_realm_laws_body` in `gui/window_my_realm.gui`), as Camp Purpose does for adventurers. Live check: the tiles render there and the Domain tab lines up again.

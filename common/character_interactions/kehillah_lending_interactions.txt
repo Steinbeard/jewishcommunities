@@ -1,0 +1,215 @@
+﻿# =====================================================================
+# LEND GOLD -- the Kehillah lending spike (2026-11-19).
+# docs/spec/2026-11-19-pillars-as-opportunities-and-expectations.md, R10/R11.
+#
+# A Kehillah leader lends to an indebted ruler through VANILLA's loan system
+# (1.21, the merchant DLC's code): set_up_new_loan_effect creates a
+# story_cycle_loan, the creditor/debtor relations and the lender's
+# owes_me_money list, and pays the debtor's negative gold. Interest,
+# repayment (repay_loan_decision), inheritance on either side's death
+# (death.txt passes a dead lender's loans to his primary heir) and debt
+# voiding by a cleric are all vanilla's.
+#
+# WHY NOT VANILLA'S loan_money_interaction: its is_available requires
+# government_has_flag = government_is_merchant, and adding that flag to the
+# Kehillah government would switch on the whole merchant-republic code path
+# in the mod's highest-risk file. This is a thin interaction that reuses
+# vanilla's triggers, values, effects and localization keys instead.
+#
+# USURY. Judaism is doctrine_usury_outsiders_only. Open interest is offered
+# only where the lender's rite does not condemn it (so: to non-Jews); to a
+# Jew, only the interest-free loan, gemilut chasadim. No "disguised" option:
+# a sinful loan is a choice this spike does not offer.
+#
+# NOT YET: demanding repayment (vanilla's demand_repayment_interaction is
+# merchant-gated too); AI lending is deliberately rare.
+# =====================================================================
+
+kehillah_loan_money_interaction = {
+	category = interaction_category_diplomacy
+	interface_priority = 110
+	icon = loan_money_interaction
+	desc = loan_money_interaction_desc
+	common_interaction = no
+	popup_on_receive = yes
+	pause_on_receive = yes
+	ai_min_reply_days = 0
+	ai_max_reply_days = 0
+	cooldown_against_recipient = { years = 10 }
+
+	ai_targets = { ai_recipients = neighboring_rulers max = 5 }
+	ai_frequency = 60
+
+	is_shown = {
+		scope:actor = { government_has_flag = government_is_kehillah }
+		NOT = { scope:actor = scope:recipient }
+		scope:recipient = { is_landed_or_landless_administrative = yes }
+	}
+
+	is_available = {
+		trigger_if = {
+			limit = { is_ai = yes }
+			gold > 500
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			is_adult = yes
+			is_imprisoned = no
+		}
+		gdp_merchant_diplo_range_trigger = {
+			TARGET = scope:recipient
+			MERCHANT = scope:actor
+		}
+		scope:recipient = {
+			is_available_quick = {
+				adult = yes
+				imprisoned = no
+			}
+			custom_tooltip = {
+				text = loan_money_interaction_gold_trigger_tt
+				gold <= gdp_loan_money_debt_threshold_value
+			}
+			NOR = {
+				is_at_war_with = scope:actor
+				has_relation_rival = scope:actor
+			}
+		}
+		scope:actor.gold >= scope:recipient.gdp_loan_money_gold_value
+	}
+
+	send_options_exclusive = yes
+	send_option = {
+		flag = open
+		localization = loan_money_interaction_open_interest
+		current_description = loan_money_interaction_open_interest_desc
+		is_shown = {
+			NOT = {
+				scope:actor = {
+					gdp_usury_condemns_loan_trigger = { BORROWER = scope:recipient }
+				}
+			}
+		}
+	}
+	send_option = {
+		flag = free
+		localization = loan_money_interaction_interest_free
+		current_description = {
+			first_valid = {
+				triggered_desc = {
+					trigger = { scope:actor = { rite = { rite_has_parameter = usury_charitable_lending } } }
+					desc = loan_money_interaction_interest_free_pious_desc
+				}
+				desc = loan_money_interaction_interest_free_desc
+			}
+		}
+	}
+
+	on_accept = {
+		# The chosen instrument. With no option (an AI send, or
+		# run_interaction), the law decides: interest from outsiders,
+		# none from a fellow Jew.
+		if = {
+			limit = { exists = scope:free }
+			save_scope_value_as = { name = instrument value = flag:free }
+		}
+		else_if = {
+			limit = { exists = scope:open }
+			save_scope_value_as = { name = instrument value = flag:open }
+		}
+		else_if = {
+			limit = {
+				scope:actor = { gdp_usury_condemns_loan_trigger = { BORROWER = scope:recipient } }
+			}
+			save_scope_value_as = { name = instrument value = flag:free }
+		}
+		else = {
+			save_scope_value_as = { name = instrument value = flag:open }
+		}
+		scope:recipient = {
+			if = {
+				limit = {
+					NOT = {
+						has_existing_loan_from_with_instrument_trigger = {
+							LENDER = scope:actor
+							INSTRUMENT = scope:instrument
+						}
+					}
+				}
+				set_up_new_loan_effect = {
+					LENDER = scope:actor
+					AMOUNT = scope:recipient.gdp_loan_principal_value
+					INSTRUMENT = scope:instrument
+				}
+			}
+			else = {
+				increase_existing_loan_effect = {
+					LENDER = scope:actor
+					INSTRUMENT = scope:instrument
+				}
+			}
+		}
+		hidden_effect = {
+			debug_log = "kehillah_loan_money_interaction: a Kehillah leader lent gold through the vanilla loan system"
+			debug_log_scopes = yes
+		}
+	}
+
+	ai_accept = {
+		base = -25
+		opinion_modifier = {
+			opinion_target = scope:actor
+			multiplier = 0.25
+		}
+		modifier = {
+			add = 30
+			trigger = { scope:recipient = { debt_level = 1 } }
+			desc = LEND_MONEY_IS_IN_DEBT_REASON_1
+		}
+		modifier = {
+			add = 45
+			trigger = { scope:recipient = { debt_level = 2 } }
+			desc = LEND_MONEY_IS_IN_DEBT_REASON_2
+		}
+		modifier = {
+			add = 60
+			trigger = { scope:recipient = { debt_level >= 3 } }
+			desc = LEND_MONEY_IS_IN_DEBT_REASON_3
+		}
+		modifier = {
+			add = 15
+			has_trait = greedy
+			desc = INTERACTION_GREEDY
+		}
+		modifier = {
+			add = 25
+			trigger = { exists = scope:free }
+			desc = LEND_MONEY_INTEREST_FREE_REASON
+		}
+		modifier = {
+			add = -15
+			trigger = { exists = scope:open }
+			desc = LEND_MONEY_OPEN_INTEREST_REASON
+		}
+		modifier = {
+			add = -40
+			trigger = {
+				exists = scope:open
+				scope:recipient = {
+					gdp_usury_borrower_condemns_loan_trigger = { LENDER = scope:actor }
+					gdp_usury_untroubled_by_sin_trigger = no
+				}
+			}
+			desc = LEND_MONEY_USURY_SIN_REASON
+		}
+	}
+
+	ai_will_do = {
+		base = 10
+		modifier = {
+			add = -40
+			scope:recipient = { has_character_flag = gdp_debt_repudiator }
+		}
+	}
+}
