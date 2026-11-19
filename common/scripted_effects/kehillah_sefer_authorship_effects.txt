@@ -9,6 +9,45 @@
 
 # Scope: the author, at kehillah_book.0005 (after kehillah_book_complete_
 # effect has set var:kehillah_book_tier). Turns the manuscript into a work.
+kehillah_sefer_finish_composition_effect = {
+	# The authored work itself replaces the old, independently rolled
+	# inventory artifact. Keep the quality bands and communal reward.
+	if = {
+		limit = { var:kehillah_book_tally >= kehillah_book_threshold_illustrious }
+		set_variable = { name = kehillah_book_tier value = flag:illustrious }
+	}
+	else_if = {
+		limit = { var:kehillah_book_tally >= kehillah_book_threshold_famed }
+		set_variable = { name = kehillah_book_tier value = flag:famed }
+	}
+	else = {
+		set_variable = { name = kehillah_book_tier value = flag:masterwork }
+	}
+	kehillah_sefer_finish_written_work_effect = yes
+	if = {
+		limit = { var:kehillah_book_tier ?= flag:illustrious }
+		primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_book_greatness_gain } }
+		primary_title = { change_variable = { name = kehillah_var_greatness add = 40 } }
+		add_piety = massive_piety_gain
+		add_prestige = massive_prestige_gain
+	}
+	else_if = {
+		limit = { var:kehillah_book_tier ?= flag:famed }
+		primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_book_greatness_gain } }
+		primary_title = { change_variable = { name = kehillah_var_greatness add = 20 } }
+		add_piety = major_piety_gain
+		add_prestige = major_prestige_gain
+	}
+	else = {
+		primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_book_greatness_gain } }
+		add_piety = medium_piety_gain
+		add_prestige = medium_prestige_gain
+	}
+	remove_variable = kehillah_book_tally
+	remove_variable = kehillah_book_tier
+	remove_variable = kehillah_book_bet_din_inspiration
+}
+
 kehillah_sefer_finish_written_work_effect = {
 	kehillah_lib_refresh_own_library_effect = yes
 	if = {
@@ -78,6 +117,7 @@ kehillah_sefer_write_named_work_effect = {
 	set_global_variable = { name = kehillah_wk_$KEY$_author value = this }
 	set_global_variable = { name = kehillah_wk_$KEY$_year value = current_year }
 	kehillah_sefer_place_written_work_effect = { KEY = $KEY$ }
+	kehillah_sefer_commentary_authority_$KEY$_effect = yes
 	kehillah_sefer_count_commentary_target_$KEY$_effect = yes
 }
 
@@ -193,6 +233,13 @@ kehillah_sefer_place_written_work_effect = {
 				}
 				change_variable = { name = kehillah_standing_$KEY$ subtract = 1 }
 			}
+			# A gloss on the less widely held Yerushalmi starts with a
+			# smaller audience; its readers still raise the source's reception
+			# through the ordinary commentary counter.
+			if = {
+				limit = { prev.var:kehillah_writing_form ?= flag:yerushalmi }
+				change_variable = { name = kehillah_standing_$KEY$ subtract = 1 }
+			}
 			clamp_variable = { name = kehillah_standing_$KEY$ min = kehillah_lib_floor_$KEY$ max = kehillah_lib_ceiling_$KEY$ }
 			set_variable = {
 				name = kehillah_reception_$KEY$
@@ -275,6 +322,7 @@ kehillah_sefer_record_teaching_effect = {
 # kehillah_sefer_recycle_slots_effect; Daniel, 2026-11-08).
 kehillah_sefer_forget_slot_effect = {
 	remove_global_variable = kehillah_wk_$SLOT$_seder
+	remove_global_variable = kehillah_wk_$SLOT$_manuscript
 	remove_global_variable = kehillah_wk_$SLOT$_written
 	remove_global_variable = kehillah_wk_$SLOT$_author
 	remove_global_variable = kehillah_wk_$SLOT$_year
