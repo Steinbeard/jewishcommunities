@@ -56,3 +56,33 @@ small dynasty-renown term.
 - Live check pending: start Worms, open Realm → Succession, confirm the button
   opens Appointment and relationship/endorsement terms appear in its score
   breakdown. Then console-kill the leader and confirm clean continuation.
+
+## Addendum 2026-11-16 — Designate Heir design language
+
+**Status: BUILT; xTiger clean (no new reports), live UI check pending.**
+Supersedes "Native UI route" above in one respect: the Appointment panel is no
+longer shown in vanilla's layout for a Kehillah.
+
+`gui/window_title_appointment.gui` is now a mod copy of the vanilla file
+(1.20.1). The vanilla layout is hidden when the title's holder has
+`kehillah_government`; a Kehillah variant takes its place, styled after
+`window_succession_designate_heir.gui`: patterned header ("Community
+Succession"), a status line naming the endorsed successor, character-list
+entry rows (portrait with rank banner; name, age/health, relation; five skills;
+house, faith, culture; candidate score with the engine's own breakdown), an
+arrow and pressed row on the endorsed candidate, a per-row **Endorse as
+Successor** button, and Close at the foot. The data is still entirely the
+engine's (candidate list, rank, score, breakdown).
+
+Assumptions: the window keeps the sidebar frame — a window's size and position
+cannot depend on which title it shows, so a centred Designate-Heir-sized popup
+would also have moved the vanilla Appointment panel. Vanilla has no bottom
+"Designate" button equivalent because endorsement goes through the existing
+interaction, which needs a target per row. Being a whole-file override, the
+file must be re-diffed against vanilla after each game patch.
+
+Live checks: open Realm → Succession → Review Community Candidates as Worms;
+rows render with skills and rank; hover the score for the breakdown; endorse a
+candidate from its row and confirm the arrow, pressed state, tag and header
+line follow; open an Administrative/theocratic Appointment panel and confirm
+the vanilla layout is unchanged; `error.log` stays clean after hovering.

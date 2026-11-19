@@ -81,7 +81,7 @@ class TenetPolish(unittest.TestCase):
                           "sanctify_artifacts_communal", "tenet_communal_identity_free_council_sway",
                           "tenet_communal_identity_language_reward"):
             self.assertIn(parameter, text)
-        self.assertIn("development_growth_factor = 0.1", text)
+        self.assertIn("prosperity_growth_factor = 0.1", text)
         self.assertNotIn("kehillah_covenant_aid", text)
         action = block(source("common/character_interactions/kehillah_covenant_aid_interactions.txt"), "kehillah_covenant_aid_interaction")
         self.assertIn(("always", "=", "no"), child(child(parse(action), "kehillah_covenant_aid_interaction"), "is_shown"))

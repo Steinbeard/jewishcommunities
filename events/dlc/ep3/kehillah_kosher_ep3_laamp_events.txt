@@ -1,0 +1,315 @@
+﻿namespace = ep3_laamps
+
+# Jewish Communities override of ONE vanilla event: ep3_laamps.5020
+# ("Unfamiliar Rations", game/events/dlc/ep3/ep3_laamp_events.txt).
+# Copied verbatim from vanilla (CK3 1.20) with one added option, marked
+# "Jewish Communities" below: a Jewish character offered local cuisine by a
+# non-Jewish cook can refuse it as not kosher. Re-diff against vanilla after
+# a game update. Uses id_override_priority (events/_events.info), so the
+# rest of vanilla ep3_laamp_events.txt is untouched.
+
+ep3_laamps.5020 = {
+	id_override_priority = 10 # outrank vanilla (0) without overriding the whole file
+	type = character_event
+	title = ep3_laamps.5020.t
+	desc = ep3_laamps.5020.desc
+	theme = landless_adventurer
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:cook
+		animation = personality_compassionate
+	}
+	cooldown = { years = 10 }
+
+	trigger = {
+		#Standard checks
+		has_playable_adventurer_dlc_trigger = yes
+		has_government = landless_adventurer_government
+		is_available_allow_travelling = yes
+		is_location_valid_for_travel_event_on_land = yes
+		culture != location.culture
+		any_courtier = {
+			is_available_ai_adult = yes
+			count >= 1
+		}
+		culture = {
+			cultural_acceptance = {
+				target = root.location.culture
+				value <= 75
+			}
+		}
+	}
+
+	weight_multiplier = {
+		base = 1
+		modifier = {
+			factor = 2
+			domicile = {
+				provisions < provisions_threshold_good_value
+			}
+		}
+	}
+
+	immediate = {
+		location = {
+			save_scope_as = location
+		}
+		location.culture = {
+			save_scope_as = local_culture
+		}
+		culture = {
+			save_scope_as = culture
+		}
+		random_courtier = {
+			limit = {
+				is_available_ai_adult = yes
+			}
+			save_scope_as = cook
+		}
+		save_scope_value_as = {
+			name = food_range
+			value = {
+				integer_range = {
+					min = 1
+					max = 20
+				}
+			}
+		}
+	}
+
+	#Suggest a *special* new addition
+	option = {
+		name = ep3_laamps.5020.a
+
+		trigger = {
+			has_trait = cannibal
+		}
+
+		flavor = ep3_laamps.5020.a.tt
+
+		random = {
+			chance = 50
+
+			send_interface_toast = {
+				type = event_toast_effect_good
+				title = ep3_laamps.5020.a.tt
+				left_icon = root
+				right_icon = scope:cook
+
+				scope:cook = {
+					add_secret = { type = secret_cannibal }
+					random_secret = {
+						type = secret_cannibal
+						reveal_to = root
+					}
+					add_opinion = {
+						target = root
+						modifier = impressed_opinion
+						opinion = 40
+					}
+				}
+				random_secret = {
+					type = secret_cannibal
+					reveal_to = scope:cook
+				}
+			}
+		}
+
+		add_character_modifier = {
+			modifier = ep3_new_tastes_cannibal_modifier
+			years = 10
+		}
+
+		stress_and_fulfillment_impact = {
+			base = medium_stress_impact_loss
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_boldness = 1
+			}
+		}
+	}
+
+	#Suggest fusion cuisine
+	option = {
+		name = ep3_laamps.5020.b
+
+		trigger = {
+			custom_tooltip = {
+				text = ep3_laamps.5020.tt
+				OR = {
+					has_trait = lifestyle_traveler
+					has_trait = eccentric
+					has_trait = gluttonous
+				}
+			}
+		}
+
+		show_as_unavailable = {
+			always = yes
+		}
+
+		trait = lifestyle_traveler
+		trait = eccentric
+		trait = gluttonous
+
+		domicile = {
+			change_provisions = medium_provisions_gain
+		}
+
+		add_character_modifier = {
+			modifier = ep3_expanded_culinary_horizons_modifier
+			years = 15
+		}
+
+		every_courtier = {
+			custom = every_follower_custom
+			add_character_modifier = {
+				modifier = ep3_new_tastes_modifier
+				years = 10
+			}
+		}
+
+		stress_and_fulfillment_impact = {
+			base = minor_stress_impact_loss
+			gluttonous = medium_stress_impact_loss
+			inappetetic = medium_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_greed = 1
+			}
+		}
+	}
+
+	#Try some of this local cuisine
+	option = {
+		name = ep3_laamps.5020.c
+
+		random_list = {
+			45 = {
+				desc = ep3_laamps.5020.c.success
+				modifier = { #This is for fuzzying up the random list so it randomises it a bit
+					add = scope:food_range
+				}
+				send_interface_toast = {
+					type = event_toast_effect_good
+					title = ep3_laamps.5020.c.success
+					left_icon = root
+
+					domicile = {
+						change_provisions = medium_provisions_gain
+					}
+					add_character_modifier = {
+						modifier = ep3_new_tastes_modifier
+						years = 10
+					}
+					scope:cook = {
+						add_opinion = {
+							target = root
+							modifier = pleased_opinion
+							opinion = 15
+						}
+					}
+					culture = {
+						change_cultural_acceptance = {
+							target = scope:local_culture
+							value = miniscule_positive_culture_acceptance
+							desc = cultural_acceptance_gain_food_acceptance
+						}
+					}
+				}
+			}
+			55 = {
+				desc = ep3_laamps.5020.c.failure
+				send_interface_toast = {
+					type = event_toast_effect_bad
+					title = ep3_laamps.5020.c.failure
+					left_icon = root
+
+					add_stress = minor_stress_gain
+				}
+			}
+		}
+
+		stress_and_fulfillment_impact = {
+			gluttonous = minor_stress_impact_loss
+			arrogant = minor_stress_impact_gain
+			humble = miniscule_stress_impact_loss
+			inappetetic = medium_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = 1
+			}
+		}
+	}
+
+	#Refuse to try it
+	option = {
+		name = ep3_laamps.5020.d
+
+		random = {
+			chance = 30
+			modifier = {
+				is_ai = yes
+				add = -29
+			}
+			send_interface_toast = {
+				type = event_toast_effect_good
+				title = ep3_laamps.5020.d.tt
+				left_icon = root
+
+				give_nickname = nick_the_narrow_minded
+			}
+		}
+
+		stress_and_fulfillment_impact = {
+			generous = miniscule_stress_impact_loss
+			paranoid = minor_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_boldness = 1
+			}
+		}
+	}
+
+	#Jewish Communities: refuse food that is not kosher
+	option = {
+		name = ep3_laamps.5020.kehillah_kosher
+
+		trigger = {
+			is_jewish_character_trigger = yes
+			scope:cook = { is_jewish_character_trigger = no }
+		}
+
+		flavor = ep3_laamps.5020.kehillah_kosher.flavor
+
+		add_piety = minor_piety_gain
+
+		stress_and_fulfillment_impact = {
+			zealous = minor_stress_impact_loss
+			cynical = miniscule_stress_impact_gain
+			gluttonous = miniscule_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 150
+			ai_value_modifier = {
+				ai_zeal = 1
+			}
+		}
+	}
+}

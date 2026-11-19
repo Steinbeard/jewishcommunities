@@ -154,8 +154,107 @@ kehillah_yeshiva_arrival_chance_modest = 15
 kehillah_yeshiva_arrival_chance_respected = 25
 kehillah_yeshiva_arrival_chance_renowned = 35
 kehillah_yeshiva_arrival_chance_illustrious = 50
-# Quarterly chance (percent) of a study event for a PLAYER student.
-kehillah_yeshiva_player_event_chance = 50
+# Quarterly chance (percent) of a study event for a PLAYER student, in
+# the seasons without a fixed event (first, halfway, last). 75 not 50
+# (2026-11-16, Daniel wanted a fuller stay at the yeshiva).
+kehillah_yeshiva_player_event_chance = 75
+# Extra track XP a season for the focus chosen before the Rosh Yeshiva.
+# 6 not 3 (2026-11-16): mastery of the focus now decides when a player
+# is ordained.
+kehillah_yeshiva_focus_bonus_xp = 6
+
+# A PLAYER student's semicha (2026-11-16, Daniel: "three years is way too
+# long ... dependent on how much xp you get", then "cap the activity at 1
+# year max"). Mastery (var:kehillah_yeshiva_mastery) counts the XP he
+# earns in his focus while at the yeshiva. Once it reaches the target,
+# after the minimum stay and with enough Learning, he is ordained at that
+# season's tick -- not at the yearly winter class. Tuned so four seasons
+# (one year) always suffice: the worst case, a mismatched focus, gains
+# 6 + 2 = 8 a season (32 in four); a matching focus under a weak head 9,
+# under a master 14 (three seasons). Event XP into the focus counts too.
+# AI students keep the 8-season winter rule.
+kehillah_yeshiva_semicha_mastery = 30
+kehillah_yeshiva_semicha_min_seasons = 2
+# The examination (.0305) at half the target, the nearly-ready event
+# (.0306) at three quarters.
+kehillah_yeshiva_mastery_exam = 15
+kehillah_yeshiva_mastery_nearly = 22
+# How long the study planner's activity holds a player student at his
+# yeshiva at most: one year (Daniel, 2026-11-16). Semicha or leaving ends
+# it sooner. A student kept back only by too little Learning goes home
+# enrolled, and may return.
+kehillah_yeshiva_study_hold_days = 365
+# After semicha, "stay a while longer" before the road home.
+kehillah_yeshiva_linger_days = 60
+# Sefarim at the yeshiva (2026-11-16): each book first mastered on the
+# benches adds this much mastery toward semicha, and while there the
+# Learn Torah course's mastery chance rises by the bonus.
+kehillah_yeshiva_sefer_mastery_points = 10
+kehillah_yeshiva_sefer_success_bonus = 15
+# The examination's Learning roll (kehillah_yeshiva.0305.a).
+kehillah_yeshiva_exam_difficulty = 12
+
+# Scope: a student, in the yeshiva tick (scope:kehillah_head_teaching_xp
+# set). The mastery one season present adds: the focus bonus, plus what
+# the head teaches when the focus is the yeshiva's specialization, else
+# the small share every other subject gets.
+kehillah_yeshiva_season_mastery_value = {
+	value = kehillah_yeshiva_focus_bonus_xp
+	if = {
+		limit = {
+			exists = var:kehillah_yeshiva_focus
+			var:kehillah_yeshiva_enrolled ?= {
+				var:kehillah_yeshiva_specialization ?= root.var:kehillah_yeshiva_focus
+			}
+		}
+		add = scope:kehillah_head_teaching_xp
+	}
+	else_if = {
+		# No specialization set: the yeshiva teaches Talmud first.
+		limit = {
+			var:kehillah_yeshiva_focus ?= flag:talmudics
+			var:kehillah_yeshiva_enrolled ?= { NOT = { has_variable = kehillah_yeshiva_specialization } }
+		}
+		add = scope:kehillah_head_teaching_xp
+	}
+	else = {
+		add = kehillah_yeshiva_xp_other
+	}
+}
+
+# 2026-11-16: the study planner (activity_kehillah_yeshiva_study).
+# root = the province scored; scope:host = the student. The yeshiva's
+# fame, less a penalty for distance from where he stands now, so a near,
+# good yeshiva outranks a famous one across the sea.
+kehillah_yeshiva_study_province_score_value = {
+	value = 0
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			has_variable = kehillah_yeshiva_fame
+			exists = holder
+			holder = { domicile ?= { domicile_location = root } }
+		}
+		add = var:kehillah_yeshiva_fame
+	}
+	if = {
+		limit = { "scope:host.location.squared_distance(root)" > squared_distance_medium }
+		subtract = 10
+	}
+	if = {
+		limit = { "scope:host.location.squared_distance(root)" > squared_distance_large }
+		subtract = 15
+	}
+	if = {
+		limit = { "scope:host.location.squared_distance(root)" > squared_distance_huge }
+		subtract = 15
+	}
+	if = {
+		limit = { "scope:host.location.squared_distance(root)" > squared_distance_massive }
+		subtract = 20
+	}
+	min = 1
+}
 # Scope: a Kehillah leader. Students on the roll (panel).
 kehillah_yeshiva_student_count_value = {
 	value = 0

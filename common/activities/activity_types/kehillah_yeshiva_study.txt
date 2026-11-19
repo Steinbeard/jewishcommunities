@@ -1,0 +1,258 @@
+﻿# =====================================================================
+# Study at a Yeshiva -- the planner, and the stay itself. ADDED
+# 2026-11-16 at Daniel's request ("it should consider travel distance
+# ... work like a hunt planner instead of this menu, so that we see on
+# the map valid spots").
+#
+# Replaces kehillah_yeshiva.0300, the "Where to Study" menu, which listed
+# only the most famous yeshivot and ignored distance. Both
+# kehillah_study_at_yeshiva_decision and kehillah_return_to_yeshiva_decision
+# open this planner. Every yeshiva of the student's faith is pinned on the
+# map (only his own, once he is enrolled); vanilla's planner shows travel
+# time, cost and danger, and province_score ranks by fame less a distance
+# penalty (kehillah_yeshiva_study_province_score_value).
+#
+# THE ACTIVITY IS THE STAY (revised the same day, after Daniel's live
+# test): a player is a ruler, and a ruler with no travel plan and no
+# activity is always placed back at home. A one-way trip to the yeshiva
+# (the old Return to the Yeshiva) ended with him snapped back to his camp
+# the moment he arrived. So the activity's one phase lasts the whole
+# course of study -- up to kehillah_yeshiva_study_hold_days; a player is
+# ordained once his mastery is complete, always within the year -- and is ended
+# early (skip_activity_phase) by semicha's "Take the road home"
+# (kehillah_yeshiva.0302) or by Leave the Yeshiva. When it ends the game
+# sends him home on its own, which is the road home.
+#
+# A student enrols on arrival, not when he sets out. A Kehillah leader
+# whose own community holds the yeshiva is already present at home: the
+# activity ends at once, he stays enrolled and studies from home.
+# =====================================================================
+
+activity_kehillah_yeshiva_study = {
+	header_background = "gfx/interface/illustrations/activity_header_backgrounds/activity_kehillah_yeshiva_study.dds"
+
+	is_shown = {
+		is_ai = no
+		OR = {
+			kehillah_yeshiva_enrollable_trigger = yes
+			AND = {
+				has_variable = kehillah_yeshiva_enrolled
+				kehillah_yeshiva_student_present_trigger = no
+			}
+		}
+	}
+
+	can_start_showing_failures_only = {
+		is_imprisoned = no
+		is_at_war = no
+		custom_tooltip = {
+			text = kehillah_yeshiva_study_no_yeshiva_tt
+			OR = {
+				has_variable = kehillah_yeshiva_enrolled
+				kehillah_any_yeshiva_for_me_trigger = yes
+			}
+		}
+	}
+
+	is_valid = {
+		scope:host = {
+			is_alive = yes
+			is_imprisoned = no
+		}
+	}
+
+	province_filter = all
+	ai_province_filter = capital
+
+	# root = the province. An enrolled student may only go back to his own
+	# yeshiva; anyone else may pick any yeshiva of his faith.
+	is_location_valid = {
+		custom_tooltip = {
+			text = kehillah_yeshiva_study_location_invalid_tt
+			OR = {
+				AND = {
+					scope:host = { has_variable = kehillah_yeshiva_enrolled }
+					scope:host.var:kehillah_yeshiva_enrolled.holder ?= {
+						domicile ?= { domicile_location = root }
+					}
+				}
+				AND = {
+					scope:host = { NOT = { has_variable = kehillah_yeshiva_enrolled } }
+					any_in_global_list = {
+						variable = kehillah_registered_communities
+						exists = holder
+						holder = {
+							kehillah_has_yeshiva_trigger = yes
+							faith = scope:host.faith
+							domicile.domicile_location = root
+						}
+					}
+				}
+			}
+		}
+	}
+
+	province_score = kehillah_yeshiva_study_province_score_value
+
+	max_province_icons = 10
+
+	is_single_location = yes
+
+	open_invite = no
+	allow_zero_guest_invites = yes
+
+	# 2026-11-16: however the stay ends, he leaves the benches.
+	on_complete = {
+		scope:host = { kehillah_yeshiva_leave_benches_effect = yes }
+	}
+	on_invalidated = {
+		scope:host ?= { kehillah_yeshiva_leave_benches_effect = yes }
+	}
+
+	phases = {
+		phase_kehillah_yeshiva_study = {
+			is_predefined = yes
+			order = 1
+			location_source = pickable
+
+			# He has arrived. A new student enrols; a returning one resumes.
+			# Then the phase holds him here for the course of study.
+			on_phase_active = {
+				scope:activity = {
+					progress_activity_phase_after = { days = kehillah_yeshiva_study_hold_days }
+				}
+				scope:host = {
+					if = {
+						limit = { NOT = { has_variable = kehillah_yeshiva_enrolled } }
+						random_in_global_list = {
+							variable = kehillah_registered_communities
+							limit = {
+								exists = holder
+								holder = {
+									kehillah_has_yeshiva_trigger = yes
+									domicile ?= { domicile_location = scope:activity.activity_location }
+								}
+							}
+							save_scope_as = kehillah_enroll_title
+						}
+						if = {
+							limit = {
+								exists = scope:kehillah_enroll_title
+								kehillah_yeshiva_enrollable_trigger = yes
+							}
+							kehillah_yeshiva_enroll_effect = yes
+						}
+					}
+					if = {
+						limit = { has_variable = kehillah_yeshiva_enrolled }
+						# 2026-11-16: on the benches -- his Learn Torah course
+						# reads this yeshiva's library, faster.
+						kehillah_yeshiva_take_benches_effect = yes
+						trigger_event = kehillah_yeshiva.0301
+					}
+					# Not enrolled after all (the yeshiva closed on the way):
+					# nothing to stay for.
+					else = {
+						debug_log = "activity_kehillah_yeshiva_study: arrived but could not enrol; ending"
+						scope:activity = { progress_activity_phase_after = { days = 1 } }
+					}
+					# His own community's yeshiva: he is home, no need to be held.
+					if = {
+						limit = {
+							exists = domicile
+							domicile.domicile_location = scope:activity.activity_location
+						}
+						scope:activity = { progress_activity_phase_after = { days = 1 } }
+					}
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		value = 0
+	}
+
+	ai_check_interval = 0
+
+	# 2026-11-16: the activity window (Daniel: "can we fix up this event a
+	# bit?" -- it showed an empty scene and the journey intent). The road
+	# while travelling, a study hall at the yeshiva; the student, his Rosh
+	# Yeshiva and his chavruta as portraits; a study intent of our own.
+	background = {
+		trigger = { scope:host.location != scope:activity.activity_location }
+		texture = "gfx/interface/illustrations/event_scenes/farms.dds"
+		environment = "environment_event_farms"
+		ambience = "event:/SFX/Events/Backgrounds/fields_farms_day"
+	}
+	background = {
+		texture = "gfx/interface/illustrations/event_scenes/study.dds"
+		environment = "environment_event_study"
+		ambience = "event:/SFX/Events/Backgrounds/office_workplace"
+	}
+
+	window_characters = {
+		kehillah_yeshiva_talmid = {
+			camera = camera_body_left
+			effect = {
+				scope:host = { add_to_list = characters }
+			}
+			scripted_animation = {
+				triggered_animation = {
+					trigger = { scope:host.location = scope:activity.activity_location }
+					animation = { thinking }
+				}
+				triggered_animation = {
+					trigger = { always = yes }
+					animation = { happiness }
+				}
+			}
+		}
+		kehillah_yeshiva_rosh = {
+			camera = camera_event_center
+			effect = {
+				if = {
+					limit = { scope:host.location = scope:activity.activity_location }
+					scope:host.var:kehillah_yeshiva_enrolled.holder ?= {
+						random_court_position_holder = {
+							type = rosh_yeshiva_kehillah_position
+							limit = { NOT = { this = scope:host } }
+							add_to_list = characters
+						}
+					}
+				}
+			}
+			scripted_animation = {
+				triggered_animation = {
+					trigger = { always = yes }
+					animation = { personality_rational }
+				}
+			}
+		}
+		kehillah_yeshiva_chavruta = {
+			camera = camera_body_right
+			effect = {
+				if = {
+					limit = { scope:host.location = scope:activity.activity_location }
+					scope:host = {
+						random_relation = {
+							type = kehillah_chavruta
+							add_to_list = characters
+						}
+					}
+				}
+			}
+			scripted_animation = {
+				triggered_animation = {
+					trigger = { always = yes }
+					animation = { thinking }
+				}
+			}
+		}
+	}
+
+	host_intents = {
+		default = kehillah_yeshiva_study_intent
+		intents = { kehillah_yeshiva_study_intent }
+	}
+}

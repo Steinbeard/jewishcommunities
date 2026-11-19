@@ -51,3 +51,25 @@ An absent title style is now explicitly **unchosen** in the UI, with no selected
 An inline nudge appears while unchosen. A native suggested action, **Choose a leadership style**, appears when the leader can act and opens My Realm's Domain tab using the treasury alert's established route. Its creation condition ends once the title has a style. There is no recurring event popup.
 
 Additional live checks: on a save with no style, confirm no button looks selected, the fallback effects are visible, and the reminder opens Domain; choose Scholarly first and confirm the reminder clears, gold styling appears and a ten-year mandate begins. Repeat for Political/Commercial, then save/reload. Check the active button remains bright while alternatives are locked; clicking it must not extend the expiry. Succession still uses the `kehillah_leadership_*_weight` script values in the appointment score, as confirmed by source audit; actual runtime succession remains unverified.
+
+## Addendum 2026-11-16 — Camp Purpose design language
+
+**Status: BUILT; xTiger clean (no new reports), live UI check pending.**
+
+`gui/kehillah_leadership_style.gui` now follows the adventurer Camp Purpose
+grid (vanilla `widget_realm_law_camp_purpose`): a centred label and three
+illustrated 160px tiles with a dark caption band. Unchosen tiles read "Follow
+the Scholars / Parnasim / Merchants"; the chosen tile is pressed, glows and
+reads "We Are Scholars! / Parnasim! / Merchants!". This replaces the earlier
+slate/gold/green colour washes. Choice logic, tooltips, status and effects
+text are unchanged. Art is vanilla's own 300px illustration set:
+`camp_purpose_scholars` (Scholarly), `powerful_family_bonus/service` — a sealed
+edict scroll, read as a charter of privileges (Political) — and
+`theme_administration_types/icon_civilian_administration` — a market (Commercial).
+Bespoke art can replace these by texture path alone.
+
+Live checks: tiles render and caption in Domain; choosing one glows it and
+starts the mandate; locked tiles show disabled with the tooltip; no
+`error.log` lines on hover.
+
+**Addendum 2026-11-17:** the tile picker made the Domain tab misaligned (Daniel, live). It now sits at the top of the Laws tab, above the charter (`vbox_my_realm_laws_body` in `gui/window_my_realm.gui`), as Camp Purpose does for adventurers. Live check: the tiles render there and the Domain tab lines up again.
