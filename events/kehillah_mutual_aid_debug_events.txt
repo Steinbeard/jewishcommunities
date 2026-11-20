@@ -1,0 +1,91 @@
+﻿# Console-only probes for mutual aid (2026-11-20). Run on a Kehillah leader.
+#   event kehillah_aid_debug.1  report the open needs and this community's reputation
+#   event kehillah_aid_debug.2  open a relief need on this leader (as if in Crisis Prosperity)
+#   event kehillah_aid_debug.3  this leader answers every open need it can with a share
+#   event kehillah_aid_debug.4  run the yearly sweep now (lapses expired needs)
+#   event kehillah_aid_debug.5  fire the emissary from the Land of Israel
+namespace = kehillah_aid_debug
+
+kehillah_aid_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { any_in_global_list = { variable = kehillah_aid_needs count >= 1 } }
+			debug_log = "AID there are open needs"
+		}
+		else = { debug_log = "AID no open needs" }
+		every_in_global_list = {
+			variable = kehillah_aid_needs
+			save_scope_as = kad_iter
+			if = { limit = { var:kehillah_aid_kind ?= flag:ransom } debug_log = "AID need: ransom" }
+			else_if = { limit = { var:kehillah_aid_kind ?= flag:relief } debug_log = "AID need: relief" }
+			else_if = { limit = { var:kehillah_aid_kind ?= flag:refugees } debug_log = "AID need: refugees" }
+			if = { limit = { kehillah_aid_remaining_value <= 0 } debug_log = "AID   fully raised" }
+			else_if = { limit = { var:kehillah_aid_raised ?= 0 } debug_log = "AID   nothing raised yet" }
+			else = { debug_log = "AID   partly raised" }
+			if = { limit = { root = { kehillah_can_answer_aid_need_trigger = { NEED = scope:kad_iter } } } debug_log = "AID   this community can answer it" }
+			if = {
+				limit = { root.primary_title ?= { save_temporary_scope_as = kad_seat } is_target_in_variable_list = { name = kehillah_aid_expected target = scope:kad_seat } }
+				debug_log = "AID   this community is expected to answer it"
+			}
+		}
+		if = { limit = { has_character_modifier = kehillah_giving_renowned_modifier } debug_log = "AID reputation: renowned" }
+		else_if = { limit = { has_character_modifier = kehillah_giving_generous_modifier } debug_log = "AID reputation: generous" }
+		else_if = { limit = { has_character_modifier = kehillah_giving_stingy_modifier } debug_log = "AID reputation: stingy" }
+		else_if = { limit = { has_character_modifier = kehillah_giving_disgraced_modifier } debug_log = "AID reputation: disgraced" }
+		else = { debug_log = "AID reputation: unremarkable" }
+	}
+}
+
+kehillah_aid_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { NOT = { has_variable = kehillah_aid_kind } }
+			kehillah_aid_open_need_effect = { KIND = relief SIZE = kehillah_aid_relief_size }
+			debug_log = "AID debug.2 opened a relief need on this leader"
+		}
+		else = { debug_log = "AID debug.2 this leader already has a need" }
+		trigger_event = kehillah_aid_debug.1
+	}
+}
+
+kehillah_aid_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		add_gold = 500
+		save_scope_as = kad_giver
+		every_in_global_list = {
+			variable = kehillah_aid_needs
+			limit = {
+				save_temporary_scope_as = kad_need
+				scope:kad_giver = { kehillah_can_answer_aid_need_trigger = { NEED = scope:kad_need } }
+			}
+			save_scope_as = kad_need_e
+			scope:kad_giver = { kehillah_aid_give_effect = { NEED = scope:kad_need_e AMOUNT = scope:kad_need_e.kehillah_aid_share_value } }
+			debug_log = "AID debug.3 gave a share"
+		}
+		trigger_event = kehillah_aid_debug.1
+	}
+}
+
+kehillah_aid_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_aid_yearly_sweep_effect = yes
+		trigger_event = kehillah_aid_debug.1
+	}
+}
+
+kehillah_aid_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = { limit = { has_variable = kehillah_emissary_cooldown } remove_variable = kehillah_emissary_cooldown }
+		trigger_event = kehillah_mutual_aid.0001
+	}
+}

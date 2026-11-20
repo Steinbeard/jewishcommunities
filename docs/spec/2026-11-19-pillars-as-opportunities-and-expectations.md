@@ -569,3 +569,13 @@ erodes that value.
 Details and the live checklist are in [the trade-DLC record, section 6](2026-11-19-trade-dlc-lending-goods-and-districts.md).
 The predatory side of E1 (voiding debts, the outlook turning on lending at expulsion time) builds on
 this.
+
+### R13. The old loan ledger torn out; mutual aid built (2026-11-20)
+- **Loans:** every Kehillah loan is a vanilla loan tagged with its community. See
+  [trade-DLC record section 7](2026-11-19-trade-dlc-lending-goods-and-districts.md).
+- **Mutual aid, built as R5/R6 described:** ransom, relief and refugee needs; Send Aid and Redeem
+  Captive; AI answers; lapse blame; a reputation for giving shown as Jewish opinion of the leader; the
+  emissary from Eretz Yisrael. See [the mutual-aid record](2026-11-20-mutual-aid.md).
+- **What changed from R5:**
+  - the court-size cap is untouched;
+  - expulsion exiles and famine or epidemic neighbours are not yet sources (mutual-aid record, section 8).

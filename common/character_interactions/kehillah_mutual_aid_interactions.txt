@@ -1,0 +1,71 @@
+﻿# =====================================================================
+# MUTUAL AID -- the player's two ways to answer a need (2026-11-20).
+# common/scripted_effects/kehillah_mutual_aid_effects.txt. Both target the
+# character the need sits on (the captive, or the needy community's
+# leader); the open-need message's portrait is that character, so the
+# player right-clicks it. AI communities answer from the quarterly pulse,
+# so neither has an AI frequency.
+# =====================================================================
+
+# Send Aid: this community's share toward any open need.
+kehillah_send_aid_interaction = {
+	category = interaction_category_friendly
+	icon = icon_gold
+	common_interaction = no
+	use_diplomatic_range = no
+	desc = kehillah_send_aid_interaction_desc
+	auto_accept = yes
+	ai_frequency = 0
+
+	is_shown = {
+		scope:actor = {
+			government_has_flag = government_is_kehillah
+			kehillah_can_answer_aid_need_trigger = { NEED = scope:recipient }
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			is_available_adult = yes
+			gold >= scope:recipient.kehillah_aid_share_value
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			kehillah_aid_give_effect = { NEED = scope:recipient AMOUNT = scope:recipient.kehillah_aid_share_value }
+		}
+	}
+}
+
+# Redeem Captive: pay what remains of a ransom, and the captive goes free.
+kehillah_redeem_captive_interaction = {
+	category = interaction_category_friendly
+	icon = icon_gold
+	common_interaction = no
+	use_diplomatic_range = no
+	desc = kehillah_redeem_captive_interaction_desc
+	auto_accept = yes
+	ai_frequency = 0
+
+	is_shown = {
+		scope:recipient = { var:kehillah_aid_kind ?= flag:ransom }
+		scope:actor = {
+			government_has_flag = government_is_kehillah
+			kehillah_can_answer_aid_need_trigger = { NEED = scope:recipient }
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			is_available_adult = yes
+			gold >= scope:recipient.kehillah_aid_remaining_value
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			kehillah_aid_give_effect = { NEED = scope:recipient AMOUNT = scope:recipient.kehillah_aid_remaining_value }
+		}
+	}
+}

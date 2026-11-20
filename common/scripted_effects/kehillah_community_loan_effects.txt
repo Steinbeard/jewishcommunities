@@ -1,0 +1,238 @@
+﻿# =====================================================================
+# COMMUNITY LOANS ON VANILLA LOANS (2026-11-20). Replaces the S8-era
+# kehillah_loan_* ledger (kehillah_loan_amount_owed / _lender_title /
+# _years_elapsed on the borrower, kehillah_loan_debtors on the title, the
+# quarterly accrual/default tick and kehillah_repay_loan_decision), torn
+# out at Daniel's request ("tear it out to avoid redundant systems").
+# docs/spec/2026-11-19-trade-dlc-lending-goods-and-districts.md section 7.
+#
+# Every Kehillah loan is a vanilla 1.21 loan (story_cycle_loan; the
+# lender's owes_me_money list; creditor/debtor relations; a loan hook).
+# Interest, repayment (vanilla's repay_loan_decision, which AI rulers take),
+# Demand Repayment and inheritance are vanilla's.
+#
+# ONE ADDITION: THE LOAN BELONGS TO THE COMMUNITY, NOT THE MAN. The old
+# ledger hung on the title so a loan survived a change of leader. Vanilla
+# hangs it on the lender character, and a dead lender's loans pass to his
+# primary heir. So each community loan story carries
+#   var:kehillah_lent_for = the community title
+# and the title keeps a variable list kehillah_community_debtors. Each
+# quarter (kehillah_community_loans_upkeep_effect) a loan of this community
+# whose lender is not the current leader is moved to him with vanilla's
+# transfer_loan_effect.
+# =====================================================================
+
+# Scope: a Kehillah leader, the lender. $DEBTOR$ borrows $AMOUNT$ gold.
+# The instrument follows the usury law: interest-free to a fellow Jew,
+# open interest to an outsider. Vanilla's loan_base_effect pays the gold
+# from the leader and gives the leader a loan hook on the borrower.
+kehillah_community_lend_effect = {
+	save_scope_as = kehillah_lender
+	$DEBTOR$ = {
+		save_scope_as = kehillah_debtor
+		if = {
+			limit = {
+				scope:kehillah_lender = { gdp_usury_condemns_loan_trigger = { BORROWER = scope:kehillah_debtor } }
+			}
+			set_up_new_loan_effect = {
+				LENDER = scope:kehillah_lender
+				AMOUNT = $AMOUNT$
+				INSTRUMENT = flag:free
+			}
+		}
+		else = {
+			set_up_new_loan_effect = {
+				LENDER = scope:kehillah_lender
+				AMOUNT = $AMOUNT$
+				INSTRUMENT = flag:open
+			}
+		}
+	}
+	kehillah_community_adopt_loans_effect = { DEBTOR = scope:kehillah_debtor }
+}
+
+# Scope: a Kehillah leader. Tags every loan $DEBTOR$ owes this leader that
+# carries no community yet as this community's, and lists the debtor on
+# the title. Used after any loan the leader makes (Loan Gold, the loan
+# contract) and each quarter for loans the leader came by otherwise.
+kehillah_community_adopt_loans_effect = {
+	save_scope_as = kehillah_adopting_leader
+	if = {
+		limit = { exists = primary_title }
+		primary_title = { save_scope_as = kehillah_adopting_seat }
+		$DEBTOR$ = {
+			every_owned_story = {
+				limit = {
+					story_type = story_cycle_loan
+					var:lender ?= scope:kehillah_adopting_leader
+					NOT = { has_variable = kehillah_lent_for }
+				}
+				set_variable = { name = kehillah_lent_for value = scope:kehillah_adopting_seat }
+			}
+			if = {
+				limit = {
+					any_owned_story = {
+						story_type = story_cycle_loan
+						var:kehillah_lent_for ?= scope:kehillah_adopting_seat
+					}
+					NOT = { is_target_in_variable_list = { name = kehillah_community_debtors target = this } }
+				}
+				save_temporary_scope_as = kehillah_adopted_debtor
+				scope:kehillah_adopting_seat = {
+					add_to_variable_list = { name = kehillah_community_debtors target = scope:kehillah_adopted_debtor }
+				}
+			}
+		}
+	}
+}
+
+# Scope: a Kehillah leader. Quarterly (kehillah_banking_on_actions.txt).
+#   1. adopt loans this leader holds that carry no community;
+#   2. bring home loans of this community held by someone else (a previous
+#      leader's heir, after vanilla's death.txt passed them on);
+#   3. drop debtors who no longer owe this community.
+kehillah_community_loans_upkeep_effect = {
+	if = {
+		limit = { exists = primary_title }
+		save_scope_as = kehillah_upkeep_leader
+		primary_title = { save_scope_as = kehillah_upkeep_seat }
+		# 1.
+		every_in_list = {
+			variable = owes_me_money
+			save_temporary_scope_as = kehillah_upkeep_debtor
+			scope:kehillah_upkeep_leader = { kehillah_community_adopt_loans_effect = { DEBTOR = scope:kehillah_upkeep_debtor } }
+		}
+		# 2. One loan per debtor per quarter: transfer_loan_effect may end a
+		# story, so this does not iterate the stories it changes.
+		scope:kehillah_upkeep_seat = {
+			every_in_list = {
+				variable = kehillah_community_debtors
+				limit = { is_alive = yes }
+				save_temporary_scope_as = kehillah_upkeep_debtor
+				random_owned_story = {
+					limit = {
+						story_type = story_cycle_loan
+						var:kehillah_lent_for ?= scope:kehillah_upkeep_seat
+						NOT = { var:lender ?= scope:kehillah_upkeep_leader }
+					}
+					save_temporary_scope_as = kehillah_upkeep_loan
+					var:lender ?= {
+						save_temporary_scope_as = kehillah_upkeep_old_lender
+						if = {
+							limit = { is_alive = yes }
+							remove_list_variable = { name = owes_me_money target = scope:kehillah_upkeep_debtor }
+							if = {
+								limit = { has_relation_debtor = scope:kehillah_upkeep_debtor }
+								remove_relation_debtor = scope:kehillah_upkeep_debtor
+							}
+						}
+					}
+					scope:kehillah_upkeep_debtor = {
+						transfer_loan_effect = {
+							OLD_LOAN = scope:kehillah_upkeep_loan
+							NEW_LENDER = scope:kehillah_upkeep_leader
+							NEW_DEBTOR = scope:kehillah_upkeep_debtor
+						}
+						hidden_effect = {
+							set_relation_creditor = { target = scope:kehillah_upkeep_leader reason = creditor_loan_taken }
+						}
+					}
+					debug_log = "kehillah_community_loans_upkeep_effect: a community loan came home to the new leader"
+				}
+			}
+		}
+		# 3. Collect, then remove (never remove from a list being iterated).
+		scope:kehillah_upkeep_seat = {
+			every_in_list = {
+				variable = kehillah_community_debtors
+				limit = {
+					OR = {
+						is_alive = no
+						NOT = {
+							any_owned_story = {
+								story_type = story_cycle_loan
+								var:kehillah_lent_for ?= scope:kehillah_upkeep_seat
+							}
+						}
+					}
+				}
+				scope:kehillah_upkeep_seat = {
+					add_to_variable_list = { name = kehillah_community_debtors_stale target = prev }
+				}
+			}
+			every_in_list = {
+				variable = kehillah_community_debtors_stale
+				scope:kehillah_upkeep_seat = {
+					remove_list_variable = { name = kehillah_community_debtors target = prev }
+				}
+			}
+			clear_variable_list = kehillah_community_debtors_stale
+		}
+	}
+}
+
+# Scope: a Kehillah leader. Every loan this community holds from $HOST$ or
+# a lord of $HOST$'s realm is void: the bonds burned, the debts cancelled at
+# expulsion. Ends the vanilla loans silently; the caller's own tooltip
+# tells the player.
+kehillah_void_community_loans_effect = {
+	if = {
+		limit = { exists = primary_title }
+		primary_title = { save_scope_as = kehillah_void_seat }
+		$HOST$ = { save_scope_as = kehillah_void_host }
+		scope:kehillah_void_seat = {
+			every_in_list = {
+				variable = kehillah_community_debtors
+				limit = {
+					is_alive = yes
+					OR = {
+						this = scope:kehillah_void_host
+						top_liege ?= scope:kehillah_void_host
+					}
+				}
+				every_owned_story = {
+					limit = {
+						story_type = story_cycle_loan
+						var:kehillah_lent_for ?= scope:kehillah_void_seat
+					}
+					hidden_effect = { end_loan_story_effect = yes }
+				}
+			}
+		}
+	}
+}
+
+# Scope: a Kehillah leader. $DEBTOR$ is released from every loan he owes
+# this community (Forgive the Debt). Vanilla's forgive_loan_effect sends
+# both sides its own toast.
+kehillah_forgive_community_loans_effect = {
+	if = {
+		limit = { exists = primary_title }
+		primary_title = { save_scope_as = kehillah_forgive_seat }
+		$DEBTOR$ = {
+			every_owned_story = {
+				limit = {
+					story_type = story_cycle_loan
+					var:kehillah_lent_for ?= scope:kehillah_forgive_seat
+				}
+				forgive_loan_effect = yes
+			}
+		}
+	}
+}
+
+# Scope: the lender, a Kehillah leader whose loan was just repaid (called
+# from the override of vanilla's repay_and_end_loan_story_effect,
+# kehillah_loan_repay_override.txt). The old ledger's repayment reward: a
+# loan repaid is wealth returned and a name for sound dealing.
+kehillah_community_loan_repaid_effect = {
+	if = {
+		limit = {
+			government_has_flag = government_is_kehillah
+			exists = primary_title
+		}
+		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_loan_repayment_prosperity_reward }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_loan_repayment_greatness_reward }
+		debug_log = "kehillah_community_loan_repaid_effect: a community loan was repaid"
+	}
+}

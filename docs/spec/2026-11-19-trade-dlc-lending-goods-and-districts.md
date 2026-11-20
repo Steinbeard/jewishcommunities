@@ -259,6 +259,58 @@ stray clergy. **Rejected.** The slice uses vanilla's *pieces* instead.
 5. The host's outlook tooltip (HUD and realm view) shows "Jewish banking in the realm: +N".
 6. Check `error.log` after hovering the new tab and the tooltips (tooltip-only errors).
 
+## 7. The old loan ledger torn out (2026-11-20)
+
+**Status:** BUILT 2026-11-20 at Daniel's request ("tear it out to avoid redundant systems"). xTiger-clean.
+**The S8 Financier path's contract is a crash-history area, so this needs a live test before it counts
+as done.** The checklist is below. It supersedes section 6's "Deferred: S8 royal loans" note.
+
+### What went
+- **The ledger itself:** `kehillah_loan_amount_owed`, `_lender_title` and `_years_elapsed` on the
+  borrower, and `kehillah_loan_debtors` on the title.
+- **The quarterly accrual/default tick** in `kehillah_quarterly_pillars_effect`.
+- **`kehillah_repay_loan_decision`** and its loc.
+- **Script values** `kehillah_loan_amount_owed_value`, `_repayment_multiplier`, `_term_years` and
+  `_default_prosperity_loss`.
+
+### What replaced it (`common/scripted_effects/kehillah_community_loan_effects.txt`)
+- **Every Kehillah loan is a vanilla loan.** `kehillah_community_lend_effect` calls
+  `set_up_new_loan_effect`: interest-free to a Jew, open interest to an outsider. The leader gets
+  vanilla's loan hook.
+- **The loan belongs to the community.** Each loan story carries `var:kehillah_lent_for` (the title),
+  and the title lists its debtors (`kehillah_community_debtors`). Each quarter
+  (`kehillah_community_loans_upkeep_effect`):
+  - it adopts loans the leader holds that carry no community;
+  - it moves a community loan held by someone else (a dead leader's heir) to the current leader with
+    `transfer_loan_effect`;
+  - it prunes debtors who no longer owe.
+- **Repayment reward.** An override of vanilla's `repay_and_end_loan_story_effect` (verbatim, plus one
+  hook; `kehillah_loan_repay_override.txt`) pays the old reward, Prosperity and Greatness, whenever a
+  community loan is repaid, by any route. There is no default penalty: vanilla has no term.
+  Repudiation and voiding are E1's to use.
+- **Kept, re-plumbed:**
+  - the loan contract and its negotiation chain (`kehillah_loan_challenge.0003` now makes the vanilla
+    loan);
+  - the royal request (`kehillah_norman_conquest.0020`);
+  - Forgive the Debt, now vanilla's `forgive_loan_effect`;
+  - the burned bonds and expulsion, now `kehillah_void_community_loans_effect`;
+  - the lord who owes us, the mob patron offer, the debt-based Greatness term, the policy pressure and
+    the outlook, all on `kehillah_owes_community_trigger` / `kehillah_owes_jewish_lender_trigger`;
+  - the debug probes `kehillah_debug.30/.40/.132-.134`, `kehillah_expulsion_debug.6/.7` and
+    `kehillah_mob_debug.17`.
+- **Also:** an indebted lord is likelier to bring the community a loan contract.
+
+### Live checklist (for Daniel)
+1. **London (Norman Conquest).** Run `kehillah_debug.132`, seal the royal loan, then `.134`. The crown
+   owes, holds Royal Favour, and is on the community's debtor list. The Debtors tab shows the crown.
+2. `kehillah_debug.40`: the county holder repays and the community gains Prosperity and Greatness (the
+   repayment hook).
+3. **Change of leader:** with a loan out, kill the leader (console). Within a quarter the loan's lender
+   is the new leader (`.134`, or the Debtors tab).
+4. **Burned bonds** (`kehillah_mob_debug.17`, then let them have the bonds): the host's loan is gone.
+5. **Forgive the Debt** on a debtor: vanilla's forgiveness toasts, and the outlook rises.
+6. Check `error.log` for anything mentioning the loan or `kehillah_lent_for`.
+
 ## 5. Live test record
 
 **2026-11-19, scripted xTiger run, Worms 1066 (`bm_1066_kehillah_worms`, play `d_kehillah_worms`),

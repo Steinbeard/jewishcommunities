@@ -233,7 +233,7 @@ kehillah_debug.30 = {
 
 		domicile.domicile_location.county.holder ?= {
 			if = {
-				limit = { exists = var:kehillah_loan_amount_owed }
+				limit = { kehillah_owes_community_trigger = { TITLE = root.primary_title } }
 				debug_log = "kehillah_debug.30: local county holder HAS an outstanding Kehillah loan"
 			}
 			else = {
@@ -244,26 +244,32 @@ kehillah_debug.30 = {
 }
 
 # ---------------------------------------------------------------------
-# Fast-forward an already-outstanding loan to one quarterly tick before
-# its 6-year term (kehillah_loan_term_years), to reach the default path
-# (kehillah_loan_default_prosperity_loss, in
-# kehillah_scripted_effects.txt) without waiting 6 real years. Take the
-# Extend a Loan decision first -- this only has anything to fast-forward
-# if a loan already exists.
+# 2026-11-20 (loan ledger torn out): the local county holder repays his
+# community loan now through vanilla's own repayment effect, so the
+# repayment hook (kehillah_loan_repay_override.txt) can be checked. Gives
+# him the gold first. Expect "kehillah_community_loan_repaid_effect".
 # ---------------------------------------------------------------------
 
 kehillah_debug.40 = {
 	type = character_event
 	hidden = yes
 	immediate = {
+		primary_title ?= { save_scope_as = kehillah_dbg_seat }
 		domicile.domicile_location.county.holder ?= {
 			if = {
-				limit = { exists = var:kehillah_loan_amount_owed }
-				set_variable = { name = kehillah_loan_years_elapsed value = 5.9 }
-				debug_log = "kehillah_debug.40: loan fast-forwarded to 5.9 years elapsed (term is 6, ticks by 0.25/quarter -- next tick should default)"
+				limit = { kehillah_owes_community_trigger = { TITLE = scope:kehillah_dbg_seat } }
+				random_owned_story = {
+					limit = {
+						story_type = story_cycle_loan
+						var:kehillah_lent_for ?= scope:kehillah_dbg_seat
+					}
+					story_owner = { add_gold = { value = prev.var:amount_owed add = 10 } }
+					repay_and_end_loan_story_effect = yes
+				}
+				debug_log = "kehillah_debug.40: the county holder repaid a community loan"
 			}
 			else = {
-				debug_log = "kehillah_debug.40: no outstanding loan to fast-forward"
+				debug_log = "kehillah_debug.40: the county holder owes this community nothing"
 			}
 		}
 	}
@@ -2799,26 +2805,20 @@ kehillah_debug.133 = {
 	hidden = yes
 	immediate = {
 		debug_log = "kehillah_debug.133: S8b fast-forward -- START"
+		# 2026-11-20: loans are vanilla loans; there is no term any more.
+		# Give the crown three times its debt so vanilla's repay_loan_decision
+		# (AI, checked every 24 months) can be taken.
 		if = {
 			limit = {
 				exists = domicile.domicile_location.county.holder.top_liege
-				domicile.domicile_location.county.holder.top_liege = { exists = var:kehillah_loan_amount_owed }
+				domicile.domicile_location.county.holder.top_liege = { kehillah_owes_community_trigger = { TITLE = root.primary_title } }
 			}
 			domicile.domicile_location.county.holder.top_liege = {
-				set_variable = { name = kehillah_loan_years_elapsed value = kehillah_loan_term_years }
-				change_variable = { name = kehillah_loan_years_elapsed add = -0.25 }
-				debug_log = "kehillah_debug.133: SETUP the crown's loan is now in its last quarter"
-				# A generous buffer, not the exact sum: topped up to exactly
-				# what it owed, the AI crown spent some of it before the pulse
-				# and defaulted (live, 2026-09-29) -- a false negative.
-				add_gold = {
-					value = var:kehillah_loan_amount_owed
-					multiply = 3
-				}
-				debug_log = "kehillah_debug.133: SETUP gave the crown three times its debt, so ordinary AI spending cannot make it default"
+				add_gold = 1000
+				debug_log = "kehillah_debug.133: SETUP gave the crown 1000 gold to repay with"
 				debug_log_scopes = yes
 			}
-			debug_log = "kehillah_debug.133: now wait for the next quarterly pulse; expect 'an AI borrower repaid at term'"
+			debug_log = "kehillah_debug.133: expect the crown to take vanilla's repay_loan_decision; or run kehillah_debug.40"
 		}
 		else = {
 			debug_log = "kehillah_debug.133: FAIL the crown owes nothing -- seal a royal loan first"
@@ -2836,7 +2836,7 @@ kehillah_debug.134 = {
 			domicile.domicile_location.county.holder.top_liege = {
 				save_scope_as = kehillah_dbg_crown
 				if = {
-					limit = { exists = var:kehillah_loan_amount_owed }
+					limit = { kehillah_owes_community_trigger = { TITLE = root.primary_title } }
 					debug_log = "kehillah_debug.134: CROWN OWES (amount in the scopes dump)"
 					debug_log_scopes = yes
 				}
@@ -2858,7 +2858,7 @@ kehillah_debug.134 = {
 			primary_title = {
 				if = {
 					limit = {
-						is_target_in_variable_list = { name = kehillah_loan_debtors target = scope:kehillah_dbg_crown }
+						is_target_in_variable_list = { name = kehillah_community_debtors target = scope:kehillah_dbg_crown }
 					}
 					debug_log = "kehillah_debug.134: THE CROWN IS ON THIS COMMUNITY'S DEBTOR LIST"
 				}
@@ -3091,31 +3091,26 @@ kehillah_debug.141 = {
 	}
 }
 
-# Settlement-visit bridge probe (2026-11-15). Run as the adventurer while
-# standing in a holding. It does not open the visit or change state; it shows
-# whether the base-game Visit Local Settlement action should offer the Kehillah
-# preface and lists the qualifying community title(s).
+# Settlement-visit community-row probe (2026-11-16). Run as the adventurer
+# while standing in a holding. It does not open the visit or change state; it
+# shows whether the base-game Visit Local Settlement action should replace its
+# Tavern row with the local Kehillah call and lists matching community title(s).
 kehillah_debug.142 = {
 	type = character_event
 	hidden = yes
 	immediate = {
-		debug_log = "kehillah_debug.142: settlement-visit bridge -- START"
+		debug_log = "kehillah_debug.142: settlement-visit community row -- START"
 		if = {
 			limit = { kehillah_adventurer_community_visit_available_trigger = yes }
-			debug_log = "kehillah_debug.142: community bridge AVAILABLE"
+			debug_log = "kehillah_debug.142: community row AVAILABLE"
 	}
-		else = { debug_log = "kehillah_debug.142: community bridge unavailable" }
+		else = { debug_log = "kehillah_debug.142: community row unavailable" }
 		every_in_global_list = {
 			variable = kehillah_registered_communities
 			limit = { kehillah_visit_title_here_trigger = { VISITOR = root } }
 			debug_log = "kehillah_debug.142: matching local community"
 			debug_log_scopes = yes
 		}
-		if = {
-			limit = { has_variable = kehillah_visit_community_cooldown }
-			debug_log = "kehillah_debug.142: six-month community cooldown ACTIVE"
-	}
-		else = { debug_log = "kehillah_debug.142: six-month community cooldown clear" }
-		debug_log = "kehillah_debug.142: settlement-visit bridge -- END"
+		debug_log = "kehillah_debug.142: settlement-visit community row -- END"
 	}
 }

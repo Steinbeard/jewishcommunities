@@ -2337,71 +2337,9 @@ kehillah_quarterly_pillars_effect = {
 		}
 	}
 
-	# ---------------------------------------------------------------
-	# LOAN TICK (Wave 3 item 4). Full mechanism account:
-	# common/script_values/kehillah_script_values.txt's "Light loan
-	# contracts" header. Two passes over the SAME variable_list, both
-	# read-only with respect to the list itself (neither pass ever
-	# calls remove_list_variable while iterating it -- see that
-	# header's note on why removal is deliberately confined to
-	# kehillah_repay_loan_decision's own plain, non-iterating effect
-	# instead): first increment every active debtor's elapsed time,
-	# then default any debtor whose term has run out. A defaulted
-	# debtor's own loan variables are cleared (so this guard cannot
-	# re-fire on them next quarter) but they are left in the list --
-	# a harmless, permanently-inert entry, not a leak, since every
-	# check here and in kehillah_repay_loan_decision already requires
-	# exists = var:kehillah_loan_amount_owed before doing anything.
-	# ---------------------------------------------------------------
-	primary_title = {
-		save_scope_as = kehillah_loan_title
-	}
-	scope:kehillah_loan_title = {
-		every_in_list = {
-			variable = kehillah_loan_debtors
-			limit = { exists = var:kehillah_loan_amount_owed }
-			change_variable = { name = kehillah_loan_years_elapsed add = 0.25 }
-		}
-		every_in_list = {
-			variable = kehillah_loan_debtors
-			limit = {
-				exists = var:kehillah_loan_amount_owed
-				var:kehillah_loan_years_elapsed >= kehillah_loan_term_years
-			}
-			# ROADMAP S8b (2026-09-29): AN AI BORROWER REPAYS AT TERM IF IT
-			# CAN. Before this, kehillah_repay_loan_decision (ai_potential
-			# always = no) was the only way a loan was ever repaid, so every
-			# loan to an AI ruler -- i.e. nearly every loan -- defaulted at
-			# term by construction. Same payment and rewards as that
-			# decision; a player borrower still repays by the decision, and
-			# anyone who cannot pay at term still defaults as before.
-			if = {
-				limit = {
-					is_ai = yes
-					exists = scope:kehillah_loan_title.holder
-					gold >= var:kehillah_loan_amount_owed
-				}
-				pay_short_term_gold = {
-					target = scope:kehillah_loan_title.holder
-					gold = var:kehillah_loan_amount_owed
-				}
-				scope:kehillah_loan_title = {
-					change_variable = { name = kehillah_var_prosperity add = kehillah_loan_repayment_prosperity_reward }
-					change_variable = { name = kehillah_var_greatness add = kehillah_loan_repayment_greatness_reward }
-				}
-				debug_log = "kehillah_quarterly_pillars_effect: an AI borrower repaid at term"
-			}
-			else = {
-				scope:kehillah_loan_title = {
-					change_variable = { name = kehillah_var_prosperity subtract = kehillah_loan_default_prosperity_loss }
-				}
-				debug_log = "kehillah_quarterly_pillars_effect: a borrower defaulted at term"
-			}
-			remove_variable = kehillah_loan_amount_owed
-			remove_variable = kehillah_loan_lender_title
-			remove_variable = kehillah_loan_years_elapsed
-		}
-	}
+	# (LOAN TICK removed 2026-11-20: Kehillah loans are vanilla loans now,
+	# kept with the community by kehillah_community_loans_upkeep_effect,
+	# kehillah_community_loan_effects.txt, from the banking quarterly pulse.)
 
 	# ---------------------------------------------------------------
 	# STANDING (v12, 2026-09-14). LAST, deliberately: every block above
