@@ -1,0 +1,54 @@
+﻿# Console-only probes for lending and banking services (2026-11-20).
+#   event kehillah_banking_debug.1   report: is the community lending, what the
+#                                    host's banking term is and what erodes it
+#   event kehillah_banking_debug.2   refresh now: run the quarterly banking pass
+#                                    and the yearly rival-credit count, then .1
+namespace = kehillah_banking_debug
+
+kehillah_banking_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = { kehillah_community_is_lending_trigger = yes }
+			debug_log = "BANKING community is lending"
+		}
+		else = { debug_log = "BANKING community is not lending" }
+		domicile.domicile_location.county.holder.top_liege ?= {
+			if = {
+				limit = { has_variable = kehillah_banking_services }
+				debug_log = "BANKING host is marked as served by Jewish banking"
+			}
+			else = { debug_log = "BANKING host is not marked" }
+			if = {
+				limit = { has_variable = kehillah_rival_credit }
+				debug_log = "BANKING host has rival (non-Jewish) lending houses in his realm"
+			}
+			if = {
+				limit = { kehillah_has_non_jewish_loan_trigger = yes }
+				debug_log = "BANKING host owes a non-Jewish lender"
+			}
+			if = { limit = { kehillah_outlook_banking_value >= 10 } debug_log = "BANKING outlook term: full (10)" }
+			else_if = { limit = { kehillah_outlook_banking_value > 0 } debug_log = "BANKING outlook term: reduced by rival credit" }
+			else = { debug_log = "BANKING outlook term: none" }
+			if = { limit = { kehillah_outlook_debts_value <= -15 } debug_log = "BANKING debts term: old debt resented (-15 or worse)" }
+			else_if = { limit = { kehillah_outlook_debts_value < 0 } debug_log = "BANKING debts term: some resentment" }
+			else = { debug_log = "BANKING debts term: none" }
+		}
+		if = {
+			limit = { kehillah_crisis_debts_chance_value > 0 }
+			debug_log = "BANKING debts crisis can open here"
+		}
+		else = { debug_log = "BANKING debts crisis cannot open here (not lending)" }
+	}
+}
+
+kehillah_banking_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_banking_services_refresh_effect = yes
+		kehillah_rival_credit_yearly_effect = yes
+		trigger_event = kehillah_banking_debug.1
+	}
+}

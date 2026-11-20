@@ -1,0 +1,85 @@
+﻿# =====================================================================
+# BANKING SERVICES -- a source of the host's outlook on the Jews
+# (2026-11-20, Daniel: "a ruler outlook bonus for 'banking services' which
+# is reduced by other sources of lending from non-Jews").
+# docs/spec/2026-11-19-trade-dlc-lending-goods-and-districts.md section 6.
+#
+# A ruler whose realm holds a lending Kehillah values the Jews for it
+# (kehillah_banking_services, refreshed quarterly by every lending community
+# for its county holder and top liege). Christian credit in his realm makes
+# the service less needed: merchant companies and holy orders that lend from
+# his lands (kehillah_rival_credit, counted yearly), and his own loans from
+# non-Jewish lenders. The term never goes below zero: rival credit erodes
+# the reason to value the Jews, it does not by itself make him hostile.
+#
+# Loans are vanilla 1.21's (story_cycle_loan; the lender's owes_me_money
+# list). See common/scripted_effects/kehillah_banking_effects.txt.
+# Scope: any character.
+# =====================================================================
+
+kehillah_outlook_banking_value = {
+	value = 0
+	if = {
+		limit = { exists = diarch }
+		add = diarch.kehillah_outlook_banking_value
+	}
+	else = {
+		add = kehillah_outlook_banking_own_value
+	}
+}
+
+kehillah_outlook_banking_own_value = {
+	value = 0
+	if = {
+		limit = {
+			is_alive = yes
+			has_variable = kehillah_banking_services
+		}
+		add = kehillah_banking_services_base
+		if = {
+			limit = { has_variable = kehillah_rival_credit }
+			subtract = {
+				value = var:kehillah_rival_credit
+				multiply = kehillah_rival_credit_per_lender
+			}
+		}
+		if = {
+			limit = { kehillah_has_non_jewish_loan_trigger = yes }
+			subtract = kehillah_rival_credit_own_loan
+		}
+		min = 0
+	}
+}
+
+# Outlook points for a realm served by a lending community.
+kehillah_banking_services_base = 10
+# Each Christian (non-Jewish) lending house based in his realm.
+kehillah_rival_credit_per_lender = 3
+# He already borrows from a non-Jewish lender.
+kehillah_rival_credit_own_loan = 4
+
+# --- Debts to Jewish lenders through vanilla loans (extends the S8 term in
+# kehillah_outlook_values.txt). Welcome at first, resented as they age.
+kehillah_outlook_vanilla_jewish_debt_value = {
+	value = 0
+	if = {
+		limit = {
+			any_owned_story = {
+				story_type = story_cycle_loan
+				var:lender ?= { is_jewish_character_trigger = yes }
+				var:years_since >= 5
+			}
+		}
+		value = -15
+	}
+	else_if = {
+		limit = {
+			any_owned_story = {
+				story_type = story_cycle_loan
+				var:lender ?= { is_jewish_character_trigger = yes }
+				var:years_since >= 1
+			}
+		}
+		value = -5
+	}
+}

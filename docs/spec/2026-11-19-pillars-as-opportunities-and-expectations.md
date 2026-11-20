@@ -555,3 +555,17 @@ modifier on the leader. See ROADMAP's Near-term TODO.
   [the trade-DLC research](2026-11-19-trade-dlc-lending-goods-and-districts.md), which also covers goods
   (domicile buildings can produce into the market but not consume) and districts (a script-placed Jewish
   quarter district on the host's province).
+
+### R12. Lending slice and banking services (2026-11-20)
+
+This slice is E1's first protective lever: a ruler values a lending community, and Christian credit
+erodes that value.
+- **New outlook term:** "banking services" is +10 for a realm with a lending community, minus 3 for each
+  non-Jewish lending house based in the realm and minus 4 if he owes a non-Jewish lender, never below 0.
+- **The debts term** now reads vanilla loans as well as S8's record.
+- **The debts crisis** fires only for communities that are lending.
+- **UI:** vanilla's Debtors panel and a vanilla-derived Demand Repayment.
+
+Details and the live checklist are in [the trade-DLC record, section 6](2026-11-19-trade-dlc-lending-goods-and-districts.md).
+The predatory side of E1 (voiding debts, the outlook turning on lending at expulsion time) builds on
+this.

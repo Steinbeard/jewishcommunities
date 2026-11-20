@@ -167,6 +167,85 @@ The order, recommended for later work:
 4. Goods needs on the district.
 5. The market feeding Prosperity.
 
+## 6. Lending slice: vanilla UI, Demand Repayment and banking services (2026-11-20)
+
+**Status:** BUILT 2026-11-20, xTiger-clean. Not yet live-tested; the checklist is below.
+
+### Why not the merchant government flag
+Daniel asked whether Kehillah governments could carry `government_is_merchant`, so that vanilla's
+lending UI simply works. Surveyed in 1.21 (`grep government_is_merchant`), the flag is read in about 40
+files. Among them:
+- **lifestyle focuses:** every standard focus is hidden for merchants (`00_lifestyle_focuses.txt`, 57
+  references);
+- **succession laws** (`00_succession_laws.txt`, 17): merchants are barred from most of them;
+- **court positions** (34): merchant art and assets;
+- **lifestyle perks** in nine trees;
+- **marriage interactions** (19);
+- **clothing** (by company size);
+- **men-at-arms, casus belli, map modes and feasts**;
+- the whole merchant-company event and decision set.
+
+Turning it on would rebuild a Kehillah into a merchant company, much as the theocratic flag brought in
+stray clergy. **Rejected.** The slice uses vanilla's *pieces* instead.
+
+### What was built
+- **Vanilla's Debtors panel in the domicile window** (`gui/window_domicile.gui`). The mod's copy of that
+  window predates 1.21, so it lacked the panel. Ported from 1.21:
+  - the Debtors bookmark tab (vanilla's usury icon, shown only when the leader has debtors);
+  - the panel itself;
+  - the `debtor` relation cache in the window's on-show;
+  - the `hbox_debtor_item` type.
+  
+  Every tab now closes the Debtors panel. On top of this, the `creditor`/`debtor` relation labels show
+  on portraits as vanilla does.
+- **Demand Repayment** (`kehillah_demand_repayment_interaction`,
+  `common/character_interactions/kehillah_demand_repayment_interactions.txt`). It is **generated from
+  vanilla's own interaction** with only three changes:
+  - its key;
+  - the government gate;
+  - the AI frequency.
+  
+  So refusals, reminders, prestige loss, house relations and AI acceptance are vanilla's. Re-generate it
+  when CK3 changes the original: `sh scripts/generate_kehillah_demand_repayment.sh`.
+- **Loan Gold.** The Lend Gold interaction now takes vanilla's own name (`$loan_money_interaction$`), and
+  Demand Repayment uses `$demand_repayment_interaction$`.
+- **Banking services**, a new host-outlook source (`common/script_values/kehillah_banking_values.txt`):
+  - **+10** for a ruler whose realm holds a lending community. Each quarter, a lending community marks
+    its county holder and his top liege for a year.
+  - **−3 for each non-Jewish lending house** based in his realm: merchant companies with the creditor
+    purpose or debtors, and holy orders with debtors. These are counted once a year in one
+    `every_ruler` pass.
+  - **−4 if he already owes a non-Jewish lender.**
+  - The term never goes below zero: rival credit erodes his reason to value the Jews, it does not make
+    him hostile.
+  - It shows as "Jewish banking in the realm" in every outlook breakdown.
+- **The debts term reads vanilla loans as well as S8's record.** The worse of the two counts, and
+  greed sharpens either. So the welcome of a new loan and the resentment of an old one now come from
+  real loans.
+- **The debts crisis is gated:** its opening chance is zero unless the community is lending
+  (`kehillah_community_is_lending_trigger`: vanilla debtors, or S8's royal loan outstanding).
+- **Debug probes:** `kehillah_banking_debug.1` reports the state; `.2` refreshes it and then reports.
+
+### Deferred, deliberately
+- **S8 royal loans and `kehillah_loan_contract` are not yet vanilla loans.** That code path has crash
+  history, so it gets its own pass and live test. Until then, the outlook and the crisis gate read both
+  records.
+- **Christian credit growing with the date** (Lombards, Cahorsins) is not modelled. Rival credit is
+  emergent: it counts the actual merchant companies and holy orders that lend.
+- **Whether loans pass to the next leader** (section 1, item 5) remains to be checked.
+
+### Live checklist (for Daniel)
+1. Worms 1066: put the host in debt and give the leader gold (or wait for an indebted neighbour), then
+   right-click him. **Loan Gold** shows with vanilla's options: open interest to a Christian;
+   interest-free only to a Jew.
+2. After the loan, the domicile window shows the **Debtors** tab (coin icon). Its panel lists the
+   debtor and the loan's age, and the relation shows on both portraits.
+3. Two years later, **Demand Repayment** is offered on the debtor and behaves like vanilla's.
+4. `event kehillah_banking_debug.2` on the leader should report "lending", the host marked, and the
+   banking term full (or reduced, if Italian or Templar lenders sit in the realm).
+5. The host's outlook tooltip (HUD and realm view) shows "Jewish banking in the realm: +N".
+6. Check `error.log` after hovering the new tab and the tooltips (tooltip-only errors).
+
 ## 5. Live test record
 
 **2026-11-19, scripted xTiger run, Worms 1066 (`bm_1066_kehillah_worms`, play `d_kehillah_worms`),
