@@ -226,6 +226,19 @@ stray clergy. **Rejected.** The slice uses vanilla's *pieces* instead.
   (`kehillah_community_is_lending_trigger`: vanilla debtors, or S8's royal loan outstanding).
 - **Debug probes:** `kehillah_banking_debug.1` reports the state; `.2` refreshes it and then reports.
 
+### Addendum 2026-11-20 (same day, Daniel)
+- **One breakdown line.** The debts and banking terms now show as a single line, "Value of Jewish
+  banking" (`kehillah_outlook_jewish_banking_value`), in every outlook breakdown: the HUD host tooltip,
+  the mood-change notices and the realm view. The separate "Debts to Jewish lenders" line is gone. The
+  outlook total is unchanged.
+- **Liquidity draws invitations.** `kehillah_wants_jewish_credit_trigger` holds for a non-Jewish ruler
+  who is in debt (gold below 0) or owes a non-Jewish lender, while no Jewish community lends in his
+  realm. It adds:
+  - +1 to the open-door review's invitation motive;
+  - +25 to the Invite Jewish Settlers decision's AI weight;
+  - a stated reason, "The ruler needs credit, and no Jewish lenders serve the realm" (`flag:credit`).
+- **Government levers:** see [the merchant-government note](2026-11-20-government-levers-from-the-merchant-government.md).
+
 ### Deferred, deliberately
 - **S8 royal loans and `kehillah_loan_contract` are not yet vanilla loans.** That code path has crash
   history, so it gets its own pass and live test. Until then, the outlook and the crisis gate read both
