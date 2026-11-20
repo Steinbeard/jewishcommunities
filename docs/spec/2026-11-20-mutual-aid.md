@@ -1,7 +1,8 @@
 **Status:** v1 BUILT 2026-11-20 at Daniel's request ("build the mutual aid system"). **v2 BUILT the
 same day** ("please proceed with smoothing out this system"). v2 is recorded in section 9, which
 **supersedes** sections 1-5 and 8 where they differ: shares, reach, letters, appeals and crisis
-integration. xTiger-clean (no reports in the new or changed files). **Not live-tested;** v1's checklist
+integration. **v2.1 the same day** (section 10: one interaction, appeal reach vs envoy, shares scale
+gifts and silence, the patron's hook and debt of gratitude) supersedes parts of section 9. xTiger-clean (no reports in the new or changed files). **Not live-tested;** v1's checklist
 is section 7 and v2's is section 9.8. Builds the pillars spec's R5 and R6
 ([pillars as opportunities and expectations](2026-11-19-pillars-as-opportunities-and-expectations.md))
 and replaces its B1-B4. ROADMAP stays authoritative.
@@ -281,3 +282,80 @@ never touched the reputation.
   are the whole surface.
 - **The patron does not yet carry a Bet Din vote.** That waits for v4's regional Bet Din.
 - **A "send a teacher" appeal** (a scholar instead of gold) is not built.
+
+## 10. v2.1: one interaction, a real appeal choice, weightier patrons (2026-11-20)
+
+Daniel, after the live test ([log](../testing/2026-11-20-mutual-aid-v2-live-test.md)) raised three
+points:
+- three character interactions for one appeal are too many;
+- the appeal's options are unclear, and he asked what the trade-off between asking for more and less is;
+- he asked whether refusing costs enough, whether giving more earns more, and what being patron is worth.
+
+He approved the proposals below, and added: "maybe being patron could give you a hook?". This section
+supersedes 9.2's interaction list, 9.4's patron and 9.5's appeal options.
+
+### 10.1 One interaction
+- **Send Aid is the only interaction.**
+  - It sends this community's share.
+  - A **send option**, "Give everything still needed", pays the whole remainder instead; for a captive,
+    that is his redemption outright.
+  - It is a common interaction, highlighted for a captive or when our community is expected.
+- **Removed:** Redeem Captive, Give What Remains and Decline the Appeal. Declining stays an option of
+  the letter (`.0002`) and of the crisis report.
+
+### 10.2 The appeal: the sum is set by the trouble, the choice is the reach
+**Why the old choice was false:** an appeal that falls short costs the asking community nothing, since
+it keeps what came in. So "a humble letter" (60%) only lost money, and "our need in full" cost a
+trivial bit of prestige.
+
+`.0010` now offers:
+
+| Option | Cost | Reach |
+|---|---|---|
+| Write to our neighbours | free | normal |
+| Send the envoy with the letters to the great communities | 25 gold | Healthy communities twice as far are asked too |
+| Not yet | none | none |
+
+- **The envoy** is the court's best diplomat, or the leader if he is better.
+- **The envoy's skill:** each point of diplomacy above 8 makes AI communities 2 points likelier per
+  quarter to answer, up to +20 (`kehillah_aid_envoy_bonus_value`, need variable
+  `kehillah_aid_envoy_bonus`).
+- **The sum** is the trouble's: relief 150, or rebuilding by the crisis's threat grade.
+- **No prestige cost.**
+
+### 10.3 Gifts and silence count by shares
+Reputation and Greatness from a gift, and the penalties for silence (lapse) or open refusal, are
+multiplied by the community's shares: one Healthy, two Flourishing, three Legendary
+(`kehillah_aid_*_greatness_value`, `kehillah_giving_rep_refused*_value`). A Legendary community that
+stays silent loses three times what a Healthy one does. The other rules are unchanged:
+- poorer communities' gifts count double;
+- giving unasked earns +3;
+- paying the remainder doubles the reward.
+
+### 10.4 The patron
+The largest giver to a **completed** appeal gains:
+- **A favour hook** (vanilla `favor_hook`, 10 years). It sits on the needy leader; for a captive, on his
+  home community's leader, or on the captive himself if he has no Jewish community. **This reverses the
+  2026-11-12 crisis-aid rule "no hook for tzedakah" for the patron only.** Ordinary gifts and shares
+  still give no hook, so routine charity does not become a lever over every community.
+- **Prestige:** a medium gain.
+- **Greatness:** a minor bonus, as before.
+- **A debt of gratitude** (title variable `kehillah_aid_grateful_to` on the helped community, naming the
+  patron, for 20 years). When the patron's community next appeals, the community it helped:
+  - is always expected, whatever its band or distance;
+  - gets a letter line, "They were our patrons once";
+  - if it is an AI, gets +40 to its quarterly chance to answer.
+- **The old rewards stay:** the opinion bonus, the thank-you event, and a redeemed captive's gratitude.
+
+### 10.5 Live checklist additions
+1. Right-click a needy leader: one Send Aid, with the "Give everything still needed" tick-box.
+   - The box is hidden when the share already covers what remains.
+   - It is greyed out without the gold.
+2. `.0010` shows three options. The envoy option names the envoy, costs 25 gold, and its tooltip lists
+   the wider reach and the envoy's skill.
+3. Complete an appeal as the largest giver: you gain a favour hook on the needy leader (character
+   window, Hooks) and prestige. Then open an appeal from your own community
+   (`kehillah_aid_debug.2`): the helped community is expected even if poor or far, and its letter (as a
+   player) carries "They were our patrons once".
+4. At Flourishing, a share's tooltip shows a larger Name for Giving rise than at Healthy. A lapse at
+   Flourishing costs twice the Healthy fall.

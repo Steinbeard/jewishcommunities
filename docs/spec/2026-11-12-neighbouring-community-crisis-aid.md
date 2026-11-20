@@ -19,4 +19,8 @@ The offer of shelter is intentionally represented as temporary refuge and recove
 
 ## No hook for tzedakah
 
+**2026-11-20 amendment (Daniel):** the *patron* of a completed mutual-aid appeal (its largest giver)
+now gains a favour hook on the community it helped. Ordinary gifts and shares still give no hook. See
+[mutual aid section 10.4](2026-11-20-mutual-aid.md).
+
 Tzedakah creates a durable grateful-opinion modifier (+20, decaying over ten years), while prayer creates a smaller +8 modifier. It does **not** create a weak hook: routine communal charity should create reciprocal trust and memory, not a legally enforceable personal claim. A later covenant, loan, or negotiated resettlement can use hooks where an explicit obligation is part of the fiction.

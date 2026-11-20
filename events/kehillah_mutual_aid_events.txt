@@ -11,7 +11,10 @@
 #   .0004 A needy community's appeal is answered in full; its largest
 #         giver is named.
 #   .0010 Writing to the communities: a poor or struck community asks for
-#         help (kehillah_write_to_communities_decision).
+#         help (kehillah_write_to_communities_decision). The sum comes from
+#         the trouble; the choice is how far the letters go: the
+#         neighbours, or an envoy (gold) who carries them twice as far and
+#         whose diplomacy makes the AI likelier to answer (v2.1).
 # =====================================================================
 
 kehillah_mutual_aid.0001 = {
@@ -101,6 +104,7 @@ kehillah_mutual_aid.0002 = {
 			desc = kehillah_mutual_aid.0002.desc_nothing
 		}
 		first_valid = {
+			triggered_desc = { trigger = { primary_title ?= { kehillah_aid_grateful_to_need_trigger = { NEED = scope:kehillah_aid_need } } } desc = kehillah_mutual_aid.0002.desc_we_owe }
 			triggered_desc = { trigger = { kehillah_aid_weight_value >= 3 } desc = kehillah_mutual_aid.0002.desc_we_lead }
 			triggered_desc = { trigger = { kehillah_aid_weight_value >= 2 } desc = kehillah_mutual_aid.0002.desc_we_are_great }
 			desc = kehillah_mutual_aid.0002.desc_we_are_neighbours
@@ -276,42 +280,54 @@ kehillah_mutual_aid.0010 = {
 		NOT = { has_variable = kehillah_aid_kind }
 	}
 
-	# A humble letter.
-	option = {
-		name = kehillah_mutual_aid.0010.a
-		custom_tooltip = kehillah_aid_appeal_humble_tt
-		hidden_effect = { kehillah_aid_appeal_effect = { SIZE = kehillah_aid_appeal_humble_size_value WIDE = no } }
-		ai_chance = { base = 40 }
+	# The envoy: the best diplomat at court, or the leader himself.
+	immediate = {
+		ordered_courtier = {
+			limit = {
+				is_adult = yes
+				is_imprisoned = no
+			}
+			order_by = diplomacy
+			save_scope_as = kehillah_aid_envoy
+		}
+		if = {
+			limit = {
+				OR = {
+					NOT = { exists = scope:kehillah_aid_envoy }
+					diplomacy > scope:kehillah_aid_envoy.diplomacy
+				}
+			}
+			save_scope_as = kehillah_aid_envoy
+		}
 	}
 
-	# Our need in full.
+	# To the neighbours.
 	option = {
-		name = kehillah_mutual_aid.0010.b
-		add_prestige = minor_prestige_loss
+		name = kehillah_mutual_aid.0010.a
 		custom_tooltip = kehillah_aid_appeal_full_tt
 		hidden_effect = { kehillah_aid_appeal_effect = { SIZE = kehillah_aid_appeal_size_value WIDE = no } }
-		ai_chance = {
-			base = 40
-			modifier = { add = 20 primary_title ?= { has_variable = kehillah_giving_reputation var:kehillah_giving_reputation >= 15 } }
-		}
+		ai_chance = { base = 60 }
 	}
 
 	# An envoy carries it farther.
 	option = {
-		name = kehillah_mutual_aid.0010.c
+		name = kehillah_mutual_aid.0010.b
 		trigger = { gold >= kehillah_aid_envoy_cost }
 		show_as_unavailable = { always = yes }
 		remove_short_term_gold = kehillah_aid_envoy_cost
-		add_prestige = minor_prestige_loss
 		custom_tooltip = kehillah_aid_appeal_full_tt
 		custom_tooltip = kehillah_aid_appeal_wide_tt
+		custom_tooltip = kehillah_aid_appeal_envoy_tt
 		hidden_effect = { kehillah_aid_appeal_effect = { SIZE = kehillah_aid_appeal_size_value WIDE = yes } }
-		ai_chance = { base = 15 }
+		ai_chance = {
+			base = 20
+			modifier = { add = 30 scope:kehillah_aid_envoy.diplomacy >= 12 }
+		}
 	}
 
 	# Not yet.
 	option = {
-		name = kehillah_mutual_aid.0010.d
+		name = kehillah_mutual_aid.0010.c
 		ai_chance = { base = 5 }
 	}
 }
