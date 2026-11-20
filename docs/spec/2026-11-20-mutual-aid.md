@@ -1,6 +1,9 @@
-**Status:** BUILT 2026-11-20 at Daniel's request ("build the mutual aid system"). xTiger-clean (no
-reports in the new files). **Not live-tested;** the checklist is in section 7. Builds the pillars spec's
-R5 and R6 ([pillars as opportunities and expectations](2026-11-19-pillars-as-opportunities-and-expectations.md))
+**Status:** v1 BUILT 2026-11-20 at Daniel's request ("build the mutual aid system"). **v2 BUILT the
+same day** ("please proceed with smoothing out this system"). v2 is recorded in section 9, which
+**supersedes** sections 1-5 and 8 where they differ: shares, reach, letters, appeals and crisis
+integration. xTiger-clean (no reports in the new or changed files). **Not live-tested;** v1's checklist
+is section 7 and v2's is section 9.8. Builds the pillars spec's R5 and R6
+([pillars as opportunities and expectations](2026-11-19-pillars-as-opportunities-and-expectations.md))
 and replaces its B1-B4. ROADMAP stays authoritative.
 
 # Mutual aid
@@ -120,3 +123,161 @@ A yearly global sweep settles needs whose two years are up:
   carried far away may have no community "expected" to redeem him (anyone in range can still answer).
 - **No dedicated panel.** The messages and the portrait interactions are the surface, as section 8 of
   the pillars spec intended. A list of open needs could come later if this proves hard to follow.
+
+## 9. v2: obligations that scale, letters, appeals (2026-11-20)
+
+Daniel's review of v1: the goal is that **prosperous communities feel different to play**, with both more
+opportunities and more obligations. He asked whether v1 communicates obligations and consequences, scales
+with Prosperity, has flavourful results, is visible to players not directly involved, and lets poor
+communities ask for help, perhaps through crisis recovery. The answer to most was "not yet". The review
+also found **two overlapping systems**: the 2026-11-12 crisis-network aid
+([neighbouring community crisis aid](2026-11-12-neighbouring-community-crisis-aid.md)) and the Recovery
+phase's "Ask Another Kehillah for Tzedakah" both moved gold between communities outside mutual aid and
+never touched the reputation.
+
+### 9.1 Obligations scale with Prosperity
+| Band | Shares (`kehillah_aid_weight_value`) | Reach (`kehillah_aid_in_reach_trigger`) | Expected? |
+|---|---|---|---|
+| Crisis | 1 | neighbours | no; may write to the communities |
+| Strained | 1 | neighbours | no; a gift counts **double** (×2 reputation, plus the unasked bonus) |
+| Healthy | 1 | neighbours (squared distance 722 500, vanilla `squared_distance_huge`) | yes |
+| Flourishing | 2 | twice as far (2 890 000) | yes |
+| Legendary | 3 | anywhere | yes; its letter says it is written to first |
+
+- **The share:** a community's share is the need divided by the expected communities' total shares
+  (counted as at least 2), times its own shares. It is at least 25 gold and never more than remains
+  (`kehillah_aid_my_share_value`).
+- **Giving unasked:** a community that gives without being expected gets +3 more reputation.
+- **The AI** gives more readily when Flourishing (+10) or Legendary (+20).
+- **Sizes** now follow the trouble:
+  - rebuilding: 100 + 75 per crisis threat grade (175 to 400);
+  - exiles: 200;
+  - relief: 150;
+  - refugees: 100;
+  - ransom: vanilla's price.
+- **The emissary from the Land of Israel** comes twice as often to Flourishing and Legendary communities
+  (20% a year instead of 10%).
+
+### 9.2 Letters and consequences
+- **The letter** (`kehillah_mutual_aid.0002`) replaces the v1 message for expected players. It shows:
+  - the needy character's portrait;
+  - a description of the need, by kind;
+  - a line on the needy community's own record of giving (reciprocity, below);
+  - a line on what is expected of us at our band.
+- **Its four options:**
+  - send our share;
+  - give everything still needed (for a ransom, "redeem him ourselves");
+  - decide later: the tooltip says the appeal stays open about two years, how to answer it, and what
+    silence costs;
+  - say no openly: a minor fall in reputation instead of silence's moderate one, and the needy are
+    displeased (−10).
+- **Throttling:** a player gets at most one letter event per 60 days; later ones come as messages. The
+  neighbours of a struck or expelled quarter get no second letter, because the crisis report
+  `kehillah_crisis_network.0002` is their letter.
+- **A reminder** goes out once, 18 months after a need opens, to each expected player who has not answered.
+- **Every reputation change now shows its size** as a tooltip line ("Name for Giving: Moderate rise"),
+  following the pillar-size rule. The v1 "rises / falls" lines are gone.
+- **Game concepts:** **Mutual Aid** and **Name for Giving** (`common/game_concepts/kehillah_game_concepts.txt`)
+  explain the rules, and every letter, message and tooltip links them.
+- **Interactions:** besides Send Aid and Redeem Captive there are now **Give What Remains** (non-ransom
+  needs) and **Decline the Appeal** (shown only to an expected community).
+
+### 9.3 Visible to every player
+- **The Prosperity breakdown tooltip** now has a mutual-aid line: what this community owes at its
+  current band, or that it may write for help.
+- **The Greatness breakdown** shows the community's name for giving as a word (Renowned, Generous,
+  unremarkable, Tight-fisted, Without charity), never as a number.
+- **News:** players in reach who are too poor to be expected get a quiet "News of an Appeal" message,
+  saying their gift would count for much.
+- **A crisis prompt:** a player whose Prosperity reaches Crisis is told, at most once every 5 years, that
+  the decision Write to the Communities exists.
+
+### 9.4 Rewards and costs
+- **Reciprocity.** An AI community's chance to answer rises or falls with the needy community's own
+  reputation × 0.4 (−40 to +40 points; `kehillah_aid_reciprocity_value`). For a captive, his home
+  community's reputation counts. Letters say whether the needy community has given in the past.
+- **The patron.** The largest giver becomes the need's patron:
+  - the needy leader gains +25 opinion of him, decaying over 15 years;
+  - his community gains a minor Greatness bonus;
+  - he is told he was named;
+  - a needy player gets `kehillah_mutual_aid.0004`, which names the patron.
+- **The redeemed captive.** A captive gains +40 opinion of his redeemer, decaying over 30 years. If he
+  is not a ruler and has no Jewish employer to go home to, the patron's community gets
+  `kehillah_mutual_aid.0003`: welcome him as a courtier (a minor Greatness bonus if his learning is 12
+  or more), or give him silver for the road. This draws on the legend of the four captives.
+- **Silence.** When an appeal lapses, the needy leader gains −15 opinion of each community that stayed
+  silent, decaying over 10 years.
+- **Death in captivity.** A captive who dies in prison (vanilla `on_death`) now blames every community
+  that was expected and never answered, with its own message. In v1 a death excused everyone.
+
+### 9.5 Poor communities can ask
+- **The decision Write to the Communities** (`common/decisions/kehillah_mutual_aid_decisions.txt`):
+  - **shown** at Strained Prosperity or worse, or while a crisis's Recovery is open;
+  - **blocked** while the community has an appeal open, and for 3 years after one;
+  - **asks for** rebuilding during Recovery, otherwise relief.
+- **The choices in `kehillah_mutual_aid.0010`:**
+
+| Option | Sum asked | Cost | Reach |
+|---|---|---|---|
+| A humble letter | 60% | none | normal |
+| Our need in full | the whole sum | minor prestige | normal |
+| An envoy carries it | the whole sum | minor prestige and 25 gold | Healthy communities up to twice as far are asked too (`kehillah_aid_wide`) |
+
+  The event reminds the player of the community's own record of giving.
+- **It replaces** the Recovery phase's "Ask Another Kehillah for Tzedakah", which asked one random
+  community anywhere. The decision is removed, and the crisis situation now lists the new one.
+- **AI communities** still open relief automatically at Crisis Prosperity, at most once every 5 years.
+  Players now do it through the decision.
+
+### 9.6 Crisis integration (one channel for giving)
+- **When a crisis is settled** (`kehillah_crisis_neighbourhood_resolution_effect`), a struck quarter
+  opens a **rebuild** need and an expelled community an **exiles** need (`kehillah_aid_crisis_need_effect`).
+- **Every gift to a rebuild need also advances the Recovery's Endure track:** 6 for a share, 12 for the
+  remainder, and 10 more when the need is met (`kehillah_crisis_recovery_progress_effect`).
+- **The neighbours' report** `kehillah_crisis_network.0002` gives through that need:
+  - its gold option sends a share;
+  - a direct gift remains only when no need could be opened;
+  - taking in displaced households counts as taking refugees in for reputation;
+  - declining counts as declining the appeal.
+  Expelled communities now get the struck/expelled options instead of "restore their confidence".
+- **Other gifts that now count for reputation:**
+  - the Agitation-stage tzedakah (`kehillah_crisis_network.0001`): a share;
+  - the reprieve gift: minor.
+
+### 9.7 Fixed from v1
+- A completed ransom released the captive before closing the need, so `on_release_from_prison` could
+  give the collected gold to the captive as well as to the captor. Now the need closes first.
+- AI gifts were given while looping over the global need list, and a gift that completed a need removed
+  it mid-loop. Now the gifts happen after the loop. The AI also checks its gold before each gift.
+
+### 9.8 Live checklist (v2, for Daniel)
+1. **The pillar breakdowns** on the Worms domicile. The Prosperity tooltip ends with the mutual-aid
+   line, and the Greatness tooltip shows "Name for Giving: unremarkable". Hover the **Mutual Aid** link.
+2. **Shares by band.** `event kehillah_aid_debug.8` reports this community's band, shares and reach.
+   With a second community at Flourishing, open a need (`kehillah_aid_debug.2` on the other leader):
+   the Flourishing community's Send Aid costs twice the Healthy one's.
+3. **The letter.** `event kehillah_aid_debug.7` sends it.
+   - Check all four options' tooltips: gold, Greatness size, Name for Giving size, the
+     decide-later warning, and the opinion on declining.
+   - A second need inside 60 days arrives as a message.
+4. **The appeal.** Lower Prosperity to Strained by console, or use `kehillah_aid_debug.6`.
+   - Write to the Communities shows; the event's three letters show the sum asked.
+   - The envoy option costs 25 gold.
+   - A need opens, and nearby AI communities give within a few quarters.
+   - When it fills, `0004` names the patron.
+5. **Crisis.** Strike a quarter (the crisis debug path), then settle it.
+   - A rebuild need opens, and the neighbours' "Word from…" sends a share through it.
+   - The Recovery panel's Endure moves with each gift.
+   - The Recovery decisions list shows Write to the Communities only once that need has closed.
+6. **Ransom.** Imprison a Jewish courtier with no Jewish lord, from a non-Jew.
+   - Redeem Captive frees him, and the redeemer gets `0003`.
+   - Kill a different captive in prison: the expected communities get "Died in Captivity".
+7. **`error.log`:** check the new scopes in loc (`kehillah_aid_need` in option tooltips,
+   `GetPlayer.MakeScope.ScriptValue` in `0010`) and the game concept links.
+
+### 9.9 Still not done
+- **Famine and epidemic** neighbours open a need only through Crisis Prosperity.
+- **No panel listing open appeals.** The letters, messages, breakdown lines and portrait interactions
+  are the whole surface.
+- **The patron does not yet carry a Bet Din vote.** That waits for v4's regional Bet Din.
+- **A "send a teacher" appeal** (a scholar instead of gold) is not built.

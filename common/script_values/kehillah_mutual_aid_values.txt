@@ -1,46 +1,105 @@
 ﻿# =====================================================================
-# MUTUAL AID (2026-11-20). docs/spec/2026-11-20-mutual-aid.md.
-# Needs (ransom, relief, refugees) live on a character; every Kehillah in
-# range with the means is expected to answer; a community's reputation for
-# giving (title var kehillah_giving_reputation, -100..100) records it.
+# MUTUAL AID. docs/spec/2026-11-20-mutual-aid.md (v1 2026-11-20, v2 the
+# same day: shares and reach by Prosperity band, appeals, letters,
+# reciprocity, patrons, crisis integration).
+# Needs (ransom, relief, rebuild, refugees, exiles) live on a character;
+# every Kehillah in reach with the means is expected to answer; a
+# community's reputation for giving (title var kehillah_giving_reputation,
+# -100..100) records it.
 # =====================================================================
 
 # --- Needs -----------------------------------------------------------------
-# How long a need stays open (years).
+# How long a need stays open (years), and when the reminder goes out
+# (months after opening).
 kehillah_aid_open_years = 2
-# A relief need: the community in Crisis Prosperity, or one sheltering
-# refugees. Gold to be raised.
+kehillah_aid_reminder_months = 18
+# Gold to be raised. Relief: a community in Crisis Prosperity (AI, or a
+# player's appeal). Refugees: a community that took refugees in. Exiles: an
+# expelled community. Rebuild: a struck quarter, by the crisis's threat
+# grade (1-4): 175 / 250 / 325 / 400.
 kehillah_aid_relief_size = 150
 kehillah_aid_refugee_size = 100
-# A community may open a relief need at most once in this many years.
+kehillah_aid_exiles_size = 200
+kehillah_aid_rebuild_size_value = {
+	value = 100
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_crisis_threat_grade } }
+		add = {
+			value = primary_title.var:kehillah_crisis_threat_grade
+			multiply = 75
+		}
+	}
+	else = { add = 150 }
+}
+# Scope: a Kehillah leader writing an appeal. What the appeal asks for:
+# rebuilding while the crisis's Recovery is open, otherwise relief.
+kehillah_aid_appeal_size_value = {
+	value = kehillah_aid_relief_size
+	if = {
+		limit = { kehillah_crisis_recovery_open_trigger = yes }
+		value = kehillah_aid_rebuild_size_value
+	}
+}
+# A humble letter asks for less.
+kehillah_aid_appeal_humble_size_value = {
+	value = kehillah_aid_appeal_size_value
+	multiply = 0.6
+	round = yes
+}
+kehillah_aid_appeal_cooldown_years = 3
+kehillah_aid_envoy_cost = 25
+# An AI community in Crisis Prosperity asks at most this often (years).
 kehillah_aid_relief_cooldown_years = 5
-# Range: who is expected to answer (squared map distance from the need).
-# (A number, not an alias of squared_distance_huge: `a = b` script values
-# are rejected by the game.) 850 map pixels: about one Holy Roman Empire.
-kehillah_aid_range = 722500
-# Never less than this per expected giver.
-kehillah_aid_min_share = 25
 
-# Scope: the needy character. One expected community's share, rounded.
-kehillah_aid_share_value = {
+# --- Reach -------------------------------------------------------------------
+# Squared map distances from the giver's domicile to the needy character.
+# Healthy communities answer their neighbours (one Holy Roman Empire,
+# vanilla squared_distance_huge); Flourishing ones, or any community for an
+# appeal carried by an envoy, twice as far; Legendary ones, anywhere.
+kehillah_aid_range = 722500
+kehillah_aid_range_far = 2890000
+
+# --- Shares ------------------------------------------------------------------
+# Scope: a Kehillah leader. How many shares his community is expected to
+# carry: one when Healthy (or less), two when Flourishing, three when
+# Legendary.
+kehillah_aid_weight_value = {
+	value = 1
+	if = {
+		limit = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_legendary_threshold } }
+		value = 3
+	}
+	else_if = {
+		limit = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_flourishing_threshold } }
+		value = 2
+	}
+}
+# Every gift is at least this much, unless less remains.
+kehillah_aid_min_share = 25
+# Scope: a Kehillah leader; scope:kehillah_aid_need saved. His community's
+# share: the need divided among the expected communities' shares (at least
+# two shares' worth, so one community is never asked for all of it), times
+# his own shares; never more than remains.
+kehillah_aid_my_share_value = {
 	value = 0
 	if = {
-		limit = { has_variable = kehillah_aid_size }
-		value = var:kehillah_aid_size
+		limit = { exists = scope:kehillah_aid_need.var:kehillah_aid_size }
+		value = scope:kehillah_aid_need.var:kehillah_aid_size
+		multiply = kehillah_aid_weight_value
 		if = {
-			limit = { has_variable = kehillah_aid_expected_count }
+			limit = { exists = scope:kehillah_aid_need.var:kehillah_aid_expected_weight }
 			divide = {
-				value = var:kehillah_aid_expected_count
-				min = 1
+				value = scope:kehillah_aid_need.var:kehillah_aid_expected_weight
+				min = 2
 			}
 		}
+		else = { divide = 2 }
 		min = kehillah_aid_min_share
-		max = var:kehillah_aid_size
+		max = scope:kehillah_aid_need.kehillah_aid_remaining_value
 	}
 	round = yes
 }
-
-# Scope: the needy character. Gold still to raise.
+# Scope: the needy character. What is still to be raised.
 kehillah_aid_remaining_value = {
 	value = 0
 	if = {
@@ -54,35 +113,57 @@ kehillah_aid_remaining_value = {
 	}
 	round = yes
 }
+# Scope: the needy character. Reciprocity: a community known for giving is
+# answered more readily (AI chance per quarter, -40..40).
+kehillah_aid_reciprocity_value = {
+	value = 0
+	if = {
+		limit = { exists = var:kehillah_aid_for_title.var:kehillah_giving_reputation }
+		value = var:kehillah_aid_for_title.var:kehillah_giving_reputation
+		multiply = 0.4
+	}
+	else_if = {
+		limit = { exists = var:kehillah_aid_home_title.var:kehillah_giving_reputation }
+		value = var:kehillah_aid_home_title.var:kehillah_giving_reputation
+		multiply = 0.4
+	}
+	round = yes
+}
 
-# --- Reputation for giving --------------------------------------------------
+# --- Reputation for giving ---------------------------------------------------
+# Changes to the title variable kehillah_giving_reputation (-100..100).
 kehillah_giving_rep_share = 6        # answered with a share
 kehillah_giving_rep_full = 12        # paid the remainder / redeemed a captive
+kehillah_giving_rep_unasked = 3      # more, for giving when not expected
 kehillah_giving_rep_refused = -6     # expected, never answered
+kehillah_giving_rep_refused_openly = -4 # expected, and said no
 kehillah_giving_rep_take_in = 6      # took refugees in
 kehillah_giving_rep_road = 2         # silver for the road
 kehillah_giving_rep_turn_away = -6   # closed the gate
 kehillah_giving_rep_emissary_generous = 10
 kehillah_giving_rep_emissary_modest = 4
 kehillah_giving_rep_emissary_decline = -5
-# Yearly fade toward zero: old deeds fade, a new leader can repair it.
+# Yearly fade toward zero.
 kehillah_giving_rep_decay = 0.85
-
-# Tiers (character modifiers on the leader).
+# Tiers (the leader's modifier).
 kehillah_giving_rep_renowned = 40
 kehillah_giving_rep_generous = 15
 kehillah_giving_rep_stingy = -15
 kehillah_giving_rep_disgraced = -40
 
-# Greatness for a gift, and the cost of a refusal.
+# --- Pillars -----------------------------------------------------------------
 kehillah_aid_gift_greatness = 10
 kehillah_aid_full_greatness = 20
 kehillah_aid_refused_greatness = -10
-# Prosperity restored to a community whose relief was fully raised.
+kehillah_aid_patron_greatness = 10
 kehillah_aid_relief_prosperity = 40
+# Crisis Recovery (Endure) progress from gifts toward rebuilding.
+kehillah_aid_rebuild_share_progress = 6
+kehillah_aid_rebuild_full_progress = 12
+kehillah_aid_rebuild_done_progress = 10
 
-# --- The emissary from the Land of Israel -----------------------------------
-# Yearly chance, percent, for a community at Healthy Prosperity or better.
-kehillah_emissary_yearly_chance = 12
+# --- The emissary from the Land of Israel ------------------------------------
+# Yearly chance per community (literals in the on_action): 10 when Healthy,
+# 20 when Flourishing or better.
 kehillah_emissary_generous_gold = 100
 kehillah_emissary_modest_gold = 30

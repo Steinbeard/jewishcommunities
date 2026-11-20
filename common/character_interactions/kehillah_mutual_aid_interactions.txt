@@ -1,13 +1,14 @@
 ﻿# =====================================================================
-# MUTUAL AID -- the player's two ways to answer a need (2026-11-20).
-# common/scripted_effects/kehillah_mutual_aid_effects.txt. Both target the
-# character the need sits on (the captive, or the needy community's
-# leader); the open-need message's portrait is that character, so the
-# player right-clicks it. AI communities answer from the quarterly pulse,
-# so neither has an AI frequency.
+# MUTUAL AID -- the player's ways to answer a need (2026-11-20; v2 the same
+# day). common/scripted_effects/kehillah_mutual_aid_effects.txt. All target
+# the character the need sits on (the captive, or the needy community's
+# leader); every letter and message about a need shows that character's
+# portrait, so the player right-clicks it. AI communities answer from the
+# quarterly pulse, so none has an AI frequency.
 # =====================================================================
 
-# Send Aid: this community's share toward any open need.
+# Send Aid: this community's share toward any open need. The share grows
+# with the community's Prosperity (kehillah_aid_my_share_value).
 kehillah_send_aid_interaction = {
 	category = interaction_category_friendly
 	icon = icon_gold
@@ -25,20 +26,22 @@ kehillah_send_aid_interaction = {
 	}
 
 	is_valid_showing_failures_only = {
+		scope:recipient = { save_temporary_scope_as = kehillah_aid_need }
 		scope:actor = {
 			is_available_adult = yes
-			gold >= scope:recipient.kehillah_aid_share_value
+			gold >= kehillah_aid_my_share_value
 		}
 	}
 
 	on_accept = {
 		scope:actor = {
-			kehillah_aid_give_effect = { NEED = scope:recipient AMOUNT = scope:recipient.kehillah_aid_share_value }
+			kehillah_aid_give_effect = { NEED = scope:recipient AMOUNT = kehillah_aid_my_share_value }
 		}
 	}
 }
 
 # Redeem Captive: pay what remains of a ransom, and the captive goes free.
+# Give the Rest: the same for any other need.
 kehillah_redeem_captive_interaction = {
 	category = interaction_category_friendly
 	icon = icon_gold
@@ -66,6 +69,66 @@ kehillah_redeem_captive_interaction = {
 	on_accept = {
 		scope:actor = {
 			kehillah_aid_give_effect = { NEED = scope:recipient AMOUNT = scope:recipient.kehillah_aid_remaining_value }
+		}
+	}
+}
+
+kehillah_give_the_rest_interaction = {
+	category = interaction_category_friendly
+	icon = icon_gold
+	common_interaction = no
+	use_diplomatic_range = no
+	desc = kehillah_give_the_rest_interaction_desc
+	auto_accept = yes
+	ai_frequency = 0
+
+	is_shown = {
+		scope:recipient = {
+			has_variable = kehillah_aid_kind
+			NOT = { var:kehillah_aid_kind = flag:ransom }
+		}
+		scope:actor = {
+			government_has_flag = government_is_kehillah
+			kehillah_can_answer_aid_need_trigger = { NEED = scope:recipient }
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			is_available_adult = yes
+			gold >= scope:recipient.kehillah_aid_remaining_value
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			kehillah_aid_give_effect = { NEED = scope:recipient AMOUNT = scope:recipient.kehillah_aid_remaining_value }
+		}
+	}
+}
+
+# Decline the Appeal: an expected community says openly that it cannot
+# help, rather than staying silent until the appeal closes.
+kehillah_decline_aid_interaction = {
+	category = interaction_category_friendly
+	icon = icon_gold
+	common_interaction = no
+	use_diplomatic_range = no
+	desc = kehillah_decline_aid_interaction_desc
+	auto_accept = yes
+	ai_frequency = 0
+
+	is_shown = {
+		scope:actor = {
+			government_has_flag = government_is_kehillah
+			kehillah_can_answer_aid_need_trigger = { NEED = scope:recipient }
+			kehillah_aid_is_expected_trigger = { NEED = scope:recipient }
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			kehillah_aid_refuse_effect = { NEED = scope:recipient }
 		}
 	}
 }

@@ -1,9 +1,17 @@
 ﻿namespace = kehillah_mutual_aid
 # =====================================================================
-# MUTUAL AID (2026-11-20). common/scripted_effects/kehillah_mutual_aid_effects.txt.
+# MUTUAL AID (2026-11-20; v2 the same day). common/scripted_effects/kehillah_mutual_aid_effects.txt.
 #   .0001 An emissary from the Land of Israel (a shadar) asks for the
 #         communities there. The standing need: no deadline, no list of
 #         who was expected; the answer goes straight to the reputation.
+#   .0002 The letter: a need is open and this community is expected to
+#         answer it. Give a share, give all of it, decide later, or say no.
+#   .0003 A redeemed captive with no Jewish household to return to asks to
+#         settle with the community that paid most of his ransom.
+#   .0004 A needy community's appeal is answered in full; its largest
+#         giver is named.
+#   .0010 Writing to the communities: a poor or struck community asks for
+#         help (kehillah_write_to_communities_decision).
 # =====================================================================
 
 kehillah_mutual_aid.0001 = {
@@ -34,8 +42,7 @@ kehillah_mutual_aid.0001 = {
 		remove_short_term_gold = kehillah_emissary_generous_gold
 		add_piety = medium_piety_gain
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_aid_full_greatness }
-		custom_tooltip = kehillah_giving_rep_up_tt
-		hidden_effect = { kehillah_giving_rep_change_effect = { AMOUNT = kehillah_giving_rep_emissary_generous } }
+		kehillah_giving_rep_change_effect = { AMOUNT = kehillah_giving_rep_emissary_generous }
 		ai_chance = {
 			base = 30
 			modifier = { add = 30 has_trait = generous }
@@ -51,19 +58,256 @@ kehillah_mutual_aid.0001 = {
 		show_as_unavailable = { always = yes }
 		remove_short_term_gold = kehillah_emissary_modest_gold
 		add_piety = minor_piety_gain
-		custom_tooltip = kehillah_giving_rep_up_tt
-		hidden_effect = { kehillah_giving_rep_change_effect = { AMOUNT = kehillah_giving_rep_emissary_modest } }
+		kehillah_giving_rep_change_effect = { AMOUNT = kehillah_giving_rep_emissary_modest }
 		ai_chance = { base = 50 }
 	}
 
 	# Nothing this year.
 	option = {
 		name = kehillah_mutual_aid.0001.c
-		custom_tooltip = kehillah_giving_rep_down_tt
-		hidden_effect = { kehillah_giving_rep_change_effect = { AMOUNT = kehillah_giving_rep_emissary_decline } }
+		kehillah_giving_rep_change_effect = { AMOUNT = kehillah_giving_rep_emissary_decline }
 		ai_chance = {
 			base = 15
 			modifier = { add = 30 has_trait = greedy }
 		}
+	}
+}
+
+# ---------------------------------------------------------------------------
+# The letter. Root: an expected player leader; scope:kehillah_aid_need: the
+# needy character.
+kehillah_mutual_aid.0002 = {
+	type = character_event
+	title = {
+		first_valid = {
+			triggered_desc = { trigger = { scope:kehillah_aid_need.var:kehillah_aid_kind ?= flag:ransom } desc = kehillah_aid_open_ransom_t }
+			triggered_desc = { trigger = { scope:kehillah_aid_need.var:kehillah_aid_kind ?= flag:rebuild } desc = kehillah_aid_open_rebuild_t }
+			triggered_desc = { trigger = { scope:kehillah_aid_need.var:kehillah_aid_kind ?= flag:refugees } desc = kehillah_aid_open_refugees_t }
+			triggered_desc = { trigger = { scope:kehillah_aid_need.var:kehillah_aid_kind ?= flag:exiles } desc = kehillah_aid_open_exiles_t }
+			desc = kehillah_aid_open_relief_t
+		}
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = { trigger = { scope:kehillah_aid_need.var:kehillah_aid_kind ?= flag:ransom } desc = kehillah_mutual_aid.0002.desc_ransom }
+			triggered_desc = { trigger = { scope:kehillah_aid_need.var:kehillah_aid_kind ?= flag:rebuild } desc = kehillah_mutual_aid.0002.desc_rebuild }
+			triggered_desc = { trigger = { scope:kehillah_aid_need.var:kehillah_aid_kind ?= flag:refugees } desc = kehillah_mutual_aid.0002.desc_refugees }
+			triggered_desc = { trigger = { scope:kehillah_aid_need.var:kehillah_aid_kind ?= flag:exiles } desc = kehillah_mutual_aid.0002.desc_exiles }
+			desc = kehillah_mutual_aid.0002.desc_relief
+		}
+		first_valid = {
+			triggered_desc = { trigger = { scope:kehillah_aid_need.kehillah_aid_reciprocity_value >= 6 } desc = kehillah_mutual_aid.0002.desc_they_gave }
+			triggered_desc = { trigger = { scope:kehillah_aid_need.kehillah_aid_reciprocity_value <= -6 } desc = kehillah_mutual_aid.0002.desc_they_withheld }
+			desc = kehillah_mutual_aid.0002.desc_nothing
+		}
+		first_valid = {
+			triggered_desc = { trigger = { kehillah_aid_weight_value >= 3 } desc = kehillah_mutual_aid.0002.desc_we_lead }
+			triggered_desc = { trigger = { kehillah_aid_weight_value >= 2 } desc = kehillah_mutual_aid.0002.desc_we_are_great }
+			desc = kehillah_mutual_aid.0002.desc_we_are_neighbours
+		}
+	}
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:kehillah_aid_need
+		animation = worry
+	}
+
+	trigger = {
+		exists = scope:kehillah_aid_need
+		kehillah_can_answer_aid_need_trigger = { NEED = scope:kehillah_aid_need }
+	}
+
+	# Our share.
+	option = {
+		name = kehillah_mutual_aid.0002.a
+		trigger = { gold >= kehillah_aid_my_share_value }
+		show_as_unavailable = { always = yes }
+		kehillah_aid_give_effect = { NEED = scope:kehillah_aid_need AMOUNT = kehillah_aid_my_share_value }
+		ai_chance = { base = 60 }
+	}
+
+	# All of it.
+	option = {
+		name = {
+			trigger = { scope:kehillah_aid_need.var:kehillah_aid_kind ?= flag:ransom }
+			text = kehillah_mutual_aid.0002.b_ransom
+		}
+		name = {
+			trigger = { NOT = { scope:kehillah_aid_need.var:kehillah_aid_kind ?= flag:ransom } }
+			text = kehillah_mutual_aid.0002.b
+		}
+		trigger = {
+			kehillah_aid_my_share_value < scope:kehillah_aid_need.kehillah_aid_remaining_value
+			gold >= scope:kehillah_aid_need.kehillah_aid_remaining_value
+		}
+		kehillah_aid_give_effect = { NEED = scope:kehillah_aid_need AMOUNT = scope:kehillah_aid_need.kehillah_aid_remaining_value }
+		ai_chance = { base = 10 modifier = { add = 20 has_trait = generous } }
+	}
+
+	# Later.
+	option = {
+		name = kehillah_mutual_aid.0002.c
+		custom_tooltip = kehillah_aid_later_tt
+		custom_tooltip = kehillah_aid_later_risk_tt
+		ai_chance = { base = 20 }
+	}
+
+	# No.
+	option = {
+		name = kehillah_mutual_aid.0002.d
+		kehillah_aid_refuse_effect = { NEED = scope:kehillah_aid_need }
+		ai_chance = { base = 10 modifier = { add = 30 has_trait = greedy } }
+	}
+}
+
+# ---------------------------------------------------------------------------
+# A redeemed captive asks to stay. Root: the community that paid most;
+# scope:kehillah_aid_need: the freed captive.
+kehillah_mutual_aid.0003 = {
+	type = character_event
+	title = kehillah_mutual_aid.0003.t
+	desc = {
+		desc = kehillah_mutual_aid.0003.desc
+		first_valid = {
+			triggered_desc = { trigger = { scope:kehillah_aid_need.learning >= 12 } desc = kehillah_mutual_aid.0003.desc_learned }
+			desc = kehillah_mutual_aid.0003.desc_plain
+		}
+	}
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+	right_portrait = {
+		character = scope:kehillah_aid_need
+		animation = happiness
+	}
+
+	trigger = {
+		exists = primary_title
+		scope:kehillah_aid_need ?= {
+			is_alive = yes
+			is_imprisoned = no
+			is_ruler = no
+			NOT = { employer ?= root }
+			NOT = { employer ?= { is_jewish_character_trigger = yes } }
+		}
+	}
+
+	# Welcome him.
+	option = {
+		name = kehillah_mutual_aid.0003.a
+		add_courtier = scope:kehillah_aid_need
+		if = {
+			limit = { scope:kehillah_aid_need.learning >= 12 }
+			kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_aid_patron_greatness }
+		}
+		ai_chance = { base = 70 }
+	}
+
+	# Silver for the road.
+	option = {
+		name = kehillah_mutual_aid.0003.b
+		kehillah_giving_rep_change_effect = { AMOUNT = kehillah_giving_rep_road }
+		ai_chance = { base = 30 }
+	}
+}
+
+# ---------------------------------------------------------------------------
+# The appeal is answered. Root: the needy leader (a player);
+# scope:kehillah_aid_patron: the largest giver.
+kehillah_mutual_aid.0004 = {
+	type = character_event
+	title = kehillah_mutual_aid.0004.t
+	desc = kehillah_mutual_aid.0004.desc
+	theme = faith
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+	right_portrait = {
+		character = scope:kehillah_aid_patron
+		animation = personality_honorable
+	}
+
+	trigger = {
+		exists = primary_title
+		exists = scope:kehillah_aid_patron
+	}
+
+	option = {
+		name = kehillah_mutual_aid.0004.a
+		add_piety = minor_piety_gain
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Writing to the communities. Root: a poor or struck community's leader.
+kehillah_mutual_aid.0010 = {
+	type = character_event
+	title = kehillah_mutual_aid.0010.t
+	desc = {
+		first_valid = {
+			triggered_desc = { trigger = { kehillah_crisis_recovery_open_trigger = yes } desc = kehillah_mutual_aid.0010.desc_struck }
+			desc = kehillah_mutual_aid.0010.desc_poor
+		}
+		first_valid = {
+			triggered_desc = { trigger = { primary_title ?= { has_variable = kehillah_giving_reputation var:kehillah_giving_reputation >= 15 } } desc = kehillah_mutual_aid.0010.desc_we_gave }
+			triggered_desc = { trigger = { primary_title ?= { has_variable = kehillah_giving_reputation var:kehillah_giving_reputation <= -15 } } desc = kehillah_mutual_aid.0010.desc_we_withheld }
+			desc = kehillah_mutual_aid.0002.desc_nothing
+		}
+	}
+	theme = stewardship
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+
+	trigger = {
+		exists = primary_title
+		NOT = { has_variable = kehillah_aid_kind }
+	}
+
+	# A humble letter.
+	option = {
+		name = kehillah_mutual_aid.0010.a
+		custom_tooltip = kehillah_aid_appeal_humble_tt
+		hidden_effect = { kehillah_aid_appeal_effect = { SIZE = kehillah_aid_appeal_humble_size_value WIDE = no } }
+		ai_chance = { base = 40 }
+	}
+
+	# Our need in full.
+	option = {
+		name = kehillah_mutual_aid.0010.b
+		add_prestige = minor_prestige_loss
+		custom_tooltip = kehillah_aid_appeal_full_tt
+		hidden_effect = { kehillah_aid_appeal_effect = { SIZE = kehillah_aid_appeal_size_value WIDE = no } }
+		ai_chance = {
+			base = 40
+			modifier = { add = 20 primary_title ?= { has_variable = kehillah_giving_reputation var:kehillah_giving_reputation >= 15 } }
+		}
+	}
+
+	# An envoy carries it farther.
+	option = {
+		name = kehillah_mutual_aid.0010.c
+		trigger = { gold >= kehillah_aid_envoy_cost }
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = kehillah_aid_envoy_cost
+		add_prestige = minor_prestige_loss
+		custom_tooltip = kehillah_aid_appeal_full_tt
+		custom_tooltip = kehillah_aid_appeal_wide_tt
+		hidden_effect = { kehillah_aid_appeal_effect = { SIZE = kehillah_aid_appeal_size_value WIDE = yes } }
+		ai_chance = { base = 15 }
+	}
+
+	# Not yet.
+	option = {
+		name = kehillah_mutual_aid.0010.d
+		ai_chance = { base = 5 }
 	}
 }

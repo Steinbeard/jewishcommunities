@@ -1,3 +1,8 @@
+**2026-11-20 note:** the gold in step 3 now goes through mutual aid. A settled struck or expelled
+crisis opens a rebuild or exiles need, and the "Word from…" tzedakah sends a share to it. All of these
+gifts count toward the community's name for giving. See
+[mutual aid section 9.6](2026-11-20-mutual-aid.md).
+
 **Status:** BUILT 2026-11-12; source/xTiger checked with the prior 16-error baseline unchanged. Live validation is pending. This extends the active Community Crisis and Recovery system; it does not replace the crisis community's own phase actions.
 
 # Neighbouring community crisis aid
