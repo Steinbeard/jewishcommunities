@@ -2,7 +2,7 @@
 same day** ("please proceed with smoothing out this system"). v2 is recorded in section 9, which
 **supersedes** sections 1-5 and 8 where they differ: shares, reach, letters, appeals and crisis
 integration. **v2.1 the same day** (section 10: one interaction, appeal reach vs envoy, shares scale
-gifts and silence, the patron's hook and debt of gratitude) supersedes parts of section 9. xTiger-clean (no reports in the new or changed files). **Not live-tested;** v1's checklist
+gifts and silence, the patron's hook and debt of gratitude) supersedes parts of section 9. **v2.2** (section 11: sums scale with families, damage and era; the Shtadlan is the envoy). xTiger-clean (no reports in the new or changed files). **Not live-tested;** v1's checklist
 is section 7 and v2's is section 9.8. Builds the pillars spec's R5 and R6
 ([pillars as opportunities and expectations](2026-11-19-pillars-as-opportunities-and-expectations.md))
 and replaces its B1-B4. ROADMAP stays authoritative.
@@ -359,3 +359,38 @@ The largest giver to a **completed** appeal gains:
    player) carries "They were our patrons once".
 4. At Flourishing, a share's tooltip shows a larger Name for Giving rise than at Healthy. A lapse at
    Flourishing costs twice the Healthy fall.
+
+## 11. v2.2: sums that scale, the Shtadlan as envoy (2026-11-20)
+
+Daniel asked for two changes:
+- the sums should "scale based on something reasonable" instead of fixed values such as 150;
+- the leader should not be the envoy "unless we have a travel activity but that seems like overkill.
+  Maybe your shtadlan?".
+
+He also said the 4-of-53 problem (section 10 and ROADMAP) is to be solved by the economic integrations
+and a later balancing pass that starts the historically rich communities prosperous, **not** by changing
+who is expected.
+
+### 11.1 Sums
+Every sum is computed in the needy leader's scope and multiplied by the era, the way vanilla's own gold
+values are (`kehillah_aid_era_value`: ×0.75 tribal, ×1 early medieval, ×1.5 high medieval, ×3 late
+medieval):
+
+| Need | Sum before the era multiplier |
+|---|---|
+| relief | 50 + 30 per householder family (`kehillah_household_count_value`) |
+| rebuild | 60 per threat grade + 25 per building lost + 5 per death in the attack (the crisis's own loss records) |
+| exiles | 50 + 60 per householder family |
+| refugees | 100 |
+| ransom | vanilla's own price, unchanged |
+
+At 1066, a three-family community asks for about 140 in relief, and a grade-2 attack that destroyed two
+buildings and killed ten asks for about 220.
+
+### 11.2 The envoy is the Shtadlan
+- **Who:** the community's Shtadlan, the chancellor council seat `cp:councillor_chancellor`
+  (`kehillah_has_shtadlan_trigger`).
+- **When it is unavailable:** without a Shtadlan who is a free adult, the envoy option is greyed out,
+  with the reason "We need a Shtadlan, free to travel, to carry the letters".
+- **His effect:** his diplomacy sets the AI bonus, as in 10.2.
+- **No travel:** he does not leave the council or go on a journey. A travel activity was judged overkill.

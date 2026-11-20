@@ -13,23 +13,90 @@
 # (months after opening).
 kehillah_aid_open_years = 2
 kehillah_aid_reminder_months = 18
-# Gold to be raised. Relief: a community in Crisis Prosperity (AI, or a
-# player's appeal). Refugees: a community that took refugees in. Exiles: an
-# expelled community. Rebuild: a struck quarter, by the crisis's threat
-# grade (1-4): 175 / 250 / 325 / 400.
-kehillah_aid_relief_size = 150
-kehillah_aid_refugee_size = 100
-kehillah_aid_exiles_size = 200
-kehillah_aid_rebuild_size_value = {
-	value = 100
+# Gold to be raised (v2.2, Daniel: "instead of fixed values ... scale based
+# on something reasonable"). Every sum is in the needy leader's scope and
+# grows with what must be carried -- the community's families, the damage
+# done -- times the era, as vanilla's own gold values do
+# (kehillah_aid_era_value: x0.75 tribal, x1 early, x1.5 high, x3 late
+# medieval). At 1066 (early medieval) a three-family community asks about
+# 140 for relief.
+#   relief   -- 50, plus 30 per householder family
+#   rebuild  -- 60 per threat grade, plus 25 per building lost and 5 per
+#               death in the attack
+#   exiles   -- 50, plus 60 per householder family (all must be resettled)
+#   refugees -- 100
+# A ransom is vanilla's own price.
+kehillah_aid_era_value = {
+	value = 1
 	if = {
-		limit = { primary_title ?= { has_variable = kehillah_crisis_threat_grade } }
-		add = {
-			value = primary_title.var:kehillah_crisis_threat_grade
-			multiply = 75
+		limit = { exists = culture }
+		culture = {
+			if = {
+				limit = { has_cultural_era_or_later = culture_era_late_medieval }
+				multiply = 3
+			}
+			else_if = {
+				limit = { has_cultural_era_or_later = culture_era_high_medieval }
+				multiply = 1.5
+			}
+			else_if = {
+				limit = { has_cultural_era_or_later = culture_era_early_medieval }
+				multiply = 1
+			}
+			else = { multiply = 0.75 }
 		}
 	}
-	else = { add = 150 }
+}
+# Scope: the needy leader. His community's householder families.
+kehillah_aid_families_value = {
+	value = 0
+	if = {
+		limit = { exists = primary_title }
+		value = primary_title.kehillah_household_count_value
+	}
+}
+kehillah_aid_relief_size = {
+	value = 30
+	multiply = kehillah_aid_families_value
+	add = 50
+	multiply = kehillah_aid_era_value
+	round = yes
+}
+kehillah_aid_refugee_size = {
+	value = 100
+	multiply = kehillah_aid_era_value
+	round = yes
+}
+kehillah_aid_exiles_size = {
+	value = 60
+	multiply = kehillah_aid_families_value
+	add = 50
+	multiply = kehillah_aid_era_value
+	round = yes
+}
+kehillah_aid_rebuild_size_value = {
+	value = 120
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_crisis_threat_grade } }
+		value = primary_title.var:kehillah_crisis_threat_grade
+		multiply = 60
+	}
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_crisis_loss_buildings } }
+		add = {
+			value = primary_title.var:kehillah_crisis_loss_buildings
+			multiply = 25
+		}
+	}
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_crisis_loss_dead } }
+		add = {
+			value = primary_title.var:kehillah_crisis_loss_dead
+			multiply = 5
+		}
+	}
+	multiply = kehillah_aid_era_value
+	round = yes
 }
 # Scope: a Kehillah leader writing an appeal. What the appeal asks for:
 # rebuilding while the crisis's Recovery is open, otherwise relief.
@@ -42,9 +109,9 @@ kehillah_aid_appeal_size_value = {
 }
 kehillah_aid_appeal_cooldown_years = 3
 kehillah_aid_envoy_cost = 25
-# Scope: the envoy. How much likelier AI communities are to answer an
-# appeal he carries (quarterly chance points): 2 per point of diplomacy
-# above 8, at most 20.
+# Scope: the envoy (the Shtadlan, v2.2). How much likelier AI communities
+# are to answer an appeal he carries (quarterly chance points): 2 per
+# point of diplomacy above 8, at most 20.
 kehillah_aid_envoy_bonus_value = {
 	value = diplomacy
 	subtract = 8

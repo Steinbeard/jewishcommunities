@@ -311,6 +311,63 @@ as done.** The checklist is below. It supersedes section 6's "Deferred: S8 royal
 5. **Forgive the Debt** on a debtor: vanilla's forgiveness toasts, and the outlook rises.
 6. Check `error.log` for anything mentioning the loan or `kehillah_lent_for`.
 
+## 8. The merchant and republic domicile, and county Prosperity (research, 2026-11-20)
+
+Daniel asked what can be borrowed from the republic and merchant domiciles, and how the goods system
+could represent Jewish trades.
+
+### What vanilla has
+- **One domicile for both governments.** `republic_government` and `merchant_government` share
+  `domicile_type = merchant_company` (`00_domicile_types.txt`). The republic differs only by
+  `mechanic_type = republic`.
+- **External buildings.** The domicile has four, by category: production, trade, warehouse and civic
+  (`merchant_company_building_*`). Each has internal slots (3 to 6) for the specialised buildings.
+- **Internal buildings** (`common/domiciles/buildings/00_merchant_company_buildings.txt`) are named
+  trades. Several fit a Jewish quarter directly:
+  - `goldsmiths_row`, `dyers_yard`, `weavers_hall`, `tanners_row`, `vintners_row`, `scriptorium` and
+    `gem_cutters`;
+  - `moneychangers_row` and `moneylenders_books`;
+  - `diaspora_network`;
+  - `books_traders` and `silk_traders`.
+- **What those buildings do.** Mostly they give character modifiers:
+  - better sell and buy prices for their good (`trade_good_<x>_sell_price_mult`), and trade expertise
+    growth;
+  - `trade_competitiveness_add`;
+  - `domicile_monthly_gold_add` (the moneychangers);
+  - a few produce goods (the spice traders' `province_modifier = { trade_good_spices_production_add }`).
+  
+  **The price modifiers matter only to someone who trades through Profit Routes.** A Kehillah that
+  cannot trade gets nothing from them.
+- **Gating.** Every one of these buildings has `allowed_domicile_types = { merchant_company }`.
+  Admitting our domicile would mean overriding about 1,050 vanilla building definitions: a large migration cost on
+  every patch, and against the levers note's caution. **Copying the ideas into our own `kehillah_`
+  Quarter buildings is additive and cheap.**
+- **County Prosperity.** 1.21 has a county **Prosperity** (game concept `county_prosperity`, with
+  `prosperity_growth`, `prosperity_growth_factor`, `prosperity_decline` modifiers and
+  `character_capital_county_monthly_prosperity_growth_add`). It drives the county's taxes and
+  development, beside the new Settlement Size. Two consequences:
+  1. **Our pillar name collides with it.** Daniel proposes renaming the pillar **Affluence** (ROADMAP
+     backlog).
+  2. **It is the natural channel for "the Jews enrich the town".** Quarter buildings could add
+     `prosperity_growth` to the host county, and the community's Affluence could read the county's
+     Prosperity: the local-economy hook v33 reserved (`kehillah_bd_local_economy_value`).
+
+### Recommendation (supersedes nothing; refines sections 2-4)
+1. **Artisan trades as Quarter buildings.** A "Craft Row" external building whose internal slots hold
+   the historical Jewish trades:
+   - dyers, silk weavers, goldsmiths, tanners, vintners (kosher wine), the sofer's scriptorium,
+     moneychangers;
+   - each **produces its good into the host county's market** (`province_modifier` production, which
+     domiciles support), adds a little county `prosperity_growth`, and adds to the community's income;
+   - which trades are open depends on region (silk and dyes in the Mediterranean and Byzantium, wine
+     in Champagne and the Rhineland, goldsmiths everywhere).
+2. **Affluence reads the market.** Add a breakdown term for the host county's Prosperity, and for
+   whether its market wants what the Quarter makes.
+3. **Diaspora networks.** A building modelled on `diaspora_network` for the long-distance trading
+   communities (Radhanite routes, the Geniza merchants).
+4. **Profit Routes** stay a later spike, as the levers note says. Only then do sell-price modifiers
+   start to matter.
+
 ## 5. Live test record
 
 **2026-11-19, scripted xTiger run, Worms 1066 (`bm_1066_kehillah_worms`, play `d_kehillah_worms`),

@@ -13,8 +13,9 @@
 #   .0010 Writing to the communities: a poor or struck community asks for
 #         help (kehillah_write_to_communities_decision). The sum comes from
 #         the trouble; the choice is how far the letters go: the
-#         neighbours, or an envoy (gold) who carries them twice as far and
-#         whose diplomacy makes the AI likelier to answer (v2.1).
+#         neighbours, or the Shtadlan as envoy (gold) who carries them
+#         twice as far and whose diplomacy makes the AI likelier to answer
+#         (v2.1; the Shtadlan since v2.2).
 # =====================================================================
 
 kehillah_mutual_aid.0001 = {
@@ -280,25 +281,12 @@ kehillah_mutual_aid.0010 = {
 		NOT = { has_variable = kehillah_aid_kind }
 	}
 
-	# The envoy: the best diplomat at court, or the leader himself.
+	# The envoy is the community's Shtadlan (v2.2, Daniel: the leader
+	# should not be the envoy "unless we have a travel activity but that
+	# seems like overkill. Maybe your shtadlan?"). The Shtadlan is the
+	# chancellor council seat (kehillah_has_shtadlan_trigger).
 	immediate = {
-		ordered_courtier = {
-			limit = {
-				is_adult = yes
-				is_imprisoned = no
-			}
-			order_by = diplomacy
-			save_scope_as = kehillah_aid_envoy
-		}
-		if = {
-			limit = {
-				OR = {
-					NOT = { exists = scope:kehillah_aid_envoy }
-					diplomacy > scope:kehillah_aid_envoy.diplomacy
-				}
-			}
-			save_scope_as = kehillah_aid_envoy
-		}
+		cp:councillor_chancellor ?= { save_scope_as = kehillah_aid_envoy }
 	}
 
 	# To the neighbours.
@@ -312,7 +300,17 @@ kehillah_mutual_aid.0010 = {
 	# An envoy carries it farther.
 	option = {
 		name = kehillah_mutual_aid.0010.b
-		trigger = { gold >= kehillah_aid_envoy_cost }
+		trigger = {
+			custom_tooltip = {
+				text = kehillah_aid_no_shtadlan_tt
+				exists = scope:kehillah_aid_envoy
+				scope:kehillah_aid_envoy = {
+					is_imprisoned = no
+					is_available_adult = yes
+				}
+			}
+			gold >= kehillah_aid_envoy_cost
+		}
 		show_as_unavailable = { always = yes }
 		remove_short_term_gold = kehillah_aid_envoy_cost
 		custom_tooltip = kehillah_aid_appeal_full_tt
@@ -321,7 +319,7 @@ kehillah_mutual_aid.0010 = {
 		hidden_effect = { kehillah_aid_appeal_effect = { SIZE = kehillah_aid_appeal_size_value WIDE = yes } }
 		ai_chance = {
 			base = 20
-			modifier = { add = 30 scope:kehillah_aid_envoy.diplomacy >= 12 }
+			modifier = { add = 30 scope:kehillah_aid_envoy ?= { diplomacy >= 12 } }
 		}
 	}
 
