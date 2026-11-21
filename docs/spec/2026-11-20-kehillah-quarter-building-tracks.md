@@ -541,3 +541,20 @@ Each entry is source-checked and xTiger-clean (beyond the known trade-good false
   - burned bonds (the Bonds incident) no longer void the community's loans;
   - when the house of study or the scriptorium burns, the books are not lost (`kehillah_crisis_books_lost` is not set).
 - **Succession:** the annexes are restored after the Wall.
+
+### 15.4 The Quarter enriches the town; development is gone in 1.21
+- **1.21 removed county development.** Vanilla now uses `prosperity_level` (0-100: medium 40, good 60) and `prosperity_growth(_factor)`; `development_level` appears nowhere in vanilla 1.21. Every use in the mod's **own** files was migrated (thresholds 5→20, 8/10→25, 15→40, 20→50, 25→60, 30→70; point values halved):
+  - the local-economy line (`kehillah_bd_local_economy_value`) and the urban-opportunity lines;
+  - the inspector and the founding and settler gates (`kehillah_natural_founding_min_development` = 25);
+  - the Sanhedrin, the revolt and the debug probe;
+  - the yeshiva and temple holding buildings and the Covenant Community tenet's modifiers.
+  
+  **Not migrated** (the separate 1.21 triage, ROADMAP): the vanilla-override copies (council task overrides, the laamp events, the Iberian struggle), and the mod's 8 uses of `tax_mult`, which 1.21 also removed. xTiger's 1.20 build reports the new `prosperity_*` tokens as unknown (51 false positives).
+- **The Quarter enriches the town:**
+  - each year (`kehillah_quarter_enrich_town_effect`, `kehillah_quarter_on_actions.txt`) the host county gets one county modifier, **Jewish Craftsmen / Jewish Trades / Jewish Commerce**, with `prosperity_growth` 0.05 / 0.1 / 0.2;
+  - the tier follows `kehillah_quarter_trade_score_value`: trades, the winery, the Scriptorium, the Market Hall, the Guild Hall, Sales to the Town, a Funduq; 4 for medium, 8 for large;
+  - the host sees it in the vanilla county view;
+  - the community's own Prosperity reads the county's Prosperity back through the local-economy line: the loop of §7.
+- **Kosher Market annexes:**
+  - **Matzah Bakery:** piety, and Stability +15;
+  - **Sales to the Town** (needs the Kosher Market): income, Prosperity +20 and a large share of the town trade score, but **+5 danger** (a new danger line, "Meat and wine sold to the town").
