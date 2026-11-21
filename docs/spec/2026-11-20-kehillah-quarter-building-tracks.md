@@ -558,3 +558,19 @@ Each entry is source-checked and xTiger-clean (beyond the known trade-good false
 - **Kosher Market annexes:**
   - **Matzah Bakery:** piety, and Stability +15;
   - **Sales to the Town** (needs the Kosher Market): income, Prosperity +20 and a large share of the town trade score, but **+5 danger** (a new danger line, "Meat and wine sold to the town").
+
+### 15.5 Kahal House, Synagogue and Funduq annexes
+- **Internal slots:** the Kahal House 1, 2, 3; the Synagogue 1, 2, 3, 3, 4 (was 1, 2, 2, 2, 3); the Funduq 1, 2, 2.
+- **Pinkas:** Stability +20.
+- **Tax Assessors:**
+  - income ×1.15;
+  - Stability +5 while Prosperity is Healthy or better, −20 below it.
+- **Archive of Privileges** (needs the Kahal House): Petition for a Wall costs 75 prestige instead of 150; Stability +10. *Not built:* charter terms resisting revocation.
+- **Bet Din Chamber** (needs the Synagogue tier 2): Greatness +20 and learning. *Not built:* a faster docket, because the docket's case count is fixed in the activity's phases.
+- **Genizah** (needs the Synagogue tier 5): books survive the burning of the house of study (as with the Strong Room); Greatness +25.
+- **Diaspora Network** (needs the Funduq tier 2):
+  - household arrival chance +10;
+  - other-faith opinion;
+  - +1 to the town trade score.
+- **Fair Stalls:** income and +1 to the town trade score.
+- *Deferred:* the **Commenda** voyage decision.
