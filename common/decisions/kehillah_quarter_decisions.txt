@@ -1,0 +1,79 @@
+﻿# =====================================================================
+# THE QUARTER'S TRACKS (2026-11-20). docs/spec/2026-11-20-kehillah-quarter-building-tracks.md, section 6.5.
+#
+# Petition for a Wall. A wall around the Jewish quarter was a privilege,
+# as Bishop Rudiger's grant to the Jews of Speyer was in 1084, so Wall and
+# Gates cannot rise past its gates (tier 1) without the host's leave
+# (kehillah_wall_licensed_trigger): a charter that grants a walled quarter,
+# or this licence. Daniel (2026-11-20): the approval belongs to the
+# charter's free/licensed construction system and costs prestige.
+#   free construction    -- granted for the prestige
+#   by permission        -- only while the community holds the permit
+#   forbidden            -- refused
+# A host who regards the Jews coldly refuses whatever the term. The licence
+# is held from the host's dynasty and lapses when another takes the throne.
+# =====================================================================
+
+kehillah_petition_for_wall_decision = {
+	picture = { reference = "gfx/interface/illustrations/decisions/decision_castle_view.dds" }
+	decision_group_type = kehillah
+	sort_order = 86
+	ai_check_interval = 36
+
+	is_shown = {
+		government_has_flag = government_is_kehillah
+		exists = primary_title
+		domicile ?= { has_domicile_building_or_higher = kehillah_wall_01 }
+		kehillah_wall_licensed_trigger = no
+	}
+
+	is_valid_showing_failures_only = {
+		is_available_adult = yes
+		custom_tooltip = {
+			text = kehillah_wall_petition_host_tt
+			exists = domicile.domicile_location.county.holder.top_liege
+		}
+		custom_tooltip = {
+			text = kehillah_wall_petition_forbidden_tt
+			NOT = { kehillah_cached_charter_construction_forbidden_trigger = yes }
+		}
+		custom_tooltip = {
+			text = kehillah_wall_petition_permit_tt
+			OR = {
+				NOT = { kehillah_cached_charter_construction_permission_trigger = yes }
+				has_character_modifier = kehillah_charter_construction_permission_modifier
+			}
+		}
+		custom_tooltip = {
+			text = kehillah_wall_petition_cold_host_tt
+			kehillah_host_outlook_value >= 0
+		}
+		custom_tooltip = {
+			text = kehillah_wall_petition_cooldown_tt
+			primary_title = { NOT = { has_variable = kehillah_wall_petition_cooldown } }
+		}
+	}
+
+	cost = {
+		prestige = kehillah_wall_petition_prestige_value
+	}
+
+	effect = {
+		domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_wall_host }
+		primary_title = {
+			set_variable = { name = kehillah_wall_licence value = scope:kehillah_wall_host.dynasty }
+			set_variable = { name = kehillah_wall_petition_cooldown value = yes years = kehillah_wall_petition_cooldown_years }
+		}
+		custom_tooltip = kehillah_wall_petition_granted_tt
+	}
+
+	ai_potential = {
+		government_has_flag = government_is_kehillah
+	}
+
+	ai_will_do = {
+		base = 30
+		modifier = { add = 30 kehillah_danger_value >= 40 }
+		modifier = { factor = 0 prestige < kehillah_wall_petition_prestige_value }
+	}
+}

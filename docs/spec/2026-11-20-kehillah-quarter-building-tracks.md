@@ -1,5 +1,6 @@
-**Status:** PROPOSAL, 2026-11-20, written at Daniel's request. **Revised the same day with his answers**
-(section 13 lists what changed). Nothing here is built. It proposes rebuilding the Kehillah Quarter
+**Status:** **Slices 1-2 BUILT 2026-11-20** (section 14), the rest still proposal. Written at Daniel's
+request and revised the same day with his answers (section 13). xTiger-clean apart from 34 known false positives;
+**not live-tested** (checklist 14.6). It proposes rebuilding the Kehillah Quarter
 (`kehillah_quarter` domicile, `common/domiciles/`) around **core institutions plus chosen specialisations**.
 Each building gets distinct mechanical functions, and the specialisations hold the goods, lending, safety
 and provisioning work planned elsewhere. It refines and partly supersedes:
@@ -394,3 +395,95 @@ may be renamed freely, and the release notes say that saves from before this cha
 - **New offices:** Melamed, Rofe and Factor. Too many minor positions for the court-size cap?
 - **The allowance:** 1/2/3 from the Kahal House, plus one at Legendary Affluence (at most 4 of 5). Generous
   enough?
+
+## 14. Build record: slices 1-2 (2026-11-20)
+
+Daniel: "Please go ahead and implement!!", with these decisions:
+- use vanilla's **physician** rather than a custom Rofe;
+- use vanilla's **tutor** rather than a Melamed;
+- leave the Factor for later;
+- "try creating new art".
+
+### 14.1 What was built
+**Keys kept** (old saves may break anyway; this avoided touching the ~20 files that name buildings):
+
+| Track | Keys | What changed |
+|---|---|---|
+| Kahal House | `kehillah_countinghouse_01-03` | renamed; tiers 2-3 now gated on **Stability**; parameter `kehillah_allows_specialisation`. Its old 240 Prosperity is split: half Prosperity, half Stability (`kehillah_bd_kahal_stability_value`) |
+| Kosher Market | `kehillah_market_stalls_01-03` | a specialisation; the Shochet; internal slots 1/2/2 |
+| Kosher Butchers | `kehillah_slaughterhouse_01-02` | now an **annex** of the Kosher Market |
+| Craft Row | `kehillah_workshops_01-03` | a specialisation; internal slots 2/3/4 for the trades |
+| Beit Midrash | `kehillah_beit_midrash_01-05` | renamed Talmud Torah, Beit Midrash, Yeshiva (still founded by decision), Great Yeshiva (Greatness Flourishing) and Metivta (Legendary); the Yeshiva hosts travelling scholars |
+
+**New buildings (27):**
+- **Bankers' Row** (`kehillah_bankers_row_01-03`): gold and stewardship; Prosperity.
+- **The Funduq** (`kehillah_funduq_01-03`): gold, diplomacy and other-faith opinion. From tier 2 the community hears of mutual-aid appeals from twice as far and can answer them (`kehillah_aid_in_reach_trigger`).
+- **Wall and Gates** (`kehillah_wall_01-03`): lowers the danger by 5, 15 and 25 (`kehillah_danger_walls_value`, a new line in the danger breakdown); Stability.
+  - Tier 2 needs `kehillah_wall_licensed_trigger`: the charter's walled-quarter right, or a licence from the present host dynasty bought with the new decision **Petition for a Wall** (150 prestige; refused under forbidden construction, needs the permit under permission construction, refused by a cold host; 5-year cooldown).
+  - Tier 3 also needs a charter watch term that lets the community arm.
+- **Seven Craft Row trades** (`kehillah_trade_<dyers|silk_weavers|goldsmiths|tanners|glassmakers|clothiers|apothecaries>_01-02`) and the **Kosher Winery** (`kehillah_winery_01-02`, a Kosher Market annex), regional as in §6.3.
+- **The Sofer's Room** (`kehillah_sofer_workshop_02`) gains goods production.
+
+**The specialisation limit:**
+- `kehillah_specialisation_count_value` counts the five specialisations; `kehillah_specialisation_allowance_value` is the Kahal House tier, plus 1 at Legendary Prosperity, at most 4.
+- Each specialisation's tier 1 checks `kehillah_quarter_can_add_specialisation_trigger`.
+- The domicile has a flat **7** external slots (synagogue tier 1 capacity, `base_external_slots = 7`, a new seventh slot position), so a seeded community over its allowance keeps its buildings.
+- **Succession and seeding:** `add_domicile_building` honours `can_construct`. So the succession rebuild (`kehillah_restore_quarter_effect`), the Worms developed start and the eminence seeds set the global variable `kehillah_quarter_seeding`, which waives the limit while they run.
+
+**Succession (`kehillah_record/restore_quarter_effect`):**
+- new tracks for Bankers' Row, the Funduq, Wall and Gates, the trades and the winery;
+- the Beit Midrash is now a 5-tier track;
+- the butchers are restored after the Kosher Market they sit in.
+
+**Plunder:** an attack can now also lower Bankers' Row or the Funduq.
+
+### 14.2 Goods: yes, the 1.21 resource system
+- Every trade, the winery and the Sofer's Room (tier 2) add `trade_good_<good>_production_add` (1 at tier 1, 2 at tier 2) through `province_modifier`. That is exactly how vanilla's merchant company produces spices (`00_merchant_company_buildings.txt`), so the goods go into the host county's market.
+- Goods: dyes, silk, jewelry, leather, glass, textiles, medicaments, wine, and books and paper.
+- Each building's tooltip says what it produces (`kehillah_produces_<good>` parameters).
+- **Not built yet:** county Prosperity growth from the trades, and the market feeding Affluence (§7). Both need the live check of how a domicile's `province_modifier` reaches the county.
+
+### 14.3 Offices (Daniel's decisions)
+- **Physician:** vanilla's court physician, no Rofe. The Hekdesh's slice will strengthen him (and Send Our Physician will use him).
+- **Tutor:** vanilla's tutor, no Melamed. A Kehillah-only rename would need a per-government name, which court positions do not have, so the tutor keeps vanilla's name. The Talmud Torah's later slice can strengthen him.
+- **Factor:** deferred with the Funduq's annexes; vanilla's merchant "market agent" is to be checked as the model first.
+
+### 14.4 Art
+- **Icons (new):**
+  - 18 flat glyph icons in vanilla's style, drawn by `scripts/kehillah_quarter_icons.py` (`gfx/interface/icons/domicile_building/kehillah_*.dds`);
+  - preview: `docs/implementation/assets/kehillah-quarter-icons-preview.png`;
+  - they cover the synagogue, the core and specialisation buildings, the butchers, the winery and the seven trades.
+- **Scenes (level 1):**
+  - the buildings now use vanilla's merchant-company town art (villa, manor, quarters, trading, production, warehouse districts and mansion) in Western, Asian and Middle-Eastern variants, chosen by vanilla's own `company_domicile_*_asset_trigger`s;
+  - the Wall uses the guard tower and Middle-Eastern barracks.
+- **Scenes (level 3):** `scripts/kehillah_quarter_scene_art.py` and `kehillah_quarter_scene_prompts.json` generate painted 512×512 building textures and their masks per family, in Western and Middle-Eastern variants, through the same image API as `make_trait_icons.py`. **Not run:** this environment has no `OPENAI_API_KEY`. Daniel runs it with the key set, then points each family's `asset` at the output.
+
+### 14.5 Not yet built (later slices, unchanged from §12)
+Slices 3-8 are unchanged:
+- the Hekdesh, Bankers', Wall, Synagogue, Kahal House and Beit Midrash annexes;
+- Enforce the Bond;
+- the Funduq's annexes and Profit Routes;
+- county Prosperity;
+- painted art.
+
+### 14.6 Live checklist (for Daniel)
+1. **The Worms domicile:**
+   - 7 external slots;
+   - the new names and icons;
+   - the town art in the right regional variant;
+   - the seventh slot's position (`79% 4%`) clear of the others.
+2. **A new community or a console-cleared Quarter:**
+   - with a Kahal Room, one specialisation can be started, and a second shows the allowance tooltip with the counts;
+   - a Kahal House (tier 2, Stability Strained) allows a second.
+3. **Craft Row:** build Workshops, then a trade.
+   - The trade's tooltip shows "Produces … for the town's market".
+   - **The county's market shows the added production (the key 1.21 check).**
+   - A non-silk region does not offer Silk Looms.
+4. **The Kosher Market** offers the Butchers and (in wine country) the Wine Press; the Shochet can be appointed.
+5. **Wall and Gates:**
+   - the gates lower the danger (a new safety line);
+   - tier 2 shows the licence requirement;
+   - Petition for a Wall works under free construction and is refused under forbidden construction.
+6. **Succession:** kill the Worms leader, and confirm every building (trades, butchers, the Yeshiva tiers, the specialisations) returns on the heir's domicile. **This touches the succession rebuild.**
+7. **An attack** that plunders can lower Bankers' Row or the Funduq.
+8. **`error.log`** after opening the domicile window and hovering buildings.
