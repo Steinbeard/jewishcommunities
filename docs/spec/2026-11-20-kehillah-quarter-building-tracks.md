@@ -574,3 +574,11 @@ Each entry is source-checked and xTiger-clean (beyond the known trade-good false
   - +1 to the town trade score.
 - **Fair Stalls:** income and +1 to the town trade score.
 - *Deferred:* the **Commenda** voyage decision.
+
+### 15.6 Beit Midrash annexes
+- **Internal slots:** 1, 2, 2, 3, 3 by tier.
+- **Book Room:** Greatness +15. It is not tied to the shelf capacity: the library files belong to another session's work in progress.
+- **Kollel** (needs the Beit Midrash): −0.2 gold a month in stipends; learning; household arrival chance +5.
+- **Students' Hall** (needs the Great Yeshiva): household arrival chance +10; Greatness +15.
+- **Responsa Office** (needs the Yeshiva): Greatness +25 and prestige.
+- **Copyists** (needs the Yeshiva): books and paper into the market; +1 to the town trade score; Greatness +10.
