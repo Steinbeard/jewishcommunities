@@ -598,3 +598,19 @@ Built while Daniel was away, following R2 and R10 as he decided them.
 - **The hook:** `kehillah_loan_repudiate_override.txt` copies vanilla's `gdp_usury_repudiate_loan_effect` verbatim and adds one marked call. For a community loan (`kehillah_lent_for`), `kehillah_community_loan_repudiated_effect` takes Prosperity −30 and Stability −10, and tells the leader, "A Bond Repudiated".
 - **Known noise:** the copy carries two vanilla xTiger warnings (`scope:gdp_repudiated_lender` / `gdp_repudiating_borrower` are read but saved under other names in vanilla's own text). It is kept identical on purpose.
 - **Still open:** the expulsion-pressure and outlook sides of E1 already exist through the debts terms. A stronger host-side response, such as the Court Jew's Office letting the host forbid repudiation, is not built.
+
+### R16. R7.1 built in a simpler form: Stability lengthens the warning (2026-11-20)
+- **What it does:** a local agitator preaches for 90-180 days before his mob comes, and that is the community's warning window. It now changes with Stability (`kehillah_stability_warning_days_value`, read in `kehillah_mob_local_warning_effect`):
+
+  | Stability | Window |
+  |---|---|
+  | Crisis | −30 days |
+  | Strained | unchanged |
+  | Healthy | +30 |
+  | Flourishing | +45 |
+  | Legendary | +60 |
+  | a Watch House (Wall and Gates) | a further +15 |
+
+  So a stable community has longer to defuse or prepare.
+- **Why simpler:** R7.1 asked for a change to the warning text (who is named, when); this changes the time instead, through one variable in the existing preacher story.
+- **Not built:** R7.2 (the spark step), R7.3 (mobilisation) and R7.4 (breaking ranks / acting as one). Each is new crisis content and needs a design pass with Daniel.
