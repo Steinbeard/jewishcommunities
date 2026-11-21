@@ -1,0 +1,104 @@
+﻿# =====================================================================
+# Send Our Physician (2026-11-20). Quarter spec section 4.4: a community with
+# a Hospital (Hekdesh tier 3) and a court physician (vanilla's office, per
+# Daniel) can send its physician to an ill ruler -- the Jewish court
+# physicians of the Middle Ages, Maimonides at Saladin's court the most
+# famous. Success earns the ruler's gratitude and the community Greatness;
+# failure is remembered.
+# =====================================================================
+
+kehillah_send_physician_interaction = {
+	category = interaction_category_friendly
+	icon = icon_gold
+	common_interaction = no
+	desc = kehillah_send_physician_interaction_desc
+	auto_accept = yes
+	ai_frequency = 0
+	cooldown_against_recipient = { years = 5 }
+
+	is_shown = {
+		scope:actor = {
+			government_has_flag = government_is_kehillah
+			domicile ?= { has_domicile_building_or_higher = kehillah_hekdesh_03 }
+		}
+		scope:recipient = {
+			NOT = { this = scope:actor }
+			is_ruler = yes
+			has_any_illness = yes
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			is_available_adult = yes
+			custom_tooltip = {
+				text = kehillah_send_physician_needs_physician_tt
+				any_court_position_holder = {
+					type = court_physician_court_position
+					is_available_adult = yes
+				}
+			}
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			random_court_position_holder = {
+				type = court_physician_court_position
+				limit = { is_available_adult = yes }
+				save_scope_as = kehillah_sent_physician
+			}
+		}
+		random_list = {
+			50 = {
+				desc = kehillah_send_physician.success
+				modifier = {
+					add = 15
+					scope:kehillah_sent_physician = { learning >= 12 }
+				}
+				modifier = {
+					add = 15
+					scope:kehillah_sent_physician = { learning >= 16 }
+				}
+				modifier = {
+					add = 10
+					scope:actor = { domicile ?= { has_domicile_building_or_higher = kehillah_trade_apothecaries_01 } }
+				}
+				modifier = {
+					add = -25
+					scope:recipient = { has_serious_disease_trigger = yes }
+				}
+				scope:recipient = {
+					add_character_modifier = { modifier = kehillah_treated_by_physician_modifier years = 2 }
+					add_opinion = { target = scope:actor modifier = kehillah_physician_saved_opinion }
+				}
+				scope:actor = {
+					kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_physician_greatness }
+					add_prestige = minor_prestige_gain
+					send_interface_toast = {
+						type = event_toast_text_and_effect_good
+						title = kehillah_toast_success
+						desc = kehillah_send_physician.success_desc
+						left_icon = scope:kehillah_sent_physician
+						right_icon = scope:recipient
+					}
+				}
+			}
+			50 = {
+				desc = kehillah_send_physician.failure
+				scope:recipient = {
+					add_opinion = { target = scope:actor modifier = kehillah_physician_failed_opinion }
+				}
+				scope:actor = {
+					send_interface_toast = {
+						type = event_toast_text_and_effect_bad
+						title = kehillah_toast_failure
+						desc = kehillah_send_physician.failure_desc
+						left_icon = scope:kehillah_sent_physician
+						right_icon = scope:recipient
+					}
+				}
+			}
+		}
+	}
+}

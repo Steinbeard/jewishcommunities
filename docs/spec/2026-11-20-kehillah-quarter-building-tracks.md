@@ -589,3 +589,11 @@ Each entry is source-checked and xTiger-clean (beyond the known trade-good false
   - for scale, a vanilla tier-1 resource building pays 0.1.
   
   The host sees in his own treasury what his Jews are worth. xTiger's 1.20 build reports `monthly_artisan_tax` and `monthly_commerce_tax` as unknown (5 false positives; both are in vanilla 1.21's modifier definitions).
+
+### 15.7 Send Our Physician
+`kehillah_send_physician_interaction`:
+- **Who:** a community with a Hospital (Hekdesh 3) and an available court physician (vanilla's office) can send him to any ill ruler (`has_any_illness`). A 5-year cooldown per ruler.
+- **The odds:** 50/50, plus 15 if the physician's learning is 12 or more and another 15 at 16 or more, plus 10 with Apothecaries. A serious disease takes 25 off.
+- **Success:** the ruler gains "Treated by a Jewish Physician" (health +0.5 for 2 years) and +25 opinion, decaying over 15 years. The community gains Greatness (minor) and prestige.
+- **Failure:** −10 opinion.
+- **Both outcomes** report with a toast.
