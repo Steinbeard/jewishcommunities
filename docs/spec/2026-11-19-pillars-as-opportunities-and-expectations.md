@@ -579,3 +579,16 @@ this.
 - **What changed from R5:**
   - the court-size cap is untouched;
   - expulsion exiles and famine or epidemic neighbours are not yet sources (mutual-aid record, section 8).
+
+### R14. R2 built: styles reward the leader's own actions (2026-11-20)
+Built while Daniel was away, following R2 and R10 as he decided them.
+- **The flat +60 is retired** (`kehillah_leadership_baseline_bonus = 0`). The breakdown lines key on the values being above 0, so they disappear.
+- **The mandate boost:** every *positive* change made through `kehillah_change_pillar_effect` to the chosen style's pillar is multiplied by 1.2 (`kehillah_leadership_mandate_boost`).
+  - The mapping: Scholarly → Greatness, Political → Stability, Commercial → Prosperity.
+  - The tooltip shows the boosted size, and the same boosted number is applied.
+  - That effect is the action path (193 call sites). Passive convergence uses raw `change_variable` and stays unboosted, as R2 asked.
+- **One style modifier on the leader,** refreshed quarterly (`kehillah_leadership_style_apply_effect`), and only once a style is chosen:
+  - **Scholarly:** learning +1 and learning XP. *Renown that draws people:* household arrival chance +10.
+  - **Political:** diplomacy +1 and diplomacy XP. A named **"Political leadership" shield of 5** in the danger breakdown.
+  - **Commercial:** stewardship +1, and **Quarter construction 20% faster** (`domicile_build_speed`).
+- **Not live-tested.** Live check: choose each style, then see the modifier, the danger line, the build time, and a boosted size on an action's tooltip.
