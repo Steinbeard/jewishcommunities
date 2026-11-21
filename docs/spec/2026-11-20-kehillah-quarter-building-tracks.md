@@ -597,3 +597,16 @@ Each entry is source-checked and xTiger-clean (beyond the known trade-good false
 - **Success:** the ruler gains "Treated by a Jewish Physician" (health +0.5 for 2 years) and +25 opinion, decaying over 15 years. The community gains Greatness (minor) and prestige.
 - **Failure:** −10 opinion.
 - **Both outcomes** report with a toast.
+
+### 15.8 The commenda (Invest in a Voyage)
+`kehillah_invest_in_voyage_decision` (needs a Funduq):
+- **The stake:** 75 gold × the era (`kehillah_commenda_stake_value`), one voyage at a time.
+- **The return:** 2-3 years later, `kehillah_commenda.0001` rolls in its option, so the odds show on the tooltip:
+
+  | Outcome | Base weight | Modifiers | Result |
+  |---|---|---|---|
+  | Profit | 45 | Diaspora Network +15, Trading House +10, stewardship 12+ +10 | ×1.7 and Prosperity +15 |
+  | Break-even | 30 | | the stake back |
+  | Loss | 25 | Diaspora Network −10 | 20% back |
+
+- **Each outcome** reports with a toast.
