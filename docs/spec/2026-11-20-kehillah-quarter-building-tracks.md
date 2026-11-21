@@ -532,3 +532,12 @@ Each entry is source-checked and xTiger-clean (beyond the known trade-good false
 - **Hostel** (needs Hekdesh 2): the community's own appeals always travel as if an envoy carried them.
 - **Burial Society:** a struck community's Recovery starts with Endure +4.
 - **Succession:** the Hekdesh track is now 3 tiers, and the annexes are restored after it.
+
+### 15.3 Slice 5: Wall and Gates annexes (R7, Stability against crises)
+- **Wall internal slots:** 1, 2 and 2 by tier.
+- **Watch House:** +3 to the crisis race's monthly protection points (`kehillah_crisis_protection_points_value`). The Quarter Wall itself adds +4.
+- **Struck siege pace** (`kehillah_crisis_struck_siege_points_value`): 25 per tick in an open town. A Quarter Wall makes it 15; a Fortified Quarter or **Refuge Tower** (needs the wall) makes it 9. The lord's own refuge stays at 6.
+- **Strong Room:**
+  - burned bonds (the Bonds incident) no longer void the community's loans;
+  - when the house of study or the scriptorium burns, the books are not lost (`kehillah_crisis_books_lost` is not set).
+- **Succession:** the annexes are restored after the Wall.
