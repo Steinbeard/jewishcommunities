@@ -1,0 +1,102 @@
+﻿namespace = kehillah_quarter_debug
+# =====================================================================
+# Console-only probes for the Quarter's tracks (2026-11-20).
+# docs/spec/2026-11-20-kehillah-quarter-building-tracks.md. Run on a Kehillah
+# leader; lines go to debug.log ("QUARTER ...").
+#   event kehillah_quarter_debug.1  report specialisations, allowance, town trade, licence, style
+#   event kehillah_quarter_debug.2  build a Kahal House (tier 3) and Craft Row with a trade (500 gold first)
+#   event kehillah_quarter_debug.3  run the yearly "enrich the town" now and report the county modifier
+#   event kehillah_quarter_debug.4  grant the wall licence (as if petitioned) and report
+#   event kehillah_quarter_debug.5  run the Bond Chest's quarterly collection now
+# =====================================================================
+
+kehillah_quarter_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		save_scope_value_as = { name = qd_count value = kehillah_specialisation_count_value }
+		save_scope_value_as = { name = qd_allow value = kehillah_specialisation_allowance_value }
+		save_scope_value_as = { name = qd_trade value = kehillah_quarter_trade_score_value }
+		if = { limit = { scope:qd_count >= scope:qd_allow } debug_log = "QUARTER specialisations: at or over the allowance" }
+		else = { debug_log = "QUARTER specialisations: below the allowance (another may be built)" }
+		if = { limit = { scope:qd_allow >= 3 } debug_log = "QUARTER allowance 3 or more" }
+		else_if = { limit = { scope:qd_allow >= 2 } debug_log = "QUARTER allowance 2" }
+		else_if = { limit = { scope:qd_allow >= 1 } debug_log = "QUARTER allowance 1" }
+		else = { debug_log = "QUARTER allowance 0 (no Kahal House)" }
+		if = { limit = { scope:qd_trade >= kehillah_quarter_trade_large_score } debug_log = "QUARTER town trade: large" }
+		else_if = { limit = { scope:qd_trade >= kehillah_quarter_trade_medium_score } debug_log = "QUARTER town trade: medium" }
+		else_if = { limit = { scope:qd_trade >= 1 } debug_log = "QUARTER town trade: small" }
+		else = { debug_log = "QUARTER town trade: none" }
+		domicile.domicile_location.county ?= {
+			if = { limit = { has_county_modifier = kehillah_quarter_trade_large_modifier } debug_log = "QUARTER county modifier: Jewish Commerce" }
+			else_if = { limit = { has_county_modifier = kehillah_quarter_trade_medium_modifier } debug_log = "QUARTER county modifier: Jewish Trades" }
+			else_if = { limit = { has_county_modifier = kehillah_quarter_trade_small_modifier } debug_log = "QUARTER county modifier: Jewish Craftsmen" }
+			else = { debug_log = "QUARTER county modifier: none" }
+			if = { limit = { prosperity_level >= 60 } debug_log = "QUARTER county prosperity: 60+" }
+			else_if = { limit = { prosperity_level >= 40 } debug_log = "QUARTER county prosperity: 40-59" }
+			else_if = { limit = { prosperity_level >= 20 } debug_log = "QUARTER county prosperity: 20-39" }
+			else = { debug_log = "QUARTER county prosperity: under 20" }
+		}
+		if = { limit = { kehillah_wall_licensed_trigger = yes } debug_log = "QUARTER wall: licensed" }
+		else = { debug_log = "QUARTER wall: not licensed" }
+		if = { limit = { has_character_modifier = kehillah_style_scholarly_modifier } debug_log = "QUARTER style modifier: scholarly" }
+		else_if = { limit = { has_character_modifier = kehillah_style_political_modifier } debug_log = "QUARTER style modifier: political" }
+		else_if = { limit = { has_character_modifier = kehillah_style_commercial_modifier } debug_log = "QUARTER style modifier: commercial" }
+		else = { debug_log = "QUARTER style modifier: none" }
+		if = { limit = { domicile ?= { has_domicile_parameter = kehillah_has_bond_chest } } debug_log = "QUARTER has a Bond Chest" }
+		debug_log_scopes = yes
+	}
+}
+
+kehillah_quarter_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		add_gold = 500
+		set_global_variable = { name = kehillah_quarter_seeding value = yes }
+		domicile ?= {
+			if = { limit = { NOT = { has_domicile_building_or_higher = kehillah_countinghouse_01 } } add_domicile_building = kehillah_countinghouse_01 }
+			if = { limit = { NOT = { has_domicile_building_or_higher = kehillah_countinghouse_02 } } add_domicile_building = kehillah_countinghouse_02 }
+			if = { limit = { NOT = { has_domicile_building_or_higher = kehillah_countinghouse_03 } } add_domicile_building = kehillah_countinghouse_03 }
+			if = { limit = { NOT = { has_domicile_building_or_higher = kehillah_workshops_01 } } add_domicile_building = kehillah_workshops_01 }
+			if = { limit = { NOT = { has_domicile_building_or_higher = kehillah_trade_dyers_01 } } add_domicile_building = kehillah_trade_dyers_01 }
+		}
+		remove_global_variable = kehillah_quarter_seeding
+		debug_log = "QUARTER debug.2 added the Kahal House (3), Workshops and the Dye Vats"
+		trigger_event = kehillah_quarter_debug.1
+	}
+}
+
+kehillah_quarter_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_quarter_enrich_town_effect = yes
+		debug_log = "QUARTER debug.3 ran the yearly town enrichment"
+		trigger_event = kehillah_quarter_debug.1
+	}
+}
+
+kehillah_quarter_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = qd_host }
+		if = {
+			limit = { exists = scope:qd_host.dynasty }
+			primary_title = { set_variable = { name = kehillah_wall_licence value = scope:qd_host.dynasty } }
+			debug_log = "QUARTER debug.4 set the wall licence from the host's dynasty"
+		}
+		else = { debug_log = "QUARTER debug.4 no host dynasty found" }
+		trigger_event = kehillah_quarter_debug.1
+	}
+}
+
+kehillah_quarter_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_bond_chest_collect_effect = yes
+		debug_log = "QUARTER debug.5 ran the Bond Chest collection"
+	}
+}
