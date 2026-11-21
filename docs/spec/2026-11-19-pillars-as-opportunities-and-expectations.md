@@ -592,3 +592,9 @@ Built while Daniel was away, following R2 and R10 as he decided them.
   - **Political:** diplomacy +1 and diplomacy XP. A named **"Political leadership" shield of 5** in the danger breakdown.
   - **Commercial:** stewardship +1, and **Quarter construction 20% faster** (`domicile_build_speed`).
 - **Not live-tested.** Live check: choose each style, then see the modifier, the danger line, the build time, and a boosted size on an action's tooltip.
+
+### R15. E1 built: the predatory host is felt (2026-11-20)
+- **Vanilla already builds the lever.** `gdp_repudiate_usurious_loan_decision` lets a borrower whose faith condemns the loan as usury repudiate it, with his cleric's approval where his faith has clerical regions.
+- **The hook:** `kehillah_loan_repudiate_override.txt` copies vanilla's `gdp_usury_repudiate_loan_effect` verbatim and adds one marked call. For a community loan (`kehillah_lent_for`), `kehillah_community_loan_repudiated_effect` takes Prosperity −30 and Stability −10, and tells the leader, "A Bond Repudiated".
+- **Known noise:** the copy carries two vanilla xTiger warnings (`scope:gdp_repudiated_lender` / `gdp_repudiating_borrower` are read but saved under other names in vanilla's own text). It is kept identical on purpose.
+- **Still open:** the expulsion-pressure and outlook sides of E1 already exist through the debts terms. A stronger host-side response, such as the Court Jew's Office letting the host forbid repudiation, is not built.

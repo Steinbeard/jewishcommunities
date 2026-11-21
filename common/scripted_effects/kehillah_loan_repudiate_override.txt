@@ -1,0 +1,109 @@
+﻿# CK3 1.21 override of gdp_usury_repudiate_loan_effect from
+# common/scripted_effects/gdp_merchant_scripted_effects.txt (2026-11-20). The
+# vanilla body is copied verbatim; the only Kehillah addition is the marked
+# kehillah_community_loan_repudiated_effect call. Vanilla's
+# gdp_repudiate_usurious_loan_decision lets a borrower whose faith condemns
+# the loan as usury repudiate it -- the predatory host of the pillars spec
+# (E1), already built by vanilla. This hook makes the lending community feel
+# it (kehillah_community_loan_effects.txt).
+#
+# Refresh this copy if vanilla changes the effect in a later patch (the
+# same convention as kehillah_loan_repay_override.txt).
+
+gdp_usury_repudiate_loan_effect = {
+	var:lender ?= { save_temporary_scope_as = repudiated_lender }
+	story_owner = {
+		save_temporary_scope_as = repudiating_borrower
+		custom_tooltip = repudiate_loan_tt
+	}
+	scope:repudiated_lender = {
+		if = {
+			limit = { NOT = { exists = scope:usury_skip_repudiate_toast } }
+			send_interface_toast = {
+				title = gdp_usury_loan_repudiated_notification
+				type = event_toast_effect_bad
+				left_icon = scope:gdp_repudiated_lender
+				right_icon = scope:gdp_repudiating_borrower
+				if = {
+					limit = {
+						has_hook_of_type = {
+							target = scope:repudiating_borrower
+							type = strong_indebted_hook
+						}
+					}
+					remove_hook = {
+						target = scope:repudiating_borrower
+						type = strong_indebted_hook
+					}
+				}
+				else_if = {
+					limit = {
+						has_hook_of_type = {
+							target = scope:repudiating_borrower
+							type = indebted_hook
+						}
+					}
+					remove_hook = {
+						target = scope:repudiating_borrower
+						type = indebted_hook
+					}
+				}
+				if = {
+					limit = { is_ai = yes }
+					add_opinion = {
+						target = scope:repudiating_borrower
+						modifier = gdp_repudiated_my_loan_opinion
+					}
+				}
+			}
+		}
+		else = {
+			if = {
+				limit = {
+					has_hook_of_type = {
+						target = scope:repudiating_borrower
+						type = strong_indebted_hook
+					}
+				}
+				remove_hook = {
+					target = scope:repudiating_borrower
+					type = strong_indebted_hook
+				}
+			}
+			else_if = {
+				limit = {
+					has_hook_of_type = {
+						target = scope:repudiating_borrower
+						type = indebted_hook
+					}
+				}
+				remove_hook = {
+					target = scope:repudiating_borrower
+					type = indebted_hook
+				}
+			}
+		}
+	}
+	story_owner = {
+		if = {
+			limit = {
+				culture = { has_cultural_parameter = binding_oaths_harsh_break_penalties }
+			}
+			gdp_binding_oaths_broke_word_effect = yes
+			add_prestige = medium_prestige_loss
+		}
+		custom_tooltip = gdp_repudiate_usurious_loan_credit_tt
+		add_character_flag = {
+			flag = gdp_debt_repudiator
+			years = 10
+		}
+	}
+	# --- Kehillah addition (2026-11-20, pillars spec E1) ---------------
+	# A community's loan repudiated as usury: the community feels it.
+	if = {
+		limit = { has_variable = kehillah_lent_for }
+		kehillah_community_loan_repudiated_effect = yes
+	}
+	# --- end of the Kehillah addition ----------------------------------
+	end_story = yes
+}
