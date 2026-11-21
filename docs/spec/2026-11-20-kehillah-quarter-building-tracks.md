@@ -543,7 +543,7 @@ Each entry is source-checked and xTiger-clean (beyond the known trade-good false
 - **Succession:** the annexes are restored after the Wall.
 
 ### 15.4 The Quarter enriches the town; development is gone in 1.21
-- **1.21 removed county development.** Vanilla now uses `prosperity_level` (0-100: medium 40, good 60) and `prosperity_growth(_factor)`; `development_level` appears nowhere in vanilla 1.21. Every use in the mod's **own** files was migrated (thresholds 5→20, 8/10→25, 15→40, 20→50, 25→60, 30→70; point values halved):
+- **1.21 removed county development.** Vanilla now uses `prosperity_level` (0-100: medium 40, good 60) and `prosperity_growth(_factor)`; `development_level` appears nowhere in vanilla 1.21. Every use in the mod's **own** files was migrated to  *with the same numbers*. A first pass doubled them, but the live test and the 1.21 history files show counties start at 3-24, the old development scale, so the original thresholds were restored ([test log](../testing/2026-11-20-quarter-lean-live-test.md)):
   - the local-economy line (`kehillah_bd_local_economy_value`) and the urban-opportunity lines;
   - the inspector and the founding and settler gates (`kehillah_natural_founding_min_development` = 25);
   - the Sanhedrin, the revolt and the debug probe;
