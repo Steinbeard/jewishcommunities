@@ -521,3 +521,14 @@ Each entry is source-checked and xTiger-clean (beyond the known trade-good false
   `kehillah_charter_forbids_interest_trigger` hides Lend Gold's interest option for borrowers in the
   host realm when the charter grants no lending right, or only pawnbroking without a Pledge Store.
   Charters with no lending term, and borrowers outside the realm, are unaffected.
+
+### 15.2 Slice 3: the Hekdesh as mutual aid's capacity
+- **Hospital** (`kehillah_hekdesh_03`, Stability Healthy): disease resistance (`camp_infection_chance_buff_6`), health and courtier opinion. **The physician is vanilla's**, per Daniel.
+- **Hekdesh internal slots:** 1, 2 and 3 by tier.
+- **Kuppah:** gifts raise the Name for Giving 25% more; AI communities answer this community's appeals more readily (+10).
+- **Tamchui:**
+  - taking refugees in costs 60% less Prosperity (`kehillah_refugee_take_in_prosperity_value`, saved as a scope value because the pillar effect evaluates on the title);
+  - the community's refugee appeal asks for 60% of the usual sum.
+- **Hostel** (needs Hekdesh 2): the community's own appeals always travel as if an envoy carried them.
+- **Burial Society:** a struck community's Recovery starts with Endure +4.
+- **Succession:** the Hekdesh track is now 3 tiers, and the annexes are restored after it.
