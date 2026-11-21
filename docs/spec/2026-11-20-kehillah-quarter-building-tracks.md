@@ -582,3 +582,10 @@ Each entry is source-checked and xTiger-clean (beyond the known trade-good false
 - **Students' Hall** (needs the Great Yeshiva): household arrival chance +10; Greatness +15.
 - **Responsa Office** (needs the Yeshiva): Greatness +25 and prestige.
 - **Copyists** (needs the Yeshiva): books and paper into the market; +1 to the town trade score; Greatness +10.
+- **The host is paid too (2026-11-20, later).** 1.21 replaced `tax_mult` with typed taxes, and the town modifiers now also carry them, paid to the county's holder:
+  - small: artisan tax 0.05 a month;
+  - medium: artisan 0.1 plus commerce 0.05;
+  - large: artisan 0.2 plus commerce 0.1;
+  - for scale, a vanilla tier-1 resource building pays 0.1.
+  
+  The host sees in his own treasury what his Jews are worth. xTiger's 1.20 build reports `monthly_artisan_tax` and `monthly_commerce_tax` as unknown (5 false positives; both are in vanilla 1.21's modifier definitions).
