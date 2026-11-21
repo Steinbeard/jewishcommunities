@@ -195,7 +195,20 @@ kehillah_void_community_loans_effect = {
 						story_type = story_cycle_loan
 						var:kehillah_lent_for ?= scope:kehillah_void_seat
 					}
-					hidden_effect = { end_loan_story_effect = yes }
+					# 2026-11-20 (Bankers' Row): the Bond Chest keeps a registered
+					# copy of each bond; half the debt survives, once.
+					if = {
+						limit = {
+							scope:kehillah_void_seat.holder ?= { domicile ?= { has_domicile_parameter = kehillah_has_bond_chest } }
+							NOT = { has_variable = kehillah_bond_saved }
+							var:amount_owed ?= { value >= 2 }
+						}
+						set_variable = { name = kehillah_bond_saved value = yes }
+						change_variable = { name = amount_owed multiply = 0.5 }
+					}
+					else = {
+						hidden_effect = { end_loan_story_effect = yes }
+					}
 				}
 			}
 		}
@@ -234,5 +247,91 @@ kehillah_community_loan_repaid_effect = {
 		kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_loan_repayment_prosperity_reward }
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_loan_repayment_greatness_reward }
 		debug_log = "kehillah_community_loan_repaid_effect: a community loan was repaid"
+	}
+}
+
+
+# ---------------------------------------------------------------------------
+# 2026-11-20 (Quarter tracks, Bankers' Row's Bond Chest). Scope: a Kehillah
+# leader whose Quarter has a Bond Chest. Quarterly: the registered bonds let
+# the community collect a share from one AI debtor who has gold: a fifth of
+# what he owes, more with a skilled Ne'eman (the trustee council seat,
+# councillor_spymaster), never more than he has. A debt paid off in full ends
+# through vanilla's repayment (and its reward, kehillah_loan_repay_override).
+# Vanilla's bailiff does the same for merchants, with Dread; this is the
+# community's ledger and the lord's courts instead.
+kehillah_bond_chest_collect_effect = {
+	if = {
+		limit = {
+			domicile ?= { has_domicile_parameter = kehillah_has_bond_chest }
+			exists = primary_title
+		}
+		save_scope_as = kehillah_bond_lender
+		primary_title = { save_scope_as = kehillah_bond_seat }
+		random_in_list = {
+			variable = owes_me_money
+			limit = {
+				is_alive = yes
+				is_ai = yes
+				gold >= 10
+				any_owned_story = {
+					story_type = story_cycle_loan
+					var:lender ?= scope:kehillah_bond_lender
+				}
+			}
+			save_scope_as = kehillah_bond_debtor
+			random_owned_story = {
+				limit = {
+					story_type = story_cycle_loan
+					var:lender ?= scope:kehillah_bond_lender
+				}
+				save_scope_as = kehillah_bond_loan
+			}
+		}
+		if = {
+			limit = { exists = scope:kehillah_bond_loan }
+			save_scope_value_as = {
+				name = kehillah_bond_collected
+				value = {
+					value = scope:kehillah_bond_loan.var:amount_owed
+					multiply = 0.2
+					if = {
+						limit = { exists = cp:councillor_spymaster }
+						multiply = {
+							value = cp:councillor_spymaster.stewardship
+							divide = 20
+							add = 1
+						}
+					}
+					max = scope:kehillah_bond_loan.var:amount_owed
+					max = scope:kehillah_bond_debtor.gold
+					min = 0
+					round = yes
+				}
+			}
+			if = {
+				limit = { scope:kehillah_bond_loan.var:amount_owed <= scope:kehillah_bond_collected }
+				scope:kehillah_bond_loan = { repay_and_end_loan_story_effect = yes }
+			}
+			else_if = {
+				limit = { scope:kehillah_bond_collected > 0 }
+				scope:kehillah_bond_debtor = {
+					pay_short_term_gold = { target = scope:kehillah_bond_lender gold = scope:kehillah_bond_collected }
+				}
+				scope:kehillah_bond_loan = {
+					change_variable = { name = amount_owed subtract = scope:kehillah_bond_collected }
+				}
+				if = {
+					limit = { is_ai = no }
+					send_interface_toast = {
+						type = event_toast_text_good
+						title = kehillah_bond_collected_t
+						desc = kehillah_bond_collected_d
+						left_icon = root
+						right_icon = scope:kehillah_bond_debtor
+					}
+				}
+			}
+		}
 	}
 }

@@ -487,3 +487,37 @@ Slices 3-8 are unchanged:
 6. **Succession:** kill the Worms leader, and confirm every building (trades, butchers, the Yeshiva tiers, the specialisations) returns on the heir's domicile. **This touches the succession rebuild.**
 7. **An attack** that plunders can lower Bankers' Row or the Funduq.
 8. **`error.log`** after opening the domicile window and hovering buildings.
+
+## 15. Later slices, built autonomously while Daniel was away (2026-11-20 onward)
+Each entry is source-checked and xTiger-clean (beyond the known trade-good false positives).
+**None is live-tested.**
+
+### 15.1 Slice 4: Bankers' Row annexes, lending under the charter
+- **Bankers' Row internal slots:** 1, 2 and 3 by tier.
+- **Bond Chest** (`kehillah_bond_chest_01`):
+  - when the community's loans are voided (expulsion, burned bonds), each loan keeps half its debt
+    once (`kehillah_void_community_loans_effect`, loan variable `kehillah_bond_saved`);
+  - each quarter it collects from one AI debtor with gold: a fifth of the debt, scaled by the
+    Ne'eman's stewardship (`kehillah_bond_chest_collect_effect`, vanilla's bailiff pattern without
+    Dread). A debt paid in full ends through vanilla's repayment, so the repayment reward applies.
+- **Pledge Store** (`kehillah_pledge_store_01`): interest-bearing loans where the charter grants only
+  pawnbroking.
+- **Court Jew's Office** (`kehillah_court_jew_office_01`, needs Bankers' Row 2):
+  - the host's value of Jewish banking rises by 5 (host variable `kehillah_banking_court_jew`, set
+    by the banking refresh);
+  - unlocks **Enforce the Bond**.
+- **Enforce the Bond** (`kehillah_enforce_bond_interaction`):
+  - the Shtadlan takes a debtor who is a subject of the host before the host's court;
+  - the odds rise with the Shtadlan's diplomacy and the host's outlook, and fall if the debtor is
+    the host's close family;
+  - success collects half the debt; failure collects nothing;
+  - either way the host's opinion falls by 5 (stacking) and the debtor's falls;
+  - a 5-year cooldown per debtor.
+- **The charter's lending right now governs interest** (Daniel asked whether it was redundant with
+  the usury doctrines):
+  - **the doctrine** is the religious law, the lender faith's view of interest;
+  - **the charter** is the host's secular licence to lend in his realm.
+  
+  `kehillah_charter_forbids_interest_trigger` hides Lend Gold's interest option for borrowers in the
+  host realm when the charter grants no lending right, or only pawnbroking without a Pledge Store.
+  Charters with no lending term, and borrowers outside the realm, are unaffected.

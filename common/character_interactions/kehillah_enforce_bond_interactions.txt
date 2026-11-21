@@ -1,0 +1,151 @@
+﻿# =====================================================================
+# Enforce the Bond (2026-11-20). Quarter spec section 6.2: the Court Jew's
+# Office (a Bankers' Row annex) lets the community's Shtadlan take a debtor
+# before the host's own court, which compels part of the debt to be paid.
+# The host's justice is a favour: every use costs a little of his goodwill,
+# and the debtor resents it. The host himself cannot be compelled.
+# =====================================================================
+
+kehillah_enforce_bond_interaction = {
+	category = interaction_category_hostile
+	icon = icon_gold
+	common_interaction = no
+	desc = kehillah_enforce_bond_interaction_desc
+	auto_accept = yes
+	ai_frequency = 0
+	cooldown_against_recipient = { years = 5 }
+
+	is_shown = {
+		scope:actor = {
+			government_has_flag = government_is_kehillah
+			domicile ?= { has_domicile_parameter = kehillah_has_court_jew_office }
+			exists = primary_title
+		}
+		scope:recipient = {
+			NOT = { this = scope:actor }
+			kehillah_owes_community_trigger = { TITLE = scope:actor.primary_title }
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			is_available_adult = yes
+			custom_tooltip = {
+				text = kehillah_enforce_bond_needs_shtadlan_tt
+				exists = cp:councillor_chancellor
+			}
+			custom_tooltip = {
+				text = kehillah_enforce_bond_needs_host_tt
+				exists = domicile.domicile_location.county.holder.top_liege
+			}
+		}
+		custom_tooltip = {
+			text = kehillah_enforce_bond_subject_tt
+			scope:actor.domicile.domicile_location.county.holder.top_liege ?= { save_temporary_scope_as = kehillah_bond_court }
+			scope:recipient = {
+				NOT = { this = scope:kehillah_bond_court }
+				top_liege ?= scope:kehillah_bond_court
+			}
+		}
+		scope:recipient = {
+			custom_tooltip = {
+				text = kehillah_enforce_bond_has_gold_tt
+				gold >= 10
+			}
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			save_scope_as = kehillah_bond_lender
+			primary_title = { save_scope_as = kehillah_bond_seat }
+			cp:councillor_chancellor = { save_scope_as = kehillah_bond_shtadlan }
+			domicile.domicile_location.county.holder.top_liege = { save_scope_as = kehillah_bond_court }
+		}
+		scope:recipient = {
+			save_scope_as = kehillah_bond_debtor
+			random_owned_story = {
+				limit = {
+					story_type = story_cycle_loan
+					var:kehillah_lent_for ?= scope:kehillah_bond_seat
+				}
+				save_scope_as = kehillah_bond_loan
+			}
+		}
+		# The host's goodwill is spent whatever the court decides.
+		scope:kehillah_bond_court = {
+			add_opinion = { target = scope:actor modifier = kehillah_bond_court_favour_opinion }
+		}
+		random_list = {
+			50 = {
+				desc = kehillah_enforce_bond.success
+				modifier = {
+					add = {
+						value = scope:kehillah_bond_shtadlan.diplomacy
+						multiply = 2
+					}
+				}
+				modifier = {
+					add = 20
+					scope:kehillah_bond_court = { kehillah_outlook_on_jews_value >= 15 }
+				}
+				modifier = {
+					add = -25
+					scope:kehillah_bond_debtor = { is_close_family_of = scope:kehillah_bond_court }
+				}
+				save_scope_value_as = {
+					name = kehillah_bond_collected
+					value = {
+						value = scope:kehillah_bond_loan.var:amount_owed
+						multiply = 0.5
+						max = scope:kehillah_bond_loan.var:amount_owed
+						max = scope:kehillah_bond_debtor.gold
+						min = 0
+						round = yes
+					}
+				}
+				scope:kehillah_bond_debtor = {
+					add_opinion = { target = scope:actor modifier = kehillah_bond_enforced_opinion }
+				}
+				if = {
+					limit = { scope:kehillah_bond_loan.var:amount_owed <= scope:kehillah_bond_collected }
+					scope:kehillah_bond_loan = { repay_and_end_loan_story_effect = yes }
+				}
+				else = {
+					scope:kehillah_bond_debtor = {
+						pay_short_term_gold = { target = scope:actor gold = scope:kehillah_bond_collected }
+					}
+					hidden_effect = {
+						scope:kehillah_bond_loan = {
+							change_variable = { name = amount_owed subtract = scope:kehillah_bond_collected }
+						}
+					}
+				}
+				scope:actor = {
+					send_interface_toast = {
+						type = event_toast_text_and_effect_good
+						title = kehillah_toast_success
+						desc = kehillah_enforce_bond.success_desc
+						left_icon = scope:actor
+						right_icon = scope:kehillah_bond_debtor
+					}
+				}
+			}
+			50 = {
+				desc = kehillah_enforce_bond.failure
+				scope:kehillah_bond_debtor = {
+					add_opinion = { target = scope:actor modifier = kehillah_bond_dismissed_opinion }
+				}
+				scope:actor = {
+					send_interface_toast = {
+						type = event_toast_text_bad
+						title = kehillah_toast_failure
+						desc = kehillah_enforce_bond.failure_desc
+						left_icon = scope:actor
+						right_icon = scope:kehillah_bond_debtor
+					}
+				}
+			}
+		}
+	}
+}
