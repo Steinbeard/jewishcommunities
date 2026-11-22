@@ -1,6 +1,6 @@
 # Jewish quarter district: live test (2026-11-22)
 
-**Status:** passed. Quarter spec section 16.
+**Status:** passed (runs 1-3). Quarter spec section 16.
 
 **Method.** xTiger MCP (`ck3_run_start` with no boot commands, then `ck3_script`), run by subagents. Each run fired the census probe `kehillah_quarter_debug.7`, which logs every registered community's town (slots, districts, free slots, quarter, room) to `debug.log`. Each game was closed by its own PID.
 
@@ -27,6 +27,33 @@ Every town without a quarter was exactly full. Djerba was the only town with a s
 - The room slot counts immediately: every town had its quarter at load, before any day passed, so the one-day retry was never needed.
 - `kehillah_dissolve_community_effect` on Mainz removed both the district and the room modifier from province 2694. The other communities were untouched.
 - **error.log:** nothing from the district, slot, dissolve or room code. The orphaned debug events are expected.
+
+## Run 3: the GUI after merging the 1.21 port (commit ddf5dba)
+
+Runs 1 and 2 found the district in game state, but the county view could not show it. The mod still shipped a 1.20 copy of `window_county_view.gui`, which hid 1.21's districts for every county. The `ck3-1.21-port` branch had already rebased every vanilla GUI override onto 1.21 (three-way, against a 1.20.1 base), so it was merged.
+
+Screenshots in [screenshots/2026-11-22-quarter-district/](screenshots/2026-11-22-quarter-district/):
+
+| File | What it shows |
+|---|---|
+| `01-worms-holding.png` | The county view: Worms's district grid with the Jewish Quarter tile, and the district window open. No raw keys. |
+| `02-quarter-district.png` | The district tooltip ("Standard District", building needs wine, books and cloth) and its window: market-street illustration, Artisan Taxes +0.25, three needs at 0/5 with +0.05 each, the description. |
+| `03-room-modifier.png` | The "Jewish Quarter" province modifier: +1 standard district slot. |
+| `04-inspector.png` | The community-inspector tab and card. |
+| `05-quarter-window.png` | The Quarter (domicile) window. |
+| `06-realm.png` | The realm window's Kehillah section. |
+| `07-character.png` | The character window's library chip. |
+
+**Navigation:** clicking Worms on the map opens the Quarter, because the community pin sits on top of it. The county view is reached through the Kehillah title window's de jure capital link.
+
+**Found and fixed:**
+- `KEHILLAH_LIB_CHIP_TOOLTIP:0"` lacked the space before its quote, so the key was dropped.
+- The inspector card had six dividers with `margin_top`/`margin_bottom` (18 error lines at load); each is now wrapped in a vbox. Two ignored `parentanchor = vcenter` inside an hbox were removed.
+
+**Still open:**
+- The inspector card overlaps the county window's close button.
+- Three inline GUI texts are logged as "unlocalized" (crisis window lines 702 and 708, ledger line 193).
+- The needs show 0/5 at the start, so the market term is not yet checked in play.
 
 ## Pre-existing errors seen in passing (not from this work)
 
