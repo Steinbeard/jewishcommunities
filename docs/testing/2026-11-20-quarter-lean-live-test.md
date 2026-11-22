@@ -27,3 +27,20 @@
 3. **Not ours to fix now (1.21 triage):**
    - "Unknown effect: add_great_building" in `kehillah_scripted_effects.txt` (the Kairouan yeshiva hall). 1.21 turned great buildings into great districts (`add_great_district`); this needs a port, not a rename;
    - `kehillah_start_eminence_effects.txt` is not UTF-8 with BOM (pre-existing).
+
+## Second run (measurement), 2026-11-21
+- **Boot:** passes, no crash.
+- **Starting Prosperity after the first balancing pass** (all 53 communities):
+
+  | Eminence | Communities | Prosperity range | Healthy or better |
+  |---|---|---|---|
+  | 1 (modest) | 6 | 243-364 | none |
+  | 2 (established) | 25 | 311-481 | 5 |
+  | 3 (major) | 16 | 436-687 | all |
+  | 4 (great) | 6 | 621-784 | all; 3 Flourishing |
+
+  So about **27-33 of 53 start Healthy, up from 4**. Expected giving is no longer dormant at 1066.
+- **Real bugs found, both fixed:**
+  1. `monthly_artisan_tax` / `monthly_commerce_tax` are not valid in a static county modifier. The whole town modifier failed to apply, and `has_`, `add_` and `remove_county_modifier` errored. The typed taxes are removed; the modifiers carry `prosperity_growth` only.
+  2. `var:amount_owed ?= { value >= 2 }` in the Bond Chest's voiding gave "Unknown trigger: value". It is now `has_variable` plus a comparison.
+- **Left for the 1.21 triage:** `add_great_building`, `add_special_building` and `has_special_building` (the yeshiva), the development tokens in `kehillah_vanilla_task_overrides.txt`, and the AI building-preference MTTH tokens in `kehillah_temple_beit_midrash_buildings.txt`.
