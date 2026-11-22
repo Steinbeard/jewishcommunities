@@ -613,7 +613,7 @@ Each entry is source-checked and xTiger-clean (beyond the known trade-good false
 
 ## 16. The Jewish quarter district (2026-11-21)
 
-**Status:** built 2026-11-21, xTiger-clean except 1.21 false positives; **not live-tested**. Daniel's design (2026-11-21): a *regular* district, not a special one, that no ruler can build, with "no room" shown when the town is full.
+**Status:** built 2026-11-21/22; placement and removal live-tested 2026-11-22. Daniel's design (2026-11-21): a *regular* district, not a special one, that no ruler can build, with "no room" shown when the town is full.
 
 **Why regular.** A province holds one special district. A live spike in Jerusalem (province 5965, the Dome of the Rock slot) refused a second one. A special Jewish quarter could never stand in Jerusalem, Rome or Cordoba.
 
@@ -654,9 +654,5 @@ Each entry is source-checked and xTiger-clean (beyond the known trade-good false
 
 **Still open.**
 
-1. **Live checks still to do.** The census showed that `add_regular_district` and game-start placement work. Still to confirm:
-   - the room modifier gives full towns their slot;
-   - expulsion removes both the district and the room;
-   - the district's needs show in the market.
-   Probes: `kehillah_quarter_debug.6` and `.7`.
+1. **Live-tested 2026-11-22** (`docs/testing/2026-11-22-quarter-district-live-test.md`): all 53 communities at the 1066 start have their quarter and room at load, and dissolution removes both. Still to check: the district's needs in the market UI, and the Prosperity market term in play.
 2. **Fold the yeshiva into the district,** as Daniel asked on 2026-11-21. The Kairouan yeshiva hall still uses 1.20 great/special-building effects, which 1.21 dropped.
