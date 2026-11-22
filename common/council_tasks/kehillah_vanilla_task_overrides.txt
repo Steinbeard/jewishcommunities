@@ -291,15 +291,24 @@ task_domestic_affairs = {
 # from 00_chancellor_tasks.txt
 task_integrate_title = {
 	position = councillor_chancellor
-	is_shown = {
-		NOT = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } } # Jewish Communities: hidden for Kehillot
-	}
 	task_type = task_type_county
 	county_target = realm
 	task_progress = task_progress_value
 	task_current_value = scope:councillor_liege.chancellor_integrate_title_current_progress
 
 	task_max_value = define:NTitle|DRIFT_PROGRESS_LIMIT
+
+	is_shown = {
+		NOT = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } } # Jewish Communities: hidden for Kehillot
+		scope:councillor_liege = {
+			trigger_if = {
+				limit = {
+					government_has_flag = government_is_republic
+				}
+				is_landed = yes
+			}
+		}
+	}
 
 	asset = {
 		icon = "gfx/interface/icons/council_task_types/task_integrate_title.dds"
@@ -465,6 +474,25 @@ task_bestow_royal_favor = {
 	task_progress = task_progress_percentage
 	restart_on_finish = yes
 
+	is_shown = {
+		has_dlc_feature = royal_court
+		trigger_if = {
+			limit = {
+				scope:councillor_liege = { tgp_has_access_to_ministry_trigger = yes }
+			}
+			has_council_position = minister_personnel
+		}
+		scope:councillor_liege = {
+			trigger_if = {
+				limit = {
+					government_has_flag = government_is_republic
+				}
+				is_landed = yes
+			}
+		}
+		NOT = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } } # Jewish Communities: hidden for Kehillot
+	}
+
 	asset = {
 		icon = "gfx/interface/icons/council_task_types/task_bestow_royal_favor.dds"
 		background = "gfx/interface/buttons/button_round_bg.dds"
@@ -555,17 +583,6 @@ task_bestow_royal_favor = {
 				desc = task_increase_control_worsen_contract
 			}
 		}
-	}
-
-	is_shown = {
-		has_dlc_feature = royal_court
-		trigger_if = {
-			limit = {
-				scope:councillor_liege = { tgp_has_access_to_ministry_trigger = yes }
-			}
-			has_council_position = minister_personnel
-		}
-		NOT = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } } # Jewish Communities: hidden for Kehillot
 	}
 
 	is_valid_showing_failures_only =  {
@@ -841,7 +858,14 @@ task_collect_taxes = {
 	}
 
 	effect_desc = {
-		desc = task_collect_taxes_effect_desc
+		triggered_desc = {
+			desc = task_collect_taxes_effect_desc
+			trigger = { liege = { is_landed = yes } }
+		}
+		triggered_desc = {
+			desc = task_collect_taxes_domicile_effect_desc
+			trigger = { liege = { has_domicile = yes } }
+		}
 		triggered_desc = {
 			trigger = { liege = { has_perk = tax_man_perk } }
 			desc = task_collect_taxes_tax_man_bonus_desc
@@ -897,6 +921,7 @@ task_collect_taxes = {
 	council_owner_modifier = {
 		name = task_collect_taxes_modifier
 		domain_tax_mult = 1
+		domicile_monthly_gold_mult = 1
 		scale = steward_collect_taxes_total_scale
 	}
 
@@ -970,14 +995,15 @@ task_develop_county = {
 	task_max_value = 100
 	highlight_own_realm = yes
 
-	asset = {
-		icon = "gfx/interface/icons/council_task_types/task_develop_county.dds"
-		background = "gfx/interface/buttons/button_round_bg.dds"
-		frame = "gfx/interface/buttons/button_round_frame.dds"
-		glow = "gfx/particles/halo.dds"
-	}
-	
 	is_shown = {
+		scope:councillor_liege = {
+			trigger_if = {
+				limit = {
+					government_has_flag = government_is_republic
+				}
+				is_landed = yes
+			}
+		}
 		trigger_if = {
 			limit = {
 				scope:councillor_liege = { tgp_has_access_to_ministry_trigger = yes }
@@ -987,7 +1013,18 @@ task_develop_county = {
 		NOT = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } } # Jewish Communities: hidden for Kehillot
 	}
 
+	asset = {
+		icon = "gfx/interface/icons/council_task_types/task_increase_prosperity_county.dds"
+		background = "gfx/interface/buttons/button_round_bg.dds"
+		frame = "gfx/interface/buttons/button_round_frame.dds"
+		glow = "gfx/particles/halo.dds"
+	}
+
 	effect_desc = {
+		triggered_desc = {
+			trigger = { council_task_not_started_in_county_trigger = yes }
+			desc = task_develop_county_current_status
+		}
 		desc = task_develop_county_complete_effect_desc
 		desc = task_develop_county_effect_desc
 		desc = {
@@ -1012,7 +1049,7 @@ task_develop_county = {
 					trigger_if = {
 						limit = { exists = scope:county }
 						scope:county = {
-							county_control < full_county_control
+							county_control < county_control_baseline
 						}
 					}
 				}
@@ -1170,10 +1207,22 @@ task_develop_county = {
 				desc = COUNCILLOR_IS_YOUR_NEMESIS
 			}
 		}
+		if = {
+			limit = {
+				exists = scope:county
+				scope:county.title_province = {
+					has_building_or_higher = manor_chamber_blocks_1
+				}
+			}
+			add = {
+				value = scope:councillor.manor_chamber_blocks_steward_develop_county_bonus
+				desc = MANOR_CHAMBER_BLOCKS_STEWARD_PROSPERITY_BONUS
+			}
+		}
 		if = { #Tribal penalty
 			limit = {
 				scope:councillor_liege = {
-					should_apply_tribal_development_penalty_trigger = yes	
+					should_apply_tribal_prosperity_penalty_trigger = yes	
 				}
 			}
 			add = {
@@ -1181,23 +1230,23 @@ task_develop_county = {
 				desc = DEVELOP_COUNTY_TRIBAL_PENALTY_VALUE
 			}
 		}	
-		if = { # Development reduces the speed.
+		if = { # Prosperity reduces the speed.
 			limit = {
 				exists = scope:county
 				scope:county = {
-					development_level > 0
+					prosperity_level > 0
 				}
 			}
 			add = {
-				value = scope:county.current_development_penalty
-				desc = STEWARD_CURRENT_DEVELOPMENT_PENALTY
+				value = scope:county.current_prosperity_penalty
+				desc = STEWARD_CURRENT_PROSPERITY_PENALTY
 			}
 		}
 		
 		if = {
 			limit = { exists = scope:county }
 			multiply = {
-				value = scope:county.development_rate_modifier
+				value = scope:county.prosperity_rate_modifier
 				desc = STEWARD_COUNTY_SPEED_MODIFIERS
 			}
 		}
@@ -1236,7 +1285,7 @@ task_develop_county = {
 	potential_county = {
 		scope:county = {
 			is_landless_type_title = no
-			development_level < max_development_level
+			prosperity_level < max_prosperity_level
 			trigger_if = {
 				limit = {
 					scope:councillor_liege = {
@@ -1259,7 +1308,7 @@ task_develop_county = {
 				}
 				OR = {
 					scope:councillor_liege = {
-						has_character_flag = vassal_directive_improve_development
+						has_character_flag = vassal_directive_improve_prosperity
 						vassal_is_valid_and_follows_directive_trigger = { VASSAL = this LIEGE = liege }
 					}
 					culture = scope:councillor_liege.culture
@@ -1282,29 +1331,37 @@ task_develop_county = {
 
 	county_modifier = {
 		name = steward_develop_county_modifier
-		development_growth = 100
+		prosperity_growth = 100
 		holding_build_speed = -7
 		#holding_build_gold_cost = -1
 		build_speed = -7
+		district_build_speed = -7
 		#build_gold_cost = -1
 		scale = { value = steward_develop_county_total divide = 100 }
 	}
 
 	county_modifier = {
-		name = steward_develop_county_current_development_modifier
-		development_growth = 100
-		scale = { value = scope:councillor.current_development_penalty divide = 100 }
+		name = steward_develop_county_current_prosperity_modifier
+		prosperity_growth = 100
+		scale = {
+			value = 0
+			if = {
+				limit = { scope:county ?= { prosperity_level > 0 } }
+				add = scope:councillor.current_prosperity_penalty
+				divide = 100
+			}
+		}
 	}
 
 	county_modifier = {
 		name = steward_develop_county_tribal_penalty_modifier
-		development_growth = 100
+		prosperity_growth = 100
 		scale = {
 			value = 0
 			if = {
 				limit = {
 					scope:councillor_liege = {
-						should_apply_tribal_development_penalty_trigger = yes
+						should_apply_tribal_prosperity_penalty_trigger = yes
 					}
 				}
 				value = scope:councillor.steward_develop_county_tribal_penalty
@@ -1314,13 +1371,13 @@ task_develop_county = {
 	}
 
 	on_start_task_county = {
-		# save current development_level for catalyst purpose
+		# save current prosperity_level for catalyst purpose
 		if = {
 			limit = { exists = scope:county }
 			scope:county = {
 				set_variable = {
-					name = current_development_level
-					value = development_level
+					name = current_prosperity_level
+					value = prosperity_level
 				}
 			}
 		}
@@ -1333,7 +1390,7 @@ task_develop_county = {
 					AND = {
 						exists = scope:county
 						scope:county = {
-							development_level = max_development_level
+							prosperity_level = max_prosperity_level
 						}
 					}
 					scope:councillor_liege = {
@@ -1349,19 +1406,19 @@ task_develop_county = {
 
 	on_monthly_county = {
 		scope:councillor_liege = {
-			# Check development level progress
+			# Check prosperity level progress
 			if = {
 				limit = {
 					exists = scope:county
-					exists = scope:county.var:current_development_level
 					scope:county = {
-						floored_development_value > floored_current_development_value
+						has_variable = current_prosperity_level
+						prosperity_level > var:current_prosperity_level
 					}
 				}
 				scope:county = {
 					set_variable = {
-						name = current_development_level
-						value = development_level
+						name = current_prosperity_level
+						value = prosperity_level
 					}
 				}
 				
@@ -1370,23 +1427,23 @@ task_develop_county = {
 						limit = {
 							exists = primary_title
 							primary_title.tier >= tier_kingdom
+							NOT = {
+								has_focus = stewardship_domain_focus
+							}
 							any_sub_realm_county = {
 								culture = {
 									cultural_acceptance = { target = scope:councillor_liege.culture value < 52 }
 								}
 							}
-							NOT = {
-								has_focus = stewardship_domain_focus
-							}
 						}
 						add_character_flag = {
-							flag = no_ai_increase_development
+							flag = no_ai_increase_prosperity
 							years = 15
 						}
 					}
 					else = {
 						add_character_flag = {
-							flag = no_ai_increase_development
+							flag = no_ai_increase_prosperity
 							years = 5
 						}
 					}
@@ -1406,14 +1463,14 @@ task_develop_county = {
 
 						any_character_struggle = {
 							involvement = involved
-							phase_has_catalyst = catalyst_improve_development_vassal_diff_faith_culture
+							phase_has_catalyst = catalyst_improve_prosperity_vassal_diff_faith_culture
 						}
 					}
 					scope:councillor_liege = {
 						every_character_struggle = {
 							involvement = involved
 							activate_struggle_catalyst = {
-								catalyst = catalyst_improve_development_vassal_diff_faith_culture
+								catalyst = catalyst_improve_prosperity_vassal_diff_faith_culture
 								character = scope:councillor_liege
 							}
 						}
@@ -1445,8 +1502,8 @@ task_develop_county = {
 				}
 				scope:county = {
 					set_variable = {
-						name = current_development_level
-						value = development_level
+						name = current_prosperity_level
+						value = prosperity_level
 					}
 				}
 			}
@@ -1466,13 +1523,13 @@ task_develop_county = {
 		if = {
 			# Don't do this too often
 			limit = {
-				scope:councillor_liege = { has_character_flag = no_ai_increase_development }
+				scope:councillor_liege = { has_character_flag = no_ai_increase_prosperity }
 			}
 			multiply = 0
 		}
 		else_if = {
 			limit = {
-				scope:councillor_liege.gold >= steward_increase_development_value
+				scope:councillor_liege.gold >= steward_increase_prosperity_value
 			}
 			add = 300
 		}
@@ -1487,7 +1544,7 @@ task_develop_county = {
 		if = {
 			limit = {
 				scope:councillor_liege = {
-					has_character_flag = vassal_directive_improve_development
+					has_character_flag = vassal_directive_improve_prosperity
 					vassal_is_valid_and_follows_directive_trigger = { VASSAL = this LIEGE = liege }
 				}
 			}
@@ -1499,9 +1556,6 @@ task_develop_county = {
 # from 00_steward_tasks.txt
 task_promote_culture = {
 	position = councillor_steward
-	is_shown = {
-		NOT = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } } # Jewish Communities: hidden for Kehillot
-	}
 
 	task_type = task_type_county
 	county_target = realm
@@ -1509,6 +1563,18 @@ task_promote_culture = {
 	task_progress = task_progress_percentage
 	restart_on_finish = yes
 	highlight_own_realm = yes
+
+	is_shown = {
+		NOT = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } } # Jewish Communities: hidden for Kehillot
+		scope:councillor_liege = {
+			trigger_if = {
+				limit = {
+					government_has_flag = government_is_republic
+				}
+				is_landed = yes
+			}
+		}
+	}
 
 	asset = {
 		icon = "gfx/interface/icons/council_task_types/task_promote_culture.dds"
@@ -1563,7 +1629,7 @@ task_promote_culture = {
 						}
 					}
 				}
-				desc = task_promote_culture_improve_county_opinion
+				desc = task_promote_culture_improve_popular_opinion
 			}
 			triggered_desc = {
 				trigger = {
@@ -1633,19 +1699,29 @@ task_promote_culture = {
 
 		add = steward_promote_culture_contextual_bonuses
 		
-		if = { # Development reduces the speed. Should be the last non-multiply modifier applied to avoid negative values
+		if = { # Prosperity reduces the speed. Should be the last non-multiply modifier applied to avoid negative values
 			limit = {
 				exists = scope:county
 				scope:county = {
-					development_level > 0
+					prosperity_level > 0
 				}
 			}
 			add = {
-				value = scope:county.promote_culture_development_penalty
-				desc = STEWARD_PROMOTE_CULTURE_DEVELOPMENT_PENALTY
+				value = scope:county.promote_culture_prosperity_penalty
+				desc = STEWARD_PROMOTE_CULTURE_PROSPERITY_PENALTY
 			}
 		}
-		
+		if = {
+			limit = { exists = scope:county.title_province }
+			multiply = {
+				value = 1
+				subtract = {
+					value = scope:county.title_province.province_size_level
+					multiply = promote_culture_settlement_size_penalty_step
+				}
+				desc = STEWARD_PROMOTE_CULTURE_SETTLEMENT_SIZE
+			}
+		}
 		# Conversion speed game rules
 		if = {
 			limit = {
@@ -2246,15 +2322,24 @@ task_promote_culture = {
 # from 00_steward_tasks.txt
 task_accept_culture = {
 	position = councillor_steward
-	is_shown = {
-		NOT = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } } # Jewish Communities: hidden for Kehillot
-	}
 
 	task_type = task_type_county
 	county_target = realm
 	ai_county_target = realm
 	highlight_own_realm = yes
 	task_progress = task_progress_infinite
+
+	is_shown = {
+		NOT = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } } # Jewish Communities: hidden for Kehillot
+		scope:councillor_liege = {
+			trigger_if = {
+				limit = {
+					government_has_flag = government_is_republic
+				}
+				is_landed = yes
+			}
+		}
+	}
 
 	asset = {
 		icon = "gfx/interface/icons/council_task_types/task_accept_culture.dds"
@@ -2352,13 +2437,13 @@ task_accept_culture = {
 					limit = { exists = scope:county }
 					scope:county = {
 						NOR = {
-							has_county_modifier = steward_accept_culture_reduced_development_spread_modifier
-							has_county_modifier = steward_accept_culture_increased_development_spread_modifier
+							has_county_modifier = steward_accept_culture_reduced_prosperity_spread_modifier
+							has_county_modifier = steward_accept_culture_increased_prosperity_spread_modifier
 						}
 					}
 				}
 			}
-			desc = task_accept_culture_reduced_development_growth
+			desc = task_accept_culture_reduced_prosperity_growth
 		}
 		triggered_desc = {
 			trigger = {
@@ -2367,13 +2452,13 @@ task_accept_culture = {
 					limit = { exists = scope:county }
 					scope:county = {
 						NOR = {
-							has_county_modifier = steward_accept_culture_reduced_development_spread_modifier
-							has_county_modifier = steward_accept_culture_increased_development_spread_modifier
+							has_county_modifier = steward_accept_culture_reduced_prosperity_spread_modifier
+							has_county_modifier = steward_accept_culture_increased_prosperity_spread_modifier
 						}
 					}
 				}
 			}
-			desc = task_accept_culture_increased_development_growth
+			desc = task_accept_culture_increased_prosperity_growth
 		}
 		triggered_desc = {
 			trigger = {
@@ -2604,7 +2689,7 @@ task_accept_culture = {
 		if = {
 			# Prefer this over Collecting Taxes if you have some money
 			limit = {
-				scope:councillor_liege.gold >= steward_increase_development_value
+				scope:councillor_liege.gold >= steward_increase_prosperity_value
 			}
 			add = 1
 		}
@@ -2726,6 +2811,19 @@ task_convince_dejure = {
 	ai_county_target = neighbor_land
 	task_progress = task_progress_percentage
 
+	is_shown = {
+		has_dlc_feature = royal_court
+		scope:councillor_liege = {
+			trigger_if = {
+				limit = {
+					government_has_flag = government_is_republic
+				}
+				is_landed = yes
+			}
+		}
+		NOT = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } } # Jewish Communities: hidden for Kehillot
+	}
+
 	asset = {
 		icon = "gfx/interface/icons/council_task_types/task_convince_dejure.dds"
 		background = "gfx/interface/buttons/button_round_bg.dds"
@@ -2756,11 +2854,6 @@ task_convince_dejure = {
 				desc = task_convince_dejure_diplomatic_blunder
 			}
 		}
-	}
-
-	is_shown = {
-		has_dlc_feature = royal_court
-		NOT = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } } # Jewish Communities: hidden for Kehillot
 	}
 
 	progress = {
@@ -3593,7 +3686,7 @@ task_increase_control = {
 	ai_county_target = domain
 	task_progress = task_progress_value
 	task_current_value = scope:councillor_liege.marshal_increase_control_current_progress
-	task_max_value = 100 # Highest possible county control
+	task_max_value = scope:councillor_liege.marshal_increase_control_max_progress
 	highlight_own_realm = yes
 	restart_on_finish = yes # If it "finishes" by removing a corruption modifier, there'll still be control to regain
 
@@ -3605,6 +3698,10 @@ task_increase_control = {
 	}
 
 	effect_desc = {
+		triggered_desc = {
+			trigger = { council_task_not_started_in_county_trigger = yes }
+			desc = task_increase_control_current_status
+		}
 		desc = task_increase_control_effect_desc
 		desc = {
 			desc = council_task_possible_side_effects
@@ -3757,9 +3854,21 @@ task_increase_control = {
 			}
 		}
 		if = {
+			limit = {
+				exists = scope:county
+				scope:county.title_province = {
+					province_has_district = manor_houses_district
+				}
+			}
+			add = {
+				value = scope:councillor.manor_houses_marshal_increase_control_bonus
+				desc = MANOR_HOUSES_MARSHAL_CONTROL_BONUS
+			}
+		}
+		if = {
 			limit = { exists = scope:county }
 			multiply = {
-				value = scope:county.monthly_county_control_growth_factor
+				value = scope:county.monthly_county_control_change
 				desc = MARSHAL_COUNTY_SPEED_MODIFIERS
 			}
 		}
@@ -3813,19 +3922,16 @@ task_increase_control = {
 			custom_description = {
 				text = potential_county_control_task_trigger
 				OR = {
+					county_control < county_control_baseline
 					has_county_corruption_trigger = yes
-					county_control < full_county_control
 				}
 			}
-			# If the growth factor is 0, no amount of trying to control helps
-			# (happens when the county is under siege/occupied most likely)
-			monthly_county_control_growth_factor > 0
 		}
 	}
 
 	county_modifier = {
 		name = marshal_increase_control_modifier
-		monthly_county_control_growth_add = 1
+		monthly_control_change_when_below_baseline_add = 0.5
 		scale = marshal_increase_control_total
 	}
 
@@ -3871,7 +3977,7 @@ task_increase_control = {
 			}
 			scope:county = {
 				marshal_remove_random_county_corruption_modifier_effect = yes
-				change_county_control = -25
+				change_county_control = -10
 			}
 		}
 	}
@@ -3883,6 +3989,24 @@ task_increase_control = {
 			chance = scope:councillor.marshal_remove_county_corruption_chance
 			scope:county = {
 				marshal_remove_random_county_corruption_modifier_effect = yes
+			}
+		}
+	}
+
+	ai_target_score = {
+		value = 10
+		scope:county = {
+			if = {
+				limit = { county_control < county_control_baseline }
+				add = {
+					value = county_control_baseline
+					subtract = county_control
+					multiply = 10
+				}
+			}
+			add = {
+				value = county_corruption_modifier_count
+				multiply = 100
 			}
 		}
 	}
@@ -4254,7 +4378,7 @@ task_conversion = {
 			}
 			desc = task_conversion_rite_only_effect_desc
 		}
-		# Development loss only applies on a real Faith change (people refuse to convert and migrate)
+		# Prosperity loss only applies on a real Faith change (people refuse to convert and migrate)
 		triggered_desc = {
 			trigger = {
 				trigger_if = {
@@ -4270,7 +4394,24 @@ task_conversion = {
 					scope:county.faith != scope:councillor.faith
 				}
 			}
-			desc = task_conversion_development_loss_desc
+			desc = task_conversion_prosperity_loss_desc
+		}
+		triggered_desc = {
+			trigger = {
+				trigger_if = {
+					limit = {
+						scope:councillor_liege = { tgp_has_access_to_ministry_trigger = yes }
+					}
+					exists = scope:county.faith
+					scope:county.faith != scope:councillor_liege.faith
+				}
+				trigger_else = {
+					exists = scope:county.faith
+					scope:county.faith != scope:councillor_liege.faith
+					scope:county.faith != scope:councillor.faith
+				}
+			}
+			desc = task_conversion_settlement_size_loss_desc
 		}
 		# Fervor effects only on a real Faith change (rite shifts within the same Faith do not move fervor)
 		triggered_desc = {
@@ -4312,7 +4453,7 @@ task_conversion = {
 				trigger = {
 					learning > mediocre_skill_rating
 				}
-				desc = task_conversion_development_gain
+				desc = task_conversion_prosperity_gain
 			}
 			triggered_desc = {
 				trigger = {
@@ -4382,23 +4523,7 @@ task_conversion = {
 			}
 		}
 		add = court_chaplain_conversion_contextual_bonuses
-
-		# Development reduces the speed. Should be the last non-multiply modifier applied to avoid negative values
-		if = {
-			limit = {
-				exists = scope:county
-				scope:county = {
-					development_level > 0
-				}
-			}
-			add = {
-				value = scope:county.convert_faith_development_penalty
-				desc = STEWARD_PROMOTE_CULTURE_DEVELOPMENT_PENALTY
-			}
-		}
-
 		multiply = court_chaplain_conversion_factors
-
 		min = {
 			value = 0.1
 			desc = minimum_conversion
@@ -4428,7 +4553,7 @@ task_conversion = {
 					save_temporary_scope_as = employer
 				}
 				any_ruler = {
-					has_government = landless_adventurer_government
+					government_type_filter = government_type:landless_adventurer_government
 					is_within_diplo_range = { CHARACTER = scope:councillor }
 					any_character_task_contract = {
 						task_contract_type = laamp_fight_faith_conversion_contract
@@ -4508,8 +4633,8 @@ task_conversion = {
 							OR = {
 								NOT = { has_variable = associated_county }
 								AND = {
-									has_variable = converted_development
-									var:converted_development <= 0
+									has_variable = converted_prosperity
+									var:converted_prosperity <= 0
 								}
 							}
 						}
@@ -4523,8 +4648,8 @@ task_conversion = {
 							OR = {
 								NOT = { has_variable = associated_culture }
 								AND = {
-									has_variable = converted_development
-									var:converted_development <= 0
+									has_variable = converted_prosperity
+									var:converted_prosperity <= 0
 								}
 							}
 						}
@@ -4535,21 +4660,70 @@ task_conversion = {
 					}
 					if = {
 						limit = {
-							NOT = { has_variable = converted_development }
+							NOT = { has_variable = converted_prosperity }
 						}
 						set_variable = {
-							name = converted_development
-							value = scope:county.convert_faith_development_value
+							name = converted_prosperity
+							value = scope:county.convert_faith_prosperity_value
 						}
 					}
 					else = {
 						change_variable = {
-							name = converted_development
-							add = scope:county.convert_faith_development_value
+							name = converted_prosperity
+							add = scope:county.convert_faith_prosperity_value
 						}
 					}
 				}
 			}
+
+			scope:old_faith = {
+				if = {
+					limit = {
+						OR = {
+							NOT = { has_variable = associated_county }
+							AND = {
+								has_variable = converted_prosperity
+								var:converted_prosperity <= 0
+							}
+						}
+					}
+					set_variable = {
+						name = associated_county
+						value = scope:county
+					}
+				}
+				if = {
+					limit = {
+						OR = {
+							NOT = { has_variable = associated_culture }
+							AND = {
+								has_variable = converted_prosperity
+								var:converted_prosperity <= 0
+							}
+						}
+					}
+					set_variable = {
+						name = associated_culture
+						value = scope:county.culture
+					}
+				}
+				if = {
+					limit = {
+						NOT = { has_variable = converted_prosperity }
+					}
+					set_variable = {
+						name = converted_prosperity
+						value = scope:county.convert_faith_prosperity_value
+					}
+				}
+				else = {
+					change_variable = {
+						name = converted_prosperity
+						add = scope:county.convert_faith_prosperity_value
+					}
+				}
+			}
+
 			# Same decision matrix as potential_county: Liege drives the rite axis whenever the post-conversion Faith ends up as the Liege's.
 			if = {
 				limit = {
@@ -4565,7 +4739,11 @@ task_conversion = {
 
 			if = {
 				limit = { scope:councillor_liege.faith != scope:old_faith }
-				change_development_level = convert_faith_development_loss
+				change_prosperity_level = convert_faith_prosperity_loss
+				every_county_province = {
+					limit = { has_holding = yes }
+					change_province_size_progress = convert_faith_settlement_size_loss
+				}
 				scope:councillor_liege.faith = {
 					change_fervor = {
 						value = trivial_fervor_gain
@@ -4789,7 +4967,10 @@ task_fabricate_claim = {
 		# Perk Bonuses
 		if = {
 			limit = {
-				scope:councillor_liege = { has_perk = accomplished_forger_perk }
+				scope:councillor_liege = {
+					has_perk = accomplished_forger_perk
+					NOT = { government_has_flag = government_is_merchant }
+				}
 			}
 			add = {
 				value = scope:councillor.court_chaplain_fabricate_claim_perk_bonus_monthly_increase

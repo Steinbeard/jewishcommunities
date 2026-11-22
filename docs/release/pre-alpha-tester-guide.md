@@ -1,6 +1,6 @@
 # Jewish Communities: Pre-Alpha Tester Guide
 
-**Status:** written 2026-11-16 for the first private pre-alpha (Discord testers). It describes the
+**Status:** written 2026-11-16 for the first private pre-alpha (Discord testers). **Updated 2026-11-17 for 0.1.1:** CK3 1.21, and Roads to Power is no longer required. It describes the
 build staged by `scripts/kehillah_build_release.py` from branch
 `sefarim-reviews-cherem-and-crisis-politics`. It is a player-facing summary of README.md, the
 [0.1 release notes](../release-notes-0.1.md) and ROADMAP.md's status lines as of this date. Where
@@ -32,8 +32,8 @@ Each runs from **Crisis** to **Legendary**. Most of what you do raises or lowers
 
 | | |
 |---|---|
-| **Game version** | Crusader Kings III **1.20.x** (Crozier) |
-| **Required DLC** | **Roads to Power.** The Kehillah is built on its landless government, and the start screens are locked without it. |
+| **Game version** | Crusader Kings III **1.21.x** (Florin) |
+| **Required DLC** | **None.** Since 1.21 the landless adventurer is in the base game, and the Kehillah plays without Roads to Power (tested 2026-11-17 with it disabled). |
 | **Optional DLC** | Royal Court (book artifacts), Legends of the Dead, The Fate of Iberia, By God Alone, All Under Heaven. Without them, the content that uses them is skipped. |
 | **Other mods** | Play it **alone** for now. Other mods that change religion, governments or the government UI will probably conflict. |
 | **Achievements / Ironman** | Like any mod, it disables achievements. |
