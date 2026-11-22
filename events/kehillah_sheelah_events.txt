@@ -155,3 +155,134 @@ kehillah_sheelah.0002 = {
 		remove_variable = kehillah_sheelah_reply_quality
 	}
 }
+
+# =====================================================================
+# Ask for Help with Your Studies (2026-11-22).
+#   .0011 The request reaches the rabbi.
+#   .0012 His reply reaches the student: progress in the current phase of
+#         the Study Torah scheme, or, for a full explanation, the phase's
+#         success (kehillah_study_torah_mastery_bonus). Only if the student
+#         is still reading the same work.
+# =====================================================================
+
+kehillah_sheelah.0011 = {
+	type = character_event
+	title = kehillah_sheelah.0011.t
+	desc = kehillah_sheelah.0011.desc
+	theme = learning
+	left_portrait = { character = root animation = thinking }
+	right_portrait = { character = scope:kehillah_study_student animation = personality_rational }
+
+	trigger = {
+		exists = var:kehillah_study_help_pending_from
+		var:kehillah_study_help_pending_from = { is_alive = yes }
+	}
+
+	immediate = {
+		save_scope_as = kehillah_study_teacher
+		var:kehillah_study_help_pending_from = { save_scope_as = kehillah_study_student }
+	}
+
+	option = {
+		name = kehillah_sheelah.0011.a
+		add_learning_lifestyle_xp = 5
+		scope:kehillah_study_student = {
+			add_opinion = { target = root modifier = respect_opinion opinion = 10 }
+		}
+		kehillah_study_help_reply_effect = { QUALITY = 1 }
+		ai_chance = { base = 60 }
+	}
+	option = {
+		name = kehillah_sheelah.0011.b
+		trigger = { learning >= kehillah_study_help_commentary_learning }
+		add_learning_lifestyle_xp = 10
+		add_stress = minor_stress_gain
+		scope:kehillah_study_student = {
+			add_opinion = { target = root modifier = respect_opinion opinion = 20 }
+		}
+		kehillah_study_help_reply_effect = { QUALITY = 2 }
+		ai_chance = { base = 80 }
+	}
+	option = {
+		name = kehillah_sheelah.0011.c
+		kehillah_study_help_reply_effect = { QUALITY = 0 }
+		ai_chance = { base = 5 }
+	}
+}
+
+kehillah_sheelah.0012 = {
+	type = character_event
+	title = kehillah_sheelah.0012.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:kehillah_study_help_reply_quality = 0 }
+				desc = kehillah_sheelah.0012.declined
+			}
+			triggered_desc = {
+				trigger = { NOT = { var:kehillah_study_help_work ?= var:kehillah_study_current_work_id } }
+				desc = kehillah_sheelah.0012.moved_on
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_study_help_reply_quality = 2 }
+				desc = kehillah_sheelah.0012.full
+			}
+			desc = kehillah_sheelah.0012.brief
+		}
+	}
+	theme = learning
+	left_portrait = { character = root animation = thinking }
+	right_portrait = { character = scope:kehillah_study_teacher animation = personality_rational }
+
+	trigger = {
+		exists = var:kehillah_study_help_reply_quality
+		exists = var:kehillah_study_help_reply_from
+	}
+
+	immediate = {
+		var:kehillah_study_help_reply_from = { save_scope_as = kehillah_study_teacher }
+	}
+
+	# A full explanation: the current phase succeeds.
+	option = {
+		name = kehillah_sheelah.0012.a
+		trigger = {
+			var:kehillah_study_help_reply_quality = 2
+			var:kehillah_study_help_work ?= var:kehillah_study_current_work_id
+		}
+		custom_tooltip = kehillah_sheelah.0012.mastery_tt
+		hidden_effect = { set_variable = { name = kehillah_study_torah_mastery_bonus value = 1 } }
+		random_scheme = {
+			type = kehillah_study_torah
+			add_scheme_progress = kehillah_study_help_progress
+		}
+	}
+	# An explanation: the current phase moves on.
+	option = {
+		name = kehillah_sheelah.0012.a
+		trigger = {
+			var:kehillah_study_help_reply_quality = 1
+			var:kehillah_study_help_work ?= var:kehillah_study_current_work_id
+		}
+		random_scheme = {
+			type = kehillah_study_torah
+			add_scheme_progress = kehillah_study_help_progress
+		}
+	}
+	# Declined, or the student has moved on to another work.
+	option = {
+		name = kehillah_sheelah.0012.b
+		trigger = {
+			OR = {
+				var:kehillah_study_help_reply_quality = 0
+				NOT = { var:kehillah_study_help_work ?= var:kehillah_study_current_work_id }
+			}
+		}
+	}
+
+	after = {
+		remove_variable = kehillah_study_help_reply_from
+		remove_variable = kehillah_study_help_reply_quality
+		remove_variable = kehillah_study_help_work
+	}
+}

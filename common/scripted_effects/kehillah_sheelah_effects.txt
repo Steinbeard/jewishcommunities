@@ -36,6 +36,10 @@ kehillah_sheelah_send_effect = {
 		set_variable = { name = kehillah_sheelah_pending_from value = scope:kehillah_sheelah_asker days = kehillah_sheelah_pending_days }
 		set_variable = { name = kehillah_sheelah_case value = scope:kehillah_sheelah_case days = kehillah_sheelah_pending_days }
 		trigger_event = { id = kehillah_sheelah.0001 days = { 10 25 } }
+		if = {
+			limit = { is_ai = no }
+			set_variable = { name = kehillah_sheelah_player_letter_recent value = yes days = kehillah_sheelah_player_letter_gap_days }
+		}
 	}
 	debug_log = "kehillah_sheelah_send_effect: a she'elah is sent"
 	debug_log_scopes = yes
@@ -101,4 +105,30 @@ kehillah_sheelah_ai_pulse_effect = {
 			}
 		}
 	}
+}
+
+# Scope: the student. scope:kehillah_study_teacher is the rabbi. The caller
+# (the interaction) takes the gift; here it reaches the rabbi.
+kehillah_study_help_send_effect = {
+	save_scope_as = kehillah_study_student
+	set_variable = { name = kehillah_study_help_cooldown value = yes days = kehillah_study_help_cooldown_days }
+	set_variable = { name = kehillah_study_help_work value = var:kehillah_study_current_work_id days = kehillah_study_help_pending_days }
+	save_scope_value_as = { name = kehillah_study_help_gift value = kehillah_study_help_gift_value }
+	scope:kehillah_study_teacher = {
+		add_gold = scope:kehillah_study_help_gift
+		set_variable = { name = kehillah_study_help_pending_from value = scope:kehillah_study_student days = kehillah_study_help_pending_days }
+		trigger_event = { id = kehillah_sheelah.0011 days = { 10 20 } }
+	}
+	debug_log = "kehillah_study_help_send_effect: a student asks for help with his reading"
+}
+
+# Scope: the rabbi answering (kehillah_sheelah.0011). QUALITY: 0 declined,
+# 1 explained, 2 a full explanation.
+kehillah_study_help_reply_effect = {
+	scope:kehillah_study_student = {
+		set_variable = { name = kehillah_study_help_reply_from value = scope:kehillah_study_teacher days = kehillah_study_help_pending_days }
+		set_variable = { name = kehillah_study_help_reply_quality value = $QUALITY$ days = kehillah_study_help_pending_days }
+		trigger_event = { id = kehillah_sheelah.0012 days = { 10 20 } }
+	}
+	remove_variable = kehillah_study_help_pending_from
 }
