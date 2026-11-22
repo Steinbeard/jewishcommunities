@@ -55,6 +55,19 @@ Screenshots in [screenshots/2026-11-22-quarter-district/](screenshots/2026-11-22
 - Three inline GUI texts are logged as "unlocalized" (crisis window lines 702 and 708, ledger line 193).
 - The needs show 0/5 at the start, so the market term is not yet checked in play.
 
+## Run 4: the yeshiva in the quarter (yeshiva rework slice 1)
+
+- **First try (commit 047f46c): failed.** `add_building` refused all 8 seeded yeshivot ("cannot be constructed in district"), because the buildings had `can_construct_potential = { always = no }` and `add_building` honours it.
+- **Fix:** the buildings are gated on a global flag, `kehillah_placing_quarter_yeshiva`, which the placing effects set around `add_building`.
+- **Rerun:**
+  - all 8 communities with a yeshiva (Worms, Narbonne, Baghdad, Lucena, Jerusalem, Sura, Pumbedita, Fustat) have `kehillah_quarter_yeshiva_01` in their quarter, and no stand-alone hall district stands anywhere;
+  - raising Worms gives the Great Yeshiva (`_02`);
+  - dissolving Lucena removes the quarter and its yeshiva;
+  - the flag is never left set;
+  - `error.log` is clean at boot.
+- **Placement without a yeshiva** (Speyer) is refused. CK3 evaluates `is_enabled` together with `can_construct_potential`, so a building cannot be placed where it would be disabled. Play never does this: founding adds the yeshiva tier before placing.
+- **Screenshot** `08-yeshiva-in-quarter.png`: Worms's Jewish Quarter district window, with building slot II holding the Great Yeshiva. It shows County Prosperity Growth +0.20/month, and Learning +1 and Prestige +0.50/month to the building's owner. The icon is vanilla's generic university glyph.
+
 ## Pre-existing errors seen in passing (not from this work)
 
 - `kehillah_yeshiva_effects.txt` line 375 (`kehillah_raise_great_yeshiva_effect`): province vs. district scope. The 1.20 great-building code that 1.21 dropped.
