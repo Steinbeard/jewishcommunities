@@ -610,3 +610,43 @@ Each entry is source-checked and xTiger-clean (beyond the known trade-good false
   | Loss | 25 | Diaspora Network −10 | 20% back |
 
 - **Each outcome** reports with a toast.
+
+## 16. The Jewish quarter district (2026-11-21)
+
+**Status:** built 2026-11-21, xTiger-clean except 1.21 false positives; **not live-tested**. Daniel's design (2026-11-21): a *regular* district, not a special one, that no ruler can build, with "no room" shown when the town is full.
+
+**Why regular.** A province holds one special district. A live spike in Jerusalem (province 5965, the Dome of the Rock slot) refused a second one. A special Jewish quarter could never stand in Jerusalem, Rome or Cordoba.
+
+**What is built.**
+
+- **The district.** `kehillah_jewish_quarter_district` in `common/districts/kehillah_jewish_quarter_districts.txt`:
+  - `type = regular`, `can_be_replaced = no`;
+  - `can_construct_potential = { always = no }`, so only script places it.
+- **Its primary building.** `kehillah_jewish_quarter_01` in `common/buildings/kehillah_jewish_quarter_buildings.txt`:
+  - the host gets `monthly_artisan_tax` 0.25, the same as vanilla's guild district;
+  - three market needs at vanilla's rural amount: wine (Kiddush), books and paper, and textiles;
+  - each need the market meets pays the host a further 0.05.
+- **Placement.** `kehillah_quarter_district_sync_effect` runs quarterly and at game start (`on_game_start_after_lobby`):
+  - it places the district in the domicile's holding if a regular slot is free;
+  - otherwise it sets `kehillah_quarter_no_room` on the community's title.
+- **Authored starts.** For about 400 days after game start (the global variable `kehillah_quarter_start_window`), a full holding first gets `kehillah_quarter_room_modifier` (`district_slot_add = 1`, as vanilla's province-size levels do). So every authored community starts with its quarter, and no holding history has to be edited.
+- **Removal.** `kehillah_quarter_district_sweep_effect` runs yearly. It removes the district and the room modifier wherever the recorded community no longer lives:
+  - the cause can be expulsion, departure, a move or the community's end;
+  - the expulsion and departure code is untouched;
+  - two communities in one town share one district, and the survivor takes it over.
+- **The player sees it** in two places:
+  - the county inspector's settlement-conditions tooltip says "No room for a Jewish quarter" when the town has no free slot. This is a note, not a blocker: a community can still settle;
+  - the Quarter tooltip says "No room" while the title is marked.
+- **Prosperity reads the market.** `kehillah_bd_market_supply_prosperity_value` is in the baseline and the breakdown:
+  - −15 for each of wine, books and paper, and textiles that the town's market leaves unmet (`trade_good_unfulfilled_need` of 1 or more);
+  - +15 when the community has its district and all three are met.
+
+**Still open.**
+
+1. **Live spike.** Confirm three things in play:
+   - `add_regular_district` succeeds;
+   - the room modifier creates a slot within the same effect. If it does not, the next quarterly sync places the district;
+   - the district's needs show in the market.
+   Probe: `event kehillah_quarter_debug.6`.
+2. **Fold the yeshiva into the district,** as Daniel asked on 2026-11-21. Today the Kairouan yeshiva hall uses 1.20 great/special-building effects, which 1.21 dropped. It should become a building of this district.
+3. **The founding inspector** checks the county capital's slots. A community seated in another barony of the county would be judged by its own holding at the first sync.

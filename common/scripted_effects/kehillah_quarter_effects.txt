@@ -29,3 +29,108 @@ kehillah_quarter_enrich_town_effect = {
 		}
 	}
 }
+
+# =====================================================================
+# THE JEWISH QUARTER DISTRICT (2026-11-21). Quarter spec section 16.
+# common/districts/kehillah_jewish_quarter_districts.txt.
+#
+# Scope: a Kehillah leader. Quarterly, and at game start. Places the
+# district in the domicile's holding if it lacks one and a slot is free;
+# otherwise marks the title "no room" (kehillah_quarter_no_room), which the
+# community's tooltips show. In the start window (authored starts) a full
+# holding first gets one more slot.
+# =====================================================================
+kehillah_quarter_district_sync_effect = {
+	save_scope_as = kehillah_qd_leader
+	primary_title = { save_scope_as = kehillah_qd_title }
+	domicile ?= {
+		domicile_location ?= {
+			save_scope_as = kehillah_qd_province
+			if = {
+				limit = { province_has_district = kehillah_jewish_quarter_district }
+				# Two communities in one town share one quarter: if the one
+				# recorded has gone, this one takes it over.
+				if = {
+					limit = {
+						NOT = {
+							var:kehillah_quarter_title ?= {
+								holder ?= {
+									government_has_flag = government_is_kehillah
+									domicile ?= { domicile_location = scope:kehillah_qd_province }
+								}
+							}
+						}
+					}
+					set_variable = { name = kehillah_quarter_title value = scope:kehillah_qd_title }
+				}
+				scope:kehillah_qd_title = { remove_variable = kehillah_quarter_no_room }
+			}
+			else = {
+				# Authored starts: make room once.
+				if = {
+					limit = {
+						has_free_district_slot = no
+						has_global_variable = kehillah_quarter_start_window
+						NOT = { has_province_modifier = kehillah_quarter_room_modifier }
+					}
+					add_province_modifier = kehillah_quarter_room_modifier
+				}
+				if = {
+					limit = { has_free_district_slot = yes }
+					add_regular_district = kehillah_jewish_quarter_district
+					set_variable = { name = kehillah_quarter_title value = scope:kehillah_qd_title }
+					add_to_global_variable_list = { name = kehillah_quarter_district_provinces target = this }
+					scope:kehillah_qd_title = { remove_variable = kehillah_quarter_no_room }
+				}
+				else = {
+					scope:kehillah_qd_title = { set_variable = kehillah_quarter_no_room }
+				}
+			}
+		}
+	}
+}
+
+# No scope. Yearly. Removes the district, and any room given for it, where
+# no community lives any more (expelled, departed, moved, or gone).
+kehillah_quarter_district_sweep_effect = {
+	every_in_global_list = {
+		variable = kehillah_quarter_district_provinces
+		save_scope_as = kehillah_qd_province
+		if = {
+			limit = {
+				NOT = {
+					var:kehillah_quarter_title ?= {
+						holder ?= {
+							government_has_flag = government_is_kehillah
+							domicile ?= { domicile_location = scope:kehillah_qd_province }
+						}
+					}
+				}
+			}
+			add_to_temporary_list = kehillah_qd_stale
+		}
+	}
+	every_in_list = {
+		list = kehillah_qd_stale
+		if = {
+			limit = { province_has_district = kehillah_jewish_quarter_district }
+			remove_district_type = kehillah_jewish_quarter_district
+		}
+		if = {
+			limit = { has_province_modifier = kehillah_quarter_room_modifier }
+			remove_province_modifier = kehillah_quarter_room_modifier
+		}
+		remove_variable = kehillah_quarter_title
+		remove_list_global_variable = { name = kehillah_quarter_district_provinces target = this }
+	}
+}
+
+# No scope. Game start: open the start window (about a year) and place every
+# authored community's district.
+kehillah_quarter_district_game_start_effect = {
+	set_global_variable = { name = kehillah_quarter_start_window value = yes days = 400 }
+	every_living_character = {
+		limit = { government_has_flag = government_is_kehillah }
+		kehillah_quarter_district_sync_effect = yes
+	}
+}

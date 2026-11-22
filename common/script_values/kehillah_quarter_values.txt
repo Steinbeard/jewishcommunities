@@ -240,3 +240,57 @@ kehillah_commenda_stake_value = {
 # The AI keeps at least this much after staking.
 kehillah_commenda_ai_gold_floor = 200
 kehillah_commenda_profit_prosperity = 15
+
+# The town's market (2026-11-21, Quarter spec section 16). Scope: a Kehillah
+# leader. The community lives on what its market sells: each of wine (for
+# Kiddush), books and paper, and textiles the market cannot supply costs
+# Prosperity; a community with its own quarter district in a market that
+# meets all three gains a little. 1.21's market needs
+# (trade_good_unfulfilled_need) include the district's own.
+kehillah_market_shortfall_threshold = 1
+kehillah_market_shortfall_prosperity = -15
+kehillah_market_supplied_prosperity = 15
+kehillah_bd_market_supply_prosperity_value = {
+	value = 0
+	if = {
+		limit = { exists = domicile.domicile_location.barony.trade_market }
+		domicile.domicile_location.barony.trade_market = {
+			save_temporary_scope_as = kehillah_market
+		}
+		if = {
+			limit = {
+				scope:kehillah_market = {
+					trade_good_unfulfilled_need = { target = trade_good_type:trade_good_wine value >= kehillah_market_shortfall_threshold }
+				}
+			}
+			add = kehillah_market_shortfall_prosperity
+		}
+		if = {
+			limit = {
+				scope:kehillah_market = {
+					trade_good_unfulfilled_need = { target = trade_good_type:trade_good_books_paper value >= kehillah_market_shortfall_threshold }
+				}
+			}
+			add = kehillah_market_shortfall_prosperity
+		}
+		if = {
+			limit = {
+				scope:kehillah_market = {
+					trade_good_unfulfilled_need = { target = trade_good_type:trade_good_textiles value >= kehillah_market_shortfall_threshold }
+				}
+			}
+			add = kehillah_market_shortfall_prosperity
+		}
+		if = {
+			limit = {
+				domicile.domicile_location = { province_has_district = kehillah_jewish_quarter_district }
+				scope:kehillah_market = {
+					NOT = { trade_good_unfulfilled_need = { target = trade_good_type:trade_good_wine value >= kehillah_market_shortfall_threshold } }
+					NOT = { trade_good_unfulfilled_need = { target = trade_good_type:trade_good_books_paper value >= kehillah_market_shortfall_threshold } }
+					NOT = { trade_good_unfulfilled_need = { target = trade_good_type:trade_good_textiles value >= kehillah_market_shortfall_threshold } }
+				}
+			}
+			add = kehillah_market_supplied_prosperity
+		}
+	}
+}
