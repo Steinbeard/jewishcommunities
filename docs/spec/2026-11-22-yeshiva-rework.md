@@ -40,10 +40,8 @@ success), which waited for this revisit. Related: the Jewish quarter district,
 - **Retired:** the hall, Great Yeshiva and special-fallback districts and buildings (`kehillah_yeshiva_districts.txt`,
   `kehillah_yeshiva_hall`, `kehillah_great_yeshiva_hall`, `kehillah_yeshiva_hall_special`), and their placement
   helpers.
-- **Kairouan.** The ruined Kairouan hall at the Mahdia start has no community in Kairouan to hold a quarter.
-  Proposed: keep one great district, renamed for the ruined academy, and place it ruined with 1.21's
-  `ruin_great_district`. This is a judgment call; the alternative is to drop the ruin and leave Kairouan to the
-  history text.
+- **Kairouan.** The ruined Kairouan hall is removed altogether (Daniel, 2026-11-22: the community-history system records
+  destroyed communities). The Mahdia start no longer places it, and with it went the last great district and its helper.
 - **Travellers:** check whether vanilla's learning point of interest (`poi_special_buildings_learning`) can see a
   building in a regular district. If not, add a small mod point-of-interest type listing provinces with a quarter
   yeshiva. V29 3.5 asked for this, and it was never built.
