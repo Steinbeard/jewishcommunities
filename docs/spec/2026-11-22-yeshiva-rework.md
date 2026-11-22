@@ -1,5 +1,5 @@
 **Status:** agreed in outline with Daniel 2026-11-22 ("the list you gave for the yeshiva is fine"). **Slice 1 built and
-live-tested 2026-11-22** ([test log](../testing/2026-11-22-quarter-district-live-test.md), run 4); **slice 2 built and live-tested 2026-11-22** (section 3a; test log runs 5-6); slice 3 is not built. It amends [V29](v29-yeshiva.md) section 3.5 (the map building) and the 2026-11-17 port of that
+live-tested 2026-11-22** ([test log](../testing/2026-11-22-quarter-district-live-test.md), run 4); **slice 2 built and live-tested 2026-11-22** (section 3a; test log runs 5-6); **slice 3 built 2026-11-22** (section 4a). It amends [V29](v29-yeshiva.md) section 3.5 (the map building) and the 2026-11-17 port of that
 building to 1.21 districts ([removed systems](../implementation/2026-11-17-ck3-1-21-removed-systems.md)). It builds
 Phase D2 of the [pillars spec](2026-11-19-pillars-as-opportunities-and-expectations.md) (students and the cost of
 success), which waited for this revisit. Related: the Jewish quarter district,
@@ -84,6 +84,19 @@ alumnus already gives a one-time +2 renown (`kehillah_yeshiva_fame_per_alumnus`)
   years, from vanilla's wanderer pool, or generated as the household system does. He may bring a book the library
   lacks, through the existing acquisition path.
 - **Display:** the yeshiva's renown tooltip names these benefits by tier.
+
+### 4a. Slice 3 as built (2026-11-22)
+
+- **Better students** (`kehillah_yeshiva_travelling_student_effect`): at Renowned, a travelling student gets +2 Learning
+  and moves from education tier 2 to 3. At Illustrious he gets +2 more.
+- **A scholar of renown** (`kehillah_yeshiva.0011`):
+  - at each yearly ordination a Renowned yeshiva has a 25% chance of drawing one, and an Illustrious one 40%;
+  - he is an ordained rabbi aged 30-60, with Learning 14-19, education tier 4, and 40 XP in the yeshiva's focus;
+  - the leader welcomes him or turns him away, as with `.0010`.
+- **Not built:**
+  - **The book** a scholar might bring. The existing chest effect needs works the scholar has mastered, and a new
+    scholar has none.
+  - **Naming these benefits** in the renown tooltip.
 
 ## 5. Deferred
 
