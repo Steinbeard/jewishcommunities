@@ -626,12 +626,23 @@ Each entry is source-checked and xTiger-clean (beyond the known trade-good false
   - the host gets `monthly_artisan_tax` 0.25, the same as vanilla's guild district;
   - three market needs at vanilla's rural amount: wine (Kiddush), books and paper, and textiles;
   - each need the market meets pays the host a further 0.05.
-- **Founding needs room** (Daniel, 2026-11-21: "just block settlement if there's no room"):
-  - `kehillah_founding_site_base_trigger` requires a free regular district slot in the county's town (its `title_province`);
-  - the inspector lists "No room for a Jewish quarter" with the other founding blockers;
-  - `kehillah_found_community_effect` seats the domicile in that town if the founder stood in another barony, then places the district.
-- **Authored starts** get room through targeted edits to province history, not a general effect (Daniel, 2026-11-21). See "Still open". At game start, `kehillah_quarter_district_game_start_effect` places each registered community's district, after the registry is built in `kehillah_on_game_start`.
-- **A quarterly re-check** (`kehillah_quarter_district_place_effect`) re-places a missing district and marks the title `kehillah_quarter_no_room` if it cannot. Founding rules this out, so it is a safety net.
+- **The quarter brings its own room** (Daniel, 2026-11-22):
+  - placing the district adds `kehillah_quarter_room_modifier` (`district_slot_add = 1`) to the host's holding, and removing it takes the slot away;
+  - so the quarter never uses one of the town's own slots. A full town can take Jews in, inviting them costs the host nothing, and expelling them leaves the town no richer than before;
+  - if the new slot is not counted at once, `kehillah_quarter_district.0001` tries again a day later.
+- **Vanilla's slot rule,** checked 2026-11-22: each barony has one base district slot (`BARONY_DISTRICT_SLOTS`, `COUNTY_DISTRICT_SLOTS`), plus `district_slot_add` from its province-size level (sizes 1-2 add 1, 3-4 add 2, 5-6 add 3, and so on). Nothing else in vanilla adds slots.
+- **The census** (`kehillah_quarter_debug.7`, run live 2026-11-22, before the room modifier) found vanilla history fills almost every authored town:
+
+  | Bookmark | Had a free slot | Full |
+  |---|---|---|
+  | 867 | 5 | 14 |
+  | 1066 | 30 | 23 |
+  | 1178 | 33 | 22 |
+
+  Only Djerba had a slot left after the quarter. This is why the quarter brings its own room. Raising `province_size` in history was rejected: size drifts back toward a baseline the game computes (`PROVINCE_SIZE_BASE_MONTHLY_CHANGE`), so the slot would not last.
+- **Founding seats the community in the county's town.** `kehillah_found_community_effect` moves the domicile there if the founder stood in another barony, then places the district. Founding is not blocked for lack of room.
+- **At game start,** `kehillah_quarter_district_game_start_effect` places each registered community's district, after the registry is built in `kehillah_on_game_start`.
+- **A quarterly re-check** (`kehillah_quarter_district_place_effect`) re-places a missing district. The title carries `kehillah_quarter_no_room` while it waits, and the Quarter tooltip says so.
 - **Removal is in the code that ends a community,** not a yearly sweep (Daniel, 2026-11-21):
   - `kehillah_dissolve_community_effect`, which collapse and expulsion both use;
   - `kehillah_history_check_pending_effect`, for a leader who dies with no successor (the engine ends that title, and the existing yearly history check records the loss);
@@ -643,10 +654,9 @@ Each entry is source-checked and xTiger-clean (beyond the known trade-good false
 
 **Still open.**
 
-1. **The province-history edits.** Vanilla history fills almost every authored town's district slots at every bookmark. The edit for each town and date either drops one vanilla district or raises `province_size` to reach the next slot. Which towns are full needs a measurement in the game.
-2. **Live spike.** Confirm three things in play:
-   - `add_regular_district` succeeds;
-   - founding blocks a full town;
+1. **Live checks still to do.** The census showed that `add_regular_district` and game-start placement work. Still to confirm:
+   - the room modifier gives full towns their slot;
+   - expulsion removes both the district and the room;
    - the district's needs show in the market.
-   Probe: `event kehillah_quarter_debug.6`.
-3. **Fold the yeshiva into the district,** as Daniel asked on 2026-11-21. The Kairouan yeshiva hall still uses 1.20 great/special-building effects, which 1.21 dropped.
+   Probes: `kehillah_quarter_debug.6` and `.7`.
+2. **Fold the yeshiva into the district,** as Daniel asked on 2026-11-21. The Kairouan yeshiva hall still uses 1.20 great/special-building effects, which 1.21 dropped.

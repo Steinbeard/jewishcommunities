@@ -32,27 +32,29 @@ kehillah_quarter_enrich_town_effect = {
 
 
 # =====================================================================
-# THE JEWISH QUARTER DISTRICT (2026-11-21). Quarter spec section 16.
-# common/districts/kehillah_jewish_quarter_districts.txt.
+# THE JEWISH QUARTER DISTRICT (2026-11-21, revised 2026-11-22). Quarter spec
+# section 16. common/districts/kehillah_jewish_quarter_districts.txt.
 #
-# A community is founded only where its town has a free district slot
-# (kehillah_founding_site_base_trigger), and authored communities get the
-# district in their province history. A community never moves its domicile
-# (the mod's only move_domicile calls move adventurer camps before
-# founding), so the district is placed once and removed once:
+# The quarter brings its own room: placing it adds kehillah_quarter_room_
+# modifier (one district slot) to the host's holding, and removing it takes
+# the slot away again (Daniel, 2026-11-22). It never uses one of the town's
+# own slots, so a full town can take Jews in, inviting them costs the host
+# nothing, and expelling them leaves the town no richer than before.
+#
+# A community never moves its domicile (the mod's only move_domicile calls
+# move adventurer camps before founding), so the district is placed once
+# and removed once:
 #   placed  -- founding (kehillah_found_community_effect), game start, and a
 #              quarterly re-check in case it is ever missing;
 #   removed -- dissolution, which covers collapse and expulsion
 #              (kehillah_dissolve_community_effect), and a leader dying with
 #              no successor (kehillah_history_check_pending_effect).
-# Two communities can share a town only in authored starts (Baghdad's
-# community and the Gaonate in 867): they share one district, and it stays
-# while either lives there.
+# Two communities share a town only in authored starts (Baghdad's community
+# and the Gaonate in 867): one district and one room, kept while either
+# lives there.
 # =====================================================================
 
-# Scope: a Kehillah leader. Places the district in the domicile's holding if
-# it lacks one; marks the title "no room" if there is no free slot (which
-# founding rules out, so this is a safety net).
+# Scope: a Kehillah leader.
 kehillah_quarter_district_place_effect = {
 	primary_title = { save_scope_as = kehillah_qd_title }
 	domicile ?= {
@@ -61,25 +63,37 @@ kehillah_quarter_district_place_effect = {
 				limit = { province_has_district = kehillah_jewish_quarter_district }
 				scope:kehillah_qd_title = { remove_variable = kehillah_quarter_no_room }
 			}
-			else_if = {
-				limit = { has_free_district_slot = yes }
-				add_regular_district = kehillah_jewish_quarter_district
-				scope:kehillah_qd_title = { remove_variable = kehillah_quarter_no_room }
-			}
 			else = {
-				scope:kehillah_qd_title = { set_variable = kehillah_quarter_no_room }
+				if = {
+					limit = { NOT = { has_province_modifier = kehillah_quarter_room_modifier } }
+					add_province_modifier = kehillah_quarter_room_modifier
+				}
+				if = {
+					limit = { has_free_district_slot = yes }
+					add_regular_district = kehillah_jewish_quarter_district
+					scope:kehillah_qd_title = { remove_variable = kehillah_quarter_no_room }
+				}
+				else_if = {
+					# The new slot may not be counted until the modifier is
+					# applied: try again tomorrow, once.
+					limit = { NOT = { scope:kehillah_qd_title = { has_variable = kehillah_quarter_no_room } } }
+					scope:kehillah_qd_title = { set_variable = kehillah_quarter_no_room }
+					scope:kehillah_qd_title.holder = {
+						trigger_event = { id = kehillah_quarter_district.0001 days = 1 }
+					}
+				}
 			}
 		}
 	}
 }
 
 # Scope: a province. $LEADER$ is the community leaving it. Removes the
-# district unless another community still lives in this holding.
+# district and its room unless another community still lives in this
+# holding.
 kehillah_quarter_district_remove_effect = {
 	save_scope_as = kehillah_qd_province
 	if = {
 		limit = {
-			province_has_district = kehillah_jewish_quarter_district
 			NOT = {
 				any_in_global_list = {
 					variable = kehillah_registered_communities
@@ -89,8 +103,15 @@ kehillah_quarter_district_remove_effect = {
 				}
 			}
 		}
-		remove_district_type = kehillah_jewish_quarter_district
-		debug_log = "kehillah_quarter_district_remove_effect: removed the Jewish quarter district"
+		if = {
+			limit = { province_has_district = kehillah_jewish_quarter_district }
+			remove_district_type = kehillah_jewish_quarter_district
+			debug_log = "kehillah_quarter_district_remove_effect: removed the Jewish quarter district"
+		}
+		if = {
+			limit = { has_province_modifier = kehillah_quarter_room_modifier }
+			remove_province_modifier = kehillah_quarter_room_modifier
+		}
 	}
 }
 
