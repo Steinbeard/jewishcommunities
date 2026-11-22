@@ -626,27 +626,27 @@ Each entry is source-checked and xTiger-clean (beyond the known trade-good false
   - the host gets `monthly_artisan_tax` 0.25, the same as vanilla's guild district;
   - three market needs at vanilla's rural amount: wine (Kiddush), books and paper, and textiles;
   - each need the market meets pays the host a further 0.05.
-- **Placement.** `kehillah_quarter_district_sync_effect` runs quarterly and at game start (`on_game_start_after_lobby`):
-  - it places the district in the domicile's holding if a regular slot is free;
-  - otherwise it sets `kehillah_quarter_no_room` on the community's title.
-- **Authored starts.** For about 400 days after game start (the global variable `kehillah_quarter_start_window`), a full holding first gets `kehillah_quarter_room_modifier` (`district_slot_add = 1`, as vanilla's province-size levels do). So every authored community starts with its quarter, and no holding history has to be edited.
-- **Removal.** `kehillah_quarter_district_sweep_effect` runs yearly. It removes the district and the room modifier wherever the recorded community no longer lives:
-  - the cause can be expulsion, departure, a move or the community's end;
-  - the expulsion and departure code is untouched;
-  - two communities in one town share one district, and the survivor takes it over.
-- **The player sees it** in two places:
-  - the county inspector's settlement-conditions tooltip says "No room for a Jewish quarter" when the town has no free slot. This is a note, not a blocker: a community can still settle;
-  - the Quarter tooltip says "No room" while the title is marked.
+- **Founding needs room** (Daniel, 2026-11-21: "just block settlement if there's no room"):
+  - `kehillah_founding_site_base_trigger` requires a free regular district slot in the county's town (its `title_province`);
+  - the inspector lists "No room for a Jewish quarter" with the other founding blockers;
+  - `kehillah_found_community_effect` seats the domicile in that town if the founder stood in another barony, then places the district.
+- **Authored starts** get room through targeted edits to province history, not a general effect (Daniel, 2026-11-21). See "Still open". At game start, `kehillah_quarter_district_game_start_effect` places each registered community's district, after the registry is built in `kehillah_on_game_start`.
+- **A quarterly re-check** (`kehillah_quarter_district_place_effect`) re-places a missing district and marks the title `kehillah_quarter_no_room` if it cannot. Founding rules this out, so it is a safety net.
+- **Removal is in the code that ends a community,** not a yearly sweep (Daniel, 2026-11-21):
+  - `kehillah_dissolve_community_effect`, which collapse and expulsion both use;
+  - `kehillah_history_check_pending_effect`, for a leader who dies with no successor (the engine ends that title, and the existing yearly history check records the loss);
+  - a community never moves its domicile: the mod's only `move_domicile` calls move adventurer camps before founding.
+- **Two communities in one town** happen only in authored starts: Baghdad's community and the Gaonate are both held in 867. Founding forbids it (the spacing rule). They share one district, and `kehillah_quarter_district_remove_effect` keeps it while either lives there.
 - **Prosperity reads the market.** `kehillah_bd_market_supply_prosperity_value` is in the baseline and the breakdown:
   - −15 for each of wine, books and paper, and textiles that the town's market leaves unmet (`trade_good_unfulfilled_need` of 1 or more);
   - +15 when the community has its district and all three are met.
 
 **Still open.**
 
-1. **Live spike.** Confirm three things in play:
+1. **The province-history edits.** Vanilla history fills almost every authored town's district slots at every bookmark. The edit for each town and date either drops one vanilla district or raises `province_size` to reach the next slot. Which towns are full needs a measurement in the game.
+2. **Live spike.** Confirm three things in play:
    - `add_regular_district` succeeds;
-   - the room modifier creates a slot within the same effect. If it does not, the next quarterly sync places the district;
+   - founding blocks a full town;
    - the district's needs show in the market.
    Probe: `event kehillah_quarter_debug.6`.
-2. **Fold the yeshiva into the district,** as Daniel asked on 2026-11-21. Today the Kairouan yeshiva hall uses 1.20 great/special-building effects, which 1.21 dropped. It should become a building of this district.
-3. **The founding inspector** checks the county capital's slots. A community seated in another barony of the county would be judged by its own holding at the first sync.
+3. **Fold the yeshiva into the district,** as Daniel asked on 2026-11-21. The Kairouan yeshiva hall still uses 1.20 great/special-building effects, which 1.21 dropped.
