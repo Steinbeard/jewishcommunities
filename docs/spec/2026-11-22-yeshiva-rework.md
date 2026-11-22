@@ -1,5 +1,5 @@
 **Status:** agreed in outline with Daniel 2026-11-22 ("the list you gave for the yeshiva is fine"). **Slice 1 built and
-live-tested 2026-11-22** ([test log](../testing/2026-11-22-quarter-district-live-test.md), run 4); slices 2 and 3 are not built. It amends [V29](v29-yeshiva.md) section 3.5 (the map building) and the 2026-11-17 port of that
+live-tested 2026-11-22** ([test log](../testing/2026-11-22-quarter-district-live-test.md), run 4); **slice 2 built 2026-11-22** (section 3a); slice 3 is not built. It amends [V29](v29-yeshiva.md) section 3.5 (the map building) and the 2026-11-17 port of that
 building to 1.21 districts ([removed systems](../implementation/2026-11-17-ck3-1-21-removed-systems.md)). It builds
 Phase D2 of the [pillars spec](2026-11-19-pillars-as-opportunities-and-expectations.md) (students and the cost of
 success), which waited for this revisit. Related: the Jewish quarter district,
@@ -63,6 +63,18 @@ alumnus already gives a one-time +2 renown (`kehillah_yeshiva_fame_per_alumnus`)
 - **Alumni send their students home.** A travelling student from a community led by an alumnus prefers that alumnus's
   alma mater when choosing a yeshiva.
 - **The cost stays real:** sending your best graduate still loses the "keep him" Stability.
+
+### 3a. Slice 2 as built (2026-11-22)
+
+- **The count:** `kehillah_yeshiva_seated_alumni_value` counts registered communities, other than our own, whose
+  holder, or whose `councillor_court_chaplain` (the Dayyan), has our title as `kehillah_alma_mater`. Up to
+  `kehillah_yeshiva_seated_alumni_cap` (3) count.
+- **Greatness:** `kehillah_bd_alumni_greatness_value` is 25 per counted alumnus, in the Greatness baseline. The breakdown
+  line reads "Our students lead or judge N communities".
+- **Arrivals:** a travelling student's seasonal chance gains 5 points per counted alumnus.
+- **Renown:** +1 per counted alumnus at each yearly ordination. The one-time renown at seating is kept, not replaced
+  as section 3 first said, so it stays a small, steady gain.
+- **The send option** of the Graduating Class gives our leader a favour hook on the receiving community's leader.
 
 ## 4. Slice 3: renown draws people
 
