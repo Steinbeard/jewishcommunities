@@ -1,0 +1,61 @@
+﻿# =====================================================================
+# SHE'ELOT, SLICE 1 (2026-11-22). docs/spec/2026-11-22-sheelot.md.
+# A community sends a hard case by letter to a posek of its own faith, as a
+# character interaction (players) or a yearly pulse (AI). The posek answers,
+# answers from the sources, or declines; the reply comes back. Asking costs
+# a gift to the answering community and is limited by a cooldown; answering
+# is the reward of Greatness. Content: the Bet Din docket's 14 cases
+# (kehillah_din_letter_N, kehillah_din_answer_N, kehillah_din_answer_careful_N).
+# =====================================================================
+
+kehillah_send_sheelah_interaction = {
+	category = interaction_category_religion
+	icon = religious
+	common_interaction = no
+	desc = kehillah_send_sheelah_interaction_desc
+	auto_accept = yes
+	ai_frequency = 0	# the AI writes through kehillah_sheelah_ai_pulse_effect
+
+	is_shown = {
+		scope:actor = { government_has_flag = government_is_kehillah }
+		scope:recipient = {
+			NOT = { this = scope:actor }
+			government_has_flag = government_is_kehillah
+			exists = faith
+			faith = scope:actor.faith
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			custom_tooltip = {
+				text = kehillah_sheelah_cooldown_tt
+				NOT = { has_variable = kehillah_sheelah_cooldown }
+			}
+			gold >= kehillah_sheelah_gift_value
+		}
+		scope:recipient = {
+			custom_tooltip = {
+				text = kehillah_sheelah_needs_rabbi_tt
+				kehillah_has_community_rabbi_trigger = yes
+			}
+			custom_tooltip = {
+				text = kehillah_sheelah_needs_greatness_tt
+				kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_healthy_threshold }
+			}
+			custom_tooltip = {
+				text = kehillah_sheelah_busy_tt
+				NOT = { has_variable = kehillah_sheelah_pending_from }
+			}
+		}
+	}
+
+	on_accept = {
+		scope:recipient = { save_scope_as = kehillah_sheelah_posek }
+		scope:actor = {
+			custom_tooltip = kehillah_sheelah_send_tt
+			remove_short_term_gold = kehillah_sheelah_gift_value
+			hidden_effect = { kehillah_sheelah_send_effect = yes }
+		}
+	}
+}
