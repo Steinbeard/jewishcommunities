@@ -68,6 +68,20 @@ Screenshots in [screenshots/2026-11-22-quarter-district/](screenshots/2026-11-22
 - **Placement without a yeshiva** (Speyer) is refused. CK3 evaluates `is_enabled` together with `can_construct_potential`, so a building cannot be placed where it would be disabled. Play never does this: founding adds the yeshiva tier before placing.
 - **Screenshot** `08-yeshiva-in-quarter.png`: Worms's Jewish Quarter district window, with building slot II holding the Great Yeshiva. It shows County Prosperity Growth +0.20/month, and Learning +1 and Prestige +0.50/month to the building's owner. The icon is vanilla's generic university glyph.
 
+## Runs 5-6: alumni who lead elsewhere (yeshiva rework slice 2)
+
+Speyer's leader and Mainz's Dayyan were given `kehillah_alma_mater = d_kehillah_worms`, then five more leaders.
+
+| Alumni | Greatness term | Baseline change |
+|---|---|---|
+| 2 | +50 | +50 |
+| 7 | +75 (cap) | +25 for the one more allowed |
+
+- **Arrivals:** +10 at 2 alumni.
+- **The Greatness tooltip** shows "Our students lead or judge 7 communities: +75" (`09-alumni-greatness.png`).
+- **The yearly ordination** adds +3 renown from the alumni.
+- **Run 5 found 424 errors at boot.** The value read `root`, which is unset when game start evaluates the baseline from a title's scope. Using `prev` fixed it; run 6 had 0, with the same values.
+
 ## Pre-existing errors seen in passing (not from this work)
 
 - `kehillah_yeshiva_effects.txt` line 375 (`kehillah_raise_great_yeshiva_effect`): province vs. district scope. The 1.20 great-building code that 1.21 dropped.

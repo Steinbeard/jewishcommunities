@@ -1,5 +1,5 @@
 **Status:** agreed in outline with Daniel 2026-11-22 ("the list you gave for the yeshiva is fine"). **Slice 1 built and
-live-tested 2026-11-22** ([test log](../testing/2026-11-22-quarter-district-live-test.md), run 4); **slice 2 built 2026-11-22** (section 3a); slice 3 is not built. It amends [V29](v29-yeshiva.md) section 3.5 (the map building) and the 2026-11-17 port of that
+live-tested 2026-11-22** ([test log](../testing/2026-11-22-quarter-district-live-test.md), run 4); **slice 2 built and live-tested 2026-11-22** (section 3a; test log runs 5-6); slice 3 is not built. It amends [V29](v29-yeshiva.md) section 3.5 (the map building) and the 2026-11-17 port of that
 building to 1.21 districts ([removed systems](../implementation/2026-11-17-ck3-1-21-removed-systems.md)). It builds
 Phase D2 of the [pillars spec](2026-11-19-pillars-as-opportunities-and-expectations.md) (students and the cost of
 success), which waited for this revisit. Related: the Jewish quarter district,
