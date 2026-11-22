@@ -1,11 +1,17 @@
 ﻿# =====================================================================
-# SHE'ELOT, SLICE 1 (2026-11-22). docs/spec/2026-11-22-sheelot.md.
-# A community sends a hard case by letter to a posek of its own faith, as a
-# character interaction (players) or a yearly pulse (AI). The posek answers,
-# answers from the sources, or declines; the reply comes back. Asking costs
-# a gift to the answering community and is limited by a cooldown; answering
-# is the reward of Greatness. Content: the Bet Din docket's 14 cases
-# (kehillah_din_letter_N, kehillah_din_answer_N, kehillah_din_answer_careful_N).
+# SEND A SHE'ELAH (2026-11-22). docs/spec/2026-11-22-sheelot.md.
+#
+# One interaction for every letter of question (Daniel, 2026-11-22: "combine
+# the help with studies into the responsa interaction"). Two kinds, chosen
+# with exclusive send options:
+#   - A case from our court: a Kehillah leader writes to a posek of the same
+#     faith (section 9). Era-scaled gift, three-year cooldown.
+#   - A passage of the work you are reading: anyone studying (the Study Torah
+#     scheme) writes to a rabbi of the same faith who has mastered it
+#     (section 10). Small gift, one-year cooldown.
+# Each kind keeps its own requirements, shown for the option selected. The
+# AI sends court cases through kehillah_sheelah_ai_pulse_effect (no
+# ai_frequency here) and never asks for help with its reading.
 # =====================================================================
 
 kehillah_send_sheelah_interaction = {
@@ -14,93 +20,134 @@ kehillah_send_sheelah_interaction = {
 	common_interaction = no
 	desc = kehillah_send_sheelah_interaction_desc
 	auto_accept = yes
-	# No ai_frequency: the AI writes through kehillah_sheelah_ai_pulse_effect.
 
 	is_shown = {
-		scope:actor = { government_has_flag = government_is_kehillah }
 		scope:recipient = {
 			NOT = { this = scope:actor }
-			government_has_flag = government_is_kehillah
 			exists = faith
 			faith = scope:actor.faith
 		}
+		OR = {
+			# A case: leader to leader.
+			AND = {
+				scope:actor = { government_has_flag = government_is_kehillah }
+				scope:recipient = { government_has_flag = government_is_kehillah }
+			}
+			# A passage: a student to a rabbi.
+			AND = {
+				scope:actor = { kehillah_study_help_can_ask_trigger = yes }
+				scope:recipient = { kehillah_study_help_teacher_trigger = { STUDENT = scope:actor } }
+			}
+		}
+	}
+
+	options_heading = kehillah_sheelah_options_heading
+	send_options_exclusive = yes
+
+	send_option = {
+		flag = kehillah_sheelah_case
+		localization = kehillah_sheelah_option_case
+		current_description = kehillah_sheelah_option_case_desc
+		is_shown = {
+			scope:actor = { government_has_flag = government_is_kehillah }
+			scope:recipient = { government_has_flag = government_is_kehillah }
+		}
+		starts_enabled = {
+			scope:actor = { government_has_flag = government_is_kehillah }
+			scope:recipient = { government_has_flag = government_is_kehillah }
+		}
+	}
+
+	send_option = {
+		flag = kehillah_sheelah_study
+		localization = kehillah_sheelah_option_study
+		current_description = kehillah_sheelah_option_study_desc
+		is_shown = {
+			scope:actor = { kehillah_study_help_can_ask_trigger = yes }
+			scope:recipient = { kehillah_study_help_teacher_trigger = { STUDENT = scope:actor } }
+		}
+		starts_enabled = {
+			NOR = {
+				scope:actor = { government_has_flag = government_is_kehillah }
+				scope:recipient = { government_has_flag = government_is_kehillah }
+			}
+		}
 	}
 
 	is_valid_showing_failures_only = {
-		scope:actor = {
-			custom_tooltip = {
-				text = kehillah_sheelah_cooldown_tt
-				NOT = { has_variable = kehillah_sheelah_cooldown }
+		custom_tooltip = {
+			text = kehillah_sheelah_choose_kind_tt
+			OR = {
+				scope:kehillah_sheelah_case = yes
+				scope:kehillah_sheelah_study = yes
 			}
-			gold >= kehillah_sheelah_gift_value
 		}
-		scope:recipient = {
-			custom_tooltip = {
-				text = kehillah_sheelah_needs_rabbi_tt
-				kehillah_has_community_rabbi_trigger = yes
+		# A case from our court.
+		trigger_if = {
+			limit = { scope:kehillah_sheelah_case = yes }
+			scope:actor = {
+				custom_tooltip = {
+					text = kehillah_sheelah_cooldown_tt
+					NOT = { has_variable = kehillah_sheelah_cooldown }
+				}
+				gold >= kehillah_sheelah_gift_value
 			}
-			custom_tooltip = {
-				text = kehillah_sheelah_needs_greatness_tt
-				kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_healthy_threshold }
+			scope:recipient = {
+				custom_tooltip = {
+					text = kehillah_sheelah_needs_rabbi_tt
+					kehillah_has_community_rabbi_trigger = yes
+				}
+				custom_tooltip = {
+					text = kehillah_sheelah_needs_greatness_tt
+					kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_healthy_threshold }
+				}
+				custom_tooltip = {
+					text = kehillah_sheelah_busy_tt
+					NOT = { has_variable = kehillah_sheelah_pending_from }
+				}
 			}
-			custom_tooltip = {
-				text = kehillah_sheelah_busy_tt
-				NOT = { has_variable = kehillah_sheelah_pending_from }
+		}
+		# A passage of the work you are reading.
+		trigger_if = {
+			limit = { scope:kehillah_sheelah_study = yes }
+			scope:actor = {
+				custom_tooltip = {
+					text = kehillah_study_help_cooldown_tt
+					NOT = { has_variable = kehillah_study_help_cooldown }
+				}
+				gold >= kehillah_study_help_gift_value
+			}
+			scope:recipient = {
+				custom_tooltip = {
+					text = kehillah_study_help_knows_work_tt
+					kehillah_study_help_knows_work_trigger = { STUDENT = scope:actor }
+				}
+				custom_tooltip = {
+					text = kehillah_study_help_busy_tt
+					NOT = { has_variable = kehillah_study_help_pending_from }
+				}
 			}
 		}
 	}
 
 	on_accept = {
-		scope:recipient = { save_scope_as = kehillah_sheelah_posek }
-		scope:actor = {
-			custom_tooltip = kehillah_sheelah_send_tt
-			remove_short_term_gold = kehillah_sheelah_gift_value
-			hidden_effect = { kehillah_sheelah_send_effect = yes }
-		}
-	}
-}
-
-# Ask for Help with Your Studies (2026-11-22, Daniel): a student of a work
-# writes to a rabbi who has mastered it. Players only (ai_frequency 0): AI
-# students study on their own, and no AI letter of this kind reaches a player.
-kehillah_ask_study_help_interaction = {
-	category = interaction_category_religion
-	icon = religious
-	common_interaction = no
-	desc = kehillah_ask_study_help_interaction_desc
-	auto_accept = yes
-
-	is_shown = {
-		scope:actor = { kehillah_study_help_can_ask_trigger = yes }
-		scope:recipient = { kehillah_study_help_teacher_trigger = { STUDENT = scope:actor } }
-	}
-
-	is_valid_showing_failures_only = {
-		scope:actor = {
-			custom_tooltip = {
-				text = kehillah_study_help_cooldown_tt
-				NOT = { has_variable = kehillah_study_help_cooldown }
-			}
-			gold >= kehillah_study_help_gift_value
-		}
-		scope:recipient = {
-			custom_tooltip = {
-				text = kehillah_study_help_knows_work_tt
-				kehillah_study_help_knows_work_trigger = { STUDENT = scope:actor }
-			}
-			custom_tooltip = {
-				text = kehillah_study_help_busy_tt
-				NOT = { has_variable = kehillah_study_help_pending_from }
+		if = {
+			limit = { scope:kehillah_sheelah_case = yes }
+			scope:recipient = { save_scope_as = kehillah_sheelah_posek }
+			scope:actor = {
+				custom_tooltip = kehillah_sheelah_send_tt
+				remove_short_term_gold = kehillah_sheelah_gift_value
+				hidden_effect = { kehillah_sheelah_send_effect = yes }
 			}
 		}
-	}
-
-	on_accept = {
-		scope:recipient = { save_scope_as = kehillah_study_teacher }
-		scope:actor = {
-			custom_tooltip = kehillah_study_help_send_tt
-			remove_short_term_gold = kehillah_study_help_gift_value
-			hidden_effect = { kehillah_study_help_send_effect = yes }
+		else_if = {
+			limit = { scope:kehillah_sheelah_study = yes }
+			scope:recipient = { save_scope_as = kehillah_study_teacher }
+			scope:actor = {
+				custom_tooltip = kehillah_study_help_send_tt
+				remove_short_term_gold = kehillah_study_help_gift_value
+				hidden_effect = { kehillah_study_help_send_effect = yes }
+			}
 		}
 	}
 }
