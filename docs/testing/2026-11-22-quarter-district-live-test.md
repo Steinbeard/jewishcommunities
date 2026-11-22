@@ -82,6 +82,20 @@ Speyer's leader and Mainz's Dayyan were given `kehillah_alma_mater = d_kehillah_
 - **The yearly ordination** adds +3 renown from the alumni.
 - **Run 5 found 424 errors at boot.** The value read `root`, which is unset when game start evaluates the baseline from a title's scope. Using `prev` fixed it; run 6 had 0, with the same values.
 
+## Run 7: renown draws people (yeshiva rework slice 3)
+
+- **Raising Worms's renown to 200** gave tier 3 (Illustrious). The thresholds are 40, 80 and 140.
+- **Travelling students** at tier 3 all had `education_learning_3`, with Learning 15, 18 and 20. That is above the
+  intended 13-16, because the education trait and random traits add on top. Tunable:
+  `kehillah_yeshiva_renowned_student_learning`.
+- **`kehillah_yeshiva.0011`** showed with the scholar's name, portrait and both options
+  (`10-scholar-of-renown.png`). The scholar joined the court as a rabbi with Learning 29.
+- **Errors:**
+  - none from the event;
+  - calling the student effect directly without `scope:kehillah_enroll_title` errors, which is harness only, since
+    the seasonal tick sets it;
+  - 3 tooltip-only "character is not valid" lines at the new education check, built before the student exists.
+
 ## Pre-existing errors seen in passing (not from this work)
 
 - `kehillah_yeshiva_effects.txt` line 375 (`kehillah_raise_great_yeshiva_effect`): province vs. district scope. The 1.20 great-building code that 1.21 dropped.
