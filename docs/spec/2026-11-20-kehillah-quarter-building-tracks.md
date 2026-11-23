@@ -656,3 +656,8 @@ Each entry is source-checked and xTiger-clean (beyond the known trade-good false
 
 1. **Live-tested 2026-11-22** (`docs/testing/2026-11-22-quarter-district-live-test.md`): all 53 communities at the 1066 start have their quarter and room at load, and dissolution removes both. Still to check: the district's needs in the market UI, and the Prosperity market term in play.
 2. **Fold the yeshiva into the district,** as Daniel asked on 2026-11-21. The Kairouan yeshiva hall still uses 1.20 great/special-building effects, which 1.21 dropped.
+
+**2026-11-23 addendum to section 16 (the town market):** the market line is now a bonus only. Each of the quarter's
+needs the market supplies adds 5, and cattle joined them for kashrut communities
+([kashrut spec](2026-11-23-kashrut.md) section 7). A missing good costs nothing; it was -15 each, which left Worms at
+-45 at the 1066 start.

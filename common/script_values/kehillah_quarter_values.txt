@@ -242,72 +242,62 @@ kehillah_commenda_ai_gold_floor = 200
 kehillah_commenda_profit_prosperity = 15
 
 # The town's market (2026-11-21, Quarter spec section 16). Scope: a Kehillah
-# leader. The community lives on what its market sells: each of wine (for
-# Kiddush), books and paper, textiles, and (2026-11-23, kashrut) cattle for
-# its shochet that the market cannot supply costs Prosperity; a community
-# with its own quarter district in a market that meets them all gains a
-# little. Cattle count only for a rite that keeps kashrut
-# (docs/spec/2026-11-23-kashrut.md). 1.21's market needs
-# (trade_good_unfulfilled_need) include the district's own.
+# leader whose community has its quarter district in the town.
+#
+# 2026-11-23 (Daniel: the penalties felt harsh): a bonus only. Each of the
+# quarter's needs the market supplies adds a little Affluence: wine for
+# Kiddush, books and paper, textiles, and, for a community that keeps
+# kashrut, cattle for its shochet (docs/spec/2026-11-23-kashrut.md). A
+# missing good costs nothing: which goods a town's market carries is
+# geography, not something a community can act on. It was -15 per missing
+# good, which left Worms at -45 at the 1066 start.
+#
+# 1.21's market needs (trade_good_unfulfilled_need) include the district's
+# own, so an unfulfilled need means the market lacks the good.
 kehillah_market_shortfall_threshold = 1
-kehillah_market_shortfall_prosperity = -15
-kehillah_market_supplied_prosperity = 15
+kehillah_market_supplied_each = 5
 kehillah_bd_market_supply_prosperity_value = {
 	value = 0
 	if = {
-		limit = { exists = domicile.domicile_location.barony.trade_market }
+		limit = {
+			exists = domicile.domicile_location.barony.trade_market
+			domicile.domicile_location = { province_has_district = kehillah_jewish_quarter_district }
+		}
 		domicile.domicile_location.barony.trade_market = {
 			save_temporary_scope_as = kehillah_market
 		}
 		if = {
 			limit = {
 				scope:kehillah_market = {
-					trade_good_unfulfilled_need = { target = trade_good_type:trade_good_wine value >= kehillah_market_shortfall_threshold }
+					NOT = { trade_good_unfulfilled_need = { target = trade_good_type:trade_good_wine value >= kehillah_market_shortfall_threshold } }
 				}
 			}
-			add = kehillah_market_shortfall_prosperity
+			add = kehillah_market_supplied_each
 		}
 		if = {
 			limit = {
 				scope:kehillah_market = {
-					trade_good_unfulfilled_need = { target = trade_good_type:trade_good_books_paper value >= kehillah_market_shortfall_threshold }
+					NOT = { trade_good_unfulfilled_need = { target = trade_good_type:trade_good_books_paper value >= kehillah_market_shortfall_threshold } }
 				}
 			}
-			add = kehillah_market_shortfall_prosperity
+			add = kehillah_market_supplied_each
 		}
 		if = {
 			limit = {
 				scope:kehillah_market = {
-					trade_good_unfulfilled_need = { target = trade_good_type:trade_good_textiles value >= kehillah_market_shortfall_threshold }
+					NOT = { trade_good_unfulfilled_need = { target = trade_good_type:trade_good_textiles value >= kehillah_market_shortfall_threshold } }
 				}
 			}
-			add = kehillah_market_shortfall_prosperity
+			add = kehillah_market_supplied_each
 		}
 		if = {
 			limit = {
 				kehillah_keeps_kashrut_trigger = yes
 				scope:kehillah_market = {
-					trade_good_unfulfilled_need = { target = trade_good_type:trade_good_cattle value >= kehillah_market_shortfall_threshold }
+					NOT = { trade_good_unfulfilled_need = { target = trade_good_type:trade_good_cattle value >= kehillah_market_shortfall_threshold } }
 				}
 			}
-			add = kehillah_market_shortfall_prosperity
-		}
-		if = {
-			limit = {
-				domicile.domicile_location = { province_has_district = kehillah_jewish_quarter_district }
-				scope:kehillah_market = {
-					NOT = { trade_good_unfulfilled_need = { target = trade_good_type:trade_good_wine value >= kehillah_market_shortfall_threshold } }
-					NOT = { trade_good_unfulfilled_need = { target = trade_good_type:trade_good_books_paper value >= kehillah_market_shortfall_threshold } }
-					NOT = { trade_good_unfulfilled_need = { target = trade_good_type:trade_good_textiles value >= kehillah_market_shortfall_threshold } }
-				}
-				OR = {
-					NOT = { kehillah_keeps_kashrut_trigger = yes }
-					scope:kehillah_market = {
-						NOT = { trade_good_unfulfilled_need = { target = trade_good_type:trade_good_cattle value >= kehillah_market_shortfall_threshold } }
-					}
-				}
-			}
-			add = kehillah_market_supplied_prosperity
+			add = kehillah_market_supplied_each
 		}
 	}
 }
