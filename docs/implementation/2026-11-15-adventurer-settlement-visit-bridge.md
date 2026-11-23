@@ -1,57 +1,59 @@
 # Adventurer settlement-visit bridge
 
-**Status:** BUILT 2026-11-15; source-audited and xTiger checked; **live retest pending**. This amends
+**Status:** BUILT 2026-11-16; source-audited and xTiger checked; **live retest pending**. This amends
 [Adventurers, seats and invitations](../spec/2026-11-14-adventurers-seats-and-invitations.md), section 4.
 
 ## Result
 
 A Jewish landless adventurer in a county with a registered Kehillah uses the base-game **Visit Local
-Settlement** map action. A small native-styled preface offers:
+Settlement** map action. Its normal **Tavern** row becomes **Visit the Jewish Community** while the
+community call is available. The visit opens directly on an audience with the local leader:
 
-- **Call on the Jewish community**, opening the existing prayer, household-recruitment and seat-discussion
-  visit; or
-- **Visit the settlement**, opening Paradox's unchanged menu, including its tavern and holding-specific and
-  second-page choices.
+- **Break bread and pray:** gives Piety and the leader's regard.
+- **Ask for introductions:** opens a second, community-specific scene. The player may invite one random
+  Jewish household whose head is deliberately a learned teacher/copyist, a merchant/bookkeeper, or a
+  road-wise guard. The household's spouse and children travel too, through the existing household system.
+- **Discuss the seat:** opens the existing candidacy conversation when it is valid.
+- **Take leave.**
 
-The former separate `kehillah_visit_community_decision` is removed, so there is no duplicate action in the
-Kehillah decision group. Non-Jewish adventurers, counties without a qualifying community, and a Jewish
-adventurer on the six-month community-visit cooldown go directly to the original vanilla flow.
+The former separate `kehillah_visit_community_decision` and the temporary preface event are removed, so
+there is no extra action or redundant level between the native settlement menu and the community scene.
+The community call shares the Tavern's unrestricted repeat availability. The ordinary Tavern appears for
+anyone without a qualifying local community.
 
-## Why this is a bridge, not a fifth menu row
+## Why this reuses the Tavern row
 
 The vanilla menu is the monolithic `ep3_laamp_decision_event.1000`; its options are not exposed through an
-on-action, scripted list, or other appendable interface. A literal Jewish-community row alongside Tavern
-would require a full override of roughly 1,300 lines of current vanilla event code. More importantly, the
-native window renders four option slots. The live UI check on 2026-11-15 confirmed that a fifth option clips
-the ordinary **Leave** button. The earlier direct override was therefore removed immediately.
+appendable scripted list, and its window renders only four rows. The 2026-11-15 live check confirmed that a
+fifth row clips the ordinary **Leave** button. The final design therefore replaces—not adds to—the Tavern
+row, retaining its normal position and its one-row footprint.
 
-`common/decisions/dlc_decisions/ep_3/06_ep3_laamp_decisions.txt` is a same-path replacement for the
-Roads to Power source file. It is the complete CK3 1.20.1.2 vanilla file, with one changed decision route:
-when `kehillah_adventurer_community_visit_available_trigger` passes it resolves the local title and opens
-the bridge event `kehillah_visit.0002`; otherwise it executes the original lock and main-square event
-unchanged. A separate-file duplicate was tried first, but the live error log marked `.0002` orphaned: the
-engine did not select that duplicate decision definition.
+`events/dlc/ep3/ep3_laamp_decision_events.txt` is a same-path copy of CK3 1.20.1.2's Roads to Power event
+file. Its only functional change is in `.1000`'s Tavern option: its label and destination become the
+community visit when `kehillah_adventurer_community_visit_available_trigger` passes. Otherwise the option
+retains its unmodified vanilla label, tooltips, and tavern destination. The decision file is no longer
+overridden. Keeping the complete source file intact also keeps the vanilla event's local helper effects and
+triggers available to both the game and xTiger.
 
-This necessarily conflicts with another mod that replaces this same Roads to Power decision file; whichever
-mod wins load order determines the route. It does not replace the vanilla main-square event.
+This necessarily conflicts with another mod that replaces the same Roads to Power event; whichever override
+wins load order determines that single row. It does not replace the decision or the holding and second-page
+events.
 
 ## Cooldowns and safety
 
-The established three-year, per-community family cooldown is unchanged. The former decision's six-month
-cooldown is now the adventurer variable `kehillah_visit_community_cooldown`, set after every outcome of the
-community event. It prevents repeat Piety/opinion visits while leaving the standard settlement visit
-available. Choosing **Continue on my way** from the bridge applies no community cooldown.
+The established three-year, per-community household cooldown is unchanged. There is no separate
+traveller-level cooldown: fellowship and leader conversations may be revisited just as the Tavern may be.
+The recruitment options remain unavailable until the community's household cooldown has expired.
 
 ## Verification
 
-- Source audit: the bridge preserves the vanilla decision's shown/valid gates and its four holding tooltip
-  branches; its non-community path is exactly `trigger_event = ep3_laamp_decision_event.1000`.
-- xTiger (CK3 1.20.1.2, xTiger 1.6.10): 0 fatals. The same-path override reports 32 errors, 124 warnings,
-  37 untidy reports and 135 tips. Its traces pass through the unchanged vanilla settlement events; no finding
-  identifies the inserted bridge route, trigger, event, or localization as an error site. The direct
-  prototype's UI finding is conclusive: a four-slot main square cannot safely carry a fifth row.
-- The direct-menu live test found the missing Leave button and has been rolled back. The remaining live test
-  should check both bridge choices, the six-month route suppression, the three-year family cooldown, and
-  that normal tavern/holding visits still end and unlock normally.
-  Console event `kehillah_debug.142`, run as the adventurer, is a read-only availability and local-community
-  probe for that test.
+- Source audit: the copied vanilla `.1000` event changes only the Tavern option. Its three other first-page
+  rows, all its holding branches, and its second-page routes remain vanilla source.
+- xTiger (CK3 1.20.1.2, xTiger 1.6.10): 0 fatals, 32 errors, 126 warnings, 37 untidy reports, and 135 tips—the
+  same 32-error baseline established before this redesign. The new event, recruitment effects, trigger use,
+  and localization have no diagnostic. The direct prototype's UI finding remains conclusive: a four-slot
+  main square cannot safely carry a fifth row.
+- The remaining live test should check the direct community row, all three household specialties, repeat
+  fellowship visits, the three-year household cooldown, and that the map action unlocks when the visit
+  finishes. Console event `kehillah_debug.142`, run as the adventurer, is a read-only availability and
+  local-community probe for that test.

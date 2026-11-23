@@ -78,19 +78,21 @@ game is in [the validation checklist](../testing/2026-11-08-stand-for-the-seat-v
 ## 4. Visit the Jewish Community
 
 For a Jewish landless adventurer standing in a county where a registered community's Quarter stands and
-whose leader is Jewish, the base game's **Visit Local Settlement** map action first opens
-`kehillah_visit.0002`. It offers either **Call on the Jewish community** or **Visit the settlement**.
-The latter opens the untouched vanilla selection menu (tavern, local clergy/castle/craftsmen as appropriate,
-then its normal second page); the former opens `kehillah_visit.0001`:
+whose leader is Jewish, the base game's **Visit Local Settlement** map action replaces its **Tavern** row
+with **Visit the Jewish Community**. It opens `kehillah_visit.0001`, an audience with the local leader:
 
 - **Pray with the congregation:** a little piety, and the leader's regard.
-- **Take a family into my company:** costs gold. A family of the community's local Jewish culture and the
-  leader's faith and rite joins his court, made by the households' own code
-  (`kehillah_household_create_head_effect`, `kehillah_household_add_family_effect`): a head, his wife,
-  children, sometimes a grown son. A community cannot spare one again for **three years**
+- **Ask for introductions:** opens `kehillah_visit.0002`, where the adventurer can spend gold to invite a
+  learned teacher/copyist, a merchant/bookkeeper, or a road-wise guard. The chosen Jewish household has the
+  community's local Jewish culture and its leader's faith and rite; the head, spouse, children, and sometimes
+  grown son are made by the household system. A community cannot spare one again for **three years**
   (`kehillah_visit_recruit_cooldown` on the title). These are the "ten Jewish followers" founding needs.
 - **Speak with the leader about the seat:** opens the weigh event, when he may stand for it.
 - **Take my leave.**
+
+Community calls have the same unrestricted repeat availability as the Tavern. The Tavern is unchanged for
+non-Jewish adventurers, counties without a qualifying community, and players who are otherwise ineligible
+for a community call; its row is replaced by the community call while the latter is available.
 
 The community route has a six-month per-adventurer cooldown and no AI use. It does not lock or alter a
 normal settlement visit. A visit is also how an adventurer meets a community that might send for him.

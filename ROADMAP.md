@@ -1,5 +1,7 @@
 # Roadmap
 
+**Writing a sefer scheme UPDATED 2026-11-18; source/xTiger checked, ordinary writing event/artifact and news fixes verified live; landmark/save checks pending:** Write a Sefer opens discipline and project choices, showing aptitude, requirements, approaching locked forms and landmark readiness. A multi-phase personal scheme uses research, objections, an optional chavrusa and revision to determine completion chance and draft quality. Machshavah has early Scripture, debate and ethics projects available in 867; systematic dialogue opens from 933 and inward devotion from 1080. Ordinary success creates a project-matched artifact and local news only. Exceptional success can fill any of 36 historical catalog niches after the 867 start (20 after 1066; twelve after 1178), entering the ledger, granting author mastery and producing a matching landmark manuscript. A work arguing for a tenet requires an author who holds its thesis conviction personally or through the rite. Commentaries refer to their source and affect its reception; their source can lend them authority or suspicion. Study Torah also supports a chavrusa. See [design](docs/spec/2026-11-17-writing-a-sefer-scheme.md), [commentary and expansion](docs/spec/2026-11-18-commentary-and-landmark-expansion.md), [implementation and live checklist](docs/implementation/2026-11-17-writing-sefer-scheme.md), [live log](docs/testing/2026-11-18-writing-scheme-live-log.md), and [the earlier duplicate-book diagnosis](docs/implementation/2026-11-17-writing-sefarim-flow.md).
+
 **Private pre-alpha release path ADDED 2026-11-16; not yet uploaded:** `scripts/kehillah_build_release.py` stages a clean, player-only copy as the sibling mod `jewishcommunities_prealpha` (about 215 MB, no .git or docs). xTiger gives it the same baseline as the dev mod. The Steam steps (upload, then set visibility to Unlisted), the tester guide, the Workshop description and a re-shoot list are in [docs/release/](docs/release/steam-private-upload.md). Needs a smoke-test boot of the staged copy before the first upload.
 
 **Exilarchate and community claims BUILT 2026-11-16; live interaction checks passed, combined branch not live-tested:** David ben Hezekiah has authored parents, a brother, Joseph ha-Nagid as a friend, Isaac ibn Sakri as his camp Dayyan, and a recorded claim to the Baghdad Kehillah. The claim interaction is general to eligible adventurers and community seats; Exilarch recognition is a separate lifetime titular office for Jewish community leaders with the Ben David trait. The two-step transfer and recognition worked in an isolated CK3 check; a new campaign using this version is needed to see the authored history. See [design](docs/spec/2026-11-16-community-claims-and-exilarch-recognition.md), [implementation](docs/implementation/2026-11-16-david-and-the-exilarchate.md), and [live log](docs/testing/2026-11-16-general-claims-live-log.md).
@@ -20,14 +22,14 @@
 
 **Karaite seats ADDED 2026-11-15; source/xTiger checked, live check pending:** 10 distinct titles provide 2 Karaite starts in 867, 5 in 1066, and 6 in 1178, following Daniel's dated placement specification. Ramla, Talavera, Attaleia and Ascalon use nearby counties as disclosed map proxies. Jerusalem, Fustat, Toledo and Constantinople retain their Rabbanite communities. See [the implementation note](docs/implementation/2026-11-15-karaite-community-seats.md).
 
-**Adventurer community visit integrated with Visit Local Settlement BUILT 2026-11-15; direct-menu UI bug
-found live and reverted, same-path decision override source/xTiger checked, live retest pending:** a fifth row in vanilla's four-slot main-square menu
-hid its Leave button. The retained safe integration opens a small choice only for a Jewish adventurer in a
-county with a registered community: call on the community, or continue into the untouched vanilla settlement
-choices (tavern, holding district, and so on). The existing visit supplies prayer, family recruitment, and
-seat discussion; its six-month traveller cooldown and the community's three-year family cooldown remain.
-See the [implementation record](docs/implementation/2026-11-15-adventurer-settlement-visit-bridge.md) and
-the 2026-11-15 addendum in [the adventurers, seats and invitations specification](docs/spec/2026-11-14-adventurers-seats-and-invitations.md).
+**Adventurer community visit redesigned 2026-11-16; source/xTiger checked, live retest pending:** the
+Jewish community now replaces—not adds to—the native Tavern row when an eligible adventurer visits a county
+with its Kehillah. The leader receives the traveller, offers fellowship, seat discussion, or introductions
+to a learned teacher/copyist, merchant/bookkeeper, or road-wise guard household. Each recruited household
+uses the established spouse-and-children system and keeps the three-year community cooldown; calls otherwise
+share the Tavern's unrestricted repeat availability. This follows the live finding that a fifth menu row hides
+Leave. See the [implementation record](docs/implementation/2026-11-15-adventurer-settlement-visit-bridge.md) and
+the 2026-11-16 addendum in [the adventurers, seats and invitations specification](docs/spec/2026-11-14-adventurers-seats-and-invitations.md).
 
 **Rabbinic Machshavah seeding BUILT 2026-11-15; source/xTiger checked, live check pending:** new Rabbinic libraries begin with *Sefer Yetzirah* and, after 933, Saadia's *Emunot ve-Deot*. The books are ordinary copies, not foundations or Yeshiva prerequisites; their ownership makes Machshavah visible in the Sefarim Ledger. Obscure, esoteric, and polemical works retain the existing ownership/mastery/reputation discovery gates. See [the build record](docs/implementation/2026-11-15-rabbinic-machshava-library-seeding.md).
 
@@ -61,6 +63,122 @@ subject to revision after each phase.
 **Quarter building cost rebalance BUILT 2026-11-15; source/xTiger checked, live test pending:** completing every available Quarter line now costs 3,885 Gold rather than 6,280 (about 38% less; 3,835 rather than 6,205 from the standard Worms start, whose first Synagogue is built). Synagogue, Beit Midrash/Yeshiva, Mikvah, and Hekdesh also ask for modest Piety; Countinghouse upgrades and the Scriptorium ask for Prestige. Commercial buildings and the Slaughterhouse remain Gold-only, preserving an accessible route to rebuild the treasury. The values remain centralized in `kehillah_script_values.txt` for playtest tuning.
 
 ## Near-term TODO
+
+**Pillars as opportunities and expectations: PROPOSED 2026-11-19, first slice agreed with Daniel.**
+See [the spec](docs/spec/2026-11-19-pillars-as-opportunities-and-expectations.md); read its addenda R1-R10
+first.
+- **First slice BUILT 2026-11-19:** the tenure mark and the high-water mark (R3, with R10's mandate
+  weighting). xTiger-clean; a scripted live test passed (modifiers apply and clear). It records each
+  pillar's band when a leader takes office, without touching succession code. It sets one opinion
+  modifier on the leader (`courtier_and_guest_opinion`), with the mandate pillar counting double. See
+  spec R11.
+- **Lend Gold BUILT 2026-11-19 as a spike:** Kehillah leaders lend through vanilla's loan system,
+  following the usury doctrine. A live test confirmed the loan is created.
+- **Lending slice BUILT 2026-11-20, xTiger-clean, live checklist pending (Daniel):**
+  - vanilla's Debtors panel, ported into the mod's domicile window;
+  - a Demand Repayment generated from vanilla's own;
+  - a "banking services" host-outlook term, eroded by non-Jewish lenders;
+  - the debts term reading vanilla loans;
+  - the debts crisis gated on actual lending.
+  
+  The merchant government flag was surveyed and rejected (it reshapes focuses, succession, court and
+  perks).
+- **Old loan ledger TORN OUT 2026-11-20, xTiger-clean, LIVE TEST NEEDED (Financier path, crash
+  history):**
+  - every Kehillah loan, the S8 contract and royal loans included, is a vanilla loan tagged with its
+    community, and is moved to the next leader;
+  - repayment pays the old reward through a one-line override of vanilla's repay effect;
+  - the repay decision and the quarterly tick are gone.
+  
+  Checklist: [trade-DLC record, section 7](docs/spec/2026-11-19-trade-dlc-lending-goods-and-districts.md).
+- **Mutual aid BUILT 2026-11-20, xTiger-clean, live checklist pending:**
+  - ransom (vanilla imprisonment), relief (Crisis Prosperity) and refugee needs;
+  - Send Aid and Redeem Captive;
+  - AI giving;
+  - blame for ignored appeals;
+  - a reputation for giving, shown as Jewish opinion of the leader;
+  - the emissary from the Land of Israel.
+
+  **v2 the same day** (also xTiger-clean, live checklist in section 9.8):
+  - shares and reach scale with Prosperity: one share for Healthy, two for Flourishing, three for
+    Legendary; poorer communities' gifts count double;
+  - letter events with their consequences in the tooltips, a reminder, and the Mutual Aid and Name for
+    Giving game concepts;
+  - breakdown lines showing what a community owes and its name for giving;
+  - reciprocity, patrons, and redeemed captives who settle with their redeemers;
+  - the decision Write to the Communities, for poor and struck communities;
+  - crisis-network aid and the Recovery tzedakah request folded into mutual aid.
+
+  **v2 live-tested 2026-11-20** (scripted, through a test agent): it passed, and three fixes followed;
+  see [the log](docs/testing/2026-11-20-mutual-aid-v2-live-test.md). **v2.1 the same day** (record
+  section 10):
+  - one Send Aid interaction, with a "give everything" option;
+  - the appeal's choice is reach, neighbours or a paid envoy, not the size of the sum;
+  - gifts and silence count by the community's shares;
+  - the patron gains a favour hook, prestige, and a 20-year debt of gratitude.
+
+  **v2.2** (record section 11): appeal sums scale with families, damage and era; the Shtadlan is the
+  envoy.
+
+  **Decided (Daniel, 2026-11-20):** the 4-of-53 problem (only four communities start Healthy, so in 1066
+  almost no one is expected to answer an appeal) is to be solved by two things, not by changing who is
+  expected:
+  - the economic integrations (trade-DLC record, section 8);
+  - **a balancing pass that starts the historically rich communities prosperous.**
+
+  **The Quarter's tracks, slices 1-2 BUILT 2026-11-20** (spec section 14):
+  - the consolidated core and five specialisations, with the Kahal House's allowance;
+  - the Beit Midrash's five tiers;
+  - the Kosher Market with its butchers and winery;
+  - Bankers' Row, the Funduq, and Wall and Gates with Petition for a Wall;
+  - the seven Craft Row trades producing **1.21 trade goods** into the host county's market;
+  - 18 new building icons, and the level-1 town art;
+  - a painted-scene generator, waiting for an image-API key.
+
+  Not live-tested; the checklist is in spec section 14.6 (it touches the succession rebuild).
+
+  **Built autonomously 2026-11-20 while Daniel was away for Shabbat** (spec section 15; pillars spec R14):
+  - slice 4: Bankers' Row annexes (Bond Chest, Pledge Store, Court Jew's Office), **Enforce the Bond**,
+    and the charter's lending right now governing interest;
+  - slice 3: the Hospital, plus the Hekdesh annexes that give mutual aid its capacity;
+  - slice 5: the Wall's annexes, which steer crises (R7);
+  - the annexes of the Kahal House, Synagogue, Funduq, Beit Midrash and Kosher Market;
+  - **the Quarter enriches the town:** a yearly county Prosperity modifier, read back by the
+    local-economy line;
+  - **pillars R2:** styles boost the leader's own actions by 20%, and the flat +60 is retired;
+  - **the 1.21 migration of `development_level` to `prosperity_level`** in the mod's own files;
+  - debug probes `kehillah_quarter_debug.1-5`.
+
+  Still to do:
+  - ~~the Affluence rename~~ and ~~the 1.21 triage of the vanilla-override copies~~: **done
+    2026-11-23**, see [the 1.21 cleanup record](docs/implementation/2026-11-23-ck3-1.21-cleanup.md);
+  - the Commenda decision and Send Our Physician;
+  - R7's warning reach, spark step and mobilisation;
+  - E1, the predatory host.
+
+  **Next feature proposed (2026-11-20, awaiting Daniel's review):**
+  [the Quarter's building tracks](docs/spec/2026-11-20-kehillah-quarter-building-tracks.md):
+  - a main building and four core institutions, plus five specialisations, of which a community holds
+    one to four;
+  - annexes with distinct functions;
+  - goods production into the host market;
+  - new offices, interactions and decisions;
+  - an art plan and a save migration.
+
+  **Backlog (Daniel, 2026-11-20): rename the Prosperity pillar to *Affluence*.** 1.21 has its own county
+  **Prosperity** (game concept `county_prosperity`). Rename the display names only; the variable
+  `kehillah_var_prosperity` can stay.
+
+  See [the record](docs/spec/2026-11-20-mutual-aid.md). See
+  [the trade-DLC research](docs/spec/2026-11-19-trade-dlc-lending-goods-and-districts.md), which also
+  covers goods and a Jewish-quarter district.
+- **Later slices, roughly in order:**
+  - leadership-style benefits rework (R2/R10);
+  - Kehillah lending on vanilla loans and usury (R10);
+  - mutual aid (R5);
+  - Stability against crises (R7);
+  - docket petitions (C1/R8);
+  - D, which waits for a yeshiva revisit.
 
 **Succession candidates and family continuity BUILT 2026-11-15; source validation/live UI and succession checks pending:** Realm → Succession now offers Kehillah leaders **Review Community Candidates** beside vanilla's Designate Heir control. It opens CK3's native Appointment panel, where candidates, ranks and every score term are already shown; right-clicking an eligible candidate's portrait opens vanilla's character-interaction menu, including **Endorse as Successor**. The endorsement check includes close kin, Kehillah court officers, and Kehillah councillors such as the Dayyan. Endorsement remains a recommendation, not hard designation. A son of the sitting leader receives +15 and another close relative +5, both visible in that score breakdown; office (+25), endorsement (+30), and Learning remain stronger signals. See [the implementation record](docs/implementation/2026-11-15-succession-candidates-and-continuity.md).
 
@@ -531,12 +649,21 @@ not yet checked live.
 longer cites York 1190, which most start dates predate (York has no community at all
 before the 1178 start). Its text also no longer assumes a Countinghouse, which is an
 optional building.
-**Blocked until the trade DLC ships:** gate the debts opening to communities that are
+**Was blocked until the trade DLC shipped; unblocked 2026-11-19:** gate the debts opening to communities that are
 actually lending. Today it can fire for any community, though all of its text assumes
 open loans in the town. The only natural start is the debts branch of
 `kehillah_crisis_opening_pulse_effect` (`kehillah_crisis_effects.txt`), with its odds
 in `kehillah_crisis_debts_chance_value`; the debug events bypass it deliberately. Read
 the DLC's lending data there rather than building a homegrown loan record first.
+*2026-11-19 correction (Daniel): the trade DLC is out; the installed game is 1.21.0.3.
+Its markets and trade goods are in `common/trade/`. **Lending is in the merchant files.**
+A loan is a `story_cycle_loan` with `creditor`/`debtor` relations, made by vanilla's
+`set_up_new_loan_effect`, and Judaism's usury doctrine is `doctrine_usury_outsiders_only`.
+"Actually lending" can therefore be a real test: whether the leader is a `creditor` of anyone.
+See the pillars spec, addendum R10.
+Market and trade-good data should feed `kehillah_bd_local_economy_value`, the hook v33
+reserved for it. xTiger is a 1.20 fork, so expect false positives on 1.21 tokens until it
+is updated.*
 
 **Community Safety risk display - 2026-11-05:** The Military panel now puts the
 incident band and yearly chance up front, with exact drivers in one tooltip;

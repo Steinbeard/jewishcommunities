@@ -1,47 +1,14 @@
 ﻿# =====================================================================
-# VISIT THE JEWISH COMMUNITY -- events. 2026-11-14 (Daniel).
+# VISIT THE JEWISH COMMUNITY -- events. 2026-11-16 (Daniel).
 # docs/spec/2026-11-14-adventurers-seats-and-invitations.md section 4.
 #
-#   .0001  The adventurer calls on the community in the county he stands in.
-#          Fired by kehillah_visit_community_decision.
-#          root = the adventurer, scope:kehillah_visit_title = the community.
+#   .0001  A Jewish adventurer calls on the local community from the
+#          Tavern row of the base-game Visit Local Settlement event.
+#   .0002  The community leader makes introductions for a household
+#          recruitment, with a chosen specialty.
 # =====================================================================
 
 namespace = kehillah_visit
-
-# The small preface entered from the base game's Visit Local Settlement map
-# action. The native main-square window has four option slots, so inserting a
-# fifth choice there hides its normal Leave button. This preserves that menu
-# intact while keeping the community call inside the same map action.
-kehillah_visit.0002 = {
-	type = character_event
-	title = kehillah_visit.0002.t
-	desc = kehillah_visit.0002.desc
-	window = visit_settlement_window
-	theme = realm
-	left_portrait = {
-		character = root
-		animation = personality_rational
-	}
-	right_portrait = {
-		character = scope:kehillah_visit_leader
-		animation = personality_honorable
-	}
-
-	immediate = {
-		scope:kehillah_visit_title.holder = { save_scope_as = kehillah_visit_leader }
-	}
-
-	option = {
-		name = kehillah_visit.0002.a
-		trigger_event = kehillah_visit.0001
-	}
-	option = {
-		name = kehillah_visit.0002.b
-		trigger_event = ep3_laamp_decision_event.1000
-	}
-	option = { name = kehillah_visit.0002.c }
-}
 
 kehillah_visit.0001 = {
 	type = character_event
@@ -49,9 +16,7 @@ kehillah_visit.0001 = {
 	desc = {
 		desc = kehillah_visit.0001.desc
 		triggered_desc = {
-			trigger = {
-				scope:kehillah_visit_title = { has_variable = kehillah_visit_recruit_cooldown }
-			}
+			trigger = { scope:kehillah_visit_title = { has_variable = kehillah_visit_recruit_cooldown } }
 			desc = kehillah_visit.0001.desc_spare
 		}
 	}
@@ -69,15 +34,10 @@ kehillah_visit.0001 = {
 		scope:kehillah_visit_title.holder = { save_scope_as = kehillah_visit_leader }
 	}
 
-	# Pray with the congregation.
+	# A guest's welcome: fellowship, Piety, and the leader's regard.
 	option = {
 		name = kehillah_visit.0001.a
 		add_piety = minor_piety_gain
-		set_variable = {
-			name = kehillah_visit_community_cooldown
-			value = yes
-			months = 6
-		}
 		scope:kehillah_visit_leader = {
 			add_opinion = {
 				target = root
@@ -87,44 +47,10 @@ kehillah_visit.0001 = {
 		}
 	}
 
-	# Take a family into the company.
+	# The leader introduces a traveller to households who may choose the road.
 	option = {
 		name = kehillah_visit.0001.b
-		show_as_unavailable = { always = yes }
-		trigger = {
-			custom_description = {
-				text = kehillah_visit_family_spare_tt
-				scope:kehillah_visit_title = { NOT = { has_variable = kehillah_visit_recruit_cooldown } }
-			}
-			gold >= kehillah_visit_family_cost_value
-		}
-		add_gold = {
-			value = kehillah_visit_family_cost_value
-			multiply = -1
-		}
-		custom_tooltip = kehillah_visit.0001.b.tt
-		set_variable = {
-			name = kehillah_visit_community_cooldown
-			value = yes
-			months = 6
-		}
-		hidden_effect = {
-			kehillah_household_create_head_effect = {
-				LEADER = scope:kehillah_visit_leader
-				LOCATION = root.location
-			}
-			kehillah_household_add_family_effect = {
-				HEAD = scope:kh_new_head
-				LEADER = root
-			}
-			scope:kehillah_visit_title = {
-				set_variable = {
-					name = kehillah_visit_recruit_cooldown
-					value = yes
-					years = kehillah_visit_recruit_cooldown_years_value
-				}
-			}
-		}
+		trigger_event = kehillah_visit.0002
 	}
 
 	# Speak with the leader about the seat.
@@ -137,11 +63,6 @@ kehillah_visit.0001 = {
 			}
 		}
 		scope:kehillah_visit_title = { save_scope_as = cand_seat }
-		set_variable = {
-			name = kehillah_visit_community_cooldown
-			value = yes
-			months = 6
-		}
 		trigger_event = kehillah_candidacy.0001
 	}
 
@@ -156,14 +77,91 @@ kehillah_visit.0001 = {
 		kehillah_home_join_effect = { TITLE = scope:kehillah_visit_title }
 	}
 
-	# Take my leave.
 	option = {
 		name = kehillah_visit.0001.d
-		set_variable = {
-			name = kehillah_visit_community_cooldown
-			value = yes
-			months = 6
-		}
 	}
 
+	# The settlement decision has already created its temporary visit state.
+	# This route leaves before any page-specific variables exist, so only the
+	# native menu's shared list, return marker, and visit lock need clearing.
+	after = {
+		clear_variable_list = list_of_options
+		remove_variable ?= list_of_options
+		remove_variable ?= return_from_location
+		remove_variable ?= ep3_laamp_decision_1000_is_visiting
+	}
+}
+
+kehillah_visit.0002 = {
+	type = character_event
+	title = kehillah_visit.0002.t
+	desc = {
+		desc = kehillah_visit.0002.desc
+		triggered_desc = {
+			trigger = { scope:kehillah_visit_title = { has_variable = kehillah_visit_recruit_cooldown } }
+			desc = kehillah_visit.0002.desc_spare
+		}
+	}
+	theme = realm
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	right_portrait = {
+		character = scope:kehillah_visit_leader
+		animation = personality_honorable
+	}
+
+	# A teacher and copyist: high Learning.
+	option = {
+		name = kehillah_visit.0002.a
+		show_as_unavailable = { always = yes }
+		trigger = {
+			custom_description = {
+				text = kehillah_visit_family_spare_tt
+				scope:kehillah_visit_title = { NOT = { has_variable = kehillah_visit_recruit_cooldown } }
+			}
+			gold >= kehillah_visit_family_cost_value
+		}
+		add_gold = { value = kehillah_visit_family_cost_value multiply = -1 }
+		custom_tooltip = kehillah_visit.0002.a.tt
+		hidden_effect = { kehillah_visit_recruit_scholar_household_effect = yes }
+	}
+
+	# A trader and bookkeeper: high Stewardship, with some Diplomacy.
+	option = {
+		name = kehillah_visit.0002.b
+		show_as_unavailable = { always = yes }
+		trigger = {
+			custom_description = {
+				text = kehillah_visit_family_spare_tt
+				scope:kehillah_visit_title = { NOT = { has_variable = kehillah_visit_recruit_cooldown } }
+			}
+			gold >= kehillah_visit_family_cost_value
+		}
+		add_gold = { value = kehillah_visit_family_cost_value multiply = -1 }
+		custom_tooltip = kehillah_visit.0002.b.tt
+		hidden_effect = { kehillah_visit_recruit_merchant_household_effect = yes }
+	}
+
+	# A caravan guard and guide: high Martial and Prowess.
+	option = {
+		name = kehillah_visit.0002.c
+		show_as_unavailable = { always = yes }
+		trigger = {
+			custom_description = {
+				text = kehillah_visit_family_spare_tt
+				scope:kehillah_visit_title = { NOT = { has_variable = kehillah_visit_recruit_cooldown } }
+			}
+			gold >= kehillah_visit_family_cost_value
+		}
+		add_gold = { value = kehillah_visit_family_cost_value multiply = -1 }
+		custom_tooltip = kehillah_visit.0002.c.tt
+		hidden_effect = { kehillah_visit_recruit_guard_household_effect = yes }
+	}
+
+	option = {
+		name = kehillah_visit.0002.d
+		trigger_event = kehillah_visit.0001
+	}
 }
