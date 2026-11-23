@@ -1,6 +1,6 @@
 # Bet Din docket research integration
 
-**Status: thirty cases scripted 2026-11-23; xTiger checked; live hearings pending. The remaining workbook cases are research, not implemented.**
+**Status: fifty cases scripted 2026-11-23; xTiger checked; live hearings pending. The remaining workbook cases are research, not implemented.**
 
 The [Mishnah-audited workbook](../research/bet-din-docket/CK3_Bet_Din_Docket_250_Cases_Mishnah_Audited.xlsx) is the exact file Daniel shared from his ChatGPT Library. Its SHA-256 is `BB099DF4FE3AFE3F5F688F0F69DDBA3220144D3FCB16FE16AA36456BD8C6A1F4`. It contains 250 proposed cases, 1,250 option prototypes, and cross-references to the Mishnah. The workbook's own **Ruling Options** sheet labels every choice `DESIGN PROTOTYPE / NOT HALAKHICALLY APPROVED`; **Research Audit** leaves case-specific medieval application and editorial sign-off open. It is a research source, not executable Paradox script.
 
@@ -56,11 +56,17 @@ Cases 35–44 add a disputed vineyard gift, support promised to a poor cousin, a
 
 Eligibility now has more variety. Cases 35, 39, 40 and 43 require Iberia; 37, 38 and 41 require the Middle East or northeastern Africa; 42 requires northeastern Africa. Case 36 requires the presiding community leader's Ashkenazi culture. Case 44 requires both the Arabian region and Teimani culture. These culture gates are intentional for flavor and may make the cases rare; if live play shows they never draw, revisit the conditions. Other cases in the pool retain their existing building, date and regional gates. Cases 35–37, 40 and 43 spend Prosperity; cases 38–39, 41–42 and 44 spend Stability. All use the 8/4/2 direct cost scale and fact-sensitive tally penalties established in the prior batch, pending live balance review.
 
+## Twenty-case communal and ritual batch: BD-150–169
+
+Cases 45–64 turn a contiguous workbook section into new hearings: physician tax relief, a widows' relief fund, a synagogue sale, a secret tax assessment, an envoy's travel costs, a double tax demand, a newcomer's shoe stall, a burned ledger, a school's future, hereditary office, rival burial societies, a ransom pledge, a courtier's privilege, an appeal, debts after a communal split, drought relief, a missing scroll, defective mezuzot, an apprentice's slaughter, and a divided eruv. The authored scenes, choices, outcomes and source tooltips are in [`kehillah_docket_batch30_data.py`](../../scripts/kehillah_docket_batch30_data.py). [`kehillah_wire_docket_batch30.py`](../../scripts/kehillah_wire_docket_batch30.py) adds their draw, citation, bench, cleanup and debug hooks idempotently; all generated game files are committed.
+
+The dilemmas distinguish a costly inquiry from a quick ruling and a cheaper final settlement. Each has a hidden fact that can make the quick ruling unjust and can make the cheap settlement overbroad. The direct cost remains 8/4/2 for the three directions, applied to Prosperity, Stability or Greatness according to the case. This is an initial comparative scale, not a claimed live balance pass. The textual source option names a Mishnah passage and explains the remaining question of evidence or local authority. The batch uses regional gates for Iberian and Mediterranean premises and Ashkenazi culture gates for the newcomer, mezuzot and eruv cases; the rest retain their date window and dispute-candidate requirement. The cases remain fictional adaptations, without asserting that their outcomes occurred historically.
+
 ## Verification and follow-up
 
 - The isolated branch started from `origin/master`; the shared human-testing checkout and its unrelated edits were left intact.
-- xTiger's pre-change baseline on CK3 1.21.0.3 was 0 fatal, 216 errors, 829 warnings. The 1.20-targeted validator reports known version-mismatch findings. The final run after all thirty cases matched the baseline exactly, with no new findings. An event-file encoding warning and a domicile-scope warning were corrected during the first pass.
-- The diagnostic console event `kehillah_bet_din_expansion_debug.1` now reports cases 15–44 and their hidden facts.
+- xTiger's pre-change baseline on CK3 1.21.0.3 was 0 fatal, 216 errors, 829 warnings. The 1.20-targeted validator reports known version-mismatch findings. The final run after all fifty cases matched the baseline exactly, with no new findings. An event-file encoding warning and a domicile-scope warning were corrected during the first pass.
+- The diagnostic console event `kehillah_bet_din_expansion_debug.1` now reports cases 15–64 and their hidden facts.
 - Luna live-game checks remain pending: draw each case in a qualifying community, confirm the two co-judges and resolution fire once, check both hidden-fact outcomes and all three directions, inspect the source tooltip and activity log, and compare error.log to its boot baseline. No other model should substitute for Luna under AGENTS.md.
 
-The next implementation unit should continue turning the workbook's scenarios into distinct playable hearings. The 220 remaining proposed cases need writing and mechanical review, not transcription of the workbook's repeated option templates.
+The next implementation unit should continue turning the workbook's scenarios into distinct playable hearings. The 200 remaining proposed cases need writing and mechanical review, not transcription of the workbook's repeated option templates.
