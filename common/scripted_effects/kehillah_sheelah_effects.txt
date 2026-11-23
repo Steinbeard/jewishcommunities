@@ -1,4 +1,4 @@
-﻿# =====================================================================
+# =====================================================================
 # SHE'ELOT, SLICE 1 (2026-11-22). docs/spec/2026-11-22-sheelot.md.
 # A community sends a hard case by letter to a posek of its own faith, as a
 # character interaction (players) or a yearly pulse (AI). The posek answers,
@@ -41,6 +41,7 @@ kehillah_sheelah_send_effect = {
 			set_variable = { name = kehillah_sheelah_player_letter_recent value = yes days = kehillah_sheelah_player_letter_gap_days }
 		}
 	}
+	kehillah_sheelah_soak_count_effect = { NAME = kehillah_sheelah_soak_letters }
 	debug_log = "kehillah_sheelah_send_effect: a she'elah is sent"
 	debug_log_scopes = yes
 }
@@ -65,6 +66,7 @@ kehillah_sheelah_reply_effect = {
 			exists = scope:kehillah_sheelah_asker.primary_title
 		}
 		kehillah_responsa_count_answer_effect = yes
+		kehillah_sheelah_soak_count_effect = { NAME = kehillah_sheelah_soak_answers }
 		primary_title = { save_scope_as = kehillah_sheelah_followed_title }
 		scope:kehillah_sheelah_asker.primary_title = {
 			if = {
@@ -125,6 +127,27 @@ kehillah_sheelah_tie_reply_tooltip_effect = {
 	else_if = {
 		limit = { exists = scope:kehillah_sheelah_now_followed }
 		custom_tooltip = kehillah_sheelah_tie_other_tt
+	}
+}
+
+# Scope: the posek, in the letter (kehillah_sheelah.0001). What an answer
+# does to the asker's tie (2026-11-23: it said "more closely" even when the
+# asker followed another community, whose tie the answer only wears down).
+# scope:kehillah_sheelah_asker_follows: whom the asker follows now, if anyone.
+kehillah_sheelah_tie_posek_tooltip_effect = {
+	if = {
+		limit = {
+			exists = primary_title
+			scope:kehillah_sheelah_asker_follows ?= primary_title
+		}
+		custom_tooltip = kehillah_sheelah_tie_gain_posek_tt
+	}
+	else_if = {
+		limit = { exists = scope:kehillah_sheelah_asker_follows }
+		custom_tooltip = kehillah_sheelah_tie_draw_posek_tt
+	}
+	else = {
+		custom_tooltip = kehillah_sheelah_tie_begin_posek_tt
 	}
 }
 
@@ -194,6 +217,7 @@ kehillah_sheelah_adopt_rite_effect = {
 			}
 		}
 	}
+	kehillah_sheelah_soak_count_effect = { NAME = kehillah_sheelah_soak_adoptions }
 	debug_log = "kehillah_sheelah_adopt_rite_effect: a community takes up another's rite"
 	debug_log_scopes = yes
 }
@@ -284,4 +308,16 @@ kehillah_study_help_reply_effect = {
 		trigger_event = { id = kehillah_sheelah.0012 days = { 10 20 } }
 	}
 	remove_variable = kehillah_study_help_pending_from
+}
+
+# Soak-test counters (2026-11-23): global tallies a census probe reads
+# (kehillah_sheelah_debug.3). NAME: the global variable.
+kehillah_sheelah_soak_count_effect = {
+	if = {
+		limit = { has_global_variable = $NAME$ }
+		change_global_variable = { name = $NAME$ add = 1 }
+	}
+	else = {
+		set_global_variable = { name = $NAME$ value = 1 }
+	}
 }

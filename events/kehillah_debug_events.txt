@@ -1974,104 +1974,6 @@ kehillah_debug.115 = {
 }
 
 
-# ---------------------------------------------------------------------
-# kehillah_debug.116 -- RESPONSA (ROADMAP S5): report the state, then
-# fire a real question.
-#
-# Added 2026-09-27. Reports every gate S5's pulse actually checks, so a
-# question that does not arrive can be told apart from a question that
-# arrived and rendered wrong -- then fires kehillah_responsa.0001 itself
-# so the event does not have to be waited for through a yearly pulse at
-# 55%.
-#
-# Fire it on the community LEADER. `event kehillah_debug.116` as the
-# player.
-# ---------------------------------------------------------------------
-kehillah_debug.116 = {
-	type = character_event
-	hidden = yes
-	immediate = {
-		debug_log = "kehillah_debug.116: responsa state -- START"
-
-		save_scope_value_as = { name = kehillah_debug_116_answerer_learning value = kehillah_responsa_answerer_learning_value }
-		save_scope_value_as = { name = kehillah_debug_116_threshold value = kehillah_responsa_learning_threshold }
-		save_scope_value_as = { name = kehillah_debug_116_great_cut value = kehillah_responsa_learning_great }
-		save_scope_value_as = { name = kehillah_debug_116_good_cut value = kehillah_responsa_learning_good }
-
-		if = {
-			limit = { government_has_flag = government_is_kehillah }
-			debug_log = "kehillah_debug.116: IS a Kehillah leader"
-		}
-		else = {
-			debug_log = "kehillah_debug.116: NOT a Kehillah leader -- kehillah_responsa.0001 will refuse to fire on this character"
-		}
-
-		# The two halves of the gate, reported separately: "no question
-		# arrived" has two completely different causes and they need
-		# different fixes.
-		if = {
-			limit = { kehillah_has_responsa_correspondent_trigger = yes }
-			debug_log = "kehillah_debug.116: CORRESPONDENT YES at least one other community has a living adult leader to write in"
-		}
-		else = {
-			debug_log = "kehillah_debug.116: CORRESPONDENT NO nobody in the registry could send a question -- the pulse can never fire here, and that is the registry's state, not a bug in the event"
-		}
-
-		if = {
-			limit = { kehillah_responsa_answerer_learning_value >= kehillah_responsa_learning_threshold }
-			debug_log = "kehillah_debug.116: LEARNING GATE PASS the answerer clears the threshold"
-		}
-		else = {
-			debug_log = "kehillah_debug.116: LEARNING GATE FAIL the answerer is below the threshold -- compare the two figures in the scope dump"
-		}
-
-		if = {
-			limit = { kehillah_can_answer_responsa_trigger = yes }
-			debug_log = "kehillah_debug.116: FULL GATE PASS the pulse would fire on this character"
-		}
-		else = {
-			debug_log = "kehillah_debug.116: FULL GATE FAIL the pulse would not fire -- one of the two halves above says why"
-		}
-
-		# WHICH TIER the answer will land in, stated before it is rolled,
-		# so the option's own tooltip can be checked against a number
-		# computed independently of it rather than against a tester's
-		# expectation. (That distinction is what made the S2 tooltip pass
-		# meaningful -- see docs/testing/2026-09-26-heartbeat5-live-test-log.md.)
-		if = {
-			limit = { kehillah_responsa_answerer_learning_value >= kehillah_responsa_learning_great }
-			debug_log = "kehillah_debug.116: EXPECT GREAT tier -- both ruling options should show their .great tooltip"
-		}
-		else_if = {
-			limit = { kehillah_responsa_answerer_learning_value >= kehillah_responsa_learning_good }
-			debug_log = "kehillah_debug.116: EXPECT GOOD tier -- both ruling options should show their .good tooltip"
-		}
-		else = {
-			debug_log = "kehillah_debug.116: EXPECT POOR tier -- both ruling options should show their .poor tooltip, and Greatness should FALL"
-		}
-
-		if = {
-			limit = { exists = primary_title }
-			primary_title = {
-				if = {
-					limit = { has_variable = kehillah_var_responsa_count }
-					save_scope_value_as = { name = kehillah_debug_116_count value = var:kehillah_var_responsa_count }
-					debug_log = "kehillah_debug.116: counter EXISTS -- its value is in the scope dump"
-				}
-				else = {
-					debug_log = "kehillah_debug.116: counter NOT SET yet -- expected before the first ruling"
-				}
-				save_scope_value_as = { name = kehillah_debug_116_greatness value = var:kehillah_var_greatness }
-			}
-		}
-
-		debug_log_scopes = yes
-		debug_log = "kehillah_debug.116: responsa state -- END, firing kehillah_responsa.0001 now"
-
-		trigger_event = { id = kehillah_responsa.0001 days = 0 }
-	}
-}
-
 
 # ---------------------------------------------------------------------
 # kehillah_debug.117 -- RESPONSA: jump the counter to the compile
@@ -2372,67 +2274,16 @@ kehillah_debug.121 = {
 
 
 # ---------------------------------------------------------------------
-# kehillah_debug.122 -- RESPONSA: arm the gate on the LEADER himself, then
-# hand off to kehillah_debug.116.
-#
-# Why this exists. Post-S4b the responsa gate needs semicha, and
-# kehillah_responsa_answerer_is_rabbi_trigger resolves the APPOINTED Chief
-# Rabbi first when there is one. So on an ordinary Worms start the pulse is
-# silent for two unrelated reasons at once, and firing .116 there produces a
-# FULL GATE FAIL that says nothing about whether the feature works. This
-# puts the community into the one state where the gate's outcome is
-# attributable: no appointed rabbi, the leader holding semicha himself.
-#
-# It deliberately does NOT touch Learning. The tier the answer lands in is
-# then the leader's real Learning against the real cuts, reported by .116
-# before the roll -- a number computed independently of the tooltip it is
-# checked against, which is what made the S2 tooltip pass meaningful. Arming
-# the tier as well would be testing the probe's arithmetic.
-#
-# DESTRUCTIVE -- it dismisses a sitting Chief Rabbi and grants a trait.
-# Fire it on the community LEADER.
+# kehillah_debug.122 -- RETIRED 2026-11-23, with the old responsa question
+# event (kehillah_responsa.0001) it armed. Being asked is now the she'elah.
 # ---------------------------------------------------------------------
 kehillah_debug.122 = {
 	type = character_event
 	hidden = yes
 	immediate = {
-		debug_log = "kehillah_debug.122: arming the responsa gate on the leader -- START"
-
-		if = {
-			limit = { has_trait = kehillah_rabbi_trait }
-			debug_log = "kehillah_debug.122: the leader already holds semicha"
-		}
-		else = {
-			add_trait = kehillah_rabbi_trait
-			debug_log = "kehillah_debug.122: granted the leader semicha (kehillah_rabbi_trait)"
-		}
-
-		save_scope_value_as = { name = kehillah_debug_122_learning value = learning }
-		save_scope_value_as = { name = kehillah_debug_122_threshold value = kehillah_responsa_learning_threshold }
-
-		if = {
-			limit = { kehillah_responsa_answerer_is_rabbi_trigger = yes }
-			debug_log = "kehillah_debug.122: SEMICHA GATE PASS"
-		}
-		else = {
-			debug_log = "kehillah_debug.122: SEMICHA GATE FAIL the trait was just granted, so this is the trigger resolving somebody else as the answerer"
-		}
-
-		if = {
-			limit = { kehillah_can_answer_responsa_trigger = yes }
-			debug_log = "kehillah_debug.122: ARMED the full gate now passes -- handing off to kehillah_debug.116, which will report the expected tier and fire the question"
-		}
-		else = {
-			debug_log = "kehillah_debug.122: NOT ARMED the full gate still fails -- .116 next will say which half (learning, or no other community to write in)"
-		}
-
-		debug_log_scopes = yes
-		debug_log = "kehillah_debug.122: arming the responsa gate on the leader -- END"
-
-		trigger_event = { id = kehillah_debug.116 days = 0 }
+		debug_log = "kehillah_debug.122: RETIRED 2026-11-23 -- the old responsa question is gone (see she'elot)"
 	}
 }
-
 
 
 # =====================================================================
