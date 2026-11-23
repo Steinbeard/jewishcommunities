@@ -1,0 +1,45 @@
+# Kashrut check 3: the test county's cattle and meat production (its capital
+# province, before trade), to 0.1. Run before and about a month after
+# kk4_convert.txt: expect cattle up about 15% and meat down about 10%.
+# Console: run kk3_measure.txt   Output: logs/debug.log, lines starting KK3;
+# the numbers are the saved values kk_cattle and kk_meat in the scope dump.
+global_var:kk_test_county ?= {
+	save_scope_as = kk_county
+	holder ?= {
+		save_scope_as = kk_holder
+		if = {
+			limit = { kehillah_keeps_kashrut_trigger = yes }
+			debug_log = "KK3 holder keeps kashrut"
+		}
+		else = {
+			debug_log = "KK3 holder does NOT keep kashrut"
+		}
+	}
+	title_province = {
+		set_variable = { name = kk_step value = 0 }
+		while = {
+			limit = {
+				var:kk_step < 50
+				production_of_trade_good_type = { target = trade_good_type:trade_good_cattle value > var:kk_step }
+			}
+			change_variable = { name = kk_step add = 0.1 }
+		}
+		save_scope_value_as = { name = kk_cattle value = var:kk_step }
+		set_variable = { name = kk_step value = 0 }
+		while = {
+			limit = {
+				var:kk_step < 50
+				production_of_trade_good_type = { target = trade_good_type:trade_good_meat value > var:kk_step }
+			}
+			change_variable = { name = kk_step add = 0.1 }
+		}
+		save_scope_value_as = { name = kk_meat value = var:kk_step }
+		remove_variable = kk_step
+	}
+	debug_log = "KK3 production (rounded up to 0.1): kk_cattle and kk_meat below"
+	debug_log_scopes = yes
+}
+if = {
+	limit = { NOT = { exists = global_var:kk_test_county } }
+	debug_log = "KK3 run kk2_pick_county.txt first"
+}
