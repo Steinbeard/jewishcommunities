@@ -10,6 +10,8 @@ namespace = kehillah_sheelah
 # =====================================================================
 #   .0001 The letter reaches the posek.
 #   .0002 The reply reaches the asking community.
+#   .0003 A player posek's further letters that year: answered by the court,
+#         reported as a notification.
 #   .0021 Slice 3: a strong tie offers the followed community's rite.
 # =====================================================================
 
@@ -377,5 +379,60 @@ kehillah_sheelah.0021 = {
 			}
 		}
 		ai_chance = { base = 50 }
+	}
+}
+# =====================================================================
+#   .0003 (2026-11-23, Daniel) A player posek's second or later letter in a
+#         year. No popup: the community's court answers on its own, from the
+#         sources where it can, and a Community News notification reports
+#         it with its effects. The asker still gets its reply (.0002), so
+#         ties form as usual.
+# =====================================================================
+kehillah_sheelah.0003 = {
+	type = character_event
+	hidden = yes
+
+	trigger = {
+		exists = var:kehillah_sheelah_pending_from
+		var:kehillah_sheelah_pending_from = { is_alive = yes }
+	}
+
+	immediate = {
+		save_scope_as = kehillah_sheelah_posek
+		var:kehillah_sheelah_pending_from = {
+			save_scope_as = kehillah_sheelah_asker
+			primary_title.var:kehillah_sheelah_follows ?= { save_scope_as = kehillah_sheelah_asker_follows }
+		}
+		if = {
+			limit = { kehillah_sheelah_can_cite_trigger = yes }
+			send_interface_message = {
+				type = msg_kehillah_community_news
+				title = kehillah_sheelah.0003.t
+				desc = kehillah_sheelah.0003.desc_sources
+				left_icon = scope:kehillah_sheelah_asker
+				kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_sheelah_careful_greatness }
+				add_learning_lifestyle_xp = 5
+				scope:kehillah_sheelah_asker = {
+					add_opinion = { target = root modifier = respect_opinion opinion = 20 }
+				}
+				kehillah_sheelah_tie_posek_tooltip_effect = yes
+			}
+			kehillah_sheelah_reply_effect = { QUALITY = 2 }
+		}
+		else = {
+			send_interface_message = {
+				type = msg_kehillah_community_news
+				title = kehillah_sheelah.0003.t
+				desc = kehillah_sheelah.0003.desc
+				left_icon = scope:kehillah_sheelah_asker
+				kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_sheelah_answer_greatness }
+				add_learning_lifestyle_xp = 3
+				scope:kehillah_sheelah_asker = {
+					add_opinion = { target = root modifier = respect_opinion opinion = 10 }
+				}
+				kehillah_sheelah_tie_posek_tooltip_effect = yes
+			}
+			kehillah_sheelah_reply_effect = { QUALITY = 1 }
+		}
 	}
 }

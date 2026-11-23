@@ -28,17 +28,39 @@ kehillah_sheelah_send_effect = {
 		1 = { save_scope_value_as = { name = kehillah_sheelah_case value = 13 } }
 		1 = { save_scope_value_as = { name = kehillah_sheelah_case value = 14 } }
 	}
-	# The caller has taken the gift from the asker (the interaction shows it;
-	# the AI pulse takes it); here it reaches the posek's community.
-	save_scope_value_as = { name = kehillah_sheelah_gift value = kehillah_sheelah_gift_value }
+	# 2026-11-23 (Daniel): the cost is prestige, taken by the caller (the
+	# interaction shows it; the AI pulse takes it). No gold changes hands.
 	scope:kehillah_sheelah_posek = {
-		add_gold = scope:kehillah_sheelah_gift
 		set_variable = { name = kehillah_sheelah_pending_from value = scope:kehillah_sheelah_asker days = kehillah_sheelah_pending_days }
 		set_variable = { name = kehillah_sheelah_case value = scope:kehillah_sheelah_case days = kehillah_sheelah_pending_days }
-		trigger_event = { id = kehillah_sheelah.0001 days = { 10 25 } }
+		# The posek's community remembers who has written to it; those
+		# communities write to it again a little more readily.
 		if = {
-			limit = { is_ai = no }
-			set_variable = { name = kehillah_sheelah_player_letter_recent value = yes days = kehillah_sheelah_player_letter_gap_days }
+			limit = {
+				exists = primary_title
+				exists = scope:kehillah_sheelah_asker.primary_title
+			}
+			primary_title = {
+				add_to_variable_list = { name = kehillah_sheelah_written_by target = scope:kehillah_sheelah_asker.primary_title }
+			}
+		}
+		# A player posek gets one letter a year as an event. Any further
+		# letter that year is answered by the community's court on its own,
+		# and reported as a notification (kehillah_sheelah.0003), so a famous
+		# community gathers followers without a stack of popups.
+		if = {
+			limit = {
+				is_ai = no
+				has_variable = kehillah_sheelah_player_letter_recent
+			}
+			trigger_event = { id = kehillah_sheelah.0003 days = { 10 25 } }
+		}
+		else = {
+			trigger_event = { id = kehillah_sheelah.0001 days = { 10 25 } }
+			if = {
+				limit = { is_ai = no }
+				set_variable = { name = kehillah_sheelah_player_letter_recent value = yes days = kehillah_sheelah_player_letter_gap_days }
+			}
 		}
 	}
 	kehillah_sheelah_soak_count_effect = { NAME = kehillah_sheelah_soak_letters }
@@ -231,7 +253,7 @@ kehillah_sheelah_ai_pulse_effect = {
 			is_ai = yes
 			kehillah_sheelah_can_ask_trigger = yes
 			NOT = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_flourishing_threshold } }
-			gold >= kehillah_sheelah_gift_value
+			prestige >= kehillah_sheelah_prestige_cost
 		}
 		save_scope_as = kehillah_sheelah_ai_asker
 		random = {
@@ -265,6 +287,25 @@ kehillah_sheelah_ai_pulse_effect = {
 						add = kehillah_sheelah_ai_tie_weight
 						scope:kehillah_sheelah_ai_asker.primary_title.var:kehillah_sheelah_follows ?= this
 					}
+					# 2026-11-23 (Daniel): a community it has written to before,
+					# a rabbi in the chair, and a leader whose study is learning.
+					modifier = {
+						add = kehillah_sheelah_ai_wrote_before_weight
+						is_target_in_variable_list = { name = kehillah_sheelah_written_by target = scope:kehillah_sheelah_ai_asker.primary_title }
+					}
+					modifier = {
+						add = kehillah_sheelah_ai_rabbi_leader_weight
+						holder = { has_trait = kehillah_rabbi_trait }
+					}
+					modifier = {
+						add = kehillah_sheelah_ai_scholar_focus_weight
+						holder = {
+							OR = {
+								has_focus = learning_scholarship_focus
+								has_focus = learning_theology_focus
+							}
+						}
+					}
 					modifier = {
 						add = kehillah_sheelah_ai_alma_mater_weight
 						OR = {
@@ -277,7 +318,7 @@ kehillah_sheelah_ai_pulse_effect = {
 			}
 			if = {
 				limit = { exists = scope:kehillah_sheelah_posek }
-				remove_short_term_gold = kehillah_sheelah_gift_value
+				add_prestige = { value = kehillah_sheelah_prestige_cost multiply = -1 }
 				kehillah_sheelah_send_effect = yes
 			}
 		}
