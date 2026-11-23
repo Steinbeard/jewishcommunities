@@ -661,3 +661,7 @@ Each entry is source-checked and xTiger-clean (beyond the known trade-good false
 needs the market supplies adds 5, and cattle joined them for kashrut communities
 ([kashrut spec](2026-11-23-kashrut.md) section 7). A missing good costs nothing; it was -15 each, which left Worms at
 -45 at the 1066 start.
+
+**2026-11-23 addendum to section 16, second:** the quarter's needs now follow vanilla's pattern. It asks for comforts and
+books (categories), wine for Kiddush, and cattle for kashrut. Cloth is dropped. See [the kashrut spec](2026-11-23-kashrut.md)
+section 8.
