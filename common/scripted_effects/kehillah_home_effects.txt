@@ -1,0 +1,198 @@
+# =====================================================================
+# THE HOME COMMUNITY (2026-11-23). docs/spec/2026-11-23-home-community.md.
+# The member's var:kehillah_home_community names the title; the title's
+# variable list kehillah_home_members lists its members.
+# =====================================================================
+
+# Scope: the member. TITLE: the new home. Leaves any old home first.
+kehillah_home_join_effect = {
+	save_scope_as = kehillah_home_member
+	$TITLE$ = { save_scope_as = kehillah_home_new }
+	custom_tooltip = kehillah_home_join_tt
+	hidden_effect = {
+		if = {
+			limit = {
+				exists = var:kehillah_home_community
+				NOT = { var:kehillah_home_community = scope:kehillah_home_new }
+			}
+			var:kehillah_home_community = {
+				remove_list_variable = { name = kehillah_home_members target = scope:kehillah_home_member }
+			}
+		}
+		set_variable = { name = kehillah_home_community value = scope:kehillah_home_new }
+		scope:kehillah_home_new = {
+			add_to_variable_list = { name = kehillah_home_members target = scope:kehillah_home_member }
+		}
+		remove_variable ?= kehillah_home_stay_title
+		remove_variable ?= kehillah_home_stay_seasons
+		scope:kehillah_home_new.holder = {
+			add_opinion = { target = scope:kehillah_home_member modifier = kehillah_home_member_opinion years = 2 }
+			if = {
+				limit = { is_ai = no }
+				send_interface_message = {
+					type = msg_kehillah_community_news
+					title = kehillah_home_msg_joined_t
+					desc = kehillah_home_msg_joined_leader
+					left_icon = scope:kehillah_home_member
+				}
+			}
+		}
+	}
+	debug_log = "kehillah_home_join_effect: a traveller takes a home community"
+	debug_log_scopes = yes
+}
+
+# Scope: the member. Drops the home.
+kehillah_home_leave_effect = {
+	save_scope_as = kehillah_home_member
+	var:kehillah_home_community ?= {
+		remove_list_variable = { name = kehillah_home_members target = scope:kehillah_home_member }
+	}
+	remove_variable ?= kehillah_home_community
+}
+
+# Scope: the member, joined automatically (a merchant's seat, an
+# adventurer's year). A notice for a player.
+kehillah_home_auto_join_effect = {
+	kehillah_home_join_effect = { TITLE = $TITLE$ }
+	if = {
+		limit = { is_ai = no }
+		send_interface_message = {
+			type = msg_kehillah_community_news
+			title = kehillah_home_msg_joined_t
+			desc = kehillah_home_msg_joined_member
+			left_icon = scope:kehillah_home_new.holder
+		}
+	}
+}
+
+# Scope: a Jewish merchant or adventurer, each season.
+kehillah_home_seasonal_effect = {
+	if = {
+		limit = { kehillah_home_traveller_trigger = yes }
+		save_scope_as = kehillah_home_traveller
+		# A merchant: the company's seat decides.
+		if = {
+			limit = {
+				government_has_flag = government_is_merchant
+				exists = domicile.domicile_location.county
+			}
+			random_in_global_list = {
+				variable = kehillah_registered_communities
+				limit = {
+					kehillah_home_title_in_county_trigger = {
+						MEMBER = scope:kehillah_home_traveller
+						COUNTY = scope:kehillah_home_traveller.domicile.domicile_location.county
+					}
+				}
+				save_scope_as = kehillah_home_here
+			}
+			if = {
+				limit = {
+					exists = scope:kehillah_home_here
+					NOT = { kehillah_home_is_home_trigger = { TITLE = scope:kehillah_home_here } }
+				}
+				kehillah_home_auto_join_effect = { TITLE = scope:kehillah_home_here }
+			}
+		}
+		# An adventurer: a year in one community's county.
+		else_if = {
+			limit = { exists = location.county }
+			random_in_global_list = {
+				variable = kehillah_registered_communities
+				limit = {
+					kehillah_home_title_in_county_trigger = {
+						MEMBER = scope:kehillah_home_traveller
+						COUNTY = scope:kehillah_home_traveller.location.county
+					}
+				}
+				save_scope_as = kehillah_home_here
+			}
+			if = {
+				limit = {
+					exists = scope:kehillah_home_here
+					NOT = { kehillah_home_is_home_trigger = { TITLE = scope:kehillah_home_here } }
+				}
+				if = {
+					limit = { var:kehillah_home_stay_title ?= scope:kehillah_home_here }
+					change_variable = { name = kehillah_home_stay_seasons add = 1 }
+				}
+				else = {
+					set_variable = { name = kehillah_home_stay_title value = scope:kehillah_home_here }
+					set_variable = { name = kehillah_home_stay_seasons value = 1 }
+				}
+				if = {
+					limit = { var:kehillah_home_stay_seasons >= kehillah_home_stay_seasons }
+					kehillah_home_auto_join_effect = { TITLE = scope:kehillah_home_here }
+				}
+			}
+		}
+	}
+}
+
+# Scope: a member, yearly. Drop an unsound home; otherwise pay the tithe.
+kehillah_home_yearly_effect = {
+	if = {
+		limit = { exists = var:kehillah_home_community }
+		save_scope_as = kehillah_home_member
+		if = {
+			limit = { NOT = { kehillah_home_still_valid_trigger = { MEMBER = scope:kehillah_home_member } } }
+			kehillah_home_leave_effect = yes
+		}
+		else = {
+			save_scope_value_as = { name = kehillah_home_tithe value = kehillah_home_tithe_value }
+			save_scope_value_as = { name = kehillah_home_reward value = kehillah_home_tithe_reward_value }
+			var:kehillah_home_community.holder = { save_scope_as = kehillah_home_leader }
+			if = {
+				limit = { gold >= scope:kehillah_home_tithe }
+				if = {
+					limit = { is_ai = no }
+					send_interface_message = {
+						type = msg_kehillah_community_news
+						title = kehillah_home_msg_tithe_t
+						desc = kehillah_home_msg_tithe
+						left_icon = scope:kehillah_home_leader
+						remove_short_term_gold = scope:kehillah_home_tithe
+						add_prestige = scope:kehillah_home_reward
+						add_piety = scope:kehillah_home_reward
+					}
+				}
+				else = {
+					remove_short_term_gold = scope:kehillah_home_tithe
+					add_prestige = scope:kehillah_home_reward
+					add_piety = scope:kehillah_home_reward
+				}
+				scope:kehillah_home_leader = {
+					add_gold = scope:kehillah_home_tithe
+					add_opinion = { target = scope:kehillah_home_member modifier = kehillah_home_member_opinion years = 2 }
+				}
+			}
+		}
+	}
+}
+
+# Scope: a Kehillah leader, yearly. Drop dead or departed members from the
+# community's list.
+kehillah_home_prune_members_effect = {
+	primary_title ?= {
+		save_scope_as = kehillah_home_prune_title
+		every_in_list = {
+			variable = kehillah_home_members
+			limit = {
+				NOT = {
+					AND = {
+						is_alive = yes
+						var:kehillah_home_community ?= scope:kehillah_home_prune_title
+					}
+				}
+			}
+			add_to_temporary_list = kehillah_home_drop
+		}
+		every_in_list = {
+			list = kehillah_home_drop
+			scope:kehillah_home_prune_title = {
+				remove_list_variable = { name = kehillah_home_members target = prev }
+			}
+		}
+	}
+}
