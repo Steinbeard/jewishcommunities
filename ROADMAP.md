@@ -1,6 +1,6 @@
 # Roadmap
 
-**Synagogue domicile art BUILT 2026-11-23; source/xTiger checked, live rendering pending:** the Quarter's central Synagogue has original painted Western and Mediterranean/Middle Eastern sprites, with matching CK3 masks, across all five tiers. The other building families retain their current art. See [the art build note](docs/implementation/2026-11-23-synagogue-domicile-art.md).
+**Quarter domicile art UPDATED 2026-11-23; source/xTiger checked, live rendering pending:** original Western and Mediterranean/Middle Eastern parchment-style backgrounds frame the Quarter; flatter regional Synagogue sprites and matching masks occupy its main slot across all five tiers. Terrain foregrounds and ambience remain; East Asian seats and other building families retain vanilla art. See [the art build note and previews](docs/implementation/2026-11-23-synagogue-domicile-art.md).
 
 **Private pre-alpha release path ADDED 2026-11-16; not yet uploaded:** `scripts/kehillah_build_release.py` stages a clean, player-only copy as the sibling mod `jewishcommunities_prealpha` (about 215 MB, no .git or docs). xTiger gives it the same baseline as the dev mod. The Steam steps (upload, then set visibility to Unlisted), the tester guide, the Workshop description and a re-shoot list are in [docs/release/](docs/release/steam-private-upload.md). Needs a smoke-test boot of the staged copy before the first upload.
 

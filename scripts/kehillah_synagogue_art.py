@@ -20,7 +20,7 @@ MAX_HEIGHT = 345
 
 
 def build(region: str) -> None:
-    name = f"kehillah_synagogue_{region}"
+    name = f"kehillah_synagogue_{region}_v2"
     source = Image.open(SOURCE / f"{name}.png").convert("RGBA")
     alpha = source.getchannel("A")
     bounds = alpha.point(lambda value: 255 if value > 8 else 0).getbbox()
