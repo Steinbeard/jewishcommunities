@@ -1,6 +1,6 @@
 # Bet Din docket research integration
 
-**Status: two cases scripted 2026-11-23; source and xTiger checked; live hearings pending. The remaining workbook cases are research, not implemented.**
+**Status: three cases scripted 2026-11-23; source and xTiger checked; live hearings pending. The remaining workbook cases are research, not implemented.**
 
 The [Mishnah-audited workbook](../research/bet-din-docket/CK3_Bet_Din_Docket_250_Cases_Mishnah_Audited.xlsx) is the exact file Daniel shared from his ChatGPT Library. Its SHA-256 is `BB099DF4FE3AFE3F5F688F0F69DDBA3220144D3FCB16FE16AA36456BD8C6A1F4`. It contains 250 proposed cases, 1,250 option prototypes, and cross-references to the Mishnah. The workbook's own **Ruling Options** sheet labels every choice `DESIGN PROTOTYPE / NOT HALAKHICALLY APPROVED`; **Research Audit** leaves case-specific medieval application and editorial sign-off open. It is a research source, not executable Paradox script.
 
@@ -20,11 +20,17 @@ Case 16 adapts the [1156 Geniza record Yevr.-Arab. I 1700.29](https://geniza.pri
 
 [Mishnah Bava Batra 8:1](https://www.sefaria.org/Mishnah_Bava_Batra.8.1) is a relevant inheritance starting point, but it does not establish this estate's accounts or the father's exact maintenance direction. The existing Nezikin mastery system supplies a citation path; the workbook's tractate-specific `mastery_bavli_bava_batra` bonus is not implemented. The event uses the same bench, tally, party responses, pillar outcomes, log and docket advance as the other cases.
 
+## Third case: BD-020, The Rented House of the Orphans
+
+Case 17 adapts [Geniza fragment T-S 12.554](https://geniza.princeton.edu/en/documents/7265/). Its date is not preserved; the proposed 1100–1138 window comes from the workbook and the identified scribe's dated career, not from a date on this fragment. The surviving text describes the court securing orphans' rent from an inherited house with a pledged sugar workshop and copies of the agreement. It does not document the workbook's claim that a former partner contested the rent. The event instead presents a proposed lease with a fictional hidden fact: whether the guarantor has clear title to the offered workshop. The court can accept the pledge immediately, verify and record it, or seek a different tenant. An unverified, defective pledge lowers the first ruling's quality; rejecting sound security delays the orphans' rent. Randomly selected litigants represent the guardians and proposed tenant.
+
+The workbook links [Mishnah Bava Metzia 8:8](https://www.sefaria.org/Mishnah_Bava_Metzia.8.8), a lease-duration analogy that does not itself decide whether the guarantor owns the security. Case 17 uses the existing Nezikin citation and bench path. Its pillar tradeoff gives immediate rent a Prosperity gain and charges for verification or vacancy; the legal-quality tally separately reflects the hidden security fact.
+
 ## Verification and follow-up
 
 - The isolated branch started from `origin/master`; the shared human-testing checkout and its unrelated edits were left intact.
-- xTiger's pre-change baseline on CK3 1.21.0.3 was 0 fatal, 216 errors, 829 warnings. The 1.20-targeted validator reports known version-mismatch findings. The final run after both cases matched the baseline exactly, with no new findings. An event-file encoding warning and a domicile-scope warning were corrected during the first pass.
-- The diagnostic console event `kehillah_bet_din_expansion_debug.1` now reports cases 15 and 16 and their hidden facts.
+- xTiger's pre-change baseline on CK3 1.21.0.3 was 0 fatal, 216 errors, 829 warnings. The 1.20-targeted validator reports known version-mismatch findings. The final run after all three cases matched the baseline exactly, with no new findings. An event-file encoding warning and a domicile-scope warning were corrected during the first pass.
+- The diagnostic console event `kehillah_bet_din_expansion_debug.1` now reports cases 15–17 and their hidden facts.
 - Luna live-game checks remain pending: draw each case in a qualifying community, confirm the two co-judges and resolution fire once, check both hidden-fact outcomes and all three directions, inspect the source tooltip and activity log, and compare error.log to its boot baseline. No other model should substitute for Luna under AGENTS.md.
 
-The next implementation unit should add a Zeraim case from a researched, region-specific premise and then review tractate-level mastery as a separate system decision. The workbook's BD-221 is broadly themed but its **Research Audit** calls the region a placeholder and says to select and research a real province before release. It is not a ready-made cross-regional event. The 248 remaining proposed cases need case-by-case legal and mechanical review, not bulk generation.
+The next implementation unit should add a Zeraim case from a researched, region-specific premise and then review tractate-level mastery as a separate system decision. The workbook's BD-221 is broadly themed but its **Research Audit** calls the region a placeholder and says to select and research a real province before release. It is not a ready-made cross-regional event. The 247 remaining proposed cases need case-by-case legal and mechanical review, not bulk generation.
