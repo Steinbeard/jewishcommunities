@@ -1,6 +1,6 @@
 # Bet Din docket research integration
 
-**Status: four cases scripted 2026-11-23; source and xTiger checked; live hearings pending. The remaining workbook cases are research, not implemented.**
+**Status: seven cases scripted 2026-11-23; xTiger checked; live hearings pending. The remaining workbook cases are research, not implemented.**
 
 The [Mishnah-audited workbook](../research/bet-din-docket/CK3_Bet_Din_Docket_250_Cases_Mishnah_Audited.xlsx) is the exact file Daniel shared from his ChatGPT Library. Its SHA-256 is `BB099DF4FE3AFE3F5F688F0F69DDBA3220144D3FCB16FE16AA36456BD8C6A1F4`. It contains 250 proposed cases, 1,250 option prototypes, and cross-references to the Mishnah. The workbook's own **Ruling Options** sheet labels every choice `DESIGN PROTOTYPE / NOT HALAKHICALLY APPROVED`; **Research Audit** leaves case-specific medieval application and editorial sign-off open. It is a research source, not executable Paradox script.
 
@@ -30,11 +30,21 @@ The workbook links [Mishnah Bava Metzia 8:8](https://www.sefaria.org/Mishnah_Bav
 
 Case 18 uses the workbook's fictional premise without making a specific historical claim. A traveler needs a meal; the collector cannot find the donor's terms before dusk. The court can spend from the disputed fund immediately, feed the traveler from general stores while checking the deed, or preserve the fund and seek voluntary gifts. A hidden fact determines whether the fund is restricted to local households. The first choice risks violating a restriction; the third delays help, especially when the fund could lawfully have paid. The middle choice protects both needs at a modest Prosperity cost. An existing hekdesh building gates the case. It supplies the docket's first Zeraim citation via [Mishnah Peah 8:7](https://www.sefaria.org/Mishnah_Peah.8.7), while the donor's actual terms remain a separate fact.
 
+## Authored batch: BD-021, BD-031 and BD-049
+
+Cases 19–21 use the common three-judge flow through [the batch generator](../../scripts/kehillah_generate_docket_batch.py), with committed event and localization files. The generator removes repetitive event scaffolding but keeps each scene, ruling, tooltip, discovered fact, outcome and log in an authored profile. The cases are fictional adaptations of workbook premises, with no claim that the generated outcome reproduces a historical court decision.
+
+- **The Baker's Missing Capital (19, BD-021):** a supplier's debt and incomplete partnership ledger. Immediate payment protects the bakery at a high communal cost but risks charging the wrong partner; an audit delays final allocation; an equal split closes the venture cheaply but may ignore clear receipts. Drawn in northeastern Africa in 1100–1200, with a Nezikin citation.
+- **The Taxpayer Between Two Communities (20, BD-031):** a newly arrived household may have paid the same levy before moving. The court can cover the new town's claim now, fund urgent costs while seeking the receipt, or settle for less. A real prior receipt makes the full claim unfair; no receipt makes the cheap settlement a shortfall. Drawn in Iberia in 1335–1360, with a Nezikin citation.
+- **The Scholar Who Changed the Prayer Rite (21, BD-049):** the congregation may welcome or oppose a visiting scholar's proposed reading. Funding immediate change risks division; trial services cost time and resources; preserving the inherited reading may discard a welcome reform. The fictional hearing has no regional gate and uses a Zeraim citation.
+
+All three use the same base tally and Prosperity costs (8 for immediate action, 4 for inquiry, 2 for the inexpensive settlement). A hidden fact penalizes immediate action by 6 when its premise fails; the cheap settlement loses 5 total tally when the contrary fact makes it unnecessary. This shared scale is deliberate for a small batch and should be compared in live play before expanding it. The two judges' review and source options still add their normal tally.
+
 ## Verification and follow-up
 
 - The isolated branch started from `origin/master`; the shared human-testing checkout and its unrelated edits were left intact.
-- xTiger's pre-change baseline on CK3 1.21.0.3 was 0 fatal, 216 errors, 829 warnings. The 1.20-targeted validator reports known version-mismatch findings. The final run after all four cases matched the baseline exactly, with no new findings. An event-file encoding warning and a domicile-scope warning were corrected during the first pass.
-- The diagnostic console event `kehillah_bet_din_expansion_debug.1` now reports cases 15–18 and their hidden facts.
+- xTiger's pre-change baseline on CK3 1.21.0.3 was 0 fatal, 216 errors, 829 warnings. The 1.20-targeted validator reports known version-mismatch findings. The final run after all seven cases matched the baseline exactly, with no new findings. An event-file encoding warning and a domicile-scope warning were corrected during the first pass.
+- The diagnostic console event `kehillah_bet_din_expansion_debug.1` now reports cases 15–21 and their hidden facts.
 - Luna live-game checks remain pending: draw each case in a qualifying community, confirm the two co-judges and resolution fire once, check both hidden-fact outcomes and all three directions, inspect the source tooltip and activity log, and compare error.log to its boot baseline. No other model should substitute for Luna under AGENTS.md.
 
-The next implementation unit should review tractate-level mastery as a separate system decision and continue turning the workbook's scenarios into distinct playable hearings. Case 18 uses BD-221's broad premise as fictional game content, without claiming a real medieval court record or universal regional rule. The 246 remaining proposed cases need writing and mechanical review, not bulk transcription of the workbook's repeated option templates.
+The next implementation unit should continue turning the workbook's scenarios into distinct playable hearings. The 243 remaining proposed cases need writing and mechanical review, not transcription of the workbook's repeated option templates.
