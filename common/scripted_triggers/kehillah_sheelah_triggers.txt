@@ -166,3 +166,41 @@ kehillah_sheelah_is_leader_trigger = {
 	government_has_flag = government_is_kehillah
 	exists = primary_title
 }
+
+# ---------------------------------------------------------------------
+# Slices 2 and 3 (2026-11-22): "follows the rulings of".
+# ---------------------------------------------------------------------
+# Scope: a Kehillah leader. LEADER: another leader. Does our community
+# follow theirs?
+kehillah_sheelah_follows_leader_trigger = {
+	exists = primary_title
+	exists = $LEADER$.primary_title
+	primary_title.var:kehillah_sheelah_follows ?= $LEADER$.primary_title
+}
+
+# Scope: a community title. Is its tie still sound: the followed community
+# led by a leader of the follower's faith?
+kehillah_sheelah_tie_sound_trigger = {
+	exists = var:kehillah_sheelah_follows
+	exists = holder
+	var:kehillah_sheelah_follows = {
+		exists = holder
+		holder = { government_has_flag = government_is_kehillah }
+	}
+	holder.faith = var:kehillah_sheelah_follows.holder.faith
+}
+
+# Scope: a Kehillah leader. Is the rite of the community ours follows
+# offered to us now? A strong, sound tie to a community of another rite of
+# our faith, and no offer within the last ten years.
+kehillah_sheelah_rite_pull_trigger = {
+	kehillah_sheelah_is_leader_trigger = yes
+	primary_title = {
+		kehillah_sheelah_tie_sound_trigger = yes
+		var:kehillah_sheelah_follows_strength >= kehillah_sheelah_tie_strong
+		NOT = { has_variable = kehillah_sheelah_rite_pull_cooldown }
+	}
+	exists = rite
+	exists = primary_title.var:kehillah_sheelah_follows.holder.rite
+	NOT = { rite = primary_title.var:kehillah_sheelah_follows.holder.rite }
+}

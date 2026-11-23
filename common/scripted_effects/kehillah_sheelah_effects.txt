@@ -54,8 +54,148 @@ kehillah_sheelah_reply_effect = {
 		set_variable = { name = kehillah_sheelah_reply_quality value = $QUALITY$ days = kehillah_sheelah_pending_days }
 		trigger_event = { id = kehillah_sheelah.0002 days = { 10 25 } }
 	}
+	# Slice 2 (2026-11-22): an answer draws the asking community toward ours,
+	# and counts as a responsum answered (the record the Compile Responsa
+	# decision reads).
+	save_scope_value_as = { name = kehillah_sheelah_quality value = $QUALITY$ }
+	if = {
+		limit = {
+			scope:kehillah_sheelah_quality >= 1
+			exists = primary_title
+			exists = scope:kehillah_sheelah_asker.primary_title
+		}
+		kehillah_responsa_count_answer_effect = yes
+		primary_title = { save_scope_as = kehillah_sheelah_followed_title }
+		scope:kehillah_sheelah_asker.primary_title = {
+			if = {
+				limit = { scope:kehillah_sheelah_quality >= 2 }
+				kehillah_sheelah_tie_strengthen_effect = { FOLLOWED = scope:kehillah_sheelah_followed_title GAIN = kehillah_sheelah_tie_careful_gain }
+			}
+			else = {
+				kehillah_sheelah_tie_strengthen_effect = { FOLLOWED = scope:kehillah_sheelah_followed_title GAIN = kehillah_sheelah_tie_answer_gain }
+			}
+		}
+	}
 	remove_variable = kehillah_sheelah_pending_from
 	remove_variable = kehillah_sheelah_case
+}
+
+# =====================================================================
+# SLICE 2: "follows the rulings of" (2026-11-22). Spec sections 5 and 12.
+# One tie per community, on the asking title. A letter answered by the
+# followed community strengthens it; one answered by another community
+# weakens it, and replaces it once it is spent, so only the strongest tie
+# counts.
+# =====================================================================
+
+# Scope: the follower's title. FOLLOWED: the answering community's title.
+# GAIN: a script value.
+kehillah_sheelah_tie_strengthen_effect = {
+	if = {
+		limit = { var:kehillah_sheelah_follows ?= $FOLLOWED$ }
+		change_variable = { name = kehillah_sheelah_follows_strength add = $GAIN$ }
+		clamp_variable = { name = kehillah_sheelah_follows_strength min = 0 max = kehillah_sheelah_tie_max }
+	}
+	else_if = {
+		limit = { exists = var:kehillah_sheelah_follows }
+		change_variable = { name = kehillah_sheelah_follows_strength subtract = $GAIN$ }
+		if = {
+			limit = { var:kehillah_sheelah_follows_strength <= 0 }
+			set_variable = { name = kehillah_sheelah_follows value = $FOLLOWED$ }
+			set_variable = { name = kehillah_sheelah_follows_strength value = $GAIN$ }
+		}
+	}
+	else = {
+		set_variable = { name = kehillah_sheelah_follows value = $FOLLOWED$ }
+		set_variable = { name = kehillah_sheelah_follows_strength value = $GAIN$ }
+	}
+	debug_log = "kehillah_sheelah_tie_strengthen_effect: a tie changes"
+	debug_log_scopes = yes
+}
+
+# Scope: the asking leader, in the reply (kehillah_sheelah.0002). The tie
+# changed when the posek answered; this shows where it now stands.
+# scope:kds_author answered; scope:kehillah_sheelah_now_followed is whom we
+# now follow.
+kehillah_sheelah_tie_reply_tooltip_effect = {
+	if = {
+		limit = { scope:kehillah_sheelah_now_followed ?= scope:kds_author.primary_title }
+		custom_tooltip = kehillah_sheelah_tie_follows_tt
+	}
+	else_if = {
+		limit = { exists = scope:kehillah_sheelah_now_followed }
+		custom_tooltip = kehillah_sheelah_tie_other_tt
+	}
+}
+
+# Scope: a community title.
+kehillah_sheelah_tie_clear_effect = {
+	remove_variable = kehillah_sheelah_follows
+	remove_variable = kehillah_sheelah_follows_strength
+}
+
+# Scope: a Kehillah leader (yearly, player or AI). The tie fades, and is
+# dropped once spent or unsound. A strong tie to another rite of the faith
+# brings the rite-pull event (slice 3).
+kehillah_sheelah_tie_yearly_effect = {
+	primary_title ?= {
+		if = {
+			limit = { exists = var:kehillah_sheelah_follows }
+			if = {
+				limit = { NOT = { kehillah_sheelah_tie_sound_trigger = yes } }
+				kehillah_sheelah_tie_clear_effect = yes
+			}
+			else = {
+				change_variable = { name = kehillah_sheelah_follows_strength subtract = kehillah_sheelah_tie_fade }
+				if = {
+					limit = { var:kehillah_sheelah_follows_strength <= 0 }
+					kehillah_sheelah_tie_clear_effect = yes
+				}
+			}
+		}
+	}
+	if = {
+		limit = { kehillah_sheelah_rite_pull_trigger = yes }
+		primary_title = {
+			set_variable = { name = kehillah_sheelah_rite_pull_cooldown value = yes days = kehillah_sheelah_rite_pull_cooldown_days }
+		}
+		trigger_event = { id = kehillah_sheelah.0021 days = { 1 90 } }
+	}
+}
+
+# =====================================================================
+# SLICE 3: rite pull (2026-11-22). Scope: the follower's leader, in
+# kehillah_sheelah.0021. scope:kehillah_rite_pull_leader leads the followed
+# community. The leader, and the courtiers of his faith, take up its rite.
+# =====================================================================
+kehillah_sheelah_adopt_rite_effect = {
+	save_scope_as = kehillah_rite_pull_adopter
+	set_character_rite = scope:kehillah_rite_pull_leader.rite
+	add_known_rite = scope:kehillah_rite_pull_leader.rite
+	custom_tooltip = kehillah_sheelah_rite_court_follows_tt
+	hidden_effect = {
+		every_courtier = {
+			limit = {
+				faith = scope:kehillah_rite_pull_adopter.faith
+				NOT = { rite = scope:kehillah_rite_pull_leader.rite }
+			}
+			set_character_rite = scope:kehillah_rite_pull_leader.rite
+		}
+	}
+	kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_sheelah_rite_adopt_stability }
+	scope:kehillah_rite_pull_leader = {
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_sheelah_rite_adopted_greatness }
+		if = {
+			limit = { is_ai = no }
+			send_interface_toast = {
+				type = event_toast_effect_good
+				title = kehillah_sheelah_rite_adopted_toast
+				left_icon = scope:kehillah_rite_pull_adopter
+			}
+		}
+	}
+	debug_log = "kehillah_sheelah_adopt_rite_effect: a community takes up another's rite"
+	debug_log_scopes = yes
 }
 
 # Scope: an AI Kehillah leader (yearly). Below Flourishing Greatness, now and
@@ -94,6 +234,19 @@ kehillah_sheelah_ai_pulse_effect = {
 					modifier = {
 						add = 1
 						holder.rite ?= scope:kehillah_sheelah_ai_asker.rite
+					}
+					# Slice 2 (2026-11-22): the community it already follows, and
+					# the yeshiva where its leader or Dayyan studied.
+					modifier = {
+						add = kehillah_sheelah_ai_tie_weight
+						scope:kehillah_sheelah_ai_asker.primary_title.var:kehillah_sheelah_follows ?= this
+					}
+					modifier = {
+						add = kehillah_sheelah_ai_alma_mater_weight
+						OR = {
+							scope:kehillah_sheelah_ai_asker.var:kehillah_alma_mater ?= this
+							scope:kehillah_sheelah_ai_asker.cp:councillor_court_chaplain.var:kehillah_alma_mater ?= this
+						}
 					}
 				}
 				holder = { save_scope_as = kehillah_sheelah_posek }

@@ -10,6 +10,7 @@
 # =====================================================================
 #   .0001 The letter reaches the posek.
 #   .0002 The reply reaches the asking community.
+#   .0021 Slice 3: a strong tie offers the followed community's rite.
 # =====================================================================
 
 kehillah_sheelah.0001 = {
@@ -59,6 +60,7 @@ kehillah_sheelah.0001 = {
 			add_opinion = { target = root modifier = respect_opinion opinion = 10 }
 		}
 		add_opinion = { target = scope:kehillah_sheelah_asker modifier = kehillah_din_consulted_opinion }
+		custom_tooltip = kehillah_sheelah_tie_gain_posek_tt
 		kehillah_sheelah_reply_effect = { QUALITY = 1 }
 		ai_chance = { base = 60 }
 	}
@@ -73,6 +75,7 @@ kehillah_sheelah.0001 = {
 			add_opinion = { target = root modifier = respect_opinion opinion = 20 }
 		}
 		add_opinion = { target = scope:kehillah_sheelah_asker modifier = kehillah_din_consulted_opinion }
+		custom_tooltip = kehillah_sheelah_tie_gain_posek_tt
 		kehillah_sheelah_reply_effect = { QUALITY = 2 }
 		ai_chance = { base = 80 }
 	}
@@ -132,17 +135,20 @@ kehillah_sheelah.0002 = {
 
 	immediate = {
 		var:kehillah_sheelah_reply_from = { save_scope_as = kds_author }
+		primary_title.var:kehillah_sheelah_follows ?= { save_scope_as = kehillah_sheelah_now_followed }
 	}
 
 	option = {
 		name = kehillah_sheelah.0002.a
 		trigger = { var:kehillah_sheelah_reply_quality = 2 }
 		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_sheelah_careful_stability }
+		kehillah_sheelah_tie_reply_tooltip_effect = yes
 	}
 	option = {
 		name = kehillah_sheelah.0002.a
 		trigger = { var:kehillah_sheelah_reply_quality = 1 }
 		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_sheelah_answer_stability }
+		kehillah_sheelah_tie_reply_tooltip_effect = yes
 	}
 	option = {
 		name = kehillah_sheelah.0002.b
@@ -284,5 +290,91 @@ kehillah_sheelah.0012 = {
 		remove_variable = kehillah_study_help_reply_from
 		remove_variable = kehillah_study_help_reply_quality
 		remove_variable = kehillah_study_help_work
+	}
+}
+
+# =====================================================================
+# SLICE 3: rite pull (2026-11-22). Spec sections 5 and 12.
+#   .0021 A strong tie to a community of another rite of our faith: take up
+#         its customs, or keep our own. Fired by kehillah_sheelah_tie_yearly_effect,
+#         at most once in ten years. The AI weighs the tie's strength against
+#         its own Stability.
+# =====================================================================
+
+kehillah_sheelah.0021 = {
+	type = character_event
+	title = kehillah_sheelah.0021.t
+	desc = kehillah_sheelah.0021.desc
+	theme = faith
+	left_portrait = { character = root animation = thinking }
+	right_portrait = { character = scope:kehillah_rite_pull_leader animation = personality_rational }
+
+	trigger = {
+		kehillah_sheelah_is_leader_trigger = yes
+		primary_title = { kehillah_sheelah_tie_sound_trigger = yes }
+		exists = primary_title.var:kehillah_sheelah_follows.holder.rite
+		NOT = { rite = primary_title.var:kehillah_sheelah_follows.holder.rite }
+	}
+
+	immediate = {
+		primary_title.var:kehillah_sheelah_follows = {
+			save_scope_as = kehillah_rite_pull_title
+			holder = { save_scope_as = kehillah_rite_pull_leader }
+		}
+	}
+
+	# Take up their customs.
+	option = {
+		name = kehillah_sheelah.0021.a
+		kehillah_sheelah_adopt_rite_effect = yes
+		ai_chance = {
+			base = 30
+			modifier = {
+				add = 20
+				primary_title.var:kehillah_sheelah_follows_strength >= 8
+			}
+			modifier = {
+				add = 20
+				primary_title.var:kehillah_sheelah_follows_strength >= 10
+			}
+			# A settled community keeps its customs; a troubled one looks
+			# to the authority it already follows.
+			modifier = {
+				add = -15
+				kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_stability THRESHOLD = kehillah_band_flourishing_threshold }
+			}
+			modifier = {
+				add = -15
+				kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_stability THRESHOLD = kehillah_band_legendary_threshold }
+			}
+			modifier = {
+				add = 15
+				NOT = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_stability THRESHOLD = kehillah_band_healthy_threshold } }
+			}
+			modifier = {
+				add = 15
+				NOT = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_stability THRESHOLD = kehillah_band_strained_threshold } }
+			}
+			modifier = { add = -20 has_trait = stubborn }
+			modifier = { add = -20 has_trait = zealous }
+			modifier = { add = 10 has_trait = humble }
+			min = 0
+		}
+	}
+
+	# Keep our own.
+	option = {
+		name = kehillah_sheelah.0021.b
+		custom_tooltip = kehillah_sheelah.0021.b.tt
+		hidden_effect = {
+			primary_title = {
+				change_variable = { name = kehillah_sheelah_follows_strength subtract = kehillah_sheelah_rite_pull_refusal_loss }
+				if = {
+					limit = { var:kehillah_sheelah_follows_strength <= 0 }
+					kehillah_sheelah_tie_clear_effect = yes
+				}
+			}
+		}
+		ai_chance = { base = 50 }
 	}
 }
