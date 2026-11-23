@@ -31,8 +31,8 @@ BOUNDS = {
 
 def build(family: str, region: str, stage: int) -> None:
     source_name = (
-        f"kehillah_synagogue_{region}_v2"
-        if family == "synagogue" and stage == 1
+        f"kehillah_{family}_{region}_s{stage}_v3"
+        if family in ("synagogue", "beit_midrash")
         else f"kehillah_{family}_{region}_s{stage}"
     )
     output_name = f"kehillah_{family}_{region}_s{stage}"
