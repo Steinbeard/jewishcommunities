@@ -4,6 +4,7 @@ Run from the mod root. The prose below is the source for this batch; generated
 files are committed so the game does not depend on Python or this script.
 """
 from pathlib import Path
+from kehillah_docket_batch10_data import EXTRA_CASES
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = (ROOT / "events/kehillah_bet_din_stranger_aid_events.txt").read_text(encoding="utf-8-sig")
@@ -94,12 +95,14 @@ CASES = [
          one="Communal reserves cover the claim at a large Prosperity cost.", two="Tracing the cargo and paying an advance cost some Prosperity.", three="Enforcement costs less but may punish an honest loss.",
          log="[CHARACTER.GetTitledFirstName] ruled on [TARGET_CHARACTER.GetFirstName]'s caravan accounting claim."),
 ]
+CASES.extend(EXTRA_CASES)
 
 for case in CASES:
     n = case["n"]
     s = TEMPLATE.replace("0181", f"0{n}1").replace("0182", f"0{n}2").replace("0183", f"0{n}3").replace("0184", f"0{n}4")
     s = s.replace("case18", f"case{n}").replace("CASE = 18", f"CASE = {n}").replace("= 18", f"= {n}").replace("_18", f"_{n}")
     s = s.replace("restriction", case["flag"])
+    s = s.replace("kehillah_var_prosperity", f"kehillah_var_{case.get('pillar', 'prosperity')}")
     s = s.replace(".restricted", ".fact_true").replace(".unrestricted", ".fact_false")
     s = s.replace("# The traveler needs food regardless of whether this particular fund\n\t\t# is restricted. An unrestricted meal is the safe middle course.",
                   "# The hidden fact changes the risk of the first and third rulings.\n\t\t# The investigation remains the dependable, costlier middle course.")
@@ -116,7 +119,7 @@ for case in CASES:
         f"{p}1.c": case["c"], f"{p}1.c.tt": case["c_tt"],
         f"kehillah_din_source_{n}": case["source"], f"kehillah_din_source_{n}_tt": case["source_tt"],
         f"kehillah_din_combo_{n}": case["combo"], f"kehillah_din_combo_{n}_tt": case["combo_tt"],
-        f"{p}4.t": "The Court Records Its Ruling", f"{p}4.desc": case["scene"],
+        f"{p}4.t": "The Court Records Its Ruling", f"{p}4.desc": case.get("decision_desc", "The parties return to hear the court's ruling."),
         f"{p}4.outcome_1": case["out1"], f"{p}4.outcome_2": case["out2"], f"{p}4.outcome_3": case["out3"],
         f"{p}4.fact_true": case["true"], f"{p}4.fact_false": case["false"],
         f"{p}4.quality_great": "$kehillah_bet_din.0083.quality_great$",

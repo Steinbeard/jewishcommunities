@@ -1,6 +1,6 @@
 # Bet Din docket research integration
 
-**Status: ten cases scripted 2026-11-23; xTiger checked; live hearings pending. The remaining workbook cases are research, not implemented.**
+**Status: twenty cases scripted 2026-11-23; xTiger checked; live hearings pending. The remaining workbook cases are research, not implemented.**
 
 The [Mishnah-audited workbook](../research/bet-din-docket/CK3_Bet_Din_Docket_250_Cases_Mishnah_Audited.xlsx) is the exact file Daniel shared from his ChatGPT Library. Its SHA-256 is `BB099DF4FE3AFE3F5F688F0F69DDBA3220144D3FCB16FE16AA36456BD8C6A1F4`. It contains 250 proposed cases, 1,250 option prototypes, and cross-references to the Mishnah. The workbook's own **Ruling Options** sheet labels every choice `DESIGN PROTOTYPE / NOT HALAKHICALLY APPROVED`; **Research Audit** leaves case-specific medieval application and editorial sign-off open. It is a research source, not executable Paradox script.
 
@@ -44,11 +44,17 @@ All three use the same base tally and Prosperity costs (8 for immediate action, 
 
 The same generator now emits cases 22–24, each with its own authored scene and decisions. **The Synagogue Roof and the Sacred Fund** asks whether a leaking roof may be repaired from money a donor may have restricted to poor relief; a temporary patch and deed search preserve both needs at a cost. **The Child's Maintenance After Divorce** weighs a father's proposed weekly payment against the child's needs and possible hidden income; an interim payment with an accounts review is the middle course. **The Caravan That Returned Empty** pits an agent's account of a failed journey against an investor's suspicion of concealed sales; checking port receipts costs the court time and money. The hidden fact in each case changes the quality of the quick ruling and the cheap final settlement. Their source orders are Moed, Nashim and Nezikin respectively. They use the same numerical tally scale as cases 19–21, pending live balance review.
 
+## Ten-case writing and balance batch: BD-007, 013, 025, 033–035, 037, 040, 041, 045
+
+Cases 25–34 cover a wife's property and a creditor, an uncle's estate account, a loan copied in two languages, a courtier's tax exemption, a parnas election, a schoolmaster's wages, two congregations sharing a synagogue, refugee families, a tanner's runoff, and a rumor against a slaughterer. The authored scenes, choices, evidence reveals, and tooltip prose live in [`kehillah_docket_batch10_data.py`](../../scripts/kehillah_docket_batch10_data.py); the generated CK3 event and localization files are committed. [`kehillah_wire_docket_batch10.py`](../../scripts/kehillah_wire_docket_batch10.py) adds their draw, citation, bench, cleanup and debug hooks idempotently. Its encoding pass preserves the BOM required by the CK3 script files.
+
+Each case puts an immediate ruling against a costly inquiry and a cheap final settlement. The hidden fact makes the first course risky when evidence contradicts its assumption; the third course has a smaller baseline quality penalty and a further cost when the opposite fact makes it unjust or unnecessary. The three options cost 8, 4, and 2 points of Prosperity, except that the election, shared synagogue, courtyard nuisance, and slaughterer cases spend Stability. Those numbers are initial balance values to be adjusted after a live hearing. The source tooltips name a relevant Mishnah passage from the workbook and explicitly say what the passage cannot establish about the case. Mastery opens a citation option; it never resolves the hidden fact by itself. The cases are playable fiction rather than claims to reproduce historical judgments.
+
 ## Verification and follow-up
 
 - The isolated branch started from `origin/master`; the shared human-testing checkout and its unrelated edits were left intact.
-- xTiger's pre-change baseline on CK3 1.21.0.3 was 0 fatal, 216 errors, 829 warnings. The 1.20-targeted validator reports known version-mismatch findings. The final run after all ten cases matched the baseline exactly, with no new findings. An event-file encoding warning and a domicile-scope warning were corrected during the first pass.
-- The diagnostic console event `kehillah_bet_din_expansion_debug.1` now reports cases 15–24 and their hidden facts.
+- xTiger's pre-change baseline on CK3 1.21.0.3 was 0 fatal, 216 errors, 829 warnings. The 1.20-targeted validator reports known version-mismatch findings. The final run after all twenty cases matched the baseline exactly, with no new findings. An event-file encoding warning and a domicile-scope warning were corrected during the first pass.
+- The diagnostic console event `kehillah_bet_din_expansion_debug.1` now reports cases 15–34 and their hidden facts.
 - Luna live-game checks remain pending: draw each case in a qualifying community, confirm the two co-judges and resolution fire once, check both hidden-fact outcomes and all three directions, inspect the source tooltip and activity log, and compare error.log to its boot baseline. No other model should substitute for Luna under AGENTS.md.
 
-The next implementation unit should continue turning the workbook's scenarios into distinct playable hearings. The 240 remaining proposed cases need writing and mechanical review, not transcription of the workbook's repeated option templates.
+The next implementation unit should continue turning the workbook's scenarios into distinct playable hearings. The 230 remaining proposed cases need writing and mechanical review, not transcription of the workbook's repeated option templates.
