@@ -18,7 +18,7 @@ SIZE = (2412, 1112)
 
 def build(region: str) -> None:
     name = f"kehillah_quarter_background_{region}"
-    image = Image.open(SOURCE / f"{name}.png").convert("RGB")
+    image = Image.open(SOURCE / f"{name}_v2.png").convert("RGB")
     aspect_error = abs(image.width / image.height - SIZE[0] / SIZE[1])
     if aspect_error > 0.01:
         raise ValueError(f"Unexpected source aspect ratio for {name}: {image.size}")
