@@ -1,6 +1,6 @@
 # Bet Din docket research integration
 
-**Status: first playable case scripted 2026-11-23; source and xTiger checked; live hearing pending. The remaining workbook cases are research, not implemented.**
+**Status: two cases scripted 2026-11-23; source and xTiger checked; live hearings pending. The remaining workbook cases are research, not implemented.**
 
 The [Mishnah-audited workbook](../research/bet-din-docket/CK3_Bet_Din_Docket_250_Cases_Mishnah_Audited.xlsx) is the exact file Daniel shared from his ChatGPT Library. Its SHA-256 is `BB099DF4FE3AFE3F5F688F0F69DDBA3220144D3FCB16FE16AA36456BD8C6A1F4`. It contains 250 proposed cases, 1,250 option prototypes, and cross-references to the Mishnah. The workbook's own **Ruling Options** sheet labels every choice `DESIGN PROTOTYPE / NOT HALAKHICALLY APPROVED`; **Research Audit** leaves case-specific medieval application and editorial sign-off open. It is a research source, not executable Paradox script.
 
@@ -12,11 +12,17 @@ The workbook's primary link is [Mishnah Mikvaot 6:1](https://www.sefaria.org/Mis
 
 The mod tracks mastery by whole work and Mishnah order, not by individual tractate. Case 15 therefore accepts a mastered Tahorot work; it does not claim to implement the workbook's proposed `mastery_mishnah_mikvaot` flag. The bench's Tahorot list and citation system use the existing order-wide code. This is an explicit departure from the workbook's proposed tractate bonuses.
 
+## Second case: BD-011, The Brother and His Half-Sisters
+
+Case 16 adapts the [1156 Geniza record Yevr.-Arab. I 1700.29](https://geniza.princeton.edu/en/documents/9637/) for communities in northeastern Africa in 1156–1170. The record says a brother agreed to pay monthly maintenance to his two half-sisters in accordance with their father's will. It does **not** establish the workbook's allegation that estate assets were withheld. The event corrects that premise: the will and the sisters' maintenance claim are known, while the fictional hidden fact is whether the estate accounts omit another obligation. Two randomly selected litigants represent the brother and sisters, so the event makes no claim that those characters are actual siblings. Its three directions are immediate payment, interim support with an audit, or suspending payments until accounting. The first and third incur fact-sensitive quality costs. The court does not purport to determine inheritance shares or a legally binding payment amount from a generic tally.
+
+[Mishnah Bava Batra 8:1](https://www.sefaria.org/Mishnah_Bava_Batra.8.1) is a relevant inheritance starting point, but it does not establish this estate's accounts or the father's exact maintenance direction. The existing Nezikin mastery system supplies a citation path; the workbook's tractate-specific `mastery_bavli_bava_batra` bonus is not implemented. The event uses the same bench, tally, party responses, pillar outcomes, log and docket advance as the other cases.
+
 ## Verification and follow-up
 
 - The isolated branch started from `origin/master`; the shared human-testing checkout and its unrelated edits were left intact.
-- xTiger's pre-change baseline on CK3 1.21.0.3 was 0 fatal, 216 errors, 829 warnings. The 1.20-targeted validator reports known version-mismatch findings. The final run matched the baseline exactly, with no findings in the changed script. An event-file encoding warning and a domicile-scope warning were corrected during the pass.
-- The diagnostic console event `kehillah_bet_din_expansion_debug.1` now reports case 15 and the hidden channel fact.
-- A Luna live-game check remains pending: draw case 15 in a qualifying community, confirm the two co-judges and resolution fire once, check both hidden-fact outcomes and all three directions, inspect the source tooltip and activity log, and compare error.log to its boot baseline. No other model should substitute for Luna under AGENTS.md.
+- xTiger's pre-change baseline on CK3 1.21.0.3 was 0 fatal, 216 errors, 829 warnings. The 1.20-targeted validator reports known version-mismatch findings. The final run after both cases matched the baseline exactly, with no new findings. An event-file encoding warning and a domicile-scope warning were corrected during the first pass.
+- The diagnostic console event `kehillah_bet_din_expansion_debug.1` now reports cases 15 and 16 and their hidden facts.
+- Luna live-game checks remain pending: draw each case in a qualifying community, confirm the two co-judges and resolution fire once, check both hidden-fact outcomes and all three directions, inspect the source tooltip and activity log, and compare error.log to its boot baseline. No other model should substitute for Luna under AGENTS.md.
 
-The next implementation unit should add a Zeraim case from a researched, region-specific premise and then review tractate-level mastery as a separate system decision. The workbook's BD-221 is broadly themed but its **Research Audit** calls the region a placeholder and says to select and research a real province before release. It is not a ready-made cross-regional event. The 249 remaining proposed cases need case-by-case legal and mechanical review, not bulk generation.
+The next implementation unit should add a Zeraim case from a researched, region-specific premise and then review tractate-level mastery as a separate system decision. The workbook's BD-221 is broadly themed but its **Research Audit** calls the region a placeholder and says to select and research a real province before release. It is not a ready-made cross-regional event. The 248 remaining proposed cases need case-by-case legal and mechanical review, not bulk generation.
