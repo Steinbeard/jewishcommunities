@@ -241,6 +241,43 @@ kehillah_commenda_stake_value = {
 kehillah_commenda_ai_gold_floor = 200
 kehillah_commenda_profit_prosperity = 15
 
+# The kosher table (2026-11-23, docs/spec/2026-11-23-kashrut.md). Scope: a
+# Kehillah leader whose rite keeps kashrut. Kosher meat needs live beasts for
+# the shochet and salt for koshering: a market short of either costs
+# Affluence; a community with its own slaughterhouse in a market that
+# supplies both gains a little.
+kehillah_kosher_shortfall_prosperity = -15
+kehillah_kosher_supplied_prosperity = 10
+kehillah_bd_kosher_table_value = {
+	value = 0
+	if = {
+		limit = {
+			rite ?= { rite_has_doctrine = doctrine_diet_kashrut }
+			exists = domicile.domicile_location.barony.trade_market
+		}
+		domicile.domicile_location.barony.trade_market = {
+			save_temporary_scope_as = kehillah_kosher_market
+		}
+		if = {
+			limit = {
+				scope:kehillah_kosher_market = {
+					OR = {
+						trade_good_unfulfilled_need = { target = trade_good_type:trade_good_cattle value >= kehillah_market_shortfall_threshold }
+						trade_good_unfulfilled_need = { target = trade_good_type:trade_good_salt value >= kehillah_market_shortfall_threshold }
+					}
+				}
+			}
+			add = kehillah_kosher_shortfall_prosperity
+		}
+		else_if = {
+			limit = {
+				domicile ?= { has_domicile_building_or_higher = kehillah_slaughterhouse_01 }
+			}
+			add = kehillah_kosher_supplied_prosperity
+		}
+	}
+}
+
 # The town's market (2026-11-21, Quarter spec section 16). Scope: a Kehillah
 # leader. The community lives on what its market sells: each of wine (for
 # Kiddush), books and paper, and textiles the market cannot supply costs
