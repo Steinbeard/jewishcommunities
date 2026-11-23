@@ -5,6 +5,7 @@ files are committed so the game does not depend on Python or this script.
 """
 from pathlib import Path
 from kehillah_docket_batch10_data import EXTRA_CASES
+from kehillah_docket_batch20_data import EXTRA_CASES_2
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = (ROOT / "events/kehillah_bet_din_stranger_aid_events.txt").read_text(encoding="utf-8-sig")
@@ -96,6 +97,7 @@ CASES = [
          log="[CHARACTER.GetTitledFirstName] ruled on [TARGET_CHARACTER.GetFirstName]'s caravan accounting claim."),
 ]
 CASES.extend(EXTRA_CASES)
+CASES.extend(EXTRA_CASES_2)
 
 for case in CASES:
     n = case["n"]
