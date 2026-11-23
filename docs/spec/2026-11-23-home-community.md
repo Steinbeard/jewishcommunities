@@ -70,4 +70,24 @@ Sections 2-5 except the proposals:
   - the Prosperity baseline and its tooltip;
   - the candidacy score's outsider penalty, in both the Weigh the Seat preview and the succession score
     (`kehillah_leadership.txt`).
-- **Not live-tested yet.** The succession change needs a live check, as every change there does.
+- **Live-tested 2026-11-23** (below). The succession file showed no errors over two months of play; a real succession
+  with a home member standing has not been run.
+
+**Live-tested 2026-11-23** (screenshot `docs/testing/screenshots/2026-11-23-home-community/01-prosperity-travellers.png`):
+
+- **Merchants:** at the 1066 start there are 109 Jewish merchant rulers, 33 of them based in a community's county. The
+  seasonal step gave Moses Qalonimus Mainz and Isaac ben Baruch Orleans.
+- **Adventurers:** a converted adventurer moved into Worms took it as home after four seasons. All three Jewish
+  adventurers at the start already lead Kehillah titles.
+- **The tithe:** it paid, the leader gained the gold, and the member gained prestige and piety, with "One of Our Own"
+  and a notice to the leader. These test members' incomes were small, so the tithe was the 1-gold minimum and the
+  reward the 15 minimum.
+- **Prosperity:** "2 travellers call us home: +20", later "3 ... +30".
+- **The visit option**, checked by script, since the player was not a traveller: its trigger holds for an eligible
+  traveller with another home and fails once this is home. Joining removed the member from the old home's list.
+- **error.log:** no errors from the succession file over two months of play. The only notes were missing BOMs on the
+  new files, since added.
+
+**To watch in the soak test:**
+- the 1-gold minimum tithe buys at least 15 prestige and 15 piety, which may be cheap for poor adventurers;
+- about 33 merchants join at the first season, so trading towns get up to +50 Prosperity at once.
