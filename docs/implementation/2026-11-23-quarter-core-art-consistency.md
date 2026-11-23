@@ -1,0 +1,13 @@
+**Status:** Matched Western and MENA Synagogue/Beit Midrash sprites built 2026-11-23; static sprite review passed; new in-game rendering pending.
+
+# Quarter core art consistency pass
+
+Daniel's in-game screenshots of Worms and Orléans exposed a mismatch that the earlier separate sprite previews missed. In particular, the level-1 Western Beit Midrash used saturated red roof tiles and fine brickwork while the level-1 Synagogue used a broad muted roof and sparse stone detail. The two buildings also had different visual scale and camera treatment. The screenshots show that several vanilla fallback buildings and foreground figures remain visually distinct from the custom core art; that wider composition still needs its own pass.
+
+This pass replaces the Western and MENA Synagogue and Beit Midrash stages 1, 3 and 5 with six *paired* transparent source sheets, split into twelve versioned PNGs under `scripts/quarter_scene_sources/`. Each regional pair was drawn together from one reference, with common wall/roof colors, ink weight, masonry detail and a matching three-quarter camera. Later stages retain the same architecture while adding rooms or height. The `kehillah_quarter_building_art.py` packer now reads the `_v3` sources and regenerates the existing DDS and intersection-mask paths; no building script or saved-game identifiers change.
+
+[Matched stage preview](assets/kehillah_matched_core_sprite_preview_v3.png) shows the packed 512-pixel sprites at a reduced display size. It is a static composite, not a CK3 screenshot. The earlier source generations remain in the repository for comparison. Imagegen used the level-1 Western paired sheet as its Western style reference and the level-1 MENA paired sheet as the MENA reference; prompts specified regional stone, muted roofs, fine brown ink, sparse detail, a fixed camera and transparent isolated buildings. Technical cropping, alpha cleanup, packing and mask generation used Pillow.
+
+The next visual check should compare both level-1 buildings together in a fresh Western and MENA Quarter, then a developed Quarter with stages 3 and 5. Check building scale, transparent edges, overlap with labels and neighboring vanilla art. The source art does not settle the wider placement and fallback-art concerns shown in Daniel's screenshots. A Luna tester is required for a Codex-driven live check; none was used for this pass.
+
+xTiger remains at the feature-branch baseline: 0 fatal, 317 errors, 808 warnings, 37 untidy and 152 tips. The 317th error is the previously recorded `initial_buildings` schema mismatch; this art change introduces no script diagnostics.
