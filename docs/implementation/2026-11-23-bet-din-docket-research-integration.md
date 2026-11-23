@@ -1,6 +1,6 @@
 # Bet Din docket research integration
 
-**Status: three cases scripted 2026-11-23; source and xTiger checked; live hearings pending. The remaining workbook cases are research, not implemented.**
+**Status: four cases scripted 2026-11-23; source and xTiger checked; live hearings pending. The remaining workbook cases are research, not implemented.**
 
 The [Mishnah-audited workbook](../research/bet-din-docket/CK3_Bet_Din_Docket_250_Cases_Mishnah_Audited.xlsx) is the exact file Daniel shared from his ChatGPT Library. Its SHA-256 is `BB099DF4FE3AFE3F5F688F0F69DDBA3220144D3FCB16FE16AA36456BD8C6A1F4`. It contains 250 proposed cases, 1,250 option prototypes, and cross-references to the Mishnah. The workbook's own **Ruling Options** sheet labels every choice `DESIGN PROTOTYPE / NOT HALAKHICALLY APPROVED`; **Research Audit** leaves case-specific medieval application and editorial sign-off open. It is a research source, not executable Paradox script.
 
@@ -26,11 +26,15 @@ Case 17 adapts [Geniza fragment T-S 12.554](https://geniza.princeton.edu/en/docu
 
 The workbook links [Mishnah Bava Metzia 8:8](https://www.sefaria.org/Mishnah_Bava_Metzia.8.8), a lease-duration analogy that does not itself decide whether the guarantor owns the security. Case 17 uses the existing Nezikin citation and bench path. Its pillar tradeoff gives immediate rent a Prosperity gain and charges for verification or vacancy; the legal-quality tally separately reflects the hidden security fact.
 
+## Fourth case: BD-221, The Aid Refused to a Stranger
+
+Case 18 uses the workbook's fictional premise without making a specific historical claim. A traveler needs a meal; the collector cannot find the donor's terms before dusk. The court can spend from the disputed fund immediately, feed the traveler from general stores while checking the deed, or preserve the fund and seek voluntary gifts. A hidden fact determines whether the fund is restricted to local households. The first choice risks violating a restriction; the third delays help, especially when the fund could lawfully have paid. The middle choice protects both needs at a modest Prosperity cost. An existing hekdesh building gates the case. It supplies the docket's first Zeraim citation via [Mishnah Peah 8:7](https://www.sefaria.org/Mishnah_Peah.8.7), while the donor's actual terms remain a separate fact.
+
 ## Verification and follow-up
 
 - The isolated branch started from `origin/master`; the shared human-testing checkout and its unrelated edits were left intact.
-- xTiger's pre-change baseline on CK3 1.21.0.3 was 0 fatal, 216 errors, 829 warnings. The 1.20-targeted validator reports known version-mismatch findings. The final run after all three cases matched the baseline exactly, with no new findings. An event-file encoding warning and a domicile-scope warning were corrected during the first pass.
-- The diagnostic console event `kehillah_bet_din_expansion_debug.1` now reports cases 15–17 and their hidden facts.
+- xTiger's pre-change baseline on CK3 1.21.0.3 was 0 fatal, 216 errors, 829 warnings. The 1.20-targeted validator reports known version-mismatch findings. The final run after all four cases matched the baseline exactly, with no new findings. An event-file encoding warning and a domicile-scope warning were corrected during the first pass.
+- The diagnostic console event `kehillah_bet_din_expansion_debug.1` now reports cases 15–18 and their hidden facts.
 - Luna live-game checks remain pending: draw each case in a qualifying community, confirm the two co-judges and resolution fire once, check both hidden-fact outcomes and all three directions, inspect the source tooltip and activity log, and compare error.log to its boot baseline. No other model should substitute for Luna under AGENTS.md.
 
-The next implementation unit should add a Zeraim case from a researched, region-specific premise and then review tractate-level mastery as a separate system decision. The workbook's BD-221 is broadly themed but its **Research Audit** calls the region a placeholder and says to select and research a real province before release. It is not a ready-made cross-regional event. The 247 remaining proposed cases need case-by-case legal and mechanical review, not bulk generation.
+The next implementation unit should review tractate-level mastery as a separate system decision and continue turning the workbook's scenarios into distinct playable hearings. Case 18 uses BD-221's broad premise as fictional game content, without claiming a real medieval court record or universal regional rule. The 246 remaining proposed cases need writing and mechanical review, not bulk transcription of the workbook's repeated option templates.
