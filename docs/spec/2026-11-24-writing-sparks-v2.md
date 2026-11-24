@@ -150,7 +150,7 @@ Debug events:
 **Improvement**
 - **Chiddush needs two of the four routes.** The button reads *Upgrade Spark (1/2)*.
 - **Original Great Work path** for every form (`ORIGINAL`): Learning 16, discipline aptitude 40, two more works of the discipline mastered since the idea, and a free authored ledger slot.
-  - A Great Work that fills no historical niche, with quality 60 or more, is written into an authored slot (`kehillah_sefer_finish_composition_effect`).
+  - A Great Work that fills no historical niche is written into an authored slot (`kehillah_sefer_finish_composition_effect`). **2026-11-24 correction (Daniel: "I kind of want all great works to enter the ledger"):** the quality-60 gate is removed here. Quality only decides whether a Great Work can claim a historical niche (60+, then the roll). Every successful Great Work enters the Ledger, unless all 100 authored slots hold live books, and the tooltips say so.
   - It is illustrious and enters the ledger under the author's name, with its own finishing text.
 - **Path cleanup.**
   - Each historical path has a descriptor (`NICHE_HINT`) and *open until YEAR*, plus a met/total count.

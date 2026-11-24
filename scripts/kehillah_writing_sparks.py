@@ -1047,7 +1047,7 @@ def loc() -> str:
         for n, (_, label) in enumerate(niche_conditions(key), 1):
             out.append(f' kehillah_spark_nc_{key}_{n}:0 "{label}"')
     for disc in DISCS:
-        out.append(f' kehillah_spark_path_original_{disc}:0 "$kehillah_spark_original_title_{disc}$ #weak · into the Ledger#!"')
+        out.append(f' kehillah_spark_path_original_{disc}:0 "$kehillah_spark_original_title_{disc}$"')
         for n, (_, label) in enumerate(ORIGINAL[disc], 1):
             out.append(f' kehillah_spark_nc_original_{disc}_{n}:0 "{label}"')
     return "﻿" + "\n".join(out) + "\n"
