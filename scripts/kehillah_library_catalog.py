@@ -254,6 +254,13 @@ def held(f, ind="", lst="kehillah_library_works"):
     return f"{ind}is_target_in_variable_list = {{ name = {lst} target = flag:{f} }}"
 
 
+def reread_ok(f):
+    """2026-11-24: a mastered work may be read again only if it is canon
+    (standing 9+, Foundational and up) in the reader's rite. Reader scope."""
+    return (f"OR = {{ NOT = {{ {held(f, '', 'kehillah_mastered_works')} }} "
+            f"kehillah_lib_standing_{f} >= 9 }}")
+
+
 def study_call(f, w, ind):
     """Call the shared study effect for f with its literal track."""
     if authored(w):
@@ -918,6 +925,14 @@ def write_triggers(order, works):
                 out.append(f"\t\t\tNOT = {{ {held(f)} }}")
         out += ["\t\t}", "\t}", "}", ""]
     out += [
+        "# 2026-11-24: scope the reader. $LIBRARY$ holds a work he may study now: one",
+        "# not yet mastered, or a canon work (a reread is for Foundational and up).",
+        "kehillah_study_torah_has_readable_work_trigger = {",
+        "	OR = {",
+    ] + [f"		AND = {{ $LIBRARY$ = {{ {held(f)} }} {reread_ok(f)} }}" for f in order] + [
+        "	}",
+        "}",
+        "",
         "kehillah_owns_any_torah_work_trigger = {",
         "\tOR = {",
         "\t\tkehillah_owns_parshanut_work_trigger = { LIBRARY = $LIBRARY$ }",
@@ -1047,7 +1062,7 @@ def write_study_effects(order, works):
         weight = 2 if w.get("canon") else 1
         out += [
             f"\t\t{weight} = {{",
-            f"\t\t\ttrigger = {{ $LIBRARY$ = {{ {held(f)} }} }}",
+            f"\t\t\ttrigger = {{ $LIBRARY$ = {{ {held(f)} }} {reread_ok(f)} }}",
         ]
         out += [
             f"\t\t\tset_variable = {{ name = kehillah_study_current_work_id value = {i} }}",
@@ -1681,6 +1696,10 @@ def write_study_gui(order, works):
             "		custom_tooltip = {",
             "			text = kehillah_lib_study_reading_now_tt",
             f"			NOT = {{ var:kehillah_study_current_work_id ?= {i} }}",
+            "		}",
+            "		custom_tooltip = {",
+            "			text = kehillah_lib_study_reread_cannot_tt",
+            f"			{reread_ok(f)}",
             "		}",
             f"		scope:library = {{ is_target_in_variable_list = {{ name = kehillah_library_works target = flag:{f} }} }}",
             "		custom_tooltip = {",
