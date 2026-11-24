@@ -1,0 +1,13 @@
+**Status:** Compact Quarter layout wired 2026-11-24; source and xTiger checked, live CK3 rendering and save migration pending. Supersedes the slot and Gates eligibility decisions in [the fixed layout](2026-11-23-fixed-quarter-layout.md) and [the playtest tuning note](2026-11-24-quarter-playtest-tuning.md); their art and cost decisions still apply.
+
+# Three trade sites and a fixed entrance
+
+Daniel's developed Worms screenshot exposed a fourth empty building pin beyond the right edge of the painted quarter. It was `external_slot_8` at x=79%, offering Factor's House because that building is one of the flexible trade families. This was a scene-layout defect, not a missing Factor's House sprite.
+
+The Quarter now has seven external positions: the seeded Beit Midrash, Kahal House and Hekdesh, the seeded Quarter Entrance, and three flexible trade sites. The Synagogue's capacity modifier matches the seven declared positions. Slot 8 is removed from the scene definition and the static composite. Market, Workshop, Bankers' Row and Funduq/Factor's House remain available as choices for the three trade sites. The Kahal House allows one trade family per tier, up to three. Legendary Prosperity no longer creates a fourth trade allowance.
+
+Gates and the licensed Wall upgrade the existing Quarter Entrance. They no longer use a trade allowance. This also resolves the reported case where a community with three trades could not raise its initial gates. The host construction permission still applies to Gates, and the Wall licence and arms requirements still apply to later tiers. The neutral entrance is still seeded on new domiciles.
+
+Vanilla's Estate does add external slot capacity at successive main-building tiers. This Quarter instead has fixed, authored positions because a dynamically revealed eighth pin outside the scene makes its composition worse. Three trade choices among four families preserve a meaningful development choice. If the scene still feels empty, add small residents and street activity to the background or to building sprites at their authored sites; adding mechanical slots would also add markers and potential collisions.
+
+This change is intended for a new Quarter or a save whose eighth site is empty. A save with a building already in slot 8 needs a migration review before relying on it. A CK3 restart is required to load the revised domicile type. The updated static four-panel Western/MENA composite is `assets/kehillah_quarter_v5_layout_preview.png`; it checks the authored scene only, not engine slot ordering, hover geometry, or old-save behavior. Those remain live checks.
