@@ -1,5 +1,7 @@
 # Roadmap
 
+**Forbidden Bet Din citations BUILT 2026-11-23; live check pending:** source choices warn when the convening community's rite bans the book. The citing judge gains cherem XP on citation whether or not the argument holds; see [implementation and checks](docs/implementation/2026-11-23-bet-din-forbidden-citations.md).
+
 **Community and province cards ADJUSTED 2026-11-23; live visual check pending:** the holding-strip menorah moves to the right end and shares its symbol with the Quarter shortcut. Fixed-height divider cells and centered leader details aim to correct the card alignment and stretched vacant-site frame. Verify both cards, long names, recorded history, the library card and clicks in game. See [the inspector notes](docs/implementation/2026-10-25-community-map-inspector.md).
 
 **Head of the Jews petition REWORKED 2026-11-23; live interaction check pending:** the capital community's leader can petition the ruler through a character interaction, including from the realm view. The visible acceptance breakdown weighs opinion, favored status, protective outlook, flourishing standing, court tradition and traits. Healthy standing, a qualified seat leader and policy permitting the office remain necessary to prevent immediate forfeiture. An accepted petition names the leader or opens the player ruler's audience; refusal starts the five-year wait. See [implementation](docs/implementation/2026-11-23-nagid-petition.md).

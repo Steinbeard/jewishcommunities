@@ -45,6 +45,12 @@ kehillah_din_cite_measure_effect = {
 	if = {
 		limit = { exists = scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$ }
 		save_scope_as = kehillah_din_measuring_judge
+		# Evaluate the host community's rite, not the citing judge's rite.
+		scope:kehillah_din_cite_activity = { remove_variable = kehillah_din_cite_$SLOT$_host_standing }
+		scope:kehillah_din_cite_activity.var:kehillah_bet_din_convening_title.holder ?= {
+			save_scope_as = kehillah_din_cite_host
+			kehillah_din_cite_host_standing_dispatch_effect = { SOURCE = scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$ SLOT = $SLOT$ }
+		}
 		# (Learning - pivot) * per-learning, held on the judge for a moment.
 		set_variable = { name = kehillah_din_cite_learning_bonus value = learning }
 		change_variable = { name = kehillah_din_cite_learning_bonus subtract = kehillah_din_cite_reliability_learning_pivot }
@@ -136,6 +142,36 @@ kehillah_din_cite_roll_effect = {
 			}
 		}
 	}
+}
+
+# The host rite judges the public citation; apply XP to its actual judge.
+kehillah_din_cite_cherem_effect = {
+ if = {
+  limit = { scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$_host_standing ?= 0 }
+  custom_tooltip = kehillah_din_cite_anathema_risk_tt
+  hidden_effect = {
+   scope:kehillah_din_cite_activity.var:kehillah_din_citing_judge ?= {
+    if = {
+     limit = { is_alive = yes is_jewish_character_trigger = yes NOT = { kehillah_cherem_in_full_trigger = yes } }
+     set_variable = { name = kehillah_cherem_cause_work value = scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$ }
+     kehillah_cherem_add_effect = { AMOUNT = kehillah_cherem_cite_anathema_points }
+    }
+   }
+  }
+ }
+ else_if = {
+  limit = { scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$_host_standing ?= 1 }
+  custom_tooltip = kehillah_din_cite_banned_risk_tt
+  hidden_effect = {
+   scope:kehillah_din_cite_activity.var:kehillah_din_citing_judge ?= {
+    if = {
+     limit = { is_alive = yes is_jewish_character_trigger = yes NOT = { kehillah_cherem_in_full_trigger = yes } }
+     set_variable = { name = kehillah_cherem_cause_work value = scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$ }
+     kehillah_cherem_add_effect = { AMOUNT = kehillah_cherem_cite_banned_points }
+    }
+   }
+  }
+ }
 }
 
 # Scope: root of kehillah_din_cite.0001. How widely the work in $SLOT$ is
