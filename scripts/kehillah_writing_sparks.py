@@ -220,6 +220,23 @@ NICHE_HINT = {
     "work_arbaah_turim": "The law arranged in four rows",
     "work_maggid_mishneh": "A defence of the great code",
 }
+def _author_slugs() -> dict[str, str]:
+    import re
+    text = (ROOT / "common/scripted_effects/kehillah_library_authors_effects.txt").read_text(encoding="utf-8-sig")
+    return dict(re.findall(r"name = kehillah_lib_author_(\w+) value = character:(\w+)", text))
+
+
+# 2026-11-24 (Daniel: "make it possible and more likely for historical AI
+# authors like Rashi and the Rif to write their own historical works"): niche
+# -> the character who wrote it historically, where the mod has him.
+_SLUGS = _author_slugs()
+HIST_AUTHOR = {}
+for _k in landmarks.FORMS:
+    _w = WORKS[_k]
+    _ref = _w.get("historical_author") or _SLUGS.get(_w.get("composer_char") or "")
+    if _ref:
+        HIST_AUTHOR[_k] = str(_ref)
+
 DEED_NAME = {"sermon": "a sermon", "ruling": "a Bet Din ruling", "letter": "an answered she'elah", "debate": "a machloket"}
 
 APT_STEP = "kehillah_spark_aptitude_step_value"
@@ -445,13 +462,17 @@ def triggers() -> str:
     out.append("kehillah_spark_ledger_slot_free_trigger = { OR = { " + " ".join(
         f"NOT = {{ has_global_variable = kehillah_wk_{k}_written }}" for k in sorted(WORKS) if k.startswith("work_authored_")) + " } }")
     out.append("")
-    out.append("# A niche worth showing: unwritten, still open, in the viewer's rite; historical")
-    out.append("# ambitions are for Rabbis.")
+    out.append("# A niche worth showing: unwritten, still open, in the viewer's rite.")
     for key in NICHES:
         conds = niche_open(key) + ([niche_rite(key)] if niche_rite(key) else [])
-        if WORKS[key].get("named"):
-            conds.append("has_trait = kehillah_rabbi_trait")
         out.append(f"kehillah_spark_niche_shown_{key}_trigger = {{ {' '.join(conds)} }}")
+    out.append("# 2026-11-24 (Daniel): beyond an Insight, a Rabbanite scholar must be a Rabbi.")
+    out.append("kehillah_spark_rabbi_gate_trigger = { OR = { NOT = { rite ?= { kehillah_rite_rabbanite_trigger = yes } } has_trait = kehillah_rabbi_trait } }")
+    out.append("# Historical authors of open niches (Rashi, the Rif, the Ri, Maimonides, ...).")
+    for key, ref in HIST_AUTHOR.items():
+        out.append(f"kehillah_spark_is_author_of_{key}_trigger = {{ character:{ref} ?= this }}")
+    out.append("kehillah_spark_is_historical_author_trigger = { OR = { " +
+               " ".join(f"kehillah_spark_is_author_of_{k}_trigger = yes" for k in HIST_AUTHOR) + " } }")
     for disc in DISCS:
         conds = " ".join(c for c, _ in ORIGINAL[disc])
         out.append(f"kehillah_spark_original_ready_{disc}_trigger = {{ {conds} }}")
@@ -479,7 +500,7 @@ def triggers() -> str:
                          for f in great)
         out.append(f"kehillah_spark_can_be_great_{disc}_trigger = {{ OR = {{ {ready} kehillah_spark_original_ready_{disc}_trigger = yes }} }}")
         out.append("# The Upgrade button: the held spark's next tier is earned.")
-        out.append(f"kehillah_spark_can_upgrade_{disc}_trigger = {{ OR = {{ "
+        out.append(f"kehillah_spark_can_upgrade_{disc}_trigger = {{ kehillah_spark_rabbi_gate_trigger = yes OR = {{ "
                    f"AND = {{ var:kehillah_spark_{disc}_tier ?= 1 kehillah_spark_can_deepen_{disc}_trigger = yes }} "
                    f"AND = {{ var:kehillah_spark_{disc}_tier ?= 2 kehillah_spark_can_be_great_{disc}_trigger = yes }} }} }}")
     out.append("")
@@ -515,6 +536,12 @@ def values() -> str:
                          for f in forms_of(disc))
         out.append(f"kehillah_spark_{disc}_known_value = {{ value = 0 {known} }}")
         out.append(f"kehillah_spark_{disc}_kinds_value = {{ value = {len(forms_of(disc))} }}")
+        if disc == "parshanut":
+            out.append("kehillah_spark_held_count_value = { value = 0 " + " ".join(
+                f"if = {{ limit = {{ has_variable = kehillah_spark_{d}_form }} add = 1 }}" for d in DISCS) + " }")
+            out.append("# -1 not Rabbanite (no gate), 0 not yet a Rabbi, 1 a Rabbi.")
+            out.append("kehillah_spark_rabbi_gate_value = { value = -1 if = { limit = { rite ?= { kehillah_rite_rabbanite_trigger = yes } } "
+                       "value = 0 if = { limit = { has_trait = kehillah_rabbi_trait } value = 1 } } }")
         out.append(f"kehillah_spark_{disc}_commentaries_value = {{ value = 0 if = {{ limit = {{ has_variable = kehillah_commentaries_{disc} }} value = var:kehillah_commentaries_{disc} }} }}")
         out.append(f"kehillah_spark_{disc}_craft_chance_value = {{ value = kehillah_spark_{disc}_commentaries_value multiply = {CRAFT_CHANCE} max = {CRAFT_CHANCE_CAP} }}")
         out.append(f"kehillah_spark_{disc}_craft_speed_value = {{ value = kehillah_spark_{disc}_commentaries_value multiply = {CRAFT_SPEED} max = {CRAFT_SPEED_CAP} }}")
@@ -738,6 +765,34 @@ def effects() -> str:
             f"kehillah_spark_set_{f}_effect = {{ WORK = flag:none }} }}" for f in FORMS]
     out += ["\t\t1 = { }", "\t}", "}"]
 
+    # Historical AI authors: their own idea, already a Chiddush, each year
+    # their niche is open; on finishing, they fill their own niche first.
+    out += ["", "# Scope: an AI writer, yearly. A historical author takes up his own work.",
+            "kehillah_spark_ai_author_effect = {"]
+    for key, ref in HIST_AUTHOR.items():
+        form = NICHES[key]
+        disc = disc_of(form)
+        out += ["\tif = {",
+                f"\t\tlimit = {{ kehillah_spark_is_author_of_{key}_trigger = yes "
+                f"NOT = {{ has_global_variable = kehillah_wk_{key}_written }} "
+                f"kehillah_spark_can_hold_{form}_trigger = yes kehillah_spark_rabbi_gate_trigger = yes "
+                f"NOT = {{ AND = {{ kehillah_spark_holds_{form}_trigger = yes var:kehillah_spark_{disc}_tier >= 2 }} }} }}",
+                f"\t\tkehillah_spark_set_{form}_effect = {{ WORK = flag:none }}",
+                f"\t\tset_variable = {{ name = kehillah_spark_{disc}_tier value = 2 }}",
+                "\t}"]
+    out.append("}")
+    out += ["# Scope: the author finishing a manuscript. A historical author who meets",
+            "# his own niche's conditions writes that work, without the quality roll.",
+            "kehillah_spark_author_claim_effect = {"]
+    for i, (key, ref) in enumerate(HIST_AUTHOR.items()):
+        kw = "if" if i == 0 else "else_if"
+        out += [f"\t{kw} = {{",
+                f"\t\tlimit = {{ kehillah_spark_is_author_of_{key}_trigger = yes " + " ".join(landmarks.eligibility(key)) + " }",
+                f"\t\tset_variable = {{ name = kehillah_book_named_work value = flag:{key} }}",
+                "\t\tset_variable = { name = kehillah_writing_landmark value = yes }",
+                "\t}"]
+    out.append("}")
+
     # Writing.
     out += ["", "# Scope: the author starting a project. Uses up the chosen form's spark.",
             "kehillah_spark_consume_current_effect = {"]
@@ -930,7 +985,7 @@ def loc() -> str:
         out.append(f' kehillah_spark_craft_{disc}_toast:0 "{name}: a commentary mastered. My {name} study and writing grow surer and quicker."')
         out.append(f' kehillah_spark.discard_{disc}.desc:0 "Shall I set aside my idea for {root}? Once let go, it will not come back unless my studies spark it again."')
         known = "\\n".join(f"[GetPlayer.MakeScope.Var('kehillah_learning_view').Char.Custom('KehillahSparkKnown_{f}')]" for f in forms_of(disc))
-        out.append(f' kehillah_spark_known_tt_{disc}:0 "#T {name}: kinds of work found#!\\n{known}"')
+        out.append(f' kehillah_spark_known_tt_{disc}:0 "#T {name}: forms discovered#!\\nEvery kind of {name} book you have ever held a spark for.\\n{known}"')
         out.append(f' kehillah_spark_craft_tt_{disc}:0 "#T Commentaries mastered: [GetPlayer.MakeScope.Var(\'kehillah_learning_view\').Char.MakeScope.ScriptValue(\'kehillah_spark_{disc}_commentaries_value\')|0]#!\\nEach commentary of {name} studied raises the success chance of {name} study and writing, and speeds them.\\nNow: [GetPlayer.MakeScope.Var(\'kehillah_learning_view\').Char.MakeScope.ScriptValue(\'kehillah_spark_{disc}_craft_chance_value\')|0]% success, [GetPlayer.MakeScope.Var(\'kehillah_learning_view\').Char.MakeScope.ScriptValue(\'kehillah_spark_{disc}_craft_speed_value\')|0] progress a month."')
         out.append(f' kehillah_spark_original_title_{disc}:0 "An original {name} work of my own"')
     for form in FORMS:
@@ -1035,6 +1090,8 @@ def upgrade_tooltip(disc: str) -> str:
 						using = Font_Size_Medium
 						align = left|nobaseline
 					}}
+					### Rabbanite scholars: beyond an Insight, a Rabbi.
+{check_line(sv("'kehillah_spark_rabbi_gate_value'"), "[Localize( 'kehillah_spark_rabbi_gate' )]", 5, visible="[GreaterThanOrEqualTo_CFixedPoint( " + sv("'kehillah_spark_rabbi_gate_value'") + ", '(CFixedPoint)0' )]")}
 					### Insight: any one route.
 					vbox = {{
 						visible = "[EqualTo_CFixedPoint( {tier}, '(CFixedPoint)1' )]"

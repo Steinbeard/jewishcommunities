@@ -177,3 +177,22 @@ Debug events:
 - The ✕ confirmation: both options work.
 - Hover a Beit Midrash book: the spark line shows, and disappears once the book is mastered.
 - An AI Great Work fills a ledger slot (check `debug.log` via `kehillah_writing_debug.2`).
+
+## Addendum 2026-11-24 (night): Rabbi gate, AI patience, historical authors, Learning window
+
+**Status: BUILT; source, tests and xTiger checked (exact baseline); not yet seen in game.**
+- **Rabbi gate (Daniel).** Beyond an Insight, a Rabbanite scholar must hold the Rabbi trait (`kehillah_spark_rabbi_gate_trigger` in every upgrade). The Upgrade tooltip shows a "Be a Rabbi" check line to Rabbanite viewers. Historical paths now show to everyone; the gate sits on the upgrade instead.
+- **Forms discovered.** "Kinds found" is renamed. It counts the different forms of a discipline the character has ever held a spark for (5 Parshanut, 8 Talmudics, 7 Machshavah), a collection to complete.
+- **AI patience.** Write a Sefer's weight is base 4, +20 with a Chiddush, +80 with a Great Work. It is quartered while no spark is a Great Work and some spark could still become a historical landmark.
+- **Historical authors** (`HIST_AUTHOR`, 16 niches with a known character: Saadia, Bahya, Halevi, Amram, Sherira, Hananel, Ibn Gabirol, Qirqisani, Yefet, Rashi ×2, the Rif, Maimonides ×2, the Ri).
+  - Each year an AI author whose niche is open takes up his own work as a Chiddush; it becomes a Great Work automatically once he meets the niche's conditions.
+  - On finishing a Great Work, he fills his own niche without the quality roll. His AI weight to write it is +100.
+- **Learning window.**
+  - The header uses the titled first name ("Rav Isaac's Learning"), never "your".
+  - Each tab has its own short intro on a dark plate clear of the portrait, with no name inside, which fixes "you has mastered".
+  - The counts read "Works mastered" and "Sparks N / 3".
+- **Deferred: historical works open until written.** Removing "open until YEAR" means dated works must stop entering circulation on their catalog year. That lives in `scripts/kehillah_library_catalog.py` (`avail_lines`, `kehillah_sefer_mark_historical_works_effect`). Another session had uncommitted changes in that script and its outputs, so the change waits for it. Planned:
+  - dated works circulate only once `_written`;
+  - the one-time start marking covers dated works with a year up to the start;
+  - existing saves mark once, on a yearly global flag;
+  - landmark eligibility and spark paths drop their `current_date < YEAR`.
