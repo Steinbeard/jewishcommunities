@@ -597,6 +597,8 @@ def effects() -> str:
                 f"\tkehillah_spark_clear_{disc}_effect = yes",
                 f"\tset_variable = {{ name = kehillah_spark_{disc}_form value = flag:{form} }}",
                 f"\tset_variable = {{ name = kehillah_spark_{disc}_tier value = 1 }}",
+                # Read by the study completion message (kehillah_study_torah.0001).
+                f"\tset_variable = {{ name = kehillah_spark_just_gained value = flag:{form} days = 5 }}",
                 f"\tset_variable = {{ name = kehillah_spark_{disc}_work value = $WORK$ }}",
                 f"\tset_variable = {{ name = kehillah_spark_{disc}_base value = {WORKS_VALUE[disc]} }}",
                 f"\tset_variable = {{ name = kehillah_spark_{disc}_apt value = kehillah_writing_{DISCS[disc][1]}_aptitude_value }}",
@@ -619,6 +621,7 @@ def effects() -> str:
                 "\t\telse_if = {",
                 f"\t\t\tlimit = {{ is_ai = no NOT = {{ kehillah_spark_holds_{form}_trigger = yes }} NOT = {{ has_variable = kehillah_spark_pending_form }} }}",
                 f"\t\t\tset_variable = {{ name = kehillah_spark_pending_form value = flag:{form} days = 60 }}",
+                f"\t\t\tset_variable = {{ name = kehillah_spark_just_competing value = flag:{form} days = 5 }}",
                 f"\t\t\tset_variable = {{ name = kehillah_spark_pending_work value = $WORK$ days = 60 }}",
                 "\t\t\ttrigger_event = { id = kehillah_spark.0002 days = 1 }",
                 "\t\t}",
@@ -758,6 +761,7 @@ def effects() -> str:
         # experience, and a popup naming both.
         out += [f"kehillah_spark_commentary_{disc}_effect = {{",
                 f"\tchange_variable = {{ name = kehillah_commentaries_{disc} add = 1 }}",
+                f"\tset_variable = {{ name = kehillah_spark_just_craft value = flag:{disc} days = 5 }}",
                 f"\tif = {{ limit = {{ has_trait = kehillah_rabbi_trait }} add_trait_xp = {{ trait = kehillah_rabbi_trait track = {disc} value = {CRAFT_XP} }} }}",
                 "\t" + toast("craft", disc),
                 "}"]
@@ -808,11 +812,20 @@ def effects() -> str:
 
 def events() -> str:
     out = ["﻿" + HEADER, "namespace = kehillah_spark", "",
-           "# What shall I write? One option per held spark (at most one per discipline).",
+           "# The writing screen (Write a Sefer, the card's Write button, the top-bar",
+           "# suggestion). One Write option per held spark; a Deepen option for each",
+           "# spark ready to upgrade first; and Not yet. The description says that",
+           "# writing uses the spark up and that a deeper spark makes a finer book.",
            "kehillah_spark.0001 = {",
            "\ttype = character_event",
            "\ttitle = kehillah_spark.0001.t",
-           "\tdesc = kehillah_spark.0001.desc",
+           "\tdesc = {",
+           "\t\tdesc = kehillah_spark.0001.desc",
+           "\t\ttriggered_desc = {",
+           "\t\t\ttrigger = { OR = { " + " ".join(f"kehillah_spark_can_upgrade_{d}_trigger = yes" for d in DISCS) + " } }",
+           "\t\t\tdesc = kehillah_spark.0001.desc_ready",
+           "\t\t}",
+           "\t}",
            "\ttheme = learning",
            "\tleft_portrait = { character = root animation = thinking }",
            "\timmediate = {",
@@ -834,7 +847,20 @@ def events() -> str:
                 f"\t\t\tmodifier = {{ add = 90 var:kehillah_spark_{disc}_tier ?= 3 }}",
                 "\t\t}",
                 "\t}"]
-    out += ["\toption = { name = kehillah_writing.close }", "}", "",
+    for disc in DISCS:
+        out += ["\toption = {",
+                f"\t\tname = {{ trigger = {{ var:kehillah_spark_{disc}_tier ?= 1 }} text = kehillah_spark.0001.deepen_{disc}.2 }}",
+                f"\t\tname = {{ trigger = {{ var:kehillah_spark_{disc}_tier ?= 2 }} text = kehillah_spark.0001.deepen_{disc}.3 }}",
+                f"\t\ttrigger = {{ kehillah_spark_can_upgrade_{disc}_trigger = yes }}",
+                "\t\tcustom_tooltip = kehillah_spark.0001.deepen.tt",
+                f"\t\thidden_effect = {{ kehillah_spark_upgrade_{disc}_effect = yes }}",
+                "\t\tai_chance = { base = 0 }",
+                "\t}"]
+    out += ["\toption = {",
+            "\t\tname = kehillah_spark.0001.later",
+            "\t\tcustom_tooltip = kehillah_spark.0001.later.tt",
+            "\t\tai_chance = { base = 0 }",
+            "\t}", "}", "",
             "# A new idea arrives while the discipline's slot holds another.",
             "kehillah_spark.0002 = {",
             "\ttype = character_event",
@@ -900,6 +926,10 @@ def custom() -> str:
         out.append("}")
 
     block("KehillahSparkPendingForm", "kehillah_spark_pending_form", "kehillah_spark_form_{}", FORMS, "kehillah_spark_form_unknown")
+    # The study completion message: what this reading just produced.
+    block("KehillahSparkJustGained", "kehillah_spark_just_gained", "kehillah_spark_form_{}", FORMS, "kehillah_spark_form_unknown")
+    block("KehillahSparkJustCompeting", "kehillah_spark_just_competing", "kehillah_spark_form_{}", FORMS, "kehillah_spark_form_unknown")
+    block("KehillahSparkJustCraft", "kehillah_spark_just_craft", "kehillah_spark_disc_{}", DISCS, "kehillah_spark_form_unknown")
     block("KehillahSparkPendingSource", "kehillah_spark_pending_work", "kehillah_lib_name_{}", PREFERRED_SOURCES(), "kehillah_spark_form_unknown")
     # The spark the pending idea would replace: the slot of its discipline.
     out.append("KehillahSparkPendingHeld = {")
@@ -965,6 +995,8 @@ def loc() -> str:
     for disc, (name, _) in DISCS.items():
         held = f"[GetPlayer.Custom('KehillahSparkForm_{disc}')]"
         out.append(f' kehillah_spark_disc_{disc}:0 "{name}"')
+        for tier, tname in ((2, "a Chiddush"), (3, "a Great Work")):
+            out.append(f' kehillah_spark.0001.deepen_{disc}.{tier}:0 "Deepen my idea for [GetPlayer.Custom(\'KehillahSparkForm_{disc}\')] into {tname} first."')
         out.append(f' kehillah_spark_held_{disc}:0 "[ROOT.Char.Custom(\'KehillahSparkForm_{disc}\')] #weak ([ROOT.Char.Custom(\'KehillahSparkTier_{disc}\')])#!"')
         out.append(f' kehillah_spark_new_{disc}_toast:0 "{name}: an idea for {held}."')
         out.append(f' kehillah_spark_ready_{disc}_toast:0 "{name}: my idea for {held} is ready to grow. #weak Upgrade it from the Learning window.#!"')
