@@ -1,0 +1,80 @@
+﻿# =====================================================================
+# Ledger news (2026-11-24, Daniel). A new work has entered the Ledger of
+# Sefarim; a reader of the author's faith hears of it. Fired by
+# kehillah_ledger_news_announce_effect
+# (common/scripted_effects/kehillah_ledger_news_effects.txt).
+#
+# Options: commission a copy (a library that lacks it); seek it out to study
+# (anyone else -- it joins var list kehillah_wished_works, which helps the
+# study scheme when it is read); hear more later; or, for one who may review
+# it and has reason -- the author is a rival or disliked, or the book argues
+# against what he holds -- condemn it with a cherem, unread.
+# =====================================================================
+
+namespace = kehillah_ledger_news
+
+kehillah_ledger_news.0001 = {
+	type = character_event
+	title = kehillah_ledger_news.0001.t
+	desc = kehillah_ledger_news.0001.desc
+	theme = learning
+	left_portrait = { character = root animation = thinking }
+	right_portrait = { character = scope:kehillah_ledger_author animation = personality_rational }
+
+	trigger = {
+		exists = var:kehillah_ledger_news_work
+		exists = var:kehillah_ledger_news_author
+		is_alive = yes
+	}
+
+	immediate = {
+		var:kehillah_ledger_news_author = { save_scope_as = kehillah_ledger_author }
+	}
+
+	# A library that lacks the book: commission a copy (the library's own flow).
+	option = {
+		name = kehillah_ledger_news.0001.copy
+		trigger = { kehillah_ledger_news_can_commission_trigger = yes }
+		custom_tooltip = kehillah_ledger_news.0001.copy.tt
+		hidden_effect = {
+			kehillah_library_refresh_acquisition_candidates_effect = yes
+			set_variable = { name = kehillah_commission_work_loc value = var:kehillah_ledger_news_work }
+			save_scope_value_as = { name = kehillah_commission_work value = var:kehillah_ledger_news_work }
+			trigger_event = kehillah_library.0002
+			kehillah_ledger_news_clear_effect = yes
+		}
+	}
+
+	# Anyone else: seek it out to study.
+	option = {
+		name = kehillah_ledger_news.0001.study
+		trigger = {
+			NOT = { kehillah_ledger_news_can_commission_trigger = yes }
+			NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = var:kehillah_ledger_news_work } }
+		}
+		custom_tooltip = kehillah_ledger_news.0001.study.tt
+		hidden_effect = {
+			if = {
+				limit = { NOT = { is_target_in_variable_list = { name = kehillah_wished_works target = var:kehillah_ledger_news_work } } }
+				add_to_variable_list = { name = kehillah_wished_works target = var:kehillah_ledger_news_work }
+			}
+			kehillah_ledger_news_clear_effect = yes
+		}
+	}
+
+	option = {
+		name = kehillah_ledger_news.0001.note
+		hidden_effect = { kehillah_ledger_news_clear_effect = yes }
+	}
+
+	# A reason and the right to ban it: a cherem, unread (half weight).
+	option = {
+		name = kehillah_ledger_news.0001.condemn
+		trigger = { kehillah_ledger_news_would_condemn_trigger = yes }
+		custom_tooltip = kehillah_ledger_news.0001.condemn.tt
+		hidden_effect = {
+			kehillah_review_cherem_dispatch_effect = { SOURCE = var:kehillah_ledger_news_work READ = unread }
+			kehillah_ledger_news_clear_effect = yes
+		}
+	}
+}

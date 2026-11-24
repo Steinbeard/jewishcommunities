@@ -502,6 +502,12 @@ def triggers() -> str:
                    f"AND = {{ var:kehillah_spark_{disc}_tier ?= 1 kehillah_spark_can_deepen_{disc}_trigger = yes }} "
                    f"AND = {{ var:kehillah_spark_{disc}_tier ?= 2 kehillah_spark_can_be_great_{disc}_trigger = yes }} }} }}")
     out.append("")
+    out.append("# 2026-11-24 Ledger news (events/kehillah_ledger_news_events.txt): may this")
+    out.append("# reader ban the newly written var:kehillah_ledger_news_work?")
+    out.append("kehillah_ledger_news_can_cherem_trigger = { OR = { " + " ".join(
+        f"AND = {{ var:kehillah_ledger_news_work ?= flag:{k} kehillah_review_can_cherem_{k}_trigger = yes }}"
+        for k in sorted(WORKS)) + " } }")
+    out.append("")
     out.append("# The book being studied, by discipline (commentary craft in the study scheme).")
     for disc in DISCS:
         ws = [k for k in sorted(WORKS) if WORKS[k].get("genre") == disc]
@@ -554,6 +560,10 @@ def values() -> str:
         out.append(f"kehillah_spark_nc_{key}_met_value = {{ value = 0 " +
                    " ".join(f"add = kehillah_spark_nc_{key}_{n}" for n in range(1, len(conds) + 1)) + " }")
         out.append(f"kehillah_spark_nc_{key}_total_value = {{ value = {len(conds)} }}")
+    # Ledger news: this reader's stance toward the newly written work.
+    out.append("kehillah_ledger_news_stance_value = { value = 0 " + " ".join(
+        f"{'if' if i == 0 else 'else_if'} = {{ limit = {{ var:kehillah_ledger_news_work ?= flag:{k} }} add = kehillah_review_stance_{k}_value }}"
+        for i, k in enumerate(sorted(WORKS))) + " }")
     # Commentary craft for the writing scheme's genre and the study scheme's book.
     out.append("kehillah_spark_writing_craft_chance_value = { value = 0 "
                "if = { limit = { OR = { var:kehillah_book_genre ?= flag:parshanut var:kehillah_book_genre ?= flag:poetry } } add = kehillah_spark_parshanut_craft_chance_value } "

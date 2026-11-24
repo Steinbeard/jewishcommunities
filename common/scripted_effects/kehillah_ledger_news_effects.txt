@@ -1,0 +1,46 @@
+﻿# =====================================================================
+# Ledger news (2026-11-24, Daniel: "notify characters who might be
+# interested (members of the same faith who have studied at least 1 work)
+# when a new work enters the ledger").
+#
+# Scope: the author, just after a work entered the Ledger of Sefarim
+# (kehillah_writing_finish_effect: a historical landmark or an original
+# Great Work); var:kehillah_sefer_my_latest_work names it. Every living
+# reader of the author's faith on the masters index (kehillah_sefer_masters:
+# everyone who has mastered at least one work) hears of it. A player gets
+# kehillah_ledger_news.0001; the AI may ban it at once if it may review it
+# and is the author's rival, dislikes him, or opposes what the book argues.
+# =====================================================================
+
+kehillah_ledger_news_announce_effect = {
+	if = {
+		limit = { exists = var:kehillah_sefer_my_latest_work }
+		save_scope_as = kehillah_ledger_writer
+		every_in_global_list = {
+			variable = kehillah_sefer_masters
+			limit = {
+				is_alive = yes
+				NOT = { this = scope:kehillah_ledger_writer }
+				faith = scope:kehillah_ledger_writer.faith
+			}
+			set_variable = { name = kehillah_ledger_news_work value = scope:kehillah_ledger_writer.var:kehillah_sefer_my_latest_work days = 90 }
+			set_variable = { name = kehillah_ledger_news_author value = scope:kehillah_ledger_writer days = 90 }
+			if = {
+				limit = { is_ai = no }
+				trigger_event = { id = kehillah_ledger_news.0001 days = { 3 20 } }
+			}
+			else_if = {
+				limit = { kehillah_ledger_news_would_condemn_trigger = yes }
+				random = {
+					chance = 25
+					kehillah_review_cherem_dispatch_effect = { SOURCE = var:kehillah_ledger_news_work READ = unread }
+				}
+			}
+		}
+	}
+}
+
+kehillah_ledger_news_clear_effect = {
+	remove_variable = kehillah_ledger_news_work
+	remove_variable = kehillah_ledger_news_author
+}
