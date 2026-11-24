@@ -186,11 +186,21 @@ kehillah_sefer_write_authored_work_effect = {
 # quality (masterwork Obscure, famed Circulating, illustrious Respected).
 kehillah_sefer_place_written_work_effect = {
 	kehillah_sefer_ensure_counters_effect = { KEY = $KEY$ }
-	var:kehillah_own_library ?= {
+	# 2026-11-24 (Daniel): an author with no library of his own -- a Jewish
+	# ruler, an adventurer, a merchant -- places the book in a library he can
+	# read (the county he is in, his domicile's, or one he rules), else the
+	# nearest one. var:kehillah_sefer_book_library remembers where (the Ledger
+	# news journey goes there).
+	kehillah_sefer_find_book_library_effect = yes
+	scope:kehillah_sefer_book_library ?= {
 		if = {
 			limit = { NOT = { is_target_in_variable_list = { name = kehillah_library_works target = flag:$KEY$ } } }
 			add_to_variable_list = { name = kehillah_library_works target = flag:$KEY$ }
 		}
+	}
+	if = {
+		limit = { exists = scope:kehillah_sefer_book_library }
+		set_variable = { name = kehillah_sefer_book_library value = scope:kehillah_sefer_book_library }
 	}
 	if = {
 		limit = { NOT = { is_target_in_variable_list = { name = kehillah_mastered_works target = flag:$KEY$ } } }
@@ -353,4 +363,49 @@ kehillah_sefer_forget_slot_effect = {
 		}
 	}
 	debug_log = "kehillah_sefer_forget_slot_effect: a forgotten book's slot was freed"
+}
+
+# 2026-11-24. Scope: an author. Saves scope:kehillah_sefer_book_library: his own
+# library; else one he can read where he is (the county he is in, his
+# domicile's county, or a county he rules -- kehillah_study_can_read_library_
+# trigger); else the nearest open library, searched in widening rings of
+# squared map distance from where he is; else any open library.
+kehillah_sefer_find_book_library_effect = {
+	save_scope_as = kehillah_sefer_book_author
+	if = {
+		limit = { var:kehillah_own_library ?= { exists = holder } }
+		var:kehillah_own_library = { save_scope_as = kehillah_sefer_book_library }
+	}
+	else_if = {
+		limit = {
+			any_in_global_list = {
+				variable = kehillah_libraries
+				kehillah_study_can_read_library_trigger = { CHARACTER = scope:kehillah_sefer_book_author LIBRARY = this }
+			}
+		}
+		random_in_global_list = {
+			variable = kehillah_libraries
+			limit = { kehillah_study_can_read_library_trigger = { CHARACTER = scope:kehillah_sefer_book_author LIBRARY = this } }
+			save_scope_as = kehillah_sefer_book_library
+		}
+	}
+	else_if = {
+		limit = { any_in_global_list = { variable = kehillah_libraries kehillah_sefer_book_library_within_trigger = { RANGE = 40000 } } }
+		random_in_global_list = { variable = kehillah_libraries limit = { kehillah_sefer_book_library_within_trigger = { RANGE = 40000 } } save_scope_as = kehillah_sefer_book_library }
+	}
+	else_if = {
+		limit = { any_in_global_list = { variable = kehillah_libraries kehillah_sefer_book_library_within_trigger = { RANGE = 160000 } } }
+		random_in_global_list = { variable = kehillah_libraries limit = { kehillah_sefer_book_library_within_trigger = { RANGE = 160000 } } save_scope_as = kehillah_sefer_book_library }
+	}
+	else_if = {
+		limit = { any_in_global_list = { variable = kehillah_libraries kehillah_sefer_book_library_within_trigger = { RANGE = 640000 } } }
+		random_in_global_list = { variable = kehillah_libraries limit = { kehillah_sefer_book_library_within_trigger = { RANGE = 640000 } } save_scope_as = kehillah_sefer_book_library }
+	}
+	else = {
+		random_in_global_list = {
+			variable = kehillah_libraries
+			limit = { exists = holder NOT = { has_variable = kehillah_library_sealed } }
+			save_scope_as = kehillah_sefer_book_library
+		}
+	}
 }
