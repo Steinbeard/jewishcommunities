@@ -8,6 +8,9 @@ from kehillah_docket_batch10_data import EXTRA_CASES
 from kehillah_docket_batch20_data import EXTRA_CASES_2
 from kehillah_docket_batch30_data import EXTRA_CASES_3
 from kehillah_docket_batch40_data import EXTRA_CASES_4
+from kehillah_docket_batch50_data import EXTRA_CASES_5
+from kehillah_docket_batch60_data import EXTRA_CASES_6
+from kehillah_docket_batch70_data import EXTRA_CASES_7
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = (ROOT / "events/kehillah_bet_din_stranger_aid_events.txt").read_text(encoding="utf-8-sig")
@@ -102,6 +105,9 @@ CASES.extend(EXTRA_CASES)
 CASES.extend(EXTRA_CASES_2)
 CASES.extend(EXTRA_CASES_3)
 CASES.extend(EXTRA_CASES_4)
+CASES.extend(EXTRA_CASES_5)
+CASES.extend(EXTRA_CASES_6)
+CASES.extend(EXTRA_CASES_7)
 
 for case in CASES:
     n = case["n"]
