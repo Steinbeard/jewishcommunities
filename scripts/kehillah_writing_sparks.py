@@ -39,6 +39,13 @@ DISCS = {
     "talmudics": ("Talmudics", "talmudics"),
     "hashkafa": ("Machshavah", "machshava"),
 }
+# Upgrade events: kehillah_spark.00(1|2)<n> for Chiddush / Great Work.
+DISC_EVENT = {"parshanut": 1, "talmudics": 2, "hashkafa": 3}
+# Each discipline's colour on its card (r g b): Scripture blue, Talmud
+# crimson, Machshavah green.
+DISC_COLOR = {"parshanut": "0.22 0.40 0.66", "talmudics": "0.62 0.20 0.17", "hashkafa": "0.20 0.52 0.42"}
+# Learning lifestyle experience for upgrading: an earned, visible reward.
+UPGRADE_XP = {2: 100, 3: 300}
 # form: (discipline, book genre for the scheme, noun phrase, title case)
 FORMS = {
     "torah": ("parshanut", "parshanut", "a Torah commentary", "Torah Commentary"),
@@ -331,6 +338,14 @@ def triggers() -> str:
             out.append(f"kehillah_spark_route_{disc}_{route}_trigger = {{ {body} }}")
         out.append(f"kehillah_spark_can_deepen_{disc}_trigger = {{ OR = {{ " +
                    " ".join(f"kehillah_spark_route_{disc}_{r}_trigger = yes" for r in ROUTES[disc]) + " } }")
+        great = [f for f in forms_of(disc) if f in set(NICHES.values())]
+        ready = " ".join(f"AND = {{ kehillah_spark_holds_{f}_trigger = yes kehillah_writing_landmark_ready_{f}_trigger = yes }}"
+                         for f in great)
+        out.append(f"kehillah_spark_can_be_great_{disc}_trigger = {{ OR = {{ {ready} }} }}")
+        out.append(f"# The Upgrade button: the held spark's next tier is earned.")
+        out.append(f"kehillah_spark_can_upgrade_{disc}_trigger = {{ OR = {{ "
+                   f"AND = {{ var:kehillah_spark_{disc}_tier ?= 1 kehillah_spark_can_deepen_{disc}_trigger = yes }} "
+                   f"AND = {{ var:kehillah_spark_{disc}_tier ?= 2 kehillah_spark_can_be_great_{disc}_trigger = yes }} }} }}")
     out.append("")
     out.append("# A niche worth showing: unwritten, still open and, where it names one, in the viewer's rite.")
     for key in NICHES:
@@ -346,6 +361,7 @@ def values() -> str:
         out.append(f"kehillah_spark_{disc}_apt_target_value = {{ value = 0 if = {{ limit = {{ has_variable = kehillah_spark_{disc}_apt }} "
                    f"value = var:kehillah_spark_{disc}_apt add = {APT_STEP} }} }}")
         out.append(f"kehillah_spark_{disc}_tier_value = {{ value = 0 if = {{ limit = {{ has_variable = kehillah_spark_{disc}_tier }} value = var:kehillah_spark_{disc}_tier }} }}")
+        out.append(f"kehillah_spark_{disc}_ready_value = {{ value = 0 if = {{ limit = {{ kehillah_spark_can_upgrade_{disc}_trigger = yes }} value = 1 }} }}")
         for route in ROUTES[disc]:
             out.append(f"kehillah_spark_route_{disc}_{route}_value = {{ value = 0 if = {{ limit = {{ kehillah_spark_route_{disc}_{route}_trigger = yes }} value = 1 }} }}")
     for key in NICHES:
@@ -374,6 +390,7 @@ def effects() -> str:
                 f"\tremove_variable = kehillah_spark_{disc}_work",
                 f"\tremove_variable = kehillah_spark_{disc}_base",
                 f"\tremove_variable = kehillah_spark_{disc}_apt",
+                f"\tremove_variable = kehillah_spark_{disc}_ready_told",
                 f"\tclear_variable_list = kehillah_spark_{disc}_paths"]
         out += [f"\tremove_variable = kehillah_spark_{disc}_did_{r}" for r in ACTION_ROUTES]
         out.append("}")
@@ -430,21 +447,38 @@ def effects() -> str:
                        f"kehillah_spark_niche_shown_{key}_trigger = yes }} "
                        f"add_to_variable_list = {{ name = kehillah_spark_{disc}_paths target = flag:{key} }} }}")
         out.append("}")
-        great = [f for f in forms_of(disc) if f in set(NICHES.values())]
-        ready = " ".join(f"AND = {{ kehillah_spark_holds_{f}_trigger = yes kehillah_writing_landmark_ready_{f}_trigger = yes }}"
-                         for f in great)
+        # 2026-11-24 (Daniel: "upgrading the spark should be an active choice
+        # that feels good"): ripening only tells the player once that the
+        # Upgrade button is ready. The AI upgrades at once.
         out += [f"kehillah_spark_ripen_{disc}_effect = {{",
+                f"\tif = {{ limit = {{ has_variable = kehillah_spark_{disc}_form }} kehillah_spark_refresh_paths_{disc}_effect = yes }}",
+                "\tif = {",
+                f"\t\tlimit = {{ kehillah_spark_can_upgrade_{disc}_trigger = yes }}",
+                "\t\tif = {",
+                "\t\t\tlimit = { is_ai = yes }",
+                f"\t\t\tkehillah_spark_upgrade_{disc}_effect = yes",
+                "\t\t}",
+                "\t\telse_if = {",
+                f"\t\t\tlimit = {{ NOT = {{ has_variable = kehillah_spark_{disc}_ready_told }} }}",
+                f"\t\t\tset_variable = {{ name = kehillah_spark_{disc}_ready_told value = yes }}",
+                "\t\t\t" + toast("ready", disc),
+                "\t\t}",
+                "\t}",
+                "}"]
+        out += [f"# The Upgrade button (scripted gui kehillah_spark_upgrade_{disc}).",
+                f"kehillah_spark_upgrade_{disc}_effect = {{",
                 "\tif = {",
                 f"\t\tlimit = {{ var:kehillah_spark_{disc}_tier ?= 1 kehillah_spark_can_deepen_{disc}_trigger = yes }}",
                 f"\t\tset_variable = {{ name = kehillah_spark_{disc}_tier value = 2 }}",
-                "\t\t" + toast("deepen", disc),
+                f"\t\tif = {{ limit = {{ is_ai = no }} trigger_event = kehillah_spark.{DISC_EVENT[disc] + 10:04d} }}",
                 "\t}",
-                "\tif = {",
-                f"\t\tlimit = {{ var:kehillah_spark_{disc}_tier ?= 2 OR = {{ {ready} }} }}",
+                "\telse_if = {",
+                f"\t\tlimit = {{ var:kehillah_spark_{disc}_tier ?= 2 kehillah_spark_can_be_great_{disc}_trigger = yes }}",
                 f"\t\tset_variable = {{ name = kehillah_spark_{disc}_tier value = 3 }}",
-                "\t\t" + toast("great", disc),
+                f"\t\tif = {{ limit = {{ is_ai = no }} trigger_event = kehillah_spark.{DISC_EVENT[disc] + 20:04d} }}",
                 "\t}",
-                f"\tif = {{ limit = {{ has_variable = kehillah_spark_{disc}_form }} kehillah_spark_refresh_paths_{disc}_effect = yes }}",
+                f"\tremove_variable = kehillah_spark_{disc}_ready_told",
+                f"\tkehillah_spark_refresh_paths_{disc}_effect = yes",
                 "}"]
     out += ["kehillah_spark_ripen_all_effect = {"] + \
            [f"\tkehillah_spark_ripen_{d}_effect = yes" for d in DISCS] + ["}"]
@@ -554,6 +588,21 @@ def events() -> str:
             "\t\thidden_effect = { kehillah_spark_take_pending_effect = yes }",
             "\t}",
             "}"]
+    # The upgrade moment: a short scene and a visible reward.
+    for disc, n in DISC_EVENT.items():
+        for tier, base, anim in ((2, 10, "personality_rational"), (3, 20, "happiness")):
+            eid = f"kehillah_spark.{base + n:04d}"
+            out += ["", f"{eid} = {{",
+                    "\ttype = character_event",
+                    f"\ttitle = kehillah_spark.upgrade_{tier}.t",
+                    f"\tdesc = kehillah_spark.upgrade_{tier}_{disc}.desc",
+                    "\ttheme = learning",
+                    f"\tleft_portrait = {{ character = root animation = {anim} }}",
+                    "\toption = {",
+                    f"\t\tname = kehillah_spark.upgrade_{tier}.a",
+                    f"\t\tadd_learning_lifestyle_xp = {UPGRADE_XP[tier]}",
+                    "\t}",
+                    "}"]
     return "\n".join(out) + "\n"
 
 
@@ -620,8 +669,15 @@ def loc() -> str:
         out.append(f' kehillah_spark_disc_{disc}:0 "{name}"')
         out.append(f' kehillah_spark_held_{disc}:0 "[ROOT.Char.Custom(\'KehillahSparkForm_{disc}\')] #weak ([ROOT.Char.Custom(\'KehillahSparkTier_{disc}\')])#!"')
         out.append(f' kehillah_spark_new_{disc}_toast:0 "{name}: an idea for {held}."')
-        out.append(f' kehillah_spark_deepen_{disc}_toast:0 "{name}: my idea for {held} has become a #high Chiddush#!."')
-        out.append(f' kehillah_spark_great_{disc}_toast:0 "{name}: my idea for {held} could become a #high Great Work#!."')
+        out.append(f' kehillah_spark_ready_{disc}_toast:0 "{name}: my idea for {held} is ready to grow. #weak Upgrade it from the Learning window.#!"')
+        root = f"[ROOT.Char.Custom('KehillahSparkForm_{disc}')]"
+        chiddush = {
+            "parshanut": f"I read the verses again with my idea beside them, and this time they answered. My idea for {root} is no longer a passing thought.\\n\\nIt is a #high chiddush#!: a reading no one has set down before.",
+            "talmudics": f"The sugya that would not close has closed. Turning the argument once more, I see where my idea for {root} must stand.\\n\\nIt is a #high chiddush#! now, reasoned through to its end.",
+            "hashkafa": f"What began as a question has found its answer. My idea for {root} holds together now, from its first principle to its last.\\n\\nIt is a #high chiddush#! of my own.",
+        }[disc]
+        out.append(f' kehillah_spark.upgrade_2_{disc}.desc:0 "{chiddush}"')
+        out.append(f' kehillah_spark.upgrade_3_{disc}.desc:0 "Late in the night it came to me whole. My idea for {root} could become one of the books that generations copy, cite and argue over.\\n\\nFew scholars are given such an idea. Fewer still finish it."')
         out.append(f' kehillah_spark_empty_{disc}:0 "Master a work of {name} to spark an idea."')
         for route in ROUTES[disc]:
             if route == "apt":
@@ -651,6 +707,7 @@ def sv(name_expr: str) -> str:
 
 
 def check_line(value_expr: str, text_expr: str, indent: int, visible: str | None = None) -> str:
+    """One check/cross requirement line, for a dark tooltip background."""
     t = "\t" * indent
     vis = f'\n{t}\tvisible = "{visible}"' if visible else ""
     return f"""{t}hbox = {{{vis}
@@ -665,46 +722,29 @@ def check_line(value_expr: str, text_expr: str, indent: int, visible: str | None
 {t}\t\tvisible = "[EqualTo_CFixedPoint( {value_expr}, '(CFixedPoint)0' )]"
 {t}\t\tsize = {{ 18 18 }}
 {t}\t\ttexture = "gfx/interface/icons/symbols/icon_cross.dds"
-{t}\t\talpha = 0.55
+{t}\t\talpha = 0.6
 {t}\t}}
 {t}\ttext_single = {{
 {t}\t\ttext = "{text_expr}"
-{t}\t\tdefault_format = "#light_background"
-{t}\t\tusing = Text_Light_Background_Overrides
 {t}\t\talign = left|nobaseline
-{t}\t\tmax_width = 440
+{t}\t\tmax_width = 380
 {t}\t}}
 {t}\texpand = {{}}
 {t}}}"""
 
 
-def card(disc: str) -> str:
+def upgrade_tooltip(disc: str) -> str:
+    """The Upgrade button's tooltip: the next rung only."""
     name, apt = DISCS[disc]
     tier = sv(f"'kehillah_spark_{disc}_tier_value'")
-    held = f"{VIEW}.MakeScope.Var( 'kehillah_spark_{disc}_form' ).IsSet"
-    form = f"{VIEW}.MakeScope.Var( 'kehillah_spark_{disc}_form' ).GetFlagName"
-    work = f"{VIEW}.MakeScope.Var( 'kehillah_spark_{disc}_work' )"
-    stars = "\n".join(f"""\t\t\t\twidget = {{
-\t\t\t\t\tsize = {{ 20 20 }}
-\t\t\t\t\ticon = {{
-\t\t\t\t\t\tvisible = "[GreaterThanOrEqualTo_CFixedPoint( {tier}, '(CFixedPoint){n}' )]"
-\t\t\t\t\t\tsize = {{ 20 20 }}
-\t\t\t\t\t\ttexture = "gfx/interface/icons/flat_icons/star.dds"
-\t\t\t\t\t}}
-\t\t\t\t\ticon = {{
-\t\t\t\t\t\tvisible = "[LessThan_CFixedPoint( {tier}, '(CFixedPoint){n}' )]"
-\t\t\t\t\t\tsize = {{ 20 20 }}
-\t\t\t\t\t\ttexture = "gfx/interface/icons/flat_icons/star.dds"
-\t\t\t\t\t\talpha = 0.2
-\t\t\t\t\t}}
-\t\t\t\t}}""" for n in (1, 2, 3))
     routes = []
     for route in ROUTES[disc]:
         value = sv(f"'kehillah_spark_route_{disc}_{route}_value'")
         if route == "apt":
-            text = (f"[Concatenate( Localize( 'kehillah_spark_route_{disc}_apt' ), Concatenate( ' ', Concatenate( "
-                    f"IntToString( FixedPointToInt( {sv(f'{chr(39)}kehillah_writing_{apt}_aptitude_value{chr(39)}')} ) ), Concatenate( ' / ', "
-                    f"IntToString( FixedPointToInt( {sv(f'{chr(39)}kehillah_spark_{disc}_apt_target_value{chr(39)}')} ) ) ) ) ) )]")
+            cur = sv(f"'kehillah_writing_{apt}_aptitude_value'")
+            target = sv(f"'kehillah_spark_{disc}_apt_target_value'")
+            text = (f"[Concatenate( Localize( 'kehillah_spark_route_{disc}_apt' ), Concatenate( '  ', Concatenate( "
+                    f"IntToString( FixedPointToInt( {cur} ) ), Concatenate( ' / ', IntToString( FixedPointToInt( {target} ) ) ) ) ) )]")
         else:
             text = f"[Localize( 'kehillah_spark_route_{disc}_{route}' )]"
         routes.append(check_line(value, text, 5))
@@ -716,163 +756,259 @@ def card(disc: str) -> str:
                                 visible=f"[GreaterThanOrEqualTo_CFixedPoint( {value}, '(CFixedPoint)0' )]"))
     routes_s = "\n".join(routes)
     conds_s = "\n".join(conds)
-    return f"""	### {name}
-	type kehillah_spark_card_{disc} = vbox {{
-		layoutpolicy_horizontal = expanding
-		margin = {{ 12 8 }}
-		spacing = 4
-		background = {{
-			using = Background_Area
-			alpha = 0.4
-		}}
-
-		### Header: the spark, its discipline and its tier.
-		hbox = {{
-			layoutpolicy_horizontal = expanding
-			spacing = 10
+    return f"""		tooltipwidget = {{
 			widget = {{
-				size = {{ 44 44 }}
-				icon = {{
-					visible = "[{held}]"
-					size = {{ 44 44 }}
-					texture = "gfx/interface/icons/inspirations/book_inspiration.dds"
-				}}
-				icon = {{
-					visible = "[Not( {held} )]"
-					size = {{ 44 44 }}
-					texture = "gfx/interface/icons/inspirations/book_inspiration.dds"
-					alpha = 0.3
-				}}
-			}}
-			vbox = {{
-				layoutpolicy_horizontal = expanding
-				text_single = {{
-					layoutpolicy_horizontal = expanding
-					text = "kehillah_spark_disc_{disc}"
-					default_format = "#light_background;weak"
-					using = Text_Light_Background_Overrides
-					align = left|nobaseline
-				}}
-				text_single = {{
-					visible = "[{held}]"
-					layoutpolicy_horizontal = expanding
-					text = "[Localize( Concatenate( 'kehillah_spark_title_', {form} ) )]"
-					default_format = "#light_background;bold"
-					using = Text_Light_Background_Overrides
-					using = Font_Size_Medium
-					align = left|nobaseline
-					max_width = 330
-				}}
-				text_single = {{
-					visible = "[Not( {held} )]"
-					layoutpolicy_horizontal = expanding
-					text = "kehillah_spark_empty_{disc}"
-					default_format = "#light_background;weak"
-					using = Text_Light_Background_Overrides
-					align = left|nobaseline
-					max_width = 330
-				}}
-			}}
-			hbox = {{
-				visible = "[{held}]"
-				spacing = 2
-				tooltip = "[Concatenate( Localize( 'kehillah_spark_tier_tt_prefix' ), {VIEW}.Custom( 'KehillahSparkTier_{disc}' ) )]"
-{stars}
-			}}
-			button_standard = {{
-				visible = "[And( {held}, {VIEW}.IsLocalPlayer )]"
-				size = {{ 110 32 }}
-				text = "kehillah_spark_write_button"
-				enabled = "[GetScriptedGui( 'kehillah_spark_write' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-				onclick = "[GetScriptedGui( 'kehillah_spark_write' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-				tooltip = "kehillah_spark_write_button_tt"
-			}}
-		}}
-
-		### Where it came from.
-		text_single = {{
-			visible = "[And( {work}.IsSet, Not( EqualTo_string( {work}.GetFlagName, 'none' ) ) )]"
-			layoutpolicy_horizontal = expanding
-			margin_left = 54
-			text = "[Concatenate( Localize( 'kehillah_spark_from' ), Localize( Concatenate( 'kehillah_lib_name_', {work}.GetFlagName ) ) )]"
-			default_format = "#light_background;weak"
-			using = Text_Light_Background_Overrides
-			align = left|nobaseline
-			max_width = 460
-		}}
-
-		### Insight: any one route deepens it.
-		vbox = {{
-			visible = "[EqualTo_CFixedPoint( {tier}, '(CFixedPoint)1' )]"
-			layoutpolicy_horizontal = expanding
-			margin_left = 54
-			margin_top = 4
-			spacing = 2
-			text_single = {{
-				layoutpolicy_horizontal = expanding
-				text = "kehillah_spark_routes_header"
-				default_format = "#light_background;weak"
-				using = Text_Light_Background_Overrides
-				align = left|nobaseline
-			}}
-{routes_s}
-		}}
-
-		### Chiddush and Great Work: the open landmark paths for this form.
-		vbox = {{
-			visible = "[GreaterThanOrEqualTo_CFixedPoint( {tier}, '(CFixedPoint)2' )]"
-			layoutpolicy_horizontal = expanding
-			margin_left = 54
-			margin_top = 4
-			spacing = 4
-			text_single = {{
-				visible = "[EqualTo_CFixedPoint( {tier}, '(CFixedPoint)2' )]"
-				layoutpolicy_horizontal = expanding
-				text = "kehillah_spark_paths_header"
-				default_format = "#light_background;weak"
-				using = Text_Light_Background_Overrides
-				align = left|nobaseline
-			}}
-			text_single = {{
-				visible = "[EqualTo_CFixedPoint( {tier}, '(CFixedPoint)3' )]"
-				layoutpolicy_horizontal = expanding
-				text = "kehillah_spark_great_header"
-				default_format = "#light_background"
-				using = Text_Light_Background_Overrides
-				align = left|nobaseline
-			}}
-			text_single = {{
-				visible = "[IsDataModelEmpty( {VIEW}.MakeScope.GetList( 'kehillah_spark_{disc}_paths' ) )]"
-				layoutpolicy_horizontal = expanding
-				text = "kehillah_spark_no_paths"
-				default_format = "#light_background;weak"
-				using = Text_Light_Background_Overrides
-				align = left|nobaseline
-				max_width = 460
-			}}
-			vbox = {{
-				layoutpolicy_horizontal = expanding
-				spacing = 6
-				datamodel = "[{VIEW}.MakeScope.GetList( 'kehillah_spark_{disc}_paths' )]"
-				item = {{
-					vbox = {{
+				using = GeneralTooltipSetup
+				using = DefaultTooltipBackground
+				vbox = {{
+					margin = {{ 16 12 }}
+					spacing = 4
+					min_width = 300
+					text_single = {{
 						layoutpolicy_horizontal = expanding
-						spacing = 1
+						text = "kehillah_spark_upgrade_tt_title"
+						using = Font_Size_Medium
+						align = left|nobaseline
+					}}
+					### Insight: any one route.
+					vbox = {{
+						visible = "[EqualTo_CFixedPoint( {tier}, '(CFixedPoint)1' )]"
+						layoutpolicy_horizontal = expanding
+						spacing = 2
 						text_single = {{
 							layoutpolicy_horizontal = expanding
-							text = "[Localize( Concatenate( 'kehillah_spark_path_', Scope.GetFlagName ) )]"
-							default_format = "#light_background;bold"
-							using = Text_Light_Background_Overrides
+							text = "kehillah_spark_routes_header"
+							default_format = "#weak"
 							align = left|nobaseline
-							max_width = 460
+						}}
+{routes_s}
+					}}
+					### Chiddush: every open Great Work path.
+					vbox = {{
+						visible = "[EqualTo_CFixedPoint( {tier}, '(CFixedPoint)2' )]"
+						layoutpolicy_horizontal = expanding
+						spacing = 4
+						text_single = {{
+							layoutpolicy_horizontal = expanding
+							text = "kehillah_spark_paths_header"
+							default_format = "#weak"
+							align = left|nobaseline
+						}}
+						text_single = {{
+							visible = "[IsDataModelEmpty( {VIEW}.MakeScope.GetList( 'kehillah_spark_{disc}_paths' ) )]"
+							layoutpolicy_horizontal = expanding
+							text = "kehillah_spark_no_paths"
+							default_format = "#weak"
+							align = left|nobaseline
 						}}
 						vbox = {{
 							layoutpolicy_horizontal = expanding
-							margin_left = 8
-							spacing = 1
+							spacing = 6
+							datamodel = "[{VIEW}.MakeScope.GetList( 'kehillah_spark_{disc}_paths' )]"
+							item = {{
+								vbox = {{
+									layoutpolicy_horizontal = expanding
+									spacing = 1
+									text_single = {{
+										layoutpolicy_horizontal = expanding
+										text = "[Localize( Concatenate( 'kehillah_spark_path_', Scope.GetFlagName ) )]"
+										default_format = "#high"
+										align = left|nobaseline
+										max_width = 380
+									}}
+									vbox = {{
+										layoutpolicy_horizontal = expanding
+										margin_left = 6
+										spacing = 1
 {conds_s}
+									}}
+								}}
+							}}
 						}}
 					}}
+					text_single = {{
+						visible = "[EqualTo_CFixedPoint( {sv(f"'kehillah_spark_{disc}_ready_value'")}, '(CFixedPoint)1' )]"
+						layoutpolicy_horizontal = expanding
+						text = "kehillah_spark_upgrade_tt_ready"
+						align = left|nobaseline
+					}}
+				}}
+			}}
+		}}"""
+
+
+def card(disc: str) -> str:
+    name, _ = DISCS[disc]
+    color = DISC_COLOR[disc]
+    tier = sv(f"'kehillah_spark_{disc}_tier_value'")
+    ready = sv(f"'kehillah_spark_{disc}_ready_value'")
+    held = f"{VIEW}.MakeScope.Var( 'kehillah_spark_{disc}_form' ).IsSet"
+    form = f"{VIEW}.MakeScope.Var( 'kehillah_spark_{disc}_form' ).GetFlagName"
+    work = f"{VIEW}.MakeScope.Var( 'kehillah_spark_{disc}_work' )"
+    mine = f"{VIEW}.IsLocalPlayer"
+    stars = "\n".join(f"""				widget = {{
+					size = {{ 22 22 }}
+					icon = {{
+						visible = "[GreaterThanOrEqualTo_CFixedPoint( {tier}, '(CFixedPoint){n}' )]"
+						size = {{ 22 22 }}
+						texture = "gfx/interface/icons/flat_icons/star.dds"
+					}}
+					icon = {{
+						visible = "[LessThan_CFixedPoint( {tier}, '(CFixedPoint){n}' )]"
+						size = {{ 22 22 }}
+						texture = "gfx/interface/icons/flat_icons/star.dds"
+						alpha = 0.2
+					}}
+				}}""" for n in (1, 2, 3))
+    return f"""	### {name}: a card in its own colour.
+	type kehillah_spark_card_{disc} = widget {{
+		size = {{ 186 318 }}
+
+		### Drop shadow, offset down and right.
+		widget = {{
+			position = {{ 5 6 }}
+			size = {{ 182 312 }}
+			alpha = 0.35
+			background = {{
+				texture = "gfx/interface/colors/white.dds"
+				color = {{ 0.08 0.05 0.03 1 }}
+			}}
+		}}
+
+		### The card.
+		widget = {{
+			size = {{ 182 312 }}
+			background = {{ using = Background_Area_Dark }}
+			background = {{
+				texture = "gfx/interface/colors/white.dds"
+				color = {{ {color} 0.16 }}
+			}}
+			background = {{ using = Background_Frame }}
+
+			vbox = {{
+				size = {{ 100% 100% }}
+				margin_bottom = 10
+				spacing = 6
+
+				### Band: the discipline, in its colour.
+				widget = {{
+					layoutpolicy_horizontal = expanding
+					size = {{ 0 30 }}
+					background = {{
+						texture = "gfx/interface/colors/white.dds"
+						color = {{ {color} 0.9 }}
+					}}
+					text_single = {{
+						parentanchor = center
+						text = "kehillah_spark_disc_{disc}"
+						align = nobaseline
+					}}
+				}}
+
+				widget = {{
+					size = {{ 64 64 }}
+					icon = {{
+						visible = "[{held}]"
+						size = {{ 64 64 }}
+						texture = "gfx/interface/icons/inspirations/book_inspiration.dds"
+					}}
+					icon = {{
+						visible = "[Not( {held} )]"
+						size = {{ 64 64 }}
+						texture = "gfx/interface/icons/inspirations/book_inspiration.dds"
+						alpha = 0.18
+					}}
+				}}
+
+				### A held spark: its name, tier and source.
+				vbox = {{
+					visible = "[{held}]"
+					layoutpolicy_horizontal = expanding
+					spacing = 4
+					text_multi = {{
+						layoutpolicy_horizontal = expanding
+						autoresize = yes
+						max_width = 166
+						min_width = 166
+						text = "[Localize( Concatenate( 'kehillah_spark_title_', {form} ) )]"
+						using = Font_Size_Medium
+						align = hcenter|nobaseline
+					}}
+					hbox = {{
+						spacing = 2
+						tooltip = "[Concatenate( Localize( 'kehillah_spark_tier_tt_prefix' ), {VIEW}.Custom( 'KehillahSparkTier_{disc}' ) )]"
+{stars}
+					}}
+					text_single = {{
+						text = "[{VIEW}.Custom( 'KehillahSparkTier_{disc}' )]"
+						default_format = "#weak"
+						align = nobaseline
+					}}
+					text_multi = {{
+						visible = "[And( {work}.IsSet, Not( EqualTo_string( {work}.GetFlagName, 'none' ) ) )]"
+						layoutpolicy_horizontal = expanding
+						autoresize = yes
+						max_width = 166
+						min_width = 166
+						text = "[Concatenate( Localize( 'kehillah_spark_from' ), Localize( Concatenate( 'kehillah_lib_name_', {work}.GetFlagName ) ) )]"
+						default_format = "#weak"
+						align = hcenter|nobaseline
+					}}
+				}}
+
+				### An empty slot.
+				vbox = {{
+					visible = "[Not( {held} )]"
+					layoutpolicy_horizontal = expanding
+					spacing = 6
+					text_single = {{
+						text = "kehillah_spark_empty_slot"
+						using = Font_Size_Medium
+						default_format = "#weak"
+						align = nobaseline
+					}}
+					text_multi = {{
+						layoutpolicy_horizontal = expanding
+						autoresize = yes
+						max_width = 160
+						min_width = 160
+						text = "kehillah_spark_empty_{disc}"
+						default_format = "#weak"
+						align = hcenter|nobaseline
+					}}
+				}}
+
+				expand = {{}}
+
+				### Actions, on the player's own cards.
+				button_standard = {{
+					visible = "[And( {held}, And( {mine}, LessThan_CFixedPoint( {tier}, '(CFixedPoint)3' ) ) )]"
+					size = {{ 156 32 }}
+					text = "kehillah_spark_upgrade_button"
+					enabled = "[GetScriptedGui( 'kehillah_spark_upgrade_{disc}' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+					onclick = "[GetScriptedGui( 'kehillah_spark_upgrade_{disc}' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+					using = tooltip_es
+					glow = {{
+						visible = "[EqualTo_CFixedPoint( {ready}, '(CFixedPoint)1' )]"
+						glow_radius = 8
+						using = Glow_Standard
+						using = Color_Bright_Yellow
+					}}
+{upgrade_tooltip(disc)}
+				}}
+				### A Great Work's place in the action row, and a viewer's read-only tooltip.
+				text_single = {{
+					visible = "[And( {held}, GreaterThanOrEqualTo_CFixedPoint( {tier}, '(CFixedPoint)3' ) )]"
+					text = "kehillah_spark_great_badge"
+					align = nobaseline
+				}}
+				button_standard = {{
+					visible = "[And( {held}, {mine} )]"
+					size = {{ 156 32 }}
+					text = "kehillah_spark_write_button"
+					enabled = "[GetScriptedGui( 'kehillah_spark_write' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+					onclick = "[GetScriptedGui( 'kehillah_spark_write' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+					tooltip = "kehillah_spark_write_button_tt"
 				}}
 			}}
 		}}
@@ -882,15 +1018,15 @@ def card(disc: str) -> str:
 
 def gui() -> str:
     head = """##########################################################################
-# SPARK CARDS for the Learning window (2026-11-24, Daniel: "a very clean and
-# vanilla-like UI experience that cleanly communicates without overexplaining,
-# using icons, colors and smart visual hierarchies").
+# SPARK CARDS for the Learning window (2026-11-24, Daniel: "sparks like cards
+# in three columns, with a shadow and 'empty slot' ... color code the three
+# genres ... upgrading the spark should be an active choice that feels good").
 # GENERATED by scripts/kehillah_writing_sparks.py -- edit the script, not this.
 # One card per discipline, for the character the Learning window shows
-# (var:kehillah_learning_view). Header: inspiration icon, discipline, the
-# spark's name, three tier stars, and Write for the player. Below: the source
-# book, then the next rung only -- the Insight's routes, or the Chiddush's
-# open landmark paths -- as check/cross lines.
+# (var:kehillah_learning_view): a coloured band, the inspiration icon, the
+# spark's name, tier stars and source; on the player's own cards an Upgrade
+# button (its tooltip lists the next rung's requirements; it glows when they
+# are met) and Write.
 ##########################################################################
 types KehillahSparkCards
 {

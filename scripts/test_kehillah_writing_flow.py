@@ -63,7 +63,8 @@ class WritingFlowTest(unittest.TestCase):
         widget = read("gui/kehillah_scheme_widget.gui")
         for disc in ("parshanut", "talmudics", "hashkafa"):
             self.assertIn(f"kehillah_spark_card_{disc} = {{}}", window)
-            self.assertIn(f"type kehillah_spark_card_{disc} = vbox", cards)
+            self.assertIn(f"type kehillah_spark_card_{disc} = widget", cards)
+            self.assertIn(f"kehillah_spark_upgrade_{disc} = {{", read("common/scripted_guis/kehillah_learning_gui.txt"))
         self.assertIn("kehillah_spark_scheme_study_tt", widget)
         self.assertIn("kehillah_is_writing_scheme", read("common/schemes/scheme_types/kehillah_writing_scheme.txt"))
         self.assertIn("kehillah_spark_write = {", read("common/scripted_guis/kehillah_learning_gui.txt"))

@@ -53,6 +53,29 @@
 - **Write a Sefer event.** Each option reads *Torah Commentary (Chiddush)*. Its tooltip gives the tier's character, says writing uses the spark up and, for a Great Work, the landmark status.
 - **Popups** announce new, deepened and Great Work sparks. A top-bar suggestion, *An Idea to Write*, opens the choice.
 
+## Addendum 2026-11-24 (later): card columns and a chosen upgrade
+
+**Status: BUILT; source, tests and xTiger checked (no new findings); not yet seen in game.** Daniel asked for:
+- three card columns with a shadow and an "Empty slot" state;
+- one colour per discipline;
+- requirements moved into the tooltip of an **Upgrade Spark** button, with upgrading as an active, rewarding choice.
+
+This supersedes the Learning-window card layout above and the automatic ripening under *Lifecycle*.
+
+- **Cards.** The three cards sit side by side; the Learning window is now 660 wide. Each card has:
+  - a drop shadow;
+  - a coloured band with the discipline's name: Parshanut blue, Talmudics crimson, Machshavah green;
+  - a faint tint of that colour;
+  - the inspiration icon, the spark's name, three tier stars, the tier name, and *From <book>*.
+  - An empty slot shows a faded icon, *Empty slot*, and how to fill it.
+- **Upgrade Spark** (`kehillah_spark_upgrade_<disc>` scripted GUIs), on the player's own cards below Insight and Chiddush sparks.
+  - Its tooltip lists only the next rung, as check/cross lines: the four routes for an Insight, the open Great Work paths for a Chiddush.
+  - The button is enabled and glows (vanilla bright-yellow glow) once a requirement is met. A Great Work shows a gold *Great Work* label in its place.
+- **Upgrading is chosen.** Meeting a rung no longer raises the tier. The player is told once (*An Idea Ripens* popup), and clicking Upgrade raises it.
+  - The click opens a short scene: *A Chiddush*, with text per discipline, or *A Great Work Within Reach*.
+  - Its option grants learning lifestyle experience: 100 for a Chiddush, 300 for a Great Work.
+  - AI characters upgrade automatically.
+
 ## Files
 
 `scripts/kehillah_writing_sparks.py` generates:
