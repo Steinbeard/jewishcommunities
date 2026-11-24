@@ -18,11 +18,36 @@ kehillah_writing_clear_draft_effect = {
 	remove_variable = kehillah_book_lang
 	remove_variable = kehillah_book_work
 	remove_variable = kehillah_writing_ordinary_form
+	remove_variable = kehillah_writing_spark_tier
 }
 
 kehillah_writing_choose_project_effect = {
 	set_variable = { name = kehillah_writing_form value = flag:$FORM$ }
 	set_variable = { name = kehillah_book_genre value = flag:$GENRE$ }
+	set_variable = { name = kehillah_writing_spark_tier value = var:kehillah_spark_$FORM$ }
+}
+
+# 2026-11-23 sparks: an option's preview names the spark's tier and only its
+# next rung. APT is the discipline's aptitude key.
+kehillah_spark_option_hint_effect = {
+	if = {
+		limit = { var:kehillah_spark_$FORM$ ?= 1 }
+		custom_tooltip = kehillah_spark_tier_1_tt
+		custom_tooltip = kehillah_spark_deepen_$APT$_tt
+	}
+	else_if = {
+		limit = { var:kehillah_spark_$FORM$ ?= 2 }
+		custom_tooltip = kehillah_spark_tier_2_tt
+		kehillah_writing_landmark_hint_effect = { FORM = $FORM$ }
+		if = {
+			limit = { kehillah_writing_landmark_open_$FORM$_trigger = yes }
+			custom_tooltip = kehillah_spark_great_rung_tt
+		}
+	}
+	else = {
+		custom_tooltip = kehillah_spark_tier_3_tt
+		kehillah_writing_landmark_hint_effect = { FORM = $FORM$ }
+	}
 }
 
 kehillah_writing_start_effect = {
@@ -33,6 +58,8 @@ kehillah_writing_start_effect = {
 			can_start_scheme = { type = kehillah_writing target_character = root }
 		}
 		add_piety = { value = kehillah_rabbi_book_piety_cost multiply = -1 }
+		# 2026-11-23: starting a project uses up its spark.
+		kehillah_spark_consume_current_effect = yes
 		set_variable = { name = kehillah_writing_recent value = yes days = 365 }
 		set_variable = { name = kehillah_writing_phase value = 0 }
 		set_variable = { name = kehillah_book_tally value = kehillah_writing_start_quality_value }
@@ -84,7 +111,10 @@ kehillah_writing_finish_effect = {
 		limit = { has_variable = kehillah_writing_success }
 		set_variable = { name = kehillah_writing_recent value = yes days = 3650 }
 		if = {
-			limit = { var:kehillah_book_tally >= 75 }
+			limit = {
+				var:kehillah_writing_spark_tier ?= 3
+				var:kehillah_book_tally >= kehillah_writing_landmark_quality_value
+			}
 			random = {
 				chance = kehillah_writing_landmark_chance_value
 				kehillah_writing_select_landmark_effect = yes
@@ -119,6 +149,7 @@ kehillah_writing_finish_effect = {
 	remove_variable = kehillah_writing_extra_time
 	remove_variable = kehillah_book_comment_on
 	remove_variable = kehillah_book_lang
+	remove_variable = kehillah_writing_spark_tier
 }
 
 kehillah_writing_create_manuscript_effect = {
@@ -147,5 +178,15 @@ kehillah_writing_create_manuscript_effect = {
 				set_artifact_rarity = masterwork
 			}
 		}
+	}
+}
+
+# 2026-11-23 sparks: once per writer, one spark in any form they could hold,
+# so a new game or an older save does not begin with an empty Write a Sefer.
+kehillah_spark_seed_effect = {
+	if = {
+		limit = { NOT = { has_variable = kehillah_spark_seeded } }
+		set_variable = { name = kehillah_spark_seeded value = yes }
+		kehillah_spark_from_any_effect = yes
 	}
 }
