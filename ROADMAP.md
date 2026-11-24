@@ -1,6 +1,6 @@
 # Roadmap
 
-**Community and province cards ADJUSTED 2026-11-23; live visual check pending:** the holding-strip menorah moves to the right end and shares its symbol with the Quarter shortcut. Fixed-height divider cells and centered leader details aim to correct the card alignment and stretched vacant-site frame. Verify both cards, long names, recorded history, the library card and clicks in game. See [the inspector notes](docs/implementation/2026-10-25-community-map-inspector.md).
+**Community and province cards ADJUSTED 2026-11-23; live visual check pending:** the holding-strip menorah moves to the right end and shares its symbol with the Quarter shortcut. The card stack is lowered and moved right after Daniel reported overlap. Fixed-height divider cells and centered leader details aim to correct the card alignment and stretched vacant-site frame. Verify both cards, long names, recorded history, the library card and clicks in game. See [the inspector notes](docs/implementation/2026-10-25-community-map-inspector.md).
 
 **Private pre-alpha release path ADDED 2026-11-16; not yet uploaded:** `scripts/kehillah_build_release.py` stages a clean, player-only copy as the sibling mod `jewishcommunities_prealpha` (about 215 MB, no .git or docs). xTiger gives it the same baseline as the dev mod. The Steam steps (upload, then set visibility to Unlisted), the tester guide, the Workshop description and a re-shoot list are in [docs/release/](docs/release/steam-private-upload.md). Needs a smoke-test boot of the staged copy before the first upload.
 
