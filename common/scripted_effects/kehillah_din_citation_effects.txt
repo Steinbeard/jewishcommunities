@@ -13,14 +13,143 @@
 
 # Scope: the event's root, in the Bet Din. $JUDGE$ is the citing judge
 # (scope:kehillah_av_beit_din or root).
+#
+# 2026-11-23 (Daniel; docs/spec/2026-11-23-bet-din-citation-strength-and-
+# risk.md): naming a source no longer adds a flat tally. Each work the court
+# could name gets two values, shown on kehillah_din_cite.0001's options:
+#   strength    what the ruling gains if the argument holds. Higher for a
+#               work few scholars have mastered (a view the parties have not
+#               already weighed): kehillah_din_cite_strength_max, less
+#               kehillah_din_cite_strength_per_master for each master in the
+#               registered communities, never below _min.
+#   reliability the chance it holds: the work's standing in the judge's rite
+#               and the judge's Learning (kehillah_din_cite_reliability_*).
+# A failed argument costs kehillah_din_cite_fail_tally and names no work.
 kehillah_din_cite_source_effect = {
 	involved_activity = {
 		save_scope_as = kehillah_din_cite_activity
-		change_variable = { name = kehillah_bet_din_tally add = kehillah_din_cite_tally }
 		set_variable = { name = kehillah_din_citing_judge value = $JUDGE$ }
 	}
-	$JUDGE$ = { kehillah_din_case_$CASE$_pick_effect = yes }
+	$JUDGE$ = {
+		kehillah_din_case_$CASE$_pick_effect = yes
+		kehillah_din_cite_measure_effect = { SLOT = grounded }
+		kehillah_din_cite_measure_effect = { SLOT = innovative }
+		kehillah_din_cite_measure_effect = { SLOT = conviction }
+	}
 	trigger_event = kehillah_din_cite.0001
+}
+
+# Scope: the citing judge; scope:kehillah_din_cite_activity. Strength and
+# reliability of the work in $SLOT$, if the pick found one.
+kehillah_din_cite_measure_effect = {
+	if = {
+		limit = { exists = scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$ }
+		save_scope_as = kehillah_din_measuring_judge
+		# (Learning - pivot) * per-learning, held on the judge for a moment.
+		set_variable = { name = kehillah_din_cite_learning_bonus value = learning }
+		change_variable = { name = kehillah_din_cite_learning_bonus subtract = kehillah_din_cite_reliability_learning_pivot }
+		change_variable = { name = kehillah_din_cite_learning_bonus multiply = kehillah_din_cite_reliability_per_learning }
+		scope:kehillah_din_cite_activity = {
+			set_variable = { name = kehillah_din_cite_$SLOT$_masters value = 0 }
+			every_in_global_list = {
+				variable = kehillah_registered_communities
+				limit = { exists = holder }
+				holder = {
+					if = {
+						limit = { is_target_in_variable_list = { name = kehillah_mastered_works target = scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$ } }
+						scope:kehillah_din_cite_activity = { change_variable = { name = kehillah_din_cite_$SLOT$_masters add = 1 } }
+					}
+					every_courtier = {
+						limit = { is_target_in_variable_list = { name = kehillah_mastered_works target = scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$ } }
+						scope:kehillah_din_cite_activity = { change_variable = { name = kehillah_din_cite_$SLOT$_masters add = 1 } }
+					}
+				}
+			}
+			# Strength: max less per-master, floored at min.
+			set_variable = { name = kehillah_din_cite_$SLOT$_strength value = var:kehillah_din_cite_$SLOT$_masters }
+			change_variable = { name = kehillah_din_cite_$SLOT$_strength multiply = kehillah_din_cite_strength_per_master_neg }
+			change_variable = { name = kehillah_din_cite_$SLOT$_strength add = kehillah_din_cite_strength_max }
+			clamp_variable = { name = kehillah_din_cite_$SLOT$_strength min = kehillah_din_cite_strength_min max = kehillah_din_cite_strength_max }
+			# Reliability: base + standing * per-standing + (Learning - pivot) * per-learning.
+			# The pick left the work's standing in the judge's rite on the judge.
+			set_variable = { name = kehillah_din_cite_$SLOT$_reliability value = scope:kehillah_din_measuring_judge.var:kehillah_din_cite_$SLOT$_standing }
+			change_variable = { name = kehillah_din_cite_$SLOT$_reliability multiply = kehillah_din_cite_reliability_per_standing }
+			change_variable = { name = kehillah_din_cite_$SLOT$_reliability add = kehillah_din_cite_reliability_base }
+			change_variable = { name = kehillah_din_cite_$SLOT$_reliability add = scope:kehillah_din_measuring_judge.var:kehillah_din_cite_learning_bonus }
+			clamp_variable = { name = kehillah_din_cite_$SLOT$_reliability min = kehillah_din_cite_reliability_min max = kehillah_din_cite_reliability_max }
+		}
+		remove_variable = kehillah_din_cite_learning_bonus
+	}
+	remove_variable = kehillah_din_cite_$SLOT$_standing
+}
+
+# Scope: root of kehillah_din_cite.0001; scope:kehillah_din_cite_activity.
+# The argument resting on the work in $SLOT$ is tested: it holds with the
+# slot's reliability and adds its strength, or fails and costs the fail
+# tally. Either way the activity log records the citation. Call after the
+# option's own effect has named the work (kehillah_din_cited_work).
+kehillah_din_cite_roll_effect = {
+	random_list = {
+		0 = {
+			modifier = { add = scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$_reliability }
+			scope:kehillah_din_cite_activity = {
+				change_variable = { name = kehillah_bet_din_tally add = var:kehillah_din_cite_$SLOT$_strength }
+			}
+			if = {
+				limit = { scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$_strength >= kehillah_din_cite_strength_band_decisive }
+				custom_tooltip = kehillah_din_cite_holds_decisive_tt
+			}
+			else_if = {
+				limit = { scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$_strength >= kehillah_din_cite_strength_band_strong }
+				custom_tooltip = kehillah_din_cite_holds_strong_tt
+			}
+			else_if = {
+				limit = { scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$_strength >= kehillah_din_cite_strength_band_solid }
+				custom_tooltip = kehillah_din_cite_holds_solid_tt
+			}
+			else = { custom_tooltip = kehillah_din_cite_holds_modest_tt }
+			hidden_effect = {
+				scope:kehillah_din_cite_activity = {
+					kehillah_din_cite_log_dispatch_effect = { SOURCE = var:kehillah_din_cite_$SLOT$ RESULT = held JUDGE = var:kehillah_din_citing_judge }
+				}
+			}
+		}
+		0 = {
+			modifier = {
+				add = {
+					value = 100
+					subtract = scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$_reliability
+				}
+			}
+			scope:kehillah_din_cite_activity = {
+				change_variable = { name = kehillah_bet_din_tally subtract = kehillah_din_cite_fail_tally }
+			}
+			custom_tooltip = kehillah_din_cite_fails_tt
+			hidden_effect = {
+				scope:kehillah_din_cite_activity = {
+					kehillah_din_cite_log_dispatch_effect = { SOURCE = var:kehillah_din_cite_$SLOT$ RESULT = failed JUDGE = var:kehillah_din_citing_judge }
+					# A failed argument names no authority, so no work gains
+					# a citation from it (kehillah_bet_din_reward_judges_for_
+					# ruling_effect).
+					remove_variable = kehillah_din_cited_work
+				}
+			}
+		}
+	}
+}
+
+# Scope: root of kehillah_din_cite.0001. How widely the work in $SLOT$ is
+# studied, said in words (the reason for its strength).
+kehillah_din_cite_rarity_tt_effect = {
+	if = {
+		limit = { scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$_masters <= kehillah_din_cite_rare_masters }
+		custom_tooltip = kehillah_din_cite_rare_tt
+	}
+	else_if = {
+		limit = { scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$_masters >= kehillah_din_cite_common_masters }
+		custom_tooltip = kehillah_din_cite_common_tt
+	}
+	else = { custom_tooltip = kehillah_din_cite_known_tt }
 }
 
 # Scope: the citing judge. Each case's order.
@@ -114,14 +243,6 @@ kehillah_din_case_84_pick_effect = { kehillah_din_pick_citations_nezikin_effect 
 kehillah_din_cite_grounded_effect = {
 	scope:kehillah_din_cite_activity = {
 		set_variable = { name = kehillah_din_cited_work value = var:kehillah_din_cite_grounded }
-		# 2026-11-23: the Mishnah alone is weaker ground than a Talmud.
-		if = {
-			# The pick, not cited_work: the option tooltip is built before
-			# the set_variable above runs.
-			limit = { var:kehillah_din_cite_grounded ?= flag:work_mishnah }
-			change_variable = { name = kehillah_bet_din_tally subtract = kehillah_din_cite_mishnah_tally_penalty }
-			custom_tooltip = kehillah_din_cite_mishnah_weaker_tt
-		}
 	}
 	scope:kehillah_din_cite_activity.var:kehillah_bet_din_convening_title.holder ?= {
 		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_din_cite_grounded_stability }
