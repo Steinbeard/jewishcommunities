@@ -3,8 +3,8 @@
 Run: python scripts/kehillah_quarter_tier_sprite_pack.py
 
 The sheet art is retained unchanged. Each generated sprite is placed on a
-transparent 512px canvas with one scale shared by every tier of its family.
-Tier-specific vertical offsets keep smaller buildings near their slot labels.
+transparent 512px canvas with a common family scale. The first Hekdesh stage
+gets a modest lift so it is legible at the same scene scale as its neighbors.
 """
 
 from pathlib import Path
@@ -121,12 +121,17 @@ def pack(cells: list[Image.Image], family: str, region: str) -> list[Image.Image
     )
     packed = []
     for index, cell in enumerate(cells):
-        width = cell.width * scale
+        stage_scale = scale
+        if family == "hekdesh" and index == 0:
+            # The generated first stage has a much smaller footprint than
+            # its siblings; fill more of the fixed slot without redrawing it.
+            stage_scale *= min(1.33, 420 / (cell.width * scale))
+        width = cell.width * stage_scale
         if family == "synagogue":
             # CK3's main slot is 28% wide but only 34.5% high; mapping a
             # square texture into it otherwise makes the hall look squat.
             width *= MAIN_WIDTH_CORRECTION
-        size = (max(1, round(width)), max(1, round(cell.height * scale)))
+        size = (max(1, round(width)), max(1, round(cell.height * stage_scale)))
         cell = cell.resize(size, Image.Resampling.LANCZOS)
         canvas = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
         bottom = BOTTOM_MARGIN[family][index]
