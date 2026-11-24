@@ -1,0 +1,9 @@
+**Status:** BUILT 2026-11-23; xTiger/source review, live interaction check pending. Revises the Kehillah-side petition in [court flow](../spec/2026-11-01-nagid-court-flow-and-tax-office.md) and [Nagid build](2026-10-30-nagid-build.md).
+
+# Petitioning for a Head of the Jews
+
+Daniel asked for a personal request with visible reasons. The capital community leader now petitions the realm ruler via character interaction; the empty office frame opens it. AI acceptance shows opinion, favored status, Protector outlook, Flourishing standing, MENA court, greed and zeal. Favored, Protector and Flourishing are bonuses rather than gates. A minimum Healthy standing, qualified adult leader, valid seat and policy allowing the office are retained because the existing yearly lifecycle otherwise removes the holder or abolishes the office. Ruler-initiated founding and AI community petitions retain their existing rules.
+
+The AI answers using interaction acceptance rather than a hidden random roll. A human ruler accepts or declines the interaction; acceptance opens the existing audience to choose a post. An AI ruler appoints immediately. Refusal alone applies the five-year cooldown. Acceptance rechecks the situation before founding to avoid stale requests creating an invalid office. `event kehillah_nagid_debug.9` logs the petition prerequisites and selected political factors.
+
+Live checks still needed: open from portrait and realm view; compare acceptance reasons as opinion, outlook, status and standing change; test refusal and five-year cooldown, AI acceptance, human-ruler response and stale requests. Confirm the office and service survive a yearly pulse and inspect error.log. xTiger's new throne-room background scope warnings arise from vanilla background triggers on the existing audience event.
