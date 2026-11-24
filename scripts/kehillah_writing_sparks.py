@@ -581,7 +581,10 @@ def values() -> str:
 
 
 def toast(kind: str, disc: str) -> str:
-    return (f"if = {{ limit = {{ is_ai = no }} send_interface_toast = {{ type = event_toast_text_good "
+    # 2026-11-24 (Daniel): a new or ripened spark's toast opens the Sparks when
+    # clicked (msg_kehillah_spark_toast's flag, gui/hud_notification_templates.gui).
+    kind_type = "event_toast_text_good" if kind == "craft" else "msg_kehillah_spark_toast"
+    return (f"if = {{ limit = {{ is_ai = no }} send_interface_toast = {{ type = {kind_type} "
             f"title = kehillah_spark_{kind}_toast_t desc = kehillah_spark_{kind}_{disc}_toast left_icon = this }} }}")
 
 
@@ -1009,8 +1012,8 @@ def loc() -> str:
         for tier, tname in ((2, "a Chiddush"), (3, "a Great Work")):
             out.append(f' kehillah_spark.0001.deepen_{disc}.{tier}:0 "Deepen my idea for [GetPlayer.Custom(\'KehillahSparkForm_{disc}\')] into {tname} first."')
         out.append(f' kehillah_spark_held_{disc}:0 "[ROOT.Char.Custom(\'KehillahSparkForm_{disc}\')] #weak ([ROOT.Char.Custom(\'KehillahSparkTier_{disc}\')])#!"')
-        out.append(f' kehillah_spark_new_{disc}_toast:0 "{name}: an idea for {held}."')
-        out.append(f' kehillah_spark_ready_{disc}_toast:0 "{name}: my idea for {held} is ready to grow. #weak Upgrade it from the Learning window.#!"')
+        out.append(f' kehillah_spark_new_{disc}_toast:0 "{name}: an idea for {held}. #weak Click to see it.#!"')
+        out.append(f' kehillah_spark_ready_{disc}_toast:0 "{name}: my idea for {held} is ready to grow. #weak Click to upgrade it.#!"')
         root = f"[ROOT.Char.Custom('KehillahSparkForm_{disc}')]"
         chiddush = {
             "parshanut": f"I read the verses again with my idea beside them, and this time they answered. My idea for {root} is no longer a passing thought.\\n\\nIt is a #high chiddush#!: a reading no one has set down before.",
