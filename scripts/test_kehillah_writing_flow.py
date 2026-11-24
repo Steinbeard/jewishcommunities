@@ -29,7 +29,7 @@ class WritingFlowTest(unittest.TestCase):
         for form, _, disc in forms:
             self.assertIn(f"kehillah_writing_{form}_trigger = {{", triggers)
             self.assertIn(f"kehillah_spark_can_hold_{form}_trigger = {{", sparks)
-            self.assertIn(f"trigger = {{ kehillah_spark_holds_{form}_trigger = yes }}", events)
+            self.assertIn(f"trigger = {{ kehillah_spark_holds_{form}_trigger = yes NOT = {{ kehillah_writing_busy_trigger = yes }} }}", events)
             self.assertIn(f" kehillah_writing.{form}.tt:0", loc)
             for tier in (1, 2, 3):
                 self.assertIn(f" kehillah_spark.0001.{form}.{tier}:0", spark_loc)

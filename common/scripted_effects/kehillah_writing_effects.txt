@@ -23,6 +23,9 @@ kehillah_writing_clear_draft_effect = {
 }
 
 kehillah_writing_choose_project_effect = {
+	# 2026-11-24: a project chosen and not yet begun blocks a second Write
+	# (kehillah_writing_busy_trigger); cleared when the scheme starts.
+	set_variable = { name = kehillah_writing_pending value = yes days = 5 }
 	set_variable = { name = kehillah_writing_form value = flag:$FORM$ }
 	set_variable = { name = kehillah_book_genre value = flag:$GENRE$ }
 	set_variable = { name = kehillah_writing_spark_tier value = var:kehillah_spark_$DISC$_tier }
@@ -70,7 +73,15 @@ kehillah_spark_option_hint_effect = {
 }
 
 kehillah_writing_start_effect = {
+	remove_variable = kehillah_writing_pending
+	# 2026-11-24 fix (Daniel: a scheme "ended without notifying me"): a second
+	# start while a writing scheme already runs must do nothing. Clearing the
+	# draft here erased var:kehillah_writing_form, which the running scheme's
+	# valid block needs, so it was silently invalidated.
 	if = {
+		limit = { any_scheme = { type = kehillah_writing } }
+	}
+	else_if = {
 		limit = {
 			has_variable = kehillah_writing_form
 			piety >= kehillah_rabbi_book_piety_cost

@@ -829,14 +829,15 @@ def events() -> str:
            "\ttheme = learning",
            "\tleft_portrait = { character = root animation = thinking }",
            "\timmediate = {",
-           "\t\tkehillah_writing_clear_draft_effect = yes",
+           "\t\t# Never clear a draft a running or pending book depends on.",
+           "\t\tif = { limit = { NOT = { kehillah_writing_busy_trigger = yes } } kehillah_writing_clear_draft_effect = yes }",
            "\t\tkehillah_spark_ripen_all_effect = yes",
            "\t}"]
     for form, (disc, genre, _, _) in FORMS.items():
         out += ["\toption = {"]
         for tier in (1, 2, 3):
             out.append(f"\t\tname = {{ trigger = {{ var:kehillah_spark_{disc}_tier ?= {tier} }} text = kehillah_spark.0001.{form}.{tier} }}")
-        out += [f"\t\ttrigger = {{ kehillah_spark_holds_{form}_trigger = yes }}",
+        out += [f"\t\ttrigger = {{ kehillah_spark_holds_{form}_trigger = yes NOT = {{ kehillah_writing_busy_trigger = yes }} }}",
                 f"\t\tkehillah_spark_option_hint_effect = {{ FORM = {form} DISC = {disc} }}",
                 f"\t\tkehillah_writing_choose_project_effect = {{ FORM = {form} GENRE = {genre} DISC = {disc} }}",
                 "\t\ttrigger_event = { id = kehillah_writing.0010 days = 1 }",
