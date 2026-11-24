@@ -100,5 +100,5 @@ Debug events:
 
 ## Known limits
 
-- The historical ambitions (*Kuzari*, *Moreh*, Rif, Mishneh Torah and others) appear as one line, "A life given to this study", rather than their full alternative conditions.
+- ~~The historical ambitions appear as one line.~~ **Fixed 2026-11-24:** each ambition lists its general path's real requirements (`NAMED` in the generator), up to eight lines. A line the historical author can meet more easily (Rashi, the Rif, Ri, Maimonides) also accepts his shortcut, so he sees it ticked. `NAMED` must be kept in step with `kehillah_sefer_ambition_triggers.txt`, which still decides the landmark.
 - Sparks from 2026-11-23 test saves (`kehillah_spark_<form>` variables) are ignored, not migrated.

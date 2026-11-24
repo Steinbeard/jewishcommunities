@@ -68,6 +68,10 @@ class WritingFlowTest(unittest.TestCase):
         self.assertIn("kehillah_is_writing_scheme", read("common/schemes/scheme_types/kehillah_writing_scheme.txt"))
         self.assertIn("kehillah_spark_write = {", read("common/scripted_guis/kehillah_learning_gui.txt"))
         self.assertEqual(cards.count("{"), cards.count("}"))
+        # 2026-11-24: historical ambitions list their real requirements.
+        spark_loc = read("localization/english/kehillah_writing_spark_generated_l_english.yml")
+        self.assertNotIn("A life given to this study", spark_loc)
+        self.assertIn(" kehillah_spark_nc_work_rashi_torah_8:0", spark_loc)
 
     def test_landmarks_are_finish_outcomes_and_names_are_unique(self) -> None:
         effects = read("common/scripted_effects/kehillah_writing_effects.txt")

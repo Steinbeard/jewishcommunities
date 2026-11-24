@@ -129,7 +129,112 @@ RITE_LABEL = {
     landmarks.KARAITE: "Karaite rite",
     landmarks.HAYMANOT: "Haymanot rite",
 }
-MAX_CONDITIONS = 5
+MAX_CONDITIONS = 8
+
+
+# The ten historical ambitions (common/scripted_triggers/kehillah_sefer_
+# ambition_triggers.txt), spelled out as their general path. Each line marked
+# True also accepts the historical author's shorter path (SHORTCUT), so that
+# author sees every line ticked when he qualifies. Keep in step with the
+# triggers; the landmark itself is still decided by them.
+def xp(track: str, n: int) -> str:
+    return f"has_trait_xp = {{ trait = kehillah_rabbi_trait track = {track} value >= {n} }}"
+
+
+def mastered_any(*works: str) -> str:
+    return "OR = { " + " ".join(landmarks.mastered(w) for w in works) + " }"
+
+
+def name(work: str) -> str:
+    return f"$kehillah_lib_name_{work}$"
+
+
+RABBI = ("has_trait = kehillah_rabbi_trait", "Be a Rabbi", False)
+SHORTCUT = {
+    "work_rashi_torah": f"AND = {{ character:9000201 ?= this {xp('parshanut', 30)} }}",
+    "work_rashi_talmud": "AND = { character:9000201 ?= this kehillah_lib_bavli_mastered_count_value >= 2 }",
+    "work_hilkhot_harif": "AND = { character:9001101 ?= this kehillah_lib_bavli_mastered_count_value >= 3 }",
+    "work_tosafot": "AND = { character:9001123 ?= this kehillah_lib_bavli_mastered_count_value >= 3 }",
+    "work_mishneh_torah": "character:maimonides_1 ?= this",
+    "work_moreh_nevukhim": "character:maimonides_1 ?= this",
+}
+NAMED = {
+    "work_rashi_torah": [
+        RABBI,
+        (landmarks.mastered("work_tanakh_torah"), f"Master {name('work_tanakh_torah')}", False),
+        ("learning >= 14", "Learning 14", True),
+        (xp("parshanut", 65), "Parshanut experience 65", False),
+        (landmarks.mastered("work_targum_onkelos"), f"Master {name('work_targum_onkelos')}", True),
+        (mastered_any("work_genesis_rabbah", "work_mekhilta"),
+         f"Master {name('work_genesis_rabbah')} or {name('work_mekhilta')}", True),
+        ("kehillah_writing_parshanut_mastered_value >= 6", "Master 6 Parshanut works", False),
+        ("kehillah_lib_tanakh_rounds_value >= 2", "Read the Tanakh twice through", False),
+    ],
+    "work_rashi_talmud": [
+        RABBI,
+        ("learning >= 15", "Learning 15", True),
+        (xp("talmudics", 60), "Talmudics experience 60", True),
+        ("kehillah_lib_bavli_mastered_count_value >= 4", "Master 4 Bavli orders", False),
+    ],
+    "work_hilkhot_harif": [
+        RABBI,
+        ("learning >= 16", "Learning 16", True),
+        (xp("talmudics", 70), "Talmudics experience 70", True),
+        ("kehillah_has_mastered_shas_trigger = yes", "Master the whole Bavli", True),
+        (landmarks.mastered("work_halakhot_gedolot"), f"Master {name('work_halakhot_gedolot')}", True),
+    ],
+    "work_tosafot": [
+        RABBI,
+        (landmarks.mastered("work_rashi_talmud"), f"Master {name('work_rashi_talmud')}", False),
+        ("learning >= 16", "Learning 16", True),
+        (xp("talmudics", 70), "Talmudics experience 70", True),
+        ("kehillah_lib_bavli_mastered_count_value >= 4", "Master 4 Bavli orders", True),
+    ],
+    "work_kuzari": [
+        RABBI,
+        ("learning >= 14", "Learning 14", False),
+        (landmarks.mastered("work_emunot_vedeot"), f"Master {name('work_emunot_vedeot')}", False),
+        (xp("hashkafa", 50), "Machshavah experience 50", False),
+        (f"OR = {{ has_trait = lifestyle_poet {xp('hashkafa', 75)} }}", "Be a poet, or Machshavah experience 75", False),
+    ],
+    "work_mishneh_torah": [
+        RABBI,
+        ("kehillah_has_mastered_shas_trigger = yes", "Master the whole Bavli", False),
+        ("learning >= 18", "Learning 18", True),
+        (xp("talmudics", 80), "Talmudics experience 80", True),
+        (landmarks.mastered("work_mishnah"), f"Master {name('work_mishnah')}", True),
+        ("kehillah_lib_yerushalmi_mastered_count_value >= 2", "Master 2 Yerushalmi orders", True),
+    ],
+    "work_moreh_nevukhim": [
+        RABBI,
+        (landmarks.mastered("work_emunot_vedeot"), f"Master {name('work_emunot_vedeot')}", False),
+        ("learning >= 18", "Learning 18", True),
+        (xp("hashkafa", 80), "Machshavah experience 80", True),
+    ],
+    "work_sefer_habahir": [
+        RABBI,
+        (xp("hashkafa", 50), "Machshavah experience 50", False),
+        (landmarks.mastered("work_sefer_yetzirah"), f"Master {name('work_sefer_yetzirah')}", False),
+        (landmarks.mastered("work_hekhalot_rabbati"), f"Master {name('work_hekhalot_rabbati')}", False),
+    ],
+    "work_sefer_hasidim": [
+        RABBI,
+        (xp("hashkafa", 50), "Machshavah experience 50", False),
+        (landmarks.mastered("work_chovot_halevavot"), f"Master {name('work_chovot_halevavot')}", False),
+        ("OR = { culture = culture:ashkenazi rite ?= { rite_has_doctrine = doctrine_monogamy } }",
+         "Be Ashkenazi, or of a monogamous rite", False),
+    ],
+    "work_zohar": [
+        RABBI,
+        ("learning >= 16", "Learning 16", False),
+        (xp("hashkafa", 80), "Machshavah experience 80", False),
+        (landmarks.mastered("work_sefer_habahir"), f"Master {name('work_sefer_habahir')}", False),
+        (landmarks.mastered("work_sefer_yetzirah"), f"Master {name('work_sefer_yetzirah')}", False),
+    ],
+}
+# Ambitions that also require knowing a tenet: folded into the thesis line,
+# which then needs both.
+KNOWS = {"work_moreh_nevukhim": "tenet_kehillah_hokhmah", "work_sefer_habahir": "tenet_esotericism"}
 
 
 def condition_label(cond: str) -> str:
@@ -153,30 +258,29 @@ def niche_conditions(key: str) -> list[tuple[str, str]]:
     work = WORKS[key]
     out = []
     if work.get("named"):
-        if key == "work_rashi_torah":
-            out += [("kehillah_writing_parshanut_mastered_value >= 6", "Master 6 Parshanut works"),
-                    ("kehillah_lib_tanakh_rounds_value >= 2", "Read the Tanakh twice through"),
-                    ("has_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value >= 65 }", "Parshanut experience 65"),
-                    ("kehillah_sefer_ambition_rashi_torah_trigger = yes", "A life given to this study")]
-        elif key == "work_rashi_talmud":
-            out += [("kehillah_lib_bavli_mastered_count_value >= 4", "Master 4 Bavli orders"),
-                    ("kehillah_sefer_ambition_rashi_talmud_trigger = yes", "A life given to this study")]
-        else:
-            out.append((f"kehillah_sefer_ambition_{work['ambition']}_trigger = yes", "A life given to this study"))
+        for cond, label, shortcut in NAMED[key]:
+            if shortcut:
+                cond = f"OR = {{ {SHORTCUT[key]} {cond} }}"
+            out.append((cond, label))
     else:
         for cond in landmarks.EXTRA[key]:
             if cond not in RITE_LABEL:  # shown niches already match the viewer's rite
                 out.append((cond, condition_label(cond)))
     thesis = work.get("writing_thesis_tenet")
     if thesis:
-        out.append((f"kehillah_writing_believes_thesis_trigger = {{ TENET = {thesis} }}", f"Hold ${thesis}_name$"))
+        cond = f"kehillah_writing_believes_thesis_trigger = {{ TENET = {thesis} }}"
+        if key in KNOWS:
+            cond += f" kehillah_sefer_author_knows_tenet_trigger = {{ TENET = {KNOWS[key]} }}"
+        out.append((cond, f"Hold ${thesis}_name$"))
+    elif key in KNOWS:
+        out.append((f"kehillah_sefer_author_knows_tenet_trigger = {{ TENET = {KNOWS[key]} }}", f"Hold ${KNOWS[key]}_name$"))
     assert len(out) <= MAX_CONDITIONS, key
     return out
 
 
 def niche_rite(key: str) -> str | None:
     if WORKS[key].get("named"):
-        return None
+        return landmarks.RABBANITE  # every historical ambition is Rabbanite
     for cond in landmarks.EXTRA[key]:
         if cond in RITE_LABEL:
             return cond
