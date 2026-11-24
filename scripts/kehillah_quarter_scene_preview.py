@@ -24,7 +24,6 @@ SLOTS = (
     ("external_slot_5", "workshops"),
     ("external_slot_6", "bankers_row"),
     ("external_slot_7", "market_stalls"),
-    ("external_slot_8", "funduq"),
 )
 
 
