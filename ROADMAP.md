@@ -1,4 +1,6 @@
-# Roadmap
+﻿# Roadmap
+
+**Jewish Herald of redemption BUILT 2026-11-23; live check pending:** Jewish characters can take a Jewish-flavored counterpart to Proclaim the Living Word, retaining its requirements and costs. The Herald learns and, unless already held through the rite, adopts Messianic Hope, providing access to the existing mission subject to its own conditions. The personal adoption can replace another tenet. Vanilla?s Jewish Herald trait label is now Herald, leaving Gaon to the mod?s office. See [implementation](docs/implementation/2026-11-23-messianic-herald.md).
 
 **Private pre-alpha release path ADDED 2026-11-16; not yet uploaded:** `scripts/kehillah_build_release.py` stages a clean, player-only copy as the sibling mod `jewishcommunities_prealpha` (about 215 MB, no .git or docs). xTiger gives it the same baseline as the dev mod. The Steam steps (upload, then set visibility to Unlisted), the tester guide, the Workshop description and a re-shoot list are in [docs/release/](docs/release/steam-private-upload.md). Needs a smoke-test boot of the staged copy before the first upload.
 
