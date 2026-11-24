@@ -125,3 +125,55 @@ Debug events:
 
 - ~~The historical ambitions appear as one line.~~ **Fixed 2026-11-24:** each ambition lists its general path's real requirements (`NAMED` in the generator), up to eight lines. A line the historical author can meet more easily (Rashi, the Rif, Ri, Maimonides) also accepts his shortcut, so he sees it ticked. `NAMED` must be kept in step with `kehillah_sefer_ambition_triggers.txt`, which still decides the landmark.
 - Sparks from 2026-11-23 test saves (`kehillah_spark_<form>` variables) are ignored, not migrated.
+
+## Addendum 2026-11-24 (evening): entry, craft, Great Works, discovery
+
+**Status: BUILT; source, tests and xTiger checked (exact baseline); not yet seen in game.** Daniel's requests after reviewing the spark trees. This supersedes the parts of the sections above that it names.
+
+**Spark entry, balanced**
+- **Weighted pools.** A book's own forms weigh 40 each. Any other form of its discipline the reader can receive weighs 6. Study still gives a predictable idea, with occasional surprises.
+- **Source families.** A form's requirement is now its language, rite and date, plus mastery of *any* book that sparks it. Previously it named one book, such as *Bereshit Rabbah* for midrash.
+- **Mapped books.** The later codes, the Agron, the Copper Plates, *Te'ezaza Sanbat* and *Defter* now map to forms. They no longer fall to a random pick.
+- **Sparks from deeds.** A deed can spark an idea into an *empty* slot (`DEEDS`):
+  - sermon 10%;
+  - Bet Din ruling 10%;
+  - answered she'elah 35%, and the only way to get Responsa;
+  - machloket 10%.
+
+  The card reads *From an answered she'elah*.
+
+**Commentaries hone craft instead of sparking** (Daniel)
+- The 8 catalog commentaries, plus the Yefet and Salmon commentaries, spark nothing.
+- Each first mastery gives +15 Rabbi experience in its discipline and adds 1 to `kehillah_commentaries_<disc>`.
+- Per commentary in a discipline: +4% study and writing success in it (cap 16%), and +2 scheme progress a month (cap 8). These show as a named line in each scheme's success breakdown and as a card line with a tooltip.
+
+**Improvement**
+- **Chiddush needs two of the four routes.** The button reads *Upgrade Spark (1/2)*.
+- **Original Great Work path** for every form (`ORIGINAL`): Learning 16, discipline aptitude 40, two more works of the discipline mastered since the idea, and a free authored ledger slot.
+  - A Great Work that fills no historical niche, with quality 60 or more, is written into an authored slot (`kehillah_sefer_finish_composition_effect`).
+  - It is illustrious and enters the ledger under the author's name, with its own finishing text.
+- **Path cleanup.**
+  - Each historical path has a descriptor (`NICHE_HINT`) and *open until YEAR*, plus a met/total count.
+  - At most three paths are listed, most urgent first, then the original path.
+  - Implied or duplicated lines are removed. Historical ambitions show only to Rabbis.
+- **A common minimum for easy niches** (`kehillah_writing_landmarks.py`): Learning 15 everywhere, and *Toldot Yeshu*, the Copper Plates and the Agron gained a second requirement. This changes the real landmark rules.
+
+**UI**
+- **Potential icon** beside the stars, in three states: historical landmark open, original only, or none. The same text appears in the Write option tooltip.
+- **Discard ✕** on the band of your own cards, with a confirmation event (`kehillah_spark.0031`–`0033`).
+- **"Kinds found: 2 / 5"** on each card. Its tooltip lists the found kinds and `???` for the rest (`kehillah_spark_known`).
+- **"Commentaries mastered: N"** on each card, with the craft numbers in its tooltip.
+- **Beit Midrash book cards and the Intrigue study icon** say what a first mastery does: *likely sparks an idea for …*, *sparks a Parshanut idea*, or *a commentary: hones your … study and writing*.
+
+**AI.** Write a Sefer's weight is 10, +25 with a Chiddush, +70 with a Great Work. The event's options prefer the ripest spark.
+
+**Fixed in passing.** `kehillah_writing_landmarks.py` and `kehillah_writing_ordinary_titles.py` read project forms from the old writing event. Since v2 moved them, a rerun would have dropped every per-form landmark trigger. Both now read `events/kehillah_spark_events.txt` and assert all 20 forms.
+
+**Live checklist additions**
+- Master a commentary: the craft popup appears, the card line shows, and the study scheme lists the craft factor.
+- Rule or answer a she'elah with an empty Talmudics slot: occasionally a *From a …* spark.
+- Insight button: the count reads 0/2, then 1/2, then upgrades at 2/2.
+- A Chiddush in midrash: the original path is the only path.
+- The ✕ confirmation: both options work.
+- Hover a Beit Midrash book: the spark line shows, and disappears once the book is mastered.
+- An AI Great Work fills a ledger slot (check `debug.log` via `kehillah_writing_debug.2`).

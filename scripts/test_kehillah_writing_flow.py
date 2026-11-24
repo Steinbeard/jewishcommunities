@@ -72,7 +72,11 @@ class WritingFlowTest(unittest.TestCase):
         # 2026-11-24: historical ambitions list their real requirements.
         spark_loc = read("localization/english/kehillah_writing_spark_generated_l_english.yml")
         self.assertNotIn("A life given to this study", spark_loc)
-        self.assertIn(" kehillah_spark_nc_work_rashi_torah_8:0", spark_loc)
+        self.assertIn(" kehillah_spark_nc_work_rashi_torah_6:0", spark_loc)
+        self.assertNotIn("Be a Rabbi", spark_loc)
+        self.assertNotIn(" kehillah_spark_bookline_work_rashi_torah:0 \"On first", spark_loc)
+        for disc in ("parshanut", "talmudics", "hashkafa"):
+            self.assertIn(f" kehillah_spark_path_original_{disc}:0", spark_loc)
 
     def test_landmarks_are_finish_outcomes_and_names_are_unique(self) -> None:
         effects = read("common/scripted_effects/kehillah_writing_effects.txt")

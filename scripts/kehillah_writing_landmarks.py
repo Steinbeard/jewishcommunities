@@ -64,22 +64,22 @@ HAYMANOT = "rite ?= { kehillah_rite_haymanot_trigger = yes }"
 EXTRA = {
     "work_emunot_vedeot": [RABBANITE, "learning >= 15"],
     "work_chovot_halevavot": [RABBANITE, "learning >= 15"],
-    "work_seder_rav_amram": ["learning >= 14"],
+    "work_seder_rav_amram": ["learning >= 15"],
     "work_iggeret_rav_sherira": ["learning >= 15", "kehillah_lib_bavli_mastered_count_value >= 2"],
     "work_rabbenu_hananel": ["learning >= 15", "kehillah_lib_bavli_mastered_count_value >= 2"],
     "work_mekor_hayyim": [RABBANITE, "learning >= 16", "knows_language = language_arabic"],
     "work_kitab_alanwar": [KARAITE, "learning >= 15"],
-    "work_yefet_commentary": [KARAITE, "learning >= 14"],
-    "work_sefer_yosippon": ["learning >= 14", mastered("work_josephus_jewish_war")],
-    "work_toldot_yeshu": ["learning >= 14"],
-    "work_diwan_dunash": [RABBANITE, "learning >= 14", "knows_language = language_arabic"],
-    "work_diwan_samuel_hanagid": [RABBANITE, "learning >= 14", mastered("work_diwan_dunash")],
+    "work_yefet_commentary": [KARAITE, "learning >= 15"],
+    "work_sefer_yosippon": ["learning >= 15", mastered("work_josephus_jewish_war")],
+    "work_toldot_yeshu": ["learning >= 15", mastered("work_mishnah")],  # 2026-11-24 floor: two requirements
+    "work_diwan_dunash": [RABBANITE, "learning >= 15", "knows_language = language_arabic"],
+    "work_diwan_samuel_hanagid": [RABBANITE, "learning >= 15", mastered("work_diwan_dunash")],
     "work_diwan_ibn_gabirol": [RABBANITE, "learning >= 15", mastered("work_diwan_dunash")],
-    "work_agron_david_al_fasi": [KARAITE, "learning >= 14"],
-    "work_salmon_ben_jeroham_commentary": [KARAITE, "learning >= 14", mastered("work_tanakh_neviim")],
+    "work_agron_david_al_fasi": [KARAITE, "learning >= 15", "knows_language = language_arabic"],  # 2026-11-24 floor
+    "work_salmon_ben_jeroham_commentary": [KARAITE, "learning >= 15", mastered("work_tanakh_neviim")],
     "work_levi_ben_yefet_mitzvot": [KARAITE, "learning >= 15"],
-    "work_teezaza_sanbat": [HAYMANOT, "learning >= 14", mastered("work_orit")],
-    "work_cochin_copper_plates": ["learning >= 14"],
+    "work_teezaza_sanbat": [HAYMANOT, "learning >= 15", mastered("work_orit")],
+    "work_cochin_copper_plates": ["learning >= 15", mastered("work_tanakh_neviim")],  # 2026-11-24 floor
     "work_ibn_ezra_torah": [RABBANITE, "learning >= 15", mastered("work_targum_onkelos")],
     "work_sefer_mitzvot_gadol": [RABBANITE, "learning >= 16", mastered("work_mishneh_torah")],
     "work_or_zarua": [RABBANITE, "learning >= 16", "kehillah_lib_bavli_mastered_count_value >= 3"],
@@ -168,8 +168,10 @@ def main() -> None:
                "}"]
     EFFECT.write_text("\n".join(effect) + "\n", encoding="utf-8-sig")
 
-    events = (ROOT / "events/kehillah_writing_events.txt").read_text(encoding="utf-8")
-    forms = set(re.findall(r"kehillah_writing_choose_project_effect = \{ FORM = (\w+) GENRE = \w+ \}", events))
+    # 2026-11-24: project options moved to the generated spark event.
+    events = (ROOT / "events/kehillah_spark_events.txt").read_text(encoding="utf-8")
+    forms = set(re.findall(r"kehillah_writing_choose_project_effect = \{ FORM = (\w+) GENRE = \w+ DISC = \w+ \}", events))
+    assert len(forms) == 20, sorted(forms)
     for form in sorted(forms):
         effect = [f"kehillah_writing_landmark_belief_hint_{form}_effect = {{"]
         for key, candidate_form in FORMS.items():

@@ -69,11 +69,31 @@ FORMS = {
     "ethics": ("hashkafa", "hashkafa", "an exhortation on righteous conduct", "Ethical Exhortation"),
     "devotion": ("hashkafa", "hashkafa", "a work on the duties of the heart", "Duties of the Heart"),
 }
-# Who may receive a spark in a form: the former project gate, so language,
-# source, rite and date stay part of the idea. Responsa needs only the law
-# gate; answering letters is one of its routes.
-HOLD = {form: f"kehillah_writing_{form}_trigger = yes" for form in FORMS}
-HOLD["responsa"] = "kehillah_writing_law_trigger = yes"
+# 2026-11-24 (Daniel: "a commentary gives you a little bit more Rabbinics xp
+# ... and a permanent buff to your scheme success and speed for that genre"):
+# mastering one of these sparks nothing; it hones its discipline instead.
+COMMENTARIES = {k: WORKS[k]["genre"] for k, v in WORKS.items() if v.get("commentary_on")}
+for _k in ("work_yefet_commentary", "work_salmon_ben_jeroham_commentary"):
+    if _k in WORKS:
+        COMMENTARIES[_k] = WORKS[_k]["genre"]
+
+SCRIPTURE = "kehillah_writing_scripture_language_trigger = yes"
+RABBANITE_RITE = "rite ?= { kehillah_rite_rabbanite_trigger = yes }"
+# Who may receive a spark in a form: its language, rite and date, plus having
+# mastered any book that sparks it (PREFERRED) -- not one named book.
+BASE_GATE = {
+    "torah": SCRIPTURE, "midrash": SCRIPTURE, "poetry": f"{SCRIPTURE} has_trait = lifestyle_poet",
+    "grammar": SCRIPTURE, "chronicle": f"{SCRIPTURE} learning >= 12",
+    "talmud": f"{RABBANITE_RITE} knows_language = language_aramaic", "yerushalmi": "knows_language = language_aramaic",
+    "law": RABBANITE_RITE, "responsa": f"{RABBANITE_RITE} kehillah_lib_bavli_mastered_count_value >= 1",
+    "minhag": SCRIPTURE, "siddur": f"{RABBANITE_RITE} knows_language = language_israelite",
+    "tradition_history": RABBANITE_RITE, "scriptural_law": "rite ?= { kehillah_rite_toric_trigger = yes }",
+    "dialogue": SCRIPTURE,
+    "systematic_dialogue": "current_date >= 933.1.1 OR = { knows_language = language_israelite knows_language = language_arabic }",
+    "mystical": SCRIPTURE, "disputation": SCRIPTURE,
+    "translation": "knows_language = language_israelite OR = { knows_language = language_greek knows_language = language_arabic }",
+    "ethics": SCRIPTURE, "devotion": f"current_date >= 1080.1.1 {SCRIPTURE}",
+}
 
 # The book a spark grows from. A work not listed sparks a random form of its
 # own discipline.
@@ -106,8 +126,101 @@ PREFERRED = {
     "work_philo_allegorical": ["dialogue", "ethics"], "work_memar_marqah": ["dialogue", "ethics"],
     "work_theology_of_aristotle": ["translation"], "work_galen_de_usu_partium": ["translation"],
     "work_kitab_alanwar": ["disputation"], "work_toldot_yeshu": ["disputation"],
+    # 2026-11-24: books that fell to a random pick.
+    "work_or_zarua": ["law"], "work_arbaah_turim": ["law"], "work_sefer_mitzvot_gadol": ["law"],
+    "work_sefer_hachinukh": ["law", "ethics"], "work_teezaza_sanbat": ["minhag"], "work_defter": ["minhag"],
+    "work_agron_david_al_fasi": ["grammar"], "work_cochin_copper_plates": ["chronicle"],
 }
-PREFERRED = {k: v for k, v in PREFERRED.items() if k in WORKS}
+PREFERRED = {k: v for k, v in PREFERRED.items() if k in WORKS and k not in COMMENTARIES}
+
+
+def sources_of(form: str) -> list[str]:
+    return [w for w, fs in PREFERRED.items() if form in fs]
+
+
+def hold_gate(form: str) -> str:
+    srcs = sources_of(form)
+    if not srcs:
+        return BASE_GATE[form]
+    mastered = " ".join(f"is_target_in_variable_list = {{ name = kehillah_mastered_works target = flag:{w} }}" for w in srcs)
+    return f"{BASE_GATE[form]} OR = {{ {mastered} }}" if len(srcs) > 1 else f"{BASE_GATE[form]} {mastered}"
+
+
+HOLD = {form: hold_gate(form) for form in FORMS}
+
+# Semi-random: a book's own forms weigh PRIMARY each; any other form of its
+# discipline the reader could hold weighs SECONDARY.
+PRIMARY, SECONDARY = 40, 6
+
+# Deeds that sometimes spark an idea for an empty slot: (chance, forms).
+DEEDS = {
+    "sermon": (10, ["torah", "midrash", "ethics"]),
+    "ruling": (10, ["law", "minhag", "responsa"]),
+    "letter": (35, ["responsa"]),
+    "debate": (10, ["disputation", "dialogue", "systematic_dialogue"]),
+}
+
+# Commentary craft: success per commentary (cap) and monthly scheme progress.
+CRAFT_CHANCE, CRAFT_CHANCE_CAP, CRAFT_SPEED, CRAFT_SPEED_CAP, CRAFT_XP = 4, 16, 2, 8, 15
+
+# Chiddush needs this many of the four routes.
+ROUTES_NEEDED = 2
+
+# An Original Great Work, for every form, into one of the ledger's authored slots.
+ORIGINAL = {
+    disc: [("learning >= 16", "Learning 16"),
+           (f"kehillah_writing_{apt}_aptitude_value >= 40", f"{name} aptitude 40"),
+           (f"has_variable = kehillah_spark_{disc}_base {wv} >= {{ value = var:kehillah_spark_{disc}_base add = 2 }}",
+            f"Master 2 more {name} works"),
+           ("kehillah_spark_ledger_slot_free_trigger = yes", "A place in the Ledger of Sefarim")]
+    for disc, (name, apt), wv in [(d, v, w) for (d, v), w in zip(
+        {"parshanut": ("Parshanut", "parshanut"), "talmudics": ("Talmudics", "talmudics"),
+         "hashkafa": ("Machshavah", "machshava")}.items(),
+        ["kehillah_writing_parshanut_mastered_value", "kehillah_spark_talmudics_mastered_value",
+         "kehillah_writing_machshava_mastered_value"])]
+}
+MAX_PATHS = 3
+
+# Each Great Work path's character, without naming the historical book.
+NICHE_HINT = {
+    "work_emunot_vedeot": "Belief defended by reason",
+    "work_chovot_halevavot": "The inner duties of the heart",
+    "work_kuzari": "A king's dialogue on faith",
+    "work_seder_rav_amram": "A prayer order for distant communities",
+    "work_iggeret_rav_sherira": "A letter tracing the chain of sages",
+    "work_rabbenu_hananel": "A concise gloss from the Maghreb",
+    "work_mekor_hayyim": "A treatise on the source of being",
+    "work_kitab_alanwar": "A survey of sects and their law",
+    "work_yefet_commentary": "Scripture read word for word",
+    "work_rashi_torah": "Plain sense for every reader",
+    "work_rashi_talmud": "A line-by-line Talmud gloss",
+    "work_hilkhot_harif": "The Talmud distilled to its law",
+    "work_mishneh_torah": "The whole law in one code",
+    "work_moreh_nevukhim": "Reason and revelation reconciled",
+    "work_sefer_habahir": "Early teaching on the divine emanations",
+    "work_sefer_hasidim": "Counsel for the pious of the Rhine",
+    "work_tosafot": "Dialectic additions to a classic gloss",
+    "work_zohar": "A mystical reading of the Torah",
+    "work_sefer_yosippon": "A Hebrew history of the Second Temple",
+    "work_toldot_yeshu": "A polemical counter-history",
+    "work_diwan_dunash": "Hebrew verse in Arabic metre",
+    "work_diwan_samuel_hanagid": "A statesman's poems of war and wine",
+    "work_diwan_ibn_gabirol": "Poems of the soul's longing",
+    "work_agron_david_al_fasi": "A dictionary of Scripture's Hebrew",
+    "work_salmon_ben_jeroham_commentary": "A literalist reading of the Prophets",
+    "work_levi_ben_yefet_mitzvot": "The commandments, from Scripture alone",
+    "work_teezaza_sanbat": "The Sabbath laws of a distant community",
+    "work_cochin_copper_plates": "The record of a royal charter",
+    "work_ibn_ezra_torah": "Plain sense by grammar and reason",
+    "work_sefer_mitzvot_gadol": "The commandments, numbered and taught",
+    "work_or_zarua": "Rulings gathered from the northern academies",
+    "work_ramban_torah": "Plain sense with hidden depths",
+    "work_sefer_hamivhar": "A late literalist commentary",
+    "work_sefer_hachinukh": "The commandments for the young",
+    "work_arbaah_turim": "The law arranged in four rows",
+    "work_maggid_mishneh": "A defence of the great code",
+}
+DEED_NAME = {"sermon": "a sermon", "ruling": "a Bet Din ruling", "letter": "an answered she'elah", "debate": "a machloket"}
 
 APT_STEP = "kehillah_spark_aptitude_step_value"
 WORKS_VALUE = {
@@ -167,8 +280,6 @@ SHORTCUT = {
 }
 NAMED = {
     "work_rashi_torah": [
-        RABBI,
-        (landmarks.mastered("work_tanakh_torah"), f"Master {name('work_tanakh_torah')}", False),
         ("learning >= 14", "Learning 14", True),
         (xp("parshanut", 65), "Parshanut experience 65", False),
         (landmarks.mastered("work_targum_onkelos"), f"Master {name('work_targum_onkelos')}", True),
@@ -178,34 +289,29 @@ NAMED = {
         ("kehillah_lib_tanakh_rounds_value >= 2", "Read the Tanakh twice through", False),
     ],
     "work_rashi_talmud": [
-        RABBI,
         ("learning >= 15", "Learning 15", True),
         (xp("talmudics", 60), "Talmudics experience 60", True),
         ("kehillah_lib_bavli_mastered_count_value >= 4", "Master 4 Bavli orders", False),
     ],
     "work_hilkhot_harif": [
-        RABBI,
         ("learning >= 16", "Learning 16", True),
         (xp("talmudics", 70), "Talmudics experience 70", True),
         ("kehillah_has_mastered_shas_trigger = yes", "Master the whole Bavli", True),
         (landmarks.mastered("work_halakhot_gedolot"), f"Master {name('work_halakhot_gedolot')}", True),
     ],
     "work_tosafot": [
-        RABBI,
         (landmarks.mastered("work_rashi_talmud"), f"Master {name('work_rashi_talmud')}", False),
         ("learning >= 16", "Learning 16", True),
         (xp("talmudics", 70), "Talmudics experience 70", True),
         ("kehillah_lib_bavli_mastered_count_value >= 4", "Master 4 Bavli orders", True),
     ],
     "work_kuzari": [
-        RABBI,
         ("learning >= 14", "Learning 14", False),
         (landmarks.mastered("work_emunot_vedeot"), f"Master {name('work_emunot_vedeot')}", False),
-        (xp("hashkafa", 50), "Machshavah experience 50", False),
-        (f"OR = {{ has_trait = lifestyle_poet {xp('hashkafa', 75)} }}", "Be a poet, or Machshavah experience 75", False),
+        (f"{xp('hashkafa', 50)} OR = {{ has_trait = lifestyle_poet {xp('hashkafa', 75)} }}",
+         "Machshavah experience 50 as a poet, or 75", False),
     ],
     "work_mishneh_torah": [
-        RABBI,
         ("kehillah_has_mastered_shas_trigger = yes", "Master the whole Bavli", False),
         ("learning >= 18", "Learning 18", True),
         (xp("talmudics", 80), "Talmudics experience 80", True),
@@ -213,26 +319,22 @@ NAMED = {
         ("kehillah_lib_yerushalmi_mastered_count_value >= 2", "Master 2 Yerushalmi orders", True),
     ],
     "work_moreh_nevukhim": [
-        RABBI,
         (landmarks.mastered("work_emunot_vedeot"), f"Master {name('work_emunot_vedeot')}", False),
         ("learning >= 18", "Learning 18", True),
         (xp("hashkafa", 80), "Machshavah experience 80", True),
     ],
     "work_sefer_habahir": [
-        RABBI,
         (xp("hashkafa", 50), "Machshavah experience 50", False),
         (landmarks.mastered("work_sefer_yetzirah"), f"Master {name('work_sefer_yetzirah')}", False),
         (landmarks.mastered("work_hekhalot_rabbati"), f"Master {name('work_hekhalot_rabbati')}", False),
     ],
     "work_sefer_hasidim": [
-        RABBI,
         (xp("hashkafa", 50), "Machshavah experience 50", False),
         (landmarks.mastered("work_chovot_halevavot"), f"Master {name('work_chovot_halevavot')}", False),
         ("OR = { culture = culture:ashkenazi rite ?= { rite_has_doctrine = doctrine_monogamy } }",
          "Be Ashkenazi, or of a monogamous rite", False),
     ],
     "work_zohar": [
-        RABBI,
         ("learning >= 16", "Learning 16", False),
         (xp("hashkafa", 80), "Machshavah experience 80", False),
         (landmarks.mastered("work_sefer_habahir"), f"Master {name('work_sefer_habahir')}", False),
@@ -314,6 +416,21 @@ def disc_of(form: str) -> str:
 
 
 # --------------------------------------------------------------------------
+def path_keys(disc: str) -> list[str]:
+    """Historical niche keys of a discipline, most urgent first."""
+    return sorted((k for k, f in NICHES.items() if disc_of(f) == disc), key=lambda k: WORKS[k]["year"])
+
+
+def path_conditions(key: str) -> list[tuple[str, str]]:
+    if key.startswith("original_"):
+        return ORIGINAL[key[len("original_"):]]
+    return niche_conditions(key)
+
+
+def all_path_keys() -> list[str]:
+    return list(NICHES) + [f"original_{d}" for d in DISCS]
+
+
 def triggers() -> str:
     out = [HEADER]
     for form in FORMS:
@@ -324,6 +441,26 @@ def triggers() -> str:
         out.append(f"kehillah_has_spark_{disc}_trigger = {{ has_variable = kehillah_spark_{disc}_form }}")
     out.append("kehillah_has_any_spark_trigger = { OR = { " +
                " ".join(f"has_variable = kehillah_spark_{d}_form" for d in DISCS) + " } }")
+    out.append("# One of the ledger's 100 authored slots is free (they recycle yearly).")
+    out.append("kehillah_spark_ledger_slot_free_trigger = { OR = { " + " ".join(
+        f"NOT = {{ has_global_variable = kehillah_wk_{k}_written }}" for k in sorted(WORKS) if k.startswith("work_authored_")) + " } }")
+    out.append("")
+    out.append("# A niche worth showing: unwritten, still open, in the viewer's rite; historical")
+    out.append("# ambitions are for Rabbis.")
+    for key in NICHES:
+        conds = niche_open(key) + ([niche_rite(key)] if niche_rite(key) else [])
+        if WORKS[key].get("named"):
+            conds.append("has_trait = kehillah_rabbi_trait")
+        out.append(f"kehillah_spark_niche_shown_{key}_trigger = {{ {' '.join(conds)} }}")
+    for disc in DISCS:
+        conds = " ".join(c for c, _ in ORIGINAL[disc])
+        out.append(f"kehillah_spark_original_ready_{disc}_trigger = {{ {conds} }}")
+    out.append("# A form still has a historical landmark the viewer could reach.")
+    for form in FORMS:
+        keys = [k for k, f in NICHES.items() if f == form]
+        shown = [f"kehillah_spark_niche_shown_{k}_trigger = yes" for k in keys]
+        body = ("OR = { " + " ".join(shown) + " }" if len(shown) > 1 else shown[0]) if shown else "always = no"
+        out.append(f"kehillah_spark_form_has_history_{form}_trigger = {{ {body} }}")
     out.append("")
     for disc, (_, apt) in DISCS.items():
         for route in ROUTES[disc]:
@@ -336,27 +473,27 @@ def triggers() -> str:
             else:
                 body = f"has_variable = kehillah_spark_{disc}_did_{route}"
             out.append(f"kehillah_spark_route_{disc}_{route}_trigger = {{ {body} }}")
-        out.append(f"kehillah_spark_can_deepen_{disc}_trigger = {{ OR = {{ " +
-                   " ".join(f"kehillah_spark_route_{disc}_{r}_trigger = yes" for r in ROUTES[disc]) + " } }")
+        out.append(f"kehillah_spark_can_deepen_{disc}_trigger = {{ kehillah_spark_{disc}_routes_met_value >= {ROUTES_NEEDED} }}")
         great = [f for f in forms_of(disc) if f in set(NICHES.values())]
         ready = " ".join(f"AND = {{ kehillah_spark_holds_{f}_trigger = yes kehillah_writing_landmark_ready_{f}_trigger = yes }}"
                          for f in great)
-        out.append(f"kehillah_spark_can_be_great_{disc}_trigger = {{ OR = {{ {ready} }} }}")
-        out.append(f"# The Upgrade button: the held spark's next tier is earned.")
+        out.append(f"kehillah_spark_can_be_great_{disc}_trigger = {{ OR = {{ {ready} kehillah_spark_original_ready_{disc}_trigger = yes }} }}")
+        out.append("# The Upgrade button: the held spark's next tier is earned.")
         out.append(f"kehillah_spark_can_upgrade_{disc}_trigger = {{ OR = {{ "
                    f"AND = {{ var:kehillah_spark_{disc}_tier ?= 1 kehillah_spark_can_deepen_{disc}_trigger = yes }} "
                    f"AND = {{ var:kehillah_spark_{disc}_tier ?= 2 kehillah_spark_can_be_great_{disc}_trigger = yes }} }} }}")
     out.append("")
-    out.append("# A niche worth showing: unwritten, still open and, where it names one, in the viewer's rite.")
-    for key in NICHES:
-        conds = niche_open(key) + ([niche_rite(key)] if niche_rite(key) else [])
-        out.append(f"kehillah_spark_niche_shown_{key}_trigger = {{ {' '.join(conds)} }}")
+    out.append("# The book being studied, by discipline (commentary craft in the study scheme).")
+    for disc in DISCS:
+        ws = [k for k in sorted(WORKS) if WORKS[k].get("genre") == disc]
+        out.append(f"kehillah_spark_studying_{disc}_trigger = {{ OR = {{ " +
+                   " ".join(f"var:kehillah_study_current_work ?= flag:{w}" for w in ws) + " } }")
     return "\n".join(out) + "\n"
 
 
 def values() -> str:
-    out = [HEADER, "# 0/1 per Chiddush route and -1/0/1 per Great Work condition, for the",
-           "# Learning window's checklists. Evaluated on the character shown."]
+    out = [HEADER, "# Checklists, counts and craft for the Learning window and the schemes.",
+           "# Evaluated on the character shown."]
     for disc in DISCS:
         out.append(f"kehillah_spark_{disc}_apt_target_value = {{ value = 0 if = {{ limit = {{ has_variable = kehillah_spark_{disc}_apt }} "
                    f"value = var:kehillah_spark_{disc}_apt add = {APT_STEP} }} }}")
@@ -364,14 +501,47 @@ def values() -> str:
         out.append(f"kehillah_spark_{disc}_ready_value = {{ value = 0 if = {{ limit = {{ kehillah_spark_can_upgrade_{disc}_trigger = yes }} value = 1 }} }}")
         for route in ROUTES[disc]:
             out.append(f"kehillah_spark_route_{disc}_{route}_value = {{ value = 0 if = {{ limit = {{ kehillah_spark_route_{disc}_{route}_trigger = yes }} value = 1 }} }}")
-    for key in NICHES:
-        conds = niche_conditions(key)
+        out.append(f"kehillah_spark_{disc}_routes_met_value = {{ value = 0 " +
+                   " ".join(f"add = kehillah_spark_route_{disc}_{r}_value" for r in ROUTES[disc]) + " }")
+        out.append(f"kehillah_spark_{disc}_routes_needed_value = {{ value = {ROUTES_NEEDED} }}")
+        # Potential: 2 a historical landmark is open for the held form, 1 an
+        # original Great Work only, 0 none.
+        hist = " ".join(f"AND = {{ kehillah_spark_holds_{f}_trigger = yes kehillah_spark_form_has_history_{f}_trigger = yes }}"
+                        for f in forms_of(disc))
+        out.append(f"kehillah_spark_{disc}_potential_value = {{ value = 0 "
+                   f"if = {{ limit = {{ OR = {{ {hist} }} }} value = 2 }} "
+                   f"else_if = {{ limit = {{ kehillah_spark_ledger_slot_free_trigger = yes }} value = 1 }} }}")
+        known = " ".join(f"if = {{ limit = {{ is_target_in_variable_list = {{ name = kehillah_spark_known target = flag:{f} }} }} add = 1 }}"
+                         for f in forms_of(disc))
+        out.append(f"kehillah_spark_{disc}_known_value = {{ value = 0 {known} }}")
+        out.append(f"kehillah_spark_{disc}_kinds_value = {{ value = {len(forms_of(disc))} }}")
+        out.append(f"kehillah_spark_{disc}_commentaries_value = {{ value = 0 if = {{ limit = {{ has_variable = kehillah_commentaries_{disc} }} value = var:kehillah_commentaries_{disc} }} }}")
+        out.append(f"kehillah_spark_{disc}_craft_chance_value = {{ value = kehillah_spark_{disc}_commentaries_value multiply = {CRAFT_CHANCE} max = {CRAFT_CHANCE_CAP} }}")
+        out.append(f"kehillah_spark_{disc}_craft_speed_value = {{ value = kehillah_spark_{disc}_commentaries_value multiply = {CRAFT_SPEED} max = {CRAFT_SPEED_CAP} }}")
+    for key in all_path_keys():
+        conds = path_conditions(key)
         for n in range(1, MAX_CONDITIONS + 1):
             name = f"kehillah_spark_nc_{key}_{n}"
             if n <= len(conds):
                 out.append(f"{name} = {{ value = 0 if = {{ limit = {{ {conds[n - 1][0]} }} value = 1 }} }}")
             else:
                 out.append(f"{name} = {{ value = -1 }}")
+        out.append(f"kehillah_spark_nc_{key}_met_value = {{ value = 0 " +
+                   " ".join(f"add = kehillah_spark_nc_{key}_{n}" for n in range(1, len(conds) + 1)) + " }")
+        out.append(f"kehillah_spark_nc_{key}_total_value = {{ value = {len(conds)} }}")
+    # Commentary craft for the writing scheme's genre and the study scheme's book.
+    out.append("kehillah_spark_writing_craft_chance_value = { value = 0 "
+               "if = { limit = { OR = { var:kehillah_book_genre ?= flag:parshanut var:kehillah_book_genre ?= flag:poetry } } add = kehillah_spark_parshanut_craft_chance_value } "
+               "else_if = { limit = { var:kehillah_book_genre ?= flag:talmudics } add = kehillah_spark_talmudics_craft_chance_value } "
+               "else_if = { limit = { var:kehillah_book_genre ?= flag:hashkafa } add = kehillah_spark_hashkafa_craft_chance_value } }")
+    out.append("kehillah_spark_writing_craft_speed_value = { value = 0 "
+               "if = { limit = { OR = { var:kehillah_book_genre ?= flag:parshanut var:kehillah_book_genre ?= flag:poetry } } add = kehillah_spark_parshanut_craft_speed_value } "
+               "else_if = { limit = { var:kehillah_book_genre ?= flag:talmudics } add = kehillah_spark_talmudics_craft_speed_value } "
+               "else_if = { limit = { var:kehillah_book_genre ?= flag:hashkafa } add = kehillah_spark_hashkafa_craft_speed_value } }")
+    for kind in ("chance", "speed"):
+        body = " ".join(f"{'if' if i == 0 else 'else_if'} = {{ limit = {{ kehillah_spark_studying_{d}_trigger = yes }} add = kehillah_spark_{d}_craft_{kind}_value }}"
+                        for i, d in enumerate(DISCS))
+        out.append(f"kehillah_spark_study_craft_{kind}_value = {{ value = 0 {body} }}")
     return "\n".join(out) + "\n"
 
 
@@ -405,6 +575,8 @@ def effects() -> str:
                 f"\tset_variable = {{ name = kehillah_spark_{disc}_work value = $WORK$ }}",
                 f"\tset_variable = {{ name = kehillah_spark_{disc}_base value = {WORKS_VALUE[disc]} }}",
                 f"\tset_variable = {{ name = kehillah_spark_{disc}_apt value = kehillah_writing_{DISCS[disc][1]}_aptitude_value }}",
+                f"\tif = {{ limit = {{ NOT = {{ is_target_in_variable_list = {{ name = kehillah_spark_known target = flag:{form} }} }} }} "
+                f"add_to_variable_list = {{ name = kehillah_spark_known target = flag:{form} }} }}",
                 "\t" + toast("new", disc),
                 "}"]
     out.append("")
@@ -438,14 +610,19 @@ def effects() -> str:
     # Paths list and ripening.
     out.append("")
     for disc in DISCS:
+        # The most urgent open niches (earliest year first), at most MAX_PATHS,
+        # then the Original Great Work, always last.
         out += [f"kehillah_spark_refresh_paths_{disc}_effect = {{",
-                f"\tclear_variable_list = kehillah_spark_{disc}_paths"]
-        for key, form in NICHES.items():
-            if disc_of(form) != disc:
-                continue
-            out.append(f"\tif = {{ limit = {{ kehillah_spark_holds_{form}_trigger = yes "
+                f"\tclear_variable_list = kehillah_spark_{disc}_paths",
+                "\tset_local_variable = { name = kehillah_spark_paths_n value = 0 }"]
+        for key in path_keys(disc):
+            form = NICHES[key]
+            out.append(f"\tif = {{ limit = {{ local_var:kehillah_spark_paths_n < {MAX_PATHS} kehillah_spark_holds_{form}_trigger = yes "
                        f"kehillah_spark_niche_shown_{key}_trigger = yes }} "
-                       f"add_to_variable_list = {{ name = kehillah_spark_{disc}_paths target = flag:{key} }} }}")
+                       f"add_to_variable_list = {{ name = kehillah_spark_{disc}_paths target = flag:{key} }} "
+                       "change_local_variable = { name = kehillah_spark_paths_n add = 1 } }")
+        out.append(f"\tif = {{ limit = {{ has_variable = kehillah_spark_{disc}_form }} "
+                   f"add_to_variable_list = {{ name = kehillah_spark_{disc}_paths target = flag:original_{disc} }} }}")
         out.append("}")
         # 2026-11-24 (Daniel: "upgrading the spark should be an active choice
         # that feels good"): ripening only tells the player once that the
@@ -480,6 +657,8 @@ def effects() -> str:
                 f"\tremove_variable = kehillah_spark_{disc}_ready_told",
                 f"\tkehillah_spark_refresh_paths_{disc}_effect = yes",
                 "}"]
+        out += [f"# The card's discard button asks first (kehillah_spark.{DISC_EVENT[disc] + 30:04d}).",
+                f"kehillah_spark_discard_{disc}_effect = {{ kehillah_spark_clear_{disc}_effect = yes }}"]
     out += ["kehillah_spark_ripen_all_effect = {"] + \
            [f"\tkehillah_spark_ripen_{d}_effect = yes" for d in DISCS] + ["}"]
 
@@ -493,29 +672,45 @@ def effects() -> str:
             "\t\tkehillah_spark_ripen_$DISC$_effect = yes",
             "\t}",
             "}"]
+    out.append("# Scope: a writer. A deed sometimes sparks an idea, into an empty slot only.")
+    for deed, (chance, forms) in DEEDS.items():
+        open_ = [f"NOT = {{ has_variable = kehillah_spark_{disc_of(f)}_form }} kehillah_spark_can_hold_{f}_trigger = yes" for f in forms]
+        cond = "OR = { " + " ".join(f"AND = {{ {c} }}" for c in open_) + " }" if len(open_) > 1 else open_[0]
+        out += [f"kehillah_spark_from_deed_{deed}_effect = {{",
+                "\tif = {",
+                f"\t\tlimit = {{ kehillah_sefer_can_write_trigger = yes {cond} }}",
+                f"\t\trandom = {{ chance = {chance}",
+                "\t\t\trandom_list = {"]
+        out += [f"\t\t\t\t10 = {{ trigger = {{ NOT = {{ has_variable = kehillah_spark_{disc_of(f)}_form }} kehillah_spark_can_hold_{f}_trigger = yes }} "
+                f"kehillah_spark_set_{f}_effect = {{ WORK = flag:deed_{deed} }} }}" for f in forms]
+        out += ["\t\t\t}", "\t\t}", "\t}", "}"]
 
-    # Study: the book read chooses the form.
+    # Study: a commentary hones its discipline; any other book sparks an idea,
+    # semi-randomly: its own forms are likely, others of its discipline possible.
     out += ["", "# Scope: the reader, after a first mastery. WORK: flag; TRACK: its discipline.",
             "kehillah_spark_from_study_effect = {",
+            "\tset_local_variable = { name = kehillah_spark_src value = $WORK$ }",
             "\tif = {",
+            "\t\tlimit = { OR = { " + " ".join(f"local_var:kehillah_spark_src ?= flag:{w}" for w in COMMENTARIES) + " } }",
+            "\t\tkehillah_spark_commentary_$TRACK$_effect = yes",
+            "\t}",
+            "\telse_if = {",
             "\t\tlimit = { kehillah_sefer_can_write_trigger = yes }",
-            "\t\tset_local_variable = { name = kehillah_spark_src value = $WORK$ }",
             "\t\t# A held slot only sometimes yields a competing idea.",
             "\t\tif = {",
             "\t\t\tlimit = { has_variable = kehillah_spark_$TRACK$_form }",
             "\t\t\trandom = { chance = 65 set_local_variable = { name = kehillah_spark_done value = yes } }",
             "\t\t}"]
     for work, forms in PREFERRED.items():
-        options = [f for f in forms]
-        holds = " ".join(f"kehillah_spark_can_hold_{f}_trigger = yes" for f in options)
-        if len(options) > 1:
-            holds = f"OR = {{ {holds} }}"
+        disc = WORKS[work].get("genre")
+        pool = list(forms) + [f for f in FORMS if disc_of(f) == disc and f not in forms]
         out += ["\t\tif = {",
-                f"\t\t\tlimit = {{ NOT = {{ exists = local_var:kehillah_spark_done }} local_var:kehillah_spark_src ?= flag:{work} {holds} }}",
+                f"\t\t\tlimit = {{ NOT = {{ exists = local_var:kehillah_spark_done }} local_var:kehillah_spark_src ?= flag:{work} "
+                "OR = { " + " ".join(f"kehillah_spark_can_hold_{f}_trigger = yes" for f in pool) + " } }",
                 "\t\t\tset_local_variable = { name = kehillah_spark_done value = yes }",
                 "\t\t\trandom_list = {"]
-        out += [f"\t\t\t\t10 = {{ trigger = {{ kehillah_spark_can_hold_{f}_trigger = yes }} kehillah_spark_offer_{f}_effect = {{ WORK = $WORK$ }} }}"
-                for f in options]
+        out += [f"\t\t\t\t{PRIMARY if f in forms else SECONDARY} = {{ trigger = {{ kehillah_spark_can_hold_{f}_trigger = yes }} "
+                f"kehillah_spark_offer_{f}_effect = {{ WORK = $WORK$ }} }}" for f in pool]
         out += ["\t\t\t}", "\t\t}"]
     out += ["\t\tif = {", "\t\t\tlimit = { NOT = { exists = local_var:kehillah_spark_done } }",
             "\t\t\tkehillah_spark_from_$TRACK$_pool_effect = { WORK = $WORK$ }", "\t\t}",
@@ -529,6 +724,13 @@ def effects() -> str:
         out += [f"\t\t\t10 = {{ trigger = {{ kehillah_spark_can_hold_{f}_trigger = yes }} kehillah_spark_offer_{f}_effect = {{ WORK = $WORK$ }} }}"
                 for f in forms]
         out += ["\t\t}", "\t}", "}"]
+        # A mastered commentary: craft for the discipline, a little more Rabbi
+        # experience, and a popup naming both.
+        out += [f"kehillah_spark_commentary_{disc}_effect = {{",
+                f"\tchange_variable = {{ name = kehillah_commentaries_{disc} add = 1 }}",
+                f"\tif = {{ limit = {{ has_trait = kehillah_rabbi_trait }} add_trait_xp = {{ trait = kehillah_rabbi_trait track = {disc} value = {CRAFT_XP} }} }}",
+                "\t" + toast("craft", disc),
+                "}"]
 
     # AI writers, who rarely study, find an idea in an empty slot.
     out += ["", "kehillah_spark_ai_find_effect = {", "\trandom_list = {"]
@@ -567,6 +769,12 @@ def events() -> str:
                 f"\t\tkehillah_spark_option_hint_effect = {{ FORM = {form} DISC = {disc} }}",
                 f"\t\tkehillah_writing_choose_project_effect = {{ FORM = {form} GENRE = {genre} DISC = {disc} }}",
                 "\t\ttrigger_event = { id = kehillah_writing.0010 days = 1 }",
+                # The AI writes its ripest idea.
+                "\t\tai_chance = {",
+                "\t\t\tbase = 10",
+                f"\t\t\tmodifier = {{ add = 30 var:kehillah_spark_{disc}_tier ?= 2 }}",
+                f"\t\t\tmodifier = {{ add = 90 var:kehillah_spark_{disc}_tier ?= 3 }}",
+                "\t\t}",
                 "\t}"]
     out += ["\toption = { name = kehillah_writing.close }", "}", "",
             "# A new idea arrives while the discipline's slot holds another.",
@@ -588,6 +796,22 @@ def events() -> str:
             "\t\thidden_effect = { kehillah_spark_take_pending_effect = yes }",
             "\t}",
             "}"]
+    # Discard, from the card's corner button: confirm first.
+    for disc, n in DISC_EVENT.items():
+        out += ["", f"kehillah_spark.{30 + n:04d} = {{",
+                "\ttype = character_event",
+                "\ttitle = kehillah_spark.discard.t",
+                f"\tdesc = kehillah_spark.discard_{disc}.desc",
+                "\ttheme = learning",
+                "\tleft_portrait = { character = root animation = thinking }",
+                f"\ttrigger = {{ has_variable = kehillah_spark_{disc}_form }}",
+                "\toption = {",
+                "\t\tname = kehillah_spark.discard.yes",
+                "\t\tcustom_tooltip = kehillah_spark.discard.yes.tt",
+                f"\t\thidden_effect = {{ kehillah_spark_discard_{disc}_effect = yes }}",
+                "\t}",
+                "\toption = { name = kehillah_spark.discard.no }",
+                "}"]
     # The upgrade moment: a short scene and a visible reward.
     for disc, n in DISC_EVENT.items():
         for tier, base, anim in ((2, 10, "personality_rational"), (3, 20, "happiness")):
@@ -635,6 +859,22 @@ def custom() -> str:
         out.append(f"\ttext = {{ trigger = {{ var:kehillah_study_current_work ?= flag:{work} }} localization_key = kehillah_spark_preview_{work} }}")
     out.append("\ttext = { trigger = { always = yes } localization_key = kehillah_spark_form_unknown fallback = yes }")
     out.append("}")
+    # The whole study-icon sentence, commentaries included.
+    out.append("KehillahSparkStudyLine = {")
+    out.append("\ttype = character")
+    for work in sorted(WORKS):
+        if work.startswith("work_authored_"):
+            continue
+        out.append(f"\ttext = {{ trigger = {{ var:kehillah_study_current_work ?= flag:{work} }} localization_key = kehillah_spark_bookline_{work} }}")
+    out.append("\ttext = { trigger = { always = yes } localization_key = kehillah_spark_form_unknown fallback = yes }")
+    out.append("}")
+    # A discovered kind, or ??? (the card's kinds-found tooltip).
+    for form in FORMS:
+        out.append(f"KehillahSparkKnown_{form} = {{")
+        out.append("\ttype = character")
+        out.append(f"\ttext = {{ trigger = {{ is_target_in_variable_list = {{ name = kehillah_spark_known target = flag:{form} }} }} localization_key = kehillah_spark_known_{form} }}")
+        out.append("\ttext = { trigger = { always = yes } localization_key = kehillah_spark_unknown fallback = yes }")
+        out.append("}")
     out.append("KehillahSparkWritingTier = {")
     out.append("\ttype = character")
     for tier in (1, 2, 3):
@@ -687,14 +927,39 @@ def loc() -> str:
             else:
                 label = ROUTE_LABEL[route]
             out.append(f' kehillah_spark_route_{disc}_{route}:0 "{label}"')
+        out.append(f' kehillah_spark_craft_{disc}_toast:0 "{name}: a commentary mastered. My {name} study and writing grow surer and quicker."')
+        out.append(f' kehillah_spark.discard_{disc}.desc:0 "Shall I set aside my idea for {root}? Once let go, it will not come back unless my studies spark it again."')
+        known = "\\n".join(f"[GetPlayer.MakeScope.Var('kehillah_learning_view').Char.Custom('KehillahSparkKnown_{f}')]" for f in forms_of(disc))
+        out.append(f' kehillah_spark_known_tt_{disc}:0 "#T {name}: kinds of work found#!\\n{known}"')
+        out.append(f' kehillah_spark_craft_tt_{disc}:0 "#T Commentaries mastered: [GetPlayer.MakeScope.Var(\'kehillah_learning_view\').Char.MakeScope.ScriptValue(\'kehillah_spark_{disc}_commentaries_value\')|0]#!\\nEach commentary of {name} studied raises the success chance of {name} study and writing, and speeds them.\\nNow: [GetPlayer.MakeScope.Var(\'kehillah_learning_view\').Char.MakeScope.ScriptValue(\'kehillah_spark_{disc}_craft_chance_value\')|0]% success, [GetPlayer.MakeScope.Var(\'kehillah_learning_view\').Char.MakeScope.ScriptValue(\'kehillah_spark_{disc}_craft_speed_value\')|0] progress a month."')
+        out.append(f' kehillah_spark_original_title_{disc}:0 "An original {name} work of my own"')
+    for form in FORMS:
+        out.append(f' kehillah_spark_known_{form}:0 "#P $kehillah_spark_title_{form}$#!"')
+    out.append(' kehillah_spark_unknown:0 "#weak ???#!"')
+    for deed, label in DEED_NAME.items():
+        out.append(f' kehillah_lib_name_deed_{deed}:0 "{label}"')
     for work, forms in PREFERRED.items():
         out.append(f' kehillah_spark_preview_{work}:0 "{" or ".join(FORMS[f][2] for f in forms)}"')
+    # One line per book, for the Beit Midrash card and the study scheme icon.
+    for work in sorted(WORKS):
+        disc = WORKS[work].get("genre")
+        dname = DISCS.get(disc, ("a new", ""))[0]
+        if work in COMMENTARIES:
+            line = f"#P A commentary.#! Mastering it hones your {dname} study and writing instead of sparking an idea."
+        elif work in PREFERRED:
+            line = f"On first mastery, likely sparks an idea for {' or '.join(FORMS[f][2] for f in PREFERRED[work])}."
+        else:
+            line = f"On first mastery, sparks a {dname} idea."
+        out.append(f' kehillah_spark_bookline_{work}:0 "{line}"')
     for key, form in NICHES.items():
-        noun = FORMS[form][2]
-        when = "" if WORKS[key].get("named") else f" #weak · before {WORKS[key]['year']}#!"
-        out.append(f' kehillah_spark_path_{key}:0 "An unwritten {noun[2:] if noun.startswith("a ") else noun[3:]}{when}"')
+        when = "" if WORKS[key].get("named") else f" #weak · open until {WORKS[key]['year']}#!"
+        out.append(f' kehillah_spark_path_{key}:0 "{NICHE_HINT[key]}{when}"')
         for n, (_, label) in enumerate(niche_conditions(key), 1):
             out.append(f' kehillah_spark_nc_{key}_{n}:0 "{label}"')
+    for disc in DISCS:
+        out.append(f' kehillah_spark_path_original_{disc}:0 "$kehillah_spark_original_title_{disc}$ #weak · into the Ledger#!"')
+        for n, (_, label) in enumerate(ORIGINAL[disc], 1):
+            out.append(f' kehillah_spark_nc_original_{disc}_{n}:0 "{label}"')
     return "﻿" + "\n".join(out) + "\n"
 
 
@@ -811,7 +1076,7 @@ def upgrade_tooltip(disc: str) -> str:
 									spacing = 1
 									text_single = {{
 										layoutpolicy_horizontal = expanding
-										text = "[Localize( Concatenate( 'kehillah_spark_path_', Scope.GetFlagName ) )]"
+										text = "[Concatenate( Localize( Concatenate( 'kehillah_spark_path_', Scope.GetFlagName ) ), Concatenate( '   ', Concatenate( IntToString( FixedPointToInt( {sv("Concatenate( Concatenate( 'kehillah_spark_nc_', Scope.GetFlagName ), '_met_value' )")} ) ), Concatenate( '/', IntToString( FixedPointToInt( {sv("Concatenate( Concatenate( 'kehillah_spark_nc_', Scope.GetFlagName ), '_total_value' )")} ) ) ) ) ) )]"
 										default_format = "#high"
 										align = left|nobaseline
 										max_width = 380
@@ -846,6 +1111,7 @@ def card(disc: str) -> str:
     form = f"{VIEW}.MakeScope.Var( 'kehillah_spark_{disc}_form' ).GetFlagName"
     work = f"{VIEW}.MakeScope.Var( 'kehillah_spark_{disc}_work' )"
     mine = f"{VIEW}.IsLocalPlayer"
+    potential = sv(f"'kehillah_spark_{disc}_potential_value'")
     stars = "\n".join(f"""				widget = {{
 					size = {{ 22 22 }}
 					icon = {{
@@ -862,12 +1128,12 @@ def card(disc: str) -> str:
 				}}""" for n in (1, 2, 3))
     return f"""	### {name}: a card in its own colour.
 	type kehillah_spark_card_{disc} = widget {{
-		size = {{ 186 318 }}
+		size = {{ 186 350 }}
 
 		### Drop shadow, offset down and right.
 		widget = {{
 			position = {{ 5 6 }}
-			size = {{ 182 312 }}
+			size = {{ 182 344 }}
 			alpha = 0.35
 			background = {{
 				texture = "gfx/interface/colors/white.dds"
@@ -877,7 +1143,7 @@ def card(disc: str) -> str:
 
 		### The card.
 		widget = {{
-			size = {{ 182 312 }}
+			size = {{ 182 344 }}
 			background = {{ using = Background_Area_Dark }}
 			background = {{
 				texture = "gfx/interface/colors/white.dds"
@@ -902,6 +1168,15 @@ def card(disc: str) -> str:
 						parentanchor = center
 						text = "kehillah_spark_disc_{disc}"
 						align = nobaseline
+					}}
+					### Set the idea aside (asks first: kehillah_spark.{30 + DISC_EVENT[disc]:04d}).
+					button_close = {{
+						visible = "[And( {held}, {mine} )]"
+						parentanchor = right|vcenter
+						position = {{ -4 0 }}
+						size = {{ 22 22 }}
+						onclick = "[GetScriptedGui( 'kehillah_spark_discard_{disc}' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+						tooltip = "kehillah_spark_discard_tt"
 					}}
 				}}
 
@@ -938,6 +1213,35 @@ def card(disc: str) -> str:
 						spacing = 2
 						tooltip = "[Concatenate( Localize( 'kehillah_spark_tier_tt_prefix' ), {VIEW}.Custom( 'KehillahSparkTier_{disc}' ) )]"
 {stars}
+						### Great Work potential: bright for a historical landmark,
+						### dimmer for an original work only, faint for none.
+						widget = {{
+							visible = "[LessThan_CFixedPoint( {tier}, '(CFixedPoint)3' )]"
+							size = {{ 26 22 }}
+							icon = {{
+								visible = "[EqualTo_CFixedPoint( {potential}, '(CFixedPoint)2' )]"
+								size = {{ 22 22 }}
+								position = {{ 4 0 }}
+								texture = "gfx/interface/icons/artifact/artifact_book.dds"
+								tooltip = "kehillah_spark_potential_2"
+							}}
+							icon = {{
+								visible = "[EqualTo_CFixedPoint( {potential}, '(CFixedPoint)1' )]"
+								size = {{ 22 22 }}
+								position = {{ 4 0 }}
+								texture = "gfx/interface/icons/artifact/artifact_book.dds"
+								alpha = 0.55
+								tooltip = "kehillah_spark_potential_1"
+							}}
+							icon = {{
+								visible = "[EqualTo_CFixedPoint( {potential}, '(CFixedPoint)0' )]"
+								size = {{ 22 22 }}
+								position = {{ 4 0 }}
+								texture = "gfx/interface/icons/artifact/artifact_book.dds"
+								alpha = 0.15
+								tooltip = "kehillah_spark_potential_0"
+							}}
+						}}
 					}}
 					text_single = {{
 						text = "[{VIEW}.Custom( 'KehillahSparkTier_{disc}' )]"
@@ -980,11 +1284,26 @@ def card(disc: str) -> str:
 
 				expand = {{}}
 
+				### Discovery and craft: kinds found in this discipline, commentaries mastered.
+				text_single = {{
+					text = "[Concatenate( Localize( 'kehillah_spark_kinds_found' ), Concatenate( IntToString( FixedPointToInt( {sv(f"'kehillah_spark_{disc}_known_value'")} ) ), Concatenate( ' / ', IntToString( FixedPointToInt( {sv(f"'kehillah_spark_{disc}_kinds_value'")} ) ) ) ) )]"
+					tooltip = "kehillah_spark_known_tt_{disc}"
+					default_format = "#weak"
+					align = nobaseline
+				}}
+				text_single = {{
+					visible = "[GreaterThan_CFixedPoint( {sv(f"'kehillah_spark_{disc}_commentaries_value'")}, '(CFixedPoint)0' )]"
+					text = "[Concatenate( Localize( 'kehillah_spark_commentaries' ), IntToString( FixedPointToInt( {sv(f"'kehillah_spark_{disc}_commentaries_value'")} ) ) )]"
+					tooltip = "kehillah_spark_craft_tt_{disc}"
+					default_format = "#weak"
+					align = nobaseline
+				}}
+
 				### Actions, on the player's own cards.
 				button_standard = {{
 					visible = "[And( {held}, And( {mine}, LessThan_CFixedPoint( {tier}, '(CFixedPoint)3' ) ) )]"
 					size = {{ 156 32 }}
-					text = "kehillah_spark_upgrade_button"
+					text = "[Concatenate( Localize( 'kehillah_spark_upgrade_button' ), Select_CString( EqualTo_CFixedPoint( {tier}, '(CFixedPoint)1' ), Concatenate( Localize( 'KEHILLAH_SPARK_COUNT_OPEN' ), Concatenate( IntToString( FixedPointToInt( {sv(f"'kehillah_spark_{disc}_routes_met_value'")} ) ), Concatenate( '/', Concatenate( IntToString( FixedPointToInt( {sv(f"'kehillah_spark_{disc}_routes_needed_value'")} ) ), Localize( 'KEHILLAH_SPARK_COUNT_CLOSE' ) ) ) ) ), Localize( 'KEHILLAH_SPARK_NOTHING' ) ) )]"
 					enabled = "[GetScriptedGui( 'kehillah_spark_upgrade_{disc}' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
 					onclick = "[GetScriptedGui( 'kehillah_spark_upgrade_{disc}' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
 					using = tooltip_es

@@ -19,6 +19,7 @@ kehillah_writing_clear_draft_effect = {
 	remove_variable = kehillah_book_work
 	remove_variable = kehillah_writing_ordinary_form
 	remove_variable = kehillah_writing_spark_tier
+	remove_variable = kehillah_writing_original
 }
 
 kehillah_writing_choose_project_effect = {
@@ -42,6 +43,13 @@ kehillah_spark_option_hint_effect = {
 	else = {
 		custom_tooltip = kehillah_spark_tier_3_tt
 		kehillah_writing_landmark_hint_effect = { FORM = $FORM$ }
+	}
+	# 2026-11-24: what this spark could still become.
+	if = {
+		limit = { NOT = { var:kehillah_spark_$DISC$_tier ?= 3 } }
+		if = { limit = { kehillah_spark_form_has_history_$FORM$_trigger = yes } custom_tooltip = kehillah_spark_potential_2 }
+		else_if = { limit = { kehillah_spark_ledger_slot_free_trigger = yes } custom_tooltip = kehillah_spark_potential_1 }
+		else = { custom_tooltip = kehillah_spark_potential_0 }
 	}
 	custom_tooltip = kehillah_spark_used_up_tt
 }
@@ -122,6 +130,19 @@ kehillah_writing_finish_effect = {
 			if = { limit = { var:kehillah_book_tally >= 55 } set_variable = { name = kehillah_writing_artifact_tier value = flag:illustrious } }
 			else_if = { limit = { var:kehillah_book_tally >= 30 } set_variable = { name = kehillah_writing_artifact_tier value = flag:famed } }
 			else = { set_variable = { name = kehillah_writing_artifact_tier value = flag:masterwork } }
+			kehillah_sefer_finish_composition_effect = yes
+			kehillah_writing_create_manuscript_effect = yes
+		}
+		# 2026-11-24: a Great Work that fills no historical niche becomes an
+		# original work in one of the ledger's authored slots.
+		else_if = {
+			limit = {
+				var:kehillah_writing_spark_tier ?= 3
+				var:kehillah_book_tally >= kehillah_writing_landmark_quality_value
+				kehillah_spark_ledger_slot_free_trigger = yes
+			}
+			set_variable = { name = kehillah_writing_original value = yes }
+			set_variable = { name = kehillah_writing_artifact_tier value = flag:illustrious }
 			kehillah_sefer_finish_composition_effect = yes
 			kehillah_writing_create_manuscript_effect = yes
 		}
