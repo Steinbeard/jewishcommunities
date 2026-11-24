@@ -443,6 +443,10 @@ Focus gets its own spec. The only hook here is a set of weight multipliers insid
 | Courtly | Diplomacy, Shtadlan office, the host's opinion of the candidate (a new term, added with focus), prestige level |
 | Mercantile | Stewardship, Countinghouse office, householder ties, wealth (a new term, added with focus) |
 
+**2026-11-23 addendum:** communal focus shipped as the leadership style (Scholarly, Political, Commercial;
+`kehillah_leadership_style_*`). She'elot read it: an AI asker gives a Scholarly community +1 when choosing whom to
+ask ([she'elot spec](2026-11-22-sheelot.md) section 14).
+
 **The yeshiva case.** The Rosh Yeshiva is a court position, and a ruler can't hold a position at
 another court. But a Rav who leads a community **is** its Rosh Yeshiva when none is appointed
 (`kehillah_officers.txt`, V29 §3.2). So "becoming head of the great yeshiva" means standing for a

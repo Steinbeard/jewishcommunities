@@ -13,14 +13,179 @@
 
 # Scope: the event's root, in the Bet Din. $JUDGE$ is the citing judge
 # (scope:kehillah_av_beit_din or root).
+#
+# 2026-11-23 (Daniel; docs/spec/2026-11-23-bet-din-citation-strength-and-
+# risk.md): naming a source no longer adds a flat tally. Each work the court
+# could name gets two values, shown on kehillah_din_cite.0001's options:
+#   strength    what the ruling gains if the argument holds. Higher for a
+#               work few scholars have mastered (a view the parties have not
+#               already weighed): kehillah_din_cite_strength_max, less
+#               kehillah_din_cite_strength_per_master for each master in the
+#               registered communities, never below _min.
+#   reliability the chance it holds: the work's standing in the judge's rite
+#               and the judge's Learning (kehillah_din_cite_reliability_*).
+# A failed argument costs kehillah_din_cite_fail_tally and names no work.
 kehillah_din_cite_source_effect = {
 	involved_activity = {
 		save_scope_as = kehillah_din_cite_activity
-		change_variable = { name = kehillah_bet_din_tally add = kehillah_din_cite_tally }
 		set_variable = { name = kehillah_din_citing_judge value = $JUDGE$ }
 	}
-	$JUDGE$ = { kehillah_din_case_$CASE$_pick_effect = yes }
+	$JUDGE$ = {
+		kehillah_din_case_$CASE$_pick_effect = yes
+		kehillah_din_cite_measure_effect = { SLOT = grounded }
+		kehillah_din_cite_measure_effect = { SLOT = innovative }
+		kehillah_din_cite_measure_effect = { SLOT = conviction }
+	}
 	trigger_event = kehillah_din_cite.0001
+}
+
+# Scope: the citing judge; scope:kehillah_din_cite_activity. Strength and
+# reliability of the work in $SLOT$, if the pick found one.
+kehillah_din_cite_measure_effect = {
+	if = {
+		limit = { exists = scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$ }
+		save_scope_as = kehillah_din_measuring_judge
+		# Evaluate the host community's rite, not the citing judge's rite.
+		scope:kehillah_din_cite_activity = { remove_variable = kehillah_din_cite_$SLOT$_host_standing }
+		scope:kehillah_din_cite_activity.var:kehillah_bet_din_convening_title.holder ?= {
+			save_scope_as = kehillah_din_cite_host
+			kehillah_din_cite_host_standing_dispatch_effect = { SOURCE = scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$ SLOT = $SLOT$ }
+		}
+		# (Learning - pivot) * per-learning, held on the judge for a moment.
+		set_variable = { name = kehillah_din_cite_learning_bonus value = learning }
+		change_variable = { name = kehillah_din_cite_learning_bonus subtract = kehillah_din_cite_reliability_learning_pivot }
+		change_variable = { name = kehillah_din_cite_learning_bonus multiply = kehillah_din_cite_reliability_per_learning }
+		scope:kehillah_din_cite_activity = {
+			set_variable = { name = kehillah_din_cite_$SLOT$_masters value = 0 }
+			every_in_global_list = {
+				variable = kehillah_registered_communities
+				limit = { exists = holder }
+				holder = {
+					if = {
+						limit = { is_target_in_variable_list = { name = kehillah_mastered_works target = scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$ } }
+						scope:kehillah_din_cite_activity = { change_variable = { name = kehillah_din_cite_$SLOT$_masters add = 1 } }
+					}
+					every_courtier = {
+						limit = { is_target_in_variable_list = { name = kehillah_mastered_works target = scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$ } }
+						scope:kehillah_din_cite_activity = { change_variable = { name = kehillah_din_cite_$SLOT$_masters add = 1 } }
+					}
+				}
+			}
+			# Strength: max less per-master, floored at min.
+			set_variable = { name = kehillah_din_cite_$SLOT$_strength value = var:kehillah_din_cite_$SLOT$_masters }
+			change_variable = { name = kehillah_din_cite_$SLOT$_strength multiply = kehillah_din_cite_strength_per_master_neg }
+			change_variable = { name = kehillah_din_cite_$SLOT$_strength add = kehillah_din_cite_strength_max }
+			clamp_variable = { name = kehillah_din_cite_$SLOT$_strength min = kehillah_din_cite_strength_min max = kehillah_din_cite_strength_max }
+			# Reliability: base + standing * per-standing + (Learning - pivot) * per-learning.
+			# The pick left the work's standing in the judge's rite on the judge.
+			set_variable = { name = kehillah_din_cite_$SLOT$_reliability value = scope:kehillah_din_measuring_judge.var:kehillah_din_cite_$SLOT$_standing }
+			change_variable = { name = kehillah_din_cite_$SLOT$_reliability multiply = kehillah_din_cite_reliability_per_standing }
+			change_variable = { name = kehillah_din_cite_$SLOT$_reliability add = kehillah_din_cite_reliability_base }
+			change_variable = { name = kehillah_din_cite_$SLOT$_reliability add = scope:kehillah_din_measuring_judge.var:kehillah_din_cite_learning_bonus }
+			clamp_variable = { name = kehillah_din_cite_$SLOT$_reliability min = kehillah_din_cite_reliability_min max = kehillah_din_cite_reliability_max }
+		}
+		remove_variable = kehillah_din_cite_learning_bonus
+	}
+	remove_variable = kehillah_din_cite_$SLOT$_standing
+}
+
+# Scope: root of kehillah_din_cite.0001; scope:kehillah_din_cite_activity.
+# The argument resting on the work in $SLOT$ is tested: it holds with the
+# slot's reliability and adds its strength, or fails and costs the fail
+# tally. Either way the activity log records the citation. Call after the
+# option's own effect has named the work (kehillah_din_cited_work).
+kehillah_din_cite_roll_effect = {
+	random_list = {
+		0 = {
+			modifier = { add = scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$_reliability }
+			scope:kehillah_din_cite_activity = {
+				change_variable = { name = kehillah_bet_din_tally add = var:kehillah_din_cite_$SLOT$_strength }
+			}
+			if = {
+				limit = { scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$_strength >= kehillah_din_cite_strength_band_decisive }
+				custom_tooltip = kehillah_din_cite_holds_decisive_tt
+			}
+			else_if = {
+				limit = { scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$_strength >= kehillah_din_cite_strength_band_strong }
+				custom_tooltip = kehillah_din_cite_holds_strong_tt
+			}
+			else_if = {
+				limit = { scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$_strength >= kehillah_din_cite_strength_band_solid }
+				custom_tooltip = kehillah_din_cite_holds_solid_tt
+			}
+			else = { custom_tooltip = kehillah_din_cite_holds_modest_tt }
+			hidden_effect = {
+				scope:kehillah_din_cite_activity = {
+					kehillah_din_cite_log_dispatch_effect = { SOURCE = var:kehillah_din_cite_$SLOT$ RESULT = held JUDGE = var:kehillah_din_citing_judge }
+				}
+			}
+		}
+		0 = {
+			modifier = {
+				add = {
+					value = 100
+					subtract = scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$_reliability
+				}
+			}
+			scope:kehillah_din_cite_activity = {
+				change_variable = { name = kehillah_bet_din_tally subtract = kehillah_din_cite_fail_tally }
+			}
+			custom_tooltip = kehillah_din_cite_fails_tt
+			hidden_effect = {
+				scope:kehillah_din_cite_activity = {
+					kehillah_din_cite_log_dispatch_effect = { SOURCE = var:kehillah_din_cite_$SLOT$ RESULT = failed JUDGE = var:kehillah_din_citing_judge }
+					# A failed argument names no authority, so no work gains
+					# a citation from it (kehillah_bet_din_reward_judges_for_
+					# ruling_effect).
+					remove_variable = kehillah_din_cited_work
+				}
+			}
+		}
+	}
+}
+
+# The host rite judges the public citation; apply XP to its actual judge.
+kehillah_din_cite_cherem_effect = {
+ if = {
+  limit = { scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$_host_standing ?= 0 }
+  custom_tooltip = kehillah_din_cite_anathema_risk_tt
+  hidden_effect = {
+   scope:kehillah_din_cite_activity.var:kehillah_din_citing_judge ?= {
+    if = {
+     limit = { is_alive = yes is_jewish_character_trigger = yes NOT = { kehillah_cherem_in_full_trigger = yes } }
+     set_variable = { name = kehillah_cherem_cause_work value = scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$ }
+     kehillah_cherem_add_effect = { AMOUNT = kehillah_cherem_cite_anathema_points }
+    }
+   }
+  }
+ }
+ else_if = {
+  limit = { scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$_host_standing ?= 1 }
+  custom_tooltip = kehillah_din_cite_banned_risk_tt
+  hidden_effect = {
+   scope:kehillah_din_cite_activity.var:kehillah_din_citing_judge ?= {
+    if = {
+     limit = { is_alive = yes is_jewish_character_trigger = yes NOT = { kehillah_cherem_in_full_trigger = yes } }
+     set_variable = { name = kehillah_cherem_cause_work value = scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$ }
+     kehillah_cherem_add_effect = { AMOUNT = kehillah_cherem_cite_banned_points }
+    }
+   }
+  }
+ }
+}
+
+# Scope: root of kehillah_din_cite.0001. How widely the work in $SLOT$ is
+# studied, said in words (the reason for its strength).
+kehillah_din_cite_rarity_tt_effect = {
+	if = {
+		limit = { scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$_masters <= kehillah_din_cite_rare_masters }
+		custom_tooltip = kehillah_din_cite_rare_tt
+	}
+	else_if = {
+		limit = { scope:kehillah_din_cite_activity.var:kehillah_din_cite_$SLOT$_masters >= kehillah_din_cite_common_masters }
+		custom_tooltip = kehillah_din_cite_common_tt
+	}
+	else = { custom_tooltip = kehillah_din_cite_known_tt }
 }
 
 # Scope: the citing judge. Each case's order.
@@ -38,6 +203,76 @@ kehillah_din_case_11_pick_effect = { kehillah_din_pick_citations_kodashim_effect
 kehillah_din_case_12_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
 kehillah_din_case_13_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
 kehillah_din_case_14_pick_effect = { kehillah_din_pick_citations_kodashim_effect = yes }
+kehillah_din_case_15_pick_effect = { kehillah_din_pick_citations_tahorot_effect = yes }
+kehillah_din_case_16_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_17_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_18_pick_effect = { kehillah_din_pick_citations_zeraim_effect = yes }
+kehillah_din_case_19_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_20_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_21_pick_effect = { kehillah_din_pick_citations_zeraim_effect = yes }
+kehillah_din_case_22_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_23_pick_effect = { kehillah_din_pick_citations_nashim_effect = yes }
+kehillah_din_case_24_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_25_pick_effect = { kehillah_din_pick_citations_nashim_effect = yes }
+kehillah_din_case_26_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_27_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_28_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_29_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_30_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_31_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_32_pick_effect = { kehillah_din_pick_citations_zeraim_effect = yes }
+kehillah_din_case_33_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_34_pick_effect = { kehillah_din_pick_citations_kodashim_effect = yes }
+kehillah_din_case_35_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_36_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_37_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_38_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_39_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_40_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_41_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_42_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_43_pick_effect = { kehillah_din_pick_citations_zeraim_effect = yes }
+kehillah_din_case_44_pick_effect = { kehillah_din_pick_citations_zeraim_effect = yes }
+kehillah_din_case_45_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_46_pick_effect = { kehillah_din_pick_citations_zeraim_effect = yes }
+kehillah_din_case_47_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_48_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_49_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_50_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_51_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_52_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_53_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_54_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_55_pick_effect = { kehillah_din_pick_citations_zeraim_effect = yes }
+kehillah_din_case_56_pick_effect = { kehillah_din_pick_citations_nashim_effect = yes }
+kehillah_din_case_57_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_58_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_59_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_60_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_61_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_62_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_63_pick_effect = { kehillah_din_pick_citations_kodashim_effect = yes }
+kehillah_din_case_64_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_65_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_66_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_67_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_68_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_69_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_70_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_71_pick_effect = { kehillah_din_pick_citations_kodashim_effect = yes }
+kehillah_din_case_72_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_73_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_74_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_75_pick_effect = { kehillah_din_pick_citations_zeraim_effect = yes }
+kehillah_din_case_76_pick_effect = { kehillah_din_pick_citations_moed_effect = yes }
+kehillah_din_case_77_pick_effect = { kehillah_din_pick_citations_nashim_effect = yes }
+kehillah_din_case_78_pick_effect = { kehillah_din_pick_citations_nashim_effect = yes }
+kehillah_din_case_79_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_80_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_81_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_82_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_83_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
+kehillah_din_case_84_pick_effect = { kehillah_din_pick_citations_nezikin_effect = yes }
 
 # Scope: root of kehillah_din_cite.0001; scope:kehillah_din_cite_activity.
 # Each names its work as the ruling's authority, then adds its own effect.
@@ -162,6 +397,76 @@ kehillah_din_case_11_bench_effect = { kehillah_din_bench_order_effect = { SEDER 
 kehillah_din_case_12_bench_effect = { kehillah_din_bench_order_effect = { SEDER = moed } }
 kehillah_din_case_13_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
 kehillah_din_case_14_bench_effect = { kehillah_din_bench_order_effect = { SEDER = kodashim } }
+kehillah_din_case_15_bench_effect = { kehillah_din_bench_order_effect = { SEDER = tahorot } }
+kehillah_din_case_16_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_17_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_18_bench_effect = { kehillah_din_bench_order_effect = { SEDER = zeraim } }
+kehillah_din_case_19_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_20_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_21_bench_effect = { kehillah_din_bench_order_effect = { SEDER = zeraim } }
+kehillah_din_case_22_bench_effect = { kehillah_din_bench_order_effect = { SEDER = moed } }
+kehillah_din_case_23_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nashim } }
+kehillah_din_case_24_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_25_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nashim } }
+kehillah_din_case_26_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_27_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_28_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_29_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_30_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_31_bench_effect = { kehillah_din_bench_order_effect = { SEDER = moed } }
+kehillah_din_case_32_bench_effect = { kehillah_din_bench_order_effect = { SEDER = zeraim } }
+kehillah_din_case_33_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_34_bench_effect = { kehillah_din_bench_order_effect = { SEDER = kodashim } }
+kehillah_din_case_35_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_36_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_37_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_38_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_39_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_40_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_41_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_42_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_43_bench_effect = { kehillah_din_bench_order_effect = { SEDER = zeraim } }
+kehillah_din_case_44_bench_effect = { kehillah_din_bench_order_effect = { SEDER = zeraim } }
+kehillah_din_case_45_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_46_bench_effect = { kehillah_din_bench_order_effect = { SEDER = zeraim } }
+kehillah_din_case_47_bench_effect = { kehillah_din_bench_order_effect = { SEDER = moed } }
+kehillah_din_case_48_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_49_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_50_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_51_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_52_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_53_bench_effect = { kehillah_din_bench_order_effect = { SEDER = moed } }
+kehillah_din_case_54_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_55_bench_effect = { kehillah_din_bench_order_effect = { SEDER = zeraim } }
+kehillah_din_case_56_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nashim } }
+kehillah_din_case_57_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_58_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_59_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_60_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_61_bench_effect = { kehillah_din_bench_order_effect = { SEDER = moed } }
+kehillah_din_case_62_bench_effect = { kehillah_din_bench_order_effect = { SEDER = moed } }
+kehillah_din_case_63_bench_effect = { kehillah_din_bench_order_effect = { SEDER = kodashim } }
+kehillah_din_case_64_bench_effect = { kehillah_din_bench_order_effect = { SEDER = moed } }
+kehillah_din_case_65_bench_effect = { kehillah_din_bench_order_effect = { SEDER = moed } }
+kehillah_din_case_66_bench_effect = { kehillah_din_bench_order_effect = { SEDER = moed } }
+kehillah_din_case_67_bench_effect = { kehillah_din_bench_order_effect = { SEDER = moed } }
+kehillah_din_case_68_bench_effect = { kehillah_din_bench_order_effect = { SEDER = moed } }
+kehillah_din_case_69_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_70_bench_effect = { kehillah_din_bench_order_effect = { SEDER = moed } }
+kehillah_din_case_71_bench_effect = { kehillah_din_bench_order_effect = { SEDER = kodashim } }
+kehillah_din_case_72_bench_effect = { kehillah_din_bench_order_effect = { SEDER = moed } }
+kehillah_din_case_73_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_74_bench_effect = { kehillah_din_bench_order_effect = { SEDER = moed } }
+kehillah_din_case_75_bench_effect = { kehillah_din_bench_order_effect = { SEDER = zeraim } }
+kehillah_din_case_76_bench_effect = { kehillah_din_bench_order_effect = { SEDER = moed } }
+kehillah_din_case_77_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nashim } }
+kehillah_din_case_78_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nashim } }
+kehillah_din_case_79_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_80_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_81_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_82_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_83_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
+kehillah_din_case_84_bench_effect = { kehillah_din_bench_order_effect = { SEDER = nezikin } }
 
 kehillah_din_bench_order_effect = {
 	scope:kds_activity = { set_variable = { name = kehillah_din_bench_seder value = flag:$SEDER$ } }

@@ -1,0 +1,72 @@
+﻿# Console-only probes for the tenure mark (2026-11-19). Run on the player:
+#   event kehillah_tenure_debug.1   report the record, score and tier
+#   event kehillah_tenure_debug.2   pretend the leader took office one band
+#                                   lower in every pillar, then re-judge
+#   event kehillah_tenure_debug.3   pretend one band higher, then re-judge
+namespace = kehillah_tenure_debug
+
+kehillah_tenure_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		# 2026-11-19 live run: data-function loc in these lines printed blank, so
+		# the report now branches on the values instead (no loc functions).
+		if = {
+			limit = { exists = primary_title }
+			if = {
+				limit = { primary_title = { has_variable = kehillah_tenure_leader var:kehillah_tenure_leader = root } }
+				debug_log = "TENURE record belongs to this leader"
+			}
+			else = { debug_log = "TENURE no record for this leader yet" }
+			if = { limit = { kehillah_tenure_tier_value = 2 } debug_log = "TENURE computed tier 2 (raised)" }
+			else_if = { limit = { kehillah_tenure_tier_value = 1 } debug_log = "TENURE computed tier 1 (improved)" }
+			else_if = { limit = { kehillah_tenure_tier_value = 0 } debug_log = "TENURE computed tier 0 (unchanged)" }
+			else_if = { limit = { kehillah_tenure_tier_value = -1 } debug_log = "TENURE computed tier -1 (declined)" }
+			else = { debug_log = "TENURE computed tier -2 (brought low)" }
+			if = { limit = { has_character_modifier = kehillah_tenure_raised_modifier } debug_log = "TENURE modifier: raised" }
+			if = { limit = { has_character_modifier = kehillah_tenure_improved_modifier } debug_log = "TENURE modifier: improved" }
+			if = { limit = { has_character_modifier = kehillah_tenure_declined_modifier } debug_log = "TENURE modifier: declined" }
+			if = { limit = { has_character_modifier = kehillah_tenure_brought_low_modifier } debug_log = "TENURE modifier: brought low" }
+			if = {
+				limit = {
+					primary_title = {
+						has_variable = kehillah_band_best_prosperity
+						has_variable = kehillah_band_best_stability
+						has_variable = kehillah_band_best_greatness
+					}
+				}
+				debug_log = "TENURE high-water marks recorded for all three pillars"
+			}
+		}
+	}
+}
+
+kehillah_tenure_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_tenure_mark_update_effect = yes
+		primary_title ?= {
+			change_variable = { name = kehillah_tenure_band_prosperity add = -1 }
+			change_variable = { name = kehillah_tenure_band_stability add = -1 }
+			change_variable = { name = kehillah_tenure_band_greatness add = -1 }
+		}
+		kehillah_tenure_mark_update_effect = yes
+		trigger_event = kehillah_tenure_debug.1
+	}
+}
+
+kehillah_tenure_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_tenure_mark_update_effect = yes
+		primary_title ?= {
+			change_variable = { name = kehillah_tenure_band_prosperity add = 1 }
+			change_variable = { name = kehillah_tenure_band_stability add = 1 }
+			change_variable = { name = kehillah_tenure_band_greatness add = 1 }
+		}
+		kehillah_tenure_mark_update_effect = yes
+		trigger_event = kehillah_tenure_debug.1
+	}
+}

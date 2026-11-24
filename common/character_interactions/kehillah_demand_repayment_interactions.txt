@@ -1,0 +1,592 @@
+﻿# =====================================================================
+# DEMAND REPAYMENT for Kehillah lenders (2026-11-20).
+# GENERATED from vanilla 1.21's demand_repayment_interaction
+# (common/character_interactions/11_gdp_merchant_interactions.txt) with
+# exactly three changes, so it behaves and reads like vanilla's:
+#   1. key: kehillah_demand_repayment_interaction (and its self-reference);
+#   2. is_available: government_is_kehillah instead of government_is_merchant
+#      (that flag would switch on the whole merchant-republic code path);
+#   3. ai_frequency = 24 instead of vanilla's per-tier block (county = 60).
+# Loc, toasts, refusal penalties and AI acceptance are vanilla's own.
+# Re-generate it when CK3 changes the vanilla interaction:
+#   sh scripts/generate_kehillah_demand_repayment.sh (docs/spec/2026-11-19-trade-dlc-lending-goods-and-districts.md, section 6).
+# =====================================================================
+
+kehillah_demand_repayment_interaction = {
+	category = interaction_category_diplomacy
+	interface_priority = 110
+	icon = demand_repayment 
+	desc = demand_repayment_interaction_desc
+	common_interaction = yes
+
+	notification_text = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:recipient = {
+						any_owned_story = {
+							story_type = story_cycle_loan
+							var:lender = scope:actor
+							var:original_lender = scope:actor
+							var:original_debtor != story_owner
+						}
+					}
+				}
+				desc = DEMAND_REPAYMENT_INHERITED_DEBT_NOTIFICATION
+			}
+			triggered_desc = {
+				trigger = {
+					scope:recipient = {
+						any_owned_story = {
+							story_type = story_cycle_loan
+							var:lender = scope:actor
+							var:original_lender != scope:actor
+							var:original_debtor = story_owner
+						}
+					}
+				}
+				desc = DEMAND_REPAYMENT_INHERITED_LOAN_NOTIFICATION
+			}
+			triggered_desc = {
+				trigger = {
+					scope:recipient = {
+						any_owned_story = {
+							story_type = story_cycle_loan
+							var:lender = scope:actor
+							var:original_lender != scope:actor
+							var:original_debtor != story_owner
+						}
+					}
+				}
+				desc = DEMAND_REPAYMENT_ALL_NEW_CHAR_NOTIFICATION
+			}
+			triggered_desc = {
+				trigger = {
+					scope:recipient = {
+						any_owned_story = {
+							story_type = story_cycle_loan
+							var:lender = scope:actor
+							var:reminders = 1
+						}
+					}
+				}
+				desc = DEMAND_REPAYMENT_SECOND_TIME_NOTIFICATION
+			}
+			triggered_desc = {
+				trigger = {
+					scope:recipient = {
+						any_owned_story = {
+							story_type = story_cycle_loan
+							var:lender = scope:actor
+							var:reminders = 2
+						}
+					}
+				}
+				desc = DEMAND_REPAYMENT_THIRD_TIME_NOTIFICATION
+			}
+			triggered_desc = {
+				trigger = {
+					scope:recipient = {
+						any_owned_story = {
+							story_type = story_cycle_loan
+							var:lender = scope:actor
+							var:reminders = 3
+						}
+					}
+				}
+				desc = DEMAND_REPAYMENT_FOURTH_TIME_NOTIFICATION
+			}
+			desc = DEMAND_REPAYMENT_FIRST_TIME_NOTIFICATION
+		}
+	}
+
+	popup_on_receive = yes
+	pause_on_receive = yes
+	ai_min_reply_days = 0
+	ai_max_reply_days = 0
+
+	ai_maybe = yes
+	can_send_despite_rejection = yes
+
+	cooldown_against_recipient = { years = 2 }
+
+	ai_frequency = 24
+
+	is_available = {
+		government_has_flag = government_is_kehillah
+		any_in_list = { variable = owes_me_money }
+	}
+
+	is_shown = {
+		scope:actor = {
+			any_in_list = {
+				variable = owes_me_money
+				this = scope:recipient
+			}
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:recipient = {
+			any_owned_story = {
+				story_type = story_cycle_loan
+				var:lender = scope:actor
+				save_temporary_scope_as = loan_temp
+			}
+		}
+		scope:recipient = {
+			is_available_quick = {
+				adult = yes
+				imprisoned = no
+			}
+			custom_tooltip = {
+				text = demand_repayment_interaction_afford_tt
+				any_owned_story = {
+					story_type = story_cycle_loan
+					var:lender = scope:actor
+					var:amount_owed <= scope:recipient.gold
+				}
+			}
+			custom_tooltip = {
+				text = demand_repayment_interaction_duration_tt
+				any_owned_story = {
+					story_type = story_cycle_loan
+					var:lender = scope:actor
+					var:years_since >= 2 # cannot demand repayment immediately
+				}
+			}
+			NOT = {
+				is_at_war_with = scope:actor
+			}
+		}
+	}
+	is_highlighted = {
+		scope:actor = {
+			is_character_interaction_potentially_accepted = {
+				recipient = scope:recipient
+				interaction = kehillah_demand_repayment_interaction
+			}
+		}
+	}
+
+	on_accept = {
+		scope:recipient = {
+			ordered_owned_story = {
+				limit = {
+					story_type = story_cycle_loan
+					var:lender = scope:actor
+					var:amount_owed <= scope:recipient.gold
+					var:years_since >= 2 # cannot demand repayment immediately
+				}
+				order_by = var:years_since
+				save_scope_as = loan
+			}
+			if = {
+				limit = {
+					NOT = { exists = scope:loan }
+				}
+				ordered_owned_story = {
+					limit = {
+						story_type = story_cycle_loan
+						var:lender = scope:actor
+					var:years_since >= 2 # cannot demand repayment immediately
+					}
+					order_by = var:years_since
+					save_scope_as = loan
+				}
+			}
+		}
+		scope:loan = { repay_and_end_loan_story_effect = yes }
+	}
+
+	on_decline = {
+		scope:recipient = {
+			ordered_owned_story = {
+				limit = {
+					story_type = story_cycle_loan
+					var:lender = scope:actor
+					var:amount_owed <= scope:recipient.gold
+					var:years_since >= 2 # cannot demand repayment immediately
+				}
+				order_by = var:years_since
+				save_scope_as = loan
+			}
+			if = {
+				limit = {
+					NOT = { exists = scope:loan }
+				}
+				ordered_owned_story = {
+					limit = {
+						story_type = story_cycle_loan
+						var:lender = scope:actor
+						var:years_since >= 2 # cannot demand repayment immediately
+					}
+					order_by = var:years_since
+					save_scope_as = loan
+				}
+			}
+		}
+		scope:loan = {
+			if = {
+				limit = {
+					NOT = { exists = var:reminders }
+				}
+				set_variable = {
+					name = reminders
+					value = 1
+				}
+			}
+			else = {
+				change_variable = {
+					name = reminders
+					add = 1
+				}
+			}
+		}
+		scope:actor = {
+			send_interface_toast = {
+				type = event_toast_effect_bad
+				title = ho_loan_demand_refused_title
+				right_icon = scope:recipient
+				scope:recipient = {
+					send_interface_toast = {
+						type = event_toast_effect_bad
+						title = ho_loan_demand_refused_title
+						right_icon = scope:actor
+						if = {
+							limit = { scope:loan.var:reminders = 1 }
+							add_prestige = minor_prestige_loss
+							scope:actor = {
+								if = {
+									limit = { is_ai = yes }
+									add_opinion = {
+										target = scope:recipient
+										modifier = respect_opinion
+										opinion = low_negative_opinion
+									}
+								}
+							}
+						}
+						else_if = {
+							limit = { scope:loan.var:reminders = 2 }
+							add_prestige = medium_prestige_loss
+							scope:actor = {
+								if = {
+									limit = { is_ai = yes }
+									add_opinion = {
+										target = scope:recipient
+										modifier = respect_opinion
+										opinion = medium_negative_opinion
+									}
+								}
+							}
+						}
+						else_if = {
+							limit = { scope:loan.var:reminders = 3 }
+							add_prestige = medium_prestige_loss
+							scope:actor = {
+								if = {
+									limit = { is_ai = yes }
+									add_opinion = {
+										target = scope:recipient
+										modifier = respect_opinion
+										opinion = medium_negative_opinion
+									}
+								}
+								progress_towards_rival_effect = {
+									REASON = rival_vassal_loan
+									CHARACTER = scope:recipient
+									OPINION = 0
+								}
+							}
+						}
+						else = {
+							add_prestige = medium_prestige_loss
+							scope:actor = {
+								if = {
+									limit = { is_ai = yes }
+									add_opinion = {
+										target = scope:recipient
+										modifier = respect_opinion
+										opinion = medium_negative_opinion
+									}
+								}
+								progress_towards_rival_effect = {
+									REASON = rival_vassal_loan
+									CHARACTER = scope:recipient
+									OPINION = 0
+								}
+							}
+						}
+					}
+				}
+			}
+			house = {
+				change_house_relation_effect = {
+					HOUSE = scope:recipient.house
+					VALUE = house_relation_damage_minor_value
+					REASON = loan_unrepaid
+					CHAR = root
+					TARGET_CHAR = scope:recipient
+					TITLE = scope:dummy_gender
+				}
+			}
+		}
+		scope:recipient = { custom_tooltip = demand_repayment_refusal_warning_tt }
+	}
+
+	ai_targets = { ai_recipients = neighboring_rulers }
+	ai_targets = { ai_recipients = liege }
+	ai_targets = { ai_recipients = suzerain }
+	ai_targets = { ai_recipients = hooked_characters }
+
+	ai_accept = {
+		base = 25
+
+		opinion_modifier = {
+			opinion_target = scope:actor
+			multiplier = 0.5
+		}
+
+		modifier = {
+			NOT = {
+				any_owned_story = {
+					story_type = story_cycle_loan
+					var:lender = scope:actor
+					var:amount_owed < scope:recipient.gold
+				}
+			}
+			add = -25
+			desc = AI_RECIPIENT_AFFORD_ACTOR_LOAN_REASON
+		}
+
+		modifier = {
+			any_owned_story = {
+				story_type = story_cycle_loan
+				var:lender = scope:actor
+				var:original_debtor != story_owner
+			}
+			add = {
+				value = 15
+				if = {
+					limit = {
+						any_owned_story = {
+							story_type = story_cycle_loan
+							var:lender = scope:actor
+							var:amount_owed < scope:recipient.gold
+							var:original_debtor != story_owner
+						}
+					}
+					multiply = 2
+				}
+			}
+			desc = AI_RECIPIENT_INHERITED_LOAN_REASON
+		}
+
+		modifier = {
+			any_owned_story = {
+				story_type = story_cycle_loan
+				var:lender = scope:actor
+				var:years_since >= 5
+			}
+			add = {
+				value = 0
+				ordered_owned_story = {
+					limit = {
+						story_type = story_cycle_loan
+						var:lender = scope:actor
+						var:years_since >= 5
+					}
+					order_by = var:years_since
+					add = var:years_since
+					if = {
+						limit = { var:amount_owed < scope:recipient.gold }
+						multiply = 2
+					}
+				}
+			}
+			desc = AI_RECIPIENT_LOAN_DURATION_REASON
+		}
+
+		modifier = {
+			any_owned_story = {
+				story_type = story_cycle_loan
+				var:lender = scope:actor
+				var:reminders > 0
+			}
+			add = {
+				value = 0
+				every_owned_story = {
+					limit = {
+						story_type = story_cycle_loan
+						var:lender = scope:actor
+						var:reminders > 0
+					}
+					add = var:reminders
+					if = {
+						limit = { var:amount_owed < scope:recipient.gold }
+						multiply = 2
+					}
+				}
+				multiply = 5
+			}
+			desc = AI_RECIPIENT_LOAN_REMINDERS_REASON
+		}
+
+		modifier = {
+			gold < 0
+			add = -25
+			desc = AI_RECIPIENT_GOLD_REASON
+		}
+
+		modifier = {
+			is_at_war = yes
+			add = -25
+			desc = RECIPIENT_AT_WAR_REASON
+		}
+
+		modifier = {
+			gdp_usury_rite_voids_debts_trigger = yes
+			culture = {
+				NOT = { has_cultural_parameter = binding_oaths_harsh_break_penalties }
+			}
+			any_owned_story = {
+				story_type = story_cycle_loan
+				var:lender = scope:actor
+				var:instrument = flag:open
+			}
+			add = -25
+			desc = AI_RECIPIENT_CAN_REPUDIATE_LOAN_REASON
+		}
+
+		# Faith
+		modifier = {
+			add = -10
+			faith = {
+				faith_hostility_level = {
+					target = scope:actor.faith
+					value = faith_astray_level
+				}
+			}
+			desc = AI_OPINION_FAITH_ASTRAY_ACTOR
+		}
+		modifier = {
+			add = -20
+			faith = {
+				faith_hostility_level = {
+					target = scope:actor.faith
+					value = faith_hostile_level
+				}
+			}
+			desc = AI_OPINION_FAITH_HOSTILE_ACTOR
+		}
+		modifier = {
+			add = -30
+			faith = {
+				faith_hostility_level = {
+					target = scope:actor.faith
+					value = faith_evil_level
+				}
+			}
+			desc = AI_OPINION_FAITH_EVIL_ACTOR
+		}
+
+		modifier = {
+			scope:recipient.gold >= scope:recipient.major_gold_value
+			add = {
+				value = 10
+				if = {
+					limit = {
+						scope:recipient.gold >= scope:recipient.massive_gold_value
+					}
+					add = 25
+				}
+				if = {
+					limit = {
+						scope:recipient.gold >= scope:recipient.monumental_gold_value
+					}
+					add = 25
+				}
+			}
+			desc = AI_RECIPIENT_GOLD_REASON
+		}
+
+		# Personality
+		modifier = {
+			add = 20
+			has_trait = honest
+			desc = INTERACTION_HONEST
+		}
+		modifier = {
+			add = -20
+			has_trait = deceitful
+			desc = INTERACTION_DECEITFUL
+		}
+		modifier = {
+			add = 15
+			has_trait = just
+			desc = INTERACTION_JUST
+		}
+		modifier = {
+			add = -15
+			has_trait = arbitrary
+			desc = INTERACTION_ARBITRARY
+		}
+		modifier = {
+			add = -20
+			has_trait = greedy
+			desc = INTERACTION_GREEDY
+		}
+		modifier = {
+			add = 10
+			has_trait = generous
+			desc = INTERACTION_GENEROUS
+		}
+
+		## Dealbreaker
+		modifier = {
+			add = -100
+			desc = AI_OPINION_DEALBREAKER_ACTOR
+			scope:actor = {
+				is_known_dealbreaker_trigger = { KNOWER = scope:recipient }
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 30
+
+		# Slight preference to do this towards players
+		modifier = {
+			add = 30
+			scope:recipient = {
+				is_ai = no
+			}
+		}
+
+		modifier = {
+			add = -10
+			scope:actor = {
+				gdp_usury_condemns_loan_trigger = {
+					BORROWER = scope:recipient
+				}
+				gdp_usury_untroubled_by_sin_trigger = no
+			}
+		}
+		modifier = {
+			add = -10
+			scope:actor = {
+				gdp_usury_forbids_loan_trigger = {
+					BORROWER = scope:recipient
+				}
+				gdp_usury_untroubled_by_sin_trigger = no
+			}
+		}
+		modifier = {
+			add = -40
+			scope:recipient = {
+				has_character_flag = gdp_debt_repudiator
+			}
+		}
+	}
+}

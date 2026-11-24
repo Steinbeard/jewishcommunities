@@ -1,0 +1,124 @@
+﻿# =====================================================================
+# THE QUARTER'S TRACKS (2026-11-20). docs/spec/2026-11-20-kehillah-quarter-building-tracks.md.
+# =====================================================================
+
+# Scope: a Kehillah leader. Yearly: the Quarter's trades enrich the host
+# county -- a county modifier on 1.21's county Prosperity, visible in the
+# vanilla county view. The local-economy line of the community's own
+# Prosperity reads that county Prosperity back (kehillah_bd_local_economy_value).
+kehillah_quarter_enrich_town_effect = {
+	if = {
+		limit = { exists = domicile.domicile_location.county }
+		save_scope_value_as = { name = kehillah_trade_score value = kehillah_quarter_trade_score_value }
+		domicile.domicile_location.county = {
+			if = { limit = { has_county_modifier = kehillah_quarter_trade_small_modifier } remove_county_modifier = kehillah_quarter_trade_small_modifier }
+			if = { limit = { has_county_modifier = kehillah_quarter_trade_medium_modifier } remove_county_modifier = kehillah_quarter_trade_medium_modifier }
+			if = { limit = { has_county_modifier = kehillah_quarter_trade_large_modifier } remove_county_modifier = kehillah_quarter_trade_large_modifier }
+			if = {
+				limit = { scope:kehillah_trade_score >= kehillah_quarter_trade_large_score }
+				add_county_modifier = { modifier = kehillah_quarter_trade_large_modifier years = 1 }
+			}
+			else_if = {
+				limit = { scope:kehillah_trade_score >= kehillah_quarter_trade_medium_score }
+				add_county_modifier = { modifier = kehillah_quarter_trade_medium_modifier years = 1 }
+			}
+			else_if = {
+				limit = { scope:kehillah_trade_score >= 1 }
+				add_county_modifier = { modifier = kehillah_quarter_trade_small_modifier years = 1 }
+			}
+		}
+	}
+}
+
+
+# =====================================================================
+# THE JEWISH QUARTER DISTRICT (2026-11-21, revised 2026-11-22). Quarter spec
+# section 16. common/districts/kehillah_jewish_quarter_districts.txt.
+#
+# The quarter brings its own room: placing it adds kehillah_quarter_room_
+# modifier (one district slot) to the host's holding, and removing it takes
+# the slot away again (Daniel, 2026-11-22). It never uses one of the town's
+# own slots, so a full town can take Jews in, inviting them costs the host
+# nothing, and expelling them leaves the town no richer than before.
+#
+# A community never moves its domicile (the mod's only move_domicile calls
+# move adventurer camps before founding), so the district is placed once
+# and removed once:
+#   placed  -- founding (kehillah_found_community_effect), game start, and a
+#              quarterly re-check in case it is ever missing;
+#   removed -- dissolution, which covers collapse and expulsion
+#              (kehillah_dissolve_community_effect), and a leader dying with
+#              no successor (kehillah_history_check_pending_effect).
+# Two communities share a town only in authored starts (Baghdad's community
+# and the Gaonate in 867): one district and one room, kept while either
+# lives there.
+# =====================================================================
+
+# Scope: a Kehillah leader.
+kehillah_quarter_district_place_effect = {
+	primary_title = { save_scope_as = kehillah_qd_title }
+	domicile ?= {
+		domicile_location ?= {
+			if = {
+				limit = { province_has_district = kehillah_jewish_quarter_district }
+				scope:kehillah_qd_title = { remove_variable = kehillah_quarter_no_room }
+			}
+			else = {
+				if = {
+					limit = { NOT = { has_province_modifier = kehillah_quarter_room_modifier } }
+					add_province_modifier = kehillah_quarter_room_modifier
+				}
+				if = {
+					limit = { has_free_district_slot = yes }
+					add_regular_district = kehillah_jewish_quarter_district
+					scope:kehillah_qd_title = { remove_variable = kehillah_quarter_no_room }
+				}
+				else_if = {
+					# The new slot may not be counted until the modifier is
+					# applied: try again tomorrow, once.
+					limit = { NOT = { scope:kehillah_qd_title = { has_variable = kehillah_quarter_no_room } } }
+					scope:kehillah_qd_title = { set_variable = kehillah_quarter_no_room }
+					scope:kehillah_qd_title.holder = {
+						trigger_event = { id = kehillah_quarter_district.0001 days = 1 }
+					}
+				}
+			}
+		}
+	}
+}
+
+# Scope: a province. $LEADER$ is the community leaving it. Removes the
+# district and its room unless another community still lives in this
+# holding.
+kehillah_quarter_district_remove_effect = {
+	save_scope_as = kehillah_qd_province
+	if = {
+		limit = {
+			NOT = {
+				any_in_global_list = {
+					variable = kehillah_registered_communities
+					exists = holder
+					NOT = { holder = $LEADER$ }
+					holder.domicile ?= { domicile_location = scope:kehillah_qd_province }
+				}
+			}
+		}
+		if = {
+			limit = { province_has_district = kehillah_jewish_quarter_district }
+			remove_district_type = kehillah_jewish_quarter_district
+			debug_log = "kehillah_quarter_district_remove_effect: removed the Jewish quarter district"
+		}
+		if = {
+			limit = { has_province_modifier = kehillah_quarter_room_modifier }
+			remove_province_modifier = kehillah_quarter_room_modifier
+		}
+	}
+}
+
+# No scope. Game start: every authored community's district.
+kehillah_quarter_district_game_start_effect = {
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		holder ?= { kehillah_quarter_district_place_effect = yes }
+	}
+}

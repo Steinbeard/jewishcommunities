@@ -1,0 +1,375 @@
+﻿# =====================================================================
+# SHE'ELOT, SLICE 1 (2026-11-22). docs/spec/2026-11-22-sheelot.md.
+# A community sends a hard case by letter to a posek of its own faith, as a
+# character interaction (players) or a yearly pulse (AI). The posek answers,
+# answers from the sources, or declines; the reply comes back. Asking costs
+# a gift to the answering community and is limited by a cooldown; answering
+# is the reward of Greatness. Content: the Bet Din docket's 14 cases
+# (kehillah_din_letter_N, kehillah_din_answer_N, kehillah_din_answer_careful_N).
+# =====================================================================
+
+# Scope: the asking leader. scope:kehillah_sheelah_posek is the posek.
+kehillah_sheelah_send_effect = {
+	save_scope_as = kehillah_sheelah_asker
+	set_variable = { name = kehillah_sheelah_cooldown value = yes days = kehillah_sheelah_cooldown_days }
+	random_list = {
+		1 = { save_scope_value_as = { name = kehillah_sheelah_case value = 1 } }
+		1 = { save_scope_value_as = { name = kehillah_sheelah_case value = 2 } }
+		1 = { save_scope_value_as = { name = kehillah_sheelah_case value = 3 } }
+		1 = { save_scope_value_as = { name = kehillah_sheelah_case value = 4 } }
+		1 = { save_scope_value_as = { name = kehillah_sheelah_case value = 5 } }
+		1 = { save_scope_value_as = { name = kehillah_sheelah_case value = 6 } }
+		1 = { save_scope_value_as = { name = kehillah_sheelah_case value = 7 } }
+		1 = { save_scope_value_as = { name = kehillah_sheelah_case value = 8 } }
+		1 = { save_scope_value_as = { name = kehillah_sheelah_case value = 9 } }
+		1 = { save_scope_value_as = { name = kehillah_sheelah_case value = 10 } }
+		1 = { save_scope_value_as = { name = kehillah_sheelah_case value = 11 } }
+		1 = { save_scope_value_as = { name = kehillah_sheelah_case value = 12 } }
+		1 = { save_scope_value_as = { name = kehillah_sheelah_case value = 13 } }
+		1 = { save_scope_value_as = { name = kehillah_sheelah_case value = 14 } }
+	}
+	# 2026-11-23 (Daniel): the cost is prestige, taken by the caller (the
+	# interaction shows it; the AI pulse takes it). No gold changes hands.
+	scope:kehillah_sheelah_posek = {
+		set_variable = { name = kehillah_sheelah_pending_from value = scope:kehillah_sheelah_asker days = kehillah_sheelah_pending_days }
+		set_variable = { name = kehillah_sheelah_case value = scope:kehillah_sheelah_case days = kehillah_sheelah_pending_days }
+		# The posek's community remembers who has written to it; those
+		# communities write to it again a little more readily.
+		if = {
+			limit = {
+				exists = primary_title
+				exists = scope:kehillah_sheelah_asker.primary_title
+			}
+			# Note it first, for the letter's "why they wrote to you" lines
+			# (the list already holds this asker by the time the letter arrives).
+			if = {
+				limit = {
+					primary_title = { is_target_in_variable_list = { name = kehillah_sheelah_written_by target = scope:kehillah_sheelah_asker.primary_title } }
+				}
+				set_variable = { name = kehillah_sheelah_letter_wrote_before value = yes days = kehillah_sheelah_pending_days }
+			}
+			else = {
+				remove_variable = kehillah_sheelah_letter_wrote_before
+			}
+			primary_title = {
+				add_to_variable_list = { name = kehillah_sheelah_written_by target = scope:kehillah_sheelah_asker.primary_title }
+			}
+		}
+		# A player posek gets one letter a year as an event. Any further
+		# letter that year is answered by the community's court on its own,
+		# and reported as a notification (kehillah_sheelah.0003), so a famous
+		# community gathers followers without a stack of popups.
+		if = {
+			limit = {
+				is_ai = no
+				has_variable = kehillah_sheelah_player_letter_recent
+			}
+			trigger_event = { id = kehillah_sheelah.0003 days = { 10 25 } }
+		}
+		else = {
+			trigger_event = { id = kehillah_sheelah.0001 days = { 10 25 } }
+			if = {
+				limit = { is_ai = no }
+				set_variable = { name = kehillah_sheelah_player_letter_recent value = yes days = kehillah_sheelah_player_letter_gap_days }
+			}
+		}
+	}
+	kehillah_sheelah_soak_count_effect = { NAME = kehillah_sheelah_soak_letters }
+	debug_log = "kehillah_sheelah_send_effect: a she'elah is sent"
+	debug_log_scopes = yes
+}
+
+# Scope: the posek, answering (kehillah_sheelah.0001). QUALITY: 0 declined,
+# 1 answered, 2 answered from the sources.
+kehillah_sheelah_reply_effect = {
+	scope:kehillah_sheelah_asker = {
+		set_variable = { name = kehillah_sheelah_reply_from value = scope:kehillah_sheelah_posek days = kehillah_sheelah_pending_days }
+		set_variable = { name = kehillah_sheelah_reply_case value = scope:kehillah_sheelah_posek.var:kehillah_sheelah_case days = kehillah_sheelah_pending_days }
+		set_variable = { name = kehillah_sheelah_reply_quality value = $QUALITY$ days = kehillah_sheelah_pending_days }
+		trigger_event = { id = kehillah_sheelah.0002 days = { 10 25 } }
+	}
+	# Slice 2 (2026-11-22): an answer draws the asking community toward ours,
+	# and counts as a responsum answered (the record the Compile Responsa
+	# decision reads).
+	save_scope_value_as = { name = kehillah_sheelah_quality value = $QUALITY$ }
+	if = {
+		limit = {
+			scope:kehillah_sheelah_quality >= 1
+			exists = primary_title
+			exists = scope:kehillah_sheelah_asker.primary_title
+		}
+		kehillah_responsa_count_answer_effect = yes
+		kehillah_sheelah_soak_count_effect = { NAME = kehillah_sheelah_soak_answers }
+		primary_title = { save_scope_as = kehillah_sheelah_followed_title }
+		scope:kehillah_sheelah_asker.primary_title = {
+			if = {
+				limit = { scope:kehillah_sheelah_quality >= 2 }
+				kehillah_sheelah_tie_strengthen_effect = { FOLLOWED = scope:kehillah_sheelah_followed_title GAIN = kehillah_sheelah_tie_careful_gain }
+			}
+			else = {
+				kehillah_sheelah_tie_strengthen_effect = { FOLLOWED = scope:kehillah_sheelah_followed_title GAIN = kehillah_sheelah_tie_answer_gain }
+			}
+		}
+	}
+	remove_variable = kehillah_sheelah_pending_from
+	remove_variable = kehillah_sheelah_case
+}
+
+# =====================================================================
+# SLICE 2: "follows the rulings of" (2026-11-22). Spec sections 5 and 12.
+# One tie per community, on the asking title. A letter answered by the
+# followed community strengthens it; one answered by another community
+# weakens it, and replaces it once it is spent, so only the strongest tie
+# counts.
+# =====================================================================
+
+# Scope: the follower's title. FOLLOWED: the answering community's title.
+# GAIN: a script value.
+kehillah_sheelah_tie_strengthen_effect = {
+	if = {
+		limit = { var:kehillah_sheelah_follows ?= $FOLLOWED$ }
+		change_variable = { name = kehillah_sheelah_follows_strength add = $GAIN$ }
+		clamp_variable = { name = kehillah_sheelah_follows_strength min = 0 max = kehillah_sheelah_tie_max }
+	}
+	else_if = {
+		limit = { exists = var:kehillah_sheelah_follows }
+		change_variable = { name = kehillah_sheelah_follows_strength subtract = $GAIN$ }
+		if = {
+			limit = { var:kehillah_sheelah_follows_strength <= 0 }
+			set_variable = { name = kehillah_sheelah_follows value = $FOLLOWED$ }
+			set_variable = { name = kehillah_sheelah_follows_strength value = $GAIN$ }
+		}
+	}
+	else = {
+		set_variable = { name = kehillah_sheelah_follows value = $FOLLOWED$ }
+		set_variable = { name = kehillah_sheelah_follows_strength value = $GAIN$ }
+	}
+	debug_log = "kehillah_sheelah_tie_strengthen_effect: a tie changes"
+	debug_log_scopes = yes
+}
+
+# Scope: the asking leader, in the reply (kehillah_sheelah.0002). The tie
+# changed when the posek answered; this shows where it now stands.
+# scope:kds_author answered; scope:kehillah_sheelah_now_followed is whom we
+# now follow.
+kehillah_sheelah_tie_reply_tooltip_effect = {
+	if = {
+		limit = { scope:kehillah_sheelah_now_followed ?= scope:kds_author.primary_title }
+		custom_tooltip = kehillah_sheelah_tie_follows_tt
+	}
+	else_if = {
+		limit = { exists = scope:kehillah_sheelah_now_followed }
+		custom_tooltip = kehillah_sheelah_tie_other_tt
+	}
+}
+
+# Scope: the posek, in the letter (kehillah_sheelah.0001). What an answer
+# does to the asker's tie (2026-11-23: it said "more closely" even when the
+# asker followed another community, whose tie the answer only wears down).
+# scope:kehillah_sheelah_asker_follows: whom the asker follows now, if anyone.
+kehillah_sheelah_tie_posek_tooltip_effect = {
+	if = {
+		limit = {
+			exists = primary_title
+			scope:kehillah_sheelah_asker_follows ?= primary_title
+		}
+		custom_tooltip = kehillah_sheelah_tie_gain_posek_tt
+	}
+	else_if = {
+		limit = { exists = scope:kehillah_sheelah_asker_follows }
+		custom_tooltip = kehillah_sheelah_tie_draw_posek_tt
+	}
+	else = {
+		custom_tooltip = kehillah_sheelah_tie_begin_posek_tt
+	}
+}
+
+# Scope: a community title.
+kehillah_sheelah_tie_clear_effect = {
+	remove_variable = kehillah_sheelah_follows
+	remove_variable = kehillah_sheelah_follows_strength
+}
+
+# Scope: a Kehillah leader (yearly, player or AI). The tie fades, and is
+# dropped once spent or unsound. A strong tie to another rite of the faith
+# brings the rite-pull event (slice 3).
+kehillah_sheelah_tie_yearly_effect = {
+	primary_title ?= {
+		if = {
+			limit = { exists = var:kehillah_sheelah_follows }
+			if = {
+				limit = { NOT = { kehillah_sheelah_tie_sound_trigger = yes } }
+				kehillah_sheelah_tie_clear_effect = yes
+			}
+			else = {
+				change_variable = { name = kehillah_sheelah_follows_strength subtract = kehillah_sheelah_tie_fade }
+				if = {
+					limit = { var:kehillah_sheelah_follows_strength <= 0 }
+					kehillah_sheelah_tie_clear_effect = yes
+				}
+			}
+		}
+	}
+	if = {
+		limit = { kehillah_sheelah_rite_pull_trigger = yes }
+		primary_title = {
+			set_variable = { name = kehillah_sheelah_rite_pull_cooldown value = yes days = kehillah_sheelah_rite_pull_cooldown_days }
+		}
+		trigger_event = { id = kehillah_sheelah.0021 days = { 1 90 } }
+	}
+}
+
+# =====================================================================
+# SLICE 3: rite pull (2026-11-22). Scope: the follower's leader, in
+# kehillah_sheelah.0021. scope:kehillah_rite_pull_leader leads the followed
+# community. The leader, and the courtiers of his faith, take up its rite.
+# =====================================================================
+kehillah_sheelah_adopt_rite_effect = {
+	save_scope_as = kehillah_rite_pull_adopter
+	set_character_rite = scope:kehillah_rite_pull_leader.rite
+	add_known_rite = scope:kehillah_rite_pull_leader.rite
+	custom_tooltip = kehillah_sheelah_rite_court_follows_tt
+	hidden_effect = {
+		every_courtier = {
+			limit = {
+				faith = scope:kehillah_rite_pull_adopter.faith
+				NOT = { rite = scope:kehillah_rite_pull_leader.rite }
+			}
+			set_character_rite = scope:kehillah_rite_pull_leader.rite
+		}
+	}
+	kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_sheelah_rite_adopt_stability }
+	scope:kehillah_rite_pull_leader = {
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_sheelah_rite_adopted_greatness }
+		if = {
+			limit = { is_ai = no }
+			send_interface_toast = {
+				type = event_toast_effect_good
+				title = kehillah_sheelah_rite_adopted_toast
+				left_icon = scope:kehillah_rite_pull_adopter
+			}
+		}
+	}
+	kehillah_sheelah_soak_count_effect = { NAME = kehillah_sheelah_soak_adoptions }
+	debug_log = "kehillah_sheelah_adopt_rite_effect: a community takes up another's rite"
+	debug_log_scopes = yes
+}
+
+# Scope: an AI Kehillah leader (yearly). Below Flourishing Greatness, now and
+# then, it writes to a posek of its faith: likelier a great one, and one of
+# its own rite.
+kehillah_sheelah_ai_pulse_effect = {
+	if = {
+		limit = {
+			is_ai = yes
+			kehillah_sheelah_can_ask_trigger = yes
+			NOT = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_flourishing_threshold } }
+			prestige >= kehillah_sheelah_prestige_cost
+		}
+		save_scope_as = kehillah_sheelah_ai_asker
+		random = {
+			chance = kehillah_sheelah_ai_chance
+			random_in_global_list = {
+				variable = kehillah_registered_communities
+				limit = {
+					exists = holder
+					holder = {
+						kehillah_sheelah_posek_trigger = { ASKER = scope:kehillah_sheelah_ai_asker }
+						in_diplomatic_range = scope:kehillah_sheelah_ai_asker
+					}
+				}
+				weight = {
+					base = 1
+					modifier = {
+						add = 2
+						kehillah_pillar_at_least_trigger_title = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_flourishing_threshold }
+					}
+					modifier = {
+						add = 3
+						kehillah_pillar_at_least_trigger_title = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_legendary_threshold }
+					}
+					modifier = {
+						add = 1
+						holder.rite ?= scope:kehillah_sheelah_ai_asker.rite
+					}
+					# Slice 2 (2026-11-22): the community it already follows, and
+					# the yeshiva where its leader or Dayyan studied.
+					modifier = {
+						add = kehillah_sheelah_ai_tie_weight
+						scope:kehillah_sheelah_ai_asker.primary_title.var:kehillah_sheelah_follows ?= this
+					}
+					# 2026-11-23 (Daniel): a community it has written to before,
+					# a rabbi in the chair, and a community given to learning.
+					modifier = {
+						add = kehillah_sheelah_ai_wrote_before_weight
+						is_target_in_variable_list = { name = kehillah_sheelah_written_by target = scope:kehillah_sheelah_ai_asker.primary_title }
+					}
+					modifier = {
+						add = kehillah_sheelah_ai_rabbi_leader_weight
+						holder = { has_trait = kehillah_rabbi_trait }
+					}
+					modifier = {
+						add = kehillah_sheelah_ai_scholarly_community_weight
+						# A community that chose the Scholarly leadership style.
+						kehillah_leadership_mandate_is_greatness_trigger = yes
+					}
+					modifier = {
+						add = kehillah_sheelah_ai_yeshiva_weight
+						holder = { kehillah_has_yeshiva_trigger = yes }
+					}
+					modifier = {
+						add = kehillah_sheelah_ai_alma_mater_weight
+						OR = {
+							scope:kehillah_sheelah_ai_asker.var:kehillah_alma_mater ?= this
+							scope:kehillah_sheelah_ai_asker.cp:councillor_court_chaplain.var:kehillah_alma_mater ?= this
+						}
+					}
+				}
+				holder = { save_scope_as = kehillah_sheelah_posek }
+			}
+			if = {
+				limit = { exists = scope:kehillah_sheelah_posek }
+				add_prestige = { value = kehillah_sheelah_prestige_cost multiply = -1 }
+				kehillah_sheelah_send_effect = yes
+			}
+		}
+	}
+}
+
+# Scope: the student. scope:kehillah_study_teacher is the rabbi. The caller
+# (the interaction) takes the gift; here it reaches the rabbi.
+kehillah_study_help_send_effect = {
+	save_scope_as = kehillah_study_student
+	set_variable = { name = kehillah_study_help_cooldown value = yes days = kehillah_study_help_cooldown_days }
+	set_variable = { name = kehillah_study_help_work value = var:kehillah_study_current_work_id days = kehillah_study_help_pending_days }
+	save_scope_value_as = { name = kehillah_study_help_gift value = kehillah_study_help_gift_value }
+	scope:kehillah_study_teacher = {
+		add_gold = scope:kehillah_study_help_gift
+		set_variable = { name = kehillah_study_help_pending_from value = scope:kehillah_study_student days = kehillah_study_help_pending_days }
+		trigger_event = { id = kehillah_sheelah.0011 days = { 10 20 } }
+	}
+	debug_log = "kehillah_study_help_send_effect: a student asks for help with his reading"
+}
+
+# Scope: the rabbi answering (kehillah_sheelah.0011). QUALITY: 0 declined,
+# 1 explained, 2 a full explanation.
+kehillah_study_help_reply_effect = {
+	scope:kehillah_study_student = {
+		set_variable = { name = kehillah_study_help_reply_from value = scope:kehillah_study_teacher days = kehillah_study_help_pending_days }
+		set_variable = { name = kehillah_study_help_reply_quality value = $QUALITY$ days = kehillah_study_help_pending_days }
+		trigger_event = { id = kehillah_sheelah.0012 days = { 10 20 } }
+	}
+	remove_variable = kehillah_study_help_pending_from
+}
+
+# Soak-test counters (2026-11-23): global tallies a census probe reads
+# (kehillah_sheelah_debug.3). NAME: the global variable.
+kehillah_sheelah_soak_count_effect = {
+	if = {
+		limit = { has_global_variable = $NAME$ }
+		change_global_variable = { name = $NAME$ add = 1 }
+	}
+	else = {
+		set_global_variable = { name = $NAME$ value = 1 }
+	}
+}

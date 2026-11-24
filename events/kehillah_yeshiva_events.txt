@@ -45,6 +45,90 @@ kehillah_yeshiva.0001 = {
 # looking for a place at a new yeshiva: candidates for the Dayyan seat,
 # judges for the Bet Din, and a supply of rabbis for the community.
 # ---------------------------------------------------------------------
+# 2026-11-22 (yeshiva rework slice 3): a renowned yeshiva draws a learned
+# scholar. Like .0010, but a greater one, with depth in the yeshiva's own
+# teaching. Sent yearly at the ordination (kehillah_yeshiva_graduation_effect).
+kehillah_yeshiva.0011 = {
+	type = character_event
+	title = kehillah_yeshiva.0011.t
+	desc = {
+		desc = kehillah_yeshiva.0011.desc
+		# 2026-11-23 (Daniel): why he came. The yeshiva's fame tier sets the
+		# chance; the other lines are what keeps that fame up now.
+		desc = kehillah_yeshiva.0011.why_header
+		first_valid = {
+			triggered_desc = {
+				trigger = { kehillah_yeshiva_fame_tier_value >= 3 }
+				desc = kehillah_yeshiva.0011.why_illustrious
+			}
+			desc = kehillah_yeshiva.0011.why_renowned
+		}
+		triggered_desc = {
+			trigger = { kehillah_yeshiva_master_head_trigger = yes }
+			desc = kehillah_yeshiva.0011.why_master_head
+		}
+		triggered_desc = {
+			trigger = { kehillah_yeshiva_seated_alumni_value > 0 }
+			desc = kehillah_yeshiva.0011.why_alumni
+		}
+		triggered_desc = {
+			trigger = {
+				is_rabbinic_authority_jewish_trigger = yes
+				rite ?= { rite_has_tenet = tenet_kehillah_scholarly_study }
+			}
+			desc = kehillah_yeshiva.0011.why_scholarly_study
+		}
+	}
+	theme = learning
+	left_portrait = {
+		character = scope:kehillah_yeshiva_scholar
+		animation = personality_rational
+	}
+
+	trigger = {
+		government_has_flag = government_is_kehillah
+		is_ruler = yes
+		kehillah_has_yeshiva_trigger = yes
+		kehillah_yeshiva_fame_tier_value >= 2
+	}
+
+	immediate = {
+		kehillah_generate_rabbi_candidate_effect = {
+			SLOT = kehillah_yeshiva_scholar
+			AGE_MIN = 30
+			AGE_MAX = 60
+			EDUCATION = education_learning_4
+			LEARNING_MIN = 14
+			LEARNING_MAX = 19
+		}
+		scope:kehillah_yeshiva_scholar = {
+			if = {
+				limit = { has_trait = kehillah_rabbi_trait }
+				if = {
+					limit = { root.primary_title.var:kehillah_yeshiva_specialization ?= flag:parshanut }
+					add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = 40 }
+				}
+				else = {
+					add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = 40 }
+				}
+			}
+			else = {
+				add_trait_xp = { trait = lifestyle_scholar value = 40 }
+			}
+		}
+	}
+
+	option = {
+		name = kehillah_yeshiva.0011.a
+		add_courtier = scope:kehillah_yeshiva_scholar
+	}
+	option = {
+		name = kehillah_yeshiva.0011.b
+		# Turned away: he goes to the pool, as in .0010.
+		ai_chance = { base = 0 }
+	}
+}
+
 kehillah_yeshiva.0010 = {
 	type = character_event
 	title = kehillah_yeshiva.0010.t
@@ -949,6 +1033,14 @@ kehillah_yeshiva.0320 = {
 		kehillah_add_yeshiva_fame_effect = { AMOUNT = kehillah_yeshiva_send_graduate_fame }
 		scope:kehillah_alumnus_destination.holder ?= {
 			add_opinion = { target = root modifier = respect_opinion opinion = kehillah_yeshiva_send_graduate_opinion }
+		}
+		# 2026-11-22 (yeshiva rework slice 2): the community he serves owes us.
+		if = {
+			limit = { exists = scope:kehillah_alumnus_destination.holder }
+			add_hook = {
+				type = favor_hook
+				target = scope:kehillah_alumnus_destination.holder
+			}
 		}
 		custom_tooltip = kehillah_yeshiva.0320.b.tt
 		ai_chance = { base = 50 }

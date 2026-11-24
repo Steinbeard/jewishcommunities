@@ -66,6 +66,8 @@ READERS_GUI = ROOT / "common/scripted_guis/kehillah_library_readers_gui.txt"
 ACTIONS_GUI = ROOT / "common/scripted_guis/kehillah_library_work_actions_gui.txt"
 LOC = ROOT / "localization/english/kehillah_library_catalog_l_english.yml"
 PROSE_LOC = ROOT / "localization/english/kehillah_library_catalog_prose_l_english.yml"
+COMMENTARY_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_library_commentary_custom_loc.txt"
+COMMENTARY_LOC = ROOT / "localization/english/kehillah_library_commentary_l_english.yml"
 AUTHORED_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_library_authored_custom_loc.txt"
 ACQUIRE_EFFECTS = ROOT / "common/scripted_effects/kehillah_library_acquisition_effects.txt"
 ACQUIRE_GUI = ROOT / "common/scripted_guis/kehillah_library_acquire_work_gui.txt"
@@ -87,6 +89,7 @@ LANGUAGE_EFFECTS = ROOT / "common/scripted_effects/kehillah_library_language_gen
 CITE_TRIGGERS = ROOT / "common/scripted_triggers/kehillah_din_citation_generated_triggers.txt"
 CITE_EFFECTS = ROOT / "common/scripted_effects/kehillah_din_citation_generated_effects.txt"
 CITE_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_din_citation_custom_loc.txt"
+CITE_LOG_LOC = ROOT / "localization/english/kehillah_din_citation_log_l_english.yml"
 # 2026-11-11: sermons cite Parshanut works by kind (same spec, section 3).
 SERMON_EFFECTS = ROOT / "common/scripted_effects/kehillah_sermon_generated_effects.txt"
 SERMON_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_sermon_custom_loc.txt"
@@ -216,6 +219,11 @@ def needs_writing(w):
     return bool(w.get("named") or w.get("authored"))
 
 
+def writable_future(w):
+    """A dated, fixed work whose niche is open in at least one bookmark."""
+    return not authored(w) and w.get("year", 0) > 867
+
+
 def short(f):
     return f.removeprefix("work_")
 
@@ -230,7 +238,15 @@ def avail_lines(f, w, ind):
     if needs_writing(w):
         out.append(f"{ind}has_global_variable = kehillah_wk_{f}_written")
     elif circulation_year(w) > 1:
-        out.append(f"{ind}current_date >= {circulation_year(w)}.1.1")
+        if writable_future(w):
+            out.extend([
+                f"{ind}OR = {{",
+                f"{ind}\tcurrent_date >= {circulation_year(w)}.1.1",
+                f"{ind}\thas_global_variable = kehillah_wk_{f}_written",
+                f"{ind}}}",
+            ])
+        else:
+            out.append(f"{ind}current_date >= {circulation_year(w)}.1.1")
     return out
 
 
@@ -312,7 +328,7 @@ def write_values(order, works):
     out += ["", "# composition year (the game date; Jan 1 is a dating convention)"]
     for f in order:
         w = works[f]
-        if authored(w) or w.get("named"):
+        if authored(w) or w.get("named") or writable_future(w):
             out += dyn_value(f"kehillah_lib_year_{f}", w["year"], f"kehillah_wk_{f}_year")
         else:
             out.append(f"kehillah_lib_year_{f} = {w['year']}")
@@ -381,6 +397,17 @@ def write_values(order, works):
                 f"\tif = {{ limit = {{ exists = global_var:kehillah_wk_{f}_author }} add = 1 }}",
                 "}",
             ]
+        elif writable_future(w):
+            out += [
+                f"kehillah_lib_author_ready_{f} = {{",
+                "\tvalue = 0",
+                f"\tif = {{ limit = {{ exists = global_var:kehillah_wk_{f}_author }} add = 1 }}",
+            ]
+            if slug:
+                out.append(f"\telse_if = {{ limit = {{ exists = var:kehillah_lib_author_{slug} }} add = 1 }}")
+            else:
+                out.append("\telse = { add = 1 }")
+            out.append("}")
         elif slug:
             out += [
                 f"kehillah_lib_author_ready_{f} = {{",
@@ -1284,7 +1311,7 @@ def write_study_effects(order, works):
         lines.append("}")
         return lines
 
-    named_keys = [f for f in order if works[f].get("named")]
+    named_keys = [f for f in order if writable_future(works[f])]
     noncanon = [f for f in order if not works[f].get("canon") and works[f]["corpus"] != "tanakh"]
     out += dispatch("kehillah_sefer_write_named_work_dispatch_effect", "var:kehillah_book_named_work",
                     "kehillah_sefer_write_named_work_effect = {{ KEY = {k} }}", named_keys,
@@ -1316,17 +1343,30 @@ def write_study_effects(order, works):
             f"\t\tkehillah_sefer_write_authored_work_effect = {{ SLOT = {f} }}",
             "\t}",
         ]
-    out += ["}", "", "# Per named work, scope the author: a commentary counts toward the work it glosses."]
+    out += ["}", "", "# Per future work, scope the author: a commentary counts toward the work it glosses."]
     for f in order:
         w = works[f]
-        if not w.get("named"):
+        if not writable_future(w):
             continue
         target = w.get("commentary_on")
         out.append(f"kehillah_sefer_count_commentary_target_{f}_effect = {{")
         if target and target in noncanon:
             out.append(f"\tkehillah_sefer_bump_counter_effect = {{ KEY = {target} COUNTER = commentaries }}")
+            out.append(f"\tkehillah_standing_add_reception_effect = {{ KEY = {target} AMOUNT = kehillah_reception_commentary_value }}")
         else:
             out.append("\t# glosses a canonical text or nothing")
+        out.append("}")
+        out.append(f"kehillah_sefer_commentary_authority_{f}_effect = {{")
+        if target and target in works:
+            if works[target].get("canon"):
+                out.append(f"\tkehillah_standing_add_reception_effect = {{ KEY = {f} AMOUNT = 4 }}")
+            else:
+                out.extend([
+                    f"\tif = {{ limit = {{ kehillah_lib_standing_{target} >= 6 }} kehillah_standing_add_reception_effect = {{ KEY = {f} AMOUNT = 6 }} }}",
+                    f"\telse_if = {{ limit = {{ kehillah_lib_standing_{target} <= 2 }} kehillah_standing_add_reception_effect = {{ KEY = {f} AMOUNT = -4 }} }}",
+                ])
+        else:
+            out.append("\t# this work is not a commentary")
         out.append("}")
     out += [
         "",
@@ -1454,6 +1494,7 @@ def write_study_effects(order, works):
             "\tif = {",
             "\t\tlimit = {",
             f"\t\t\thas_global_variable = kehillah_wk_{f}_written",
+            f"\t\t\tNOT = {{ exists = global_var:kehillah_wk_{f}_manuscript }}",
             f"\t\t\tkehillah_lib_copies_{f} < 1",
             f"\t\t\tNOT = {{ is_target_in_global_variable_list = {{ name = kehillah_ransom_pool target = flag:{f} }} }}",
             "\t\t\tNOT = {",
@@ -1789,12 +1830,15 @@ def write_loc(order, works):
         if needs_writing(w):
             lines.append(f' kehillah_lib_composer_{f}:0 "{written_author_link(f)}"')
             lines.append(f' kehillah_lib_composer_plain_{f}:0 "{w["composer"] or plain_name}"')
+        elif writable_future(w):
+            lines.append(f' kehillah_lib_composer_{f}:0 "[GetPlayer.Custom(\'KehillahFutureComposer_{f}\')]"')
+            lines.append(f' kehillah_lib_composer_plain_{f}:0 "[GetPlayer.Custom(\'KehillahFutureComposer_{f}\')]"')
         else:
             lines.append(f' kehillah_lib_composer_{f}:0 "{w["composer"]}"')
             lines.append(f' kehillah_lib_composer_plain_{f}:0 "{w["composer"]}"')
         if w.get("composer_linked"):
             lines.append(f' kehillah_lib_composer_linked_{f}:0 "{w["composer_linked"]}"')
-        if needs_writing(w):
+        if needs_writing(w) or writable_future(w):
             lines.append(f' kehillah_lib_year_text_{f}:0 "[GetPlayer.MakeScope.ScriptValue(\'kehillah_lib_year_{f}\')|0]"')
         elif w.get("year_text"):
             lines.append(f' kehillah_lib_year_text_{f}:0 "{w["year_text"]}"')
@@ -1803,13 +1847,16 @@ def write_loc(order, works):
         lines.append(f' kehillah_lib_summary_{f}:0 "Work of {subject}"')
         if w.get("canon"):
             who_line = f"{w['credit']} {{who}}."
-        elif needs_writing(w):
+        elif needs_writing(w) or writable_future(w):
             who_line = f"{w['credit']} {{who}}."
         else:
             who_line = f"{w['credit']} {{who}} around {w['year']}."
         if needs_writing(w):
             who = written_author_link(f)
             plain = plain_name
+        elif writable_future(w):
+            who = f"$kehillah_lib_composer_{f}$"
+            plain = plain_name or w["composer"]
         elif w.get("composer_char"):
             who = author_link(w["composer_char"])
             plain = AUTHOR_NAMES[w["composer_char"]]
@@ -1825,6 +1872,7 @@ def write_loc(order, works):
 def write_prose_loc(order, works):
     lines = ["l_english:"]
     track = {"parshanut": "PARSHANUT", "talmudics": "TALMUDICS", "hashkafa": "HASHKAFA"}
+    commentary_targets = {w["commentary_on"] for w in works.values() if w.get("commentary_on")}
     for f in order:
         w = works[f]
         if authored(w):
@@ -1844,16 +1892,58 @@ def write_prose_loc(order, works):
         if not p:
             continue
         t = track[w["genre"]]
+        name = p["name"]
+        description = p["desc"]
+        detail = p["detail"]
+        if w.get("commentary_on"):
+            detail += f"\\n\\n#weak Commentary on $kehillah_lib_name_{w['commentary_on']}$#!"
+        if writable_future(w) and w.get("writing_title"):
+            name = f"[GetPlayer.Custom('KehillahFutureTitle_{f}')]"
+            description = f"[GetPlayer.Custom('KehillahFutureDesc_{f}')]"
+            detail = f"[GetPlayer.Custom('KehillahFutureDetail_{f}')]"
+            if w.get("commentary_on"):
+                detail += f"\\n\\n#weak Commentary on $kehillah_lib_name_{w['commentary_on']}$#!"
+        commentary_index = f"\\n\\n$kehillah_lib_commentaries_{f}$" if f in commentary_targets else ""
         lines += [
-            f' kehillah_lib_name_{f}:0 "{p["name"]}"',
+            f' kehillah_lib_name_{f}:0 "{name}"',
             f' kehillah_lib_subject_{f}:0 "$KEHILLAH_LIB_TRACK_{t}$"',
-            f' kehillah_lib_desc_{f}:0 "{p["desc"]}"',
-            f' kehillah_lib_detail_{f}:0 "{p["detail"]}"',
-            f' kehillah_lib_tt_{f}:0 "#T $kehillah_lib_name_{f}$#!\\n#weak $KEHILLAH_LIB_TRACK_{t}$#!\\n\\n$kehillah_lib_detail_{f}$"',
+            f' kehillah_lib_desc_{f}:0 "{description}"',
+            f' kehillah_lib_detail_{f}:0 "{detail}"',
+            f' kehillah_lib_tt_{f}:0 "#T $kehillah_lib_name_{f}$#!\\n#weak $KEHILLAH_LIB_TRACK_{t}$#!\\n\\n$kehillah_lib_detail_{f}${commentary_index}"',
             f' {study_tt_key(f, w)}:0 "{p["study"]}"',
             f' kehillah_yeshiva_msg_work_{f}:0 "[kehillah_msg_talmid.GetTitledFirstName] has mastered $kehillah_lib_name_{f}$ at the yeshiva."',
         ]
     write(PROSE_LOC, lines)
+
+
+def write_commentary_index(order, works):
+    """Show the commentaries currently in circulation on each base work hover."""
+    targets = {base: [key for key in order if works[key].get("commentary_on") == base]
+               for base in order if any(work.get("commentary_on") == base for work in works.values())}
+    custom = ["# Generated by scripts/kehillah_library_catalog.py."]
+    loc = ["l_english:"]
+    for base, children in targets.items():
+        custom += [f"KehillahCommentaryIndex_{base} = {{", "\ttype = character", "\ttext = {"]
+        if len(children) == 1:
+            custom.append(f"\t\ttrigger = {{ kehillah_lib_available_{children[0]}_trigger = yes }}")
+        else:
+            custom.append("\t\ttrigger = { OR = {")
+            custom += [f"\t\t\tkehillah_lib_available_{child}_trigger = yes" for child in children]
+            custom.append("\t\t} }")
+        custom += [f"\t\tlocalization_key = kehillah_commentary_index_{base}_known", "\t}",
+                   f"\ttext = {{ trigger = {{ always = no }} localization_key = kehillah_commentary_index_{base}_none fallback = yes }}", "}"]
+        items = "".join(f"[GetPlayer.Custom('KehillahCommentaryItem_{child}')]" for child in children)
+        loc += [f' kehillah_lib_commentaries_{base}:0 "[GetPlayer.Custom(\'KehillahCommentaryIndex_{base}\')]"',
+                f' kehillah_commentary_index_{base}_known:0 "#T Known commentaries#!{items}"',
+                f' kehillah_commentary_index_{base}_none:0 "#weak No commentary in circulation yet.#!"']
+        for child in children:
+            custom += [f"KehillahCommentaryItem_{child} = {{", "\ttype = character",
+                       f"\ttext = {{ trigger = {{ kehillah_lib_available_{child}_trigger = yes }} localization_key = kehillah_commentary_item_{child}_known }}",
+                       f"\ttext = {{ trigger = {{ always = no }} localization_key = kehillah_commentary_item_{child}_none fallback = yes }}", "}"]
+            loc += [f' kehillah_commentary_item_{child}_known:0 "\\n$kehillah_lib_name_{child}$"',
+                    f' kehillah_commentary_item_{child}_none:0 ""']
+    write(COMMENTARY_CUSTOM_LOC, custom)
+    write(COMMENTARY_LOC, loc)
 
 
 def write_authored_custom_loc(order, works):
@@ -2257,6 +2347,9 @@ def write_ledger_loc(order, works):
             byline = written_author_link(f)
             # 2026-11-11: the short, capitalised name (short_byline) for the Author column.
             plain = short_byline(w) if w.get("composer_name") else (AUTHOR_NAMES.get(w.get("composer_char") or "", "") or w["composer"])
+        elif writable_future(w):
+            byline = f"[GetPlayer.Custom('KehillahFutureComposer_{f}')]"
+            plain = byline
         elif w.get("composer_char"):
             byline = author_link(w["composer_char"])
             plain = AUTHOR_NAMES[w["composer_char"]]
@@ -2875,6 +2968,12 @@ def bench_effect_lines(order, works):
     return out
 
 
+# Works the Bet Din ranks below their standing when naming its authority:
+# each needs kehillah_din_cite_standing_<work> in
+# common/script_values/kehillah_bet_din_sources_values.txt.
+CITE_WEAKER_WORKS = {"work_mishnah"}
+
+
 def write_citation_files(order, works):
     trig = HEADER + [
         "# The Bet Din docket by order of the Mishnah (2026-11-11). Scope: a judge.",
@@ -2916,11 +3015,17 @@ def write_citation_files(order, works):
             if not c:
                 continue
             st = f"kehillah_lib_standing_{f}"
+            # 2026-11-23 (Daniel): the Mishnah is a weaker authority than the
+            # Talmuds. It ranks below its own standing when the court names a
+            # grounded authority (kehillah_bet_din_sources_values.txt).
+            gst = f"kehillah_din_cite_standing_{f}" if f in CITE_WEAKER_WORKS else st
             eff += [
                 "\tif = {",
-                f"\t\tlimit = {{ {c} {st} > local_var:kehillah_din_best }}",
-                f"\t\tset_local_variable = {{ name = kehillah_din_best value = {st} }}",
-                f"\t\tscope:kehillah_din_cite_activity = {{ set_variable = {{ name = kehillah_din_cite_grounded value = flag:{f} }} }}",
+                f"\t\tlimit = {{ {c} {gst} > local_var:kehillah_din_best }}",
+                f"\t\tset_local_variable = {{ name = kehillah_din_best value = {gst} }}",
+                f"\t\tscope:kehillah_din_cite_activity = {{ set_variable = {{ name = kehillah_din_cite_grounded value = flag:{f} }} "
+                f"}}",
+                f"		set_variable = {{ name = kehillah_din_cite_grounded_standing value = {gst} }}",
                 "\t}",
             ]
             if not w.get("canon"):
@@ -2929,7 +3034,9 @@ def write_citation_files(order, works):
                     "\tif = {",
                     f"\t\tlimit = {{ {c} {st} <= 6 {yr} > local_var:kehillah_din_newest }}",
                     f"\t\tset_local_variable = {{ name = kehillah_din_newest value = {yr} }}",
-                    f"\t\tscope:kehillah_din_cite_activity = {{ set_variable = {{ name = kehillah_din_cite_innovative value = flag:{f} }} }}",
+                    f"\t\tscope:kehillah_din_cite_activity = {{ set_variable = {{ name = kehillah_din_cite_innovative value = flag:{f} }} "
+                    f"}}",
+                    f"		set_variable = {{ name = kehillah_din_cite_innovative_standing value = {st} }}",
                     "\t}",
                 ]
                 cc = conviction_cond(f, w)
@@ -2938,7 +3045,9 @@ def write_citation_files(order, works):
                         "\tif = {",
                         f"\t\tlimit = {{ {c} {cc} {st} > local_var:kehillah_din_conviction }}",
                         f"\t\tset_local_variable = {{ name = kehillah_din_conviction value = {st} }}",
-                        f"\t\tscope:kehillah_din_cite_activity = {{ set_variable = {{ name = kehillah_din_cite_conviction value = flag:{f} }} }}",
+                        f"\t\tscope:kehillah_din_cite_activity = {{ set_variable = {{ name = kehillah_din_cite_conviction value = flag:{f} }} "
+                        f"}}",
+                        f"		set_variable = {{ name = kehillah_din_cite_conviction_standing value = {st} }}",
                         "\t}",
                     ]
         eff += ["}"]
@@ -2961,6 +3070,26 @@ def write_citation_files(order, works):
     eff += dispatch("kehillah_din_conviction_popularity_dispatch_effect",
                     "Scope: a faith. The tenets of the cited work ($SOURCE$) gain popularity.",
                     "kehillah_sefer_work_popularity_{k}_effect = {{ AMOUNT = 3 }}", noncanon)
+    # 2026-11-23 (Daniel: "a list afterwards of what each judge ruled and all
+    # the sources cited"): one activity log entry per citation, by work.
+    citeable = [f for f in order if any(covers_cond(f, works[f], sd) for sd in SEDARIM)]
+    eff += dispatch("kehillah_din_cite_log_dispatch_effect",
+                    "Scope: the Bet Din activity. Logs that $JUDGE$ cited the work ($SOURCE$) "
+                    "and whether the argument held ($RESULT$ = held or failed).",
+                    "add_activity_log_entry = {{ key = kehillah_din_cite_log_$RESULT$_{k} tags = {{ completed }} "
+                    "show_in_conclusion = yes character = $JUDGE$ }}", citeable)
+    eff += dispatch("kehillah_din_cite_host_standing_dispatch_effect",
+                    "Scope: the convening community leader; records the host rite's actual standing "
+                    "of $SOURCE$ for a citation slot ($SLOT$).",
+                    "scope:kehillah_din_cite_activity = {{ set_variable = {{ name = kehillah_din_cite_$SLOT$_host_standing value = scope:kehillah_din_cite_host.kehillah_lib_standing_{k} }} }}", citeable)
+    log = ["l_english:", " # GENERATED by scripts/kehillah_library_catalog.py -- edit the generator."]
+    for f in citeable:
+        name = f"$kehillah_lib_name_{f}$"
+        log += [f' kehillah_din_cite_log_held_{f}_title:0 "Cited: {name}"',
+                f' kehillah_din_cite_log_held_{f}:0 "[CHARACTER.GetTitledFirstName] cited {name}, and the argument held."',
+                f' kehillah_din_cite_log_failed_{f}_title:0 "Cited: {name}"',
+                f' kehillah_din_cite_log_failed_{f}:0 "[CHARACTER.GetTitledFirstName] cited {name}, but the argument did not hold."']
+    write(CITE_LOG_LOC, log)
     glossable = [f for f in order if not authored(works[f]) and work_sedarim(f, works[f])]
     eff += ["", "# Scope: the author of a Talmudics gloss. The book covers the order of the",
             "# work it glosses ($SLOT$ his authored slot).", "kehillah_sefer_gloss_seder_dispatch_effect = {"]
@@ -3417,6 +3546,7 @@ if __name__ == "__main__":
     write_actions_gui(order, works)
     write_loc(order, works)
     write_prose_loc(order, works)
+    write_commentary_index(order, works)
     write_authored_custom_loc(order, works)
     write_acquisition_effects(order, works)
     write_catalog_list_effects(order, works)

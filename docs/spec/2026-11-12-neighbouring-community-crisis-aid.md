@@ -1,3 +1,8 @@
+**2026-11-20 note:** the gold in step 3 now goes through mutual aid. A settled struck or expelled
+crisis opens a rebuild or exiles need, and the "Word from…" tzedakah sends a share to it. All of these
+gifts count toward the community's name for giving. See
+[mutual aid section 9.6](2026-11-20-mutual-aid.md).
+
 **Status:** BUILT 2026-11-12; source/xTiger checked with the prior 16-error baseline unchanged. Live validation is pending. This extends the active Community Crisis and Recovery system; it does not replace the crisis community's own phase actions.
 
 # Neighbouring community crisis aid
@@ -13,5 +18,9 @@ A crisis should be an event in a regional Jewish network, not only in the commun
 The offer of shelter is intentionally represented as temporary refuge and recovery capacity, not as an automatic permanent migration. Population transfer needs a dedicated migration/refugee system before it can safely change community membership, titles, and domiciles.
 
 ## No hook for tzedakah
+
+**2026-11-20 amendment (Daniel):** the *patron* of a completed mutual-aid appeal (its largest giver)
+now gains a favour hook on the community it helped. Ordinary gifts and shares still give no hook. See
+[mutual aid section 10.4](2026-11-20-mutual-aid.md).
 
 Tzedakah creates a durable grateful-opinion modifier (+20, decaying over ten years), while prayer creates a smaller +8 modifier. It does **not** create a weak hook: routine communal charity should create reciprocal trust and memory, not a legally enforceable personal claim. A later covenant, loan, or negotiated resettlement can use hooks where an explicit obligation is part of the fiction.

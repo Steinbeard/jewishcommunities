@@ -49,6 +49,9 @@ kehillah_crisis_protection_points_value = {
  if = { limit = { var:kehillah_crisis_title ?= { has_variable = kehillah_mob_men_by } } add = 8 }
  if = { limit = { var:kehillah_crisis_title ?= { has_variable = kehillah_mob_armed } } add = 5 }
  if = { limit = { var:kehillah_crisis_title ?= { has_variable = kehillah_mob_refuge } } add = 3 }
+ # 2026-11-20 (Wall and Gates): the quarter's own watch and wall.
+ if = { limit = { var:kehillah_crisis_title.holder ?= { domicile ?= { has_domicile_parameter = kehillah_has_watch_house } } } add = 3 }
+ if = { limit = { var:kehillah_crisis_title.holder ?= { domicile ?= { has_domicile_parameter = kehillah_has_quarter_wall } } } add = 4 }
 }
 # Monthly from a Protective (8) or Well-disposed (4) sovereign.
 kehillah_crisis_goodwill_points_value = {
@@ -76,6 +79,34 @@ kehillah_crisis_next_push_value = {
    var:kehillah_crisis_title ?= { var:kehillah_crisis_stage ?= 1 }
   }
   value = kehillah_crisis_preaching_points_value
+ }
+}
+
+# --- The wait after the danger (2026-11-23) ---
+# Months from the ruler's answer to "Returning to Ordinary Life" (kehillah_crisis_schedule_return_effect).
+# Ticked by the situation's on_monthly, so the event comes 1-2 months after the answer (was 45 days).
+kehillah_crisis_return_months_value = 2
+# Scope: the situation. 1 while the quarter's outcome is settled but the ruler has not yet answered
+# (stage 3; kehillah_crisis.0202 moves it to 4). The window's "Awaiting judgement" line.
+kehillah_crisis_ui_awaiting_judgement_value = {
+ value = 0
+ if = {
+  limit = {
+   kehillah_crisis_situation_link_valid_trigger = yes
+   var:kehillah_crisis_title = { var:kehillah_crisis_stage ?= 3 has_variable = kehillah_crisis_outcome }
+  }
+  value = 1
+ }
+}
+# Scope: the situation. Months left until "Returning to Ordinary Life"; 0 when not counting.
+kehillah_crisis_ui_return_months_value = {
+ value = 0
+ if = {
+  limit = {
+   kehillah_crisis_situation_link_valid_trigger = yes
+   var:kehillah_crisis_title = { has_variable = kehillah_crisis_return_months }
+  }
+  value = var:kehillah_crisis_title.var:kehillah_crisis_return_months
  }
 }
 
@@ -165,6 +196,21 @@ kehillah_crisis_struck_march_points = 2
 kehillah_crisis_struck_muster_points = 3
 kehillah_crisis_struck_siege_points_value = {
  value = 25
+ # 2026-11-20 (Wall and Gates): the quarter's own wall slows the assault;
+ # a fortified quarter or a refuge tower, nearly as much as the lord's walls.
+ if = {
+  limit = { var:kehillah_crisis_title.holder ?= { domicile ?= { has_domicile_parameter = kehillah_has_quarter_wall } } }
+  value = 15
+ }
+ if = {
+  limit = {
+   OR = {
+    var:kehillah_crisis_title.holder ?= { domicile ?= { has_domicile_parameter = kehillah_fortified_quarter } }
+    var:kehillah_crisis_title.holder ?= { domicile ?= { has_domicile_parameter = kehillah_has_refuge_tower } }
+   }
+  }
+  value = 9
+ }
  if = {
   limit = { var:kehillah_crisis_title ?= { has_variable = kehillah_mob_refuge } }
   value = 6
@@ -187,6 +233,13 @@ kehillah_crisis_debts_chance_value = {
  if = {
   limit = { domicile.domicile_location.county.holder.top_liege ?= { is_at_war = yes } }
   value = 2
+ }
+ # 2026-11-20 (unblocked by the 1.21 trade DLC): only a community that is
+ # actually lending (vanilla loans or the S8 royal loan) can face its debts
+ # turned against it. kehillah_banking_triggers.txt.
+ if = {
+  limit = { NOT = { kehillah_community_is_lending_trigger = yes } }
+  value = 0
  }
 }
 kehillah_crisis_holy_week_chance = 4

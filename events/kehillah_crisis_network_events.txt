@@ -31,6 +31,7 @@ kehillah_crisis_network.0001 = {
 		pay_short_term_gold = { target = scope:kehillah_network_crisis_leader gold = minor_gold_value }
 		add_piety = minor_piety_gain
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = 5 }
+		kehillah_giving_rep_change_effect = { AMOUNT = kehillah_giving_rep_share }
 		scope:kehillah_network_crisis_leader = { add_opinion = { target = root modifier = kehillah_crisis_aid_opinion } }
 		scope:kehillah_network_crisis_title = { kehillah_crisis_race_add_effect = { CATALYST = kehillah_crisis_efforts_catalyst POINTS = 5 } }
 		ai_chance = { base = 40 modifier = { add = 40 has_trait = compassionate } modifier = { add = 25 has_trait = generous } modifier = { add = -30 has_trait = greedy } }
@@ -83,54 +84,128 @@ kehillah_crisis_network.0002 = {
 	immediate = {
 		var:kehillah_network_crisis_title = {
 			save_scope_as = kehillah_network_crisis_title
-			holder = { save_scope_as = kehillah_network_crisis_leader }
+			holder = {
+				save_scope_as = kehillah_network_crisis_leader
+				# 2026-11-20, mutual aid v2: a struck or expelled community's
+				# settlement opened a need on its leader
+				# (kehillah_aid_crisis_need_effect); this report is the
+				# neighbours' letter for it, and gifts go through it.
+				if = {
+					limit = { kehillah_has_open_aid_need_trigger = yes }
+					save_scope_as = kehillah_aid_need
+				}
+			}
 		}
 	}
+	# --- Spared, held or bought off -------------------------------------
 	option = {
 		name = kehillah_crisis_network.0002.a_safe
-		trigger = { scope:kehillah_network_crisis_title.var:kehillah_crisis_outcome < 4 gold >= minor_gold_value }
+		trigger = {
+			scope:kehillah_network_crisis_title.var:kehillah_crisis_outcome < 4
+			NOT = { scope:kehillah_network_crisis_title.var:kehillah_crisis_response ?= 4 }
+			gold >= minor_gold_value
+		}
 		pay_short_term_gold = { target = scope:kehillah_network_crisis_leader gold = minor_gold_value }
 		add_piety = minor_piety_gain
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = 5 }
+		kehillah_giving_rep_change_effect = { AMOUNT = kehillah_giving_rep_road }
 		scope:kehillah_network_crisis_leader = { add_opinion = { target = root modifier = kehillah_crisis_aid_opinion } }
 		ai_chance = { base = 55 modifier = { add = 30 has_trait = compassionate } modifier = { add = -30 has_trait = greedy } }
 	}
 	option = {
 		name = kehillah_crisis_network.0002.b_safe
-		trigger = { scope:kehillah_network_crisis_title.var:kehillah_crisis_outcome < 4 }
+		trigger = {
+			scope:kehillah_network_crisis_title.var:kehillah_crisis_outcome < 4
+			NOT = { scope:kehillah_network_crisis_title.var:kehillah_crisis_response ?= 4 }
+		}
 		add_piety = minor_piety_gain
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = 4 }
 		scope:kehillah_network_crisis_leader = { add_opinion = { target = root modifier = kehillah_crisis_prayer_opinion } }
 		ai_chance = { base = 30 modifier = { add = 25 has_trait = zealous } }
 	}
+	# --- Struck or expelled: gold, through the mutual-aid need ----------
 	option = {
 		name = kehillah_crisis_network.0002.a_struck
-		trigger = { scope:kehillah_network_crisis_title.var:kehillah_crisis_outcome = 4 gold >= medium_gold_value }
+		trigger = {
+			OR = {
+				scope:kehillah_network_crisis_title.var:kehillah_crisis_outcome = 4
+				scope:kehillah_network_crisis_title.var:kehillah_crisis_response ?= 4
+			}
+			exists = scope:kehillah_aid_need
+			kehillah_can_answer_aid_need_trigger = { NEED = scope:kehillah_aid_need }
+			gold >= kehillah_aid_my_share_value
+		}
+		kehillah_aid_give_effect = { NEED = scope:kehillah_aid_need AMOUNT = kehillah_aid_my_share_value }
+		add_piety = minor_piety_gain
+		scope:kehillah_network_crisis_leader = { add_opinion = { target = root modifier = kehillah_crisis_aid_opinion } }
+		ai_chance = { base = 55 modifier = { add = 45 has_trait = compassionate } modifier = { add = 25 has_trait = generous } modifier = { add = -40 has_trait = greedy } }
+	}
+	# The same, when no need could be opened (the community already had one
+	# open, or this community cannot answer it): a direct gift.
+	option = {
+		name = kehillah_crisis_network.0002.a_struck
+		trigger = {
+			OR = {
+				scope:kehillah_network_crisis_title.var:kehillah_crisis_outcome = 4
+				scope:kehillah_network_crisis_title.var:kehillah_crisis_response ?= 4
+			}
+			NOT = {
+				AND = {
+					exists = scope:kehillah_aid_need
+					kehillah_can_answer_aid_need_trigger = { NEED = scope:kehillah_aid_need }
+				}
+			}
+			gold >= medium_gold_value
+		}
 		pay_short_term_gold = { target = scope:kehillah_network_crisis_leader gold = medium_gold_value }
 		add_piety = minor_piety_gain
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = 10 }
+		kehillah_giving_rep_change_effect = { AMOUNT = kehillah_giving_rep_share }
 		scope:kehillah_network_crisis_leader = { add_opinion = { target = root modifier = kehillah_crisis_aid_opinion } }
 		scope:kehillah_network_crisis_title = { kehillah_crisis_recovery_progress_effect = { POINTS = 12 } }
 		ai_chance = { base = 55 modifier = { add = 45 has_trait = compassionate } modifier = { add = 25 has_trait = generous } modifier = { add = -40 has_trait = greedy } }
 	}
 	option = {
 		name = kehillah_crisis_network.0002.b_struck
-		trigger = { scope:kehillah_network_crisis_title.var:kehillah_crisis_outcome = 4 }
+		trigger = {
+			OR = {
+				scope:kehillah_network_crisis_title.var:kehillah_crisis_outcome = 4
+				scope:kehillah_network_crisis_title.var:kehillah_crisis_response ?= 4
+			}
+		}
 		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = -5 }
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = 8 }
 		add_piety = minor_piety_gain
+		kehillah_giving_rep_change_effect = { AMOUNT = kehillah_giving_rep_take_in }
 		scope:kehillah_network_crisis_leader = { add_opinion = { target = root modifier = kehillah_crisis_aid_opinion } }
 		scope:kehillah_network_crisis_title = { kehillah_crisis_recovery_progress_effect = { POINTS = 10 } }
 		ai_chance = { base = 30 modifier = { add = 45 has_trait = compassionate } modifier = { add = 20 has_trait = generous } }
 	}
 	option = {
 		name = kehillah_crisis_network.0002.c_struck
-		trigger = { scope:kehillah_network_crisis_title.var:kehillah_crisis_outcome = 4 }
+		trigger = {
+			OR = {
+				scope:kehillah_network_crisis_title.var:kehillah_crisis_outcome = 4
+				scope:kehillah_network_crisis_title.var:kehillah_crisis_response ?= 4
+			}
+		}
 		add_piety = minor_piety_gain
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = 4 }
 		scope:kehillah_network_crisis_leader = { add_opinion = { target = root modifier = kehillah_crisis_prayer_opinion } }
 		scope:kehillah_network_crisis_title = { kehillah_crisis_recovery_progress_effect = { POINTS = 4 } }
 		ai_chance = { base = 10 modifier = { add = 30 has_trait = zealous } }
 	}
-	option = { name = kehillah_crisis_network.0002.d ai_chance = { base = 15 modifier = { add = 35 has_trait = greedy } } }
+	option = {
+		name = kehillah_crisis_network.0002.d
+		# Saying no to an appeal this community was expected to answer.
+		if = {
+			limit = {
+				exists = scope:kehillah_aid_need
+				kehillah_can_answer_aid_need_trigger = { NEED = scope:kehillah_aid_need }
+				kehillah_aid_is_expected_trigger = { NEED = scope:kehillah_aid_need }
+			}
+			kehillah_aid_refuse_effect = { NEED = scope:kehillah_aid_need }
+		}
+		ai_chance = { base = 15 modifier = { add = 35 has_trait = greedy } }
+	}
 }

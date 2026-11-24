@@ -1,0 +1,112 @@
+﻿# Mutual aid (2026-11-20, v2 the same day). common/scripted_effects/kehillah_mutual_aid_effects.txt.
+
+# Scope: any character. An open need sits on him.
+kehillah_has_open_aid_need_trigger = {
+	has_variable = kehillah_aid_kind
+	has_variable = kehillah_aid_open
+	is_target_in_global_variable_list = { name = kehillah_aid_needs target = this }
+}
+
+# Scope: a Kehillah leader. The needy character $NEED$ is within his
+# community's reach: neighbours when Healthy or less; twice as far when
+# Flourishing, or for an appeal carried by an envoy; anywhere when
+# Legendary.
+kehillah_aid_in_reach_trigger = {
+	exists = domicile.domicile_location
+	exists = $NEED$.location
+	OR = {
+		kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_legendary_threshold }
+		# A community that owes the needy one a debt of gratitude hears from
+		# it wherever it is.
+		primary_title ?= { kehillah_aid_grateful_to_need_trigger = { NEED = $NEED$ } }
+		domicile.domicile_location = {
+			squared_distance = {
+				target = $NEED$.location
+				value < kehillah_aid_range
+			}
+		}
+		AND = {
+			OR = {
+				kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_flourishing_threshold }
+				$NEED$ = { has_variable = kehillah_aid_wide }
+				# A Funduq's trade network carries letters far (Quarter tracks).
+				domicile ?= { has_domicile_building_or_higher = kehillah_funduq_02 }
+			}
+			domicile.domicile_location = {
+				squared_distance = {
+					target = $NEED$.location
+					value < kehillah_aid_range_far
+				}
+			}
+		}
+	}
+}
+
+# Scope: a Kehillah leader. He could answer the need on $NEED$: in reach,
+# not the needy community itself, and his community has not yet given or
+# refused.
+kehillah_can_answer_aid_need_trigger = {
+	government_has_flag = government_is_kehillah
+	exists = primary_title
+	NOT = { this = $NEED$ }
+	primary_title = { save_temporary_scope_as = kehillah_aid_answerer_seat }
+	$NEED$ = {
+		kehillah_has_open_aid_need_trigger = yes
+		NOT = { var:kehillah_aid_for_title ?= scope:kehillah_aid_answerer_seat }
+		NOT = { is_target_in_variable_list = { name = kehillah_aid_givers target = scope:kehillah_aid_answerer_seat } }
+		NOT = { is_target_in_variable_list = { name = kehillah_aid_refusers target = scope:kehillah_aid_answerer_seat } }
+	}
+	kehillah_aid_in_reach_trigger = { NEED = $NEED$ }
+}
+
+# Scope: a Kehillah leader. His community is among those expected to answer
+# the need on $NEED$.
+kehillah_aid_is_expected_trigger = {
+	primary_title ?= { save_temporary_scope_as = kehillah_aid_expected_seat_t }
+	exists = scope:kehillah_aid_expected_seat_t
+	$NEED$ = { is_target_in_variable_list = { name = kehillah_aid_expected target = scope:kehillah_aid_expected_seat_t } }
+}
+
+# Scope: a Kehillah leader. His community has the means to be expected to
+# give: Healthy Prosperity or better.
+kehillah_aid_expected_giver_trigger = {
+	kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_healthy_threshold }
+}
+
+# Scope: a Kehillah leader. His community is poor enough to write to the
+# other communities for help (Strained Prosperity or worse), or is
+# recovering from an attack.
+kehillah_aid_may_appeal_trigger = {
+	OR = {
+		kehillah_aid_expected_giver_trigger = no
+		kehillah_crisis_recovery_open_trigger = yes
+	}
+}
+
+# Scope: a prisoner, at imprisonment (scope:imprisoner saved). A Jew taken
+# by a non-Jew is a captive to redeem (pidyon shvuyim).
+kehillah_is_captive_to_redeem_trigger = {
+	is_jewish_character_trigger = yes
+	is_adult = yes
+	exists = scope:imprisoner
+	scope:imprisoner = { is_jewish_character_trigger = no }
+	NOT = { has_variable = kehillah_aid_kind }
+}
+
+# Scope: a community title. It owes the community behind the need on $NEED$
+# a debt of gratitude: that community was its patron within the last
+# kehillah_aid_gratitude_years. The title var kehillah_aid_grateful_to sits
+# on the community that was helped and names its patron's title.
+kehillah_aid_grateful_to_need_trigger = {
+	has_variable = kehillah_aid_grateful_to
+	OR = {
+		AND = {
+			exists = $NEED$.var:kehillah_aid_for_title
+			var:kehillah_aid_grateful_to = $NEED$.var:kehillah_aid_for_title
+		}
+		AND = {
+			exists = $NEED$.var:kehillah_aid_home_title
+			var:kehillah_aid_grateful_to = $NEED$.var:kehillah_aid_home_title
+		}
+	}
+}

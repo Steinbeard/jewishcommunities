@@ -328,3 +328,70 @@ kehillah_yeshiva_news_work_days = 730
 kehillah_yeshiva_news_track_days = 365
 kehillah_yeshiva_news_arrival_days = 365
 kehillah_yeshiva_news_chavruta_days = 365
+
+# =====================================================================
+# Alumni who lead elsewhere (2026-11-22). docs/spec/2026-11-22-yeshiva-
+# rework.md section 3 (pillars spec Phase D2). Scope: a Kehillah leader.
+# =====================================================================
+# How many other communities are led, or judged, by one of our students:
+# their leader, or their Dayyan (the councillor_court_chaplain seat), has
+# this community as his alma mater (set at enrolment).
+kehillah_yeshiva_seated_alumni_value = {
+	value = 0
+	if = {
+		limit = {
+			kehillah_has_yeshiva_trigger = yes
+			exists = primary_title
+		}
+		every_in_global_list = {
+			variable = kehillah_registered_communities
+			# prev, not root: at game start the baseline is read from a title's
+			# scope, where root is not this leader (live 2026-11-22, 424 errors).
+			# Here prev is the leader, one scope out from the listed title.
+			limit = {
+				NOT = { this = prev.primary_title }
+				exists = holder
+				OR = {
+					holder.var:kehillah_alma_mater ?= prev.primary_title
+					holder.cp:councillor_court_chaplain.var:kehillah_alma_mater ?= prev.primary_title
+				}
+			}
+			add = 1
+		}
+	}
+}
+# At most this many count toward the rewards below.
+kehillah_yeshiva_seated_alumni_cap = 3
+kehillah_yeshiva_seated_alumni_counted_value = {
+	value = kehillah_yeshiva_seated_alumni_value
+	max = kehillah_yeshiva_seated_alumni_cap
+}
+# Greatness baseline per seated alumnus (the renown term gives up to 100,
+# the Gabbai Tzedakah 40, the Shtadlan 90).
+kehillah_yeshiva_alumni_greatness_each = 25
+kehillah_bd_alumni_greatness_value = {
+	value = kehillah_yeshiva_seated_alumni_counted_value
+	multiply = kehillah_yeshiva_alumni_greatness_each
+}
+# Each season: extra percent chance that a travelling student arrives, per
+# seated alumnus (their communities send their students to their teacher).
+kehillah_yeshiva_alumni_arrival_each = 5
+kehillah_yeshiva_alumni_arrival_value = {
+	value = kehillah_yeshiva_seated_alumni_counted_value
+	multiply = kehillah_yeshiva_alumni_arrival_each
+}
+# Each year, at the ordination: renown per seated alumnus.
+kehillah_yeshiva_alumni_fame_each = 1
+kehillah_yeshiva_alumni_fame_value = {
+	value = kehillah_yeshiva_seated_alumni_counted_value
+	multiply = kehillah_yeshiva_alumni_fame_each
+}
+
+# Renown draws people (2026-11-22, yeshiva rework slice 3).
+# Learning added to a travelling student at Renowned, and again at
+# Illustrious (on top of the base 9-12 and education tier 2 -> 3).
+kehillah_yeshiva_renowned_student_learning = 2
+# Yearly chance (percent), at the ordination, that a learned scholar
+# comes to stay (kehillah_yeshiva.0011).
+kehillah_yeshiva_scholar_chance_renowned = 25
+kehillah_yeshiva_scholar_chance_illustrious = 40

@@ -44,16 +44,19 @@ TAIL = """
 	}}"""
 
 
-def option(eid, offerer, effects, base_stress=None):
+def option(eid, offerer, effects, base_stress=None, trigger=None):
     base = f"\n\t\t\tbase = {base_stress}" if base_stress else ""
+    # Default: a Jew offered food by a non-Jew. A target may pass its own
+    # trigger instead (2026-11-23: the hunt, where the food is one's own kill).
+    trigger = trigger or f"""is_jewish_character_trigger = yes
+			{offerer} = {{ is_jewish_character_trigger = no }}"""
     return f"""
 	#Jewish Communities: refuse food or wine that is not kosher
 	option = {{
 		name = {eid}.kehillah_kosher
 
 		trigger = {{
-			is_jewish_character_trigger = yes
-			{offerer} = {{ is_jewish_character_trigger = no }}
+			{trigger}
 		}}
 
 		flavor = {eid}.kehillah_kosher.flavor
@@ -124,7 +127,49 @@ TARGETS = [
 """),
         ],
     },
+    {
+        "out": r"events\activities\hunt_activity\kehillah_kosher_hunt_events.txt",
+        "events": [
+            # Felling a Beast (2026-11-23, kashrut): a beast brought down in
+            # the chase was never shechted, so it is not kosher, whatever the
+            # animal. Vanilla only stops Jews and Muslims eating boar
+            # (can_eat_boar_trigger). SUBSTITUTIONS below keep kashrut-keepers
+            # from the feast; the kosher option stands in for vanilla's "eat
+            # it here" for the same host (gluttonous or comfort eater), who
+            # sends the meat to the poor instead. No new choice for anyone
+            # vanilla would not have offered the feast.
+            ("events/activities/hunt_activity/hunt_events.txt", "hunt.4004", "scope:host", """
+		add_piety = minor_piety_gain
+""", None, """this = scope:host
+			kehillah_keeps_kashrut_trigger = yes
+			OR = {
+				has_trait = gluttonous
+				has_trait = comfort_eater
+			}"""),
+        ],
+    },
 ]
+
+# Exact text replacements inside a copied event (2026-11-23). Each `old`
+# must occur exactly once in the vanilla event, or the build stops.
+SUBSTITUTIONS = {
+    "hunt.4004": [
+        # The guests who share the kill: not those who keep kashrut.
+        ("\t\t\t\t\tthis != scope:host\n\t\t\t\t\tcan_eat_boar_trigger = yes\n",
+         "\t\t\t\t\tthis != scope:host\n\t\t\t\t\tcan_eat_boar_trigger = yes\n"
+         "\t\t\t\t\tNOT = { kehillah_keeps_kashrut_trigger = yes } # Jewish Communities: hunted game is not kosher\n"),
+        # "We eat it here and now!": not for a host who keeps kashrut.
+        ("\t\t\tcan_eat_boar_trigger = yes\n\t\t\tany_in_list = {",
+         "\t\t\tcan_eat_boar_trigger = yes\n"
+         "\t\t\tNOT = { kehillah_keeps_kashrut_trigger = yes } # Jewish Communities: hunted game is not kosher\n"
+         "\t\t\tany_in_list = {"),
+    ],
+}
+
+# Vanilla file-local scripted triggers the copied events use.
+LOCAL_TRIGGERS = {
+    "hunt.4004": ["can_eat_boar_trigger"],
+}
 
 
 def extract(path, eid):
@@ -149,8 +194,18 @@ LOCAL_EFFECTS = {
 }
 
 
+def extract_local_trigger(path, name):
+    _, body = extract(path, "scripted_trigger " + name)
+    return "\n".join(body)
+
+
 def build(eid, body, opt):
-    body = list(body)
+    text = "\n".join(body)
+    for old, new in SUBSTITUTIONS.get(eid, []):
+        if text.count(old) != 1:
+            sys.exit(f"{eid}: substitution matched {text.count(old)} times: {old!r}")
+        text = text.replace(old, new)
+    body = text.split("\n")
     body.insert(1, "\tid_override_priority = 10 # Jewish Communities: outrank vanilla (0)")
     # Options must come before an `after` block if there is one.
     at = next((i for i, l in enumerate(body) if l.rstrip() == "\tafter = {"), len(body) - 1)
@@ -168,6 +223,8 @@ for target in TARGETS:
             namespaces.append(ns)
         local = "".join(f"# Vanilla file-local effect, copied from {path}\n{extract_local_effect(path, n)}\n\n"
                         for n in LOCAL_EFFECTS.get(eid, []))
+        local += "".join(f"# Vanilla file-local trigger, copied from {path}\n{extract_local_trigger(path, n)}\n\n"
+                         for n in LOCAL_TRIGGERS.get(eid, []))
         chunks.append(local + f"# Vanilla: {path}\n" + build(eid, body, option(eid, offerer, effects, *rest)))
     out = os.path.join(MOD, target["out"])
     os.makedirs(os.path.dirname(out), exist_ok=True)

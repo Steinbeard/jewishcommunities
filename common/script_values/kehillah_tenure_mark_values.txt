@@ -1,0 +1,74 @@
+﻿# =====================================================================
+# The tenure mark (2026-11-19). See common/scripted_effects/
+# kehillah_tenure_mark_effects.txt. Scope: the Kehillah leader, whose title
+# holds kehillah_band_now_* and kehillah_tenure_band_*.
+# =====================================================================
+
+# Bands gained (+) or lost (-) since the leader took office, summed over the
+# three pillars; the chosen style's pillar counts twice. Range -20..20.
+kehillah_tenure_score_value = {
+	value = 0
+	if = {
+		limit = {
+			primary_title ?= {
+				has_variable = kehillah_tenure_band_prosperity
+				has_variable = kehillah_tenure_band_stability
+				has_variable = kehillah_tenure_band_greatness
+				has_variable = kehillah_band_now_prosperity
+				has_variable = kehillah_band_now_stability
+				has_variable = kehillah_band_now_greatness
+			}
+		}
+		add = primary_title.var:kehillah_band_now_prosperity
+		subtract = primary_title.var:kehillah_tenure_band_prosperity
+		add = primary_title.var:kehillah_band_now_stability
+		subtract = primary_title.var:kehillah_tenure_band_stability
+		add = primary_title.var:kehillah_band_now_greatness
+		subtract = primary_title.var:kehillah_tenure_band_greatness
+		# Mandate weighting: an explicitly chosen style's pillar again.
+		if = {
+			limit = { primary_title = { has_variable = kehillah_leadership_style } }
+			if = {
+				limit = { primary_title.var:kehillah_leadership_style = 1 }
+				add = primary_title.var:kehillah_band_now_greatness
+				subtract = primary_title.var:kehillah_tenure_band_greatness
+			}
+			else_if = {
+				limit = { primary_title.var:kehillah_leadership_style = 2 }
+				add = primary_title.var:kehillah_band_now_stability
+				subtract = primary_title.var:kehillah_tenure_band_stability
+			}
+			else_if = {
+				limit = { primary_title.var:kehillah_leadership_style = 3 }
+				add = primary_title.var:kehillah_band_now_prosperity
+				subtract = primary_title.var:kehillah_tenure_band_prosperity
+			}
+		}
+	}
+}
+
+# The score as a tier: 2 raised, 1 improved, 0 unchanged, -1 declined,
+# -2 brought low. One band in an ordinary pillar is a step; a mandate band, or
+# three or more weighted bands, is the larger judgement.
+kehillah_tenure_tier_value = {
+	value = 0
+	if = {
+		limit = { kehillah_tenure_score_value >= kehillah_tenure_major_threshold }
+		value = 2
+	}
+	else_if = {
+		limit = { kehillah_tenure_score_value >= 1 }
+		value = 1
+	}
+	else_if = {
+		limit = { kehillah_tenure_score_value <= kehillah_tenure_major_threshold_neg }
+		value = -2
+	}
+	else_if = {
+		limit = { kehillah_tenure_score_value <= -1 }
+		value = -1
+	}
+}
+
+kehillah_tenure_major_threshold = 3
+kehillah_tenure_major_threshold_neg = -3

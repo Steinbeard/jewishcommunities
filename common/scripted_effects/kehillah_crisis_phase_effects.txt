@@ -31,8 +31,9 @@ kehillah_crisis_recovery_start_effect = {
    remove_variable = kehillah_crisis_relief_used
    remove_variable = kehillah_crisis_reckoning_used
   }
-  set_variable = { name = kehillah_crisis_endure_push value = 12 }
-  set_variable = { name = kehillah_crisis_collapse_push value = 10 }
+  # 2026-11-23: the base rates follow the final threat grade (kehillah_crisis_phase_values.txt).
+  set_variable = { name = kehillah_crisis_endure_push value = kehillah_crisis_recovery_endure_base_value }
+  set_variable = { name = kehillah_crisis_collapse_push value = kehillah_crisis_recovery_collapse_base_value }
   if = { limit = { var:kehillah_crisis_title ?= { var:kehillah_var_stability < 250 } } change_variable = { name = kehillah_crisis_collapse_push add = 8 } }
   if = { limit = { var:kehillah_crisis_sovereign ?= { kehillah_outlook_band_value <= -1 } } change_variable = { name = kehillah_crisis_collapse_push add = 6 } }
   if = { limit = { var:kehillah_crisis_title ?= { has_variable = kehillah_mob_refuge } } change_variable = { name = kehillah_crisis_endure_push add = 5 } }
@@ -40,6 +41,8 @@ kehillah_crisis_recovery_start_effect = {
   if = { limit = { var:kehillah_crisis_title ?= { var:kehillah_crisis_loss_buildings > 0 } } change_variable = { name = kehillah_crisis_collapse_push add = 3 } }
   if = { limit = { var:kehillah_crisis_title ?= { has_variable = kehillah_crisis_captives_unresolved } } change_variable = { name = kehillah_crisis_collapse_push add = 3 } }
   if = { limit = { var:kehillah_crisis_title ?= { has_variable = kehillah_crisis_royal_protection } } change_variable = { name = kehillah_crisis_endure_push add = 4 } }
+  # 2026-11-20 (Hekdesh's Burial Society): the dead are buried and mourned properly.
+  if = { limit = { var:kehillah_crisis_title.holder ?= { domicile ?= { has_domicile_parameter = kehillah_has_burial_society } } } change_variable = { name = kehillah_crisis_endure_push add = 4 } }
  }
 }
 kehillah_crisis_recovery_monthly_effect = {
@@ -50,10 +53,47 @@ kehillah_crisis_recovery_monthly_effect = {
  }
 }
 
+# --- The return to ordinary life (2026-11-23) ---
+# Daniel: after Spared or Quarter held the window showed no progress while the community waited
+# about two months for "Returning to Ordinary Life". The wait after the ruler's answer is now a
+# month count on the title, ticked by the situation's on_monthly, so the window can show it
+# (kehillah_crisis_ui_return_months_value). Scope: a community leader, in kehillah_crisis.0202,
+# where scope:kehillah_crisis_title and scope:kehillah_crisis_epoch are set.
+kehillah_crisis_schedule_return_effect = {
+ if = {
+  limit = { primary_title ?= { var:kehillah_crisis_situation ?= { kehillah_crisis_situation_link_valid_trigger = yes } } }
+  primary_title = { set_variable = { name = kehillah_crisis_return_months value = kehillah_crisis_return_months_value } }
+ }
+ # No live situation to count it: the old fixed delay.
+ else = { domicile.domicile_location.county.holder ?= { trigger_event = { id = kehillah_crisis.0220 days = 45 } } }
+}
+# Scope: the situation, monthly. At zero, the leader gets "Returning to Ordinary Life" (via .0220).
+kehillah_crisis_return_monthly_effect = {
+ if = {
+  limit = {
+   kehillah_crisis_situation_link_valid_trigger = yes
+   var:kehillah_crisis_title = { has_variable = kehillah_crisis_return_months }
+  }
+  var:kehillah_crisis_title = {
+   change_variable = { name = kehillah_crisis_return_months subtract = 1 }
+   if = {
+    limit = { var:kehillah_crisis_return_months <= 0 }
+    remove_variable = kehillah_crisis_return_months
+    save_scope_as = kehillah_crisis_title
+    save_scope_value_as = { name = kehillah_crisis_epoch value = var:kehillah_crisis_epoch }
+    holder ?= { trigger_event = kehillah_crisis.0220 }
+   }
+  }
+ }
+}
+
 # Scope: title; action awards remain tied to the active recovery of this exact title.
 kehillah_crisis_recovery_progress_effect = {
+ # 2026-11-23: compare against this title, not root. In an event root is a character, so the check
+ # failed ("different types") and every Endure/Collapse push from an action or a gift was dropped.
+ save_scope_as = kehillah_recovery_push_title
  if = {
-  limit = { var:kehillah_crisis_situation ?= { situation_current_phase = kehillah_crisis_recovery var:kehillah_crisis_title ?= root var:kehillah_crisis_epoch = root.var:kehillah_crisis_epoch } }
+  limit = { var:kehillah_crisis_situation ?= { situation_current_phase = kehillah_crisis_recovery var:kehillah_crisis_title ?= scope:kehillah_recovery_push_title var:kehillah_crisis_epoch = scope:kehillah_recovery_push_title.var:kehillah_crisis_epoch } }
   var:kehillah_crisis_situation = {
    set_variable = { name = kehillah_crisis_endure_push_restore value = var:kehillah_crisis_endure_push }
    set_variable = { name = kehillah_crisis_endure_push value = $POINTS$ }
@@ -67,8 +107,11 @@ kehillah_crisis_recovery_progress_effect = {
 # Scope: title. A failed attempt at communal reconciliation can worsen Collapse
 # only while this title still owns its original Recovery situation.
 kehillah_crisis_recovery_setback_effect = {
+ # 2026-11-23: compare against this title, not root. In an event root is a character, so the check
+ # failed ("different types") and every Endure/Collapse push from an action or a gift was dropped.
+ save_scope_as = kehillah_recovery_push_title
  if = {
-  limit = { var:kehillah_crisis_situation ?= { situation_current_phase = kehillah_crisis_recovery var:kehillah_crisis_title ?= root var:kehillah_crisis_epoch = root.var:kehillah_crisis_epoch } }
+  limit = { var:kehillah_crisis_situation ?= { situation_current_phase = kehillah_crisis_recovery var:kehillah_crisis_title ?= scope:kehillah_recovery_push_title var:kehillah_crisis_epoch = scope:kehillah_recovery_push_title.var:kehillah_crisis_epoch } }
   var:kehillah_crisis_situation = {
    set_variable = { name = kehillah_crisis_collapse_push_restore value = var:kehillah_crisis_collapse_push }
    set_variable = { name = kehillah_crisis_collapse_push value = $POINTS$ }

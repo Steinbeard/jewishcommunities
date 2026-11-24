@@ -2859,11 +2859,13 @@ types DomicileWindowTypes {
 		state = {
 			name = _mouse_enter
 			on_start = "[PdxGuiWidget.FindChild('building_banner').TriggerAnimation('mouse_enter_domicile')]"
+			on_start = "[PdxGuiWidget.FindChild('building_banner_quarter').TriggerAnimation('mouse_enter_domicile')]"
 		}
 
 		state = {
 			name = _mouse_leave
 			on_start = "[PdxGuiWidget.FindChild('building_banner').TriggerAnimation('mouse_leave_domicile')]"
+			on_start = "[PdxGuiWidget.FindChild('building_banner_quarter').TriggerAnimation('mouse_leave_domicile')]"
 		}
 
 		### Mouse enter animation built slot — merchant company
@@ -3083,10 +3085,20 @@ types DomicileWindowTypes {
 
 		# Non-merchant: default vs asia banners (asia = celestial/meritocratic/nomad/japan)
 		domicile_building_banner_button = {
-			visible = "[And3( Not( GetVariableSystem.Exists( 'hide_ui' ) ), Not( DomicileWindow.GetDomicile.GetType.IsDomicileType('merchant_company') ), Not(Or(GetPlayer.GetGovernment.IsType( 'celestial_government'), Or(GetPlayer.GetGovernment.IsType( 'meritocratic_government'), Or(GetPlayer.GetGovernment.IsType( 'nomad_government' ), Or(GetPlayer.GetGovernment.IsType( 'japan_administrative_government' ), GetPlayer.GetGovernment.IsType( 'japan_feudal_government' )))))) )]"
+			visible = "[And3( Not( GetVariableSystem.Exists( 'hide_ui' ) ), Not( Or( DomicileWindow.GetDomicile.GetType.IsDomicileType('merchant_company'), DomicileWindow.GetDomicile.GetType.IsDomicileType('kehillah_quarter') ) ), Not(Or(GetPlayer.GetGovernment.IsType( 'celestial_government'), Or(GetPlayer.GetGovernment.IsType( 'meritocratic_government'), Or(GetPlayer.GetGovernment.IsType( 'nomad_government' ), Or(GetPlayer.GetGovernment.IsType( 'japan_administrative_government' ), GetPlayer.GetGovernment.IsType( 'japan_feudal_government' )))))) )]"
 
 			parentanchor = top|hcenter
 
+			allow_outside = yes
+		}
+
+		# The original slot anchor is at its upper-left edge. Quarter artwork
+		# occupies the middle of that slot, so attach its compact marker there.
+		domicile_building_banner_button = {
+			name = "building_banner_quarter"
+			visible = "[And( Not( GetVariableSystem.Exists( 'hide_ui' ) ), DomicileWindow.GetDomicile.GetType.IsDomicileType('kehillah_quarter') )]"
+			parentanchor = top|hcenter
+			position = { 60 40 }
 			allow_outside = yes
 		}
 
@@ -3124,6 +3136,15 @@ types DomicileWindowTypes {
 		alwaystransparent = "[And( And( Not( DomicileBuildingSlot.CanBuild ), DomicileBuildingSlot.IsFree), Not( DomicileBuildingSlot.IsUnderConstruction ) )]"
 
 		allow_outside = yes
+		tooltipwidget = {
+			container = {
+				name = "BuildingSlotTooltip"
+				datacontext = "[DomicileBuildingSlot.GetBuilding]"
+				using = domicile_building_slot_tooltip
+			}
+		}
+		tooltip_visible = "[DomicileWindow.GetDomicile.GetType.IsDomicileType('kehillah_quarter')]"
+		using = tooltip_ws
 
 		### Hover animation - used when hovering banner texture
 		state = {
@@ -3180,6 +3201,8 @@ types DomicileWindowTypes {
 		}
 
 		hbox = {
+			# The Quarter uses compact markers so labels do not obscure the painted buildings.
+			visible = "[Not( DomicileWindow.GetDomicile.GetType.IsDomicileType('kehillah_quarter') )]"
 			set_parent_size_to_minimum = yes
 			minimumsize = { 220 0 }
 			margin_right = 10
@@ -3256,6 +3279,43 @@ types DomicileWindowTypes {
 
 			### Banner level
 			text_domicile_banner_level = {}
+		}
+
+		# In the Quarter the building itself identifies the site. The marker remains
+		# clickable and the surrounding building slot retains its full tooltip.
+		widget = {
+			visible = "[And( DomicileWindow.GetDomicile.GetType.IsDomicileType('kehillah_quarter'), Or( DomicileBuildingSlot.IsUnderConstruction, Not( DomicileBuildingSlot.IsFree ) ) )]"
+			size = { 58 58 }
+			icon = {
+				visible = "[LessThanOrEqualTo_int32( DomicileBuildingSlot.GetLevel, '(int32)2' )]"
+				parentanchor = center
+				size = { 58 58 }
+				texture = "gfx/interface/window_domiciles/domicile_icon_bg_level_01.dds"
+			}
+			icon = {
+				visible = "[And( GreaterThanOrEqualTo_int32( DomicileBuildingSlot.GetLevel, '(int32)3' ), Not( EqualTo_int32( DomicileBuildingSlot.GetLevel, '(int32)5' ) ) )]"
+				parentanchor = center
+				size = { 58 58 }
+				texture = "gfx/interface/window_domiciles/domicile_icon_bg_level_02.dds"
+			}
+			icon = {
+				visible = "[GreaterThanOrEqualTo_int32( DomicileBuildingSlot.GetLevel, '(int32)5' )]"
+				parentanchor = center
+				size = { 58 58 }
+				texture = "gfx/interface/window_domiciles/domicile_icon_bg_level_03.dds"
+			}
+			button_domicile_building_can_upgrade = {
+				datacontext = "[DomicileBuildingSlot.GetBuilding]"
+				datacontext = "[DomicileBuilding.GetAsset( DomicileWindow.GetDomicile.Self )]"
+				visible = "[DomicileBuildingSlot.CanBuild]"
+				size = { 25 25 }
+			}
+			button_domicile_building_cannot_upgrade = {
+				datacontext = "[DomicileBuildingSlot.GetBuilding]"
+				datacontext = "[DomicileBuilding.GetAsset( DomicileWindow.GetDomicile.Self )]"
+				visible = "[Not( DomicileBuildingSlot.CanBuild )]"
+				size = { 25 25 }
+			}
 		}
 	}
 

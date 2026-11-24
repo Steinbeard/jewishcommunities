@@ -1,0 +1,108 @@
+﻿# Banking services and lending (2026-11-20). See
+# common/script_values/kehillah_banking_values.txt.
+
+# Scope: a Kehillah leader. The community is actually lending: the leader is
+# a creditor through vanilla's loans. (2026-11-20: the S8 ledger is gone;
+# every Kehillah loan is a vanilla loan, kehillah_community_loan_effects.txt.)
+kehillah_community_is_lending_trigger = {
+	any_in_list = { variable = owes_me_money }
+}
+
+# Scope: any character. He owes the community $TITLE$ (a Kehillah title)
+# through a community loan.
+kehillah_owes_community_trigger = {
+	any_owned_story = {
+		story_type = story_cycle_loan
+		var:kehillah_lent_for ?= $TITLE$
+	}
+}
+
+# Scope: any character. He owes a Jewish lender through a vanilla loan.
+kehillah_owes_jewish_lender_trigger = {
+	any_owned_story = {
+		story_type = story_cycle_loan
+		var:lender ?= { is_jewish_character_trigger = yes }
+	}
+}
+
+# Scope: a Kehillah leader. $HOST$ or a lord of $HOST$'s realm owes this
+# community.
+kehillah_has_host_realm_community_debtor_trigger = {
+	primary_title ?= {
+		save_temporary_scope_as = kehillah_debt_seat
+		any_in_list = {
+			variable = kehillah_community_debtors
+			is_alive = yes
+			OR = {
+				this = $HOST$
+				top_liege ?= $HOST$
+			}
+			kehillah_owes_community_trigger = { TITLE = scope:kehillah_debt_seat }
+		}
+	}
+}
+
+# Scope: any character. He owes a non-Jewish lender through a vanilla loan.
+kehillah_has_non_jewish_loan_trigger = {
+	any_owned_story = {
+		story_type = story_cycle_loan
+		var:lender ?= { is_jewish_character_trigger = no }
+	}
+}
+
+# Scope: a ruler (2026-11-20, Daniel). He needs credit -- in debt, or
+# paying a non-Jewish lender -- and no Jewish community lends in his realm.
+# Feeds the invitation motive (kehillah_invitation_values.txt) and the
+# Invite Jewish Settlers decision's AI weight.
+kehillah_wants_jewish_credit_trigger = {
+	is_jewish_character_trigger = no
+	NOT = { has_variable = kehillah_banking_services }
+	OR = {
+		gold < 0
+		kehillah_has_non_jewish_loan_trigger = yes
+	}
+}
+
+# Scope: a ruler. A Christian (non-Jewish) lending house: a merchant company
+# or holy order that lends, or is set up to.
+kehillah_is_rival_lender_trigger = {
+	is_jewish_character_trigger = no
+	OR = {
+		AND = {
+			government_has_flag = government_is_merchant
+			OR = {
+				has_realm_law = company_purpose_creditor
+				any_in_list = { variable = owes_me_money }
+			}
+		}
+		AND = {
+			government_has_flag = government_is_holy_order
+			any_in_list = { variable = owes_me_money }
+		}
+	}
+}
+
+# 2026-11-20. Scope: a Kehillah leader. The host charter does not let the
+# community lend at interest to $BORROWER$, a subject of the host's realm:
+# the charter grants no lending right, or only pawnbroking and the Quarter
+# has no Pledge Store. Borrowers outside the realm, and charters that set no
+# lending term (kehillah_charter_cache_lending unset), are not restricted.
+# The faith's usury doctrine is separate (gdp_usury_condemns_loan_trigger).
+kehillah_charter_forbids_interest_trigger = {
+	exists = domicile.domicile_location.county.holder.top_liege
+	domicile.domicile_location.county.holder.top_liege = { save_temporary_scope_as = kehillah_charter_realm_top }
+	$BORROWER$ = {
+		OR = {
+			this = scope:kehillah_charter_realm_top
+			top_liege ?= scope:kehillah_charter_realm_top
+		}
+	}
+	primary_title ?= { has_variable = kehillah_charter_cache_lending }
+	OR = {
+		primary_title.var:kehillah_charter_cache_lending = 0
+		AND = {
+			primary_title.var:kehillah_charter_cache_lending = 1
+			NOT = { domicile ?= { has_domicile_parameter = kehillah_has_pledge_store } }
+		}
+	}
+}

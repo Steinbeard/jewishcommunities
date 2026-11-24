@@ -172,6 +172,8 @@ kehillah_book_courtier_loss = 3
 # check, not just another deterministic branch.
 kehillah_book_courtier_lucky_bonus = 8
 kehillah_book_revision_gain = 15
+kehillah_book_public_reading_gain = 25
+kehillah_book_public_reading_loss = 5
 kehillah_book_revision_stress = minor_stress_gain
 
 # A FOURTH INSPIRATION OPTION, ADDED 2026-09-15 at user request: "draw
@@ -389,6 +391,10 @@ kehillah_prosperity_baseline_value = {
 	# V44 (2026-10-15)
 	add = kehillah_bd_restrictions_prosperity_value
 	add = kehillah_bd_debts_prosperity_value
+	# The town's market (2026-11-21, Quarter spec section 16).
+	add = kehillah_bd_market_supply_prosperity_value
+	# 2026-11-23: travellers who call this community home.
+	add = kehillah_bd_home_members_prosperity_value
 }
 
 # ---------------------------------------------------------------------
@@ -558,6 +564,10 @@ kehillah_greatness_baseline_value = {
 	# V29 (2026-10-11): the yeshiva's fame, the growing term on top of the
 	# Beit Midrash line's flat +150. Capped (kehillah_bd_yeshiva_fame_value).
 	add = kehillah_bd_yeshiva_fame_value
+	# 2026-11-22: our students who lead or judge other communities.
+	add = kehillah_bd_alumni_greatness_value
+	# 2026-11-22 (she'elot slice 2): communities that follow our rulings.
+	add = kehillah_bd_follower_greatness_value
 	# 2026-11-08 Sefer redesign (Daniel's follow-up): missing foundational
 	# works cost Greatness -- a Bavli order, or a founding Karaite work --
 	# and a complete Shas earns a little. One breakdown row.
@@ -959,24 +969,13 @@ kehillah_loan_principal_value = {
 		multiply = kehillah_loan_royal_principal_multiplier
 	}
 }
-kehillah_loan_repayment_multiplier = 1.3
-kehillah_loan_term_years = 6
-
-# The amount actually owed, principal x the flat multiplier above,
-# computed as its own script value rather than via a "set then multiply"
-# two-step effect call -- CONFIRMED there is no multiply_variable effect
-# in vanilla (grepped for it directly against the installed 1.19 files
-# during this task's research and found nothing); change_variable only
-# supports add/subtract, not multiply, so the multiplication has to
-# happen here, in a script_value, where "multiply" is a valid operator
-# (the same operator this file's own kehillah_tzedakah_gold_cost already
-# uses).
-kehillah_loan_amount_owed_value = {
-	value = kehillah_loan_principal_value
-	multiply = kehillah_loan_repayment_multiplier
-}
-
-kehillah_loan_default_prosperity_loss = 60
+# 2026-11-20: THE LEDGER ABOVE IS GONE. Every Kehillah loan is now a vanilla
+# 1.21 loan (common/scripted_effects/kehillah_community_loan_effects.txt):
+# vanilla interest replaces the flat repayment multiplier, vanilla
+# repayment replaces the fixed term and kehillah_repay_loan_decision, and
+# the title anchor survives as var:kehillah_lent_for on each loan story.
+# The header above is kept as the record of the old design. Only the
+# principal and the repayment reward remain.
 kehillah_loan_repayment_prosperity_reward = 50
 kehillah_loan_repayment_greatness_reward = 20
 
@@ -1202,8 +1201,17 @@ kehillah_bet_din_judge_fail_tally = 12
 
 # Resolution thresholds against the summed tally (max plausible +60,
 # min plausible -36 across three judges).
-kehillah_bet_din_tally_threshold_great = 45
-kehillah_bet_din_tally_threshold_good = 15
+#
+# RAISED 2026-11-23 (Daniel: "They shouldn't all be landmark!"): 45/15 were
+# set before the bench bonus (up to +22) and citations (up to +50) were added,
+# so three learned judges passing (+60) made nearly every case great and
+# every docket a landmark. Simulated with judges passing 90% of the time:
+# 45/15 gave 77% landmark dockets; 75/30 gives 23% landmark, 52% strong, 22%
+# adequate, 3% failed. Three plain passes are now good; great needs the
+# bench's learning or a strong citation on top. Two passes and one failure
+# stay good with any bench bonus.
+kehillah_bet_din_tally_threshold_great = 75
+kehillah_bet_din_tally_threshold_good = 30
 
 # Case 1 -- A Dowry Beyond Reach (Stewardship-led; Prosperity/Stability).
 kehillah_bet_din_case1_stability_gain_great = 40
@@ -1297,11 +1305,6 @@ kehillah_bet_din_case7_public_levy_piety = 20
 kehillah_bet_din_case7_private_collection_cost = 6
 kehillah_bet_din_case7_private_collection_prestige = 10
 kehillah_bet_din_case7_source_tally_bonus = 8
-kehillah_bet_din_case7_precedent_tally_bonus = 5
-kehillah_bet_din_case7_letter_days = 3
-kehillah_bet_din_case7_reply_tally_bonus = 24
-kehillah_bet_din_case7_reply_author_prestige = 15
-kehillah_bet_din_case7_reply_author_learning_xp = 20
 
 # The "beat him up" direction's opinion collapse lives as a literal -70
 # directly in common/opinion_modifiers/kehillah_opinion_modifiers.txt's
@@ -1411,21 +1414,25 @@ kehillah_bet_din_session_threshold_adequate = 1
 # Stability specifically, at the session-close reward specifically.
 # Greatness and Prosperity below are UNCHANGED, still convening-only,
 # as are all per-case (kehillah_bet_din_case1/2/3_*) values above.
-kehillah_bet_din_session_greatness_gain_landmark = 50
-kehillah_bet_din_session_stability_gain_landmark = 30
-kehillah_bet_din_session_prosperity_gain_landmark = 20
-kehillah_bet_din_session_greatness_gain_strong = 25
-kehillah_bet_din_session_stability_gain_strong = 15
-kehillah_bet_din_session_greatness_gain_adequate = 10
-kehillah_bet_din_session_stability_gain_adequate = 5
-kehillah_bet_din_session_greatness_loss_failed = 20
+#
+# REWORKED 2026-11-23 (Daniel: "stability for the sitting judge and maybe a
+# small greatness bonus for the visiting judges"). The sitting community
+# gains Stability by tier (major / moderate / minor; a failed docket a
+# moderate penalty). The visiting judges' communities gain Greatness
+# (moderate / minor / minor), never lose it. A landmark docket, copied for
+# other communities, also gives the sitting community a minor Greatness
+# bonus. Prosperity, the host's Piety and Prestige, and the attendees'
+# Prestige, Piety and Learning experience are gone; attendees keep only
+# the better opinion of the host. Sizes per the pillar bands (minor <= 10,
+# moderate <= 30, major <= 60).
+kehillah_bet_din_session_stability_gain_landmark = 50
+kehillah_bet_din_session_stability_gain_strong = 30
+kehillah_bet_din_session_stability_gain_adequate = 10
 kehillah_bet_din_session_stability_loss_failed = 25
-
-# One reward per invited attendee when a docket finishes positively. Judges
-# also receive this; the convening leader already has the tiered payout.
-kehillah_bet_din_attendee_prestige_gain = 10
-kehillah_bet_din_attendee_piety_gain = 10
-kehillah_bet_din_attendee_learning_xp = 15
+kehillah_bet_din_session_greatness_gain_landmark = 10
+kehillah_bet_din_session_panel_greatness_gain_landmark = 20
+kehillah_bet_din_session_panel_greatness_gain_strong = 10
+kehillah_bet_din_session_panel_greatness_gain_adequate = 5
 
 
 # =====================================================================
@@ -2407,94 +2414,16 @@ kehillah_rabbi_price_young_display = {
 
 
 # =====================================================================
-# RESPONSA (ROADMAP S5). She'elot u-teshuvot: another community's leader
-# writes with a question, and the answer travels further than the
-# answerer does.
+# RESPONSA (ROADMAP S5, 2026-09-27). The community's record of answered
+# responsa (kehillah_var_responsa_count, on the title) and the Gather the
+# Responsa decision that compiles it into a book.
 #
-# ADDED 2026-09-27. Events in events/kehillah_responsa_events.txt, pulse
-# in common/on_action/kehillah_on_actions.txt
-# (kehillah_responsa_pulse), compile decision in
-# common/decisions/kehillah_responsa_decisions.txt.
-#
-# WHY GREATNESS AND NOT STABILITY for the answerer: answering responsa
-# is exactly what Greatness measures in this mod -- learning, piety,
-# scholarship, reputation beyond your own walls (see ROADMAP's pillar
-# definitions). The ASKING community gets a Stability effect instead,
-# because what a ruling does for them is settle a quarrel.
-#
-# Magnitudes are deliberately small next to the Bet Din's (whose
-# stability_gain_great is 40): a conference is a once-every-three-years
-# set piece that three communities travel to, a letter is a letter. They
-# are set in the same range as the dispute-ruling family so that a
-# scholar's decade of correspondence adds up to something comparable to
-# a decade of good governance at home, without either eclipsing the
-# other.
+# 2026-11-23: the old question event (kehillah_responsa.0001) and its
+# values are retired. The count now grows from answered she'elot
+# (kehillah_sheelah_reply_effect; docs/spec/2026-11-22-sheelot.md).
 # =====================================================================
 
-# The gate on both the pulse and the decision.
-#
-# LOWERED 12 -> 8, 2026-09-28. At 12 this number was exactly
-# kehillah_responsa_learning_good below, which made the POOR tier
-# unreachable: the gate admitted nobody who could then fall below the good
-# cut, so kehillah_responsa.0001's three `.poor` tooltips and
-# kehillah_responsa_greatness_loss_poor were dead script. That tier is the
-# only thing at stake in the whole feature -- a ruling can cost you
-# standing -- so a gate that removed it removed the risk from the loop.
-#
-# 8 is not a new bar invented for this: it is
-# kehillah_bet_din_local_dayan_learning_threshold, which S4d set as the
-# point at which this mod treats someone as a real judge rather than a
-# renowned one. The two questions ("may he sit as a dayan", "may he be
-# written to") deserve the same answer, and having them share a number is
-# why 8 rather than 10.
-#
-# This also follows S4b's own shift of emphasis, at Daniel's instruction:
-# responsa are gated on SEMICHA now (kehillah_responsa_answerer_is_rabbi_
-# trigger), so Learning has stopped being the thing that decides whether a
-# letter arrives and has become the thing that decides how well it is
-# answered. A rabbi of modest learning receiving a hard question and ruling
-# badly on it is the feature working, not a hole in it.
-#
-# Rashi still clears it on day one (his history pins learning = 12 for
-# S4(2)'s own threshold, which is unchanged at 12).
-kehillah_responsa_learning_threshold = 8
-
-# Tier cuts for the answer's quality, on the ANSWERER's Learning (see
-# kehillah_responsa_answerer_learning_value). Above the great cut the
-# ruling is remembered; between the two it is respected; below, it is
-# second-guessed -- and the poor tier is the only one that can lose
-# Greatness, because a bad ruling circulated under your name is worse
-# for your standing than never having been asked.
-kehillah_responsa_learning_great = 16
-kehillah_responsa_learning_good = 12
-
-kehillah_responsa_greatness_gain_great = 14
-kehillah_responsa_greatness_gain_good = 7
-kehillah_responsa_greatness_loss_poor = 5
-
-# The asking community's Stability. A ruling they can act on settles
-# something; a ruling that misreads their situation makes it worse.
-kehillah_responsa_asker_stability_gain_great = 12
-kehillah_responsa_asker_stability_gain_good = 6
-kehillah_responsa_asker_stability_loss_poor = 6
-
-# Deferring to a greater authority (option 3). Flat, NOT Learning-tiered
-# -- see the event file's header for why a deferral is not a skill test.
-# It costs a little standing (you were asked and did not answer) and
-# still helps the asker a little (they will get an answer, from someone
-# greater than you).
-kehillah_responsa_defer_greatness_loss = 3
-kehillah_responsa_asker_stability_gain_defer = 3
-
-# Opinion the asker holds of the answerer afterwards.
-kehillah_responsa_opinion_great = 25
-kehillah_responsa_opinion_good = 12
-kehillah_responsa_opinion_poor = -10
-kehillah_responsa_opinion_defer = -5
-
 # How many answered responsa before they can be compiled into a book.
-# Only options 1 and 2 count -- a deferral is not a responsum of yours,
-# which is what keeps the counter an honest measure of rulings given.
 kehillah_responsa_compile_threshold = 10
 
 # What the compiled collection is worth, fed into the existing book
@@ -2503,39 +2432,6 @@ kehillah_responsa_compile_threshold = 10
 # a long career of correspondence can reach its top one, rather than
 # handing out an illustrious artifact for clearing the minimum.
 kehillah_responsa_compile_tally_per_answer = 4
-
-# RAW Learning of whoever actually answers: the community rabbi -- the
-# leader if he is a Rav, otherwise the Dayyan -- or, failing both, the
-# leader himself. Same rule as kehillah_has_community_rabbi_trigger.
-#
-# Deliberately NOT kehillah_community_rabbi_learning_value, which
-# multiplies by kehillah_baseline_officer_stat_weight because it feeds a
-# pillar baseline. This one is compared against a Learning threshold, so
-# it must stay in Learning's own units.
-#
-# Scope: the Kehillah leader.
-kehillah_responsa_answerer_learning_value = {
-	# V29 section 4 (2026-10-11): judicial Learning (Learning plus a
-	# Talmudics bonus) -- same units, so the thresholds are unchanged.
-	value = 0
-
-	# 2026-10-11: the community rabbi (leader if a Rav, else the Dayyan);
-	# failing both, the leader himself answers.
-	# 2026-11-08: a Karaite Dayyan answers for a Karaite leader, as for a lay
-	# one (kehillah_save_community_rabbi_effect).
-	if = {
-		limit = {
-			NOT = { kehillah_is_ordained_rabbi_trigger = yes }
-			cp:councillor_court_chaplain ?= { kehillah_ordained_or_karaite_trigger = yes }
-		}
-		cp:councillor_court_chaplain = {
-			add = kehillah_judicial_learning_value
-		}
-	}
-	else = {
-		add = kehillah_judicial_learning_value
-	}
-}
 
 
 # Pillar changes are shown as a size, not a number (2026-11-01; kehillah_change_pillar_effect).

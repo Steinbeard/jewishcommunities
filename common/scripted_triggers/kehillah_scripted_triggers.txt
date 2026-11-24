@@ -400,7 +400,7 @@ kehillah_bet_din_eligible_judge_trigger = {
 	# 2026-11-11 (Daniel): a rabbi in herem may not sit on a Bet Din or preach.
 	NOT = { kehillah_cherem_in_full_trigger = yes }
 	OR = {
-		# 2026-11-15: same rite and within diplomatic range, replacing the
+		# Same faith (2026-11-22; same rite from 2026-11-15) and within diplomatic range, replacing the
 		# minhag region (kehillah_bet_din_shares_court_trigger).
 		AND = {
 			is_ruler = yes
@@ -414,7 +414,7 @@ kehillah_bet_din_eligible_judge_trigger = {
 				OR = {
 					kehillah_is_sanhedrin_head_trigger = yes
 					AND = {
-						piety_level >= kehillah_synod_min_devotion_level
+						kehillah_synod_greatness_gate_trigger = yes
 						kehillah_synod_region_has_quorum_trigger = yes
 						kehillah_synod_has_open_takkanah_trigger = yes
 						NOT = { has_variable = kehillah_synod_cooldown }
@@ -1345,119 +1345,6 @@ kehillah_pillars_are_live_trigger = {
 # =====================================================================
 # RESPONSA (ROADMAP S5). ADDED 2026-09-27.
 # =====================================================================
-
-# Scope: the Kehillah leader. Is this community learned enough to be
-# written to, and is there anybody out there to write?
-#
-# The second half matters more than it looks: responsa are correspondence
-# BETWEEN communities, so a world with exactly one registered community
-# has nobody to ask. The registry is the same one the book system's
-# "send copies" step and S4's rabbi search both walk
-# (kehillah_registered_communities, populated at game start).
-kehillah_can_answer_responsa_trigger = {
-	government_has_flag = government_is_kehillah
-	kehillah_responsa_answerer_is_rabbi_trigger = yes
-	kehillah_responsa_answerer_learning_value >= kehillah_responsa_learning_threshold
-	kehillah_has_responsa_correspondent_trigger = yes
-}
-
-# Scope: the Kehillah leader. Does whoever would ANSWER here hold
-# rabbinic standing?
-#
-# ADDED 2026-09-27 (S4b), at user request: "any rabbi can receive rabbinic
-# responsa, but it should be gated on rabbi trait". Learning alone was the
-# whole gate before, so a merely well-read leader with no semicha received
-# she'elot addressed to a posek -- the one thing responsa are NOT. A
-# question of halakha is sent to someone qualified to answer it.
-#
-# Kept in exact lockstep with kehillah_responsa_answerer_learning_value
-# (common/script_values/kehillah_script_values.txt) -- same two branches,
-# same precedence -- because the two must agree about WHO is being tested
-# or the gate and the skill check would be measuring different people.
-# The appointed-rabbi branch is effectively always true (the office grants
-# kehillah_rabbi_trait on receipt, common/court_positions/types/
-# kehillah_officers.txt), and is written out anyway rather than assumed:
-# it is what makes the trigger read as "the answerer is a rabbi" instead
-# of "the leader is a rabbi, unless".
-kehillah_responsa_answerer_is_rabbi_trigger = {
-	kehillah_has_community_rabbi_trigger = yes
-}
-
-# Scope: the Kehillah leader. Does at least one OTHER community exist
-# with a living leader who could send a question?
-kehillah_has_responsa_correspondent_trigger = {
-	any_in_global_list = {
-		variable = kehillah_registered_communities
-		exists = holder
-		NOT = { holder = root }
-		holder = {
-			is_adult = yes
-			is_alive = yes
-		}
-	}
-}
-
-# Case 7's two relevant works: the Mishnah's ransom rule (Gittin 4:6)
-# and the Bavli's discussion in tractate Gittin (Nashim). This list is
-# character mastery, never mere possession by a community library.
-kehillah_has_ransom_source_trigger = {
-	OR = {
-		is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_mishnah }
-		is_target_in_variable_list = { name = kehillah_mastered_works target = flag:work_bavli_nashim }
-	}
-}
-
-# Scope: host of an active Bet Din. All three seated judges count; a
-# third judge with the source should prevent a needless outside letter.
-kehillah_bet_din_case7_panel_has_source_trigger = {
-	OR = {
-		AND = {
-			exists = involved_activity.var:kehillah_bet_din_av_beit_din
-			involved_activity.var:kehillah_bet_din_av_beit_din = { kehillah_has_ransom_source_trigger = yes }
-		}
-		AND = {
-			exists = involved_activity.var:kehillah_bet_din_judge2
-			involved_activity.var:kehillah_bet_din_judge2 = { kehillah_has_ransom_source_trigger = yes }
-		}
-		AND = {
-			exists = involved_activity.var:kehillah_bet_din_judge3
-			involved_activity.var:kehillah_bet_din_judge3 = { kehillah_has_ransom_source_trigger = yes }
-		}
-	}
-}
-
-# The asking leader may have changed, or the conference may have ended
-# while a letter travelled. A reply applies to the case only while this
-# exact Bet Din activity still holds its pending marker.
-kehillah_bet_din_case7_pending_trigger = {
-	exists = involved_activity
-	involved_activity = { has_variable = kehillah_bet_din_case7_pending_responsum }
-}
-
-# Scope: another registered community's leader. The actual addressee is
-# the appointed Chief Rabbi, or an ordained, source-mastering leader if
-# no appointment exists. This permits historical Rabbi leaders to answer
-# before they choose the separate self-service office toggle.
-kehillah_has_ransom_correspondent_trigger = {
-	# The community rabbi (leader if a Rav, else the Dayyan) must be alive
-	# and hold a ransom source. 2026-10-11: was the Chief Rabbi, else the
-	# leader.
-	OR = {
-		AND = {
-			has_trait = kehillah_rabbi_trait
-			is_alive = yes
-			kehillah_has_ransom_source_trigger = yes
-		}
-		AND = {
-			NOT = { has_trait = kehillah_rabbi_trait }
-			cp:councillor_court_chaplain ?= {
-				is_alive = yes
-				has_trait = kehillah_rabbi_trait
-				kehillah_has_ransom_source_trigger = yes
-			}
-		}
-	}
-}
 
 # Scope: the Kehillah leader. Enough answered rulings on the books to
 # gather them into a volume.

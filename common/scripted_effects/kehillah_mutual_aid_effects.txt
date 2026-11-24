@@ -1,0 +1,871 @@
+﻿# =====================================================================
+# MUTUAL AID (2026-11-20, Daniel: "transform it from a one-time event
+# during a crisis into a more dynamic and continuous mutual aid system,
+# combined with ransoming prisoners and helping destitute communities").
+# docs/spec/2026-11-20-mutual-aid.md; pillars spec R5/R6. v2 the same day
+# (Daniel: prosperous communities should feel both more opportunity and
+# more obligation; poor ones should be able to ask): see the record's v2
+# section.
+#
+# A NEED sits on one character:
+#   ransom   -- a Jew held by a non-Jew (vanilla on_imprison): the captive
+#   relief   -- a poor community (AI in Crisis Prosperity, or a player's
+#               appeal): its leader
+#   rebuild  -- a struck quarter (crisis settlement, or an appeal during
+#               Recovery): its leader; gifts also advance Recovery
+#   refugees -- a community that took refugees in: its leader
+#   exiles   -- an expelled community: its leader
+# with variables kehillah_aid_kind (flag), kehillah_aid_open (timed),
+# kehillah_aid_reminder_wait (timed), kehillah_aid_size, kehillah_aid_raised,
+# kehillah_aid_for_title (the needy community) or kehillah_aid_home_title (a
+# captive's community), kehillah_aid_wide (an envoy carried the appeal),
+# kehillah_aid_expected_count/_weight, kehillah_aid_top_giver/_amount, and
+# variable lists kehillah_aid_expected, kehillah_aid_givers,
+# kehillah_aid_refusers, kehillah_aid_reminded. Every open need is on the
+# global list kehillah_aid_needs.
+#
+# SHARES BY PROSPERITY: a Healthy community carries one share, a
+# Flourishing one two, a Legendary one three (kehillah_aid_weight_value);
+# reach grows the same way (kehillah_aid_in_reach_trigger). Strained and
+# poorer communities are not expected, and a gift from them counts double.
+#
+# REPUTATION FOR GIVING: title variable kehillah_giving_reputation,
+# -100..100, fading yearly toward zero, shown as one character modifier on
+# the leader (judaism_religion_opinion: how Jews regard him), and read back
+# as RECIPROCITY: AI communities answer a generous community's need more
+# readily (kehillah_aid_reciprocity_value).
+# =====================================================================
+
+# ---------------------------------------------------------------------------
+# Scope: the needy character. Opens a need of kind $KIND$ for $SIZE$ gold.
+# $WIDE$ (yes/no): an envoy carries the appeal, so Healthy communities twice
+# as far are reached too. Finds the communities expected to answer and
+# writes to the players among them; players in reach who are not expected
+# hear the news.
+kehillah_aid_open_need_effect = {
+	save_scope_as = kehillah_aid_need
+	set_variable = { name = kehillah_aid_kind value = flag:$KIND$ }
+	set_variable = { name = kehillah_aid_open value = yes years = kehillah_aid_open_years }
+	set_variable = { name = kehillah_aid_reminder_wait value = yes months = kehillah_aid_reminder_months }
+	set_variable = { name = kehillah_aid_size value = $SIZE$ }
+	set_variable = { name = kehillah_aid_raised value = 0 }
+	set_variable = { name = kehillah_aid_top_amount value = 0 }
+	set_variable = { name = kehillah_aid_expected_count value = 0 }
+	set_variable = { name = kehillah_aid_expected_weight value = 0 }
+	if = { limit = { has_variable = kehillah_aid_wide } remove_variable = kehillah_aid_wide }
+	if = {
+		limit = {
+			OR = {
+				always = $WIDE$
+				# Hekdesh's Hostel: travellers carry the community's letters.
+				domicile ?= { has_domicile_parameter = kehillah_has_hostel }
+			}
+		}
+		set_variable = { name = kehillah_aid_wide value = yes }
+	}
+	clear_variable_list = kehillah_aid_expected
+	clear_variable_list = kehillah_aid_givers
+	clear_variable_list = kehillah_aid_refusers
+	clear_variable_list = kehillah_aid_reminded
+	if = {
+		limit = {
+			government_has_flag = government_is_kehillah
+			exists = primary_title
+		}
+		set_variable = { name = kehillah_aid_for_title value = primary_title }
+	}
+	else_if = {
+		limit = {
+			employer ?= {
+				government_has_flag = government_is_kehillah
+				exists = primary_title
+			}
+		}
+		set_variable = { name = kehillah_aid_home_title value = employer.primary_title }
+	}
+	if = {
+		limit = { NOT = { is_target_in_global_variable_list = { name = kehillah_aid_needs target = this } } }
+		add_to_global_variable_list = { name = kehillah_aid_needs target = this }
+	}
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = {
+			exists = holder
+			NOT = { scope:kehillah_aid_need.var:kehillah_aid_for_title ?= this }
+			holder = {
+				is_alive = yes
+				government_has_flag = government_is_kehillah
+				NOT = { this = scope:kehillah_aid_need }
+				kehillah_aid_in_reach_trigger = { NEED = scope:kehillah_aid_need }
+			}
+		}
+		save_temporary_scope_as = kehillah_aid_reach_seat
+		holder = {
+			save_temporary_scope_as = kehillah_aid_reach_holder
+			if = {
+				limit = {
+					OR = {
+						kehillah_aid_expected_giver_trigger = yes
+						# It owes the needy community a debt of gratitude.
+						scope:kehillah_aid_reach_seat = { kehillah_aid_grateful_to_need_trigger = { NEED = scope:kehillah_aid_need } }
+					}
+				}
+				# Expected: carries its shares, and is written to.
+				scope:kehillah_aid_need = {
+					add_to_variable_list = { name = kehillah_aid_expected target = scope:kehillah_aid_reach_seat }
+					change_variable = { name = kehillah_aid_expected_count add = 1 }
+					change_variable = { name = kehillah_aid_expected_weight add = scope:kehillah_aid_reach_holder.kehillah_aid_weight_value }
+				}
+				if = {
+					limit = { is_ai = no }
+					kehillah_aid_send_letter_effect = { KIND = $KIND$ }
+				}
+			}
+			else_if = {
+				# Too poor to be asked, but near enough to hear of it.
+				limit = { is_ai = no }
+				send_interface_message = {
+					type = msg_kehillah_community_news
+					title = kehillah_aid_news_t
+					desc = kehillah_aid_news_$KIND$_d
+					left_icon = scope:kehillah_aid_need
+				}
+			}
+		}
+	}
+	debug_log = "kehillah_aid_open_need_effect: a need opened"
+	debug_log_scopes = yes
+}
+
+# Scope: an expected player leader; scope:kehillah_aid_need saved. The
+# letter: an event, unless the crisis report already asked (the
+# neighbours of a struck or expelled quarter) or another letter came
+# lately, in which case a message.
+kehillah_aid_send_letter_effect = {
+	if = {
+		limit = {
+			exists = scope:kehillah_aid_need.var:kehillah_aid_for_title
+			var:kehillah_aid_letter_covered ?= scope:kehillah_aid_need.var:kehillah_aid_for_title
+		}
+		# kehillah_crisis_network.0002 is this community's letter.
+	}
+	else_if = {
+		limit = { has_variable = kehillah_aid_letter_recent }
+		send_interface_message = {
+			type = msg_kehillah_community_news
+			title = kehillah_aid_open_$KIND$_t
+			desc = kehillah_aid_open_$KIND$_d
+			left_icon = scope:kehillah_aid_need
+		}
+	}
+	else = {
+		set_variable = { name = kehillah_aid_letter_recent value = yes days = 60 }
+		trigger_event = { id = kehillah_mutual_aid.0002 days = 1 }
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Scope: the giving Kehillah leader. Gives $AMOUNT$ gold (capped at what is
+# still needed) toward the need on $NEED$. $AMOUNT$ is evaluated after
+# scope:kehillah_aid_need is saved, so kehillah_aid_my_share_value works.
+kehillah_aid_give_effect = {
+	save_scope_as = kehillah_aid_giver
+	primary_title = { save_scope_as = kehillah_aid_giver_seat }
+	$NEED$ = { save_scope_as = kehillah_aid_need }
+	save_scope_value_as = { name = kehillah_aid_was_remaining value = scope:kehillah_aid_need.kehillah_aid_remaining_value }
+	save_scope_value_as = {
+		name = kehillah_aid_amount
+		value = {
+			value = $AMOUNT$
+			max = scope:kehillah_aid_was_remaining
+			min = 0
+		}
+	}
+	if = {
+		limit = { scope:kehillah_aid_amount > 0 }
+		# Reputation: a share, more for what remains; more again unasked,
+		# and double from a community too poor to be asked.
+		save_scope_value_as = {
+			name = kehillah_aid_rep
+			value = {
+				value = kehillah_giving_rep_share
+				if = {
+					limit = { scope:kehillah_aid_amount >= scope:kehillah_aid_was_remaining }
+					value = kehillah_giving_rep_full
+				}
+				if = {
+					limit = { NOT = { kehillah_aid_is_expected_trigger = { NEED = scope:kehillah_aid_need } } }
+					add = kehillah_giving_rep_unasked
+				}
+				multiply = kehillah_aid_weight_value
+				if = {
+					limit = { kehillah_aid_expected_giver_trigger = no }
+					multiply = 2
+				}
+				# Hekdesh's Kuppah (charity fund), 2026-11-20.
+				if = {
+					limit = { domicile ?= { has_domicile_parameter = kehillah_has_kuppah } }
+					multiply = 1.25
+				}
+			}
+		}
+		save_scope_value_as = { name = kehillah_aid_gift_greatness_amount value = kehillah_aid_gift_greatness_value }
+		save_scope_value_as = { name = kehillah_aid_full_greatness_amount value = kehillah_aid_full_greatness_value }
+		remove_short_term_gold = scope:kehillah_aid_amount
+		if = {
+			limit = { scope:kehillah_aid_need.var:kehillah_aid_kind = flag:ransom }
+			custom_tooltip = kehillah_aid_gift_ransom_tt
+		}
+		else = { custom_tooltip = kehillah_aid_gift_relief_tt }
+		hidden_effect = {
+			scope:kehillah_aid_need = {
+				change_variable = { name = kehillah_aid_raised add = scope:kehillah_aid_amount }
+				add_to_variable_list = { name = kehillah_aid_givers target = scope:kehillah_aid_giver_seat }
+				if = {
+					limit = { is_target_in_variable_list = { name = kehillah_aid_expected target = scope:kehillah_aid_giver_seat } }
+					remove_list_variable = { name = kehillah_aid_expected target = scope:kehillah_aid_giver_seat }
+				}
+				if = {
+					limit = { scope:kehillah_aid_amount > var:kehillah_aid_top_amount }
+					set_variable = { name = kehillah_aid_top_amount value = scope:kehillah_aid_amount }
+					set_variable = { name = kehillah_aid_top_giver value = scope:kehillah_aid_giver_seat }
+				}
+				# Relief goes straight to the needy community; a ransom is
+				# held until it is complete.
+				if = {
+					limit = { NOT = { var:kehillah_aid_kind = flag:ransom } }
+					add_gold = scope:kehillah_aid_amount
+				}
+			}
+		}
+		if = {
+			limit = { scope:kehillah_aid_amount >= scope:kehillah_aid_was_remaining }
+			kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = scope:kehillah_aid_full_greatness_amount }
+		}
+		else = {
+			kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = scope:kehillah_aid_gift_greatness_amount }
+		}
+		kehillah_giving_rep_change_effect = { AMOUNT = scope:kehillah_aid_rep }
+		# A struck quarter: every gift helps it endure.
+		if = {
+			limit = { scope:kehillah_aid_need.var:kehillah_aid_kind = flag:rebuild }
+			custom_tooltip = kehillah_aid_gift_rebuild_tt
+			hidden_effect = {
+				scope:kehillah_aid_need.var:kehillah_aid_for_title ?= {
+					if = {
+						limit = { scope:kehillah_aid_amount >= scope:kehillah_aid_was_remaining }
+						kehillah_crisis_recovery_progress_effect = { POINTS = kehillah_aid_rebuild_full_progress }
+					}
+					else = {
+						kehillah_crisis_recovery_progress_effect = { POINTS = kehillah_aid_rebuild_share_progress }
+					}
+				}
+			}
+		}
+		# Complete?
+		if = {
+			limit = { scope:kehillah_aid_amount >= scope:kehillah_aid_was_remaining }
+			if = {
+				limit = { scope:kehillah_aid_need.var:kehillah_aid_kind = flag:ransom }
+				custom_tooltip = kehillah_aid_completes_ransom_tt
+			}
+			else = { custom_tooltip = kehillah_aid_completes_relief_tt }
+			hidden_effect = { scope:kehillah_aid_need = { kehillah_aid_complete_effect = yes } }
+		}
+		debug_log = "kehillah_aid_give_effect: a community answered a need"
+	}
+}
+
+# Scope: a Kehillah leader expected to answer the need on $NEED$. He says
+# openly that his community cannot help: a smaller fall in its name than
+# silence, the needy remember it, and he is no longer expected.
+kehillah_aid_refuse_effect = {
+	save_scope_as = kehillah_aid_refuser
+	primary_title = { save_scope_as = kehillah_aid_refuser_seat }
+	$NEED$ = { save_scope_as = kehillah_aid_need }
+	kehillah_giving_rep_change_effect = { AMOUNT = kehillah_giving_rep_refused_openly_value }
+	scope:kehillah_aid_need = {
+		if = {
+			limit = { is_alive = yes }
+			add_opinion = { target = scope:kehillah_aid_refuser modifier = kehillah_aid_refused_opinion }
+		}
+		hidden_effect = {
+			if = {
+				limit = { is_target_in_variable_list = { name = kehillah_aid_expected target = scope:kehillah_aid_refuser_seat } }
+				remove_list_variable = { name = kehillah_aid_expected target = scope:kehillah_aid_refuser_seat }
+			}
+			add_to_variable_list = { name = kehillah_aid_refusers target = scope:kehillah_aid_refuser_seat }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Scope: the needy character. The full sum is raised. The largest giver is
+# the need's patron: the needy remember him, his community gains Greatness,
+# and a redeemed captive with no Jewish household to return to may settle
+# with him (kehillah_mutual_aid.0003).
+kehillah_aid_complete_effect = {
+	save_scope_as = kehillah_aid_need
+	save_scope_value_as = { name = kehillah_aid_done_size value = var:kehillah_aid_size }
+	var:kehillah_aid_top_giver ?= {
+		save_scope_as = kehillah_aid_patron_seat
+		holder ?= { save_scope_as = kehillah_aid_patron }
+	}
+	var:kehillah_aid_for_title ?= { save_scope_as = kehillah_aid_done_title }
+	# The community that owes the patron: the needy one, or a captive's home.
+	if = {
+		limit = { exists = var:kehillah_aid_for_title }
+		var:kehillah_aid_for_title = { save_scope_as = kehillah_aid_grateful_title }
+	}
+	else_if = {
+		limit = { exists = var:kehillah_aid_home_title }
+		var:kehillah_aid_home_title = { save_scope_as = kehillah_aid_grateful_title }
+	}
+	# The patron's hook: on the needy leader, or on a captive's home leader
+	# (the captive himself if he has none). Daniel 2026-11-20 ("maybe being
+	# patron could give you a hook?"): only the patron of a COMPLETED appeal,
+	# never an ordinary gift (the 2026-11-12 crisis-aid rule still holds for
+	# those).
+	if = {
+		limit = { exists = scope:kehillah_aid_grateful_title.holder }
+		scope:kehillah_aid_grateful_title.holder = { save_scope_as = kehillah_aid_hook_target }
+	}
+	else = { save_scope_as = kehillah_aid_hook_target }
+	if = {
+		limit = { var:kehillah_aid_kind = flag:ransom }
+		kehillah_aid_tell_givers_effect = { TITLE = kehillah_aid_done_ransom_t DESC = kehillah_aid_done_ransom_d }
+		imprisoner ?= { save_scope_as = kehillah_aid_captor }
+		# Close first: the release below fires on_release_from_prison, which
+		# must not find the need still open.
+		kehillah_aid_close_effect = yes
+		scope:kehillah_aid_captor ?= { add_gold = scope:kehillah_aid_done_size }
+		if = {
+			limit = { is_imprisoned = yes }
+			release_from_prison = yes
+		}
+		if = {
+			limit = { exists = scope:kehillah_aid_patron }
+			add_opinion = { target = scope:kehillah_aid_patron modifier = kehillah_aid_redeemer_opinion }
+			if = {
+				limit = {
+					is_ruler = no
+					NOT = { employer ?= { is_jewish_character_trigger = yes } }
+				}
+				scope:kehillah_aid_patron = { trigger_event = { id = kehillah_mutual_aid.0003 days = 3 } }
+			}
+		}
+	}
+	else = {
+		kehillah_aid_tell_givers_effect = { TITLE = kehillah_aid_done_relief_t DESC = kehillah_aid_done_relief_d }
+		if = {
+			limit = { var:kehillah_aid_kind = flag:rebuild }
+			scope:kehillah_aid_done_title ?= { kehillah_crisis_recovery_progress_effect = { POINTS = kehillah_aid_rebuild_done_progress } }
+		}
+		kehillah_aid_close_effect = yes
+		scope:kehillah_aid_done_title ?= {
+			holder ?= { kehillah_change_pillar_effect = { PILLAR = prosperity AMOUNT = kehillah_aid_relief_prosperity } }
+		}
+		if = {
+			limit = { exists = scope:kehillah_aid_patron }
+			add_opinion = { target = scope:kehillah_aid_patron modifier = kehillah_aid_patron_opinion }
+		}
+		if = {
+			limit = { is_ai = no }
+			trigger_event = { id = kehillah_mutual_aid.0004 days = 1 }
+		}
+	}
+	# The debt of gratitude: the needy community's future appeals reach the
+	# patron's community wherever it is, and its AI answers them far more
+	# readily.
+	if = {
+		limit = {
+			exists = scope:kehillah_aid_grateful_title
+			exists = scope:kehillah_aid_patron_seat
+			NOT = { scope:kehillah_aid_grateful_title = scope:kehillah_aid_patron_seat }
+		}
+		scope:kehillah_aid_grateful_title = {
+			set_variable = { name = kehillah_aid_grateful_to value = scope:kehillah_aid_patron_seat years = kehillah_aid_gratitude_years }
+		}
+	}
+	scope:kehillah_aid_patron ?= {
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_aid_patron_greatness }
+		add_prestige = medium_prestige_gain
+		if = {
+			limit = {
+				exists = scope:kehillah_aid_hook_target
+				NOT = { this = scope:kehillah_aid_hook_target }
+				scope:kehillah_aid_hook_target = { is_alive = yes }
+				NOT = { has_hook = scope:kehillah_aid_hook_target }
+			}
+			add_hook = { type = favor_hook target = scope:kehillah_aid_hook_target }
+		}
+		if = {
+			limit = { is_ai = no }
+			send_interface_message = {
+				type = msg_kehillah_community_news
+				title = kehillah_aid_patron_t
+				desc = kehillah_aid_patron_d
+				left_icon = scope:kehillah_aid_need
+			}
+		}
+	}
+	debug_log = "kehillah_aid_complete_effect: a need was met"
+}
+
+# Scope: the needy character. Messages every giving community's leader
+# (players only) with $TITLE$/$DESC$; scope:kehillah_aid_need is the needy.
+kehillah_aid_tell_givers_effect = {
+	every_in_list = {
+		variable = kehillah_aid_givers
+		holder ?= {
+			if = {
+				limit = { is_ai = no }
+				send_interface_message = {
+					type = msg_kehillah_community_news
+					title = $TITLE$
+					desc = $DESC$
+					left_icon = scope:kehillah_aid_need
+				}
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Scope: the needy character. The need lapsed unmet. Unless $EXCUSED$ (the
+# need ended by no one's fault: a captive freed some other way, a needy
+# leader dead), every community that was expected and never answered
+# loses reputation and some Greatness, the needy hold it against its
+# leader, and its player is told with kehillah_aid_$MSG$_t/_d ("refused":
+# the appeal closed; "died": the captive died awaiting redemption). A
+# ransom already collected goes to the captive.
+kehillah_aid_lapse_effect = {
+	save_scope_as = kehillah_aid_need
+	if = {
+		limit = { always = $EXCUSED$ }
+		debug_log = "kehillah_aid_lapse_effect: a need ended by other means; no one is blamed"
+	}
+	else = {
+		every_in_list = {
+			variable = kehillah_aid_expected
+			holder ?= {
+				save_temporary_scope_as = kehillah_aid_silent
+				kehillah_giving_rep_change_effect = { AMOUNT = kehillah_giving_rep_refused_value }
+				save_temporary_scope_value_as = { name = kehillah_aid_silent_greatness value = kehillah_aid_refused_greatness_value }
+				kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = scope:kehillah_aid_silent_greatness }
+				if = {
+					limit = {
+						scope:kehillah_aid_need = { is_alive = yes }
+						NOT = { this = scope:kehillah_aid_need }
+					}
+					scope:kehillah_aid_need = { add_opinion = { target = scope:kehillah_aid_silent modifier = kehillah_aid_silent_opinion } }
+				}
+				if = {
+					limit = { is_ai = no }
+					send_interface_message = {
+						type = msg_kehillah_community_news_bad
+						title = kehillah_aid_$MSG$_t
+						desc = kehillah_aid_$MSG$_d
+						left_icon = scope:kehillah_aid_need
+					}
+				}
+			}
+		}
+		debug_log = "kehillah_aid_lapse_effect: a need lapsed unmet; the communities that ignored it are blamed"
+	}
+	if = {
+		limit = {
+			var:kehillah_aid_kind ?= flag:ransom
+			is_alive = yes
+			var:kehillah_aid_raised > 0
+		}
+		add_gold = var:kehillah_aid_raised
+	}
+	kehillah_aid_close_effect = yes
+}
+
+# Scope: the needy character. Clears the need.
+kehillah_aid_close_effect = {
+	remove_list_global_variable = { name = kehillah_aid_needs target = this }
+	if = { limit = { has_variable = kehillah_aid_kind } remove_variable = kehillah_aid_kind }
+	if = { limit = { has_variable = kehillah_aid_open } remove_variable = kehillah_aid_open }
+	if = { limit = { has_variable = kehillah_aid_reminder_wait } remove_variable = kehillah_aid_reminder_wait }
+	if = { limit = { has_variable = kehillah_aid_size } remove_variable = kehillah_aid_size }
+	if = { limit = { has_variable = kehillah_aid_raised } remove_variable = kehillah_aid_raised }
+	if = { limit = { has_variable = kehillah_aid_for_title } remove_variable = kehillah_aid_for_title }
+	if = { limit = { has_variable = kehillah_aid_home_title } remove_variable = kehillah_aid_home_title }
+	if = { limit = { has_variable = kehillah_aid_wide } remove_variable = kehillah_aid_wide }
+	if = { limit = { has_variable = kehillah_aid_envoy_bonus } remove_variable = kehillah_aid_envoy_bonus }
+	if = { limit = { has_variable = kehillah_aid_expected_count } remove_variable = kehillah_aid_expected_count }
+	if = { limit = { has_variable = kehillah_aid_expected_weight } remove_variable = kehillah_aid_expected_weight }
+	if = { limit = { has_variable = kehillah_aid_top_giver } remove_variable = kehillah_aid_top_giver }
+	if = { limit = { has_variable = kehillah_aid_top_amount } remove_variable = kehillah_aid_top_amount }
+	clear_variable_list = kehillah_aid_expected
+	clear_variable_list = kehillah_aid_givers
+	clear_variable_list = kehillah_aid_refusers
+	clear_variable_list = kehillah_aid_reminded
+}
+
+# ---------------------------------------------------------------------------
+# Yearly, for the world: needs that lapsed or whose subject died. Collected
+# first, then settled (never change a list while iterating it).
+kehillah_aid_yearly_sweep_effect = {
+	every_in_global_list = {
+		variable = kehillah_aid_needs
+		limit = {
+			OR = {
+				is_alive = no
+				NOT = { has_variable = kehillah_aid_open }
+			}
+		}
+		add_to_temporary_list = kehillah_aid_lapsed
+	}
+	every_in_list = {
+		list = kehillah_aid_lapsed
+		if = {
+			limit = { is_alive = no }
+			kehillah_aid_lapse_effect = { EXCUSED = yes MSG = refused }
+		}
+		else = {
+			kehillah_aid_lapse_effect = { EXCUSED = no MSG = refused }
+		}
+	}
+	# Reputation fades toward zero.
+	every_in_global_list = {
+		variable = kehillah_registered_communities
+		limit = { has_variable = kehillah_giving_reputation }
+		change_variable = { name = kehillah_giving_reputation multiply = kehillah_giving_rep_decay }
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Scope: a Kehillah leader. Quarterly.
+kehillah_aid_quarterly_effect = {
+	if = {
+		limit = { exists = primary_title }
+		save_scope_as = kehillah_aid_leader
+		primary_title = { save_scope_as = kehillah_aid_seat }
+		# 1. A community in Crisis Prosperity: an AI one asks its neighbours
+		#    for relief at once; a player is told it may write to them.
+		if = {
+			limit = {
+				primary_title = { var:kehillah_band_now_prosperity ?= 0 }
+				NOT = { has_variable = kehillah_aid_kind }
+			}
+			if = {
+				limit = {
+					is_ai = yes
+					primary_title = { NOT = { has_variable = kehillah_aid_relief_cooldown } }
+				}
+				primary_title = { set_variable = { name = kehillah_aid_relief_cooldown value = yes years = kehillah_aid_relief_cooldown_years } }
+				kehillah_aid_open_need_effect = { KIND = relief SIZE = kehillah_aid_relief_size WIDE = no }
+			}
+			else_if = {
+				limit = {
+					is_ai = no
+					primary_title = {
+						NOT = { has_variable = kehillah_aid_appeal_hint }
+						NOT = { has_variable = kehillah_aid_appeal_cooldown }
+					}
+				}
+				primary_title = { set_variable = { name = kehillah_aid_appeal_hint value = yes years = 5 } }
+				send_interface_message = {
+					type = msg_kehillah_community_news_bad
+					title = kehillah_aid_hint_t
+					desc = kehillah_aid_hint_d
+					left_icon = root
+				}
+			}
+		}
+		# 2. An AI community answers the needs it is expected to answer.
+		#    Reciprocity: a generous community's need is answered sooner.
+		if = {
+			limit = { is_ai = yes }
+			every_in_global_list = {
+				variable = kehillah_aid_needs
+				limit = {
+					save_temporary_scope_as = kehillah_aid_need
+					is_target_in_variable_list = { name = kehillah_aid_expected target = scope:kehillah_aid_seat }
+					scope:kehillah_aid_leader = {
+						kehillah_can_answer_aid_need_trigger = { NEED = scope:kehillah_aid_need }
+						gold >= kehillah_aid_my_share_value
+					}
+				}
+				save_temporary_scope_as = kehillah_aid_need
+				random = {
+					chance = 30
+					modifier = { add = 20 scope:kehillah_aid_leader = { has_trait = generous } }
+					modifier = { add = 15 scope:kehillah_aid_leader = { has_trait = compassionate } }
+					modifier = { add = -25 scope:kehillah_aid_leader = { has_trait = greedy } }
+					modifier = { add = 15 var:kehillah_aid_kind = flag:ransom }
+					modifier = { add = 10 scope:kehillah_aid_leader = { kehillah_aid_weight_value >= 2 } }
+					modifier = { add = 10 scope:kehillah_aid_leader = { kehillah_aid_weight_value >= 3 } }
+					modifier = { add = kehillah_aid_reciprocity_value }
+					modifier = {
+						add = 40
+						scope:kehillah_aid_seat = { kehillah_aid_grateful_to_need_trigger = { NEED = scope:kehillah_aid_need } }
+					}
+					modifier = {
+						exists = var:kehillah_aid_envoy_bonus
+						add = var:kehillah_aid_envoy_bonus
+					}
+					modifier = {
+						add = 10
+						var:kehillah_aid_for_title.holder ?= { domicile ?= { has_domicile_parameter = kehillah_has_kuppah } }
+					}
+					# 2026-11-22 (Daniel): a great community's appeal is answered;
+					# a community of no standing struggles to be heard.
+					modifier = {
+						add = kehillah_aid_greatness_crisis_chance
+						var:kehillah_aid_for_title ?= { has_variable = kehillah_var_greatness var:kehillah_var_greatness < kehillah_band_strained_threshold }
+					}
+					modifier = {
+						add = kehillah_aid_greatness_strained_chance
+						var:kehillah_aid_for_title ?= {
+							has_variable = kehillah_var_greatness
+							var:kehillah_var_greatness >= kehillah_band_strained_threshold
+							var:kehillah_var_greatness < kehillah_band_healthy_threshold
+						}
+					}
+					modifier = {
+						add = kehillah_aid_greatness_flourishing_chance
+						var:kehillah_aid_for_title ?= {
+							has_variable = kehillah_var_greatness
+							var:kehillah_var_greatness >= kehillah_band_flourishing_threshold
+							var:kehillah_var_greatness < kehillah_band_legendary_threshold
+						}
+					}
+					modifier = {
+						add = kehillah_aid_greatness_legendary_chance
+						var:kehillah_aid_for_title ?= { has_variable = kehillah_var_greatness var:kehillah_var_greatness >= kehillah_band_legendary_threshold }
+					}
+					# 2026-11-22 (she'elot slice 2): a community answers readily
+					# the community whose rulings it follows.
+					modifier = {
+						add = kehillah_aid_follower_chance
+						exists = var:kehillah_aid_for_title
+						scope:kehillah_aid_seat.var:kehillah_sheelah_follows ?= var:kehillah_aid_for_title
+					}
+					add_to_temporary_list = kehillah_aid_ai_picks
+				}
+			}
+			# Give after the loop: a gift can complete a need, which takes it
+			# off the global list.
+			every_in_list = {
+				list = kehillah_aid_ai_picks
+				save_temporary_scope_as = kehillah_aid_ai_need
+				save_temporary_scope_as = kehillah_aid_need
+				if = {
+					limit = {
+						kehillah_has_open_aid_need_trigger = yes
+						scope:kehillah_aid_leader = {
+							kehillah_can_answer_aid_need_trigger = { NEED = scope:kehillah_aid_ai_need }
+							gold >= kehillah_aid_my_share_value
+						}
+					}
+					scope:kehillah_aid_leader = {
+						kehillah_aid_give_effect = { NEED = scope:kehillah_aid_ai_need AMOUNT = kehillah_aid_my_share_value }
+					}
+				}
+			}
+		}
+		# 3. A player is reminded once of each appeal still unanswered.
+		else = {
+			every_in_global_list = {
+				variable = kehillah_aid_needs
+				limit = {
+					is_target_in_variable_list = { name = kehillah_aid_expected target = scope:kehillah_aid_seat }
+					NOT = { has_variable = kehillah_aid_reminder_wait }
+					NOT = { is_target_in_variable_list = { name = kehillah_aid_reminded target = scope:kehillah_aid_seat } }
+				}
+				save_temporary_scope_as = kehillah_aid_need
+				add_to_variable_list = { name = kehillah_aid_reminded target = scope:kehillah_aid_seat }
+				scope:kehillah_aid_leader = {
+					send_interface_message = {
+						type = msg_kehillah_community_news_bad
+						title = kehillah_aid_reminder_t
+						desc = kehillah_aid_reminder_d
+						left_icon = scope:kehillah_aid_need
+					}
+				}
+			}
+		}
+		# 4. The reputation shows on the leader.
+		kehillah_giving_rep_apply_effect = yes
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Scope: a Kehillah leader writing to the communities (kehillah_mutual_aid.
+# 0010): rebuilding while the crisis's Recovery is open, otherwise relief.
+# $WIDE$ = yes: scope:kehillah_aid_envoy carries it, and his diplomacy
+# makes the AI likelier to answer.
+kehillah_aid_appeal_effect = {
+	primary_title = { set_variable = { name = kehillah_aid_appeal_cooldown value = yes years = kehillah_aid_appeal_cooldown_years } }
+	if = {
+		limit = { kehillah_crisis_recovery_open_trigger = yes }
+		kehillah_aid_open_need_effect = { KIND = rebuild SIZE = $SIZE$ WIDE = $WIDE$ }
+	}
+	else = {
+		kehillah_aid_open_need_effect = { KIND = relief SIZE = $SIZE$ WIDE = $WIDE$ }
+	}
+	if = {
+		limit = {
+			always = $WIDE$
+			exists = scope:kehillah_aid_envoy
+		}
+		set_variable = { name = kehillah_aid_envoy_bonus value = scope:kehillah_aid_envoy.kehillah_aid_envoy_bonus_value }
+	}
+}
+
+# Scope: the leader of a community whose crisis has just been settled
+# (kehillah_crisis_neighbourhood_resolution_effect). A struck quarter asks
+# for rebuilding, an expelled community for help to resettle.
+kehillah_aid_crisis_need_effect = {
+	if = {
+		limit = {
+			NOT = { has_variable = kehillah_aid_kind }
+			primary_title ?= { var:kehillah_crisis_response ?= 4 }
+		}
+		kehillah_aid_open_need_effect = { KIND = exiles SIZE = kehillah_aid_exiles_size WIDE = no }
+	}
+	else_if = {
+		limit = {
+			NOT = { has_variable = kehillah_aid_kind }
+			primary_title ?= { var:kehillah_crisis_outcome ?= 4 }
+		}
+		kehillah_aid_open_need_effect = { KIND = rebuild SIZE = kehillah_aid_rebuild_size_value WIDE = no }
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Scope: a Kehillah leader. Changes his community's reputation for giving by
+# $AMOUNT$, within both bounds, and shows the size of the change.
+kehillah_giving_rep_change_effect = {
+	save_temporary_scope_value_as = { name = kehillah_rep_delta value = $AMOUNT$ }
+	if = {
+		limit = { scope:kehillah_rep_delta >= 9 }
+		custom_tooltip = kehillah_giving_rep_up_major_tt
+	}
+	else_if = {
+		limit = { scope:kehillah_rep_delta >= 5 }
+		custom_tooltip = kehillah_giving_rep_up_moderate_tt
+	}
+	else_if = {
+		limit = { scope:kehillah_rep_delta > 0 }
+		custom_tooltip = kehillah_giving_rep_up_minor_tt
+	}
+	else_if = {
+		limit = { scope:kehillah_rep_delta <= -9 }
+		custom_tooltip = kehillah_giving_rep_down_major_tt
+	}
+	else_if = {
+		limit = { scope:kehillah_rep_delta <= -5 }
+		custom_tooltip = kehillah_giving_rep_down_moderate_tt
+	}
+	else_if = {
+		limit = { scope:kehillah_rep_delta < 0 }
+		custom_tooltip = kehillah_giving_rep_down_minor_tt
+	}
+	hidden_effect = {
+		primary_title ?= {
+			if = {
+				limit = { NOT = { has_variable = kehillah_giving_reputation } }
+				set_variable = { name = kehillah_giving_reputation value = 0 }
+			}
+			change_variable = { name = kehillah_giving_reputation add = scope:kehillah_rep_delta }
+			clamp_variable = { name = kehillah_giving_reputation min = -100 max = 100 }
+		}
+		kehillah_giving_rep_apply_effect = yes
+	}
+}
+
+# Scope: a Kehillah leader. Exactly one reputation modifier, or none.
+kehillah_giving_rep_apply_effect = {
+	if = { limit = { has_character_modifier = kehillah_giving_renowned_modifier } remove_character_modifier = kehillah_giving_renowned_modifier }
+	if = { limit = { has_character_modifier = kehillah_giving_generous_modifier } remove_character_modifier = kehillah_giving_generous_modifier }
+	if = { limit = { has_character_modifier = kehillah_giving_stingy_modifier } remove_character_modifier = kehillah_giving_stingy_modifier }
+	if = { limit = { has_character_modifier = kehillah_giving_disgraced_modifier } remove_character_modifier = kehillah_giving_disgraced_modifier }
+	primary_title ?= { save_temporary_scope_as = kehillah_rep_seat }
+	if = {
+		limit = { exists = scope:kehillah_rep_seat.var:kehillah_giving_reputation }
+		if = {
+			limit = { scope:kehillah_rep_seat.var:kehillah_giving_reputation >= kehillah_giving_rep_renowned }
+			add_character_modifier = kehillah_giving_renowned_modifier
+		}
+		else_if = {
+			limit = { scope:kehillah_rep_seat.var:kehillah_giving_reputation >= kehillah_giving_rep_generous }
+			add_character_modifier = kehillah_giving_generous_modifier
+		}
+		else_if = {
+			limit = { scope:kehillah_rep_seat.var:kehillah_giving_reputation <= kehillah_giving_rep_disgraced }
+			add_character_modifier = kehillah_giving_disgraced_modifier
+		}
+		else_if = {
+			limit = { scope:kehillah_rep_seat.var:kehillah_giving_reputation <= kehillah_giving_rep_stingy }
+			add_character_modifier = kehillah_giving_stingy_modifier
+		}
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Scope: the prisoner (vanilla on_imprison; scope:imprisoner saved).
+kehillah_aid_on_imprison_effect = {
+	if = {
+		limit = { kehillah_is_captive_to_redeem_trigger = yes }
+		save_scope_as = kehillah_aid_captive
+		save_scope_value_as = {
+			name = kehillah_aid_ransom_size
+			value = {
+				value = ransom_cost_value
+				min = kehillah_aid_min_share
+				round = yes
+			}
+		}
+		kehillah_aid_open_need_effect = { KIND = ransom SIZE = scope:kehillah_aid_ransom_size WIDE = no }
+	}
+}
+
+# Scope: the released character (vanilla on_release_from_prison). Freed by
+# other means: no one is blamed; what was collected goes to him.
+kehillah_aid_on_release_effect = {
+	if = {
+		limit = {
+			var:kehillah_aid_kind ?= flag:ransom
+			is_target_in_global_variable_list = { name = kehillah_aid_needs target = this }
+		}
+		kehillah_aid_lapse_effect = { EXCUSED = yes MSG = refused }
+	}
+}
+
+# Scope: the dying character (vanilla on_death). A captive who dies in
+# chains is on the conscience of every community that never answered; any
+# other needy character's need simply ends.
+kehillah_aid_on_death_effect = {
+	if = {
+		limit = { kehillah_has_open_aid_need_trigger = yes }
+		if = {
+			limit = {
+				var:kehillah_aid_kind = flag:ransom
+				is_imprisoned = yes
+			}
+			kehillah_aid_lapse_effect = { EXCUSED = no MSG = died }
+		}
+		else = {
+			kehillah_aid_lapse_effect = { EXCUSED = yes MSG = refused }
+		}
+	}
+}
+
+# Scope: a Kehillah leader who has just taken refugees in
+# (kehillah_refugees_take_in_effect): the neighbours are asked to help house
+# them.
+kehillah_aid_refugees_taken_in_effect = {
+	kehillah_giving_rep_change_effect = { AMOUNT = kehillah_giving_rep_take_in }
+	hidden_effect = {
+		if = {
+			limit = { NOT = { has_variable = kehillah_aid_kind } }
+			kehillah_aid_open_need_effect = { KIND = refugees SIZE = kehillah_aid_refugee_size WIDE = no }
+		}
+	}
+}

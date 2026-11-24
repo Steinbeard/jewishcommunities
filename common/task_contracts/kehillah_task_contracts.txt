@@ -567,7 +567,8 @@ kehillah_loan_contract = {
 			is_alive = yes
 			NOT = { government_has_flag = government_is_kehillah }
 			NOT = { faith = root.faith }
-			NOT = { exists = var:kehillah_loan_amount_owed }
+			# 2026-11-20: vanilla loans (kehillah_community_loan_effects.txt).
+			NOT = { kehillah_owes_community_trigger = { TITLE = root.primary_title } }
 		}
 	}
 
@@ -585,10 +586,16 @@ kehillah_loan_contract = {
 	# contract since the 2026-09-17 chain overhaul was exposed to it. The
 	# open negotiation tally on the lender (set in on_accepted, removed by
 	# .0003 on either outcome) now also keeps the contract alive.
+	# 2026-11-20: the loan is a vanilla loan tagged with the community
+	# (kehillah_owes_community_trigger), no longer kehillah_loan_amount_owed.
 	valid_to_continue = {
+		task_contract_taker.primary_title ?= { save_temporary_scope_as = kehillah_tc_seat }
 		OR = {
-			task_contract_employer = {
-				exists = var:kehillah_loan_amount_owed
+			AND = {
+				exists = scope:kehillah_tc_seat
+				task_contract_employer = {
+					kehillah_owes_community_trigger = { TITLE = scope:kehillah_tc_seat }
+				}
 			}
 			task_contract_taker ?= {
 				has_variable = kehillah_loan_challenge_tally
@@ -597,8 +604,14 @@ kehillah_loan_contract = {
 	}
 
 	valid_to_keep = {
-		task_contract_employer = {
-			NOT = { exists = var:kehillah_loan_amount_owed }
+		task_contract_taker.primary_title ?= { save_temporary_scope_as = kehillah_tc_seat }
+		NOT = {
+			AND = {
+				exists = scope:kehillah_tc_seat
+				task_contract_employer = {
+					kehillah_owes_community_trigger = { TITLE = scope:kehillah_tc_seat }
+				}
+			}
 		}
 	}
 

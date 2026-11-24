@@ -1,0 +1,165 @@
+﻿# =====================================================================
+# By-name override of CK3 1.21's temple_in_jerusalem_01, the Temple in
+# Jerusalem (common/buildings/special_buildings/00_special_buildings.txt),
+# copied from 1.21.0.3. It is the Dome of the Rock's upgrade, which only a
+# Jewish holder can build: the rebuilt Temple.
+#
+# The one change: three building needs for the Temple service's offerings
+# (cattle, wine, grain), marked in the block. Everything else is vanilla.
+# Rebase on each patch (scripts/vanilla_rebase); docs/spec/2026-11-23-kashrut.md
+# section 13.
+# =====================================================================
+
+temple_in_jerusalem_01 = {
+	effect_desc = {
+		triggered_desc = {
+			trigger = { has_dlc_feature = legends_of_the_dead }
+			desc = building_funeral_effect_desc
+		}
+	}
+	construction_time = very_slow_construction_time
+
+	type_icon = "special_buildings/temple_in_jerusalem.dds"
+	
+	can_construct_potential = {
+		building_requirement_tribal = no
+	}
+	can_construct_showing_failures_only = {
+		holding_district_level_2_trigger = yes
+	}
+	
+	can_construct = {
+
+		custom_description = {
+			text = holy_site_building_trigger
+			barony = {
+				is_holy_site_of = scope:holder.faith
+			}
+		}
+		judaism_or_syncretic_with_judaism_trigger = { CHARACTER = scope:holder }
+		building_monument_tribal_trigger = yes
+	}
+	
+	is_enabled = {
+		custom_description = {
+			text = holy_site_jewish_or_holy_site_trigger
+			OR = {
+				custom_description = {
+					text = holy_site_building_trigger
+					barony = {
+						is_holy_site_of = scope:holder.faith
+					}
+				}
+				judaism_or_syncretic_with_judaism_trigger = { CHARACTER = scope:holder }
+			}
+		}
+	}
+	
+	show_disabled = yes
+	
+	cost_gold = 1000
+	cost_piety = 1000
+
+	character_modifier = {
+		monthly_piety_gain_per_knight_mult = 0.03
+		monthly_dynasty_prestige_mult = 0.05
+		character_capital_county_monthly_control_change_add = 0.1
+		martial_per_piety_level = 1
+		learning_per_prestige_level = 1
+		knight_effectiveness_mult = 0.2
+		same_faith_opinion = 5
+	}
+	
+	county_modifier = {
+		religious_tax_mult = 0.3
+	}
+
+	province_modifier = {
+		province_size_baseline_add = 40
+	}
+
+	on_complete = {
+		#Regular Mandala Boon
+		mandala_built_piety_duchy_building_t3_effect = yes
+	}
+	
+	ai_value = {
+		base = 10
+		ai_pious_building_preference_modifier = yes
+		modifier = { # Fill all building slots before going for special buildings
+			factor = 0
+			free_building_slots > 0
+		}
+		ai_special_district_modifier = { LEVEL = 2 }
+	}
+	
+
+	market_modifier = {
+		trade_good_incense_sell_price_mult = special_building_need_sell_price
+		trade_good_oil_sell_price_mult = special_building_need_sell_price
+	}
+	trade_good_need = {
+		trade_good = trade_good_incense
+		amount = special_building_need_amount
+		can_be_filled_multiple_times = 5
+
+		modifiers = {
+			county_modifier = {
+				prosperity_growth_factor = special_building_need_prosperity_high
+			}
+		}
+	}
+
+	trade_good_need = {
+		trade_good = trade_good_oil
+		amount = special_building_need_amount
+		can_be_filled_multiple_times = 5
+
+		modifiers = {
+			province_modifier = {
+				province_size_baseline_add = 10
+			}
+		}
+	}
+
+	# ---- Kehillah mod (2026-11-23): the Temple service's offerings ----
+	# Vanilla asks incense (the incense altar) and oil (the menorah). The
+	# service also needs beasts for the offerings, wine for the libations and
+	# flour for the showbread. Met, they add the holder's piety; unmet, they
+	# cost nothing. docs/spec/2026-11-23-kashrut.md section 13.
+	trade_good_need = {
+		trade_good = trade_good_cattle
+		amount = special_building_need_amount
+		can_be_filled_multiple_times = 3
+		modifiers = {
+			character_modifier = {
+				monthly_piety_gain_mult = 0.05
+			}
+		}
+	}
+	trade_good_need = {
+		trade_good = trade_good_wine
+		amount = special_building_need_amount
+		can_be_filled_multiple_times = 2
+		modifiers = {
+			character_modifier = {
+				monthly_piety_gain_mult = 0.02
+			}
+		}
+	}
+	trade_good_need = {
+		trade_good = trade_good_grain
+		amount = special_building_need_amount
+		modifiers = {
+			character_modifier = {
+				monthly_piety_gain_mult = 0.02
+			}
+		}
+	}
+	# ---- end of the mod's additions ----
+
+	flag = travel_point_of_interest_religious
+	flag = holy_building
+	flag = holy_building_judaism
+	flag = religious_studies_location
+}

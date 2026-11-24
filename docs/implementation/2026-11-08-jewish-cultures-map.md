@@ -364,3 +364,19 @@ instead is open, and listed below.
 7. **Dynamic cultures.** Console-set a county's culture to a hybrid Jewish culture, then repaint.
    The county should show pink and its card should name the hybrid.
 8. **`error.log`** stays clean after hovering both maps.
+
+## Vanilla `mustaarabi` retired into Mizrahi (addendum, 2026-11-23)
+
+**Status:** decided by Daniel 2026-11-23; supersedes nothing, extends the Mizrahi addendum above.
+
+CK3 1.21 added its own Jewish culture, `mustaarabi` (Arabic-speaking, `mena_*` graphics, its own
+name list). It is the people the 2026-11-09 addendum had already merged into Mizrahi (`bavlim`
+renamed), now returning under a vanilla key. Yemen (Teimani) and the Maghreb (Maaravi) are covered
+elsewhere, so it has no territory of its own left.
+
+Treated like `mustarab`: vanilla's definition stays (vanilla's Egyptian, Maghrebi and Yemeni
+character histories reference it, so it cannot be removed), nothing seeds or generates it, and
+`kehillah_convert_retired_jewish_cultures_effect` moves anyone of that culture to Mizrahi.
+
+**Open question:** whether Mizrahi should take `name_list_mustaarabi` and the `mena_*` graphics.
+Not changed here; Mizrahi keeps what it has.

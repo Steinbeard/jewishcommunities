@@ -1,0 +1,53 @@
+﻿# CK3 1.21 override of repay_and_end_loan_story_effect from
+# common/scripted_effects/00_scripted_effects.txt (2026-11-20). The vanilla
+# body is copied verbatim; the only Kehillah addition is the marked
+# kehillah_community_loan_repaid_effect call, which gives a Kehillah lender
+# the repayment reward the old S8 ledger paid
+# (kehillah_community_loan_effects.txt). Every repayment in the game runs
+# through this effect (repay_loan_decision, Demand Repayment accepted, the
+# merchant bailiff), so this one hook catches them all.
+#
+# Refresh this copy if vanilla changes the effect in a later patch (the
+# same convention as kehillah_forced_conversion_override.txt).
+
+repay_and_end_loan_story_effect = { # to handle repayment centrally
+	save_temporary_scope_as = loan_temp
+	var:lender = { save_temporary_scope_as = lender_temp }
+	story_owner = { save_temporary_scope_as = debtor_temp }
+	scope:lender_temp = {
+		send_interface_toast = {
+			type = event_toast_effect_neutral
+			title = loan_repaid_toast_title
+			right_icon = scope:debtor_temp
+			scope:debtor_temp = {
+				send_interface_toast = {
+					type = event_toast_effect_neutral
+					title = loan_repaid_toast_title
+					right_icon = scope:lender_temp
+					pay_short_term_gold = {
+						gold = scope:loan_temp.var:amount_owed
+						target = scope:lender_temp
+					}
+				}
+			}
+			if = {
+				limit = {
+					is_landless_merchant = yes
+				}
+				add_trait_xp = {
+					trait = lifestyle_merchant
+					track = creditor
+					value = lifestyle_merchant_xp_gain_minor_value
+				}
+				merchant_creditor_capstone_prestige_effect = yes
+				gdp_merchant_creditor_loan_acumen_effect = { GOLD = scope:loan_temp.var:amount_owed }
+			}
+			# KEHILLAH ADDITION: a community loan repaid.
+			if = {
+				limit = { scope:loan_temp = { has_variable = kehillah_lent_for } }
+				kehillah_community_loan_repaid_effect = yes
+			}
+		}
+	}
+	end_loan_story_effect = yes
+}

@@ -1,0 +1,79 @@
+﻿namespace = kehillah_sheelah_debug
+# =====================================================================
+# She'elot slices 2 and 3 (2026-11-22), console only. Fire on a Kehillah
+# leader (event kehillah_sheelah_debug.N <character id>).
+#   .1  Report: whom this community follows and how strongly, how many
+#       follow it, and its Greatness term.
+#   .2  Run the yearly tie step now (fade, cleanup, rite pull), ignoring
+#       the rite-pull cooldown.
+#   .3  Soak census (fire on anyone): letters sent, answered, rites taken up,
+#       and how many communities hold a tie, a strong tie, and a strong tie
+#       to another rite.
+# =====================================================================
+
+kehillah_sheelah_debug.1 = {
+	type = character_event
+	hidden = yes
+	orphan = yes
+	immediate = {
+		if = {
+			limit = { exists = primary_title.var:kehillah_sheelah_follows }
+			primary_title.var:kehillah_sheelah_follows = { save_scope_as = kehillah_debug_followed }
+			save_scope_value_as = { name = kehillah_debug_strength value = primary_title.var:kehillah_sheelah_follows_strength }
+			debug_log = "kehillah_sheelah_debug.1: follows (scope kehillah_debug_followed) at strength kehillah_debug_strength"
+		}
+		else = {
+			debug_log = "kehillah_sheelah_debug.1: follows no one"
+		}
+		save_scope_value_as = { name = kehillah_debug_followers value = kehillah_sheelah_follower_count_value }
+		save_scope_value_as = { name = kehillah_debug_follower_greatness value = kehillah_bd_follower_greatness_value }
+		debug_log = "kehillah_sheelah_debug.1: followers kehillah_debug_followers, Greatness term kehillah_debug_follower_greatness"
+		debug_log_scopes = yes
+	}
+}
+
+kehillah_sheelah_debug.2 = {
+	type = character_event
+	hidden = yes
+	orphan = yes
+	immediate = {
+		primary_title ?= { remove_variable = kehillah_sheelah_rite_pull_cooldown }
+		kehillah_sheelah_tie_yearly_effect = yes
+		debug_log = "kehillah_sheelah_debug.2: yearly tie step run"
+		debug_log_scopes = yes
+	}
+}
+
+kehillah_sheelah_debug.3 = {
+	type = character_event
+	hidden = yes
+	orphan = yes
+	immediate = {
+		save_scope_value_as = { name = kehillah_debug_letters value = { value = 0 if = { limit = { has_global_variable = kehillah_sheelah_soak_letters } value = global_var:kehillah_sheelah_soak_letters } } }
+		save_scope_value_as = { name = kehillah_debug_answers value = { value = 0 if = { limit = { has_global_variable = kehillah_sheelah_soak_answers } value = global_var:kehillah_sheelah_soak_answers } } }
+		save_scope_value_as = { name = kehillah_debug_adoptions value = { value = 0 if = { limit = { has_global_variable = kehillah_sheelah_soak_adoptions } value = global_var:kehillah_sheelah_soak_adoptions } } }
+		save_scope_value_as = {
+			name = kehillah_debug_ties
+			value = {
+				value = 0
+				every_in_global_list = { variable = kehillah_registered_communities limit = { exists = var:kehillah_sheelah_follows } add = 1 }
+			}
+		}
+		save_scope_value_as = {
+			name = kehillah_debug_strong
+			value = {
+				value = 0
+				every_in_global_list = {
+					variable = kehillah_registered_communities
+					limit = {
+						has_variable = kehillah_sheelah_follows_strength
+						var:kehillah_sheelah_follows_strength >= kehillah_sheelah_tie_strong
+					}
+					add = 1
+				}
+			}
+		}
+		debug_log = "kehillah_sheelah_debug.3: letters kehillah_debug_letters, answered kehillah_debug_answers, rites taken up kehillah_debug_adoptions, ties kehillah_debug_ties, strong kehillah_debug_strong"
+		debug_log_scopes = yes
+	}
+}

@@ -320,7 +320,13 @@ activity_kehillah_bet_din_conference = {
 	# worldwide by Learning/government alone, no distance bound, so guests
 	# can be arriving from much farther than camp_party's 1-week case
 	# assumes.
-	max_guest_arrival_delay_time = { months = 3 }
+	# LOWERED 3 -> 1 month, 2026-11-23 (Daniel: "why the 3 month wait?"):
+	# every invite rule but the Sanhedrin/Synod delegates is now bounded by
+	# diplomatic range, so the worldwide-guest reason above is gone. One month
+	# is vanilla's figure for local_examination and tournament. A guest who
+	# could not arrive in time is now less likely to accept at all
+	# (guest_join_chance, KEHILLAH_BET_DIN_GUEST_WOULD_BE_LATE).
+	max_guest_arrival_delay_time = { months = 1 }
 
 	# REWRITTEN 2026-09-17 (THE PANEL, this file's own header, has the
 	# full account): open_invite already covered scholars/adventurers
@@ -765,6 +771,48 @@ activity_kehillah_bet_din_conference = {
 				has_character_flag = kehillah_bet_din_ai_override
 			}
 			add = 10000
+		}
+	}
+
+	# ADDED 2026-11-23 (Daniel: "adjust acceptance logic for AI"). The
+	# activity had no guest_join_chance, so every invitee accepted at the
+	# engine default whatever their distance, learning or feelings for the
+	# host. Vanilla's shared modifiers supply opinion, rank, family, faith,
+	# epidemics, travel time and courtier duty; the rest is the Bet Din's own:
+	# scholars and rabbis want a seat, fellow leaders owe one another a hearing,
+	# and nobody sets out on a long road to a court that will open without them.
+	# A sitting is a religious duty, not a feast, so the base is higher than
+	# feast.txt's 10.
+	guest_join_chance = {
+		base = 25
+		base_activity_modifier = yes
+		activity_guest_shared_ai_accept_modifier = yes
+		activity_guest_health_ai_accept_modifier = yes
+
+		modifier = {
+			kehillah_rabbi_or_karaite_trigger = yes
+			add = 15
+			desc = KEHILLAH_BET_DIN_GUEST_RABBI
+		}
+		modifier = {
+			learning >= kehillah_bet_din_scholar_guest_learning_threshold
+			add = 10
+			desc = KEHILLAH_BET_DIN_GUEST_LEARNED
+		}
+		modifier = {
+			government_has_flag = government_is_kehillah
+			add = 10
+			desc = KEHILLAH_BET_DIN_GUEST_FELLOW_COMMUNITY
+		}
+		modifier = {
+			scope:minimal_travel_time > 45
+			add = -15
+			desc = KEHILLAH_BET_DIN_GUEST_LONG_ROAD
+		}
+		modifier = {
+			scope:estimated_arrival_diff_days < 0
+			add = -30
+			desc = KEHILLAH_BET_DIN_GUEST_WOULD_BE_LATE
 		}
 	}
 
