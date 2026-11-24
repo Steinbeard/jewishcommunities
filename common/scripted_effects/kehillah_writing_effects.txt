@@ -26,6 +26,12 @@ kehillah_writing_choose_project_effect = {
 	set_variable = { name = kehillah_writing_form value = flag:$FORM$ }
 	set_variable = { name = kehillah_book_genre value = flag:$GENRE$ }
 	set_variable = { name = kehillah_writing_spark_tier value = var:kehillah_spark_$DISC$_tier }
+	# A study course gives way to the book (the scheme starts a day later).
+	if = {
+		limit = { any_scheme = { type = kehillah_study_torah } }
+		custom_tooltip = kehillah_writing_ends_study_tt
+		hidden_effect = { kehillah_writing_end_study_effect = yes }
+	}
 }
 
 # 2026-11-24 sparks: an option's preview -- the tier, that writing uses the
@@ -109,8 +115,57 @@ kehillah_writing_start_effect = {
 		start_scheme = { type = kehillah_writing target_character = root }
 		trigger_event = { id = kehillah_writing.0011 days = 1 }
 	}
+	# 2026-11-24 (Daniel: "it should just give you an option to replace your
+	# current scheme"): another personal scheme is in the way -- ask whether to
+	# set it aside. The draft is kept for the answer; the spark is used up only
+	# when writing begins.
+	else_if = {
+		limit = {
+			is_ai = no
+			has_variable = kehillah_writing_form
+			piety >= kehillah_rabbi_book_piety_cost
+			any_scheme = { is_scheme_category = personal NOT = { scheme_type = kehillah_writing } }
+		}
+		trigger_event = kehillah_writing.0012
+	}
 	else = {
+		if = {
+			limit = { is_ai = no }
+			send_interface_toast = {
+				type = event_toast_text_bad
+				title = kehillah_writing_cannot_start_t
+				desc = kehillah_writing_cannot_start_desc
+				left_icon = root
+			}
+		}
 		kehillah_writing_clear_draft_effect = yes
+	}
+}
+
+# Scope: the author, from kehillah_writing.0012. Ends every other personal
+# scheme (a study course through its own cleanup).
+kehillah_writing_set_aside_schemes_effect = {
+	kehillah_writing_end_study_effect = yes
+	every_scheme = {
+		limit = { is_scheme_category = personal NOT = { scheme_type = kehillah_writing } }
+		end_scheme = yes
+	}
+}
+
+# 2026-11-24 (Daniel: "clicking write doesn't replace my current scheme"):
+# writing replaces a Studying Torah course, as the study panel's "choose
+# later" does -- the course ends and the book's progress is lost.
+kehillah_writing_end_study_effect = {
+	if = {
+		limit = { any_scheme = { type = kehillah_study_torah } }
+		remove_variable = kehillah_study_current_work_id
+		remove_variable = kehillah_study_choose_later
+		kehillah_study_torah_clear_offers_effect = yes
+		every_scheme = {
+			limit = { scheme_type = kehillah_study_torah }
+			end_scheme = yes
+		}
+		kehillah_study_sync_current_work_effect = yes
 	}
 }
 
