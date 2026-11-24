@@ -1113,9 +1113,12 @@ def upgrade_tooltip(disc: str) -> str:
     return f"""		tooltipwidget = {{
 			widget = {{
 				using = GeneralTooltipSetup
+				alwaystransparent = no
 				using = DefaultTooltipBackground
 				vbox = {{
-					margin = {{ 16 12 }}
+					set_parent_size_to_minimum = yes
+					ignoreinvisible = yes
+					margin = {{ 18 12 }}
 					spacing = 4
 					min_width = 300
 					text_single = {{
@@ -1219,12 +1222,12 @@ def card(disc: str) -> str:
 				}}""" for n in (1, 2, 3))
     return f"""	### {name}: a card in its own colour.
 	type kehillah_spark_card_{disc} = widget {{
-		size = {{ 186 350 }}
+		size = {{ 176 350 }}
 
 		### Drop shadow, offset down and right.
 		widget = {{
 			position = {{ 5 6 }}
-			size = {{ 182 344 }}
+			size = {{ 170 344 }}
 			alpha = 0.35
 			background = {{
 				texture = "gfx/interface/colors/white.dds"
@@ -1234,7 +1237,7 @@ def card(disc: str) -> str:
 
 		### The card.
 		widget = {{
-			size = {{ 182 344 }}
+			size = {{ 170 344 }}
 			background = {{ using = Background_Area_Dark }}
 			background = {{
 				texture = "gfx/interface/colors/white.dds"
@@ -1294,8 +1297,8 @@ def card(disc: str) -> str:
 					text_multi = {{
 						layoutpolicy_horizontal = expanding
 						autoresize = yes
-						max_width = 166
-						min_width = 166
+						max_width = 154
+						min_width = 154
 						text = "[Localize( Concatenate( 'kehillah_spark_title_', {form} ) )]"
 						using = Font_Size_Medium
 						align = hcenter|nobaseline
@@ -1313,14 +1316,14 @@ def card(disc: str) -> str:
 								visible = "[EqualTo_CFixedPoint( {potential}, '(CFixedPoint)2' )]"
 								size = {{ 22 22 }}
 								position = {{ 4 0 }}
-								texture = "gfx/interface/icons/artifact/artifact_book.dds"
+								texture = "gfx/interface/icons/artifact/artifact_chronicle.dds"
 								tooltip = "kehillah_spark_potential_2"
 							}}
 							icon = {{
 								visible = "[EqualTo_CFixedPoint( {potential}, '(CFixedPoint)1' )]"
 								size = {{ 22 22 }}
 								position = {{ 4 0 }}
-								texture = "gfx/interface/icons/artifact/artifact_book.dds"
+								texture = "gfx/interface/icons/artifact/artifact_chronicle.dds"
 								alpha = 0.55
 								tooltip = "kehillah_spark_potential_1"
 							}}
@@ -1328,7 +1331,7 @@ def card(disc: str) -> str:
 								visible = "[EqualTo_CFixedPoint( {potential}, '(CFixedPoint)0' )]"
 								size = {{ 22 22 }}
 								position = {{ 4 0 }}
-								texture = "gfx/interface/icons/artifact/artifact_book.dds"
+								texture = "gfx/interface/icons/artifact/artifact_chronicle.dds"
 								alpha = 0.15
 								tooltip = "kehillah_spark_potential_0"
 							}}
@@ -1343,8 +1346,8 @@ def card(disc: str) -> str:
 						visible = "[And( {work}.IsSet, Not( EqualTo_string( {work}.GetFlagName, 'none' ) ) )]"
 						layoutpolicy_horizontal = expanding
 						autoresize = yes
-						max_width = 166
-						min_width = 166
+						max_width = 154
+						min_width = 154
 						text = "[Concatenate( Localize( 'kehillah_spark_from' ), Localize( Concatenate( 'kehillah_lib_name_', {work}.GetFlagName ) ) )]"
 						default_format = "#weak"
 						align = hcenter|nobaseline
@@ -1365,8 +1368,8 @@ def card(disc: str) -> str:
 					text_multi = {{
 						layoutpolicy_horizontal = expanding
 						autoresize = yes
-						max_width = 160
-						min_width = 160
+						max_width = 150
+						min_width = 150
 						text = "kehillah_spark_empty_{disc}"
 						default_format = "#weak"
 						align = hcenter|nobaseline
@@ -1393,7 +1396,7 @@ def card(disc: str) -> str:
 				### Actions, on the player's own cards.
 				button_standard = {{
 					visible = "[And( {held}, And( {mine}, LessThan_CFixedPoint( {tier}, '(CFixedPoint)3' ) ) )]"
-					size = {{ 156 32 }}
+					size = {{ 146 32 }}
 					text = "[Concatenate( Localize( 'kehillah_spark_upgrade_button' ), Select_CString( EqualTo_CFixedPoint( {tier}, '(CFixedPoint)1' ), Concatenate( Localize( 'KEHILLAH_SPARK_COUNT_OPEN' ), Concatenate( IntToString( FixedPointToInt( {sv(f"'kehillah_spark_{disc}_routes_met_value'")} ) ), Concatenate( '/', Concatenate( IntToString( FixedPointToInt( {sv(f"'kehillah_spark_{disc}_routes_needed_value'")} ) ), Localize( 'KEHILLAH_SPARK_COUNT_CLOSE' ) ) ) ) ), Localize( 'KEHILLAH_SPARK_NOTHING' ) ) )]"
 					enabled = "[GetScriptedGui( 'kehillah_spark_upgrade_{disc}' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
 					onclick = "[GetScriptedGui( 'kehillah_spark_upgrade_{disc}' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
@@ -1414,11 +1417,21 @@ def card(disc: str) -> str:
 				}}
 				button_standard = {{
 					visible = "[And( {held}, {mine} )]"
-					size = {{ 156 32 }}
+					size = {{ 146 32 }}
 					text = "kehillah_spark_write_button"
 					enabled = "[GetScriptedGui( 'kehillah_spark_write' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
 					onclick = "[GetScriptedGui( 'kehillah_spark_write' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
 					tooltip = "kehillah_spark_write_button_tt"
+				}}
+			}}
+			### An empty slot is washed out, like an unfilled page.
+			widget = {{
+				visible = "[Not( {held} )]"
+				size = {{ 100% 100% }}
+				alwaystransparent = yes
+				background = {{
+					texture = "gfx/interface/colors/white.dds"
+					color = {{ 0.86 0.80 0.68 0.45 }}
 				}}
 			}}
 		}}
