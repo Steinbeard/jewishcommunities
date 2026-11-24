@@ -1,4 +1,6 @@
-# Roadmap
+﻿# Roadmap
+
+**Jewish Herald of redemption BUILT 2026-11-23; live check pending:** Jewish characters can take a Jewish-flavored counterpart to Proclaim the Living Word, retaining its requirements and costs. The Herald learns and, unless already held through the rite, adopts Messianic Hope, providing access to the existing mission subject to its own conditions. The personal adoption can replace another tenet. Vanilla?s Jewish Herald trait label is now Herald, leaving Gaon to the mod?s office. See [implementation](docs/implementation/2026-11-23-messianic-herald.md).
 
 **Forbidden Bet Din citations BUILT 2026-11-23; live check pending:** source choices warn when the convening community's rite bans the book. The citing judge gains cherem XP on citation whether or not the argument holds; see [implementation and checks](docs/implementation/2026-11-23-bet-din-forbidden-citations.md).
 
