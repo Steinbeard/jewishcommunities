@@ -21,6 +21,7 @@ WRITING = ("And( Scheme.MakeScope.Var( 'kehillah_is_writing_scheme' ).IsSet, "
 
 def main() -> None:
     text = GUI.read_text(encoding="utf-8-sig")
+    # icon has no margin_left (error.log, 2026-11-24 live test); the header hbox spacing separates it.
     if MARK in text:
         return
     plain = (T * 6 + f'visible = "[Not( {STUDY} )]"\n' + T * 6 + 'text = "SCHEME_WINDOW_ITEM_NAME"')
@@ -49,14 +50,12 @@ def main() -> None:
 {T*5}icon = {{
 {T*6}visible = "[And( {STUDY}, EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( 'kehillah_spark_study_new_value' ), '(CFixedPoint)1' ) )]"
 {T*6}size = {{ 28 28 }}
-{T*6}margin_left = 6
 {T*6}texture = "{spark_icon}"
 {T*6}tooltip = "kehillah_spark_scheme_study_tt"
 {T*5}}}
 {T*5}icon = {{
 {T*6}visible = "[{WRITING}]"
 {T*6}size = {{ 28 28 }}
-{T*6}margin_left = 6
 {T*6}texture = "{spark_icon}"
 {T*6}tooltip = "kehillah_spark_scheme_writing_tt"
 {T*5}}}
