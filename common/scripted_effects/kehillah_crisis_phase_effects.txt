@@ -52,6 +52,40 @@ kehillah_crisis_recovery_monthly_effect = {
  }
 }
 
+# --- The return to ordinary life (2026-11-23) ---
+# Daniel: after Spared or Quarter held the window showed no progress while the community waited
+# about two months for "Returning to Ordinary Life". The wait after the ruler's answer is now a
+# month count on the title, ticked by the situation's on_monthly, so the window can show it
+# (kehillah_crisis_ui_return_months_value). Scope: a community leader, in kehillah_crisis.0202,
+# where scope:kehillah_crisis_title and scope:kehillah_crisis_epoch are set.
+kehillah_crisis_schedule_return_effect = {
+ if = {
+  limit = { primary_title ?= { var:kehillah_crisis_situation ?= { kehillah_crisis_situation_link_valid_trigger = yes } } }
+  primary_title = { set_variable = { name = kehillah_crisis_return_months value = kehillah_crisis_return_months_value } }
+ }
+ # No live situation to count it: the old fixed delay.
+ else = { domicile.domicile_location.county.holder ?= { trigger_event = { id = kehillah_crisis.0220 days = 45 } } }
+}
+# Scope: the situation, monthly. At zero, the leader gets "Returning to Ordinary Life" (via .0220).
+kehillah_crisis_return_monthly_effect = {
+ if = {
+  limit = {
+   kehillah_crisis_situation_link_valid_trigger = yes
+   var:kehillah_crisis_title = { has_variable = kehillah_crisis_return_months }
+  }
+  var:kehillah_crisis_title = {
+   change_variable = { name = kehillah_crisis_return_months subtract = 1 }
+   if = {
+    limit = { var:kehillah_crisis_return_months <= 0 }
+    remove_variable = kehillah_crisis_return_months
+    save_scope_as = kehillah_crisis_title
+    save_scope_value_as = { name = kehillah_crisis_epoch value = var:kehillah_crisis_epoch }
+    holder ?= { trigger_event = kehillah_crisis.0220 }
+   }
+  }
+ }
+}
+
 # Scope: title; action awards remain tied to the active recovery of this exact title.
 kehillah_crisis_recovery_progress_effect = {
  if = {
