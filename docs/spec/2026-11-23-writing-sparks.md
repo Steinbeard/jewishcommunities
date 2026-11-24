@@ -1,6 +1,6 @@
 # Writing sparks
 
-**Status: BUILT 2026-11-23, Daniel's request and decisions. Source and xTiger checked; live test pending.** Supersedes the project-entry rules of [the writing scheme spec](2026-11-17-writing-a-sefer-scheme.md) (Player flow steps 2 and 4's "exceptional manuscript" route) and the greyed-out "near" projects of [its implementation](../implementation/2026-11-17-writing-sefer-scheme.md). The scheme phases, quality, chavrusa, ordinary and landmark outcomes carry forward unchanged except as stated here.
+**Status: SUPERSEDED 2026-11-24 by [version 2](2026-11-24-writing-sparks-v2.md)** (decisions 1–3 stand). Originally: BUILT 2026-11-23, Daniel's request and decisions. Supersedes the project-entry rules of [the writing scheme spec](2026-11-17-writing-a-sefer-scheme.md) (Player flow steps 2 and 4's "exceptional manuscript" route) and the greyed-out "near" projects of [its implementation](../implementation/2026-11-17-writing-sefer-scheme.md). The scheme phases, quality, chavrusa, ordinary and landmark outcomes carry forward unchanged except as stated here.
 
 ## Decisions (Daniel, 2026-11-23)
 

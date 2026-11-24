@@ -15,44 +15,59 @@ def read(path: str) -> str:
 
 class WritingFlowTest(unittest.TestCase):
     def test_project_choices_have_gates_and_localization(self) -> None:
-        events = read("events/kehillah_writing_events.txt")
+        # 2026-11-24: the project is chosen from held sparks (one per discipline)
+        # in the generated kehillah_spark.0001; the old per-form gate decides who
+        # may receive a spark in that form.
+        events = read("events/kehillah_spark_events.txt")
         triggers = read("common/scripted_triggers/kehillah_writing_triggers.txt")
-        loc = read("localization/english/kehillah_writing_l_english.yml")
-        forms = re.findall(r"kehillah_writing_choose_project_effect = \{ FORM = (\w+) GENRE = (\w+) \}", events)
-        self.assertEqual(len(forms), 20)
-        self.assertEqual(len({form for form, _ in forms}), 20)
         sparks = read("common/scripted_triggers/kehillah_writing_spark_generated_triggers.txt")
+        loc = read("localization/english/kehillah_writing_l_english.yml")
         spark_loc = read("localization/english/kehillah_writing_spark_generated_l_english.yml")
-        for form, _ in forms:
-            # 2026-11-23: a held spark replaces the old project gate, which now
-            # decides who may receive that spark.
+        forms = re.findall(r"kehillah_writing_choose_project_effect = \{ FORM = (\w+) GENRE = (\w+) DISC = (\w+) \}", events)
+        self.assertEqual(len(forms), 20)
+        self.assertEqual(len({form for form, _, _ in forms}), 20)
+        for form, _, disc in forms:
             self.assertIn(f"kehillah_writing_{form}_trigger = {{", triggers)
-            self.assertIn(f"trigger = {{ has_variable = kehillah_spark_{form} }}", events)
-            self.assertIn(f"kehillah_spark_option_hint_effect = {{ FORM = {form} APT = ", events)
             self.assertIn(f"kehillah_spark_can_hold_{form}_trigger = {{", sparks)
-            self.assertIn(f" kehillah_spark_new_{form}:0", spark_loc)
-        self.assertNotIn("show_as_unavailable", events)
+            self.assertIn(f"trigger = {{ kehillah_spark_holds_{form}_trigger = yes }}", events)
+            self.assertIn(f" kehillah_writing.{form}.tt:0", loc)
+            for tier in (1, 2, 3):
+                self.assertIn(f" kehillah_spark.0001.{form}.{tier}:0", spark_loc)
+        self.assertNotIn("kehillah_writing.0001 = {", read("events/kehillah_writing_events.txt"))
 
     def test_sparks_gate_and_are_used_up(self) -> None:
         decision = read("common/decisions/kehillah_rabbi_book_decisions.txt")
         effects = read("common/scripted_effects/kehillah_writing_effects.txt")
         scheme = read("common/schemes/scheme_types/kehillah_writing_scheme.txt")
         self.assertIn("kehillah_has_any_spark_trigger = yes", decision)
-        self.assertNotIn("kehillah_writing_ready_again_tt", decision)
+        self.assertIn("trigger_event = kehillah_spark.0001", decision)
         start = effects[effects.index("kehillah_writing_start_effect = {"):]
         self.assertLess(start.index("kehillah_spark_consume_current_effect = yes"),
                         start.index("		start_scheme = { type = kehillah_writing"))
         self.assertIn("var:kehillah_writing_spark_tier ?= 3", effects)
         self.assertIn("NOT = { var:kehillah_writing_spark_tier ?= 1 }", scheme)
+        self.assertNotIn("kehillah_spark_seed_effect", read("common/on_action/kehillah_writing_spark_on_actions.txt"))
         hooks = {
-            "common/scripted_effects/kehillah_library_effects.txt": "kehillah_spark_from_study_$TRACK$_effect",
-            "common/scripted_effects/kehillah_bet_din_scripted_effects.txt": "kehillah_spark_from_court_effect",
-            "common/scripted_effects/kehillah_sheelah_effects.txt": "kehillah_spark_from_letters_effect",
-            "common/scripted_effects/kehillah_machloket_effects.txt": "kehillah_spark_from_debate_effect",
-            "events/kehillah_sermon_events.txt": "kehillah_spark_from_sermon_effect",
+            "common/scripted_effects/kehillah_library_effects.txt": "kehillah_spark_from_study_effect = { WORK = $WORK$ TRACK = $TRACK$ }",
+            "common/scripted_effects/kehillah_bet_din_scripted_effects.txt": "DISC = talmudics ROUTE = ruled",
+            "common/scripted_effects/kehillah_sheelah_effects.txt": "DISC = talmudics ROUTE = answered",
+            "common/scripted_effects/kehillah_machloket_effects.txt": "DISC = hashkafa ROUTE = debated",
+            "events/kehillah_sermon_events.txt": "DISC = parshanut ROUTE = preached",
         }
         for path, call in hooks.items():
             self.assertIn(call, read(path), path)
+
+    def test_spark_ui_is_wired(self) -> None:
+        window = read("gui/kehillah_learning_window.gui")
+        cards = read("gui/kehillah_spark_cards.gui")
+        widget = read("gui/kehillah_scheme_widget.gui")
+        for disc in ("parshanut", "talmudics", "hashkafa"):
+            self.assertIn(f"kehillah_spark_card_{disc} = {{}}", window)
+            self.assertIn(f"type kehillah_spark_card_{disc} = vbox", cards)
+        self.assertIn("kehillah_spark_scheme_study_tt", widget)
+        self.assertIn("kehillah_is_writing_scheme", read("common/schemes/scheme_types/kehillah_writing_scheme.txt"))
+        self.assertIn("kehillah_spark_write = {", read("common/scripted_guis/kehillah_learning_gui.txt"))
+        self.assertEqual(cards.count("{"), cards.count("}"))
 
     def test_landmarks_are_finish_outcomes_and_names_are_unique(self) -> None:
         effects = read("common/scripted_effects/kehillah_writing_effects.txt")
