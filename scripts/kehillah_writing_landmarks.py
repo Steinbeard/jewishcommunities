@@ -117,9 +117,9 @@ def eligibility(key: str) -> list[str]:
         else:
             parts.append(f"kehillah_sefer_ambition_{work['ambition']}_trigger = yes")
     else:
-        # Fixed historical works circulate automatically at their catalog date.
-        # Until then, a scholar can fill the same niche in an alternate history.
-        parts.append(f"current_date < {work['year']}.1.1")
+        # 2026-11-24 (Daniel): a fixed work dated after the game's start stays
+        # open until someone writes it (kehillah_library_catalog.py marks the
+        # earlier ones written at the start); no closing year.
         parts.extend(EXTRA[key])
     thesis = work.get("writing_thesis_tenet")
     if thesis:
@@ -198,12 +198,12 @@ def main() -> None:
                     work = WORKS[key]
                     if kind == "open":
                         conditions = [f"NOT = {{ has_global_variable = kehillah_wk_{key}_written }}"]
-                        if not work.get("named"):
-                            conditions.append(f"current_date < {work['year']}.1.1")
                     else:
                         conditions = eligibility(key)[1:]
                     if len(keys) == 1:
                         status.extend("\t" + condition for condition in conditions)
+                    elif len(conditions) == 1:
+                        status.append("\t\t" + conditions[0])
                     else:
                         status.append("\t\tAND = { " + " ".join(conditions) + " }")
                 if len(keys) > 1:

@@ -239,12 +239,11 @@ def avail_lines(f, w, ind):
         out.append(f"{ind}has_global_variable = kehillah_wk_{f}_written")
     elif circulation_year(w) > 1:
         if writable_future(w):
-            out.extend([
-                f"{ind}OR = {{",
-                f"{ind}\tcurrent_date >= {circulation_year(w)}.1.1",
-                f"{ind}\thas_global_variable = kehillah_wk_{f}_written",
-                f"{ind}}}",
-            ])
+            # 2026-11-24 (Daniel): a dated landmark exists once written -- by
+            # history before the game's start (kehillah_sefer_mark_historical_
+            # works_effect) or by a scholar during it. It no longer appears by
+            # itself on its catalog year.
+            out.append(f"{ind}has_global_variable = kehillah_wk_{f}_written")
         else:
             out.append(f"{ind}current_date >= {circulation_year(w)}.1.1")
     return out
@@ -1253,12 +1252,13 @@ def write_study_effects(order, works):
     ]
     for f in order:
         w = works[f]
-        if not w.get("named"):
+        # 2026-11-24: dated landmarks too -- written by history before the start.
+        if not (w.get("named") or writable_future(w)):
             continue
         out += [
             "\tif = {",
             "\t\tlimit = {",
-            f"\t\t\tcurrent_year >= {w['year']}",
+            f"\t\t\tcurrent_year >= {w['year'] if w.get('named') else circulation_year(w)}",
             f"\t\t\tNOT = {{ has_global_variable = kehillah_wk_{f}_written }}",
             "\t\t}",
             f"\t\tset_global_variable = {{ name = kehillah_wk_{f}_written value = yes }}",

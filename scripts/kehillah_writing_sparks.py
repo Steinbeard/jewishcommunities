@@ -414,10 +414,8 @@ def niche_rite(key: str) -> str | None:
 
 
 def niche_open(key: str) -> list[str]:
-    conds = [f"NOT = {{ has_global_variable = kehillah_wk_{key}_written }}"]
-    if not WORKS[key].get("named"):
-        conds.append(f"current_date < {WORKS[key]['year']}.1.1")
-    return conds
+    # 2026-11-24: open until written, at any date.
+    return [f"NOT = {{ has_global_variable = kehillah_wk_{key}_written }}"]
 
 
 NICHES = landmarks.FORMS  # work key -> form
@@ -1007,8 +1005,7 @@ def loc() -> str:
             line = f"On first mastery, sparks a {dname} idea."
         out.append(f' kehillah_spark_bookline_{work}:0 "{line}"')
     for key, form in NICHES.items():
-        when = "" if WORKS[key].get("named") else f" #weak · open until {WORKS[key]['year']}#!"
-        out.append(f' kehillah_spark_path_{key}:0 "{NICHE_HINT[key]}{when}"')
+        out.append(f' kehillah_spark_path_{key}:0 "{NICHE_HINT[key]}"')
         for n, (_, label) in enumerate(niche_conditions(key), 1):
             out.append(f' kehillah_spark_nc_{key}_{n}:0 "{label}"')
     for disc in DISCS:

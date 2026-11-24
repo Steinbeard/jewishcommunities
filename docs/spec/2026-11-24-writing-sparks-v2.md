@@ -191,8 +191,9 @@ Debug events:
   - The header uses the titled first name ("Rav Isaac's Learning"), never "your".
   - Each tab has its own short intro on a dark plate clear of the portrait, with no name inside, which fixes "you has mastered".
   - The counts read "Works mastered" and "Sparks N / 3".
-- **Deferred: historical works open until written.** Removing "open until YEAR" means dated works must stop entering circulation on their catalog year. That lives in `scripts/kehillah_library_catalog.py` (`avail_lines`, `kehillah_sefer_mark_historical_works_effect`). Another session had uncommitted changes in that script and its outputs, so the change waits for it. Planned:
-  - dated works circulate only once `_written`;
-  - the one-time start marking covers dated works with a year up to the start;
-  - existing saves mark once, on a yearly global flag;
-  - landmark eligibility and spark paths drop their `current_date < YEAR`.
+- **Historical works open until written. BUILT later the same night,** after the other session's reread work was committed:
+  - In `scripts/kehillah_library_catalog.py`, each of the 26 dated landmark works circulates only once `kehillah_wk_<key>_written` is set. Before, it appeared on its catalog year by itself.
+  - `kehillah_sefer_mark_historical_works_effect`, run once at game start, now also marks dated works whose year is no later than the start.
+  - Older saves mark once on the first yearly tick (`kehillah_sefer_dated_marked`, `common/on_action/kehillah_writing_spark_on_actions.txt`), since those works were already circulating there.
+  - Landmark eligibility, open triggers and spark paths no longer carry `current_date < YEAR`, and the path titles drop "open until".
+  - Consequence: after the start, only a scholar can write these books, whether the player, an AI, or the historical author. A historical author's AI pass makes that likely when he lives.
