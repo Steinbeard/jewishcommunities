@@ -1,0 +1,9 @@
+**Status:** Dynamic Quarter site experiment wired 2026-11-24; source and xTiger checked, live CK3 check pending. Extends [compact trade sites](2026-11-24-quarter-compact-trade-sites.md) and supersedes its decision to expose all seven sites at Synagogue tier 1.
+
+# Trade sites unlocked by Synagogue growth
+
+Vanilla Estates use `domicile_external_slots_capacity_add` on their main building track to add external building sites as the Estate grows. The Quarter now tries that same mechanism within its fixed seven-position scene. Three seeded institutions and the seeded entrance remain available from the start. Synagogue tier 1 grants capacity for five external sites, leaving one open trade site; tiers 2 and 3 each add one capacity. At tier 3 all three optional trade sites are available. Tiers 4 and 5 improve the Synagogue without adding further pins.
+
+The Kahal House still governs how many trade families may operate, one per tier to a maximum of three. Actual construction therefore needs both an unlocked physical site and a trade allowance. Gates continue to upgrade the seeded entrance and consume no trade allowance. No additional sprite or background position is required: the previously authored sites 5, 6 and 7 appear in order.
+
+This experiment gives a new Quarter a visible growth path while retaining the compact developed composition. A level-3 Worms Synagogue should retain all three optional sites. Saves with trade buildings in sites 6 or 7 while their Synagogue is below the matching tier need a live compatibility check; a fresh Quarter is the cleanest trial. After restarting CK3, inspect a newly founded or level-1 Quarter, then upgrade the Synagogue to levels 2 and 3 and confirm that one new pin appears at each stage, with existing seeded buildings and Gates intact. The static artwork preview cannot establish the engine's dynamic pin behavior.
