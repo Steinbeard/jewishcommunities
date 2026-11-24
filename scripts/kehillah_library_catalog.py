@@ -2967,6 +2967,12 @@ def bench_effect_lines(order, works):
     return out
 
 
+# Works the Bet Din ranks below their standing when naming its authority:
+# each needs kehillah_din_cite_standing_<work> in
+# common/script_values/kehillah_bet_din_sources_values.txt.
+CITE_WEAKER_WORKS = {"work_mishnah"}
+
+
 def write_citation_files(order, works):
     trig = HEADER + [
         "# The Bet Din docket by order of the Mishnah (2026-11-11). Scope: a judge.",
@@ -3008,10 +3014,14 @@ def write_citation_files(order, works):
             if not c:
                 continue
             st = f"kehillah_lib_standing_{f}"
+            # 2026-11-23 (Daniel): the Mishnah is a weaker authority than the
+            # Talmuds. It ranks below its own standing when the court names a
+            # grounded authority (kehillah_bet_din_sources_values.txt).
+            gst = f"kehillah_din_cite_standing_{f}" if f in CITE_WEAKER_WORKS else st
             eff += [
                 "\tif = {",
-                f"\t\tlimit = {{ {c} {st} > local_var:kehillah_din_best }}",
-                f"\t\tset_local_variable = {{ name = kehillah_din_best value = {st} }}",
+                f"\t\tlimit = {{ {c} {gst} > local_var:kehillah_din_best }}",
+                f"\t\tset_local_variable = {{ name = kehillah_din_best value = {gst} }}",
                 f"\t\tscope:kehillah_din_cite_activity = {{ set_variable = {{ name = kehillah_din_cite_grounded value = flag:{f} }} }}",
                 "\t}",
             ]
