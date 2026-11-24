@@ -74,3 +74,74 @@ kehillah_nagid_dismiss_interaction = {
 
 	ai_will_do = { base = 0 }
 }
+
+# The seat leader petitions the ruler; acceptance explains political preferences.
+kehillah_ask_nagid_interaction = {
+ icon = council
+ category = interaction_category_diplomacy
+ common_interaction = no
+ use_diplomatic_range = no
+ popup_on_receive = yes
+ desc = kehillah_ask_nagid_interaction_desc
+ notification_text = kehillah_ask_nagid_interaction_notification
+ ai_min_reply_days = 3
+ ai_max_reply_days = 7
+ is_shown = {
+  scope:actor = { is_ai = no government_has_flag = government_is_kehillah }
+  scope:actor.domicile.domicile_location.county.holder.top_liege ?= scope:recipient
+  scope:recipient = { NOT = { kehillah_realm_has_nagid_office_trigger = yes } }
+ }
+ is_valid_showing_failures_only = {
+  scope:actor = {
+   kehillah_is_realm_seat_trigger = yes
+   custom_tooltip = { text = kehillah_nagid_needs_qualified_tt kehillah_nagid_personally_qualified_trigger = yes }
+   custom_tooltip = { text = kehillah_nagid_petition_healthy_tt primary_title = { kehillah_standing_value >= kehillah_nagid_retain_standing } }
+   custom_tooltip = { text = kehillah_ask_nagid_cooldown_tt NOT = { has_variable = kehillah_nagid_petition_cooldown } }
+  }
+  scope:recipient = {
+   custom_tooltip = { text = kehillah_ask_nagid_no_law_tt kehillah_can_hold_settlement_law_trigger = yes }
+   custom_tooltip = { text = kehillah_nagid_petition_policy_tt kehillah_nagid_office_may_persist_trigger = yes }
+  }
+ }
+ ai_accept = {
+  base = -30
+  opinion_modifier = { who = scope:recipient opinion_target = scope:actor multiplier = 1 desc = AI_OPINION_REASON }
+  modifier = { add = 25 desc = kehillah_nagid_accept_favored scope:recipient = { kehillah_ruler_favors_jews_trigger = yes } }
+  modifier = { add = 25 desc = kehillah_nagid_accept_protector scope:recipient = { kehillah_outlook_protector_trigger = yes } }
+  modifier = { add = 20 desc = kehillah_nagid_accept_flourishing scope:actor.primary_title = { kehillah_standing_value >= kehillah_nagid_found_standing } }
+  modifier = { add = 15 desc = kehillah_nagid_accept_mena scope:recipient = { culture_has_mena_heritage_pillar_trigger = yes } }
+  modifier = { add = 10 desc = kehillah_nagid_accept_greedy scope:recipient = { has_trait = greedy } }
+  modifier = { add = -20 desc = kehillah_nagid_accept_zealous scope:recipient = { has_trait = zealous } }
+ }
+ on_accept = {
+  scope:actor = { save_scope_as = kehillah_nagid_seat_leader }
+  scope:recipient = {
+   save_scope_as = kehillah_nagid_host
+   if = {
+    limit = {
+     NOT = { kehillah_realm_has_nagid_office_trigger = yes }
+     kehillah_nagid_office_may_persist_trigger = yes
+     kehillah_can_hold_settlement_law_trigger = yes
+     scope:actor = {
+      is_alive = yes
+      kehillah_is_realm_seat_trigger = yes
+      kehillah_nagid_personally_qualified_trigger = yes
+      primary_title = { kehillah_standing_value >= kehillah_nagid_retain_standing }
+      domicile.domicile_location.county.holder.top_liege ?= scope:recipient
+     }
+    }
+    kehillah_nagid_found_office_effect = yes
+    if = { limit = { is_ai = yes } kehillah_nagid_appoint_and_pick_effect = yes }
+    else = { trigger_event = kehillah_nagid.0001 }
+   }
+   else = {
+    scope:actor = { send_interface_message = { type = msg_kehillah_community_news_bad title = kehillah_nagid_petition_expired_t desc = kehillah_nagid_petition_expired_d left_icon = scope:recipient } }
+   }
+  }
+ }
+ on_decline = {
+  scope:actor = { set_variable = { name = kehillah_nagid_petition_cooldown value = yes years = kehillah_nagid_petition_cooldown_years } }
+  custom_tooltip = kehillah_nagid_petition_declined_tt
+ }
+ ai_will_do = { base = 0 }
+}
