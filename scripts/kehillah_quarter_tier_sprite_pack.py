@@ -3,8 +3,8 @@
 Run: python scripts/kehillah_quarter_tier_sprite_pack.py
 
 The sheet art is retained unchanged. Each generated sprite is placed on a
-transparent 512px canvas with one scale shared by every tier of its family,
-so upgrading visibly grows the building without moving its ground baseline.
+transparent 512px canvas with one scale shared by every tier of its family.
+Tier-specific vertical offsets keep smaller buildings near their slot labels.
 """
 
 from pathlib import Path
@@ -31,21 +31,36 @@ FAMILIES = {
 }
 MAX_BOUNDS = {
     "synagogue": (420, 350),
-    "beit_midrash": (370, 325),
-    "kahal_house": (340, 290),
-    "hekdesh": (345, 275),
-    "market_stalls": (370, 230),
-    "workshops": (350, 275),
-    "bankers_row": (330, 275),
-    "funduq": (365, 285),
-    "wall": (350, 260),
+    "beit_midrash": (450, 390),
+    "kahal_house": (390, 330),
+    "hekdesh": (430, 335),
+    "market_stalls": (450, 280),
+    "workshops": (430, 335),
+    "bankers_row": (380, 320),
+    "funduq": (430, 335),
+    "wall": (400, 300),
 }
 MANUAL_CUTS = {
     ("beit_midrash", "mena"): (413, 790, 1180, 1577),
     ("wall", "mena"): (395, 830, 1320),
 }
 SIZE = 512
-BOTTOM_MARGIN = 22
+# CK3 puts a slot's label near its top, then maps the full 512px sprite
+# canvas into that slot. Earlier art sat on the canvas bottom, leaving a
+# large empty band between labels and low-tier buildings. These margins
+# lift each painted building while allowing later tiers to grow downward.
+BOTTOM_MARGIN = {
+    "synagogue": (35, 35, 35, 35, 35),
+    "beit_midrash": (200, 180, 160, 140, 120),
+    "kahal_house": (200, 170, 140),
+    "hekdesh": (220, 185, 150),
+    "market_stalls": (185, 175, 165),
+    "workshops": (220, 185, 150),
+    "bankers_row": (190, 165, 140),
+    "funduq": (205, 180, 155),
+    "wall": (210, 190, 165, 135),
+}
+MAIN_WIDTH_CORRECTION = 0.72
 
 
 def visible_runs(alpha: np.ndarray, expected: int) -> list[tuple[int, int]]:
@@ -106,10 +121,19 @@ def pack(cells: list[Image.Image], family: str, region: str) -> list[Image.Image
     )
     packed = []
     for index, cell in enumerate(cells):
-        size = (max(1, round(cell.width * scale)), max(1, round(cell.height * scale)))
+        width = cell.width * scale
+        if family == "synagogue":
+            # CK3's main slot is 28% wide but only 34.5% high; mapping a
+            # square texture into it otherwise makes the hall look squat.
+            width *= MAIN_WIDTH_CORRECTION
+        size = (max(1, round(width)), max(1, round(cell.height * scale)))
         cell = cell.resize(size, Image.Resampling.LANCZOS)
         canvas = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
-        canvas.alpha_composite(cell, ((SIZE - cell.width) // 2, SIZE - BOTTOM_MARGIN - cell.height))
+        bottom = BOTTOM_MARGIN[family][index]
+        y = SIZE - bottom - cell.height
+        if y < 0:
+            raise ValueError(f"{family} {region} stage {index} does not fit its canvas")
+        canvas.alpha_composite(cell, ((SIZE - cell.width) // 2, y))
         alpha = canvas.getchannel("A")
         mask_alpha = alpha.point(lambda value: 255 if value > 40 else 0)
         if family == "wall" and index == 0:
