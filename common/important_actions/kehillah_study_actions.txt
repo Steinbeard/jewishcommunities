@@ -1,0 +1,51 @@
+﻿# A Sefer to Study (2026-11-24, Daniel: "top-bar notifications that direct the
+# player on what to do. Jewish players who could study a sefer should have a
+# notification that tells them that, and clicking on it should open the study
+# selector"). While the player could begin a course of study and is reading
+# nothing, the top bar suggests it; a click opens the Learn Torah decision
+# (common/decisions/kehillah_learn_torah_decisions.txt), whose window is the
+# library and shelf picker. Opened as vanilla's action_take_decision opens a
+# decision.
+#
+# The conditions mirror the decision's is_shown and is_valid. Its
+# is_valid_showing_failures_only needs the library picked in the window, so
+# can_execute_decision cannot be used here. Not while writing (the study
+# course would replace the book in hand).
+action_kehillah_study_available = {
+	type = action
+	icon = action_take_decision
+	priority = 110
+
+	check_create_action = {
+		if = {
+			limit = {
+				is_jewish_character_trigger = yes
+				OR = {
+					government_has_flag = government_is_kehillah
+					is_ruler = yes
+					has_government = landless_adventurer_government
+				}
+				is_adult = yes
+				is_imprisoned = no
+				kehillah_torah_reader_eligible_trigger = yes
+				kehillah_study_torah_has_accessible_library_trigger = { CHARACTER = root }
+				NOT = { any_scheme = { type = kehillah_study_torah } }
+				NOT = { kehillah_writing_busy_trigger = yes }
+				can_start_scheme = {
+					type = kehillah_study_torah
+					target_character = root
+				}
+				piety >= kehillah_learn_torah_piety_cost
+			}
+			try_create_important_action = {
+				important_action_type = action_kehillah_study_available
+				actor = root
+				decision = decision:kehillah_learn_torah_decision
+			}
+		}
+	}
+
+	effect = {
+		scope:decision = { open_view_data = decision_detail }
+	}
+}
