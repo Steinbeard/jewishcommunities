@@ -1,144 +1,401 @@
-# Military community-safety dashboard. The content block belongs inside the native scrollbox.
-# Peacetime planning: background incident risk, its pressures and protection,
-# then links to existing levers. An active crisis lives in its own situation.
+# Military > Community Safety. The content block belongs inside the native scrollbox.
+# 2026-11-25 dashboard (docs/implementation/2026-11-25-community-safety-dashboard.md):
+# an emblem for the danger band, a balance bar of what pushes the danger up
+# against what holds it down, then a card per category with its own breakdown
+# and the levers that improve it. An active crisis lives in its own situation.
 types KehillahCrisis {
- # A crisis card: the situation's icon, name and phase; click to open its window.
- type kehillah_safety_situation_card = button_standard {
-  layoutpolicy_horizontal = expanding
-  size = { 0 62 }
-  onclick = "[ToggleGameViewData( Situation.GetWindowName, Situation.GetID )]"
-  tooltip = "kehillah_safety_open_situation_tt"
-  using = tooltip_ws
-  hbox = {
-   size = { 100% 100% }
-   margin = { 10 0 }
-   spacing = 10
-   icon = { size = { 46 46 } texture = "[Situation.GetIcon]" alwaystransparent = yes }
-   vbox = {
-    layoutpolicy_horizontal = expanding
-    text_single = { layoutpolicy_horizontal = expanding text = "[Situation.GetNameNoTooltip]" default_format = "#high;bold" alwaystransparent = yes }
-    text_single = { layoutpolicy_horizontal = expanding text = "kehillah_safety_situation_phase" alwaystransparent = yes }
-   }
-   text_single = { text = "kehillah_safety_open_situation" default_format = "#clickable" alwaystransparent = yes }
-  }
- }
+	# A crisis card: the situation's icon, name and phase; click to open its window.
+	type kehillah_safety_situation_card = button_standard {
+		layoutpolicy_horizontal = expanding
+		size = { 0 62 }
+		onclick = "[ToggleGameViewData( Situation.GetWindowName, Situation.GetID )]"
+		tooltip = "kehillah_safety_open_situation_tt"
+		using = tooltip_ws
+		hbox = {
+			size = { 100% 100% }
+			margin = { 10 0 }
+			spacing = 10
+			icon = { size = { 46 46 } texture = "[Situation.GetIcon]" alwaystransparent = yes }
+			vbox = {
+				layoutpolicy_horizontal = expanding
+				text_single = { layoutpolicy_horizontal = expanding text = "[Situation.GetNameNoTooltip]" default_format = "#high;bold" alwaystransparent = yes }
+				text_single = { layoutpolicy_horizontal = expanding text = "kehillah_safety_situation_phase" alwaystransparent = yes }
+			}
+			text_single = { text = "kehillah_safety_open_situation" default_format = "#clickable" alwaystransparent = yes }
+		}
+	}
 
- type kehillah_crisis_military_panel = vbox {
-  layoutpolicy_horizontal = expanding
-  layoutpolicy_vertical = expanding
-  visible = "[And(GetScriptedGui('kehillah_crisis_visible').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End), Not(GetVariableSystem.Exists('kehillah_crisis_armies')))]"
-  scrollbox = {
-   layoutpolicy_horizontal = expanding
-   layoutpolicy_vertical = expanding
-   blockoverride "scrollbox_content" {
-    vbox = { layoutpolicy_horizontal = expanding spacing = 12 margin = { 8 12 }
+	# One step of the band ladder under the emblem.
+	type kehillah_safety_band_step = vbox {
+		spacing = 2
+		block "step_bar" {}
+		block "step_label" {}
+	}
 
-     ### CRISES UNDER WAY: a card per open situation, each opening its window.
-     vbox = { layoutpolicy_horizontal = expanding spacing = 8 margin = { 14 14 }
-      visible = "[GetScriptedGui('kehillah_safety_any_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
-      background = { using = Background_Area_Dark }
-      text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "kehillah_safety_live_header" default_format = "#high;bold" }
-      vbox = { layoutpolicy_horizontal = expanding
-       visible = "[GetScriptedGui('kehillah_safety_attack_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
-       kehillah_safety_situation_card = { datacontext = "[GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_crisis_situation').Situation]" }
-      }
-      vbox = { layoutpolicy_horizontal = expanding
-       visible = "[GetScriptedGui('kehillah_safety_trial_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
-       kehillah_safety_situation_card = { datacontext = "[GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_trial_situation').Situation]" }
-      }
-      vbox = { layoutpolicy_horizontal = expanding
-       visible = "[GetScriptedGui('kehillah_safety_decree_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
-       kehillah_safety_situation_card = { datacontext = "[GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_decree_situation').Situation]" }
-      }
-     }
+	# Four pips over a 0-4 progressbar: three dark dividers cut it into steps.
+	type kehillah_safety_pips = widget {
+		size = { 68 10 }
+		block "pips_bar" {}
+		icon = { size = { 2 10 } position = { 16 0 } texture = "gfx/interface/colors/white.dds" color = { 0.05 0.05 0.05 1 } alwaystransparent = yes }
+		icon = { size = { 2 10 } position = { 33 0 } texture = "gfx/interface/colors/white.dds" color = { 0.05 0.05 0.05 1 } alwaystransparent = yes }
+		icon = { size = { 2 10 } position = { 50 0 } texture = "gfx/interface/colors/white.dds" color = { 0.05 0.05 0.05 1 } alwaystransparent = yes }
+	}
 
+	# A category card: a colour strip matching its segment in the balance bar,
+	# an icon, the name, a four-pip meter and a short status line. Hover shows
+	# the category's own breakdown; levers that improve it sit underneath.
+	type kehillah_safety_card = vbox {
+		layoutpolicy_horizontal = expanding
+		spacing = 4
+		margin = { 0 0 }
+		margin_bottom = 6
+		background = { using = Background_Area }
+		using = tooltip_ws
+		block "card_tooltip" {}
 
+		hbox = {
+			layoutpolicy_horizontal = expanding
+			spacing = 8
+			margin_right = 8
+			icon = {
+				size = { 4 52 }
+				texture = "gfx/interface/colors/white.dds"
+				alwaystransparent = yes
+				block "card_color" { color = { 0.5 0.5 0.5 1 } }
+			}
+			icon = {
+				size = { 44 44 }
+				alwaystransparent = yes
+				block "card_icon" {}
+			}
+			vbox = {
+				layoutpolicy_horizontal = expanding
+				spacing = 3
+				text_single = {
+					layoutpolicy_horizontal = expanding
+					max_width = 170
+					default_format = "#high"
+					alwaystransparent = yes
+					block "card_name" {}
+				}
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					block "card_pips" {}
+					expand = {}
+				}
+				text_single = {
+					layoutpolicy_horizontal = expanding
+					max_width = 170
+					using = Font_Size_Small
+					default_format = "#weak"
+					alwaystransparent = yes
+					block "card_sub" {}
+				}
+			}
+		}
+		block "card_actions" {}
+	}
 
-     ### AMBIENT INCIDENT RISK: one status; exact factors live in its tooltip.
-     vbox = { layoutpolicy_horizontal = expanding spacing = 8 margin = { 14 14 }
-      background = { using = Background_Area_Dark }
-      # 2026-11-10: the same danger breakdown as the realm view and the inspector.
-      tooltipwidget = { kehillah_danger_breakdown_tooltip = { datacontext = "[GetPlayer.GetPrimaryTitle]" } }
-      using = tooltip_ws
-      text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "kehillah_safety_danger_header" default_format = "#high;bold" }
-      hbox = { layoutpolicy_horizontal = expanding spacing = 12
-       text_single = { text = "[GetPlayer.Custom('KehillahDangerBand')]" using = Font_Size_Big }
-       text_single = { text = "kehillah_safety_danger_chance" }
-       expand = {}
-      }
-      hbox = { layoutpolicy_horizontal = expanding spacing = 4
-       visible = "[Not(GetScriptedGui('kehillah_safety_any_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End))]"
-       vbox = { spacing = 3
-        progressbar_green = { size = { 92 14 } min = 0 max = 1 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_fill_calm_value')]" }
-        text_single = { size = { 92 20 } autoresize = no align = center|nobaseline text = "kehillah_safety_band_calm" visible = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_band_index_value'), '(CFixedPoint)0')]" }
-        text_single = { size = { 92 20 } autoresize = no align = center|nobaseline text = "kehillah_safety_band_calm_off" visible = "[NotEqualTo_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_band_index_value'), '(CFixedPoint)0')]" }
-       }
-       vbox = { spacing = 3
-        progressbar_standard = { size = { 92 14 } min = 0 max = 1 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_fill_uneasy_value')]" }
-        text_single = { size = { 92 20 } autoresize = no align = center|nobaseline text = "kehillah_safety_band_uneasy" visible = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_band_index_value'), '(CFixedPoint)1')]" }
-        text_single = { size = { 92 20 } autoresize = no align = center|nobaseline text = "kehillah_safety_band_uneasy_off" visible = "[NotEqualTo_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_band_index_value'), '(CFixedPoint)1')]" }
-       }
-       vbox = { spacing = 3
-        progressbar_red = { size = { 92 14 } min = 0 max = 1 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_fill_tense_value')]" }
-        text_single = { size = { 92 20 } autoresize = no align = center|nobaseline text = "kehillah_safety_band_tense" visible = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_band_index_value'), '(CFixedPoint)2')]" }
-        text_single = { size = { 92 20 } autoresize = no align = center|nobaseline text = "kehillah_safety_band_tense_off" visible = "[NotEqualTo_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_band_index_value'), '(CFixedPoint)2')]" }
-       }
-       vbox = { spacing = 3
-        progressbar_red = { size = { 92 14 } min = 0 max = 1 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_fill_dangerous_value')]" }
-        text_single = { size = { 92 20 } autoresize = no align = center|nobaseline text = "kehillah_safety_band_dangerous" visible = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_band_index_value'), '(CFixedPoint)3')]" }
-        text_single = { size = { 92 20 } autoresize = no align = center|nobaseline text = "kehillah_safety_band_dangerous_off" visible = "[NotEqualTo_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_band_index_value'), '(CFixedPoint)3')]" }
-       }
-       vbox = { spacing = 3
-        progressbar_red = { size = { 92 14 } min = 0 max = 1 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_fill_perilous_value')]" }
-        text_single = { size = { 92 20 } autoresize = no align = center|nobaseline text = "kehillah_safety_band_perilous" visible = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_band_index_value'), '(CFixedPoint)4')]" }
-        text_single = { size = { 92 20 } autoresize = no align = center|nobaseline text = "kehillah_safety_band_perilous_off" visible = "[NotEqualTo_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_band_index_value'), '(CFixedPoint)4')]" }
-       }
-       expand = {}
-      }
-     }
+	# A small lever button inside a protection card.
+	type kehillah_safety_lever = button_standard {
+		layoutpolicy_horizontal = expanding
+		size = { 0 28 }
+		using = tooltip_ws
+	}
 
-     ### THE CAUSES: two pressures and separate visibility. Each row holds its breakdown on hover.
-     vbox = { layoutpolicy_horizontal = expanding spacing = 9 margin = { 14 14 }
-      background = { using = Background_Area_Dark }
-      text_single = { text = "kehillah_safety_pressures_header" default_format = "#high;bold" }
-      hbox = { layoutpolicy_horizontal = expanding spacing = 8 tooltip = "kehillah_safety_court_tt" using = tooltip_ws
-       text_single = { text = "kehillah_safety_court_label" }
-       expand = {}
-       text_single = { text = "[GetPlayer.Custom('KehillahCourtPressureBand')]" }
-      }
-      hbox = { layoutpolicy_horizontal = expanding spacing = 8 tooltip = "kehillah_safety_popular_tt" using = tooltip_ws
-       text_single = { text = "kehillah_safety_popular_label" }
-       expand = {}
-       text_single = { text = "[GetPlayer.Custom('KehillahPopularPressureBand')]" }
-      }
-      text_single = { text = "kehillah_safety_visibility_summary" tooltip = "kehillah_safety_visibility_tt" using = tooltip_ws }
-     }
+	type kehillah_crisis_military_panel = vbox {
+		layoutpolicy_horizontal = expanding
+		layoutpolicy_vertical = expanding
+		visible = "[And(GetScriptedGui('kehillah_crisis_visible').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End), Not(GetVariableSystem.Exists('kehillah_crisis_armies')))]"
+		scrollbox = {
+			layoutpolicy_horizontal = expanding
+			layoutpolicy_vertical = expanding
+			blockoverride "scrollbox_content" {
+				vbox = { layoutpolicy_horizontal = expanding spacing = 10 margin = { 8 12 }
 
-     ### PROTECTION AND LEVERS. These navigate to actual existing systems.
-     vbox = { layoutpolicy_horizontal = expanding spacing = 9 margin = { 14 14 }
-      background = { using = Background_Area_Dark }
-      text_single = { text = "kehillah_safety_protection_header" default_format = "#high;bold" }
-      text_single = { text = "kehillah_safety_stability_summary" tooltip = "kehillah_safety_stability_tt" using = tooltip_ws }
-      text_single = { text = "kehillah_safety_ruler_summary" tooltip = "kehillah_safety_ruler_tt" using = tooltip_ws }
-      text_single = { text = "kehillah_safety_shields_summary" tooltip = "kehillah_safety_shields_tt" using = tooltip_ws }
-      text_single = { text = "kehillah_safety_shield_protection_on" visible = "[GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_crisis_royal_protection').IsSet]" tooltip = "kehillah_safety_shields_tt" using = tooltip_ws }
-      text_single = { text = "kehillah_safety_shield_protection_off" visible = "[Not(GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_crisis_royal_protection').IsSet)]" tooltip = "kehillah_safety_shields_tt" using = tooltip_ws }
-      hbox = { layoutpolicy_horizontal = expanding spacing = 8
-       visible = "[Not(GetScriptedGui('kehillah_safety_any_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End))]"
-       button_standard = { layoutpolicy_horizontal = expanding size = { 0 38 } text = "kehillah_safety_bet_din_action"
-        onclick = "[ToggleGameView('activity_list_window')]" tooltip = "kehillah_safety_bet_din_action_tt" using = tooltip_ws }
-       button_standard = { layoutpolicy_horizontal = expanding size = { 0 38 } text = "kehillah_safety_petition_action"
-        onclick = "[ToggleGameViewData('council_window', GetPlayer.GetID)]" tooltip = "kehillah_safety_petition_action_tt" using = tooltip_ws }
-      }
-      text_single = { text = "kehillah_safety_religious_support_on" visible = "[GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_safety_religious_support').IsSet]" tooltip = "kehillah_safety_religious_support_tt" using = tooltip_ws }
-      button_standard = { layoutpolicy_horizontal = expanding size = { 0 36 } text = "kehillah_safety_religious_support_action"
-       visible = "[And(GetScriptedGui('kehillah_safety_religious_route').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End), Not(GetScriptedGui('kehillah_safety_any_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End)))]"
-       onclick = "[ToggleGameViewData('council_window', GetPlayer.GetID)]" tooltip = "kehillah_safety_religious_support_tt" using = tooltip_ws }
-      text_single = { text = "kehillah_safety_crisis_hint" visible = "[GetScriptedGui('kehillah_safety_any_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End)]" }
-     }
+					### CRISES UNDER WAY: a card per open situation, each opening its window.
+					vbox = { layoutpolicy_horizontal = expanding spacing = 8 margin = { 14 14 }
+						visible = "[GetScriptedGui('kehillah_safety_any_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+						background = { using = Background_Area_Dark }
+						text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 490 text = "kehillah_safety_live_header" default_format = "#high;bold" }
+						vbox = { layoutpolicy_horizontal = expanding
+							visible = "[GetScriptedGui('kehillah_safety_attack_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+							kehillah_safety_situation_card = { datacontext = "[GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_crisis_situation').Situation]" }
+						}
+						vbox = { layoutpolicy_horizontal = expanding
+							visible = "[GetScriptedGui('kehillah_safety_trial_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+							kehillah_safety_situation_card = { datacontext = "[GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_trial_situation').Situation]" }
+						}
+						vbox = { layoutpolicy_horizontal = expanding
+							visible = "[GetScriptedGui('kehillah_safety_decree_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+							kehillah_safety_situation_card = { datacontext = "[GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_decree_situation').Situation]" }
+						}
+					}
 
-    }
-   }
-  }
- }
+					### THE EMBLEM: a lock from gilded (Calm) to broken (Perilous), the band,
+					### the yearly chance, and a slim ladder of the five bands.
+					hbox = { layoutpolicy_horizontal = expanding spacing = 14 margin = { 14 12 }
+						background = { using = Background_Area_Dark }
+						tooltipwidget = { kehillah_danger_breakdown_tooltip = { datacontext = "[GetPlayer.GetPrimaryTitle]" } }
+						using = tooltip_ws
+
+						icon = {
+							size = { 76 76 }
+							texture = "gfx/interface/icons/control_level_icons.dds"
+							framesize = { 64 64 }
+							frame = "[FixedPointToInt( GetPlayer.MakeScope.ScriptValue( 'kehillah_safety_emblem_frame_value' ) )]"
+							alwaystransparent = yes
+						}
+						vbox = { layoutpolicy_horizontal = expanding spacing = 6
+							text_single = { layoutpolicy_horizontal = expanding text = "kehillah_safety_danger_header" default_format = "#weak" using = Font_Size_Small }
+							hbox = { layoutpolicy_horizontal = expanding spacing = 10
+								text_single = { text = "[GetPlayer.Custom('KehillahDangerBand')]" using = Font_Size_Big }
+								text_single = { text = "kehillah_safety_danger_chance" }
+								expand = {}
+							}
+							hbox = { layoutpolicy_horizontal = expanding spacing = 3
+								kehillah_safety_band_step = {
+									blockoverride "step_bar" { progressbar_green = { size = { 70 6 } min = 0 max = 1 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_fill_calm_value')]" } }
+									blockoverride "step_label" { text_single = { size = { 70 16 } autoresize = no align = center|nobaseline using = Font_Size_Small text = "[Select_CString(EqualTo_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_band_index_value'), '(CFixedPoint)0'), Localize('kehillah_safety_band_calm'), Localize('kehillah_safety_band_calm_off'))]" } }
+								}
+								kehillah_safety_band_step = {
+									blockoverride "step_bar" { progressbar_standard = { size = { 70 6 } min = 0 max = 1 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_fill_uneasy_value')]" } }
+									blockoverride "step_label" { text_single = { size = { 70 16 } autoresize = no align = center|nobaseline using = Font_Size_Small text = "[Select_CString(EqualTo_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_band_index_value'), '(CFixedPoint)1'), Localize('kehillah_safety_band_uneasy'), Localize('kehillah_safety_band_uneasy_off'))]" } }
+								}
+								kehillah_safety_band_step = {
+									blockoverride "step_bar" { progressbar_red = { size = { 70 6 } min = 0 max = 1 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_fill_tense_value')]" } }
+									blockoverride "step_label" { text_single = { size = { 70 16 } autoresize = no align = center|nobaseline using = Font_Size_Small text = "[Select_CString(EqualTo_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_band_index_value'), '(CFixedPoint)2'), Localize('kehillah_safety_band_tense'), Localize('kehillah_safety_band_tense_off'))]" } }
+								}
+								kehillah_safety_band_step = {
+									blockoverride "step_bar" { progressbar_red = { size = { 70 6 } min = 0 max = 1 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_fill_dangerous_value')]" } }
+									blockoverride "step_label" { text_single = { size = { 70 16 } autoresize = no align = center|nobaseline using = Font_Size_Small text = "[Select_CString(EqualTo_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_band_index_value'), '(CFixedPoint)3'), Localize('kehillah_safety_band_dangerous'), Localize('kehillah_safety_band_dangerous_off'))]" } }
+								}
+								kehillah_safety_band_step = {
+									blockoverride "step_bar" { progressbar_red = { size = { 70 6 } min = 0 max = 1 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_fill_perilous_value')]" } }
+									blockoverride "step_label" { text_single = { size = { 70 16 } autoresize = no align = center|nobaseline using = Font_Size_Small text = "[Select_CString(EqualTo_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_band_index_value'), '(CFixedPoint)4'), Localize('kehillah_safety_band_perilous'), Localize('kehillah_safety_band_perilous_off'))]" } }
+								}
+								expand = {}
+							}
+						}
+					}
+
+					### THE BALANCE: protection fills from the left, pressure from the right,
+					### one coloured segment per category. Where they meet is the net.
+					vbox = { layoutpolicy_horizontal = expanding spacing = 5 margin = { 14 10 }
+						background = { using = Background_Area_Dark }
+						tooltip = "kehillah_safety_balance_tt"
+						using = tooltip_ws
+						hbox = { layoutpolicy_horizontal = expanding
+							text_single = { text = "kehillah_safety_balance_protection" }
+							expand = {}
+							text_single = { text = "kehillah_safety_balance_header" default_format = "#high;bold" }
+							expand = {}
+							text_single = { text = "kehillah_safety_balance_pressure" }
+						}
+						widget = { layoutpolicy_horizontal = expanding size = { 0 18 }
+							icon = { size = { 100% 100% } texture = "gfx/interface/colors/white.dds" color = { 0.12 0.12 0.12 1 } alwaystransparent = yes }
+							hbox = { size = { 100% 100% } ignoreinvisible = yes
+								# Protection, left to right: walls, patrons, inner strength.
+								widget = { layoutpolicy_horizontal = expanding layoutpolicy_vertical = expanding
+									visible = "[GreaterThan_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_seg_walls_value'), '(CFixedPoint)0')]"
+									layoutstretchfactor_horizontal = "[GetProgressBarValueMaxScaled( FixedPointToFloat( GetPlayer.MakeScope.ScriptValue('kehillah_safety_seg_walls_value') ), '(float)200', '(int32)2000' )]"
+									icon = { size = { 100% 100% } texture = "gfx/interface/colors/white.dds" color = { 0.22 0.45 0.33 1 } alwaystransparent = yes }
+								}
+								widget = { layoutpolicy_horizontal = expanding layoutpolicy_vertical = expanding
+									visible = "[GreaterThan_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_seg_patrons_value'), '(CFixedPoint)0')]"
+									layoutstretchfactor_horizontal = "[GetProgressBarValueMaxScaled( FixedPointToFloat( GetPlayer.MakeScope.ScriptValue('kehillah_safety_seg_patrons_value') ), '(float)200', '(int32)2000' )]"
+									icon = { size = { 100% 100% } texture = "gfx/interface/colors/white.dds" color = { 0.30 0.58 0.52 1 } alwaystransparent = yes }
+								}
+								widget = { layoutpolicy_horizontal = expanding layoutpolicy_vertical = expanding
+									visible = "[GreaterThan_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_seg_inner_value'), '(CFixedPoint)0')]"
+									layoutstretchfactor_horizontal = "[GetProgressBarValueMaxScaled( FixedPointToFloat( GetPlayer.MakeScope.ScriptValue('kehillah_safety_seg_inner_value') ), '(float)200', '(int32)2000' )]"
+									icon = { size = { 100% 100% } texture = "gfx/interface/colors/white.dds" color = { 0.42 0.64 0.30 1 } alwaystransparent = yes }
+								}
+								# Pressure, from the meeting point outward: a hostile ruler, the
+								# street, power and debts, the church, wealth, hard times.
+								widget = { layoutpolicy_horizontal = expanding layoutpolicy_vertical = expanding
+									visible = "[GreaterThan_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_seg_patrons_hostile_value'), '(CFixedPoint)0')]"
+									layoutstretchfactor_horizontal = "[GetProgressBarValueMaxScaled( FixedPointToFloat( GetPlayer.MakeScope.ScriptValue('kehillah_safety_seg_patrons_hostile_value') ), '(float)200', '(int32)2000' )]"
+									icon = { size = { 100% 100% } texture = "gfx/interface/colors/white.dds" color = { 0.85 0.20 0.15 1 } alwaystransparent = yes }
+								}
+								widget = { layoutpolicy_horizontal = expanding layoutpolicy_vertical = expanding
+									visible = "[GreaterThan_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_seg_street_value'), '(CFixedPoint)0')]"
+									layoutstretchfactor_horizontal = "[GetProgressBarValueMaxScaled( FixedPointToFloat( GetPlayer.MakeScope.ScriptValue('kehillah_safety_seg_street_value') ), '(float)200', '(int32)2000' )]"
+									icon = { size = { 100% 100% } texture = "gfx/interface/colors/white.dds" color = { 0.72 0.25 0.20 1 } alwaystransparent = yes }
+								}
+								widget = { layoutpolicy_horizontal = expanding layoutpolicy_vertical = expanding
+									visible = "[GreaterThan_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_seg_power_value'), '(CFixedPoint)0')]"
+									layoutstretchfactor_horizontal = "[GetProgressBarValueMaxScaled( FixedPointToFloat( GetPlayer.MakeScope.ScriptValue('kehillah_safety_seg_power_value') ), '(float)200', '(int32)2000' )]"
+									icon = { size = { 100% 100% } texture = "gfx/interface/colors/white.dds" color = { 0.66 0.38 0.62 1 } alwaystransparent = yes }
+								}
+								widget = { layoutpolicy_horizontal = expanding layoutpolicy_vertical = expanding
+									visible = "[GreaterThan_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_seg_church_value'), '(CFixedPoint)0')]"
+									layoutstretchfactor_horizontal = "[GetProgressBarValueMaxScaled( FixedPointToFloat( GetPlayer.MakeScope.ScriptValue('kehillah_safety_seg_church_value') ), '(float)200', '(int32)2000' )]"
+									icon = { size = { 100% 100% } texture = "gfx/interface/colors/white.dds" color = { 0.50 0.30 0.22 1 } alwaystransparent = yes }
+								}
+								widget = { layoutpolicy_horizontal = expanding layoutpolicy_vertical = expanding
+									visible = "[GreaterThan_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_seg_wealth_value'), '(CFixedPoint)0')]"
+									layoutstretchfactor_horizontal = "[GetProgressBarValueMaxScaled( FixedPointToFloat( GetPlayer.MakeScope.ScriptValue('kehillah_safety_seg_wealth_value') ), '(float)200', '(int32)2000' )]"
+									icon = { size = { 100% 100% } texture = "gfx/interface/colors/white.dds" color = { 0.82 0.60 0.22 1 } alwaystransparent = yes }
+								}
+								widget = { layoutpolicy_horizontal = expanding layoutpolicy_vertical = expanding
+									visible = "[GreaterThan_CFixedPoint(GetPlayer.MakeScope.ScriptValue('kehillah_safety_seg_hardship_value'), '(CFixedPoint)0')]"
+									layoutstretchfactor_horizontal = "[GetProgressBarValueMaxScaled( FixedPointToFloat( GetPlayer.MakeScope.ScriptValue('kehillah_safety_seg_hardship_value') ), '(float)200', '(int32)2000' )]"
+									icon = { size = { 100% 100% } texture = "gfx/interface/colors/white.dds" color = { 0.42 0.40 0.38 1 } alwaystransparent = yes }
+								}
+							}
+							# The midpoint: past it, pressure outweighs protection.
+							icon = { size = { 2 24 } parentanchor = center texture = "gfx/interface/colors/white.dds" color = { 0.95 0.90 0.75 1 } alwaystransparent = yes }
+						}
+					}
+
+					### THE CARDS: what draws danger on the left, what holds it down on the right.
+					hbox = { layoutpolicy_horizontal = expanding spacing = 10
+
+						vbox = { layoutpolicy_horizontal = expanding layoutpolicy_vertical = expanding layoutstretchfactor_horizontal = 1 spacing = 6
+							text_single = { layoutpolicy_horizontal = expanding text = "kehillah_safety_col_pressure" default_format = "#high;bold" }
+
+							kehillah_safety_card = {
+								blockoverride "card_tooltip" { tooltipwidget = { kehillah_safety_category_tooltip = {
+									blockoverride "bd_header" { text = "kehillah_safety_cat_wealth" }
+									blockoverride "bd_source" { datacontext = "[GuiScope.SetRoot( GetPlayer.MakeScope ).GetScriptValueBreakdown( 'kehillah_safety_cat_wealth_value' )]" }
+									blockoverride "bd_hint" { text = "kehillah_safety_cat_wealth_hint" }
+								} } }
+								blockoverride "card_color" { color = { 0.82 0.60 0.22 1 } }
+								blockoverride "card_icon" { texture = "gfx/interface/icons/icon_gold.dds" }
+								blockoverride "card_name" { text = "kehillah_safety_cat_wealth" }
+								blockoverride "card_pips" { kehillah_safety_pips = { blockoverride "pips_bar" { progressbar_red = { size = { 68 10 } min = 0 max = 4 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_meter_wealth_value')]" } } } }
+								blockoverride "card_sub" { text = "kehillah_safety_cat_wealth_sub" }
+							}
+							kehillah_safety_card = {
+								blockoverride "card_tooltip" { tooltipwidget = { kehillah_safety_category_tooltip = {
+									blockoverride "bd_header" { text = "kehillah_safety_cat_power" }
+									blockoverride "bd_source" { datacontext = "[GuiScope.SetRoot( GetPlayer.MakeScope ).GetScriptValueBreakdown( 'kehillah_safety_cat_power_value' )]" }
+									blockoverride "bd_hint" { text = "kehillah_safety_cat_power_hint" }
+								} } }
+								blockoverride "card_color" { color = { 0.66 0.38 0.62 1 } }
+								blockoverride "card_icon" { texture = "gfx/interface/icons/icon_royal_court.dds" }
+								blockoverride "card_name" { text = "kehillah_safety_cat_power" }
+								blockoverride "card_pips" { kehillah_safety_pips = { blockoverride "pips_bar" { progressbar_red = { size = { 68 10 } min = 0 max = 4 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_meter_power_value')]" } } } }
+								blockoverride "card_sub" { text = "kehillah_safety_cat_power_sub" }
+							}
+							kehillah_safety_card = {
+								blockoverride "card_tooltip" { tooltipwidget = { kehillah_safety_category_tooltip = {
+									blockoverride "bd_header" { text = "kehillah_safety_cat_street" }
+									blockoverride "bd_source" { datacontext = "[GuiScope.SetRoot( GetPlayer.MakeScope ).GetScriptValueBreakdown( 'kehillah_safety_cat_street_value' )]" }
+									blockoverride "bd_hint" { text = "kehillah_safety_cat_street_hint" }
+								} } }
+								blockoverride "card_color" { color = { 0.72 0.25 0.20 1 } }
+								blockoverride "card_icon" {
+									texture = "gfx/interface/icons/popular_opinion_levels.dds"
+									framesize = { 64 64 }
+									frame = "[FixedPointToInt( GetPlayer.MakeScope.ScriptValue( 'kehillah_safety_street_face_frame_value' ) )]"
+								}
+								blockoverride "card_name" { text = "kehillah_safety_cat_street" }
+								blockoverride "card_pips" { kehillah_safety_pips = { blockoverride "pips_bar" { progressbar_red = { size = { 68 10 } min = 0 max = 4 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_meter_street_value')]" } } } }
+								blockoverride "card_sub" { text = "kehillah_safety_cat_street_sub" }
+							}
+							kehillah_safety_card = {
+								blockoverride "card_tooltip" { tooltipwidget = { kehillah_safety_category_tooltip = {
+									blockoverride "bd_header" { text = "kehillah_safety_cat_church" }
+									blockoverride "bd_source" { datacontext = "[GuiScope.SetRoot( GetPlayer.MakeScope ).GetScriptValueBreakdown( 'kehillah_safety_cat_church_value' )]" }
+									blockoverride "bd_hint" { text = "kehillah_safety_cat_church_hint" }
+								} } }
+								blockoverride "card_color" { color = { 0.50 0.30 0.22 1 } }
+								blockoverride "card_icon" { texture = "gfx/interface/icons/icon_holding_church.dds" }
+								blockoverride "card_name" { text = "kehillah_safety_cat_church" }
+								blockoverride "card_pips" { kehillah_safety_pips = { blockoverride "pips_bar" { progressbar_red = { size = { 68 10 } min = 0 max = 4 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_meter_church_value')]" } } } }
+								blockoverride "card_sub" { text = "kehillah_safety_cat_church_sub" }
+							}
+							kehillah_safety_card = {
+								blockoverride "card_tooltip" { tooltipwidget = { kehillah_safety_category_tooltip = {
+									blockoverride "bd_header" { text = "kehillah_safety_cat_hardship" }
+									blockoverride "bd_source" { datacontext = "[GuiScope.SetRoot( GetPlayer.MakeScope ).GetScriptValueBreakdown( 'kehillah_safety_cat_hardship_value' )]" }
+									blockoverride "bd_hint" { text = "kehillah_safety_cat_hardship_hint" }
+								} } }
+								blockoverride "card_color" { color = { 0.42 0.40 0.38 1 } }
+								blockoverride "card_icon" { texture = "gfx/interface/icons/epidemics/bubonic_plague.dds" }
+								blockoverride "card_name" { text = "kehillah_safety_cat_hardship" }
+								blockoverride "card_pips" { kehillah_safety_pips = { blockoverride "pips_bar" { progressbar_red = { size = { 68 10 } min = 0 max = 4 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_meter_hardship_value')]" } } } }
+								blockoverride "card_sub" { text = "kehillah_safety_cat_hardship_sub" }
+							}
+							expand = {}
+						}
+
+						vbox = { layoutpolicy_horizontal = expanding layoutpolicy_vertical = expanding layoutstretchfactor_horizontal = 1 spacing = 6
+							text_single = { layoutpolicy_horizontal = expanding text = "kehillah_safety_col_protection" default_format = "#high;bold" }
+
+							kehillah_safety_card = {
+								blockoverride "card_tooltip" { tooltipwidget = { kehillah_safety_category_tooltip = {
+									blockoverride "bd_header" { text = "kehillah_safety_cat_walls" }
+									blockoverride "bd_source" { datacontext = "[GuiScope.SetRoot( GetPlayer.MakeScope ).GetScriptValueBreakdown( 'kehillah_safety_cat_walls_value' )]" }
+									blockoverride "bd_hint" { text = "kehillah_safety_cat_walls_hint" }
+								} } }
+								blockoverride "card_color" { color = { 0.22 0.45 0.33 1 } }
+								blockoverride "card_icon" { texture = "gfx/interface/icons/icon_holding_castle.dds" }
+								blockoverride "card_name" { text = "kehillah_safety_cat_walls" }
+								blockoverride "card_pips" { kehillah_safety_pips = { blockoverride "pips_bar" { progressbar_green = { size = { 68 10 } min = 0 max = 4 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_meter_walls_value')]" } } } }
+								blockoverride "card_sub" { text = "kehillah_safety_cat_walls_sub" }
+								blockoverride "card_actions" {
+									hbox = { layoutpolicy_horizontal = expanding spacing = 6 margin = { 8 0 }
+										visible = "[Not(GetScriptedGui('kehillah_safety_any_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End))]"
+										kehillah_safety_lever = { text = "kehillah_safety_lever_fortify" tooltip = "kehillah_safety_lever_fortify_tt"
+											onclick = "[ToggleGameViewData( 'domicile', GetPlayer.GetDomicile )]" }
+										kehillah_safety_lever = { text = "kehillah_safety_lever_watch" tooltip = "kehillah_safety_lever_watch_tt"
+											onclick = "[ToggleGameViewData('council_window', GetPlayer.GetID)]" }
+									}
+								}
+							}
+							kehillah_safety_card = {
+								blockoverride "card_tooltip" { tooltipwidget = { kehillah_safety_category_tooltip = {
+									blockoverride "bd_header" { text = "kehillah_safety_cat_patrons" }
+									blockoverride "bd_source" { datacontext = "[GuiScope.SetRoot( GetPlayer.MakeScope ).GetScriptValueBreakdown( 'kehillah_safety_cat_patrons_value' )]" }
+									blockoverride "bd_hint" { text = "kehillah_safety_cat_patrons_hint" }
+								} } }
+								blockoverride "card_color" { color = { 0.30 0.58 0.52 1 } }
+								blockoverride "card_icon" { texture = "gfx/interface/icons/icon_liege.dds" }
+								blockoverride "card_name" { text = "kehillah_safety_cat_patrons" }
+								blockoverride "card_pips" { kehillah_safety_pips = { blockoverride "pips_bar" { progressbar_green = { size = { 68 10 } min = 0 max = 4 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_meter_patrons_value')]" } } } }
+								blockoverride "card_sub" { text = "kehillah_safety_cat_patrons_sub" }
+								blockoverride "card_actions" {
+									hbox = { layoutpolicy_horizontal = expanding spacing = 6 margin = { 8 0 }
+										visible = "[Not(GetScriptedGui('kehillah_safety_any_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End))]"
+										kehillah_safety_lever = { text = "kehillah_safety_petition_action" tooltip = "kehillah_safety_petition_action_tt"
+											onclick = "[ToggleGameViewData('council_window', GetPlayer.GetID)]" }
+										kehillah_safety_lever = { text = "kehillah_safety_religious_support_action" tooltip = "kehillah_safety_religious_support_tt"
+											visible = "[GetScriptedGui('kehillah_safety_religious_route').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+											onclick = "[ToggleGameViewData('council_window', GetPlayer.GetID)]" }
+									}
+								}
+							}
+							kehillah_safety_card = {
+								blockoverride "card_tooltip" { tooltipwidget = { kehillah_safety_category_tooltip = {
+									blockoverride "bd_header" { text = "kehillah_safety_cat_inner" }
+									blockoverride "bd_source" { datacontext = "[GuiScope.SetRoot( GetPlayer.MakeScope ).GetScriptValueBreakdown( 'kehillah_safety_cat_inner_value' )]" }
+									blockoverride "bd_hint" { text = "kehillah_safety_cat_inner_hint" }
+								} } }
+								blockoverride "card_color" { color = { 0.42 0.64 0.30 1 } }
+								blockoverride "card_icon" { texture = "gfx/interface/icons/scale_of_power.dds" }
+								blockoverride "card_name" { text = "kehillah_safety_cat_inner" }
+								blockoverride "card_pips" { kehillah_safety_pips = { blockoverride "pips_bar" { progressbar_green = { size = { 68 10 } min = 0 max = 4 value = "[GetPlayer.MakeScope.ScriptValue('kehillah_safety_meter_inner_value')]" } } } }
+								blockoverride "card_sub" { text = "kehillah_safety_cat_inner_sub" }
+								blockoverride "card_actions" {
+									hbox = { layoutpolicy_horizontal = expanding spacing = 6 margin = { 8 0 }
+										visible = "[Not(GetScriptedGui('kehillah_safety_any_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End))]"
+										kehillah_safety_lever = { text = "kehillah_safety_bet_din_action" tooltip = "kehillah_safety_bet_din_action_tt"
+											onclick = "[ToggleGameView('activity_list_window')]" }
+									}
+								}
+							}
+							text_single = { layoutpolicy_horizontal = expanding text = "kehillah_safety_religious_support_on" visible = "[GetPlayer.GetPrimaryTitle.MakeScope.Var('kehillah_safety_religious_support').IsSet]" tooltip = "kehillah_safety_religious_support_tt" using = tooltip_ws }
+							text_single = { layoutpolicy_horizontal = expanding text = "kehillah_safety_crisis_hint" visible = "[GetScriptedGui('kehillah_safety_any_card').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End)]" }
+							expand = {}
+						}
+					}
+
+					text_multi = { layoutpolicy_horizontal = expanding autoresize = yes max_width = 520 text = "kehillah_safety_incident_kinds" default_format = "#weak" using = Font_Size_Small }
+				}
+			}
+		}
+	}
 }
