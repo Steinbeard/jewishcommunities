@@ -24,25 +24,9 @@ kehillah_sefer_finish_composition_effect = {
 		set_variable = { name = kehillah_book_tier value = flag:masterwork }
 	}
 	kehillah_sefer_finish_written_work_effect = yes
-	if = {
-		limit = { var:kehillah_book_tier ?= flag:illustrious }
-		primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_book_greatness_gain } }
-		primary_title = { change_variable = { name = kehillah_var_greatness add = 40 } }
-		add_piety = massive_piety_gain
-		add_prestige = massive_prestige_gain
-	}
-	else_if = {
-		limit = { var:kehillah_book_tier ?= flag:famed }
-		primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_book_greatness_gain } }
-		primary_title = { change_variable = { name = kehillah_var_greatness add = 20 } }
-		add_piety = major_piety_gain
-		add_prestige = major_prestige_gain
-	}
-	else = {
-		primary_title = { change_variable = { name = kehillah_var_greatness add = kehillah_book_greatness_gain } }
-		add_piety = medium_piety_gain
-		add_prestige = medium_prestige_gain
-	}
+	# 2026-11-25: shared with kehillah_book_complete_effect; the writing
+	# scheme defers it to its visible report (kehillah_book_effects.txt).
+	kehillah_book_tier_reward_or_defer_effect = yes
 	remove_variable = kehillah_book_tally
 	remove_variable = kehillah_book_tier
 	remove_variable = kehillah_book_bet_din_inspiration
@@ -221,42 +205,53 @@ kehillah_sefer_place_written_work_effect = {
 		kehillah_standing_seed_written_works_effect = yes
 		if = {
 			limit = { has_variable = kehillah_standing_$KEY$ }
+			# 2026-11-25 fix (Daniel: a new book "started off as celebrated"):
+			# the 4/5/6 seed was written for the old scale (Obscure, Circulating,
+			# Respected). On the one scale (docs/spec/2026-11-11-standing-one-
+			# scale.md) 5 Popular and 6 Celebrated are earned tiers, and Obscure
+			# is "where most new books start". Every new work now starts Obscure;
+			# quality and audience set its head start inside that tier's
+			# reception band (30-39), so a fine book reaches Popular sooner.
+			set_variable = { name = kehillah_standing_$KEY$ value = 4 }
+			set_variable = { name = kehillah_reception_$KEY$ value = kehillah_sefer_new_work_reception_masterwork }
 			if = {
 				limit = { prev.var:kehillah_book_tier ?= flag:illustrious }
-				set_variable = { name = kehillah_standing_$KEY$ value = 6 }
+				set_variable = { name = kehillah_reception_$KEY$ value = kehillah_sefer_new_work_reception_illustrious }
 			}
 			else_if = {
 				limit = { prev.var:kehillah_book_tier ?= flag:famed }
-				set_variable = { name = kehillah_standing_$KEY$ value = 5 }
-			}
-			else = {
-				set_variable = { name = kehillah_standing_$KEY$ value = 4 }
+				set_variable = { name = kehillah_reception_$KEY$ value = kehillah_sefer_new_work_reception_famed }
 			}
 			# 2026-11-10 (Sefer languages): a book in the author's own tongue,
-			# when no royal court speaks it, starts a tier lower; its ceiling is
-			# capped by the tongue's prestige in kehillah_lib_ceiling_.
+			# when no royal court speaks it, starts with a smaller audience; its
+			# ceiling is capped by the tongue's prestige in kehillah_lib_ceiling_.
 			if = {
 				limit = {
 					global_var:kehillah_wk_$KEY$_lang ?= flag:vernacular
 					NOT = { global_var:kehillah_wk_$KEY$_lang_prestige ?= 1 }
 					NOT = { global_var:kehillah_wk_$KEY$_lang_prestige ?= 2 }
 				}
-				change_variable = { name = kehillah_standing_$KEY$ subtract = 1 }
+				change_variable = { name = kehillah_reception_$KEY$ subtract = kehillah_sefer_new_work_reception_small_audience }
 			}
 			# A gloss on the less widely held Yerushalmi starts with a
 			# smaller audience; its readers still raise the source's reception
 			# through the ordinary commentary counter.
 			if = {
 				limit = { prev.var:kehillah_writing_form ?= flag:yerushalmi }
-				change_variable = { name = kehillah_standing_$KEY$ subtract = 1 }
+				change_variable = { name = kehillah_reception_$KEY$ subtract = kehillah_sefer_new_work_reception_small_audience }
 			}
+			clamp_variable = { name = kehillah_reception_$KEY$ min = 30 max = 39 }
+			# A floor or ceiling of the work's own (tenets, language) still binds.
 			clamp_variable = { name = kehillah_standing_$KEY$ min = kehillah_lib_floor_$KEY$ max = kehillah_lib_ceiling_$KEY$ }
-			set_variable = {
-				name = kehillah_reception_$KEY$
-				value = {
-					value = var:kehillah_standing_$KEY$
-					multiply = 10
-					subtract = 5
+			if = {
+				limit = { NOT = { var:kehillah_standing_$KEY$ = 4 } }
+				set_variable = {
+					name = kehillah_reception_$KEY$
+					value = {
+						value = var:kehillah_standing_$KEY$
+						multiply = 10
+						subtract = 5
+					}
 				}
 			}
 			set_variable = { name = kehillah_touched_$KEY$ value = yes days = 3650 }

@@ -75,6 +75,17 @@ def main() -> None:
                      f"\t\tset_artifact_name = {title_key}",
                      f"\t\tset_artifact_description = kehillah_writing_landmark_artifact_desc_{key}", "\t}"]
         identity_loc.append(f' kehillah_writing_landmark_artifact_desc_{key}:0 "The original manuscript of ${title_key}$, a landmark work of scholarship. Copies may travel far beyond its first library."')
+    # 2026-11-25 fix (Daniel: "the artifact does not match the created work"):
+    # an original Great Work in an authored slot kept vanilla's random book
+    # name. Its manuscript now carries the Ledger name of its slot.
+    for key in keys:
+        if not key.startswith("work_authored_"):
+            continue
+        identity += ["\telse_if = {",
+                     f"\t\tlimit = {{ root = {{ var:kehillah_sefer_my_latest_work ?= flag:{key} }} }}",
+                     f"\t\tset_artifact_name = kehillah_lib_name_{key}",
+                     f"\t\tset_artifact_description = kehillah_writing_authored_artifact_desc_{key}", "\t}"]
+        identity_loc.append(f' kehillah_writing_authored_artifact_desc_{key}:0 "The original manuscript of $kehillah_lib_name_{key}$, an original work entered in the Ledger of Sefarim under its author\'s name."')
     identity.append("}")
     IDENTITY_OUTPUT.write_text("\n".join(identity) + "\n", encoding="utf-8-sig")
     IDENTITY_LOC.write_text("\n".join(identity_loc) + "\n", encoding="utf-8-sig")

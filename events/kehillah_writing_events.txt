@@ -132,31 +132,94 @@ kehillah_writing.0300 = {
 	hidden = yes
 	immediate = {
 		kehillah_writing_finish_effect = yes
-		if = { limit = { has_variable = kehillah_writing_landmark } trigger_event = kehillah_writing.0301 }
-		else = { trigger_event = kehillah_writing.0302 }
+		trigger_event = kehillah_writing.0302
 	}
 }
 
-kehillah_writing.0301 = {
-	type = character_event
-	title = kehillah_writing.0301.t
-	desc = kehillah_writing.0300.desc.landmark
-	theme = learning
-	left_portrait = { character = root animation = happiness }
-	option = { name = kehillah_writing.0300.a }
-}
-
+# 2026-11-25 (Daniel: "underwhelming and doesn't give enough info to
+# investigate"): one report for every outcome. Flavor first, then what the
+# finish recorded (var:kehillah_writing_result_*, kehillah_writing_finish_
+# effect): quality and its tier, the spark, the Ledger outcome, why the book
+# did or did not become a historical landmark, and the chavrusa. The
+# manuscript is shown, and the option applies and lists the reward.
+# kehillah_writing.0301 (the old landmark-only event) is folded in here.
 kehillah_writing.0302 = {
 	type = character_event
-	title = kehillah_writing.0300.t
+	title = {
+		first_valid = {
+			triggered_desc = { trigger = { has_variable = kehillah_writing_landmark } desc = kehillah_writing.0301.t }
+			triggered_desc = { trigger = { NOT = { has_variable = kehillah_writing_success } } desc = kehillah_writing.0302.t.failure }
+			desc = kehillah_writing.0300.t
+		}
+	}
 	desc = {
 		first_valid = {
 			triggered_desc = { trigger = { NOT = { has_variable = kehillah_writing_success } } desc = kehillah_writing.0300.desc.failure }
+			triggered_desc = { trigger = { has_variable = kehillah_writing_landmark } desc = kehillah_writing.0300.desc.landmark }
 			triggered_desc = { trigger = { has_variable = kehillah_writing_original } desc = kehillah_writing.0300.desc.original }
 			desc = kehillah_writing.0300.desc.success
 		}
+		# Quality, and the tier it reached.
+		first_valid = {
+			triggered_desc = { trigger = { NOT = { has_variable = kehillah_writing_success } } desc = kehillah_writing.result.quality.failure }
+			triggered_desc = { trigger = { var:kehillah_writing_result_tier ?= flag:illustrious } desc = kehillah_writing.result.quality.illustrious }
+			triggered_desc = { trigger = { var:kehillah_writing_result_tier ?= flag:famed } desc = kehillah_writing.result.quality.famed }
+			desc = kehillah_writing.result.quality.masterwork
+		}
+		# The spark it was written from.
+		first_valid = {
+			triggered_desc = { trigger = { var:kehillah_writing_result_spark_tier ?= 1 } desc = kehillah_writing.result.spark_1 }
+			triggered_desc = { trigger = { var:kehillah_writing_result_spark_tier ?= 2 } desc = kehillah_writing.result.spark_2 }
+			triggered_desc = { trigger = { var:kehillah_writing_result_spark_tier ?= 3 } desc = kehillah_writing.result.spark_3 }
+		}
+		# The Ledger of Sefarim.
+		first_valid = {
+			triggered_desc = { trigger = { var:kehillah_writing_result_ledger ?= flag:landmark } desc = kehillah_writing.result.ledger.landmark }
+			triggered_desc = { trigger = { var:kehillah_writing_result_ledger ?= flag:original } desc = kehillah_writing.result.ledger.original }
+			triggered_desc = { trigger = { var:kehillah_writing_result_ledger ?= flag:full } desc = kehillah_writing.result.ledger.full }
+			triggered_desc = { trigger = { var:kehillah_writing_result_ledger ?= flag:none } desc = kehillah_writing.result.ledger.none }
+		}
+		# Why it did or did not become a historical landmark (a Great Work only).
+		first_valid = {
+			triggered_desc = { trigger = { var:kehillah_writing_result_landmark ?= flag:claimed } desc = kehillah_writing.result.landmark.claimed }
+			triggered_desc = { trigger = { var:kehillah_writing_result_landmark ?= flag:low_quality } desc = kehillah_writing.result.landmark.low_quality }
+			triggered_desc = { trigger = { var:kehillah_writing_result_landmark ?= flag:no_niche } desc = kehillah_writing.result.landmark.no_niche }
+			triggered_desc = { trigger = { var:kehillah_writing_result_landmark ?= flag:roll_failed } desc = kehillah_writing.result.landmark.roll_failed }
+		}
+		triggered_desc = {
+			trigger = { exists = scope:kehillah_writing_report_partner }
+			desc = kehillah_writing.result.partner
+		}
+		first_valid = {
+			triggered_desc = { trigger = { has_variable = kehillah_writing_success } desc = kehillah_writing.result.next.success }
+			desc = kehillah_writing.result.next.failure
+		}
 	}
 	theme = learning
-	left_portrait = { character = root animation = happiness }
-	option = { name = kehillah_writing.0300.a }
+	left_portrait = {
+		character = root
+		triggered_animation = { trigger = { NOT = { has_variable = kehillah_writing_success } } animation = stress }
+		animation = happiness
+	}
+	artifact = {
+		target = scope:kehillah_writing_report_manuscript
+		position = lower_right_portrait
+		trigger = { exists = scope:kehillah_writing_report_manuscript }
+	}
+	immediate = {
+		var:kehillah_writing_result_artifact ?= { save_scope_as = kehillah_writing_report_manuscript }
+		var:kehillah_writing_result_partner ?= { save_scope_as = kehillah_writing_report_partner }
+	}
+	option = {
+		name = {
+			trigger = { has_variable = kehillah_writing_success }
+			text = kehillah_writing.0300.a
+		}
+		name = {
+			trigger = { NOT = { has_variable = kehillah_writing_success } }
+			text = kehillah_writing.0302.a.failure
+		}
+		kehillah_writing_reward_effect = yes
+	}
+	after = { kehillah_writing_clear_result_effect = yes }
 }

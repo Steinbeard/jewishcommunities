@@ -185,7 +185,42 @@ kehillah_writing_end_study_effect = {
 # composition quality and a separate roll supply the demanding finish.
 # Landmark selection is generated from the dated catalog and project map.
 
+# 2026-11-25 (Daniel: the completion event "doesn't give enough info to
+# investigate"): the finish records what happened and why in
+# var:kehillah_writing_result_*, which kehillah_writing.0302 reports; its
+# option applies the reward (deferred through kehillah_writing_defer_reward).
+kehillah_writing_clear_result_effect = {
+	remove_variable = kehillah_writing_result_quality
+	remove_variable = kehillah_writing_result_spark_tier
+	remove_variable = kehillah_writing_result_partner
+	remove_variable = kehillah_writing_result_landmark
+	remove_variable = kehillah_writing_result_ledger
+	remove_variable = kehillah_writing_result_tier
+	remove_variable = kehillah_writing_result_artifact
+	remove_variable = kehillah_writing_defer_reward
+}
+
 kehillah_writing_finish_effect = {
+	kehillah_writing_clear_result_effect = yes
+	# 2026-11-25 fix: these outlived the previous book (kehillah_book.0006
+	# reads the landmark flag ten days after the finish), so a later ordinary
+	# book was reported as a landmark or an original Ledger work.
+	remove_variable = kehillah_writing_landmark
+	remove_variable = kehillah_writing_original
+	# Set again below only for a book that is not a Ledger work. The news
+	# events tell Ledger works from ordinary manuscripts by it (an original
+	# work used to fall through to the ordinary title, "An Untitled Manuscript").
+	remove_variable = kehillah_writing_ordinary_form
+	set_variable = { name = kehillah_writing_defer_reward value = yes }
+	set_variable = { name = kehillah_writing_result_quality value = kehillah_writing_quality_outlook_value }
+	if = {
+		limit = { has_variable = kehillah_writing_spark_tier }
+		set_variable = { name = kehillah_writing_result_spark_tier value = var:kehillah_writing_spark_tier }
+	}
+	if = {
+		limit = { exists = var:kehillah_writing_partner }
+		set_variable = { name = kehillah_writing_result_partner value = var:kehillah_writing_partner }
+	}
 	if = {
 		limit = { has_variable = kehillah_writing_success }
 		set_variable = { name = kehillah_writing_recent value = yes days = 3650 }
@@ -194,20 +229,44 @@ kehillah_writing_finish_effect = {
 			limit = { var:kehillah_writing_spark_tier ?= 3 kehillah_spark_is_historical_author_trigger = yes }
 			kehillah_spark_author_claim_effect = yes
 		}
+		# Why this book did or did not become a historical landmark. The niche
+		# is found first and the roll made second (same odds as rolling
+		# first), so the report can tell "no niche" from "the roll missed".
 		if = {
-			limit = {
-				NOT = { has_variable = kehillah_book_named_work }
-				var:kehillah_writing_spark_tier ?= 3
-				var:kehillah_book_tally >= kehillah_writing_landmark_quality_value
+			limit = { has_variable = kehillah_book_named_work }
+			set_variable = { name = kehillah_writing_result_landmark value = flag:claimed }
+		}
+		else_if = {
+			limit = { NOT = { var:kehillah_writing_spark_tier ?= 3 } }
+			set_variable = { name = kehillah_writing_result_landmark value = flag:not_great }
+		}
+		else_if = {
+			limit = { var:kehillah_book_tally < kehillah_writing_landmark_quality_value }
+			set_variable = { name = kehillah_writing_result_landmark value = flag:low_quality }
+		}
+		else = {
+			kehillah_writing_select_landmark_effect = yes
+			if = {
+				limit = { NOT = { has_variable = kehillah_book_named_work } }
+				set_variable = { name = kehillah_writing_result_landmark value = flag:no_niche }
 			}
-			random = {
-				chance = kehillah_writing_landmark_chance_value
-				kehillah_writing_select_landmark_effect = yes
+			else = {
+				random = {
+					chance = kehillah_writing_landmark_chance_value
+					set_variable = { name = kehillah_writing_result_landmark value = flag:landmark }
+				}
+				if = {
+					limit = { NOT = { has_variable = kehillah_writing_result_landmark } }
+					remove_variable = kehillah_book_named_work
+					remove_variable = kehillah_writing_landmark
+					set_variable = { name = kehillah_writing_result_landmark value = flag:roll_failed }
+				}
 			}
 		}
 		remove_variable = kehillah_sefer_my_latest_work
 		if = {
 			limit = { has_variable = kehillah_book_named_work }
+			set_variable = { name = kehillah_writing_result_ledger value = flag:landmark }
 			if = { limit = { var:kehillah_book_tally >= 55 } set_variable = { name = kehillah_writing_artifact_tier value = flag:illustrious } }
 			else_if = { limit = { var:kehillah_book_tally >= 30 } set_variable = { name = kehillah_writing_artifact_tier value = flag:famed } }
 			else = { set_variable = { name = kehillah_writing_artifact_tier value = flag:masterwork } }
@@ -226,6 +285,7 @@ kehillah_writing_finish_effect = {
 				kehillah_spark_ledger_slot_free_trigger = yes
 			}
 			set_variable = { name = kehillah_writing_original value = yes }
+			set_variable = { name = kehillah_writing_result_ledger value = flag:original }
 			set_variable = { name = kehillah_writing_artifact_tier value = flag:illustrious }
 			kehillah_sefer_finish_composition_effect = yes
 			kehillah_writing_create_manuscript_effect = yes
@@ -233,19 +293,28 @@ kehillah_writing_finish_effect = {
 			kehillah_ledger_news_announce_effect = yes
 		}
 		else = {
+			if = {
+				limit = { var:kehillah_writing_spark_tier ?= 3 }
+				set_variable = { name = kehillah_writing_result_ledger value = flag:full }
+			}
+			else = { set_variable = { name = kehillah_writing_result_ledger value = flag:none } }
 			set_variable = { name = kehillah_writing_ordinary_form value = var:kehillah_writing_form }
 			kehillah_book_complete_effect = yes
 			scope:newly_created_artifact ?= {
 				kehillah_writing_set_ordinary_artifact_identity_effect = yes
 			}
 		}
+		if = {
+			limit = { exists = scope:newly_created_artifact }
+			set_variable = { name = kehillah_writing_result_artifact value = scope:newly_created_artifact }
+		}
 		trigger_event = { id = kehillah_book.0006 days = 10 }
 	}
 	else = {
 		set_variable = { name = kehillah_writing_recent value = yes days = 730 }
-		add_learning_lifestyle_xp = 150
 		remove_variable = kehillah_book_tally
 	}
+	remove_variable = kehillah_writing_defer_reward
 	remove_variable = kehillah_writing_form
 	remove_variable = kehillah_writing_phase
 	remove_variable = kehillah_writing_partner
@@ -281,5 +350,34 @@ kehillah_writing_create_manuscript_effect = {
 				set_artifact_rarity = masterwork
 			}
 		}
+	}
+}
+
+# 2026-11-25: the finished book's reward, in kehillah_writing.0302's option so
+# its tooltip lists it (it used to be applied unseen in a hidden event).
+# Scope: the author. Same amounts as kehillah_book_tier_reward_or_defer_effect.
+kehillah_writing_reward_effect = {
+	if = {
+		limit = { var:kehillah_writing_result_tier ?= flag:illustrious }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_writing_greatness_illustrious_value }
+		add_piety = massive_piety_gain
+		add_prestige = massive_prestige_gain
+	}
+	else_if = {
+		limit = { var:kehillah_writing_result_tier ?= flag:famed }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_writing_greatness_famed_value }
+		add_piety = major_piety_gain
+		add_prestige = major_prestige_gain
+	}
+	else_if = {
+		limit = { has_variable = kehillah_writing_result_tier }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_writing_greatness_masterwork_value }
+		add_piety = medium_piety_gain
+		add_prestige = medium_prestige_gain
+	}
+	# A book that was not finished still taught its author.
+	if = {
+		limit = { NOT = { has_variable = kehillah_writing_success } }
+		add_learning_lifestyle_xp = 150
 	}
 }
