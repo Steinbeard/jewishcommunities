@@ -95,9 +95,9 @@ def build(region: str) -> None:
     name = f"kehillah_quarter_background_{region}"
     summer = Image.open(SOURCE / f"{name}_lived_v4.png")
     winter = winterise(summer)
-    winter.save(SOURCE / f"{name}_winter_v1.png")
+    winter.save(SOURCE / f"{name}_winter_procedural_placeholder.png")
     winter = winter.resize(SIZE, Image.Resampling.LANCZOS)
-    winter.save(OUTPUT / f"{name}_winter.dds", pixel_format="DXT1")
+    winter.save(OUTPUT / f"{name}_winter_procedural_placeholder.dds", pixel_format="DXT1")
 
 
 if __name__ == "__main__":
