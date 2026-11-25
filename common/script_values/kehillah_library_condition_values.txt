@@ -1,0 +1,63 @@
+﻿# Sefer condition: wear, repair and the genizah (2026-11-24, Daniel's request).
+# See docs/implementation/2026-11-24-sefer-condition-and-genizah.md.
+# Per-work condition values are generated: kehillah_library_condition_generated_values.txt.
+
+# Library title scope. The yearly chance, in percent, that a held book wears
+# one step: Sound -> Worn -> Fragile -> laid in the genizah. At 3 a book
+# lasts about a century untended; a library of twenty books sees a step
+# about every other year and loses a book every five years or so.
+# A Sofer's Workshop at the library's quarter re-sews loose quires before
+# they fall out, so books wear more slowly there.
+kehillah_lib_wear_chance_value = {
+	value = 3
+	if = {
+		limit = { holder ?= { domicile ?= { has_domicile_parameter = kehillah_unlocks_sofer } } }
+		subtract = 1
+	}
+	if = {
+		limit = { has_global_variable = kehillah_wear_debug_force }
+		value = 100
+	}
+}
+
+# Character scope: the library's holder, who pays. Mending is always cheaper
+# than a new copy (a local copy costs minor_gold_value, a bought manuscript
+# major_gold_value), and cheaper again with a sofer of one's own.
+kehillah_lib_repair_worn_cost_value = {
+	value = minor_gold_value
+	multiply = 0.5
+	if = {
+		limit = { domicile ?= { has_domicile_parameter = kehillah_unlocks_sofer } }
+		multiply = 0.5
+	}
+}
+
+kehillah_lib_repair_fragile_cost_value = {
+	value = minor_gold_value
+	if = {
+		limit = { domicile ?= { has_domicile_parameter = kehillah_unlocks_sofer } }
+		multiply = 0.5
+	}
+}
+
+# Library title scope: how many held books are worn, fragile, or were laid to rest.
+kehillah_lib_worn_count_value = {
+	value = 0
+	every_in_list = { variable = kehillah_library_worn add = 1 }
+}
+
+kehillah_lib_fragile_count_value = {
+	value = 0
+	every_in_list = { variable = kehillah_library_fragile add = 1 }
+}
+
+kehillah_lib_genizah_count_value = {
+	value = 0
+	every_in_list = { variable = kehillah_library_genizah add = 1 }
+}
+
+# Character scope. An AI holder mends a fragile book only with this much in hand.
+kehillah_lib_ai_repair_reserve_value = {
+	value = kehillah_lib_repair_fragile_cost_value
+	multiply = 3
+}

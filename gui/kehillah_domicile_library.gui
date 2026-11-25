@@ -235,6 +235,9 @@ types KehillahLibrary
 					text = "[Select_CString( GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_LIB_MASTERY_YES' ), Localize( 'KEHILLAH_LIB_MASTERY_NO' ) )]"
 				}
 			}
+			### 2026-11-24: the copy's condition, only where a shelf (and so a Title)
+			### is in context; the shelf and the corpus order list fill this block.
+			block "condition_line" {}
 			### 2026-11-24: what a first mastery of this book does for writing:
 			### the idea it is likely to spark, or a commentary's craft.
 			hbox = {
@@ -585,7 +588,7 @@ types KehillahLibrary
 		onclick = "[GetScriptedGui( 'kehillah_lib_cache_authors' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
 		onclick = "[GetVariableSystem.Set( 'kehillah_lib_picked_work', Scope.GetFlagName )]"
 		onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_holders_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-		tooltipwidget = { kehillah_library_work_tooltip = {} }
+		tooltipwidget = { kehillah_library_work_tooltip = { blockoverride "condition_line" { kehillah_lib_condition_line = {} } } }
 		state = { name = _mouse_hierarchy_enter on_start = "[PdxGuiWidget.FindChild( 'kehillah_spine_art' ).TriggerAnimation( 'kehillah_spine_lift' )]" }
 		state = { name = _mouse_hierarchy_leave on_start = "[PdxGuiWidget.FindChild( 'kehillah_spine_art' ).TriggerAnimation( 'kehillah_spine_drop' )]" }
 		icon = {
@@ -674,6 +677,62 @@ types KehillahLibrary
 				texture = "gfx/interface/icons/symbols/icon_warning.dds"
 				alwaystransparent = yes
 			}
+			### 2026-11-24 (Daniel: sefarim deteriorate; docs/implementation/2026-11-24-
+			### sefer-condition-and-genizah.md): a worn book is dulled; a fragile one is
+			### darker still, with pale splits where its leaves are coming loose.
+			icon = {
+				visible = "[EqualTo_CFixedPoint( Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_condition_', Scope.GetFlagName ) ), '(CFixedPoint)1' )]"
+				size = { 100% 100% }
+				texture = "gfx/interface/colors/black.dds"
+				alpha = 0.2
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[EqualTo_CFixedPoint( Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_condition_', Scope.GetFlagName ) ), '(CFixedPoint)2' )]"
+				size = { 100% 100% }
+				texture = "gfx/interface/colors/black.dds"
+				alpha = 0.4
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[EqualTo_CFixedPoint( Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_condition_', Scope.GetFlagName ) ), '(CFixedPoint)2' )]"
+				parentanchor = top|hcenter
+				widgetanchor = top|hcenter
+				position = { 1 31 }
+				size = { 80% 2 }
+				texture = "gfx/interface/colors/white.dds"
+				alpha = 0.55
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[EqualTo_CFixedPoint( Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_condition_', Scope.GetFlagName ) ), '(CFixedPoint)2' )]"
+				parentanchor = top|hcenter
+				widgetanchor = top|hcenter
+				position = { -1 64 }
+				size = { 70% 2 }
+				texture = "gfx/interface/colors/white.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+		}
+	}
+
+	# 2026-11-24: a book's condition in the library shown (needs Title in context).
+	# Empty by default in the hover card, so the ledger, the Learning window and
+	# the scheme widget -- which have no library -- never ask for it.
+	type kehillah_lib_condition_line = widget {
+		visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_condition_', Scope.GetFlagName ) ), '(CFixedPoint)0' )]"
+		size = { 380 22 }
+		text_single = { position = { 0 2 } text = "KEHILLAH_LIB_ROW_CONDITION" default_format = "#weak" }
+		icon = {
+			position = { 96 1 }
+			size = { 20 20 }
+			texture = "gfx/interface/icons/flat_icons/quality.dds"
+		}
+		text_single = {
+			position = { 120 2 }
+			max_width = 260
+			text = "[Localize( Concatenate( 'KEHILLAH_LIB_CONDITION_', IntToString( FixedPointToInt( Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_condition_', Scope.GetFlagName ) ) ) ) ) )]"
 		}
 	}
 
@@ -2393,6 +2452,20 @@ types KehillahLibrary
 							text = "[Select_CString( GetScriptedGui( Concatenate( 'kehillah_lib_studied_', GetVariableSystem.Get( 'kehillah_lib_picked_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_LIB_MASTERY_YES' ), Localize( 'KEHILLAH_LIB_MASTERY_NO' ) )]"
 						}
 					}
+					### 2026-11-24: this copy's condition, once it is no longer sound.
+					widget = {
+						visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_condition_', GetVariableSystem.Get( 'kehillah_lib_picked_work' ) ) ), '(CFixedPoint)0' )]"
+						layoutpolicy_horizontal = expanding
+						size = { 0 22 }
+						tooltip = "[Localize( Concatenate( 'KEHILLAH_LIB_CONDITION_TT_', IntToString( FixedPointToInt( Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_condition_', GetVariableSystem.Get( 'kehillah_lib_picked_work' ) ) ) ) ) ) )]"
+						text_single = { position = { 0 2 } text = "KEHILLAH_LIB_ROW_CONDITION" default_format = "#weak" }
+						icon = { position = { 84 1 } size = { 20 20 } texture = "gfx/interface/icons/flat_icons/quality.dds" }
+						text_single = {
+							position = { 108 2 }
+							max_width = 160
+							text = "[Localize( Concatenate( 'KEHILLAH_LIB_CONDITION_', IntToString( FixedPointToInt( Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_condition_', GetVariableSystem.Get( 'kehillah_lib_picked_work' ) ) ) ) ) ) )]"
+						}
+					}
 					hbox = {
 						visible = "[LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_lib_view_reader' ).Char.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_standing_', GetVariableSystem.Get( 'kehillah_lib_picked_work' ) ) ), '(CFixedPoint)2' )]"
 						layoutpolicy_horizontal = expanding
@@ -2452,6 +2525,24 @@ types KehillahLibrary
 								position = { 11 0 }
 								size = { 26 26 }
 								texture = "gfx/interface/icons/scheme_types/icon_scheme_study_scriptures.dds"
+								alwaystransparent = yes
+							}
+						}
+						### 2026-11-24: mend a worn or fragile copy (the library's holder only).
+						button_standard_list = {
+							visible = "[GetScriptedGui( Concatenate( 'kehillah_lib_repair_', GetVariableSystem.Get( 'kehillah_lib_picked_work' ) ) ).IsShown( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End )]"
+							layoutpolicy_horizontal = expanding
+							size = { 120 34 }
+							text = "KEHILLAH_LIB_REPAIR_ACTION"
+							tooltip = "[Select_CString( GetScriptedGui( Concatenate( 'kehillah_lib_repair_', GetVariableSystem.Get( 'kehillah_lib_picked_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End ), GetScriptedGui( Concatenate( 'kehillah_lib_repair_', GetVariableSystem.Get( 'kehillah_lib_picked_work' ) ) ).BuildTooltip( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End ), Concatenate( Localize( 'KEHILLAH_LIB_REPAIR_BLOCKED' ), GetScriptedGui( Concatenate( 'kehillah_lib_repair_', GetVariableSystem.Get( 'kehillah_lib_picked_work' ) ) ).IsValidTooltip( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End ) ) )]"
+							using = tooltip_se
+							enabled = "[GetScriptedGui( Concatenate( 'kehillah_lib_repair_', GetVariableSystem.Get( 'kehillah_lib_picked_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End )]"
+							onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_repair_', GetVariableSystem.Get( 'kehillah_lib_picked_work' ) ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End )]"
+							icon = {
+								parentanchor = left|vcenter
+								position = { 6 0 }
+								size = { 20 20 }
+								texture = "gfx/interface/icons/flat_icons/hammer.dds"
 								alwaystransparent = yes
 							}
 						}
@@ -2568,7 +2659,7 @@ types KehillahLibrary
 									onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_holders_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
 									onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_readers_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
 									tooltipwidget = {
-										kehillah_library_work_tooltip = {}
+										kehillah_library_work_tooltip = { blockoverride "condition_line" { kehillah_lib_condition_line = {} } }
 									}
 									icon = { parentanchor = left|vcenter position = { 8 0 } size = { 40 40 } texture = "gfx/interface/icons/artifact/artifact_chronicle.dds" alwaystransparent = yes }
 									text_single = { parentanchor = left|vcenter position = { 54 0 } text = "[Concatenate( Select_CString( LessThan_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_standing_', Scope.GetFlagName ) ), '(CFixedPoint)2' ), Localize( 'KEHILLAH_STUDY_FORBIDDEN_MARK' ), Localize( 'KEHILLAH_LIB_NOTHING' ) ), Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) ) )]" default_format = "#high" max_width = 365 }
@@ -2735,6 +2826,20 @@ types KehillahLibrary
 							tooltip = "[Concatenate( Localize( Concatenate( 'kehillah_lib_tenets_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ), Localize( 'KEHILLAH_SEFARIM_TENETS_TT_AFTER' ) )]"
 						}
 					}
+					### 2026-11-24: this copy's condition, for a book the library holds.
+					widget = {
+						visible = "[GreaterThan_CFixedPoint( Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_held_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ), '(CFixedPoint)0' )]"
+						layoutpolicy_horizontal = expanding
+						size = { 0 22 }
+						tooltip = "[Localize( Concatenate( 'KEHILLAH_LIB_CONDITION_TT_', IntToString( FixedPointToInt( Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_condition_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ) ) ) ) )]"
+						text_single = { position = { 0 2 } text = "KEHILLAH_LIB_ROW_CONDITION" default_format = "#weak" }
+						icon = { position = { 84 1 } size = { 20 20 } texture = "gfx/interface/icons/flat_icons/quality.dds" }
+						text_single = {
+							position = { 108 2 }
+							max_width = 160
+							text = "[Localize( Concatenate( 'KEHILLAH_LIB_CONDITION_', IntToString( FixedPointToInt( Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_condition_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ) ) ) ) )]"
+						}
+					}
 					hbox = {
 						visible = "[LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_lib_view_reader' ).Char.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_standing_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ), '(CFixedPoint)2' )]"
 						layoutpolicy_horizontal = expanding
@@ -2822,6 +2927,24 @@ types KehillahLibrary
 							position = { 6 0 }
 							size = { 20 20 }
 							texture = "gfx/interface/icons/character_interactions/gift_claim_interaction.dds"
+							alwaystransparent = yes
+						}
+					}
+					### 2026-11-24: mend a worn or fragile copy. Shown to the library's holder only.
+					button_standard_list = {
+						visible = "[GetScriptedGui( Concatenate( 'kehillah_lib_repair_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).IsShown( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End )]"
+						layoutpolicy_horizontal = expanding
+						size = { 150 34 }
+						text = "KEHILLAH_LIB_REPAIR_ACTION"
+						tooltip = "[Select_CString( GetScriptedGui( Concatenate( 'kehillah_lib_repair_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End ), GetScriptedGui( Concatenate( 'kehillah_lib_repair_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).BuildTooltip( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End ), Concatenate( Localize( 'KEHILLAH_LIB_REPAIR_BLOCKED' ), GetScriptedGui( Concatenate( 'kehillah_lib_repair_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).IsValidTooltip( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End ) ) )]"
+						using = tooltip_se
+						enabled = "[GetScriptedGui( Concatenate( 'kehillah_lib_repair_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End )]"
+						onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_repair_', GetVariableSystem.Get( 'kehillah_lib_selected_work' ) ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Title.MakeScope ).End )]"
+						icon = {
+							parentanchor = left|vcenter
+							position = { 6 0 }
+							size = { 20 20 }
+							texture = "gfx/interface/icons/flat_icons/hammer.dds"
 							alwaystransparent = yes
 						}
 					}

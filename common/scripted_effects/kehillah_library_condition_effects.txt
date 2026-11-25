@@ -1,0 +1,93 @@
+﻿# Sefer condition: wear, repair and the genizah (2026-11-24, Daniel's request:
+# "Can we make sefarim deteriorate over time? So you need to buy new ones or
+# pay to repair them? If they break they go to the genizah (just flavor and 5
+# piety)."). See docs/implementation/2026-11-24-sefer-condition-and-genizah.md.
+#
+# A library title keeps two lists beside kehillah_library_works:
+#   kehillah_library_worn     works whose binding is worn
+#   kehillah_library_fragile  works falling apart; the next step loses them
+# A work in neither is sound. A lost work goes on kehillah_library_genizah,
+# a record only (nothing reads it yet).
+# The yearly roll for every work is generated:
+# kehillah_lib_wear_yearly_effect in kehillah_library_condition_generated_effects.txt.
+
+# Library title scope. $WORK$ wears one step.
+kehillah_lib_wear_step_effect = {
+	if = {
+		limit = { is_target_in_variable_list = { name = kehillah_library_fragile target = $WORK$ } }
+		kehillah_lib_genizah_effect = { WORK = $WORK$ }
+	}
+	else_if = {
+		limit = { is_target_in_variable_list = { name = kehillah_library_worn target = $WORK$ } }
+		remove_list_variable = { name = kehillah_library_worn target = $WORK$ }
+		add_to_variable_list = { name = kehillah_library_fragile target = $WORK$ }
+		holder ?= {
+			set_variable = { name = kehillah_wear_work_loc value = $WORK$ }
+			send_interface_message = {
+				type = msg_kehillah_sefer_wear
+				title = kehillah_lib_wear_fragile_t
+				desc = kehillah_lib_wear_fragile_d
+				left_icon = this
+			}
+		}
+	}
+	else = {
+		add_to_variable_list = { name = kehillah_library_worn target = $WORK$ }
+	}
+}
+
+# Library title scope. $WORK$ is past mending: it leaves the shelf and is laid
+# in the genizah, or buried where the community has none. Its holder gains
+# Piety for the honour shown a worn holy book.
+kehillah_lib_genizah_effect = {
+	remove_list_variable = { name = kehillah_library_works target = $WORK$ }
+	remove_list_variable = { name = kehillah_library_worn target = $WORK$ }
+	remove_list_variable = { name = kehillah_library_fragile target = $WORK$ }
+	if = {
+		limit = { NOT = { is_target_in_variable_list = { name = kehillah_library_genizah target = $WORK$ } } }
+		add_to_variable_list = { name = kehillah_library_genizah target = $WORK$ }
+	}
+	holder ?= {
+		set_variable = { name = kehillah_wear_work_loc value = $WORK$ }
+		if = {
+			limit = { domicile ?= { has_domicile_parameter = kehillah_has_genizah } }
+			send_interface_message = {
+				type = msg_kehillah_sefer
+				title = kehillah_lib_genizah_t
+				desc = kehillah_lib_genizah_room_d
+				left_icon = this
+				add_piety = 5
+			}
+		}
+		else = {
+			send_interface_message = {
+				type = msg_kehillah_sefer
+				title = kehillah_lib_genizah_t
+				desc = kehillah_lib_genizah_burial_d
+				left_icon = this
+				add_piety = 5
+			}
+		}
+	}
+	kehillah_lib_refresh_cache_effect = yes
+}
+
+# Library title scope. Its holder pays to mend $WORK$, which becomes sound.
+# Used by the Repair button (kehillah_lib_repair_<work>) and by AI holders.
+kehillah_lib_pay_and_repair_effect = {
+	save_scope_as = kehillah_repair_library
+	holder ?= {
+		set_variable = { name = kehillah_wear_work_loc value = $WORK$ }
+		if = {
+			limit = { scope:kehillah_repair_library = { is_target_in_variable_list = { name = kehillah_library_fragile target = $WORK$ } } }
+			remove_short_term_gold = kehillah_lib_repair_fragile_cost_value
+			custom_tooltip = kehillah_lib_repair_fragile_effect_tt
+		}
+		else = {
+			remove_short_term_gold = kehillah_lib_repair_worn_cost_value
+			custom_tooltip = kehillah_lib_repair_worn_effect_tt
+		}
+	}
+	remove_list_variable = { name = kehillah_library_worn target = $WORK$ }
+	remove_list_variable = { name = kehillah_library_fragile target = $WORK$ }
+}

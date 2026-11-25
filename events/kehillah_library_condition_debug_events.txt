@@ -1,0 +1,55 @@
+﻿# Console-only probes for sefer condition (2026-11-24).
+# docs/implementation/2026-11-24-sefer-condition-and-genizah.md
+#   event kehillah_wear_debug.1  log your library's books, worn, fragile and genizah counts, wear chance and repair costs (read-only)
+#   event kehillah_wear_debug.2  every book in your library wears one step now (run it three times to send books to the genizah)
+#   event kehillah_wear_debug.3  run your library's normal yearly wear roll once
+
+namespace = kehillah_wear_debug
+
+kehillah_wear_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_wear_debug.1 START"
+		kehillah_lib_resolve_own_library_effect = yes
+		if = {
+			limit = { exists = scope:kehillah_own_library_scope }
+			scope:kehillah_own_library_scope = { save_scope_as = kehillah_wear_debug_library }
+			debug_log = "kehillah_wear_debug.1 library=[kehillah_wear_debug_library.GetName] books=[kehillah_wear_debug_library.MakeScope.ScriptValue('kehillah_lib_work_count_value')|0] worn=[kehillah_wear_debug_library.MakeScope.ScriptValue('kehillah_lib_worn_count_value')|0] fragile=[kehillah_wear_debug_library.MakeScope.ScriptValue('kehillah_lib_fragile_count_value')|0] genizah=[kehillah_wear_debug_library.MakeScope.ScriptValue('kehillah_lib_genizah_count_value')|0] wear_chance=[kehillah_wear_debug_library.MakeScope.ScriptValue('kehillah_lib_wear_chance_value')|0]"
+			debug_log = "kehillah_wear_debug.1 gold=[ROOT.Char.GetGold|0] repair_worn=[ROOT.Char.MakeScope.ScriptValue('kehillah_lib_repair_worn_cost_value')|1] repair_fragile=[ROOT.Char.MakeScope.ScriptValue('kehillah_lib_repair_fragile_cost_value')|1]"
+			if = {
+				limit = { scope:kehillah_wear_debug_library = { has_variable = kehillah_library_sealed } }
+				debug_log = "kehillah_wear_debug.1 library is SEALED (no wear)"
+			}
+		}
+		else = { debug_log = "kehillah_wear_debug.1 no own library" }
+		debug_log = "kehillah_wear_debug.1 END"
+	}
+}
+
+kehillah_wear_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_lib_resolve_own_library_effect = yes
+		if = {
+			limit = { exists = scope:kehillah_own_library_scope }
+			set_global_variable = { name = kehillah_wear_debug_force value = yes }
+			scope:kehillah_own_library_scope = { kehillah_lib_wear_yearly_effect = yes }
+			remove_global_variable = kehillah_wear_debug_force
+			debug_log = "kehillah_wear_debug.2 every held book wore one step"
+		}
+		trigger_event = kehillah_wear_debug.1
+	}
+}
+
+kehillah_wear_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_lib_resolve_own_library_effect = yes
+		scope:kehillah_own_library_scope ?= { kehillah_lib_wear_yearly_effect = yes }
+		debug_log = "kehillah_wear_debug.3 ran one yearly wear roll"
+		trigger_event = kehillah_wear_debug.1
+	}
+}
