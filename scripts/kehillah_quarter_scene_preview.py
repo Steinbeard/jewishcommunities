@@ -44,6 +44,10 @@ def render(region: str, developed: bool) -> Image.Image:
     scene = Image.open(GFX / f"kehillah_quarter_background_{region}.dds").convert("RGBA")
     scene = scene.resize(SCENE, Image.Resampling.LANCZOS)
     for slot, family in SLOTS:
+        if not developed and slot in ("external_slot_6", "external_slot_7"):
+            # Synagogue tier 1 has one optional trade site; tiers 2 and 3
+            # unlock these two positions in order.
+            continue
         level = "s3" if developed else "s0" if family == "wall" else "s1"
         sprite = Image.open(GFX / f"kehillah_quarter_v4_{family}_{region}_{level}.dds").convert("RGBA")
         x, y, width, height = geometry(slot)
