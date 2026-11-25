@@ -68,26 +68,49 @@ kehillah_safety_religious_support_monthly_chance_value = {
 	}
 }
 
-# --- Dayyan: Prepare the Bet Din. Conference cooldown in months: the
-# base (kehillah_bet_din_conference_cooldown_years, 2) less up to 12
-# months at Learning 20 while a Dayyan performs the task. Scope: the
-# conference host (the Kehillah leader).
-kehillah_bet_din_prepare_max_months_saved = 12
+# --- Dayyan: Prepare the Bet Din. REWORKED 2026-11-25 (Daniel): the task
+# no longer shortens the conference cooldown -- Scholarly leadership does
+# that now, and the two overlapped. It makes the court argue better: every
+# judge's argument chance in a sitting hosted by this leader gains up to
+# kehillah_bet_din_prepared_max_bonus points at Learning 20
+# (kehillah_bet_din_prepared_bonus_value, kehillah_din_argument_values.txt).
+kehillah_bet_din_prepared_max_bonus = 10
 
+# 2026-11-25 (Daniel): Scholarly leadership, once chosen, sits every year.
+kehillah_bet_din_scholarly_cooldown_years = 1
+
+# Conference cooldown in months: kehillah_bet_din_conference_cooldown_years
+# (3), or 1 year for a chosen Scholarly style. Scope: the conference host.
 kehillah_bet_din_conference_cooldown_months = {
 	value = kehillah_bet_din_conference_cooldown_years
+	if = {
+		limit = {
+			primary_title ?= {
+				has_variable = kehillah_leadership_style
+				kehillah_leadership_is_scholarly_trigger = yes
+			}
+		}
+		value = kehillah_bet_din_scholarly_cooldown_years
+	}
 	multiply = 12
+	round = yes
+	min = 6
+}
+
+# Scope: a Kehillah leader. The points the Dayyan's preparation adds to each
+# argument chance in this leader's sitting (0 without the task).
+kehillah_bet_din_prepared_points_value = {
+	value = 0
 	cp:councillor_court_chaplain ?= {
 		if = {
 			limit = { is_performing_council_task = task_kehillah_prepare_bet_din }
-			subtract = {
-				value = kehillah_bet_din_prepare_max_months_saved
-				multiply = kehillah_council_learning_scale
+			add = {
+				value = kehillah_council_learning_scale
+				multiply = kehillah_bet_din_prepared_max_bonus
 			}
 		}
 	}
 	round = yes
-	min = 6
 }
 
 # --- Rosh ha-Shmirah: Keep the Night Watch. Weight multiplier applied to
@@ -112,7 +135,12 @@ kehillah_night_watch_event_weight_value = {
 # task's effect_desc).
 kehillah_council_revenue_pct_value = { value = kehillah_council_stewardship_scale multiply = 25 round = yes }
 kehillah_council_construction_pct_value = { value = kehillah_council_stewardship_scale multiply = 25 round = yes }
-kehillah_council_bet_din_months_saved_value = { value = kehillah_council_learning_scale multiply = kehillah_bet_din_prepare_max_months_saved round = yes }
+# 2026-11-25: the Dayyan's task card. Scope: the councillor.
+kehillah_council_bet_din_prepared_points_value = {
+	value = kehillah_council_learning_scale
+	multiply = kehillah_bet_din_prepared_max_bonus
+	round = yes
+}
 kehillah_council_petition_chance_display_value = {
 	value = kehillah_council_diplomacy_scale
 	multiply = kehillah_shtadlan_petition_max_monthly_chance

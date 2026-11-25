@@ -230,6 +230,28 @@ lending more effective. Built the same day:
 4. Give the Quarter the Bankers' Row, then Loan Gold to an indebted ruler with interest. The acceptance
    breakdown shows the lending-table line, and the debt is about 10% above vanilla's.
 
+## 4d. Addendum (2026-11-25, Daniel): Scholarly sits the Bet Din yearly; the Dayyan prepares arguments instead
+
+Daniel wanted Scholarly to feel like a playstyle, not only a She'elot cap. A special Bet Din intent was weighed
+and declined. Instead:
+
+- **Bet Din cooldown:** the default is now **3 years** (`kehillah_bet_din_conference_cooldown_years`, was 2), and
+  **1 year** once Scholarly leadership is chosen (`kehillah_bet_din_scholarly_cooldown_years`). An unchosen style
+  uses the default, even though other scholarly fallbacks apply. The 6-month floor stays. The She'elot follower
+  extra (§4c) stays too.
+- **Dayyan's Prepare the Bet Din reworked** (Daniel: "too much overlap with the dayyan task"). The task no
+  longer shortens the cooldown. It adds up to **+10** points at Learning 20 to every judge's argument chance in a
+  sitting the leader hosts. The three `kehillah_din_argument_*_chance_value` values add
+  `kehillah_bet_din_prepared_bonus_value`, which reads the activity host's Dayyan. AI sittings count too, because
+  the stand-in hands the activity to the leader in `on_start`. The task card shows the bonus.
+- **Not done:** the argument preview's factor list (`kehillah_din_argument_*_factors_tt`) does not name the
+  Dayyan's bonus yet; the shown percentage includes it. Those loc and event files carry another session's
+  uncommitted Bet Din work, so they were left alone.
+
+**Live checks:** choose Scholarly, hold a sitting, and check that the decision is available again after a year
+(the cooldown tooltip). With a Dayyan on Prepare the Bet Din, an argument's shown chance is higher by the task
+card's number. With no style chosen, the cooldown is three years.
+
 ## 5. Questions for Daniel
 1. Should routes be the real vanilla trade window (§3.1), or scripted sales only? The first is richer;
    the second is safer for the government file.
