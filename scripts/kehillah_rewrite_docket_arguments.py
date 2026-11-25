@@ -74,6 +74,25 @@ def strip_quality_desc(event: str) -> str:
     return event
 
 
+def polish_case97_panel(event: str) -> str:
+    """Join the hidden fact to the ruling, instead of repeating the choice."""
+    first = event.find("\t\tfirst_valid = {")
+    assert first >= 0
+    first_end = match_brace(event, event.index("{", first))
+    second = event.find("\t\tfirst_valid = {", first_end)
+    assert second >= 0
+    second_end = match_brace(event, event.index("{", second))
+    fact = """\t\tfirst_valid = {
+\t\t\ttriggered_desc = { trigger = { involved_activity.var:kehillah_bet_din_case97_direction = 1 involved_activity.var:kehillah_din_case97_private_advice_given = 1 } desc = kehillah_bet_din.0974.ruling_1_advice }
+\t\t\ttriggered_desc = { trigger = { involved_activity.var:kehillah_bet_din_case97_direction = 1 } desc = kehillah_bet_din.0974.ruling_1_schedule }
+\t\t\ttriggered_desc = { trigger = { involved_activity.var:kehillah_bet_din_case97_direction = 2 involved_activity.var:kehillah_din_case97_private_advice_given = 1 } desc = kehillah_bet_din.0974.ruling_2_advice }
+\t\t\ttriggered_desc = { trigger = { involved_activity.var:kehillah_bet_din_case97_direction = 2 } desc = kehillah_bet_din.0974.ruling_2_schedule }
+\t\t\ttriggered_desc = { trigger = { involved_activity.var:kehillah_din_case97_private_advice_given = 1 } desc = kehillah_bet_din.0974.ruling_3_advice }
+\t\t\tdesc = kehillah_bet_din.0974.ruling_3_schedule
+\t\t}"""
+    return event[:first] + fact + event[second_end:]
+
+
 def choice_event(event: str, n: int, seat: int, eid: str | None = None) -> str:
     eid = eid or f"0{n}"
     options = top_blocks(event, "option")
@@ -85,11 +104,21 @@ def choice_event(event: str, n: int, seat: int, eid: str | None = None) -> str:
     for letter, position, skill in choices:
         check_letter = {"a": "c", "c": "b"}.get(letter, letter) if n == 15 else letter
         stress = "if = { limit = { has_trait = just } add_stress = 5 custom_tooltip = kehillah_din_stress_just_tt }" if position in (1, 3) else "if = { limit = { has_trait = impatient } add_stress = 8 custom_tooltip = kehillah_din_stress_impatient_tt }\n\t\tif = { limit = { has_trait = diligent } add_stress = -4 custom_tooltip = kehillah_din_stress_diligent_tt }"
+        factors = {
+            "a": (("gregarious", "gregarious"), ("shy", "shy"), ("just", "just")),
+            "b": (("diligent", "diligent"), ("lazy", "lazy"), ("has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 }", "talmudics")),
+            "c": (("patient", "patient"), ("impatient", "impatient"), ("just", "just")),
+        }
+        factor_lines = "\n\t\t".join(
+            f"if = {{ limit = {{ {condition if condition.startswith('has_trait_xp') else 'has_trait = ' + condition} }} custom_tooltip = kehillah_din_factor_{key}_tt }}"
+            for condition, key in factors[check_letter]
+        )
         opts.append(f"""\toption = {{
 \t\tname = kehillah_bet_din.{eid}1.{letter}
 \t\tkehillah_din_choose_argument_effect = {{ SEAT = {seat} POSITION = {position} LETTER = {check_letter} }}
 \t\t{stress}
 \t\tcustom_tooltip = kehillah_din_argument_{check_letter}_factors_tt
+\t\t{factor_lines}
 \t\tshow_as_tooltip = {{
 \t\t\trandom_list = {{
 \t\t\t\t0 = {{ modifier = {{ add = kehillah_din_argument_{check_letter}_chance_value }} custom_tooltip = kehillah_din_argument_preview_success }}
@@ -193,6 +222,8 @@ def rewrite_file(path: Path, n: int) -> bool:
     panel = panel.replace(desc, "\tdesc = {\n\t\tdesc = kehillah_din_argument_panel_desc", 1)
     panel = re.sub(rf"(?m)^\s*desc = kehillah_bet_din\.{eid}4\.desc\s*\n", "\n", panel, count=1)
     panel = strip_quality_desc(panel)
+    if n == 97:
+        panel = polish_case97_panel(panel)
     panel = panel.replace("kehillah_bet_din_advance_docket_effect = yes", "kehillah_din_clear_argument_case_effect = yes kehillah_bet_din_advance_docket_effect = yes")
     replacements.append((start, end, panel))
     for start, end, value in sorted(replacements, reverse=True):
