@@ -1,0 +1,227 @@
+﻿# Shared argument flow for the authored Bet Din cases. The seat is saved on
+# the activity between the argument, citation, and feedback screens.
+kehillah_din_choose_argument_effect = {
+	set_variable = { name = kehillah_din_argument_tmp value = kehillah_din_argument_$LETTER$_chance_value }
+	involved_activity = {
+		set_variable = { name = kehillah_din_argument_seat value = $SEAT$ }
+		set_variable = { name = kehillah_din_argument_position value = $POSITION$ }
+		set_variable = { name = kehillah_din_argument_chance value = root.var:kehillah_din_argument_tmp }
+		set_variable = { name = kehillah_din_argument_final_chance value = root.var:kehillah_din_argument_tmp }
+		set_variable = { name = kehillah_din_vote_$SEAT$_position value = $POSITION$ }
+		remove_variable = kehillah_din_vote_$SEAT$_cited
+		set_variable = { name = kehillah_din_vote_$SEAT$_success value = 0 }
+		set_variable = { name = kehillah_din_vote_$SEAT$_weight value = 0 }
+		remove_variable = kehillah_din_argument_cited_work
+		remove_variable = kehillah_din_argument_cite_weight
+		clamp_variable = { name = kehillah_din_argument_chance min = 10 max = 90 }
+		clamp_variable = { name = kehillah_din_argument_final_chance min = 10 max = 90 }
+	}
+	set_variable = { name = kehillah_din_argument_display_chance value = var:kehillah_din_argument_tmp }
+	remove_variable = kehillah_din_argument_tmp
+}
+
+kehillah_din_prepare_argument_citations_effect = {
+	involved_activity = {
+		save_scope_as = kehillah_din_cite_activity
+		set_variable = { name = kehillah_din_citing_judge value = root }
+	}
+	kehillah_din_case_$CASE$_pick_effect = yes
+	kehillah_din_cite_measure_effect = { SLOT = grounded }
+	kehillah_din_cite_measure_effect = { SLOT = innovative }
+	involved_activity = {
+		if = {
+			limit = { exists = var:kehillah_din_cite_grounded }
+			set_variable = { name = kehillah_din_argument_grounded_chance value = var:kehillah_din_cite_grounded_reliability }
+			change_variable = { name = kehillah_din_argument_grounded_chance divide = kehillah_din_argument_citation_chance_divisor }
+			change_variable = { name = kehillah_din_argument_grounded_chance add = var:kehillah_din_argument_chance }
+			clamp_variable = { name = kehillah_din_argument_grounded_chance min = 10 max = 90 }
+		}
+		if = {
+			limit = { exists = var:kehillah_din_cite_innovative }
+			set_variable = { name = kehillah_din_argument_innovative_chance value = var:kehillah_din_cite_innovative_reliability }
+			change_variable = { name = kehillah_din_argument_innovative_chance divide = kehillah_din_argument_citation_chance_divisor }
+			change_variable = { name = kehillah_din_argument_innovative_chance add = var:kehillah_din_argument_chance }
+			clamp_variable = { name = kehillah_din_argument_innovative_chance min = 10 max = 90 }
+		}
+	}
+	if = { limit = { exists = involved_activity.var:kehillah_din_argument_grounded_chance } set_variable = { name = kehillah_din_argument_grounded_display value = involved_activity.var:kehillah_din_argument_grounded_chance } }
+	if = { limit = { exists = involved_activity.var:kehillah_din_argument_innovative_chance } set_variable = { name = kehillah_din_argument_innovative_display value = involved_activity.var:kehillah_din_argument_innovative_chance } }
+}
+
+kehillah_din_choose_argument_citation_effect = {
+	involved_activity = {
+		set_variable = { name = kehillah_din_argument_final_chance value = var:kehillah_din_argument_$SLOT$_chance }
+		set_variable = { name = kehillah_din_argument_cited_work value = var:kehillah_din_cite_$SLOT$ }
+		set_variable = { name = kehillah_din_argument_cite_weight value = var:kehillah_din_cite_$SLOT$_strength }
+		change_variable = { name = kehillah_din_argument_cite_weight divide = kehillah_din_argument_citation_weight_divisor }
+		set_variable = { name = kehillah_din_cited_work value = var:kehillah_din_cite_$SLOT$ }
+	}
+	kehillah_din_cite_cherem_effect = { SLOT = $SLOT$ }
+}
+
+kehillah_din_roll_argument_effect = {
+	involved_activity = {
+		set_variable = { name = kehillah_din_argument_success value = 0 }
+		random = { chance = var:kehillah_din_argument_final_chance set_variable = { name = kehillah_din_argument_success value = 1 } }
+		set_variable = { name = kehillah_din_argument_weight value = kehillah_din_argument_failure_weight }
+		if = {
+			limit = { var:kehillah_din_argument_success = 1 }
+			set_variable = { name = kehillah_din_argument_weight value = kehillah_din_argument_success_weight }
+			if = { limit = { exists = var:kehillah_din_argument_cite_weight } change_variable = { name = kehillah_din_argument_weight add = var:kehillah_din_argument_cite_weight } }
+		}
+		if = {
+			limit = { exists = var:kehillah_din_argument_cited_work }
+			if = {
+				limit = { var:kehillah_din_argument_success = 1 }
+				kehillah_din_cite_log_dispatch_effect = { SOURCE = var:kehillah_din_argument_cited_work RESULT = held JUDGE = root }
+			}
+			else = { kehillah_din_cite_log_dispatch_effect = { SOURCE = var:kehillah_din_argument_cited_work RESULT = failed JUDGE = root } }
+		}
+		if = { limit = { var:kehillah_din_argument_seat = 1 } kehillah_din_store_argument_vote_effect = { SEAT = 1 } }
+		if = { limit = { var:kehillah_din_argument_seat = 2 } kehillah_din_store_argument_vote_effect = { SEAT = 2 } }
+		if = { limit = { var:kehillah_din_argument_seat = 3 } kehillah_din_store_argument_vote_effect = { SEAT = 3 } }
+		remove_variable = kehillah_din_argument_cite_weight
+	}
+	set_variable = { name = kehillah_din_argument_display_chance value = involved_activity.var:kehillah_din_argument_final_chance }
+	set_variable = { name = kehillah_din_argument_display_weight value = involved_activity.var:kehillah_din_argument_weight }
+}
+
+# Scope: activity.
+kehillah_din_store_argument_vote_effect = {
+	set_variable = { name = kehillah_din_vote_$SEAT$_chance value = var:kehillah_din_argument_final_chance }
+	set_variable = { name = kehillah_din_vote_$SEAT$_success value = var:kehillah_din_argument_success }
+	set_variable = { name = kehillah_din_vote_$SEAT$_weight value = var:kehillah_din_argument_weight }
+	if = {
+		limit = { exists = var:kehillah_din_argument_cited_work }
+		set_variable = { name = kehillah_din_vote_$SEAT$_cited value = var:kehillah_din_argument_cited_work }
+	}
+}
+
+# The winner is the position with the greatest combined argument weight.
+# Ties first favor more votes, then the presiding judge's choice.
+kehillah_din_count_argument_panel_effect = {
+	involved_activity = {
+		set_variable = { name = kehillah_din_panel_1_weight value = 0 }
+		set_variable = { name = kehillah_din_panel_2_weight value = 0 }
+		set_variable = { name = kehillah_din_panel_3_weight value = 0 }
+		set_variable = { name = kehillah_din_panel_1_votes value = 0 }
+		set_variable = { name = kehillah_din_panel_2_votes value = 0 }
+		set_variable = { name = kehillah_din_panel_3_votes value = 0 }
+		kehillah_din_count_argument_seat_effect = { SEAT = 1 }
+		kehillah_din_count_argument_seat_effect = { SEAT = 2 }
+		kehillah_din_count_argument_seat_effect = { SEAT = 3 }
+		set_variable = { name = kehillah_din_panel_winner value = 1 }
+		set_variable = { name = kehillah_din_panel_winning_weight value = var:kehillah_din_panel_1_weight }
+		set_variable = { name = kehillah_din_panel_winning_votes value = var:kehillah_din_panel_1_votes }
+		kehillah_din_compare_argument_position_effect = { POSITION = 2 }
+		kehillah_din_compare_argument_position_effect = { POSITION = 3 }
+		set_variable = { name = kehillah_bet_din_case$CASE$_direction value = var:kehillah_din_panel_winner }
+		set_variable = { name = kehillah_bet_din_tally value = var:kehillah_din_panel_winning_weight }
+		# A well-supported ruling on the facts is worth more than a cautious
+		# investigation. Investigation preserves options but delays relief.
+		if = { limit = { var:kehillah_din_panel_winner = 1 var:kehillah_din_case$CASE$_$FACT$ = 0 } change_variable = { name = kehillah_bet_din_tally add = 12 } }
+		if = { limit = { var:kehillah_din_panel_winner = 3 var:kehillah_din_case$CASE$_$FACT$ = 1 } change_variable = { name = kehillah_bet_din_tally add = 12 } }
+		if = { limit = { var:kehillah_din_panel_winner = 2 } change_variable = { name = kehillah_bet_din_tally subtract = 4 } }
+	}
+	set_variable = { name = kehillah_din_panel_display_1_position value = involved_activity.var:kehillah_din_vote_1_position }
+	set_variable = { name = kehillah_din_panel_display_2_position value = involved_activity.var:kehillah_din_vote_2_position }
+	set_variable = { name = kehillah_din_panel_display_3_position value = involved_activity.var:kehillah_din_vote_3_position }
+	set_variable = { name = kehillah_din_panel_display_1_weight value = involved_activity.var:kehillah_din_vote_1_weight }
+	set_variable = { name = kehillah_din_panel_display_2_weight value = involved_activity.var:kehillah_din_vote_2_weight }
+	set_variable = { name = kehillah_din_panel_display_3_weight value = involved_activity.var:kehillah_din_vote_3_weight }
+	set_variable = { name = kehillah_din_panel_display_1_chance value = involved_activity.var:kehillah_din_vote_1_chance }
+	set_variable = { name = kehillah_din_panel_display_2_chance value = involved_activity.var:kehillah_din_vote_2_chance }
+	set_variable = { name = kehillah_din_panel_display_3_chance value = involved_activity.var:kehillah_din_vote_3_chance }
+	set_variable = { name = kehillah_din_panel_display_winner value = involved_activity.var:kehillah_din_panel_winner }
+	set_variable = { name = kehillah_din_panel_display_weight value = involved_activity.var:kehillah_din_panel_winning_weight }
+	if = { limit = { exists = involved_activity.var:kehillah_bet_din_judge2 } set_variable = { name = kehillah_din_panel_display_judge2 value = involved_activity.var:kehillah_bet_din_judge2 } }
+	if = { limit = { exists = involved_activity.var:kehillah_bet_din_judge3 } set_variable = { name = kehillah_din_panel_display_judge3 value = involved_activity.var:kehillah_bet_din_judge3 } }
+}
+
+kehillah_din_count_argument_seat_effect = {
+	if = { limit = { var:kehillah_din_vote_$SEAT$_position = 1 } change_variable = { name = kehillah_din_panel_1_weight add = var:kehillah_din_vote_$SEAT$_weight } change_variable = { name = kehillah_din_panel_1_votes add = 1 } }
+	if = { limit = { var:kehillah_din_vote_$SEAT$_position = 2 } change_variable = { name = kehillah_din_panel_2_weight add = var:kehillah_din_vote_$SEAT$_weight } change_variable = { name = kehillah_din_panel_2_votes add = 1 } }
+	if = { limit = { var:kehillah_din_vote_$SEAT$_position = 3 } change_variable = { name = kehillah_din_panel_3_weight add = var:kehillah_din_vote_$SEAT$_weight } change_variable = { name = kehillah_din_panel_3_votes add = 1 } }
+}
+
+kehillah_din_compare_argument_position_effect = {
+	if = {
+		limit = {
+			OR = {
+				var:kehillah_din_panel_$POSITION$_weight > var:kehillah_din_panel_winning_weight
+				AND = { var:kehillah_din_panel_$POSITION$_weight = var:kehillah_din_panel_winning_weight var:kehillah_din_panel_$POSITION$_votes > var:kehillah_din_panel_winning_votes }
+				AND = { var:kehillah_din_panel_$POSITION$_weight = var:kehillah_din_panel_winning_weight var:kehillah_din_panel_$POSITION$_votes = var:kehillah_din_panel_winning_votes var:kehillah_din_vote_1_position = $POSITION$ }
+			}
+		}
+		set_variable = { name = kehillah_din_panel_winner value = $POSITION$ }
+		set_variable = { name = kehillah_din_panel_winning_weight value = var:kehillah_din_panel_$POSITION$_weight }
+		set_variable = { name = kehillah_din_panel_winning_votes value = var:kehillah_din_panel_$POSITION$_votes }
+	}
+}
+
+# Called after the panel screen is dismissed, before the next docket draw.
+kehillah_din_clear_argument_case_effect = {
+	involved_activity = {
+		remove_variable = kehillah_din_argument_seat
+		remove_variable = kehillah_din_argument_position
+		remove_variable = kehillah_din_argument_chance
+		remove_variable = kehillah_din_argument_final_chance
+		remove_variable = kehillah_din_argument_success
+		remove_variable = kehillah_din_argument_weight
+		remove_variable = kehillah_din_argument_cited_work
+		remove_variable = kehillah_din_argument_cite_weight
+		remove_variable = kehillah_din_argument_grounded_chance
+		remove_variable = kehillah_din_argument_innovative_chance
+		remove_variable = kehillah_din_panel_1_weight
+		remove_variable = kehillah_din_panel_2_weight
+		remove_variable = kehillah_din_panel_3_weight
+		remove_variable = kehillah_din_panel_1_votes
+		remove_variable = kehillah_din_panel_2_votes
+		remove_variable = kehillah_din_panel_3_votes
+		remove_variable = kehillah_din_panel_winner
+		remove_variable = kehillah_din_panel_winning_weight
+		remove_variable = kehillah_din_panel_winning_votes
+		remove_variable = kehillah_din_cited_work
+		kehillah_din_clear_argument_seat_effect = { SEAT = 1 }
+		kehillah_din_clear_argument_seat_effect = { SEAT = 2 }
+		kehillah_din_clear_argument_seat_effect = { SEAT = 3 }
+	}
+	remove_variable = kehillah_din_panel_display_1_position
+	remove_variable = kehillah_din_panel_display_2_position
+	remove_variable = kehillah_din_panel_display_3_position
+	remove_variable = kehillah_din_panel_display_1_weight
+	remove_variable = kehillah_din_panel_display_2_weight
+	remove_variable = kehillah_din_panel_display_3_weight
+	remove_variable = kehillah_din_panel_display_1_chance
+	remove_variable = kehillah_din_panel_display_2_chance
+	remove_variable = kehillah_din_panel_display_3_chance
+	remove_variable = kehillah_din_panel_display_winner
+	remove_variable = kehillah_din_panel_display_weight
+	remove_variable = kehillah_din_panel_display_judge2
+	remove_variable = kehillah_din_panel_display_judge3
+}
+
+kehillah_din_clear_argument_seat_effect = {
+	remove_variable = kehillah_din_vote_$SEAT$_position
+	remove_variable = kehillah_din_vote_$SEAT$_chance
+	remove_variable = kehillah_din_vote_$SEAT$_success
+	remove_variable = kehillah_din_vote_$SEAT$_weight
+	remove_variable = kehillah_din_vote_$SEAT$_cited
+}
+
+# Called only from the positive case tiers. Each successful citing judge
+# credits the work in that judge's own community.
+kehillah_din_reward_argument_sources_effect = {
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_av_beit_din exists = involved_activity.var:kehillah_din_vote_1_cited involved_activity.var:kehillah_din_vote_1_success = 1 }
+		involved_activity.var:kehillah_bet_din_av_beit_din = { kehillah_din_record_citation_dispatch_effect = { SOURCE = involved_activity.var:kehillah_din_vote_1_cited } }
+	}
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_judge2 exists = involved_activity.var:kehillah_din_vote_2_cited involved_activity.var:kehillah_din_vote_2_success = 1 }
+		involved_activity.var:kehillah_bet_din_judge2 = { kehillah_din_record_citation_dispatch_effect = { SOURCE = involved_activity.var:kehillah_din_vote_2_cited } }
+	}
+	if = {
+		limit = { exists = involved_activity.var:kehillah_bet_din_judge3 exists = involved_activity.var:kehillah_din_vote_3_cited involved_activity.var:kehillah_din_vote_3_success = 1 }
+		involved_activity.var:kehillah_bet_din_judge3 = { kehillah_din_record_citation_dispatch_effect = { SOURCE = involved_activity.var:kehillah_din_vote_3_cited } }
+	}
+}

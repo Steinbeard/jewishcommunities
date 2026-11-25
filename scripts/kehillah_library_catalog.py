@@ -3032,7 +3032,7 @@ def write_citation_files(order, works):
                 yr = f"kehillah_lib_year_{f}"
                 eff += [
                     "\tif = {",
-                    f"\t\tlimit = {{ {c} {st} <= 6 {yr} > local_var:kehillah_din_newest }}",
+                    f"\t\tlimit = {{ {c} {st} <= 4 {yr} > local_var:kehillah_din_newest }}",
                     f"\t\tset_local_variable = {{ name = kehillah_din_newest value = {yr} }}",
                     f"\t\tscope:kehillah_din_cite_activity = {{ set_variable = {{ name = kehillah_din_cite_innovative value = flag:{f} }} "
                     f"}}",
@@ -3561,6 +3561,8 @@ if __name__ == "__main__":
     write_ledger_loc(order, works)
     write_language_files(order, works)
     write_citation_files(order, works)
+    from kehillah_generate_argument_panel_loc import generate as generate_argument_panel_loc
+    generate_argument_panel_loc()
     write_sermon_files(order, works)
     write_minds_files(order, works)
     write_review_files(order, works)

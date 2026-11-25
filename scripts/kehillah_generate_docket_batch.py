@@ -13,7 +13,7 @@ from kehillah_docket_batch60_data import EXTRA_CASES_6
 from kehillah_docket_batch70_data import EXTRA_CASES_7
 
 ROOT = Path(__file__).resolve().parents[1]
-TEMPLATE = (ROOT / "events/kehillah_bet_din_stranger_aid_events.txt").read_text(encoding="utf-8-sig")
+TEMPLATE = (ROOT / "scripts/templates/kehillah_bet_din_stranger_aid_original.txt").read_text(encoding="utf-8-sig")
 
 CASES = [
     dict(n=19, book="BD-021", slug="bakers_capital", flag="ledger_gap", order="nezikin", title="The Baker's Missing Capital",
@@ -141,8 +141,16 @@ for case in CASES:
         f"kehillah_din_case{n}_two_tt": case["two"],
         f"kehillah_din_case{n}_three_tt": case["three"],
     }
+    if n >= 85:
+        for index, letter in enumerate(("a", "b", "c"), 1):
+            labels[f"kehillah_din_proposed_{n}_{index}"] = f"The ruling proposed so far: $kehillah_bet_din.0{n}1.{letter}$"
     for tier, adjective in (("great", "well-supported"), ("good", "workable"), ("poor", "disputed")):
         labels[f"kehillah_bet_din_case{n}_{tier}_log_title"] = f"{case['title']}: a {adjective} ruling"
         labels[f"kehillah_bet_din_case{n}_{tier}_log"] = case["log"]
     loc = "l_english:\n" + "\n".join(f' {key}:0 "{value}"' for key, value in labels.items()) + "\n"
     (ROOT / f"localization/english/kehillah_bet_din_{case['slug']}_l_english.yml").write_text(loc, encoding="utf-8-sig")
+
+# The game files are committed; this pass keeps the argument/citation event
+# structure identical across all authored cases after prose generation.
+from kehillah_rewrite_docket_arguments import apply as rewrite_arguments
+rewrite_arguments()
