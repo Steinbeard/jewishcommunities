@@ -101,6 +101,14 @@ See [the spec](docs/spec/2026-11-25-dynamic-synod-agenda.md), section 11. The Sy
 is now a menu of the kinds of matter that are live:
 - marriage, including the ketubbah clause again;
 - a question of belief;
+**Samaritan priestly succession and Jewish cleric names: BUILT 2026-11-25 (Daniel's request), xTiger-clean, NOT live-tested.**
+- **The bug:** vanilla's Samaritan High Priest passed his office to a non-Kohen court cleric. The 2026-11-15 Kohen-only filter never reached him, because Samaritans hold no clerical election.
+- **The fix:** `d_samaritan` now has its own title law. The High Priest alone names a Kohen heir: sons first, then brothers, grandsons, nephews and other kin, eldest first.
+- **Game start:** he and his male clergy become the priestly line.
+- **Yearly:** a guard keeps a Kohen within the election's reach, so the office never ends for lack of an heir.
+- **Cleric names:** vanilla's cleric trait no longer reads "Hazzan" for Samaritans (Priestly Elder), Rabbinic Jews (Talmid Hakham), Karaites (Maskil) or Beta Israel (Debtera). These names are proposals for Daniel to review.
+- Succession code, so it needs the four-step live checklist in [the build record](docs/implementation/2026-11-25-samaritan-priestly-succession.md).
+
 - the ordinances, reachable again;
 - naming a head of the rite when there is none;
 - common undertakings: a captives' fund, a public fast, an academy levy;

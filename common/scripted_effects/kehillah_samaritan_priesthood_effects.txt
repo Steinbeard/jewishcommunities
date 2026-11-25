@@ -1,0 +1,121 @@
+# The Samaritan High Priesthood passes only to Kohanim
+# (docs/implementation/2026-11-25-samaritan-priestly-succession.md).
+#
+# Vanilla's d_samaritan follows the default theocratic succession, which
+# put a non-Kohen court cleric next in line. The Kohen-only filter in the
+# copied theocratic_elective (00_pam_clerical_elective.txt) never reached
+# it: Samaritans lack special_doctrine_has_clerical_electors, so they never
+# hold that election. This gives the title its own law,
+# kehillah_priestly_succession_law (kehillah_priestly_elective), and keeps
+# a Kohen within its reach.
+
+# Game start (kehillah_samaritan_priesthood_on_actions.txt), and yearly
+# through kehillah_samaritan_priesthood_yearly_effect.
+kehillah_samaritan_priesthood_law_effect = {
+	if = {
+		limit = { exists = title:d_samaritan.holder }
+		title:d_samaritan = {
+			if = {
+				limit = { NOT = { has_variable = kehillah_priestly_succession_title } }
+				set_variable = kehillah_priestly_succession_title
+			}
+			if = {
+				limit = { NOT = { has_title_law = kehillah_priestly_succession_law } }
+				add_title_law = kehillah_priestly_succession_law
+				debug_log = "KEHILLAH_SAMARITAN_PRIESTHOOD: priestly succession law added"
+			}
+		}
+	}
+}
+
+# Game start only. Vanilla's High Priests are lowborn and have no recorded
+# family, so the line is seeded: the High Priest and the male clergy of his
+# faith at his court are the priestly family, and become Kohanim. Their sons
+# inherit it (kohen passes father to son). A Levite among them becomes a
+# Kohen instead, since nobody is both.
+kehillah_samaritan_priesthood_setup_effect = {
+	kehillah_samaritan_priesthood_law_effect = yes
+	title:d_samaritan.holder ?= {
+		save_scope_as = kehillah_sp_holder
+		if = {
+			limit = {
+				is_male = yes
+				NOT = { has_trait = kohen }
+			}
+			if = {
+				limit = { has_trait = levite }
+				remove_trait = levite
+			}
+			add_trait = kohen
+		}
+		every_courtier = {
+			limit = {
+				is_male = yes
+				faith = scope:kehillah_sp_holder.faith
+				has_trait = cleric
+				NOT = { has_trait = kohen }
+			}
+			if = {
+				limit = { has_trait = levite }
+				remove_trait = levite
+			}
+			add_trait = kohen
+		}
+		debug_log = "KEHILLAH_SAMARITAN_PRIESTHOOD: priestly line seeded"
+		debug_log_scopes = yes
+	}
+	kehillah_samaritan_priesthood_yearly_effect = yes
+}
+
+# Yearly, and once at game start. Re-adds the law if the title was
+# recreated, and makes sure the election can reach a Kohen: d_samaritan is
+# destroy_if_invalid_heir, so a High Priest with no Kohen heir would end
+# the office. If no kinsman or councillor is a Kohen, the most learned
+# adult Kohen at court, or failing that a new Kohen from the priestly
+# families, is made court chaplain (a holder_council_members candidate).
+kehillah_samaritan_priesthood_yearly_effect = {
+	kehillah_samaritan_priesthood_law_effect = yes
+	title:d_samaritan.holder ?= {
+		save_scope_as = kehillah_sp_holder
+		if = {
+			limit = {
+				NOT = { kehillah_priestly_line_has_heir_trigger = { HOLDER = scope:kehillah_sp_holder } }
+			}
+			ordered_courtier = {
+				limit = {
+					kehillah_priestly_heir_candidate_trigger = { HOLDER = scope:kehillah_sp_holder }
+					is_adult = yes
+					is_incapable = no
+				}
+				order_by = learning
+				save_scope_as = kehillah_sp_kohen
+			}
+			if = {
+				limit = { NOT = { exists = scope:kehillah_sp_kohen } }
+				create_character = {
+					employer = scope:kehillah_sp_holder
+					faith = scope:kehillah_sp_holder.faith
+					culture = scope:kehillah_sp_holder.culture
+					gender = male
+					age = { 25 45 }
+					learning = { 8 14 }
+					trait = kohen
+					trait = cleric
+					dynasty = none
+					save_scope_as = kehillah_sp_kohen
+				}
+			}
+			scope:kehillah_sp_kohen ?= {
+				scope:kehillah_sp_holder = {
+					assign_councillor_type = {
+						type = councillor_court_chaplain
+						target = scope:kehillah_sp_kohen
+						remove_existing_councillor = yes
+					}
+				}
+				debug_log = "KEHILLAH_SAMARITAN_PRIESTHOOD: Kohen made court chaplain so the line has an heir"
+				debug_log_scopes = yes
+			}
+		}
+	}
+}

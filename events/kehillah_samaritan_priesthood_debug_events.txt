@@ -1,0 +1,73 @@
+# Console-only probes for the Samaritan priestly succession
+# (docs/implementation/2026-11-25-samaritan-priestly-succession.md).
+#   .1  report: the title law, the High Priest, his primary heir, and
+#       whether each is a Kohen
+#   .2  run the yearly effect now (changes the save), then report
+#   .3  kill the High Priest (changes the save); run .1 a day later to see
+#       who succeeded
+namespace = kehillah_samaritan_priesthood_debug
+
+kehillah_samaritan_priesthood_debug.1 = {
+	type = character_event
+	hidden = yes
+	orphan = yes
+	immediate = {
+		if = {
+			limit = { NOT = { exists = title:d_samaritan.holder } }
+			debug_log = "samaritan_priesthood_debug: no High Priest"
+		}
+		else = {
+			if = {
+				limit = { title:d_samaritan = { has_title_law = kehillah_priestly_succession_law } }
+				debug_log = "samaritan_priesthood_debug: priestly succession law PRESENT"
+			}
+			else = { debug_log = "samaritan_priesthood_debug: priestly succession law MISSING" }
+			title:d_samaritan.holder = {
+				save_scope_as = kehillah_sp_holder
+				debug_log = "samaritan_priesthood_debug: High Priest"
+				debug_log_scopes = yes
+				if = {
+					limit = { has_trait = kohen }
+					debug_log = "samaritan_priesthood_debug: High Priest is a Kohen"
+				}
+				else = { debug_log = "samaritan_priesthood_debug: High Priest is NOT a Kohen" }
+				if = {
+					limit = { kehillah_priestly_line_has_heir_trigger = { HOLDER = scope:kehillah_sp_holder } }
+					debug_log = "samaritan_priesthood_debug: a Kohen kinsman or councillor exists"
+				}
+				else = { debug_log = "samaritan_priesthood_debug: NO Kohen kinsman or councillor" }
+				primary_heir ?= {
+					debug_log = "samaritan_priesthood_debug: primary heir"
+					debug_log_scopes = yes
+					if = {
+						limit = { kehillah_priestly_heir_candidate_trigger = { HOLDER = scope:kehillah_sp_holder } }
+						debug_log = "samaritan_priesthood_debug: heir PASS, a Kohen of the faith"
+					}
+					else = { debug_log = "samaritan_priesthood_debug: heir FAIL, not a Kohen of the faith" }
+				}
+			}
+		}
+	}
+}
+
+kehillah_samaritan_priesthood_debug.2 = {
+	type = character_event
+	hidden = yes
+	orphan = yes
+	immediate = {
+		kehillah_samaritan_priesthood_yearly_effect = yes
+		trigger_event = kehillah_samaritan_priesthood_debug.1
+	}
+}
+
+kehillah_samaritan_priesthood_debug.3 = {
+	type = character_event
+	hidden = yes
+	orphan = yes
+	immediate = {
+		title:d_samaritan.holder ?= {
+			debug_log = "samaritan_priesthood_debug: killing the High Priest"
+			death = { death_reason = death_natural_causes }
+		}
+	}
+}
