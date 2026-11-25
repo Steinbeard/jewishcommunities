@@ -150,7 +150,7 @@ They are now keyed to `government_uses_kehillah_lifestyle_perks`, set only by `k
 | --- | --- |
 | Healthy | epidemic resistance +5 (kept: the landless flag removes it) |
 | Planned Cultivation | Quarter prestige +0.15/month |
-| Scientific | cultural fascination +20% (kept) |
+| Scientific | Torah study scheme 30 days faster per phase. *Corrected 2026-11-25: was cultural fascination +20%, which has no display text in 1.21 (Daniel saw an empty tooltip) and only helps a culture head.* |
 | Faithful | Quarter piety +0.25/month |
 | Church and State | Quarter piety +50% |
 | Heregeld | Quarter gold +0.15/month |

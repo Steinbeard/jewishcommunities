@@ -34,8 +34,10 @@ KEHILLAH_BLOCKS = {
     },
     "00_learning_2_scholarship_tree_perks.txt": {
         # planned_cultivation_perk: no modifier; it slows sefer wear (KEHILLAH_TEXT).
-        # The landless flag drops vanilla's fascination bonus; keep it.
-        "scientific_perk": ["cultural_head_fascination_mult = 0.2"],
+        # 2026-11-25: was cultural_head_fascination_mult, which has no display
+        # text (the tooltip was empty) and only helps a culture head. Study of
+        # Torah runs faster instead (half the Yeshiva's -60).
+        "scientific_perk": ["kehillah_study_torah_scheme_phase_duration_add = -30"],
     },
     "00_learning_3_theology_tree_perks.txt": {
         "faithful_perk": ["domicile_monthly_piety_add = 0.25"],
