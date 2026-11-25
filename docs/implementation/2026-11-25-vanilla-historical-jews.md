@@ -28,3 +28,12 @@ About 110 non-generic rabbinic or Karaite characters, in `franconian`, `egyptian
 ## Live check
 
 Start 1066 and 1178 once, then read `debug.log` for `kehillah_vanilla_historical` lines. Expected: Fustat's leader gains the five pool figures (or the log says they were left at vanilla's court); Moses Qalonimus, Yekuthiel and Maimonides show the Rabbi trait. `error.log` should stay clean for the new files.
+
+## Reconciliation, later the same day (Daniel's follow-up)
+
+- **Qalonimus:** our Kalonymus family now uses vanilla's `ashkenazi_qalonimus` dynasty and its spelling (Rome's poets, Speyer's 1066 leader, Lucca 867, Yehuda he-Hasid 1178). Our dynasty 9000002 is gone; its harp arms now key the vanilla dynasty, since vanilla defines none. Speyer's leader is now the son of vanilla's Hananeel I, so Moses III's nephew. The Speyer leader stays a non-historical representative.
+- **Bundar:** the four Aden Bundars use vanilla's `yemeni_bundar`; our dynasty 9000076 and its arms and motto are removed. Our Yefet (b. 1042) and vanilla's (b. 1075) are still two people; vanilla's is born during play with no parents.
+- **Nahray:** 9002047 and the ben Nissim dynasty are removed (tracker row marked `removed`). Arus (9002048) holds Fustat's steward seat.
+- **Placement list trimmed:** Hillel Awkalid, Karima al-Dallala and Moshe al-Lebdi hold merchant companies, so they are rulers and never in the pool.
+- **Merchant count:** 17 named Jewish merchant holders (about 11 at 1066: Nahray, Qalonimus, Rabban, Barhun, Berekhya, Hillel Awkalid, Karima, and four Maghrebi houses) against 264 generic ones, about 88 per start.
+- **Vanilla's spawn list:** `spawn_historical_characters_effect` (yearly) creates a 20-year-old of 13 Jewish figures in a six-year window unless the global `hchar_<name>` exists. Rashi was already guarded. `kehillah_vanilla_spawn_guard` now registers our Saadia, Hasdai ibn Shaprut, Gabirol, Halevi and vanilla's `maimonides_1` so none are spawned twice. Unguarded: Aaron of Lincoln, ibn Awkal, Benjamin of Tudela, Abraham ibn Ezra, Nachmanides, Crescas, Gersonides. Our Halevi (9000410) is a bare Library record with no parents; vanilla's spawn is richer, so this guard may be reversed later.
