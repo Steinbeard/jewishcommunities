@@ -22,21 +22,26 @@ kehillah_machloket_yearly_effect = {
 		limit = { var:kehillah_mk_active ?= flag:$KEY$ }
 		kehillah_machloket_advance_effect = { KEY = $KEY$ }
 	}
+	# 2026-11-25: the gate is kehillah_machloket_can_erupt_trigger (a fresh,
+	# widely read book its rite's tenets hold back); see that file for why
+	# the old "at its ceiling" gate disputed Emunot ve-Deot in 1066.
 	else_if = {
-		limit = {
-			NOT = { has_variable = kehillah_mk_active }
-			NOT = { has_global_variable = kehillah_wk_$KEY$_mk_cooldown }
-			# Not before the work exists: the 867 start disputed Saadia's
-			# Emunot ve-Deot (933) in 867 (2026-11-17 smoke test).
-			current_year >= kehillah_lib_year_$KEY$
-			# 2026-11-11 one scale: Celebrated or higher, pressed against a
-			# ceiling its tenets set below Authoritative.
-			var:kehillah_standing_$KEY$ >= 6
-			var:kehillah_standing_$KEY$ >= kehillah_lib_ceiling_$KEY$
-			kehillah_lib_ceiling_$KEY$ < 8
-		}
+		limit = { kehillah_machloket_can_erupt_trigger = { KEY = $KEY$ } }
 		random = {
-			chance = 15
+			chance = kehillah_machloket_base_chance
+			modifier = {
+				add = kehillah_machloket_author_alive_chance
+				global_var:kehillah_wk_$KEY$_author ?= { is_alive = yes }
+			}
+			# A tenet it argues for is only known or prohibited here.
+			modifier = {
+				add = kehillah_machloket_sharp_clash_chance
+				kehillah_lib_ceiling_$KEY$ <= 6
+			}
+			modifier = {
+				add = kehillah_machloket_at_ceiling_chance
+				var:kehillah_standing_$KEY$ >= kehillah_lib_ceiling_$KEY$
+			}
 			kehillah_machloket_start_effect = { KEY = $KEY$ }
 		}
 	}
@@ -71,7 +76,11 @@ kehillah_machloket_start_effect = {
 			}
 		}
 	}
-	random_in_global_list = {
+	# 2026-11-25: the opening critic is the learned rabbi most opposed to the
+	# book by his rite and personal tenets (the review stance, -100 to 100),
+	# never its champion. Only if no one opposes it does a random learned
+	# rabbi raise the first objections.
+	every_in_global_list = {
 		variable = kehillah_libraries
 		limit = {
 			exists = holder
@@ -80,12 +89,48 @@ kehillah_machloket_start_effect = {
 				is_ai = yes
 				learning >= 8
 				rite = { this = scope:kehillah_mk_rite }
+				kehillah_review_stance_$KEY$_value < 0
+				NOT = { scope:kehillah_mk_rite.var:kehillah_mk_champion ?= this }
 			}
 		}
 		holder = {
-			save_temporary_scope_as = kehillah_mk_opening_critic
-			scope:kehillah_mk_rite = {
-				set_variable = { name = kehillah_mk_critic value = scope:kehillah_mk_opening_critic }
+			if = {
+				limit = {
+					OR = {
+						NOT = { exists = scope:kehillah_mk_rite.var:kehillah_mk_critic_stance }
+						kehillah_review_stance_$KEY$_value < scope:kehillah_mk_rite.var:kehillah_mk_critic_stance
+					}
+				}
+				save_temporary_scope_as = kehillah_mk_opening_critic
+				set_variable = { name = kehillah_mk_my_stance value = kehillah_review_stance_$KEY$_value }
+				scope:kehillah_mk_rite = {
+					set_variable = { name = kehillah_mk_critic value = scope:kehillah_mk_opening_critic }
+					set_variable = { name = kehillah_mk_critic_stance value = scope:kehillah_mk_opening_critic.var:kehillah_mk_my_stance }
+				}
+				remove_variable = kehillah_mk_my_stance
+			}
+		}
+	}
+	remove_variable = kehillah_mk_critic_stance
+	if = {
+		limit = { NOT = { exists = var:kehillah_mk_critic } }
+		random_in_global_list = {
+			variable = kehillah_libraries
+			limit = {
+				exists = holder
+				holder = {
+					is_alive = yes
+					is_ai = yes
+					learning >= 8
+					rite = { this = scope:kehillah_mk_rite }
+					NOT = { scope:kehillah_mk_rite.var:kehillah_mk_champion ?= this }
+				}
+			}
+			holder = {
+				save_temporary_scope_as = kehillah_mk_opening_critic
+				scope:kehillah_mk_rite = {
+					set_variable = { name = kehillah_mk_critic value = scope:kehillah_mk_opening_critic }
+				}
 			}
 		}
 	}
