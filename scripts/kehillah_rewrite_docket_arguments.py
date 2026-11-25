@@ -63,14 +63,26 @@ def top_blocks(event: str, name: str):
     return blocks
 
 
-def choice_event(event: str, n: int, seat: int) -> str:
-    eid = f"0{n}"
+def strip_quality_desc(event: str) -> str:
+    """The shared panel heading now gives the grade; avoid repeating it in prose."""
+    header_end = event.find("\timmediate = {")
+    assert header_end >= 0
+    for match in list(re.finditer(r"first_valid\s*=\s*\{", event[:header_end])):
+        end = match_brace(event, event.index("{", match.start(), match.end()))
+        if ".quality_great" in event[match.start():end]:
+            return event[:match.start()] + event[end:]
+    return event
+
+
+def choice_event(event: str, n: int, seat: int, eid: str | None = None) -> str:
+    eid = eid or f"0{n}"
     options = top_blocks(event, "option")
     assert len(options) >= 2, (n, seat, len(options))
     afters = top_blocks(event, "after")
     assert len(afters) == 1, (n, seat)
     opts = []
-    for letter, position, skill in (("a", 1, "Diplomacy"), ("b", 2, "Learning"), ("c", 3, "Stewardship")):
+    choices = (("a", 1, "Diplomacy"), ("b", 2, "Learning")) if n <= 3 else (("a", 1, "Diplomacy"), ("b", 2, "Learning"), ("c", 3, "Stewardship"))
+    for letter, position, skill in choices:
         check_letter = {"a": "c", "c": "b"}.get(letter, letter) if n == 15 else letter
         stress = "if = { limit = { has_trait = just } add_stress = 5 custom_tooltip = kehillah_din_stress_just_tt }" if position in (1, 3) else "if = { limit = { has_trait = impatient } add_stress = 8 custom_tooltip = kehillah_din_stress_impatient_tt }\n\t\tif = { limit = { has_trait = diligent } add_stress = -4 custom_tooltip = kehillah_din_stress_diligent_tt }"
         opts.append(f"""\toption = {{
@@ -95,8 +107,8 @@ def choice_event(event: str, n: int, seat: int) -> str:
     return event
 
 
-def citation_and_feedback(n: int) -> str:
-    eid = f"0{n}"
+def citation_and_feedback(n: int, eid: str | None = None) -> str:
+    eid = eid or f"0{n}"
     return f"""
 kehillah_bet_din.{eid}5 = {{
 \ttype = character_event
@@ -180,6 +192,7 @@ def rewrite_file(path: Path, n: int) -> bool:
     assert desc in panel, (path, "panel desc")
     panel = panel.replace(desc, "\tdesc = {\n\t\tdesc = kehillah_din_argument_panel_desc", 1)
     panel = re.sub(rf"(?m)^\s*desc = kehillah_bet_din\.{eid}4\.desc\s*\n", "\n", panel, count=1)
+    panel = strip_quality_desc(panel)
     panel = panel.replace("kehillah_bet_din_advance_docket_effect = yes", "kehillah_din_clear_argument_case_effect = yes kehillah_bet_din_advance_docket_effect = yes")
     replacements.append((start, end, panel))
     for start, end, value in sorted(replacements, reverse=True):
