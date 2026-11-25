@@ -365,6 +365,68 @@ kehillah_synod_levy_give_effect = {
 }
 
 # ---------------------------------------------------------------------
+# 2026-11-25 law-and-custom doctrine motions. Scope: the host.
+# Score how controversial it would be for his rite to take $DOCTRINE$, into
+# var:$VAR$ on him (values in kehillah_synod_values.txt). STEP: the
+# motion's base controversy.
+# ---------------------------------------------------------------------
+kehillah_synod_score_doctrine_effect = {
+	set_variable = { name = $VAR$ value = $STEP$ }
+	if = {
+		limit = { faith.main_rite ?= { rite_has_doctrine = $DOCTRINE$ } }
+		change_variable = { name = $VAR$ multiply = 0.5 }
+	}
+	if = {
+		limit = {
+			exists = rite
+			exists = faith.main_rite
+			rite = { this = prev.faith.main_rite }
+		}
+		change_variable = { name = $VAR$ add = kehillah_synod_controversy_main_rite_add }
+	}
+	else_if = {
+		limit = { exists = rite exists = faith.main_rite }
+		change_variable = {
+			name = $VAR$
+			add = {
+				value = "rite.divergence(faith.main_rite)"
+				multiply = 0.5
+			}
+		}
+	}
+}
+
+# Show the controversy band of var:$VAR$ (scope: the host).
+kehillah_synod_controversy_tt_effect = {
+	if = {
+		limit = { var:$VAR$ ?= 0 }
+		custom_tooltip = kehillah_synod_controversy_none_tt
+	}
+	else_if = {
+		limit = { var:$VAR$ < kehillah_synod_controversy_moderate }
+		custom_tooltip = kehillah_synod_controversy_minor_tt
+	}
+	else_if = {
+		limit = { var:$VAR$ < kehillah_synod_controversy_major }
+		custom_tooltip = kehillah_synod_controversy_moderate_tt
+	}
+	else_if = {
+		limit = { var:$VAR$ < kehillah_synod_controversy_grave }
+		custom_tooltip = kehillah_synod_controversy_major_tt
+	}
+	else = { custom_tooltip = kehillah_synod_controversy_grave_tt }
+}
+
+# Put a law-and-custom doctrine motion. Scope: the host, in kehillah_synod.0109.
+kehillah_synod_put_doctrine_motion_effect = {
+	involved_activity ?= {
+		set_variable = { name = kehillah_synod_proposed_doctrine value = doctrine:$DOCTRINE$ }
+		set_variable = { name = kehillah_synod_controversy value = prev.var:$VAR$ }
+	}
+	kehillah_synod_put_motion_effect = { MOTION = flag:rite_doctrine }
+}
+
+# ---------------------------------------------------------------------
 # Enact the takkanah a synod passed. Scope: the host.
 # scope:kehillah_synod_takkanah: the motion flag.
 # scope:kehillah_synod_proposed_doctrine: the doctrine scope saved from the
@@ -433,6 +495,22 @@ kehillah_synod_enact_takkanah_effect = {
 		kehillah_synod_bind_effect = { VAR = kehillah_takkanah_letters }
 		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_letters_stability }
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_letters_greatness }
+	}
+	# 2026-11-25 law and custom: a doctrine of the host's rite. At a Sanhedrin
+	# too it binds the host's rite only; faith-wide doctrine is not a synod's.
+	# A controversial ruling divides the communities.
+	else_if = {
+		limit = { scope:kehillah_synod_takkanah = flag:rite_doctrine }
+		custom_tooltip = kehillah_synod_rite_doctrine_tt
+		rite ?= { change_rite_doctrine = scope:kehillah_synod_proposed_doctrine }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
+		if = {
+			limit = {
+				exists = scope:kehillah_synod_controversy
+				scope:kehillah_synod_controversy >= kehillah_synod_controversy_moderate
+			}
+			kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_controversy_stability_value }
+		}
 	}
 	# 2026-11-25 dynamic agenda: the gathering names a head of the rite.
 	# Re-checked: he may have died, or someone else been raised, since the vote.

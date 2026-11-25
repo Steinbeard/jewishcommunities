@@ -306,3 +306,57 @@ Use a 1066 Worms start, convening a Synod at a Bet Din sitting. Get a clean `keh
    in `.0108` and in the head-of-rite motion text.
 7. **AI host.** Run `kehillah_synod_debug.10` on an AI leader, then let an AI-hosted synod run
    with the player as a delegate. The vote event names the motion.
+
+## 12. Law and custom: further rite doctrines, controversy by divergence (2026-11-25, Daniel)
+
+Daniel widened section 11's first departure: "include proselytism with a very low AI weight, maybe
+same with divorce. Maybe we could include women in clergy, and maybe funerals too. Some should be
+really controversial though based on their rite divergence." This **supersedes v45 Decision 3**
+("marriage is the only real doctrine a synod changes") and v45 section 6's "divorce at rite level:
+Daniel chose marriage only".
+
+**New kind: "A question of law and custom"** (`kehillah_synod.0109`). Each motion changes a doctrine
+of the host's rite only, at a Synod or a Sanhedrin, since a synod has no say over faith-wide doctrine.
+
+| Motion | Doctrine | STEP | AI base |
+|---|---|---|---|
+| No divorce against the wife's will (Gershom) | `doctrine_divorce_approval` | 10 | 3 |
+| Loose the ban on divorce | `doctrine_divorce_allowed` | 10 | 3 |
+| Welcome converts | `kehillah_proselytism_encouraged` | 20 | 1 |
+| Turn the convert away (reverse) | `kehillah_proselytism_discouraged` | 5 | 5 |
+| Women may teach and lead prayer | `doctrine_clerical_gender_either` | 35 | 1 |
+| Restore the rabbinate to men (reverse) | `doctrine_clerical_gender_male_only` | 15 | 5 |
+| Let mourners lament aloud | `doctrine_funeral_bewailment` | 5 | 3 |
+| Return to restrained mourning (reverse) | `doctrine_funeral_stoic` | 5 | 5 |
+| Acknowledge the authority of the sages | `kehillah_recognition_of_sages` | 10 | 20 |
+
+The reverse rows appear only once a rite has moved away from received custom. Excluded as
+ahistorical: female-only clergy, cremation and the other non-Abrahamic funerals, and divorce
+disallowed. Renouncing Recognition of the Sages needs a second doctrine in its group, so it waits.
+
+**Controversy** (`kehillah_synod_score_doctrine_effect`). It is computed per row when the page
+opens and shown on each option as a band: none, minor, moderate, major or grave.
+
+- STEP is the vanilla divergence between the two doctrines plus how sharply the change breaks with
+  received custom. The vanilla deltas are divorce 10, clergy gender 10, funeral 0, and proselytism 0
+  (both mod doctrines carry divergence 10).
+- The score is halved when the faith's main rite already holds the doctrine, a move toward common
+  practice.
+- It rises by `kehillah_synod_controversy_main_rite_add` when the host's rite is the main rite, since
+  every other rite then diverges.
+- Otherwise half the rite's present `divergence(faith.main_rite)` is added, so a rite that has
+  already drifted finds each further change harder.
+
+A delegate's vote against gains controversy x `kehillah_synod_controversy_vote_weight`, and zealous
+or stubborn delegates add 20 more. A carried motion of moderate controversy or more costs the host
+Stability (`kehillah_synod_controversy_stability_value`). An AI host halves its weight for a motion
+of major controversy or more. Law and custom opens a sitting only for a player host.
+
+**Engine checks for the live test:**
+1. `change_rite_doctrine` works on rites for the clergy-gender and funeral doctrines, since
+   vanilla's reaffirm-doctrine interaction does it. It is **unproven** for divorce, proselytism and
+   Recognition of the Sages, where the rite has no doctrine of that group yet.
+2. Vanilla's divorce-approval doctrine requires the head of faith's consent. Check whether Jewish
+   characters can still divorce under it with no head of faith.
+3. In the 0109 option tooltips, the band line and the doctrine names must render, using
+   `GetDoctrine(...).GetName( GetPlayer.GetFaith )`.
