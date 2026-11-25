@@ -71,12 +71,13 @@ def choice_event(event: str, n: int, seat: int) -> str:
     assert len(afters) == 1, (n, seat)
     opts = []
     for letter, position, skill in (("a", 1, "Diplomacy"), ("b", 2, "Learning"), ("c", 3, "Stewardship")):
+        check_letter = {"a": "c", "c": "b"}.get(letter, letter) if n == 15 else letter
         stress = "if = { limit = { has_trait = just } add_stress = 5 }" if position in (1, 3) else "if = { limit = { has_trait = impatient } add_stress = 8 }\n\t\tif = { limit = { has_trait = diligent } add_stress = -4 }"
         opts.append(f"""\toption = {{
 \t\tname = kehillah_bet_din.{eid}1.{letter}
-\t\tkehillah_din_choose_argument_effect = {{ SEAT = {seat} POSITION = {position} LETTER = {letter} }}
+\t\tkehillah_din_choose_argument_effect = {{ SEAT = {seat} POSITION = {position} LETTER = {check_letter} }}
 \t\t{stress}
-\t\tcustom_tooltip = kehillah_din_argument_{letter}_chance_tt
+\t\tcustom_tooltip = kehillah_din_argument_{check_letter}_chance_tt
 \t\tcustom_tooltip = kehillah_bet_din.{eid}1.{letter}.tt
 \t\tai_chance = {{ base = {35 if position == 2 else 30} }}
 \t}}""")
